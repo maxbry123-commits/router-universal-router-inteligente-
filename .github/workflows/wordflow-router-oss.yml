@@ -1,0 +1,25 @@
+name: Wordflow router OSS 50
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: router-main-oss
+  cancel-in-progress: false
+env:
+  GIT_LFS_SKIP_SMUDGE: '1'
+jobs:
+  descarga-extraccion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: ZIP + EXTRACT 50
+        run: |
+          set -euo pipefail
+          git lfs uninstall --local || true
+          sudo apt-get update -y && sudo apt-get install -y zip unzip
+          python3 scripts/research_download_router.py
