@@ -1,5 +1,10 @@
 name: Wordflow router OSS 50
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/wordflow-router-oss.yml'
+      - 'scripts/research_download_router.py'
   workflow_dispatch:
 permissions:
   contents: write
@@ -16,9 +21,27 @@ jobs:
           ref: main
           fetch-depth: 1
           lfs: false
-      - name: ZIP + EXTRACT 50
+      - name: Eliminar capacidad LFS del runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          if dpkg-query -W -f='${Status}' git-lfs 2>/dev/null | grep -q 'install ok installed'; then
+            sudo apt-get purge -y git-lfs
+          fi
+          ! command -v git-lfs
+      - name: Preparar tooling
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update -y && sudo apt-get install -y zip unzip
+      - name: Limpiar descarga anterior
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf 'Download code router'
+          mkdir -p 'Download code router'
+      - name: ZIP + EXTRACT 50 desde cero
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 scripts/research_download_router.py
