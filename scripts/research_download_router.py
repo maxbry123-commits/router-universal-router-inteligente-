@@ -1,4 +1,4 @@
-import json, shutil, subprocess, time, zipfile, stat
+import json, os, shutil, stat, subprocess, time, zipfile
 from pathlib import Path
 ROOT=Path('.').resolve(); WORK=ROOT/'_work/router-oss'; SRC=WORK/'src'; PACK=WORK/'pack'; EXTRACT=WORK/'extract'; OUT=ROOT/'Download code router'
 MANIFEST=OUT/'RESEARCH_DOWNLOAD_MANIFEST.jsonl'; LEDGER=OUT/'FAILURE_LEDGER.yml'
@@ -56,10 +56,42 @@ def safe_extract(z,dest):
 def verify_zip(z):
     if not z.exists() or z.stat().st_size<=0 or z.stat().st_size>MAX_ZIP: raise RuntimeError(f'ZIP SIZE FAIL: {z}')
     subprocess.run(['unzip','-tq',str(z)],check=True)
+def scan_lfs_material(root):
+    signatures=(b'git-lfs.github.com/spec/',b'version https://git-lfs.github.com/spec')
+    for p in root.rglob('*'):
+        if not p.is_file(): continue
+        try:
+            with p.open('rb') as f:
+                carry=b''
+                while True:
+                    chunk=carry+f.read(1024*1024)
+                    if not chunk: break
+                    if any(sig in chunk for sig in signatures):
+                        raise RuntimeError(f'LFS MATERIAL FAIL {p}')
+                    carry=chunk[-128:]
+        except OSError as exc:
+            raise RuntimeError(f'LFS SCAN READ FAIL {p}') from exc
 def append_failure(number,slug,exc):
     OUT.mkdir(parents=True,exist_ok=True)
+    workflow=os.environ.get('GITHUB_WORKFLOW','Wordflow router OSS 50')
+    run_id=os.environ.get('GITHUB_RUN_ID','')
+    run_attempt=os.environ.get('GITHUB_RUN_ATTEMPT','')
+    commit_sha=os.environ.get('GITHUB_SHA','')
+    repair_commit=os.environ.get('REPAIR_COMMIT_SHA',commit_sha)
+    next_run_id=os.environ.get('NEXT_RUN_ID','')
+    root_cause=str(exc).replace(chr(34),chr(39)).replace('\n',' ')
     with LEDGER.open('a',encoding='utf-8') as f:
-        f.write(f'failure:\n  target: "router-50"\n  failed_step: "{number}-{slug}"\n  root_cause: "{str(exc).replace(chr(34),chr(39))}"\n  status: "OPEN"\n\n')
+        f.write('failure:\n')
+        f.write(f'  target: "router-50"\n')
+        f.write(f'  workflow: "{workflow}"\n')
+        f.write(f'  run_id: "{run_id}"\n')
+        f.write(f'  run_attempt: "{run_attempt}"\n')
+        f.write(f'  commit_sha: "{commit_sha}"\n')
+        f.write(f'  failed_step: "{number}-{slug}"\n')
+        f.write(f'  root_cause: "{root_cause}"\n')
+        f.write(f'  repair_commit: "{repair_commit}"\n')
+        f.write(f'  next_run_id: "{next_run_id}"\n')
+        f.write('  status: "OPEN"\n\n')
 def commit_batch():
     run(['git','add',str(OUT)])
     if subprocess.run(['git','diff','--cached','--quiet']).returncode==0:return
@@ -70,7 +102,12 @@ def commit_batch():
             if attempt==3: raise
             time.sleep(attempt*2)
 def clean_room():
+    previous_ledger=''
+    if LEDGER.exists():
+        previous_ledger=LEDGER.read_text(encoding='utf-8')
     shutil.rmtree(OUT,ignore_errors=True); shutil.rmtree(WORK,ignore_errors=True); OUT.mkdir(parents=True); SRC.mkdir(parents=True); PACK.mkdir(parents=True); EXTRACT.mkdir(parents=True)
+    if previous_ledger:
+        LEDGER.write_text(previous_ledger,encoding='utf-8')
 def verify_output():
     rows=[json.loads(x) for x in MANIFEST.read_text().splitlines() if x.strip()]
     if len(rows)!=50 or [int(x['number']) for x in rows]!=list(range(1,51)): raise RuntimeError('MANIFEST 50/50 FAIL')
@@ -78,10 +115,7 @@ def verify_output():
     for n,slug,_ in REPOS:
         root=EXTRACT/slug
         if not root.exists() or not any(root.iterdir()): raise RuntimeError(f'EXTRACTION LOCATION FAIL {n} {slug}')
-        for p in root.rglob('*'):
-            if p.is_file():
-                with p.open('rb') as f: head=f.read(300)
-                if b'git-lfs.github.com/spec/' in head or b'version https://git-lfs.github.com/spec' in head: raise RuntimeError(f'LFS MATERIAL FAIL {p}')
+        scan_lfs_material(root)
     (OUT/'FINAL_FORENSIC_REPORT.json').write_text(json.dumps({'status':'PASS','components':50,'manifest_rows':50,'contiguous_ids':True,'crc':'PASS','safe_extraction':'PASS'},indent=2))
 clean_room(); batch_bytes=0
 for number,slug,url in REPOS:
@@ -91,6 +125,7 @@ for number,slug,url in REPOS:
         for z in parts:
             verify_zip(z); shutil.copy2(z,OUT/z.name); safe_extract(z,extract_root); batch_bytes+=z.stat().st_size
         if not any(extract_root.iterdir()): raise RuntimeError(f'EMPTY EXTRACTION {slug}')
+        scan_lfs_material(extract_root)
         with MANIFEST.open('a') as f: f.write(json.dumps({'number':int(number),'slug':slug,'source':url,'source_commit':sha,'parts':len(parts),'status':'COMPLETE'},sort_keys=True)+'\n')
         shutil.rmtree(PACK,ignore_errors=True); PACK.mkdir(parents=True)
         if batch_bytes>=BATCH_LIMIT: commit_batch(); batch_bytes=0
