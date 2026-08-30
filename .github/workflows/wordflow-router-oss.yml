@@ -67,8 +67,21 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          test -f 'Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl'
-          test -f 'Download code router/FINAL_FORENSIC_REPORT.json'
-          test "$(wc -l < 'Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl')" -eq 50
-          test "$(grep -c '"'"'"status"'"'"'"'"'"'"': "'"'"'"'"'"'"'"'"'COMPLETE"'"'"'"'"'"'"'"'"')" -eq 50
-          cat 'Download code router/FINAL_FORENSIC_REPORT.json'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          out=Path('Download code router')
+          manifest=out/'RESEARCH_DOWNLOAD_MANIFEST.jsonl'
+          report=out/'FINAL_FORENSIC_REPORT.json'
+          if not manifest.is_file() or not report.is_file():
+              raise SystemExit('FINAL EVIDENCE FILES MISSING')
+          rows=[json.loads(x) for x in manifest.read_text(encoding='utf-8').splitlines() if x.strip()]
+          if len(rows)!=50 or [int(x['number']) for x in rows]!=list(range(1,51)):
+              raise SystemExit('MANIFEST 50/50 FAIL')
+          if any(x.get('status')!='COMPLETE' for x in rows):
+              raise SystemExit('MANIFEST COMPLETE FAIL')
+          data=json.loads(report.read_text(encoding='utf-8'))
+          if data.get('status')!='PASS' or data.get('components')!=50:
+              raise SystemExit('FINAL REPORT FAIL')
+          print('ROUTER 50/50 FINAL EVIDENCE PASS')
+          PY
