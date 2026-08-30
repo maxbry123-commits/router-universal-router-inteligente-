@@ -1,4 +1,4 @@
-import json, shutil, subprocess, time, zipfile
+import json, shutil, subprocess, time, zipfile, stat
 from pathlib import Path
 ROOT=Path('.').resolve(); WORK=ROOT/'_work/router-oss'; SRC=WORK/'src'; PACK=WORK/'pack'; EXTRACT=WORK/'extract'; OUT=ROOT/'Download code router'
 MANIFEST=OUT/'RESEARCH_DOWNLOAD_MANIFEST.jsonl'; LEDGER=OUT/'FAILURE_LEDGER.yml'
@@ -14,7 +14,7 @@ def clone_retry(url,root):
             return
         except subprocess.CalledProcessError as e:
             last=e
-            time.sleep(attempt*3)
+            if attempt<4: time.sleep(attempt*3)
     raise last
 def stage_repo(slug,root):
     stage=PACK/f'{slug}_stage'; shutil.rmtree(stage,ignore_errors=True); stage.mkdir(parents=True)
@@ -48,11 +48,18 @@ def safe_extract(z,dest):
     with zipfile.ZipFile(z) as zf:
         if zf.testzip() is not None: raise RuntimeError(f'CRC FAIL: {z}')
         for info in zf.infolist():
-            if not (dest/info.filename).resolve().is_relative_to(root): raise RuntimeError(f'UNSAFE ZIP PATH: {info.filename}')
+            target=(dest/info.filename).resolve()
+            if not target.is_relative_to(root): raise RuntimeError(f'UNSAFE ZIP PATH: {info.filename}')
+            mode=info.external_attr >> 16
+            if mode and stat.S_ISLNK(mode): raise RuntimeError(f'SYMLINK REJECTED: {info.filename}')
         zf.extractall(dest)
 def verify_zip(z):
     if not z.exists() or z.stat().st_size<=0 or z.stat().st_size>MAX_ZIP: raise RuntimeError(f'ZIP SIZE FAIL: {z}')
     subprocess.run(['unzip','-tq',str(z)],check=True)
+def append_failure(number,slug,exc):
+    OUT.mkdir(parents=True,exist_ok=True)
+    with LEDGER.open('a',encoding='utf-8') as f:
+        f.write(f'failure:\n  target: "router-50"\n  failed_step: "{number}-{slug}"\n  root_cause: "{str(exc).replace(chr(34),chr(39))}"\n  status: "OPEN"\n\n')
 def commit_batch():
     run(['git','add',str(OUT)])
     if subprocess.run(['git','diff','--cached','--quiet']).returncode==0:return
@@ -88,5 +95,6 @@ for number,slug,url in REPOS:
         shutil.rmtree(PACK,ignore_errors=True); PACK.mkdir(parents=True)
         if batch_bytes>=BATCH_LIMIT: commit_batch(); batch_bytes=0
     except Exception as exc:
-        OUT.mkdir(parents=True,exist_ok=True); LEDGER.write_text(f'failure:\n  target: "router-50"\n  failed_step: "{number}-{slug}"\n  root_cause: "{str(exc).replace(chr(34),chr(39))}"\n  status: "OPEN"\n'); raise
+        append_failure(number,slug,exc)
+        raise
 verify_output(); commit_batch(); print('ROUTER 50/50 FORENSIC PASS')
