@@ -24,16 +24,51 @@ jobs:
       - name: Preparar tooling
         shell: bash
         run: |
-          set -euo pipefail
-          sudo apt-get update -y && sudo apt-get install -y zip unzip
+          set -euxo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y zip unzip
+          command -v git
+          command -v zip
+          command -v unzip
+          command -v zipsplit
+      - name: Preflight determinista
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -f .github/workflows/wordflow-router-oss.yml
+          test -f scripts/research_download_router.py
+          python3 -m py_compile scripts/research_download_router.py
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          p=Path('scripts/research_download_router.py')
+          t=p.read_text(encoding='utf-8')
+          w=Path('.github/workflows/wordflow-router-oss.yml').read_text(encoding='utf-8')
+          if 'lfs: false' not in w or 'git lfs' in w or 'GIT_LFS_' in w:
+              raise SystemExit('LFS operational policy FAIL')
+          tree=ast.parse(t)
+          f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='clone_retry')
+          if any(isinstance(x,ast.Call) and isinstance(x.func,ast.Name) and x.func.id=='clone_retry' for x in ast.walk(f)):
+              raise SystemExit('clone_retry recursion detected')
+          print('PREFLIGHT PASS')
+          PY
       - name: Limpiar descarga anterior
         shell: bash
         run: |
-          set -euo pipefail
-          rm -rf 'Download code router'
-          mkdir -p 'Download code router'
+          set -euxo pipefail
+          rm -rf 'Download code router' '_work/router-oss'
+          mkdir -p 'Download code router' '_work/router-oss/src' '_work/router-oss/pack'
       - name: ZIP + EXTRACT 50 desde cero
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           python3 scripts/research_download_router.py
+      - name: Evidencia final 50
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -f 'Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl'
+          test -f 'Download code router/FINAL_FORENSIC_REPORT.json'
+          test "$(wc -l < 'Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl')" -eq 50
+          test "$(grep -c '"'"'"status"'"'"'"'"'"'"': "'"'"'"'"'"'"'"'"'COMPLETE"'"'"'"'"'"'"'"'"')" -eq 50
+          cat 'Download code router/FINAL_FORENSIC_REPORT.json'
