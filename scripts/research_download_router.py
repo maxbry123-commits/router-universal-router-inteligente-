@@ -9,8 +9,12 @@ def clone_retry(url,root):
     last=None
     for attempt in range(1,5):
         shutil.rmtree(root,ignore_errors=True)
-        try: run(['git','clone','--depth=1','--no-tags','--filter=blob:none',url,str(root)]); return
-        except subprocess.CalledProcessError as e: last=e; time.sleep(attempt*3)
+        try:
+            run(['git','clone','--depth=1','--no-tags',url,str(root)])
+            return
+        except subprocess.CalledProcessError as e:
+            last=e
+            time.sleep(attempt*3)
     raise last
 def stage_repo(slug,root):
     stage=PACK/f'{slug}_stage'; shutil.rmtree(stage,ignore_errors=True); stage.mkdir(parents=True)
