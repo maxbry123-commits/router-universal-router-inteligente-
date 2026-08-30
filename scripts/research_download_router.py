@@ -11,7 +11,7 @@ def clone_retry(url, root):
     for attempt in range(1,5):
         shutil.rmtree(root,ignore_errors=True)
         try:
-            clone_retry(url,root)
+            run(['git','clone','--depth','1','--no-tags',url,str(root)])
             return
         except subprocess.CalledProcessError as e:
             last=e
@@ -46,7 +46,7 @@ def commit(n,label):
     if subprocess.run(['git','diff','--cached','--quiet']).returncode==0:return
     run(['git','config','user.name','github-actions[bot]']); run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com']); run(['git','commit','-m',f'build(router-oss): {label} ({n} bytes)']); push(label)
 def extract_to_root(slug, zips):
-    dest=ROOT/slug; dest.mkdir(parents=True, exist_ok=True)
+    dest=ROOT/slug; shutil.rmtree(dest,ignore_errors=True); dest.mkdir(parents=True, exist_ok=True)
     for z,size in zips:
         shutil.copy2(z, dest/z.name)
         with zipfile.ZipFile(z) as zf: zf.extractall(dest)
