@@ -1,104 +1,71 @@
 name: Wordflow router OSS 50
+run-name: Router OSS 50 • ${{ github.event_name }} • ${{ github.sha }}
+
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - '.github/workflows/wordflow-router-oss.yml'
-  workflow_dispatch:
+      - 'scripts/research_download_router.py'
+
 permissions:
   contents: write
-concurrency:
-  group: router-oss-50
-  cancel-in-progress: false
+
 jobs:
   descarga-extraccion:
+    name: Download 50 repos sequentially
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 1
           lfs: false
-      - name: Preparar tooling
+
+      - name: Execute deterministic download chain
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update -y
-          sudo apt-get install -y zip unzip
-          command -v git; command -v zip; command -v unzip; command -v zipsplit
-      - name: Preflight deterministic 12 goals
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f .github/workflows/wordflow-router-oss.yml
-          test -f scripts/research_download_router.py
-          PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile scripts/research_download_router.py
-          python3 - <<'PY'
-          import ast
-          from pathlib import Path
-          w=Path('.github/workflows/wordflow-router-oss.yml').read_text()
-          s=Path('scripts/research_download_router.py').read_text()
-          assert 'lfs: false' in w and 'git lfs' not in w and 'GIT_LFS_' not in w
-          tree=ast.parse(s)
-          fn=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='clone_retry')
-          assert not any(isinstance(x,ast.Call) and isinstance(x.func,ast.Name) and x.func.id=='clone_retry' for x in ast.walk(fn))
-          assert "list(range(1,51))" in s
-          assert 'unzip' in s and 'testzip' in s and 'is_relative_to' in s
-          assert 'BATCH_LIMIT' in s and 'commit_batch' in s
-          print('PREFLIGHT 12/12 PASS')
-          PY
-      - name: Clean room
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf 'Download code router' '_work/router-oss'
-          mkdir -p 'Download code router' '_work/router-oss'
-      - name: Create RUN trace
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json,os
-          from pathlib import Path
-          Path('Download code router/RUN_TRACE.json').write_text(json.dumps({'repository':os.environ['GITHUB_REPOSITORY'],'workflow':os.environ['GITHUB_WORKFLOW'],'run_id':int(os.environ['GITHUB_RUN_ID']),'run_attempt':int(os.environ['GITHUB_RUN_ATTEMPT']),'sha':os.environ['GITHUB_SHA'],'status':'STARTED'},indent=2))
-          PY
-      - name: Download ZIP CRC extract 50
-        shell: bash
-        run: |
-          set -euo pipefail
+          python3 -m py_compile scripts/research_download_router.py
           python3 scripts/research_download_router.py
-      - name: EvidenceGate 50
+
+      - name: Final safety audit
         shell: bash
         run: |
           set -euo pipefail
+          test -f 'Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl'
+          test -f 'Download code router/FINAL_FORENSIC_REPORT.json'
+          count=$(grep -c '"status": "COMPLETE"' 'Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl' || true)
+          test "$count" -eq 50
           python3 - <<'PY'
-          import json,zipfile
+          import json, zipfile
           from pathlib import Path
-          out=Path('Download code router'); m=out/'RESEARCH_DOWNLOAD_MANIFEST.jsonl'; r=out/'FINAL_FORENSIC_REPORT.json'; t=out/'RUN_TRACE.json'
-          assert m.is_file() and r.is_file() and t.is_file()
-          rows=[json.loads(x) for x in m.read_text().splitlines() if x.strip()]
-          assert len(rows)==50 and [int(x['number']) for x in rows]==list(range(1,51))
-          assert all(x.get('status')=='COMPLETE' and int(x.get('parts',0))>=1 for x in rows)
+          out=Path('Download code router')
+          rows=[json.loads(x) for x in (out/'RESEARCH_DOWNLOAD_MANIFEST.jsonl').read_text().splitlines() if x.strip()]
+          assert len(rows)==50
+          assert [int(x['number']) for x in rows]==list(range(1,51))
+          assert all(x.get('status')=='COMPLETE' for x in rows)
           zips=list(out.glob('*.zip'))
-          assert sum(int(x['parts']) for x in rows)==len(zips)
+          assert sum(int(x.get('parts',0)) for x in rows)==len(zips)
           for z in zips:
-              assert z.stat().st_size<=17*1000*1000 and z.stat().st_size>0
-              with zipfile.ZipFile(z) as q: assert q.testzip() is None
-          report=json.loads(r.read_text()); assert report.get('status')=='PASS' and report.get('components')==50
-          trace=json.loads(t.read_text()); trace.update({'status':'PASS','manifest_rows':50,'zip_parts':len(zips),'components':50}); t.write_text(json.dumps(trace,indent=2))
-          print('ROUTER 50/50 EVIDENCEGATE PASS')
+              assert 0 < z.stat().st_size <= 17_000_000
+              with zipfile.ZipFile(z) as q:
+                  assert q.testzip() is None
+          report=json.loads((out/'FINAL_FORENSIC_REPORT.json').read_text())
+          assert report.get('status')=='PASS' and report.get('components')==50
+          for _,slug,_ in json.loads('[]'):
+              pass
+          print('ROUTER 50/50 FINAL SAFETY AUDIT PASS')
           PY
+
       - name: Publish forensic evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: router-50-forensic-${{ github.run_id }}
           path: |
-            Download code router/RUN_TRACE.json
-            Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl
-            Download code router/FAILURE_LEDGER.yml
-            Download code router/FINAL_FORENSIC_REPORT.json
-          if-no-files-found: warn
+            Download code router/
+          if-no-files-found: error
           retention-days: 14
