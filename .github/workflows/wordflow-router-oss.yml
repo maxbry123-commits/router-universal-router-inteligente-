@@ -8,14 +8,18 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency:
-  group: router-main-oss
-  cancel-in-progress: false
 jobs:
   descarga-extraccion:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 360
     steps:
+      - name: Runner probe
+        shell: bash
+        run: |
+          set -euxo pipefail
+          echo "RUNNER=${RUNNER_NAME}"
+          echo "RUN_ID=${GITHUB_RUN_ID}"
+          test -n "${GITHUB_SHA}"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -55,7 +59,7 @@ jobs:
           set -euxo pipefail
           test -f .github/workflows/wordflow-router-oss.yml
           test -f scripts/research_download_router.py
-          python3 -m py_compile scripts/research_download_router.py
+          PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile scripts/research_download_router.py
           python3 - <<'PY'
           import ast
           from pathlib import Path
@@ -115,7 +119,7 @@ jobs:
           trace.write_text(json.dumps(tr,indent=2),encoding='utf-8')
           print('ROUTER 50/50 FINAL EVIDENCE PASS')
           PY
-      - name: Publicar evidencia forense y trazabilidad
+a      - name: Publicar evidencia forense y trazabilidad
         if: always()
         uses: actions/upload-artifact@v4
         with:
