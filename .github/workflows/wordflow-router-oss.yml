@@ -3,11 +3,6 @@ run-name: Router OSS 50 • ${{ github.event_name }} • ${{ github.sha }}
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/wordflow-router-oss.yml'
-      - 'scripts/research_download_router.py'
 
 permissions:
   contents: write
@@ -26,6 +21,8 @@ jobs:
 
       - name: Execute deterministic download chain
         shell: bash
+        env:
+          CONTRACT_2_INPUT_BLOCK: I26:I28
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/research_download_router.py
@@ -55,8 +52,6 @@ jobs:
                   assert q.testzip() is None
           report=json.loads((out/'FINAL_FORENSIC_REPORT.json').read_text())
           assert report.get('status')=='PASS' and report.get('components')==50
-          for _,slug,_ in json.loads('[]'):
-              pass
           print('ROUTER 50/50 FINAL SAFETY AUDIT PASS')
           PY
 
