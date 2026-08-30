@@ -10,16 +10,9 @@ permissions:
   contents: write
 jobs:
   descarga-extraccion:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
-      - name: Runner probe
-        shell: bash
-        run: |
-          set -euxo pipefail
-          echo "RUNNER=${RUNNER_NAME}"
-          echo "RUN_ID=${GITHUB_RUN_ID}"
-          test -n "${GITHUB_SHA}"
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -35,16 +28,6 @@ jobs:
           command -v zip
           command -v unzip
           command -v zipsplit
-      - name: Crear trazabilidad del RUN
-        shell: bash
-        run: |
-          set -euxo pipefail
-          mkdir -p 'Download code router'
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          Path('Download code router/RUN_TRACE.json').write_text(json.dumps({'repository': os.environ['GITHUB_REPOSITORY'], 'workflow': os.environ['GITHUB_WORKFLOW'], 'run_id': int(os.environ['GITHUB_RUN_ID']), 'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']), 'sha': os.environ['GITHUB_SHA'], 'ref': os.environ['GITHUB_REF'], 'status': 'STARTED'}, indent=2), encoding='utf-8')
-          PY
       - name: Preflight determinista
         shell: bash
         run: |
@@ -56,10 +39,9 @@ jobs:
           import ast
           from pathlib import Path
           p=Path('scripts/research_download_router.py')
-          t=p.read_text(encoding='utf-8')
           w=Path('.github/workflows/wordflow-router-oss.yml').read_text(encoding='utf-8')
           if 'lfs: false' not in w or 'git lfs' in w or 'GIT_LFS_' in w: raise SystemExit('LFS operational policy FAIL')
-          tree=ast.parse(t)
+          tree=ast.parse(p.read_text(encoding='utf-8'))
           f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='clone_retry')
           if any(isinstance(x,ast.Call) and isinstance(x.func,ast.Name) and x.func.id=='clone_retry' for x in ast.walk(f)): raise SystemExit('clone_retry recursion detected')
           print('PREFLIGHT PASS')
@@ -70,14 +52,30 @@ jobs:
           set -euxo pipefail
           rm -rf 'Download code router' '_work/router-oss'
           mkdir -p 'Download code router' '_work/router-oss/src' '_work/router-oss/pack'
-      - name: Restaurar trazabilidad después de clean-room
+      - name: Aplicar modelo de ejecución exitoso 35
         shell: bash
         run: |
           set -euxo pipefail
           python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/research_download_router.py')
+          s=p.read_text(encoding='utf-8')
+          target="        commit_and_push(f'{number}-{slug}')\n"
+          if target not in s:
+              raise SystemExit('EXPECTED PER-COMPONENT PUSH CALL NOT FOUND')
+          s=s.replace(target, '', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile scripts/research_download_router.py
+      - name: Crear trazabilidad del RUN
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p 'Download code router'
+          python3 - <<'PY'
           import json, os
           from pathlib import Path
-          Path('Download code router/RUN_TRACE.json').write_text(json.dumps({'repository': os.environ['GITHUB_REPOSITORY'], 'workflow': os.environ['GITHUB_WORKFLOW'], 'run_id': int(os.environ['GITHUB_RUN_ID']), 'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']), 'sha': os.environ['GITHUB_SHA'], 'ref': os.environ['GITHUB_REF'], 'status': 'CLEAN_ROOM_READY'}, indent=2), encoding='utf-8')
+          Path('Download code router/RUN_TRACE.json').write_text(json.dumps({'repository': os.environ['GITHUB_REPOSITORY'], 'workflow': os.environ['GITHUB_WORKFLOW'], 'run_id': int(os.environ['GITHUB_RUN_ID']), 'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']), 'sha': os.environ['GITHUB_SHA'], 'ref': os.environ['GITHUB_REF'], 'status': 'STARTED'}, indent=2), encoding='utf-8')
           PY
       - name: ZIP + EXTRACT 50 desde cero
         shell: bash
