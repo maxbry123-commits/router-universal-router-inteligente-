@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-  actions: read
 concurrency:
   group: router-main-oss
   cancel-in-progress: false
@@ -40,8 +39,7 @@ jobs:
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          p=Path('Download code router/RUN_TRACE.json')
-          p.write_text(json.dumps({
+          Path('Download code router/RUN_TRACE.json').write_text(json.dumps({
             'repository': os.environ['GITHUB_REPOSITORY'],
             'workflow': os.environ['GITHUB_WORKFLOW'],
             'run_id': int(os.environ['GITHUB_RUN_ID']),
@@ -85,8 +83,11 @@ jobs:
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          p=Path('Download code router/RUN_TRACE.json')
-          p.write_text(json.dumps({'repository':os.environ['GITHUB_REPOSITORY'],'workflow':os.environ['GITHUB_WORKFLOW'],'run_id':int(os.environ['GITHUB_RUN_ID']),'run_attempt':int(os.environ['GITHUB_RUN_ATTEMPT']),'sha':os.environ['GITHUB_SHA'],'ref':os.environ['GITHUB_REF'],'status':'CLEAN_ROOM_READY'},indent=2),encoding='utf-8')
+          Path('Download code router/RUN_TRACE.json').write_text(json.dumps({
+            'repository': os.environ['GITHUB_REPOSITORY'], 'workflow': os.environ['GITHUB_WORKFLOW'],
+            'run_id': int(os.environ['GITHUB_RUN_ID']), 'run_attempt': int(os.environ['GITHUB_RUN_ATTEMPT']),
+            'sha': os.environ['GITHUB_SHA'], 'ref': os.environ['GITHUB_REF'], 'status': 'CLEAN_ROOM_READY'
+          }, indent=2), encoding='utf-8')
           PY
       - name: ZIP + EXTRACT 50 desde cero
         shell: bash
@@ -104,20 +105,13 @@ jobs:
           manifest=out/'RESEARCH_DOWNLOAD_MANIFEST.jsonl'
           report=out/'FINAL_FORENSIC_REPORT.json'
           trace=out/'RUN_TRACE.json'
-          if not manifest.is_file() or not report.is_file() or not trace.is_file():
-              raise SystemExit('FINAL EVIDENCE FILES MISSING')
+          if not manifest.is_file() or not report.is_file() or not trace.is_file(): raise SystemExit('FINAL EVIDENCE FILES MISSING')
           rows=[json.loads(x) for x in manifest.read_text(encoding='utf-8').splitlines() if x.strip()]
-          if len(rows)!=50 or [int(x['number']) for x in rows]!=list(range(1,51)):
-              raise SystemExit('MANIFEST 50/50 FAIL')
-          if any(x.get('status')!='COMPLETE' for x in rows):
-              raise SystemExit('MANIFEST COMPLETE FAIL')
+          if len(rows)!=50 or [int(x['number']) for x in rows]!=list(range(1,51)): raise SystemExit('MANIFEST 50/50 FAIL')
+          if any(x.get('status')!='COMPLETE' for x in rows): raise SystemExit('MANIFEST COMPLETE FAIL')
           data=json.loads(report.read_text(encoding='utf-8'))
-          if data.get('status')!='PASS' or data.get('components')!=50:
-              raise SystemExit('FINAL REPORT FAIL')
-          tr=json.loads(trace.read_text(encoding='utf-8'))
-          tr['status']='PASS'
-          tr['manifest_rows']=len(rows)
-          tr['components']=50
+          if data.get('status')!='PASS' or data.get('components')!=50: raise SystemExit('FINAL REPORT FAIL')
+          tr=json.loads(trace.read_text(encoding='utf-8')); tr.update({'status':'PASS','manifest_rows':len(rows),'components':50})
           trace.write_text(json.dumps(tr,indent=2),encoding='utf-8')
           print('ROUTER 50/50 FINAL EVIDENCE PASS')
           PY
