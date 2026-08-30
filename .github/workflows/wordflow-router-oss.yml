@@ -8,6 +8,7 @@ concurrency:
   cancel-in-progress: false
 env:
   GIT_LFS_SKIP_SMUDGE: '1'
+  GIT_LFS_SKIP_PUSH: '1'
 jobs:
   descarga-extraccion:
     runs-on: ubuntu-latest
@@ -17,9 +18,12 @@ jobs:
         with:
           ref: main
           fetch-depth: 1
+          lfs: false
       - name: ZIP + EXTRACT 50
         run: |
           set -euo pipefail
           git lfs uninstall --local || true
+          git config lfs.allowincompletepush true
+          git config filter.lfs.required false
           sudo apt-get update -y && sudo apt-get install -y zip unzip
           python3 scripts/research_download_router.py
