@@ -8,8 +8,101 @@ permissions:
   contents: write
 
 jobs:
+  preflight:
+    name: Contract 2 + Skill static preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          lfs: false
+
+      - name: Load Contract 2 literal input block
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            'https://raw.githubusercontent.com/maxbry123-commits/Agentes-motores-Wordflow-YAIWES/main/notas%20de%20trabajo%20grock%20y%20gpt/CONTRATO-2.yml' \
+            -o /tmp/CONTRATO-2.yml
+          grep -Fq 'I26: ejecutar descarga/extraccion sin reescribir el packer LOCK ni introducir LFS' /tmp/CONTRATO-2.yml
+          grep -Fq 'I27: descargar 119 repos con CHUNK 8MiB, ZIP seguro y commits por lote' /tmp/CONTRATO-2.yml
+          grep -Fq 'I28: auditar todos los GHA y resolver cualquier referencia o uso operativo de LFS' /tmp/CONTRATO-2.yml
+          grep -Fq 'modo: fail-closed' /tmp/CONTRATO-2.yml
+
+      - name: Load Skill literal and verify lock rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error \
+            'https://raw.githubusercontent.com/maxbry123-commits/agentes/main/skills/research-download-chain/SKILL.md' \
+            -o /tmp/SKILL.md
+          grep -Fq 'Do not rewrite the packer' /tmp/SKILL.md
+          grep -Fq 'Checkout must use `lfs: false`.' /tmp/SKILL.md
+          grep -Fq 'SKIP EXISTING' /tmp/SKILL.md
+          grep -Fq 'EvidenceGate' /tmp/SKILL.md
+
+      - name: Verify workflow and script wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f '.github/workflows/wordflow-router-oss.yml'
+          test -f 'scripts/research_download_router.py'
+          grep -Fq 'lfs: false' '.github/workflows/wordflow-router-oss.yml'
+          ! grep -nE '\b(git[[:space:]]+lfs|GIT_LFS_[A-Za-z0-9_]*|filter\.lfs)\b' '.github/workflows/wordflow-router-oss.yml' 'scripts/research_download_router.py'
+
+      - name: Python compile and AST retry self-call check
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/research_download_router.py
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          p=Path('scripts/research_download_router.py')
+          tree=ast.parse(p.read_text(encoding='utf-8'))
+          for node in ast.walk(tree):
+              if isinstance(node, ast.FunctionDef) and node.name == 'clone_retry':
+                  for child in ast.walk(node):
+                      if isinstance(child, ast.Call) and isinstance(child.func, ast.Name) and child.func.id == node.name:
+                          raise SystemExit('FAIL: clone_retry direct self-recursion')
+          print('AST RETRY SELF-CALL PASS')
+          PY
+
+      - name: Verify output roots are clean before execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e '_work/router-oss'
+          test ! -e 'Download code router'
+
+      - name: Verify scanner does not self-trigger on its own signatures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/research_download_router.py').read_text(encoding='utf-8')
+          assert 'git-lfs.github.com/spec/' in s
+          assert 'filter=lfs' not in s
+          print('SCANNER SELF-TRIGGER STATIC CHECK PASS')
+          PY
+
+      - name: Verify archive and extraction guards exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'testzip()' scripts/research_download_router.py
+          grep -Fq "unzip','-tq" scripts/research_download_router.py
+          grep -Fq 'is_relative_to' scripts/research_download_router.py
+          grep -Fq 'S_ISLNK' scripts/research_download_router.py
+
   descarga-extraccion:
     name: Download 50 repos sequentially
+    needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
@@ -37,7 +130,7 @@ jobs:
           count=$(grep -c '"status": "COMPLETE"' 'Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl' || true)
           test "$count" -eq 50
           python3 - <<'PY'
-          import json, zipfile
+          import json, zipfile, subprocess
           from pathlib import Path
           out=Path('Download code router')
           rows=[json.loads(x) for x in (out/'RESEARCH_DOWNLOAD_MANIFEST.jsonl').read_text().splitlines() if x.strip()]
@@ -50,6 +143,7 @@ jobs:
               assert 0 < z.stat().st_size <= 17_000_000
               with zipfile.ZipFile(z) as q:
                   assert q.testzip() is None
+              subprocess.run(['unzip','-tq',str(z)],check=True)
           report=json.loads((out/'FINAL_FORENSIC_REPORT.json').read_text())
           assert report.get('status')=='PASS' and report.get('components')==50
           print('ROUTER 50/50 FINAL SAFETY AUDIT PASS')
