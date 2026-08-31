@@ -18,3 +18,6 @@
 {"number": 18, "parts": 6, "slug": "litellm", "source": "https://github.com/BerriAI/litellm.git", "source_commit": "4ba8517134816b98a040300032e7e0185ccffbc7", "status": "COMPLETE"}
 {"number": 19, "parts": 26, "slug": "llama_index", "source": "https://github.com/run-llama/llama_index.git", "source_commit": "f87a57bb2b95a7ca9923b4e5029cb6d7ea6e28fe", "status": "COMPLETE"}
 {"number": 20, "parts": 1, "slug": "lucide", "source": "https://github.com/lucide-icons/lucide.git", "source_commit": "eb3c04d059d92903f992f0d3b7c732deca6da7a5", "status": "COMPLETE"}
+{"number": 21, "parts": 1, "slug": "python-sdk", "source": "https://github.com/modelcontextprotocol/python-sdk.git", "source_commit": "d2290ca3434731b68ea3e2270bc06a6e6575931b", "status": "COMPLETE"}
+{"number": 22, "parts": 1, "slug": "servers", "source": "https://github.com/modelcontextprotocol/servers.git", "source_commit": "a6cdbf4deac97aac5c9b76bd12d38eace78dac01", "status": "COMPLETE"}
+{"number": 23, "parts": 7, "slug": "n8n", "source": "https://github.com/n8n-io/n8n.git", "source_commit": "cae0c8be00a47d5ebb74660821d60b649f89269e", "status": "COMPLETE"}
