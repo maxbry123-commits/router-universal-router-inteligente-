@@ -31,3 +31,10 @@
 {"number": 31, "parts": 1, "slug": "qdrant", "source": "https://github.com/qdrant/qdrant.git", "source_commit": "74f3e85b9473c62560006c043e13737ce6b48412", "status": "COMPLETE"}
 {"number": 32, "parts": 2, "slug": "react", "source": "https://github.com/facebook/react.git", "source_commit": "2dc7da790d6388b95b83198ca9b588b2ad5f5c0b", "status": "COMPLETE"}
 {"number": 33, "parts": 1, "slug": "redis-py", "source": "https://github.com/redis/redis-py.git", "source_commit": "7ff04812c3a8e2b6e79b2b8edc7e112d927a78ea", "status": "COMPLETE"}
+{"number": 34, "parts": 4, "slug": "ruflo", "source": "https://github.com/ruvnet/ruflo.git", "source_commit": "29f048fc3b556f857cf2b126d2a84c19d2daa0d0", "status": "COMPLETE"}
+{"number": 35, "parts": 1, "slug": "starlette", "source": "https://github.com/encode/starlette.git", "source_commit": "39fd0ffac25593fce39466320c9a666957ce8b8c", "status": "COMPLETE"}
+{"number": 36, "parts": 1, "slug": "tailwindcss", "source": "https://github.com/tailwindlabs/tailwindcss.git", "source_commit": "f723e834ad032aa0f42405f95f684be3cfcac8ef", "status": "COMPLETE"}
+{"number": 37, "parts": 5, "slug": "vllm", "source": "https://github.com/vllm-project/vllm.git", "source_commit": "e0d27040ddcc5ac31cf01c5b04a7d764ccba656d", "status": "COMPLETE"}
+{"number": 38, "parts": 1, "slug": "zustand", "source": "https://github.com/pmndrs/zustand.git", "source_commit": "b57db4f86ef179285da216eeb291266da82c361c", "status": "COMPLETE"}
+{"number": 39, "parts": 1, "slug": "uvicorn", "source": "https://github.com/encode/uvicorn.git", "source_commit": "eed8e7212a60681a9c3c865305cdd227a2b16f90", "status": "COMPLETE"}
+{"number": 40, "parts": 1, "slug": "gunicorn", "source": "https://github.com/benoitc/gunicorn.git", "source_commit": "1597b0559272929cfa6fc739b0eb1201d61a8a98", "status": "COMPLETE"}
