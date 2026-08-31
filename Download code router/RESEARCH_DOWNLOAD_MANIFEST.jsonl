@@ -3,3 +3,8 @@
 {"number": 3, "parts": 3, "slug": "autogen", "source": "https://github.com/microsoft/autogen.git", "source_commit": "027ecf0a379bcc1d09956d46d12d44a3ad9cee14", "status": "COMPLETE"}
 {"number": 4, "parts": 2, "slug": "Chart.js", "source": "https://github.com/chartjs/Chart.js.git", "source_commit": "cb02e1d207bd4c4c40b20c259017f85f26f1e30a", "status": "COMPLETE"}
 {"number": 5, "parts": 3, "slug": "chroma", "source": "https://github.com/chroma-core/chroma.git", "source_commit": "c38b46f4621496a3734e20de982c355d9b85ea6e", "status": "COMPLETE"}
+{"number": 6, "parts": 18, "slug": "crewAI", "source": "https://github.com/crewAIInc/crewAI.git", "source_commit": "da4daadba0e5049abc00fee8bc31b8b8019c60dd", "status": "COMPLETE"}
+{"number": 7, "parts": 6, "slug": "cryptography", "source": "https://github.com/pyca/cryptography.git", "source_commit": "c20f7beadd64b1d237498057a3bde57e1c42fdb3", "status": "COMPLETE"}
+{"number": 8, "parts": 1, "slug": "dzhng-deep-research", "source": "https://github.com/dzhng/deep-research.git", "source_commit": "1f8f3e285bbc23e80b98a66a64effab9069f3ad4", "status": "COMPLETE"}
+{"number": 9, "parts": 1, "slug": "agents-deep-research", "source": "https://github.com/qx-labs/agents-deep-research.git", "source_commit": "5e7f4b2321b20bf04c72a405688ab9980887c603", "status": "COMPLETE"}
+{"number": 10, "parts": 1, "slug": "docker-py", "source": "https://github.com/docker/docker-py.git", "source_commit": "afc6d1ee308e78b908b96a94298c37fa8c465588", "status": "COMPLETE"}
