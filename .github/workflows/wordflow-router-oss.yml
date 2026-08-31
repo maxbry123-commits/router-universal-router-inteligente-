@@ -4,8 +4,8 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: router-oss-50
-  cancel-in-progress: false
+  group: research-download-chain-final
+  cancel-in-progress: true
 jobs:
   descarga-extraccion:
     runs-on: ubuntu-latest
