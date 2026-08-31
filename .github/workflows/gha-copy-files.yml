@@ -1,14 +1,15 @@
 # Copiar archivos. Fuente: https://github.com/actions/checkout
+# src = repo agentes (skill lock). dest = repo donde corre el GHA.
 name: Copy files
 on:
   workflow_dispatch:
     inputs:
       src_file:
-        description: 'Archivo origen'
+        description: 'Archivo origen en agentes'
         required: true
         default: 'skills/research-download-chain/assets/FORENSIC-PASS-research_download_chain.py'
       dest_file:
-        description: 'Archivo destino'
+        description: 'Archivo destino en este repo'
         required: true
         default: 'scripts/research_download_chain.py'
 permissions:
@@ -20,24 +21,36 @@ jobs:
   copy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout dest
+        uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
           lfs: false
           persist-credentials: true
+          path: dest
+      - name: Checkout agentes skill
+        uses: actions/checkout@v4
+        with:
+          repository: maxbry123-commits/agentes
+          ref: main
+          fetch-depth: 1
+          lfs: false
+          token: ${{ secrets.GH_PAT }}
+          path: src
       - name: cp -a
         run: |
           set -euo pipefail
-          test -e "${{ inputs.src_file }}"
-          mkdir -p "$(dirname "${{ inputs.dest_file }}")"
-          cp -a "${{ inputs.src_file }}" "${{ inputs.dest_file }}"
-      - name: commit push main
+          test -e "src/${{ inputs.src_file }}"
+          mkdir -p "dest/$(dirname "${{ inputs.dest_file }}")"
+          cp -a "src/${{ inputs.src_file }}" "dest/${{ inputs.dest_file }}"
+      - name: commit push dest main
+        working-directory: dest
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "${{ inputs.dest_file }}"
           git diff --cached --quiet && echo 'NO CHANGE' && exit 0
-          git commit -m "copy: ${{ inputs.src_file }} -> ${{ inputs.dest_file }}"
+          git commit -m "copy: agentes/${{ inputs.src_file }} -> ${{ inputs.dest_file }}"
           git push origin HEAD:main
