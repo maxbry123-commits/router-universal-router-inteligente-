@@ -15,3 +15,4 @@
 {"number": 15, "parts": 1, "slug": "httpx", "source": "https://github.com/encode/httpx.git", "source_commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254", "status": "COMPLETE"}
 {"number": 16, "parts": 124, "slug": "plex", "source": "https://github.com/IBM/plex.git", "source_commit": "bf260093582f04622aacc1e9f9ca604d7ccd0c42", "status": "COMPLETE"}
 {"number": 17, "parts": 1, "slug": "langgraph", "source": "https://github.com/langchain-ai/langgraph.git", "source_commit": "11ee185999b86bfea2d8c0e69cef9a5e37acf686", "status": "COMPLETE"}
+{"number": 18, "parts": 6, "slug": "litellm", "source": "https://github.com/BerriAI/litellm.git", "source_commit": "4ba8517134816b98a040300032e7e0185ccffbc7", "status": "COMPLETE"}
