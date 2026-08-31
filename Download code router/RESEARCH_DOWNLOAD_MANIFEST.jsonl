@@ -16,3 +16,5 @@
 {"number": 16, "parts": 124, "slug": "plex", "source": "https://github.com/IBM/plex.git", "source_commit": "bf260093582f04622aacc1e9f9ca604d7ccd0c42", "status": "COMPLETE"}
 {"number": 17, "parts": 1, "slug": "langgraph", "source": "https://github.com/langchain-ai/langgraph.git", "source_commit": "11ee185999b86bfea2d8c0e69cef9a5e37acf686", "status": "COMPLETE"}
 {"number": 18, "parts": 6, "slug": "litellm", "source": "https://github.com/BerriAI/litellm.git", "source_commit": "4ba8517134816b98a040300032e7e0185ccffbc7", "status": "COMPLETE"}
+{"number": 19, "parts": 26, "slug": "llama_index", "source": "https://github.com/run-llama/llama_index.git", "source_commit": "f87a57bb2b95a7ca9923b4e5029cb6d7ea6e28fe", "status": "COMPLETE"}
+{"number": 20, "parts": 1, "slug": "lucide", "source": "https://github.com/lucide-icons/lucide.git", "source_commit": "eb3c04d059d92903f992f0d3b7c732deca6da7a5", "status": "COMPLETE"}
