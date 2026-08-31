@@ -1,0 +1,5 @@
+{"number": 1, "parts": 1, "slug": "asyncpg", "source": "https://github.com/MagicStack/asyncpg.git", "source_commit": "db8ecc2a38e16fb0c090aef6f5506547c2831c24", "status": "COMPLETE"}
+{"number": 2, "parts": 1, "slug": "aiomysql", "source": "https://github.com/aio-libs/aiomysql.git", "source_commit": "1aa9cfcbad60f14f5a8bdccaa660f10f69123015", "status": "COMPLETE"}
+{"number": 3, "parts": 3, "slug": "autogen", "source": "https://github.com/microsoft/autogen.git", "source_commit": "027ecf0a379bcc1d09956d46d12d44a3ad9cee14", "status": "COMPLETE"}
+{"number": 4, "parts": 2, "slug": "Chart.js", "source": "https://github.com/chartjs/Chart.js.git", "source_commit": "cb02e1d207bd4c4c40b20c259017f85f26f1e30a", "status": "COMPLETE"}
+{"number": 5, "parts": 3, "slug": "chroma", "source": "https://github.com/chroma-core/chroma.git", "source_commit": "c38b46f4621496a3734e20de982c355d9b85ea6e", "status": "COMPLETE"}
