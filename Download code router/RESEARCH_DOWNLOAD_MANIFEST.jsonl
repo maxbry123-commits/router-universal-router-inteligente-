@@ -26,3 +26,8 @@
 {"number": 26, "parts": 2, "slug": "phoenix", "source": "https://github.com/Arize-ai/phoenix.git", "source_commit": "bfec5c91217af4b3275fcb2d4b5d0c2a3ed399c2", "status": "COMPLETE"}
 {"number": 27, "parts": 1, "slug": "pydantic", "source": "https://github.com/pydantic/pydantic.git", "source_commit": "f512b087202f58ec90a9d38c9102858567d72440", "status": "COMPLETE"}
 {"number": 28, "parts": 1, "slug": "pydantic-settings", "source": "https://github.com/pydantic/pydantic-settings.git", "source_commit": "53df0b5196a22d441f0c37460ccfa7cb20394671", "status": "COMPLETE"}
+{"number": 29, "parts": 14, "slug": "pydantic-ai", "source": "https://github.com/pydantic/pydantic-ai.git", "source_commit": "11448676233858db3cf3fe30fc5b902d77c6face", "status": "COMPLETE"}
+{"number": 30, "parts": 1, "slug": "pyyaml", "source": "https://github.com/yaml/pyyaml.git", "source_commit": "34a9bf82357f4952d8f194a5a31f1c39743652d0", "status": "COMPLETE"}
+{"number": 31, "parts": 1, "slug": "qdrant", "source": "https://github.com/qdrant/qdrant.git", "source_commit": "74f3e85b9473c62560006c043e13737ce6b48412", "status": "COMPLETE"}
+{"number": 32, "parts": 2, "slug": "react", "source": "https://github.com/facebook/react.git", "source_commit": "2dc7da790d6388b95b83198ca9b588b2ad5f5c0b", "status": "COMPLETE"}
+{"number": 33, "parts": 1, "slug": "redis-py", "source": "https://github.com/redis/redis-py.git", "source_commit": "7ff04812c3a8e2b6e79b2b8edc7e112d927a78ea", "status": "COMPLETE"}
