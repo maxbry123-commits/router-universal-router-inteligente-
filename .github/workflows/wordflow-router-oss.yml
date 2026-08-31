@@ -1,22 +1,2 @@
-name: Wordflow router OSS 50
-on:
-  workflow_dispatch:
-permissions:
-  contents: write
-concurrency:
-  group: router-oss-50
-  cancel-in-progress: false
-jobs:
-  descarga-extraccion:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          lfs: false
-      - name: Execute deterministic download chain
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 scripts/research_download_router.py
+wordflow-router-oss.yml
+prueba
