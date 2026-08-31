@@ -8,3 +8,8 @@
 {"number": 8, "parts": 1, "slug": "dzhng-deep-research", "source": "https://github.com/dzhng/deep-research.git", "source_commit": "1f8f3e285bbc23e80b98a66a64effab9069f3ad4", "status": "COMPLETE"}
 {"number": 9, "parts": 1, "slug": "agents-deep-research", "source": "https://github.com/qx-labs/agents-deep-research.git", "source_commit": "5e7f4b2321b20bf04c72a405688ab9980887c603", "status": "COMPLETE"}
 {"number": 10, "parts": 1, "slug": "docker-py", "source": "https://github.com/docker/docker-py.git", "source_commit": "afc6d1ee308e78b908b96a94298c37fa8c465588", "status": "COMPLETE"}
+{"number": 11, "parts": 2, "slug": "fastapi", "source": "https://github.com/fastapi/fastapi.git", "source_commit": "49033471594ea5d99a80abdf1043231b7791ee49", "status": "COMPLETE"}
+{"number": 12, "parts": 2, "slug": "gpt-researcher", "source": "https://github.com/assafelovic/gpt-researcher.git", "source_commit": "6f998577d547b1e54ec662dac63583aa11e3b84b", "status": "COMPLETE"}
+{"number": 13, "parts": 1, "slug": "guardrails", "source": "https://github.com/guardrails-ai/guardrails.git", "source_commit": "06d0ff2c5f9bcb493d976b76f885e37e41ce845d", "status": "COMPLETE"}
+{"number": 14, "parts": 4, "slug": "haystack", "source": "https://github.com/deepset-ai/haystack.git", "source_commit": "99f2249a6197afc7d32d6229627216957ce28b76", "status": "COMPLETE"}
+{"number": 15, "parts": 1, "slug": "httpx", "source": "https://github.com/encode/httpx.git", "source_commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254", "status": "COMPLETE"}
