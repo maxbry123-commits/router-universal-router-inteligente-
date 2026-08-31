@@ -47,3 +47,4 @@
 {"number": 47, "parts": 4, "slug": "postgres", "source": "https://github.com/postgres/postgres.git", "source_commit": "0e944fe3579ecd525e5ffe7b7db4a7e1c34de49e", "status": "COMPLETE"}
 {"number": 48, "reason": "clone", "slug": "websockets", "source": "https://github.com/websockets/websockets.git", "status": "SKIPPED"}
 {"number": 49, "parts": 1, "slug": "prometheus", "source": "https://github.com/prometheus/prometheus.git", "source_commit": "9c8c131e849264f1dd210c89e5232dc9d1723536", "status": "COMPLETE"}
+{"number": 50, "parts": 6, "slug": "grafana", "source": "https://github.com/grafana/grafana.git", "source_commit": "e47052b9c8401d6efd3856d87eab5b4eb38dcb0d", "status": "COMPLETE"}
