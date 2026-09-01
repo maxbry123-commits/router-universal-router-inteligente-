@@ -1,0 +1,21 @@
+name: rm basura plantilla
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  rm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -rf 'skills agente router inteligente universal' 'Documentos proyectos router inteligente universal' 'Router inteligente universal' 'PIPELINE router inteligente universal' 'Agente motores router inteligente universal'
+          git add -A -- ':!.github'
+          git diff --cached --quiet && exit 0
+          git commit -m 'rm: plantillas vacias no pedidas'
+          git pull --rebase origin main
+          git push --no-verify origin main
