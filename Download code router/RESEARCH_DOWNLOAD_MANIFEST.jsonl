@@ -48,3 +48,5 @@
 {"number": 48, "reason": "clone", "slug": "websockets", "source": "https://github.com/websockets/websockets.git", "status": "SKIPPED"}
 {"number": 49, "parts": 1, "slug": "prometheus", "source": "https://github.com/prometheus/prometheus.git", "source_commit": "9c8c131e849264f1dd210c89e5232dc9d1723536", "status": "COMPLETE"}
 {"number": 50, "parts": 6, "slug": "grafana", "source": "https://github.com/grafana/grafana.git", "source_commit": "e47052b9c8401d6efd3856d87eab5b4eb38dcb0d", "status": "COMPLETE"}
+{"number": 1, "parts": 22, "slug": "vLLM-Semantic-Router", "source": "https://github.com/vllm-project/semantic-router.git", "source_commit": "349bd3ba455582fb1c5c6d77d0d0f29de7c90526", "status": "COMPLETE"}
+{"number": 2, "parts": 1, "slug": "vLLM-Router", "source": "https://github.com/vllm-project/router.git", "source_commit": "1d10e71fb7bb4c0adc9f2c16ec77bf5dd4aa1586", "status": "COMPLETE"}
