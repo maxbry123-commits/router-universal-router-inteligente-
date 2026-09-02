@@ -1,0 +1,24 @@
+name: Router intelligent components 7 deduplicated
+on:
+  pull_request_target:
+    paths: [router-components-trigger.txt]
+permissions:
+  contents: write
+concurrency:
+  group: research-download-chain-final
+  cancel-in-progress: false
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            scripts/research_download_router_missing_07.py
+            Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl
+          sparse-checkout-cone-mode: false
+      - run: python3 scripts/research_download_router_missing_07.py "Download code router" "_work/router-missing-07"
