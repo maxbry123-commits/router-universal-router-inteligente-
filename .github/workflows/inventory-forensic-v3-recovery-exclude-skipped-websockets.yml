@@ -1,0 +1,100 @@
+name: inventory-forensic-v3-recovery-exclude-skipped-websockets
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/inventory-forensic-v3-recovery-exclude-skipped-websockets.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify_exclusion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            .github
+
+      - name: Verify SKIPPED row is not a downloaded component
+        env:
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          set -euo pipefail
+          mkdir -p audit-v3-exclusion
+          python3 - <<'PY'
+          import json, os, re, subprocess
+
+          manifest="Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl"
+          raw=subprocess.check_output(["git","show","HEAD:"+manifest]).decode("utf-8","replace")
+          row=None
+          line_no=None
+          for i,line in enumerate(raw.splitlines(),1):
+              if not line.strip():
+                  continue
+              d=json.loads(line)
+              if str(d.get("slug","")).lower()=="websockets":
+                  row=d; line_no=i; break
+
+          if row is None:
+              raise SystemExit("websockets row missing")
+          if str(row.get("status","")).upper()!="SKIPPED":
+              raise SystemExit("websockets is no longer SKIPPED")
+          if row.get("source_commit"):
+              raise SystemExit("unexpected source_commit: component may now be downloaded")
+          if row.get("parts"):
+              raise SystemExit("unexpected parts: component may now be downloaded")
+
+          names=subprocess.check_output(["git","ls-tree","-r","-z","--name-only","HEAD"])
+          paths=[p.decode("utf-8","replace") for p in names.split(b"\x00") if p]
+          norm=lambda s: re.sub(r"[^a-z0-9]+","",s.lower())
+          matches=[]
+          for p in paths:
+              b=os.path.basename(p)
+              stem=re.sub(r"(?i)(_\d{4})?\.zip$","",b)
+              if p.lower().endswith(".zip") and norm(stem)==norm("websockets"):
+                  matches.append(p)
+
+          if matches:
+              raise SystemExit("ZIP evidence exists; exclusion invalid: "+repr(matches))
+
+          result={
+            "schema":"YAIWES-INVENTORY-INDEXES-V3-EXCLUDED-NON-DOWNLOADED",
+            "repository":os.environ["REPOSITORY"],
+            "manifest_path":manifest,
+            "manifest_line":line_no,
+            "source_url":row.get("source"),
+            "manifest_status":"SKIPPED",
+            "reason":row.get("reason"),
+            "source_commit_present":False,
+            "parts_present":False,
+            "zip_matches":[],
+            "classification":"EXCLUDED_NON_DOWNLOADED",
+            "component_universe_skipped":0,
+            "workflow_run_url":os.environ["SERVER_URL"]+"/"+os.environ["REPOSITORY"]+"/actions/runs/"+os.environ["RUN_ID"]
+          }
+          with open("audit-v3-exclusion/exclusion-v3.json","w") as f:
+              json.dump(result,f,indent=2)
+          with open("audit-v3-exclusion/exclusion-v3.md","w") as f:
+              f.write("# V3 exclusion evidence — websockets\n\n")
+              f.write("- classification: EXCLUDED_NON_DOWNLOADED\n")
+              f.write("- manifest status: SKIPPED\n")
+              f.write("- reason: "+str(row.get("reason"))+"\n")
+              f.write("- source_commit: absent\n- parts: absent\n- matching ZIPs: 0\n")
+          PY
+
+      - name: Upload exclusion evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-forensic-v3-exclusion-websockets
+          path: audit-v3-exclusion/
+          if-no-files-found: error
+          retention-days: 30
