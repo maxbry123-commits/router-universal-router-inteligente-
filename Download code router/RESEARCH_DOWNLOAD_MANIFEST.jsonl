@@ -52,3 +52,6 @@
 {"number": 2, "parts": 1, "slug": "vLLM-Router", "source": "https://github.com/vllm-project/router.git", "source_commit": "1d10e71fb7bb4c0adc9f2c16ec77bf5dd4aa1586", "status": "COMPLETE"}
 {"number": 3, "parts": 4, "slug": "SGLang", "source": "https://github.com/sgl-project/sglang.git", "source_commit": "f8cbf000f4a5bfd86d3fb7c1e2d6c8fb12339d0e", "status": "COMPLETE"}
 {"number": 4, "parts": 4, "slug": "llama.cpp", "source": "https://github.com/ggml-org/llama.cpp.git", "source_commit": "9cc33944f9b7a44243618d5522adae357d7fdc90", "status": "COMPLETE"}
+{"number": 5, "parts": 12, "slug": "RouterArena", "source": "https://github.com/RouteWorks/RouterArena.git", "source_commit": "cff9659dd6a3a07815f4842fcdadea5a597a1df1", "status": "COMPLETE"}
+{"number": 6, "parts": 1, "slug": "MCP-Python-SDK", "source": "https://github.com/modelcontextprotocol/python-sdk.git", "source_commit": "d060b36e1d095ef6e93e07ba5d59bb69b2ad449a", "status": "COMPLETE"}
+{"number": 7, "parts": 2, "slug": "Sentence-Transformers", "source": "https://github.com/huggingface/sentence-transformers.git", "source_commit": "5868a1013928f6dae12c12d8c7f1a681b098a9c4", "status": "COMPLETE"}
