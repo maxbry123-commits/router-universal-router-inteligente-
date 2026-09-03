@@ -1,0 +1,42 @@
+name: RDC router control patch 20260903
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rdc-router-control-patch-20260903.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='.github/workflows/research-download-chain-router-components-repair-01-20260903.yml'
+          SELF='.github/workflows/rdc-router-control-patch-20260903.yml'
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/research-download-chain-router-components-repair-01-20260903.yml')
+          s=p.read_text()
+          a=s.index('          new=(')
+          b=s.index('          if old not in s:', a)
+          block=s[a:b]
+          fixed=block.replace(r'\\n', r'\n')
+          if fixed == block:
+              raise SystemExit('CONTROL_PATCH_GAP:no escaped-newline sequence changed')
+          if r'\\n' in fixed:
+              raise SystemExit('CONTROL_PATCH_GAP:double escaped newline remains in target block')
+          p.write_text(s[:a]+fixed+s[b:])
+          print('CONTROL_PATCH_PASS', block.count(r'\\n'))
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$TARGET"
+          git rm -- "$SELF"
+          git commit -m 'fix(actions): normalize RDC runtime newlines router'
+          git pull --rebase origin main
+          git push origin HEAD:main
