@@ -133,3 +133,5 @@ jobs:
           echo "ZIP_COUNT_OLD_ROOTS=$OLD_COUNT"
           test "$COUNT" -gt 0
           test "$OLD_COUNT" -eq 0
+
+# activation-revision: 2
