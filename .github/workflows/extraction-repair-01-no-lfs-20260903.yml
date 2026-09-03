@@ -46,21 +46,29 @@ jobs:
           set -o pipefail
           python3 scripts/extract_guardian_repair_20260903.py --audit-only > pre-audit.json
           LIMIT="$(python3 - <<'PY'
-          import json,re
+          import json
           from pathlib import Path
           d=json.load(open("pre-audit.json"))
           gaps=d.get("remaining_gaps",[])
           if not gaps:
               print(1); raise SystemExit
-          slug=gaps[0]["slug"]
           root=Path("router inteligente software/componentes todos/componentes descargados")
-          parts=list(root.rglob(slug+"_*.zip"))
-          n=len(parts)
-          if n>50: limit=1
-          elif n>20: limit=2
-          elif n>10: limit=3
-          else: limit=6
-          print(limit)
+          max_components=6
+          max_parts=40
+          selected=0
+          total_parts=0
+          for row in gaps[:max_components]:
+              slug=row["slug"]
+              n=len(list(root.rglob(slug+"_*.zip")))
+              n=max(n,1)
+              if selected and total_parts+n>max_parts:
+                  break
+              if not selected and n>max_parts:
+                  selected=1
+                  break
+              selected+=1
+              total_parts+=n
+          print(max(selected,1))
           PY
           )"
           echo "ADAPTIVE_LIMIT=$LIMIT"
