@@ -1,0 +1,264 @@
+<?php
+
+namespace App\Support;
+
+use Illuminate\Http\JsonResponse;
+use Workflow\Serializers\AvroValueJsonProjection;
+
+final class ControlPlaneResultMapper
+{
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    public function signal(string $workflowId, string $signalName, array $result, ?string $runId = null): JsonResponse
+    {
+        return $this->commandResponse(
+            operation: 'signal',
+            operationName: $signalName,
+            workflowId: $workflowId,
+            runId: $runId,
+            result: $result,
+            defaultStatus: 202,
+            fallbackFields: [
+                'signal_name' => $signalName,
+            ],
+            projectCommandReason: true,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    public function query(string $workflowId, string $queryName, array $result, ?string $runId = null): JsonResponse
+    {
+        return $this->commandResponse(
+            operation: 'query',
+            operationName: $queryName,
+            workflowId: $workflowId,
+            runId: $runId,
+            result: $result,
+            defaultStatus: 200,
+            fallbackFields: [
+                'query_name' => $queryName,
+            ],
+            projectCommandReason: false,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    public function update(
+        string $workflowId,
+        string $updateName,
+        ?string $waitFor,
+        array $result,
+        ?string $runId = null,
+    ): JsonResponse {
+        $fallbackFields = [
+            'update_name' => $updateName,
+        ];
+
+        if (is_string($waitFor) && $waitFor !== '') {
+            $fallbackFields['wait_for'] = $waitFor;
+        }
+
+        return $this->commandResponse(
+            operation: 'update',
+            operationName: $updateName,
+            workflowId: $workflowId,
+            runId: $runId,
+            result: $result,
+            defaultStatus: 200,
+            fallbackFields: $fallbackFields,
+            projectCommandReason: true,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    public function cancel(string $workflowId, array $result, ?string $runId = null): JsonResponse
+    {
+        return $this->commandResponse(
+            operation: 'cancel',
+            operationName: null,
+            workflowId: $workflowId,
+            runId: $runId,
+            result: $result,
+            defaultStatus: 200,
+            fallbackFields: [],
+            projectCommandReason: true,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    public function terminate(string $workflowId, array $result, ?string $runId = null): JsonResponse
+    {
+        return $this->commandResponse(
+            operation: 'terminate',
+            operationName: null,
+            workflowId: $workflowId,
+            runId: $runId,
+            result: $result,
+            defaultStatus: 200,
+            fallbackFields: [],
+            projectCommandReason: true,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    public function repair(string $workflowId, array $result, ?string $runId = null): JsonResponse
+    {
+        return $this->commandResponse(
+            operation: 'repair',
+            operationName: null,
+            workflowId: $workflowId,
+            runId: $runId,
+            result: $result,
+            defaultStatus: 200,
+            fallbackFields: [],
+            projectCommandReason: true,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    public function archive(string $workflowId, array $result, ?string $runId = null): JsonResponse
+    {
+        return $this->commandResponse(
+            operation: 'archive',
+            operationName: null,
+            workflowId: $workflowId,
+            runId: $runId,
+            result: $result,
+            defaultStatus: 200,
+            fallbackFields: [],
+            projectCommandReason: true,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     * @param  array<string, string>  $fallbackFields
+     */
+    private function commandResponse(
+        string $operation,
+        ?string $operationName,
+        string $workflowId,
+        ?string $runId,
+        array $result,
+        int $defaultStatus,
+        array $fallbackFields,
+        bool $projectCommandReason,
+    ): JsonResponse {
+        if ($this->instanceNotFound($result)) {
+            return ControlPlaneProtocol::json(
+                ControlPlaneResponseContract::attach(
+                    operation: $operation,
+                    operationName: $operationName,
+                    payload: array_filter([
+                        'message' => 'Workflow not found.',
+                        'workflow_id' => $workflowId,
+                        'run_id' => $runId,
+                        'reason' => 'instance_not_found',
+                    ], static fn (mixed $value): bool => $value !== null),
+                ),
+                404,
+            );
+        }
+
+        $payload = $this->canonicalPayload(
+            workflowId: $workflowId,
+            result: $result,
+            fallbackFields: $fallbackFields,
+            projectCommandReason: $projectCommandReason,
+            runId: $runId,
+        );
+
+        return ControlPlaneProtocol::json(
+            ControlPlaneResponseContract::attach(
+                operation: $operation,
+                operationName: $operationName,
+                payload: $payload,
+            ),
+            (int) ($result['status'] ?? $defaultStatus),
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     * @param  array<string, string>  $fallbackFields
+     * @return array<string, mixed>
+     */
+    private function canonicalPayload(
+        string $workflowId,
+        array $result,
+        array $fallbackFields,
+        bool $projectCommandReason,
+        ?string $runId,
+    ): array {
+        $payload = $result;
+        $accepted = $payload['accepted'] ?? null;
+
+        if (
+            $projectCommandReason
+            && ($payload['reason'] ?? null) === null
+            && isset($payload['command_reason'])
+        ) {
+            $payload['reason'] = $payload['command_reason'];
+        }
+
+        unset(
+            $payload['status'],
+            $payload['accepted'],
+            $payload['success'],
+            $payload['workflow_instance_id'],
+            $payload['workflow_command_id'],
+            $payload['command_reason'],
+        );
+
+        if ($accepted === false) {
+            $payload['accepted'] = false;
+        }
+
+        $payload['workflow_id'] = $this->stringValue($payload['workflow_id'] ?? null) ?? $workflowId;
+
+        if ($this->stringValue($payload['run_id'] ?? null) === null && $runId !== null) {
+            $payload['run_id'] = $runId;
+        }
+
+        foreach ($fallbackFields as $field => $value) {
+            if ($this->stringValue($payload[$field] ?? null) === null) {
+                $payload[$field] = $value;
+            }
+        }
+
+        if (array_key_exists('result', $payload)) {
+            $payload['result'] = AvroValueJsonProjection::project($payload['result']);
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    private function instanceNotFound(array $result): bool
+    {
+        return ($result['status'] ?? null) === 404
+            && ($result['reason'] ?? null) === 'instance_not_found';
+    }
+
+    private function stringValue(mixed $value): ?string
+    {
+        return is_string($value) && trim($value) !== ''
+            ? $value
+            : null;
+    }
+}

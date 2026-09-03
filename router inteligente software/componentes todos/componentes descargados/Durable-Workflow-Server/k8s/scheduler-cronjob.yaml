@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: durable-workflow-scheduler
+  namespace: durable-workflow
+  labels:
+    app.kubernetes.io/name: durable-workflow
+    app.kubernetes.io/component: scheduler
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 55
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: durable-workflow
+            app.kubernetes.io/component: scheduler
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scheduler
+              image: durableworkflow/server:2.0.3
+              command: ["server-entrypoint"]
+              args: ["sh", "-c", "php artisan schedule:evaluate --limit=100 --json; php artisan activity:timeout-enforce --limit=100; if php artisan list --raw | grep -q '^external-payloads:cleanup '; then php artisan external-payloads:cleanup --limit=100 --json; fi; php artisan history:prune --limit=100"]
+              envFrom:
+                - configMapRef:
+                    name: durable-workflow-config
+                - secretRef:
+                    name: durable-workflow-app-secrets
+              env:
+                - name: DB_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: durable-workflow-database
+                      key: DB_USERNAME
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: durable-workflow-database
+                      key: DB_PASSWORD
+                - name: REDIS_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: durable-workflow-redis
+                      key: REDIS_USERNAME
+                      optional: true
+                - name: REDIS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: durable-workflow-redis
+                      key: REDIS_PASSWORD
+                      optional: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi

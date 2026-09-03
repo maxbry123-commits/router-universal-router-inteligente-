@@ -1,0 +1,44 @@
+name: Helm Chart Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "k8s/helm/**"
+      - "scripts/helm-chart-kind-smoke.sh"
+      - "scripts/helm-chart-kind-fixtures.yaml"
+      - "scripts/ci/helm_chart_release.py"
+      - "scripts/ci/cleanup-kind-cluster.sh"
+      - "scripts/ci/test_helm_chart_release.py"
+      - "uv.toml"
+      - ".github/workflows/helm-chart-checks.yml"
+      - ".github/workflows/helm-chart-validation.yml"
+      - ".github/workflows/helm-chart-release.yml"
+      - ".github/workflows/helm-chart-publish.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate protected chart source
+    permissions:
+      contents: read
+    uses: ./.github/workflows/helm-chart-checks.yml  # local
+    with:
+      source_ref: ${{ github.sha }}
+
+  publish:
+    name: Publish protected chart source
+    needs: validate
+    if: >-
+      github.repository == 'durable-workflow/server' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/helm-chart-publish.yml  # local
+    with:
+      source_ref: ${{ github.sha }}
+      allow_missing_image: true

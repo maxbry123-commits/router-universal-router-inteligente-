@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: durable-workflow-migrate
+  namespace: durable-workflow
+  labels:
+    app.kubernetes.io/name: durable-workflow
+    app.kubernetes.io/component: migration
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: durableworkflow/server:2.0.3
+          command: ["server-entrypoint"]
+          args: ["server-bootstrap"]
+          envFrom:
+            - configMapRef:
+                name: durable-workflow-config
+            - secretRef:
+                name: durable-workflow-app-secrets
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: durable-workflow-database
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: durable-workflow-database
+                  key: DB_PASSWORD
+            - name: REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: durable-workflow-redis
+                  key: REDIS_USERNAME
+                  optional: true
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: durable-workflow-redis
+                  key: REDIS_PASSWORD
+                  optional: true

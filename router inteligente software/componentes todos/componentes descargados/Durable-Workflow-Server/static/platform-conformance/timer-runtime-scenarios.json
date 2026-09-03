@@ -1,0 +1,421 @@
+{
+  "schema": "durable-workflow.v2.platform-conformance.runtime-scenarios",
+  "version": 1,
+  "category": "timer_runtime_contract",
+  "suite_schema": "durable-workflow.v2.platform-conformance.suite",
+  "suite_version": 15,
+  "description": "Public scenario manifest for timer and sleep conformance. The current handoff is executable from the published server image and proves normal sleep completion, worker restart while sleeping, server restart while sleeping, replay after timer fire, concurrent timers with distinct deadlines, cancellation while waiting, and operator-visible waiting state when the focused shards run.",
+  "fixture_type": "published_artifact_runtime_scenario_manifest",
+  "result_schema": "durable-workflow.v2.timer-runtime.result",
+  "result_version": 1,
+  "result_statuses": [
+    "pass",
+    "fail",
+    "unsupported",
+    "not_covered",
+    "runner_blocked"
+  ],
+  "artifact_policy": {
+    "published_artifacts_only": true,
+    "requires_published_artifact_versions": true,
+    "rejects_placeholder_versions": true,
+    "implementation_tests_are_not_sources": true,
+    "required_artifacts": [
+      "server",
+      "cli",
+      "workflow-php",
+      "sdk-python",
+      "waterline"
+    ],
+    "release_artifact_aliases": {
+      "workflow-php": [
+        "workflow"
+      ]
+    },
+    "forbidden_sources": [
+      "local_product_source_checkout",
+      "workspace_repo_as_artifact_under_test"
+    ],
+    "placeholder_version_examples": [
+      "latest",
+      "current",
+      "head",
+      "unresolved",
+      "placeholder",
+      "<latest>",
+      "${VERSION}",
+      "{{ version }}"
+    ]
+  },
+  "common_result_evidence": [
+    "scenario_id",
+    "status",
+    "started_at",
+    "finished_at",
+    "generated_at",
+    "outcome",
+    "runner_blocked",
+    "artifact_versions",
+    "observed_outputs",
+    "linked_findings"
+  ],
+  "required_scenarios": [
+    "normal_sleep_completion",
+    "worker_restart_while_sleeping",
+    "server_restart_while_sleeping",
+    "replay_after_timer_fire",
+    "concurrent_timers_distinct_deadlines",
+    "cancellation_while_waiting",
+    "operator_visible_timer_waiting_state"
+  ],
+  "scenarios": [
+    {
+      "id": "normal_sleep_completion",
+      "description": "A workflow sleep/timer completes only after the recorded wake-up deadline and returns the expected result.",
+      "required_evidence": [
+        "workflow_id",
+        "sleep_requested_at",
+        "wake_up_at",
+        "completed_at",
+        "workflow_result"
+      ],
+      "required_behavior": "workflow_sleep_completes_after_recorded_wake_up_without_early_resume"
+    },
+    {
+      "id": "worker_restart_while_sleeping",
+      "description": "A sleeping workflow survives worker restart, resumes after the timer fires, and does not produce duplicate resumes.",
+      "required_evidence": [
+        "workflow_id",
+        "sleep_started_at",
+        "worker_restart_window",
+        "wake_up_at",
+        "completed_at",
+        "timer_fire_count",
+        "duplicate_resume_count"
+      ],
+      "required_behavior": "worker_restart_does_not_drop_or_duplicate_a_sleeping_timer"
+    },
+    {
+      "id": "server_restart_while_sleeping",
+      "description": "A sleeping workflow survives server restart, recovers waiting timer state, and completes after the timer deadline.",
+      "required_evidence": [
+        "workflow_id",
+        "sleep_started_at",
+        "server_restart_window",
+        "wake_up_at",
+        "completed_at",
+        "timer_state_recovered",
+        "timer_fire_count",
+        "duplicate_resume_count"
+      ],
+      "required_behavior": "server_restart_recovers_waiting_timer_state_and_completes_after_wake_up"
+    },
+    {
+      "id": "replay_after_timer_fire",
+      "description": "Replay after a timer has fired is deterministic and does not schedule duplicate timer commands.",
+      "required_evidence": [
+        "workflow_id",
+        "timer_id",
+        "fired_at",
+        "replay_started_at",
+        "replayed_event_ids",
+        "replayed_event_types",
+        "duplicate_timer_commands"
+      ],
+      "required_behavior": "replay_after_timer_fire_is_deterministic_and_does_not_schedule_duplicate_timers"
+    },
+    {
+      "id": "concurrent_timers_distinct_deadlines",
+      "description": "Concurrent timers with distinct wake-up deadlines resume in deadline order, never fire before wake_up_times, and never fire more than once.",
+      "required_evidence": [
+        "wake_up_times",
+        "observed_resume_order",
+        "fired_at_times",
+        "fire_counts"
+      ],
+      "required_behavior": "resume_order_matches_wake_up_times_no_early_fires_no_duplicate_fires"
+    },
+    {
+      "id": "cancellation_while_waiting",
+      "description": "Cancelling a workflow while it is waiting on a timer records cancellation before the timer wake-up, prevents post-cancel firing, and ends in a documented terminal workflow status.",
+      "required_evidence": [
+        "cancellation_requested_at",
+        "wake_up_at",
+        "fired_after_cancel",
+        "workflow_status"
+      ],
+      "allowed_terminal_workflow_statuses": [
+        "cancelled",
+        "terminated",
+        "failed",
+        "completed"
+      ]
+    },
+    {
+      "id": "operator_visible_timer_waiting_state",
+      "description": "Operators can observe an explicit waiting or timer-waiting workflow state through CLI, Waterline, or a public API response.",
+      "required_evidence": [
+        "status",
+        "surface"
+      ],
+      "explicit_waiting_statuses": [
+        "waiting",
+        "timer_waiting",
+        "waiting_on_timer",
+        "waiting_for_timer"
+      ],
+      "recognized_public_surfaces": [
+        "cli",
+        "waterline",
+        "public_api"
+      ]
+    }
+  ],
+  "scenario_requirements": {
+    "normal_sleep_completion": {
+      "evidence": [
+        "workflow_id",
+        "sleep_requested_at",
+        "wake_up_at",
+        "completed_at",
+        "workflow_result"
+      ],
+      "required_behavior": "workflow_sleep_completes_after_recorded_wake_up_without_early_resume"
+    },
+    "worker_restart_while_sleeping": {
+      "evidence": [
+        "workflow_id",
+        "sleep_started_at",
+        "worker_restart_window",
+        "wake_up_at",
+        "completed_at",
+        "timer_fire_count",
+        "duplicate_resume_count"
+      ],
+      "required_behavior": "worker_restart_does_not_drop_or_duplicate_a_sleeping_timer"
+    },
+    "server_restart_while_sleeping": {
+      "evidence": [
+        "workflow_id",
+        "sleep_started_at",
+        "server_restart_window",
+        "wake_up_at",
+        "completed_at",
+        "timer_state_recovered",
+        "timer_fire_count",
+        "duplicate_resume_count"
+      ],
+      "required_behavior": "server_restart_recovers_waiting_timer_state_and_completes_after_wake_up"
+    },
+    "replay_after_timer_fire": {
+      "evidence": [
+        "workflow_id",
+        "timer_id",
+        "fired_at",
+        "replay_started_at",
+        "replayed_event_ids",
+        "replayed_event_types",
+        "duplicate_timer_commands"
+      ],
+      "required_behavior": "replay_after_timer_fire_is_deterministic_and_does_not_schedule_duplicate_timers"
+    },
+    "concurrent_timers_distinct_deadlines": {
+      "evidence": [
+        "wake_up_times",
+        "observed_resume_order",
+        "fired_at_times",
+        "fire_counts"
+      ],
+      "required_behavior": "resume_order_matches_wake_up_times_no_early_fires_no_duplicate_fires"
+    },
+    "cancellation_while_waiting": {
+      "evidence": [
+        "cancellation_requested_at",
+        "wake_up_at",
+        "fired_after_cancel",
+        "workflow_status"
+      ],
+      "allowed_terminal_workflow_statuses": [
+        "cancelled",
+        "terminated",
+        "failed",
+        "completed"
+      ]
+    },
+    "operator_visible_timer_waiting_state": {
+      "evidence": [
+        "status",
+        "surface"
+      ],
+      "explicit_waiting_statuses": [
+        "waiting",
+        "timer_waiting",
+        "waiting_on_timer",
+        "waiting_for_timer"
+      ],
+      "recognized_public_surfaces": [
+        "cli",
+        "waterline",
+        "public_api"
+      ]
+    }
+  },
+  "timer_semantics": {
+    "replay_after_timer_fire": {
+      "required_behavior": "replay_after_timer_fire_is_deterministic_and_does_not_schedule_duplicate_timers",
+      "required_evidence": [
+        "workflow_id",
+        "timer_id",
+        "fired_at",
+        "replay_started_at",
+        "replayed_event_ids",
+        "replayed_event_types",
+        "duplicate_timer_commands"
+      ],
+      "replay_timing_policy": "replay_started_at must be greater than or equal to fired_at",
+      "replayed_history_policy": "replayed_event_ids must be non-empty and replayed_event_types must include TimerFired",
+      "no_duplicate_timer_policy": "duplicate_timer_commands must be exactly zero after replaying the fired timer history"
+    },
+    "concurrent_timers_distinct_deadlines": {
+      "required_behavior": "timers_resume_in_recorded_wake_up_order_without_early_or_duplicate_fires",
+      "required_evidence": [
+        "wake_up_times",
+        "observed_resume_order",
+        "fired_at_times",
+        "fire_counts"
+      ],
+      "order_policy": "observed_resume_order_must_equal_wake_up_times_sorted_by_deadline",
+      "no_early_fire_policy": "each fired_at timestamp must be greater than or equal to its timer wake_up_at",
+      "no_duplicate_fire_policy": "each timer id may appear once in observed_resume_order and once in fired_at_times",
+      "fire_count_policy": "fire_counts must include every timer id from wake_up_times with value exactly one"
+    },
+    "cancellation_while_waiting": {
+      "required_behavior": "cancellation_requested_before_recorded_wake_up_and_timer_never_fires_after_cancel",
+      "required_evidence": [
+        "cancellation_requested_at",
+        "wake_up_at",
+        "fired_after_cancel",
+        "workflow_status"
+      ],
+      "allowed_terminal_workflow_statuses": [
+        "cancelled",
+        "terminated",
+        "failed",
+        "completed"
+      ]
+    },
+    "operator_visible_timer_waiting_state": {
+      "required_behavior": "operators_can_observe_an_explicit_waiting_or_timer_waiting_state_on_a_public_surface",
+      "recognized_public_surfaces": [
+        "cli",
+        "waterline",
+        "public_api"
+      ],
+      "explicit_waiting_statuses": [
+        "waiting",
+        "timer_waiting",
+        "waiting_on_timer",
+        "waiting_for_timer"
+      ]
+    }
+  },
+  "coverage_gate": {
+    "passing_outcome_requires": [
+      "all_required_scenarios_reported",
+      "run_timestamps_outcome_runner_blocked_and_findings_are_recorded",
+      "declared_outcome_matches_evaluated_status",
+      "published_artifact_versions_are_recorded_and_pinned",
+      "no_local_product_source_artifacts",
+      "each_pass_scenario_reports_required_evidence",
+      "findings_linked_for_non_pass_scenarios",
+      "coverage_gap_scenario_findings_are_top_level_and_linked",
+      "normal_sleep_completion_completes_at_or_after_wake_up",
+      "replay_after_timer_fire_starts_at_or_after_fire",
+      "replay_after_timer_fire_replays_recorded_events",
+      "replay_after_timer_fire_does_not_schedule_duplicate_timer_commands",
+      "concurrent_timer_resume_order_matches_wake_up_times",
+      "concurrent_timer_fires_are_not_early",
+      "concurrent_timer_fires_are_not_duplicated",
+      "concurrent_timer_fire_counts_cover_declared_timer_ids",
+      "concurrent_timer_fire_counts_are_exactly_one",
+      "cancellation_occurs_before_recorded_wake_up",
+      "cancelled_timer_does_not_fire_after_cancel",
+      "cancellation_terminal_status_is_documented",
+      "operator_waiting_state_uses_explicit_waiting_status",
+      "operator_waiting_state_uses_recognized_public_surface",
+      "worker_restart_occurs_before_recorded_wake_up",
+      "worker_restart_completion_occurs_at_or_after_wake_up",
+      "worker_restart_timer_fires_exactly_once",
+      "worker_restart_duplicate_resume_count_is_zero",
+      "server_restart_occurs_before_recorded_wake_up",
+      "server_restart_completion_occurs_at_or_after_wake_up",
+      "server_restart_timer_state_recovered",
+      "server_restart_timer_fires_exactly_once",
+      "server_restart_duplicate_resume_count_is_zero"
+    ],
+    "uncovered_required_scenario_outcome": "non_passing",
+    "smoke_subset_outcome": "non_passing",
+    "runner_blocked_outcome": "runner_blocked",
+    "coverage_gap_outcome": "non_passing"
+  },
+  "host_runner_contract": {
+    "status": "published_handoff_proves_all_timer_runtime_cells_including_operator_visible_waiting_state",
+    "result_schema": "durable-workflow.v2.timer-runtime.result",
+    "runner_repository": "server",
+    "runner_path": "scripts/conformance/timers-published-artifacts.sh",
+    "runner_command": "scripts/conformance/timers-published-artifacts.sh --result-dir <result-dir>",
+    "result_files": [
+      "pins.json",
+      "run-metadata.json",
+      "timer-runtime-result.json",
+      "timer-runtime-record.json",
+      "timer-runtime-findings.json",
+      "timers-result.json",
+      "timers-record.json"
+    ],
+    "host_runner_implemented": true,
+    "must_execute_inside_pinned_published_server_image": true,
+    "must_probe_runtime_published_surfaces": true,
+    "must_name_public_artifact_sources": true,
+    "no_local_product_source_checkout_pass_evidence": true,
+    "must_emit_result_for_every_required_scenario": true,
+    "smoke_summary_only_outcome": "non_passing",
+    "unexecuted_required_scenario_status": "not_covered",
+    "coverage_gap_finding_type": "conformance_runner_coverage_gap",
+    "coverage_gap_owner": "conformance_harness",
+    "required_execution_scopes": [
+      "published-artifact-timer-runtime",
+      "normal-sleep-completion-shard",
+      "worker-restart-while-sleeping-shard",
+      "server-restart-while-sleeping-shard",
+      "replay-after-timer-fire-shard",
+      "concurrent-timers-distinct-deadlines-shard",
+      "cancellation-while-waiting-shard",
+      "operator-visible-timer-waiting-state-shard"
+    ],
+    "routing_policy": {
+      "missing_executable_handoff": {
+        "scenario_status": "runner_blocked",
+        "classification": "runner-gap",
+        "finding_type": "conformance_runner_coverage_gap",
+        "owner": "conformance_harness"
+      },
+      "missing_host_runner": {
+        "scenario_status": "runner_blocked",
+        "classification": "runner-gap",
+        "finding_type": "conformance_runner_coverage_gap",
+        "owner": "conformance_harness"
+      },
+      "missing_required_scenario": {
+        "scenario_status": "not_covered",
+        "classification": "coverage-gap",
+        "finding_type": "conformance_runner_coverage_gap",
+        "owner": "conformance_harness"
+      },
+      "scenario_product_failure": {
+        "scenario_status": "fail",
+        "finding_source": "timer_runtime_contract.finding_policy"
+      }
+    }
+  }
+}

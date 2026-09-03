@@ -1,0 +1,303 @@
+name: Server Perf
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/server-perf.yml"
+      - ".github/workflows/capacity-schema-publication.yml"
+      - "Dockerfile"
+      - "bootstrap/app.php"
+      - "docker-compose.yml"
+      - "app/Support/ActivityRuntimeResultGate.php"
+      - "app/Support/HistoryRetentionEnforcer.php"
+      - "app/Support/BoundedMetricPolicy.php"
+      - "app/Support/BoundedRedisReadinessProbe.php"
+      - "app/Support/LongPollSignalStore.php"
+      - "app/Support/LongPoller.php"
+      - "app/Support/LongPollCapacityExhaustedException.php"
+      - "app/Support/LongPollWaitSlotStore.php"
+      - "app/Support/WorkerPollBackpressure.php"
+      - "app/Support/ProjectionDriftMetrics.php"
+      - "app/Support/ServerReadiness.php"
+      - "app/Support/RemoteScheduleStarter.php"
+      - "app/Support/ServerPollingCache.php"
+      - "app/Support/SharedServiceBoundaryPolicy.php"
+      - "app/Support/TaskQueueAdmission.php"
+      - "app/Support/NamespaceRequestAdmission.php"
+      - "app/Support/NamespaceDurableStateQuota.php"
+      - "app/Support/RuntimeExternalPayloadQuota.php"
+      - "app/Support/WorkerPollClaimGate.php"
+      - "app/Support/WorkflowQueryTaskBroker.php"
+      - "app/Support/WorkflowTaskFailureMetrics.php"
+      - "app/Support/WorkflowTaskPoller.php"
+      - "app/Support/WorkerCompatibilityHeartbeatRecorder.php"
+      - "app/Support/ActivityTaskPollRequestStore.php"
+      - "app/Support/QueryTaskPollRequestStore.php"
+      - "app/Support/WorkflowTaskPollRequestStore.php"
+      - "app/Http/Controllers/Api/SystemController.php"
+      - "app/Http/Controllers/Api/ActivityTaskController.php"
+      - "app/Http/Controllers/Api/WorkerController.php"
+      - "app/Http/Middleware/RequireWorkflowBootstrapReady.php"
+      - "app/Services/PrometheusMetricsSummary.php"
+      - "config/dw-bounded-growth.php"
+      - "config/server.php"
+      - "benchmarks/capacity/**"
+      - "docs/bounded-growth.md"
+      - "routes/api.php"
+      - "scripts/perf/**"
+      - "scripts/ci/checkout-workflow-package-source.sh"
+      - "scripts/benchmark/**"
+      - "tests/Unit/BoundedGrowthPolicyTest.php"
+      - "tests/Unit/BoundedMetricPolicyTest.php"
+      - "tests/Unit/ServerPerfHarnessContractTest.php"
+      - "tests/Unit/Support/server_soak_test.py"
+      - "tests/Unit/Support/capacity_benchmark_test.py"
+      - "tests/Feature/SystemMetricsTest.php"
+      - "tests/Feature/HealthControllerTest.php"
+      - "tests/Feature/WorkerPollBackpressureTest.php"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/server-perf.yml"
+      - ".github/workflows/capacity-schema-publication.yml"
+      - "Dockerfile"
+      - "bootstrap/app.php"
+      - "docker-compose.yml"
+      - "app/Support/ActivityRuntimeResultGate.php"
+      - "app/Support/HistoryRetentionEnforcer.php"
+      - "app/Support/BoundedMetricPolicy.php"
+      - "app/Support/BoundedRedisReadinessProbe.php"
+      - "app/Support/LongPollSignalStore.php"
+      - "app/Support/LongPoller.php"
+      - "app/Support/LongPollCapacityExhaustedException.php"
+      - "app/Support/LongPollWaitSlotStore.php"
+      - "app/Support/WorkerPollBackpressure.php"
+      - "app/Support/ProjectionDriftMetrics.php"
+      - "app/Support/ServerReadiness.php"
+      - "app/Support/RemoteScheduleStarter.php"
+      - "app/Support/ServerPollingCache.php"
+      - "app/Support/SharedServiceBoundaryPolicy.php"
+      - "app/Support/TaskQueueAdmission.php"
+      - "app/Support/NamespaceRequestAdmission.php"
+      - "app/Support/NamespaceDurableStateQuota.php"
+      - "app/Support/RuntimeExternalPayloadQuota.php"
+      - "app/Support/WorkerPollClaimGate.php"
+      - "app/Support/WorkflowQueryTaskBroker.php"
+      - "app/Support/WorkflowTaskFailureMetrics.php"
+      - "app/Support/WorkflowTaskPoller.php"
+      - "app/Support/WorkerCompatibilityHeartbeatRecorder.php"
+      - "app/Support/ActivityTaskPollRequestStore.php"
+      - "app/Support/QueryTaskPollRequestStore.php"
+      - "app/Support/WorkflowTaskPollRequestStore.php"
+      - "app/Http/Controllers/Api/SystemController.php"
+      - "app/Http/Controllers/Api/ActivityTaskController.php"
+      - "app/Http/Controllers/Api/WorkerController.php"
+      - "app/Http/Middleware/RequireWorkflowBootstrapReady.php"
+      - "app/Services/PrometheusMetricsSummary.php"
+      - "config/dw-bounded-growth.php"
+      - "config/server.php"
+      - "benchmarks/capacity/**"
+      - "docs/bounded-growth.md"
+      - "routes/api.php"
+      - "scripts/perf/**"
+      - "scripts/ci/checkout-workflow-package-source.sh"
+      - "scripts/benchmark/**"
+      - "tests/Unit/BoundedGrowthPolicyTest.php"
+      - "tests/Unit/BoundedMetricPolicyTest.php"
+      - "tests/Unit/ServerPerfHarnessContractTest.php"
+      - "tests/Unit/Support/server_soak_test.py"
+      - "tests/Unit/Support/capacity_benchmark_test.py"
+      - "tests/Feature/SystemMetricsTest.php"
+      - "tests/Feature/HealthControllerTest.php"
+      - "tests/Feature/WorkerPollBackpressureTest.php"
+  workflow_dispatch:
+permissions:
+  contents: read
+
+concurrency:
+  group: server-perf-${{ github.event_name }}-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    name: Bounded-growth contract
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 20
+    env:
+      CAPACITY_DOCKER_PROJECT: capacity-contract-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+      CAPACITY_DOCKER_HOST_PORT: "0"
+      CAPACITY_REPOSITORY_ROOT: ${{ github.workspace }}
+      CAPACITY_OUTPUT_ROOT: ${{ github.workspace }}/build/capacity-v1
+
+    steps:
+      - name: Checkout server
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+
+      - name: Resolve locked workflow package authority
+        id: workflow
+        run: php scripts/ci/resolve-workflow-package-authority.php
+
+      - name: Checkout workflow package
+        shell: bash
+        env:
+          WORKFLOW_PACKAGE_SOURCE: ${{ steps.workflow.outputs.source }}
+          WORKFLOW_PACKAGE_COMMIT: ${{ steps.workflow.outputs.commit }}
+        run: scripts/ci/checkout-workflow-package-source.sh
+
+      - name: Verify workflow package source provenance
+        shell: bash
+        env:
+          WORKFLOW_PACKAGE_SOURCE: ${{ steps.workflow.outputs.source }}
+          WORKFLOW_PACKAGE_REF: ${{ steps.workflow.outputs.ref }}
+          WORKFLOW_PACKAGE_COMMIT: ${{ steps.workflow.outputs.commit }}
+        run: |
+          set -euo pipefail
+          resolved_commit="$(git -C workflow-package rev-parse HEAD)"
+          if [[ "$resolved_commit" != "$WORKFLOW_PACKAGE_COMMIT" ]]; then
+            echo "Resolved Workflow commit $resolved_commit does not match $WORKFLOW_PACKAGE_COMMIT" >&2
+            exit 1
+          fi
+          printf '%s\n' \
+            "$WORKFLOW_PACKAGE_SOURCE" \
+            "$WORKFLOW_PACKAGE_REF" \
+            "$resolved_commit" \
+            > workflow-package/.package-provenance
+          rm -rf workflow-package/.git
+
+      - name: Run perf harness result-gate tests
+        run: |
+          python3 -m py_compile scripts/perf/server_soak.py scripts/benchmark/capacity_suite.py scripts/benchmark/capacity_schema_publication.py scripts/benchmark/capacity_matrix.py tests/Unit/Support/server_soak_test.py tests/Unit/Support/capacity_benchmark_test.py benchmarks/capacity/v1/bindings/python/capacity_adapter.py benchmarks/capacity/v1/collectors/local-docker/local_docker_collector.py
+          python3 -m unittest tests/Unit/Support/server_soak_test.py
+
+      - name: Compile exact first-party capacity adapters
+        run: |
+          php -l benchmarks/capacity/v1/bindings/php/capacity_adapter.php
+          composer install \
+            --working-dir=benchmarks/capacity/v1/bindings/php \
+            --no-dev --no-interaction --no-progress --prefer-dist
+          DURABLE_WORKFLOW_RUNTIME_URL=http://127.0.0.1 \
+          DURABLE_WORKFLOW_TASK_QUEUE=capacity-check \
+            php benchmarks/capacity/v1/bindings/php/capacity_adapter.php check
+          rm -rf benchmarks/capacity/v1/bindings/php/vendor
+
+          python3 -m pip install \
+            --requirement benchmarks/capacity/v1/bindings/python/requirements.lock \
+            --target build/capacity-python-adapter
+          PYTHONPATH=build/capacity-python-adapter \
+            python3 benchmarks/capacity/v1/bindings/python/capacity_adapter.py check
+
+          CARGO_TARGET_DIR=build/capacity-rust-target \
+            cargo check --locked \
+              --manifest-path benchmarks/capacity/v1/bindings/rust/Cargo.toml
+
+      - name: Qualify capacity benchmark contract and bounded reference cell
+        run: |
+          python3 -m unittest tests/Unit/Support/capacity_benchmark_test.py
+          python3 scripts/benchmark/capacity_suite.py validate
+          python3 scripts/benchmark/capacity_matrix.py dry-run \
+            > build/capacity-benchmark-matrix-plan.json
+          python3 scripts/benchmark/capacity_suite.py reference \
+            --source-revision "$GITHUB_SHA" \
+            --run-timestamp "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
+            --architecture "$RUNNER_ARCH" \
+            --output build/capacity-benchmark-reference.json
+
+      - name: Run bounded-growth contract tests
+        run: |
+          # Stream sources into the test container so containerized runners avoid host bind-path assumptions.
+          tar --exclude=.git --exclude=vendor --exclude=build -cf - . \
+            | docker run --rm -i -w /app composer:2 \
+                sh -lc 'tar -xf - -C /app && cp -a /app/workflow-package /workflow && php scripts/ci/prepare-release-workflow-composer-metadata.php && composer update durable-workflow/workflow --with-dependencies --minimal-changes --no-install --no-scripts --no-autoloader --no-interaction --no-progress --prefer-dist && composer install --no-interaction --no-progress --prefer-dist && vendor/bin/phpunit tests/Unit/BoundedGrowthPolicyTest.php tests/Unit/ServerPerfHarnessContractTest.php --colors=never'
+
+      - name: Clean up capacity contract Docker resources
+        if: always()
+        run: |
+          docker compose -p "$CAPACITY_DOCKER_PROJECT" \
+            -f benchmarks/capacity/v1/topologies/local-docker/compose.json \
+            down --volumes --remove-orphans >/dev/null 2>&1 || true
+
+  smoke:
+    name: Polling cache bounded-growth smoke
+    runs-on: ubuntu-latest
+    if: ${{ github.server_url == 'https://github.com' }}
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout server
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+
+      - name: Resolve locked workflow package authority
+        id: workflow
+        run: php scripts/ci/resolve-workflow-package-authority.php
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4
+
+      - name: Run short perf smoke
+        env:
+          DW_PERF_DURATION_SECONDS: "120"
+          DW_PERF_CONCURRENCY: "8"
+          DW_PERF_NAMESPACES: "4"
+          DW_PERF_TASK_QUEUES: "8"
+          DW_PERF_WORKFLOW_RUNS: "1000"
+          DW_PERF_START_CONCURRENCY: "8"
+          DW_PERF_MIN_WORKFLOW_COMPLETION_RATIO: "0.98"
+          DW_PERF_HEALTH_INTERVAL_SECONDS: "0.5"
+          DW_PERF_MAX_HEALTH_LATENCY_SECONDS: "3"
+          DW_PERF_CONTROL_PLANE_INTERVAL_SECONDS: "5"
+          DW_PERF_MAX_CONTROL_PLANE_LATENCY_SECONDS: "5"
+          DW_PERF_WORKFLOW_VERSION: ${{ steps.workflow.outputs.ref }}
+          DW_PERF_MAX_SERVER_MEMORY_MB: "768"
+          DW_PERF_MAX_POLLING_KEYS: "2048"
+          DW_PERF_MAX_FINAL_POLLING_KEYS: "0"
+          DW_PERF_MAX_SERVER_CACHE_KEYS: "4096"
+          DW_PERF_MIN_SAMPLE_COVERAGE: "0.75"
+          DW_PERF_MAX_SERVER_CACHE_KEYS_BY_POLICY: '{"polling_cache_availability_probe":0,"workflow_task_poll_requests":2048,"activity_task_poll_requests":512,"query_task_poll_requests":512,"sqlite_worker_poll_claim_gate":1,"long_poll_signals":2048,"long_poll_wait_slots":64,"workflow_query_tasks":64,"task_queue_admission_locks":128,"task_queue_dispatch_counters":128,"namespace_request_admission":128,"shared_service_boundary_admission":128,"namespace_durable_state_quota_rejections":128,"runtime_external_payload_quota_rejections":128,"workflow_task_expired_lease_recovery":128,"history_retention_inline":64,"worker_compatibility_heartbeat":64,"readiness_probe":16}'
+          DW_PERF_MAX_FINAL_SERVER_CACHE_KEYS_BY_POLICY: '{"polling_cache_availability_probe":0,"workflow_task_poll_requests":0,"activity_task_poll_requests":0,"query_task_poll_requests":0,"sqlite_worker_poll_claim_gate":0,"long_poll_signals":0,"long_poll_wait_slots":0,"workflow_query_tasks":0,"task_queue_admission_locks":0,"task_queue_dispatch_counters":0,"namespace_request_admission":0,"shared_service_boundary_admission":0,"namespace_durable_state_quota_rejections":0,"runtime_external_payload_quota_rejections":0,"workflow_task_expired_lease_recovery":0,"history_retention_inline":0,"worker_compatibility_heartbeat":0,"readiness_probe":0}'
+          DW_PERF_COMPOSE_PROJECT: server-perf-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          RUNNER_ENVIRONMENT: "github-hosted"
+        if: ${{ always() && success() }}
+        run: scripts/perf/run-server-soak.sh
+
+      - name: Clean up perf Docker resources
+        if: always()
+        env:
+          DW_PERF_COMPOSE_PROJECT: server-perf-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        run: |
+          docker rm -f "${DW_PERF_COMPOSE_PROJECT}-prometheus" >/dev/null 2>&1 || true
+          docker compose -p "$DW_PERF_COMPOSE_PROJECT" -f docker-compose.yml \
+            down -v --remove-orphans >/dev/null 2>&1 || true
+
+      - name: Upload perf artifacts
+        if: always() && github.server_url == 'https://github.com'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        with:
+          name: server-perf-smoke
+          path: build/perf/
+          if-no-files-found: warn
+
+  qualification:
+    name: Performance source qualification
+    needs: [contract, smoke]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Require the intended qualification route
+        env:
+          ACTIONS_SERVER_URL: ${{ github.server_url }}
+          CONTRACT_RESULT: ${{ needs.contract.result }}
+          SMOKE_RESULT: ${{ needs.smoke.result }}
+        run: |
+          set -euo pipefail
+          test "$CONTRACT_RESULT" = success
+          if [[ "$ACTIONS_SERVER_URL" == "https://github.com" ]]; then
+            test "$SMOKE_RESULT" = success
+            echo "Complete GitHub polling-cache qualification succeeded."
+          else
+            test "$SMOKE_RESULT" = skipped
+            echo "Focused bounded-growth contract qualification succeeded."
+          fi

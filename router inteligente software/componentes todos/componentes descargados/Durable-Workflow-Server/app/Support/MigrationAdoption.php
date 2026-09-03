@@ -1,0 +1,201 @@
+<?php
+
+namespace App\Support;
+
+use Illuminate\Database\Migrations\Migrator;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Adopts create-table migrations whose target tables already exist but are not
+ * yet recorded in the `migrations` table.
+ *
+ * BLK-S002 surfaced a real operator scenario: a fresh MySQL deploy of the
+ * server image wedged because an earlier partial bootstrap had already created
+ * the `workflow_schedule_history_events` table but not recorded the migration.
+ * Each retry then hit "table already exists".
+ *
+ * The workflow v2 migration slate is pinned as final-form create-table only
+ * (Workflow\V2 `MigrationsTest::testV2MigrationSlateDoesNotUseSchemaDetectionGuards`),
+ * so the recovery guard lives here in the server instead of in the package
+ * migrations. This scans every registered migration, and for any pending
+ * migration whose `Schema::create()` targets all already exist on the
+ * connection, records it as applied in the current batch so `migrate` becomes
+ * a no-op for those files.
+ */
+class MigrationAdoption
+{
+    public function __construct(
+        private readonly Migrator $migrator,
+    ) {}
+
+    /**
+     * @return list<string> names of migrations that were adopted
+     */
+    public function adopt(): array
+    {
+        $repository = $this->migrator->getRepository();
+
+        if (! $repository->repositoryExists()) {
+            $repository->createRepository();
+        }
+
+        $inspection = $this->inspect();
+        $batch = $repository->getNextBatchNumber();
+        $adopted = [];
+
+        foreach ($inspection['pending_migrations'] as $entry) {
+            if (! ($entry['adoptable'] ?? false)) {
+                continue;
+            }
+
+            $name = $entry['migration'] ?? null;
+            if (! is_string($name) || $name === '') {
+                continue;
+            }
+
+            $repository->log($name, $batch);
+            $adopted[] = $name;
+        }
+
+        return $adopted;
+    }
+
+    /**
+     * @return array{
+     *     repository_exists: bool,
+     *     pending_migrations: list<array{
+     *         migration: string,
+     *         type: string,
+     *         tables: list<string>,
+     *         missing_tables: list<string>,
+     *         adoptable: bool
+     *     }>,
+     *     adoptable_migrations: list<string>,
+     *     blocking_migrations: list<array{
+     *         migration: string,
+     *         type: string,
+     *         tables: list<string>,
+     *         missing_tables: list<string>,
+     *         adoptable: bool
+     *     }>
+     * }
+     */
+    public function inspect(): array
+    {
+        $repository = $this->migrator->getRepository();
+        $repositoryExists = $repository->repositoryExists();
+        $files = $this->migrator->getMigrationFiles($this->migrationPaths());
+        $ran = $repositoryExists ? $repository->getRan() : [];
+        $pending = [];
+        $adoptable = [];
+        $blocking = [];
+
+        foreach ($files as $name => $path) {
+            if (in_array($name, $ran, true)) {
+                continue;
+            }
+
+            $tables = $this->createdTablesIn($path);
+            $missingTables = array_values(array_filter(
+                $tables,
+                static fn (string $table): bool => ! Schema::hasTable($table),
+            ));
+            $entry = [
+                'migration' => $name,
+                'type' => $tables === [] ? 'non_create' : 'create_table',
+                'tables' => $tables,
+                'missing_tables' => $missingTables,
+                'adoptable' => $tables !== [] && $missingTables === [],
+            ];
+
+            $pending[] = $entry;
+
+            if ($entry['adoptable']) {
+                $adoptable[] = $name;
+
+                continue;
+            }
+
+            $blocking[] = $entry;
+        }
+
+        return [
+            'repository_exists' => $repositoryExists,
+            'pending_migrations' => $pending,
+            'adoptable_migrations' => $adoptable,
+            'blocking_migrations' => $blocking,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function migrationPaths(): array
+    {
+        return array_merge(
+            [database_path('migrations')],
+            $this->migrator->paths(),
+        );
+    }
+
+    /**
+     * Extract table names from `Schema::create(...)` calls in a migration file.
+     * Handles both string literals and `self::CONST` references where the
+     * constant is declared in the same file as a string. Returns an empty list
+     * for migrations that do not create tables (ALTER-style, no-op tombstones,
+     * dynamic names), which are left to the normal migrator.
+     *
+     * The workflow package side of this contract is pinned by
+     * `Workflow\V2 MigrationsTest::testPackageMigrationCreateTablesAreDetectableByServerAdoptionPatterns`,
+     * which fails closed if any package migration's `Schema::create()` target
+     * falls outside the two patterns this method recognizes. Keep these
+     * regexes synchronized with that contract test or the BLK-S002 recovery
+     * regresses silently.
+     *
+     * @return list<string>
+     */
+    private function createdTablesIn(string $path): array
+    {
+        $contents = @file_get_contents($path);
+
+        if ($contents === false || $contents === '') {
+            return [];
+        }
+
+        $constants = [];
+
+        if (preg_match_all(
+            "/\\bconst\\s+(\\w+)\\s*=\\s*['\"]([^'\"]+)['\"]/",
+            $contents,
+            $constMatches,
+        )) {
+            $constants = array_combine($constMatches[1], $constMatches[2]);
+        }
+
+        if (! preg_match_all(
+            "/Schema::create\\(\\s*(?:['\"]([^'\"]+)['\"]|self::(\\w+))/",
+            $contents,
+            $createMatches,
+        )) {
+            return [];
+        }
+
+        $tables = [];
+
+        foreach ($createMatches[1] as $i => $literal) {
+            if ($literal !== '') {
+                $tables[] = $literal;
+
+                continue;
+            }
+
+            $constName = $createMatches[2][$i] ?? '';
+
+            if ($constName !== '' && isset($constants[$constName])) {
+                $tables[] = $constants[$constName];
+            }
+        }
+
+        return array_values(array_unique($tables));
+    }
+}

@@ -1,0 +1,48 @@
+name: Small Cluster Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: small-cluster-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: MySQL/PostgreSQL small cluster
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout server
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4
+
+      - name: Run small cluster smoke
+        env:
+          DW_SMALL_CLUSTER_DATABASES: ${{ github.event_name == 'workflow_dispatch' && inputs.databases || 'mysql,pgsql' }}
+          DW_SMALL_CLUSTER_IMAGE: durable-workflow/server-small-cluster:${{ github.run_id }}-${{ github.run_attempt }}
+          DW_SMALL_CLUSTER_COMPOSE_PROJECT: small-cluster-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+          DW_SMALL_CLUSTER_LB_PORT: "0"
+          DW_SMALL_CLUSTER_SERVER_A_PORT: "0"
+          DW_SMALL_CLUSTER_SERVER_B_PORT: "0"
+        run: scripts/smoke-small-cluster.sh
+
+      - name: Clean up small cluster stacks
+        if: always()
+        env:
+          DW_SMALL_CLUSTER_DATABASES: ${{ github.event_name == 'workflow_dispatch' && inputs.databases || 'mysql,pgsql' }}
+          DW_SMALL_CLUSTER_COMPOSE_PROJECT: small-cluster-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        run: |
+          IFS=',' read -ra databases <<< "$DW_SMALL_CLUSTER_DATABASES"
+          for database in "${databases[@]}"; do
+            project="$(printf '%s-%s' "$DW_SMALL_CLUSTER_COMPOSE_PROJECT" "$database" | tr -c '[:alnum:]_-' '-')"
+            docker compose -p "$project" --profile "$database" \
+              -f docker-compose.small-cluster.yml down -v --remove-orphans \
+              >/dev/null 2>&1 || true
+          done
