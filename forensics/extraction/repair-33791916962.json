@@ -1,0 +1,167 @@
+{
+  "schema": "yaiwes.extraction.guardian.v2",
+  "run_id": "33791916962",
+  "archive_groups": 56,
+  "processed": [
+    {
+      "slug": "vLLM-Semantic-Router",
+      "target": "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 22,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0001.zip": "1f9ed4b698bd083a17fd66953b6854bc2dd1a973eb0113415101b1b0a6c55906",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0002.zip": "ff3f01fe48f12a6806c2af065c26143531134808ad72f6c033cbfda1839b742f",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0003.zip": "2385921b59f6fa454deee6c7649f3dbbbe8e22828006e495f8897caa2e5cd3f2",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0004.zip": "3a637ab04a52c604f4ace3574e688bbca22eeebef3293e38d995fb9c65bd7084",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0005.zip": "8106233ed1af38fbd466c5760ae7f208625b0411cbbef01785f0ca90404897ef",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0006.zip": "8635c8b7f4b470135d6f87ccb58e84f647ff3de3edc8c6d3145d8dfc13d6055c",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0007.zip": "e573baa8577921469bea081b90fe47a43d1d020f9ef2c9b933db1a01a705723d",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0008.zip": "6e1c06486c08f205ca662fb7f51c01cf54e34c27a24727095b67d3bb590ec77f",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0009.zip": "ede231b21b6935b233d3b5211f71cab11f6764fa85e78d3530ffb742e63c65a4",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0010.zip": "57b9ca1fd34702243ef22c52c1e969cbd745e5d661cdd3315885e3b0943e35fb",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0011.zip": "4f7ee9c5cc46f92780cd30afd37442d7074bbacc68d96993e5d034b76664a8e6",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0012.zip": "5897db40caed748f5879ff2ba9fd1c57cd4e05f243c270cc958a3d549c8f752e",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0013.zip": "d9802b6d7ebeff7eacd9412a07fa2da616c6269f173b35323cb7981fa36f2088",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0014.zip": "b45d74ca8c2ddb3514b6dc682da20220d2fb8b5f27fd116c992e1308c852d62b",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0015.zip": "c83a0a38a9a28fe8d04027ef0b72c4d2fb342ffcb305c92b569e1c9ad9e5d95e",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0016.zip": "53ecc458818263669e89903d9b4ba0dd8867e623f9ec41ddd1609f9343a5414a",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0017.zip": "9187cab2f25b8fefd11d8e32979322924aa636dd93371fa31b49981b03409467",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0018.zip": "ad0ceba4aebdf4848335166e12ade36c706b0dd13c9275b9648edb07fa997f21",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0019.zip": "f67a261735f14f2e689d5340880f30160a6c5a988406a5836ce915d013b7e761",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0020.zip": "74cfbe74d8c2b6ebba71b38635ff75d3281e349735b0d72fe02a4351a63e0769",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0021.zip": "c3368c1938ad8bf16fb21659a5f59bf7821878a24e6815ac84ff7d2482e30fbb",
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router/vLLM-Semantic-Router_0022.zip": "423ee95aaf3cf23ccf96a2bff3bcfcacc71f8e93eaf38ff40fa01981ab3ba18b"
+      },
+      "copied": 8038,
+      "mirrors": [],
+      "files": 8038,
+      "bytes": 406472262,
+      "tree_sha256": "f8e525c4539af52c808dd039884983c379e9d7f7492e7a213d4341cb6f7c17b0"
+    },
+    {
+      "slug": "servers",
+      "target": "router inteligente software/componentes todos/componentes descargados/servers",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/servers/servers_0001.zip": "7023f926fc26548abaa3bb1c17b0abcfada96b60b95f8802c547ac5197fc8d31"
+      },
+      "copied": 152,
+      "mirrors": [],
+      "files": 152,
+      "bytes": 1472909,
+      "tree_sha256": "fbdbf94b67a7363cf27ee016f241114487caeecfbcaa28d9830e72c57427dd2d"
+    },
+    {
+      "slug": "gunicorn",
+      "target": "router inteligente software/componentes todos/componentes descargados/gunicorn",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/gunicorn/gunicorn_0001.zip": "6597df7e81383a03f3a2cee1e95aab2521b5e2f913c9f393d319f2af662e74f7"
+      },
+      "copied": 770,
+      "mirrors": [],
+      "files": 770,
+      "bytes": 3888639,
+      "tree_sha256": "d7e8aa3c7679b6d46d02c2d5b7f2ee265c714a4bb5d074787f6f345427fcbecf"
+    },
+    {
+      "slug": "haystack",
+      "target": "router inteligente software/componentes todos/componentes descargados/haystack",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 4,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/haystack/haystack_0001.zip": "4e437e71799623c636770ea9a273525687e55cb895309dade3c271786b764ee0",
+        "router inteligente software/componentes todos/componentes descargados/haystack/haystack_0002.zip": "a915f9d0c0d5f72b6b53e9c669c4be42a1d736055d7aba980f4e2cb38124c42a",
+        "router inteligente software/componentes todos/componentes descargados/haystack/haystack_0003.zip": "0af71a5baa8bdc3cd926e24109648fdaac5a5f7a752ebdbccc0204b34b2afff0",
+        "router inteligente software/componentes todos/componentes descargados/haystack/haystack_0004.zip": "c1d8f8aa0072533b003338a521e3d7d89b2553d9521c0655650484c2fbb33de6"
+      },
+      "copied": 10741,
+      "mirrors": [],
+      "files": 10741,
+      "bytes": 93710397,
+      "tree_sha256": "bd988f2c9b5608b8a92bf3fbdd22e1d08791bbe9e3ae50043001dc3d9c44dd65"
+    },
+    {
+      "slug": "vllm",
+      "target": "router inteligente software/componentes todos/componentes descargados/vllm",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 5,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/vllm/vllm_0001.zip": "8702580f84b0890bed63f302763b2f42167a94f6702054f3a3d4d536542ecb01",
+        "router inteligente software/componentes todos/componentes descargados/vllm/vllm_0002.zip": "ec74a34502e89eb91e9792743f39f4bacaee320b548c32d698e90a2a4e4409e9",
+        "router inteligente software/componentes todos/componentes descargados/vllm/vllm_0003.zip": "56a58fc6f8c6e7e4b6499337a57620f21135a07e0ceac748e32c9e37fb7495c4",
+        "router inteligente software/componentes todos/componentes descargados/vllm/vllm_0004.zip": "a061139cb580d1e4e1b0922494dcb0c2408cb0387907247c4d678b9f8e8319f5",
+        "router inteligente software/componentes todos/componentes descargados/vllm/vllm_0005.zip": "6c3bd6fdf7f380371f18330d3b28b67c1f962a3e2eb8b551f46b73409446d95a"
+      },
+      "copied": 6796,
+      "mirrors": [],
+      "files": 6796,
+      "bytes": 108780783,
+      "tree_sha256": "1a823a0781f12935ceeba29dcdd87318118411c1bd3362dd5a72c1e06102f9c6"
+    },
+    {
+      "slug": "gpt-researcher",
+      "target": "router inteligente software/componentes todos/componentes descargados/gpt-researcher",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 2,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/gpt-researcher/gpt-researcher_0001.zip": "2ee25c78de89333e36ff643e7e8f30199b1f758120987b5f8c5f9b8a84b189b9",
+        "router inteligente software/componentes todos/componentes descargados/gpt-researcher/gpt-researcher_0002.zip": "e65ea07add87d12cc8fc44b3fa0870356244c594cba6682921489e3b9fbca2a2"
+      },
+      "copied": 820,
+      "mirrors": [],
+      "files": 820,
+      "bytes": 27672673,
+      "tree_sha256": "0ab44dbab264fd88d362b02101403c8a2666848de531770acb4160d819e566d6"
+    },
+    {
+      "slug": "agents-deep-research",
+      "target": "router inteligente software/componentes todos/componentes descargados/agents-deep-research",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/agents-deep-research/agents-deep-research_0001.zip": "20da8c82cc751e0bf39ae33e2a1e5722a8f46085f4b6ea0f31d32ecd25a35e75"
+      },
+      "copied": 49,
+      "mirrors": [],
+      "files": 49,
+      "bytes": 303855,
+      "tree_sha256": "f069af476f8049f2366b27826a10cc517d3ddb81eb9d9ddb1b829a25f383da1c"
+    }
+  ],
+  "failures": [
+    {
+      "slug": "autogen",
+      "target": "router inteligente software/componentes todos/componentes descargados/autogen",
+      "error": "SOURCE_LFS_POINTER_GAP:autogen/autogen-landing.jpg,autogen/dotnet/nuget/icon.png,autogen/dotnet/resource/images/background.png,autogen/dotnet/resource/images/square.png,autogen/dotnet/samples/dev-team/docs/images/github-sk-dev-team.png,autogen/dotnet/samples/dev-team/docs/images/new-codespace.png,autogen/dotnet/samples/dev-team/docs/images/overview.png,autogen/dotnet/samples/dev-team/docs/images/solution-explorer.png,autogen/dotnet/test/AutoGen.Anthropic.Tests/images/square.png,autogen/dotnet/test/AutoGen.Ollama.Tests/images/image.png,autogen/dotnet/test/AutoGen.Ollama.Tests/images/square.png,autogen/dotnet/test/AutoGen.Tests/ApprovalTests/square.png,autogen/dotnet/website/images/articles/CreateAgentWithTools/single-turn-tool-call-with-auto-invoke.png,autogen/dotnet/website/images/articles/CreateAgentWithTools/single-turn-tool-call-without-auto-invoke.png,autogen/dotnet/website/images/articles/CreateUserProxyAgent/image-1.png,autogen/dotnet/website/images/articles/DynamicGroupChat/dynamicChat.gif,autogen/dotnet/website/images/articles/PrintMessageMiddleware/printMessage.png,autogen/dotnet/website/images/articles/PrintMessageMiddleware/streamingoutput.gif,autogen/dotnet/website/images/articles/SequentialGroupChat/SearcherSummarizer.gif,autogen/dotnet/website/images/articles/UseAutoGenAsModelinAGStudio/FinalStepsA.png",
+      "retryable": false
+    }
+  ],
+  "remaining_gaps": [
+    {
+      "slug": "autogen",
+      "target": "router inteligente software/componentes todos/componentes descargados/autogen",
+      "mirror": null
+    }
+  ],
+  "retryable_gaps": [],
+  "blocked_gaps": [
+    {
+      "slug": "autogen",
+      "target": "router inteligente software/componentes todos/componentes descargados/autogen",
+      "mirror": null,
+      "code": "SOURCE_LFS_POINTER_GAP",
+      "detail": "SOURCE_LFS_POINTER_GAP:autogen/autogen-landing.jpg,autogen/dotnet/nuget/icon.png,autogen/dotnet/resource/images/background.png,autogen/dotnet/resource/images/square.png,autogen/dotnet/samples/dev-team/docs/images/github-sk-dev-team.png,autogen/dotnet/samples/dev-team/docs/images/new-codespace.png,autogen/dotnet/samples/dev-team/docs/images/overview.png,autogen/dotnet/samples/dev-team/docs/images/solution-explorer.png,autogen/dotnet/test/AutoGen.Anthropic.Tests/images/square.png,autogen/dotnet/test/AutoGen.Ollama.Tests/images/image.png,autogen/dotnet/test/AutoGen.Ollama.Tests/images/square.png,autogen/dotnet/test/AutoGen.Tests/ApprovalTests/square.png,autogen/dotnet/website/images/articles/CreateAgentWithTools/single-turn-tool-call-with-auto-invoke.png,autogen/dotnet/website/images/articles/CreateAgentWithTools/single-turn-tool-call-without-auto-invoke.png,autogen/dotnet/website/images/articles/CreateUserProxyAgent/image-1.png,autogen/dotnet/website/images/articles/DynamicGroupChat/dynamicChat.gif,autogen/dotnet/website/images/articles/PrintMessageMiddleware/printMessage.png,autogen/dotnet/website/images/articles/PrintMessageMiddleware/streamingoutput.gif,autogen/dotnet/website/images/articles/SequentialGroupChat/SearcherSummarizer.gif,autogen/dotnet/website/images/articles/UseAutoGenAsModelinAGStudio/FinalStepsA.png",
+      "evidence": "current-run"
+    }
+  ],
+  "counts": {
+    "remaining": 1,
+    "retryable": 0,
+    "blocked": 1,
+    "processed": 7
+  },
+  "verdict": "GAPS_PENDING"
+}

@@ -1,0 +1,898 @@
+# -*- coding: utf-8 -
+#
+# This file is part of gunicorn released under the MIT license.
+# See the NOTICE for more information.
+
+"""Tests for HTTP/2 request and body classes."""
+
+import pytest
+from unittest import mock
+
+from gunicorn.config import Config
+from gunicorn.http.errors import InvalidHeader
+from gunicorn.http2.request import HTTP2Request, HTTP2Body
+from gunicorn.http2.stream import HTTP2Stream, StreamState
+
+
+class MockConnection:
+    """Mock HTTP/2 connection for testing."""
+
+    def __init__(self, initial_window_size=65535):
+        self.initial_window_size = initial_window_size
+
+
+def MockConfig():
+    """Real gunicorn configuration.
+
+    HTTP2Request applies the same header policy as HTTP/1, which reads
+    forwarded_allow_ips, header_map and friends, so a stub with no
+    attributes would not exercise the real defaults.
+    """
+    return Config()
+
+
+class TestHTTP2Body:
+    """Test HTTP2Body class."""
+
+    def test_init_with_data(self):
+        body = HTTP2Body(b"Hello, World!")
+        assert body.read() == b"Hello, World!"
+
+    def test_init_empty(self):
+        body = HTTP2Body(b"")
+        assert body.read() == b""
+
+    def test_read_all(self):
+        body = HTTP2Body(b"Test data")
+        assert body.read() == b"Test data"
+        assert body.read() == b""  # Already consumed
+
+    def test_read_with_size(self):
+        body = HTTP2Body(b"Hello, World!")
+        assert body.read(5) == b"Hello"
+        assert body.read(2) == b", "
+        assert body.read(100) == b"World!"
+        assert body.read(1) == b""
+
+    def test_read_none_size(self):
+        body = HTTP2Body(b"Test")
+        assert body.read(None) == b"Test"
+
+    def test_readline_basic(self):
+        body = HTTP2Body(b"Line1\nLine2\nLine3")
+        assert body.readline() == b"Line1\n"
+        assert body.readline() == b"Line2\n"
+        assert body.readline() == b"Line3"
+
+    def test_readline_with_size(self):
+        body = HTTP2Body(b"Hello\nWorld")
+        assert body.readline(3) == b"Hel"
+        assert body.readline(10) == b"lo\n"
+
+    def test_readline_no_newline(self):
+        body = HTTP2Body(b"No newline here")
+        assert body.readline() == b"No newline here"
+
+    def test_readline_empty(self):
+        body = HTTP2Body(b"")
+        assert body.readline() == b""
+
+    def test_readline_crlf(self):
+        body = HTTP2Body(b"Line1\r\nLine2")
+        # BytesIO readline includes \r\n
+        assert body.readline() == b"Line1\r\n"
+
+    def test_readlines_basic(self):
+        body = HTTP2Body(b"Line1\nLine2\nLine3")
+        lines = body.readlines()
+        assert lines == [b"Line1\n", b"Line2\n", b"Line3"]
+
+    def test_readlines_with_hint(self):
+        body = HTTP2Body(b"Line1\nLine2\nLine3\nLine4")
+        # Hint affects how many lines are returned
+        lines = body.readlines(hint=5)
+        assert len(lines) >= 1
+
+    def test_readlines_empty(self):
+        body = HTTP2Body(b"")
+        assert body.readlines() == []
+
+    def test_iter(self):
+        body = HTTP2Body(b"Line1\nLine2\nLine3")
+        lines = list(body)
+        assert lines == [b"Line1\n", b"Line2\n", b"Line3"]
+
+    def test_close(self):
+        body = HTTP2Body(b"test")
+        body.close()
+        # Should not raise
+        with pytest.raises(ValueError):
+            body.read()
+
+
+class TestHTTP2BodyReadStrategies:
+    """Test different reading strategies matching HTTP/1.x patterns."""
+
+    def test_read_all_at_once(self):
+        data = b"A" * 1000
+        body = HTTP2Body(data)
+        result = body.read()
+        assert result == data
+
+    def test_read_chunked(self):
+        data = b"A" * 100
+        body = HTTP2Body(data)
+        chunks = []
+        while True:
+            chunk = body.read(10)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        assert b"".join(chunks) == data
+        assert len(chunks) == 10
+
+    def test_read_byte_by_byte(self):
+        data = b"Hello"
+        body = HTTP2Body(data)
+        result = []
+        for _ in range(len(data)):
+            result.append(body.read(1))
+        assert b"".join(result) == data
+
+    def test_readline_all_lines(self):
+        data = b"Line1\nLine2\nLine3\n"
+        body = HTTP2Body(data)
+        lines = []
+        while True:
+            line = body.readline()
+            if not line:
+                break
+            lines.append(line)
+        assert lines == [b"Line1\n", b"Line2\n", b"Line3\n"]
+
+
+class TestHTTP2Request:
+    """Test HTTP2Request class."""
+
+    def _make_stream(self, headers, body=b""):
+        """Helper to create a stream with headers and body."""
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers(headers, end_stream=(len(body) == 0))
+        if body:
+            stream.state = StreamState.OPEN
+            stream.receive_data(body, end_stream=True)
+        return stream
+
+    def test_bodyless_request_reads_eof_without_touching_the_socket(self):
+        """An upgraded or END_STREAM'd GET has no body to pull in."""
+        conn = MockConnection()
+        conn.pump = mock.Mock(side_effect=AssertionError("socket read"))
+        conn.is_closed = False
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([(":method", "GET"), (":path", "/")], end_stream=True)
+        req = HTTP2Request(stream, Config(), ("127.0.0.1", 1))
+        assert req.body.read() == b""
+        conn.pump.assert_not_called()
+
+    def test_basic_get_request(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/test'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.method == 'GET'
+        assert req.uri == '/test'
+        assert req.path == '/test'
+        assert req.scheme == 'https'
+        assert req.version == (2, 0)
+
+    def test_post_request_with_body(self):
+        stream = self._make_stream(
+            [
+                (':method', 'POST'),
+                (':path', '/submit'),
+                (':scheme', 'https'),
+                (':authority', 'api.example.com'),
+                ('content-type', 'application/json'),
+                ('content-length', '13'),
+            ],
+            body=b'{"key":"val"}'
+        )
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('192.168.1.1', 54321))
+
+        assert req.method == 'POST'
+        assert req.body.read() == b'{"key":"val"}'
+        assert req.content_type == 'application/json'
+        assert req.content_length == 13
+
+    def test_path_with_query_string(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/search?q=test&page=1'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.path == '/search'
+        assert req.query == 'q=test&page=1'
+        assert req.uri == '/search?q=test&page=1'
+
+    def test_path_with_fragment(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/page#section'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.path == '/page'
+        assert req.fragment == 'section'
+
+    def test_headers_uppercase_conversion(self):
+        """HTTP/2 headers are lowercase, should be converted to uppercase."""
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+            ('content-type', 'text/html'),
+            ('accept-language', 'en-US'),
+            ('x-custom-header', 'custom-value'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        header_names = [h[0] for h in req.headers]
+        assert 'CONTENT-TYPE' in header_names
+        assert 'ACCEPT-LANGUAGE' in header_names
+        assert 'X-CUSTOM-HEADER' in header_names
+
+    def test_host_header_from_authority(self):
+        """Host header should be generated from :authority pseudo-header."""
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'test.example.com:8080'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        host = req.get_header('HOST')
+        assert host == 'test.example.com:8080'
+
+    def test_authority_overrides_host_header(self):
+        """:authority MUST override Host header per RFC 9113 section 8.3.1."""
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'authority.example.com'),
+            ('host', 'explicit.example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        # Count HOST headers - should be exactly one, from :authority
+        host_headers = [h for h in req.headers if h[0] == 'HOST']
+        assert len(host_headers) == 1
+        assert host_headers[0][1] == 'authority.example.com'
+
+    def test_get_header_case_insensitive(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+            ('x-test-header', 'test-value'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.get_header('X-TEST-HEADER') == 'test-value'
+        assert req.get_header('x-test-header') == 'test-value'
+        assert req.get_header('X-Test-Header') == 'test-value'
+
+    def test_get_header_not_found(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.get_header('X-Not-Exists') is None
+
+    def test_content_length_property(self):
+        stream = self._make_stream([
+            (':method', 'POST'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+            ('content-length', '42'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.content_length == 42
+
+    def test_content_length_none_when_missing(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.content_length is None
+
+    def test_content_length_invalid_value(self):
+        stream = self._make_stream([
+            (':method', 'POST'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+            ('content-length', 'not-a-number'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.content_length is None
+
+    def test_content_type_property(self):
+        stream = self._make_stream([
+            (':method', 'POST'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+            ('content-type', 'application/json; charset=utf-8'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.content_type == 'application/json; charset=utf-8'
+
+    def test_content_type_none_when_missing(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.content_type is None
+
+
+class TestHTTP2RequestConnectionState:
+    """Test connection state methods."""
+
+    def _make_stream(self, headers):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers(headers, end_stream=True)
+        return stream
+
+    def test_should_close_default_false(self):
+        """HTTP/2 connections are persistent by default."""
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.should_close() is False
+
+    def test_force_close(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        req.force_close()
+        assert req.should_close() is True
+        assert req.must_close is True
+
+
+class TestHTTP2RequestTrailers:
+    """Test request trailers handling."""
+
+    def test_no_trailers(self):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.trailers == []
+
+    def test_with_trailers(self):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([
+            (':method', 'POST'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=False)
+        stream.state = stream.state  # Keep state
+        stream.trailers = [
+            ('grpc-status', '0'),
+            ('grpc-message', 'OK'),
+        ]
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert len(req.trailers) == 2
+        assert ('GRPC-STATUS', '0') in req.trailers
+        assert ('GRPC-MESSAGE', 'OK') in req.trailers
+
+
+class TestHTTP2RequestMetadata:
+    """Test request metadata properties."""
+
+    def _make_stream(self, headers, stream_id=1):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=stream_id, connection=conn)
+        stream.receive_headers(headers, end_stream=True)
+        return stream
+
+    def test_version_is_http2(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.version == (2, 0)
+
+    def test_req_number_is_stream_id(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], stream_id=5)
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.req_number == 5
+
+    def test_peer_addr(self):
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('10.0.0.1', 54321))
+
+        assert req.peer_addr == ('10.0.0.1', 54321)
+        assert req.remote_addr == ('10.0.0.1', 54321)
+
+    def test_proxy_protocol_info_none(self):
+        """HTTP/2 doesn't use proxy protocol through data stream."""
+        stream = self._make_stream([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ])
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.proxy_protocol_info is None
+
+
+class TestHTTP2RequestRepr:
+    """Test request string representation."""
+
+    def test_repr_format(self):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=3, connection=conn)
+        stream.receive_headers([
+            (':method', 'POST'),
+            (':path', '/api/users'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        repr_str = repr(req)
+        assert "HTTP2Request" in repr_str
+        assert "method=POST" in repr_str
+        assert "path=/api/users" in repr_str
+        assert "stream_id=3" in repr_str
+
+
+class TestHTTP2RequestDefaults:
+    """Test default values when pseudo-headers are missing."""
+
+    def test_default_method(self):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.method == 'GET'
+
+    def test_default_scheme(self):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        # Derived from the transport, not assumed to be https.
+        assert req.scheme == 'http'
+
+    def test_default_scheme_over_tls(self):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+        cfg.set('certfile', __file__)
+        cfg.set('keyfile', __file__)
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.scheme == 'https'
+
+    def test_default_path(self):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([
+            (':method', 'GET'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.uri == '/'
+        assert req.path == '/'
+
+
+class TestHTTP2RequestPriority:
+    """Test HTTP2Request priority attributes."""
+
+    def test_default_priority_values(self):
+        """Test that request inherits default stream priority."""
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        assert req.priority_weight == 16
+        assert req.priority_depends_on == 0
+
+    def test_custom_priority_values(self):
+        """Test that request inherits custom stream priority."""
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=3, connection=conn)
+
+        # Update priority before creating request
+        stream.update_priority(weight=200, depends_on=1)
+
+        stream.receive_headers([
+            (':method', 'POST'),
+            (':path', '/api/data'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=False)
+        stream.receive_data(b'{"data": "test"}', end_stream=True)
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('192.168.1.100', 54321))
+
+        assert req.priority_weight == 200
+        assert req.priority_depends_on == 1
+
+    def test_priority_reflects_stream_at_request_creation(self):
+        """Test that priority reflects stream state when request is created."""
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([
+            (':method', 'GET'),
+            (':path', '/'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+
+        # Create request with default priority
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+        assert req.priority_weight == 16
+
+        # Update stream priority after request was created
+        stream.update_priority(weight=256)
+
+        # Request should still have old value (captured at creation time)
+        assert req.priority_weight == 16
+
+        # Stream has new value
+        assert stream.priority_weight == 256
+
+
+class MockWSGIConfig:
+    """Mock gunicorn configuration with WSGI-required attributes."""
+
+    def __init__(self):
+        self.errorlog = '-'
+        self.workers = 1
+
+
+class TestHTTP2RequestWSGIEnviron:
+    """Test HTTP/2 priority in WSGI environ."""
+
+    def test_priority_in_wsgi_environ(self):
+        """Test that HTTP/2 priority is added to WSGI environ."""
+        from unittest import mock
+        from gunicorn.http.wsgi import create
+
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.update_priority(weight=128, depends_on=3)
+        stream.receive_headers([
+            (':method', 'GET'),
+            (':path', '/test'),
+            (':scheme', 'https'),
+            (':authority', 'example.com'),
+        ], end_stream=True)
+
+        cfg = MockConfig()
+        req = HTTP2Request(stream, cfg, ('127.0.0.1', 12345))
+
+        # Create a mock socket
+        mock_sock = mock.Mock()
+        mock_sock.getsockname.return_value = ('127.0.0.1', 8443)
+
+        # Use WSGI config for environ creation
+        wsgi_cfg = MockWSGIConfig()
+
+        # Create WSGI environ
+        resp, environ = create(req, mock_sock, ('127.0.0.1', 12345), ('127.0.0.1', 8443), wsgi_cfg)
+
+        # Verify priority is in environ
+        assert environ.get('gunicorn.http2.priority_weight') == 128
+        assert environ.get('gunicorn.http2.priority_depends_on') == 3
+
+    def test_priority_not_in_environ_for_http1(self):
+        """Test that HTTP/1 requests don't have priority keys."""
+        from unittest import mock
+        from gunicorn.http.wsgi import create
+
+        # Create a mock HTTP/1 request (no priority attributes)
+        mock_req = mock.Mock()
+        mock_req.headers = [('HOST', 'example.com')]
+        mock_req.scheme = 'https'
+        mock_req.path = '/test'
+        mock_req.query = ''
+        mock_req.fragment = ''
+        mock_req.method = 'GET'
+        mock_req.uri = '/test'
+        mock_req.version = (1, 1)
+        mock_req._expected_100_continue = False
+        mock_req.proxy_protocol_info = None
+        mock_req.body = mock.Mock()
+
+        # Remove priority attributes to simulate HTTP/1 request
+        del mock_req.priority_weight
+        del mock_req.priority_depends_on
+
+        wsgi_cfg = MockWSGIConfig()
+
+        mock_sock = mock.Mock()
+        mock_sock.getsockname.return_value = ('127.0.0.1', 8443)
+
+        resp, environ = create(mock_req, mock_sock, ('127.0.0.1', 12345), ('127.0.0.1', 8443), wsgi_cfg)
+
+        # HTTP/1 requests should not have priority keys
+        assert 'gunicorn.http2.priority_weight' not in environ
+        assert 'gunicorn.http2.priority_depends_on' not in environ
+
+
+class TestHTTP2HeaderPolicy:
+    """HTTP/2 requests go through the same header policy as HTTP/1."""
+
+    UNTRUSTED = ('203.0.113.9', 4444)
+    TRUSTED = ('127.0.0.1', 5555)
+
+    def _request(self, headers, peer, cfg=None):
+        conn = MockConnection()
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers(headers, end_stream=True)
+        return HTTP2Request(stream, cfg or MockConfig(), peer)
+
+    def _base(self, **extra):
+        headers = [
+            (':method', 'GET'), (':path', '/admin/x'),
+            (':scheme', 'https'), (':authority', 'example.com'),
+        ]
+        headers.extend(extra.items())
+        return headers
+
+    def test_underscore_header_dropped_for_untrusted_peer(self):
+        req = self._request(self._base(script_name='/admin'), self.UNTRUSTED)
+        assert not any(n == 'SCRIPT_NAME' for n, _ in req.headers)
+
+    def test_underscore_header_kept_for_trusted_forwarder(self):
+        cfg = MockConfig()
+        cfg.set('forwarded_allow_ips', '127.0.0.1')
+        cfg.set('forwarder_headers', 'SCRIPT_NAME')
+        req = self._request(self._base(script_name='/admin'), self.TRUSTED, cfg)
+        assert ('SCRIPT_NAME', '/admin') in req.headers
+
+    def test_duplicate_content_type_rejected(self):
+        headers = [
+            (':method', 'GET'), (':path', '/'), (':scheme', 'http'),
+            (':authority', 'a'),
+            ('content-type', 'application/json'),
+            ('content-type', 'text/html'),
+        ]
+        with pytest.raises(InvalidHeader):
+            self._request(headers, self.UNTRUSTED)
+
+    def test_control_character_in_value_rejected(self):
+        with pytest.raises(InvalidHeader):
+            self._request(self._base(**{'x-thing': 'a\x00b'}), self.UNTRUSTED)
+
+    def test_untrusted_scheme_claim_ignored(self):
+        req = self._request(self._base(), self.UNTRUSTED)
+        assert req.scheme == 'http'
+
+    def test_trusted_scheme_claim_honoured(self):
+        cfg = MockConfig()
+        cfg.set('forwarded_allow_ips', '127.0.0.1')
+        req = self._request(self._base(), self.TRUSTED, cfg)
+        assert req.scheme == 'https'
+
+    def test_expect_continue_never_set_on_http2(self):
+        req = self._request(self._base(expect='100-continue'), self.UNTRUSTED)
+        assert req._expected_100_continue is False
+
+    def test_authority_precedence_after_policy(self):
+        req = self._request(self._base(host='attacker.example'), self.UNTRUSTED)
+        assert [v for n, v in req.headers if n == 'HOST'] == ['example.com']
+
+
+class TestHTTP2BodyStreaming:
+    """wsgi.input over a stream: sizes, lines, EOF and closure."""
+
+    def _body(self, frames, pump=True):
+        """A body whose connection hands over one frame per pump()."""
+        conn = MockConnection()
+        conn.is_closed = False
+        stream = HTTP2Stream(stream_id=1, connection=conn)
+        stream.receive_headers([(":method", "POST"), (":path", "/")])
+        pending = list(frames)
+
+        def do_pump(stream_id=None):
+            data = pending.pop(0)
+            stream.receive_data(data, end_stream=not pending)
+        if pump:
+            conn.pump = do_pump
+        return HTTP2Body(stream), stream, conn
+
+    def test_read_pulls_frames_on_demand(self):
+        body, stream, conn = self._body([b"abc", b"def", b"g"])
+        assert body.read(2) == b"ab"
+        assert stream.body_size == 3
+        assert body.read(3) == b"cde"
+        assert stream.body_size == 6
+        assert body.read() == b"fg"
+        assert body.read() == b""
+        assert body.read(1) == b""
+
+    def test_read_zero_and_negative(self):
+        body, stream, conn = self._body([b"abc"])
+        assert body.read(0) == b""
+        assert stream.body_size == 0
+        assert body.read(-1) == b"abc"
+
+    def test_readline_with_size(self):
+        body, stream, conn = self._body([b"alpha\nbe", b"ta\ngamma"])
+        assert body.readline(3) == b"alp"
+        assert body.readline() == b"ha\n"
+        assert body.readline(-1) == b"beta\n"
+        assert body.readline(0) == b""
+        assert body.readline(100) == b"gamma"
+        assert body.readline() == b""
+
+    def test_readline_size_caps_a_found_line(self):
+        body, stream, conn = self._body([b"ab\ncd\n"])
+        assert body.readline(2) == b"ab"
+        assert body.readline(2) == b"\n"
+        assert body.readlines() == [b"cd\n"]
+
+    def test_readlines_hint(self):
+        body, stream, conn = self._body([b"1\n2\n3\n4\n"])
+        assert body.readlines(3) == [b"1\n", b"2\n"]
+        assert list(body) == [b"3\n", b"4\n"]
+
+    def test_close_then_read_raises(self):
+        body, stream, conn = self._body([b"abc"])
+        assert body.read(1) == b"a"
+        body.close()
+        with pytest.raises(ValueError):
+            body.read()
+        with pytest.raises(ValueError):
+            body.readline()
+
+    def test_connection_without_pump_reads_what_is_held(self):
+        """The ASGI path never reads through HTTP2Body; it must not block."""
+        body, stream, conn = self._body([b"abc"], pump=False)
+        stream.receive_data(b"abc")
+        assert body.read() == b"abc"
+        assert body.read() == b""
+
+    def test_closed_connection_raises(self):
+        from gunicorn.http2.errors import HTTP2StreamError
+        body, stream, conn = self._body([b"abc"])
+        conn.is_closed = True
+        with pytest.raises(HTTP2StreamError):
+            body.read()
+
+    def test_readline_size_reached_without_newline(self):
+        body, stream, conn = self._body([b"abc", b"def"])
+        assert body.readline(2) == b"ab"
+        assert body.readline(10) == b"cdef"
