@@ -3,23 +3,12 @@ run-name: Consolidate router components • ${{ github.sha }}
 
 on:
   workflow_dispatch:
-  issues:
-    types: [opened, reopened]
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/consolidate-router-inteligente-software.yml"
 
 permissions:
   contents: write
 
-concurrency:
-  group: consolidate-router-inteligente-software
-  cancel-in-progress: false
-
 jobs:
   consolidate:
-    if: github.event_name != 'issues' || github.event.issue.title == '[router] consolidate components'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -33,7 +22,7 @@ jobs:
             .github
           persist-credentials: true
 
-      - name: Build deterministic tree move without downloading ZIP blobs
+      - name: Move router component ZIPs into one root
         shell: bash
         run: |
           set -euo pipefail
@@ -44,7 +33,6 @@ jobs:
           git read-tree "$BASE"
 
           python3 - <<'PY'
-          import os
           import re
           import subprocess
           import sys
@@ -119,10 +107,6 @@ jobs:
             git commit-tree "$NEW_TREE" -p "$BASE"
           )"
 
-          echo "BASE=$BASE"
-          echo "NEW_TREE=$NEW_TREE"
-          echo "NEW_COMMIT=$NEW_COMMIT"
-
           git push origin "$NEW_COMMIT:refs/heads/main"
 
       - name: Verify final tree
@@ -136,5 +120,3 @@ jobs:
           echo "ZIP_COUNT_OLD_ROOTS=$OLD_COUNT"
           test "$COUNT" -gt 0
           test "$OLD_COUNT" -eq 0
-
-# activation-revision: 3
