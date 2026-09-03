@@ -3,3 +3,4 @@
 {"number": 3, "parts": 1, "slug": "Temporal-Python-SDK", "source": "https://github.com/temporalio/sdk-python.git", "source_commit": "d0e075c1e25b3371f0e0f5116d9c6626892e3eab", "status": "COMPLETE"}
 {"number": 4, "parts": 1, "slug": "Durable-Task-Python", "source": "https://github.com/microsoft/durabletask-python.git", "source_commit": "46602d5221591b6aaeff1238cd0ec952419e2e29", "status": "COMPLETE"}
 {"number": 5, "parts": 1, "slug": "Durable-Workflow-Server", "source": "https://github.com/durable-workflow/server.git", "source_commit": "1636e53eb2e99d22fd8263e5d3192ce50cab799a", "status": "COMPLETE"}
+{"number": 6, "parts": 4, "slug": "Prefect", "source": "https://github.com/PrefectHQ/prefect.git", "source_commit": "d63a95a49f48f869523781116d8adf2eb4118f32", "status": "COMPLETE"}
