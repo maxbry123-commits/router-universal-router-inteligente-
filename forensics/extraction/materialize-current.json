@@ -1,6 +1,14 @@
 {
   "schema": "yaiwes.no_lfs.materializer.v1",
-  "materialized": [],
+  "materialized": [
+    {
+      "path": "router inteligente software/componentes todos/componentes descargados/qdrant/tests/e2e_tests/test_data/storage.tar.xz",
+      "sha256": "47aaa44296d2a99bd7839859efaf73f44800760b855cbcad8770c25c658afd02",
+      "bytes": 1752948,
+      "source": "https://github.com/qdrant/qdrant.git",
+      "commit": "74f3e85b9473c62560006c043e13737ce6b48412"
+    }
+  ],
   "failures": [],
   "remaining_pointers": [],
   "oversized": [],
