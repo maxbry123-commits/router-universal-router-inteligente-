@@ -1,0 +1,32 @@
+{
+  "schema": "yaiwes.extraction.guardian.v2",
+  "run_id": "33792760237",
+  "archive_groups": 56,
+  "processed": [],
+  "failures": [],
+  "remaining_gaps": [
+    {
+      "slug": "autogen",
+      "target": "router inteligente software/componentes todos/componentes descargados/autogen",
+      "mirror": null
+    }
+  ],
+  "retryable_gaps": [],
+  "blocked_gaps": [
+    {
+      "slug": "autogen",
+      "target": "router inteligente software/componentes todos/componentes descargados/autogen",
+      "mirror": null,
+      "code": "SOURCE_LFS_POINTER_GAP",
+      "detail": "SOURCE_LFS_POINTER_GAP:autogen/autogen-landing.jpg,autogen/dotnet/nuget/icon.png,autogen/dotnet/resource/images/background.png,autogen/dotnet/resource/images/square.png,autogen/dotnet/samples/dev-team/docs/images/github-sk-dev-team.png,autogen/dotnet/samples/dev-team/docs/images/new-codespace.png,autogen/dotnet/samples/dev-team/docs/images/overview.png,autogen/dotnet/samples/dev-team/docs/images/solution-explorer.png,autogen/dotnet/test/AutoGen.Anthropic.Tests/images/square.png,autogen/dotnet/test/AutoGen.Ollama.Tests/images/image.png,autogen/dotnet/test/AutoGen.Ollama.Tests/images/square.png,autogen/dotnet/test/AutoGen.Tests/ApprovalTests/square.png,autogen/dotnet/website/images/articles/CreateAgentWithTools/single-turn-tool-call-with-auto-invoke.png,autogen/dotnet/website/images/articles/CreateAgentWithTools/single-turn-tool-call-without-auto-invoke.png,autogen/dotnet/website/images/articles/CreateUserProxyAgent/image-1.png,autogen/dotnet/website/images/articles/DynamicGroupChat/dynamicChat.gif,autogen/dotnet/website/images/articles/PrintMessageMiddleware/printMessage.png,autogen/dotnet/website/images/articles/PrintMessageMiddleware/streamingoutput.gif,autogen/dotnet/website/images/articles/SequentialGroupChat/SearcherSummarizer.gif,autogen/dotnet/website/images/articles/UseAutoGenAsModelinAGStudio/FinalStepsA.png",
+      "evidence": "forensics/extraction/repair-33791916962.json"
+    }
+  ],
+  "counts": {
+    "remaining": 1,
+    "retryable": 0,
+    "blocked": 1,
+    "processed": 0
+  },
+  "verdict": "GAPS_PENDING"
+}
