@@ -1,0 +1,231 @@
+name: Research Download Chain • Router Components • Repair 02
+run-name: RDC-ROUTER-ADDITIONAL-20260903 • ${{ github.run_id }} • repair-02
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/research-download-chain-router-components-repair-02-20260903.yml"
+
+permissions:
+  contents: write
+
+env:
+  GIT_TERMINAL_PROMPT: "0"
+  TASK_ID: "RDC-ROUTER-ADDITIONAL-20260903"
+  SKILL_REPOSITORY: "maxbry123-commits/agentes"
+  SKILL_REF: "05e3cd5f869ce17b9d6c44f36dee67800ce29ab7"
+  DEST_ROOT: "router inteligente software/componentes todos/componentes descargados"
+  COMPONENTS_JSON: '[{"n":"01","slug":"LiteLLM","url":"https://github.com/BerriAI/litellm.git","requested":"https://github.com/BerriAI/litellm","ref":"658f50663d19f613a3f5caf998168da019764ad8"},{"n":"02","slug":"vLLM-Router","url":"https://github.com/llm-semantic-router/vllm-router.git","requested":"https://github.com/LLM-inference-router/vllm-router","ref":"5680dbe19b3f3d1f9bb062466d9f3f07136039b6"},{"n":"03","slug":"Temporal-Python-SDK","url":"https://github.com/temporalio/sdk-python.git","requested":"https://github.com/temporalio/sdk-python","ref":"d0e075c1e25b3371f0e0f5116d9c6626892e3eab"},{"n":"04","slug":"Durable-Task-Python","url":"https://github.com/microsoft/durabletask-python.git","requested":"https://github.com/microsoft/durabletask-python","ref":"46602d5221591b6aaeff1238cd0ec952419e2e29"},{"n":"05","slug":"Durable-Workflow-Server","url":"https://github.com/durable-workflow/server.git","requested":"https://github.com/durable-workflow/server","ref":"1636e53eb2e99d22fd8263e5d3192ce50cab799a"},{"n":"06","slug":"Prefect","url":"https://github.com/PrefectHQ/prefect.git","requested":"https://github.com/PrefectHQ/prefect","ref":"d63a95a49f48f869523781116d8adf2eb4118f32"}]'
+
+concurrency:
+  group: extraction-single-writer-main
+  cancel-in-progress: false
+
+jobs:
+  download-extract-verified:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - name: Checkout destination main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          lfs: false
+
+      - name: Copy pinned research-download-chain skill from GitHub
+        uses: actions/checkout@v4
+        with:
+          repository: maxbry123-commits/agentes
+          ref: 05e3cd5f869ce17b9d6c44f36dee67800ce29ab7
+          path: _skill_source
+          fetch-depth: 1
+          lfs: false
+
+      - name: Copy official asset and edit task fields surgically
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p _work
+          cp "_skill_source/skills/research-download-chain/assets/FORENSIC-PASS-research_download_chain.py" "_work/task_chain.py"
+          python3 - <<'PY'
+          import ast, json, os, re
+          from pathlib import Path
+
+          p=Path("_work/task_chain.py")
+          s=p.read_text()
+          comps=json.loads(os.environ["COMPONENTS_JSON"])
+          repos=[(x["n"],x["slug"],x["url"],x["ref"]) for x in comps]
+
+          s=re.sub(r"^REPOS=.*$", "REPOS="+repr(repos), s, count=1, flags=re.M)
+          s=s.replace("for number,slug,url in REPOS:", "for number,slug,url,ref in REPOS:")
+          old="sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(); guard_source_tree(root); shutil.rmtree(root/'.git',ignore_errors=True)"
+          new=("run(['git','fetch','--depth','1','origin',ref],cwd=root); "
+               "run(['git','checkout','--detach',ref],cwd=root); "
+               "sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(); "
+               "assert sha == ref, f'SOURCE_REF_MISMATCH expected={ref} actual={sha}'; "
+               "guard_source_tree(root); shutil.rmtree(root/'.git',ignore_errors=True)")
+          if old not in s:
+              raise SystemExit("ASSET_GAP: expected pinned edit anchor missing")
+          s=s.replace(old,new)
+          s=s.replace("/20:", f"/{len(comps)}:")
+          s=s.replace("20/20 repositories processed", f"{len(comps)}/{len(comps)} repositories processed")
+          p.write_text(s)
+          print("ASSET_COPY_PASS",p)
+          PY
+
+      - name: Execute copied skill runtime into immutable archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --local filter.lfs.clean cat
+          git config --local filter.lfs.smudge cat
+          git config --local --unset-all filter.lfs.process || true
+          git config --local filter.lfs.required false
+          mkdir -p "$DEST_ROOT/archives"
+          python3 "_work/task_chain.py" "$DEST_ROOT/archives" "_work/research-download"
+
+      - name: Extract real trees with no overwrite and NO-LFS gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, shutil, stat, tempfile, zipfile
+          from pathlib import Path, PurePosixPath
+
+          root=Path(os.environ["DEST_ROOT"])
+          archives=root/"archives"
+          comps=json.loads(os.environ["COMPONENTS_JSON"])
+          manifest=archives/"RESEARCH_DOWNLOAD_MANIFEST.jsonl"
+          rows=[]
+          if manifest.exists():
+              for line in manifest.read_text().splitlines():
+                  if line.strip():
+                      rows.append(json.loads(line))
+          latest={}
+          for r in rows:
+              latest[r.get("slug")]=r
+
+          out=[]
+          marker=b"version https://git-lfs.github.com/spec/v1\n"
+
+          def sha256(p):
+              h=hashlib.sha256()
+              with p.open("rb") as f:
+                  for b in iter(lambda:f.read(1024*1024),b""): h.update(b)
+              return h.hexdigest()
+
+          def safe(info):
+              q=PurePosixPath(info.filename.replace("\\","/"))
+              if q.is_absolute() or ".." in q.parts:
+                  return False
+              mode=(info.external_attr>>16)&0o170000
+              return mode not in {stat.S_IFLNK,stat.S_IFCHR,stat.S_IFBLK,stat.S_IFIFO,stat.S_IFSOCK}
+
+          for c in comps:
+              slug=c["slug"]; target=root/slug; row=latest.get(slug)
+              if target.exists():
+                  su=target/"SOURCE_URL.txt"; sc=target/"SOURCE_COMMIT.txt"
+                  if su.exists() and sc.exists() and sc.read_text().strip()==c["ref"] and su.read_text().strip() in {c["requested"],c["url"].removesuffix(".git")}:
+                      out.append({"slug":slug,"status":"VERIFIED_EXISTING","target":str(target),"source_commit":c["ref"]})
+                  else:
+                      out.append({"slug":slug,"status":"INSUFFICIENT_EVIDENCE_EXISTING_TARGET","target":str(target)})
+                  continue
+              if not row or row.get("status")!="COMPLETE":
+                  out.append({"slug":slug,"status":"ARCHIVE_GAP","detail":row})
+                  continue
+
+              parts=sorted(archives.glob(f"{slug}_*.zip"))
+              if not parts:
+                  out.append({"slug":slug,"status":"ARCHIVE_GAP","detail":"no zip parts"})
+                  continue
+
+              try:
+                  with tempfile.TemporaryDirectory(prefix="rdc-extract-") as td:
+                      stage=Path(td)
+                      seen={}
+                      for z in parts:
+                          with zipfile.ZipFile(z) as a:
+                              bad=a.testzip()
+                              if bad: raise RuntimeError(f"CRC_FAIL:{z.name}:{bad}")
+                              for info in a.infolist():
+                                  if not safe(info): raise RuntimeError(f"UNSAFE_ZIP:{z.name}:{info.filename}")
+                                  if info.is_dir(): continue
+                                  q=PurePosixPath(info.filename.replace("\\","/"))
+                                  key=str(q)
+                                  dst=stage/q
+                                  dst.parent.mkdir(parents=True,exist_ok=True)
+                                  with a.open(info) as src, dst.open("wb") as f: shutil.copyfileobj(src,f)
+                                  h=sha256(dst)
+                                  if key in seen and seen[key]!=h: raise RuntimeError(f"COLLISION_BLOCKED:{key}")
+                                  seen[key]=h
+                      payload=stage/slug if (stage/slug).is_dir() else stage
+                      files=[p for p in payload.rglob("*") if p.is_file()]
+                      if not files: raise RuntimeError("EMPTY_EXTRACTION")
+                      badptr=[]; overs=[]
+                      for p in files:
+                          if p.stat().st_size>=100*1024*1024: overs.append(str(p.relative_to(payload)))
+                          if p.stat().st_size<=1024 and p.read_bytes().startswith(marker): badptr.append(str(p.relative_to(payload)))
+                      if badptr: raise RuntimeError("SOURCE_LFS_POINTER_GAP:"+",".join(badptr[:20]))
+                      if overs: raise RuntimeError("GIT_BLOB_LIMIT_GAP:"+",".join(overs[:20]))
+                      shutil.copytree(payload,target)
+                      (target/"SOURCE_URL.txt").write_text(c["requested"]+"\n")
+                      (target/"SOURCE_COMMIT.txt").write_text(c["ref"]+"\n")
+                      if c["requested"].rstrip("/") != c["url"].removesuffix(".git").rstrip("/"):
+                          (target/"SOURCE_RESOLVED_URL.txt").write_text(c["url"].removesuffix(".git")+"\n")
+                      licenses=sorted([str(p.relative_to(target)) for p in target.rglob("*") if p.is_file() and p.name.lower().startswith(("license","copying","notice"))])
+                      (target/"SOURCE_LICENSE.txt").write_text(("; ".join(licenses) if licenses else "LICENSE_FILE_NOT_DETECTED")+"\n")
+                      hs=[]
+                      for p in sorted(x for x in target.rglob("*") if x.is_file() and x.name!="SOURCE_SHA256SUMS.txt"):
+                          hs.append(f"{sha256(p)}  {p.relative_to(target).as_posix()}")
+                      (target/"SOURCE_SHA256SUMS.txt").write_text("\n".join(hs)+"\n")
+                      tree=hashlib.sha256("\n".join(hs).encode()).hexdigest()
+                      out.append({"slug":slug,"status":"EXTRACTED_VERIFIED","target":str(target),"source_commit":c["ref"],"files":len(files),"tree_sha256":tree})
+              except Exception as e:
+                  out.append({"slug":slug,"status":"GAP","error":str(e)})
+
+          evidence=root/"RDC_ADDITIONAL_COMPONENTS_EVIDENCE.json"
+          evidence.write_text(json.dumps({"task_id":os.environ["TASK_ID"],"components":out},indent=2,ensure_ascii=False)+"\n")
+          print(json.dumps(out,ensure_ascii=False))
+          PY
+
+      - name: Commit extracted trees and evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _skill_source _work
+          git add -A -- "$DEST_ROOT"
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m "build(download): RDC-ROUTER-ADDITIONAL-20260903 verified components"
+            for attempt in 1 2 3; do
+              git pull --rebase origin main && git push --no-verify origin HEAD:main && break
+              test "$attempt" -lt 3 || exit 41
+              sleep $((attempt*10))
+            done
+          fi
+
+      - name: GitHub read-back and final gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          python3 - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          root=Path(os.environ["DEST_ROOT"])
+          p=root/"RDC_ADDITIONAL_COMPONENTS_EVIDENCE.json"
+          if not p.exists():
+              print("READ_BACK_GAP evidence missing"); sys.exit(50)
+          d=json.loads(p.read_text())
+          bad=[x for x in d["components"] if x["status"] not in {"EXTRACTED_VERIFIED","VERIFIED_EXISTING"}]
+          print("READ_BACK_COMPONENTS",len(d["components"]))
+          print("READ_BACK_GAPS",len(bad))
+          for x in bad: print("GAP",json.dumps(x,ensure_ascii=False))
+          if bad: sys.exit(51)
+          print("VERIFIED_CLOSED")
+          PY
