@@ -1,0 +1,1502 @@
+# Copyright 2020 The HuggingFace Team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import io
+import os
+import shutil
+import stat
+import warnings
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Iterable
+from unittest.mock import Mock, patch
+
+import httpx
+import pytest
+
+from huggingface_hub import HfApi, constants
+from huggingface_hub._local_folder import write_download_metadata
+from huggingface_hub.errors import EntryNotFoundError, GatedRepoError, LocalEntryNotFoundError
+from huggingface_hub.file_download import (
+    _CACHED_NO_EXIST,
+    HfFileMetadata,
+    _check_disk_space,
+    _create_symlink,
+    _get_pointer_path,
+    _normalize_etag,
+    get_hf_file_metadata,
+    hf_hub_download,
+    hf_hub_url,
+    http_get,
+    try_to_load_from_cache,
+)
+from huggingface_hub.utils import SoftTemporaryDirectory, WeakFileLock, get_session, hf_raise_for_status
+from huggingface_hub.utils._headers import build_hf_headers
+from huggingface_hub.utils._http import _http_backoff_base
+
+from .conftest import RepoFactory
+from .testing_constants import (
+    DUMMY_EXTRA_LARGE_FILE_MODEL_ID,
+    DUMMY_EXTRA_LARGE_FILE_NAME,
+    DUMMY_MODEL_ID,
+    DUMMY_MODEL_ID_REVISION_ONE_SPECIFIC_COMMIT,
+    DUMMY_RENAMED_OLD_MODEL_ID,
+    OTHER_TOKEN,
+    SAMPLE_DATASET_IDENTIFIER,
+    TOKEN,
+)
+from .testing_utils import repo_name
+
+
+REVISION_ID_DEFAULT = "main"
+# Default branch name
+
+DATASET_ID = SAMPLE_DATASET_IDENTIFIER
+# An actual dataset hosted on huggingface.co
+
+
+DATASET_REVISION_ID_ONE_SPECIFIC_COMMIT = "e25d55a1c4933f987c46cc75d8ffadd67f257c61"
+# One particular commit for DATASET_ID
+DATASET_SAMPLE_PY_FILE = "custom_squad.py"
+
+
+class TestDiskUsageWarning:
+    @pytest.fixture(scope="class", autouse=True)
+    def setup(self, request):
+        # Test with 100MB expected file size
+        request.cls.expected_size = 100 * 1024 * 1024
+        yield
+
+    def test_disk_usage_warning(self, mocker) -> None:
+        disk_usage_mock = mocker.patch("huggingface_hub.file_download.shutil.disk_usage")
+        # Test with only 1MB free disk space / not enough disk space, with UserWarning expected
+        disk_usage_mock.return_value.free = 1024 * 1024
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+            _check_disk_space(expected_size=self.expected_size, target_dir=disk_usage_mock)
+            assert len(w) == 1
+            assert issubclass(w[-1].category, UserWarning)
+
+        # Test with 200MB free disk space / enough disk space, with no warning expected
+        disk_usage_mock.return_value.free = 200 * 1024 * 1024
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+            _check_disk_space(expected_size=self.expected_size, target_dir=disk_usage_mock)
+            assert len(w) == 0
+
+    def test_disk_usage_warning_with_non_existent_path(self) -> None:
+        # Test for not existent (absolute) path
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+            _check_disk_space(expected_size=self.expected_size, target_dir="path/to/not_existent_path")
+            assert len(w) == 0
+
+        # Test for not existent (relative) path
+        with warnings.catch_warnings(record=True) as w:
+            # Cause all warnings to always be triggered.
+            warnings.simplefilter("always")
+            _check_disk_space(expected_size=self.expected_size, target_dir="/path/to/not_existent_path")
+            assert len(w) == 0
+
+
+class TestStagingDownload:
+    def test_download_from_a_gated_repo_with_hf_hub_download(self, api: HfApi, repo_factory: RepoFactory) -> None:
+        """Checks `hf_hub_download` outputs error on gated repo.
+
+        Regression test for #1121.
+        https://github.com/huggingface/huggingface_hub/pull/1121
+
+        Cannot test on staging as dynamically setting a gated repo doesn't work there.
+        """
+        repo_url = repo_factory()
+        # Set repo as gated
+        response = get_session().put(
+            f"{api.endpoint}/api/models/{repo_url.repo_id}/settings",
+            json={"gated": "auto"},
+            headers=api._build_hf_headers(),
+        )
+        hf_raise_for_status(response)
+
+        # Cannot download file as repo is gated
+        with SoftTemporaryDirectory() as tmpdir:
+            with pytest.raises(
+                GatedRepoError, match="Access to model .* is restricted and you are not in the authorized list"
+            ):
+                hf_hub_download(
+                    repo_id=repo_url.repo_id, filename=".gitattributes", token=OTHER_TOKEN, cache_dir=tmpdir
+                )
+
+    def test_download_regular_file_from_private_renamed_repo(self, api: HfApi, repo_factory: RepoFactory) -> None:
+        """Regression test for #1999.
+
+        See https://github.com/huggingface/huggingface_hub/pull/1999.
+        """
+        repo_url = repo_factory()
+        repo_id_before = repo_url.repo_id
+        repo_id_after = repo_url.repo_id + "_renamed"
+
+        # Make private + rename + upload regular file
+        api.update_repo_settings(repo_id_before, private=True)
+        api.upload_file(repo_id=repo_id_before, path_in_repo="file.txt", path_or_fileobj=b"content")
+        api.move_repo(repo_id_before, repo_id_after)
+
+        # Download from private renamed repo
+        path = api.hf_hub_download(repo_id_before, filename="file.txt")
+        with open(path) as f:
+            assert f.read() == "content"
+
+        # Move back (so that auto-cleanup works)
+        api.move_repo(repo_id_after, repo_id_before)
+
+
+@pytest.mark.production
+class TestCachedDownload:
+    def test_file_not_found_locally_and_network_disabled(self):
+        # Valid file but missing locally and network is disabled.
+        with SoftTemporaryDirectory() as tmpdir:
+            # Download a first time to get the refs ok
+            filepath = hf_hub_download(
+                DUMMY_MODEL_ID,
+                filename=constants.CONFIG_NAME,
+                cache_dir=tmpdir,
+                local_files_only=False,
+            )
+
+            # Remove local file
+            os.remove(filepath)
+
+            # Get without network must fail
+            with pytest.raises(LocalEntryNotFoundError):
+                hf_hub_download(
+                    DUMMY_MODEL_ID,
+                    filename=constants.CONFIG_NAME,
+                    cache_dir=tmpdir,
+                    local_files_only=True,
+                )
+
+    def test_private_repo_and_file_cached_locally(self, api: HfApi):
+        repo_id = api.create_repo(repo_id=repo_name(), private=True, token=TOKEN).repo_id
+        api.upload_file(path_or_fileobj=b"content", path_in_repo="config.json", repo_id=repo_id, token=TOKEN)
+
+        with SoftTemporaryDirectory() as tmpdir:
+            # Download a first time with token => file is cached
+            filepath_1 = api.hf_hub_download(repo_id, filename="config.json", cache_dir=tmpdir, token=TOKEN)
+
+            # Download without token => return cached file
+            filepath_2 = api.hf_hub_download(repo_id, filename="config.json", cache_dir=tmpdir, token=False)
+
+            assert filepath_1 == filepath_2
+
+    def test_file_cached_and_read_only_access(self):
+        """Should works if file is already cached and user has read-only permission.
+
+        Regression test for https://github.com/huggingface/huggingface_hub/issues/1216.
+        """
+        # Valid file but missing locally and network is disabled.
+        with SoftTemporaryDirectory() as tmpdir:
+            # Download a first time to get the refs ok
+            hf_hub_download(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=tmpdir)
+
+            # Set read-only permission recursively
+            _recursive_chmod(tmpdir, 0o555)
+
+            # Get without write-access must succeed
+            hf_hub_download(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=tmpdir)
+
+            # Set permission back for cleanup
+            _recursive_chmod(tmpdir, 0o777)
+
+    @pytest.mark.skipif(os.name == "nt", reason="umask is UNIX-specific")
+    def test_hf_hub_download_custom_cache_permission(self):
+        """Checks `hf_hub_download` respect the cache dir permission.
+
+        Regression test for #1141 #1215.
+        https://github.com/huggingface/huggingface_hub/issues/1141
+        https://github.com/huggingface/huggingface_hub/issues/1215
+        """
+        with SoftTemporaryDirectory() as tmpdir:
+            # Equivalent to umask u=rwx,g=r,o=
+            previous_umask = os.umask(0o037)
+            try:
+                filepath = hf_hub_download(DUMMY_RENAMED_OLD_MODEL_ID, "config.json", cache_dir=tmpdir)
+                # Permissions are honored (640: u=rw,g=r,o=)
+                assert stat.S_IMODE(os.stat(filepath).st_mode) == 0o640
+            finally:
+                os.umask(previous_umask)
+
+    def test_hf_hub_download_survives_bad_fileno(self):
+        """Download must not crash when stderr.fileno() returns -1 (e.g. Textual TUIs)."""
+
+        class FakeStderr:
+            def write(self, s):
+                pass
+
+            def flush(self):
+                pass
+
+            def isatty(self):
+                return True
+
+            def fileno(self):
+                return -1
+
+        with SoftTemporaryDirectory() as tmpdir:
+            with patch("sys.stderr", FakeStderr()):
+                filepath = hf_hub_download(
+                    DUMMY_MODEL_ID,
+                    filename=constants.CONFIG_NAME,
+                    cache_dir=tmpdir,
+                )
+            assert os.path.exists(filepath)
+
+    def test_download_from_a_renamed_repo_with_hf_hub_download(self):
+        """Checks `hf_hub_download` works also on a renamed repo.
+
+        Regression test for #981.
+        https://github.com/huggingface/huggingface_hub/issues/981
+        """
+        with SoftTemporaryDirectory() as tmpdir:
+            filepath = hf_hub_download(DUMMY_RENAMED_OLD_MODEL_ID, "config.json", cache_dir=tmpdir)
+            assert os.path.exists(filepath)
+
+    def test_hf_hub_download_with_empty_subfolder(self):
+        """
+        Check subfolder arg is processed correctly when empty string is passed to
+        `hf_hub_download`.
+
+        See https://github.com/huggingface/huggingface_hub/issues/1016.
+        """
+        filepath = Path(
+            hf_hub_download(
+                DUMMY_MODEL_ID,
+                filename=constants.CONFIG_NAME,
+                subfolder="",  # Subfolder should be processed as `None`
+            )
+        )
+
+        # Check file exists and is not in a subfolder in cache
+        # e.g: "(...)/snapshots/<commit-id>/config.json"
+        assert filepath.is_file()
+        assert filepath.name == constants.CONFIG_NAME
+        assert Path(filepath).parent.parent.name == "snapshots"
+
+    def test_hf_hub_download_offline_no_refs(self):
+        """Regression test for #1305.
+
+        If "refs/" dir did not exists on "local_files_only" (or connection broken), a
+        non-explicit `FileNotFoundError` was raised (for the "/refs/revision" file) instead
+        of the documented `LocalEntryNotFoundError` (for the actual searched file).
+
+        See https://github.com/huggingface/huggingface_hub/issues/1305.
+        """
+        with SoftTemporaryDirectory() as cache_dir:
+            with pytest.raises(LocalEntryNotFoundError):
+                hf_hub_download(
+                    DUMMY_MODEL_ID,
+                    filename=constants.CONFIG_NAME,
+                    local_files_only=True,
+                    cache_dir=cache_dir,
+                )
+
+    def test_hf_hub_download_with_user_agent(self):
+        """
+        Check that user agent is correctly sent to the HEAD call when downloading a file.
+
+        Regression test for #1854.
+        See https://github.com/huggingface/huggingface_hub/pull/1854.
+        """
+
+        def _check_user_agent(headers: dict):
+            assert "user-agent" in headers
+            assert "test/1.0.0" in headers["user-agent"]
+            assert "foo/bar" in headers["user-agent"]
+
+        with SoftTemporaryDirectory() as cache_dir:
+            with patch("huggingface_hub.utils._http._http_backoff_base", wraps=_http_backoff_base) as mock_request:
+                # First download
+                hf_hub_download(
+                    DUMMY_MODEL_ID,
+                    filename=constants.CONFIG_NAME,
+                    cache_dir=cache_dir,
+                    library_name="test",
+                    library_version="1.0.0",
+                    user_agent="foo/bar",
+                )
+                calls = mock_request.call_args_list
+                assert len(calls) >= 3  # at least HEAD, HEAD, GET
+                for call in calls:
+                    _check_user_agent(call.kwargs["headers"])
+
+            with patch("huggingface_hub.utils._http._http_backoff_base", wraps=_http_backoff_base) as mock_request:
+                # Second download: no GET call
+                hf_hub_download(
+                    DUMMY_MODEL_ID,
+                    filename=constants.CONFIG_NAME,
+                    cache_dir=cache_dir,
+                    library_name="test",
+                    library_version="1.0.0",
+                    user_agent="foo/bar",
+                )
+                calls = mock_request.call_args_list
+                assert len(calls) >= 2  # at least HEAD, HEAD
+                for call in calls:
+                    _check_user_agent(call.kwargs["headers"])
+
+    def test_hf_hub_url_with_empty_subfolder(self):
+        """
+        Check subfolder arg is processed correctly when empty string is passed to
+        `hf_hub_url`.
+
+        See https://github.com/huggingface/huggingface_hub/issues/1016.
+        """
+        url = hf_hub_url(
+            DUMMY_MODEL_ID,
+            filename=constants.CONFIG_NAME,
+            subfolder="",  # Subfolder should be processed as `None`
+        )
+        assert url.endswith(
+            # "./resolve/main/config.json" and not "./resolve/main//config.json"
+            f"{DUMMY_MODEL_ID}/resolve/main/config.json",
+        )
+
+    def test_hf_hub_url_with_endpoint(self, mocker):
+        mocker.patch("huggingface_hub.constants.ENDPOINT", "https://huggingface.co")
+        mocker.patch(
+            "huggingface_hub.constants.HUGGINGFACE_CO_URL_TEMPLATE",
+            "https://huggingface.co/{repo_id}/resolve/{revision}/{filename}",
+        )
+        assert (
+            hf_hub_url(
+                DUMMY_MODEL_ID,
+                filename=constants.CONFIG_NAME,
+                endpoint="https://hf-ci.co",
+            )
+            == "https://hf-ci.co/julien-c/dummy-unknown/resolve/main/config.json"
+        )
+
+    def test_try_to_load_from_cache_exist(self):
+        # Make sure the file is cached
+        filepath = hf_hub_download(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME)
+
+        new_file_path = try_to_load_from_cache(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME)
+        assert filepath == new_file_path
+
+        new_file_path = try_to_load_from_cache(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, revision="main")
+        assert filepath == new_file_path
+
+        # If file is not cached, returns None
+        assert try_to_load_from_cache(DUMMY_MODEL_ID, filename="conf.json") is None
+        # Same for uncached revisions
+        assert (
+            try_to_load_from_cache(
+                DUMMY_MODEL_ID,
+                filename=constants.CONFIG_NAME,
+                revision="aaa",
+            )
+            is None
+        )
+        # Same for uncached models
+        assert try_to_load_from_cache("bert-base", filename=constants.CONFIG_NAME) is None
+
+    def test_try_to_load_from_cache_specific_pr_revision_exists(self):
+        # Make sure the file is cached
+        file_path = hf_hub_download(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, revision="refs/pr/1")
+
+        new_file_path = try_to_load_from_cache(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, revision="refs/pr/1")
+        assert file_path == new_file_path
+
+        # If file is not cached, returns None
+        assert try_to_load_from_cache(DUMMY_MODEL_ID, filename="conf.json", revision="refs/pr/1") is None
+
+        # If revision does not exist, returns None
+        assert (
+            try_to_load_from_cache(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, revision="does-not-exist") is None
+        )
+
+    def test_try_to_load_from_cache_no_exist(self):
+        # Make sure the file is cached
+        with pytest.raises(EntryNotFoundError):
+            _ = hf_hub_download(DUMMY_MODEL_ID, filename="dummy")
+
+        new_file_path = try_to_load_from_cache(DUMMY_MODEL_ID, filename="dummy")
+        assert new_file_path == _CACHED_NO_EXIST
+
+        new_file_path = try_to_load_from_cache(DUMMY_MODEL_ID, filename="dummy", revision="main")
+        assert new_file_path == _CACHED_NO_EXIST
+
+        # If file non-existence is not cached, returns None
+        assert try_to_load_from_cache(DUMMY_MODEL_ID, filename="dummy2") is None
+
+    def test_try_to_load_from_cache_specific_commit_id_exist(self):
+        """Regression test for #1306.
+
+        See https://github.com/huggingface/huggingface_hub/pull/1306."""
+        with SoftTemporaryDirectory() as cache_dir:
+            # Cache file from specific commit id (no "refs/"" folder)
+            commit_id = HfApi().model_info(DUMMY_MODEL_ID).sha
+            filepath = hf_hub_download(
+                DUMMY_MODEL_ID,
+                filename=constants.CONFIG_NAME,
+                revision=commit_id,
+                cache_dir=cache_dir,
+            )
+
+            # Must be able to retrieve it "offline"
+            attempt = try_to_load_from_cache(
+                DUMMY_MODEL_ID,
+                filename=constants.CONFIG_NAME,
+                revision=commit_id,
+                cache_dir=cache_dir,
+            )
+            assert filepath == attempt
+
+    def test_try_to_load_from_cache_specific_commit_id_no_exist(self):
+        """Regression test for #1306.
+
+        See https://github.com/huggingface/huggingface_hub/pull/1306."""
+        with SoftTemporaryDirectory() as cache_dir:
+            # Cache file from specific commit id (no "refs/"" folder)
+            commit_id = HfApi().model_info(DUMMY_MODEL_ID).sha
+            with pytest.raises(EntryNotFoundError):
+                hf_hub_download(
+                    DUMMY_MODEL_ID,
+                    filename="missing_file",
+                    revision=commit_id,
+                    cache_dir=cache_dir,
+                )
+
+            # Must be able to retrieve it "offline"
+            attempt = try_to_load_from_cache(
+                DUMMY_MODEL_ID,
+                filename="missing_file",
+                revision=commit_id,
+                cache_dir=cache_dir,
+            )
+            assert attempt == _CACHED_NO_EXIST
+
+    def test_get_hf_file_metadata_basic(self) -> None:
+        """Test getting metadata from a file on the Hub."""
+        url = hf_hub_url(
+            DUMMY_MODEL_ID,
+            filename=constants.CONFIG_NAME,
+            revision=DUMMY_MODEL_ID_REVISION_ONE_SPECIFIC_COMMIT,
+        )
+        metadata = get_hf_file_metadata(url)
+
+        # Metadata
+        assert metadata.commit_hash == DUMMY_MODEL_ID_REVISION_ONE_SPECIFIC_COMMIT
+        assert metadata.etag is not None  # example: "85c2fc2dcdd86563aaa85ef4911..."
+        assert metadata.size == 851
+
+    def test_get_hf_file_metadata_from_a_lfs_file(self) -> None:
+        """Test getting metadata from an LFS file.
+
+        Must get size of the LFS file, not size of the pointer file
+        """
+        url = hf_hub_url("gpt2", filename="tf_model.h5")
+        metadata = get_hf_file_metadata(url)
+
+        assert "xethub.hf.co" in metadata.location or "cdn.hf.co" in metadata.location  # Redirection
+        assert metadata.size == 497933648  # Size of LFS file, not pointer
+
+    def test_file_consistency_check_fails_regular_file(self):
+        """Regression test for #1396 (regular file).
+
+        Download fails if file size is different than the expected one (from headers metadata).
+
+        See https://github.com/huggingface/huggingface_hub/pull/1396."""
+        with SoftTemporaryDirectory() as cache_dir:
+
+            def _mocked_hf_file_metadata(*args, **kwargs):
+                metadata = get_hf_file_metadata(*args, **kwargs)
+                return HfFileMetadata(
+                    commit_hash=metadata.commit_hash,
+                    etag=metadata.etag,
+                    location=metadata.location,
+                    size=450,  # will expect 450 bytes but will download 496 bytes
+                    xet_file_data=None,
+                )
+
+            with patch("huggingface_hub.file_download.get_hf_file_metadata", _mocked_hf_file_metadata):
+                with pytest.raises(EnvironmentError):
+                    hf_hub_download(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=cache_dir)
+
+    def test_file_consistency_check_fails_LFS_file(self):
+        """Regression test for #1396 (LFS file).
+
+        Download fails if file size is different than the expected one (from headers metadata).
+
+        See https://github.com/huggingface/huggingface_hub/pull/1396."""
+        with SoftTemporaryDirectory() as cache_dir:
+
+            def _mocked_hf_file_metadata(*args, **kwargs):
+                metadata = get_hf_file_metadata(*args, **kwargs)
+                return HfFileMetadata(
+                    commit_hash=metadata.commit_hash,
+                    etag=metadata.etag,
+                    location=metadata.location,
+                    size=65000,  # will expect 65000 bytes but will download 65074 bytes
+                    xet_file_data=None,
+                )
+
+            with patch("huggingface_hub.file_download.get_hf_file_metadata", _mocked_hf_file_metadata):
+                with pytest.raises(EnvironmentError):
+                    hf_hub_download(DUMMY_MODEL_ID, filename="pytorch_model.bin", cache_dir=cache_dir)
+
+    def test_hf_hub_download_when_tmp_file_is_complete(self):
+        """Regression test for #2511.
+
+        See https://github.com/huggingface/huggingface_hub/issues/2511.
+
+        A leftover `<blob>.incomplete` file (e.g. from an interrupted download with a previous version
+        of `huggingface_hub`) must not break the download.
+        """
+        with SoftTemporaryDirectory() as tmpdir:
+            # Download the file once
+            filepath = Path(hf_hub_download(DUMMY_MODEL_ID, filename="pytorch_model.bin", cache_dir=tmpdir))
+
+            # Fake tmp file
+            incomplete_filepath = Path(str(filepath.resolve()) + ".incomplete")
+            incomplete_filepath.write_bytes(filepath.read_bytes())  # fake a partial download
+            filepath.resolve().unlink()
+
+            # delete snapshot folder to re-trigger a download
+            shutil.rmtree(filepath.parents[2] / "snapshots")
+
+            # Download must not fail
+            hf_hub_download(DUMMY_MODEL_ID, filename="pytorch_model.bin", cache_dir=tmpdir)
+
+    def test_no_incomplete_file_left_after_download(self):
+        """Temporary `*.incomplete` files are cleaned up after a successful download."""
+        with SoftTemporaryDirectory() as tmpdir:
+            hf_hub_download(DUMMY_MODEL_ID, filename="pytorch_model.bin", cache_dir=tmpdir)
+            assert not list(Path(tmpdir).rglob("*.incomplete"))
+
+    def test_keep_lock_file(self):
+        """Downloading should acquire locks under `.locks`."""
+        with SoftTemporaryDirectory() as tmpdir:
+            original_weak_file_lock = WeakFileLock
+            acquired_lock_paths = []
+
+            @contextmanager
+            def tracked_weak_file_lock(lock_file, **kwargs):
+                acquired_lock_paths.append(Path(lock_file))
+                with original_weak_file_lock(lock_file, **kwargs):
+                    yield
+
+            with patch("huggingface_hub.file_download.WeakFileLock", tracked_weak_file_lock):
+                hf_hub_download(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=tmpdir)
+
+            def _normalize_lock_path(path: Path) -> str:
+                normalized = str(path)
+                # Windows long-path prefix can appear in lock paths.
+                if normalized.startswith("\\\\?\\"):
+                    normalized = normalized[4:]
+                return os.path.normcase(os.path.normpath(normalized))
+
+            locks_dir = _normalize_lock_path(Path(tmpdir) / ".locks")
+
+            def _is_lock_under_cache_locks(path: Path) -> bool:
+                normalized = _normalize_lock_path(path)
+                if not normalized.endswith(".lock"):
+                    return False
+                try:
+                    return os.path.commonpath([normalized, locks_dir]) == locks_dir
+                except ValueError:
+                    # Happens on Windows if drives differ.
+                    return False
+
+            assert len(acquired_lock_paths) > 0, "no lock acquisition was recorded"
+            assert any(_is_lock_under_cache_locks(path) for path in acquired_lock_paths), (
+                "expected at least one lock acquisition in cache `.locks`"
+            )
+
+
+class TestHfHubDownloadToLocalDir:
+    # `cache_dir` is a temporary directory
+    # `local_dir` is a subdirectory in which files will be downloaded
+    # `hub_cache_dir` is a subdirectory in which files will be cached ("HF cache")
+    file_name: str = "file.txt"
+    lfs_name: str = "lfs.bin"
+
+    @pytest.fixture(autouse=True)
+    def _setup_cache_dir(self, tmp_path: Path):
+        self.cache_dir = tmp_path
+
+    @property
+    def local_dir(self) -> Path:
+        path = Path(self.cache_dir) / "local"
+        path.mkdir(exist_ok=True, parents=True)
+        return path
+
+    @property
+    def hub_cache_dir(self) -> Path:
+        path = Path(self.cache_dir) / "cache"
+        path.mkdir(exist_ok=True, parents=True)
+        return path
+
+    @property
+    def file_path(self) -> Path:
+        return self.local_dir / self.file_name
+
+    @property
+    def lfs_path(self) -> Path:
+        return self.local_dir / self.lfs_name
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup(self, request):
+        api = HfApi(endpoint=constants.ENDPOINT, token=TOKEN)
+        request.cls.api = api
+        request.cls.repo_id = api.create_repo(repo_id=repo_name()).repo_id
+        commit_1 = api.upload_file(
+            path_or_fileobj=b"content", path_in_repo=request.cls.file_name, repo_id=request.cls.repo_id
+        )
+        commit_2 = api.upload_file(
+            path_or_fileobj=b"content", path_in_repo=request.cls.lfs_name, repo_id=request.cls.repo_id
+        )
+
+        info = api.get_paths_info(repo_id=request.cls.repo_id, paths=[request.cls.file_name, request.cls.lfs_name])
+        info = {item.path: item for item in info}
+        request.cls.commit_hash_1 = commit_1.oid
+        request.cls.commit_hash_2 = commit_2.oid
+        request.cls.file_etag = info[request.cls.file_name].blob_id
+        request.cls.lfs_etag = info[request.cls.lfs_name].lfs.sha256
+        yield
+        api.delete_repo(repo_id=request.cls.repo_id)
+
+    @contextmanager
+    def with_patch_head(self):
+        with patch("huggingface_hub.file_download._get_metadata_or_catch_error") as mock:
+            yield mock
+
+    @contextmanager
+    def with_patch_download(self):
+        with patch("huggingface_hub.file_download._download_to_tmp_and_move") as mock:
+            yield mock
+
+    def test_empty_local_dir(self):
+        # Download to local dir
+        returned_path = self.api.hf_hub_download(
+            self.repo_id, filename=self.file_name, cache_dir=self.hub_cache_dir, local_dir=self.local_dir
+        )
+        assert self.local_dir in Path(returned_path).parents
+
+        # Cache directory not used (no blobs, no symlinks in it)
+        for path in self.hub_cache_dir.glob("**/blobs/**"):
+            assert not path.is_file()
+        for path in self.hub_cache_dir.glob("**/snapshots/**"):
+            assert not path.is_file()
+
+    def test_metadata_ok_and_revision_is_a_commit_hash_and_match(self):
+        # File already exists + commit_hash matches (and etag not even required)
+        self.file_path.write_text("content")
+        write_download_metadata(self.local_dir, self.file_name, self.commit_hash_1, etag="...")
+
+        # Download to local dir => no HEAD call needed
+        with self.with_patch_head() as mock:
+            self.api.hf_hub_download(
+                self.repo_id, filename=self.file_name, revision=self.commit_hash_1, local_dir=self.local_dir
+            )
+        mock.assert_not_called()
+
+    def test_metadata_ok_and_revision_is_a_commit_hash_and_mismatch(self):
+        # 1 HEAD call + 1 download
+        # File already exists + commit_hash mismatch
+        self.file_path.write_text("content")
+        write_download_metadata(self.local_dir, self.file_name, self.commit_hash_1, etag="...")
+
+        # Mismatch => download
+        with self.with_patch_download() as mock:
+            self.api.hf_hub_download(
+                self.repo_id, filename=self.file_name, revision=self.commit_hash_2, local_dir=self.local_dir
+            )
+        mock.assert_called_once()
+
+    def test_metadata_not_ok_and_revision_is_a_commit_hash(self):
+        # 1 HEAD call + 1 download
+        # File already exists but no metadata
+        self.file_path.write_text("content")
+
+        # Mismatch => download
+        with self.with_patch_download() as mock:
+            self.api.hf_hub_download(
+                self.repo_id, filename=self.file_name, revision=self.commit_hash_1, local_dir=self.local_dir
+            )
+        mock.assert_called_once()
+
+    def test_local_files_only_and_file_exists(self):
+        # must return without error
+        self.file_path.write_text("content2")
+
+        path = self.api.hf_hub_download(
+            self.repo_id, filename=self.file_name, local_dir=self.local_dir, local_files_only=True
+        )
+        assert Path(path) == self.file_path
+        assert self.file_path.read_text() == "content2"  # not overwritten even if wrong content
+
+    def test_local_files_only_and_file_missing(self):
+        # must raise
+        with pytest.raises(LocalEntryNotFoundError):
+            self.api.hf_hub_download(
+                self.repo_id, filename=self.file_name, local_dir=self.local_dir, local_files_only=True
+            )
+
+    def test_metadata_ok_and_etag_match(self):
+        # 1 HEAD call + return early
+        self.file_path.write_text("something")
+        write_download_metadata(self.local_dir, self.file_name, self.commit_hash_1, etag=self.file_etag)
+
+        with self.with_patch_download() as mock:
+            # Download from main => commit_hash mismatch but etag match => return early
+            self.api.hf_hub_download(self.repo_id, filename=self.file_name, local_dir=self.local_dir)
+        mock.assert_not_called()
+
+    def test_metadata_ok_and_etag_mismatch(self):
+        # 1 HEAD call + 1 download
+        self.file_path.write_text("something")
+        write_download_metadata(self.local_dir, self.file_name, self.commit_hash_1, etag="some_other_etag")
+
+        with self.with_patch_download() as mock:
+            # Download from main => commit_hash mismatch but etag match => return early
+            self.api.hf_hub_download(self.repo_id, filename=self.file_name, local_dir=self.local_dir)
+        mock.assert_called_once()
+
+    def test_metadata_ok_and_etag_match_and_force_download(self):
+        # force_download=True takes precedence on any other rule
+        self.file_path.write_text("something")
+        write_download_metadata(self.local_dir, self.file_name, self.commit_hash_1, etag=self.file_etag)
+
+        with self.with_patch_download() as mock:
+            self.api.hf_hub_download(
+                self.repo_id, filename=self.file_name, local_dir=self.local_dir, force_download=True
+            )
+        mock.assert_called_once()
+
+    def test_metadata_not_ok_and_lfs_file_and_sha256_match(self):
+        # 1 HEAD call + 1 hash compute + return early
+        self.lfs_path.write_text("content")
+
+        with self.with_patch_download() as mock:
+            # Download from main
+            # => no metadata but it's an LFS file
+            # => compute local hash => matches => return early
+            self.api.hf_hub_download(self.repo_id, filename=self.lfs_name, local_dir=self.local_dir)
+        mock.assert_not_called()
+
+    def test_metadata_not_ok_and_lfs_file_and_sha256_mismatch(self):
+        # 1 HEAD call + 1 file hash + 1 download
+        self.lfs_path.write_text("wrong_content")
+
+        # Download from main
+        # => no metadata but it's an LFS file
+        # => compute local hash => mismatches => download
+        path = self.api.hf_hub_download(self.repo_id, filename=self.lfs_name, local_dir=self.local_dir)
+
+        # existing file overwritten
+        assert Path(path).read_text() == "content"
+
+    def test_file_exists_in_cache(self):
+        # 1 HEAD call + return early
+        self.api.hf_hub_download(self.repo_id, filename=self.file_name, cache_dir=self.hub_cache_dir)
+
+        with self.with_patch_download() as mock:
+            # Download to local dir
+            # => file is already in Hub cache
+            # => we assume it's faster to make a local copy rather than re-downloading
+            # => duplicate file locally
+            path = self.api.hf_hub_download(
+                self.repo_id, filename=self.file_name, cache_dir=self.hub_cache_dir, local_dir=self.local_dir
+            )
+        mock.assert_not_called()
+
+        assert Path(path) == self.file_path
+
+    def test_file_exists_and_overwrites(self):
+        # 1 HEAD call + 1 download
+        self.file_path.write_text("another content")
+        self.api.hf_hub_download(self.repo_id, filename=self.file_name, local_dir=self.local_dir)
+        assert self.file_path.read_text() == "content"
+
+    def test_passing_token_false_is_respected(self, mocker):
+        """Regression test for #2385.
+
+        A bug introduced in 0.23.0 was causing the `token` parameter to be ignored when set to `False`.
+
+        See https://github.com/huggingface/huggingface_hub/issues/2385.
+        """
+        mock = mocker.patch("huggingface_hub.file_download.build_hf_headers")
+        # Download to local dir
+        mock.reset_mock(return_value={})
+        self.api.hf_hub_download(self.repo_id, filename=self.file_name, local_dir=self.local_dir, token=False)
+        mock.assert_called()
+        for call in mock.call_args_list:
+            assert call.kwargs["token"] is False
+
+        # Download to cache dir
+        mock.reset_mock(return_value={})
+        self.api.hf_hub_download(self.repo_id, filename=self.file_name, cache_dir=self.local_dir, token=False)
+        mock.assert_called()
+        for call in mock.call_args_list:
+            assert call.kwargs["token"] is False
+
+
+@pytest.mark.production
+class TestFileDownloadDryRun:
+    def test_dry_run_cache_dir(self):
+        with SoftTemporaryDirectory() as tmpdir:
+            # Dry-run a first time => file is not cached
+            dry_run_info = hf_hub_download(
+                DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=tmpdir, dry_run=True
+            )
+            assert dry_run_info.commit_hash is not None
+            commit_hash = dry_run_info.commit_hash
+            assert dry_run_info.file_size > 0
+            assert not dry_run_info.is_cached
+            assert dry_run_info.will_download
+            expected_path = str(tmpdir / "models--julien-c--dummy-unknown" / "snapshots" / commit_hash / "config.json")
+            assert dry_run_info.local_path == expected_path
+
+            # Download the file => file is cached
+            hf_hub_download(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=tmpdir, local_files_only=False)
+
+            # Dry-run a second time => file is cached
+            dry_run_info = hf_hub_download(
+                DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=tmpdir, dry_run=True
+            )
+            assert dry_run_info.commit_hash == commit_hash  # same commit hash
+            assert dry_run_info.is_cached
+            assert not dry_run_info.will_download
+
+            # Dry-run with force_download => file is cached but we will still download
+            dry_run_info = hf_hub_download(
+                DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=tmpdir, dry_run=True, force_download=True
+            )
+            assert dry_run_info.commit_hash == commit_hash  # same commit hash
+            assert dry_run_info.is_cached
+            assert dry_run_info.will_download
+
+            # Delete pointer file => file is still cached (metadata exists) but not the file itself => won't download again
+            # This is different than when using local dir
+            os.remove(expected_path)
+            dry_run_info = hf_hub_download(
+                DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, cache_dir=tmpdir, dry_run=True
+            )
+            if os.name == "nt":
+                # On Windows, symlinks are not supported by default so when we deleted the pointer, we were
+                # deleting the actual file. Hence the file is not cached anymore.
+                assert not dry_run_info.is_cached
+                assert dry_run_info.will_download
+            else:
+                assert dry_run_info.is_cached
+                assert not dry_run_info.will_download
+
+    def test_dry_run_local_dir(self):
+        with SoftTemporaryDirectory() as tmpdir:
+            # Dry-run a first time => file is not cached
+            dry_run_info = hf_hub_download(
+                DUMMY_MODEL_ID,
+                filename=constants.CONFIG_NAME,
+                local_dir=tmpdir,
+                dry_run=True,
+            )
+            assert dry_run_info.commit_hash is not None
+            commit_hash = dry_run_info.commit_hash
+            assert dry_run_info.file_size > 0
+            assert not dry_run_info.is_cached
+            assert dry_run_info.will_download
+            expected_path = str(tmpdir / "config.json")  # local dir => not the cache structure
+            assert dry_run_info.local_path == expected_path
+
+            # Download the file => file is cached
+            hf_hub_download(DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, local_dir=tmpdir, local_files_only=False)
+
+            # Dry-run a second time => file is cached
+            dry_run_info = hf_hub_download(
+                DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, local_dir=tmpdir, dry_run=True
+            )
+            assert dry_run_info.commit_hash == commit_hash
+            assert dry_run_info.is_cached
+            assert not dry_run_info.will_download
+
+            # Dry-run with force_download => file is cached but we will still download
+            dry_run_info = hf_hub_download(
+                DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, local_dir=tmpdir, dry_run=True, force_download=True
+            )
+            assert dry_run_info.is_cached
+            assert dry_run_info.will_download
+
+            # Delete file => not cached anymore even if metadata exists => re-download
+            # This is different than when using cache_dir structure
+            os.remove(expected_path)
+            dry_run_info = hf_hub_download(
+                DUMMY_MODEL_ID, filename=constants.CONFIG_NAME, local_dir=tmpdir, dry_run=True
+            )
+            assert not dry_run_info.is_cached
+            assert dry_run_info.will_download
+
+
+class TestStagingCachedDownloadOnAwfulFilenames:
+    """Implement regression tests for #1161.
+
+    Issue was on filename not url encoded by `hf_hub_download` and `hf_hub_url`.
+
+    See https://github.com/huggingface/huggingface_hub/issues/1161
+    """
+
+    subfolder = "subfolder/to?"
+    filename = "awful?filename%you:should,never.give"
+    filepath = f"subfolder/to?/{filename}"
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup(self, request):
+        api = HfApi(endpoint=constants.ENDPOINT, token=TOKEN)
+        request.cls.api = api
+        request.cls.repo_url = api.create_repo(repo_id=repo_name("awful_filename"))
+        request.cls.expected_resolve_url = (
+            f"{request.cls.repo_url}/resolve/main/subfolder/to%3F/awful%3Ffilename%25you%3Ashould%2Cnever.give"
+        )
+        api.upload_file(
+            path_or_fileobj=b"content",
+            path_in_repo=request.cls.filepath,
+            repo_id=request.cls.repo_url.repo_id,
+        )
+        yield
+        api.delete_repo(repo_id=request.cls.repo_url.repo_id)
+
+    def test_hf_hub_url_on_awful_filepath(self):
+        assert hf_hub_url(self.repo_url.repo_id, self.filepath) == self.expected_resolve_url
+
+    def test_hf_hub_url_on_awful_subfolder_and_filename(self):
+        assert hf_hub_url(self.repo_url.repo_id, self.filename, subfolder=self.subfolder) == self.expected_resolve_url
+
+    @pytest.mark.skipif(os.name == "nt", reason="Windows paths cannot contain a '?'.")
+    def test_hf_hub_download_on_awful_filepath(self, tmp_path: Path):
+        local_path = hf_hub_download(self.repo_url.repo_id, self.filepath, cache_dir=tmp_path)
+        # Local path is not url-encoded
+        assert local_path.endswith(self.filepath)
+
+    @pytest.mark.skipif(os.name == "nt", reason="Windows paths cannot contain a '?'.")
+    def test_hf_hub_download_on_awful_subfolder_and_filename(self, tmp_path: Path):
+        local_path = hf_hub_download(
+            self.repo_url.repo_id,
+            self.filename,
+            subfolder=self.subfolder,
+            cache_dir=tmp_path,
+        )
+        # Local path is not url-encoded
+        assert local_path.endswith(self.filepath)
+
+
+class TestHfHubDownloadRelativePaths:
+    """Regression test for HackerOne report 1928845 and its absolute/UNC follow-up (CVE-2026-15717).
+
+    Issue was that a malicious repo could overwrite files outside of the cache/local dir on Windows
+    clients: a crafted filename (`..\\` traversal, absolute `C:\\...`, drive-relative `D:foo`, root-relative
+    `\\foo`, or UNC `\\\\host\\share\\...`) escapes the target directory when joined onto it. The UNC form
+    additionally makes the Windows client authenticate to the attacker's SMB server, leaking a NetNTLMv2
+    hash.
+
+    Protection is a single validation (`_validate_relative_filename`) applied on both the cache and the
+    `local_dir` download paths, interpreting the filename under both POSIX and Windows rules on all
+    platforms (so a file materialized on Linux cannot escape when later consumed on Windows), backed by
+    the `_get_pointer_path` containment check in the cache path.
+    """
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup(self, request):
+        api = HfApi(endpoint=constants.ENDPOINT, token=TOKEN)
+        request.cls.api = api
+        request.cls.repo_id = api.create_repo(repo_id=repo_name()).repo_id
+        api.upload_file(
+            path_or_fileobj=b"content", path_in_repo="folder/..\\..\\..\\file", repo_id=request.cls.repo_id
+        )
+        yield
+        api.delete_repo(repo_id=request.cls.repo_id)
+
+    def test_download_folder_file_in_cache_dir(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="Invalid filename"):
+            hf_hub_download(self.repo_id, "folder/..\\..\\..\\file", cache_dir=tmp_path)
+
+    def test_download_folder_file_to_local_dir(self, tmp_path: Path) -> None:
+        with SoftTemporaryDirectory() as local_dir:
+            with pytest.raises(ValueError, match="Invalid filename"):
+                hf_hub_download(self.repo_id, "folder/..\\..\\..\\file", cache_dir=tmp_path, local_dir=local_dir)
+
+    def test_get_pointer_path_and_valid_relative_filename(self) -> None:
+        # Cannot happen because of other protections, but just in case.
+        assert _get_pointer_path("path/to/storage", "abcdef", "path/to/file.txt") == os.path.join(
+            "path/to/storage", "snapshots", "abcdef", "path/to/file.txt"
+        )
+
+    def test_get_pointer_path_but_invalid_relative_filename(self) -> None:
+        # Cannot happen because of other protections, but just in case.
+        relative_filename = "folder\\..\\..\\..\\file.txt" if os.name == "nt" else "folder/../../../file.txt"
+        with pytest.raises(ValueError):
+            _get_pointer_path("path/to/storage", "abcdef", relative_filename)
+
+
+class TestHttpGet:
+    def test_http_get_with_ssl_and_timeout_error(self, caplog):
+        def _iter_content_1() -> Iterable[bytes]:
+            yield b"0" * 10
+            yield b"0" * 10
+            raise httpx.ConnectError("Fake ConnectError")
+
+        def _iter_content_2() -> Iterable[bytes]:
+            yield b"0" * 10
+            raise httpx.TimeoutException("Fake TimeoutException")
+
+        def _iter_content_3() -> Iterable[bytes]:
+            yield b"0" * 10
+            yield b"0" * 10
+            yield b"0" * 10
+            raise httpx.ConnectError("Fake ConnectionError")
+
+        def _iter_content_4() -> Iterable[bytes]:
+            yield b"0" * 10
+            yield b"0" * 10
+            yield b"0" * 10
+            yield b"0" * 10
+
+        with patch("huggingface_hub.file_download.http_stream_backoff") as mock_stream_backoff:
+            # Create a mock response object
+            mock_response = Mock()
+            mock_response.headers = {"Content-Length": "100"}
+            mock_response.iter_bytes.side_effect = [
+                _iter_content_1(),
+                _iter_content_2(),
+                _iter_content_3(),
+                _iter_content_4(),
+            ]
+
+            # Mock the context manager behavior
+            mock_stream_backoff.return_value.__enter__.return_value = mock_response
+            mock_stream_backoff.return_value.__exit__.return_value = None
+
+            temp_file = io.BytesIO()
+
+            http_get("fake_url", temp_file=temp_file)
+
+        assert len([r for r in caplog.records if r.levelname == "WARNING"]) == 3
+
+        # Check final value
+        assert temp_file.tell() == 100
+        assert temp_file.getvalue() == b"0" * 100
+
+        # Check number of calls + correct range headers
+        assert len(mock_response.iter_bytes.call_args_list) == 4
+        # Note: The range headers are now handled internally by http_get's retry mechanism
+        # The test verifies that the download completed successfully after retries
+
+    @pytest.mark.parametrize(
+        "initial_range,expected_ranges",
+        [
+            # Test suffix ranges (bytes=-100)
+            (
+                "bytes=-100",
+                [
+                    "bytes=-100",
+                    "bytes=-80",
+                    "bytes=-70",
+                    "bytes=-40",
+                ],
+            ),
+            # Test prefix ranges (bytes=15-)
+            (
+                "bytes=15-",
+                [
+                    "bytes=15-",
+                    "bytes=35-",
+                    "bytes=45-",
+                    "bytes=75-",
+                ],
+            ),
+            # Test double closed ranges (bytes=15-114)
+            (
+                "bytes=15-114",
+                [
+                    "bytes=15-114",
+                    "bytes=35-114",
+                    "bytes=45-114",
+                    "bytes=75-114",
+                ],
+            ),
+        ],
+    )
+    def test_http_get_with_range_headers(self, caplog, initial_range: str, expected_ranges: list[str]):
+        def _iter_content_1() -> Iterable[bytes]:
+            yield b"0" * 10
+            yield b"0" * 10
+            raise httpx.ConnectError("Fake ConnectError")
+
+        def _iter_content_2() -> Iterable[bytes]:
+            yield b"0" * 10
+            raise httpx.TimeoutException("Fake TimeoutException")
+
+        def _iter_content_3() -> Iterable[bytes]:
+            yield b"0" * 10
+            yield b"0" * 10
+            yield b"0" * 10
+            raise httpx.ConnectError("Fake ConnectionError")
+
+        def _iter_content_4() -> Iterable[bytes]:
+            yield b"0" * 10
+            yield b"0" * 10
+            yield b"0" * 10
+            yield b"0" * 10
+
+        with patch("huggingface_hub.file_download.http_stream_backoff") as mock_stream_backoff:
+            # Create a mock response object
+            mock_response = Mock()
+            mock_response.headers = {"Content-Length": "100"}
+            mock_response.iter_bytes.side_effect = [
+                _iter_content_1(),
+                _iter_content_2(),
+                _iter_content_3(),
+                _iter_content_4(),
+            ]
+
+            # Mock the context manager behavior
+            mock_stream_backoff.return_value.__enter__.return_value = mock_response
+            mock_stream_backoff.return_value.__exit__.return_value = None
+
+            temp_file = io.BytesIO()
+
+            http_get("fake_url", temp_file=temp_file, headers={"Range": initial_range})
+
+        assert len([r for r in caplog.records if r.levelname == "WARNING"]) == 3
+
+        assert temp_file.tell() == 100
+        assert temp_file.getvalue() == b"0" * 100
+
+        # Check that http_stream_backoff was called with the correct range headers
+        assert len(mock_stream_backoff.call_args_list) == 4
+        for i, expected_range in enumerate(expected_ranges):
+            assert mock_stream_backoff.call_args_list[i].kwargs["headers"] == {"Range": expected_range}
+
+    def test_http_get_retry_resets_file_when_range_ignored(self, caplog):
+        """Test that http_get resets the file when the server ignores the Range header.
+
+        When a download is interrupted and retried with a Range header, some servers
+        (e.g. CloudFront with Accept-Encoding: gzip) ignore the Range header and return
+        200 with the full file instead of 206. In that case, the code must truncate
+        the file before writing to avoid appending the full content to partial data.
+        """
+
+        def _iter_content_1() -> Iterable[bytes]:
+            yield b"A" * 30
+            raise httpx.TimeoutException("Fake timeout")
+
+        def _iter_content_2() -> Iterable[bytes]:
+            # Server ignores Range, returns full content
+            yield b"B" * 100
+
+        mock_response_1 = Mock()
+        mock_response_1.status_code = 200
+        mock_response_1.headers = {"Content-Length": "100"}
+        mock_response_1.iter_bytes.return_value = _iter_content_1()
+
+        mock_response_2 = Mock()
+        mock_response_2.status_code = 200  # 200, not 206 — Range was ignored
+        mock_response_2.headers = {"Content-Length": "100"}
+        mock_response_2.iter_bytes.return_value = _iter_content_2()
+
+        mock_responses = iter([mock_response_1, mock_response_2])
+
+        @contextmanager
+        def _mock_stream(*args, **kwargs):
+            yield next(mock_responses)
+
+        with patch("huggingface_hub.file_download.http_stream_backoff", side_effect=_mock_stream):
+            temp_file = io.BytesIO()
+            http_get("fake_url", temp_file=temp_file)
+
+        # File should contain only the full content from retry (100 bytes), not 130
+        assert temp_file.tell() == 100
+        assert temp_file.getvalue() == b"B" * 100
+
+    @staticmethod
+    def _make_aggregated_tqdm():
+        """Mimic _AggregatedTqdm defined in snapshot_download."""
+
+        class _Tracker:
+            def __init__(self):
+                self.total = 0
+                self.n = 0
+                self.instances = 0
+
+        tracker = _Tracker()
+
+        class _TqdmClass:
+            def __init__(self, *args, **kwargs):
+                tracker.instances += 1
+                if (total := kwargs.get("total")) is not None:
+                    tracker.total += total
+                if initial := kwargs.get("initial", 0):
+                    tracker.n += initial
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                pass
+
+            def update(self, n=1):
+                tracker.n += n
+
+            def update_transfer(self, n=1):
+                tracker.transfer_n += n
+
+        tracker.transfer_n = 0
+        return tracker, _TqdmClass
+
+    @staticmethod
+    def _mock_response(*, status_code=200, headers, iter_bytes):
+        r = Mock()
+        r.status_code = status_code
+        r.headers = headers
+        r.iter_bytes.return_value = iter_bytes
+        return r
+
+    @staticmethod
+    def _http_get_with_mocked_responses(responses, **http_get_kwargs):
+        """Run http_get against a sequence of mock responses, return the BytesIO."""
+        it = iter(responses)
+
+        @contextmanager
+        def _mock_stream(*args, **kwargs):
+            yield next(it)
+
+        with patch("huggingface_hub.file_download.http_stream_backoff", side_effect=_mock_stream):
+            temp_file = io.BytesIO()
+            http_get("fake_url", temp_file=temp_file, **http_get_kwargs)
+        return temp_file
+
+    def test_http_get_forwards_update_transfer(self):
+        tracker, tqdm_class = self._make_aggregated_tqdm()
+
+        temp_file = self._http_get_with_mocked_responses(
+            [self._mock_response(headers={"Content-Length": "100"}, iter_bytes=iter([b"A" * 100]))],
+            expected_size=100,
+            tqdm_class=tqdm_class,
+        )
+
+        assert temp_file.getvalue() == b"A" * 100
+        assert tracker.n == 100
+        assert tracker.transfer_n == 100
+
+    def test_http_get_retry_reuses_tqdm_class_instance(self):
+        """Retries must not re-instantiate the user-supplied tqdm_class.
+
+        Regression test for https://github.com/huggingface/huggingface_hub/issues/4208.
+        """
+        tracker, tqdm_class = self._make_aggregated_tqdm()
+
+        def _fail_after(data: bytes):
+            yield data
+            raise httpx.TimeoutException("timeout")
+
+        temp_file = self._http_get_with_mocked_responses(
+            [
+                self._mock_response(headers={"Content-Length": "100"}, iter_bytes=_fail_after(b"A" * 30)),
+                self._mock_response(
+                    status_code=206,
+                    headers={"Content-Length": "70", "Content-Range": "bytes 30-99/100"},
+                    iter_bytes=_fail_after(b"B" * 25),
+                ),
+                self._mock_response(
+                    status_code=206,
+                    headers={"Content-Length": "45", "Content-Range": "bytes 55-99/100"},
+                    iter_bytes=iter([b"C" * 45]),
+                ),
+            ],
+            expected_size=100,
+            tqdm_class=tqdm_class,
+        )
+
+        assert temp_file.getvalue() == b"A" * 30 + b"B" * 25 + b"C" * 45
+        assert tracker.instances == 1
+        assert tracker.total == 100
+        assert tracker.n == 100
+
+    def test_http_get_retry_rolls_back_reused_bar_when_range_ignored(self):
+        """Test reused bar rolls back when file is re-downloaded from scratch (when Range is ignored by the server).
+
+        Regression test for https://github.com/huggingface/huggingface_hub/issues/4208.
+        """
+        tracker, tqdm_class = self._make_aggregated_tqdm()
+
+        def _fail_after(data: bytes):
+            yield data
+            raise httpx.TimeoutException("timeout")
+
+        temp_file = self._http_get_with_mocked_responses(
+            [
+                self._mock_response(headers={"Content-Length": "100"}, iter_bytes=_fail_after(b"A" * 30)),
+                self._mock_response(headers={"Content-Length": "100"}, iter_bytes=iter([b"B" * 100])),
+            ],
+            expected_size=100,
+            tqdm_class=tqdm_class,
+        )
+
+        assert temp_file.getvalue() == b"B" * 100
+        assert tracker.total == 100
+        assert tracker.n == 100
+
+    def test_http_get_falls_back_to_expected_size_when_response_lacks_content_length(self):
+        """Test correct progress on small files when the response is gzip+chunked (i.e. no Content-Length).
+
+        Regression test for https://github.com/huggingface/huggingface_hub/issues/4208.
+        """
+        tracker, tqdm_class = self._make_aggregated_tqdm()
+
+        temp_file = self._http_get_with_mocked_responses(
+            [
+                self._mock_response(
+                    headers={
+                        "Content-Encoding": "gzip",
+                        "Transfer-Encoding": "chunked",
+                        "Content-Type": "application/json",
+                    },
+                    iter_bytes=iter([b"X" * 100]),
+                ),
+            ],
+            expected_size=100,
+            tqdm_class=tqdm_class,
+        )
+
+        assert temp_file.getvalue() == b"X" * 100
+        assert tracker.total == 100
+        assert tracker.n == 100
+
+
+class TestCreateSymlink:
+    @pytest.mark.skipif(os.name == "nt", reason="No symlinks on Windows")
+    def test_create_symlink_concurrent_access(self, mocker) -> None:
+        mock_are_symlinks_supported = mocker.patch("huggingface_hub.file_download.are_symlinks_supported")
+        with SoftTemporaryDirectory() as tmpdir:
+            src = os.path.join(tmpdir, "source")
+            other = os.path.join(tmpdir, "other")
+            dst = os.path.join(tmpdir, "destination")
+
+            # Normal case: symlink does not exist
+            mock_are_symlinks_supported.return_value = True
+            _create_symlink(src, dst)
+            assert os.path.realpath(dst) == os.path.realpath(src)
+
+            # Symlink already exists when it tries to create it (most probably from a
+            # concurrent access) but do not raise exception
+            def _are_symlinks_supported(cache_dir: str) -> bool:
+                os.symlink(src, dst)
+                return True
+
+            mock_are_symlinks_supported.side_effect = _are_symlinks_supported
+            _create_symlink(src, dst)
+
+            # Symlink already exists but pointing to a different source file. This should
+            # never happen in the context of HF cache system -> raise exception
+            def _are_symlinks_supported(cache_dir: str) -> bool:
+                os.symlink(other, dst)
+                return True
+
+            mock_are_symlinks_supported.side_effect = _are_symlinks_supported
+            with pytest.raises(FileExistsError):
+                _create_symlink(src, dst)
+
+    def test_create_symlink_relative_src(self) -> None:
+        """Regression test for #1388.
+
+        See https://github.com/huggingface/huggingface_hub/issues/1388.
+        """
+        # Test dir has to be relative
+        test_dir = Path(".") / "dir_for_create_symlink_test"
+        test_dir.mkdir(parents=True, exist_ok=True)
+        src = Path(test_dir) / "source"
+        src.touch()
+        dst = Path(test_dir) / "destination"
+
+        _create_symlink(str(src), str(dst))
+        assert dst.resolve().is_file()
+        if os.name != "nt":
+            assert dst.resolve() == src.resolve()
+        shutil.rmtree(test_dir)
+
+
+class TestNormalizeEtag:
+    """Unit tests implemented after a server-side change broke the ETag normalization once (see #1428).
+
+    TL;DR: _normalize_etag was expecting only strong references, but the server started to return weak references after
+    a config update. Problem was quickly fixed server-side but we prefer to make sure this doesn't happen again by
+    supporting weak etags. For context, etags are used to build the cache-system structure.
+
+    For more details, see https://github.com/huggingface/huggingface_hub/pull/1428 and related issues.
+    """
+
+    def test_strong_reference(self):
+        assert (
+            _normalize_etag('"a16a55fda99d2f2e7b69cce5cf93ff4ad3049930"') == "a16a55fda99d2f2e7b69cce5cf93ff4ad3049930"
+        )
+
+    def test_weak_reference(self):
+        assert (
+            _normalize_etag('W/"a16a55fda99d2f2e7b69cce5cf93ff4ad3049930"')
+            == "a16a55fda99d2f2e7b69cce5cf93ff4ad3049930"
+        )
+
+    @pytest.mark.production
+    def test_resolve_endpoint_on_regular_file(self):
+        url = "https://huggingface.co/gpt2/resolve/e7da7f221d5bf496a48136c0cd264e630fe9fcc8/README.md"
+        response = httpx.head(url, headers=build_hf_headers(user_agent="is_ci/true"))
+        assert self._get_etag_and_normalize(response) == "a16a55fda99d2f2e7b69cce5cf93ff4ad3049930"
+
+    @pytest.mark.production
+    def test_resolve_endpoint_on_lfs_file(self):
+        url = "https://huggingface.co/gpt2/resolve/e7da7f221d5bf496a48136c0cd264e630fe9fcc8/pytorch_model.bin"
+        response = httpx.head(url, headers=build_hf_headers(user_agent="is_ci/true"))
+        assert (
+            self._get_etag_and_normalize(response)
+            == "7c5d3f4b8b76583b422fcb9189ad6c89d5d97a094541ce8932dce3ecabde1421"
+        )
+
+    @staticmethod
+    def _get_etag_and_normalize(response: httpx.Response) -> str:
+        return _normalize_etag(
+            response.headers.get(constants.HUGGINGFACE_HEADER_X_LINKED_ETAG) or response.headers.get("ETag")
+        )
+
+
+@pytest.mark.production
+class TestExtraLargeFileDownloadPaths:
+    def test_large_file_http_path_error(self, mocker):
+        mocker.patch("huggingface_hub.file_download.constants.HF_HUB_DISABLE_XET", True)
+        with SoftTemporaryDirectory() as cache_dir:
+            with pytest.raises(ValueError):
+                hf_hub_download(
+                    DUMMY_EXTRA_LARGE_FILE_MODEL_ID,
+                    filename=DUMMY_EXTRA_LARGE_FILE_NAME,
+                    cache_dir=cache_dir,
+                    revision="main",
+                    etag_timeout=10,
+                )
+
+
+def _recursive_chmod(path: str, mode: int) -> None:
+    # Taken from https://stackoverflow.com/a/2853934
+    for root, dirs, files in os.walk(path):
+        for d in dirs:
+            os.chmod(os.path.join(root, d), mode)
+        for f in files:
+            os.chmod(os.path.join(root, f), mode)

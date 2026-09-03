@@ -1,0 +1,16 @@
+[
+  {
+    "repo": "llama.cpp",
+    "path": "models/ggml-vocab-command-r.gguf",
+    "chunks_dir": "llama.cpp/models/ggml-vocab-command-r.gguf.chunks",
+    "bytes": 10874545,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "llama.cpp",
+    "path": "models/ggml-vocab-gemma-4.gguf",
+    "chunks_dir": "llama.cpp/models/ggml-vocab-gemma-4.gguf.chunks",
+    "bytes": 15776467,
+    "chunk_bytes": 8388608
+  }
+]

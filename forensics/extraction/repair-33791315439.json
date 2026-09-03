@@ -1,0 +1,257 @@
+{
+  "schema": "yaiwes.extraction.guardian.v2",
+  "run_id": "33791315439",
+  "archive_groups": 56,
+  "processed": [
+    {
+      "slug": "ollama",
+      "target": "router inteligente software/componentes todos/componentes descargados/ollama",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 3,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/ollama/ollama_0001.zip": "cbc2f8a573dabaf4023382769cee366a7bf5212ed3553966c7c4a218acc1eac7",
+        "router inteligente software/componentes todos/componentes descargados/ollama/ollama_0002.zip": "c4e156c37812639528f0cd587b9b733a9a8172ae8b72e4c74bf003d771898e75",
+        "router inteligente software/componentes todos/componentes descargados/ollama/ollama_0003.zip": "ec8fd650d9b9a583ddf8e91b3e038b7aa8f605f2a0ccde13a0d26517cc1b2253"
+      },
+      "copied": 1348,
+      "mirrors": [],
+      "files": 1348,
+      "bytes": 54569625,
+      "tree_sha256": "d6752a4322a2752a06bf43fc0348bee04709ed8e27414df88f54d81386e49a76"
+    },
+    {
+      "slug": "vLLM-Router",
+      "target": "router inteligente software/componentes todos/componentes descargados/vLLM-Router",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/vLLM-Router/vLLM-Router_0001.zip": "cdbac1952c6328a2854c16dda75fbeb1897701f7da02518f49db6ebc86fb08e9"
+      },
+      "copied": 310,
+      "mirrors": [],
+      "files": 310,
+      "bytes": 3122906,
+      "tree_sha256": "e0fdd8cbec7cd68a54a332fd8e58421a17a4584bcafe560a0afb662b657b5529"
+    },
+    {
+      "slug": "huggingface_hub",
+      "target": "router inteligente software/componentes todos/componentes descargados/huggingface_hub",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/huggingface_hub/huggingface_hub_0001.zip": "b8edc1f10861db97e17b748aa80f56fa11ecba6ba111f746ecb02d25131f44b0"
+      },
+      "copied": 505,
+      "mirrors": [],
+      "files": 505,
+      "bytes": 6748117,
+      "tree_sha256": "431c08a8376d06d4cdb816b545e16ee05e0dca248d6215d4ed18e5e865edf8cd"
+    },
+    {
+      "slug": "litellm",
+      "target": "router inteligente software/componentes todos/componentes descargados/litellm",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 6,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/litellm/litellm_0001.zip": "4b8d024f54254efafe05e189366d551b0b3fc5b8e0c0dade25e7e7d9f66d7a8f",
+        "router inteligente software/componentes todos/componentes descargados/litellm/litellm_0002.zip": "dbf63bc7a95dc8061db5b8d73ca02272422e75ff129f26c2d274230e61e0535e",
+        "router inteligente software/componentes todos/componentes descargados/litellm/litellm_0003.zip": "e3aa1b97dc8583f35a8099f8f8f4dcbbb103e4a908623ec6ebf373b31cf3239e",
+        "router inteligente software/componentes todos/componentes descargados/litellm/litellm_0004.zip": "ab5b7fb1d7dff9470cc9c81bdad86ed049c19b76f0519ffaa0dde1f1c7080580",
+        "router inteligente software/componentes todos/componentes descargados/litellm/litellm_0005.zip": "188f8387dc7d9e28c33054df77551c1bbf95489d21c3dbb3743f1f2ee5f8e24d",
+        "router inteligente software/componentes todos/componentes descargados/litellm/litellm_0006.zip": "962c5bf0ec8ed280b064482d18a1e85d6429058b64e693ba32c36370bcca54a0"
+      },
+      "copied": 10035,
+      "mirrors": [],
+      "files": 10033,
+      "bytes": 165220735,
+      "tree_sha256": "724d48cb4dc379cf1a0442ac8253d3a1ced214fe0b66060b6c92b726a21da1e1"
+    },
+    {
+      "slug": "vite",
+      "target": "router inteligente software/componentes todos/componentes descargados/vite",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 2,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/vite/vite_0001.zip": "09b6e132434b8ad410545b094780c8f274769c62956d872a8aee44637b77d909",
+        "router inteligente software/componentes todos/componentes descargados/vite/vite_0002.zip": "bd3e51f66aeea754dfc9b7c84d5275ef81ad65c111e296b3d92bd42a4a5f0756"
+      },
+      "copied": 2806,
+      "mirrors": [],
+      "files": 2806,
+      "bytes": 17541272,
+      "tree_sha256": "0abb113d3dcf8e07c84cd23b23761530cb6341fe3d9cd7278642a3598a3f34e0"
+    },
+    {
+      "slug": "llama.cpp",
+      "target": "router inteligente software/componentes todos/componentes descargados/llama.cpp",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 4,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/llama.cpp/llama.cpp_0001.zip": "9fffcbc21baf08ef4da6bf0c4608d0e67bedf111bd2e83be85ec063b72d02913",
+        "router inteligente software/componentes todos/componentes descargados/llama.cpp/llama.cpp_0002.zip": "b3eb1063519c41ecb96aa918af68a79b9f0cd4f9c064942026b4160eefb668cd",
+        "router inteligente software/componentes todos/componentes descargados/llama.cpp/llama.cpp_0003.zip": "e34245d293108460fde22fc2dfe26715fea81ab173abb19257849dc3907f015a",
+        "router inteligente software/componentes todos/componentes descargados/llama.cpp/llama.cpp_0004.zip": "fdb1ca2e143cf9bbd8ed30e98a139fcb6fe585482dadb4908c3f35091ca09f33"
+      },
+      "copied": 3521,
+      "mirrors": [],
+      "files": 3521,
+      "bytes": 167471851,
+      "tree_sha256": "08e1d0815e4204394851bd60af911a18c039a56904c6fc5aff07828ee7e6fac8"
+    },
+    {
+      "slug": "pyyaml",
+      "target": "router inteligente software/componentes todos/componentes descargados/pyyaml",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/pyyaml/pyyaml_0001.zip": "b6e143cce1fb81e8b338fd5ffcbe6fccad80021a88bc22263f124e0d82802fff"
+      },
+      "copied": 642,
+      "mirrors": [],
+      "files": 642,
+      "bytes": 617514,
+      "tree_sha256": "ae724e3766fa4dfd1ce4606324c409cfd30c0a10cc70b92448b429211518ee3b"
+    },
+    {
+      "slug": "langgraph",
+      "target": "router inteligente software/componentes todos/componentes descargados/langgraph",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/langgraph/langgraph_0001.zip": "accad3de2b4211fb42988bfc8d3dd0501b11373c6da66b678a577ae3cd2164f8"
+      },
+      "copied": 673,
+      "mirrors": [],
+      "files": 673,
+      "bytes": 13728061,
+      "tree_sha256": "8441c8a9d0919ba0401fbd952215b2a47a08b3f85723dbb57d7bfe85285c3caf"
+    },
+    {
+      "slug": "cryptography",
+      "target": "router inteligente software/componentes todos/componentes descargados/cryptography",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 6,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/cryptography/cryptography_0001.zip": "e6c31b224bd3e0921185f0524c274d8cc24edf6a530fcab8485750d66009d31f",
+        "router inteligente software/componentes todos/componentes descargados/cryptography/cryptography_0002.zip": "fc68d76a0bebe021a27f16a3b32afdb8b3b8b8f82d8dbdc4f71f71b765672162",
+        "router inteligente software/componentes todos/componentes descargados/cryptography/cryptography_0003.zip": "970374c16a7c2692365de2bb64ec7c4826d6691542d81627ebf3d878f9a931d7",
+        "router inteligente software/componentes todos/componentes descargados/cryptography/cryptography_0004.zip": "62dcd23b2c30573b656dd609093073ea8889c83645524a362e1f6766f44412bf",
+        "router inteligente software/componentes todos/componentes descargados/cryptography/cryptography_0005.zip": "1ffef1b3e929ab453f58b02caf80c259a284ffc0982e0a176bd9e1e1feea9b00",
+        "router inteligente software/componentes todos/componentes descargados/cryptography/cryptography_0006.zip": "d7e269a039dd79a990b452c2820262ecf756825ebfd19087b82766098fa8a9ec"
+      },
+      "copied": 3051,
+      "mirrors": [],
+      "files": 3051,
+      "bytes": 129698216,
+      "tree_sha256": "7d9234a2758a59192085ef70e22ac1dc90f982f5c64db01768fa4a33702b4585"
+    },
+    {
+      "slug": "fastapi",
+      "target": "router inteligente software/componentes todos/componentes descargados/fastapi",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 2,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/fastapi/fastapi_0001.zip": "24416f5e334c9343035a17ee74f1b2cfdff628d72c14294c14ceedec97f4ea71",
+        "router inteligente software/componentes todos/componentes descargados/fastapi/fastapi_0002.zip": "aac549c5e35a3e4c54ecd40e37bd1ecceb44947b7e3c09422cf5edb59ab0b038"
+      },
+      "copied": 3139,
+      "mirrors": [],
+      "files": 3139,
+      "bytes": 34377000,
+      "tree_sha256": "a99b4b20659b4b87d441a60049fed39abc178c16332fc622f1ef9b66b746cb30"
+    }
+  ],
+  "failures": [],
+  "remaining_gaps": [
+    {
+      "slug": "vLLM-Semantic-Router",
+      "target": "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router",
+      "mirror": null
+    },
+    {
+      "slug": "autogen",
+      "target": "router inteligente software/componentes todos/componentes descargados/autogen",
+      "mirror": null
+    },
+    {
+      "slug": "servers",
+      "target": "router inteligente software/componentes todos/componentes descargados/servers",
+      "mirror": null
+    },
+    {
+      "slug": "gunicorn",
+      "target": "router inteligente software/componentes todos/componentes descargados/gunicorn",
+      "mirror": null
+    },
+    {
+      "slug": "haystack",
+      "target": "router inteligente software/componentes todos/componentes descargados/haystack",
+      "mirror": null
+    },
+    {
+      "slug": "vllm",
+      "target": "router inteligente software/componentes todos/componentes descargados/vllm",
+      "mirror": null
+    },
+    {
+      "slug": "gpt-researcher",
+      "target": "router inteligente software/componentes todos/componentes descargados/gpt-researcher",
+      "mirror": null
+    },
+    {
+      "slug": "agents-deep-research",
+      "target": "router inteligente software/componentes todos/componentes descargados/agents-deep-research",
+      "mirror": null
+    }
+  ],
+  "retryable_gaps": [
+    {
+      "slug": "vLLM-Semantic-Router",
+      "target": "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router",
+      "mirror": null
+    },
+    {
+      "slug": "autogen",
+      "target": "router inteligente software/componentes todos/componentes descargados/autogen",
+      "mirror": null
+    },
+    {
+      "slug": "servers",
+      "target": "router inteligente software/componentes todos/componentes descargados/servers",
+      "mirror": null
+    },
+    {
+      "slug": "gunicorn",
+      "target": "router inteligente software/componentes todos/componentes descargados/gunicorn",
+      "mirror": null
+    },
+    {
+      "slug": "haystack",
+      "target": "router inteligente software/componentes todos/componentes descargados/haystack",
+      "mirror": null
+    },
+    {
+      "slug": "vllm",
+      "target": "router inteligente software/componentes todos/componentes descargados/vllm",
+      "mirror": null
+    },
+    {
+      "slug": "gpt-researcher",
+      "target": "router inteligente software/componentes todos/componentes descargados/gpt-researcher",
+      "mirror": null
+    },
+    {
+      "slug": "agents-deep-research",
+      "target": "router inteligente software/componentes todos/componentes descargados/agents-deep-research",
+      "mirror": null
+    }
+  ],
+  "blocked_gaps": [],
+  "counts": {
+    "remaining": 8,
+    "retryable": 8,
+    "blocked": 0,
+    "processed": 10
+  },
+  "verdict": "GAPS_PENDING"
+}
