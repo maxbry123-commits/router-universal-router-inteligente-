@@ -1,0 +1,44 @@
+contract: HF-ROUTER-BRIDGE-V1
+mode: REMOTE_ONLY
+router_role: CENTRAL_GATEWAY
+hf_processors: [HF1, HF2, HF3]
+protocols:
+  http_rest: true
+  fastapi: true
+  openai_compatible: true
+  mcp_streamable_http: true
+  mcp_sse_legacy: true
+  websocket_optional: true
+  ssh_tunnel_optional: true
+  webhook_callbacks: true
+  sse_streaming: true
+security:
+  secrets_only: true
+  no_hardcoded_keys: true
+  external_weights_persisted: false
+providers:
+  groq:
+    base_url: https://api.groq.com/openai/v1
+    secret: GROQ_API_KEY
+  cerebras:
+    base_url: https://api.cerebras.ai/v1
+    secret: CEREBRAS_API_KEY
+  nvidia:
+    base_url: https://integrate.api.nvidia.com/v1
+    secret: NVIDIA_API_KEY
+  openrouter:
+    base_url: https://openrouter.ai/api/v1
+    secret: OPENROUTER_API_KEY
+  huggingface:
+    base_url_env: HF_INFERENCE_ENDPOINT
+    token_secret: HF_TOKEN
+router_secrets:
+  - ROUTER_AUTH_TOKEN
+  - MCP_AUTH_TOKEN
+  - SSH_PRIVATE_KEY
+  - SSH_KNOWN_HOSTS
+runtime:
+  cache_warn_gb: 1
+  cache_hard_clean_gb: 2
+  cache_action: LRU_EVICT_AND_OFFLOAD
+  failover: HF1->HF2->HF3->WAITING
