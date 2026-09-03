@@ -44,7 +44,27 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python3 scripts/extract_guardian_repair_20260903.py --limit 6 | tee extraction-result.json
+          python3 scripts/extract_guardian_repair_20260903.py --audit-only > pre-audit.json
+          LIMIT="$(python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          d=json.load(open("pre-audit.json"))
+          gaps=d.get("remaining_gaps",[])
+          if not gaps:
+              print(1); raise SystemExit
+          slug=gaps[0]["slug"]
+          root=Path("router inteligente software/componentes todos/componentes descargados")
+          parts=list(root.rglob(slug+"_*.zip"))
+          n=len(parts)
+          if n>50: limit=1
+          elif n>20: limit=2
+          elif n>10: limit=3
+          else: limit=6
+          print(limit)
+          PY
+          )"
+          echo "ADAPTIVE_LIMIT=$LIMIT"
+          python3 scripts/extract_guardian_repair_20260903.py --limit "$LIMIT" | tee extraction-result.json
 
       - name: Materialize source pointers over HTTPS and enforce plain-Git gates
         id: materialize
