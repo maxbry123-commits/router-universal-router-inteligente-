@@ -1,0 +1,5 @@
+{"number": 1, "parts": 6, "slug": "LiteLLM", "source": "https://github.com/BerriAI/litellm.git", "source_commit": "658f50663d19f613a3f5caf998168da019764ad8", "status": "COMPLETE"}
+{"number": 2, "parts": 1, "slug": "vLLM-Router", "source": "https://github.com/llm-semantic-router/vllm-router.git", "source_commit": "5680dbe19b3f3d1f9bb062466d9f3f07136039b6", "status": "COMPLETE"}
+{"number": 3, "parts": 1, "slug": "Temporal-Python-SDK", "source": "https://github.com/temporalio/sdk-python.git", "source_commit": "d0e075c1e25b3371f0e0f5116d9c6626892e3eab", "status": "COMPLETE"}
+{"number": 4, "parts": 1, "slug": "Durable-Task-Python", "source": "https://github.com/microsoft/durabletask-python.git", "source_commit": "46602d5221591b6aaeff1238cd0ec952419e2e29", "status": "COMPLETE"}
+{"number": 5, "parts": 1, "slug": "Durable-Workflow-Server", "source": "https://github.com/durable-workflow/server.git", "source_commit": "1636e53eb2e99d22fd8263e5d3192ce50cab799a", "status": "COMPLETE"}
