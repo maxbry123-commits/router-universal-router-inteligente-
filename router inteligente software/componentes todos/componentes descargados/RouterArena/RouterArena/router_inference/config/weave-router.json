@@ -1,0 +1,17 @@
+{
+  "pipeline_params": {
+    "router_name": "weave-router",
+    "router_cls_name": "WeaveRouter",
+    "models": [
+      "deepseek/deepseek-v4-flash",
+      "deepseek/deepseek-v4-pro",
+      "gemini-3.1-flash-lite-preview",
+      "gemini-3.1-pro-preview",
+      "Qwen/Qwen3-Coder-Next",
+      "qwen/qwen3-next-80b-a3b-instruct"
+    ],
+    "description": "Weave Router (v0.54): 6-model cluster routing trained only on OpenRouterBench labels + Artificial Analysis quality priors. No RouterArena prompts in any training signal.",
+    "router_version": "v0.54",
+    "router_homepage": "https://workweave.ai"
+  }
+}

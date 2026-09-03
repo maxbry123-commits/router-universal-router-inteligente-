@@ -1,0 +1,256 @@
+{
+  "schema": "yaiwes.extraction.guardian.v1",
+  "run_id": "33741756674",
+  "archive_groups": 56,
+  "pending_before": 34,
+  "processed": [
+    {
+      "slug": "dzhng-deep-research",
+      "target": "router inteligente software/componentes todos/componentes descargados/dzhng-deep-research",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/dzhng-deep-research/dzhng-deep-research_0001.zip": "0c7b6d2f2bdb1ab15f1f32b64713487a6133fa893f48a0cc729c688fa9fe41a3"
+      },
+      "copied": 21,
+      "mirrors": [],
+      "files": 21,
+      "bytes": 137472,
+      "tree_sha256": "982c47c6004800d414ac6c1d4897bf2b3e83a2e0401c2d6dc3ca561d3a46084f",
+      "post_materialization_hash": true
+    },
+    {
+      "slug": "pydantic-settings",
+      "target": "router inteligente software/componentes todos/componentes descargados/pydantic-settings",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/pydantic-settings/pydantic-settings_0001.zip": "b896ad87fbb9e358ae26e118f63c19bc07e19fbbe731d8319a14d1797329b791"
+      },
+      "copied": 57,
+      "mirrors": [],
+      "files": 57,
+      "bytes": 1183048,
+      "tree_sha256": "c42c337b26ebe1c68e50a4ce516afe6d6de2d2800056c85836741e0697c30ed2",
+      "post_materialization_hash": true
+    },
+    {
+      "slug": "zustand",
+      "target": "router inteligente software/componentes todos/componentes descargados/zustand",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/zustand/zustand_0001.zip": "f9018c66be688cc4ad7cf20e624be087b8707d6ab2a555555327ae1217a31de9"
+      },
+      "copied": 144,
+      "mirrors": [],
+      "files": 144,
+      "bytes": 2137793,
+      "tree_sha256": "a9aee04651f22ec12ff18d01639787252f7e0ecfb25cc88d0eb17f9e7e364086",
+      "post_materialization_hash": true
+    },
+    {
+      "slug": "postgres",
+      "target": "router inteligente software/componentes todos/componentes descargados/postgres",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 4,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/postgres/postgres_0001.zip": "ec59a6343ee8e038bdb9a347a7a72c9d84f860c9a65c11aa898f1fe2707c1d6c",
+        "router inteligente software/componentes todos/componentes descargados/postgres/postgres_0002.zip": "5a09bc7d789c6982472cd5ca26e251fb541b375d9a47368267919b22c3dfdd7a",
+        "router inteligente software/componentes todos/componentes descargados/postgres/postgres_0003.zip": "ab3bcae23e98c7f2bff70bf8a315794ea0548dac261d81a4bb22d2889014d99f",
+        "router inteligente software/componentes todos/componentes descargados/postgres/postgres_0004.zip": "6e41e8487788ec1a29d79e38f7a58ff1a57bc7af32c00f4b674c7f25f55b4d3b"
+      },
+      "copied": 7700,
+      "mirrors": [],
+      "files": 7700,
+      "bytes": 147175797,
+      "tree_sha256": "d42e720874d2c252530377e56a9292ed42e16de9a553b9ea0a08b7bc04e3233a",
+      "post_materialization_hash": true
+    },
+    {
+      "slug": "RouterArena",
+      "target": "router inteligente software/componentes todos/componentes descargados/RouterArena",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 12,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0001.zip": "3d28af3d3d71e37f5f7177ba9868c7243ca32d9a316f7da7b953013b3957c5ff",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0002.zip": "870f5208797f5889e4ee70af7978f796f46f37ccbad0923230e5cdaf1034b6b7",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0003.zip": "40b068c28902e07c698248b7cc9e4b75bccadcc0401143bf95e0d9bba9a3d5aa",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0004.zip": "a553216a0a8561dac4a17f02c958050da65c4bd9e61206e16acce2ec454587fb",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0005.zip": "8c6721857a5f456e844bd23e5325859bd24dbe649329fb01857aaae5e3ca1ee4",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0006.zip": "c86c07d40382c74a41b6f25846ce869eb7ecc9fe021c29674d3406d8eabb1842",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0007.zip": "d8350ec2da579a5cba82e92a93818f909b7805d791a2d9e9ef1c96240390ba04",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0008.zip": "6a5cf242ac6c2fca2e113662ca6c050778e35256f06191b75e1d2ba7a32c7222",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0009.zip": "558e159c19b4a953aef8fe76044defcb50897c736a19c7571a27c55d0ea36dc4",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0010.zip": "7c4da2c69fb7385624b573b84a8e91bda333f5cf6c1d89e57b0dbfd63eb6f678",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0011.zip": "aa5ccd3731c1c1060d009002d8b359ceb7d57769846e5a2778d64db06b8f7201",
+        "router inteligente software/componentes todos/componentes descargados/RouterArena/RouterArena_0012.zip": "23783a7931d25d9d29e5a244e6bec0c54e3b17918134b4ec2721b9331862fc80"
+      },
+      "copied": 232,
+      "mirrors": [],
+      "files": 232,
+      "bytes": 528165388,
+      "tree_sha256": "1ed3cb63546c0c75dd49b44766e7e24678b43e575a0541165ce3c00f51e5f2b3",
+      "post_materialization_hash": true
+    },
+    {
+      "slug": "MCP-Python-SDK",
+      "target": "router inteligente software/componentes todos/componentes descargados/MCP-Python-SDK",
+      "status": "EXTRACTED_VERIFIED",
+      "parts": 1,
+      "part_sha256": {
+        "router inteligente software/componentes todos/componentes descargados/MCP-Python-SDK/MCP-Python-SDK_0001.zip": "1005a2f9b5a8869735e88d647d284843191b1b45af68dfed15325ce003b60a2f"
+      },
+      "copied": 1665,
+      "mirrors": [],
+      "files": 1665,
+      "bytes": 14805209,
+      "tree_sha256": "93950e83a8b7db6fa575abf957de7292a67fbf4fe61db12cd863950e3166fed9",
+      "post_materialization_hash": true
+    }
+  ],
+  "failures": [],
+  "remaining_gaps": [
+    {
+      "slug": "fastapi",
+      "target": "router inteligente software/componentes todos/componentes descargados/fastapi",
+      "mirror": null
+    },
+    {
+      "slug": "huggingface_hub",
+      "target": "router inteligente software/componentes todos/componentes descargados/huggingface_hub",
+      "mirror": null
+    },
+    {
+      "slug": "asyncpg",
+      "target": "router inteligente software/componentes todos/componentes descargados/asyncpg",
+      "mirror": null
+    },
+    {
+      "slug": "langgraph",
+      "target": "router inteligente software/componentes todos/componentes descargados/langgraph",
+      "mirror": null
+    },
+    {
+      "slug": "llama.cpp",
+      "target": "router inteligente software/componentes todos/componentes descargados/llama.cpp",
+      "mirror": null
+    },
+    {
+      "slug": "SGLang",
+      "target": "router inteligente software/componentes todos/componentes descargados/SGLang",
+      "mirror": null
+    },
+    {
+      "slug": "uvicorn",
+      "target": "router inteligente software/componentes todos/componentes descargados/uvicorn",
+      "mirror": null
+    },
+    {
+      "slug": "react",
+      "target": "router inteligente software/componentes todos/componentes descargados/react",
+      "mirror": null
+    },
+    {
+      "slug": "cryptography",
+      "target": "router inteligente software/componentes todos/componentes descargados/cryptography",
+      "mirror": null
+    },
+    {
+      "slug": "aiomysql",
+      "target": "router inteligente software/componentes todos/componentes descargados/aiomysql",
+      "mirror": null
+    },
+    {
+      "slug": "litellm",
+      "target": "router inteligente software/componentes todos/componentes descargados/litellm",
+      "mirror": null
+    },
+    {
+      "slug": "autogen",
+      "target": "router inteligente software/componentes todos/componentes descargados/autogen",
+      "mirror": null
+    },
+    {
+      "slug": "vLLM-Router",
+      "target": "router inteligente software/componentes todos/componentes descargados/vLLM-Router",
+      "mirror": null
+    },
+    {
+      "slug": "agents-deep-research",
+      "target": "router inteligente software/componentes todos/componentes descargados/agents-deep-research",
+      "mirror": null
+    },
+    {
+      "slug": "docker-py",
+      "target": "router inteligente software/componentes todos/componentes descargados/docker-py",
+      "mirror": null
+    },
+    {
+      "slug": "chroma",
+      "target": "router inteligente software/componentes todos/componentes descargados/chroma",
+      "mirror": null
+    },
+    {
+      "slug": "starlette",
+      "target": "router inteligente software/componentes todos/componentes descargados/starlette",
+      "mirror": null
+    },
+    {
+      "slug": "redis",
+      "target": "router inteligente software/componentes todos/componentes descargados/redis",
+      "mirror": null
+    },
+    {
+      "slug": "vite",
+      "target": "router inteligente software/componentes todos/componentes descargados/vite",
+      "mirror": null
+    },
+    {
+      "slug": "servers",
+      "target": "router inteligente software/componentes todos/componentes descargados/servers",
+      "mirror": null
+    },
+    {
+      "slug": "gpt-researcher",
+      "target": "router inteligente software/componentes todos/componentes descargados/gpt-researcher",
+      "mirror": null
+    },
+    {
+      "slug": "vllm",
+      "target": "router inteligente software/componentes todos/componentes descargados/vllm",
+      "mirror": null
+    },
+    {
+      "slug": "ollama",
+      "target": "router inteligente software/componentes todos/componentes descargados/ollama",
+      "mirror": null
+    },
+    {
+      "slug": "haystack",
+      "target": "router inteligente software/componentes todos/componentes descargados/haystack",
+      "mirror": null
+    },
+    {
+      "slug": "pyyaml",
+      "target": "router inteligente software/componentes todos/componentes descargados/pyyaml",
+      "mirror": null
+    },
+    {
+      "slug": "gunicorn",
+      "target": "router inteligente software/componentes todos/componentes descargados/gunicorn",
+      "mirror": null
+    },
+    {
+      "slug": "vLLM-Semantic-Router",
+      "target": "router inteligente software/componentes todos/componentes descargados/vLLM-Semantic-Router",
+      "mirror": null
+    },
+    {
+      "slug": "crewAI",
+      "target": "router inteligente software/componentes todos/componentes descargados/crewAI",
+      "mirror": null
+    }
+  ],
+  "verdict": "GAPS_PENDING"
+}

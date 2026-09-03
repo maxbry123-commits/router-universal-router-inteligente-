@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Model outputs and cached results - don't track these
+outputs/
+results/
+
+# datasets
+dataset/
+
+# Logs
+*.log
+logs/
+/cached_results2/
+.pr_worktrees/
+pr_evaluations/
+
+# Environment files
+.env
+.venv
+venv/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+.mypy_cache/*
+.ruff_cache/*
+
+tools/.addlicense.lock
+tools/addlicense
+
+# Ignore all Markdown files
+*.md
+
+# Except for this one specific file
+!README.md
