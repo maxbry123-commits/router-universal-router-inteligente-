@@ -3,6 +3,8 @@ run-name: Consolidate router components • ${{ github.sha }}
 
 on:
   workflow_dispatch:
+  issues:
+    types: [opened, reopened]
   push:
     branches: [main]
     paths:
@@ -17,6 +19,7 @@ concurrency:
 
 jobs:
   consolidate:
+    if: github.event_name != 'issues' || github.event.issue.title == '[router] consolidate components'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -134,4 +137,4 @@ jobs:
           test "$COUNT" -gt 0
           test "$OLD_COUNT" -eq 0
 
-# activation-revision: 2
+# activation-revision: 3
