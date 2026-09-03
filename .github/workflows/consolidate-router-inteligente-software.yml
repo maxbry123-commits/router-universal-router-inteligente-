@@ -1,0 +1,135 @@
+name: Consolidate router inteligente software
+run-name: Consolidate router components • ${{ github.sha }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/consolidate-router-inteligente-software.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: consolidate-router-inteligente-software
+  cancel-in-progress: false
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout metadata only
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            .github
+          persist-credentials: true
+
+      - name: Build deterministic tree move without downloading ZIP blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BASE="$(git rev-parse HEAD)"
+          export GIT_INDEX_FILE="$RUNNER_TEMP/router-consolidate.index"
+          rm -f "$GIT_INDEX_FILE"
+          git read-tree "$BASE"
+
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          import sys
+
+          roots = (
+              "Download code router/",
+              "Auditoria duplicados router/",
+          )
+          destination_root = "router inteligente software"
+
+          raw = subprocess.check_output(
+              ["git", "ls-tree", "-r", "-z", "HEAD"]
+          )
+
+          entries = []
+          existing = set()
+
+          for rec in raw.split(b"\0"):
+              if not rec:
+                  continue
+              meta, path_b = rec.split(b"\t", 1)
+              mode, obj_type, sha = meta.decode().split()
+              path = path_b.decode("utf-8", "surrogateescape")
+              existing.add(path)
+
+              if obj_type != "blob":
+                  continue
+              if not path.endswith(".zip"):
+                  continue
+              if not path.startswith(roots):
+                  continue
+
+              name = path.rsplit("/", 1)[-1]
+              match = re.match(r"^(.*)_([0-9]{4})\.zip$", name, re.I)
+              component = match.group(1) if match else name[:-4]
+              dest = f"{destination_root}/{component}/{name}"
+              entries.append((mode, sha, path, dest))
+
+          if not entries:
+              print("NO ZIP COMPONENTS FOUND: nothing to move")
+              sys.exit(0)
+
+          destinations = [e[3] for e in entries]
+          if len(destinations) != len(set(destinations)):
+              raise SystemExit("FAIL: duplicate destination path generated")
+
+          conflicts = [d for d in destinations if d in existing]
+          if conflicts:
+              raise SystemExit("FAIL: destination already exists: " + "; ".join(conflicts[:20]))
+
+          for mode, sha, src, dest in entries:
+              subprocess.check_call(["git", "update-index", "--force-remove", "--", src])
+              subprocess.check_call(["git", "update-index", "--add", "--cacheinfo", f"{mode},{sha},{dest}"])
+
+          print(f"MOVED_LOGICAL_FILES={len(entries)}")
+          print(f"DESTINATION_ROOT={destination_root}")
+          PY
+
+          NEW_TREE="$(git write-tree)"
+          OLD_TREE="$(git rev-parse "$BASE^{tree}")"
+
+          if [ "$NEW_TREE" = "$OLD_TREE" ]; then
+            echo "NO_CHANGE=1"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          NEW_COMMIT="$(
+            printf '%s\n' 'chore(router): consolidate component archives under router inteligente software' |
+            git commit-tree "$NEW_TREE" -p "$BASE"
+          )"
+
+          echo "BASE=$BASE"
+          echo "NEW_TREE=$NEW_TREE"
+          echo "NEW_COMMIT=$NEW_COMMIT"
+
+          git push origin "$NEW_COMMIT:refs/heads/main"
+
+      - name: Verify final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --filter=blob:none
+          COUNT="$(git ls-tree -r --name-only origin/main -- 'router inteligente software' | grep -c '\.zip$' || true)"
+          OLD_COUNT="$(git ls-tree -r --name-only origin/main -- 'Download code router' 'Auditoria duplicados router' | grep -c '\.zip$' || true)"
+          echo "ZIP_COUNT_DEST=$COUNT"
+          echo "ZIP_COUNT_OLD_ROOTS=$OLD_COUNT"
+          test "$COUNT" -gt 0
+          test "$OLD_COUNT" -eq 0
