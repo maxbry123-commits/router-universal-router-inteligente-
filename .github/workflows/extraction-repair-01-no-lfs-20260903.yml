@@ -35,7 +35,7 @@ jobs:
           set -euo pipefail
           git config --local filter.lfs.clean cat
           git config --local filter.lfs.smudge cat
-          git config --local --unset-all filter.lfs.process || true
+          git config --local filter.lfs.process ''
           git config --local filter.lfs.required false
 
       - name: Extract next bounded batch
