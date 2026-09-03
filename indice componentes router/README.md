@@ -5,9 +5,9 @@
 - Repositorio: https://github.com/maxbry123-commits/router-universal-router-inteligente-
 - Fuente primaria: `Download code router/RESEARCH_DOWNLOAD_MANIFEST.jsonl`.
 - Registros del manifiesto: **57** (50 base + 7 adicionales).
-- Grupos ZIP presentes en `Download code router`: **55**.
-- ZIP/fragmentos presentes en `Download code router`: **323**.
-- Duplicado MCP separado en `Auditoria duplicados router`: **PRESENTE**.
+- Componentes con artefactos presentes en `router inteligente software/`: **56**.
+- ZIP/fragmentos presentes en `router inteligente software/`: **324**.
+- `MCP-Python-SDK` quedó preservado como componente histórico separado dentro de la nueva raíz.
 - `websockets`: **SKIPPED** en el manifiesto; no existe artefacto ZIP.
 - Nota: los componentes descargados están almacenados como ZIP fragmentados; este índice cuenta tecnologías/componentes lógicos, no cada fragmento como un componente.
 
@@ -86,11 +86,16 @@
 ## Trazabilidad local
 
 - Manifiesto: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Download%20code%20router/RESEARCH_DOWNLOAD_MANIFEST.jsonl
-- Carpeta actual de ZIP: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/Download%20code%20router
-- Duplicado MCP: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/Auditoria%20duplicados%20router
+- Carpeta final de componentes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20software
+- Manifiesto conservado fuera de la raíz de componentes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Download%20code%20router/RESEARCH_DOWNLOAD_MANIFEST.jsonl
 
-## Estado para reorganización
+## Resultado de reorganización
 
-- Objetivo aprobado: mover **solo los artefactos ZIP de componentes** a una raíz única `router inteligente software/`, conservando el blob SHA de Git y sin re-descargar los archivos.
-- El manifiesto, documentación, UI, scripts y workflows no son componentes binarios y permanecen fuera de esa raíz.
-- La reorganización se ejecutará por GitHub Actions con operación de árbol Git/index, evitando descargar ~3 GB de blobs solamente para renombrar rutas.
+- ✅ Movimiento ejecutado **solo por GitHub Actions**.
+- ✅ Raíz final: `router inteligente software/`.
+- ✅ Componentes presentes: **56** directorios.
+- ✅ Artefactos ZIP/fragmentos movidos: **324**.
+- ✅ ZIP restantes en `Download code router/`: **0**.
+- ✅ ZIP restantes en `Auditoria duplicados router/`: **0**.
+- ✅ El manifiesto y su README permanecen en `Download code router/` porque son documentación/trazabilidad, no componentes.
+- GitHub Actions run verificado: https://github.com/maxbry123-commits/router-universal-router-inteligente-/actions/runs/33722719651
