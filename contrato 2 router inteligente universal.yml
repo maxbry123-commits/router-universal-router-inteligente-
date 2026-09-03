@@ -1,8 +1,0 @@
-contrato: 2
-nombre: contrato 2 router inteligente universal
-destino: maxbry123-commits/router-universal-router-inteligente-
-rama: main
-plan: INVENTARIO → ZIP → EXTRACT → raiz individual → main
-lista: 50 URL + 3 gaps
-action: .github/workflows/wordflow-router-oss.yml
-estado: MONTADO sin Run hasta INICIA
