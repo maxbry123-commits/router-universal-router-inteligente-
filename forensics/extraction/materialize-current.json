@@ -1,0 +1,8 @@
+{
+  "schema": "yaiwes.no_lfs.materializer.v1",
+  "materialized": [],
+  "failures": [],
+  "remaining_pointers": [],
+  "oversized": [],
+  "verdict": "PASS"
+}
