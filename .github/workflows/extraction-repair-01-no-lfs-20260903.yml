@@ -200,6 +200,51 @@ jobs:
               sys.exit(73)
           PY
 
+      - name: Recompute deterministic tree hashes after materialization
+        if: ${{ steps.extract.outcome == 'success' && steps.materialize.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          def digest(path):
+              h=hashlib.sha256()
+              with path.open("rb") as f:
+                  for b in iter(lambda:f.read(1024*1024), b""):
+                      h.update(b)
+              return h.hexdigest()
+
+          def tree_digest(root):
+              h=hashlib.sha256(); count=0; total=0
+              for p in sorted((x for x in root.rglob("*") if x.is_file()), key=lambda x:x.as_posix()):
+                  rel=p.relative_to(root).as_posix()
+                  if p.suffix.lower()==".zip" or p.name in {"RESEARCH_DOWNLOAD_MANIFEST.jsonl","EXTRACTION_GUARDIAN_REPORT.json"}:
+                      continue
+                  h.update(rel.encode()+b"\0")
+                  h.update(digest(p).encode()+b"\n")
+                  count += 1
+                  total += p.stat().st_size
+              return h.hexdigest(),count,total
+
+          result_path=Path("extraction-result.json")
+          d=json.loads(result_path.read_text())
+          for row in d.get("processed",[]):
+              root=Path(row["target"])
+              sha,n,b=tree_digest(root)
+              row["tree_sha256"]=sha
+              row["files"]=n
+              row["bytes"]=b
+              row["post_materialization_hash"]=True
+
+          result_path.write_text(json.dumps(d,ensure_ascii=False)+"\n")
+          evidence=Path("forensics/extraction")/f"repair-{os.environ.get('GITHUB_RUN_ID','local')}.json"
+          if evidence.exists():
+              evidence.write_text(json.dumps(d,indent=2,ensure_ascii=False)+"\n")
+          print(json.dumps({"rehashed":[{"slug":x["slug"],"tree_sha256":x["tree_sha256"],"files":x["files"],"bytes":x["bytes"]} for x in d.get("processed",[])]},ensure_ascii=False))
+          PY
+
       - name: Commit extracted trees and immutable evidence
         id: publish
         if: ${{ steps.extract.outcome == 'success' && steps.materialize.outcome == 'success' }}
