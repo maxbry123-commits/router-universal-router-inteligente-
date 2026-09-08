@@ -1,0 +1,26 @@
+{
+  "verified_at": "2026-09-08T04:45:24Z",
+  "source": "Claude GitHub Backup HF MCP list_repositories",
+  "count": 19,
+  "repositories": [
+    "maxbry123-commits/Agentes-motores-Wordflow-YAIWES",
+    "maxbry123-commits/BIBLIOTECA",
+    "maxbry123-commits/BITACORA-MAXBRY",
+    "maxbry123-commits/Cerebro",
+    "maxbry123-commits/Grupo-Trabajo-1",
+    "maxbry123-commits/Grupo-Trabajo-2",
+    "maxbry123-commits/MEMORIA",
+    "maxbry123-commits/Maxbry-AGI",
+    "maxbry123-commits/Orquestador-Maxbry-",
+    "maxbry123-commits/TAREA-1",
+    "maxbry123-commits/TAREA-2",
+    "maxbry123-commits/agentes",
+    "maxbry123-commits/comand-Center",
+    "maxbry123-commits/frontend",
+    "maxbry123-commits/informaci-n-auditor-",
+    "maxbry123-commits/nct-core",
+    "maxbry123-commits/nct-hub",
+    "maxbry123-commits/osquestador-auditor",
+    "maxbry123-commits/router-universal-router-inteligente-"
+  ]
+}
