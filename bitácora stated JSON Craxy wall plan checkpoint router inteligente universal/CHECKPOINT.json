@@ -1,0 +1,13 @@
+{
+  "checkpoint": "router-inteligente-universal-method-bootstrap",
+  "verified": {
+    "components_root": "Componente open soure router inteligente universal/",
+    "component_index": "readme índice de componentes/README índice de componentes router inteligente universal.md",
+    "architecture_root": "Readme arquitectura router inteligente universal/",
+    "crazy_wall_root": "bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/",
+    "documents_root": "Documentos proyectos router inteligente universal/",
+    "download_root": "Download code router inteligente universal/"
+  },
+  "next": "wait_for_director_upload",
+  "status": "READY_FOR_INPUT"
+}
