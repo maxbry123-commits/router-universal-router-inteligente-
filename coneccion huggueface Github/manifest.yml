@@ -1,0 +1,30 @@
+contract: HF-COMPUTE-CENTER-V1
+mode: FAIL_CLOSED_LOOP
+owner: maxbry123-commits
+repo: router-universal-router-inteligente-
+branch: main
+threshold_ram_percent: 95
+workers:
+  - id: HF1
+    backend: huggingface_jobs
+    flavor: cpu-upgrade
+    ram_gb: 32
+  - id: HF2
+    backend: huggingface_jobs
+    flavor: cpu-upgrade
+    ram_gb: 32
+  - id: HF3
+    backend: huggingface_jobs
+    flavor: cpu-upgrade
+    ram_gb: 32
+queue:
+  policy: FIFO
+  overflow: WAITING
+lifecycle:
+  start: ON_DEMAND
+  idle: JOB_EXIT
+  billing_idle: false
+storage:
+  type: huggingface_storage_bucket
+  logical_bridge_repo: maxbry123-commits/osquestador-auditor
+  logical_root: la coneccion de todos los repos con el almacenamiento de huggueface/almacenamiento huggueface
