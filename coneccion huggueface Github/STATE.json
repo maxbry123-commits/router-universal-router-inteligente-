@@ -1,0 +1,9 @@
+{
+  "status": "ACTIVE_LOOP",
+  "node": 2,
+  "closed": ["audit_repo_and_hf", "verify_19_github_repositories", "initialize_compute_root"],
+  "in_progress": ["wire_hf_workers", "create_storage_bridge"],
+  "pending": ["physical_failover_test", "storage_mount_test", "github_write_roundtrip", "sleep_wake_or_job_exit_test"],
+  "gaps": ["Only one existing Space currently requests cpu-upgrade; HF1/HF2/HF3 will use on-demand Hugging Face Jobs unless three persistent Spaces are later proven necessary."],
+  "ram_threshold_percent": 95
+}
