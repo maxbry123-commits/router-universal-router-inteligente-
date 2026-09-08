@@ -10,4 +10,5 @@
 - MCP desplegó `storage_write/storage_read/storage_list`; roundtrip `HF_STORAGE_ROUNDTRIP_PASS`.
 - Adaptador real `router/hf_jobs_adapter.py` lanzó child job `6a9f9c31259f8e97255ee0a3` y terminó `COMPLETED` con 32 GB.
 - E2E final job `6a9f9c6f259f8e97255ee0b3`: compute 32 GB → storage `E2E_STORAGE_PASS` → GitHub commit `16b0ecc3b530e16b9469ef3ec3ac83ba597f7186` → `COMPLETED`.
-- `STATE.json` marcado `VERIFIED_CLOSED`; sin tareas pendientes.
+- Se materializaron 19 carpetas puente por repositorio en `osquestador-auditor/main/.../almacenamiento huggueface/`; commit `ccd56db1e10f471b5f48adb81d17fa9624c33846`.
+- `STATE.json` y `CHECKPOINT.json` permanecen `VERIFIED_CLOSED`; sin tareas pendientes.
