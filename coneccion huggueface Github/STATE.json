@@ -1,6 +1,6 @@
 {
-  "status": "ACTIVE_LOOP",
-  "node": 4,
+  "status": "VERIFIED_CLOSED",
+  "node": 5,
   "closed": [
     "audit_repo_and_hf",
     "verify_19_github_repositories",
@@ -10,26 +10,29 @@
     "storage_roundtrip",
     "verify_three_cpu_upgrade_workers",
     "router_threshold_logic_test",
-    "github_write_roundtrip"
-  ],
-  "in_progress": [
+    "github_write_roundtrip",
     "centralize_live_mcp_source_in_router_repo",
-    "wire_job_dispatch_from_router"
-  ],
-  "pending": [
+    "wire_job_dispatch_from_router",
     "final_integrated_dispatch_test",
     "verify_job_exit_idle_behavior",
     "cross_check_all_persistence_files"
   ],
+  "in_progress": [],
+  "pending": [],
   "gaps": [
-    "The connected Hugging Face OAuth credential has read access but cannot create a new Storage Bucket (403). Existing mounted bucket is reused successfully.",
-    "Only one persistent Space requests cpu-upgrade; StrategyDelta uses three on-demand Hugging Face Jobs with cpu-upgrade and 32,000,000,000-byte cgroup limits."
+    "New HF bucket creation is unavailable to the connected OAuth credential (403); the existing mounted bucket is the verified StrategyDelta.",
+    "Persistent HF1/HF2/HF3 Spaces were not required; verified StrategyDelta uses on-demand cpu-upgrade Jobs with 32,000,000,000-byte cgroup limits and automatic job termination after completion."
   ],
   "evidence": {
     "repo_count": 19,
     "storage_roundtrip": "HF_STORAGE_ROUNDTRIP_PASS",
     "router_threshold": "ROUTER_THRESHOLD_PASS",
     "github_write_commit": "5cd3e6940183de3ce84d4442ca27ac827b9556a8",
+    "adapter_child_job": "6a9f9c31259f8e97255ee0a3",
+    "final_e2e_job": "6a9f9c6f259f8e97255ee0b3",
+    "final_e2e_job_stage": "COMPLETED",
+    "final_e2e_storage": "E2E_STORAGE_PASS",
+    "final_e2e_github_commit": "16b0ecc3b530e16b9469ef3ec3ac83ba597f7186",
     "worker_memory_limit_bytes": 32000000000
   },
   "ram_threshold_percent": 95
