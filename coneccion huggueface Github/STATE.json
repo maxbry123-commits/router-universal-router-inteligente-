@@ -1,9 +1,36 @@
 {
   "status": "ACTIVE_LOOP",
-  "node": 2,
-  "closed": ["audit_repo_and_hf", "verify_19_github_repositories", "initialize_compute_root"],
-  "in_progress": ["wire_hf_workers", "create_storage_bridge"],
-  "pending": ["physical_failover_test", "storage_mount_test", "github_write_roundtrip", "sleep_wake_or_job_exit_test"],
-  "gaps": ["Only one existing Space currently requests cpu-upgrade; HF1/HF2/HF3 will use on-demand Hugging Face Jobs unless three persistent Spaces are later proven necessary."],
+  "node": 4,
+  "closed": [
+    "audit_repo_and_hf",
+    "verify_19_github_repositories",
+    "initialize_compute_root",
+    "create_storage_bridge",
+    "deploy_storage_tools",
+    "storage_roundtrip",
+    "verify_three_cpu_upgrade_workers",
+    "router_threshold_logic_test",
+    "github_write_roundtrip"
+  ],
+  "in_progress": [
+    "centralize_live_mcp_source_in_router_repo",
+    "wire_job_dispatch_from_router"
+  ],
+  "pending": [
+    "final_integrated_dispatch_test",
+    "verify_job_exit_idle_behavior",
+    "cross_check_all_persistence_files"
+  ],
+  "gaps": [
+    "The connected Hugging Face OAuth credential has read access but cannot create a new Storage Bucket (403). Existing mounted bucket is reused successfully.",
+    "Only one persistent Space requests cpu-upgrade; StrategyDelta uses three on-demand Hugging Face Jobs with cpu-upgrade and 32,000,000,000-byte cgroup limits."
+  ],
+  "evidence": {
+    "repo_count": 19,
+    "storage_roundtrip": "HF_STORAGE_ROUNDTRIP_PASS",
+    "router_threshold": "ROUTER_THRESHOLD_PASS",
+    "github_write_commit": "5cd3e6940183de3ce84d4442ca27ac827b9556a8",
+    "worker_memory_limit_bytes": 32000000000
+  },
   "ram_threshold_percent": 95
 }
