@@ -1,0 +1,28 @@
+{
+  "contract": "tel.workflow/v4",
+  "mode": "FAIL_CLOSED_EXECUTION_LOOP",
+  "project": "router inteligente universal",
+  "repo": "maxbry123-commits/router-universal-router-inteligente-",
+  "branch": "main",
+  "status": "READY_FOR_INPUT",
+  "current_node": null,
+  "closed": [
+    "centralize_open_source_components",
+    "create_component_index",
+    "replicate_work_method_from_UI_YAIWES",
+    "create_architecture_readme",
+    "create_master_loop_guide",
+    "create_crazy_wall_state_root",
+    "prepare_document_upload_lots",
+    "prepare_code_upload_lot"
+  ],
+  "in_progress": [],
+  "pending": ["receive_director_documents", "receive_director_code"],
+  "rules": {
+    "input_literal": true,
+    "one_node_at_a_time": true,
+    "evidence_required": true,
+    "no_monolith": true,
+    "reuse_first": true
+  }
+}
