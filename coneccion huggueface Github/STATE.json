@@ -15,7 +15,8 @@
     "wire_job_dispatch_from_router",
     "final_integrated_dispatch_test",
     "verify_job_exit_idle_behavior",
-    "cross_check_all_persistence_files"
+    "cross_check_all_persistence_files",
+    "create_19_physical_storage_namespace_bridges"
   ],
   "in_progress": [],
   "pending": [],
@@ -26,6 +27,8 @@
   "evidence": {
     "repo_count": 19,
     "storage_roundtrip": "HF_STORAGE_ROUNDTRIP_PASS",
+    "storage_namespaces": 19,
+    "storage_namespace_commit": "ccd56db1e10f471b5f48adb81d17fa9624c33846",
     "router_threshold": "ROUTER_THRESHOLD_PASS",
     "github_write_commit": "5cd3e6940183de3ce84d4442ca27ac827b9556a8",
     "adapter_child_job": "6a9f9c31259f8e97255ee0a3",
