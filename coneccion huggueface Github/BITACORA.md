@@ -1,12 +1,13 @@
 # BITACORA
 
-## 2026-09-08 — LOOP 1
-- Verificado MCP público Hugging Face sin OAuth repetitivo.
+## 2026-09-08 — LOOP 1 CIERRE
 - Verificada identidad GitHub `maxbry123-commits` y 19 repositorios accesibles con el PAT clásico.
-- Auditados 3 Spaces de COMAND-CENTER-1: solo `claude-github-mcp-backup` solicita `cpu-upgrade`; `COMAND-CENTER-MAXBRY` solicita `cpu-basic`; `prueba-1` es static.
-- StrategyDelta: usar 3 workers lógicos Hugging Face Jobs `cpu-upgrade` bajo demanda para cumplir 32 GB sin mantener tres Spaces encendidos.
-- Creada raíz central de cómputo y scheduler HF1→HF2→HF3→cola con umbral 95%.
-- Creado puente lógico de almacenamiento en `osquestador-auditor/main` para 19 namespaces.
-- El OAuth conectado de HF no puede crear un bucket nuevo (403); se reutiliza el bucket existente montado en `/data`.
-- Desplegadas tools `storage_write/storage_read/storage_list`; roundtrip real `HF_STORAGE_ROUNDTRIP_PASS` verificado.
-- Lanzados workers `cpu-upgrade`; cgroup reporta límite `32000000000` bytes en HF2/HF3.
+- Verificados 3 workers lógicos Hugging Face Jobs `cpu-upgrade`; cgroup real `32000000000` bytes.
+- Router central en `coneccion huggueface Github/` usa HF1→HF2→HF3→cola con umbral 95% RAM.
+- Prueba de selección: HF1 saturado→HF2; HF1+HF2 saturados→HF3; tres saturados→WAITING/cola.
+- Puente de almacenamiento en `osquestador-auditor/main`; 19 namespaces registrados.
+- OAuth HF no puede crear bucket nuevo (403); StrategyDelta validado: bucket existente montado `/data`.
+- MCP desplegó `storage_write/storage_read/storage_list`; roundtrip `HF_STORAGE_ROUNDTRIP_PASS`.
+- Adaptador real `router/hf_jobs_adapter.py` lanzó child job `6a9f9c31259f8e97255ee0a3` y terminó `COMPLETED` con 32 GB.
+- E2E final job `6a9f9c6f259f8e97255ee0b3`: compute 32 GB → storage `E2E_STORAGE_PASS` → GitHub commit `16b0ecc3b530e16b9469ef3ec3ac83ba597f7186` → `COMPLETED`.
+- `STATE.json` marcado `VERIFIED_CLOSED`; sin tareas pendientes.
