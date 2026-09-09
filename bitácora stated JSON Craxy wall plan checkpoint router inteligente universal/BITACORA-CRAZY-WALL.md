@@ -29,14 +29,20 @@ Ejecución determinista: `PASS_ENCHUFE_GATE_V15_REUSE`.
 ## RIU-0007 — P02 REUSE CONECTORES BASELINE
 Se recupera `red/conectores.py` de la misma fuente canónica y se materializa en `router inteligente universal/red/conectores.py` sin añadir todavía el catálogo v6.
 Commit código: `8dc43490cc14f21c6d09d9e3d824606868679766`.
-Read-back: ruta publicada verificada en `main`.
 Test: `router inteligente universal/tests/test_conectores_baseline.py`, commit `94ad8b8879c8c03b2f084ac62059bd346da6a610`.
-Ejecución determinista local: `3 passed in 0.11s`; secretos ausentes no se hardcodean, comandos VPS no permitidos fallan cerrado y webhook sin env falla cerrado.
+Ejecución determinista local: `3 passed in 0.11s`.
+
+## RIU-0008 — P02 ADAPT CONECTOR HUGGING FACE V6
+Se leyó el contrato v6 y se añadió únicamente `ConectorHuggingFace` sobre el baseline, reutilizando `ConectorHTTP`; no se reescribieron HTTP/MCP/GitHub y no se inventó ningún `model_id`.
+Código: `router inteligente universal/red/conectores.py`, commit `eb3d9fc2f67a33d8cf22056488ea299a2ffa7875`, blob `e7a125354e32b718a9410f1c53485dc75ca4cf15`.
+Test: `router inteligente universal/tests/test_conector_huggingface_v6.py`, commit `0458b589e89d5c4ff9245528f3acb515936fa34e`, blob `90425867a0c2f1b090e6a51c584cb018fda13b18`.
+Verify exact-blob: ambos blobs locales comparados contra GitHub; pytest `3 passed in 0.10s`; `PASS_CONECTOR_HUGGINGFACE_V6_CONTRACT`.
+Nota: esto prueba el adapter/contrato, no un modelo privado ni endpoint remoto real.
 
 ## 3 REFUTACIONES
 1. COUNT 0 público ≠ ausencia de privados/endpoints.
-2. REUSE + baseline PASS ≠ catálogo v6 integrado.
-3. Gate/conectores PASS ≠ Paso 2 completo.
+2. Adapter HF PASS ≠ endpoint/modelo HF real verificado.
+3. Gate/conectores unitarios PASS ≠ Paso 2/3 completos.
 
 ## NEXT
-Cola 1×1: PATCH/ADAPT `red/conectores.py` con capacidades v6 respaldadas por arquitectura y donors locales → test → persistir; conservar `ConectorHTTP`/`ConectorMCP` existentes.
+Cola 1×1: siguiente conector v6 respaldado por arquitectura → PATCH/ADAPT → exact-blob test → persistir; conservar baselines verificados.
