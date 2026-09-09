@@ -50,10 +50,13 @@ Adapter `red/conector_gitlab.py`; secretos solo por entorno; acción desconocida
 ## RIU-0015 — P02 REUSE + RECONCILE CONECTOR WEBHOOK V6
 `ConectorWebhook` ya existía en `red/conectores.py` y `webhook` ya estaba registrado; no se generó adapter duplicado. El test existente `tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b` verifica resolución del registry y fail-closed `env_faltante:ROUTER_WEBHOOK_URL`. La evidencia remota ya producida por HF Job `6aa13ab432d5d0c22c5b008f` fue reconciliada correctamente: `3 passed in 0.11s`.
 
+## RIU-0016 — P02 AUDIT RECOVERY CONTRATO FILTRO LLM
+Se releyó STATE/CHECKPOINT/PLAN/Handoff/README arquitectura antes de programar. `Readme arquitectura router inteligente universal/README.md` blob `85365fb67397ebb38c6660afaea04b079ce17fe5` ordena materializar la capa/filtro LLM únicamente cuando exista contrato definido/recuperado. Handoff blob `1182154d2a96497867f29529cf97871a18a9434b` referencia `enchufe/validator_v2.py`, pero fetch de esa ruta en `main` devolvió 404 y la búsqueda de código no recuperó un contrato explícito de comportamiento. Se abre `GAP-BEHAVIOR-CONTRACT-001`; no se generó policy inventada. StrategyDelta: documentos fuente de verdad + donor local `guardrails`, manteniendo guard/plugin separado y cola 1×1.
+
 ## 3 REFUTACIONES
-1. COUNT 0 público ≠ ausencia de privados/endpoints HF.
-2. ConectorWebhook contractual PASS ≠ entrega externa real a un servicio remoto.
-3. Tests contractuales PASS ≠ Paso 2/3 completos.
+1. Donor `guardrails` físicamente disponible ≠ contrato de comportamiento autorizado.
+2. Referencia Handoff a `validator_v2.py` ≠ archivo materializado/recuperado.
+3. Auditoría contractual cerrada ≠ filtro LLM implementado ≠ Paso 2/3 completos.
 
 ## NEXT
-Cola 1×1: siguiente delta P02 prioritario respaldado por arquitectura → REUSE/PATCH/ADAPT → registry/loader/guard según corresponda → test fijado → persistir; conservar baselines verificados.
+Cola 1×1: StrategyDelta para recuperar contrato del filtro LLM desde fuentes de verdad/donor local; solo si existe → REUSE/PATCH/ADAPT → guard/plugin → test fijado → persistir. Si no existe, continuar únicamente tarea independiente segura P02.
