@@ -42,21 +42,24 @@ Adapter `red/conector_gitlab.py`; secretos solo por entorno; acción desconocida
 `ConectorVPS` ya existía en `red/conectores.py`; se reutilizó sin crear adapter duplicado. Registry `vps` commit `2b57fe8e4ef7965ee23a6a086415ef8c21db7f60`; test `tests/test_conector_vps_v6.py` commit `7f04404876b2fb1123742d32dd4d48741a2b388d`. HF Job `6aa12c19900620b5c77e61d2` status success con `PASS_CONECTOR_VPS_V6: 3/3`; unknown command fail-closed.
 
 ## RIU-0013 — P02 REUSE + WIRE CONECTOR MEMORIA V6
-`ConectorMemoria` ya existía en `red/conectores.py`; se reutilizó sin duplicar adapter. Registry `memoria` commit `3987856e107e848e111d96317e3a9c92c40a6cbb`, blob `878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9`; test `tests/test_conector_memoria_v6.py` commit `de82bd75e630f13141df7b2b2b74131163e52200`, blob `0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582`. HF Job `6aa1318d32d5d0c22c5afe2c` descargó 5 archivos exactos de `main` y dio `3 passed in 0.04s` para registry, read/commit/snapshot/health y operación desconocida fail-closed.
+`ConectorMemoria` ya existía en `red/conectores.py`; se reutilizó sin duplicar adapter. Registry `memoria` commit `3987856e107e848e111d96317e3a9c92c40a6cbb`, blob `878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9`; test `tests/test_conector_memoria_v6.py` commit `de82bd75e630f13141df7b2b2b74131163e52200`, blob `0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582`. HF Job `6aa1318d32d5d0c22c5afe2c` descargó 5 archivos exactos de `main` y dio `3 passed in 0.04s`.
 
 ## RIU-0014 — P02 REUSE + RECONCILE CONECTOR INTERNO V6
-`ConectorInterno` ya existía en `red/conectores.py` y `interno` ya estaba cableado en `red/connector_registry.py`; se evitó adapter duplicado. Registry blob `4beb5b96e5abb6ff7263cdf2297628058a98e790`; test existente `tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b`. HF Job `6aa13ab432d5d0c22c5b008f` descargó 5 archivos exactos de `main` y dio `3 passed in 0.11s`.
+`ConectorInterno` ya existía en `red/conectores.py` y `interno` ya estaba cableado en `red/connector_registry.py`; se evitó adapter duplicado. Registry blob `4beb5b96e5abb6ff7263cdf2297628058a98e790`; test `tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b`. HF Job `6aa13ab432d5d0c22c5b008f` dio `3 passed in 0.11s`.
 
 ## RIU-0015 — P02 REUSE + RECONCILE CONECTOR WEBHOOK V6
-`ConectorWebhook` ya existía en `red/conectores.py` y `webhook` ya estaba registrado; no se generó adapter duplicado. El test existente `tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b` verifica resolución del registry y fail-closed `env_faltante:ROUTER_WEBHOOK_URL`. La evidencia remota ya producida por HF Job `6aa13ab432d5d0c22c5b008f` fue reconciliada correctamente: `3 passed in 0.11s`.
+`ConectorWebhook` ya existía en `red/conectores.py` y `webhook` ya estaba registrado; no se generó adapter duplicado. Test `tests/test_conector_interno_webhook_v6.py` verifica fail-closed; HF Job `6aa13ab432d5d0c22c5b008f`: `3 passed in 0.11s`.
 
 ## RIU-0016 — P02 AUDIT RECOVERY CONTRATO FILTRO LLM
-Se releyó STATE/CHECKPOINT/PLAN/Handoff/README arquitectura antes de programar. `Readme arquitectura router inteligente universal/README.md` blob `85365fb67397ebb38c6660afaea04b079ce17fe5` ordena materializar la capa/filtro LLM únicamente cuando exista contrato definido/recuperado. Handoff blob `1182154d2a96497867f29529cf97871a18a9434b` referencia `enchufe/validator_v2.py`, pero fetch de esa ruta en `main` devolvió 404 y la búsqueda de código no recuperó un contrato explícito de comportamiento. Se abre `GAP-BEHAVIOR-CONTRACT-001`; no se generó policy inventada. StrategyDelta: documentos fuente de verdad + donor local `guardrails`, manteniendo guard/plugin separado y cola 1×1.
+README arquitectura ordenó materializar filtro LLM únicamente con contrato definido/recuperado. Handoff referenciaba `enchufe/validator_v2.py`, inicialmente ausente; se abrió `GAP-BEHAVIOR-CONTRACT-001` sin generar policy.
+
+## RIU-0017 — P02 RECOVER + MATERIALIZE VALIDATOR V2
+StrategyDelta sobre documentos fuente de verdad recuperó el código completo de `validator_v2.py` desde `FABLES ENCHUFE UNIVERSAL v2`, source blob `1f2de5b0578391164e6f6f7331507299130e8579`. Se materializó `router inteligente universal/enchufe/validator_v2.py` commit `2e20488e384ad658675d1ccaf6726fa1edd02034`, blob `418f230e705d18525aae63d6930311ccb7b9297b`. Los seis tests nombrados por la fuente quedaron en `tests/test_validator_v2_contract.py`, final commit `de9326ff0167a04024a09fc60617c8bf6b75ae28`, blob `4aa5d4a878f582b82f254cd5ff1fda8d9161fe14`. Primer harness falló por registro `sys.modules`; se corrigió el test sin alterar validator. HF Job sparse-clone `6aa15fea900620b5c77e6fa1` terminó COMPLETED: `6 passed in 0.02s`.
 
 ## 3 REFUTACIONES
-1. Donor `guardrails` físicamente disponible ≠ contrato de comportamiento autorizado.
-2. Referencia Handoff a `validator_v2.py` ≠ archivo materializado/recuperado.
-3. Auditoría contractual cerrada ≠ filtro LLM implementado ≠ Paso 2/3 completos.
+1. `validator_v2` recuperado y PASS ≠ behavior filter standalone implementado.
+2. Donor `guardrails` físicamente disponible ≠ policy de comportamiento autorizada.
+3. Test contractual PASS ≠ Paso 2 cerrado ≠ E2E Paso 3.
 
 ## NEXT
-Cola 1×1: StrategyDelta para recuperar contrato del filtro LLM desde fuentes de verdad/donor local; solo si existe → REUSE/PATCH/ADAPT → guard/plugin → test fijado → persistir. Si no existe, continuar únicamente tarea independiente segura P02.
+Cola 1×1: buscar exclusivamente contrato explícito del filtro LLM en fuentes de verdad; si existe → REUSE/PATCH/ADAPT detrás de `guard/plugin` → test fijado → persistir. Si no existe, continuar únicamente tarea independiente segura P02.
