@@ -47,11 +47,14 @@ Producción `router inteligente universal/engine/resilience.py`, commit `6b408a7
 Donor Redis/vector disponible; decisión `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C11 hasta recuperar contrato exacto de cache-key, embedding/model version, metric/threshold, TTL/invalidation, namespace/privacy, serialization, fallback/stale policy y boundary Enchufe.
 
 ## C12 Cost Optimizer — RIU-0028 AUDIT_ONLY
-Handoff define C12 como `MISSING`, `GENERATE; presupuesto/policy`. Donor local `router inteligente universal/Componente open soure router inteligente universal/litellm/`; `pyproject.toml` identifica `litellm` 1.100.0, licencia MIT y upstream `https://github.com/BerriAI/litellm`.
+Donor LiteLLM disponible; decisión `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C12 hasta recuperar scopes de presupuesto, hard/soft limits, accounting interval, currency normalization, price-source authority, fallback/rollover, ownership agente/tarea y boundary Enchufe exacto.
 
-Auditoría: `router inteligente universal/integration/audits/C12-COST-OPTIMIZER-DONOR-AUDIT.md`, commit `d34b0ff83e81537d0d1da9ad26db327a0ea552d8`.
+## C13 CodeSandbox dual — RIU-0029 AUDIT_ONLY
+Handoff define C13 como `MISSING`, `GENERATE/ADAPT; Docker + subprocess con paridad`. Donor local `router inteligente universal/Componente open soure router inteligente universal/docker-py/`; `pyproject.toml` declara paquete `docker`, licencia Apache-2.0, versión dinámica y upstream `https://github.com/docker/docker-py`.
 
-Decisión: `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C12 hasta recuperar scopes de presupuesto, hard/soft limits, accounting interval, currency normalization, price-source authority, fallback/rollover, ownership agente/tarea y boundary Enchufe exacto.
+Auditoría: `router inteligente universal/integration/audits/C13-CODESANDBOX-DONOR-AUDIT.md`, commit `b761958f1532345e97ec82e747d38cd9b596ec0c`.
+
+Decisión: `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C13 hasta recuperar allowlists, imagen/pinning, límites CPU/mem/PIDs/disco, red/filesystem, timeout/cancel, límites IO/artefactos, secretos, contrato de paridad/fallback Docker↔subprocess, schema de resultado y boundary Enchufe exacto.
 
 ## GAPs activos
 - `GAP-HF-CATALOG-001`: privados/endpoints sin `model_id` confirmado.
@@ -61,6 +64,7 @@ Decisión: `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C12 hasta recuperar scope
 - `GAP-C01-API-CONTRACT-001`: FastAPI donor válido, contrato Paneles 1–5 incompleto.
 - `GAP-C11-SEMANTIC-CACHE-CONTRACT-001`: donors Redis/vector presentes, policy/contrato semantic-cache no recuperado.
 - `GAP-C12-COST-POLICY-CONTRACT-001`: LiteLLM/cost metadata presente, budget policy Router no recuperada.
+- `GAP-C13-SANDBOX-CONTRACT-001`: docker-py presente, contrato Router de aislamiento/ejecución/paridad no recuperado.
 
 ## Último delta LOOP
-RIU-0028 auditó exclusivamente C12 Cost Optimizer y registró el GAP contractual sin generar producción. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_C12_AUDIT_ONLY_CONTRACT_GAP_RECORDED`. Progreso se conserva en 95% porque auditoría sin runtime PASS no equivale a implementación; Paso 2 ACTIVE; Paso 3 PENDING.
+RIU-0029 auditó exclusivamente C13 CodeSandbox dual y registró el GAP contractual sin generar producción. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_C13_AUDIT_ONLY_CONTRACT_GAP_RECORDED`. Progreso se conserva en 95% porque auditoría sin runtime PASS no equivale a implementación; Paso 2 ACTIVE; Paso 3 PENDING.
