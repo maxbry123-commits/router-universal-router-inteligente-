@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 78,
+  "progress_percent": 82,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -48,7 +48,10 @@
     "reuse_conector_webhook_v6",
     "verify_conector_webhook_v6_contract",
     "audit_behavior_filter_contract_recovery",
-    "verify_connector_registry_v6_contract"
+    "verify_connector_registry_v6_contract",
+    "recover_validator_v2_contract_from_fables",
+    "materialize_validator_v2",
+    "verify_validator_v2_contract"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -61,9 +64,9 @@
     },
     {
       "id": "GAP-BEHAVIOR-CONTRACT-001",
-      "type": "CONTRACT_NOT_RECOVERED",
-      "evidence": "README arquitectura requires behavior filter only when contract is defined/recovered; Handoff references enchufe/validator_v2.py but that path returns 404 on main; repository code search did not recover an explicit behavior-filter contract",
-      "next": "StrategyDelta: inspect architecture/source-of-truth documents and local guardrails donor for a pre-existing contract; do not generate behavior semantics until recovered"
+      "type": "BEHAVIOR_POLICY_NOT_RECOVERED",
+      "evidence": "FABLES Enchufe Universal v2 recovered validator_v2 and cognitive profile/repetition invariants, but no explicit standalone LLM behavior-filter allow/deny policy was recovered; validator contract is not equivalent to behavior policy",
+      "next": "StrategyDelta: inspect remaining architecture/source-of-truth documents for explicit behavior-filter semantics; do not generate behavior policy until recovered"
     }
   ],
   "evidence": [
@@ -90,8 +93,12 @@
     "router inteligente universal/tests/test_conector_interno_webhook_v6.py blob b7dc3343b7515ad9a1f57ccee983ace65bb03a6b",
     "HF Job 6aa13ab432d5d0c22c5b008f FETCHED_EXACT_MAIN 5; 3 passed in 0.11s",
     "ConectorWebhook REUSE from router inteligente universal/red/conectores.py blob beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78; registry webhook blob 4beb5b96e5abb6ff7263cdf2297628058a98e790; fail-closed covered by test blob b7dc3343b7515ad9a1f57ccee983ace65bb03a6b; same HF Job 6aa13ab432d5d0c22c5b008f 3 passed",
-    "Behavior filter contract audit: Readme arquitectura router inteligente universal/README.md blob 85365fb67397ebb38c6660afaea04b079ce17fe5 requires defined/recovered contract; readme Handoff indice componentes.md blob 1182154d2a96497867f29529cf97871a18a9434b references enchufe/validator_v2.py; fetch of enchufe/validator_v2.py on main returned 404",
-    "router inteligente universal/tests/test_connector_registry_v6.py commit 34df884ae1a0ba474425556e1c551b4bbead53be blob 228788e2f62df45dfb23f88a804924ec5e8feb8f; HF Job 6aa15404900620b5c77e6c45 clean-clone main; 13 passed in 0.05s"
+    "Behavior filter contract audit: Readme arquitectura router inteligente universal/README.md requires defined/recovered contract; Handoff references enchufe/validator_v2.py; initial fetch returned 404",
+    "router inteligente universal/tests/test_connector_registry_v6.py commit 34df884ae1a0ba474425556e1c551b4bbead53be blob 228788e2f62df45dfb23f88a804924ec5e8feb8f; HF Job 6aa15404900620b5c77e6c45 clean-clone main; 13 passed in 0.05s",
+    "FABLES Enchufe Universal v2 source blob 1f2de5b0578391164e6f6f7331507299130e8579 recovered explicit validator_v2 code and six named contract tests",
+    "router inteligente universal/enchufe/validator_v2.py commit 2e20488e384ad658675d1ccaf6726fa1edd02034 blob 418f230e705d18525aae63d6930311ccb7b9297b",
+    "router inteligente universal/tests/test_validator_v2_contract.py final commit de9326ff0167a04024a09fc60617c8bf6b75ae28 blob 4aa5d4a878f582b82f254cd5ff1fda8d9161fe14",
+    "HF Job 6aa15fea900620b5c77e6fa1 COMPLETED; sparse-clone main; 6 passed in 0.02s"
   ],
   "rules": {
     "input_literal": true,
