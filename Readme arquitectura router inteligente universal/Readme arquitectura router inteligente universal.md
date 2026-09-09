@@ -28,9 +28,11 @@ Bridge HF REUSE confirmado. HF Job verificó 0 modelos públicos del owner `COMA
 - Enchufe Gate v1.5 reutilizado y verificado.
 - Conectores baseline reutilizados sin reescribir HTTP/MCP.
 - `ConectorHuggingFace` v6 añadido sobre `ConectorHTTP`; contrato verificado 3/3.
-- `ConectorDB` v6 añadido en `../router inteligente universal/red/conectores.py` siguiendo v6 §4.4 y TASK-03 R-002: DSN únicamente por env; adapters lazy para Postgres/MySQL/Redis; fail-closed para motor/params/acción inválidos.
-- Código DB: commit `885cf992222e59097e5042b74b5371a3a4aa7d1a`, blob `beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78`.
-- Test: `../router inteligente universal/tests/test_conector_db_v6.py`, commit `0f6681e17988554a3206d9d3fac7326028ae24dc`; HF Job fijado al commit `6aa1105432d5d0c22c5af971` => `3 passed in 0.10s`.
+- `ConectorDB` v6 añadido siguiendo v6 §4.4 y TASK-03 R-002: DSN únicamente por env; adapters lazy para Postgres/MySQL/Redis; fail-closed para motor/params/acción inválidos.
+- `ConectorGitLab` y `ConectorMCPApp` adaptados/cableados en registry y verificados contractualmente.
+- `ConectorVPS` reutilizado desde `red/conectores.py`, cableado en registry y verificado sin crear adapter duplicado.
+- `ConectorMemoria` reutilizado desde `red/conectores.py` y cableado como `memoria` en `connector_registry.py`; registry commit `3987856e107e848e111d96317e3a9c92c40a6cbb`, blob `878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9`.
+- Test Memoria: `tests/test_conector_memoria_v6.py`, commit `de82bd75e630f13141df7b2b2b74131163e52200`, blob `0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582`; HF Job `6aa1318d32d5d0c22c5afe2c` descargó archivos exactos de `main` y produjo `3 passed in 0.04s`.
 
 Los PASS actuales demuestran contratos/adapters, no servicios remotos reales. Esos pertenecen al Paso 3.
 
