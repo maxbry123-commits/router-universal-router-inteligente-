@@ -1,23 +1,21 @@
 {
-  "checkpoint": "router-universal-p02-hf-connector-v6",
+  "checkpoint": "router-universal-p02-db-connector-v6",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
     "components_destination": "router inteligente universal/Componente open soure router inteligente universal/",
     "hf_public_owner_inventory": "HF Job 6aa0f30c32d5d0c22c5af586 => COUNT 0",
-    "hf_registry": "coneccion huggueface Github/registry/repos.json@e9ac743159b44a54325f15557c9a1c7222e7cc95 => GitHub namespaces only, no HF model_id",
     "enchufe_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "connectors_path": "router inteligente universal/red/conectores.py",
-    "connectors_baseline": "8dc43490cc14f21c6d09d9e3d824606868679766; baseline pytest 3 passed in 0.11s",
     "hf_connector_commit": "eb3d9fc2f67a33d8cf22056488ea299a2ffa7875",
-    "hf_connector_blob": "e7a125354e32b718a9410f1c53485dc75ca4cf15",
-    "hf_connector_test_commit": "0458b589e89d5c4ff9245528f3acb515936fa34e",
-    "hf_connector_test_blob": "90425867a0c2f1b090e6a51c584cb018fda13b18",
-    "hf_connector_test_log": "exact Git blob verified; pytest 3 passed in 0.10s; PASS_CONECTOR_HUGGINGFACE_V6_CONTRACT"
+    "db_connector_commit": "885cf992222e59097e5042b74b5371a3a4aa7d1a",
+    "db_connector_blob": "beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78",
+    "db_connector_test_commit": "0f6681e17988554a3206d9d3fac7326028ae24dc",
+    "db_connector_test_log": "HF Job 6aa1105432d5d0c22c5af971 pinned commit; pytest 3 passed in 0.10s; PASS_CONECTOR_DB_V6_CONTRACT"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING",
-  "next_delta": "PATCH/ADAPT next highest-value v6 connector in red/conectores.py, one connector at a time; preserve HTTP/MCP/GitHub/HF baselines",
+  "next_delta": "PATCH/ADAPT next highest-value v6 connector after ConectorDB, one connector at a time; preserve verified baselines",
   "next_if_pass": "continue P02 queue 1x1",
   "next_if_gap": "StrategyDelta materially different",
   "status": "ACTIVE_LOOP"
