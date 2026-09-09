@@ -1,21 +1,23 @@
 {
-  "checkpoint": "router-universal-p02-db-connector-v6",
+  "checkpoint": "router-universal-p02-gitlab-connector-v6",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
     "components_destination": "router inteligente universal/Componente open soure router inteligente universal/",
-    "hf_public_owner_inventory": "HF Job 6aa0f30c32d5d0c22c5af586 => COUNT 0",
+    "hf_public_owner_inventory": "COUNT 0",
     "enchufe_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "connectors_path": "router inteligente universal/red/conectores.py",
-    "hf_connector_commit": "eb3d9fc2f67a33d8cf22056488ea299a2ffa7875",
-    "db_connector_commit": "885cf992222e59097e5042b74b5371a3a4aa7d1a",
-    "db_connector_blob": "beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78",
-    "db_connector_test_commit": "0f6681e17988554a3206d9d3fac7326028ae24dc",
-    "db_connector_test_log": "HF Job 6aa1105432d5d0c22c5af971 pinned commit; pytest 3 passed in 0.10s; PASS_CONECTOR_DB_V6_CONTRACT"
+    "gitlab_adapter_path": "router inteligente universal/red/conector_gitlab.py",
+    "gitlab_adapter_commit": "122e5baeec061e89be2fe32411d0b3d5ee70f6aa",
+    "gitlab_adapter_blob": "d0e1de92a0cb3ab1577e29c2c83adf020806f4c1",
+    "gitlab_registry_path": "router inteligente universal/red/connector_registry.py",
+    "gitlab_registry_commit": "0c13109de1f2e120b9c3eea7990026b4c80f8639",
+    "gitlab_test_commit": "0e5dbf8d4efa34df83397fea6631a74bb7896c12",
+    "gitlab_verify": "HF Job 6aa11334900620b5c77e5ca7 status success"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING",
-  "next_delta": "PATCH/ADAPT next highest-value v6 connector after ConectorDB, one connector at a time; preserve verified baselines",
+  "next_delta": "PATCH/ADAPT next architecture-backed v6 connector one at a time; preserve registry and verified baselines",
   "next_if_pass": "continue P02 queue 1x1",
   "next_if_gap": "StrategyDelta materially different",
   "status": "ACTIVE_LOOP"
