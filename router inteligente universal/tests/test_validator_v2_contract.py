@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import sys
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).parents[1] / "enchufe" / "validator_v2.py"
 spec = importlib.util.spec_from_file_location("validator_v2", MODULE_PATH)
 assert spec and spec.loader
 validator_v2 = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = validator_v2
 spec.loader.exec_module(validator_v2)
 
 
