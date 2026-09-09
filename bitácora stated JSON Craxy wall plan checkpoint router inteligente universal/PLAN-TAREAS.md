@@ -11,14 +11,16 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
 2. 📌 **Paso 2 — cableado + poda + código faltante** — ACTIVE
    - ✅ REUSE `red/enchufe_gate.py` + baseline determinista PASS;
    - ✅ REUSE `red/conectores.py` sin reescribir HTTP/MCP;
-   - ✅ PATCH/ADAPT `ConectorHuggingFace` + pytest 3/3 PASS;
-   - ✅ PATCH/ADAPT `ConectorDB` v6 en el mismo módulo, DSN solo por entorno, Postgres/MySQL/Redis fail-closed;
-   - ✅ verify commit fijado en HF Job `6aa1105432d5d0c22c5af971`: pytest 3/3 PASS (`PASS_CONECTOR_DB_V6_CONTRACT`);
-   - ⏳ siguiente cola 1×1: siguiente conector v6 prioritario demostrado por arquitectura, preservando baselines;
+   - ✅ PATCH/ADAPT `ConectorHuggingFace` + test contractual PASS;
+   - ✅ PATCH/ADAPT `ConectorDB` v6 + test contractual PASS;
+   - ✅ ADAPT `red/conector_gitlab.py` + secretos por env + acciones fail-closed;
+   - ✅ WIRE `red/connector_registry.py` con GitLab y baselines existentes;
+   - ✅ test `test_conector_gitlab_v6.py`; HF Job `6aa11334900620b5c77e5ca7` status success;
+   - ⏳ siguiente cola 1×1: siguiente conector v6 prioritario demostrado por arquitectura;
    - ⏳ capa/filtro comportamiento LLM pendiente hasta contrato definido/recuperado.
 3. 📌✅ **Paso 3 — tests integración** — PENDING
    - Hugging Face + GitHub + API + agentes;
    - exigir ruta + SHA/diff + read-back + test/log.
 
-Cola 1×1 actual: `red/conectores.py` → siguiente connector PATCH/ADAPT v6 → test → persistir.
+Cola 1×1 actual: siguiente conector v6 → adapter/registry → test → persistir.
 Reglas: no sobreingeniería; no añadir pasos; REUSE > PATCH > ADAPT > GENERATE; archivo presente ≠ integrado.
