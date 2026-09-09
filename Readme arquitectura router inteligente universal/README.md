@@ -44,11 +44,14 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 Producción `router inteligente universal/engine/resilience.py`, commit `6b408a781d886a8bde43c3f62b48247d872afd36`; test `a0e74c04c93dfc2cc0c96da9c31234d98b44333c`; HF Job `6aa1ae8221047bf1b03707ff` = `5 passed in 0.10s`.
 
 ## C11 Semantic Cache — RIU-0027 AUDIT_ONLY
-Handoff blob `1182154d2a96497867f29529cf97871a18a9434b` define C11 como `MISSING`, `GENERATE/ADAPT sobre Redis/vector similarity`. Donor root tree `5322af570d72fe2e6feb67426d9d299e08fadad1` confirma biblioteca local y `redis-py/`; upstream `https://github.com/redis/redis-py`.
+Donor Redis/vector disponible; decisión `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C11 hasta recuperar contrato exacto de cache-key, embedding/model version, metric/threshold, TTL/invalidation, namespace/privacy, serialization, fallback/stale policy y boundary Enchufe.
 
-Auditoría: `router inteligente universal/integration/audits/C11-SEMANTIC-CACHE-DONOR-AUDIT.md`, commit `e03782dcc413efab22399f2df3dc30c6a60a053e`.
+## C12 Cost Optimizer — RIU-0028 AUDIT_ONLY
+Handoff define C12 como `MISSING`, `GENERATE; presupuesto/policy`. Donor local `router inteligente universal/Componente open soure router inteligente universal/litellm/`; `pyproject.toml` identifica `litellm` 1.100.0, licencia MIT y upstream `https://github.com/BerriAI/litellm`.
 
-Decisión: `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C11 hasta recuperar contrato exacto de cache-key, embedding/model version, metric/threshold, TTL/invalidation, namespace/privacy, serialization, fallback/stale policy y boundary Enchufe. Donor Redis/vector no constituye integración.
+Auditoría: `router inteligente universal/integration/audits/C12-COST-OPTIMIZER-DONOR-AUDIT.md`, commit `d34b0ff83e81537d0d1da9ad26db327a0ea552d8`.
+
+Decisión: `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C12 hasta recuperar scopes de presupuesto, hard/soft limits, accounting interval, currency normalization, price-source authority, fallback/rollover, ownership agente/tarea y boundary Enchufe exacto.
 
 ## GAPs activos
 - `GAP-HF-CATALOG-001`: privados/endpoints sin `model_id` confirmado.
@@ -57,6 +60,7 @@ Decisión: `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C11 hasta recuperar contr
 - `GAP-C03-CONTRACT-001`: donor settings válido, contrato Router no recuperado.
 - `GAP-C01-API-CONTRACT-001`: FastAPI donor válido, contrato Paneles 1–5 incompleto.
 - `GAP-C11-SEMANTIC-CACHE-CONTRACT-001`: donors Redis/vector presentes, policy/contrato semantic-cache no recuperado.
+- `GAP-C12-COST-POLICY-CONTRACT-001`: LiteLLM/cost metadata presente, budget policy Router no recuperada.
 
 ## Último delta LOOP
-RIU-0027 auditó exclusivamente C11 Semantic Cache y registró el GAP contractual sin generar producción. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_C11_AUDIT_ONLY_CONTRACT_GAP_RECORDED`. Progreso se conserva en 95% porque auditoría sin runtime PASS no equivale a implementación; Paso 2 ACTIVE; Paso 3 PENDING.
+RIU-0028 auditó exclusivamente C12 Cost Optimizer y registró el GAP contractual sin generar producción. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_C12_AUDIT_ONLY_CONTRACT_GAP_RECORDED`. Progreso se conserva en 95% porque auditoría sin runtime PASS no equivale a implementación; Paso 2 ACTIVE; Paso 3 PENDING.
