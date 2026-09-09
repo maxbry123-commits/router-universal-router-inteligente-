@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Router · Conectores</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+:root{--n:#0D0D0F;--c:#1F1E1B;--c2:#252320;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--w:#F2EBD9;--g:#B8B0A0;--gd:#7E776B;--az:#3B82F6;--ok:#7FD1A8;--r:18px;--rs:10px;--serif:'Fraunces',serif;--sans:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--n);color:var(--w);font:14px/1.5 var(--sans);max-width:520px;margin:0 auto;padding:24px 20px;min-height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.lbl{font:500 11px/1 var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:6px}
+h1{font:500 26px/1.1 var(--serif);letter-spacing:-0.02em}
+.close{background:transparent;border:1px solid var(--b);color:var(--g);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:14px}
+.close:hover{border-color:var(--b2);color:var(--w)}
+
+.search{background:var(--c);border:1px solid var(--b);border-radius:var(--rs);padding:10px 12px;width:100%;color:var(--w);font:13px var(--sans);outline:none;margin-bottom:8px}
+.search:focus{border-color:var(--az)}
+.search::placeholder{color:var(--gd)}
+
+.imp-exp{display:flex;gap:6px;margin-bottom:14px}
+.imp-exp button{flex:1;padding:8px;background:var(--c2);border:1px solid var(--b);color:var(--g);border-radius:var(--rs);font:11px var(--sans);cursor:pointer}
+.imp-exp button:hover{border-color:var(--b2);color:var(--w)}
+
+.cats{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px}
+.cat{padding:6px 12px;background:var(--c);border:1px solid var(--b);border-radius:20px;font:500 11px var(--sans);color:var(--g);cursor:pointer;white-space:nowrap}
+.cat.on{background:var(--c2);color:var(--w);border-color:var(--b2)}
+
+.acc{background:var(--c);border:1px solid var(--b);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+.acc-h{padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s}
+.acc-h:hover{background:var(--c2)}
+.acc-i{width:36px;height:36px;background:var(--c2);border:1px solid var(--b);border-radius:8px;display:grid;place-items:center;font:600 11px var(--sans);color:var(--az);flex-shrink:0}
+.acc-n{flex:1;font:500 14px var(--serif);color:var(--w)}
+.acc-c{font:11px var(--sans);color:var(--gd)}
+.chev{color:var(--gd);font-size:12px;transition:transform .2s}
+.acc.open .chev{transform:rotate(90deg)}
+.acc-b{display:none;padding:0 16px 14px}
+.acc.open .acc-b{display:block}
+
+.svc{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--b);font-size:13px}
+.svc-i{width:28px;height:28px;background:var(--c2);border:1px solid var(--b);border-radius:6px;display:grid;place-items:center;font:600 10px var(--sans);color:var(--g)}
+.svc-n{flex:1;color:var(--w);font-weight:500}
+.svc-k{color:var(--gd);font:11px var(--sans)}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--ok)} .dot.idle{background:#5a5a5a}
+.svc-act{display:flex;gap:3px;margin-left:6px}
+.svc-act button{background:transparent;border:0;color:var(--gd);cursor:pointer;padding:2px 5px;font-size:12px}
+.svc-act button:hover{color:var(--w)}
+.t{background:transparent;border:1px solid var(--b);color:var(--g);padding:3px 8px;border-radius:6px;font:10px var(--sans);cursor:pointer;text-transform:uppercase;letter-spacing:0.05em}
+.t:hover{border-color:var(--b2);color:var(--w)}
+
+.sw{position:relative;width:30px;height:16px;background:#3a3a3a;border-radius:8px;cursor:pointer;flex-shrink:0;border:0;padding:0}
+.sw::after{content:"";position:absolute;width:12px;height:12px;background:#fff;border-radius:50%;top:2px;left:2px;transition:all .2s}
+.sw.on{background:var(--az)}
+.sw.on::after{left:16px}
+
+.fab{position:fixed;bottom:20px;right:20px;width:50px;height:50px;background:var(--w);color:var(--n);border:0;border-radius:50%;font-size:22px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.4)}
+</style>
+</head>
+<body>
+
+<header>
+  <div><div class="lbl">Panel 4 · Conectores pre-config</div><h1>Conectores</h1></div>
+  <button class="close" onclick="location.href='router-v1-lista.html'">×</button>
+</header>
+
+<!-- ID 70 importarConectorMasivo + 71 exportarConectores -->
+<div class="imp-exp">
+  <button onclick="document.getElementById('imp').click()">↑ importarConectorMasivo</button>
+  <button onclick="alert('exportarConectores() → yaml')">↓ exportarConectores</button>
+  <input type="file" id="imp" hidden accept=".yaml,.yml,.json" onchange="alert('importarConectorMasivo() → ' + this.files[0].name)">
+</div>
+
+<input class="search" placeholder="🔍 buscar..." />
+
+<!-- ID 69 seleccionarCategoria -->
+<div class="cats">
+  <div class="cat on" data-c="all">Todas</div>
+  <div class="cat" data-c="ai">ai_providers</div>
+  <div class="cat" data-c="cloud">cloud</div>
+  <div class="cat" data-c="db">databases</div>
+  <div class="cat" data-c="msg">messaging</div>
+  <div class="cat" data-c="repo">repos</div>
+  <div class="cat" data-c="mcp">mcp</div>
+  <div class="cat" data-c="storage">storage</div>
+  <div class="cat" data-c="email">email</div>
+  <div class="cat" data-c="infra">infra</div>
+  <div class="cat" data-c="webhook">webhooks</div>
+</div>
+
+<!-- ID 63 listarConectoresPreconfigurados -->
+<div class="acc open" data-cat="ai">
+  <div class="acc-h"><div class="acc-i">AI</div><div class="acc-n">AI Providers</div><div class="acc-c">3/10</div><div class="chev">›</div></div>
+  <div class="acc-b">
+    <div class="svc">
+      <div class="svc-i">LL</div><div class="svc-n">LiteLLM</div><div class="svc-k">sk-...</div>
+      <span class="dot ok"></span>
+      <div class="svc-act">
+        <button class="sw on"></button>
+        <button class="t">test</button>
+        <button title="editar">✎</button>
+        <button title="eliminar">×</button>
+      </div>
+    </div>
+    <div class="svc">
+      <div class="svc-i">OC</div><div class="svc-n">OpenAI Compatible</div><div class="svc-k">nvapi-...</div>
+      <span class="dot ok"></span>
+      <div class="svc-act">
+        <button class="sw on"></button>
+        <button class="t">test</button>
+        <button title="editar">✎</button>
+        <button title="eliminar">×</button>
+      </div>
+    </div>
+    <div class="svc">
+      <div class="svc-i">HF</div><div class="svc-n">HuggingFace</div><div class="svc-k">5 nim</div>
+      <span class="dot ok"></span>
+      <div class="svc-act">
+        <button class="sw on"></button>
+        <button class="t">test</button>
+        <button title="editar">✎</button>
+        <button title="eliminar">×</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="acc" data-cat="cloud">
+  <div class="acc-h"><div class="acc-i">CL</div><div class="acc-n">Cloud</div><div class="acc-c">1/4</div><div class="chev">›</div></div>
+  <div class="acc-b">
+    <div class="svc"><div class="svc-i">CF</div><div class="svc-n">Cloudflare</div><div class="svc-k">cf-...</div><span class="dot ok"></span><div class="svc-act"><button class="sw on"></button><button class="t">test</button><button title="editar">✎</button><button title="eliminar">×</button></div></div>
+  </div>
+</div>
+
+<div class="acc" data-cat="repo">
+  <div class="acc-h"><div class="acc-i">RP</div><div class="acc-n">Repos</div><div class="acc-c">1/3</div><div class="chev">›</div></div>
+  <div class="acc-b">
+    <div class="svc"><div class="svc-i">GH</div><div class="svc-n">GitHub</div><div class="svc-k">maxbry</div><span class="dot ok"></span><div class="svc-act"><button class="sw on"></button><button class="t">test</button><button title="editar">✎</button><button title="eliminar">×</button></div></div>
+  </div>
+</div>
+
+<div class="acc" data-cat="msg"><div class="acc-h"><div class="acc-i">MS</div><div class="acc-n">Mensajería</div><div class="acc-c">0/3</div><div class="chev">›</div></div></div>
+<div class="acc" data-cat="mcp"><div class="acc-h"><div class="acc-i">MC</div><div class="acc-n">MCPs</div><div class="acc-c">0/4</div><div class="chev">›</div></div></div>
+<div class="acc" data-cat="db"><div class="acc-h"><div class="acc-i">DB</div><div class="acc-n">Databases</div><div class="acc-c">0/4</div><div class="chev">›</div></div></div>
+<div class="acc" data-cat="storage"><div class="acc-h"><div class="acc-i">ST</div><div class="acc-n">Storage</div><div class="acc-c">0/3</div><div class="chev">›</div></div></div>
+<div class="acc" data-cat="email"><div class="acc-h"><div class="acc-i">EM</div><div class="acc-n">Email</div><div class="acc-c">0/2</div><div class="chev">›</div></div></div>
+<div class="acc" data-cat="infra"><div class="acc-h"><div class="acc-i">IF</div><div class="acc-n">Infra</div><div class="acc-c">0/4</div><div class="chev">›</div></div></div>
+<div class="acc" data-cat="webhook"><div class="acc-h"><div class="acc-i">WH</div><div class="acc-n">Webhooks</div><div class="acc-c">1/3</div><div class="chev">›</div></div></div>
+
+<!-- ID 72 probarTodosConectores -->
+<button class="fab" onclick="if(confirm('probarTodosConectores()?')) alert('OK batch test')">⊕</button>
+
+<script>
+// 64 agregarConectorPreconfig (FAB)
+document.querySelector('.fab').onclick = e => {
+  if (e.target.textContent === '⊕') return;
+};
+
+// 68 probarConectorPreconfig + 67 toggle + 66 editar + 65 eliminar
+document.querySelectorAll('.svc').forEach(s => {
+  s.querySelectorAll('.svc-act button').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    if (b.classList.contains('t')) b.textContent = '✓';
+    else if (b.classList.contains('sw')) b.classList.toggle('on');
+    else if (b.title === 'editar') alert('editarConectorPreconfig()');
+    else if (b.title === 'eliminar') { s.remove(); }
+  });
+});
+
+// 69 seleccionarCategoria
+document.querySelectorAll('.cat').forEach(c => c.onclick = () => {
+  document.querySelectorAll('.cat').forEach(x => x.classList.remove('on'));
+  c.classList.add('on');
+  const v = c.dataset.c;
+  document.querySelectorAll('.acc').forEach(a => a.style.display = (v === 'all' || a.dataset.cat === v) ? '' : 'none');
+});
+
+// accordion
+document.querySelectorAll('.acc-h').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'));
+</script>
+</body>
+</html>

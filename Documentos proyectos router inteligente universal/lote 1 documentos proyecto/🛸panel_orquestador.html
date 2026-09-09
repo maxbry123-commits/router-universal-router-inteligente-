@@ -1,0 +1,113 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel Orquestador 🎅 · NCT</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+:root{--p:#0E2A1F;--c:#0B211A;--b:#1E4634;--pa:#F2EDE3;--l:#C9A24B;
+--m:#7FD1A8;--r:#D6453D;--t:#DCE8DF;--am:#E8B23A}*{box-sizing:border-box;margin:0}
+body{background:var(--p);color:var(--t);font:13px/1.5 'IBM Plex Mono',
+monospace;padding:12px}h1{font-family:'Fraunces',serif;color:var(--pa);
+font-size:clamp(19px,4vw,29px)}h2{font-family:'Fraunces',serif;
+color:var(--pa);font-size:14px}.sub{color:var(--l);font-size:11px}
+.tri{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:820px){.tri{grid-template-columns:1fr}}
+.caja{background:var(--c);border:1px solid var(--b);border-radius:10px;
+padding:11px;display:flex;flex-direction:column;gap:7px}
+select,input,textarea{background:#07160F;color:var(--t);
+border:1px solid var(--b);border-radius:6px;padding:7px;font:inherit;
+width:100%;font-size:12px}
+button{background:var(--l);color:#1B1406;border:0;padding:8px 11px;
+border-radius:6px;font:600 12px 'IBM Plex Mono';cursor:pointer}
+button.f{background:transparent;color:var(--l);border:1px solid var(--l)}
+button.verde{background:var(--m);color:#0A1D14}
+button:focus-visible{outline:3px solid var(--m)}
+.fase{background:#07160F;border:1px solid var(--b);border-radius:8px;
+padding:8px;font-size:12px}.fase b{color:var(--am)}
+pre{background:#07160F;border:1px solid var(--b);border-radius:8px;
+padding:8px;font-size:10.5px;max-height:190px;overflow:auto;
+white-space:pre-wrap}.fila{display:flex;gap:7px;flex-wrap:wrap}
+.pill{font-size:10px;border:1px solid var(--b);border-radius:99px;
+padding:2px 7px;color:var(--m)}</style></head><body>
+<h1>Panel Orquestador 🎅</h1>
+<span class="sub">input configurable → funciones REALES en sandbox →
+salida · JS corre aquí YA · Python corre vía puente 🌉</span>
+<div class="tri">
+<section class="caja"><h2>📥 Input</h2>
+<select id="fuente"><option value="texto">texto directo</option>
+<option value="json">JSON</option><option value="carta">carta 💌 (demo)</option>
+</select>
+<textarea id="entrada" rows="6">{"x": 5, "msg": "hola tren"}</textarea>
+<span class="pill">acople futuro: E-001 input_listener vía Router</span>
+</section>
+<section class="caja"><h2>⚙️ Proceso (apila funciones)</h2>
+<div class="fila">
+<select id="lib" style="flex:1">
+<option value="limpiar">🧼 limpiar texto</option>
+<option value="mayus">🔠 a mayúsculas</option>
+<option value="numeros">🔢 extraer números</option>
+<option value="sumar1">➕ x = x+1</option>
+<option value="doblar">✖️ x = x*2</option>
+<option value="sellar">🔏 sellar hash</option>
+<option value="custom">✍️ JS propio</option></select>
+<button id="bAdd">＋</button></div>
+<textarea id="jsCustom" rows="2" hidden
+placeholder="return {...p, y: (p.x||0)+10}"></textarea>
+<div id="pila"></div>
+<div class="fila">
+<button id="bRun" class="verde">▶ EJECUTAR en sandbox (JS vivo)</button>
+<button id="bPy" class="f">🐍 Generar Python p/ jaula</button></div>
+</section>
+<section class="caja"><h2>📤 Salida</h2>
+<select id="destino"><option>ver aquí</option><option>router → VPS</option>
+<option>router → HF</option><option>agente 🧝</option><option>repo</option>
+</select>
+<pre id="salida">— ejecuta para ver la salida fase por fase —</pre>
+<span class="pill">acople futuro: fase_runner.correr(handlers) — misma
+firma que /puente/ejecutar</span>
+</section></div>
+<pre id="pyOut" hidden style="margin-top:10px"></pre>
+<script>
+const LIB={
+ limpiar:p=>({...p,msg:String(p.msg||"").replace(/[^\x20-\x7EáéíóúñÑ]/g,"").trim()}),
+ mayus:p=>({...p,msg:String(p.msg||"").toUpperCase()}),
+ numeros:p=>({...p,numeros:(String(p.msg||"").match(/\d+/g)||[]).map(Number)}),
+ sumar1:p=>({...p,x:(p.x||0)+1}),
+ doblar:p=>({...p,x:(p.x||0)*2}),
+ sellar:p=>({...p,sello:btoa(JSON.stringify(p)).slice(0,12)})};
+const PY={limpiar:"entrada['msg']=str(entrada.get('msg','')).strip()",
+ mayus:"entrada['msg']=str(entrada.get('msg','')).upper()",
+ numeros:"import re;entrada['numeros']=[int(n) for n in re.findall(r'\\d+',str(entrada.get('msg','')))]",
+ sumar1:"entrada['x']=entrada.get('x',0)+1",
+ doblar:"entrada['x']=entrada.get('x',0)*2",
+ sellar:"import hashlib,json;entrada['sello']=hashlib.sha256(json.dumps(entrada,sort_keys=True).encode()).hexdigest()[:12]"};
+const S={pila:[]};const $=i=>document.getElementById(i);
+$("lib").onchange=()=>$("jsCustom").hidden=$("lib").value!=="custom";
+$("bAdd").onclick=()=>{
+ const v=$("lib").value;
+ S.pila.push(v==="custom"?{n:"js_propio",js:$("jsCustom").value}:{n:v});
+ pinta();};
+function pinta(){const d=$("pila");d.innerHTML="";
+ S.pila.forEach((f,i)=>{const e=document.createElement("div");
+  e.className="fase";e.innerHTML=`<b>${i+1}.</b> ${f.n} `;
+  const b=document.createElement("button");b.textContent="✕";
+  b.style.cssText="padding:0 6px;font-size:10px;float:right";
+  b.onclick=()=>{S.pila.splice(i,1);pinta();};e.appendChild(b);
+  d.appendChild(e);});}
+$("bRun").onclick=()=>{
+ let p;try{p=$("fuente").value==="json"?JSON.parse($("entrada").value):
+  {msg:$("entrada").value,x:5};}catch{return alert("JSON inválido");}
+ const log=[`IN: ${JSON.stringify(p)}`];
+ for(const f of S.pila){
+  try{p=f.js?(new Function("p","\"use strict\";"+f.js))({...p})||p:
+   LIB[f.n]({...p});}
+  catch(e){log.push(`⛔ ${f.n}: ${e.message}`);break;}
+  log.push(`⚙️ ${f.n} → ${JSON.stringify(p)}`);}
+ log.push(`📤 destino: ${$("destino").value}`);
+ $("salida").textContent=log.join("\n");};
+$("bPy").onclick=()=>{
+ const lineas=S.pila.map(f=>PY[f.n]||"# js_propio: portar a mano");
+ const code=["import json","# entrada la inyecta el puente",
+  ...lineas,"print(json.dumps(entrada))"].join("\n");
+ $("pyOut").hidden=false;$("pyOut").textContent=
+  "POST /puente/ejecutar  (corre en la JAULA real)\n\n"+code;};
+pinta();
+</script></body></html>

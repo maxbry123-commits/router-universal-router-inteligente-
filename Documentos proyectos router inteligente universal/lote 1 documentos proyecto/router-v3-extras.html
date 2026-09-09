@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Router · Extras</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+:root{--n:#0D0D0F;--c:#1F1E1B;--c2:#252320;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--w:#F2EBD9;--g:#B8B0A0;--gd:#7E776B;--az:#3B82F6;--ok:#7FD1A8;--warn:#E0B43C;--err:#E07A6B;--r:18px;--rs:10px;--serif:'Fraunces',serif;--sans:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--n);color:var(--w);font:14px/1.5 var(--sans);max-width:520px;margin:0 auto;padding:24px 20px;min-height:100vh}
+.lbl{font:500 11px/1 var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:10px}
+h1{font:500 32px/1.1 var(--serif);letter-spacing:-0.02em;margin-bottom:4px}
+.sub{color:var(--g);font-size:13px;margin:8px 0 18px}
+
+.tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:4px}
+.tab{flex:1;padding:9px 6px;text-align:center;background:transparent;border:0;color:var(--g);font:500 10px var(--sans);cursor:pointer;border-radius:14px;text-transform:uppercase;letter-spacing:0.05em}
+.tab.on{background:var(--c2);color:var(--w);border:1px solid var(--b)}
+
+.card{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
+.card:hover{border-color:var(--b2)}
+.glyph{width:38px;height:38px;background:var(--c2);border:1px solid var(--b);border-radius:8px;display:grid;place-items:center;font:600 11px var(--sans);color:var(--az);flex-shrink:0}
+.meta{flex:1;min-width:0}
+.t{font:500 14px var(--serif);color:var(--w);margin-bottom:2px}
+.d{font:11px var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.05em}
+.b{padding:4px 10px;background:var(--c2);border:1px solid var(--b);border-radius:8px;font:600 10px var(--sans);color:var(--g)}
+.b.ok{color:var(--ok);background:rgba(127,209,168,0.1);border-color:rgba(127,209,168,0.3)}
+.b.warn{color:var(--warn);background:rgba(224,180,60,0.1);border-color:rgba(224,180,60,0.3)}
+</style>
+</head>
+<body>
+
+<div class="lbl">Panel 3 · Extras</div>
+<h1>Extras</h1>
+<p class="sub">11 sub-paneles · exactamente las funciones del spec</p>
+
+<div class="tabs">
+  <button class="tab on" onclick="show('')">Todo</button>
+  <button class="tab" onclick="show('mon')">Monitoreo</button>
+  <button class="tab" onclick="show('cfg')">Config</button>
+  <button class="tab" onclick="show('sis')">Sistema</button>
+</div>
+
+<!-- ID 88 panelProvider -->
+<div class="card" data-g="mon">
+  <div class="glyph">PR</div><div class="meta"><div class="t">panelProvider()</div><div class="d">18 puertas ia · 14 activas</div></div><div class="b ok">ON</div>
+</div>
+<!-- ID 89 panelModelos -->
+<div class="card" data-g="mon">
+  <div class="glyph">MD</div><div class="meta"><div class="t">panelModelos()</div><div class="d">10 cerebros registrados</div></div><div class="b">10</div>
+</div>
+<!-- ID 90 panelCostes -->
+<div class="card" data-g="mon">
+  <div class="glyph">$$</div><div class="meta"><div class="t">panelCostes()</div><div class="d">$12.4 hoy · m3 $4 · claude $8</div></div><div class="b warn">85%</div>
+</div>
+<!-- ID 91 panelLiveGraph -->
+<div class="card" data-g="mon">
+  <div class="glyph">LG</div><div class="meta"><div class="t">panelLiveGraph()</div><div class="d">d3 animado en vivo</div></div><div class="b ok">REC</div>
+</div>
+<!-- ID 92 panelTrazabilidad -->
+<div class="card" data-g="mon">
+  <div class="glyph">TR</div><div class="meta"><div class="t">panelTrazabilidad()</div><div class="d">trace_id · otlp exporter</div></div><div class="b">VER</div>
+</div>
+<!-- ID 93 panelCola -->
+<div class="card" data-g="mon">
+  <div class="glyph">QU</div><div class="meta"><div class="t">panelCola()</div><div class="d">12 pend · 3 ejec · 1 err</div></div><div class="b warn">12</div>
+</div>
+<!-- ID 94 panelLogs -->
+<div class="card" data-g="mon">
+  <div class="glyph">LG</div><div class="meta"><div class="t">panelLogs()</div><div class="d">stream de eventos · filtro</div></div><div class="b">VER</div>
+</div>
+<!-- ID 95 panelSecretVault -->
+<div class="card" data-g="cfg">
+  <div class="glyph">VL</div><div class="meta"><div class="t">panelSecretVault()</div><div class="d">aes-256 · 11 secretos</div></div><div class="b ok">SAFE</div>
+</div>
+<!-- ID 96 panelScheduler -->
+<div class="card" data-g="cfg">
+  <div class="glyph">SC</div><div class="meta"><div class="t">panelScheduler()</div><div class="d">3 tareas cron activas</div></div><div class="b">3</div>
+</div>
+<!-- ID 97 panelRecovery -->
+<div class="card" data-g="cfg">
+  <div class="glyph">RC</div><div class="meta"><div class="t">panelRecovery()</div><div class="d">circuit breaker · auto</div></div><div class="b ok">OK</div>
+</div>
+<!-- ID 98 panelMapaRed -->
+<div class="card" data-g="sis">
+  <div class="glyph">MP</div><div class="meta"><div class="t">panelMapaRed()</div><div class="d">grafo nodos github↔vps</div></div><div class="b">VER</div>
+</div>
+
+<script>
+function show(g) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  event.target.classList.add('on');
+  document.querySelectorAll('.card').forEach(c => {
+    c.style.display = (!g || c.dataset.g === g) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

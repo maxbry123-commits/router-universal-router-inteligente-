@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ventanas del Tren 🪟⛓️ + Arquitecto 📐 · NCT</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+  :root{--pino:#0E2A1F;--panel:#0B211A;--borde:#1E4634;--papel:#F2EDE3;
+    --laton:#C9A24B;--rojo:#D6453D;--menta:#7FD1A8;--tinta:#DCE8DF;
+    --ambar:#E8B23A;--azul:#7FB4D1}
+  *{box-sizing:border-box;margin:0}
+  body{background:radial-gradient(1000px 400px at 30% -10%,#14382A,var(--pino) 60%);
+    color:var(--tinta);font:13.5px/1.5 'IBM Plex Mono',monospace;padding:14px}
+  h1{font-family:'Fraunces',serif;font-weight:900;color:var(--papel);
+     font-size:clamp(20px,4vw,32px)}
+  h2{font-family:'Fraunces',serif;color:var(--papel);font-size:15px;margin:0 0 8px}
+  header{border-bottom:2px solid var(--laton);padding-bottom:8px;
+    display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .sub{color:var(--laton);font-size:11.5px}
+  .caja{background:var(--panel);border:1px solid var(--borde);
+    border-radius:10px;padding:12px;margin-top:14px}
+  button{background:var(--laton);color:#1B1406;border:0;padding:8px 12px;
+    border-radius:6px;font:600 12.5px 'IBM Plex Mono',monospace;cursor:pointer}
+  button.f{background:transparent;color:var(--laton);
+    border:1px solid var(--laton)}
+  button.rojo{background:var(--rojo);color:var(--papel)}
+  button:focus-visible{outline:3px solid var(--menta)}
+  input,textarea,select{background:#07160F;color:var(--tinta);
+    border:1px solid var(--borde);border-radius:6px;padding:8px;font:inherit}
+  /* la cadena de ventanas */
+  .riel{display:flex;gap:0;overflow-x:auto;padding:8px 2px;align-items:stretch}
+  .vent{min-width:215px;background:#07160F;border:1px solid var(--borde);
+    border-radius:9px;padding:9px;display:flex;flex-direction:column;gap:5px}
+  .vent.running{border-color:var(--ambar);box-shadow:0 0 0 1px var(--ambar)}
+  .vent.done{border-color:var(--menta)}
+  .vent.failed{border-color:var(--rojo)}
+  .vent.pausada{border-color:var(--azul);box-shadow:0 0 0 1px var(--azul)}
+  .vent b{color:var(--papel)} .vent .io{font-size:10.8px;background:#0A1D14;
+    border-radius:5px;padding:5px;max-height:74px;overflow:auto;
+    white-space:pre-wrap;word-break:break-all}
+  .eslabon{align-self:center;color:var(--laton);padding:0 3px;font-size:18px}
+  .fila{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+  .pill{font-size:10.5px;border:1px solid var(--borde);border-radius:99px;
+    padding:2px 8px}
+  dialog{background:var(--panel);color:var(--tinta);border:1px solid
+    var(--laton);border-radius:10px;max-width:420px;width:92vw}
+  dialog::backdrop{background:#000000AA}
+  /* arquitecto */
+  .capas{display:flex;flex-direction:column;gap:8px}
+  .capa{border:1px dashed var(--laton);border-radius:8px;padding:8px}
+  .capa b{color:var(--laton);font-size:11px;letter-spacing:1px}
+  .mods{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+  .mod{background:#07160F;border:1px solid var(--borde);border-radius:6px;
+    padding:5px 9px;font-size:11.5px}
+  .mod small{color:var(--azul)}
+  .verde{color:var(--menta)} .malo{color:var(--rojo)}
+  pre{background:#07160F;border:1px solid var(--borde);border-radius:8px;
+    padding:9px;font-size:11px;max-height:180px;overflow:auto}
+</style>
+</head>
+<body>
+<header>
+  <h1>Ventanas del Tren</h1>
+  <span class="sub">cada ventana 🪟 = una estación · pausa ⏸ · interviene 👐
+  · exporta a DSL 🔁</span>
+</header>
+
+<section class="caja">
+  <h2>⛓️ La cadena (demo real en JS, espejo de ventanas/cadena.py)</h2>
+  <div class="riel" id="riel"></div>
+  <div class="fila">
+    <button id="bCorrer">▶ Correr / Continuar</button>
+    <button id="bReset" class="f">↺ Reiniciar</button>
+    <span class="pill" id="estadoCadena">lista</span>
+    <span class="pill">tip: toca 🔴 en una ventana para poner breakpoint</span>
+  </div>
+  <div class="fila">
+    <input id="entradaX" value='{"x": 5}' style="flex:1"
+      aria-label="payload de entrada">
+    <button id="bExporta" class="f">🔁 Exportar cadena → nodos DSL</button>
+  </div>
+  <pre id="salidaDSL" hidden></pre>
+</section>
+
+<section class="caja">
+  <h2>📐 Arquitecto de proyectos (plantillas validadas)</h2>
+  <div class="fila">
+    <select id="plantilla">
+      <option value="hexagonal">hexagonal</option>
+      <option value="pipeline">pipeline</option>
+      <option value="eventos">eventos</option>
+      <option value="microservicios">microservicios</option>
+    </select>
+    <button id="bDisenar">Diseñar y validar</button>
+    <span id="veredictoArq" class="pill"></span>
+  </div>
+  <div class="capas" id="capas"></div>
+</section>
+
+<dialog id="modal">
+  <h2>👐 Intervenir en <span id="modalEst"></span></h2>
+  <p class="sub">Edita el payload en pausa; el tren sigue con TU versión.</p>
+  <textarea id="modalPayload" rows="6" style="width:100%"></textarea>
+  <div class="fila">
+    <button id="bAplicar">Aplicar y continuar</button>
+    <button id="bCerrar" class="f">Cancelar</button>
+  </div>
+</dialog>
+
+<script>
+// ====== espejo JS de Estacion/Cadena (misma semántica que el Python) ======
+const PROCESOS = [
+ {id:"V-01", fase:"sumar_uno",  fn:p=>({...p, a:(p.x??0)+1})},
+ {id:"V-02", fase:"duplicar",   fn:p=>({...p, b:(p.a??0)*2 + (p.manual??0)})},
+ {id:"V-03", fase:"validar",    fn:p=>{ if(p.b===undefined) throw
+    Error("sin b"); return {...p, valido:true}}},
+ {id:"V-04", fase:"empaquetar", fn:p=>({...p, final:(p.b??0)+(p.x??0)})}];
+const C = {i:0, payload:{}, estado:"lista", bps:new Set(),
+           fotos:PROCESOS.map(()=>null),
+           estados:PROCESOS.map(()=> "pending")};
+const $=id=>document.getElementById(id);
+
+function pintar(){
+  $("estadoCadena").textContent = C.estado;
+  const r=$("riel"); r.innerHTML="";
+  PROCESOS.forEach((p,i)=>{
+    if(i) { const e=document.createElement("span");
+      e.className="eslabon"; e.textContent="⛓️"; r.appendChild(e); }
+    const v=document.createElement("div");
+    v.className="vent "+C.estados[i];
+    const f=C.fotos[i];
+    v.innerHTML=`<b>🪟 ${p.id} · ${p.fase}</b>
+      <span class="pill">${C.estados[i]}${C.bps.has(p.id)?" · 🔴bp":""}</span>
+      <div class="io">IN: ${f?JSON.stringify(f.in):"—"}</div>
+      <div class="io">OUT: ${f?(f.err?("⛔ "+f.err):
+        JSON.stringify(f.out)):"—"}${f&&f.ms!==undefined?
+        " ("+f.ms+"ms)":""}</div>`;
+    const fila=document.createElement("div"); fila.className="fila";
+    const bp=document.createElement("button"); bp.className="f";
+    bp.textContent = C.bps.has(p.id) ? "quitar 🔴" : "🔴 breakpoint";
+    bp.onclick=()=>{C.bps.has(p.id)?C.bps.delete(p.id):C.bps.add(p.id);
+      pintar();};
+    fila.appendChild(bp);
+    if(C.estados[i]==="pausada"){
+      const bi=document.createElement("button");
+      bi.textContent="👐 Intervenir";
+      bi.onclick=()=>{ $("modalEst").textContent=p.id;
+        $("modalPayload").value=JSON.stringify(C.payload,null,1);
+        $("modal").showModal(); };
+      fila.appendChild(bi);}
+    v.appendChild(fila); r.appendChild(v);});
+}
+function correr(){
+  if(C.estado==="lista"){
+    try{ C.payload=JSON.parse($("entradaX").value); }
+    catch{ alert("entrada no es JSON"); return; }}
+  C.estado="corriendo";
+  while(C.i<PROCESOS.length){
+    const p=PROCESOS[C.i];
+    if(C.bps.has(p.id) && C.estados[C.i]==="pending"){
+      C.estados[C.i]="pausada"; C.estado="pausada"; pintar(); return;}
+    const t0=performance.now();
+    try{ const out=p.fn({...C.payload});
+      C.fotos[C.i]={in:{...C.payload}, out,
+        ms:Math.round(performance.now()-t0)};
+      C.payload=out; C.estados[C.i]="done"; C.i++;}
+    catch(e){ C.fotos[C.i]={in:{...C.payload}, err:e.message};
+      C.estados[C.i]="failed"; C.estado="failed"; pintar(); return;}}
+  C.estado="done"; pintar();
+}
+$("bCorrer").onclick=correr;
+$("bReset").onclick=()=>{C.i=0;C.payload={};C.estado="lista";
+  C.fotos=PROCESOS.map(()=>null);
+  C.estados=PROCESOS.map(()=> "pending"); pintar();};
+$("bAplicar").onclick=()=>{
+  try{ C.payload=JSON.parse($("modalPayload").value); }
+  catch{ alert("JSON inválido"); return; }
+  C.bps.delete(PROCESOS[C.i].id); C.estados[C.i]="pending";
+  $("modal").close(); correr();};
+$("bCerrar").onclick=()=>$("modal").close();
+$("bExporta").onclick=()=>{
+  const nodos=PROCESOS.map((p,i)=>({id:`T-V${String(i+1).padStart(2,"0")}`,
+    goal:`[${p.fase}] ${p.id}`,
+    dependencies:i?[`T-V${String(i).padStart(2,"0")}`]:[],
+    contrato:{output:{criterio_exito:`ventana ${p.id} done con foto`}},
+    risk:"medio", sandbox:"local"}));
+  $("salidaDSL").hidden=false;
+  $("salidaDSL").textContent=JSON.stringify({nodos},null,1);};
+
+// ====== arquitecto (espejo de ventanas/arquitecto.py) ======
+const PLANTILLAS={
+ hexagonal:{capas:[{nombre:"dominio",modulos:[{nombre:"entidades",usa:[]},
+   {nombre:"casos_uso",usa:["entidades"]}]},
+  {nombre:"adaptadores",modulos:[{nombre:"api_http",usa:["casos_uso"]},
+   {nombre:"repositorio_db",usa:["casos_uso"]}]},
+  {nombre:"infra",modulos:[{nombre:"config",usa:[]}]}],
+  reglas:[["adaptadores","dominio"],["infra","adaptadores"]]},
+ pipeline:{capas:[{nombre:"etapas",modulos:[{nombre:"ingesta",usa:[]},
+   {nombre:"proceso",usa:["ingesta"]},{nombre:"salida",usa:["proceso"]}]},
+  {nombre:"soporte",modulos:[{nombre:"metricas",usa:[]}]}],
+  reglas:[["soporte","etapas"]]},
+ eventos:{capas:[{nombre:"nucleo",modulos:[{nombre:"bus",usa:[]}]},
+  {nombre:"productores",modulos:[{nombre:"api",usa:["bus"]}]},
+  {nombre:"consumidores",modulos:[{nombre:"worker",usa:["bus"]},
+   {nombre:"notificador",usa:["bus"]}]}],
+  reglas:[["productores","nucleo"],["consumidores","nucleo"]]},
+ microservicios:{capas:[{nombre:"gateway",modulos:[{nombre:"router",usa:[]}]},
+  {nombre:"servicios",modulos:[{nombre:"svc_usuarios",usa:["router"]},
+   {nombre:"svc_pagos",usa:["router"]}]},
+  {nombre:"datos",modulos:[{nombre:"db_compartida",usa:[]}]}],
+  reglas:[["servicios","gateway"],["servicios","datos"]]}};
+$("bDisenar").onclick=()=>{
+  const s=PLANTILLAS[$("plantilla").value];
+  const capaDe={}; s.capas.forEach(c=>c.modulos.forEach(
+    m=>capaDe[m.nombre]=c.nombre));
+  const permitido=new Set(s.reglas.map(r=>r.join(">")));
+  let veredicto="✅ válida (capas respetadas, sin ciclos)"; let ok=true;
+  s.capas.forEach(c=>c.modulos.forEach(m=>m.usa.forEach(d=>{
+    const par=capaDe[m.nombre]+">"+capaDe[d];
+    if(capaDe[m.nombre]!==capaDe[d] && !permitido.has(par)){
+      ok=false; veredicto="⛔ violación de capas: "+par;}})));
+  $("veredictoArq").textContent=veredicto;
+  $("veredictoArq").className="pill "+(ok?"verde":"malo");
+  const cc=$("capas"); cc.innerHTML="";
+  s.capas.forEach(c=>{
+    const d=document.createElement("div"); d.className="capa";
+    d.innerHTML=`<b>CAPA · ${c.nombre.toUpperCase()}</b>`;
+    const ms=document.createElement("div"); ms.className="mods";
+    c.modulos.forEach(m=>{const e=document.createElement("span");
+      e.className="mod";
+      e.innerHTML=`${m.nombre}${m.usa.length?
+        ` <small>→ ${m.usa.join(", ")}</small>`:""}`;
+      ms.appendChild(e);});
+    d.appendChild(ms); cc.appendChild(d);});};
+pintar();
+</script>
+</body>
+</html>

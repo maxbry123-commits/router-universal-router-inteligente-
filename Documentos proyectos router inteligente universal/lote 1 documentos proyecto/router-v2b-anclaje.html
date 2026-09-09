@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Router · Ficha / Anclaje + Salida</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap');
+:root{--n:#0D0D0F;--c:#1F1E1B;--c2:#252320;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--w:#F2EBD9;--g:#B8B0A0;--gd:#7E776B;--az:#3B82F6;--ok:#7FD1A8;--r:18px;--rs:10px;--serif:'Fraunces',serif;--sans:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--n);color:var(--w);font:14px/1.5 var(--sans);max-width:520px;margin:0 auto;padding:24px 20px;min-height:100vh}
+.lbl{font:500 11px/1 var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:8px}
+.crumb{font-size:12px;color:var(--gd);margin-bottom:6px}
+.crumb a{color:var(--g);text-decoration:none;cursor:pointer}
+h1{font:500 28px/1.1 var(--serif);letter-spacing:-0.02em;margin-bottom:4px}
+.doc{font:11px var(--sans);color:var(--gd);margin-bottom:14px}
+
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:4px}
+.tab{flex:1;padding:9px 4px;text-align:center;background:transparent;border:0;color:var(--g);font:500 10px var(--sans);cursor:pointer;border-radius:14px;text-transform:uppercase;letter-spacing:0.05em}
+.tab.on{background:var(--c2);color:var(--w);border:1px solid var(--b2)}
+
+.sec{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.sec-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sec-n{width:24px;height:24px;background:var(--c2);border:1px solid var(--b);border-radius:6px;display:grid;place-items:center;font:600 11px var(--sans);color:var(--az);flex-shrink:0}
+.sec-t{font:500 14px var(--serif);flex:1}
+.sec-c{font:11px var(--sans);color:var(--gd);background:var(--c2);padding:2px 8px;border-radius:6px}
+
+.anc{display:flex;align-items:center;gap:10px;background:var(--c2);border:1px solid var(--b);border-radius:var(--rs);padding:10px 12px;margin-bottom:6px}
+.anc-ic{width:32px;height:24px;background:var(--n);border:1px solid var(--b);border-radius:5px;display:grid;place-items:center;font:600 10px var(--sans);color:var(--az);flex-shrink:0}
+.anc-info{flex:1;min-width:0}
+.anc-n{font:500 12px var(--sans);color:var(--w)}
+.anc-v{font:10px var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.05em}
+.anc-act{display:flex;gap:3px}
+.anc-act button{background:transparent;border:0;color:var(--gd);cursor:pointer;padding:2px 5px;font-size:12px}
+.anc-act button:hover{color:var(--w)}
+
+.sel{background:var(--c2);color:var(--w);border:1px solid var(--b);border-radius:var(--rs);padding:10px 12px;font:13px var(--sans);width:100%;outline:none;margin-bottom:10px;appearance:none}
+.sel:focus{border-color:var(--az)}
+
+.txt{background:var(--c2);color:var(--w);border:1px solid var(--b);border-radius:var(--rs);padding:10px 12px;font:13px var(--sans);width:100%;outline:none;margin-bottom:8px;min-height:50px;resize:vertical;font-family:inherit;line-height:1.5}
+.txt.code{font:11px 'JetBrains Mono',monospace}
+.txt:focus{border-color:var(--az)}
+.txt::placeholder{color:var(--gd)}
+
+.add-s{border:1px dashed var(--b2);background:transparent;color:var(--g);width:100%;padding:10px;border-radius:var(--rs);font:500 11px var(--sans);cursor:pointer;margin-top:6px}
+.add-s:hover{border-color:var(--az);color:var(--w)}
+
+.sw{position:relative;width:34px;height:18px;background:#3a3a3a;border-radius:9px;cursor:pointer;flex-shrink:0;border:0;padding:0}
+.sw::after{content:"";position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;left:2px;transition:all .2s}
+.sw.on{background:var(--az)}
+.sw.on::after{left:18px}
+
+.nav{display:flex;gap:8px;margin-top:18px}
+.nav button{flex:1;padding:12px;border-radius:var(--rs);font:600 11px var(--sans);cursor:pointer;border:1px solid var(--b);background:var(--c);color:var(--w);text-transform:uppercase;letter-spacing:0.05em}
+.nav button.p{background:var(--w);color:var(--n);border-color:var(--w)}
+.nav button:hover{border-color:var(--b2)}
+</style>
+</head>
+<body>
+
+<div class="lbl">Panel 2B · Ficha / Anclaje + Salida</div>
+<div class="crumb"><a onclick="location.href='router-v1-lista.html'">Inicio</a> › <a onclick="location.href='router-v1-lista.html'">Conexiones</a> › <strong>GitHub</strong></div>
+<h1>GitHub</h1>
+<div class="doc">Doc 2 de 3 · Anclaje (10 fns) y Salida (9 fns)</div>
+
+<div class="tabs">
+  <button class="tab" onclick="location.href='router-v2a-entrada.html'">Entrada</button>
+  <button class="tab on">Anclaje</button>
+  <button class="tab" onclick="document.getElementById('salida').scrollIntoView()">Salida</button>
+  <button class="tab" onclick="location.href='router-v2c-otras.html'">Otras</button>
+</div>
+
+<!-- ==================== SECCIÓN 2: ANCLAJE (10 fns reales) ==================== -->
+<div class="sec">
+  <div class="sec-h">
+    <div class="sec-n">2</div>
+    <div class="sec-t">ANCLAJE</div>
+    <div class="sec-c">2</div>
+    <button class="sw on" id="anSw"></button>
+  </div>
+
+  <div id="anclajes">
+    <div class="anc">
+      <div class="anc-ic">DC</div>
+      <div class="anc-info"><div class="anc-n">README.md</div><div class="anc-v">anclarDocumento · 12kb</div></div>
+      <div class="anc-act">
+        <button title="previewAnclaje">⎁</button>
+        <button title="versionarAnclaje">⌥</button>
+        <button title="eliminarAnclaje">×</button>
+      </div>
+    </div>
+    <div class="anc">
+      <div class="anc-ic">CD</div>
+      <div class="anc-info"><div class="anc-n">sandbox_code.py</div><div class="anc-v">abrirSandboxCode · ejecutable</div></div>
+      <div class="anc-act">
+        <button title="previewAnclaje">⎁</button>
+        <button title="versionarAnclaje">⌥</button>
+        <button title="eliminarAnclaje">×</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="add-s" id="anTxt">+ anclarTexto()</button>
+  <button class="add-s" id="anIns" style="margin-top:4px">+ anclarInstrucciones()</button>
+  <button class="add-s" id="anDoc" style="margin-top:4px">+ anclarDocumento() / abrirSandboxCode()</button>
+  <button class="add-s" id="anRun" style="margin-top:4px;background:var(--c2);border-style:solid;border-color:var(--b);color:var(--ok)">▶ ejecutarCodigoSandbox()</button>
+
+  <!-- editarSystemPrompt -->
+  <div style="font:10px var(--sans);color:var(--gd);margin:12px 0 4px;text-transform:uppercase;letter-spacing:0.1em">editarSystemPrompt()</div>
+  <textarea class="txt code">Eres el router de MAXBRY. Conectas entradas con salidas según las rutas declaradas. Mantén el contexto del State Engine.</textarea>
+</div>
+
+<!-- ==================== SECCIÓN 3: SALIDA (9 fns reales) ==================== -->
+<div class="sec" id="salida">
+  <div class="sec-h">
+    <div class="sec-n">3</div>
+    <div class="sec-t">SALIDA</div>
+    <div class="sec-c"><span id="cOut">2</span>/100</div>
+    <button class="sw on" id="outSw"></button>
+  </div>
+
+  <!-- seleccionarTipoSalida -->
+  <select class="sel" id="tipoOut">
+    <option value="vps">seleccionarTipoSalida · vps</option>
+    <option value="hf">hf</option>
+    <option value="repo">repo</option>
+    <option value="agente">agente</option>
+    <option value="chat">chat</option>
+    <option value="webhook">webhook</option>
+    <option value="archivo">archivo</option>
+    <option value="stream">stream</option>
+  </select>
+
+  <div style="font:10px var(--sans);color:var(--gd);margin:6px 0;text-transform:uppercase;letter-spacing:0.1em">seleccionarDestinoSalida() · 2/100</div>
+  <div id="outs">
+    <div class="anc" draggable="true">
+      <div class="anc-ic">V1</div>
+      <div class="anc-info"><div class="anc-n">VPS Contabo</div><div class="anc-v">vps · 95.111.232.89</div></div>
+      <div class="anc-act">
+        <button class="sw on" data-act="tog"></button>
+        <button data-act="tst">⏵</button>
+        <button data-act="del">×</button>
+      </div>
+    </div>
+    <div class="anc" draggable="true">
+      <div class="anc-ic">H1</div>
+      <div class="anc-info"><div class="anc-n">HF Space 1</div><div class="anc-v">hf · worker</div></div>
+      <div class="anc-act">
+        <button class="sw on" data-act="tog"></button>
+        <button data-act="tst">⏵</button>
+        <button data-act="del">×</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="add-s" id="addOut">+ agregarSalidaFicha() (1-100)</button>
+</div>
+
+<div class="nav">
+  <button onclick="location.href='router-v2a-entrada.html'">← Anterior</button>
+  <button class="p" onclick="location.href='router-v2c-otras.html'">Siguiente →</button>
+</div>
+
+<script>
+// toggleAnclaje
+$('anSw').onclick = () => $('anSw').classList.toggle('on');
+$('outSw').onclick = () => $('outSw').classList.toggle('on');
+
+// anclarTexto / anclarInstrucciones / anclarDocumento
+const tipos = ['documento','instrucciones','texto'];
+const ic = ['DC','IN','TX'];
+['anTxt','anIns','anDoc'].forEach((id, i) => {
+  document.getElementById(id).onclick = () => {
+    const n = prompt(tipos[i] + ' — nombre:', tipos[i] + '_' + Date.now().toString().slice(-4));
+    if (!n) return;
+    const a = document.createElement('div');
+    a.className = 'anc';
+    a.innerHTML = `<div class="anc-ic">${ic[i]}</div><div class="anc-info"><div class="anc-n">${n}</div><div class="anc-v">anclar${tipos[i][0].toUpperCase()+tipos[i].slice(1)}</div></div>
+      <div class="anc-act">
+        <button title="previewAnclaje">⎁</button>
+        <button title="versionarAnclaje">⌥</button>
+        <button title="eliminarAnclaje" onclick="this.closest('.anc').remove()">×</button>
+      </div>`;
+    document.getElementById('anclajes').appendChild(a);
+  };
+});
+
+// ejecutarCodigoSandbox
+$('anRun').onclick = () => alert('ejecutarCodigoSandbox() → output OK');
+
+// eliminarAnclaje / previewAnclaje / versionarAnclaje
+document.querySelectorAll('#anclajes .anc-act button').forEach(b => b.onclick = e => {
+  e.stopPropagation();
+  if (b.title === 'eliminarAnclaje') b.closest('.anc').remove();
+  else if (b.title === 'previewAnclaje') alert('previewAnclaje() — abriendo vista');
+  else if (b.title === 'versionarAnclaje') alert('versionarAnclaje() — git commit creado');
+});
+
+// Salida: agregar / toggle / probar / eliminar / reordenar / params
+let outCount = 2;
+$('addOut').onclick = () => {
+  if (outCount >= 100) return alert('máx 100');
+  outCount++;
+  const t = $('tipoOut').value;
+  const s = document.createElement('div');
+  s.className = 'anc'; s.draggable = true;
+  s.innerHTML = `<div class="anc-ic">${t[0].toUpperCase()}${outCount}</div>
+    <div class="anc-info"><div class="anc-n">${t}_${outCount}</div><div class="anc-v">${t}</div></div>
+    <div class="anc-act">
+      <button class="sw on" data-act="tog"></button>
+      <button data-act="tst">⏵</button>
+      <button data-act="del">×</button>
+    </div>`;
+  bindOut(s);
+  $('outs').appendChild(s);
+  $('cOut').textContent = outCount;
+};
+
+function bindOut(s) {
+  s.querySelectorAll('.anc-act button').forEach(b => {
+    b.onclick = e => {
+      e.stopPropagation();
+      if (b.dataset.act === 'tog') b.classList.toggle('on');
+      else if (b.dataset.act === 'tst') { b.textContent='✓'; setTimeout(()=>b.textContent='⏵', 1000); }
+      else if (b.dataset.act === 'del') { s.remove(); outCount--; $('cOut').textContent = outCount; }
+    };
+  });
+}
+document.querySelectorAll('#outs .anc').forEach(bindOut);
+
+// validarSalida + configurarParamsSalida
+document.getElementById('outs').onclick = e => {
+  if (e.target.closest('.anc-act')) return;
+  const s = e.target.closest('.anc');
+  if (s) {
+    const p = prompt('configurarParamsSalida() — params:', '{}');
+    if (p) s.style.borderColor = 'var(--ok)';
+  }
+};
+
+// reordenarSalidas (drag&drop)
+let drag;
+document.addEventListener('dragstart', e => { if (e.target.classList.contains('anc')) drag = e.target; });
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  if (drag && e.target.classList.contains('anc') && e.target !== drag) e.target.parentNode.insertBefore(drag, e.target.nextSibling);
+});
+
+const $=i=>document.getElementById(i);
+</script>
+</body>
+</html>

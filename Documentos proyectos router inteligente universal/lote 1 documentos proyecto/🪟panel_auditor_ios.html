@@ -1,0 +1,90 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auditor 🗂️ estilo iOS · NCT</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+:root{--p:#0E2A1F;--c:#0B211A;--b:#1E4634;--pa:#F2EDE3;--l:#C9A24B;
+--m:#7FD1A8;--t:#DCE8DF;--az:#7FB4D1}*{box-sizing:border-box;margin:0}
+body{background:var(--p);color:var(--t);font:13px/1.5 'IBM Plex Mono',
+monospace;padding:12px}h1{font-family:'Fraunces',serif;color:var(--pa);
+font-size:clamp(19px,4vw,29px)}.sub{color:var(--l);font-size:11px}
+.busca{width:100%;background:#07160F;color:var(--t);
+border:1px solid var(--b);border-radius:10px;padding:10px;font:inherit;
+margin-top:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+gap:10px;margin-top:12px}
+.doc{background:var(--c);border:1px solid var(--b);border-radius:14px;
+padding:10px 6px;text-align:center;cursor:pointer;transition:transform .12s}
+.doc:hover{transform:scale(1.05)}
+.doc .ico{font-size:30px}.doc small{font-size:10px;display:block;
+word-break:break-all;color:var(--t)}
+.doc .tag{font-size:9px;color:var(--az)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chip{border:1px solid var(--b);border-radius:99px;padding:4px 10px;
+font-size:10.5px;color:var(--az)}
+dialog{background:var(--c);color:var(--t);border:1px solid var(--l);
+border-radius:14px;max-width:400px;width:92vw;padding:14px}
+dialog::backdrop{background:#000000AA}
+dialog h2{font-family:'Fraunces',serif;color:var(--pa)}
+button{background:var(--l);color:#1B1406;border:0;padding:9px 12px;
+border-radius:8px;font:600 12px 'IBM Plex Mono';cursor:pointer;margin:3px}
+button.f{background:transparent;color:var(--l);border:1px solid var(--l)}
+pre{background:#07160F;border:1px solid var(--b);border-radius:8px;
+padding:8px;font-size:10.5px;max-height:140px;overflow:auto;margin-top:8px}
+.anclados{margin-top:12px;background:var(--c);border:1px solid var(--b);
+border-radius:10px;padding:10px}.pin{font-size:11.5px;padding:3px 0;
+border-bottom:1px dashed var(--b)}</style></head><body>
+<h1>Auditor 🗂️ <span class="sub">estilo iOS · anclar 📌 · enviar a
+agente 🧝 vía sandbox</span></h1>
+<input class="busca" id="busca" placeholder="🔎 buscar documento…">
+<div class="grid" id="grid"></div>
+<div class="chips">
+<span class="chip">🔮 Obsidian · por conectar (repo 16)</span>
+<span class="chip">🕸️ Graphiti · por conectar</span>
+<span class="chip">👁️ OCR Baidu · por conectar</span>
+<span class="chip">📋 Kanboard · por conectar</span></div>
+<div class="anclados"><b>📌 Anclados</b> <span class="sub">(se inyectan
+en CADA paso del agente)</span><div id="pins">— nada anclado —</div></div>
+<dialog id="hoja"><h2 id="hTit"></h2><p class="sub" id="hMeta"></p>
+<pre id="hPrev"></pre>
+<div><button id="bAnclar">📌 Anclar</button>
+<button id="bEnviar">🧝 Enviar a agente</button>
+<button id="bTag" class="f">🏷️ Etiquetar</button>
+<button id="bCerrar" class="f">Cerrar</button></div>
+<pre id="hOut" hidden></pre></dialog>
+<script>
+const DOCS=[
+{n:"ACTA_DECISIONES.md",i:"📜",t:"gobernanza",p:"15/15 gaps firmados…"},
+{n:"sequence.json",i:"🚂",t:"plan",p:"DAG congelado con SAT ✅"},
+{n:"LOTE_1A_fichas.md",i:"💡",t:"fichas",p:"E-001..E-010, 10/10 humo"},
+{n:"providers.yaml",i:"🔌",t:"config",p:"9 GGUF + 16 slots env"},
+{n:"factura_scan.png",i:"🖼️",t:"ocr",p:"(imagen → OCR Baidu al conectar)"},
+{n:"notas_obsidian.md",i:"🔮",t:"vault",p:"grafo de notas del proyecto"},
+{n:"repo_router",i:"📁",t:"repo",p:"router/core.py + auth + cola…"},
+{n:"parte_santa.txt",i:"🎅",t:"reporte",p:"progreso 12/12 🟢"},
+{n:"conexiones.yaml",i:"🌉",t:"mapa",p:"cómo enchufar cada panel"}];
+const S={pins:[],sel:null};const $=i=>document.getElementById(i);
+function pinta(f=""){const g=$("grid");g.innerHTML="";
+ DOCS.filter(d=>d.n.includes(f)||d.t.includes(f)).forEach(d=>{
+  const e=document.createElement("div");e.className="doc";
+  e.innerHTML=`<div class="ico">${d.i}</div><small>${d.n}</small>
+   <span class="tag">${d.t}</span>`;
+  e.onclick=()=>{S.sel=d;$("hTit").textContent=d.i+" "+d.n;
+   $("hMeta").textContent="tipo: "+d.t;$("hPrev").textContent=d.p;
+   $("hOut").hidden=true;$("hoja").showModal();};
+  g.appendChild(e);});}
+$("busca").oninput=e=>pinta(e.target.value.toLowerCase());
+$("bAnclar").onclick=()=>{S.pins.push(S.sel.n);
+ $("pins").innerHTML=S.pins.map(p=>`<div class="pin">📌 ${p}</div>`).join("");
+ $("hOut").hidden=false;$("hOut").textContent=
+  `POST /puente/anclar\n{"tipo":"documento","ref":"${S.sel.n}",`+
+  `"extracto":"${S.sel.p}"}\n→ PIN emitido: se re-inyecta cada paso`;};
+$("bEnviar").onclick=()=>{$("hOut").hidden=false;
+ $("hOut").textContent=`POST /puente/enviar\n`+JSON.stringify(
+  {task_id:"T-aud",trace_id:"tr-1",doc:S.sel.n,
+   anclas_activas:S.pins},null,1)+
+  "\n→ el puente inyecta 📌 y rutea vía Router (token)";};
+$("bTag").onclick=()=>{S.sel.t=prompt("etiqueta:",S.sel.t)||S.sel.t;
+ pinta($("busca").value);};
+$("bCerrar").onclick=()=>$("hoja").close();
+pinta();
+</script></body></html>
