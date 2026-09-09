@@ -33,15 +33,17 @@ Bridge HF auditado; owner público HF COUNT 0; privados/endpoints quedan `GAP-HF
 `ConectorDB` preserva HTTP/MCP/GitHub/HF; DSN solo por env; Postgres/MySQL/Redis; HF Job `6aa1105432d5d0c22c5af971` PASS contractual.
 
 ## RIU-0010 — P02 ADAPT + WIRE CONECTOR GITLAB V6
-Fuente: arquitectura v6 / TASK-03 R-002. Se creó adapter separado `red/conector_gitlab.py` para no engordar el módulo base. Acciones declaradas: project_info/get_file/create_issue/create_mr/trigger_pipeline; `GITLAB_TOKEN` solo por entorno; acción desconocida fail-closed.
-Adapter commit `122e5baeec061e89be2fe32411d0b3d5ee70f6aa`, blob `d0e1de92a0cb3ab1577e29c2c83adf020806f4c1`.
-Se creó `red/connector_registry.py` commit `0c13109de1f2e120b9c3eea7990026b4c80f8639`, preservando HTTP/MCP/GitHub/HF/DB e incorporando GitLab.
-Test actualizado commit `0e5dbf8d4efa34df83397fea6631a74bb7896c12`; HF Job `6aa11334900620b5c77e5ca7` status success ejecutando pytest del adapter + registry.
-No se declara GitLab remoto real: eso pertenece al Paso 3.
+Adapter `red/conector_gitlab.py`; secretos solo por entorno; acción desconocida fail-closed. Adapter commit `122e5baeec061e89be2fe32411d0b3d5ee70f6aa`; registry y test verificados por HF Job `6aa11334900620b5c77e5ca7` success.
+
+## RIU-0011 — P02 ADAPT + WIRE CONECTOR MCP APP V6
+Fuente: arquitectura v6/TASK-03 R-002 y `ConectorMCP` existente; búsqueda local no encontró implementación MCP App reusable, por lo que se aplicó ADAPT mínimo, no segundo core.
+`red/conector_mcp_app.py` extiende `ConectorMCP` y agrega `renderizar_ui()` con salida HTML/JSON tipada y fail-closed. Commit `8a45204be6c3de7a2b8e95f648ef2cbc678dbda0`, blob `8411989712033186312516c0c229a4facd976446`.
+Registry actualizado commit `1289c5b57e72029a95f9d794eac5ea648c71f9e2`, blob `6c6d4d0efe3e12d9c8512c71d14d80555cb93442`.
+Test `tests/test_conector_mcp_app_v6.py` commit `1df8b57fc5a410a383a1a1b4e2b78535eedc5efe`, blob `950c5f4d2d8c974253ff24385352d3504412565c`; HF Job `6aa11dac32d5d0c22c5afb80` status success.
 
 ## 3 REFUTACIONES
 1. COUNT 0 público ≠ ausencia de privados/endpoints HF.
-2. Adapter/registry GitLab PASS ≠ GitLab remoto real verificado.
+2. MCP App adapter/registry PASS ≠ servidor MCP App remoto real.
 3. Tests contractuales PASS ≠ Paso 2/3 completos.
 
 ## NEXT
