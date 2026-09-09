@@ -118,6 +118,38 @@ class ConectorGitHub:
 
 
 @dataclass
+class ConectorHuggingFace:
+    """Hugging Face Hub adapter defined by the v6 router contract."""
+    conector_id: str
+    token_env: str = "HF_TOKEN"
+
+    def _api(self) -> ConectorHTTP:
+        return ConectorHTTP(
+            self.conector_id,
+            "https://huggingface.co/api",
+            headers_env={"Authorization": self.token_env},
+        )
+
+    async def enviar(self, payload: dict) -> dict:
+        accion = payload.get("_accion", "model_info")
+        repo_id = payload.get("repo_id", "")
+        rutas = {
+            "model_info": ("GET", f"/models/{repo_id}"),
+            "dataset_info": ("GET", f"/datasets/{repo_id}"),
+            "inference": ("POST", f"/models/{repo_id}"),
+            "list_spaces": ("GET", "/spaces"),
+        }
+        metodo, ruta = rutas.get(accion, rutas["model_info"])
+        body = {k: v for k, v in payload.items() if not k.startswith("_")}
+        return await self._api().enviar(
+            {"_ruta": ruta, "_metodo": metodo, **body}
+        )
+
+    async def sondear(self) -> bool:
+        return await self._api().sondear()
+
+
+@dataclass
 class ConectorVPS:
     """VPS/servidor remoto vía agente HTTP propio."""
     conector_id: str
