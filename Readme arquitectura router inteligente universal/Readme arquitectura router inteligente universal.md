@@ -55,7 +55,9 @@ Reuse confirmado antes de programar:
 - `../huggueface/bridge/router_hf_bridge.py`: puente remoto con `provider_models()` y `chat()` para proveedores existentes.
 - Auditoría: `../router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md`.
 
-`GAP-HF-CATALOG-001`: Hugging Face autenticado, pero la enumeración remota de modelos falló en la herramienta de catálogo. No crear adapters por `model_id` no confirmado. StrategyDelta: enumeración mediante otra ruta autorizada del Hub y reconciliación de `model_id/revision/task`.
+`GAP-HF-CATALOG-001` está parcialmente resuelto mediante StrategyDelta real: Hugging Face Jobs + `HfApi.list_models(author='COMAND-CENTER-1')` devolvió `COUNT 0` para modelos públicos propiedad de la cuenta. Un segundo Job confirmó que el contenedor no recibe `HF_TOKEN`, por lo que este resultado no demuestra ausencia de modelos privados ni endpoints configurados. No crear adapters por `model_id` no confirmado.
+
+Siguiente delta: reconciliar `HF_INFERENCE_ENDPOINT`/registry/configuración persistida con IDs reales consumibles, verificar `model_id/revision/task` y recién entonces registrar adapters/FastAPI por modelo.
 
 ## 9. Regla de cierre
 `archivo presente != integrado`
