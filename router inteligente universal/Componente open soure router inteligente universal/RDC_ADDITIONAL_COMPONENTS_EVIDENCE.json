@@ -1,0 +1,50 @@
+{
+  "task_id": "RDC-ROUTER-ADDITIONAL-20260903",
+  "components": [
+    {
+      "slug": "LiteLLM",
+      "status": "EXTRACTED_VERIFIED",
+      "target": "router inteligente software/componentes todos/componentes descargados/LiteLLM",
+      "source_commit": "658f50663d19f613a3f5caf998168da019764ad8",
+      "files": 10219,
+      "tree_sha256": "37e8c5609f28f08f7f2b655f7728283238b6d4942f37b4ff5e8012a948ed659f"
+    },
+    {
+      "slug": "vLLM-Router",
+      "status": "INSUFFICIENT_EVIDENCE_EXISTING_TARGET",
+      "target": "router inteligente software/componentes todos/componentes descargados/vLLM-Router"
+    },
+    {
+      "slug": "Temporal-Python-SDK",
+      "status": "EXTRACTED_VERIFIED",
+      "target": "router inteligente software/componentes todos/componentes descargados/Temporal-Python-SDK",
+      "source_commit": "d0e075c1e25b3371f0e0f5116d9c6626892e3eab",
+      "files": 776,
+      "tree_sha256": "bd20534e792a557eee61d97397a8ac0dde7656f4737680c6243baa69435fe718"
+    },
+    {
+      "slug": "Durable-Task-Python",
+      "status": "EXTRACTED_VERIFIED",
+      "target": "router inteligente software/componentes todos/componentes descargados/Durable-Task-Python",
+      "source_commit": "46602d5221591b6aaeff1238cd0ec952419e2e29",
+      "files": 376,
+      "tree_sha256": "ead79244f2c1c8f66a0226365b6e8e60afd9fc84948b009237f261174fbcbc76"
+    },
+    {
+      "slug": "Durable-Workflow-Server",
+      "status": "EXTRACTED_VERIFIED",
+      "target": "router inteligente software/componentes todos/componentes descargados/Durable-Workflow-Server",
+      "source_commit": "1636e53eb2e99d22fd8263e5d3192ce50cab799a",
+      "files": 900,
+      "tree_sha256": "f99f70136a1aed1713935ccf70caee343e268f660a00d8973fb3f66d74d23e5b"
+    },
+    {
+      "slug": "Prefect",
+      "status": "EXTRACTED_VERIFIED",
+      "target": "router inteligente software/componentes todos/componentes descargados/Prefect",
+      "source_commit": "d63a95a49f48f869523781116d8adf2eb4118f32",
+      "files": 5366,
+      "tree_sha256": "60ee66b7d7f92d52d9e34ff5f0088f3f86feef3bdadc8c0135fed928c136ebaa"
+    }
+  ]
+}

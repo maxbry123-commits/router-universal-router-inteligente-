@@ -1,0 +1,23 @@
+[
+  {
+    "repo": "cryptography",
+    "path": "vectors/cryptography_vectors/asymmetric/MLKEM/kat_MLKEM_768.rsp",
+    "chunks_dir": "cryptography/vectors/cryptography_vectors/asymmetric/MLKEM/kat_MLKEM_768.rsp.chunks",
+    "bytes": 12012890,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "cryptography",
+    "path": "vectors/cryptography_vectors/asymmetric/MLKEM/kat_MLKEM_512.rsp",
+    "chunks_dir": "cryptography/vectors/cryptography_vectors/asymmetric/MLKEM/kat_MLKEM_512.rsp.chunks",
+    "bytes": 8428890,
+    "chunk_bytes": 8388608
+  },
+  {
+    "repo": "cryptography",
+    "path": "vectors/cryptography_vectors/asymmetric/MLKEM/kat_MLKEM_1024.rsp",
+    "chunks_dir": "cryptography/vectors/cryptography_vectors/asymmetric/MLKEM/kat_MLKEM_1024.rsp.chunks",
+    "bytes": 16236890,
+    "chunk_bytes": 8388608
+  }
+]
