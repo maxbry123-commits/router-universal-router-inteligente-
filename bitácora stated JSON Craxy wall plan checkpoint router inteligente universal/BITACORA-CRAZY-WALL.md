@@ -42,12 +42,18 @@ README arquitectura ordenó materializar filtro LLM únicamente con contrato def
 `red/red_universal.py` recuperado desde fuente canónica, blob `66154b60ad53aa797094df8741389c8427f9bec0`; HF Job `6aa16b68900620b5c77e7259`: `5 passed in 0.05s`.
 
 ## RIU-0020 — P02 PATCH C15 ENCHUFE GATE v1.5→v2.0
-Auditoría cruzó el Gate v1.5 fuente `692daca7ace7ac983aeb585dd05ac281e571f2f3` contra Enchufe Universal v2 fuente `1f2de5b0578391164e6f6f7331507299130e8579`. El delta demostrado: v1.5 excluía `agent` y no delegaba invariantes v2. Se aplicó PATCH mínimo manteniendo `validar_contrato_conexion()` y la ruta v1.5; fichas v2 delegan a `EnchufeV2.model_validate()` + `validator_v2.validar()` sin duplicar invariantes. Producción commit `4e256e1332d41f9177e0df4806bb749cbd1f1e54`, blob `b5fdc15a4b4c3747425d7db86a81f2c4e409de9e`. Tests v1.5/v2: commits `e938ff557670d27763c6d5b507fd2946e1cd6702` y `8536808a3a53cab0afb89b007f5e7095bf37a047`. Jobs `6aa16f6932d5d0c22c5b090a`/`6aa16f8d32d5d0c22c5b090c` refutados por loader/cache del harness. StrategyDelta: registrar módulo en `sys.modules` + fijar commit exacto. HF Job `6aa16ff732d5d0c22c5b0912`: `5 passed in 0.09s`.
+Auditoría cruzó el Gate v1.5 fuente `692daca7ace7ac983aeb585dd05ac281e571f2f3` contra Enchufe Universal v2 fuente `1f2de5b0578391164e6f6f7331507299130e8579`. El delta demostrado: v1.5 excluía `agent` y no delegaba invariantes v2. Se aplicó PATCH mínimo manteniendo `validar_contrato_conexion()` y la ruta v1.5; fichas v2 delegan a `EnchufeV2.model_validate()` + `validator_v2.validar()` sin duplicar invariantes. Producción commit `4e256e1332d41f9177e0df4806bb749cbd1f1e54`, blob `b5fdc15a4b4c3747425d7db86a81f2c4e409de9e`. Tests v1.5/v2: commits `e938ff557670d27763c6d5b507fd2946e1cd6702` y `8536808a3a53cab0afb89b007f5e7095bf37a047`. HF Job `6aa16ff732d5d0c22c5b0912`: `5 passed in 0.09s`.
+
+## RIU-0021 — P02 AUDIT R-004 BACKUP / RESPALDO
+Handoff declara C19/R-004 `infrastructure/backup/respaldo.py` como `EXISTING_COMPLETE → REUSE`, pero lectura directa del destino activo devolvió 404. Historial GitHub para `router inteligente universal/infrastructure/backup/respaldo.py` y `infrastructure/backup/respaldo.py` devolvió `[]`. StrategyDelta distinto: se enumeraron las ramas `download/router-missing-07` (`7fa837fa...`), `forensic-router-50-recovery` (`519cae1...`) e `import/maxbry-router-code` (`949c71f...`) y sus árboles; ninguna contiene match `respaldo`. Se abre `GAP-R004-SOURCE-001`; no se escribió código, no se marcó REUSE y el progreso permanece 93%.
+
+## COUNCIL12 / CROSS-CHECK / CODA / VERIFY_FINAL RIU-0021
+PASS de auditoría fail-closed: 12 perspectivas convergen en que una declaración documental no demuestra source/ownership; cross-check Handoff↔main↔history↔branches encontró contradicción; CODA preservó `REUSE > PATCH > ADAPT > GENERATE`; `verify_final` confirma que no hubo implementación falsa ni avance porcentual artificial.
 
 ## 3 REFUTACIONES
-1. C15 v1.5/v2 PASS ≠ behavior filter standalone implementado.
-2. Donor `guardrails` disponible ≠ policy de comportamiento autorizada.
-3. Tests contractuales PASS ≠ Paso 2 cerrado ≠ E2E Paso 3.
+1. Handoff `EXISTING_COMPLETE` ≠ archivo fuente recuperado.
+2. Ausencia de fuente ≠ autorización para generar `respaldo.py` desde la descripción.
+3. Auditoría R-004 PASS ≠ C19 integrado ≠ Paso 2 cerrado ≠ E2E Paso 3.
 
 ## NEXT
-Cola 1×1: auditar R-004 `infrastructure/backup/respaldo.py`; REUSE solo con presencia/ownership demostrados. El filtro LLM sigue fail-closed hasta recuperar policy explícita.
+Cola 1×1: recuperar source/ownership canónico R-004 desde evidencia del proyecto; si sigue ausente, mantener GAP y continuar únicamente una tarea P02 independiente segura respaldada por arquitectura. Filtro LLM sigue fail-closed hasta policy explícita.
