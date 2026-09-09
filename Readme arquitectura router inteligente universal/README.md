@@ -25,8 +25,10 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - `red/red_universal.py`: R-003 REUSE; propietario único del mapa/rutas/failover/broadcast/espejo/salud.
 - `red/conectores.py`: conectores base preservados; integración solo con registry + test.
 - `red/connector_registry.py`: registro explícito fail-closed de conectores verificados.
+- `engine/resilience.py`: C10 aislado; R5 Retry + R6 Circuit Breaker, sin ownership de routing/conectores.
 - `tests/`: tests contractuales separados.
 - `integration/huggingface/`: auditoría/bridge HF; prohibido inventar `model_id`.
+- `integration/audits/C10-RESILIENCE-MATERIALIZATION.md`: evidencia C10 runtime-contract.
 - `integration/audits/C03-CONFIG-DONOR-AUDIT.md`: donor `pydantic-settings` = ADAPT_CANDIDATE, no integración.
 - `integration/audits/R004-PDF-EXTRACTION-AUDIT.md`: R-004 identidad/origen demostrados, fuente Python exacta bloqueada.
 - `integration/audits/C01-FASTAPI-DONOR-AUDIT.md`: donor FastAPI auditado; `ADAPT_CANDIDATE`, no integración.
@@ -44,11 +46,19 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - Donor capaz != contrato específico del Router.
 - PASS exige ruta + SHA/diff + read-back + test/log + URL cuando aplique.
 - Filtro LLM únicamente con policy explícita definida/recuperada.
+- `tel.workflow/v3` es el contrato vigente de este LOOP; una guía interna v4 no sustituye una instrucción/STATE v3 vigente.
 
 ## C15 Enchufe Gate v1.5→v2.0 — PATCH verificado
 Fuentes contractuales: Gate v1.5 blob `692daca7ace7ac983aeb585dd05ac281e571f2f3`; Enchufe Universal v2 blob `1f2de5b0578391164e6f6f7331507299130e8579`.
 PATCH producción: `router inteligente universal/red/enchufe_gate.py`, commit `4e256e1332d41f9177e0df4806bb749cbd1f1e54`, blob `b5fdc15a4b4c3747425d7db86a81f2c4e409de9e`.
 Verificación remota: HF Job `6aa16ff732d5d0c22c5b0912`, `5 passed in 0.09s`.
+
+## C10 Resilience — GENERATE desde contrato explícito verificado
+DOC-A02 fija C10 en `engine/resilience.py`; arquitectura v6 define R5 Retry con `intentos=3`, `base_ms=500`, y R6 Circuit Breaker `CLOSED→OPEN→HALF_OPEN`, umbral 5 fallos/60s y cooldown 30s.
+Producción: commit `6b408a781d886a8bde43c3f62b48247d872afd36`, blob `6a92375926909864d6fe604b4966b306a9aac449`.
+Test: `router inteligente universal/tests/test_resilience_c10.py`, commit `a0e74c04c93dfc2cc0c96da9c31234d98b44333c`, blob `77ce9fef2e899215eff9ed2dc2f473adc82950b7`.
+Verificación remota: HF Job `6aa1ae8221047bf1b03707ff`, `5 passed in 0.10s`.
+C10 recibe una operación ya autorizada y no registra/resuelve conectores; no crea un segundo core y conserva Enchufe Universal/RedUniversal como ruta única de conexión.
 
 ## GAPs activos
 - `GAP-HF-CATALOG-001`: privados/endpoints sin `model_id` confirmado.
@@ -64,4 +74,4 @@ Auditoría: `router inteligente universal/integration/audits/C01-FASTAPI-DONOR-A
 Decisión: `ADAPT_CANDIDATE`, no integrar hasta recuperar contrato API del Router.
 
 ## Último delta LOOP
-RIU-0025 auditó únicamente C01/FastAPI. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_AUDIT_ONLY`; no se escribió producción ni se adelantó Paso 3. Progreso se mantiene 93%; Paso 2 ACTIVE; Paso 3 PENDING.
+RIU-0026 materializó y verificó exclusivamente C10 Resilience. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_C10_RUNTIME_CONTRACT`; no se materializó filtro LLM ni se adelantó Paso 3. Progreso 95%; Paso 2 ACTIVE; Paso 3 PENDING.
