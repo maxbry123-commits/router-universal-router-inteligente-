@@ -1,28 +1,38 @@
 {
-  "contract": "tel.workflow/v4",
-  "mode": "FAIL_CLOSED_EXECUTION_LOOP",
+  "contract": "tel.workflow/v3",
+  "mode": "FAIL_CLOSED_LOOP",
   "project": "router inteligente universal",
   "repo": "maxbry123-commits/router-universal-router-inteligente-",
   "branch": "main",
-  "status": "READY_FOR_INPUT",
-  "current_node": null,
+  "status": "ACTIVE_LOOP",
+  "current_node": "P01_COMPONENTS_AND_HF_LLM_AUDIT",
   "closed": [
-    "centralize_open_source_components",
+    "centralize_open_source_components_initial",
     "create_component_index",
     "replicate_work_method_from_UI_YAIWES",
     "create_architecture_readme",
     "create_master_loop_guide",
     "create_crazy_wall_state_root",
     "prepare_document_upload_lots",
-    "prepare_code_upload_lot"
+    "prepare_code_upload_lot",
+    "analyze_router_architecture",
+    "create_handoff_component_index"
   ],
-  "in_progress": [],
-  "pending": ["receive_director_documents", "receive_director_code"],
+  "in_progress": [
+    "move_open_source_into_router_code_root",
+    "audit_huggingface_llms_for_fastapi_adapters"
+  ],
+  "pending": [
+    "wire_prune_and_fill_missing_code",
+    "behavior_filter_layer",
+    "integration_tests_hf_github_api_agents"
+  ],
   "rules": {
     "input_literal": true,
     "one_node_at_a_time": true,
     "evidence_required": true,
     "no_monolith": true,
-    "reuse_first": true
+    "reuse_first": true,
+    "steps_limit": 3
   }
 }
