@@ -5,6 +5,7 @@ No contiene lógica de negocio ni planificación; solo resuelve adapters por cla
 from __future__ import annotations
 
 from red.conector_gitlab import ConectorGitLab
+from red.conector_mcp_app import ConectorMCPApp
 from red.conectores import (
     ConectorDB,
     ConectorGitHub,
@@ -16,6 +17,7 @@ from red.conectores import (
 CONNECTOR_REGISTRY = {
     "http": ConectorHTTP,
     "mcp": ConectorMCP,
+    "mcp_app": ConectorMCPApp,
     "github": ConectorGitHub,
     "huggingface": ConectorHuggingFace,
     "db": ConectorDB,
