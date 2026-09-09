@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 68,
+  "progress_percent": 72,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -41,7 +41,10 @@
     "verify_vps_connector_v6_contract",
     "reuse_conector_memoria_v6",
     "wire_memoria_connector_registry",
-    "verify_memoria_connector_v6_contract"
+    "verify_memoria_connector_v6_contract",
+    "reuse_conector_interno_v6",
+    "reconcile_interno_connector_registry",
+    "verify_conector_interno_v6_contract"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -69,7 +72,11 @@
     "ConectorMemoria REUSE from router inteligente universal/red/conectores.py blob beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78",
     "router inteligente universal/red/connector_registry.py Memoria commit 3987856e107e848e111d96317e3a9c92c40a6cbb blob 878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9",
     "router inteligente universal/tests/test_conector_memoria_v6.py commit de82bd75e630f13141df7b2b2b74131163e52200 blob 0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582",
-    "HF Job 6aa1318d32d5d0c22c5afe2c FETCHED_EXACT_MAIN 5; 3 passed in 0.04s"
+    "HF Job 6aa1318d32d5d0c22c5afe2c FETCHED_EXACT_MAIN 5; 3 passed in 0.04s",
+    "ConectorInterno REUSE from router inteligente universal/red/conectores.py blob beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78",
+    "router inteligente universal/red/connector_registry.py already maps interno; blob 4beb5b96e5abb6ff7263cdf2297628058a98e790",
+    "router inteligente universal/tests/test_conector_interno_webhook_v6.py blob b7dc3343b7515ad9a1f57ccee983ace65bb03a6b",
+    "HF Job 6aa13ab432d5d0c22c5b008f FETCHED_EXACT_MAIN 5; 3 passed in 0.11s"
   ],
   "rules": {
     "input_literal": true,
