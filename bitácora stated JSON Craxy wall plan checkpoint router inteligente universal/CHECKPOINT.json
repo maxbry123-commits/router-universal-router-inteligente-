@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-enchufe-v2-schema-verified",
+  "checkpoint": "router-universal-p02-r003-red-universal-verified",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -20,13 +20,19 @@
     "enchufe_v2_schema_blob": "faf0b8a2f1474c044143728bf7fdfd41d1a751fa",
     "enchufe_v2_schema_test": "router inteligente universal/tests/test_enchufe_v2_schema.py commit 96448365568950d9bbd7405f58e001f7eb419f1c blob 53d4ee813b51000609532817ca1b5d02a71459f8",
     "enchufe_v2_schema_remote_verification": "HF Job 6aa165be32d5d0c22c5b07df COMPLETED success; exact main raw fetch; 4 passed in 0.09s",
+    "red_universal_source": "Documentos proyectos router inteligente universal/lote 1 documentos proyecto/2📌🔌ROUTER_UNIVERSAL_RED_CONEXIONES.md blob 692daca7ace7ac983aeb585dd05ac281e571f2f3",
+    "red_universal_path": "router inteligente universal/red/red_universal.py",
+    "red_universal_blob": "66154b60ad53aa797094df8741389c8427f9bec0",
+    "red_universal_test": "router inteligente universal/tests/test_red_universal_r003.py commit b7ed873fa8c8b8f848d46c3fd1217206a51480c3 blob 2be8bcf56fac0bb1c88b0f18edd0330538364726",
+    "red_universal_remote_verification": "HF Job 6aa16b68900620b5c77e7259 exact main raw fetch preserving red/tests layout; 5 passed in 0.05s",
+    "red_universal_refuted_harness": "HF Job 6aa16b3e32d5d0c22c5b0874 flat download broke test path; refuted and replaced by directory-preserving StrategyDelta",
     "behavior_filter_rule": "materialize only when explicit standalone behavior policy is defined/recovered",
     "behavior_filter_status": "standalone LLM behavior-filter policy not recovered; do not infer policy from schema, profiles, validator or donor guardrails"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING + GAP-BEHAVIOR-CONTRACT-001",
-  "next_delta": "StrategyDelta: continue source-of-truth search for explicit LLM behavior-filter semantics; if absent choose next independent architecture-backed P02 component after donor audit",
-  "next_if_pass": "materialize only recovered behavior contract behind guard/plugin boundary, then fixed contract test",
-  "next_if_gap": "continue P02 only with independent safe architecture-backed work; do not invent behavior policy",
+  "next_delta": "audit C15 v1.5->v2.0 gate wiring against recovered EnchufeV2/validator contract; PATCH only if exact compatibility delta is demonstrated",
+  "next_if_pass": "wire minimal C15 compatibility behind existing Enchufe Gate signature, fixed test, persist",
+  "next_if_gap": "continue P02 only with next independent architecture-backed component; do not invent behavior policy",
   "status": "ACTIVE_LOOP"
 }
