@@ -13,9 +13,10 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
    - ✅ REUSE `red/conectores.py` sin reescribir HTTP/MCP;
    - ✅ PATCH/ADAPT `ConectorHuggingFace` + test contractual PASS;
    - ✅ PATCH/ADAPT `ConectorDB` v6 + test contractual PASS;
-   - ✅ ADAPT `red/conector_gitlab.py` + secretos por env + acciones fail-closed;
-   - ✅ WIRE `red/connector_registry.py` con GitLab y baselines existentes;
-   - ✅ test `test_conector_gitlab_v6.py`; HF Job `6aa11334900620b5c77e5ca7` status success;
+   - ✅ ADAPT/WIRE `ConectorGitLab` + registry + test remoto PASS;
+   - ✅ ADAPT `red/conector_mcp_app.py`: extiende `ConectorMCP`, UI HTML/JSON validada y fail-closed;
+   - ✅ WIRE `mcp_app` en `red/connector_registry.py`;
+   - ✅ test `test_conector_mcp_app_v6.py`; HF Job `6aa11dac32d5d0c22c5afb80` status success;
    - ⏳ siguiente cola 1×1: siguiente conector v6 prioritario demostrado por arquitectura;
    - ⏳ capa/filtro comportamiento LLM pendiente hasta contrato definido/recuperado.
 3. 📌✅ **Paso 3 — tests integración** — PENDING
