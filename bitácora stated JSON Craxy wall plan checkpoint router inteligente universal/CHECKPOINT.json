@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-c03-donor-audited",
+  "checkpoint": "router-universal-p02-r004-pdf-source-found",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -16,7 +16,10 @@
     "c15_gate_commit": "4e256e1332d41f9177e0df4806bb749cbd1f1e54",
     "c15_gate_blob": "b5fdc15a4b4c3747425d7db86a81f2c4e409de9e",
     "c15_remote_verification": "HF Job 6aa16ff732d5d0c22c5b0912 pinned commit 8536808a3a53cab0afb89b007f5e7095bf37a047; 5 passed in 0.09s",
-    "r004_decision": "FAIL_CLOSED: canonical source/ownership absent; do not REUSE or GENERATE",
+    "r004_pdf_path": "Documentos proyectos router inteligente universal/lote 1 documentos proyecto/respaldo.py.pdf",
+    "r004_pdf_blob": "2ee8d937493d1923b2c1e5d6cc294a1513df3c91",
+    "r004_pdf_size": 27576,
+    "r004_decision": "SOURCE_PDF_FOUND / EXTRACTION_PENDING: do not REUSE or GENERATE until PDF code/ownership is extracted and verified",
     "c03_donor_path": "router inteligente universal/Componente open soure router inteligente universal/pydantic-settings/",
     "c03_donor_readme_blob": "84c893ab07d3282555622f69cee358686ba4ea99",
     "c03_donor_pyproject_blob": "21c3e4780e6da923cccf8435498930f4d9e1bece",
@@ -26,9 +29,9 @@
     "behavior_filter_rule": "materialize only when explicit standalone behavior policy is defined/recovered"
   },
   "current": "P02_WIRE_PRUNE_FILL",
-  "gap": "GAP-HF-CATALOG-001 + GAP-BEHAVIOR-CONTRACT-001 + GAP-R004-SOURCE-001 + GAP-C03-CONTRACT-001",
-  "next_delta": "recover C03 field/env contract or choose a separate architecture-backed P02 task with sufficient source contract",
-  "next_if_pass": "ADAPT pydantic-settings behind small config module + fixed test + read-back + persist",
-  "next_if_gap": "keep C03 fail-closed; do not invent config fields",
+  "gap": "GAP-HF-CATALOG-001 + GAP-BEHAVIOR-CONTRACT-001 + GAP-R004-EXTRACTION-001 + GAP-C03-CONTRACT-001",
+  "next_delta": "extract and verify canonical respaldo.py.pdf through an authorized binary path; no code write before content/ownership verification",
+  "next_if_pass": "REUSE exact respaldo.py into infrastructure/backup + fixed test + read-back + persist",
+  "next_if_gap": "keep R-004 fail-closed; continue only independent safe P02 task",
   "status": "ACTIVE_LOOP"
 }
