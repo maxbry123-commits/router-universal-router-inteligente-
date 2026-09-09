@@ -11,9 +11,11 @@ from red.conectores import (
     ConectorGitHub,
     ConectorHuggingFace,
     ConectorHTTP,
+    ConectorInterno,
     ConectorMCP,
     ConectorMemoria,
     ConectorVPS,
+    ConectorWebhook,
 )
 
 CONNECTOR_REGISTRY = {
@@ -26,6 +28,8 @@ CONNECTOR_REGISTRY = {
     "gitlab": ConectorGitLab,
     "vps": ConectorVPS,
     "memoria": ConectorMemoria,
+    "interno": ConectorInterno,
+    "webhook": ConectorWebhook,
 }
 
 
