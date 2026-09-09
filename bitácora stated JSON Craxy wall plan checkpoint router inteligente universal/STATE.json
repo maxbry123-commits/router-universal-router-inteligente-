@@ -41,7 +41,7 @@
     "verify_vps_connector_v6_contract",
     "reuse_conector_memoria_v6",
     "wire_memoria_connector_registry",
-    "verify_memoria_connector_v6_contract",
+    "verify_conector_memoria_v6_contract",
     "reuse_conector_interno_v6",
     "reconcile_interno_connector_registry",
     "verify_conector_interno_v6_contract",
@@ -61,7 +61,8 @@
     "verify_c15_gate_v15_v2_contract",
     "audit_r004_backup_source_presence",
     "audit_c03_config_local_donor_provenance",
-    "audit_r004_pdf_extraction_authorized_routes"
+    "audit_r004_pdf_extraction_authorized_routes",
+    "audit_c01_fastapi_local_donor_provenance"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -69,26 +70,32 @@
     {
       "id": "GAP-HF-CATALOG-001",
       "type": "PARTIAL_REMOTE_ENUMERATION",
-      "evidence": "public owner inventory COUNT 0; repo HF registry contains GitHub namespace metadata only; no confirmed HF model_id/private endpoint model is persisted",
-      "next": "continue P02 safe independent work; retry HF model enumeration only with new evidence/credential path"
+      "evidence": "public owner inventory COUNT 0; no confirmed HF model_id/private endpoint model persisted",
+      "next": "retry only with new credential/evidence path"
     },
     {
       "id": "GAP-BEHAVIOR-CONTRACT-001",
       "type": "BEHAVIOR_POLICY_NOT_RECOVERED",
-      "evidence": "FABLES Enchufe Universal v2 recovered validator_v2 and cognitive profile/repetition invariants, but no explicit standalone LLM behavior-filter allow/deny policy was recovered; validator contract is not equivalent to behavior policy",
-      "next": "continue P02 independent architecture-backed work; do not generate behavior policy until recovered"
+      "evidence": "no explicit standalone LLM behavior-filter allow/deny policy recovered",
+      "next": "do not generate behavior policy until recovered"
     },
     {
       "id": "GAP-R004-EXTRACTION-001",
       "type": "CANONICAL_PDF_BINARY_NOT_MATERIALIZED",
-      "evidence": "canonical PDF blob 2ee8d937493d1923b2c1e5d6cc294a1513df3c91 and origin commit 7db4e349ff3ea22be5f1b8c10a1efc46b73418aa verified; base64 retrieval proves PDF identity, UTF-8 blob fetch fails by design, raw/web fetch failed and runtime network DNS failed; exact Python source not reconstructed",
-      "next": "do not generate substitute; retry only with a binary-capable authorized path, otherwise continue independent safe P02 work"
+      "evidence": "PDF identity/origin verified but exact Python source not reconstructed",
+      "next": "retry only with binary-capable authorized path"
     },
     {
       "id": "GAP-C03-CONTRACT-001",
       "type": "CONFIG_FIELDS_NOT_DEFINED",
-      "evidence": "local pydantic-settings donor is valid/MIT and supports Pydantic v2 settings, but project evidence recovered only 'env única fuente de configuración'; exact env names, required fields, defaults and profiles are not defined",
-      "next": "do not invent settings fields; recover C03 field contract/source, otherwise continue a separate safe P02 task"
+      "evidence": "pydantic-settings donor valid/MIT but Router env fields/defaults/profiles not defined",
+      "next": "do not invent settings fields"
+    },
+    {
+      "id": "GAP-C01-API-CONTRACT-001",
+      "type": "API_SURFACE_NOT_DEFINED",
+      "evidence": "FastAPI donor is present/MIT/Pydantic-v2 compatible, but exact Panels 1-5 routes, methods, schemas, auth/error envelope and WS/SSE binding are not recovered",
+      "next": "do not generate production api routers until exact API contract is recovered"
     }
   ],
   "evidence": [
@@ -97,25 +104,15 @@
     "PASS_CONECTORES_CANONICAL_REUSE_BASELINE",
     "PASS_CONECTOR_HUGGINGFACE_V6_CONTRACT: 3 passed",
     "PASS_CONECTOR_DB_V6_CONTRACT: 3 passed in 0.10s",
-    "router inteligente universal/red/conector_gitlab.py commit 122e5baeec061e89be2fe32411d0b3d5ee70f6aa blob d0e1de92a0cb3ab1577e29c2c83adf020806f4c1",
-    "HF Job 6aa11334900620b5c77e5ca7 status success; pytest GitLab registry contract",
-    "router inteligente universal/red/conector_mcp_app.py commit 8a45204be6c3de7a2b8e95f648ef2cbc678dbda0 blob 8411989712033186312516c0c229a4facd976446",
-    "HF Job 6aa11dac32d5d0c22c5afb80 status success; pytest MCP App contract",
-    "HF Job 6aa12c19900620b5c77e61d2 status success; PASS_CONECTOR_VPS_V6: 3/3",
-    "HF Job 6aa1318d32d5d0c22c5afe2c FETCHED_EXACT_MAIN 5; 3 passed in 0.04s",
-    "HF Job 6aa13ab432d5d0c22c5b008f FETCHED_EXACT_MAIN 5; 3 passed in 0.11s",
-    "router inteligente universal/tests/test_connector_registry_v6.py commit 34df884ae1a0ba474425556e1c551b4bbead53be blob 228788e2f62df45dfb23f88a804924ec5e8feb8f; HF Job 6aa15404900620b5c77e6c45 13 passed in 0.05s",
-    "router inteligente universal/enchufe/validator_v2.py commit 2e20488e384ad658675d1ccaf6726fa1edd02034 blob 418f230e705d18525aae63d6930311ccb7b9297b; HF Job 6aa15fea900620b5c77e6fa1 6 passed in 0.02s",
-    "router inteligente universal/domain/schemas/enchufe_v2.py commit 14d86fb07caa02e552a2c5a7788c197084a8d11f blob faf0b8a2f1474c044143728bf7fdfd41d1a751fa; HF Job 6aa165be32d5d0c22c5b07df 4 passed in 0.09s",
-    "router inteligente universal/red/red_universal.py commit 189a605fbccf703a81269d05777573c14acb68fb blob 66154b60ad53aa797094df8741389c8427f9bec0; HF Job 6aa16b68900620b5c77e7259 5 passed in 0.05s",
-    "C15 source v1.5 blob 692daca7ace7ac983aeb585dd05ac281e571f2f3 + Enchufe Universal v2 source blob 1f2de5b0578391164e6f6f7331507299130e8579",
+    "HF Job 6aa15404900620b5c77e6c45 13 passed in 0.05s",
+    "router inteligente universal/enchufe/validator_v2.py blob 418f230e705d18525aae63d6930311ccb7b9297b",
+    "router inteligente universal/domain/schemas/enchufe_v2.py blob faf0b8a2f1474c044143728bf7fdfd41d1a751fa",
+    "router inteligente universal/red/red_universal.py blob 66154b60ad53aa797094df8741389c8427f9bec0",
     "router inteligente universal/red/enchufe_gate.py commit 4e256e1332d41f9177e0df4806bb749cbd1f1e54 blob b5fdc15a4b4c3747425d7db86a81f2c4e409de9e",
-    "router inteligente universal/tests/test_enchufe_gate_v15.py commit e938ff557670d27763c6d5b507fd2946e1cd6702 blob d524efd1513e3346b50f2dbb5cab168c222882ff",
-    "router inteligente universal/tests/test_enchufe_gate_v2.py commit 8536808a3a53cab0afb89b007f5e7095bf37a047 blob 55cd01b9b464349cba5bc94c04a1b71cf522a017",
-    "HF Jobs 6aa16f6932d5d0c22c5b090a and 6aa16f8d32d5d0c22c5b090c refuted stale/loader harness; StrategyDelta fixed sys.modules and pinned commit",
-    "HF Job 6aa16ff732d5d0c22c5b0912 pinned commit 8536808a3a53cab0afb89b007f5e7095bf37a047; 5 passed in 0.09s",
-    "R-004 PDF blob 2ee8d937493d1923b2c1e5d6cc294a1513df3c91; origin commit 7db4e349ff3ea22be5f1b8c10a1efc46b73418aa; extraction audit commit f41db4710a7af645288fe1b1339fa5aba6cc894f",
-    "C03 donor audit commit fa787fe101858ecd2ddf02e1f9ff25238a2148ef; pydantic-settings README blob 84c893ab07d3282555622f69cee358686ba4ea99; pyproject blob 21c3e4780e6da923cccf8435498930f4d9e1bece; MIT; ADAPT_CANDIDATE only"
+    "HF Job 6aa16ff732d5d0c22c5b0912 5 passed in 0.09s",
+    "R-004 PDF blob 2ee8d937493d1923b2c1e5d6cc294a1513df3c91 origin commit 7db4e349ff3ea22be5f1b8c10a1efc46b73418aa audit f41db4710a7af645288fe1b1339fa5aba6cc894f",
+    "C03 donor audit fa787fe101858ecd2ddf02e1f9ff25238a2148ef; pydantic-settings README 84c893ab07d3282555622f69cee358686ba4ea99 pyproject 21c3e4780e6da923cccf8435498930f4d9e1bece MIT",
+    "C01 donor audit c8d297ed1046445c74190d6ba51bc1a39307462d; fastapi pyproject 06c82344a7010eefaf98f567468dea8be5a5ae10 LICENSE 3e92463e6bd522a2a21e5f0a80d8089d6c4be20d upstream https://github.com/fastapi/fastapi"
   ],
   "rules": {
     "input_literal": true,
@@ -124,5 +121,13 @@
     "no_monolith": true,
     "reuse_first": true,
     "steps_limit": 3
+  },
+  "last_delta": {
+    "id": "RIU-0025",
+    "decision": "C01_FASTAPI_ADAPT_CANDIDATE_ONLY",
+    "verify_final": "PASS_AUDIT_ONLY",
+    "council12": "PASS_AUDIT_ONLY",
+    "cross_check": "PASS",
+    "coda": "FAIL_CLOSED_NO_CODE"
   }
 }
