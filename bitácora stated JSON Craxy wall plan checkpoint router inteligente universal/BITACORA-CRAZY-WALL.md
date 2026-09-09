@@ -41,9 +41,12 @@ Adapter `red/conector_gitlab.py`; secretos solo por entorno; acción desconocida
 ## RIU-0012 — P02 REUSE + WIRE CONECTOR VPS V6
 `ConectorVPS` ya existía en `red/conectores.py`; se reutilizó sin crear adapter duplicado. Registry `vps` commit `2b57fe8e4ef7965ee23a6a086415ef8c21db7f60`; test `tests/test_conector_vps_v6.py` commit `7f04404876b2fb1123742d32dd4d48741a2b388d`. HF Job `6aa12c19900620b5c77e61d2` status success con `PASS_CONECTOR_VPS_V6: 3/3`; unknown command fail-closed.
 
+## RIU-0013 — P02 REUSE + WIRE CONECTOR MEMORIA V6
+`ConectorMemoria` ya existía en `red/conectores.py`; se reutilizó sin duplicar adapter. Registry `memoria` commit `3987856e107e848e111d96317e3a9c92c40a6cbb`, blob `878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9`; test `tests/test_conector_memoria_v6.py` commit `de82bd75e630f13141df7b2b2b74131163e52200`, blob `0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582`. HF Job `6aa1318d32d5d0c22c5afe2c` descargó 5 archivos exactos de `main` y dio `3 passed in 0.04s` para registry, read/commit/snapshot/health y operación desconocida fail-closed.
+
 ## 3 REFUTACIONES
 1. COUNT 0 público ≠ ausencia de privados/endpoints HF.
-2. ConectorVPS contractual PASS ≠ VPS remoto real del Paso 3.
+2. ConectorMemoria contractual PASS ≠ State Engine real integrado extremo a extremo.
 3. Tests contractuales PASS ≠ Paso 2/3 completos.
 
 ## NEXT
