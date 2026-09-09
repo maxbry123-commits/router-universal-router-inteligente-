@@ -12,6 +12,7 @@ from red.conectores import (
     ConectorHuggingFace,
     ConectorHTTP,
     ConectorMCP,
+    ConectorVPS,
 )
 
 CONNECTOR_REGISTRY = {
@@ -22,6 +23,7 @@ CONNECTOR_REGISTRY = {
     "huggingface": ConectorHuggingFace,
     "db": ConectorDB,
     "gitlab": ConectorGitLab,
+    "vps": ConectorVPS,
 }
 
 
