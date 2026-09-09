@@ -1,0 +1,59 @@
+{
+  "contract": "RIU-HF-MODEL-REGISTRY-V1",
+  "source": "https://router.huggingface.co/v1/models",
+  "evidence_job": "6aa1ba1321047bf1b037097f",
+  "models": [
+    {
+      "model_id": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+      "specialty": "code",
+      "provider_policy": "fastest",
+      "supports_tools": true,
+      "context_length": 262144,
+      "live_providers": ["novita", "featherless-ai"]
+    },
+    {
+      "model_id": "openai/gpt-oss-120b",
+      "specialty": "tools_general",
+      "provider_policy": "fastest",
+      "supports_tools": true,
+      "context_length": 131072,
+      "live_providers": ["groq", "novita", "cerebras", "nscale", "together", "fireworks-ai", "featherless-ai", "scaleway", "baseten", "ovhcloud", "deepinfra"]
+    },
+    {
+      "model_id": "Qwen/Qwen3-4B-Thinking-2507",
+      "specialty": "reasoning",
+      "provider_policy": "fastest",
+      "supports_tools": true,
+      "context_length": 262144,
+      "live_providers": ["nscale", "featherless-ai"]
+    },
+    {
+      "model_id": "Qwen/Qwen2.5-Coder-32B-Instruct",
+      "specialty": "code_fallback",
+      "provider_policy": "fastest",
+      "supports_tools": false,
+      "context_length": 131072,
+      "live_providers": ["nscale", "featherless-ai"]
+    },
+    {
+      "model_id": "deepseek-ai/DeepSeek-R1",
+      "specialty": "deep_reasoning",
+      "provider_policy": "fastest",
+      "supports_tools": true,
+      "context_length": 64000,
+      "live_providers": ["novita"]
+    },
+    {
+      "model_id": "zai-org/GLM-4.5",
+      "specialty": "general_reasoning",
+      "provider_policy": "fastest",
+      "supports_tools": true,
+      "context_length": null,
+      "live_providers": ["zai-org"]
+    }
+  ],
+  "security": {
+    "token_env": "HF_TOKEN",
+    "hardcoded_tokens": false
+  }
+}
