@@ -5,8 +5,8 @@
   "repo": "maxbry123-commits/router-universal-router-inteligente-",
   "branch": "main",
   "status": "ACTIVE_LOOP",
-  "current_node": "P01_COMPONENTS_AND_HF_LLM_AUDIT",
-  "progress_percent": 27,
+  "current_node": "P02_WIRE_PRUNE_FILL",
+  "progress_percent": 31,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -20,13 +20,15 @@
     "create_handoff_component_index",
     "move_open_source_into_router_code_root",
     "audit_local_hf_bridge_reuse",
-    "verify_hf_public_owner_model_inventory"
+    "verify_hf_public_owner_model_inventory",
+    "reconcile_hf_registry_no_model_ids",
+    "reuse_enchufe_gate_v15_into_code_root",
+    "verify_enchufe_gate_v15_deterministic"
   ],
   "in_progress": [
-    "audit_huggingface_private_endpoint_models_for_fastapi_adapters"
+    "wire_prune_and_fill_missing_code"
   ],
   "pending": [
-    "wire_prune_and_fill_missing_code",
     "behavior_filter_layer",
     "integration_tests_hf_github_api_agents"
   ],
@@ -34,16 +36,16 @@
     {
       "id": "GAP-HF-CATALOG-001",
       "type": "PARTIAL_REMOTE_ENUMERATION",
-      "evidence": "model_search tool unavailable; authorized HF Job using HfApi verified COUNT 0 public owner models; job environment has no HF token, so private/endpoints remain unverified",
-      "next": "StrategyDelta: reconcile configured HF endpoint/model references and verify exact IDs before adapters"
+      "evidence": "public owner inventory COUNT 0; repo HF registry contains GitHub namespace metadata only; no confirmed HF model_id/private endpoint model is persisted",
+      "next": "continue P02 safe independent work; retry HF model enumeration only with new evidence/credential path"
     }
   ],
   "evidence": [
     "router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md@cb2465a592cc7f3158925d422e18fcff93e771ef",
-    "HF Job 6aa0f30c32d5d0c22c5af586: COUNT 0 public owner models",
-    "HF Job 6aa0f328900620b5c77e5534: no token injected",
-    "huggueface/manifest.yml@35f97e66989fb307be7f6f3509329ddb6a5bb478",
-    "huggueface/bridge/router_hf_bridge.py@a6f11200bb2be34304c0da1d3772d7b94058a7b6"
+    "coneccion huggueface Github/registry/repos.json@e9ac743159b44a54325f15557c9a1c7222e7cc95",
+    "router inteligente universal/red/enchufe_gate.py commit 4007983f2cabecdf78198a1a7ae23aff5fcfa8ce",
+    "router inteligente universal/tests/test_enchufe_gate_v15.py commit 7328d377726dbf435cbc877d6909a5f74a9bcbb3",
+    "deterministic local execution: PASS_ENCHUFE_GATE_V15_REUSE"
   ],
   "rules": {
     "input_literal": true,
