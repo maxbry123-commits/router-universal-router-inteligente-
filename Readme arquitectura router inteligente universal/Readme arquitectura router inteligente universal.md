@@ -11,55 +11,28 @@ Backend Python 95% determinista / 5% LLM. El Router no inventa DAGs: clasifica l
 La IA puede producir contenido dentro de nodos autorizados, pero no crear, borrar, reordenar ni sustituir el DAG.
 
 ## 3. Plan autorizado — solo 3 pasos
-1. **Componentes + Hugging Face/LLM:** centralizar componentes bajo `../router inteligente universal/Componente open soure router inteligente universal/`, auditar LLM disponibles y preparar adapters/FastAPI por modelo.
-2. **Cableado + poda + faltantes:** `REUSE > PATCH > ADAPT > GENERATE`; separar contracts/adapters/plugins/registry/loader/guards/tests; conectar únicamente por Enchufe Universal; crear capa/filtro de comportamiento LLM separada del DAG.
+1. **Componentes + Hugging Face/LLM:** componentes centralizados; owner público HF auditado; privados/endpoints sin `model_id` confirmado permanecen FLAG.
+2. **Cableado + poda + faltantes:** ACTIVE. `REUSE > PATCH > ADAPT > GENERATE`; conectar por Enchufe Universal; separar contracts/adapters/plugins/registry/loader/guards/tests.
 3. **Test integral:** Hugging Face + GitHub + API + agentes con evidencia real.
 
-No añadir fases, servicios ni arquitecturas paralelas salvo GAP demostrado dentro de estos tres pasos.
-
 ## 4. Arquitectura de trabajo LOOP
-```text
-INPUT LITERAL -> SHERIFF -> STATE/CHECKPOINT/PLAN/RECOVERY -> RESEARCH/REUSE
--> PLAN 1x1 -> EXECUTE DELTA -> VALIDATE/VERIFY/REFUTE
--> PASS:PERSIST:NEXT | GAP:StrategyDelta:RETRY | FLAG:RECOVERY:NEXT SAFE
-```
+`INPUT LITERAL -> SHERIFF -> STATE/CHECKPOINT/PLAN/RECOVERY -> RESEARCH/REUSE -> PLAN 1x1 -> EXECUTE -> VERIFY/REFUTE -> PERSIST -> NEXT`
 
-## 5. Separación obligatoria
-```text
-contracts/
-adapters/
-plugins/
-registry/
-loader/
-guards/
-tests/
-evidence/
-```
-
-Componente descargado ≠ integrado. Vendor/donor no se convierte en segundo dueño del workflow.
-
-## 6. Fuentes de verdad
-1. INPUT literal del Director.
-2. `../readme Handoff indice componentes.md`.
-3. `../bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/STATE.json`.
-4. CHECKPOINT + PLAN + RECOVERY + BITACORA.
-5. Documentos de arquitectura del proyecto.
-6. HEAD real + pruebas.
-
-## 7. Evidencia mínima
+## 5. Evidencia mínima
 `ruta + commit/tree/blob SHA + read-back + test/log + URL/SHA externo cuando aplique`.
 
-## 8. Estado integración Hugging Face
-Reuse confirmado antes de programar:
-- `../huggueface/manifest.yml`: contrato `HF-ROUTER-BRIDGE-V1`, REMOTE_ONLY, FastAPI/OpenAI-compatible, secretos por entorno y failover HF1→HF2→HF3→WAITING.
-- `../huggueface/bridge/router_hf_bridge.py`: puente remoto con `provider_models()` y `chat()` para proveedores existentes.
-- Auditoría: `../router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md`.
+## 6. Estado Hugging Face
+`huggueface/manifest.yml` y `router_hf_bridge.py` son REUSE confirmados. HF Job verificó 0 modelos públicos del owner `COMAND-CENTER-1`; `coneccion huggueface Github/registry/repos.json` contiene 19 namespaces GitHub y ningún `model_id` HF. No se generan adapters por modelos supuestos.
 
-`GAP-HF-CATALOG-001` está parcialmente resuelto mediante StrategyDelta real: Hugging Face Jobs + `HfApi.list_models(author='COMAND-CENTER-1')` devolvió `COUNT 0` para modelos públicos propiedad de la cuenta. Un segundo Job confirmó que el contenedor no recibe `HF_TOKEN`, por lo que este resultado no demuestra ausencia de modelos privados ni endpoints configurados. No crear adapters por `model_id` no confirmado.
+## 7. Estado Paso 2
+Primer delta real materializado desde fuente canónica:
+- `../router inteligente universal/red/enchufe_gate.py` — commit `4007983f2cabecdf78198a1a7ae23aff5fcfa8ce`.
+- `../router inteligente universal/tests/test_enchufe_gate_v15.py` — commit `7328d377726dbf435cbc877d6909a5f74a9bcbb3`.
+- test determinista: `PASS_ENCHUFE_GATE_V15_REUSE`.
 
-Siguiente delta: reconciliar `HF_INFERENCE_ENDPOINT`/registry/configuración persistida con IDs reales consumibles, verificar `model_id/revision/task` y recién entonces registrar adapters/FastAPI por modelo.
+Siguiente delta 1×1: REUSE `red/conectores.py` desde la fuente canónica, ejecutar baseline tests y solo después PATCH/ADAPT del catálogo v6.
 
-## 9. Regla de cierre
+## 8. Regla de cierre
 `archivo presente != integrado`
 `componente descargado != adaptado`
 `codigo escrito != ejecutado`
