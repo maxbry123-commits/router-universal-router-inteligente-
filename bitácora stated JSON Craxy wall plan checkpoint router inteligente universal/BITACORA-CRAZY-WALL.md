@@ -56,10 +56,13 @@ README arquitectura ordenó materializar filtro LLM únicamente con contrato def
 ## RIU-0017 — P02 RECOVER + MATERIALIZE VALIDATOR V2
 StrategyDelta sobre documentos fuente de verdad recuperó el código completo de `validator_v2.py` desde `FABLES ENCHUFE UNIVERSAL v2`, source blob `1f2de5b0578391164e6f6f7331507299130e8579`. Se materializó `router inteligente universal/enchufe/validator_v2.py` commit `2e20488e384ad658675d1ccaf6726fa1edd02034`, blob `418f230e705d18525aae63d6930311ccb7b9297b`. Los seis tests nombrados por la fuente quedaron en `tests/test_validator_v2_contract.py`, final commit `de9326ff0167a04024a09fc60617c8bf6b75ae28`, blob `4aa5d4a878f582b82f254cd5ff1fda8d9161fe14`. Primer harness falló por registro `sys.modules`; se corrigió el test sin alterar validator. HF Job sparse-clone `6aa15fea900620b5c77e6fa1` terminó COMPLETED: `6 passed in 0.02s`.
 
+## RIU-0018 — P02 MATERIALIZE C05 ENCHUFE SCHEMA PYDANTIC V2
+Búsqueda literal del behavior filter no recuperó policy standalone; FAIL_CLOSED prohibió inventarla. StrategyDelta tomó una tarea P02 independiente ya especificada: DOC-A02 C05 + JSON Schema FABLES. Se materializó `router inteligente universal/domain/schemas/enchufe_v2.py` commit `14d86fb07caa02e552a2c5a7788c197084a8d11f`, blob `faf0b8a2f1474c044143728bf7fdfd41d1a751fa`; test `router inteligente universal/tests/test_enchufe_v2_schema.py` commit `96448365568950d9bbd7405f58e001f7eb419f1c`, blob `53d4ee813b51000609532817ca1b5d02a71459f8`. Primer harness local falló por `importlib`/anotaciones diferidas y se corrigió solo el harness; local final `4 passed`. Primer HF run fue refutado porque `python:3.12-slim` no trae `git`; StrategyDelta materialmente distinto descargó blobs exactos de `main` por raw GitHub. HF Job `6aa165be32d5d0c22c5b07df` terminó COMPLETED/success: `4 passed in 0.09s`.
+
 ## 3 REFUTACIONES
-1. `validator_v2` recuperado y PASS ≠ behavior filter standalone implementado.
+1. C05 Pydantic + `validator_v2` PASS ≠ behavior filter standalone implementado.
 2. Donor `guardrails` físicamente disponible ≠ policy de comportamiento autorizada.
-3. Test contractual PASS ≠ Paso 2 cerrado ≠ E2E Paso 3.
+3. Tests C05/validator/conectores PASS ≠ Paso 2 cerrado ≠ E2E Paso 3.
 
 ## NEXT
-Cola 1×1: buscar exclusivamente contrato explícito del filtro LLM en fuentes de verdad; si existe → REUSE/PATCH/ADAPT detrás de `guard/plugin` → test fijado → persistir. Si no existe, continuar únicamente tarea independiente segura P02.
+Cola 1×1: buscar exclusivamente contrato explícito del filtro LLM en fuentes de verdad; si existe → REUSE/PATCH/ADAPT detrás de `guard/plugin` → test fijado → persistir. Si no existe, auditar y ejecutar únicamente la siguiente tarea independiente segura P02 respaldada por arquitectura.
