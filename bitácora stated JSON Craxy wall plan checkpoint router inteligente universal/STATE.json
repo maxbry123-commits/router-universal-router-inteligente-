@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 52,
+  "progress_percent": 58,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -32,7 +32,10 @@
     "verify_db_connector_v6_contract",
     "adapt_gitlab_connector_v6",
     "wire_gitlab_connector_registry",
-    "verify_gitlab_connector_v6_contract"
+    "verify_gitlab_connector_v6_contract",
+    "adapt_mcp_app_connector_v6",
+    "wire_mcp_app_connector_registry",
+    "verify_mcp_app_connector_v6_contract"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -49,9 +52,11 @@
     "PASS_CONECTOR_HUGGINGFACE_V6_CONTRACT: 3 passed",
     "PASS_CONECTOR_DB_V6_CONTRACT: 3 passed in 0.10s",
     "router inteligente universal/red/conector_gitlab.py commit 122e5baeec061e89be2fe32411d0b3d5ee70f6aa blob d0e1de92a0cb3ab1577e29c2c83adf020806f4c1",
-    "router inteligente universal/red/connector_registry.py commit 0c13109de1f2e120b9c3eea7990026b4c80f8639",
-    "router inteligente universal/tests/test_conector_gitlab_v6.py commit 0e5dbf8d4efa34df83397fea6631a74bb7896c12",
-    "HF Job 6aa11334900620b5c77e5ca7 status success; command runs pytest GitLab registry contract"
+    "HF Job 6aa11334900620b5c77e5ca7 status success; pytest GitLab registry contract",
+    "router inteligente universal/red/conector_mcp_app.py commit 8a45204be6c3de7a2b8e95f648ef2cbc678dbda0 blob 8411989712033186312516c0c229a4facd976446",
+    "router inteligente universal/red/connector_registry.py MCP App commit 1289c5b57e72029a95f9d794eac5ea648c71f9e2 blob 6c6d4d0efe3e12d9c8512c71d14d80555cb93442",
+    "router inteligente universal/tests/test_conector_mcp_app_v6.py commit 1df8b57fc5a410a383a1a1b4e2b78535eedc5efe blob 950c5f4d2d8c974253ff24385352d3504412565c",
+    "HF Job 6aa11dac32d5d0c22c5afb80 status success; pytest MCP App contract"
   ],
   "rules": {
     "input_literal": true,
