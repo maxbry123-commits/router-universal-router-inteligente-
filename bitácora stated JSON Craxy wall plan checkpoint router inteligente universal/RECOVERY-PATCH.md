@@ -6,12 +6,12 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 - Plan limitado a 3 pasos.
 - Paso 1: componentes centralizados; owner público HF 0; privados/endpoints FLAG no bloqueante.
 - Paso 2 ACTIVE: Gate/conectores reutilizados desde fuente canónica.
-- `ConectorHuggingFace` y `ConectorDB` v6 permanecen contractualmente verificados.
-- Nuevo `ConectorGitLab` separado en `router inteligente universal/red/conector_gitlab.py`.
-- Código GitLab commit `122e5baeec061e89be2fe32411d0b3d5ee70f6aa`, blob `d0e1de92a0cb3ab1577e29c2c83adf020806f4c1`.
-- Registry explícito `red/connector_registry.py` commit `0c13109de1f2e120b9c3eea7990026b4c80f8639`.
-- Test GitLab/registry commit `0e5dbf8d4efa34df83397fea6631a74bb7896c12`.
-- Verify remoto: HF Job `6aa11334900620b5c77e5ca7` status `success` ejecutando pytest del contrato GitLab.
+- `ConectorHuggingFace`, `ConectorDB` y `ConectorGitLab` permanecen contractualmente verificados.
+- `ConectorMCPApp` vive en `router inteligente universal/red/conector_mcp_app.py` y extiende `ConectorMCP`; no crea segundo core.
+- MCP App adapter commit `8a45204be6c3de7a2b8e95f648ef2cbc678dbda0`, blob `8411989712033186312516c0c229a4facd976446`.
+- Registry MCP App commit `1289c5b57e72029a95f9d794eac5ea648c71f9e2`, blob `6c6d4d0efe3e12d9c8512c71d14d80555cb93442`.
+- Test MCP App commit `1df8b57fc5a410a383a1a1b4e2b78535eedc5efe`, blob `950c5f4d2d8c974253ff24385352d3504412565c`.
+- Verify remoto: HF Job `6aa11dac32d5d0c22c5afb80` status `success` ejecutando pytest del contrato MCP App.
 - Paso 3 pendiente.
 
 ## Boot de recuperación
@@ -23,6 +23,6 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 No inventar modelos. Reintentar privados/endpoints solo con nueva evidencia consumible; continuar tareas P02 independientes.
 
 ## Refutaciones
-1. Adapter GitLab probado contractualmente != GitLab remoto autenticado del Paso 3.
-2. Registry con GitLab != catálogo v6 completo.
+1. MCP App contractual PASS != servidor MCP App remoto real del Paso 3.
+2. Registry con MCP App != catálogo v6 completo.
 3. PASS contractual != Paso 2 ni Paso 3 completos.
