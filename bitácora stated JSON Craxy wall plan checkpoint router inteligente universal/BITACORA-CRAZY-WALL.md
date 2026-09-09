@@ -32,12 +32,17 @@ Se audita código local antes de programar: `huggueface/manifest.yml` (`HF-ROUTE
 
 ## RIU-0009 — GAP-HF-CATALOG-001
 Autenticación HF confirmada para `COMAND-CENTER-1`; la enumeración por `model_search` falló con `Tool model_search not found`. Se persiste `router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md`; prohibido inventar `model_id`.
-StrategyDelta: enumerar por otra ruta autorizada, reconciliar IDs/revision/task y solo entonces crear registry/adapters FastAPI.
+
+## RIU-0010 — STRATEGYDELTA HF JOBS
+Se cambia materialmente la estrategia: Hugging Face Jobs ejecuta `huggingface_hub.HfApi.list_models(author='COMAND-CENTER-1', full=True)`.
+- Job `6aa0f30c32d5d0c22c5af586`: instalación reproducible de `huggingface_hub`; resultado `COUNT 0` para modelos públicos del owner.
+- Job `6aa0f328900620b5c77e5534`: confirma `HF_TOKEN=False`, `HUGGING_FACE_HUB_TOKEN=False`, `HUGGINGFACE_TOKEN=False` dentro del contenedor.
+Conclusión: el inventario público del owner queda verificado en cero; privados/endpoints siguen pendientes y no se infieren. GAP reclasificado a `PARTIAL_REMOTE_ENUMERATION`.
 
 ## 3 REFUTACIONES
 1. HF autenticado ≠ modelos enumerados.
-2. Bridge FastAPI presente ≠ LLM integrado.
-3. Modelo sugerido sin evidencia remota ≠ modelo disponible.
+2. COUNT 0 público ≠ ausencia de privados/endpoints.
+3. Bridge FastAPI presente ≠ LLM integrado.
 
 ## REGLAS
 - INPUT literal.
@@ -49,4 +54,4 @@ StrategyDelta: enumerar por otra ruta autorizada, reconciliar IDs/revision/task 
 - Archivo presente ≠ integrado.
 
 ## NEXT
-Resolver `GAP-HF-CATALOG-001` con lectura alternativa autorizada y completar inventario real HF; después preparar adapters/FastAPI únicamente para modelos confirmados.
+Cruzar referencias `HF_INFERENCE_ENDPOINT`/registry/configuración persistida, verificar modelos reales consumibles y solo entonces preparar adapters/FastAPI por `model_id` confirmado.
