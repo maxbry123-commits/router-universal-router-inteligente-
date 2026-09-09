@@ -6,8 +6,10 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
 1. 📌🛜 **Paso 1 — componentes + LLM/Hugging Face** — ACTIVE
    - ✅ componentes open source movidos a `router inteligente universal/Componente open soure router inteligente universal/`;
    - ✅ reuse local HF auditado: `huggueface/manifest.yml` + `huggueface/bridge/router_hf_bridge.py`;
-   - ⏳ auditar LLM reales disponibles en Hugging Face;
-   - GAP-HF-CATALOG-001: autenticación OK, pero catálogo remoto no enumerable por `model_search`; StrategyDelta = ruta alternativa autorizada de lectura;
+   - ✅ StrategyDelta autorizado: Hugging Face Job + `HfApi.list_models(author='COMAND-CENTER-1')` verificó `COUNT 0` modelos públicos propiedad de la cuenta;
+   - ✅ verificado que el contenedor del Job no recibe `HF_TOKEN`; por tanto `COUNT 0` no prueba ausencia de privados/endpoints;
+   - ⏳ auditar IDs reales detrás de endpoints/configuración HF consumibles por el Router;
+   - GAP-HF-CATALOG-001 PARTIAL: catálogo público del owner resuelto, privados/endpoints aún no enumerados;
    - ⏳ preparar adapters/FastAPI solo para `model_id` confirmados, sin crear segundo core.
 2. 📌 **Paso 2 — cableado + poda + código faltante** — PENDING
    - REUSE > PATCH > ADAPT > GENERATE;
@@ -18,6 +20,6 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
    - Hugging Face + GitHub + API + agentes;
    - exigir ruta + SHA/diff + read-back + test/log.
 
-Cola 1×1 actual: resolver enumeración real HF → registrar modelos confirmados → adapters/FastAPI.
+Cola 1×1 actual: reconciliar referencias HF configuradas/endpoints → confirmar `model_id/revision/task` → adapters/FastAPI.
 
 Reglas: no sobreingeniería; no añadir pasos fuera de estos 3; componente presente ≠ integrado; GAP → StrategyDelta distinto; FLAG → registrar y continuar solo con tarea independiente segura.
