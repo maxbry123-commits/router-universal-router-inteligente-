@@ -3,31 +3,21 @@
 Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 
 ## Estado válido
-- Arquitectura y Handoff de componentes leídos.
-- Plan limitado a 3 pasos aprobado por el Director.
-- Paso 1 activo.
-- Componentes movidos y verificados en `router inteligente universal/Componente open soure router inteligente universal/`.
-- Reuse HF confirmado: `huggueface/manifest.yml` y `huggueface/bridge/router_hf_bridge.py`.
-- Auditoría persistida en `router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md`.
-- StrategyDelta ejecutado con Hugging Face Job + `huggingface_hub.HfApi`: inventario público del owner `COMAND-CENTER-1` = 0 modelos.
-- Job de control confirmó que no hay `HF_TOKEN` inyectado en el contenedor; privados/endpoints siguen sin demostrar.
-- Paso 2 y Paso 3 permanecen pendientes; no añadir tareas externas al plan.
+- Plan limitado a 3 pasos.
+- Paso 1: componentes centralizados; owner público HF verificado en 0 modelos; registry persistido no contiene `model_id` HF; privados/endpoints quedan FLAG no bloqueante.
+- Paso 2 ACTIVE: `router inteligente universal/red/enchufe_gate.py` reutilizado desde la fuente canónica y probado determinísticamente.
+- Evidencia gate: commit `4007983f2cabecdf78198a1a7ae23aff5fcfa8ce`; test commit `7328d377726dbf435cbc877d6909a5f74a9bcbb3`; log `PASS_ENCHUFE_GATE_V15_REUSE`.
+- Paso 3 pendiente.
 
 ## Boot de recuperación
-1. Leer `STATE.json`, `CHECKPOINT.json`, `PLAN-TAREAS.md`, `BITACORA-CRAZY-WALL.md`, README arquitectura y `HF-LLM-AUDIT.md`.
-2. Consultar HEAD real y verificar destino/SHAs antes de escribir.
-3. Continuar cola 1×1 desde `P01_COMPONENTS_AND_HF_LLM_AUDIT`.
+1. Leer STATE/CHECKPOINT/PLAN/BITACORA/README arquitectura.
+2. Verificar HEAD y SHAs.
+3. Continuar P02 cola 1×1: recuperar `red/conectores.py` de la fuente canónica, materializar sin reescribir y probar antes de PATCH.
 
-## GAP-HF-CATALOG-001 — PARTIAL
-La herramienta `model_search` sigue fallando, pero la ruta alternativa autorizada por Hugging Face Jobs resolvió el inventario público: `COUNT 0`. No inferir que esto incluye modelos privados ni endpoints configurados.
+## GAP-HF-CATALOG-001
+No inventar modelos. Reintentar privados/endpoints solo cuando exista nueva credencial/evidencia consumible; mientras tanto continuar tareas P02 independientes.
 
-Evidencia:
-- `https://huggingface.co/jobs/COMAND-CENTER-1/6aa0f30c32d5d0c22c5af586` → `COUNT 0`.
-- `https://huggingface.co/jobs/COMAND-CENTER-1/6aa0f328900620b5c77e5534` → no token en entorno.
-
-StrategyDelta siguiente: cruzar `HF_INFERENCE_ENDPOINT`/referencias persistidas y registry de endpoints; verificar IDs/revision/task por una ruta real antes de generar adapters FastAPI.
-
-## Refutaciones persistentes
-1. autenticación HF != modelos enumerados;
-2. COUNT 0 público != ausencia de privados/endpoints;
-3. bridge presente != LLM integrado.
+## Refutaciones
+1. COUNT 0 público != ausencia de privados/endpoints.
+2. Código fuente documental != integrado hasta materializar + test.
+3. PASS unitario Gate != Paso 2 completo.
