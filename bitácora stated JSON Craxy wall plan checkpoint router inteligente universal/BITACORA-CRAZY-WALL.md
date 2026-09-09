@@ -7,7 +7,7 @@
 Se replica el método de trabajo de `frontend/UI YAIWES/` sin copiar la arquitectura funcional de UI YAIWES.
 
 ## RIU-0002 — COMPONENTES OPEN SOURCE
-Los componentes descargados fueron centralizados inicialmente en `Componente open soure router inteligente universal/`.
+Los componentes descargados fueron centralizados inicialmente y luego movidos a `router inteligente universal/Componente open soure router inteligente universal/`.
 
 ## RIU-0003 — ÍNDICE
 Se crea índice de componentes y regla `presencia != integración`.
@@ -24,9 +24,20 @@ README arquitectura, guía LOOP, Crazy Wall, STATE, CHECKPOINT, PLAN y RECOVERY 
 3. Test integración HF + GitHub + API + agentes.
 No se añaden pasos fuera de este contrato.
 
-## RIU-0007 — P01 ACTIVE
-Se inicia `P01_COMPONENTS_AND_HF_LLM_AUDIT`.
-Delta físico: mover la biblioteca open source completa bajo `router inteligente universal/Componente open soure router inteligente universal/` conservando el mismo tree SHA de componentes y eliminando la raíz top-level anterior mediante commit fast-forward.
+## RIU-0007 — P01 COMPONENTES
+Movimiento físico completado bajo la raíz de código del Router; el tree de componentes queda preservado y se exige read-back antes de integración.
+
+## RIU-0008 — HF REUSE AUDIT
+Se audita código local antes de programar: `huggueface/manifest.yml` (`HF-ROUTER-BRIDGE-V1`, REMOTE_ONLY, FastAPI/OpenAI-compatible, secretos por env, failover HF1→HF2→HF3→WAITING) y `huggueface/bridge/router_hf_bridge.py` (provider_models/chat para proveedores remotos). Resultado: REUSE/PATCH primero; no crear segundo gateway sin justificar.
+
+## RIU-0009 — GAP-HF-CATALOG-001
+Autenticación HF confirmada para `COMAND-CENTER-1`; la enumeración por `model_search` falló con `Tool model_search not found`. Se persiste `router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md`; prohibido inventar `model_id`.
+StrategyDelta: enumerar por otra ruta autorizada, reconciliar IDs/revision/task y solo entonces crear registry/adapters FastAPI.
+
+## 3 REFUTACIONES
+1. HF autenticado ≠ modelos enumerados.
+2. Bridge FastAPI presente ≠ LLM integrado.
+3. Modelo sugerido sin evidencia remota ≠ modelo disponible.
 
 ## REGLAS
 - INPUT literal.
@@ -38,4 +49,4 @@ Delta físico: mover la biblioteca open source completa bajo `router inteligente
 - Archivo presente ≠ integrado.
 
 ## NEXT
-Read-back del destino movido + auditoría real de LLM disponibles en Hugging Face; después preparar adapters/FastAPI únicamente para modelos confirmados.
+Resolver `GAP-HF-CATALOG-001` con lectura alternativa autorizada y completar inventario real HF; después preparar adapters/FastAPI únicamente para modelos confirmados.
