@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-enchufe-gate-reuse",
+  "checkpoint": "router-universal-p02-connectors-reuse",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -8,13 +8,16 @@
     "hf_registry": "coneccion huggueface Github/registry/repos.json@e9ac743159b44a54325f15557c9a1c7222e7cc95 => GitHub namespaces only, no HF model_id",
     "enchufe_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "enchufe_gate_commit": "4007983f2cabecdf78198a1a7ae23aff5fcfa8ce",
-    "enchufe_test_path": "router inteligente universal/tests/test_enchufe_gate_v15.py",
     "enchufe_test_commit": "7328d377726dbf435cbc877d6909a5f74a9bcbb3",
-    "test_log": "PASS_ENCHUFE_GATE_V15_REUSE"
+    "connectors_path": "router inteligente universal/red/conectores.py",
+    "connectors_commit": "8dc43490cc14f21c6d09d9e3d824606868679766",
+    "connectors_test_path": "router inteligente universal/tests/test_conectores_baseline.py",
+    "connectors_test_commit": "94ad8b8879c8c03b2f084ac62059bd346da6a610",
+    "test_log": "3 passed in 0.11s; PASS_CONECTORES_CANONICAL_REUSE_BASELINE"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING",
-  "next_delta": "REUSE red/conectores.py from canonical project source; patch only after read-back and deterministic tests",
+  "next_delta": "PATCH/ADAPT red/conectores.py only with v6 connector capabilities proven by architecture and local donors; keep existing HTTP/MCP baseline intact",
   "next_if_pass": "continue P02 queue 1x1",
   "next_if_gap": "StrategyDelta materially different",
   "status": "ACTIVE_LOOP"
