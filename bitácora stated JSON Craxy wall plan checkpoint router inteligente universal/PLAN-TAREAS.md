@@ -11,14 +11,16 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
 2. 📌 **Paso 2 — cableado + poda + código faltante** — ACTIVE
    - ✅ Gate/conectores/registry + validator/schema/RedUniversal + C15 verificados;
    - ✅ C10 Resilience generado únicamente desde contrato explícito y verificado remotamente;
-   - ✅ RIU-0027 auditó C11 Semantic Cache: `redis-py` y donors vectoriales disponibles → `ADAPT_CANDIDATE/AUDIT_ONLY`;
-   - ✅ RIU-0028 auditó C12 Cost Optimizer: LiteLLM local disponible → `ADAPT_CANDIDATE/AUDIT_ONLY`;
+   - ✅ RIU-0027 C11 Semantic Cache → `ADAPT_CANDIDATE/AUDIT_ONLY`;
+   - ✅ RIU-0028 C12 Cost Optimizer → `ADAPT_CANDIDATE/AUDIT_ONLY`;
+   - ✅ RIU-0029 C13 CodeSandbox dual: docker-py local validado → `ADAPT_CANDIDATE/AUDIT_ONLY`;
    - 🚩 GAP-BEHAVIOR-CONTRACT-001: prohibido inferir/generar policy LLM;
    - 🚩 GAP-R004-EXTRACTION-001: fuente Python exacta no materializada;
    - 🚩 GAP-C03-CONTRACT-001: campos/env/defaults/perfiles no definidos;
    - 🚩 GAP-C01-API-CONTRACT-001: contrato Paneles 1–5 no recuperado;
-   - 🚩 GAP-C11-SEMANTIC-CACHE-CONTRACT-001: faltan keying, embedding/model version, metric/threshold, TTL/invalidation, namespace/privacy, serialization y boundary Enchufe exacto;
-   - 🚩 GAP-C12-COST-POLICY-CONTRACT-001: faltan scopes, límites, intervalos, normalización monetaria, autoridad de precios, rollover/fallback y ownership/boundary exactos.
+   - 🚩 GAP-C11-SEMANTIC-CACHE-CONTRACT-001: contrato semantic-cache incompleto;
+   - 🚩 GAP-C12-COST-POLICY-CONTRACT-001: budget/cost policy Router incompleta;
+   - 🚩 GAP-C13-SANDBOX-CONTRACT-001: faltan allowlists, recursos/red/fs, timeout/cancel, IO, secretos, paridad Docker↔subprocess, schema resultado y boundary Enchufe.
 3. 📌✅ **Paso 3 — tests integración** — PENDING
    - Hugging Face + GitHub + API + agentes;
    - exigir ruta + SHA/diff + read-back + test/log.
