@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 47,
+  "progress_percent": 52,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -29,7 +29,10 @@
     "adapt_huggingface_connector_v6",
     "verify_huggingface_connector_v6_contract",
     "adapt_db_connector_v6",
-    "verify_db_connector_v6_contract"
+    "verify_db_connector_v6_contract",
+    "adapt_gitlab_connector_v6",
+    "wire_gitlab_connector_registry",
+    "verify_gitlab_connector_v6_contract"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -41,15 +44,14 @@
   }],
   "evidence": [
     "router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md@cb2465a592cc7f3158925d422e18fcff93e771ef",
-    "router inteligente universal/red/enchufe_gate.py commit 4007983f2cabecdf78198a1a7ae23aff5fcfa8ce",
     "PASS_ENCHUFE_GATE_V15_REUSE",
-    "router inteligente universal/red/conectores.py baseline commit 8dc43490cc14f21c6d09d9e3d824606868679766",
     "PASS_CONECTORES_CANONICAL_REUSE_BASELINE",
-    "router inteligente universal/red/conectores.py HF v6 commit eb3d9fc2f67a33d8cf22056488ea299a2ffa7875 blob e7a125354e32b718a9410f1c53485dc75ca4cf15",
-    "PASS_CONECTOR_HUGGINGFACE_V6_CONTRACT: 3 passed in 0.10s",
-    "router inteligente universal/red/conectores.py DB v6 commit 885cf992222e59097e5042b74b5371a3a4aa7d1a blob beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78",
-    "router inteligente universal/tests/test_conector_db_v6.py commit 0f6681e17988554a3206d9d3fac7326028ae24dc",
-    "HF Job 6aa1105432d5d0c22c5af971 exact commit test: 3 passed in 0.10s; PASS_CONECTOR_DB_V6_CONTRACT"
+    "PASS_CONECTOR_HUGGINGFACE_V6_CONTRACT: 3 passed",
+    "PASS_CONECTOR_DB_V6_CONTRACT: 3 passed in 0.10s",
+    "router inteligente universal/red/conector_gitlab.py commit 122e5baeec061e89be2fe32411d0b3d5ee70f6aa blob d0e1de92a0cb3ab1577e29c2c83adf020806f4c1",
+    "router inteligente universal/red/connector_registry.py commit 0c13109de1f2e120b9c3eea7990026b4c80f8639",
+    "router inteligente universal/tests/test_conector_gitlab_v6.py commit 0e5dbf8d4efa34df83397fea6631a74bb7896c12",
+    "HF Job 6aa11334900620b5c77e5ca7 status success; command runs pytest GitLab registry contract"
   ],
   "rules": {
     "input_literal": true,
