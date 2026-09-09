@@ -33,14 +33,18 @@ Bridge HF REUSE confirmado. HF Job verificó 0 modelos públicos del owner `COMA
 - `ConectorVPS` reutilizado desde `red/conectores.py`, cableado en registry y verificado sin crear adapter duplicado.
 - `ConectorMemoria` reutilizado desde `red/conectores.py` y cableado como `memoria` en `connector_registry.py`; registry commit `3987856e107e848e111d96317e3a9c92c40a6cbb`, blob `878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9`.
 - Test Memoria: `tests/test_conector_memoria_v6.py`, commit `de82bd75e630f13141df7b2b2b74131163e52200`, blob `0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582`; HF Job `6aa1318d32d5d0c22c5afe2c` descargó archivos exactos de `main` y produjo `3 passed in 0.04s`.
+- C05 schema + validator v2 y R-003 RedUniversal están materializados/verificados; C15 Gate preserva v1.5 y delega v2.
+- C19/R-004: StrategyDelta forense localizó `Documentos proyectos router inteligente universal/lote 1 documentos proyecto/respaldo.py.pdf`, blob `2ee8d937493d1923b2c1e5d6cc294a1513df3c91`, 27576 bytes. Esto refuta `fuente totalmente ausente`, pero el PDF binario todavía no fue extraído/verificado; estado `SOURCE_PDF_FOUND / EXTRACTION_PENDING` y no se materializa producción.
+- C03: donor `pydantic-settings` válido, pero contrato de campos/env aún insuficiente; no generar configuración por inferencia.
 
-Los PASS actuales demuestran contratos/adapters, no servicios remotos reales. Esos pertenecen al Paso 3.
+Los PASS actuales demuestran contratos/adapters/auditorías, no servicios remotos reales. Esos pertenecen al Paso 3.
 
-Siguiente delta 1×1: siguiente conector v6 prioritario respaldado por arquitectura, preservando todos los baselines ya verificados.
+Siguiente delta 1×1: extraer/verificar `respaldo.py.pdf`; solo con código+ownership demostrados aplicar REUSE exacto a `infrastructure/backup/respaldo.py`, test fijo y persistencia. Si el binario sigue inaccesible, mantener GAP y elegir otra tarea P02 independiente con contrato suficiente.
 
 ## 8. Regla de cierre
 `archivo presente != integrado`
 `componente descargado != adaptado`
+`PDF presente != código recuperado`
 `codigo escrito != ejecutado`
 `mock/injection != test remoto real`
 
