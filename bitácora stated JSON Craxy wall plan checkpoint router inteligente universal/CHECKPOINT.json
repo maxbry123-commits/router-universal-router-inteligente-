@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-gitlab-connector-v6",
+  "checkpoint": "router-universal-p02-mcp-app-connector-v6",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -7,13 +7,14 @@
     "hf_public_owner_inventory": "COUNT 0",
     "enchufe_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "connectors_path": "router inteligente universal/red/conectores.py",
-    "gitlab_adapter_path": "router inteligente universal/red/conector_gitlab.py",
-    "gitlab_adapter_commit": "122e5baeec061e89be2fe32411d0b3d5ee70f6aa",
-    "gitlab_adapter_blob": "d0e1de92a0cb3ab1577e29c2c83adf020806f4c1",
-    "gitlab_registry_path": "router inteligente universal/red/connector_registry.py",
-    "gitlab_registry_commit": "0c13109de1f2e120b9c3eea7990026b4c80f8639",
-    "gitlab_test_commit": "0e5dbf8d4efa34df83397fea6631a74bb7896c12",
-    "gitlab_verify": "HF Job 6aa11334900620b5c77e5ca7 status success"
+    "mcp_app_adapter_path": "router inteligente universal/red/conector_mcp_app.py",
+    "mcp_app_adapter_commit": "8a45204be6c3de7a2b8e95f648ef2cbc678dbda0",
+    "mcp_app_adapter_blob": "8411989712033186312516c0c229a4facd976446",
+    "mcp_app_registry_commit": "1289c5b57e72029a95f9d794eac5ea648c71f9e2",
+    "mcp_app_registry_blob": "6c6d4d0efe3e12d9c8512c71d14d80555cb93442",
+    "mcp_app_test_commit": "1df8b57fc5a410a383a1a1b4e2b78535eedc5efe",
+    "mcp_app_test_blob": "950c5f4d2d8c974253ff24385352d3504412565c",
+    "mcp_app_verify": "HF Job 6aa11dac32d5d0c22c5afb80 status success"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING",
