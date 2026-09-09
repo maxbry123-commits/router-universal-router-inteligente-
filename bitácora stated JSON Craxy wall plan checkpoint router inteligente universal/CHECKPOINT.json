@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-vps-connector-v6",
+  "checkpoint": "router-universal-p02-memoria-connector-v6",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -7,12 +7,14 @@
     "hf_public_owner_inventory": "COUNT 0",
     "enchufe_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "connectors_path": "router inteligente universal/red/conectores.py",
-    "vps_source": "ConectorVPS already present in red/conectores.py; REUSE, no duplicate adapter",
-    "vps_registry_path": "router inteligente universal/red/connector_registry.py",
-    "vps_registry_commit": "2b57fe8e4ef7965ee23a6a086415ef8c21db7f60",
-    "vps_test_path": "router inteligente universal/tests/test_conector_vps_v6.py",
-    "vps_test_commit": "7f04404876b2fb1123742d32dd4d48741a2b388d",
-    "vps_verify": "HF Job 6aa12c19900620b5c77e61d2 status success; PASS_CONECTOR_VPS_V6: 3/3"
+    "memoria_source": "ConectorMemoria already present in red/conectores.py; REUSE, no duplicate adapter",
+    "memoria_registry_path": "router inteligente universal/red/connector_registry.py",
+    "memoria_registry_commit": "3987856e107e848e111d96317e3a9c92c40a6cbb",
+    "memoria_registry_blob": "878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9",
+    "memoria_test_path": "router inteligente universal/tests/test_conector_memoria_v6.py",
+    "memoria_test_commit": "de82bd75e630f13141df7b2b2b74131163e52200",
+    "memoria_test_blob": "0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582",
+    "memoria_verify": "HF Job 6aa1318d32d5d0c22c5afe2c; FETCHED_EXACT_MAIN 5; 3 passed in 0.04s"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING",
