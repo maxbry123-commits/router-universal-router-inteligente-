@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 38,
+  "progress_percent": 42,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -25,7 +25,9 @@
     "reuse_enchufe_gate_v15_into_code_root",
     "verify_enchufe_gate_v15_deterministic",
     "reuse_canonical_connectors_into_code_root",
-    "verify_connectors_canonical_baseline"
+    "verify_connectors_canonical_baseline",
+    "adapt_huggingface_connector_v6",
+    "verify_huggingface_connector_v6_contract"
   ],
   "in_progress": [
     "wire_prune_and_fill_missing_code"
@@ -48,9 +50,12 @@
     "router inteligente universal/red/enchufe_gate.py commit 4007983f2cabecdf78198a1a7ae23aff5fcfa8ce",
     "router inteligente universal/tests/test_enchufe_gate_v15.py commit 7328d377726dbf435cbc877d6909a5f74a9bcbb3",
     "deterministic local execution: PASS_ENCHUFE_GATE_V15_REUSE",
-    "router inteligente universal/red/conectores.py commit 8dc43490cc14f21c6d09d9e3d824606868679766",
+    "router inteligente universal/red/conectores.py baseline commit 8dc43490cc14f21c6d09d9e3d824606868679766",
     "router inteligente universal/tests/test_conectores_baseline.py commit 94ad8b8879c8c03b2f084ac62059bd346da6a610",
-    "deterministic local pytest: 3 passed in 0.11s; PASS_CONECTORES_CANONICAL_REUSE_BASELINE"
+    "deterministic local pytest: 3 passed in 0.11s; PASS_CONECTORES_CANONICAL_REUSE_BASELINE",
+    "router inteligente universal/red/conectores.py HF v6 commit eb3d9fc2f67a33d8cf22056488ea299a2ffa7875 blob e7a125354e32b718a9410f1c53485dc75ca4cf15",
+    "router inteligente universal/tests/test_conector_huggingface_v6.py commit 0458b589e89d5c4ff9245528f3acb515936fa34e blob 90425867a0c2f1b090e6a51c584cb018fda13b18",
+    "exact-blob deterministic local pytest: 3 passed in 0.10s; PASS_CONECTOR_HUGGINGFACE_V6_CONTRACT"
   ],
   "rules": {
     "input_literal": true,
