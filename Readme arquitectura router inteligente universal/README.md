@@ -20,22 +20,14 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 
 ## Separación vigente
 - `red/enchufe_gate.py`: Gate C15 compatible v1.5→v2.0.
-- `domain/schemas/enchufe_v2.py`: C05 Pydantic v2 materializado desde JSON Schema FABLES.
-- `enchufe/validator_v2.py`: contrato v2 recuperado desde FABLES Enchufe Universal v2.
-- `red/red_universal.py`: R-003 REUSE; propietario único del mapa/rutas/failover/broadcast/espejo/salud.
-- `red/conectores.py`: conectores base preservados; integración solo con registry + test.
-- `red/connector_registry.py`: registro explícito fail-closed de conectores verificados.
-- `engine/resilience.py`: C10 aislado; R5 Retry + R6 Circuit Breaker, sin ownership de routing/conectores.
+- `domain/schemas/enchufe_v2.py`: C05 Pydantic v2.
+- `enchufe/validator_v2.py`: contrato v2 recuperado.
+- `red/red_universal.py`: propietario único de mapa/rutas/failover/broadcast/espejo/salud.
+- `red/conectores.py` + `red/connector_registry.py`: conectores y registro fail-closed.
+- `engine/resilience.py`: C10 aislado, sin ownership de routing.
 - `tests/`: tests contractuales separados.
 - `integration/huggingface/`: auditoría/bridge HF; prohibido inventar `model_id`.
-- `integration/audits/C10-RESILIENCE-MATERIALIZATION.md`: evidencia C10 runtime-contract.
-- `integration/audits/C03-CONFIG-DONOR-AUDIT.md`: donor `pydantic-settings` = ADAPT_CANDIDATE, no integración.
-- `integration/audits/R004-PDF-EXTRACTION-AUDIT.md`: R-004 identidad/origen demostrados, fuente Python exacta bloqueada.
-- `integration/audits/C01-FASTAPI-DONOR-AUDIT.md`: donor FastAPI auditado; `ADAPT_CANDIDATE`, no integración.
-- Capa/filtro LLM: **NO materializada** mientras `GAP-BEHAVIOR-CONTRACT-001` permanezca abierto.
-- C19/R-004 backup: **NO integrado** mientras `GAP-R004-EXTRACTION-001` permanezca abierto.
-- C03 Config: **NO integrado** mientras `GAP-C03-CONTRACT-001` permanezca abierto.
-- C01 API Gateway: **NO integrado** mientras `GAP-C01-API-CONTRACT-001` permanezca abierto.
+- `integration/audits/`: decisiones REUSE/PATCH/ADAPT/GENERATE y GAPs por componente.
 
 ## Reglas
 - `REUSE > PATCH > ADAPT > GENERATE`.
@@ -46,32 +38,25 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - Donor capaz != contrato específico del Router.
 - PASS exige ruta + SHA/diff + read-back + test/log + URL cuando aplique.
 - Filtro LLM únicamente con policy explícita definida/recuperada.
-- `tel.workflow/v3` es el contrato vigente de este LOOP; una guía interna v4 no sustituye una instrucción/STATE v3 vigente.
+- `tel.workflow/v3` es el contrato vigente de este LOOP.
 
-## C15 Enchufe Gate v1.5→v2.0 — PATCH verificado
-Fuentes contractuales: Gate v1.5 blob `692daca7ace7ac983aeb585dd05ac281e571f2f3`; Enchufe Universal v2 blob `1f2de5b0578391164e6f6f7331507299130e8579`.
-PATCH producción: `router inteligente universal/red/enchufe_gate.py`, commit `4e256e1332d41f9177e0df4806bb749cbd1f1e54`, blob `b5fdc15a4b4c3747425d7db86a81f2c4e409de9e`.
-Verificación remota: HF Job `6aa16ff732d5d0c22c5b0912`, `5 passed in 0.09s`.
+## C10 Resilience — verificado
+Producción `router inteligente universal/engine/resilience.py`, commit `6b408a781d886a8bde43c3f62b48247d872afd36`; test `a0e74c04c93dfc2cc0c96da9c31234d98b44333c`; HF Job `6aa1ae8221047bf1b03707ff` = `5 passed in 0.10s`.
 
-## C10 Resilience — GENERATE desde contrato explícito verificado
-DOC-A02 fija C10 en `engine/resilience.py`; arquitectura v6 define R5 Retry con `intentos=3`, `base_ms=500`, y R6 Circuit Breaker `CLOSED→OPEN→HALF_OPEN`, umbral 5 fallos/60s y cooldown 30s.
-Producción: commit `6b408a781d886a8bde43c3f62b48247d872afd36`, blob `6a92375926909864d6fe604b4966b306a9aac449`.
-Test: `router inteligente universal/tests/test_resilience_c10.py`, commit `a0e74c04c93dfc2cc0c96da9c31234d98b44333c`, blob `77ce9fef2e899215eff9ed2dc2f473adc82950b7`.
-Verificación remota: HF Job `6aa1ae8221047bf1b03707ff`, `5 passed in 0.10s`.
-C10 recibe una operación ya autorizada y no registra/resuelve conectores; no crea un segundo core y conserva Enchufe Universal/RedUniversal como ruta única de conexión.
+## C11 Semantic Cache — RIU-0027 AUDIT_ONLY
+Handoff blob `1182154d2a96497867f29529cf97871a18a9434b` define C11 como `MISSING`, `GENERATE/ADAPT sobre Redis/vector similarity`. Donor root tree `5322af570d72fe2e6feb67426d9d299e08fadad1` confirma biblioteca local y `redis-py/`; upstream `https://github.com/redis/redis-py`.
+
+Auditoría: `router inteligente universal/integration/audits/C11-SEMANTIC-CACHE-DONOR-AUDIT.md`, commit `e03782dcc413efab22399f2df3dc30c6a60a053e`.
+
+Decisión: `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C11 hasta recuperar contrato exacto de cache-key, embedding/model version, metric/threshold, TTL/invalidation, namespace/privacy, serialization, fallback/stale policy y boundary Enchufe. Donor Redis/vector no constituye integración.
 
 ## GAPs activos
 - `GAP-HF-CATALOG-001`: privados/endpoints sin `model_id` confirmado.
 - `GAP-BEHAVIOR-CONTRACT-001`: no existe policy standalone allow/deny recuperada.
 - `GAP-R004-EXTRACTION-001`: PDF exacto demostrado, código Python exacto no materializado.
-- `GAP-C03-CONTRACT-001`: donor settings válido, campos/env/defaults/perfiles del Router no recuperados.
-- `GAP-C01-API-CONTRACT-001`: FastAPI donor válido, pero faltan rutas/métodos/schemas/auth/error envelope/WS-SSE para Paneles 1–5.
-
-## C01 FastAPI donor — AUDIT verificado
-Donor local: `router inteligente universal/Componente open soure router inteligente universal/fastapi/`.
-`pyproject.toml` blob `06c82344a7010eefaf98f567468dea8be5a5ae10`; `LICENSE` blob `3e92463e6bd522a2a21e5f0a80d8089d6c4be20d`; upstream declarado `https://github.com/fastapi/fastapi`; MIT; Python `>=3.10`; Pydantic v2 + Starlette.
-Auditoría: `router inteligente universal/integration/audits/C01-FASTAPI-DONOR-AUDIT.md`, commit `c8d297ed1046445c74190d6ba51bc1a39307462d`.
-Decisión: `ADAPT_CANDIDATE`, no integrar hasta recuperar contrato API del Router.
+- `GAP-C03-CONTRACT-001`: donor settings válido, contrato Router no recuperado.
+- `GAP-C01-API-CONTRACT-001`: FastAPI donor válido, contrato Paneles 1–5 incompleto.
+- `GAP-C11-SEMANTIC-CACHE-CONTRACT-001`: donors Redis/vector presentes, policy/contrato semantic-cache no recuperado.
 
 ## Último delta LOOP
-RIU-0026 materializó y verificó exclusivamente C10 Resilience. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_C10_RUNTIME_CONTRACT`; no se materializó filtro LLM ni se adelantó Paso 3. Progreso 95%; Paso 2 ACTIVE; Paso 3 PENDING.
+RIU-0027 auditó exclusivamente C11 Semantic Cache y registró el GAP contractual sin generar producción. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_C11_AUDIT_ONLY_CONTRACT_GAP_RECORDED`. Progreso se conserva en 95% porque auditoría sin runtime PASS no equivale a implementación; Paso 2 ACTIVE; Paso 3 PENDING.
