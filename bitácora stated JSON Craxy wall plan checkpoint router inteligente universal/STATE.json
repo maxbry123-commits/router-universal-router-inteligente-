@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 74,
+  "progress_percent": 76,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -46,16 +46,25 @@
     "reconcile_interno_connector_registry",
     "verify_conector_interno_v6_contract",
     "reuse_conector_webhook_v6",
-    "verify_conector_webhook_v6_contract"
+    "verify_conector_webhook_v6_contract",
+    "audit_behavior_filter_contract_recovery"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
-  "gaps_flags": [{
-    "id": "GAP-HF-CATALOG-001",
-    "type": "PARTIAL_REMOTE_ENUMERATION",
-    "evidence": "public owner inventory COUNT 0; repo HF registry contains GitHub namespace metadata only; no confirmed HF model_id/private endpoint model is persisted",
-    "next": "continue P02 safe independent work; retry HF model enumeration only with new evidence/credential path"
-  }],
+  "gaps_flags": [
+    {
+      "id": "GAP-HF-CATALOG-001",
+      "type": "PARTIAL_REMOTE_ENUMERATION",
+      "evidence": "public owner inventory COUNT 0; repo HF registry contains GitHub namespace metadata only; no confirmed HF model_id/private endpoint model is persisted",
+      "next": "continue P02 safe independent work; retry HF model enumeration only with new evidence/credential path"
+    },
+    {
+      "id": "GAP-BEHAVIOR-CONTRACT-001",
+      "type": "CONTRACT_NOT_RECOVERED",
+      "evidence": "README arquitectura requires behavior filter only when contract is defined/recovered; Handoff references enchufe/validator_v2.py but that path returns 404 on main; repository code search did not recover an explicit behavior-filter contract",
+      "next": "StrategyDelta: inspect architecture/source-of-truth documents and local guardrails donor for a pre-existing contract; do not generate behavior semantics until recovered"
+    }
+  ],
   "evidence": [
     "router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md@cb2465a592cc7f3158925d422e18fcff93e771ef",
     "PASS_ENCHUFE_GATE_V15_REUSE",
@@ -79,7 +88,8 @@
     "router inteligente universal/red/connector_registry.py already maps interno; blob 4beb5b96e5abb6ff7263cdf2297628058a98e790",
     "router inteligente universal/tests/test_conector_interno_webhook_v6.py blob b7dc3343b7515ad9a1f57ccee983ace65bb03a6b",
     "HF Job 6aa13ab432d5d0c22c5b008f FETCHED_EXACT_MAIN 5; 3 passed in 0.11s",
-    "ConectorWebhook REUSE from router inteligente universal/red/conectores.py blob beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78; registry webhook blob 4beb5b96e5abb6ff7263cdf2297628058a98e790; fail-closed covered by test blob b7dc3343b7515ad9a1f57ccee983ace65bb03a6b; same HF Job 6aa13ab432d5d0c22c5b008f 3 passed"
+    "ConectorWebhook REUSE from router inteligente universal/red/conectores.py blob beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78; registry webhook blob 4beb5b96e5abb6ff7263cdf2297628058a98e790; fail-closed covered by test blob b7dc3343b7515ad9a1f57ccee983ace65bb03a6b; same HF Job 6aa13ab432d5d0c22c5b008f 3 passed",
+    "Behavior filter contract audit: Readme arquitectura router inteligente universal/README.md blob 85365fb67397ebb38c6660afaea04b079ce17fe5 requires defined/recovered contract; readme Handoff indice componentes.md blob 1182154d2a96497867f29529cf97871a18a9434b references enchufe/validator_v2.py; fetch of enchufe/validator_v2.py on main returned 404"
   ],
   "rules": {
     "input_literal": true,
