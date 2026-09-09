@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-behavior-filter-contract-audit",
+  "checkpoint": "router-universal-p02-connector-registry-v6-verified",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -8,6 +8,8 @@
     "enchufe_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "connectors_path": "router inteligente universal/red/conectores.py",
     "connector_registry_blob": "4beb5b96e5abb6ff7263cdf2297628058a98e790",
+    "registry_contract_test": "router inteligente universal/tests/test_connector_registry_v6.py@34df884ae1a0ba474425556e1c551b4bbead53be blob 228788e2f62df45dfb23f88a804924ec5e8feb8f",
+    "registry_remote_verification": "HF Job 6aa15404900620b5c77e6c45 clean clone main; 13 passed in 0.05s",
     "behavior_filter_rule_source": "Readme arquitectura router inteligente universal/README.md blob 85365fb67397ebb38c6660afaea04b079ce17fe5",
     "behavior_filter_rule": "only materialize when contract is defined/recovered",
     "handoff_source": "readme Handoff indice componentes.md blob 1182154d2a96497867f29529cf97871a18a9434b",
@@ -17,7 +19,7 @@
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING + GAP-BEHAVIOR-CONTRACT-001",
-  "next_delta": "StrategyDelta: inspect source-of-truth architecture documents and local guardrails donor for an existing behavior-filter contract; preserve current registry and baselines",
+  "next_delta": "StrategyDelta: inspect source-of-truth architecture documents and local guardrails donor for an existing behavior-filter contract; preserve verified registry baseline",
   "next_if_pass": "materialize only recovered contract behind guard/plugin boundary, then fixed contract test",
   "next_if_gap": "continue P02 only with independent safe architecture-backed work; do not invent behavior policy",
   "status": "ACTIVE_LOOP"
