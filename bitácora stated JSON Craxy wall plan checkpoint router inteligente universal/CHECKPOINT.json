@@ -1,22 +1,20 @@
 {
-  "checkpoint": "router-universal-p01-hf-jobs-real-compute-verified",
+  "checkpoint": "router-universal-p01-hf-catalog-token-boundary-audited",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
     "components_destination": "router inteligente universal/Componente open soure router inteligente universal/",
     "hf_public_owner_inventory": "COUNT 0",
+    "hf_connected_identity": "COMAND-CENTER-1 OAuth authenticated; jobs/openid/profile/read-mcp/read-repos",
     "hf_jobs_compute": "HF Job 6aa1c5fd21047bf1b0370d4d success; cpu-upgrade; real repository audit",
-    "hf_jobs_audit_path": "router inteligente universal/integration/huggingface/RIU-0030-HF-JOBS-COMPUTE-AUDIT.md",
-    "hf_jobs_audit_commit": "0acb4f31a0ff784bae7037b62bac36074e15850f",
-    "c10_remote_verification": "HF Job 6aa1ae8221047bf1b03707ff; 5 passed in 0.10s",
-    "c11_decision": "ADAPT_CANDIDATE/AUDIT_ONLY",
-    "c12_decision": "ADAPT_CANDIDATE/AUDIT_ONLY",
-    "c13_decision": "ADAPT_CANDIDATE/AUDIT_ONLY",
+    "hf_catalog_boundary": "HF Job 6aa1d38621047bf1b0370f3f completed; public count 0; hf_token_present=false",
+    "hf_catalog_audit_path": "router inteligente universal/integration/huggingface/RIU-0031-HF-CATALOG-TOKEN-AUDIT.md",
+    "hf_catalog_audit_commit": "505d54c23120f96cec42dde5c26cd001c20092b9",
     "behavior_filter_rule": "materialize only when explicit standalone behavior policy is defined/recovered"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001 + GAP-BEHAVIOR-CONTRACT-001 + GAP-R004-EXTRACTION-001 + GAP-C03-CONTRACT-001 + GAP-C01-API-CONTRACT-001 + GAP-C11-SEMANTIC-CACHE-CONTRACT-001 + GAP-C12-COST-POLICY-CONTRACT-001 + GAP-C13-SANDBOX-CONTRACT-001",
-  "next_delta": "continue one independent safe P02 task; HF Jobs compute is verified but HF catalog remains fail-closed",
+  "next_delta": "continue one independent safe P02 task; retry private HF catalog only with explicit secure credential/evidence path",
   "next_if_pass": "REUSE/PATCH/ADAPT/GENERATE exact component + fixed test + read-back + persist",
   "next_if_gap": "research official/community alternatives, apply material StrategyDelta, or move only to independent safe task",
   "status": "ACTIVE_LOOP"
