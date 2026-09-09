@@ -16,6 +16,7 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
    - ✅ ADAPT/WIRE `ConectorGitLab` + registry + test remoto PASS;
    - ✅ ADAPT/WIRE `ConectorMCPApp` + registry + test remoto PASS;
    - ✅ REUSE `ConectorVPS`, `ConectorMemoria`, `ConectorInterno`, `ConectorWebhook` + registry/tests remotos PASS;
+   - ✅ registry v6 fijado por `tests/test_connector_registry_v6.py` commit `34df884ae1a0ba474425556e1c551b4bbead53be`, blob `228788e2f62df45dfb23f88a804924ec5e8feb8f`; HF Job `6aa15404900620b5c77e6c45`: 13 passed in 0.05s;
    - ✅ auditoría de recuperación del contrato del filtro LLM: README exige contrato definido/recuperado; Handoff referencia `enchufe/validator_v2.py`; esa ruta devuelve 404 en `main`; búsqueda de código no recuperó contrato explícito;
    - 🚩 GAP-BEHAVIOR-CONTRACT-001: prohibido generar semántica del filtro sin contrato;
    - ⏳ StrategyDelta cola 1×1: inspeccionar documentos fuente de verdad + donor local `guardrails` para recuperar contrato existente; si aparece, materializar detrás de guard/plugin y probar; si no, continuar solo tarea independiente segura P02.
@@ -24,4 +25,4 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
    - exigir ruta + SHA/diff + read-back + test/log.
 
 Cola 1×1 actual: recuperación contractual filtro LLM → REUSE/PATCH/ADAPT únicamente si existe contrato → guard/plugin → test → persistir.
-Reglas: no sobreingeniería; no añadir pasos; REUSE > PATCH > ADAPT > GENERATE; archivo presente ≠ integrado.
+Reglas: no sobreingeniería; no añadir pasos; REUSE > PATCH > ADAPT > GENERATE; archivo presente ≠ integrado; test registry PASS ≠ E2E.
