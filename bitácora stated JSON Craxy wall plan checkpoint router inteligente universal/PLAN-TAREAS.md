@@ -14,14 +14,13 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
    - ✅ PATCH/ADAPT `ConectorHuggingFace` + test contractual PASS;
    - ✅ PATCH/ADAPT `ConectorDB` v6 + test contractual PASS;
    - ✅ ADAPT/WIRE `ConectorGitLab` + registry + test remoto PASS;
-   - ✅ ADAPT `red/conector_mcp_app.py`: extiende `ConectorMCP`, UI HTML/JSON validada y fail-closed;
-   - ✅ WIRE `mcp_app` en `red/connector_registry.py`;
-   - ✅ test `test_conector_mcp_app_v6.py`; HF Job `6aa11dac32d5d0c22c5afb80` status success;
+   - ✅ ADAPT/WIRE `ConectorMCPApp` + registry + test remoto PASS;
+   - ✅ REUSE `ConectorVPS` existente; WIRE `vps` en registry; test fail-closed remoto PASS (`HF Job 6aa12c19900620b5c77e61d2`);
    - ⏳ siguiente cola 1×1: siguiente conector v6 prioritario demostrado por arquitectura;
    - ⏳ capa/filtro comportamiento LLM pendiente hasta contrato definido/recuperado.
 3. 📌✅ **Paso 3 — tests integración** — PENDING
    - Hugging Face + GitHub + API + agentes;
    - exigir ruta + SHA/diff + read-back + test/log.
 
-Cola 1×1 actual: siguiente conector v6 → adapter/registry → test → persistir.
+Cola 1×1 actual: siguiente conector v6 → REUSE/PATCH/ADAPT → registry → test → persistir.
 Reglas: no sobreingeniería; no añadir pasos; REUSE > PATCH > ADAPT > GENERATE; archivo presente ≠ integrado.
