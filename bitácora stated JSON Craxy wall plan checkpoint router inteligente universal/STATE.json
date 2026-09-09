@@ -6,6 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P01_COMPONENTS_AND_HF_LLM_AUDIT",
+  "progress_percent": 24,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -16,16 +17,30 @@
     "prepare_document_upload_lots",
     "prepare_code_upload_lot",
     "analyze_router_architecture",
-    "create_handoff_component_index"
+    "create_handoff_component_index",
+    "move_open_source_into_router_code_root",
+    "audit_local_hf_bridge_reuse"
   ],
   "in_progress": [
-    "move_open_source_into_router_code_root",
     "audit_huggingface_llms_for_fastapi_adapters"
   ],
   "pending": [
     "wire_prune_and_fill_missing_code",
     "behavior_filter_layer",
     "integration_tests_hf_github_api_agents"
+  ],
+  "gaps_flags": [
+    {
+      "id": "GAP-HF-CATALOG-001",
+      "type": "TRANSIENT_TOOL_CATALOG",
+      "evidence": "HF authenticated as COMAND-CENTER-1; model_search returned Tool model_search not found",
+      "next": "StrategyDelta: enumerate models through an alternative authorized Hub read path; do not invent model_id"
+    }
+  ],
+  "evidence": [
+    "router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md",
+    "huggueface/manifest.yml@35f97e66989fb307be7f6f3509329ddb6a5bb478",
+    "huggueface/bridge/router_hf_bridge.py@a6f11200bb2be34304c0da1d3772d7b94058a7b6"
   ],
   "rules": {
     "input_literal": true,
