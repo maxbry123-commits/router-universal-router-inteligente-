@@ -36,15 +36,15 @@ Bridge HF auditado; owner público HF COUNT 0; privados/endpoints quedan `GAP-HF
 Adapter `red/conector_gitlab.py`; secretos solo por entorno; acción desconocida fail-closed. Adapter commit `122e5baeec061e89be2fe32411d0b3d5ee70f6aa`; registry y test verificados por HF Job `6aa11334900620b5c77e5ca7` success.
 
 ## RIU-0011 — P02 ADAPT + WIRE CONECTOR MCP APP V6
-Fuente: arquitectura v6/TASK-03 R-002 y `ConectorMCP` existente; búsqueda local no encontró implementación MCP App reusable, por lo que se aplicó ADAPT mínimo, no segundo core.
-`red/conector_mcp_app.py` extiende `ConectorMCP` y agrega `renderizar_ui()` con salida HTML/JSON tipada y fail-closed. Commit `8a45204be6c3de7a2b8e95f648ef2cbc678dbda0`, blob `8411989712033186312516c0c229a4facd976446`.
-Registry actualizado commit `1289c5b57e72029a95f9d794eac5ea648c71f9e2`, blob `6c6d4d0efe3e12d9c8512c71d14d80555cb93442`.
-Test `tests/test_conector_mcp_app_v6.py` commit `1df8b57fc5a410a383a1a1b4e2b78535eedc5efe`, blob `950c5f4d2d8c974253ff24385352d3504412565c`; HF Job `6aa11dac32d5d0c22c5afb80` status success.
+`red/conector_mcp_app.py` extiende `ConectorMCP`; no crea segundo core. Commit `8a45204be6c3de7a2b8e95f648ef2cbc678dbda0`; registry `1289c5b57e72029a95f9d794eac5ea648c71f9e2`; test `1df8b57fc5a410a383a1a1b4e2b78535eedc5efe`; HF Job `6aa11dac32d5d0c22c5afb80` success.
+
+## RIU-0012 — P02 REUSE + WIRE CONECTOR VPS V6
+`ConectorVPS` ya existía en `red/conectores.py`; se reutilizó sin crear adapter duplicado. Registry `vps` commit `2b57fe8e4ef7965ee23a6a086415ef8c21db7f60`; test `tests/test_conector_vps_v6.py` commit `7f04404876b2fb1123742d32dd4d48741a2b388d`. HF Job `6aa12c19900620b5c77e61d2` status success con `PASS_CONECTOR_VPS_V6: 3/3`; unknown command fail-closed.
 
 ## 3 REFUTACIONES
 1. COUNT 0 público ≠ ausencia de privados/endpoints HF.
-2. MCP App adapter/registry PASS ≠ servidor MCP App remoto real.
+2. ConectorVPS contractual PASS ≠ VPS remoto real del Paso 3.
 3. Tests contractuales PASS ≠ Paso 2/3 completos.
 
 ## NEXT
-Cola 1×1: siguiente conector v6 prioritario respaldado por arquitectura → adapter/registry → test fijado → persistir; conservar baselines verificados.
+Cola 1×1: siguiente conector v6 prioritario respaldado por arquitectura → REUSE/PATCH/ADAPT → registry → test fijado → persistir; conservar baselines verificados.
