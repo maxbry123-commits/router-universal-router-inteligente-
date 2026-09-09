@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-webhook-connector-v6",
+  "checkpoint": "router-universal-p02-behavior-filter-contract-audit",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -7,17 +7,18 @@
     "hf_public_owner_inventory": "COUNT 0",
     "enchufe_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "connectors_path": "router inteligente universal/red/conectores.py",
-    "webhook_source": "ConectorWebhook already present in red/conectores.py; REUSE, no duplicate adapter",
-    "webhook_registry_path": "router inteligente universal/red/connector_registry.py",
-    "webhook_registry_blob": "4beb5b96e5abb6ff7263cdf2297628058a98e790",
-    "webhook_test_path": "router inteligente universal/tests/test_conector_interno_webhook_v6.py",
-    "webhook_test_blob": "b7dc3343b7515ad9a1f57ccee983ace65bb03a6b",
-    "webhook_verify": "HF Job 6aa13ab432d5d0c22c5b008f; FETCHED_EXACT_MAIN 5; 3 passed in 0.11s; fail-closed env_faltante covered"
+    "connector_registry_blob": "4beb5b96e5abb6ff7263cdf2297628058a98e790",
+    "behavior_filter_rule_source": "Readme arquitectura router inteligente universal/README.md blob 85365fb67397ebb38c6660afaea04b079ce17fe5",
+    "behavior_filter_rule": "only materialize when contract is defined/recovered",
+    "handoff_source": "readme Handoff indice componentes.md blob 1182154d2a96497867f29529cf97871a18a9434b",
+    "validator_v2_reference": "enchufe/validator_v2.py",
+    "validator_v2_fetch": "404 on main",
+    "behavior_filter_search": "no explicit contract recovered; no behavior semantics generated"
   },
   "current": "P02_WIRE_PRUNE_FILL",
-  "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING",
-  "next_delta": "REUSE/PATCH/ADAPT next architecture-backed v6 connector or contract-backed behavior filter one at a time; preserve registry and verified baselines",
-  "next_if_pass": "continue P02 queue 1x1",
-  "next_if_gap": "StrategyDelta materially different",
+  "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING + GAP-BEHAVIOR-CONTRACT-001",
+  "next_delta": "StrategyDelta: inspect source-of-truth architecture documents and local guardrails donor for an existing behavior-filter contract; preserve current registry and baselines",
+  "next_if_pass": "materialize only recovered contract behind guard/plugin boundary, then fixed contract test",
+  "next_if_gap": "continue P02 only with independent safe architecture-backed work; do not invent behavior policy",
   "status": "ACTIVE_LOOP"
 }
