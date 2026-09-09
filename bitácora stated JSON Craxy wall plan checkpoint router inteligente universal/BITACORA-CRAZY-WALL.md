@@ -23,8 +23,15 @@ Auditoría persistida: `router inteligente universal/integration/audits/C12-COST
 
 Decisión `ADAPT_CANDIDATE / AUDIT_ONLY`: LiteLLM puede aportar telemetría/cost metadata, pero no existe contrato Router-owned exacto para scopes de presupuesto, hard/soft limits, intervalos, currency normalization, price-source authority, fallback, rollover, ownership por agente/tarea ni boundary Enchufe. Se abre `GAP-C12-COST-POLICY-CONTRACT-001`; no se generó producción.
 
-## COUNCIL12 / 3 REFUTACIONES / CROSS-CHECK / CODA / VERIFY_FINAL RIU-0028
-Council12 PASS para auditoría. Refutaciones: (1) LiteLLM presente ≠ C12 integrado; (2) cost metadata ≠ budget policy del Router; (3) inferir límites/intervalos/fuente de precios violaría FAIL_CLOSED_LOOP. Cross-check Handoff↔README↔STATE↔CHECKPOINT↔PLAN↔RECOVERY PASS. CODA `PASS_SAFE_AUDIT_DELTA`. `verify_final=PASS_C12_AUDIT_ONLY_CONTRACT_GAP_RECORDED`.
+## RIU-0029 — P02 AUDIT C13 CODESANDBOX DUAL
+Cola 1×1 auditó C13 antes de programar. Handoff define C13 `CodeSandbox dual` como `MISSING`, `GENERATE/ADAPT; Docker + subprocess con paridad`. Donor local `router inteligente universal/Componente open soure router inteligente universal/docker-py/`; `pyproject.toml` declara paquete `docker`, licencia Apache-2.0, upstream `https://github.com/docker/docker-py` y versión dinámica.
+
+Auditoría persistida: `router inteligente universal/integration/audits/C13-CODESANDBOX-DONOR-AUDIT.md`, commit `b761958f1532345e97ec82e747d38cd9b596ec0c`.
+
+Decisión `ADAPT_CANDIDATE / AUDIT_ONLY`: no existe contrato Router-owned exacto para allowlists, imágenes/pinning, límites de recursos, red/filesystem, timeout/cancel, stdout/stderr/artefactos, secretos, paridad/fallback Docker↔subprocess, schema de resultado ni boundary Enchufe. Se abre `GAP-C13-SANDBOX-CONTRACT-001`; no se generó producción y no se invocó skill externo porque el donor ya existe localmente.
+
+## COUNCIL12 / 3 REFUTACIONES / CROSS-CHECK / CODA / VERIFY_FINAL RIU-0029
+Council12 PASS para auditoría. Refutaciones: (1) docker-py presente ≠ C13 integrado; (2) Docker Engine API ≠ policy de aislamiento/recursos Router; (3) fallback subprocess sin contrato de paridad violaría FAIL_CLOSED_LOOP. Cross-check Handoff↔README↔STATE↔CHECKPOINT↔PLAN↔RECOVERY PASS. CODA `PASS_SAFE_AUDIT_DELTA`. `verify_final=PASS_C13_AUDIT_ONLY_CONTRACT_GAP_RECORDED`.
 
 ## NEXT
-C01, C03, C11, C12, R-004, HF catalog y filtro LLM permanecen fail-closed hasta nueva evidencia. Cola 1×1 pasa a otro componente P02 independiente con source/contrato suficiente; `REUSE > PATCH > ADAPT > GENERATE`.
+C01, C03, C11, C12, C13, R-004, HF catalog y filtro LLM permanecen fail-closed hasta nueva evidencia. Cola 1×1 pasa a otro componente P02 independiente con source/contrato suficiente; `REUSE > PATCH > ADAPT > GENERATE`.
