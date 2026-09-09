@@ -49,7 +49,15 @@ Componente descargado ≠ integrado. Vendor/donor no se convierte en segundo due
 ## 7. Evidencia mínima
 `ruta + commit/tree/blob SHA + read-back + test/log + URL/SHA externo cuando aplique`.
 
-## 8. Regla de cierre
+## 8. Estado integración Hugging Face
+Reuse confirmado antes de programar:
+- `../huggueface/manifest.yml`: contrato `HF-ROUTER-BRIDGE-V1`, REMOTE_ONLY, FastAPI/OpenAI-compatible, secretos por entorno y failover HF1→HF2→HF3→WAITING.
+- `../huggueface/bridge/router_hf_bridge.py`: puente remoto con `provider_models()` y `chat()` para proveedores existentes.
+- Auditoría: `../router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md`.
+
+`GAP-HF-CATALOG-001`: Hugging Face autenticado, pero la enumeración remota de modelos falló en la herramienta de catálogo. No crear adapters por `model_id` no confirmado. StrategyDelta: enumeración mediante otra ruta autorizada del Hub y reconciliación de `model_id/revision/task`.
+
+## 9. Regla de cierre
 `archivo presente != integrado`
 `componente descargado != adaptado`
 `codigo escrito != ejecutado`
