@@ -26,16 +26,23 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - `red/conectores.py` + `red/connector_registry.py`: conectores y registro fail-closed.
 - `engine/resilience.py`: C10 aislado, sin ownership de routing.
 - `tests/`: tests contractuales separados.
-- `integration/huggingface/`: auditoría/bridge HF; prohibido inventar `model_id`.
+- `integration/huggingface/`: bridge/auditorías HF; prohibido inventar `model_id`.
 - `integration/audits/`: decisiones REUSE/PATCH/ADAPT/GENERATE y GAPs por componente.
+
+## Hugging Face Jobs — RIU-0030 VERIFIED COMPUTE
+La arquitectura admite Jobs como cómputo real externo del proyecto sin convertirlo en segundo orquestador: `Router/GitHub source -> HF Job compute -> resultado/evidencia -> GitHub/state`. Documentación oficial consultada: https://huggingface.co/docs/hub/en/jobs y https://huggingface.co/docs/hub/en/jobs-configuration . `cpu-upgrade` corresponde a 8 vCPU/32 GB.
+
+Job real: `6aa1c5fd21047bf1b0370d4d`, flavor `cpu-upgrade`, resultado `success`, clonando y auditando el repo Router dentro de Hugging Face Jobs. Auditoría: `router inteligente universal/integration/huggingface/RIU-0030-HF-JOBS-COMPUTE-AUDIT.md`, commit `0acb4f31a0ff784bae7037b62bac36074e15850f`.
+
+Este PASS demuestra capacidad de cómputo real, no catálogo LLM privado, no model_id, no FastAPI por modelo y no E2E Paso 3.
 
 ## Reglas
 - `REUSE > PATCH > ADAPT > GENERATE`.
 - Prohibido monolito.
 - Secretos solo por entorno/Vault.
 - Archivo presente != integrado.
-- Declaración documental != source/ownership demostrado.
 - Donor capaz != contrato específico del Router.
+- HF Job success != model catalog ni E2E.
 - PASS exige ruta + SHA/diff + read-back + test/log + URL cuando aplique.
 - Filtro LLM únicamente con policy explícita definida/recuperada.
 - `tel.workflow/v3` es el contrato vigente de este LOOP.
@@ -43,28 +50,18 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 ## C10 Resilience — verificado
 Producción `router inteligente universal/engine/resilience.py`, commit `6b408a781d886a8bde43c3f62b48247d872afd36`; test `a0e74c04c93dfc2cc0c96da9c31234d98b44333c`; HF Job `6aa1ae8221047bf1b03707ff` = `5 passed in 0.10s`.
 
-## C11 Semantic Cache — RIU-0027 AUDIT_ONLY
-Donor Redis/vector disponible; decisión `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C11 hasta recuperar contrato exacto de cache-key, embedding/model version, metric/threshold, TTL/invalidation, namespace/privacy, serialization, fallback/stale policy y boundary Enchufe.
-
-## C12 Cost Optimizer — RIU-0028 AUDIT_ONLY
-Donor LiteLLM disponible; decisión `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C12 hasta recuperar scopes de presupuesto, hard/soft limits, accounting interval, currency normalization, price-source authority, fallback/rollover, ownership agente/tarea y boundary Enchufe exacto.
-
-## C13 CodeSandbox dual — RIU-0029 AUDIT_ONLY
-Handoff define C13 como `MISSING`, `GENERATE/ADAPT; Docker + subprocess con paridad`. Donor local `router inteligente universal/Componente open soure router inteligente universal/docker-py/`; `pyproject.toml` declara paquete `docker`, licencia Apache-2.0, versión dinámica y upstream `https://github.com/docker/docker-py`.
-
-Auditoría: `router inteligente universal/integration/audits/C13-CODESANDBOX-DONOR-AUDIT.md`, commit `b761958f1532345e97ec82e747d38cd9b596ec0c`.
-
-Decisión: `ADAPT_CANDIDATE / AUDIT_ONLY`. No producir C13 hasta recuperar allowlists, imagen/pinning, límites CPU/mem/PIDs/disco, red/filesystem, timeout/cancel, límites IO/artefactos, secretos, contrato de paridad/fallback Docker↔subprocess, schema de resultado y boundary Enchufe exacto.
+## C11/C12/C13
+C11 Semantic Cache, C12 Cost Optimizer y C13 CodeSandbox dual siguen `ADAPT_CANDIDATE/AUDIT_ONLY` hasta recuperar sus contratos Router-owned exactos.
 
 ## GAPs activos
 - `GAP-HF-CATALOG-001`: privados/endpoints sin `model_id` confirmado.
 - `GAP-BEHAVIOR-CONTRACT-001`: no existe policy standalone allow/deny recuperada.
-- `GAP-R004-EXTRACTION-001`: PDF exacto demostrado, código Python exacto no materializado.
-- `GAP-C03-CONTRACT-001`: donor settings válido, contrato Router no recuperado.
-- `GAP-C01-API-CONTRACT-001`: FastAPI donor válido, contrato Paneles 1–5 incompleto.
-- `GAP-C11-SEMANTIC-CACHE-CONTRACT-001`: donors Redis/vector presentes, policy/contrato semantic-cache no recuperado.
-- `GAP-C12-COST-POLICY-CONTRACT-001`: LiteLLM/cost metadata presente, budget policy Router no recuperada.
-- `GAP-C13-SANDBOX-CONTRACT-001`: docker-py presente, contrato Router de aislamiento/ejecución/paridad no recuperado.
+- `GAP-R004-EXTRACTION-001`.
+- `GAP-C03-CONTRACT-001`.
+- `GAP-C01-API-CONTRACT-001`.
+- `GAP-C11-SEMANTIC-CACHE-CONTRACT-001`.
+- `GAP-C12-COST-POLICY-CONTRACT-001`.
+- `GAP-C13-SANDBOX-CONTRACT-001`.
 
 ## Último delta LOOP
-RIU-0029 auditó exclusivamente C13 CodeSandbox dual y registró el GAP contractual sin generar producción. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_C13_AUDIT_ONLY_CONTRACT_GAP_RECORDED`. Progreso se conserva en 95% porque auditoría sin runtime PASS no equivale a implementación; Paso 2 ACTIVE; Paso 3 PENDING.
+RIU-0030 verificó Hugging Face Jobs como cómputo real del Router con `cpu-upgrade`; Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_HF_JOBS_COMPUTE_REAL_NO_CATALOG_CLAIM`. Progreso 96%; Paso 2 ACTIVE; Paso 3 PENDING.
