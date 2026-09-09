@@ -64,7 +64,8 @@
     "audit_r004_pdf_extraction_authorized_routes",
     "audit_c01_fastapi_local_donor_provenance",
     "materialize_c10_resilience_from_explicit_contract",
-    "verify_c10_resilience_runtime_contract"
+    "verify_c10_resilience_runtime_contract",
+    "audit_c11_semantic_cache_local_donor_provenance"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -98,6 +99,12 @@
       "type": "API_SURFACE_NOT_DEFINED",
       "evidence": "FastAPI donor is present/MIT/Pydantic-v2 compatible, but exact Panels 1-5 routes, methods, schemas, auth/error envelope and WS/SSE binding are not recovered",
       "next": "do not generate production api routers until exact API contract is recovered"
+    },
+    {
+      "id": "GAP-C11-SEMANTIC-CACHE-CONTRACT-001",
+      "type": "SEMANTIC_CACHE_POLICY_NOT_DEFINED",
+      "evidence": "redis-py and vector donors are physically available, but cache-key derivation, embedding/model version, metric/threshold, TTL/invalidation, namespace/privacy, serialization and exact Enchufe boundary are not recovered",
+      "next": "do not generate or adapt C11 production code until the Router-owned semantic-cache contract is recovered"
     }
   ],
   "evidence": [
@@ -115,7 +122,8 @@
     "R-004 PDF blob 2ee8d937493d1923b2c1e5d6cc294a1513df3c91 origin commit 7db4e349ff3ea22be5f1b8c10a1efc46b73418aa audit f41db4710a7af645288fe1b1339fa5aba6cc894f",
     "C03 donor audit fa787fe101858ecd2ddf02e1f9ff25238a2148ef; pydantic-settings README 84c893ab07d3282555622f69cee358686ba4ea99 pyproject 21c3e4780e6da923cccf8435498930f4d9e1bece MIT",
     "C01 donor audit c8d297ed1046445c74190d6ba51bc1a39307462d; fastapi pyproject 06c82344a7010eefaf98f567468dea8be5a5ae10 LICENSE 3e92463e6bd522a2a21e5f0a80d8089d6c4be20d upstream https://github.com/fastapi/fastapi",
-    "C10 resilience commit 6b408a781d886a8bde43c3f62b48247d872afd36 blob 6a92375926909864d6fe604b4966b306a9aac449; test commit a0e74c04c93dfc2cc0c96da9c31234d98b44333c blob 77ce9fef2e899215eff9ed2dc2f473adc82950b7; HF Job 6aa1ae8221047bf1b03707ff 5 passed in 0.10s; audit commit 538e0e04f2ca99ee891ddfbee8b233cc7459dd1d"
+    "C10 resilience commit 6b408a781d886a8bde43c3f62b48247d872afd36 blob 6a92375926909864d6fe604b4966b306a9aac449; test commit a0e74c04c93dfc2cc0c96da9c31234d98b44333c blob 77ce9fef2e899215eff9ed2dc2f473adc82950b7; HF Job 6aa1ae8221047bf1b03707ff 5 passed in 0.10s; audit commit 538e0e04f2ca99ee891ddfbee8b233cc7459dd1d",
+    "C11 donor audit e03782dcc413efab22399f2df3dc30c6a60a053e; donor root tree 5322af570d72fe2e6feb67426d9d299e08fadad1; redis-py present; upstream https://github.com/redis/redis-py; AUDIT_ONLY"
   ],
   "rules": {
     "input_literal": true,
@@ -126,11 +134,17 @@
     "steps_limit": 3
   },
   "last_delta": {
-    "id": "RIU-0026",
-    "decision": "C10_GENERATE_FROM_EXPLICIT_CONTRACT",
-    "verify_final": "PASS_C10_RUNTIME_CONTRACT",
+    "id": "RIU-0027",
+    "decision": "C11_ADAPT_CANDIDATE_AUDIT_ONLY",
+    "verify_final": "PASS_C11_AUDIT_ONLY_CONTRACT_GAP_RECORDED",
     "council12": "PASS",
+    "refutations": [
+      "redis-py presence is not C11 integration",
+      "Redis/vector capability is not the Router semantic-cache policy",
+      "inferred threshold/TTL/embedding rules would violate FAIL_CLOSED_LOOP"
+    ],
     "cross_check": "PASS",
-    "coda": "PASS_SAFE_DELTA"
+    "coda": "PASS_SAFE_AUDIT_DELTA",
+    "audit_commit": "e03782dcc413efab22399f2df3dc30c6a60a053e"
   }
 }
