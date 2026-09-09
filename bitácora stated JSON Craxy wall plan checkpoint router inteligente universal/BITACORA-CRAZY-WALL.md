@@ -47,10 +47,13 @@ Adapter `red/conector_gitlab.py`; secretos solo por entorno; acción desconocida
 ## RIU-0014 — P02 REUSE + RECONCILE CONECTOR INTERNO V6
 `ConectorInterno` ya existía en `red/conectores.py` y `interno` ya estaba cableado en `red/connector_registry.py`; se evitó adapter duplicado. Registry blob `4beb5b96e5abb6ff7263cdf2297628058a98e790`; test existente `tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b`. HF Job `6aa13ab432d5d0c22c5b008f` descargó 5 archivos exactos de `main` y dio `3 passed in 0.11s`.
 
+## RIU-0015 — P02 REUSE + RECONCILE CONECTOR WEBHOOK V6
+`ConectorWebhook` ya existía en `red/conectores.py` y `webhook` ya estaba registrado; no se generó adapter duplicado. El test existente `tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b` verifica resolución del registry y fail-closed `env_faltante:ROUTER_WEBHOOK_URL`. La evidencia remota ya producida por HF Job `6aa13ab432d5d0c22c5b008f` fue reconciliada correctamente: `3 passed in 0.11s`.
+
 ## 3 REFUTACIONES
 1. COUNT 0 público ≠ ausencia de privados/endpoints HF.
-2. ConectorInterno contractual PASS ≠ agente externo real integrado extremo a extremo.
+2. ConectorWebhook contractual PASS ≠ entrega externa real a un servicio remoto.
 3. Tests contractuales PASS ≠ Paso 2/3 completos.
 
 ## NEXT
-Cola 1×1: siguiente conector v6 prioritario respaldado por arquitectura → REUSE/PATCH/ADAPT → registry → test fijado → persistir; conservar baselines verificados.
+Cola 1×1: siguiente delta P02 prioritario respaldado por arquitectura → REUSE/PATCH/ADAPT → registry/loader/guard según corresponda → test fijado → persistir; conservar baselines verificados.
