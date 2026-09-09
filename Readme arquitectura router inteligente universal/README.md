@@ -30,6 +30,7 @@ DAGs y modelos no pueden alterar este ownership. Los componentes externos se reu
 - `red/connector_registry.py`: registro explícito fail-closed de conectores integrados; `interno` y `webhook` están reconciliados y verificados sin adapters duplicados.
 - `tests/`: tests contractuales separados; `test_conector_interno_webhook_v6.py` verifica Interno + Webhook y fue ejecutado remotamente.
 - `integration/huggingface/`: auditoría/bridge HF y evidencia de modelos; prohibido inventar `model_id`.
+- Capa/filtro LLM: **NO materializada** mientras `GAP-BEHAVIOR-CONTRACT-001` permanezca abierto; debe vivir detrás de boundary `guard/plugin`, no dentro del core.
 
 ## Reglas
 - `REUSE > PATCH > ADAPT > GENERATE`.
@@ -38,6 +39,13 @@ DAGs y modelos no pueden alterar este ownership. Los componentes externos se reu
 - Archivo presente != integrado.
 - PASS exige ruta + SHA/diff + read-back + test/log + URL cuando aplique.
 - `GAP-HF-CATALOG-001` permanece no bloqueante hasta disponer de evidencia real de privados/endpoints HF.
+- Filtro LLM únicamente con contrato definido/recuperado; donor externo/local no autoriza por sí mismo una policy.
+
+## GAP-BEHAVIOR-CONTRACT-001
+Auditoría P02: este README exige contrato definido/recuperado; `readme Handoff indice componentes.md` blob `1182154d2a96497867f29529cf97871a18a9434b` referencia `enchufe/validator_v2.py`, pero esa ruta devuelve 404 en `main` y la búsqueda de código no recuperó contrato explícito de comportamiento. StrategyDelta: revisar documentos fuente de verdad y donor local `guardrails`; solo materializar reglas ya autorizadas y recuperadas.
 
 ## Última integración verificada
 `ConectorWebhook` existente → registry existente → test contractual remoto: `tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b`; HF Job `6aa13ab432d5d0c22c5b008f`, `FETCHED_EXACT_MAIN 5`, `3 passed in 0.11s`; REUSE sin código duplicado y fail-closed sin `ROUTER_WEBHOOK_URL`.
+
+## Último delta LOOP
+Auditoría de recuperación contractual del filtro LLM: evidencia documental cruzada + 404 de `enchufe/validator_v2.py`; persistencia actualizada sin generar código no autorizado.
