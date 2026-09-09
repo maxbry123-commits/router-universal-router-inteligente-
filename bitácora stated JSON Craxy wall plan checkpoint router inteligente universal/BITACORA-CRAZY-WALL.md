@@ -21,7 +21,7 @@ Componentes centralizados y movidos a `router inteligente universal/Componente o
 Bridge HF auditado; owner público HF COUNT 0; privados/endpoints quedan `GAP-HF-CATALOG-001` no bloqueante; prohibido inventar `model_id`.
 
 ## RIU-0006..0020 — P02 CIERRES PREVIOS
-Gate/conectores v6/registry/validator/schema/RedUniversal y PATCH C15 v1.5→v2.0 verificados; último HF Job C15 `6aa16ff732d5d0c22c5b0912`: `5 passed in 0.09s`.
+Gate/conectores v6/registry/validator/schema/RedUniversal y PATCH C15 v1.5→v2.0 verificados; HF Job C15 `6aa16ff732d5d0c22c5b0912`: `5 passed in 0.09s`.
 
 ## RIU-0021 — P02 AUDIT R-004 BACKUP / RESPALDO
 Handoff declara C19/R-004 `EXISTING_COMPLETE → REUSE`, pero no se recuperó `.py` exacto; fail-closed.
@@ -33,15 +33,24 @@ Handoff declara C19/R-004 `EXISTING_COMPLETE → REUSE`, pero no se recuperó `.
 PDF canónico localizado y origen/identidad verificados; materialización binaria bloqueada. `GAP-R004-EXTRACTION-001` permanece OPEN; auditoría commit `f41db4710a7af645288fe1b1339fa5aba6cc894f`.
 
 ## RIU-0025 — P02 AUDIT C01 FASTAPI DONOR
-Cola 1×1 auditó exclusivamente C01 sin escribir producción. Donor local: `router inteligente universal/Componente open soure router inteligente universal/fastapi/`; `pyproject.toml` blob `06c82344a7010eefaf98f567468dea8be5a5ae10`; `LICENSE` blob `3e92463e6bd522a2a21e5f0a80d8089d6c4be20d`; upstream declarado `https://github.com/fastapi/fastapi`; licencia MIT; Python `>=3.10`; dependencias base Starlette + Pydantic v2. Evidencia persistida en `router inteligente universal/integration/audits/C01-FASTAPI-DONOR-AUDIT.md`, commit `c8d297ed1046445c74190d6ba51bc1a39307462d`. Decisión: `ADAPT_CANDIDATE`, no integrado. Se abrió `GAP-C01-API-CONTRACT-001` porque no están definidos los paths/métodos/schemas/auth/error envelope/WS-SSE de Paneles 1–5.
+Donor FastAPI local auditado; auditoría commit `c8d297ed1046445c74190d6ba51bc1a39307462d`. Decisión `ADAPT_CANDIDATE`, no integrado; `GAP-C01-API-CONTRACT-001` por falta del contrato exacto Paneles 1–5.
 
-## COUNCIL12 / CROSS-CHECK / CODA / VERIFY_FINAL RIU-0025
-`PASS_AUDIT_ONLY`. Source/destination/ownership/license/dependency fit demostrados; implementación runtime bloqueada por contrato API específico ausente. Cross-check Handoff↔README↔STATE↔CHECKPOINT↔PLAN↔RECOVERY consistente. CODA: fail-closed/no-code y continuar solo con tarea P02 independiente segura. `verify_final = PASS_AUDIT_ONLY`.
+## RIU-0026 — P02 MATERIALIZE C10 RESILIENCE
+Cola 1×1 seleccionó C10 porque DOC-A02 y arquitectura v6 definen explícitamente comportamiento, defaults y destino, y no existe implementación Router-owned previa que reutilizar. Se aplicó `GENERATE_FROM_EXPLICIT_CONTRACT`, sin dependencia externa ni skill de descarga.
 
-## 3 REFUTACIONES RIU-0025
-1. FastAPI presente ≠ C01 integrado.
-2. FastAPI soporta REST/WS ≠ contrato Paneles 1–5 recuperado.
-3. Auditoría PASS ≠ C01 runtime PASS ≠ Paso 2 cerrado ≠ E2E Paso 3.
+Producción: `router inteligente universal/engine/resilience.py`; commit `6b408a781d886a8bde43c3f62b48247d872afd36`; read-back blob `6a92375926909864d6fe604b4966b306a9aac449`. Implementa R5 Retry (`intentos=3`, `base_ms=500`, backoff exponencial) + R6 Circuit Breaker por nodo (`CLOSED→OPEN→HALF_OPEN`, umbral 5, ventana 60s, cooldown 30s). No resuelve conectores: acepta una operación async ya autorizada para conservar ownership Enchufe Universal/RedUniversal.
+
+Test: `router inteligente universal/tests/test_resilience_c10.py`; commit final `a0e74c04c93dfc2cc0c96da9c31234d98b44333c`; blob `77ce9fef2e899215eff9ed2dc2f473adc82950b7`.
+
+StrategyDelta: job HF inicial `6aa1adb121047bf1b03707ea` falló por ausencia de `git`; el siguiente intento cambió instalación de entorno; cierre final usó estrategia materialmente distinta descargando únicamente raw blobs desde el commit fijado. HF Job `6aa1ae8221047bf1b03707ff` → `5 passed in 0.10s`. Auditoría persistida en `router inteligente universal/integration/audits/C10-RESILIENCE-MATERIALIZATION.md`, commit `538e0e04f2ca99ee891ddfbee8b233cc7459dd1d`.
+
+## COUNCIL12 / CROSS-CHECK / CODA / VERIFY_FINAL RIU-0026
+Council12 PASS: objetivo, INPUT, destino, estado, evidencia, reusable, arquitectura, concurrencia, dependencia, test, rollback y cierre. Cross-check DOC-A02↔v6↔Handoff↔STATE↔CHECKPOINT↔PLAN↔RECOVERY PASS. CODA `PASS_SAFE_DELTA`. `verify_final = PASS_C10_RUNTIME_CONTRACT`.
+
+## 3 REFUTACIONES RIU-0026
+1. C10 presente ≠ verificado: se exigió pytest remoto sobre commit fijado.
+2. C10 runtime PASS ≠ Paso 2 completo ≠ E2E Paso 3.
+3. Retry/Breaker no posee routing ni registro; todo destino sigue pasando por Enchufe Universal/RedUniversal.
 
 ## NEXT
 C01, C03, R-004, HF catalog y filtro LLM permanecen fail-closed hasta nueva evidencia. Cola 1×1 pasa a otro componente P02 independiente con source/contrato suficiente; `REUSE > PATCH > ADAPT > GENERATE`.
