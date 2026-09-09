@@ -30,8 +30,9 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - `tests/`: tests contractuales separados.
 - `integration/huggingface/`: auditoría/bridge HF y evidencia; prohibido inventar `model_id`.
 - `integration/audits/C03-CONFIG-DONOR-AUDIT.md`: provenance C03; donor `pydantic-settings` válido como ADAPT_CANDIDATE, no integración.
+- `integration/audits/R004-PDF-EXTRACTION-AUDIT.md`: evidencia de identidad/origen/contrato del PDF R-004 y bloqueo de materialización binaria; no producción.
 - Capa/filtro LLM: **NO materializada** mientras `GAP-BEHAVIOR-CONTRACT-001` permanezca abierto.
-- C19/R-004 backup: **NO integrado** mientras `GAP-R004-SOURCE-001` permanezca abierto.
+- C19/R-004 backup: **NO integrado** mientras `GAP-R004-EXTRACTION-001` permanezca abierto.
 - C03 Config: **NO integrado** mientras `GAP-C03-CONTRACT-001` permanezca abierto; donor capaz no autoriza inventar campos/env.
 
 ## Reglas
@@ -53,11 +54,11 @@ Verificación remota: HF Job `6aa16ff732d5d0c22c5b0912`, fijado al commit `85368
 ## GAP-BEHAVIOR-CONTRACT-001
 No existe evidencia de policy standalone allow/deny del comportamiento LLM. El GAP permanece fail-closed; no se deriva policy de schemas, validator, perfiles ni vendors.
 
-## GAP-R004-SOURCE-001
-El Handoff identifica `R-004 infrastructure/backup/respaldo.py` como existente completo, pero source/ownership físico no fue recuperado. No generar ni copiar sustituto hasta recuperar fuente canónica.
+## GAP-R004-EXTRACTION-001
+El Handoff identifica `R-004 infrastructure/backup/respaldo.py` como existente completo. Se verificó el PDF canónico `Documentos proyectos router inteligente universal/lote 1 documentos proyecto/respaldo.py.pdf`, blob `2ee8d937493d1923b2c1e5d6cc294a1513df3c91`, origen commit `7db4e349ff3ea22be5f1b8c10a1efc46b73418aa`; la arquitectura exige `empaquetar()`/`verificar()`, ZIP + manifiesto SHA-256. La fuente Python exacta sigue sin materializarse: base64 demuestra PDF, UTF-8 falla por binario, raw/web y red local no permitieron obtener bytes ejecutables. No generar sustituto desde la descripción.
 
 ## GAP-C03-CONTRACT-001
 C03 exige configuración inmutable y env como única fuente. El donor físico `pydantic-settings` está disponible, declara MIT y soporte Pydantic v2 (`README` blob `84c893ab07d3282555622f69cee358686ba4ea99`; `pyproject` blob `21c3e4780e6da923cccf8435498930f4d9e1bece`; upstream `https://github.com/pydantic/pydantic-settings`). Sin embargo no se han recuperado nombres de variables/campos, requeridos, defaults ni perfiles propios del Router. Estado: `ADAPT_CANDIDATE`, no integrado; no inventar `settings.py`.
 
 ## Último delta LOOP
-P02 ejecutó exclusivamente la auditoría/provenance C03 y la persistió en commit `fa787fe101858ecd2ddf02e1f9ff25238a2148ef`. Council12 + 3 refutaciones + cross-check + CODA + verify_final validan el cierre de auditoría, no de C03. Progreso se mantiene 93%; Paso 2 ACTIVE; Paso 3 PENDING.
+P02 ejecutó exclusivamente StrategyDelta R-004 de extracción binaria y persistió `router inteligente universal/integration/audits/R004-PDF-EXTRACTION-AUDIT.md` en commit `f41db4710a7af645288fe1b1339fa5aba6cc894f`. Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_AUDIT_ONLY` validan la auditoría, no R-004 runtime. Progreso se mantiene 93%; Paso 2 ACTIVE; Paso 3 PENDING.
