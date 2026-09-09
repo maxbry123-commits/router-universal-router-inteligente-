@@ -1,12 +1,14 @@
 import asyncio
 import importlib.util
+import sys
 from pathlib import Path
 
 
 MODULE_PATH = Path(__file__).parents[1] / "engine" / "resilience.py"
 spec = importlib.util.spec_from_file_location("riu_resilience", MODULE_PATH)
-module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
+module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
 spec.loader.exec_module(module)
 
 CircuitBreaker = module.CircuitBreaker
@@ -75,7 +77,7 @@ def test_open_breaker_fails_closed_without_calling_operation():
         called = True
         return "unexpected"
 
-    # Force deterministic timestamp check by keeping OPEN and a large monotonic origin.
+    # Keep OPEN deterministically regardless of the runner monotonic clock.
     breaker.abierto_desde = 10**20
     try:
         asyncio.run(ejecutar_con_resiliencia(operation, breaker=breaker))
