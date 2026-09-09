@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-interno-connector-v6",
+  "checkpoint": "router-universal-p02-webhook-connector-v6",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -7,16 +7,16 @@
     "hf_public_owner_inventory": "COUNT 0",
     "enchufe_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "connectors_path": "router inteligente universal/red/conectores.py",
-    "interno_source": "ConectorInterno already present in red/conectores.py; REUSE, no duplicate adapter",
-    "interno_registry_path": "router inteligente universal/red/connector_registry.py",
-    "interno_registry_blob": "4beb5b96e5abb6ff7263cdf2297628058a98e790",
-    "interno_test_path": "router inteligente universal/tests/test_conector_interno_webhook_v6.py",
-    "interno_test_blob": "b7dc3343b7515ad9a1f57ccee983ace65bb03a6b",
-    "interno_verify": "HF Job 6aa13ab432d5d0c22c5b008f; FETCHED_EXACT_MAIN 5; 3 passed in 0.11s"
+    "webhook_source": "ConectorWebhook already present in red/conectores.py; REUSE, no duplicate adapter",
+    "webhook_registry_path": "router inteligente universal/red/connector_registry.py",
+    "webhook_registry_blob": "4beb5b96e5abb6ff7263cdf2297628058a98e790",
+    "webhook_test_path": "router inteligente universal/tests/test_conector_interno_webhook_v6.py",
+    "webhook_test_blob": "b7dc3343b7515ad9a1f57ccee983ace65bb03a6b",
+    "webhook_verify": "HF Job 6aa13ab432d5d0c22c5b008f; FETCHED_EXACT_MAIN 5; 3 passed in 0.11s; fail-closed env_faltante covered"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING",
-  "next_delta": "REUSE/PATCH/ADAPT next architecture-backed v6 connector one at a time; preserve registry and verified baselines",
+  "next_delta": "REUSE/PATCH/ADAPT next architecture-backed v6 connector or contract-backed behavior filter one at a time; preserve registry and verified baselines",
   "next_if_pass": "continue P02 queue 1x1",
   "next_if_gap": "StrategyDelta materially different",
   "status": "ACTIVE_LOOP"
