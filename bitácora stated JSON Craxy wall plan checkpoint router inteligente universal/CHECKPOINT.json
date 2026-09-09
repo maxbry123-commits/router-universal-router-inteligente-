@@ -1,14 +1,19 @@
 {
-  "checkpoint": "router-universal-step1-active",
+  "checkpoint": "router-universal-step1-hf-audit-active",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
     "handoff_index": "readme Handoff indice componentes.md",
     "architecture_root": "Readme arquitectura router inteligente universal/",
     "crazy_wall_root": "bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/",
-    "components_destination": "router inteligente universal/Componente open soure router inteligente universal/"
+    "components_destination": "router inteligente universal/Componente open soure router inteligente universal/",
+    "hf_audit": "router inteligente universal/integration/huggingface/HF-LLM-AUDIT.md",
+    "hf_bridge_manifest_sha": "35f97e66989fb307be7f6f3509329ddb6a5bb478",
+    "hf_bridge_code_sha": "a6f11200bb2be34304c0da1d3772d7b94058a7b6"
   },
   "current": "P01_COMPONENTS_AND_HF_LLM_AUDIT",
+  "gap": "GAP-HF-CATALOG-001",
+  "next_delta": "Enumerate real HF model IDs by an alternative authorized read path; then register adapters only for confirmed models",
   "next_if_pass": "P02_WIRE_PRUNE_FILL",
   "next_if_gap": "StrategyDelta materially different",
   "status": "ACTIVE_LOOP"
