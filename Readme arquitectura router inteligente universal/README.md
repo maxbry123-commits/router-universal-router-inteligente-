@@ -29,8 +29,10 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - `red/connector_registry.py`: registro explícito fail-closed de conectores verificados.
 - `tests/`: tests contractuales separados.
 - `integration/huggingface/`: auditoría/bridge HF y evidencia; prohibido inventar `model_id`.
+- `integration/audits/C03-CONFIG-DONOR-AUDIT.md`: provenance C03; donor `pydantic-settings` válido como ADAPT_CANDIDATE, no integración.
 - Capa/filtro LLM: **NO materializada** mientras `GAP-BEHAVIOR-CONTRACT-001` permanezca abierto.
-- C19/R-004 backup: **NO integrado** mientras `GAP-R004-SOURCE-001` permanezca abierto; una clasificación `EXISTING_COMPLETE` sin blob/source/ownership no autoriza REUSE ni GENERATE.
+- C19/R-004 backup: **NO integrado** mientras `GAP-R004-SOURCE-001` permanezca abierto.
+- C03 Config: **NO integrado** mientras `GAP-C03-CONTRACT-001` permanezca abierto; donor capaz no autoriza inventar campos/env.
 
 ## Reglas
 - `REUSE > PATCH > ADAPT > GENERATE`.
@@ -38,6 +40,7 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - Secretos solo por entorno/Vault.
 - Archivo presente != integrado.
 - Declaración documental != source/ownership demostrado.
+- Donor capaz != contrato específico del Router.
 - PASS exige ruta + SHA/diff + read-back + test/log + URL cuando aplique.
 - `GAP-HF-CATALOG-001` permanece no bloqueante hasta disponer de evidencia real de privados/endpoints HF.
 - Filtro LLM únicamente con policy explícita definida/recuperada.
@@ -51,7 +54,10 @@ Verificación remota: HF Job `6aa16ff732d5d0c22c5b0912`, fijado al commit `85368
 No existe evidencia de policy standalone allow/deny del comportamiento LLM. El GAP permanece fail-closed; no se deriva policy de schemas, validator, perfiles ni vendors.
 
 ## GAP-R004-SOURCE-001
-El Handoff identifica `R-004 infrastructure/backup/respaldo.py` como existente completo, pero el árbol activo no contiene esa ruta. La API de commits devuelve historial vacío tanto para la ruta bajo `router inteligente universal/` como root-relative. Auditoría materialmente distinta de ramas `download/router-missing-07`, `forensic-router-50-recovery` e `import/maxbry-router-code` tampoco encontró `respaldo`. Decisión arquitectónica: no generar ni copiar un sustituto hasta recuperar source canónico + ownership; después deberá hacerse REUSE exacto + read-back/blob + test.
+El Handoff identifica `R-004 infrastructure/backup/respaldo.py` como existente completo, pero source/ownership físico no fue recuperado. No generar ni copiar sustituto hasta recuperar fuente canónica.
+
+## GAP-C03-CONTRACT-001
+C03 exige configuración inmutable y env como única fuente. El donor físico `pydantic-settings` está disponible, declara MIT y soporte Pydantic v2 (`README` blob `84c893ab07d3282555622f69cee358686ba4ea99`; `pyproject` blob `21c3e4780e6da923cccf8435498930f4d9e1bece`; upstream `https://github.com/pydantic/pydantic-settings`). Sin embargo no se han recuperado nombres de variables/campos, requeridos, defaults ni perfiles propios del Router. Estado: `ADAPT_CANDIDATE`, no integrado; no inventar `settings.py`.
 
 ## Último delta LOOP
-P02 ejecutó exclusivamente la auditoría R-004. Council12 + 3 refutaciones + cross-check + CODA + verify_final validan la decisión fail-closed: la auditoría queda cerrada, C19 no. Progreso se mantiene 93%; Paso 2 ACTIVE; Paso 3 PENDING.
+P02 ejecutó exclusivamente la auditoría/provenance C03 y la persistió en commit `fa787fe101858ecd2ddf02e1f9ff25238a2148ef`. Council12 + 3 refutaciones + cross-check + CODA + verify_final validan el cierre de auditoría, no de C03. Progreso se mantiene 93%; Paso 2 ACTIVE; Paso 3 PENDING.
