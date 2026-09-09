@@ -22,23 +22,24 @@ La IA puede producir contenido dentro de nodos autorizados, pero no crear, borra
 `ruta + commit/tree/blob SHA + read-back + test/log + URL/SHA externo cuando aplique`.
 
 ## 6. Estado Hugging Face
-`huggueface/manifest.yml` y `router_hf_bridge.py` son REUSE confirmados. HF Job verificó 0 modelos públicos del owner `COMAND-CENTER-1`; `coneccion huggueface Github/registry/repos.json` contiene 19 namespaces GitHub y ningún `model_id` HF. No se generan adapters por modelos supuestos.
+Bridge HF REUSE confirmado. HF Job verificó 0 modelos públicos del owner `COMAND-CENTER-1`; registry sin `model_id` HF. No se generan adapters por modelos supuestos.
 
 ## 7. Estado Paso 2
-Deltas REUSE/ADAPT materializados desde fuentes canónicas antes de ampliar capacidad:
-- `../router inteligente universal/red/enchufe_gate.py` — commit `4007983f2cabecdf78198a1a7ae23aff5fcfa8ce`; `PASS_ENCHUFE_GATE_V15_REUSE`.
-- `../router inteligente universal/red/conectores.py` — baseline commit `8dc43490cc14f21c6d09d9e3d824606868679766`; baseline pytest `3 passed in 0.11s`.
-- `ConectorHuggingFace` añadido sobre ese baseline siguiendo el contrato v6 y reutilizando `ConectorHTTP`, sin modelo supuesto: commit `eb3d9fc2f67a33d8cf22056488ea299a2ffa7875`, blob `e7a125354e32b718a9410f1c53485dc75ca4cf15`.
-- Test `../router inteligente universal/tests/test_conector_huggingface_v6.py`: commit `0458b589e89d5c4ff9245528f3acb515936fa34e`, blob `90425867a0c2f1b090e6a51c584cb018fda13b18`; exact-blob pytest `3 passed in 0.10s`.
+- Enchufe Gate v1.5 reutilizado y verificado.
+- Conectores baseline reutilizados sin reescribir HTTP/MCP.
+- `ConectorHuggingFace` v6 añadido sobre `ConectorHTTP`; contrato verificado 3/3.
+- `ConectorDB` v6 añadido en `../router inteligente universal/red/conectores.py` siguiendo v6 §4.4 y TASK-03 R-002: DSN únicamente por env; adapters lazy para Postgres/MySQL/Redis; fail-closed para motor/params/acción inválidos.
+- Código DB: commit `885cf992222e59097e5042b74b5371a3a4aa7d1a`, blob `beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78`.
+- Test: `../router inteligente universal/tests/test_conector_db_v6.py`, commit `0f6681e17988554a3206d9d3fac7326028ae24dc`; HF Job fijado al commit `6aa1105432d5d0c22c5af971` => `3 passed in 0.10s`.
 
-El PASS actual demuestra contrato/routing del adapter HF. No demuestra todavía un modelo privado, Inference Endpoint remoto ni el E2E del Paso 3.
+Los PASS actuales demuestran contratos/adapters, no servicios remotos reales. Esos pertenecen al Paso 3.
 
-Siguiente delta 1×1: integrar el siguiente conector v6 demostrado por arquitectura, preservando los conectores base y el adapter HF ya verificados.
+Siguiente delta 1×1: siguiente conector v6 prioritario respaldado por arquitectura, preservando todos los baselines ya verificados.
 
 ## 8. Regla de cierre
 `archivo presente != integrado`
 `componente descargado != adaptado`
 `codigo escrito != ejecutado`
-`mock != test real`
+`mock/injection != test remoto real`
 
 Solo `VERIFIED_CLOSED` después del test integral del Paso 3.
