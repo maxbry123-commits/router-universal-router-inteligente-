@@ -60,7 +60,8 @@
     "patch_c15_gate_v2_delegate",
     "verify_c15_gate_v15_v2_contract",
     "audit_r004_backup_source_presence",
-    "audit_c03_config_local_donor_provenance"
+    "audit_c03_config_local_donor_provenance",
+    "audit_r004_pdf_extraction_authorized_routes"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -78,10 +79,10 @@
       "next": "continue P02 independent architecture-backed work; do not generate behavior policy until recovered"
     },
     {
-      "id": "GAP-R004-SOURCE-001",
-      "type": "DECLARED_EXISTING_SOURCE_NOT_FOUND",
-      "evidence": "Handoff declares R-004 infrastructure/backup/respaldo.py EXISTING_COMPLETE, but direct main read is 404; GitHub commit history for target and root-relative paths is empty; branch trees download/router-missing-07, forensic-router-50-recovery and import/maxbry-router-code contain no respaldo match",
-      "next": "do not GENERATE or mark REUSE; recover a canonical source/ownership artifact first, then exact-copy/read-back/test"
+      "id": "GAP-R004-EXTRACTION-001",
+      "type": "CANONICAL_PDF_BINARY_NOT_MATERIALIZED",
+      "evidence": "canonical PDF blob 2ee8d937493d1923b2c1e5d6cc294a1513df3c91 and origin commit 7db4e349ff3ea22be5f1b8c10a1efc46b73418aa verified; base64 retrieval proves PDF identity, UTF-8 blob fetch fails by design, raw/web fetch failed and runtime network DNS failed; exact Python source not reconstructed",
+      "next": "do not generate substitute; retry only with a binary-capable authorized path, otherwise continue independent safe P02 work"
     },
     {
       "id": "GAP-C03-CONTRACT-001",
@@ -113,7 +114,7 @@
     "router inteligente universal/tests/test_enchufe_gate_v2.py commit 8536808a3a53cab0afb89b007f5e7095bf37a047 blob 55cd01b9b464349cba5bc94c04a1b71cf522a017",
     "HF Jobs 6aa16f6932d5d0c22c5b090a and 6aa16f8d32d5d0c22c5b090c refuted stale/loader harness; StrategyDelta fixed sys.modules and pinned commit",
     "HF Job 6aa16ff732d5d0c22c5b0912 pinned commit 8536808a3a53cab0afb89b007f5e7095bf37a047; 5 passed in 0.09s",
-    "R-004 target direct read 404; commits?path=router inteligente universal/infrastructure/backup/respaldo.py => []; commits?path=infrastructure/backup/respaldo.py => []; branch audit refs 7fa837fa253c6ec602ad0cc24f2b549cbab9f7b3, 519cae1be13c2857ceccefc6d693b0da6b6cc43a, 949c71f58a6308ca1ce8bf482c46890524d6ffa1 => no respaldo match",
+    "R-004 PDF blob 2ee8d937493d1923b2c1e5d6cc294a1513df3c91; origin commit 7db4e349ff3ea22be5f1b8c10a1efc46b73418aa; extraction audit commit f41db4710a7af645288fe1b1339fa5aba6cc894f",
     "C03 donor audit commit fa787fe101858ecd2ddf02e1f9ff25238a2148ef; pydantic-settings README blob 84c893ab07d3282555622f69cee358686ba4ea99; pyproject blob 21c3e4780e6da923cccf8435498930f4d9e1bece; MIT; ADAPT_CANDIDATE only"
   ],
   "rules": {
