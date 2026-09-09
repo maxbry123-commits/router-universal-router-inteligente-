@@ -59,7 +59,8 @@
     "audit_c15_gate_v15_v2_compatibility",
     "patch_c15_gate_v2_delegate",
     "verify_c15_gate_v15_v2_contract",
-    "audit_r004_backup_source_presence"
+    "audit_r004_backup_source_presence",
+    "audit_c03_config_local_donor_provenance"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -81,6 +82,12 @@
       "type": "DECLARED_EXISTING_SOURCE_NOT_FOUND",
       "evidence": "Handoff declares R-004 infrastructure/backup/respaldo.py EXISTING_COMPLETE, but direct main read is 404; GitHub commit history for target and root-relative paths is empty; branch trees download/router-missing-07, forensic-router-50-recovery and import/maxbry-router-code contain no respaldo match",
       "next": "do not GENERATE or mark REUSE; recover a canonical source/ownership artifact first, then exact-copy/read-back/test"
+    },
+    {
+      "id": "GAP-C03-CONTRACT-001",
+      "type": "CONFIG_FIELDS_NOT_DEFINED",
+      "evidence": "local pydantic-settings donor is valid/MIT and supports Pydantic v2 settings, but project evidence recovered only 'env única fuente de configuración'; exact env names, required fields, defaults and profiles are not defined",
+      "next": "do not invent settings fields; recover C03 field contract/source, otherwise continue a separate safe P02 task"
     }
   ],
   "evidence": [
@@ -106,7 +113,8 @@
     "router inteligente universal/tests/test_enchufe_gate_v2.py commit 8536808a3a53cab0afb89b007f5e7095bf37a047 blob 55cd01b9b464349cba5bc94c04a1b71cf522a017",
     "HF Jobs 6aa16f6932d5d0c22c5b090a and 6aa16f8d32d5d0c22c5b090c refuted stale/loader harness; StrategyDelta fixed sys.modules and pinned commit",
     "HF Job 6aa16ff732d5d0c22c5b0912 pinned commit 8536808a3a53cab0afb89b007f5e7095bf37a047; 5 passed in 0.09s",
-    "R-004 target direct read 404; commits?path=router inteligente universal/infrastructure/backup/respaldo.py => []; commits?path=infrastructure/backup/respaldo.py => []; branch audit refs 7fa837fa253c6ec602ad0cc24f2b549cbab9f7b3, 519cae1be13c2857ceccefc6d693b0da6b6cc43a, 949c71f58a6308ca1ce8bf482c46890524d6ffa1 => no respaldo match"
+    "R-004 target direct read 404; commits?path=router inteligente universal/infrastructure/backup/respaldo.py => []; commits?path=infrastructure/backup/respaldo.py => []; branch audit refs 7fa837fa253c6ec602ad0cc24f2b549cbab9f7b3, 519cae1be13c2857ceccefc6d693b0da6b6cc43a, 949c71f58a6308ca1ce8bf482c46890524d6ffa1 => no respaldo match",
+    "C03 donor audit commit fa787fe101858ecd2ddf02e1f9ff25238a2148ef; pydantic-settings README blob 84c893ab07d3282555622f69cee358686ba4ea99; pyproject blob 21c3e4780e6da923cccf8435498930f4d9e1bece; MIT; ADAPT_CANDIDATE only"
   ],
   "rules": {
     "input_literal": true,
