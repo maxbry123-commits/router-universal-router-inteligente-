@@ -17,6 +17,7 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
    - ✅ ADAPT/WIRE `ConectorMCPApp` + registry + test remoto PASS;
    - ✅ REUSE `ConectorVPS` existente; WIRE `vps` en registry; test fail-closed remoto PASS (`HF Job 6aa12c19900620b5c77e61d2`);
    - ✅ REUSE `ConectorMemoria` existente; WIRE `memoria` en registry; read/commit/snapshot/health + fail-closed PASS (`HF Job 6aa1318d32d5d0c22c5afe2c`, 3 passed in 0.04s);
+   - ✅ REUSE `ConectorInterno` existente y registry ya cableado; test exact-main PASS (`HF Job 6aa13ab432d5d0c22c5b008f`, 3 passed in 0.11s); no adapter duplicado;
    - ⏳ siguiente cola 1×1: siguiente conector v6 prioritario demostrado por arquitectura;
    - ⏳ capa/filtro comportamiento LLM pendiente hasta contrato definido/recuperado.
 3. 📌✅ **Paso 3 — tests integración** — PENDING
