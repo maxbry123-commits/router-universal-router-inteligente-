@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-c15-gate-v2-verified",
+  "checkpoint": "router-universal-p02-r004-source-gap-audited",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -12,22 +12,21 @@
     "enchufe_v2_schema_blob": "faf0b8a2f1474c044143728bf7fdfd41d1a751fa",
     "red_universal_path": "router inteligente universal/red/red_universal.py",
     "red_universal_blob": "66154b60ad53aa797094df8741389c8427f9bec0",
-    "c15_source_v15_blob": "692daca7ace7ac983aeb585dd05ac281e571f2f3",
-    "c15_source_v2_blob": "1f2de5b0578391164e6f6f7331507299130e8579",
     "c15_gate_path": "router inteligente universal/red/enchufe_gate.py",
     "c15_gate_commit": "4e256e1332d41f9177e0df4806bb749cbd1f1e54",
     "c15_gate_blob": "b5fdc15a4b4c3747425d7db86a81f2c4e409de9e",
-    "c15_test_v15": "e938ff557670d27763c6d5b507fd2946e1cd6702/d524efd1513e3346b50f2dbb5cab168c222882ff",
-    "c15_test_v2": "8536808a3a53cab0afb89b007f5e7095bf37a047/55cd01b9b464349cba5bc94c04a1b71cf522a017",
     "c15_remote_verification": "HF Job 6aa16ff732d5d0c22c5b0912 pinned commit 8536808a3a53cab0afb89b007f5e7095bf37a047; 5 passed in 0.09s",
-    "c15_refuted_harness": "HF Jobs 6aa16f6932d5d0c22c5b090a and 6aa16f8d32d5d0c22c5b090c used stale/invalid loader path; StrategyDelta registered modules and pinned exact commit",
-    "behavior_filter_rule": "materialize only when explicit standalone behavior policy is defined/recovered",
-    "behavior_filter_status": "standalone LLM behavior-filter policy not recovered; do not infer policy"
+    "r004_handoff_claim": "R-004 infrastructure/backup/respaldo.py EXISTING_COMPLETE; REUSE",
+    "r004_target_read": "404 Not Found on main",
+    "r004_main_history": "empty for target and root-relative paths",
+    "r004_branch_audit": "no respaldo match in download/router-missing-07@7fa837fa253c6ec602ad0cc24f2b549cbab9f7b3, forensic-router-50-recovery@519cae1be13c2857ceccefc6d693b0da6b6cc43a, import/maxbry-router-code@949c71f58a6308ca1ce8bf482c46890524d6ffa1",
+    "r004_decision": "FAIL_CLOSED: do not REUSE or GENERATE without canonical source and ownership",
+    "behavior_filter_rule": "materialize only when explicit standalone behavior policy is defined/recovered"
   },
   "current": "P02_WIRE_PRUNE_FILL",
-  "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING + GAP-BEHAVIOR-CONTRACT-001",
-  "next_delta": "audit R-004 infrastructure/backup/respaldo.py physical presence and ownership; REUSE only if source and code root match",
-  "next_if_pass": "verify R-004 with fixed test and persist",
-  "next_if_gap": "continue P02 only with next independent architecture-backed component; do not invent behavior policy",
+  "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING + GAP-BEHAVIOR-CONTRACT-001 + GAP-R004-SOURCE-001",
+  "next_delta": "recover R-004 canonical source/ownership from architecture/project evidence; if absent, continue only a separate architecture-backed P02 task",
+  "next_if_pass": "exact REUSE R-004 + fixed test + read-back + persist",
+  "next_if_gap": "keep R-004 fail-closed; no backup implementation by inference",
   "status": "ACTIVE_LOOP"
 }
