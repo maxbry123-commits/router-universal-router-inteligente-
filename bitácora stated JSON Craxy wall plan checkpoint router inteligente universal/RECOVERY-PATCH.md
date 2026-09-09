@@ -4,22 +4,24 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 
 ## Estado válido
 - Plan limitado a 3 pasos.
-- Paso 1: componentes centralizados; owner público HF verificado en 0 modelos; registry persistido no contiene `model_id` HF; privados/endpoints quedan FLAG no bloqueante.
-- Paso 2 ACTIVE: Gate y conectores reutilizados desde fuente canónica antes de ampliar capacidad.
-- Baseline conectores: `8dc43490cc14f21c6d09d9e3d824606868679766`; test `94ad8b8879c8c03b2f084ac62059bd346da6a610`; `3 passed in 0.11s`.
-- `ConectorHuggingFace` v6 integrado quirúrgicamente en `router inteligente universal/red/conectores.py`; commit `eb3d9fc2f67a33d8cf22056488ea299a2ffa7875`, blob `e7a125354e32b718a9410f1c53485dc75ca4cf15`.
-- Test HF: `router inteligente universal/tests/test_conector_huggingface_v6.py`; commit `0458b589e89d5c4ff9245528f3acb515936fa34e`, blob `90425867a0c2f1b090e6a51c584cb018fda13b18`; exact-blob pytest `3 passed in 0.10s`.
+- Paso 1: componentes centralizados; owner público HF 0; privados/endpoints FLAG no bloqueante.
+- Paso 2 ACTIVE: Gate/conectores reutilizados desde fuente canónica.
+- `ConectorHuggingFace` v6 verificado por contrato: pytest 3/3 PASS.
+- `ConectorDB` v6 integrado en `router inteligente universal/red/conectores.py`; commit `885cf992222e59097e5042b74b5371a3a4aa7d1a`, blob `beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78`.
+- Test `router inteligente universal/tests/test_conector_db_v6.py`; commit `0f6681e17988554a3206d9d3fac7326028ae24dc`.
+- Verify remoto fijado al commit: HF Job `6aa1105432d5d0c22c5af971`, `3 passed in 0.10s`.
+- Primer intento de verify falló solo por ausencia de pytest en el entorno; StrategyDelta instaló pytest/httpx y repitió contra el mismo commit con PASS.
 - Paso 3 pendiente.
 
 ## Boot de recuperación
 1. Leer STATE/CHECKPOINT/PLAN/BITACORA/README arquitectura.
 2. Verificar HEAD y SHAs.
-3. Continuar P02 cola 1×1 con el siguiente conector v6 demostrado por arquitectura; preservar `ConectorHTTP`, `ConectorMCP`, `ConectorGitHub` y `ConectorHuggingFace` ya verificados.
+3. Continuar P02 cola 1×1 con el siguiente conector v6 prioritario; preservar HTTP/MCP/GitHub/HF/DB verificados.
 
 ## GAP-HF-CATALOG-001
-No inventar modelos. Reintentar privados/endpoints solo cuando exista nueva credencial/evidencia consumible; mientras tanto continuar tareas P02 independientes.
+No inventar modelos. Reintentar privados/endpoints solo con nueva evidencia consumible; continuar tareas P02 independientes.
 
 ## Refutaciones
-1. Adapter HF probado contra contrato != endpoint/modelo HF real confirmado.
-2. Un conector v6 integrado != catálogo v6 completo.
-3. PASS unitario != Paso 2 ni Paso 3 completos.
+1. Adapter DB probado con contrato/injection != DB remoto real del Paso 3.
+2. HF/DB adapters PASS != catálogo v6 completo.
+3. PASS unitario/contractual != Paso 2 ni Paso 3 completos.
