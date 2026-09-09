@@ -7,21 +7,25 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 - Paso 1: componentes centralizados; owner público HF 0; privados/endpoints FLAG no bloqueante.
 - Paso 2 ACTIVE: Gate/conectores reutilizados desde fuente canónica.
 - `ConectorHuggingFace`, `ConectorDB`, `ConectorGitLab`, `ConectorMCPApp`, `ConectorVPS`, `ConectorMemoria`, `ConectorInterno` y `ConectorWebhook` permanecen contractualmente verificados.
-- `ConectorInterno` y `ConectorWebhook` ya existían en `router inteligente universal/red/conectores.py`; REUSE sin adapters duplicados y registry existente reconciliado.
-- Registry blob `4beb5b96e5abb6ff7263cdf2297628058a98e790` contiene `interno` y `webhook`.
-- Test `router inteligente universal/tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b` verifica resolución de ambos, comportamiento Interno y fail-closed Webhook sin env.
-- Verify remoto: HF Job `6aa13ab432d5d0c22c5b008f`; `FETCHED_EXACT_MAIN 5`; `3 passed in 0.11s`.
+- `connector_registry.py` actual registra HTTP/MCP/MCP App/GitHub/HuggingFace/DB/GitLab/VPS/Memoria/Interno/Webhook.
+- Auditoría del filtro LLM cerrada como recuperación contractual: `Readme arquitectura router inteligente universal/README.md` exige filtro únicamente cuando exista contrato definido/recuperado.
+- Handoff referencia `enchufe/validator_v2.py`, pero fetch de esa ruta en `main` devuelve 404; búsqueda de código no recuperó contrato explícito del filtro.
+- No se generó semántica/policy inventada.
 - Paso 3 pendiente.
 
 ## Boot de recuperación
 1. Leer STATE/CHECKPOINT/PLAN/BITACORA/README arquitectura.
 2. Verificar HEAD y SHAs.
-3. Continuar P02 cola 1×1 con siguiente delta respaldado por arquitectura; conservar registry y baselines.
+3. Continuar P02 cola 1×1 con StrategyDelta de recuperación contractual: documentos fuente de verdad + donor local `guardrails`.
+4. Solo si aparece contrato explícito, materializarlo detrás de guard/plugin y fijar test; si no aparece, continuar únicamente tarea P02 independiente segura.
 
 ## GAP-HF-CATALOG-001
 No inventar modelos. Reintentar privados/endpoints solo con nueva evidencia consumible; continuar tareas P02 independientes.
 
+## GAP-BEHAVIOR-CONTRACT-001
+No inventar reglas de comportamiento. Evidencia: README arquitectura blob `85365fb67397ebb38c6660afaea04b079ce17fe5`; Handoff blob `1182154d2a96497867f29529cf97871a18a9434b`; `enchufe/validator_v2.py` ausente en `main` (404).
+
 ## Refutaciones
-1. ConectorWebhook contractual PASS != entrega real a Telegram/Discord/n8n/Zapier.
-2. Registry con catálogo actual != backend C01-C23 completo.
-3. PASS contractual != Paso 2 ni Paso 3 completos.
+1. Donor `guardrails` disponible físicamente != contrato de comportamiento autorizado.
+2. Handoff que menciona `validator_v2.py` != archivo materializado.
+3. Auditoría contractual cerrada != filtro LLM implementado ni Paso 2 cerrado.
