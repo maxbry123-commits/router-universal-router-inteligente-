@@ -1,11 +1,10 @@
 """Tests contractuales del ConectorGitLab v6."""
 from __future__ import annotations
 
-import os
-
 import pytest
 
 from red.conector_gitlab import ConectorGitLab
+from red.connector_registry import get_connector_class
 
 
 def test_gitlab_project_path_encoded() -> None:
@@ -26,3 +25,12 @@ async def test_gitlab_rejects_unknown_action(monkeypatch: pytest.MonkeyPatch) ->
     connector = ConectorGitLab("gitlab", "grupo/proyecto")
     result = await connector.enviar({"_accion": "inventada"})
     assert result == {"status": "FAIL", "error": "accion_no_soportada:inventada"}
+
+
+def test_gitlab_is_wired_in_registry() -> None:
+    assert get_connector_class("gitlab") is ConectorGitLab
+
+
+def test_registry_fails_closed_for_unknown_kind() -> None:
+    with pytest.raises(ValueError, match="conector_no_registrado:desconocido"):
+        get_connector_class("desconocido")
