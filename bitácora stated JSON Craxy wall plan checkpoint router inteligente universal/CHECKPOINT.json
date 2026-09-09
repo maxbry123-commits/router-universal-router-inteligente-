@@ -1,5 +1,5 @@
 {
-  "checkpoint": "router-universal-p02-validator-v2-verified",
+  "checkpoint": "router-universal-p02-enchufe-v2-schema-verified",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
@@ -15,12 +15,17 @@
     "validator_v2_blob": "418f230e705d18525aae63d6930311ccb7b9297b",
     "validator_v2_test": "router inteligente universal/tests/test_validator_v2_contract.py commit de9326ff0167a04024a09fc60617c8bf6b75ae28 blob 4aa5d4a878f582b82f254cd5ff1fda8d9161fe14",
     "validator_v2_remote_verification": "HF Job 6aa15fea900620b5c77e6fa1 COMPLETED; sparse-clone main; 6 passed in 0.02s",
+    "enchufe_v2_schema_source": "FABLES Enchufe Universal v2 JSON Schema blob 1f2de5b0578391164e6f6f7331507299130e8579 + DOC-A02 C05",
+    "enchufe_v2_schema_path": "router inteligente universal/domain/schemas/enchufe_v2.py",
+    "enchufe_v2_schema_blob": "faf0b8a2f1474c044143728bf7fdfd41d1a751fa",
+    "enchufe_v2_schema_test": "router inteligente universal/tests/test_enchufe_v2_schema.py commit 96448365568950d9bbd7405f58e001f7eb419f1c blob 53d4ee813b51000609532817ca1b5d02a71459f8",
+    "enchufe_v2_schema_remote_verification": "HF Job 6aa165be32d5d0c22c5b07df COMPLETED success; exact main raw fetch; 4 passed in 0.09s",
     "behavior_filter_rule": "materialize only when explicit standalone behavior policy is defined/recovered",
-    "behavior_filter_status": "validator_v2 recovered, but standalone LLM behavior-filter policy not yet recovered; do not infer policy from donor or validator"
+    "behavior_filter_status": "standalone LLM behavior-filter policy not recovered; do not infer policy from schema, profiles, validator or donor guardrails"
   },
   "current": "P02_WIRE_PRUNE_FILL",
   "gap": "GAP-HF-CATALOG-001_PARTIAL_NONBLOCKING + GAP-BEHAVIOR-CONTRACT-001",
-  "next_delta": "StrategyDelta: continue source-of-truth search for explicit LLM behavior-filter semantics; preserve validator_v2 and connector registry verified baselines",
+  "next_delta": "StrategyDelta: continue source-of-truth search for explicit LLM behavior-filter semantics; if absent choose next independent architecture-backed P02 component after donor audit",
   "next_if_pass": "materialize only recovered behavior contract behind guard/plugin boundary, then fixed contract test",
   "next_if_gap": "continue P02 only with independent safe architecture-backed work; do not invent behavior policy",
   "status": "ACTIVE_LOOP"
