@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 58,
+  "progress_percent": 64,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -35,7 +35,10 @@
     "verify_gitlab_connector_v6_contract",
     "adapt_mcp_app_connector_v6",
     "wire_mcp_app_connector_registry",
-    "verify_mcp_app_connector_v6_contract"
+    "verify_mcp_app_connector_v6_contract",
+    "reuse_conector_vps_v6",
+    "wire_vps_connector_registry",
+    "verify_vps_connector_v6_contract"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -56,7 +59,10 @@
     "router inteligente universal/red/conector_mcp_app.py commit 8a45204be6c3de7a2b8e95f648ef2cbc678dbda0 blob 8411989712033186312516c0c229a4facd976446",
     "router inteligente universal/red/connector_registry.py MCP App commit 1289c5b57e72029a95f9d794eac5ea648c71f9e2 blob 6c6d4d0efe3e12d9c8512c71d14d80555cb93442",
     "router inteligente universal/tests/test_conector_mcp_app_v6.py commit 1df8b57fc5a410a383a1a1b4e2b78535eedc5efe blob 950c5f4d2d8c974253ff24385352d3504412565c",
-    "HF Job 6aa11dac32d5d0c22c5afb80 status success; pytest MCP App contract"
+    "HF Job 6aa11dac32d5d0c22c5afb80 status success; pytest MCP App contract",
+    "router inteligente universal/red/connector_registry.py VPS commit 2b57fe8e4ef7965ee23a6a086415ef8c21db7f60",
+    "router inteligente universal/tests/test_conector_vps_v6.py commit 7f04404876b2fb1123742d32dd4d48741a2b388d",
+    "HF Job 6aa12c19900620b5c77e61d2 status success; PASS_CONECTOR_VPS_V6: 3/3"
   ],
   "rules": {
     "input_literal": true,
