@@ -9,6 +9,7 @@ import json
 import os
 from dataclasses import dataclass, field
 from typing import Any, Protocol
+from urllib.parse import unquote, urlparse
 
 import httpx
 
@@ -147,6 +148,105 @@ class ConectorHuggingFace:
 
     async def sondear(self) -> bool:
         return await self._api().sondear()
+
+
+@dataclass
+class ConectorDB:
+    """DB v6: Postgres/MySQL/Redis con DSN secreto leído solo desde entorno."""
+    conector_id: str
+    dsn_env: str
+    motor: str = "postgres"
+
+    def _dsn(self) -> str:
+        dsn = os.environ.get(self.dsn_env, "")
+        if not dsn:
+            raise RuntimeError(f"env_faltante:{self.dsn_env}")
+        return dsn
+
+    @staticmethod
+    def _mysql_config(dsn: str) -> dict:
+        parsed = urlparse(dsn)
+        if parsed.scheme not in {"mysql", "mysql+aiomysql"}:
+            raise ValueError("dsn_mysql_invalido")
+        return {
+            "host": parsed.hostname or "localhost",
+            "port": parsed.port or 3306,
+            "user": unquote(parsed.username or ""),
+            "password": unquote(parsed.password or ""),
+            "db": parsed.path.lstrip("/"),
+        }
+
+    async def _postgres(self, accion: str, sql: str, params: list) -> object:
+        import asyncpg
+        conn = await asyncpg.connect(self._dsn())
+        try:
+            if accion == "query":
+                return [dict(row) for row in await conn.fetch(sql, *params)]
+            if accion in {"execute", "migrate"}:
+                return await conn.execute(sql, *params)
+            if accion == "healthcheck":
+                return await conn.fetchval("SELECT 1")
+            raise ValueError(f"accion_no_soportada:{accion}")
+        finally:
+            await conn.close()
+
+    async def _mysql(self, accion: str, sql: str, params: list) -> object:
+        import aiomysql
+        conn = await aiomysql.connect(**self._mysql_config(self._dsn()))
+        try:
+            async with conn.cursor(aiomysql.DictCursor) as cur:
+                if accion == "query":
+                    await cur.execute(sql, tuple(params))
+                    return list(await cur.fetchall())
+                if accion in {"execute", "migrate"}:
+                    await cur.execute(sql, tuple(params))
+                    await conn.commit()
+                    return {"rowcount": cur.rowcount}
+                if accion == "healthcheck":
+                    await cur.execute("SELECT 1")
+                    return await cur.fetchone()
+                raise ValueError(f"accion_no_soportada:{accion}")
+        finally:
+            conn.close()
+
+    async def _redis(self, accion: str, sql: str, params: list) -> object:
+        import redis.asyncio as redis
+        client = redis.from_url(self._dsn())
+        try:
+            if accion == "healthcheck":
+                return await client.ping()
+            if accion == "query":
+                if not sql:
+                    raise ValueError("redis_command_faltante")
+                return await client.execute_command(sql, *params)
+            raise ValueError(f"accion_no_soportada:{accion}")
+        finally:
+            await client.aclose()
+
+    async def enviar(self, payload: dict) -> dict:
+        accion = payload.get("_accion", "query")
+        sql = payload.get("sql", "")
+        params = payload.get("params", [])
+        if not isinstance(params, list):
+            return {"status": "FAIL", "error": "params_debe_ser_lista"}
+        handlers = {
+            "postgres": self._postgres,
+            "mysql": self._mysql,
+            "redis": self._redis,
+        }
+        handler = handlers.get(self.motor)
+        if handler is None:
+            return {"status": "FAIL",
+                    "error": f"motor_no_soportado:{self.motor}"}
+        try:
+            output = await handler(accion, sql, params)
+            return {"status": "DONE", "output": output}
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "FAIL", "error": f"{type(exc).__name__}:{exc}"}
+
+    async def sondear(self) -> bool:
+        result = await self.enviar({"_accion": "healthcheck"})
+        return result["status"] == "DONE"
 
 
 @dataclass
