@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 82,
+  "progress_percent": 86,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -51,7 +51,9 @@
     "verify_connector_registry_v6_contract",
     "recover_validator_v2_contract_from_fables",
     "materialize_validator_v2",
-    "verify_validator_v2_contract"
+    "verify_validator_v2_contract",
+    "materialize_enchufe_v2_pydantic_schema",
+    "verify_enchufe_v2_pydantic_schema_contract"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -98,7 +100,10 @@
     "FABLES Enchufe Universal v2 source blob 1f2de5b0578391164e6f6f7331507299130e8579 recovered explicit validator_v2 code and six named contract tests",
     "router inteligente universal/enchufe/validator_v2.py commit 2e20488e384ad658675d1ccaf6726fa1edd02034 blob 418f230e705d18525aae63d6930311ccb7b9297b",
     "router inteligente universal/tests/test_validator_v2_contract.py final commit de9326ff0167a04024a09fc60617c8bf6b75ae28 blob 4aa5d4a878f582b82f254cd5ff1fda8d9161fe14",
-    "HF Job 6aa15fea900620b5c77e6fa1 COMPLETED; sparse-clone main; 6 passed in 0.02s"
+    "HF Job 6aa15fea900620b5c77e6fa1 COMPLETED; sparse-clone main; 6 passed in 0.02s",
+    "router inteligente universal/domain/schemas/enchufe_v2.py commit 14d86fb07caa02e552a2c5a7788c197084a8d11f blob faf0b8a2f1474c044143728bf7fdfd41d1a751fa",
+    "router inteligente universal/tests/test_enchufe_v2_schema.py commit 96448365568950d9bbd7405f58e001f7eb419f1c blob 53d4ee813b51000609532817ca1b5d02a71459f8",
+    "HF Job 6aa165be32d5d0c22c5b07df COMPLETED success; exact main raw fetch; 4 passed in 0.09s"
   ],
   "rules": {
     "input_literal": true,
