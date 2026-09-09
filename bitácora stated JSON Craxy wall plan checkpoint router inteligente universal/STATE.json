@@ -6,7 +6,7 @@
   "branch": "main",
   "status": "ACTIVE_LOOP",
   "current_node": "P02_WIRE_PRUNE_FILL",
-  "progress_percent": 86,
+  "progress_percent": 89,
   "closed": [
     "centralize_open_source_components_initial",
     "create_component_index",
@@ -53,7 +53,9 @@
     "materialize_validator_v2",
     "verify_validator_v2_contract",
     "materialize_enchufe_v2_pydantic_schema",
-    "verify_enchufe_v2_pydantic_schema_contract"
+    "verify_enchufe_v2_pydantic_schema_contract",
+    "reuse_red_universal_r003_into_code_root",
+    "verify_red_universal_r003_contract"
   ],
   "in_progress": ["wire_prune_and_fill_missing_code"],
   "pending": ["behavior_filter_layer", "integration_tests_hf_github_api_agents"],
@@ -95,7 +97,7 @@
     "router inteligente universal/tests/test_conector_interno_webhook_v6.py blob b7dc3343b7515ad9a1f57ccee983ace65bb03a6b",
     "HF Job 6aa13ab432d5d0c22c5b008f FETCHED_EXACT_MAIN 5; 3 passed in 0.11s",
     "ConectorWebhook REUSE from router inteligente universal/red/conectores.py blob beca488fdb34ff14ee2f5b4e4ef8c8de45ee9c78; registry webhook blob 4beb5b96e5abb6ff7263cdf2297628058a98e790; fail-closed covered by test blob b7dc3343b7515ad9a1f57ccee983ace65bb03a6b; same HF Job 6aa13ab432d5d0c22c5b008f 3 passed",
-    "Behavior filter contract audit: Readme arquitectura router inteligente universal/README.md requires defined/recovered contract; Handoff references enchufe/validator_v2.py; initial fetch returned 404",
+    "Behavior filter contract audit: Readme arquitectura router inteligente universal/README.md requires defined/recovered contract; standalone policy still absent",
     "router inteligente universal/tests/test_connector_registry_v6.py commit 34df884ae1a0ba474425556e1c551b4bbead53be blob 228788e2f62df45dfb23f88a804924ec5e8feb8f; HF Job 6aa15404900620b5c77e6c45 clean-clone main; 13 passed in 0.05s",
     "FABLES Enchufe Universal v2 source blob 1f2de5b0578391164e6f6f7331507299130e8579 recovered explicit validator_v2 code and six named contract tests",
     "router inteligente universal/enchufe/validator_v2.py commit 2e20488e384ad658675d1ccaf6726fa1edd02034 blob 418f230e705d18525aae63d6930311ccb7b9297b",
@@ -103,7 +105,12 @@
     "HF Job 6aa15fea900620b5c77e6fa1 COMPLETED; sparse-clone main; 6 passed in 0.02s",
     "router inteligente universal/domain/schemas/enchufe_v2.py commit 14d86fb07caa02e552a2c5a7788c197084a8d11f blob faf0b8a2f1474c044143728bf7fdfd41d1a751fa",
     "router inteligente universal/tests/test_enchufe_v2_schema.py commit 96448365568950d9bbd7405f58e001f7eb419f1c blob 53d4ee813b51000609532817ca1b5d02a71459f8",
-    "HF Job 6aa165be32d5d0c22c5b07df COMPLETED success; exact main raw fetch; 4 passed in 0.09s"
+    "HF Job 6aa165be32d5d0c22c5b07df COMPLETED success; exact main raw fetch; 4 passed in 0.09s",
+    "R-003 source Documentos proyectos router inteligente universal/lote 1 documentos proyecto/2📌🔌ROUTER_UNIVERSAL_RED_CONEXIONES.md blob 692daca7ace7ac983aeb585dd05ac281e571f2f3",
+    "router inteligente universal/red/red_universal.py commit 189a605fbccf703a81269d05777573c14acb68fb blob 66154b60ad53aa797094df8741389c8427f9bec0",
+    "router inteligente universal/tests/test_red_universal_r003.py commit b7ed873fa8c8b8f848d46c3fd1217206a51480c3 blob 2be8bcf56fac0bb1c88b0f18edd0330538364726",
+    "HF Job 6aa16b3e32d5d0c22c5b0874 refuted harness flat-path collection error; StrategyDelta preserved repo directories",
+    "HF Job 6aa16b68900620b5c77e7259 exact main raw fetch with red/tests layout; 5 passed in 0.05s"
   ],
   "rules": {
     "input_literal": true,
