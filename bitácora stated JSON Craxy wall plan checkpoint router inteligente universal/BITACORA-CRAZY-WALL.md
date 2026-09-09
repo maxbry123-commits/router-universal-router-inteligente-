@@ -21,51 +21,33 @@ Componentes centralizados y movidos a `router inteligente universal/Componente o
 Bridge HF auditado; owner público HF COUNT 0; privados/endpoints quedan `GAP-HF-CATALOG-001` no bloqueante; prohibido inventar `model_id`.
 
 ## RIU-0006 — P02 REUSE ENCHUFE GATE
-`router inteligente universal/red/enchufe_gate.py` commit `4007983f2cabecdf78198a1a7ae23aff5fcfa8ce`; `PASS_ENCHUFE_GATE_V15_REUSE`.
+`router inteligente universal/red/enchufe_gate.py` baseline v1.5 verificado.
 
 ## RIU-0007 — P02 REUSE CONECTORES BASELINE
-`red/conectores.py` baseline commit `8dc43490cc14f21c6d09d9e3d824606868679766`; pytest 3/3 PASS.
+`red/conectores.py` reutilizado sin reescribir HTTP/MCP.
 
-## RIU-0008 — P02 ADAPT CONECTOR HUGGING FACE V6
-`ConectorHuggingFace` reutiliza `ConectorHTTP`; commit `eb3d9fc2f67a33d8cf22056488ea299a2ffa7875`; contract test PASS.
-
-## RIU-0009 — P02 ADAPT CONECTOR DB V6
-`ConectorDB` preserva HTTP/MCP/GitHub/HF; DSN solo por env; Postgres/MySQL/Redis; HF Job `6aa1105432d5d0c22c5af971` PASS contractual.
-
-## RIU-0010 — P02 ADAPT + WIRE CONECTOR GITLAB V6
-Adapter `red/conector_gitlab.py`; secretos solo por entorno; acción desconocida fail-closed. Adapter commit `122e5baeec061e89be2fe32411d0b3d5ee70f6aa`; registry y test verificados por HF Job `6aa11334900620b5c77e5ca7` success.
-
-## RIU-0011 — P02 ADAPT + WIRE CONECTOR MCP APP V6
-`red/conector_mcp_app.py` extiende `ConectorMCP`; no crea segundo core. Commit `8a45204be6c3de7a2b8e95f648ef2cbc678dbda0`; registry `1289c5b57e72029a95f9d794eac5ea648c71f9e2`; test `1df8b57fc5a410a383a1a1b4e2b78535eedc5efe`; HF Job `6aa11dac32d5d0c22c5afb80` success.
-
-## RIU-0012 — P02 REUSE + WIRE CONECTOR VPS V6
-`ConectorVPS` ya existía en `red/conectores.py`; se reutilizó sin crear adapter duplicado. Registry `vps` commit `2b57fe8e4ef7965ee23a6a086415ef8c21db7f60`; test `tests/test_conector_vps_v6.py` commit `7f04404876b2fb1123742d32dd4d48741a2b388d`. HF Job `6aa12c19900620b5c77e61d2` status success con `PASS_CONECTOR_VPS_V6: 3/3`; unknown command fail-closed.
-
-## RIU-0013 — P02 REUSE + WIRE CONECTOR MEMORIA V6
-`ConectorMemoria` ya existía en `red/conectores.py`; se reutilizó sin duplicar adapter. Registry `memoria` commit `3987856e107e848e111d96317e3a9c92c40a6cbb`, blob `878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9`; test `tests/test_conector_memoria_v6.py` commit `de82bd75e630f13141df7b2b2b74131163e52200`, blob `0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582`. HF Job `6aa1318d32d5d0c22c5afe2c` descargó 5 archivos exactos de `main` y dio `3 passed in 0.04s`.
-
-## RIU-0014 — P02 REUSE + RECONCILE CONECTOR INTERNO V6
-`ConectorInterno` ya existía en `red/conectores.py` y `interno` ya estaba cableado en `red/connector_registry.py`; se evitó adapter duplicado. Registry blob `4beb5b96e5abb6ff7263cdf2297628058a98e790`; test `tests/test_conector_interno_webhook_v6.py` blob `b7dc3343b7515ad9a1f57ccee983ace65bb03a6b`. HF Job `6aa13ab432d5d0c22c5b008f` dio `3 passed in 0.11s`.
-
-## RIU-0015 — P02 REUSE + RECONCILE CONECTOR WEBHOOK V6
-`ConectorWebhook` ya existía en `red/conectores.py` y `webhook` ya estaba registrado; no se generó adapter duplicado. Test `tests/test_conector_interno_webhook_v6.py` verifica fail-closed; HF Job `6aa13ab432d5d0c22c5b008f`: `3 passed in 0.11s`.
+## RIU-0008..0015 — P02 CONECTORES V6
+HF/DB/GitLab/MCPApp/VPS/Memoria/Interno/Webhook + registry verificados con tests remotos HF; sin segundo core.
 
 ## RIU-0016 — P02 AUDIT RECOVERY CONTRATO FILTRO LLM
-README arquitectura ordenó materializar filtro LLM únicamente con contrato definido/recuperado. Handoff referenciaba `enchufe/validator_v2.py`, inicialmente ausente; se abrió `GAP-BEHAVIOR-CONTRACT-001` sin generar policy.
+README arquitectura ordenó materializar filtro LLM únicamente con contrato definido/recuperado. Se abrió `GAP-BEHAVIOR-CONTRACT-001` sin generar policy.
 
 ## RIU-0017 — P02 RECOVER + MATERIALIZE VALIDATOR V2
-StrategyDelta sobre documentos fuente de verdad recuperó el código completo de `validator_v2.py` desde `FABLES ENCHUFE UNIVERSAL v2`, source blob `1f2de5b0578391164e6f6f7331507299130e8579`. Se materializó `router inteligente universal/enchufe/validator_v2.py` commit `2e20488e384ad658675d1ccaf6726fa1edd02034`, blob `418f230e705d18525aae63d6930311ccb7b9297b`. Los seis tests nombrados por la fuente quedaron en `tests/test_validator_v2_contract.py`, final commit `de9326ff0167a04024a09fc60617c8bf6b75ae28`, blob `4aa5d4a878f582b82f254cd5ff1fda8d9161fe14`. HF Job sparse-clone `6aa15fea900620b5c77e6fa1` terminó COMPLETED: `6 passed in 0.02s`.
+`enchufe/validator_v2.py` recuperado desde FABLES Enchufe Universal v2, blob fuente `1f2de5b0578391164e6f6f7331507299130e8579`; HF Job `6aa15fea900620b5c77e6fa1`: `6 passed in 0.02s`.
 
 ## RIU-0018 — P02 MATERIALIZE C05 ENCHUFE SCHEMA PYDANTIC V2
-Búsqueda literal del behavior filter no recuperó policy standalone; FAIL_CLOSED prohibió inventarla. StrategyDelta tomó una tarea P02 independiente ya especificada: DOC-A02 C05 + JSON Schema FABLES. Se materializó `router inteligente universal/domain/schemas/enchufe_v2.py` commit `14d86fb07caa02e552a2c5a7788c197084a8d11f`, blob `faf0b8a2f1474c044143728bf7fdfd41d1a751fa`; test `router inteligente universal/tests/test_enchufe_v2_schema.py` commit `96448365568950d9bbd7405f58e001f7eb419f1c`, blob `53d4ee813b51000609532817ca1b5d02a71459f8`. Primer HF run fue refutado porque `python:3.12-slim` no trae `git`; StrategyDelta descargó blobs exactos de `main`. HF Job `6aa165be32d5d0c22c5b07df` terminó COMPLETED/success: `4 passed in 0.09s`.
+`domain/schemas/enchufe_v2.py` materializado desde JSON Schema FABLES; HF Job `6aa165be32d5d0c22c5b07df`: `4 passed in 0.09s`.
 
 ## RIU-0019 — P02 REUSE R-003 RED UNIVERSAL
-Auditoría física del code root detectó que `red/red_universal.py` no existía aunque Handoff lo marcaba `R-003 EXISTING_COMPLETE / REUSE`. Se recuperó únicamente desde la fuente canónica `2📌🔌ROUTER_UNIVERSAL_RED_CONEXIONES.md`, blob `692daca7ace7ac983aeb585dd05ac281e571f2f3`, sin donor externo ni segundo core. Materialización: commit `189a605fbccf703a81269d05777573c14acb68fb`, blob `66154b60ad53aa797094df8741389c8427f9bec0`. Test fijo: commit `b7ed873fa8c8b8f848d46c3fd1217206a51480c3`, blob `2be8bcf56fac0bb1c88b0f18edd0330538364726`. HF Job `6aa16b3e32d5d0c22c5b0874` fue refutado por aplanar rutas del harness; StrategyDelta preservó `red/` y `tests/`; HF Job `6aa16b68900620b5c77e7259` dio `5 passed in 0.05s`. R-003 queda contractualmente VERIFIED para este delta; no implica Paso 2 ni E2E cerrados.
+`red/red_universal.py` recuperado desde fuente canónica, blob `66154b60ad53aa797094df8741389c8427f9bec0`; HF Job `6aa16b68900620b5c77e7259`: `5 passed in 0.05s`.
+
+## RIU-0020 — P02 PATCH C15 ENCHUFE GATE v1.5→v2.0
+Auditoría cruzó el Gate v1.5 fuente `692daca7ace7ac983aeb585dd05ac281e571f2f3` contra Enchufe Universal v2 fuente `1f2de5b0578391164e6f6f7331507299130e8579`. El delta demostrado: v1.5 excluía `agent` y no delegaba invariantes v2. Se aplicó PATCH mínimo manteniendo `validar_contrato_conexion()` y la ruta v1.5; fichas v2 delegan a `EnchufeV2.model_validate()` + `validator_v2.validar()` sin duplicar invariantes. Producción commit `4e256e1332d41f9177e0df4806bb749cbd1f1e54`, blob `b5fdc15a4b4c3747425d7db86a81f2c4e409de9e`. Tests v1.5/v2: commits `e938ff557670d27763c6d5b507fd2946e1cd6702` y `8536808a3a53cab0afb89b007f5e7095bf37a047`. Jobs `6aa16f6932d5d0c22c5b090a`/`6aa16f8d32d5d0c22c5b090c` refutados por loader/cache del harness. StrategyDelta: registrar módulo en `sys.modules` + fijar commit exacto. HF Job `6aa16ff732d5d0c22c5b0912`: `5 passed in 0.09s`.
 
 ## 3 REFUTACIONES
-1. R-003 + C05 + `validator_v2` PASS ≠ behavior filter standalone implementado.
-2. Donor `guardrails` físicamente disponible ≠ policy de comportamiento autorizada.
+1. C15 v1.5/v2 PASS ≠ behavior filter standalone implementado.
+2. Donor `guardrails` disponible ≠ policy de comportamiento autorizada.
 3. Tests contractuales PASS ≠ Paso 2 cerrado ≠ E2E Paso 3.
 
 ## NEXT
-Cola 1×1: auditar C15 Enchufe Gate v1.5→v2.0 contra C05/validator recuperados; PATCH mínimo solo si el contrato exacto lo exige. El filtro LLM sigue fail-closed hasta recuperar policy explícita.
+Cola 1×1: auditar R-004 `infrastructure/backup/respaldo.py`; REUSE solo con presencia/ownership demostrados. El filtro LLM sigue fail-closed hasta recuperar policy explícita.
