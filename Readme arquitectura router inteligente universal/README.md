@@ -29,12 +29,12 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - `integration/huggingface/`: bridge/auditorías HF; prohibido inventar `model_id`.
 - `integration/audits/`: decisiones REUSE/PATCH/ADAPT/GENERATE y GAPs por componente.
 
-## Hugging Face Jobs — RIU-0030 VERIFIED COMPUTE
-La arquitectura admite Jobs como cómputo real externo del proyecto sin convertirlo en segundo orquestador: `Router/GitHub source -> HF Job compute -> resultado/evidencia -> GitHub/state`. Documentación oficial consultada: https://huggingface.co/docs/hub/en/jobs y https://huggingface.co/docs/hub/en/jobs-configuration . `cpu-upgrade` corresponde a 8 vCPU/32 GB.
+## Hugging Face Jobs — cómputo real
+Jobs forma parte del flujo externo `Router/GitHub source -> HF Job compute -> resultado/evidencia -> GitHub/state` sin convertirse en segundo orquestador. Documentación oficial: https://huggingface.co/docs/hub/en/jobs y https://huggingface.co/docs/hub/en/jobs-configuration . `cpu-upgrade` se reserva para cargas que realmente necesitan 8 vCPU/32 GB; auditorías mínimas pueden usar `cpu-basic`.
 
-Job real: `6aa1c5fd21047bf1b0370d4d`, flavor `cpu-upgrade`, resultado `success`, clonando y auditando el repo Router dentro de Hugging Face Jobs. Auditoría: `router inteligente universal/integration/huggingface/RIU-0030-HF-JOBS-COMPUTE-AUDIT.md`, commit `0acb4f31a0ff784bae7037b62bac36074e15850f`.
+RIU-0030 verificó cómputo real con Job `6aa1c5fd21047bf1b0370d4d`, `cpu-upgrade`, `success`.
 
-Este PASS demuestra capacidad de cómputo real, no catálogo LLM privado, no model_id, no FastAPI por modelo y no E2E Paso 3.
+RIU-0031 auditó el boundary del catálogo HF: identidad conectada `COMAND-CENTER-1`, OAuth autenticado; Job `6aa1d38621047bf1b0370f3f` completó con `public_model_count=0` y `hf_token_present=false`. La documentación de Jobs trata `HF_TOKEN` como secreto explícito, no como built-in automático. Por tanto, público 0 no demuestra privado 0 y ningún `model_id→especialidad→adapter→FastAPI` puede registrarse todavía. Auditoría: `router inteligente universal/integration/huggingface/RIU-0031-HF-CATALOG-TOKEN-AUDIT.md`, commit `505d54c23120f96cec42dde5c26cd001c20092b9`.
 
 ## Reglas
 - `REUSE > PATCH > ADAPT > GENERATE`.
@@ -43,6 +43,7 @@ Este PASS demuestra capacidad de cómputo real, no catálogo LLM privado, no mod
 - Archivo presente != integrado.
 - Donor capaz != contrato específico del Router.
 - HF Job success != model catalog ni E2E.
+- Público HF 0 != privado HF 0.
 - PASS exige ruta + SHA/diff + read-back + test/log + URL cuando aplique.
 - Filtro LLM únicamente con policy explícita definida/recuperada.
 - `tel.workflow/v3` es el contrato vigente de este LOOP.
@@ -54,7 +55,7 @@ Producción `router inteligente universal/engine/resilience.py`, commit `6b408a7
 C11 Semantic Cache, C12 Cost Optimizer y C13 CodeSandbox dual siguen `ADAPT_CANDIDATE/AUDIT_ONLY` hasta recuperar sus contratos Router-owned exactos.
 
 ## GAPs activos
-- `GAP-HF-CATALOG-001`: privados/endpoints sin `model_id` confirmado.
+- `GAP-HF-CATALOG-001`: boundary de credencial privada; reintentar sólo con ruta segura explícita.
 - `GAP-BEHAVIOR-CONTRACT-001`: no existe policy standalone allow/deny recuperada.
 - `GAP-R004-EXTRACTION-001`.
 - `GAP-C03-CONTRACT-001`.
@@ -64,4 +65,4 @@ C11 Semantic Cache, C12 Cost Optimizer y C13 CodeSandbox dual siguen `ADAPT_CAND
 - `GAP-C13-SANDBOX-CONTRACT-001`.
 
 ## Último delta LOOP
-RIU-0030 verificó Hugging Face Jobs como cómputo real del Router con `cpu-upgrade`; Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_HF_JOBS_COMPUTE_REAL_NO_CATALOG_CLAIM`. Progreso 96%; Paso 2 ACTIVE; Paso 3 PENDING.
+RIU-0031: Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_AUDIT_ONLY_NO_MODEL_CLAIM`. Progreso 96%; Paso 2 ACTIVE; Paso 3 PENDING.
