@@ -7,14 +7,14 @@ Este índice registra únicamente modelos observados/validados. `CATALOG_OBSERVE
 Catálogo público 20: HF Job `6aa2513d5527934177ebfaad`.
 HF-M01 compute/hot-path/dataset RO verificados; provider auth Job `6aa2985921047bf1b03725ed` ERROR 403; NO READY.
 HF-M02 compute/integración real verificados; storage RW Job `6aa2ebc15527934177ec1eb6` ERROR 403 por permiso bucket create/write; NO READY.
-HF-M03 compute real: Job `6aa2ecbb21047bf1b037318e` COMPLETED; `Qwen3ForCausalLM`; 8190735360 params; `RIU_HF_M03_OK`; max GPU memory 16396255232; NO READY hasta adapter/dataset/storage/FastAPI.
+HF-M03 compute + integración FastAPI→Enchufe→Router→adapter + dataset RO: Job `6aa2f8e921047bf1b03732b7` COMPLETED; HTTP 200; `RIU_HF_M03_ROUTE_OK`; `Qwen3ForCausalLM`; 8190735360 params; CUDA True; storage RW persistente PENDING; NO READY.
 
 ## Registry observado — 20 modelos
 | Slot | model_id | especialidad | adapter | compute/acelerador | dataset/storage | FastAPI | estado |
 |---|---|---|---|---|---|---|---|
 | HF-M01 | Qwen/Qwen3-0.6B | text-generation/conversational | ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED | cpu-upgrade REAL_INFERENCE_VERIFIED | ultrachat_200k RO_BINDING_VERIFIED | HOT_PATH_DETERMINISTIC_TESTED | PROVIDER_AUTH_FLAGGED |
 | HF-M02 | openai-community/gpt2 | text-generation | ENCHUFE_ROUTER_ADAPTER_VERIFIED | cpu-upgrade REAL_INFERENCE_VERIFIED | Salesforce/wikitext RO_MOUNT_VERIFIED; RW_STORAGE_AUTH_FLAGGED | HTTP_200_HOT_PATH_VERIFIED | INTEGRATION_VERIFIED_STORAGE_RW_AUTH_FLAGGED |
-| HF-M03 | Qwen/Qwen3-8B | text-generation/conversational | PENDING | a10g-small REAL_INFERENCE_VERIFIED | PENDING | PENDING | COMPUTE_VERIFIED_NOT_READY |
+| HF-M03 | Qwen/Qwen3-8B | text-generation/conversational | ENCHUFE_ROUTER_ADAPTER_VERIFIED | a10g-small REAL_INFERENCE_VERIFIED | ultrachat_200k RO_MOUNT_VERIFIED; RW_STORAGE_PENDING | HTTP_200_HOT_PATH_VERIFIED | INTEGRATION_VERIFIED_STORAGE_RW_PENDING |
 | HF-M04 | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF | text-generation/code | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M05 | Qwen/Qwen2.5-7B-Instruct | text-generation/instruct | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M06 | facebook/opt-125m | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
@@ -34,4 +34,4 @@ HF-M03 compute real: Job `6aa2ecbb21047bf1b037318e` COMPLETED; `Qwen3ForCausalLM
 | HF-M20 | Qwen/Qwen2.5-7B-Instruct-AWQ | text-generation/instruct | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 
 ## Siguiente cola 1×1
-HF-M03 adapter + dataset/storage + FastAPI→Enchufe→Router con Job real. HF-M01/HF-M02 mantienen FLAGs; ninguno READY.
+HF-M04 compute real. HF-M01/HF-M02/HF-M03 mantienen FLAG/GAP de auth/storage; ninguno READY.
