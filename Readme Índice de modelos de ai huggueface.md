@@ -8,12 +8,13 @@ Catálogo público 20: HF Job `6aa2513d5527934177ebfaad`.
 HF-M01 compute/hot-path/dataset RO verificados; provider auth Job `6aa2985921047bf1b03725ed` ERROR 403; NO READY.
 HF-M02 compute real: Job `6aa2a4f25527934177ec0e01` COMPLETED.
 HF-M02 integración: Job `6aa2cf4f21047bf1b0372e67` COMPLETED; repo ZIP SHA256 `033a19f379e56f3a23bcad488af9089bc6f9a2e1fae25df6dd17a06bee8412df`; dataset mount True/16 files; HTTP 200; `FASTAPI_ENCHUFE_ROUTER_M02_OK=True`; GPT2LMHeadModel; 124439808 params.
+HF-M02 storage RW attempt: Job `6aa2ebc15527934177ec1eb6` ERROR 403; current authorized credential lacks bucket create/write permission; secret not exposed; NO READY.
 
 ## Registry observado — 20 modelos
 | Slot | model_id | especialidad | adapter | compute/acelerador | dataset/storage | FastAPI | estado |
 |---|---|---|---|---|---|---|---|
 | HF-M01 | Qwen/Qwen3-0.6B | text-generation/conversational | ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED | cpu-upgrade REAL_INFERENCE_VERIFIED | ultrachat_200k RO_BINDING_VERIFIED | HOT_PATH_DETERMINISTIC_TESTED | PROVIDER_AUTH_FLAGGED |
-| HF-M02 | openai-community/gpt2 | text-generation | ENCHUFE_ROUTER_ADAPTER_VERIFIED | cpu-upgrade REAL_INFERENCE_VERIFIED | DATASET_RO_MOUNT_VERIFIED; RW_STORAGE_PENDING | HTTP_200_HOT_PATH_VERIFIED | INTEGRATION_VERIFIED_STORAGE_RW_PENDING |
+| HF-M02 | openai-community/gpt2 | text-generation | ENCHUFE_ROUTER_ADAPTER_VERIFIED | cpu-upgrade REAL_INFERENCE_VERIFIED | DATASET_RO_MOUNT_VERIFIED; RW_STORAGE_AUTH_FLAGGED | HTTP_200_HOT_PATH_VERIFIED | INTEGRATION_VERIFIED_STORAGE_RW_AUTH_FLAGGED |
 | HF-M03 | Qwen/Qwen3-8B | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M04 | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF | text-generation/code | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M05 | Qwen/Qwen2.5-7B-Instruct | text-generation/instruct | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
@@ -34,4 +35,4 @@ HF-M02 integración: Job `6aa2cf4f21047bf1b0372e67` COMPLETED; repo ZIP SHA256 `
 | HF-M20 | Qwen/Qwen2.5-7B-Instruct-AWQ | text-generation/instruct | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 
 ## Siguiente cola 1×1
-Certificar Storage Bucket/output RW persistente HF-M02. HF-M01 mantiene `FLAG-HF-PROVIDER-AUTH-001`; ambos siguen NO READY.
+HF-M03 `Qwen/Qwen3-8B` real compute. HF-M01 mantiene `FLAG-HF-PROVIDER-AUTH-001`; HF-M02 mantiene `FLAG-HF-M02-RW-STORAGE-AUTH-001`; ninguno READY.
