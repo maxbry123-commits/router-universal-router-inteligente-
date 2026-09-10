@@ -10,18 +10,17 @@ Backend Python 95% determinista / 5% LLM. Flujo: `INPUT -> classifier -> DAG fij
 2. Integración GitHub/C01-C23 — PENDING tras P01.
 3. API keys agentes + E2E — PENDING.
 
-## 3. Estado P01 — RIU-0039
-Catálogo público 20 certificado por HF Job `6aa2513d5527934177ebfaad`.
-HF-M01 `Qwen/Qwen3-0.6B` config/tokenizer/generation validados por Job `6aa26cc321047bf1b0371f28`.
-HF-M01 ejecutó inferencia material real en HF Job `6aa288a521047bf1b0372324` (`cpu-upgrade`).
-Adapter `integration/huggingface/huggingface_openai_chat.py` y gateway FastAPI único `integration/huggingface/fastapi_gateway.py` preservados.
-Nuevo `integration/huggingface/router_hot_path.py` elimina el bypass FastAPI→adapter y reutiliza `red/enchufe_gate.py` + `red/red_universal.py`; no crea segundo router.
-HF Job `6aa297195527934177ec0aed` leyó el código desde `main` y ejecutó `tests/test_hf_router_hot_path.py`: `2 passed in 1.25s`, RC=0.
+## 3. Estado P01 — RIU-0040
+- Catálogo público 20 certificado.
+- HF-M01 config/tokenizer/generation + inferencia local real verificados.
+- FastAPI delega a `router_hot_path.py`, que reutiliza Enchufe Gate + RedUniversal; Job `6aa297195527934177ec0aed` ejecutó `2 passed`.
+- Dataset/storage RO binding verificado con `HuggingFaceH4/ultrachat_200k` en Job `6aa2983921047bf1b03725eb`; 10 archivos montados y manifest SHA256 `241f6f1a9ac692d9bb2c1556e2be369c15d6a53401256749d34f3e1a6fc0b640`.
+- Provider hosted autenticado todavía NO PASS: Job `6aa2985921047bf1b03725ed` alcanzó el endpoint HF y recibió 403 por permisos insuficientes; secreto permaneció redactado.
 
-HF-M01 sigue NO READY: el recorrido determinista Enchufe→RedUniversal→adapter quedó probado, pero aún faltan dataset/storage y provider hosted autenticado por ese hot-path. P03 auth/agentes continúa separado.
+HF-M01 sigue NO READY. El único blocker de serving de este nodo es `FLAG-HF-PROVIDER-AUTH-001`; persistencia RW a Storage Bucket tampoco se declara porque no se montó bucket de escritura.
 
 ## 4. Reglas
-No crear 20 servidores FastAPI: un gateway único y adapters separados. No monolito. P02 usa `REUSE > PATCH > ADAPT > GENERATE`. Descarga/copia/movimiento exclusivamente por motores canónicos autorizados.
+No 20 servidores FastAPI; gateway único y adapters separados. No monolito. P02 `REUSE > PATCH > ADAPT > GENERATE`. Descarga/copia/movimiento solo motores canónicos autorizados.
 
 ## 5. Cierre
-`modelo listado != endpoint probado`; `archivo presente != integrado`; `hot-path determinista != provider autenticado`; `API key creada != autenticación probada`. Solo `VERIFIED_CLOSED` después de P03 E2E real.
+`dataset mount != output bucket`; `token presente != permiso inference`; `hot-path determinista != provider autenticado`; solo `VERIFIED_CLOSED` tras P03 E2E real.
