@@ -3,46 +3,24 @@
 Contrato operativo: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 
 ## 1. Objetivo
-Backend Python 95% determinista / 5% LLM. El Router clasifica la tarea y activa una plantilla DAG fija autorizada. Todo destino/origen entra por Enchufe Universal como `Conector`.
+Backend Python 95% determinista / 5% LLM. Flujo: `INPUT -> classifier -> DAG fija -> validator/Enchufe Gate -> Router/RedUniversal -> conector -> destino -> verify/state`.
 
-## 2. Flujo canónico
-`INPUT -> classifier -> template DAG fija -> validator/Enchufe Gate -> Router/RedUniversal -> worker/conector -> destino -> verify/state`
+## 2. Plan autorizado — solo 3 pasos
+1. Hugging Face + modelos + FastAPI — ACTIVE.
+2. Integración GitHub/C01-C23 — PENDING tras P01.
+3. API keys agentes + E2E — PENDING.
 
-## 3. Plan autorizado — solo 3 pasos
-1. **Hugging Face + modelos + FastAPI** — ACTIVE.
-2. **Integración GitHub/C01-C23** — PENDING tras P01.
-3. **API keys agentes + E2E** — PENDING.
+## 3. Estado P01 — RIU-0037
+Catálogo público 20 certificado por HF Job `6aa2513d5527934177ebfaad`.
+HF-M01 `Qwen/Qwen3-0.6B` config/tokenizer/generation validados por Job `6aa26cc321047bf1b0371f28`.
+Adapter `integration/huggingface/huggingface_openai_chat.py` creado con allowlist del registry y `HF_TOKEN` runtime-only; commit `70b2a7d4b5ee419999e3b6f436e219370141d294`, blob `3d89e6e705fb30a55ca5ae72db05538bdabbabb7`.
+Gateway FastAPI único `integration/huggingface/fastapi_gateway.py` creado con `/health`, `/v1/models`, `/v1/chat/completions`; commit `ea0392a58ce6391514471926a315a6ebd9928521`, blob `a7a2c16019adee69de597ec0abd251912a8a11ca`.
+Registry V4 commit `3de1df105276080ae8c94067816d2e190c8b18df`.
 
-## 4. Estado P01 actualizado — RIU-0036
-HF Job `6aa2513d5527934177ebfaad` (`cpu-upgrade`) enumeró exactamente 20 modelos públicos, no gated, `transformers`, `text-generation`. Evidencia: https://huggingface.co/jobs/COMAND-CENTER-1/6aa2513d5527934177ebfaad
+HF-M01 sigue NO READY: código/read-back ≠ runtime. Falta inferencia autenticada, paso efectivo por Enchufe/Router, dataset/storage y acelerador.
 
-HF-M01 `Qwen/Qwen3-0.6B` fue validado en HF Job real `6aa26cc321047bf1b0371f28` → COMPLETED. Dentro del Job se descargaron y leyeron `config.json`, `tokenizer_config.json` y `generation_config.json`. Se verificó `Qwen3ForCausalLM`, `model_type=qwen3`, BF16, contexto 40960, 751632384 parámetros y provider `featherless-ai` live conversational. Evidencia: https://huggingface.co/jobs/COMAND-CENTER-1/6aa26cc321047bf1b0371f28
+## 4. Reglas
+No crear 20 servidores FastAPI: un gateway único y adapters separados. No monolito. P02 usa `REUSE > PATCH > ADAPT > GENERATE`. Descarga/copia/movimiento exclusivamente por motores canónicos autorizados.
 
-HF-M01 permanece NO READY: falta serving compute/acelerador, dataset/storage binding, adapter, registro FastAPI y llamada real/read-back por Enchufe/Router.
-
-Cola obligatoria 1×1 por modelo:
-`model_id -> metadata/processor -> compute/acelerador -> dataset/storage -> adapter -> FastAPI registry -> llamada real -> verifier/read-back`.
-
-`GAP-HF-CATALOG-001` permanece únicamente para catálogo privado de `COMAND-CENTER-1` porque Jobs no recibe `HF_TOKEN` implícitamente.
-
-## 5. Código central
-`router inteligente universal/` con `domain/`, `enchufe/`, `engine/`, `integration/`, `red/`, `tests/`, `Componente open soure router inteligente universal/`.
-
-## 6. Estado C01-C23 conocido
-C05 y C17 verificados; C15 REUSE/PATCH v1.5→v2; C16 parcial ampliado; C19 fuente localizada pero extracción pendiente. El resto se cruza contra donors locales antes de generar código.
-
-## 7. FastAPI objetivo
-Un solo gateway:
-`/v1/models` -> registry
-`/v1/chat/completions` -> Enchufe -> Router -> adapter
-`/health` -> gateway/registry
-
-No crear 20 servidores FastAPI independientes.
-
-## 8. Motores autorizados
-Para adquirir/extraer/copiar/mover cualquier componente externo: exclusivamente `frontend@ef0669bbc753861bfc33b86548f3f90c0f3d8df9/➡️📂motores de descarga extracción copiado movimiento archivos fromtend/`; motores inmutables/COPY_ONLY, sin LFS/force, destino explícito, SHA/read-back.
-
-## 9. Criterio de cierre
-`modelo listado != endpoint probado`; `archivo presente != integrado`; `API key creada != autenticación probada`; `mock != test remoto real`.
-
-Solo `VERIFIED_CLOSED` después del Paso 3 E2E real.
+## 5. Cierre
+`modelo listado != endpoint probado`; `archivo presente != integrado`; `API key creada != autenticación probada`. Solo `VERIFIED_CLOSED` después de P03 E2E real.
