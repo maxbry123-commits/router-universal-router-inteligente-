@@ -5,11 +5,11 @@
   "repo": "maxbry123-commits/router-universal-router-inteligente-",
   "branch": "main",
   "status": "ACTIVE_LOOP",
-  "current_node": "P01_HF_M03_REAL_COMPUTE",
+  "current_node": "P01_HF_M03_INTEGRATION_VALIDATION",
   "progress_percent": 98,
-  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","enumerate_20_public_nongated_transformers_models","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding","validate_HF_M02_real_local_inference_via_hf_job","validate_HF_M02_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job"],
-  "in_progress": ["HF_M03_real_compute_validation"],
-  "pending": ["HF_M01_authenticated_provider_permission_resolution_FLAGGED","HF_M02_persistent_rw_storage_validation_FLAGGED","HF_M03_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
+  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","enumerate_20_public_nongated_transformers_models","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding","validate_HF_M02_real_local_inference_via_hf_job","validate_HF_M02_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job","validate_HF_M03_real_gpu_inference_via_hf_job"],
+  "in_progress": ["HF_M03_adapter_dataset_fastapi_validation"],
+  "pending": ["HF_M01_authenticated_provider_permission_resolution_FLAGGED","HF_M02_persistent_rw_storage_validation_FLAGGED","HF_M03_adapter_dataset_fastapi_validation","HF_M04_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
   "gaps_flags": [
     {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only"},
     {"id":"FLAG-HF-PROVIDER-AUTH-001","type":"TOKEN_SCOPE_INSUFFICIENT_FOR_INFERENCE_PROVIDERS","evidence":"HF Job 6aa2985921047bf1b03725ed HTTP 403 insufficient permissions"},
@@ -27,17 +27,18 @@
     "HF Job 6aa2513d5527934177ebfaad certified 20 public non-gated transformers text-generation model IDs",
     "HF Job 6aa2a4f25527934177ec0e01 COMPLETED; openai-community/gpt2 real local inference",
     "HF Job 6aa2cf4f21047bf1b0372e67 COMPLETED; repo SHA256 033a19f379e56f3a23bcad488af9089bc6f9a2e1fae25df6dd17a06bee8412df; dataset mount True; 16 files; HTTP 200; FASTAPI_ENCHUFE_ROUTER_M02_OK True; GPT2LMHeadModel; 124439808 params",
-    "HF Job 6aa2ebc15527934177ec1eb6 ERROR; bucket create denied 403 because current authorized credential has read access but lacks required write permission"
+    "HF Job 6aa2ebc15527934177ec1eb6 ERROR; bucket create denied 403 because current authorized credential lacks required write permission",
+    "HF Job 6aa2ecbb21047bf1b037318e COMPLETED; Qwen/Qwen3-8B; Qwen3ForCausalLM; 8190735360 params; reply RIU_HF_M03_OK; MAX_MEMORY_ALLOCATED 16396255232"
   ],
   "rules": {"input_literal":true,"one_node_at_a_time":true,"evidence_required":true,"no_monolith":true,"reuse_first":true,"steps_limit":3},
   "last_delta": {
-    "id":"RIU-0043",
-    "decision":"HF_M02_RW_STORAGE_PERMISSION_BOUNDARY_CONFIRMED_FLAG_AND_ADVANCE_SAFE_HF_M03",
-    "verify_final":"PASS_FLAGGED_EXTERNAL_BOUNDARY_NO_STORAGE_READY",
+    "id":"RIU-0044",
+    "decision":"HF_M03_REAL_GPU_COMPUTE_VERIFIED_KEEP_INTEGRATION_PENDING",
+    "verify_final":"PASS_HF_M03_REAL_COMPUTE_ONLY",
     "council12":"PASS",
-    "refutations":["Job ERROR cannot certify persistent RW storage","secret injection does not imply write permission","HF-M02 remains NO READY despite prior hot-path PASS"],
+    "refutations":["COMPLETED compute does not prove FastAPI/Enchufe adapter wiring","GPU inference does not prove dataset/storage persistence","HF-M03 success does not close HF-M01 or HF-M02 external auth flags"],
     "cross_check":"PASS",
-    "coda":"PERSIST_STORAGE_AUTH_FLAG_CONTINUE_ONLY_SAFE_P01_HF_M03",
-    "jobs":["6aa2ebc15527934177ec1eb6"]
+    "coda":"PERSIST_HF_M03_COMPUTE_KEEP_NO_READY_QUEUE_INTEGRATION",
+    "jobs":["6aa2ecbb21047bf1b037318e"]
   }
 }
