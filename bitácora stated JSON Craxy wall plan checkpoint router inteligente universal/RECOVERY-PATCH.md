@@ -4,22 +4,19 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 
 ## Estado válido
 - Plan limitado a 3 pasos.
-- Paso 1: componentes centralizados; HF Jobs compute real verificado; catálogo privado todavía no demostrado.
-- RIU-0031: identidad HF conectada `COMAND-CENTER-1`; OAuth con scopes `jobs/openid/profile/read-mcp/read-repos`; Job `6aa1d38621047bf1b0370f3f` completó auditoría mínima y reportó `public_model_count=0`, `hf_token_present=false`.
-- Auditoría: `router inteligente universal/integration/huggingface/RIU-0031-HF-CATALOG-TOKEN-AUDIT.md`, commit `505d54c23120f96cec42dde5c26cd001c20092b9`.
-- Intento previo `6aa1d3125527934177ebe373` cancelado por clone grande ineficiente; no PASS.
-- Paso 2 ACTIVE; filtro LLM fail-closed; Paso 3 PENDING.
+- Paso 1 ACTIVE: HF Jobs compute real operativo.
+- RIU-0034: Job `6aa2513d5527934177ebfaad` devolvió `COUNT=20` de modelos públicos, no gated, `transformers`, `text-generation`; índice persistido en commit `49962acfc50aa9b84e88410693a66d3858ea110c`.
+- Los 20 están solo `CATALOG_OBSERVED`; ningún modelo se considera READY sin adapter/compute/dataset/FastAPI/llamada real.
+- GAP-HF-CATALOG-001 queda reducido al catálogo privado de `COMAND-CENTER-1` por boundary de `HF_TOKEN`.
+- Paso 2 PENDING tras P01. Paso 3 PENDING.
 
 ## Boot de recuperación
-1. Leer STATE/CHECKPOINT/PLAN/BITACORA/README arquitectura/Handoff; mantener `tel.workflow/v3`.
-2. Último delta cerrado: RIU-0031 / HF catalog-token boundary audit.
-3. Mantener `GAP-HF-CATALOG-001`: público 0 ≠ privado 0; Jobs no recibió `HF_TOKEN` implícito.
-4. Reintentar privados solo mediante credencial explícita segura; nunca hardcode/log tokens.
-5. Continuar una tarea P02 independiente solo con source/contrato suficiente; `REUSE > PATCH > ADAPT > GENERATE`.
-6. Tras cada delta: read-back/blob + test/log + persistencia; no iniciar Paso 3 por un audit PASS.
+1. Leer STATE/CHECKPOINT/PLAN/BITACORA/README arquitectura/Handoff.
+2. Continuar `P01_HF_VALIDATE_20` desde `HF-M01 Qwen/Qwen3-0.6B`.
+3. Validar 1×1: metadata/processor → compute/acelerador → dataset/storage → adapter → FastAPI → llamada real/read-back.
+4. Si aparece GAP, investigar y aplicar StrategyDelta materialmente distinto; no promover READY por presencia.
+5. Tras cerrar 20, ejecutar P02 C01-C23 con `REUSE > PATCH > ADAPT > GENERATE` y Enchufe Universal.
+6. Solo después ejecutar P03 API Key Manager + E2E real.
 
-## GAPs activos
-`GAP-HF-CATALOG-001`, `GAP-BEHAVIOR-CONTRACT-001`, `GAP-R004-EXTRACTION-001`, `GAP-C03-CONTRACT-001`, `GAP-C01-API-CONTRACT-001`, `GAP-C11-SEMANTIC-CACHE-CONTRACT-001`, `GAP-C12-COST-POLICY-CONTRACT-001`, `GAP-C13-SANDBOX-CONTRACT-001`.
-
-## RIU-0031 verification
-Council12 PASS. Refutaciones: (1) público 0 ≠ privado 0; (2) OAuth conectado ≠ token inyectado en Jobs; (3) Job success ≠ FastAPI/model adapter autorizado. Cross-check PASS. CODA `PASS_HF_CATALOG_BOUNDARY_AUDIT_GAP_REFINED`. `verify_final=PASS_AUDIT_ONLY_NO_MODEL_CLAIM`.
+## Cierre
+Exigir `ruta + diff/SHA + read-back + test/log + URL`. Estado `ACTIVE_LOOP`.
