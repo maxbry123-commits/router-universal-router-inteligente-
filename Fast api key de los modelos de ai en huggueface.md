@@ -4,17 +4,18 @@
 Controlar el acceso de agentes al gateway FastAPI del Router sin publicar secretos en GitHub.
 
 ## Arquitectura
-`AGENTE -> Authorization: Bearer <router_api_key> -> FastAPI -> APIKeyGuard -> Enchufe Universal -> Router -> model registry -> adapter -> Hugging Face`
+`AGENTE -> Authorization: Bearer <router_api_key> -> FastAPI -> APIKeyGuard -> Enchufe Gate -> RedUniversal -> model registry -> adapter -> Hugging Face`
 
 ## Regla de seguridad
 Las API keys reales NO se guardan en este archivo ni en ningún commit. El Router debe guardar solo hash/metadata; la key plaintext se entrega una sola vez al crearla.
 
 ## Estado actual
-- Gateway FastAPI único: PENDING integración final.
+- Gateway FastAPI único: materializado y delegado al hot-path Enchufe Gate → RedUniversal.
+- Hot-path determinista: HF Job `6aa297195527934177ec0aed` COMPLETED, `2 passed`, RC=0.
+- HF-M01 provider hosted autenticado: PENDING; dataset/storage: PENDING.
 - APIKeyGuard/API Key Manager: PENDING Paso 3.
-- 20 slots de modelos: creados en índice, model IDs todavía PENDING por GAP de catálogo HF privado.
+- 20 slots públicos: catálogo certificado; HF-M02..HF-M20 aún no validados 1×1.
 - Hugging Face Jobs: disponible como compute real.
-- Bridge HF/GitHub: existente.
 
 ## Formato objetivo de key
 `riu_<agent_id>_<random-secret>`
@@ -46,7 +47,7 @@ Metadata persistida por key:
 ## Estado de entrega
 `PLAINTEXT_KEYS: NOT_GENERATED_YET`
 
-No se generarán keys definitivas hasta que el gateway, registry y al menos un model adapter real estén cableados y verificados. Cuando se generen, se entregarán una sola vez fuera del repositorio y este documento registrará únicamente `key_id/hash/status/scopes`.
+No se generarán keys definitivas hasta cerrar P01. El código de routing determinista ya está verificado, pero todavía falta provider hosted autenticado + dataset/storage de HF-M01.
 
 ## Criterio PASS
 Agente con key válida -> 200 y routing permitido.
