@@ -1,11 +1,11 @@
 {
-  "checkpoint":"router-universal-p01-hf-m01-provider-auth-resolution",
+  "checkpoint":"router-universal-p01-hf-m02-independent-validation",
   "contract":"tel.workflow/v3",
   "mode":"FAIL_CLOSED_LOOP",
-  "verified":{"hf_m01_local_compute":"6aa288a521047bf1b0372324 COMPLETED","hf_m01_hot_path":"6aa297195527934177ec0aed COMPLETED; 2 passed","hf_m01_dataset_storage":"6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k ro mount; binding OK","provider_auth_attempt":"6aa2985921047bf1b03725ed ERROR; 403 insufficient inference-provider permission; secret redacted","riu_0040":"dbcd504acc500e31d36abcddaf103434d87866e9"},
-  "current":"P01_HF_M01_PROVIDER_AUTH_RESOLUTION",
-  "next_delta":"resolve authorized inference-provider credential scope without exposing secrets; otherwise continue only independent safe P01 work",
-  "next_if_pass":"promote HF-M01 then validate HF-M02 1x1",
-  "next_if_gap":"keep FLAG and NO READY",
+  "verified":{"hf_m01_local_compute":"6aa288a521047bf1b0372324 COMPLETED","hf_m01_hot_path":"6aa297195527934177ec0aed COMPLETED; 2 passed","hf_m01_dataset_storage":"6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k ro mount; binding OK","provider_auth_attempt":"6aa2985921047bf1b03725ed ERROR; 403 insufficient inference-provider permission; secret redacted","hf_m02_local_compute":"6aa2a4f25527934177ec0e01 COMPLETED; GPT2LMHeadModel; cpu; 124439808 parameters; HF_M02_REAL_COMPUTE_OK True"},
+  "current":"P01_HF_M02_INDEPENDENT_VALIDATION",
+  "next_delta":"validate HF-M02 dataset/storage plus adapter/FastAPI boundary as independent safe P01 work; keep HF-M01 provider-auth FLAG open",
+  "next_if_pass":"continue HF-M03 1x1 while keeping NO READY semantics until complete routing/provider criteria pass",
+  "next_if_gap":"register FLAG/GAP and use materially different StrategyDelta without promoting model",
   "status":"ACTIVE_LOOP"
 }
