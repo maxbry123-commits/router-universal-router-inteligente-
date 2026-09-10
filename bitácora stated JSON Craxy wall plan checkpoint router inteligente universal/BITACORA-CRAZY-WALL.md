@@ -3,26 +3,38 @@
 **Contrato:** `tel.workflow/v3`
 **Modo:** `FAIL_CLOSED_LOOP`
 
-## RIU-0001..0035 — TRAZABILIDAD PREVIA
-Baseline, componentes, Handoff, plan 3 pasos, HF, Gate/conectores v6/registry/validator/schema/RedUniversal, auditorías, catálogo público 20 y reconciliación del registry quedan preservados por commits/STATE/CHECKPOINT previos.
+## RIU-0001..0036 — TRAZABILIDAD PREVIA
+Baseline, arquitectura, componentes, HF Jobs, catálogo 20 y validación HF-M01 config/tokenizer/generation preservados por commits/STATE/CHECKPOINT previos.
 
-## RIU-0036 — HF-M01 CONFIG/TOKENIZER/GENERATION EN CÓMPUTO REAL
-INPUT literal: continuar P01 1×1 sin promover READY por metadata; HF Jobs como cómputo real.
+## RIU-0037 — HF-M01 ADAPTER + GATEWAY FASTAPI ÚNICO
+INPUT literal: continuar P01 1×1, investigar primero, no promover READY por presencia.
 
-HF Job `6aa26cc321047bf1b0371f28` (`cpu-upgrade`) → `COMPLETED`. URL https://huggingface.co/jobs/COMAND-CENTER-1/6aa26cc321047bf1b0371f28
+Investigación oficial: Hugging Face documenta `InferenceClient.chat_completion` como interfaz compatible con OpenAI y TGI/HUGS expone `/v1/chat/completions`; autenticación por token de runtime.
 
-Read-back real desde Hub dentro del Job:
-- `model_id=Qwen/Qwen3-0.6B`
-- `pipeline=text-generation`, `library=transformers`
-- `Qwen3ForCausalLM`, `model_type=qwen3`, `torch_dtype=bfloat16`
-- `max_position_embeddings=40960`
-- safetensors `751632384` parámetros BF16
-- `config.json`, `tokenizer_config.json`, `generation_config.json` descargados y leídos
-- provider observado: `featherless-ai`, status `live`, task `conversational`
+Delta ejecutado:
+- `router inteligente universal/integration/huggingface/huggingface_openai_chat.py`
+  - allowlist estricta desde `model_registry.json`
+  - `HF_TOKEN` sólo en environment/runtime
+  - `InferenceClient.chat_completion`
+  - commit `70b2a7d4b5ee419999e3b6f436e219370141d294`
+  - read-back blob `3d89e6e705fb30a55ca5ae72db05538bdabbabb7`
+- `router inteligente universal/integration/huggingface/fastapi_gateway.py`
+  - gateway único
+  - `/health`, `/v1/models`, `/v1/chat/completions`
+  - commit `ea0392a58ce6391514471926a315a6ebd9928521`
+  - read-back blob `a7a2c16019adee69de597ec0abd251912a8a11ca`
+- `model_registry.json` V4
+  - HF-M01 adapter=`WIRED_CODE_READBACK`
+  - FastAPI=`REGISTERED_CODE_READBACK`
+  - status=`SERVING_RUNTIME_PENDING`
+  - commit `3de1df105276080ae8c94067816d2e190c8b18df`
 
-Decision: HF-M01 avanza a `CONFIG_TOKENIZER_VALIDATED`, pero NO READY. Faltan serving compute/acelerador, dataset/storage, adapter, registro FastAPI y llamada real por Enchufe/Router.
+Verificación/refutación:
+1. Código adapter ≠ inferencia real.
+2. Ruta FastAPI ≠ paso probado por Enchufe/Router.
+3. Provider live ≠ runtime autenticado con `HF_TOKEN`.
 
-3 refutaciones: config/tokenizer ≠ inferencia; provider live ≠ hot path Router; cpu-upgrade para auditoría ≠ acelerador final de serving. Council12 PASS; cross-check PASS; CODA `KEEP_HF_M01_NOT_READY_UNTIL_SERVING`; `verify_final=PASS_CONFIGURATION_ONLY_SERVING_PENDING`.
+Council12 PASS; cross-check PASS; CODA `KEEP_HF_M01_SERVING_RUNTIME_PENDING`; verify_final=`PASS_CODE_READBACK_ONLY_RUNTIME_HOT_PATH_PENDING`.
 
 ## NEXT
-Cola 1×1: HF-M01 serving compute/acelerador → dataset/storage → adapter → FastAPI → llamada real/read-back. Solo entonces HF-M02.
+HF-M01 1×1: inferencia runtime autenticada → Enchufe/Router hot path → dataset/storage/acelerador → solo entonces READY y HF-M02.
