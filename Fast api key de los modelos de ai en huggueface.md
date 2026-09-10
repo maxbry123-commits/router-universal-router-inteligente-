@@ -11,9 +11,9 @@ Las API keys reales NO se guardan en este archivo ni en ningún commit. El Route
 
 ## Estado actual
 - Gateway FastAPI único + Enchufe Gate + RedUniversal: hot-path determinista HF-M01 verificado.
-- HF-M02 FastAPI→Enchufe→Router→adapter validado en Job `6aa2cf4f21047bf1b0372e67`: HTTP 200 y `FASTAPI_ENCHUFE_ROUTER_M02_OK=True`.
-- Provider hosted auth HF-M01: FLAG; Job `6aa2985921047bf1b03725ed` recibió 403 por permisos insuficientes para Inference Providers; secreto redactado.
-- HF-M02 storage RW persistente: FLAG/GAP; Job `6aa2ebc15527934177ec1eb6` recibió 403 al crear Storage Bucket porque la credencial autorizada carece de permiso create/write; secreto protegido no expuesto; HF-M02 NO READY.
+- HF-M02 FastAPI→Enchufe→Router→adapter validado en Job `6aa2cf4f21047bf1b0372e67`; storage RW sigue FLAG 403 por permiso bucket create/write; HF-M02 NO READY.
+- HF-M03 `Qwen/Qwen3-8B` compute real validado en Job `6aa2ecbb21047bf1b037318e`: `Qwen3ForCausalLM`, 8190735360 params, respuesta `RIU_HF_M03_OK`; FastAPI/adapter/dataset/storage siguen PENDING, por lo que NO READY.
+- Provider hosted auth HF-M01: `FLAG-HF-PROVIDER-AUTH-001` por 403 de Inference Providers.
 - APIKeyGuard/API Key Manager: PENDING Paso 3.
 - `PLAINTEXT_KEYS: NOT_GENERATED_YET`.
 
