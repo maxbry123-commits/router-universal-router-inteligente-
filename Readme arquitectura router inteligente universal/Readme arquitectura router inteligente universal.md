@@ -10,13 +10,12 @@ Backend Python 95% determinista / 5% LLM. Flujo: `INPUT -> classifier -> DAG fij
 2. Integración GitHub/C01-C23 — PENDING tras P01.
 3. API keys agentes + E2E — PENDING.
 
-## 3. Estado P01 — RIU-0044
+## 3. Estado P01 — RIU-0045
 - Catálogo público 20 certificado.
 - HF-M01 compute/hot-path/dataset RO verificados; provider auth 403 (`FLAG-HF-PROVIDER-AUTH-001`); NO READY.
 - HF-M02 compute + integración FastAPI→Enchufe→Router→adapter verificados; storage RW create/write bloqueado por 403 (`FLAG-HF-M02-RW-STORAGE-AUTH-001`); NO READY.
-- HF-M03 `Qwen/Qwen3-8B` compute real verificado por Job `6aa2ecbb21047bf1b037318e`: `Qwen3ForCausalLM`, 8190735360 params, respuesta `RIU_HF_M03_OK`, max GPU memory 16396255232; adapter/dataset/storage/FastAPI PENDING; NO READY.
-- Registry reconciliado a V8.
-- Cola P01 1×1: HF-M03 adapter + dataset/storage + FastAPI/Enchufe real.
+- HF-M03 `Qwen/Qwen3-8B` compute real + integración FastAPI→Enchufe→Router→adapter + dataset RO verificados por Job `6aa2f8e921047bf1b03732b7`: HTTP 200, `RIU_HF_M03_ROUTE_OK`, `Qwen3ForCausalLM`, 8190735360 params, CUDA True, `MAX_MEMORY_ALLOCATED=16396255232`; storage RW persistente PENDING; NO READY.
+- Cola P01 1×1: HF-M04 compute real.
 
 ## 4. Reglas
 Gateway FastAPI único; adapters separados; sin monolito. P02 `REUSE > PATCH > ADAPT > GENERATE`. Descarga/copia/movimiento sólo motores canónicos autorizados.
