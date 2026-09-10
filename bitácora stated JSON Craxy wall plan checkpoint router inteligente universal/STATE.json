@@ -5,14 +5,15 @@
   "repo": "maxbry123-commits/router-universal-router-inteligente-",
   "branch": "main",
   "status": "ACTIVE_LOOP",
-  "current_node": "P01_HF_M02_INDEPENDENT_VALIDATION",
+  "current_node": "P01_HF_M02_STORAGE_COMPLETION",
   "progress_percent": 98,
-  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models","reconcile_model_registry_to_certified_20","validate_HF_M01_metadata","validate_HF_M01_config_tokenizer_generation_via_real_hf_job","materialize_HF_M01_adapter","materialize_single_fastapi_gateway","readback_HF_M01_adapter_gateway","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding","validate_HF_M02_real_local_inference_via_hf_job"],
-  "in_progress": ["HF_M02_dataset_storage_adapter_fastapi_validation"],
+  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","enumerate_20_public_nongated_transformers_models","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding","validate_HF_M02_real_local_inference_via_hf_job","validate_HF_M02_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job"],
+  "in_progress": ["HF_M02_persistent_rw_storage_validation"],
   "pending": ["HF_M01_authenticated_provider_permission_resolution_FLAGGED","HF_M03_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
   "gaps_flags": [
     {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only"},
-    {"id":"FLAG-HF-PROVIDER-AUTH-001","type":"TOKEN_SCOPE_INSUFFICIENT_FOR_INFERENCE_PROVIDERS","evidence":"HF Job 6aa2985921047bf1b03725ed reached router.huggingface.co/v1/chat/completions with secret redacted and received HTTP 403 insufficient permissions"},
+    {"id":"FLAG-HF-PROVIDER-AUTH-001","type":"TOKEN_SCOPE_INSUFFICIENT_FOR_INFERENCE_PROVIDERS","evidence":"HF Job 6aa2985921047bf1b03725ed HTTP 403 insufficient permissions"},
+    {"id":"GAP-HF-M02-RW-STORAGE-001","type":"PERSISTENT_RW_STORAGE_NOT_YET_CERTIFIED","evidence":"HF-M02 dataset mount + FastAPI hot-path PASS, but no Storage Bucket RW evidence yet"},
     {"id":"GAP-BEHAVIOR-CONTRACT-001","type":"BEHAVIOR_POLICY_NOT_RECOVERED"},
     {"id":"GAP-R004-EXTRACTION-001","type":"CANONICAL_PDF_BINARY_NOT_MATERIALIZED"},
     {"id":"GAP-C03-CONTRACT-001","type":"CONFIG_FIELDS_NOT_DEFINED"},
@@ -23,21 +24,18 @@
   ],
   "evidence": [
     "HF Job 6aa2513d5527934177ebfaad certified 20 public non-gated transformers text-generation model IDs",
-    "HF Job 6aa288a521047bf1b0372324 COMPLETED; HF-M01 real local inference",
-    "HF Job 6aa297195527934177ec0aed COMPLETED; Enchufe Gate + RedUniversal deterministic hot path 2 passed",
-    "HF Job 6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k mounted read-only; 10 files; manifest sha256 241f6f1a9ac692d9bb2c1556e2be369c15d6a53401256749d34f3e1a6fc0b640; binding OK",
-    "HF Job 6aa2985921047bf1b03725ed ERROR; authenticated provider call reached router endpoint but token scope was insufficient; secret redacted",
-    "HF Job 6aa2a4f25527934177ec0e01 COMPLETED; openai-community/gpt2 real local inference; GPT2LMHeadModel; cpu; 124439808 runtime parameters; HF_M02_REAL_COMPUTE_OK True"
+    "HF Job 6aa2a4f25527934177ec0e01 COMPLETED; openai-community/gpt2 real local inference",
+    "HF Job 6aa2cf4f21047bf1b0372e67 COMPLETED; repo SHA256 033a19f379e56f3a23bcad488af9089bc6f9a2e1fae25df6dd17a06bee8412df; dataset mount True; 16 files; HTTP 200; FASTAPI_ENCHUFE_ROUTER_M02_OK True; GPT2LMHeadModel; 124439808 params"
   ],
   "rules": {"input_literal":true,"one_node_at_a_time":true,"evidence_required":true,"no_monolith":true,"reuse_first":true,"steps_limit":3},
   "last_delta": {
-    "id":"RIU-0041",
-    "decision":"HF_M02_REAL_COMPUTE_VERIFIED_INDEPENDENT_SAFE_P01_WORK",
-    "verify_final":"PASS_HF_M02_REAL_COMPUTE_ONLY",
+    "id":"RIU-0042",
+    "decision":"HF_M02_DATASET_FASTAPI_ENCHUFE_ROUTER_ADAPTER_VERIFIED_KEEP_STORAGE_RW_PENDING",
+    "verify_final":"PASS_HF_M02_INTEGRATED_HOT_PATH_STORAGE_RW_PENDING",
     "council12":"PASS",
-    "refutations":["HF-M02 compute does not prove adapter/FastAPI routing","HF-M02 compute does not prove dataset/storage binding","HF-M01 remains NO READY while provider auth flag is open"],
+    "refutations":["HTTP 200 does not prove persistent RW storage","dataset mount does not prove Storage Bucket output persistence","HF-M01 provider auth flag remains unresolved"],
     "cross_check":"PASS",
-    "coda":"PERSIST_HF_M02_COMPUTE_KEEP_BOTH_MODELS_NO_READY",
-    "jobs":["6aa2a4f25527934177ec0e01"]
+    "coda":"PERSIST_HF_M02_INTEGRATION_KEEP_NO_READY_UNTIL_RW_STORAGE",
+    "jobs":["6aa2cf4f21047bf1b0372e67"]
   }
 }
