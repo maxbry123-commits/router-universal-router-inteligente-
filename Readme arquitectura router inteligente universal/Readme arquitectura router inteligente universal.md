@@ -13,10 +13,12 @@ Backend Python 95% determinista / 5% LLM. El Router clasifica la tarea y activa 
 2. **Integración GitHub/C01-C23** — PENDING tras P01.
 3. **API keys agentes + E2E** — PENDING.
 
-## 4. Estado P01 actualizado — RIU-0034
+## 4. Estado P01 actualizado — RIU-0036
 HF Job `6aa2513d5527934177ebfaad` (`cpu-upgrade`) enumeró exactamente 20 modelos públicos, no gated, `transformers`, `text-generation`. Evidencia: https://huggingface.co/jobs/COMAND-CENTER-1/6aa2513d5527934177ebfaad
 
-Los 20 `model_id` están persistidos en `Readme Índice de modelos de ai huggueface.md` como `CATALOG_OBSERVED`. Esto cierra el GAP de inventario público, pero NO prueba que los modelos estén listos para servir.
+HF-M01 `Qwen/Qwen3-0.6B` fue validado en HF Job real `6aa26cc321047bf1b0371f28` → COMPLETED. Dentro del Job se descargaron y leyeron `config.json`, `tokenizer_config.json` y `generation_config.json`. Se verificó `Qwen3ForCausalLM`, `model_type=qwen3`, BF16, contexto 40960, 751632384 parámetros y provider `featherless-ai` live conversational. Evidencia: https://huggingface.co/jobs/COMAND-CENTER-1/6aa26cc321047bf1b0371f28
+
+HF-M01 permanece NO READY: falta serving compute/acelerador, dataset/storage binding, adapter, registro FastAPI y llamada real/read-back por Enchufe/Router.
 
 Cola obligatoria 1×1 por modelo:
 `model_id -> metadata/processor -> compute/acelerador -> dataset/storage -> adapter -> FastAPI registry -> llamada real -> verifier/read-back`.
