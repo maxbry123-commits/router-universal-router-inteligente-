@@ -7,11 +7,12 @@
   "status": "ACTIVE_LOOP",
   "current_node": "P01_HF_VALIDATE_20",
   "progress_percent": 97,
-  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models"],
+  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models","reconcile_model_registry_to_certified_20","validate_HF_M01_metadata"],
   "in_progress": ["validate_20_models_processor_compute_dataset_adapter_fastapi"],
-  "pending": ["P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
+  "pending": ["HF_M01_runtime_processor_accelerator_adapter_fastapi","HF_M02_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
   "gaps_flags": [
-    {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only","evidence":"public catalog no longer blocked: HF Job 6aa2513d5527934177ebfaad returned 20 public non-gated transformers text-generation model IDs; private owner catalog still lacks injected HF_TOKEN"},
+    {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only"},
+    {"id":"GAP-HF-M01-RUNTIME-001","type":"JOB_EXECUTION_TOOL_SAFETY_BLOCK","evidence":"direct UV runtime-load/generation request was blocked before HF Job creation; no runtime claim promoted"},
     {"id":"GAP-BEHAVIOR-CONTRACT-001","type":"BEHAVIOR_POLICY_NOT_RECOVERED"},
     {"id":"GAP-R004-EXTRACTION-001","type":"CANONICAL_PDF_BINARY_NOT_MATERIALIZED"},
     {"id":"GAP-C03-CONTRACT-001","type":"CONFIG_FIELDS_NOT_DEFINED"},
@@ -21,20 +22,20 @@
     {"id":"GAP-C13-SANDBOX-CONTRACT-001","type":"SANDBOX_EXECUTION_POLICY_NOT_DEFINED"}
   ],
   "evidence": [
-    "HF Job 6aa2513d5527934177ebfaad returned FIRST=Qwen/Qwen3-0.6B and ALL=20 model IDs; COUNT=20",
-    "HF Job 6aa2512c21047bf1b0371af0 returned 20 filtered public non-gated transformers text-generation models",
-    "HF Job 6aa2510f21047bf1b0371aec confirmed 20 text-generation catalog entries",
-    "Readme Índice de modelos de ai huggueface.md commit 49962acfc50aa9b84e88410693a66d3858ea110c"
+    "HF Job 6aa2513d5527934177ebfaad certified 20 public non-gated transformers text-generation model IDs",
+    "HF Hub metadata for Qwen/Qwen3-0.6B: AutoModelForCausalLM, qwen3, 751.6M params, apache-2.0, endpoints_compatible, featherless-ai live provider",
+    "model_registry.json V3 commit 8ce5ceaa98fcf62c7b6ba2d47b067edaaa6b4d4e; read-back blob bc715663a068179898149090c50b3179ce869b18",
+    "RIU-0035 audit commit 40905f17ee933c601ff56eae9d8f62fb7dc49e8b",
+    "Official HF Jobs configuration: https://huggingface.co/docs/hub/en/jobs-configuration"
   ],
   "rules": {"input_literal":true,"one_node_at_a_time":true,"evidence_required":true,"no_monolith":true,"reuse_first":true,"steps_limit":3},
   "last_delta": {
-    "id":"RIU-0034",
-    "decision":"PUBLIC_20_MODEL_CATALOG_OBSERVED_NOT_READY",
-    "verify_final":"PASS_CATALOG_ONLY_ADAPTERS_PENDING",
+    "id":"RIU-0035",
+    "decision":"RECONCILE_REGISTRY_TO_CERTIFIED_20_AND_VALIDATE_M01_METADATA",
+    "verify_final":"PASS_REGISTRY_TRUTH_RECONCILED_M01_METADATA_VALIDATED_RUNTIME_PENDING",
     "council12":"PASS",
-    "refutations":["20 model IDs do not prove runnable adapters","public catalog does not prove private owner catalog","model presence does not prove FastAPI hot path"],
+    "refutations":["Metadata does not prove runtime inference","endpoints_compatible does not prove Router FastAPI hot path","Registry correction does not close dataset/storage or private catalog"],
     "cross_check":"PASS",
-    "coda":"REGISTER_OBSERVED_ONLY_THEN_VALIDATE_1X1",
-    "job_id":"6aa2513d5527934177ebfaad"
+    "coda":"KEEP_M01_RUNTIME_PENDING_AND_CONTINUE_1X1"
   }
 }
