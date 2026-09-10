@@ -6,7 +6,7 @@ SCHEMA = "yaiwes.frontend.download-extract-queue.v1"
 QUEUE_FILE = pathlib.Path(os.getenv("QUEUE_FILE", "queue.json")).expanduser()
 STATE_FILE = pathlib.Path(os.getenv("STATE_FILE", ".motor2-queue-state.json")).expanduser()
 ENGINE_PATH = pathlib.Path(os.getenv("ENGINE_PATH", "➡️📂motor descarga y extracción con huggueface/hf_download_extract_engine.py")).expanduser()
-INDEX_PATH = pathlib.Path(os.getenv("INDEX_PATH", "📂componentes open soure fromtend/README-INDICE-COMPONENTES.md")).expanduser()
+INDEX_PATH = pathlib.Path(os.getenv("INDEX_PATH", "📂componentes open soure router-universal-router-inteligente-/README-INDICE-COMPONENTES.md")).expanduser()
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 LOOP_SLEEP_SECONDS = float(os.getenv("LOOP_SLEEP_SECONDS", "0"))
 
@@ -41,9 +41,9 @@ def run_item(item):
     env = dict(os.environ)
     env.update({
         "SOURCE_REPO": item["source_repo"], "SOURCE_REF": str(item.get("source_ref", "HEAD")), "SLUG": item["slug"],
-        "DEST_REPO": item.get("dest_repo", env.get("DEST_REPO", "maxbry123-commits/frontend")),
+        "DEST_REPO": item.get("dest_repo", env.get("DEST_REPO", "maxbry123-commits/router-universal-router-inteligente-")),
         "DEST_BRANCH": item.get("dest_branch", env.get("DEST_BRANCH", "main")),
-        "DEST_ROOT": item.get("dest_root", env.get("DEST_ROOT", "📂componentes open soure fromtend")),
+        "DEST_ROOT": item.get("dest_root", env.get("DEST_ROOT", "📂componentes open soure router-universal-router-inteligente-")),
         "PUBLISH": "1" if item.get("publish") else "0",
     })
     p = subprocess.run([sys.executable, str(ENGINE_PATH)], env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
