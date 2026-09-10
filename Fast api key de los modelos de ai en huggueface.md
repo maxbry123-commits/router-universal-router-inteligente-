@@ -10,9 +10,10 @@ Controlar el acceso de agentes al gateway FastAPI del Router sin publicar secret
 Las API keys reales NO se guardan en este archivo ni en ningún commit. El Router debe guardar solo hash/metadata; plaintext una sola vez.
 
 ## Estado actual
-- Gateway FastAPI único + Enchufe Gate + RedUniversal: hot-path determinista verificado en Job `6aa297195527934177ec0aed` (`2 passed`).
-- HF-M01 dataset/storage RO: verificado con `HuggingFaceH4/ultrachat_200k` en Job `6aa2983921047bf1b03725eb`.
-- Provider hosted auth: FLAG; Job `6aa2985921047bf1b03725ed` recibió 403 por permisos insuficientes para Inference Providers; el secreto quedó redactado.
+- Gateway FastAPI único + Enchufe Gate + RedUniversal: hot-path determinista HF-M01 verificado.
+- HF-M02 FastAPI→Enchufe→Router→adapter validado en Job `6aa2cf4f21047bf1b0372e67`: HTTP 200 y `FASTAPI_ENCHUFE_ROUTER_M02_OK=True`.
+- Provider hosted auth HF-M01: FLAG; Job `6aa2985921047bf1b03725ed` recibió 403 por permisos insuficientes para Inference Providers; secreto redactado.
+- HF-M02 storage RW persistente sigue PENDING; NO READY.
 - APIKeyGuard/API Key Manager: PENDING Paso 3.
 - `PLAINTEXT_KEYS: NOT_GENERATED_YET`.
 
@@ -28,4 +29,4 @@ create/verify/revoke/rotate/list; persistir solo `key_id`, `agent_id`, `key_hash
 ## Criterio PASS
 Key válida -> routing permitido; revocada/inválida -> 401/403; scope inválido -> 403; ningún secreto en logs/GitHub/STATE/BITACORA.
 
-Paso 3 no inicia mientras P01 no cierre; `FLAG-HF-PROVIDER-AUTH-001` debe resolverse con credencial autorizada y alcance Inference Providers.
+Paso 3 no inicia mientras P01 no cierre.
