@@ -7,8 +7,8 @@ LFS_POINTER=b'version https://git-lfs.github.com/spec/v1\n'
 PART_SIZE=int(os.getenv('PART_SIZE_MIB','12'))*1024*1024
 MAX_BLOB=int(os.getenv('MAX_GITHUB_BLOB_MIB','95'))*1024*1024
 SOURCE_REPO=os.getenv('SOURCE_REPO','').strip(); SOURCE_REF=os.getenv('SOURCE_REF','HEAD').strip() or 'HEAD'
-SLUG=os.getenv('SLUG','').strip(); DEST_REPO=os.getenv('DEST_REPO','maxbry123-commits/router-universal-router-inteligente-').strip()
-DEST_BRANCH=os.getenv('DEST_BRANCH','main').strip() or 'main'; DEST_ROOT=os.getenv('DEST_ROOT','📂componentes open soure router-universal-router-inteligente-').strip().strip('/')
+SLUG=os.getenv('SLUG','').strip(); DEST_REPO=os.getenv('DEST_REPO','maxbry123-commits/frontend').strip()
+DEST_BRANCH=os.getenv('DEST_BRANCH','main').strip() or 'main'; DEST_ROOT=os.getenv('DEST_ROOT','📂componentes open soure fromtend').strip().strip('/')
 TOKEN=os.getenv('GITHUB_TOKEN',''); PUBLISH=os.getenv('PUBLISH','0').lower() in {'1','true','yes'}
 
 def run(argv,cwd=None,env=None,check=True):
