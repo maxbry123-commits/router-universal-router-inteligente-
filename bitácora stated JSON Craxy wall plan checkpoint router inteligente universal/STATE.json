@@ -7,12 +7,12 @@
   "status": "ACTIVE_LOOP",
   "current_node": "P01_HF_M01_SERVING_VALIDATION",
   "progress_percent": 97,
-  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models","reconcile_model_registry_to_certified_20","validate_HF_M01_metadata","validate_HF_M01_config_tokenizer_generation_via_real_hf_job"],
-  "in_progress": ["HF_M01_serving_compute_dataset_adapter_fastapi_real_call"],
+  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models","reconcile_model_registry_to_certified_20","validate_HF_M01_metadata","validate_HF_M01_config_tokenizer_generation_via_real_hf_job","materialize_HF_M01_adapter","materialize_single_fastapi_gateway","readback_HF_M01_adapter_gateway"],
+  "in_progress": ["HF_M01_serving_compute_dataset_router_enchufe_real_call"],
   "pending": ["HF_M02_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
   "gaps_flags": [
     {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only"},
-    {"id":"GAP-HF-M01-SERVING-001","type":"SERVING_ACCELERATOR_ADAPTER_FASTAPI_NOT_YET_VERIFIED","evidence":"Job 6aa26cc321047bf1b0371f28 validates config/tokenizer/generation/provider metadata only; no Router hot-path call yet"},
+    {"id":"GAP-HF-M01-SERVING-001","type":"RUNTIME_ROUTER_ENCHUFE_CALL_NOT_YET_VERIFIED","evidence":"adapter and FastAPI gateway code/read-back verified; live inference/hot-path still unverified"},
     {"id":"GAP-BEHAVIOR-CONTRACT-001","type":"BEHAVIOR_POLICY_NOT_RECOVERED"},
     {"id":"GAP-R004-EXTRACTION-001","type":"CANONICAL_PDF_BINARY_NOT_MATERIALIZED"},
     {"id":"GAP-C03-CONTRACT-001","type":"CONFIG_FIELDS_NOT_DEFINED"},
@@ -23,20 +23,20 @@
   ],
   "evidence": [
     "HF Job 6aa2513d5527934177ebfaad certified 20 public non-gated transformers text-generation model IDs",
-    "HF Job 6aa26cc321047bf1b0371f28 COMPLETED on cpu-upgrade; config.json/tokenizer_config.json/generation_config.json read-back; Qwen3ForCausalLM; 751632384 BF16 params; provider featherless-ai live conversational",
-    "model index commit 6722b9786c454f92fa4913e93336583757af2730",
-    "model_registry.json V3 commit 8ce5ceaa98fcf62c7b6ba2d47b067edaaa6b4d4e; read-back blob bc715663a068179898149090c50b3179ce869b18",
-    "Official HF Jobs configuration: https://huggingface.co/docs/hub/en/jobs-configuration"
+    "HF Job 6aa26cc321047bf1b0371f28 COMPLETED; HF-M01 config/tokenizer/generation/provider metadata validated",
+    "HF adapter commit 70b2a7d4b5ee419999e3b6f436e219370141d294; blob 3d89e6e705fb30a55ca5ae72db05538bdabbabb7",
+    "FastAPI gateway commit ea0392a58ce6391514471926a315a6ebd9928521; blob a7a2c16019adee69de597ec0abd251912a8a11ca",
+    "model_registry V4 commit 3de1df105276080ae8c94067816d2e190c8b18df; blob ab125ff486f175df1d2643972df10c7e33669386",
+    "Official HF InferenceClient docs confirm OpenAI-compatible chat_completion and provider routing"
   ],
   "rules": {"input_literal":true,"one_node_at_a_time":true,"evidence_required":true,"no_monolith":true,"reuse_first":true,"steps_limit":3},
   "last_delta": {
-    "id":"RIU-0036",
-    "decision":"HF_M01_CONFIG_TOKENIZER_GENERATION_VALIDATED_WITH_REAL_HF_JOB",
-    "verify_final":"PASS_CONFIGURATION_ONLY_SERVING_PENDING",
+    "id":"RIU-0037",
+    "decision":"HF_M01_ADAPTER_AND_SINGLE_FASTAPI_GATEWAY_MATERIALIZED_READBACK_VERIFIED",
+    "verify_final":"PASS_CODE_READBACK_ONLY_RUNTIME_HOT_PATH_PENDING",
     "council12":"PASS",
-    "refutations":["Config/tokenizer read-back does not prove inference","Live HF provider does not prove Router FastAPI hot path","cpu-upgrade validation does not prove final accelerator choice"],
+    "refutations":["adapter code presence does not prove provider inference","FastAPI route presence does not prove Enchufe/Router wiring","HF_TOKEN fail-closed behavior means authenticated runtime remains unverified"],
     "cross_check":"PASS",
-    "coda":"KEEP_HF_M01_NOT_READY_UNTIL_SERVING_AND_ROUTER_CALL_VERIFIED",
-    "job_id":"6aa26cc321047bf1b0371f28"
+    "coda":"KEEP_HF_M01_SERVING_RUNTIME_PENDING"
   }
 }
