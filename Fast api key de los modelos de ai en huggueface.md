@@ -13,7 +13,7 @@ Las API keys reales NO se guardan en este archivo ni en ningún commit. El Route
 - Gateway FastAPI único + Enchufe Gate + RedUniversal: hot-path determinista HF-M01 verificado.
 - HF-M02 FastAPI→Enchufe→Router→adapter validado en Job `6aa2cf4f21047bf1b0372e67`: HTTP 200 y `FASTAPI_ENCHUFE_ROUTER_M02_OK=True`.
 - Provider hosted auth HF-M01: FLAG; Job `6aa2985921047bf1b03725ed` recibió 403 por permisos insuficientes para Inference Providers; secreto redactado.
-- HF-M02 storage RW persistente sigue PENDING; NO READY.
+- HF-M02 storage RW persistente: FLAG/GAP; Job `6aa2ebc15527934177ec1eb6` recibió 403 al crear Storage Bucket porque la credencial autorizada carece de permiso create/write; secreto protegido no expuesto; HF-M02 NO READY.
 - APIKeyGuard/API Key Manager: PENDING Paso 3.
 - `PLAINTEXT_KEYS: NOT_GENERATED_YET`.
 
