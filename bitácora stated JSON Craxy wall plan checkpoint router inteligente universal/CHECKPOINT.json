@@ -1,11 +1,11 @@
 {
-  "checkpoint":"router-universal-p01-hf-m02-storage-completion",
+  "checkpoint":"router-universal-p01-hf-m03-real-compute",
   "contract":"tel.workflow/v3",
   "mode":"FAIL_CLOSED_LOOP",
-  "verified":{"hf_m01_local_compute":"6aa288a521047bf1b0372324 COMPLETED","hf_m01_hot_path":"6aa297195527934177ec0aed COMPLETED; 2 passed","hf_m01_dataset_storage":"6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k ro mount","provider_auth_attempt":"6aa2985921047bf1b03725ed ERROR; 403 insufficient inference-provider permission","hf_m02_local_compute":"6aa2a4f25527934177ec0e01 COMPLETED","hf_m02_integrated_hot_path":"6aa2cf4f21047bf1b0372e67 COMPLETED; dataset mount True; 16 files; HTTP 200; FASTAPI_ENCHUFE_ROUTER_M02_OK True; GPT2LMHeadModel; 124439808 params"},
-  "current":"P01_HF_M02_STORAGE_COMPLETION",
-  "next_delta":"validate persistent RW Storage Bucket/output for HF-M02; keep HF-M01 provider-auth FLAG open",
-  "next_if_pass":"advance HF-M03 1x1 without promoting incomplete models",
+  "verified":{"hf_m01_local_compute":"6aa288a521047bf1b0372324 COMPLETED","hf_m01_hot_path":"6aa297195527934177ec0aed COMPLETED; 2 passed","hf_m01_dataset_storage":"6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k ro mount","provider_auth_attempt":"6aa2985921047bf1b03725ed ERROR; 403 insufficient inference-provider permission","hf_m02_local_compute":"6aa2a4f25527934177ec0e01 COMPLETED","hf_m02_integrated_hot_path":"6aa2cf4f21047bf1b0372e67 COMPLETED; dataset mount True; 16 files; HTTP 200; FASTAPI_ENCHUFE_ROUTER_M02_OK True; GPT2LMHeadModel; 124439808 params","hf_m02_rw_storage_attempt":"6aa2ebc15527934177ec1eb6 ERROR; 403 read access but missing required bucket write/create permission"},
+  "current":"P01_HF_M03_REAL_COMPUTE",
+  "next_delta":"validate HF-M03 real compute in HF Jobs; keep HF-M01 provider-auth and HF-M02 RW storage auth as FLAGs",
+  "next_if_pass":"continue HF-M03 adapter/dataset/FastAPI without promoting incomplete models",
   "next_if_gap":"register FLAG/GAP and apply materially different StrategyDelta",
   "status":"ACTIVE_LOOP"
 }
