@@ -1,51 +1,66 @@
-# Router Inteligente Universal — Arquitectura y método de trabajo
+# Router Inteligente Universal — Arquitectura y estado de integración
 
 Contrato operativo: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 
 ## 1. Objetivo
-Backend Python 95% determinista / 5% LLM. El Router no inventa DAGs: clasifica la tarea y activa una plantilla fija autorizada. Todo destino/origen entra por Enchufe Universal como Conector.
+Backend Python 95% determinista / 5% LLM. El Router no inventa DAGs: clasifica la tarea y activa una plantilla fija autorizada. Todo destino/origen entra por Enchufe Universal como `Conector`.
 
-## 2. Flujo funcional
+## 2. Flujo canónico
 `INPUT -> classifier -> template DAG fija -> validator/Enchufe Gate -> Router/RedUniversal -> worker/conector -> destino -> verify/state`
 
 La IA puede producir contenido dentro de nodos autorizados, pero no crear, borrar, reordenar ni sustituir el DAG.
 
 ## 3. Plan autorizado — solo 3 pasos
-1. **Componentes + Hugging Face/LLM:** componentes centralizados; owner público HF auditado; privados/endpoints sin `model_id` confirmado permanecen FLAG.
-2. **Cableado + poda + faltantes:** ACTIVE. `REUSE > PATCH > ADAPT > GENERATE`; conectar por Enchufe Universal; separar contracts/adapters/plugins/registry/loader/guards/tests.
-3. **Test integral:** Hugging Face + GitHub + API + agentes con evidencia real.
+1. **Hugging Face + modelos + FastAPI:** usar HF Jobs como cómputo real; identificar hasta 20 modelos reales, su especialidad, procesador/acelerador, dataset/storage y adapter; un gateway FastAPI único con adapters por modelo.
+2. **Integración GitHub/C01-C23:** mover/integrar componentes, podar duplicación y completar solo faltantes con `REUSE > PATCH > ADAPT > GENERATE`.
+3. **API keys de agentes + test E2E:** API Key Manager propio, hash/revocación/rotación y prueba `agente -> FastAPI -> Router -> HF/GitHub/API -> resultado`.
 
-## 4. Arquitectura de trabajo LOOP
-`INPUT LITERAL -> SHERIFF -> STATE/CHECKPOINT/PLAN/RECOVERY -> RESEARCH/REUSE -> PLAN 1x1 -> EXECUTE -> VERIFY/REFUTE -> PERSIST -> NEXT`
+## 4. Código fuente central actual
+`router inteligente universal/`
 
-## 5. Evidencia mínima
-`ruta + commit/tree/blob SHA + read-back + test/log + URL/SHA externo cuando aplique`.
+Raíces verificadas: `domain/`, `enchufe/`, `engine/`, `integration/`, `red/`, `tests/` y `Componente open soure router inteligente universal/`.
 
-## 6. Estado Hugging Face
-Bridge HF REUSE confirmado. HF Job verificó 0 modelos públicos del owner `COMAND-CENTER-1`; registry sin `model_id` HF. No se generan adapters por modelos supuestos.
+## 5. Componentes de arquitectura ya materializados/verificados
+- C05 Enchufe Schema + validator v2: materializado/verificado.
+- C15 Enchufe Gate: REUSE/PATCH preservando v1.5 y delegando v2.
+- C16 Conectores: PARTIAL pero ampliado con HuggingFace, DB, GitLab, MCPApp, VPS y Memoria.
+- C17 RedUniversal: REUSE verificado.
+- C19 Backup: fuente `respaldo.py.pdf` localizada; extracción aún pendiente, no PASS.
+- `ConectorMemoria` cableado en registry; test HF Job previo: `3 passed`.
 
-## 7. Estado Paso 2
-- Enchufe Gate v1.5 reutilizado y verificado.
-- Conectores baseline reutilizados sin reescribir HTTP/MCP.
-- `ConectorHuggingFace` v6 añadido sobre `ConectorHTTP`; contrato verificado 3/3.
-- `ConectorDB` v6 añadido siguiendo v6 §4.4 y TASK-03 R-002: DSN únicamente por env; adapters lazy para Postgres/MySQL/Redis; fail-closed para motor/params/acción inválidos.
-- `ConectorGitLab` y `ConectorMCPApp` adaptados/cableados en registry y verificados contractualmente.
-- `ConectorVPS` reutilizado desde `red/conectores.py`, cableado en registry y verificado sin crear adapter duplicado.
-- `ConectorMemoria` reutilizado desde `red/conectores.py` y cableado como `memoria` en `connector_registry.py`; registry commit `3987856e107e848e111d96317e3a9c92c40a6cbb`, blob `878d0fb69fce49b62fc9e2d934b3d8896c5cc4c9`.
-- Test Memoria: `tests/test_conector_memoria_v6.py`, commit `de82bd75e630f13141df7b2b2b74131163e52200`, blob `0263e511694b7a45b3b8ffaec0f3d0e7b9e2d582`; HF Job `6aa1318d32d5d0c22c5afe2c` descargó archivos exactos de `main` y produjo `3 passed in 0.04s`.
-- C05 schema + validator v2 y R-003 RedUniversal están materializados/verificados; C15 Gate preserva v1.5 y delega v2.
-- C19/R-004: StrategyDelta forense localizó `Documentos proyectos router inteligente universal/lote 1 documentos proyecto/respaldo.py.pdf`, blob `2ee8d937493d1923b2c1e5d6cc294a1513df3c91`, 27576 bytes. Esto refuta `fuente totalmente ausente`, pero el PDF binario todavía no fue extraído/verificado; estado `SOURCE_PDF_FOUND / EXTRACTION_PENDING` y no se materializa producción.
-- C03: donor `pydantic-settings` válido, pero contrato de campos/env aún insuficiente; no generar configuración por inferencia.
+## 6. Hugging Face — estado real
+- Bridge existente: `huggueface/bridge/router_hf_bridge.py`.
+- Manifest existente: `huggueface/manifest.yml`.
+- HF Jobs confirmado como cómputo real del proyecto.
+- Cuenta conectada: `COMAND-CENTER-1`.
+- Auditoría pública previa devolvió `public_model_count=0`; esto NO demuestra que no existan modelos privados.
+- GAP vigente: catálogo privado/model IDs aún no certificado desde el Job porque el token no fue inyectado automáticamente.
+- Prohibido inventar los 20 model_id. El índice de modelos queda PENDING hasta read-back real.
 
-Los PASS actuales demuestran contratos/adapters/auditorías, no servicios remotos reales. Esos pertenecen al Paso 3.
+## 7. FastAPI / LLM
+Arquitectura aprobada: **un solo gateway FastAPI** del Router, no 20 servidores independientes.
 
-Siguiente delta 1×1: extraer/verificar `respaldo.py.pdf`; solo con código+ownership demostrados aplicar REUSE exacto a `infrastructure/backup/respaldo.py`, test fijo y persistencia. Si el binario sigue inaccesible, mantener GAP y elegir otra tarea P02 independiente con contrato suficiente.
+`/v1/models` -> registry de modelos
+`/v1/chat/completions` -> Enchufe -> Router -> model adapter
+`/health` -> salud del gateway/registry
 
-## 8. Regla de cierre
+Cada modelo tendrá `model_id`, `specialty`, `adapter`, `accelerator`, `dataset/storage binding`, `status` y evidencia.
+
+## 8. Integración C01-C23 pendiente
+Pendiente principal: C01-C04, C06-C14 según estado real, C18 y C20-C23; cada uno debe cruzarse contra donors locales antes de generar código.
+
+No se considera integrado por estar descargado. Cada componente debe tener wiring + test + read-back.
+
+## 9. Motores autorizados para adquirir/mover componentes
+Único sistema permitido si hace falta código externo: `frontend@ef0669bbc753861bfc33b86548f3f90c0f3d8df9/➡️📂motores de descarga extracción copiado movimiento archivos fromtend/`.
+
+Motores inmutables, COPY_ONLY, sin LFS, sin force, destino explícito, allowlist y SHA/read-back obligatorios.
+
+## 10. Criterio de cierre
 `archivo presente != integrado`
 `componente descargado != adaptado`
-`PDF presente != código recuperado`
-`codigo escrito != ejecutado`
-`mock/injection != test remoto real`
+`modelo listado != endpoint probado`
+`API key creada != autenticación probada`
+`mock != test remoto real`
 
-Solo `VERIFIED_CLOSED` después del test integral del Paso 3.
+Solo `VERIFIED_CLOSED` después del Paso 3 E2E real.
