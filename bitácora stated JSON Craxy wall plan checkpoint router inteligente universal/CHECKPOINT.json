@@ -3,18 +3,17 @@
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
-    "components_destination": "router inteligente universal/Componente open soure router inteligente universal/",
     "hf_jobs_compute": "cpu-upgrade operational",
-    "hf_public_20_catalog": "HF Job 6aa2513d5527934177ebfaad COUNT=20; public; non-gated; transformers; text-generation",
+    "hf_public_20_catalog": "HF Job 6aa2513d5527934177ebfaad COUNT=20",
     "hf_m01_job": "6aa26cc321047bf1b0371f28 COMPLETED",
-    "hf_m01_config": "Qwen3ForCausalLM; qwen3; BF16; max_position_embeddings=40960; 751632384 params",
-    "hf_m01_tokenizer_generation": "tokenizer_config.json and generation_config.json downloaded/read-back",
-    "hf_m01_provider": "featherless-ai live; conversational",
-    "private_catalog_boundary": "still OPEN; no implicit HF_TOKEN"
+    "hf_m01_config": "Qwen3ForCausalLM; qwen3; BF16; 751632384 params",
+    "hf_m01_adapter": "commit 70b2a7d4b5ee419999e3b6f436e219370141d294; blob 3d89e6e705fb30a55ca5ae72db05538bdabbabb7",
+    "hf_fastapi_gateway": "commit ea0392a58ce6391514471926a315a6ebd9928521; blob a7a2c16019adee69de597ec0abd251912a8a11ca",
+    "hf_registry_v4": "commit 3de1df105276080ae8c94067816d2e190c8b18df; blob ab125ff486f175df1d2643972df10c7e33669386"
   },
   "current": "P01_HF_M01_SERVING_VALIDATION",
-  "next_delta": "HF-M01 serving compute/accelerator -> dataset/storage -> adapter -> FastAPI registry -> real Router call/read-back",
+  "next_delta": "verify HF-M01 runtime inference + Enchufe/Router hot path + dataset/storage binding",
   "next_if_pass": "promote HF-M01 then validate HF-M02 1x1",
-  "next_if_gap": "StrategyDelta distinct; preserve no-READY and continue independent safe validation",
+  "next_if_gap": "StrategyDelta distinct; preserve no-READY",
   "status": "ACTIVE_LOOP"
 }
