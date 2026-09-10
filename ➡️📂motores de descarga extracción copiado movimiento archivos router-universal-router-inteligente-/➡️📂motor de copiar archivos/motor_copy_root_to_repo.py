@@ -24,7 +24,7 @@ ALLOWED_FILES = (
 
 SOURCE_ROOT = pathlib.Path(os.getenv("SOURCE_ROOT", "")).expanduser()
 DEST_ROOT = pathlib.Path(os.getenv("DEST_ROOT", "")).expanduser()
-DEST_REPO_NAME = os.getenv("DEST_REPO_NAME", "").strip()
+DEST_REPO_NAME = os.getenv("DEST_REPO_NAME", "router-universal-router-inteligente-").strip()
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "2"))
 
 
