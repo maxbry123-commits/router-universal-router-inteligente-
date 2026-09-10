@@ -4,15 +4,17 @@
 Este índice registra únicamente modelos observados/validados. `CATALOG_OBSERVED` no significa `READY`.
 
 ## Evidencia actual
-HF Job `6aa2513d5527934177ebfaad` (`cpu-upgrade`) enumeró exactamente 20 modelos públicos, no gated, `library=transformers`, `pipeline=text-generation`.
+Catálogo público 20: HF Job `6aa2513d5527934177ebfaad`.
 HF-M01 config/tokenizer/generation: Job `6aa26cc321047bf1b0371f28` COMPLETED.
 HF-M01 inferencia local real: Job `6aa288a521047bf1b0372324` COMPLETED.
-HF-M01 Enchufe/Router hot-path determinista: Job `6aa297195527934177ec0aed` COMPLETED, read-back desde `main`, `2 passed in 1.25s`, `RIU_HOT_PATH_TEST_RC 0`.
+HF-M01 Enchufe/Router hot-path determinista: Job `6aa297195527934177ec0aed` COMPLETED, `2 passed`.
+HF-M01 dataset/storage RO: `HuggingFaceH4/ultrachat_200k` montado en Job `6aa2983921047bf1b03725eb`, binding OK, manifest SHA256 `241f6f1a9ac692d9bb2c1556e2be369c15d6a53401256749d34f3e1a6fc0b640`.
+HF-M01 provider auth: Job `6aa2985921047bf1b03725ed` ERROR 403 por permiso Inference Providers insuficiente; secreto redactado.
 
 ## Registry observado — 20 modelos
 | Slot | model_id | especialidad | adapter | compute/acelerador | dataset/storage | FastAPI | estado |
 |---|---|---|---|---|---|---|---|
-| HF-M01 | Qwen/Qwen3-0.6B | text-generation/conversational | ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED | cpu-upgrade REAL_INFERENCE_VERIFIED | PENDING_BINDING | HOT_PATH_DETERMINISTIC_TESTED | DATASET_AUTH_PENDING |
+| HF-M01 | Qwen/Qwen3-0.6B | text-generation/conversational | ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED | cpu-upgrade REAL_INFERENCE_VERIFIED | ultrachat_200k RO_BINDING_VERIFIED | HOT_PATH_DETERMINISTIC_TESTED | PROVIDER_AUTH_FLAGGED |
 | HF-M02 | openai-community/gpt2 | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M03 | Qwen/Qwen3-8B | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M04 | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF | text-generation/code | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
@@ -33,11 +35,5 @@ HF-M01 Enchufe/Router hot-path determinista: Job `6aa297195527934177ec0aed` COMP
 | HF-M19 | Qwen/Qwen-72B | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M20 | Qwen/Qwen2.5-7B-Instruct-AWQ | text-generation/instruct | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 
-## Cableado aprobado
-`FastAPI gateway -> Enchufe Gate -> RedUniversal -> model registry/adapter -> Hugging Face -> verifier`.
-
 ## Siguiente cola 1×1
-HF-M01: dataset/storage binding -> provider hosted autenticado por hot-path -> solo después READY y HF-M02.
-
-## GAP privado
-`GAP-HF-CATALOG-001` sigue abierto únicamente para catálogo privado de `COMAND-CENTER-1`; no bloquea validación pública 1×1.
+Resolver `FLAG-HF-PROVIDER-AUTH-001`; HF-M01 permanece NO READY. Si la credencial autorizada no cambia, continuar solo P01 independiente seguro sin falsificar PASS.
