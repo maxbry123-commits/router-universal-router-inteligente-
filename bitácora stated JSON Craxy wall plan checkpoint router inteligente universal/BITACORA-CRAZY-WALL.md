@@ -36,5 +36,30 @@ Verificación/refutación:
 
 Council12 PASS; cross-check PASS; CODA `KEEP_HF_M01_SERVING_RUNTIME_PENDING`; verify_final=`PASS_CODE_READBACK_ONLY_RUNTIME_HOT_PATH_PENDING`.
 
+## RIU-0038 — HF-M01 INFERENCIA REAL EN HF JOB
+INPUT literal y fuentes de verdad releídas antes del delta. Prioridades: (1) comprobar compute material HF-M01; (2) preservar fail-closed del hot-path no demostrado.
+
+Investigación:
+- documentación oficial HF: `InferenceClient.chat_completion` / OpenAI-compatible Inference Providers exige autorización de inferencia para hosted routing;
+- comunidad Hugging Face: Qwen/provider conversational debe probarse mediante chat-completion y no confundirse con `text_generation`.
+
+Ejecución material:
+- HF Job `6aa288a521047bf1b0372324`, flavor `cpu-upgrade`, stage `COMPLETED`;
+- `AutoTokenizer.from_pretrained('Qwen/Qwen3-0.6B')`;
+- `AutoModelForCausalLM.from_pretrained(..., device_map='cpu')`;
+- generación determinista con marker esperado;
+- read-back: `REPLY=RIU_HF_M01_OK`;
+- `HF_M01_REAL_COMPUTE_OK=True`;
+- `LOAD_AND_INFER_SECONDS=7.108`;
+- `PARAMS=596049920`; `DEVICE=cpu`.
+- evidencia persistida: `router inteligente universal/integration/huggingface/RIU-0038-HF-M01-REAL-COMPUTE.md`, commit `d798b6b878d3876ce866584647fd41b9cf8c6c23`.
+
+3 refutaciones:
+1. Inferencia local real en HF Job ≠ FastAPI→Enchufe→Router verificado.
+2. Compute CPU real ≠ hosted provider auth verificado.
+3. Inferencia del modelo ≠ dataset/storage binding verificado.
+
+Council12 PASS; cross-check PASS; CODA `PASS_REAL_HF_JOB_COMPUTE_KEEP_ROUTER_HOT_PATH_PENDING`; verify_final=`PASS_HF_M01_REAL_COMPUTE_ONLY_ROUTER_ENCHUFE_DATASET_PENDING`.
+
 ## NEXT
-HF-M01 1×1: inferencia runtime autenticada → Enchufe/Router hot path → dataset/storage/acelerador → solo entonces READY y HF-M02.
+HF-M01 1×1: demostrar `FastAPI -> Enchufe Universal -> Router -> HF-M01` con código persistido + dataset/storage → solo entonces READY y HF-M02.
