@@ -18,13 +18,14 @@ Raíces verificadas: `domain/`, `enchufe/`, `engine/`, `integration/`, `red/`, `
 - C17 RedUniversal: reuse verificado.
 - HF bridge + manifest presentes.
 - HF Jobs adoptado como compute real.
-- ConectorMemoria con test previo en HF Job: 3 passed.
+- Catálogo público certificado de 20 modelos: Job `6aa2513d5527934177ebfaad`.
+- HF-M01 `Qwen/Qwen3-0.6B`: Job `6aa26cc321047bf1b0371f28` COMPLETED; config/tokenizer/generation validados. Sigue NO READY hasta serving+FastAPI+llamada real.
 
 ## GAP vigente
-HF catalog privado no certificado. Auditoría pública dio 0 modelos públicos; no se inventan model IDs. Falta resolver credencial segura para enumerar privados y cerrar lista real de hasta 20 modelos.
+`GAP-HF-CATALOG-001` queda restringido al catálogo privado de `COMAND-CENTER-1`; no bloquea el catálogo público. `GAP-HF-M01-SERVING-001` permanece hasta validar serving compute/acelerador, dataset/storage, adapter, FastAPI y hot path Router.
 
 ## Plan único — 3 pasos
-1. P01 ACTIVE — Hugging Face: modelos reales + compute/aceleradores + dataset/storage + adapters + gateway FastAPI único.
+1. P01 ACTIVE — completar HF-M01 y repetir 1×1 HF-M02..HF-M20; luego gateway FastAPI único.
 2. P02 PENDING — GitHub/C01-C23: cablear/podar/completar únicamente faltantes con REUSE>PATCH>ADAPT>GENERATE.
 3. P03 PENDING — API Key Manager agentes + generación one-time + test E2E.
 
