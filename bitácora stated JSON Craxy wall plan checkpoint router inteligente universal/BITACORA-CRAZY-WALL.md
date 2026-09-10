@@ -31,5 +31,13 @@ Baseline, componentes, Handoff, plan 3 pasos, HF, Gate/conectores v6/registry/va
 ### Verificación obligatoria
 Nada pasa a PASS sin `ruta + SHA/diff + read-back + test/log + URL`.
 
+## RIU-0033 — HF COMPUTE RECONFIRMATION / CATALOG RETRY
+- Attempt catálogo: Job `6aa24e7921047bf1b0371acc`, `cpu-upgrade`, terminó ERROR antes de producir inventario utilizable; no se promovió ningún `model_id`.
+- StrategyDelta: aislar compute del catálogo. Job `6aa24ea35527934177ebfa5c`, `cpu-upgrade`, `python:3.12-slim` → COMPLETED con salida `HF_JOB_COMPUTE_OK`.
+- Evidencia: https://huggingface.co/jobs/COMAND-CENTER-1/6aa24ea35527934177ebfa5c
+- Decisión: compute real HF reconfirmado; `GAP-HF-CATALOG-001` sigue OPEN. P02 solo puede avanzar por tareas independientes seguras. P03 API keys sigue PENDING hasta gateway/auth verificable.
+- Refutaciones: compute success ≠ catálogo; fallo de catálogo ≠ permiso para inventar modelos; API key sin hot path verificado ≠ integración.
+- `verify_final=PASS_COMPUTE_ONLY_CATALOG_INCONCLUSIVE`.
+
 ## NEXT
 Cerrar P01 sin sobreingeniería; resolver token/catalog boundary por StrategyDelta y registrar solo modelos realmente observados. Después P02 y P03 en ese orden.
