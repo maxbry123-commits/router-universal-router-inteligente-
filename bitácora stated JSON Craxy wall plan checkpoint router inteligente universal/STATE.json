@@ -5,11 +5,11 @@
   "repo": "maxbry123-commits/router-universal-router-inteligente-",
   "branch": "main",
   "status": "ACTIVE_LOOP",
-  "current_node": "P01_HF_M01_PROVIDER_AUTH_RESOLUTION",
+  "current_node": "P01_HF_M02_INDEPENDENT_VALIDATION",
   "progress_percent": 98,
-  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models","reconcile_model_registry_to_certified_20","validate_HF_M01_metadata","validate_HF_M01_config_tokenizer_generation_via_real_hf_job","materialize_HF_M01_adapter","materialize_single_fastapi_gateway","readback_HF_M01_adapter_gateway","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding"],
-  "in_progress": ["HF_M01_authenticated_provider_permission_resolution"],
-  "pending": ["HF_M02_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
+  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models","reconcile_model_registry_to_certified_20","validate_HF_M01_metadata","validate_HF_M01_config_tokenizer_generation_via_real_hf_job","materialize_HF_M01_adapter","materialize_single_fastapi_gateway","readback_HF_M01_adapter_gateway","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding","validate_HF_M02_real_local_inference_via_hf_job"],
+  "in_progress": ["HF_M02_dataset_storage_adapter_fastapi_validation"],
+  "pending": ["HF_M01_authenticated_provider_permission_resolution_FLAGGED","HF_M03_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
   "gaps_flags": [
     {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only"},
     {"id":"FLAG-HF-PROVIDER-AUTH-001","type":"TOKEN_SCOPE_INSUFFICIENT_FOR_INFERENCE_PROVIDERS","evidence":"HF Job 6aa2985921047bf1b03725ed reached router.huggingface.co/v1/chat/completions with secret redacted and received HTTP 403 insufficient permissions"},
@@ -27,17 +27,17 @@
     "HF Job 6aa297195527934177ec0aed COMPLETED; Enchufe Gate + RedUniversal deterministic hot path 2 passed",
     "HF Job 6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k mounted read-only; 10 files; manifest sha256 241f6f1a9ac692d9bb2c1556e2be369c15d6a53401256749d34f3e1a6fc0b640; binding OK",
     "HF Job 6aa2985921047bf1b03725ed ERROR; authenticated provider call reached router endpoint but token scope was insufficient; secret redacted",
-    "RIU-0040 audit commit dbcd504acc500e31d36abcddaf103434d87866e9"
+    "HF Job 6aa2a4f25527934177ec0e01 COMPLETED; openai-community/gpt2 real local inference; GPT2LMHeadModel; cpu; 124439808 runtime parameters; HF_M02_REAL_COMPUTE_OK True"
   ],
   "rules": {"input_literal":true,"one_node_at_a_time":true,"evidence_required":true,"no_monolith":true,"reuse_first":true,"steps_limit":3},
   "last_delta": {
-    "id":"RIU-0040",
-    "decision":"HF_M01_DATASET_STORAGE_BINDING_VERIFIED_PROVIDER_AUTH_PERMISSION_FLAGGED",
-    "verify_final":"PASS_DATASET_BINDING_PROVIDER_AUTH_FLAGGED",
+    "id":"RIU-0041",
+    "decision":"HF_M02_REAL_COMPUTE_VERIFIED_INDEPENDENT_SAFE_P01_WORK",
+    "verify_final":"PASS_HF_M02_REAL_COMPUTE_ONLY",
     "council12":"PASS",
-    "refutations":["dataset mount read-only does not prove persistent output bucket","token present does not imply Inference Providers permission","HF-M01 remains NO READY while provider auth fails"],
+    "refutations":["HF-M02 compute does not prove adapter/FastAPI routing","HF-M02 compute does not prove dataset/storage binding","HF-M01 remains NO READY while provider auth flag is open"],
     "cross_check":"PASS",
-    "coda":"CLOSE_DATASET_BINDING_REGISTER_PROVIDER_AUTH_FLAG_KEEP_HF_M01_NO_READY",
-    "jobs":["6aa2983921047bf1b03725eb","6aa2985921047bf1b03725ed"]
+    "coda":"PERSIST_HF_M02_COMPUTE_KEEP_BOTH_MODELS_NO_READY",
+    "jobs":["6aa2a4f25527934177ec0e01"]
   }
 }
