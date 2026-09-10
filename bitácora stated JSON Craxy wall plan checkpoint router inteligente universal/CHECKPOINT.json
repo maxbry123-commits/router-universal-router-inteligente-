@@ -1,17 +1,20 @@
 {
-  "checkpoint": "router-universal-p01-hf-20-public-models-observed",
+  "checkpoint": "router-universal-p01-hf-m01-serving-validation",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
     "components_destination": "router inteligente universal/Componente open soure router inteligente universal/",
     "hf_jobs_compute": "cpu-upgrade operational",
     "hf_public_20_catalog": "HF Job 6aa2513d5527934177ebfaad COUNT=20; public; non-gated; transformers; text-generation",
-    "hf_model_index_commit": "49962acfc50aa9b84e88410693a66d3858ea110c",
+    "hf_m01_job": "6aa26cc321047bf1b0371f28 COMPLETED",
+    "hf_m01_config": "Qwen3ForCausalLM; qwen3; BF16; max_position_embeddings=40960; 751632384 params",
+    "hf_m01_tokenizer_generation": "tokenizer_config.json and generation_config.json downloaded/read-back",
+    "hf_m01_provider": "featherless-ai live; conversational",
     "private_catalog_boundary": "still OPEN; no implicit HF_TOKEN"
   },
-  "current": "P01_HF_VALIDATE_20",
-  "next_delta": "validate model 1x1: metadata/processor -> compute -> dataset/storage -> adapter -> FastAPI -> real call",
-  "next_if_pass": "advance next model until 20 validated, then close P01",
-  "next_if_gap": "StrategyDelta distinct; continue next independent safe model/task without invented PASS",
+  "current": "P01_HF_M01_SERVING_VALIDATION",
+  "next_delta": "HF-M01 serving compute/accelerator -> dataset/storage -> adapter -> FastAPI registry -> real Router call/read-back",
+  "next_if_pass": "promote HF-M01 then validate HF-M02 1x1",
+  "next_if_gap": "StrategyDelta distinct; preserve no-READY and continue independent safe validation",
   "status": "ACTIVE_LOOP"
 }
