@@ -8,6 +8,7 @@ PROVIDERS = {
     "cerebras": ("https://api.cerebras.ai/v1", "CEREBRAS_API_KEY"),
     "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY"),
     "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
+    "huggingface": ("https://router.huggingface.co/v1", "HF_TOKEN"),
 }
 
 
