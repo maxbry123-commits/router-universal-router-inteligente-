@@ -1,19 +1,11 @@
 {
-  "checkpoint": "router-universal-p01-hf-m01-dataset-storage-provider-validation",
-  "contract": "tel.workflow/v3",
-  "mode": "FAIL_CLOSED_LOOP",
-  "verified": {
-    "hf_jobs_compute": "cpu-upgrade operational",
-    "hf_public_20_catalog": "HF Job 6aa2513d5527934177ebfaad COUNT=20",
-    "hf_m01_config_job": "6aa26cc321047bf1b0371f28 COMPLETED",
-    "hf_m01_real_compute_job": "6aa288a521047bf1b0372324 COMPLETED; real local inference",
-    "hf_m01_hot_path_code": "commits 86f5f545f070dc3180652e73265f6fc77ba1e514 + 6da8ecd573986bc4e77a2c749e37d9f34955bd57",
-    "hf_m01_hot_path_test": "HF Job 6aa297195527934177ec0aed COMPLETED; 2 passed in 1.25s; RIU_HOT_PATH_TEST_RC 0",
-    "riu_0039_audit": "commit f08191ec91f0d74850799b38b44298bc77f0cfe9"
-  },
-  "current": "P01_HF_M01_DATASET_STORAGE_PROVIDER_VALIDATION",
-  "next_delta": "bind and verify dataset/storage, then authenticated provider hot-path without exposing secrets",
-  "next_if_pass": "promote HF-M01 then validate HF-M02 1x1",
-  "next_if_gap": "StrategyDelta distinct; preserve no-READY",
-  "status": "ACTIVE_LOOP"
+  "checkpoint":"router-universal-p01-hf-m01-provider-auth-resolution",
+  "contract":"tel.workflow/v3",
+  "mode":"FAIL_CLOSED_LOOP",
+  "verified":{"hf_m01_local_compute":"6aa288a521047bf1b0372324 COMPLETED","hf_m01_hot_path":"6aa297195527934177ec0aed COMPLETED; 2 passed","hf_m01_dataset_storage":"6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k ro mount; binding OK","provider_auth_attempt":"6aa2985921047bf1b03725ed ERROR; 403 insufficient inference-provider permission; secret redacted","riu_0040":"dbcd504acc500e31d36abcddaf103434d87866e9"},
+  "current":"P01_HF_M01_PROVIDER_AUTH_RESOLUTION",
+  "next_delta":"resolve authorized inference-provider credential scope without exposing secrets; otherwise continue only independent safe P01 work",
+  "next_if_pass":"promote HF-M01 then validate HF-M02 1x1",
+  "next_if_gap":"keep FLAG and NO READY",
+  "status":"ACTIVE_LOOP"
 }
