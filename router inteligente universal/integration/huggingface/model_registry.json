@@ -1,59 +1,36 @@
 {
-  "contract": "RIU-HF-MODEL-REGISTRY-V1",
+  "contract": "RIU-HF-MODEL-REGISTRY-V2",
   "source": "https://router.huggingface.co/v1/models",
-  "evidence_job": "6aa1ba1321047bf1b037097f",
-  "models": [
-    {
-      "model_id": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
-      "specialty": "code",
-      "provider_policy": "fastest",
-      "supports_tools": true,
-      "context_length": 262144,
-      "live_providers": ["novita", "featherless-ai"]
-    },
-    {
-      "model_id": "openai/gpt-oss-120b",
-      "specialty": "tools_general",
-      "provider_policy": "fastest",
-      "supports_tools": true,
-      "context_length": 131072,
-      "live_providers": ["groq", "novita", "cerebras", "nscale", "together", "fireworks-ai", "featherless-ai", "scaleway", "baseten", "ovhcloud", "deepinfra"]
-    },
-    {
-      "model_id": "Qwen/Qwen3-4B-Thinking-2507",
-      "specialty": "reasoning",
-      "provider_policy": "fastest",
-      "supports_tools": true,
-      "context_length": 262144,
-      "live_providers": ["nscale", "featherless-ai"]
-    },
-    {
-      "model_id": "Qwen/Qwen2.5-Coder-32B-Instruct",
-      "specialty": "code_fallback",
-      "provider_policy": "fastest",
-      "supports_tools": false,
-      "context_length": 131072,
-      "live_providers": ["nscale", "featherless-ai"]
-    },
-    {
-      "model_id": "deepseek-ai/DeepSeek-R1",
-      "specialty": "deep_reasoning",
-      "provider_policy": "fastest",
-      "supports_tools": true,
-      "context_length": 64000,
-      "live_providers": ["novita"]
-    },
-    {
-      "model_id": "zai-org/GLM-4.5",
-      "specialty": "general_reasoning",
-      "provider_policy": "fastest",
-      "supports_tools": true,
-      "context_length": null,
-      "live_providers": ["zai-org"]
-    }
-  ],
-  "security": {
+  "evidence_jobs": ["6aa245235527934177ebf8aa", "6aa245405527934177ebf8ac"],
+  "gateway": {
+    "provider": "huggingface",
+    "base_url": "https://router.huggingface.co/v1",
     "token_env": "HF_TOKEN",
-    "hardcoded_tokens": false
-  }
+    "fastapi_route": "/v1/chat/completions",
+    "adapter": "huggingface_openai_chat"
+  },
+  "models": [
+    {"model_id":"Qwen/Qwen3.8-27B","revision":"1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0","specialty":"multimodal_general","task":"image-text-to-text","library":"transformers","processor":"AutoProcessor","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"deepseek-ai/DeepSeek-V4-Flash-Vision-Exp","revision":"6821d6ad3681a4b137b066b76094fa82ebd0a380","specialty":"multimodal_reasoning","task":"image-text-to-text","library":"transformers","processor":"AutoProcessor","accelerator_hint":"gpu_fp8","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"zai-org/GLM-5.3-Flash","revision":"eb9eb208eb0d988989d07a6a12d0fdeb5f52574a","specialty":"multimodal_fast","task":"image-text-to-text","library":"transformers","processor":"AutoProcessor","accelerator_hint":"gpu_fp8","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"zai-org/GLM-5.3","revision":"aca966e4e02791568aa6a4ced368624b3d897f42","specialty":"general_reasoning","task":"text-generation","library":"transformers","processor":"AutoTokenizer","accelerator_hint":"gpu_fp8","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"inclusionAI/Ling-3.0-flash-Fin","revision":"4194bf7d6e4bf31c37a3ab2edfe140a4ac50ba28","specialty":"finance_agents","task":"text-generation","library":"custom_code","processor":"AutoTokenizer","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"moonshotai/Kimi-K3","revision":"f831ab66814297da540d832a5235f8e904f29d06","specialty":"multimodal_agents","task":"image-text-to-text","library":"transformers","processor":"AutoProcessor","accelerator_hint":"gpu_8bit","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"meta-llama/Llama-3.1-8B-Instruct","revision":"0e9e39f249a16976918f6564b8830bc894c89659","specialty":"general_chat","task":"text-generation","library":"transformers","processor":"AutoTokenizer","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions","gated":"manual"},
+    {"model_id":"inclusionAI/Ling-3.0-flash-VL","revision":"f1fefd96a2eb5bb68913b2bd88e3dd6156290c5d","specialty":"vision_language","task":"text-generation","library":"custom_code","processor":"AutoProcessor","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"deepseek-ai/DeepSeek-V4-Flash-0731","revision":"7872f01b1d1fe23eabc4c98b48bffcef5a386062","specialty":"fast_reasoning","task":"text-generation","library":"transformers","processor":"AutoTokenizer","accelerator_hint":"gpu_fp8","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"prism-ml/Ternary-Bonsai-27B-gguf","revision":"86e89f34c93201c3dfd5e5880fedb0022fc7e34d","specialty":"local_quantized_fallback","task":"text-generation","library":"llama.cpp","processor":"llama_cpp","accelerator_hint":"cuda_or_metal","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"meta-models/Muse-Glimmer-30B","revision":"a4e59da52a7bc87ae7251dd5545c0dd437c44b68","specialty":"multimodal_general","task":"image-text-to-text","library":"transformers","processor":"AutoProcessor","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"google/gemma-4-31B-it","revision":"842da3794eaa0b77d5f08bae87a17459d91ff475","specialty":"multimodal_instruction","task":"image-text-to-text","library":"transformers","processor":"AutoProcessor","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"openai/gpt-oss-120b","revision":"b5c939de8f754692c1647ca79fbf85e8c1e70f8a","specialty":"tools_general","task":"text-generation","library":"transformers","processor":"AutoTokenizer","accelerator_hint":"gpu_mxfp4","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"Qwen/Qwen3.6-35B-A3B","revision":"995ad96eacd98c81ed38be0c5b274b04031597b0","specialty":"multimodal_reasoning","task":"image-text-to-text","library":"transformers","processor":"AutoProcessor","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"openai/gpt-oss-20b","revision":"6cee5e81ee83917806bbde320786a8fb61efebee","specialty":"tools_fast","task":"text-generation","library":"transformers","processor":"AutoTokenizer","accelerator_hint":"gpu_mxfp4","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"deepseek-ai/DeepSeek-V4-Pro","revision":"b5968e9190ef611bbf34a7229255be88a0e937c1","specialty":"deep_reasoning","task":"text-generation","library":"transformers","processor":"AutoTokenizer","accelerator_hint":"gpu_fp8","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"deepseek-ai/DeepSeek-V4-Flash","revision":"60d8d70770c6776ff598c94bb586a859a38244f1","specialty":"reasoning_fast","task":"text-generation","library":"transformers","processor":"AutoTokenizer","accelerator_hint":"gpu_fp8","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"Qwen/Qwen3.5-9B","revision":"c202236235762e1c871ad0ccb60c8ee5ba337b9a","specialty":"multimodal_compact","task":"image-text-to-text","library":"transformers","processor":"AutoProcessor","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"inclusionAI/Ling-3.0-flash","revision":"e0dfe7cd0f6e3b572bbbc0a8a84947469e428cc3","specialty":"general_agents","task":"text-generation","library":"custom_code","processor":"AutoTokenizer","accelerator_hint":"gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"},
+    {"model_id":"ibm-granite/granite-4.2-3b","revision":"e459acceac81e5fe67c07d9cfc72329a332e7eb1","specialty":"reasoning_tool_calling_compact","task":"text-generation","library":"transformers","processor":"AutoTokenizer","accelerator_hint":"cpu_or_gpu","adapter":"huggingface_openai_chat","fastapi_route":"/v1/chat/completions"}
+  ],
+  "dataset": {"status":"PENDING_BOUND_DATASET_EVIDENCE","dataset_ref":null},
+  "security": {"token_env":"HF_TOKEN","hardcoded_tokens":false}
 }
