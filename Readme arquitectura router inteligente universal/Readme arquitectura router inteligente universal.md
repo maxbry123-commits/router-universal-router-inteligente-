@@ -3,64 +3,44 @@
 Contrato operativo: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`.
 
 ## 1. Objetivo
-Backend Python 95% determinista / 5% LLM. El Router no inventa DAGs: clasifica la tarea y activa una plantilla fija autorizada. Todo destino/origen entra por Enchufe Universal como `Conector`.
+Backend Python 95% determinista / 5% LLM. El Router clasifica la tarea y activa una plantilla DAG fija autorizada. Todo destino/origen entra por Enchufe Universal como `Conector`.
 
 ## 2. Flujo canónico
 `INPUT -> classifier -> template DAG fija -> validator/Enchufe Gate -> Router/RedUniversal -> worker/conector -> destino -> verify/state`
 
-La IA puede producir contenido dentro de nodos autorizados, pero no crear, borrar, reordenar ni sustituir el DAG.
-
 ## 3. Plan autorizado — solo 3 pasos
-1. **Hugging Face + modelos + FastAPI:** usar HF Jobs como cómputo real; identificar hasta 20 modelos reales, su especialidad, procesador/acelerador, dataset/storage y adapter; un gateway FastAPI único con adapters por modelo.
-2. **Integración GitHub/C01-C23:** mover/integrar componentes, podar duplicación y completar solo faltantes con `REUSE > PATCH > ADAPT > GENERATE`.
-3. **API keys de agentes + test E2E:** API Key Manager propio, hash/revocación/rotación y prueba `agente -> FastAPI -> Router -> HF/GitHub/API -> resultado`.
+1. **Hugging Face + modelos + FastAPI** — ACTIVE.
+2. **Integración GitHub/C01-C23** — PENDING tras P01.
+3. **API keys agentes + E2E** — PENDING.
 
-## 4. Código fuente central actual
-`router inteligente universal/`
+## 4. Estado P01 actualizado — RIU-0034
+HF Job `6aa2513d5527934177ebfaad` (`cpu-upgrade`) enumeró exactamente 20 modelos públicos, no gated, `transformers`, `text-generation`. Evidencia: https://huggingface.co/jobs/COMAND-CENTER-1/6aa2513d5527934177ebfaad
 
-Raíces verificadas: `domain/`, `enchufe/`, `engine/`, `integration/`, `red/`, `tests/` y `Componente open soure router inteligente universal/`.
+Los 20 `model_id` están persistidos en `Readme Índice de modelos de ai huggueface.md` como `CATALOG_OBSERVED`. Esto cierra el GAP de inventario público, pero NO prueba que los modelos estén listos para servir.
 
-## 5. Componentes de arquitectura ya materializados/verificados
-- C05 Enchufe Schema + validator v2: materializado/verificado.
-- C15 Enchufe Gate: REUSE/PATCH preservando v1.5 y delegando v2.
-- C16 Conectores: PARTIAL pero ampliado con HuggingFace, DB, GitLab, MCPApp, VPS y Memoria.
-- C17 RedUniversal: REUSE verificado.
-- C19 Backup: fuente `respaldo.py.pdf` localizada; extracción aún pendiente, no PASS.
-- `ConectorMemoria` cableado en registry; test HF Job previo: `3 passed`.
+Cola obligatoria 1×1 por modelo:
+`model_id -> metadata/processor -> compute/acelerador -> dataset/storage -> adapter -> FastAPI registry -> llamada real -> verifier/read-back`.
 
-## 6. Hugging Face — estado real
-- Bridge existente: `huggueface/bridge/router_hf_bridge.py`.
-- Manifest existente: `huggueface/manifest.yml`.
-- HF Jobs confirmado como cómputo real del proyecto.
-- Cuenta conectada: `COMAND-CENTER-1`.
-- Auditoría pública previa devolvió `public_model_count=0`; esto NO demuestra que no existan modelos privados.
-- GAP vigente: catálogo privado/model IDs aún no certificado desde el Job porque el token no fue inyectado automáticamente.
-- Prohibido inventar los 20 model_id. El índice de modelos queda PENDING hasta read-back real.
+`GAP-HF-CATALOG-001` permanece únicamente para catálogo privado de `COMAND-CENTER-1` porque Jobs no recibe `HF_TOKEN` implícitamente.
 
-## 7. FastAPI / LLM
-Arquitectura aprobada: **un solo gateway FastAPI** del Router, no 20 servidores independientes.
+## 5. Código central
+`router inteligente universal/` con `domain/`, `enchufe/`, `engine/`, `integration/`, `red/`, `tests/`, `Componente open soure router inteligente universal/`.
 
-`/v1/models` -> registry de modelos
-`/v1/chat/completions` -> Enchufe -> Router -> model adapter
-`/health` -> salud del gateway/registry
+## 6. Estado C01-C23 conocido
+C05 y C17 verificados; C15 REUSE/PATCH v1.5→v2; C16 parcial ampliado; C19 fuente localizada pero extracción pendiente. El resto se cruza contra donors locales antes de generar código.
 
-Cada modelo tendrá `model_id`, `specialty`, `adapter`, `accelerator`, `dataset/storage binding`, `status` y evidencia.
+## 7. FastAPI objetivo
+Un solo gateway:
+`/v1/models` -> registry
+`/v1/chat/completions` -> Enchufe -> Router -> adapter
+`/health` -> gateway/registry
 
-## 8. Integración C01-C23 pendiente
-Pendiente principal: C01-C04, C06-C14 según estado real, C18 y C20-C23; cada uno debe cruzarse contra donors locales antes de generar código.
+No crear 20 servidores FastAPI independientes.
 
-No se considera integrado por estar descargado. Cada componente debe tener wiring + test + read-back.
+## 8. Motores autorizados
+Para adquirir/extraer/copiar/mover cualquier componente externo: exclusivamente `frontend@ef0669bbc753861bfc33b86548f3f90c0f3d8df9/➡️📂motores de descarga extracción copiado movimiento archivos fromtend/`; motores inmutables/COPY_ONLY, sin LFS/force, destino explícito, SHA/read-back.
 
-## 9. Motores autorizados para adquirir/mover componentes
-Único sistema permitido si hace falta código externo: `frontend@ef0669bbc753861bfc33b86548f3f90c0f3d8df9/➡️📂motores de descarga extracción copiado movimiento archivos fromtend/`.
-
-Motores inmutables, COPY_ONLY, sin LFS, sin force, destino explícito, allowlist y SHA/read-back obligatorios.
-
-## 10. Criterio de cierre
-`archivo presente != integrado`
-`componente descargado != adaptado`
-`modelo listado != endpoint probado`
-`API key creada != autenticación probada`
-`mock != test remoto real`
+## 9. Criterio de cierre
+`modelo listado != endpoint probado`; `archivo presente != integrado`; `API key creada != autenticación probada`; `mock != test remoto real`.
 
 Solo `VERIFIED_CLOSED` después del Paso 3 E2E real.
