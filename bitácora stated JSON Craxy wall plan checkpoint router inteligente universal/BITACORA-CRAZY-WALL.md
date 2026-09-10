@@ -3,25 +3,33 @@
 **Contrato:** `tel.workflow/v3`
 **Modo:** `FAIL_CLOSED_LOOP`
 
-## RIU-0001..0030 — TRAZABILIDAD PREVIA
-Baseline, componentes, Handoff, plan 3 pasos, HF, Gate/conectores v6/registry/validator/schema/RedUniversal, C10, auditorías C11/C12/C13 y HF Jobs compute real quedan preservados por STATE/CHECKPOINT/commits anteriores.
+## RIU-0001..0031 — TRAZABILIDAD PREVIA
+Baseline, componentes, Handoff, plan 3 pasos, HF, Gate/conectores v6/registry/validator/schema/RedUniversal, auditorías y HF Jobs compute real preservados por commits/STATE/CHECKPOINT previos.
 
-## RIU-0031 — HF CATALOG/TOKEN BOUNDARY
-INPUT literal: resolver primero Hugging Face; investigar oficial/comunidad; Jobs como cómputo real; auditar LLM reales sin inventar model_id; cola 1×1.
+## RIU-0032 — SINCRONIZACIÓN DIRECTOR / 3 PASOS
 
-Investigación oficial: https://huggingface.co/docs/hub/en/jobs ; https://huggingface.co/docs/hub/en/jobs-configuration ; https://huggingface.co/docs/huggingface_hub/en/guides/jobs . Jobs documenta `JOB_ID/ACCELERATOR/CPU_CORES/MEMORY` como built-ins y los secretos, incluido `HF_TOKEN`, como entrada explícita.
+### Hecho
+- Componentes open source centralizados bajo `router inteligente universal/Componente open soure router inteligente universal/`.
+- Raíz de código fuente real ya existe con `domain/`, `enchufe/`, `engine/`, `integration/`, `red/`, `tests/`.
+- C05/C15/C16/C17 tienen trabajo materializado; C16 sigue parcial.
+- Bridge HF y manifest existen en `huggueface/`.
+- HF Jobs se usa como cómputo real del proyecto.
+- `ConectorMemoria` fue cableado y validado previamente mediante HF Job (`3 passed`).
+- Sistema canónico de descarga/extracción/copia/movimiento fijado a `frontend@ef0669bbc753861bfc33b86548f3f90c0f3d8df9` y motores inmutables.
 
-Identidad conectada: `COMAND-CENTER-1`, OAuth autenticado con scopes `jobs/openid/profile/read-mcp/read-repos`.
+### GAP actual
+`GAP-HF-CATALOG-001`: la enumeración pública confirmó 0 modelos públicos de `COMAND-CENTER-1`, pero no certifica privados; el Job previo no recibió `HF_TOKEN` automáticamente. No se inventan 20 modelos ni adapters.
 
-Attempt A: Job `6aa1d3125527934177ebe373` inició clone del repo grande; quedó consumiendo cómputo sin producir la evidencia objetivo y fue cancelado. No PASS.
+### Lista única de tareas — 3 pasos
+1. **P01 ACTIVE** — cerrar inventario real de hasta 20 modelos HF; registrar model_id/especialidad/compute/dataset-storage/adapter y gateway FastAPI único.
+2. **P02 PENDING** — cerrar integración GitHub C01-C23: reuse/patch/adapt/generate, poda y cableado por Enchufe Universal.
+3. **P03 PENDING** — API Key Manager de agentes + generación one-time de keys + prueba E2E real HF/GitHub/API/agentes.
 
-StrategyDelta B materialmente distinto: eliminar clone y ejecutar sólo enumeración pública + boundary de token. Job `6aa1d38621047bf1b0370f3f` → COMPLETED, `cpu-basic`, 2 CPU/16.0G observados, `public_model_count=0`, `public_model_ids=[]`, `hf_token_present=false`. URL https://huggingface.co/jobs/COMAND-CENTER-1/6aa1d38621047bf1b0370f3f .
+### Cableado objetivo
+`AGENTE -> API KEY -> FastAPI -> Enchufe Universal -> Router/RedUniversal -> adapter -> HF Job/modelo/API/GitHub -> verifier -> respuesta`
 
-Decisión: `GAP-HF-CATALOG-001` sigue OPEN y queda refinado a boundary de credencial privada. Público 0 no demuestra privado 0. No se creó ningún mapping `model_id→especialidad→adapter→FastAPI` sin modelo confirmado.
-
-Auditoría: `router inteligente universal/integration/huggingface/RIU-0031-HF-CATALOG-TOKEN-AUDIT.md`, commit `505d54c23120f96cec42dde5c26cd001c20092b9`.
-
-Council12 PASS. Refutaciones: público 0 ≠ privado 0; OAuth conectado ≠ token automático en Job; Job success ≠ permiso para inventar FastAPI/adapter. Cross-check PASS. CODA `PASS_HF_CATALOG_BOUNDARY_AUDIT_GAP_REFINED`. `verify_final=PASS_AUDIT_ONLY_NO_MODEL_CLAIM`.
+### Verificación obligatoria
+Nada pasa a PASS sin `ruta + SHA/diff + read-back + test/log + URL`.
 
 ## NEXT
-Paso 2 sigue ACTIVE. Cola 1×1: componente P02 independiente con contrato suficiente. Reintentar catálogo privado sólo con ruta segura explícita de credencial/evidencia. Paso 3 sigue PENDING.
+Cerrar P01 sin sobreingeniería; resolver token/catalog boundary por StrategyDelta y registrar solo modelos realmente observados. Después P02 y P03 en ese orden.
