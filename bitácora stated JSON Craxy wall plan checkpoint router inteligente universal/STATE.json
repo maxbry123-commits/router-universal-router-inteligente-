@@ -7,12 +7,12 @@
   "status": "ACTIVE_LOOP",
   "current_node": "P01_HF_M01_SERVING_VALIDATION",
   "progress_percent": 97,
-  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models","reconcile_model_registry_to_certified_20","validate_HF_M01_metadata","validate_HF_M01_config_tokenizer_generation_via_real_hf_job","materialize_HF_M01_adapter","materialize_single_fastapi_gateway","readback_HF_M01_adapter_gateway"],
-  "in_progress": ["HF_M01_serving_compute_dataset_router_enchufe_real_call"],
+  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","audit_hf_jobs_catalog_token_boundary","verify_hf_jobs_cpu_upgrade_current_loop","enumerate_20_public_nongated_transformers_models","reconcile_model_registry_to_certified_20","validate_HF_M01_metadata","validate_HF_M01_config_tokenizer_generation_via_real_hf_job","materialize_HF_M01_adapter","materialize_single_fastapi_gateway","readback_HF_M01_adapter_gateway","validate_HF_M01_real_local_inference_via_hf_job"],
+  "in_progress": ["HF_M01_router_enchufe_dataset_storage_hot_path"],
   "pending": ["HF_M02_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
   "gaps_flags": [
     {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only"},
-    {"id":"GAP-HF-M01-SERVING-001","type":"RUNTIME_ROUTER_ENCHUFE_CALL_NOT_YET_VERIFIED","evidence":"adapter and FastAPI gateway code/read-back verified; live inference/hot-path still unverified"},
+    {"id":"GAP-HF-M01-SERVING-001","type":"ROUTER_ENCHUFE_DATASET_HOT_PATH_NOT_YET_VERIFIED","evidence":"HF Job 6aa288a521047bf1b0372324 proves real local HF-M01 inference on cpu-upgrade; repository FastAPI→Enchufe→Router traversal and dataset/storage binding still unverified"},
     {"id":"GAP-BEHAVIOR-CONTRACT-001","type":"BEHAVIOR_POLICY_NOT_RECOVERED"},
     {"id":"GAP-R004-EXTRACTION-001","type":"CANONICAL_PDF_BINARY_NOT_MATERIALIZED"},
     {"id":"GAP-C03-CONTRACT-001","type":"CONFIG_FIELDS_NOT_DEFINED"},
@@ -24,19 +24,22 @@
   "evidence": [
     "HF Job 6aa2513d5527934177ebfaad certified 20 public non-gated transformers text-generation model IDs",
     "HF Job 6aa26cc321047bf1b0371f28 COMPLETED; HF-M01 config/tokenizer/generation/provider metadata validated",
+    "HF Job 6aa288a521047bf1b0372324 COMPLETED on cpu-upgrade; REPLY=RIU_HF_M01_OK; HF_M01_REAL_COMPUTE_OK=True; LOAD_AND_INFER_SECONDS=7.108; PARAMS=596049920; DEVICE=cpu",
+    "RIU-0038 audit commit d798b6b878d3876ce866584647fd41b9cf8c6c23",
     "HF adapter commit 70b2a7d4b5ee419999e3b6f436e219370141d294; blob 3d89e6e705fb30a55ca5ae72db05538bdabbabb7",
     "FastAPI gateway commit ea0392a58ce6391514471926a315a6ebd9928521; blob a7a2c16019adee69de597ec0abd251912a8a11ca",
     "model_registry V4 commit 3de1df105276080ae8c94067816d2e190c8b18df; blob ab125ff486f175df1d2643972df10c7e33669386",
-    "Official HF InferenceClient docs confirm OpenAI-compatible chat_completion and provider routing"
+    "Official HF docs confirm InferenceClient chat_completion/OpenAI-compatible routing requires inference authorization for hosted providers"
   ],
   "rules": {"input_literal":true,"one_node_at_a_time":true,"evidence_required":true,"no_monolith":true,"reuse_first":true,"steps_limit":3},
   "last_delta": {
-    "id":"RIU-0037",
-    "decision":"HF_M01_ADAPTER_AND_SINGLE_FASTAPI_GATEWAY_MATERIALIZED_READBACK_VERIFIED",
-    "verify_final":"PASS_CODE_READBACK_ONLY_RUNTIME_HOT_PATH_PENDING",
+    "id":"RIU-0038",
+    "decision":"HF_M01_REAL_LOCAL_INFERENCE_COMPLETED_IN_HF_JOB_CPU_UPGRADE",
+    "verify_final":"PASS_HF_M01_REAL_COMPUTE_ONLY_ROUTER_ENCHUFE_DATASET_PENDING",
     "council12":"PASS",
-    "refutations":["adapter code presence does not prove provider inference","FastAPI route presence does not prove Enchufe/Router wiring","HF_TOKEN fail-closed behavior means authenticated runtime remains unverified"],
+    "refutations":["real local HF Job inference does not prove repository FastAPI hot path","successful CPU runtime does not prove hosted provider authentication","model inference does not prove dataset/storage binding"],
     "cross_check":"PASS",
-    "coda":"KEEP_HF_M01_SERVING_RUNTIME_PENDING"
+    "coda":"PASS_REAL_HF_JOB_COMPUTE_KEEP_ROUTER_HOT_PATH_PENDING",
+    "job_id":"6aa288a521047bf1b0372324"
   }
 }
