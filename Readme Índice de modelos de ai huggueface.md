@@ -4,14 +4,15 @@
 Este índice registra únicamente modelos observados/validados. `CATALOG_OBSERVED` no significa `READY`.
 
 ## Evidencia actual
-HF Job `6aa2513d5527934177ebfaad` (`cpu-upgrade`) enumeró exactamente 20 modelos públicos, no gated, `library=transformers`, `pipeline=text-generation`, excluyendo repos de testing. URL: https://huggingface.co/jobs/COMAND-CENTER-1/6aa2513d5527934177ebfaad
-
-HF-M01 fue validado 1×1 con HF Job real `6aa26cc321047bf1b0371f28` (`cpu-upgrade`) → `COMPLETED`. Read-back: `Qwen/Qwen3-0.6B`, `Qwen3ForCausalLM`, `model_type=qwen3`, `torch_dtype=bfloat16`, `max_position_embeddings=40960`, `751632384` parámetros BF16; `config.json`, `tokenizer_config.json` y `generation_config.json` descargados y leídos; provider observado `featherless-ai` status `live`, task `conversational`. URL: https://huggingface.co/jobs/COMAND-CENTER-1/6aa26cc321047bf1b0371f28
+HF Job `6aa2513d5527934177ebfaad` (`cpu-upgrade`) enumeró exactamente 20 modelos públicos, no gated, `library=transformers`, `pipeline=text-generation`.
+HF-M01 config/tokenizer/generation: Job `6aa26cc321047bf1b0371f28` COMPLETED.
+HF-M01 inferencia local real: Job `6aa288a521047bf1b0372324` COMPLETED.
+HF-M01 Enchufe/Router hot-path determinista: Job `6aa297195527934177ec0aed` COMPLETED, read-back desde `main`, `2 passed in 1.25s`, `RIU_HOT_PATH_TEST_RC 0`.
 
 ## Registry observado — 20 modelos
 | Slot | model_id | especialidad | adapter | compute/acelerador | dataset/storage | FastAPI | estado |
 |---|---|---|---|---|---|---|---|
-| HF-M01 | Qwen/Qwen3-0.6B | text-generation/conversational | PENDING | cpu-upgrade validó metadata/config; serving accelerator PENDING | PENDING | PENDING | CONFIG_TOKENIZER_VALIDATED |
+| HF-M01 | Qwen/Qwen3-0.6B | text-generation/conversational | ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED | cpu-upgrade REAL_INFERENCE_VERIFIED | PENDING_BINDING | HOT_PATH_DETERMINISTIC_TESTED | DATASET_AUTH_PENDING |
 | HF-M02 | openai-community/gpt2 | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M03 | Qwen/Qwen3-8B | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M04 | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF | text-generation/code | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
@@ -33,10 +34,10 @@ HF-M01 fue validado 1×1 con HF Job real `6aa26cc321047bf1b0371f28` (`cpu-upgrad
 | HF-M20 | Qwen/Qwen2.5-7B-Instruct-AWQ | text-generation/instruct | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 
 ## Cableado aprobado
-`FastAPI gateway -> Enchufe Universal -> model registry -> adapter del model_id -> HF Job/inference -> verifier`.
+`FastAPI gateway -> Enchufe Gate -> RedUniversal -> model registry/adapter -> Hugging Face -> verifier`.
 
 ## Siguiente cola 1×1
-HF-M01: cerrar serving compute/acelerador -> dataset/storage binding -> adapter -> registro FastAPI -> llamada real/read-back. Solo después promover HF-M01 y pasar a HF-M02.
+HF-M01: dataset/storage binding -> provider hosted autenticado por hot-path -> solo después READY y HF-M02.
 
 ## GAP privado
-`GAP-HF-CATALOG-001` sigue abierto únicamente para catálogo privado de `COMAND-CENTER-1`; no bloquea la validación pública 1×1 y no autoriza inventar IDs.
+`GAP-HF-CATALOG-001` sigue abierto únicamente para catálogo privado de `COMAND-CENTER-1`; no bloquea validación pública 1×1.
