@@ -1,21 +1,17 @@
 {
-  "checkpoint": "router-universal-p01-hf-catalog-token-boundary-audited",
+  "checkpoint": "router-universal-p01-hf-20-public-models-observed",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "verified": {
     "components_destination": "router inteligente universal/Componente open soure router inteligente universal/",
-    "hf_public_owner_inventory": "COUNT 0",
-    "hf_connected_identity": "COMAND-CENTER-1 OAuth authenticated; jobs/openid/profile/read-mcp/read-repos",
-    "hf_jobs_compute": "HF Job 6aa1c5fd21047bf1b0370d4d success; cpu-upgrade; real repository audit",
-    "hf_catalog_boundary": "HF Job 6aa1d38621047bf1b0370f3f completed; public count 0; hf_token_present=false",
-    "hf_catalog_audit_path": "router inteligente universal/integration/huggingface/RIU-0031-HF-CATALOG-TOKEN-AUDIT.md",
-    "hf_catalog_audit_commit": "505d54c23120f96cec42dde5c26cd001c20092b9",
-    "behavior_filter_rule": "materialize only when explicit standalone behavior policy is defined/recovered"
+    "hf_jobs_compute": "cpu-upgrade operational",
+    "hf_public_20_catalog": "HF Job 6aa2513d5527934177ebfaad COUNT=20; public; non-gated; transformers; text-generation",
+    "hf_model_index_commit": "49962acfc50aa9b84e88410693a66d3858ea110c",
+    "private_catalog_boundary": "still OPEN; no implicit HF_TOKEN"
   },
-  "current": "P02_WIRE_PRUNE_FILL",
-  "gap": "GAP-HF-CATALOG-001 + GAP-BEHAVIOR-CONTRACT-001 + GAP-R004-EXTRACTION-001 + GAP-C03-CONTRACT-001 + GAP-C01-API-CONTRACT-001 + GAP-C11-SEMANTIC-CACHE-CONTRACT-001 + GAP-C12-COST-POLICY-CONTRACT-001 + GAP-C13-SANDBOX-CONTRACT-001",
-  "next_delta": "continue one independent safe P02 task; retry private HF catalog only with explicit secure credential/evidence path",
-  "next_if_pass": "REUSE/PATCH/ADAPT/GENERATE exact component + fixed test + read-back + persist",
-  "next_if_gap": "research official/community alternatives, apply material StrategyDelta, or move only to independent safe task",
+  "current": "P01_HF_VALIDATE_20",
+  "next_delta": "validate model 1x1: metadata/processor -> compute -> dataset/storage -> adapter -> FastAPI -> real call",
+  "next_if_pass": "advance next model until 20 validated, then close P01",
+  "next_if_gap": "StrategyDelta distinct; continue next independent safe model/task without invented PASS",
   "status": "ACTIVE_LOOP"
 }
