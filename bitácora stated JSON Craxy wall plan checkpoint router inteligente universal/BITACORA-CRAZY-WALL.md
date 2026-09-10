@@ -23,5 +23,14 @@ FLAG registrado: `FLAG-HF-PROVIDER-AUTH-001=TOKEN_SCOPE_INSUFFICIENT_FOR_INFEREN
 Council12 PASS; cross-check PASS; CODA `CLOSE_DATASET_BINDING_REGISTER_PROVIDER_AUTH_FLAG_KEEP_HF_M01_NO_READY`; verify_final=`PASS_DATASET_BINDING_PROVIDER_AUTH_FLAGGED`.
 Auditoría RIU-0040: commit `dbcd504acc500e31d36abcddaf103434d87866e9`.
 
+## RIU-0041 — HF-M02 REAL COMPUTE
+Fuentes de verdad releídas antes del delta. El FLAG de HF-M01 se mantuvo abierto y se continuó únicamente trabajo P01 independiente seguro.
+Investigación oficial HF: GPT-2 es causal text-generation, compatible con `AutoModelForCausalLM`; la documentación recomienda `generate()`/`max_new_tokens`. Metadata Hub de `openai-community/gpt2`: transformers, MIT, endpoints-compatible.
+HF Job `6aa2a4f25527934177ec0e01`, imagen `uv:python3.12-bookworm`, flavor `cpu-upgrade`, COMPLETED el 2026-09-10T12:40:02Z.
+Logs: `MODEL openai-community/gpt2`; `CLASS GPT2LMHeadModel`; `DEVICE cpu`; `PARAMS 124439808`; generación real; `ELAPSED 6.338`; `HF_M02_REAL_COMPUTE_OK True`.
+Decisión: compute/acelerador local de HF-M02 PASS solamente. Adapter, dataset/storage, FastAPI/provider routing siguen PENDING; HF-M02 NO READY.
+3 refutaciones: compute != adapter/FastAPI; compute != dataset/storage; HF-M02 progress no resuelve FLAG provider-auth HF-M01.
+Council12 PASS; cross-check PASS; CODA `PERSIST_HF_M02_COMPUTE_KEEP_BOTH_MODELS_NO_READY`; verify_final=`PASS_HF_M02_REAL_COMPUTE_ONLY`.
+
 ## NEXT
-Resolver permiso autorizado Inference Providers sin exponer credencial; si FLAG persiste, continuar solo validaciones P01 independientes y no promover HF-M01.
+Cola 1×1: validar HF-M02 dataset/storage + adapter/FastAPI detrás del Enchufe Universal. Mantener HF-M01 `FLAG-HF-PROVIDER-AUTH-001` abierto hasta credencial autorizada con permiso suficiente.
