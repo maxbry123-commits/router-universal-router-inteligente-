@@ -1,6 +1,6 @@
 {
-  "contract": "RIU-HF-MODEL-REGISTRY-V4",
-  "truth_rule": "CATALOG_OBSERVED != READY; code present != hot path verified; no model_id is promoted without evidence",
+  "contract": "RIU-HF-MODEL-REGISTRY-V5",
+  "truth_rule": "CATALOG_OBSERVED != READY; deterministic hot-path tested != authenticated provider E2E; no model_id is promoted without evidence",
   "catalog_evidence": {
     "job_id": "6aa2513d5527934177ebfaad",
     "job_url": "https://huggingface.co/jobs/COMAND-CENTER-1/6aa2513d5527934177ebfaad",
@@ -15,11 +15,12 @@
     "fastapi_route": "/v1/chat/completions",
     "adapter": "huggingface_openai_chat",
     "gateway_file": "router inteligente universal/integration/huggingface/fastapi_gateway.py",
+    "hot_path_file": "router inteligente universal/integration/huggingface/router_hot_path.py",
     "adapter_file": "router inteligente universal/integration/huggingface/huggingface_openai_chat.py",
-    "status": "CODE_READBACK_VERIFIED_RUNTIME_HOT_PATH_PENDING"
+    "status": "ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED_DATASET_AUTH_PENDING"
   },
   "models": [
-    {"slot":"HF-M01","model_id":"Qwen/Qwen3-0.6B","specialty":"text-generation","library":"transformers","metadata":{"model_class":"AutoModelForCausalLM","architecture":"qwen3","parameters":751600000,"license":"apache-2.0","endpoints_compatible":true,"inference_provider":"featherless-ai"},"processor":"CONFIG_TOKENIZER_VALIDATED","accelerator":"PENDING_RUNTIME_VALIDATION","dataset_storage":"PENDING_BINDING","adapter":"WIRED_CODE_READBACK","fastapi":"REGISTERED_CODE_READBACK","status":"SERVING_RUNTIME_PENDING"},
+    {"slot":"HF-M01","model_id":"Qwen/Qwen3-0.6B","specialty":"text-generation/conversational","library":"transformers","metadata":{"model_class":"AutoModelForCausalLM","architecture":"qwen3","parameters":751600000,"license":"apache-2.0","endpoints_compatible":true,"inference_provider":"featherless-ai"},"processor":"CONFIG_TOKENIZER_VALIDATED","accelerator":"CPU_UPGRADE_REAL_INFERENCE_VERIFIED","dataset_storage":"PENDING_BINDING","adapter":"ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED","fastapi":"HOT_PATH_DETERMINISTIC_TESTED","status":"DATASET_AUTH_PENDING"},
     {"slot":"HF-M02","model_id":"openai-community/gpt2","specialty":"text-generation","processor":"PENDING","accelerator":"PENDING","dataset_storage":"PENDING","adapter":"PENDING","fastapi":"PENDING","status":"CATALOG_OBSERVED"},
     {"slot":"HF-M03","model_id":"Qwen/Qwen3-8B","specialty":"text-generation","processor":"PENDING","accelerator":"PENDING","dataset_storage":"PENDING","adapter":"PENDING","fastapi":"PENDING","status":"CATALOG_OBSERVED"},
     {"slot":"HF-M04","model_id":"unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF","specialty":"text-generation/code","processor":"PENDING","accelerator":"PENDING","dataset_storage":"PENDING","adapter":"PENDING","fastapi":"PENDING","status":"CATALOG_OBSERVED"},
@@ -42,5 +43,12 @@
   ],
   "dataset": {"status":"PENDING_BOUND_DATASET_EVIDENCE","dataset_ref":null},
   "security": {"token_env":"HF_TOKEN","hardcoded_tokens":false},
-  "delta_evidence": {"adapter_commit":"70b2a7d4b5ee419999e3b6f436e219370141d294","gateway_commit":"ea0392a58ce6391514471926a315a6ebd9928521","adapter_blob":"3d89e6e705fb30a55ca5ae72db05538bdabbabb7","gateway_blob":"a7a2c16019adee69de597ec0abd251912a8a11ca"}
+  "delta_evidence": {
+    "hot_path_commit":"86f5f545f070dc3180652e73265f6fc77ba1e514",
+    "gateway_commit":"6da8ecd573986bc4e77a2c749e37d9f34955bd57",
+    "test_commit":"8509fa25793fec73a1e9ce023787713df5ed4225",
+    "job_id":"6aa297195527934177ec0aed",
+    "job_result":"COMPLETED; 2 passed in 1.25s; RIU_HOT_PATH_TEST_RC 0",
+    "audit_commit":"f08191ec91f0d74850799b38b44298bc77f0cfe9"
+  }
 }
