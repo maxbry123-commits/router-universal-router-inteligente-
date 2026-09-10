@@ -7,50 +7,25 @@ Controlar el acceso de agentes al gateway FastAPI del Router sin publicar secret
 `AGENTE -> Authorization: Bearer <router_api_key> -> FastAPI -> APIKeyGuard -> Enchufe Gate -> RedUniversal -> model registry -> adapter -> Hugging Face`
 
 ## Regla de seguridad
-Las API keys reales NO se guardan en este archivo ni en ningún commit. El Router debe guardar solo hash/metadata; la key plaintext se entrega una sola vez al crearla.
+Las API keys reales NO se guardan en este archivo ni en ningún commit. El Router debe guardar solo hash/metadata; plaintext una sola vez.
 
 ## Estado actual
-- Gateway FastAPI único: materializado y delegado al hot-path Enchufe Gate → RedUniversal.
-- Hot-path determinista: HF Job `6aa297195527934177ec0aed` COMPLETED, `2 passed`, RC=0.
-- HF-M01 provider hosted autenticado: PENDING; dataset/storage: PENDING.
+- Gateway FastAPI único + Enchufe Gate + RedUniversal: hot-path determinista verificado en Job `6aa297195527934177ec0aed` (`2 passed`).
+- HF-M01 dataset/storage RO: verificado con `HuggingFaceH4/ultrachat_200k` en Job `6aa2983921047bf1b03725eb`.
+- Provider hosted auth: FLAG; Job `6aa2985921047bf1b03725ed` recibió 403 por permisos insuficientes para Inference Providers; el secreto quedó redactado.
 - APIKeyGuard/API Key Manager: PENDING Paso 3.
-- 20 slots públicos: catálogo certificado; HF-M02..HF-M20 aún no validados 1×1.
-- Hugging Face Jobs: disponible como compute real.
+- `PLAINTEXT_KEYS: NOT_GENERATED_YET`.
 
 ## Formato objetivo de key
 `riu_<agent_id>_<random-secret>`
 
-Metadata persistida por key:
-- `key_id`
-- `agent_id`
-- `key_hash`
-- `created_at`
-- `status`
-- `scopes`
-- `allowed_models`
-- `last_used_at`
-
 ## Operaciones requeridas
-- create: genera y muestra plaintext una sola vez.
-- verify: compara hash, nunca plaintext persistido.
-- revoke: invalida key.
-- rotate: crea key nueva e invalida anterior.
-- list: muestra metadata sin secreto.
+create/verify/revoke/rotate/list; persistir solo `key_id`, `agent_id`, `key_hash`, timestamps, status, scopes y allowed_models.
 
 ## Endpoints objetivo
-- `POST /v1/keys` — crear key para agente.
-- `POST /v1/keys/{key_id}/rotate` — rotar.
-- `DELETE /v1/keys/{key_id}` — revocar.
-- `GET /v1/models` — modelos permitidos según key.
-- `POST /v1/chat/completions` — ejecución autenticada vía Router.
-
-## Estado de entrega
-`PLAINTEXT_KEYS: NOT_GENERATED_YET`
-
-No se generarán keys definitivas hasta cerrar P01. El código de routing determinista ya está verificado, pero todavía falta provider hosted autenticado + dataset/storage de HF-M01.
+`POST /v1/keys`, `POST /v1/keys/{key_id}/rotate`, `DELETE /v1/keys/{key_id}`, `GET /v1/models`, `POST /v1/chat/completions`.
 
 ## Criterio PASS
-Agente con key válida -> 200 y routing permitido.
-Key revocada/inválida -> 401/403 fail-closed.
-Key sin scope de modelo -> 403.
-Ningún secreto aparece en logs, GitHub, STATE, BITACORA o respuestas de listado.
+Key válida -> routing permitido; revocada/inválida -> 401/403; scope inválido -> 403; ningún secreto en logs/GitHub/STATE/BITACORA.
+
+Paso 3 no inicia mientras P01 no cierre; `FLAG-HF-PROVIDER-AUTH-001` debe resolverse con credencial autorizada y alcance Inference Providers.
