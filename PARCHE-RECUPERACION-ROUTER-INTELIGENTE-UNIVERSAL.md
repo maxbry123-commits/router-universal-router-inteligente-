@@ -10,61 +10,58 @@ Cerrar el proyecto Router Inteligente Universal sin rehacer trabajo verificado y
 ## Hecho y verificado
 - Raíz fuente activa: `router inteligente universal/`.
 - Componentes open source centralizados bajo `router inteligente universal/Componente open soure router inteligente universal/`.
-- Arquitectura/Handoff/Bitácora/STATE/CHECKPOINT/PLAN/RECOVERY existentes y usados como fuentes de verdad.
 - C05 Enchufe Schema/validator v2 materializado/verificado.
 - C15 Enchufe Gate reutilizado/parchado v1.5→v2.
 - C16 Conectores ampliado parcialmente con Hugging Face, DB, GitLab, MCPApp, VPS y Memoria.
 - C17 RedUniversal reutilizado/verificado.
-- HF bridge + manifest presentes.
-- Hugging Face Jobs adoptado como cómputo real del proyecto.
-- ConectorMemoria probado previamente en HF Job con `3 passed`.
+- HF Jobs adoptado como cómputo real del proyecto.
+- Catálogo público: 20 modelos certificados por Job `6aa2513d5527934177ebfaad`.
+- HF-M01 `Qwen/Qwen3-0.6B`: Job `6aa26cc321047bf1b0371f28` COMPLETED; `config.json`, `tokenizer_config.json`, `generation_config.json`, arquitectura Qwen3ForCausalLM, BF16 y provider live observados/verificados.
 
-## GAP principal
-`GAP-HF-CATALOG-001`: la auditoría pública confirmó 0 modelos públicos de `COMAND-CENTER-1`, pero esto no demuestra que no existan modelos privados. Falta una ruta de credencial segura para enumerar el catálogo privado real. No se deben inventar `model_id`.
+## GAP actuales
+- `GAP-HF-CATALOG-001`: solo catálogo privado; no existe `HF_TOKEN` implícito en Jobs.
+- `GAP-HF-M01-SERVING-001`: HF-M01 NO READY hasta validar serving compute/acelerador, dataset/storage, adapter, FastAPI y llamada real por Router.
+- Gaps P02 contractuales existentes permanecen sin inventar implementación.
 
 ## Pasos pendientes para cierre
 
 ### PASO 1 — Hugging Face / modelos / FastAPI
-1. Resolver acceso seguro al catálogo privado HF.
-2. Enumerar y verificar hasta 20 modelos reales.
-3. Registrar por cada modelo: `model_id`, especialidad, dataset/storage relacionado, acelerador/procesador y adapter.
-4. Integrar un único gateway FastAPI del Router con adapters por modelo detrás del Enchufe Universal.
-5. Usar HF Jobs como cómputo real para auditorías, procesamiento y validación.
-6. Verificar cada integración con log/resultado real; no PASS por presencia.
+1. Cerrar HF-M01 serving real: compute/acelerador → dataset/storage → adapter → FastAPI → llamada real/read-back.
+2. Repetir cola 1×1 HF-M02..HF-M20.
+3. Mantener registry `model_id→especialidad→adapter→FastAPI` y evidencia por modelo.
+4. Dejar un único gateway FastAPI detrás del Enchufe Universal.
+5. Resolver catálogo privado solo por ruta segura autorizada; nunca hardcodear/loggear token.
 
 ### PASO 2 — Integración GitHub / C01-C23
-1. Cruzar estado real C01-C23 contra código fuente y componentes disponibles.
+1. Cruzar estado real C01-C23 contra código fuente y donors.
 2. Aplicar `REUSE > PATCH > ADAPT > GENERATE`.
 3. Podar duplicación únicamente cuando esté demostrada.
-4. Completar solo módulos faltantes necesarios para el flujo del Router.
-5. Mantener arquitectura separada: `contracts/adapters/plugins/registry/loader/guards/tests`.
-6. Todo cableado externo entra únicamente por Enchufe Universal.
-7. Si hace falta descargar/extraer/copiar/mover componentes, usar exclusivamente el sistema canónico de motores en `maxbry123-commits/frontend@ef0669bbc753861bfc33b86548f3f90c0f3d8df9/➡️📂motores de descarga extracción copiado movimiento archivos fromtend/`, sin editar motores, sin LFS, sin force y con read-back+SHA.
+4. Completar solo módulos faltantes necesarios.
+5. Mantener `contracts/adapters/plugins/registry/loader/guards/tests` y cableado externo solo por Enchufe Universal.
+6. Para descargar/extraer/copiar/mover usar exclusivamente motores canónicos de `frontend@ef0669bbc753861bfc33b86548f3f90c0f3d8df9`, sin editar, sin LFS/force, con SHA/read-back.
 
 ### PASO 3 — API keys para agentes + test final
-1. Crear API Key Manager propio del Router.
-2. Generar una key distinta por agente.
-3. Guardar solo hash/metadata; soportar revocación y rotación.
-4. Entrada estándar: `Authorization: Bearer <key>`.
-5. Entregar las keys una sola vez fuera de GitHub; nunca persistir plaintext.
-6. Ejecutar E2E real: `agente -> API key -> FastAPI -> Enchufe -> Router -> adapter -> HF/GitHub/API -> verifier -> response`.
-7. Cerrar solo con ruta + SHA/diff + read-back + test/log + URL.
+1. Crear API Key Manager propio.
+2. Key distinta por agente; guardar solo hash/metadata; revocar/rotar.
+3. `Authorization: Bearer <key>` y entrega one-time fuera del repo.
+4. E2E real: `agente -> API key -> FastAPI -> Enchufe -> Router -> adapter -> HF/GitHub/API -> verifier -> response`.
+5. Cerrar solo con ruta + SHA/diff + read-back + test/log + URL.
 
 ## Lista única de tareas
-- [ ] P01.1 Resolver catálogo HF privado.
-- [ ] P01.2 Verificar hasta 20 modelos reales.
-- [ ] P01.3 Registrar adapters/FastAPI/dataset/storage/aceleradores.
-- [ ] P01.4 Verificar ejecución real con HF Jobs.
+- [ ] P01.1 Cerrar HF-M01 serving real.
+- [ ] P01.2 Validar HF-M02..HF-M20 1×1.
+- [ ] P01.3 Completar registry/adapters/gateway FastAPI.
 - [ ] P02.1 Cerrar integración C01-C23 faltante.
 - [ ] P02.2 Podar duplicación y validar cableado.
 - [ ] P03.1 Implementar API Key Manager.
 - [ ] P03.2 Generar/rotar/revocar keys por agente.
 - [ ] P03.3 Ejecutar E2E final HF→Router→GitHub/API/agentes.
-- [ ] P03.4 Actualizar BITACORA + STATE + CHECKPOINT + PLAN + RECOVERY + README arquitectura y marcar `VERIFIED_CLOSED` solo con evidencia.
+- [ ] P03.4 Marcar `VERIFIED_CLOSED` solo con evidencia completa.
 
 ## Criterio de cierre
 `archivo presente != integrado`
-`componente descargado != cableado`
+`modelo configurado != servido`
+`provider live != hot path Router`
 `Job success != integración completa`
 `mock != test remoto real`
 
