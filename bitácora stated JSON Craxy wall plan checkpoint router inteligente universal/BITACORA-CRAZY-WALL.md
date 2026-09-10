@@ -7,59 +7,34 @@
 Baseline, arquitectura, componentes, HF Jobs, catálogo 20 y validación HF-M01 config/tokenizer/generation preservados por commits/STATE/CHECKPOINT previos.
 
 ## RIU-0037 — HF-M01 ADAPTER + GATEWAY FASTAPI ÚNICO
-INPUT literal: continuar P01 1×1, investigar primero, no promover READY por presencia.
-
-Investigación oficial: Hugging Face documenta `InferenceClient.chat_completion` como interfaz compatible con OpenAI y TGI/HUGS expone `/v1/chat/completions`; autenticación por token de runtime.
-
-Delta ejecutado:
-- `router inteligente universal/integration/huggingface/huggingface_openai_chat.py`
-  - allowlist estricta desde `model_registry.json`
-  - `HF_TOKEN` sólo en environment/runtime
-  - `InferenceClient.chat_completion`
-  - commit `70b2a7d4b5ee419999e3b6f436e219370141d294`
-  - read-back blob `3d89e6e705fb30a55ca5ae72db05538bdabbabb7`
-- `router inteligente universal/integration/huggingface/fastapi_gateway.py`
-  - gateway único
-  - `/health`, `/v1/models`, `/v1/chat/completions`
-  - commit `ea0392a58ce6391514471926a315a6ebd9928521`
-  - read-back blob `a7a2c16019adee69de597ec0abd251912a8a11ca`
-- `model_registry.json` V4
-  - HF-M01 adapter=`WIRED_CODE_READBACK`
-  - FastAPI=`REGISTERED_CODE_READBACK`
-  - status=`SERVING_RUNTIME_PENDING`
-  - commit `3de1df105276080ae8c94067816d2e190c8b18df`
-
-Verificación/refutación:
-1. Código adapter ≠ inferencia real.
-2. Ruta FastAPI ≠ paso probado por Enchufe/Router.
-3. Provider live ≠ runtime autenticado con `HF_TOKEN`.
-
-Council12 PASS; cross-check PASS; CODA `KEEP_HF_M01_SERVING_RUNTIME_PENDING`; verify_final=`PASS_CODE_READBACK_ONLY_RUNTIME_HOT_PATH_PENDING`.
+Adapter `integration/huggingface/huggingface_openai_chat.py`, gateway único `fastapi_gateway.py` y registry V4 materializados/read-back. Verify_final: `PASS_CODE_READBACK_ONLY_RUNTIME_HOT_PATH_PENDING`.
 
 ## RIU-0038 — HF-M01 INFERENCIA REAL EN HF JOB
-INPUT literal y fuentes de verdad releídas antes del delta. Prioridades: (1) comprobar compute material HF-M01; (2) preservar fail-closed del hot-path no demostrado.
+HF Job `6aa288a521047bf1b0372324`, flavor `cpu-upgrade`, COMPLETED. Read-back: `REPLY=RIU_HF_M01_OK`, `HF_M01_REAL_COMPUTE_OK=True`, 596049920 parámetros, CPU, 7.108s. Evidencia commit `d798b6b878d3876ce866584647fd41b9cf8c6c23`. Verify_final: `PASS_HF_M01_REAL_COMPUTE_ONLY_ROUTER_ENCHUFE_DATASET_PENDING`.
 
-Investigación:
-- documentación oficial HF: `InferenceClient.chat_completion` / OpenAI-compatible Inference Providers exige autorización de inferencia para hosted routing;
-- comunidad Hugging Face: Qwen/provider conversational debe probarse mediante chat-completion y no confundirse con `text_generation`.
+## RIU-0039 — HF-M01 ENCHUFE/ROUTER HOT-PATH
+INPUT literal/fuentes releídas. Prioridades: (1) eliminar bypass FastAPI→adapter; (2) probar Enchufe Gate + RedUniversal sin promover READY prematuramente.
 
-Ejecución material:
-- HF Job `6aa288a521047bf1b0372324`, flavor `cpu-upgrade`, stage `COMPLETED`;
-- `AutoTokenizer.from_pretrained('Qwen/Qwen3-0.6B')`;
-- `AutoModelForCausalLM.from_pretrained(..., device_map='cpu')`;
-- generación determinista con marker esperado;
-- read-back: `REPLY=RIU_HF_M01_OK`;
-- `HF_M01_REAL_COMPUTE_OK=True`;
-- `LOAD_AND_INFER_SECONDS=7.108`;
-- `PARAMS=596049920`; `DEVICE=cpu`.
-- evidencia persistida: `router inteligente universal/integration/huggingface/RIU-0038-HF-M01-REAL-COMPUTE.md`, commit `d798b6b878d3876ce866584647fd41b9cf8c6c23`.
+Investigación previa:
+- HF `InferenceClient.chat_completion` es OpenAI-compatible;
+- HF Jobs tiene storage efímero por flavor y permite datasets/buckets por streaming/mount; Storage Buckets persisten resultados.
+
+Delta ADAPT:
+- `integration/huggingface/router_hot_path.py` reutiliza `red/enchufe_gate.py` + `red/red_universal.py`; commit `86f5f545f070dc3180652e73265f6fc77ba1e514`.
+- `fastapi_gateway.py` actualizado para delegar por hot-path; commit `6da8ecd573986bc4e77a2c749e37d9f34955bd57`.
+- `tests/test_hf_router_hot_path.py`; commit `8509fa25793fec73a1e9ce023787713df5ed4225`.
+
+Primer Job `6aa2970221047bf1b0372550`: fallo pre-test `base64: invalid input`. StrategyDelta materialmente distinto: bootstrap Python directo como argv, sin base64.
+Segundo Job `6aa297195527934177ec0aed`, `cpu-upgrade`, COMPLETED. Leyó desde `main` siete archivos del hot-path y ejecutó pytest: `2 passed in 1.25s`; `RIU_HOT_PATH_TEST_RC 0`.
+URL: https://huggingface.co/jobs/COMAND-CENTER-1/6aa297195527934177ec0aed
+Auditoría detallada: `integration/huggingface/RIU-0039-HF-M01-ENCHUFE-ROUTER-HOT-PATH.md`, commit `f08191ec91f0d74850799b38b44298bc77f0cfe9`.
 
 3 refutaciones:
-1. Inferencia local real en HF Job ≠ FastAPI→Enchufe→Router verificado.
-2. Compute CPU real ≠ hosted provider auth verificado.
-3. Inferencia del modelo ≠ dataset/storage binding verificado.
+1. Executor fake en test ≠ provider hosted autenticado.
+2. Hot-path determinista ≠ dataset/storage binding.
+3. Inferencia local + routing determinista ≠ E2E P03 autenticado por agente.
 
-Council12 PASS; cross-check PASS; CODA `PASS_REAL_HF_JOB_COMPUTE_KEEP_ROUTER_HOT_PATH_PENDING`; verify_final=`PASS_HF_M01_REAL_COMPUTE_ONLY_ROUTER_ENCHUFE_DATASET_PENDING`.
+Council12 PASS; cross-check PASS; CODA `CLOSE_ROUTER_ENCHUFE_CODE_GAP_KEEP_DATASET_AUTH_PENDING`; verify_final=`PASS_DETERMINISTIC_ROUTER_ENCHUFE_HOT_PATH_DATASET_AUTH_PENDING`.
 
 ## NEXT
-HF-M01 1×1: demostrar `FastAPI -> Enchufe Universal -> Router -> HF-M01` con código persistido + dataset/storage → solo entonces READY y HF-M02.
+HF-M01 1×1: cerrar dataset/storage + provider hosted autenticado por FastAPI→Enchufe→RedUniversal→adapter. Solo entonces promover HF-M01 y abrir HF-M02.
