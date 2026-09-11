@@ -3,16 +3,15 @@
 **Contrato:** `tel.workflow/v3`
 **Modo:** `FAIL_CLOSED_LOOP`
 
-## RIU-0001..0045
-Trazabilidad previa preservada: catálogo 20; HF-M01 compute/hot-path/dataset RO + FLAG provider-auth 403; HF-M02 compute/integración + FLAG storage RW 403; HF-M03 compute GPU + integración FastAPI→Enchufe→Router→adapter + dataset RO PASS; storage RW PENDING.
+## RIU-0001..0046
+Trazabilidad previa preservada: catálogo 20; HF-M01 compute/hot-path/dataset RO + FLAG provider-auth 403; HF-M02 compute/integración + FLAG storage RW 403; HF-M03 compute GPU + integración FastAPI→Enchufe→Router→adapter + dataset RO PASS; storage RW PENDING; HF-M04 primer timeout-state registrado y retry lanzado.
 
-## RIU-0046 — HF-M04 TIMEOUT STRATEGYDELTA
-Fuentes de verdad releídas antes del delta. HF-M04 model_id observado: `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`.
-Job `6aa316585527934177ec29ee` seguía `RUNNING` con `timeout_seconds=1800` y sin logs finales útiles; documentación oficial HF indica que Jobs deben detenerse al superar timeout. Se registró `GAP-HF-M04-TIMEOUT-001` y el Job fue cancelado, sin marcar PASS.
-StrategyDelta materialmente distinto: relanzamiento con timeout explícito `2h`/7200s, runtime `ghcr.io/ggml-org/llama.cpp:full-cuda`, flavor `a10g-small`, comando `llama-cli -hf unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:TQ1_0 ... -ngl 99`.
-Nuevo Job `6aa34d825527934177ec3d2c`; estado inicial `SCHEDULING`; no existe inferencia final todavía.
-3 refutaciones: RUNNING no equivale output; metadata timeout no demuestra cierre automático; SCHEDULING del retry no demuestra compute PASS.
-Council12 PASS; cross-check PASS; CODA `KEEP_HF_M04_NO_READY_WAIT_FOR_FINAL_INFERENCE_EVIDENCE`; verify_final=`HF_M04_RETRY_SCHEDULING_NO_PASS_YET`.
+## RIU-0047 — HF-M04 FLAG + HF-M05 SAFE ADVANCE
+Fuentes de verdad releídas antes del delta. La documentación oficial Hugging Face indica que un Job debe detenerse cuando supera su timeout configurado. Retry HF-M04 `6aa34d825527934177ec3d2c` fue inspeccionado aún `RUNNING` después de superar `timeout_seconds=7200`, con logs no finales/blank; se canceló sin PASS. Se eleva `FLAG-HF-M04-COMPUTE-001` y permanece `GAP-HF-M04-TIMEOUT-001`.
+Regla FLAG aplicada: continuar sólo tarea P01 independiente segura. HF-M05 model_id observado y validado: `Qwen/Qwen2.5-7B-Instruct`; Hub metadata: text-generation, `AutoModelForCausalLM`, ~7615.6M parámetros. Comunidad técnica Qwen confirma uso por Transformers con `AutoModelForCausalLM`/`AutoTokenizer`.
+Job real HF-M05 `6aa3781121047bf1b0374a5c` lanzado en `a10g-small`, imagen PyTorch CUDA, Transformers, timeout 30m; estado inicial `SCHEDULING`; no existe inferencia final todavía.
+3 refutaciones: RUNNING fuera de timeout no equivale output; cancelar HF-M04 no lo cierra como PASS; SCHEDULING HF-M05 no demuestra compute PASS.
+Council12 PASS; cross-check PASS; CODA `FLAG_HF_M04_CONTINUE_ONLY_INDEPENDENT_SAFE_HF_M05`; verify_final=`HF_M05_JOB_SCHEDULING_NO_PASS_YET`.
 
 ## NEXT
-Cola 1×1: inspeccionar `6aa34d825527934177ec3d2c`; exigir `COMPLETED` + salida generada + runtime/GPU/log/URL antes de promover HF-M04 compute. P02/P03 siguen PENDING.
+Cola 1×1: inspeccionar `6aa3781121047bf1b0374a5c`; exigir `COMPLETED` + `RIU_HF_M05_OK=True` + clase/parámetros/CUDA/log/URL antes de promover HF-M05 compute. P02/P03 siguen PENDING.
