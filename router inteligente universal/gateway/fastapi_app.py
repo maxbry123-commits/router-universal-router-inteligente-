@@ -1,5 +1,6 @@
 """Minimal FastAPI hot-path: Auth -> Enchufe/Red -> adapter -> verifier."""
 from __future__ import annotations
+import hashlib
 import sys
 import uuid
 from pathlib import Path
@@ -22,14 +23,17 @@ from response_verifier import verify_response  # noqa: E402
 class ChatRequest(BaseModel):
     model: str = "github/public"
     messages: list[dict] = Field(default_factory=list)
-    path: str = "README.md"
+    path: str = "Handoff router inteligente universal.md"
 
 
 def _contract() -> dict:
     dt = {"family": "json", "type": "object", "version": 1}
+    adapter_path = ROOT / "adapters" / "github_public.py"
+    contract_hash = "sha256:" + hashlib.sha256(adapter_path.read_bytes()).hexdigest()
     return {
         "artifact_id": "github.public.adapter",
         "estado": "active",
+        "contract_hash": contract_hash,
         "ejecucion": {"kind": "code", "transport": "http"},
         "seguridad": {"sandbox": "process", "limites": {"timeout_ms": 30000, "deadline_ms": 35000}},
         "contrato": {"rol": "service", "consume": {"datatype": dt}, "expone": {"datatype": dt}},
