@@ -1,14 +1,14 @@
 {
-  "checkpoint":"router-universal-p01-hf-compatible-batch-m06-m12-validation",
+  "checkpoint":"router-universal-p01-hf-remaining-m08-m20-classify-execute",
   "contract":"tel.workflow/v3",
   "mode":"FAIL_CLOSED_LOOP",
-  "verified":{"hf_m01_local_compute":"6aa288a521047bf1b0372324 COMPLETED","hf_m01_hot_path":"6aa297195527934177ec0aed COMPLETED; 2 passed","hf_m01_dataset_storage":"6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k ro mount","provider_auth_attempt":"6aa2985921047bf1b03725ed ERROR; 403 insufficient inference-provider permission","hf_m02_local_compute":"6aa2a4f25527934177ec0e01 COMPLETED","hf_m02_integrated_hot_path":"6aa2cf4f21047bf1b0372e67 COMPLETED; HTTP 200; FASTAPI_ENCHUFE_ROUTER_M02_OK True","hf_m02_rw_storage_attempt":"6aa2ebc15527934177ec1eb6 ERROR; 403 missing bucket write/create permission","hf_m03_real_compute":"6aa2ecbb21047bf1b037318e COMPLETED; Qwen3ForCausalLM; 8190735360 params; RIU_HF_M03_OK","hf_m03_integrated_hot_path":"6aa2f8e921047bf1b03732b7 COMPLETED; HTTP 200; RIU_HF_M03_ROUTE_OK; FASTAPI_ENCHUFE_ROUTER_M03_OK True","hf_m05_real_compute":"6aa3781121047bf1b0374a5c COMPLETED; Qwen2ForCausalLM; 7615616512 params; CUDA True; RIU_HF_M05_OK=True; 126.386s","hf_m05_integrated_hot_path":"6aa3977e21047bf1b0374e94 COMPLETED; HTTP 200; dataset mount True/10 files; CUDA True; RIU_HF_M05_ROUTE_OK; SHA256 d3352d066152f07379352c94eaae94dd415be1adcda68b43791f8736c9653e79; read-back True; FASTAPI_ENCHUFE_ROUTER_M05_OK=True"},
-  "current":"P01_HF_COMPATIBLE_BATCH_M06_M12_VALIDATION",
-  "hf_m04_attempt_1":"6aa316585527934177ec29ee CANCELLED after timeout-state anomaly; no final inference evidence",
-  "hf_m04_retry":"6aa34d825527934177ec3d2c CANCELLED after repeated timeout-state anomaly; HF-M04 FLAGGED NO PASS",
-  "hf_m05_storage_boundary":"persistent RW bucket not certified; external authorization boundary; does not invalidate integrated hot-path PASS",
-  "next_delta":"validate compatible local batch HF-M06/M07/M10/M11/M12 in one HF Job and persist per-model results",
-  "next_if_pass":"persist individual model evidence and continue remaining compatible/large/gated slots with exact flags",
-  "next_if_gap":"register per-model FLAG/GAP and continue independent model validation; no global stall",
-  "status":"ACTIVE_LOOP"
+  "verified":{"hf_m05_integrated_hot_path":"6aa3977e21047bf1b0374e94 COMPLETED; HTTP 200; dataset mount True/10 files; CUDA True; RIU_HF_M05_ROUTE_OK; SHA/read-back PASS","hf_batch_m06_m12":"6aa398fe5527934177ec4cd0 COMPLETED; M06/M07/M10/M11/M12 all verifier PASS; dataset mount True/10 files; summary SHA256 c3b38014bdd5423cd85b42f14d54fc13c95247a0aa29e3729eb3ac84264dd6a5; summary read-back True","hf_m06_individual":"PASS; SHA256 e5820de1040e58a84591fd48a3f8a1fbf256090b03ba082a7f0f9e9b30a04d01","hf_m07_individual":"PASS by batch verifier","hf_m10_individual":"PASS by batch verifier","hf_m11_individual":"PASS by batch verifier","hf_m12_individual":"PASS; Qwen2ForCausalLM; 3085938688 params; HTTP 200; SHA256 640448abf630b2c7df1e70fc8849d72dcb84096bf47d9c124dc746c51026b2ab"},
+  "current":"P01_HF_REMAINING_M08_M20_CLASSIFY_EXECUTE",
+  "hf_m04":"FLAGGED NO PASS after two timeout-state anomalies; do not consume another long window",
+  "external_boundaries":"provider auth + persistent RW storage remain explicit external GAP/FLAG and do not invalidate local core PASS",
+  "next_delta":"classify M08/M09/M13-M20 by size/flavor/scope; execute compatible models and FLAG exact non-executable ones",
+  "next_if_pass":"persist each model result then enter P02 hot-path blocking gaps only",
+  "next_if_gap":"register exact per-model FLAG and continue; no global stall",
+  "status":"ACTIVE_LOOP",
+  "progress_percent":99
 }
