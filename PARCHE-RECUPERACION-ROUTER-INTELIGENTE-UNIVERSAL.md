@@ -1,13 +1,34 @@
 # PARCHE DE RECUPERACIÓN — ROUTER INTELIGENTE UNIVERSAL
-Estado: `VERIFIED_CLOSED` · `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · FAST-CLOSE · **100%**.
 
-## RIU-0058 — sólo 3 pasos
-- [x] Paso 1 — Hugging Face: `CLOSED_EXECUTABLE_SET`; PASS reales preservados y FLAGS externos exactos mantenidos.
-- [x] Paso 2 — GitHub/C01-C23: `CLOSED_HOT_PATH_EXECUTABLE_SET`; sólo bloqueantes reales del hot-path fueron cerrados.
-- [x] Paso 3 — API Key Manager + E2E: `VERIFIED_CLOSED`; 100 slots, hash-only, rotate/revoke, overflow fail-closed y E2E real.
+Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP`.
 
-## Evidencia final
-GitHub Actions `RIU FAST-CLOSE` run `34582284615`, job `103208408709`: `success`; `2 passed in 6.79s`.
-El fallo previo `active_requiere_hash_real` demostró el gate fail-closed; RIU-0057 añadió el SHA-256 del adapter físico y el rerun pasó. Commit `af469152fd0306d706c67b8cf6548512fdc4f1c0`; gateway blob `e970b5de2281d236b916ea41492ee52df8454153`; test blob `23473c2a33cb9e5a451ad5a19ce5c4e5a58fc2c7`.
+## Estado del core
+RIU-0058 permanece `VERIFIED_CLOSED`: P01/P02/P03 cerrados; API Key Manager 100 slots + E2E base verificados.
+Evidencia base: GitHub Actions run `34582284615`, job `103208408709`, `2 passed in 6.79s`; commit `af469152fd0306d706c67b8cf6548512fdc4f1c0`.
 
-Los FLAGS HF/provider/storage/runtime no controlables permanecen explícitos y no invalidan el core verificado. `verify_final=PASS_GLOBAL_EXECUTABLE_CORE_100_PERCENT`.
+## Nuevo gate solicitado por el Director
+Antes de iniciar la siguiente tarea Ask Council/Mini Workflow:
+1. testear/certificar cada uno de los 20 modelos HF;
+2. dejar cada slot como PASS o FLAG/GAP con evidencia;
+3. ejecutar regresión/E2E global final;
+4. sincronizar todo el ADN/X-Ray documental.
+
+## Estado de slots al abrir el gate
+- Evidencia previa válida: M01, M02, M03, M05, M06, M07, M10, M11, M12, M20.
+- FLAGS/GAP: M04, M08, M09, M13, M14, M15, M16, M17, M18, M19.
+- M18 requiere test individual: el job anterior no llegó a ejecutarlo.
+- M09 tiene compute completado pero response `content=null`.
+- M04/M17 mantienen timeout flags.
+
+## Evidencia Jobs a preservar
+Catálogo `6aa2513d5527934177ebfaad`; M03 `6aa2f8e921047bf1b03732b7`; M05 compute `6aa3781121047bf1b0374a5c`; M05 integration `6aa3977e21047bf1b0374e94`; M20 `6aa3a3cd5527934177ebfa5c`; M09 `6aa3a3dd5527934177ec4e80`; M17/M18 `6aa3a24f5527934177ec4e3c`.
+
+## Último intento y GAP
+Job `6aa3943f21047bf1b0374dc8` para M06/M10/M07 expuso `ModuleNotFoundError: transformers`. Clasificación: `GAP_ENVIRONMENT_DEPENDENCY`; no PASS y no invalida evidencia anterior.
+
+## Recuperación 1×1
+`read truth files -> unresolved model slot -> research -> execute -> verify/refute -> persist -> next slot -> 20/20 accounted -> final E2E -> final ADN sync -> next task`.
+
+## Gate final
+`CORE_VERIFIED_CLOSED + MODEL_CERTIFICATION_20_OF_20_ACCOUNTED + FINAL_REGRESSION_E2E_PASS`.
+Estado operativo actual: `ACTIVE_LOOP_MODEL_CERTIFICATION`.
