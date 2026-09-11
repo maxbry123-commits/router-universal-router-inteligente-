@@ -1,14 +1,55 @@
-schema: riu.connectivity.bridge/v1
+schema: riu.connectivity.bridge/v2
 project: router-universal-router-inteligente-
 repo: maxbry123-commits/router-universal-router-inteligente-
 branch: main
 role: central_connectivity_router
+owner: maxbry123-commits
 router:
   repo: maxbry123-commits/router-universal-router-inteligente-
+  root: conectividad con Router inteligente universal
   registry: conectividad con Router inteligente universal/REGISTRY-CONECTIVIDAD-RIU.json
+  map: conectividad con Router inteligente universal/MAPA-MENTAL-CONECTIVIDAD-RIU.md
+  handoff: Handoff router inteligente universal.md
+  runtime: router inteligente universal/integration/connectivity_runtime.py
+  mode: FAIL_CLOSED_LOOP
+secret_store:
+  provider: github_codespaces_user_secrets
+  settings_url: https://github.com/settings/codespaces
+  repo_access_required: maxbry123-commits/router-universal-router-inteligente-
+  raw_credentials_in_git: false
+  resolution:
+    huggingface: [RIU_HF_TOKEN, HF_TOKEN, HUGGINGFACE_TOKEN]
+    github: [RIU_GITHUB_PAT, GITHUB_TOKEN, GH_TOKEN]
+  rule: resolve_at_runtime_only
+connections:
+  github:
+    route_via: router_inteligente_universal
+    auth: runtime_env_ref
+    api: https://api.github.com
+    verification: [identity, repository_access, permission, operation, readback]
+  huggingface:
+    account: COMAND-CENTER-1
+    route_via: router_inteligente_universal
+    auth: runtime_env_ref
+    compute: [hf_jobs_cpu, hf_jobs_gpu]
+    capabilities: [models, datasets, spaces, jobs]
+    verification: [whoami, scope_check, api_probe, job_probe]
+  claude_github_mcp:
+    resource_type: github_repository
+    mcp_url: https://api.githubcopilot.com/mcp/
+    auth_boundary: vault_or_runtime
+    route_via: router_inteligente_universal
+  memory:
+    route_via: router_inteligente_universal
+    targets: [maxbry123-commits/MEMORIA, maxbry123-commits/BIBLIOTECA, maxbry123-commits/BITACORA-MAXBRY, maxbry123-commits/Cerebro]
 transport: [api, mcp]
-capabilities: [routing, github, huggingface, compute, memory, storage, verification]
-auth: external_runtime_secret_store
-raw_credentials_in_git: false
-status: BRIDGE_DECLARED
-verification: PENDING_GLOBAL_CONNECTIVITY_E2E
+capabilities: [routing, github, huggingface, compute, memory, storage, verification, claude_github_mcp]
+health_gates: {github: PENDING_RUNTIME_CREDENTIAL_TEST, huggingface: PENDING_RUNTIME_CREDENTIAL_TEST, claude_github_mcp: PENDING_RUNTIME_CREDENTIAL_TEST, runtime_unit_tests: PASS_3_OF_3, global_e2e: PENDING_CREDENTIALS}
+security: {fail_closed: true, evidence_required: true, raw_credentials_in_git: false, never_log_secret_values: true}
+evidence:
+  runtime_commit: 5664301d9051068b98ab326e5545110299e110a6
+  tests_commit: cfa87f7470f73e36d383f2e302f1fd38c582a674
+  hf_job: 6aa490c35527934177ecacb3
+  test_result: 3 passed in 0.02s
+status: BRIDGE_V2_DECLARED_RUNTIME_TESTED
+verification: PENDING_GLOBAL_CONNECTIVITY_E2E_CREDENTIALS
