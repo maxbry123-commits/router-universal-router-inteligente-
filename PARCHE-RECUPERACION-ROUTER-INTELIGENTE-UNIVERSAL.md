@@ -5,21 +5,27 @@ Estado actual: `ACTIVE_LOOP` · contrato `tel.workflow/v3` · modo `FAIL_CLOSED_
 ## Hecho y verificado
 - HF Jobs como cómputo real; catálogo público 20 certificado.
 - HF-M01/M02/M03 conservan PASS internos; auth/provider/RW-storage externos quedan FLAGS/GAP explícitos.
-- HF-M04: `FLAG-HF-M04-COMPUTE-001` tras dos anomalías timeout-state; no otra ventana larga.
-- HF-M05 integración real PASS.
-- HF-M06/M07/M10/M11/M12: Job `6aa398fe5527934177ec4cd0` COMPLETED; verifier individual PASS para cada slot detrás de FastAPI→Enchufe→Router→HFAdapter; dataset RO `/data` True/10 files; summary `/tmp/riu_hf_batch_m06_m12_summary.json`; SHA256 `c3b38014bdd5423cd85b42f14d54fc13c95247a0aa29e3729eb3ac84264dd6a5`; read-back True; `RIU_HF_BATCH_M06_M12_OK=True`.
+- HF-M04 mantiene `FLAG-HF-M04-COMPUTE-001`; no otra ventana larga.
+- HF-M05 integración real PASS; HF-M06/M07/M10/M11/M12 batch integrado PASS.
+- M08/M13/M14/M15/M16/M19: FLAGS exactos contra `a10g-small` y formato observado/provider autorizado; no equivalen a imposibilidad global.
+- M17/M18: StrategyDelta aplicado tras exit127; `/app/llama-cli` confirmado y Job `6aa3a24f5527934177ec4e3c` lanzado.
+- M09/M20: candidatos locales; vLLM runtime probe `6aa3a2cb5527934177ec4e50` lanzado tras fallo de path del smoke inicial.
 
 ## GAP/FLAG
 - `GAP-HF-CATALOG-001`: catálogo privado.
 - `FLAG-HF-PROVIDER-AUTH-001`: permiso Inference Providers insuficiente.
-- storage RW HF-M02/HF-M03/HF-M05: boundary externo no certificado; no inventar bucket/secret.
+- storage RW HF-M02/HF-M03/HF-M05: boundary externo no certificado.
 - `GAP-HF-M04-TIMEOUT-001` + `FLAG-HF-M04-COMPUTE-001`.
+- `GAP-HF-M17-M18-RUNTIME-001`: path binario inicial corregido mediante StrategyDelta.
+- `GAP-HF-VLLM-IMAGE-PATH-001`: imagen vLLM requiere entrypoint/path real antes de M09/M20.
 - GAP P02 contractuales sólo bloquean si afectan E2E real.
 
 ## Lista única
 - [x] HF-M05 integración real.
-- [x] HF-M06/M07/M10/M11/M12 batch compatible con persistencia individual lógica y summary SHA/read-back.
-- [ ] M08/M09/M13-M20 por flavor/tamaño/scope; ejecutar compatibles, FLAG exacto los no ejecutables.
+- [x] HF-M06/M07/M10/M11/M12 batch compatible.
+- [x] M08/M13/M14/M15/M16/M19 clasificados y FLAG exacto local/external.
+- [ ] M17/M18 retry real.
+- [ ] M09/M20 runtime compatible.
 - [ ] P02 sólo GAPs C01-C23 bloqueantes del hot-path.
 - [ ] P03 API Key Manager hasta 100 slots + E2E real.
 
