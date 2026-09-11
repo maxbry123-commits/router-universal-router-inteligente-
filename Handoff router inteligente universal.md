@@ -2,65 +2,48 @@
 
 Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · repo `maxbry123-commits/router-universal-router-inteligente-` · branch `main`.
 
-## Estado preservado
-- Core P01-P03=`VERIFIED_CLOSED`.
-- `MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`=PASS.
-- Regresión core=`PASS`.
-- No reabrir core sin regresión demostrada.
+## Preservado
+Core P01-P03=`VERIFIED_CLOSED`; modelos 20/20 accounted; regresión core PASS.
 
 ## Nodo vivo
-`RIU-0063/0064_CONNECTIVITY_FABRIC_AND_CREDENTIAL_E2E` = `ACTIVE`.
+`RIU-0066_RUNTIME_SECRET_E2E`.
 
-### Materializado
-- raíz canónica: `conectividad con Router inteligente universal/`.
-- 19/19 repos con único `PUENTE-RIU-<repo>.yaml` v2.
-- registry maestro v2: `REGISTRY-CONECTIVIDAD-RIU.json`.
-- mapa mental: `MAPA-MENTAL-CONECTIVIDAD-RIU.md`.
-- runtime: `router inteligente universal/integration/connectivity_runtime.py`.
-- test: `router inteligente universal/tests/test_connectivity_runtime.py`.
+## Fabric disponible
+- 19/19 repos con raíz `conectividad con Router inteligente universal/` y `PUENTE-RIU-<repo>.yaml` v2.
+- Registry commit `f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3`.
+- Mapa commit `c781e9dad4b4504c2d15b517022ce0b7b3a8f267`.
+- Frontend/Astra bridge commit `168b12de4c574a165d32601968ee7dd864614d8a`.
 
-### Secret store indicado por Director
-`https://github.com/settings/codespaces`.
-Resolución runtime:
-- HF: `RIU_HF_TOKEN`, fallback `HF_TOKEN`, `HUGGINGFACE_TOKEN`.
-- GitHub/MCP: `RIU_GITHUB_PAT`, fallback `GITHUB_TOKEN`, `GH_TOKEN`.
-Nunca guardar ni imprimir valores.
+## Frontend/Astra
+El archivo `frontend/conectividad con Router inteligente universal/PUENTE-RIU-frontend.yaml` registra GitHub, HF `COMAND-CENTER-1`, HF Jobs CPU/GPU, models/datasets/spaces/jobs, Space `COMAND-CENTER-1/yaiwes-ui-factory`, Claude `github_repository` + GitHub MCP y memoria.
 
-### Frontend — listo para Astra
-Archivo: `maxbry123-commits/frontend/conectividad con Router inteligente universal/PUENTE-RIU-frontend.yaml`.
-Commit v2: `168b12de4c574a165d32601968ee7dd864614d8a`.
-Incluye GitHub, Hugging Face `COMAND-CENTER-1`, HF Jobs CPU/GPU, models/datasets/spaces/jobs, Space `COMAND-CENTER-1/yaiwes-ui-factory`, Claude `github_repository` + GitHub MCP y targets de memoria.
-Estado: declarativo completo; E2E de los secrets Codespaces pendiente.
+## Secrets
+Store indicado: `https://github.com/settings/codespaces`.
+Refs: HF=`RIU_HF_TOKEN/HF_TOKEN/HUGGINGFACE_TOKEN`; GitHub/MCP=`RIU_GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN`.
+No copiar valores a Git ni chat.
 
-### Claude ↔ GitHub MCP
-Fuente: `TAREA-1/skills/claude-api/`.
-Patrón: `github_repository -> https://api.githubcopilot.com/mcp/ -> vault/runtime`.
+## Runtime
+- `integration/connectivity_runtime.py` latest commit `912fc38708c13f57046d8aa48c503773bd722d93`.
+- `integration/verify_runtime_connectivity.py` commit `5b727b139f3736a4f277fb68b03bbaff95d31dfb`.
+- probes: GitHub identity/permissions/scopes; HF whoami/role; GitHub MCP initialize read-only.
 
-### Claude ↔ memoria
-Fuente: `TAREA-1/skills/claude-api/shared/managed-agents-memory.md`.
-Recurso: `memory_store`, persistencia cross-session.
-Targets: `MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro`.
+## Tests
+- Job `6aa493a121047bf1b03796e9`=`COMPLETED`: **75 passed, 2 warnings in 5.78s**.
+- Job `6aa493e221047bf1b037970b`=`COMPLETED`: verificador sin secrets respondió fail-closed esperado y el gate de seguridad pasó.
+- 18 archivos de test cubren conectores, registry, Enchufe, RedUniversal, resilience, validator, HF hot-path, FastAPI E2E y connectivity runtime.
 
-### Hugging Face
-Cuenta: `COMAND-CENTER-1`; compute: HF Jobs CPU/GPU.
-Test estructural del runtime ejecutado en HF Job `6aa490c35527934177ecacb3`, `COMPLETED`, resultado `3 passed in 0.02s`.
+## GAP real restante
+Los Codespaces secrets no son re-leíbles mediante la API/connector actual. Para validar los 3 tokens reales, `verify_runtime_connectivity.py` debe ejecutarse dentro de un Codespace/runtime autorizado para el repo. Hasta entonces no declarar acceso externo PASS.
 
-## Evidencia principal
-- runtime commit `5664301d9051068b98ab326e5545110299e110a6`.
-- tests commit `cfa87f7470f73e36d383f2e302f1fd38c582a674`.
-- Router self bridge v2 `38a2eca676f9e90cdb425d55697d036b20643360`.
-- Registry 19/19 v2 `f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3`.
-- mapa mental actualizado `c781e9dad4b4504c2d15b517022ce0b7b3a8f267`.
-- arquitectura sincronizada `a1b842a9687be99a7b8130abf8c54127d643627a`.
-
-## Cola 1×1 pendiente
-1. Confirmar visibilidad runtime de los 3 secrets de Codespaces en el contexto donde corre el Router.
-2. GitHub: identity + repo access + permission + operation/read-back.
-3. HF: whoami-v2 + scopes + API/Job probe.
-4. Claude/GitHub MCP: mount/connect/tool probe.
-5. memoria: operación/read-back.
-6. ejecutar suite de componentes y regresión global del Router.
-7. cerrar solo con evidencia.
+## Cola 1×1
+1. visibilidad de refs en Codespace Router/frontend.
+2. GitHub identity + full repo permissions + read-back.
+3. HF identity=`COMAND-CENTER-1` + token role/scope + API/Job probe.
+4. GitHub MCP initialize + tool boundary.
+5. memory operation/read-back.
+6. global connectivity E2E.
+7. sync final/cierre.
 
 ## Gate
-`BRIDGES_V2_19_OF_19=PASS` + `ROUTER_RUNTIME_TESTED=PASS`; `GITHUB_ACCESS_VERIFIED/HF_ACCESS_VERIFIED/MCP_BOUNDARY_VERIFIED/MEMORY_BOUNDARY_VERIFIED/GLOBAL_CONNECTIVITY_E2E_PASS=PENDING`.
+PASS=`BRIDGES_V2_19_OF_19 + ROUTER_RUNTIME + SUITE_75_OF_75 + FAIL_CLOSED_NO_SECRET`.
+PENDING=`GITHUB/HF/MCP/MEMORY/GLOBAL_E2E` por visibilidad runtime de Codespaces secrets.
