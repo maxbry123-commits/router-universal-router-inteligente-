@@ -1,0 +1,58 @@
+{
+  "contract": "tel.workflow/v3",
+  "mode": "FAIL_CLOSED_LOOP",
+  "router_repo": "maxbry123-commits/router-universal-router-inteligente-",
+  "router_branch": "main",
+  "bridge_root": "conectividad con Router inteligente universal",
+  "status": "ACTIVE_BUILD",
+  "connections": {
+    "github": {
+      "provider": "github",
+      "auth": "external_runtime_secret_store",
+      "verification": "identity+permission+operation+readback",
+      "status": "CREDENTIAL_PENDING"
+    },
+    "huggingface": {
+      "provider": "huggingface",
+      "account": "COMAND-CENTER-1",
+      "compute": ["jobs_cpu", "jobs_gpu"],
+      "auth": "external_runtime_secret_store",
+      "verification": "identity+scope+job_or_api_probe",
+      "status": "CREDENTIAL_PENDING"
+    },
+    "claude_github_mcp": {
+      "provider": "anthropic_managed_agents",
+      "resource": "github_repository",
+      "mcp_url": "https://api.githubcopilot.com/mcp/",
+      "auth": "vault_or_runtime",
+      "source": "maxbry123-commits/TAREA-1/skills/claude-api/",
+      "status": "DISCOVERED"
+    }
+  },
+  "repositories": [
+    {"name":"agentes","bridge":"PUENTE-RIU-agentes.yaml","status":"BRIDGE_PENDING"},
+    {"name":"Agentes-motores-Wordflow-YAIWES","bridge":"PUENTE-RIU-Agentes-motores-Wordflow-YAIWES.yaml","status":"BRIDGE_PENDING"},
+    {"name":"BIBLIOTECA","bridge":"PUENTE-RIU-BIBLIOTECA.yaml","status":"BRIDGE_PENDING"},
+    {"name":"BITACORA-MAXBRY","bridge":"PUENTE-RIU-BITACORA-MAXBRY.yaml","status":"BRIDGE_PENDING"},
+    {"name":"Cerebro","bridge":"PUENTE-RIU-Cerebro.yaml","status":"BRIDGE_PENDING"},
+    {"name":"comand-Center","bridge":"PUENTE-RIU-comand-Center.yaml","status":"BRIDGE_PENDING"},
+    {"name":"frontend","bridge":"PUENTE-RIU-frontend.yaml","status":"BRIDGE_PENDING"},
+    {"name":"Grupo-Trabajo-1","bridge":"PUENTE-RIU-Grupo-Trabajo-1.yaml","status":"BRIDGE_PENDING"},
+    {"name":"Grupo-Trabajo-2","bridge":"PUENTE-RIU-Grupo-Trabajo-2.yaml","status":"BRIDGE_PENDING"},
+    {"name":"informaci-n-auditor-","bridge":"PUENTE-RIU-informaci-n-auditor-.yaml","status":"BRIDGE_PENDING"},
+    {"name":"Maxbry-AGI","bridge":"PUENTE-RIU-Maxbry-AGI.yaml","status":"BRIDGE_PENDING"},
+    {"name":"MEMORIA","bridge":"PUENTE-RIU-MEMORIA.yaml","status":"BRIDGE_PENDING"},
+    {"name":"nct-core","bridge":"PUENTE-RIU-nct-core.yaml","status":"BRIDGE_PENDING"},
+    {"name":"nct-hub","bridge":"PUENTE-RIU-nct-hub.yaml","status":"BRIDGE_PENDING"},
+    {"name":"Orquestador-Maxbry-","bridge":"PUENTE-RIU-Orquestador-Maxbry-.yaml","status":"BRIDGE_PENDING"},
+    {"name":"osquestador-auditor","bridge":"PUENTE-RIU-osquestador-auditor.yaml","status":"BRIDGE_PENDING"},
+    {"name":"router-universal-router-inteligente-","bridge":"PUENTE-RIU-router-universal-router-inteligente-.yaml","status":"BRIDGE_PENDING"},
+    {"name":"TAREA-1","bridge":"PUENTE-RIU-TAREA-1.yaml","status":"BRIDGE_PENDING"},
+    {"name":"TAREA-2","bridge":"PUENTE-RIU-TAREA-2.yaml","status":"BRIDGE_PENDING"}
+  ],
+  "security": {
+    "raw_credentials_in_git": false,
+    "fail_closed": true,
+    "evidence_required": true
+  }
+}
