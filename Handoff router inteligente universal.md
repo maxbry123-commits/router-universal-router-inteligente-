@@ -2,59 +2,65 @@
 
 Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · repo `maxbry123-commits/router-universal-router-inteligente-` · branch `main`.
 
-## Estado preservado del core
+## Estado preservado
 - Core P01-P03=`VERIFIED_CLOSED`.
 - `MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`=PASS.
-- `FINAL_REGRESSION_E2E_PASS`=PASS.
-- El core no se reabre salvo regresión demostrada.
+- Regresión core=`PASS`.
+- No reabrir core sin regresión demostrada.
 
-## Nueva tarea autorizada — conectividad centralizada multi-repo
-Estado=`ACTIVE_BUILD`.
-Raíz canónica del Router: `conectividad con Router inteligente universal/`.
+## Nodo vivo
+`RIU-0063/0064_CONNECTIVITY_FABRIC_AND_CREDENTIAL_E2E` = `ACTIVE`.
 
-Objetivo: que toda conexión de GitHub, Hugging Face, MCP, cómputo, memoria, almacenamiento, VPS/API y puentes entre proyectos pase por Router Inteligente Universal y sea localizable desde un mapa mental/registry único.
+### Materializado
+- raíz canónica: `conectividad con Router inteligente universal/`.
+- 19/19 repos con único `PUENTE-RIU-<repo>.yaml` v2.
+- registry maestro v2: `REGISTRY-CONECTIVIDAD-RIU.json`.
+- mapa mental: `MAPA-MENTAL-CONECTIVIDAD-RIU.md`.
+- runtime: `router inteligente universal/integration/connectivity_runtime.py`.
+- test: `router inteligente universal/tests/test_connectivity_runtime.py`.
 
-### Regla por repositorio
-Cada repo tiene una sola raíz lógica `conectividad con Router inteligente universal/` y un solo archivo `PUENTE-RIU-<repo>.yaml`.
-Puentes declarados y persistidos: `19/19`.
+### Secret store indicado por Director
+`https://github.com/settings/codespaces`.
+Resolución runtime:
+- HF: `RIU_HF_TOKEN`, fallback `HF_TOKEN`, `HUGGINGFACE_TOKEN`.
+- GitHub/MCP: `RIU_GITHUB_PAT`, fallback `GITHUB_TOKEN`, `GH_TOKEN`.
+Nunca guardar ni imprimir valores.
 
-Repos: agentes; Agentes-motores-Wordflow-YAIWES; BIBLIOTECA; BITACORA-MAXBRY; Cerebro; comand-Center; frontend; Grupo-Trabajo-1; Grupo-Trabajo-2; informaci-n-auditor-; Maxbry-AGI; MEMORIA; nct-core; nct-hub; Orquestador-Maxbry-; osquestador-auditor; router-universal-router-inteligente-; TAREA-1; TAREA-2.
+### Frontend — listo para Astra
+Archivo: `maxbry123-commits/frontend/conectividad con Router inteligente universal/PUENTE-RIU-frontend.yaml`.
+Commit v2: `168b12de4c574a165d32601968ee7dd864614d8a`.
+Incluye GitHub, Hugging Face `COMAND-CENTER-1`, HF Jobs CPU/GPU, models/datasets/spaces/jobs, Space `COMAND-CENTER-1/yaiwes-ui-factory`, Claude `github_repository` + GitHub MCP y targets de memoria.
+Estado: declarativo completo; E2E de los secrets Codespaces pendiente.
 
-### Registro maestro
-- `conectividad con Router inteligente universal/MAPA-MENTAL-CONECTIVIDAD-RIU.md`
-- `conectividad con Router inteligente universal/REGISTRY-CONECTIVIDAD-RIU.json`
-- `conectividad con Router inteligente universal/PUENTE-RIU-router-universal-router-inteligente-.yaml`
+### Claude ↔ GitHub MCP
+Fuente: `TAREA-1/skills/claude-api/`.
+Patrón: `github_repository -> https://api.githubcopilot.com/mcp/ -> vault/runtime`.
 
-### Claude ↔ GitHub MCP recuperado
-Fuente histórica: `maxbry123-commits/TAREA-1/skills/claude-api/`.
-Patrón: Claude Managed Agents + recurso `github_repository` + GitHub MCP `https://api.githubcopilot.com/mcp/` + autenticación externa en vault/runtime. No copiar tokens al repo.
-
-### Claude ↔ memoria persistente recuperada
-Fuente: `maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md`.
-Patrón: recurso `memory_store` en la sesión Managed Agent para memoria persistente entre sesiones. El puente TAREA-1 fue enriquecido y el registry central ya registra esta capacidad. Estado=`DISCOVERED_BRIDGED_TEST_PENDING`.
+### Claude ↔ memoria
+Fuente: `TAREA-1/skills/claude-api/shared/managed-agents-memory.md`.
+Recurso: `memory_store`, persistencia cross-session.
+Targets: `MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro`.
 
 ### Hugging Face
-Cuenta observada: `COMAND-CENTER-1`.
-Cómputo observado/ya usado en el proyecto: Hugging Face Jobs CPU/GPU. El Router debe consumir autenticación en runtime desde almacén seguro y validar identidad/scope antes de PASS.
-Workflow histórico localizado: `maxbry123-commits/TAREA-1/.github/workflows/yaiwes-hf-static-publish.yml`.
+Cuenta: `COMAND-CENTER-1`; compute: HF Jobs CPU/GPU.
+Test estructural del runtime ejecutado en HF Job `6aa490c35527934177ecacb3`, `COMPLETED`, resultado `3 passed in 0.02s`.
 
-### Memoria/estado propios
-`MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro` están mapeados como capacidades de memoria/almacenamiento/estado; siguen `PENDING_E2E_ROUTER` hasta una operación real y read-back mediante el Router.
+## Evidencia principal
+- runtime commit `5664301d9051068b98ab326e5545110299e110a6`.
+- tests commit `cfa87f7470f73e36d383f2e302f1fd38c582a674`.
+- Router self bridge v2 `38a2eca676f9e90cdb425d55697d036b20643360`.
+- Registry 19/19 v2 `f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3`.
+- mapa mental actualizado `c781e9dad4b4504c2d15b517022ce0b7b3a8f267`.
+- arquitectura sincronizada `a1b842a9687be99a7b8130abf8c54127d643627a`.
 
-## Seguridad
-Credenciales crudas prohibidas en Git. Los puentes solo registran frontera `external_runtime_secret_store`/vault/runtime. Codespaces/Actions/HF/vault pueden alojar credenciales, pero Router solo recibe referencias/runtime.
+## Cola 1×1 pendiente
+1. Confirmar visibilidad runtime de los 3 secrets de Codespaces en el contexto donde corre el Router.
+2. GitHub: identity + repo access + permission + operation/read-back.
+3. HF: whoami-v2 + scopes + API/Job probe.
+4. Claude/GitHub MCP: mount/connect/tool probe.
+5. memoria: operación/read-back.
+6. ejecutar suite de componentes y regresión global del Router.
+7. cerrar solo con evidencia.
 
-## Gate actual
-`ALL_REPOS_BRIDGED=PASS(19/19)`.
-Pendiente: `GITHUB_ACCESS_VERIFIED + HF_ACCESS_VERIFIED + MCP_BOUNDARY_VERIFIED + CONNECTIVITY_GLOBAL_E2E_PASS`.
-Hasta que esas pruebas existan, la capa de conectividad no es `VERIFIED_CLOSED`.
-
-## Evidencia de esta iteración
-- mapa central inicial: `b74d6220b8ddbead8a77af48e04b0970d2ddea60`
-- mapa enriquecido con Claude memory_store: `a8331c4f866d0f90d5d0936e2dc7469021562e27`
-- registry inicial: `f56d64668448363a62684066d5f1a8685dcd31f7`
-- registry 19/19 + SHA por repo: `698302e578d0871bd2dc6987d339ec3a88f7b6dc`
-- registry enriquecido memory_store/TAREA-1: `0a6289861460c9bce4e091c7e39d3cb02724075a`
-- puente TAREA-1 enriquecido: `295c380ebee82ccf49a7623bd3bb7320e847fad0`
-- README arquitectura actual: `7a475f55849692b461379de44d69e1e2f038f183`
-- archivos puente creados en los 19 repos; ver `REGISTRY-CONECTIVIDAD-RIU.json`.
+## Gate
+`BRIDGES_V2_19_OF_19=PASS` + `ROUTER_RUNTIME_TESTED=PASS`; `GITHUB_ACCESS_VERIFIED/HF_ACCESS_VERIFIED/MCP_BOUNDARY_VERIFIED/MEMORY_BOUNDARY_VERIFIED/GLOBAL_CONNECTIVITY_E2E_PASS=PENDING`.
