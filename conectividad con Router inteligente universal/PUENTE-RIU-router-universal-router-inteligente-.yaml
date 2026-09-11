@@ -1,0 +1,14 @@
+schema: riu.connectivity.bridge/v1
+project: router-universal-router-inteligente-
+repo: maxbry123-commits/router-universal-router-inteligente-
+branch: main
+role: central_connectivity_router
+router:
+  repo: maxbry123-commits/router-universal-router-inteligente-
+  registry: conectividad con Router inteligente universal/REGISTRY-CONECTIVIDAD-RIU.json
+transport: [api, mcp]
+capabilities: [routing, github, huggingface, compute, memory, storage, verification]
+auth: external_runtime_secret_store
+raw_credentials_in_git: false
+status: BRIDGE_DECLARED
+verification: PENDING_GLOBAL_CONNECTIVITY_E2E
