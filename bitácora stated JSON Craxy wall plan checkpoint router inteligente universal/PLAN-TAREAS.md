@@ -22,9 +22,14 @@ Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP`.
    - Sincronizar Arquitectura, Handoff, Crazy Wall, STATE, CHECKPOINT, PLAN, RECOVERY, índice HF, API keys y parche maestro.
    - Después habilitar siguiente tarea Ask Council/Mini Workflow.
 
+## RIU-0061 — cola 1×1 actual
+- M18 `ornith-ai/Ornith-1.5-9B-GGUF`: Job individual `6aa475605527934177eca1cb` creado con llama.cpp CUDA, `a10g-small`, `Q3_K_S`, ctx=512, n=4, timeout=480s.
+- Estado observado: `SCHEDULING / Pulling container image`; no PASS todavía.
+- Siguiente única acción: verificar estado terminal/log. PASS sólo con inferencia no vacía y `HF_M18_OK=True`; en caso contrario registrar FLAG/GAP exacto y continuar al gate 20/20.
+
 ## Estado actual
 `ACTIVE_LOOP_MODEL_CERTIFICATION`.
-El core sigue `VERIFIED_CLOSED`; el nuevo requisito de certificación de modelos y regresión final aún está pendiente.
+El core sigue `VERIFIED_CLOSED`; la certificación está en 19/20 contabilizados antes del resultado terminal M18.
 
 ## Regla de cierre
 `CORE_VERIFIED_CLOSED + MODEL_CERTIFICATION_20_OF_20_ACCOUNTED + FINAL_REGRESSION_E2E_PASS`.
