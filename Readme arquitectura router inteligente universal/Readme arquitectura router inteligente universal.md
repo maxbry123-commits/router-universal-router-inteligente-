@@ -10,13 +10,13 @@ Backend Python 95% determinista / 5% LLM. Flujo: `INPUT -> classifier -> DAG fij
 2. Integración GitHub/C01-C23 — PENDING tras P01 ejecutable.
 3. API keys agentes + E2E — PENDING.
 
-## 3. Estado P01 — RIU-0050
-- HF-M01/M02/M03: PASS internos previos; auth/provider/RW externos quedan FLAGS/GAP explícitos.
-- HF-M04: `FLAG-HF-M04-COMPUTE-001` tras dos anomalías timeout-state; no repetir ventana larga.
-- HF-M05: compute + integración FastAPI→Enchufe→RedUniversal→HF adapter PASS.
-- HF-M06/M07/M10/M11/M12: batch Job `6aa398fe5527934177ec4cd0` COMPLETED en `a10g-small`; cada slot pasó verifier individual; dataset `HuggingFaceH4/ultrachat_200k` RO `/data` True/10 files; summary `/tmp/riu_hf_batch_m06_m12_summary.json`; SHA256 `c3b38014bdd5423cd85b42f14d54fc13c95247a0aa29e3729eb3ac84264dd6a5`; read-back True; `RIU_HF_BATCH_M06_M12_OK=True`.
-- M06 individual SHA `e5820de1040e58a84591fd48a3f8a1fbf256090b03ba082a7f0f9e9b30a04d01`; M12 individual SHA `640448abf630b2c7df1e70fc8849d72dcb84096bf47d9c124dc746c51026b2ab`.
-- Cola P01: M08/M09/M13-M20 por compatibilidad/tamaño/scope; ejecutar compatibles y FLAG exacto lo externo/no ejecutable.
+## 3. Estado P01 — RIU-0051
+- HF-M01/M02/M03: PASS internos previos; auth/provider/RW externos quedan FLAGS/GAP.
+- HF-M04: `FLAG-HF-M04-COMPUTE-001`; no otra ventana larga.
+- HF-M05 integrado PASS; HF-M06/M07/M10/M11/M12 batch integrado PASS.
+- HF metadata revalidada para M08/M09/M13-M20. M08/M13/M14/M15/M16/M19 reciben FLAG específico para `a10g-small` + formato observado/provider autorizado; no se declara imposibilidad global.
+- HF-M17/M18 GGUF: initial Job `6aa3a1875527934177ec4e06` exit127; probe `6aa3a24221047bf1b0374f88` encontró `/app/llama-cli`; StrategyDelta Job `6aa3a24f5527934177ec4e3c` está ejecutándose con Q4_K_M.
+- HF-M09 MXFP4 y HF-M20 AWQ 4-bit: candidatos locales; vLLM smoke `6aa3a15c5527934177ec4e04` falló por executable path, no por modelo; probe `6aa3a2cb5527934177ec4e50` lanzado.
 
 ## 4. Reglas
 Gateway FastAPI único; adapters separados; sin monolito. P02 `REUSE > PATCH > ADAPT > GENERATE`. Descarga/copia/movimiento sólo motores canónicos autorizados. No reauditar donors cerrados.
