@@ -4,7 +4,7 @@
   "router_repo": "maxbry123-commits/router-universal-router-inteligente-",
   "router_branch": "main",
   "bridge_root": "conectividad con Router inteligente universal",
-  "status": "ACTIVE_BUILD",
+  "status": "ALL_BRIDGES_DECLARED_CREDENTIAL_TEST_PENDING",
   "connections": {
     "github": {
       "provider": "github",
@@ -26,30 +26,36 @@
       "mcp_url": "https://api.githubcopilot.com/mcp/",
       "auth": "vault_or_runtime",
       "source": "maxbry123-commits/TAREA-1/skills/claude-api/",
-      "status": "DISCOVERED"
+      "status": "DISCOVERED_BRIDGED_TEST_PENDING"
     }
   },
   "repositories": [
-    {"name":"agentes","bridge":"PUENTE-RIU-agentes.yaml","status":"BRIDGE_PENDING"},
-    {"name":"Agentes-motores-Wordflow-YAIWES","bridge":"PUENTE-RIU-Agentes-motores-Wordflow-YAIWES.yaml","status":"BRIDGE_PENDING"},
-    {"name":"BIBLIOTECA","bridge":"PUENTE-RIU-BIBLIOTECA.yaml","status":"BRIDGE_PENDING"},
-    {"name":"BITACORA-MAXBRY","bridge":"PUENTE-RIU-BITACORA-MAXBRY.yaml","status":"BRIDGE_PENDING"},
-    {"name":"Cerebro","bridge":"PUENTE-RIU-Cerebro.yaml","status":"BRIDGE_PENDING"},
-    {"name":"comand-Center","bridge":"PUENTE-RIU-comand-Center.yaml","status":"BRIDGE_PENDING"},
-    {"name":"frontend","bridge":"PUENTE-RIU-frontend.yaml","status":"BRIDGE_PENDING"},
-    {"name":"Grupo-Trabajo-1","bridge":"PUENTE-RIU-Grupo-Trabajo-1.yaml","status":"BRIDGE_PENDING"},
-    {"name":"Grupo-Trabajo-2","bridge":"PUENTE-RIU-Grupo-Trabajo-2.yaml","status":"BRIDGE_PENDING"},
-    {"name":"informaci-n-auditor-","bridge":"PUENTE-RIU-informaci-n-auditor-.yaml","status":"BRIDGE_PENDING"},
-    {"name":"Maxbry-AGI","bridge":"PUENTE-RIU-Maxbry-AGI.yaml","status":"BRIDGE_PENDING"},
-    {"name":"MEMORIA","bridge":"PUENTE-RIU-MEMORIA.yaml","status":"BRIDGE_PENDING"},
-    {"name":"nct-core","bridge":"PUENTE-RIU-nct-core.yaml","status":"BRIDGE_PENDING"},
-    {"name":"nct-hub","bridge":"PUENTE-RIU-nct-hub.yaml","status":"BRIDGE_PENDING"},
-    {"name":"Orquestador-Maxbry-","bridge":"PUENTE-RIU-Orquestador-Maxbry-.yaml","status":"BRIDGE_PENDING"},
-    {"name":"osquestador-auditor","bridge":"PUENTE-RIU-osquestador-auditor.yaml","status":"BRIDGE_PENDING"},
-    {"name":"router-universal-router-inteligente-","bridge":"PUENTE-RIU-router-universal-router-inteligente-.yaml","status":"BRIDGE_PENDING"},
-    {"name":"TAREA-1","bridge":"PUENTE-RIU-TAREA-1.yaml","status":"BRIDGE_PENDING"},
-    {"name":"TAREA-2","bridge":"PUENTE-RIU-TAREA-2.yaml","status":"BRIDGE_PENDING"}
+    {"name":"agentes","bridge":"PUENTE-RIU-agentes.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"Agentes-motores-Wordflow-YAIWES","bridge":"PUENTE-RIU-Agentes-motores-Wordflow-YAIWES.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"BIBLIOTECA","bridge":"PUENTE-RIU-BIBLIOTECA.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"BITACORA-MAXBRY","bridge":"PUENTE-RIU-BITACORA-MAXBRY.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"Cerebro","bridge":"PUENTE-RIU-Cerebro.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"comand-Center","bridge":"PUENTE-RIU-comand-Center.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"frontend","bridge":"PUENTE-RIU-frontend.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"Grupo-Trabajo-1","bridge":"PUENTE-RIU-Grupo-Trabajo-1.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"Grupo-Trabajo-2","bridge":"PUENTE-RIU-Grupo-Trabajo-2.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"informaci-n-auditor-","bridge":"PUENTE-RIU-informaci-n-auditor-.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"Maxbry-AGI","bridge":"PUENTE-RIU-Maxbry-AGI.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"MEMORIA","bridge":"PUENTE-RIU-MEMORIA.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"nct-core","bridge":"PUENTE-RIU-nct-core.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"nct-hub","bridge":"PUENTE-RIU-nct-hub.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"Orquestador-Maxbry-","bridge":"PUENTE-RIU-Orquestador-Maxbry-.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"osquestador-auditor","bridge":"PUENTE-RIU-osquestador-auditor.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"router-universal-router-inteligente-","bridge":"PUENTE-RIU-router-universal-router-inteligente-.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"TAREA-1","bridge":"PUENTE-RIU-TAREA-1.yaml","status":"BRIDGE_DECLARED"},
+    {"name":"TAREA-2","bridge":"PUENTE-RIU-TAREA-2.yaml","status":"BRIDGE_DECLARED"}
   ],
+  "bridge_summary": {
+    "expected": 19,
+    "declared": 19,
+    "failed": 0,
+    "next_gate": "CREDENTIAL_AND_E2E_CONNECTIVITY_VALIDATION"
+  },
   "security": {
     "raw_credentials_in_git": false,
     "fail_closed": true,
