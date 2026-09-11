@@ -1,15 +1,1 @@
-{
-  "checkpoint":"router-universal-p01-hf-m17-m18-strategydelta-running",
-  "contract":"tel.workflow/v3",
-  "mode":"FAIL_CLOSED_LOOP",
-  "verified":{"hf_m05_integrated_hot_path":"6aa3977e21047bf1b0374e94 COMPLETED; HTTP 200; dataset mount True/10 files; CUDA True; SHA/read-back PASS","hf_batch_m06_m12":"6aa398fe5527934177ec4cd0 COMPLETED; M06/M07/M10/M11/M12 verifier PASS; summary SHA/read-back PASS","remaining_metadata":"M08=31273.1M; M09=20914.8M MXFP4; M13=116829.2M MXFP4; M14=32762.1M; M15=34388.9M; M16=304180.4M FP8; M17/M18=GGUF; M19=72287.9M; M20=7615.6M AWQ 4-bit","gguf_runtime_probe":"6aa3a24221047bf1b0374f88 found /app/llama-cli after initial exit127"},
-  "current":"P01_HF_M17_M18_GGUF_STRATEGYDELTA_RUNNING",
-  "large_model_flags":"M08/M13/M14/M15/M16/M19 flagged specifically for observed format vs a10g-small/local authorized path; not global impossibility",
-  "hf_m04":"FLAGGED NO PASS after two timeout-state anomalies; do not consume another long window",
-  "external_boundaries":"provider auth + persistent RW storage remain explicit external GAP/FLAG",
-  "next_delta":"inspect Job 6aa3a24f5527934177ec4e3c; then validate M09/M20 with corrected vLLM runtime path",
-  "next_if_pass":"persist M17/M18 individually then execute M09/M20 candidates and close P01 executable set",
-  "next_if_gap":"register exact per-model/runtime FLAG and continue; no global stall",
-  "status":"ACTIVE_LOOP",
-  "progress_percent":99
-}
+{"checkpoint":"router-universal-p01-m09-m17-m18-finalize","contract":"tel.workflow/v3","mode":"FAIL_CLOSED_LOOP","verified":{"hf_m20":"Job 6aa3a3cd5527934177ec4e7e COMPLETED; Qwen/Qwen2.5-7B-Instruct-AWQ; vllm-0.29.0-7d06a941; response OK; SHA256 5c45711905d5c34282a4711527ced24ede31e3390bf318285a01e8d78acf5302; HF_M20_OK=True","prior":"M05 + M06/M07/M10/M11/M12 preserved PASS"},"current":"P01_HF_M09_M17_M18_FINALIZE","next_delta":"settle M09 and M17/M18 terminal results; exact FLAG on failure","next_if_pass":"close P01 executable set and enter P02 hot-path blockers only","next_if_gap":"record exact FLAG and continue","status":"ACTIVE_LOOP","progress_percent":99}
