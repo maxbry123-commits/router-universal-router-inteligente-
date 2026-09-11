@@ -1,54 +1,33 @@
 # RECOVERY PATCH — ROUTER INTELIGENTE UNIVERSAL
 Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP`.
 
-## Estado recuperable preservado
-Core RIU-0058=`VERIFIED_CLOSED`; P01/P02/P03 cerrados.
-Certificación HF ampliada=`MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`.
-Regresión global core=`FINAL_REGRESSION_E2E_PASS`.
+## Estado preservado
+Core P01-P03=`VERIFIED_CLOSED`; `MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`; regresión global core=`PASS`.
 
-## Nueva fase recuperable — RIU-0063 conectividad centralizada
-Objetivo: toda conectividad de proyectos pasa por Router Inteligente Universal y queda inventariada bajo `conectividad con Router inteligente universal/`.
+## RIU-0063/0064 — Connectivity Fabric
+Objetivo: toda conectividad de proyectos pasa por Router Inteligente Universal bajo `conectividad con Router inteligente universal/`.
 
-### Artefactos canónicos
-- `MAPA-MENTAL-CONECTIVIDAD-RIU.md`
-- `REGISTRY-CONECTIVIDAD-RIU.json`
-- `PUENTE-RIU-router-universal-router-inteligente-.yaml`
-- cada repo propietario contiene exactamente un `PUENTE-RIU-<repo>.yaml` dentro de la misma raíz lógica.
+### Estado material verificado
+- 19/19 repositorios con exactamente un `PUENTE-RIU-<repo>.yaml` en `riu.connectivity.bridge/v2` y read-back.
+- registry central v2 sincronizado; blob `aa27dc728af98af73741ad287cdcd6bdee6addeb`.
+- runtime `router inteligente universal/integration/connectivity_runtime.py`; blob `0a26e4133efba1e5343685eff9fe17a88a7ea3a3`.
+- Router bridge v2/runtime-tested; blob `469ee974ea6c0f3edfb38443b96ef19b83f6df81`.
+- frontend v2 incluye GitHub, HF `COMAND-CENTER-1`, HF Jobs CPU/GPU, models/datasets/spaces/jobs, Claude `github_repository` + GitHub MCP y memoria.
+- TAREA-2 v2 commit `0848a33e21a8e48d62597d05ca363caac40f64f8`, blob `dab6ebdc7b7a973314df7ce2126a432cc0388658`.
+- runtime tests ejecutados en HF Job `6aa490c35527934177ecacb3`: `COMPLETED`, `3 passed in 0.02s`.
 
-### Estado material
-- repos esperados: 19
-- bridges declarados: 19
-- fallos de persistencia: 0
-- GitHub runtime credential validation: PENDING
-- Hugging Face runtime credential validation: PENDING
-- Claude/GitHub MCP boundary validation: PENDING
-- Claude memory_store boundary validation: PENDING
-- Global connectivity E2E: PENDING
+### Secret boundary
+Store autorizado: `https://github.com/settings/codespaces`.
+HF refs: `RIU_HF_TOKEN`, `HF_TOKEN`, `HUGGINGFACE_TOKEN`.
+GitHub/MCP refs: `RIU_GITHUB_PAT`, `GITHUB_TOKEN`, `GH_TOKEN`.
+Valores crudos prohibidos en Git, logs, README, STATE, registry y respuestas.
 
-### Conexiones recuperadas
-Claude/GitHub MCP: fuente histórica `maxbry123-commits/TAREA-1/skills/claude-api/`; patrón `github_repository` + `https://api.githubcopilot.com/mcp/` + auth externa vault/runtime.
-Claude memoria persistente: fuente `maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md`; recurso `memory_store` persistente entre sesiones; bridge TAREA-1 enriquecido, aún no E2E.
-Hugging Face: cuenta observada `COMAND-CENTER-1`; Jobs CPU/GPU usados previamente; workflow histórico `TAREA-1/.github/workflows/yaiwes-hf-static-publish.yml`; toda credencial queda fuera de Git.
-Memoria/estado propios: `MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro` mapeados como targets pendientes de E2E Router.
+### Gate actual
+PASS: `BRIDGES_V2_19_OF_19`, `ROUTER_RUNTIME_TESTED`, `SECRET_RESOLUTION_FAIL_CLOSED_UNIT_TEST`.
+PENDING runtime credential: `GITHUB_ACCESS_VERIFIED`, `HF_ACCESS_VERIFIED`, `MCP_BOUNDARY_VERIFIED`, `MEMORY_BOUNDARY_VERIFIED`, `CONNECTIVITY_GLOBAL_E2E_PASS`.
 
-## Evidencias RIU-0063 actuales
-- mapa central enriquecido `a8331c4f866d0f90d5d0936e2dc7469021562e27`
-- registry 19/19 + conexiones `0a6289861460c9bce4e091c7e39d3cb02724075a`
-- TAREA-1 bridge enriquecido `295c380ebee82ccf49a7623bd3bb7320e847fad0`
-- arquitectura `7a475f55849692b461379de44d69e1e2f038f183`
-- handoff `2b5b63ffd9fe0bb0cd74fbcc6de0ef8972f2647d`
-- STATE `c32184ad9840f33030fa3601628eebb5dff38ea3`
-- Crazy Wall `c2428802f42df5275b867b8624425e79c93b4c5e`
-- CHECKPOINT `b38651c5b400a887ecf5c080b0c598efe5380f3b`
-- PLAN `509e44be501bc556b4f8e372b6178c6876fac586`
+### Recuperación
+Retomar en `GITHUB_RUNTIME_CREDENTIAL_VALIDATION`. Ejecutar sólo si el runtime donde corre Router ve una de las refs autorizadas; nunca intentar leer valores desde GitHub Secrets API. Después: GitHub probe -> HF probe -> MCP boundary -> memory read-back -> global E2E -> sync final. Cualquier ausencia de secret o scope queda FLAG/PENDING, nunca PASS falso.
 
-## Reglas de recuperación
-1. No repetir P01-P03 ni certificación 20/20 salvo regresión.
-2. No exponer ni persistir valores secretos.
-3. Retomar en `GITHUB_RUNTIME_CREDENTIAL_VALIDATION` cuando el Director confirme los tokens runtime.
-4. Seguir cola 1×1 hasta GitHub PASS → HF PASS → MCP boundary PASS → memory boundary PASS → global E2E PASS → cierre documental.
-5. Cualquier fallo queda FLAG/GAP con evidencia, nunca PASS falso.
-
-## Gate actual
-`ALL_REPOS_BRIDGED=PASS(19/19)`.
-`CONNECTIVITY_LAYER_VERIFIED_CLOSED=PENDING`.
+### Evidencia documental RIU-0064
+STATE commit `9db5cec9574c1e3c70f1509347612ea24876087c`; CHECKPOINT `605dc13491c523e26b1b8d5178771b98f29c8f2b`; PLAN `64c0aeda36d06db8cbea8e40d0b9a8adfbf1c812`; Crazy Wall `00cd6cf1d196bc20007d51f0decb7611f51d3946`.
