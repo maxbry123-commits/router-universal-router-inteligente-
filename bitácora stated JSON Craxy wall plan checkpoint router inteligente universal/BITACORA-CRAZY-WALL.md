@@ -27,8 +27,13 @@ Decisión: el core no se reabre ni se degrada; se abre `ACTIVE_LOOP_MODEL_CERTIF
 ## RIU-0060 — intento batch reciente
 Job `6aa3943f21047bf1b0374dc8` fue lanzado para M06/M10/M07 y reveló `ModuleNotFoundError: transformers`. Resultado: `GAP_ENVIRONMENT_DEPENDENCY`; no se usa como PASS y no invalida las evidencias anteriores ya verificadas de esos slots.
 
+## RIU-0061 — M18 individual StrategyDelta
+Fuentes de verdad releídas antes del delta. La metadata fresca del Hub mantiene `ornith-ai/Ornith-1.5-9B-GGUF` como GGUF 9B y llama.cpp soporta ejecución `-hf`; no se promueve por catálogo.
+Se creó Job individual `6aa475605527934177eca1cb` en `a10g-small`, imagen `ghcr.io/ggml-org/llama.cpp:full-cuda`, quant `Q3_K_S`, contexto 512, salida 4 tokens y timeout corto 480s. Estado observado tras creación: `SCHEDULING / Pulling container image`.
+Resultado actual: `PENDING_TERMINAL_EVIDENCE`; PASS exige output no vacío + grep OK + `HF_M18_OK=True`. Si termina en fallo/timeout, registrar FLAG/GAP exacto y contabilizar M18 sin falso PASS.
+
 ## Cola actual
-`sync_docs -> individual_model_certification -> 20/20 accounted -> final regression/E2E -> update ADN -> next task`.
+`M18 terminal verify -> 20/20 accounted -> final regression/E2E -> update ADN -> next task`.
 
 ## Reglas
 `CATALOG_OBSERVED != TESTED != READY`; presencia no es integración; COMPLETED no es inferencia; timeout no es PASS; FLAG externo no se maquilla como cierre.
