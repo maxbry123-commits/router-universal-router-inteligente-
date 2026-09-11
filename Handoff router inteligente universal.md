@@ -6,17 +6,15 @@
 ## Arquitectura
 Entrada -> DAG fija -> Enchufe Gate -> RedUniversal -> adapter/conector -> verifier.
 
-## RIU-0051
-- HF-M01/M02/M03 conservan PASS internos; auth/provider/RW storage externos permanecen FLAGS/GAP.
-- HF-M04 mantiene `FLAG-HF-M04-COMPUTE-001`; no otra ventana larga.
-- HF-M05 integrado PASS; HF-M06/M07/M10/M11/M12 batch integrado PASS.
-- M08/M13/M14/M15/M16/M19: FLAG exacto contra `a10g-small` + formato observado/provider autorizado; no es imposibilidad global.
-- M17/M18 GGUF: initial `6aa3a1875527934177ec4e06` exit127; `/app/llama-cli` confirmado; retry `6aa3a24f5527934177ec4e3c` en ejecución.
-- M09 MXFP4 y M20 AWQ 4-bit siguen candidatos locales; vLLM path probe `6aa3a2cb5527934177ec4e50` en curso.
+## RIU-0052
+- M01-M03 preservados; M04 FLAG; M05 y batch M06/M07/M10/M11/M12 PASS.
+- M08/M13/M14/M15/M16/M19 FLAGS exactos para flavor/formato/provider actual.
+- M20 `Qwen/Qwen2.5-7B-Instruct-AWQ`: Job `6aa3a3cd5527934177ec4e7e` COMPLETED; vLLM; exact model; response `OK`; SHA `5c45711905d5c34282a4711527ced24ede31e3390bf318285a01e8d78acf5302`; PASS.
+- M09 `6aa3a3dd5527934177ec4e80` y M17/M18 `6aa3a24f5527934177ec4e3c` en curso.
 
 ## Plan único
-1. P01 ACTIVE — cerrar M17/M18 y luego M09/M20; FLAGS externos ya explicitados.
-2. P02 PENDING — cerrar únicamente GAPs C01-C23 que bloqueen el hot-path real.
+1. P01 ACTIVE — finalizar M09/M17/M18 y cerrar ejecutable set.
+2. P02 PENDING — sólo C01-C23 bloqueantes del hot-path.
 3. P03 PENDING — API Key Manager hasta 100 slots + E2E real.
 
-Cierre global = 100% PASS de lo ejecutable + FLAGS externos explícitos; exigir ruta+SHA/read-back+test/log+URL.
+Cierre global = 100% PASS ejecutable + FLAGS externos explícitos.
