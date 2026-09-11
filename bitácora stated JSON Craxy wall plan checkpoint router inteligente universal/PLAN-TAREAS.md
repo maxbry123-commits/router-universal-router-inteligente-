@@ -8,35 +8,28 @@ Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP`.
 - MODEL CERTIFICATION ✅ 20/20 slots accounted.
 - FINAL REGRESSION/E2E ✅ run `34582284615`, job `103434377312`, `2 passed, 2 warnings in 6.75s`.
 
-## Nueva tarea autorizada — RIU-0063 conectividad centralizada
-### Paso A — inventario/raíz/puentes ✅
-- raíz central Router creada: `conectividad con Router inteligente universal/`
-- mapa mental creado
-- registry central creado con SHA de cada bridge
-- 19/19 repositorios con `PUENTE-RIU-<repo>.yaml`
-- Claude/GitHub MCP histórico localizado y referenciado
-- Claude `memory_store` histórico localizado y referenciado
-- Hugging Face `COMAND-CENTER-1` + Jobs CPU/GPU referenciado
-- repos de memoria/estado mapeados: MEMORIA/BIBLIOTECA/BITACORA-MAXBRY/Cerebro
+## RIU-0063/0064 — Connectivity Fabric
+### Cerrado/verificado
+- raíz central Router y mapa mental materializados.
+- `19/19` repositorios con exactamente un `PUENTE-RIU-<repo>.yaml` en esquema `riu.connectivity.bridge/v2`, read-back verificado.
+- frontend v2 confirmado; incluye GitHub, HF `COMAND-CENTER-1`, HF Jobs CPU/GPU, Claude `github_repository` + GitHub MCP, memoria y refs Codespaces.
+- registry central v2 sincronizado.
+- runtime central `router inteligente universal/integration/connectivity_runtime.py` materializado con resolución por nombres lógicos y fail-closed.
+- secret store canónico: `https://github.com/settings/codespaces`; sólo refs `RIU_HF_TOKEN/HF_TOKEN/HUGGINGFACE_TOKEN` y `RIU_GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN`.
+- runtime unit/component test en HF Job `6aa490c35527934177ecacb3`: `COMPLETED`, `3 passed in 0.02s`.
+- TAREA-2 promovido a v2 en commit `0848a33e21a8e48d62597d05ca363caac40f64f8`.
 
-### Paso B — credenciales runtime ⏳
-Validar las credenciales que el Director deje en almacén externo seguro. No escribir valores en Git.
-Pruebas requeridas:
-1. GitHub: identidad + permisos + operación mínima + read-back.
-2. Hugging Face: identidad/account + scopes/capacidades + operación API/Job mínima.
-3. Claude/GitHub MCP: frontera MCP/vault/runtime + disponibilidad de herramientas sin exponer secreto.
-4. Claude memoria: disponibilidad del `memory_store`/frontera de memoria sin exponer credenciales.
+### Pendiente — cola 1×1
+1. `GITHUB_RUNTIME_CREDENTIAL_VALIDATION`: identity + repo access + permission + operation/read-back.
+2. `HF_RUNTIME_CREDENTIAL_VALIDATION`: whoami-v2 + scope + API probe + Job probe.
+3. `CLAUDE_GITHUB_MCP_BOUNDARY_VALIDATION`: mount/connect/tool probe sin exponer secreto.
+4. `CLAUDE_MEMORY_STORE_BOUNDARY_VALIDATION`: operación/read-back.
+5. `GLOBAL_CONNECTIVITY_E2E`: repo/agent -> bridge -> Router -> Enchufe -> provider -> verifier -> response.
+6. `DOC_SYNC_FINAL` y cierre sólo con evidencia.
 
-### Paso C — E2E Router ⏳
-Probar al menos una ruta real por proveedor:
-`repo/agent -> PUENTE-RIU -> Router -> Enchufe Gate -> RedUniversal -> provider -> verifier -> response`.
-
-### Paso D — cierre documental ⏳
-Actualizar registry, README arquitectura, Handoff, Crazy Wall, STATE, CHECKPOINT, PLAN y RECOVERY con evidencias finales. Solo entonces `CONNECTIVITY_LAYER_VERIFIED_CLOSED`.
-
-## Cola 1×1 actual
-`GITHUB_RUNTIME_CREDENTIAL_VALIDATION` → `HF_RUNTIME_CREDENTIAL_VALIDATION` → `CLAUDE_GITHUB_MCP_BOUNDARY_VALIDATION` → `CLAUDE_MEMORY_STORE_BOUNDARY_VALIDATION` → `GLOBAL_CONNECTIVITY_E2E` → `DOC_SYNC_FINAL`.
+## GAP/FLAG
+Las credenciales Codespaces no son legibles por la API GitHub conectada a este agente; por diseño tampoco deben persistirse. Los gates externos permanecen `PENDING_RUNTIME_CREDENTIAL`, no PASS.
 
 ## Estado
-`ALL_REPOS_BRIDGED=PASS(19/19)`.
-`CONNECTIVITY_LAYER_VERIFIED_CLOSED=PENDING`.
+`BRIDGES_V2_19_OF_19=PASS` + `ROUTER_RUNTIME_TESTED=PASS`.
+`CONNECTIVITY_LAYER_VERIFIED_CLOSED=PENDING_RUNTIME_CREDENTIAL_E2E`.
