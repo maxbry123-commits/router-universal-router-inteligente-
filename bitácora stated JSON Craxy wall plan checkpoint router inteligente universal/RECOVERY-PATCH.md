@@ -1,14 +1,15 @@
 # RECOVERY PATCH — ROUTER INTELIGENTE UNIVERSAL
 Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · FAST-CLOSE.
 
-## Estado RIU-0052
-- P01 ACTIVE 99%; P02/P03 pendientes.
-- M20 real inference PASS: Job `6aa3a3cd5527934177ec4e7e` COMPLETED, exact model_id, response `OK`, vLLM fingerprint, SHA `5c45711905d5c34282a4711527ced24ede31e3390bf318285a01e8d78acf5302`, `HF_M20_OK=True`.
-- M09 Job `6aa3a3dd5527934177ec4e80` y M17/M18 Job `6aa3a24f5527934177ec4e3c` siguen pendientes de estado terminal.
-- M08/M13/M14/M15/M16/M19 conservan FLAGS exactos para flavor/formato/provider actual; M04 conserva FLAG.
+## Estado RIU-0053
+- P01 `CLOSED_EXECUTABLE_SET`; P02 ACTIVE; P03 PENDING.
+- M20 PASS real; M09 compute real COMPLETED but response `content=null`/reasoning-only -> exact response-contract FLAG.
+- M17/M18 GGUF retry `6aa3a24f5527934177ec4e3c` exceeded short timeout and was CANCELED; no further long window.
+- M04/large-model/provider/RW-storage boundaries remain explicit FLAGS/GAP and do not block core close.
 
 ## Boot
 1. Releer fuentes.
-2. Resolver estado terminal M09/M17/M18 y persistir individualmente.
-3. Cerrar P01 ejecutable; entrar P02 sólo bloqueantes y luego P03 API Key Manager+E2E.
-Cierre global = 100% PASS ejecutable + FLAGS externos explícitos.
+2. P02 inspect physical repo hot-path and patch only blocking C01-C23 with REUSE>PATCH>ADAPT>GENERATE.
+3. Leave undefined nonblocking contracts documented.
+4. Enter P03 API Key Manager + real E2E.
+Cierre global requires P03 real E2E plus explicit external FLAGS.
