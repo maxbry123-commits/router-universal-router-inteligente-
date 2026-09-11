@@ -9,7 +9,7 @@ Centralizar en el Router Inteligente Universal el inventario y la ruta de todas 
 `PROYECTO -> PUENTE-RIU-<repo>.yaml -> Router Inteligente Universal -> registry -> Enchufe Gate -> RedUniversal -> adapter -> destino -> verifier -> respuesta`
 
 ## Regla de archivos por proyecto
-Cada repositorio de `maxbry123-commits` tendrá una única raíz `conectividad con Router inteligente universal/` y dentro un solo archivo canónico `PUENTE-RIU-<repo>.yaml`. Ese archivo describe conectividad y referencias externas, pero nunca contiene credenciales crudas.
+Cada repositorio de `maxbry123-commits` tiene una única raíz `conectividad con Router inteligente universal/` y dentro un solo archivo canónico `PUENTE-RIU-<repo>.yaml`. Ese archivo describe conectividad y referencias externas, pero nunca contiene credenciales crudas.
 
 ## Conexiones recuperadas
 ### Claude / GitHub MCP
@@ -18,16 +18,23 @@ Cada repositorio de `maxbry123-commits` tendrá una única raíz `conectividad c
 - Autenticación: vault/runtime externo; no se persiste en Git.
 - Fuente histórica: `maxbry123-commits/TAREA-1/skills/claude-api/`.
 
+### Claude / memoria persistente
+- Fuente recuperada: `maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md`.
+- Recurso observado: `memory_store` dentro de `resources[]` de la sesión Managed Agent.
+- Semántica: memoria persistente entre sesiones; se registra como capacidad del Router pero no se declara operativa hasta E2E.
+- El archivo `PUENTE-RIU-TAREA-1.yaml` fue enriquecido con esta conexión.
+
 ### Hugging Face
 - Cuenta/proyecto observado: `COMAND-CENTER-1`.
 - Cómputo real previamente usado: Hugging Face Jobs CPU/GPU.
+- Workflow histórico localizado: `maxbry123-commits/TAREA-1/.github/workflows/yaiwes-hf-static-publish.yml`.
 - El Router debe consumir credenciales únicamente desde runtime/secret store; el archivo puente registra la referencia lógica y el estado, nunca el valor.
 
 ### GitHub
 - Los proyectos son repositorios propiedad de `maxbry123-commits` en rama `main`.
 - El Router es el punto central para operaciones GitHub y debe verificar permisos/identidad antes de promover una conexión a PASS.
 
-### Memoria / estado
+### Memoria / estado propios
 - Repositorios dedicados observados: `MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro`.
 - Su conexión queda registrada como capacidad candidata; no se declara operativa hasta prueba de lectura/escritura mediante el Router.
 
@@ -51,6 +58,15 @@ Cada repositorio de `maxbry123-commits` tendrá una única raíz `conectividad c
 17. router-universal-router-inteligente-
 18. TAREA-1
 19. TAREA-2
+
+## Estado material actual
+- raíz central creada
+- registry maestro creado
+- 19/19 archivos puente persistidos
+- Claude/GitHub MCP recuperado y referenciado
+- Claude `memory_store` recuperado y referenciado
+- Hugging Face `COMAND-CENTER-1`/Jobs CPU-GPU recuperado y referenciado
+- validación credenciales/E2E: pendiente
 
 ## Estados
 - `DISCOVERED`: conexión o recurso localizado.
