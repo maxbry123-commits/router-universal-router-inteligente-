@@ -20,21 +20,24 @@ Nueva orden del Director: toda conectividad de proyectos — GitHub, Hugging Fac
 
 ### Persistencia ejecutada
 - raíz central creada: `conectividad con Router inteligente universal/`
-- mapa mental creado: `MAPA-MENTAL-CONECTIVIDAD-RIU.md`, commit `b74d6220b8ddbead8a77af48e04b0970d2ddea60`
-- registry maestro creado: `REGISTRY-CONECTIVIDAD-RIU.json`, commit inicial `f56d64668448363a62684066d5f1a8685dcd31f7`
+- mapa mental creado y enriquecido: último commit `a8331c4f866d0f90d5d0936e2dc7469021562e27`
+- registry maestro 19/19 + SHA por repo + conexiones recuperadas: último commit `0a6289861460c9bce4e091c7e39d3cb02724075a`
 - 19/19 repositorios propietarios recibieron `conectividad con Router inteligente universal/PUENTE-RIU-<repo>.yaml`
-- registry actualizado a 19/19 `BRIDGE_DECLARED`, commit `87b5f3c61a94e69494450829772a74b0eee552c9`
-- README arquitectura actualizado, commit `be0dc26ab4f6aac525c06decbb56bab20829457a`
-- Handoff actualizado, commit `6a8facc3bfc9ea3616f6d5c93493d2db4c6731e1`
+- README arquitectura actual: `7a475f55849692b461379de44d69e1e2f038f183`
+- Handoff actual: `2b5b63ffd9fe0bb0cd74fbcc6de0ef8972f2647d`
+- STATE actual: `c32184ad9840f33030fa3601628eebb5dff38ea3`
 
 ### Claude ↔ GitHub MCP recuperado
 Fuente histórica localizada en `maxbry123-commits/TAREA-1/skills/claude-api/`.
 Patrón validado documentalmente: recurso `github_repository` + MCP GitHub `https://api.githubcopilot.com/mcp/` + credencial externa en vault/runtime. Se centraliza la referencia, nunca el secreto.
 
-### Hugging Face
-Cuenta observada `COMAND-CENTER-1`; Jobs CPU/GPU ya fueron usados en el proyecto. El nuevo gate exige credencial runtime + prueba de identidad/scope + operación real/read-back por el Router antes de PASS.
+### Claude ↔ memoria persistente recuperada
+`maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md` documenta `memory_store` como recurso de sesión con memoria persistente entre sesiones. El puente TAREA-1 fue enriquecido en commit `295c380ebee82ccf49a7623bd3bb7320e847fad0`; registry/mapa/README/Handoff/STATE sincronizados. Estado=`DISCOVERED_BRIDGED_TEST_PENDING`.
 
-### Memoria/estado
+### Hugging Face
+Cuenta observada `COMAND-CENTER-1`; Jobs CPU/GPU ya fueron usados en el proyecto. Workflow histórico localizado en `TAREA-1/.github/workflows/yaiwes-hf-static-publish.yml`. El nuevo gate exige credencial runtime + prueba de identidad/scope + operación real/read-back por el Router antes de PASS.
+
+### Memoria/estado propios
 `MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro` incorporados al mapa como targets de memoria/almacenamiento/estado. Operatividad aún no declarada: `PENDING_E2E_ROUTER`.
 
 ### Gate RIU-0063
@@ -43,6 +46,7 @@ Cuenta observada `COMAND-CENTER-1`; Jobs CPU/GPU ya fueron usados en el proyecto
 - `GITHUB_ACCESS_VERIFIED=PENDING`
 - `HF_ACCESS_VERIFIED=PENDING`
 - `MCP_BOUNDARY_VERIFIED=PENDING`
+- `MEMORY_BOUNDARY_VERIFIED=PENDING`
 - `CONNECTIVITY_GLOBAL_E2E_PASS=PENDING`
 
 ## Reglas preservadas
