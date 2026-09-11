@@ -22,29 +22,31 @@ Objetivo: toda conectividad de proyectos pasa por Router Inteligente Universal y
 - GitHub runtime credential validation: PENDING
 - Hugging Face runtime credential validation: PENDING
 - Claude/GitHub MCP boundary validation: PENDING
+- Claude memory_store boundary validation: PENDING
 - Global connectivity E2E: PENDING
 
 ### Conexiones recuperadas
 Claude/GitHub MCP: fuente histórica `maxbry123-commits/TAREA-1/skills/claude-api/`; patrón `github_repository` + `https://api.githubcopilot.com/mcp/` + auth externa vault/runtime.
-Hugging Face: cuenta observada `COMAND-CENTER-1`; Jobs CPU/GPU usados previamente; toda credencial queda fuera de Git.
-Memoria/estado: `MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro` mapeados como targets pendientes de E2E Router.
+Claude memoria persistente: fuente `maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md`; recurso `memory_store` persistente entre sesiones; bridge TAREA-1 enriquecido, aún no E2E.
+Hugging Face: cuenta observada `COMAND-CENTER-1`; Jobs CPU/GPU usados previamente; workflow histórico `TAREA-1/.github/workflows/yaiwes-hf-static-publish.yml`; toda credencial queda fuera de Git.
+Memoria/estado propios: `MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro` mapeados como targets pendientes de E2E Router.
 
-## Evidencias RIU-0063
-- mapa central `b74d6220b8ddbead8a77af48e04b0970d2ddea60`
-- registry inicial `f56d64668448363a62684066d5f1a8685dcd31f7`
-- registry 19/19 `87b5f3c61a94e69494450829772a74b0eee552c9`
-- arquitectura `be0dc26ab4f6aac525c06decbb56bab20829457a`
-- handoff `6a8facc3bfc9ea3616f6d5c93493d2db4c6731e1`
-- STATE `cb7a184aac29ee1967ad5b13a5e9917303a0d0fd`
-- Crazy Wall `8116f24e147a61697d235f30612184e67e586537`
-- CHECKPOINT `4b8cb86bf347248455a1e8a0975c0a3b3c5298d0`
-- PLAN `50060a46671c2735ee9af3ea5de9fc5c3a214df1`
+## Evidencias RIU-0063 actuales
+- mapa central enriquecido `a8331c4f866d0f90d5d0936e2dc7469021562e27`
+- registry 19/19 + conexiones `0a6289861460c9bce4e091c7e39d3cb02724075a`
+- TAREA-1 bridge enriquecido `295c380ebee82ccf49a7623bd3bb7320e847fad0`
+- arquitectura `7a475f55849692b461379de44d69e1e2f038f183`
+- handoff `2b5b63ffd9fe0bb0cd74fbcc6de0ef8972f2647d`
+- STATE `c32184ad9840f33030fa3601628eebb5dff38ea3`
+- Crazy Wall `c2428802f42df5275b867b8624425e79c93b4c5e`
+- CHECKPOINT `b38651c5b400a887ecf5c080b0c598efe5380f3b`
+- PLAN `509e44be501bc556b4f8e372b6178c6876fac586`
 
 ## Reglas de recuperación
 1. No repetir P01-P03 ni certificación 20/20 salvo regresión.
 2. No exponer ni persistir valores secretos.
 3. Retomar en `GITHUB_RUNTIME_CREDENTIAL_VALIDATION` cuando el Director confirme los tokens runtime.
-4. Seguir cola 1×1 hasta GitHub PASS → HF PASS → MCP boundary PASS → global E2E PASS → cierre documental.
+4. Seguir cola 1×1 hasta GitHub PASS → HF PASS → MCP boundary PASS → memory boundary PASS → global E2E PASS → cierre documental.
 5. Cualquier fallo queda FLAG/GAP con evidencia, nunca PASS falso.
 
 ## Gate actual
