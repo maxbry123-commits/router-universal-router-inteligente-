@@ -1,14 +1,13 @@
 # PARCHE DE RECUPERACIÓN — ROUTER INTELIGENTE UNIVERSAL
-Estado: `ACTIVE_LOOP` · `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · FAST-CLOSE · 99%.
+Estado: `VERIFIED_CLOSED` · `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · FAST-CLOSE · **100%**.
 
-## RIU-0053
-- P01 `CLOSED_EXECUTABLE_SET`.
-- M20 PASS real (`6aa3a3cd5527934177ec4e7e`, SHA `5c45711905d5c34282a4711527ced24ede31e3390bf318285a01e8d78acf5302`).
-- M09 real compute COMPLETED (`6aa3a3dd5527934177ec4e80`, SHA `43a490a128c6a64b845cd2397a881c2e85969d7a15db669a47f0b230f4bb4e68`) pero `content=null`/reasoning-only -> FLAG, no hot-path PASS.
-- M17/M18 job `6aa3a24f5527934177ec4e3c` CANCELED tras exceder ventana corta; no PASS/no nueva ventana larga.
-- External/provider/storage/large-model flags permanecen explícitos.
+## RIU-0058 — sólo 3 pasos
+- [x] Paso 1 — Hugging Face: `CLOSED_EXECUTABLE_SET`; PASS reales preservados y FLAGS externos exactos mantenidos.
+- [x] Paso 2 — GitHub/C01-C23: `CLOSED_HOT_PATH_EXECUTABLE_SET`; sólo bloqueantes reales del hot-path fueron cerrados.
+- [x] Paso 3 — API Key Manager + E2E: `VERIFIED_CLOSED`; 100 slots, hash-only, rotate/revoke, overflow fail-closed y E2E real.
 
-## Lista única
-- [x] Paso 1 ejecutable cerrado con PASS + FLAGS exactos.
-- [ ] Paso 2 ACTIVE: sólo C01-C23 bloqueantes del hot-path/E2E.
-- [ ] Paso 3 API Key Manager + real E2E.
+## Evidencia final
+GitHub Actions `RIU FAST-CLOSE` run `34582284615`, job `103208408709`: `success`; `2 passed in 6.79s`.
+El fallo previo `active_requiere_hash_real` demostró el gate fail-closed; RIU-0057 añadió el SHA-256 del adapter físico y el rerun pasó. Commit `af469152fd0306d706c67b8cf6548512fdc4f1c0`; gateway blob `e970b5de2281d236b916ea41492ee52df8454153`; test blob `23473c2a33cb9e5a451ad5a19ce5c4e5a58fc2c7`.
+
+Los FLAGS HF/provider/storage/runtime no controlables permanecen explícitos y no invalidan el core verificado. `verify_final=PASS_GLOBAL_EXECUTABLE_CORE_100_PERCENT`.
