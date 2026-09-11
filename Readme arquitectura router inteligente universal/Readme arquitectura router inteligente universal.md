@@ -1,16 +1,18 @@
 # Router Inteligente Universal — Arquitectura y estado de integración
-Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · FAST-CLOSE.
+Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · FAST-CLOSE · **VERIFIED_CLOSED 100%**.
 
-## Plan autorizado — sólo 3 pasos
-1. Hugging Face — `CLOSED_EXECUTABLE_SET`.
-2. GitHub/C01-C23 — ACTIVE, sólo bloqueantes del hot-path/E2E.
-3. API Key Manager + E2E — PENDING.
+## Plan autorizado — exactamente 3 pasos
+1. Hugging Face — ✅ `CLOSED_EXECUTABLE_SET`: PASS ejecutables preservados; FLAGS externos/runtime explícitos.
+2. GitHub/C01-C23 — ✅ `CLOSED_HOT_PATH_EXECUTABLE_SET`: se cerraron sólo bloqueantes del E2E, sin materializar contratos no necesarios.
+3. API Key Manager + E2E — ✅ `VERIFIED_CLOSED`: 100 slots, hash-only, revoke/rotate y E2E real.
 
-## P01 RIU-0053
-M05, M06/M07/M10/M11/M12 y M20 tienen PASS verificables. M09 ejecutó realmente (`6aa3a3dd5527934177ec4e80`, SHA `43a490a128c6a64b845cd2397a881c2e85969d7a15db669a47f0b230f4bb4e68`) pero devolvió `content=null` con reasoning-only, por lo que queda FLAG de contrato. M17/M18 job `6aa3a24f5527934177ec4e3c` fue CANCELED tras superar ventana corta; no PASS. M04/large/provider/RW boundaries continúan FLAGS exactos.
+## Hot-path verificado
+`FastAPI -> Auth/APIKeyGuard -> Enchufe Gate -> RedUniversal -> GitHub public adapter -> GitHub API -> verifier -> response`.
+C01 REST, C15, C16, C17 y C20 quedaron verificados en ejecución. Componentes C01-C23 no requeridos por este hot-path permanecen como GAP no bloqueante, conforme FAST-CLOSE.
 
-## P02 regla
-`REUSE > PATCH > ADAPT > GENERATE`; no reauditar donors cerrados, no materializar contratos no bloqueantes, no monolito. Hot-path objetivo: `FastAPI -> Auth/APIKeyGuard -> Enchufe Gate -> RedUniversal -> adapter -> destination -> verifier`.
+## Evidencia de cierre
+GitHub Actions `RIU FAST-CLOSE` run `34582284615`, job `103208408709`: `success`; `2 passed in 6.79s`.
+El primer E2E rechazó correctamente un adapter activo sin hash real. RIU-0057 lo corrigió calculando SHA-256 del adapter físico; commit `af469152fd0306d706c67b8cf6548512fdc4f1c0`, gateway blob `e970b5de2281d236b916ea41492ee52df8454153`.
 
 ## Cierre
-`VERIFIED_CLOSED` exige P03 E2E real; FLAGS externos demostrados no retienen artificialmente el core.
+`verify_final=PASS_GLOBAL_EXECUTABLE_CORE_100_PERCENT`. Los FLAGS HF/provider/RW-storage/tamaño/runtime siguen documentados y no se convierten en PASS ni retienen artificialmente el cierre del core.
