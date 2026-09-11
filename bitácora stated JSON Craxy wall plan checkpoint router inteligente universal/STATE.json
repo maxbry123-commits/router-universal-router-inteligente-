@@ -5,11 +5,11 @@
   "repo": "maxbry123-commits/router-universal-router-inteligente-",
   "branch": "main",
   "status": "ACTIVE_LOOP",
-  "current_node": "P01_HF_M05_REAL_COMPUTE_VALIDATION",
+  "current_node": "P01_HF_M05_INTEGRATION_VALIDATION",
   "progress_percent": 98,
-  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","enumerate_20_public_nongated_transformers_models","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding","validate_HF_M02_real_local_inference_via_hf_job","validate_HF_M02_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job","validate_HF_M03_real_gpu_inference_via_hf_job","validate_HF_M03_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job"],
-  "in_progress": ["HF_M05_real_compute_validation_job_6aa3781121047bf1b0374a5c"],
-  "pending": ["HF_M01_authenticated_provider_permission_resolution_FLAGGED","HF_M02_persistent_rw_storage_validation_FLAGGED","HF_M03_persistent_rw_storage_validation_FLAGGED","HF_M04_real_compute_validation_FLAGGED","HF_M05_real_compute_validation","HF_M06_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
+  "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","enumerate_20_public_nongated_transformers_models","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding","validate_HF_M02_real_local_inference_via_hf_job","validate_HF_M02_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job","validate_HF_M03_real_gpu_inference_via_hf_job","validate_HF_M03_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job","validate_HF_M05_real_gpu_inference_via_hf_job"],
+  "in_progress": ["HF_M05_adapter_dataset_storage_fastapi_enchufe_validation"],
+  "pending": ["HF_M01_authenticated_provider_permission_resolution_FLAGGED","HF_M02_persistent_rw_storage_validation_FLAGGED","HF_M03_persistent_rw_storage_validation_FLAGGED","HF_M04_real_compute_validation_FLAGGED","HF_M05_adapter_dataset_storage_fastapi_enchufe_validation","HF_M06_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
   "gaps_flags": [
     {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only"},
     {"id":"FLAG-HF-PROVIDER-AUTH-001","type":"TOKEN_SCOPE_INSUFFICIENT_FOR_INFERENCE_PROVIDERS","evidence":"HF Job 6aa2985921047bf1b03725ed HTTP 403 insufficient permissions"},
@@ -35,17 +35,17 @@
     "HF Job 6aa2f8e921047bf1b03732b7 COMPLETED; HTTP 200; RIU_HF_M03_ROUTE_OK; FASTAPI_ENCHUFE_ROUTER_M03_OK True; Qwen3ForCausalLM; 8190735360 params; CUDA True; MAX_MEMORY_ALLOCATED 16396255232",
     "HF-M04 Job 6aa316585527934177ec29ee cancelled after timeout-state anomaly",
     "HF-M04 retry 6aa34d825527934177ec3d2c inspected RUNNING after >7200s configured timeout with no final logs; cancelled; NO PASS",
-    "HF-M05 model_id Qwen/Qwen2.5-7B-Instruct verified from Hub metadata; 7615.6M params; AutoModelForCausalLM; Job 6aa3781121047bf1b0374a5c launched on a10g-small with 30m timeout"
+    "HF-M05 Job 6aa3781121047bf1b0374a5c COMPLETED; Qwen2ForCausalLM; 7615616512 params; CUDA True; RIU_HF_M05_OUTPUT=RIU_HF_M05_OK; RIU_HF_M05_OK=True; 126.386s"
   ],
   "rules": {"input_literal":true,"one_node_at_a_time":true,"evidence_required":true,"no_monolith":true,"reuse_first":true,"steps_limit":3},
   "last_delta": {
-    "id":"RIU-0047",
-    "decision":"HF_M04_REPEATED_TIMEOUT_ANOMALY_FLAGGED_AND_CANCELLED_ADVANCE_INDEPENDENT_SAFE_HF_M05_REAL_COMPUTE",
-    "verify_final":"HF_M05_JOB_SCHEDULING_NO_PASS_YET",
+    "id":"RIU-0048",
+    "decision":"HF_M05_REAL_GPU_COMPUTE_CERTIFIED_ADVANCE_TO_INTEGRATION",
+    "verify_final":"PASS_HF_M05_REAL_COMPUTE_ONLY",
     "council12":"PASS",
-    "refutations":["RUNNING beyond configured timeout does not prove inference output","blank/non-final logs do not prove HF-M04 compute","SCHEDULING HF-M05 does not prove compute PASS"],
+    "refutations":["COMPLETED alone was not accepted without output/log evidence","model presence alone was not accepted as inference","compute PASS does not imply adapter/dataset/storage/FastAPI READY"],
     "cross_check":"PASS",
-    "coda":"FLAG_HF_M04_CONTINUE_ONLY_INDEPENDENT_SAFE_HF_M05",
-    "jobs":["6aa316585527934177ec29ee","6aa34d825527934177ec3d2c","6aa3781121047bf1b0374a5c"]
+    "coda":"ADVANCE_HF_M05_INTEGRATION_NO_READY_UNTIL_HOT_PATH_AND_STORAGE_EVIDENCE",
+    "jobs":["6aa3781121047bf1b0374a5c"]
   }
 }
