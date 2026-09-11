@@ -20,8 +20,8 @@ Commit `af469152fd0306d706c67b8cf6548512fdc4f1c0`; gateway blob `e970b5de2281d23
 ## Reglas de secretos
 Las keys reales NO se guardan en README, STATE, BITACORA ni commits. El Router sólo conserva `key_id`, `agent_id`, hash, timestamps, status, scopes y allowed_models. Plaintext se entrega una sola vez en el canal autorizado.
 
-## Estado HF asociado
-La certificación individual de HF_M01..HF_M20 está actualmente `ACTIVE_LOOP_MODEL_CERTIFICATION`. Una key válida no convierte un modelo FLAG/GAP en READY: el Router debe consultar registry/estado de modelo antes del routing.
+## Estado HF asociado — RIU-0061
+La certificación individual sigue `ACTIVE_LOOP_MODEL_CERTIFICATION`: 19/20 slots contabilizados antes del terminal M18. Attempt M18 `6aa475605527934177eca1cb` terminó ERROR y NO PASS; diagnóstico corto `6aa475e721047bf1b0378e13` está en ejecución/scheduling para obtener causa exacta. Una key válida no convierte un modelo FLAG/GAP en READY.
 
 ## Criterio final de esta etapa
 Después de contabilizar los 20 modelos con PASS o FLAG/GAP explícito, reejecutar regresión/E2E global con APIKeyGuard activo. Sólo entonces cerrar el gate ampliado.
