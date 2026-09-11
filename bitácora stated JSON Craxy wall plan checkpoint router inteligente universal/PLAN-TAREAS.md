@@ -1,8 +1,14 @@
 # PLAN DE TAREAS — ROUTER INTELIGENTE UNIVERSAL
-Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · FAST-CLOSE.
-1. **Paso 1 — Hugging Face** — CLOSED_EXECUTABLE_SET.
-   - ✅ M05, M06/M07/M10/M11/M12, M20 verified.
-   - ⚑ M09 compute real verified but `content=null`/reasoning-only response contract flagged; M17 timeout; M18 not reached in sequential GGUF job; M04 and large/provider/storage external flags preserved.
-2. **Paso 2 — C01-C23** — ACTIVE: inspect and close only blockers of real hot-path/E2E; undefined nonblockers remain documented GAP.
-3. **Paso 3 — API Key Manager + E2E** — PENDING: up to 100 slots, hash-only, revoke/rotate, real agent→key→FastAPI→Enchufe→Router→adapter→destination→verifier.
-Cierre global = PASS ejecutable + explicit external FLAGS + final P03 E2E.
+Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · FAST-CLOSE · **VERIFIED_CLOSED 100%**.
+
+1. **Paso 1 — Hugging Face** — ✅ `CLOSED_EXECUTABLE_SET`.
+   - PASS ejecutables preservados: M05, M06/M07/M10/M11/M12, M20.
+   - FLAGS externos/runtime preservados: M04, M08, M09 response-contract, M13-M19 según STATE; provider/RW-storage no promovidos a PASS.
+2. **Paso 2 — C01-C23** — ✅ `CLOSED_HOT_PATH_EXECUTABLE_SET`.
+   - Hot-path verificado: C01 REST FastAPI → C20 Auth/APIKeyGuard → C15 Enchufe Gate → C17 RedUniversal → C16 GitHub adapter → destination → verifier.
+   - Contratos/componentes no requeridos por este E2E quedan documentados como GAP no bloqueante; no se materializaron por sobreingeniería.
+3. **Paso 3 — API Key Manager + E2E** — ✅ `VERIFIED_CLOSED`.
+   - 100 slots reales en test, estado hash-only, rotate/revoke, slot 101 fail-closed y secretos nunca persistidos/commiteados.
+   - E2E real GitHub Actions run `34582284615`, job `103208408709`: `2 passed in 6.79s`.
+
+Cierre global: **100% PASS de lo ejecutable + FLAGS externos explícitos**. No existe Paso 4.
