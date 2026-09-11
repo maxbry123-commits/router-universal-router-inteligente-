@@ -31,6 +31,24 @@ def test_api_key_manager_hash_only_rotate_revoke_and_100_slots() -> None:
     assert manager.revoke(meta["key_id"]) is True
     assert manager.verify(rotated, model_id="github/public") is None
 
+    # Materialize the full authorized capacity without logging or persisting
+    # plaintext secrets. The revoked first slot still occupies one of 100 slots.
+    issued_plaintexts = []
+    for index in range(1, manager.MAX_SLOTS):
+        slot_plain, _ = manager.create(
+            f"agent-slot-{index:03d}", allowed_models=("github/public",)
+        )
+        issued_plaintexts.append(slot_plain)
+    assert len(manager.hash_state()) == manager.MAX_SLOTS
+    hashed_state = json.dumps(manager.hash_state())
+    assert all(secret not in hashed_state for secret in issued_plaintexts)
+    try:
+        manager.create("agent-slot-overflow", allowed_models=("github/public",))
+    except RuntimeError as exc:
+        assert str(exc) == "max_slots_100"
+    else:
+        raise AssertionError("slot_101_must_fail_closed")
+
 
 def test_real_agent_key_fastapi_enchufe_red_github_verifier_response() -> None:
     manager = APIKeyManager()
