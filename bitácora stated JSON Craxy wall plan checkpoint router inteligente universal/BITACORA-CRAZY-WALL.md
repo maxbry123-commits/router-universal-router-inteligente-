@@ -12,38 +12,54 @@ P01=`CLOSED_EXECUTABLE_SET`; P02=`CLOSED_HOT_PATH_EXECUTABLE_SET`; P03=`VERIFIED
 Raíz canónica `conectividad con Router inteligente universal/`; mapa mental + registry + 19 bridges declarados; Claude/GitHub MCP, HF `COMAND-CENTER-1`, memoria y Codespaces secret boundary inventariados sin secretos crudos.
 
 ## RIU-0064 — CONNECTIVITY FABRIC V2 + RUNTIME
-### Read-back de bridges
-- `19/19` repositorios confirmados en `schema: riu.connectivity.bridge/v2`.
-- frontend confirmado con GitHub, HF Jobs CPU/GPU, models/datasets/spaces/jobs, Space `COMAND-CENTER-1/yaiwes-ui-factory`, Claude Managed Agents `github_repository`, MCP `https://api.githubcopilot.com/mcp/` y memory targets.
-- TAREA-2 fue promovido por este ciclo a v2 en commit `0848a33e21a8e48d62597d05ca363caac40f64f8`; read-back blob `dab6ebdc7b7a973314df7ce2126a432cc0388658`.
-- Dos intentos de write sobre bridges concurrentemente modificados devolvieron `409`; se aplicó fail-closed/no-force y el read-back posterior confirmó que ya habían convergido a v2.
+- `19/19` repositorios convergidos a `schema: riu.connectivity.bridge/v2`.
+- frontend v2 commit `168b12de4c574a165d32601968ee7dd864614d8a`: GitHub, HF Jobs CPU/GPU, models/datasets/spaces/jobs, Space `COMAND-CENTER-1/yaiwes-ui-factory`, Claude `github_repository`, GitHub MCP y memory targets.
+- TAREA-1 v2 enriquecido commit `17e043991e6d63db81657a16e0695e687dd680a9`.
+- TAREA-2 v2 commit `0848a33e21a8e48d62597d05ca363caac40f64f8`.
+- Registry 19/19 v2 commit `f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3`.
+- mapa mental v2 commit `c781e9dad4b4504c2d15b517022ce0b7b3a8f267`.
 
 ### Runtime central
-- `router inteligente universal/integration/connectivity_runtime.py` blob `0a26e4133efba1e5343685eff9fe17a88a7ea3a3`.
-- resuelve únicamente nombres lógicos: HF=`RIU_HF_TOKEN/HF_TOKEN/HUGGINGFACE_TOKEN`; GitHub/MCP=`RIU_GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN`.
-- nunca persiste/imprime valores; falta de credencial => fail-closed.
-- Router self bridge blob `469ee974ea6c0f3edfb38443b96ef19b83f6df81`.
+- `router inteligente universal/integration/connectivity_runtime.py`, commit `5664301d9051068b98ab326e5545110299e110a6`.
+- resuelve solo refs autorizadas: HF=`RIU_HF_TOKEN/HF_TOKEN/HUGGINGFACE_TOKEN`; GitHub/MCP=`RIU_GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN`.
+- falta de credencial => fail-closed; valores secretos nunca salen en estado público.
+- test runtime commit `cfa87f7470f73e36d383f2e302f1fd38c582a674`.
+- HF Job `6aa490c35527934177ecacb3`=`COMPLETED`; `3 passed in 0.02s`.
 
-### Tests/evidencia
-- HF Job `6aa490c35527934177ecacb3`=`COMPLETED`.
-- suite `router inteligente universal/tests/test_connectivity_runtime.py` => `3 passed in 0.02s`.
-- registry actual blob `aa27dc728af98af73741ad287cdcd6bdee6addeb`, status `BRIDGES_V2_19_OF_19_RUNTIME_UNIT_TEST_PASS_CREDENTIAL_E2E_PENDING`.
-- STATE RIU-0064 commit `9db5cec9574c1e3c70f1509347612ea24876087c`.
-- CHECKPOINT RIU-0064 commit `605dc13491c523e26b1b8d5178771b98f29c8f2b`.
-- PLAN RIU-0064 commit `64c0aeda36d06db8cbea8e40d0b9a8adfbf1c812`.
+## RIU-0065 — SUITE COMPLETA DE COMPONENTES DEL ROUTER
+### Intento 1
+HF Job `6aa4924021047bf1b0379661` terminó ERROR durante collection: faltaba dependencia `huggingface_hub`. Clasificación=`TEST_ENV_GAP`, no fallo funcional del Router.
 
-### GAP/flags externos
-La conexión GitHub disponible para esta ejecución no expone GitHub Codespaces Secrets API ni valores secretos. Por seguridad, no se intenta extraerlos. Por ello siguen `PENDING_RUNTIME_CREDENTIAL`: GitHub identity/repo access; HF whoami/scope/API/Job probe; Claude/GitHub MCP connect/tool probe; memory operation/read-back; global connectivity E2E.
+### StrategyDelta 1
+HF Job `6aa492635527934177ecad45`: se añadió `huggingface_hub`; collection avanzó pero terminó ERROR por `ModuleNotFoundError: red`. Clasificación=`PYTHONPATH_TEST_ENV_GAP`.
 
-## Gate RIU-0064
+### StrategyDelta 2
+HF Job `6aa4928c21047bf1b037967e`: sparse checkout del código ejecutable del Router + dependencias + `PYTHONPATH=$PWD/router inteligente universal`.
+Resultado terminal=`COMPLETED`; suite completa actual de `router inteligente universal/tests` => **`71 passed, 2 warnings in 6.00s`**.
+
+Cobertura recolectada por HF Job `6aa492b55527934177ecad83` (`COMPLETED`), 18 archivos de test / 71 casos:
+- DB 3; GitLab 5; Hugging Face connector 3; Interno/Webhook 3; MCP App 3; Memoria 3; VPS 3; baseline conectores 3.
+- connectivity runtime 3; connector registry 13; Enchufe Gate v1.5 2; Enchufe Gate v2 3; Enchufe schema v2 4.
+- FAST-CLOSE E2E 2; HF router hot-path 2; RedUniversal R003 5; resilience C10 5; validator v2 contract 6.
+
+Warnings: deprecaciones de FastAPI/Starlette TestClient; no fallo de tests.
+
+## GAP externos que siguen abiertos
+La conexión GitHub de esta ejecución no expone los valores de GitHub Codespaces user secrets. Por diseño GitHub tampoco permite re-leer valores de secrets guardados. Los tres tokens que el Director dejó en `https://github.com/settings/codespaces` solo pueden ser consumidos por un runtime/Codespace al que se les concedió acceso.
+
+Por tanto permanecen fail-closed hasta ejecución dentro de ese runtime:
+- `GITHUB_ACCESS_VERIFIED`
+- `HF_ACCESS_VERIFIED`
+- `MCP_BOUNDARY_VERIFIED`
+- `MEMORY_BOUNDARY_VERIFIED`
+- `CONNECTIVITY_GLOBAL_E2E_PASS`
+
+## Gate actual
 - `BRIDGES_V2_19_OF_19=PASS`
 - `ROUTER_RUNTIME_TESTED=PASS`
-- `SECRET_RESOLUTION_FAIL_CLOSED=PASS_UNIT_TEST`
-- `GITHUB_ACCESS_VERIFIED=PENDING_RUNTIME_CREDENTIAL`
-- `HF_ACCESS_VERIFIED=PENDING_RUNTIME_CREDENTIAL`
-- `MCP_BOUNDARY_VERIFIED=PENDING_RUNTIME_CREDENTIAL`
-- `MEMORY_BOUNDARY_VERIFIED=PENDING_RUNTIME_CREDENTIAL`
-- `CONNECTIVITY_GLOBAL_E2E_PASS=PENDING_RUNTIME_CREDENTIALS`
+- `ROUTER_CURRENT_TEST_SUITE=71/71 PASS`
+- `SECRET_RESOLUTION_FAIL_CLOSED=PASS`
+- credencial/E2E externo=`PENDING_RUNTIME_CREDENTIAL_VISIBILITY`
 
 ## Reglas preservadas
 No secretos en repo/logs; no force; evidencia antes de PASS; core y certificación previa no se reabren sin regresión demostrada.
