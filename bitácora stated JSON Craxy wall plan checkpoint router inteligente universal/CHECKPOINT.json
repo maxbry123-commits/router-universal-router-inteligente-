@@ -1,14 +1,14 @@
 {
-  "checkpoint":"router-universal-p01-hf-m05-real-compute-validation",
+  "checkpoint":"router-universal-p01-hf-m05-integration-validation",
   "contract":"tel.workflow/v3",
   "mode":"FAIL_CLOSED_LOOP",
-  "verified":{"hf_m01_local_compute":"6aa288a521047bf1b0372324 COMPLETED","hf_m01_hot_path":"6aa297195527934177ec0aed COMPLETED; 2 passed","hf_m01_dataset_storage":"6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k ro mount","provider_auth_attempt":"6aa2985921047bf1b03725ed ERROR; 403 insufficient inference-provider permission","hf_m02_local_compute":"6aa2a4f25527934177ec0e01 COMPLETED","hf_m02_integrated_hot_path":"6aa2cf4f21047bf1b0372e67 COMPLETED; HTTP 200; FASTAPI_ENCHUFE_ROUTER_M02_OK True","hf_m02_rw_storage_attempt":"6aa2ebc15527934177ec1eb6 ERROR; 403 missing bucket write/create permission","hf_m03_real_compute":"6aa2ecbb21047bf1b037318e COMPLETED; Qwen3ForCausalLM; 8190735360 params; RIU_HF_M03_OK","hf_m03_integrated_hot_path":"6aa2f8e921047bf1b03732b7 COMPLETED; HTTP 200; RIU_HF_M03_ROUTE_OK; FASTAPI_ENCHUFE_ROUTER_M03_OK True; CUDA True; MAX_MEMORY_ALLOCATED 16396255232"},
-  "current":"P01_HF_M05_REAL_COMPUTE_VALIDATION",
+  "verified":{"hf_m01_local_compute":"6aa288a521047bf1b0372324 COMPLETED","hf_m01_hot_path":"6aa297195527934177ec0aed COMPLETED; 2 passed","hf_m01_dataset_storage":"6aa2983921047bf1b03725eb COMPLETED; ultrachat_200k ro mount","provider_auth_attempt":"6aa2985921047bf1b03725ed ERROR; 403 insufficient inference-provider permission","hf_m02_local_compute":"6aa2a4f25527934177ec0e01 COMPLETED","hf_m02_integrated_hot_path":"6aa2cf4f21047bf1b0372e67 COMPLETED; HTTP 200; FASTAPI_ENCHUFE_ROUTER_M02_OK True","hf_m02_rw_storage_attempt":"6aa2ebc15527934177ec1eb6 ERROR; 403 missing bucket write/create permission","hf_m03_real_compute":"6aa2ecbb21047bf1b037318e COMPLETED; Qwen3ForCausalLM; 8190735360 params; RIU_HF_M03_OK","hf_m03_integrated_hot_path":"6aa2f8e921047bf1b03732b7 COMPLETED; HTTP 200; RIU_HF_M03_ROUTE_OK; FASTAPI_ENCHUFE_ROUTER_M03_OK True; CUDA True; MAX_MEMORY_ALLOCATED 16396255232","hf_m05_real_compute":"6aa3781121047bf1b0374a5c COMPLETED; Qwen2ForCausalLM; 7615616512 params; CUDA True; RIU_HF_M05_OK=True; 126.386s"},
+  "current":"P01_HF_M05_INTEGRATION_VALIDATION",
   "hf_m04_attempt_1":"6aa316585527934177ec29ee CANCELLED after timeout-state anomaly; no final inference evidence",
-  "hf_m04_retry":"6aa34d825527934177ec3d2c CANCELLED after repeated timeout-state anomaly; inspected RUNNING beyond timeout_seconds=7200 with no final inference evidence; HF-M04 FLAGGED NO PASS",
-  "hf_m05_job":"6aa3781121047bf1b0374a5c SCHEDULING; Qwen/Qwen2.5-7B-Instruct; a10g-small; transformers AutoModelForCausalLM; timeout_seconds=1800; NO PASS YET",
-  "next_delta":"inspect HF-M05 and require COMPLETED plus generated RIU_HF_M05_OK output before PASS",
-  "next_if_pass":"integrate HF-M05 adapter + dataset/storage + FastAPI/Enchufe without promoting incomplete models",
-  "next_if_gap":"register FLAG/GAP and apply materially different StrategyDelta; HF-M04 remains flagged while independent safe P01 work continues",
+  "hf_m04_retry":"6aa34d825527934177ec3d2c CANCELLED after repeated timeout-state anomaly; HF-M04 FLAGGED NO PASS",
+  "hf_m05_job":"6aa3781121047bf1b0374a5c COMPLETED with generated RIU_HF_M05_OK; compute PASS only, NOT READY",
+  "next_delta":"validate HF-M05 adapter + dataset/storage + FastAPI/Enchufe real hot-path",
+  "next_if_pass":"persist integrated evidence and continue HF-M06 while incomplete storage/auth boundaries remain flagged",
+  "next_if_gap":"register FLAG/GAP and apply materially different StrategyDelta; continue only independent safe P01 work",
   "status":"ACTIVE_LOOP"
 }
