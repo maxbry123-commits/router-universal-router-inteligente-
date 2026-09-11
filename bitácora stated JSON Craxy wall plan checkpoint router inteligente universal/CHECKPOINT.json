@@ -1,14 +1,15 @@
 {
-  "checkpoint":"router-universal-p01-hf-remaining-m08-m20-classify-execute",
+  "checkpoint":"router-universal-p01-hf-m17-m18-strategydelta-running",
   "contract":"tel.workflow/v3",
   "mode":"FAIL_CLOSED_LOOP",
-  "verified":{"hf_m05_integrated_hot_path":"6aa3977e21047bf1b0374e94 COMPLETED; HTTP 200; dataset mount True/10 files; CUDA True; RIU_HF_M05_ROUTE_OK; SHA/read-back PASS","hf_batch_m06_m12":"6aa398fe5527934177ec4cd0 COMPLETED; M06/M07/M10/M11/M12 all verifier PASS; dataset mount True/10 files; summary SHA256 c3b38014bdd5423cd85b42f14d54fc13c95247a0aa29e3729eb3ac84264dd6a5; summary read-back True","hf_m06_individual":"PASS; SHA256 e5820de1040e58a84591fd48a3f8a1fbf256090b03ba082a7f0f9e9b30a04d01","hf_m07_individual":"PASS by batch verifier","hf_m10_individual":"PASS by batch verifier","hf_m11_individual":"PASS by batch verifier","hf_m12_individual":"PASS; Qwen2ForCausalLM; 3085938688 params; HTTP 200; SHA256 640448abf630b2c7df1e70fc8849d72dcb84096bf47d9c124dc746c51026b2ab"},
-  "current":"P01_HF_REMAINING_M08_M20_CLASSIFY_EXECUTE",
+  "verified":{"hf_m05_integrated_hot_path":"6aa3977e21047bf1b0374e94 COMPLETED; HTTP 200; dataset mount True/10 files; CUDA True; SHA/read-back PASS","hf_batch_m06_m12":"6aa398fe5527934177ec4cd0 COMPLETED; M06/M07/M10/M11/M12 verifier PASS; summary SHA/read-back PASS","remaining_metadata":"M08=31273.1M; M09=20914.8M MXFP4; M13=116829.2M MXFP4; M14=32762.1M; M15=34388.9M; M16=304180.4M FP8; M17/M18=GGUF; M19=72287.9M; M20=7615.6M AWQ 4-bit","gguf_runtime_probe":"6aa3a24221047bf1b0374f88 found /app/llama-cli after initial exit127"},
+  "current":"P01_HF_M17_M18_GGUF_STRATEGYDELTA_RUNNING",
+  "large_model_flags":"M08/M13/M14/M15/M16/M19 flagged specifically for observed format vs a10g-small/local authorized path; not global impossibility",
   "hf_m04":"FLAGGED NO PASS after two timeout-state anomalies; do not consume another long window",
-  "external_boundaries":"provider auth + persistent RW storage remain explicit external GAP/FLAG and do not invalidate local core PASS",
-  "next_delta":"classify M08/M09/M13-M20 by size/flavor/scope; execute compatible models and FLAG exact non-executable ones",
-  "next_if_pass":"persist each model result then enter P02 hot-path blocking gaps only",
-  "next_if_gap":"register exact per-model FLAG and continue; no global stall",
+  "external_boundaries":"provider auth + persistent RW storage remain explicit external GAP/FLAG",
+  "next_delta":"inspect Job 6aa3a24f5527934177ec4e3c; then validate M09/M20 with corrected vLLM runtime path",
+  "next_if_pass":"persist M17/M18 individually then execute M09/M20 candidates and close P01 executable set",
+  "next_if_gap":"register exact per-model/runtime FLAG and continue; no global stall",
   "status":"ACTIVE_LOOP",
   "progress_percent":99
 }
