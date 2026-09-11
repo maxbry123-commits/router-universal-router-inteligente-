@@ -10,13 +10,14 @@ Backend Python 95% determinista / 5% LLM. Flujo: `INPUT -> classifier -> DAG fij
 2. Integración GitHub/C01-C23 — PENDING tras P01.
 3. API keys agentes + E2E — PENDING.
 
-## 3. Estado P01 — RIU-0046
+## 3. Estado P01 — RIU-0047
 - Catálogo público 20 certificado.
 - HF-M01 compute/hot-path/dataset RO verificados; provider auth 403; NO READY.
 - HF-M02 compute + integración FastAPI→Enchufe→Router→adapter verificados; storage RW create/write 403; NO READY.
 - HF-M03 compute real + integración FastAPI→Enchufe→Router→adapter + dataset RO verificados; storage RW persistente PENDING; NO READY.
-- HF-M04 `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`: intento `6aa316585527934177ec29ee` cancelado por anomalía timeout-state sin salida final; retry `6aa34d825527934177ec3d2c` lanzado con timeout explícito 2h/7200s, runtime llama.cpp CUDA, `a10g-small`; estado inicial SCHEDULING; NO PASS.
-- Cola P01 1×1: HF-M04 compute real.
+- HF-M04 `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`: dos Jobs (`6aa316585527934177ec29ee`, `6aa34d825527934177ec3d2c`) cancelados por anomalía timeout-state repetida sin salida final; `FLAG-HF-M04-COMPUTE-001`; NO PASS/NO READY.
+- HF-M05 `Qwen/Qwen2.5-7B-Instruct`: model_id y metadata Hub verificados; Job real `6aa3781121047bf1b0374a5c` lanzado en a10g-small/Transformers, timeout 30m; estado inicial SCHEDULING; NO PASS.
+- Cola P01 1×1: HF-M05 compute real.
 
 ## 4. Reglas
 Gateway FastAPI único; adapters separados; sin monolito. P02 `REUSE > PATCH > ADAPT > GENERATE`. Descarga/copia/movimiento sólo motores canónicos autorizados.
