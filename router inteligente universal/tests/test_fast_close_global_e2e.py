@@ -31,8 +31,6 @@ def test_api_key_manager_hash_only_rotate_revoke_and_100_slots() -> None:
     assert manager.revoke(meta["key_id"]) is True
     assert manager.verify(rotated, model_id="github/public") is None
 
-    # Materialize the full authorized capacity without logging or persisting
-    # plaintext secrets. The revoked first slot still occupies one of 100 slots.
     issued_plaintexts = []
     for index in range(1, manager.MAX_SLOTS):
         slot_plain, _ = manager.create(
@@ -62,7 +60,7 @@ def test_real_agent_key_fastapi_enchufe_red_github_verifier_response() -> None:
     response = client.post(
         "/v1/chat/completions",
         headers={"Authorization": f"Bearer {plain}"},
-        json={"model": "github/public", "messages": [{"role": "user", "content": "read repository README"}], "path": "README.md"},
+        json={"model": "github/public", "messages": [{"role": "user", "content": "read handoff"}], "path": "Handoff router inteligente universal.md"},
     )
     assert response.status_code == 200, response.text
     body = response.json()
