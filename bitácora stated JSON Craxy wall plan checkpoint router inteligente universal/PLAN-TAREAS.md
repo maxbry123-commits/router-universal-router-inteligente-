@@ -4,11 +4,13 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP` · FAST-CLOSE.
 
 ## Lista única activa
 1. 📌 **Paso 1 — Hugging Face completo** — ACTIVE · 99%
-   - ✅ HF-M01/M02/M03: PASS internos preservados; provider/RW externos documentados.
-   - ⚑ HF-M04: dos anomalías timeout-state; FLAG, no otra ventana larga.
+   - ✅ HF-M01/M02/M03 preservados; provider/RW externos documentados.
+   - ⚑ HF-M04 FLAG tras dos anomalías timeout-state; no otra ventana larga.
    - ✅ HF-M05 integración real PASS.
-   - ✅ HF-M06 `facebook/opt-125m`, M07 `Qwen/Qwen2.5-1.5B-Instruct`, M10 `Qwen/Qwen2.5-0.5B-Instruct`, M11 `Qwen/Qwen3-4B`, M12 `Qwen/Qwen2.5-3B-Instruct`: batch Job `6aa398fe5527934177ec4cd0` COMPLETED con verifier individual para cada modelo, dataset RO 10 files, summary SHA/read-back y `RIU_HF_BATCH_M06_M12_OK=True`.
-   - 🔄 Siguiente: M08/M09/M13/M14/M15/M16/M17/M18/M19/M20 por compatibilidad/tamaño/scope; ejecutar compatibles y FLAG exacto lo externo/no ejecutable sin detener P01.
+   - ✅ HF-M06/M07/M10/M11/M12 batch Job `6aa398fe5527934177ec4cd0` PASS con verifier individual + SHA/read-back.
+   - ⚑ HF-M08/M13/M14/M15/M16/M19: FLAG exacto para `a10g-small`/formato observado por tamaño o ruta provider no autorizada; no se declara imposibilidad global.
+   - 🔄 HF-M17/M18 GGUF: primer Job `6aa3a1875527934177ec4e06` falló exit127; probe halló `/app/llama-cli`; StrategyDelta Job `6aa3a24f5527934177ec4e3c` RUNNING.
+   - 🔄 HF-M09 `openai/gpt-oss-20b` MXFP4 y HF-M20 `Qwen/Qwen2.5-7B-Instruct-AWQ` 4-bit: candidatos locales; vLLM smoke inicial falló por `python` fuera de PATH y probe `6aa3a2cb5527934177ec4e50` está lanzado.
 2. 📌 **Paso 2 — integración GitHub C01-C23** — cerrar sólo GAPs bloqueantes del hot-path real; no reauditar donors cerrados.
 3. 📌 **Paso 3 — API Key Manager + E2E** — hasta 100 slots; sólo hash; create/verify/revoke/rotate/list; E2E real agente→key→FastAPI→Enchufe→Router→adapter→destino→verifier.
 
