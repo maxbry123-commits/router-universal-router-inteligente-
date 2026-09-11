@@ -8,7 +8,7 @@
   "current_node": "P01_HF_M04_REAL_COMPUTE_VALIDATION",
   "progress_percent": 98,
   "closed": ["prior_closed_set_preserved","verify_hf_jobs_real_project_compute","enumerate_20_public_nongated_transformers_models","validate_HF_M01_real_local_inference_via_hf_job","wire_and_test_HF_M01_fastapi_enchufe_reduniversal_adapter_boundary","verify_HF_M01_dataset_storage_readonly_binding","validate_HF_M02_real_local_inference_via_hf_job","validate_HF_M02_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job","validate_HF_M03_real_gpu_inference_via_hf_job","validate_HF_M03_dataset_mount_fastapi_enchufe_router_adapter_via_real_hf_job"],
-  "in_progress": ["HF_M04_real_compute_validation"],
+  "in_progress": ["HF_M04_real_compute_validation_retry_explicit_timeout"],
   "pending": ["HF_M01_authenticated_provider_permission_resolution_FLAGGED","HF_M02_persistent_rw_storage_validation_FLAGGED","HF_M03_persistent_rw_storage_validation_FLAGGED","HF_M04_real_compute_validation","HF_M05_to_HF_M20_validation","P02_complete_C01_C23_integration","P03_api_key_manager_and_e2e"],
   "gaps_flags": [
     {"id":"GAP-HF-CATALOG-001","type":"PRIVATE_ENUMERATION_CREDENTIAL_BOUNDARY","scope":"private catalog only"},
@@ -16,6 +16,7 @@
     {"id":"FLAG-HF-M02-RW-STORAGE-AUTH-001","type":"TOKEN_SCOPE_INSUFFICIENT_FOR_BUCKET_CREATE_WRITE","evidence":"HF Job 6aa2ebc15527934177ec1eb6 ERROR 403; no secret exposed"},
     {"id":"GAP-HF-M02-RW-STORAGE-001","type":"PERSISTENT_RW_STORAGE_NOT_YET_CERTIFIED"},
     {"id":"GAP-HF-M03-RW-STORAGE-001","type":"PERSISTENT_RW_STORAGE_NOT_YET_CERTIFIED","evidence":"HF-M03 dataset RO + integrated hot-path PASS; persistent RW output not demonstrated"},
+    {"id":"GAP-HF-M04-TIMEOUT-001","type":"JOB_TIMEOUT_STATE_ANOMALY","evidence":"Job 6aa316585527934177ec29ee remained RUNNING with timeout_seconds=1800 and no useful final logs; cancelled before retry"},
     {"id":"GAP-BEHAVIOR-CONTRACT-001","type":"BEHAVIOR_POLICY_NOT_RECOVERED"},
     {"id":"GAP-R004-EXTRACTION-001","type":"CANONICAL_PDF_BINARY_NOT_MATERIALIZED"},
     {"id":"GAP-C03-CONTRACT-001","type":"CONFIG_FIELDS_NOT_DEFINED"},
@@ -30,17 +31,19 @@
     "HF Job 6aa2cf4f21047bf1b0372e67 COMPLETED; dataset mount True; HTTP 200; FASTAPI_ENCHUFE_ROUTER_M02_OK True",
     "HF Job 6aa2ebc15527934177ec1eb6 ERROR; bucket create denied 403",
     "HF Job 6aa2ecbb21047bf1b037318e COMPLETED; Qwen/Qwen3-8B real GPU compute",
-    "HF Job 6aa2f8e921047bf1b03732b7 COMPLETED; HTTP 200; RIU_HF_M03_ROUTE_OK; FASTAPI_ENCHUFE_ROUTER_M03_OK True; Qwen3ForCausalLM; 8190735360 params; CUDA True; MAX_MEMORY_ALLOCATED 16396255232"
+    "HF Job 6aa2f8e921047bf1b03732b7 COMPLETED; HTTP 200; RIU_HF_M03_ROUTE_OK; FASTAPI_ENCHUFE_ROUTER_M03_OK True; Qwen3ForCausalLM; 8190735360 params; CUDA True; MAX_MEMORY_ALLOCATED 16396255232",
+    "HF-M04 Job 6aa316585527934177ec29ee cancelled after timeout-state anomaly",
+    "HF-M04 retry Job 6aa34d825527934177ec3d2c launched with timeout_seconds=7200; status SCHEDULING; no PASS yet"
   ],
   "rules": {"input_literal":true,"one_node_at_a_time":true,"evidence_required":true,"no_monolith":true,"reuse_first":true,"steps_limit":3},
   "last_delta": {
-    "id":"RIU-0045",
-    "decision":"HF_M03_INTEGRATED_HOT_PATH_VERIFIED_KEEP_RW_STORAGE_PENDING_ADVANCE_SAFE_HF_M04",
-    "verify_final":"PASS_HF_M03_INTEGRATED_HOT_PATH_STORAGE_RW_PENDING",
+    "id":"RIU-0046",
+    "decision":"HF_M04_TIMEOUT_ANOMALY_REGISTERED_RETRY_WITH_EXPLICIT_2H_TIMEOUT_NO_PASS_YET",
+    "verify_final":"HF_M04_RETRY_SCHEDULING_NO_PASS_YET",
     "council12":"PASS",
-    "refutations":["HTTP 200 does not prove persistent RW storage","dataset RO mount does not equal Storage Bucket RW persistence","HF-M03 success does not close HF-M01 or HF-M02 auth flags"],
+    "refutations":["RUNNING does not prove inference output","timeout_seconds metadata does not prove automatic termination occurred","retry scheduling does not close HF-M04 compute"],
     "cross_check":"PASS",
-    "coda":"PERSIST_HF_M03_INTEGRATION_KEEP_NO_READY_ADVANCE_SAFE_HF_M04",
-    "jobs":["6aa2f8e921047bf1b03732b7"]
+    "coda":"KEEP_HF_M04_NO_READY_WAIT_FOR_FINAL_INFERENCE_EVIDENCE",
+    "jobs":["6aa316585527934177ec29ee","6aa34d825527934177ec3d2c"]
   }
 }
