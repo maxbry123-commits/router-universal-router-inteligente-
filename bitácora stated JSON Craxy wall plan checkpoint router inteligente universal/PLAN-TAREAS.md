@@ -9,7 +9,8 @@ Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`
    - ✅ HF-M02 compute real + dataset mount + FastAPI→Enchufe→Router→adapter; storage RW sigue FLAG 403, NO READY.
    - ✅ HF-M03 compute real + integración FastAPI→Enchufe→Router→adapter + dataset RO; storage RW persistente sigue PENDING/FLAG, NO READY.
    - ⚑ HF-M04 compute real: Jobs `6aa316585527934177ec29ee` y `6aa34d825527934177ec3d2c` cancelados tras anomalía timeout-state repetida sin inferencia final; FLAG, NO PASS.
-   - 🔄 HF-M05 `Qwen/Qwen2.5-7B-Instruct`: Job `6aa3781121047bf1b0374a5c` lanzado en a10g-small, timeout 30m; NO PASS hasta COMPLETED+output.
+   - ✅ HF-M05 `Qwen/Qwen2.5-7B-Instruct`: Job `6aa3781121047bf1b0374a5c` COMPLETED; `Qwen2ForCausalLM`; `7615616512` params; CUDA=True; `RIU_HF_M05_OK=True`; compute PASS únicamente.
+   - 🔄 Cola 1×1: HF-M05 adapter + dataset/storage + FastAPI→Enchufe→Router; NO READY hasta evidencia integrada.
    - ⏳ HF-M06..HF-M20 después.
 2. 📌 **Paso 2 — integración GitHub C01-C23** — PENDING tras P01.
 3. 📌 **Paso 3 — API keys agentes + E2E** — PENDING.
