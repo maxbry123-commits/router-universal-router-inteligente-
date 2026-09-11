@@ -5,52 +5,45 @@
 ## RIU-0001..0058 — CORE
 P01=`CLOSED_EXECUTABLE_SET`; P02=`CLOSED_HOT_PATH_EXECUTABLE_SET`; P03=`VERIFIED_CLOSED`. Hot-path commit `af469152fd0306d706c67b8cf6548512fdc4f1c0`.
 
-## RIU-0059..0061 — CERTIFICACIÓN 20 MODELOS
-PASS/ejecución previa válida preservada: M01, M02, M03, M05, M06, M07, M10, M11, M12, M20.
-FLAG/GAP contabilizados: M04, M08, M09, M13, M14, M15, M16, M17, M19.
-M18 fue trabajado individualmente: `6aa475605527934177eca1cb` ERROR; diagnóstico `6aa475e721047bf1b0378e13` mostró `no GGUF files found ... Q3_K_S` y `--model is required`; StrategyDelta canónico `Q4_K_M` Job `6aa4769b5527934177eca24b` llegó a RUNNING pero no cerró dentro de la ventana corta de 240s y fue cancelado para no consumir otra ventana larga. Resultado final M18=`FLAG-HF-M18-RUNTIME-TIMEOUT-001`, nunca PASS/READY.
-
-## RIU-0062 — GATE FINAL CORE/MODELOS
-`MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`=PASS: 20/20 slots terminan PASS/verified o FLAG/GAP explícito con evidencia.
-Regresión global `RIU FAST-CLOSE` relanzada: run `34582284615`, job `103434377312`, conclusion=`success`; `pytest -q router inteligente universal/tests/test_fast_close_global_e2e.py` => `2 passed, 2 warnings in 6.75s`.
-El checkout reportó un warning existente de pointer LFS en `qdrant/tests/e2e_tests/test_data/storage.tar.xz`, pero el workflow/test final concluyó success; se registra como warning, no como fallo del hot-path.
+## RIU-0059..0062 — CERTIFICACIÓN Y REGRESIÓN
+`MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`=PASS; PASS/verified=M01,M02,M03,M05,M06,M07,M10,M11,M12,M20; FLAG/GAP=M04,M08,M09,M13,M14,M15,M16,M17,M18,M19. Regresión `RIU FAST-CLOSE` run `34582284615`, job `103434377312`: success, `2 passed, 2 warnings in 6.75s`.
 
 ## RIU-0063 — CONECTIVIDAD CENTRALIZADA MULTI-REPO
-Nueva orden del Director: toda conectividad de proyectos — GitHub, Hugging Face, MCP, cómputo, memoria, almacenamiento, APIs/VPS y puentes — debe quedar organizada bajo una raíz canónica y pasar por Router Inteligente Universal.
+Raíz canónica `conectividad con Router inteligente universal/`; mapa mental + registry + 19 bridges declarados; Claude/GitHub MCP, HF `COMAND-CENTER-1`, memoria y Codespaces secret boundary inventariados sin secretos crudos.
 
-### Persistencia ejecutada
-- raíz central creada: `conectividad con Router inteligente universal/`
-- mapa mental creado y enriquecido: último commit `a8331c4f866d0f90d5d0936e2dc7469021562e27`
-- registry maestro 19/19 + SHA por repo + conexiones recuperadas: último commit `0a6289861460c9bce4e091c7e39d3cb02724075a`
-- 19/19 repositorios propietarios recibieron `conectividad con Router inteligente universal/PUENTE-RIU-<repo>.yaml`
-- README arquitectura actual: `7a475f55849692b461379de44d69e1e2f038f183`
-- Handoff actual: `2b5b63ffd9fe0bb0cd74fbcc6de0ef8972f2647d`
-- STATE actual: `c32184ad9840f33030fa3601628eebb5dff38ea3`
+## RIU-0064 — CONNECTIVITY FABRIC V2 + RUNTIME
+### Read-back de bridges
+- `19/19` repositorios confirmados en `schema: riu.connectivity.bridge/v2`.
+- frontend confirmado con GitHub, HF Jobs CPU/GPU, models/datasets/spaces/jobs, Space `COMAND-CENTER-1/yaiwes-ui-factory`, Claude Managed Agents `github_repository`, MCP `https://api.githubcopilot.com/mcp/` y memory targets.
+- TAREA-2 fue promovido por este ciclo a v2 en commit `0848a33e21a8e48d62597d05ca363caac40f64f8`; read-back blob `dab6ebdc7b7a973314df7ce2126a432cc0388658`.
+- Dos intentos de write sobre bridges concurrentemente modificados devolvieron `409`; se aplicó fail-closed/no-force y el read-back posterior confirmó que ya habían convergido a v2.
 
-### Claude ↔ GitHub MCP recuperado
-Fuente histórica localizada en `maxbry123-commits/TAREA-1/skills/claude-api/`.
-Patrón validado documentalmente: recurso `github_repository` + MCP GitHub `https://api.githubcopilot.com/mcp/` + credencial externa en vault/runtime. Se centraliza la referencia, nunca el secreto.
+### Runtime central
+- `router inteligente universal/integration/connectivity_runtime.py` blob `0a26e4133efba1e5343685eff9fe17a88a7ea3a3`.
+- resuelve únicamente nombres lógicos: HF=`RIU_HF_TOKEN/HF_TOKEN/HUGGINGFACE_TOKEN`; GitHub/MCP=`RIU_GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN`.
+- nunca persiste/imprime valores; falta de credencial => fail-closed.
+- Router self bridge blob `469ee974ea6c0f3edfb38443b96ef19b83f6df81`.
 
-### Claude ↔ memoria persistente recuperada
-`maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md` documenta `memory_store` como recurso de sesión con memoria persistente entre sesiones. El puente TAREA-1 fue enriquecido en commit `295c380ebee82ccf49a7623bd3bb7320e847fad0`; registry/mapa/README/Handoff/STATE sincronizados. Estado=`DISCOVERED_BRIDGED_TEST_PENDING`.
+### Tests/evidencia
+- HF Job `6aa490c35527934177ecacb3`=`COMPLETED`.
+- suite `router inteligente universal/tests/test_connectivity_runtime.py` => `3 passed in 0.02s`.
+- registry actual blob `aa27dc728af98af73741ad287cdcd6bdee6addeb`, status `BRIDGES_V2_19_OF_19_RUNTIME_UNIT_TEST_PASS_CREDENTIAL_E2E_PENDING`.
+- STATE RIU-0064 commit `9db5cec9574c1e3c70f1509347612ea24876087c`.
+- CHECKPOINT RIU-0064 commit `605dc13491c523e26b1b8d5178771b98f29c8f2b`.
+- PLAN RIU-0064 commit `64c0aeda36d06db8cbea8e40d0b9a8adfbf1c812`.
 
-### Hugging Face
-Cuenta observada `COMAND-CENTER-1`; Jobs CPU/GPU ya fueron usados en el proyecto. Workflow histórico localizado en `TAREA-1/.github/workflows/yaiwes-hf-static-publish.yml`. El nuevo gate exige credencial runtime + prueba de identidad/scope + operación real/read-back por el Router antes de PASS.
+### GAP/flags externos
+La conexión GitHub disponible para esta ejecución no expone GitHub Codespaces Secrets API ni valores secretos. Por seguridad, no se intenta extraerlos. Por ello siguen `PENDING_RUNTIME_CREDENTIAL`: GitHub identity/repo access; HF whoami/scope/API/Job probe; Claude/GitHub MCP connect/tool probe; memory operation/read-back; global connectivity E2E.
 
-### Memoria/estado propios
-`MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro` incorporados al mapa como targets de memoria/almacenamiento/estado. Operatividad aún no declarada: `PENDING_E2E_ROUTER`.
-
-### Gate RIU-0063
-- `ALL_REPOS_BRIDGED=PASS(19/19)`
-- `ROUTER_REGISTRY_COMPLETE=PASS`
-- `GITHUB_ACCESS_VERIFIED=PENDING`
-- `HF_ACCESS_VERIFIED=PENDING`
-- `MCP_BOUNDARY_VERIFIED=PENDING`
-- `MEMORY_BOUNDARY_VERIFIED=PENDING`
-- `CONNECTIVITY_GLOBAL_E2E_PASS=PENDING`
+## Gate RIU-0064
+- `BRIDGES_V2_19_OF_19=PASS`
+- `ROUTER_RUNTIME_TESTED=PASS`
+- `SECRET_RESOLUTION_FAIL_CLOSED=PASS_UNIT_TEST`
+- `GITHUB_ACCESS_VERIFIED=PENDING_RUNTIME_CREDENTIAL`
+- `HF_ACCESS_VERIFIED=PENDING_RUNTIME_CREDENTIAL`
+- `MCP_BOUNDARY_VERIFIED=PENDING_RUNTIME_CREDENTIAL`
+- `MEMORY_BOUNDARY_VERIFIED=PENDING_RUNTIME_CREDENTIAL`
+- `CONNECTIVITY_GLOBAL_E2E_PASS=PENDING_RUNTIME_CREDENTIALS`
 
 ## Reglas preservadas
-`CATALOG_OBSERVED != TESTED != READY`; no secretos en repo; flags externos/runtime no se maquillan como PASS; core anterior no se reabre sin regresión.
-
-Estado global del core: `VERIFIED_CLOSED`.
-Estado de la nueva capa: `ACTIVE_BUILD_CONNECTIVITY_LAYER`.
+No secretos en repo/logs; no force; evidencia antes de PASS; core y certificación previa no se reabren sin regresión demostrada.
