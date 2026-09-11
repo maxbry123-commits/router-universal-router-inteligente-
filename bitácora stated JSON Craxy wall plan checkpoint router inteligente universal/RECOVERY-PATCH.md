@@ -1,46 +1,39 @@
 # RECOVERY PATCH — ROUTER INTELIGENTE UNIVERSAL
 Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP`.
 
-## Estado preservado
-Core P01-P03=`VERIFIED_CLOSED`; `MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`; regresión core=`PASS`.
+## Preservado
+Core P01-P03=`VERIFIED_CLOSED`; modelos 20/20 accounted; regresión core PASS.
 
-## RIU-0063/0064 — Connectivity Fabric
-- raíz canónica `conectividad con Router inteligente universal/`.
-- 19/19 repos con un `PUENTE-RIU-<repo>.yaml` v2.
-- registry central commit `f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3`.
-- mapa mental commit `c781e9dad4b4504c2d15b517022ce0b7b3a8f267`.
-- frontend urgente v2 commit `168b12de4c574a165d32601968ee7dd864614d8a`.
-- runtime `router inteligente universal/integration/connectivity_runtime.py`, commit `5664301d9051068b98ab326e5545110299e110a6`.
-- unit tests runtime commit `cfa87f7470f73e36d383f2e302f1fd38c582a674`; HF Job `6aa490c35527934177ecacb3` COMPLETED, `3 passed in 0.02s`.
+## Fabric
+19/19 repos con puente v2; registry `f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3`; frontend `168b12de4c574a165d32601968ee7dd864614d8a`.
 
-## RIU-0065 — test global de componentes actuales
-- Attempt `6aa4924021047bf1b0379661`: ERROR por dependencia de entorno `huggingface_hub` ausente.
-- StrategyDelta `6aa492635527934177ecad45`: ERROR de entorno por `PYTHONPATH`/módulo `red`.
-- StrategyDelta final `6aa4928c21047bf1b037967e`: `COMPLETED`, **71 passed, 2 warnings in 6.00s**.
-- auditoría de colección `6aa492b55527934177ecad83`: `COMPLETED`, 18 archivos / 71 casos.
-- warnings: deprecaciones TestClient FastAPI/Starlette; no fallos funcionales.
+## Runtime actual
+- `connectivity_runtime.py` latest `912fc38708c13f57046d8aa48c503773bd722d93`.
+- `verify_runtime_connectivity.py` `5b727b139f3736a4f277fb68b03bbaff95d31dfb`.
+- GitHub permissions/scopes probe, HF identity/role probe, GitHub MCP initialize probe; todos sin exposición de valores.
+
+## Tests
+- suite latest HF Job `6aa493a121047bf1b03796e9`: `COMPLETED`, **75 passed, 2 warnings in 5.78s**.
+- fail-closed Job `6aa493e221047bf1b037970b`: `COMPLETED`, `FAIL_CLOSED_EXPECTED_PASS`.
 
 ## Secret boundary
-Store indicado por Director: `https://github.com/settings/codespaces`.
-HF refs: `RIU_HF_TOKEN`, `HF_TOKEN`, `HUGGINGFACE_TOKEN`.
-GitHub/MCP refs: `RIU_GITHUB_PAT`, `GITHUB_TOKEN`, `GH_TOKEN`.
-Valores crudos prohibidos en Git/logs/documentos.
+Store: `https://github.com/settings/codespaces`.
+HF refs=`RIU_HF_TOKEN/HF_TOKEN/HUGGINGFACE_TOKEN`.
+GitHub/MCP refs=`RIU_GITHUB_PAT/GITHUB_TOKEN/GH_TOKEN`.
+Los valores no son re-leíbles por API y nunca deben persistirse.
 
-## Nodo de recuperación exacto
-`RIU-0066_RUNTIME_SECRET_E2E`.
+## Punto exacto de recuperación
+Nodo=`RIU-0066_RUNTIME_SECRET_E2E`.
+Ejecutar dentro de un Codespace autorizado:
+`python "router inteligente universal/integration/verify_runtime_connectivity.py" --repo maxbry123-commits/frontend`
 
-Secuencia cola 1×1:
-1. ejecutar Router dentro de runtime/Codespace autorizado y confirmar sólo disponibilidad de refs, sin imprimir valores.
-2. GitHub identity + repo access + permission + operation/read-back.
-3. HF whoami-v2 + scope + API/Job probe.
-4. Claude GitHub MCP mount/connect/tool probe.
-5. memory operation/read-back.
-6. global connectivity E2E.
-7. sync documental y cierre.
+Resultado esperado para avanzar: runtime refs `AVAILABLE`; GitHub PASS; HF identity `COMAND-CENTER-1` PASS; GitHub MCP initialize PASS. Después probar memory read-back y global E2E.
 
-## Estado de gates
-PASS: `BRIDGES_V2_19_OF_19`, `ROUTER_RUNTIME_TESTED`, `CURRENT_ROUTER_TEST_SUITE_71_OF_71`, `SECRET_RESOLUTION_FAIL_CLOSED`.
-PENDING: `GITHUB_ACCESS_VERIFIED`, `HF_ACCESS_VERIFIED`, `MCP_BOUNDARY_VERIFIED`, `MEMORY_BOUNDARY_VERIFIED`, `CONNECTIVITY_GLOBAL_E2E_PASS`.
+Si las refs no aparecen: comprobar en GitHub Codespaces settings que cada secret autoriza `maxbry123-commits/frontend` y/o `maxbry123-commits/router-universal-router-inteligente-`; reiniciar/crear el Codespace para inyección. Mantener `PENDING_RUNTIME_CREDENTIAL_VISIBILITY`, nunca PASS falso.
 
-## Evidencia documental actual
-Architecture `a1b842a9687be99a7b8130abf8c54127d643627a`; Handoff `038765d3fdb06c3fe2bc42e987e0d40f9d7c8496`; Crazy Wall `551b4e36fccd82d81f75fa5f21408dbe9da41281`; STATE `d94d4ea72fe9a4cdbd8bad6cea5db54b0dd98fe6`; CHECKPOINT `45878a7782f71f3dacca078f5c3b03068ecf8a72`; PLAN `6887f62dece655c23b7b22bb767252798d6d2dbe`.
+## Gates
+PASS=`19/19 v2 + runtime + suite 75/75 + fail-closed`.
+PENDING=`GITHUB/HF/MCP/MEMORY/GLOBAL E2E`.
+
+## Evidencia documental
+Architecture `70eec6c53b4e39ba75c86c4e0591f1edc2db47c1`; Handoff `96966d7ca10f2eb2c1a3ced746c6182f01159a7e`; Crazy Wall `127e8f7e3d01a763b2e55d8e9de53d2bb370b247`; STATE `6668eed1ce64eb27e11d9f3e10c2c07768832631`; CHECKPOINT `364814100f8136dd5b17b4a6fbf5e3b22866b2b8`; PLAN `1bebc4684574bda27a70aa1a2ad570e49530071e`.
