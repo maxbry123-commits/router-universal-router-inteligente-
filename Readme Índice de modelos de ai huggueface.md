@@ -9,7 +9,7 @@ HF-M01 compute/hot-path/dataset RO verificados; provider auth Job `6aa2985921047
 HF-M02 compute/integración real verificados; storage RW Job `6aa2ebc15527934177ec1eb6` ERROR 403; NO READY.
 HF-M03 compute + integración FastAPI→Enchufe→Router→adapter + dataset RO verificados; storage RW persistente PENDING; NO READY.
 HF-M04 Jobs `6aa316585527934177ec29ee` y `6aa34d825527934177ec3d2c` cancelados tras anomalía timeout-state repetida sin output final; FLAG, NO PASS.
-HF-M05 `Qwen/Qwen2.5-7B-Instruct` metadata Hub verificada; Job real `6aa3781121047bf1b0374a5c` lanzado en a10g-small/Transformers con timeout 30m; NO PASS hasta cierre.
+HF-M05 `Qwen/Qwen2.5-7B-Instruct`: Job real `6aa3781121047bf1b0374a5c` COMPLETED; `Qwen2ForCausalLM`; `7615616512` params; CUDA=True; `RIU_HF_M05_OK=True`; compute PASS únicamente; integración PENDING.
 
 ## Registry observado — 20 modelos
 | Slot | model_id | especialidad | adapter | compute/acelerador | dataset/storage | FastAPI | estado |
@@ -18,7 +18,7 @@ HF-M05 `Qwen/Qwen2.5-7B-Instruct` metadata Hub verificada; Job real `6aa37811210
 | HF-M02 | openai-community/gpt2 | text-generation | ENCHUFE_ROUTER_ADAPTER_VERIFIED | cpu-upgrade REAL_INFERENCE_VERIFIED | Salesforce/wikitext RO_MOUNT_VERIFIED; RW_STORAGE_AUTH_FLAGGED | HTTP_200_HOT_PATH_VERIFIED | INTEGRATION_VERIFIED_STORAGE_RW_AUTH_FLAGGED |
 | HF-M03 | Qwen/Qwen3-8B | text-generation/conversational | ENCHUFE_ROUTER_ADAPTER_VERIFIED | a10g-small REAL_INFERENCE_VERIFIED | ultrachat_200k RO_MOUNT_VERIFIED; RW_STORAGE_PENDING | HTTP_200_HOT_PATH_VERIFIED | INTEGRATION_VERIFIED_STORAGE_RW_PENDING |
 | HF-M04 | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF | text-generation/code | PENDING | a10g-small llama.cpp CUDA; two timeout-state anomalies; NO PASS | PENDING | PENDING | COMPUTE_FLAGGED |
-| HF-M05 | Qwen/Qwen2.5-7B-Instruct | text-generation/instruct | PENDING | a10g-small Transformers Job 6aa3781121047bf1b0374a5c SCHEDULING | PENDING | PENDING | COMPUTE_ACTIVE |
+| HF-M05 | Qwen/Qwen2.5-7B-Instruct | text-generation/instruct | PENDING | a10g-small REAL_INFERENCE_VERIFIED; Qwen2ForCausalLM; 7615616512 params; CUDA True | PENDING | PENDING | COMPUTE_VERIFIED_INTEGRATION_PENDING |
 | HF-M06 | facebook/opt-125m | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M07 | Qwen/Qwen2.5-1.5B-Instruct | text-generation/instruct | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 | HF-M08 | farbodtavakkoli/OTel-2.0-LLM-31B-IT | text-generation | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
@@ -36,4 +36,4 @@ HF-M05 `Qwen/Qwen2.5-7B-Instruct` metadata Hub verificada; Job real `6aa37811210
 | HF-M20 | Qwen/Qwen2.5-7B-Instruct-AWQ | text-generation/instruct | PENDING | PENDING | PENDING | PENDING | CATALOG_OBSERVED |
 
 ## Siguiente cola 1×1
-HF-M05 Job `6aa3781121047bf1b0374a5c`; exigir COMPLETED + output real antes de PASS. HF-M01/HF-M02/HF-M03 mantienen FLAG/GAP de auth/storage; HF-M04 mantiene FLAG compute; ninguno incompleto es READY.
+HF-M05 adapter + dataset/storage + FastAPI→Enchufe→Router. HF-M01/HF-M02/HF-M03 mantienen FLAG/GAP de auth/storage; HF-M04 mantiene FLAG compute; ninguno incompleto es READY.
