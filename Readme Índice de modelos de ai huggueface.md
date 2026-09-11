@@ -1,42 +1,15 @@
 # Readme Índice de modelos de AI Hugging Face
 
 ## Regla de verdad
-Este índice registra únicamente modelos observados/validados. `CATALOG_OBSERVED` no significa `READY`; FAST-CLOSE permite cerrar core con FLAGS externos demostrados.
+`CATALOG_OBSERVED` no significa `READY`; FAST-CLOSE cierra core con PASS ejecutable + FLAGS externos demostrados.
 
-## Evidencia actual
-Catálogo público 20: HF Job `6aa2513d5527934177ebfaad`.
-HF-M01/M02/M03: PASS internos previos; auth/provider/RW storage externos quedan FLAGS/GAP.
-HF-M04: dos Jobs cancelados tras anomalía timeout-state; FLAG, NO PASS.
-HF-M05: compute + integración real PASS.
-HF-M06/M07/M10/M11/M12: batch Job `6aa398fe5527934177ec4cd0` COMPLETED; todos pasaron verifier individual detrás del hot-path.
+## Estado resumido
+- M01-M03 PASS internos preservados; auth/provider/RW externos GAP/FLAG.
+- M04 FLAG; M05 integrado PASS; M06/M07/M10/M11/M12 batch integrado PASS.
+- M08/M13/M14/M15/M16/M19: FLAGS exactos para flavor/formato/provider actual.
+- M17/M18: StrategyDelta GGUF Job `6aa3a24f5527934177ec4e3c` en curso.
+- M09: vLLM Job `6aa3a3dd5527934177ec4e80` en curso.
+- M20 `Qwen/Qwen2.5-7B-Instruct-AWQ`: **REAL_INFERENCE_VERIFIED** — Job `6aa3a3cd5527934177ec4e7e` COMPLETED en `a10g-small`; `/usr/local/bin/vllm serve`; exact model response `OK`; fingerprint `vllm-0.29.0-7d06a941`; SHA256 `/tmp/m20.json`=`5c45711905d5c34282a4711527ced24ede31e3390bf318285a01e8d78acf5302`; `HF_M20_OK=True`.
 
-## Registry observado — 20 modelos
-| Slot | model_id | especialidad | adapter | compute/acelerador | dataset/storage | FastAPI | estado |
-|---|---|---|---|---|---|---|---|
-| HF-M01 | Qwen/Qwen3-0.6B | text-generation/conversational | VERIFIED | REAL_INFERENCE_VERIFIED | RO_BINDING_VERIFIED | HOT_PATH_VERIFIED | CORE_PASS_PROVIDER_AUTH_FLAGGED |
-| HF-M02 | openai-community/gpt2 | text-generation | VERIFIED | REAL_INFERENCE_VERIFIED | RO_VERIFIED; RW_AUTH_FLAGGED | VERIFIED | CORE_PASS_STORAGE_RW_FLAGGED |
-| HF-M03 | Qwen/Qwen3-8B | text-generation/conversational | VERIFIED | a10g-small VERIFIED | RO_VERIFIED; RW_EXTERNAL_GAP | VERIFIED | CORE_PASS_STORAGE_RW_FLAGGED |
-| HF-M04 | unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF | text-generation/code | PENDING | two timeout-state anomalies | PENDING | PENDING | COMPUTE_FLAGGED |
-| HF-M05 | Qwen/Qwen2.5-7B-Instruct | text-generation/instruct | VERIFIED | REAL_INFERENCE_VERIFIED | RO_VERIFIED; RW_EXTERNAL_GAP | VERIFIED | CORE_INTEGRATION_VERIFIED |
-| HF-M06 | facebook/opt-125m | text-generation | VERIFIED | a10g-small BATCH_VERIFIED | RO_VERIFIED | VERIFIED | CORE_INTEGRATION_VERIFIED |
-| HF-M07 | Qwen/Qwen2.5-1.5B-Instruct | text-generation/instruct | VERIFIED | a10g-small BATCH_VERIFIED | RO_VERIFIED | VERIFIED | CORE_INTEGRATION_VERIFIED |
-| HF-M08 | farbodtavakkoli/OTel-2.0-LLM-31B-IT | text-generation/multimodal | PENDING | 31273.1M observed; a10g-small local format unsuitable | PENDING | PENDING | LOCAL_FLAVOR_FLAGGED_PROVIDER_AUTH_BLOCKED |
-| HF-M09 | openai/gpt-oss-20b | text-generation | PENDING | 20914.8M MXFP4; local candidate | PENDING | PENDING | LOCAL_RUNTIME_CANDIDATE |
-| HF-M10 | Qwen/Qwen2.5-0.5B-Instruct | text-generation/instruct | VERIFIED | a10g-small BATCH_VERIFIED | RO_VERIFIED | VERIFIED | CORE_INTEGRATION_VERIFIED |
-| HF-M11 | Qwen/Qwen3-4B | text-generation | VERIFIED | a10g-small BATCH_VERIFIED | RO_VERIFIED | VERIFIED | CORE_INTEGRATION_VERIFIED |
-| HF-M12 | Qwen/Qwen2.5-3B-Instruct | text-generation/instruct | VERIFIED | a10g-small BATCH_VERIFIED | RO_VERIFIED | VERIFIED | CORE_INTEGRATION_VERIFIED |
-| HF-M13 | openai/gpt-oss-120b | text-generation | PENDING | 116829.2M MXFP4; a10g-small unsuitable | PENDING | PENDING | LOCAL_FLAVOR_FLAGGED_PROVIDER_AUTH_BLOCKED |
-| HF-M14 | Qwen/Qwen3-32B | text-generation | PENDING | 32762.1M observed; a10g-small unsuitable | PENDING | PENDING | LOCAL_FLAVOR_FLAGGED_PROVIDER_AUTH_BLOCKED |
-| HF-M15 | dphn/dolphin-2.9.1-yi-1.5-34b | text-generation | PENDING | 34388.9M observed; a10g-small unsuitable | PENDING | PENDING | LOCAL_FLAVOR_FLAGGED |
-| HF-M16 | deepseek-ai/DeepSeek-V4-Flash-0731 | text-generation | PENDING | 304180.4M FP8; a10g-small unsuitable | PENDING | PENDING | LOCAL_FLAVOR_FLAGGED_PROVIDER_AUTH_BLOCKED |
-| HF-M17 | ornith-ai/Ornith-1.0-9B-GGUF | text-generation | LLAMA_CPP_CANDIDATE | Q4_K_M StrategyDelta Job `6aa3a24f5527934177ec4e3c` | PENDING | PENDING | REAL_JOB_RUNNING |
-| HF-M18 | ornith-ai/Ornith-1.5-9B-GGUF | text-generation | LLAMA_CPP_CANDIDATE | Q4_K_M StrategyDelta Job `6aa3a24f5527934177ec4e3c` | PENDING | PENDING | REAL_JOB_RUNNING |
-| HF-M19 | Qwen/Qwen-72B | text-generation | PENDING | 72287.9M observed; a10g-small unsuitable | PENDING | PENDING | LOCAL_FLAVOR_FLAGGED |
-| HF-M20 | Qwen/Qwen2.5-7B-Instruct-AWQ | text-generation/instruct | VLLM_CANDIDATE | 7615.6M AWQ 4-bit; local candidate | PENDING | PENDING | LOCAL_RUNTIME_CANDIDATE |
-
-## Runtime evidence RIU-0051
-- Initial M17/M18 Job `6aa3a1875527934177ec4e06`: ERROR exit127; runtime probe `6aa3a24221047bf1b0374f88` found `/app/llama-cli`; retry `6aa3a24f5527934177ec4e3c` launched.
-- vLLM smoke `6aa3a15c5527934177ec4e04`: ERROR because `python` was not in image PATH; this is a runtime-entrypoint GAP, not an M09/M20 model failure. Probe `6aa3a2cb5527934177ec4e50` launched.
-
-## Siguiente cola
-M17/M18 result -> M09/M20 corrected runtime -> cerrar P01 ejecutable; los FLAGS de `a10g-small` permanecen explícitos y no bloquean P02/P03.
+## Slots pendientes de cierre ejecutable
+HF-M09, HF-M17, HF-M18. Los restantes no ejecutables en la ruta local actual conservan FLAG preciso y no bloquean P02/P03.
