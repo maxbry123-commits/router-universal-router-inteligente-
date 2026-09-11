@@ -38,12 +38,17 @@ Ruta transversal:
 Fuente histórica localizada en `maxbry123-commits/TAREA-1/skills/claude-api/`.
 Patrón recuperado: `github_repository` + servidor MCP GitHub `https://api.githubcopilot.com/mcp/` + autenticación externa en vault/runtime. El Router registra el endpoint y la frontera de autenticación, nunca la credencial cruda.
 
+### Claude Managed Agents ↔ memoria persistente
+Fuente recuperada: `maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md`.
+Recurso: `memory_store` en `resources[]` de sesión, con semántica de memoria persistente entre sesiones. El Router lo registra como capacidad de memoria externa y exige validación E2E antes de usarlo como dependencia operativa.
+
 ### Hugging Face
 Cuenta observada: `COMAND-CENTER-1`.
 Cómputo usado anteriormente: Hugging Face Jobs CPU/GPU y workflows que consumen autenticación desde runtime.
+Workflow histórico identificado: `maxbry123-commits/TAREA-1/.github/workflows/yaiwes-hf-static-publish.yml`.
 El Router centraliza la referencia lógica, el tipo de cómputo y el estado de verificación. Las credenciales permanecen fuera de Git.
 
-### Memoria / almacenamiento / estado
+### Memoria / almacenamiento / estado propios
 Repositorios dedicados identificados: `MEMORIA`, `BIBLIOTECA`, `BITACORA-MAXBRY`, `Cerebro`. Quedan registrados como capacidades del mapa mental; su promoción a conexión operativa requiere prueba mediante el Router.
 
 ## Seguridad y secrets
