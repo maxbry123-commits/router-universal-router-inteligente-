@@ -27,6 +27,13 @@
       "auth": "vault_or_runtime",
       "source": "maxbry123-commits/TAREA-1/skills/claude-api/",
       "status": "DISCOVERED_BRIDGED_TEST_PENDING"
+    },
+    "claude_memory_store": {
+      "provider": "anthropic_managed_agents",
+      "resource": "memory_store",
+      "semantics": "persistent_cross_session_memory",
+      "source": "maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md",
+      "status": "DISCOVERED_BRIDGED_TEST_PENDING"
     }
   },
   "repositories": [
@@ -47,7 +54,7 @@
     {"name":"Orquestador-Maxbry-","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-Orquestador-Maxbry-.yaml","bridge_commit":"31d6392b6adfd9585605330cc493f398cafab930","status":"BRIDGE_DECLARED"},
     {"name":"osquestador-auditor","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-osquestador-auditor.yaml","bridge_commit":"9114b84695d8efe5b29756bdd12eb0fe1d48a6cb","status":"BRIDGE_DECLARED"},
     {"name":"router-universal-router-inteligente-","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-router-universal-router-inteligente-.yaml","bridge_commit":"604928880a95a4524b3f4b3e00ced9f97a8aa7c1","status":"BRIDGE_DECLARED"},
-    {"name":"TAREA-1","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-TAREA-1.yaml","bridge_commit":"aedffceae395db7314ba190f50fc326926e5f4bc","status":"BRIDGE_DECLARED"},
+    {"name":"TAREA-1","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-TAREA-1.yaml","bridge_commit":"295c380ebee82ccf49a7623bd3bb7320e847fad0","status":"BRIDGE_DECLARED_DISCOVERY_ENRICHED"},
     {"name":"TAREA-2","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-TAREA-2.yaml","bridge_commit":"b1e12a998780887251244afd2f4cf6a3996f01dc","status":"BRIDGE_DECLARED"}
   ],
   "bridge_summary": {
