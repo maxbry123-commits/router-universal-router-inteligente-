@@ -1,0 +1,23 @@
+name: RIU FAST-CLOSE
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'router inteligente universal/security/**'
+      - 'router inteligente universal/adapters/**'
+      - 'router inteligente universal/verifier/**'
+      - 'router inteligente universal/gateway/**'
+      - 'router inteligente universal/tests/test_fast_close_global_e2e.py'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pytest fastapi httpx pydantic
+      - name: FAST-CLOSE global E2E
+        run: pytest -q 'router inteligente universal/tests/test_fast_close_global_e2e.py'
