@@ -15,26 +15,35 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      HF_TOKEN: ${{ secrets.RIU_HF_TOKEN || secrets.HF_TOKEN || secrets.HUGGINGFACE_TOKEN }}
-      HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+      RIU_GITHUB_PAT: ${{ secrets.RIU_GITHUB_PAT }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Install official clients
+
+      - name: Fail closed unless GitHub secret bootstrap exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$RIU_GITHUB_PAT" ]; then
+            echo '::error::Add RIU_GITHUB_PAT to Router Actions secrets first.'
+            exit 2
+          fi
+          echo 'GITHUB_SECRET_BOOTSTRAP=PRESENT'
+
+      - name: Install official Codex client and encrypted-secret dependency
         run: |
           npm install -g @openai/codex
-          python -m pip install huggingface_hub
+          python -m pip install --quiet --disable-pip-version-check pynacl
           codex --version
-      - name: Check HF destination before starting authorization
-        run: python scripts/persist_codex_auth_hf.py preflight --account 2
+
       - name: Authorize ChatGPT account 2 from mobile
         shell: bash
         run: |
           set -euo pipefail
-          echo "CUENTA=2; autoriza con la cuenta correcta en el navegador del movil."
-          echo "Usa el enlace y codigo NUEVOS que imprime Codex."
+          echo 'CUENTA=2; abre el enlace de device auth y autoriza con la segunda cuenta ChatGPT.'
           timeout 840 codex -c 'cli_auth_credentials_store="file"' login --device-auth
           codex login status
-      - name: Save account 2 to Hugging Face Secrets
-        run: python scripts/persist_codex_auth_hf.py save --account 2
+
+      - name: Encrypt and propagate account 2 login to project repositories
+        run: python scripts/persist_codex_auth_github.py --account 2
