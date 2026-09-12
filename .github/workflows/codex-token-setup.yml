@@ -9,51 +9,16 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Codex
-        run: npm install -g @openai/codex
-      - name: Start Codex authorization
+      - name: Run login raw output
         shell: bash
         run: |
-          set -euo pipefail
-          rm -f /tmp/codex-session.log
-          script -qec "codex login --device-auth" /tmp/codex-session.log >/dev/null 2>&1 &
-          PID=$!
-
-          echo "Buscando URL/código de autorización de Codex..."
-          FOUND=0
-          for i in $(seq 1 60); do
-            sleep 2
-            AUTH_LINES=$(grep -Ei 'https://|device|code' /tmp/codex-session.log 2>/dev/null | sed -E 's/(sk-[A-Za-z0-9_-]{20,})/[REDACTED]/g' | head -20 || true)
-            if [ -n "$AUTH_LINES" ]; then
-              echo "===== AUTORIZACIÓN CODEX ====="
-              echo "$AUTH_LINES"
-              echo "==============================="
-              FOUND=1
-              break
-            fi
-          done
-
-          if [ "$FOUND" -ne 1 ]; then
-            echo "No se encontró información de autorización en el tiempo esperado."
-            kill "$PID" 2>/dev/null || true
-            exit 1
-          fi
-
-          echo "Autoriza desde tu navegador. Este workflow no imprimirá ni copiará credenciales de sesión."
-          for i in $(seq 1 120); do
-            if ! kill -0 "$PID" 2>/dev/null; then
-              wait "$PID" || true
-              echo "CODEX_AUTH_FLOW_FINISHED"
-              rm -f /tmp/codex-session.log
-              exit 0
-            fi
-            sleep 5
-          done
-
-          echo "Tiempo de espera agotado."
-          kill "$PID" 2>/dev/null || true
-          rm -f /tmp/codex-session.log
-          exit 1
+          npm install -g @openai/codex
+          STATUS=0
+          script -qec "timeout 60 codex login" /tmp/session_codex.log || STATUS=$?
+          echo "===== SALIDA COMPLETA ====="
+          cat /tmp/session_codex.log
+          echo "==========================="
+          echo "CODEX_EXIT_STATUS=$STATUS"
+          exit "$STATUS"
