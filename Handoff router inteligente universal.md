@@ -53,3 +53,36 @@ Los Codespaces user secrets no son re-leíbles mediante GitHub API/connector y e
 ## Gate
 PASS local=`BRIDGES_V2_19_OF_19 + ROUTER_RUNTIME + SUITE_75_OF_75 + FRESH_CONNECTIVITY_7_OF_7 + FAIL_CLOSED_NO_SECRET`.
 PENDING externo=`GITHUB/HF/MCP/MEMORY/GLOBAL_E2E` por visibilidad runtime de Codespaces secrets.
+
+---
+
+## Handoff 2026-09-12 — HF OIDC / Trusted Publishers
+
+### Estado nuevo
+- Space HF `COMAND-CENTER-1/yaiwes-ui-factory` ya existe y está confirmado como `static`.
+- Frontend workflow OIDC: `.github/workflows/astra-hf-static-space-publish.yml`.
+- Commit OIDC frontend=`d62b02cc95a5d732b7531b99ae597d4d14b1aa7a`.
+- Run histórico=`34675165228`: package 7/7 PASS + HF CLI/OIDC PASS; publish falló por `Repository ... not found` cuando el Space todavía no existía. Esa causa ya fue eliminada al crear el Space.
+
+### Repos informados por Director como añadidos/configurados en Trusted Publishers, branch main
+`frontend`, `agentes`, `Agentes-motores-Wordflow-YAIWES`, `osquestador-auditor`, `Maxbry-AGI`, `nct-core`, `TAREA-1`, `router-universal-router-inteligente-` bajo owner `maxbry123-commits`.
+
+Estado=`CONFIGURED_BY_DIRECTOR / E2E_NOT_YET_CERTIFIED`.
+
+### Acceso HF actual de esta sesión
+Identidad=`COMAND-CENTER-1`; OAuth visible=`jobs, openid, profile, read-mcp, read-repos`. No afirmar Hub write/admin mediante esta conexión hasta tener prueba de escritura.
+
+### Regla de seguridad operativa
+- OIDC/Trusted Publisher primero para Actions: evita duplicar PAT permanente.
+- PAT HF write solo donde la operación realmente requiera permisos globales no cubiertos por OIDC.
+- Secretos GitHub/HF solo en secret store/runtime; jamás en Git, prompt, README, logs o salida de modelo.
+- Los modelos AI reciben capacidades mediante el runtime/Actions/MCP; no reciben el valor crudo de las credenciales.
+
+### Siguiente nodo obligatorio
+`RIU-0067_HF_OIDC_E2E_AFTER_SPACE_CREATION`:
+1. re-run frontend HF publish;
+2. comprobar intercambio OIDC;
+3. upload real al Space;
+4. read-back desde Hub;
+5. si PASS, replicar probe no destructivo a los otros 7 repos;
+6. después cerrar estrategia OpenAI SDK + Anthropic SDK/GitHub runtime.
