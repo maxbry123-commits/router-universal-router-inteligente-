@@ -2,35 +2,39 @@ name: Codex Token Setup - Cuenta 1
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/codex-token-setup.yml"
 
 permissions:
   contents: read
 
+concurrency:
+  group: codex-auth-account-1
+  cancel-in-progress: false
+
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 16
+    timeout-minutes: 20
+    env:
+      HF_TOKEN: ${{ secrets.RIU_HF_TOKEN || secrets.HF_TOKEN || secrets.HUGGINGFACE_TOKEN }}
+      HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
     steps:
-      - name: Run Codex Cuenta 1 device authorization
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install official clients
+        run: |
+          npm install -g @openai/codex
+          python -m pip install huggingface_hub
+          codex --version
+      - name: Check HF destination before starting authorization
+        run: python scripts/persist_codex_auth_hf.py preflight --account 1
+      - name: Authorize ChatGPT account 1 from mobile
         shell: bash
         run: |
-          set -u
-          export CODEX_HOME="$RUNNER_TEMP/codex-account-1"
-          mkdir -p "$CODEX_HOME"
-          npm install -g @openai/codex
-          echo "Codex version: $(codex --version)"
-          echo "CUENTA=1"
-          echo "Abre https://auth.openai.com/codex/device y escribe el codigo de un solo uso que aparecera debajo."
-          STATUS=0
-          script -qec "timeout 840 codex login --device-auth" /tmp/codex-account-1.log || STATUS=$?
-          echo "===== SALIDA COMPLETA CUENTA 1 ====="
-          cat /tmp/codex-account-1.log
-          echo "===================================="
-          echo "CODEX_ACCOUNT_1_EXIT_STATUS=$STATUS"
-          if [ "$STATUS" -eq 124 ]; then
-            echo "::error::Codex Cuenta 1 expiro esperando aprobacion; vuelve a ejecutar para obtener un codigo nuevo."
-          fi
-          exit "$STATUS"
+          set -euo pipefail
+          echo "CUENTA=1; autoriza con la cuenta correcta en el navegador del movil."
+          echo "Usa el enlace y codigo NUEVOS que imprime Codex."
+          timeout 840 codex -c 'cli_auth_credentials_store="file"' login --device-auth
+          codex login status
+      - name: Save account 1 to Hugging Face Secrets
+        run: python scripts/persist_codex_auth_hf.py save --account 1
