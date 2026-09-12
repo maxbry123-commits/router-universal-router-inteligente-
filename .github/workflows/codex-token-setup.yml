@@ -1,4 +1,4 @@
-name: Codex Token Setup
+name: Codex Token Setup - Cuenta 1
 
 on:
   workflow_dispatch:
@@ -12,23 +12,26 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 16
+    env:
+      CODEX_HOME: ${{ runner.temp }}/codex-account-1
     steps:
-      - name: Run Codex device authorization
+      - name: Run Codex Cuenta 1 device authorization
         shell: bash
         run: |
           set -u
+          mkdir -p "$CODEX_HOME"
           npm install -g @openai/codex
           echo "Codex version: $(codex --version)"
-          echo "Starting the official headless device authorization flow."
-          echo "Open the URL and enter the device code shown below while this job is running."
+          echo "CUENTA=1"
+          echo "Abre la URL y escribe el codigo de un solo uso mientras este job esta activo."
           STATUS=0
-          script -qec "timeout 600 codex login --device-auth" /tmp/codex-session.log || STATUS=$?
-          echo "===== SALIDA COMPLETA ====="
-          cat /tmp/codex-session.log
-          echo "==========================="
-          echo "CODEX_EXIT_STATUS=$STATUS"
+          script -qec "timeout 840 codex login --device-auth" /tmp/codex-account-1.log || STATUS=$?
+          echo "===== SALIDA COMPLETA CUENTA 1 ====="
+          cat /tmp/codex-account-1.log
+          echo "===================================="
+          echo "CODEX_ACCOUNT_1_EXIT_STATUS=$STATUS"
           if [ "$STATUS" -eq 124 ]; then
-            echo "::error::Codex device authorization timed out waiting for approval."
+            echo "::error::Codex Cuenta 1 expiro esperando aprobacion; vuelve a ejecutar para obtener un codigo nuevo."
           fi
           exit "$STATUS"
