@@ -2,33 +2,103 @@ name: Claude Token Setup
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/claude-token-setup.yml"
 
 permissions:
   contents: read
 
+concurrency:
+  group: claude-subscription-auth
+  cancel-in-progress: false
+
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
+    env:
+      RIU_GITHUB_PAT: ${{ secrets.RIU_GITHUB_PAT }}
     steps:
-      - name: Generate Claude authorization URL
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Fail closed unless GitHub secret bootstrap exists
         shell: bash
         run: |
-          set -u
-          npm install -g @anthropic-ai/claude-code
-          echo "Claude Code version: $(claude --version)"
-          echo "Starting Claude setup-token in a pseudo-TTY."
-          echo "Open the claude.com authorization URL shown below while this job is running."
-          STATUS=0
-          script -qec "timeout 600 claude setup-token" /tmp/claude-session.log || STATUS=$?
-          echo "===== SALIDA COMPLETA ====="
-          cat /tmp/claude-session.log
-          echo "==========================="
-          echo "CLAUDE_EXIT_STATUS=$STATUS"
-          if [ "$STATUS" -eq 124 ]; then
-            echo "::error::Claude authorization timed out waiting for the browser/code step. The URL generation itself worked."
+          set -euo pipefail
+          if [ -z "$RIU_GITHUB_PAT" ]; then
+            echo '::error::Add RIU_GITHUB_PAT to Router Actions secrets first.'
+            exit 2
           fi
-          exit "$STATUS"
+          echo 'GITHUB_SECRET_BOOTSTRAP=PRESENT'
+
+      - name: Install Claude Code and encrypted-secret dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g @anthropic-ai/claude-code
+          python -m pip install --quiet --disable-pip-version-check pynacl
+          claude --version
+
+      - name: Generate authorization URL without exposing resulting token
+        shell: bash
+        run: |
+          set -euo pipefail
+          SESSION=/tmp/claude-setup-token.session
+          STATUS=/tmp/claude-setup-token.status
+          rm -f "$SESSION" "$STATUS"
+
+          # Keep Claude's raw terminal output runner-local. setup-token prints the
+          # final OAuth token, so stdout must never be copied to Actions logs.
+          (
+            set +e
+            COLUMNS=5000 script -qec "stty cols 5000 2>/dev/null || true; timeout 780 claude setup-token" "$SESSION" >/dev/null 2>&1
+            code=$?
+            printf '%s' "$code" > "$STATUS"
+          ) &
+          child=$!
+
+          printed=0
+          for _ in $(seq 1 160); do
+            if [ "$printed" -eq 0 ] && [ -s "$SESSION" ]; then
+              url="$(python - "$SESSION" <<'PY'
+          import re, sys
+          from pathlib import Path
+          text=Path(sys.argv[1]).read_text(errors='ignore')
+          text=re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text)
+          m=re.search(r'https://claude\.com/cai/oauth/authorize\?[^\s]+', text)
+          if m:
+              # The authorization URL is intended for the user. Never print any
+              # other session text because the completed session contains token material.
+              print(m.group(0))
+          PY
+              )"
+              if [ -n "$url" ]; then
+                echo "CLAUDE_AUTH_URL=$url"
+                echo 'Open that URL on your phone and complete Claude authorization.'
+                printed=1
+              fi
+            fi
+            if ! kill -0 "$child" 2>/dev/null; then break; fi
+            sleep 5
+          done
+          wait "$child" || true
+          code="$(cat "$STATUS" 2>/dev/null || echo 1)"
+          echo "CLAUDE_SETUP_PROCESS_STATUS=$code"
+          if [ "$printed" -ne 1 ]; then
+            echo '::error::Claude authorization URL was not captured.'
+            shred -u "$SESSION" "$STATUS" 2>/dev/null || rm -f "$SESSION" "$STATUS"
+            exit 1
+          fi
+          if [ "$code" -ne 0 ]; then
+            echo '::error::Claude setup-token did not complete. Raw output is intentionally suppressed to protect credentials.'
+            shred -u "$SESSION" "$STATUS" 2>/dev/null || rm -f "$SESSION" "$STATUS"
+            exit 1
+          fi
+
+      - name: Encrypt and propagate Claude subscription token
+        shell: bash
+        run: |
+          set -euo pipefail
+          SESSION=/tmp/claude-setup-token.session
+          python scripts/persist_claude_token_github.py "$SESSION"
+          shred -u "$SESSION" /tmp/claude-setup-token.status 2>/dev/null || rm -f "$SESSION" /tmp/claude-setup-token.status
