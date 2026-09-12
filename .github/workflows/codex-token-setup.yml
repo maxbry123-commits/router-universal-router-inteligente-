@@ -32,8 +32,13 @@ jobs:
           echo 'GITHUB_SECRET_BOOTSTRAP=PRESENT'
 
       - name: Install official Codex client and encrypted-secret dependency
+        shell: bash
         run: |
+          set -euo pipefail
           npm install -g @openai/codex
+          export PATH="$(npm config get prefix)/bin:$PATH"
+          echo "$(npm config get prefix)/bin" >> "$GITHUB_PATH"
+          which codex
           python -m pip install --quiet --disable-pip-version-check pynacl
           codex --version
 
@@ -41,8 +46,50 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          export PATH="$(npm config get prefix)/bin:$PATH"
+          which codex
+
+          SESSION=/tmp/codex-device-auth.session
+          SAFE_SESSION=/tmp/session.log
+          rm -f "$SESSION" "$SAFE_SESSION"
+
+          print_session_log() {
+            rc=$?
+            trap - EXIT
+            set +e
+            : > "$SAFE_SESSION"
+            if [ -f "$SESSION" ]; then
+              python - "$SESSION" "$SAFE_SESSION" <<'PY'
+          import re, sys
+          from pathlib import Path
+          src = Path(sys.argv[1])
+          dst = Path(sys.argv[2])
+          text = src.read_text(errors='ignore')
+          text = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text)
+          text = re.sub(r'sk-[A-Za-z0-9._-]+', 'sk-[REDACTED]', text)
+          text = re.sub(r'(?i)((?:access|refresh|id)[_-]?token\s*[=:]\s*)[^\s]+', r'\1[REDACTED]', text)
+          dst.write_text(text)
+          PY
+            fi
+            echo '===== CODEX SESSION LOG (credential material redacted) ====='
+            cat /tmp/session.log
+            echo '===== END CODEX SESSION LOG ====='
+            rm -f "$SAFE_SESSION"
+            exit "$rc"
+          }
+          trap print_session_log EXIT
+
           echo 'CUENTA=1; abre el enlace de device auth y autoriza con la cuenta ChatGPT correcta.'
-          timeout 840 codex -c 'cli_auth_credentials_store="file"' login --device-auth
+          set +e
+          COLUMNS=5000 script -qefc "stty cols 5000 2>/dev/null || true; timeout 840 codex -c 'cli_auth_credentials_store=\"file\"' login --device-auth" "$SESSION" 2>&1 \
+            | sed -u -E 's/sk-[A-Za-z0-9._-]+/sk-[REDACTED]/g'
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "CODEX_DEVICE_AUTH_PROCESS_STATUS=$code"
+          if [ "$code" -ne 0 ]; then
+            echo '::error::Codex device authentication did not complete. See the sanitized session log below.'
+            exit "$code"
+          fi
           codex login status
 
       - name: Encrypt and propagate account 1 login to project repositories
