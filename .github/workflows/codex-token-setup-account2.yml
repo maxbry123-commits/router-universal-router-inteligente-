@@ -13,18 +13,17 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     timeout-minutes: 16
-    env:
-      CODEX_HOME: ${{ runner.temp }}/codex-account-2
     steps:
       - name: Run Codex Cuenta 2 device authorization
         shell: bash
         run: |
           set -u
+          export CODEX_HOME="$RUNNER_TEMP/codex-account-2"
           mkdir -p "$CODEX_HOME"
           npm install -g @openai/codex
           echo "Codex version: $(codex --version)"
           echo "CUENTA=2"
-          echo "Abre la URL y escribe el codigo de un solo uso mientras este job esta activo."
+          echo "Abre https://auth.openai.com/codex/device y escribe el codigo de un solo uso que aparecera debajo."
           STATUS=0
           script -qec "timeout 840 codex login --device-auth" /tmp/codex-account-2.log || STATUS=$?
           echo "===== SALIDA COMPLETA CUENTA 2 ====="
