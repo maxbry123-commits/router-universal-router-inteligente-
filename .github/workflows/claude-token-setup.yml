@@ -1,138 +1,14 @@
 name: Claude Token Setup
-
 on:
   workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: claude-subscription-auth-exec-v2
-  cancel-in-progress: false
-
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      RIU_GITHUB_PAT: ${{ secrets.RIU_GITHUB_PAT }}
     steps:
-      - name: Fail closed unless GitHub secret bootstrap exists
-        shell: bash
+      - name: Install and run setup-token
         run: |
-          set -euo pipefail
-          if [ -z "$RIU_GITHUB_PAT" ]; then
-            echo '::error::Add RIU_GITHUB_PAT to Router Actions secrets first.'
-            exit 2
-          fi
-          echo 'GITHUB_SECRET_BOOTSTRAP=PRESENT'
-
-      - name: Install Claude Code and encrypted-secret dependency
-        shell: bash
-        run: |
-          set -euo pipefail
           npm install -g @anthropic-ai/claude-code
           export PATH="$(npm config get prefix)/bin:$PATH"
-          echo "$(npm config get prefix)/bin" >> "$GITHUB_PATH"
-          which claude
-          python -m pip install --quiet --disable-pip-version-check pynacl
-          claude --version
-
-      - name: Generate authorization URL without exposing resulting token
-        shell: bash
-        run: |
-          set -euo pipefail
-          export PATH="$(npm config get prefix)/bin:$PATH"
-          which claude
-
-          SESSION=/tmp/claude-setup-token.session
-          STATUS=/tmp/claude-setup-token.status
-          SAFE_SESSION=/tmp/session.log
-          rm -f "$SESSION" "$STATUS" "$SAFE_SESSION"
-
-          print_session_log() {
-            rc=$?
-            trap - EXIT
-            set +e
-            : > "$SAFE_SESSION"
-            if [ -f "$SESSION" ]; then
-              python - "$SESSION" "$SAFE_SESSION" <<'PY'
-          import re, sys
-          from pathlib import Path
-          src = Path(sys.argv[1])
-          dst = Path(sys.argv[2])
-          text = src.read_text(errors='ignore')
-          text = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text)
-          text = re.sub(r'sk-ant-[A-Za-z0-9._-]+', 'sk-ant-[REDACTED]', text)
-          text = re.sub(r'(?i)((?:access|refresh|id)[_-]?token\s*[=:]\s*)[^\s]+', r'\1[REDACTED]', text)
-          dst.write_text(text)
-          PY
-            fi
-            echo '===== CLAUDE SESSION LOG (credential material redacted) ====='
-            cat /tmp/session.log
-            echo '===== END CLAUDE SESSION LOG ====='
-            rm -f "$SAFE_SESSION"
-            if [ "$rc" -ne 0 ]; then
-              shred -u "$SESSION" "$STATUS" 2>/dev/null || rm -f "$SESSION" "$STATUS"
-            fi
-            exit "$rc"
-          }
-          trap print_session_log EXIT
-
-          (
-            set +e
-            COLUMNS=5000 script -qefc "stty cols 5000 2>/dev/null || true; timeout 780 claude setup-token" "$SESSION" >/dev/null 2>&1
-            code=$?
-            printf '%s' "$code" > "$STATUS"
-          ) &
-          child=$!
-
-          printed=0
-          for _ in $(seq 1 160); do
-            if [ "$printed" -eq 0 ] && [ -s "$SESSION" ]; then
-              url="$(python - "$SESSION" <<'PY'
-          import re, sys
-          from pathlib import Path
-          text=Path(sys.argv[1]).read_text(errors='ignore')
-          text=re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text)
-          m=re.search(r'https://claude\.com/cai/oauth/authorize\?[^\s]+', text)
-          if m:
-              print(m.group(0))
-          PY
-              )"
-              if [ -n "$url" ]; then
-                echo "CLAUDE_AUTH_URL=$url"
-                echo 'Open that URL on your phone and complete Claude authorization.'
-                printed=1
-              fi
-            fi
-            if ! kill -0 "$child" 2>/dev/null; then break; fi
-            sleep 5
-          done
-          wait "$child" || true
-          code="$(cat "$STATUS" 2>/dev/null || echo 1)"
-          echo "CLAUDE_SETUP_PROCESS_STATUS=$code"
-          if [ "$printed" -ne 1 ]; then
-            echo '::error::Claude authorization URL was not captured.'
-            exit 1
-          fi
-          if [ "$code" -ne 0 ]; then
-            echo '::error::Claude setup-token did not complete. See the sanitized session log below.'
-            exit 1
-          fi
-
-      - name: Checkout persistence script only
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            scripts/persist_claude_token_github.py
-          sparse-checkout-cone-mode: false
-
-      - name: Encrypt and propagate Claude subscription token
-        shell: bash
-        run: |
-          set -euo pipefail
-          SESSION=/tmp/claude-setup-token.session
-          python scripts/persist_claude_token_github.py "$SESSION"
-          shred -u "$SESSION" /tmp/claude-setup-token.status 2>/dev/null || rm -f "$SESSION" /tmp/claude-setup-token.status
+          script -qefc "timeout 120 claude setup-token" /tmp/session.log
+          echo "===== LOG COMPLETO ====="
+          cat /tmp/session.log
