@@ -5,7 +5,7 @@
   "router_branch": "main",
   "bridge_root": "conectividad con Router inteligente universal",
   "runtime": "router inteligente universal/integration/connectivity_runtime.py",
-  "status": "BRIDGES_V2_19_OF_19_RUNTIME_UNIT_TEST_PASS_CREDENTIAL_E2E_PENDING",
+  "status": "BRIDGES_V2_19_OF_19_RUNTIME_TESTED_CREDENTIAL_E2E_PENDING",
   "secret_store": {
     "provider": "github_codespaces_user_secrets",
     "settings_url": "https://github.com/settings/codespaces",
@@ -16,37 +16,10 @@
     "rule": "runtime_only_never_persist_values"
   },
   "connections": {
-    "github": {
-      "provider": "github",
-      "api": "https://api.github.com",
-      "auth": "runtime_env_ref",
-      "verification": "identity+repository_access+permission+operation+readback",
-      "status": "CREDENTIAL_E2E_PENDING"
-    },
-    "huggingface": {
-      "provider": "huggingface",
-      "account": "COMAND-CENTER-1",
-      "compute": ["hf_jobs_cpu", "hf_jobs_gpu"],
-      "capabilities": ["models", "datasets", "spaces", "jobs"],
-      "auth": "runtime_env_ref",
-      "verification": "whoami+scope+api_probe+job_probe",
-      "status": "CREDENTIAL_E2E_PENDING"
-    },
-    "claude_github_mcp": {
-      "provider": "anthropic_managed_agents",
-      "resource": "github_repository",
-      "mcp_url": "https://api.githubcopilot.com/mcp/",
-      "auth": "vault_or_runtime",
-      "source": "maxbry123-commits/TAREA-1/skills/claude-api/",
-      "status": "BRIDGED_E2E_PENDING"
-    },
-    "claude_memory_store": {
-      "provider": "anthropic_managed_agents",
-      "resource": "memory_store",
-      "semantics": "persistent_cross_session_memory",
-      "source": "maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md",
-      "status": "BRIDGED_E2E_PENDING"
-    }
+    "github": {"provider":"github","api":"https://api.github.com","auth":"runtime_env_ref","verification":"identity+repository_access+permission+operation+readback","status":"CREDENTIAL_E2E_PENDING"},
+    "huggingface": {"provider":"huggingface","account":"COMAND-CENTER-1","compute":["hf_jobs_cpu","hf_jobs_gpu"],"capabilities":["models","datasets","spaces","jobs"],"auth":"runtime_env_ref","verification":"whoami+scope+api_probe+job_probe","status":"CREDENTIAL_E2E_PENDING"},
+    "claude_github_mcp": {"provider":"anthropic_managed_agents","resource":"github_repository","mcp_url":"https://api.githubcopilot.com/mcp/","auth":"vault_or_runtime","source":"maxbry123-commits/TAREA-1/skills/claude-api/","status":"BRIDGED_E2E_PENDING"},
+    "claude_memory_store": {"provider":"anthropic_managed_agents","resource":"memory_store","semantics":"persistent_cross_session_memory","source":"maxbry123-commits/TAREA-1/skills/claude-api/shared/managed-agents-memory.md","status":"BRIDGED_E2E_PENDING"}
   },
   "repositories": [
     {"name":"agentes","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-agentes.yaml","bridge_commit":"876fde2c325fcc0b1d5642e1242c400d46b3ea9d","status":"BRIDGE_V2_DECLARED"},
@@ -55,7 +28,7 @@
     {"name":"BITACORA-MAXBRY","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-BITACORA-MAXBRY.yaml","bridge_commit":"2feb180e907f5f871c92f499b245fb6f20175a7a","status":"BRIDGE_V2_DECLARED"},
     {"name":"Cerebro","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-Cerebro.yaml","bridge_commit":"5dc0a06790d481fae704c724138b4b2240f6699c","status":"BRIDGE_V2_DECLARED"},
     {"name":"comand-Center","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-comand-Center.yaml","bridge_commit":"60cedeadb80793c4430c46dced686fe7bae4adab","status":"BRIDGE_V2_DECLARED"},
-    {"name":"frontend","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-frontend.yaml","bridge_commit":"168b12de4c574a165d32601968ee7dd864614d8a","status":"FRONTEND_BRIDGE_V2_DECLARED"},
+    {"name":"frontend","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-frontend.yaml","bridge_commit":"aa1ab876c04d0ff1d33ec1fdf0397e47e2e86f6f","bridge_blob":"b7541b29d560cd37fcbfb7e075f15a78239133be","status":"FRONTEND_BRIDGE_V2_READY_FOR_CODESPACE_E2E"},
     {"name":"Grupo-Trabajo-1","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-Grupo-Trabajo-1.yaml","bridge_commit":"11bcc2d0736e069d2ec53aae1a98f2738d9309e7","status":"BRIDGE_V2_DECLARED"},
     {"name":"Grupo-Trabajo-2","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-Grupo-Trabajo-2.yaml","bridge_commit":"09abd7a8c9c2aad7ca1c792db19fa5c85601764e","status":"BRIDGE_V2_DECLARED"},
     {"name":"informaci-n-auditor-","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-informaci-n-auditor-.yaml","bridge_commit":"a22b7fabc7db39d52c2a7bfeb1d30f8f698e9f12","status":"BRIDGE_V2_DECLARED"},
@@ -69,22 +42,12 @@
     {"name":"TAREA-1","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-TAREA-1.yaml","bridge_commit":"17e043991e6d63db81657a16e0695e687dd680a9","status":"BRIDGE_V2_DISCOVERY_ENRICHED"},
     {"name":"TAREA-2","bridge":"conectividad con Router inteligente universal/PUENTE-RIU-TAREA-2.yaml","bridge_commit":"0848a33e21a8e48d62597d05ca363caac40f64f8","status":"BRIDGE_V2_DECLARED"}
   ],
-  "bridge_summary": {
-    "expected": 19,
-    "v2_declared": 19,
-    "failed": 0,
-    "next_gate": "CREDENTIAL_AND_GLOBAL_E2E_CONNECTIVITY_VALIDATION"
+  "bridge_summary": {"expected":19,"v2_declared":19,"failed":0,"next_gate":"CREDENTIAL_AND_GLOBAL_E2E_CONNECTIVITY_VALIDATION"},
+  "tests": {
+    "connectivity_unit": {"hf_job_id":"6aa490c35527934177ecacb3","stage":"COMPLETED","result":"3 passed in 0.02s"},
+    "full_suite_latest_verified": {"hf_job_id":"6aa493a121047bf1b03796e9","stage":"COMPLETED","result":"75 passed, 2 warnings in 5.78s","test_files":18},
+    "fail_closed_runner": {"hf_job_id":"6aa493e221047bf1b037970b","stage":"COMPLETED","result":"FAIL_CLOSED_EXPECTED_PASS"},
+    "fresh_regression": {"hf_job_id":"6aa499e45527934177ecb1cb","stage":"RUNNING","scope":"main sparse checkout + router tests"}
   },
-  "runtime_test": {
-    "hf_job_id": "6aa490c35527934177ecacb3",
-    "owner": "COMAND-CENTER-1",
-    "stage": "COMPLETED",
-    "result": "3 passed in 0.02s",
-    "tests": "router inteligente universal/tests/test_connectivity_runtime.py"
-  },
-  "security": {
-    "raw_credentials_in_git": false,
-    "fail_closed": true,
-    "evidence_required": true
-  }
+  "security": {"raw_credentials_in_git":false,"fail_closed":true,"evidence_required":true}
 }
