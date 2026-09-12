@@ -1,4 +1,4 @@
-name: Codex Token Setup
+name: Codex Token Setup - Cuenta 1
 on:
   workflow_dispatch:
   push:
@@ -6,14 +6,47 @@ on:
       - main
     paths:
       - '.github/workflows/codex-token-setup.yml'
+permissions:
+  contents: read
+concurrency:
+  group: codex-auth-account-1
+  cancel-in-progress: false
 jobs:
   setup:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RIU_GITHUB_PAT: ${{ secrets.RIU_GITHUB_PAT }}
     steps:
-      - name: Install and run login
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check persistence bootstrap
+        shell: bash
+        run: |
+          if [ -n "$RIU_GITHUB_PAT" ]; then
+            echo 'GITHUB_SECRET_BOOTSTRAP=PRESENT'
+          else
+            echo 'GITHUB_SECRET_BOOTSTRAP=ABSENT'
+          fi
+      - name: Install official Codex client
         run: |
           npm install -g @openai/codex
-          export PATH="$(npm config get prefix)/bin:$PATH"
-          script -qefc "timeout 120 codex login" /tmp/session_codex.log
-          echo "===== LOG COMPLETO ====="
-          cat /tmp/session_codex.log
+          python -m pip install --quiet --disable-pip-version-check pynacl
+          codex --version
+      - name: Authorize ChatGPT account 1 from mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'CUENTA=1; abre el enlace y usa el codigo de device auth.'
+          timeout 840 codex -c 'cli_auth_credentials_store="file"' login --device-auth
+          codex login status
+      - name: Persist account 1 login securely
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$RIU_GITHUB_PAT" ]; then
+            echo '::error::RIU_GITHUB_PAT is required to persist the completed login.'
+            exit 2
+          fi
+          python scripts/persist_codex_auth_github.py --account 1
