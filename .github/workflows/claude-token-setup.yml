@@ -36,6 +36,9 @@ jobs:
         run: |
           set -euo pipefail
           npm install -g @anthropic-ai/claude-code
+          export PATH="$(npm config get prefix)/bin:$PATH"
+          echo "$(npm config get prefix)/bin" >> "$GITHUB_PATH"
+          which claude
           python -m pip install --quiet --disable-pip-version-check pynacl
           claude --version
 
@@ -43,15 +46,49 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          export PATH="$(npm config get prefix)/bin:$PATH"
+          which claude
+
           SESSION=/tmp/claude-setup-token.session
           STATUS=/tmp/claude-setup-token.status
-          rm -f "$SESSION" "$STATUS"
+          SAFE_SESSION=/tmp/session.log
+          rm -f "$SESSION" "$STATUS" "$SAFE_SESSION"
 
-          # Keep Claude's raw terminal output runner-local. setup-token prints the
-          # final OAuth token, so stdout must never be copied to Actions logs.
+          print_session_log() {
+            rc=$?
+            trap - EXIT
+            set +e
+            : > "$SAFE_SESSION"
+            if [ -f "$SESSION" ]; then
+              python - "$SESSION" "$SAFE_SESSION" <<'PY'
+          import re, sys
+          from pathlib import Path
+          src = Path(sys.argv[1])
+          dst = Path(sys.argv[2])
+          text = src.read_text(errors='ignore')
+          text = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text)
+          text = re.sub(r'sk-ant-[A-Za-z0-9._-]+', 'sk-ant-[REDACTED]', text)
+          text = re.sub(r'(?i)((?:access|refresh|id)[_-]?token\s*[=:]\s*)[^\s]+', r'\1[REDACTED]', text)
+          dst.write_text(text)
+          PY
+            fi
+            echo '===== CLAUDE SESSION LOG (credential material redacted) ====='
+            cat /tmp/session.log
+            echo '===== END CLAUDE SESSION LOG ====='
+            rm -f "$SAFE_SESSION"
+            if [ "$rc" -ne 0 ]; then
+              shred -u "$SESSION" "$STATUS" 2>/dev/null || rm -f "$SESSION" "$STATUS"
+            fi
+            exit "$rc"
+          }
+          trap print_session_log EXIT
+
+          # Keep Claude's raw terminal output runner-local because setup-token can
+          # print credential material. -f forces PTY output to flush in real time
+          # so the authorization URL can be detected while the process is alive.
           (
             set +e
-            COLUMNS=5000 script -qec "stty cols 5000 2>/dev/null || true; timeout 780 claude setup-token" "$SESSION" >/dev/null 2>&1
+            COLUMNS=5000 script -qefc "stty cols 5000 2>/dev/null || true; timeout 780 claude setup-token" "$SESSION" >/dev/null 2>&1
             code=$?
             printf '%s' "$code" > "$STATUS"
           ) &
@@ -67,8 +104,6 @@ jobs:
           text=re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text)
           m=re.search(r'https://claude\.com/cai/oauth/authorize\?[^\s]+', text)
           if m:
-              # The authorization URL is intended for the user. Never print any
-              # other session text because the completed session contains token material.
               print(m.group(0))
           PY
               )"
@@ -86,12 +121,10 @@ jobs:
           echo "CLAUDE_SETUP_PROCESS_STATUS=$code"
           if [ "$printed" -ne 1 ]; then
             echo '::error::Claude authorization URL was not captured.'
-            shred -u "$SESSION" "$STATUS" 2>/dev/null || rm -f "$SESSION" "$STATUS"
             exit 1
           fi
           if [ "$code" -ne 0 ]; then
-            echo '::error::Claude setup-token did not complete. Raw output is intentionally suppressed to protect credentials.'
-            shred -u "$SESSION" "$STATUS" 2>/dev/null || rm -f "$SESSION" "$STATUS"
+            echo '::error::Claude setup-token did not complete. See the sanitized session log below.'
             exit 1
           fi
 
