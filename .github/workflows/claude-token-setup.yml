@@ -2,6 +2,9 @@ name: Claude Token Setup
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/claude-token-setup.yml"
 
 permissions:
   contents: read
@@ -9,16 +12,23 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
-      - name: Run setup-token raw output
+      - name: Generate Claude authorization URL
         shell: bash
         run: |
+          set -u
           npm install -g @anthropic-ai/claude-code
+          echo "Claude Code version: $(claude --version)"
+          echo "Starting Claude setup-token in a pseudo-TTY."
+          echo "Open the claude.com authorization URL shown below while this job is running."
           STATUS=0
-          script -qec "timeout 60 claude setup-token" /tmp/session.log || STATUS=$?
+          script -qec "timeout 600 claude setup-token" /tmp/claude-session.log || STATUS=$?
           echo "===== SALIDA COMPLETA ====="
-          cat /tmp/session.log
+          cat /tmp/claude-session.log
           echo "==========================="
           echo "CLAUDE_EXIT_STATUS=$STATUS"
+          if [ "$STATUS" -eq 124 ]; then
+            echo "::error::Claude authorization timed out waiting for the browser/code step. The URL generation itself worked."
+          fi
           exit "$STATUS"
