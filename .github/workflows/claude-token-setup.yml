@@ -1,0 +1,59 @@
+name: Claude Token Setup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Start Claude authorization
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f /tmp/claude-session.log
+          script -qec "claude setup-token" /tmp/claude-session.log >/dev/null 2>&1 &
+          PID=$!
+
+          echo "Buscando URL de autorización de Claude..."
+          FOUND=0
+          for i in $(seq 1 60); do
+            sleep 2
+            URL=$(grep -Eo 'https://(claude\.ai|console\.anthropic\.com)[^[:space:]]*' /tmp/claude-session.log 2>/dev/null | head -1 || true)
+            if [ -n "$URL" ]; then
+              echo "===== ABRE ESTA URL DE CLAUDE ====="
+              echo "$URL"
+              echo "===================================="
+              FOUND=1
+              break
+            fi
+          done
+
+          if [ "$FOUND" -ne 1 ]; then
+            echo "No se encontró una URL de autorización en el tiempo esperado."
+            kill "$PID" 2>/dev/null || true
+            exit 1
+          fi
+
+          echo "Autoriza desde tu navegador. Este workflow no imprimirá ni copiará el token OAuth."
+          for i in $(seq 1 120); do
+            if ! kill -0 "$PID" 2>/dev/null; then
+              wait "$PID" || true
+              echo "CLAUDE_AUTH_FLOW_FINISHED"
+              rm -f /tmp/claude-session.log
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "Tiempo de espera agotado."
+          kill "$PID" 2>/dev/null || true
+          rm -f /tmp/claude-session.log
+          exit 1
