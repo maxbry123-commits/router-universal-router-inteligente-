@@ -59,30 +59,61 @@ PENDING externo=`GITHUB/HF/MCP/MEMORY/GLOBAL_E2E` por visibilidad runtime de Cod
 ## Handoff 2026-09-12 — HF OIDC / Trusted Publishers
 
 ### Estado nuevo
-- Space HF `COMAND-CENTER-1/yaiwes-ui-factory` ya existe y está confirmado como `static`.
+- Space HF `COMAND-CENTER-1/yaiwes-ui-factory` existe y está confirmado como `static`.
 - Frontend workflow OIDC: `.github/workflows/astra-hf-static-space-publish.yml`.
 - Commit OIDC frontend=`d62b02cc95a5d732b7531b99ae597d4d14b1aa7a`.
-- Run histórico=`34675165228`: package 7/7 PASS + HF CLI/OIDC PASS; publish falló por `Repository ... not found` cuando el Space todavía no existía. Esa causa ya fue eliminada al crear el Space.
+- Trusted Publishers informados por Director para 8 repos branch `main`.
 
-### Repos informados por Director como añadidos/configurados en Trusted Publishers, branch main
-`frontend`, `agentes`, `Agentes-motores-Wordflow-YAIWES`, `osquestador-auditor`, `Maxbry-AGI`, `nct-core`, `TAREA-1`, `router-universal-router-inteligente-` bajo owner `maxbry123-commits`.
+### Certificación real posterior
+- `frontend` run `34675165228`, attempt 2: `HF_AUTH_SELECTED=OIDC`, upload PASS, commit HF `57b5a04d371bad59bab6fa7e9db791fb982daec4`.
+- Después de añadir `app_file: index.html`, run `34677293995`: OIDC upload PASS otra vez, commit HF `307549f879b6a3d40493b3bb82d285cb93f76047`.
+- Página Hub read-back HTTP 200 PASS.
+- URL directa `https://comand-center-1-yaiwes-ui-factory.hf.space/` continúa 404; GAP de serving separado, no de autorización/escritura.
 
-Estado=`CONFIGURED_BY_DIRECTOR / E2E_NOT_YET_CERTIFIED`.
+### Probe de secretos Actions — evidencia
+Workflow `.github/workflows/riu-auth-presence-probe.yml`, commit `fe1cb36c03f6cf62e561f472a0269de824c01fb0`, run `34677207175` success.
+Todos ausentes en Router Actions al momento de la prueba: `RIU_HF_TOKEN/HF_TOKEN`, `RIU_GITHUB_PAT/GH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN`, `CODEX_AUTH_JSON_ACCOUNT_1/2`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`.
 
-### Acceso HF actual de esta sesión
-Identidad=`COMAND-CENTER-1`; OAuth visible=`jobs, openid, profile, read-mcp, read-repos`. No afirmar Hub write/admin mediante esta conexión hasta tener prueba de escritura.
+Conclusión: OIDC del Space funciona, pero no existe aún credencial global HF/GitHub en Actions.
 
-### Regla de seguridad operativa
-- OIDC/Trusted Publisher primero para Actions: evita duplicar PAT permanente.
-- PAT HF write solo donde la operación realmente requiera permisos globales no cubiertos por OIDC.
-- Secretos GitHub/HF solo en secret store/runtime; jamás en Git, prompt, README, logs o salida de modelo.
-- Los modelos AI reciben capacidades mediante el runtime/Actions/MCP; no reciben el valor crudo de las credenciales.
+### Bootstrap ya preparado
+- `scripts/propagate_actions_secrets.py` commit `3adbee46324a7aeafccd83fd3da1747ebf06953e`.
+- `.github/workflows/riu-propagate-auth-secrets.yml` commit `4eeb8e6e434e07ea0ad6c909e9df677f4ee9269e`.
+- Requiere una sola carga inicial en Router de `RIU_GITHUB_PAT`; si además existe `RIU_HF_TOKEN`, puede cifrar/replicar ambas credenciales a los 8 repos usando las public keys de Actions Secrets.
+- No hace falta crear ocho HF tokens distintos; un token HF `write` puede reutilizarse, aunque separar por app reduce el riesgo.
 
-### Siguiente nodo obligatorio
-`RIU-0067_HF_OIDC_E2E_AFTER_SPACE_CREATION`:
-1. re-run frontend HF publish;
-2. comprobar intercambio OIDC;
-3. upload real al Space;
-4. read-back desde Hub;
-5. si PASS, replicar probe no destructivo a los otros 7 repos;
-6. después cerrar estrategia OpenAI SDK + Anthropic SDK/GitHub runtime.
+### OpenAI Codex SDK/CLI — estado
+OpenAI confirma Codex incluido con login ChatGPT y existe `@openai/codex-sdk`; el runtime instalado usa `@openai/codex` + `codex login --device-auth` para autenticación de suscripción.
+
+Correcciones ejecutadas:
+- `scripts/persist_codex_auth_github.py` commit `4de0669687d01bf05bc5698f6f6548b518a584cd`.
+- Cuenta 1 workflow commit `7ed16435dbf1b3aed027cbf52f87a102d9edf095`.
+- Cuenta 2 workflow commit `90c1cb4d054fbb51e2b590720261087a7cf12a8f`.
+- Se dejó de usar HF Space Secrets como bóveda para un secreto que GitHub Actions necesita recuperar; ahora el `auth.json` ChatGPT se valida, cifra y escribe como `CODEX_AUTH_JSON_ACCOUNT_1/2` en Actions Secrets.
+
+### Anthropic Claude SDK/CLI — estado
+Anthropic documenta `claude setup-token` -> `CLAUDE_CODE_OAUTH_TOKEN` de larga duración para CI con suscripción; HF Job confirmó CLI `2.1.269` y comando disponible.
+
+Correcciones ejecutadas:
+- workflow anterior era inseguro porque volcaba la sesión completa; removido ese patrón.
+- `scripts/persist_claude_token_github.py` commit `1aea9ce0262b33b6dbf1a28ca94010d8bfe2d994`.
+- workflow seguro `.github/workflows/claude-token-setup.yml` commit `7b165f04f5fe0032fd139804e16accc783043880`.
+- La salida cruda de `setup-token` queda runner-local; solo se publica la URL de autorización, el token `sk-ant-oat01-*` se cifra hacia GitHub Secrets y después el log se destruye.
+
+### Reglas finales de acceso
+- OIDC HF repo publisher: write temporal SOLO al repo HF configurado.
+- HF global: `RIU_HF_TOKEN` role=`write`.
+- GitHub `GITHUB_TOKEN`: temporal y repo-local; acceso transversal requiere `RIU_GITHUB_PAT` o GitHub App instalado en los repos objetivo.
+- Los modelos no deben recibir valores secretos; reciben capacidad mediante Actions/Router/MCP.
+
+### Nodo vivo ahora
+`RIU-0068_BOOTSTRAP_GLOBAL_AUTH`.
+
+Orden:
+1. añadir en Router Actions Secrets `RIU_GITHUB_PAT` con acceso a los 8 repos y Secrets write;
+2. añadir `RIU_HF_TOKEN` role write de `COMAND-CENTER-1`;
+3. ejecutar `RIU Propagate Auth Secrets`;
+4. re-run capability probe y exigir PASS;
+5. ejecutar Codex account 1/2 device-auth;
+6. ejecutar Claude setup-token seguro;
+7. certificar modelos/agentes consumiendo GitHub + HF mediante runtime.
