@@ -1,1 +1,124 @@
-{"contract":"tel.workflow/v3","mode":"FAIL_CLOSED_LOOP","project":"router inteligente universal","repo":"maxbry123-commits/router-universal-router-inteligente-","branch":"main","core_status":"VERIFIED_CLOSED","status":"ACTIVE_RUNTIME_CREDENTIAL_E2E","core_progress_percent":100,"current_node":"RIU-0066_RUNTIME_SECRET_E2E","closed":["P01_executable_set_closed","P02_hot_path_executable_set_closed","P03_api_key_manager_verified","MODEL_CERTIFICATION_20_OF_20_ACCOUNTED","FINAL_REGRESSION_E2E_PASS","CONNECTIVITY_FABRIC_19_OF_19_V2","ROUTER_CONNECTIVITY_RUNTIME_MATERIALIZED","ROUTER_TEST_SUITE_PASS_75_OF_75","FAIL_CLOSED_NO_SECRET_VERIFIED","CLAUDE_GITHUB_MCP_DISCOVERED_AND_BRIDGED","CLAUDE_MEMORY_STORE_DISCOVERED_AND_BRIDGED"],"in_progress":["GITHUB_RUNTIME_CREDENTIAL_VALIDATION","HUGGINGFACE_RUNTIME_CREDENTIAL_VALIDATION","CLAUDE_GITHUB_MCP_BOUNDARY_VALIDATION","CLAUDE_MEMORY_STORE_BOUNDARY_VALIDATION","GLOBAL_CONNECTIVITY_E2E"],"pending":["GITHUB_ACCESS_VERIFIED","HF_ACCESS_VERIFIED","MCP_BOUNDARY_VERIFIED","MEMORY_BOUNDARY_VERIFIED","CONNECTIVITY_GLOBAL_E2E_PASS","CONNECTIVITY_LAYER_VERIFIED_CLOSED"],"connectivity":{"root":"conectividad con Router inteligente universal","registry_commit":"f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3","map_commit":"c781e9dad4b4504c2d15b517022ce0b7b3a8f267","bridges":{"expected":19,"v2_declared":19,"failed":0},"frontend":{"bridge_commit":"168b12de4c574a165d32601968ee7dd864614d8a","hf_space":"COMAND-CENTER-1/yaiwes-ui-factory"},"runtime":{"path":"router inteligente universal/integration/connectivity_runtime.py","commit":"912fc38708c13f57046d8aa48c503773bd722d93"},"runner":{"path":"router inteligente universal/integration/verify_runtime_connectivity.py","commit":"5b727b139f3736a4f277fb68b03bbaff95d31dfb"},"secret_store":{"provider":"github_codespaces_user_secrets","settings_url":"https://github.com/settings/codespaces","huggingface_env_refs":["RIU_HF_TOKEN","HF_TOKEN","HUGGINGFACE_TOKEN"],"github_env_refs":["RIU_GITHUB_PAT","GITHUB_TOKEN","GH_TOKEN"],"raw_values_in_git":false},"github":{"status":"PENDING_RUNTIME_CREDENTIAL_VISIBILITY"},"huggingface":{"account":"COMAND-CENTER-1","compute":["hf_jobs_cpu","hf_jobs_gpu"],"status":"PENDING_RUNTIME_CREDENTIAL_VISIBILITY"},"claude_github_mcp":{"resource":"github_repository","url":"https://api.githubcopilot.com/mcp/","status":"BRIDGED_E2E_PENDING"},"claude_memory_store":{"resource":"memory_store","status":"BRIDGED_E2E_PENDING"}},"tests":{"full_suite":{"job_id":"6aa493a121047bf1b03796e9","stage":"COMPLETED","result":"75 passed, 2 warnings in 5.78s","test_files":18},"fail_closed_runner":{"job_id":"6aa493e221047bf1b037970b","stage":"COMPLETED","result":"FAIL_CLOSED_EXPECTED_PASS"},"previous_strategy_delta":{"job_id":"6aa4928c21047bf1b037967e","result":"71 passed, 2 warnings in 6.00s"}},"evidence":["architecture 70eec6c53b4e39ba75c86c4e0591f1edc2db47c1","handoff 96966d7ca10f2eb2c1a3ced746c6182f01159a7e","crazywall 127e8f7e3d01a763b2e55d8e9de53d2bb370b247","runtime 912fc38708c13f57046d8aa48c503773bd722d93","runner 5b727b139f3736a4f277fb68b03bbaff95d31dfb","runtime tests cb35fa345081e18e4aa4e081fd581c036092cbba","HF suite job 6aa493a121047bf1b03796e9","HF fail-closed job 6aa493e221047bf1b037970b"],"rules":{"evidence_required":true,"no_secret_in_repo":true,"fail_closed_credentials":true,"no_force":true},"last_delta":{"id":"RIU-0066","decision":"PROBES_READY_AND_SUITE_75_PASS","verify_final":"LOCAL_ROUTER_PASS; EXTERNAL_CODESPACES_SECRET_E2E_PENDING","cross_check":"PASS_LOCAL_FAIL_CLOSED_EXTERNAL_PENDING","coda":"ACTIVE_UNTIL_CODESPACES_RUNTIME_E2E"}}
+{
+  "contract": "tel.workflow/v3",
+  "mode": "FAIL_CLOSED_LOOP",
+  "project": "router inteligente universal",
+  "repo": "maxbry123-commits/router-universal-router-inteligente-",
+  "branch": "main",
+  "core_status": "VERIFIED_CLOSED",
+  "status": "ACTIVE_RUNTIME_CREDENTIAL_E2E",
+  "core_progress_percent": 100,
+  "current_node": "RIU-0066_RUNTIME_SECRET_E2E",
+  "closed": [
+    "P01_executable_set_closed",
+    "P02_hot_path_executable_set_closed",
+    "P03_api_key_manager_verified",
+    "MODEL_CERTIFICATION_20_OF_20_ACCOUNTED",
+    "FINAL_REGRESSION_E2E_PASS",
+    "CONNECTIVITY_FABRIC_19_OF_19_V2",
+    "ROUTER_CONNECTIVITY_RUNTIME_MATERIALIZED",
+    "ROUTER_TEST_SUITE_PASS_75_OF_75",
+    "FRESH_CONNECTIVITY_RUNTIME_PASS_7_OF_7",
+    "FAIL_CLOSED_NO_SECRET_VERIFIED",
+    "CLAUDE_GITHUB_MCP_DISCOVERED_AND_BRIDGED",
+    "CLAUDE_MEMORY_STORE_DISCOVERED_AND_BRIDGED"
+  ],
+  "in_progress": [
+    "FRESH_FULL_ROUTER_REGRESSION_JOB_6aa499e45527934177ecb1cb",
+    "GITHUB_RUNTIME_CREDENTIAL_VALIDATION",
+    "HUGGINGFACE_RUNTIME_CREDENTIAL_VALIDATION",
+    "CLAUDE_GITHUB_MCP_BOUNDARY_VALIDATION",
+    "CLAUDE_MEMORY_STORE_BOUNDARY_VALIDATION",
+    "GLOBAL_CONNECTIVITY_E2E"
+  ],
+  "pending": [
+    "GITHUB_ACCESS_VERIFIED",
+    "HF_ACCESS_VERIFIED",
+    "MCP_BOUNDARY_VERIFIED",
+    "MEMORY_BOUNDARY_VERIFIED",
+    "CONNECTIVITY_GLOBAL_E2E_PASS",
+    "CONNECTIVITY_LAYER_VERIFIED_CLOSED"
+  ],
+  "connectivity": {
+    "root": "conectividad con Router inteligente universal",
+    "registry_commit": "e1eb61931fbc5892398fd93aa7a5385fcb212a1f",
+    "bridges": {"expected": 19, "v2_declared": 19, "failed": 0},
+    "frontend": {
+      "bridge_commit": "aa1ab876c04d0ff1d33ec1fdf0397e47e2e86f6f",
+      "bridge_blob": "b7541b29d560cd37fcbfb7e075f15a78239133be",
+      "status": "FRONTEND_BRIDGE_V2_READY_FOR_CODESPACE_E2E",
+      "hf_space": "COMAND-CENTER-1/yaiwes-ui-factory"
+    },
+    "runtime": {
+      "path": "router inteligente universal/integration/connectivity_runtime.py",
+      "blob": "fdfe385afb2b5b88cc2aa2ee63f6bf7d9c157833"
+    },
+    "runner": {
+      "path": "router inteligente universal/integration/verify_runtime_connectivity.py",
+      "blob": "8d0aca03f84730f2ac9204b4580c2eabaedd4ffb",
+      "frontend_command": "PYTHONPATH=\"router inteligente universal/integration\" python \"router inteligente universal/integration/verify_runtime_connectivity.py\" --repo maxbry123-commits/frontend"
+    },
+    "secret_store": {
+      "provider": "github_codespaces_user_secrets",
+      "settings_url": "https://github.com/settings/codespaces",
+      "huggingface_env_refs": ["RIU_HF_TOKEN", "HF_TOKEN", "HUGGINGFACE_TOKEN"],
+      "github_env_refs": ["RIU_GITHUB_PAT", "GITHUB_TOKEN", "GH_TOKEN"],
+      "raw_values_in_git": false
+    },
+    "github": {"status": "PENDING_RUNTIME_CREDENTIAL_VISIBILITY"},
+    "huggingface": {
+      "account": "COMAND-CENTER-1",
+      "compute": ["hf_jobs_cpu", "hf_jobs_gpu"],
+      "status": "PENDING_RUNTIME_CREDENTIAL_VISIBILITY"
+    },
+    "claude_github_mcp": {
+      "resource": "github_repository",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "status": "BRIDGED_E2E_PENDING"
+    },
+    "claude_memory_store": {"resource": "memory_store", "status": "BRIDGED_E2E_PENDING"}
+  },
+  "tests": {
+    "full_suite_verified": {
+      "job_id": "6aa493a121047bf1b03796e9",
+      "stage": "COMPLETED",
+      "result": "75 passed, 2 warnings in 5.78s",
+      "test_files": 18
+    },
+    "fresh_connectivity": {
+      "job_id": "6aa49ae621047bf1b0379a54",
+      "stage": "COMPLETED",
+      "result": "7 passed in 0.19s"
+    },
+    "fresh_full_suite": {
+      "job_id": "6aa499e45527934177ecb1cb",
+      "stage": "RUNNING",
+      "result": "PENDING_TERMINAL"
+    },
+    "fail_closed_runner": {
+      "job_id": "6aa493e221047bf1b037970b",
+      "stage": "COMPLETED",
+      "result": "FAIL_CLOSED_EXPECTED_PASS"
+    }
+  },
+  "evidence": [
+    "frontend bridge aa1ab876c04d0ff1d33ec1fdf0397e47e2e86f6f",
+    "registry e1eb61931fbc5892398fd93aa7a5385fcb212a1f",
+    "handoff 4f607ee522f6fe3966ade783c8d65fe817718f28",
+    "HF fresh connectivity job 6aa49ae621047bf1b0379a54 COMPLETED 7 passed in 0.19s",
+    "HF prior full suite 6aa493a121047bf1b03796e9 COMPLETED 75 passed, 2 warnings",
+    "HF fail-closed job 6aa493e221047bf1b037970b"
+  ],
+  "rules": {
+    "evidence_required": true,
+    "no_secret_in_repo": true,
+    "fail_closed_credentials": true,
+    "no_force": true
+  },
+  "last_delta": {
+    "id": "RIU-0066A",
+    "decision": "FRONTEND_CODESPACE_HANDOFF_READY_FRESH_CONNECTIVITY_PASS",
+    "verify_final": "LOCAL_CONNECTIVITY_7_OF_7_PASS; EXTERNAL_CODESPACES_SECRET_E2E_PENDING",
+    "cross_check": "PASS_LOCAL_FAIL_CLOSED_EXTERNAL_PENDING",
+    "coda": "ACTIVE_UNTIL_CODESPACES_RUNTIME_E2E"
+  }
+}
