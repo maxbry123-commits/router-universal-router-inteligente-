@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: claude-subscription-auth
+  group: claude-subscription-auth-exec-v2
   cancel-in-progress: false
 
 jobs:
@@ -21,10 +21,6 @@ jobs:
     env:
       RIU_GITHUB_PAT: ${{ secrets.RIU_GITHUB_PAT }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
       - name: Fail closed unless GitHub secret bootstrap exists
         shell: bash
         run: |
@@ -87,9 +83,6 @@ jobs:
           }
           trap print_session_log EXIT
 
-          # Keep Claude's raw terminal output runner-local because setup-token can
-          # print credential material. -f forces PTY output to flush in real time
-          # so the authorization URL can be detected while the process is alive.
           (
             set +e
             COLUMNS=5000 script -qefc "stty cols 5000 2>/dev/null || true; timeout 780 claude setup-token" "$SESSION" >/dev/null 2>&1
@@ -131,6 +124,14 @@ jobs:
             echo '::error::Claude setup-token did not complete. See the sanitized session log below.'
             exit 1
           fi
+
+      - name: Checkout persistence script only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/persist_claude_token_github.py
+          sparse-checkout-cone-mode: false
 
       - name: Encrypt and propagate Claude subscription token
         shell: bash
