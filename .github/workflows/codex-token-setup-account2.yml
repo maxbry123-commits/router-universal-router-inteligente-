@@ -1,0 +1,37 @@
+name: Codex Token Setup - Cuenta 2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/codex-token-setup-account2.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      CODEX_HOME: ${{ runner.temp }}/codex-account-2
+    steps:
+      - name: Run Codex Cuenta 2 device authorization
+        shell: bash
+        run: |
+          set -u
+          mkdir -p "$CODEX_HOME"
+          npm install -g @openai/codex
+          echo "Codex version: $(codex --version)"
+          echo "CUENTA=2"
+          echo "Abre la URL y escribe el codigo de un solo uso mientras este job esta activo."
+          STATUS=0
+          script -qec "timeout 840 codex login --device-auth" /tmp/codex-account-2.log || STATUS=$?
+          echo "===== SALIDA COMPLETA CUENTA 2 ====="
+          cat /tmp/codex-account-2.log
+          echo "===================================="
+          echo "CODEX_ACCOUNT_2_EXIT_STATUS=$STATUS"
+          if [ "$STATUS" -eq 124 ]; then
+            echo "::error::Codex Cuenta 2 expiro esperando aprobacion; vuelve a ejecutar para obtener un codigo nuevo."
+          fi
+          exit "$STATUS"
