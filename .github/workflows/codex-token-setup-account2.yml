@@ -1,52 +1,17 @@
 name: Codex Token Setup - Cuenta 2
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/codex-token-setup-account2.yml'
-permissions:
-  contents: read
-concurrency:
-  group: codex-auth-account-2
-  cancel-in-progress: true
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      RIU_GITHUB_PAT: ${{ secrets.RIU_GITHUB_PAT }}
     steps:
-      - name: Check persistence bootstrap
-        shell: bash
-        run: |
-          if [ -n "$RIU_GITHUB_PAT" ]; then
-            echo 'GITHUB_SECRET_BOOTSTRAP=PRESENT'
-          else
-            echo 'GITHUB_SECRET_BOOTSTRAP=ABSENT'
-          fi
-      - name: Install official Codex client
+      - name: Install and run device-auth
         run: |
           npm install -g @openai/codex
-          python -m pip install --quiet --disable-pip-version-check pynacl
-          codex --version
-      - name: Authorize ChatGPT account 2 from mobile
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo 'CUENTA=2; abre el enlace y usa el codigo de device auth.'
-          timeout 840 codex -c 'cli_auth_credentials_store="file"' login --device-auth
-          codex login status
-      - name: Persist account 2 login securely
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "$RIU_GITHUB_PAT" ]; then
-            echo '::error::RIU_GITHUB_PAT is required to persist the completed login.'
-            exit 2
-          fi
-          cd /tmp
-          curl -fsSL https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/scripts/propagate_actions_secrets.py -o propagate_actions_secrets.py
-          curl -fsSL https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/scripts/persist_codex_auth_github.py -o persist_codex_auth_github.py
-          python persist_codex_auth_github.py --account 2
+          export PATH="$(npm config get prefix)/bin:$PATH"
+          set +e
+          script -qefc "timeout 840 codex login --device-auth" /tmp/session_codex.log
+          rc=$?
+          echo "===== LOG COMPLETO ====="
+          cat /tmp/session_codex.log
+          exit "$rc"
