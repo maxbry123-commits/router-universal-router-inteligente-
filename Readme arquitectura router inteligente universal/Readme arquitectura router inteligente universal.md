@@ -80,7 +80,7 @@ PENDING runtime Codespaces: `GITHUB_ACCESS_VERIFIED`, `HF_ACCESS_VERIFIED`, `MCP
 - En `frontend` se implementó fallback OIDC keyless para HF en `.github/workflows/astra-hf-static-space-publish.yml`, commit `d62b02cc95a5d732b7531b99ae597d4d14b1aa7a`.
 - Run previo `34675165228`: empaquetado Factory V0=PASS (7 archivos), HF CLI 1.19.0=PASS, OIDC seleccionado; falló únicamente porque el Space aún no existía en ese momento.
 
-### Trusted Publishers configurados por el Director — pendiente de prueba E2E
+### Trusted Publishers configurados por el Director
 El Director informó configuración de Trusted Publisher desde Hugging Face para repositorios GitHub, branch `main`:
 1. `maxbry123-commits/frontend`
 2. `maxbry123-commits/agentes`
@@ -91,16 +91,53 @@ El Director informó configuración de Trusted Publisher desde Hugging Face para
 7. `maxbry123-commits/TAREA-1`
 8. `maxbry123-commits/router-universal-router-inteligente-`
 
-No marcar como PASS hasta ejecutar workflows OIDC reales desde cada repo y obtener escritura/lectura de vuelta en HF.
+### Evidencia posterior a la creación del Space
+- Re-run `frontend` run `34675165228`, attempt 2: `HF_AUTH_SELECTED=OIDC`; upload real=`PASS`; commit HF=`57b5a04d371bad59bab6fa7e9db791fb982daec4`.
+- Run `34677293995` después de declarar `app_file: index.html`: OIDC volvió a autenticar y upload=`PASS`; commit HF=`307549f879b6a3d40493b3bb82d285cb93f76047`.
+- Hub page read-back=`HTTP 200 PASS`.
+- Embed host esperado `https://comand-center-1-yaiwes-ui-factory.hf.space/` continúa `404`; por tanto publicar/escribir está certificado, servir la URL directa sigue GAP independiente.
 
-### Distinción de credenciales
-- Trusted Publisher/OIDC: acceso sin PAT permanente, ligado a claims de GitHub y al recurso HF autorizado.
-- `HF_TOKEN` de escritura: alternativa para operaciones Hub que excedan el recurso OIDC configurado.
-- La conexión HF disponible en ChatGPT autentica como `COMAND-CENTER-1` pero su OAuth actual expone `jobs/openid/profile/read-mcp/read-repos`; no constituye evidencia de `write/admin` del Hub.
-- Nunca almacenar tokens en archivos, commits, logs o chat; solo secrets/identidad OIDC.
+### Probe real de secretos GitHub Actions en Router
+Workflow=`.github/workflows/riu-auth-presence-probe.yml`, commit=`fe1cb36c03f6cf62e561f472a0269de824c01fb0`, run=`34677207175`.
+Resultado sin exponer valores:
+- `HF_AUTH_TOKEN=ABSENT`
+- `GH_AUTH_TOKEN=ABSENT`
+- `CLAUDE_AUTH=ABSENT`
+- `CODEX_AUTH_1=ABSENT`
+- `CODEX_AUTH_2=ABSENT`
+- `OPENAI_API_KEY_PRESENT=ABSENT`
+- `ANTHROPIC_API_KEY_PRESENT=ABSENT`
 
-### Próximo gate
-1. Reejecutar publicación HF desde `frontend` ahora que el Space existe.
-2. Verificar OIDC + upload + read-back.
-3. Probar de forma no destructiva HF/GitHub en los demás repos autorizados.
-4. Separar acceso de modelos AI de credenciales: cada agente consume credenciales del runtime/Actions; ningún modelo debe contener el secreto en prompt o repositorio.
+Conclusión: Trusted Publisher OIDC sí escribe al Space, pero NO existe todavía un `RIU_HF_TOKEN` global ni un `RIU_GITHUB_PAT` en Actions.
+
+### Arquitectura de bootstrap de credenciales
+- `scripts/propagate_actions_secrets.py`, commit=`3adbee46324a7aeafccd83fd3da1747ebf06953e`.
+- `.github/workflows/riu-propagate-auth-secrets.yml`, commit=`4eeb8e6e434e07ea0ad6c909e9df677f4ee9269e`.
+- Con `RIU_GITHUB_PAT` en Router, cifra mediante la public key de GitHub Actions y puede replicar solo los secretos aprobados a los 8 repos, sin imprimir valores.
+- Un solo `RIU_HF_TOKEN` de rol HF `write` puede reutilizarse técnicamente; no hace falta crear ocho tokens HF diferentes. Para reducir blast radius HF recomienda tokens por app/uso, pero el diseño solicitado permite una credencial central con distribución controlada.
+
+### OpenAI Codex / ChatGPT subscription
+- Codex está instalado mediante `@openai/codex` y usa `codex login --device-auth` con login ChatGPT, no `OPENAI_API_KEY`.
+- `scripts/persist_codex_auth_github.py`, commit=`4de0669687d01bf05bc5698f6f6548b518a584cd`, valida `auth_mode=chatgpt` y cifra el `auth.json` como GitHub Actions Secret.
+- Workflow cuenta 1 corregido commit=`7ed16435dbf1b3aed027cbf52f87a102d9edf095`.
+- Workflow cuenta 2 corregido commit=`90c1cb4d054fbb51e2b590720261087a7cf12a8f`.
+- Se eliminó la dependencia incorrecta de HF Space Secrets como bóveda para credenciales que después necesita GitHub Actions.
+
+### Anthropic Claude subscription
+- CLI actual comprobado en HF Job: Claude Code `2.1.269`; `claude setup-token` soportado y requiere suscripción.
+- La implementación anterior imprimía la sesión completa y podía exponer el token OAuth: corregida.
+- `scripts/persist_claude_token_github.py`, commit=`1aea9ce0262b33b6dbf1a28ca94010d8bfe2d994`, captura solo token `sk-ant-oat01-*` desde log local y lo cifra hacia GitHub Secrets.
+- `.github/workflows/claude-token-setup.yml` corregido commit=`7b165f04f5fe0032fd139804e16accc783043880`; salida cruda queda suprimida, solo muestra URL de autorización y destruye el log local tras persistir.
+
+### Regla de credenciales
+- Trusted Publisher/OIDC = token temporal de escritura limitado al recurso HF configurado; no es acceso global a toda la cuenta.
+- `RIU_HF_TOKEN` = credencial HF `write` para operaciones globales sobre repos donde `COMAND-CENTER-1` tenga permisos.
+- `GITHUB_TOKEN` de Actions = token temporal limitado al repo del workflow; para acceso transversal a los 8 repos se requiere `RIU_GITHUB_PAT`/GitHub App con permisos explícitos.
+- Los modelos AI reciben capacidades a través del runtime/Actions/MCP; nunca se coloca el valor crudo de secretos en prompt, repositorio o logs.
+
+### Gate pendiente mínimo
+1. Cargar manualmente una vez en Router Actions Secrets: `RIU_GITHUB_PAT` y `RIU_HF_TOKEN`.
+2. Ejecutar `RIU Propagate Auth Secrets` para distribuirlos a los 8 repos.
+3. Ejecutar `Codex Token Setup - Cuenta 1/2` y completar device-auth desde móvil.
+4. Ejecutar `Claude Token Setup` y completar autorización desde móvil; verificar si el flujo OAuth remoto termina sin entrada adicional.
+5. Re-ejecutar capability probe y exigir roles/permisos PASS.
