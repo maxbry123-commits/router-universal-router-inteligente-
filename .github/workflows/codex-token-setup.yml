@@ -2,6 +2,9 @@ name: Codex Token Setup
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/codex-token-setup.yml"
 
 permissions:
   contents: read
@@ -9,16 +12,23 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
-      - name: Run login raw output
+      - name: Run Codex device authorization
         shell: bash
         run: |
+          set -u
           npm install -g @openai/codex
+          echo "Codex version: $(codex --version)"
+          echo "Starting the official headless device authorization flow."
+          echo "Open the URL and enter the device code shown below while this job is running."
           STATUS=0
-          script -qec "timeout 60 codex login" /tmp/session_codex.log || STATUS=$?
+          script -qec "timeout 600 codex login --device-auth" /tmp/codex-session.log || STATUS=$?
           echo "===== SALIDA COMPLETA ====="
-          cat /tmp/session_codex.log
+          cat /tmp/codex-session.log
           echo "==========================="
           echo "CODEX_EXIT_STATUS=$STATUS"
+          if [ "$STATUS" -eq 124 ]; then
+            echo "::error::Codex device authorization timed out waiting for approval."
+          fi
           exit "$STATUS"
