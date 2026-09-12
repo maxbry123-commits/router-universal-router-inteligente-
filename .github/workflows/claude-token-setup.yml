@@ -1,6 +1,11 @@
 name: Claude Token Setup
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/claude-token-setup.yml'
 jobs:
   setup:
     runs-on: ubuntu-latest
