@@ -69,3 +69,38 @@ Claude Managed Agents `memory_store`; targets propios: `MEMORIA`, `BIBLIOTECA`, 
 PASS: `BRIDGES_V2_19_OF_19`, `ROUTER_RUNTIME_TESTED`, `CURRENT_ROUTER_TEST_SUITE_75_OF_75`, `FAIL_CLOSED_WITHOUT_SECRETS`.
 
 PENDING runtime Codespaces: `GITHUB_ACCESS_VERIFIED`, `HF_ACCESS_VERIFIED`, `MCP_BOUNDARY_VERIFIED`, `MEMORY_BOUNDARY_VERIFIED`, `CONNECTIVITY_GLOBAL_E2E_PASS`.
+
+---
+
+## Nota 2026-09-12 — Hugging Face / GitHub Trusted Publishers
+
+### Hecho y verificado
+- Hugging Face Space creado: `COMAND-CENTER-1/yaiwes-ui-factory`.
+- El Hub lo reporta existente, owner=`COMAND-CENTER-1`, SDK=`static`, actualizado `2026-09-12`.
+- En `frontend` se implementó fallback OIDC keyless para HF en `.github/workflows/astra-hf-static-space-publish.yml`, commit `d62b02cc95a5d732b7531b99ae597d4d14b1aa7a`.
+- Run previo `34675165228`: empaquetado Factory V0=PASS (7 archivos), HF CLI 1.19.0=PASS, OIDC seleccionado; falló únicamente porque el Space aún no existía en ese momento.
+
+### Trusted Publishers configurados por el Director — pendiente de prueba E2E
+El Director informó configuración de Trusted Publisher desde Hugging Face para repositorios GitHub, branch `main`:
+1. `maxbry123-commits/frontend`
+2. `maxbry123-commits/agentes`
+3. `maxbry123-commits/Agentes-motores-Wordflow-YAIWES`
+4. `maxbry123-commits/osquestador-auditor`
+5. `maxbry123-commits/Maxbry-AGI`
+6. `maxbry123-commits/nct-core`
+7. `maxbry123-commits/TAREA-1`
+8. `maxbry123-commits/router-universal-router-inteligente-`
+
+No marcar como PASS hasta ejecutar workflows OIDC reales desde cada repo y obtener escritura/lectura de vuelta en HF.
+
+### Distinción de credenciales
+- Trusted Publisher/OIDC: acceso sin PAT permanente, ligado a claims de GitHub y al recurso HF autorizado.
+- `HF_TOKEN` de escritura: alternativa para operaciones Hub que excedan el recurso OIDC configurado.
+- La conexión HF disponible en ChatGPT autentica como `COMAND-CENTER-1` pero su OAuth actual expone `jobs/openid/profile/read-mcp/read-repos`; no constituye evidencia de `write/admin` del Hub.
+- Nunca almacenar tokens en archivos, commits, logs o chat; solo secrets/identidad OIDC.
+
+### Próximo gate
+1. Reejecutar publicación HF desde `frontend` ahora que el Space existe.
+2. Verificar OIDC + upload + read-back.
+3. Probar de forma no destructiva HF/GitHub en los demás repos autorizados.
+4. Separar acceso de modelos AI de credenciales: cada agente consume credenciales del runtime/Actions; ningún modelo debe contener el secreto en prompt o repositorio.
