@@ -9,6 +9,9 @@ jobs:
         run: |
           npm install -g @anthropic-ai/claude-code
           export PATH="$(npm config get prefix)/bin:$PATH"
+          set +e
           script -qefc "timeout 120 claude setup-token" /tmp/session.log
+          rc=$?
           echo "===== LOG COMPLETO ====="
           cat /tmp/session.log
+          exit "$rc"
