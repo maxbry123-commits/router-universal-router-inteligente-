@@ -1,35 +1,37 @@
 # PLAN DE TAREAS — ROUTER INTELIGENTE UNIVERSAL
 Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP`.
 
-## Cerrado/preservado
+## Estado consolidado
 - Core P01/P02/P03 ✅
 - Model certification 20/20 accounted ✅
 - Regresión core ✅
 - Connectivity Fabric 19/19 bridge v2 ✅
+- Router runtime + probes ✅
+- Suite amplia 75/75 ✅
+- Connectivity runtime fresca 7/7 ✅
+- Fail-closed sin secrets ✅
+- HF Space OIDC write ✅
 
-## RIU-0066 — estado probado
-- runtime latest commit `912fc38708c13f57046d8aa48c503773bd722d93`.
-- runner Codespaces commit `5b727b139f3736a4f277fb68b03bbaff95d31dfb`.
-- tests connectivity runtime commit `cb35fa345081e18e4aa4e081fd581c036092cbba`.
-- HF Job `6aa493a121047bf1b03796e9`: `COMPLETED`, **75 passed, 2 warnings in 5.78s**.
-- HF Job `6aa493e221047bf1b037970b`: `COMPLETED`, fail-closed sin secrets validado.
+## Nodo activo
+`RIU-0068_BOOTSTRAP_GLOBAL_AUTH`.
 
-## Frontend urgente
-`frontend/conectividad con Router inteligente universal/PUENTE-RIU-frontend.yaml`, commit `168b12de4c574a165d32601968ee7dd864614d8a`.
-Astra dispone en un solo archivo del mapa de GitHub, HF `COMAND-CENTER-1`, HF Jobs CPU/GPU, Space `yaiwes-ui-factory`, Claude GitHub MCP y memoria.
+## Tareas activadas — sin sobreingeniería
+1. **BOOTSTRAP_GITHUB** — cargar `RIU_GITHUB_PAT` en Router Actions Secrets con acceso a los 8 repos y permiso suficiente para escribir Actions secrets.
+2. **BOOTSTRAP_HF** — cargar `RIU_HF_TOKEN` role=`write` para `COMAND-CENTER-1`.
+3. **PROPAGATE_8_REPOS** — ejecutar manualmente `.github/workflows/riu-propagate-auth-secrets.yml`; debe abortar si falta `RIU_GITHUB_PAT`.
+4. **PROBE_AUTH** — ejecutar `.github/workflows/riu-auth-presence-probe.yml`; exigir HF identity/role PASS y GitHub read-back/permisos sobre los 8 repos.
+5. **CODEX_AUTH_1_2** — completar device-auth de las dos cuentas y persistir solo `auth.json` cifrado en Actions Secrets.
+6. **CLAUDE_AUTH** — completar `claude setup-token` y persistir únicamente el token cifrado.
+7. **GLOBAL_E2E** — GitHub + HF + MCP + memoria, con evidencia fresca y cierre final.
 
-## Cola 1×1 pendiente
-1. Ejecutar `verify_runtime_connectivity.py --repo maxbry123-commits/frontend` dentro del Codespace autorizado donde los 3 secrets estén inyectados.
-2. `GITHUB_ACCESS_VERIFIED`: identity + full repo permissions + read-back.
-3. `HF_ACCESS_VERIFIED`: identity `COMAND-CENTER-1` + token role/scope + API/Job probe.
-4. `MCP_BOUNDARY_VERIFIED`: JSON-RPC initialize + tool boundary GitHub MCP.
-5. `MEMORY_BOUNDARY_VERIFIED`: operación/read-back.
-6. `CONNECTIVITY_GLOBAL_E2E_PASS`.
-7. documentación final + cierre.
+## Evidencia que ya existe
+- Probe de presencia workflow materializado y seguro: `.github/workflows/riu-auth-presence-probe.yml`.
+- Propagación fail-closed materializada: `.github/workflows/riu-propagate-auth-secrets.yml`.
+- Probe run previo `34677207175`: credenciales globales estaban ausentes al momento de la prueba.
+- HF OIDC frontend: runs `34675165228` attempt 2 y `34677293995` PASS; Hub read-back HTTP 200.
 
-## GAP real
-GitHub Codespaces no permite recuperar el valor de secrets mediante la API/conector. La ejecución actual no es un Codespace que reciba esos secrets. Esto bloquea únicamente el E2E externo; no bloquea fabric/runtime/tests ya cerrados.
+## GAP exacto
+No falta arquitectura del router. Falta **inyectar y validar en runtime las credenciales globales externas** y completar los logins de suscripción de Codex/Claude. Los valores secretos no se escriben en Git, logs ni chat.
 
-## Gate
-PASS=`BRIDGES_V2_19_OF_19 + RUNTIME + 75_OF_75_TESTS + FAIL_CLOSED`.
-PENDING=`CODESPACES_SECRET_RUNTIME_VISIBILITY + GITHUB/HF/MCP/MEMORY/GLOBAL_E2E`.
+## Gate de cierre
+`VERIFIED_CLOSED` solo cuando `GITHUB_PAT_RUNTIME_VERIFIED + HF_GLOBAL_WRITE_RUNTIME_VERIFIED + CODEX_1_2 + CLAUDE + MCP + MEMORY + CONNECTIVITY_GLOBAL_E2E_PASS` tengan evidencia fresca.
