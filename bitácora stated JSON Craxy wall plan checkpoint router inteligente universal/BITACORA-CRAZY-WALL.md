@@ -8,48 +8,43 @@ P01/P02/P03=`VERIFIED_CLOSED`; `MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`; regresi
 ## RIU-0063/0064 — CONNECTIVITY FABRIC
 - raíz canónica `conectividad con Router inteligente universal/`.
 - 19/19 repos con `PUENTE-RIU-<repo>.yaml` v2.
-- frontend v2 `168b12de4c574a165d32601968ee7dd864614d8a` con GitHub + HF `COMAND-CENTER-1` + Jobs CPU/GPU + Space `yaiwes-ui-factory` + Claude GitHub MCP + memoria.
-- registry `f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3`; mapa `c781e9dad4b4504c2d15b517022ce0b7b3a8f267`.
-- runtime base commit `5664301d9051068b98ab326e5545110299e110a6`; Job `6aa490c35527934177ecacb3` COMPLETED, `3 passed`.
+- frontend v2 integra GitHub + HF `COMAND-CENTER-1` + Jobs CPU/GPU + Space `yaiwes-ui-factory` + Claude GitHub MCP + memoria.
+- runtime base y fabric probados.
 
 ## RIU-0065 — SUITE COMPLETA
-Attempt `6aa4924021047bf1b0379661`: ERROR test-env (`huggingface_hub` ausente).
-StrategyDelta `6aa492635527934177ecad45`: ERROR test-env (`PYTHONPATH/red`).
-StrategyDelta final `6aa4928c21047bf1b037967e`: COMPLETED, `71 passed, 2 warnings in 6.00s`.
-Collection audit `6aa492b55527934177ecad83`: 18 archivos / 71 casos.
+Regresión final amplia: **75 passed, 2 warnings**. Connectivity runtime fresco: **7 passed**. Fail-closed sin secrets validado.
 
-## RIU-0066 — PROBES DE ACCESO + RUNNER CODESPACES
-Runtime actualizado commit `912fc38708c13f57046d8aa48c503773bd722d93`:
-- GitHub: identity + repo + permisos admin/push/pull/maintain + scopes visibles.
-- HF: whoami-v2 + identity + role de token visible.
-- GitHub MCP: handshake JSON-RPC `initialize` read-only a `https://api.githubcopilot.com/mcp/`.
-- sin exposición del valor de ninguna credencial.
+## RIU-0066 — PROBES + RUNNER CODESPACES
+Runtime implementa probes GitHub identity/permisos, HF whoami/role y GitHub MCP initialize sin exponer secretos. Runner `integration/verify_runtime_connectivity.py` preparado para ejecución en entorno autorizado.
 
-Tests de connectivity runtime ampliados de 3 a 7, commit `cb35fa345081e18e4aa4e081fd581c036092cbba`.
-Runner Codespaces `integration/verify_runtime_connectivity.py`, commit `5b727b139f3736a4f277fb68b03bbaff95d31dfb`.
+## RIU-0067 — HF OIDC / TRUSTED PUBLISHER
+- Space `COMAND-CENTER-1/yaiwes-ui-factory` confirmado `static`.
+- frontend OIDC publica correctamente al Hub.
+- runs `34675165228` attempt 2 y `34677293995`: upload PASS.
+- commits HF `57b5a04d371bad59bab6fa7e9db791fb982daec4` y `307549f879b6a3d40493b3bb82d285cb93f76047`.
+- Hub read-back HTTP 200 PASS.
+- URL directa `hf.space` 404 permanece como serving GAP separado, no fallo de autorización.
 
-### Regresión tras probes
-HF Job `6aa493a121047bf1b03796e9`=`COMPLETED`: **75 passed, 2 warnings in 5.78s**.
-HF Job `6aa493e221047bf1b037970b`=`COMPLETED`: con refs de secrets deliberadamente ausentes, runner devolvió exit 2/`FAIL_CLOSED` y el harness confirmó `FAIL_CLOSED_EXPECTED_PASS`.
+## RIU-0068 — BOOTSTRAP GLOBAL AUTH — NODO VIVO
+Auditoría cruzada del 2026-09-13 confirma:
+- Core del Router = **100% VERIFIED_CLOSED**.
+- Integraciones/fabric/runtime existen; no se requiere refactor ni arquitectura nueva.
+- `.github/workflows/riu-auth-presence-probe.yml` comprueba presencia, identidad HF/rol y acceso GitHub a 8 repos sin imprimir valores.
+- `.github/workflows/riu-propagate-auth-secrets.yml` es fail-closed y no continúa sin `RIU_GITHUB_PAT`.
+- evidencia previa del probe run `34677207175`: credenciales globales de Actions ausentes en ese momento.
 
-### GAP real externo
-Store: `https://github.com/settings/codespaces`.
-Los valores de Codespaces secrets no son re-leíbles por GitHub API ni por el conector actual. Solo se inyectan en un Codespace autorizado. Por eso el Router ya está cableado y probado fail-closed, pero no se falsifica el E2E de los 3 tokens.
+### GAP REAL RESTANTE
+No es código base: es **bootstrap y validación runtime de credenciales externas**.
+1. `RIU_GITHUB_PAT` en Router Actions Secrets, con acceso a los 8 repos y capacidad para escribir Actions secrets.
+2. `RIU_HF_TOKEN` role=`write` de `COMAND-CENTER-1`.
+3. Dispatch `RIU Propagate Auth Secrets`.
+4. Re-run `RIU Auth Capability Probe` y exigir identidad/permisos PASS.
+5. Completar Codex account 1/2 device-auth persistence.
+6. Completar Claude `setup-token` persistence.
+7. Ejecutar E2E global GitHub + HF + MCP + memoria y cerrar solo con evidencia fresca.
 
-## Gates actuales
-PASS:
-- `BRIDGES_V2_19_OF_19`
-- `ROUTER_RUNTIME_TESTED`
-- `CURRENT_ROUTER_TEST_SUITE_75_OF_75`
-- `FAIL_CLOSED_WITHOUT_SECRETS`
-
-PENDING runtime Codespaces:
-- `GITHUB_ACCESS_VERIFIED`
-- `HF_ACCESS_VERIFIED`
-- `MCP_BOUNDARY_VERIFIED`
-- `MEMORY_BOUNDARY_VERIFIED`
-- `CONNECTIVITY_GLOBAL_E2E_PASS`
-
-## Nodo vivo
-`RIU-0066_RUNTIME_SECRET_E2E`.
-No secretos en repo/logs; no force; evidencia antes de PASS.
+## ESTADO
+- Core/arquitectura/runtime: `VERIFIED_CLOSED` 100%.
+- Capa externa de acceso global: `ACTIVE_BOOTSTRAP_GLOBAL_AUTH`.
+- Nodo: `RIU-0068_BOOTSTRAP_GLOBAL_AUTH`.
+- Regla: sin secreto runtime verificable y read-back real => PENDING, nunca PASS inventado.
