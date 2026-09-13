@@ -5,9 +5,9 @@
   "repo": "maxbry123-commits/router-universal-router-inteligente-",
   "branch": "main",
   "core_status": "VERIFIED_CLOSED",
-  "status": "ACTIVE_RUNTIME_CREDENTIAL_E2E",
   "core_progress_percent": 100,
-  "current_node": "RIU-0066_RUNTIME_SECRET_E2E",
+  "status": "ACTIVE_BOOTSTRAP_GLOBAL_AUTH",
+  "current_node": "RIU-0068_BOOTSTRAP_GLOBAL_AUTH",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -19,20 +19,25 @@
     "ROUTER_TEST_SUITE_PASS_75_OF_75",
     "FRESH_CONNECTIVITY_RUNTIME_PASS_7_OF_7",
     "FAIL_CLOSED_NO_SECRET_VERIFIED",
+    "HF_SPACE_OIDC_WRITE_VERIFIED",
+    "HF_HUB_READBACK_HTTP_200_VERIFIED",
+    "AUTH_PRESENCE_PROBE_MATERIALIZED",
+    "AUTH_PROPAGATION_WORKFLOW_MATERIALIZED",
     "CLAUDE_GITHUB_MCP_DISCOVERED_AND_BRIDGED",
     "CLAUDE_MEMORY_STORE_DISCOVERED_AND_BRIDGED"
   ],
   "in_progress": [
-    "FRESH_FULL_ROUTER_REGRESSION_JOB_6aa499e45527934177ecb1cb",
-    "GITHUB_RUNTIME_CREDENTIAL_VALIDATION",
-    "HUGGINGFACE_RUNTIME_CREDENTIAL_VALIDATION",
-    "CLAUDE_GITHUB_MCP_BOUNDARY_VALIDATION",
-    "CLAUDE_MEMORY_STORE_BOUNDARY_VALIDATION",
-    "GLOBAL_CONNECTIVITY_E2E"
+    "BOOTSTRAP_RIU_GITHUB_PAT",
+    "BOOTSTRAP_RIU_HF_TOKEN",
+    "PROPAGATE_AUTH_TO_8_REPOS",
+    "RERUN_AUTH_CAPABILITY_PROBE"
   ],
   "pending": [
-    "GITHUB_ACCESS_VERIFIED",
-    "HF_ACCESS_VERIFIED",
+    "GITHUB_PAT_RUNTIME_VERIFIED",
+    "HF_GLOBAL_WRITE_RUNTIME_VERIFIED",
+    "CODEX_ACCOUNT_1_DEVICE_AUTH_VERIFIED",
+    "CODEX_ACCOUNT_2_DEVICE_AUTH_VERIFIED",
+    "CLAUDE_SETUP_TOKEN_VERIFIED",
     "MCP_BOUNDARY_VERIFIED",
     "MEMORY_BOUNDARY_VERIFIED",
     "CONNECTIVITY_GLOBAL_E2E_PASS",
@@ -40,85 +45,58 @@
   ],
   "connectivity": {
     "root": "conectividad con Router inteligente universal",
-    "registry_commit": "e1eb61931fbc5892398fd93aa7a5385fcb212a1f",
     "bridges": {"expected": 19, "v2_declared": 19, "failed": 0},
-    "frontend": {
-      "bridge_commit": "aa1ab876c04d0ff1d33ec1fdf0397e47e2e86f6f",
-      "bridge_blob": "b7541b29d560cd37fcbfb7e075f15a78239133be",
-      "status": "FRONTEND_BRIDGE_V2_READY_FOR_CODESPACE_E2E",
-      "hf_space": "COMAND-CENTER-1/yaiwes-ui-factory"
+    "github": {
+      "connector_access_current_chat": "ADMIN_PUSH_CONFIRMED_ROUTER_AND_TAREA_1",
+      "actions_global_credential": "PENDING_RIU_GITHUB_PAT_BOOTSTRAP"
     },
-    "runtime": {
-      "path": "router inteligente universal/integration/connectivity_runtime.py",
-      "blob": "fdfe385afb2b5b88cc2aa2ee63f6bf7d9c157833"
-    },
-    "runner": {
-      "path": "router inteligente universal/integration/verify_runtime_connectivity.py",
-      "blob": "8d0aca03f84730f2ac9204b4580c2eabaedd4ffb",
-      "frontend_command": "PYTHONPATH=\"router inteligente universal/integration\" python \"router inteligente universal/integration/verify_runtime_connectivity.py\" --repo maxbry123-commits/frontend"
-    },
-    "secret_store": {
-      "provider": "github_codespaces_user_secrets",
-      "settings_url": "https://github.com/settings/codespaces",
-      "huggingface_env_refs": ["RIU_HF_TOKEN", "HF_TOKEN", "HUGGINGFACE_TOKEN"],
-      "github_env_refs": ["RIU_GITHUB_PAT", "GITHUB_TOKEN", "GH_TOKEN"],
-      "raw_values_in_git": false
-    },
-    "github": {"status": "PENDING_RUNTIME_CREDENTIAL_VISIBILITY"},
     "huggingface": {
       "account": "COMAND-CENTER-1",
-      "compute": ["hf_jobs_cpu", "hf_jobs_gpu"],
-      "status": "PENDING_RUNTIME_CREDENTIAL_VISIBILITY"
+      "space": "COMAND-CENTER-1/yaiwes-ui-factory",
+      "oidc_space_write": "VERIFIED",
+      "global_write_token": "PENDING_RIU_HF_TOKEN_BOOTSTRAP"
     },
-    "claude_github_mcp": {
-      "resource": "github_repository",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "status": "BRIDGED_E2E_PENDING"
+    "auth_workflows": {
+      "presence_probe": ".github/workflows/riu-auth-presence-probe.yml",
+      "propagate": ".github/workflows/riu-propagate-auth-secrets.yml",
+      "fail_closed": true
     },
-    "claude_memory_store": {"resource": "memory_store", "status": "BRIDGED_E2E_PENDING"}
-  },
-  "tests": {
-    "full_suite_verified": {
-      "job_id": "6aa493a121047bf1b03796e9",
-      "stage": "COMPLETED",
-      "result": "75 passed, 2 warnings in 5.78s",
-      "test_files": 18
-    },
-    "fresh_connectivity": {
-      "job_id": "6aa49ae621047bf1b0379a54",
-      "stage": "COMPLETED",
-      "result": "7 passed in 0.19s"
-    },
-    "fresh_full_suite": {
-      "job_id": "6aa499e45527934177ecb1cb",
-      "stage": "RUNNING",
-      "result": "PENDING_TERMINAL"
-    },
-    "fail_closed_runner": {
-      "job_id": "6aa493e221047bf1b037970b",
-      "stage": "COMPLETED",
-      "result": "FAIL_CLOSED_EXPECTED_PASS"
+    "secret_policy": {
+      "raw_values_in_git": false,
+      "raw_values_in_chat": false,
+      "github_token_refs": ["RIU_GITHUB_PAT", "GH_TOKEN"],
+      "hf_token_refs": ["RIU_HF_TOKEN", "HF_TOKEN", "HUGGINGFACE_TOKEN"]
     }
   },
   "evidence": [
-    "frontend bridge aa1ab876c04d0ff1d33ec1fdf0397e47e2e86f6f",
-    "registry e1eb61931fbc5892398fd93aa7a5385fcb212a1f",
-    "handoff 4f607ee522f6fe3966ade783c8d65fe817718f28",
-    "HF fresh connectivity job 6aa49ae621047bf1b0379a54 COMPLETED 7 passed in 0.19s",
-    "HF prior full suite 6aa493a121047bf1b03796e9 COMPLETED 75 passed, 2 warnings",
-    "HF fail-closed job 6aa493e221047bf1b037970b"
+    "core state previously VERIFIED_CLOSED 100%",
+    "HF Space OIDC publish PASS: frontend runs 34675165228 attempt 2 and 34677293995",
+    "HF commits 57b5a04d371bad59bab6fa7e9db791fb982daec4 and 307549f879b6a3d40493b3bb82d285cb93f76047",
+    "auth presence probe run 34677207175 success but global auth secrets ABSENT",
+    "workflow .github/workflows/riu-auth-presence-probe.yml verifies HF identity/role and GitHub access to 8 repos",
+    "workflow .github/workflows/riu-propagate-auth-secrets.yml fails closed without RIU_GITHUB_PAT"
+  ],
+  "next_tasks": [
+    "Add RIU_GITHUB_PAT to Router Actions Secrets with access to the 8 project repositories and ability to write Actions secrets",
+    "Add RIU_HF_TOKEN role write for COMAND-CENTER-1",
+    "Dispatch RIU Propagate Auth Secrets",
+    "Dispatch RIU Auth Capability Probe and require identity/permission PASS",
+    "Complete Codex account 1 and account 2 device-auth persistence",
+    "Complete Claude setup-token persistence",
+    "Run global connectivity E2E and close only with fresh evidence"
   ],
   "rules": {
     "evidence_required": true,
     "no_secret_in_repo": true,
     "fail_closed_credentials": true,
-    "no_force": true
+    "no_force": true,
+    "no_overengineering": true
   },
   "last_delta": {
-    "id": "RIU-0066A",
-    "decision": "FRONTEND_CODESPACE_HANDOFF_READY_FRESH_CONNECTIVITY_PASS",
-    "verify_final": "LOCAL_CONNECTIVITY_7_OF_7_PASS; EXTERNAL_CODESPACES_SECRET_E2E_PENDING",
-    "cross_check": "PASS_LOCAL_FAIL_CLOSED_EXTERNAL_PENDING",
-    "coda": "ACTIVE_UNTIL_CODESPACES_RUNTIME_E2E"
+    "id": "RIU-0068A",
+    "decision": "CORE_100_CLOSED_EXTERNAL_AUTH_BOOTSTRAP_ONLY",
+    "verify_final": "WORKFLOWS_PRESENT_AND_FAIL_CLOSED; GLOBAL_CREDENTIALS_NOT_YET_RUNTIME_VERIFIED",
+    "cross_check": "PASS_ARCHITECTURE_AND_LOCAL_INTEGRATION; GAP_EXTERNAL_CREDENTIAL_BOOTSTRAP",
+    "coda": "ACTIVE_UNTIL_GLOBAL_AUTH_AND_E2E_PASS"
   }
 }
