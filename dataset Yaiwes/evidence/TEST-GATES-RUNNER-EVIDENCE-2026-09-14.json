@@ -1,0 +1,32 @@
+{
+  "schema": "yaiwes.test-gate-evidence/v1",
+  "date": "2026-09-14",
+  "crazy_wall_revision_read": 9,
+  "runner": {
+    "path": "Yaiwes Cognitive Control Plane/verify_all.py",
+    "commit": "f68491c1d88e1dce70243c88b520d3647422dfca",
+    "runtime": "python3 standard library",
+    "suites": [
+      "dataset Yaiwes/tests/test_data.py",
+      "Yaiwes Cognitive Control Plane/tests/test_router.py",
+      "Yaiwes Cognitive Control Plane/tests/test_control.py",
+      "Yaiwes Cognitive Control Plane/tests/test_integration.py"
+    ],
+    "fail_closed_exit": "0 only when every discovered test_* callable passes; otherwise 1"
+  },
+  "execution_evidence": {
+    "status": "PENDING_EXTERNAL_EXECUTABLE_RUNNER",
+    "local_shell_git": "BLOCKED_DNS_COULD_NOT_RESOLVE_GITHUB_COM",
+    "github_commit_status_checks": 0,
+    "existing_repo_pytest_runner_found": false,
+    "pass_claimed": false
+  },
+  "nodes": {
+    "CTRL-04": "VERIFYING",
+    "TEST-DATA": "VERIFYING",
+    "TEST-ROUTER": "VERIFYING",
+    "TEST-INTEGRATION": "VERIFYING",
+    "PLUGIN-999": "BLOCKED_UNTIL_TEST_INTEGRATION_PASS"
+  },
+  "next_valid_action": "Execute python3 'Yaiwes Cognitive Control Plane/verify_all.py' in an environment with the repository checkout, capture stdout/stderr and exit code, then update Crazy Wall statuses. Do not activate PLUGIN-999 before verified PASS."
+}
