@@ -1,0 +1,21 @@
+version: 3
+selection:
+  never_full_scan: true
+  registry_first: true
+  max_methods_per_request: 4
+  default_records_per_request: 6
+quality:
+  require_provenance: true
+  reject_duplicate_ids: true
+  reject_empty_verification: true
+  prioritize_mythos_quality: true
+diversity:
+  preferred_mix:
+    debugging: 2
+    causal: 2
+    error: 1
+    counterexample: 1
+fail_closed:
+  unknown_method: problem_framing_only
+  missing_registry: reject
+  schema_failure: reject
