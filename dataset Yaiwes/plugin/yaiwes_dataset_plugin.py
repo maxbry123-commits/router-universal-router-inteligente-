@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import itertools
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
@@ -165,10 +166,12 @@ class DatasetYaiwesPlugin:
         """Delegate classification to the existing Control Plane router, read-only."""
         if not CONTROL_ROUTER_PATH.exists():
             raise FileNotFoundError(f"control router missing: {CONTROL_ROUTER_PATH}")
-        spec = importlib.util.spec_from_file_location("_yaiwes_control_router", CONTROL_ROUTER_PATH)
+        module_name = "_yaiwes_control_router"
+        spec = importlib.util.spec_from_file_location(module_name, CONTROL_ROUTER_PATH)
         if spec is None or spec.loader is None:
             raise ImportError("unable to load YAIWES Control Plane router")
         module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
         spec.loader.exec_module(module)
         bundles = module.route_and_retrieve(
             query,
