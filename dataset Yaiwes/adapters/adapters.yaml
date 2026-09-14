@@ -1,0 +1,20 @@
+version: 3
+adapters:
+  debugging:
+    prefer_methods: [M03, M19, M22, M23, M30, C03]
+    context_mix: {debugging: 2, causal: 2, error: 1, counterexample: 1}
+  planning:
+    prefer_methods: [M07, M12, M13, M14, M30, Y03]
+    context_mix: {debugging: 1, causal: 3, error: 1, counterexample: 1}
+  architecture:
+    prefer_methods: [M11, M14, M16, M23, M32]
+    context_mix: {debugging: 1, causal: 2, error: 1, counterexample: 2}
+  research:
+    prefer_methods: [M02, M03, M17, M26, M27]
+    context_mix: {debugging: 1, causal: 2, error: 1, counterexample: 2}
+  tool_use:
+    prefer_methods: [Y32, META11, META12, META13, META14, C05]
+    context_mix: {debugging: 2, causal: 1, error: 2, counterexample: 1}
+  decision:
+    prefer_methods: [M23, M32, M34, M35, C01, C03, C04]
+    context_mix: {debugging: 1, causal: 2, error: 1, counterexample: 2}
