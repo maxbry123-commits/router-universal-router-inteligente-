@@ -1,0 +1,90 @@
+{
+  "schema": "yaiwes.crazywall/v3",
+  "mode": "FAIL_CLOSED_STRICT_3_STEPS",
+  "repo": "maxbry123-commits/router-universal-router-inteligente-",
+  "branch": "main",
+  "revision": 1,
+  "authorized_roots": [
+    "dataset Yaiwes/",
+    "Yaiwes Cognitive Control Plane/"
+  ],
+  "compact_target": {
+    "logical_methods": 107,
+    "final_files_target": "30-35",
+    "records_target": "~1100-1150",
+    "tiers": {
+      "A": {"records_per_method": 20, "distribution": {"debugging": 10, "causal": 5, "errors": 3, "counterexamples": 2}},
+      "B": {"records_per_method": 10, "distribution": {"debugging": 5, "causal": 3, "errors": 1, "counterexamples": 1}},
+      "C": {"records_per_method": 7, "distribution": {"debugging": 3, "causal": 2, "errors": 1, "counterexamples": 1}}
+    }
+  },
+  "step0_resolution": {
+    "status": "PASS_WITH_EXTERNAL_DEPENDENCY",
+    "context_composer_contract": "ContextRequest -> ContextPack",
+    "input_shark": "EXTERNAL_UPSTREAM_NOT_IMPLEMENTED",
+    "fusion": false,
+    "reason": "No inspectable Input Shark artifact/path was found in osquestador-auditor main; FAIL_CLOSED forbids inventing its contract.",
+    "future_action": "When an authoritative Input Shark contract is found, add only an I/O compatibility adapter; do not duplicate either module."
+  },
+  "multi_chat_protocol": {
+    "read_fresh_before_claim": true,
+    "single_owner_per_node": true,
+    "claim_fields": ["claim_id", "owner", "lease_expires_at", "base_revision"],
+    "write_scope_required": true,
+    "shared_write_scope_forbidden": true,
+    "revision_conflict_action": "STALE_AND_RECONCILE",
+    "pass_requires_evidence": true,
+    "release_after_terminal": true,
+    "shard_strategy": "Parallel SOL GPT chats write only to unique data/shards/*.jsonl; COMPACT node alone writes canonical JSONL."
+  },
+  "node_defaults": {
+    "status": "READY",
+    "owner": null,
+    "claim_id": null,
+    "lease_expires_at": null,
+    "base_revision": 1,
+    "evidence": [],
+    "tests": [],
+    "blockers": []
+  },
+  "nodes": [
+    {"id":"ARCH-001","name":"Authoritative compact architecture V3","status":"PASS","write_scope":"dataset Yaiwes/README-AUTORITATIVO-V3.md","evidence":["commit:baf14becce7fddf4c82b7cb5508a2d1eba3f0f47"]},
+    {"id":"ARCH-002","name":"Compact master plan V3","status":"PASS","write_scope":"dataset Yaiwes/PLAN-MAESTRO-COMPACTO-V3.md","evidence":["commit:fb8435a5f4e62c016a3be0d07e98d14a21352ae1"]},
+    {"id":"REG-001","name":"Canonical registry 107 methods + tiers","status":"READY","write_scope":"dataset Yaiwes/registry.json"},
+    {"id":"SCHEMA-001","name":"Dataset schemas","status":"READY","write_scope":"dataset Yaiwes/schemas/"},
+    {"id":"SRC-001","name":"Provenance + source aliases","status":"READY","write_scope":"dataset Yaiwes/sources/"},
+    {"id":"MYTHOS-01","name":"MYTHOS M01-M10 high-quality examples","status":"READY","write_scope":"dataset Yaiwes/data/shards/mythos_m01_m10.jsonl"},
+    {"id":"MYTHOS-02","name":"MYTHOS M11-M20 high-quality examples","status":"READY","write_scope":"dataset Yaiwes/data/shards/mythos_m11_m20.jsonl"},
+    {"id":"MYTHOS-03","name":"MYTHOS M21-M30 high-quality examples","status":"READY","write_scope":"dataset Yaiwes/data/shards/mythos_m21_m30.jsonl"},
+    {"id":"MYTHOS-04","name":"MYTHOS M31-M40 high-quality examples","status":"READY","write_scope":"dataset Yaiwes/data/shards/mythos_m31_m40.jsonl"},
+    {"id":"YAIWES-01","name":"YAIWES Y01-Y10","status":"READY","write_scope":"dataset Yaiwes/data/shards/yaiwes_y01_y10.jsonl"},
+    {"id":"YAIWES-02","name":"YAIWES Y11-Y20","status":"READY","write_scope":"dataset Yaiwes/data/shards/yaiwes_y11_y20.jsonl"},
+    {"id":"YAIWES-03","name":"YAIWES Y21-Y30","status":"READY","write_scope":"dataset Yaiwes/data/shards/yaiwes_y21_y30.jsonl"},
+    {"id":"YAIWES-04","name":"YAIWES Y31-Y40","status":"READY","write_scope":"dataset Yaiwes/data/shards/yaiwes_y31_y40.jsonl"},
+    {"id":"YAIWES-05","name":"YAIWES Y41-Y42","status":"READY","write_scope":"dataset Yaiwes/data/shards/yaiwes_y41_y42.jsonl"},
+    {"id":"META-01","name":"META01-META10","status":"READY","write_scope":"dataset Yaiwes/data/shards/meta_01_10.jsonl"},
+    {"id":"META-02","name":"META11-META20","status":"READY","write_scope":"dataset Yaiwes/data/shards/meta_11_20.jsonl"},
+    {"id":"COGDATA-01","name":"Cognitive control C01-C05 dataset records","status":"READY","write_scope":"dataset Yaiwes/data/shards/cognitive_control.jsonl"},
+    {"id":"COMPACT-001","name":"Validate + compact shards to canonical data files","status":"BLOCKED","dependencies":["MYTHOS-01","MYTHOS-02","MYTHOS-03","MYTHOS-04","YAIWES-01","YAIWES-02","YAIWES-03","YAIWES-04","YAIWES-05","META-01","META-02","COGDATA-01"],"write_scope":"dataset Yaiwes/data/"},
+    {"id":"CTRL-01","name":"Source of Truth","status":"READY","write_scope":"Yaiwes Cognitive Control Plane/source_of_truth.py"},
+    {"id":"CTRL-02","name":"Context Composer","status":"READY","write_scope":"Yaiwes Cognitive Control Plane/context_composer.py","constraints":["Do not implement or clone Input Shark"]},
+    {"id":"CTRL-03","name":"Consistency Engine","status":"READY","write_scope":"Yaiwes Cognitive Control Plane/consistency_engine.py"},
+    {"id":"CTRL-04","name":"Agent Router","status":"READY","write_scope":"Yaiwes Cognitive Control Plane/router.py"},
+    {"id":"CTRL-05","name":"Policy Guard","status":"READY","write_scope":"Yaiwes Cognitive Control Plane/policy_guard.py"},
+    {"id":"TEST-DATA","name":"Dataset tests","status":"BLOCKED","dependencies":["REG-001","SCHEMA-001","COMPACT-001"],"write_scope":"dataset Yaiwes/tests/test_data.py"},
+    {"id":"TEST-ROUTER","name":"Router tests","status":"BLOCKED","dependencies":["CTRL-04"],"write_scope":"Yaiwes Cognitive Control Plane/tests/test_router.py"},
+    {"id":"TEST-CONTROL","name":"Control tests","status":"BLOCKED","dependencies":["CTRL-01","CTRL-02","CTRL-03","CTRL-05"],"write_scope":"Yaiwes Cognitive Control Plane/tests/test_control.py"},
+    {"id":"TEST-INTEGRATION","name":"Integration tests","status":"BLOCKED","dependencies":["TEST-DATA","TEST-ROUTER","TEST-CONTROL"],"write_scope":"Yaiwes Cognitive Control Plane/tests/test_integration.py"},
+    {"id":"PLUGIN-999","name":"Universal plugin wiring FINAL ONLY","status":"BLOCKED","dependencies":["TEST-INTEGRATION"],"write_scope":"Yaiwes Cognitive Control Plane/plugin_wiring.py","constraints":["Must remain last","Use uploaded Universal Plugin Bus/Ficha contracts","Shadow test before activation","No wiring while any prior node is non-PASS"]}
+  ],
+  "completion_gate": [
+    "107 methods registered",
+    "Tier counts valid",
+    "provenance fields complete",
+    "MYTHOS examples quality gate PASS",
+    "five Cognitive Control modules PASS",
+    "four mandatory tests PASS",
+    "plugin wiring is final node",
+    "all evidence includes path/blob-or-commit SHA"
+  ]
+}
