@@ -7,7 +7,7 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 PLUGIN_ID = "yaiwes.dataset.router"
 PLUGIN_VERSION = "3.0.0"
@@ -44,10 +44,12 @@ def load_manifest(path: Path = MANIFEST_PATH) -> Dict[str, Any]:
 
 
 def validate_manifest_shape(manifest: Mapping[str, Any]) -> List[str]:
-    """Small fail-closed preflight compatible with FichaContractV2 invariants used here."""
+    """Fail-closed preflight aligned with the FichaContractV2 invariants used here."""
     errors: List[str] = []
-    required = ("artifact_id", "version", "estado", "contract_hash", "contrato",
-                "ejecucion", "seguridad", "firma")
+    required = (
+        "artifact_id", "version", "estado", "contract_hash", "contrato",
+        "ejecucion", "seguridad", "firma",
+    )
     for key in required:
         if key not in manifest:
             errors.append(f"missing:{key}")
@@ -162,7 +164,7 @@ class DatasetYaiwesPlugin:
         query: str,
         parallel_width: int = 1,
         limits: Optional[Mapping[str, int]] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Delegate classification to the existing Control Plane router, read-only."""
         if not CONTROL_ROUTER_PATH.exists():
             raise FileNotFoundError(f"control router missing: {CONTROL_ROUTER_PATH}")
@@ -173,12 +175,13 @@ class DatasetYaiwesPlugin:
         module = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = module
         spec.loader.exec_module(module)
-        bundles = module.route_and_retrieve(
+        return module.route_and_retrieve(
             query,
             parallel_width=parallel_width,
-            per_route_limits=dict(limits or {"debugging": 2, "causal": 2, "error": 1, "counterexample": 1}),
+            category_limits=dict(
+                limits or {"debugging": 2, "causal": 2, "error": 1, "counterexample": 1}
+            ),
         )
-        return bundles
 
 
 def shadow_validate() -> ShadowReport:
@@ -206,7 +209,7 @@ def shadow_validate() -> ShadowReport:
         details={
             "manifest_errors": errors,
             "health": health,
-            "routed_method_ids": [getattr(b.get("route"), "method_id", None) if isinstance(b, dict) else None for b in routed],
+            "routed_method_ids": sorted(routed.keys()),
         },
     )
 
@@ -237,5 +240,5 @@ def route_and_retrieve(
     query: str,
     parallel_width: int = 1,
     limits: Optional[Mapping[str, int]] = None,
-) -> List[Dict[str, Any]]:
+) -> Dict[str, List[Dict[str, Any]]]:
     return DatasetYaiwesPlugin().route_and_retrieve(query, parallel_width, limits)
