@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,6 +12,7 @@ MANIFEST_PATH = ROOT / "plugin" / "ficha_yaiwes_dataset_v2.json"
 spec = importlib.util.spec_from_file_location("yaiwes_dataset_plugin", PLUGIN_PATH)
 assert spec and spec.loader
 plugin_mod = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = plugin_mod
 spec.loader.exec_module(plugin_mod)
 
 
