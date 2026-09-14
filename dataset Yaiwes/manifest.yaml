@@ -1,5 +1,5 @@
 schema: yaiwes.dataset/v3
-version: 3.0.0
+version: 3.1.0
 mode: FAIL_CLOSED_STRICT_3_STEPS
 logical_methods: 107
 target_records: 1139
@@ -7,13 +7,20 @@ tiers:
   A: {methods: 12, records_per_method: 20}
   B: {methods: 78, records_per_method: 10}
   C: {methods: 17, records_per_method: 7}
-canonical_data:
-  - data/mythos.jsonl
-  - data/yaiwes.jsonl
-  - data/meta_runtime.jsonl
-  - data/cognitive_control.jsonl
+canonical_store:
+  type: segmented_jsonl
+  root: data/shards/
+  index: indexes/shard_index.json
+  rule: method_range_only_never_full_dataset_scan
+legacy_seed_data:
+  status: SUPERSEDED_NOT_ROUTED
+  paths:
+    - data/mythos.jsonl
+    - data/yaiwes.jsonl
+    - data/meta_runtime.jsonl
+    - data/cognitive_control.jsonl
 registry: registry.json
 schemas: schemas/
-provenance_required: [id, method_id, method, category, source, commit, added_at]
-router_policy: registry_first_never_full_scan
+provenance_required: [id, method_id, method, tier, category, source, commit, added_at]
+router_policy: registry_then_shard_index_then_method_range
 plugin_wiring: FINAL_ONLY
