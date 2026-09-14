@@ -1,0 +1,151 @@
+{
+  "schema": "yaiwes.crazy-wall/v1",
+  "project": "dataset Yaiwes",
+  "repository": "maxbry123-commits/router-universal-router-inteligente-",
+  "branch": "main",
+  "root": "dataset Yaiwes/",
+  "revision": 1,
+  "status": "BOOTSTRAP_CREATED",
+  "authoritative_queue": true,
+  "record_contract": {
+    "debugging": 10,
+    "causal_patterns": 5,
+    "similar_errors": 3,
+    "counterexamples": 2,
+    "total_per_method": 20
+  },
+  "scope": {
+    "mythos_methods": 40,
+    "yaiwes_methods": 42,
+    "meta_runtime_methods": 20,
+    "initial_total_methods": 102,
+    "initial_total_records": 2040
+  },
+  "states": [
+    "PENDING",
+    "READY",
+    "CLAIMED",
+    "IN_PROGRESS",
+    "VERIFYING",
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "STALE",
+    "SUPERSEDED"
+  ],
+  "rules": [
+    "Never claim PASS without evidence",
+    "Uploaded source documents are hashed before integration",
+    "Reasoning and operational control remain separate layers",
+    "Aliases do not generate duplicate method datasets",
+    "UNKNOWN is not automatically PASS or FAIL",
+    "README registry and Crazy Wall must remain synchronized",
+    "Router loads selective context rather than the whole dataset"
+  ],
+  "nodes": [
+    {
+      "node_id": "DY-F0-001",
+      "phase": "F0",
+      "title": "Ingest source documents",
+      "status": "READY",
+      "dependencies": [],
+      "inputs": ["Director uploaded documents"],
+      "outputs": ["source registry", "content hashes", "document classification"],
+      "evidence": [],
+      "tests": ["all files registered", "hashes generated"],
+      "blockers": ["waiting for additional Director uploads"],
+      "next_action": "ingest and hash new files when supplied"
+    },
+    {
+      "node_id": "DY-F1-001",
+      "phase": "F1",
+      "title": "Build canonical method registry",
+      "status": "PENDING",
+      "dependencies": ["DY-F0-001"],
+      "inputs": ["MYTHOS/FABLES", "YAIWES", "Muse/Glimmer/Meta sources"],
+      "outputs": ["registry.json", "aliases.json"],
+      "evidence": [],
+      "tests": ["all source methods represented", "aliases deduplicated", "no silent omissions"],
+      "blockers": [],
+      "next_action": "normalize methods and aliases"
+    },
+    {
+      "node_id": "DY-F2-001",
+      "phase": "F2",
+      "title": "Create schemas and contracts",
+      "status": "PENDING",
+      "dependencies": ["DY-F1-001"],
+      "inputs": ["canonical registry"],
+      "outputs": ["method schema", "case schema", "router schema", "context pack schema"],
+      "evidence": [],
+      "tests": ["schema validation PASS"],
+      "blockers": [],
+      "next_action": "implement schemas"
+    },
+    {
+      "node_id": "DY-F3-001",
+      "phase": "F3",
+      "title": "Generate and curate method datasets",
+      "status": "PENDING",
+      "dependencies": ["DY-F2-001"],
+      "inputs": ["validated methods", "source material", "researched open-source patterns"],
+      "outputs": ["20 records per canonical method"],
+      "evidence": [],
+      "tests": ["10 debugging", "5 causal", "3 errors", "2 counterexamples", "dedup PASS", "traceability PASS"],
+      "blockers": [],
+      "next_action": "generate records method-by-method"
+    },
+    {
+      "node_id": "DY-F4-001",
+      "phase": "F4",
+      "title": "Implement selective router",
+      "status": "PENDING",
+      "dependencies": ["DY-F2-001", "DY-F3-001"],
+      "inputs": ["registry", "dataset records"],
+      "outputs": ["classifier.py", "router.py", "scorer.py", "retriever.py", "context_builder.py", "policies.yaml"],
+      "evidence": [],
+      "tests": ["classification PASS", "retrieval PASS", "context budget PASS"],
+      "blockers": [],
+      "next_action": "implement router modules separately"
+    },
+    {
+      "node_id": "DY-F5-001",
+      "phase": "F5",
+      "title": "Create external adapters and integration contracts",
+      "status": "PENDING",
+      "dependencies": ["DY-F4-001"],
+      "inputs": ["router", "kernel contracts"],
+      "outputs": ["code adapter", "research adapter", "planning adapter", "debugging adapter", "architecture adapter", "tool-use adapter"],
+      "evidence": [],
+      "tests": ["adapter selection PASS", "no model weight training required"],
+      "blockers": [],
+      "next_action": "integrate adapters with router"
+    },
+    {
+      "node_id": "DY-F6-001",
+      "phase": "F6",
+      "title": "Cross-validation and Sheriff certification",
+      "status": "PENDING",
+      "dependencies": ["DY-F3-001", "DY-F4-001", "DY-F5-001"],
+      "inputs": ["all implementation artifacts"],
+      "outputs": ["test reports", "traceability report", "Sheriff verdict"],
+      "evidence": [],
+      "tests": ["schemas PASS", "router PASS", "retrieval PASS", "source traceability PASS", "no critical duplicate PASS"],
+      "blockers": [],
+      "next_action": "run verification suite"
+    },
+    {
+      "node_id": "DY-F7-001",
+      "phase": "F7",
+      "title": "Finalize architecture and documentation",
+      "status": "PENDING",
+      "dependencies": ["DY-F6-001"],
+      "inputs": ["verified implementation"],
+      "outputs": ["final README", "manifest", "metrics", "final registry", "final Crazy Wall"],
+      "evidence": [],
+      "tests": ["README synchronized", "Crazy Wall synchronized", "all critical nodes PASS"],
+      "blockers": [],
+      "next_action": "close project only after evidence-backed PASS"
+    }
+  ]
+}
