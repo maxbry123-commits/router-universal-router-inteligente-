@@ -1,17 +1,58 @@
 name: Claude Token Setup
+
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   setup:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RIU_GITHUB_PAT: ${{ secrets.RIU_GITHUB_PAT }}
     steps:
-      - name: Install and run setup-token
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Require bootstrap GitHub credential
+        shell: bash
         run: |
-          npm install -g @anthropic-ai/claude-code
-          export PATH="$(npm config get prefix)/bin:$PATH"
+          set -euo pipefail
+          if [ -z "${RIU_GITHUB_PAT:-}" ]; then
+            echo '::error::RIU_GITHUB_PAT is required to persist Claude auth across project repositories.'
+            exit 2
+          fi
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run setup-token without exposing the token
+        shell: bash
+        run: |
+          set -euo pipefail
           set +e
-          script -qefc "timeout 120 claude setup-token" /tmp/session.log
+          script -qefc "timeout 180 claude setup-token" /tmp/claude-session.log
           rc=$?
-          echo "===== LOG COMPLETO ====="
-          cat /tmp/session.log
-          exit "$rc"
+          set -e
+          # Show only sanitized setup output so an authorization URL can be used,
+          # while any OAuth token remains masked.
+          sed -E 's/sk-ant-oat01-[A-Za-z0-9_-]+/***REDACTED***/g' /tmp/claude-session.log || true
+          if [ "$rc" -ne 0 ]; then
+            shred -u /tmp/claude-session.log || rm -f /tmp/claude-session.log
+            exit "$rc"
+          fi
+
+      - name: Persist Claude OAuth token as GitHub Actions secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --disable-pip-version-check pynacl
+          python scripts/persist_claude_token_github.py /tmp/claude-session.log
+
+      - name: Destroy runner-local session log
+        if: always()
+        shell: bash
+        run: shred -u /tmp/claude-session.log 2>/dev/null || rm -f /tmp/claude-session.log
