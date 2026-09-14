@@ -21,30 +21,29 @@ Runtime implementa probes GitHub identity/permisos, HF whoami/role y GitHub MCP 
 - Space `COMAND-CENTER-1/yaiwes-ui-factory` confirmado `static`.
 - frontend OIDC publica correctamente al Hub.
 - runs `34675165228` attempt 2 y `34677293995`: upload PASS.
-- commits HF `57b5a04d371bad59bab6fa7e9db791fb982daec4` y `307549f879b6a3d40493b3bb82d285cb93f76047`.
 - Hub read-back HTTP 200 PASS.
-- URL directa `hf.space` 404 permanece como serving GAP separado, no fallo de autorización.
 
-## RIU-0068 — BOOTSTRAP GLOBAL AUTH — NODO VIVO
-Auditoría cruzada del 2026-09-13 confirma:
-- Core del Router = **100% VERIFIED_CLOSED**.
-- Integraciones/fabric/runtime existen; no se requiere refactor ni arquitectura nueva.
-- `.github/workflows/riu-auth-presence-probe.yml` comprueba presencia, identidad HF/rol y acceso GitHub a 8 repos sin imprimir valores.
-- `.github/workflows/riu-propagate-auth-secrets.yml` es fail-closed y no continúa sin `RIU_GITHUB_PAT`.
-- evidencia previa del probe run `34677207175`: credenciales globales de Actions ausentes en ese momento.
+## RIU-0068 — BOOTSTRAP GLOBAL AUTH
+Core del Router = **100% VERIFIED_CLOSED**. La capa global de credenciales externas continúa separada del core y se valida fail-closed.
+
+## RIU-0069 — CLAUDE DIRECT GITHUB ROOT ACCESS — NODO VIVO
+Delta mínimo aplicado 2026-09-13:
+- `GitHub Backup HF` queda clasificado como **respaldo opcional, no bloqueante**.
+- Hugging Face no se usa como autoridad para editar GitHub.
+- Nuevo `.github/workflows/claude-root-editor.yml` con `contents: write`, `pull-requests: write`, `issues: write`, usando `RIU_GITHUB_PAT` cuando existe o `github.token` para el repo actual.
+- Nuevo `CLAUDE.md` en raíz: GitHub `main` es fuente de verdad y la ausencia del backup HF no detiene lectura/escritura de raíces.
+- `.github/workflows/claude-token-setup.yml` corregido: ya no imprime en claro la sesión de `setup-token`; sanitiza salida y destruye el log runner-local.
+
+### Evidencia
+- `f3d0daa60cecc25e711886cac6b6f468feedfe05` — setup-token seguro.
+- `946f1a0e1c976298c6c34d4e70f0a07243109aa6` — Claude Root Editor.
+- `ddfeb73e4c5d80515e28ed8511c14f8f0fc1ba88` — `CLAUDE.md` canónico.
 
 ### GAP REAL RESTANTE
-No es código base: es **bootstrap y validación runtime de credenciales externas**.
-1. `RIU_GITHUB_PAT` en Router Actions Secrets, con acceso a los 8 repos y capacidad para escribir Actions secrets.
-2. `RIU_HF_TOKEN` role=`write` de `COMAND-CENTER-1`.
-3. Dispatch `RIU Propagate Auth Secrets`.
-4. Re-run `RIU Auth Capability Probe` y exigir identidad/permisos PASS.
-5. Completar Codex account 1/2 device-auth persistence.
-6. Completar Claude `setup-token` persistence.
-7. Ejecutar E2E global GitHub + HF + MCP + memoria y cerrar solo con evidencia fresca.
+La configuración está materializada y leída de vuelta, pero **Claude runtime no se marca PASS** hasta ejecutar el workflow con `CLAUDE_CODE_OAUTH_TOKEN` disponible y obtener un commit/read-back real de una edición de raíz. Para edición transversal a otros repos también se requiere `RIU_GITHUB_PAT`/GitHub App con permisos efectivos.
 
 ## ESTADO
 - Core/arquitectura/runtime: `VERIFIED_CLOSED` 100%.
-- Capa externa de acceso global: `ACTIVE_BOOTSTRAP_GLOBAL_AUTH`.
-- Nodo: `RIU-0068_BOOTSTRAP_GLOBAL_AUTH`.
-- Regla: sin secreto runtime verificable y read-back real => PENDING, nunca PASS inventado.
+- Ruta directa de Claude en GitHub: `MATERIALIZED`.
+- Verificación runtime de escritura Claude: `PENDING_FRESH_WRITE_READBACK`.
+- Nodo: `RIU-0069_CLAUDE_DIRECT_GITHUB_ROOT_ACCESS`.
