@@ -27,7 +27,8 @@
     "CLAUDE_MEMORY_STORE_DISCOVERED_AND_BRIDGED",
     "CLAUDE_DIRECT_ROOT_EDITOR_WORKFLOW_MATERIALIZED",
     "CLAUDE_ROOT_POLICY_MATERIALIZED",
-    "CLAUDE_SETUP_TOKEN_LOG_REDACTION_FIXED"
+    "CLAUDE_SETUP_TOKEN_LOG_REDACTION_FIXED",
+    "RIU_0070_DOCUMENTATION_SYNC_READBACK_PASS"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -40,8 +41,7 @@
     "OMNIROUTE_ADAPTER_CONTRACT",
     "ORCA_ADE_BOUNDARY",
     "OMARCHY_HOST_CHECKLIST",
-    "ANYDOC_INGEST_ADAPTER",
-    "RIU_0070_STATE_PLAN_BITACORA_SYNC"
+    "ANYDOC_INGEST_ADAPTER"
   ],
   "pending": [
     "CLAUDE_ROOT_WRITE_VERIFIED",
@@ -58,8 +58,7 @@
     "OMNIROUTE_ADAPTER_VERIFIED",
     "ORCA_ADE_BOUNDARY_VERIFIED",
     "OMARCHY_HOST_OPTION_VALIDATED",
-    "ANYDOC_ADAPTER_VERIFIED",
-    "STATE_PLAN_BITACORA_SYNC_VERIFIED"
+    "ANYDOC_ADAPTER_VERIFIED"
   ],
   "connectivity": {
     "root": "conectividad con Router inteligente universal",
@@ -120,7 +119,8 @@
     "commit ddfeb73e4c5d80515e28ed8511c14f8f0fc1ba88 adds canonical CLAUDE.md policy",
     "RIU-0070 X-Ray: 29 root entries enumerated and shallow-inspected on 2026-09-17",
     "Architecture integration plan commit 8616da2a84bd5f803ca38a9bbeaea1ed93bafbac",
-    "Verified external sources: diegosouzapw/OmniRoute, saiichi/orca, basecamp/omarchy, firecrawl/anydoc"
+    "Verified external sources: diegosouzapw/OmniRoute, saiichi/orca, basecamp/omarchy, firecrawl/anydoc",
+    "RIU-0070 read-back PASS: architecture/PLAN/STATE/BITACORA/CHECKPOINT markers present on main"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -145,8 +145,8 @@
   "last_delta": {
     "id": "RIU-0070",
     "decision": "ROOT_XRAY_29_AND_EXTERNAL_4_INTEGRATION_PLAN_MATERIALIZED",
-    "verify_final": "DOCUMENTATION_WRITE_PENDING_READBACK; EXTERNAL_RUNTIME_NOT_YET_CLAIMED",
-    "cross_check": "PASS_RESEARCH_AND_ROOT_SHALLOW_AUDIT; GAP_RUNTIME_ADAPTERS_AUTH_AND_GLOBAL_E2E",
+    "verify_final": "DOCUMENTATION_AND_STATE_SYNC_READBACK_PASS; EXTERNAL_RUNTIME_AUTH_AND_GLOBAL_E2E_PENDING",
+    "cross_check": "PASS_ROOT_XRAY_AND_DOC_SYNC; GAP_RUNTIME_ADAPTERS_AUTH_AND_GLOBAL_E2E",
     "coda": "ACTIVE_UNTIL_EXTERNAL_BOUNDARIES_AND_GLOBAL_E2E_PASS"
   },
   "root_xray": {
