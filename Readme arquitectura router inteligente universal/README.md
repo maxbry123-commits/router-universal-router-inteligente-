@@ -164,3 +164,7 @@ Snapshot base auditado: `main@d001d96cfa382888d409255e5dd3e9d2b6372860`. Se dete
 - Runtime canónico: 11 bloques top-level; biblioteca donor: 62 directorios de componentes OSS; candidato de duplicado literal/case-insensitive confirmado: `LiteLLM` vs `litellm`, **sin borrar hasta comparar contenido/provenance**.
 - El probe recursivo devolvió 35.979 entradas pero GitHub lo marcó `truncated=true`; esos conteos son lower-bound, no inventario total de archivos.
 - Gate corregido: `ROOT_28_ACCOUNTED`.
+
+
+### HF mirrors / replicas — RIU-0078
+Se separan tres mecanismos: (1) repo duplicate/mirror con `duplicate_repo` / `hf repos duplicate`; (2) replicas runtime administradas por Hugging Face Inference Endpoints con min/max/autoscaling; (3) snapshot/cache revision-pinned con `snapshot_download(revision=...)`. Ninguna de estas capas obtiene routing ownership: `RedUniversal -> connector_registry -> endpoint/provider adapter`. Diseño/evidencia: `forensics/RIU-0078-HF-MIRROR-REPLICA-ARCHITECTURE-2026-09-17.md`, commit `9b0595507649d495651d7e5065bc7b15087a3d6f`. No se creó un mirror real porque falta destino/namespace explícito.
