@@ -52,3 +52,25 @@ def scheduler_decision(slots: Iterable[HFSlot]) -> dict[str, str | None]:
     if worker_id is None:
         return {"state": "WAITING", "worker": None}
     return {"state": "DISPATCH", "worker": worker_id}
+
+
+def dispatch_hf_request(
+    slots: Iterable[HFSlot],
+    request: object,
+    submitter: object,
+) -> dict[str, object]:
+    """Select one logical slot and delegate submission to the canonical submitter.
+
+    The submitter must expose submit(request). This module never implements
+    Hugging Face Job submission itself.
+    """
+    worker_id = choose_hf_slot(slots)
+    if worker_id is None:
+        return {"state": "WAITING", "worker": None}
+    submit = getattr(submitter, "submit", None)
+    if not callable(submit):
+        raise TypeError("HF_SUBMITTER_MUST_EXPOSE_SUBMIT")
+    result = submit(request)
+    if not isinstance(result, dict):
+        raise TypeError("HF_SUBMITTER_INVALID_RESULT")
+    return {"state": "DISPATCH", "worker": worker_id, **result}
