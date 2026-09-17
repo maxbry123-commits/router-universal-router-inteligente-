@@ -1,1 +1,51 @@
-{"checkpoint":"riu-0066-runtime-secret-e2e-ready","contract":"tel.workflow/v3","mode":"FAIL_CLOSED_LOOP","status":"ACTIVE_RUNTIME_CREDENTIAL_E2E","core":"VERIFIED_CLOSED","connectivity":{"bridges_v2":"19_OF_19_PASS","registry_commit":"f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3","frontend_commit":"168b12de4c574a165d32601968ee7dd864614d8a","runtime_commit":"912fc38708c13f57046d8aa48c503773bd722d93","runner_commit":"5b727b139f3736a4f277fb68b03bbaff95d31dfb","secret_store":"https://github.com/settings/codespaces","github":"PENDING_RUNTIME_CREDENTIAL_VISIBILITY","huggingface":"PENDING_RUNTIME_CREDENTIAL_VISIBILITY","mcp":"BRIDGED_E2E_PENDING","memory":"BRIDGED_E2E_PENDING","global_e2e":"PENDING"},"tests":{"suite_job":"6aa493a121047bf1b03796e9","suite":"75 passed, 2 warnings in 5.78s","fail_closed_job":"6aa493e221047bf1b037970b","fail_closed":"PASS_EXPECTED","test_files":18},"next_gate":"CODESPACES_RUNTIME_SECRETS_VISIBLE -> GITHUB -> HF -> MCP -> MEMORY -> GLOBAL_E2E -> CLOSE","evidence":{"architecture":"70eec6c53b4e39ba75c86c4e0591f1edc2db47c1","handoff":"96966d7ca10f2eb2c1a3ced746c6182f01159a7e","crazywall":"127e8f7e3d01a763b2e55d8e9de53d2bb370b247","state":"6668eed1ce64eb27e11d9f3e10c2c07768832631"}}
+{
+  "checkpoint": "riu-0066-runtime-secret-e2e-ready",
+  "contract": "tel.workflow/v3",
+  "mode": "FAIL_CLOSED_LOOP",
+  "status": "ACTIVE",
+  "core": "VERIFIED_CLOSED",
+  "connectivity": {
+    "bridges_v2": "19_OF_19_PASS",
+    "registry_commit": "f4c16807248a676e9e8c2bf7dd04e2d8cbe46bb3",
+    "frontend_commit": "168b12de4c574a165d32601968ee7dd864614d8a",
+    "runtime_commit": "912fc38708c13f57046d8aa48c503773bd722d93",
+    "runner_commit": "5b727b139f3736a4f277fb68b03bbaff95d31dfb",
+    "secret_store": "https://github.com/settings/codespaces",
+    "github": "PENDING_RUNTIME_CREDENTIAL_VISIBILITY",
+    "huggingface": "PENDING_RUNTIME_CREDENTIAL_VISIBILITY",
+    "mcp": "BRIDGED_E2E_PENDING",
+    "memory": "BRIDGED_E2E_PENDING",
+    "global_e2e": "PENDING"
+  },
+  "tests": {
+    "suite_job": "6aa493a121047bf1b03796e9",
+    "suite": "75 passed, 2 warnings in 5.78s",
+    "fail_closed_job": "6aa493e221047bf1b037970b",
+    "fail_closed": "PASS_EXPECTED",
+    "test_files": 18
+  },
+  "next_gate": "CODESPACES_RUNTIME_SECRETS_VISIBLE -> GITHUB -> HF -> MCP -> MEMORY -> GLOBAL_E2E -> CLOSE",
+  "evidence": {
+    "base_snapshot_sha": "d001d96cfa382888d409255e5dd3e9d2b6372860",
+    "architecture_commit": "8616da2a84bd5f803ca38a9bbeaea1ed93bafbac",
+    "plan_commit": "b5c2d5585de2eba4de11bfb08795cca56f71b811",
+    "state_commit": "561b546d1344a551cb9c09387044d7aadf4aa88c"
+  },
+  "current_node": "RIU-0070_XRAY_ROOT_EXTERNAL_INTEGRATION_PLAN",
+  "updated_at": "2026-09-17",
+  "root_entries_accounted": 29,
+  "external_components_accounted": [
+    "OmniRoute",
+    "Orca",
+    "Omarchy",
+    "AnyDoc"
+  ],
+  "closure_gates": {
+    "ROOT_29_ACCOUNTED": true,
+    "EXTERNAL_4_BOUNDARIES_DEFINED": true,
+    "NO_ROUTING_OWNERSHIP_CONFLICT": true,
+    "AUTH_RUNTIME_VERIFIED": false,
+    "CONNECTIVITY_GLOBAL_E2E_PASS": false,
+    "STATE_PLAN_BITACORA_SYNC": false
+  }
+}
