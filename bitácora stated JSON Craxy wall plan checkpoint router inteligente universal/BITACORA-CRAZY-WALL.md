@@ -128,3 +128,14 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - 3 fresh watchdog executions reproduce HTTP 404.
 - Evidence: `forensics/RIU-0075-HF-INVENTORY-PARTIAL-2026-09-17.md`, commit `382b8e8b342cad59505a1ccbd7dc5f3dec8aa3f8`.
 - GAP remains: private Hub resources + uncapped current Job history + dedup model refs.
+
+
+## RIU-0076 — HF WATCHDOG 404 ROOT CAUSE — ✅ INCIDENT CONTAINED
+- Historical root recovered in `maxbry123-commits/frontend`: `➡️📂motor extracción de zip con huggueface/`.
+- Git commit `e0b3cd3bc9e33c8184009d5507f2e1e4bd6bfb49` deliberately removed `watchdog.py`, `hf_zip_engine.py`, `watchdog-state.json` to keep a single canonical motors root.
+- Active Scheduled Job `6aa1af2821047bf1b0370810` still referenced the removed files; 3 fresh runs repeated HTTP 404.
+- Current immutable combined motor = `hf_download_extract_engine.py` blob `91e6e4486692eab314be5c7130d8310d3c855397`; controller = `84d566e2ee4e98e42eb3a864026d067d48caabd9`.
+- Obsolete Scheduled Job suspended; inspect + scheduled-list both read back `suspended=true`.
+- No delete, no secret disclosure, no historical code resurrection.
+- Replacement schedule remains GAP until explicit QUEUE_FILE/STATE_FILE/INDEX_PATH/DEST_* contract exists.
+- Evidence: `forensics/RIU-0076-HF-WATCHDOG-404-ROOT-CAUSE-2026-09-17.md`, commit `ddb993d0f898a51b2f7372cc8e59cc269fdca220`.
