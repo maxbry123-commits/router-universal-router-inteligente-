@@ -1,0 +1,217 @@
+{
+  "contract": "tel.workflow/v3",
+  "mode": "FAIL_CLOSED_LOOP",
+  "node": "RIU-0071_FORENSIC_XRAY_AUTHORITATIVE_INVENTORY",
+  "generated_at": "2026-09-17",
+  "repository": "maxbry123-commits/router-universal-router-inteligente-",
+  "branch": "main",
+  "base_head_sha": "55b8136a8f19d3bf9dda5f5febe0398ba5f07ff4",
+  "methodology": {
+    "chat_history_reviewed": true,
+    "github_root_contents_read": true,
+    "component_containers_read": true,
+    "recursive_tree_probe": {
+      "tree_sha": "94aa3d2c2c2d1a48297ea9717ba504a9f8d8de03",
+      "returned_entries": 35979,
+      "returned_files": 30934,
+      "returned_dirs": 5045,
+      "truncated": true,
+      "rule": "counts are LOWER_BOUNDS only; never claim full-file inventory from this recursive response"
+    }
+  },
+  "root_inventory": {
+    "count": 28,
+    "entries": [
+      ".github",
+      "CLAUDE.md",
+      "Documentos proyectos router inteligente universal",
+      "Download code router inteligente universal",
+      "Fast api key de los modelos de ai en huggueface.md",
+      "Github coneccion",
+      "Handoff router inteligente universal.md",
+      "PARCHE-RECUPERACION-ROUTER-INTELIGENTE-UNIVERSAL.md",
+      "Readme arquitectura router inteligente universal",
+      "Readme Índice componentes.md",
+      "Readme Índice de modelos de ai huggueface.md",
+      "Yaiwes Cognitive Control Plane",
+      "bitácora stated JSON Craxy wall plan checkpoint router inteligente universal",
+      "coneccion huggueface Github",
+      "conectividad con Router inteligente universal",
+      "dataset Yaiwes",
+      "extraction-result.json",
+      "forensics",
+      "huggueface",
+      "pre-audit.json",
+      "readme Handoff indice componentes.md",
+      "readme indice router inteligente universal.md",
+      "readme índice de componentes",
+      "router inteligente software",
+      "router inteligente universal",
+      "scripts",
+      "➡️📂 Wordflow LOOP router inteligente universal",
+      "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-"
+    ],
+    "correction": "Previous 29 count incorrectly treated .github/workflows as a root entry; it is a child of .github."
+  },
+  "canonical_owners": {
+    "runtime": "router inteligente universal/",
+    "routing": "router inteligente universal/red/",
+    "connectivity": "conectividad con Router inteligente universal/",
+    "integrations": "router inteligente universal/integration/",
+    "state": "bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/",
+    "architecture": "Readme arquitectura router inteligente universal/",
+    "evidence": "forensics/",
+    "donor_library": "router inteligente universal/Componente open soure router inteligente universal/",
+    "legacy": "router inteligente software/"
+  },
+  "runtime_top_level": {
+    "count": 11,
+    "entries": [
+      "Componente open soure router inteligente universal",
+      "adapters",
+      "domain",
+      "enchufe",
+      "engine",
+      "gateway",
+      "integration",
+      "red",
+      "security",
+      "tests",
+      "verifier"
+    ]
+  },
+  "donor_components": {
+    "count": 62,
+    "entries": [
+      "Chart.js",
+      "Durable-Task-Python",
+      "Durable-Workflow-Server",
+      "LiteLLM",
+      "MCP-Python-SDK",
+      "Prefect",
+      "PyGithub",
+      "RouterArena",
+      "SGLang",
+      "Sentence-Transformers",
+      "Temporal-Python-SDK",
+      "TypeScript",
+      "agents-deep-research",
+      "aiomysql",
+      "archives",
+      "asyncpg",
+      "autogen",
+      "chroma",
+      "crewAI",
+      "cryptography",
+      "docker-py",
+      "dzhng-deep-research",
+      "fastapi",
+      "gpt-researcher",
+      "grafana",
+      "guardrails",
+      "gunicorn",
+      "haystack",
+      "httpx",
+      "huggingface_hub",
+      "langgraph",
+      "litellm",
+      "llama.cpp",
+      "llama_index",
+      "lucide",
+      "n8n",
+      "ollama",
+      "open_deep_research",
+      "phoenix",
+      "plex",
+      "postgres",
+      "prometheus",
+      "pydantic-ai",
+      "pydantic-settings",
+      "pydantic",
+      "python-dotenv",
+      "python-sdk",
+      "pyyaml",
+      "qdrant",
+      "react",
+      "redis-py",
+      "redis",
+      "ruflo",
+      "servers",
+      "starlette",
+      "tailwindcss",
+      "uvicorn",
+      "vLLM-Router",
+      "vLLM-Semantic-Router",
+      "vite",
+      "vllm",
+      "zustand"
+    ]
+  },
+  "duplicate_candidates": [
+    {
+      "id": "DUP-LITELLM-001",
+      "normalized_name": "litellm",
+      "entries": [
+        {
+          "path": "router inteligente universal/Componente open soure router inteligente universal/LiteLLM",
+          "tree_sha": "70bac1cf90286c8c59bd5d00d30716a40179cf4f"
+        },
+        {
+          "path": "router inteligente universal/Componente open soure router inteligente universal/litellm",
+          "tree_sha": "9820f5fdbea52e9744f5fbb9a93faa5b6f1f354e"
+        }
+      ],
+      "state": "PENDING_CONTENT_PROVENANCE_COMPARISON_NO_DELETE"
+    }
+  ],
+  "legacy_component_roots": [
+    "examples",
+    "frontend src",
+    "router core version alternativa",
+    "router core",
+    "scripts"
+  ],
+  "external_hf_bridge_candidates": [
+    "coneccion huggueface Github/router/dispatcher.py",
+    "coneccion huggueface Github/router/hf_jobs_adapter.py",
+    "huggueface/bridge/router_hf_bridge.py"
+  ],
+  "external_components": {
+    "OmniRoute": {
+      "state": "BOUNDARY_DEFINED_PENDING_RUNTIME_TEST",
+      "target": "router inteligente universal/adapters or red connector boundary after contract"
+    },
+    "Orca": {
+      "state": "ADE_BOUNDARY_PENDING_RUNTIME_VALIDATION",
+      "target": "external development control plane only"
+    },
+    "Omarchy": {
+      "state": "OPTIONAL_HOST_PENDING_CHECKLIST",
+      "target": "no runtime ownership"
+    },
+    "AnyDoc": {
+      "state": "INGEST_ADAPTER_PENDING_RUNTIME_TEST",
+      "target": "router inteligente universal/integration or adapters after contract"
+    }
+  },
+  "chat_pending_objectives": [
+    "HF-01 full Hugging Face inventory including models, Jobs and remote registry",
+    "HF-02 execute real operational tests for every discovered AI/model before PASS",
+    "HF-03 identify and list Code-specialized models with evidence",
+    "HF-04 research/model mirror-replica strategy",
+    "HF-05 design >50 API/identity routing sequentially using models/replicas/mirrors",
+    "HF-06 compute sizing using the three HF compute resources/processors referenced by the project",
+    "HF-07 small-agent model strategy plus larger models",
+    "HF-08 MCP + API-key boundary without exposing secrets",
+    "HF-09 Hugging Face skills integration",
+    "HF-10 GitHub + Hugging Face integration using authorized credentials only",
+    "HF-11 evidence-based alternatives/final plan before blind build",
+    "HF-12 repair HF scheduled watchdog currently evidenced failing on stale 404 source path",
+    "W1 repository owner consolidation and duplicate/orphan classification",
+    "W2 OmniRoute/AnyDoc runtime adapters + Orca/Omarchy validation",
+    "W3 GitHub/HF/Claude/Codex/MCP/memory runtime auth/connectivity",
+    "W4 global E2E and failure-path validation",
+    "W5 architecture/STATE/PLAN/BITACORA/CHECKPOINT/Handoff final synchronization"
+  ],
+  "closure_rule": "No VERIFIED_CLOSED without path + commit/blob SHA/diff/log/URL/test/read-back as applicable."
+}
