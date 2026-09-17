@@ -33,9 +33,10 @@
     "state_sync_commit": "ec8f057c5171d3e2007fb3da855b77ebf8e6ff47",
     "bitacora_sync_commit": "b067cf06e3a54939dec838f7ef1ad24695905dd2",
     "inventory_path": "forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json",
-    "inventory_commit": "a5a3e02cea01d753a495b5090c4ae46146200a64"
+    "inventory_commit": "a5a3e02cea01d753a495b5090c4ae46146200a64",
+    "litellm_audit_commit": "d155e901ed489de0d36a2ba948cf6b44e0310e30"
   },
-  "current_node": "RIU-0071_FORENSIC_XRAY_AUTHORITATIVE_INVENTORY",
+  "current_node": "RIU-0073_HF_BRIDGE_CONSOLIDATION_AUDIT",
   "updated_at": "2026-09-17",
   "root_entries_accounted": 28,
   "external_components_accounted": [
@@ -52,7 +53,8 @@
     "STATE_PLAN_BITACORA_SYNC": true,
     "ROOT_28_ACCOUNTED": true,
     "FULL_COMPONENT_CONTAINER_XRAY": false,
-    "DEDUP_ORPHAN_RECONCILIATION": false
+    "DEDUP_ORPHAN_RECONCILIATION": false,
+    "DEDUP_LITELLM_AUDIT": true
   },
   "documentation_sync": "VERIFIED_READBACK_PASS"
 }
