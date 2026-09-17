@@ -97,3 +97,13 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - `litellm`: 9.795 files; no SOURCE_* provenance markers found in its complete tree; includes `litellm_0001.zip..0006.zip`.
 - Compare: 9.784 common paths; 8.930 identical blobs; **854 differing blobs**; 193 only in LiteLLM; 11 only in litellm.
 - Decision: preserve both. `LiteLLM` = canonical donor candidate by provenance. `litellm` = legacy snapshot pending origin/use. No deletion authorized.
+
+
+## RIU-0073 — HF BRIDGE CONSOLIDATION — ✅ PASS AUDIT ONLY
+- Canonical owner: `router inteligente universal/integration/huggingface/`.
+- `dispatcher.py`: deterministic HF1→HF2→HF3 scheduler donor.
+- `hf_jobs_adapter.py`: RAM-aware scheduling + Job launch; overlaps canonical submission.
+- `router_hf_bridge.py`: direct multi-provider donor/legacy; cannot own routing outside RedUniversal; declared protocol set exceeds executable implementation in this file.
+- Existing connection tests are only marker files and do not prove scheduler/failover.
+- Audit: `forensics/RIU-0073-HF-BRIDGE-CONSOLIDATION-AUDIT-2026-09-17.md`, commit `48b91296d373dcc8daba4bf51d8c7c63d3589c4c`.
+- Next: adapt scheduler into canonical owner + focused tests + one real HF Job smoke test.
