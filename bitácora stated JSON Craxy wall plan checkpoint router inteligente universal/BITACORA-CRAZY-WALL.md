@@ -139,3 +139,11 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - No delete, no secret disclosure, no historical code resurrection.
 - Replacement schedule remains GAP until explicit QUEUE_FILE/STATE_FILE/INDEX_PATH/DEST_* contract exists.
 - Evidence: `forensics/RIU-0076-HF-WATCHDOG-404-ROOT-CAUSE-2026-09-17.md`, commit `ddb993d0f898a51b2f7372cc8e59cc269fdca220`.
+
+
+## RIU-0077 — HF CODE MODEL CLASSIFICATION — ✅ PASS CLASSIFICATION
+- M04 `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` = **CODE_SPECIALIZED**, fresh Hub base model `Qwen/Qwen3-Coder-30B-A3B-Instruct`.
+- M15 `dphn/dolphin-2.9.1-yi-1.5-34b` = **CODE_CAPABLE_TRAINING_EVIDENCE / generalist**, with CodeFeedback + dolphin-coder datasets.
+- Other 18 slots not promoted to Code-specialized without explicit evidence.
+- Runtime Code PASS remains open; classification != operational readiness.
+- Audit commit: `fad57842d3d677010c581c7ddedc67fd95d7797c`.
