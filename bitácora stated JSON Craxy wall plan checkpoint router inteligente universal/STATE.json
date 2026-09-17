@@ -7,7 +7,7 @@
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
   "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0078_HF_MIRROR_REPLICA_RESEARCH",
+  "current_node": "RIU-0079_ROUTING_OVER_50_IDENTITIES_PLAN",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -33,7 +33,8 @@
     "RIU_0073_HF_BRIDGE_OWNERSHIP_AUDIT_PASS",
     "RIU_0074_HF_CANONICAL_SCHEDULER_TESTED_STABLE_5X",
     "RIU_0076_HF_OBSOLETE_WATCHDOG_404_SUSPENDED_VERIFIED",
-    "RIU_0077_HF_CODE_MODEL_CLASSIFICATION_PASS"
+    "RIU_0077_HF_CODE_MODEL_CLASSIFICATION_PASS",
+    "RIU_0078_HF_MIRROR_REPLICA_RESEARCH_DESIGN_PASS"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -50,7 +51,6 @@
     "XRAY_COMPONENT_CONTAINER_INVENTORY",
     "HF_FULL_INVENTORY",
     "HF_MODEL_OPERATIONAL_TESTS",
-    "HF_MIRROR_REPLICA_RESEARCH",
     "ROUTING_OVER_50_IDENTITIES_PLAN",
     "HF_COMPUTE_SIZING",
     "AGENT_MODEL_MIX",
@@ -79,7 +79,9 @@
     "FULL_COMPONENT_CONTAINER_XRAY_VERIFIED",
     "DEDUP_ORPHAN_RECONCILIATION_VERIFIED",
     "HF_CLOSURE_PLAN_VERIFIED",
-    "HF_CANONICAL_REPLACEMENT_SCHEDULE_INPUTS_AND_TEST"
+    "HF_CANONICAL_REPLACEMENT_SCHEDULE_INPUTS_AND_TEST",
+    "HF_MIRROR_RUNTIME_DESTINATION_AND_TEST",
+    "HF_ENDPOINT_REPLICA_RUNTIME_CONFIG_TEST"
   ],
   "connectivity": {
     "root": "conectividad con Router inteligente universal",
@@ -158,7 +160,8 @@
     "frontend commit e0b3cd3bc9e33c8184009d5507f2e1e4bd6bfb49 intentionally removed obsolete HF ZIP watchdog root",
     "HF scheduled 6aa1af2821047bf1b0370810 suspended=true via inspect + scheduled ps",
     "RIU-0077 Code classification audit commit fad57842d3d677010c581c7ddedc67fd95d7797c",
-    "HF-M04 CODE_SPECIALIZED by explicit Qwen3-Coder base model; HF-M15 code-trained generalist; no runtime Code PASS claimed"
+    "HF-M04 CODE_SPECIALIZED by explicit Qwen3-Coder base model; HF-M15 code-trained generalist; no runtime Code PASS claimed",
+    "RIU-0078 mirror/replica architecture commit 9b0595507649d495651d7e5065bc7b15087a3d6f"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -181,11 +184,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0077",
-    "decision": "ONE_CODE_SPECIALIZED_PLUS_ONE_CODE_TRAINED_GENERALIST",
-    "verify_final": "PASS_CLASSIFICATION_ONLY_RUNTIME_OPEN",
-    "cross_check": "NO_OTHER_REGISTRY_SLOT_PROMOTED_WITHOUT_EXPLICIT_HUB_EVIDENCE",
-    "coda": "NEXT_RIU_0078_HF_MIRROR_REPLICA_RESEARCH"
+    "id": "RIU-0078",
+    "decision": "SEPARATE_REPO_MIRROR_ENDPOINT_REPLICA_AND_REVISION_SNAPSHOT",
+    "verify_final": "PASS_RESEARCH_DESIGN_NO_RUNTIME_DUPLICATION_CLAIM",
+    "cross_check": "RUNTIME_MIRROR_REQUIRES_EXPLICIT_DESTINATION_AND_ENDPOINT_COST_POLICY",
+    "coda": "NEXT_RIU_0079_ROUTING_OVER_50_IDENTITIES_PLAN"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
