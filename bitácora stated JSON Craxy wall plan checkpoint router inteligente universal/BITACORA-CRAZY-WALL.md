@@ -90,3 +90,10 @@ PASS 2026-09-17: README arquitectura, PLAN-TAREAS, STATE, BITÁCORA y CHECKPOINT
 - Inventario: `forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json`, commit `a5a3e02cea01d753a495b5090c4ae46146200a64`.
 - Cola del chat recuperada: inventario HF, pruebas modelos, Code, mirrors, >50 identidades, compute, mix agentes, MCP/API, skills, GitHub+HF, watchdog 404, externos, auth y E2E.
 Estado: **ACTIVE / NO GLOBAL CLOSE**.
+
+
+## RIU-0072 — LITELLM DUPLICATE AUDIT — ✅ PASS AUDIT / NO DELETE
+- `LiteLLM`: 9.977 files; explicit SOURCE_URL `https://github.com/BerriAI/litellm`; SOURCE_COMMIT `658f50663d19f613a3f5caf998168da019764ad8`.
+- `litellm`: 9.795 files; no SOURCE_* provenance markers found in its complete tree; includes `litellm_0001.zip..0006.zip`.
+- Compare: 9.784 common paths; 8.930 identical blobs; **854 differing blobs**; 193 only in LiteLLM; 11 only in litellm.
+- Decision: preserve both. `LiteLLM` = canonical donor candidate by provenance. `litellm` = legacy snapshot pending origin/use. No deletion authorized.
