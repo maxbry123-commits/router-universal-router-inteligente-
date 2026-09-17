@@ -70,7 +70,7 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 5. **LEGACY-ROUTER-CORES** — comparar `router inteligente software/componentes todos/router core*` contra runtime canónico; donor/legacy sin segundo owner.
 
 ### W2 — Hugging Face / modelos / routing
-6. **HF-SCHEDULER ✅** — scheduler canónico HF1→HF2→HF3 en `integration/huggingface/hf_scheduler.py`; 5/5 rondas estables, 7 tests por ronda, Job `6aac7c9eb1dc2b62dc58faf9` COMPLETED.\n7. **HF-INVENTORY** — modelos + Jobs + scheduled + remote refs/registry; privado no se infiere de público.
+6. **HF-SCHEDULER ✅** — scheduler canónico HF1→HF2→HF3 en `integration/huggingface/hf_scheduler.py`; 5/5 rondas estables, 7 tests por ronda, Job `6aac7c9eb1dc2b62dc58faf9` COMPLETED.\n7. **HF-INVENTORY 🟡 PARTIAL** — fresh: OAuth COMAND-CENTER-1; ventana 100 Jobs (8 completed/1 canceled/91 error), 2 scheduled, 3 Spaces públicos, registry 20 slots; privado + historial uncapped siguen GAP. Evidencia `forensics/RIU-0075-HF-INVENTORY-PARTIAL-2026-09-17.md`.
 8. **HF-MODEL-RUNTIME** — prueba real por modelo descubierto antes de operational PASS.
 9. **HF-CODE-MODELS** — clasificación Code con model card/tags/prueba, no nombre solamente.
 10. **HF-MIRROR-REPLICA** — estrategia de mirror/replica con provenance y rollback.
