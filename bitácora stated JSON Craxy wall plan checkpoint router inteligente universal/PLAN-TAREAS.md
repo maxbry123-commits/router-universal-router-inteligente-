@@ -70,10 +70,10 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 5. **LEGACY-ROUTER-CORES** — comparar `router inteligente software/componentes todos/router core*` contra runtime canónico; donor/legacy sin segundo owner.
 
 ### W2 — Hugging Face / modelos / routing
-6. **HF-INVENTORY** — modelos + Jobs + scheduled + remote refs/registry; privado no se infiere de público.
-7. **HF-MODEL-RUNTIME** — prueba real por modelo descubierto antes de operational PASS.
-8. **HF-CODE-MODELS** — clasificación Code con model card/tags/prueba, no nombre solamente.
-9. **HF-MIRROR-REPLICA** — estrategia de mirror/replica con provenance y rollback.
+6. **HF-SCHEDULER ✅** — scheduler canónico HF1→HF2→HF3 en `integration/huggingface/hf_scheduler.py`; 5/5 rondas estables, 7 tests por ronda, Job `6aac7c9eb1dc2b62dc58faf9` COMPLETED.\n7. **HF-INVENTORY** — modelos + Jobs + scheduled + remote refs/registry; privado no se infiere de público.
+8. **HF-MODEL-RUNTIME** — prueba real por modelo descubierto antes de operational PASS.
+9. **HF-CODE-MODELS** — clasificación Code con model card/tags/prueba, no nombre solamente.
+10. **HF-MIRROR-REPLICA** — estrategia de mirror/replica con provenance y rollback.
 10. **ROUTING-50-IDENTITIES** — diseño secuencial >50 APIs/identidades usando modelos/replicas/mirrors; no simultaneidad obligatoria.
 11. **HF-COMPUTE** — sizing de cómputo considerando los 3 recursos/procesadores HF del proyecto.
 12. **AGENT-MODEL-MIX** — modelos pequeños para agentes + modelos grandes, con criterios medidos.
