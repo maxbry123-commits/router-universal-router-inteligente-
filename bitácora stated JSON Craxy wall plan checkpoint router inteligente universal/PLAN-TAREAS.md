@@ -65,7 +65,7 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 ### W1 — Forense/organización
 1. **XRAY-ROOT-28** — 28/28 raíces contabilizadas; mantener owner y clasificación.
 2. **XRAY-COMPONENTS** — continuar inventario por contenedores porque el árbol recursivo global está truncado; inventario base: `forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json`.
-3. **DEDUP-LITELLM** — comparar `LiteLLM` vs `litellm` por provenance/tree/content; no borrar hasta equivalencia demostrada.
+3. **DEDUP-LITELLM ✅ AUDITADO / NO DELETE** — árboles divergentes; `LiteLLM` tiene SOURCE_URL + SOURCE_COMMIT `658f5066…`; `litellm` carece de esos marcadores y contiene ZIP parciales. Preservar ambos; `LiteLLM` canonical donor candidate, `litellm` legacy snapshot hasta resolver origen/uso.
 4. **HF-BRIDGE-CONSOLIDATION** — comparar `integration/huggingface`, `coneccion huggueface Github/router` y `huggueface/bridge`; una sola entrada canónica.
 5. **LEGACY-ROUTER-CORES** — comparar `router inteligente software/componentes todos/router core*` contra runtime canónico; donor/legacy sin segundo owner.
 
