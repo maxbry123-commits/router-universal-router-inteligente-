@@ -44,14 +44,14 @@ Estas herramientas se incorporan al mapa arquitectónico como componentes extern
 - Boundary propuesto: `Operador -> Orca -> agentes/worktrees -> GitHub/MCP -> Router`; Orca no reemplaza el loop `tel.workflow/v3` ni el ownership de routing.
 - Encaje: útil para visualizar terminales, diffs, agentes y trabajo paralelo mientras el Router conserva validación y cierre fail-closed.
 - Estado: `RESEARCH_VERIFIED / INTEGRATION_CANDIDATE`; falta probar el boundary MCP/CLI con RIU.
-- Fuentes: https://www.onorca.dev/ · https://github.com/stablyai/orca
+- Fuentes: https://www.onorca.dev/ · https://github.com/saiichi/orca
 
 ### Omarchy — workstation Linux opcional
 - Rol RIU: **entorno de operador/desarrollo opcional**, no dependencia del runtime del Router.
 - Boundary propuesto: `Omarchy host -> herramientas/CLI/agentes -> Router`; puede alojar la estación de trabajo donde corran Git, terminales y agentes.
 - Upstream: distribución Linux de DHH basada en Arch, orientada a productividad/agentes.
 - Estado: `RESEARCH_VERIFIED / HOST_OPTION`; no debe introducir lógica de routing ni convertirse en requisito para desplegar RIU.
-- Fuentes: https://omarchy.org/ · https://github.com/omacom/omarchy
+- Fuentes: https://omarchy.org/ · https://github.com/basecamp/omarchy
 
 ### AnyDoc — normalización documental a Markdown
 - Rol RIU: **adapter de ingestión** para convertir documentos a Markdown antes de entregarlos a la capa de validación/contexto.
@@ -100,3 +100,60 @@ C11 Semantic Cache, C12 Cost Optimizer y C13 CodeSandbox dual siguen `ADAPT_CAND
 
 ## Último delta LOOP
 RIU-0031: Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_AUDIT_ONLY_NO_MODEL_CLAIM`. Progreso 96%; Paso 2 ACTIVE; Paso 3 PENDING.
+
+
+## Auditoría forense X-Ray de raíz — 2026-09-17
+Snapshot base auditado: `main@d001d96cfa382888d409255e5dd3e9d2b6372860`. Se detectaron **29 entradas raíz**. La regla es: raíz presente != runtime integrado; cada entrada recibe un rol, una decisión y un gate de cierre.
+
+| # | Entrada raíz | Rol X-Ray | Decisión de integración / cierre |
+|---|---|---|---|
+| 1 | `.github/` | CI/CD y automatización | REUSE; workflows como ejecutores, nunca fuente de contrato. Cierre por run + commit/read-back. |
+| 2 | `CLAUDE.md` | política de agente | REUSE; mantener instrucciones raíz y validar workflow Claude por escritura inocua/read-back. |
+| 3 | `Documentos proyectos router inteligente universal/` | documentación, contratos y despliegue | REUSE/CONSOLIDATE; enlazar desde arquitectura, evitar duplicar estado operativo. |
+| 4 | `Download code router inteligente universal/` | donor/download staging | QUARANTINE-DONOR; sólo fuentes con URL/SHA pasan a adapters; nunca importar ciegamente. |
+| 5 | `Fast api key de los modelos de ai en huggueface.md` | guía HF/API | DOC-ONLY; conservar referencias de secretos, jamás valores. |
+| 6 | `Github coneccion/` | workflows/conexión GitHub histórica | CONSOLIDATE con `conectividad...`; no crear segundo fabric. |
+| 7 | `Handoff router inteligente universal.md` | handoff operativo | REUSE; resumen de continuidad, sincronizado con STATE/bitácora. |
+| 8 | `PARCHE-RECUPERACION-ROUTER-INTELIGENTE-UNIVERSAL.md` | recuperación | RECOVERY-ONLY; usar sólo ante GAP con evidencia. |
+| 9 | `Readme arquitectura router inteligente universal/` | arquitectura canónica | SOURCE-OF-TRUTH documental; este README recibe el mapa X-Ray. |
+| 10 | `Readme Índice componentes.md` | índice C01-C23 | REUSE; mantener estado técnico, cruzar con pruebas frescas. |
+| 11 | `Readme Índice de modelos de ai huggueface.md` | inventario HF | REVERIFY; cruzar con Jobs/Hub antes de promover modelos. |
+| 12 | `Yaiwes Cognitive Control Plane/` | policy/context/control | ADAPT; puede decidir contexto/policy, pero no reemplaza `RedUniversal`. |
+| 13 | `bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/` | ledger/estado/plan | SOURCE-OF-TRUTH operativo; STATE + PLAN + BITÁCORA deben permanecer consistentes. |
+| 14 | `coneccion huggueface Github/` | bridge HF↔GitHub | CONSOLIDATE; reutilizar tests/registry, evitar duplicar conectividad. |
+| 15 | `conectividad con Router inteligente universal/` | fabric canónico | REUSE; conservar registry/puentes como única tela de conectividad. |
+| 16 | `dataset Yaiwes/` | datasets, schemas, evidence | REUSE bajo schema/manifest; separar datos de control/runtime. |
+| 17 | `extraction-result.json` | evidencia de extracción | EVIDENCE-ONLY; inmutable salvo nueva extracción trazable. |
+| 18 | `forensics/` | auditoría/forense | REUSE; destino de informes y hashes, no runtime. |
+| 19 | `huggueface/` | bridge/manifest HF | CONSOLIDATE con `integration/huggingface`; una sola API de entrada. |
+| 20 | `pre-audit.json` | evidencia pre-audit | EVIDENCE-ONLY; conservar para comparación antes/después. |
+| 21 | `readme Handoff indice componentes.md` | handoff de componentes | CONSOLIDATE; referencias al índice canónico, no estado paralelo. |
+| 22 | `readme indice router inteligente universal.md` | índice raíz | REUSE; navegación únicamente. |
+| 23 | `readme índice de componentes/` | índice documental alterno | DEDUP-CANDIDATE; mantener sólo si aporta datos no presentes en índice canónico. |
+| 24 | `router inteligente software/` | inventario legado de componentes | DONOR/LEGACY; extraer sólo por contrato y evidencia. |
+| 25 | `router inteligente universal/` | **runtime canónico** | OWNER; adapters/domain/enchufe/engine/gateway/integration/red/security/tests/verifier viven aquí. |
+| 26 | `scripts/` | utilidades auth/repair | REUSE con fail-closed; secretos sólo vía entorno/Actions. |
+| 27 | `➡️📂 Wordflow LOOP router inteligente universal/` | método LOOP | REUSE como guía de ejecución; no segundo estado. |
+| 28 | `➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/` | motores de archivos | REUSE-CONTROLLED; checks de hash/collision/read-back obligatorios. |
+| 29 | `.github/workflows` (contenido de #1) | ejecución programada | CHILD-OF-.github; cualquier watchdog/CI debe reportar evidencia y no declarar PASS por calendario. |
+
+### Componentes externos añadidos al plan
+- **OmniRoute** — upstream/package verificado: https://github.com/diegosouzapw/OmniRoute y https://www.npmjs.com/package/omniroute . v3.8.50 publica catálogo de 352 proveedores, endpoint OpenAI-compatible y scheduling sensible a cuota. Integración RIU: `connector_registry -> adapter_omniroute -> OmniRoute`. Gate: health + fallback controlado + rate-limit simulation + read-back; nunca prometer “cuota infinita”.
+- **Orca ADE** — upstream gráfico verificado: https://github.com/saiichi/orca y https://www.onorca.dev/ . Controla Codex, Claude Code y otros agentes en worktrees paralelos. Integración RIU: control-plane de desarrollo externo; gate: abrir repo RIU, lanzar 2 agentes aislados, revisar diff, prohibir merge sin verifier.
+- **Omarchy** — upstream verificado: https://github.com/basecamp/omarchy y https://omarchy.org/ . Host Arch Linux de DHH; integración sólo como workstation opcional. Gate: checklist host/CLI/Git/MCP; nunca requisito del runtime.
+- **AnyDoc** — upstream verificado: https://github.com/firecrawl/anydoc . Rust -> Markdown para Word/PowerPoint/Excel/OpenDocument/RTF/EPUB/CSV/PDF. Integración RIU: `archivo -> adapter_anydoc -> Markdown -> validator/ingest`. Gate: corpus mínimo multiformato + fallo controlado + hash input/output.
+
+### Plan actualizado de integración — máximo 3 pasos por nodo
+1. **Planificar:** contrato/boundary por componente, ruta owner y evidencia esperada; REUSE > PATCH > ADAPT > GENERATE.
+2. **Ejecutar:** materializar sólo adapter/config/documentación mínima dentro del owner correcto; ningún componente externo adquiere routing ownership.
+3. **Validar/cerrar:** prueba real + fallo controlado + URL/SHA/log/read-back; repetir checks externos hasta 10x cuando haya riesgo de flakiness.
+
+### Olas de cierre
+- **W0 Preservación:** congelar snapshot X-Ray, hashes y bitácora; no borrar duplicados todavía.
+- **W1 Consolidación:** declarar owners canónicos (runtime, connectivity, state, docs, evidence) y marcar legacy/donor.
+- **W2 Externos:** OmniRoute y AnyDoc como adapters; Orca como ADE externo; Omarchy como host opcional.
+- **W3 Credenciales/connectivity:** cerrar Claude/Codex/GitHub/HF/MCP/memoria sin exponer secretos.
+- **W4 Final:** tests E2E + read-back + auditoría de duplicación + STATE/PLAN/BITÁCORA consistentes => `VERIFIED_CLOSED`.
+
+### Gate final RIU-0070
+`ROOT_29_ACCOUNTED + EXTERNAL_4_BOUNDARIES_DEFINED + NO_ROUTING_OWNERSHIP_CONFLICT + AUTH_RUNTIME_VERIFIED + CONNECTIVITY_GLOBAL_E2E_PASS + STATE_PLAN_BITACORA_SYNC`.
