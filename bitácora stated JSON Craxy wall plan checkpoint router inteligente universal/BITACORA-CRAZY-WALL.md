@@ -107,3 +107,13 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - Existing connection tests are only marker files and do not prove scheduler/failover.
 - Audit: `forensics/RIU-0073-HF-BRIDGE-CONSOLIDATION-AUDIT-2026-09-17.md`, commit `48b91296d373dcc8daba4bf51d8c7c63d3589c4c`.
 - Next: adapt scheduler into canonical owner + focused tests + one real HF Job smoke test.
+
+
+## RIU-0074 — HF CANONICAL SCHEDULER — ✅ TESTED STABLE
+- Canonical code: `router inteligente universal/integration/huggingface/hf_scheduler.py`.
+- Submission remains delegated to the existing canonical submitter; no second `run_job` implementation added.
+- Tests: `router inteligente universal/tests/test_hf_scheduler.py`.
+- Exact commit test: `83a7636639a7dade2e1abfcb5366ad99e9884360`.
+- HF Job `6aac7c9eb1dc2b62dc58faf9` = COMPLETED; 5/5 runs, 7 passed each (0.01–0.02s).
+- Heavy clone Job `6aac7c2d5c02253cfb1452bc` canceled after being superseded by exact-file test.
+- Closure scope: scheduler logic/boundary only. Full HF inventory/model runtime remains open.
