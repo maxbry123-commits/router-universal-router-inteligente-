@@ -80,7 +80,7 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 13. **HF-MCP-API** — MCP + API key por secret refs; sin valores en repo/chat.
 14. **HF-SKILLS** — integrar skills HF verificadas.
 15. **GITHUB-HF** — conexión autorizada GitHub+HF y evidencia runtime.
-16. **HF-WATCHDOG-404** — localizar fuente vigente, one-shot PASS, repetir estabilidad y sólo después reparar schedule.
+16. **HF-WATCHDOG-404 ✅ INCIDENTE RESUELTO / REPLACEMENT GAP** — causa raíz: commit frontend `e0b3cd3b…` eliminó intencionalmente la raíz antigua; Scheduled `6aa1af28…` quedó stale y fue suspendido con 2× read-back. Reemplazo canónico queda GAP hasta definir QUEUE/STATE/INDEX/DEST explícitos.
 
 ### W3 — Externos
 17. **OMNIROUTE** — adapter downstream, health/fallback/rate-limit test.
