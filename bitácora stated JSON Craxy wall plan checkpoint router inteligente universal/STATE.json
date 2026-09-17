@@ -7,7 +7,7 @@
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
   "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0076_HF_WATCHDOG_404_SOURCE_RECOVERY",
+  "current_node": "RIU-0077_HF_CODE_MODEL_CLASSIFICATION",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -31,7 +31,8 @@
     "RIU_0070_DOCUMENTATION_SYNC_READBACK_PASS",
     "RIU_0072_LITELLM_DUPLICATE_AUDIT_NO_DELETE_PASS",
     "RIU_0073_HF_BRIDGE_OWNERSHIP_AUDIT_PASS",
-    "RIU_0074_HF_CANONICAL_SCHEDULER_TESTED_STABLE_5X"
+    "RIU_0074_HF_CANONICAL_SCHEDULER_TESTED_STABLE_5X",
+    "RIU_0076_HF_OBSOLETE_WATCHDOG_404_SUSPENDED_VERIFIED"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -57,8 +58,7 @@
     "HF_SKILLS_INTEGRATION",
     "GITHUB_HF_RUNTIME",
     "HF_WATCHDOG_404_REPAIR",
-    "HF_FULL_INVENTORY_PRIVATE_AND_UNCAPPED_GAP",
-    "HF_WATCHDOG_404_SOURCE_RECOVERY"
+    "HF_FULL_INVENTORY_PRIVATE_AND_UNCAPPED_GAP"
   ],
   "pending": [
     "CLAUDE_ROOT_WRITE_VERIFIED",
@@ -78,7 +78,8 @@
     "ROOT_28_ACCOUNTED_VERIFIED",
     "FULL_COMPONENT_CONTAINER_XRAY_VERIFIED",
     "DEDUP_ORPHAN_RECONCILIATION_VERIFIED",
-    "HF_CLOSURE_PLAN_VERIFIED"
+    "HF_CLOSURE_PLAN_VERIFIED",
+    "HF_CANONICAL_REPLACEMENT_SCHEDULE_INPUTS_AND_TEST"
   ],
   "connectivity": {
     "root": "conectividad con Router inteligente universal",
@@ -152,7 +153,10 @@
     "Redundant full-clone HF Job 6aac7c2d5c02253cfb1452bc canceled after exact-file test superseded it",
     "RIU-0075 partial inventory audit forensics/RIU-0075-HF-INVENTORY-PARTIAL-2026-09-17.md commit 382b8e8b342cad59505a1ccbd7dc5f3dec8aa3f8",
     "Fresh HF visible window: 100 Jobs = 8 COMPLETED / 1 CANCELED / 91 ERROR; 2 scheduled jobs",
-    "Fresh watchdog repeat-check: jobs 6aac7b7e..., 6aac77fa..., 6aac7476... each HTTP 404"
+    "Fresh watchdog repeat-check: jobs 6aac7b7e..., 6aac77fa..., 6aac7476... each HTTP 404",
+    "RIU-0076 audit forensics/RIU-0076-HF-WATCHDOG-404-ROOT-CAUSE-2026-09-17.md commit ddb993d0f898a51b2f7372cc8e59cc269fdca220",
+    "frontend commit e0b3cd3bc9e33c8184009d5507f2e1e4bd6bfb49 intentionally removed obsolete HF ZIP watchdog root",
+    "HF scheduled 6aa1af2821047bf1b0370810 suspended=true via inspect + scheduled ps"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -175,11 +179,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0075",
-    "decision": "HF_INVENTORY_PARTIAL_FRESH_ACCOUNT_PRIVATE_AND_UNCAPPED_HISTORY_UNRESOLVED",
-    "verify_final": "PARTIAL_NO_CLOSE",
-    "cross_check": "PUBLIC_0_DOES_NOT_IMPLY_PRIVATE_0; CURRENT_JOB_WINDOW_CAPPED_AT_100",
-    "coda": "CONTINUE_RIU_0076_WATCHDOG_SOURCE_RECOVERY_WHILE_INVENTORY_GAP_REMAINS"
+    "id": "RIU-0076",
+    "decision": "OBSOLETE_HF_WATCHDOG_SUSPENDED_DO_NOT_RESTORE_DELETED_ENGINE",
+    "verify_final": "PASS_INCIDENT_CONTAINMENT_2X_READBACK",
+    "cross_check": "CANONICAL_MOTOR_REPLACEMENT_REQUIRES_EXPLICIT_QUEUE_STATE_INDEX_DEST_INPUTS",
+    "coda": "NEXT_RIU_0077_HF_CODE_MODEL_CLASSIFICATION"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
