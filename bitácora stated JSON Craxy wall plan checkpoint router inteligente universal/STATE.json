@@ -7,7 +7,7 @@
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
   "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0071_FORENSIC_XRAY_AUTHORITATIVE_INVENTORY",
+  "current_node": "RIU-0073_HF_BRIDGE_CONSOLIDATION_AUDIT",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -28,7 +28,8 @@
     "CLAUDE_DIRECT_ROOT_EDITOR_WORKFLOW_MATERIALIZED",
     "CLAUDE_ROOT_POLICY_MATERIALIZED",
     "CLAUDE_SETUP_TOKEN_LOG_REDACTION_FIXED",
-    "RIU_0070_DOCUMENTATION_SYNC_READBACK_PASS"
+    "RIU_0070_DOCUMENTATION_SYNC_READBACK_PASS",
+    "RIU_0072_LITELLM_DUPLICATE_AUDIT_NO_DELETE_PASS"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -43,7 +44,6 @@
     "OMARCHY_HOST_CHECKLIST",
     "ANYDOC_INGEST_ADAPTER",
     "XRAY_COMPONENT_CONTAINER_INVENTORY",
-    "DEDUP_LITELLM_PROVENANCE_COMPARE",
     "HF_BRIDGE_CONSOLIDATION_AUDIT",
     "HF_FULL_INVENTORY",
     "HF_MODEL_OPERATIONAL_TESTS",
@@ -140,7 +140,9 @@
     "RIU-0070 read-back PASS: architecture/PLAN/STATE/BITACORA/CHECKPOINT markers present on main",
     "RIU-0071 root fresh-read corrected root count to 28",
     "RIU-0071 component inventory commit a5a3e02cea01d753a495b5090c4ae46146200a64",
-    "Recursive tree probe returned 35979 entries with truncated=true; total file inventory remains open"
+    "Recursive tree probe returned 35979 entries with truncated=true; total file inventory remains open",
+    "RIU-0072 LiteLLM vs litellm full-tree comparison: 9784 common paths, 8930 same blobs, 854 differing blobs; preserve both",
+    "LiteLLM SOURCE_URL=https://github.com/BerriAI/litellm SOURCE_COMMIT=658f50663d19f613a3f5caf998168da019764ad8"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -163,11 +165,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0071",
-    "decision": "AUTHORITATIVE_ROOT_CORRECTION_AND_FULL_PENDING_QUEUE_RECONCILIATION",
-    "verify_final": "ROOT_28_FRESH_READ_PASS; COMPONENT_DEEP_XRAY_AND_RUNTIME_GATES_PENDING",
-    "cross_check": "PLAN_STATE_HANDOFF_DRIFT_FOUND_AND_BEING_REPAIRED",
-    "coda": "ACTIVE_UNTIL_ALL_COMPONENTS_TASKS_AUTH_E2E_AND_FINAL_SYNC_PASS"
+    "id": "RIU-0072",
+    "decision": "LITELLM_DUPLICATE_CANDIDATE_IS_VERSION_DIVERGENT_PRESERVE_BOTH",
+    "verify_final": "PASS_AUDIT_NO_DELETE",
+    "cross_check": "PROVENANCE_PRESENT_ONLY_ON_LiteLLM; SECOND_SNAPSHOT_ORIGIN_PENDING",
+    "coda": "NEXT_RIU_0073_HF_BRIDGE_CONSOLIDATION_AUDIT"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
