@@ -161,7 +161,39 @@
           "tree_sha": "9820f5fdbea52e9744f5fbb9a93faa5b6f1f354e"
         }
       ],
-      "state": "PENDING_CONTENT_PROVENANCE_COMPARISON_NO_DELETE"
+      "state": "AUDITED_VERSION_DIVERGENT_NO_DELETE",
+      "evidence": {
+        "LiteLLM": {
+          "files": 9977,
+          "tree_entries": 12052,
+          "bytes": 159479094,
+          "source_url": "https://github.com/BerriAI/litellm",
+          "source_commit": "658f50663d19f613a3f5caf998168da019764ad8",
+          "provenance_files_present": true
+        },
+        "litellm": {
+          "files": 9795,
+          "tree_entries": 11837,
+          "bytes": 218583915,
+          "provenance_files_present": false,
+          "zip_parts": [
+            "litellm_0001.zip",
+            "litellm_0002.zip",
+            "litellm_0003.zip",
+            "litellm_0004.zip",
+            "litellm_0005.zip",
+            "litellm_0006.zip"
+          ]
+        },
+        "comparison": {
+          "common_paths": 9784,
+          "same_blobs": 8930,
+          "different_blobs": 854,
+          "only_LiteLLM": 193,
+          "only_litellm": 11
+        }
+      },
+      "decision": "PRESERVE_BOTH; LiteLLM is canonical donor candidate because provenance is explicit; litellm remains legacy snapshot pending origin/use audit."
     }
   ],
   "legacy_component_roots": [
