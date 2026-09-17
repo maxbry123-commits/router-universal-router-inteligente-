@@ -78,3 +78,15 @@ Estado actual: **ACTIVE / GAP runtime**.
 
 ### READ-BACK RIU-0070
 PASS 2026-09-17: README arquitectura, PLAN-TAREAS, STATE, BITÁCORA y CHECKPOINT fueron releídos desde `main`; los cinco marcadores RIU-0070 están presentes. Este PASS cierra sólo la **sincronización documental/estado**. Adapters externos, auth runtime y E2E global permanecen abiertos.
+
+
+## RIU-0071 — FORENSIC X-RAY AUTORITATIVO — NODO ACTIVO
+- Fresh HEAD inicial: `55b8136a8f19d3bf9dda5f5febe0398ba5f07ff4`.
+- Corrección: raíz real = **28**, no 29; `.github/workflows` era hijo, no raíz.
+- Probe recursivo: 35.979 entradas devueltas, `truncated=true`; no se declara inventario total de archivos.
+- Inventario por contenedores: runtime top-level=11; donor OSS dirs=62; legacy component roots=5.
+- Duplicado candidato: `LiteLLM` / `litellm`; prohibido borrar antes de provenance/content comparison.
+- Bridges HF candidatos a consolidación: `integration/huggingface`, `coneccion huggueface Github/router`, `huggueface/bridge`.
+- Inventario: `forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json`, commit `a5a3e02cea01d753a495b5090c4ae46146200a64`.
+- Cola del chat recuperada: inventario HF, pruebas modelos, Code, mirrors, >50 identidades, compute, mix agentes, MCP/API, skills, GitHub+HF, watchdog 404, externos, auth y E2E.
+Estado: **ACTIVE / NO GLOBAL CLOSE**.
