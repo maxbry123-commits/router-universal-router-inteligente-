@@ -117,3 +117,14 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - HF Job `6aac7c9eb1dc2b62dc58faf9` = COMPLETED; 5/5 runs, 7 passed each (0.01–0.02s).
 - Heavy clone Job `6aac7c2d5c02253cfb1452bc` canceled after being superseded by exact-file test.
 - Closure scope: scheduler logic/boundary only. Full HF inventory/model runtime remains open.
+
+
+## RIU-0075 — HF INVENTORY — 🟡 PARTIAL / GAP
+- Fresh OAuth identity: `COMAND-CENTER-1`; scopes jobs/read-repos/read-mcp (no secret values).
+- Direct visible window: **100 Jobs** = 8 COMPLETED / 1 CANCELED / 91 ERROR; request `limit=0` remains capped at 100.
+- Scheduled Jobs: 2; active watchdog `6aa1af2821047bf1b0370810` every 15 min, second suspended.
+- Public no-token Job `6aac7d015c02253cfb1452fd`: 0 public models, 0 public datasets, 3 Spaces; does not prove private absence.
+- Router registry: 20 slots in `model_registry.json`.
+- 3 fresh watchdog executions reproduce HTTP 404.
+- Evidence: `forensics/RIU-0075-HF-INVENTORY-PARTIAL-2026-09-17.md`, commit `382b8e8b342cad59505a1ccbd7dc5f3dec8aa3f8`.
+- GAP remains: private Hub resources + uncapped current Job history + dedup model refs.
