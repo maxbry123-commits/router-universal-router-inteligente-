@@ -6,8 +6,8 @@
   "branch": "main",
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
-  "status": "ACTIVE_CLAUDE_DIRECT_GITHUB_RUNTIME_PROBE",
-  "current_node": "RIU-0069_CLAUDE_DIRECT_GITHUB_ROOT_ACCESS",
+  "status": "ACTIVE_RIU_0070_XRAY_ROOT_EXTERNAL_INTEGRATION",
+  "current_node": "RIU-0070_XRAY_ROOT_EXTERNAL_INTEGRATION_PLAN",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -35,7 +35,13 @@
     "BOOTSTRAP_RIU_GITHUB_PAT",
     "BOOTSTRAP_RIU_HF_TOKEN",
     "PROPAGATE_AUTH_TO_8_REPOS",
-    "RERUN_AUTH_CAPABILITY_PROBE"
+    "RERUN_AUTH_CAPABILITY_PROBE",
+    "ROOT_OWNER_CONSOLIDATION",
+    "OMNIROUTE_ADAPTER_CONTRACT",
+    "ORCA_ADE_BOUNDARY",
+    "OMARCHY_HOST_CHECKLIST",
+    "ANYDOC_INGEST_ADAPTER",
+    "RIU_0070_STATE_PLAN_BITACORA_SYNC"
   ],
   "pending": [
     "CLAUDE_ROOT_WRITE_VERIFIED",
@@ -47,11 +53,21 @@
     "MCP_BOUNDARY_VERIFIED",
     "MEMORY_BOUNDARY_VERIFIED",
     "CONNECTIVITY_GLOBAL_E2E_PASS",
-    "CONNECTIVITY_LAYER_VERIFIED_CLOSED"
+    "CONNECTIVITY_LAYER_VERIFIED_CLOSED",
+    "ROOT_29_ACCOUNTED_VERIFIED",
+    "OMNIROUTE_ADAPTER_VERIFIED",
+    "ORCA_ADE_BOUNDARY_VERIFIED",
+    "OMARCHY_HOST_OPTION_VALIDATED",
+    "ANYDOC_ADAPTER_VERIFIED",
+    "STATE_PLAN_BITACORA_SYNC_VERIFIED"
   ],
   "connectivity": {
     "root": "conectividad con Router inteligente universal",
-    "bridges": {"expected": 19, "v2_declared": 19, "failed": 0},
+    "bridges": {
+      "expected": 19,
+      "v2_declared": 19,
+      "failed": 0
+    },
     "github": {
       "connector_access_current_chat": "ADMIN_PUSH_CONFIRMED_ROUTER_AND_TAREA_1",
       "claude_same_repo_route": ".github/workflows/claude-root-editor.yml",
@@ -81,9 +97,18 @@
     "secret_policy": {
       "raw_values_in_git": false,
       "raw_values_in_chat": false,
-      "github_token_refs": ["RIU_GITHUB_PAT", "GH_TOKEN"],
-      "hf_token_refs": ["RIU_HF_TOKEN", "HF_TOKEN", "HUGGINGFACE_TOKEN"],
-      "claude_token_refs": ["CLAUDE_CODE_OAUTH_TOKEN"]
+      "github_token_refs": [
+        "RIU_GITHUB_PAT",
+        "GH_TOKEN"
+      ],
+      "hf_token_refs": [
+        "RIU_HF_TOKEN",
+        "HF_TOKEN",
+        "HUGGINGFACE_TOKEN"
+      ],
+      "claude_token_refs": [
+        "CLAUDE_CODE_OAUTH_TOKEN"
+      ]
     }
   },
   "evidence": [
@@ -92,14 +117,22 @@
     "auth presence probe run 34677207175 success but global auth secrets ABSENT at that time",
     "commit f3d0daa60cecc25e711886cac6b6f468feedfe05 fixes Claude setup-token logging",
     "commit 946f1a0e1c976298c6c34d4e70f0a07243109aa6 adds direct Claude GitHub root editor",
-    "commit ddfeb73e4c5d80515e28ed8511c14f8f0fc1ba88 adds canonical CLAUDE.md policy"
+    "commit ddfeb73e4c5d80515e28ed8511c14f8f0fc1ba88 adds canonical CLAUDE.md policy",
+    "RIU-0070 X-Ray: 29 root entries enumerated and shallow-inspected on 2026-09-17",
+    "Architecture integration plan commit 8616da2a84bd5f803ca38a9bbeaea1ed93bafbac",
+    "Verified external sources: diegosouzapw/OmniRoute, saiichi/orca, basecamp/omarchy, firecrawl/anydoc"
   ],
   "next_tasks": [
+    "Consolidate root owners without deleting donor/evidence data",
+    "Materialize and test OmniRoute adapter behind connector_registry",
+    "Validate Orca ADE with isolated RIU worktrees and verifier-gated merge",
+    "Keep Omarchy as optional workstation and validate host checklist only",
+    "Materialize AnyDoc ingestion adapter and multiformat/error-path tests",
     "Ensure CLAUDE_CODE_OAUTH_TOKEN is available to Router Actions without exposing its value",
-    "Dispatch Claude Root Editor with a harmless root write/read-back probe and require commit evidence",
-    "If cross-repo editing is required, bootstrap RIU_GITHUB_PAT with effective target-repo permissions",
-    "Keep GitHub Backup HF optional and non-blocking",
-    "Run global auth capability probe and connectivity E2E before final closure"
+    "Dispatch Claude Root Editor harmless write/read-back probe and require commit evidence",
+    "Bootstrap RIU_GITHUB_PAT/RIU_HF_TOKEN only through authorized secret stores when required",
+    "Complete Codex account runtime auth probes, MCP and memory boundary validation",
+    "Run global connectivity E2E and sync STATE/PLAN/BITACORA before final closure"
   ],
   "rules": {
     "evidence_required": true,
@@ -110,10 +143,39 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0069A",
-    "decision": "CLAUDE_DIRECT_GITHUB_ROOT_PATH_MATERIALIZED_HF_BACKUP_OPTIONAL",
-    "verify_final": "WORKFLOW_AND_ROOT_POLICY_READBACK_PASS; CLAUDE_RUNTIME_ROOT_WRITE_PENDING",
-    "cross_check": "PASS_CONFIGURATION; GAP_RUNTIME_CLAUDE_OAUTH_AND_WRITE_READBACK",
-    "coda": "ACTIVE_UNTIL_CLAUDE_ROOT_WRITE_READBACK_PASS"
+    "id": "RIU-0070",
+    "decision": "ROOT_XRAY_29_AND_EXTERNAL_4_INTEGRATION_PLAN_MATERIALIZED",
+    "verify_final": "DOCUMENTATION_WRITE_PENDING_READBACK; EXTERNAL_RUNTIME_NOT_YET_CLAIMED",
+    "cross_check": "PASS_RESEARCH_AND_ROOT_SHALLOW_AUDIT; GAP_RUNTIME_ADAPTERS_AUTH_AND_GLOBAL_E2E",
+    "coda": "ACTIVE_UNTIL_EXTERNAL_BOUNDARIES_AND_GLOBAL_E2E_PASS"
+  },
+  "root_xray": {
+    "audited_at": "2026-09-17",
+    "root_entries": 29,
+    "base_snapshot_sha": "d001d96cfa382888d409255e5dd3e9d2b6372860",
+    "architecture_commit": "8616da2a84bd5f803ca38a9bbeaea1ed93bafbac",
+    "decision": "ACCOUNTED_WITH_OWNER_AND_CLOSURE_GATE"
+  },
+  "external_components": {
+    "omniroute": {
+      "source": "https://github.com/diegosouzapw/OmniRoute",
+      "role": "OPTIONAL_DOWNSTREAM_GATEWAY",
+      "state": "BOUNDARY_DEFINED_PENDING_RUNTIME_TEST"
+    },
+    "orca": {
+      "source": "https://github.com/saiichi/orca",
+      "role": "EXTERNAL_GRAPHICAL_AGENT_ADE",
+      "state": "BOUNDARY_DEFINED_PENDING_RUNTIME_TEST"
+    },
+    "omarchy": {
+      "source": "https://github.com/basecamp/omarchy",
+      "role": "OPTIONAL_WORKSTATION_HOST",
+      "state": "HOST_OPTION_PENDING_VALIDATION"
+    },
+    "anydoc": {
+      "source": "https://github.com/firecrawl/anydoc",
+      "role": "DOCUMENT_INGEST_ADAPTER",
+      "state": "BOUNDARY_DEFINED_PENDING_RUNTIME_TEST"
+    }
   }
 }
