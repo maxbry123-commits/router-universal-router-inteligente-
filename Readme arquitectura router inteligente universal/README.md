@@ -29,6 +29,40 @@ DAGs/modelos no pueden alterar este ownership. Componentes externos son donor/ad
 - `integration/huggingface/`: bridge/auditorías HF; prohibido inventar `model_id`.
 - `integration/audits/`: decisiones REUSE/PATCH/ADAPT/GENERATE y GAPs por componente.
 
+## Integraciones externas investigadas — 2026-09-17
+Estas herramientas se incorporan al mapa arquitectónico como componentes externos/adapters. **Ninguna adquiere ownership del Router ni sustituye `RedUniversal`.** La instalación o cableado runtime queda sujeto a contrato, adapter y pruebas reales antes de marcarse PASS.
+
+### OmniRoute — gateway multi-proveedor / fallback por cuota
+- Rol RIU: **gateway downstream opcional** detrás de `connector_registry` para unificar proveedores compatibles con API OpenAI y aportar fallback/selección sensible a disponibilidad/cuota.
+- Boundary propuesto: `RedUniversal -> connector_registry -> adapter_omniroute -> OmniRoute -> proveedor IA`.
+- Motivo: upstream expone un único endpoint y un catálogo de cientos de proveedores; su README v3.8.50 lista 352 proveedores y scheduling quota-aware. Esto puede reducir interrupciones por rate-limit, pero **no garantiza cuota infinita**.
+- Estado: `RESEARCH_VERIFIED / ADAPT_CANDIDATE`; no está certificado todavía como runtime RIU.
+- Fuentes: https://github.com/diegosouzapw/OmniRoute · https://www.npmjs.com/package/omniroute
+
+### Orca — entorno gráfico / ADE para agentes
+- Rol RIU: **control plane de desarrollo externo** para ejecutar y supervisar Claude Code, Codex y otros agentes en paralelo sobre worktrees aislados.
+- Boundary propuesto: `Operador -> Orca -> agentes/worktrees -> GitHub/MCP -> Router`; Orca no reemplaza el loop `tel.workflow/v3` ni el ownership de routing.
+- Encaje: útil para visualizar terminales, diffs, agentes y trabajo paralelo mientras el Router conserva validación y cierre fail-closed.
+- Estado: `RESEARCH_VERIFIED / INTEGRATION_CANDIDATE`; falta probar el boundary MCP/CLI con RIU.
+- Fuentes: https://www.onorca.dev/ · https://github.com/stablyai/orca
+
+### Omarchy — workstation Linux opcional
+- Rol RIU: **entorno de operador/desarrollo opcional**, no dependencia del runtime del Router.
+- Boundary propuesto: `Omarchy host -> herramientas/CLI/agentes -> Router`; puede alojar la estación de trabajo donde corran Git, terminales y agentes.
+- Upstream: distribución Linux de DHH basada en Arch, orientada a productividad/agentes.
+- Estado: `RESEARCH_VERIFIED / HOST_OPTION`; no debe introducir lógica de routing ni convertirse en requisito para desplegar RIU.
+- Fuentes: https://omarchy.org/ · https://github.com/omacom/omarchy
+
+### AnyDoc — normalización documental a Markdown
+- Rol RIU: **adapter de ingestión** para convertir documentos a Markdown antes de entregarlos a la capa de validación/contexto.
+- Boundary propuesto: `archivo -> adapter_anydoc -> Markdown -> validator/ingest -> Router/agente`.
+- Upstream: librería Rust de Firecrawl para Word, PowerPoint, Excel, OpenDocument, RTF, EPUB, CSV y PDF, con bindings Node.js/Python/WASM y Agent Skill.
+- Estado: `RESEARCH_VERIFIED / ADAPT_CANDIDATE`; faltan wrapper RIU y tests de formatos/errores antes de PASS.
+- Fuente: https://github.com/firecrawl/anydoc
+
+### Gate de integración de estos cuatro componentes
+Para pasar de documentación a `VERIFIED_CLOSED` se exige, por componente: adapter/boundary explícito -> prueba mínima real -> read-back/log -> ausencia de secreto embebido -> test de fallo -> evidencia URL/SHA/commit. Hasta entonces permanecen externos/candidatos y no se anuncian como runtime integrado.
+
 ## Hugging Face Jobs — cómputo real
 Jobs forma parte del flujo externo `Router/GitHub source -> HF Job compute -> resultado/evidencia -> GitHub/state` sin convertirse en segundo orquestador. Documentación oficial: https://huggingface.co/docs/hub/en/jobs y https://huggingface.co/docs/hub/en/jobs-configuration . `cpu-upgrade` se reserva para cargas que realmente necesitan 8 vCPU/32 GB; auditorías mínimas pueden usar `cpu-basic`.
 
