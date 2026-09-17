@@ -74,3 +74,7 @@ Delta 2026-09-17:
 - `STATE_PLAN_BITACORA_SYNC`
 
 Estado actual: **ACTIVE / GAP runtime**.
+
+
+### READ-BACK RIU-0070
+PASS 2026-09-17: README arquitectura, PLAN-TAREAS, STATE, BITÁCORA y CHECKPOINT fueron releídos desde `main`; los cinco marcadores RIU-0070 están presentes. Este PASS cierra sólo la **sincronización documental/estado**. Adapters externos, auth runtime y E2E global permanecen abiertos.
