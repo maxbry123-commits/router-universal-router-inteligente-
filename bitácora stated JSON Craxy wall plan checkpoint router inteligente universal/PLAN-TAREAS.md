@@ -73,7 +73,7 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 6. **HF-SCHEDULER ✅** — scheduler canónico HF1→HF2→HF3 en `integration/huggingface/hf_scheduler.py`; 5/5 rondas estables, 7 tests por ronda, Job `6aac7c9eb1dc2b62dc58faf9` COMPLETED.\n7. **HF-INVENTORY 🟡 PARTIAL** — fresh: OAuth COMAND-CENTER-1; ventana 100 Jobs (8 completed/1 canceled/91 error), 2 scheduled, 3 Spaces públicos, registry 20 slots; privado + historial uncapped siguen GAP. Evidencia `forensics/RIU-0075-HF-INVENTORY-PARTIAL-2026-09-17.md`.
 8. **HF-MODEL-RUNTIME** — prueba real por modelo descubierto antes de operational PASS.
 9. **HF-CODE-MODELS ✅ CLASIFICADO** — M04=CODE_SPECIALIZED por base model Qwen3-Coder; M15=CODE_CAPABLE_TRAINING_EVIDENCE generalista; otros 18 no demostrados Code-specialized. Runtime Code sigue pendiente.
-10. **HF-MIRROR-REPLICA** — estrategia de mirror/replica con provenance y rollback.
+10. **HF-MIRROR-REPLICA ✅ DISEÑO** — repo duplicate ≠ endpoint replicas ≠ revision-pinned snapshot; gates/provenance definidos. Ejecución real queda pendiente de destino/costo explícito.
 10. **ROUTING-50-IDENTITIES** — diseño secuencial >50 APIs/identidades usando modelos/replicas/mirrors; no simultaneidad obligatoria.
 11. **HF-COMPUTE** — sizing de cómputo considerando los 3 recursos/procesadores HF del proyecto.
 12. **AGENT-MODEL-MIX** — modelos pequeños para agentes + modelos grandes, con criterios medidos.
