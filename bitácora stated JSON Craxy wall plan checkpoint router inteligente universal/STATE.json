@@ -7,7 +7,7 @@
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
   "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0077_HF_CODE_MODEL_CLASSIFICATION",
+  "current_node": "RIU-0078_HF_MIRROR_REPLICA_RESEARCH",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -32,7 +32,8 @@
     "RIU_0072_LITELLM_DUPLICATE_AUDIT_NO_DELETE_PASS",
     "RIU_0073_HF_BRIDGE_OWNERSHIP_AUDIT_PASS",
     "RIU_0074_HF_CANONICAL_SCHEDULER_TESTED_STABLE_5X",
-    "RIU_0076_HF_OBSOLETE_WATCHDOG_404_SUSPENDED_VERIFIED"
+    "RIU_0076_HF_OBSOLETE_WATCHDOG_404_SUSPENDED_VERIFIED",
+    "RIU_0077_HF_CODE_MODEL_CLASSIFICATION_PASS"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -49,7 +50,6 @@
     "XRAY_COMPONENT_CONTAINER_INVENTORY",
     "HF_FULL_INVENTORY",
     "HF_MODEL_OPERATIONAL_TESTS",
-    "HF_CODE_MODEL_CLASSIFICATION",
     "HF_MIRROR_REPLICA_RESEARCH",
     "ROUTING_OVER_50_IDENTITIES_PLAN",
     "HF_COMPUTE_SIZING",
@@ -156,7 +156,9 @@
     "Fresh watchdog repeat-check: jobs 6aac7b7e..., 6aac77fa..., 6aac7476... each HTTP 404",
     "RIU-0076 audit forensics/RIU-0076-HF-WATCHDOG-404-ROOT-CAUSE-2026-09-17.md commit ddb993d0f898a51b2f7372cc8e59cc269fdca220",
     "frontend commit e0b3cd3bc9e33c8184009d5507f2e1e4bd6bfb49 intentionally removed obsolete HF ZIP watchdog root",
-    "HF scheduled 6aa1af2821047bf1b0370810 suspended=true via inspect + scheduled ps"
+    "HF scheduled 6aa1af2821047bf1b0370810 suspended=true via inspect + scheduled ps",
+    "RIU-0077 Code classification audit commit fad57842d3d677010c581c7ddedc67fd95d7797c",
+    "HF-M04 CODE_SPECIALIZED by explicit Qwen3-Coder base model; HF-M15 code-trained generalist; no runtime Code PASS claimed"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -179,11 +181,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0076",
-    "decision": "OBSOLETE_HF_WATCHDOG_SUSPENDED_DO_NOT_RESTORE_DELETED_ENGINE",
-    "verify_final": "PASS_INCIDENT_CONTAINMENT_2X_READBACK",
-    "cross_check": "CANONICAL_MOTOR_REPLACEMENT_REQUIRES_EXPLICIT_QUEUE_STATE_INDEX_DEST_INPUTS",
-    "coda": "NEXT_RIU_0077_HF_CODE_MODEL_CLASSIFICATION"
+    "id": "RIU-0077",
+    "decision": "ONE_CODE_SPECIALIZED_PLUS_ONE_CODE_TRAINED_GENERALIST",
+    "verify_final": "PASS_CLASSIFICATION_ONLY_RUNTIME_OPEN",
+    "cross_check": "NO_OTHER_REGISTRY_SLOT_PROMOTED_WITHOUT_EXPLICIT_HUB_EVIDENCE",
+    "coda": "NEXT_RIU_0078_HF_MIRROR_REPLICA_RESEARCH"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
