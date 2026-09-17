@@ -14,6 +14,7 @@ from integration.huggingface.hf_scheduler import (  # noqa: E402
     RAM_THRESHOLD,
     choose_hf_slot,
     scheduler_decision,
+    dispatch_hf_request,
 )
 
 
@@ -56,3 +57,45 @@ def test_unknown_duplicate_and_invalid_ram_are_rejected() -> None:
         HFSlot("HF1", ram_percent=101)
     with pytest.raises(ValueError, match="DUPLICATE_HF_WORKER"):
         choose_hf_slot([HFSlot("HF1"), HFSlot("HF1")])
+
+
+class FakeSubmitter:
+    def __init__(self) -> None:
+        self.requests: list[object] = []
+
+    def submit(self, request: object) -> dict[str, object]:
+        self.requests.append(request)
+        return {"status": "SUBMITTED", "job_id": "job-123"}
+
+
+def test_dispatch_delegates_once_to_canonical_submitter() -> None:
+    submitter = FakeSubmitter()
+    request = {"command": ["python", "-V"]}
+    result = dispatch_hf_request(
+        [HFSlot("HF1", busy=True), HFSlot("HF2", ram_percent=10), HFSlot("HF3")],
+        request,
+        submitter,
+    )
+    assert result == {
+        "state": "DISPATCH",
+        "worker": "HF2",
+        "status": "SUBMITTED",
+        "job_id": "job-123",
+    }
+    assert submitter.requests == [request]
+
+
+def test_waiting_never_calls_submitter() -> None:
+    submitter = FakeSubmitter()
+    result = dispatch_hf_request(
+        [HFSlot("HF1", busy=True), HFSlot("HF2", busy=True), HFSlot("HF3", busy=True)],
+        {"command": ["unused"]},
+        submitter,
+    )
+    assert result == {"state": "WAITING", "worker": None}
+    assert submitter.requests == []
+
+
+def test_invalid_submitter_fails_closed() -> None:
+    with pytest.raises(TypeError, match="HF_SUBMITTER_MUST_EXPOSE_SUBMIT"):
+        dispatch_hf_request([HFSlot("HF1")], object(), object())
