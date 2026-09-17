@@ -1,8 +1,8 @@
 {
-  "checkpoint": "riu-0066-runtime-secret-e2e-ready",
+  "checkpoint": "riu-0071-forensic-xray-authoritative-inventory",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
-  "status": "ACTIVE_RUNTIME_GAPS",
+  "status": "ACTIVE_FORENSIC_XRAY_AND_RUNTIME_GAPS",
   "core": "VERIFIED_CLOSED",
   "connectivity": {
     "bridges_v2": "19_OF_19_PASS",
@@ -31,11 +31,13 @@
     "plan_commit": "b5c2d5585de2eba4de11bfb08795cca56f71b811",
     "state_commit": "561b546d1344a551cb9c09387044d7aadf4aa88c",
     "state_sync_commit": "ec8f057c5171d3e2007fb3da855b77ebf8e6ff47",
-    "bitacora_sync_commit": "b067cf06e3a54939dec838f7ef1ad24695905dd2"
+    "bitacora_sync_commit": "b067cf06e3a54939dec838f7ef1ad24695905dd2",
+    "inventory_path": "forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json",
+    "inventory_commit": "a5a3e02cea01d753a495b5090c4ae46146200a64"
   },
-  "current_node": "RIU-0070_XRAY_ROOT_EXTERNAL_INTEGRATION_PLAN",
+  "current_node": "RIU-0071_FORENSIC_XRAY_AUTHORITATIVE_INVENTORY",
   "updated_at": "2026-09-17",
-  "root_entries_accounted": 29,
+  "root_entries_accounted": 28,
   "external_components_accounted": [
     "OmniRoute",
     "Orca",
@@ -43,12 +45,14 @@
     "AnyDoc"
   ],
   "closure_gates": {
-    "ROOT_29_ACCOUNTED": true,
     "EXTERNAL_4_BOUNDARIES_DEFINED": true,
     "NO_ROUTING_OWNERSHIP_CONFLICT": true,
     "AUTH_RUNTIME_VERIFIED": false,
     "CONNECTIVITY_GLOBAL_E2E_PASS": false,
-    "STATE_PLAN_BITACORA_SYNC": true
+    "STATE_PLAN_BITACORA_SYNC": true,
+    "ROOT_28_ACCOUNTED": true,
+    "FULL_COMPONENT_CONTAINER_XRAY": false,
+    "DEDUP_ORPHAN_RECONCILIATION": false
   },
   "documentation_sync": "VERIFIED_READBACK_PASS"
 }
