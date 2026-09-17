@@ -103,7 +103,7 @@ RIU-0031: Council12 + 3 refutaciones + cross-check + CODA + `verify_final=PASS_A
 
 
 ## Auditoría forense X-Ray de raíz — 2026-09-17
-Snapshot base auditado: `main@d001d96cfa382888d409255e5dd3e9d2b6372860`. Se detectaron **29 entradas raíz**. La regla es: raíz presente != runtime integrado; cada entrada recibe un rol, una decisión y un gate de cierre.
+Snapshot base auditado: `main@d001d96cfa382888d409255e5dd3e9d2b6372860`. Se detectaron **28 entradas raíz**. La regla es: raíz presente != runtime integrado; cada entrada recibe un rol, una decisión y un gate de cierre.
 
 | # | Entrada raíz | Rol X-Ray | Decisión de integración / cierre |
 |---|---|---|---|
@@ -135,7 +135,6 @@ Snapshot base auditado: `main@d001d96cfa382888d409255e5dd3e9d2b6372860`. Se dete
 | 26 | `scripts/` | utilidades auth/repair | REUSE con fail-closed; secretos sólo vía entorno/Actions. |
 | 27 | `➡️📂 Wordflow LOOP router inteligente universal/` | método LOOP | REUSE como guía de ejecución; no segundo estado. |
 | 28 | `➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/` | motores de archivos | REUSE-CONTROLLED; checks de hash/collision/read-back obligatorios. |
-| 29 | `.github/workflows` (contenido de #1) | ejecución programada | CHILD-OF-.github; cualquier watchdog/CI debe reportar evidencia y no declarar PASS por calendario. |
 
 ### Componentes externos añadidos al plan
 - **OmniRoute** — upstream/package verificado: https://github.com/diegosouzapw/OmniRoute y https://www.npmjs.com/package/omniroute . v3.8.50 publica catálogo de 352 proveedores, endpoint OpenAI-compatible y scheduling sensible a cuota. Integración RIU: `connector_registry -> adapter_omniroute -> OmniRoute`. Gate: health + fallback controlado + rate-limit simulation + read-back; nunca prometer “cuota infinita”.
@@ -156,4 +155,12 @@ Snapshot base auditado: `main@d001d96cfa382888d409255e5dd3e9d2b6372860`. Se dete
 - **W4 Final:** tests E2E + read-back + auditoría de duplicación + STATE/PLAN/BITÁCORA consistentes => `VERIFIED_CLOSED`.
 
 ### Gate final RIU-0070
-`ROOT_29_ACCOUNTED + EXTERNAL_4_BOUNDARIES_DEFINED + NO_ROUTING_OWNERSHIP_CONFLICT + AUTH_RUNTIME_VERIFIED + CONNECTIVITY_GLOBAL_E2E_PASS + STATE_PLAN_BITACORA_SYNC`.
+`ROOT_28_ACCOUNTED + EXTERNAL_4_BOUNDARIES_DEFINED + NO_ROUTING_OWNERSHIP_CONFLICT + AUTH_RUNTIME_VERIFIED + CONNECTIVITY_GLOBAL_E2E_PASS + STATE_PLAN_BITACORA_SYNC`.
+
+
+### Corrección forense RIU-0071 — 2026-09-17
+- Fresh root read sobre `main`: **28 entradas raíz**. El conteo previo 29 incluía erróneamente `.github/workflows` como raíz; es hijo de `.github/`.
+- Inventario autoritativo: `forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json`, commit `a5a3e02cea01d753a495b5090c4ae46146200a64`.
+- Runtime canónico: 11 bloques top-level; biblioteca donor: 62 directorios de componentes OSS; candidato de duplicado literal/case-insensitive confirmado: `LiteLLM` vs `litellm`, **sin borrar hasta comparar contenido/provenance**.
+- El probe recursivo devolvió 35.979 entradas pero GitHub lo marcó `truncated=true`; esos conteos son lower-bound, no inventario total de archivos.
+- Gate corregido: `ROOT_28_ACCOUNTED`.
