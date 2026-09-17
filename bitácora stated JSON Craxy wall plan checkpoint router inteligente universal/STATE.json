@@ -7,7 +7,7 @@
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
   "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0074_HF_CANONICAL_SCHEDULER_ADAPT_AND_TEST",
+  "current_node": "RIU-0075_HF_FULL_INVENTORY",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -30,7 +30,8 @@
     "CLAUDE_SETUP_TOKEN_LOG_REDACTION_FIXED",
     "RIU_0070_DOCUMENTATION_SYNC_READBACK_PASS",
     "RIU_0072_LITELLM_DUPLICATE_AUDIT_NO_DELETE_PASS",
-    "RIU_0073_HF_BRIDGE_OWNERSHIP_AUDIT_PASS"
+    "RIU_0073_HF_BRIDGE_OWNERSHIP_AUDIT_PASS",
+    "RIU_0074_HF_CANONICAL_SCHEDULER_TESTED_STABLE_5X"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -55,8 +56,7 @@
     "HF_MCP_API_BOUNDARY",
     "HF_SKILLS_INTEGRATION",
     "GITHUB_HF_RUNTIME",
-    "HF_WATCHDOG_404_REPAIR",
-    "HF_CANONICAL_SCHEDULER_ADAPT_AND_TEST"
+    "HF_WATCHDOG_404_REPAIR"
   ],
   "pending": [
     "CLAUDE_ROOT_WRITE_VERIFIED",
@@ -144,7 +144,10 @@
     "Recursive tree probe returned 35979 entries with truncated=true; total file inventory remains open",
     "RIU-0072 LiteLLM vs litellm full-tree comparison: 9784 common paths, 8930 same blobs, 854 differing blobs; preserve both",
     "LiteLLM SOURCE_URL=https://github.com/BerriAI/litellm SOURCE_COMMIT=658f50663d19f613a3f5caf998168da019764ad8",
-    "RIU-0073 audit forensics/RIU-0073-HF-BRIDGE-CONSOLIDATION-AUDIT-2026-09-17.md commit 48b91296d373dcc8daba4bf51d8c7c63d3589c4c"
+    "RIU-0073 audit forensics/RIU-0073-HF-BRIDGE-CONSOLIDATION-AUDIT-2026-09-17.md commit 48b91296d373dcc8daba4bf51d8c7c63d3589c4c",
+    "RIU-0074 scheduler code commits 5514e3957a7f64c986f2ddbe26420968a1e26a65 and 83a7636639a7dade2e1abfcb5366ad99e9884360",
+    "HF Job 6aac7c9eb1dc2b62dc58faf9 COMPLETED: 5/5 rounds, 7 passed each",
+    "Redundant full-clone HF Job 6aac7c2d5c02253cfb1452bc canceled after exact-file test superseded it"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -167,11 +170,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0073",
-    "decision": "HF_INTEGRATION_OWNER_CANONICAL_EXTERNAL_BRIDGES_CLASSIFIED",
-    "verify_final": "PASS_AUDIT_ONLY; SCHEDULER_RUNTIME_PENDING",
-    "cross_check": "NO_EXISTING_TEST_EVIDENCE_FOR_HF1_HF2_HF3_SCHEDULER",
-    "coda": "NEXT_RIU_0074_HF_CANONICAL_SCHEDULER_ADAPT_AND_TEST"
+    "id": "RIU-0074",
+    "decision": "CANONICAL_HF_THREE_SLOT_SCHEDULER_WIRED_TO_SINGLE_SUBMITTER_BOUNDARY",
+    "verify_final": "PASS_5X_STABLE_UNIT_ON_HF_COMPUTE",
+    "cross_check": "NO_DUPLICATE_RUN_JOB_IMPLEMENTATION_ADDED",
+    "coda": "NEXT_RIU_0075_HF_FULL_INVENTORY"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
