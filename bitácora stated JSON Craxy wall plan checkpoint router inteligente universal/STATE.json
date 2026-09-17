@@ -7,7 +7,7 @@
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
   "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0073_HF_BRIDGE_CONSOLIDATION_AUDIT",
+  "current_node": "RIU-0074_HF_CANONICAL_SCHEDULER_ADAPT_AND_TEST",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -29,7 +29,8 @@
     "CLAUDE_ROOT_POLICY_MATERIALIZED",
     "CLAUDE_SETUP_TOKEN_LOG_REDACTION_FIXED",
     "RIU_0070_DOCUMENTATION_SYNC_READBACK_PASS",
-    "RIU_0072_LITELLM_DUPLICATE_AUDIT_NO_DELETE_PASS"
+    "RIU_0072_LITELLM_DUPLICATE_AUDIT_NO_DELETE_PASS",
+    "RIU_0073_HF_BRIDGE_OWNERSHIP_AUDIT_PASS"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -44,7 +45,6 @@
     "OMARCHY_HOST_CHECKLIST",
     "ANYDOC_INGEST_ADAPTER",
     "XRAY_COMPONENT_CONTAINER_INVENTORY",
-    "HF_BRIDGE_CONSOLIDATION_AUDIT",
     "HF_FULL_INVENTORY",
     "HF_MODEL_OPERATIONAL_TESTS",
     "HF_CODE_MODEL_CLASSIFICATION",
@@ -55,7 +55,8 @@
     "HF_MCP_API_BOUNDARY",
     "HF_SKILLS_INTEGRATION",
     "GITHUB_HF_RUNTIME",
-    "HF_WATCHDOG_404_REPAIR"
+    "HF_WATCHDOG_404_REPAIR",
+    "HF_CANONICAL_SCHEDULER_ADAPT_AND_TEST"
   ],
   "pending": [
     "CLAUDE_ROOT_WRITE_VERIFIED",
@@ -142,7 +143,8 @@
     "RIU-0071 component inventory commit a5a3e02cea01d753a495b5090c4ae46146200a64",
     "Recursive tree probe returned 35979 entries with truncated=true; total file inventory remains open",
     "RIU-0072 LiteLLM vs litellm full-tree comparison: 9784 common paths, 8930 same blobs, 854 differing blobs; preserve both",
-    "LiteLLM SOURCE_URL=https://github.com/BerriAI/litellm SOURCE_COMMIT=658f50663d19f613a3f5caf998168da019764ad8"
+    "LiteLLM SOURCE_URL=https://github.com/BerriAI/litellm SOURCE_COMMIT=658f50663d19f613a3f5caf998168da019764ad8",
+    "RIU-0073 audit forensics/RIU-0073-HF-BRIDGE-CONSOLIDATION-AUDIT-2026-09-17.md commit 48b91296d373dcc8daba4bf51d8c7c63d3589c4c"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -165,11 +167,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0072",
-    "decision": "LITELLM_DUPLICATE_CANDIDATE_IS_VERSION_DIVERGENT_PRESERVE_BOTH",
-    "verify_final": "PASS_AUDIT_NO_DELETE",
-    "cross_check": "PROVENANCE_PRESENT_ONLY_ON_LiteLLM; SECOND_SNAPSHOT_ORIGIN_PENDING",
-    "coda": "NEXT_RIU_0073_HF_BRIDGE_CONSOLIDATION_AUDIT"
+    "id": "RIU-0073",
+    "decision": "HF_INTEGRATION_OWNER_CANONICAL_EXTERNAL_BRIDGES_CLASSIFIED",
+    "verify_final": "PASS_AUDIT_ONLY; SCHEDULER_RUNTIME_PENDING",
+    "cross_check": "NO_EXISTING_TEST_EVIDENCE_FOR_HF1_HF2_HF3_SCHEDULER",
+    "coda": "NEXT_RIU_0074_HF_CANONICAL_SCHEDULER_ADAPT_AND_TEST"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
