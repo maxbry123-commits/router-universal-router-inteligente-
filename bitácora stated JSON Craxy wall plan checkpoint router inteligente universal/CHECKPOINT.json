@@ -42,9 +42,10 @@
     "hf_visible_jobs": 100,
     "hf_scheduled_jobs": 2,
     "hf_watchdog_root_cause_commit": "ddb993d0f898a51b2f7372cc8e59cc269fdca220",
-    "obsolete_schedule_id": "6aa1af2821047bf1b0370810"
+    "obsolete_schedule_id": "6aa1af2821047bf1b0370810",
+    "hf_code_classification_commit": "fad57842d3d677010c581c7ddedc67fd95d7797c"
   },
-  "current_node": "RIU-0077_HF_CODE_MODEL_CLASSIFICATION",
+  "current_node": "RIU-0078_HF_MIRROR_REPLICA_RESEARCH",
   "updated_at": "2026-09-17",
   "root_entries_accounted": 28,
   "external_components_accounted": [
@@ -68,7 +69,9 @@
     "HF_FULL_INVENTORY_VERIFIED": false,
     "HF_WATCHDOG_SOURCE_RECOVERED": true,
     "HF_OBSOLETE_SCHEDULE_SUSPENDED": true,
-    "HF_CANONICAL_REPLACEMENT_SCHEDULE_VERIFIED": false
+    "HF_CANONICAL_REPLACEMENT_SCHEDULE_VERIFIED": false,
+    "HF_CODE_MODELS_CLASSIFIED": true,
+    "HF_CODE_RUNTIME_VERIFIED": false
   },
   "documentation_sync": "VERIFIED_READBACK_PASS"
 }
