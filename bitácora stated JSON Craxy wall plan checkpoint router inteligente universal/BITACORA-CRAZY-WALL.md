@@ -47,3 +47,30 @@ La configuración está materializada y leída de vuelta, pero **Claude runtime 
 - Ruta directa de Claude en GitHub: `MATERIALIZED`.
 - Verificación runtime de escritura Claude: `PENDING_FRESH_WRITE_READBACK`.
 - Nodo: `RIU-0069_CLAUDE_DIRECT_GITHUB_ROOT_ACCESS`.
+
+
+## RIU-0070 — X-RAY RAÍZ + 4 COMPONENTES EXTERNOS — NODO ACTIVO
+Delta 2026-09-17:
+- Auditoría shallow X-Ray completada sobre **29 entradas raíz**, snapshot base `d001d96cfa382888d409255e5dd3e9d2b6372860`.
+- README arquitectura actualizado: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
+- PLAN-TAREAS actualizado: commit `b5c2d5585de2eba4de11bfb08795cca56f71b811`.
+- STATE actualizado: commit `561b546d1344a551cb9c09387044d7aadf4aa88c`.
+- Fuentes externas verificadas: OmniRoute=`diegosouzapw/OmniRoute`; Orca ADE=`saiichi/orca`; Omarchy=`basecamp/omarchy`; AnyDoc=`firecrawl/anydoc`.
+- Owners preservados: runtime=`router inteligente universal/`; connectivity=`conectividad con Router inteligente universal/`; estado=`bitácora.../`; evidencia=`forensics/` + JSON de auditoría; donor/download quedan sin ownership.
+- No se declara instalación runtime de los cuatro externos. Estado: `BOUNDARY_DEFINED / PENDING_RUNTIME_TEST`.
+
+### Plan de cierre RIU-0070
+1. Consolidar owners/duplicados por referencia sin borrar evidencia.
+2. Materializar OmniRoute/AnyDoc como adapters; validar Orca como ADE externo y Omarchy como host opcional.
+3. Cerrar auth GitHub/HF/Claude/Codex + MCP/memoria y ejecutar E2E global.
+4. Sincronizar arquitectura + STATE + PLAN + BITÁCORA y exigir URLs/SHA/log/read-back antes de `VERIFIED_CLOSED`.
+
+### Gates
+- `ROOT_29_ACCOUNTED`
+- `EXTERNAL_4_BOUNDARIES_DEFINED`
+- `NO_ROUTING_OWNERSHIP_CONFLICT`
+- `AUTH_RUNTIME_VERIFIED`
+- `CONNECTIVITY_GLOBAL_E2E_PASS`
+- `STATE_PLAN_BITACORA_SYNC`
+
+Estado actual: **ACTIVE / GAP runtime**.
