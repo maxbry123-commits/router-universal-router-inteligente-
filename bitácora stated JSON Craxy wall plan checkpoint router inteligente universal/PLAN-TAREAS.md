@@ -35,3 +35,27 @@ No falta arquitectura del router. Falta **inyectar y validar en runtime las cred
 
 ## Gate de cierre
 `VERIFIED_CLOSED` solo cuando `GITHUB_PAT_RUNTIME_VERIFIED + HF_GLOBAL_WRITE_RUNTIME_VERIFIED + CODEX_1_2 + CLAUDE + MCP + MEMORY + CONNECTIVITY_GLOBAL_E2E_PASS` tengan evidencia fresca.
+
+
+## RIU-0070 — X-RAY RAÍZ + EXTERNOS + PLAN DE CIERRE
+1. **ROOT_XRAY_29** — contabilizar las 29 entradas raíz y asignar owner: runtime, connectivity, state, docs, evidence, donor/legacy.
+2. **OMNIROUTE_ADAPTER** — definir/probar `connector_registry -> adapter_omniroute`; health, fallback y rate-limit simulation obligatorios.
+3. **ORCA_ADE** — validar Orca gráfico como control plane externo para Claude Code/Codex con worktrees; no puede mergear sin verifier RIU.
+4. **OMARCHY_HOST** — documentar/validar workstation opcional; nunca dependencia del runtime ni gate de producción.
+5. **ANYDOC_ADAPTER** — wrapper de ingestión a Markdown y corpus multiformato; hashes y error path obligatorios.
+6. **DEDUP_ROOT** — consolidar conexiones/índices duplicados por referencia, sin borrar hasta verificar que no haya información única.
+7. **AUTH_RUNTIME** — continuar `CLAUDE_CODE_OAUTH_TOKEN`, `RIU_GITHUB_PAT`, `RIU_HF_TOKEN`, Codex 1/2, MCP y memoria sin exponer valores.
+8. **GLOBAL_E2E** — ejecutar Router + GitHub + HF + adapters externos habilitados + verifier; registrar logs/URLs/SHA.
+9. **SYNC_CLOSE** — STATE + PLAN + BITÁCORA + arquitectura deben coincidir antes de `VERIFIED_CLOSED`.
+
+### Olas
+- W0 preservación/evidencia ✅ X-Ray documental materializado.
+- W1 owners y deduplicación: EN CURSO.
+- W2 externos: PENDIENTE pruebas runtime.
+- W3 auth/connectivity: PENDIENTE credenciales/runtime.
+- W4 E2E/final: PENDIENTE.
+
+### Gate final RIU-0070
+`ROOT_29_ACCOUNTED + EXTERNAL_4_BOUNDARIES_DEFINED + NO_ROUTING_OWNERSHIP_CONFLICT + AUTH_RUNTIME_VERIFIED + CONNECTIVITY_GLOBAL_E2E_PASS + STATE_PLAN_BITACORA_SYNC`.
+
+Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
