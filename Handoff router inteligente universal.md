@@ -6,7 +6,7 @@ Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · repo `maxbry123-commits/rou
 El core del Router está `VERIFIED_CLOSED` al 100%: P01/P02/P03, certificación 20/20, Connectivity Fabric 19/19, runtime, pruebas amplias 75/75, pruebas frescas de connectivity 7/7 y comportamiento fail-closed están preservados.
 
 ## Nodo vivo
-`RIU-0069_CLAUDE_DIRECT_GITHUB_ROOT_ACCESS`.
+`RIU-0071_FORENSIC_XRAY_AUTHORITATIVE_INVENTORY`.
 
 ## Arquitectura e integraciones verificadas
 - Fabric 19/19 bridges v2.
@@ -48,3 +48,12 @@ Solo falta evidencia runtime: ejecutar `Claude Root Editor` con `CLAUDE_CODE_OAU
 
 ## Gate final
 Ruta Claude directa=`MATERIALIZED`; backup HF=`OPTIONAL_NON_BLOCKING`; runtime root-write=`PENDING_FRESH_WRITE_READBACK`.
+
+
+## RIU-0071 — autoridad de cierre actual
+- Root fresh: **28 entradas**; corrección forense del conteo 29 anterior.
+- Inventario: `forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json` @ `a5a3e02cea01d753a495b5090c4ae46146200a64`.
+- Runtime owner sigue siendo `router inteligente universal/`; `RedUniversal` conserva routing ownership.
+- La cola completa está en `PLAN-TAREAS.md`: W1 X-Ray/dedup → W2 HF/modelos → W3 externos → W4 auth/connectivity → W5 E2E/sync/final.
+- Árbol global GitHub aparece truncado; inventario total de archivos **no está cerrado**. Se audita por contenedores/component roots.
+- No borrar duplicados/legacy/donor hasta demostrar equivalencia/provenance y rollback.
