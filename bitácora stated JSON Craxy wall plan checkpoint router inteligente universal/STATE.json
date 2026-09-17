@@ -6,8 +6,8 @@
   "branch": "main",
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
-  "status": "ACTIVE_RIU_0070_XRAY_ROOT_EXTERNAL_INTEGRATION",
-  "current_node": "RIU-0070_XRAY_ROOT_EXTERNAL_INTEGRATION_PLAN",
+  "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
+  "current_node": "RIU-0071_FORENSIC_XRAY_AUTHORITATIVE_INVENTORY",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -41,7 +41,21 @@
     "OMNIROUTE_ADAPTER_CONTRACT",
     "ORCA_ADE_BOUNDARY",
     "OMARCHY_HOST_CHECKLIST",
-    "ANYDOC_INGEST_ADAPTER"
+    "ANYDOC_INGEST_ADAPTER",
+    "XRAY_COMPONENT_CONTAINER_INVENTORY",
+    "DEDUP_LITELLM_PROVENANCE_COMPARE",
+    "HF_BRIDGE_CONSOLIDATION_AUDIT",
+    "HF_FULL_INVENTORY",
+    "HF_MODEL_OPERATIONAL_TESTS",
+    "HF_CODE_MODEL_CLASSIFICATION",
+    "HF_MIRROR_REPLICA_RESEARCH",
+    "ROUTING_OVER_50_IDENTITIES_PLAN",
+    "HF_COMPUTE_SIZING",
+    "AGENT_MODEL_MIX",
+    "HF_MCP_API_BOUNDARY",
+    "HF_SKILLS_INTEGRATION",
+    "GITHUB_HF_RUNTIME",
+    "HF_WATCHDOG_404_REPAIR"
   ],
   "pending": [
     "CLAUDE_ROOT_WRITE_VERIFIED",
@@ -54,11 +68,14 @@
     "MEMORY_BOUNDARY_VERIFIED",
     "CONNECTIVITY_GLOBAL_E2E_PASS",
     "CONNECTIVITY_LAYER_VERIFIED_CLOSED",
-    "ROOT_29_ACCOUNTED_VERIFIED",
     "OMNIROUTE_ADAPTER_VERIFIED",
     "ORCA_ADE_BOUNDARY_VERIFIED",
     "OMARCHY_HOST_OPTION_VALIDATED",
-    "ANYDOC_ADAPTER_VERIFIED"
+    "ANYDOC_ADAPTER_VERIFIED",
+    "ROOT_28_ACCOUNTED_VERIFIED",
+    "FULL_COMPONENT_CONTAINER_XRAY_VERIFIED",
+    "DEDUP_ORPHAN_RECONCILIATION_VERIFIED",
+    "HF_CLOSURE_PLAN_VERIFIED"
   ],
   "connectivity": {
     "root": "conectividad con Router inteligente universal",
@@ -120,7 +137,10 @@
     "RIU-0070 X-Ray: 29 root entries enumerated and shallow-inspected on 2026-09-17",
     "Architecture integration plan commit 8616da2a84bd5f803ca38a9bbeaea1ed93bafbac",
     "Verified external sources: diegosouzapw/OmniRoute, saiichi/orca, basecamp/omarchy, firecrawl/anydoc",
-    "RIU-0070 read-back PASS: architecture/PLAN/STATE/BITACORA/CHECKPOINT markers present on main"
+    "RIU-0070 read-back PASS: architecture/PLAN/STATE/BITACORA/CHECKPOINT markers present on main",
+    "RIU-0071 root fresh-read corrected root count to 28",
+    "RIU-0071 component inventory commit a5a3e02cea01d753a495b5090c4ae46146200a64",
+    "Recursive tree probe returned 35979 entries with truncated=true; total file inventory remains open"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -143,18 +163,20 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0070",
-    "decision": "ROOT_XRAY_29_AND_EXTERNAL_4_INTEGRATION_PLAN_MATERIALIZED",
-    "verify_final": "DOCUMENTATION_AND_STATE_SYNC_READBACK_PASS; EXTERNAL_RUNTIME_AUTH_AND_GLOBAL_E2E_PENDING",
-    "cross_check": "PASS_ROOT_XRAY_AND_DOC_SYNC; GAP_RUNTIME_ADAPTERS_AUTH_AND_GLOBAL_E2E",
-    "coda": "ACTIVE_UNTIL_EXTERNAL_BOUNDARIES_AND_GLOBAL_E2E_PASS"
+    "id": "RIU-0071",
+    "decision": "AUTHORITATIVE_ROOT_CORRECTION_AND_FULL_PENDING_QUEUE_RECONCILIATION",
+    "verify_final": "ROOT_28_FRESH_READ_PASS; COMPONENT_DEEP_XRAY_AND_RUNTIME_GATES_PENDING",
+    "cross_check": "PLAN_STATE_HANDOFF_DRIFT_FOUND_AND_BEING_REPAIRED",
+    "coda": "ACTIVE_UNTIL_ALL_COMPONENTS_TASKS_AUTH_E2E_AND_FINAL_SYNC_PASS"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
-    "root_entries": 29,
+    "root_entries": 28,
     "base_snapshot_sha": "d001d96cfa382888d409255e5dd3e9d2b6372860",
     "architecture_commit": "8616da2a84bd5f803ca38a9bbeaea1ed93bafbac",
-    "decision": "ACCOUNTED_WITH_OWNER_AND_CLOSURE_GATE"
+    "decision": "CORRECTED_28_ROOTS_ACCOUNTED; DEEP_COMPONENT_XRAY_CONTINUES",
+    "inventory_path": "forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json",
+    "inventory_commit": "a5a3e02cea01d753a495b5090c4ae46146200a64"
   },
   "external_components": {
     "omniroute": {
