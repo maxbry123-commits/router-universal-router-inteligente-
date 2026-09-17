@@ -18,3 +18,9 @@ M04 `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` compute timeout; M08 `farbodtava
 ## Gate final
 20/20 slots contabilizados. Regresión `RIU FAST-CLOSE` run `34582284615`, job `103434377312`: success, `2 passed, 2 warnings in 6.75s`.
 Estado=`VERIFIED_CLOSED`.
+
+## Clasificación Code — RIU-0077 (fresh 2026-09-17)
+- **CODE_SPECIALIZED:** M04 `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`; base model Hub=`Qwen/Qwen3-Coder-30B-A3B-Instruct`. Runtime sigue GAP; clasificación no implica READY.
+- **CODE_CAPABLE_TRAINING_EVIDENCE / generalista:** M15 `dphn/dolphin-2.9.1-yi-1.5-34b`; metadata Hub incluye `CodeFeedback-Filtered-Instruction` y `dolphin-coder`, además de datasets generales.
+- **No demostrados Code-specialized:** los otros 18 slots; no se infiere especialización por capacidad general.
+- Auditoría: `forensics/RIU-0077-HF-CODE-MODEL-CLASSIFICATION-2026-09-17.md`, commit `fad57842d3d677010c581c7ddedc67fd95d7797c`.
