@@ -2,7 +2,7 @@
   "checkpoint": "riu-0071-forensic-xray-authoritative-inventory",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
-  "status": "ACTIVE_FORENSIC_XRAY_AND_RUNTIME_GAPS",
+  "status": "ACTIVE_HF_CODE_MODEL_CLASSIFICATION",
   "core": "VERIFIED_CLOSED",
   "connectivity": {
     "bridges_v2": "19_OF_19_PASS",
@@ -40,9 +40,11 @@
     "hf_scheduler_test_commit": "83a7636639a7dade2e1abfcb5366ad99e9884360",
     "hf_inventory_partial_commit": "382b8e8b342cad59505a1ccbd7dc5f3dec8aa3f8",
     "hf_visible_jobs": 100,
-    "hf_scheduled_jobs": 2
+    "hf_scheduled_jobs": 2,
+    "hf_watchdog_root_cause_commit": "ddb993d0f898a51b2f7372cc8e59cc269fdca220",
+    "obsolete_schedule_id": "6aa1af2821047bf1b0370810"
   },
-  "current_node": "RIU-0076_HF_WATCHDOG_404_SOURCE_RECOVERY",
+  "current_node": "RIU-0077_HF_CODE_MODEL_CLASSIFICATION",
   "updated_at": "2026-09-17",
   "root_entries_accounted": 28,
   "external_components_accounted": [
@@ -64,7 +66,9 @@
     "HF_BRIDGE_OWNERSHIP_AUDITED": true,
     "HF_SCHEDULER_RUNTIME_VERIFIED": true,
     "HF_FULL_INVENTORY_VERIFIED": false,
-    "HF_WATCHDOG_SOURCE_RECOVERED": false
+    "HF_WATCHDOG_SOURCE_RECOVERED": true,
+    "HF_OBSOLETE_SCHEDULE_SUSPENDED": true,
+    "HF_CANONICAL_REPLACEMENT_SCHEDULE_VERIFIED": false
   },
   "documentation_sync": "VERIFIED_READBACK_PASS"
 }
