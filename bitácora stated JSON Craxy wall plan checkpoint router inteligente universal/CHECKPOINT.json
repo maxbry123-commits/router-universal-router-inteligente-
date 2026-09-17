@@ -2,7 +2,7 @@
   "checkpoint": "riu-0066-runtime-secret-e2e-ready",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
-  "status": "ACTIVE",
+  "status": "ACTIVE_RUNTIME_GAPS",
   "core": "VERIFIED_CLOSED",
   "connectivity": {
     "bridges_v2": "19_OF_19_PASS",
@@ -29,7 +29,9 @@
     "base_snapshot_sha": "d001d96cfa382888d409255e5dd3e9d2b6372860",
     "architecture_commit": "8616da2a84bd5f803ca38a9bbeaea1ed93bafbac",
     "plan_commit": "b5c2d5585de2eba4de11bfb08795cca56f71b811",
-    "state_commit": "561b546d1344a551cb9c09387044d7aadf4aa88c"
+    "state_commit": "561b546d1344a551cb9c09387044d7aadf4aa88c",
+    "state_sync_commit": "ec8f057c5171d3e2007fb3da855b77ebf8e6ff47",
+    "bitacora_sync_commit": "b067cf06e3a54939dec838f7ef1ad24695905dd2"
   },
   "current_node": "RIU-0070_XRAY_ROOT_EXTERNAL_INTEGRATION_PLAN",
   "updated_at": "2026-09-17",
@@ -46,6 +48,7 @@
     "NO_ROUTING_OWNERSHIP_CONFLICT": true,
     "AUTH_RUNTIME_VERIFIED": false,
     "CONNECTIVITY_GLOBAL_E2E_PASS": false,
-    "STATE_PLAN_BITACORA_SYNC": false
-  }
+    "STATE_PLAN_BITACORA_SYNC": true
+  },
+  "documentation_sync": "VERIFIED_READBACK_PASS"
 }
