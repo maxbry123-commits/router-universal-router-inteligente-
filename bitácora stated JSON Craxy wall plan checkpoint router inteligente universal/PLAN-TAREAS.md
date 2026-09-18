@@ -107,3 +107,13 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 3. **LTX_VIDEO** — resolver licencia exacta -> revision/tamaño -> descarga/hash -> carga/inferencia.
 4. **HUNYUANVIDEO** — resolver licencia exacta -> revision/tamaño -> descarga/hash -> carga/inferencia.
 5. **COMPUTE_RECALC** — recalcular HF1/HF2/HF3 después de conocer pesos/requisitos reales de los modelos aceptados.
+
+
+## PRIORITY LOCK — 5 tareas solamente hasta supervisión Claude
+1. **HF Skills Library** — verificar instalación/descubrimiento/runtime.
+2. **Dataset HF conectado** — comprobar conexión/lectura/evidencia real.
+3. **HF compute + 50 API identities + modelos/mirrors** — inventario real, dimensionamiento y prueba sin exponer secretos.
+4. **Integración de modelos AI Staff** — TimesFM 3.0 + WAN 2.2 Animate + LTX-Video + HunyuanVideo + Kandinsky 5 + Qwen-Image + FLUX.1-schnell, uno por uno, fail-closed.
+5. **Archify Skills + diagrama de flujo** — resolver upstream exacto, descargar/integrar skills y mantener diagrama listo vs pendiente.
+
+Fuera de estas cinco tareas: PAUSADO hasta supervisión Claude.
