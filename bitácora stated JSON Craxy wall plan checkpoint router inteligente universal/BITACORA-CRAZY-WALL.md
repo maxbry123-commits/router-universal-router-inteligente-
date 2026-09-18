@@ -147,3 +147,12 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - Other 18 slots not promoted to Code-specialized without explicit evidence.
 - Runtime Code PASS remains open; classification != operational readiness.
 - Audit commit: `fad57842d3d677010c581c7ddedc67fd95d7797c`.
+
+
+## RIU-0078 — HF MIRROR / REPLICA — ✅ RESEARCH/DESIGN PASS
+- Repo mirror: Hub `duplicate_repo` / `hf repos duplicate`.
+- Runtime replicas: Hugging Face Inference Endpoint min/max replicas + autoscaling.
+- Snapshot/cache: `snapshot_download(revision=...)` for deterministic local/Job materialization.
+- RedUniversal remains routing owner; no internal endpoint replica is exposed as a second Router route.
+- No mirror created without explicit destination/namespace; no Endpoint replica count changed without resource/cost authorization.
+- Audit commit: `9b0595507649d495651d7e5065bc7b15087a3d6f`.
