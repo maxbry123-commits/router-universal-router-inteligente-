@@ -1,112 +1,71 @@
 {
-  "checkpoint": "riu-0083-hf-skills-integration",
+  "checkpoint": "riu-0092-authoritative-checkpoint-reconciliation",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
-  "status": "ACTIVE_PRIORITY_LOCK_5",
+  "status": "ACTIVE_CLOSURE",
   "core": "VERIFIED_CLOSED",
-  "current_node": "RIU-0086_PRIORITY_LOCK_AND_IMAGE_MODELS",
-  "updated_at": "2026-09-17",
+  "current_node": "RIU-0092_AUTHORITATIVE_CHECKPOINT_RECONCILIATION",
+  "updated_at": "2026-09-18",
   "root_entries_accounted": 28,
+  "routing_owner": "RedUniversal",
+  "hf_runtime_contract": "REMOTE_INFERENCE_ONLY",
   "connectivity": {
-    "bridges_v2": "19_OF_19_PASS",
-    "github": "PENDING_RUNTIME_CREDENTIAL_VISIBILITY",
-    "huggingface": "PENDING_RUNTIME_CREDENTIAL_VISIBILITY",
+    "bridges_v2": "19_OF_19_HISTORICAL_PASS",
+    "github": "PENDING_FRESH_RUNTIME_CAPABILITY",
+    "huggingface": "PENDING_FRESH_RUNTIME_CAPABILITY",
     "mcp": "BRIDGED_E2E_PENDING",
     "memory": "BRIDGED_E2E_PENDING",
     "global_e2e": "PENDING"
   },
-  "tests": {
+  "historical_tests": {
     "suite_job": "6aa493a121047bf1b03796e9",
     "suite": "75 passed, 2 warnings in 5.78s",
     "hf_scheduler_test_job": "6aac7c9eb1dc2b62dc58faf9",
     "identity_pool_test_job": "6aac7f48b1dc2b62dc58fb73",
     "hf_mcp_boundary_test_job": "6aac809f5c02253cfb145474"
   },
-  "evidence": {
-    "inventory_commit": "a5a3e02cea01d753a495b5090c4ae46146200a64",
-    "hf_bridge_audit_commit": "48b91296d373dcc8daba4bf51d8c7c63d3589c4c",
-    "hf_scheduler_test_commit": "83a7636639a7dade2e1abfcb5366ad99e9884360",
-    "hf_inventory_partial_commit": "382b8e8b342cad59505a1ccbd7dc5f3dec8aa3f8",
-    "hf_watchdog_root_cause_commit": "ddb993d0f898a51b2f7372cc8e59cc269fdca220",
-    "hf_code_classification_commit": "fad57842d3d677010c581c7ddedc67fd95d7797c",
-    "hf_mirror_replica_design_commit": "9b0595507649d495651d7e5065bc7b15087a3d6f",
-    "identity_pool_test_commit": "7ec0a58b7f4557984963f099dd113ea48d4be110",
-    "hf_compute_sizing_commit": "fbd82905b0a73b3bd5c9714726564f1b8b4f8479",
-    "agent_model_mix_commit": "7c91f51e3aec6c0d6108e68b4132ec232d2513cd",
-    "hf_mcp_api_audit_commit": "014f3e59a76bf7943a6a1cc36dfd5e1376dd1760",
-    "hf_mcp_boundary_test_commit": "f97791ca61197ecbdad0d1d2bb7c792a37c721dc",
-    "hf_skills_upstream": "https://github.com/huggingface/skills",
-    "hf_skills_upstream_commit": "abc20ae526d8b4c0e4dff89f904adce28a4a0eb6",
-    "hf_skills_registry_commit": "d33a5f41a8c33438e20111e599362cb5590b6bfb",
-    "hf_skills_registry_blob": "0b0ab10577e33fd13b26e21534bfe924f35e15ef",
-    "riu_0085_registry_commit": "fa5fc46668b1ba91eddbcef8861aa16ea41d1689",
-    "riu_0085_index_commit": "c0b4bf8859cf759bd10a9bd494375ea52cf0ddf1",
-    "riu_0085_architecture_commit": "1c5dcd3e7af49e21465a6476ea2e3ecac064f45d",
-    "riu_0085_state_commit": "30bd475168074aba1226b5b0f4033f37788be966",
-    "riu_0085_plan_commit": "7e09e13031d4722e023257399a6560ee189ca5d8",
-    "riu_0085_bitacora_commit": "14cc737b7e86ff6af6e3f41a66cf8686c01bdff1"
-  },
   "closure_gates": {
     "ROOT_28_ACCOUNTED": true,
     "EXTERNAL_4_BOUNDARIES_DEFINED": true,
     "NO_ROUTING_OWNERSHIP_CONFLICT": true,
-    "HF_SCHEDULER_RUNTIME_VERIFIED": true,
-    "ROUTING_OVER_50_IDENTITIES_VERIFIED": true,
-    "HF_COMPUTE_SIZING_POLICY_VERIFIED": true,
-    "AGENT_MODEL_MIX_POLICY_VERIFIED": true,
-    "HF_MCP_API_BOUNDARY_VERIFIED": true,
-    "HF_SKILLS_OFFICIAL_SOURCE_PINNED": true,
-    "HF_SKILLS_REGISTRY_MATERIALIZED": true,
-    "HF_SKILLS_RUNTIME_DISCOVERY_VERIFIED": false,
-    "HF_MCP_REMOTE_OAUTH_E2E_VERIFIED": false,
+    "HF_SCHEDULER_RUNTIME_HISTORICAL_VERIFIED": true,
+    "ROUTING_OVER_50_IDENTITIES_HISTORICAL_VERIFIED": true,
+    "HF_MCP_API_BOUNDARY_HISTORICAL_VERIFIED": true,
+    "HF_REMOTE_MODEL_GATES_ALL_VERIFIED": false,
     "AUTH_RUNTIME_VERIFIED": false,
     "CONNECTIVITY_GLOBAL_E2E_PASS": false,
     "FULL_COMPONENT_CONTAINER_XRAY": false,
-    "DEDUP_ORPHAN_RECONCILIATION": false
+    "DEDUP_ORPHAN_RECONCILIATION": false,
+    "OMNIROUTE_ADAPTER_VERIFIED": false,
+    "ANYDOC_ADAPTER_VERIFIED": false,
+    "ORCA_ADE_BOUNDARY_VERIFIED": false,
+    "OMARCHY_HOST_OPTION_VALIDATED": false,
+    "DOC_STATE_PLAN_CHECKPOINT_HANDOFF_SYNC": false
   },
-  "next_gate": "HF_SKILLS_RUNTIME_DISCOVERY -> GITHUB_HF_RUNTIME -> AUTH -> MCP_MEMORY -> GLOBAL_E2E",
-  "documentation_sync": "PENDING_STATE_PLAN_BITACORA_SYNC_AFTER_RIU_0083",
   "hf_inventory": {
-    "owned_model_repos": 0,
+    "owned_model_repos_verified": 0,
     "persistent_mirrors_verified": 0,
     "persistent_local_installs_verified": 0,
-    "runtime_inference_verified": 3,
-    "provisional_router_refs": 4,
-    "pending_video_models": 3
-  },
-  "priority_lock": [
-    "HF_SKILLS_LIBRARY",
-    "HF_DATASET_CONNECTION_VERIFY",
-    "HF_COMPUTE_50_API_IDENTITIES_MODELS_MIRRORS",
-    "AI_MODEL_INTEGRATION_QUEUE_TIMESFM_VIDEO_IMAGE",
-    "ARCHIFY_SKILLS_FLOW_DIAGRAM"
-  ],
-  "hf_installed_surface_audit": {
-    "account": "COMAND-CENTER-1",
-    "owned_model_repos": 0,
-    "owned_model_probe_job": "6aacb9175c02253cfb1461d1",
-    "spaces_count": 5,
-    "spaces_probe_job": "6aacc24d5c02253cfb14636e",
-    "spaces_with_model_weights_verified": 0,
-    "buckets_count": 2,
-    "bucket_ids": [
-      "COMAND-CENTER-1/claude-github-mcp-backup-storage",
-      "COMAND-CENTER-1/yaiwes-v54"
-    ],
-    "buckets_with_model_weights_verified": 0,
-    "buckets_probe_job": "6aacc21b5c02253cfb146365",
-    "inference_endpoints_status": "GAP_PERMISSION_403_MISSING_inference.endpoints.read",
-    "endpoints_probe_job": "6aacc20eb1dc2b62dc590800",
-    "runtime_inference_verified_model_ids": [
+    "runtime_inference_historical_verified_model_ids": [
       "Qwen/Qwen3-0.6B",
       "openai-community/gpt2",
       "Qwen/Qwen3-8B"
     ],
-    "persistent_model_installations_verified": 0
+    "historical_20_accounted_semantics": "CATALOG_ACCOUNTING_NOT_RUNTIME_READY",
+    "active_model_gate": "REGISTER -> REMOTE_PROVIDER_DISCOVERY -> AUTH_REFERENCE -> REMOTE_INFERENCE_SMOKE -> FAILURE_FALLBACK_TEST -> EVIDENCE -> READY"
   },
-  "image_models_registered_gap_pending": [
-    "kandinskylab/Kandinsky-5.0-T2I-Lite-sft-Diffusers",
-    "Qwen/Qwen-Image",
-    "black-forest-labs/FLUX.1-schnell"
-  ]
+  "superseded_provenance": {
+    "mirror_download_design": "PRESERVED_AS_HISTORY_NOT_ACTIVE_GATE",
+    "snapshot_download": "SUPERSEDED_FOR_NORMAL_AI_STAFF_PATH",
+    "download_hash_load": "SUPERSEDED_FOR_NORMAL_AI_STAFF_PATH"
+  },
+  "external_components": {
+    "OmniRoute": "DOWNSTREAM_ADAPTER_RUNTIME_TEST_PENDING",
+    "AnyDoc": "INGEST_ADAPTER_RUNTIME_TEST_PENDING",
+    "Orca": "EXTERNAL_ADE_RUNTIME_VERIFIER_PENDING",
+    "Omarchy": "OPTIONAL_HOST_CHECKLIST_PENDING"
+  },
+  "next_gate": "STATE_RECONCILIATION -> CRAZY_WALL_SYNC -> HF_REMOTE_MODEL_GATES -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
+  "documentation_sync": "PARTIAL_PLAN_HANDOFF_CHECKPOINT_RECONCILED_STATE_CRAZY_WALL_README_INDEX_PENDING",
+  "global_closed": false
 }
