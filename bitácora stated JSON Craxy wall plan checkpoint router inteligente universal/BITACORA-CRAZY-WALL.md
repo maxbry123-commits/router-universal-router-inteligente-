@@ -257,3 +257,80 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - TAREA-1 no contiene el catálogo remoto 20; sólo bridge de credenciales/runtime + publicación de Space.
 - GAP actual: V12 no tiene `models` pero `huggingface_openai_chat.py` aún exige esa clave; adapter/registry están desincronizados.
 - Auditoría completa: `forensics/RIU-0091-HF-REMOTE-20-RECOVERY-XRAY-2026-09-18.md`.
+
+
+## RIU-0098 — CLAUDE NOTAS/ CREADA + FIX REAL GAP_ADAPTER_REGISTRY_SCHEMA — 2026-09-18
+
+**Autorización del Director (verbatim, chat 2026-09-18):** P1=SI iniciar;
+P2=autorizado a reparar en el camino sin escalar ni detenerse, resolver
+GAPs disponibles, avanzar y reportar, "100 autorizado"; P3=solo puedo
+escribir en ESTE repo (nunca en `agentes` ni otros); P4=replicar el
+método de `agentes/Claude notas/` en este repo.
+
+### Trabajo realizado
+1. **Auditoría forense pasada 1 de 4** completada: leídos CLAUDE.md,
+   Handoff, README arquitectura completo (28 raíces + 4 externos + HF
+   REMOTE20 + gates), Índice componentes C01-C23, ambos índices de
+   modelos HF, STATE.json, CHECKPOINT.json, PLAN-TAREAS.md, esta bitácora
+   completa, y el método/memoria del Claude de `agentes`
+   (memoria.md, REQUISITO-50-mundos, LISTA-TRABAJO-4-FRENTES,
+   DECISION-objetivo-osquestador).
+2. **Raíz `Claude notas/memoria.md` creada en main de este repo**
+   (commit `a26f2abbfcbf1dadbf9b53d48d825c6e74384b0b`), replicando el
+   método verbatim/1-a-1 del otro Claude, con inventario completo de las
+   28 raíces, duplicados, componentes externos, HF, gaps y proximo delta.
+3. **GAP_ADAPTER_REGISTRY_SCHEMA RESUELTO CON EVIDENCIA REAL** (no era
+   bloqueante-teórico, era un bug real que rompía cualquier llamada):
+   - `huggingface_openai_chat.py::allowed_model_ids()` llamaba
+     `registry()["models"]`, clave que **nunca existió en V12** ->
+     KeyError garantizado en producción.
+   - Fix commit `dfd796616d074c71b17589f7d1654ae3988846cd`: ahora lee
+     `runtime_inference_verified_model_ids` (los 3 IDs con
+     REMOTE_INFERENCE_SMOKE real: Qwen3-0.6B, gpt2, Qwen3-8B) y separa
+     una función nueva `provider_live_model_ids()` para exponer el
+     REMOTE20 SIN habilitarlo para chat (sigue en
+     `GAP_AUTH_REMOTE_INFERENCE`, 0/20 PASS por 403).
+   - `model_registry.json` migrado V12->V13 (commit
+     `2479c28587fbdacd03db124d1a41b32f51bb79fc`): se agregó
+     `remote20_provider_live_verified` con los 20 model_id + providers
+     reales tomados de `Handoff router inteligente universal.md`
+     RIU-0094 y `forensics/RIU-0091-...`. Ningún campo previo fue
+     borrado; `runtime_inference_verified_model_ids` y
+     `remote_inference_queue` quedaron intactos.
+   - Test nuevo `router inteligente universal/tests/test_huggingface_openai_chat_registry.py`
+     (commit `21e71e72f2e69c785af16abd6fe193b8385e0115`) cubre: no-crash
+     de `allowed_model_ids()`, separación estricta allowed vs
+     provider-live, y rechazo de un model_id del REMOTE20 en
+     `chat_completion()` con `MODEL_NOT_IN_CERTIFIED_REGISTRY`.
+   - **GAP HONESTO, no oculto:** el test fue escrito y committeado pero
+     **no se ejecutó todavía en un runner real** (esta sesión no tiene
+     shell sobre el repo clonado ni acceso a un HF Job/GitHub Actions
+     para correrlo). No se declara `PASS`; se declara
+     `CODE_COMMITTED_TEST_WRITTEN_EXECUTION_PENDING`. Regla del propio
+     repo: "no declarar PASS sin evidencia real (ruta + commit/blob SHA +
+     diff + log + URL + read-back + test)" -- el log de ejecución real
+     falta y queda como tarea inmediata (correrlo vía
+     `.github/workflows/claude-root-editor.yml` o un HF Job cpu-basic).
+
+### Nuevo GAP autoritativo agregado
+`GAP-TEST-EXECUTION-001`: `test_huggingface_openai_chat_registry.py`
+existe en `main` pero no tiene corrida real registrada (sin log/run
+id). No cerrar el fix de RIU-0094/GAP_ADAPTER_REGISTRY_SCHEMA como
+`VERIFIED` hasta tener ese log.
+
+### Estado heredado sin cambios (ver Handoff RIU-0094 para detalle completo)
+`REMOTE20_INVENTORY_RECOVERED=PASS`,
+`REMOTE20_PROVIDER_DISCOVERY=20/20_PASS`,
+`REMOTE20_PERSISTENT_WEIGHT_COPIES=0_VERIFIED`,
+`REMOTE20_AUTHENTICATED_INFERENCE=0/20_PASS_CURRENT_EVIDENCE`,
+`GAP_AUTH_REMOTE_INFERENCE=OPEN` (sin cambios, sigue abierto -- el fix de
+hoy resuelve el bug del *adapter*, no la autenticación remota, que
+requiere una credencial HF con permiso real de Inference Providers).
+`GAP_ADAPTER_REGISTRY_SCHEMA=CODE_FIXED_TEST_WRITTEN_EXECUTION_PENDING`
+(antes: `OPEN`).
+
+### Próximo delta seguro (sin cambios respecto al Handoff, adoptado)
+`STATE_RECONCILIATION -> CRAZY_WALL_SYNC(este commit) -> PLAN_SYNC ->
+HF_ADAPTER_REGISTRY_SCHEMA_FIX(commit real, test pendiente de ejecutar)
+-> HF_REMOTE_MODEL_GATES -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY
+-> GLOBAL_E2E -> FINAL_DOC_SYNC`.
