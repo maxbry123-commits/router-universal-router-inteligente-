@@ -215,3 +215,23 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - Read-back real: HF Job `6aacbb0c5c02253cfb14622d` COMPLETED; submodule checkout exacto y `package.json` presente.
 - Estado descarga/materialización: `VERIFIED`.
 - Integración detrás de `connector_registry`: `PENDING`; no se declara PASS funcional todavía.
+
+
+## RIU-0086 — PRIORITY LOCK 5 + IMAGE STAFF
+1. `HF_SKILLS_LIBRARY` — sólo cerrar con runtime discovery real.
+2. `HF_DATASET_CONNECTION_VERIFY` — lectura/conexión real, no presencia documental.
+3. `HF_COMPUTE_50_API_IDENTITIES_MODELS_MIRRORS` — inventario persistente + compute + identidades/mirrors reales.
+4. `AI_MODEL_INTEGRATION_QUEUE` — TimesFM, WAN2.2 Animate, LTX-Video, HunyuanVideo, Kandinsky 5, Qwen-Image, FLUX.1-schnell; integrar uno por uno.
+5. `ARCHIFY_SKILLS_FLOW_DIAGRAM` — upstream exacto pendiente; producir diagrama de listo/falta.
+
+### HF installed-surface X-Ray
+- Owned model repos=0, Job `6aacb9175c02253cfb1461d1`.
+- Spaces=5; ninguno guarda pesos de modelo en repo, Job `6aacc24d5c02253cfb14636e`.
+- Buckets=2; tamaños 41 B y 1918 B, sin pesos, Job `6aacc21b5c02253cfb146365`.
+- Inference Endpoints=`GAP_PERMISSION_403`, Job `6aacc20eb1dc2b62dc590800`; no inferir 0.
+- Runtime models realmente inferidos: Qwen3-0.6B, GPT-2, Qwen3-8B.
+
+### Nuevos modelos AI Staff
+- Kandinsky 5 T2I Lite — MIT, rev `25da1e82...`, GAP_PENDING.
+- Qwen-Image — Apache-2.0, rev `75e0b4be...`, GAP_PENDING.
+- FLUX.1-schnell — Apache-2.0, gated, rev `741f7c3c...`, GAP_PENDING.
