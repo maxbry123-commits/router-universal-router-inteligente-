@@ -48,9 +48,12 @@
     "identity_pool_test_job": "6aac7f48b1dc2b62dc58fb73",
     "identity_pool_test_commit": "7ec0a58b7f4557984963f099dd113ea48d4be110",
     "hf_compute_sizing_commit": "fbd82905b0a73b3bd5c9714726564f1b8b4f8479",
-    "agent_model_mix_commit": "7c91f51e3aec6c0d6108e68b4132ec232d2513cd"
+    "agent_model_mix_commit": "7c91f51e3aec6c0d6108e68b4132ec232d2513cd",
+    "hf_mcp_api_audit_commit": "014f3e59a76bf7943a6a1cc36dfd5e1376dd1760",
+    "hf_mcp_boundary_test_job": "6aac809f5c02253cfb145474",
+    "hf_mcp_boundary_test_commit": "f97791ca61197ecbdad0d1d2bb7c792a37c721dc"
   },
-  "current_node": "RIU-0082_HF_MCP_API_BOUNDARY",
+  "current_node": "RIU-0083_HF_SKILLS_INTEGRATION",
   "updated_at": "2026-09-17",
   "root_entries_accounted": 28,
   "external_components_accounted": [
@@ -81,7 +84,9 @@
     "HF_MIRROR_RUNTIME_VERIFIED": false,
     "ROUTING_OVER_50_IDENTITIES_VERIFIED": true,
     "HF_COMPUTE_SIZING_POLICY_VERIFIED": true,
-    "AGENT_MODEL_MIX_POLICY_VERIFIED": true
+    "AGENT_MODEL_MIX_POLICY_VERIFIED": true,
+    "HF_MCP_API_BOUNDARY_VERIFIED": true,
+    "HF_MCP_REMOTE_OAUTH_E2E_VERIFIED": false
   },
   "documentation_sync": "VERIFIED_READBACK_PASS"
 }
