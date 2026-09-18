@@ -30,7 +30,8 @@
         "tencent/HunyuanVideo",
         "google/timesfm-3.0-pytorch"
       ]
-    }
+    },
+    "video_metadata_job": "6aacbd6a5c02253cfb14629d"
   },
   "gateway": {
     "provider": "huggingface",
@@ -127,7 +128,12 @@
       "hash_state": "GAP_PENDING",
       "load_test_state": "GAP_PENDING",
       "status": "GAP_PENDING",
-      "agent": false
+      "agent": false,
+      "revision": "cb93a225fbaf1ca100f54e79da8f994995b689b3",
+      "repo_total_bytes": 72376533926,
+      "repo_file_count": 444,
+      "metadata_job": "6aacbd6a5c02253cfb14629d",
+      "download_decision": "PENDING_EXACT_FILESET_TO_AVOID_BLIND_72GB_FULL_REPO"
     },
     {
       "slot": "HF-VID-02",
@@ -144,7 +150,12 @@
       "hash_state": "GAP_PENDING",
       "load_test_state": "GAP_PENDING",
       "status": "GAP_PENDING",
-      "agent": false
+      "agent": false,
+      "revision": "8984fa25007f376c1a299016d0957a37a2f797bb",
+      "repo_total_bytes": 254107005436,
+      "repo_file_count": 63,
+      "metadata_job": "6aacbd6a5c02253cfb14629d",
+      "download_decision": "PENDING_VARIANT_SELECTION_REPO_CONTAINS_MULTIPLE_13B_FP8_DISTILLED_DEV_WEIGHTS"
     },
     {
       "slot": "HF-VID-03",
@@ -159,7 +170,12 @@
       "hash_state": "GAP_PENDING",
       "load_test_state": "GAP_PENDING",
       "status": "GAP_PENDING",
-      "agent": false
+      "agent": false,
+      "revision": "6204ad6aea1a77ff5aba337c88278bb9500eb37d",
+      "repo_total_bytes": 39813712319,
+      "repo_file_count": 10,
+      "metadata_job": "6aacbd6a5c02253cfb14629d",
+      "download_decision": "PENDING_LICENSE_AND_EXACT_WEIGHT_SELECTION"
     }
   ],
   "dataset": {
