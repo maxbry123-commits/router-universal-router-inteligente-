@@ -188,3 +188,11 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - HF Job `6aac809f5c02253cfb145474` = COMPLETED; **5/5 runs, 10 passed each**.
 - Current app OAuth has read-mcp scope, but RIU-side remote OAuth handshake is not falsely claimed.
 - Audit commit: `014f3e59a76bf7943a6a1cc36dfd5e1376dd1760`.
+
+
+## RIU-0083 — OMNIROUTE ACQUISITION + INTEGRATION QUEUE — 2026-09-17
+- Fuente fijada: `diegosouzapw/OmniRoute` rama `release/v3.8.51` @ `1603c86e06da473e0fffb3802585e052219ac353`.
+- Destino canónico resuelto: `router inteligente universal/Componente open soure router inteligente universal/OmniRoute/`.
+- DOWNLOAD=MOTOR_QUEUE_PENDING; MATERIALIZATION=NOT_YET_VERIFIED.
+- PENDING PARA CLAUDE + SOL: después de presencia física + read-back/hash, integrar detrás de `connector_registry` sin crear un segundo router.
+- Gate: no declarar DOWNLOAD PASS ni INTEGRATION PASS sin evidencia física/prueba real.
