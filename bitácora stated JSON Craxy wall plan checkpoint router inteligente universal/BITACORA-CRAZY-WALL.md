@@ -235,3 +235,14 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - Kandinsky 5 T2I Lite — MIT, rev `25da1e82...`, GAP_PENDING.
 - Qwen-Image — Apache-2.0, rev `75e0b4be...`, GAP_PENDING.
 - FLUX.1-schnell — Apache-2.0, gated, rev `741f7c3c...`, GAP_PENDING.
+
+
+## RIU-0090 — HF REMOTE LLM X-RAY
+- Regla autoritativa: modelos AI Staff/HF se consumen por llamada remota; no se instalan ni persisten pesos.
+- Ruta: `RedUniversal -> connector_registry -> HF adapter/InferenceClient -> Inference Provider/Endpoint remoto -> model_id`.
+- Histórico `20/20 accounted` = catálogo/slots contabilizados, NO 20 llamadas remotas verificadas.
+- Evidencia real auditada: M01 Qwen3-0.6B, M02 GPT-2 y M03 Qwen3-8B fueron inferencia dentro de HF Jobs con carga efímera; M05/M06/M07/M10/M11/M12/M20 tienen Jobs/hot-path previos, pero la evidencia histórica es principalmente compute/Job-local, no provider-hosted autenticado.
+- Provider hosted histórico quedó bloqueado por `FLAG-HF-PROVIDER-AUTH-001`; el adapter canónico existe pero V12 quedó desincronizado porque `huggingface_openai_chat.py` espera `registry["models"]` y V12 ya no contiene esa clave.
+- Probe GitHub Actions rerun actual: run `34677207175`, job `105555011892`; paso HF identity/token role=`skipped`, por lo que esa cadena de secrets no llega al workflow del Router. No inferir ausencia en otros repos/entornos.
+- TAREA-1: workflow HF encontrado es publicación de Space estático; no registra catálogo LLM remoto.
+- Estado: `GAP_REMOTE_MODEL_RECONSTRUCTION`; no READY hasta provider discovery + auth + remote inference + fallback + evidencia por modelo.
