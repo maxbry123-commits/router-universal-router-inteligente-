@@ -165,3 +165,10 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - Batch registration is atomic and validates connector kinds against `connector_registry`.
 - Exact test commit `7ec0a58b7f4557984963f099dd113ea48d4be110`.
 - HF Job `6aac7f48b1dc2b62dc58fb73` COMPLETED; **5/5 runs, 5 passed each**, including 64-identity rollover.
+
+
+## RIU-0080 — HF COMPUTE SIZING — ✅ POLICY PASS
+- HF1/HF2/HF3 remain logical worker lanes, not permanently allocated machines.
+- HF1: CPU control/tests/small workloads; HF2: A10G medium baseline supported by Qwen3-8B real evidence; HF3: large/burst selected by benchmark or provider Endpoint.
+- Official HF Jobs flavors/pricing reviewed fresh; no paid resource provisioned speculatively.
+- Policy commit: `fbd82905b0a73b3bd5c9714726564f1b8b4f8479`.
