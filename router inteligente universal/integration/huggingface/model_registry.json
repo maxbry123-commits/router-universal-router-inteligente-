@@ -1,31 +1,178 @@
 {
-  "contract":"RIU-HF-MODEL-REGISTRY-V8",
-  "truth_rule":"CATALOG_OBSERVED != READY; compute != adapter/FastAPI; dataset RO binding != persistent RW; token present != inference or bucket-write permission",
-  "catalog_evidence":{"job_id":"6aa2513d5527934177ebfaad","count":20,"private_catalog_status":"GAP-HF-CATALOG-001"},
-  "gateway":{"provider":"huggingface","base_url":"https://router.huggingface.co/v1","token_env":"HF_TOKEN","fastapi_route":"/v1/chat/completions","gateway_file":"router inteligente universal/integration/huggingface/fastapi_gateway.py","hot_path_file":"router inteligente universal/integration/huggingface/router_hot_path.py","adapter_file":"router inteligente universal/integration/huggingface/huggingface_openai_chat.py","status":"ENCHUFE_REDUNIVERSAL_TESTED_PROVIDER_AUTH_FLAGGED"},
-  "models":[
-    {"slot":"HF-M01","model_id":"Qwen/Qwen3-0.6B","specialty":"text-generation/conversational","library":"transformers","processor":"CONFIG_TOKENIZER_VALIDATED","accelerator":"CPU_UPGRADE_REAL_INFERENCE_VERIFIED","dataset_storage":"HuggingFaceH4/ultrachat_200k:RO_BINDING_VERIFIED","adapter":"ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED","fastapi":"HOT_PATH_DETERMINISTIC_TESTED","status":"PROVIDER_AUTH_FLAGGED"},
-    {"slot":"HF-M02","model_id":"openai-community/gpt2","specialty":"text-generation","library":"transformers","processor":"AUTOTOKENIZER_RUNTIME_VALIDATED","accelerator":"CPU_UPGRADE_REAL_INFERENCE_VERIFIED","runtime_model_class":"GPT2LMHeadModel","runtime_parameters":124439808,"compute_job":"6aa2a4f25527934177ec0e01","dataset_storage":"Salesforce/wikitext:RO_MOUNT_VERIFIED; RW_STORAGE_AUTH_FLAGGED","adapter":"ENCHUFE_ROUTER_ADAPTER_VERIFIED","fastapi":"HTTP_200_HOT_PATH_VERIFIED","integration_job":"6aa2cf4f21047bf1b0372e67","storage_auth_job":"6aa2ebc15527934177ec1eb6","status":"INTEGRATION_VERIFIED_STORAGE_RW_AUTH_FLAGGED"},
-    {"slot":"HF-M03","model_id":"Qwen/Qwen3-8B","specialty":"text-generation/conversational","library":"transformers","processor":"AUTOTOKENIZER_CHAT_TEMPLATE_RUNTIME_VALIDATED","accelerator":"A10G_SMALL_REAL_INFERENCE_VERIFIED","runtime_model_class":"Qwen3ForCausalLM","runtime_parameters":8190735360,"max_memory_allocated":16396255232,"compute_job":"6aa2ecbb21047bf1b037318e","dataset_storage":"PENDING","adapter":"PENDING","fastapi":"PENDING","status":"COMPUTE_VERIFIED_NOT_READY"},
-    {"slot":"HF-M04","model_id":"unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF","specialty":"text-generation/code","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M05","model_id":"Qwen/Qwen2.5-7B-Instruct","specialty":"text-generation/instruct","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M06","model_id":"facebook/opt-125m","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M07","model_id":"Qwen/Qwen2.5-1.5B-Instruct","specialty":"text-generation/instruct","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M08","model_id":"farbodtavakkoli/OTel-2.0-LLM-31B-IT","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M09","model_id":"openai/gpt-oss-20b","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M10","model_id":"Qwen/Qwen2.5-0.5B-Instruct","specialty":"text-generation/instruct","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M11","model_id":"Qwen/Qwen3-4B","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M12","model_id":"Qwen/Qwen2.5-3B-Instruct","specialty":"text-generation/instruct","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M13","model_id":"openai/gpt-oss-120b","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M14","model_id":"Qwen/Qwen3-32B","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M15","model_id":"dphn/dolphin-2.9.1-yi-1.5-34b","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M16","model_id":"deepseek-ai/DeepSeek-V4-Flash-0731","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M17","model_id":"ornith-ai/Ornith-1.0-9B-GGUF","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M18","model_id":"ornith-ai/Ornith-1.5-9B-GGUF","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M19","model_id":"Qwen/Qwen-72B","specialty":"text-generation","status":"CATALOG_OBSERVED"},
-    {"slot":"HF-M20","model_id":"Qwen/Qwen2.5-7B-Instruct-AWQ","specialty":"text-generation/instruct","status":"CATALOG_OBSERVED"}
+  "contract": "RIU-HF-MODEL-REGISTRY-V9",
+  "truth_rule": "ROUTER_REGISTERED != ACCOUNT_INSTALLED; CATALOG_OBSERVED != READY; only fresh authenticated Hub/cache/runtime evidence may populate installed inventory",
+  "catalog_evidence": {
+    "job_id": "6aa2513d5527934177ebfaad",
+    "count": 20,
+    "private_catalog_status": "GAP-HF-CATALOG-001",
+    "historical_router_catalog_count": 20,
+    "active_router_registry_count": 7,
+    "installed_account_inventory_status": "GAP_PENDING_FRESH_AUTHENTICATED_INVENTORY"
+  },
+  "gateway": {
+    "provider": "huggingface",
+    "base_url": "https://router.huggingface.co/v1",
+    "token_env": "HF_TOKEN",
+    "fastapi_route": "/v1/chat/completions",
+    "gateway_file": "router inteligente universal/integration/huggingface/fastapi_gateway.py",
+    "hot_path_file": "router inteligente universal/integration/huggingface/router_hot_path.py",
+    "adapter_file": "router inteligente universal/integration/huggingface/huggingface_openai_chat.py",
+    "status": "ENCHUFE_REDUNIVERSAL_TESTED_PROVIDER_AUTH_FLAGGED"
+  },
+  "models": [
+    {
+      "slot": "HF-M01",
+      "model_id": "Qwen/Qwen3-0.6B",
+      "specialty": "text-generation/conversational",
+      "library": "transformers",
+      "processor": "CONFIG_TOKENIZER_VALIDATED",
+      "accelerator": "CPU_UPGRADE_REAL_INFERENCE_VERIFIED",
+      "dataset_storage": "HuggingFaceH4/ultrachat_200k:RO_BINDING_VERIFIED",
+      "adapter": "ENCHUFE_REDUNIVERSAL_BOUNDARY_TESTED",
+      "fastapi": "HOT_PATH_DETERMINISTIC_TESTED",
+      "status": "PROVIDER_AUTH_FLAGGED"
+    },
+    {
+      "slot": "HF-M02",
+      "model_id": "openai-community/gpt2",
+      "specialty": "text-generation",
+      "library": "transformers",
+      "processor": "AUTOTOKENIZER_RUNTIME_VALIDATED",
+      "accelerator": "CPU_UPGRADE_REAL_INFERENCE_VERIFIED",
+      "runtime_model_class": "GPT2LMHeadModel",
+      "runtime_parameters": 124439808,
+      "compute_job": "6aa2a4f25527934177ec0e01",
+      "dataset_storage": "Salesforce/wikitext:RO_MOUNT_VERIFIED; RW_STORAGE_AUTH_FLAGGED",
+      "adapter": "ENCHUFE_ROUTER_ADAPTER_VERIFIED",
+      "fastapi": "HTTP_200_HOT_PATH_VERIFIED",
+      "integration_job": "6aa2cf4f21047bf1b0372e67",
+      "storage_auth_job": "6aa2ebc15527934177ec1eb6",
+      "status": "INTEGRATION_VERIFIED_STORAGE_RW_AUTH_FLAGGED"
+    },
+    {
+      "slot": "HF-M03",
+      "model_id": "Qwen/Qwen3-8B",
+      "specialty": "text-generation/conversational",
+      "library": "transformers",
+      "processor": "AUTOTOKENIZER_CHAT_TEMPLATE_RUNTIME_VALIDATED",
+      "accelerator": "A10G_SMALL_REAL_INFERENCE_VERIFIED",
+      "runtime_model_class": "Qwen3ForCausalLM",
+      "runtime_parameters": 8190735360,
+      "max_memory_allocated": 16396255232,
+      "compute_job": "6aa2ecbb21047bf1b037318e",
+      "dataset_storage": "PENDING",
+      "adapter": "PENDING",
+      "fastapi": "PENDING",
+      "status": "COMPUTE_VERIFIED_NOT_READY"
+    },
+    {
+      "slot": "HF-M05",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "specialty": "text-generation/instruct",
+      "status": "CATALOG_OBSERVED"
+    },
+    {
+      "slot": "HF-M07",
+      "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+      "specialty": "text-generation/instruct",
+      "status": "CATALOG_OBSERVED"
+    },
+    {
+      "slot": "HF-M08",
+      "model_id": "farbodtavakkoli/OTel-2.0-LLM-31B-IT",
+      "specialty": "text-generation",
+      "status": "CATALOG_OBSERVED"
+    },
+    {
+      "slot": "HF-M09",
+      "model_id": "openai/gpt-oss-20b",
+      "specialty": "text-generation",
+      "status": "CATALOG_OBSERVED"
+    }
   ],
-  "dataset":{"hf_m01":{"dataset_ref":"HuggingFaceH4/ultrachat_200k","status":"RO_BINDING_VERIFIED","job_id":"6aa2983921047bf1b03725eb","manifest_sha256":"241f6f1a9ac692d9bb2c1556e2be369c15d6a53401256749d34f3e1a6fc0b640"},"hf_m02":{"dataset_ref":"Salesforce/wikitext","status":"RO_MOUNT_VERIFIED; RW_STORAGE_AUTH_FLAGGED","integration_job":"6aa2cf4f21047bf1b0372e67","storage_auth_job":"6aa2ebc15527934177ec1eb6"},"persistent_output_bucket":"NOT_VERIFIED"},
-  "security":{"token_env":"HF_TOKEN","hardcoded_tokens":false,"provider_auth_status":"FLAG-HF-PROVIDER-AUTH-001","provider_auth_job":"6aa2985921047bf1b03725ed","provider_auth_result":"403_INSUFFICIENT_INFERENCE_PROVIDER_PERMISSION","bucket_auth_status":"FLAG-HF-M02-RW-STORAGE-AUTH-001","bucket_auth_job":"6aa2ebc15527934177ec1eb6","bucket_auth_result":"403_INSUFFICIENT_BUCKET_CREATE_WRITE_PERMISSION"},
-  "delta_evidence":{"delta":"RIU-0044","hf_m03_compute_job":"6aa2ecbb21047bf1b037318e","hf_m03_compute_result":"COMPLETED_REAL_GPU_GENERATION","audit_file":"router inteligente universal/integration/huggingface/RIU-0044-HF-M03-REAL-COMPUTE.md"}
+  "dataset": {
+    "hf_m01": {
+      "dataset_ref": "HuggingFaceH4/ultrachat_200k",
+      "status": "RO_BINDING_VERIFIED",
+      "job_id": "6aa2983921047bf1b03725eb",
+      "manifest_sha256": "241f6f1a9ac692d9bb2c1556e2be369c15d6a53401256749d34f3e1a6fc0b640"
+    },
+    "hf_m02": {
+      "dataset_ref": "Salesforce/wikitext",
+      "status": "RO_MOUNT_VERIFIED; RW_STORAGE_AUTH_FLAGGED",
+      "integration_job": "6aa2cf4f21047bf1b0372e67",
+      "storage_auth_job": "6aa2ebc15527934177ec1eb6"
+    },
+    "persistent_output_bucket": "NOT_VERIFIED"
+  },
+  "security": {
+    "token_env": "HF_TOKEN",
+    "hardcoded_tokens": false,
+    "provider_auth_status": "FLAG-HF-PROVIDER-AUTH-001",
+    "provider_auth_job": "6aa2985921047bf1b03725ed",
+    "provider_auth_result": "403_INSUFFICIENT_INFERENCE_PROVIDER_PERMISSION",
+    "bucket_auth_status": "FLAG-HF-M02-RW-STORAGE-AUTH-001",
+    "bucket_auth_job": "6aa2ebc15527934177ec1eb6",
+    "bucket_auth_result": "403_INSUFFICIENT_BUCKET_CREATE_WRITE_PERMISSION"
+  },
+  "delta_evidence": {
+    "delta": "RIU-0044",
+    "hf_m03_compute_job": "6aa2ecbb21047bf1b037318e",
+    "hf_m03_compute_result": "COMPLETED_REAL_GPU_GENERATION",
+    "audit_file": "router inteligente universal/integration/huggingface/RIU-0044-HF-M03-REAL-COMPUTE.md"
+  },
+  "removed_from_active_registry_2026_09_17": [
+    {
+      "model_id": "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "facebook/opt-125m",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "Qwen/Qwen3-4B",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "Qwen/Qwen2.5-3B-Instruct",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "openai/gpt-oss-120b",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "Qwen/Qwen3-32B",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "dphn/dolphin-2.9.1-yi-1.5-34b",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "ornith-ai/Ornith-1.0-9B-GGUF",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "ornith-ai/Ornith-1.5-9B-GGUF",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "Qwen/Qwen-72B",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    },
+    {
+      "model_id": "Qwen/Qwen2.5-7B-Instruct-AWQ",
+      "reason": "USER_REJECTED_AS_INSTALLED_INVENTORY; historical catalog/job reference is not proof of account installation"
+    }
+  ]
 }
