@@ -1,12 +1,12 @@
 {
-  "contract": "RIU-HF-MODEL-REGISTRY-V10",
+  "contract": "RIU-HF-MODEL-REGISTRY-V11",
   "truth_rule": "ROUTER_REGISTERED != ACCOUNT_INSTALLED; CATALOG_OBSERVED != READY; only fresh authenticated Hub/cache/runtime evidence may populate installed inventory",
   "catalog_evidence": {
     "job_id": "6aa2513d5527934177ebfaad",
     "count": 20,
     "private_catalog_status": "GAP-HF-CATALOG-001",
     "historical_router_catalog_count": 20,
-    "active_router_registry_count": 10,
+    "active_router_registry_count": 13,
     "installed_account_inventory_status": "GAP_PENDING_FRESH_AUTHENTICATED_INVENTORY",
     "real_inventory_summary": {
       "account_owned_model_repos": 0,
@@ -31,7 +31,30 @@
         "google/timesfm-3.0-pytorch"
       ]
     },
-    "video_metadata_job": "6aacbd6a5c02253cfb14629d"
+    "video_metadata_job": "6aacbd6a5c02253cfb14629d",
+    "installed_surface_audit": {
+      "account": "COMAND-CENTER-1",
+      "owned_model_repos": 0,
+      "owned_model_probe_job": "6aacb9175c02253cfb1461d1",
+      "spaces_count": 5,
+      "spaces_probe_job": "6aacc24d5c02253cfb14636e",
+      "spaces_with_model_weights_verified": 0,
+      "buckets_count": 2,
+      "bucket_ids": [
+        "COMAND-CENTER-1/claude-github-mcp-backup-storage",
+        "COMAND-CENTER-1/yaiwes-v54"
+      ],
+      "buckets_with_model_weights_verified": 0,
+      "buckets_probe_job": "6aacc21b5c02253cfb146365",
+      "inference_endpoints_status": "GAP_PERMISSION_403_MISSING_inference.endpoints.read",
+      "endpoints_probe_job": "6aacc20eb1dc2b62dc590800",
+      "runtime_inference_verified_model_ids": [
+        "Qwen/Qwen3-0.6B",
+        "openai-community/gpt2",
+        "Qwen/Qwen3-8B"
+      ],
+      "persistent_model_installations_verified": 0
+    }
   },
   "gateway": {
     "provider": "huggingface",
@@ -176,6 +199,71 @@
       "repo_file_count": 10,
       "metadata_job": "6aacbd6a5c02253cfb14629d",
       "download_decision": "PENDING_LICENSE_AND_EXACT_WEIGHT_SELECTION"
+    },
+    {
+      "slot": "HF-IMG-01",
+      "model_id": "kandinskylab/Kandinsky-5.0-T2I-Lite-sft-Diffusers",
+      "family": "Kandinsky 5.0",
+      "ai_staff_path": "AI Staff/Image & Design Models",
+      "specialty": "text-to-image/image-generation",
+      "task": "text-to-image",
+      "library": "diffusers",
+      "parameters": 6022100000,
+      "source_url": "https://huggingface.co/kandinskylab/Kandinsky-5.0-T2I-Lite-sft-Diffusers",
+      "revision": "25da1e82e6adefdbc83c02a71f762287c5e471a4",
+      "repo_total_bytes": 35656690112,
+      "repo_file_count": 49,
+      "license": "mit",
+      "gated": false,
+      "agent": false,
+      "status": "GAP_PENDING",
+      "download_state": "GAP_PENDING",
+      "hash_state": "GAP_PENDING",
+      "load_test_state": "GAP_PENDING",
+      "note": "Kandinsky 5 checkpoint license observed on HF is MIT; do not inherit Kandinsky 2.0 license assumptions."
+    },
+    {
+      "slot": "HF-IMG-02",
+      "model_id": "Qwen/Qwen-Image",
+      "family": "Qwen-Image",
+      "ai_staff_path": "AI Staff/Image & Design Models",
+      "specialty": "text-to-image/image-editing/text-rendering",
+      "task": "text-to-image",
+      "library": "diffusers",
+      "parameters": 20430400000,
+      "source_url": "https://huggingface.co/Qwen/Qwen-Image",
+      "revision": "75e0b4be04f60ec59a75f475837eced720f823b6",
+      "repo_total_bytes": 57704594653,
+      "repo_file_count": 31,
+      "license": "apache-2.0",
+      "gated": false,
+      "agent": false,
+      "status": "GAP_PENDING",
+      "download_state": "GAP_PENDING",
+      "hash_state": "GAP_PENDING",
+      "load_test_state": "GAP_PENDING"
+    },
+    {
+      "slot": "HF-IMG-03",
+      "model_id": "black-forest-labs/FLUX.1-schnell",
+      "family": "FLUX.1",
+      "ai_staff_path": "AI Staff/Image & Design Models",
+      "specialty": "fast-text-to-image",
+      "task": "text-to-image",
+      "library": "diffusers",
+      "parameters": 11891200000,
+      "source_url": "https://huggingface.co/black-forest-labs/FLUX.1-schnell",
+      "revision": "741f7c3ce8b383c54771c7003378a50191e9efe9",
+      "repo_total_bytes": 57845410538,
+      "repo_file_count": 28,
+      "license": "apache-2.0",
+      "gated": "auto",
+      "access_note": "GATED_REPO_ACCEPT_ACCESS_CONDITIONS_BEFORE_FILE_DOWNLOAD",
+      "agent": false,
+      "status": "GAP_PENDING",
+      "download_state": "GAP_PENDING",
+      "hash_state": "GAP_PENDING",
+      "load_test_state": "GAP_PENDING"
     }
   ],
   "dataset": {
