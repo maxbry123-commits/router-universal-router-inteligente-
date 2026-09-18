@@ -246,3 +246,14 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - Probe GitHub Actions rerun actual: run `34677207175`, job `105555011892`; paso HF identity/token role=`skipped`, por lo que esa cadena de secrets no llega al workflow del Router. No inferir ausencia en otros repos/entornos.
 - TAREA-1: workflow HF encontrado es publicación de Space estático; no registra catálogo LLM remoto.
 - Estado: `GAP_REMOTE_MODEL_RECONSTRUCTION`; no READY hasta provider discovery + auth + remote inference + fallback + evidencia por modelo.
+
+
+## RIU-0091 — HF REMOTE 20 RECOVERY X-RAY
+- Recuperado el registry remoto V2 en commit `fc61718c658b60a4f2b9ecbad3b0bfabf1c5847f`: 20 model_id provenientes de `https://router.huggingface.co/v1/models`.
+- Jobs históricos `6aa245235527934177ebf8aa` + `6aa245405527934177ebf8ac` = enumeración y metadata de los 20.
+- Fresh Job `6aad0a2951992417dfcc6844`: **20/20 siguen presentes y 20/20 tienen >=1 provider live**.
+- Root cause: commit `8ce5ceaa98fcf62c7b6ba2d47b067edaaa6b4d4e` reemplazó ese registry por otro top-20 público de text-generation; ambas listas se mezclaron después.
+- `huggueface/manifest.yml` confirma `REMOTE_ONLY` y `external_weights_persisted=false`; bucket `yaiwes-v54` confirma `weights_copy_count=0`.
+- TAREA-1 no contiene el catálogo remoto 20; sólo bridge de credenciales/runtime + publicación de Space.
+- GAP actual: V12 no tiene `models` pero `huggingface_openai_chat.py` aún exige esa clave; adapter/registry están desincronizados.
+- Auditoría completa: `forensics/RIU-0091-HF-REMOTE-20-RECOVERY-XRAY-2026-09-18.md`.
