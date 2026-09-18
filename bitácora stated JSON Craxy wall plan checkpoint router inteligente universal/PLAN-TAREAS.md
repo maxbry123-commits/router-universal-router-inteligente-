@@ -74,7 +74,7 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 8. **HF-MODEL-RUNTIME** — prueba real por modelo descubierto antes de operational PASS.
 9. **HF-CODE-MODELS ✅ CLASIFICADO** — M04=CODE_SPECIALIZED por base model Qwen3-Coder; M15=CODE_CAPABLE_TRAINING_EVIDENCE generalista; otros 18 no demostrados Code-specialized. Runtime Code sigue pendiente.
 10. **HF-MIRROR-REPLICA ✅ DISEÑO** — repo duplicate ≠ endpoint replicas ≠ revision-pinned snapshot; gates/provenance definidos. Ejecución real queda pendiente de destino/costo explícito.
-10. **ROUTING-50-IDENTITIES** — diseño secuencial >50 APIs/identidades usando modelos/replicas/mirrors; no simultaneidad obligatoria.
+10. **ROUTING-50-IDENTITIES ✅ 64 VERIFIED** — `red/identity_pool.py`; 64 identidades secuenciales, quota/cooldown/mirror/priority, secret refs only; HF Job `6aac7f48b1dc2b62dc58fb73`, 5×5 tests PASS.
 11. **HF-COMPUTE** — sizing de cómputo considerando los 3 recursos/procesadores HF del proyecto.
 12. **AGENT-MODEL-MIX** — modelos pequeños para agentes + modelos grandes, con criterios medidos.
 13. **HF-MCP-API** — MCP + API key por secret refs; sin valores en repo/chat.
