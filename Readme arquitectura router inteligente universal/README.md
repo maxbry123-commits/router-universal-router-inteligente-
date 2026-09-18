@@ -213,3 +213,15 @@ Destino: `AI Staff -> Image & Design Models`. Son modelos especializados, no age
 | `black-forest-labs/FLUX.1-schnell` | text-to-image rápido | Apache-2.0 + acceso gated | GAP_PENDING |
 
 Regla: registrar != descargar != hash-verificar != cargar != inferir != PASS. Cada modelo pasa por el motor de descarga existente, revisión fija, selección de fileset, hash, carga e inferencia antes de promoverse.
+
+
+## Hugging Face AI Staff — contrato remoto autoritativo RIU-0090
+Los modelos del AI Staff no se descargan ni se instalan como pesos persistentes en Hugging Face, buckets, Spaces o el Router. Se consumen remotamente.
+
+Ruta canónica: `RedUniversal -> connector_registry -> HF adapter/InferenceClient -> Inference Provider o Endpoint remoto -> model_id -> respuesta`.
+
+El diseño RIU-0078 de `duplicate_repo` / `snapshot_download` se conserva sólo como provenance histórica y queda SUPERSEDED para la integración normal de modelos AI Staff. Un cache temporal dentro de HF Jobs se clasifica `EPHEMERAL_JOB_CACHE`, nunca `INSTALLED`.
+
+Gate por modelo: `REGISTER -> REMOTE_PROVIDER_DISCOVERY -> AUTH_REFERENCE -> REMOTE_INFERENCE_SMOKE -> FAILURE_FALLBACK_TEST -> EVIDENCE -> READY`.
+
+Auditoría RIU-0090: el histórico `MODEL_CERTIFICATION_20_OF_20_ACCOUNTED` demuestra contabilización de catálogo, no 20 provider calls. M01/M02/M03 tienen evidencia de inferencia real dentro de HF Jobs; los demás PASS históricos deben recertificarse como llamadas remotas provider-hosted antes de considerarse READY bajo este contrato.
