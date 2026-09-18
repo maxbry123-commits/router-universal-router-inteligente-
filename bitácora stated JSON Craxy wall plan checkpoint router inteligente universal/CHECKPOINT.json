@@ -2,9 +2,9 @@
   "checkpoint": "riu-0083-hf-skills-integration",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
-  "status": "ACTIVE_GAP_PENDING_DOWNLOADS",
+  "status": "ACTIVE_PRIORITY_LOCK_5",
   "core": "VERIFIED_CLOSED",
-  "current_node": "RIU-0085_HF_REAL_INVENTORY_AND_VIDEO_MODELS",
+  "current_node": "RIU-0086_PRIORITY_LOCK_AND_IMAGE_MODELS",
   "updated_at": "2026-09-17",
   "root_entries_accounted": 28,
   "connectivity": {
@@ -73,5 +73,40 @@
     "runtime_inference_verified": 3,
     "provisional_router_refs": 4,
     "pending_video_models": 3
-  }
+  },
+  "priority_lock": [
+    "HF_SKILLS_LIBRARY",
+    "HF_DATASET_CONNECTION_VERIFY",
+    "HF_COMPUTE_50_API_IDENTITIES_MODELS_MIRRORS",
+    "AI_MODEL_INTEGRATION_QUEUE_TIMESFM_VIDEO_IMAGE",
+    "ARCHIFY_SKILLS_FLOW_DIAGRAM"
+  ],
+  "hf_installed_surface_audit": {
+    "account": "COMAND-CENTER-1",
+    "owned_model_repos": 0,
+    "owned_model_probe_job": "6aacb9175c02253cfb1461d1",
+    "spaces_count": 5,
+    "spaces_probe_job": "6aacc24d5c02253cfb14636e",
+    "spaces_with_model_weights_verified": 0,
+    "buckets_count": 2,
+    "bucket_ids": [
+      "COMAND-CENTER-1/claude-github-mcp-backup-storage",
+      "COMAND-CENTER-1/yaiwes-v54"
+    ],
+    "buckets_with_model_weights_verified": 0,
+    "buckets_probe_job": "6aacc21b5c02253cfb146365",
+    "inference_endpoints_status": "GAP_PERMISSION_403_MISSING_inference.endpoints.read",
+    "endpoints_probe_job": "6aacc20eb1dc2b62dc590800",
+    "runtime_inference_verified_model_ids": [
+      "Qwen/Qwen3-0.6B",
+      "openai-community/gpt2",
+      "Qwen/Qwen3-8B"
+    ],
+    "persistent_model_installations_verified": 0
+  },
+  "image_models_registered_gap_pending": [
+    "kandinskylab/Kandinsky-5.0-T2I-Lite-sft-Diffusers",
+    "Qwen/Qwen-Image",
+    "black-forest-labs/FLUX.1-schnell"
+  ]
 }
