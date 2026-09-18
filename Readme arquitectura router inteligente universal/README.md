@@ -195,9 +195,9 @@ Destino lógico: `AI Staff -> Video / Animation Models`. Estos modelos son espec
 | `Lightricks/LTX-Video` | image-to-video, workflows de video, control de movimiento | other — términos exactos por verificar | GAP_PENDING |
 | `tencent/HunyuanVideo` | text-to-video, foundation video | other — términos exactos por verificar | GAP_PENDING |
 
-Flujo obligatorio: `repo HF -> motor de descarga existente -> revision + archivos -> hash -> carga real -> inferencia smoke -> evidencia -> AI Staff registry -> Router`.
+Flujo autoritativo REMOTE_ONLY: `RedUniversal -> connector_registry -> HF remote adapter/InferenceClient -> Inference Provider/Endpoint remoto -> model_id -> respuesta -> evidencia`. **No descargar, duplicar, instalar ni persistir pesos**. El flujo anterior de descarga/hash/carga queda `SUPERSEDED` para AI Staff.
 
-No se habilita producción hasta validar licencia individual, revisión, tamaño, hashes, requisitos de cómputo y prueba de carga. Fuentes:
+No se habilita producción hasta validar licencia individual, provider remoto, autorización, inferencia smoke, failure/fallback y evidencia. Fuentes:
 - https://huggingface.co/Wan-AI/Wan2.2-Animate-14B
 - https://huggingface.co/Lightricks/LTX-Video
 - https://huggingface.co/tencent/HunyuanVideo
@@ -212,7 +212,7 @@ Destino: `AI Staff -> Image & Design Models`. Son modelos especializados, no age
 | `Qwen/Qwen-Image` | generación/edición de imagen y texto visual | Apache-2.0 | GAP_PENDING |
 | `black-forest-labs/FLUX.1-schnell` | text-to-image rápido | Apache-2.0 + acceso gated | GAP_PENDING |
 
-Regla: registrar != descargar != hash-verificar != cargar != inferir != PASS. Cada modelo pasa por el motor de descarga existente, revisión fija, selección de fileset, hash, carga e inferencia antes de promoverse.
+Regla REMOTE_ONLY: `REGISTERED != PROVIDER_LIVE != REMOTE_INFERENCE_PASS != READY`. Cada modelo debe pasar por provider discovery, autorización, inferencia remota smoke, failure/fallback y evidencia. **No se descargan ni persisten pesos**.
 
 
 ## Hugging Face AI Staff — contrato remoto autoritativo RIU-0090
@@ -225,3 +225,45 @@ El diseño RIU-0078 de `duplicate_repo` / `snapshot_download` se conserva sólo 
 Gate por modelo: `REGISTER -> REMOTE_PROVIDER_DISCOVERY -> AUTH_REFERENCE -> REMOTE_INFERENCE_SMOKE -> FAILURE_FALLBACK_TEST -> EVIDENCE -> READY`.
 
 Auditoría RIU-0090: el histórico `MODEL_CERTIFICATION_20_OF_20_ACCOUNTED` demuestra contabilización de catálogo, no 20 provider calls. M01/M02/M03 tienen evidencia de inferencia real dentro de HF Jobs; los demás PASS históricos deben recertificarse como llamadas remotas provider-hosted antes de considerarse READY bajo este contrato.
+
+
+## RIU-0094 — Inventario Hugging Face REMOTE20 V2 completo, modelo por modelo — 2026-09-18
+Fuente histórica exacta: commit `fc61718c658b60a4f2b9ecbad3b0bfabf1c5847f` (`RIU-HF-MODEL-REGISTRY-V2`). Recuperación forense: `forensics/RIU-0091-HF-REMOTE-20-RECOVERY-XRAY-2026-09-18.md`, commit `df829bb92d7ef5b8c2e6f740802a050d77c1ecec`.
+
+Verificación fresh: HF Job `6aad981352d0dbd7f1d6b827` consultó `https://router.huggingface.co/v1/models`: HTTP 200, catálogo observado=138; **20/20 REMOTE20 presentes y 20/20 con >=1 provider live**. La misma ejecución intentó `/v1/chat/completions` con `:fastest` y providers explícitos: 0/20 inferencias PASS porque la credencial disponible en ese HF Job devolvió 403 `insufficient permissions to call Inference Providers`. Por fail-closed: `PROVIDER_LIVE_VERIFIED != REMOTE_INFERENCE_AUTHENTICATED_PASS`.
+
+| # | model_id | providers live verificados | estado |
+|---:|---|---|---|
+| 1 | `Qwen/Qwen3.8-27B` | novita, cerebras, ovhcloud, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 2 | `deepseek-ai/DeepSeek-V4-Flash-Vision-Exp` | novita, fireworks-ai, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 3 | `zai-org/GLM-5.3-Flash` | novita, together, fireworks-ai, featherless-ai, zai-org, baseten, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 4 | `zai-org/GLM-5.3` | novita, together, fireworks-ai, featherless-ai, zai-org, baseten, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 5 | `inclusionAI/Ling-3.0-flash-Fin` | novita, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 6 | `moonshotai/Kimi-K3` | together, fireworks-ai, featherless-ai, baseten, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 7 | `meta-llama/Llama-3.1-8B-Instruct` | novita, nscale, featherless-ai, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 8 | `inclusionAI/Ling-3.0-flash-VL` | novita, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 9 | `deepseek-ai/DeepSeek-V4-Flash-0731` | novita, together, fireworks-ai, featherless-ai, scaleway, baseten, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 10 | `prism-ml/Ternary-Bonsai-27B-gguf` | together | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 11 | `meta-models/Muse-Glimmer-30B` | together, fireworks-ai, featherless-ai, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 12 | `google/gemma-4-31B-it` | novita, featherless-ai, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 13 | `openai/gpt-oss-120b` | groq, novita, cerebras, nscale, together, fireworks-ai, featherless-ai, scaleway, baseten, ovhcloud, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 14 | `Qwen/Qwen3.6-35B-A3B` | featherless-ai, scaleway, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 15 | `openai/gpt-oss-20b` | groq, novita, nscale, featherless-ai, ovhcloud, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 16 | `deepseek-ai/DeepSeek-V4-Pro` | novita, featherless-ai, baseten, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 17 | `deepseek-ai/DeepSeek-V4-Flash` | novita, featherless-ai, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 18 | `Qwen/Qwen3.5-9B` | together, featherless-ai, ovhcloud, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 19 | `inclusionAI/Ling-3.0-flash` | novita, deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+| 20 | `ibm-granite/granite-4.2-3b` | deepinfra | PROVIDER_LIVE_VERIFIED / GAP_AUTH_REMOTE_INFERENCE |
+
+### Ubicación exacta y contrato
+- **No existen como 20 repos/instalaciones de `COMAND-CENTER-1`**. Se resuelven remotamente mediante `https://router.huggingface.co/v1`.
+- Pesos: permanecen en publishers/providers; el Router no debe copiarlos.
+- Cache de HF Jobs: efímera; no cuenta como instalación persistente.
+- Bucket persistente `COMAND-CENTER-1/yaiwes-v54`: manifiesto/evidencia; `persistent_external_weights=false`, `weights_copy_count=0`.
+- Bridge remoto: `huggueface/bridge/router_hf_bridge.py`.
+- Adapter de chat: `router inteligente universal/integration/huggingface/huggingface_openai_chat.py`.
+- Registry vigente: `router inteligente universal/integration/huggingface/model_registry.json`; actualmente V12 está desincronizado con `allowed_model_ids()` porque V12 no contiene la clave legacy `models`. Estado: `GAP_ADAPTER_REGISTRY_SCHEMA`.
+- Inventario recuperado y causa de mezcla de catálogos: `forensics/RIU-0091-HF-REMOTE-20-RECOVERY-XRAY-2026-09-18.md`.
+- Job fresh de provider discovery + smoke auth: `6aad981352d0dbd7f1d6b827`.
+- Workflow de prueba creado en TAREA-1: commit `c52feb559ad9a6e9ddc93c7ab319f86bef02cbb6`, run `35388761622`, job `105741917281`; se detuvo antes de inferencia porque `${{ secrets.HF_TOKEN }}` resolvió vacío en ese contexto. No atribuir ese fallo a los modelos.
+- Estado autoritativo: **20/20 PROVIDER_LIVE_VERIFIED; 0/20 REMOTE_INFERENCE_AUTHENTICATED_PASS con la credencial disponible en las pruebas actuales; GAP_AUTH pendiente**.
