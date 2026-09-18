@@ -99,3 +99,11 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 26. **FINAL-DEDUP-ORPHANS** — ninguna eliminación sin provenance/equivalencia/read-back.
 27. **SYNC-FINAL** — arquitectura + STATE + PLAN + BITÁCORA + CHECKPOINT + Handoff consistentes.
 28. **VERIFY_FINAL** — sólo `VERIFIED_CLOSED` con todas las pruebas/evidencias requeridas.
+
+
+## RIU-0085 — HF REAL INVENTORY + VIDEO MODELS
+1. **INVENTORY_REAL** — mantener separado repos propios (0 fresh), inferencia verificada (3), referencias Router provisionales (4), mirrors persistentes verificados (0) e instalaciones locales persistentes verificadas (0).
+2. **WAN22_ANIMATE** — licencia/revision/tamaño -> motor existente -> descarga -> hashes -> carga/inferencia -> evidencia -> PASS sólo si todo cumple.
+3. **LTX_VIDEO** — resolver licencia exacta -> revision/tamaño -> descarga/hash -> carga/inferencia.
+4. **HUNYUANVIDEO** — resolver licencia exacta -> revision/tamaño -> descarga/hash -> carga/inferencia.
+5. **COMPUTE_RECALC** — recalcular HF1/HF2/HF3 después de conocer pesos/requisitos reales de los modelos aceptados.
