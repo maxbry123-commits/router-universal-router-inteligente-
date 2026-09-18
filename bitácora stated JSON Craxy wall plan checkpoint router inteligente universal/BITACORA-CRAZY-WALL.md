@@ -156,3 +156,12 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - RedUniversal remains routing owner; no internal endpoint replica is exposed as a second Router route.
 - No mirror created without explicit destination/namespace; no Endpoint replica count changed without resource/cost authorization.
 - Audit commit: `9b0595507649d495651d7e5065bc7b15087a3d6f`.
+
+
+## RIU-0079 — ROUTING >50 IDENTITIES — ✅ 64 VERIFIED
+- Added `router inteligente universal/red/identity_pool.py`; no second router.
+- Identity metadata stores `secret_env` references, not secret values.
+- Selection is sequential: priority → mirror rank → identity id; quota/cooldown/disable fail over to next identity.
+- Batch registration is atomic and validates connector kinds against `connector_registry`.
+- Exact test commit `7ec0a58b7f4557984963f099dd113ea48d4be110`.
+- HF Job `6aac7f48b1dc2b62dc58fb73` COMPLETED; **5/5 runs, 5 passed each**, including 64-identity rollover.
