@@ -179,3 +179,12 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - Specialist/large models remain escalation-only until their exact runtime path is verified.
 - Quota/auth/health failures use identity/mirror failover before increasing model size.
 - Policy commit: `7c91f51e3aec6c0d6108e68b4132ec232d2513cd`.
+
+
+## RIU-0082 — HF MCP + API — ✅ BOUNDARY VERIFIED / REMOTE E2E PENDING
+- Official HF MCP URL: `https://huggingface.co/mcp`; transport declared Streamable HTTP; MCP authentication remains client/OAuth-managed.
+- Hub/Inference API credential remains a separate runtime secret reference.
+- Runtime/test commit `f97791ca61197ecbdad0d1d2bb7c792a37c721dc`.
+- HF Job `6aac809f5c02253cfb145474` = COMPLETED; **5/5 runs, 10 passed each**.
+- Current app OAuth has read-mcp scope, but RIU-side remote OAuth handshake is not falsely claimed.
+- Audit commit: `014f3e59a76bf7943a6a1cc36dfd5e1376dd1760`.
