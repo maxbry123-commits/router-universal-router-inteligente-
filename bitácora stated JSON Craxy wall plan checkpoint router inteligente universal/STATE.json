@@ -181,7 +181,7 @@
     "WAN2.2 Animate/LTX-Video/HunyuanVideo official HF repos verified and registered GAP_PENDING"
   ],
   "next_tasks": [
-    "Claude + SOL: materialize OmniRoute @ 1603c86e06da473e0fffb3802585e052219ac353 into router inteligente universal/Componente open soure router inteligente universal/OmniRoute/, read-back/hash, then integrate behind connector_registry",
+    "Integrate and test OmniRoute adapter behind connector_registry",
     "Consolidate root owners without deleting donor/evidence data",
     "Materialize and test OmniRoute adapter behind connector_registry",
     "Validate Orca ADE with isolated RIU worktrees and verifier-gated merge",
@@ -223,7 +223,9 @@
       "source_commit": "1603c86e06da473e0fffb3802585e052219ac353",
       "destination": "router inteligente universal/Componente open soure router inteligente universal/OmniRoute/",
       "role": "OPTIONAL_DOWNSTREAM_GATEWAY",
-      "state": "DOWNLOAD_QUEUED_PENDING_MATERIALIZATION_AND_INTEGRATION",
+      "state": "MATERIALIZED_PINNED_SUBMODULE_VERIFIED_INTEGRATION_PENDING",
+      "materialization_commit": "ca931941988510d546fb71e2bef76545d5cab5e2",
+      "readback_job": "6aacbb0c5c02253cfb14622d",
       "integration_owners": [
         "Claude",
         "SOL"
