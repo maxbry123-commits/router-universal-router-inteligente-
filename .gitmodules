@@ -1,0 +1,4 @@
+[submodule "router inteligente universal/Componente open soure router inteligente universal/OmniRoute"]
+	path = router inteligente universal/Componente open soure router inteligente universal/OmniRoute
+	url = https://github.com/diegosouzapw/OmniRoute.git
+	branch = release/v3.8.51
