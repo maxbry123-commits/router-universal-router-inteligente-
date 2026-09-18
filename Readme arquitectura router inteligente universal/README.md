@@ -172,3 +172,7 @@ Se separan tres mecanismos: (1) repo duplicate/mirror con `duplicate_repo` / `hf
 
 ### >50 identidades/API — RIU-0079
 El Router ya soportaba 1000+ nodos en `RedUniversal`; se añadió `red/identity_pool.py` para resolver el GAP de muchas identidades/proveedores sin fan-out. El pool registra sólo referencias `secret_env`, valida `connector_kind` contra el registry y selecciona una identidad elegible por vez usando prioridad, mirror rank, quota-exhausted y cooldown. Test exacto `7ec0a58b7f4557984963f099dd113ea48d4be110`: HF Job `6aac7f48b1dc2b62dc58fb73` COMPLETED, 5/5 rondas, 5 tests por ronda, incluyendo rollover secuencial de **64 identidades**. Routing ownership permanece en RedUniversal.
+
+
+### Cómputo HF — RIU-0080
+HF1/HF2/HF3 son workers lógicos, no máquinas fijas. Política: HF1 control/tests/small en CPU; HF2 GPU medio con baseline A10G para Qwen3-8B ya verificado; HF3 large/burst seleccionado por benchmark (48 GB/multi-GPU/provider Endpoint según modelo). No se aprovisiona hardware caro especulativamente. Evidencia/política: `forensics/RIU-0080-HF-COMPUTE-SIZING-2026-09-17.md`, commit `fbd82905b0a73b3bd5c9714726564f1b8b4f8479`.
