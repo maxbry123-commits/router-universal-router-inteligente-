@@ -2,9 +2,9 @@
   "checkpoint": "riu-0083-hf-skills-integration",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
-  "status": "ACTIVE_HF_SKILLS_RUNTIME_DISCOVERY_PENDING",
+  "status": "ACTIVE_GAP_PENDING_DOWNLOADS",
   "core": "VERIFIED_CLOSED",
-  "current_node": "RIU-0083_HF_SKILLS_INTEGRATION",
+  "current_node": "RIU-0085_HF_REAL_INVENTORY_AND_VIDEO_MODELS",
   "updated_at": "2026-09-17",
   "root_entries_accounted": 28,
   "connectivity": {
@@ -38,7 +38,13 @@
     "hf_skills_upstream": "https://github.com/huggingface/skills",
     "hf_skills_upstream_commit": "abc20ae526d8b4c0e4dff89f904adce28a4a0eb6",
     "hf_skills_registry_commit": "d33a5f41a8c33438e20111e599362cb5590b6bfb",
-    "hf_skills_registry_blob": "0b0ab10577e33fd13b26e21534bfe924f35e15ef"
+    "hf_skills_registry_blob": "0b0ab10577e33fd13b26e21534bfe924f35e15ef",
+    "riu_0085_registry_commit": "fa5fc46668b1ba91eddbcef8861aa16ea41d1689",
+    "riu_0085_index_commit": "c0b4bf8859cf759bd10a9bd494375ea52cf0ddf1",
+    "riu_0085_architecture_commit": "1c5dcd3e7af49e21465a6476ea2e3ecac064f45d",
+    "riu_0085_state_commit": "30bd475168074aba1226b5b0f4033f37788be966",
+    "riu_0085_plan_commit": "7e09e13031d4722e023257399a6560ee189ca5d8",
+    "riu_0085_bitacora_commit": "14cc737b7e86ff6af6e3f41a66cf8686c01bdff1"
   },
   "closure_gates": {
     "ROOT_28_ACCOUNTED": true,
@@ -59,5 +65,13 @@
     "DEDUP_ORPHAN_RECONCILIATION": false
   },
   "next_gate": "HF_SKILLS_RUNTIME_DISCOVERY -> GITHUB_HF_RUNTIME -> AUTH -> MCP_MEMORY -> GLOBAL_E2E",
-  "documentation_sync": "PENDING_STATE_PLAN_BITACORA_SYNC_AFTER_RIU_0083"
+  "documentation_sync": "PENDING_STATE_PLAN_BITACORA_SYNC_AFTER_RIU_0083",
+  "hf_inventory": {
+    "owned_model_repos": 0,
+    "persistent_mirrors_verified": 0,
+    "persistent_local_installs_verified": 0,
+    "runtime_inference_verified": 3,
+    "provisional_router_refs": 4,
+    "pending_video_models": 3
+  }
 }
