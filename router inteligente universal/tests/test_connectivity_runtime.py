@@ -93,3 +93,38 @@ def test_github_mcp_initialize_probe_is_read_only_and_hides_secret() -> None:
     kwargs = mocked.call_args.kwargs
     assert kwargs["method"] == "POST"
     assert kwargs["payload"]["method"] == "initialize"
+
+
+def test_huggingface_mcp_descriptor_separates_oauth_from_api_key() -> None:
+    env = {"RIU_HF_TOKEN": "hf-secret-value"}
+    descriptor = cr.mcp_huggingface_descriptor(env)
+    assert descriptor == {
+        "provider": "huggingface",
+        "resource": "hub_mcp",
+        "mcp_url": "https://huggingface.co/mcp",
+        "transport": "streamable_http",
+        "mcp_auth": "oauth_client_managed",
+        "hub_api_credential_ref": "RIU_HF_TOKEN",
+        "hub_api_auth_boundary": "runtime_or_vault",
+        "status": "CONFIGURED",
+    }
+    assert "hf-secret-value" not in json.dumps(descriptor)
+
+
+def test_huggingface_mcp_descriptor_fails_closed_without_api_reference() -> None:
+    try:
+        cr.mcp_huggingface_descriptor({})
+    except cr.MissingCredential:
+        pass
+    else:
+        raise AssertionError("HF MCP/API descriptor must fail closed without HF API credential reference")
+
+
+def test_public_runtime_status_declares_hf_mcp_without_secret() -> None:
+    env = {"RIU_HF_TOKEN": "hf-secret-value", "RIU_GITHUB_PAT": "gh-secret-value"}
+    status = cr.public_runtime_status(env)
+    assert status["huggingface_mcp"]["url"] == "https://huggingface.co/mcp"
+    assert status["huggingface_mcp"]["transport"] == "streamable_http"
+    assert status["huggingface_mcp"]["auth"] == "oauth_client_managed"
+    assert "hf-secret-value" not in json.dumps(status)
+    assert "gh-secret-value" not in json.dumps(status)
