@@ -7,7 +7,7 @@
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
   "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0082_HF_MCP_API_BOUNDARY",
+  "current_node": "RIU-0083_HF_SKILLS_INTEGRATION",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -37,7 +37,8 @@
     "RIU_0078_HF_MIRROR_REPLICA_RESEARCH_DESIGN_PASS",
     "RIU_0079_ROUTING_64_IDENTITIES_SEQUENTIAL_TESTED_5X",
     "RIU_0080_HF_COMPUTE_SIZING_POLICY_PASS",
-    "RIU_0081_AGENT_MODEL_MIX_POLICY_PASS"
+    "RIU_0081_AGENT_MODEL_MIX_POLICY_PASS",
+    "RIU_0082_HF_MCP_API_BOUNDARY_TESTED_5X"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -84,7 +85,8 @@
     "HF_CLOSURE_PLAN_VERIFIED",
     "HF_CANONICAL_REPLACEMENT_SCHEDULE_INPUTS_AND_TEST",
     "HF_MIRROR_RUNTIME_DESTINATION_AND_TEST",
-    "HF_ENDPOINT_REPLICA_RUNTIME_CONFIG_TEST"
+    "HF_ENDPOINT_REPLICA_RUNTIME_CONFIG_TEST",
+    "HF_MCP_REMOTE_OAUTH_E2E_VERIFIED"
   ],
   "connectivity": {
     "root": "conectividad con Router inteligente universal",
@@ -168,7 +170,9 @@
     "RIU-0079 identity pool code commits 87698603cd3072ba9c26662189e92f4e8b8f15f9 / 7ec0a58b7f4557984963f099dd113ea48d4be110",
     "HF Job 6aac7f48b1dc2b62dc58fb73 COMPLETED: 5 rounds x 5 tests; 64 identities sequential rollover verified",
     "RIU-0080 compute sizing policy commit fbd82905b0a73b3bd5c9714726564f1b8b4f8479",
-    "RIU-0081 agent model mix policy commit 7c91f51e3aec6c0d6108e68b4132ec232d2513cd"
+    "RIU-0081 agent model mix policy commit 7c91f51e3aec6c0d6108e68b4132ec232d2513cd",
+    "RIU-0082 MCP/API audit forensics/RIU-0082-HF-MCP-API-BOUNDARY-2026-09-17.md commit 014f3e59a76bf7943a6a1cc36dfd5e1376dd1760",
+    "HF Job 6aac809f5c02253cfb145474 COMPLETED: 5 rounds x 10 connectivity tests"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -191,11 +195,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0081",
-    "decision": "SMALL_FIRST_AGENT_MODEL_TIERS_WITH_VERIFIED_ESCALATION",
-    "verify_final": "PASS_POLICY_RUNTIME_STATUS_UNCHANGED",
-    "cross_check": "IDENTITY_MIRROR_FAILOVER_BEFORE_MODEL_SIZE_ESCALATION",
-    "coda": "NEXT_RIU_0082_HF_MCP_API_BOUNDARY"
+    "id": "RIU-0082",
+    "decision": "HF_MCP_OAUTH_AND_HUB_API_KEY_BOUNDARIES_SEPARATED",
+    "verify_final": "PASS_BOUNDARY_5X_REMOTE_OAUTH_E2E_PENDING",
+    "cross_check": "NO_SECRET_VALUES_SERIALIZED",
+    "coda": "NEXT_RIU_0083_HF_SKILLS_INTEGRATION"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
