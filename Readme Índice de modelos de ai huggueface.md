@@ -1,26 +1,40 @@
-# Readme Índice de modelos de AI Hugging Face — certificación 20/20
+# Readme Índice de modelos de AI Hugging Face — inventario corregido
 
 ## Regla de verdad
-`CATALOG_OBSERVED != TESTED != READY`. Cada slot termina con `PASS` o `FLAG/GAP` explícito y evidencia.
+`ROUTER_REGISTERED != ACCOUNT_INSTALLED` y `CATALOG_OBSERVED != TESTED != READY`.
 
-## Estado final
-Core Router=`VERIFIED_CLOSED`; `MODEL_CERTIFICATION_20_OF_20_ACCOUNTED`; regresión global final=`PASS`.
+La certificación histórica de 20 slots del Router **no es un inventario de modelos instalados en la cuenta Hugging Face**. El usuario corrigió esa interpretación el 2026-09-17.
 
-## PASS/ejecución verificada
-M01 `Qwen/Qwen3-0.6B`; M02 `openai-community/gpt2`; M03 `Qwen/Qwen3-8B`; M05 `Qwen/Qwen2.5-7B-Instruct`; M06 `facebook/opt-125m`; M07 `Qwen/Qwen2.5-1.5B-Instruct`; M10 `Qwen/Qwen2.5-0.5B-Instruct`; M11 `Qwen/Qwen3-4B`; M12 `Qwen/Qwen2.5-3B-Instruct`; M20 `Qwen/Qwen2.5-7B-Instruct-AWQ`.
+## Registro activo provisional del Router
+Estos 7 IDs permanecen únicamente como referencias activas del Router hasta una verificación autenticada de instalación/uso. **No se declaran instalados en COMAND-CENTER-1.**
+- `Qwen/Qwen3-0.6B` — PROVIDER_AUTH_FLAGGED
+- `openai-community/gpt2` — INTEGRATION_VERIFIED_STORAGE_RW_AUTH_FLAGGED
+- `Qwen/Qwen3-8B` — COMPUTE_VERIFIED_NOT_READY
+- `Qwen/Qwen2.5-7B-Instruct` — CATALOG_OBSERVED
+- `Qwen/Qwen2.5-1.5B-Instruct` — CATALOG_OBSERVED
+- `farbodtavakkoli/OTel-2.0-LLM-31B-IT` — CATALOG_OBSERVED
+- `openai/gpt-oss-20b` — CATALOG_OBSERVED
 
-## FLAG/GAP contabilizados
-M04 `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` compute timeout; M08 `farbodtavakkoli/OTel-2.0-LLM-31B-IT` flavor/hardware; M09 `openai/gpt-oss-20b` response-contract content=null; M13 `openai/gpt-oss-120b` flavor/hardware; M14 `Qwen/Qwen3-32B` flavor/hardware; M15 `dphn/dolphin-2.9.1-yi-1.5-34b` flavor/hardware; M16 `deepseek-ai/DeepSeek-V4-Flash-0731` flavor/hardware; M17 `ornith-ai/Ornith-1.0-9B-GGUF` timeout; M18 `ornith-ai/Ornith-1.5-9B-GGUF` runtime/timeout; M19 `Qwen/Qwen-72B` flavor/hardware.
+## Modelos retirados del registro activo por corrección del usuario
+- `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`
+- `facebook/opt-125m`
+- `Qwen/Qwen2.5-0.5B-Instruct`
+- `Qwen/Qwen3-4B`
+- `Qwen/Qwen2.5-3B-Instruct`
+- `openai/gpt-oss-120b`
+- `Qwen/Qwen3-32B`
+- `dphn/dolphin-2.9.1-yi-1.5-34b`
+- `deepseek-ai/DeepSeek-V4-Flash-0731`
+- `ornith-ai/Ornith-1.0-9B-GGUF`
+- `ornith-ai/Ornith-1.5-9B-GGUF`
+- `Qwen/Qwen-72B`
+- `Qwen/Qwen2.5-7B-Instruct-AWQ`
 
-## M18 evidencia individual
-`6aa475605527934177eca1cb` ERROR exit 1; `6aa475e721047bf1b0378e13` diagnosticó `no GGUF files found` con selector Q3_K_S y `--model is required`; StrategyDelta canónico Q4_K_M `6aa4769b5527934177eca24b` alcanzó RUNNING pero no terminó en la ventana corta de 240s y fue cancelado. Final=`FLAG-HF-M18-RUNTIME-TIMEOUT-001`; no PASS/READY.
+Motivo común: aparecían en catálogo/Jobs históricos, pero esa evidencia no demuestra que sean modelos instalados o propios de la cuenta.
 
-## Gate final
-20/20 slots contabilizados. Regresión `RIU FAST-CLOSE` run `34582284615`, job `103434377312`: success, `2 passed, 2 warnings in 6.75s`.
-Estado=`VERIFIED_CLOSED`.
+## Inventario real de cuenta
+Estado: `GAP_PENDING_FRESH_AUTHENTICATED_INVENTORY`.
+La conexión actual confirma identidad `COMAND-CENTER-1`, pero el endpoint directo de búsqueda de modelos no está disponible. No se inferirá “0 modelos” ni se reutilizará el catálogo histórico como sustituto.
 
-## Clasificación Code — RIU-0077 (fresh 2026-09-17)
-- **CODE_SPECIALIZED:** M04 `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF`; base model Hub=`Qwen/Qwen3-Coder-30B-A3B-Instruct`. Runtime sigue GAP; clasificación no implica READY.
-- **CODE_CAPABLE_TRAINING_EVIDENCE / generalista:** M15 `dphn/dolphin-2.9.1-yi-1.5-34b`; metadata Hub incluye `CodeFeedback-Filtered-Instruction` y `dolphin-coder`, además de datasets generales.
-- **No demostrados Code-specialized:** los otros 18 slots; no se infiere especialización por capacidad general.
-- Auditoría: `forensics/RIU-0077-HF-CODE-MODEL-CLASSIFICATION-2026-09-17.md`, commit `fad57842d3d677010c581c7ddedc67fd95d7797c`.
+## Siguiente gate
+Obtener evidencia autenticada de repos/modelos privados/propios y de cualquier almacenamiento/cache persistente usado por el Router; deduplicar contra Jobs; sólo entonces recalcular cómputo y mirrors.
