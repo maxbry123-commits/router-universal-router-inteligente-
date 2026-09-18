@@ -1,13 +1,36 @@
 {
-  "contract": "RIU-HF-MODEL-REGISTRY-V9",
+  "contract": "RIU-HF-MODEL-REGISTRY-V10",
   "truth_rule": "ROUTER_REGISTERED != ACCOUNT_INSTALLED; CATALOG_OBSERVED != READY; only fresh authenticated Hub/cache/runtime evidence may populate installed inventory",
   "catalog_evidence": {
     "job_id": "6aa2513d5527934177ebfaad",
     "count": 20,
     "private_catalog_status": "GAP-HF-CATALOG-001",
     "historical_router_catalog_count": 20,
-    "active_router_registry_count": 7,
-    "installed_account_inventory_status": "GAP_PENDING_FRESH_AUTHENTICATED_INVENTORY"
+    "active_router_registry_count": 10,
+    "installed_account_inventory_status": "GAP_PENDING_FRESH_AUTHENTICATED_INVENTORY",
+    "real_inventory_summary": {
+      "account_owned_model_repos": 0,
+      "account_owned_model_repo_probe_job": "6aacb9175c02253cfb1461d1",
+      "persistent_mirrors_verified": 0,
+      "persistent_local_model_installations_verified": 0,
+      "runtime_inference_verified_model_ids": [
+        "Qwen/Qwen3-0.6B",
+        "openai-community/gpt2",
+        "Qwen/Qwen3-8B"
+      ],
+      "provisional_router_refs_not_proof_of_install": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "Qwen/Qwen2.5-1.5B-Instruct",
+        "farbodtavakkoli/OTel-2.0-LLM-31B-IT",
+        "openai/gpt-oss-20b"
+      ],
+      "pending_requested_models": [
+        "Wan-AI/Wan2.2-Animate-14B",
+        "Lightricks/LTX-Video",
+        "tencent/HunyuanVideo",
+        "google/timesfm-3.0-pytorch"
+      ]
+    }
   },
   "gateway": {
     "provider": "huggingface",
@@ -88,6 +111,55 @@
       "model_id": "openai/gpt-oss-20b",
       "specialty": "text-generation",
       "status": "CATALOG_OBSERVED"
+    },
+    {
+      "slot": "HF-VID-01",
+      "model_id": "Wan-AI/Wan2.2-Animate-14B",
+      "ai_staff_path": "AI Staff/Video / Animation Models",
+      "specialty": "video-to-video/character-animation/motion-transfer/character-replacement",
+      "task": "video-to-video",
+      "library": "diffusers",
+      "parameters": 17274800000,
+      "source_url": "https://huggingface.co/Wan-AI/Wan2.2-Animate-14B",
+      "license": "apache-2.0",
+      "license_scope": "REVIEW_BEFORE_PRODUCTION",
+      "download_state": "GAP_PENDING",
+      "hash_state": "GAP_PENDING",
+      "load_test_state": "GAP_PENDING",
+      "status": "GAP_PENDING",
+      "agent": false
+    },
+    {
+      "slot": "HF-VID-02",
+      "model_id": "Lightricks/LTX-Video",
+      "ai_staff_path": "AI Staff/Video / Animation Models",
+      "specialty": "image-to-video/text-video-workflows/motion-control/cinematic-composition",
+      "task": "image-to-video",
+      "library": "diffusers",
+      "parameters": 1923400000,
+      "source_url": "https://huggingface.co/Lightricks/LTX-Video",
+      "license": "other",
+      "license_scope": "UNVERIFIED_EXACT_TERMS_DO_NOT_ENABLE_PRODUCTION",
+      "download_state": "GAP_PENDING",
+      "hash_state": "GAP_PENDING",
+      "load_test_state": "GAP_PENDING",
+      "status": "GAP_PENDING",
+      "agent": false
+    },
+    {
+      "slot": "HF-VID-03",
+      "model_id": "tencent/HunyuanVideo",
+      "ai_staff_path": "AI Staff/Video / Animation Models",
+      "specialty": "text-to-video/foundation-video/prompt-video-alignment",
+      "task": "text-to-video",
+      "source_url": "https://huggingface.co/tencent/HunyuanVideo",
+      "license": "other",
+      "license_scope": "UNVERIFIED_EXACT_TERMS_DO_NOT_ENABLE_PRODUCTION",
+      "download_state": "GAP_PENDING",
+      "hash_state": "GAP_PENDING",
+      "load_test_state": "GAP_PENDING",
+      "status": "GAP_PENDING",
+      "agent": false
     }
   ],
   "dataset": {
