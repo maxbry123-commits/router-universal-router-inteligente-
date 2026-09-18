@@ -180,3 +180,7 @@ HF1/HF2/HF3 son workers lógicos, no máquinas fijas. Política: HF1 control/tes
 
 ### Mix de modelos para agentes — RIU-0081
 Política de escalado por tier: tiny/triage M10/M01/M07; small M12/M11; standard ~7B–8B M05/M20/M03; specialist/large sólo cuando la ruta exacta tenga runtime PASS. Auth/quota/health usa failover de identidad/mirror dentro del mismo tier antes de subir tamaño. Evidencia: `forensics/RIU-0081-AGENT-MODEL-MIX-2026-09-17.md`, commit `7c91f51e3aec6c0d6108e68b4132ec232d2513cd`.
+
+
+### HF MCP + API — RIU-0082
+HF MCP oficial=`https://huggingface.co/mcp` con autenticación OAuth/client-managed; Hub/Inference conserva credencial API separada por referencia de entorno. RIU no serializa secretos ni reutiliza una credencial como otro mecanismo sin evidencia. Exact test commit `f97791ca61197ecbdad0d1d2bb7c792a37c721dc`, HF Job `6aac809f5c02253cfb145474` COMPLETED, 5×10 tests PASS. Runtime OAuth MCP remoto de RIU sigue pendiente. Auditoría: `forensics/RIU-0082-HF-MCP-API-BOUNDARY-2026-09-17.md`.
