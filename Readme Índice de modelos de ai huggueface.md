@@ -38,3 +38,26 @@ La conexión actual confirma identidad `COMAND-CENTER-1`, pero el endpoint direc
 
 ## Siguiente gate
 Obtener evidencia autenticada de repos/modelos privados/propios y de cualquier almacenamiento/cache persistente usado por el Router; deduplicar contra Jobs; sólo entonces recalcular cómputo y mirrors.
+
+
+## Inventario real verificable — RIU-0085
+- Cuenta autenticada: `COMAND-CENTER-1`.
+- Repos de modelos **propiedad de la cuenta** obtenidos con consulta autenticada: **0**. Evidencia HF Job `6aacb9175c02253cfb1461d1`.
+- Mirrors de repos materializados y verificados: **0**. RIU-0078 documentó diseño, no ejecución.
+- Instalaciones locales persistentes verificadas: **0**.
+- Modelos con **inferencia real verificada en HF Jobs**:
+  - `Qwen/Qwen3-0.6B`
+  - `openai-community/gpt2`
+  - `Qwen/Qwen3-8B`
+- Referencias activas del Router sin prueba suficiente de instalación persistente:
+  - `Qwen/Qwen2.5-7B-Instruct`
+  - `Qwen/Qwen2.5-1.5B-Instruct`
+  - `farbodtavakkoli/OTel-2.0-LLM-31B-IT`
+  - `openai/gpt-oss-20b`
+
+### Video / Animation Models — solicitados, no instalados aún
+- `Wan-AI/Wan2.2-Animate-14B` — task video-to-video, Diffusers, ~17.27B params, licencia HF=`apache-2.0`, estado=`GAP_PENDING`.
+- `Lightricks/LTX-Video` — image-to-video, Diffusers, ~1.923B params, licencia HF=`other`; términos exactos pendientes, estado=`GAP_PENDING`.
+- `tencent/HunyuanVideo` — text-to-video, licencia HF=`other`; términos exactos pendientes, estado=`GAP_PENDING`.
+
+Regla: `REGISTERED/GAP_PENDING != DOWNLOADED != HASH_VERIFIED != LOAD_TESTED != PASS`.
