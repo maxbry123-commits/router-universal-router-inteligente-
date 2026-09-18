@@ -44,9 +44,11 @@
     "hf_watchdog_root_cause_commit": "ddb993d0f898a51b2f7372cc8e59cc269fdca220",
     "obsolete_schedule_id": "6aa1af2821047bf1b0370810",
     "hf_code_classification_commit": "fad57842d3d677010c581c7ddedc67fd95d7797c",
-    "hf_mirror_replica_design_commit": "9b0595507649d495651d7e5065bc7b15087a3d6f"
+    "hf_mirror_replica_design_commit": "9b0595507649d495651d7e5065bc7b15087a3d6f",
+    "identity_pool_test_job": "6aac7f48b1dc2b62dc58fb73",
+    "identity_pool_test_commit": "7ec0a58b7f4557984963f099dd113ea48d4be110"
   },
-  "current_node": "RIU-0079_ROUTING_OVER_50_IDENTITIES_PLAN",
+  "current_node": "RIU-0080_HF_COMPUTE_SIZING",
   "updated_at": "2026-09-17",
   "root_entries_accounted": 28,
   "external_components_accounted": [
@@ -74,7 +76,8 @@
     "HF_CODE_MODELS_CLASSIFIED": true,
     "HF_CODE_RUNTIME_VERIFIED": false,
     "HF_MIRROR_REPLICA_DESIGN_VERIFIED": true,
-    "HF_MIRROR_RUNTIME_VERIFIED": false
+    "HF_MIRROR_RUNTIME_VERIFIED": false,
+    "ROUTING_OVER_50_IDENTITIES_VERIFIED": true
   },
   "documentation_sync": "VERIFIED_READBACK_PASS"
 }
