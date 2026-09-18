@@ -61,3 +61,16 @@ Obtener evidencia autenticada de repos/modelos privados/propios y de cualquier a
 - `tencent/HunyuanVideo` — text-to-video, licencia HF=`other`; términos exactos pendientes, estado=`GAP_PENDING`.
 
 Regla: `REGISTERED/GAP_PENDING != DOWNLOADED != HASH_VERIFIED != LOAD_TESTED != PASS`.
+
+
+## Image / Design Models — RIU-0086
+- `kandinskylab/Kandinsky-5.0-T2I-Lite-sft-Diffusers` — rev `25da1e82...`, ~35.66 GB repo, MIT, `GAP_PENDING`.
+- `Qwen/Qwen-Image` — rev `75e0b4be...`, ~57.70 GB repo, Apache-2.0, `GAP_PENDING`.
+- `black-forest-labs/FLUX.1-schnell` — rev `741f7c3c...`, ~57.85 GB repo, Apache-2.0, gated access, `GAP_PENDING`.
+
+### Inventario persistente fresh
+- repos de modelo propios: **0** (Job `6aacb9175c02253cfb1461d1`).
+- Spaces: **5**, ninguno con pesos de modelo en el repo (Job `6aacc24d5c02253cfb14636e`).
+- buckets: **2**, ambos diminutos, sin pesos de modelo (Job `6aacc21b5c02253cfb146365`).
+- Inference Endpoints: **UNKNOWN/GAP_PERMISSION** por 403 `inference.endpoints.read` (Job `6aacc20eb1dc2b62dc590800`).
+- inferencia real probada en Jobs: `Qwen/Qwen3-0.6B`, `openai-community/gpt2`, `Qwen/Qwen3-8B`.
