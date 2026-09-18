@@ -7,7 +7,7 @@
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
   "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0081_AGENT_MODEL_MIX",
+  "current_node": "RIU-0082_HF_MCP_API_BOUNDARY",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -36,7 +36,8 @@
     "RIU_0077_HF_CODE_MODEL_CLASSIFICATION_PASS",
     "RIU_0078_HF_MIRROR_REPLICA_RESEARCH_DESIGN_PASS",
     "RIU_0079_ROUTING_64_IDENTITIES_SEQUENTIAL_TESTED_5X",
-    "RIU_0080_HF_COMPUTE_SIZING_POLICY_PASS"
+    "RIU_0080_HF_COMPUTE_SIZING_POLICY_PASS",
+    "RIU_0081_AGENT_MODEL_MIX_POLICY_PASS"
   ],
   "in_progress": [
     "CLAUDE_CODE_OAUTH_RUNTIME_PRESENCE",
@@ -166,7 +167,8 @@
     "RIU-0078 mirror/replica architecture commit 9b0595507649d495651d7e5065bc7b15087a3d6f",
     "RIU-0079 identity pool code commits 87698603cd3072ba9c26662189e92f4e8b8f15f9 / 7ec0a58b7f4557984963f099dd113ea48d4be110",
     "HF Job 6aac7f48b1dc2b62dc58fb73 COMPLETED: 5 rounds x 5 tests; 64 identities sequential rollover verified",
-    "RIU-0080 compute sizing policy commit fbd82905b0a73b3bd5c9714726564f1b8b4f8479"
+    "RIU-0080 compute sizing policy commit fbd82905b0a73b3bd5c9714726564f1b8b4f8479",
+    "RIU-0081 agent model mix policy commit 7c91f51e3aec6c0d6108e68b4132ec232d2513cd"
   ],
   "next_tasks": [
     "Consolidate root owners without deleting donor/evidence data",
@@ -189,11 +191,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0080",
-    "decision": "THREE_LOGICAL_WORKERS_DYNAMIC_HARDWARE_BY_MEASURED_WORKLOAD",
-    "verify_final": "PASS_POLICY_NO_SPECULATIVE_PROVISIONING",
-    "cross_check": "M01_M02_CPU_EVIDENCE_M03_A10G_EVIDENCE_LARGE_MODELS_REQUIRE_BENCHMARK",
-    "coda": "NEXT_RIU_0081_AGENT_MODEL_MIX"
+    "id": "RIU-0081",
+    "decision": "SMALL_FIRST_AGENT_MODEL_TIERS_WITH_VERIFIED_ESCALATION",
+    "verify_final": "PASS_POLICY_RUNTIME_STATUS_UNCHANGED",
+    "cross_check": "IDENTITY_MIRROR_FAILOVER_BEFORE_MODEL_SIZE_ESCALATION",
+    "coda": "NEXT_RIU_0082_HF_MCP_API_BOUNDARY"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
