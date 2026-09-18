@@ -172,3 +172,10 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - HF1: CPU control/tests/small workloads; HF2: A10G medium baseline supported by Qwen3-8B real evidence; HF3: large/burst selected by benchmark or provider Endpoint.
 - Official HF Jobs flavors/pricing reviewed fresh; no paid resource provisioned speculatively.
 - Policy commit: `fbd82905b0a73b3bd5c9714726564f1b8b4f8479`.
+
+
+## RIU-0081 — AGENT MODEL MIX — ✅ POLICY PASS
+- Tiny/triage: M10/M01/M07; small agents: M12/M11; standard agents: M05/M20/M03.
+- Specialist/large models remain escalation-only until their exact runtime path is verified.
+- Quota/auth/health failures use identity/mirror failover before increasing model size.
+- Policy commit: `7c91f51e3aec6c0d6108e68b4132ec232d2513cd`.
