@@ -1,19 +1,19 @@
 {
-  "checkpoint": "riu-0095-fresh-root-state-reconciliation",
+  "checkpoint": "riu-0097-remote20-authority-reconciliation",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "status": "ACTIVE_CLOSURE",
   "core": "VERIFIED_CLOSED_HISTORICAL_SCOPE_ONLY",
-  "current_node": "RIU-0095_FRESH_ROOT_STATE_RECONCILIATION",
+  "current_node": "RIU-0097_REMOTE20_AUTHORITY_RECONCILIATION",
   "updated_at": "2026-09-18",
-  "fresh_head_before_mutation": "5211fa27ff3a4552f3cf29b6bf8680235a67e208",
+  "fresh_head_before_mutation": "ab2e0ff79ce1b3699a647d450367d27e925deb29",
   "root_entries_accounted": 28,
   "routing_owner": "RedUniversal",
   "hf_runtime_contract": "REMOTE_INFERENCE_ONLY",
   "connectivity": {
     "bridges_v2": "19_OF_19_HISTORICAL_PASS",
     "github": "ADMIN_PUSH_FRESH_CONFIRMED_THIS_RUN",
-    "huggingface": "PENDING_FRESH_RUNTIME_CAPABILITY",
+    "huggingface": "REMOTE20_PROVIDER_DISCOVERY_20_OF_20_PASS_AUTH_INFERENCE_0_OF_20_GAP_AUTH",
     "mcp": "BRIDGED_E2E_PENDING",
     "memory": "BRIDGED_E2E_PENDING",
     "global_e2e": "PENDING"
@@ -22,7 +22,10 @@
     "ROOT_28_ACCOUNTED": true,
     "EXTERNAL_4_BOUNDARIES_DEFINED": true,
     "NO_ROUTING_OWNERSHIP_CONFLICT": true,
-    "HF_REMOTE_MODEL_GATES_ALL_VERIFIED": false,
+    "HF_REMOTE20_INVENTORY_RECOVERED": true,
+    "HF_REMOTE20_PROVIDER_DISCOVERY_20_OF_20": true,
+    "HF_REMOTE20_AUTHENTICATED_INFERENCE_ALL_VERIFIED": false,
+    "HF_ADAPTER_REGISTRY_SCHEMA_RECONCILED": false,
     "AUTH_RUNTIME_VERIFIED": false,
     "CONNECTIVITY_GLOBAL_E2E_PASS": false,
     "FULL_COMPONENT_CONTAINER_XRAY": false,
@@ -34,16 +37,22 @@
     "DOC_STATE_PLAN_CHECKPOINT_HANDOFF_SYNC": false
   },
   "hf_inventory": {
-    "owned_model_repos_verified": 0,
+    "remote20_inventory": "RECOVERED_VERIFIED",
+    "remote20_provider_discovery": "20_OF_20_PASS",
+    "remote20_authenticated_inference": "0_OF_20_CURRENT_EVIDENCE_GAP_AUTH",
     "persistent_mirrors_verified": 0,
     "persistent_local_installs_verified": 0,
-    "runtime_inference_historical_verified_model_ids": [
+    "persistent_external_weights": false,
+    "weights_copy_count": 0,
+    "historical_runtime_inference_verified_model_ids": [
       "Qwen/Qwen3-0.6B",
       "openai-community/gpt2",
       "Qwen/Qwen3-8B"
     ],
-    "historical_20_accounted_semantics": "CATALOG_ACCOUNTING_NOT_RUNTIME_READY",
-    "active_model_gate": "REGISTER -> REMOTE_PROVIDER_DISCOVERY -> AUTH_REFERENCE -> REMOTE_INFERENCE_SMOKE -> FAILURE_FALLBACK_TEST -> EVIDENCE -> READY"
+    "historical_20_accounted_semantics": "SEPARATE_CATALOG_ACCOUNTING_NOT_REMOTE20_RUNTIME_READY",
+    "active_model_gate": "REGISTER -> REMOTE_PROVIDER_DISCOVERY -> AUTH_REFERENCE -> REMOTE_INFERENCE_SMOKE -> FAILURE_FALLBACK_TEST -> EVIDENCE -> READY",
+    "provider_discovery_job": "6aad981352d0dbd7f1d6b827",
+    "adapter_schema_gap": "model_registry V12 lacks models while allowed_model_ids reads registry[models]"
   },
   "superseded_provenance": {
     "mirror_download_design": "PRESERVED_AS_HISTORY_NOT_ACTIVE_GATE",
@@ -59,16 +68,19 @@
   "fresh_authority_xray": {
     "state": "RIU-0086_STALE_LEGACY_MIRROR_DOWNLOAD_GATES_ACTIVE",
     "state_blob": "099355cbf19ebf5edc9b9f409c41548f998adca2",
+    "state_full_readback_forensic": "forensics/RIU-0096-STATE-FULL-READBACK-RECONCILIATION-2026-09-18.md",
+    "state_full_readback_forensic_blob": "9e9401240cc7ef6cee3ec99b4a35f3f1bd37cd06",
     "plan": "RIU-0089_REMOTE_INFERENCE_ONLY",
     "plan_blob": "acb08866e32a25c5f2669076211ecf20d7c4cea5",
-    "checkpoint": "RIU-0095_THIS_FILE",
-    "handoff": "RIU-0093_REMOTE_INFERENCE_ONLY",
-    "handoff_blob": "022f8e157e1bb0ad419ea67c4804d5af9bcc86d3",
-    "root_tree_probe": "FRESH_HEAD_AND_ROOT_TREE_READBACK_PASS",
-    "contradiction": "STATE_ACTIVE_GATES_CONFLICT_WITH_PLAN_HANDOFF_CHECKPOINT_REMOTE_INFERENCE_ONLY",
-    "safe_decision": "PRESERVE_STATE_EVIDENCE; DO_NOT_REWRITE_FROM_TRUNCATED_SOURCE; FAIL_CLOSED_NO_GLOBAL_PASS"
+    "checkpoint": "RIU-0097_THIS_FILE",
+    "handoff": "RIU-0093_BASE_PLUS_REMOTE20_EXACT_APPEND",
+    "handoff_blob": "5c28b348cd22d51434253a7be40e711375394f9b",
+    "remote20_forensic": "forensics/RIU-0091-HF-REMOTE-20-RECOVERY-XRAY-2026-09-18.md",
+    "remote20_forensic_commit": "df829bb92d7ef5b8c2e6f740802a050d77c1ecec",
+    "contradiction": "STATE_ACTIVE_MIRROR_GATES_AND_DOC_NODE_MARKERS_LAG_REMOTE20_REMOTE_INFERENCE_AUTHORITY",
+    "safe_decision": "PRESERVE_EVIDENCE_NO_GLOBAL_PASS; RECONCILE_STATE_FROM_FULL_BLOB_THEN_DOCS"
   },
-  "next_gate": "STATE_RECONCILIATION_FULL_READBACK -> CRAZY_WALL_SYNC -> PLAN_SYNC -> README_INDEX_SYNC -> HF_REMOTE_MODEL_GATES -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
-  "documentation_sync": "PARTIAL_CHECKPOINT_RIU0095_PLAN_RIU0089_HANDOFF_RIU0093_STATE_RIU0086_README_MIXED_INDEX_RIU0058_CRAZY_WALL_PENDING",
+  "next_gate": "STATE_RECONCILIATION_FULL_BLOB -> CRAZY_WALL_SYNC -> PLAN_SYNC -> README_INDEX_SYNC -> HF_ADAPTER_REGISTRY_SCHEMA_FIX -> HF_REMOTE20_AUTH_INFERENCE_GATES -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
+  "documentation_sync": "PARTIAL_CHECKPOINT_RIU0097_PLAN_RIU0089_HANDOFF_RIU0093_PLUS_REMOTE20_STATE_RIU0086_README_INDEX_CRAZY_WALL_PENDING",
   "global_closed": false
 }
