@@ -175,6 +175,7 @@
     "HF Job 6aac809f5c02253cfb145474 COMPLETED: 5 rounds x 10 connectivity tests"
   ],
   "next_tasks": [
+    "Claude + SOL: materialize OmniRoute @ 1603c86e06da473e0fffb3802585e052219ac353 into router inteligente universal/Componente open soure router inteligente universal/OmniRoute/, read-back/hash, then integrate behind connector_registry",
     "Consolidate root owners without deleting donor/evidence data",
     "Materialize and test OmniRoute adapter behind connector_registry",
     "Validate Orca ADE with isolated RIU worktrees and verifier-gated merge",
@@ -213,8 +214,14 @@
   "external_components": {
     "omniroute": {
       "source": "https://github.com/diegosouzapw/OmniRoute",
+      "source_commit": "1603c86e06da473e0fffb3802585e052219ac353",
+      "destination": "router inteligente universal/Componente open soure router inteligente universal/OmniRoute/",
       "role": "OPTIONAL_DOWNSTREAM_GATEWAY",
-      "state": "BOUNDARY_DEFINED_PENDING_RUNTIME_TEST"
+      "state": "DOWNLOAD_QUEUED_PENDING_MATERIALIZATION_AND_INTEGRATION",
+      "integration_owners": [
+        "Claude",
+        "SOL"
+      ]
     },
     "orca": {
       "source": "https://github.com/saiichi/orca",
