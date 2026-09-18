@@ -184,3 +184,20 @@ Política de escalado por tier: tiny/triage M10/M01/M07; small M12/M11; standard
 
 ### HF MCP + API — RIU-0082
 HF MCP oficial=`https://huggingface.co/mcp` con autenticación OAuth/client-managed; Hub/Inference conserva credencial API separada por referencia de entorno. RIU no serializa secretos ni reutiliza una credencial como otro mecanismo sin evidencia. Exact test commit `f97791ca61197ecbdad0d1d2bb7c792a37c721dc`, HF Job `6aac809f5c02253cfb145474` COMPLETED, 5×10 tests PASS. Runtime OAuth MCP remoto de RIU sigue pendiente. Auditoría: `forensics/RIU-0082-HF-MCP-API-BOUNDARY-2026-09-17.md`.
+
+
+## AI Staff — Video / Animation Models — RIU-0085
+Destino lógico: `AI Staff -> Video / Animation Models`. Estos modelos son especialistas, **no agentes** y no reciben ownership de routing.
+
+| Modelo | Especialidad | Licencia observada en HF | Estado real |
+|---|---|---|---|
+| `Wan-AI/Wan2.2-Animate-14B` | video-to-video, animación/personajes, transferencia de movimiento | Apache-2.0 | GAP_PENDING |
+| `Lightricks/LTX-Video` | image-to-video, workflows de video, control de movimiento | other — términos exactos por verificar | GAP_PENDING |
+| `tencent/HunyuanVideo` | text-to-video, foundation video | other — términos exactos por verificar | GAP_PENDING |
+
+Flujo obligatorio: `repo HF -> motor de descarga existente -> revision + archivos -> hash -> carga real -> inferencia smoke -> evidencia -> AI Staff registry -> Router`.
+
+No se habilita producción hasta validar licencia individual, revisión, tamaño, hashes, requisitos de cómputo y prueba de carga. Fuentes:
+- https://huggingface.co/Wan-AI/Wan2.2-Animate-14B
+- https://huggingface.co/Lightricks/LTX-Video
+- https://huggingface.co/tencent/HunyuanVideo
