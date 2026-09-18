@@ -18,6 +18,7 @@ HF_ENV_REFS = ("RIU_HF_TOKEN", "HF_TOKEN", "HUGGINGFACE_TOKEN")
 GITHUB_ENV_REFS = ("RIU_GITHUB_PAT", "GITHUB_TOKEN", "GH_TOKEN")
 GITHUB_API = "https://api.github.com"
 HF_WHOAMI = "https://huggingface.co/api/whoami-v2"
+HF_MCP = "https://huggingface.co/mcp"
 GITHUB_MCP = "https://api.githubcopilot.com/mcp/"
 HF_ACCOUNT = "COMAND-CENTER-1"
 MCP_PROTOCOL_VERSION = "2025-06-18"
@@ -163,6 +164,27 @@ def mcp_github_descriptor(env: Mapping[str, str] | None = None) -> dict:
     }
 
 
+
+def mcp_huggingface_descriptor(env: Mapping[str, str] | None = None) -> dict:
+    """Describe the official HF MCP boundary without serializing credentials.
+
+    Hugging Face MCP authentication is client/OAuth managed. The Hub/Inference
+    API credential is kept as a separate runtime reference for direct API or
+    inference use; it is never copied into this descriptor.
+    """
+    cred = resolve_huggingface(env)
+    return {
+        "provider": "huggingface",
+        "resource": "hub_mcp",
+        "mcp_url": HF_MCP,
+        "transport": "streamable_http",
+        "mcp_auth": "oauth_client_managed",
+        "hub_api_credential_ref": cred.env_name,
+        "hub_api_auth_boundary": "runtime_or_vault",
+        "status": "CONFIGURED",
+    }
+
+
 def probe_github_mcp(env: Mapping[str, str] | None = None) -> dict:
     """Hace solo el handshake MCP initialize. No ejecuta herramientas mutantes."""
     cred = resolve_github(env)
@@ -204,4 +226,5 @@ def public_runtime_status(env: Mapping[str, str] | None = None) -> dict:
         except MissingCredential:
             result[provider] = {"provider": provider, "status": "MISSING"}
     result["mcp"] = {"provider": "github", "url": GITHUB_MCP, "status": "DECLARED"}
+    result["huggingface_mcp"] = {"provider": "huggingface", "url": HF_MCP, "transport": "streamable_http", "auth": "oauth_client_managed", "status": "DECLARED"}
     return result
