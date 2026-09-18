@@ -1,4 +1,4 @@
-# BITÁCORA CRAZY WALL — ROUTER INTELIGENTE UNIVERSAL
+﻿# BITÁCORA CRAZY WALL — ROUTER INTELIGENTE UNIVERSAL
 
 **Contrato:** `tel.workflow/v3` · **Modo:** `FAIL_CLOSED_LOOP`.
 
@@ -334,3 +334,108 @@ requiere una credencial HF con permiso real de Inference Providers).
 HF_ADAPTER_REGISTRY_SCHEMA_FIX(commit real, test pendiente de ejecutar)
 -> HF_REMOTE_MODEL_GATES -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY
 -> GLOBAL_E2E -> FINAL_DOC_SYNC`.
+
+
+## RIU-0099 — AUDITORÍA FORENSE PASADA 2/4 + ARQUITECTURA/AGENTE META + LÍMITE EXTERNO DE CREDENCIAL — 2026-09-18
+
+Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`. Continúa bajo la
+misma autorización P1-P4 registrada en RIU-0098; nada nuevo se declara
+sin evidencia.
+
+### Alcance de esta pasada
+Lectura completa de los 14 informes restantes en `forensics/` (RIU-0073,
+RIU-0075 a RIU-0082, RIU-0084, RIU-0087, RIU-0088, RIU-0091, RIU-0096,
+AUTH-REPAIR-20260912) más inventario completo de `router inteligente
+universal/Componente open soure router inteligente universal/` (64
+entradas) y `RDC_ADDITIONAL_COMPONENTS_EVIDENCE.json`. Se aplicaron 3
+verificaciones cruzadas contra hallazgos ya registrados en pasada 1
+(RIU-0098): (1) bridges HF de RIU-0073 vs 4.5/4.6; (2) corrección
+REMOTE20 de RIU-0084/0087/0088/0091/0096 vs 4.6; (3) causa raíz de
+`GAP_AUTH_REMOTE_INFERENCE` (AUTH-REPAIR-20260912 + RIU-0075) vs 4.6/8.3.
+
+### Hallazgo mayor 1 — origen exacto de la confusión REMOTE20 (RIU-0091)
+Existieron dos inventarios de "20 modelos" que se mezclaron: (A) el
+REMOTE20 real via `https://router.huggingface.co/v1/models` (reverify
+fresh Job `6aad0a2951992417dfcc6844`: 139 modelos totales, los 20 V2
+siguen con >=1 provider live cada uno); (B) un catálogo distinto de 20
+obtenido por búsqueda pública `pipeline_tag=text-generation` (Job
+`6aa2513d5527934177ebfaad`) que reemplazó por error al primero (commit
+`8ce5ceaa98fcf62c7b6ba2d47b067edaaa6b4d4e`) y luego se mezcló con
+pruebas de compute efímero, produciendo la falsa certificación
+"20/20". Confirma y documenta el origen exacto de lo que ya tenía
+anotado como sospechoso en RIU-0098/4.6.
+
+### Hallazgo mayor 2 — límite EXTERNO real, no reparable solo con código
+`AUTH-REPAIR-20260912.md` (fecha más antigua, 2026-09-12) y RIU-0075
+confirman de forma cruzada que la identidad OAuth conectada
+(`COMAND-CENTER-1`, scopes `jobs/openid/profile/read-mcp/read-repos`)
+**nunca tuvo scope de escritura de repo ni de Inference Providers**. El
+403 "insufficient permissions to call Inference Providers" del
+REMOTE20 y la imposibilidad de escribir en el Space
+`COMAND-CENTER-1/yaiwes-ui-factory` desde este contexto son la MISMA
+causa raíz: falta de scope en la credencial, no un bug de código. Un
+flujo de login interactivo de Claude Code (run `34671762824`) quedó
+esperando un código pegado manualmente y nunca se completó
+(consentimiento humano pendiente). **Marcado explícitamente como límite
+externo que requiere acción del Director** (nueva credencial HF con
+scope correcto, o completar el login interactivo) -- no se declara como
+gap de código reparable desde este repo, respetando P2 (reparar sin
+escalar aplica a código, no a permisos de cuenta externa).
+
+### Hallazgo mayor 3 — inventario de componentes donantes confirmado
+64 entradas en `Componente open soure router inteligente universal/`:
+62 carpetas donor/vendor sin integración runtime individual (fastapi,
+redis, vllm, langgraph, crewAI, autogen, chroma, qdrant, react, vite,
+tailwindcss, LiteLLM/litellm, Prefect, Temporal-Python-SDK,
+Durable-Task-Python, Durable-Workflow-Server, etc.), más `OmniRoute`
+(submodule Git pinneado, ya materializado desde RIU-0083) y
+`RDC_ADDITIONAL_COMPONENTS_EVIDENCE.json` (evidencia de extracción: 4 de
+5 componentes adicionales EXTRACTED_VERIFIED con conteo de archivos y
+commit; `vLLM-Router` queda `INSUFFICIENT_EVIDENCE_EXISTING_TARGET`).
+Ninguno de los 62 donors tiene integración runtime probada; presencia de
+carpeta sigue sin equivaler a integración, tal como fijaba RIU-0071.
+
+### Arquitectura descubierta -- raíz extendida + agente meta
+Documentado en detalle en `Claude notas/memoria.md` sección 9: diagrama
+completo de la raíz extendida del Router (desde raíz de repo hasta
+`integration/huggingface/` y el donor pool), y un bloque JSON de "agente
+meta" / nota 1-a-1 que cualquiera de los 50+ wordflows puede declarar
+como input estándar para conectarse al Router (identidad del mundo,
+contacto con RedUniversal vía FastAPI->APIKeyGuard->EnchufeGate,
+preferencia de tier de modelo sin fijar proveedor, requisitos de
+evidencia, archivos propios del mundo -- Readme/Handoff/Crazy
+Wall/system prompt -- y política de escalamiento). No crea ningún
+componente nuevo de routing; reusa RedUniversal/EnchufeGate/API Key
+Manager ya certificados.
+
+### GAPs nuevos/actualizados esta pasada
+- `GAP-EXTERNAL-CREDENTIAL-SCOPE-001` (nuevo): scope de credencial HF
+  insuficiente para Inference Providers y para escritura de Space/repo;
+  requiere acción del Director, no reparable solo con código.
+- `GAP-REMOTE20-REJECTED-IDS-CONFIRM-001` (nuevo): confirmar con el
+  Director si los IDs rechazados en RIU-0084 (incluye
+  `unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF` y `openai/gpt-oss-120b`)
+  siguen excluidos bajo el contrato REMOTE_INFERENCE_ONLY actual o si
+  ese rechazo aplicaba solo al contrato de instalación/mirror ya
+  SUPERSEDED.
+- `GAP-KAT-CODER-2.5-RESEARCH-001` (nuevo): "Kat Coder 2.5" no aparece en
+  ningún documento leído hasta ahora del repo; pendiente de
+  investigación en pasada 3 antes de proponer integración a HF.
+- `GAP-TEST-EXECUTION-001` (heredado de RIU-0098): sigue abierto, sin
+  cambios; el test de RIU-0098 aún no tiene corrida real registrada.
+
+### Estado del nodo
+`AUDITORIA_FORENSE_PASADA_2_DE_4_COMPLETA`. Pasadas 3 y 4 restantes
+(incluye `router inteligente software/`, `Documentos proyectos.../`,
+`dataset Yaiwes/`, `Yaiwes Cognitive Control Plane/`, y verificación
+archivo-por-archivo del resto del donor pool). Sin cierre global; ningún
+PASS nuevo se declara sobre HF remoto -- los hallazgos de esta pasada son
+forenses/de diseño, igual que la pasada anterior.
+
+### Próximo delta seguro (sin cambios respecto a RIU-0098, reafirmado)
+`STATE_RECONCILIATION -> PLAN_SYNC -> CHECKPOINT_SYNC ->
+HF_SCHEDULER_IMPLEMENTATION(diseño ya en 8.2/8.5, falta código) ->
+GAP-TEST-EXECUTION-001(ejecutar test real) ->
+HF_REMOTE_MODEL_GATES(bloqueado por GAP-EXTERNAL-CREDENTIAL-SCOPE-001) ->
+EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E ->
+FINAL_DOC_SYNC`.
