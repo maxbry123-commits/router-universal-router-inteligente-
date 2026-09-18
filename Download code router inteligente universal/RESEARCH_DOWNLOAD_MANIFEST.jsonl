@@ -1,58 +1,58 @@
-{"number": 1, "parts": 1, "slug": "asyncpg", "source": "https://github.com/MagicStack/asyncpg.git", "source_commit": "db8ecc2a38e16fb0c090aef6f5506547c2831c24", "status": "COMPLETE"}
-{"number": 2, "parts": 1, "slug": "aiomysql", "source": "https://github.com/aio-libs/aiomysql.git", "source_commit": "1aa9cfcbad60f14f5a8bdccaa660f10f69123015", "status": "COMPLETE"}
-{"number": 3, "parts": 3, "slug": "autogen", "source": "https://github.com/microsoft/autogen.git", "source_commit": "027ecf0a379bcc1d09956d46d12d44a3ad9cee14", "status": "COMPLETE"}
-{"number": 4, "parts": 2, "slug": "Chart.js", "source": "https://github.com/chartjs/Chart.js.git", "source_commit": "cb02e1d207bd4c4c40b20c259017f85f26f1e30a", "status": "COMPLETE"}
-{"number": 5, "parts": 3, "slug": "chroma", "source": "https://github.com/chroma-core/chroma.git", "source_commit": "c38b46f4621496a3734e20de982c355d9b85ea6e", "status": "COMPLETE"}
-{"number": 6, "parts": 18, "slug": "crewAI", "source": "https://github.com/crewAIInc/crewAI.git", "source_commit": "da4daadba0e5049abc00fee8bc31b8b8019c60dd", "status": "COMPLETE"}
-{"number": 7, "parts": 6, "slug": "cryptography", "source": "https://github.com/pyca/cryptography.git", "source_commit": "c20f7beadd64b1d237498057a3bde57e1c42fdb3", "status": "COMPLETE"}
-{"number": 8, "parts": 1, "slug": "dzhng-deep-research", "source": "https://github.com/dzhng/deep-research.git", "source_commit": "1f8f3e285bbc23e80b98a66a64effab9069f3ad4", "status": "COMPLETE"}
-{"number": 9, "parts": 1, "slug": "agents-deep-research", "source": "https://github.com/qx-labs/agents-deep-research.git", "source_commit": "5e7f4b2321b20bf04c72a405688ab9980887c603", "status": "COMPLETE"}
-{"number": 10, "parts": 1, "slug": "docker-py", "source": "https://github.com/docker/docker-py.git", "source_commit": "afc6d1ee308e78b908b96a94298c37fa8c465588", "status": "COMPLETE"}
-{"number": 11, "parts": 2, "slug": "fastapi", "source": "https://github.com/fastapi/fastapi.git", "source_commit": "49033471594ea5d99a80abdf1043231b7791ee49", "status": "COMPLETE"}
-{"number": 12, "parts": 2, "slug": "gpt-researcher", "source": "https://github.com/assafelovic/gpt-researcher.git", "source_commit": "6f998577d547b1e54ec662dac63583aa11e3b84b", "status": "COMPLETE"}
-{"number": 13, "parts": 1, "slug": "guardrails", "source": "https://github.com/guardrails-ai/guardrails.git", "source_commit": "06d0ff2c5f9bcb493d976b76f885e37e41ce845d", "status": "COMPLETE"}
-{"number": 14, "parts": 4, "slug": "haystack", "source": "https://github.com/deepset-ai/haystack.git", "source_commit": "99f2249a6197afc7d32d6229627216957ce28b76", "status": "COMPLETE"}
-{"number": 15, "parts": 1, "slug": "httpx", "source": "https://github.com/encode/httpx.git", "source_commit": "b5addb64f0161ff6bfe94c124ef76f6a1fba5254", "status": "COMPLETE"}
-{"number": 16, "parts": 124, "slug": "plex", "source": "https://github.com/IBM/plex.git", "source_commit": "bf260093582f04622aacc1e9f9ca604d7ccd0c42", "status": "COMPLETE"}
-{"number": 17, "parts": 1, "slug": "langgraph", "source": "https://github.com/langchain-ai/langgraph.git", "source_commit": "11ee185999b86bfea2d8c0e69cef9a5e37acf686", "status": "COMPLETE"}
-{"number": 18, "parts": 6, "slug": "litellm", "source": "https://github.com/BerriAI/litellm.git", "source_commit": "4ba8517134816b98a040300032e7e0185ccffbc7", "status": "COMPLETE"}
-{"number": 19, "parts": 26, "slug": "llama_index", "source": "https://github.com/run-llama/llama_index.git", "source_commit": "f87a57bb2b95a7ca9923b4e5029cb6d7ea6e28fe", "status": "COMPLETE"}
-{"number": 20, "parts": 1, "slug": "lucide", "source": "https://github.com/lucide-icons/lucide.git", "source_commit": "eb3c04d059d92903f992f0d3b7c732deca6da7a5", "status": "COMPLETE"}
-{"number": 21, "parts": 1, "slug": "python-sdk", "source": "https://github.com/modelcontextprotocol/python-sdk.git", "source_commit": "d2290ca3434731b68ea3e2270bc06a6e6575931b", "status": "COMPLETE"}
-{"number": 22, "parts": 1, "slug": "servers", "source": "https://github.com/modelcontextprotocol/servers.git", "source_commit": "a6cdbf4deac97aac5c9b76bd12d38eace78dac01", "status": "COMPLETE"}
-{"number": 23, "parts": 7, "slug": "n8n", "source": "https://github.com/n8n-io/n8n.git", "source_commit": "cae0c8be00a47d5ebb74660821d60b649f89269e", "status": "COMPLETE"}
-{"number": 24, "parts": 3, "slug": "ollama", "source": "https://github.com/ollama/ollama.git", "source_commit": "f96e7aa0513b9973a0ccc71be414c2ecb9d65b1a", "status": "COMPLETE"}
-{"number": 25, "parts": 1, "slug": "open_deep_research", "source": "https://github.com/langchain-ai/open_deep_research.git", "source_commit": "1b7d2e80db9faa586165c60e09096dbbfd483a64", "status": "COMPLETE"}
-{"number": 26, "parts": 2, "slug": "phoenix", "source": "https://github.com/Arize-ai/phoenix.git", "source_commit": "bfec5c91217af4b3275fcb2d4b5d0c2a3ed399c2", "status": "COMPLETE"}
-{"number": 27, "parts": 1, "slug": "pydantic", "source": "https://github.com/pydantic/pydantic.git", "source_commit": "f512b087202f58ec90a9d38c9102858567d72440", "status": "COMPLETE"}
-{"number": 28, "parts": 1, "slug": "pydantic-settings", "source": "https://github.com/pydantic/pydantic-settings.git", "source_commit": "53df0b5196a22d441f0c37460ccfa7cb20394671", "status": "COMPLETE"}
-{"number": 29, "parts": 14, "slug": "pydantic-ai", "source": "https://github.com/pydantic/pydantic-ai.git", "source_commit": "11448676233858db3cf3fe30fc5b902d77c6face", "status": "COMPLETE"}
-{"number": 30, "parts": 1, "slug": "pyyaml", "source": "https://github.com/yaml/pyyaml.git", "source_commit": "34a9bf82357f4952d8f194a5a31f1c39743652d0", "status": "COMPLETE"}
-{"number": 31, "parts": 1, "slug": "qdrant", "source": "https://github.com/qdrant/qdrant.git", "source_commit": "74f3e85b9473c62560006c043e13737ce6b48412", "status": "COMPLETE"}
-{"number": 32, "parts": 2, "slug": "react", "source": "https://github.com/facebook/react.git", "source_commit": "2dc7da790d6388b95b83198ca9b588b2ad5f5c0b", "status": "COMPLETE"}
-{"number": 33, "parts": 1, "slug": "redis-py", "source": "https://github.com/redis/redis-py.git", "source_commit": "7ff04812c3a8e2b6e79b2b8edc7e112d927a78ea", "status": "COMPLETE"}
-{"number": 34, "parts": 4, "slug": "ruflo", "source": "https://github.com/ruvnet/ruflo.git", "source_commit": "29f048fc3b556f857cf2b126d2a84c19d2daa0d0", "status": "COMPLETE"}
-{"number": 35, "parts": 1, "slug": "starlette", "source": "https://github.com/encode/starlette.git", "source_commit": "39fd0ffac25593fce39466320c9a666957ce8b8c", "status": "COMPLETE"}
-{"number": 36, "parts": 1, "slug": "tailwindcss", "source": "https://github.com/tailwindlabs/tailwindcss.git", "source_commit": "f723e834ad032aa0f42405f95f684be3cfcac8ef", "status": "COMPLETE"}
-{"number": 37, "parts": 5, "slug": "vllm", "source": "https://github.com/vllm-project/vllm.git", "source_commit": "e0d27040ddcc5ac31cf01c5b04a7d764ccba656d", "status": "COMPLETE"}
-{"number": 38, "parts": 1, "slug": "zustand", "source": "https://github.com/pmndrs/zustand.git", "source_commit": "b57db4f86ef179285da216eeb291266da82c361c", "status": "COMPLETE"}
-{"number": 39, "parts": 1, "slug": "uvicorn", "source": "https://github.com/encode/uvicorn.git", "source_commit": "eed8e7212a60681a9c3c865305cdd227a2b16f90", "status": "COMPLETE"}
-{"number": 40, "parts": 1, "slug": "gunicorn", "source": "https://github.com/benoitc/gunicorn.git", "source_commit": "1597b0559272929cfa6fc739b0eb1201d61a8a98", "status": "COMPLETE"}
-{"number": 41, "parts": 2, "slug": "vite", "source": "https://github.com/vitejs/vite.git", "source_commit": "238ad811c7fb9e4730cbd317d0657867ed3447b3", "status": "COMPLETE"}
-{"number": 42, "parts": 6, "slug": "TypeScript", "source": "https://github.com/microsoft/TypeScript.git", "source_commit": "9a8581c393a38961489cc8409ae4dfbe97fc25ec", "status": "COMPLETE"}
-{"number": 43, "parts": 1, "slug": "PyGithub", "source": "https://github.com/PyGithub/PyGithub.git", "source_commit": "5cdf6ab395c52efb652d0bc1f28fdf2e452b1b41", "status": "COMPLETE"}
-{"number": 44, "parts": 1, "slug": "huggingface_hub", "source": "https://github.com/huggingface/huggingface_hub.git", "source_commit": "94cb25dada381d14e54b16dcfe92436be244fca9", "status": "COMPLETE"}
-{"number": 45, "parts": 1, "slug": "python-dotenv", "source": "https://github.com/theskumar/python-dotenv.git", "source_commit": "a00cb2eed0704cd6d2071b2004c37e95ccc86ee5", "status": "COMPLETE"}
-{"number": 46, "parts": 1, "slug": "redis", "source": "https://github.com/redis/redis.git", "source_commit": "e1d7d50f9c244ce52f724b279fcb19773fffa98c", "status": "COMPLETE"}
-{"number": 47, "parts": 4, "slug": "postgres", "source": "https://github.com/postgres/postgres.git", "source_commit": "0e944fe3579ecd525e5ffe7b7db4a7e1c34de49e", "status": "COMPLETE"}
-{"number": 48, "reason": "clone", "slug": "websockets", "source": "https://github.com/websockets/websockets.git", "status": "SKIPPED"}
-{"number": 49, "parts": 1, "slug": "prometheus", "source": "https://github.com/prometheus/prometheus.git", "source_commit": "9c8c131e849264f1dd210c89e5232dc9d1723536", "status": "COMPLETE"}
-{"number": 50, "parts": 6, "slug": "grafana", "source": "https://github.com/grafana/grafana.git", "source_commit": "e47052b9c8401d6efd3856d87eab5b4eb38dcb0d", "status": "COMPLETE"}
-{"number": 1, "parts": 22, "slug": "vLLM-Semantic-Router", "source": "https://github.com/vllm-project/semantic-router.git", "source_commit": "349bd3ba455582fb1c5c6d77d0d0f29de7c90526", "status": "COMPLETE"}
-{"number": 2, "parts": 1, "slug": "vLLM-Router", "source": "https://github.com/vllm-project/router.git", "source_commit": "1d10e71fb7bb4c0adc9f2c16ec77bf5dd4aa1586", "status": "COMPLETE"}
-{"number": 3, "parts": 4, "slug": "SGLang", "source": "https://github.com/sgl-project/sglang.git", "source_commit": "f8cbf000f4a5bfd86d3fb7c1e2d6c8fb12339d0e", "status": "COMPLETE"}
-{"number": 4, "parts": 4, "slug": "llama.cpp", "source": "https://github.com/ggml-org/llama.cpp.git", "source_commit": "9cc33944f9b7a44243618d5522adae357d7fdc90", "status": "COMPLETE"}
-{"number": 5, "parts": 12, "slug": "RouterArena", "source": "https://github.com/RouteWorks/RouterArena.git", "source_commit": "cff9659dd6a3a07815f4842fcdadea5a597a1df1", "status": "COMPLETE"}
-{"number": 6, "parts": 1, "slug": "MCP-Python-SDK", "source": "https://github.com/modelcontextprotocol/python-sdk.git", "source_commit": "d060b36e1d095ef6e93e07ba5d59bb69b2ad449a", "status": "COMPLETE"}
-{"number": 7, "parts": 2, "slug": "Sentence-Transformers", "source": "https://github.com/huggingface/sentence-transformers.git", "source_commit": "5868a1013928f6dae12c12d8c7f1a681b098a9c4", "status": "COMPLETE"}
-{"number":8,"parts":1,"slug":"OmniRoute","source":"https://github.com/diegosouzapw/OmniRoute.git","source_commit":"1603c86e06da473e0fffb3802585e052219ac353","status":"PENDING"}
+{"number":1,"parts":1,"slug":"asyncpg","source":"https://github.com/MagicStack/asyncpg.git","source_commit":"db8ecc2a38e16fb0c090aef6f5506547c2831c24","status":"COMPLETE"}
+{"number":2,"parts":1,"slug":"aiomysql","source":"https://github.com/aio-libs/aiomysql.git","source_commit":"1aa9cfcbad60f14f5a8bdccaa660f10f69123015","status":"COMPLETE"}
+{"number":3,"parts":3,"slug":"autogen","source":"https://github.com/microsoft/autogen.git","source_commit":"027ecf0a379bcc1d09956d46d12d44a3ad9cee14","status":"COMPLETE"}
+{"number":4,"parts":2,"slug":"Chart.js","source":"https://github.com/chartjs/Chart.js.git","source_commit":"cb02e1d207bd4c4c40b20c259017f85f26f1e30a","status":"COMPLETE"}
+{"number":5,"parts":3,"slug":"chroma","source":"https://github.com/chroma-core/chroma.git","source_commit":"c38b46f4621496a3734e20de982c355d9b85ea6e","status":"COMPLETE"}
+{"number":6,"parts":18,"slug":"crewAI","source":"https://github.com/crewAIInc/crewAI.git","source_commit":"da4daadba0e5049abc00fee8bc31b8b8019c60dd","status":"COMPLETE"}
+{"number":7,"parts":6,"slug":"cryptography","source":"https://github.com/pyca/cryptography.git","source_commit":"c20f7beadd64b1d237498057a3bde57e1c42fdb3","status":"COMPLETE"}
+{"number":8,"parts":1,"slug":"dzhng-deep-research","source":"https://github.com/dzhng/deep-research.git","source_commit":"1f8f3e285bbc23e80b98a66a64effab9069f3ad4","status":"COMPLETE"}
+{"number":9,"parts":1,"slug":"agents-deep-research","source":"https://github.com/qx-labs/agents-deep-research.git","source_commit":"5e7f4b2321b20bf04c72a405688ab9980887c603","status":"COMPLETE"}
+{"number":10,"parts":1,"slug":"docker-py","source":"https://github.com/docker/docker-py.git","source_commit":"afc6d1ee308e78b908b96a94298c37fa8c465588","status":"COMPLETE"}
+{"number":11,"parts":2,"slug":"fastapi","source":"https://github.com/fastapi/fastapi.git","source_commit":"49033471594ea5d99a80abdf1043231b7791ee49","status":"COMPLETE"}
+{"number":12,"parts":2,"slug":"gpt-researcher","source":"https://github.com/assafelovic/gpt-researcher.git","source_commit":"6f998577d547b1e54ec662dac63583aa11e3b84b","status":"COMPLETE"}
+{"number":13,"parts":1,"slug":"guardrails","source":"https://github.com/guardrails-ai/guardrails.git","source_commit":"06d0ff2c5f9bcb493d976b76f885e37e41ce845d","status":"COMPLETE"}
+{"number":14,"parts":4,"slug":"haystack","source":"https://github.com/deepset-ai/haystack.git","source_commit":"99f2249a6197afc7d32d6229627216957ce28b76","status":"COMPLETE"}
+{"number":15,"parts":1,"slug":"httpx","source":"https://github.com/encode/httpx.git","source_commit":"b5addb64f0161ff6bfe94c124ef76f6a1fba5254","status":"COMPLETE"}
+{"number":16,"parts":124,"slug":"plex","source":"https://github.com/IBM/plex.git","source_commit":"bf260093582f04622aacc1e9f9ca604d7ccd0c42","status":"COMPLETE"}
+{"number":17,"parts":1,"slug":"langgraph","source":"https://github.com/langchain-ai/langgraph.git","source_commit":"11ee185999b86bfea2d8c0e69cef9a5e37acf686","status":"COMPLETE"}
+{"number":18,"parts":6,"slug":"litellm","source":"https://github.com/BerriAI/litellm.git","source_commit":"4ba8517134816b98a040300032e7e0185ccffbc7","status":"COMPLETE"}
+{"number":19,"parts":26,"slug":"llama_index","source":"https://github.com/run-llama/llama_index.git","source_commit":"f87a57bb2b95a7ca9923b4e5029cb6d7ea6e28fe","status":"COMPLETE"}
+{"number":20,"parts":1,"slug":"lucide","source":"https://github.com/lucide-icons/lucide.git","source_commit":"eb3c04d059d92903f992f0d3b7c732deca6da7a5","status":"COMPLETE"}
+{"number":21,"parts":1,"slug":"python-sdk","source":"https://github.com/modelcontextprotocol/python-sdk.git","source_commit":"d2290ca3434731b68ea3e2270bc06a6e6575931b","status":"COMPLETE"}
+{"number":22,"parts":1,"slug":"servers","source":"https://github.com/modelcontextprotocol/servers.git","source_commit":"a6cdbf4deac97aac5c9b76bd12d38eace78dac01","status":"COMPLETE"}
+{"number":23,"parts":7,"slug":"n8n","source":"https://github.com/n8n-io/n8n.git","source_commit":"cae0c8be00a47d5ebb74660821d60b649f89269e","status":"COMPLETE"}
+{"number":24,"parts":3,"slug":"ollama","source":"https://github.com/ollama/ollama.git","source_commit":"f96e7aa0513b9973a0ccc71be414c2ecb9d65b1a","status":"COMPLETE"}
+{"number":25,"parts":1,"slug":"open_deep_research","source":"https://github.com/langchain-ai/open_deep_research.git","source_commit":"1b7d2e80db9faa586165c60e09096dbbfd483a64","status":"COMPLETE"}
+{"number":26,"parts":2,"slug":"phoenix","source":"https://github.com/Arize-ai/phoenix.git","source_commit":"bfec5c91217af4b3275fcb2d4b5d0c2a3ed399c2","status":"COMPLETE"}
+{"number":27,"parts":1,"slug":"pydantic","source":"https://github.com/pydantic/pydantic.git","source_commit":"f512b087202f58ec90a9d38c9102858567d72440","status":"COMPLETE"}
+{"number":28,"parts":1,"slug":"pydantic-settings","source":"https://github.com/pydantic/pydantic-settings.git","source_commit":"53df0b5196a22d441f0c37460ccfa7cb20394671","status":"COMPLETE"}
+{"number":29,"parts":14,"slug":"pydantic-ai","source":"https://github.com/pydantic/pydantic-ai.git","source_commit":"11448676233858db3cf3fe30fc5b902d77c6face","status":"COMPLETE"}
+{"number":30,"parts":1,"slug":"pyyaml","source":"https://github.com/yaml/pyyaml.git","source_commit":"34a9bf82357f4952d8f194a5a31f1c39743652d0","status":"COMPLETE"}
+{"number":31,"parts":1,"slug":"qdrant","source":"https://github.com/qdrant/qdrant.git","source_commit":"74f3e85b9473c62560006c043e13737ce6b48412","status":"COMPLETE"}
+{"number":32,"parts":2,"slug":"react","source":"https://github.com/facebook/react.git","source_commit":"2dc7da790d6388b95b83198ca9b588b2ad5f5c0b","status":"COMPLETE"}
+{"number":33,"parts":1,"slug":"redis-py","source":"https://github.com/redis/redis-py.git","source_commit":"7ff04812c3a8e2b6e79b2b8edc7e112d927a78ea","status":"COMPLETE"}
+{"number":34,"parts":4,"slug":"ruflo","source":"https://github.com/ruvnet/ruflo.git","source_commit":"29f048fc3b556f857cf2b126d2a84c19d2daa0d0","status":"COMPLETE"}
+{"number":35,"parts":1,"slug":"starlette","source":"https://github.com/encode/starlette.git","source_commit":"39fd0ffac25593fce39466320c9a666957ce8b8c","status":"COMPLETE"}
+{"number":36,"parts":1,"slug":"tailwindcss","source":"https://github.com/tailwindlabs/tailwindcss.git","source_commit":"f723e834ad032aa0f42405f95f684be3cfcac8ef","status":"COMPLETE"}
+{"number":37,"parts":5,"slug":"vllm","source":"https://github.com/vllm-project/vllm.git","source_commit":"e0d27040ddcc5ac31cf01c5b04a7d764ccba656d","status":"COMPLETE"}
+{"number":38,"parts":1,"slug":"zustand","source":"https://github.com/pmndrs/zustand.git","source_commit":"b57db4f86ef179285da216eeb291266da82c361c","status":"COMPLETE"}
+{"number":39,"parts":1,"slug":"uvicorn","source":"https://github.com/encode/uvicorn.git","source_commit":"eed8e7212a60681a9c3c865305cdd227a2b16f90","status":"COMPLETE"}
+{"number":40,"parts":1,"slug":"gunicorn","source":"https://github.com/benoitc/gunicorn.git","source_commit":"1597b0559272929cfa6fc739b0eb1201d61a8a98","status":"COMPLETE"}
+{"number":41,"parts":2,"slug":"vite","source":"https://github.com/vitejs/vite.git","source_commit":"238ad811c7fb9e4730cbd317d0657867ed3447b3","status":"COMPLETE"}
+{"number":42,"parts":6,"slug":"TypeScript","source":"https://github.com/microsoft/TypeScript.git","source_commit":"9a8581c393a38961489cc8409ae4dfbe97fc25ec","status":"COMPLETE"}
+{"number":43,"parts":1,"slug":"PyGithub","source":"https://github.com/PyGithub/PyGithub.git","source_commit":"5cdf6ab395c52efb652d0bc1f28fdf2e452b1b41","status":"COMPLETE"}
+{"number":44,"parts":1,"slug":"huggingface_hub","source":"https://github.com/huggingface/huggingface_hub.git","source_commit":"94cb25dada381d14e54b16dcfe92436be244fca9","status":"COMPLETE"}
+{"number":45,"parts":1,"slug":"python-dotenv","source":"https://github.com/theskumar/python-dotenv.git","source_commit":"a00cb2eed0704cd6d2071b2004c37e95ccc86ee5","status":"COMPLETE"}
+{"number":46,"parts":1,"slug":"redis","source":"https://github.com/redis/redis.git","source_commit":"e1d7d50f9c244ce52f724b279fcb19773fffa98c","status":"COMPLETE"}
+{"number":47,"parts":4,"slug":"postgres","source":"https://github.com/postgres/postgres.git","source_commit":"0e944fe3579ecd525e5ffe7b7db4a7e1c34de49e","status":"COMPLETE"}
+{"number":48,"reason":"clone","slug":"websockets","source":"https://github.com/websockets/websockets.git","status":"SKIPPED"}
+{"number":49,"parts":1,"slug":"prometheus","source":"https://github.com/prometheus/prometheus.git","source_commit":"9c8c131e849264f1dd210c89e5232dc9d1723536","status":"COMPLETE"}
+{"number":50,"parts":6,"slug":"grafana","source":"https://github.com/grafana/grafana.git","source_commit":"e47052b9c8401d6efd3856d87eab5b4eb38dcb0d","status":"COMPLETE"}
+{"number":1,"parts":22,"slug":"vLLM-Semantic-Router","source":"https://github.com/vllm-project/semantic-router.git","source_commit":"349bd3ba455582fb1c5c6d77d0d0f29de7c90526","status":"COMPLETE"}
+{"number":2,"parts":1,"slug":"vLLM-Router","source":"https://github.com/vllm-project/router.git","source_commit":"1d10e71fb7bb4c0adc9f2c16ec77bf5dd4aa1586","status":"COMPLETE"}
+{"number":3,"parts":4,"slug":"SGLang","source":"https://github.com/sgl-project/sglang.git","source_commit":"f8cbf000f4a5bfd86d3fb7c1e2d6c8fb12339d0e","status":"COMPLETE"}
+{"number":4,"parts":4,"slug":"llama.cpp","source":"https://github.com/ggml-org/llama.cpp.git","source_commit":"9cc33944f9b7a44243618d5522adae357d7fdc90","status":"COMPLETE"}
+{"number":5,"parts":12,"slug":"RouterArena","source":"https://github.com/RouteWorks/RouterArena.git","source_commit":"cff9659dd6a3a07815f4842fcdadea5a597a1df1","status":"COMPLETE"}
+{"number":6,"parts":1,"slug":"MCP-Python-SDK","source":"https://github.com/modelcontextprotocol/python-sdk.git","source_commit":"d060b36e1d095ef6e93e07ba5d59bb69b2ad449a","status":"COMPLETE"}
+{"number":7,"parts":2,"slug":"Sentence-Transformers","source":"https://github.com/huggingface/sentence-transformers.git","source_commit":"5868a1013928f6dae12c12d8c7f1a681b098a9c4","status":"COMPLETE"}
+{"number":8,"parts":1,"slug":"OmniRoute","source":"https://github.com/diegosouzapw/OmniRoute.git","source_commit":"1603c86e06da473e0fffb3802585e052219ac353","status":"MATERIALIZED_PINNED_SUBMODULE_VERIFIED","destination":"router inteligente universal/Componente open soure router inteligente universal/OmniRoute","materialization_commit":"ca931941988510d546fb71e2bef76545d5cab5e2","readback_job":"6aacbb0c5c02253cfb14622d","readback":"SUBMODULE_HEAD_VERIFIED"}
