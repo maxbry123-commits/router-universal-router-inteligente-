@@ -3,57 +3,66 @@
 Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · repo `maxbry123-commits/router-universal-router-inteligente-` · branch `main`.
 
 ## Estado consolidado
-El core del Router está `VERIFIED_CLOSED` al 100%: P01/P02/P03, certificación 20/20, Connectivity Fabric 19/19, runtime, pruebas amplias 75/75, pruebas frescas de connectivity 7/7 y comportamiento fail-closed están preservados.
+El core conserva evidencia histórica `VERIFIED_CLOSED` para P01/P02/P03, Connectivity Fabric 19/19, suite 75/75 y fail-closed. Esto NO equivale a cierre global.
 
 ## Nodo vivo
-`RIU-0071_FORENSIC_XRAY_AUTHORITATIVE_INVENTORY`.
+`RIU-0090_AUTHORITATIVE_HANDOFF_SYNC`.
 
-## Arquitectura e integraciones verificadas
-- Fabric 19/19 bridges v2.
-- Frontend/Astra integra GitHub, Hugging Face `COMAND-CENTER-1`, Jobs CPU/GPU, Space `COMAND-CENTER-1/yaiwes-ui-factory`, GitHub MCP y memoria.
-- Runtime y runner de conectividad ya existen; no se requiere una arquitectura nueva ni refactor general.
-- La conexión GitHub disponible en esta sesión confirmó permisos admin/push sobre Router y `TAREA-1`; esa evidencia no sustituye la validación runtime de Claude/Actions.
+## Arquitectura autoritativa
+`RedUniversal` conserva ownership único de routing. AI Staff usa `REMOTE_INFERENCE_ONLY`:
+`RedUniversal -> connector_registry -> HF adapter/InferenceClient -> Inference Provider/Endpoint remoto -> model_id`.
 
-## Hugging Face / OIDC
-- Space `COMAND-CENTER-1/yaiwes-ui-factory` confirmado como `static`.
-- Publicación OIDC al Hub verificada mediante runs `34675165228` attempt 2 y `34677293995`.
-- Hub read-back HTTP 200 PASS.
-- Hugging Face es autoridad para recursos HF; un token HF no concede permisos de escritura GitHub.
+Gate por modelo:
+`REGISTER -> REMOTE_PROVIDER_DISCOVERY -> AUTH_REFERENCE -> REMOTE_INFERENCE_SMOKE -> FAILURE_FALLBACK_TEST -> EVIDENCE -> READY`.
 
-## Claude — ruta directa GitHub
-- `CLAUDE.md` en raíz define `main` como fuente de verdad.
-- `GitHub Backup HF` es respaldo opcional y su ausencia no bloquea lectura, edición u organización de raíces GitHub.
-- `.github/workflows/claude-root-editor.yml` ejecuta `anthropics/claude-code-action@v1` con `contents: write`, `pull-requests: write` e `issues: write`.
-- Para el repo actual usa `RIU_GITHUB_PAT` si está presente o `github.token` como fallback repo-local.
-- Para múltiples repos se requiere `RIU_GITHUB_PAT` o GitHub App con permisos efectivos en cada destino.
-- Claude Code requiere `CLAUDE_CODE_OAUTH_TOKEN` disponible en Actions; nunca se registra el valor.
+Los diseños históricos de mirror/download (`snapshot_download`, hash/load de pesos) se preservan como provenance, pero quedan SUPERSEDED para el camino normal de AI Staff. No declarar READY por catálogo, README, presencia de ID o carga efímera de un Job.
 
-## Seguridad corregida
-`.github/workflows/claude-token-setup.yml` ya no imprime la sesión completa de `claude setup-token`: solo salida sanitizada, persistencia cifrada vía helper existente y destrucción del log local.
+## W1 — X-Ray / owners / dedup
+- Root fresh contabilizado: 28 entradas; inventario `forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json`.
+- Árbol recursivo global anterior fue truncado; `FULL_COMPONENT_CONTAINER_XRAY` sigue abierto.
+- LiteLLM/litellm se preservan hasta demostrar equivalencia/provenance completa.
+- Donor/legacy/orphan no adquiere ownership por presencia.
 
-## Evidencia fresca
-- commit `f3d0daa60cecc25e711886cac6b6f468feedfe05`: setup-token seguro.
-- commit `946f1a0e1c976298c6c34d4e70f0a07243109aa6`: Claude Root Editor directo.
-- commit `ddfeb73e4c5d80515e28ed8511c14f8f0fc1ba88`: política raíz `CLAUDE.md`.
-- workflows anteriores leídos de vuelta desde `main`.
+## W2 — componentes externos
+- OmniRoute: downstream adapter detrás de `connector_registry`; materializado/pinneado, integración runtime pendiente.
+- AnyDoc: document ingest adapter; multiformato/hash/error-path pendientes.
+- Orca: ADE externo; boundary definido, runtime/verifier pendiente.
+- Omarchy: host opcional; no dependencia runtime; checklist pendiente.
 
-## GAP restante — sin sobreingeniería
-Solo falta evidencia runtime: ejecutar `Claude Root Editor` con `CLAUDE_CODE_OAUTH_TOKEN` presente y exigir un commit/read-back real sobre un archivo de raíz. Si se pide edición transversal, validar además el PAT/App sobre el repo objetivo. Hasta esa evidencia, `CLAUDE_ROOT_WRITE_VERIFIED` permanece PENDING.
+## W3 — Hugging Face / auth
+- Cuenta HF: `COMAND-CENTER-1`.
+- HF Space OIDC publish/read-back conserva evidencia histórica.
+- Auditoría persistente: 0 repos propios de modelos, 0 mirrors persistentes verificados, 0 instalaciones persistentes verificadas; los modelos de AI Staff son referencias/inferencia remota.
+- Runtime inference históricamente verificado para `Qwen/Qwen3-0.6B`, `openai-community/gpt2`, `Qwen/Qwen3-8B`; esto no certifica los demás IDs.
+- Histórico `20/20 accounted` = contabilización de catálogo, NO 20 integraciones remotas operativas.
+- Pendientes de gate remoto individual: TimesFM 3.0, WAN 2.2 Animate, LTX-Video, HunyuanVideo, Kandinsky 5, Qwen-Image, FLUX.1-schnell y cualquier ID histórico sin evidencia de llamada.
+- GitHub PAT, HF full-access/write, Claude OAuth, Codex 1/2, MCP y memoria requieren capacidad runtime fresh sin exponer valores.
+
+## W4 — pruebas obligatorias
+Cada cierre requiere ruta + commit/blob SHA/diff/log/URL/read-back/test. Ejecutar runtime real, failure path y fallback. Repetir hasta 10x sólo ante flakiness real; un fallo determinista permanece GAP.
+
+## W5 — sincronización / cierre
+Antes de cierre global sincronizar exactamente:
+- `Readme arquitectura router inteligente universal/README.md`
+- `Readme Índice componentes.md`
+- `Handoff router inteligente universal.md`
+- `STATE.json`
+- `PLAN-TAREAS.md`
+- `BITACORA-CRAZY-WALL.md`
+- `CHECKPOINT.json`
+
+## GAPs autoritativos
+1. STATE/CHECKPOINT todavía apuntan RIU-0086/0083 y arrastran gates legacy mirror/download.
+2. Reconstrucción de los 20 IDs históricos vs llamadas remotas verificadas sigue abierta.
+3. Endpoints/Jobs privados e historial uncapped requieren la ruta autorizada real.
+4. OmniRoute/AnyDoc/Orca/Omarchy requieren pruebas runtime definidas.
+5. Claude/Codex/MCP/memoria y GLOBAL_E2E permanecen abiertos.
+6. FULL_COMPONENT_CONTAINER_XRAY y DEDUP_ORPHAN_RECONCILIATION permanecen abiertos.
 
 ## Fuente de verdad
-- `CLAUDE.md`
-- `bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/STATE.json`
-- `bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/BITACORA-CRAZY-WALL.md`
-- `Handoff router inteligente universal.md`
+`CLAUDE.md`, README arquitectura, Índice componentes, este Handoff y `bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/{STATE.json,PLAN-TAREAS.md,BITACORA-CRAZY-WALL.md,CHECKPOINT.json}`.
 
-## Gate final
-Ruta Claude directa=`MATERIALIZED`; backup HF=`OPTIONAL_NON_BLOCKING`; runtime root-write=`PENDING_FRESH_WRITE_READBACK`.
+## Gate global
+`ROOT_INVENTORY_VERIFIED + OWNERS_DEDUP_VERIFIED + EXTERNAL_COMPONENTS_APPLICABLE_VERIFIED + HF_REMOTE_MODELS_VERIFIED + AUTH_RUNTIME_VERIFIED + CONNECTIVITY_GLOBAL_E2E_PASS + DOC_STATE_PLAN_CHECKPOINT_HANDOFF_SYNC`.
 
-
-## RIU-0071 — autoridad de cierre actual
-- Root fresh: **28 entradas**; corrección forense del conteo 29 anterior.
-- Inventario: `forensics/RIU-0071-XRAY-COMPONENT-INVENTORY-2026-09-17.json` @ `a5a3e02cea01d753a495b5090c4ae46146200a64`.
-- Runtime owner sigue siendo `router inteligente universal/`; `RedUniversal` conserva routing ownership.
-- La cola completa está en `PLAN-TAREAS.md`: W1 X-Ray/dedup → W2 HF/modelos → W3 externos → W4 auth/connectivity → W5 E2E/sync/final.
-- Árbol global GitHub aparece truncado; inventario total de archivos **no está cerrado**. Se audita por contenedores/component roots.
-- No borrar duplicados/legacy/donor hasta demostrar equivalencia/provenance y rollback.
+Regla: `REUSE_EXISTING > PATCH > ADAPT > GENERATE`; no borrar evidencia ni ownership válido.
