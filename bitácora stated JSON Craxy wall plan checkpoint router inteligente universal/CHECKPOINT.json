@@ -1,36 +1,27 @@
 {
-  "checkpoint": "riu-0094-fresh-authority-drift-xray",
+  "checkpoint": "riu-0095-fresh-root-state-reconciliation",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "status": "ACTIVE_CLOSURE",
   "core": "VERIFIED_CLOSED_HISTORICAL_SCOPE_ONLY",
-  "current_node": "RIU-0094_FRESH_AUTHORITY_DRIFT_XRAY",
+  "current_node": "RIU-0095_FRESH_ROOT_STATE_RECONCILIATION",
   "updated_at": "2026-09-18",
+  "fresh_head_before_mutation": "5211fa27ff3a4552f3cf29b6bf8680235a67e208",
   "root_entries_accounted": 28,
   "routing_owner": "RedUniversal",
   "hf_runtime_contract": "REMOTE_INFERENCE_ONLY",
   "connectivity": {
     "bridges_v2": "19_OF_19_HISTORICAL_PASS",
-    "github": "PENDING_FRESH_RUNTIME_CAPABILITY",
+    "github": "ADMIN_PUSH_FRESH_CONFIRMED_THIS_RUN",
     "huggingface": "PENDING_FRESH_RUNTIME_CAPABILITY",
     "mcp": "BRIDGED_E2E_PENDING",
     "memory": "BRIDGED_E2E_PENDING",
     "global_e2e": "PENDING"
   },
-  "historical_tests": {
-    "suite_job": "6aa493a121047bf1b03796e9",
-    "suite": "75 passed, 2 warnings in 5.78s",
-    "hf_scheduler_test_job": "6aac7c9eb1dc2b62dc58faf9",
-    "identity_pool_test_job": "6aac7f48b1dc2b62dc58fb73",
-    "hf_mcp_boundary_test_job": "6aac809f5c02253cfb145474"
-  },
   "closure_gates": {
     "ROOT_28_ACCOUNTED": true,
     "EXTERNAL_4_BOUNDARIES_DEFINED": true,
     "NO_ROUTING_OWNERSHIP_CONFLICT": true,
-    "HF_SCHEDULER_RUNTIME_HISTORICAL_VERIFIED": true,
-    "ROUTING_OVER_50_IDENTITIES_HISTORICAL_VERIFIED": true,
-    "HF_MCP_API_BOUNDARY_HISTORICAL_VERIFIED": true,
     "HF_REMOTE_MODEL_GATES_ALL_VERIFIED": false,
     "AUTH_RUNTIME_VERIFIED": false,
     "CONNECTIVITY_GLOBAL_E2E_PASS": false,
@@ -67,16 +58,17 @@
   },
   "fresh_authority_xray": {
     "state": "RIU-0086_STALE_LEGACY_MIRROR_DOWNLOAD_GATES_ACTIVE",
+    "state_blob": "099355cbf19ebf5edc9b9f409c41548f998adca2",
     "plan": "RIU-0089_REMOTE_INFERENCE_ONLY",
-    "checkpoint": "RIU-0094_THIS_FILE",
+    "plan_blob": "acb08866e32a25c5f2669076211ecf20d7c4cea5",
+    "checkpoint": "RIU-0095_THIS_FILE",
     "handoff": "RIU-0093_REMOTE_INFERENCE_ONLY",
-    "architecture_readme": "MIXED_HISTORY_CURRENT_ROOT_XRAY_PRESENT_BUT_LAST_DELTA_SECTION_STALE_RIU-0031",
-    "component_index": "RIU-0058_HOT_PATH_SCOPE_NOT_GLOBAL_CLOSURE",
-    "crazy_wall": "HISTORICAL_LEDGER_LONG_FORM_REQUIRES_CURRENT_NODE_APPEND_SYNC",
+    "handoff_blob": "022f8e157e1bb0ad419ea67c4804d5af9bcc86d3",
+    "root_tree_probe": "FRESH_HEAD_AND_ROOT_TREE_READBACK_PASS",
     "contradiction": "STATE_ACTIVE_GATES_CONFLICT_WITH_PLAN_HANDOFF_CHECKPOINT_REMOTE_INFERENCE_ONLY",
-    "decision": "FAIL_CLOSED_NO_GLOBAL_PASS"
+    "safe_decision": "PRESERVE_STATE_EVIDENCE; DO_NOT_REWRITE_FROM_TRUNCATED_SOURCE; FAIL_CLOSED_NO_GLOBAL_PASS"
   },
-  "next_gate": "STATE_RECONCILIATION -> CRAZY_WALL_SYNC -> PLAN_SYNC -> README_INDEX_SYNC -> HF_REMOTE_MODEL_GATES -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
-  "documentation_sync": "PARTIAL_CHECKPOINT_RIU0094_PLAN_RIU0089_HANDOFF_RIU0093_STATE_RIU0086_README_MIXED_INDEX_RIU0058_CRAZY_WALL_PENDING",
+  "next_gate": "STATE_RECONCILIATION_FULL_READBACK -> CRAZY_WALL_SYNC -> PLAN_SYNC -> README_INDEX_SYNC -> HF_REMOTE_MODEL_GATES -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
+  "documentation_sync": "PARTIAL_CHECKPOINT_RIU0095_PLAN_RIU0089_HANDOFF_RIU0093_STATE_RIU0086_README_MIXED_INDEX_RIU0058_CRAZY_WALL_PENDING",
   "global_closed": false
 }
