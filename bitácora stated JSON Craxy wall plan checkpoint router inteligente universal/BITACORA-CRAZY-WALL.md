@@ -196,3 +196,13 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - DOWNLOAD=MOTOR_QUEUE_PENDING; MATERIALIZATION=NOT_YET_VERIFIED.
 - PENDING PARA CLAUDE + SOL: después de presencia física + read-back/hash, integrar detrás de `connector_registry` sin crear un segundo router.
 - Gate: no declarar DOWNLOAD PASS ni INTEGRATION PASS sin evidencia física/prueba real.
+
+
+## RIU-0085 — HF REAL INVENTORY + VIDEO/ANIMATION — ACTIVO
+- Inventario fresh autenticado: `COMAND-CENTER-1` posee 0 repos de modelos; Job `6aacb9175c02253cfb1461d1`.
+- Esto no invalida modelos externos usados por Jobs: se separan de instalación persistente.
+- Inferencia real demostrada: Qwen3-0.6B, GPT-2, Qwen3-8B.
+- Mirrors persistentes verificados: 0; RIU-0078 fue diseño sin duplicación ejecutada.
+- Nuevos nodos: `WAN22_ANIMATE_MODEL_INTEGRATION`, `LTX_VIDEO_MODEL_INTEGRATION`, `HUNYUANVIDEO_MODEL_INTEGRATION`.
+- Estado de los tres: `GAP_PENDING`.
+- No cerrar hasta: licencia + revision + tamaño + descarga real + hash + carga + inferencia + evidencia.
