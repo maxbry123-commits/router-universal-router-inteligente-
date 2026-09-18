@@ -176,3 +176,7 @@ El Router ya soportaba 1000+ nodos en `RedUniversal`; se añadió `red/identity_
 
 ### Cómputo HF — RIU-0080
 HF1/HF2/HF3 son workers lógicos, no máquinas fijas. Política: HF1 control/tests/small en CPU; HF2 GPU medio con baseline A10G para Qwen3-8B ya verificado; HF3 large/burst seleccionado por benchmark (48 GB/multi-GPU/provider Endpoint según modelo). No se aprovisiona hardware caro especulativamente. Evidencia/política: `forensics/RIU-0080-HF-COMPUTE-SIZING-2026-09-17.md`, commit `fbd82905b0a73b3bd5c9714726564f1b8b4f8479`.
+
+
+### Mix de modelos para agentes — RIU-0081
+Política de escalado por tier: tiny/triage M10/M01/M07; small M12/M11; standard ~7B–8B M05/M20/M03; specialist/large sólo cuando la ruta exacta tenga runtime PASS. Auth/quota/health usa failover de identidad/mirror dentro del mismo tier antes de subir tamaño. Evidencia: `forensics/RIU-0081-AGENT-MODEL-MIX-2026-09-17.md`, commit `7c91f51e3aec6c0d6108e68b4132ec232d2513cd`.
