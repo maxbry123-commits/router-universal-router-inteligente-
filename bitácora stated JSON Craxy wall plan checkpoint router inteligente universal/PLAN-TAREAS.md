@@ -76,7 +76,7 @@ Evidencia arquitectura: commit `8616da2a84bd5f803ca38a9bbeaea1ed93bafbac`.
 10. **HF-MIRROR-REPLICA ✅ DISEÑO** — repo duplicate ≠ endpoint replicas ≠ revision-pinned snapshot; gates/provenance definidos. Ejecución real queda pendiente de destino/costo explícito.
 10. **ROUTING-50-IDENTITIES ✅ 64 VERIFIED** — `red/identity_pool.py`; 64 identidades secuenciales, quota/cooldown/mirror/priority, secret refs only; HF Job `6aac7f48b1dc2b62dc58fb73`, 5×5 tests PASS.
 11. **HF-COMPUTE ✅ POLICY** — HF1 CPU control/small; HF2 A10G medium baseline; HF3 large/burst by benchmark/provider. No fixed paid hardware assumed.
-12. **AGENT-MODEL-MIX** — modelos pequeños para agentes + modelos grandes, con criterios medidos.
+12. **AGENT-MODEL-MIX ✅ POLICY** — tiny 0.5–1.5B; small 3–4B; standard 7–8B; specialist/large 30B+ only with exact runtime PASS; identity failover before size escalation.
 13. **HF-MCP-API** — MCP + API key por secret refs; sin valores en repo/chat.
 14. **HF-SKILLS** — integrar skills HF verificadas.
 15. **GITHUB-HF** — conexión autorizada GitHub+HF y evidencia runtime.
