@@ -201,3 +201,15 @@ No se habilita producción hasta validar licencia individual, revisión, tamaño
 - https://huggingface.co/Wan-AI/Wan2.2-Animate-14B
 - https://huggingface.co/Lightricks/LTX-Video
 - https://huggingface.co/tencent/HunyuanVideo
+
+
+## AI Staff — Image / Design Models — RIU-0086
+Destino: `AI Staff -> Image & Design Models`. Son modelos especializados, no agentes.
+
+| Modelo | Función | Licencia HF | Estado |
+|---|---|---|---|
+| `kandinskylab/Kandinsky-5.0-T2I-Lite-sft-Diffusers` | text-to-image / diseño generativo | MIT | GAP_PENDING |
+| `Qwen/Qwen-Image` | generación/edición de imagen y texto visual | Apache-2.0 | GAP_PENDING |
+| `black-forest-labs/FLUX.1-schnell` | text-to-image rápido | Apache-2.0 + acceso gated | GAP_PENDING |
+
+Regla: registrar != descargar != hash-verificar != cargar != inferir != PASS. Cada modelo pasa por el motor de descarga existente, revisión fija, selección de fileset, hash, carga e inferencia antes de promoverse.
