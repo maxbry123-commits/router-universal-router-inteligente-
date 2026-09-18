@@ -206,3 +206,12 @@ Estado: **ACTIVE / NO GLOBAL CLOSE**.
 - Nuevos nodos: `WAN22_ANIMATE_MODEL_INTEGRATION`, `LTX_VIDEO_MODEL_INTEGRATION`, `HUNYUANVIDEO_MODEL_INTEGRATION`.
 - Estado de los tres: `GAP_PENDING`.
 - No cerrar hasta: licencia + revision + tamaño + descarga real + hash + carga + inferencia + evidencia.
+
+
+## RIU-0083 — OMNIROUTE MATERIALIZATION VERIFIED
+- Destino: `router inteligente universal/Componente open soure router inteligente universal/OmniRoute/`.
+- Materialización: submodule/gitlink fijado a `diegosouzapw/OmniRoute@1603c86e06da473e0fffb3802585e052219ac353`.
+- Commit RIU: `ca931941988510d546fb71e2bef76545d5cab5e2`.
+- Read-back real: HF Job `6aacbb0c5c02253cfb14622d` COMPLETED; submodule checkout exacto y `package.json` presente.
+- Estado descarga/materialización: `VERIFIED`.
+- Integración detrás de `connector_registry`: `PENDING`; no se declara PASS funcional todavía.
