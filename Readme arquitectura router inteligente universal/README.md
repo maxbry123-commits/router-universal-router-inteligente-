@@ -168,3 +168,7 @@ Snapshot base auditado: `main@d001d96cfa382888d409255e5dd3e9d2b6372860`. Se dete
 
 ### HF mirrors / replicas — RIU-0078
 Se separan tres mecanismos: (1) repo duplicate/mirror con `duplicate_repo` / `hf repos duplicate`; (2) replicas runtime administradas por Hugging Face Inference Endpoints con min/max/autoscaling; (3) snapshot/cache revision-pinned con `snapshot_download(revision=...)`. Ninguna de estas capas obtiene routing ownership: `RedUniversal -> connector_registry -> endpoint/provider adapter`. Diseño/evidencia: `forensics/RIU-0078-HF-MIRROR-REPLICA-ARCHITECTURE-2026-09-17.md`, commit `9b0595507649d495651d7e5065bc7b15087a3d6f`. No se creó un mirror real porque falta destino/namespace explícito.
+
+
+### >50 identidades/API — RIU-0079
+El Router ya soportaba 1000+ nodos en `RedUniversal`; se añadió `red/identity_pool.py` para resolver el GAP de muchas identidades/proveedores sin fan-out. El pool registra sólo referencias `secret_env`, valida `connector_kind` contra el registry y selecciona una identidad elegible por vez usando prioridad, mirror rank, quota-exhausted y cooldown. Test exacto `7ec0a58b7f4557984963f099dd113ea48d4be110`: HF Job `6aac7f48b1dc2b62dc58fb73` COMPLETED, 5/5 rondas, 5 tests por ronda, incluyendo rollover secuencial de **64 identidades**. Routing ownership permanece en RedUniversal.
