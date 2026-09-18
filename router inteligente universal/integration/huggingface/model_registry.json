@@ -1,1 +1,70 @@
-{"contract":"RIU-HF-MODEL-REGISTRY-V12","truth_rule":"AI Staff models are REMOTE_INFERENCE_ONLY: never install/download/mirror model weights into RIU or HF account storage; REGISTERED != REMOTE_INFERENCE_VERIFIED; PASS requires provider discovery + auth reference + remote inference + failure/fallback evidence.","supersedes":"V11 download/hash/load semantics for AI Staff","gateway":{"provider":"huggingface","base_url":"https://router.huggingface.co/v1","token_env":"HF_TOKEN","ownership":"RedUniversal -> connector_registry -> HF remote adapter/provider"},"persistent_storage_policy":{"model_weights_allowed":false,"persistent_model_installations_verified":0,"persistent_mirrors_verified":0,"action_if_weights_found":"QUARANTINE_AND_VERIFY_THEN_REMOVE_ONLY_IF_CONFIRMED_REDUNDANT; preserve evidence"},"runtime_inference_verified_model_ids":["Qwen/Qwen3-0.6B","openai-community/gpt2","Qwen/Qwen3-8B"],"catalog_observed_not_runtime_verified":["Qwen/Qwen2.5-7B-Instruct","Qwen/Qwen2.5-1.5B-Instruct","farbodtavakkoli/OTel-2.0-LLM-31B-IT","openai/gpt-oss-20b"],"remote_inference_queue":[{"slot":"HF-VID-01","model_id":"Wan-AI/Wan2.2-Animate-14B","task":"video-to-video","state":"REMOTE_PROVIDER_DISCOVERY_PENDING"},{"slot":"HF-VID-02","model_id":"Lightricks/LTX-Video","task":"image-to-video","state":"REMOTE_PROVIDER_DISCOVERY_PENDING"},{"slot":"HF-VID-03","model_id":"tencent/HunyuanVideo","task":"text-to-video","state":"REMOTE_PROVIDER_DISCOVERY_PENDING"},{"slot":"HF-IMG-01","model_id":"kandinskylab/Kandinsky-5.0-T2I-Lite-sft-Diffusers","task":"text-to-image","state":"REMOTE_PROVIDER_DISCOVERY_PENDING"},{"slot":"HF-IMG-02","model_id":"Qwen/Qwen-Image","task":"text-to-image","state":"REMOTE_PROVIDER_DISCOVERY_PENDING"},{"slot":"HF-IMG-03","model_id":"black-forest-labs/FLUX.1-schnell","task":"text-to-image","state":"REMOTE_PROVIDER_DISCOVERY_PENDING","gated":"auto"},{"slot":"HF-TS-01","model_id":"google/timesfm-3.0-pytorch","task":"time-series-forecasting","state":"REMOTE_PROVIDER_DISCOVERY_PENDING"}],"closure_gate":["REGISTER","REMOTE_PROVIDER_DISCOVERY","AUTH_REFERENCE","REMOTE_INFERENCE_SMOKE","FAILURE_FALLBACK_TEST","EVIDENCE","READY"],"legacy_provenance":{"historical_router_catalog_count":20,"note":"V11 and earlier retained in git history; legacy download/hash/load fields are superseded, not evidence of installation."}}
+{
+  "contract": "RIU-HF-MODEL-REGISTRY-V13",
+  "truth_rule": "AI Staff models are REMOTE_INFERENCE_ONLY: never install/download/mirror model weights into RIU or HF account storage; REGISTERED != PROVIDER_LIVE_VERIFIED != REMOTE_INFERENCE_AUTHENTICATED_PASS != READY. PASS requires provider discovery + auth reference + remote inference + failure/fallback evidence.",
+  "supersedes": "V12 lacked a queryable allowed-id surface for the adapter; V11 and earlier download/hash/load semantics for AI Staff remain superseded",
+  "gateway": {
+    "provider": "huggingface",
+    "base_url": "https://router.huggingface.co/v1",
+    "token_env": "HF_TOKEN",
+    "ownership": "RedUniversal -> connector_registry -> HF remote adapter/provider"
+  },
+  "persistent_storage_policy": {
+    "model_weights_allowed": false,
+    "persistent_model_installations_verified": 0,
+    "persistent_mirrors_verified": 0,
+    "action_if_weights_found": "QUARANTINE_AND_VERIFY_THEN_REMOVE_ONLY_IF_CONFIRMED_REDUNDANT; preserve evidence"
+  },
+  "runtime_inference_verified_model_ids": [
+    "Qwen/Qwen3-0.6B",
+    "openai-community/gpt2",
+    "Qwen/Qwen3-8B"
+  ],
+  "remote20_provider_live_verified": {
+    "source_commit": "fc61718c658b60a4f2b9ecbad3b0bfabf1c5847f",
+    "recovery_forensic": "forensics/RIU-0091-HF-REMOTE-20-RECOVERY-XRAY-2026-09-18.md",
+    "provider_discovery_job": "6aad981352d0dbd7f1d6b827",
+    "authenticated_inference_status": "0_OF_20_GAP_AUTH_REMOTE_INFERENCE",
+    "models": [
+      {"model_id": "Qwen/Qwen3.8-27B", "providers_live": ["novita", "cerebras", "ovhcloud", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp", "providers_live": ["novita", "fireworks-ai", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "zai-org/GLM-5.3-Flash", "providers_live": ["novita", "together", "fireworks-ai", "featherless-ai", "zai-org", "baseten", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "zai-org/GLM-5.3", "providers_live": ["novita", "together", "fireworks-ai", "featherless-ai", "zai-org", "baseten", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "inclusionAI/Ling-3.0-flash-Fin", "providers_live": ["novita", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "moonshotai/Kimi-K3", "providers_live": ["together", "fireworks-ai", "featherless-ai", "baseten", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "meta-llama/Llama-3.1-8B-Instruct", "providers_live": ["novita", "nscale", "featherless-ai", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "inclusionAI/Ling-3.0-flash-VL", "providers_live": ["novita", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "deepseek-ai/DeepSeek-V4-Flash-0731", "providers_live": ["novita", "together", "fireworks-ai", "featherless-ai", "scaleway", "baseten", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "prism-ml/Ternary-Bonsai-27B-gguf", "providers_live": ["together"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "meta-models/Muse-Glimmer-30B", "providers_live": ["together", "fireworks-ai", "featherless-ai", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "google/gemma-4-31B-it", "providers_live": ["novita", "featherless-ai", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "openai/gpt-oss-120b", "providers_live": ["groq", "novita", "cerebras", "nscale", "together", "fireworks-ai", "featherless-ai", "scaleway", "baseten", "ovhcloud", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "Qwen/Qwen3.6-35B-A3B", "providers_live": ["featherless-ai", "scaleway", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "openai/gpt-oss-20b", "providers_live": ["groq", "novita", "nscale", "featherless-ai", "ovhcloud", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "deepseek-ai/DeepSeek-V4-Pro", "providers_live": ["novita", "featherless-ai", "baseten", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "deepseek-ai/DeepSeek-V4-Flash", "providers_live": ["novita", "featherless-ai", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "Qwen/Qwen3.5-9B", "providers_live": ["together", "featherless-ai", "ovhcloud", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "inclusionAI/Ling-3.0-flash", "providers_live": ["novita", "deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"},
+      {"model_id": "ibm-granite/granite-4.2-3b", "providers_live": ["deepinfra"], "state": "PROVIDER_LIVE_VERIFIED"}
+    ]
+  },
+  "catalog_observed_not_runtime_verified": [
+    "Qwen/Qwen2.5-7B-Instruct",
+    "Qwen/Qwen2.5-1.5B-Instruct",
+    "farbodtavakkoli/OTel-2.0-LLM-31B-IT",
+    "openai/gpt-oss-20b"
+  ],
+  "remote_inference_queue": [
+    {"slot": "HF-VID-01", "model_id": "Wan-AI/Wan2.2-Animate-14B", "task": "video-to-video", "state": "REMOTE_PROVIDER_DISCOVERY_PENDING"},
+    {"slot": "HF-VID-02", "model_id": "Lightricks/LTX-Video", "task": "image-to-video", "state": "REMOTE_PROVIDER_DISCOVERY_PENDING"},
+    {"slot": "HF-VID-03", "model_id": "tencent/HunyuanVideo", "task": "text-to-video", "state": "REMOTE_PROVIDER_DISCOVERY_PENDING"},
+    {"slot": "HF-IMG-01", "model_id": "kandinskylab/Kandinsky-5.0-T2I-Lite-sft-Diffusers", "task": "text-to-image", "state": "REMOTE_PROVIDER_DISCOVERY_PENDING"},
+    {"slot": "HF-IMG-02", "model_id": "Qwen/Qwen-Image", "task": "text-to-image", "state": "REMOTE_PROVIDER_DISCOVERY_PENDING"},
+    {"slot": "HF-IMG-03", "model_id": "black-forest-labs/FLUX.1-schnell", "task": "text-to-image", "state": "REMOTE_PROVIDER_DISCOVERY_PENDING", "gated": "auto"},
+    {"slot": "HF-TS-01", "model_id": "google/timesfm-3.0-pytorch", "task": "time-series-forecasting", "state": "REMOTE_PROVIDER_DISCOVERY_PENDING"}
+  ],
+  "closure_gate": ["REGISTER", "REMOTE_PROVIDER_DISCOVERY", "AUTH_REFERENCE", "REMOTE_INFERENCE_SMOKE", "FAILURE_FALLBACK_TEST", "EVIDENCE", "READY"],
+  "legacy_provenance": {
+    "historical_router_catalog_count": 20,
+    "note": "V11 and earlier retained in git history; legacy download/hash/load fields are superseded, not evidence of installation."
+  }
+}
