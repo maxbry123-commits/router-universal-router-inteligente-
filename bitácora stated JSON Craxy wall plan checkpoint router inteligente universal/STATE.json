@@ -6,8 +6,8 @@
   "branch": "main",
   "core_status": "VERIFIED_CLOSED",
   "core_progress_percent": 100,
-  "status": "ACTIVE_RIU_0071_FORENSIC_XRAY_AND_CLOSURE_EXECUTION",
-  "current_node": "RIU-0083_HF_SKILLS_INTEGRATION",
+  "status": "ACTIVE_RIU_0085_HF_REAL_INVENTORY_AND_VIDEO_MODELS",
+  "current_node": "RIU-0085_HF_REAL_INVENTORY_AND_VIDEO_MODELS",
   "closed": [
     "P01_executable_set_closed",
     "P02_hot_path_executable_set_closed",
@@ -62,7 +62,10 @@
     "HF_SKILLS_INTEGRATION",
     "GITHUB_HF_RUNTIME",
     "HF_WATCHDOG_404_REPAIR",
-    "HF_FULL_INVENTORY_PRIVATE_AND_UNCAPPED_GAP"
+    "HF_FULL_INVENTORY_PRIVATE_AND_UNCAPPED_GAP",
+    "WAN22_ANIMATE_MODEL_INTEGRATION",
+    "LTX_VIDEO_MODEL_INTEGRATION",
+    "HUNYUANVIDEO_MODEL_INTEGRATION"
   ],
   "pending": [
     "CLAUDE_ROOT_WRITE_VERIFIED",
@@ -172,7 +175,10 @@
     "RIU-0080 compute sizing policy commit fbd82905b0a73b3bd5c9714726564f1b8b4f8479",
     "RIU-0081 agent model mix policy commit 7c91f51e3aec6c0d6108e68b4132ec232d2513cd",
     "RIU-0082 MCP/API audit forensics/RIU-0082-HF-MCP-API-BOUNDARY-2026-09-17.md commit 014f3e59a76bf7943a6a1cc36dfd5e1376dd1760",
-    "HF Job 6aac809f5c02253cfb145474 COMPLETED: 5 rounds x 10 connectivity tests"
+    "HF Job 6aac809f5c02253cfb145474 COMPLETED: 5 rounds x 10 connectivity tests",
+    "HF authenticated owned-model repo probe Job 6aacb9175c02253cfb1461d1 returned account=COMAND-CENTER-1 count=0",
+    "RIU-0085 distinguishes runtime-verified models from persistent installs/mirrors",
+    "WAN2.2 Animate/LTX-Video/HunyuanVideo official HF repos verified and registered GAP_PENDING"
   ],
   "next_tasks": [
     "Claude + SOL: materialize OmniRoute @ 1603c86e06da473e0fffb3802585e052219ac353 into router inteligente universal/Componente open soure router inteligente universal/OmniRoute/, read-back/hash, then integrate behind connector_registry",
@@ -196,11 +202,11 @@
     "optional_backup_must_not_block_primary_github": true
   },
   "last_delta": {
-    "id": "RIU-0082",
-    "decision": "HF_MCP_OAUTH_AND_HUB_API_KEY_BOUNDARIES_SEPARATED",
-    "verify_final": "PASS_BOUNDARY_5X_REMOTE_OAUTH_E2E_PENDING",
-    "cross_check": "NO_SECRET_VALUES_SERIALIZED",
-    "coda": "NEXT_RIU_0083_HF_SKILLS_INTEGRATION"
+    "id": "RIU-0085",
+    "decision": "REAL_HF_INVENTORY_SPLIT_AND_VIDEO_MODELS_REGISTERED_GAP_PENDING",
+    "verify_final": "REGISTRY_DOC_STATE_PENDING_DOWNLOAD_HASH_LOAD_TEST",
+    "cross_check": "NO_INSTALL_OR_PASS_CLAIM_WITHOUT_RUNTIME_EVIDENCE",
+    "coda": "NEXT_LICENSE_REVISION_SIZE_DOWNLOAD_COMPUTE_GATES"
   },
   "root_xray": {
     "audited_at": "2026-09-17",
@@ -237,6 +243,40 @@
       "source": "https://github.com/firecrawl/anydoc",
       "role": "DOCUMENT_INGEST_ADAPTER",
       "state": "BOUNDARY_DEFINED_PENDING_RUNTIME_TEST"
+    }
+  },
+  "hf_real_inventory": {
+    "owned_model_repos": 0,
+    "owned_model_probe_job": "6aacb9175c02253cfb1461d1",
+    "persistent_mirrors_verified": 0,
+    "persistent_local_installs_verified": 0,
+    "runtime_inference_verified": [
+      "Qwen/Qwen3-0.6B",
+      "openai-community/gpt2",
+      "Qwen/Qwen3-8B"
+    ],
+    "provisional_router_refs": [
+      "Qwen/Qwen2.5-7B-Instruct",
+      "Qwen/Qwen2.5-1.5B-Instruct",
+      "farbodtavakkoli/OTel-2.0-LLM-31B-IT",
+      "openai/gpt-oss-20b"
+    ]
+  },
+  "video_models": {
+    "Wan-AI/Wan2.2-Animate-14B": {
+      "status": "GAP_PENDING",
+      "license": "apache-2.0",
+      "agent": false
+    },
+    "Lightricks/LTX-Video": {
+      "status": "GAP_PENDING",
+      "license": "other",
+      "agent": false
+    },
+    "tencent/HunyuanVideo": {
+      "status": "GAP_PENDING",
+      "license": "other",
+      "agent": false
     }
   }
 }
