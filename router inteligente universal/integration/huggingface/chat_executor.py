@@ -11,7 +11,7 @@ from .chat_catalog import cached_discovery, selectable_live_ids
 def _call_inference(*, token: str, model_id: str, messages: list[dict[str, str]], max_tokens: int) -> dict[str, Any]:
     from huggingface_hub import InferenceClient
 
-    out = InferenceClient(token=token).chat_completion(model=model_id, messages=messages, max_tokens=max_tokens)
+    out = InferenceClient(token=token, timeout=60).chat_completion(model=model_id, messages=messages, max_tokens=max_tokens)
     choice = out.choices[0]
     return {
         "model": model_id,
