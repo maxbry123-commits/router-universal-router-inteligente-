@@ -1,7 +1,8 @@
 name: RIU Chat MVP Verify
 
 # Real-runner evidence for the chat MVP + selector models (Kimi K3, MiniMax, DeepSeek V4 Flash/Pro).
-# Results are emitted as annotations (::notice / ::warning) so they are readable via the check-run API.
+# Results are emitted as ONE aggregated annotation per step (::notice / ::warning) because GitHub caps
+# annotations at 10 per level per step; they stay readable through the check-run API.
 # No secret value is ever printed; HF_TOKEN_1 is only injected into the env of the steps that need it.
 
 on:
@@ -16,7 +17,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,51 +57,41 @@ jobs:
           code=${PIPESTATUS[0]}
           last=$(tail -n 1 /tmp/pytest.txt | tr -d '\r')
           echo "::notice title=RIU_TESTS::exit=${code} | ${last}"
-          grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | head -12 | while IFS= read -r line; do echo "::warning title=RIU_TEST_FAIL::${line}"; done
+          grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | head -8 | while IFS= read -r line; do echo "::warning title=RIU_TEST_FAIL::${line}"; done
           exit 0
 
-      - name: Router catalog discovery (public model ids only)
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
-        run: |
-          python - <<'PY'
-          import json, os, re, urllib.request
-          tok = os.environ.get("HF_TOKEN", "")
-          headers = {"Authorization": "Bearer " + tok} if tok else {}
-          req = urllib.request.Request("https://router.huggingface.co/v1/models", headers=headers)
-          try:
-              with urllib.request.urlopen(req, timeout=30) as r:
-                  ids = sorted(d["id"] for d in json.load(r)["data"])
-          except Exception as e:
-              print("::warning title=RIU_CATALOG::FAIL " + type(e).__name__)
-              raise SystemExit(0)
-          hit = [i for i in ids if re.search(r"kimi|minimax|deepseek|glm", i, re.I)]
-          print("::notice title=RIU_CATALOG_COUNT::" + str(len(ids)) + " models, token_present=" + str(bool(tok)))
-          print("::notice title=RIU_CATALOG_MATCH::" + ",".join(hit))
-          PY
-
-      - name: Live smoke through the Router executor
+      - name: End-to-end through the gateway (API key -> Enchufe -> RedUniversal -> HF)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
         run: |
           cd "router inteligente universal"
           python - <<'PY'
-          import sys
+          import json, os, secrets, sys
+          key = "ci-" + secrets.token_hex(8)
+          os.environ["RIU_AGENT_API_KEYS"] = json.dumps({key: "ci-agent"})
+          os.environ["RIU_CHAT_ALLOW_PROVIDER_LIVE"] = "1"
           sys.path.insert(0, ".")
-          from integration.huggingface import chat_catalog as cat, chat_executor as ex
-          discovered = cat.discover_catalog_ids(timeout=30)
-          run = ex.make_executor(allow_provider_live=True, discover=lambda: discovered)
-          rows = cat.selector_models(discovered=discovered, live_enabled=True)["models"]
+          from fastapi.testclient import TestClient
+          from integration.huggingface import fastapi_gateway as gw
+          client = TestClient(gw.app)
+          rows = client.get("/chat/models").json()["models"]
+          sel = ["%s|%s|%s" % (r["model_id"], r["state"], "sel" if r["selectable"] else "no") for r in rows]
+          print("::notice title=RIU_SELECTOR::" + "; ".join(sel))
+          out = []
           for r in rows:
               mid = r["model_id"]
               if not mid or not r["selectable"]:
-                  print("::notice title=RIU_SMOKE::%s %s SKIP %s" % (r["label"], mid, r["state"]))
                   continue
               try:
-                  out = run(model_id=mid, messages=[{"role": "user", "content": "Reply OK"}], max_tokens=8)
-                  txt = (out["message"]["content"] or "")[:20].replace("\n", " ")
-                  print("::notice title=RIU_SMOKE::%s PASS certified=%s reply=%r" % (mid, out["certified"], txt))
+                  resp = client.post("/v1/chat/completions", headers={"X-API-Key": key},
+                                     json={"model": mid, "messages": [{"role": "user", "content": "Reply with the single word OK"}], "max_tokens": 256})
+                  body = resp.json()
+                  if resp.status_code == 200:
+                      ch = body["choices"][0]
+                      out.append("%s 200 len=%d finish=%s cert=%s" % (mid, len(ch["message"].get("content") or ""), ch["finish_reason"], body["certified"]))
+                  else:
+                      out.append("%s %d %s" % (mid, resp.status_code, str(body.get("detail", ""))[:80].replace("\n", " ")))
               except Exception as e:
-                  status = getattr(getattr(e, "response", None), "status_code", "")
-                  print("::warning title=RIU_SMOKE::%s FAIL %s %s" % (mid, type(e).__name__, status))
+                  out.append("%s EXC %s" % (mid, type(e).__name__))
+          print("::notice title=RIU_E2E::" + "; ".join(out))
           PY
