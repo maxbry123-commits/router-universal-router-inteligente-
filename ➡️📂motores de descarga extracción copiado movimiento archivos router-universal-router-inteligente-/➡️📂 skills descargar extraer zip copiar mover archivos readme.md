@@ -37,7 +37,7 @@ El nombre se define **desde la copia inicial**. No se crea con un nombre tempora
 
 ## 2. Contenido final autorizado de la raíz
 
-La raíz final contiene **solamente** estos siete archivos distribuidos en cuatro carpetas de motores + este skill:
+La raíz final contiene los seis motores canónicos inmutables, este skill y la carpeta autorizada de búsqueda web. La ampliación `➡️📂 motor de búsqueda/` fue autorizada explícitamente por el Director el 2026-09-19 y NO modifica los seis blobs canónicos existentes:
 
 1. `➡️📂 skills descargar extraer zip copiar mover archivos readme.md`
 2. `➡️📂 Motor de extracción zip/motor_1_extract_only.py`
@@ -46,6 +46,12 @@ La raíz final contiene **solamente** estos siete archivos distribuidos en cuatr
 5. `➡️📂motor de copiar archivos/motor_3_copy_batches.py`
 6. `➡️📂motor de copiar archivos/motor_copy_root_to_repo.py`
 7. `➡️📂motor de moves archivos/motor_4_move_batches.py`
+8. `➡️📂 motor de búsqueda/websearch_engine.py`
+9. `➡️📂 motor de búsqueda/trigger_hf_websearch.py`
+10. `➡️📂 motor de búsqueda/test_websearch_engine.py`
+11. `➡️📂 motor de búsqueda/README.md`
+
+La carpeta `➡️📂 motor de búsqueda/` es un motor NUEVO y separado; está prohibido usar su creación como motivo para alterar cualquiera de los seis motores históricos bloqueados por SHA.
 
 Cualquier otro archivo dentro de esta raíz produce:
 
@@ -210,6 +216,34 @@ Entradas:
 PASS:
 
 `VERIFIED_CLOSED` + `failed=0` + `pending=0`.
+
+---
+
+## 9A. Motor de búsqueda web avanzada
+
+Ruta:
+
+`➡️📂 motor de búsqueda/`
+
+Archivos autorizados:
+
+- `websearch_engine.py`
+- `trigger_hf_websearch.py`
+- `test_websearch_engine.py`
+- `README.md`
+
+Diseño:
+
+`TRIGGER -> HF Job ON_DEMAND -> DuckDuckGo/Brave/Tavily/Serper/Firecrawl -> deduplicación/ranking -> result.json + summary.md -> read-back`
+
+Reglas:
+
+- no GitHub Actions para ejecutar búsquedas;
+- no LLM por defecto;
+- secretos solo por variables/secret store, nunca impresos;
+- salida persistente preferida: `/data/websearch/results/<JOB_ID>/`;
+- un proveedor ausente/fallido se registra como GAP; no se oculta;
+- PASS del motor exige archivo de resultado + read-back coherente.
 
 ---
 
