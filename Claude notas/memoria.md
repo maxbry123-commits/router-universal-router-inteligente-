@@ -1,4 +1,4 @@
-﻿# CLAUDE NOTAS - memoria.md (Router Inteligente Universal)
+# CLAUDE NOTAS - memoria.md (Router Inteligente Universal)
 RAIZ UNICA DE MEMORIA DE ESTE CLAUDE PARA ESTE REPO, creada 2026-09-18.
 Replica el metodo del Claude que trabaja en repo `agentes` (ver
 `agentes/Claude notas/memoria.md`). Este archivo NUNCA se resume. Se
@@ -159,7 +159,10 @@ sin secreto embebido -> test de fallo -> evidencia URL/SHA/commit.
   DeepSeek-V4-Flash-0731, Ternary-Bonsai-27B-gguf, Muse-Glimmer-30B,
   gemma-4-31B-it, gpt-oss-120b, Qwen3.6-35B-A3B, gpt-oss-20b,
   DeepSeek-V4-Pro, DeepSeek-V4-Flash, Qwen3.5-9B, Ling-3.0-flash,
-  granite-4.2-3b).
+  granite-4.2-3b). **VER CORRECCION DE SEGURIDAD EN SECCION 12: los 4
+  model_id "DeepSeek-V4-*" de esta lista son UNVERIFIED_NAMESPACE /
+  POSSIBLE_SQUATTING, no confirmados como de la organizacion oficial
+  deepseek-ai.**
 - GAP DE SCHEMA CRITICO: `model_registry.json` (V12) ya NO tiene la clave
   `models`, pero `huggingface_openai_chat.py` -> `allowed_model_ids()`
   todavia lee `_registry()["models"]`. **El adapter esta roto/desincronizado
@@ -630,6 +633,8 @@ contra la documentacion oficial de Anthropic antes de dar instrucciones
   usaria si el Director pide aislar el segundo entorno del primero.
 - Este hallazgo NO cambia nada del estado tecnico del Router; es un
   procedimiento operativo para el Director, no un gap de codigo.
+- **CONFIRMADO por el Director (2026-09-18): el segundo entorno de
+  Claude ya fue anadido con exito usando este mecanismo.**
 
 ### 11.2 Diseno UI "0 friccion" descrito por el Director (Fables) -- SOLO DOCUMENTADO, sin construir aun
 El Director explico la arquitectura de UI disenada originalmente por
@@ -746,3 +751,127 @@ configuracion ENCIMA del hot-path, nunca un router paralelo.
 `GAP-UI-FICHAS-DESIGN-BUILD-001`: diseno completo documentado (11.2),
 pendiente decision del Director sobre en que repo/artifact construirlo
 antes de escribir cualquier codigo de UI.
+
+## 12. SEGURIDAD: "DEEPSEEK-V4" ES NO-OFICIAL / PROBABLE NAMESPACE-SQUATTING (2026-09-18)
+
+### 12.1 Contexto del hallazgo
+El Director recibio de un chat de DeepSeek (no de una fuente oficial) instrucciones
+para: (a) usar un supuesto endpoint publico gratuito y anonimo de
+`deepseek-ai/DeepSeek-V4-Flash-0731` alojado en HF Inference Endpoints
+(URL tipo `https://<hash>.us-east-2.aws.endpoints.huggingface.cloud/v1`),
+sin cuenta ni token; (b) extraer el `userToken` de la sesion web de
+DeepSeek desde localStorage y pasarlo a una extension de navegador de
+tercero ("DeepSeek++") para evitar pagar la API oficial.
+
+### 12.2 Verificacion aplicada
+- Busqueda web (incluso filtrada solo a `huggingface.co`) SI devuelve
+  repos y hasta un "blog post" en `huggingface.co/blog/<usuario-cualquiera>/...`
+  anunciando "DeepSeek V4 Flash oficial". El autor del blog no es la cuenta
+  `deepseek-ai`; en HF cualquier usuario publica en `/blog/<su-usuario>/...`.
+- El repo `github.com/Moh4696/deepseek-v4-flash-free` ofrece "sin token,
+  sin cuenta, sin costo" para un endpoint dedicado de HF -- tecnicamente
+  imposible de forma legitima y permanente (los HF Inference Endpoints
+  dedicados siempre facturan a una cuenta). Patron tipico de trampa
+  dirigida a agentes de IA autonomos.
+- `api-docs.deepseek.com` (fuente oficial verificada) y
+  `github.com/deepseek-ai/DeepSeek-V3` NO mencionan ningun "V4". El
+  lineage oficial confirmado llega a V3 / V3.1 / familia R1.
+- El "truco" de extraer `userToken` de localStorage + extension de
+  tercero = secuestro de sesion autenticada propia, viola ToS de
+  DeepSeek y es vector de robo de credenciales si la extension es
+  maliciosa. **No ejecutado, no configurado.**
+
+### 12.3 Hallazgo cruzado en el propio repo (auditoria pasada 3/4)
+El README de arquitectura (`Readme arquitectura router inteligente
+universal/README.md`, seccion RIU-0094) YA contenia, de una sesion
+anterior, una tabla "REMOTE20 V2" con model_id
+`deepseek-ai/DeepSeek-V4-Flash-0731`, `DeepSeek-V4-Pro`,
+`DeepSeek-V4-Flash`, `DeepSeek-V4-Flash-Vision-Exp`, obtenidos de
+`https://router.huggingface.co/v1/models` (catalogo publico de HF,
+editable por cualquier cuenta). Esa sesion los registro como
+"catalogo presente" pero el propio contrato del repo ya distingue
+`PROVIDER_LIVE_VERIFIED != REMOTE_INFERENCE_AUTHENTICATED_PASS`, y el
+estado real anotado es **0/20 con inferencia autenticada exitosa**
+(bloqueado por GAP_AUTH_REMOTE_INFERENCE, no por los nombres de
+modelo). Es decir: ningun "V4" fue jamas invocado con exito real --
+solo aparecio listado en el catalogo publico.
+
+**Correccion de auditoria (no se borra RIU-0091/0094, se marca
+encima):** los 4 model_id "V4" del REMOTE20 V2 deben tratarse como
+`UNVERIFIED_NAMESPACE / POSSIBLE_SQUATTING` hasta que se confirme
+contra la organizacion oficial `deepseek-ai` en HF (verificar badge de
+organizacion verificada, no solo el string del path del repo). No se
+recomienda ni se habilita su uso en produccion bajo ninguna
+circunstancia mientras dure esta duda. Los 16 model_id restantes del
+REMOTE20 (Qwen, GLM, Llama, Gemma, gpt-oss, granite, etc.) no
+presentan esta senal de alerta y siguen bajo su gate normal
+(GAP_AUTH_REMOTE_INFERENCE, no relacionado a squatting).
+
+### 12.4 Decision operativa (P2 -- reparar sin escalar, dentro de alcance)
+- NO se creo, instalo ni configuro ningun Space/endpoint apuntando a
+  las URLs sospechosas.
+- NO se conecto ninguna cuenta de DeepSeek via extension de tercero ni
+  via token de sesion robado.
+- Via legitima documentada para DeepSeek real: (1) API oficial de pago
+  en `platform.deepseek.com` con key propia del Director como secret
+  de entorno, conectada al `connector_registry` como un provider mas
+  (mismo patron que los demas adapters); (2) modelos DeepSeek reales
+  (V3/V3.1/R1, organizacion `deepseek-ai` verificada) via HF Inference
+  Providers oficial, sujeto al mismo `GAP_AUTH_REMOTE_INFERENCE` ya
+  documentado -- no es un gap nuevo, es el mismo de siempre.
+- Nuevo gap registrado: `GAP-HF-CATALOG-NAMESPACE-VERIFICATION-001`.
+
+### 12.5 Fuentes oficiales confirmadas (para conectar Deepseek/HF real)
+- `https://huggingface.co/docs/hub/hf-mcp-server` -- servidor MCP
+  oficial de HF (Hub tools via MCP).
+- `https://huggingface.co/docs/chat-ui/configuration/mcp-tools` --
+  HuggingChat SI soporta MCP Tools de forma oficial (chat-ui).
+- `https://api-docs.deepseek.com/quick_start/agent_integrations/` --
+  integraciones oficiales de DeepSeek son para GitHub Copilot / Copilot
+  CLI, NO para "chat web de DeepSeek + MCP + GitHub" (esa combinacion
+  no tiene soporte oficial documentado).
+- No existe combinacion oficial "cuenta de DeepSeek dentro de HF,
+  conectada por MCP a GitHub y HF simultaneamente" -- se descarta como
+  ruta.
+
+### 12.6 Nuevo gap de investigacion registrado
+`GAP-HF-CATALOG-NAMESPACE-VERIFICATION-001`: antes de promover
+cualquier model_id nuevo del catalogo publico de HF a REMOTE20 o
+REMOTE_ONLY, verificar que pertenece a una organizacion HF verificada
+(badge oficial), no solo que el path del repo contenga el nombre de un
+proveedor conocido. Aplica retroactivamente a los 4 model_id "V4" de
+RIU-0094 y a cualquier adicion futura.
+
+## 13. COMPONENTE DE BUSQUEDA WEB PROPIO PARA AGENTES/CLAUDE (pedido del Director, 2026-09-18)
+
+### 13.1 Pedido
+El Director pidio un buscador activable en Hugging Face para que "todos
+los chats de Claude y los agentes" lo usen, sin depender de Anthropic
+para busqueda web -- util para agentes/wordflows que no tengan su propio
+WebSearch (ej. workers HF Jobs, agentes headless).
+
+### 13.2 Diseno propuesto (documentado, NO construido aun -- mismo criterio
+que 11.2: falta decidir si se autoriza construir ya)
+Boundary propuesto, coherente con el resto de la arquitectura (nunca un
+segundo orquestador, nunca bypass de RedUniversal):
+```
+Agente/wordflow -> connector_registry -> adapter_websearch -> proveedor de busqueda -> resultados -> RedUniversal/caller
+```
+- Implementacion candidata: un Space de HF (Gradio + soporte MCP, igual
+  patron que `hf-mcp-server`) que exponga una tool `web_search(query)`
+  respaldada por un proveedor de busqueda real (Brave Search API, Tavily
+  o SerpAPI -- los tres tienen tier gratuito con limite mensual; requiere
+  que el Director elija uno y genere su propia API key, igual patron que
+  cualquier otro secret).
+- Se registra como un conector mas en `connector_registry`, con su propio
+  `secret_env` -- mismo patron ya usado para HF/GitHub. No reemplaza
+  WebSearch nativo de Claude; es la opcion para agentes que no tienen
+  acceso a esa herramienta (workers HF Jobs, agentes en otros runtimes).
+- Gate antes de READY: mismo patron que cualquier adapter (prueba real +
+  read-back + test de fallo + evidencia URL/commit).
+
+### 13.3 Nuevo gap de investigacion registrado
+`GAP-WEBSEARCH-COMPONENT-BUILD-001`: diseno documentado en 13.2,
+pendiente que el Director elija proveedor de busqueda (Brave/Tavily/
+SerpAPI) y confirme autorizacion para construir el Space + adapter antes
+de escribir codigo.
