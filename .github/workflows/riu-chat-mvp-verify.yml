@@ -1,0 +1,106 @@
+name: RIU Chat MVP Verify
+
+# Real-runner evidence for the chat MVP + selector models (Kimi K3, MiniMax, DeepSeek V4 Flash/Pro).
+# Results are emitted as annotations (::notice / ::warning) so they are readable via the check-run API.
+# No secret value is ever printed; HF_TOKEN_1 is only injected into the env of the steps that need it.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-chat-mvp-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/tests/
+            router inteligente universal/verifier/
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: pip install fastapi httpx pytest pydantic uvicorn huggingface_hub
+
+      - name: Run chat MVP and Hugging Face tests
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q -p no:cacheprovider \
+            "router inteligente universal/tests/test_chat_mvp.py" \
+            "router inteligente universal/tests/test_chat_catalog_patterns.py" \
+            "router inteligente universal/tests/test_chat_gateway.py" \
+            "router inteligente universal/tests/test_hf_scheduler.py" \
+            "router inteligente universal/tests/test_huggingface_openai_chat_registry.py" \
+            "router inteligente universal/tests/test_hf_router_hot_path.py" \
+            "router inteligente universal/tests/test_identity_pool.py" 2>&1 | tee /tmp/pytest.txt
+          code=${PIPESTATUS[0]}
+          last=$(tail -n 1 /tmp/pytest.txt | tr -d '\r')
+          echo "::notice title=RIU_TESTS::exit=${code} | ${last}"
+          grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | head -12 | while IFS= read -r line; do echo "::warning title=RIU_TEST_FAIL::${line}"; done
+          exit 0
+
+      - name: Router catalog discovery (public model ids only)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import json, os, re, urllib.request
+          tok = os.environ.get("HF_TOKEN", "")
+          headers = {"Authorization": "Bearer " + tok} if tok else {}
+          req = urllib.request.Request("https://router.huggingface.co/v1/models", headers=headers)
+          try:
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  ids = sorted(d["id"] for d in json.load(r)["data"])
+          except Exception as e:
+              print("::warning title=RIU_CATALOG::FAIL " + type(e).__name__)
+              raise SystemExit(0)
+          hit = [i for i in ids if re.search(r"kimi|minimax|deepseek|glm", i, re.I)]
+          print("::notice title=RIU_CATALOG_COUNT::" + str(len(ids)) + " models, token_present=" + str(bool(tok)))
+          print("::notice title=RIU_CATALOG_MATCH::" + ",".join(hit))
+          PY
+
+      - name: Live smoke through the Router executor
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          cd "router inteligente universal"
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, ".")
+          from integration.huggingface import chat_catalog as cat, chat_executor as ex
+          discovered = cat.discover_catalog_ids(timeout=30)
+          run = ex.make_executor(allow_provider_live=True, discover=lambda: discovered)
+          rows = cat.selector_models(discovered=discovered, live_enabled=True)["models"]
+          for r in rows:
+              mid = r["model_id"]
+              if not mid or not r["selectable"]:
+                  print("::notice title=RIU_SMOKE::%s %s SKIP %s" % (r["label"], mid, r["state"]))
+                  continue
+              try:
+                  out = run(model_id=mid, messages=[{"role": "user", "content": "Reply OK"}], max_tokens=8)
+                  txt = (out["message"]["content"] or "")[:20].replace("\n", " ")
+                  print("::notice title=RIU_SMOKE::%s PASS certified=%s reply=%r" % (mid, out["certified"], txt))
+              except Exception as e:
+                  status = getattr(getattr(e, "response", None), "status_code", "")
+                  print("::warning title=RIU_SMOKE::%s FAIL %s %s" % (mid, type(e).__name__, status))
+          PY
