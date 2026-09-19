@@ -7,7 +7,7 @@ el Router los promueva a REMOTE20/READY.
 Secretos esperados como Space secrets (Settings -> Variables and secrets del
 Space, NUNCA en este archivo):
   HF_TOKEN_1        -> Hugging Face (Inference Providers, incluye DeepSeek V4,
-                        Kimi K2/K2.5/K2.6, GLM, Qwen, etc. via router.huggingface.co)
+                        Kimi K3/K2.6, GLM, Qwen, etc. via router.huggingface.co)
   GROQ_API_KEY_1     -> Groq (Llama, Qwen, GPT-OSS, Kimi K2 instruct)
   NVIDIA_API_KEY_1   -> NVIDIA NIM (MiniMax M2, Llama, etc.)
   CEREBRAS_API_KEY_1 -> Cerebras (Llama, Qwen)
@@ -25,8 +25,8 @@ PROVIDERS = {
         "models": [
             "deepseek-ai/DeepSeek-V4.1-Flash",
             "deepseek-ai/DeepSeek-V4-Pro",
+            "moonshotai/Kimi-K3",
             "moonshotai/Kimi-K2.6",
-            "moonshotai/Kimi-K2.5",
             "zai-org/GLM-5.3",
             "Qwen/Qwen3.5-9B",
         ],
