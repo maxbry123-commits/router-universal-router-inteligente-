@@ -462,7 +462,7 @@ router-universal-router-inteligente-/            (repo, main = fuente de verdad)
 │   ├── STATE.json          (estado runtime, aun en nodo legacy RIU-0086 -- GAP)
 │   ├── CHECKPOINT.json     (checkpoint de cierre por oleadas W1-W5)
 │   ├── PLAN-TAREAS.md      (plan operativo, aun en RIU-0089 -- GAP)
-│   └── BITACORA-CRAZY-WALL.md  (ledger historico RIU-0001..RIU-0099, este es el "Crazy Wall")
+│   └── BITACORA-CRAZY-WALL.md  (ledger historico RIU-0001..RIU-0100, este es el "Crazy Wall")
 ├── forensics/               (29 informes RIU-00XX, evidencia dura por nodo + AUTH-REPAIR)
 │   └── extraction/
 ├── conectividad con Router inteligente universal/  (fabric de conectividad canonico, 19/19)
@@ -595,3 +595,154 @@ darle soporte -- se reusa lo ya certificado (regla REUSE_EXISTING).
     `openai/gpt-oss-120b`) deben excluirse tambien del REMOTE20 actual, o
     si el rechazo aplicaba solo al contrato de instalacion/mirror viejo
     (ya SUPERSEDED) y no al contrato REMOTE_INFERENCE_ONLY actual.
+
+## 11. SEGUNDO CONECTOR MCP HF-GITHUB + DISENO UI "0 FRICCION" (Fables) -- 2026-09-18
+
+### 11.1 Segundo entorno de Claude -- mecanismo confirmado (sin tocar codigo)
+El Director pidio habilitar un segundo entorno de Claude con el mismo
+camino HF<->GitHub que uso yo en esta sesion. Investigacion validada
+contra la documentacion oficial de Anthropic antes de dar instrucciones
+(no se ejecuto nada sin validar primero):
+
+- Lo que yo uso aqui (`GitHub_Backup_HF`) es un **conector MCP remoto**:
+  un servidor externo (probablemente un Space de HF) que ya trae el PAT
+  de GitHub guardado como secreto propio. El chat de Claude nunca ve el
+  token -- solo se conecta a una URL.
+- Verificado con `github_api GET /user`: el PAT pertenece a la cuenta
+  `maxbry123-commits`, con `admin:true` sobre TODOS sus repos (12
+  privados + 7 publicos), no solo este -- el alcance amplio es una
+  capacidad real del token; mi propia regla de trabajo (P3) es la que me
+  limita a escribir solo en este repo, no una limitacion tecnica del PAT.
+- **Decision (confirmada por el Director): reusar el mismo conector**,
+  no crear un secreto/Space nuevo. Mecanismo 0 friccion:
+  1. En la cuenta/chat ORIGINAL: Settings -> Connectors -> abrir el
+     conector `GitHub_Backup_HF` (o como se llame ahi) -> copiar la URL
+     del servidor MCP remoto configurado.
+  2. En la cuenta/chat NUEVO: Settings -> Connectors -> Add custom
+     connector -> pegar esa misma URL -> autorizar.
+  3. Verificar con `github_api GET /user` en el chat nuevo: si devuelve
+     `maxbry123-commits`, quedo con el mismo acceso, mismos repos, sin
+     configurar nada en HF ni crear secretos nuevos.
+  - Fuente validada: https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp
+- Ruta alterna NO elegida (documentada por si se necesita despues):
+  aislar con un Space HF nuevo + `HfApi.add_space_secret()` con un PAT
+  de GitHub propio -- mas pasos, mas superficie de secretos. Solo se
+  usaria si el Director pide aislar el segundo entorno del primero.
+- Este hallazgo NO cambia nada del estado tecnico del Router; es un
+  procedimiento operativo para el Director, no un gap de codigo.
+
+### 11.2 Diseno UI "0 friccion" descrito por el Director (Fables) -- SOLO DOCUMENTADO, sin construir aun
+El Director explico la arquitectura de UI disenada originalmente por
+Fables para el Router, y adjunto ~18 prototipos HTML que ya la
+implementan parcialmente. Regla del Director para esta ronda: documentar
+en notas, NO construir codigo todavia (repo destino aun sin confirmar).
+
+**Principio rector**: el backend hace todo el trabajo; el usuario
+interactua con el minimo posible (2 acciones manuales en el router); todo
+lo demas lo resuelve el agente por el usuario, igual que un chat normal
+de Claude no expone su procesamiento interno.
+
+**Estructura de 2 procesos:**
+
+1. **Proceso 1 -- Lista de conexiones (fichas):**
+   - Una lista donde cada fila es una "ficha" = una conexion externa
+     (api, mcp, webhook, repo, chat, agente, lo que sea).
+   - Cada ficha tiene 3 partes fijas:
+     1. **Input**: todo lo que entra (api, mcp, webhook, documento, chat,
+        repo, telegram, archivo, stream, cron).
+     2. **Salida**: el destino (vps, hf, repo, agente, chat, webhook,
+        archivo, stream).
+     3. **Sandbox/panel de code**: filtra y procesa el trayecto entre
+        input y salida -- el Router es el intermediario de TODO proceso,
+        nunca un paso directo input->salida sin pasar por el filtro.
+   - Vi este patron exacto materializado en los HTML adjuntos:
+     - `router-v1-lista.html`: lista de conexiones (GitHub, HuggingFace,
+       VPS Contabo, Telegram, OpenRouter), con switch on/off, busqueda,
+       filtro por tipo/estado, y un mini-chat inferior que auto-rellena
+       fichas por lenguaje natural ("conecta api github al vps").
+     - `router-v2a-entrada.html` / `router-v2b-anclaje.html` /
+       `router-v2c-otras.html`: ficha detallada de UNA conexion, en 4
+       tabs -- Entrada (hasta 100 slots por tipo), Anclaje (documentos/
+       texto/instrucciones/sandbox ejecutable/system prompt propio de la
+       ficha) + Salida (hasta 100 destinos, drag&drop para reordenar), y
+       Otras (15 configs avanzadas: prioridad, timeout, reintentos, rate
+       limit, modo de envio primero/todos/espejo, costo maximo, cron
+       schedule, fallback chain, credenciales via vault-ref, tags, ACL
+       read/write).
+     - `panel_router_3.html`: version simplificada de 3 paneles
+       (Entradas -> Quien recibe [Orquestador/Agente/Chat] -> Salidas),
+       con auto-relleno por chat y export a `/puente/router/config`.
+     - `router-v4-conectores.html`: catalogo de conectores
+       preconfigurados por categoria (ai_providers, cloud, databases,
+       messaging, repos, mcp, storage, email, infra, webhooks), cada uno
+       con test/editar/eliminar/toggle y import/export masivo en YAML.
+
+2. **Proceso 2 -- capa "Ask Council" (orquestacion de multiples LLM):**
+   - Con muchos LLM conectados (ej. 50), una capa intermedia orquesta un
+     "consejo" de wordflows/modelos que trabajan en equipo sobre la misma
+     entrada, similar a un ask-council: reciben una entrada compartida y
+     devuelven una salida sintetizada, en vez de 50 llamadas
+     independientes y repetidas.
+   - El usuario puede prender/apagar cada IA de la lista y anexar su
+     propio system prompt/codigo ejecutable (Python) -- el agente hace la
+     configuracion tecnica por el usuario a partir de lenguaje natural.
+   - `router-v5-agente.html` es el detalle de esto para UN agente/chat:
+     seleccion de agente (OpenHand/Claude Code/OpenClaw/MiMo Code),
+     seleccion de modelo con precio/contexto visible, system prompt
+     editable, y sliders de temperature/max_tokens/top_p/frequency/
+     presence penalty -- exactamente los parametros de bajo nivel que el
+     "Proceso 2" necesita para poder despachar cada miembro del consejo
+     con configuracion propia.
+
+**Patron Ask Council detallado (de la conversacion previa del Director
+con otro asistente, coherente con RIU-0081 Tiers ya documentado):**
+```
+ENTRADA -> ROUTER -> DECIDER-2B [que hacer / que LLM usar]
+        -> NanoJev [microdecisiones/scores en paralelo, sin generar texto]
+        -> RUTA SIMPLE: LLM pequeno (Gemma 3 1B / Qwen3 0.6B / LFM2.5 1.2B) -> respuesta
+        -> RUTA COMPLEJA (Ask Council):
+             INPUT -> research UNA sola vez -> evidence packet compartido
+             -> N LLM en paralelo, cada uno con un rol fijo (hechos,
+                interpretacion, restricciones, solucion A/B, refutacion,
+                riesgos, planificacion, arquitectura, verificacion,
+                alternativa independiente)
+             -> NanoJev [ranking/score]
+             -> Decider-2B [aceptar / combinar / investigar mas / escalar]
+             -> LLM sintetizador -> UNA SOLA SALIDA
+```
+Punto clave de eficiencia (coincide con RIU-0080/0081 ya en mis notas):
+**N miembros del consejo NO exige N pesos de modelo distintos cargados**.
+Se pueden montar 11 roles del consejo sobre 3-4 modelos pequenos
+realmente cargados (Gemma 3 1B, LFM2.5 1.2B, Qwen3 0.6B + 1 mas),
+asignando varios agentes/roles al mismo modelo -- reduce RAM sin perder
+diversidad de analisis. Esto es directamente compatible con mi diseno de
+HF1/HF2/HF3 (seccion 8.5): los roles del consejo se despachan en el
+carril logico que corresponda segun tamano del modelo, no 1 carril por
+rol.
+
+**Router modal (detectado en los HTML, relevante para el "Sandbox" de
+cada ficha):**
+```
+INPUT -> MODALITY ROUTER -> TEXTO -> Small LLM / Ask Council
+                          -> CODE  -> Code model (solo cuando hay que
+                                       escribir/modificar codigo real)
+                          -> IMAGE -> Vision model
+                          -> AUDIO -> Audio model
+                          -> VIDEO -> Vision+Audio pipeline
+       -> TODOS -> Decision layer -> Agents/Skills/Tools -> Verificacion -> Salida unica
+```
+
+**Decision de alcance para esta ronda:** SOLO documentado aqui y en
+Crazy Wall. No se creo ningun archivo de codigo ni artifact de UI en
+este repo todavia -- el Director confirmo explicitamente "solo
+documentar el diseno en notas por ahora". Cuando se autorice construir,
+el candidato natural de owner en runtime es un modulo nuevo tipo
+`router inteligente universal/gateway/ui_fichas/` o equivalente, sin
+tocar el hot-path ya certificado (`FastAPI -> APIKeyGuard -> Enchufe Gate
+-> RedUniversal -> ...`) -- la UI de fichas seria una capa de
+configuracion ENCIMA del hot-path, nunca un router paralelo.
+
+### 11.3 Nuevo gap de investigacion registrado
+`GAP-UI-FICHAS-DESIGN-BUILD-001`: diseno completo documentado (11.2),
+pendiente decision del Director sobre en que repo/artifact construirlo
+antes de escribir cualquier codigo de UI.
