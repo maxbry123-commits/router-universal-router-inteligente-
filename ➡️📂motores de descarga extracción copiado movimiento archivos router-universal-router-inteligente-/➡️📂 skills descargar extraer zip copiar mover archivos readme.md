@@ -234,7 +234,7 @@ Archivos autorizados:
 
 Diseño:
 
-`TRIGGER -> HF Job ON_DEMAND -> DuckDuckGo/Brave/Tavily/Serper/Firecrawl -> deduplicación/ranking -> result.json + summary.md -> read-back`
+`TRIGGER -> HF Job ON_DEMAND -> DDGS/Brave/Tavily/Serper/Firecrawl -> deduplicación/ranking -> result.json + summary.md -> read-back`
 
 Reglas:
 
