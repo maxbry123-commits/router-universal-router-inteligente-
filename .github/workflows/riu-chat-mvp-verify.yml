@@ -42,7 +42,7 @@ jobs:
       - name: Install test dependencies
         run: pip install fastapi httpx pytest pydantic uvicorn huggingface_hub
 
-      - name: Run chat MVP and Hugging Face tests
+      - name: Run chat MVP, auth and Hugging Face tests
         shell: bash
         run: |
           set +e
@@ -50,6 +50,7 @@ jobs:
             "router inteligente universal/tests/test_chat_mvp.py" \
             "router inteligente universal/tests/test_chat_catalog_patterns.py" \
             "router inteligente universal/tests/test_chat_gateway.py" \
+            "router inteligente universal/tests/test_keystore_auth.py" \
             "router inteligente universal/tests/test_hf_scheduler.py" \
             "router inteligente universal/tests/test_huggingface_openai_chat_registry.py" \
             "router inteligente universal/tests/test_hf_router_hot_path.py" \
@@ -59,6 +60,28 @@ jobs:
           echo "::notice title=RIU_TESTS::exit=${code} | ${last}"
           grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | head -8 | while IFS= read -r line; do echo "::warning title=RIU_TEST_FAIL::${line}"; done
           exit 0
+
+      - name: HF token capability probe (role and scopes only, no values)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          tok = os.environ.get("HF_TOKEN", "")
+          if not tok:
+              print("::warning title=RIU_HF_CAPS::GAP_SECRET_MISSING")
+              raise SystemExit(0)
+          req = urllib.request.Request("https://huggingface.co/api/whoami-v2", headers={"Authorization": "Bearer " + tok})
+          try:
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  d = json.load(r)
+          except Exception as e:
+              print("::warning title=RIU_HF_CAPS::FAIL " + type(e).__name__)
+              raise SystemExit(0)
+          at = (d.get("auth") or {}).get("accessToken") or {}
+          fg = at.get("fineGrained") or {}
+          print("::notice title=RIU_HF_CAPS::account=%s type=%s role=%s global=%s scoped=%d" % (d.get("name"), d.get("type"), at.get("role"), ",".join(fg.get("global", [])), len(fg.get("scoped", []))))
+          PY
 
       - name: End-to-end through the gateway (API key -> Enchufe -> RedUniversal -> HF)
         env:
