@@ -14,11 +14,13 @@ No usa GitHub Actions. No usa LLM por defecto.
 
 ## Proveedores
 
-1. duckduckgo — fallback sin API key.
+1. ddgs — metasearch sin API key; combina varios motores disponibles.
 2. brave — BRAVE_SEARCH_API_KEY.
 3. tavily — TAVILY_API_KEY.
 4. serper — SERPER_API_KEY.
 5. firecrawl — FIRECRAWL_API_KEY.
+
+El scraper HTML directo de DuckDuckGo se conserva solo como fallback interno opcional; no es el proveedor principal porque HF puede recibir challenge/CAPTCHA.
 
 Los proveedores sin secreto quedan GAP; el motor continúa con los disponibles.
 
@@ -50,7 +52,7 @@ python trigger_hf_websearch.py "consulta"
 
 Opcional:
 
-python trigger_hf_websearch.py "consulta" --providers duckduckgo,brave,tavily,serper,firecrawl --worker HF1
+python trigger_hf_websearch.py "consulta" --providers ddgs,brave,tavily,serper,firecrawl --worker HF1
 
 Conserva el patrón del centro de cómputo existente:
 - namespace: COMAND-CENTER-1
