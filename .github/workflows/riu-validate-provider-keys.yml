@@ -1,0 +1,94 @@
+name: RIU Validate Provider Keys
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HF_TOKEN_1: ${{ secrets.HF_TOKEN_1 }}
+      GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
+      NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+      CEREBRAS_API_KEY_1: ${{ secrets.CEREBRAS_API_KEY_1 }}
+    steps:
+      - name: Validar Hugging Face (whoami-v2)
+        if: env.HF_TOKEN_1 != ''
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /tmp/hf_whoami.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${HF_TOKEN_1}" \
+            https://huggingface.co/api/whoami-v2)
+          echo "HF whoami HTTP status: $code"
+          if [ "$code" = "200" ]; then
+            echo "HF_TOKEN_RESULT=PASS"
+            python3 -c "import json;d=json.load(open('/tmp/hf_whoami.json'));print('HF account:', d.get('name'), '| type:', d.get('type'))"
+          else
+            echo "HF_TOKEN_RESULT=FAIL"
+            cat /tmp/hf_whoami.json || true
+          fi
+
+      - name: Validar HF Inference Providers (catalogo real)
+        if: env.HF_TOKEN_1 != ''
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /tmp/hf_models.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${HF_TOKEN_1}" \
+            "https://router.huggingface.co/v1/models")
+          echo "HF router/v1/models HTTP status: $code"
+          if [ "$code" = "200" ]; then
+            count=$(python3 -c "import json;d=json.load(open('/tmp/hf_models.json'));print(len(d.get('data', [])))")
+            echo "HF_CATALOG_COUNT=$count modelos visibles"
+            python3 -c "
+import json
+d = json.load(open('/tmp/hf_models.json'))
+names = [m['id'] for m in d.get('data', []) if 'deepseek' in m['id'].lower() or 'kimi' in m['id'].lower()][:10]
+print('Modelos DeepSeek/Kimi encontrados en el catalogo real:', names)
+"
+          fi
+
+      - name: Test real de inferencia (chat completions minimo)
+        if: env.HF_TOKEN_1 != ''
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /tmp/hf_chat.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${HF_TOKEN_1}" \
+            -H "Content-Type: application/json" \
+            -d '{"model":"deepseek-ai/DeepSeek-V4.1-Flash","messages":[{"role":"user","content":"di OK"}],"max_tokens":5}' \
+            https://router.huggingface.co/v1/chat/completions)
+          echo "HF inference chat.completions HTTP status: $code"
+          cat /tmp/hf_chat.json || true
+
+      - name: Validar Groq
+        if: env.GROQ_API_KEY_1 != ''
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /tmp/groq.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${GROQ_API_KEY_1}" \
+            https://api.groq.com/openai/v1/models)
+          echo "Groq HTTP status: $code"
+          [ "$code" = "200" ] && echo "GROQ_RESULT=PASS" || { echo "GROQ_RESULT=FAIL"; cat /tmp/groq.json || true; }
+
+      - name: Validar NVIDIA
+        if: env.NVIDIA_API_KEY_1 != ''
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /tmp/nvidia.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${NVIDIA_API_KEY_1}" \
+            https://integrate.api.nvidia.com/v1/models)
+          echo "NVIDIA HTTP status: $code"
+          [ "$code" = "200" ] && echo "NVIDIA_RESULT=PASS" || { echo "NVIDIA_RESULT=FAIL"; cat /tmp/nvidia.json || true; }
+
+      - name: Validar Cerebras
+        if: env.CEREBRAS_API_KEY_1 != ''
+        run: |
+          set -euo pipefail
+          code=$(curl -s -o /tmp/cerebras.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${CEREBRAS_API_KEY_1}" \
+            https://api.cerebras.ai/v1/models)
+          echo "Cerebras HTTP status: $code"
+          [ "$code" = "200" ] && echo "CEREBRAS_RESULT=PASS" || { echo "CEREBRAS_RESULT=FAIL"; cat /tmp/cerebras.json || true; }
