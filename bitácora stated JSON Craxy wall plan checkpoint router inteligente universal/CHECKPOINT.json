@@ -1,10 +1,10 @@
 {
-  "checkpoint": "riu-0103-independent-extraction-audit-reconciliation",
+  "checkpoint": "riu-0104-qdrant-lfs-provenance-classification",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "status": "ACTIVE_CLOSURE",
   "updated_at": "2026-09-19",
-  "fresh_head_before_mutation": "719a5fe3a9506ce1d19d6968b144315d3c4c5ebf",
+  "fresh_head_before_mutation": "ea327339c22a4c3c18d9f6248488b373c563ffaa",
   "routing_owner": "RedUniversal",
   "hf_runtime_contract": "REMOTE_INFERENCE_ONLY",
   "evidence": {
@@ -19,10 +19,17 @@
     "blocked_gaps": 0,
     "extraction_verdict": "VERIFIED_CLOSED",
     "watchdog": "PASSIVE",
-    "lfs_anomaly": "router inteligente universal/Componente open soure router inteligente universal/qdrant/tests/e2e_tests/test_data/storage.tar.xz should have been a pointer but was not"
+    "lfs_anomaly_path": "router inteligente universal/Componente open soure router inteligente universal/qdrant/tests/e2e_tests/test_data/storage.tar.xz",
+    "lfs_runner_observation": "should have been a pointer but was not",
+    "lfs_root_gitattributes": "ABSENT_404",
+    "lfs_code_search_filter_lfs": "NO_MATCH",
+    "lfs_classification": "DONOR_TEST_FIXTURE_PROVENANCE_ANOMALY_PRESERVE_AS_IS",
+    "lfs_repair_authorized": false,
+    "lfs_gate_effect": "DO_NOT_BLOCK_EXTRACTION_INTEGRITY; TRACK_UNDER_W1_PROVENANCE"
   },
   "closure_gates": {
     "EXTRACTION_ARCHIVE_INTEGRITY_VERIFIED": true,
+    "LFS_PROVENANCE_CLASSIFIED": true,
     "ROOT_28_ACCOUNTED": true,
     "NO_ROUTING_OWNERSHIP_CONFLICT": true,
     "HF_REMOTE20_PROVIDER_DISCOVERY_20_OF_20_HISTORICAL": true,
@@ -39,10 +46,9 @@
     "GLOBAL_CLOSED": false
   },
   "gaps": [
-    "GAP_LFS_PROVENANCE_QDRANT_STORAGE",
-    "STATE_RIU0086_STALE_ACTIVE_MIRROR_DOWNLOAD_GATES",
     "FULL_COMPONENT_CONTAINER_XRAY_PENDING",
     "DEDUP_ORPHAN_RECONCILIATION_PENDING",
+    "STATE_RIU0086_STALE_ACTIVE_MIRROR_DOWNLOAD_GATES",
     "HF_REMOTE20_AUTHENTICATED_INFERENCE_NOT_CLOSED",
     "OMNIROUTE_RUNTIME_TEST_PENDING",
     "ANYDOC_RUNTIME_TEST_PENDING",
@@ -52,6 +58,6 @@
     "GLOBAL_E2E_PENDING",
     "FINAL_DOC_SYNC_PENDING"
   ],
-  "next_gate": "LFS_PROVENANCE_CLASSIFICATION -> FULL_COMPONENT_XRAY -> STATE_PLAN_CRAZY_WALL_SYNC -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
+  "next_gate": "FULL_COMPONENT_XRAY -> DEDUP_ORPHAN_RECONCILIATION -> STATE_PLAN_CRAZY_WALL_SYNC -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
   "global_closed": false
 }
