@@ -1,18 +1,35 @@
-"""Single FastAPI gateway for certified Hugging Face models.
+"""Single FastAPI gateway for Hugging Face models: certified path + chat MVP.
 
 Routes stay thin: authentication is enforced at the HTTP boundary and valid
 requests continue through the persisted Enchufe Gate + RedUniversal.
+
+RIU_CHAT_ALLOW_PROVIDER_LIVE=1 lets the chat ATTEMPT provider-live selector
+models (Kimi K3, MiniMax, DeepSeek V4 Flash/Pro). They are returned with
+`certified: false` until their gates close in model_registry.json.
 """
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .api_key_auth import authenticate_api_key
+from .chat_catalog import cached_discovery, selector_models
+from .chat_executor import make_executor
 from .huggingface_openai_chat import allowed_model_ids
 from .router_hot_path import route_chat_completion
 
-app = FastAPI(title="Router Inteligente Universal HF Gateway", version="0.3.0")
+LIVE_ENV = "RIU_CHAT_ALLOW_PROVIDER_LIVE"
+_CHAT_UI = Path(__file__).with_name("chat_ui.html")
+
+app = FastAPI(title="Router Inteligente Universal HF Gateway", version="0.4.0")
+
+
+def live_enabled() -> bool:
+    return os.getenv(LIVE_ENV, "") == "1"
 
 
 class ChatMessage(BaseModel):
@@ -33,6 +50,8 @@ def health() -> dict[str, object]:
         "registry_count": len(allowed_model_ids()),
         "route": "FastAPI->EnchufeGate->RedUniversal->HFAdapter",
         "auth": "RIU_AGENT_API_KEYS",
+        "chat": "/chat",
+        "live_provider_inference": live_enabled(),
     }
 
 
@@ -42,6 +61,16 @@ def models() -> dict[str, object]:
         "object": "list",
         "data": [{"id": model_id, "object": "model"} for model_id in sorted(allowed_model_ids())],
     }
+
+
+@app.get("/chat", response_class=HTMLResponse)
+def chat_page() -> HTMLResponse:
+    return HTMLResponse(_CHAT_UI.read_text(encoding="utf-8"))
+
+
+@app.get("/chat/models")
+def chat_models() -> dict[str, object]:
+    return selector_models(discovered=cached_discovery(), live_enabled=live_enabled())
 
 
 @app.post("/v1/chat/completions")
@@ -59,17 +88,24 @@ async def chat(
             model_id=req.model,
             messages=[m.model_dump() for m in req.messages],
             max_tokens=req.max_tokens,
+            executor=make_executor(allow_provider_live=live_enabled()),
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         detail = str(exc)
-        status = 401 if detail.startswith("RIU_API_KEY_") else 503
+        if detail.startswith("RIU_API_KEY_"):
+            status = 401
+        elif "MODEL_NOT_" in detail:
+            status = 400
+        else:
+            status = 503
         raise HTTPException(status_code=status, detail=detail) from exc
     return {
         "object": "chat.completion",
         "model": result["model"],
         "agent_id": agent_id,
+        "certified": bool(result.get("certified", True)),
         "choices": [
             {
                 "index": 0,
