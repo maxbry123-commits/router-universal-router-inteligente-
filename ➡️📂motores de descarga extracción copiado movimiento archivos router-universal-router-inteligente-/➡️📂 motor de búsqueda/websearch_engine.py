@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from html.parser import HTMLParser
 
 SCHEMA="yaiwes.websearch.engine.v1"
-PROVIDERS=("duckduckgo","brave","tavily","serper","firecrawl")
+PROVIDERS=("ddgs","brave","tavily","serper","firecrawl")
 UA=os.getenv("WEBSEARCH_USER_AGENT","Mozilla/5.0 (compatible; YaiwesWebSearch/1.0)")
 TIMEOUT=float(os.getenv("WEBSEARCH_TIMEOUT_SECONDS","15"))
 LIMIT=int(os.getenv("MAX_RESULTS_PER_PROVIDER","8"))
@@ -55,6 +55,14 @@ class DDGParser(HTMLParser):
         if self.ct:self.title+=data
         elif self.cs:self.snip+=data
 
+def ddgs(q,n):
+    try:
+        from ddgs import DDGS
+    except ImportError as e:
+        raise RuntimeError("MISSING_DEPENDENCY:ddgs") from e
+    rows=list(DDGS().text(q,max_results=n))
+    return [Result(x.get("title",""),x.get("href",""),x.get("body",""),"ddgs",i+1) for i,x in enumerate(rows[:n])]
+
 def duckduckgo(q,n):
     p=DDGParser(); p.feed(req_text("https://html.duckduckgo.com/html/?"+urllib.parse.urlencode({"q":q}))); return p.rows[:n]
 
@@ -84,7 +92,7 @@ def firecrawl(q,n):
     rows=d.get("data",d.get("results",[]))
     return [Result(x.get("title",""),x.get("url",""),x.get("description",x.get("markdown",""))[:1200],"firecrawl",i+1) for i,x in enumerate(rows[:n])]
 
-FUNCS={"duckduckgo":duckduckgo,"brave":brave,"tavily":tavily,"serper":serper,"firecrawl":firecrawl}
+FUNCS={"ddgs":ddgs,"duckduckgo":duckduckgo,"brave":brave,"tavily":tavily,"serper":serper,"firecrawl":firecrawl}
 
 def canon(url):
     p=urllib.parse.urlsplit(url.strip()); host=(p.hostname or "").lower()
