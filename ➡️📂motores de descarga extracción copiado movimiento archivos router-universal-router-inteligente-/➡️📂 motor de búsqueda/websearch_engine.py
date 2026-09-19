@@ -119,11 +119,11 @@ def write_outputs(query,providers,status,merged,root):
     run_id=jid or f"{stamp}-{digest}"; out=root/run_id; out.mkdir(parents=True,exist_ok=True)
     payload={"schema":SCHEMA,"query":query,"run_id":run_id,"created_at_epoch":int(time.time()),"providers_requested":providers,"provider_status":status,"result_count":len(merged),"results":merged,"llm_used":False,"verdict":"VERIFIED_CLOSED" if merged else "NO_RESULTS"}
     jp=out/"result.json"; mp=out/"summary.md"; jp.write_text(json.dumps(payload,indent=2,ensure_ascii=False,sort_keys=True)+"\n",encoding="utf-8")
-    lines=[f"# Web search: {query}","",f"- Run: \`{run_id}\`",f"- Resultados: **{len(merged)}**","- LLM usado: **no**","","## Fuentes"]
+    lines=[f"# Web search: {query}","",f"- Run: `{run_id}`",f"- Resultados: **{len(merged)}**","- LLM usado: **no**","","## Fuentes"]
     for i,x in enumerate(merged,1):
         lines+=["",f"### {i}. {x['title'] or x['url']}",f"- URL: {x['url']}",f"- Proveedores: {', '.join(x['providers'])}",f"- Score: {x['score']}"]
         if x["snippet"]: lines.append(f"- Extracto: {x['snippet']}")
-    lines+=["","## Estado de proveedores","","\`\`\`json",json.dumps(status,indent=2,ensure_ascii=False,sort_keys=True),"\`\`\`",""]
+    lines+=["","## Estado de proveedores","","```json",json.dumps(status,indent=2,ensure_ascii=False,sort_keys=True),"```",""]
     mp.write_text("\n".join(lines),encoding="utf-8")
     chk=json.loads(jp.read_text(encoding="utf-8"))
     if chk.get("query")!=query or chk.get("result_count")!=len(merged): raise RuntimeError("READBACK_MISMATCH")
