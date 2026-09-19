@@ -31,8 +31,8 @@ SELECTOR_FAMILIES: tuple[dict[str, str], ...] = (
     {"family": "kimi-k3", "label": "Kimi K3", "pattern": r"kimi[-_ ]?k3"},
     {"family": "minimax", "label": "MiniMax", "pattern": r"minimax[-_ ]?m\d"},
     {"family": "deepseek-v4-flash", "label": "DeepSeek V4 Flash",
-     "pattern": r"deepseek[-_ ]?v4[-_ ]?flash(?!.*vision)"},
-    {"family": "deepseek-v4-pro", "label": "DeepSeek V4 Pro", "pattern": r"deepseek[-_ ]?v4[-_ ]?pro"},
+     "pattern": r"deepseek[-_ ]?v4(?:\.\d+)?[-_ ]?flash(?!.*vision)"},
+    {"family": "deepseek-v4-pro", "label": "DeepSeek V4 Pro", "pattern": r"deepseek[-_ ]?v4(?:\.\d+)?[-_ ]?pro"},
 )
 
 # Hub repos that exist (hf_fs search 2026-09-19) but have NO recorded provider
