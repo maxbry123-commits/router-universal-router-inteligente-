@@ -439,3 +439,81 @@ GAP-TEST-EXECUTION-001(ejecutar test real) ->
 HF_REMOTE_MODEL_GATES(bloqueado por GAP-EXTERNAL-CREDENTIAL-SCOPE-001) ->
 EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E ->
 FINAL_DOC_SYNC`.
+
+
+## RIU-0100 — SEGUNDO CONECTOR MCP HF-GITHUB (0 FRICCIÓN) + DISEÑO UI "0 FRICCIÓN" DE FABLES — 2026-09-18
+
+Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP`. Continúa bajo la
+misma autorización P1-P4 de RIU-0098/0099.
+
+### Parte A — segundo entorno de Claude, mismo camino HF↔GitHub
+El Director pidió habilitar un segundo entorno Claude con el mismo
+acceso GitHub que usa esta sesión, buscando la vía de "0 fricción" y
+validando primero contra documentación oficial (no se ejecutó nada sin
+validar). Hallazgos:
+- El conector `GitHub_Backup_HF` usado aquí es un **conector MCP
+  remoto**: un servidor externo con el PAT de GitHub guardado como su
+  propio secreto; el chat de Claude nunca ve el token en texto plano.
+- Verificado con `github_api GET /user`: el PAT pertenece a
+  `maxbry123-commits`, `admin:true` sobre TODOS sus repos (12 privados +
+  7 públicos) -- alcance amplio real del token; la restricción a
+  escribir solo en este repo es una regla de trabajo propia (P3), no un
+  límite técnico del PAT.
+- **Decisión del Director: reusar el mismo conector**, sin crear Space ni
+  secreto nuevo. Procedimiento validado con la documentación oficial de
+  Anthropic (Settings → Connectors → Add custom connector → pegar la
+  misma URL del servidor MCP remoto → autorizar) y verificable de vuelta
+  con `github_api GET /user` en el chat nuevo.
+  Fuente: https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp
+- Ruta alterna NO elegida, documentada por si se requiere aislar despues:
+  Space HF nuevo + `HfApi.add_space_secret()` con un PAT propio.
+- Este punto es procedimiento operativo para el Director; no cambia
+  ningún estado técnico del Router.
+
+### Parte B — diseño UI "0 fricción" de Fables, SOLO documentado (sin construir)
+El Director compartió ~18 prototipos HTML y la explicación de la
+arquitectura de UI diseñada originalmente por Fables. Por instrucción
+explícita del Director esta ronda es solo documentación en notas, sin
+tocar código ni artifacts todavía.
+
+Principio: backend hace todo el trabajo; el usuario tiene el mínimo de
+acciones manuales; el agente resuelve el resto, igual que un chat normal
+de Claude no expone su procesamiento interno.
+
+**Estructura de 2 procesos** (detalle completo con mapeo a cada HTML
+adjunto en `Claude notas/memoria.md` sección 11.2):
+1. Lista de fichas de conexión (Input / Salida / Sandbox-code), con la
+   ficha detallada en 4 tabs (Entrada, Anclaje, Salida, Otras -- hasta
+   100 slots por sección, 15 configs avanzadas: prioridad, timeout,
+   reintentos, rate limit, modo de envío primero/todos/espejo, costo
+   máximo, cron, fallback chain, credenciales vault-ref, tags, ACL).
+2. Capa "Ask Council": orquestación de múltiples LLM en paralelo sobre
+   una entrada compartida (research único, evidence packet compartido,
+   N roles fijos por LLM, NanoJev para scoring/ranking sin generación de
+   texto, Decider-2B para aceptar/combinar/escalar, sintetizador final).
+   Confirma y refuerza la política de tiers ya registrada en RIU-0081:
+   N roles del consejo no exigen N pesos distintos -- se pueden montar
+   sobre 3-4 modelos pequeños reales, compatible con el diseño HF1/HF2/
+   HF3 de RIU-0080.
+
+Router modal detectado (para el Sandbox de cada ficha): texto -> small
+LLM/Ask Council; code -> code model solo cuando hay que escribir/
+modificar código real; imagen/audio/video -> modelos especializados;
+todos convergen en decision layer -> agents/skills/tools -> verificación
+-> salida única.
+
+Decisión de alcance: sin repo/artifact destino confirmado aún, por lo
+que no se creó ningún archivo de código de UI. Cuando se autorice
+construir, la UI de fichas sería una capa de configuración ENCIMA del
+hot-path ya certificado (`FastAPI -> APIKeyGuard -> Enchufe Gate ->
+RedUniversal -> ...`), nunca un router paralelo.
+
+### Nuevo GAP registrado
+`GAP-UI-FICHAS-DESIGN-BUILD-001`: diseño completo documentado, pendiente
+que el Director confirme en qué repo/artifact construirlo antes de
+escribir cualquier código de UI.
+
+### Estado del nodo
+`SEGUNDO_CONECTOR_DOCUMENTADO + DISENO_UI_FICHAS_ASK_COUNCIL_DOCUMENTADO`.
+Sin cambios de estado técnico del Router. Continúa pendiente la pasada
+forense 3/4.
