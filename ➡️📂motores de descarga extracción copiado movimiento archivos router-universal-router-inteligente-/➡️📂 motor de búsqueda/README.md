@@ -32,13 +32,21 @@ Los proveedores sin secreto quedan GAP; el motor continúa con los disponibles.
 
 ## Salida
 
-Por defecto en HF:
+Durante el Job, por defecto:
 
-/data/websearch/results/<JOB_ID>/result.json
+/tmp/websearch-results/<JOB_ID>/result.json
 
-/data/websearch/results/<JOB_ID>/summary.md
+/tmp/websearch-results/<JOB_ID>/summary.md
 
-Si /data no existe, usa ./websearch-results/.
+Para persistencia hay dos rutas:
+
+1. GitHub directo (sin GitHub Actions): si el entorno que activa el trigger tiene GITHUB_TOKEN, el Job publica summary.md en:
+   router inteligente universal/websearch-results/<JOB_ID>/summary.md
+   y realiza read-back antes de declarar publicación verificada.
+
+2. Storage Bucket HF opcional: pasar --volume con formato:
+   hf://buckets/<owner>/<bucket>:/data
+   y usar /data/websearch/results como output.
 
 summary.md es la vista compacta que debe leer el agente para reducir contexto/tokens.
 
@@ -59,11 +67,18 @@ Conserva el patrón del centro de cómputo existente:
 - flavor: cpu-upgrade
 - workers lógicos: HF1, HF2, HF3
 - lifecycle: ON_DEMAND
+- engine pinneado a commit probado
 - sin GitHub Actions
+
+Persistencia por GitHub:
+python trigger_hf_websearch.py "consulta" --publish-github auto
+
+Persistencia por bucket, cuando la credencial tenga permiso:
+python trigger_hf_websearch.py "consulta" --volume hf://buckets/COMAND-CENTER-1/yaiwes-v54:/data
 
 ## Secretos
 
-Nunca se imprimen claves. Solo se reenvían al Job mediante secrets= cuando ya existen en el entorno que activa el trigger.
+Nunca se imprimen claves. Solo se reenvían al Job mediante secrets= cuando ya existen en el entorno que activa el trigger. Esto aplica a las claves de búsqueda y a GITHUB_TOKEN.
 
 ## PASS
 
