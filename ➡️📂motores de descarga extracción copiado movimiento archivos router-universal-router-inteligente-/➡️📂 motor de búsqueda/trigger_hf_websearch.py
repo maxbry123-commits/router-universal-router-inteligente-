@@ -25,7 +25,7 @@ def main():
     if not q: raise SystemExit(json.dumps({"schema":SCHEMA,"verdict":"INPUT_GAP","detail":"QUERY required"}))
 
     secrets={k:os.environ[k] for k in SECRET_NAMES if os.getenv(k)}
-    bootstrap="import urllib.request;urllib.request.urlretrieve(%r,'/tmp/websearch_engine.py')"%RAW_ENGINE_URL
+    bootstrap="import urllib.request,time;urllib.request.urlretrieve(%r+'?cache='+str(int(time.time())),'/tmp/websearch_engine.py')"%RAW_ENGINE_URL
     command=["sh","-lc","python -m pip install -q ddgs==9.16.0 && python -c "+repr(bootstrap)+" && python /tmp/websearch_engine.py"]
     env={"QUERY":q,"PROVIDERS":a.providers,"MAX_RESULTS_PER_PROVIDER":str(max(1,min(a.limit,20))),"WEBSEARCH_OUTPUT_ROOT":a.output_root}
     job=run_job(
