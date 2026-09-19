@@ -241,9 +241,11 @@ Reglas:
 - no GitHub Actions para ejecutar búsquedas;
 - no LLM por defecto;
 - secretos solo por variables/secret store, nunca impresos;
-- salida persistente preferida: `/data/websearch/results/<JOB_ID>/`;
+- salida local del Job: `/tmp/websearch-results/<JOB_ID>/`;
+- persistencia durable primaria: publicación GitHub directa (sin Actions) cuando existe `GITHUB_TOKEN`, con read-back;
+- persistencia durable alternativa: Storage Bucket montado por `--volume` cuando la credencial HF tenga permiso de bucket;
 - un proveedor ausente/fallido se registra como GAP; no se oculta;
-- PASS del motor exige archivo de resultado + read-back coherente.
+- PASS del motor exige archivo de resultado + read-back coherente; la persistencia durable tiene estado explícito separado.
 
 ---
 
