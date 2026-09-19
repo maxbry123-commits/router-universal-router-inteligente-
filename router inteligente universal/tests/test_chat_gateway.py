@@ -50,13 +50,22 @@ def test_chat_requires_api_key(client):
     assert client.post("/v1/chat/completions", json=BODY, headers={"X-API-Key": "wrong"}).status_code == 401
 
 
-def test_flag_off_rejects_uncertified_model_with_400_through_real_hot_path(client):
+def test_flag_off_rejects_uncertified_model_with_400(client):
     r = client.post("/v1/chat/completions", json=BODY, headers={"X-API-Key": "test-key"})
     assert r.status_code == 400
     assert "MODEL_NOT_IN_CERTIFIED_REGISTRY" in r.json()["detail"]
 
 
+def test_flag_on_rejects_model_outside_selector_families_with_400(client, monkeypatch):
+    monkeypatch.setenv(gw.LIVE_ENV, "1")
+    body = {**BODY, "model": "Qwen/Qwen3.8-27B"}  # provider-live in the registry but not a requested family
+    r = client.post("/v1/chat/completions", json=body, headers={"X-API-Key": "test-key"})
+    assert r.status_code == 400
+    assert "MODEL_NOT_SELECTABLE" in r.json()["detail"]
+
+
 def test_gateway_passes_executor_and_reports_certified_flag(client, monkeypatch):
+    monkeypatch.setenv(gw.LIVE_ENV, "1")
     seen = {}
 
     async def fake_route(**kw):
