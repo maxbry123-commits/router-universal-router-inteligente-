@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, hashlib, html, json, os, pathlib, re, time, urllib.parse, urllib.request
+import argparse, base64, hashlib, html, json, os, pathlib, re, time, urllib.error, urllib.parse, urllib.request
 from dataclasses import dataclass
 from html.parser import HTMLParser
 
@@ -114,6 +114,38 @@ def aggregate(rows):
         x["score"]=round(x["score"]+0.35*max(0,len(x["providers"])-1),4); x["providers"].sort()
     return sorted(out.values(),key=lambda x:(-x["score"],x["best_rank"],x["url"]))
 
+def github_publish_summary(run_id, summary_path):
+    mode=os.getenv("PUBLISH_GITHUB","auto").strip().lower()
+    token=os.getenv("GITHUB_TOKEN","").strip()
+    if mode in {"0","false","no","off"}:
+        return {"state":"DISABLED"}
+    if not token:
+        return {"state":"SKIPPED","detail":"GITHUB_TOKEN missing"}
+    repo=os.getenv("RESULT_REPO","maxbry123-commits/router-universal-router-inteligente-").strip()
+    branch=os.getenv("RESULT_BRANCH","main").strip() or "main"
+    root=os.getenv("RESULT_ROOT","router inteligente universal/websearch-results").strip().strip("/")
+    dest=f"{root}/{run_id}/summary.md"
+    encoded=urllib.parse.quote(dest,safe="/")
+    api=f"https://api.github.com/repos/{repo}/contents/{encoded}"
+    headers={"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json","User-Agent":UA}
+    check=urllib.request.Request(api+"?ref="+urllib.parse.quote(branch,safe=""),headers=headers)
+    try:
+        with urllib.request.urlopen(check,timeout=TIMEOUT):
+            raise RuntimeError("RESULT_DESTINATION_EXISTS:"+dest)
+    except urllib.error.HTTPError as e:
+        if e.code!=404: raise
+    raw=summary_path.read_bytes()
+    payload={"message":f"feat(websearch-result): {run_id}","content":base64.b64encode(raw).decode(),"branch":branch}
+    req=urllib.request.Request(api,data=json.dumps(payload).encode(),headers={**headers,"Content-Type":"application/json"},method="PUT")
+    with urllib.request.urlopen(req,timeout=TIMEOUT) as r:
+        created=json.loads(r.read().decode())
+    rb=urllib.request.Request(api+"?ref="+urllib.parse.quote(branch,safe=""),headers=headers)
+    with urllib.request.urlopen(rb,timeout=TIMEOUT) as r:
+        obj=json.loads(r.read().decode())
+    got=base64.b64decode((obj.get("content") or "").replace("\n",""))
+    if got!=raw: raise RuntimeError("GITHUB_RESULT_READBACK_MISMATCH")
+    return {"state":"PUBLISHED_READBACK_VERIFIED","repo":repo,"branch":branch,"path":dest,"url":obj.get("html_url"),"commit":created.get("commit",{}).get("sha")}
+
 def write_outputs(query,providers,status,merged,root):
     jid=os.getenv("JOB_ID","").strip(); stamp=time.strftime("%Y%m%d-%H%M%S",time.gmtime()); digest=hashlib.sha256(query.encode()).hexdigest()[:10]
     run_id=jid or f"{stamp}-{digest}"; out=root/run_id; out.mkdir(parents=True,exist_ok=True)
@@ -138,7 +170,8 @@ def run(query,providers,limit,root):
             got=fn(query,limit); rows.extend(got); status[p]={"state":"PASS","results":len(got)}
         except Exception as e: status[p]={"state":"GAP","detail":str(e)[:500]}
     merged=aggregate(rows); out=write_outputs(query,providers,status,merged,root)
-    return {"schema":SCHEMA,"query":query,"provider_status":status,"result_count":len(merged),**out}
+    persistence=github_publish_summary(out["run_id"],pathlib.Path(out["summary_md"])) if merged else {"state":"SKIPPED","detail":"NO_RESULTS"}
+    return {"schema":SCHEMA,"query":query,"provider_status":status,"result_count":len(merged),"persistence":persistence,**out}
 
 def main():
     a=argparse.ArgumentParser(); a.add_argument("query",nargs="?",default=os.getenv("QUERY","").strip()); a.add_argument("--providers",default=os.getenv("PROVIDERS",",".join(PROVIDERS))); a.add_argument("--limit",type=int,default=LIMIT); a.add_argument("--output-root",default=str(OUTPUT_ROOT)); x=a.parse_args()
