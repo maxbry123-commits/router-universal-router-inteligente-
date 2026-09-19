@@ -88,15 +88,21 @@
     fetch('/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-API-Key': keyEl.value },
-      body: JSON.stringify({ model: model, messages: history, max_tokens: 512 })
+      body: JSON.stringify({ model: model, messages: history, max_tokens: 1024 })
     }).then(function (r) {
       return r.json().then(function (j) { return { status: r.status, body: j }; }, function () { return { status: r.status, body: {} }; });
     }).then(function (res) {
       wait.remove();
       if (res.status !== 200) { history.pop(); add(explain(res.status, res.body.detail || ''), 'error'); return; }
-      var choice = res.body.choices[0], reply = choice.message.content;
+      var choice = res.body.choices[0], reply = choice.message.content || '';
+      var meta = res.body.model + (res.body.certified ? '' : ' · NO certificado (intento en vivo)');
+      if (!reply) {
+        history.pop();
+        add('(El modelo devolvió texto vacío: probablemente agotó max_tokens razonando. Reintenta o usa otro modelo.)', 'error', meta + ' · finish=' + choice.finish_reason, 'warn');
+        return;
+      }
       history.push({ role: 'assistant', content: reply });
-      add(reply, '', res.body.model + (res.body.certified ? '' : ' · NO certificado (intento en vivo)'), res.body.certified ? '' : 'warn');
+      add(reply, '', meta, res.body.certified ? '' : 'warn');
     }).catch(function (e) { wait.remove(); history.pop(); add('Error de red: ' + e, 'error'); })
       .then(function () { send.disabled = false; input.focus(); });
   }
