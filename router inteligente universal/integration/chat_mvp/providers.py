@@ -18,6 +18,9 @@ PROVIDERS: dict[str, dict[str, Any]] = {
     "cerebras": {"label": "Cerebras", "base": "https://api.cerebras.ai/v1", "env": ("CEREBRAS_API_KEY", "CEREBRAS_API_KEY_1")},
     "nvidia": {"label": "NVIDIA NIM", "base": "https://integrate.api.nvidia.com/v1", "env": ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1")},
     "groq": {"label": "Groq", "base": "https://api.groq.com/openai/v1", "env": ("GROQ_API_KEY", "GROQ_API_KEY_1")},
+    "deepseek": {"label": "DeepSeek API directa (caché de contexto nativa)", "base": "https://api.deepseek.com/v1", "env": ("DEEPSEEK_API_KEY",)},
+    "moonshot": {"label": "Moonshot / Kimi API directa (caché de contexto nativa)", "base": "https://api.moonshot.ai/v1", "env": ("MOONSHOT_API_KEY",)},
+    "minimax": {"label": "MiniMax API directa", "base": "https://api.minimax.io/v1", "env": ("MINIMAX_API_KEY",)},
     "local": {"label": "API local (llama.cpp / Ollama / vLLM)", "base": None, "env": ("RIU_LOCAL_API_KEY",)},
 }
 MODELS_TTL = 300.0
