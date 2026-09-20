@@ -1,0 +1,26 @@
+{
+  "name": "RIU Chat MVP",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "containerEnv": {
+    "RIU_CHAT_ALLOW_PROVIDER_LIVE": "1",
+    "RIU_DATA_DIR": "/workspaces/riu_data",
+    "RIU_GITHUB_ACCOUNTS": "{\"maxbry123-commits\":\"GH_PAT_FINE_FULL\",\"planeta123-usa\":\"GH_ACCOUNT_3\"}"
+  },
+  "postCreateCommand": "pip install -r 'router inteligente universal/chat_space/requirements.txt' && mkdir -p /workspaces/riu_data",
+  "postStartCommand": "cd 'router inteligente universal' && nohup uvicorn integration.chat_mvp.app:app --host 0.0.0.0 --port 7860 > /tmp/riu_chat.log 2>&1 &",
+  "forwardPorts": [7860],
+  "portsAttributes": {
+    "7860": {"label": "RIU Chat (abrir /chat)", "onAutoForward": "notify", "visibility": "private"}
+  },
+  "secrets": {
+    "HF_TOKEN_1": {"description": "Token de Hugging Face para el router HF"},
+    "GH_PAT_FINE_FULL": {"description": "Token GitHub cuenta maxbry123-commits (selector de cuentas)"},
+    "GH_ACCOUNT_3": {"description": "Token GitHub cuenta planeta123-usa (selector de cuentas)"},
+    "CEREBRAS_API_KEY_1": {"description": "Cerebras (opcional)"},
+    "NVIDIA_API_KEY_1": {"description": "NVIDIA NIM (opcional)"},
+    "GROQ_API_KEY_1": {"description": "Groq (opcional)"},
+    "DEEPSEEK_API_KEY": {"description": "DeepSeek API directa (opcional, caché nativa)"},
+    "MOONSHOT_API_KEY": {"description": "Moonshot/Kimi API directa (opcional)"},
+    "MINIMAX_API_KEY": {"description": "MiniMax API directa (opcional)"}
+  }
+}
