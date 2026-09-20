@@ -1,16 +1,10 @@
 name: RIU NVIDIA and GitHub Probe
 
-# One-shot evidence for: (0) why GH_ACCOUNT_1/2 are rejected, (Paso 1) HF account used for billing, (Paso 2) the 5 NVIDIA keys.
-# Values are never printed. Results are annotations (::notice) readable through the check-run API.
-# Paso 2 result so far: all 5 keys list 82 models; minimaxai/minimax-m2.7 returns 410 Gone (retired by NVIDIA).
-# This version chat-tests every key with a model that IS in the NVIDIA catalog.
+# Prueba cada clave NVIDIA (1..5) contra los modelos que importan y dice cuáles responden.
+# En paralelo, 1 reintento si hay timeout. No imprime valores de claves.
 
 on:
   workflow_dispatch:
-    inputs:
-      model:
-        description: 'Modelo NVIDIA a probar con cada clave'
-        default: 'deepseek-ai/deepseek-v4-flash-0731'
   push:
     paths:
       - '.github/workflows/riu-nvidia-github-probe.yml'
@@ -25,7 +19,6 @@ jobs:
     steps:
       - name: Probe
         env:
-          MODEL: ${{ inputs.model || 'deepseek-ai/deepseek-v4-flash-0731' }}
           N1: ${{ secrets.NVIDIA_API_KEY_1 }}
           N2: ${{ secrets.NVIDIA_API_KEY_2 }}
           N3: ${{ secrets.NVIDIA_API_KEY_3 }}
@@ -33,38 +26,55 @@ jobs:
           N5: ${{ secrets.NVIDIA_API_KEY_5 }}
         run: |
           python3 - <<'PY'
-          import json, os, urllib.request, urllib.error
+          import json, os, time, urllib.request, urllib.error
+          from concurrent.futures import ThreadPoolExecutor
 
-          def note(t, m): print("::notice title=%s::%s" % (t, m))
+          MODELS = ["deepseek-ai/deepseek-v4-flash-0731", "moonshotai/kimi-k3", "moonshotai/kimi-k2.6", "z-ai/glm-5.3-flash"]
 
-          def call(method, url, headers, body=None, timeout=90):
+          def call(method, url, tok, body=None, timeout=100):
               data = json.dumps(body).encode() if body is not None else None
-              req = urllib.request.Request(url, data=data, headers={"User-Agent": "riu-probe", "Content-Type": "application/json", **headers}, method=method)
-              try:
-                  with urllib.request.urlopen(req, timeout=timeout) as r:
-                      return r.status, json.loads(r.read().decode() or "null")
-              except urllib.error.HTTPError as e:
-                  txt = e.read().decode(errors="replace")[:200]
-                  try:
-                      return e.code, json.loads(txt)
-                  except Exception:
-                      return e.code, {"raw": txt}
-              except Exception as e:
-                  return type(e).__name__, {}
+              req = urllib.request.Request(url, data=data, method=method,
+                                           headers={"Authorization": "Bearer " + tok, "Content-Type": "application/json", "User-Agent": "riu-probe"})
+              with urllib.request.urlopen(req, timeout=timeout) as r:
+                  return r.status, json.loads(r.read().decode() or "null")
 
-          model = os.environ["MODEL"]
-          out = []
+          def try_model(i, model):
+              tok = os.environ.get("N%d" % i, "")
+              if not tok:
+                  return i, model, "SIN_CLAVE"
+              last = ""
+              for attempt in (1, 2):
+                  t0 = time.time()
+                  try:
+                      s, d = call("POST", "https://integrate.api.nvidia.com/v1/chat/completions", tok,
+                                  {"model": model, "messages": [{"role": "user", "content": "Reply with the single word OK"}], "max_tokens": 256})
+                      ch = (d.get("choices") or [{}])[0]
+                      txt = ((ch.get("message") or {}).get("content") or "").strip().replace("\n", " ")[:12]
+                      return i, model, "RESPONDE(%s, %ds)" % (txt or "vacío", time.time() - t0)
+                  except urllib.error.HTTPError as e:
+                      body = e.read().decode(errors="replace")[:80].replace(tok, "***").replace("\n", " ")
+                      return i, model, "ERROR %s %s" % (e.code, body)
+                  except Exception as e:
+                      last = "TIMEOUT" if "timed out" in str(e).lower() or type(e).__name__ == "TimeoutError" else type(e).__name__
+              return i, model, last + " (2 intentos)"
+
+          jobs = [(i, m) for i in range(1, 6) for m in MODELS]
+          with ThreadPoolExecutor(max_workers=10) as ex:
+              results = list(ex.map(lambda a: try_model(*a), jobs))
+          # catalog per key (which DeepSeek V4 / Kimi ids exist)
+          cat = {}
           for i in range(1, 6):
               tok = os.environ.get("N%d" % i, "")
               if not tok:
-                  out.append("N%d=missing" % i); continue
-              s, d = call("POST", "https://integrate.api.nvidia.com/v1/chat/completions", {"Authorization": "Bearer " + tok},
-                          {"model": model, "messages": [{"role": "user", "content": "Reply with the single word OK"}], "max_tokens": 256})
-              if s == 200:
-                  ch = (d.get("choices") or [{}])[0]
-                  u = d.get("usage") or {}
-                  out.append("N%d chat=200 finish=%s reply=%r tokens=%s" % (i, ch.get("finish_reason"), ((ch.get("message") or {}).get("content") or "")[:20].replace("\n", " "), u.get("total_tokens")))
-              else:
-                  out.append("N%d chat=%s %s" % (i, s, json.dumps(d, ensure_ascii=False)[:100].replace(tok, "***")))
-          note("RIU_PROBE_NVIDIA_CHAT", "model=%s | %s" % (model, "; ".join(out)))
+                  continue
+              try:
+                  s, d = call("GET", "https://integrate.api.nvidia.com/v1/models", tok, timeout=40)
+                  ids = [m["id"] for m in d.get("data", [])]
+                  cat[i] = [x for x in ids if any(k in x.lower() for k in ("deepseek-v4", "kimi", "glm-5"))]
+              except Exception as e:
+                  cat[i] = ["ERR " + type(e).__name__]
+          for i in range(1, 6):
+              row = "; ".join("%s=%s" % (m.split("/")[-1], r) for (k, m, r) in results if k == i)
+              print("::notice title=RIU_NVIDIA_CLAVE_%d::%s" % (i, row))
+          print("::notice title=RIU_NVIDIA_CATALOGO::" + " | ".join("clave%d: %s" % (i, ",".join(v)) for i, v in cat.items()))
           PY
