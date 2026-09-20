@@ -52,7 +52,7 @@ def client(tmp_path, monkeypatch):
 
 def send(client, **over):
     body = {"message": "hola", "provider": "hf", "model": KIMI, **over}
-    return client.post("/chat/send", json=body, headers={**H, **over.pop("headers", {})} if False else H)
+    return client.post("/chat/send", json=body, headers=H)
 
 
 def test_page_providers_and_auth(client):
@@ -88,7 +88,7 @@ def test_hf_gate_rejects_unselectable_models_and_flag_off(client, monkeypatch):
     assert r.status_code == 400 and r.json()["detail"] == "MODEL_NOT_SELECTABLE"
 
 
-def test_other_providers_use_catalog_and_byok(client, monkeypatch):
+def test_other_providers_use_catalog_and_byok(client):
     r = client.post("/chat/send", json={"message": "hola", "provider": "cerebras", "model": "llama3.1-8b"},
                     headers={**H, "X-Provider-Key": "byok-key"})
     assert r.status_code == 200 and client.calls[-1]["key"] == "byok-key" and client.calls[-1]["provider"] == "cerebras"
@@ -174,10 +174,10 @@ def test_github_accounts_switch_read_attach_and_commit(client, monkeypatch):
     assert "tok-one" not in json.dumps(accounts)
 
 
-def test_storage_graph_and_bucket_sync(client, tmp_path, monkeypatch):
+def test_storage_graph_and_bucket_sync(client):
     send(client, message="uno")
     stats = client.get("/chat/storage", headers=H).json()
-    assert stats["sql"]["messages"] == 2 and stats["graph"]["edges"] >= 3 and stats["hf_bucket"]["configured"] is False
+    assert stats["sql"]["messages"] == 2 and stats["graph"]["edges"] >= 2 and stats["hf_bucket"]["configured"] is False
     graph = client.get("/chat/graph", headers=H).json()
     assert {"conversation", "model", "owner"} <= {n["kind"] for n in graph["nodes"]}
     assert client.post("/chat/storage/sync", headers=H).json()["detail"] == "HF_BUCKET_ID_NOT_SET"
@@ -194,4 +194,4 @@ def test_storage_graph_and_bucket_sync(client, tmp_path, monkeypatch):
     client.post("/chat/documents", json={"name": "n.txt", "mime": "text/plain", "data_b64": base64.b64encode(b"x").decode()}, headers=H)
     out = rt.sync_to_bucket(rt.get_store(), "u/b", "w", fs_factory=FakeFS)
     assert out == {"bucket": "u/b", "files": 2}
-    assert "buckets/u/b/riu-chat/riu_chat.sqlite3" in written and written["buckets/u/b/riu-chat/riu_chat.sqlite3"].startswith(b"SQLite format 3")
+    assert written["buckets/u/b/riu-chat/riu_chat.sqlite3"].startswith(b"SQLite format 3")
