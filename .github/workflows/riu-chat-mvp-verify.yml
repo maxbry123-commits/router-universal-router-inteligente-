@@ -1,8 +1,6 @@
 name: RIU Chat MVP Verify
 
-# Real-runner evidence for the chat MVP + selector models (Kimi K3, MiniMax, DeepSeek V4 Flash/Pro).
-# Results are emitted as ONE aggregated annotation per step (::notice / ::warning) because GitHub caps
-# annotations at 10 per level per step; they stay readable through the check-run API.
+# Real-runner evidence for the chat MVP + selector models and the HF router hot-path.
 # No secret value is ever printed; HF_TOKEN_1 is only injected into the env of the steps that need it.
 
 on:
@@ -10,6 +8,8 @@ on:
   push:
     paths:
       - '.github/workflows/riu-chat-mvp-verify.yml'
+      - 'router inteligente universal/integration/huggingface/router_hot_path.py'
+      - 'router inteligente universal/tests/test_hf_router_hot_path.py'
 
 permissions:
   contents: read
@@ -59,7 +59,7 @@ jobs:
           last=$(tail -n 1 /tmp/pytest.txt | tr -d '\r')
           echo "::notice title=RIU_TESTS::exit=${code} | ${last}"
           grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | head -8 | while IFS= read -r line; do echo "::warning title=RIU_TEST_FAIL::${line}"; done
-          exit 0
+          exit "$code"
 
       - name: HF token capability probe (role and scopes only, no values)
         env:
