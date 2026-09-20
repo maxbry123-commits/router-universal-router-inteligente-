@@ -1,0 +1,84 @@
+name: RIU DAG Run
+
+# Claude (the brain) writes a plan in chat_orders/*.dag.json (schema riu.dag/v1) and dispatches this workflow.
+# The Router executes each node with the model named in the plan, verifies with deterministic checks and commits the
+# result (with a hash-chained ledger) to chat_orders/results/. Claude then reads the result and audits it.
+# Provider keys come only from GitHub Secrets and are never printed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan:
+        description: 'Ruta del plan DAG dentro del repo'
+        default: 'chat_orders/ORDER-000-smoke.dag.json'
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/verifier/
+            chat_orders/
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install huggingface_hub
+
+      - name: Run the DAG through the Router
+        id: dag
+        env:
+          PLAN: ${{ inputs.plan }}
+          RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
+          HF_TOKEN_1: ${{ secrets.HF_TOKEN_1 }}
+          CEREBRAS_API_KEY_1: ${{ secrets.CEREBRAS_API_KEY_1 }}
+          NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+          GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        shell: bash
+        run: |
+          set +e
+          case "$PLAN" in chat_orders/*.dag.json) ;; *) echo "::error::el plan debe estar en chat_orders/*.dag.json"; exit 2;; esac
+          name=$(basename "$PLAN" .dag.json)
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          root="$GITHUB_WORKSPACE"
+          cd "router inteligente universal"
+          python -m integration.chat_mvp.dag_cli "$root/$PLAN" --out "$root/chat_orders/results/${name}.result.json"
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Commit the result
+        if: always() && steps.dag.outputs.name != ''
+        shell: bash
+        env:
+          NAME: ${{ steps.dag.outputs.name }}
+        run: |
+          git config user.name "riu-dag-runner"
+          git config user.email "riu-dag-runner@users.noreply.github.com"
+          git add chat_orders/results
+          git commit -m "chat_orders: resultado de ${NAME} (riu.dag.result/v1)" || { echo "nada que confirmar"; exit 0; }
+          for i in 1 2 3 4; do
+            git pull --rebase origin main && git push origin HEAD:main && { echo "::notice title=RIU_DAG_COMMIT::pushed ${NAME}"; exit 0; }
+            sleep 4
+          done
+          echo "::warning title=RIU_DAG_COMMIT::push failed after retries"
