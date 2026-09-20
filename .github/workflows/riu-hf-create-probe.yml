@@ -1,0 +1,54 @@
+name: RIU HF Create Probe
+
+# Diagnoses why creating the chat Space fails (402): tries each HF token, public/private, docker/static, and reports the server message.
+# Cleans up anything it creates. Never prints token values.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-hf-create-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install huggingface_hub
+      - name: Try creating throwaway repos
+        env:
+          T1: ${{ secrets.HF_TOKEN_1 }}
+          T2: ${{ secrets.HF_TOKEN_MAXBRY123 }}
+        run: |
+          python - <<'PY'
+          import os, time
+          from huggingface_hub import HfApi
+          out = []
+          for label, tok in (("HF_TOKEN_1", os.environ.get("T1", "")), ("HF_TOKEN_MAXBRY123", os.environ.get("T2", ""))):
+              if not tok:
+                  out.append(label + ":missing"); continue
+              api = HfApi(token=tok)
+              for kind, kw in (("space-docker-public", dict(repo_type="space", space_sdk="docker", private=False)),
+                               ("space-docker-private", dict(repo_type="space", space_sdk="docker", private=True)),
+                               ("space-static-public", dict(repo_type="space", space_sdk="static", private=False)),
+                               ("dataset-private", dict(repo_type="dataset", private=True))):
+                  rid = "COMAND-CENTER-1/riu-probe-%d" % int(time.time())
+                  try:
+                      api.create_repo(rid, exist_ok=False, **kw)
+                      out.append("%s/%s:OK" % (label, kind))
+                      try:
+                          api.delete_repo(rid, repo_type=kw["repo_type"])
+                      except Exception as e:
+                          out.append("cleanup_failed:%s" % type(e).__name__)
+                  except Exception as e:
+                      resp = getattr(e, "response", None)
+                      body = (getattr(resp, "text", "") or "")[:220].replace("\n", " ").replace(tok, "***")
+                      out.append("%s/%s:%s %s %s" % (label, kind, type(e).__name__, getattr(resp, "status_code", ""), body))
+          print("::notice title=RIU_HF_CREATE::" + " || ".join(out))
+          PY
