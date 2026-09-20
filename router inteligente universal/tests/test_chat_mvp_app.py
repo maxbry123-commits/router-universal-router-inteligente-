@@ -17,6 +17,7 @@ pytest.importorskip("huggingface_hub")
 from fastapi.testclient import TestClient  # noqa: E402
 
 from integration.chat_mvp import app as chat_app  # noqa: E402
+from integration.chat_mvp import core  # noqa: E402
 from integration.chat_mvp import github_tools as gh  # noqa: E402
 from integration.chat_mvp import providers as prov  # noqa: E402
 from integration.chat_mvp import router as rt  # noqa: E402
@@ -31,8 +32,9 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"k1": "agent-a", "k2": "agent-b"}')
     monkeypatch.setenv("RIU_CHAT_ALLOW_PROVIDER_LIVE", "1")
     monkeypatch.setenv("HF_TOKEN_1", "hf-test-not-a-secret")
-    for name in ("HF_TOKEN", "NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "CEREBRAS_API_KEY", "CEREBRAS_API_KEY_1", "RIU_GITHUB_ACCOUNTS"):
+    for name in ("HF_TOKEN", "NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "CEREBRAS_API_KEY", "CEREBRAS_API_KEY_1", "RIU_GITHUB_ACCOUNTS", "RIU_PRICES_JSON"):
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(core, "cached_discovery", lambda: [])
     monkeypatch.setattr(rt, "cached_discovery", lambda: [])
     rt.set_store(Store(tmp_path))
     calls: list[dict] = []
@@ -40,7 +42,7 @@ def client(tmp_path, monkeypatch):
     def fake_chat(provider, key, model, messages, max_tokens, *, temperature=None, post=None):
         calls.append({"provider": provider, "key": key, "model": model, "messages": messages})
         return {"model": model, "message": {"role": "assistant", "content": "eco:" + messages[-1]["content"]},
-                "finish_reason": "stop", "usage": {"total_tokens": 3}}
+                "finish_reason": "stop", "usage": {"prompt_tokens": 100, "completion_tokens": 3, "prompt_cache_hit_tokens": 60}}
 
     monkeypatch.setattr(prov, "chat", fake_chat)
     monkeypatch.setattr(prov, "list_models", lambda provider, key, **kw: ["llama3.1-8b", "deepseek-v4-flash-x"])
@@ -59,10 +61,12 @@ def test_page_providers_and_auth(client):
     page = client.get("/chat")
     assert page.status_code == 200 and "Chat RIU" in page.text and "/chat/send" in page.text
     body = client.get("/chat/providers").json()
-    assert {p["id"] for p in body["providers"]} == {"hf", "cerebras", "nvidia", "groq", "local"}
+    assert {p["id"] for p in body["providers"]} == {"hf", "cerebras", "nvidia", "groq", "deepseek", "moonshot", "minimax", "local"}
     assert next(p for p in body["providers"] if p["id"] == "hf")["configured"] is True
     assert client.post("/chat/send", json={"message": "x", "model": KIMI}).status_code == 401
     assert client.get("/chat/agents").status_code == 401
+    assert client.get("/chat/usage").status_code == 401
+    assert client.post("/chat/dag/run", json={"dag": {}}).status_code == 401
 
 
 def test_send_hf_live_model_keeps_history_and_isolates_owners(client):
@@ -70,6 +74,7 @@ def test_send_hf_live_model_keeps_history_and_isolates_owners(client):
     assert r.status_code == 200, r.text
     first = r.json()
     assert first["reply"] == "eco:hola" and first["certified"] is False and first["conversation_id"]
+    assert first["usage_normalized"] == {"input": 100, "output": 3, "cached": 60}
     assert client.calls[-1]["key"] == "hf-test-not-a-secret" and client.calls[-1]["model"] == KIMI
     r2 = send(client, message="segundo", conversation_id=first["conversation_id"])
     assert r2.status_code == 200
@@ -118,29 +123,61 @@ def test_agent_mode_and_agent_crud(client):
     assert client.post("/chat/agents", json={"id": "BAD ID", "name": "x"}, headers=H).status_code == 422
 
 
-def test_documents_upload_attach_and_delete(client):
-    data = base64.b64encode(b"la palabra secreta es zafiro").decode()
-    up = client.post("/chat/documents", json={"name": "notas.txt", "mime": "text/plain", "data_b64": data}, headers=H)
-    assert up.status_code == 200
-    did = up.json()["document"]["id"]
-    assert client.get("/chat/documents", headers=H).json()["documents"][0]["id"] == did
-    assert "zafiro" in client.get(f"/chat/documents/{did}", headers=H).json()["preview"]
-    r = send(client, doc_ids=[did])
-    assert r.status_code == 200 and r.json()["docs_used"] == [did]
-    assert any("zafiro" in m["content"] and m["role"] == "system" for m in client.calls[-1]["messages"])
+def test_documents_upload_attach_sorted_prefix_and_delete(client):
+    up1 = client.post("/chat/documents", json={"name": "a.txt", "mime": "text/plain", "data_b64": base64.b64encode(b"la palabra secreta es zafiro").decode()}, headers=H)
+    up2 = client.post("/chat/documents", json={"name": "b.txt", "mime": "text/plain", "data_b64": base64.b64encode(b"segundo documento").decode()}, headers=H)
+    assert up1.status_code == 200 and up2.status_code == 200
+    d1, d2 = up1.json()["document"]["id"], up2.json()["document"]["id"]
+    assert "zafiro" in client.get(f"/chat/documents/{d1}", headers=H).json()["preview"]
+    r = send(client, doc_ids=[d2, d1])
+    assert r.status_code == 200 and r.json()["docs_used"] == sorted([d1, d2])
+    system_texts = [m["content"] for m in client.calls[-1]["messages"] if m["role"] == "system"]
+    assert len(system_texts) == 2 and any("zafiro" in t for t in system_texts)
+    swapped = send(client, doc_ids=[d1, d2], message="otra pregunta")
+    assert [m["content"] for m in client.calls[-1]["messages"] if m["role"] == "system"] == system_texts  # same prefix order
+    assert swapped.status_code == 200
     binary = client.post("/chat/documents", json={"name": "a.bin", "data_b64": base64.b64encode(b"\x00\x01").decode()}, headers=H).json()["document"]["id"]
     assert send(client, doc_ids=[binary]).status_code == 404
     assert client.post("/chat/documents", json={"name": "x", "data_b64": "###"}, headers=H).json()["detail"] == "DOCUMENT_BASE64_INVALID"
-    assert client.delete(f"/chat/documents/{did}", headers=H).status_code == 200
-    assert client.delete(f"/chat/documents/{did}", headers=H).status_code == 404
+    assert client.delete(f"/chat/documents/{d1}", headers=H).status_code == 200
+    assert client.delete(f"/chat/documents/{d1}", headers=H).status_code == 404
 
 
-def test_cache_hit_skips_the_provider(client):
-    a = send(client, cache=True).json()
+def test_cache_is_on_by_default_refresh_and_off_switch(client):
+    a = send(client).json()
     n = len(client.calls)
-    b = send(client, cache=True).json()
+    b = send(client).json()
     assert a["cached"] is False and b["cached"] is True and len(client.calls) == n
+    c = send(client, refresh=True).json()
+    d = send(client, cache=False).json()
+    assert c["cached"] is False and d["cached"] is False and len(client.calls) == n + 2
     assert client.get("/chat/storage", headers=H).json()["cache"]["hits"] == 1
+
+
+def test_usage_endpoint_reports_provider_cache_and_response_cache(client, monkeypatch):
+    monkeypatch.setenv("RIU_PRICES_JSON", json.dumps({f"hf/{KIMI}": {"in": 1.0, "cached_in": 0.1, "out": 2.0}}))
+    send(client)
+    send(client)  # response-cache hit
+    u = client.get("/chat/usage", headers=H).json()
+    t = u["totals"]
+    assert t["calls"] == 1 and t["input"] == 100 and t["cached_input"] == 60 and t["response_cache_hits"] == 1
+    assert u["prices_configured"] is True and u["models"][0]["est_saved_usd"] > 0 and u["models"][0]["est_cost_usd"] > 0
+
+
+def test_dag_run_endpoint_executes_the_plan_and_reports_evidence(client):
+    plan = {"schema": "riu.dag/v1", "id": "api-dag", "input_block": "INPUT LITERAL", "nodes": [
+        {"id": "A", "model": {"provider": "hf", "model": KIMI}, "instructions": "di hola", "expect": {"contains": ["eco:"]}},
+        {"id": "B", "model": {"provider": "cerebras", "model": "llama3.1-8b"}, "instructions": "resume", "needs": ["A"], "expect": {"contains": ["eco:"]}},
+    ]}
+    r = client.post("/chat/dag/run", json={"dag": plan}, headers={**H, "X-Provider-Keys": json.dumps({"cerebras": "byok-c"})})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["status"] == "PASS" and body["ledger_valid"] is True and set(body["nodes"]) == {"A", "B"}
+    assert any(c["provider"] == "cerebras" and c["key"] == "byok-c" for c in client.calls)
+    assert "INPUT LITERAL" in client.calls[0]["messages"][1]["content"]
+    bad = client.post("/chat/dag/run", json={"dag": {"schema": "x"}}, headers=H)
+    assert bad.status_code == 400 and bad.json()["detail"].startswith("DAG_INVALID:")
+    assert client.post("/chat/dag/run", json={"dag": plan}, headers={**H, "X-Provider-Keys": "{"}).json()["detail"] == "X_PROVIDER_KEYS_INVALID_JSON"
 
 
 def test_github_accounts_switch_read_attach_and_commit(client, monkeypatch):
