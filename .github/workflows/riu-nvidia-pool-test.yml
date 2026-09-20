@@ -1,0 +1,49 @@
+name: RIU NVIDIA Pool Test
+
+# Runs the NVIDIA-first / key-pool tests plus the chat API tests on a real runner. No secrets needed.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-nvidia-pool-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  pooltest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/tests/
+            router inteligente universal/verifier/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install fastapi httpx pytest pydantic uvicorn huggingface_hub
+      - name: Tests
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q -p no:cacheprovider \
+            "router inteligente universal/tests/test_nvidia_pool.py" \
+            "router inteligente universal/tests/test_chat_mvp_app.py" \
+            "router inteligente universal/tests/test_chat_cost_dag.py" 2>&1 | tee /tmp/p.txt
+          code=${PIPESTATUS[0]}
+          echo "::notice title=RIU_POOL_TESTS::exit=${code} | $(tail -n 1 /tmp/p.txt | tr -d '\r')"
+          grep -E '^(FAILED|ERROR)' /tmp/p.txt | head -6 | while IFS= read -r l; do echo "::warning title=RIU_POOL_FAIL::${l}"; done
+          exit 0
