@@ -1,15 +1,15 @@
-"""Chat MVP HTTP surface: providers, chat, agents, documents, GitHub accounts, storage and graph.
+"""Chat MVP HTTP surface: providers, chat, agents, documents, GitHub accounts, storage, usage, DAG and graph.
 
 Every /chat/* data endpoint requires a Router API key (env RIU_AGENT_API_KEYS or the certified MAXBRY keystore).
 Provider keys and GitHub tokens come from the server environment or from per-request BYOK headers
-(X-Provider-Key, X-GitHub-Token); they are never stored, logged or returned.
+(X-Provider-Key, X-Provider-Keys as JSON, X-GitHub-Token); they are never stored, logged or returned.
 Chat turns go through the certified hot path: FastAPI -> Enchufe Gate -> RedUniversal -> provider executor.
+Cost: response cache ON by default, prefix-stable prompts and a usage log (see core.py / usage.py).
 """
 from __future__ import annotations
 
 import asyncio
 import base64
-import hashlib
 import json
 import os
 import tempfile
@@ -21,12 +21,14 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from ..huggingface.api_key_auth import authenticate_api_key
-from ..huggingface.chat_catalog import cached_discovery, family_of, selectable_live_ids, selector_models
-from ..huggingface.huggingface_openai_chat import allowed_model_ids
-from ..huggingface.router_hot_path import route_chat_completion
+from ..huggingface.chat_catalog import cached_discovery, family_of, selector_models
+from . import core
+from . import dag as dagmod
+from . import dag_cli
 from . import github_tools as gh
 from . import providers as prov
 from .store import Store
+from .usage import UsageLog, normalize_usage
 
 _UI = Path(__file__).with_name("chat_ui.html")
 _store: Store | None = None
@@ -43,10 +45,6 @@ def get_store() -> Store:
 def set_store(store: Store | None) -> None:
     global _store
     _store = store
-
-
-def _live() -> bool:
-    return os.getenv("RIU_CHAT_ALLOW_PROVIDER_LIVE", "") == "1"
 
 
 def _auth(
@@ -87,7 +85,8 @@ class SendReq(BaseModel):
     mode: str = "direct"  # direct = sin agente, agent = con agente
     agent_id: str | None = None
     doc_ids: list[str] = []
-    cache: bool = False
+    cache: bool = True  # exact-match response cache (skipped when temperature > 0)
+    refresh: bool = False  # bypass the cache read and overwrite the entry
     max_tokens: int = Field(default=1024, ge=1, le=8192)
     temperature: float | None = None
     github: dict[str, str] | None = None  # {"account": ..., "repo": ...} provenance only
@@ -117,6 +116,10 @@ class CommitReq(BaseModel):
     branch: str | None = None
 
 
+class DagReq(BaseModel):
+    dag: dict[str, Any]
+
+
 def _gh_token(account: str, byok: str | None) -> str:
     token = gh.token_for(account, byok)
     if not token:
@@ -140,7 +143,7 @@ def build_router() -> APIRouter:
 
     @r.get("/chat/providers")
     def providers() -> dict[str, Any]:
-        return {"live_provider_inference": _live(),
+        return {"live_provider_inference": core.live_enabled(),
                 "providers": [{"id": k, "label": v["label"], "configured": prov.configured(k)} for k, v in prov.PROVIDERS.items()]}
 
     @r.get("/chat/providers/{provider}/models")
@@ -149,7 +152,7 @@ def build_router() -> APIRouter:
         if provider not in prov.PROVIDERS:
             raise HTTPException(status_code=404, detail="PROVIDER_UNKNOWN")
         if provider == "hf":
-            rows = selector_models(discovered=cached_discovery(), live_enabled=_live())["models"]
+            rows = selector_models(discovered=core.cached_discovery(), live_enabled=core.live_enabled())["models"]
             return {"provider": "hf", "models": rows}
         key = prov.resolve_key(provider, x_provider_key)
         if not key and provider != "local":
@@ -180,10 +183,10 @@ def build_router() -> APIRouter:
             raise HTTPException(status_code=400, detail=f"PROVIDER_KEY_MISSING:{req.provider}")
         certified = False
         if req.provider == "hf":
-            if req.model in allowed_model_ids():
-                certified = True
-            elif not (_live() and req.model in selectable_live_ids(discovered=cached_discovery())):
-                raise HTTPException(status_code=400, detail="MODEL_NOT_SELECTABLE")
+            try:
+                certified = core.hf_gate(req.model)
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
         else:
             try:
                 if req.model not in prov.list_models(req.provider, key):
@@ -195,43 +198,26 @@ def build_router() -> APIRouter:
             row = st.conversation(conv)
             if not row or row["owner"] != owner:
                 raise HTTPException(status_code=404, detail="CONVERSATION_NOT_FOUND")
+        # Prefix-stable order (provider prompt caching): agent prompt, documents sorted by id, history, new turn.
         msgs: list[dict[str, str]] = []
         if agent and agent["system_prompt"]:
             msgs.append({"role": "system", "content": agent["system_prompt"]})
         used_docs: list[str] = []
-        for did in req.doc_ids:
+        for did in sorted(set(req.doc_ids)):
             doc, text = st.document(did), st.document_text(did)
             if not doc or text is None:
                 raise HTTPException(status_code=404, detail=f"DOCUMENT_NOT_READABLE:{did}")
             msgs.append({"role": "system", "content": f"Documento adjunto «{doc['name']}»:\n{text}"})
             used_docs.append(did)
         if conv:
-            msgs += [{"role": m["role"], "content": m["content"]} for m in st.messages(conv, limit=20)]
+            msgs += core.trim_history([{"role": m["role"], "content": m["content"]} for m in st.messages(conv, limit=40)])
         msgs.append({"role": "user", "content": req.message})
-
-        ckey = hashlib.sha256(json.dumps([req.provider, req.model, msgs, req.max_tokens, req.temperature], sort_keys=True).encode()).hexdigest()
-        result = st.cache_get(ckey) if req.cache else None
-        cached = result is not None
-        if not cached:
-            errbox: dict[str, str] = {}
-
-            def executor(*, model_id: str, messages: list[dict[str, str]], max_tokens: int = 256) -> dict[str, Any]:
-                try:
-                    return prov.chat(req.provider, key, model_id, messages, max_tokens, temperature=req.temperature)
-                except prov.ProviderError as exc:
-                    errbox["e"] = str(exc)
-                    raise
-
-            def run() -> dict[str, Any]:
-                return asyncio.run(route_chat_completion(model_id=req.model, messages=msgs, max_tokens=req.max_tokens, executor=executor))
-
-            try:
-                result = await asyncio.to_thread(run)
-            except RuntimeError as exc:
-                raise HTTPException(status_code=502, detail=errbox.get("e") or str(exc)) from exc
-        reply = (result["message"].get("content") or "") if result else ""
-        if reply and not cached and req.cache:
-            st.cache_put(ckey, {"message": result["message"], "finish_reason": result.get("finish_reason"), "usage": result.get("usage")})
+        try:
+            result = await asyncio.to_thread(core.run_completion, st, owner, req.provider, key, req.model, msgs, req.max_tokens,
+                                             req.temperature, use_cache=req.cache, refresh=req.refresh)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        reply = result["message"].get("content") or ""
         if reply:
             if not conv:
                 conv = st.new_conversation(req.message, agent["id"] if agent else None, owner)
@@ -241,8 +227,31 @@ def build_router() -> APIRouter:
                            agent_id=agent["id"] if agent else None, doc_ids=used_docs,
                            repo=(req.github or {}).get("repo"))
         return {"conversation_id": conv, "reply": reply, "empty": not reply, "provider": req.provider, "model": req.model,
-                "certified": certified, "cached": cached, "finish_reason": result.get("finish_reason"),
-                "usage": result.get("usage"), "docs_used": used_docs, "agent_id": agent["id"] if agent else None}
+                "certified": certified, "cached": result["cached"], "finish_reason": result.get("finish_reason"),
+                "usage": result.get("usage"), "usage_normalized": normalize_usage(result.get("usage")),
+                "docs_used": used_docs, "agent_id": agent["id"] if agent else None}
+
+    @r.get("/chat/usage")
+    def usage(_owner: str = Depends(_auth)) -> dict[str, Any]:
+        return UsageLog(get_store()).summary()
+
+    @r.post("/chat/dag/run")
+    async def dag_run(req: DagReq, owner: str = Depends(_auth),
+                      x_provider_keys: str | None = Header(default=None, alias="X-Provider-Keys")) -> dict[str, Any]:
+        keys: dict[str, str] = {}
+        if x_provider_keys:
+            try:
+                parsed = json.loads(x_provider_keys)
+            except json.JSONDecodeError as exc:
+                raise HTTPException(status_code=400, detail="X_PROVIDER_KEYS_INVALID_JSON") from exc
+            keys = {str(k): str(v) for k, v in parsed.items()} if isinstance(parsed, dict) else {}
+        st = get_store()
+        agents = {a["id"]: a["system_prompt"] for a in st.agents()}
+        try:
+            return await asyncio.to_thread(dagmod.run_dag, req.dag, dag_cli.build_executor(st, owner, keys),
+                                           agents=agents, known_providers=set(prov.PROVIDERS))
+        except dagmod.DagError as exc:
+            raise HTTPException(status_code=400, detail=f"DAG_INVALID:{exc}") from exc
 
     @r.get("/chat/conversations")
     def conversations(owner: str = Depends(_auth)) -> dict[str, Any]:
