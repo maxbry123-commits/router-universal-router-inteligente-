@@ -1,0 +1,106 @@
+{
+ "schema": "riu.dag.result/v1",
+ "id": "ORDER-000-smoke",
+ "status": "PASS",
+ "nodes": {
+  "A01": {
+   "status": "PASS",
+   "attempts": [
+    {
+     "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+     "verdict": "PASS",
+     "checks_failed": []
+    }
+   ],
+   "reply": "{\n  \"palancas\": [\"prompt prefix persistente\", \"cache de contexto\", \"reutilizar historial\"],\n  \"riesgo\": \"bajo: depende del proveedor y del diseño del sistema\"\n}",
+   "reply_sha256": "2a9f5776f150a53980e73caa8413ea24b496187697ca06ee207d8d7820b36e4e",
+   "checks_failed": []
+  },
+  "A03": {
+   "status": "PASS",
+   "attempts": [
+    {
+     "model": "hf/MiniMaxAI/MiniMax-M3",
+     "verdict": "PASS",
+     "checks_failed": []
+    }
+   ],
+   "reply": "OK",
+   "reply_sha256": "565339bc4d33d72817b583024112eb7f5cdf3e5eef0252d6ec1b9c9a94e12bb3",
+   "checks_failed": []
+  },
+  "A02": {
+   "status": "PASS",
+   "attempts": [
+    {
+     "model": "hf/moonshotai/Kimi-K3",
+     "verdict": "PASS",
+     "checks_failed": []
+    }
+   ],
+   "reply": "SI",
+   "reply_sha256": "1b127c358de26517e699cc4ec5ff86fc45fd6c8e0ad49d1f2783b38c20b92c6c",
+   "checks_failed": []
+  }
+ },
+ "totals": {
+  "calls": 3,
+  "input": 794,
+  "output": 338,
+  "cached_input": 192,
+  "cached_responses": 0
+ },
+ "ledger": [
+  {
+   "node": "A01",
+   "attempt": 1,
+   "provider": "hf",
+   "model": "deepseek-ai/DeepSeek-V4-Flash",
+   "prompt_sha256": "948ca27fddb86bf45dac347d11999cb645d19803d9d54dc26d65dd7d2f0bdf9d",
+   "reply_sha256": "2a9f5776f150a53980e73caa8413ea24b496187697ca06ee207d8d7820b36e4e",
+   "cached": false,
+   "verdict": "PASS",
+   "checks_failed": [],
+   "prev": "GENESIS",
+   "hash": "127ea98669d0d03f3396cc7510e86a17277c5fac80a766cf45004045a15d9d69"
+  },
+  {
+   "node": "A03",
+   "attempt": 1,
+   "provider": "hf",
+   "model": "MiniMaxAI/MiniMax-M3",
+   "prompt_sha256": "55d0b4a046c541b60858138bd1c77aeac09f495e66f75e11adac7dc54cb6ed2f",
+   "reply_sha256": "565339bc4d33d72817b583024112eb7f5cdf3e5eef0252d6ec1b9c9a94e12bb3",
+   "cached": false,
+   "verdict": "PASS",
+   "checks_failed": [],
+   "prev": "127ea98669d0d03f3396cc7510e86a17277c5fac80a766cf45004045a15d9d69",
+   "hash": "e43ca34fabae95690bb07c7e5a9fb0be61897be311957ac84c40786d3b915e9b"
+  },
+  {
+   "node": "A02",
+   "attempt": 1,
+   "provider": "hf",
+   "model": "moonshotai/Kimi-K3",
+   "prompt_sha256": "eaff7c6ee256004e01d5250a2b7c3e6bcab01f3c25e4375d751548e88fb85749",
+   "reply_sha256": "1b127c358de26517e699cc4ec5ff86fc45fd6c8e0ad49d1f2783b38c20b92c6c",
+   "cached": false,
+   "verdict": "PASS",
+   "checks_failed": [],
+   "prev": "e43ca34fabae95690bb07c7e5a9fb0be61897be311957ac84c40786d3b915e9b",
+   "hash": "e680800b15a3437e3a0dacd67485bdeba3749ae5b1e8ab9c47dbec22fff063d2"
+  }
+ ],
+ "ledger_head": "e680800b15a3437e3a0dacd67485bdeba3749ae5b1e8ab9c47dbec22fff063d2",
+ "ledger_valid": true,
+ "input_block_sha256": "73747b2f78c6852afaa6c5826bb0aed5cb27adc93ea20b2218f726129e4a5e18",
+ "usage_summary": {
+  "calls": 3,
+  "input": 794,
+  "output": 338,
+  "cached_input": 192,
+  "provider_cache_hit_ratio": 0.2418,
+  "response_cache_hits": 0,
+  "tokens_avoided_by_response_cache": 0
+ }
+}
