@@ -6,6 +6,7 @@ attaches the Hugging Face chat adapter as one validated network node.
 """
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -62,7 +63,10 @@ class HuggingFaceChatConnector:
 
     async def enviar(self, payload: dict[str, Any]) -> dict[str, Any]:
         try:
-            result = self._executor(
+            # The executor is blocking network I/O: run it in a worker thread so
+            # concurrent agents (swarm) do not serialize on the event loop.
+            result = await asyncio.to_thread(
+                self._executor,
                 model_id=payload["model_id"],
                 messages=payload["messages"],
                 max_tokens=int(payload.get("max_tokens", 256)),
