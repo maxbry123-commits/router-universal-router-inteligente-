@@ -1,0 +1,98 @@
+name: RIU NVIDIA and GitHub Probe
+
+# One-shot evidence for: (0) why GH_ACCOUNT_1/2 are rejected, (Paso 1) HF account used for billing, (Paso 2) the 5 NVIDIA keys.
+# Values are never printed. Results are annotations (::notice) readable through the check-run API.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-nvidia-github-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Probe
+        env:
+          N1: ${{ secrets.NVIDIA_API_KEY_1 }}
+          N2: ${{ secrets.NVIDIA_API_KEY_2 }}
+          N3: ${{ secrets.NVIDIA_API_KEY_3 }}
+          N4: ${{ secrets.NVIDIA_API_KEY_4 }}
+          N5: ${{ secrets.NVIDIA_API_KEY_5 }}
+          G1: ${{ secrets.GH_ACCOUNT_1 }}
+          G2: ${{ secrets.GH_ACCOUNT_2 }}
+          G3: ${{ secrets.GH_ACCOUNT_3 }}
+          HF1: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request, urllib.error
+
+          def note(t, m): print("::notice title=%s::%s" % (t, m))
+
+          def call(method, url, headers, body=None, timeout=40):
+              data = json.dumps(body).encode() if body is not None else None
+              req = urllib.request.Request(url, data=data, headers={"User-Agent": "riu-probe", "Content-Type": "application/json", **headers}, method=method)
+              try:
+                  with urllib.request.urlopen(req, timeout=timeout) as r:
+                      return r.status, json.loads(r.read().decode() or "null"), dict(r.headers)
+              except urllib.error.HTTPError as e:
+                  txt = e.read().decode(errors="replace")[:200]
+                  try:
+                      return e.code, json.loads(txt), dict(e.headers)
+                  except Exception:
+                      return e.code, {"raw": txt}, dict(e.headers)
+              except Exception as e:
+                  return type(e).__name__, {}, {}
+
+          def scrub(s, secret):
+              s = str(s).replace("\n", " ")
+              return s.replace(secret, "***") if secret else s
+
+          # ---- (0) GitHub tokens the Director says "have always worked"
+          out = []
+          for name in ("G1", "G2", "G3"):
+              tok = os.environ.get(name, "")
+              if not tok:
+                  out.append("%s=missing" % name); continue
+              res = []
+              for scheme in ("Bearer", "token"):
+                  s, d, h = call("GET", "https://api.github.com/user", {"Authorization": "%s %s" % (scheme, tok), "Accept": "application/vnd.github+json"})
+                  res.append("%s:%s:%s" % (scheme, s, scrub((d or {}).get("login") or (d or {}).get("message"), tok)[:40]))
+              out.append("%s len=%d %s" % (name, len(tok), " ".join(res)))
+          note("RIU_PROBE_GH", "; ".join(out))
+
+          # ---- Paso 1: which HF account is billed (the token's account) and can it pay
+          hf = os.environ.get("HF1", "")
+          s, d, _ = call("GET", "https://huggingface.co/api/whoami-v2", {"Authorization": "Bearer " + hf})
+          note("RIU_PROBE_HFBILL", "http=%s account=%s canPay=%s isPro=%s plan=%s" % (s, d.get("name"), d.get("canPay"), d.get("isPro"), d.get("plan")))
+
+          # ---- Paso 2: the 5 NVIDIA keys
+          out, catalog = [], []
+          for i in range(1, 6):
+              tok = os.environ.get("N%d" % i, "")
+              if not tok:
+                  out.append("N%d=missing" % i); continue
+              auth = {"Authorization": "Bearer " + tok, "Accept": "application/json"}
+              s, d, _ = call("GET", "https://integrate.api.nvidia.com/v1/models", auth)
+              ids = sorted(m.get("id", "") for m in (d.get("data") or [])) if s == 200 else []
+              if ids and not catalog:
+                  catalog = ids
+              has = "minimaxai/minimax-m2.7" in ids
+              s2, d2, _ = call("POST", "https://integrate.api.nvidia.com/v1/chat/completions", auth,
+                               {"model": "minimaxai/minimax-m2.7", "messages": [{"role": "user", "content": "Reply with the single word OK"}], "max_tokens": 64})
+              if s2 == 200:
+                  ch = (d2.get("choices") or [{}])[0]
+                  reply = ((ch.get("message") or {}).get("content") or "")[:30].replace("\n", " ")
+                  chat = "chat=200 finish=%s reply=%r" % (ch.get("finish_reason"), reply)
+              else:
+                  chat = "chat=%s %s" % (s2, scrub(json.dumps(d2, ensure_ascii=False)[:110], tok))
+              out.append("N%d models_http=%s count=%d has_minimax_m2.7=%s %s" % (i, s, len(ids), has, chat))
+          note("RIU_PROBE_NVIDIA", "; ".join(out))
+          rx = re.compile(r"minimax|kimi|deepseek|glm|nemotron|qwen3", re.I)
+          note("RIU_PROBE_NVIDIA_CATALOG", "total=%d match=%s" % (len(catalog), ",".join([m for m in catalog if rx.search(m)][:60])))
+          PY
