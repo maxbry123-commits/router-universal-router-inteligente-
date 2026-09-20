@@ -2,6 +2,7 @@
 
 Keys come from the server environment or, per request, from a BYOK header. They are never logged,
 stored or echoed back; error messages carry only the HTTP status and a short provider message.
+NVIDIA is listed FIRST (principal provider) and has a pool of up to 5 keys with failover (see core.py).
 """
 from __future__ import annotations
 
@@ -14,9 +15,10 @@ import urllib.request
 from typing import Any, Callable
 
 PROVIDERS: dict[str, dict[str, Any]] = {
+    "nvidia": {"label": "NVIDIA NIM (principal)", "base": "https://integrate.api.nvidia.com/v1",
+               "env": ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4", "NVIDIA_API_KEY_5")},
     "hf": {"label": "Hugging Face Router", "base": "https://router.huggingface.co/v1", "env": ("HF_TOKEN", "HF_TOKEN_1")},
     "cerebras": {"label": "Cerebras", "base": "https://api.cerebras.ai/v1", "env": ("CEREBRAS_API_KEY", "CEREBRAS_API_KEY_1")},
-    "nvidia": {"label": "NVIDIA NIM", "base": "https://integrate.api.nvidia.com/v1", "env": ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1")},
     "groq": {"label": "Groq", "base": "https://api.groq.com/openai/v1", "env": ("GROQ_API_KEY", "GROQ_API_KEY_1")},
     "deepseek": {"label": "DeepSeek API directa (caché de contexto nativa)", "base": "https://api.deepseek.com/v1", "env": ("DEEPSEEK_API_KEY",)},
     "moonshot": {"label": "Moonshot / Kimi API directa (caché de contexto nativa)", "base": "https://api.moonshot.ai/v1", "env": ("MOONSHOT_API_KEY",)},
@@ -39,14 +41,21 @@ def base_url(provider: str) -> str | None:
     return PROVIDERS[provider]["base"]
 
 
+def env_keys(provider: str) -> list[str]:
+    """All distinct non-empty keys of the provider in the server environment (pool order)."""
+    seen: list[str] = []
+    for name in PROVIDERS[provider]["env"]:
+        value = os.getenv(name)
+        if value and value not in seen:
+            seen.append(value)
+    return seen
+
+
 def resolve_key(provider: str, byok: str | None = None) -> str | None:
     if byok:
         return byok
-    for name in PROVIDERS[provider]["env"]:
-        value = os.getenv(name)
-        if value:
-            return value
-    return None
+    keys = env_keys(provider)
+    return keys[0] if keys else None
 
 
 def configured(provider: str) -> bool:
