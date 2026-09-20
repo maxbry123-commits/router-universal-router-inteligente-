@@ -1,8 +1,8 @@
 name: Deploy Chat MVP Space
 
 # Publishes the chat MVP as a Docker Space on Hugging Face and wires its secrets from GitHub Secrets.
-# Requires the GitHub secret HF_WRITE_TOKEN (HF token with write access to Spaces and the bucket).
-# Without it the job reports GAP_SECRET_MISSING and exits 0. Secret values are never printed.
+# Write token: HF_WRITE_TOKEN if present, otherwise HF_TOKEN_MAXBRY123 (fine-grained, space + user repo.write).
+# Secret values are never printed.
 
 on:
   workflow_dispatch:
@@ -13,10 +13,10 @@ on:
       bucket_id:
         description: 'Bucket de almacenamiento HF (owner/name)'
         default: 'COMAND-CENTER-1/yaiwes-v54'
-      include_github_token:
-        description: 'Pasar RIU_GITHUB_PAT_FULL_ACCESO al Space como cuenta GitHub'
+      include_github_accounts:
+        description: 'Pasar al Space las cuentas GitHub del selector (maxbry123-commits y planeta123-usa)'
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -65,12 +65,16 @@ jobs:
         env:
           SPACE_ID: ${{ inputs.space_id }}
           BUCKET_ID: ${{ inputs.bucket_id }}
-          HF_WRITE_TOKEN: ${{ secrets.HF_WRITE_TOKEN }}
+          HF_WRITE_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_MAXBRY123 }}
           S_HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           S_CEREBRAS: ${{ secrets.CEREBRAS_API_KEY_1 }}
           S_NVIDIA: ${{ secrets.NVIDIA_API_KEY_1 }}
           S_GROQ: ${{ secrets.GROQ_API_KEY_1 }}
-          S_GITHUB: ${{ inputs.include_github_token && secrets.RIU_GITHUB_PAT_FULL_ACCESO || '' }}
+          S_DEEPSEEK: ${{ secrets.DEEPSEEK_API_KEY }}
+          S_MOONSHOT: ${{ secrets.MOONSHOT_API_KEY }}
+          S_MINIMAX: ${{ secrets.MINIMAX_API_KEY }}
+          S_GH_FINE: ${{ inputs.include_github_accounts && secrets.GH_PAT_FINE_FULL || '' }}
+          S_GH_PLANETA: ${{ inputs.include_github_accounts && secrets.GH_ACCOUNT_3 || '' }}
         run: |
           python - <<'PY'
           import json, os
@@ -81,18 +85,24 @@ jobs:
 
           tok = os.environ.get("HF_WRITE_TOKEN", "")
           if not tok:
-              warn("RIU_DEPLOY", "GAP_SECRET_MISSING:HF_WRITE_TOKEN (crear en GitHub Secrets un token HF con permiso de escritura en Spaces y en el bucket)")
+              warn("RIU_DEPLOY", "GAP_SECRET_MISSING:HF_WRITE_TOKEN")
               raise SystemExit(0)
           api, space, bucket = HfApi(token=tok), os.environ["SPACE_ID"], os.environ["BUCKET_ID"]
           try:
               api.create_repo(space, repo_type="space", space_sdk="docker", exist_ok=True)
-              api.upload_folder(folder_path="/tmp/space", repo_id=space, repo_type="space", commit_message="deploy: RIU chat MVP")
-              note("RIU_DEPLOY_SPACE", "uploaded %s" % space)
+              note("RIU_DEPLOY_CREATE", "space %s ready" % space)
           except Exception as e:
-              warn("RIU_DEPLOY_SPACE", "FAIL %s" % type(e).__name__)
+              warn("RIU_DEPLOY_CREATE", "FAIL %s %s" % (type(e).__name__, str(e)[:120].replace(tok, "***")))
               raise SystemExit(0)
-          secrets_map = {"HF_TOKEN": "S_HF_TOKEN", "CEREBRAS_API_KEY": "S_CEREBRAS", "NVIDIA_API_KEY": "S_NVIDIA",
-                         "GROQ_API_KEY": "S_GROQ", "GITHUB_TOKEN_1": "S_GITHUB", "HF_WRITE_TOKEN": "HF_WRITE_TOKEN"}
+          try:
+              api.upload_folder(folder_path="/tmp/space", repo_id=space, repo_type="space", commit_message="deploy: RIU chat MVP")
+              note("RIU_DEPLOY_UPLOAD", "uploaded")
+          except Exception as e:
+              warn("RIU_DEPLOY_UPLOAD", "FAIL %s %s" % (type(e).__name__, str(e)[:120].replace(tok, "***")))
+              raise SystemExit(0)
+          secrets_map = {"HF_TOKEN": "S_HF_TOKEN", "CEREBRAS_API_KEY": "S_CEREBRAS", "NVIDIA_API_KEY": "S_NVIDIA", "GROQ_API_KEY": "S_GROQ",
+                         "DEEPSEEK_API_KEY": "S_DEEPSEEK", "MOONSHOT_API_KEY": "S_MOONSHOT", "MINIMAX_API_KEY": "S_MINIMAX",
+                         "GH_PAT_FINE_FULL": "S_GH_FINE", "GH_ACCOUNT_3": "S_GH_PLANETA", "HF_WRITE_TOKEN": "HF_WRITE_TOKEN"}
           done, skipped = [], []
           for name, env in secrets_map.items():
               value = os.environ.get(env, "")
@@ -105,8 +115,13 @@ jobs:
               except Exception as e:
                   skipped.append(name + ":" + type(e).__name__)
           variables = {"RIU_CHAT_ALLOW_PROVIDER_LIVE": "1", "RIU_DATA_DIR": "/data", "HF_BUCKET_ID": bucket}
-          if os.environ.get("S_GITHUB"):
-              variables["RIU_GITHUB_ACCOUNTS"] = json.dumps({"maxbry123-commits": "GITHUB_TOKEN_1"})
+          if os.environ.get("S_GH_FINE") or os.environ.get("S_GH_PLANETA"):
+              accounts = {}
+              if os.environ.get("S_GH_FINE"):
+                  accounts["maxbry123-commits"] = "GH_PAT_FINE_FULL"
+              if os.environ.get("S_GH_PLANETA"):
+                  accounts["planeta123-usa"] = "GH_ACCOUNT_3"
+              variables["RIU_GITHUB_ACCOUNTS"] = json.dumps(accounts)
           for name, value in variables.items():
               try:
                   api.add_space_variable(space, name, value)
@@ -118,6 +133,11 @@ jobs:
               api.set_space_volumes(space, volumes=[Volume(type="bucket", source=bucket, mount_path="/data")])
               note("RIU_DEPLOY_VOLUME", "bucket %s mounted at /data" % bucket)
           except Exception as e:
-              warn("RIU_DEPLOY_VOLUME", "GAP_VOLUME_MOUNT:%s (montar el bucket en Settings del Space como volumen /data)" % type(e).__name__)
+              warn("RIU_DEPLOY_VOLUME", "GAP_VOLUME_MOUNT:%s" % type(e).__name__)
+          try:
+              rt = api.get_space_runtime(space)
+              note("RIU_DEPLOY_RUNTIME", "stage=%s" % getattr(rt, "stage", "?"))
+          except Exception as e:
+              warn("RIU_DEPLOY_RUNTIME", type(e).__name__)
           note("RIU_DEPLOY_URL", "https://%s.hf.space" % space.replace("/", "-").replace("_", "-").lower())
           PY
