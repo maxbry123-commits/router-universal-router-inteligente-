@@ -1,0 +1,93 @@
+schema: chat-mvp.groups/v1
+updated: "2026-09-20"
+sources:
+  - "RIU-0107 (INPUT BLOCK 05): listas de modelos por grupo del Director"
+  - "RIU-0109 (respuestas del Director): ambas LFM2; eliminados MiroThinker-8B y yasserrmd/Neuro-Orchestrator-8B"
+  - "Auditoría del catálogo del router de Hugging Face: run 35489878690 (138 modelos, 2026-09-20)"
+
+runtime_classes:
+  serverless_verified: "Aparece en el catálogo del router de Hugging Face (Inference Providers). inference_smoke indica si se probó una respuesta real."
+  hf_job_fallback: "Sin proveedor serverless. Se serviría en un HF Job efímero con pesos leídos desde hf:// en solo lectura. Requiere la enmienda HF_JOB_EPHEMERAL_SERVING (S7.4) y la prueba S7.3."
+  pending_definition: "Falta definir el modelo exacto o su runtime."
+
+removed_by_director:
+  - "MiroThinker-8B"
+  - "yasserrmd/Neuro-Orchestrator-8B"
+
+chat_selector_families:
+  description: "Modelos pedidos para el selector del chat (Paso 1). Ver integration/huggingface/chat_catalog.py."
+  models:
+    - {name: "Kimi K3", model_id: "moonshotai/Kimi-K3", runtime: serverless_verified, inference_smoke: "PASS run 35489744898"}
+    - {name: "MiniMax M3", model_id: "MiniMaxAI/MiniMax-M3", runtime: serverless_verified, inference_smoke: "PASS run 35489744898"}
+    - {name: "DeepSeek V4 Flash", model_id: "deepseek-ai/DeepSeek-V4-Flash", runtime: serverless_verified, inference_smoke: "PASS run 35489744898"}
+    - {name: "DeepSeek V4 Pro", model_id: "deepseek-ai/DeepSeek-V4-Pro", runtime: serverless_verified, inference_smoke: "PASS run 35489744898"}
+
+groups:
+  group_0_orquestador:
+    description: "Command Center + modelos de orquestación y razonamiento"
+    command_center: true
+    models:
+      - {name: "LFM2.5-8B-A1B", model_id: "LiquidAI/LFM2.5-8B-A1B", role: "subagentes, loops agentic", runtime: hf_job_fallback}
+      - {name: "OpenThinker3-7B", model_id: "open-thoughts/OpenThinker3-7B", role: "razonamiento", runtime: hf_job_fallback}
+
+  group_1_seals_team_yaiwes:
+    description: "Enjambre Seals Team YAIWES (50+ agentes). El router cambia de modelos según el tipo de trabajo."
+    architecture_and_decisions_no_code:
+      - {name: "LFM2-2.6B", model_id: "LiquidAI/LFM2-2.6B", role: "worker rápido, clasificación y extracción", runtime: hf_job_fallback, note: "modelo anterior; el Director pidió registrar ambas"}
+      - {name: "LFM2.5-2.6B", model_id: "LiquidAI/LFM2.5-2.6B", role: "nueva generación, contexto 131072", runtime: hf_job_fallback}
+      - {name: "Nemotron Nano 9B v2", model_id: "nvidia/NVIDIA-Nemotron-Nano-9B-v2", role: "razonamiento, arquitectura y reparación", runtime: hf_job_fallback}
+      - {name: "Nanbeige4.2-3B", model_id: "Nanbeige/Nanbeige4.2-3B", role: "código / agentic", runtime: hf_job_fallback}
+      - {name: "Qwen3-0.6B", model_id: "Qwen/Qwen3-0.6B", role: "ultraligero, router, worker", runtime: hf_job_fallback, note: "503 en el gateway: ningún proveedor lo sirve (run 35489744898)"}
+      - {name: "Qwen2.5-1.5B-Instruct", model_id: "Qwen/Qwen2.5-1.5B-Instruct", role: "worker ligero", runtime: hf_job_fallback, id_verified: false}
+      - {name: "Qwen2.5-0.5B-Instruct", model_id: "Qwen/Qwen2.5-0.5B-Instruct", role: "worker ultraligero", runtime: hf_job_fallback, id_verified: false}
+    code_work:
+      - {name: "Qwen3.5-9B", model_id: "Qwen/Qwen3.5-9B", role: "código principal", runtime: serverless_verified, inference_smoke: null}
+      - {name: "KAT-Coder Q5", model_id: "Kwaipilot/KAT-Coder-V2.5-Dev", role: "código, reparación y escalamiento (Q5 = GGUF cuantizado de terceros)", runtime: hf_job_fallback, gguf_candidates: ["bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF", "mudler/KAT-Coder-V2.5-Dev-APEX-GGUF"]}
+      - {name: "Seed-Coder 8B", model_id: "ByteDance-Seed/Seed-Coder-8B-Instruct", role: "código, reparación y escalamiento", runtime: hf_job_fallback}
+
+  group_2_pool_20_agentes:
+    description: "Pool de 20 agentes del Wordflow Loop Code YAIWES"
+    ram_limit_gb: 26
+    ram_note: "Límite pedido por el Director para modelos locales cuantizados; no aplica a modelos en Jobs o Inference Providers."
+    models:
+      - {name: "Muse Glimmer 30B", model_id: "meta-models/Muse-Glimmer-30B", role: "código / agentic, multimodal", runtime: serverless_verified, inference_smoke: null}
+      - {name: "Laguna XS 2.1", model_id: "poolside/Laguna-XS-2.1", role: "código / agentic, router, long-horizon (33B total, 3B activos)", runtime: hf_job_fallback}
+      - {name: "DeepSeek-Coder", model_id: null, role: "código", runtime: pending_definition, note: "variante/peso no especificado por el Director"}
+      - {name: "DeepSeek V4 Flash", model_id: "deepseek-ai/DeepSeek-V4-Flash", role: "escalamiento por saturación o latencia", runtime: serverless_verified, inference_smoke: "PASS run 35489744898"}
+    cascade:
+      status: "PASO_3_NO_IMPLEMENTADO"
+      order:
+        - "4 API de NVIDIA y Cerebras"
+        - "API locales del grupo 2"
+        - "DeepSeek V4 Flash (API)"
+    compute_policy:
+      status: "PASO_3_NO_IMPLEMENTADO"
+      note: "Si se saturan 3 procesadores saltar a 7 más; al llegar a 10 o con mucha latencia, escalar solo a DeepSeek V4 Flash para el grupo 2."
+
+  frontend_fabrica_ui:
+    description: "Pendiente de clasificación por el Director"
+    models_serverless_verified:
+      - "ibm-granite/granite-4.2-3b"
+      - "ibm-granite/granite-4.2-8b"
+      - "ibm-granite/granite-4.2-30b"
+      - "google/gemma-4-26B-A4B-it"
+      - "google/gemma-4-31B-it"
+      - "inclusionAI/Ling-3.0-flash"
+      - "inclusionAI/Ling-3.0-flash-VL"
+      - "prism-ml/Ternary-Bonsai-27B-gguf"
+    models_without_serverless_provider:
+      - "OLMo-3-7B-RL-Zero"
+      - "OTel-2.0-LLM-31B-IT"
+      - "Skywork-OR1-Math-7B"
+      - "CrystalSonic-4B"
+      - "Hunyuan-7B-Instruct"
+      - "Yuan3.0-Flash"
+      - "OPT-125M"
+      - "Granite-4.0-7B"
+    media_models_not_llm_serving:
+      - "Kandinsky-5.0-T2I-Lite"
+      - "Qwen-Image"
+      - "FLUX.1-schnell"
+      - "Wan2.2-Animate-14B"
+      - "LTX-Video"
+      - "HunyuanVideo"
