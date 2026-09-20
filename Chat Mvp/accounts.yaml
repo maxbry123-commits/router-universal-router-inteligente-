@@ -1,27 +1,30 @@
 schema: chat-mvp.accounts/v1
 updated: "2026-09-20"
-rule: "Este archivo guarda SOLO alias y logins públicos. Los tokens viven en el Secret Bank (S2) referenciados como credential_ref; jamás aquí."
+rule: "Este archivo guarda SOLO alias, logins públicos y NOMBRES de secrets. Los valores viven en el Secret Bank (S2) referenciados como credential_ref; jamás aquí."
 default_mode: read_only
 github_accounts:
   - alias: maxbry123
     director_label: "Maxbry 123"
     login: "maxbry123-commits"
-    login_status: "presunto: es el dueño de este repo; sin confirmar que coincida con la cuenta del token que el Director pegó en el chat"
+    login_status: "dueño de este repo; el token guardado como secret coincide por nombre (sin verificar con una llamada)"
     credential_ref: "github/maxbry123"
+    temporary_secret_source: {repo: "maxbry123-commits/agentes", secret_name: "MAXBRY_123_TOKENS", name_match: "por nombre"}
     mode: read_only
     repo_allowlist: []
   - alias: abc123
     director_label: "abc123"
-    login: null
-    login_status: "PENDING_LOGIN: no aparece en agentes, frontend ni router; el Director debe dar el login público"
+    login: "abc1tienda-web"
+    login_status: "confirmado por captura de pantalla del Director (perfil abc1tienda-web, sin repositorios)"
     credential_ref: "github/abc123"
+    temporary_secret_source: {repo: "maxbry123-commits/agentes", secret_name: "EXTERNAL_GH_B_TOKEN", name_match: "presunto (cuenta B); sin verificar"}
     mode: read_only
     repo_allowlist: []
   - alias: planeta123
-    director_label: "planeta 123"
-    login: null
-    login_status: "PENDING_LOGIN: no aparece en agentes, frontend ni router; el Director debe dar el login público"
+    director_label: "planeta 123 usa"
+    login: "planeta123-usa"
+    login_status: "confirmado por captura de pantalla del Director (perfil público con el repo Agentes-)"
     credential_ref: "github/planeta123"
+    temporary_secret_source: {repo: "maxbry123-commits/agentes", secret_name: "PLANETA_123_USA_CUENTA_C", name_match: "por nombre (cuenta C); sin verificar"}
     mode: read_only
     repo_allowlist: []
 huggingface_accounts:
@@ -29,3 +32,8 @@ huggingface_accounts:
     login: "COMAND-CENTER-1"
     credential_ref: "huggingface/primary"
     note: "Token de CI HF_TOKEN_1 (full access sobre esta cuenta) permanece en GitHub Secrets solo para el despliegue (D4)."
+model_provider_secrets_found_in_github:
+  - {repo: "maxbry123-commits/router-universal-router-inteligente-", names: ["CEREBRAS_API_KEY_1..6", "HF_TOKEN_1", "RIU_GITHUB_PAT_FULL_ACCESO"]}
+  - {repo: "maxbry123-commits/agentes", names: ["GROQ_API_KEY_1..7", "YAIWES_PUSH_TOKEN", "EXTERNAL_GH_B_TOKEN", "MAXBRY_123_TOKENS", "PLANETA_123_USA_CUENTA_C"]}
+  - {repo: "frontend, comand-Center, Yaiwes, Agentes-motores-Wordflow-YAIWES", names: []}
+not_found_anywhere_checked: ["NVIDIA_API_KEY_*", "DEEPSEEK_API_KEY", "MINIMAX_API_KEY", "KIMI/MOONSHOT_API_KEY"]
