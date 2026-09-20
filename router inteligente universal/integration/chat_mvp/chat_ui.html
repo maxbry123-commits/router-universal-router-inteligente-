@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat RIU — Router Inteligente Universal</title>
+<style>
+  :root { --bg:#faf9f5; --fg:#1f1e1d; --mut:#6b6a68; --card:#fff; --line:#e4e1d8; --acc:#c96442; --warn:#a15c00; --err:#b3261e; --ok:#2f7d4f; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#262624; --fg:#f0eee6; --mut:#a3a19a; --card:#30302e; --line:#41403d; --acc:#d97757; --warn:#e0a458; --err:#f2857d; --ok:#6fcf97; } }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { background:var(--bg); color:var(--fg); font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; display:flex; flex-direction:column; }
+  header { padding:8px 12px; border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  header h1 { font-size:16px; margin:0 auto 0 0; }
+  select, input, textarea, button { font:inherit; color:inherit; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 9px; max-width:100%; }
+  button { background:var(--acc); color:#fff; border:none; cursor:pointer; }
+  button.sec { background:var(--card); color:var(--fg); border:1px solid var(--line); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  #pill { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--mut); }
+  main { flex:1; min-height:0; display:grid; grid-template-columns:1fr 360px; }
+  @media (max-width:900px) { main { grid-template-columns:1fr; grid-template-rows:1fr auto; } #panel { max-height:45vh; } }
+  #chat { display:flex; flex-direction:column; min-height:0; }
+  #bar { padding:8px 12px; display:flex; flex-wrap:wrap; gap:6px; border-bottom:1px solid var(--line); align-items:center; }
+  #log { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px; }
+  .msg { max-width:min(760px, 94%); padding:9px 12px; border-radius:12px; border:1px solid var(--line); background:var(--card); white-space:pre-wrap; word-wrap:break-word; }
+  .user { align-self:flex-end; background:var(--acc); color:#fff; border-color:transparent; }
+  .meta { font-size:12px; color:var(--mut); margin-top:5px; } .meta.warn { color:var(--warn); }
+  .error { border-color:var(--err); color:var(--err); }
+  #chips { padding:0 12px; display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { font-size:12px; padding:2px 8px; border-radius:999px; background:var(--card); border:1px solid var(--line); }
+  #compose { padding:8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); border-top:1px solid var(--line); display:flex; gap:8px; }
+  textarea { flex:1; resize:none; min-height:44px; max-height:140px; }
+  #panel { border-left:1px solid var(--line); overflow-y:auto; padding:8px 12px; }
+  #tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+  #tabs button { padding:4px 8px; font-size:13px; }
+  #tabs button.on { background:var(--acc); color:#fff; }
+  .tab { display:none; } .tab.on { display:block; }
+  .row { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; align-items:center; }
+  .item { border:1px solid var(--line); border-radius:8px; padding:6px 8px; margin:6px 0; font-size:13px; background:var(--card); }
+  pre { margin:0; white-space:pre-wrap; font-size:12px; }
+  label.k { display:block; font-size:12px; color:var(--mut); margin-top:6px; }
+  .k input { width:100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Chat RIU</h1>
+  <span id="pill">sin conectar</span>
+  <input id="riukey" type="password" placeholder="API key del Router (MAXBRY-…)" autocomplete="off" style="width:230px">
+  <button id="connect">Conectar</button>
+</header>
+<main>
+  <section id="chat">
+    <div id="bar">
+      <select id="provider" aria-label="Proveedor"></select>
+      <select id="model" aria-label="Modelo" style="flex:1;min-width:180px"></select>
+      <select id="mode" aria-label="Modo"><option value="direct">Sin agente</option><option value="agent">Con agente</option></select>
+      <select id="agent" aria-label="Agente" style="display:none"></select>
+      <label><input id="cache" type="checkbox"> caché</label>
+      <button class="sec" id="newchat">Nuevo chat</button>
+    </div>
+    <div id="log" aria-live="polite"></div>
+    <div id="chips"></div>
+    <div id="compose">
+      <textarea id="input" rows="1" placeholder="Escribe un mensaje…  (Enter envía, Shift+Enter nueva línea)"></textarea>
+      <button id="send">Enviar</button>
+    </div>
+  </section>
+  <aside id="panel">
+    <div id="tabs"></div>
+    <div class="tab" data-t="Documentos">
+      <div class="row"><input id="file" type="file" multiple><span class="meta">Sube archivos: quedan en el almacenamiento y puedes adjuntarlos al chat.</span></div>
+      <div id="docs"></div>
+    </div>
+    <div class="tab" data-t="GitHub">
+      <div class="row"><select id="ghacc"></select><button class="sec" id="ghwho">Verificar</button><span id="ghlogin" class="meta"></span></div>
+      <div class="row"><select id="ghrepo" style="flex:1"></select><button class="sec" id="ghrepos">Cargar repos</button></div>
+      <div class="row"><input id="ghpath" placeholder="ruta/archivo.md" style="flex:1"><button class="sec" id="ghread">Leer y adjuntar</button></div>
+      <div class="row"><input id="ghmsg" placeholder="mensaje de commit" style="flex:1" value="chat: update from RIU chat"><button id="ghcommit">Guardar última respuesta</button></div>
+      <div id="ghout" class="meta"></div>
+    </div>
+    <div class="tab" data-t="Agentes">
+      <div id="agents"></div>
+      <label class="k">id (minúsculas)<input id="ag_id"></label><label class="k">nombre<input id="ag_name"></label>
+      <label class="k">rol<input id="ag_role" value="general"></label><label class="k">system prompt<textarea id="ag_prompt" rows="3" style="width:100%"></textarea></label>
+      <div class="row"><button id="ag_save">Guardar agente</button></div>
+    </div>
+    <div class="tab" data-t="Almacenamiento">
+      <div class="row"><button class="sec" id="st_refresh">Actualizar</button><button id="st_sync">Sincronizar con bucket HF</button></div>
+      <pre id="st_out"></pre>
+    </div>
+    <div class="tab" data-t="Claves">
+      <div class="meta">Claves solo en memoria de esta pestaña (no se guardan). Si el servidor ya las tiene, déjalas vacías.</div>
+      <div id="keys"></div>
+      <label class="k">GitHub token (cuenta adicional «byok»)<input id="k_gh" type="password" autocomplete="off"></label>
+    </div>
+  </aside>
+</main>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var S = { keys: {}, conv: null, lastReply: '', docs: [], attach: {}, providers: [] };
+  var TABS = ['Documentos', 'GitHub', 'Agentes', 'Almacenamiento', 'Claves'];
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function add(text, cls, meta, mcls) {
+    var d = el('div', 'msg ' + (cls || ''), text);
+    if (meta) d.appendChild(el('div', 'meta ' + (mcls || ''), meta));
+    $('log').appendChild(d); $('log').scrollTop = $('log').scrollHeight; return d;
+  }
+  function headers(extra) {
+    var h = { 'Content-Type': 'application/json', 'X-API-Key': $('riukey').value };
+    var pk = S.keys[$('provider').value]; if (pk) h['X-Provider-Key'] = pk;
+    var gk = $('k_gh').value; if (gk && $('ghacc').value === 'byok') h['X-GitHub-Token'] = gk;
+    for (var k in (extra || {})) h[k] = extra[k];
+    return h;
+  }
+  function api(path, opt) {
+    opt = opt || {}; opt.headers = headers(opt.headers);
+    return fetch(path, opt).then(function (r) {
+      return r.json().then(function (j) { return { status: r.status, body: j }; }, function () { return { status: r.status, body: {} }; });
+    });
+  }
+  function fail(res) { return 'Error ' + res.status + ': ' + (res.body.detail || JSON.stringify(res.body)); }
+
+  TABS.forEach(function (name, i) {
+    var b = el('button', 'sec', name); b.onclick = function () { show(name); }; b.dataset.t = name; $('tabs').appendChild(b);
+  });
+  function show(name) {
+    document.querySelectorAll('#tabs button').forEach(function (b) { b.className = b.dataset.t === name ? 'on' : 'sec'; });
+    document.querySelectorAll('.tab').forEach(function (t) { t.className = 'tab' + (t.dataset.t === name ? ' on' : ''); });
+  }
+  show('Documentos');
+
+  function buildKeys() {
+    $('keys').textContent = '';
+    S.providers.forEach(function (p) {
+      var l = el('label', 'k', p.label + (p.configured ? '  (servidor: configurado)' : '  (servidor: sin clave)'));
+      var i = el('input'); i.type = 'password'; i.autocomplete = 'off'; i.placeholder = 'BYOK ' + p.id;
+      i.oninput = function () { S.keys[p.id] = i.value; }; l.appendChild(i); $('keys').appendChild(l);
+    });
+  }
+
+  function loadModels() {
+    var p = $('provider').value; $('model').textContent = '';
+    return api('/chat/providers/' + p + '/models').then(function (res) {
+      if (res.status !== 200) { add(fail(res), 'error'); return; }
+      var first = null;
+      res.body.models.forEach(function (m) {
+        var o = el('option'); o.value = m.model_id || '';
+        var tag = m.certified ? 'certificado' : (m.state || '');
+        o.textContent = (m.suggested ? '★ ' : '') + (m.label || m.model_id) + (m.model_id && m.label !== m.model_id ? ' — ' + m.model_id : '') + '  [' + tag + (m.selectable ? '' : ' · no disponible: ' + (m.reason || '')) + ']';
+        o.disabled = !m.selectable; $('model').appendChild(o);
+        if (m.selectable && !first) first = o;
+      });
+      if (first) first.selected = true;
+    });
+  }
+
+  function loadAgents() {
+    return api('/chat/agents').then(function (res) {
+      if (res.status !== 200) return;
+      $('agent').textContent = ''; $('agents').textContent = '';
+      res.body.agents.forEach(function (a) {
+        var o = el('option', '', a.name + ' (' + a.id + ')'); o.value = a.id; $('agent').appendChild(o);
+        var d = el('div', 'item'); d.appendChild(el('b', '', a.name)); d.appendChild(el('div', 'meta', a.id + ' · ' + a.role));
+        var del = el('button', 'sec', 'Borrar'); del.onclick = function () { api('/chat/agents/' + a.id, { method: 'DELETE' }).then(loadAgents); };
+        d.appendChild(del); $('agents').appendChild(d);
+      });
+    });
+  }
+
+  function loadDocs() {
+    return api('/chat/documents').then(function (res) {
+      if (res.status !== 200) return;
+      $('docs').textContent = '';
+      res.body.documents.forEach(function (d) {
+        var box = el('div', 'item'); box.appendChild(el('b', '', d.name)); box.appendChild(el('div', 'meta', d.mime + ' · ' + d.size + ' B' + (d.is_text ? '' : ' · no legible como texto')));
+        var row = el('div', 'row');
+        if (d.is_text) { var c = el('input'); c.type = 'checkbox'; c.checked = !!S.attach[d.id]; c.onchange = function () { if (c.checked) S.attach[d.id] = d.name; else delete S.attach[d.id]; chips(); }; row.appendChild(c); row.appendChild(el('span', 'meta', 'adjuntar')); }
+        var del = el('button', 'sec', 'Borrar'); del.onclick = function () { delete S.attach[d.id]; chips(); api('/chat/documents/' + d.id, { method: 'DELETE' }).then(loadDocs); };
+        row.appendChild(del); box.appendChild(row); $('docs').appendChild(box);
+      });
+    });
+  }
+  function chips() {
+    $('chips').textContent = '';
+    Object.keys(S.attach).forEach(function (id) { $('chips').appendChild(el('span', 'chip', '📎 ' + S.attach[id])); });
+  }
+
+  function b64(buf) { var s = '', a = new Uint8Array(buf); for (var i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.subarray(i, i + 8192)); return btoa(s); }
+  $('file').onchange = function () {
+    Array.prototype.forEach.call($('file').files, function (f) {
+      f.arrayBuffer().then(function (buf) {
+        return api('/chat/documents', { method: 'POST', body: JSON.stringify({ name: f.name, mime: f.type || 'application/octet-stream', data_b64: b64(buf), conversation_id: S.conv }) });
+      }).then(function (res) { if (res.status !== 200) add(fail(res), 'error'); return loadDocs(); });
+    });
+    $('file').value = '';
+  };
+
+  function loadStorage() { return api('/chat/storage').then(function (res) { $('st_out').textContent = JSON.stringify(res.body, null, 2); }); }
+  $('st_refresh').onclick = loadStorage;
+  $('st_sync').onclick = function () { api('/chat/storage/sync', { method: 'POST' }).then(function (res) { $('st_out').textContent = res.status === 200 ? 'Sincronizado: ' + JSON.stringify(res.body) : fail(res); }); };
+
+  function loadGh() {
+    return api('/chat/github/accounts').then(function (res) {
+      if (res.status !== 200) return; $('ghacc').textContent = '';
+      res.body.accounts.forEach(function (a) { var o = el('option', '', a.account + (a.configured ? '' : ' (sin token)')); o.value = a.account; $('ghacc').appendChild(o); });
+      if (!res.body.accounts.length) $('ghacc').appendChild(el('option', '', 'byok (pega token en Claves)')).value = 'byok';
+    });
+  }
+  $('ghwho').onclick = function () { api('/chat/github/whoami?account=' + encodeURIComponent($('ghacc').value)).then(function (res) { $('ghlogin').textContent = res.status === 200 ? '→ ' + res.body.login : fail(res); }); };
+  $('ghrepos').onclick = function () {
+    api('/chat/github/repos?account=' + encodeURIComponent($('ghacc').value)).then(function (res) {
+      $('ghrepo').textContent = ''; if (res.status !== 200) { $('ghout').textContent = fail(res); return; }
+      res.body.repos.forEach(function (r) { var o = el('option', '', r.full_name + (r.private ? ' 🔒' : '')); o.value = r.full_name; $('ghrepo').appendChild(o); });
+    });
+  };
+  $('ghread').onclick = function () {
+    var q = '?account=' + encodeURIComponent($('ghacc').value) + '&repo=' + encodeURIComponent($('ghrepo').value) + '&path=' + encodeURIComponent($('ghpath').value) + '&attach=true';
+    api('/chat/github/file' + q).then(function (res) {
+      if (res.status !== 200) { $('ghout').textContent = fail(res); return; }
+      S.attach[res.body.document.id] = res.body.document.name; chips(); loadDocs(); $('ghout').textContent = 'Adjuntado: ' + res.body.document.name;
+    });
+  };
+  $('ghcommit').onclick = function () {
+    if (!S.lastReply) { $('ghout').textContent = 'No hay respuesta para guardar.'; return; }
+    api('/chat/github/commit', { method: 'POST', body: JSON.stringify({ account: $('ghacc').value, repo: $('ghrepo').value, path: $('ghpath').value, content: S.lastReply, message: $('ghmsg').value }) })
+      .then(function (res) { $('ghout').textContent = res.status === 200 ? 'Commit ' + res.body.commit.slice(0, 8) + ' en ' + $('ghrepo').value + '/' + res.body.path : fail(res); });
+  };
+
+  $('ag_save').onclick = function () {
+    api('/chat/agents', { method: 'POST', body: JSON.stringify({ id: $('ag_id').value, name: $('ag_name').value, role: $('ag_role').value, system_prompt: $('ag_prompt').value, models: [] }) })
+      .then(function (res) { if (res.status !== 200) add(fail(res), 'error'); else loadAgents(); });
+  };
+
+  $('mode').onchange = function () { $('agent').style.display = $('mode').value === 'agent' ? '' : 'none'; };
+  $('provider').onchange = loadModels;
+  $('newchat').onclick = function () { S.conv = null; S.lastReply = ''; $('log').textContent = ''; };
+
+  $('connect').onclick = function () {
+    $('pill').textContent = 'conectando…';
+    fetch('/chat/providers').then(function (r) { return r.json(); }).then(function (data) {
+      S.providers = data.providers; $('provider').textContent = '';
+      data.providers.forEach(function (p) { var o = el('option', '', p.label + (p.configured ? '' : ' · sin clave en servidor')); o.value = p.id; $('provider').appendChild(o); });
+      $('pill').textContent = data.live_provider_inference ? 'conectado · proveedores en vivo: ACTIVOS' : 'conectado · en vivo: desactivado';
+      buildKeys();
+      return Promise.all([loadModels(), loadAgents(), loadDocs(), loadStorage(), loadGh()]);
+    }).catch(function (e) { $('pill').textContent = 'error'; add('No se pudo conectar: ' + e, 'error'); });
+  };
+
+  function explain(res) {
+    var d = res.body.detail || '';
+    if (res.status === 401) return 'API key del Router ausente o inválida.';
+    if (res.status === 400) return 'Petición rechazada: ' + d;
+    if (res.status === 502) return 'El proveedor falló: ' + d;
+    return fail(res);
+  }
+
+  function submit() {
+    var text = $('input').value.trim(), model = $('model').value;
+    if (!text || !model) return;
+    $('input').value = ''; $('send').disabled = true; add(text, 'user'); var wait = add('…');
+    var body = { message: text, provider: $('provider').value, model: model, conversation_id: S.conv, mode: $('mode').value,
+                 agent_id: $('mode').value === 'agent' ? $('agent').value : null, doc_ids: Object.keys(S.attach), cache: $('cache').checked, max_tokens: 1024 };
+    if ($('ghrepo').value) body.github = { account: $('ghacc').value, repo: $('ghrepo').value };
+    api('/chat/send', { method: 'POST', body: JSON.stringify(body) }).then(function (res) {
+      wait.remove();
+      if (res.status !== 200) { add(explain(res), 'error'); return; }
+      var b = res.body; S.conv = b.conversation_id || S.conv;
+      var meta = b.provider + '/' + b.model + (b.certified ? ' · certificado' : ' · no certificado') + (b.cached ? ' · caché' : '') + (b.agent_id ? ' · agente ' + b.agent_id : '');
+      if (b.empty) { add('(El modelo devolvió texto vacío; probablemente agotó max_tokens razonando. Reintenta o cambia de modelo.)', 'error', meta + ' · finish=' + b.finish_reason, 'warn'); return; }
+      S.lastReply = b.reply; add(b.reply, '', meta, b.certified ? '' : 'warn'); loadStorage();
+    }).catch(function (e) { wait.remove(); add('Error de red: ' + e, 'error'); }).then(function () { $('send').disabled = false; $('input').focus(); });
+  }
+  $('send').onclick = submit;
+  $('input').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
+})();
+</script>
+</body>
+</html>
