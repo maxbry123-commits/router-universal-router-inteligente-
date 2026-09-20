@@ -1,0 +1,202 @@
+name: RIU HF Job Serving Smoke
+
+# S7.3 del plan RIU-0108: mide arranque en frío, latencia en caliente y coste de servir modelos SIN proveedor serverless
+# con Hugging Face Jobs (pesos leídos desde el Hub, sin copia persistente).
+# Autorizado por el Director ("Arranca prueba prueba latencia y arranque y costo"). Coste esperado: menos de 1 USD.
+# Salvaguardas: --timeout 20m en cada Job, cancelación en finally y un paso final que cancela cualquier Job que quede.
+# El token solo va por entorno; nunca se imprime.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-hf-job-serving-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install huggingface_hub CLI
+        run: pip install -U "huggingface_hub[cli]"
+
+      - name: Run the three serving tests
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import json, os, re, subprocess, sys, time, urllib.error, urllib.request
+
+          TOKEN = os.environ["HF_TOKEN"]
+          HDR = {"Authorization": "Bearer " + TOKEN, "Content-Type": "application/json"}
+          from huggingface_hub import HfApi
+          api = HfApi(token=TOKEN)
+          MODEL = "LiquidAI/LFM2.5-8B-A1B"
+          PRICE = {"a10g-small": 1.00, "cpu-upgrade": 0.03}
+          EXPOSE_FEE = 0.01  # USD/h por puerto expuesto según el Director; no verificado
+
+          def scrub(text):
+              return re.sub(r"hf_[A-Za-z0-9]{20,}", "hf_***", text or "")
+
+          def note(level, title, msg):
+              print("::%s title=%s::%s" % (level, title, scrub(msg).replace("\n", " | ")[:1800]))
+
+          TESTS = [
+              {"name": "A_vllm_bf16_download_a10g", "flavor": "a10g-small", "port": 8000, "health": "/health", "model": MODEL,
+               "cmd": ["vllm/vllm-openai", "--", "vllm", "serve", MODEL, "--max-model-len", "8192"], "mount": None},
+              {"name": "B_llamacpp_q4_mounted_a10g", "flavor": "a10g-small", "port": 8080, "health": "/health", "model": "model",
+               "cmd": ["ghcr.io/ggml-org/llama.cpp:server-cuda", "--", "/app/llama-server", "--model", "/model/LFM2.5-8B-A1B-Q4_K_M.gguf",
+                       "--host", "0.0.0.0", "--port", "8080", "-ngl", "99"],
+               "mount": "hf://LiquidAI/LFM2.5-8B-A1B-GGUF:/model:ro"},
+              {"name": "C_llamacpp_q4_mounted_cpu", "flavor": "cpu-upgrade", "port": 8080, "health": "/health", "model": "model",
+               "cmd": ["ghcr.io/ggml-org/llama.cpp:server", "--", "/app/llama-server", "--model", "/model/LFM2.5-8B-A1B-Q4_K_M.gguf",
+                       "--host", "0.0.0.0", "--port", "8080"],
+               "mount": "hf://LiquidAI/LFM2.5-8B-A1B-GGUF:/model:ro"},
+          ]
+
+          def http(url, body=None, timeout=20):
+              req = urllib.request.Request(url, data=body, headers=HDR)
+              return urllib.request.urlopen(req, timeout=timeout)
+
+          def chat(base, model, prompt, max_tokens=64):
+              body = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens,
+                                 "stream": True, "stream_options": {"include_usage": True}}).encode()
+              t0 = time.time(); first = None; pieces = 0; usage = None
+              with http(base + "/v1/chat/completions", body, timeout=180) as r:
+                  for raw in r:
+                      line = raw.decode("utf-8", "replace").strip()
+                      if not line.startswith("data:"):
+                          continue
+                      data = line[5:].strip()
+                      if data == "[DONE]":
+                          break
+                      j = json.loads(data)
+                      if j.get("usage"):
+                          usage = j["usage"]
+                      for ch in j.get("choices", []):
+                          d = ch.get("delta", {}) or {}
+                          txt = d.get("content") or d.get("reasoning_content") or d.get("reasoning")
+                          if txt:
+                              pieces += 1
+                              if first is None:
+                                  first = time.time() - t0
+              total = time.time() - t0
+              toks = (usage or {}).get("completion_tokens") or pieces
+              gen_time = max(total - (first or 0), 1e-6)
+              return {"ttft_ms": round((first or total) * 1000), "total_s": round(total, 2), "tokens": toks,
+                      "tok_s": round(toks / gen_time, 1)}
+
+          os.makedirs("/tmp/riu", exist_ok=True)
+          ids_file = open("/tmp/riu/jobs.txt", "a")
+
+          for t in TESTS:
+              res = {"test": t["name"], "flavor": t["flavor"]}
+              job_id = None
+              t_start = time.time()
+              try:
+                  cmd = ["hf", "jobs", "run", "--detach", "--expose", str(t["port"]), "--flavor", t["flavor"], "--timeout", "20m", "-s", "HF_TOKEN"]
+                  if t["mount"]:
+                      cmd += ["-v", t["mount"]]
+                  cmd += t["cmd"]
+                  p = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+                  out = (p.stdout or "") + (p.stderr or "")
+                  m = re.search(r"\bid:\s*([0-9a-f]{20,})", out)
+                  if not m:
+                      res["error"] = "NO_JOB_ID rc=%s out=%s" % (p.returncode, scrub(out)[-400:])
+                      note("warning", "RIU_JOB_" + t["name"][:1], json.dumps(res))
+                      continue
+                  job_id = m.group(1)
+                  ids_file.write(job_id + "\n"); ids_file.flush()
+                  res["job_id"] = job_id
+                  base = "https://%s--%d.hf.jobs" % (job_id, t["port"])
+                  t_running = None; t_ready = None; stage = None
+                  deadline = time.time() + 900
+                  while time.time() < deadline:
+                      try:
+                          info = api.inspect_job(job_id=job_id)
+                          stage = str(getattr(info.status, "stage", info.status))
+                      except Exception as e:  # noqa: BLE001
+                          stage = "INSPECT_ERR:" + type(e).__name__
+                      if t_running is None and "RUNNING" in stage.upper():
+                          t_running = time.time() - t_start
+                      if any(x in stage.upper() for x in ("ERROR", "CANCEL", "COMPLETED", "DELETED")):
+                          res["error"] = "JOB_ENDED:" + stage
+                          break
+                      try:
+                          with http(base + t["health"], timeout=10) as r:
+                              if r.status == 200:
+                                  t_ready = time.time() - t_start
+                                  break
+                      except urllib.error.HTTPError:
+                          pass
+                      except Exception:  # noqa: BLE001
+                          pass
+                      time.sleep(4)
+                  res["to_running_s"] = None if t_running is None else round(t_running)
+                  res["cold_start_s"] = None if t_ready is None else round(t_ready)
+                  res["last_stage"] = stage
+                  if t_ready is not None:
+                      hot = []
+                      for prompt in ("Responde en una frase: ¿qué es un router de modelos de IA?",
+                                     "Lista tres ventajas de usar un router entre varios modelos.",
+                                     "Di solo la palabra OK."):
+                          try:
+                              hot.append(chat(base, t["model"], prompt))
+                          except Exception as e:  # noqa: BLE001
+                              hot.append({"error": type(e).__name__ + ":" + str(e)[:120]})
+                      res["requests"] = hot
+                  else:
+                      try:
+                          logs = []
+                          for i, line in enumerate(api.fetch_job_logs(job_id=job_id)):
+                              logs.append(str(line))
+                              if i > 400:
+                                  break
+                          res["log_tail"] = scrub(" / ".join(logs[-6:]))[-500:]
+                      except Exception as e:  # noqa: BLE001
+                          res["log_tail"] = "NO_LOGS:" + type(e).__name__
+              except Exception as e:  # noqa: BLE001
+                  res["error"] = type(e).__name__ + ":" + str(e)[:200]
+              finally:
+                  if job_id:
+                      try:
+                          api.cancel_job(job_id=job_id)
+                      except Exception as e:  # noqa: BLE001
+                          res["cancel_error"] = type(e).__name__
+                      billed_min = (time.time() - t_start) / 60
+                      res["billed_min"] = round(billed_min, 1)
+                      res["est_cost_usd"] = round((PRICE[t["flavor"]] + EXPOSE_FEE) * billed_min / 60, 3)
+              note("notice" if "error" not in res else "warning", "RIU_JOB_" + t["name"][:1], json.dumps(res, ensure_ascii=False))
+          PY
+
+      - name: Safety net - cancel any job still running
+        if: always()
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          n = 0
+          try:
+              for line in open("/tmp/riu/jobs.txt"):
+                  jid = line.strip()
+                  if not jid:
+                      continue
+                  try:
+                      api.cancel_job(job_id=jid)
+                      n += 1
+                  except Exception:
+                      pass
+          except FileNotFoundError:
+              pass
+          print("::notice title=RIU_JOB_SAFETY::cancel attempted for %d job(s)" % n)
+          PY
