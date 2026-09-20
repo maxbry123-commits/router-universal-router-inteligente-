@@ -1,0 +1,68 @@
+name: RIU Router Catalog Audit
+
+# Lists every model id served by the Hugging Face router (Inference Providers) and flags the ones
+# in the Director's group lists. Public ids only; no secret value is printed.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-router-catalog-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Router catalog vs Director model lists
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request
+          tok = os.environ.get("HF_TOKEN", "")
+          headers = {"Authorization": "Bearer " + tok} if tok else {}
+          req = urllib.request.Request("https://router.huggingface.co/v1/models", headers=headers)
+          with urllib.request.urlopen(req, timeout=30) as r:
+              data = json.load(r)["data"]
+          ids = sorted(d["id"] for d in data)
+          print("::notice title=RIU_CAT_COUNT::%d models" % len(ids))
+          wanted = {
+              "Neuro-Orchestrator": r"neuro[-_ ]?orchestrator",
+              "MiroThinker": r"mirothinker",
+              "LFM2.5-8B-A1B": r"lfm2\.?5?-8b",
+              "OpenThinker3": r"openthinker",
+              "LFM2-2.6B": r"lfm2(\.5)?-2\.6b",
+              "Nemotron-Nano-9B-v2": r"nemotron.*nano.*9b",
+              "Nanbeige": r"nanbeige",
+              "Qwen3-0.6B": r"qwen3-0\.6b",
+              "Qwen2.5-1.5B": r"qwen2\.5-1\.5b",
+              "Qwen2.5-0.5B": r"qwen2\.5-0\.5b",
+              "Qwen3.5-9B": r"qwen3\.5-9b",
+              "KAT-Coder": r"kat[-_ ]?coder",
+              "Seed-Coder": r"seed[-_ ]?coder",
+              "Muse-Glimmer": r"muse[-_ ]?glimmer",
+              "Laguna": r"laguna",
+              "DeepSeek-Coder": r"deepseek[-_ ]?coder",
+              "OLMo-3": r"olmo",
+              "Granite": r"granite",
+              "Gemma-4": r"gemma[-_ ]?4",
+              "Ling-3.0": r"ling-3",
+              "Hunyuan": r"hunyuan",
+              "Yuan3": r"yuan3",
+              "Skywork": r"skywork",
+              "OPT-125M": r"opt-125m",
+              "Ternary-Bonsai": r"bonsai",
+              "OTel": r"otel",
+              "FLUX/Qwen-Image/Kandinsky/Wan/LTX": r"flux|qwen-image|kandinsky|wan2|ltx",
+          }
+          hits = []
+          for label, rx in wanted.items():
+              m = [i for i in ids if re.search(rx, i, re.I)]
+              hits.append("%s=%s" % (label, ",".join(m) if m else "NONE"))
+          print("::notice title=RIU_CAT_WANTED::" + " | ".join(hits))
+          print("::notice title=RIU_CAT_ALL::" + ",".join(ids))
+          PY
