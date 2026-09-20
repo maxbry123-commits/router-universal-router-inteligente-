@@ -1,0 +1,75 @@
+name: RIU Websearch (Router engine, no LLM)
+
+# Runs the Router's own websearch engine (ddgs provider, no API key, no LLM) so research does not
+# spend model tokens. Queries come from the workflow_dispatch input `queries` (one per line) or the
+# defaults below on push. Results are emitted as one annotation per query.
+
+on:
+  workflow_dispatch:
+    inputs:
+      queries:
+        description: 'One query per line'
+        required: false
+        default: ''
+  push:
+    paths:
+      - '.github/workflows/riu-websearch.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run websearch_engine.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          QUERIES: ${{ github.event.inputs.queries }}
+        run: |
+          pip install ddgs 2>&1 | tail -n 1
+          python - <<'PY'
+          import base64, importlib.util, json, os, pathlib, sys, urllib.request
+          os.environ["PUBLISH_GITHUB"] = "off"
+
+          def gh(path):
+              req = urllib.request.Request("https://api.github.com/repos/maxbry123-commits/router-universal-router-inteligente-/" + path,
+                                           headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json", "User-Agent": "riu"})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.load(r)
+
+          try:
+              root = gh("git/trees/main")["tree"]
+              motores = next(e for e in root if "motores de descarga" in e["path"])
+              sub = gh("git/trees/%s?recursive=1" % motores["sha"])["tree"]
+              blob = next(e for e in sub if e["path"].split("/")[-1] == "websearch_engine.py")
+              dst = pathlib.Path("/tmp/websearch_engine.py")
+              dst.write_bytes(base64.b64decode(gh("git/blobs/%s" % blob["sha"])["content"]))
+              spec = importlib.util.spec_from_file_location("websearch_engine", dst)
+              we = importlib.util.module_from_spec(spec)
+              sys.modules["websearch_engine"] = we
+              spec.loader.exec_module(we)
+          except Exception as e:
+              print("::warning title=RIU_SEARCH_ERR::load %s %s" % (type(e).__name__, str(e)[:200]))
+              raise SystemExit(0)
+
+          raw = os.environ.get("QUERIES", "").strip()
+          queries = [q.strip() for q in raw.splitlines() if q.strip()] or [
+              "Open WebUI OpenAI compatible endpoint file upload knowledge base model selector agents",
+              "LibreChat agents file uploads custom OpenAI endpoint MCP multi model self hosted",
+              "Graphiti FalkorDB docker compose quickstart graphiti-core falkordb",
+          ]
+          for n, q in enumerate(queries, 1):
+              try:
+                  res = we.run(q, ["ddgs"], 8, pathlib.Path("/tmp/ws"))
+                  data = json.loads(pathlib.Path(res["result_json"]).read_text(encoding="utf-8"))
+                  rows = ["%s <%s> %s" % (x["title"][:70], x["url"], x["snippet"][:160]) for x in data["results"][:6]]
+                  print("::notice title=RIU_SEARCH_%d::Q=%s | status=%s | %s" % (n, q[:60], res["provider_status"].get("ddgs", {}), " ;; ".join(rows)))
+              except Exception as e:
+                  print("::warning title=RIU_SEARCH_%d::Q=%s | ERR %s %s" % (n, q[:60], type(e).__name__, str(e)[:160]))
+          PY
