@@ -134,7 +134,10 @@ class Store:
         return json.loads(rows[0]["value"])
 
     def cache_put(self, key: str, value: Any, ttl: float = 3600.0) -> None:
-        self._exec("INSERT OR REPLACE INTO cache(key,value,expires_at,hits) VALUES(?,?,?,0)", (key, json.dumps(value), time.time() + ttl))
+        # Upsert keeps the hit counter when an entry is refreshed (total hits stay accurate).
+        self._exec("INSERT INTO cache(key,value,expires_at,hits) VALUES(?,?,?,0) "
+                   "ON CONFLICT(key) DO UPDATE SET value=excluded.value, expires_at=excluded.expires_at",
+                   (key, json.dumps(value), time.time() + ttl))
 
     # -- graph ---------------------------------------------------------------------
     def graph_node(self, node_id: str, kind: str, label: str, **props: Any) -> None:
