@@ -1,0 +1,68 @@
+name: RIU Websearch Run
+
+# Runs the repo's own search engine ("motor de búsqueda") on a GitHub runner so agents can research
+# WITHOUT spending LLM tokens. The engine aggregates providers (ddgs by default; brave/tavily/serper/
+# firecrawl only if their secrets exist), deduplicates deterministically and publishes summary.md to
+#   router inteligente universal/websearch-results/<run>/summary.md
+# Query is passed through the environment (never interpolated into the script).
+
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: 'Consulta de búsqueda'
+        required: true
+      providers:
+        description: 'Proveedores separados por coma'
+        required: false
+        default: 'ddgs'
+
+permissions:
+  contents: write
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ddgs
+        run: pip install ddgs
+
+      - name: Fetch the engine from main (public raw URL)
+        run: |
+          python - <<'PY'
+          import urllib.parse, urllib.request
+          base = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/"
+          path = "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/➡️📂 motor de búsqueda/websearch_engine.py"
+          urllib.request.urlretrieve(base + urllib.parse.quote(path), "websearch_engine.py")
+          print("engine fetched")
+          PY
+
+      - name: Run the engine and publish summary.md
+        env:
+          QUERY: ${{ inputs.query }}
+          PROVIDERS: ${{ inputs.providers }}
+          JOB_ID: ws-${{ github.run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PUBLISH_GITHUB: auto
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: |
+          set +e
+          python websearch_engine.py > out.json
+          code=$?
+          python - <<'PY'
+          import json
+          try:
+              d = json.load(open("out.json"))
+              print("::notice title=RIU_WEBSEARCH::%s results=%s persistence=%s providers=%s" % (d.get("run_id"), d.get("result_count"), (d.get("persistence") or {}).get("state"), json.dumps(d.get("provider_status"))[:400]))
+          except Exception as e:
+              print("::warning title=RIU_WEBSEARCH::FAIL " + type(e).__name__)
+          PY
+          exit 0
