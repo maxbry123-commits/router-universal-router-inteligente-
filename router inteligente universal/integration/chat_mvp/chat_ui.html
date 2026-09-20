@@ -56,7 +56,8 @@
       <select id="model" aria-label="Modelo" style="flex:1;min-width:180px"></select>
       <select id="mode" aria-label="Modo"><option value="direct">Sin agente</option><option value="agent">Con agente</option></select>
       <select id="agent" aria-label="Agente" style="display:none"></select>
-      <label><input id="cache" type="checkbox"> caché</label>
+      <label title="Si repites una pregunta idéntica no se vuelve a cobrar"><input id="cache" type="checkbox" checked> caché</label>
+      <label title="Ignora la caché y vuelve a preguntar"><input id="refresh" type="checkbox"> regenerar</label>
       <button class="sec" id="newchat">Nuevo chat</button>
     </div>
     <div id="log" aria-live="polite"></div>
@@ -198,7 +199,12 @@
     $('file').value = '';
   };
 
-  function loadStorage() { return api('/chat/storage').then(function (res) { $('st_out').textContent = JSON.stringify(res.body, null, 2); }); }
+  function loadStorage() {
+    return Promise.all([api('/chat/storage'), api('/chat/usage')]).then(function (rs) {
+      $('st_out').textContent = JSON.stringify(rs[0].body, null, 2) + '\n\nCOSTOS (tokens)\n' + JSON.stringify(rs[1].body.totals || {}, null, 2) +
+        '\n\nPor modelo\n' + JSON.stringify(rs[1].body.models || [], null, 2);
+    });
+  }
   $('st_refresh').onclick = loadStorage;
   $('st_sync').onclick = function () { api('/chat/storage/sync', { method: 'POST' }).then(function (res) { $('st_out').textContent = res.status === 200 ? 'Sincronizado: ' + JSON.stringify(res.body) : fail(res); }); };
 
@@ -262,13 +268,16 @@
     if (!text || !model) return;
     $('input').value = ''; $('send').disabled = true; add(text, 'user'); var wait = add('…');
     var body = { message: text, provider: $('provider').value, model: model, conversation_id: S.conv, mode: $('mode').value,
-                 agent_id: $('mode').value === 'agent' ? $('agent').value : null, doc_ids: Object.keys(S.attach), cache: $('cache').checked, max_tokens: 1024 };
+                 agent_id: $('mode').value === 'agent' ? $('agent').value : null, doc_ids: Object.keys(S.attach),
+                 cache: $('cache').checked, refresh: $('refresh').checked, max_tokens: 1024 };
     if ($('ghrepo').value) body.github = { account: $('ghacc').value, repo: $('ghrepo').value };
     api('/chat/send', { method: 'POST', body: JSON.stringify(body) }).then(function (res) {
       wait.remove();
       if (res.status !== 200) { add(explain(res), 'error'); return; }
       var b = res.body; S.conv = b.conversation_id || S.conv;
-      var meta = b.provider + '/' + b.model + (b.certified ? ' · certificado' : ' · no certificado') + (b.cached ? ' · caché' : '') + (b.agent_id ? ' · agente ' + b.agent_id : '');
+      var u = b.usage_normalized || {};
+      var meta = b.provider + '/' + b.model + (b.certified ? ' · certificado' : ' · no certificado') + (b.cached ? ' · respuesta de caché (sin costo)' : '') +
+                 (u.cached ? ' · ' + u.cached + ' tokens de entrada en caché del proveedor' : '') + (b.agent_id ? ' · agente ' + b.agent_id : '');
       if (b.empty) { add('(El modelo devolvió texto vacío; probablemente agotó max_tokens razonando. Reintenta o cambia de modelo.)', 'error', meta + ' · finish=' + b.finish_reason, 'warn'); return; }
       S.lastReply = b.reply; add(b.reply, '', meta, b.certified ? '' : 'warn'); loadStorage();
     }).catch(function (e) { wait.remove(); add('Error de red: ' + e, 'error'); }).then(function () { $('send').disabled = false; $('input').focus(); });
