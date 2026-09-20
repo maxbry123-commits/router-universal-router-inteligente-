@@ -1,0 +1,35 @@
+{
+  "schema": "riu.dag/v1",
+  "id": "ORDER-000-smoke",
+  "contract": {"role": "executor", "authority": "NONE", "self_certification": false},
+  "input_block": "Resuelve que podamos usar cache para pagar menos precio no se cómo se hace pero hazlo para mantener menor costo",
+  "nodes": [
+    {
+      "id": "A01",
+      "stage": "worker",
+      "model": {"provider": "hf", "model": "deepseek-ai/DeepSeek-V4-Flash"},
+      "instructions": "Responde SOLO con un objeto JSON con las claves \"palancas\" (lista de exactamente 3 cadenas cortas) y \"riesgo\" (una cadena) sobre cómo reducir el costo de tokens de un chat con LLM usando caché.",
+      "expect": {"json_keys": ["palancas", "riesgo"], "max_chars": 2000},
+      "retries": 1,
+      "max_tokens": 700
+    },
+    {
+      "id": "A02",
+      "stage": "validator",
+      "model": {"provider": "hf", "model": "moonshotai/Kimi-K3"},
+      "needs": ["A01"],
+      "instructions": "Mira el JSON de A01. Responde SOLO una palabra: SI si alguna palanca menciona caché de respuestas o de prefijo/contexto del proveedor; NO en caso contrario.",
+      "expect": {"regex": "^\\s*(SI|SÍ|NO)\\b"},
+      "retries": 1,
+      "max_tokens": 200
+    },
+    {
+      "id": "A03",
+      "stage": "worker",
+      "model": {"provider": "hf", "model": "MiniMaxAI/MiniMax-M3"},
+      "instructions": "Responde con la palabra OK y nada más.",
+      "expect": {"contains": ["OK"], "max_chars": 200},
+      "max_tokens": 200
+    }
+  ]
+}
