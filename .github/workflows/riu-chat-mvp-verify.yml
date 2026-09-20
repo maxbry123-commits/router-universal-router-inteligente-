@@ -1,6 +1,6 @@
 name: RIU Chat MVP Verify
 
-# Real-runner evidence for the chat MVP (providers, agents, storage, documents, GitHub accounts),
+# Real-runner evidence for the chat MVP (providers, agents, storage, documents, GitHub accounts, cache/usage, DAG),
 # the selector models and the HF router hot-path.
 # Results are emitted as aggregated annotations (::notice / ::warning), readable through the check-run API.
 # No secret value is ever printed; secrets are only injected into the env of the steps that need them.
@@ -54,6 +54,7 @@ jobs:
             "router inteligente universal/tests/test_chat_catalog_patterns.py" \
             "router inteligente universal/tests/test_chat_gateway.py" \
             "router inteligente universal/tests/test_chat_mvp_pure.py" \
+            "router inteligente universal/tests/test_chat_cost_dag.py" \
             "router inteligente universal/tests/test_chat_mvp_app.py" \
             "router inteligente universal/tests/test_keystore_auth.py" \
             "router inteligente universal/tests/test_hf_scheduler.py" \
@@ -135,6 +136,8 @@ jobs:
           GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
           GITHUB_TOKEN_1: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN_2: ${{ secrets.GITHUB_TOKEN }}
+          GH_ACCOUNT_3: ${{ secrets.GH_ACCOUNT_3 }}
+          RIU_PRICES_JSON: '{"hf/moonshotai/Kimi-K3": {"in": 1.0, "cached_in": 0.25, "out": 3.0}}'
         run: |
           cd "router inteligente universal"
           python - <<'PY'
@@ -143,7 +146,7 @@ jobs:
           os.environ["RIU_AGENT_API_KEYS"] = json.dumps({key: "ci-agent"})
           os.environ["RIU_CHAT_ALLOW_PROVIDER_LIVE"] = "1"
           os.environ["RIU_DATA_DIR"] = tempfile.mkdtemp()
-          os.environ["RIU_GITHUB_ACCOUNTS"] = json.dumps({"ci-a": "GITHUB_TOKEN_1", "ci-b": "GITHUB_TOKEN_2"})
+          os.environ["RIU_GITHUB_ACCOUNTS"] = json.dumps({"ci-a": "GITHUB_TOKEN_1", "ci-b": "GITHUB_TOKEN_2", "planeta123-usa": "GH_ACCOUNT_3"})
           sys.path.insert(0, ".")
           from fastapi.testclient import TestClient
           from integration.chat_mvp.app import app
@@ -160,7 +163,7 @@ jobs:
                   r = c.post("/chat/send", headers=H, json=body)
                   j = r.json()
                   if r.status_code == 200:
-                      return "%s 200 len=%d finish=%s cert=%s" % (tag, len(j["reply"]), j["finish_reason"], j["certified"]), j
+                      return "%s 200 len=%d finish=%s cert=%s cached=%s" % (tag, len(j["reply"]), j["finish_reason"], j["certified"], j["cached"]), j
                   return "%s %d %s" % (tag, r.status_code, str(j.get("detail", ""))[:90].replace("\n", " ")), j
               except Exception as e:
                   return "%s EXC %s" % (tag, type(e).__name__), {}
@@ -191,9 +194,9 @@ jobs:
           tag, j = send("agent", provider="hf", model="deepseek-ai/DeepSeek-V4-Flash", mode="agent", agent_id="seals-team-yaiwes-001",
                         message="En una frase, ¿cuál es tu rol?")
           flow.append(tag + " agent=%s" % j.get("agent_id"))
-          t1, a = send("cache1", provider="hf", model="moonshotai/Kimi-K3", message=ok, cache=True)
-          t2, b = send("cache2", provider="hf", model="moonshotai/Kimi-K3", message=ok, cache=True)
-          flow.append("cache first=%s second=%s" % (a.get("cached"), b.get("cached")))
+          t1, a = send("cache1", provider="hf", model="moonshotai/Kimi-K3", message=ok)
+          t2, b = send("cache2", provider="hf", model="moonshotai/Kimi-K3", message=ok)
+          flow.append("default_cache first=%s second=%s" % (a.get("cached"), b.get("cached")))
           conv = a.get("conversation_id")
           if conv:
               hist = c.get("/chat/conversations/" + conv, headers=H).json()
@@ -205,6 +208,8 @@ jobs:
               r = c.get("/chat/github/file", headers=H, params={"account": acc, "repo": "maxbry123-commits/router-universal-router-inteligente-", "path": "CLAUDE.md", "attach": "true"})
               flow.append("gh_file[%s]=%d" % (acc, r.status_code))
               last = r.json()
+          who = c.get("/chat/github/whoami", headers=H, params={"account": "planeta123-usa"})
+          flow.append("whoami[planeta123-usa]=%s" % (who.json().get("login") if who.status_code == 200 else who.status_code))
           if last.get("document"):
               tag, j = send("ghdoc", provider="hf", model="deepseek-ai/DeepSeek-V4-Flash", doc_ids=[last["document"]["id"]],
                             message="Resume el documento adjunto en 8 palabras.")
@@ -212,5 +217,8 @@ jobs:
           st = c.get("/chat/storage", headers=H).json()
           flow.append("storage msgs=%s graph_edges=%s cache_hits=%s docs=%s" % (
               st["sql"]["messages"], st["graph"]["edges"], st["cache"]["hits"], st["documents"]["count"]))
+          u = c.get("/chat/usage", headers=H).json()
+          t = u["totals"]
+          flow.append("usage calls=%s input=%s cached_input=%s resp_cache_hits=%s" % (t["calls"], t["input"], t["cached_input"], t["response_cache_hits"]))
           note("RIU_CHAT_E2E_FLOW", "; ".join(flow))
           PY
