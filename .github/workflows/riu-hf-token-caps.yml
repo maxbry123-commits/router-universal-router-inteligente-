@@ -1,0 +1,39 @@
+name: RIU HF Token Capabilities
+
+# Prints ONLY metadata of the token behind secrets.HF_TOKEN_1 (account, role, permission names, scoped
+# entity names). No token value is printed or stored.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-hf-token-caps.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  caps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: whoami-v2 metadata
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          tok = os.environ.get("HF_TOKEN", "")
+          if not tok:
+              print("::warning title=RIU_HF_CAPS2::GAP_SECRET_MISSING")
+              raise SystemExit(0)
+          req = urllib.request.Request("https://huggingface.co/api/whoami-v2", headers={"Authorization": "Bearer " + tok})
+          with urllib.request.urlopen(req, timeout=30) as r:
+              d = json.load(r)
+          at = (d.get("auth") or {}).get("accessToken") or {}
+          fg = at.get("fineGrained") or {}
+          scoped = ["%s:%s=%s" % ((s.get("entity") or {}).get("type"), (s.get("entity") or {}).get("name"), "+".join(s.get("permissions", []))) for s in fg.get("scoped", [])]
+          print("::notice title=RIU_HF_CAPS2::name=%s role=%s displayName=%s global=%s scoped=%s orgs=%s" % (
+              d.get("name"), at.get("role"), at.get("displayName"), ",".join(fg.get("global", [])), "; ".join(scoped),
+              ",".join(o.get("name", "") for o in d.get("orgs", []))))
+          PY
