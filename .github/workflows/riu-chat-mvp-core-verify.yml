@@ -1,0 +1,92 @@
+name: RIU Chat MVP Core Verify
+
+# Verifica en runner real lo que vive en "Chat Mvp/": tests del Secret Bank y coherencia de groups.yaml / accounts.yaml.
+# Resultados como anotaciones (legibles por la API de check-runs). No imprime valores secretos.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Chat Mvp/**'
+      - '.github/workflows/riu-chat-mvp-core-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            Chat Mvp
+          sparse-checkout-cone-mode: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        run: pip install cryptography pyyaml pytest
+
+      - name: Tests del Secret Bank
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q -p no:cacheprovider "Chat Mvp/tests" 2>&1 | tee /tmp/pytest.txt
+          code=${PIPESTATUS[0]}
+          last=$(tail -n 1 /tmp/pytest.txt | tr -d '\r')
+          echo "::notice title=RIU_CHATMVP_TESTS::exit=${code} | ${last}"
+          grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | head -8 | while IFS= read -r line; do echo "::warning title=RIU_CHATMVP_TEST_FAIL::${line}"; done
+          exit 0
+
+      - name: Coherencia de groups.yaml y accounts.yaml
+        run: |
+          python - <<'PY'
+          import re, yaml
+          g = yaml.safe_load(open("Chat Mvp/groups.yaml", encoding="utf-8"))
+          a = yaml.safe_load(open("Chat Mvp/accounts.yaml", encoding="utf-8"))
+          problems = []
+          ids, names = [], []
+          def walk(o):
+              if isinstance(o, dict):
+                  if "model_id" in o:
+                      ids.append(o["model_id"]); names.append(o.get("name", ""))
+                  for v in o.values():
+                      walk(v)
+              elif isinstance(o, list):
+                  for v in o:
+                      walk(v)
+          walk(g["groups"]); walk(g["chat_selector_families"])
+          blob = " ".join(str(x) for x in ids + names).lower()
+          for banned in ("mirothinker", "neuro-orchestrator"):
+              if banned in blob:
+                  problems.append("eliminado por el Director sigue en groups: " + banned)
+          for needed in ("liquidai/lfm2-2.6b", "liquidai/lfm2.5-2.6b", "moonshotai/kimi-k3", "minimaxai/minimax-m3",
+                         "deepseek-ai/deepseek-v4-flash", "deepseek-ai/deepseek-v4-pro"):
+              if needed not in blob:
+                  problems.append("falta " + needed)
+          classes = set(g["runtime_classes"])
+          def check_runtime(o):
+              if isinstance(o, dict):
+                  if "runtime" in o and o["runtime"] not in classes:
+                      problems.append("runtime desconocido: %s" % o["runtime"])
+                  for v in o.values():
+                      check_runtime(v)
+              elif isinstance(o, list):
+                  for v in o:
+                      check_runtime(v)
+          check_runtime(g["groups"]); check_runtime(g["chat_selector_families"])
+          text = open("Chat Mvp/accounts.yaml", encoding="utf-8").read() + open("Chat Mvp/groups.yaml", encoding="utf-8").read()
+          if re.search(r"\b(hf_|ghp_|github_pat_|sk-|nvapi-|csk-|gsk_)[A-Za-z0-9_-]{20,}", text):
+              problems.append("posible credencial en los YAML")
+          for acc in a["github_accounts"]:
+              if not acc["credential_ref"].startswith("github/") or acc.get("mode") != "read_only":
+                  problems.append("cuenta mal configurada: " + acc["alias"])
+          pending = [x["alias"] for x in a["github_accounts"] if not x.get("login")]
+          print("::notice title=RIU_CHATMVP_YAML::models=%d problems=%d pending_logins=%s" % (len(ids), len(problems), ",".join(pending)))
+          for p in problems:
+              print("::warning title=RIU_CHATMVP_YAML_PROBLEM::" + p)
+          PY
