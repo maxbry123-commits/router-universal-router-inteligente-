@@ -1,10 +1,10 @@
 {
-  "checkpoint": "riu-0104-qdrant-lfs-provenance-classification",
+  "checkpoint": "riu-0105-hot-path-concurrency-evidence-gap",
   "contract": "tel.workflow/v3",
   "mode": "FAIL_CLOSED_LOOP",
   "status": "ACTIVE_CLOSURE",
   "updated_at": "2026-09-19",
-  "fresh_head_before_mutation": "ea327339c22a4c3c18d9f6248488b373c563ffaa",
+  "fresh_head_before_mutation": "f4e4b6dd20be2424c49024ddd542a4e9f4226736",
   "routing_owner": "RedUniversal",
   "hf_runtime_contract": "REMOTE_INFERENCE_ONLY",
   "evidence": {
@@ -25,7 +25,15 @@
     "lfs_code_search_filter_lfs": "NO_MATCH",
     "lfs_classification": "DONOR_TEST_FIXTURE_PROVENANCE_ANOMALY_PRESERVE_AS_IS",
     "lfs_repair_authorized": false,
-    "lfs_gate_effect": "DO_NOT_BLOCK_EXTRACTION_INTEGRITY; TRACK_UNDER_W1_PROVENANCE"
+    "lfs_gate_effect": "DO_NOT_BLOCK_EXTRACTION_INTEGRITY; TRACK_UNDER_W1_PROVENANCE",
+    "hot_path_concurrency_patch_sha": "f4e4b6dd20be2424c49024ddd542a4e9f4226736",
+    "hot_path_blob_sha": "c9d918c59af73a42f0b94185c15cd4526972ade5",
+    "hot_path_change": "blocking executor moved to asyncio.to_thread",
+    "exact_head_runtime_test": "PENDING",
+    "legacy_research_download_run": 35482169826,
+    "legacy_research_download_conclusion": "failure",
+    "legacy_research_download_jobs_returned": 0,
+    "legacy_workflow_classification": "LEGACY_PROVENANCE_AUTO_TRIGGER_GAP"
   },
   "closure_gates": {
     "EXTRACTION_ARCHIVE_INTEGRITY_VERIFIED": true,
@@ -34,6 +42,7 @@
     "NO_ROUTING_OWNERSHIP_CONFLICT": true,
     "HF_REMOTE20_PROVIDER_DISCOVERY_20_OF_20_HISTORICAL": true,
     "HF_REMOTE20_AUTHENTICATED_INFERENCE_ALL_VERIFIED": false,
+    "HOT_PATH_CONCURRENCY_EXACT_HEAD_VERIFIED": false,
     "FULL_COMPONENT_CONTAINER_XRAY": false,
     "DEDUP_ORPHAN_RECONCILIATION": false,
     "OMNIROUTE_ADAPTER_VERIFIED": false,
@@ -46,6 +55,8 @@
     "GLOBAL_CLOSED": false
   },
   "gaps": [
+    "HOT_PATH_CONCURRENCY_EXACT_HEAD_TEST_PENDING",
+    "LEGACY_RESEARCH_DOWNLOAD_AUTO_TRIGGER_FAILURE",
     "FULL_COMPONENT_CONTAINER_XRAY_PENDING",
     "DEDUP_ORPHAN_RECONCILIATION_PENDING",
     "STATE_RIU0086_STALE_ACTIVE_MIRROR_DOWNLOAD_GATES",
@@ -58,6 +69,6 @@
     "GLOBAL_E2E_PENDING",
     "FINAL_DOC_SYNC_PENDING"
   ],
-  "next_gate": "FULL_COMPONENT_XRAY -> DEDUP_ORPHAN_RECONCILIATION -> STATE_PLAN_CRAZY_WALL_SYNC -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
+  "next_gate": "HOT_PATH_EXACT_HEAD_TEST -> FULL_COMPONENT_XRAY -> DEDUP_ORPHAN_RECONCILIATION -> STATE_PLAN_CRAZY_WALL_SYNC -> EXTERNAL_COMPONENT_RUNTIME -> AUTH_MCP_MEMORY -> GLOBAL_E2E -> FINAL_DOC_SYNC",
   "global_closed": false
 }
