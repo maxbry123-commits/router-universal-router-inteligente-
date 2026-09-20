@@ -1,0 +1,123 @@
+name: Deploy Chat MVP Space
+
+# Publishes the chat MVP as a Docker Space on Hugging Face and wires its secrets from GitHub Secrets.
+# Requires the GitHub secret HF_WRITE_TOKEN (HF token with write access to Spaces and the bucket).
+# Without it the job reports GAP_SECRET_MISSING and exits 0. Secret values are never printed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      space_id:
+        description: 'Space destino (owner/name)'
+        default: 'COMAND-CENTER-1/riu-chat-mvp'
+      bucket_id:
+        description: 'Bucket de almacenamiento HF (owner/name)'
+        default: 'COMAND-CENTER-1/yaiwes-v54'
+      include_github_token:
+        description: 'Pasar RIU_GITHUB_PAT_FULL_ACCESO al Space como cuenta GitHub'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/verifier/
+            router inteligente universal/chat_space/
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub
+
+      - name: Assemble Space bundle
+        shell: bash
+        run: |
+          set -e
+          mkdir -p /tmp/space/riu
+          cp "router inteligente universal/chat_space/Dockerfile" "router inteligente universal/chat_space/requirements.txt" "router inteligente universal/chat_space/README.md" /tmp/space/
+          for d in adapters domain enchufe engine gateway integration red security verifier; do
+            cp -r "router inteligente universal/$d" /tmp/space/riu/
+          done
+          find /tmp/space -name __pycache__ -prune -exec rm -rf {} + || true
+          echo "::notice title=RIU_DEPLOY_BUNDLE::files=$(find /tmp/space -type f | wc -l)"
+
+      - name: Create/update the Space and wire secrets
+        env:
+          SPACE_ID: ${{ inputs.space_id }}
+          BUCKET_ID: ${{ inputs.bucket_id }}
+          HF_WRITE_TOKEN: ${{ secrets.HF_WRITE_TOKEN }}
+          S_HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          S_CEREBRAS: ${{ secrets.CEREBRAS_API_KEY_1 }}
+          S_NVIDIA: ${{ secrets.NVIDIA_API_KEY_1 }}
+          S_GROQ: ${{ secrets.GROQ_API_KEY_1 }}
+          S_GITHUB: ${{ inputs.include_github_token && secrets.RIU_GITHUB_PAT_FULL_ACCESO || '' }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from huggingface_hub import HfApi
+
+          def note(t, m): print("::notice title=%s::%s" % (t, m))
+          def warn(t, m): print("::warning title=%s::%s" % (t, m))
+
+          tok = os.environ.get("HF_WRITE_TOKEN", "")
+          if not tok:
+              warn("RIU_DEPLOY", "GAP_SECRET_MISSING:HF_WRITE_TOKEN (crear en GitHub Secrets un token HF con permiso de escritura en Spaces y en el bucket)")
+              raise SystemExit(0)
+          api, space, bucket = HfApi(token=tok), os.environ["SPACE_ID"], os.environ["BUCKET_ID"]
+          try:
+              api.create_repo(space, repo_type="space", space_sdk="docker", exist_ok=True)
+              api.upload_folder(folder_path="/tmp/space", repo_id=space, repo_type="space", commit_message="deploy: RIU chat MVP")
+              note("RIU_DEPLOY_SPACE", "uploaded %s" % space)
+          except Exception as e:
+              warn("RIU_DEPLOY_SPACE", "FAIL %s" % type(e).__name__)
+              raise SystemExit(0)
+          secrets_map = {"HF_TOKEN": "S_HF_TOKEN", "CEREBRAS_API_KEY": "S_CEREBRAS", "NVIDIA_API_KEY": "S_NVIDIA",
+                         "GROQ_API_KEY": "S_GROQ", "GITHUB_TOKEN_1": "S_GITHUB", "HF_WRITE_TOKEN": "HF_WRITE_TOKEN"}
+          done, skipped = [], []
+          for name, env in secrets_map.items():
+              value = os.environ.get(env, "")
+              if not value:
+                  skipped.append(name)
+                  continue
+              try:
+                  api.add_space_secret(space, name, value)
+                  done.append(name)
+              except Exception as e:
+                  skipped.append(name + ":" + type(e).__name__)
+          variables = {"RIU_CHAT_ALLOW_PROVIDER_LIVE": "1", "RIU_DATA_DIR": "/data", "HF_BUCKET_ID": bucket}
+          if os.environ.get("S_GITHUB"):
+              variables["RIU_GITHUB_ACCOUNTS"] = json.dumps({"maxbry123-commits": "GITHUB_TOKEN_1"})
+          for name, value in variables.items():
+              try:
+                  api.add_space_variable(space, name, value)
+              except Exception as e:
+                  skipped.append(name + ":" + type(e).__name__)
+          note("RIU_DEPLOY_SECRETS", "set=%s skipped=%s" % (",".join(done), ",".join(skipped)))
+          try:
+              from huggingface_hub import Volume
+              api.set_space_volumes(space, volumes=[Volume(type="bucket", source=bucket, mount_path="/data")])
+              note("RIU_DEPLOY_VOLUME", "bucket %s mounted at /data" % bucket)
+          except Exception as e:
+              warn("RIU_DEPLOY_VOLUME", "GAP_VOLUME_MOUNT:%s (montar el bucket en Settings del Space como volumen /data)" % type(e).__name__)
+          note("RIU_DEPLOY_URL", "https://%s.hf.space" % space.replace("/", "-").replace("_", "-").lower())
+          PY
