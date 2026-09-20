@@ -1,0 +1,62 @@
+name: RIU NVIDIA Matrix
+
+# Every NVIDIA key x several models, in parallel (60 s timeout per call). Values are never printed.
+# Result is one annotation: RIU_NVIDIA_MATRIX.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-nvidia-matrix.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Matrix
+        env:
+          N1: ${{ secrets.NVIDIA_API_KEY_1 }}
+          N2: ${{ secrets.NVIDIA_API_KEY_2 }}
+          N3: ${{ secrets.NVIDIA_API_KEY_3 }}
+          N4: ${{ secrets.NVIDIA_API_KEY_4 }}
+          N5: ${{ secrets.NVIDIA_API_KEY_5 }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.error
+          from concurrent.futures import ThreadPoolExecutor
+
+          MODELS = ["deepseek-ai/deepseek-v4-flash-0731", "moonshotai/kimi-k3", "moonshotai/kimi-k2.6",
+                    "z-ai/glm-5.3-flash", "nvidia/nemotron-3-super-120b-a12b"]
+
+          def call(i, model):
+              tok = os.environ.get("N%d" % i, "")
+              if not tok:
+                  return i, model, "sin_clave", 0.0
+              body = json.dumps({"model": model, "messages": [{"role": "user", "content": "Reply with the single word OK"}], "max_tokens": 256}).encode()
+              req = urllib.request.Request("https://integrate.api.nvidia.com/v1/chat/completions", data=body, method="POST",
+                                           headers={"Authorization": "Bearer " + tok, "Content-Type": "application/json", "User-Agent": "riu-probe"})
+              t0 = time.time()
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      d = json.loads(r.read().decode())
+                  txt = ((d.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
+                  return i, model, "OK" if txt.strip() else "vacio", time.time() - t0
+              except urllib.error.HTTPError as e:
+                  return i, model, "HTTP%d" % e.code, time.time() - t0
+              except Exception as e:
+                  return i, model, type(e).__name__, time.time() - t0
+
+          jobs = [(i, m) for m in MODELS for i in range(1, 6)]
+          with ThreadPoolExecutor(max_workers=10) as ex:
+              res = list(ex.map(lambda a: call(*a), jobs))
+          per_model = []
+          for m in MODELS:
+              rows = [r for r in res if r[1] == m]
+              ok = [r for r in rows if r[2] == "OK"]
+              per_model.append("%s: %d/5 OK (%s)" % (m, len(ok), ",".join("k%d:%s:%.0fs" % (r[0], r[2], r[3]) for r in rows)))
+          print("::notice title=RIU_NVIDIA_MATRIX::" + " | ".join(per_model))
+          PY
