@@ -3,6 +3,7 @@ name: RIU Research Plan Inputs
 # One-shot research for the chat plan. Uses the Router's own websearch engine (ddgs provider, no LLM, no API key)
 # and public metadata endpoints. Results are emitted as annotations. No secret value is printed.
 # The engine file is located through the GitHub tree API (folder names contain emoji), never by a typed path.
+# Every stage reports its own error as an annotation so a failure is never silent.
 
 on:
   workflow_dispatch:
@@ -23,13 +24,17 @@ jobs:
           python-version: '3.12'
 
       - name: Search with the Router websearch engine (ddgs, no LLM)
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python -m pip install -q ddgs
+          pip install ddgs 2>&1 | tail -n 1
           python - <<'PY'
-          import base64, importlib.util, json, os, pathlib, urllib.request
+          import base64, importlib.util, json, os, pathlib, traceback, urllib.request
           os.environ["PUBLISH_GITHUB"] = "off"
+
+          def stage(msg):
+              print("::notice title=RIU_STAGE::" + msg)
 
           def gh(path):
               req = urllib.request.Request("https://api.github.com/repos/maxbry123-commits/router-universal-router-inteligente-/" + path,
@@ -37,21 +42,25 @@ jobs:
               with urllib.request.urlopen(req, timeout=30) as r:
                   return json.load(r)
 
-          root = gh("git/trees/main")["tree"]
-          motores = next(e for e in root if "motores de descarga" in e["path"])
-          sub = gh("git/trees/%s?recursive=1" % motores["sha"])["tree"]
-          blob = next(e for e in sub if e["path"].endswith("websearch_engine.py"))
-          dst = pathlib.Path("/tmp/websearch_engine.py")
-          dst.write_bytes(base64.b64decode(gh("git/blobs/%s" % blob["sha"])["content"]))
-          spec = importlib.util.spec_from_file_location("we", dst)
-          we = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(we)
+          try:
+              root = gh("git/trees/main")["tree"]
+              motores = next(e for e in root if "motores de descarga" in e["path"])
+              sub = gh("git/trees/%s?recursive=1" % motores["sha"])["tree"]
+              blob = next(e for e in sub if e["path"].endswith("websearch_engine.py"))
+              dst = pathlib.Path("/tmp/websearch_engine.py")
+              dst.write_bytes(base64.b64decode(gh("git/blobs/%s" % blob["sha"])["content"]))
+              spec = importlib.util.spec_from_file_location("we", dst)
+              we = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(we)
+              stage("engine loaded, %d bytes" % dst.stat().st_size)
+          except Exception as e:
+              print("::warning title=RIU_SEARCH_ERR::load %s %s" % (type(e).__name__, str(e)[:200]))
+              raise SystemExit(0)
+
           queries = [
               "Open WebUI OpenAI compatible endpoint file upload knowledge base model selector agents",
               "LibreChat agents file uploads custom OpenAI endpoint MCP multi model self hosted",
-              "open source Claude like chat UI self hosted agents file storage projects memory",
               "Graphiti FalkorDB docker compose quickstart graphiti-core falkordb",
-              "sqlcipher3 python encrypted sqlite argon2 key derivation vault",
           ]
           lines = []
           for q in queries:
@@ -61,7 +70,7 @@ jobs:
                   top = ["%s <%s>" % (x["title"][:60], x["url"]) for x in data["results"][:5]]
                   lines.append("Q=%s | %s | %s" % (q[:40], res["provider_status"].get("ddgs", {}), " ; ".join(top)))
               except Exception as e:
-                  lines.append("Q=%s | ERR %s %s" % (q[:40], type(e).__name__, str(e)[:120]))
+                  lines.append("Q=%s | ERR %s %s" % (q[:40], type(e).__name__, str(e)[:160]))
           print("::notice title=RIU_SEARCH::" + " ### ".join(lines))
           PY
 
