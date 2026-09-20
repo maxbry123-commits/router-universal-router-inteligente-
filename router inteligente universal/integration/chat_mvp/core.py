@@ -6,6 +6,8 @@ Cost levers implemented here:
      native prompt caching (DeepSeek, Moonshot, OpenAI-style) bill the repeated prefix as cached input.
   3. History budget: old turns are dropped in one large step (to 60 %) instead of one by one, so the cached prefix stays stable.
   4. Usage log with cached-token accounting (see usage.py) to measure real savings.
+Availability: when the key comes from the server environment, the provider's other environment keys form a POOL;
+a slow or failing key (timeout, 401/402/403/429/5xx) falls over to the next one. Request errors (400/404/410/422) do not.
 """
 from __future__ import annotations
 
@@ -23,6 +25,7 @@ from .usage import UsageLog
 CACHE_TTL_ENV = "RIU_CACHE_TTL"
 DEFAULT_CACHE_TTL = 86400.0
 HISTORY_BUDGET_CHARS = 24000
+NO_FAILOVER_STATUS = {400, 404, 410, 422}
 
 
 def live_enabled() -> bool:
@@ -56,19 +59,34 @@ def trim_history(history: list[dict[str, str]], budget: int = HISTORY_BUDGET_CHA
     return out
 
 
+def key_pool(provider: str, key: str | None) -> list[str | None]:
+    """Keys to try, in order. Only an environment key expands to the provider's pool; a BYOK key is used alone."""
+    env = prov.env_keys(provider)
+    if key and key in env:
+        return [key] + [k for k in env if k != key]
+    return [key]
+
+
 def call_via_router(provider: str, key: str | None, model: str, messages: list[dict[str, str]], max_tokens: int,
                     temperature: float | None = None) -> dict[str, Any]:
     """FastAPI-side call: Enchufe Gate -> RedUniversal -> provider executor (blocking; run it in a thread)."""
     from ..huggingface.router_hot_path import route_chat_completion
 
     errbox: dict[str, str] = {}
+    pool = key_pool(provider, key)
 
     def executor(*, model_id: str, messages: list[dict[str, str]], max_tokens: int = 256) -> dict[str, Any]:
-        try:
-            return prov.chat(provider, key, model_id, messages, max_tokens, temperature=temperature)
-        except prov.ProviderError as exc:
-            errbox["e"] = str(exc)
-            raise
+        last: prov.ProviderError | None = None
+        for k in pool:
+            try:
+                return prov.chat(provider, k, model_id, messages, max_tokens, temperature=temperature)
+            except prov.ProviderError as exc:
+                last = exc
+                errbox["e"] = str(exc)
+                if exc.status in NO_FAILOVER_STATUS:
+                    raise
+        assert last is not None
+        raise last
 
     try:
         return asyncio.run(route_chat_completion(model_id=model, messages=messages, max_tokens=max_tokens, executor=executor))
