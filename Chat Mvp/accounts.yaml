@@ -1,0 +1,31 @@
+schema: chat-mvp.accounts/v1
+updated: "2026-09-20"
+rule: "Este archivo guarda SOLO alias y logins públicos. Los tokens viven en el Secret Bank (S2) referenciados como credential_ref; jamás aquí."
+default_mode: read_only
+github_accounts:
+  - alias: maxbry123
+    director_label: "Maxbry 123"
+    login: "maxbry123-commits"
+    login_status: "presunto: es el dueño de este repo; sin confirmar que coincida con la cuenta del token que el Director pegó en el chat"
+    credential_ref: "github/maxbry123"
+    mode: read_only
+    repo_allowlist: []
+  - alias: abc123
+    director_label: "abc123"
+    login: null
+    login_status: "PENDING_LOGIN: no aparece en agentes, frontend ni router; el Director debe dar el login público"
+    credential_ref: "github/abc123"
+    mode: read_only
+    repo_allowlist: []
+  - alias: planeta123
+    director_label: "planeta 123"
+    login: null
+    login_status: "PENDING_LOGIN: no aparece en agentes, frontend ni router; el Director debe dar el login público"
+    credential_ref: "github/planeta123"
+    mode: read_only
+    repo_allowlist: []
+huggingface_accounts:
+  - alias: comand-center-1
+    login: "COMAND-CENTER-1"
+    credential_ref: "huggingface/primary"
+    note: "Token de CI HF_TOKEN_1 (full access sobre esta cuenta) permanece en GitHub Secrets solo para el despliegue (D4)."
