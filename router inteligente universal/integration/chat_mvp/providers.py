@@ -1,8 +1,8 @@
 """OpenAI-compatible provider clients for the chat MVP (stdlib only).
 
-Keys come from the server environment or, per request, from a BYOK header. They are never logged,
-stored or echoed back; error messages carry only the HTTP status and a short provider message.
-NVIDIA is listed FIRST (principal provider) and has a pool of up to 5 keys with failover (see core.py).
+Keys come from the unlocked Secret Bank (vault_hook), the server environment or, per request, a BYOK header.
+They are never logged, stored or echoed back; error messages carry only the HTTP status and a short provider message.
+NVIDIA is listed FIRST (principal provider) and has a pool of keys with failover (see core.py).
 """
 from __future__ import annotations
 
@@ -13,6 +13,8 @@ import time
 import urllib.error
 import urllib.request
 from typing import Any, Callable
+
+from . import vault_hook
 
 PROVIDERS: dict[str, dict[str, Any]] = {
     "nvidia": {"label": "NVIDIA NIM (principal)", "base": "https://integrate.api.nvidia.com/v1",
@@ -42,10 +44,10 @@ def base_url(provider: str) -> str | None:
 
 
 def env_keys(provider: str) -> list[str]:
-    """All distinct non-empty keys of the provider in the server environment (pool order)."""
+    """All distinct non-empty keys of the provider (pool order): unlocked Secret Bank first, then the server environment."""
     seen: list[str] = []
-    for name in PROVIDERS[provider]["env"]:
-        value = os.getenv(name)
+    candidates = [*vault_hook.provider_keys(provider), *(os.getenv(name) for name in PROVIDERS[provider]["env"])]
+    for value in candidates:
         if value and value not in seen:
             seen.append(value)
     return seen
