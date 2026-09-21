@@ -3,7 +3,7 @@
  "agent": "agent-3-router",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-21T08:23:25Z",
+ "updated_at": "2026-09-21T13:13:47Z",
  "group": "hf-chat",
  "chain": [
   "space_readme",
@@ -17,5 +17,10 @@
  ],
  "failed": [],
  "next_nodes": [],
- "current_nodes": []
+ "current_nodes": [],
+ "route": [
+  "groq",
+  "nvidia",
+  "cerebras"
+ ]
 }

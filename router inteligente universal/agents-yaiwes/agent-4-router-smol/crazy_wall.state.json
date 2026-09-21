@@ -3,7 +3,7 @@
  "agent": "agent-4-router-smol",
  "framework": "smolagents",
  "status": "BLOCKED",
- "updated_at": "2026-09-21T08:29:32Z",
+ "updated_at": "2026-09-21T13:44:11Z",
  "group": "hf-models",
  "chain": [
   "models_registry",
@@ -18,5 +18,10 @@
   "job_spec",
   "node_monitor"
  ],
- "current_nodes": []
+ "current_nodes": [],
+ "route": [
+  "groq",
+  "nvidia",
+  "cerebras"
+ ]
 }

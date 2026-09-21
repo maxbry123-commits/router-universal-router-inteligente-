@@ -3,7 +3,7 @@
  "agent": "agent-2-chat-hf-smol",
  "framework": "smolagents",
  "status": "BLOCKED",
- "updated_at": "2026-09-21T08:29:21Z",
+ "updated_at": "2026-09-21T13:27:24Z",
  "group": "chat",
  "current_nodes": [
   "tool_calling_agent"
@@ -15,10 +15,10 @@
   "tool_calling_agent"
  ],
  "gaps": [
-  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal",
-  "groq/openai/gpt-oss-120b:AgentGenerationError:Error while generating output:\nError code: 401 - {'error': {'message': 'Invalid ",
   "cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:\nError code: 402 - {'message': 'Payment required t",
-  "hf/MiniMaxAI/MiniMax-M3:AgentGenerationError:Error while generating output:\n<html>\r\n<head><title>504 Gateway Time-out</title>"
+  "cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:\nError code: 402 - {'message': 'Payment required t",
+  "cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:\nError code: 402 - {'message': 'Payment required t",
+  "hf/MiniMaxAI/MiniMax-M3:AgentGenerationError:Error while generating output:\nError code: 429 - {'error': {'message': 'Model bu"
  ],
- "attempts": 4
+ "attempts": 10
 }

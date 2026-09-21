@@ -1,0 +1,201 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-5-auditor
+  framework: smolagents
+  runner: auditor
+  post: audit_report
+  group: audit
+  route:
+  - groq
+  - nvidia
+  - cerebras
+  fallback:
+  - deepseek_flash
+  max_tokens: 3000
+context:
+  text: "Auditas por PAQUETES: cada paso recibe un paquete con las palabras LITERALES\
+    \ del Director (`=== ARCHIVO: ... ===`) y el estado actual de los agentes\n(`agents_state.md`).\
+    \ Los agentes son: agent-1-chat-hf (chat, PocketFlow), agent-2-chat-hf-smol (chat,\
+    \ SmolAgents), agent-3-router (Hugging Face: chat sin PRO,\nPocketFlow) y agent-4-router-smol\
+    \ (Hugging Face: modelos por pesos remotos, SmolAgents). Sus entregables están\
+    \ en agents-yaiwes/<agente>/steps/<paso>/results/.\n\n\n=== ARCHIVO router inteligente\
+    \ universal/agents-yaiwes/agent-5-auditor/packs/pack-1.md ===\n=== ARCHIVO: Claude\
+    \ notas/INPUT-VERBATIM-2026-09-20-b-claves-nvidia-plantilla.md ===\nResolvamos\
+    \ algo primero \nNo puede ser que las claves de Github no sirvan eso es imposible\
+    \ algo estás haciendo mal y me vas hacer fricción evita fricción 0\n\nO no sabes\
+    \ lo que haces porque esas claves han venido funcionando \n\n\n\n1. Usa el plan\
+    \ que te di para que revisar para crear una plantilla de trabajo para los panes\
+    \ exactas \n2. Encadena y anclas busca la manera en el chat un Craxy wall bitácora\
+    \ historia stated JSON handoff permanente \n3. Anade este promt como oalntilla\
+    \ fija en al chat para convertir en las indicaciones lo más detrminetista como\
+    \ es api key usa Yamil como reglas Jason indicaciones y phyton como motor \n\n\
+    \n\n\n\nVamos a empezar resolviendo cada punto faltante uno por uno lo que tú\
+    \ necesitas resolver lo que conviertes en Gaps porque no te veo resolviendo nada\
+    \ te veo alucinando haciendo fricción y no estás enfocado o no sabes lo que haces\
+    \ \n\nAnota mis instrucciones revisa que todo está anotado 1 a 1 imput block verbartin\
+    \ \nSi te doy una instrucción la anotas 1 a 1 y espera terminar lo que está en\
+    \ curso antes de hacerlo porque te veo patinando alucinando anotas en tu notas\
+    \ de Claude notas y en el Craxy wall bitácora stated JSON handoff \nNo puede avanzar\
+    \ sin anotar \nNo puedes hacer ninguna tarea sin anotar y validar que mis instrucciones\
+    \ fueron anotadas \n\nSolamente vamos a resolver por parte lo siguiente \nPaso\
+    \ 1 \U0001F4CC \nAclara lo de que dices que no hiciste \nEstas alucinando Tu no\
+    \ pusiste los los modelos de Kimi k y mínimax y deepsek v4 para que se cobren\
+    \ en la cuenta de HF ?\n\nPaso 2 \U0001F4CC \nLuego empezamos por las claves de\
+    \ Nvidia prueba si funciona \n\n\n.\nNc1 nvidia DIGI MAXBRY .[CORREO REDACTADO]\n\
+    \n[CLAVE nvapi REDACTADA → secret NVIDIA_API_KEY_1]\n\n\nNvidia 2 DIGI BRISEIDA\
+    \ \n[CORREO REDACTADO] \n\n[CLAVE nvapi REDACTADA → secret NVIDIA_API_KEY_2]\n\
+    \n\U0001F511\U0001F511\U0001F511\U0001F511\U0001F511\nNvidia 3 MOVISTAR ESPAÑA\
+    \ BRISEIDA \n[CORREO REDACTADO]\n\n[CLAVE nvapi REDACTADA → secret NVIDIA_API_KEY_3]\n\
+    \n\nNvidia 4 wow Colombia Maxbry \n[CORREO REDACTADO] \n\n[CLAVE nvapi REDACTADA\
+    \ → secret NVIDIA_API_KEY_4]\n\nNVIDIA 5 wow Colombia brisa\n\n[CLAVE nvapi REDACTADA\
+    \ → secret NVIDIA_API_KEY_5]\n\n\n\U0001F4A1\n\U0001F194\U0001F194\U0001F194\U0001F194\
+    \U0001F194\U0001F194\U0001F194\U0001F194\U0001F194\nMiniMax se usa dentro de NVIDIA\
+    \ como modelo\nUna vez tienes la key, llamas así:\nBase URL:\n\nhttps://integrate.api.nvidia.com/v1\n\
+    Modelo:\n\nminimaxai/minimax-m2.7\nfrom openai import OpenAI\n\nclient = OpenAI(\n\
+    \  base_url=\"https://integrate.api.nvidia.com/v1\",\n  api_key=\"TU_NVIDIA_API_KEY\"\
+    \n)\n\nresponse = client.chat.completions.create(\n  model=\"minimaxai/minimax-m2.7\"\
+    ,\n  messages=[{\"role\": \"user\", \"content\": \"Hola\"}]\n)\n\nprint(response.choices[0].message.content)\n\
+    \U0001F9E0 Ejemplo real (OpenAI style)\nPython\n\nInicia\n\n---\n\n=== ARCHIVO:\
+    \ Claude notas/INPUT-VERBATIM-2026-09-20-c-formato-loop-nvidia.md ===\nPara aclarar\
+    \ porque le  hablas como si yo fuera una ai \nRespondió 200 ??? \nDebes reducir\
+    \ el formato de salida a solo la repuesta simple corta sin detalles inecesarios\
+    \ \n\nTienes ñeibidk esperar más de 1 min  quedarte pegado procesando si haces\
+    \ un commint push o Tigger o manda un Run o lo que sea sigues con la siguiente\
+    \ tarea pendiente o paras para ahorra token porque te gastas el saldo del plan\
+    \ esperando o procesando nada encadena una lista de tareas y ejecutas al finalizar\
+    \ regresas pads revisar la repuesta si ya está lista o si no paras y esperas que\
+    \ te de Ok para reiniciar \n\nSi te digo modo Loops y bucle hasta terminar la\
+    \ tarea no paras no stop no escalas pero planificas si vas a ejecutar haces una\
+    \ secuencia de tareas pendientes y luego vas   midiendo el tiempo transcurrido\
+    \ para luego revisar la respuesta \n\nSi las api key de Nvidia están activas busca\
+    \ la manera oor el chat y con el router para que tú le mandes las tareas a ellos\
+    \ para que ejecuten por tu tu eres el cerebro ellos ejecutan tu le das una cadena\
+    \ de tareas y ellos ejecutan luego tu esperas las repuestas si no está funcionando\
+    \ las api de Nvidia en algún momento me informas y me avisas y te autorizo y le\
+    \ das las instrucciones a mínimax para code y DeepSeek para tareas menores si\
+    \ es hora pico de deepsek usas solo minimax sin tareas programadas DSL Dag shema\
+    \ determinetista usas el promt que te di o un Jason corto para tareas triviales\
+    \ pero siempre DSL Dag determinetista \n\n\nSirven las api key de Nvidia que te\
+    \ di todas si no ? \nSi  busca que modelos responde si responde deepsek v4 y Kimi\
+    \ k 3\n\n\nTe hice una pregunta solo eso las probaste si o no ?\n\n---\n\n## Reglas\
+    \ derivadas (1 a 1, sin añadir)\nR1. Respuestas cortas y simples, sin jerga (no\
+    \ \"200\"); hablarle como a una persona, no como a una IA.\nR2. No esperar más\
+    \ de 1 minuto tras un commit/push/trigger/run: seguir con la siguiente tarea;\
+    \ encadenar tareas, ejecutar y volver al final a revisar; si no está lista, parar\
+    \ y esperar el OK del Director.\nR3. \"Modo loop y bucle\": no parar ni escalar;\
+    \ planificar la secuencia y medir el tiempo antes de revisar.\nR4. Si NVIDIA está\
+    \ activa: Claude (cerebro) manda cadenas de tareas por el chat/Router y NVIDIA\
+    \ ejecuta; si NVIDIA falla, avisar; con autorización, MiniMax para código y DeepSeek\
+    \ para tareas menores; en hora pico de DeepSeek solo MiniMax; sin tareas programadas;\
+    \ siempre DSL DAG determinista (el YAML del Director o un JSON corto).\nR5. Pregunta:\
+    \ ¿sirven las claves NVIDIA (todas)? ¿qué modelos responden? ¿DeepSeek V4 y Kimi\
+    \ K3? ¿las probaste, sí o no?\n\n=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-20-c-formato-y-nvidia.md\
+    \ ===\nPara aclarar porque le  hablas como si yo fuera una ai \nRespondió 200\
+    \ ??? \nDebes reducir el formato de salida a solo la repuesta simple corta sin\
+    \ detalles inecesarios \n\n\nSirven las api key de Nvidia que te di todas si no\
+    \ ? \nSi  busca que modelos responde si responde deepsek v4 y Kimi k 3\n\n---\n\
+    \n=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-20-chat-mvp.md ===\nOk \nPaso\
+    \ 1 dieme qué hay que decidir para que puedas terminar con referente al chat \n\
+    Necesitas que pueda tu colocar los api key de mis modelos locales y los modelos\
+    \ de deepsek v4 flash y pro y Kimi k 3 mínimax M3 \nQue puedan operar en Github\
+    \ y huggueface 100%\n autorizado \n\U0001F4CCQue con el selector pueda cambiar\
+    \ de cuenta de Github diferente \n\U0001F4CCQue los  modelos que yo seleccione\
+    \ trabaje con el pool de agente que yo te voy a decir pueda operar con agente\
+    \ y sin agente \n\U0001F4CC Le conectas al chat dentro de huggueface almacenamiento\
+    \ su propio espacio y fusionas para crear un entorno llamado Mvp almacenamiento\
+    \ para ai \nData base \nSQL Little \nGraphiti y graphyty \nCaché \nQue pueda subir\
+    \ archivos adjuntos y tener una ventana de documentos en almacenamiento y conectados\
+    \ cableado por medio de los 4 sistema de almacenamiento para agentes \nHasta que\
+    \ no termines esto no pasas a paso 2 \nGrupo para el chat \U0001F4CC \ncomand\
+    \ Center y \nNeuro-Orchestrator-8B — 8B — orquestación/agentic.\nMiroThinker-8B\
+    \ — 8B — razonamiento.\nLFM2.5-8B-A1B — 8B total / ~1B activo — subagentes, loops\
+    \ agentic.\nOpenThinker3-7B — 7B — razonamiento.\nLFM2-2.6B — 2.6B — worker rápido,\
+    \ clasificación y extracción\nNemotron Nano 9B v2 — 9B — razonamiento, arquitectura\
+    \ y reparación.\nNanbeige4.2-3B — 3B — \U0001F9D1‍\U0001F4BB MODELO DE CODE /\
+    \ agentic\nNeuro-Orchestrator-8B — 8B — orquestación/agentic.\nMiroThinker-8B\
+    \ — 8B — razonamiento.\nLFM2.5-8B-A1B — 8B total / ~1B activo — subagentes, loops\
+    \ agentic.\nOpenThinker3-7B — 7B — razonamiento.\nModelos que deben trabajar local\
+    \ por máximo 26 de ram  quanrificado para no saturar el procesador + caché \n\
+    Muse Glimmer 30B — 30B — \U0001F9D1‍\U0001F4BB MODELO DE CODE / agentic, multimodal.\n\
+    Laguna XS 2.1 — 33B total / 3B activos — \U0001F9D1‍\U0001F4BB MODELO DE CODE\
+    \ / agentic, router y long-horizon.\nDeepSeek-Coder — variante/peso no especificado\
+    \ en tus archivos — \U0001F9D1‍\U0001F4BB MODELO DE CODE.\nDeepSeek v4 flash \n\
+    \n\nPaso 2\U0001F4CC \n\n\n\nPaso 3 \U0001F4CC \n\nNecesito que revises el router\
+    \ en el repo de router universal usa el router que hizo Fables los code están\
+    \ en los archivos \nLuego necesito que uses lo que adelanto sol gpt y íntegras\
+    \ los componentes mínimos componentes para conseguir el siguiente objetivo \n\
+    1. Vasmos a tener más de 50 agente con el nombre de agente Seals Team YAIWES necesito\
+    \ que operen con las api locales que te voy a define esos modelos locales no deben\
+    \ estar instalado a huggueface deben llamar al modelo remoto como lo indica hugguenface\
+    \ para no descargar el modelo y deben trabajar como mirror y duplicarse sines\
+    \ necesario 50 o 100 veces \nDeben usar el dataset y los aceleradores que deberían\
+    \ o fueron instalados en huggueface \nNecesito que si se satura los 3 procesadores\
+    \ de cómputo no se caiga salte a 7 procesadores más y si llega al número 10 o\
+    \ existe mucha latencia solo escala a deepsek v4 flash para el grupo 2 \n\n\n\U0001F4CC\
+    Para que sepas cómo vas a tener que clasificar el router o varios router ➡️➡️\n\
+    \nGrupo 1 \U0001F4CC  del wordflow loop code Yaiwes con el ejambre de agente Seals\
+    \ Team YAIWES \n\nGrupo 2 \U0001F4CC con los agente de el wordflow loops code\
+    \ Yaiwes con el pool de 20 agentes\nSolo para el grupo 2 si se satura el cómputo\
+    \ o hay mucha latencia el router cambia la api por al de deepsek v4 pero son 6\
+    \ grupos de trabajo que requieren api key  especializada que te voy a decir \n\
+    Como funciona o deberia funcionar router para grupo 2 \n1. Las 4 api de Nvidia\
+    \ y cerebras si no responde o los modelos no están disponibles el router Salta\
+    \ para mis api locales \n2. Api locales del grupo 2 .\nSi las api locales de esta\
+    \ lista están saturadas o con latencia salta a \nDeepsek \n\n\n=== ARCHIVO router\
+    \ inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md ===\n\
+    ## agent-1-chat-hf: estado=CLOSED marco=pocketflow pasos_cerrados=['vault_panel',\
+    \ 'router_panel', 'wire_panels'] ruta=?\n- paso router_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ gaps=-\n  - entregable: router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/output.txt\n\
+    \  - entregable: router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js\n\
+    - paso vault_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b gaps=-\n \
+    \ - entregable: router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/output.txt\n\
+    \  - entregable: router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js\n\
+    - paso wire_panels: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b gaps=-\n \
+    \ - entregable: router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/output.txt\n\
+    \  - entregable: router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js\n\
+    ## agent-2-chat-hf-smol: estado=BLOCKED marco=smolagents pasos_cerrados=[] ruta=?\n\
+    - paso jobs_panel: BLOCKED modelo=- gaps=nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error\
+    \ while generating output:\nError code: 500 - {'error': {'message': 'Internal;\
+    \ groq/openai/gpt-oss-120b:AgentGenerationError:Error whil\n## agent-3-router:\
+    \ estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme', 'space_index',\
+    \ 'deploy_script'] ruta=?\n- paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ gaps=-\n  - entregable: router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py\n\
+    \  - entregable: router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/output.txt\n\
+    - paso space_index: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b gaps=-\n \
+    \ - entregable: router inteligente universal/agents-yaiwes/agent-3-router/steps/space_index/results/output.txt\n\
+    - paso space_readme: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b gaps=-\n\
+    \  - entregable: router inteligente universal/agents-yaiwes/agent-3-router/steps/space_readme/results/output.txt\n\
+    ## agent-4-router-smol: estado=BLOCKED marco=smolagents pasos_cerrados=[] ruta=?\n\
+    - paso models_registry: BLOCKED modelo=- gaps=nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error\
+    \ while generating output:\nError code: 500 - {'error': {'message': 'Internal;\
+    \ groq/openai/gpt-oss-120b:AgentGenerationError:Error whil"
+  max_chars: 40000
+task: 'Audita el PAQUETE del CONTEXTO. Devuelve SOLO un objeto JSON {"items": [...]}
+  con al menos 6 ítems, cada uno con:
+
+  "id" (único, ej. P1-01), "quote" (copiada LETRA POR LETRA de las palabras del Director
+  en el paquete, de 20 a 200 caracteres),
+
+  "status" (uno de HECHO, PARCIAL, PENDIENTE, AMBIGUO, REFUTADO), "evidence" (lista
+  de rutas del repo que EXISTEN y respaldan el estado; usa
+
+  list_repo_dir y read_repo_file; lista vacía si es PENDIENTE) y "note" (una frase).
+  Criterios: HECHO solo con evidencia verificada;
+
+  REFUTADO si un agente afirma o entrega algo que no cumple la instrucción (di en
+  "note" qué agente y por qué); AMBIGUO si la instrucción no
+
+  permite decidir; PENDIENTE si no hay evidencia. No inventes rutas ni citas.
+
+  '
+checks:
+- kind: audit_json
+  min_items: 6
+  sources:
+  - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-1.md
+- kind: no_secrets

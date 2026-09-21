@@ -3,7 +3,7 @@
  "agent": "agent-2-chat-hf-smol",
  "framework": "smolagents",
  "status": "BLOCKED",
- "updated_at": "2026-09-21T08:29:21Z",
+ "updated_at": "2026-09-21T13:27:24Z",
  "group": "chat",
  "chain": [
   "jobs_panel",
@@ -18,5 +18,10 @@
   "fixed_template",
   "crazy_wall_chain"
  ],
- "current_nodes": []
+ "current_nodes": [],
+ "route": [
+  "groq",
+  "nvidia",
+  "cerebras"
+ ]
 }

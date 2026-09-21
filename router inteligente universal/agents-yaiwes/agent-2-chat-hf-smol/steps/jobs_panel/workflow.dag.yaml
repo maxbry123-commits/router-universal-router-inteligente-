@@ -9,8 +9,8 @@ agent:
   framework: smolagents
   group: chat
   route:
-  - nvidia
   - groq
+  - nvidia
   - cerebras
   fallback:
   - minimax_m3
@@ -26,7 +26,7 @@ context:
     para anotar cada avance. Solo biblioteca estándar.
 
     '
-  max_chars: 9000
+  max_chars: 40000
 task: 'Escribe SOLO JavaScript (un único bloque ```js) que defina la función global
   `initJobsPanel(container, fetchJson)` para el chat.
 

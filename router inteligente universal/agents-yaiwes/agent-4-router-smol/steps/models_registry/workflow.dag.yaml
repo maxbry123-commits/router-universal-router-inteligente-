@@ -9,8 +9,8 @@ agent:
   framework: smolagents
   group: hf-models
   route:
-  - nvidia
   - groq
+  - nvidia
   - cerebras
   fallback:
   - minimax_m3
@@ -44,7 +44,7 @@ context:
     0-80 % GREEN, 80-90 % YELLOW, 90-95 % DRAIN, >= 95 % CLOSED.
 
     '
-  max_chars: 9000
+  max_chars: 40000
 task: "Escribe el módulo Python `hf_models_registry.py` (solo código, un único bloque\
   \ ```python; solo biblioteca estándar) con:\n- `MODELS`: dict con exactamente 7\
   \ claves: \"lfm2.5-1.2b-thinking\", \"qwen3-0.6b\", \"k2-horizon-0.9b\", \"nanbeige4.2-3b\"\

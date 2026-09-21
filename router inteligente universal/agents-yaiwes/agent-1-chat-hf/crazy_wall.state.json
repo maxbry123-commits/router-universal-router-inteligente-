@@ -3,7 +3,7 @@
  "agent": "agent-1-chat-hf",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-21T08:23:35Z",
+ "updated_at": "2026-09-21T13:13:48Z",
  "group": "chat",
  "chain": [
   "vault_panel",
@@ -17,5 +17,10 @@
  ],
  "failed": [],
  "next_nodes": [],
- "current_nodes": []
+ "current_nodes": [],
+ "route": [
+  "groq",
+  "nvidia",
+  "cerebras"
+ ]
 }

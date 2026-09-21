@@ -3,7 +3,7 @@
 Estado: **BLOCKED**
 
 - group: chat
-- attempts: 4
+- attempts: 10
 - model: -
 - gaps: cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:
 Error code: 402 - {'message': 'Payment required t; hf/MiniMaxAI/MiniMax-M3:AgentGenerationError:Error while generating output:
