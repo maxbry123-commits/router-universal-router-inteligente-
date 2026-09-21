@@ -351,5 +351,42 @@
       "gated": "auto",
       "revision": "741f7c3ce8b383c54771c7003378a50191e9efe9"
     }
+  },
+  "dataset_mythos_yaiwes_integration_note": {
+    "recorded_at": "2026-09-21",
+    "state": "PLANNED_INTEGRATION_NOT_RUNTIME_PASS",
+    "dataset": {
+      "path": "dataset Yaiwes/",
+      "methods": 107,
+      "records": 1139,
+      "store": "segmented_jsonl",
+      "index": "dataset Yaiwes/indexes/shard_index.json",
+      "tests": "24/24 PASS exact-SHA evidence",
+      "plugin": "PASS_SHADOW_READY_NOT_PRODUCTION_ACTIVE"
+    },
+    "target": "Router Inteligente Universal hot-path / RedUniversal",
+    "method": [
+      "registry lookup",
+      "shard_index method-range retrieval",
+      "ContextPack budget/dedup",
+      "SourceOfTruth+Consistency",
+      "PolicyGuard",
+      "verified output"
+    ],
+    "invariants": [
+      "never full dataset scan",
+      "do not duplicate router ownership",
+      "read-only adapter first",
+      "fail-closed",
+      "Input Shark external fusion=false"
+    ],
+    "hardening": [
+      "reconcile indexes/methods.json",
+      "sync legacy docs to segmented store",
+      "expand selector toward 107 methods",
+      "consume adapters.yaml and rules.yaml",
+      "unify verification evidence",
+      "governance gate before production activation"
+    ]
   }
 }
