@@ -1,0 +1,7 @@
+{
+  "schema": "yaiwes.trigger/v1",
+  "run_id": "RUN-A3-001",
+  "input_block": "Tu prioridad es una sola los agentes y luego delegas\nPrioridad CHat y HF y modelos Ai en HF\nLlegas todos los tokens a los agentes\nLos agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas",
+  "requested_by": "claude-brain",
+  "source": "INPUT-VERBATIM-2026-09-21-p-4-agentes-pocketflow-smolagents.md"
+}
