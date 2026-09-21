@@ -1,0 +1,101 @@
+schema: yaiwes.chain/v1
+
+# Agente 9 — HF: catálogo de TODOS los modelos que el Director dio (con lo verificado en Hugging Face y lo no verificado) y plan de instalación en 10 procesadores
+# (un modelo por servidor, una copia de pesos compartida por varias sesiones). Marco: SmolAgents. Tarea entregada por el Director (2026-09-21 s y t).
+input_block: |
+  Busca los otros modelos que te di que tienes anotados
+  Salte al siguiente HF procesador si hace falta llevas a 10 procesador HF 32 de ram para tener suficiente cómputos de trabajo sin colapsar
+
+agent:
+  id: agent-9-models-catalog
+  framework: smolagents
+  group: hf-models
+  route: [minimax_m3, deepseek_flash, groq, nvidia, cerebras]
+  fallback: []
+  max_tokens: 3500
+
+context:
+  text: |
+    TABLA VERIFICADA EN HUGGING FACE (2026-09-21). Formato: id | repo | gguf_repo | file | size_mb | runtime | verified | needs_fork | role
+    qwen3.5-0.8b | Qwen/Qwen3.5-0.8B | ggml-org/Qwen3.5-0.8B-GGUF | Qwen3.5-0.8B-Q4_0.gguf | 563 | llama.cpp | True | False | router / tareas ultrarrápidas
+    lfm2.5-1.2b-instruct | LiquidAI/LFM2.5-1.2B-Instruct | LiquidAI/LFM2.5-1.2B-Instruct-GGUF | LFM2.5-1.2B-Instruct-Q4_K_M.gguf | 731 | llama.cpp | True | False | razonamiento pequeño
+    lfm2.5-1.2b-thinking | LiquidAI/LFM2.5-1.2B-Thinking | LiquidAI/LFM2.5-1.2B-Thinking-GGUF | LFM2.5-1.2B-Thinking-Q4_K_M.gguf | 731 | llama.cpp | True | False | razonamiento principal pequeño
+    gemma-4-e2b | google/gemma-4-E2B-it | google/gemma-4-E2B-it-qat-q4_0-gguf | gemma-4-E2B_q4_0-it.gguf | 3300 | llama.cpp | True | False | router, herramientas y JSON (enable_thinking=False)
+    qwen3-0.6b | Qwen/Qwen3-0.6B | Qwen/Qwen3-0.6B-GGUF | Qwen3-0.6B-Q8_0.gguf | 639 | llama.cpp | True | False | tareas ultrarrápidas / router / reasoning corto
+    smollm3-3b | HuggingFaceTB/SmolLM3-3B | ggml-org/SmolLM3-3B-GGUF | (archivo sin verificar) | (tamaño sin verificar) | llama.cpp | True | False | herramientas y /no_think
+    k2-horizon-0.9b | IFM/K2-Horizon-0.9B | IFM/K2-Horizon-0.9B-GGUF | (archivo sin verificar) | (tamaño sin verificar) | llama.cpp | True | False | por definir
+    nanbeige4.2-3b | Nanbeige/Nanbeige4.2-3B | bartowski/Nanbeige_Nanbeige4.2-3B-GGUF | (archivo sin verificar) | (sin verificar) | llama.cpp | True | True (fork rama nanbeige42) | code
+    nanojev | C-Tianyu/NanoJev | (sin GGUF) | (safetensors) | 2400 | python | True | False | decisiones
+    decider-0.8b | Mapika/decider-0.8b | (sin GGUF oficial) | - | (sin verificar) | python | True | False | decisiones
+    decider-2b | Mapika/decider-2b | (sin GGUF oficial) | - | (sin verificar) | python | True | False | decisiones
+    muse-glimmer-30b | meta-models/Muse-Glimmer-30B | meta-models/Muse-Glimmer-30B-GGUF | Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf | 16800 | llama.cpp | True | False | cerebro de decisiones de los agentes de Meta
+       (también: modelo borrador dflash-Muse-Glimmer-30B-Q4_K_M.gguf 1.6 GB y visión mmproj-Muse-Glimmer-30B-Q4_K_M.gguf 1.4 GB)
+    NO VERIFICADOS: gemma-3-1b (google/gemma-3-1b-it), smollm2-1.7b (HuggingFaceTB/SmolLM2-1.7B-Instruct), laya-421m (existe la familia convaiinnovations/laya, no se confirma que alguna sea de 421M),
+    verdict-151m (NO se encontró en Hugging Face).
+
+steps:
+
+  - id: models_catalog
+    task: |
+      Escribe el módulo Python `models_catalog.py` (solo código, un único bloque ```python, solo biblioteca estándar) con:
+      - `CATALOG`: dict con EXACTAMENTE 16 claves (los 12 ids verificados de la tabla y estos 4 no verificados: "gemma-3-1b", "smollm2-1.7b", "laya-421m", "verdict-151m"). Cada valor es un dict con las claves
+        "repo", "gguf_repo", "file", "size_mb", "runtime", "role", "verified", "needs_fork", "notes". Usa None donde la tabla diga "(sin verificar)", "(sin GGUF …)" o "-". Los 4 no verificados llevan
+        "verified": False (repo "google/gemma-3-1b-it", "HuggingFaceTB/SmolLM2-1.7B-Instruct", "convaiinnovations/laya" y None para verdict-151m), runtime "transformers" salvo laya-421m y verdict-151m que son "python".
+        muse-glimmer-30b lleva además "draft_file": "dflash-Muse-Glimmer-30B-Q4_K_M.gguf" y "mmproj_file": "mmproj-Muse-Glimmer-30B-Q4_K_M.gguf". size_mb es un entero (563, 731, 731, 3300, 639, 2400, 16800) o None.
+      - `get(model_id)`: devuelve el dict o lanza KeyError.
+      - `verified_ids()`: lista de los ids con "verified" True.
+      - `fits(model_id, ram_mb, overhead_mb=1500) -> bool`: True solo si size_mb no es None y size_mb + overhead_mb <= ram_mb.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: models_catalog.py
+        test: |
+          from models_catalog import CATALOG, get, verified_ids, fits
+          assert len(CATALOG) == 16
+          for k, v in CATALOG.items():
+              assert {"repo", "gguf_repo", "file", "size_mb", "runtime", "role", "verified", "needs_fork", "notes"} <= set(v), k
+          q = get("qwen3.5-0.8b")
+          assert q["gguf_repo"] == "ggml-org/Qwen3.5-0.8B-GGUF" and q["file"] == "Qwen3.5-0.8B-Q4_0.gguf" and q["size_mb"] == 563 and q["verified"] is True and q["runtime"] == "llama.cpp"
+          l = get("lfm2.5-1.2b-instruct")
+          assert l["gguf_repo"] == "LiquidAI/LFM2.5-1.2B-Instruct-GGUF" and l["file"] == "LFM2.5-1.2B-Instruct-Q4_K_M.gguf" and l["size_mb"] == 731
+          g = get("gemma-4-e2b")
+          assert g["gguf_repo"] == "google/gemma-4-E2B-it-qat-q4_0-gguf" and g["file"] == "gemma-4-E2B_q4_0-it.gguf" and g["size_mb"] == 3300
+          m = get("muse-glimmer-30b")
+          assert m["gguf_repo"] == "meta-models/Muse-Glimmer-30B-GGUF" and m["file"] == "Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf" and m["size_mb"] == 16800
+          assert m["draft_file"] == "dflash-Muse-Glimmer-30B-Q4_K_M.gguf" and m["mmproj_file"] == "mmproj-Muse-Glimmer-30B-Q4_K_M.gguf"
+          assert get("verdict-151m")["verified"] is False and get("nanbeige4.2-3b")["needs_fork"] is True and get("nanojev")["runtime"] == "python"
+          v = verified_ids()
+          assert "qwen3.5-0.8b" in v and "muse-glimmer-30b" in v and "verdict-151m" not in v and "laya-421m" not in v and len(v) == 12
+          assert fits("qwen3.5-0.8b", 24000) is True and fits("muse-glimmer-30b", 16000) is False and fits("muse-glimmer-30b", 24000) is True and fits("verdict-151m", 24000) is False
+          try:
+              get("no-existe")
+              raise SystemExit("no lanzó KeyError")
+          except KeyError:
+              pass
+      - kind: no_secrets
+
+  - id: install_plan
+    task: |
+      Escribe el módulo Python `install_plan.py` (solo código, un único bloque ```python, solo biblioteca estándar; autocontenido) con la función
+      `plan_install(models, nodes, ram_cap_gb) -> dict`: `models` es una lista de dicts {"id","size_mb"}, `nodes` una lista de ids de nodo en orden y `ram_cap_gb` el tope de RAM por nodo.
+      Regla: cada nodo aloja UN solo modelo (una copia de pesos compartida por sus ranuras). Modelos ligeros = size_mb <= 3500, ordenados por tamaño ascendente; pesados = size_mb > 3500.
+      Al i-ésimo nodo (empezando en 0) se le asigna el ligero de índice i % len(ligeros). Excepción: si hay al menos 2 nodos y existe algún pesado con size_mb + 6000 <= ram_cap_gb * 1024,
+      el ÚLTIMO nodo recibe el pesado más grande que cumpla eso (solo un nodo recibe un pesado). Devuelve {id_nodo: id_modelo}. Si `models` está vacío devuelve {}.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: install_plan.py
+        test: |
+          from install_plan import plan_install
+          models = [{"id": "qwen", "size_mb": 563}, {"id": "lfm", "size_mb": 731}, {"id": "gemma", "size_mb": 3300}, {"id": "muse", "size_mb": 16800}]
+          nodes = ["HF-%02d" % i for i in range(1, 11)]
+          p = plan_install(models, nodes, 24)
+          assert [p[n] for n in nodes[:9]] == ["qwen", "lfm", "gemma", "qwen", "lfm", "gemma", "qwen", "lfm", "gemma"] and p["HF-10"] == "muse" and len(p) == 10
+          q = plan_install(models, nodes, 16)
+          assert q["HF-10"] == "qwen" and all(v != "muse" for v in q.values())
+          assert plan_install(models, ["HF-01"], 24) == {"HF-01": "qwen"}
+          assert plan_install([], nodes, 24) == {}
+      - kind: no_secrets
+
+edges:
+  - models_catalog -> install_plan
