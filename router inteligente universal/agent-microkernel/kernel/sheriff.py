@@ -41,6 +41,11 @@ def extract_code(text: str) -> str:
     return (m.group(1) if m else text).strip() + "\n"
 
 
+def extract_js(text: str) -> str:
+    m = re.search(r"```(?:js|javascript)?\s*\n(.*?)```", text, re.S)
+    return (m.group(1) if m else text).strip() + "\n"
+
+
 def extract_json(text: str) -> Any:
     body = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
     start, end = body.find("{"), body.rfind("}")
@@ -69,6 +74,21 @@ def run(checks: list[dict[str, Any]], output: str, workdir: Path, owners: set[st
                 ast.parse(extract_code(output))
             except SyntaxError as exc:
                 fails.append(f"Python inválido: {exc.msg} (línea {exc.lineno})")
+        elif kind == "js_syntax":
+            code = extract_js(output)
+            workdir.mkdir(parents=True, exist_ok=True)
+            target = workdir / c.get("file", "check.js")
+            target.write_text(code, encoding="utf-8")
+            try:
+                p = subprocess.run(["node", "--check", str(target)], capture_output=True, text=True, timeout=25)
+                evidence.append({"kind": "js_syntax", "exit": p.returncode, "file": target.name, "sha256": sha256(code)})
+                if p.returncode != 0:
+                    last = [ln for ln in (p.stderr or p.stdout).strip().splitlines() if ln.strip()]
+                    fails.append("JavaScript inválido: " + (last[-1][:160] if last else "node --check falló"))
+            except FileNotFoundError:
+                fails.append("node no está disponible para validar JavaScript")
+            except subprocess.TimeoutExpired:
+                fails.append("la validación de JavaScript superó el tiempo")
         elif kind == "python_exec":
             code = extract_code(output)
             workdir.mkdir(parents=True, exist_ok=True)
