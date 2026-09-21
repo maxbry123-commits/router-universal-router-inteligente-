@@ -1,0 +1,69 @@
+schema: yaiwes.micro-agent/v1
+
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+
+agent:
+  id: agent-1-chat-hf
+  framework: pocketflow
+  group: chat-hf
+  route: [nvidia, groq, cerebras]
+  fallback: [minimax_m3]
+  max_tokens: 1800
+
+context:
+  max_chars: 3000
+  text: |
+    HECHOS VERIFICADOS (Hugging Face, 2026-09-21):
+    - LFM2.5-1.2B-Thinking: repo LiquidAI/LFM2.5-1.2B-Thinking; GGUF oficial LiquidAI/LFM2.5-1.2B-Thinking-GGUF con LFM2.5-1.2B-Thinking-Q4_K_M.gguf (731 MB).
+    - Qwen3-0.6B: repo Qwen/Qwen3-0.6B; GGUF oficial Qwen/Qwen3-0.6B-GGUF (solo Q8_0, 639 MB).
+    - K2-Horizon-0.9B: repo IFM/K2-Horizon-0.9B; GGUF IFM/K2-Horizon-0.9B-GGUF.
+    - Nanbeige4.2-3B: repo Nanbeige/Nanbeige4.2-3B (código propio); GGUF Q4_K_M solo de la comunidad: bartowski/Nanbeige_Nanbeige4.2-3B-GGUF; exige el fork de llama.cpp, rama nanbeige42.
+    - NanoJev: repo C-Tianyu/NanoJev; se ejecuta con Python (no llama.cpp).
+    - Decider-0.8B: repo Mapika/decider-0.8b. Decider-2B: repo Mapika/decider-2b. Se ejecutan con Python.
+
+task: |
+  Escribe el módulo Python `hf_models_registry.py` (solo código, un único bloque ```python; solo biblioteca estándar) con:
+  - `MODELS`: dict con exactamente 7 claves: "lfm2.5-1.2b-thinking", "qwen3-0.6b", "k2-horizon-0.9b", "nanbeige4.2-3b", "nanojev",
+    "decider-0.8b", "decider-2b". Cada valor es un dict con las claves "repo", "gguf_repo", "file", "runtime", "needs_fork", "role".
+  - Usa SOLO los repos del CONTEXTO. "gguf_repo" y "file" son None cuando no aplican o no se conocen (el archivo solo se conoce para lfm2.5-1.2b-thinking).
+  - "runtime" es "llama.cpp" cuando hay GGUF y "python" para nanojev, decider-0.8b y decider-2b. "needs_fork" es True solo para nanbeige4.2-3b.
+  - "role": lfm2.5-1.2b-thinking = "reasoning principal pequeño"; qwen3-0.6b = "tareas ultrarrápidas / router / reasoning corto";
+    k2-horizon-0.9b = "por definir"; nanbeige4.2-3b = "code"; nanojev, decider-0.8b y decider-2b = "decisiones".
+  - `get_model(key)`: devuelve el dict de esa clave y lanza KeyError si no existe.
+
+checks:
+  - kind: python_ast
+  - kind: python_exec
+    module: hf_models_registry.py
+    test: |
+      from hf_models_registry import MODELS, get_model
+      m = get_model("lfm2.5-1.2b-thinking")
+      assert m["gguf_repo"] == "LiquidAI/LFM2.5-1.2B-Thinking-GGUF" and m["file"] == "LFM2.5-1.2B-Thinking-Q4_K_M.gguf"
+      assert m["runtime"] == "llama.cpp" and m["needs_fork"] is False
+      assert get_model("qwen3-0.6b")["gguf_repo"] == "Qwen/Qwen3-0.6B-GGUF"
+      assert get_model("qwen3-0.6b")["role"] == "tareas ultrarrápidas / router / reasoning corto"
+      assert get_model("k2-horizon-0.9b")["gguf_repo"] == "IFM/K2-Horizon-0.9B-GGUF"
+      n = get_model("nanbeige4.2-3b")
+      assert n["needs_fork"] is True and n["gguf_repo"] == "bartowski/Nanbeige_Nanbeige4.2-3B-GGUF"
+      assert get_model("nanojev")["repo"] == "C-Tianyu/NanoJev" and get_model("nanojev")["runtime"] == "python"
+      assert get_model("decider-2b")["repo"] == "Mapika/decider-2b" and get_model("decider-0.8b")["repo"] == "Mapika/decider-0.8b"
+      assert len(MODELS) == 7
+      try:
+          get_model("no-existe")
+          raise SystemExit(1)
+      except KeyError:
+          pass
+  - kind: no_secrets
+
+nodes:
+  execute: {type: llm, provider: route, action: code}
+  sheriff: {type: deterministic_validator, depends_on: [execute]}
+
+edges:
+  - execute -> sheriff
+  - sheriff.PASS -> done
+  - sheriff.FAIL -> fix
