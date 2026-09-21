@@ -1,0 +1,69 @@
+name: RIU Cerebras Matrix
+
+# Cerebras: each of the 6 keys x every model in its catalog (1 short call each). Values are never printed.
+# Earlier test used only the first catalog model (gpt-oss-120b -> 402); the Director says Cerebras works, so test them all.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/riu-cerebras-matrix.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cerebras:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Matrix
+        env:
+          C1: ${{ secrets.CEREBRAS_API_KEY_1 }}
+          C2: ${{ secrets.CEREBRAS_API_KEY_2 }}
+          C3: ${{ secrets.CEREBRAS_API_KEY_3 }}
+          C4: ${{ secrets.CEREBRAS_API_KEY_4 }}
+          C5: ${{ secrets.CEREBRAS_API_KEY_5 }}
+          C6: ${{ secrets.CEREBRAS_API_KEY_6 }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request, urllib.error
+          from concurrent.futures import ThreadPoolExecutor
+
+          def call(method, url, tok, body=None, timeout=45):
+              data = json.dumps(body).encode() if body is not None else None
+              req = urllib.request.Request(url, data=data, method=method, headers={"Authorization": "Bearer " + tok, "Content-Type": "application/json", "User-Agent": "riu-probe"})
+              try:
+                  with urllib.request.urlopen(req, timeout=timeout) as r:
+                      return r.status, json.loads(r.read().decode())
+              except urllib.error.HTTPError as e:
+                  return e.code, {}
+              except Exception as e:
+                  return type(e).__name__, {}
+
+          keys = {i: os.environ.get("C%d" % i, "") for i in range(1, 7)}
+          models = {}
+          for i, tok in keys.items():
+              if tok:
+                  s, d = call("GET", "https://api.cerebras.ai/v1/models", tok)
+                  models[i] = sorted(m["id"] for m in d.get("data", [])) if s == 200 else []
+          catalog = sorted({m for v in models.values() for m in v})
+          jobs = [(i, m) for i in keys if keys[i] for m in (models.get(i) or catalog)]
+
+          def one(a):
+              i, m = a
+              t0 = time.time()
+              s, d = call("POST", "https://api.cerebras.ai/v1/chat/completions", keys[i],
+                          {"model": m, "messages": [{"role": "user", "content": "Reply with the single word OK"}], "max_tokens": 32})
+              txt = ((d.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
+              return i, m, ("OK" if s == 200 and txt.strip() else str(s)), time.time() - t0
+
+          with ThreadPoolExecutor(max_workers=6) as ex:
+              res = list(ex.map(one, jobs))
+          per_model = {}
+          for i, m, st, dt in res:
+              per_model.setdefault(m, []).append("k%d:%s:%.0fs" % (i, st, dt))
+          print("::notice title=RIU_CEREBRAS_MATRIX::keys_with_catalog=%s | catalog=%s | %s" % (
+              ",".join(str(i) for i in models if models[i]), ",".join(catalog),
+              " | ".join("%s -> %s" % (m, " ".join(v)) for m, v in per_model.items())))
+          PY
