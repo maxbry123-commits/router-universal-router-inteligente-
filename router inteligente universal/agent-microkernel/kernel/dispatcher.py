@@ -1,7 +1,8 @@
 """Model dispatcher for the micro-agents.
-Order set by the Director: the route (NVIDIA / Groq / Cerebras) first; only if the whole route fails, DeepSeek V4 Flash or
-MiniMax M3 through the Hugging Face router. Every call goes through the Router core (Enchufe Gate -> RedUniversal ->
-adaptive limiter + per-key circuit breaker + key pool). Keys come from the unlocked bank (never from files).
+The route is an ordered list. Entries: `nvidia` / `groq` / `cerebras` (their own APIs) and `deepseek_flash` / `minimax_m3` (DeepSeek V4 Flash and
+MiniMax M3 through the Hugging Face router, paid by the HF account). Order is set by the Director (agents-yaiwes/ROUTE.json). `fallback` entries
+(same names) are tried only after the whole route. Every call goes through the Router core (Enchufe Gate -> RedUniversal -> adaptive limiter +
+per-key circuit breaker + key pool). Keys come from the unlocked bank (never from files).
 """
 from __future__ import annotations
 
@@ -33,9 +34,31 @@ def _text(res: dict[str, Any]) -> str:
     return (res.get("message") or {}).get("content") or ""
 
 
+def _hf(name: str, messages: list[dict[str, str]], max_tokens: int, trace: list[str]) -> dict[str, Any] | None:
+    model, keys = FALLBACK[name], prov.env_keys("hf")
+    if not keys:
+        trace.append("hf:SIN_CLAVE")
+        return None
+    try:
+        core.hf_gate(model)
+        text = _text(core.call_via_router("hf", keys[0], model, messages, max_tokens))
+    except (RuntimeError, ValueError) as exc:
+        trace.append(f"hf/{model}:{str(exc)[:100]}")
+        return None
+    if not text.strip():
+        trace.append(f"hf/{model}:VACIO")
+        return None
+    return {"text": text, "provider": "hf", "model": model, "via": "route", "trace": trace}
+
+
 def call(cfg: dict[str, Any], messages: list[dict[str, str]], max_tokens: int = 1500) -> dict[str, Any]:
     trace: list[str] = []
-    for provider in cfg.get("route", []):
+    for provider in [*cfg.get("route", []), *cfg.get("fallback", [])]:
+        if provider in FALLBACK:
+            out = _hf(provider, messages, max_tokens, trace)
+            if out:
+                return out
+            continue
         keys = prov.env_keys(provider)
         if not keys:
             trace.append(f"{provider}:SIN_CLAVE")
@@ -50,19 +73,4 @@ def call(cfg: dict[str, Any], messages: list[dict[str, str]], max_tokens: int = 
             trace.append(f"{provider}/{model}:VACIO")
             continue
         return {"text": text, "provider": provider, "model": model, "via": "route", "trace": trace}
-    for fb in cfg.get("fallback", []):
-        model, keys = FALLBACK[fb], prov.env_keys("hf")
-        if not keys:
-            trace.append("hf:SIN_CLAVE")
-            continue
-        try:
-            core.hf_gate(model)
-            text = _text(core.call_via_router("hf", keys[0], model, messages, max_tokens))
-        except (RuntimeError, ValueError) as exc:
-            trace.append(f"hf/{model}:{str(exc)[:100]}")
-            continue
-        if not text.strip():
-            trace.append(f"hf/{model}:VACIO")
-            continue
-        return {"text": text, "provider": "hf", "model": model, "via": "fallback", "trace": trace}
     raise RuntimeError("SIN_RUTA: " + " | ".join(trace))
