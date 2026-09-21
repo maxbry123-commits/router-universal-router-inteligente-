@@ -2,7 +2,8 @@ name: RIU Microkernel Run
 
 # Claude (the brain) edits agent-microkernel/TRIGGER.json and dispatches this workflow. The micro-agents run in parallel,
 # every result is validated by the deterministic Sheriff, and the Crazy Wall state, results and HANDOFF.md are committed back.
-# Keys: only inside the encrypted bank (agent-microkernel/runtime-bank.db.gz.b64); the single secret is the bank passphrase.
+# Keys: only inside the encrypted bank (agent-microkernel/runtime-bank-v2.part1 + part2); the single secret is the bank passphrase.
+# (First micro-kernel, kept for other uses by order of the Director. The agents built on PocketFlow / SmolAgents live in agents/.)
 
 on:
   workflow_dispatch:
@@ -39,6 +40,12 @@ jobs:
 
       - run: pip install fastapi pydantic huggingface_hub pyyaml cryptography
 
+      - name: Assemble the encrypted bank (two parts)
+        run: |
+          cd "router inteligente universal/agent-microkernel"
+          cat runtime-bank-v2.part1 runtime-bank-v2.part2 > /tmp/runtime-bank.db.gz.b64
+          cp /tmp/runtime-bank.db.gz.b64 runtime-bank.db.gz.b64
+
       - name: Run the micro-agents
         id: run
         env:
@@ -59,6 +66,7 @@ jobs:
         run: |
           git config user.name "riu-microkernel"
           git config user.email "riu-microkernel@users.noreply.github.com"
+          git checkout -- "router inteligente universal/agent-microkernel/runtime-bank.db.gz.b64" || true
           git add "router inteligente universal/agent-microkernel/results" "router inteligente universal/agent-microkernel/crazy_wall" \
                   "router inteligente universal/agent-microkernel/crazy_wall.state.json" "router inteligente universal/agent-microkernel/HANDOFF.md" || true
           git commit -m "microkernel: resultados de la ronda (Crazy Wall + HANDOFF + salidas verificadas)" || { echo "nada que confirmar"; exit 0; }
