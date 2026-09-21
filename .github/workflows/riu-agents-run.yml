@@ -1,19 +1,23 @@
 name: RIU Agents Run
 
 # The Yaiwes SWARM: every folder agents-yaiwes/agent-*/ that has a chain.yaml (the DSL DAG) runs on its own and in parallel with its chain of steps.
-# Add an agent = add a folder with a chain.yaml. Frameworks: PocketFlow and SmolAgents (auditor = SmolAgents copy). Claude (the brain) only edits chains and
-# agents-yaiwes/ROUTE.json (code -> MiniMax M3, jobs -> DeepSeek V4 Flash) and dispatches this workflow; the agents execute, note their progress in their own
-# crazy_wall.state.json / HANDOFF.md / steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped.
-# Keys: only the encrypted bank (agent-microkernel/runtime-bank*); the single secret is its passphrase. Every agent has a 30-minute budget.
+# Add an agent = add a folder with a chain.yaml. `only` runs a single agent (priority runs, e.g. the auditor) in its own concurrency group.
+# Frameworks: PocketFlow and SmolAgents (auditor = SmolAgents copy). Claude (the brain) only edits chains and agents-yaiwes/ROUTE.json (code -> MiniMax M3,
+# jobs -> DeepSeek V4 Flash) and dispatches this workflow; the agents execute, note their progress in their own crazy_wall.state.json / HANDOFF.md /
+# steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped. Keys: only the encrypted bank; every agent has a 30-minute budget.
 
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: 'Run only this agent folder (e.g. agent-5-auditor). Empty = the whole swarm.'
+        default: ''
 
 permissions:
   contents: write
 
 concurrency:
-  group: riu-agents-run
+  group: riu-agents-run-${{ inputs.only || 'all' }}
   cancel-in-progress: false
 
 jobs:
@@ -53,6 +57,7 @@ jobs:
         env:
           RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
+          ONLY: ${{ inputs.only }}
           PYTHONUTF8: '1'
           PYTHONIOENCODING: utf-8
           LC_ALL: C.UTF-8
@@ -62,7 +67,7 @@ jobs:
           cd "router inteligente universal"
           for d in agents-yaiwes/agent-*/; do
             d="${d%/}"
-            if [ -f "$d/chain.yaml" ]; then
+            if [ -f "$d/chain.yaml" ] && { [ -z "$ONLY" ] || [ "$(basename "$d")" = "$ONLY" ]; }; then
               timeout 1800 python agents-yaiwes/chain.py "$d" > "/tmp/$(basename "$d").log" 2>&1 &
             fi
           done
