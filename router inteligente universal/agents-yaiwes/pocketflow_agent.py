@@ -8,6 +8,7 @@ Run: python pocketflow_agent.py <agent_dir>   (env: RIU_BANK_PASSPHRASE)
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -71,19 +72,18 @@ def main(agent_dir: str) -> int:
     cfg = boot.load_agent(agent_dir)
     agent = cfg["agent"]
     aid = agent["id"]
-    n = boot.open_bank(aid)
-    print(f"{aid}: {n} credenciales del banco abiertas en memoria")
-    trigger = __import__("json").loads((Path(agent_dir) / "TRIGGER.json").read_text(encoding="utf-8"))
+    print(f"{aid}: {boot.open_bank(aid)} credenciales del banco abiertas en memoria")
+    trigger = json.loads((Path(agent_dir) / "TRIGGER.json").read_text(encoding="utf-8"))
     shared = {"id": aid, "dir": str(agent_dir), "task": cfg["task"], "checks": cfg["checks"], "context": boot.load_context(cfg),
               "input_block": trigger["input_block"], "owners": set(), "attempt": 0, "feedback": None, "closed": False, "gaps": []}
     boot.write_state(agent_dir, aid, "pocketflow", "RUNNING", group=agent.get("group"), current_nodes=["execute"], next_nodes=["sheriff"])
     execute, validate = Execute(max_retries=1), Validate()
-    params = {"cfg": {"route": agent.get("route", []), "fallback": agent.get("fallback", [])}, "max_tokens": agent.get("max_tokens", 1500)}
-    execute.set_params(params)
     execute - "validate" >> validate
     execute - "retry" >> execute
     validate - "fix" >> execute
-    Flow(start=execute).run(shared)
+    flow = Flow(start=execute)
+    flow.set_params({"cfg": {"route": agent.get("route", []), "fallback": agent.get("fallback", [])}, "max_tokens": agent.get("max_tokens", 1500)})
+    flow.run(shared)
     if not shared["closed"]:
         boot.write_state(agent_dir, aid, "pocketflow", "BLOCKED", failed=["execute"], gaps=shared["gaps"], attempts=shared["attempt"])
     return boot.finish(agent_dir, aid, "pocketflow", shared["closed"], {
