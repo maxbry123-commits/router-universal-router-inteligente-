@@ -1,0 +1,38 @@
+name: RIU Download Agents
+
+# Paso 2 del Director: crea y descarga los agentes (4 agentes de Meta, SmolAgents, PocketFlow) con el motor de descarga; deja
+# agents-yaiwes/donors/<agente>/ y donors/MANIFEST.json (commit exacto, archivos, estado). Determinista: sin LLM.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/agents-yaiwes/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download
+        run: python "router inteligente universal/agents-yaiwes/common/download_donors.py"
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name "riu-download"
+          git config user.email "riu-download@users.noreply.github.com"
+          git add "router inteligente universal/agents-yaiwes/donors" || true
+          git commit -m "agentes: donantes descargados (Meta, SmolAgents, PocketFlow) + manifiesto" || { echo "sin cambios"; exit 0; }
+          for i in 1 2 3 4; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 4
+          done
