@@ -1,10 +1,12 @@
 schema: yaiwes.chain/v1
 
-# Agente 5 — AUDITOR / CHECKLIST (copia de SmolAgents convertida). Audita las instrucciones del Director (input block verbatim) contra lo que
-# hicieron los agentes: qué falta, qué es ambiguo, qué no se hizo, qué hace mal un agente (lo REFUTA). Auditoría forense: cada cita debe ser
-# textual del Director y cada evidencia debe existir en el repo (lo comprueba el Sheriff). Los paquetes los arma common/audit_pack.py.
+# Agente 5 — AUDITOR / CHECKLIST (copia de SmolAgents convertida) — 4 PASADAS sobre TODAS las notas del Director (input block verbatim), una por lente:
+# 1 chat · 2 almacenamiento y cableado de agentes con chat y documentos · 3 modelos de IA locales y aceleradores · 4 verificación cruzada (refuta a los agentes).
+# El Sheriff exige que cada cita sea textual del Director y que cada evidencia exista en el repo. Salida determinista: AUDIT-CHECKLIST.md y DELEGACION.md.
 input_block: |
-  Realiza una copia de Smolange y lo conviertes en agente auditor y check lista su misión es aduidtar mis instrucciones el 1 a 1 imput block verbartin para verificar cruzada que de está cumpliendo las indicaciones su objetivo poder decirte que falta que es ambiguo que no se ha hecho o que está haciendo mal algún agente el debe refutar el trabajo y funciona como un sherriff policy guardián sentinela realiza auditoría forense x Ray verificación cruzada con la información y los agentes
+  Prioridad solo el chat y los modelos de ai lo ales busca audita todos los imput block verbartin que yo te di para revisar haces una lista de lo que debe funcionar en hf todos los detalles del chat y almacenamiento para agantes y cabkear los agente al Chat y documentos y todos los modelos de ai más aceleradores para si
+  Audita los archivos y haces una lista de lo que vas a mandar hacer
+  4 pasadas
 
 agent:
   id: agent-5-auditor
@@ -12,69 +14,85 @@ agent:
   runner: auditor
   post: audit_report
   group: audit
-  route: [groq, nvidia, cerebras]
-  fallback: [deepseek_flash]
-  max_tokens: 3000
+  route: [deepseek_flash, minimax_m3, groq, nvidia, cerebras]
+  fallback: []
+  max_tokens: 4000
 
 context:
   text: |
-    Auditas por PAQUETES: cada paso recibe un paquete con las palabras LITERALES del Director (`=== ARCHIVO: ... ===`) y el estado actual de los agentes
-    (`agents_state.md`). Los agentes son: agent-1-chat-hf (chat, PocketFlow), agent-2-chat-hf-smol (chat, SmolAgents), agent-3-router (Hugging Face: chat sin PRO,
-    PocketFlow) y agent-4-router-smol (Hugging Face: modelos por pesos remotos, SmolAgents). Sus entregables están en agents-yaiwes/<agente>/steps/<paso>/results/.
+    Auditas por PASADAS: cada paso recibe un paquete con las palabras LITERALES del Director sobre un tema (`=== ARCHIVO: ... ===`) y el estado actual de los agentes (`agents_state.md`,
+    con las rutas de sus entregables). Agentes: agent-1-chat-hf (paneles del chat), agent-2-chat-hf-smol (panel de trabajos, plantilla fija, Crazy Wall), agent-3-router (chat sin PRO en HF: Static Space),
+    agent-4-router-smol (registro de modelos, Job, monitor de nodos), agent-6-hf-nodes (RAM, caché reducida, 10 procesadores), agent-7-llama-hf (llama-server con aceleradores), agent-8-router-local (pool de
+    nodos locales y ruta espejo), agent-9-models-catalog (catálogo de modelos y plan de instalación). Ya existe en el repo: Chat MVP (`router inteligente universal/integration/chat_mvp/`: selector de
+    proveedor y modelo, con/sin agente, cuentas GitHub, documentos, SQL+grafo+caché+documentos, banco de claves, jobs en paralelo, DAG, `/chat/route`); el Router corre en un Job de HF (probado); benchmarks
+    de llama.cpp (Qwen3.5-0.8B tg 28 t/s, LFM2.5-1.2B tg 30 t/s en 4 vCPU). Prioridad del Director: SOLO el chat y los modelos de IA locales.
 
 steps:
 
-  - id: audit_pass_1
+  - id: lens_chat
     context_file:
-      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-1.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-chat.md
       - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md
-    task: &audit_task |
-      Audita el PAQUETE del CONTEXTO. Devuelve SOLO un objeto JSON {"items": [...]} con al menos 6 ítems, cada uno con:
-      "id" (único, ej. P1-01), "quote" (copiada LETRA POR LETRA de las palabras del Director en el paquete, de 20 a 200 caracteres),
-      "status" (uno de HECHO, PARCIAL, PENDIENTE, AMBIGUO, REFUTADO), "evidence" (lista de rutas del repo que EXISTEN y respaldan el estado; usa
-      list_repo_dir y read_repo_file; lista vacía si es PENDIENTE) y "note" (una frase). Criterios: HECHO solo con evidencia verificada;
-      REFUTADO si un agente afirma o entrega algo que no cumple la instrucción (di en "note" qué agente y por qué); AMBIGUO si la instrucción no
-      permite decidir; PENDIENTE si no hay evidencia. No inventes rutas ni citas.
+    task: |
+      PASADA 1 — CHAT. Audita TODOS los detalles del chat que el Director pidió (interfaz, selector de proveedor y modelo, con o sin agente, cuentas de GitHub, documentos adjuntos, historial, banco de claves,
+      paneles, costos, publicarlo en Hugging Face, URL) y di cuáles funcionan. Devuelve SOLO un objeto JSON {"items": [...]} con al menos 10 ítems, cada uno con: "id" (único, P1-01...), "quote" (copiada LETRA POR LETRA
+      de las palabras del Director en el paquete, de 20 a 200 caracteres), "status" (HECHO, PARCIAL, PENDIENTE, AMBIGUO o REFUTADO), "area" (chat, almacenamiento, agentes, modelos o aceleradores),
+      "evidence" (lista de rutas del CONTEXTO que respaldan el estado; [] si es PENDIENTE), "note" (una frase) y "tarea" (qué hay que mandar hacer a un agente, una frase; "" si es HECHO).
+      HECHO solo con evidencia; REFUTADO si un agente entregó algo que no cumple (di cuál en "note"); AMBIGUO si no permite decidir; no inventes citas ni rutas.
     checks:
       - kind: audit_json
-        min_items: 6
-        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-1.md]
+        min_items: 10
+        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-chat.md]
       - kind: no_secrets
 
-  - id: audit_pass_2
+  - id: lens_storage
     context_file:
-      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-2.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-storage.md
       - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md
-    task: *audit_task
+    task: |
+      PASADA 2 — ALMACENAMIENTO Y CABLEADO. Audita el ALMACENAMIENTO para agentes (SQL, grafo, caché, documentos, memoria, Crazy Wall, handoff, notas) y la conexión ("cablear") de los agentes con el chat y con
+      los documentos, en Hugging Face. Devuelve SOLO un objeto JSON {"items": [...]} con al menos 10 ítems, cada uno con: "id" (único, P2-01...), "quote" (copiada LETRA POR LETRA de las palabras del Director en el
+      paquete, de 20 a 200 caracteres), "status" (HECHO, PARCIAL, PENDIENTE, AMBIGUO o REFUTADO), "area" (chat, almacenamiento, agentes, modelos o aceleradores), "evidence" (lista de rutas del CONTEXTO; [] si es
+      PENDIENTE), "note" (una frase) y "tarea" (qué mandar hacer a un agente; "" si es HECHO). No inventes citas ni rutas.
     checks:
       - kind: audit_json
-        min_items: 6
-        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-2.md]
+        min_items: 10
+        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-storage.md]
       - kind: no_secrets
 
-  - id: audit_pass_3
+  - id: lens_models
     context_file:
-      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-3.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-models.md
       - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md
-    task: *audit_task
+    task: |
+      PASADA 3 — MODELOS DE IA LOCALES Y ACELERADORES. Audita los MODELOS locales en Hugging Face (pesos remotos, cuantización, una copia compartida por varias sesiones = espejo, RAM, 10 procesadores de 32 GB,
+      salto de nodo, Jobs) y los ACELERADORES (llama.cpp: atención flash, caché KV q8, caché de prompt, batching continuo, ranuras, decodificación especulativa; OpenVINO, ONNX, TorchAO, etc.). Devuelve SOLO un objeto
+      JSON {"items": [...]} con al menos 10 ítems, cada uno con: "id" (único, P3-01...), "quote" (copiada LETRA POR LETRA de las palabras del Director en el paquete, de 20 a 200 caracteres), "status" (HECHO,
+      PARCIAL, PENDIENTE, AMBIGUO o REFUTADO), "area" (chat, almacenamiento, agentes, modelos o aceleradores), "evidence" (lista de rutas del CONTEXTO; [] si es PENDIENTE), "note" (una frase) y "tarea" (qué mandar
+      hacer a un agente; "" si es HECHO). No inventes citas ni rutas.
     checks:
       - kind: audit_json
-        min_items: 6
-        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-3.md]
+        min_items: 10
+        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-models.md]
       - kind: no_secrets
 
-  - id: audit_pass_4
+  - id: lens_cross
     context_file:
-      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-4.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-cross.md
       - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md
-    task: *audit_task
+    task: |
+      PASADA 4 — VERIFICACIÓN CRUZADA. Contrasta lo que dicen los agentes (su estado y entregables en `agents_state.md`) con lo que el Director pidió (paquete). Marca REFUTADO cuando un agente entregó algo que no cumple
+      lo pedido o no está donde debe, PENDIENTE lo que nadie hizo, AMBIGUO lo que no permite decidir. Solo chat y modelos locales. Devuelve SOLO un objeto JSON {"items": [...]} con al menos 10 ítems, cada uno con:
+      "id" (único, P4-01...), "quote" (copiada LETRA POR LETRA de las palabras del Director en el paquete, de 20 a 200 caracteres), "status" (HECHO, PARCIAL, PENDIENTE, AMBIGUO o REFUTADO), "area" (chat,
+      almacenamiento, agentes, modelos o aceleradores), "evidence" (lista de rutas del CONTEXTO; [] si es PENDIENTE), "note" (una frase; en REFUTADO di qué agente y por qué) y "tarea" (qué mandar hacer a un agente;
+      "" si es HECHO). No inventes citas ni rutas.
     checks:
       - kind: audit_json
-        min_items: 6
-        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-4.md]
+        min_items: 10
+        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-cross.md]
       - kind: no_secrets
 
 edges:
-  - audit_pass_1 -> audit_pass_2
-  - audit_pass_2 -> audit_pass_3
-  - audit_pass_3 -> audit_pass_4
+  - lens_chat -> lens_storage
+  - lens_storage -> lens_models
+  - lens_models -> lens_cross
