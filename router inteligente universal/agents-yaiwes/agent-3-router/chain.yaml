@@ -1,0 +1,92 @@
+schema: yaiwes.chain/v1
+
+# Cadena de pasos (DSL DAG) del agente 3 — HUGGING FACE: el chat en HF SIN plan PRO (opciones que dio el Director). Marco: PocketFlow.
+input_block: |
+  2 agente en HF para lo que falta en tares distintas
+  Le das una encadenado de pasos
+  Chat en HF ya te di varias opciones sin plan pro
+
+agent:
+  id: agent-3-router
+  framework: pocketflow
+  group: hf-chat
+  route: [nvidia, groq, cerebras]
+  fallback: [minimax_m3]
+  max_tokens: 2200
+
+context:
+  text: |
+    OPCIONES DEL DIRECTOR PARA EL CHAT EN HF SIN PRO (documento pegado por él; sus datos no están verificados todavía):
+    - Elegida: Static Space GRATUITO (HTML/JS) como interfaz + servidor del Router en un Job de HF (8 vCPU / 32 GB) que expone un puerto:
+      https://<job_id>--8000.hf.jobs. El endpoint existe mientras el Job esté vivo.
+    - En un Static Space las variables/secrets pueden llegar al JavaScript del navegador: NO poner claves privadas allí.
+    - Para autenticar sin token maestro: HF OAuth. Front matter del Space: `sdk: static`, `hf_oauth: true`, `hf_oauth_scopes:` con `jobs`
+      e `inference-api`.
+    - Alternativas: Gradio ZeroGPU (2 Spaces gratis por cuenta elegible), o Static + OAuth + Inference Providers directos.
+    - HF exige plan de pago para crear Spaces Docker/Gradio CPU nuevos (salvo ZeroGPU): descartado.
+    API del chat (Router): POST /chat/send (cabecera X-API-Key) cuerpo {"message","provider","model","conversation_id","mode","agent_id","doc_ids","cache","max_tokens"} -> {"reply","conversation_id","certified","cached"}.
+
+steps:
+
+  - id: space_readme
+    task: |
+      Escribe el archivo `README.md` de un Static Space de Hugging Face para el chat. Debe empezar con un bloque YAML entre líneas `---`
+      con exactamente estas claves: title: "Chat YAIWES", emoji, colorFrom, colorTo, sdk: static, pinned: false, hf_oauth: true y
+      hf_oauth_scopes con dos elementos (jobs e inference-api). Después del bloque, en español, una explicación breve (mínimo 300
+      caracteres) de qué hace el Space, que NO contiene claves privadas y que la interfaz habla con el Router en un Job de HF.
+    checks:
+      - kind: contains
+        values: ["---", "title:", "sdk: static", "hf_oauth: true", "hf_oauth_scopes:", "inference-api", "jobs"]
+      - kind: min_chars
+        value: 400
+      - kind: no_secrets
+
+  - id: space_index
+    task: |
+      Escribe el archivo `index.html` (un solo archivo, HTML + CSS + JavaScript, sin librerías externas) del chat estático. Requisitos:
+      empieza con <!doctype html>; título "Chat YAIWES"; un campo para la URL base del Router (API_BASE, se guarda solo en memoria) y un
+      campo de contraseña "API key del Router" (solo en memoria, nunca en localStorage ni en el HTML); una caja de mensajes y un botón
+      "Enviar" que hace fetch(API_BASE + '/chat/send', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-API-Key': <valor>},
+      body: JSON.stringify({message, provider: 'nvidia', model: 'nvidia/nemotron-3-super-120b-a12b', max_tokens: 1024})}) y muestra
+      la respuesta (reply) y los errores. Todo texto del servidor se muestra con textContent, nunca innerHTML. Incluye un botón
+      "Iniciar sesión con Hugging Face" que solo lleva a https://huggingface.co/oauth/authorize (marcador para la integración OAuth).
+      No incluyas ninguna clave.
+    checks:
+      - kind: contains
+        values: ["<!doctype html", "API_BASE", "fetch(", "/chat/send", "X-API-Key", "textContent", "oauth"]
+      - kind: min_chars
+        value: 1500
+      - kind: no_secrets
+
+  - id: deploy_script
+    task: |
+      Escribe un módulo Python `deploy_static_space.py` (solo código, un único bloque ```python) con:
+      - `plan_files(space_id: str, api_base: str) -> dict`: función PURA que devuelve {"repo_id": space_id, "repo_type": "space",
+        "space_sdk": "static", "files": ["README.md", "index.html"], "api_base": api_base}. Lanza ValueError si space_id no tiene la forma
+        "usuario/nombre" (exactamente una barra y ambos lados no vacíos) o si api_base no empieza por "https://".
+      - `deploy(space_id: str, folder: str, token: str) -> str`: importa huggingface_hub DENTRO de la función, llama a
+        HfApi(token=token).create_repo(space_id, repo_type="space", space_sdk="static", exist_ok=True) y luego
+        upload_folder(folder_path=folder, repo_id=space_id, repo_type="space"), y devuelve "https://huggingface.co/spaces/" + space_id.
+      El token nunca se imprime ni se guarda.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: deploy_static_space.py
+        test: |
+          from deploy_static_space import plan_files
+          p = plan_files("COMAND-CENTER-1/riu-chat", "https://job--8000.hf.jobs")
+          assert p == {"repo_id": "COMAND-CENTER-1/riu-chat", "repo_type": "space", "space_sdk": "static",
+                       "files": ["README.md", "index.html"], "api_base": "https://job--8000.hf.jobs"}
+          for bad in (("sin-barra", "https://x"), ("a/b/c", "https://x"), ("/b", "https://x"), ("a/", "https://x"), ("a/b", "http://x")):
+              try:
+                  plan_files(*bad)
+                  raise SystemExit("aceptó " + repr(bad))
+              except ValueError:
+                  pass
+      - kind: contains
+        values: ['space_sdk="static"', "upload_folder", "create_repo"]
+      - kind: no_secrets
+
+edges:
+  - space_readme -> space_index
+  - space_index -> deploy_script
