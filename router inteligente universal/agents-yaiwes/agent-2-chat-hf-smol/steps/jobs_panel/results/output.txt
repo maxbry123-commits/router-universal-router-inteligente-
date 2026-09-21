@@ -1,3 +1,4 @@
+```js
 function initJobsPanel(container, fetchJson) {
   // Create textarea for JSON input
   const textarea = document.createElement('textarea');
@@ -44,3 +45,4 @@ function initJobsPanel(container, fetchJson) {
     });
   });
 }
+```

@@ -1,0 +1,96 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-4-router-smol
+  framework: smolagents
+  group: hf-models
+  route:
+  - deepseek_flash
+  - minimax_m3
+  - groq
+  - nvidia
+  - cerebras
+  fallback:
+  - minimax_m3
+  max_tokens: 1800
+context:
+  text: "HECHOS VERIFICADOS (Hugging Face, 2026-09-21):\n- LFM2.5-1.2B-Thinking: repo\
+    \ LiquidAI/LFM2.5-1.2B-Thinking; GGUF oficial LiquidAI/LFM2.5-1.2B-Thinking-GGUF\
+    \ con LFM2.5-1.2B-Thinking-Q4_K_M.gguf (731 MB).\n- Qwen3-0.6B: repo Qwen/Qwen3-0.6B;\
+    \ GGUF oficial Qwen/Qwen3-0.6B-GGUF (solo Q8_0, 639 MB).\n- K2-Horizon-0.9B: repo\
+    \ IFM/K2-Horizon-0.9B; GGUF IFM/K2-Horizon-0.9B-GGUF.\n- Nanbeige4.2-3B: repo\
+    \ Nanbeige/Nanbeige4.2-3B (código propio); GGUF Q4_K_M solo de la comunidad: bartowski/Nanbeige_Nanbeige4.2-3B-GGUF;\
+    \ exige el fork de llama.cpp, rama nanbeige42.\n- NanoJev: repo C-Tianyu/NanoJev;\
+    \ se ejecuta con Python (no llama.cpp).\n- Decider-0.8B: repo Mapika/decider-0.8b.\
+    \ Decider-2B: repo Mapika/decider-2b. Se ejecutan con Python.\nREGLAS DEL DIRECTOR:\
+    \ pesos remotos con `-v hf://models/AUTOR/MODELO:/model:ro` en HF Jobs y llama.cpp;\
+    \ una copia por modelo compartida\npor muchos agentes (continuous batching, prompt\
+    \ cache); 3 nodos HF de 32 GB con un Nanbeige por nodo; estados por carga:\n0-80\
+    \ % GREEN, 80-90 % YELLOW, 90-95 % DRAIN, >= 95 % CLOSED.\n\n\nSALIDA VERIFICADA\
+    \ DEL PASO ANTERIOR (models_registry):\n```python\nMODELS = {\n    \"lfm2.5-1.2b-thinking\"\
+    : {\n        \"repo\": \"LiquidAI/LFM2.5-1.2B-Thinking\",\n        \"gguf_repo\"\
+    : \"LiquidAI/LFM2.5-1.2B-Thinking-GGUF\",\n        \"file\": \"LFM2.5-1.2B-Thinking-Q4_K_M.gguf\"\
+    ,\n        \"runtime\": \"llama.cpp\",\n        \"needs_fork\": False,\n     \
+    \   \"role\": \"reasoning principal pequeño\"\n    },\n    \"qwen3-0.6b\": {\n\
+    \        \"repo\": \"Qwen/Qwen3-0.6B\",\n        \"gguf_repo\": \"Qwen/Qwen3-0.6B-GGUF\"\
+    ,\n        \"file\": None,\n        \"runtime\": \"llama.cpp\",\n        \"needs_fork\"\
+    : False,\n        \"role\": \"tareas ultrarrápidas / router / reasoning corto\"\
+    \n    },\n    \"k2-horizon-0.9b\": {\n        \"repo\": \"IFM/K2-Horizon-0.9B\"\
+    ,\n        \"gguf_repo\": \"IFM/K2-Horizon-0.9B-GGUF\",\n        \"file\": None,\n\
+    \        \"runtime\": \"llama.cpp\",\n        \"needs_fork\": False,\n       \
+    \ \"role\": \"por definir\"\n    },\n    \"nanbeige4.2-3b\": {\n        \"repo\"\
+    : \"Nanbeige/Nanbeige4.2-3B\",\n        \"gguf_repo\": \"bartowski/Nanbeige_Nanbeige4.2-3B-GGUF\"\
+    ,\n        \"file\": None,\n        \"runtime\": \"llama.cpp\",\n        \"needs_fork\"\
+    : True,\n        \"role\": \"code\"\n    },\n    \"nanojev\": {\n        \"repo\"\
+    : \"C-Tianyu/NanoJev\",\n        \"gguf_repo\": None,\n        \"file\": None,\n\
+    \        \"runtime\": \"python\",\n        \"needs_fork\": False,\n        \"\
+    role\": \"decisiones\"\n    },\n    \"decider-0.8b\": {\n        \"repo\": \"\
+    Mapika/decider-0.8b\",\n        \"gguf_repo\": None,\n        \"file\": None,\n\
+    \        \"runtime\": \"python\",\n        \"needs_fork\": False,\n        \"\
+    role\": \"decisiones\"\n    },\n    \"decider-2b\": {\n        \"repo\": \"Mapika/decider-2b\"\
+    ,\n        \"gguf_repo\": None,\n        \"file\": None,\n        \"runtime\"\
+    : \"python\",\n        \"needs_fork\": False,\n        \"role\": \"decisiones\"\
+    \n    }\n}\n\ndef get_model(key):\n    if key not in MODELS:\n        raise KeyError(key)\n\
+    \    return MODELS[key]\n```"
+  max_chars: 40000
+task: 'Escribe un módulo Python `job_spec.py` (solo código, un único bloque ```python,
+  sin librerías externas) con la función
+
+  `build_job_spec(repo: str, gguf_file: str, port: int = 8080, flavor: str = "cpu-upgrade",
+  parallel: int = 4, ctx: int = 8192) -> dict`
+
+  que prepara un Job de Hugging Face que sirve un modelo GGUF con llama.cpp montando
+  los pesos remotos (sin descargarlos antes).
+
+  Devuelve un dict con: "image" = "ghcr.io/ggml-org/llama.cpp:server"; "flavor" =
+  flavor; "expose" = port;
+
+  "volumes" = [f"hf://models/{repo}:/model:ro"]; "command" = lista ["llama-server",
+  "--host", "0.0.0.0", "--port", str(port),
+
+  "--model", f"/model/{gguf_file}", "--parallel", str(parallel), "--ctx-size", str(ctx),
+  "--cont-batching", "--cache-prompt"].
+
+  Si `repo` no tiene la forma "organizacion/nombre" lanza ValueError.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: job_spec.py
+  test: "from job_spec import build_job_spec\ns = build_job_spec(\"LiquidAI/LFM2.5-1.2B-Thinking-GGUF\"\
+    , \"LFM2.5-1.2B-Thinking-Q4_K_M.gguf\")\nassert s[\"flavor\"] == \"cpu-upgrade\"\
+    \ and s[\"expose\"] == 8080 and s[\"image\"] == \"ghcr.io/ggml-org/llama.cpp:server\"\
+    \nassert \"hf://models/LiquidAI/LFM2.5-1.2B-Thinking-GGUF:/model:ro\" in s[\"\
+    volumes\"]\ncmd = \" \".join(s[\"command\"])\nfor f in [\"--model /model/LFM2.5-1.2B-Thinking-Q4_K_M.gguf\"\
+    , \"--parallel 4\", \"--ctx-size 8192\", \"--cont-batching\", \"--cache-prompt\"\
+    ]:\n    assert f in cmd, f\ns2 = build_job_spec(\"A/B\", \"m.gguf\", parallel=2,\
+    \ ctx=4096, port=9000)\nassert s2[\"expose\"] == 9000 and \"--parallel 2\" in\
+    \ \" \".join(s2[\"command\"]) and \"--ctx-size 4096\" in \" \".join(s2[\"command\"\
+    ])\ntry:\n    build_job_spec(\"sin-barra\", \"m.gguf\")\n    raise SystemExit(\"\
+    aceptó un repo inválido\")\nexcept ValueError:\n    pass\n"
+- kind: no_secrets

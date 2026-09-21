@@ -2,24 +2,25 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-2-chat-hf-smol",
  "framework": "smolagents",
- "status": "BLOCKED",
- "updated_at": "2026-09-21T13:27:24Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T14:24:01Z",
  "group": "chat",
  "chain": [
   "jobs_panel",
   "fixed_template",
   "crazy_wall_chain"
  ],
- "completed": [],
- "failed": [
-  "jobs_panel"
- ],
- "next_nodes": [
+ "completed": [
+  "jobs_panel",
   "fixed_template",
   "crazy_wall_chain"
  ],
+ "failed": [],
+ "next_nodes": [],
  "current_nodes": [],
  "route": [
+  "deepseek_flash",
+  "minimax_m3",
   "groq",
   "nvidia",
   "cerebras"

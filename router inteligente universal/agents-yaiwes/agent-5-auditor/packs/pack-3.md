@@ -1,171 +1,3 @@
-=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-j-definir-router-jev-vercel.md ===
-## Mensaje del Director
-
-Vamos a definir antes de avanzar vamos a investiga primero solo vamos a definir no inicias nada 
-
-1. Porque no haces un router tienes el code que hizo Fables en unos de los archivos de documentos y en mai que sirva para el chat y el otro equipo usando las api de Nvidia y mínimax en hora pico y deepsek v4 en hora no pico ? 
-
-2. El motor de busqueda como imput lo metes en el router como búsqueda de contexto cuando inicia el imput dispara los motores de búsqueda cuando detecta cualquier imput menos code solo se programación lo Empaquetado: si quieres, lo dejo empaquetado con un script que lo lance y devuelva los resultados que tenga predeterminada 12 lugares de la comunidad de desarrolladores de programación de code como fuente primaria en el router y el Github o fuentes de huggueface o de programacion y que podamos prender y apagar en el chat o en el router  puede hacerlo asi si o no ?
-
-Necesito . 
-
-Quiero  que busques en huggueface para conectar llamada al modelo sin api de otro proveedor solo a la base del pesos de los modelos como te explique recuerdas 
-Nanbeige4.2
-Laya-421M → Verdict-151M → NanoJev-0.6B → Decider-0.8B → Decider-2B
-
-En vercel vas a instalar para probar  → Jev en Vercel AI Gateway — integración pública 
-typesafe-ai/jev
-
-Esto será para poder crear el router el archivo que te pase
-
-Salida 1 📌 
-Paso 1 📌 anota todo 1 a 1 imput block verbartin 
-
-Paso 2 📌 dime qué te falta solo del chat 
-
-
-Salida 2 📌 definimos lo del router y el chat 
-
-Inicia salida 1
-
-=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-k-pesos-remotos-nanbeige-microkernels.md ===
-Ok hagamos algo para trabajar en paralelo vamos a Cerrar solo los modelos que te di ahora en la lista en huggueface y vecel luego sigues uno por uno los 9 puntos 
-
-Sabes cómo hacer lo de los modelos en huggueface con la información que te di como de llamar al modelo por el job de HF los pesos revisa la información que te pase antes y ahora revisa de lo que te doy que tienes y que te falta y anotas 1 a 1 imput block verbartin 
-
-Vamos a poner donde el chat provincianal en vercel o huggueface? 
-
-Añade esto a los modelos que vamos a instalar local en HF 
-LFM2.5-1.2B-Thinking
-1.2B
-Qwen3-0.6B
-→ tareas ultrarrápidas / router / reasoning corto
-
-LFM2.5-1.2B-Thinking
-→ reasoning principal pequeño
-
-K2-Horizon-0.9B
-→ 
-
-Lo de los “pesos remotos” que recordabas
-Sí. La función correcta de HF Jobs es:
-HF HUB
-modelo original
-    ↓
-hf://models/AUTOR/MODELO
-    ↓
-MOUNT READ-ONLY
-    ↓
-HF JOB
-    ↓
-/model
-    ↓
-llama.cpp / runtime
-    ↓
-RAM
-Hugging Face permite montar directamente repos de modelos:
--v hf://models/AUTOR/MODELO:/model:ro
-Los archivos se fetch lazily, es decir, se leen bajo demanda. No tienes que copiar los pesos a yaiwes-v54, ni hacer una copia persistente del modelo en tu cuenta. �
-Hugging Face +1
-Incluso HF documenta específicamente este patrón para llama.cpp:
-hf jobs run \
-  -v hf://models/ORG/MODEL:/model:ro \
-  ...
-  llama serve \
-  --model /model/model-Q4_K_M.gguf
-HF dice explícitamente que esto puede evitar el paso previo de descarga y que el servidor streamea desde el repo montado mientras carga. �
-Hugging Face
-Pero hay una precisión importante:
-NO copia persistente         ✅
-NO duplicación en tu bucket  ✅
-NO snapshot_download previo  ✅
-
-cero transferencia de pesos  ❌
-La CPU no puede inferir directamente desde Internet. Los bloques necesarios tienen que ser leídos y terminar en RAM/cache efímera del Job. Cuando termina el Job, ese filesystem efímero desaparece. 
-
-
-HF REMOTE MODEL
-      ↓
-hf:// mount
-      ↓
-GGUF Q4_K_M
-      ↓
-llama.cpp
-      ↓
-AVX2/AVX512/AMX si el host los expone
-      +
-OpenBLAS o oneMKL
-      +
-Flash Attention
-      +
-KV Q8
-      +
-Prompt Cache
-      +
-Continuous Batching
-      +
-Parallel slots
-      +
-N-gram speculative decoding
-      ↓
-OpenAI-compatible API
-      ↓
-YAIWES ROUTER
-
-
-OpenBLAS / oneMKL: sí, pero con una limitación
-llama.cpp dice que BLAS puede mejorar prompt processing, especialmente con batches superiores a 32, pero no mejora directamente la velocidad de token generation. �
-GitHub
-Así que:
-INPUT 50K tokens
-→ BLAS puede ayudar bastante
-
-OUTPUT token → token → token
-→ BLAS no es la principal aceleración
-Para agentes que leen repositorios grandes, esto sigue siendo importante.
-
-Prompt cache puede ser enorme para tus 50 agentes
-llama-server permite:
---cache-prompt
---cache-reuse
-Solo procesa la parte nueva cuando reutilizas un prefijo común. También soporta una cache RAM compartida. �
-GitHub
-Esto encaja perfectamente con:
-SYSTEM PROMPT YAIWES
-+ REGLAS
-+ ARQUITECTURA
-+ SKILLS
-
-        ↓ se procesan una vez
-
-Agente 1 → input nuevo
-Agente 2 → input nuevo
-Agente 3 → input nuevo
-...
-Eso podría darte más ahorro real que una pequeña mejora de tok/s.
-
-Para varios agentes: continuous batching
-llama-server soporta nativamente:
---parallel N
---cont-batching
-Las distintas solicitudes comparten un batch de inferencia. �
-GitHub +1
-Para tu máquina:
-8 vCPU / 32 GB
-        ↓
-1 × LFM 1.2B Q4
-        ↓
-llama-server
-        ↓
-continuous batching
-        ↓
-┌ Agent 1
-├ Agent 2
-├ Agent 3
-├ Agent 4
-└ ...
-Esto es mucho mejor qu
-
 === ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-l-agentes-smolagents-vercel-chat-hf.md ===
 ## Mensaje del Director
 
@@ -265,5 +97,73 @@ Te di esta orden y no avanzas en más nada  hasta que lo hagas tú orquestar y e
 
 
 .
+
+---
+
+=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-o-smolagents-pocketflow-4-agentes.md ===
+Que usaste yo te di unas instrucciones tu no cambias mis instrucciones nunca sin mi autorización está claro 
+
+Yo te di dos modelos para usar y crear los agentes Smolange y PocketFlow tu lo haces con todas las instrucciones que te di 
+
+Dime si entiendes? 
+
+Para eso te mando a anotar idiota incompetente 
+
+Y cada agente va trabajar por separado 
+Agente 1 y 2 HF con mis instrucciones con todos los claves de acceso para terminar el chat 
+Agentes 3 y 4 router integrar todo lo del router Componentes 
+
+Luego que estén trabajando los 4 agentes tu entras a vercel y haces un puente con nuestro router mandas a los agentes integradores a descargar todo lo de jev que te di y a integrar como un thinking un dataset que está en main llamado mhytos Yaiwes 
+
+Luego vas delegando tareas a los agentes si vez que una tarea se hace muy pesada o llega más trabajo creas 2 o 4 agentes más 
+
+Anota 1 a 1 imput block verbartin 
+Dime si te quedo claro 
+
+❌🎯🆘🆘⛔
+
+---
+
+=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-p-4-agentes-pocketflow-smolagents.md ===
+Tu prioridad es una sola los agentes y luego delegas 
+Los  agente que creaste no lo borras déjalo para algun uso 
+Ya está listo lo de versel pero no vas hacer nada vas hacer lo siguiente 
+
+Paso 1 📌 
+Haces los agentes 
+Paso 2 📌 
+Auditas todos mis imput instrucciones 
+Prioridad CHat y HF y modelos Ai en HF
+Llegas todos los tokens a los agentes 
+Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas 
+Paso 3 📌 
+Tu haces el puente en versel y nuestro router para hacer las pruebas ya Tienes los permisos listo de versel 
+
+Dime si te quedo claro 
+No avanzas tu delegas avanzas los agentes 
+
+Esta claro
+
+---
+
+=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-p-agentes-auditar-puente.md ===
+Tu prioridad es una sola los agentes y luego delegas 
+Los  agente que creaste no lo borras déjalo para algun uso 
+Ya está listo lo de versel pero no vas hacer nada vas hacer lo siguiente 
+
+Paso 1 📌 
+Haces los agentes 
+Paso 2 📌 
+Auditas todos mis imput instrucciones 
+Prioridad CHat y HF y modelos Ai en HF
+Llegas todos los tokens a los agentes 
+Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas 
+Paso 3 📌 
+Tu haces el puente en versel y nuestro router para hacer las pruebas ya Tienes los permisos listo de versel 
+
+Dime si te quedo claro 
+No avanzas tu delegas avanzas los agentes 
+
+Esta claro
 
 ---

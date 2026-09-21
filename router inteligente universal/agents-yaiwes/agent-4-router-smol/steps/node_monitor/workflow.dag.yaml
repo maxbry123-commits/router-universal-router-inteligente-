@@ -1,0 +1,72 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-4-router-smol
+  framework: smolagents
+  group: hf-models
+  route:
+  - deepseek_flash
+  - minimax_m3
+  - groq
+  - nvidia
+  - cerebras
+  fallback:
+  - minimax_m3
+  max_tokens: 1800
+context:
+  text: "HECHOS VERIFICADOS (Hugging Face, 2026-09-21):\n- LFM2.5-1.2B-Thinking: repo\
+    \ LiquidAI/LFM2.5-1.2B-Thinking; GGUF oficial LiquidAI/LFM2.5-1.2B-Thinking-GGUF\
+    \ con LFM2.5-1.2B-Thinking-Q4_K_M.gguf (731 MB).\n- Qwen3-0.6B: repo Qwen/Qwen3-0.6B;\
+    \ GGUF oficial Qwen/Qwen3-0.6B-GGUF (solo Q8_0, 639 MB).\n- K2-Horizon-0.9B: repo\
+    \ IFM/K2-Horizon-0.9B; GGUF IFM/K2-Horizon-0.9B-GGUF.\n- Nanbeige4.2-3B: repo\
+    \ Nanbeige/Nanbeige4.2-3B (código propio); GGUF Q4_K_M solo de la comunidad: bartowski/Nanbeige_Nanbeige4.2-3B-GGUF;\
+    \ exige el fork de llama.cpp, rama nanbeige42.\n- NanoJev: repo C-Tianyu/NanoJev;\
+    \ se ejecuta con Python (no llama.cpp).\n- Decider-0.8B: repo Mapika/decider-0.8b.\
+    \ Decider-2B: repo Mapika/decider-2b. Se ejecutan con Python.\nREGLAS DEL DIRECTOR:\
+    \ pesos remotos con `-v hf://models/AUTOR/MODELO:/model:ro` en HF Jobs y llama.cpp;\
+    \ una copia por modelo compartida\npor muchos agentes (continuous batching, prompt\
+    \ cache); 3 nodos HF de 32 GB con un Nanbeige por nodo; estados por carga:\n0-80\
+    \ % GREEN, 80-90 % YELLOW, 90-95 % DRAIN, >= 95 % CLOSED.\n\n\nSALIDA VERIFICADA\
+    \ DEL PASO ANTERIOR (job_spec):\n```python\ndef build_job_spec(repo: str, gguf_file:\
+    \ str, port: int = 8080, flavor: str = \"cpu-upgrade\", parallel: int = 4, ctx:\
+    \ int = 8192) -> dict:\n    if \"/\" not in repo or repo.count(\"/\") != 1 or\
+    \ not repo.split(\"/\")[0] or not repo.split(\"/\")[1]:\n        raise ValueError(f\"\
+    repo must have the form 'organizacion/nombre', got {repo!r}\")\n    return {\n\
+    \        \"image\": \"ghcr.io/ggml-org/llama.cpp:server\",\n        \"flavor\"\
+    : flavor,\n        \"expose\": port,\n        \"volumes\": [f\"hf://models/{repo}:/model:ro\"\
+    ],\n        \"command\": [\n            \"llama-server\",\n            \"--host\"\
+    , \"0.0.0.0\",\n            \"--port\", str(port),\n            \"--model\", f\"\
+    /model/{gguf_file}\",\n            \"--parallel\", str(parallel),\n          \
+    \  \"--ctx-size\", str(ctx),\n            \"--cont-batching\",\n            \"\
+    --cache-prompt\"\n        ]\n    }\n```"
+  max_chars: 40000
+task: "Escribe un módulo Python `node_monitor.py` (solo código, un único bloque ```python,\
+  \ sin librerías externas) con dos funciones:\n1) `node_state(ram_pct, cpu_pct, active_jobs,\
+  \ max_parallel) -> str` con la regla del Director: sea `load = max(ram_pct, cpu_pct)`;\n\
+  \   load < 80 -> \"GREEN\"; 80 <= load < 90 -> \"YELLOW\"; 90 <= load < 95 -> \"\
+  DRAIN\"; load >= 95 -> \"CLOSED\".\n   Además, si active_jobs >= max_parallel el\
+  \ estado es \"CLOSED\".\n2) `pick_node(nodes) -> str | None`: `nodes` es una lista\
+  \ de dicts con las claves \"id\", \"ram\", \"cpu\", \"active\", \"max_parallel\"\
+  .\n   Devuelve el \"id\" del nodo con estado GREEN y menor carga (max(ram, cpu));\
+  \ si no hay ninguno GREEN, el YELLOW de menor carga;\n   nunca elige nodos DRAIN\
+  \ ni CLOSED; si no hay candidato devuelve None.\n"
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: node_monitor.py
+  test: "from node_monitor import node_state, pick_node\nassert node_state(50, 30,\
+    \ 1, 4) == \"GREEN\"\nassert node_state(85, 30, 1, 4) == \"YELLOW\"\nassert node_state(92,\
+    \ 30, 1, 4) == \"DRAIN\"\nassert node_state(95, 30, 1, 4) == \"CLOSED\" and node_state(99,\
+    \ 10, 0, 4) == \"CLOSED\"\nassert node_state(50, 96, 1, 4) == \"CLOSED\"\nassert\
+    \ node_state(50, 30, 4, 4) == \"CLOSED\"\nnodes = [{\"id\": \"HF-01\", \"ram\"\
+    : 60, \"cpu\": 100, \"active\": 4, \"max_parallel\": 4},\n         {\"id\": \"\
+    HF-02\", \"ram\": 70, \"cpu\": 35, \"active\": 1, \"max_parallel\": 4},\n    \
+    \     {\"id\": \"HF-03\", \"ram\": 20, \"cpu\": 20, \"active\": 0, \"max_parallel\"\
+    : 4}]\nassert pick_node(nodes) == \"HF-03\"\nnodes[2][\"ram\"] = 96\nassert pick_node(nodes)\
+    \ == \"HF-02\"\nassert pick_node([{\"id\": \"A\", \"ram\": 96, \"cpu\": 10, \"\
+    active\": 0, \"max_parallel\": 4}]) is None\n"
+- kind: no_secrets

@@ -2,24 +2,25 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-4-router-smol",
  "framework": "smolagents",
- "status": "BLOCKED",
- "updated_at": "2026-09-21T13:44:11Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T14:24:04Z",
  "group": "hf-models",
  "chain": [
   "models_registry",
   "job_spec",
   "node_monitor"
  ],
- "completed": [],
- "failed": [
-  "models_registry"
- ],
- "next_nodes": [
+ "completed": [
+  "models_registry",
   "job_spec",
   "node_monitor"
  ],
+ "failed": [],
+ "next_nodes": [],
  "current_nodes": [],
  "route": [
+  "deepseek_flash",
+  "minimax_m3",
   "groq",
   "nvidia",
   "cerebras"

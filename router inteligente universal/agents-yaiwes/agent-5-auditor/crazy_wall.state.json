@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-5-auditor",
  "framework": "smolagents",
- "status": "RUNNING",
- "updated_at": "2026-09-21T13:13:48Z",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-21T14:35:13Z",
  "group": "audit",
  "chain": [
   "audit_pass_1",
@@ -12,18 +12,20 @@
   "audit_pass_4"
  ],
  "completed": [],
- "failed": [],
+ "failed": [
+  "audit_pass_1 (tiempo agotado)"
+ ],
  "next_nodes": [
   "audit_pass_2",
   "audit_pass_3",
   "audit_pass_4"
  ],
  "route": [
+  "deepseek_flash",
+  "minimax_m3",
   "groq",
   "nvidia",
   "cerebras"
  ],
- "current_nodes": [
-  "audit_pass_1"
- ]
+ "current_nodes": []
 }

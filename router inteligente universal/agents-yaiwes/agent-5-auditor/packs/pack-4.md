@@ -1,71 +1,3 @@
-=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-o-smolagents-pocketflow-4-agentes.md ===
-Que usaste yo te di unas instrucciones tu no cambias mis instrucciones nunca sin mi autorización está claro 
-
-Yo te di dos modelos para usar y crear los agentes Smolange y PocketFlow tu lo haces con todas las instrucciones que te di 
-
-Dime si entiendes? 
-
-Para eso te mando a anotar idiota incompetente 
-
-Y cada agente va trabajar por separado 
-Agente 1 y 2 HF con mis instrucciones con todos los claves de acceso para terminar el chat 
-Agentes 3 y 4 router integrar todo lo del router Componentes 
-
-Luego que estén trabajando los 4 agentes tu entras a vercel y haces un puente con nuestro router mandas a los agentes integradores a descargar todo lo de jev que te di y a integrar como un thinking un dataset que está en main llamado mhytos Yaiwes 
-
-Luego vas delegando tareas a los agentes si vez que una tarea se hace muy pesada o llega más trabajo creas 2 o 4 agentes más 
-
-Anota 1 a 1 imput block verbartin 
-Dime si te quedo claro 
-
-❌🎯🆘🆘⛔
-
----
-
-=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-p-4-agentes-pocketflow-smolagents.md ===
-Tu prioridad es una sola los agentes y luego delegas 
-Los  agente que creaste no lo borras déjalo para algun uso 
-Ya está listo lo de versel pero no vas hacer nada vas hacer lo siguiente 
-
-Paso 1 📌 
-Haces los agentes 
-Paso 2 📌 
-Auditas todos mis imput instrucciones 
-Prioridad CHat y HF y modelos Ai en HF
-Llegas todos los tokens a los agentes 
-Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas 
-Paso 3 📌 
-Tu haces el puente en versel y nuestro router para hacer las pruebas ya Tienes los permisos listo de versel 
-
-Dime si te quedo claro 
-No avanzas tu delegas avanzas los agentes 
-
-Esta claro
-
----
-
-=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-p-agentes-auditar-puente.md ===
-Tu prioridad es una sola los agentes y luego delegas 
-Los  agente que creaste no lo borras déjalo para algun uso 
-Ya está listo lo de versel pero no vas hacer nada vas hacer lo siguiente 
-
-Paso 1 📌 
-Haces los agentes 
-Paso 2 📌 
-Auditas todos mis imput instrucciones 
-Prioridad CHat y HF y modelos Ai en HF
-Llegas todos los tokens a los agentes 
-Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas 
-Paso 3 📌 
-Tu haces el puente en versel y nuestro router para hacer las pruebas ya Tienes los permisos listo de versel 
-
-Dime si te quedo claro 
-No avanzas tu delegas avanzas los agentes 
-
-Esta claro
-
----
-
 === ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-p-agentes-auditar-tokens-vercel.md ===
 Tu prioridad es una sola los agentes y luego delegas 
 Los  agente que creaste no lo borras déjalo para algun uso 
@@ -173,3 +105,74 @@ Muse Code → programador/orquestador: lee repo, mantiene sesión, modifica cód
 Muse Glimmer → cerebro de decisiones: plan → tool → result → self-correct → next. En el código que tienes, su loop precisamente ejecuta herramientas, devuelve el resultado al modelo y corrige en la siguiente iteración.
 CUA + MCP → computadora aislada: levanta navegador/escritorio, ejecuta la aplicación y proporciona screenshot, mouse, teclado y shell dentro del sandbox.
 MetaCua 
+
+=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-s-tareas-modelos-locales-hoy.md ===
+## Mensaje del Director
+
+Pero necesitas hacer una lista de tareas si lo haces solo con 3 pasos no vamos avanzar nunca debe buscar toda la información que ellos deberían hace según el objetivo y tratar que lo lleven hasta final 
+
+Busca instala estos modelo y lo pones en el router para que si no responde un modelo de api de groq o cerebras y Nvidia los agente no se paren crear un mirror de cada modelo y asegúrate que tenga el sistema que yo te di para acelerar modelo en huggueface busca mis notas 
+
+herramientas. �
+Hugging Face +2
+Qwen3.5-0.8B oficial en Hugging Face⁠�
+Qwen3.5-0.8B GGUF Q4 para ejecución local⁠�
+La versión Q4 ocupa unos 563 MB, por lo que es especialmente atractiva para mantenerla cargada permanentemente como pequeño kernel/router.
+Realizas una prueba para que podamos medir cuantos token por segundos usa el modelo 
+
+Sí, sí se puede. Lo que quise decir es que normalmente no conviene cargar muchas copias separadas del mismo modelo si un solo servidor puede atender varias solicitudes simultáneas.
+
+Hay dos formas:
+
+1. Varias copias independientes
+
+Servidor HF 32 GB
+├─ Qwen 0.8B #1
+├─ Qwen 0.8B #2
+├─ Qwen 0.8B #3
+└─ Qwen 0.8B #4
+
+Esto funciona, pero cada copia consume su propia RAM y compite por los mismos vCPU.
+
+2. Una sola copia + varios agentes concurrentes
+
+Servidor HF 32 GB
+        ↓
+Qwen 0.8B cargado UNA vez
+        ↓
+llama.cpp / servidor de inferencia
+├─ Agente 1
+├─ Agente 2
+├─ Agente 3
+├─ Agente 4
+├─ Agente 5
+└─ Agente 6
+
+Para tu caso, la segunda opción es normalmente mejor. Los 6 agentes pueden estar haciendo tareas distintas al mismo tiempo, aunque todos utilicen el mismo Qwen cargado en memoria.
+
+Con tus 3 servidores HF, podrías montar algo así:
+
+HF-1 → Qwen 0.8B → 4 agentes
+HF-2 → Qwen 0.8B → 4 agentes
+HF-3 → Qwen 0.8B → 4 agentes
+
+TOTAL → 12 agentes concurrentes
+
+O probar:
+
+3 servidores × 2 agentes = 6 concurrentes  → más velocidad por agente
+3 servidores × 4 agentes = 12 concurrentes → buen equilibrio
+3 servidores × 8 agentes = 24 concurrentes → más tareas, menos tok/s por tarea
+
+La clave es esta: RAM te sobra para un modelo de 0.8B; el límite real será la CPU. No necesitas 12 archivos/copias de Qwen para tener 12 agentes. Puedes cargar 3 modelos, uno por servidor, y darle múltiples slots concurrentes a cada uno.
+
+Para YAIWES, yo empezaría con 4 slots por servidor = 12 microagentes simultáneos y mediría rendimiento.
+
+Como lo piensas hacer para ir mas rápido habilitar el chat lo más pronto y los modelos locales Gemma 4 E2B QAT Q4 + llama.cpp. Google ya tiene una versión oficial gemma-4-E2B-it-qat-q4_0-gguf. Eso evita tener que cuantizar tú mismo y es especialmente interesante para CPU. Gemma 4 E2B QAT Q4 GGUF oficial⁠�
+enable_thinking=False. Para router, selección de herramientas, JSON y pequeñas decisiones, no necesitas que Gemma genere razonamiento largo. La propia tarjeta oficial muestra este modo. �
+Hugging Face
+OpenVINO + INT4/INT8. En CPU Intel puede ser una de tus mejores alternativas a llama.cpp. Optimum Intel permite compresión de pesos a 8 o 4 bits y Hugging Face documenta que esto puede reducir memoria y latencia. �
+Hugging Face +1
+NNCF + OpenVINO. Puedes aplicar weight-only INT4, INT8, AWQ, GPTQ, Scale Estimation y cuantización mixta. Esto permite encontrar una combinación rápida sin destruir demasiado la calidad. �
+Hugging Face
+TorchAO. Este es uno que faltó en mi lista anterior y merece bastante atención. Hugging Face soporta TorchAO en CPU con INT8 dinámico, INT8 weight-only e INT4 weight-only, y ade

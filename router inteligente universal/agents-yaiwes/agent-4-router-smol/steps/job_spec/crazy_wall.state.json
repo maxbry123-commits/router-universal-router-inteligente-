@@ -3,7 +3,7 @@
  "agent": "agent-4-router-smol",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-21T14:23:31Z",
+ "updated_at": "2026-09-21T14:23:48Z",
  "group": "hf-models",
  "current_nodes": [
   "tool_calling_agent"
@@ -11,24 +11,21 @@
  "next_nodes": [
   "sheriff"
  ],
- "failed": [
-  "tool_calling_agent"
- ],
  "gaps": [],
- "attempts": 1,
  "evidence": [
   {
    "kind": "output_sha256",
-   "sha256": "1270a9f678868b157ff60022cae91a7d5c4b8c97ac8744f2010c72a1bd9d413b",
-   "chars": 1758
+   "sha256": "3b3a381b33780d70dba2ddc2443918f005af904b763f53fb475feeab65546dd4",
+   "chars": 825
   },
   {
    "kind": "exec",
    "exit": 0,
-   "file": "hf_models_registry.py",
-   "sha256": "9d66d8b452cd8060f42cbdc778305c78bd01d2fb79f2bcd776c1fbc9b34f4966"
+   "file": "job_spec.py",
+   "sha256": "5471238f6ad5e5c3aff877218fed57c4b1de06114b6867ac58115eccdbea7fe3"
   }
  ],
  "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+ "attempts": 1,
  "route_trace": []
 }
