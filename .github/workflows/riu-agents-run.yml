@@ -44,6 +44,9 @@ jobs:
         env:
           RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: utf-8
+          LC_ALL: C.UTF-8
         shell: bash
         run: |
           set +e
@@ -55,7 +58,7 @@ jobs:
           wait
           for i in 1 2 3 4; do
             grep -h '^::notice' /tmp/a$i.log || true
-            grep -E '^(Traceback|[A-Za-z]*(Error|Exception))' /tmp/a$i.log | head -3 | while IFS= read -r l; do echo "::warning title=RIU_AGENT_${i}_ERROR::${l}"; done
+            grep -E '^(Traceback|[A-Za-z]*(Error|Exception))' /tmp/a$i.log | tail -2 | while IFS= read -r l; do echo "::warning title=RIU_AGENT_${i}_ERROR::${l}"; done
           done
           exit 0
 
