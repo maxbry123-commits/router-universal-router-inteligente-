@@ -1,0 +1,78 @@
+name: RIU Agents Run
+
+# Claude (the brain) edits agents/ORDERS.yaml (DSL DAG) and dispatches this workflow. The 4 agents run SEPARATELY (one job each):
+#   agent-1-chat (PocketFlow), agent-2-chat (SmolAgents), agent-3-router (PocketFlow), agent-4-router (SmolAgents).
+# Each one validates its own result with the deterministic Sheriff, writes its own Crazy Wall + HANDOFF and commits them.
+# Keys: only inside the encrypted bank (agent-microkernel/runtime-bank-v2.part1 + part2); the single secret is the bank passphrase.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        agent: [agent-1-chat, agent-2-chat, agent-3-router, agent-4-router]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/verifier/
+            router inteligente universal/agent-microkernel/
+            router inteligente universal/agents/
+            Chat Mvp/secret_bank/
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install (PocketFlow and SmolAgents as the Director ordered)
+        run: pip install fastapi pydantic huggingface_hub pyyaml cryptography pocketflow "smolagents[openai]"
+
+      - name: Assemble the encrypted bank (two parts)
+        run: |
+          cd "router inteligente universal/agent-microkernel"
+          cat runtime-bank-v2.part1 runtime-bank-v2.part2 > runtime-bank.db.gz.b64
+
+      - name: Run the agent
+        env:
+          RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
+          RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
+        shell: bash
+        run: |
+          set +e
+          cd "router inteligente universal"
+          python agents/runtime/run_agent.py --agent "${{ matrix.agent }}" 2>&1 | tee /tmp/agent.txt
+          grep -E '^(Traceback|[A-Za-z]*Error)' /tmp/agent.txt | head -5 | while IFS= read -r l; do echo "::warning title=RIU_AGENT_ERROR::${l}"; done
+          exit 0
+
+      - name: Commit this agent's files (Crazy Wall, results, HANDOFF)
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "riu-agent"
+          git config user.email "riu-agent@users.noreply.github.com"
+          git checkout -- "router inteligente universal/agent-microkernel/runtime-bank.db.gz.b64" || true
+          git add "router inteligente universal/agents/${{ matrix.agent }}" || true
+          git commit -m "agentes: resultado de ${{ matrix.agent }} (Crazy Wall + HANDOFF + salidas verificadas)" || { echo "nada que confirmar"; exit 0; }
+          for i in 1 2 3 4 5 6; do
+            git pull --rebase origin main && git push origin HEAD:main && { echo "::notice title=RIU_AGENT_COMMIT::pushed ${{ matrix.agent }}"; exit 0; }
+            sleep $((3 + i))
+          done
+          echo "::warning title=RIU_AGENT_COMMIT::push failed after retries"
