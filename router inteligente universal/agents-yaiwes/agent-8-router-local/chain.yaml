@@ -1,0 +1,129 @@
+schema: yaiwes.chain/v1
+
+# Agente 8 — ROUTER: proveedor de modelos locales de HF con varios nodos, y ruta de respaldo (espejo) para que los agentes NO se paren si Groq, Cerebras o NVIDIA no responden.
+# Marco: PocketFlow. Tarea entregada por el Director (2026-09-21 s y t).
+input_block: |
+  busca instala estos modelo y lo pones en el router para que si no responde un modelo de api de groq o cerebras y Nvidia los agente no se paren
+  Salte al siguiente HF procesador si hace falta llevas a 10 procesador HF 32 de ram para tener suficiente cómputos de trabajo sin colapsar
+
+agent:
+  id: agent-8-router-local
+  framework: pocketflow
+  group: router-local
+  route: [minimax_m3, deepseek_flash, groq, nvidia, cerebras]
+  fallback: []
+  max_tokens: 2500
+
+context:
+  text: |
+    HECHOS: cada nodo local es un Job de HF que corre llama-server y expone https://<job_id>--<puerto>.hf.jobs; el acceso EXIGE cabecera "Authorization: Bearer <token de HF>".
+    El servidor es compatible con OpenAI: POST <base_url>/v1/chat/completions con {"model","messages","max_tokens"} responde {"choices":[{"message":{"content":...}}],"usage":{...}}.
+    Los errores 400/404/410/422 son de la petición y NO cambian de nodo; 5xx, 429, 401/403 y los fallos de red/timeouts sí (se pasa al siguiente nodo). Un nodo que falla queda en
+    enfriamiento un tiempo (cooldown). Los modelos locales equivalentes (espejos) de las APIs: qwen3.5-0.8b (rápido/router), lfm2.5-1.2b-instruct (razonamiento pequeño), gemma-4-e2b.
+    Cada nodo carga cada modelo UNA sola vez y lo comparte entre las ranuras/sesiones. Sin librerías externas: la llamada HTTP se inyecta como función `post`.
+
+steps:
+
+  - id: local_pool
+    task: |
+      Escribe el módulo Python `local_pool.py` (solo código, un único bloque ```python, solo biblioteca estándar: time) con la clase
+      `LocalPool(nodes, post, token="", clock=time.monotonic, cooldown=60.0)`.
+      `nodes` es una lista de dicts {"id","base_url","models"}; `post(url, headers, body, timeout)` devuelve (status, data) y puede lanzar excepciones.
+      - `chat(self, model, messages, max_tokens=256, timeout=60) -> dict`: prueba en orden los nodos cuyo "models" contiene `model` y que NO estén en enfriamiento. Para cada uno llama
+        post(base_url + "/v1/chat/completions", {"Authorization": "Bearer " + token, "Content-Type": "application/json"}, {"model": model, "messages": messages, "max_tokens": max_tokens}, timeout).
+        Si status == 200 devuelve {"node": id, "text": data["choices"][0]["message"]["content"], "usage": data.get("usage")}. Si status es 400, 404, 410 o 422 lanza ValueError("LOCAL_REQUEST_ERROR:" + str(status))
+        sin probar otro nodo. Con cualquier otro status o si post lanza una excepción, marca el nodo en enfriamiento (hasta clock() + cooldown) y prueba el siguiente.
+        Si ningún nodo responde (o ninguno tiene el modelo) lanza RuntimeError("NO_LOCAL_NODE").
+      - `states(self) -> dict`: {id: "OK" o "COOLDOWN"} según el reloj actual.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: local_pool.py
+        test: |
+          from local_pool import LocalPool
+          calls = []
+          def make_post(behavior):
+              def post(url, headers, body, timeout):
+                  calls.append(url)
+                  assert headers["Authorization"] == "Bearer t"
+                  b = behavior[url.split("/v1")[0]]
+                  if isinstance(b, Exception):
+                      raise b
+                  return b
+              return post
+          ok = (200, {"choices": [{"message": {"content": "hola"}}], "usage": {"total_tokens": 3}})
+          nodes = [{"id": "A", "base_url": "http://a", "models": ["q"]}, {"id": "B", "base_url": "http://b", "models": ["q", "l"]}]
+          t = [0.0]
+          pool = LocalPool(nodes, make_post({"http://a": TimeoutError("lento"), "http://b": ok}), token="t", clock=lambda: t[0], cooldown=60)
+          r = pool.chat("q", [{"role": "user", "content": "x"}])
+          assert r == {"node": "B", "text": "hola", "usage": {"total_tokens": 3}} and calls == ["http://a/v1/chat/completions", "http://b/v1/chat/completions"]
+          calls.clear()
+          pool.chat("q", [])
+          assert calls == ["http://b/v1/chat/completions"]
+          assert pool.states() == {"A": "COOLDOWN", "B": "OK"}
+          t[0] = 61.0
+          calls.clear()
+          pool.chat("q", [])
+          assert calls[0] == "http://a/v1/chat/completions" and pool.states()["A"] == "COOLDOWN"
+          try:
+              pool.chat("zzz", [])
+              raise SystemExit("aceptó un modelo desconocido")
+          except RuntimeError as e:
+              assert "NO_LOCAL_NODE" in str(e)
+          calls.clear()
+          p2 = LocalPool(nodes, make_post({"http://a": (400, {}), "http://b": ok}), token="t")
+          try:
+              p2.chat("q", [])
+              raise SystemExit("no lanzó ValueError")
+          except ValueError as e:
+              assert "400" in str(e) and calls == ["http://a/v1/chat/completions"]
+          p3 = LocalPool(nodes, make_post({"http://a": (503, {}), "http://b": OSError("caído")}), token="t")
+          try:
+              p3.chat("q", [])
+              raise SystemExit("no lanzó RuntimeError")
+          except RuntimeError as e:
+              assert "NO_LOCAL_NODE" in str(e)
+      - kind: no_secrets
+
+  - id: mirror_route
+    task: |
+      Escribe el módulo Python `mirror_route.py` (solo código, un único bloque ```python, solo biblioteca estándar) con la función
+      `with_mirror(api_call, pool, mirror_map, key, messages, max_tokens=256) -> dict`: los agentes NO deben pararse cuando falla una API.
+      - Llama a api_call() (sin argumentos; devuelve el texto). Si funciona devuelve {"via": "api", "text": texto}.
+      - Si api_call lanza RuntimeError: si `key` NO está en mirror_map vuelve a lanzar ese mismo error; si está, usa el modelo local espejo mirror_map[key] con
+        pool.chat(modelo, messages, max_tokens) y devuelve {"via": "local", "node": r["node"], "text": r["text"]}.
+      - Si el pool también falla con RuntimeError, lanza RuntimeError("NO_ROUTE: " + str(error_de_la_api) + " | " + str(error_local)).
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: mirror_route.py
+        test: |
+          from mirror_route import with_mirror
+          class P:
+              def __init__(self, fail=False):
+                  self.fail, self.calls = fail, []
+              def chat(self, model, messages, max_tokens=256):
+                  self.calls.append(model)
+                  if self.fail:
+                      raise RuntimeError("NO_LOCAL_NODE")
+                  return {"node": "HF-03", "text": "local:" + model}
+          m = {"groq": "qwen3.5-0.8b"}
+          assert with_mirror(lambda: "api", P(), m, "groq", []) == {"via": "api", "text": "api"}
+          def boom():
+              raise RuntimeError("PROVIDER_ERROR:503")
+          p = P()
+          assert with_mirror(boom, p, m, "groq", []) == {"via": "local", "node": "HF-03", "text": "local:qwen3.5-0.8b"} and p.calls == ["qwen3.5-0.8b"]
+          try:
+              with_mirror(boom, P(), m, "nvidia", [])
+              raise SystemExit("no relanzó")
+          except RuntimeError as e:
+              assert "PROVIDER_ERROR" in str(e) and "NO_ROUTE" not in str(e)
+          try:
+              with_mirror(boom, P(fail=True), m, "groq", [])
+              raise SystemExit("no lanzó NO_ROUTE")
+          except RuntimeError as e:
+              assert "NO_ROUTE" in str(e) and "PROVIDER_ERROR" in str(e) and "NO_LOCAL_NODE" in str(e)
+      - kind: no_secrets
+
+edges:
+  - local_pool -> mirror_route
