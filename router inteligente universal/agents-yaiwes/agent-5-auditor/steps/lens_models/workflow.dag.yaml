@@ -1,0 +1,352 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-5-auditor
+  framework: smolagents
+  runner: auditor
+  post: audit_report
+  group: audit
+  route:
+  - deepseek_flash
+  - minimax_m3
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 4000
+context:
+  text: "Auditas por PASADAS: cada paso recibe un paquete con las palabras LITERALES\
+    \ del Director sobre un tema (`=== ARCHIVO: ... ===`) y el estado actual de los\
+    \ agentes (`agents_state.md`,\ncon las rutas de sus entregables). Agentes: agent-1-chat-hf\
+    \ (paneles del chat), agent-2-chat-hf-smol (panel de trabajos, plantilla fija,\
+    \ Crazy Wall), agent-3-router (chat sin PRO en HF: Static Space),\nagent-4-router-smol\
+    \ (registro de modelos, Job, monitor de nodos), agent-6-hf-nodes (RAM, caché reducida,\
+    \ 10 procesadores), agent-7-llama-hf (llama-server con aceleradores), agent-8-router-local\
+    \ (pool de\nnodos locales y ruta espejo), agent-9-models-catalog (catálogo de\
+    \ modelos y plan de instalación). Ya existe en el repo: Chat MVP (`router inteligente\
+    \ universal/integration/chat_mvp/`: selector de\nproveedor y modelo, con/sin agente,\
+    \ cuentas GitHub, documentos, SQL+grafo+caché+documentos, banco de claves, jobs\
+    \ en paralelo, DAG, `/chat/route`); el Router corre en un Job de HF (probado);\
+    \ benchmarks\nde llama.cpp (Qwen3.5-0.8B tg 28 t/s, LFM2.5-1.2B tg 30 t/s en 4\
+    \ vCPU). Prioridad del Director: SOLO el chat y los modelos de IA locales.\n\n\
+    \n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-models.md\
+    \ ===\n=== ARCHIVO: Claude notas/INPUT-BLOCK-05-chat-storage-grupos-VERBATIM.md\
+    \ ===\nOk \nPaso 1 dieme qué hay que decidir para que puedas terminar con referente\
+    \ al chat \nNecesitas que pueda tu colocar los api key de mis modelos locales\
+    \ y los modelos de deepsek v4 flash y pro y Kimi k 3 mínimax M3 \nQue puedan operar\
+    \ en Github y huggueface 100%\n autorizado \n\U0001F4CCQue con el selector pueda\
+    \ cambiar de cuenta de Github diferente \n\U0001F4CCQue los  modelos que yo seleccione\
+    \ trabaje con el pool de agente que yo te voy a decir pueda operar con agente\
+    \ y sin agente \n\U0001F4CC Le conectas al chat dentro de huggueface almacenamiento\
+    \ su propio espacio y fusionas para crear un entorno llamado Mvp almacenamiento\
+    \ para ai \nData base \nSQL Little \nGraphiti y graphyty \nCaché \nQue pueda subir\
+    \ archivos adjuntos y ten\n\nNecesito que revises el router en el repo de router\
+    \ universal usa el router que hizo Fables los code están en los archivos \nLuego\
+    \ necesito que uses lo que adelanto sol gpt y íntegras los componentes mínimos\
+    \ componentes para conseguir el siguiente objetivo \n1. Vasmos a tener más de\
+    \ 50 agente con el nombre de agente Seals Team YAIWES necesito que operen con\
+    \ las api locales que te voy a define esos modelos locales no deben estar instalado\
+    \ a huggueface deben llamar al modelo remoto como lo indica hugguenface para no\
+    \ descargar el modelo y deben trabajar como mirror y duplicarse sines necesario\
+    \ 50 o 100 veces \nDeben usar el dataset y los aceleradores que deberían o fueron\
+    \ instalados en huggueface \n\nGrupo 2 \U0001F4CC con los agente de el wordflow\
+    \ loops code Yaiwes con el pool de 20 agentes\nSolo para el grupo 2 si se satura\
+    \ el cómputo o hay mucha latencia el router cambia la api por al de deepsek v4\
+    \ pero son 6 grupos de trabajo que requieren api key  especializada que te voy\
+    \ a decir \nComo funciona o deberia funcionar router para grupo 2 \n1. Las 4 api\
+    \ de Nvidia y cerebras si no responde o los modelos no están disponibles el router\
+    \ Salta para mis api locales \n2. Api locales del grupo 2 .\nSi las api locales\
+    \ de esta lista están saturadas o con latencia salta a \nDeepsek v4 flash api\
+    \ \n3. Usa deepsek v4 \nAsí debería funcionar el router de grupo 2 \nTambién la\
+    \ biblioteca de skills de huggueface instalada\n\nGrupo 0\U0001F4CC osquestador\
+    \ \ncomand Center y \nNeuro-Orchestrator-8B — 8B — orquestación/agentic.\nMiroThinker-8B\
+    \ — 8B — razonamiento.\nLFM2.5-8B-A1B — 8B total / ~1B activo — subagentes, loops\
+    \ agentic.\nOpenThinker3-7B — 7B — razonamiento.\n➡️\n\nGrupo 1 \U0001F4CC \n\
+    Para trabajo de arquitectura decidir y funciones sin generar code el router usa\
+    \ solo usa ➡️\nLFM2-2.6B — 2.6B — worker rápido, clasificación y extracción\n\
+    Nemotron Nano 9B v2 — 9B — razonamiento, arquitectura y reparación.\nNanbeige4.2-3B\
+    \ — 3B — \U0001F9D1‍\U0001F4BB MODELO DE CODE / agentic.\nQwen3-0.6B — 0.6B —\
+    \ ultraligero/router/worker.\nQwen2.5-1.5B-Instruct — 1.5B — worker ligero.\n\
+    Qwen2.5-0.5B-Instruct — 0.5B — worker ultraligero.\n\n\U0001F4CCPara trabajo de\
+    \ code el router canbia ➡️\nQwen3.5-9B — 9B — \U0001F9D1‍\U0001F4BB MODELO DE\
+    \ CODE principal local.\nKAT-Coder Q5 KAT-Coder Q5, Seed-Coder 8B, parámetros\
+    \ no indicados; Q5 = cuantización — \U0001F9D1‍\U0001F4BB MODELO DE CODE, reparación/escalamiento\n\
+    \nGrupo 2 \U0001F4CC\nModelos que deben trabajar local por máximo 26 de ram  quanrificado\
+    \ para no saturar el procesador + caché \nMuse Glimmer 30B — 30B — \U0001F9D1\
+    ‍\U0001F4BB MODELO DE CODE / agentic, multimodal.\nLaguna XS 2.1 — 33B total /\
+    \ 3B activos — \U0001F9D1‍\U0001F4BB MODELO DE CODE / agentic, router y long-horizon.\n\
+    DeepSeek-Coder — variante/peso no especificado en tus archivos — \U0001F9D1‍\U0001F4BB\
+    \ MODELO DE CODE.\nDeepSeek v4 flash \n➡️➡️➡️➡️➡️➡️\n\n\U0001F4CCGrupo fromtend\
+    \ y fábrica de UI y interface UI staff pendientes por clasificación \nOLMo-3-7B-RL-Zero\
+    \ — 7B — razonamiento/RL.\nTernary-Bonsai-27B-GGUF — 27B — general; GGUF.\nOTel-2.0-LLM-31B-IT\
+    \ — 31B —\ndebe estar instalado \nKandinsky-5.0-T2I-Lite — peso exacto no indicado\
+    \ — generación de imagen.\nQwen-Image —\nFLUX.1-schnell —\nWan2.2-Animate-14B\
+    \ — 14B — vídeo/animación.\nLTX-Video — peso exacto no indicado en tus archivos\
+    \ — vídeo.\nHunyuanVideo —\nOPT-125M — 125M — ultraligero/pruebas.\nSkywork-OR1-Math-7B\
+    \ — 7B — matemáticas/razonamiento.\nMiroThinker-8B — 8B — razonamiento.\nNeuro-Orchestrator-8B\
+    \ — 8B — orquestación/agentic.\nCrystalSonic-4B — 4B — ligero.\nHunyuan-7B-Instruct\
+    \ — 7B — general.\nYuan3.0-F\n\n=== ARCHIVO: Claude notas/INPUT-BLOCK-06-VERBATIM.md\
+    \ ===\nRegla del Director: instrucciones textuales, 1 a 1. Nada se resume ni se\
+    \ corrige (los errores de tipeo son del original).\nÚNICA desviación, por seguridad:\
+    \ las 4 credenciales que el Director pegó en el chat (1 de Hugging Face y 3 tokens\
+    \ de GitHub) están sustituidas por el marcador `[CREDENCIAL PEGADA EN EL CHAT\
+    \ — REDACTADA, NO SE GUARDA]`. Los nombres de cuenta y las etiquetas se conservan.\
+    \ Esas credenciales quedaron expuestas en el chat y deben rotarse.\nTrazabilidad\
+    \ instrucción por instrucción: `../bitácora stated JSON Craxy wall plan checkpoint\
+    \ router inteligente universal/RIU-0108-PLAN-MAESTRO-CHAT-MVP.md`.\n\nMapika/decider-2b-vision\
+    \ existe actualmente: está basado en Qwen3.5-2B, tiene unos 2B\n\nTienes en secreto\
+    \ de Github el token secreto de HF full acceso revisa y confirma y te lo doy para\
+    \ que lo uses si no sirve\n\nToken github cuenta nombre planeta 123 usa\n\nNecesito\
+    \ un acceso directo al chat busca algo Open soure como el chat de minimax o Claude\
+    \ que pueda usar para el chat para cambiar de modelos y agente y para almacenar\
+    \ archivos para encadenar a los procesos de almacenamiento\n\n=== ARCHIVO: Claude\
+    \ notas/INPUT-BLOCK-06-secret-bank-stack-plan-VERBATIM.md ===\nREDACCIÓN OBLIGATORIA\
+    \ (única desviación del verbatim): el Director pegó en el chat 1 token de Hugging\
+    \ Face y 3 tokens de GitHub. Este repo es PÚBLICO, así que los valores NO se guardan\
+    \ aquí; se sustituyen por `[REDACTADO]`. El texto que los rodea es literal. Esos\
+    \ tokens quedaron expuestos en el chat y deben rotarse.\n\n---INICIO DEL INPUT\
+    \ BLOCK 06 (verbatim, con tokens redactados)---\n\nMapika/decider-2b-vision existe\
+    \ actualmente: está basado en Qwen3.5-2B, tiene unos 2B\n\nTienes en secreto de\
+    \ Github el token secreto de HF full acceso revisa y confirma y te lo doy para\
+    \ que lo uses si no sirve\n\n[REDACTADO — token de Hugging Face pegado en el chat]\n\
+    \n[REDACTADO — token de GitHub pegado en el chat]\n\n[REDACTADO — token de GitHub\
+    \ pegado en el chat]\n\nToken github cuenta nombre planeta 123 usa\n\n[REDACTADO\
+    \ — token de GitHub pegado en el chat]\n\nNecesito un acceso directo al chat busca\
+    \ algo Open soure como el chat de minimax o Claude que pueda usar para el chat\
+    \ para cambiar de modelos y agente y para almacenar archivos para encadenar a\
+    \ los procesos de almacenamiento\n\n=== ARCHIVO: Claude notas/INPUT-BLOCK-07-VERBATIM.md\
+    \ ===\n# INPUT BLOCK 07 — HF JOBS COMO FALLBACK + RESPUESTAS A LAS DUDAS D1-D7\
+    \ — VERBATIM (2026-09-20)\n\nRegla del Director: instrucciones textuales, 1 a\
+    \ 1. Los errores de tipeo son del original. Este mensaje no contenía credenciales.\n\
+    Análisis y decisiones: `../Readme arquitectura router inteligente universal/ADENDA-RIU-0109-HF-JOBS-FALLBACK-y-decisiones.md`\
+    \ y `../bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/RIU-0109-DECISIONES-Y-ANALISIS-HF-JOBS.md`.\n\
+    \nCorrecto: no necesitas guardar una copia de los pesos en un Storage Bucket de\
+    \ tu cuenta si el modelo ya vive en un repositorio del Hugging Face Hub. El Job\
+    \ puede montar directamente ese repositorio con hf://... en modo lectura y usarlo\
+    \ desde el runtime.\n\nPero hay una precisión importante: el modelo no se ejecuta\
+    \ “sin pesos”. Durante la ejecución, los pesos necesarios terminan siendo leídos/cargados\
+    \ por la máquina del Job en su almacenamiento temporal/RAM/VRAM. Lo que evitas\
+    \ es mantener tú una segunda copia persistente de esos pesos.\n\nHUGGING FACE\
+    \ HUB\nmodelo original\n      ↓\nhf://models/ORG/MODELO\n      ↓\nHF JOB\nGPU\
+    \ + almacenamiento temporal\n      ↓\nvLLM / llama.cpp / SGLang\n      ↓\nAPI\n\
+    \      ↓\nTU ROUTER\n\nSí, HF Jobs tiene costo adicional\n\nHugging Face cobra\
+    \ Jobs por el hardware mientras el Job está Starting o Running, calculado por\
+    \ minuto. No es un servicio gratuito incluido simplemente por tener los modelos\
+    \ en el Hub.\n\nGPU HF Job\tVRAM\tPrecio aproximado\n\nAdemás, si expones un puerto\
+    \ para convertirlo en API para tu router, actualmente Hugging Face cobra $0.01/h\
+    \ adicional por Job con puertos expuestos.\n\n❌ NO necesitas:\nStorage Bucket\
+    \ propio\n↓\ncopiar 10/20/30/100 GB de pesos\n↓\nmantener esa copia\n\n✅ PUEDES:\n\
+    modelo público/privado existente en HF Hub\n↓\nhf://modelo\n↓\nmontarlo directamente\
+    \ en HF Job\n↓\npagar únicamente el cómputo mientras corre\n\nY hay otra ventaja\
+    \ importante para tu router: no necesariamente tienes que dejar el Job encendido\
+    \ todo el día. Puedes levantar el Job cuando necesitas uno de esos modelos, hacer\
+    \ las inferencias y detenerlo; la facturación de Jobs es por minuto de ejecución.\n\
+    \nAsí que tu arquitectura podría usar Inference Providers primero cuando haya\
+    \ proveedor, y HF Jobs solo como fallback para los modelos que nadie sirve, evitando\
+    \ pagar GPU permanentemente.\n\n1. Revisa  Claude WebUI, o\nClaude.ai UI Clone\n\
+    \  la idea es que pase por el router inteligente universal revisa si sirve o si\
+    \ no lob chat\n o LibreChat o open WebUI \nQue sea más rápido menos trabajo de\
+    \ programación y de conecte al router inteligente universal y puedas incluso conectar\
+    \ MCp para intervenir en la conversión\n\n7. Ya te di la solución de modelos como\
+    \ se hace en huggueface dime si eso lo resolveria\n\n=== ARCHIVO: Claude notas/INPUT-BLOCK-08-VERBATIM.md\
+    \ ===\n# INPUT BLOCK 08 — LOGINS, PRUEBA DE HF JOBS, OPERADOR WEB, PRECIOS DEEPSEEK\
+    \ Y PRIORIDAD DEL ROUTER — VERBATIM (2026-09-20)\n\nMODELO APAGADO\n      ↓\n\
+    crear HF Job\n      ↓\narrancar contenedor\n      ↓\nleer/montar pesos\n     \
+    \ ↓\ncargar RAM/VRAM\n      ↓\narrancar vLLM\n      ↓\nREADY\n====================\n\
+    \      ↓\npetición\n      ↓\nTTFT normal\n      ↓\ntokens\n\nUna vez que el Job\
+    \ está caliente (READY), ya no deberías esperar varios minutos por cada respuesta.\
+    \ Los minutos corresponden principalmente al arranque inicial.\nHugging Face incluso\
+    \ señala que usando un repositorio montado mediante hf:// con llama.cpp, el servidor\
+    \ puede arrancar mucho más rápido porque no hay una descarga previa completa;\
+    \ el modelo se lee desde el repositorio montado mientras se carga.\n\nexecution:\n\
+    \  mode: HF_JOB\n  runtime: vllm | llama.cpp | sglang\n  model_source: hf://ORG/MODEL\n\
+    \nlatency:\n  cold_start_seconds: measured\n  hot_ttft_ms: measured\n  tokens_per_second:\
+    \ measured\n\nsecurity:\n  exposed_port: true\n  auth: HF_TOKEN\nEsto permite\
+    \ que tu router sepa:\nmodelo READY\n→ llamada inmediata\n\nmodelo STOPPED\n→\
+    \ crear Job\n→ esperar healthcheck\n→ READY\n→ ejecutar\n\nmodelo IDLE demasiado\
+    \ tiempo\n→ cancelar Job\n→ detener facturación\n\nREQUEST\n   ↓\n¿PROVIDER DISPONIBLE?\n\
+    \   ├── SÍ → HF Inference Provider\n   │\n   └── NO\n        ↓\n     HF JOB\n\
+    \        ↓\n  COST GUARD\n        ↓\n  START + LOAD\n        ↓\n      READY\n\
+    \        ↓\n    INFERENCE\n        ↓\n   idle_timeout\n        ↓\n   CANCEL JOB\n\
+    \        ↓\n  BILLING STOP\n\nEl router puede detectar actividad y arrancar el\
+    \ HF Job antes de que llegue la petición que realmente necesita el modelo. Esa\
+    \ es precisamente una buena forma de ocultar gran parte del cold start.\nPor ejemplo:\n\
+    USUARIO ABRE CHAT / LLEGA INPUT / EMPIEZA WORKFLOW\n                    ↓\n  \
+    \            ROUTER DETECTA\n                    ↓\n          ¿modelo probablemente\
+    \ necesario?\n             ↓ SÍ             ↓ NO\n      START HF JOB         \
+    \ continúa\n             ↓\n      STARTING / LOADING\n             ↓\n       \
+    \     READY\n             ↓\n       petición al modelo\nTu interfaz puede mandar\
+    \ algo tan pequeño como PREWARM(model_id) al router cuando el usuario abre una\
+    \ conversación, selecciona un modelo o\n\nACTIVITY DETECTOR\n       ↓\nMODEL PREDICTOR\n\
+    \       ↓\nPREWARM\n       ↓\nHF JOB START\n       ↓\nHEALTHCHECK / READY\n  \
+    \     ↓\nREQUESTS\n       ↓\nIDLE 3-5 MIN\n       ↓\nCANCEL JOB\n\nY añadiría\
+    \ al registry state, job_id, ready_url, cold_start_ms, last_used_at, idle_timeout,\
+    \ hourly_cost y max_session_cost.\n\nSí. Solo uso DeepSeek V4.1 Flash, el modelo\
+    \ nuevo. No incluyo ningún V4 anterior.\n\nDeepSeek oficial — económico\t$0.15\t\
+    $0.60\nDeepSeek oficial — pico\t$0.30\t$1.20\nHF → DeepSeek V4.1 Flash / Novita\t\
+    $0.30\t$1.20\nHF → DeepSeek V4.1 Flash / Baseten\t$0.30\t$1.20\n\nEl catálogo\
+    \ actual de Hugging Face confirma DeepSeek-V4.1-Flash, con Novita a $0.30/$1.20\
+    \ y Baseten a $0.30/$1.20.\n\nAdemás, HF confirma que con Inference Providers\
+    \ cobra la tarifa del proveedor sin añadir margen, y permite seleccionar :cheapest\
+    \ en lugar del :fastest predeterminado.\n\nROUTER DE COSTO\n                 \
+    \        │\n                         ↓\n              HORA ACTUAL COLOMBIA\n \
+    \                        │\n             ┌───────────┴───────────┐\n         \
+    \    │                       │\n      \U0001F7E9 FUERA DE PICO          \U0001F7E5\
+    \ HORA PICO\n             │                       │\n             ↓          \
+    \             ↓\n   DeepSeek V4.1 Flash           HF ROUTER\n      API OFICIAL\
+    \                    │\n     $0.15 / $0.60                   ↓\n             \
+    \               comparar automáticamente\n                              ┌───────┴────────┐\n\
+    \                              ↓                ↓\n                       MiniMax\
+    \ M3      DeepSeek V4.1\n                         :cheapest        :c\n\nen pico\
+    \ → consulta HF :cheapest y compara MiniMax M3 con DeepSeek V4.1 Flash. HF puede\
+    \ cambiar de proveedor sin que tengas que cambiar el token; un único HF token\
+    \ puede servir para múltiples proveedores.\n\nAsí tu router no necesita memorizar\
+    \ manualmente qué proveedor es más barato: puede mantener DeepSeek oficial como\
+    \ ruta económica programada por horario y usar HF como ruta dinámica durante las\
+    \ ventanas pico.\n\n\U0001F4CC Primero debe intentar usar las api de Nvidia que\
+    \ son 4 usando Kimi k 3 o minimax M3 o Dee\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md\
+    \ ===\n## agent-1-chat-hf: estado=CLOSED marco=pocketflow pasos_cerrados=['vault_panel',\
+    \ 'router_panel', 'wire_panels']\n- paso router_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js']\
+    \ gaps=-\n- paso vault_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js']\
+    \ gaps=-\n- paso wire_panels: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js']\
+    \ gaps=-\n## agent-2-chat-hf-smol: estado=CLOSED marco=smolagents pasos_cerrados=['jobs_panel',\
+    \ 'fixed_template', 'crazy_wall_chain']\n- paso crazy_wall_chain: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py']\
+    \ gaps=-\n- paso fixed_template: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py']\
+    \ gaps=-\n- paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js']\
+    \ gaps=-\n## agent-3-router: estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme',\
+    \ 'space_index', 'deploy_script']\n- paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py']\
+    \ gaps=-\n- paso space_index: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=[] gaps=-\n- paso space_readme: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=[] gaps=-\n## agent-4-router-smol: estado=CLOSED marco=smolagents\
+    \ pasos_cerrados=['models_registry', 'job_spec', 'node_monitor']\n- paso job_spec:\
+    \ CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente\
+    \ universal/agents-yaiwes/agent-4-router-smol/steps/job_spec/results/job_spec.py']\
+    \ gaps=-\n- paso models_registry: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/models_registry/results/hf_models_registry.py']\
+    \ gaps=-\n- paso node_monitor: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/node_monitor/results/node_monitor.py']\
+    \ gaps=-\n## agent-6-hf-nodes: estado=CLOSED marco=pocketflow pasos_cerrados=['ram_plan',\
+    \ 'node_hop']\n- paso node_hop: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-6-hf-nodes/steps/node_hop/results/hf_hop.py']\
+    \ gaps=-\n- paso ram_plan: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-6-hf-nodes/steps/ram_plan/results/hf_nodes.py']\
+    \ gaps=-\n## agent-7-llama-hf: estado=CLOSED marco=smolagents pasos_cerrados=['llama_cmd',\
+    \ 'hf_job', 'bench_report']\n- paso bench_report: CLOSED modelo=hf/MiniMaxAI/MiniMax-M3\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/bench_report/results/bench_report.py']\
+    \ gaps=-\n- paso hf_job: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/hf_job/results/hf_job.py']\
+    \ gaps=-\n- paso llama_cmd: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/llama_cmd/results/llama_cmd.py']\
+    \ gaps=-\n## agent-8-router-local: estado=CLOSED marco=pocketflow pasos_cerrados=['local_pool',\
+    \ 'mirror_route']\n- paso local_pool: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-8-router-local/steps/local_pool/results/local_pool.py']\
+    \ gaps=-\n- paso mirror_route: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-8-router-local/steps/mirror_route/results/mirror_route.py']\
+    \ gaps=-\n## agent-9-models-catalog: estado=CLOSED marco=smolagents pasos_cerrados=['models_catalog',\
+    \ 'install_plan']\n- paso install_plan: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-9-models-catalog/steps/install_plan/results/install_plan.py']\
+    \ gaps=-\n- paso models_catalog: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-9-models-catalog/steps/models_catalog/results/models_catalog.py']\
+    \ gaps=-\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (lens_storage):\n{\"items\": [{\"\
+    id\": \"P2-01\", \"quote\": \"Le conectas al chat dentro de huggueface almacenamiento\
+    \ su propio espacio y fusionas para crear un entorno llamado Mvp almacenamiento\
+    \ para ai\", \"status\": \"PARCIAL\", \"area\": \"almacenamiento\", \"evidence\"\
+    : [\"router inteligente universal/integration/chat_mvp/\", \"router inteligente\
+    \ universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py\"\
+    ], \"note\": \"Existe Static Space HF y el Chat MVP como integración, pero ningún\
+    \ entregable del CONTEXTO nombra explícitamente el entorno Mvp almacenamiento\
+    \ para ai.\", \"tarea\": \"agent-3-router debe documentar el Space HF llamado\
+    \ Mvp almacenamiento para ai enlazado al chat y al stack de almacenamiento.\"\
+    }, {\"id\": \"P2-02\", \"quote\": \"Data base SQL Little Graphiti y graphyty Caché\"\
+    , \"status\": \"PARCIAL\", \"area\": \"almacenamiento\", \"evidence\": [\"router\
+    \ inteligente universal/integration/chat_mvp/\"], \"note\": \"El Chat MVP declara\
+    \ SQL+grafo+caché+documentos, pero no hay entregables que documenten SQL/Graphiti/Graphty/caché\
+    \ por separado ni su cableado al chat.\", \"tarea\": \"agent-1-chat-hf debe cablear\
+    \ explícitamente SQL, Graphiti/Graphty y caché en el chat, con archivos de configuración\
+    \ por cada capa.\"}, {\"id\": \"P2-03\", \"quote\": \"Database principal PostgreSQL\
+    \ estado persistente y estructurado\", \"status\": \"AMBIGUO\", \"area\": \"almacenamiento\"\
+    , \"evidence\": [\"router inteligente universal/integration/chat_mvp/\"], \"note\"\
+    : \"El Chat MVP integra SQL+grafo, pero el CONTEXTO no muestra un entregable concreto\
+    \ que sea PostgreSQL como database principal ni su DDL/esquema.\", \"tarea\":\
+    \ \"agent-1-chat-hf debe confirmar que el SQL del Chat MVP es PostgreSQL y entregar\
+    \ el esquema (DDL) y la conexión real.\"}, {\"id\": \"P2-04\", \"quote\": \"Graphiti\
+    \ → construye/consulta la memoria de conocimiento\", \"status\": \"PARCIAL\",\
+    \ \"area\": \"almacenamiento\", \"evidence\": [\"router inteligente universal/integration/chat_mvp/\"\
+    ], \"note\": \"El Chat MVP integra grafo y memoria, pero ningún entregable del\
+    \ CONTEXTO instala ni configura Graphiti concretamente.\", \"tarea\": \"agent-2-chat-hf-smol\
+    \ debe cablear Graphiti como capa de memoria de conocimiento dentro del chat y\
+    \ entregar el módulo de conexión.\"}, {\"id\": \"P2-05\", \"quote\": \"Graphty\
+    \  → visualiza gráficamente nodos y conexiones\", \"status\": \"PENDIENTE\", \"\
+    area\": \"almacenamiento\", \"evidence\": [], \"note\": \"El propio CONTEXTO indica\
+    \ Graphty NO necesario si vas backend-only añadir únicamente si después quieres\
+    \ visualizar nodos/grafos, por lo que es opcional y no hay entregable.\", \"tarea\"\
+    : \"agent-2-chat-hf-smol debe decidir si se instala Graphty (visualización) o\
+    \ se mantiene backend-only y dejarlo documentado.\"}, {\"id\": \"P2-06\", \"quote\"\
+    : \"Redis → caché de respuestas\", \"status\": \"PARCIAL\", \"area\": \"almacenamiento\"\
+    , \"evidence\": [\"router inteligente universal/integration/chat_mvp/\"], \"note\"\
+    : \"El Chat MVP declara caché, pero el CONTEXTO no muestra un cliente/conector\
+    \ Redis cableado al chat.\", \"tarea\": \"agent-1-chat-hf debe cablear Redis (caché,\
+    \ TTL, locks, rate limits, deduplicación) al chat y entregar el módulo.\"}, {\"\
+    id\": \"P2-07\", \"quote\": \"AGENTDB    → memoria especializada del agente\"\
+    , \"status\": \"PENDIENTE\", \"area\": \"almacenamiento\", \"evidence\": [], \"\
+    note\": \"AgentDB (episodios, skills, patrones, memoria vectorial) aparece como\
+    \ capa exigida por el Director, pero no hay ningún entregable del CONTEXTO que\
+    \ lo instale o lo conecte.\", \"tarea\": \"agent-2-chat-hf-smol debe instalar\
+    \ e integrar AgentDB como memoria especializada de los agentes y conectarla al\
+    \ chat.\"}, {\"id\": \"P2-08\", \"quote\": \"FalkorDB o Neo4j backend de Graphiti\"\
+    , \"status\": \"PENDIENTE\", \"area\": \"almacenamiento\", \"evidence\": [], \"\
+    note\": \"El CONTEXTO exige FalkorDB o Neo4j como backend físico de Graphiti,\
+    \ pero ningún entregable del CONTEXTO lo implementa.\", \"tarea\": \"agent-2-chat-hf-smol\
+    \ debe elegir e instalar FalkorDB (recomendado por el propio CONTEXTO) como backend\
+    \ de Graphiti y entregar el conector.\"}, {\"id\": \"P2-09\", \"quote\": \"Mantendría\
+    \ el mismo chat, pero añadiría una ventana/panel persistente de Archivos / Memoria\"\
+    , \"status\": \"PARCIAL\", \"area\": \"chat\", \"evidence\": [\"router inteligente\
+    \ universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js\"\
+    , \"router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js\"\
+    , \"router inteligente universal/integration/chat_mvp/\"], \"note\": \"vault_panel.js\
+    \ y wire_panels.js (CLOSED) cubren parte del cableado, pero el CONTEXTO no confirma\
+    \ el panel Archivos / Memoria persistente conectado al chat.\", \"tarea\": \"\
+    agent-1-chat-hf debe cablear el panel Archivos / Memoria persistente dentro del\
+    \ mismo chat, integrado con el ingestion router.\"}, {\"id\": \"P2-10\", \"quote\"\
+    : \"Que pueda subir archivos adjuntos y ten\", \"status\": \"HECHO\", \"area\"\
+    : \"almacenamiento\", \"evidence\": [\"router inteligente universal/integration/chat_mvp/\"\
+    ], \"note\": \"El Chat MVP integra documentos, lo que cubre la subida de archivos\
+    \ adjuntos.\", \"tarea\": \"\"}, {\"id\": \"P2-11\", \"quote\": \"Necesito un\
+    \ acceso directo al chat busca algo O"
+  max_chars: 40000
+task: 'PASADA 3 — MODELOS DE IA LOCALES Y ACELERADORES. Audita los MODELOS locales
+  en Hugging Face (pesos remotos, cuantización, una copia compartida por varias sesiones
+  = espejo, RAM, 10 procesadores de 32 GB,
+
+  salto de nodo, Jobs) y los ACELERADORES (llama.cpp: atención flash, caché KV q8,
+  caché de prompt, batching continuo, ranuras, decodificación especulativa; OpenVINO,
+  ONNX, TorchAO, etc.). Devuelve SOLO un objeto
+
+  JSON {"items": [...]} con al menos 10 ítems, cada uno con: "id" (único, P3-01...),
+  "quote" (copiada LETRA POR LETRA de las palabras del Director en el paquete, de
+  20 a 200 caracteres), "status" (HECHO,
+
+  PARCIAL, PENDIENTE, AMBIGUO o REFUTADO), "area" (chat, almacenamiento, agentes,
+  modelos o aceleradores), "evidence" (lista de rutas del CONTEXTO; [] si es PENDIENTE),
+  "note" (una frase) y "tarea" (qué mandar
+
+  hacer a un agente; "" si es HECHO). No inventes citas ni rutas.
+
+  '
+checks:
+- kind: audit_json
+  min_items: 10
+  sources:
+  - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-models.md
+- kind: no_secrets

@@ -3,7 +3,7 @@
  "agent": "agent-5-auditor",
  "framework": "smolagents",
  "status": "BLOCKED",
- "updated_at": "2026-09-21T19:01:30Z",
+ "updated_at": "2026-09-21T22:53:01Z",
  "group": "audit",
  "chain": [
   "lens_chat",
@@ -12,13 +12,13 @@
   "lens_cross"
  ],
  "completed": [
-  "lens_chat"
+  "lens_chat",
+  "lens_storage"
  ],
  "failed": [
-  "lens_storage (tiempo agotado)"
+  "lens_models (tiempo agotado)"
  ],
  "next_nodes": [
-  "lens_models",
   "lens_cross"
  ],
  "route": [

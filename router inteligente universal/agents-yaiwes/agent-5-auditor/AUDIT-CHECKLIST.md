@@ -1,13 +1,13 @@
-# AUDIT-CHECKLIST — 2026-09-21 19:01:30Z
+# AUDIT-CHECKLIST — 2026-09-21 22:53:01Z
 
 Generado por el agente auditor (pasadas `lens_*`, validadas por el Sheriff: cada cita es textual del Director y cada evidencia existe en el repo) y unido de forma determinista. Refutado = el trabajo de un agente no cumple lo pedido.
 
 | estado | ítems |
 |---|---|
 | REFUTADO | 0 |
-| PENDIENTE | 1 |
-| AMBIGUO | 2 |
-| PARCIAL | 8 |
+| PENDIENTE | 4 |
+| AMBIGUO | 3 |
+| PARCIAL | 15 |
 | HECHO | 6 |
 
 ## PENDIENTE
@@ -15,6 +15,15 @@ Generado por el agente auditor (pasadas `lens_*`, validadas por el Sheriff: cada
 - **P1-09** (lens_chat, agentes) «Vasmos a tener más de 50 agente con el nombre de agente Seals Team YAIWES»
   - evidencia: -
   - nota: Ningún entregable del CONTEXTO registra agentes con el nombre 'Seals Team YAIWES'.
+- **P2-05** (lens_storage, almacenamiento) «Graphty  → visualiza gráficamente nodos y conexiones»
+  - evidencia: -
+  - nota: El propio CONTEXTO indica Graphty NO necesario si vas backend-only añadir únicamente si después quieres visualizar nodos/grafos, por lo que es opcional y no hay entregable.
+- **P2-07** (lens_storage, almacenamiento) «AGENTDB    → memoria especializada del agente»
+  - evidencia: -
+  - nota: AgentDB (episodios, skills, patrones, memoria vectorial) aparece como capa exigida por el Director, pero no hay ningún entregable del CONTEXTO que lo instale o lo conecte.
+- **P2-08** (lens_storage, almacenamiento) «FalkorDB o Neo4j backend de Graphiti»
+  - evidencia: -
+  - nota: El CONTEXTO exige FalkorDB o Neo4j como backend físico de Graphiti, pero ningún entregable del CONTEXTO lo implementa.
 
 ## AMBIGUO
 
@@ -24,6 +33,9 @@ Generado por el agente auditor (pasadas `lens_*`, validadas por el Sheriff: cada
 - **P1-15** (lens_chat, chat) «Necesito un acceso directo al chat busca algo Open soure como el chat de minimax o Claude que pueda usar para el chat»
   - evidencia: `router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py`
   - nota: Hay deploy_static_space.py, pero el CONTEXTO no confirma que el front-end adoptado sea open source tipo MiniMax/Claude ni su URL.
+- **P2-03** (lens_storage, almacenamiento) «Database principal PostgreSQL estado persistente y estructurado»
+  - evidencia: `router inteligente universal/integration/chat_mvp/`
+  - nota: El Chat MVP integra SQL+grafo, pero el CONTEXTO no muestra un entregable concreto que sea PostgreSQL como database principal ni su DDL/esquema.
 
 ## PARCIAL
 
@@ -51,6 +63,27 @@ Generado por el agente auditor (pasadas `lens_*`, validadas por el Sheriff: cada
 - **P1-17** (lens_chat, chat) «añadiría una ventana/panel persistente de Archivos / Memoria»
   - evidencia: `router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js`
   - nota: Existe vault_panel.js del agent-1, pero el CONTEXTO no lo confirma como panel persistente Archivos/Memoria visible dentro del chat.
+- **P2-02** (lens_storage, almacenamiento) «Data base SQL Little Graphiti y graphyty Caché»
+  - evidencia: `router inteligente universal/integration/chat_mvp/`
+  - nota: El Chat MVP declara SQL+grafo+caché+documentos, pero no hay entregables que documenten SQL/Graphiti/Graphty/caché por separado ni su cableado al chat.
+- **P2-04** (lens_storage, almacenamiento) «Graphiti → construye/consulta la memoria de conocimiento»
+  - evidencia: `router inteligente universal/integration/chat_mvp/`
+  - nota: El Chat MVP integra grafo y memoria, pero ningún entregable del CONTEXTO instala ni configura Graphiti concretamente.
+- **P2-06** (lens_storage, almacenamiento) «Redis → caché de respuestas»
+  - evidencia: `router inteligente universal/integration/chat_mvp/`
+  - nota: El Chat MVP declara caché, pero el CONTEXTO no muestra un cliente/conector Redis cableado al chat.
+- **P2-09** (lens_storage, chat) «Mantendría el mismo chat, pero añadiría una ventana/panel persistente de Archivos / Memoria»
+  - evidencia: `router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js`, `router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js`, `router inteligente universal/integration/chat_mvp/`
+  - nota: vault_panel.js y wire_panels.js (CLOSED) cubren parte del cableado, pero el CONTEXTO no confirma el panel Archivos / Memoria persistente conectado al chat.
+- **P2-11** (lens_storage, chat) «Necesito un acceso directo al chat busca algo Open soure como el chat de minimax o Claude que pueda usar para el chat para cambiar de modelos y agente y para almacenar archivos»
+  - evidencia: `router inteligente universal/integration/chat_mvp/`, `router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js`
+  - nota: El Chat MVP integra selector de proveedor/modelo y agente, pero el CONTEXTO no lo describe como acceso directo Open source comparable al chat de MiniMax o Claude.
+- **P2-12** (lens_storage, agentes) «Las 4 api de Nvidia y cerebras si no responde o los modelos no están disponibles el router Salta para mis api locales»
+  - evidencia: `router inteligente universal/integration/chat_mvp/`, `router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/models_registry/results/hf_models_registry.py`, `router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/job_spec/results/job_spec.py`
+  - nota: models_registry y job_spec existen como CLOSED, pero el CONTEXTO no muestra el código de handoff (Nvidia/cerebras → api locales → DeepSeek v4) implementado ni cableado al chat.
+- **P2-13** (lens_storage, modelos) «Modelos que deben trabajar local por máximo 26 de ram  quanrificado para no saturar el procesador + caché»
+  - evidencia: `router inteligente universal/agents-yaiwes/agent-9-models-catalog/steps/install_plan/results/install_plan.py`, `router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/llama_cmd/results/llama_cmd.py`, `router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/bench_report/results/bench_report.py`
+  - nota: Hay catálogo, llama_cmd y benchmark, pero el CONTEXTO no confirma que los modelos locales del grupo 2 estén cuantificados a 26 GB de RAM con caché cableada al chat.
 
 ## HECHO
 
