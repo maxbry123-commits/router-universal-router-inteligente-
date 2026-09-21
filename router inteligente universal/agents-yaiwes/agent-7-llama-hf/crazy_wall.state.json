@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-7-llama-hf",
  "framework": "smolagents",
- "status": "BLOCKED",
- "updated_at": "2026-09-21T15:09:30Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T18:47:19Z",
  "group": "hf-llama",
  "chain": [
   "llama_cmd",
@@ -12,11 +12,10 @@
  ],
  "completed": [
   "llama_cmd",
-  "hf_job"
+  "hf_job",
+  "bench_report"
  ],
- "failed": [
-  "bench_report (tiempo agotado)"
- ],
+ "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [

@@ -2,13 +2,26 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-5-auditor",
  "framework": "smolagents",
- "status": "RUNNING",
- "updated_at": "2026-09-21T15:16:23Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T18:49:30Z",
  "group": "audit",
  "current_nodes": [
   "auditor"
  ],
  "next_nodes": [
   "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "6be0a38ba17e7822e8a1c517373afcf623e5bc3374d6f3c34325ccea2c17aac1",
+   "chars": 9415
+  }
+ ],
+ "model": "hf/MiniMaxAI/MiniMax-M3",
+ "attempts": 2,
+ "route_trace": [
+  "hf/deepseek-ai/DeepSeek-V4-Flash:AgentGenerationError:Error while generating output:\nRequest timed out."
  ]
 }

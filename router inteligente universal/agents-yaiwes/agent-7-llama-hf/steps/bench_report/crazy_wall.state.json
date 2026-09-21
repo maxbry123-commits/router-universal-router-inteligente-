@@ -2,13 +2,30 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-7-llama-hf",
  "framework": "smolagents",
- "status": "RUNNING",
- "updated_at": "2026-09-21T14:57:31Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T18:47:19Z",
  "group": "hf-llama",
  "current_nodes": [
   "tool_calling_agent"
  ],
  "next_nodes": [
   "sheriff"
- ]
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "387e8d8db87131bf552a3fce59e9f1228c2767661c552628c7d9e8f0d6e3ce3b",
+   "chars": 1636
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "bench_report.py",
+   "sha256": "387e8d8db87131bf552a3fce59e9f1228c2767661c552628c7d9e8f0d6e3ce3b"
+  }
+ ],
+ "model": "hf/MiniMaxAI/MiniMax-M3",
+ "attempts": 1,
+ "route_trace": []
 }

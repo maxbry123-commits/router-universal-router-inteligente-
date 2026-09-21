@@ -1,0 +1,337 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-5-auditor
+  framework: smolagents
+  runner: auditor
+  post: audit_report
+  group: audit
+  route:
+  - deepseek_flash
+  - minimax_m3
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 4000
+context:
+  text: "Auditas por PASADAS: cada paso recibe un paquete con las palabras LITERALES\
+    \ del Director sobre un tema (`=== ARCHIVO: ... ===`) y el estado actual de los\
+    \ agentes (`agents_state.md`,\ncon las rutas de sus entregables). Agentes: agent-1-chat-hf\
+    \ (paneles del chat), agent-2-chat-hf-smol (panel de trabajos, plantilla fija,\
+    \ Crazy Wall), agent-3-router (chat sin PRO en HF: Static Space),\nagent-4-router-smol\
+    \ (registro de modelos, Job, monitor de nodos), agent-6-hf-nodes (RAM, caché reducida,\
+    \ 10 procesadores), agent-7-llama-hf (llama-server con aceleradores), agent-8-router-local\
+    \ (pool de\nnodos locales y ruta espejo), agent-9-models-catalog (catálogo de\
+    \ modelos y plan de instalación). Ya existe en el repo: Chat MVP (`router inteligente\
+    \ universal/integration/chat_mvp/`: selector de\nproveedor y modelo, con/sin agente,\
+    \ cuentas GitHub, documentos, SQL+grafo+caché+documentos, banco de claves, jobs\
+    \ en paralelo, DAG, `/chat/route`); el Router corre en un Job de HF (probado);\
+    \ benchmarks\nde llama.cpp (Qwen3.5-0.8B tg 28 t/s, LFM2.5-1.2B tg 30 t/s en 4\
+    \ vCPU). Prioridad del Director: SOLO el chat y los modelos de IA locales.\n\n\
+    \n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-storage.md\
+    \ ===\n=== ARCHIVO: Claude notas/INPUT-BLOCK-05-chat-storage-grupos-VERBATIM.md\
+    \ ===\n# INPUT BLOCK 05 — CHAT MVP + ALMACENAMIENTO + GRUPOS 0/1/2 — VERBATIM\
+    \ (2026-09-19/20)\n\nRegla del Director: las instrucciones se anotan textuales,\
+    \ 1 a 1 (input block), en `Claude notas/` + `Readme arquitectura router inteligente\
+    \ universal/` + `bitácora stated JSON Craxy wall plan checkpoint router inteligente\
+    \ universal/`. Nada se resume ni se corrige: los errores de tipeo son del original.\n\
+    Los tres documentos que el Director adjuntó a este mensaje están, también textuales,\
+    \ en `REFERENCIAS-ADJUNTAS-INPUT-05-VERBATIM.md`.\n\nOk \nPaso 1 dieme qué hay\
+    \ que decidir para que puedas terminar con referente al chat \nNecesitas que pueda\
+    \ tu colocar los api key de mis modelos locales y los modelos de deepsek v4 flash\
+    \ y pro y Kimi k 3 mínimax M3 \nQue puedan operar en Github y huggueface 100%\n\
+    \ autorizado \n\U0001F4CCQue con el selector pueda cambiar de cuenta de Github\
+    \ diferente \n\U0001F4CCQue los  modelos que yo seleccione trabaje con el pool\
+    \ de agente que yo te voy a decir pueda operar con agente y sin agente \n\U0001F4CC\
+    \ Le conectas al chat dentro de huggueface almacenamiento su propio espacio y\
+    \ fusionas para crear un entorno llamado Mvp almacenamiento para ai \nData base\
+    \ \nSQL Little \nGraphiti y graphyty \nCaché \nQue pueda subir archivos adjuntos\
+    \ y ten\n\nNecesito que revises el router en el repo de router universal usa el\
+    \ router que hizo Fables los code están en los archivos \nLuego necesito que uses\
+    \ lo que adelanto sol gpt y íntegras los componentes mínimos componentes para\
+    \ conseguir el siguiente objetivo \n1. Vasmos a tener más de 50 agente con el\
+    \ nombre de agente Seals Team YAIWES necesito que operen con las api locales que\
+    \ te voy a define esos modelos locales no deben estar instalado a huggueface deben\
+    \ llamar al modelo remoto como lo indica hugguenface para no descargar el modelo\
+    \ y deben trabajar como mirror y duplicarse sines necesario 50 o 100 veces \n\
+    Deben usar el dataset y los aceleradores que deberían o fueron instalados en huggueface\
+    \ \n\nGrupo 1 \U0001F4CC  del wordflow loop code Yaiwes con el ejambre de agente\
+    \ Seals Team YAIWES\n\nGrupo 2 \U0001F4CC con los agente de el wordflow loops\
+    \ code Yaiwes con el pool de 20 agentes\nSolo para el grupo 2 si se satura el\
+    \ cómputo o hay mucha latencia el router cambia la api por al de deepsek v4 pero\
+    \ son 6 grupos de trabajo que requieren api key  especializada que te voy a decir\
+    \ \nComo funciona o deberia funcionar router para grupo 2 \n1. Las 4 api de Nvidia\
+    \ y cerebras si no responde o los modelos no están disponibles el router Salta\
+    \ para mis api locales \n2. Api locales del grupo 2 .\nSi las api locales de esta\
+    \ lista están saturadas o con latencia salta a \nDeepsek v4 flash api \n3. Usa\
+    \ deepsek v4 \nAsí debería funcionar el router de grupo 2 \nTambién la biblioteca\
+    \ de skills de huggueface instalada\n\nGrupo 0\U0001F4CC osquestador \ncomand\
+    \ Center y \nNeuro-Orchestrator-8B — 8B — orquestación/agentic.\nMiroThinker-8B\
+    \ — 8B — razonamiento.\nLFM2.5-8B-A1B — 8B total / ~1B activo — subagentes, loops\
+    \ agentic.\nOpenThinker3-7B — 7B — razonamiento.\n➡️\n\nGrupo 2 \U0001F4CC\nModelos\
+    \ que deben trabajar local por máximo 26 de ram  quanrificado para no saturar\
+    \ el procesador + caché \nMuse Glimmer 30B — 30B — \U0001F9D1‍\U0001F4BB MODELO\
+    \ DE CODE / agentic, multimodal.\nLaguna XS 2.1 — 33B total / 3B activos — \U0001F9D1\
+    ‍\U0001F4BB MODELO DE CODE / agentic, router y long-horizon.\nDeepSeek-Coder —\
+    \ variante/peso no especificado en tus archivos — \U0001F9D1‍\U0001F4BB MODELO\
+    \ DE CODE.\nDeepSeek v4 flash \n➡️➡️➡️➡️➡️➡️\n\n\U0001F4CCGrupo fromtend y fábrica\
+    \ de UI y interface UI staff pendientes por clasificación \nOLMo-3-7B-RL-Zero\
+    \ — 7B — razonamiento/RL.\nTernary-Bonsai-27B-GGUF — 27B — general; GGUF.\nOTel-2.0-LLM-31B-IT\
+    \ — 31B —\ndebe estar instalado \nKandinsky-5.0-T2I-Lite — peso exacto no indicado\
+    \ — generación de imagen.\nQwen-Image —\nFLUX.1-schnell —\nWan2.2-Animate-14B\
+    \ — 14B — vídeo/animación.\nLTX-Video — peso exacto no indicado en tus archivos\
+    \ — vídeo.\nHunyuanVideo —\nOPT-125M — 125M — ultraligero/pruebas.\nSkywork-OR1-Math-7B\
+    \ — 7B — matemáticas/razonamiento.\nMiroThinker-8B — 8B — razonamiento.\nNeuro-Orchestrator-8B\
+    \ — 8B — orquestación/agentic.\nCrystalSonic-4B — 4B — ligero.\nHunyuan-7B-Instruct\
+    \ — 7B — general.\nYuan3.0-F\n\nlos 3 métodos de procesamiento \nLos necesito\
+    \ pero primero necesito resolver la prioridad de el chat con los requisitos que.\
+    \ Te puse como primer paso Mónico chat + deepsek v4 flash y pro + Kimi k 3+ Nvidia\
+    \ api + mínimax M3 + agentes que pasan por medio de el router con agente y sin\
+    \ agente   coneccion con el G\n\n=== ARCHIVO: Claude notas/INPUT-BLOCK-06-VERBATIM.md\
+    \ ===\n# INPUT BLOCK 06 — SECRET BANK + STACK DE ALMACENAMIENTO + CHAT OPEN SOURCE\
+    \ + PLAN — VERBATIM (2026-09-20)\n\nRegla del Director: instrucciones textuales,\
+    \ 1 a 1. Nada se resume ni se corrige (los errores de tipeo son del original).\n\
+    ÚNICA desviación, por seguridad: las 4 credenciales que el Director pegó en el\
+    \ chat (1 de Hugging Face y 3 tokens de GitHub) están sustituidas por el marcador\
+    \ `[CREDENCIAL PEGADA EN EL CHAT — REDACTADA, NO SE GUARDA]`. Los nombres de cuenta\
+    \ y las etiquetas se conservan. Esas credenciales quedaron expuestas en el chat\
+    \ y deben rotarse.\nTrazabilidad instrucción por instrucción: `../bitácora stated\
+    \ JSON Craxy wall plan checkpoint router inteligente universal/RIU-0108-PLAN-MAESTRO-CHAT-MVP.md`.\n\
+    \n[CREDENCIAL PEGADA EN EL CHAT — REDACTADA, NO SE GUARDA]\n\nGraphiti → construye/consulta\
+    \ la memoria de conocimiento\nGraphty  → visualiza gráficamente nodos y conexiones\n\
+    \nRedis\n→ caché de respuestas\n→ resultados de búsquedas repetidas\n→ sesiones\
+    \ efímeras\n→ locks\n→ rate limits\n→ deduplicación\n→ estados rápidos de workers\n\
+    → colas ligeras\n→ TTL\n\nDatabase principal\nPostgreSQL\nestado persistente y\
+    \ estructurado\nGraphiti\nconocimiento temporal de agentes\nGraph DB\nFalkorDB\
+    \ o Neo4j\nbackend de Graphiti\nGraphty → nodos solo usas el backend no UI \n\
+    POSTGRESQL → verdad/estado persistente\n     +\nAGENTDB    → memoria especializada\
+    \ del agente\n\ndividiría así: AgentDB = episodios + skills + patrones + memoria\
+    \ vectorial aprendida; Graphiti = entidades + hechos + relaciones + evolución\
+    \ temporal. PostgreSQL conserva IDs y referencias que permiten unir ambas memorias.\n\
+    Así, PostgreSQL + AgentDB no compiten; se complementan. Y con Graphiti tienes\
+    \ una tercera capa especializada, en vez de intentar que una única base haga todo.\
+    \ �\n\nGraphiti — memoria/conocimiento temporal para agentes\n[https://github.com/getzep/graphiti](https://github.com/getzep/graphiti?utm_source=chatgpt.com)\n\
+    Graphiti soporta actualmente FalkorDB y Neo4j como backends de grafo.\n\nGraphty\
+    \ — visualización de nodos/grafos\n[https://graphty-org.github.io/graphty-element/](https://graphty-org.github.io/graphty-element/?utm_source=chatgpt.com)\n\
+    En tu arquitectura backend-only: opcional / no instalar. No es la base donde Graphiti\
+    \ guarda el conocimiento.\n\nRedis — caché, TTL, sesiones, locks, deduplicación,\
+    \ colas y estado rápido\n[https://github.com/redis/redis](https://github.com/redis/redis?utm_source=chatgpt.com)\n\
+    Redis soporta explícitamente caché, expiración, sesiones, queues/streams, deduplicación\
+    \ y también operaciones vectoriales.\n\nPostgreSQL — base de datos principal /\
+    \ fuente de verdad\n[https://www.postgresql.org/](https://www.postgresql.org/?utm_source=chatgpt.com)\n\
+    Código fuente:\n[https://github.com/postgres/postgres](https://github.com/postgres/postgres?utm_source=chatgpt.com)\n\
+    \nFalkorDB — Graph DB para Graphiti\n[https://github.com/FalkorDB/FalkorDB](https://github.com/FalkorDB/FalkorDB?utm_source=chatgpt.com)\n\
+    Organización oficial:\n[https://github.com/FalkorDB](https://github.com/FalkorDB?utm_source=chatgpt.com)\n\
+    Graphiti tiene soporte directo para FalkorDB.\n\nNeo4j — Graph DB alternativo\
+    \ para Graphiti\n[https://github.com/neo4j/neo4j](https://github.com/neo4j/neo4j?utm_source=chatgpt.com)\n\
+    [https://neo4j.com/](https://neo4j.com/?utm_source=chatgpt.com)\nTambién está\
+    \ soportado directamente por Graphiti.\n\nAgentDB — memoria especializada para\
+    \ agentes\nEl proyecto que corresponde a lo que hablábamos de episodios + skills\
+    \ + patrones + memoria vectorial + aprendizaje es este:\n[https://github.com/ruvnet/agentdb](https://github.com/ruvnet/agentdb?utm_source=chatgpt.com)\n\
+    NPM:\n[https://www.npmjs.com/package/agentdb](https://www.npmjs.com/package/agentdb?utm_source=chatgpt.com)\n\
+    Incluye memoria episódica/Reflexion, skill library, causal graph, búsqueda vectorial\
+    \ e integración MCP.\n\nPOSTGRESQL\n→ verdad / estado persistente / IDs / tareas\
+    \ / auditoría\n\nREDIS\n→ caché / TTL / sesiones / locks / colas / estado temporal\n\
+    \nAGENTDB\n→ episodios / skills / patrones / memoria vectorial aprendida\n\nGRAPHITI\n\
+    → entidades / hechos / relaciones / evolución temporal\n        ↓\nFALKORDB\n\
+    → Graph DB físico de Graphiti\n\nGRAPHTY\n→ NO necesario si vas backend-only\n\
+    → añadir únicamente si después quieres visualizar nodos/grafos\n\nPara tu caso\
+    \ concreto, FalkorDB + Graphiti encajan especialmente bien: el propio Graphiti\
+    \ ofrece instalación específica graphiti-core[falkordb] y su servidor MCP usa\
+    \ FalkorDB como una de sus opciones de backend. \nNo kuzu ❌ Para proyectos nuevos\
+    \ recomienda Neo4j o FalkorDB\n\n[CREDENCIAL PEGADA EN EL CHAT — REDACTADA, NO\
+    \ SE GUARDA]\n\n[CREDENCIAL PEGADA EN EL CHAT — REDACTADA, NO SE GUARDA]\n\n[CREDENCIAL\
+    \ PEGADA EN EL CHAT — REDACTADA, NO SE GUARDA]\n\nNecesito un acceso directo al\
+    \ chat busca algo Open soure como el chat de minimax o Claude que pueda usar para\
+    \ el chat para cambiar de modelos y agente y para almacenar archivos para encadenar\
+    \ a los procesos de almacenamiento\n\nParte 1 \U0001F4CC Adjuntos + memoria\n\
+    No necesitas crear otro chat. Mantendría el mismo chat, pero añadiría una ventana/panel\
+    \ persistente de Archivos / Memoria. El chat sería la interfaz; el panel mostraría\
+    \ qué documentos están conectados al proyecto y permitiría decidir si un archivo\
+    \ pertenece solo a esa conversación o a la memoria permanente.\nEl flujo sería:\n\
+    ┌──────────── MISMO CHAT ─────────────┐\n│ mensaje                           \
+    \  │\n│ + adjuntar archivos                 │\n│ + panel ARCHIVOS / MEMORIA  \
+    \        │\n└────────────────┬────────────────────┘\n                 ↓\n    \
+    \      INGESTION ROUTER\n                 ↓\n       ┌─────────┴──────────┐\n \
+    \      ↓                    ↓\n ARCHIVO ORIGINAL    \n\n=== ARCHIVO: Claude notas/INPUT-BLOCK-06-secret-bank-stack-plan-VERBATIM.md\
+    \ ===\nRegla del Director: instrucciones textuales, 1 a 1, en `Claude notas/`\
+    \ + `Readme arquitectura router inteligente universal/` + bitácora Crazy Wall.\
+    \ Los errores de tipeo son del original.\n\nREDACCIÓN OBLIGATORIA (única desviación\
+    \ del verbatim): el Director pegó en el chat 1 token de Hugging Face y 3 tokens\
+    \ de GitHub. Este repo es PÚBLICO, así que los valores NO se guardan aquí; se\
+    \ sustituyen por `[REDACTADO]`. El texto que los rodea es literal. Esos tokens\
+    \ quedaron expuestos en el chat y deben rotarse.\n\nGraphiti → construye/consulta\
+    \ la memoria de conocimiento\nGraphty  → visualiza gráficamente nodos y conexiones\n\
+    \nRedis\n→ caché de respuestas\n→ resultados de búsquedas repetidas\n→ sesiones\
+    \ efímeras\n→ locks\n→ rate limits\n→ deduplicación\n→ estados rápidos de workers\n\
+    → colas ligeras\n→ TTL\n\nDatabase principal\nPostgreSQL\nestado persistente y\
+    \ estructurado\nGraphiti\nconocimiento temporal de agentes\nGraph DB\nFalkorDB\
+    \ o Neo4j\nbackend de Graphiti\nGraphty → nodos solo usas el backend no UI \n\
+    POSTGRESQL → verdad/estado persistente\n     +\nAGENTDB    → memoria especializada\
+    \ del agente\n\ndividiría así: AgentDB = episodios + skills + patrones + memoria\
+    \ vectorial aprendida; Graphiti = entidades + hechos + relaciones + evolución\
+    \ temporal. PostgreSQL conserva IDs y referencias que permiten unir ambas memorias.\n\
+    Así, PostgreSQL + AgentDB no compiten; se complementan. Y con Graphiti tienes\
+    \ una tercera capa especializada, en vez de intentar que una única base haga todo.\
+    \ �\n\nGraphiti — memoria/conocimiento temporal para agentes\n[https://github.com/getzep/graphiti](https://github.com/getzep/graphiti?utm_source=chatgpt.com)\n\
+    Graphiti soporta actualmente FalkorDB y Neo4j como backends de grafo.\n\nGraphty\
+    \ — visualización de nodos/grafos\n[https://graphty-org.github.io/graphty-element/](https://graphty-org.github.io/graphty-element/?utm_source=chatgpt.com)\n\
+    En tu arquitectura backend-only: opcional / no instalar. No es la base donde Graphiti\
+    \ guarda el conocimiento.\n\nRedis — caché, TTL, sesiones, locks, deduplicación,\
+    \ colas y estado rápido\n[https://github.com/redis/redis](https://github.com/redis/redis?utm_source=chatgpt.com)\n\
+    Redis soporta explícitamente caché, expiración, sesiones, queues/streams, deduplicación\
+    \ y también operaciones vectoriales.\n\nPostgreSQL — base de datos principal /\
+    \ fuente de verdad\n[https://www.postgresql.org/](https://www.postgresql.org/?utm_source=chatgpt.com)\n\
+    Código fuente:\n[https://github.com/postgres/postgres](https://github.com/postgres/postgres?utm_source=chatgpt.com)\n\
+    \nFalkorDB — Graph DB para Graphiti\n[https://github.com/FalkorDB/FalkorDB](https://github.com/FalkorDB/FalkorDB?utm_source=chatgpt.com)\n\
+    Organización oficial:\n[https://github.com/FalkorDB](https://github.com/FalkorDB?utm_source=chatgpt.com)\n\
+    Graphiti tiene soporte directo para FalkorDB.\n\nNeo4j — Graph DB alternativo\
+    \ para Graphiti\n[https://github.com/neo4j/neo4j](https://github.com/neo4j/neo4j?utm_source=chatgpt.com)\n\
+    [https://neo4j.com/](https://neo4j.com/?utm_source=chatgpt.com)\nTambién está\
+    \ soportado directamente por Graphiti.\n\nAgentDB — memoria especializada para\
+    \ agentes\nEl proyecto que corresponde a lo que hablábamos de episodios + skills\
+    \ + patrones + memoria vectorial + aprendizaje es este:\n[https://github.com/ruvnet/agentdb](https://github.com/ruvnet/agentdb?utm_source=chatgpt.com)\n\
+    NPM:\n[https://www.npmjs.com/package/agentdb](https:\n\n=== ARCHIVO router inteligente\
+    \ universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md ===\n## agent-1-chat-hf:\
+    \ estado=CLOSED marco=pocketflow pasos_cerrados=['vault_panel', 'router_panel',\
+    \ 'wire_panels']\n- paso router_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js']\
+    \ gaps=-\n- paso vault_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js']\
+    \ gaps=-\n- paso wire_panels: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js']\
+    \ gaps=-\n## agent-2-chat-hf-smol: estado=CLOSED marco=smolagents pasos_cerrados=['jobs_panel',\
+    \ 'fixed_template', 'crazy_wall_chain']\n- paso crazy_wall_chain: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py']\
+    \ gaps=-\n- paso fixed_template: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py']\
+    \ gaps=-\n- paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js']\
+    \ gaps=-\n## agent-3-router: estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme',\
+    \ 'space_index', 'deploy_script']\n- paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py']\
+    \ gaps=-\n- paso space_index: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=[] gaps=-\n- paso space_readme: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
+    \ entregables=[] gaps=-\n## agent-4-router-smol: estado=CLOSED marco=smolagents\
+    \ pasos_cerrados=['models_registry', 'job_spec', 'node_monitor']\n- paso job_spec:\
+    \ CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente\
+    \ universal/agents-yaiwes/agent-4-router-smol/steps/job_spec/results/job_spec.py']\
+    \ gaps=-\n- paso models_registry: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/models_registry/results/hf_models_registry.py']\
+    \ gaps=-\n- paso node_monitor: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/node_monitor/results/node_monitor.py']\
+    \ gaps=-\n## agent-6-hf-nodes: estado=CLOSED marco=pocketflow pasos_cerrados=['ram_plan',\
+    \ 'node_hop']\n- paso node_hop: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-6-hf-nodes/steps/node_hop/results/hf_hop.py']\
+    \ gaps=-\n- paso ram_plan: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-6-hf-nodes/steps/ram_plan/results/hf_nodes.py']\
+    \ gaps=-\n## agent-7-llama-hf: estado=BLOCKED marco=smolagents pasos_cerrados=['llama_cmd',\
+    \ 'hf_job']\n- paso bench_report: RUNNING modelo=- entregables=[] gaps=-\n- paso\
+    \ hf_job: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/hf_job/results/hf_job.py']\
+    \ gaps=-\n- paso llama_cmd: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/llama_cmd/results/llama_cmd.py']\
+    \ gaps=-\n## agent-8-router-local: estado=CLOSED marco=pocketflow pasos_cerrados=['local_pool',\
+    \ 'mirror_route']\n- paso local_pool: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-8-router-local/steps/local_pool/results/local_pool.py']\
+    \ gaps=-\n- paso mirror_route: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router\
+    \ inteligente universal/agents-yaiwes/agent-8-router-local/steps/mirror_route/results/mirror_route.py']\
+    \ gaps=-\n## agent-9-models-catalog: estado=CLOSED marco=smolagents pasos_cerrados=['models_catalog',\
+    \ 'install_plan']\n- paso install_plan: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-9-models-catalog/steps/install_plan/results/install_plan.py']\
+    \ gaps=-\n- paso models_catalog: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-9-models-catalog/steps/models_catalog/results/models_catalog.py']\
+    \ gaps=-\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (lens_chat):\n{\n  \"items\":\
+    \ [\n    {\n      \"id\": \"P1-01\",\n      \"quote\": \"Necesitas que pueda tu\
+    \ colocar los api key de mis modelos locales y los modelos de deepsek v4 flash\
+    \ y pro y Kimi k 3 mínimax M3\",\n      \"status\": \"PARCIAL\",\n      \"area\"\
+    : \"chat\",\n      \"evidence\": [\n        \"router inteligente universal/integration/chat_mvp/\"\
+    ,\n        \"router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js\"\
+    \n      ],\n      \"note\": \"El selector de proveedor y modelo existe en el Chat\
+    \ MVP, pero el CONTEXTO no muestra cableadas las 4 APIs literales (DeepSeek v4\
+    \ flash/pro, Kimi k3, MiniMax M3).\",\n      \"tarea\": \"agent-1-chat-hf debe\
+    \ añadir al selector los 4 proveedores literales del Director (DeepSeek v4 flash/pro,\
+    \ Kimi k3, MiniMax M3) y validar cada api key.\"\n    },\n    {\n      \"id\"\
+    : \"P1-02\",\n      \"quote\": \"Que puedan operar en Github y huggueface 100%\"\
+    ,\n      \"status\": \"PARCIAL\",\n      \"area\": \"chat\",\n      \"evidence\"\
+    : [\n        \"router inteligente universal/integration/chat_mvp/\",\n       \
+    \ \"router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py\"\
+    \n      ],\n      \"note\": \"El router corre como Job en HF (probado) y el chat\
+    \ se construye en GitHub con raíz main, pero no hay URL pública de Space confirmada\
+    \ en el CONTEXTO.\",\n      \"tarea\": \"agent-3-router debe entregar la URL del\
+    \ Space HF público y el repo GitHub con raíz main enlazado al chat.\"\n    },\n\
+    \    {\n      \"id\": \"P1-03\",\n      \"quote\": \"Que con el selector pueda\
+    \ cambiar de cuenta de Github diferente\",\n      \"status\": \"HECHO\",\n   \
+    \   \"area\": \"chat\",\n      \"evidence\": [\n        \"router inteligente universal/integration/chat_mvp/\"\
+    \n      ],\n      \"note\": \"El Chat MVP declara explícitamente 'cuentas GitHub'\
+    \ en su integración.\",\n      \"tarea\": \"\"\n    },\n    {\n      \"id\": \"\
+    P1-04\",\n      \"quote\": \"pueda operar con agente y sin agente\",\n      \"\
+    status\": \"HECHO\",\n      \"area\": \"agentes\",\n      \"evidence\": [\n  \
+    \      \"router inteligente universal/integration/chat_mvp/\"\n      ],\n    \
+    \  \"note\": \"El Chat MVP incluye el modo 'con/sin agente' según el CONTEXTO.\"\
+    ,\n      \"tarea\": \"\"\n    },\n    {\n      \"id\": \"P1-05\",\n      \"quote\"\
+    : \"Le conectas al chat dentro de huggueface almacenamiento su propio espacio\
+    \ y fusionas para crear un entorno llamado Mvp almacenamiento para ai\",\n   \
+    \   \"status\": \"PARCIAL\",\n      \"area\": \"almacenamiento\",\n      \"evidence\"\
+    : [\n        \"router inteligente universal/integration/chat_mvp/\",\n       \
+    \ \"router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py\"\
+    \n      ],\n      \"note\": \"Existe Static Space HF y Chat MVP como integración,\
+    \ pero no se nombra explícitamente el entorno 'Mvp almacenamiento para ai' en\
+    \ los entregables.\",\n      \"tarea\": \"agent-3-router debe documentar el Space\
+    \ 'Mvp almacenamiento para ai' y verificar la fusión con el chat.\"\n    },\n\
+    \    {\n      \"id\": \"P1-06\",\n      \"quote\": \"SQL Little Graphiti y graphyty\
+    \ Caché\",\n      \"status\": \"HECHO\",\n      \"area\": \"almacenamiento\",\n\
+    \      \"evidence\": [\n        \"router inteligente universal/integration/chat_mvp/\"\
+    \n      ],\n      \"note\": \"El Chat MVP integra 'SQL+grafo+caché+documentos',\
+    \ cubriendo SQL, Graphiti/Graphyty y caché.\",\n      \"tarea\": \"\"\n    },\n\
+    \    {\n      \"id\": \"P1-07\",\n      \"quote\": \"Que pueda subir archivos\
+    \ adjuntos y ten\",\n      \"status\": \"HECHO\",\n      \"area\": \"chat\",\n\
+    \      \"evidence\": [\n        \"router inteligente universal/integration/chat_mvp/\"\
+    \n      ],\n      \"note\": \"El Chat MVP incluye 'documentos' en su integración,\
+    \ lo que cubre adjuntos.\",\n      \"tarea\": \"\"\n    },\n    {\n      \"id\"\
+    : \"P1-08\",\n      \"quote\": \"Necesito que revises el router en el repo de\
+    \ router universal usa el router que hizo Fables los code están en los archivos\"\
+    ,\n      \"status\": \"AMBIGUO\",\n      \"area\": \"agentes\",\n      \"evidence\"\
+    : [],\n      \"note\": \"El CONTEXTO no menciona a Fables por nombre; el router\
+    \ de Job existe pero no se confirma que sea el código de Fables.\",\n      \"\
+    tarea\": \"agent-3-router debe confirmar en una nota si el router activo es el\
+    \ de Fables o indicar qué código se adoptó.\"\n    },\n    {\n      \"id\": \"\
+    P1-09\",\n      \"quote\": \"Vasmos a tener más de 50 agente con el nombre de\
+    \ agente Seals Team YAIWES\",\n      \"status\": \"PENDIENTE\",\n      \"area\"\
+    : \"agentes\",\n      \"evidence\": [],\n      \"note\": \"Ningún entregable del\
+    \ CONTEXTO registra agentes con el nombre 'Seals Team YAIWES'.\",\n      \"tarea\"\
+    : \"agent-4-router-smol debe crear el registro de los 50+ agentes 'Seals Team\
+    \ YAIWES' con su api key y pool.\"\n    },\n    {\n      \"id\": \"P1-10\",\n\
+    \      \"quote\": \"esos modelos locales no deben estar instalado a huggueface\
+    \ deben llamar al modelo remoto como lo indica hugguenface para no descargar el\
+    \ modelo\",\n      \"status\": \"PARCIAL\",\n      \"area\": \"modelos\",\n  \
+    \    \"evidence\": [\n        \"router inteligente universal/agents-yaiwes/agent-8-router-local/steps/mirror_route/results/mirror_route.py\"\
+    ,\n        \"router inteligente universal/agents-yaiwes/agent-9-models-catalog/steps/models_catalog/results/models_c"
+  max_chars: 40000
+task: 'PASADA 2 — ALMACENAMIENTO Y CABLEADO. Audita el ALMACENAMIENTO para agentes
+  (SQL, grafo, caché, documentos, memoria, Crazy Wall, handoff, notas) y la conexión
+  ("cablear") de los agentes con el chat y con
+
+  los documentos, en Hugging Face. Devuelve SOLO un objeto JSON {"items": [...]} con
+  al menos 10 ítems, cada uno con: "id" (único, P2-01...), "quote" (copiada LETRA
+  POR LETRA de las palabras del Director en el
+
+  paquete, de 20 a 200 caracteres), "status" (HECHO, PARCIAL, PENDIENTE, AMBIGUO o
+  REFUTADO), "area" (chat, almacenamiento, agentes, modelos o aceleradores), "evidence"
+  (lista de rutas del CONTEXTO; [] si es
+
+  PENDIENTE), "note" (una frase) y "tarea" (qué mandar hacer a un agente; "" si es
+  HECHO). No inventes citas ni rutas.
+
+  '
+checks:
+- kind: audit_json
+  min_items: 10
+  sources:
+  - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/lens-storage.md
+- kind: no_secrets
