@@ -1,0 +1,128 @@
+schema: yaiwes.chain/v1
+
+# Cadena de pasos (DSL DAG) del agente 4 — HUGGING FACE: modelos por pesos remotos en Jobs. Marco: SmolAgents. Tareas distintas a las del agente 3.
+input_block: |
+  2 agente en HF para lo que falta en tares distintas
+  Le das una encadenado de pasos
+  Para código usamos solo Nanbeige4.2-3B (Qwen 9B queda fuera del flujo de code)
+
+agent:
+  id: agent-4-router-smol
+  framework: smolagents
+  group: hf-models
+  route: [nvidia, groq, cerebras]
+  fallback: [minimax_m3]
+  max_tokens: 1800
+
+context:
+  text: |
+    HECHOS VERIFICADOS (Hugging Face, 2026-09-21):
+    - LFM2.5-1.2B-Thinking: repo LiquidAI/LFM2.5-1.2B-Thinking; GGUF oficial LiquidAI/LFM2.5-1.2B-Thinking-GGUF con LFM2.5-1.2B-Thinking-Q4_K_M.gguf (731 MB).
+    - Qwen3-0.6B: repo Qwen/Qwen3-0.6B; GGUF oficial Qwen/Qwen3-0.6B-GGUF (solo Q8_0, 639 MB).
+    - K2-Horizon-0.9B: repo IFM/K2-Horizon-0.9B; GGUF IFM/K2-Horizon-0.9B-GGUF.
+    - Nanbeige4.2-3B: repo Nanbeige/Nanbeige4.2-3B (código propio); GGUF Q4_K_M solo de la comunidad: bartowski/Nanbeige_Nanbeige4.2-3B-GGUF; exige el fork de llama.cpp, rama nanbeige42.
+    - NanoJev: repo C-Tianyu/NanoJev; se ejecuta con Python (no llama.cpp).
+    - Decider-0.8B: repo Mapika/decider-0.8b. Decider-2B: repo Mapika/decider-2b. Se ejecutan con Python.
+    REGLAS DEL DIRECTOR: pesos remotos con `-v hf://models/AUTOR/MODELO:/model:ro` en HF Jobs y llama.cpp; una copia por modelo compartida
+    por muchos agentes (continuous batching, prompt cache); 3 nodos HF de 32 GB con un Nanbeige por nodo; estados por carga:
+    0-80 % GREEN, 80-90 % YELLOW, 90-95 % DRAIN, >= 95 % CLOSED.
+
+steps:
+
+  - id: models_registry
+    task: |
+      Escribe el módulo Python `hf_models_registry.py` (solo código, un único bloque ```python; solo biblioteca estándar) con:
+      - `MODELS`: dict con exactamente 7 claves: "lfm2.5-1.2b-thinking", "qwen3-0.6b", "k2-horizon-0.9b", "nanbeige4.2-3b", "nanojev",
+        "decider-0.8b", "decider-2b". Cada valor es un dict con las claves "repo", "gguf_repo", "file", "runtime", "needs_fork", "role".
+      - Usa SOLO los repos del CONTEXTO. "gguf_repo" y "file" son None cuando no aplican o no se conocen (el archivo solo se conoce para lfm2.5-1.2b-thinking).
+      - "runtime" es "llama.cpp" cuando hay GGUF y "python" para nanojev, decider-0.8b y decider-2b. "needs_fork" es True solo para nanbeige4.2-3b.
+      - "role": lfm2.5-1.2b-thinking = "reasoning principal pequeño"; qwen3-0.6b = "tareas ultrarrápidas / router / reasoning corto";
+        k2-horizon-0.9b = "por definir"; nanbeige4.2-3b = "code"; nanojev, decider-0.8b y decider-2b = "decisiones".
+      - `get_model(key)`: devuelve el dict de esa clave y lanza KeyError si no existe.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: hf_models_registry.py
+        test: |
+          from hf_models_registry import MODELS, get_model
+          m = get_model("lfm2.5-1.2b-thinking")
+          assert m["gguf_repo"] == "LiquidAI/LFM2.5-1.2B-Thinking-GGUF" and m["file"] == "LFM2.5-1.2B-Thinking-Q4_K_M.gguf"
+          assert m["runtime"] == "llama.cpp" and m["needs_fork"] is False
+          assert get_model("qwen3-0.6b")["gguf_repo"] == "Qwen/Qwen3-0.6B-GGUF"
+          assert get_model("qwen3-0.6b")["role"] == "tareas ultrarrápidas / router / reasoning corto"
+          assert get_model("k2-horizon-0.9b")["gguf_repo"] == "IFM/K2-Horizon-0.9B-GGUF"
+          n = get_model("nanbeige4.2-3b")
+          assert n["needs_fork"] is True and n["gguf_repo"] == "bartowski/Nanbeige_Nanbeige4.2-3B-GGUF"
+          assert get_model("nanojev")["repo"] == "C-Tianyu/NanoJev" and get_model("nanojev")["runtime"] == "python"
+          assert get_model("decider-2b")["repo"] == "Mapika/decider-2b" and get_model("decider-0.8b")["repo"] == "Mapika/decider-0.8b"
+          assert len(MODELS) == 7
+          try:
+              get_model("no-existe")
+              raise SystemExit(1)
+          except KeyError:
+              pass
+      - kind: no_secrets
+
+  - id: job_spec
+    task: |
+      Escribe un módulo Python `job_spec.py` (solo código, un único bloque ```python, sin librerías externas) con la función
+      `build_job_spec(repo: str, gguf_file: str, port: int = 8080, flavor: str = "cpu-upgrade", parallel: int = 4, ctx: int = 8192) -> dict`
+      que prepara un Job de Hugging Face que sirve un modelo GGUF con llama.cpp montando los pesos remotos (sin descargarlos antes).
+      Devuelve un dict con: "image" = "ghcr.io/ggml-org/llama.cpp:server"; "flavor" = flavor; "expose" = port;
+      "volumes" = [f"hf://models/{repo}:/model:ro"]; "command" = lista ["llama-server", "--host", "0.0.0.0", "--port", str(port),
+      "--model", f"/model/{gguf_file}", "--parallel", str(parallel), "--ctx-size", str(ctx), "--cont-batching", "--cache-prompt"].
+      Si `repo` no tiene la forma "organizacion/nombre" lanza ValueError.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: job_spec.py
+        test: |
+          from job_spec import build_job_spec
+          s = build_job_spec("LiquidAI/LFM2.5-1.2B-Thinking-GGUF", "LFM2.5-1.2B-Thinking-Q4_K_M.gguf")
+          assert s["flavor"] == "cpu-upgrade" and s["expose"] == 8080 and s["image"] == "ghcr.io/ggml-org/llama.cpp:server"
+          assert "hf://models/LiquidAI/LFM2.5-1.2B-Thinking-GGUF:/model:ro" in s["volumes"]
+          cmd = " ".join(s["command"])
+          for f in ["--model /model/LFM2.5-1.2B-Thinking-Q4_K_M.gguf", "--parallel 4", "--ctx-size 8192", "--cont-batching", "--cache-prompt"]:
+              assert f in cmd, f
+          s2 = build_job_spec("A/B", "m.gguf", parallel=2, ctx=4096, port=9000)
+          assert s2["expose"] == 9000 and "--parallel 2" in " ".join(s2["command"]) and "--ctx-size 4096" in " ".join(s2["command"])
+          try:
+              build_job_spec("sin-barra", "m.gguf")
+              raise SystemExit("aceptó un repo inválido")
+          except ValueError:
+              pass
+      - kind: no_secrets
+
+  - id: node_monitor
+    task: |
+      Escribe un módulo Python `node_monitor.py` (solo código, un único bloque ```python, sin librerías externas) con dos funciones:
+      1) `node_state(ram_pct, cpu_pct, active_jobs, max_parallel) -> str` con la regla del Director: sea `load = max(ram_pct, cpu_pct)`;
+         load < 80 -> "GREEN"; 80 <= load < 90 -> "YELLOW"; 90 <= load < 95 -> "DRAIN"; load >= 95 -> "CLOSED".
+         Además, si active_jobs >= max_parallel el estado es "CLOSED".
+      2) `pick_node(nodes) -> str | None`: `nodes` es una lista de dicts con las claves "id", "ram", "cpu", "active", "max_parallel".
+         Devuelve el "id" del nodo con estado GREEN y menor carga (max(ram, cpu)); si no hay ninguno GREEN, el YELLOW de menor carga;
+         nunca elige nodos DRAIN ni CLOSED; si no hay candidato devuelve None.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: node_monitor.py
+        test: |
+          from node_monitor import node_state, pick_node
+          assert node_state(50, 30, 1, 4) == "GREEN"
+          assert node_state(85, 30, 1, 4) == "YELLOW"
+          assert node_state(92, 30, 1, 4) == "DRAIN"
+          assert node_state(95, 30, 1, 4) == "CLOSED" and node_state(99, 10, 0, 4) == "CLOSED"
+          assert node_state(50, 96, 1, 4) == "CLOSED"
+          assert node_state(50, 30, 4, 4) == "CLOSED"
+          nodes = [{"id": "HF-01", "ram": 60, "cpu": 100, "active": 4, "max_parallel": 4},
+                   {"id": "HF-02", "ram": 70, "cpu": 35, "active": 1, "max_parallel": 4},
+                   {"id": "HF-03", "ram": 20, "cpu": 20, "active": 0, "max_parallel": 4}]
+          assert pick_node(nodes) == "HF-03"
+          nodes[2]["ram"] = 96
+          assert pick_node(nodes) == "HF-02"
+          assert pick_node([{"id": "A", "ram": 96, "cpu": 10, "active": 0, "max_parallel": 4}]) is None
+      - kind: no_secrets
+
+edges:
+  - models_registry -> job_spec
+  - job_spec -> node_monitor
