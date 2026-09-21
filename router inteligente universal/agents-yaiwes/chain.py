@@ -5,6 +5,8 @@ directory `steps/<id>/` (workflow.dag.yaml + TRIGGER.json + results/), the previ
 chain is FAIL_CLOSED: if a step ends BLOCKED, the next steps do not run. Steps that already closed (state CLOSED + output) are SKIPPED, so a
 re-run only works on what is pending. `agents-yaiwes/ROUTE.json` (edited by Claude) overrides every agent's model route. A step may add
 `context_file: [repo-relative paths]` to its context. `agent.post: audit_report` builds the auditor's checklist after the chain.
+Time limits (an agent must never hang the run for an hour): every step has a wall-clock budget (STEP_SECONDS) and every SmolAgents model call
+has an HTTP timeout (CALL_SECONDS, no hidden retries).
 
 Run: python chain.py <agent_dir>     (env: RIU_BANK_PASSPHRASE)
 """
@@ -12,6 +14,7 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +26,8 @@ from common import boot  # noqa: E402
 
 MAX_PREV_CHARS = 5000
 MAX_FILE_CHARS = 14000
+STEP_SECONDS = 720
+CALL_SECONDS = 75.0
 
 
 def step_cfg(chain: dict[str, Any], st: dict[str, Any], prev: str, prev_id: str | None) -> dict[str, Any]:
@@ -48,6 +53,14 @@ def already_closed(sd: Path) -> str | None:
     return None
 
 
+def run_with_budget(runner: Any, step_dir: str) -> int:
+    box: dict[str, int] = {}
+    t = threading.Thread(target=lambda: box.setdefault("rc", runner.main(step_dir)), daemon=True)
+    t.start()
+    t.join(STEP_SECONDS)
+    return 98 if t.is_alive() else box.get("rc", 99)
+
+
 def main(agent_dir: str) -> int:
     chain = yaml.safe_load((Path(agent_dir) / "chain.yaml").read_text(encoding="utf-8"))
     if chain.get("schema") != "yaiwes.chain/v1" or not chain.get("steps"):
@@ -55,7 +68,10 @@ def main(agent_dir: str) -> int:
     agent = chain["agent"]
     route_file = Path(agent_dir).parent / "ROUTE.json"
     if route_file.exists():
-        agent["route"] = json.loads(route_file.read_text(encoding="utf-8"))["route"]
+        cfg = json.loads(route_file.read_text(encoding="utf-8"))
+        agent["route"] = cfg["route"]
+        if "fallback" in cfg:
+            agent["fallback"] = cfg["fallback"]
     aid, fw = agent["id"], agent["framework"]
     if chain.get("input_block"):
         trigger = json.dumps({"schema": "yaiwes.trigger/v1", "run_id": chain.get("run_id", "CHAIN-001"), "input_block": chain["input_block"]}, ensure_ascii=False)
@@ -63,12 +79,22 @@ def main(agent_dir: str) -> int:
         trigger = (Path(agent_dir) / "TRIGGER.json").read_text(encoding="utf-8")
     if fw == "pocketflow":
         import pocketflow_agent as runner
-    elif agent.get("runner") == "auditor":
-        import auditor_agent as runner
     else:
-        import smol_agent as runner
-        from common import routes
-        runner.candidates = routes.candidates  # every key of every provider, in the route order (a dead key must not block the agent)
+        if agent.get("runner") == "auditor":
+            import auditor_agent as runner
+        else:
+            import smol_agent as runner
+            from common import routes
+            runner.candidates = routes.candidates  # every usable key of every provider, in the route order
+        orig_model = runner.OAIModel
+
+        def timed_model(**kw: Any) -> Any:
+            try:
+                return orig_model(client_kwargs={"timeout": CALL_SECONDS, "max_retries": 0}, **kw)
+            except TypeError:
+                return orig_model(**kw)
+
+        runner.OAIModel = timed_model
     ids = [s["id"] for s in chain["steps"]]
     done: list[str] = []
     prev, prev_id, failed = "", None, None
@@ -84,9 +110,9 @@ def main(agent_dir: str) -> int:
         (sd / "workflow.dag.yaml").write_text(yaml.safe_dump(step_cfg(chain, st, prev, prev_id), allow_unicode=True, sort_keys=False), encoding="utf-8")
         (sd / "TRIGGER.json").write_text(trigger, encoding="utf-8")
         boot.write_state(agent_dir, aid, fw, "RUNNING", current_nodes=[st["id"]], completed=done, next_nodes=ids[i + 1:])
-        rc = runner.main(str(sd))
+        rc = run_with_budget(runner, str(sd))
         if rc != 0:
-            failed = st["id"]
+            failed = st["id"] + (" (tiempo agotado)" if rc == 98 else "")
             break
         done.append(st["id"])
         out = sd / "results" / "output.txt"
