@@ -1,0 +1,110 @@
+schema: yaiwes.chain/v1
+
+# Agente 7 — HF: servidor llama.cpp con TODOS los aceleradores, caché reducida solo para modelos locales y UNA copia de pesos compartida por varias ranuras (espejo).
+# Marco: SmolAgents. Tarea entregada por el Director (2026-09-21 s y t).
+input_block: |
+  Ok espejo es que se puede usar el mismo peso del modelo ai por varias secciones al mismo tiempo sin copiar el modelo
+  Busca la manera de reducir el caché solo para los modelos locales o saturar el ram.
+  asegúrate que tenga el sistema que yo te di para acelerar modelo en huggueface busca mis notas
+
+agent:
+  id: agent-7-llama-hf
+  framework: smolagents
+  group: hf-llama
+  route: [minimax_m3, deepseek_flash, groq, nvidia, cerebras]
+  fallback: []
+  max_tokens: 2500
+
+context:
+  text: |
+    HECHOS: llama-server carga los pesos UNA vez (mmap) y los comparten sus ranuras: `-np N` ranuras, `-c` = ranuras * contexto_por_ranura (el contexto total se reparte),
+    `-cb` batching continuo, `--cache-prompt` y `--cache-reuse 256` reutilizan el prefijo, `--cache-ram MB` limita la caché de prompts en RAM (para no saturarla),
+    `-fa on` atención flash, `-ctk q8_0 -ctv q8_0` caché KV cuantizada (exige atención flash), `-t` hilos, `-md ARCHIVO` modelo borrador (decodificación especulativa),
+    `--mmproj ARCHIVO` visión. NO usar `--mlock` (fijaría la RAM). Un Job de HF se lanza con huggingface_hub.HfApi.run_job(image, command, flavor, timeout, volumes, expose=[puerto]);
+    `expose` es una LISTA de puertos; el endpoint es https://<job_id>--<puerto>.hf.jobs y exige un token de HF. Imagen: ghcr.io/ggml-org/llama.cpp:server; los pesos se montan
+    con el volumen hf://models/ORG/MODELO:/model:ro (lectura bajo demanda, sin copiar). Medido en un runner de 4 vCPU: Qwen3.5-0.8B Q4_0 pp256 154.7 t/s / tg128 28.2 t/s;
+    LFM2.5-1.2B Q4_K_M pp256 103.3 / tg128 30.4.
+
+steps:
+
+  - id: llama_cmd
+    task: |
+      Escribe el módulo Python `llama_cmd.py` (solo código, un único bloque ```python, solo biblioteca estándar) con la función
+      `build_llama_cmd(model_path, slots=4, ctx_per_slot=4096, kv="q8_0", flash=True, cache_ram_mb=512, threads=8, draft_path=None, mmproj_path=None, port=8080) -> list[str]`
+      que devuelve la lista de argumentos (str) en este orden: "llama-server", "-m", model_path, "--host", "0.0.0.0", "--port", str(port), "-c", str(slots * ctx_per_slot), "-np", str(slots),
+      "-cb", "--cache-prompt", "--cache-reuse", "256", "--cache-ram", str(cache_ram_mb), "-t", str(threads); luego "-fa", "on" si flash o "-fa", "off" si no;
+      luego "-ctk", kv, "-ctv", kv SOLO si kv != "f16"; luego "-md", draft_path si draft_path; luego "--mmproj", mmproj_path si mmproj_path.
+      Lanza ValueError si kv no está en ("f16", "q8_0", "q4_0"), si kv != "f16" y flash es False, si slots < 1 o si ctx_per_slot < 512. Nunca incluye "--mlock".
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: llama_cmd.py
+        test: |
+          from llama_cmd import build_llama_cmd
+          c = build_llama_cmd("/model/m.gguf")
+          s = " ".join(c)
+          assert c[0] == "llama-server" and "-m /model/m.gguf" in s
+          for f in ["-c 16384", "-np 4", "-cb", "--cache-prompt", "--cache-reuse 256", "--cache-ram 512", "-fa on", "-ctk q8_0 -ctv q8_0", "-t 8", "--port 8080"]:
+              assert f in s, f
+          assert "--mlock" not in s
+          d = " ".join(build_llama_cmd("/model/m.gguf", slots=2, ctx_per_slot=2048, kv="f16", cache_ram_mb=256, threads=4, draft_path="/model/d.gguf", mmproj_path="/model/mm.gguf", port=9000))
+          assert "-c 4096" in d and "-np 2" in d and "-ctk" not in d and "--cache-ram 256" in d and "-md /model/d.gguf" in d and "--mmproj /model/mm.gguf" in d and "--port 9000" in d
+          for bad in (dict(kv="q4_0", flash=False), dict(slots=0), dict(ctx_per_slot=100), dict(kv="q2")):
+              try:
+                  build_llama_cmd("/model/m.gguf", **bad)
+                  raise SystemExit("aceptó " + str(bad))
+              except ValueError:
+                  pass
+      - kind: no_secrets
+
+  - id: hf_job
+    task: |
+      Escribe el módulo Python `hf_job.py` (solo código, un único bloque ```python, solo biblioteca estándar; debe ser AUTOCONTENIDO: no importa otros módulos) con la función
+      `build_hf_job(repo, gguf_file, slots=4, ctx_per_slot=4096, flavor="cpu-upgrade", port=8080, kv="q8_0", cache_ram_mb=512) -> dict` que prepara los argumentos de HfApi.run_job para servir un GGUF
+      con UNA copia de pesos compartida por las ranuras: {"image": "ghcr.io/ggml-org/llama.cpp:server", "flavor": flavor, "expose": [port], "volumes": [f"hf://models/{repo}:/model:ro"],
+      "command": [...]}. El comando es la lista de argumentos de llama-server: "llama-server", "-m", f"/model/{gguf_file}", "--host", "0.0.0.0", "--port", str(port), "-c", str(slots * ctx_per_slot),
+      "-np", str(slots), "-cb", "--cache-prompt", "--cache-reuse", "256", "--cache-ram", str(cache_ram_mb), "-fa", "on", "-ctk", kv, "-ctv", kv. Lanza ValueError si repo no tiene la forma
+      "organizacion/nombre" (exactamente una barra y ambos lados no vacíos).
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: hf_job.py
+        test: |
+          from hf_job import build_hf_job
+          s = build_hf_job("LiquidAI/LFM2.5-1.2B-Instruct-GGUF", "LFM2.5-1.2B-Instruct-Q4_K_M.gguf")
+          c = " ".join(s["command"])
+          assert s["image"] == "ghcr.io/ggml-org/llama.cpp:server" and s["flavor"] == "cpu-upgrade" and s["expose"] == [8080]
+          assert s["volumes"] == ["hf://models/LiquidAI/LFM2.5-1.2B-Instruct-GGUF:/model:ro"]
+          for f in ["-m /model/LFM2.5-1.2B-Instruct-Q4_K_M.gguf", "-np 4", "-c 16384", "--cache-ram 512", "-ctk q8_0 -ctv q8_0", "-fa on"]:
+              assert f in c, f
+          s2 = build_hf_job("A/B", "m.gguf", slots=2, ctx_per_slot=2048, flavor="cpu-basic", port=9000)
+          assert s2["expose"] == [9000] and "-c 4096" in " ".join(s2["command"]) and s2["flavor"] == "cpu-basic"
+          for bad in ("sin-barra", "a/b/c", "/b", "a/"):
+              try:
+                  build_hf_job(bad, "m.gguf")
+                  raise SystemExit("aceptó " + bad)
+              except ValueError:
+                  pass
+      - kind: no_secrets
+
+  - id: bench_report
+    task: |
+      Escribe el módulo Python `bench_report.py` (solo código, un único bloque ```python, solo biblioteca estándar) con:
+      - `summarize(rows) -> str`: `rows` es la lista JSON de `llama-bench` (dicts con "n_prompt", "n_gen", "avg_ts"). Toma la fila con n_prompt > 0 y n_gen == 0 y la fila con n_gen > 0 y n_prompt == 0 y devuelve
+        f"pp{n_prompt}={avg_ts:.1f} t/s | tg{n_gen}={avg_ts:.1f} t/s".
+      - `slots_summary(results) -> list[str]`: `results` es una lista de tuplas (concurrencia, tokens_totales, segundos); devuelve una línea por tupla:
+        f"{c} simult.: {tokens/segundos:.1f} t/s total ({tokens/segundos/c:.1f} por agente)".
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: bench_report.py
+        test: |
+          from bench_report import summarize, slots_summary
+          rows = [{"n_prompt": 256, "n_gen": 0, "avg_ts": 154.7}, {"n_prompt": 0, "n_gen": 128, "avg_ts": 28.2}]
+          assert summarize(rows) == "pp256=154.7 t/s | tg128=28.2 t/s"
+          assert slots_summary([(1, 64, 2.0), (4, 256, 4.0)]) == ["1 simult.: 32.0 t/s total (32.0 por agente)", "4 simult.: 64.0 t/s total (16.0 por agente)"]
+      - kind: no_secrets
+
+edges:
+  - llama_cmd -> hf_job
+  - hf_job -> bench_report
