@@ -1,7 +1,7 @@
 """Shared boot for the Yaiwes agents: paths, YAML loading (fail-closed), bank opening, context, Crazy Wall state file.
 
-Tokens/keys: only through the encrypted bank (agent-microkernel/runtime-bank.db.gz.b64); the passphrase comes from the environment.
-Every agent gets ALL the keys (NVIDIA, Groq, Cerebras, Hugging Face) through the provider key pools.
+Tokens/keys: only through the encrypted bank (agent-microkernel/runtime-bank*): the passphrase comes from the environment.
+Every agent gets ALL the keys (NVIDIA, Groq, Cerebras, Hugging Face, GitHub) through the provider key pools / GitHub accounts.
 """
 from __future__ import annotations
 
@@ -47,12 +47,25 @@ def load_agent(agent_dir: str | Path) -> dict[str, Any]:
     return cfg
 
 
+def bank_text() -> str:
+    """The encrypted bank as base64+gzip text: the single file when it is valid, else the parts (`runtime-bank-v2.part1`, `.part2`, ...)."""
+    single = MK / "runtime-bank.db.gz.b64"
+    if single.exists():
+        text = single.read_text().strip()
+        if text.startswith("H4sI"):
+            return text
+    parts = sorted(MK.glob("runtime-bank-v2.part*"))
+    if not parts:
+        raise RuntimeError("BANK_FILE_NOT_FOUND")
+    return "".join(p.read_text().strip() for p in parts)
+
+
 def open_bank(agent_id: str) -> int:
     from integration.chat_mvp.vault_bridge import BankError, bridge
 
     os.environ["RIU_VAULT_PATH"] = f"/tmp/riu_vault_{agent_id}.db"
     try:
-        bridge.import_b64gz((MK / "runtime-bank.db.gz.b64").read_text().strip())
+        bridge.import_b64gz(bank_text())
     except BankError as exc:
         if str(exc) != "VAULT_EXISTS":
             raise
@@ -88,6 +101,6 @@ def finish(agent_dir: str | Path, agent_id: str, framework: str, ok: bool, detai
         f"# HANDOFF — {agent_id} ({framework})\n\nEstado: **{'CLOSED' if ok else 'BLOCKED'}**\n\n"
         + "".join(f"- {k}: {v}\n" for k, v in detail.items())
         + "\nGenerado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea "
-          "editando `workflow.dag.yaml` y despachando `RIU Agents Run`. Ninguna clave aparece aquí.\n", encoding="utf-8")
+          "editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.\n", encoding="utf-8")
     print(f"::notice title=RIU_AGENT_{agent_id}::{'CLOSED' if ok else 'BLOCKED'} " + " ".join(f"{k}={v}" for k, v in detail.items()))
     return 0 if ok else 1
