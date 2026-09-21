@@ -1,0 +1,78 @@
+schema: yaiwes.chain/v1
+
+# Agente 6 — HF: RAM y nodos. UNA copia de los pesos por servidor compartida por varias ranuras (espejo), caché reducida solo para modelos locales,
+# salto al siguiente procesador de HF y 10 procesadores de 32 GB. Marco: PocketFlow. Tarea entregada por el Director (2026-09-21 t).
+input_block: |
+  Ok espejo es que se puede usar el mismo peso del modelo ai por varias secciones al mismo tiempo sin copiar el modelo
+  Busca la manera de reducir el caché solo para los modelos locales o saturar el ram. Salte al siguiente HF procesador si hace falta llevas a 10 procesador HF 32 de ram para tener suficiente cómputos de trabajo sin colapsar
+
+agent:
+  id: agent-6-hf-nodes
+  framework: pocketflow
+  group: hf-nodes
+  route: [deepseek_flash, minimax_m3, groq, nvidia, cerebras]
+  fallback: []
+  max_tokens: 2500
+
+context:
+  text: |
+    HECHOS: cada nodo HF = 8 vCPU / 32 GB RAM. Un servidor llama.cpp carga los pesos UNA vez (mmap) y los comparten todas las ranuras (-np); el consumo extra
+    por ranura es su caché KV: kv_mb = 2 * capas * cabezas_kv * dim_cabeza * tokens_de_contexto * bytes_por_elemento / 1e6 (K y V; f16 = 2 bytes, q8_0 ~ 1 byte,
+    q4_0 ~ 0.5 bytes). Regla del Director para la RAM: normal 0-20 GB; 20-24 GB no cargar otro modelo grande; 24-27 GB reducir ranuras/contexto; > 27 GB descargar
+    el inactivo; ~30 GB tope. Estados por carga = max(RAM %, CPU %): < 80 GREEN, 80-90 YELLOW, 90-95 DRAIN, >= 95 CLOSED. Si un nodo no puede aceptar, se salta al siguiente.
+    Medido (runner de 4 vCPU): Qwen3.5-0.8B Q4_0 (563 MB) pp256 154.7 t/s, tg128 28.2 t/s; LFM2.5-1.2B Q4_K_M (731 MB) pp256 103.3 t/s, tg128 30.4 t/s.
+
+steps:
+
+  - id: ram_plan
+    task: |
+      Escribe el módulo Python `hf_nodes.py` (solo código, un único bloque ```python, solo biblioteca estándar) con:
+      - `NODES`: lista de 10 dicts {"id": "HF-01" ... "HF-10", "ram_gb": 32, "vcpu": 8}.
+      - `kv_cache_mb(n_layers, n_kv_heads, head_dim, ctx_tokens, bytes_per_elem) -> float` = 2 * n_layers * n_kv_heads * head_dim * ctx_tokens * bytes_per_elem / 1e6.
+      - `plan_slots(weights_mb, kv_mb_per_slot, slots, ram_cap_mb, overhead_mb=1500) -> dict` con "total_mb" = weights_mb (UNA sola copia compartida) + slots * kv_mb_per_slot + overhead_mb,
+        "fits" (total_mb <= ram_cap_mb) y "max_slots" = máximo entero de ranuras que caben (mínimo 0).
+      - `reduce_ctx_to_fit(weights_mb, kv_mb_per_1k_tokens, slots, ram_cap_mb, ctx_start=8192, ctx_min=2048, overhead_mb=1500) -> int | None`: reduce el contexto por ranura a la mitad
+        (8192 -> 4096 -> 2048) hasta que quepa; devuelve el contexto por ranura que cabe o None si ni con ctx_min cabe. El KV de una ranura es kv_mb_per_1k_tokens * ctx / 1000.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: hf_nodes.py
+        test: |
+          from hf_nodes import NODES, kv_cache_mb, plan_slots, reduce_ctx_to_fit
+          assert len(NODES) == 10 and NODES[0]["id"] == "HF-01" and NODES[9]["id"] == "HF-10" and all(n["ram_gb"] == 32 and n["vcpu"] == 8 for n in NODES)
+          assert abs(kv_cache_mb(24, 8, 64, 4096, 2) - 2 * 24 * 8 * 64 * 4096 * 2 / 1e6) < 1e-6
+          p = plan_slots(600, 200, 4, 24000)
+          assert p["total_mb"] == 600 + 4 * 200 + 1500 and p["fits"] is True and p["max_slots"] == (24000 - 600 - 1500) // 200
+          assert plan_slots(600, 200, 200, 24000)["fits"] is False and plan_slots(30000, 200, 4, 24000)["max_slots"] == 0
+          assert reduce_ctx_to_fit(600, 100, 4, 24000) == 8192
+          assert reduce_ctx_to_fit(600, 3000, 4, 9000) == 2048
+          assert reduce_ctx_to_fit(600, 6000, 4, 6000) is None
+      - kind: no_secrets
+
+  - id: node_hop
+    task: |
+      Escribe el módulo Python `hf_hop.py` (solo código, un único bloque ```python, solo biblioteca estándar) con:
+      - `node_state(ram_pct, cpu_pct) -> str`: load = max(ram_pct, cpu_pct); < 80 "GREEN"; < 90 "YELLOW"; < 95 "DRAIN"; si no "CLOSED".
+      - `choose_node(nodes, need_mb) -> str | None`: `nodes` es una lista de dicts en orden {"id","ram_pct","cpu_pct","active","max_parallel","free_mb"}. Devuelve el "id" del PRIMER nodo
+        (en el orden dado) cuyo estado sea GREEN o YELLOW, con active < max_parallel y free_mb >= need_mb; es decir, salta al siguiente procesador si el actual está lleno. Si ninguno sirve devuelve None.
+      - `next_action(nodes, need_mb) -> dict`: {"node": id} si hay nodo; si no, {"node": None, "action": "QUEUE"} cuando algún nodo está DRAIN (esperar), o {"node": None, "action": "SCALE_OUT"}
+        cuando todos están CLOSED.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: hf_hop.py
+        test: |
+          from hf_hop import node_state, choose_node, next_action
+          assert node_state(50, 30) == "GREEN" and node_state(85, 10) == "YELLOW" and node_state(92, 10) == "DRAIN" and node_state(10, 96) == "CLOSED"
+          def n(i, ram, cpu, act=0, free=8000): return {"id": i, "ram_pct": ram, "cpu_pct": cpu, "active": act, "max_parallel": 4, "free_mb": free}
+          nodes = [n("HF-01", 96, 10), n("HF-02", 50, 20, act=4), n("HF-03", 85, 30), n("HF-04", 20, 20)]
+          assert choose_node(nodes, 2000) == "HF-03"
+          assert choose_node(nodes, 9000) is None
+          assert choose_node([n("HF-01", 20, 20, free=1000), n("HF-02", 20, 20, free=5000)], 2000) == "HF-02"
+          assert next_action(nodes, 2000) == {"node": "HF-03"}
+          assert next_action([n("HF-01", 92, 10)], 1000) == {"node": None, "action": "QUEUE"}
+          assert next_action([n("HF-01", 99, 10), n("HF-02", 10, 97)], 1000) == {"node": None, "action": "SCALE_OUT"}
+      - kind: no_secrets
+
+edges:
+  - ram_plan -> node_hop
