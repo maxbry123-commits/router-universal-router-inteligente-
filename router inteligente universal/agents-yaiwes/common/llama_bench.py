@@ -28,6 +28,7 @@ MODELS = {
     "gemma4-e2b-qat-q4_0": ("google/gemma-4-E2B-it-qat-q4_0-gguf", "gemma-4-E2B_q4_0-it.gguf"),
 }
 THREADS = os.cpu_count() or 4
+BAD = r"vulkan|rocm|openvino|sycl|cuda|hip|arm|s390|riscv|musa|kompute|opencl"
 
 
 def note(title: str, msg: str, level: str = "notice") -> None:
@@ -36,14 +37,21 @@ def note(title: str, msg: str, level: str = "notice") -> None:
 
 def get_llama() -> str:
     hdr = {"Authorization": "Bearer " + os.environ.get("GH_TOKEN", "")}
-    rel = requests.get("https://api.github.com/repos/ggml-org/llama.cpp/releases/latest", headers=hdr, timeout=60).json()
-    assets = rel.get("assets", [])
-    cands = [a for a in assets if re.search(r"(ubuntu|linux).*x64", a["name"]) and not re.search(r"vulkan|rocm|openvino|sycl|cuda|hip|arm|s390|riscv", a["name"])]
-    note("LLAMACPP", f"release={rel.get('tag_name')} assets={len(assets)} candidatos={[a['name'] for a in cands][:3]}")
-    blob = requests.get(cands[0]["browser_download_url"], timeout=300).content
+    rels = requests.get("https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=40", headers=hdr, timeout=60).json()
+    chosen = None
+    for rel in rels:
+        cands = [a for a in rel.get("assets", []) if re.search(r"(ubuntu|linux).*x64", a["name"]) and not re.search(BAD, a["name"])]
+        if cands:
+            chosen = (rel, cands[0])
+            break
+    if not chosen:
+        raise RuntimeError("ninguna release trae binario ubuntu-x64; etiquetas vistas: " + ",".join(str(r.get("tag_name")) for r in rels[:6]))
+    rel, asset = chosen
+    note("LLAMACPP", f"release={rel.get('tag_name')} asset={asset['name']} ({asset['size'] / 1e6:.0f} MB)")
+    blob = requests.get(asset["browser_download_url"], timeout=600).content
     dest = Path("/tmp/llama")
     dest.mkdir(exist_ok=True)
-    if cands[0]["name"].endswith(".zip"):
+    if asset["name"].endswith(".zip"):
         zipfile.ZipFile(io.BytesIO(blob)).extractall(dest)
     else:
         tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz").extractall(dest)
