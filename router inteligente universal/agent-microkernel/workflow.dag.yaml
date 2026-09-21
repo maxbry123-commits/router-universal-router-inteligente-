@@ -1,0 +1,96 @@
+schema: yaiwes.micro-agent/v1
+
+# Autoridad ejecutable del microkernel. El LLM no puede inventar agentes, saltar pasos ni cambiar estas reglas.
+# Ruta (orden del Director): NVIDIA / Groq / Cerebras primero; si toda la ruta falla, DeepSeek V4 Flash o MiniMax M3 (router de Hugging Face).
+
+execution:
+  mode: fail_closed
+  max_parallel: 8
+  continue_on_failure: false
+  retries: 2
+
+agents:
+
+  code-agent:
+    action: code
+    route: [nvidia, groq, cerebras]
+    fallback: [minimax_m3]
+    max_tokens: 1500
+    task: |
+      Escribe un módulo Python `template_engine.py` (solo código, en un único bloque ```python) con la función
+      `build_dag(input_block: str, steps: list[str]) -> dict` que devuelve un plan del esquema `riu.dag/v1`:
+      - clave "schema" = "riu.dag/v1"
+      - clave "id" = "PLAN"
+      - clave "input_block" = el texto recibido, SIN cambios
+      - clave "nodes": lista con un nodo por paso; cada nodo tiene "id" ("N01", "N02", ... con dos dígitos), "stage" = "worker",
+        "instructions" = el texto del paso, "needs" = lista con el id del nodo anterior (lista vacía en el primero) y
+        "model" = {"provider": "hf", "model": "MiniMaxAI/MiniMax-M3"}.
+      No uses librerías externas y no imprimas nada.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: template_engine.py
+        test: |
+          from template_engine import build_dag
+          d = build_dag("HAZ X", ["a", "b"])
+          assert d["schema"] == "riu.dag/v1" and d["input_block"] == "HAZ X"
+          assert [n["id"] for n in d["nodes"]] == ["N01", "N02"]
+          assert d["nodes"][0]["needs"] == [] and d["nodes"][1]["needs"] == ["N01"]
+          assert d["nodes"][1]["instructions"] == "b" and d["nodes"][0]["stage"] == "worker"
+          assert d["nodes"][0]["model"]["provider"] == "hf"
+      - kind: no_secrets
+
+  recurring-agent:
+    action: plan
+    route: [nvidia, groq, cerebras]
+    fallback: [deepseek_flash]
+    max_tokens: 1400
+    context:
+      file: Claude notas/HANDOFF-PARCHE-RECUPERACION-2026-09-21.md
+      from: "## 8. GAPs"
+      to: "## 9."
+      max_chars: 3500
+    task: |
+      Con los GAPs abiertos del CONTEXTO, arma la lista de tareas pendientes y reparte cada una a un agente.
+      Responde SOLO con un objeto JSON {"tasks": [...]} con al menos 5 tareas. Cada tarea: "id" ("T01", "T02", ...),
+      "title" (texto corto en español), "owner_agent" (uno de: code-agent, recurring-agent, docs-agent, audit-agent, director)
+      y "priority" (entero 1, 2 o 3; 1 = más urgente). Lo que requiere una clave, una cuenta o una decisión del Director va a "director".
+    checks:
+      - kind: task_list
+      - kind: no_secrets
+
+  docs-agent:
+    action: docs
+    route: [nvidia, groq, cerebras]
+    fallback: [deepseek_flash]
+    max_tokens: 1400
+    task: |
+      Escribe en español el archivo `README_AGENTE.md`: el contrato que debe leer cualquier agente antes de tocar el microkernel.
+      Usa exactamente estos encabezados de segundo nivel: "## Rol", "## Reglas", "## Cómo se activa", "## Qué NO hacer".
+      Debe mencionar `workflow.dag.yaml` como archivo ejecutable autoritativo y el modo FAIL_CLOSED. Explica que las claves nunca
+      aparecen en README, DAG, Crazy Wall ni GitHub. Sin bloques de código. Entre 900 y 2500 caracteres.
+    checks:
+      - kind: headings
+        values: [Rol, Reglas, Cómo se activa, Qué NO hacer]
+      - kind: contains
+        values: [workflow.dag.yaml, FAIL_CLOSED]
+      - kind: min_chars
+        value: 900
+      - kind: no_secrets
+
+  audit-agent:
+    action: summarize
+    route: [nvidia, groq, cerebras]
+    fallback: [deepseek_flash]
+    depends_on: [code-agent, recurring-agent, docs-agent]
+    max_tokens: 900
+    task: |
+      Redacta en español un resumen ejecutivo de 3 a 6 líneas de lo que produjeron los agentes previos (ver RESULTADOS DE AGENTES
+      PREVIOS). Nombra cada agente por su id (code-agent, recurring-agent, docs-agent), el modelo que usó y su sha256 (12 caracteres).
+      No inventes resultados que no estén en esa lista.
+    checks:
+      - kind: contains
+        values: [code-agent, recurring-agent, docs-agent]
+      - kind: min_chars
+        value: 200
+      - kind: no_secrets
