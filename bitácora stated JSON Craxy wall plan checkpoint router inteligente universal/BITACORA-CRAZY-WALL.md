@@ -517,3 +517,34 @@ escribir cualquier código de UI.
 `SEGUNDO_CONECTOR_DOCUMENTADO + DISENO_UI_FICHAS_ASK_COUNCIL_DOCUMENTADO`.
 Sin cambios de estado técnico del Router. Continúa pendiente la pasada
 forense 3/4.
+
+
+## NOTA DE INTEGRACIÓN — DATASET MYTHOS / YAIWES — 2026-09-21
+
+**Estado de origen:** dataset canónico V3 cerrado en `dataset Yaiwes/`: **107 métodos / 1.139 registros**, tiers A/B/C, almacenamiento `segmented_jsonl` e índice autoritativo `dataset Yaiwes/indexes/shard_index.json`. Evidencia registrada en `dataset Yaiwes/CRAZY-WALL-DATASET-YAIWES-V3.json`: runner externo exact-SHA, **24/24 tests PASS**, plugin en `PASS_SHADOW_READY` y no activo en producción por diseño.
+
+### Diseño resumido
+`INPUT Router Universal -> clasificación/selección -> registry.json -> shard_index.json -> lectura SOLO del rango del método -> registros Mythos/YAIWES/Meta/Cognitive Control -> Context Composer -> kernel/modelo/agente -> verificación -> salida`.
+
+Regla arquitectónica: **nunca cargar el dataset completo al LLM**. El Router consulta primero `registry.json`, después `shard_index.json` y recupera únicamente `start_line + count` del método seleccionado. Los cuatro JSONL seed históricos están `SUPERSEDED_NOT_ROUTED`.
+
+### Componentes a integrar
+- Contenido: `dataset Yaiwes/data/shards/`.
+- Registro maestro: `dataset Yaiwes/registry.json`.
+- Índice canónico: `dataset Yaiwes/indexes/shard_index.json`.
+- Reglas/adapters: `dataset Yaiwes/filters/rules.yaml` + `dataset Yaiwes/adapters/adapters.yaml`.
+- Mecanismo: `Yaiwes Cognitive Control Plane/` con Source of Truth, Context Composer, Consistency Engine, Router y Policy Guard.
+- Adapter final: `dataset Yaiwes/plugin/yaiwes_dataset_plugin.py`, **read-only / shadow-ready**.
+
+### Método de integración al Router Inteligente Universal
+1. Conectar el hot-path del Router a una interfaz de consulta read-only del dataset; no duplicar shards ni crear un segundo router propietario.
+2. Entregar query/intención al selector; resolver método(s) y tier en registry; recuperar sólo rangos indexados; construir ContextPack con presupuesto y deduplicación.
+3. Mantener fail-closed: Source of Truth + Consistency Engine resuelven evidencia/conflictos; Policy Guard decide permisos antes de cualquier efecto. Input Shark continúa upstream externo, `fusion:false`.
+
+### Hardening antes de declarar integración runtime PASS
+- Reconciliar `indexes/methods.json` y documentación antigua con `shard_index.json`/segmented JSONL.
+- Hacer que el Router aproveche los 107 métodos y consuma `adapters.yaml` + `rules.yaml`, evitando drift de configuración.
+- Unificar el verificador para dataset + Control Plane + plugin y conservar evidencia exact-SHA.
+- No activar el plugin en producción hasta cumplir su governance gate (aprobación + ficha firmada). **Presencia/shadow PASS no equivale a integración runtime del Router Universal.**
+
+**Objetivo:** usar Mythos/YAIWES como capa externa de conocimiento y control cognitivo del Router Inteligente Universal, conservando a `RedUniversal`/hot-path existente como dueño del routing y al dataset como retrieval selectivo, no como router paralelo.
