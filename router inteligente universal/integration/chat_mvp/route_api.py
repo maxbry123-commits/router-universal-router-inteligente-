@@ -1,14 +1,15 @@
-"""/chat/route (policy routing by group with fallback only where authorized) and /chat/router/status."""
+"""/chat/route (policy routing by group with fallback only where authorized), /chat/router/status and /chat/jev
+(Choice/Score/Noul decisions, see jev.py)."""
 from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from . import core, resilience
+from . import core, jev, resilience
 from .router import _auth, get_store
 from .usage import UsageLog
 
@@ -19,6 +20,17 @@ class RouteReq(BaseModel):
     agent_id: str | None = None
     max_tokens: int = Field(default=1024, ge=1, le=8192)
     temperature: float | None = None
+
+
+class JevReq(BaseModel):
+    kind: Literal["choice", "score", "noul"]
+    state: Any
+    instructions: str = Field(min_length=1, max_length=4000)
+    criteria: dict[str, str] | None = None
+    levels: list[str] | None = None
+    provider: str = Field(default="nvidia", pattern=r"^[a-z_]{1,20}$")
+    model: str | None = None
+    max_tokens: int = Field(default=300, ge=32, le=2000)
 
 
 def _call(provider: str, key: str | None, model: str, messages: list[dict[str, str]], max_tokens: int, temperature: float | None) -> dict[str, Any]:
@@ -64,5 +76,25 @@ def build_route_router() -> APIRouter:
         lim = resilience.ROUTER.limiter
         return {"deepseek_peak_now": resilience.is_peak_utc(now), "limiter": {"tier": lim.tier, "slots": lim.tiers[lim.tier], "tiers": list(lim.tiers)},
                 "latency_seconds": {k: round(v, 2) for k, v in resilience.ROUTER.latency.items()}, "groups": groups}
+
+    @r.post("/chat/jev")
+    async def jev_decide(req: JevReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        model = req.model or "nvidia/nemotron-3-super-120b-a12b"
+        try:
+            if req.kind == "choice":
+                if not req.criteria:
+                    raise HTTPException(status_code=400, detail="criteria es obligatorio para choice")
+                out = await asyncio.to_thread(jev.choice, req.state, req.instructions, req.criteria, provider=req.provider, model=model, max_tokens=req.max_tokens)
+            elif req.kind == "score":
+                if not req.levels:
+                    raise HTTPException(status_code=400, detail="levels es obligatorio para score")
+                out = await asyncio.to_thread(jev.score, req.state, req.instructions, req.levels, provider=req.provider, model=model, max_tokens=req.max_tokens)
+            else:
+                out = await asyncio.to_thread(jev.noul, req.state, req.instructions, provider=req.provider, model=model, max_tokens=req.max_tokens)
+        except jev.JevError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        return {"kind": req.kind, "provider": req.provider, "model": model, "answer": out}
 
     return r
