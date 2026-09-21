@@ -3,8 +3,9 @@
 Each step is executed by the agent's own framework runner (pocketflow_agent.py, smol_agent.py or auditor_agent.py): the step gets its own
 directory `steps/<id>/` (workflow.dag.yaml + TRIGGER.json + results/), the previous step's verified output is added to its context, and the
 chain is FAIL_CLOSED: if a step ends BLOCKED, the next steps do not run. Steps that already closed (state CLOSED + output) are SKIPPED, so a
-re-run only works on what is pending. `agents-yaiwes/ROUTE.json` (edited by Claude) overrides every agent's model route. A step may add
-`context_file: [repo-relative paths]` to its context. `agent.post: audit_report` builds the auditor's checklist after the chain.
+re-run only works on what is pending. `agents-yaiwes/ROUTE.json` (edited by Claude) sets the model route: `route_code` for steps that produce code
+(their checks compile or run Python/JavaScript: MiniMax M3 first), `route_jobs` for every other step (DeepSeek V4 Flash first), `route` as default.
+A step may add `context_file: [repo-relative paths]` to its context. `agent.post: audit_report` builds the auditor's checklist after the chain.
 Time limits (an agent must never hang the run for an hour): every step has a wall-clock budget (STEP_SECONDS) and every SmolAgents model call
 has an HTTP timeout (CALL_SECONDS, no hidden retries).
 
@@ -28,9 +29,24 @@ MAX_PREV_CHARS = 5000
 MAX_FILE_CHARS = 14000
 STEP_SECONDS = 720
 CALL_SECONDS = 75.0
+CODE_CHECKS = ("python_exec", "python_ast", "js_syntax")
 
 
-def step_cfg(chain: dict[str, Any], st: dict[str, Any], prev: str, prev_id: str | None) -> dict[str, Any]:
+def step_agent(agent: dict[str, Any], st: dict[str, Any], routes: dict[str, Any]) -> dict[str, Any]:
+    """The agent block for one step: code steps use route_code (MiniMax M3 first), the rest route_jobs (DeepSeek V4 Flash first)."""
+    is_code = any(c.get("kind") in CODE_CHECKS for c in st.get("checks", []))
+    key = "route_code" if is_code else "route_jobs"
+    out = dict(agent)
+    if routes.get(key):
+        out["route"] = routes[key]
+    elif routes.get("route"):
+        out["route"] = routes["route"]
+    if "fallback" in routes:
+        out["fallback"] = routes["fallback"]
+    return out
+
+
+def step_cfg(chain: dict[str, Any], agent: dict[str, Any], st: dict[str, Any], prev: str, prev_id: str | None) -> dict[str, Any]:
     ctx = str((chain.get("context") or {}).get("text", ""))
     for rel in st.get("context_file", []) or []:
         p = boot.REPO / rel
@@ -39,7 +55,7 @@ def step_cfg(chain: dict[str, Any], st: dict[str, Any], prev: str, prev_id: str 
     if prev:
         ctx += f"\n\nSALIDA VERIFICADA DEL PASO ANTERIOR ({prev_id}):\n{prev[:MAX_PREV_CHARS]}"
     return {"schema": boot.SCHEMA, "execution": {"mode": "fail_closed", "max_parallel": 1, "continue_on_failure": False, "retries": 2},
-            "agent": chain["agent"], "context": {"text": ctx, "max_chars": 40000}, "task": st["task"], "checks": st["checks"]}
+            "agent": agent, "context": {"text": ctx, "max_chars": 40000}, "task": st["task"], "checks": st["checks"]}
 
 
 def already_closed(sd: Path) -> str | None:
@@ -67,11 +83,7 @@ def main(agent_dir: str) -> int:
         raise SystemExit("chain.yaml inválido (schema yaiwes.chain/v1 y steps son obligatorios)")
     agent = chain["agent"]
     route_file = Path(agent_dir).parent / "ROUTE.json"
-    if route_file.exists():
-        cfg = json.loads(route_file.read_text(encoding="utf-8"))
-        agent["route"] = cfg["route"]
-        if "fallback" in cfg:
-            agent["fallback"] = cfg["fallback"]
+    routes = json.loads(route_file.read_text(encoding="utf-8")) if route_file.exists() else {}
     aid, fw = agent["id"], agent["framework"]
     if chain.get("input_block"):
         trigger = json.dumps({"schema": "yaiwes.trigger/v1", "run_id": chain.get("run_id", "CHAIN-001"), "input_block": chain["input_block"]}, ensure_ascii=False)
@@ -84,8 +96,8 @@ def main(agent_dir: str) -> int:
             import auditor_agent as runner
         else:
             import smol_agent as runner
-            from common import routes
-            runner.candidates = routes.candidates  # every usable key of every provider, in the route order
+            from common import routes as routes_mod
+            runner.candidates = routes_mod.candidates  # every usable key of every provider, in the route order
         orig_model = runner.OAIModel
 
         def timed_model(**kw: Any) -> Any:
@@ -98,7 +110,7 @@ def main(agent_dir: str) -> int:
     ids = [s["id"] for s in chain["steps"]]
     done: list[str] = []
     prev, prev_id, failed = "", None, None
-    boot.write_state(agent_dir, aid, fw, "RUNNING", group=agent.get("group"), chain=ids, completed=[], failed=[], next_nodes=ids, route=agent.get("route"))
+    boot.write_state(agent_dir, aid, fw, "RUNNING", group=agent.get("group"), chain=ids, completed=[], failed=[], next_nodes=ids)
     for i, st in enumerate(chain["steps"]):
         sd = Path(agent_dir) / "steps" / st["id"]
         text = already_closed(sd)
@@ -107,9 +119,10 @@ def main(agent_dir: str) -> int:
             prev, prev_id = text, st["id"]
             continue
         sd.mkdir(parents=True, exist_ok=True)
-        (sd / "workflow.dag.yaml").write_text(yaml.safe_dump(step_cfg(chain, st, prev, prev_id), allow_unicode=True, sort_keys=False), encoding="utf-8")
+        ag = step_agent(agent, st, routes)
+        (sd / "workflow.dag.yaml").write_text(yaml.safe_dump(step_cfg(chain, ag, st, prev, prev_id), allow_unicode=True, sort_keys=False), encoding="utf-8")
         (sd / "TRIGGER.json").write_text(trigger, encoding="utf-8")
-        boot.write_state(agent_dir, aid, fw, "RUNNING", current_nodes=[st["id"]], completed=done, next_nodes=ids[i + 1:])
+        boot.write_state(agent_dir, aid, fw, "RUNNING", current_nodes=[st["id"]], completed=done, next_nodes=ids[i + 1:], route=ag.get("route"))
         rc = run_with_budget(runner, str(sd))
         if rc != 0:
             failed = st["id"] + (" (tiempo agotado)" if rc == 98 else "")
