@@ -1,0 +1,61 @@
+name: RIU HF Job Smoke
+
+# Submits a tiny Hugging Face Job (cpu-basic) and prints its stage, status message and logs, to learn why earlier Jobs ended in ERROR.
+# Then (second job) tries the expose-port flavor used to serve models: llama.cpp image + hf:// mounted weights. Values are printed as annotations.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub
+      - name: Submit and watch
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os, time, inspect
+          import huggingface_hub
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          print("::notice title=RIU_JOB_VERSION::huggingface_hub " + huggingface_hub.__version__ + " | run_job params: " + ",".join(inspect.signature(api.run_job).parameters))
+          who = api.whoami()
+          print("::notice title=RIU_JOB_WHO::" + who.get("name", "?") + " canPay=" + str(who.get("canPay")))
+          def watch(job, label, secs=240):
+              t0 = time.time()
+              stage = None
+              while time.time() - t0 < secs:
+                  info = api.inspect_job(job_id=job.id)
+                  stage = info.status.stage
+                  if stage in ("COMPLETED", "ERROR", "CANCELED", "DELETED"):
+                      break
+                  time.sleep(6)
+              logs = []
+              try:
+                  for line in api.fetch_job_logs(job_id=job.id):
+                      logs.append(str(line))
+                      if len(logs) > 40:
+                          break
+              except Exception as e:
+                  logs.append("logs error: " + type(e).__name__ + " " + str(e)[:100])
+              print(f"::notice title=RIU_JOB_{label}::stage={stage} message={getattr(info.status, 'message', None)} logs={' | '.join(logs)[:600]}")
+          try:
+              j = api.run_job(image="python:3.12", command=["python", "-c", "print('hola desde un Job de HF'); import os; print(os.cpu_count())"], flavor="cpu-basic", timeout="5m")
+              watch(j, "BASIC")
+          except Exception as e:
+              print("::warning title=RIU_JOB_BASIC_ERROR::" + type(e).__name__ + " " + str(e)[:400])
+          try:
+              j = api.run_job(image="python:3.12", command=["python", "-c", "import os; print(os.cpu_count()); print(open('/proc/meminfo').readline())"], flavor="cpu-upgrade", timeout="5m")
+              watch(j, "UPGRADE")
+          except Exception as e:
+              print("::warning title=RIU_JOB_UPGRADE_ERROR::" + type(e).__name__ + " " + str(e)[:400])
+          PY
