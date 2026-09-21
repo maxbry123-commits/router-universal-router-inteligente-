@@ -3,22 +3,22 @@
  "agent": "agent-5-auditor",
  "framework": "smolagents",
  "status": "BLOCKED",
- "updated_at": "2026-09-21T15:06:26Z",
+ "updated_at": "2026-09-21T15:28:23Z",
  "group": "audit",
  "chain": [
-  "audit_pass_1",
-  "audit_pass_2",
-  "audit_pass_3",
-  "audit_pass_4"
+  "lens_chat",
+  "lens_storage",
+  "lens_models",
+  "lens_cross"
  ],
  "completed": [],
  "failed": [
-  "audit_pass_1 (tiempo agotado)"
+  "lens_chat (tiempo agotado)"
  ],
  "next_nodes": [
-  "audit_pass_2",
-  "audit_pass_3",
-  "audit_pass_4"
+  "lens_storage",
+  "lens_models",
+  "lens_cross"
  ],
  "route": [
   "deepseek_flash",
