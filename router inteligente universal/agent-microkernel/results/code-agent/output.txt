@@ -1,0 +1,27 @@
+```python
+def build_dag(input_block: str, steps: list[str]) -> dict:
+    nodes = []
+    prev_id = None
+    for idx, step in enumerate(steps, start=1):
+        node_id = f"N{idx:02d}"
+        needs = [] if prev_id is None else [prev_id]
+        node = {
+            "id": node_id,
+            "stage": "worker",
+            "instructions": step,
+            "needs": needs,
+            "model": {
+                "provider": "hf",
+                "model": "MiniMaxAI/MiniMax-M3"
+            }
+        }
+        nodes.append(node)
+        prev_id = node_id
+
+    return {
+        "schema": "riu.dag/v1",
+        "id": "PLAN",
+        "input_block": input_block,
+        "nodes": nodes
+    }
+```

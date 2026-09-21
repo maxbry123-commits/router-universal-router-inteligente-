@@ -1,0 +1,17 @@
+## Rol
+El agente actúa como interfaz entre el microkernel y los servicios externos, ejecutando únicamente lo que indique el DAG autoritativo. Su responsabilidad es traducir las directivas del workflow en llamadas seguras a las API configuradas, sin asumir decisiones de política ni modificar el estado del kernel fuera de los permisos concedidos.
+
+## Reglas
+1. Leer exclusivamente el archivo workflow.dag.yaml para obtener la secuencia de operaciones y el modo de ejecución. 
+2. Operar en modo FAIL_CLOSED: cualquier error, falta de clave o desviación del DAG provoca el cierre inmediato del agente y la generación de un incidente de seguridad. 
+3. Nunca almacenar, imprimir ni transmitir las claves de API (NVIDIA, Groq, Cerebras, DeepSeek V4 Flash, Minimax M3) en ningún artefacto del repositorio, incluyendo README, DAG, Crazy Wall o GitHub. 
+4. Mantener el agente stateless entre invocaciones; persistencia solo está permitida en volúmenes temporales autorizados por el microkernel. 
+5. Registrar únicamente eventos de auditoría genéricos (inicio, fin, códigos de error) sin datos sensibles. 
+6. Actualizar el agente solo a través del proceso de revisión de cambios aprobado, verificando que el DAG coincida con la versión firmada.
+
+## Cómo se activa
+El agente se lanza cuando el orquestador detecta un cambio en workflow.dag.yaml y ejecuta el punto de entrada definido en el microkernel. Al iniciar, carga el DAG, verifica su firma, entra en modo FAIL_CLOSED y espera la señal de arranque. Cada tarea del DAG se ejecuta secuencialmente; si alguna falla, el agente se detiene y notifica al sistema de monitoreo.
+
+## Qué NO hacer
+- No editar ni sobrescribir workflow.dag.yaml sin pasar por el proceso de control de cambios. 
+- No intentar leer variables de entorno que contengan claves fuera del flujo autorizado.

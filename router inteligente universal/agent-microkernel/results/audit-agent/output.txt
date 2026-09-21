@@ -1,0 +1,4 @@
+code-agent (modelo: nvidia/nvidia/nemotron-3-super-120b-a12b, sha256: 521b5484cb65) completó su tarea tras 1 intento.  
+recurring-agent (modelo: nvidia/nvidia/nemotron-3-super-120b-a12b, sha256: 9202bee6a789) completó su tarea tras 2 intentos.  
+docs-agent (modelo: nvidia/nvidia/nemotron-3-super-120b-a12b, sha256: 15a2fca9360d) completó su tarea tras 2 intentos.  
+Todos los agentes utilizaron el mismo modelo de Nvidia y sus resultados están identificados por los hashes SHA‑256 de 12 caracteres indicados.

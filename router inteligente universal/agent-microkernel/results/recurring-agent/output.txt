@@ -1,0 +1,10 @@
+{
+  "tasks": [
+    {"id":"T01","title":"Instalar dependencias y lanzar el chat localmente","owner_agent":"code-agent","priority":1},
+    {"id":"T02","title":"Obtener y configurar las claves API faltantes (Groq, DeepSeek, Moonshot, MiniMax)","owner_agent":"director","priority":1},
+    {"id":"T03","title":"Probar los repositorios github/planeta123 y github/abc1tienda-web","owner_agent":"code-agent","priority":2},
+    {"id":"T04","title":"Ejecutar benchmark del modelo Nanbeige/Qwen 9B en máquina de 8 núcleos","owner_agent":"code-agent","priority":2},
+    {"id":"T05","title":"Capturar log del job cpu-upgrade y corregir el error","owner_agent":"audit-agent","priority":1},
+    {"id":"T06","title":"Actualizar plantilla YAML/JSON/Python y Crazy Wall permanente","owner_agent":"docs-agent","priority":3}
+  ]
+}

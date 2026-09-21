@@ -1,0 +1,209 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "run_id": "RUN-001",
+ "status": "CLOSED",
+ "completed": [
+  "audit-agent",
+  "code-agent",
+  "docs-agent",
+  "recurring-agent"
+ ],
+ "failed": [],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "521b5484cb6545ba6d3dc474e2860a6e0b028a32dc1542577139afa67ce4b43f",
+   "chars": 691
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "template_engine.py",
+   "sha256": "380dce298a7a1fef1cbe73b39d4e33fef4582f1a6d061c5486ea769c810d6b5e"
+  },
+  {
+   "kind": "file",
+   "path": "router inteligente universal/agent-microkernel/results/code-agent/output.txt",
+   "sha256": "521b5484cb6545ba6d3dc474e2860a6e0b028a32dc1542577139afa67ce4b43f"
+  },
+  {
+   "kind": "output_sha256",
+   "sha256": "15a2fca9360df4b8b767fa31318248baa63490458f14e990abb9488f82e27dc9",
+   "chars": 1816
+  },
+  {
+   "kind": "file",
+   "path": "router inteligente universal/agent-microkernel/results/docs-agent/output.txt",
+   "sha256": "15a2fca9360df4b8b767fa31318248baa63490458f14e990abb9488f82e27dc9"
+  },
+  {
+   "kind": "output_sha256",
+   "sha256": "9202bee6a789b247085ecfc6e1c207374be1321ed4fe25e32f3c5a5ae74b4c40",
+   "chars": 810
+  },
+  {
+   "kind": "tasks",
+   "count": 6
+  },
+  {
+   "kind": "file",
+   "path": "router inteligente universal/agent-microkernel/results/recurring-agent/output.txt",
+   "sha256": "9202bee6a789b247085ecfc6e1c207374be1321ed4fe25e32f3c5a5ae74b4c40"
+  },
+  {
+   "kind": "output_sha256",
+   "sha256": "a80311b69cb842e0940b59fc780ad7feeddf60795837a4f7f7e704d79ad453f6",
+   "chars": 509
+  },
+  {
+   "kind": "file",
+   "path": "router inteligente universal/agent-microkernel/results/audit-agent/output.txt",
+   "sha256": "a80311b69cb842e0940b59fc780ad7feeddf60795837a4f7f7e704d79ad453f6"
+  }
+ ],
+ "agents": {
+  "code-agent": {
+   "schema": "yaiwes.crazy-wall/v1",
+   "run_id": "RUN-001",
+   "agent": "code-agent",
+   "completed": [
+    "code"
+   ],
+   "failed": [],
+   "gaps": [],
+   "evidence": [
+    {
+     "kind": "output_sha256",
+     "sha256": "521b5484cb6545ba6d3dc474e2860a6e0b028a32dc1542577139afa67ce4b43f",
+     "chars": 691
+    },
+    {
+     "kind": "exec",
+     "exit": 0,
+     "file": "template_engine.py",
+     "sha256": "380dce298a7a1fef1cbe73b39d4e33fef4582f1a6d061c5486ea769c810d6b5e"
+    },
+    {
+     "kind": "file",
+     "path": "router inteligente universal/agent-microkernel/results/code-agent/output.txt",
+     "sha256": "521b5484cb6545ba6d3dc474e2860a6e0b028a32dc1542577139afa67ce4b43f"
+    }
+   ],
+   "current_nodes": [
+    "code"
+   ],
+   "next_nodes": [],
+   "status": "CLOSED",
+   "updated_at": "2026-09-21T07:03:21Z",
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "attempts": 1,
+   "route_trace": []
+  },
+  "docs-agent": {
+   "schema": "yaiwes.crazy-wall/v1",
+   "run_id": "RUN-001",
+   "agent": "docs-agent",
+   "completed": [
+    "docs"
+   ],
+   "failed": [],
+   "gaps": [],
+   "evidence": [
+    {
+     "kind": "output_sha256",
+     "sha256": "15a2fca9360df4b8b767fa31318248baa63490458f14e990abb9488f82e27dc9",
+     "chars": 1816
+    },
+    {
+     "kind": "file",
+     "path": "router inteligente universal/agent-microkernel/results/docs-agent/output.txt",
+     "sha256": "15a2fca9360df4b8b767fa31318248baa63490458f14e990abb9488f82e27dc9"
+    }
+   ],
+   "current_nodes": [
+    "docs"
+   ],
+   "next_nodes": [],
+   "status": "CLOSED",
+   "updated_at": "2026-09-21T07:04:02Z",
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "attempts": 2,
+   "route_trace": []
+  },
+  "recurring-agent": {
+   "schema": "yaiwes.crazy-wall/v1",
+   "run_id": "RUN-001",
+   "agent": "recurring-agent",
+   "completed": [
+    "plan"
+   ],
+   "failed": [],
+   "gaps": [],
+   "evidence": [
+    {
+     "kind": "output_sha256",
+     "sha256": "9202bee6a789b247085ecfc6e1c207374be1321ed4fe25e32f3c5a5ae74b4c40",
+     "chars": 810
+    },
+    {
+     "kind": "tasks",
+     "count": 6
+    },
+    {
+     "kind": "file",
+     "path": "router inteligente universal/agent-microkernel/results/recurring-agent/output.txt",
+     "sha256": "9202bee6a789b247085ecfc6e1c207374be1321ed4fe25e32f3c5a5ae74b4c40"
+    }
+   ],
+   "current_nodes": [
+    "plan"
+   ],
+   "next_nodes": [],
+   "status": "CLOSED",
+   "updated_at": "2026-09-21T07:03:36Z",
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "attempts": 2,
+   "route_trace": []
+  },
+  "audit-agent": {
+   "schema": "yaiwes.crazy-wall/v1",
+   "run_id": "RUN-001",
+   "agent": "audit-agent",
+   "completed": [
+    "summarize"
+   ],
+   "failed": [],
+   "gaps": [],
+   "evidence": [
+    {
+     "kind": "output_sha256",
+     "sha256": "a80311b69cb842e0940b59fc780ad7feeddf60795837a4f7f7e704d79ad453f6",
+     "chars": 509
+    },
+    {
+     "kind": "file",
+     "path": "router inteligente universal/agent-microkernel/results/audit-agent/output.txt",
+     "sha256": "a80311b69cb842e0940b59fc780ad7feeddf60795837a4f7f7e704d79ad453f6"
+    }
+   ],
+   "current_nodes": [
+    "summarize"
+   ],
+   "next_nodes": [],
+   "status": "CLOSED",
+   "updated_at": "2026-09-21T07:04:12Z",
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "attempts": 1,
+   "route_trace": []
+  }
+ }
+}

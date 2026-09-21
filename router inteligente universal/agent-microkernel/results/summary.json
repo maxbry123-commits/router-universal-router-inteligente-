@@ -1,0 +1,45 @@
+{
+ "run_id": "RUN-001",
+ "results": {
+  "code-agent": {
+   "agent": "code-agent",
+   "status": "CLOSED",
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "attempts": 1,
+   "output_sha256": "521b5484cb6545ba6d3dc474e2860a6e0b028a32dc1542577139afa67ce4b43f",
+   "trace": []
+  },
+  "docs-agent": {
+   "agent": "docs-agent",
+   "status": "CLOSED",
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "attempts": 2,
+   "output_sha256": "15a2fca9360df4b8b767fa31318248baa63490458f14e990abb9488f82e27dc9",
+   "trace": []
+  },
+  "recurring-agent": {
+   "agent": "recurring-agent",
+   "status": "CLOSED",
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "attempts": 2,
+   "output_sha256": "9202bee6a789b247085ecfc6e1c207374be1321ed4fe25e32f3c5a5ae74b4c40",
+   "trace": []
+  },
+  "audit-agent": {
+   "agent": "audit-agent",
+   "status": "CLOSED",
+   "provider": "nvidia",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "via": "route",
+   "attempts": 1,
+   "output_sha256": "a80311b69cb842e0940b59fc780ad7feeddf60795837a4f7f7e704d79ad453f6",
+   "trace": []
+  }
+ }
+}

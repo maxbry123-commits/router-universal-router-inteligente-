@@ -1,0 +1,39 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "run_id": "RUN-001",
+ "agent": "code-agent",
+ "completed": [
+  "code"
+ ],
+ "failed": [],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "521b5484cb6545ba6d3dc474e2860a6e0b028a32dc1542577139afa67ce4b43f",
+   "chars": 691
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "template_engine.py",
+   "sha256": "380dce298a7a1fef1cbe73b39d4e33fef4582f1a6d061c5486ea769c810d6b5e"
+  },
+  {
+   "kind": "file",
+   "path": "router inteligente universal/agent-microkernel/results/code-agent/output.txt",
+   "sha256": "521b5484cb6545ba6d3dc474e2860a6e0b028a32dc1542577139afa67ce4b43f"
+  }
+ ],
+ "current_nodes": [
+  "code"
+ ],
+ "next_nodes": [],
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T07:03:21Z",
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "attempts": 1,
+ "route_trace": []
+}
