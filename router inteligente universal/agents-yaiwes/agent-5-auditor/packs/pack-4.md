@@ -1,25 +1,3 @@
-=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-p-agentes-auditar-tokens-vercel.md ===
-Tu prioridad es una sola los agentes y luego delegas 
-Los  agente que creaste no lo borras déjalo para algun uso 
-Ya está listo lo de versel pero no vas hacer nada vas hacer lo siguiente 
-
-Paso 1 📌 
-Haces los agentes 
-Paso 2 📌 
-Auditas todos mis imput instrucciones 
-Prioridad CHat y HF y modelos Ai en HF
-Llegas todos los tokens a los agentes 
-Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas 
-Paso 3 📌 
-Tu haces el puente en versel y nuestro router para hacer las pruebas ya Tienes los permisos listo de versel 
-
-Dime si te quedo claro 
-No avanzas tu delegas avanzas los agentes 
-
-Esta claro
-
----
-
 === ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-q-cadena-de-pasos-chat-hf.md ===
 Te estás quedando pegado y se cae tu proceso de salida 
 Y se reinicia 
@@ -176,3 +154,38 @@ Hugging Face +1
 NNCF + OpenVINO. Puedes aplicar weight-only INT4, INT8, AWQ, GPTQ, Scale Estimation y cuantización mixta. Esto permite encontrar una combinación rápida sin destruir demasiado la calidad. �
 Hugging Face
 TorchAO. Este es uno que faltó en mi lista anterior y merece bastante atención. Hugging Face soporta TorchAO en CPU con INT8 dinámico, INT8 weight-only e INT4 weight-only, y ade
+
+=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-t-espejo-10-procesadores-mvp-delegar.md ===
+Ok espejo es que se puede usar el mismo peso del modelo ai por varias secciones al mismo tiempo sin copiar el modelo 
+
+Busca la manera de reducir el caché solo para los modelos locales o saturar el ram. Salte al siguiente HF procesador si hace falta llevas a 10 procesador HF 32 de ram para tener suficiente cómputos de trabajo sin colapsar 
+
+Busca los otros modelos que te di que tienes anotados 
+
+
+🎯🎯🎯🆘🆘🆘🆘🆘🆘
+
+Pero no estás siguiendo mis instrucciones intentas y sigue. Haciendo tú el trabajo 
+
+
+
+Debes hacer ahora el mvp para que los agentes usen deepsek v4 flash para trabajos y para code mínimax M3 
+
+Concéntrate el objetivo todo lo demás anotas pare después 
+
+Paso 1 📌 
+Anota todo lo que te di 
+
+Paso 2 📌 
+Crea y descarga los agente que te di 
+
+Paso 3 📌 
+Planifica y activas los agente con todas las tareas del plan de el chat y de huggueface tu no lo vas hacer lo van hacer ellos 
+
+
+📌🆘🆘🆘 Nota tu no vas hacer la tarea tu solo prepara el router MVP y los agente y delegas todas las tareas 
+
+Me entiendes o no me entiendes 
+🎯🎯🆘🆘🆘
+
+---

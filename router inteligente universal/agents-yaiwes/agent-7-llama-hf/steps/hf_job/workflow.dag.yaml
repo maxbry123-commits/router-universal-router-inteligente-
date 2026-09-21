@@ -1,0 +1,91 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-7-llama-hf
+  framework: smolagents
+  group: hf-llama
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 2500
+context:
+  text: "HECHOS: llama-server carga los pesos UNA vez (mmap) y los comparten sus ranuras:\
+    \ `-np N` ranuras, `-c` = ranuras * contexto_por_ranura (el contexto total se\
+    \ reparte),\n`-cb` batching continuo, `--cache-prompt` y `--cache-reuse 256` reutilizan\
+    \ el prefijo, `--cache-ram MB` limita la caché de prompts en RAM (para no saturarla),\n\
+    `-fa on` atención flash, `-ctk q8_0 -ctv q8_0` caché KV cuantizada (exige atención\
+    \ flash), `-t` hilos, `-md ARCHIVO` modelo borrador (decodificación especulativa),\n\
+    `--mmproj ARCHIVO` visión. NO usar `--mlock` (fijaría la RAM). Un Job de HF se\
+    \ lanza con huggingface_hub.HfApi.run_job(image, command, flavor, timeout, volumes,\
+    \ expose=[puerto]);\n`expose` es una LISTA de puertos; el endpoint es https://<job_id>--<puerto>.hf.jobs\
+    \ y exige un token de HF. Imagen: ghcr.io/ggml-org/llama.cpp:server; los pesos\
+    \ se montan\ncon el volumen hf://models/ORG/MODELO:/model:ro (lectura bajo demanda,\
+    \ sin copiar). Medido en un runner de 4 vCPU: Qwen3.5-0.8B Q4_0 pp256 154.7 t/s\
+    \ / tg128 28.2 t/s;\nLFM2.5-1.2B Q4_K_M pp256 103.3 / tg128 30.4.\n\n\nSALIDA\
+    \ VERIFICADA DEL PASO ANTERIOR (llama_cmd):\n```python\ndef build_llama_cmd(model_path,\
+    \ slots=4, ctx_per_slot=4096, kv=\"q8_0\", flash=True, cache_ram_mb=512, threads=8,\
+    \ draft_path=None, mmproj_path=None, port=8080):\n    # Validaciones\n    if kv\
+    \ not in (\"f16\", \"q8_0\", \"q4_0\"):\n        raise ValueError(f\"kv must be\
+    \ one of 'f16', 'q8_0', 'q4_0', got '{kv}'\")\n    if kv != \"f16\" and not flash:\n\
+    \        raise ValueError(\"flash must be True when kv is not 'f16'\")\n    if\
+    \ slots < 1:\n        raise ValueError(f\"slots must be >= 1, got {slots}\")\n\
+    \    if ctx_per_slot < 512:\n        raise ValueError(f\"ctx_per_slot must be\
+    \ >= 512, got {ctx_per_slot}\")\n\n    args = [\n        \"llama-server\",\n \
+    \       \"-m\", model_path,\n        \"--host\", \"0.0.0.0\",\n        \"--port\"\
+    , str(port),\n        \"-c\", str(slots * ctx_per_slot),\n        \"-np\", str(slots),\n\
+    \        \"-cb\",\n        \"--cache-prompt\",\n        \"--cache-reuse\", \"\
+    256\",\n        \"--cache-ram\", str(cache_ram_mb),\n        \"-t\", str(threads),\n\
+    \    ]\n\n    # flash attention\n    if flash:\n        args += [\"-fa\", \"on\"\
+    ]\n    else:\n        args += [\"-fa\", \"off\"]\n\n    # kv cache quantization\n\
+    \    if kv != \"f16\":\n        args += [\"-ctk\", kv, \"-ctv\", kv]\n\n    #\
+    \ draft model\n    if draft_path:\n        args += [\"-md\", draft_path]\n\n \
+    \   # mmproj (vision)\n    if mmproj_path:\n        args += [\"--mmproj\", mmproj_path]\n\
+    \n    return args\n```"
+  max_chars: 40000
+task: 'Escribe el módulo Python `hf_job.py` (solo código, un único bloque ```python,
+  solo biblioteca estándar; debe ser AUTOCONTENIDO: no importa otros módulos) con
+  la función
+
+  `build_hf_job(repo, gguf_file, slots=4, ctx_per_slot=4096, flavor="cpu-upgrade",
+  port=8080, kv="q8_0", cache_ram_mb=512) -> dict` que prepara los argumentos de HfApi.run_job
+  para servir un GGUF
+
+  con UNA copia de pesos compartida por las ranuras: {"image": "ghcr.io/ggml-org/llama.cpp:server",
+  "flavor": flavor, "expose": [port], "volumes": [f"hf://models/{repo}:/model:ro"],
+
+  "command": [...]}. El comando es la lista de argumentos de llama-server: "llama-server",
+  "-m", f"/model/{gguf_file}", "--host", "0.0.0.0", "--port", str(port), "-c", str(slots
+  * ctx_per_slot),
+
+  "-np", str(slots), "-cb", "--cache-prompt", "--cache-reuse", "256", "--cache-ram",
+  str(cache_ram_mb), "-fa", "on", "-ctk", kv, "-ctv", kv. Lanza ValueError si repo
+  no tiene la forma
+
+  "organizacion/nombre" (exactamente una barra y ambos lados no vacíos).
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: hf_job.py
+  test: "from hf_job import build_hf_job\ns = build_hf_job(\"LiquidAI/LFM2.5-1.2B-Instruct-GGUF\"\
+    , \"LFM2.5-1.2B-Instruct-Q4_K_M.gguf\")\nc = \" \".join(s[\"command\"])\nassert\
+    \ s[\"image\"] == \"ghcr.io/ggml-org/llama.cpp:server\" and s[\"flavor\"] == \"\
+    cpu-upgrade\" and s[\"expose\"] == [8080]\nassert s[\"volumes\"] == [\"hf://models/LiquidAI/LFM2.5-1.2B-Instruct-GGUF:/model:ro\"\
+    ]\nfor f in [\"-m /model/LFM2.5-1.2B-Instruct-Q4_K_M.gguf\", \"-np 4\", \"-c 16384\"\
+    , \"--cache-ram 512\", \"-ctk q8_0 -ctv q8_0\", \"-fa on\"]:\n    assert f in\
+    \ c, f\ns2 = build_hf_job(\"A/B\", \"m.gguf\", slots=2, ctx_per_slot=2048, flavor=\"\
+    cpu-basic\", port=9000)\nassert s2[\"expose\"] == [9000] and \"-c 4096\" in \"\
+    \ \".join(s2[\"command\"]) and s2[\"flavor\"] == \"cpu-basic\"\nfor bad in (\"\
+    sin-barra\", \"a/b/c\", \"/b\", \"a/\"):\n    try:\n        build_hf_job(bad,\
+    \ \"m.gguf\")\n        raise SystemExit(\"aceptó \" + bad)\n    except ValueError:\n\
+    \        pass\n"
+- kind: no_secrets

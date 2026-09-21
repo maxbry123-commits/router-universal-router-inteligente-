@@ -1,0 +1,91 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-6-hf-nodes
+  framework: pocketflow
+  group: hf-nodes
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 2500
+context:
+  text: "HECHOS: cada nodo HF = 8 vCPU / 32 GB RAM. Un servidor llama.cpp carga los\
+    \ pesos UNA vez (mmap) y los comparten todas las ranuras (-np); el consumo extra\n\
+    por ranura es su caché KV: kv_mb = 2 * capas * cabezas_kv * dim_cabeza * tokens_de_contexto\
+    \ * bytes_por_elemento / 1e6 (K y V; f16 = 2 bytes, q8_0 ~ 1 byte,\nq4_0 ~ 0.5\
+    \ bytes). Regla del Director para la RAM: normal 0-20 GB; 20-24 GB no cargar otro\
+    \ modelo grande; 24-27 GB reducir ranuras/contexto; > 27 GB descargar\nel inactivo;\
+    \ ~30 GB tope. Estados por carga = max(RAM %, CPU %): < 80 GREEN, 80-90 YELLOW,\
+    \ 90-95 DRAIN, >= 95 CLOSED. Si un nodo no puede aceptar, se salta al siguiente.\n\
+    Medido (runner de 4 vCPU): Qwen3.5-0.8B Q4_0 (563 MB) pp256 154.7 t/s, tg128 28.2\
+    \ t/s; LFM2.5-1.2B Q4_K_M (731 MB) pp256 103.3 t/s, tg128 30.4 t/s.\n\n\nSALIDA\
+    \ VERIFICADA DEL PASO ANTERIOR (ram_plan):\n```python\n# hf_nodes.py\n\nfrom typing\
+    \ import Optional\n\nNODES = [{\"id\": f\"HF-{i:02d}\", \"ram_gb\": 32, \"vcpu\"\
+    : 8} for i in range(1, 11)]\n\ndef kv_cache_mb(n_layers: int, n_kv_heads: int,\
+    \ head_dim: int, ctx_tokens: int, bytes_per_elem: float) -> float:\n    return\
+    \ 2 * n_layers * n_kv_heads * head_dim * ctx_tokens * bytes_per_elem / 1e6\n\n\
+    def plan_slots(weights_mb: float, kv_mb_per_slot: float, slots: int, ram_cap_mb:\
+    \ float, overhead_mb: float = 1500) -> dict:\n    total_mb = weights_mb + slots\
+    \ * kv_mb_per_slot + overhead_mb\n    fits = total_mb <= ram_cap_mb\n    max_slots\
+    \ = 0\n    if kv_mb_per_slot > 0:\n        max_slots = max(0, int((ram_cap_mb\
+    \ - weights_mb - overhead_mb) // kv_mb_per_slot))\n    elif ram_cap_mb >= weights_mb\
+    \ + overhead_mb:\n        max_slots = slots  # any number fits if kv is zero\n\
+    \    return {\n        \"total_mb\": total_mb,\n        \"fits\": fits,\n    \
+    \    \"max_slots\": max_slots\n    }\n\ndef reduce_ctx_to_fit(weights_mb: float,\
+    \ kv_mb_per_1k_tokens: float, slots: int, ram_cap_mb: float,\n               \
+    \       ctx_start: int = 8192, ctx_min: int = 2048, overhead_mb: float = 1500)\
+    \ -> Optional[int]:\n    ctx = ctx_start\n    while ctx >= ctx_min:\n        kv_slot\
+    \ = kv_mb_per_1k_tokens * ctx / 1000\n        total = weights_mb + slots * kv_slot\
+    \ + overhead_mb\n        if total <= ram_cap_mb:\n            return ctx\n   \
+    \     ctx //= 2\n    return None\n```"
+  max_chars: 40000
+task: "Escribe el módulo Python `hf_hop.py` (solo código, un único bloque ```python,\
+  \ solo biblioteca estándar) con:\n- `node_state(ram_pct, cpu_pct) -> str`: load\
+  \ = max(ram_pct, cpu_pct); < 80 \"GREEN\"; < 90 \"YELLOW\"; < 95 \"DRAIN\"; si no\
+  \ \"CLOSED\".\n- `choose_node(nodes, need_mb) -> str | None`: `nodes` es una lista\
+  \ de dicts en orden {\"id\",\"ram_pct\",\"cpu_pct\",\"active\",\"max_parallel\"\
+  ,\"free_mb\"}. Devuelve el \"id\" del PRIMER nodo\n  (en el orden dado) cuyo estado\
+  \ sea GREEN o YELLOW, con active < max_parallel y free_mb >= need_mb; es decir,\
+  \ salta al siguiente procesador si el actual está lleno. Si ninguno sirve devuelve\
+  \ None.\n- `next_action(nodes, need_mb) -> dict`: {\"node\": id} si hay nodo; si\
+  \ no, {\"node\": None, \"action\": \"QUEUE\"} cuando algún nodo está DRAIN (esperar),\
+  \ o {\"node\": None, \"action\": \"SCALE_OUT\"}\n  cuando todos están CLOSED.\n"
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: hf_hop.py
+  test: 'from hf_hop import node_state, choose_node, next_action
+
+    assert node_state(50, 30) == "GREEN" and node_state(85, 10) == "YELLOW" and node_state(92,
+    10) == "DRAIN" and node_state(10, 96) == "CLOSED"
+
+    def n(i, ram, cpu, act=0, free=8000): return {"id": i, "ram_pct": ram, "cpu_pct":
+    cpu, "active": act, "max_parallel": 4, "free_mb": free}
+
+    nodes = [n("HF-01", 96, 10), n("HF-02", 50, 20, act=4), n("HF-03", 85, 30), n("HF-04",
+    20, 20)]
+
+    assert choose_node(nodes, 2000) == "HF-03"
+
+    assert choose_node(nodes, 9000) is None
+
+    assert choose_node([n("HF-01", 20, 20, free=1000), n("HF-02", 20, 20, free=5000)],
+    2000) == "HF-02"
+
+    assert next_action(nodes, 2000) == {"node": "HF-03"}
+
+    assert next_action([n("HF-01", 92, 10)], 1000) == {"node": None, "action": "QUEUE"}
+
+    assert next_action([n("HF-01", 99, 10), n("HF-02", 10, 97)], 1000) == {"node":
+    None, "action": "SCALE_OUT"}
+
+    '
+- kind: no_secrets

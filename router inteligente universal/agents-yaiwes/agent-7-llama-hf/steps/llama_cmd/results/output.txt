@@ -1,0 +1,46 @@
+```python
+def build_llama_cmd(model_path, slots=4, ctx_per_slot=4096, kv="q8_0", flash=True, cache_ram_mb=512, threads=8, draft_path=None, mmproj_path=None, port=8080):
+    # Validaciones
+    if kv not in ("f16", "q8_0", "q4_0"):
+        raise ValueError(f"kv must be one of 'f16', 'q8_0', 'q4_0', got '{kv}'")
+    if kv != "f16" and not flash:
+        raise ValueError("flash must be True when kv is not 'f16'")
+    if slots < 1:
+        raise ValueError(f"slots must be >= 1, got {slots}")
+    if ctx_per_slot < 512:
+        raise ValueError(f"ctx_per_slot must be >= 512, got {ctx_per_slot}")
+
+    args = [
+        "llama-server",
+        "-m", model_path,
+        "--host", "0.0.0.0",
+        "--port", str(port),
+        "-c", str(slots * ctx_per_slot),
+        "-np", str(slots),
+        "-cb",
+        "--cache-prompt",
+        "--cache-reuse", "256",
+        "--cache-ram", str(cache_ram_mb),
+        "-t", str(threads),
+    ]
+
+    # flash attention
+    if flash:
+        args += ["-fa", "on"]
+    else:
+        args += ["-fa", "off"]
+
+    # kv cache quantization
+    if kv != "f16":
+        args += ["-ctk", kv, "-ctv", kv]
+
+    # draft model
+    if draft_path:
+        args += ["-md", draft_path]
+
+    # mmproj (vision)
+    if mmproj_path:
+        args += ["--mmproj", mmproj_path]
+
+    return args
+```

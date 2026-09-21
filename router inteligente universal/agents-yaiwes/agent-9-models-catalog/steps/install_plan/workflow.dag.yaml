@@ -1,0 +1,166 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-9-models-catalog
+  framework: smolagents
+  group: hf-models
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 3500
+context:
+  text: "TABLA VERIFICADA EN HUGGING FACE (2026-09-21). Formato: id | repo | gguf_repo\
+    \ | file | size_mb | runtime | verified | needs_fork | role\nqwen3.5-0.8b | Qwen/Qwen3.5-0.8B\
+    \ | ggml-org/Qwen3.5-0.8B-GGUF | Qwen3.5-0.8B-Q4_0.gguf | 563 | llama.cpp | True\
+    \ | False | router / tareas ultrarrápidas\nlfm2.5-1.2b-instruct | LiquidAI/LFM2.5-1.2B-Instruct\
+    \ | LiquidAI/LFM2.5-1.2B-Instruct-GGUF | LFM2.5-1.2B-Instruct-Q4_K_M.gguf | 731\
+    \ | llama.cpp | True | False | razonamiento pequeño\nlfm2.5-1.2b-thinking | LiquidAI/LFM2.5-1.2B-Thinking\
+    \ | LiquidAI/LFM2.5-1.2B-Thinking-GGUF | LFM2.5-1.2B-Thinking-Q4_K_M.gguf | 731\
+    \ | llama.cpp | True | False | razonamiento principal pequeño\ngemma-4-e2b | google/gemma-4-E2B-it\
+    \ | google/gemma-4-E2B-it-qat-q4_0-gguf | gemma-4-E2B_q4_0-it.gguf | 3300 | llama.cpp\
+    \ | True | False | router, herramientas y JSON (enable_thinking=False)\nqwen3-0.6b\
+    \ | Qwen/Qwen3-0.6B | Qwen/Qwen3-0.6B-GGUF | Qwen3-0.6B-Q8_0.gguf | 639 | llama.cpp\
+    \ | True | False | tareas ultrarrápidas / router / reasoning corto\nsmollm3-3b\
+    \ | HuggingFaceTB/SmolLM3-3B | ggml-org/SmolLM3-3B-GGUF | (archivo sin verificar)\
+    \ | (tamaño sin verificar) | llama.cpp | True | False | herramientas y /no_think\n\
+    k2-horizon-0.9b | IFM/K2-Horizon-0.9B | IFM/K2-Horizon-0.9B-GGUF | (archivo sin\
+    \ verificar) | (tamaño sin verificar) | llama.cpp | True | False | por definir\n\
+    nanbeige4.2-3b | Nanbeige/Nanbeige4.2-3B | bartowski/Nanbeige_Nanbeige4.2-3B-GGUF\
+    \ | (archivo sin verificar) | (sin verificar) | llama.cpp | True | True (fork\
+    \ rama nanbeige42) | code\nnanojev | C-Tianyu/NanoJev | (sin GGUF) | (safetensors)\
+    \ | 2400 | python | True | False | decisiones\ndecider-0.8b | Mapika/decider-0.8b\
+    \ | (sin GGUF oficial) | - | (sin verificar) | python | True | False | decisiones\n\
+    decider-2b | Mapika/decider-2b | (sin GGUF oficial) | - | (sin verificar) | python\
+    \ | True | False | decisiones\nmuse-glimmer-30b | meta-models/Muse-Glimmer-30B\
+    \ | meta-models/Muse-Glimmer-30B-GGUF | Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf\
+    \ | 16800 | llama.cpp | True | False | cerebro de decisiones de los agentes de\
+    \ Meta\n   (también: modelo borrador dflash-Muse-Glimmer-30B-Q4_K_M.gguf 1.6 GB\
+    \ y visión mmproj-Muse-Glimmer-30B-Q4_K_M.gguf 1.4 GB)\nNO VERIFICADOS: gemma-3-1b\
+    \ (google/gemma-3-1b-it), smollm2-1.7b (HuggingFaceTB/SmolLM2-1.7B-Instruct),\
+    \ laya-421m (existe la familia convaiinnovations/laya, no se confirma que alguna\
+    \ sea de 421M),\nverdict-151m (NO se encontró en Hugging Face).\n\n\nSALIDA VERIFICADA\
+    \ DEL PASO ANTERIOR (models_catalog):\n```python\n\"\"\"Models catalog for agent-9.\
+    \ Standard library only.\"\"\"\n\nCATALOG = {\n    \"qwen3.5-0.8b\": {\n     \
+    \   \"repo\": \"Qwen/Qwen3.5-0.8B\",\n        \"gguf_repo\": \"ggml-org/Qwen3.5-0.8B-GGUF\"\
+    ,\n        \"file\": \"Qwen3.5-0.8B-Q4_0.gguf\",\n        \"size_mb\": 563,\n\
+    \        \"runtime\": \"llama.cpp\",\n        \"role\": \"router / tareas ultrarrápidas\"\
+    ,\n        \"verified\": True,\n        \"needs_fork\": False,\n        \"notes\"\
+    : None,\n    },\n    \"lfm2.5-1.2b-instruct\": {\n        \"repo\": \"LiquidAI/LFM2.5-1.2B-Instruct\"\
+    ,\n        \"gguf_repo\": \"LiquidAI/LFM2.5-1.2B-Instruct-GGUF\",\n        \"\
+    file\": \"LFM2.5-1.2B-Instruct-Q4_K_M.gguf\",\n        \"size_mb\": 731,\n   \
+    \     \"runtime\": \"llama.cpp\",\n        \"role\": \"razonamiento pequeño\"\
+    ,\n        \"verified\": True,\n        \"needs_fork\": False,\n        \"notes\"\
+    : None,\n    },\n    \"lfm2.5-1.2b-thinking\": {\n        \"repo\": \"LiquidAI/LFM2.5-1.2B-Thinking\"\
+    ,\n        \"gguf_repo\": \"LiquidAI/LFM2.5-1.2B-Thinking-GGUF\",\n        \"\
+    file\": \"LFM2.5-1.2B-Thinking-Q4_K_M.gguf\",\n        \"size_mb\": 731,\n   \
+    \     \"runtime\": \"llama.cpp\",\n        \"role\": \"razonamiento principal\
+    \ pequeño\",\n        \"verified\": True,\n        \"needs_fork\": False,\n  \
+    \      \"notes\": None,\n    },\n    \"gemma-4-e2b\": {\n        \"repo\": \"\
+    google/gemma-4-E2B-it\",\n        \"gguf_repo\": \"google/gemma-4-E2B-it-qat-q4_0-gguf\"\
+    ,\n        \"file\": \"gemma-4-E2B_q4_0-it.gguf\",\n        \"size_mb\": 3300,\n\
+    \        \"runtime\": \"llama.cpp\",\n        \"role\": \"router, herramientas\
+    \ y JSON (enable_thinking=False)\",\n        \"verified\": True,\n        \"needs_fork\"\
+    : False,\n        \"notes\": None,\n    },\n    \"qwen3-0.6b\": {\n        \"\
+    repo\": \"Qwen/Qwen3-0.6B\",\n        \"gguf_repo\": \"Qwen/Qwen3-0.6B-GGUF\"\
+    ,\n        \"file\": \"Qwen3-0.6B-Q8_0.gguf\",\n        \"size_mb\": 639,\n  \
+    \      \"runtime\": \"llama.cpp\",\n        \"role\": \"tareas ultrarrápidas /\
+    \ router / reasoning corto\",\n        \"verified\": True,\n        \"needs_fork\"\
+    : False,\n        \"notes\": None,\n    },\n    \"smollm3-3b\": {\n        \"\
+    repo\": \"HuggingFaceTB/SmolLM3-3B\",\n        \"gguf_repo\": \"ggml-org/SmolLM3-3B-GGUF\"\
+    ,\n        \"file\": None,\n        \"size_mb\": None,\n        \"runtime\": \"\
+    llama.cpp\",\n        \"role\": \"herramientas y /no_think\",\n        \"verified\"\
+    : True,\n        \"needs_fork\": False,\n        \"notes\": None,\n    },\n  \
+    \  \"k2-horizon-0.9b\": {\n        \"repo\": \"IFM/K2-Horizon-0.9B\",\n      \
+    \  \"gguf_repo\": \"IFM/K2-Horizon-0.9B-GGUF\",\n        \"file\": None,\n   \
+    \     \"size_mb\": None,\n        \"runtime\": \"llama.cpp\",\n        \"role\"\
+    : \"por definir\",\n        \"verified\": True,\n        \"needs_fork\": False,\n\
+    \        \"notes\": None,\n    },\n    \"nanbeige4.2-3b\": {\n        \"repo\"\
+    : \"Nanbeige/Nanbeige4.2-3B\",\n        \"gguf_repo\": \"bartowski/Nanbeige_Nanbeige4.2-3B-GGUF\"\
+    ,\n        \"file\": None,\n        \"size_mb\": None,\n        \"runtime\": \"\
+    llama.cpp\",\n        \"role\": \"code\",\n        \"verified\": True,\n     \
+    \   \"needs_fork\": True,\n        \"notes\": None,\n    },\n    \"nanojev\":\
+    \ {\n        \"repo\": \"C-Tianyu/NanoJev\",\n        \"gguf_repo\": None,\n \
+    \       \"file\": None,\n        \"size_mb\": 2400,\n        \"runtime\": \"python\"\
+    ,\n        \"role\": \"decisiones\",\n        \"verified\": True,\n        \"\
+    needs_fork\": False,\n        \"notes\": None,\n    },\n    \"decider-0.8b\":\
+    \ {\n        \"repo\": \"Mapika/decider-0.8b\",\n        \"gguf_repo\": None,\n\
+    \        \"file\": None,\n        \"size_mb\": None,\n        \"runtime\": \"\
+    python\",\n        \"role\": \"decisiones\",\n        \"verified\": True,\n  \
+    \      \"needs_fork\": False,\n        \"notes\": None,\n    },\n    \"decider-2b\"\
+    : {\n        \"repo\": \"Mapika/decider-2b\",\n        \"gguf_repo\": None,\n\
+    \        \"file\": None,\n        \"size_mb\": None,\n        \"runtime\": \"\
+    python\",\n        \"role\": \"decisiones\",\n        \"verified\": True,\n  \
+    \      \"needs_fork\": False,\n        \"notes\": None,\n    },\n    \"muse-glimmer-30b\"\
+    : {\n        \"repo\": \"meta-models/Muse-Glimmer-30B\",\n        \"gguf_repo\"\
+    : \"meta-models/Muse-Glimmer-30B-GGUF\",\n        \"file\": \"Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf\"\
+    ,\n        \"size_mb\": 16800,\n        \"runtime\": \"llama.cpp\",\n        \"\
+    role\": \"cerebro de decisiones de los agentes de Meta\",\n        \"verified\"\
+    : True,\n        \"needs_fork\": False,\n        \"notes\": None,\n        \"\
+    draft_file\": \"dflash-Muse-Glimmer-30B-Q4_K_M.gguf\",\n        \"mmproj_file\"\
+    : \"mmproj-Muse-Glimmer-30B-Q4_K_M.gguf\",\n    },\n    \"gemma-3-1b\": {\n  \
+    \      \"repo\": \"google/gemma-3-1b-it\",\n        \"gguf_repo\": None,\n   \
+    \     \"file\": None,\n        \"size_mb\": None,\n        \"runtime\": \"transformers\"\
+    ,\n        \"role\": None,\n        \"verified\": False,\n        \"needs_fork\"\
+    : False,\n        \"notes\": None,\n    },\n    \"smollm2-1.7b\": {\n        \"\
+    repo\": \"HuggingFaceTB/SmolLM2-1.7B-Instruct\",\n        \"gguf_repo\": None,\n\
+    \        \"file\": None,\n        \"size_mb\": None,\n        \"runtime\": \"\
+    transformers\",\n        \"role\": None,\n        \"verified\": False,\n     \
+    \   \"needs_fork\": False,\n        \"notes\": None,\n    },\n    \"laya-421m\"\
+    : {\n        \"repo\": \"convaiinnovations/laya\",\n        \"gguf_repo\": None,\n\
+    \        \"file\": None,\n        \"size_mb\": None,\n        \"runtime\": \"\
+    python\",\n        \"role\": None,\n        \"verified\": False,\n        \"needs_fork\"\
+    : "
+  max_chars: 40000
+task: 'Escribe el módulo Python `install_plan.py` (solo código, un único bloque ```python,
+  solo biblioteca estándar; autocontenido) con la función
+
+  `plan_install(models, nodes, ram_cap_gb) -> dict`: `models` es una lista de dicts
+  {"id","size_mb"}, `nodes` una lista de ids de nodo en orden y `ram_cap_gb` el tope
+  de RAM por nodo.
+
+  Regla: cada nodo aloja UN solo modelo (una copia de pesos compartida por sus ranuras).
+  Modelos ligeros = size_mb <= 3500, ordenados por tamaño ascendente; pesados = size_mb
+  > 3500.
+
+  Al i-ésimo nodo (empezando en 0) se le asigna el ligero de índice i % len(ligeros).
+  Excepción: si hay al menos 2 nodos y existe algún pesado con size_mb + 6000 <= ram_cap_gb
+  * 1024,
+
+  el ÚLTIMO nodo recibe el pesado más grande que cumpla eso (solo un nodo recibe un
+  pesado). Devuelve {id_nodo: id_modelo}. Si `models` está vacío devuelve {}.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: install_plan.py
+  test: 'from install_plan import plan_install
+
+    models = [{"id": "qwen", "size_mb": 563}, {"id": "lfm", "size_mb": 731}, {"id":
+    "gemma", "size_mb": 3300}, {"id": "muse", "size_mb": 16800}]
+
+    nodes = ["HF-%02d" % i for i in range(1, 11)]
+
+    p = plan_install(models, nodes, 24)
+
+    assert [p[n] for n in nodes[:9]] == ["qwen", "lfm", "gemma", "qwen", "lfm", "gemma",
+    "qwen", "lfm", "gemma"] and p["HF-10"] == "muse" and len(p) == 10
+
+    q = plan_install(models, nodes, 16)
+
+    assert q["HF-10"] == "qwen" and all(v != "muse" for v in q.values())
+
+    assert plan_install(models, ["HF-01"], 24) == {"HF-01": "qwen"}
+
+    assert plan_install([], nodes, 24) == {}
+
+    '
+- kind: no_secrets

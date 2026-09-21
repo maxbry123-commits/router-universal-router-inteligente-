@@ -1,0 +1,29 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-7-llama-hf",
+ "framework": "smolagents",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-21T15:09:30Z",
+ "group": "hf-llama",
+ "chain": [
+  "llama_cmd",
+  "hf_job",
+  "bench_report"
+ ],
+ "completed": [
+  "llama_cmd",
+  "hf_job"
+ ],
+ "failed": [
+  "bench_report (tiempo agotado)"
+ ],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "minimax_m3",
+  "deepseek_flash",
+  "groq",
+  "nvidia",
+  "cerebras"
+ ]
+}

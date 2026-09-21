@@ -1,0 +1,93 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-9-models-catalog
+  framework: smolagents
+  group: hf-models
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 3500
+context:
+  text: "TABLA VERIFICADA EN HUGGING FACE (2026-09-21). Formato: id | repo | gguf_repo\
+    \ | file | size_mb | runtime | verified | needs_fork | role\nqwen3.5-0.8b | Qwen/Qwen3.5-0.8B\
+    \ | ggml-org/Qwen3.5-0.8B-GGUF | Qwen3.5-0.8B-Q4_0.gguf | 563 | llama.cpp | True\
+    \ | False | router / tareas ultrarrápidas\nlfm2.5-1.2b-instruct | LiquidAI/LFM2.5-1.2B-Instruct\
+    \ | LiquidAI/LFM2.5-1.2B-Instruct-GGUF | LFM2.5-1.2B-Instruct-Q4_K_M.gguf | 731\
+    \ | llama.cpp | True | False | razonamiento pequeño\nlfm2.5-1.2b-thinking | LiquidAI/LFM2.5-1.2B-Thinking\
+    \ | LiquidAI/LFM2.5-1.2B-Thinking-GGUF | LFM2.5-1.2B-Thinking-Q4_K_M.gguf | 731\
+    \ | llama.cpp | True | False | razonamiento principal pequeño\ngemma-4-e2b | google/gemma-4-E2B-it\
+    \ | google/gemma-4-E2B-it-qat-q4_0-gguf | gemma-4-E2B_q4_0-it.gguf | 3300 | llama.cpp\
+    \ | True | False | router, herramientas y JSON (enable_thinking=False)\nqwen3-0.6b\
+    \ | Qwen/Qwen3-0.6B | Qwen/Qwen3-0.6B-GGUF | Qwen3-0.6B-Q8_0.gguf | 639 | llama.cpp\
+    \ | True | False | tareas ultrarrápidas / router / reasoning corto\nsmollm3-3b\
+    \ | HuggingFaceTB/SmolLM3-3B | ggml-org/SmolLM3-3B-GGUF | (archivo sin verificar)\
+    \ | (tamaño sin verificar) | llama.cpp | True | False | herramientas y /no_think\n\
+    k2-horizon-0.9b | IFM/K2-Horizon-0.9B | IFM/K2-Horizon-0.9B-GGUF | (archivo sin\
+    \ verificar) | (tamaño sin verificar) | llama.cpp | True | False | por definir\n\
+    nanbeige4.2-3b | Nanbeige/Nanbeige4.2-3B | bartowski/Nanbeige_Nanbeige4.2-3B-GGUF\
+    \ | (archivo sin verificar) | (sin verificar) | llama.cpp | True | True (fork\
+    \ rama nanbeige42) | code\nnanojev | C-Tianyu/NanoJev | (sin GGUF) | (safetensors)\
+    \ | 2400 | python | True | False | decisiones\ndecider-0.8b | Mapika/decider-0.8b\
+    \ | (sin GGUF oficial) | - | (sin verificar) | python | True | False | decisiones\n\
+    decider-2b | Mapika/decider-2b | (sin GGUF oficial) | - | (sin verificar) | python\
+    \ | True | False | decisiones\nmuse-glimmer-30b | meta-models/Muse-Glimmer-30B\
+    \ | meta-models/Muse-Glimmer-30B-GGUF | Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf\
+    \ | 16800 | llama.cpp | True | False | cerebro de decisiones de los agentes de\
+    \ Meta\n   (también: modelo borrador dflash-Muse-Glimmer-30B-Q4_K_M.gguf 1.6 GB\
+    \ y visión mmproj-Muse-Glimmer-30B-Q4_K_M.gguf 1.4 GB)\nNO VERIFICADOS: gemma-3-1b\
+    \ (google/gemma-3-1b-it), smollm2-1.7b (HuggingFaceTB/SmolLM2-1.7B-Instruct),\
+    \ laya-421m (existe la familia convaiinnovations/laya, no se confirma que alguna\
+    \ sea de 421M),\nverdict-151m (NO se encontró en Hugging Face).\n"
+  max_chars: 40000
+task: "Escribe el módulo Python `models_catalog.py` (solo código, un único bloque\
+  \ ```python, solo biblioteca estándar) con:\n- `CATALOG`: dict con EXACTAMENTE 16\
+  \ claves (los 12 ids verificados de la tabla y estos 4 no verificados: \"gemma-3-1b\"\
+  , \"smollm2-1.7b\", \"laya-421m\", \"verdict-151m\"). Cada valor es un dict con\
+  \ las claves\n  \"repo\", \"gguf_repo\", \"file\", \"size_mb\", \"runtime\", \"\
+  role\", \"verified\", \"needs_fork\", \"notes\". Usa None donde la tabla diga \"\
+  (sin verificar)\", \"(sin GGUF …)\" o \"-\". Los 4 no verificados llevan\n  \"verified\"\
+  : False (repo \"google/gemma-3-1b-it\", \"HuggingFaceTB/SmolLM2-1.7B-Instruct\"\
+  , \"convaiinnovations/laya\" y None para verdict-151m), runtime \"transformers\"\
+  \ salvo laya-421m y verdict-151m que son \"python\".\n  muse-glimmer-30b lleva además\
+  \ \"draft_file\": \"dflash-Muse-Glimmer-30B-Q4_K_M.gguf\" y \"mmproj_file\": \"\
+  mmproj-Muse-Glimmer-30B-Q4_K_M.gguf\". size_mb es un entero (563, 731, 731, 3300,\
+  \ 639, 2400, 16800) o None.\n- `get(model_id)`: devuelve el dict o lanza KeyError.\n\
+  - `verified_ids()`: lista de los ids con \"verified\" True.\n- `fits(model_id, ram_mb,\
+  \ overhead_mb=1500) -> bool`: True solo si size_mb no es None y size_mb + overhead_mb\
+  \ <= ram_mb.\n"
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: models_catalog.py
+  test: "from models_catalog import CATALOG, get, verified_ids, fits\nassert len(CATALOG)\
+    \ == 16\nfor k, v in CATALOG.items():\n    assert {\"repo\", \"gguf_repo\", \"\
+    file\", \"size_mb\", \"runtime\", \"role\", \"verified\", \"needs_fork\", \"notes\"\
+    } <= set(v), k\nq = get(\"qwen3.5-0.8b\")\nassert q[\"gguf_repo\"] == \"ggml-org/Qwen3.5-0.8B-GGUF\"\
+    \ and q[\"file\"] == \"Qwen3.5-0.8B-Q4_0.gguf\" and q[\"size_mb\"] == 563 and\
+    \ q[\"verified\"] is True and q[\"runtime\"] == \"llama.cpp\"\nl = get(\"lfm2.5-1.2b-instruct\"\
+    )\nassert l[\"gguf_repo\"] == \"LiquidAI/LFM2.5-1.2B-Instruct-GGUF\" and l[\"\
+    file\"] == \"LFM2.5-1.2B-Instruct-Q4_K_M.gguf\" and l[\"size_mb\"] == 731\ng =\
+    \ get(\"gemma-4-e2b\")\nassert g[\"gguf_repo\"] == \"google/gemma-4-E2B-it-qat-q4_0-gguf\"\
+    \ and g[\"file\"] == \"gemma-4-E2B_q4_0-it.gguf\" and g[\"size_mb\"] == 3300\n\
+    m = get(\"muse-glimmer-30b\")\nassert m[\"gguf_repo\"] == \"meta-models/Muse-Glimmer-30B-GGUF\"\
+    \ and m[\"file\"] == \"Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf\" and m[\"size_mb\"\
+    ] == 16800\nassert m[\"draft_file\"] == \"dflash-Muse-Glimmer-30B-Q4_K_M.gguf\"\
+    \ and m[\"mmproj_file\"] == \"mmproj-Muse-Glimmer-30B-Q4_K_M.gguf\"\nassert get(\"\
+    verdict-151m\")[\"verified\"] is False and get(\"nanbeige4.2-3b\")[\"needs_fork\"\
+    ] is True and get(\"nanojev\")[\"runtime\"] == \"python\"\nv = verified_ids()\n\
+    assert \"qwen3.5-0.8b\" in v and \"muse-glimmer-30b\" in v and \"verdict-151m\"\
+    \ not in v and \"laya-421m\" not in v and len(v) == 12\nassert fits(\"qwen3.5-0.8b\"\
+    , 24000) is True and fits(\"muse-glimmer-30b\", 16000) is False and fits(\"muse-glimmer-30b\"\
+    , 24000) is True and fits(\"verdict-151m\", 24000) is False\ntry:\n    get(\"\
+    no-existe\")\n    raise SystemExit(\"no lanzó KeyError\")\nexcept KeyError:\n\
+    \    pass\n"
+- kind: no_secrets

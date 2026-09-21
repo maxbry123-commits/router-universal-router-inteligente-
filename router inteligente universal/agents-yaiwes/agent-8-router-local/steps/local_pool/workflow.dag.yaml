@@ -1,0 +1,84 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-8-router-local
+  framework: pocketflow
+  group: router-local
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 2500
+context:
+  text: 'HECHOS: cada nodo local es un Job de HF que corre llama-server y expone https://<job_id>--<puerto>.hf.jobs;
+    el acceso EXIGE cabecera "Authorization: Bearer <token de HF>".
+
+    El servidor es compatible con OpenAI: POST <base_url>/v1/chat/completions con
+    {"model","messages","max_tokens"} responde {"choices":[{"message":{"content":...}}],"usage":{...}}.
+
+    Los errores 400/404/410/422 son de la petición y NO cambian de nodo; 5xx, 429,
+    401/403 y los fallos de red/timeouts sí (se pasa al siguiente nodo). Un nodo que
+    falla queda en
+
+    enfriamiento un tiempo (cooldown). Los modelos locales equivalentes (espejos)
+    de las APIs: qwen3.5-0.8b (rápido/router), lfm2.5-1.2b-instruct (razonamiento
+    pequeño), gemma-4-e2b.
+
+    Cada nodo carga cada modelo UNA sola vez y lo comparte entre las ranuras/sesiones.
+    Sin librerías externas: la llamada HTTP se inyecta como función `post`.
+
+    '
+  max_chars: 40000
+task: "Escribe el módulo Python `local_pool.py` (solo código, un único bloque ```python,\
+  \ solo biblioteca estándar: time) con la clase\n`LocalPool(nodes, post, token=\"\
+  \", clock=time.monotonic, cooldown=60.0)`.\n`nodes` es una lista de dicts {\"id\"\
+  ,\"base_url\",\"models\"}; `post(url, headers, body, timeout)` devuelve (status,\
+  \ data) y puede lanzar excepciones.\n- `chat(self, model, messages, max_tokens=256,\
+  \ timeout=60) -> dict`: prueba en orden los nodos cuyo \"models\" contiene `model`\
+  \ y que NO estén en enfriamiento. Para cada uno llama\n  post(base_url + \"/v1/chat/completions\"\
+  , {\"Authorization\": \"Bearer \" + token, \"Content-Type\": \"application/json\"\
+  }, {\"model\": model, \"messages\": messages, \"max_tokens\": max_tokens}, timeout).\n\
+  \  Si status == 200 devuelve {\"node\": id, \"text\": data[\"choices\"][0][\"message\"\
+  ][\"content\"], \"usage\": data.get(\"usage\")}. Si status es 400, 404, 410 o 422\
+  \ lanza ValueError(\"LOCAL_REQUEST_ERROR:\" + str(status))\n  sin probar otro nodo.\
+  \ Con cualquier otro status o si post lanza una excepción, marca el nodo en enfriamiento\
+  \ (hasta clock() + cooldown) y prueba el siguiente.\n  Si ningún nodo responde (o\
+  \ ninguno tiene el modelo) lanza RuntimeError(\"NO_LOCAL_NODE\").\n- `states(self)\
+  \ -> dict`: {id: \"OK\" o \"COOLDOWN\"} según el reloj actual.\n"
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: local_pool.py
+  test: "from local_pool import LocalPool\ncalls = []\ndef make_post(behavior):\n\
+    \    def post(url, headers, body, timeout):\n        calls.append(url)\n     \
+    \   assert headers[\"Authorization\"] == \"Bearer t\"\n        b = behavior[url.split(\"\
+    /v1\")[0]]\n        if isinstance(b, Exception):\n            raise b\n      \
+    \  return b\n    return post\nok = (200, {\"choices\": [{\"message\": {\"content\"\
+    : \"hola\"}}], \"usage\": {\"total_tokens\": 3}})\nnodes = [{\"id\": \"A\", \"\
+    base_url\": \"http://a\", \"models\": [\"q\"]}, {\"id\": \"B\", \"base_url\":\
+    \ \"http://b\", \"models\": [\"q\", \"l\"]}]\nt = [0.0]\npool = LocalPool(nodes,\
+    \ make_post({\"http://a\": TimeoutError(\"lento\"), \"http://b\": ok}), token=\"\
+    t\", clock=lambda: t[0], cooldown=60)\nr = pool.chat(\"q\", [{\"role\": \"user\"\
+    , \"content\": \"x\"}])\nassert r == {\"node\": \"B\", \"text\": \"hola\", \"\
+    usage\": {\"total_tokens\": 3}} and calls == [\"http://a/v1/chat/completions\"\
+    , \"http://b/v1/chat/completions\"]\ncalls.clear()\npool.chat(\"q\", [])\nassert\
+    \ calls == [\"http://b/v1/chat/completions\"]\nassert pool.states() == {\"A\"\
+    : \"COOLDOWN\", \"B\": \"OK\"}\nt[0] = 61.0\ncalls.clear()\npool.chat(\"q\", [])\n\
+    assert calls[0] == \"http://a/v1/chat/completions\" and pool.states()[\"A\"] ==\
+    \ \"COOLDOWN\"\ntry:\n    pool.chat(\"zzz\", [])\n    raise SystemExit(\"aceptó\
+    \ un modelo desconocido\")\nexcept RuntimeError as e:\n    assert \"NO_LOCAL_NODE\"\
+    \ in str(e)\ncalls.clear()\np2 = LocalPool(nodes, make_post({\"http://a\": (400,\
+    \ {}), \"http://b\": ok}), token=\"t\")\ntry:\n    p2.chat(\"q\", [])\n    raise\
+    \ SystemExit(\"no lanzó ValueError\")\nexcept ValueError as e:\n    assert \"\
+    400\" in str(e) and calls == [\"http://a/v1/chat/completions\"]\np3 = LocalPool(nodes,\
+    \ make_post({\"http://a\": (503, {}), \"http://b\": OSError(\"caído\")}), token=\"\
+    t\")\ntry:\n    p3.chat(\"q\", [])\n    raise SystemExit(\"no lanzó RuntimeError\"\
+    )\nexcept RuntimeError as e:\n    assert \"NO_LOCAL_NODE\" in str(e)\n"
+- kind: no_secrets

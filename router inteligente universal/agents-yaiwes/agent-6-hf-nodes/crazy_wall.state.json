@@ -1,26 +1,24 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-1-chat-hf",
+ "agent": "agent-6-hf-nodes",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-21T14:54:25Z",
- "group": "chat",
+ "updated_at": "2026-09-21T15:00:44Z",
+ "group": "hf-nodes",
  "chain": [
-  "vault_panel",
-  "router_panel",
-  "wire_panels"
+  "ram_plan",
+  "node_hop"
  ],
  "completed": [
-  "vault_panel",
-  "router_panel",
-  "wire_panels"
+  "ram_plan",
+  "node_hop"
  ],
  "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
-  "deepseek_flash",
   "minimax_m3",
+  "deepseek_flash",
   "groq",
   "nvidia",
   "cerebras"

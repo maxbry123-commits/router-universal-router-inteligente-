@@ -1,12 +1,12 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-5-auditor",
+ "agent": "agent-7-llama-hf",
  "framework": "smolagents",
  "status": "RUNNING",
- "updated_at": "2026-09-21T14:54:26Z",
- "group": "audit",
+ "updated_at": "2026-09-21T14:57:31Z",
+ "group": "hf-llama",
  "current_nodes": [
-  "auditor"
+  "tool_calling_agent"
  ],
  "next_nodes": [
   "sheriff"

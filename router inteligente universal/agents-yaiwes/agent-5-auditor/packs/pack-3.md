@@ -167,3 +167,25 @@ No avanzas tu delegas avanzas los agentes
 Esta claro
 
 ---
+
+=== ARCHIVO: Claude notas/INPUT-VERBATIM-2026-09-21-p-agentes-auditar-tokens-vercel.md ===
+Tu prioridad es una sola los agentes y luego delegas 
+Los  agente que creaste no lo borras déjalo para algun uso 
+Ya está listo lo de versel pero no vas hacer nada vas hacer lo siguiente 
+
+Paso 1 📌 
+Haces los agentes 
+Paso 2 📌 
+Auditas todos mis imput instrucciones 
+Prioridad CHat y HF y modelos Ai en HF
+Llegas todos los tokens a los agentes 
+Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas 
+Paso 3 📌 
+Tu haces el puente en versel y nuestro router para hacer las pruebas ya Tienes los permisos listo de versel 
+
+Dime si te quedo claro 
+No avanzas tu delegas avanzas los agentes 
+
+Esta claro
+
+---

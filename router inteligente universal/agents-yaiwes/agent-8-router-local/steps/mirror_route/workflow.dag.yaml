@@ -1,0 +1,92 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-8-router-local
+  framework: pocketflow
+  group: router-local
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 2500
+context:
+  text: "HECHOS: cada nodo local es un Job de HF que corre llama-server y expone https://<job_id>--<puerto>.hf.jobs;\
+    \ el acceso EXIGE cabecera \"Authorization: Bearer <token de HF>\".\nEl servidor\
+    \ es compatible con OpenAI: POST <base_url>/v1/chat/completions con {\"model\"\
+    ,\"messages\",\"max_tokens\"} responde {\"choices\":[{\"message\":{\"content\"\
+    :...}}],\"usage\":{...}}.\nLos errores 400/404/410/422 son de la petición y NO\
+    \ cambian de nodo; 5xx, 429, 401/403 y los fallos de red/timeouts sí (se pasa\
+    \ al siguiente nodo). Un nodo que falla queda en\nenfriamiento un tiempo (cooldown).\
+    \ Los modelos locales equivalentes (espejos) de las APIs: qwen3.5-0.8b (rápido/router),\
+    \ lfm2.5-1.2b-instruct (razonamiento pequeño), gemma-4-e2b.\nCada nodo carga cada\
+    \ modelo UNA sola vez y lo comparte entre las ranuras/sesiones. Sin librerías\
+    \ externas: la llamada HTTP se inyecta como función `post`.\n\n\nSALIDA VERIFICADA\
+    \ DEL PASO ANTERIOR (local_pool):\n```python\nimport time\n\nclass LocalPool:\n\
+    \    def __init__(self, nodes, post, token=\"\", clock=time.monotonic, cooldown=60.0):\n\
+    \        self._nodes = {n[\"id\"]: n for n in nodes}\n        self._post = post\n\
+    \        self._token = token\n        self._clock = clock\n        self._cooldown\
+    \ = cooldown\n        self._cooldowns = {}  # id -> timestamp when cooldown ends\n\
+    \n    def chat(self, model, messages, max_tokens=256, timeout=60):\n        now\
+    \ = self._clock()\n        tried_any = False\n        for node in self._nodes.values():\n\
+    \            if model not in node.get(\"models\", []):\n                continue\n\
+    \            nid = node[\"id\"]\n            if nid in self._cooldowns and self._cooldowns[nid]\
+    \ > now:\n                continue\n            tried_any = True\n           \
+    \ url = node[\"base_url\"].rstrip(\"/\") + \"/v1/chat/completions\"\n        \
+    \    headers = {\n                \"Authorization\": \"Bearer \" + self._token,\n\
+    \                \"Content-Type\": \"application/json\"\n            }\n     \
+    \       body = {\n                \"model\": model,\n                \"messages\"\
+    : messages,\n                \"max_tokens\": max_tokens\n            }\n     \
+    \       try:\n                status, data = self._post(url, headers, body, timeout)\n\
+    \            except Exception:\n                # Network/timeout error → cooldown\
+    \ and continue\n                self._cooldowns[nid] = now + self._cooldown\n\
+    \                continue\n\n            if status == 200:\n                text\
+    \ = data[\"choices\"][0][\"message\"][\"content\"]\n                usage = data.get(\"\
+    usage\")\n                return {\"node\": nid, \"text\": text, \"usage\": usage}\n\
+    \            elif status in (400, 404, 410, 422):\n                raise ValueError(\"\
+    LOCAL_REQUEST_ERROR:\" + str(status))\n            else:\n                # 5xx,\
+    \ 429, 401/403 or other → cooldown and continue\n                self._cooldowns[nid]\
+    \ = now + self._cooldown\n                continue\n\n        if not tried_any:\n\
+    \            raise RuntimeError(\"NO_LOCAL_NODE\")\n        raise RuntimeError(\"\
+    NO_LOCAL_NODE\")\n\n    def states(self):\n        now = self._clock()\n     \
+    \   result = {}\n        for nid in self._nodes:\n            if nid in self._cooldowns\
+    \ and self._cooldowns[nid] > now:\n                result[nid] = \"COOLDOWN\"\n\
+    \            else:\n                result[nid] = \"OK\"\n        return result\n\
+    ```"
+  max_chars: 40000
+task: "Escribe el módulo Python `mirror_route.py` (solo código, un único bloque ```python,\
+  \ solo biblioteca estándar) con la función\n`with_mirror(api_call, pool, mirror_map,\
+  \ key, messages, max_tokens=256) -> dict`: los agentes NO deben pararse cuando falla\
+  \ una API.\n- Llama a api_call() (sin argumentos; devuelve el texto). Si funciona\
+  \ devuelve {\"via\": \"api\", \"text\": texto}.\n- Si api_call lanza RuntimeError:\
+  \ si `key` NO está en mirror_map vuelve a lanzar ese mismo error; si está, usa el\
+  \ modelo local espejo mirror_map[key] con\n  pool.chat(modelo, messages, max_tokens)\
+  \ y devuelve {\"via\": \"local\", \"node\": r[\"node\"], \"text\": r[\"text\"]}.\n\
+  - Si el pool también falla con RuntimeError, lanza RuntimeError(\"NO_ROUTE: \" +\
+  \ str(error_de_la_api) + \" | \" + str(error_local)).\n"
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: mirror_route.py
+  test: "from mirror_route import with_mirror\nclass P:\n    def __init__(self, fail=False):\n\
+    \        self.fail, self.calls = fail, []\n    def chat(self, model, messages,\
+    \ max_tokens=256):\n        self.calls.append(model)\n        if self.fail:\n\
+    \            raise RuntimeError(\"NO_LOCAL_NODE\")\n        return {\"node\":\
+    \ \"HF-03\", \"text\": \"local:\" + model}\nm = {\"groq\": \"qwen3.5-0.8b\"}\n\
+    assert with_mirror(lambda: \"api\", P(), m, \"groq\", []) == {\"via\": \"api\"\
+    , \"text\": \"api\"}\ndef boom():\n    raise RuntimeError(\"PROVIDER_ERROR:503\"\
+    )\np = P()\nassert with_mirror(boom, p, m, \"groq\", []) == {\"via\": \"local\"\
+    , \"node\": \"HF-03\", \"text\": \"local:qwen3.5-0.8b\"} and p.calls == [\"qwen3.5-0.8b\"\
+    ]\ntry:\n    with_mirror(boom, P(), m, \"nvidia\", [])\n    raise SystemExit(\"\
+    no relanzó\")\nexcept RuntimeError as e:\n    assert \"PROVIDER_ERROR\" in str(e)\
+    \ and \"NO_ROUTE\" not in str(e)\ntry:\n    with_mirror(boom, P(fail=True), m,\
+    \ \"groq\", [])\n    raise SystemExit(\"no lanzó NO_ROUTE\")\nexcept RuntimeError\
+    \ as e:\n    assert \"NO_ROUTE\" in str(e) and \"PROVIDER_ERROR\" in str(e) and\
+    \ \"NO_LOCAL_NODE\" in str(e)\n"
+- kind: no_secrets

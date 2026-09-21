@@ -1,0 +1,79 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-7-llama-hf
+  framework: smolagents
+  group: hf-llama
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 2500
+context:
+  text: "HECHOS: llama-server carga los pesos UNA vez (mmap) y los comparten sus ranuras:\
+    \ `-np N` ranuras, `-c` = ranuras * contexto_por_ranura (el contexto total se\
+    \ reparte),\n`-cb` batching continuo, `--cache-prompt` y `--cache-reuse 256` reutilizan\
+    \ el prefijo, `--cache-ram MB` limita la caché de prompts en RAM (para no saturarla),\n\
+    `-fa on` atención flash, `-ctk q8_0 -ctv q8_0` caché KV cuantizada (exige atención\
+    \ flash), `-t` hilos, `-md ARCHIVO` modelo borrador (decodificación especulativa),\n\
+    `--mmproj ARCHIVO` visión. NO usar `--mlock` (fijaría la RAM). Un Job de HF se\
+    \ lanza con huggingface_hub.HfApi.run_job(image, command, flavor, timeout, volumes,\
+    \ expose=[puerto]);\n`expose` es una LISTA de puertos; el endpoint es https://<job_id>--<puerto>.hf.jobs\
+    \ y exige un token de HF. Imagen: ghcr.io/ggml-org/llama.cpp:server; los pesos\
+    \ se montan\ncon el volumen hf://models/ORG/MODELO:/model:ro (lectura bajo demanda,\
+    \ sin copiar). Medido en un runner de 4 vCPU: Qwen3.5-0.8B Q4_0 pp256 154.7 t/s\
+    \ / tg128 28.2 t/s;\nLFM2.5-1.2B Q4_K_M pp256 103.3 / tg128 30.4.\n\n\nSALIDA\
+    \ VERIFICADA DEL PASO ANTERIOR (hf_job):\n```python\ndef build_hf_job(repo, gguf_file,\
+    \ slots=4, ctx_per_slot=4096, flavor=\"cpu-upgrade\", port=8080, kv=\"q8_0\",\
+    \ cache_ram_mb=512):\n    # Validar formato del repo: \"organizacion/nombre\"\n\
+    \    if '/' not in repo:\n        raise ValueError(f\"repo must be in format 'organizacion/nombre',\
+    \ got '{repo}'\")\n    parts = repo.split('/', 1)\n    if not parts[0] or not\
+    \ parts[1]:\n        raise ValueError(f\"repo must be in format 'organizacion/nombre',\
+    \ got '{repo}'\")\n    if '/' in parts[1]:\n        raise ValueError(f\"repo must\
+    \ be in format 'organizacion/nombre' (exactly one slash), got '{repo}'\")\n\n\
+    \    # Validar otros parametros\n    if kv not in (\"f16\", \"q8_0\", \"q4_0\"\
+    ):\n        raise ValueError(f\"kv must be one of 'f16', 'q8_0', 'q4_0', got '{kv}'\"\
+    )\n    if slots < 1:\n        raise ValueError(f\"slots must be >= 1, got {slots}\"\
+    )\n    if ctx_per_slot < 512:\n        raise ValueError(f\"ctx_per_slot must be\
+    \ >= 512, got {ctx_per_slot}\")\n\n    total_ctx = slots * ctx_per_slot\n\n  \
+    \  command = [\n        \"llama-server\",\n        \"-m\", f\"/model/{gguf_file}\"\
+    ,\n        \"--host\", \"0.0.0.0\",\n        \"--port\", str(port),\n        \"\
+    -c\", str(total_ctx),\n        \"-np\", str(slots),\n        \"-cb\",\n      \
+    \  \"--cache-prompt\",\n        \"--cache-reuse\", \"256\",\n        \"--cache-ram\"\
+    , str(cache_ram_mb),\n        \"-fa\", \"on\",\n        \"-ctk\", kv,\n      \
+    \  \"-ctv\", kv,\n    ]\n\n    return {\n        \"image\": \"ghcr.io/ggml-org/llama.cpp:server\"\
+    ,\n        \"flavor\": flavor,\n        \"expose\": [port],\n        \"volumes\"\
+    : [f\"hf://models/{repo}:/model:ro\"],\n        \"command\": command,\n    }\n\
+    ```"
+  max_chars: 40000
+task: "Escribe el módulo Python `bench_report.py` (solo código, un único bloque ```python,\
+  \ solo biblioteca estándar) con:\n- `summarize(rows) -> str`: `rows` es la lista\
+  \ JSON de `llama-bench` (dicts con \"n_prompt\", \"n_gen\", \"avg_ts\"). Toma la\
+  \ fila con n_prompt > 0 y n_gen == 0 y la fila con n_gen > 0 y n_prompt == 0 y devuelve\n\
+  \  f\"pp{n_prompt}={avg_ts:.1f} t/s | tg{n_gen}={avg_ts:.1f} t/s\".\n- `slots_summary(results)\
+  \ -> list[str]`: `results` es una lista de tuplas (concurrencia, tokens_totales,\
+  \ segundos); devuelve una línea por tupla:\n  f\"{c} simult.: {tokens/segundos:.1f}\
+  \ t/s total ({tokens/segundos/c:.1f} por agente)\".\n"
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: bench_report.py
+  test: 'from bench_report import summarize, slots_summary
+
+    rows = [{"n_prompt": 256, "n_gen": 0, "avg_ts": 154.7}, {"n_prompt": 0, "n_gen":
+    128, "avg_ts": 28.2}]
+
+    assert summarize(rows) == "pp256=154.7 t/s | tg128=28.2 t/s"
+
+    assert slots_summary([(1, 64, 2.0), (4, 256, 4.0)]) == ["1 simult.: 32.0 t/s total
+    (32.0 por agente)", "4 simult.: 64.0 t/s total (16.0 por agente)"]
+
+    '
+- kind: no_secrets

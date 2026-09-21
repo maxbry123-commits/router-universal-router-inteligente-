@@ -1,0 +1,82 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-7-llama-hf
+  framework: smolagents
+  group: hf-llama
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  - cerebras
+  fallback: []
+  max_tokens: 2500
+context:
+  text: 'HECHOS: llama-server carga los pesos UNA vez (mmap) y los comparten sus ranuras:
+    `-np N` ranuras, `-c` = ranuras * contexto_por_ranura (el contexto total se reparte),
+
+    `-cb` batching continuo, `--cache-prompt` y `--cache-reuse 256` reutilizan el
+    prefijo, `--cache-ram MB` limita la caché de prompts en RAM (para no saturarla),
+
+    `-fa on` atención flash, `-ctk q8_0 -ctv q8_0` caché KV cuantizada (exige atención
+    flash), `-t` hilos, `-md ARCHIVO` modelo borrador (decodificación especulativa),
+
+    `--mmproj ARCHIVO` visión. NO usar `--mlock` (fijaría la RAM). Un Job de HF se
+    lanza con huggingface_hub.HfApi.run_job(image, command, flavor, timeout, volumes,
+    expose=[puerto]);
+
+    `expose` es una LISTA de puertos; el endpoint es https://<job_id>--<puerto>.hf.jobs
+    y exige un token de HF. Imagen: ghcr.io/ggml-org/llama.cpp:server; los pesos se
+    montan
+
+    con el volumen hf://models/ORG/MODELO:/model:ro (lectura bajo demanda, sin copiar).
+    Medido en un runner de 4 vCPU: Qwen3.5-0.8B Q4_0 pp256 154.7 t/s / tg128 28.2
+    t/s;
+
+    LFM2.5-1.2B Q4_K_M pp256 103.3 / tg128 30.4.
+
+    '
+  max_chars: 40000
+task: 'Escribe el módulo Python `llama_cmd.py` (solo código, un único bloque ```python,
+  solo biblioteca estándar) con la función
+
+  `build_llama_cmd(model_path, slots=4, ctx_per_slot=4096, kv="q8_0", flash=True,
+  cache_ram_mb=512, threads=8, draft_path=None, mmproj_path=None, port=8080) -> list[str]`
+
+  que devuelve la lista de argumentos (str) en este orden: "llama-server", "-m", model_path,
+  "--host", "0.0.0.0", "--port", str(port), "-c", str(slots * ctx_per_slot), "-np",
+  str(slots),
+
+  "-cb", "--cache-prompt", "--cache-reuse", "256", "--cache-ram", str(cache_ram_mb),
+  "-t", str(threads); luego "-fa", "on" si flash o "-fa", "off" si no;
+
+  luego "-ctk", kv, "-ctv", kv SOLO si kv != "f16"; luego "-md", draft_path si draft_path;
+  luego "--mmproj", mmproj_path si mmproj_path.
+
+  Lanza ValueError si kv no está en ("f16", "q8_0", "q4_0"), si kv != "f16" y flash
+  es False, si slots < 1 o si ctx_per_slot < 512. Nunca incluye "--mlock".
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: llama_cmd.py
+  test: "from llama_cmd import build_llama_cmd\nc = build_llama_cmd(\"/model/m.gguf\"\
+    )\ns = \" \".join(c)\nassert c[0] == \"llama-server\" and \"-m /model/m.gguf\"\
+    \ in s\nfor f in [\"-c 16384\", \"-np 4\", \"-cb\", \"--cache-prompt\", \"--cache-reuse\
+    \ 256\", \"--cache-ram 512\", \"-fa on\", \"-ctk q8_0 -ctv q8_0\", \"-t 8\", \"\
+    --port 8080\"]:\n    assert f in s, f\nassert \"--mlock\" not in s\nd = \" \"\
+    .join(build_llama_cmd(\"/model/m.gguf\", slots=2, ctx_per_slot=2048, kv=\"f16\"\
+    , cache_ram_mb=256, threads=4, draft_path=\"/model/d.gguf\", mmproj_path=\"/model/mm.gguf\"\
+    , port=9000))\nassert \"-c 4096\" in d and \"-np 2\" in d and \"-ctk\" not in\
+    \ d and \"--cache-ram 256\" in d and \"-md /model/d.gguf\" in d and \"--mmproj\
+    \ /model/mm.gguf\" in d and \"--port 9000\" in d\nfor bad in (dict(kv=\"q4_0\"\
+    , flash=False), dict(slots=0), dict(ctx_per_slot=100), dict(kv=\"q2\")):\n   \
+    \ try:\n        build_llama_cmd(\"/model/m.gguf\", **bad)\n        raise SystemExit(\"\
+    aceptó \" + str(bad))\n    except ValueError:\n        pass\n"
+- kind: no_secrets
