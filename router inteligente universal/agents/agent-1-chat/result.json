@@ -1,0 +1,11 @@
+{
+ "agent": "agent-1-chat",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "attempts": 2,
+ "output_sha256": "000cc20740dfab9e7a88867c261e55709ddd5ede23b66c4d18ec78c66742d469",
+ "gaps": []
+}
