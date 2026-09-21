@@ -1,0 +1,131 @@
+schema: yaiwes.orders/v1
+
+# DSL DAG que Claude (el cerebro) entrega a los agentes. Claude solo edita este archivo y despacha "RIU Agents Run";
+# los agentes ejecutan, anotan en su Crazy Wall (agents/<id>/crazy_wall.state.json) y dejan sus salidas verificadas.
+# Marcos (indicados por el Director): PocketFlow (agentes 1 y 3) y SmolAgents (agentes 2 y 4), para comparar su comportamiento.
+# Ruta de modelos (orden del Director): NVIDIA / Groq / Cerebras primero; si toda la ruta falla, DeepSeek V4 Flash o MiniMax M3.
+
+run_id: RUN-002
+
+input_block: |
+  Tu prioridad es una sola los agentes y luego delegas
+  Los  agente que creaste no lo borras déjalo para algun uso
+  Paso 1 📌 Haces los agentes
+  Paso 2 📌 Auditas todos mis imput instrucciones. Prioridad CHat y HF y modelos Ai en HF. Llegas todos los tokens a los agentes.
+  Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas
+  No avanzas tu delegas avanzas los agentes
+
+agents:
+
+  agent-1-chat:
+    framework: pocketflow
+    area: chat
+    route: [nvidia, groq, cerebras]
+    fallback: [minimax_m3]
+    max_tokens: 1500
+    task: |
+      Escribe SOLO JavaScript (un único bloque ```js) que defina la función global `initVaultPanel(container, fetchJson)` para la
+      pestaña "Claves" del chat. `container` es un elemento DOM y `fetchJson(path, options)` devuelve una promesa con {status, body}.
+      La función crea dentro del contenedor: un campo de contraseña (type password, placeholder "Contraseña maestra"), un botón
+      "Desbloquear" que llama a fetchJson('/vault/unlock', {method: 'POST', body: JSON.stringify({passphrase: <valor del campo>})}),
+      un botón "Bloquear" que llama a fetchJson('/vault/lock', {method: 'POST'}) y un elemento de estado que muestra "desbloqueado" o
+      "bloqueado" según la respuesta (status 200 = éxito). Al desbloquear debe vaciar el campo de contraseña. Sin librerías externas.
+      Usa textContent, nunca innerHTML con datos del servidor.
+    checks:
+      - kind: js_syntax
+        file: vault_panel.js
+      - kind: contains
+        values: [initVaultPanel, /vault/unlock, /vault/lock, passphrase]
+      - kind: no_secrets
+
+  agent-2-chat:
+    framework: smolagents
+    area: chat
+    route: [nvidia, groq, cerebras]
+    fallback: [minimax_m3]
+    max_tokens: 1500
+    max_steps: 6
+    task: |
+      Escribe SOLO JavaScript (un único bloque ```js) que defina la función global `initJobsPanel(container, fetchJson)` para el chat.
+      `container` es un elemento DOM y `fetchJson(path, options)` devuelve una promesa con {status, body}.
+      Crea dentro del contenedor: un textarea donde se pega un arreglo JSON de trabajos, y un botón "Ejecutar en paralelo" que valida
+      el JSON (si es inválido muestra el error con textContent y no llama al servidor) y luego llama a
+      fetchJson('/chat/jobs/run', {method: 'POST', body: JSON.stringify({jobs: <arreglo>, max_parallel: 8})}).
+      Muestra el resultado como una lista: una línea por trabajo con su id y su status (usa textContent). Sin librerías externas.
+    checks:
+      - kind: js_syntax
+        file: jobs_panel.js
+      - kind: contains
+        values: [initJobsPanel, /chat/jobs/run, max_parallel]
+      - kind: no_secrets
+
+  agent-3-router:
+    framework: pocketflow
+    area: router
+    route: [nvidia, groq, cerebras]
+    fallback: [minimax_m3]
+    max_tokens: 1500
+    task: |
+      Escribe un módulo Python `node_monitor.py` (solo código, un único bloque ```python, sin librerías externas) con dos funciones:
+      1) `node_state(ram_pct, cpu_pct, active_jobs, max_parallel) -> str` con la regla del Director: sea `load = max(ram_pct, cpu_pct)`;
+         load < 80 -> "GREEN"; 80 <= load < 90 -> "YELLOW"; 90 <= load < 95 -> "DRAIN"; load >= 95 -> "CLOSED".
+         Además, si active_jobs >= max_parallel el estado es "CLOSED".
+      2) `pick_node(nodes) -> str | None`: `nodes` es una lista de dicts con las claves "id", "ram", "cpu", "active", "max_parallel".
+         Devuelve el "id" del nodo con estado GREEN y menor carga (max(ram, cpu)); si no hay ninguno GREEN, el YELLOW de menor carga;
+         nunca elige nodos DRAIN ni CLOSED; si no hay candidato devuelve None.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: node_monitor.py
+        test: |
+          from node_monitor import node_state, pick_node
+          assert node_state(50, 30, 1, 4) == "GREEN"
+          assert node_state(85, 30, 1, 4) == "YELLOW"
+          assert node_state(92, 30, 1, 4) == "DRAIN"
+          assert node_state(95, 30, 1, 4) == "CLOSED" and node_state(99, 10, 0, 4) == "CLOSED"
+          assert node_state(50, 96, 1, 4) == "CLOSED"
+          assert node_state(50, 30, 4, 4) == "CLOSED"
+          nodes = [{"id": "HF-01", "ram": 60, "cpu": 100, "active": 4, "max_parallel": 4},
+                   {"id": "HF-02", "ram": 70, "cpu": 35, "active": 1, "max_parallel": 4},
+                   {"id": "HF-03", "ram": 20, "cpu": 20, "active": 0, "max_parallel": 4}]
+          assert pick_node(nodes) == "HF-03"
+          nodes[2]["ram"] = 96
+          assert pick_node(nodes) == "HF-02"
+          assert pick_node([{"id": "A", "ram": 96, "cpu": 10, "active": 0, "max_parallel": 4}]) is None
+      - kind: no_secrets
+
+  agent-4-router:
+    framework: smolagents
+    area: router
+    route: [nvidia, groq, cerebras]
+    fallback: [minimax_m3]
+    max_tokens: 1500
+    max_steps: 6
+    task: |
+      Escribe un módulo Python `job_spec.py` (solo código, un único bloque ```python, sin librerías externas) con la función
+      `build_job_spec(repo: str, gguf_file: str, port: int = 8080, flavor: str = "cpu-upgrade", parallel: int = 4, ctx: int = 8192) -> dict`
+      que prepara un Job de Hugging Face que sirve un modelo GGUF con llama.cpp montando los pesos remotos (sin descargarlos antes).
+      Devuelve un dict con: "image" = "ghcr.io/ggml-org/llama.cpp:server"; "flavor" = flavor; "expose" = port;
+      "volumes" = [f"hf://models/{repo}:/model:ro"]; "command" = lista ["llama-server", "--host", "0.0.0.0", "--port", str(port),
+      "--model", f"/model/{gguf_file}", "--parallel", str(parallel), "--ctx-size", str(ctx), "--cont-batching", "--cache-prompt"].
+      Si `repo` no tiene la forma "organizacion/nombre" lanza ValueError.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: job_spec.py
+        test: |
+          from job_spec import build_job_spec
+          s = build_job_spec("LiquidAI/LFM2.5-1.2B-Thinking-GGUF", "LFM2.5-1.2B-Thinking-Q4_K_M.gguf")
+          assert s["flavor"] == "cpu-upgrade" and s["expose"] == 8080 and s["image"] == "ghcr.io/ggml-org/llama.cpp:server"
+          assert "hf://models/LiquidAI/LFM2.5-1.2B-Thinking-GGUF:/model:ro" in s["volumes"]
+          cmd = " ".join(s["command"])
+          for f in ["--model /model/LFM2.5-1.2B-Thinking-Q4_K_M.gguf", "--parallel 4", "--ctx-size 8192", "--cont-batching", "--cache-prompt"]:
+              assert f in cmd, f
+          s2 = build_job_spec("A/B", "m.gguf", parallel=2, ctx=4096, port=9000)
+          assert s2["expose"] == 9000 and "--parallel 2" in " ".join(s2["command"]) and "--ctx-size 4096" in " ".join(s2["command"])
+          try:
+              build_job_spec("sin-barra", "m.gguf")
+              raise SystemExit("aceptó un repo inválido")
+          except ValueError:
+              pass
+      - kind: no_secrets
