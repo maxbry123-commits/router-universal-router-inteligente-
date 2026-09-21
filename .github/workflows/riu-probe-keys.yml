@@ -1,0 +1,42 @@
+name: RIU Probe Keys
+
+# Verifies every NVIDIA / Groq / Cerebras key inside the encrypted bank (one tiny call each; values are never printed).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/verifier/
+            router inteligente universal/agent-microkernel/
+            router inteligente universal/agents-yaiwes/
+            Chat Mvp/secret_bank/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install fastapi pydantic huggingface_hub pyyaml cryptography
+      - name: Probe
+        env:
+          RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
+          RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
+        run: |
+          cd "router inteligente universal"
+          python agents-yaiwes/common/probe_keys.py 2>&1 | tail -n 20
