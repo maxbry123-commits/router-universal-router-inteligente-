@@ -1,0 +1,30 @@
+def node_state(ram_pct, cpu_pct, active_jobs, max_parallel):
+    load = max(ram_pct, cpu_pct)
+    if active_jobs >= max_parallel:
+        return "CLOSED"
+    if load < 80:
+        return "GREEN"
+    if load < 90:
+        return "YELLOW"
+    if load < 95:
+        return "DRAIN"
+    return "CLOSED"
+
+
+def pick_node(nodes):
+    candidates = []
+    for n in nodes:
+        state = node_state(n["ram"], n["cpu"], n["active"], n["max_parallel"])
+        if state in ("GREEN", "YELLOW"):
+            load = max(n["ram"], n["cpu"])
+            candidates.append((state, load, n["id"]))
+    if not candidates:
+        return None
+    # Prefer GREEN, then YELLOW; within same state pick minimal load
+    green = [(load, nid) for st, load, nid in candidates if st == "GREEN"]
+    if green:
+        return min(green, key=lambda x: x[0])[1]
+    yellow = [(load, nid) for st, load, nid in candidates if st == "YELLOW"]
+    if yellow:
+        return min(yellow, key=lambda x: x[0])[1]
+    return None
