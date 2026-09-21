@@ -1,0 +1,68 @@
+schema: yaiwes.micro-agent/v1
+
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+
+agent:
+  id: agent-3-router
+  framework: pocketflow
+  group: router-components
+  route: [nvidia, groq, cerebras]
+  fallback: [minimax_m3]
+  max_tokens: 1600
+
+context:
+  max_chars: 2000
+  text: |
+    Regla del Director para los nodos de cómputo HF (3 CPU de 32 GB con un servidor de modelo cada uno):
+    - Estado por carga (usar el MAYOR entre RAM % y CPU %): 0-80 % VERDE (GREEN), 80-90 % AMARILLO (YELLOW), 90-95 % DRENAJE (DRAIN), >=95 % CERRADO (CLOSED).
+    - DRENAJE = termina las tareas actuales pero NO acepta nuevas. Un nodo también está CERRADO si sus tareas activas >= su máximo en paralelo.
+    - Salto: HF-01 -> HF-02 -> HF-03 (en ese orden) a la primera que acepte tareas nuevas (VERDE o AMARILLO); si ninguna acepta, la tarea espera en cola.
+    - Ejemplo: HF-01 con RAM 60 % pero CPU 100 % está CERRADO; HF-02 con RAM 70 % y CPU 35 % es el nodo correcto.
+
+task: |
+  Escribe el módulo Python `node_state.py` (solo código, un único bloque ```python; solo biblioteca estándar) con:
+  - `node_state(ram_pct: float, cpu_pct: float, active_jobs: int, max_parallel: int) -> str` que devuelve "GREEN", "YELLOW", "DRAIN" o "CLOSED"
+    según la regla del CONTEXTO (los límites 80, 90 y 95 pertenecen al estado superior: 80 es YELLOW, 90 es DRAIN, 95 es CLOSED).
+  - `pick_node(nodes: list[dict]) -> str | None`: cada nodo es un dict con "id", "ram_pct", "cpu_pct", "active_jobs", "max_parallel". Devuelve el "id" del primer nodo
+    (en el orden de la lista) cuyo estado es GREEN o YELLOW, o None si ninguno acepta tareas nuevas.
+
+checks:
+  - kind: python_ast
+  - kind: python_exec
+    module: node_state.py
+    test: |
+      from node_state import node_state, pick_node
+      assert node_state(50, 40, 1, 4) == "GREEN" and node_state(85, 10, 1, 4) == "YELLOW"
+      assert node_state(92, 10, 1, 4) == "DRAIN" and node_state(96, 10, 1, 4) == "CLOSED"
+      assert node_state(60, 100, 1, 4) == "CLOSED" and node_state(10, 10, 4, 4) == "CLOSED"
+      assert node_state(79.9, 79.9, 0, 4) == "GREEN" and node_state(80, 0, 0, 4) == "YELLOW"
+      assert node_state(90, 0, 0, 4) == "DRAIN" and node_state(95, 0, 0, 4) == "CLOSED"
+      nodes = [
+          {"id": "HF-01", "ram_pct": 60, "cpu_pct": 100, "active_jobs": 4, "max_parallel": 4},
+          {"id": "HF-02", "ram_pct": 70, "cpu_pct": 35, "active_jobs": 1, "max_parallel": 4},
+          {"id": "HF-03", "ram_pct": 10, "cpu_pct": 10, "active_jobs": 0, "max_parallel": 4},
+      ]
+      assert pick_node(nodes) == "HF-02"
+      nodes[1]["ram_pct"] = 96
+      assert pick_node(nodes) == "HF-03"
+      nodes[2]["cpu_pct"] = 99
+      assert pick_node(nodes) is None
+      n2 = [
+          {"id": "HF-01", "ram_pct": 92, "cpu_pct": 10, "active_jobs": 1, "max_parallel": 4},
+          {"id": "HF-02", "ram_pct": 85, "cpu_pct": 10, "active_jobs": 1, "max_parallel": 4},
+      ]
+      assert pick_node(n2) == "HF-02"
+  - kind: no_secrets
+
+nodes:
+  execute: {type: llm, provider: route, action: code}
+  sheriff: {type: deterministic_validator, depends_on: [execute]}
+
+edges:
+  - execute -> sheriff
+  - sheriff.PASS -> done
+  - sheriff.FAIL -> fix
