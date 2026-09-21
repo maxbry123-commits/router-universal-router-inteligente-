@@ -1,4 +1,5 @@
-"""Sheriff: deterministic validator (never asks the LLM "is everything fine?"). Pydantic models + concrete checks."""
+"""Sheriff: deterministic validator (never asks the LLM "is everything fine?"). Pydantic models + concrete checks.
+Forensic check `audit_json`: every quote must be a verbatim substring of the listed sources and every evidence path must exist in the repo."""
 from __future__ import annotations
 
 import ast
@@ -12,7 +13,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError
 
+REPO = Path(__file__).resolve().parents[3]
 SECRET_RE = re.compile(r"(nvapi-[A-Za-z0-9_-]{20,}|gsk_[A-Za-z0-9]{20,}|csk-[a-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|hf_[A-Za-z0-9]{20,})")
+AUDIT_STATUSES = ("HECHO", "PARCIAL", "PENDIENTE", "AMBIGUO", "REFUTADO")
 
 
 class Task(BaseModel):
@@ -36,6 +39,10 @@ def sha256(text: str | bytes) -> str:
     return hashlib.sha256(text.encode() if isinstance(text, str) else text).hexdigest()
 
 
+def norm(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def extract_code(text: str) -> str:
     m = re.search(r"```(?:python|py)?\s*\n(.*?)```", text, re.S)
     return (m.group(1) if m else text).strip() + "\n"
@@ -50,6 +57,34 @@ def extract_json(text: str) -> Any:
     body = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
     start, end = body.find("{"), body.rfind("}")
     return json.loads(body[start:end + 1] if start >= 0 and end > start else body)
+
+
+def audit_failures(output: str, c: dict[str, Any]) -> list[str]:
+    try:
+        items = extract_json(output)["items"]
+        assert isinstance(items, list)
+    except Exception:  # noqa: BLE001
+        return ["JSON de auditoría inválido (se espera {\"items\": [...]})"]
+    corpus = norm(" ".join((REPO / p).read_text(encoding="utf-8", errors="ignore") for p in c.get("sources", []) if (REPO / p).exists()))
+    allowed = set(c.get("statuses", AUDIT_STATUSES))
+    fails: list[str] = []
+    if len(items) < int(c.get("min_items", 5)):
+        fails.append(f"hay {len(items)} ítems y se piden al menos {c.get('min_items', 5)}")
+    seen: set[str] = set()
+    for it in items:
+        iid = str(it.get("id", "?"))
+        if iid in seen:
+            fails.append(f"id repetido {iid}")
+        seen.add(iid)
+        q = norm(str(it.get("quote", "")))
+        if len(q) < 15 or q not in corpus:
+            fails.append(f"{iid}: la cita no es textual de las fuentes")
+        if it.get("status") not in allowed:
+            fails.append(f"{iid}: status inválido {it.get('status')!r}")
+        for ev in it.get("evidence", []) or []:
+            if not (REPO / str(ev)).exists():
+                fails.append(f"{iid}: la evidencia {ev} no existe en el repo")
+    return fails[:8]
 
 
 def run(checks: list[dict[str, Any]], output: str, workdir: Path, owners: set[str]) -> SheriffResult:
@@ -69,6 +104,8 @@ def run(checks: list[dict[str, Any]], output: str, workdir: Path, owners: set[st
                     fails.append(f"falta el encabezado '{h}'")
         elif kind == "no_secrets" and SECRET_RE.search(output):
             fails.append("el resultado contiene algo con forma de clave")
+        elif kind == "audit_json":
+            fails.extend(audit_failures(output, c))
         elif kind == "python_ast":
             try:
                 ast.parse(extract_code(output))
