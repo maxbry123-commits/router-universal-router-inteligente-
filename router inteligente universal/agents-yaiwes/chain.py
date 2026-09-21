@@ -1,9 +1,10 @@
 """Chain runner: gives an agent a CHAIN of steps (DSL DAG in <agent_dir>/chain.yaml) and runs them in order.
 
-Each step is executed by the agent's own framework runner (pocketflow_agent.py or smol_agent.py, unchanged): the step gets its own
-directory `steps/<id>/` (workflow.dag.yaml + TRIGGER.json + results/), the previous step's verified output is added to its context,
-and the chain is FAIL_CLOSED: if a step ends BLOCKED, the next steps do not run. The agent's Crazy Wall (crazy_wall.state.json) shows
-which steps closed; deliverables are in steps/<id>/results/. The literal instruction of the Director travels in chain.yaml `input_block`.
+Each step is executed by the agent's own framework runner (pocketflow_agent.py, smol_agent.py or auditor_agent.py): the step gets its own
+directory `steps/<id>/` (workflow.dag.yaml + TRIGGER.json + results/), the previous step's verified output is added to its context, and the
+chain is FAIL_CLOSED: if a step ends BLOCKED, the next steps do not run. Steps that already closed (state CLOSED + output) are SKIPPED, so a
+re-run only works on what is pending. `agents-yaiwes/ROUTE.json` (edited by Claude) overrides every agent's model route. A step may add
+`context_file: [repo-relative paths]` to its context. `agent.post: audit_report` builds the auditor's checklist after the chain.
 
 Run: python chain.py <agent_dir>     (env: RIU_BANK_PASSPHRASE)
 """
@@ -21,14 +22,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import boot  # noqa: E402
 
 MAX_PREV_CHARS = 5000
+MAX_FILE_CHARS = 14000
 
 
 def step_cfg(chain: dict[str, Any], st: dict[str, Any], prev: str, prev_id: str | None) -> dict[str, Any]:
     ctx = str((chain.get("context") or {}).get("text", ""))
+    for rel in st.get("context_file", []) or []:
+        p = boot.REPO / rel
+        if p.exists():
+            ctx += f"\n\n=== ARCHIVO {rel} ===\n" + p.read_text(encoding="utf-8", errors="ignore")[:MAX_FILE_CHARS]
     if prev:
         ctx += f"\n\nSALIDA VERIFICADA DEL PASO ANTERIOR ({prev_id}):\n{prev[:MAX_PREV_CHARS]}"
     return {"schema": boot.SCHEMA, "execution": {"mode": "fail_closed", "max_parallel": 1, "continue_on_failure": False, "retries": 2},
-            "agent": chain["agent"], "context": {"text": ctx, "max_chars": 9000}, "task": st["task"], "checks": st["checks"]}
+            "agent": chain["agent"], "context": {"text": ctx, "max_chars": 40000}, "task": st["task"], "checks": st["checks"]}
+
+
+def already_closed(sd: Path) -> str | None:
+    state, out = sd / "crazy_wall.state.json", sd / "results" / "output.txt"
+    if state.exists() and out.exists():
+        try:
+            if json.loads(state.read_text(encoding="utf-8")).get("status") == "CLOSED":
+                return out.read_text(encoding="utf-8")
+        except json.JSONDecodeError:
+            return None
+    return None
 
 
 def main(agent_dir: str) -> int:
@@ -36,6 +53,9 @@ def main(agent_dir: str) -> int:
     if chain.get("schema") != "yaiwes.chain/v1" or not chain.get("steps"):
         raise SystemExit("chain.yaml inválido (schema yaiwes.chain/v1 y steps son obligatorios)")
     agent = chain["agent"]
+    route_file = Path(agent_dir).parent / "ROUTE.json"
+    if route_file.exists():
+        agent["route"] = json.loads(route_file.read_text(encoding="utf-8"))["route"]
     aid, fw = agent["id"], agent["framework"]
     if chain.get("input_block"):
         trigger = json.dumps({"schema": "yaiwes.trigger/v1", "run_id": chain.get("run_id", "CHAIN-001"), "input_block": chain["input_block"]}, ensure_ascii=False)
@@ -43,14 +63,23 @@ def main(agent_dir: str) -> int:
         trigger = (Path(agent_dir) / "TRIGGER.json").read_text(encoding="utf-8")
     if fw == "pocketflow":
         import pocketflow_agent as runner
+    elif agent.get("runner") == "auditor":
+        import auditor_agent as runner
     else:
         import smol_agent as runner
+        from common import routes
+        runner.candidates = routes.candidates  # every key of every provider, in the route order (a dead key must not block the agent)
     ids = [s["id"] for s in chain["steps"]]
     done: list[str] = []
     prev, prev_id, failed = "", None, None
-    boot.write_state(agent_dir, aid, fw, "RUNNING", group=agent.get("group"), chain=ids, completed=[], failed=[], next_nodes=ids)
+    boot.write_state(agent_dir, aid, fw, "RUNNING", group=agent.get("group"), chain=ids, completed=[], failed=[], next_nodes=ids, route=agent.get("route"))
     for i, st in enumerate(chain["steps"]):
         sd = Path(agent_dir) / "steps" / st["id"]
+        text = already_closed(sd)
+        if text is not None:
+            done.append(st["id"])
+            prev, prev_id = text, st["id"]
+            continue
         sd.mkdir(parents=True, exist_ok=True)
         (sd / "workflow.dag.yaml").write_text(yaml.safe_dump(step_cfg(chain, st, prev, prev_id), allow_unicode=True, sort_keys=False), encoding="utf-8")
         (sd / "TRIGGER.json").write_text(trigger, encoding="utf-8")
@@ -65,6 +94,9 @@ def main(agent_dir: str) -> int:
     ok = failed is None
     boot.write_state(agent_dir, aid, fw, "CLOSED" if ok else "BLOCKED", current_nodes=[], completed=done, failed=[] if ok else [failed],
                      next_nodes=[] if ok else ids[len(done) + 1:])
+    if agent.get("post") == "audit_report":
+        from common import audit_report
+        audit_report.build(agent_dir)
     print(f"::notice title=RIU_CHAIN_{aid}::{'CLOSED' if ok else 'BLOCKED en ' + str(failed)} pasos_cerrados={len(done)}/{len(ids)} ({','.join(done)})")
     return 0 if ok else 1
 
