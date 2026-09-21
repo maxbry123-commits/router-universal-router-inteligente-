@@ -1,10 +1,10 @@
 name: RIU Agents Run
 
-# The 4 Yaiwes agents, each on its own and in parallel, each with a CHAIN of steps (agents-yaiwes/<agent>/chain.yaml = the DSL DAG).
-# Chat: agent 1 (PocketFlow) and agent 2 (SmolAgents). Hugging Face: agent 3 (PocketFlow) and agent 4 (SmolAgents).
-# Claude (the brain) edits a chain.yaml and dispatches this workflow; the agents execute, note their progress in their own
-# crazy_wall.state.json / HANDOFF.md / steps/<id>/results/, and the results are committed back. Keys: only the encrypted bank
-# (agent-microkernel/runtime-bank.db.gz.b64); the single secret is its passphrase.
+# The 5 Yaiwes agents, each on its own and in parallel, each with a CHAIN of steps (agents-yaiwes/<agent>/chain.yaml = the DSL DAG).
+# Chat: agent 1 (PocketFlow) and agent 2 (SmolAgents). Hugging Face: agent 3 (PocketFlow) and agent 4 (SmolAgents). Agent 5: AUDITOR (SmolAgents copy).
+# Claude (the brain) edits a chain.yaml (or agents-yaiwes/ROUTE.json) and dispatches this workflow; the agents execute, note their progress
+# in their own crazy_wall.state.json / HANDOFF.md / steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped.
+# Keys: only the encrypted bank (agent-microkernel/runtime-bank*); the single secret is its passphrase.
 
 on:
   workflow_dispatch:
@@ -12,10 +12,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: riu-agents-run
+  cancel-in-progress: false
+
 jobs:
   agents:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +37,7 @@ jobs:
             router inteligente universal/agent-microkernel/
             router inteligente universal/agents-yaiwes/
             Chat Mvp/secret_bank/
+            Claude notas/
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
@@ -41,7 +46,10 @@ jobs:
 
       - run: pip install pocketflow smolagents openai fastapi pydantic huggingface_hub pyyaml cryptography
 
-      - name: Run the 4 agents in parallel (each with its chain of steps)
+      - name: Build the auditor's evidence packs (deterministic)
+        run: python "router inteligente universal/agents-yaiwes/common/audit_pack.py"
+
+      - name: Run the 5 agents in parallel (each with its chain of steps)
         env:
           RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
@@ -56,13 +64,14 @@ jobs:
           python agents-yaiwes/chain.py agents-yaiwes/agent-2-chat-hf-smol > /tmp/a2.log 2>&1 &
           python agents-yaiwes/chain.py agents-yaiwes/agent-3-router > /tmp/a3.log 2>&1 &
           python agents-yaiwes/chain.py agents-yaiwes/agent-4-router-smol > /tmp/a4.log 2>&1 &
+          python agents-yaiwes/chain.py agents-yaiwes/agent-5-auditor > /tmp/a5.log 2>&1 &
           wait
-          for i in 1 2 3 4; do
+          for i in 1 2 3 4 5; do
             grep -h '^::notice title=RIU_CHAIN' /tmp/a$i.log || echo "::warning title=RIU_AGENT_${i}_LOG::$(tail -n 14 /tmp/a$i.log | tr '\n' '|' | cut -c1-900)"
           done
           exit 0
 
-      - name: Commit results (Crazy Wall, HANDOFF, deliverables)
+      - name: Commit results (Crazy Wall, HANDOFF, deliverables, audit)
         if: always()
         shell: bash
         run: |
@@ -70,7 +79,7 @@ jobs:
           git config user.email "riu-agents@users.noreply.github.com"
           find "router inteligente universal/agents-yaiwes" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
           git add "router inteligente universal/agents-yaiwes" || true
-          git commit -m "agentes: resultados de la ronda (Crazy Wall + HANDOFF + entregables verificados)" || { echo "nada que confirmar"; exit 0; }
+          git commit -m "agentes: resultados de la ronda (Crazy Wall + HANDOFF + entregables verificados + auditoría)" || { echo "nada que confirmar"; exit 0; }
           for i in 1 2 3 4; do
             git pull --rebase origin main && git push origin HEAD:main && { echo "::notice title=RIU_AGENTS_COMMIT::pushed"; exit 0; }
             sleep 4
