@@ -1,0 +1,69 @@
+name: RIU Microkernel Run
+
+# Claude (the brain) edits agent-microkernel/TRIGGER.json and dispatches this workflow. The micro-agents run in parallel,
+# every result is validated by the deterministic Sheriff, and the Crazy Wall state, results and HANDOFF.md are committed back.
+# Keys: only inside the encrypted bank (agent-microkernel/runtime-bank.db.gz.b64); the single secret is the bank passphrase.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  microkernel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/verifier/
+            router inteligente universal/agent-microkernel/
+            Chat Mvp/secret_bank/
+            Claude notas/HANDOFF-PARCHE-RECUPERACION-2026-09-21.md
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install fastapi pydantic huggingface_hub pyyaml cryptography
+
+      - name: Run the micro-agents
+        id: run
+        env:
+          RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
+          RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
+        shell: bash
+        run: |
+          set +e
+          cd "router inteligente universal"
+          python agent-microkernel/kernel/runner.py --trigger agent-microkernel/TRIGGER.json 2>&1 | tee /tmp/mk.txt
+          echo "code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          grep -E '^(Traceback|[A-Za-z]*Error)' /tmp/mk.txt | head -5 | while IFS= read -r l; do echo "::warning title=RIU_MICROKERNEL_ERROR::${l}"; done
+          exit 0
+
+      - name: Commit results (Crazy Wall, results, HANDOFF)
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "riu-microkernel"
+          git config user.email "riu-microkernel@users.noreply.github.com"
+          git add "router inteligente universal/agent-microkernel/results" "router inteligente universal/agent-microkernel/crazy_wall" \
+                  "router inteligente universal/agent-microkernel/crazy_wall.state.json" "router inteligente universal/agent-microkernel/HANDOFF.md" || true
+          git commit -m "microkernel: resultados de la ronda (Crazy Wall + HANDOFF + salidas verificadas)" || { echo "nada que confirmar"; exit 0; }
+          for i in 1 2 3 4; do
+            git pull --rebase origin main && git push origin HEAD:main && { echo "::notice title=RIU_MICROKERNEL_COMMIT::pushed"; exit 0; }
+            sleep 4
+          done
+          echo "::warning title=RIU_MICROKERNEL_COMMIT::push failed after retries"
