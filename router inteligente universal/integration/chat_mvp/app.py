@@ -1,10 +1,15 @@
 """RIU Chat MVP app: certified HF gateway routes plus the chat API, Secret Bank, Wordflow fleet, parallel jobs and policy routing.
 
 Run: uvicorn integration.chat_mvp.app:app --host 0.0.0.0 --port 7860
+CORS: RIU_CORS_ORIGINS (comma-separated, default "*") lets the static chat (a Hugging Face Static Space) call this API from the browser; the API key
+header (X-API-Key) still protects every route except the public pages.
 """
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from ..huggingface import fastapi_gateway as gateway
 from . import wordflow_agents
@@ -13,7 +18,9 @@ from .route_api import build_route_router
 from .router import build_router, get_store
 from .vault_api import build_vault_router
 
-app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.0")
+app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.1")
+app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in os.getenv("RIU_CORS_ORIGINS", "*").split(",") if o.strip()],
+                   allow_methods=["*"], allow_headers=["*"], allow_credentials=False)
 
 
 @app.on_event("startup")
