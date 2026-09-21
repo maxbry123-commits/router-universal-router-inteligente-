@@ -1,7 +1,8 @@
 name: RIU NVIDIA Pool Test
 
 # Runs the NVIDIA-first / key-pool tests, the chat API tests, the Secret Bank bridge, the Wordflow fleet mirror,
-# the parallel jobs and the router resilience tests. No secrets needed (the bank test builds its own throwaway vault).
+# the parallel jobs, the router resilience tests and the Jev decision layer. No secrets needed (the bank test builds
+# its own throwaway vault; the Jev tests mock the provider call).
 
 on:
   workflow_dispatch:
@@ -46,7 +47,8 @@ jobs:
             "router inteligente universal/tests/test_resilience.py" \
             "router inteligente universal/tests/test_vault_wordflow_jobs.py" \
             "router inteligente universal/tests/test_chat_mvp_app.py" \
-            "router inteligente universal/tests/test_chat_cost_dag.py" 2>&1 | tee /tmp/p.txt
+            "router inteligente universal/tests/test_chat_cost_dag.py" \
+            "router inteligente universal/tests/test_jev.py" 2>&1 | tee /tmp/p.txt
           code=${PIPESTATUS[0]}
           echo "::notice title=RIU_POOL_TESTS::exit=${code} | $(tail -n 1 /tmp/p.txt | tr -d '\r')"
           grep -E '^(FAILED|ERROR)' /tmp/p.txt | head -8 | while IFS= read -r l; do echo "::warning title=RIU_POOL_FAIL::${l}"; done
