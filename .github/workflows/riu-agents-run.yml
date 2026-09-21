@@ -4,7 +4,7 @@ name: RIU Agents Run
 # Chat: agent 1 (PocketFlow) and agent 2 (SmolAgents). Hugging Face: agent 3 (PocketFlow) and agent 4 (SmolAgents). Agent 5: AUDITOR (SmolAgents copy).
 # Claude (the brain) edits a chain.yaml (or agents-yaiwes/ROUTE.json) and dispatches this workflow; the agents execute, note their progress
 # in their own crazy_wall.state.json / HANDOFF.md / steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped.
-# Keys: only the encrypted bank (agent-microkernel/runtime-bank*); the single secret is its passphrase.
+# Keys: only the encrypted bank (agent-microkernel/runtime-bank*); the single secret is its passphrase. Every agent has a 30-minute budget.
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ concurrency:
 jobs:
   agents:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,7 +44,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - run: pip install pocketflow smolagents openai fastapi pydantic huggingface_hub pyyaml cryptography
+      - run: pip install pocketflow smolagents openai fastapi httpx pydantic huggingface_hub pyyaml cryptography
 
       - name: Build the auditor's evidence packs (deterministic)
         run: python "router inteligente universal/agents-yaiwes/common/audit_pack.py"
@@ -60,11 +60,10 @@ jobs:
         run: |
           set +e
           cd "router inteligente universal"
-          python agents-yaiwes/chain.py agents-yaiwes/agent-1-chat-hf > /tmp/a1.log 2>&1 &
-          python agents-yaiwes/chain.py agents-yaiwes/agent-2-chat-hf-smol > /tmp/a2.log 2>&1 &
-          python agents-yaiwes/chain.py agents-yaiwes/agent-3-router > /tmp/a3.log 2>&1 &
-          python agents-yaiwes/chain.py agents-yaiwes/agent-4-router-smol > /tmp/a4.log 2>&1 &
-          python agents-yaiwes/chain.py agents-yaiwes/agent-5-auditor > /tmp/a5.log 2>&1 &
+          for pair in "1:agent-1-chat-hf" "2:agent-2-chat-hf-smol" "3:agent-3-router" "4:agent-4-router-smol" "5:agent-5-auditor"; do
+            n="${pair%%:*}"; d="${pair#*:}"
+            timeout 1800 python agents-yaiwes/chain.py "agents-yaiwes/$d" > "/tmp/a$n.log" 2>&1 &
+          done
           wait
           for i in 1 2 3 4 5; do
             grep -h '^::notice title=RIU_CHAIN' /tmp/a$i.log || echo "::warning title=RIU_AGENT_${i}_LOG::$(tail -n 14 /tmp/a$i.log | tr '\n' '|' | cut -c1-900)"
