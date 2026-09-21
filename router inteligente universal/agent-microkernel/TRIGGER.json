@@ -1,0 +1,7 @@
+{
+  "schema": "yaiwes.trigger/v1",
+  "run_id": "RUN-001",
+  "input_block": "4 microagentes tu objetivo con mis instrucciones todo lo demás tu anotas y queda pendiente usando las api key de Nvidia o groq o cerebras si el router no consigue usa deepsek v4 flash y mínimax M3  para 3",
+  "requested_by": "claude-brain",
+  "note": "Orden literal del Director (INPUT-VERBATIM-2026-09-21-n). Claude edita este archivo y despacha el workflow 'RIU Microkernel Run' para activar la siguiente ronda."
+}
