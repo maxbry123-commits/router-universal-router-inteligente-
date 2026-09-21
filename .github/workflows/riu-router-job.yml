@@ -1,0 +1,76 @@
+name: RIU Router Job
+
+# Launches the Router (chat API + banks + policy routing) as a Hugging Face Job with an exposed port and checks /health from outside.
+# The Job costs while it runs (flavor below) and stops by itself at `timeout`. The bank passphrase is not in the Job (typed in the chat's Claves tab).
+
+on:
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: 'HF flavor'
+        default: 'cpu-basic'
+      timeout:
+        description: 'Job lifetime'
+        default: '4h'
+
+permissions:
+  contents: read
+
+jobs:
+  router:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub requests
+      - name: Launch and check
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          FLAVOR: ${{ inputs.flavor }}
+          LIFETIME: ${{ inputs.timeout }}
+        run: |
+          python - <<'PY'
+          import os, time, requests
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          repo = "https://github.com/maxbry123-commits/router-universal-router-inteligente-"
+          cmd = ("set -e; apt-get update -qq >/dev/null 2>&1 || true; command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
+                 f"git clone --depth 1 --filter=blob:none --sparse {repo} r >/dev/null 2>&1 && cd r && "
+                 "git sparse-checkout set --no-cone 'router inteligente universal' 'Chat Mvp/secret_bank' >/dev/null 2>&1 && "
+                 "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml && "
+                 "python 'router inteligente universal/agents-yaiwes/common/router_job_start.py'")
+          try:
+              job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=os.environ["LIFETIME"], expose=8000,
+                                env={"RIU_CORS_ORIGINS": "*", "RIU_CHAT_ALLOW_PROVIDER_LIVE": "1"})
+          except Exception as e:
+              print("::warning title=RIU_ROUTER_JOB_ERROR::" + type(e).__name__ + " " + str(e)[:500]); raise SystemExit(1)
+          print("::notice title=RIU_ROUTER_JOB_ID::" + str(job.id))
+          urls = []
+          t0 = time.time(); stage = None; ok = None
+          while time.time() - t0 < 600 and ok is None:
+              info = api.inspect_job(job_id=job.id)
+              stage = info.status.stage
+              cand = [getattr(info, "endpoint", None), getattr(job, "endpoint", None), getattr(info, "url", None), f"https://{job.id}--8000.hf.jobs"]
+              urls = [u for u in dict.fromkeys(cand) if u]
+              if stage == "RUNNING":
+                  for u in urls:
+                      try:
+                          r = requests.get(u.rstrip("/") + "/health", headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]}, timeout=15)
+                          if r.status_code == 200:
+                              ok = u; break
+                      except Exception:
+                          pass
+              if stage in ("ERROR", "COMPLETED", "CANCELED", "DELETED"):
+                  break
+              time.sleep(10)
+          logs = []
+          try:
+              for line in api.fetch_job_logs(job_id=job.id):
+                  logs.append(str(line))
+          except Exception as e:
+              logs.append("logs: " + type(e).__name__)
+          print(f"::notice title=RIU_ROUTER_JOB_STATE::stage={stage} health_ok_url={ok} urls_probadas={urls} message={getattr(info.status, 'message', None)} logs_final={' | '.join(logs[-6:])[:500]}")
+          raise SystemExit(0 if ok else 1)
+          PY
