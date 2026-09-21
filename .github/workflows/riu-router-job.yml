@@ -2,6 +2,7 @@ name: RIU Router Job
 
 # Launches the Router (chat API + banks + policy routing) as a Hugging Face Job with an exposed port and checks /health from outside.
 # The Job costs while it runs (flavor below) and stops by itself at `timeout`. The bank passphrase is not in the Job (typed in the chat's Claves tab).
+# It tries several accepted shapes of the `expose` argument and prints the server's error text for each failure.
 
 on:
   workflow_dispatch:
@@ -32,7 +33,7 @@ jobs:
           LIFETIME: ${{ inputs.timeout }}
         run: |
           python - <<'PY'
-          import os, time, requests
+          import os, time, requests, inspect
           from huggingface_hub import HfApi
           api = HfApi(token=os.environ["HF_TOKEN"])
           repo = "https://github.com/maxbry123-commits/router-universal-router-inteligente-"
@@ -41,14 +42,28 @@ jobs:
                  "git sparse-checkout set --no-cone 'router inteligente universal' 'Chat Mvp/secret_bank' >/dev/null 2>&1 && "
                  "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml && "
                  "python 'router inteligente universal/agents-yaiwes/common/router_job_start.py'")
-          try:
-              job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=os.environ["LIFETIME"], expose=8000,
-                                env={"RIU_CORS_ORIGINS": "*", "RIU_CHAT_ALLOW_PROVIDER_LIVE": "1"})
-          except Exception as e:
-              print("::warning title=RIU_ROUTER_JOB_ERROR::" + type(e).__name__ + " " + str(e)[:500]); raise SystemExit(1)
-          print("::notice title=RIU_ROUTER_JOB_ID::" + str(job.id))
+          doc = (inspect.getdoc(api.run_job) or "")
+          idx = doc.find("expose")
+          print("::notice title=RIU_ROUTER_JOB_DOC::" + doc[idx: idx + 350].replace("\n", " "))
+          job, errors = None, []
+          for label, expose in (("int", 8000), ("str", "8000"), ("list", [8000]), ("sin_expose", None)):
+              kw = dict(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=os.environ["LIFETIME"],
+                        env={"RIU_CORS_ORIGINS": "*", "RIU_CHAT_ALLOW_PROVIDER_LIVE": "1"})
+              if expose is not None:
+                  kw["expose"] = expose
+              try:
+                  job = api.run_job(**kw)
+                  print(f"::notice title=RIU_ROUTER_JOB_ID::{job.id} (expose={label})")
+                  break
+              except Exception as e:
+                  resp = getattr(e, "response", None)
+                  errors.append(f"{label}: {type(e).__name__} {(getattr(resp, 'text', '') or str(e))[:220]}")
+          if job is None:
+              print("::warning title=RIU_ROUTER_JOB_ERROR::" + " || ".join(errors)); raise SystemExit(1)
+          if errors:
+              print("::notice title=RIU_ROUTER_JOB_FALLOS_PREVIOS::" + " || ".join(errors))
           urls = []
-          t0 = time.time(); stage = None; ok = None
+          t0 = time.time(); stage = None; ok = None; info = None
           while time.time() - t0 < 600 and ok is None:
               info = api.inspect_job(job_id=job.id)
               stage = info.status.stage
@@ -57,7 +72,7 @@ jobs:
               if stage == "RUNNING":
                   for u in urls:
                       try:
-                          r = requests.get(u.rstrip("/") + "/health", headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]}, timeout=15)
+                          r = requests.get(str(u).rstrip("/") + "/health", headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]}, timeout=15)
                           if r.status_code == 200:
                               ok = u; break
                       except Exception:
@@ -71,6 +86,6 @@ jobs:
                   logs.append(str(line))
           except Exception as e:
               logs.append("logs: " + type(e).__name__)
-          print(f"::notice title=RIU_ROUTER_JOB_STATE::stage={stage} health_ok_url={ok} urls_probadas={urls} message={getattr(info.status, 'message', None)} logs_final={' | '.join(logs[-6:])[:500]}")
+          print(f"::notice title=RIU_ROUTER_JOB_STATE::stage={stage} health_ok_url={ok} urls_probadas={urls} message={getattr(getattr(info, 'status', None), 'message', None)} logs_final={' | '.join(logs[-6:])[:500]}")
           raise SystemExit(0 if ok else 1)
           PY
