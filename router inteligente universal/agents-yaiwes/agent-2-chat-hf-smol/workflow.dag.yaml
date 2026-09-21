@@ -1,0 +1,71 @@
+schema: yaiwes.micro-agent/v1
+
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+
+agent:
+  id: agent-2-chat-hf-smol
+  framework: smolagents
+  group: chat-hf
+  route: [groq, cerebras, nvidia]
+  fallback: [minimax_m3]
+  max_tokens: 1800
+
+context:
+  max_chars: 1500
+  text: |
+    Patrón de Hugging Face Jobs para servir un GGUF con pesos remotos (sin copia persistente):
+    hf jobs run --flavor cpu-upgrade --expose <puerto> -v hf://models/ORG/MODELO:/model:ro <imagen llama.cpp> ... --model /model/<archivo>.gguf
+    Servidor llama.cpp: --ctx-size (empezar en 8192), --parallel N y --cont-batching (varios agentes comparten una copia), --cache-prompt y --cache-reuse (prefijo común).
+    Repos GGUF verificados: LiquidAI/LFM2.5-1.2B-Thinking-GGUF (archivo LFM2.5-1.2B-Thinking-Q4_K_M.gguf), Qwen/Qwen3-0.6B-GGUF, IFM/K2-Horizon-0.9B-GGUF.
+    Los nombres de archivo de Qwen3-0.6B y K2-Horizon NO están verificados: no los inventes; el llamador los pasa con el parámetro `file`.
+
+task: |
+  Escribe el módulo Python `hf_job_command.py` (solo código, un único bloque ```python; solo biblioteca estándar) con la función
+  `build_command(model_key: str, port: int = 8080, ctx: int = 8192, parallel: int = 4, file: str | None = None) -> list[str]`
+  que devuelve la lista de argumentos de `hf jobs run` para servir el modelo con llama.cpp montando los pesos remotos.
+  - SPECS interno: "lfm2.5-1.2b-thinking" -> repo "LiquidAI/LFM2.5-1.2B-Thinking-GGUF" con archivo por defecto "LFM2.5-1.2B-Thinking-Q4_K_M.gguf";
+    "qwen3-0.6b" -> repo "Qwen/Qwen3-0.6B-GGUF" (sin archivo por defecto); "k2-horizon-0.9b" -> repo "IFM/K2-Horizon-0.9B-GGUF" (sin archivo por defecto).
+  - Si `file` se pasa, sustituye al archivo por defecto. Si no hay archivo (ni por defecto ni pasado) lanza ValueError. Clave desconocida: KeyError.
+  - La lista es exactamente: ["hf","jobs","run","--flavor","cpu-upgrade","--expose",str(port),"-v",f"hf://models/{repo}:/model:ro",
+    "ghcr.io/ggml-org/llama.cpp:server","--model",f"/model/{archivo}","--ctx-size",str(ctx),"--parallel",str(parallel),
+    "--cont-batching","--cache-prompt","--cache-reuse","256","--host","0.0.0.0","--port",str(port)].
+
+checks:
+  - kind: python_ast
+  - kind: python_exec
+    module: hf_job_command.py
+    test: |
+      from hf_job_command import build_command
+      c = build_command("lfm2.5-1.2b-thinking")
+      assert c[:8] == ["hf", "jobs", "run", "--flavor", "cpu-upgrade", "--expose", "8080", "-v"]
+      assert c[8] == "hf://models/LiquidAI/LFM2.5-1.2B-Thinking-GGUF:/model:ro"
+      assert c[9] == "ghcr.io/ggml-org/llama.cpp:server"
+      assert c[c.index("--model") + 1] == "/model/LFM2.5-1.2B-Thinking-Q4_K_M.gguf"
+      assert c[c.index("--ctx-size") + 1] == "8192" and c[c.index("--parallel") + 1] == "4"
+      assert "--cont-batching" in c and "--cache-prompt" in c and c[c.index("--cache-reuse") + 1] == "256"
+      d = build_command("qwen3-0.6b", port=9000, ctx=4096, parallel=2, file="m.gguf")
+      assert d[6] == "9000" and d[8] == "hf://models/Qwen/Qwen3-0.6B-GGUF:/model:ro" and d[d.index("--port") + 1] == "9000"
+      try:
+          build_command("qwen3-0.6b")
+          raise SystemExit(1)
+      except ValueError:
+          pass
+      try:
+          build_command("zzz")
+          raise SystemExit(1)
+      except KeyError:
+          pass
+  - kind: no_secrets
+
+nodes:
+  tool_calling_agent: {type: smolagents.ToolCallingAgent, tools: [write_deliverable, run_sheriff]}
+  sheriff: {type: deterministic_validator, depends_on: [tool_calling_agent]}
+
+edges:
+  - tool_calling_agent -> sheriff
+  - sheriff.PASS -> done
+  - sheriff.FAIL -> fix
