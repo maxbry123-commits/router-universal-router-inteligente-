@@ -1,5 +1,5 @@
-"""Candidate endpoints for the SmolAgents runners: EVERY usable key of every provider in the route order (a dead key, e.g. 401, is skipped
-instead of blocking the agent), then the fallback (DeepSeek V4 Flash / MiniMax M3 through the Hugging Face router) only after the whole route."""
+"""Candidate endpoints for the SmolAgents runners, in the order of the route: EVERY usable key of nvidia / groq / cerebras (a dead key, e.g. 401, is
+skipped instead of blocking the agent) and the Hugging Face models `deepseek_flash` / `minimax_m3` wherever they appear in the route or the fallback."""
 from __future__ import annotations
 
 from typing import Any
@@ -14,7 +14,17 @@ MAX_KEYS = 3
 
 def candidates(agent: dict[str, Any]) -> list[tuple[str, str, str, str]]:
     out: list[tuple[str, str, str, str]] = []
-    for p in agent.get("route", []):
+    hf_keys = prov.env_keys("hf")
+    for p in [*agent.get("route", []), *agent.get("fallback", [])]:
+        if p in dispatcher.FALLBACK:
+            model = dispatcher.FALLBACK[p]
+            try:
+                core.hf_gate(model)
+            except ValueError:
+                continue
+            if hf_keys:
+                out.append(("hf", prov.PROVIDERS["hf"]["base"], model, hf_keys[0]))
+            continue
         used = 0
         for key in prov.env_keys(p):
             if used >= MAX_KEYS:
@@ -28,13 +38,4 @@ def candidates(agent: dict[str, Any]) -> list[tuple[str, str, str, str]]:
             model = next((m for m in dispatcher.PREFS[p] if m in ids), ids[0] if ids else dispatcher.PREFS[p][0])
             out.append((p, prov.PROVIDERS[p]["base"], model, key))
             used += 1
-    keys = prov.env_keys("hf")
-    for fb in agent.get("fallback", []):
-        model = dispatcher.FALLBACK[fb]
-        try:
-            core.hf_gate(model)
-        except ValueError:
-            continue
-        if keys:
-            out.append(("hf", prov.PROVIDERS["hf"]["base"], model, keys[0]))
     return out
