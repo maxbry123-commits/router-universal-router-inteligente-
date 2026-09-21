@@ -1,0 +1,114 @@
+schema: yaiwes.chain/v1
+
+# Cadena de pasos (DSL DAG) del agente 2 — CHAT. Marco: SmolAgents. Tareas distintas a las del agente 1.
+input_block: |
+  Revisa mis instrucciones de lo que debe hace cada agente y revisas todas mis notas y lo pones a trabajar 2 agentes en  en el chat en taress distintas
+  Le das una encadenado de pasos
+
+agent:
+  id: agent-2-chat-hf-smol
+  framework: smolagents
+  group: chat
+  route: [nvidia, groq, cerebras]
+  fallback: [minimax_m3]
+  max_tokens: 1800
+
+context:
+  text: |
+    CONTEXTO DEL CHAT: el Router ejecuta planes en el esquema `riu.dag/v1` (schema, id, input_block literal, nodes con id, instructions,
+    needs, expect, retries, model). El chat necesita una plantilla FIJA determinista que convierta las reglas (YAML→dict) y una orden
+    (JSON→dict) en un plan, y un Crazy Wall / handoff permanente encadenado por hash para anotar cada avance. Solo biblioteca estándar.
+
+steps:
+
+  - id: jobs_panel
+    task: |
+      Escribe SOLO JavaScript (un único bloque ```js) que defina la función global `initJobsPanel(container, fetchJson)` para el chat.
+      `container` es un elemento DOM y `fetchJson(path, options)` devuelve una promesa con {status, body}.
+      Crea dentro del contenedor: un textarea donde se pega un arreglo JSON de trabajos, y un botón "Ejecutar en paralelo" que valida
+      el JSON (si es inválido muestra el error con textContent y no llama al servidor) y luego llama a
+      fetchJson('/chat/jobs/run', {method: 'POST', body: JSON.stringify({jobs: <arreglo>, max_parallel: 8})}).
+      Muestra el resultado como una lista: una línea por trabajo con su id y su status (usa textContent). Sin librerías externas.
+    checks:
+      - kind: js_syntax
+        file: jobs_panel.js
+      - kind: contains
+        values: [initJobsPanel, /chat/jobs/run, max_parallel]
+      - kind: no_secrets
+
+  - id: fixed_template
+    task: |
+      Escribe un módulo Python `fixed_template.py` (solo código, un único bloque ```python, solo biblioteca estándar) con la función
+      `render_order(rules: dict, order: dict) -> dict`.
+      `rules` tiene "max_retries" (int), "route" (lista de proveedores) y "fallback" (lista). `order` tiene "id", "input_block" y "steps"
+      (lista de dicts con "id", "instructions" y opcionalmente "expect").
+      Devuelve un dict con: "schema" = "riu.dag/v1"; "id" = order["id"]; "input_block" = order["input_block"] SIN cambios; "route" y
+      "fallback" copiados de rules; y "nodes": una lista con un nodo por paso, en el mismo orden, cada uno con "id" = id del paso,
+      "instructions" = instructions del paso, "needs" = [] para el primero y [id del paso anterior] para los demás, "retries" =
+      rules["max_retries"], "expect" = step.get("expect") y "model" = {"provider": rules["route"][0], "model": "auto"}.
+      Lanza ValueError si "steps" está vacío, si input_block está vacío o si route está vacía. No modifica los diccionarios recibidos.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: fixed_template.py
+        test: |
+          import copy
+          from fixed_template import render_order
+          rules = {"max_retries": 2, "route": ["nvidia", "groq"], "fallback": ["minimax_m3"]}
+          order = {"id": "PLAN-1", "input_block": "  HAZ X\nliteral  ", "steps": [
+              {"id": "A", "instructions": "primero", "expect": {"contains": ["ok"]}}, {"id": "B", "instructions": "segundo"}, {"id": "C", "instructions": "tercero"}]}
+          r0, o0 = copy.deepcopy(rules), copy.deepcopy(order)
+          d = render_order(rules, order)
+          assert rules == r0 and order == o0
+          assert d["schema"] == "riu.dag/v1" and d["id"] == "PLAN-1" and d["input_block"] == "  HAZ X\nliteral  "
+          assert [n["id"] for n in d["nodes"]] == ["A", "B", "C"]
+          assert d["nodes"][0]["needs"] == [] and d["nodes"][1]["needs"] == ["A"] and d["nodes"][2]["needs"] == ["B"]
+          assert d["nodes"][0]["expect"] == {"contains": ["ok"]} and d["nodes"][1]["expect"] is None and d["nodes"][0]["retries"] == 2
+          assert d["nodes"][0]["model"] == {"provider": "nvidia", "model": "auto"} and d["route"] == ["nvidia", "groq"] and d["fallback"] == ["minimax_m3"]
+          for bad in ({**order, "steps": []}, {**order, "input_block": ""}):
+              try:
+                  render_order(rules, bad)
+                  raise SystemExit("aceptó una orden inválida")
+              except ValueError:
+                  pass
+          try:
+              render_order({**rules, "route": []}, order)
+              raise SystemExit("aceptó route vacía")
+          except ValueError:
+              pass
+      - kind: no_secrets
+
+  - id: crazy_wall_chain
+    task: |
+      Escribe un módulo Python `crazy_wall_chain.py` (solo código, un único bloque ```python, solo biblioteca estándar: hashlib y json) con
+      el Crazy Wall permanente encadenado por hash:
+      - `append_event(state: dict, event: dict) -> dict`: devuelve un estado NUEVO (no modifica el recibido) cuya lista "events"
+        (vacía si no existe) tiene un elemento más: {"seq": n (desde 1), "event": event, "prev": hash del evento anterior o "GENESIS",
+        "hash": sha256 hexadecimal de (prev + json.dumps(event, sort_keys=True, ensure_ascii=False))}.
+      - `verify(state: dict) -> bool`: True si toda la cadena es consistente (seq consecutivos, prev correcto, hash recalculado igual).
+      - `render_handoff(state: dict) -> str`: markdown que empieza con la línea "# HANDOFF", tiene la línea "## Eventos" y luego una línea
+        por evento con su seq y el valor de event.get("texto", "").
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: crazy_wall_chain.py
+        test: |
+          import copy
+          from crazy_wall_chain import append_event, verify, render_handoff
+          s0 = {"run": "R1"}
+          s1 = append_event(s0, {"texto": "uno"})
+          assert s0 == {"run": "R1"} and len(s1["events"]) == 1 and s1["events"][0]["prev"] == "GENESIS" and s1["events"][0]["seq"] == 1
+          s2 = append_event(s1, {"texto": "dos"})
+          s3 = append_event(s2, {"texto": "tres"})
+          assert [e["seq"] for e in s3["events"]] == [1, 2, 3] and len(s1["events"]) == 1
+          assert s3["events"][1]["prev"] == s3["events"][0]["hash"] and verify(s3) is True
+          bad = copy.deepcopy(s3)
+          bad["events"][1]["event"]["texto"] = "manipulado"
+          assert verify(bad) is False
+          md = render_handoff(s3)
+          assert md.splitlines()[0] == "# HANDOFF" and "## Eventos" in md and "uno" in md and "tres" in md
+      - kind: no_secrets
+
+edges:
+  - jobs_panel -> fixed_template
+  - fixed_template -> crazy_wall_chain
