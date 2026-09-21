@@ -1,8 +1,8 @@
 """Bridge between the chat and the YAIWES Secret Bank (Chat Mvp/secret_bank/vault.py).
 
 * The master passphrase is never stored: the bank is unlocked in memory for a TTL (RIU_VAULT_TTL, default 1 h).
-* While unlocked, provider keys (nvidia/*, huggingface/*, ...) join the key pool via vault_hook, and GitHub tokens
-  (github/*) are exported as in-process env vars so the existing account selector sees them. Locking removes both.
+* While unlocked, provider keys (nvidia/*, huggingface/*, ...) join the key pool via vault_hook (oldest credential first),
+  and GitHub tokens (github/*) are exported as in-process env vars so the existing account selector sees them. Locking removes both.
 * Values are never returned by any method that leaves this module: only credential refs (names) are listed.
 * 5 wrong passphrases lock unlock attempts for 10 minutes.
 """
@@ -114,7 +114,7 @@ class VaultBridge:
         if provider not in PROVIDER_MAP or not self._alive():
             return []
         keys: list[str] = []
-        for rec in self._open.list():
+        for rec in sorted(self._open.list(), key=lambda r: r["created_at"]):
             if rec["provider"] == PROVIDER_MAP[provider] and rec["enabled"] and rec["scope"] != "github":
                 try:
                     keys.append(self._open.get_secret(rec["credential_ref"]))
