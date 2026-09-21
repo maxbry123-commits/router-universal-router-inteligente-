@@ -1,9 +1,8 @@
 name: RIU Llama Bench
 
-# Measures real tokens/second of the small local models with llama.cpp on a CPU runner (4 vCPU / 16 GB, a proxy of the HF CPU nodes):
-#  1) llama-bench (prompt processing pp and token generation tg) with the accelerators: flash attention, KV cache q8_0, threads;
-#  2) llama-server with parallel slots (-np 4), continuous batching, prompt cache: aggregate tokens/s with 1, 4 and 8 simultaneous requests.
-# Public GGUF files only. Values are printed as annotations (RIU_BENCH_*).
+# Real tokens/second of the small local models with llama.cpp on a CPU runner (4 vCPU / 16 GB, a proxy of the HF CPU nodes):
+# llama-bench (pp/tg) and llama-server with parallel slots (1, 4, 8 simultaneous requests) with the accelerators. See common/llama_bench.py.
+# Results are printed as annotations (RIU_BENCH_*).
 
 on:
   workflow_dispatch:
@@ -16,113 +15,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/agents-yaiwes/common/llama_bench.py
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install huggingface_hub requests
-      - name: Get llama.cpp (prebuilt) and the models
+      - name: Bench
         env:
           GH_TOKEN: ${{ github.token }}
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
-        run: |
-          set -e
-          url=$(gh api repos/ggml-org/llama.cpp/releases/latest --jq '[.assets[] | select(.name | test("bin-ubuntu-x64")) | select(.name | test("vulkan|rocm|openvino|sycl|arm|s390|cuda|hip") | not)][0].browser_download_url')
-          echo "llama.cpp asset: $url"
-          mkdir -p /tmp/llama && cd /tmp/llama
-          curl -sL "$url" -o pkg && (unzip -q pkg 2>/dev/null || tar xzf pkg)
-          find /tmp/llama -name 'llama-bench' -o -name 'llama-server' | head
-          python - <<'PY'
-          import os
-          from huggingface_hub import hf_hub_download
-          models = {
-            "qwen35-0.8b-q4_0": ("ggml-org/Qwen3.5-0.8B-GGUF", "Qwen3.5-0.8B-Q4_0.gguf"),
-            "lfm25-1.2b-instruct-q4km": ("LiquidAI/LFM2.5-1.2B-Instruct-GGUF", "LFM2.5-1.2B-Instruct-Q4_K_M.gguf"),
-            "lfm25-1.2b-thinking-q4km": ("LiquidAI/LFM2.5-1.2B-Thinking-GGUF", "LFM2.5-1.2B-Thinking-Q4_K_M.gguf"),
-            "qwen3-0.6b-q8": ("Qwen/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"),
-            "gemma4-e2b-qat-q4_0": ("google/gemma-4-E2B-it-qat-q4_0-gguf", "gemma-4-E2B_q4_0-it.gguf"),
-          }
-          import json
-          out = {}
-          for k, (repo, f) in models.items():
-              try:
-                  out[k] = hf_hub_download(repo, f, local_dir="/tmp/models")
-                  print("ok", k)
-              except Exception as e:
-                  print("FALLO", k, type(e).__name__, str(e)[:120])
-          json.dump(out, open("/tmp/models.json", "w"))
-          PY
-      - name: llama-bench (pp / tg) and parallel slots
-        run: |
-          set +e
-          BIN=$(dirname "$(find /tmp/llama -name llama-bench | head -1)")
-          export LD_LIBRARY_PATH="$BIN:$LD_LIBRARY_PATH"
-          python - <<'PY'
-          import json, os, subprocess, time, threading, urllib.request, glob
-          BIN = os.path.dirname(subprocess.check_output("find /tmp/llama -name llama-bench | head -1", shell=True, text=True).strip())
-          models = json.load(open("/tmp/models.json"))
-          threads = os.cpu_count() or 4
-
-          def bench(name, path):
-              for fa in ("1", "0"):
-                  p = subprocess.run([f"{BIN}/llama-bench", "-m", path, "-p", "256", "-n", "128", "-t", str(threads), "-fa", fa, "-r", "2", "-o", "json"],
-                                     capture_output=True, text=True, timeout=900)
-                  if p.returncode == 0:
-                      try:
-                          rows = json.loads(p.stdout)
-                          pp = next((r["avg_ts"] for r in rows if r.get("n_prompt") and not r.get("n_gen")), None)
-                          tg = next((r["avg_ts"] for r in rows if r.get("n_gen") and not r.get("n_prompt")), None)
-                          return f"pp256={pp:.1f} t/s tg128={tg:.1f} t/s (flash_attn={fa}, threads={threads})"
-                      except Exception as e:
-                          return f"salida no interpretable: {type(e).__name__}: {p.stdout[:150]}"
-              return "FALLO: " + (p.stderr or p.stdout)[-200:].replace("\n", " ")
-
-          def post(port, n):
-              body = json.dumps({"prompt": "Escribe una lista de 5 ideas para un chat de agentes.", "n_predict": 64, "temperature": 0.7, "cache_prompt": True}).encode()
-              req = urllib.request.Request(f"http://127.0.0.1:{port}/completion", data=body, headers={"Content-Type": "application/json"})
-              with urllib.request.urlopen(req, timeout=300) as r:
-                  return json.loads(r.read().decode()).get("tokens_predicted", 0)
-
-          def serve(name, path):
-              port = 8080
-              for fa in ("on", "off"):
-                  cmd = [f"{BIN}/llama-server", "-m", path, "--host", "127.0.0.1", "--port", str(port), "-c", "8192", "-np", "4", "-cb", "--cache-prompt",
-                         "--cache-reuse", "256", "-t", str(threads), "-fa", fa] + (["-ctk", "q8_0", "-ctv", "q8_0"] if fa == "on" else [])
-                  proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                  ok = False
-                  for _ in range(90):
-                      time.sleep(2)
-                      try:
-                          urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=2)
-                          ok = True
-                          break
-                      except Exception:
-                          if proc.poll() is not None:
-                              break
-                  if ok:
-                      res = []
-                      for conc in (1, 4, 8):
-                          t0, toks, lock = time.time(), [0], threading.Lock()
-                          def w():
-                              try:
-                                  n = post(port, conc)
-                              except Exception:
-                                  n = 0
-                              with lock:
-                                  toks[0] += n
-                          ts = [threading.Thread(target=w) for _ in range(conc)]
-                          [t.start() for t in ts]
-                          [t.join() for t in ts]
-                          dt = time.time() - t0
-                          res.append(f"{conc} simult.: {toks[0] / dt:.1f} t/s total ({toks[0] / dt / conc:.1f} t/s por agente)")
-                      proc.terminate()
-                      proc.wait(timeout=20)
-                      return f"flash_attn={fa}; " + " | ".join(res)
-                  proc.terminate()
-              return "el servidor no arrancó"
-
-          for name, path in models.items():
-              print(f"::notice title=RIU_BENCH_{name}::{bench(name, path)}")
-          for name in ("qwen35-0.8b-q4_0", "lfm25-1.2b-instruct-q4km"):
-              if name in models:
-                  print(f"::notice title=RIU_BENCH_SLOTS_{name}::{serve(name, models[name])}")
-          PY
+        run: python "router inteligente universal/agents-yaiwes/common/llama_bench.py"
