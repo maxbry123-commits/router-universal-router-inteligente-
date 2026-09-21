@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Chat YAIWES</title>
+<style>
+  body {font-family: Arial, sans-serif; margin: 20px; background:#f9f9f9;}
+  .container {max-width: 600px; margin:auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+  label {display:block; margin-top:10px; font-weight:bold;}
+  input, textarea {width:100%; padding:8px; margin-top:4px; box-sizing:border-box;}
+  button {margin-top:12px; padding:10px 16px; background:#1976d2; color:#fff; border:none; border-radius:4px; cursor:pointer;}
+  button:hover {background:#1565c0;}
+  #messages {margin-top:20px; min-height:100px; border:1px solid #ddd; padding:10px; background:#fafafa; overflow:auto;}
+  .msg {margin-bottom:8px;}
+  .error {color:#c62828;}
+  .reply {color:#2e7d32;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Chat YAIWES</h1>
+
+  <label for="apiBase">URL base del Router (API_BASE)</label>
+  <input type="text" id="apiBase" placeholder="Ej: https://<job_id>--8000.hf.jobs">
+
+  <label for="apiKey">API key del Router</label>
+  <input type="password" id="apiKey" placeholder="Introduce la clave (solo en memoria)">
+
+  <label for="msgInput">Mensaje</label>
+  <textarea id="msgInput" rows="3" placeholder="Escribe tu mensaje aquí"></textarea>
+
+  <button id="sendBtn">Enviar</button>
+  <button id="hfLoginBtn">Iniciar sesión con Hugging Face</button>
+
+  <div id="messages"></div>
+</div>
+
+<script>
+  const apiBaseInput = document.getElementById('apiBase');
+  const apiKeyInput = document.getElementById('apiKey');
+  const msgInput = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const hfLoginBtn = document.getElementById('hfLoginBtn');
+  const messagesDiv = document.getElementById('messages');
+
+  function addText(text, isError = false) {
+    const p = document.createElement('p');
+    p.className = isError ? 'error' : 'reply';
+    p.textContent = text;
+    messagesDiv.appendChild(p);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  sendBtn.addEventListener('click', async () => {
+    const apiBase = apiBaseInput.value.trim();
+    const apiKey = apiKeyInput.value.trim();
+    const message = msgInput.value.trim();
+
+    if (!apiBase) { addText('Debes indicar la URL base del Router.', true); return; }
+    if (!apiKey) { addText('Debes introducir la API key del Router.', true); return; }
+    if (!message) { addText('El mensaje no puede estar vacío.', true); return; }
+
+    const url = apiBase.endsWith('/') ? apiBase + 'chat/send' : apiBase + '/chat/send';
+    const payload = {
+      message,
+      provider: 'nvidia',
+      model: 'nvidia/nemotron-3-super-120b-a12b',
+      max_tokens: 1024
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': apiKey
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        addText(`Error ${response.status}: ${errText}`, true);
+        return;
+      }
+
+      const data = await response.json();
+      const reply = data.reply || '(sin respuesta)';
+      addText(`Respuesta: ${reply}`);
+    } catch (err) {
+      addText(`Error de red: ${err.message}`, true);
+    }
+  });
+
+  hfLoginBtn.addEventListener('click', () => {
+    // Marker for OAuth integration; actual token handling would be done via HF OAuth flow.
+    window.location.href = 'https://huggingface.co/oauth/authorize';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-3-router
+  framework: pocketflow
+  group: hf-chat
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  fallback:
+  - minimax_m3
+  max_tokens: 2200
+context:
+  text: "OPCIONES DEL DIRECTOR PARA EL CHAT EN HF SIN PRO (documento pegado por él;\
+    \ sus datos no están verificados todavía):\n- Elegida: Static Space GRATUITO (HTML/JS)\
+    \ como interfaz + servidor del Router en un Job de HF (8 vCPU / 32 GB) que expone\
+    \ un puerto:\n  https://<job_id>--8000.hf.jobs. El endpoint existe mientras el\
+    \ Job esté vivo.\n- En un Static Space las variables/secrets pueden llegar al\
+    \ JavaScript del navegador: NO poner claves privadas allí.\n- Para autenticar\
+    \ sin token maestro: HF OAuth. Front matter del Space: `sdk: static`, `hf_oauth:\
+    \ true`, `hf_oauth_scopes:` con `jobs`\n  e `inference-api`.\n- Alternativas:\
+    \ Gradio ZeroGPU (2 Spaces gratis por cuenta elegible), o Static + OAuth + Inference\
+    \ Providers directos.\n- HF exige plan de pago para crear Spaces Docker/Gradio\
+    \ CPU nuevos (salvo ZeroGPU): descartado.\nAPI del chat (Router): POST /chat/send\
+    \ (cabecera X-API-Key) cuerpo {\"message\",\"provider\",\"model\",\"conversation_id\"\
+    ,\"mode\",\"agent_id\",\"doc_ids\",\"cache\",\"max_tokens\"} -> {\"reply\",\"\
+    conversation_id\",\"certified\",\"cached\"}.\n"
+  max_chars: 9000
+task: 'Escribe el archivo `README.md` de un Static Space de Hugging Face para el chat.
+  Debe empezar con un bloque YAML entre líneas `---`
+
+  con exactamente estas claves: title: "Chat YAIWES", emoji, colorFrom, colorTo, sdk:
+  static, pinned: false, hf_oauth: true y
+
+  hf_oauth_scopes con dos elementos (jobs e inference-api). Después del bloque, en
+  español, una explicación breve (mínimo 300
+
+  caracteres) de qué hace el Space, que NO contiene claves privadas y que la interfaz
+  habla con el Router en un Job de HF.
+
+  '
+checks:
+- kind: contains
+  values:
+  - '---'
+  - 'title:'
+  - 'sdk: static'
+  - 'hf_oauth: true'
+  - 'hf_oauth_scopes:'
+  - inference-api
+  - jobs
+- kind: min_chars
+  value: 400
+- kind: no_secrets

@@ -1,0 +1,45 @@
+```python
+def plan_files(space_id: str, api_base: str) -> dict:
+    """
+    Returns a dict describing the static space to be created.
+    Raises ValueError if space_id is not in the form "usuario/nombre"
+    or if api_base does not start with "https://".
+    """
+    if space_id.count("/") != 1:
+        raise ValueError("space_id must contain exactly one '/'")
+    user, name = space_id.split("/")
+    if not user or not name:
+        raise ValueError("space_id must have non-empty user and name parts")
+    if not api_base.startswith("https://"):
+        raise ValueError("api_base must start with 'https://'")
+    return {
+        "repo_id": space_id,
+        "repo_type": "space",
+        "space_sdk": "static",
+        "files": ["README.md", "index.html"],
+        "api_base": api_base,
+    }
+
+
+def deploy(space_id: str, folder: str, token: str) -> str:
+    """
+    Creates a static Hugging Face Space and uploads the contents of `folder`.
+    Returns the URL of the created space.
+    The `token` is used only for authentication and is never printed or stored.
+    """
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=token)
+    api.create_repo(
+        repo_id=space_id,
+        repo_type="space",
+        space_sdk="static",
+        exist_ok=True,
+    )
+    api.upload_folder(
+        folder_path=folder,
+        repo_id=space_id,
+        repo_type="space",
+    )
+    return f"https://huggingface.co/spaces/{space_id}"
+```

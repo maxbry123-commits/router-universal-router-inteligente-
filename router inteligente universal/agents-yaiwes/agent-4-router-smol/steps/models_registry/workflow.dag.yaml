@@ -1,0 +1,78 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-4-router-smol
+  framework: smolagents
+  group: hf-models
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  fallback:
+  - minimax_m3
+  max_tokens: 1800
+context:
+  text: 'HECHOS VERIFICADOS (Hugging Face, 2026-09-21):
+
+    - LFM2.5-1.2B-Thinking: repo LiquidAI/LFM2.5-1.2B-Thinking; GGUF oficial LiquidAI/LFM2.5-1.2B-Thinking-GGUF
+    con LFM2.5-1.2B-Thinking-Q4_K_M.gguf (731 MB).
+
+    - Qwen3-0.6B: repo Qwen/Qwen3-0.6B; GGUF oficial Qwen/Qwen3-0.6B-GGUF (solo Q8_0,
+    639 MB).
+
+    - K2-Horizon-0.9B: repo IFM/K2-Horizon-0.9B; GGUF IFM/K2-Horizon-0.9B-GGUF.
+
+    - Nanbeige4.2-3B: repo Nanbeige/Nanbeige4.2-3B (código propio); GGUF Q4_K_M solo
+    de la comunidad: bartowski/Nanbeige_Nanbeige4.2-3B-GGUF; exige el fork de llama.cpp,
+    rama nanbeige42.
+
+    - NanoJev: repo C-Tianyu/NanoJev; se ejecuta con Python (no llama.cpp).
+
+    - Decider-0.8B: repo Mapika/decider-0.8b. Decider-2B: repo Mapika/decider-2b.
+    Se ejecutan con Python.
+
+    REGLAS DEL DIRECTOR: pesos remotos con `-v hf://models/AUTOR/MODELO:/model:ro`
+    en HF Jobs y llama.cpp; una copia por modelo compartida
+
+    por muchos agentes (continuous batching, prompt cache); 3 nodos HF de 32 GB con
+    un Nanbeige por nodo; estados por carga:
+
+    0-80 % GREEN, 80-90 % YELLOW, 90-95 % DRAIN, >= 95 % CLOSED.
+
+    '
+  max_chars: 9000
+task: "Escribe el módulo Python `hf_models_registry.py` (solo código, un único bloque\
+  \ ```python; solo biblioteca estándar) con:\n- `MODELS`: dict con exactamente 7\
+  \ claves: \"lfm2.5-1.2b-thinking\", \"qwen3-0.6b\", \"k2-horizon-0.9b\", \"nanbeige4.2-3b\"\
+  , \"nanojev\",\n  \"decider-0.8b\", \"decider-2b\". Cada valor es un dict con las\
+  \ claves \"repo\", \"gguf_repo\", \"file\", \"runtime\", \"needs_fork\", \"role\"\
+  .\n- Usa SOLO los repos del CONTEXTO. \"gguf_repo\" y \"file\" son None cuando no\
+  \ aplican o no se conocen (el archivo solo se conoce para lfm2.5-1.2b-thinking).\n\
+  - \"runtime\" es \"llama.cpp\" cuando hay GGUF y \"python\" para nanojev, decider-0.8b\
+  \ y decider-2b. \"needs_fork\" es True solo para nanbeige4.2-3b.\n- \"role\": lfm2.5-1.2b-thinking\
+  \ = \"reasoning principal pequeño\"; qwen3-0.6b = \"tareas ultrarrápidas / router\
+  \ / reasoning corto\";\n  k2-horizon-0.9b = \"por definir\"; nanbeige4.2-3b = \"\
+  code\"; nanojev, decider-0.8b y decider-2b = \"decisiones\".\n- `get_model(key)`:\
+  \ devuelve el dict de esa clave y lanza KeyError si no existe.\n"
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: hf_models_registry.py
+  test: "from hf_models_registry import MODELS, get_model\nm = get_model(\"lfm2.5-1.2b-thinking\"\
+    )\nassert m[\"gguf_repo\"] == \"LiquidAI/LFM2.5-1.2B-Thinking-GGUF\" and m[\"\
+    file\"] == \"LFM2.5-1.2B-Thinking-Q4_K_M.gguf\"\nassert m[\"runtime\"] == \"llama.cpp\"\
+    \ and m[\"needs_fork\"] is False\nassert get_model(\"qwen3-0.6b\")[\"gguf_repo\"\
+    ] == \"Qwen/Qwen3-0.6B-GGUF\"\nassert get_model(\"qwen3-0.6b\")[\"role\"] == \"\
+    tareas ultrarrápidas / router / reasoning corto\"\nassert get_model(\"k2-horizon-0.9b\"\
+    )[\"gguf_repo\"] == \"IFM/K2-Horizon-0.9B-GGUF\"\nn = get_model(\"nanbeige4.2-3b\"\
+    )\nassert n[\"needs_fork\"] is True and n[\"gguf_repo\"] == \"bartowski/Nanbeige_Nanbeige4.2-3B-GGUF\"\
+    \nassert get_model(\"nanojev\")[\"repo\"] == \"C-Tianyu/NanoJev\" and get_model(\"\
+    nanojev\")[\"runtime\"] == \"python\"\nassert get_model(\"decider-2b\")[\"repo\"\
+    ] == \"Mapika/decider-2b\" and get_model(\"decider-0.8b\")[\"repo\"] == \"Mapika/decider-0.8b\"\
+    \nassert len(MODELS) == 7\ntry:\n    get_model(\"no-existe\")\n    raise SystemExit(1)\n\
+    except KeyError:\n    pass\n"
+- kind: no_secrets

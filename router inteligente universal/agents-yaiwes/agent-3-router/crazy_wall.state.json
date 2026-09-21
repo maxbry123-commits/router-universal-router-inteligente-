@@ -1,0 +1,21 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-3-router",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T08:23:25Z",
+ "group": "hf-chat",
+ "chain": [
+  "space_readme",
+  "space_index",
+  "deploy_script"
+ ],
+ "completed": [
+  "space_readme",
+  "space_index",
+  "deploy_script"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": []
+}

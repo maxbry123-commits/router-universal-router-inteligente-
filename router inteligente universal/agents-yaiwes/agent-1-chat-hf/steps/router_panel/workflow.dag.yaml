@@ -1,0 +1,78 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-1-chat-hf
+  framework: pocketflow
+  group: chat
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  fallback:
+  - minimax_m3
+  max_tokens: 1800
+context:
+  text: "ENDPOINTS DEL CHAT (todos con cabecera X-API-Key; los paneles reciben fetchJson(path,\
+    \ options) -> Promise<{status, body}>):\n- POST /vault/unlock  cuerpo {\"passphrase\"\
+    : \"...\"}  -> 200 {\"unlocked\": true, \"credentials\": N}; 401 contraseña incorrecta;\
+    \ 429 demasiados intentos.\n- POST /vault/lock    -> 200 {\"unlocked\": false}\n\
+    - GET  /chat/router/status -> {\"deepseek_peak_now\": bool, \"limiter\": {\"tier\"\
+    : n, \"slots\": n, \"tiers\": [3, 10]}, \"latency_seconds\": {...},\n    \"groups\"\
+    : {\"<grupo>\": {\"authorized_fallback\": bool, \"chain\": [{\"provider\": \"\
+    ...\", \"model\": \"...\"}], \"skipped\": [\"...\"]}}}\n- POST /chat/jobs/run\
+    \ cuerpo {\"jobs\": [...], \"max_parallel\": 8} -> {\"results\": [{\"id\": \"\
+    ...\", \"status\": \"...\"}], \"passed\": n, \"total\": n}\nRegla de seguridad:\
+    \ mostrar datos del servidor SOLO con textContent (nunca innerHTML).\n\n\nSALIDA\
+    \ VERIFICADA DEL PASO ANTERIOR (vault_panel):\n```js\nfunction initVaultPanel(container,\
+    \ fetchJson) {\n    // Limpiar el contenedor (no es dato del servidor)\n    container.innerHTML\
+    \ = '';\n\n    const pwInput = document.createElement('input');\n    pwInput.type\
+    \ = 'password';\n    pwInput.placeholder = 'Contraseña maestra';\n    pwInput.style.marginBottom\
+    \ = '8px';\n\n    const unlockBtn = document.createElement('button');\n    unlockBtn.textContent\
+    \ = 'Desbloquear';\n    unlockBtn.style.marginRight = '8px';\n\n    const lockBtn\
+    \ = document.createElement('button');\n    lockBtn.textContent = 'Bloquear';\n\
+    \n    const statusEl = document.createElement('div');\n    statusEl.style.marginTop\
+    \ = '8px';\n    statusEl.textContent = 'bloqueado'; // estado inicial\n\n    container.append(pwInput,\
+    \ unlockBtn, lockBtn, statusEl);\n\n    async function handleUnlock() {\n    \
+    \    const passphrase = pwInput.value;\n        pwInput.value = ''; // vaciar\
+    \ campo tras intentar desbloquear\n        const resp = await fetchJson('/vault/unlock',\
+    \ {\n            method: 'POST',\n            body: JSON.stringify({ passphrase\
+    \ })\n        });\n        if (resp.status === 200) {\n            statusEl.textContent\
+    \ = 'desbloqueado';\n        } else {\n            statusEl.textContent = 'bloqueado';\n\
+    \        }\n    }\n\n    async function handleLock() {\n        const resp = await\
+    \ fetchJson('/vault/lock', { method: 'POST' });\n        if (resp.status === 200)\
+    \ {\n            statusEl.textContent = 'bloqueado';\n        } else {\n     \
+    \       statusEl.textContent = 'bloqueado';\n        }\n    }\n\n    unlockBtn.addEventListener('click',\
+    \ handleUnlock);\n    lockBtn.addEventListener('click', handleLock);\n}\n```"
+  max_chars: 9000
+task: 'Escribe SOLO JavaScript (un único bloque ```js) que defina la función global
+  `initRouterPanel(container, fetchJson)`.
+
+  Crea dentro del contenedor un botón "Actualizar estado del Router" y un elemento
+  de texto. Al pulsar (y una vez al iniciar) llama a
+
+  fetchJson(''/chat/router/status'') y, si status es 200, muestra con textContent:
+  una línea "Hora pico de DeepSeek: sí/no"
+
+  (según body.deepseek_peak_now), una línea "Concurrencia: <limiter.slots> espacios
+  (nivel <limiter.tier>)" y una línea por grupo:
+
+  "<grupo>: respaldo autorizado sí/no (authorized_fallback) — <modelos de chain unidos
+  con '' → ''>". Si status no es 200 muestra
+
+  "Error <status>". Sin librerías externas. Nunca innerHTML con datos del servidor.
+
+  '
+checks:
+- kind: js_syntax
+  file: router_panel.js
+- kind: contains
+  values:
+  - initRouterPanel
+  - /chat/router/status
+  - deepseek_peak_now
+  - authorized_fallback
+- kind: no_secrets

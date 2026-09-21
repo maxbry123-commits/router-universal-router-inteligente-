@@ -1,0 +1,57 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-2-chat-hf-smol
+  framework: smolagents
+  group: chat
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  fallback:
+  - minimax_m3
+  max_tokens: 1800
+context:
+  text: 'CONTEXTO DEL CHAT: el Router ejecuta planes en el esquema `riu.dag/v1` (schema,
+    id, input_block literal, nodes con id, instructions,
+
+    needs, expect, retries, model). El chat necesita una plantilla FIJA determinista
+    que convierta las reglas (YAML→dict) y una orden
+
+    (JSON→dict) en un plan, y un Crazy Wall / handoff permanente encadenado por hash
+    para anotar cada avance. Solo biblioteca estándar.
+
+    '
+  max_chars: 9000
+task: 'Escribe SOLO JavaScript (un único bloque ```js) que defina la función global
+  `initJobsPanel(container, fetchJson)` para el chat.
+
+  `container` es un elemento DOM y `fetchJson(path, options)` devuelve una promesa
+  con {status, body}.
+
+  Crea dentro del contenedor: un textarea donde se pega un arreglo JSON de trabajos,
+  y un botón "Ejecutar en paralelo" que valida
+
+  el JSON (si es inválido muestra el error con textContent y no llama al servidor)
+  y luego llama a
+
+  fetchJson(''/chat/jobs/run'', {method: ''POST'', body: JSON.stringify({jobs: <arreglo>,
+  max_parallel: 8})}).
+
+  Muestra el resultado como una lista: una línea por trabajo con su id y su status
+  (usa textContent). Sin librerías externas.
+
+  '
+checks:
+- kind: js_syntax
+  file: jobs_panel.js
+- kind: contains
+  values:
+  - initJobsPanel
+  - /chat/jobs/run
+  - max_parallel
+- kind: no_secrets

@@ -1,0 +1,48 @@
+function initVaultPanel(container, fetchJson) {
+    // Limpiar el contenedor (no es dato del servidor)
+    container.innerHTML = '';
+
+    const pwInput = document.createElement('input');
+    pwInput.type = 'password';
+    pwInput.placeholder = 'Contraseña maestra';
+    pwInput.style.marginBottom = '8px';
+
+    const unlockBtn = document.createElement('button');
+    unlockBtn.textContent = 'Desbloquear';
+    unlockBtn.style.marginRight = '8px';
+
+    const lockBtn = document.createElement('button');
+    lockBtn.textContent = 'Bloquear';
+
+    const statusEl = document.createElement('div');
+    statusEl.style.marginTop = '8px';
+    statusEl.textContent = 'bloqueado'; // estado inicial
+
+    container.append(pwInput, unlockBtn, lockBtn, statusEl);
+
+    async function handleUnlock() {
+        const passphrase = pwInput.value;
+        pwInput.value = ''; // vaciar campo tras intentar desbloquear
+        const resp = await fetchJson('/vault/unlock', {
+            method: 'POST',
+            body: JSON.stringify({ passphrase })
+        });
+        if (resp.status === 200) {
+            statusEl.textContent = 'desbloqueado';
+        } else {
+            statusEl.textContent = 'bloqueado';
+        }
+    }
+
+    async function handleLock() {
+        const resp = await fetchJson('/vault/lock', { method: 'POST' });
+        if (resp.status === 200) {
+            statusEl.textContent = 'bloqueado';
+        } else {
+            statusEl.textContent = 'bloqueado';
+        }
+    }
+
+    unlockBtn.addEventListener('click', handleUnlock);
+    lockBtn.addEventListener('click', handleLock);
+}

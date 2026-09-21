@@ -1,0 +1,61 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-1-chat-hf
+  framework: pocketflow
+  group: chat
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  fallback:
+  - minimax_m3
+  max_tokens: 1800
+context:
+  text: "ENDPOINTS DEL CHAT (todos con cabecera X-API-Key; los paneles reciben fetchJson(path,\
+    \ options) -> Promise<{status, body}>):\n- POST /vault/unlock  cuerpo {\"passphrase\"\
+    : \"...\"}  -> 200 {\"unlocked\": true, \"credentials\": N}; 401 contraseña incorrecta;\
+    \ 429 demasiados intentos.\n- POST /vault/lock    -> 200 {\"unlocked\": false}\n\
+    - GET  /chat/router/status -> {\"deepseek_peak_now\": bool, \"limiter\": {\"tier\"\
+    : n, \"slots\": n, \"tiers\": [3, 10]}, \"latency_seconds\": {...},\n    \"groups\"\
+    : {\"<grupo>\": {\"authorized_fallback\": bool, \"chain\": [{\"provider\": \"\
+    ...\", \"model\": \"...\"}], \"skipped\": [\"...\"]}}}\n- POST /chat/jobs/run\
+    \ cuerpo {\"jobs\": [...], \"max_parallel\": 8} -> {\"results\": [{\"id\": \"\
+    ...\", \"status\": \"...\"}], \"passed\": n, \"total\": n}\nRegla de seguridad:\
+    \ mostrar datos del servidor SOLO con textContent (nunca innerHTML).\n"
+  max_chars: 9000
+task: 'Escribe SOLO JavaScript (un único bloque ```js) que defina la función global
+  `initVaultPanel(container, fetchJson)` para la
+
+  pestaña "Claves" del chat. `container` es un elemento DOM y `fetchJson(path, options)`
+  devuelve una promesa con {status, body}.
+
+  La función crea dentro del contenedor: un campo de contraseña (type password, placeholder
+  "Contraseña maestra"), un botón
+
+  "Desbloquear" que llama a fetchJson(''/vault/unlock'', {method: ''POST'', body:
+  JSON.stringify({passphrase: <valor del campo>})}),
+
+  un botón "Bloquear" que llama a fetchJson(''/vault/lock'', {method: ''POST''}) y
+  un elemento de estado que muestra "desbloqueado" o
+
+  "bloqueado" según la respuesta (status 200 = éxito). Al desbloquear debe vaciar
+  el campo de contraseña. Sin librerías externas.
+
+  Usa textContent, nunca innerHTML con datos del servidor.
+
+  '
+checks:
+- kind: js_syntax
+  file: vault_panel.js
+- kind: contains
+  values:
+  - initVaultPanel
+  - /vault/unlock
+  - /vault/lock
+  - passphrase
+- kind: no_secrets

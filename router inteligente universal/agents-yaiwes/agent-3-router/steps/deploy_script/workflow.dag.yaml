@@ -1,0 +1,107 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-3-router
+  framework: pocketflow
+  group: hf-chat
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  fallback:
+  - minimax_m3
+  max_tokens: 2200
+context:
+  text: "OPCIONES DEL DIRECTOR PARA EL CHAT EN HF SIN PRO (documento pegado por él;\
+    \ sus datos no están verificados todavía):\n- Elegida: Static Space GRATUITO (HTML/JS)\
+    \ como interfaz + servidor del Router en un Job de HF (8 vCPU / 32 GB) que expone\
+    \ un puerto:\n  https://<job_id>--8000.hf.jobs. El endpoint existe mientras el\
+    \ Job esté vivo.\n- En un Static Space las variables/secrets pueden llegar al\
+    \ JavaScript del navegador: NO poner claves privadas allí.\n- Para autenticar\
+    \ sin token maestro: HF OAuth. Front matter del Space: `sdk: static`, `hf_oauth:\
+    \ true`, `hf_oauth_scopes:` con `jobs`\n  e `inference-api`.\n- Alternativas:\
+    \ Gradio ZeroGPU (2 Spaces gratis por cuenta elegible), o Static + OAuth + Inference\
+    \ Providers directos.\n- HF exige plan de pago para crear Spaces Docker/Gradio\
+    \ CPU nuevos (salvo ZeroGPU): descartado.\nAPI del chat (Router): POST /chat/send\
+    \ (cabecera X-API-Key) cuerpo {\"message\",\"provider\",\"model\",\"conversation_id\"\
+    ,\"mode\",\"agent_id\",\"doc_ids\",\"cache\",\"max_tokens\"} -> {\"reply\",\"\
+    conversation_id\",\"certified\",\"cached\"}.\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR\
+    \ (space_index):\n<!doctype html>\n<html lang=\"es\">\n<head>\n<meta charset=\"\
+    UTF-8\">\n<title>Chat YAIWES</title>\n<style>\n  body {font-family: Arial, sans-serif;\
+    \ margin: 20px; background:#f9f9f9;}\n  .container {max-width: 600px; margin:auto;\
+    \ background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);}\n\
+    \  label {display:block; margin-top:10px; font-weight:bold;}\n  input, textarea\
+    \ {width:100%; padding:8px; margin-top:4px; box-sizing:border-box;}\n  button\
+    \ {margin-top:12px; padding:10px 16px; background:#1976d2; color:#fff; border:none;\
+    \ border-radius:4px; cursor:pointer;}\n  button:hover {background:#1565c0;}\n\
+    \  #messages {margin-top:20px; min-height:100px; border:1px solid #ddd; padding:10px;\
+    \ background:#fafafa; overflow:auto;}\n  .msg {margin-bottom:8px;}\n  .error {color:#c62828;}\n\
+    \  .reply {color:#2e7d32;}\n</style>\n</head>\n<body>\n<div class=\"container\"\
+    >\n  <h1>Chat YAIWES</h1>\n\n  <label for=\"apiBase\">URL base del Router (API_BASE)</label>\n\
+    \  <input type=\"text\" id=\"apiBase\" placeholder=\"Ej: https://<job_id>--8000.hf.jobs\"\
+    >\n\n  <label for=\"apiKey\">API key del Router</label>\n  <input type=\"password\"\
+    \ id=\"apiKey\" placeholder=\"Introduce la clave (solo en memoria)\">\n\n  <label\
+    \ for=\"msgInput\">Mensaje</label>\n  <textarea id=\"msgInput\" rows=\"3\" placeholder=\"\
+    Escribe tu mensaje aquí\"></textarea>\n\n  <button id=\"sendBtn\">Enviar</button>\n\
+    \  <button id=\"hfLoginBtn\">Iniciar sesión con Hugging Face</button>\n\n  <div\
+    \ id=\"messages\"></div>\n</div>\n\n<script>\n  const apiBaseInput = document.getElementById('apiBase');\n\
+    \  const apiKeyInput = document.getElementById('apiKey');\n  const msgInput =\
+    \ document.getElementById('msgInput');\n  const sendBtn = document.getElementById('sendBtn');\n\
+    \  const hfLoginBtn = document.getElementById('hfLoginBtn');\n  const messagesDiv\
+    \ = document.getElementById('messages');\n\n  function addText(text, isError =\
+    \ false) {\n    const p = document.createElement('p');\n    p.className = isError\
+    \ ? 'error' : 'reply';\n    p.textContent = text;\n    messagesDiv.appendChild(p);\n\
+    \    messagesDiv.scrollTop = messagesDiv.scrollHeight;\n  }\n\n  sendBtn.addEventListener('click',\
+    \ async () => {\n    const apiBase = apiBaseInput.value.trim();\n    const apiKey\
+    \ = apiKeyInput.value.trim();\n    const message = msgInput.value.trim();\n\n\
+    \    if (!apiBase) { addText('Debes indicar la URL base del Router.', true); return;\
+    \ }\n    if (!apiKey) { addText('Debes introducir la API key del Router.', true);\
+    \ return; }\n    if (!message) { addText('El mensaje no puede estar vacío.', true);\
+    \ return; }\n\n    const url = apiBase.endsWith('/') ? apiBase + 'chat/send' :\
+    \ apiBase + '/chat/send';\n    const payload = {\n      message,\n      provider:\
+    \ 'nvidia',\n      model: 'nvidia/nemotron-3-super-120b-a12b',\n      max_tokens:\
+    \ 1024\n    };\n\n    try {\n      const response = await fetch(url, {\n     \
+    \   method: 'POST',\n        headers: {\n          'Content-Type': 'application/json',\n\
+    \          'X-API-Key': apiKey\n        },\n        body: JSON.stringify(payload)\n\
+    \      });\n\n      if (!response.ok) {\n        const errText = await response.text();\n\
+    \        addText(`Error ${response.status}: ${errText}`, true);\n        return;\n\
+    \      }\n\n      const data = await response.json();\n      const reply = data.reply\
+    \ || '(sin respuesta)';\n      addText(`Respuesta: ${reply}`);\n    } catch (err)\
+    \ {\n      addText(`Error de red: ${err.message}`, true);\n    }\n  });\n\n  hfLoginBtn.addEventListener('click',\
+    \ () => {\n    // Marker for OAuth integration; actual token handling would be\
+    \ done via HF OAuth flow.\n    window.location.href = 'https://huggingface.co/oauth/authorize';\n\
+    \  });\n</script>\n</body>\n</html>"
+  max_chars: 9000
+task: "Escribe un módulo Python `deploy_static_space.py` (solo código, un único bloque\
+  \ ```python) con:\n- `plan_files(space_id: str, api_base: str) -> dict`: función\
+  \ PURA que devuelve {\"repo_id\": space_id, \"repo_type\": \"space\",\n  \"space_sdk\"\
+  : \"static\", \"files\": [\"README.md\", \"index.html\"], \"api_base\": api_base}.\
+  \ Lanza ValueError si space_id no tiene la forma\n  \"usuario/nombre\" (exactamente\
+  \ una barra y ambos lados no vacíos) o si api_base no empieza por \"https://\".\n\
+  - `deploy(space_id: str, folder: str, token: str) -> str`: importa huggingface_hub\
+  \ DENTRO de la función, llama a\n  HfApi(token=token).create_repo(space_id, repo_type=\"\
+  space\", space_sdk=\"static\", exist_ok=True) y luego\n  upload_folder(folder_path=folder,\
+  \ repo_id=space_id, repo_type=\"space\"), y devuelve \"https://huggingface.co/spaces/\"\
+  \ + space_id.\nEl token nunca se imprime ni se guarda.\n"
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: deploy_static_space.py
+  test: "from deploy_static_space import plan_files\np = plan_files(\"COMAND-CENTER-1/riu-chat\"\
+    , \"https://job--8000.hf.jobs\")\nassert p == {\"repo_id\": \"COMAND-CENTER-1/riu-chat\"\
+    , \"repo_type\": \"space\", \"space_sdk\": \"static\",\n             \"files\"\
+    : [\"README.md\", \"index.html\"], \"api_base\": \"https://job--8000.hf.jobs\"\
+    }\nfor bad in ((\"sin-barra\", \"https://x\"), (\"a/b/c\", \"https://x\"), (\"\
+    /b\", \"https://x\"), (\"a/\", \"https://x\"), (\"a/b\", \"http://x\")):\n   \
+    \ try:\n        plan_files(*bad)\n        raise SystemExit(\"aceptó \" + repr(bad))\n\
+    \    except ValueError:\n        pass\n"
+- kind: contains
+  values:
+  - space_sdk="static"
+  - upload_folder
+  - create_repo
+- kind: no_secrets

@@ -1,0 +1,13 @@
+---
+title: "Chat YAIWES"
+emoji: "💬"
+colorFrom: "blue"
+colorTo: "indigo"
+sdk: static
+pinned: false
+hf_oauth: true
+hf_oauth_scopes:
+  - jobs
+  - inference-api
+---
+Este Space estático proporciona una interfaz de chat basada en HTML y JavaScript que se ejecuta totalmente en el navegador del usuario. No almacena ni expone claves privadas; toda la información sensible permanece en el servidor del Router, que se ejecuta como un Job de Hugging Face con los recursos especificados (8 vCPU / 32 GB). La interfaz se comunica mediante peticiones HTTP al endpoint expuesto por el Job (https://<job_id>--8000.hf.jobs), enviando el cuerpo JSON requerido por la API del Router y recibiendo la respuesta con el mensaje, el identificador de conversación y otros campos. Para autenticar sin necesidad de un token maestro, el Space utiliza HF OAuth, solicitando únicamente los scopes `jobs` e `inference-api`, lo que permite al frontend iniciar y consultar el Job y, si es necesario, acceder a proveedores de inferencia de forma segura. Todo el código del Space es público y revisable, garantizando transparencia, ausencia de credenciales sensibles y una experiencia de chat que depende exclusivamente del Router ejecutado en un Job de HF.
