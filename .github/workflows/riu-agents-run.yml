@@ -58,7 +58,9 @@ jobs:
           wait
           for i in 1 2 3 4; do
             grep -h '^::notice' /tmp/a$i.log || true
-            grep -E '^(Traceback|[A-Za-z]*(Error|Exception))' /tmp/a$i.log | tail -2 | while IFS= read -r l; do echo "::warning title=RIU_AGENT_${i}_ERROR::${l}"; done
+            if ! grep -q '^::notice' /tmp/a$i.log; then
+              echo "::warning title=RIU_AGENT_${i}_LOG::$(tail -n 14 /tmp/a$i.log | tr '\n' '|' | cut -c1-900)"
+            fi
           done
           exit 0
 
