@@ -1,8 +1,9 @@
 """AUDITOR agent (copy of smol_agent.py, SmolAgents): sheriff / policy / guardian / sentinel with forensic X-ray cross-verification.
 
 Same procedure as the SmolAgents agents (write_deliverable -> run_sheriff until PASS, independent re-check by this runner), plus read-only
-forensic tools over the repo (`read_repo_file`, `list_repo_dir`) so the auditor can open the agents' real deliverables and states and REFUTE
-their work with evidence. Reads are limited to `Claude notas/`, `router inteligente universal/agents-yaiwes/` and `.github/workflows/`.
+forensic tools over the repo (`read_repo_file`, `list_repo_dir`). To be FAST the evidence is already in the context (the Director's literal words and
+the agents' state with their deliverable paths): the auditor answers straight from it and uses the tools only for a doubt (max 6 steps, 2 cycles per model).
+Reads are limited to `Claude notas/`, `router inteligente universal/agents-yaiwes/` and `.github/workflows/`.
 Route: every usable key of every provider in the route order (common/routes.py), then the fallback only after the whole route.
 
 Run: python auditor_agent.py <step_dir>   (env: RIU_BANK_PASSPHRASE)   — normally launched by chain.py
@@ -25,7 +26,8 @@ try:
 except ImportError:  # newer smolagents renamed it
     from smolagents import OpenAIModel as OAIModel
 
-MAX_CYCLES = 3
+MAX_CYCLES = 2
+MAX_STEPS = 6
 ALLOWED = ("Claude notas/", "router inteligente universal/agents-yaiwes/", ".github/workflows/")
 
 
@@ -50,7 +52,7 @@ def main(agent_dir: str) -> int:
 
     @tool
     def read_repo_file(path: str) -> str:
-        """Reads a text file of the repo (read-only; only Claude notas/, router inteligente universal/agents-yaiwes/ and .github/workflows/).
+        """Reads a text file of the repo (read-only; only Claude notas/, router inteligente universal/agents-yaiwes/ and .github/workflows/). Use only for a doubt.
 
         Args:
             path: repo-relative path, for example 'Claude notas/RIU-0124-agentes-cadena-chat-hf-y-puente-vercel.md'.
@@ -58,11 +60,11 @@ def main(agent_dir: str) -> int:
         p = safe(path)
         if p is None or not p.is_file():
             return "NO_ENCONTRADO_O_NO_PERMITIDO"
-        return p.read_text(encoding="utf-8", errors="ignore")[:6000]
+        return p.read_text(encoding="utf-8", errors="ignore")[:5000]
 
     @tool
     def list_repo_dir(path: str) -> str:
-        """Lists the entries of a repo directory (read-only, same allowed roots as read_repo_file).
+        """Lists the entries of a repo directory (read-only, same allowed roots as read_repo_file). Use only for a doubt.
 
         Args:
             path: repo-relative directory path, for example 'router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps'.
@@ -95,11 +97,12 @@ def main(agent_dir: str) -> int:
         return "PASS" if sr.passed else "FALLAS: " + " | ".join(sr.failures)
 
     prompt = (f"{boot.CONTRACT}\n\nERES EL AUDITOR (sheriff / guardián / centinela). No confías en nadie: cada afirmación se comprueba contra el texto "
-              f"literal del Director y contra los archivos reales de los agentes (read_repo_file / list_repo_dir).\n\n"
+              f"literal del Director y contra los entregables reales de los agentes.\n\n"
               f"INPUT_BLOCK (literal):\n{trigger['input_block']}\n\nTAREA:\n{cfg['task']}\n"
-              + (f"\nCONTEXTO:\n{ctx}\n" if ctx else "")
-              + "\nProcedimiento obligatorio: 1) llama write_deliverable con el JSON COMPLETO; 2) llama run_sheriff; 3) si devuelve FALLAS, corrige y "
-                "repite; 4) cuando devuelva PASS, termina con final_answer('OK'). Las citas deben copiarse LETRA POR LETRA del texto del Director.")
+              + (f"\nCONTEXTO (ya contiene lo que necesitas; NO hace falta abrir archivos):\n{ctx}\n" if ctx else "")
+              + "\nProcedimiento obligatorio y RÁPIDO: 1) llama YA a write_deliverable con el JSON COMPLETO (copia las citas LETRA POR LETRA del texto del Director del CONTEXTO y usa como evidencia "
+                "SOLO rutas que aparezcan en el CONTEXTO); 2) llama run_sheriff; 3) si devuelve FALLAS, corrige y repite; 4) cuando devuelva PASS, termina con final_answer('OK'). "
+                "Usa read_repo_file / list_repo_dir solo ante una duda concreta.")
     trace: list[str] = []
     closed, used, cycles = False, "-", 0
     for label, base, model_id, key in candidates(agent):
@@ -108,7 +111,7 @@ def main(agent_dir: str) -> int:
             box["content"] = None
             try:
                 model = OAIModel(model_id=model_id, api_base=base, api_key=key)
-                ToolCallingAgent(tools=[read_repo_file, list_repo_dir, write_deliverable, run_sheriff], model=model, max_steps=10).run(prompt)
+                ToolCallingAgent(tools=[read_repo_file, list_repo_dir, write_deliverable, run_sheriff], model=model, max_steps=MAX_STEPS).run(prompt)
             except Exception as exc:  # noqa: BLE001 - a provider/tool-calling failure is evidence, then the next candidate
                 trace.append(f"{label}/{model_id}:{type(exc).__name__}:{str(exc)[:80]}")
                 break
