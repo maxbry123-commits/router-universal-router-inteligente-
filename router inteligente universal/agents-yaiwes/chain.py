@@ -3,7 +3,7 @@
 Each step is executed by the agent's own framework runner (pocketflow_agent.py or smol_agent.py, unchanged): the step gets its own
 directory `steps/<id>/` (workflow.dag.yaml + TRIGGER.json + results/), the previous step's verified output is added to its context,
 and the chain is FAIL_CLOSED: if a step ends BLOCKED, the next steps do not run. The agent's Crazy Wall (crazy_wall.state.json) shows
-which steps closed; deliverables are in steps/<id>/results/.
+which steps closed; deliverables are in steps/<id>/results/. The literal instruction of the Director travels in chain.yaml `input_block`.
 
 Run: python chain.py <agent_dir>     (env: RIU_BANK_PASSPHRASE)
 """
@@ -37,7 +37,10 @@ def main(agent_dir: str) -> int:
         raise SystemExit("chain.yaml inválido (schema yaiwes.chain/v1 y steps son obligatorios)")
     agent = chain["agent"]
     aid, fw = agent["id"], agent["framework"]
-    trigger = (Path(agent_dir) / "TRIGGER.json").read_text(encoding="utf-8")
+    if chain.get("input_block"):
+        trigger = json.dumps({"schema": "yaiwes.trigger/v1", "run_id": chain.get("run_id", "CHAIN-001"), "input_block": chain["input_block"]}, ensure_ascii=False)
+    else:
+        trigger = (Path(agent_dir) / "TRIGGER.json").read_text(encoding="utf-8")
     if fw == "pocketflow":
         import pocketflow_agent as runner
     else:
