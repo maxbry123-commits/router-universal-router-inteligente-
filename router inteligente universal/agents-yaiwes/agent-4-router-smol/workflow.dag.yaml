@@ -1,0 +1,56 @@
+schema: yaiwes.micro-agent/v1
+
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+
+agent:
+  id: agent-4-router-smol
+  framework: smolagents
+  group: router-components
+  route: [groq, cerebras, nvidia]
+  fallback: [minimax_m3]
+  max_tokens: 1600
+
+context:
+  max_chars: 1800
+  text: |
+    Regla del Director para elegir modelo por hora (pregunta J1): "NVIDIA y MiniMax en hora pico y DeepSeek V4 en hora no pico".
+    Hora pico de DeepSeek (UTC, lunes a viernes): de 01:00 a 03:59 y de 06:00 a 09:59. Fuera de eso, o en sábado y domingo, NO es hora pico.
+    En hora pico: código -> MiniMax M3 (proveedor "hf", modelo "MiniMaxAI/MiniMax-M3"); cualquier otra clase de tarea -> NVIDIA
+    (proveedor "nvidia", modelo "nvidia/nemotron-3-super-120b-a12b").
+    Fuera de hora pico: DeepSeek V4 Flash (proveedor "hf", modelo "deepseek-ai/DeepSeek-V4-Flash") para todas las tareas.
+
+task: |
+  Escribe el módulo Python `peak_policy.py` (solo código, un único bloque ```python; solo biblioteca estándar) con:
+  - `is_peak(now_utc: datetime) -> bool`: convierte a UTC con astimezone; False en sábado y domingo; True si la hora está en [1,4) o [6,10).
+  - `choose_model(now_utc: datetime, task_class: str) -> dict`: devuelve {"provider": ..., "model": ...} según la regla del CONTEXTO
+    ("code" es la clase de código; cualquier otro texto es otra clase).
+
+checks:
+  - kind: python_ast
+  - kind: python_exec
+    module: peak_policy.py
+    test: |
+      from datetime import datetime, timezone
+      from peak_policy import choose_model, is_peak
+      mon = lambda h: datetime(2026, 9, 21, h, 0, tzinfo=timezone.utc)
+      assert is_peak(mon(1)) and is_peak(mon(3)) and not is_peak(mon(4)) and is_peak(mon(6)) and is_peak(mon(9))
+      assert not is_peak(mon(10)) and not is_peak(mon(0))
+      assert not is_peak(datetime(2026, 9, 20, 2, 0, tzinfo=timezone.utc))
+      assert choose_model(mon(7), "code") == {"provider": "hf", "model": "MiniMaxAI/MiniMax-M3"}
+      assert choose_model(mon(7), "minor") == {"provider": "nvidia", "model": "nvidia/nemotron-3-super-120b-a12b"}
+      assert choose_model(mon(12), "code") == {"provider": "hf", "model": "deepseek-ai/DeepSeek-V4-Flash"}
+      assert choose_model(mon(12), "minor") == {"provider": "hf", "model": "deepseek-ai/DeepSeek-V4-Flash"}
+  - kind: no_secrets
+
+nodes:
+  tool_calling_agent: {type: smolagents.ToolCallingAgent, tools: [write_deliverable, run_sheriff]}
+  sheriff: {type: deterministic_validator, depends_on: [tool_calling_agent]}
+
+edges:
+  - tool_calling_agent -> sheriff
+  - sheriff.PASS -> done
+  - sheriff.FAIL -> fix
