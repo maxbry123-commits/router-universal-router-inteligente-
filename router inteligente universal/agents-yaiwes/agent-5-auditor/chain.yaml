@@ -1,0 +1,80 @@
+schema: yaiwes.chain/v1
+
+# Agente 5 — AUDITOR / CHECKLIST (copia de SmolAgents convertida). Audita las instrucciones del Director (input block verbatim) contra lo que
+# hicieron los agentes: qué falta, qué es ambiguo, qué no se hizo, qué hace mal un agente (lo REFUTA). Auditoría forense: cada cita debe ser
+# textual del Director y cada evidencia debe existir en el repo (lo comprueba el Sheriff). Los paquetes los arma common/audit_pack.py.
+input_block: |
+  Realiza una copia de Smolange y lo conviertes en agente auditor y check lista su misión es aduidtar mis instrucciones el 1 a 1 imput block verbartin para verificar cruzada que de está cumpliendo las indicaciones su objetivo poder decirte que falta que es ambiguo que no se ha hecho o que está haciendo mal algún agente el debe refutar el trabajo y funciona como un sherriff policy guardián sentinela realiza auditoría forense x Ray verificación cruzada con la información y los agentes
+
+agent:
+  id: agent-5-auditor
+  framework: smolagents
+  runner: auditor
+  post: audit_report
+  group: audit
+  route: [groq, nvidia, cerebras]
+  fallback: [deepseek_flash]
+  max_tokens: 3000
+
+context:
+  text: |
+    Auditas por PAQUETES: cada paso recibe un paquete con las palabras LITERALES del Director (`=== ARCHIVO: ... ===`) y el estado actual de los agentes
+    (`agents_state.md`). Los agentes son: agent-1-chat-hf (chat, PocketFlow), agent-2-chat-hf-smol (chat, SmolAgents), agent-3-router (Hugging Face: chat sin PRO,
+    PocketFlow) y agent-4-router-smol (Hugging Face: modelos por pesos remotos, SmolAgents). Sus entregables están en agents-yaiwes/<agente>/steps/<paso>/results/.
+
+steps:
+
+  - id: audit_pass_1
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-1.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md
+    task: &audit_task |
+      Audita el PAQUETE del CONTEXTO. Devuelve SOLO un objeto JSON {"items": [...]} con al menos 6 ítems, cada uno con:
+      "id" (único, ej. P1-01), "quote" (copiada LETRA POR LETRA de las palabras del Director en el paquete, de 20 a 200 caracteres),
+      "status" (uno de HECHO, PARCIAL, PENDIENTE, AMBIGUO, REFUTADO), "evidence" (lista de rutas del repo que EXISTEN y respaldan el estado; usa
+      list_repo_dir y read_repo_file; lista vacía si es PENDIENTE) y "note" (una frase). Criterios: HECHO solo con evidencia verificada;
+      REFUTADO si un agente afirma o entrega algo que no cumple la instrucción (di en "note" qué agente y por qué); AMBIGUO si la instrucción no
+      permite decidir; PENDIENTE si no hay evidencia. No inventes rutas ni citas.
+    checks:
+      - kind: audit_json
+        min_items: 6
+        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-1.md]
+      - kind: no_secrets
+
+  - id: audit_pass_2
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-2.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md
+    task: *audit_task
+    checks:
+      - kind: audit_json
+        min_items: 6
+        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-2.md]
+      - kind: no_secrets
+
+  - id: audit_pass_3
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-3.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md
+    task: *audit_task
+    checks:
+      - kind: audit_json
+        min_items: 6
+        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-3.md]
+      - kind: no_secrets
+
+  - id: audit_pass_4
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-4.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/packs/agents_state.md
+    task: *audit_task
+    checks:
+      - kind: audit_json
+        min_items: 6
+        sources: [router inteligente universal/agents-yaiwes/agent-5-auditor/packs/pack-4.md]
+      - kind: no_secrets
+
+edges:
+  - audit_pass_1 -> audit_pass_2
+  - audit_pass_2 -> audit_pass_3
+  - audit_pass_3 -> audit_pass_4
