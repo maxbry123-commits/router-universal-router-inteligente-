@@ -1,4 +1,6 @@
 {
+  "route_code": ["minimax_m3", "deepseek_flash", "groq", "nvidia", "cerebras"],
+  "route_jobs": ["deepseek_flash", "minimax_m3", "groq", "nvidia", "cerebras"],
   "route": ["deepseek_flash", "minimax_m3", "groq", "nvidia", "cerebras"],
-  "nota": "Ruta central de TODOS los agentes (Claude la edita para corregir rutas). MODO VELOCIDAD por orden del Director (2026-09-21 s): DeepSeek V4 Flash y MiniMax M3 (router de Hugging Face, se cobran a la cuenta de HF) van PRIMERO hasta que el chat esté 100 % operativo y los modelos locales de HF estén instalados; entonces se CIERRA su acceso quitando las dos primeras entradas y se sigue con Groq, NVIDIA, Cerebras y los locales de HF. Sonda 13:08 UTC: Groq 6 de 7 claves sirven (la 1 da 401); NVIDIA 5 de 5 autentican pero 503 (saturada); Cerebras 5 de 5 autentican pero 402 (pago requerido con gpt-oss-120b)."
+  "nota": "Router MVP de los agentes (orden del Director 2026-09-21 t): CÓDIGO -> MiniMax M3 primero (route_code); TRABAJOS -> DeepSeek V4 Flash primero (route_jobs). Ambos por el router de Hugging Face (se cobran a la cuenta de HF). Cuando el chat esté 100 % operativo y los modelos locales instalados se CIERRA su acceso quitando esas dos entradas y se sigue con Groq, NVIDIA, Cerebras y los locales de HF. Sonda 13:08 UTC: Groq 6 de 7 claves sirven (la 1 da 401); NVIDIA 5 de 5 autentican pero 503; Cerebras 5 de 5 autentican pero 402."
 }
