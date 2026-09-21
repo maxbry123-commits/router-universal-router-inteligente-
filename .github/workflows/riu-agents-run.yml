@@ -1,9 +1,9 @@
 name: RIU Agents Run
 
-# The 5 Yaiwes agents, each on its own and in parallel, each with a CHAIN of steps (agents-yaiwes/<agent>/chain.yaml = the DSL DAG).
-# Chat: agent 1 (PocketFlow) and agent 2 (SmolAgents). Hugging Face: agent 3 (PocketFlow) and agent 4 (SmolAgents). Agent 5: AUDITOR (SmolAgents copy).
-# Claude (the brain) edits a chain.yaml (or agents-yaiwes/ROUTE.json) and dispatches this workflow; the agents execute, note their progress
-# in their own crazy_wall.state.json / HANDOFF.md / steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped.
+# The Yaiwes SWARM: every folder agents-yaiwes/agent-*/ that has a chain.yaml (the DSL DAG) runs on its own and in parallel with its chain of steps.
+# Add an agent = add a folder with a chain.yaml. Frameworks: PocketFlow and SmolAgents (auditor = SmolAgents copy). Claude (the brain) only edits chains and
+# agents-yaiwes/ROUTE.json (code -> MiniMax M3, jobs -> DeepSeek V4 Flash) and dispatches this workflow; the agents execute, note their progress in their own
+# crazy_wall.state.json / HANDOFF.md / steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped.
 # Keys: only the encrypted bank (agent-microkernel/runtime-bank*); the single secret is its passphrase. Every agent has a 30-minute budget.
 
 on:
@@ -49,7 +49,7 @@ jobs:
       - name: Build the auditor's evidence packs (deterministic)
         run: python "router inteligente universal/agents-yaiwes/common/audit_pack.py"
 
-      - name: Run the 5 agents in parallel (each with its chain of steps)
+      - name: Run the swarm (every agent-* with a chain.yaml, in parallel)
         env:
           RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
@@ -60,13 +60,15 @@ jobs:
         run: |
           set +e
           cd "router inteligente universal"
-          for pair in "1:agent-1-chat-hf" "2:agent-2-chat-hf-smol" "3:agent-3-router" "4:agent-4-router-smol" "5:agent-5-auditor"; do
-            n="${pair%%:*}"; d="${pair#*:}"
-            timeout 1800 python agents-yaiwes/chain.py "agents-yaiwes/$d" > "/tmp/a$n.log" 2>&1 &
+          for d in agents-yaiwes/agent-*/; do
+            d="${d%/}"
+            if [ -f "$d/chain.yaml" ]; then
+              timeout 1800 python agents-yaiwes/chain.py "$d" > "/tmp/$(basename "$d").log" 2>&1 &
+            fi
           done
           wait
-          for i in 1 2 3 4 5; do
-            grep -h '^::notice title=RIU_CHAIN' /tmp/a$i.log || echo "::warning title=RIU_AGENT_${i}_LOG::$(tail -n 14 /tmp/a$i.log | tr '\n' '|' | cut -c1-900)"
+          for f in /tmp/agent-*.log; do
+            grep -h '^::notice title=RIU_CHAIN' "$f" || echo "::warning title=RIU_AGENT_LOG_$(basename "$f" .log)::$(tail -n 14 "$f" | tr '\n' '|' | cut -c1-700)"
           done
           exit 0
 
@@ -79,8 +81,8 @@ jobs:
           find "router inteligente universal/agents-yaiwes" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
           git add "router inteligente universal/agents-yaiwes" || true
           git commit -m "agentes: resultados de la ronda (Crazy Wall + HANDOFF + entregables verificados + auditoría)" || { echo "nada que confirmar"; exit 0; }
-          for i in 1 2 3 4; do
+          for i in 1 2 3 4 5; do
             git pull --rebase origin main && git push origin HEAD:main && { echo "::notice title=RIU_AGENTS_COMMIT::pushed"; exit 0; }
-            sleep 4
+            sleep 5
           done
           echo "::warning title=RIU_AGENTS_COMMIT::push failed after retries"
