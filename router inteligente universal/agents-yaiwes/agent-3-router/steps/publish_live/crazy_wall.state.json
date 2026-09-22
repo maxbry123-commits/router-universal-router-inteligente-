@@ -2,7 +2,7 @@
  "schema": "yaiwes.crazy-wall/v1",
  "step": "publish_live",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T23:30:35Z",
+ "updated_at": "2026-09-22T23:50:07Z",
  "attempts": 3,
  "last_error": "SyntaxError unterminated triple-quote — ORCH ordena reescritura sin triples + hardware 32GB only",
  "hardware_lock": "32GB_RAM_ACTIVE_ONLY",
@@ -19,7 +19,8 @@
  "model": "nvidia/nemotron-3-super-120b-a12b",
  "via": "route",
  "gaps": [
-  "Python inválido: invalid syntax (línea 1)"
+  "Python inválido: invalid syntax (línea 1)",
+  "la prueba falló (exit=1): SyntaxError: invalid syntax"
  ],
  "failed": [
   "execute"

@@ -3,7 +3,7 @@
  "agent": "agent-3-router",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T23:42:43Z",
+ "updated_at": "2026-09-22T23:50:07Z",
  "group": "hf-chat",
  "chain": [
   "space_readme",
@@ -19,9 +19,7 @@
  "failed": [
   "publish_live"
  ],
- "next_nodes": [
-  "publish_live"
- ],
+ "next_nodes": [],
  "current_nodes": [],
  "attempts_publish_live": 3,
  "blockers": [
