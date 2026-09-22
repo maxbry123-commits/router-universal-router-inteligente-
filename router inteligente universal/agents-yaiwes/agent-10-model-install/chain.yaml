@@ -30,6 +30,9 @@ steps:
   - id: install_launch_test
     task: |
       Escribe el módulo Python `install_launch_test.py` (solo código, un único bloque ```python, dependencias: huggingface_hub, requests) con
+      IMPORTANTE (desbloqueo): NUNCA `from huggingface_hub import HfHubHTTPError` (ImportError en el runner).
+      Usa: `from huggingface_hub.errors import HfHubHTTPError` (fallback: `from huggingface_hub.utils import HfHubHTTPError`).
+      Imports OK: os, time, requests, `from huggingface_hub import HfApi`, y HfHubHTTPError solo desde `.errors`/`.utils`.
       la función `launch_and_verify(model_id, repo, file, port=8080) -> dict`: construye la URL pública `https://huggingface.co/{repo}/resolve/main/{file}`,
       arma el comando bash (curl + llama-server, igual al del CONTEXTO), llama `HfApi(token=os.environ["HF_TOKEN"]).run_job(image="ghcr.io/ggml-org/llama.cpp:server",
       command=["bash","-lc", comando], flavor="cpu-basic", timeout="20m", expose=[port])`, y espera hasta 300 segundos revisando `inspect_job` y
