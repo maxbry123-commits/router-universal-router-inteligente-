@@ -1,6 +1,6 @@
-# WATCHDOG — estado de los agentes (2026-09-22 13:27:06Z)
+# WATCHDOG — estado de los agentes (2026-09-22 18:08:18Z)
 
-**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
 
 | agente | marco | estado | pasos cerrados | bloqueado en | GAPs |
 |---|---|---|---|---|---|
