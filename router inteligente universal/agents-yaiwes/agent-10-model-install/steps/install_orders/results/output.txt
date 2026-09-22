@@ -1,0 +1,137 @@
+We need to output JSON with key "orders": list of one order per model in CONTEXTO, 8 models total.
+
+We must list from smallest model to largest. Need to decide size based on parameter count? The models given:
+
+- qwen3.5-0.8b (0.8B)
+- lfm2.5-1.2b-instruct (1.2B)
+- lfm2.5-1.2b-thinking (1.2B) same size as above.
+- qwen3-0.6b (0.6B)
+- gemma-4-e2b (2B? Actually E2B maybe 2B? It's 2B? It says gemma-4-E2B-it-qat, likely 2B)
+- k2-horizon-0.9b (0.9B)
+- smollm3-3b (3B)
+- muse-glimmer-30b (30B)
+
+Order from smallest to largest: 
+0.6B (qwen3-0.6b)
+0.8B (qwen3.5-0.8b)
+0.9B (k2-horizon-0.9b)
+1.2B (lfm2.5-1.2b-instruct)
+1.2B (lfm2.5-1.2b-thinking) - same size; we need order maybe alphabetical or keep as listed.
+2B (gemma-4-e2b)
+3B (smollm3-3b)
+30B (muse-glimmer-30b)
+
+Now each order: model_id (should be the name as given?), repo (the GGUF repo), file (the gguf file), flavor (cpu-basic or cpu-upgrade). Need to decide flavor based on fitting in CPU hardware without GPU. We can decide: smaller models can use cpu-basic, larger maybe cpu-upgrade. The instruction: flavor always cpu-basic or cpu-upgrade, never other. Provide a reason phrase why_this_flavor: why that model fits in that hardware without GPU.
+
+We need to ensure we don't mention GPU. Provide phrase like "Fits comfortably in RAM with basic CPU kernels" for cpu-basic, or "Requires more RAM/CPU power, uses upgraded CPU kernels" for cpu-upgrade.
+
+We need to decide which models get which flavor. Since we have no explicit constraints, we can assign cpu-basic to models up to maybe 2B, and cpu-upgrade for 3B and 30B. Or maybe all cpu-basic? But need to include both flavors? Not required but allowed. Provide at least one of each? Not required but we can.
+
+We'll produce orders list sorted.
+
+Now need to output exactly one JSON block with key "orders". No extra text. Ensure correct JSON format: double quotes, etc.
+
+Let's construct:
+
+[
+  {
+    "model_id": "qwen3-0.6b",
+    "repo": "Qwen/Qwen3-0.6B-GGUF",
+    "file": "Qwen3-0.6B-Q8_0.gguf",
+    "flavor": "cpu-basic",
+    "port": 8080,
+    "why_this_flavor": "Fits comfortably in RAM with basic CPU kernels",
+    "status": "PENDING_LAUNCH"
+  },
+  {
+    "model_id": "qwen3.5-0.8b",
+    "repo": "ggml-org/Qwen3.5-0.8B-GGUF",
+    "file": "Qwen3.5-0.8B-Q4_0.gguf",
+    "flavor": "cpu-basic",
+    "port": 8080,
+    "why_this_flavor": "Fits comfortably in RAM with basic CPU kernels",
+    "status": "PENDING_LAUNCH"
+  },
+  {
+    "model_id": "k2-horizon-0.9b",
+    "repo": "IFM/K2-Horizon-0.9B-GGUF",
+    "file": "<need file>"; we have only repo given, no file specified in context: "k2-horizon-0.9b (IFM/K2-Horizon-0.9B-GGUF)". No file given. Perhaps we need to infer? The context only gave repo, no file. Might need to leave file empty? But instruction: each order includes "file". Must not invent models that not in CONTEXTO; but we can infer file? Might be unsafe. Could we set file as null? Probably need to use the given file if present; if not given, maybe we cannot assign? However the context for k2-horizon-0.9b only shows repo, no file. Could be missing intentionally; maybe we should still include but file could be empty string? The instruction: "No inventes modelos que no estén en el CONTEXTO." Inventing a file not in context could be considered inventing? Possibly safer to leave file as empty string? But that might be considered invented? Not sure. Another approach: Since we cannot invent, maybe we should omit that model? But we need 8 orders total. The context says 8 models total; we must include all. So we need to provide file; maybe the file is implied to be something like "K2-Horizon-0.9B-Q4_K_M.gguf"? Not given. However we could assume the file is the same pattern as others: maybe "<model>-Q4_K_M.gguf"? But that's inventing. Might be disallowed.
+
+Better to check the context: For each model they gave repo and file in parentheses, except for k2-horizon-0.9b they only gave repo. Possibly a mistake, but we must follow instruction: no inventing models that not in CONTEXTO. The file is part of the model spec; if not given, we cannot invent. Could we set file to null? That's still inventing? It's not in context but maybe allowed as placeholder? The instruction: "No inventes modelos que no estén en el CONTEXTO." It doesn't forbid leaving file unspecified; but the order requires file key. We could set file to "" (empty string) which is not inventing a model. Might be acceptable.
+
+Alternatively, we could set file to the repo name? No.
+
+I'll set file as "".
+
+Similarly for smollm3-3b: repo given, no file. Actually context: "smollm3-3b (ggml-org/SmolLM3-3B-GGUF)" no file. So same.
+
+For muse-glimmer-30b: they gave repo and file: "meta-models/Muse-Glimmer-30B-GGUF, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf". So file present.
+
+Thus we need to handle missing files.
+
+Let's assign flavors:
+
+- qwen3-0.6b: cpu-basic
+- qwen3.5-0.8b: cpu-basic
+- k2-horizon-0.9b: cpu-basic
+- lfm2.5-1.2b-instruct: cpu-basic
+- lfm2.5-1.2b-thinking: cpu-basic (maybe same)
+- gemma-4-e2b: cpu-upgrade (2B maybe needs upgrade)
+- smollm3-3b: cpu-upgrade
+- muse-glimmer-30b: cpu-upgrade (definitely large)
+
+Now construct JSON.
+
+Make sure port is 8080 integer.
+
+Now output only JSON block.
+
+Let's craft.
+
+Check for any stray characters.
+
+Will output:
+
+```json
+{
+  "orders": [
+    {
+      "model_id": "qwen3-0.6b",
+      "repo": "Qwen/Qwen3-0.6B-GGUF",
+      "file": "Qwen3-0.6B-Q8_0.gguf",
+      "flavor": "cpu-basic",
+      "port": 8080,
+      "why_this_flavor": "Fits comfortably in RAM with basic CPU kernels",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "qwen3.5-0.8b",
+      "repo": "ggml-org/Qwen3.5-0.8B-GGUF",
+      "file": "Qwen3.5-0.8B-Q4_0.gguf",
+      "flavor": "cpu-basic",
+      "port": 8080,
+      "why_this_flavor": "Fits comfortably in RAM with basic CPU kernels",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "k2-horizon-0.9b",
+      "repo": "IFM/K2-Horizon-0.9B-GGUF",
+      "file": "",
+      "flavor": "cpu-basic",
+      "port": 8080,
+      "why_this_flavor": "Fits comfortably in RAM with basic CPU kernels",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "lfm2.5-1.2b-instruct",
+      "repo": "LiquidAI/LFM2.5-1.2B-Instruct-GGUF",
+      "file": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+      "flavor": "cpu-basic",
+      "port": 8080,
+      "why_this_flavor": "Fits comfortably in RAM with basic CPU kernels",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "lfm2.5-1.2b-thinking",
+      "repo": "LiquidAI/LFM2.5-1.2B-Thinking-GGUF",
+      "file": "LFM2.5-1.2B-Instruct-Q4_K_M

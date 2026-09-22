@@ -2,8 +2,11 @@
 - paso router_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js'] gaps=-
 - paso vault_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js'] gaps=-
 - paso wire_panels: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js'] gaps=-
-## agent-10-model-install: estado=? marco=? pasos_cerrados=[]
-## agent-11-download-extraction: estado=? marco=? pasos_cerrados=[]
+## agent-10-model-install: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
+- paso install_orders: BLOCKED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=falta '"orders"'; falta 'cpu-basic'
+## agent-11-download-extraction: estado=BLOCKED marco=smolagents pasos_cerrados=[]
+- paso extend_download_list: BLOCKED modelo=- entregables=['router inteligente universal/agents-yaiwes/agent-11-download-extraction/steps/extend_download_list/results/extra_donors.py'] gaps=cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:
+Error code: 402 - {'message': 'Payment require
 ## agent-2-chat-hf-smol: estado=CLOSED marco=smolagents pasos_cerrados=['jobs_panel', 'fixed_template', 'crazy_wall_chain']
 - paso crazy_wall_chain: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py'] gaps=-
 - paso fixed_template: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py'] gaps=-

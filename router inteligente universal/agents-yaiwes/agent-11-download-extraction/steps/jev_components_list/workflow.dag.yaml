@@ -1,0 +1,81 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-11-download-extraction
+  framework: smolagents
+  group: downloads
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  - minimax_m3
+  fallback: []
+  max_tokens: 1800
+context:
+  text: 'Pendiente de descargar/extraer, aparte de los 6 donantes ya bajados (Muse
+    Code SDK, bucle de Muse Glimmer, MetaCua, CUA+MCP, SmolAgents,
+
+    PocketFlow) y de llama-cpp-nanbeige-fork/omniroute-readme: los 15 componentes
+    de software de Jev/System One que dio el Director:
+
+    typesafe-ai/skills, typesafe-ai/typesafe-sdk-python, typesafe-ai/typesafe-sdk-js,
+    typesafe-ai/system-one-adapter-python,
+
+    BunsDev/typesafe-router, gargpratyush/jev-router, 0xNatoshi/jev-codex-router,
+    jkudish/jev-mcp, anasbekheit/typesafe-jev-mcp,
+
+    itsmostafa/typesafe-mcp, BYK/jev-mcp, GodsBoy/jev-agent-skill-router, Dicklesworthstone/skillranker,
+    vinilana/jev-eval-agent,
+
+    haseeb-heaven/jev-system-one. De cada uno basta el README.md y, si existe, la
+    carpeta principal de código fuente (src/ o el paquete
+
+    con el nombre del repo) — NO bajes node_modules, dist, ni carpetas de pruebas.
+    Usa el mismo motor determinista
+
+    (`common/download_donors.py`, límite 150 KB por archivo, 2 MB por donante). NO
+    instales nada, NO lances ningún Job, NO toques el Router.
+
+    '
+  max_chars: 40000
+task: 'Escribe el módulo Python `jev_components.py` (solo código, un único bloque
+  ```python, solo biblioteca estándar) con el dict
+
+  `JEV_COMPONENTS` con EXACTAMENTE estas 15 claves (usa el nombre del repo en minúsculas,
+  con guiones donde el nombre original los
+
+  tenga) y cada valor una tupla (url_de_github, lista_de_rutas_para_sparse_checkout):
+  typesafe-skills, typesafe-sdk-python,
+
+  typesafe-sdk-js, system-one-adapter-python, typesafe-router, jev-router, jev-codex-router,
+  jev-mcp-jkudish, typesafe-jev-mcp,
+
+  typesafe-mcp, jev-mcp-byk, jev-agent-skill-router, skillranker, jev-eval-agent,
+  jev-system-one. Cada tupla: (url exacta del repo
+
+  de GitHub que dio el Director, ["README.md", "src"]). Los dos repos con nombre repetido
+  "jev-mcp" (de jkudish y de BYK) deben
+
+  quedar como claves distintas: "jev-mcp-jkudish" y "jev-mcp-byk", cada uno con su
+  URL correcta.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: jev_components.py
+  test: "from jev_components import JEV_COMPONENTS\nassert len(JEV_COMPONENTS) ==\
+    \ 15\nassert set(JEV_COMPONENTS) == {\"typesafe-skills\",\"typesafe-sdk-python\"\
+    ,\"typesafe-sdk-js\",\"system-one-adapter-python\",\n    \"typesafe-router\",\"\
+    jev-router\",\"jev-codex-router\",\"jev-mcp-jkudish\",\"typesafe-jev-mcp\",\"\
+    typesafe-mcp\",\"jev-mcp-byk\",\n    \"jev-agent-skill-router\",\"skillranker\"\
+    ,\"jev-eval-agent\",\"jev-system-one\"}\nfor url, paths in JEV_COMPONENTS.values():\n\
+    \    assert url.startswith(\"https://github.com/\") and paths == [\"README.md\"\
+    , \"src\"]\nassert JEV_COMPONENTS[\"jev-mcp-jkudish\"][0] != JEV_COMPONENTS[\"\
+    jev-mcp-byk\"][0]\nassert JEV_COMPONENTS[\"jev-router\"][0] == \"https://github.com/gargpratyush/jev-router\"\
+    \n"
+- kind: no_secrets

@@ -1,0 +1,36 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-11-download-extraction",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-22T09:27:07Z",
+ "group": "downloads",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "cf6296f441dda5612704106b5604df43a9d2ec7e4453cc36f9142c92a27e315c",
+   "chars": 1448
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "jev_components.py",
+   "sha256": "cf6296f441dda5612704106b5604df43a9d2ec7e4453cc36f9142c92a27e315c"
+  }
+ ],
+ "model": "groq/openai/gpt-oss-120b",
+ "attempts": 5,
+ "route_trace": [
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nRequest timed out.",
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal",
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal",
+  "groq/openai/gpt-oss-120b:AgentGenerationError:Error while generating output:\nError code: 400 - {'error': {'message': \"Tool cal"
+ ]
+}

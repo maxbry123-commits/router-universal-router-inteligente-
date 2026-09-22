@@ -3,7 +3,7 @@
  "agent": "agent-10-model-install",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-22T09:18:55Z",
+ "updated_at": "2026-09-22T09:19:05Z",
  "group": "hf-install",
  "current_nodes": [
   "execute"
@@ -14,16 +14,19 @@
  "provider": "nvidia",
  "model": "nvidia/nemotron-3-super-120b-a12b",
  "via": "route",
- "attempts": 2,
+ "attempts": 1,
  "gaps": [],
- "failed": [
-  "execute"
- ],
  "evidence": [
   {
    "kind": "output_sha256",
-   "sha256": "a23fd88204fa25346812aa800a9f75eb1107c1159f1dd723ea278b0034191d0c",
-   "chars": 6575
+   "sha256": "bdb9743bcf5febcbeee1d0028e02d52df26ff7c7e57325d184ddb98bbaf0d949",
+   "chars": 1905
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "install_report.py",
+   "sha256": "982d7a42b8a4c3d05e369fc1bd1a0eee301312a464e32e238b6fbb2b614b2bba"
   }
  ],
  "route_trace": []

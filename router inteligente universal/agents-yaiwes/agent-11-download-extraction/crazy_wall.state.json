@@ -2,16 +2,16 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-11-download-extraction",
  "framework": "smolagents",
- "status": "BLOCKED",
- "updated_at": "2026-09-22T08:38:59Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-22T09:27:07Z",
  "group": "downloads",
  "chain": [
-  "extend_download_list"
+  "jev_components_list"
  ],
- "completed": [],
- "failed": [
-  "extend_download_list"
+ "completed": [
+  "jev_components_list"
  ],
+ "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
