@@ -17,7 +17,7 @@ agent:
   max_tokens: 2200
 context:
   text: |
-    ORDEN Director: HARDWARE ÚNICO = flavor exactamente "cpu-upgrade" (8 vCPU / 32 GB RAM).
+    HARDWARE ÚNICO = máquina HF de 32 GB RAM (8 vCPU·32GB). Flavor ID = mapeo técnico docs HF (no texto Director).
     PROHIBIDO: cpu-basic (16 GB), GPU, cualquier otro flavor.
     Modelos (repo GGUF / file): qwen3-0.6b (Qwen/Qwen3-0.6B-GGUF, Qwen3-0.6B-Q8_0.gguf),
     qwen3.5-0.8b (ggml-org/Qwen3.5-0.8B-GGUF, Qwen3.5-0.8B-Q4_0.gguf),
@@ -27,7 +27,7 @@ task: |
   Escribe SOLO un objeto JSON (un único bloque ```json) con la clave "orders":
   UNA orden por modelo del CONTEXTO. Cada orden: {"model_id","repo","file",
   "flavor":"cpu-upgrade" (SIEMPRE exactamente cpu-upgrade, nunca cpu-basic ni GPU),
-  "port":8080, "why_this_flavor":"32GB cpu-upgrade obligatorio Director",
+  "port":8080, "why_this_flavor":"máquina HF 32 GB RAM (mapeo técnico docs HF)",
   "status":"PENDING_LAUNCH"}. Ordena de más chico a más grande.
 checks:
 - kind: contains
