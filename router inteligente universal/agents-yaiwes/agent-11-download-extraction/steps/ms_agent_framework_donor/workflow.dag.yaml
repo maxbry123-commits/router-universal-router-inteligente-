@@ -1,0 +1,64 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-11-download-extraction
+  framework: smolagents
+  group: downloads
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  - minimax_m3
+  fallback: []
+  max_tokens: 1800
+context:
+  text: "Pendiente de descargar/extraer, aparte de los 6 donantes ya bajados (Muse\
+    \ Code SDK, bucle de Muse Glimmer, MetaCua, CUA+MCP, SmolAgents,\nPocketFlow)\
+    \ y de llama-cpp-nanbeige-fork/omniroute-readme: los 15 componentes de Jev/System\
+    \ One (ver `jev_components.py`, ya escrito) y\nahora Microsoft Agent Framework\
+    \ (https://github.com/microsoft/agent-framework, MIT, orquestador central pedido\
+    \ por el Director) —\nbajar su README.md y la carpeta principal de código (python/packages,\
+    \ si existe, o \"python\"). De cada uno basta el README.md y, si\nexiste, la carpeta\
+    \ principal de código fuente — NO bajes node_modules, dist, ni carpetas de pruebas.\
+    \ Usa el mismo motor determinista\n(`common/download_donors.py`, límite 150 KB\
+    \ por archivo, 2 MB por donante). NO instales nada, NO lances ningún Job, NO toques\
+    \ el Router.\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (jev_components_list):\n\
+    JEV_COMPONENTS = {\n    \"typesafe-skills\": (\"https://github.com/typesafe-ai/skills\"\
+    , [\"README.md\", \"src\"]),\n    \"typesafe-sdk-python\": (\"https://github.com/typesafe-ai/typesafe-sdk-python\"\
+    , [\"README.md\", \"src\"]),\n    \"typesafe-sdk-js\": (\"https://github.com/typesafe-ai/typesafe-sdk-js\"\
+    , [\"README.md\", \"src\"]),\n    \"system-one-adapter-python\": (\"https://github.com/typesafe-ai/system-one-adapter-python\"\
+    , [\"README.md\", \"src\"]),\n    \"typesafe-router\": (\"https://github.com/BunsDev/typesafe-router\"\
+    , [\"README.md\", \"src\"]),\n    \"jev-router\": (\"https://github.com/gargpratyush/jev-router\"\
+    , [\"README.md\", \"src\"]),\n    \"jev-codex-router\": (\"https://github.com/0xNatoshi/jev-codex-router\"\
+    , [\"README.md\", \"src\"]),\n    \"jev-mcp-jkudish\": (\"https://github.com/jkudish/jev-mcp\"\
+    , [\"README.md\", \"src\"]),\n    \"typesafe-jev-mcp\": (\"https://github.com/anasbekheit/typesafe-jev-mcp\"\
+    , [\"README.md\", \"src\"]),\n    \"typesafe-mcp\": (\"https://github.com/itsmostafa/typesafe-mcp\"\
+    , [\"README.md\", \"src\"]),\n    \"jev-mcp-byk\": (\"https://github.com/BYK/jev-mcp\"\
+    , [\"README.md\", \"src\"]),\n    \"jev-agent-skill-router\": (\"https://github.com/GodsBoy/jev-agent-skill-router\"\
+    , [\"README.md\", \"src\"]),\n    \"skillranker\": (\"https://github.com/Dicklesworthstone/skillranker\"\
+    , [\"README.md\", \"src\"]),\n    \"jev-eval-agent\": (\"https://github.com/vinilana/jev-eval-agent\"\
+    , [\"README.md\", \"src\"]),\n    \"jev-system-one\": (\"https://github.com/haseeb-heaven/jev-system-one\"\
+    , [\"README.md\", \"src\"]),\n}\n"
+  max_chars: 40000
+task: 'Escribe el módulo Python `ms_agent_framework_donor.py` (solo código, un único
+  bloque ```python, solo biblioteca estándar) con la
+
+  tupla `MS_AGENT_FRAMEWORK = ("https://github.com/microsoft/agent-framework", ["README.md",
+  "python"])`. Nada más en el archivo.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: ms_agent_framework_donor.py
+  test: 'from ms_agent_framework_donor import MS_AGENT_FRAMEWORK
+
+    assert MS_AGENT_FRAMEWORK == ("https://github.com/microsoft/agent-framework",
+    ["README.md", "python"])
+
+    '
+- kind: no_secrets

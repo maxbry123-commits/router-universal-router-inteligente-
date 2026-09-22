@@ -3,13 +3,15 @@
  "agent": "agent-11-download-extraction",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-22T11:03:55Z",
+ "updated_at": "2026-09-22T11:46:32Z",
  "group": "downloads",
  "chain": [
-  "jev_components_list"
+  "jev_components_list",
+  "ms_agent_framework_donor"
  ],
  "completed": [
-  "jev_components_list"
+  "jev_components_list",
+  "ms_agent_framework_donor"
  ],
  "failed": [],
  "next_nodes": [],
