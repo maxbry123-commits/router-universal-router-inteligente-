@@ -1,0 +1,119 @@
+name: RIU HF Jobs Audit 32GB
+
+# Lista Jobs/Spaces activos y cancela compute ≠ máquina 32 GB RAM (flavor técnico cpu-upgrade = 8 vCPU/32GB).
+# Solo metadatos en logs; nunca imprime el token.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q huggingface_hub requests
+      - name: List + cancel non-32GB Jobs
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          from huggingface_hub import HfApi
+
+          tok = os.environ.get("HF_TOKEN") or ""
+          if not tok:
+              print("::error title=RIU_HF_AUDIT::GAP_SECRET_MISSING HF_TOKEN_1")
+              sys.exit(1)
+
+          api = HfApi(token=tok)
+          me = api.whoami()
+          name = me.get("name") if isinstance(me, dict) else getattr(me, "name", "?")
+          print(f"::notice title=RIU_HF_WHO::account={name}")
+
+          # Jobs: list scheduled/running
+          jobs = []
+          try:
+              # huggingface_hub: list_jobs may take namespace
+              for ns in [None, name, "COMAND-CENTER-1"]:
+                  try:
+                      kwargs = {}
+                      if ns:
+                          kwargs["namespace"] = ns
+                      it = api.list_jobs(**kwargs) if hasattr(api, "list_jobs") else []
+                      for j in it:
+                          jobs.append(j)
+                      if jobs:
+                          break
+                  except Exception as e:
+                      print(f"::warning title=RIU_HF_LIST_JOBS::ns={ns} err={type(e).__name__}:{e}")
+          except Exception as e:
+              print(f"::error title=RIU_HF_LIST_JOBS::err={type(e).__name__}:{e}")
+
+          # Dedup by id
+          seen = set()
+          uniq = []
+          for j in jobs:
+              jid = getattr(j, "id", None) or (j.get("id") if isinstance(j, dict) else None)
+              if not jid or jid in seen:
+                  continue
+              seen.add(jid)
+              uniq.append(j)
+
+          ALLOWED = {"cpu-upgrade"}  # 8 vCPU / 32 GB RAM
+          cancelled = []
+          rows = []
+
+          def g(obj, *keys, default=None):
+              cur = obj
+              for k in keys:
+                  if cur is None:
+                      return default
+                  if isinstance(cur, dict):
+                      cur = cur.get(k)
+                  else:
+                      cur = getattr(cur, k, None)
+              return cur if cur is not None else default
+
+          for j in uniq:
+              jid = g(j, "id")
+              flavor = g(j, "flavor") or g(j, "hardware", "flavor") or g(j, "spec", "flavor") or "?"
+              status = g(j, "status") or g(j, "stage") or g(j, "status", "stage") or "?"
+              if hasattr(status, "stage"):
+                  status = status.stage
+              status = str(status)
+              # only act on live-ish
+              live = status.upper() in ("RUNNING", "SCHEDULED", "PENDING", "STARTING", "UPLOADING") or "RUN" in status.upper()
+              ram = "32GB" if str(flavor) in ALLOWED else ("16GB?" if str(flavor) == "cpu-basic" else ("GPU?" if "a10" in str(flavor) or "t4" in str(flavor) or "l4" in str(flavor) or "gpu" in str(flavor).lower() else "?"))
+              action = "keep"
+              if live and str(flavor) not in ALLOWED:
+                  try:
+                      api.cancel_job(job_id=jid)
+                      action = "CANCELLED"
+                      cancelled.append(jid)
+                  except Exception as e:
+                      action = f"cancel_fail:{type(e).__name__}"
+              elif not live:
+                  action = "skip_not_live"
+              rows.append((jid, flavor, ram, status, action))
+              print(f"::notice title=RIU_HF_JOB_ROW::id={jid}|flavor={flavor}|ram={ram}|status={status}|action={action}")
+
+          print(f"::notice title=RIU_HF_JOBS_SUMMARY::count={len(rows)} cancelled={len(cancelled)} ids={','.join(cancelled) or '-'}")
+
+          # Spaces (compute-ish): list spaces owned; report hardware if present — do not delete Spaces without hardware field
+          try:
+              spaces = list(api.list_spaces(author=name)) if hasattr(api, "list_spaces") else []
+          except Exception as e:
+              spaces = []
+              print(f"::warning title=RIU_HF_SPACES::err={type(e).__name__}:{e}")
+          for s in spaces[:50]:
+              sid = g(s, "id") or str(s)
+              runtime = g(s, "runtime") or g(s, "cardData", "hardware") or g(s, "sdk") or "?"
+              print(f"::notice title=RIU_HF_SPACE_ROW::id={sid}|runtime={runtime}")
+          print(f"::notice title=RIU_HF_SPACES_SUMMARY::count={len(spaces)}")
+          PY
