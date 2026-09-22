@@ -1,2 +1,4 @@
-ORDEN Director 2026-09-22: todas las órdenes usan flavor "cpu-upgrade" (32 GB RAM).
-cpu-basic y GPU prohibidos. Ver orders.json.
+Órdenes install: todas apuntan a máquina HF de 32 GB RAM (8 vCPU·32GB).
+El ID de flavor en HF Jobs es mapeo técnico (docs HF), no texto del Director.
+why_this_flavor unificado: «máquina HF 32 GB RAM (mapeo técnico docs HF)».
+Prohibido: máquina 16 GB y GPU.
