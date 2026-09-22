@@ -90,3 +90,71 @@ VERIFIED_CLOSED exige:
 5. read-back de result.json coherente.
 
 Si un proveedor falla, queda registrado como GAP sin ocultarse.
+
+
+## Research Prepass nativo
+
+Objetivo:
+
+INPUT_BLOCK verbatim
+-> research_prepass.py
+-> 10 fuentes web preestablecidas
+-> GitHub API
+-> Hugging Face Hub API
+-> dedupe/ranking/budget
+-> context_packet.json + context.md
+-> agente/LLM
+
+Archivos:
+
+- source_registry.json
+- research_prepass.py
+- context_packet.schema.json
+- test_research_prepass.py
+- RESEARCH-PREPASS-TRAZABILIDAD.md
+
+Fuentes web preestablecidas:
+
+1. Stack Overflow
+2. DEV Community
+3. Reddit
+4. Python Docs
+5. MDN
+6. docs.rs
+7. Node.js Docs
+8. Docker Docs
+9. Vercel Docs
+10. npm
+
+Fuentes directas de alta autoridad:
+
+- GitHub REST Search API
+- Hugging Face Hub API
+
+Reglas:
+
+- no LLM durante la investigación;
+- input literal preservado en input_verbatim.txt;
+- context.md NO reemplaza el input original;
+- consultas derivadas por reglas deterministas;
+- resultados deduplicados y rankeados;
+- context budget antes de entregarlo al modelo;
+- cache por hash para evitar búsquedas repetidas;
+- NO_NEW_EVIDENCE si no aparece evidencia nueva;
+- cada fuente conserva provenance y estado PASS/NO_RESULTS/GAP.
+
+Uso local:
+
+INPUT_BLOCK_FILE=input.md python research_prepass.py
+
+Con plan de ejecución:
+
+INPUT_BLOCK_FILE=input.md EXECUTION_PLAN_FILE=plan.md python research_prepass.py
+
+Estado actual:
+
+CODE_PRESENT / RUNTIME_NETWORK_TEST_PENDING.
+
+Trazabilidad exacta:
+
+RESEARCH-PREPASS-TRAZABILIDAD.md
