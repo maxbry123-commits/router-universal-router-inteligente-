@@ -3,8 +3,8 @@
 - paso vault_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js'] gaps=-
 - paso wire_panels: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js'] gaps=-
 ## agent-10-model-install: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
-- paso install_launch_test: BLOCKED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py'] gaps=la prueba falló (exit=1): ImportError: cannot import name 'HfHubHTTPError' from 'huggingface_hub' (/opt/hostedtoolcache/
-- paso install_orders: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
+- paso install_launch_test: BLOCKED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py'] gaps=la prueba falló (exit=1): TypeError: HfApi.inspect_job() takes 1 positional argument but 2 were given
+- paso install_orders: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_orders/results/orders.json'] gaps=-
 - paso install_report: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_report/results/install_report.py'] gaps=-
 ## agent-11-download-extraction: estado=CLOSED marco=smolagents pasos_cerrados=['jev_components_list', 'ms_agent_framework_donor']
 - paso extend_download_list: BLOCKED modelo=- entregables=['router inteligente universal/agents-yaiwes/agent-11-download-extraction/steps/extend_download_list/results/extra_donors.py'] gaps=cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:
@@ -22,9 +22,9 @@ Error code: 402 - {'message': 'Payment require
 - paso crazy_wall_chain: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py'] gaps=-
 - paso fixed_template: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py'] gaps=-
 - paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js'] gaps=-
-## agent-3-router: estado=PENDING marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script']
+## agent-3-router: estado=BLOCKED marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script']
 - paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py'] gaps=-
-- paso publish_live: BLOCKED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py'] gaps=Python inválido: unterminated triple-quoted string literal (detected at line 83) (línea 76); la prueba falló (exit=1): S
+- paso publish_live: PENDING modelo=- entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/PUBLISH_LIVE_REJECTED.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py'] gaps=-
 - paso space_index: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
 - paso space_readme: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
 ## agent-4-router-smol: estado=CLOSED marco=smolagents pasos_cerrados=['models_registry', 'job_spec', 'node_monitor']

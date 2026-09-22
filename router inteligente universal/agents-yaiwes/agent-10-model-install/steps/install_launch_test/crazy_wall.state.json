@@ -3,7 +3,7 @@
  "agent": "agent-10-model-install",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T23:20:33Z",
+ "updated_at": "2026-09-22T23:29:24Z",
  "group": "hf-install",
  "current_nodes": [
   "execute"
@@ -16,7 +16,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
-  "la prueba falló (exit=1): TypeError: HfApi.inspect_job() takes 1 positional argument but 2 were given"
+  "la prueba superó el tiempo"
  ],
  "failed": [
   "execute"

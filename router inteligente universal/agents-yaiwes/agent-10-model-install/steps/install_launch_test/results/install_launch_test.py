@@ -2,105 +2,95 @@ import os
 import time
 import requests
 from huggingface_hub import HfApi
+
 try:
     from huggingface_hub.errors import HfHubHTTPError
-except ImportError:
-    from huggingface_hub.utils import HfHubHTTPError  # noqa: F401
+except Exception:  # pragma: no cover
+    from huggingface_hub.utils import HfHubHTTPError  # fallback
 
 MODELS = [
-    ("qwen3-0.6b", "Qwen/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"),
+    ("qwen3-0.6b", "Qwen/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf")
 ]
 
-ALLOWED_FLAVOR = "cpu-upgrade"  # 8 vCPU / 32 GB — único permitido
 
-
-def launch_and_verify(model_id: str, repo: str, file: str, port: int = 8080, flavor: str = "cpu-upgrade") -> dict:
-    if flavor != ALLOWED_FLAVOR:
+def launch_and_verify(model_id, repo, file, port=8080, flavor="cpu-upgrade") -> dict:
+    if flavor != "cpu-upgrade":
         raise ValueError("HARDWARE: solo cpu-upgrade 32GB permitido")
 
+    api = HfApi(token=os.environ["HF_TOKEN"])
     url = f"https://huggingface.co/{repo}/resolve/main/{file}"
-    comando = (
+    # Command to download model and start llama.cpp server
+    command = [
+        "bash",
+        "-lc",
         f"curl -fL {url} -o /model.gguf && "
         f"/app/llama-server -m /model.gguf --host 0.0.0.0 --port {port} "
-        f"-c 8192 -np 4 -cb --cache-prompt --cache-ram 512 -fa on -ctk q8_0 -ctv q8_0"
-    )
+        "-c 8192 -np 4 -cb --cache-prompt --cache-ram 512 -fa on -ctk q8_0 -ctv q8_0"
+    ]
 
-    api = HfApi(token=os.environ["HF_TOKEN"])
-    job = api.run_job(
-        image="ghcr.io/ggml-org/llama.cpp:server",
-        command=["bash", "-lc", comando],
-        flavor=ALLOWED_FLAVOR,
-        timeout="20m",
-        expose=[port],
-    )
-
-    start = time.time()
-    job_info = None
-    while time.time() - start < 300:
-        try:
-            job_info = api.inspect_job(job.id)
-        except Exception:
-            time.sleep(5)
-            continue
-        status = getattr(job_info, "status", None)
-        stage = status
-        if hasattr(status, "stage"):
-            stage = status.stage
-        if str(stage).upper() in ("RUNNING", "JobStatus.RUNNING") or stage == "RUNNING":
-            break
-        time.sleep(5)
-    else:
+    try:
+        job = api.run_job(
+            image="ghcr.io/ggml-org/llama.cpp:server",
+            command=command,
+            flavor=flavor,
+            timeout="20m",
+            expose=[port],
+        )
+    except HfHubHTTPError as e:  # pragma: no cover
         return {
             "model_id": model_id,
-            "job_id": getattr(job, "id", None),
+            "job_id": None,
             "endpoint": None,
             "status": "FAILED",
-            "detail": "Job did not reach RUNNING within timeout",
-            "flavor": ALLOWED_FLAVOR,
+            "detail": f"run_job failed: {e}",
+            "flavor": flavor,
         }
 
+    job_id = getattr(job, "id", None)
     endpoint = None
-    runtime = getattr(job_info, "runtime", None)
-    if runtime:
-        if isinstance(runtime, list) and runtime:
-            endpoint = getattr(runtime[0], "url", None)
-        else:
-            endpoint = getattr(runtime, "url", None)
-    if not endpoint:
-        jid = getattr(job, "id", "unknown")
-        endpoint = f"https://{jid}--{port}.jobs.huggingface.co"
+    if job and hasattr(job, "metadata"):
+        endpoint = job.metadata.get("endpoint")
+    if not endpoint and job_id:
+        endpoint = f"https://{job_id}.hf.space"
 
+    start = time.time()
+    health_ok = False
+    detail = ""
     while time.time() - start < 300:
         try:
-            resp = requests.get(
-                f"{endpoint}/health",
-                headers={"Authorization": f"Bearer {os.environ['HF_TOKEN']}"},
-                timeout=10,
-            )
+            job_info = api.inspect_job(job_id)
+            stage = getattr(job_info, "stage", None)
+            if stage != "RUNNING":
+                detail = f"Job not RUNNING (stage={stage})"
+                time.sleep(2)
+                continue
+            health_url = f"{endpoint}/health"
+            headers = {"Authorization": f"Bearer {os.environ['HF_TOKEN']}"}
+            resp = requests.get(health_url, headers=headers, timeout=5)
             if resp.status_code == 200:
-                return {
-                    "model_id": model_id,
-                    "job_id": getattr(job, "id", None),
-                    "endpoint": endpoint,
-                    "status": "RUNNING_HEALTHY",
-                    "detail": "",
-                    "flavor": ALLOWED_FLAVOR,
-                }
-        except Exception:
-            pass
-        time.sleep(5)
+                health_ok = True
+                break
+            else:
+                detail = f"Health check returned {resp.status_code}"
+        except Exception as e:  # pragma: no cover
+            detail = f"Error during polling: {e}"
+        time.sleep(2)
+
+    status = "RUNNING_HEALTHY" if health_ok else "FAILED"
+    if not health_ok and not detail:
+        detail = "Timeout waiting for job to become healthy"
 
     return {
         "model_id": model_id,
-        "job_id": getattr(job, "id", None),
+        "job_id": job_id,
         "endpoint": endpoint,
-        "status": "FAILED",
-        "detail": "Health endpoint did not return 200 within timeout",
-        "flavor": ALLOWED_FLAVOR,
+        "status": status,
+        "detail": detail,
+        "flavor": flavor,
     }
 
 
-def run_all() -> list:
+def run_all() -> list[dict]:
     results = []
     for model_id, repo, file in MODELS:
         results.append(launch_and_verify(model_id, repo, file))
