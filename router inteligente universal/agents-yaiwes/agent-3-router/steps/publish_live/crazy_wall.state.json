@@ -1,9 +1,27 @@
 {
-  "schema": "yaiwes.crazy-wall.step/v1",
-  "step": "publish_live",
-  "status": "PENDING",
-  "updated_at": "2026-09-22T23:25:00Z",
-  "attempts": 3,
-  "last_error": "SyntaxError unterminated triple-quote — ORCH ordena reescritura sin triples + hardware 32GB only",
-  "hardware_lock": "32GB_RAM_ACTIVE_ONLY"
+ "schema": "yaiwes.crazy-wall/v1",
+ "step": "publish_live",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-22T23:30:35Z",
+ "attempts": 3,
+ "last_error": "SyntaxError unterminated triple-quote — ORCH ordena reescritura sin triples + hardware 32GB only",
+ "hardware_lock": "32GB_RAM_ACTIVE_ONLY",
+ "agent": "agent-3-router",
+ "framework": "pocketflow",
+ "group": "hf-chat",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "gaps": [
+  "Python inválido: invalid syntax (línea 1)"
+ ],
+ "failed": [
+  "execute"
+ ]
 }

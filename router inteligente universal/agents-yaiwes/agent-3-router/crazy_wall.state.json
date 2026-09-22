@@ -1,22 +1,39 @@
 {
-  "schema": "yaiwes.crazy-wall/v1",
-  "agent": "agent-3-router",
-  "framework": "pocketflow",
-  "status": "BLOCKED",
-  "updated_at": "2026-09-22T23:30:00Z",
-  "group": "hf-chat",
-  "chain": ["space_readme", "space_index", "deploy_script", "publish_live"],
-  "completed": ["space_readme", "space_index", "deploy_script"],
-  "failed": ["publish_live"],
-  "next_nodes": ["publish_live"],
-  "current_nodes": ["publish_live"],
-  "attempts_publish_live": 3,
-  "blockers": [
-    "SyntaxError: unterminated triple-quoted string (~L76)",
-    "Job hardware != 32GB RAM (Director requirement)"
-  ],
-  "hardware_requirement": "HF processor 32GB RAM (8 vCPU / 32GB) — any other machine rejected",
-  "job_port": 8000,
-  "space_id_suffix": "riu-chat-yaiwes",
-  "orchestrator_order": "Rewrite publish_live: fix strings; Job ONLY on 32GB RAM machine; /health; Space riu-chat-yaiwes; write space_url+router_endpoint. No flavor names attributed to Director."
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-3-router",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-22T23:30:35Z",
+ "group": "hf-chat",
+ "chain": [
+  "space_readme",
+  "space_index",
+  "deploy_script",
+  "publish_live"
+ ],
+ "completed": [
+  "space_readme",
+  "space_index",
+  "deploy_script"
+ ],
+ "failed": [
+  "publish_live"
+ ],
+ "next_nodes": [],
+ "current_nodes": [],
+ "attempts_publish_live": 3,
+ "blockers": [
+  "SyntaxError: unterminated triple-quoted string (~L76)",
+  "Job hardware != 32GB RAM (Director requirement)"
+ ],
+ "hardware_requirement": "HF processor 32GB RAM (8 vCPU / 32GB) — any other machine rejected",
+ "job_port": 8000,
+ "space_id_suffix": "riu-chat-yaiwes",
+ "orchestrator_order": "Rewrite publish_live: fix strings; Job ONLY on 32GB RAM machine; /health; Space riu-chat-yaiwes; write space_url+router_endpoint. No flavor names attributed to Director.",
+ "route": [
+  "nvidia",
+  "groq",
+  "cerebras",
+  "minimax_m3"
+ ]
 }
