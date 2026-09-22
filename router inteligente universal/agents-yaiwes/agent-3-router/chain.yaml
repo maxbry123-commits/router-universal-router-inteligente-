@@ -1,10 +1,13 @@
 schema: yaiwes.chain/v1
 
-# Cadena de pasos (DSL DAG) del agente 3 — HUGGING FACE: el chat en HF SIN plan PRO (opciones que dio el Director). Marco: PocketFlow.
+# Cadena de pasos (DSL DAG) del agente 3 — HUGGING FACE: el chat en HF SIN plan PRO. Marco: PocketFlow.
+# Paso final (publish_live) EJECUTA de verdad: lanza el Router en un Job de tu cuenta, publica el Static Space apuntando a su endpoint real,
+# y confirma con un GET que el Space responde — todo dentro del propio paso del agente, sin que Claude lo haga a mano (orden del Director).
 input_block: |
   2 agente en HF para lo que falta en tares distintas
   Le das una encadenado de pasos
   Chat en HF ya te di varias opciones sin plan pro
+  La misma hora para que me entregues el chat listo 100% funcional con todas mis instrucciones (2026-09-22, última advertencia)
 
 agent:
   id: agent-3-router
@@ -16,15 +19,14 @@ agent:
 
 context:
   text: |
-    OPCIONES DEL DIRECTOR PARA EL CHAT EN HF SIN PRO (documento pegado por él; sus datos no están verificados todavía):
-    - Elegida: Static Space GRATUITO (HTML/JS) como interfaz + servidor del Router en un Job de HF (8 vCPU / 32 GB) que expone un puerto:
-      https://<job_id>--8000.hf.jobs. El endpoint existe mientras el Job esté vivo.
-    - En un Static Space las variables/secrets pueden llegar al JavaScript del navegador: NO poner claves privadas allí.
-    - Para autenticar sin token maestro: HF OAuth. Front matter del Space: `sdk: static`, `hf_oauth: true`, `hf_oauth_scopes:` con `jobs`
-      e `inference-api`.
-    - Alternativas: Gradio ZeroGPU (2 Spaces gratis por cuenta elegible), o Static + OAuth + Inference Providers directos.
-    - HF exige plan de pago para crear Spaces Docker/Gradio CPU nuevos (salvo ZeroGPU): descartado.
-    API del chat (Router): POST /chat/send (cabecera X-API-Key) cuerpo {"message","provider","model","conversation_id","mode","agent_id","doc_ids","cache","max_tokens"} -> {"reply","conversation_id","certified","cached"}.
+    OPCIONES DEL DIRECTOR PARA EL CHAT EN HF SIN PRO: Static Space GRATUITO (HTML/JS) como interfaz + servidor del Router en un Job de HF que
+    expone un puerto: https://<job_id>--8000.hf.jobs. En un Static Space las variables/secrets pueden llegar al JavaScript del navegador: NO
+    poner claves privadas ahí. Front matter del Space: sdk: static, hf_oauth: true, hf_oauth_scopes con jobs e inference-api.
+    Ya probado a mano que este patrón de arranque del Router funciona: clona el repo con `git clone --depth 1 --filter=blob:none --sparse
+    <repo> r && cd r && git sparse-checkout set --no-cone "router inteligente universal" "Chat Mvp/secret_bank"`, instala
+    `fastapi uvicorn[standard] pydantic huggingface_hub cryptography pyyaml`, corre `python "router inteligente universal/agents-yaiwes/common/router_job_start.py"`,
+    como comando de un Job con imagen "python:3.12", flavor "cpu-basic", expose=[8000], vía HfApi(token=os.environ["HF_TOKEN"]).run_job(...).
+    El repo es "https://github.com/maxbry123-commits/router-universal-router-inteligente-". El token está en la variable de entorno HF_TOKEN.
 
 steps:
 
@@ -87,6 +89,39 @@ steps:
         values: ['space_sdk="static"', "upload_folder", "create_repo"]
       - kind: no_secrets
 
+  - id: publish_live
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-3-router/steps/space_readme/results/output.txt
+      - router inteligente universal/agents-yaiwes/agent-3-router/steps/space_index/results/output.txt
+      - router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/output.txt
+    task: |
+      Escribe el módulo Python `publish_live.py` (solo código, un único bloque ```python, dependencias: huggingface_hub, requests) con la
+      función `publish() -> dict` que hace TODO de verdad, en este orden: 1) usa HfApi(token=os.environ["HF_TOKEN"]).whoami() para obtener el
+      nombre de la cuenta; 2) lanza el Job del Router (imagen "python:3.12", flavor "cpu-basic", expose=[8000], comando bash con el clon y
+      arranque descritos en el CONTEXTO); 3) espera hasta 300 s a que `inspect_job` diga stage=="RUNNING" y a que un GET a
+      "<endpoint>/health" (con Authorization Bearer del HF_TOKEN) responda 200; 4) escribe en una carpeta temporal los archivos README.md e
+      index.html EXACTOS de la SALIDA VERIFICADA de los pasos anteriores (sustituyendo dentro del index.html el texto del marcador
+      "API_BASE = ''" o similar por la URL real del Job, si existe ese marcador; si no, deja el archivo igual); 5) importa `deploy` de
+      `deploy_static_space.py` (ya escrito, mismo directorio) y lo llama con space_id = "<cuenta>/riu-chat-yaiwes", esa carpeta, y el token;
+      6) hace un GET a la URL del Space devuelta y confirma que responde (200 o 401, ambos indican que existe). Devuelve {"space_url",
+      "router_endpoint", "router_health_ok": bool, "space_reachable": bool}. Cualquier fallo real (no simulado) debe propagarse como excepción,
+      nunca inventar un resultado.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: publish_live.py
+        test: |
+          import os
+          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN en el entorno"
+          from publish_live import publish
+          r = publish()
+          assert r["router_health_ok"] is True, r
+          assert r["space_reachable"] is True, r
+          assert r["space_url"].startswith("https://huggingface.co/spaces/"), r
+          print(r)
+      - kind: no_secrets
+
 edges:
   - space_readme -> space_index
   - space_index -> deploy_script
+  - deploy_script -> publish_live
