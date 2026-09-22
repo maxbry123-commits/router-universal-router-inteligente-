@@ -1,10 +1,9 @@
 schema: yaiwes.chain/v1
 
-# Agente 14 — ORQUESTADOR CENTRAL: Microsoft Agent Framework. Marco: PocketFlow. De principio a fin dentro de su propio paso: instala el
-# paquete y demuestra una conexión real con DeepSeek vía HF_TOKEN.
+# Agente 14 — ORQUESTADOR CENTRAL: Microsoft Agent Framework. Marco: PocketFlow. De principio a fin dentro de su propio paso.
 input_block: |
-  Manda un nuevo 2 agente que se encargue... usen los motores y conecten todo con HF token 1 deepsek
-  Coloca a Microsoft Agent Framework como ORQUESTADOR CENTRAL... mándalo a descargar con los motores
+  Manda 2 agentes separados para que cada uno se encarguen usen los motores y conecten todo con HF token 1 deepsek
+  Coloca a Microsoft Agent Framework como ORQUESTADOR CENTRAL... mándalo a descargar con los motores y luego lo pones a que aprenda cómo funciona el router
 
 agent:
   id: agent-14-orchestrator-msaf
@@ -16,20 +15,19 @@ agent:
 
 context:
   text: |
-    Microsoft Agent Framework (microsoft/agent-framework, MIT) se instala con `pip install agent-framework`. Expone un protocolo compatible
-    con la API de OpenAI para sus adaptadores de modelo, que es la misma forma que usa DeepSeek vía el router de HF (base
-    https://router.huggingface.co/v1, token en la variable de entorno HF_TOKEN). Objetivo: instalar el paquete y demostrar UNA llamada real
-    a DeepSeek (deepseek-ai/DeepSeek-V4-Flash) con ese cliente compatible con OpenAI.
+    Microsoft Agent Framework (microsoft/agent-framework, MIT): paquete Python `pip install agent-framework`. Objetivo: instalarlo y
+    demostrar UNA llamada real a DeepSeek (deepseek-ai/DeepSeek-V4-Flash) por la API de HF (base https://router.huggingface.co/v1, token en
+    la variable de entorno HF_TOKEN), usando el cliente OpenAI-compatible (el mismo protocolo que expone Agent Framework).
 
 steps:
 
   - id: install_and_connect
     task: |
-      Escribe el módulo Python `msaf_connect.py` (un único bloque ```python) con la función `connect_and_ping() -> dict` que: 1) hace
+      Escribe el módulo Python `msaf_connect.py` (un único bloque ```python) con la función `connect_and_ping() -> dict` que: 1)
       `import subprocess, sys; subprocess.run([sys.executable, "-m", "pip", "install", "-q", "agent-framework", "--break-system-packages"], check=True)`;
-      2) crea un cliente `openai.OpenAI(base_url="https://router.huggingface.co/v1", api_key=os.environ["HF_TOKEN"])` (el protocolo que usa
-      Agent Framework por debajo); 3) envía UN mensaje ("Responde solo con la palabra OK.") a "deepseek-ai/DeepSeek-V4-Flash" y devuelve
-      {"installed": True, "reply": texto}. Si algo falla de verdad, deja que la excepción se propague.
+      2) usa `openai.OpenAI(base_url="https://router.huggingface.co/v1", api_key=os.environ["HF_TOKEN"])` para enviar UN mensaje ("Responde
+      solo con la palabra OK.") al modelo "deepseek-ai/DeepSeek-V4-Flash"; 3) devuelve {"installed": True, "reply": texto}. Si algo falla de
+      verdad, deja que la excepción se propague.
     checks:
       - kind: python_ast
       - kind: python_exec
