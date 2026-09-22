@@ -1,10 +1,10 @@
 schema: yaiwes.chain/v1
 
-# Cadena DSL DAG — agent-3-router — PocketFlow. Chat HF sin PRO.
-# publish_live EJECUTA de verdad. ORCH-CHAT P1 2026-09-22: reintento publish_live sin strings triples.
+# agent-3-router — PocketFlow. ORCH-CHAT Director 2026-09-22 ~19:22 COT
+# CANDADO HARD: Job SOLO en procesador 32GB RAM activo. Prohibido otro CPU/GPU.
 input_block: |
-  P1 ORCH-CHAT: reescribe publish_live.py SIN triples; Job cpu-basic:8000; GET /health;
-  Static Space riu-chat-yaiwes con API_BASE real; anota space_url+router_endpoint; fail-closed.
+  URGENTE Director: publish_live YA. Sin triples. Job SOLO 32GB RAM activo (8vCPU/32GB).
+  Prohibido cpu-basic/T4/A10/A100. GET /health. Space riu-chat-yaiwes. Anota URLs.
 
 agent:
   id: agent-3-router
@@ -12,15 +12,18 @@ agent:
   group: hf-chat
   route: [nvidia, groq, cerebras]
   fallback: [minimax_m3]
-  max_tokens: 2200
+  max_tokens: 2400
 
 context:
   text: |
-    Static Space GRATUITO + Job HF con puerto 8000. NO poner claves en el Space.
+    Static Space GRATUITO + Job Router. NO claves en el Space.
     Repo: https://github.com/maxbry123-commits/router-universal-router-inteligente-
-    Token: HF_TOKEN en entorno. Fail-closed si falta.
-    PROHIBIDO en publish_live.py: strings con tres comillas (causa SyntaxError).
-    Usa Path.write_text, "..." escapadas, o listas de líneas + "\n".join.
+    Token: HF_TOKEN. Fail-closed si falta.
+    HARDWARE LOCK (Director): el Job DEBE ir al procesador de 32 GB RAM que ya está
+    activo (perfil 8 vCPU / 32 GB). PROHIBIDO montar cpu-basic, T4, A10G, A100 u otro.
+    Si hay Job 32GB vivo, reutiliza su endpoint. Si propones otro flavor → rechazado.
+    PROHIBIDO en publish_live.py: strings con tres comillas (SyntaxError previo).
+    Usa Path.write_text, comillas simples/dobles escapadas, o "\n".join(lineas).
 
 steps:
 
@@ -63,14 +66,19 @@ steps:
       - router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/output.txt
       - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
     task: |
-      REESCRIBE publish_live.py COMPLETO (bloque ```python único). REGLA DURA: cero strings
-      con tres comillas; el intento anterior falló con SyntaxError unterminated triple-quote.
-      Función publish() -> dict: (1) whoami con HF_TOKEN; (2) Job cpu-basic image python:3.12
-      expose 8000 clonando repo sparse + router_job_start.py; (3) hasta 300s GET /health 200;
-      (4) temp README+index de pasos previos con API_BASE=endpoint Job; (5) deploy Space
-      <cuenta>/riu-chat-yaiwes; (6) GET Space reachable. Return space_url, router_endpoint,
-      router_health_ok, space_reachable. Fail-closed: sin HF_TOKEN o Job/health falla → raise.
-      Tras éxito escribe space_url y router_endpoint en crazy_wall.state.json del agente.
+      REESCRIBE publish_live.py COMPLETO (un bloque python). CERO strings de tres comillas.
+      publish() -> dict:
+      (1) whoami HF_TOKEN;
+      (2) Job Router SOLO en hardware 32GB RAM activo (8vCPU/32GB). PROHIBIDO cpu-basic,
+          T4, A10G, A100 u otro. Reutiliza Job 32GB vivo si existe. Puerto 8000 +
+          common/router_job_start.py;
+      (3) hasta 300s GET /health == 200;
+      (4) temp README+index con API_BASE=endpoint Job;
+      (5) deploy Space <cuenta>/riu-chat-yaiwes;
+      (6) GET Space reachable.
+      Return space_url, router_endpoint, router_health_ok, space_reachable, hardware_flavor.
+      Fail-closed si falta HF_TOKEN, hardware distinto a 32GB, o /health falla.
+      Escribe space_url y router_endpoint en crazy_wall.state.json del agente.
     checks:
       - kind: python_ast
       - kind: no_secrets
