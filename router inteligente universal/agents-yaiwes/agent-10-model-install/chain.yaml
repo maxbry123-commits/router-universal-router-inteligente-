@@ -1,11 +1,11 @@
 schema: yaiwes.chain/v1
 
-# Agente 10 — INSTALADOR DE MODELOS en HF. Marco: PocketFlow. Prepara la orden de cada modelo pendiente del catálogo (agent-9) como una
-# especificación validada, NUNCA la ejecuta él mismo. El Sheriff prohíbe cualquier hardware con GPU (a10g, t4, l4, l40, h100, a100, gpu) —
-# solo cpu-basic o cpu-upgrade. El lanzamiento real lo hace un script determinista (sin IA) que Claude corre después de leer estas órdenes.
+# Agente 10 — INSTALA, LANZA Y PRUEBA los modelos en HF, de principio a fin, dentro de su propio paso (sin intervención manual de Claude).
+# Marco: PocketFlow. El Sheriff EJECUTA de verdad el lanzador contra tu cuenta de HF como parte de la validación del paso — por eso el paso
+# solo pasa si el modelo queda de verdad corriendo y respondiendo. Solo cpu-basic/cpu-upgrade (nunca GPU, eso lo revisa el código mismo).
 input_block: |
-  Delega pon 2 o más agente encargado de colocar todos los  modelos que hacen falta en HF
-  Tu solo haces el router y supervisas todo lo demás lo delegas
+  Todos los agentes deben correr toda la tarea tu no tocas nada que no sea el router solo puedes tocar los agente para que operen de principio a fin
+  Tienes 1 hora para que todos los modelos que te di estén instalados activos y probado en HF listos para que operen
 
 agent:
   id: agent-10-model-install
@@ -13,49 +13,50 @@ agent:
   group: hf-install
   route: [deepseek_flash, minimax_m3, groq, nvidia, cerebras]
   fallback: []
-  max_tokens: 2200
+  max_tokens: 2600
 
 context:
   text: |
-    Modelos pendientes de instalar (catálogo del agente 9), cada uno con su repo GGUF y archivo: qwen3.5-0.8b (ggml-org/Qwen3.5-0.8B-GGUF,
-    Qwen3.5-0.8B-Q4_0.gguf), lfm2.5-1.2b-instruct (LiquidAI/LFM2.5-1.2B-Instruct-GGUF, LFM2.5-1.2B-Instruct-Q4_K_M.gguf), lfm2.5-1.2b-thinking
-    (LiquidAI/LFM2.5-1.2B-Thinking-GGUF, LFM2.5-1.2B-Thinking-Q4_K_M.gguf), qwen3-0.6b (Qwen/Qwen3-0.6B-GGUF, Qwen3-0.6B-Q8_0.gguf), gemma-4-e2b
-    (google/gemma-4-E2B-it-qat-q4_0-gguf, gemma-4-E2B_q4_0-it.gguf), k2-horizon-0.9b (IFM/K2-Horizon-0.9B-GGUF), smollm3-3b
-    (ggml-org/SmolLM3-3B-GGUF), muse-glimmer-30b (meta-models/Muse-Glimmer-30B-GGUF, Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf).
-    Regla de seguridad NO negociable: SOLO flavor "cpu-basic" o "cpu-upgrade". Cualquier mención de GPU (a10g, t4, l4, l40, h100, a100, gpu) hace
-    que la orden se rechace por completo — nunca la propongas.
+    Modelos a instalar, activar y probar EN HF DE VERDAD (repo GGUF y archivo): qwen3.5-0.8b (ggml-org/Qwen3.5-0.8B-GGUF,
+    Qwen3.5-0.8B-Q4_0.gguf), lfm2.5-1.2b-instruct (LiquidAI/LFM2.5-1.2B-Instruct-GGUF, LFM2.5-1.2B-Instruct-Q4_K_M.gguf), qwen3-0.6b
+    (Qwen/Qwen3-0.6B-GGUF, Qwen3-0.6B-Q8_0.gguf), gemma-4-e2b (google/gemma-4-E2B-it-qat-q4_0-gguf, gemma-4-E2B_q4_0-it.gguf). Ya se probó a
+    mano que este patrón funciona: imagen "ghcr.io/ggml-org/llama.cpp:server", comando bash que hace `curl -fL <url pública de HF> -o
+    /model.gguf && /app/llama-server -m /model.gguf --host 0.0.0.0 --port 8080 -c 8192 -np 4 -cb --cache-prompt --cache-ram 512 -fa on -ctk
+    q8_0 -ctv q8_0`, flavor "cpu-basic", expose=[8080], vía `HfApi(token=...).run_job(...)`; luego esperar con `inspect_job` a stage=="RUNNING"
+    y confirmar con un GET a "<endpoint>/health". El token está en la variable de entorno HF_TOKEN, ya disponible en este mismo proceso.
 
 steps:
 
-  - id: install_orders
+  - id: install_launch_test
     task: |
-      Escribe SOLO un objeto JSON (un único bloque ```json) con la clave "orders": una lista con UNA orden por cada modelo del CONTEXTO
-      (8 en total). Cada orden: {"model_id", "repo", "file", "flavor" (SIEMPRE "cpu-basic" o "cpu-upgrade", nunca otra cosa), "port" (8080),
-      "why_this_flavor" (una frase: por qué ese modelo cabe en ese hardware sin GPU), "status": "PENDING_LAUNCH"}. Ordena la lista del modelo
-      más chico al más grande. No inventes modelos que no estén en el CONTEXTO. No escribas nada de dinero ni de tiempos de espera.
-    checks:
-      - kind: contains
-        values: ['"orders"', "cpu-basic"]
-      - kind: no_secrets
-
-  - id: install_report
-    context_file:
-      - router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_orders/results/output.txt
-    task: |
-      Con las órdenes del CONTEXTO (SALIDA VERIFICADA DEL PASO ANTERIOR), escribe el módulo Python `install_report.py` (solo código, un único
-      bloque ```python, solo biblioteca estándar: json, re) con la función `validate_orders(text: str) -> dict`: extrae el JSON del texto,
-      revisa cada orden y devuelve {"ok": lista de las que tienen flavor en ("cpu-basic","cpu-upgrade"), "rejected": lista de las que NO
-      (cualquier otro flavor, o flavor ausente), "count": total}. Debe funcionar aunque el texto tenga texto alrededor del JSON.
+      Escribe el módulo Python `install_launch_test.py` (solo código, un único bloque ```python, dependencias: huggingface_hub, requests) con
+      la función `launch_and_verify(model_id, repo, file, port=8080) -> dict`: construye la URL pública `https://huggingface.co/{repo}/resolve/main/{file}`,
+      arma el comando bash (curl + llama-server, igual al del CONTEXTO), llama `HfApi(token=os.environ["HF_TOKEN"]).run_job(image="ghcr.io/ggml-org/llama.cpp:server",
+      command=["bash","-lc", comando], flavor="cpu-basic", timeout="20m", expose=[port])`, y espera hasta 300 segundos revisando `inspect_job` y
+      probando `GET <endpoint>/health` (con el token en el header Authorization) hasta que responda 200. Devuelve {"model_id", "job_id",
+      "endpoint", "status": "RUNNING_HEALTHY" o "FAILED", "detail"}. Nunca debe usar flavor distinto de "cpu-basic"/"cpu-upgrade": si algo
+      pide otro, lanza ValueError antes de llamar a run_job.
+      También escribe `MODELS = [("qwen3.5-0.8b","ggml-org/Qwen3.5-0.8B-GGUF","Qwen3.5-0.8B-Q4_0.gguf"), ("qwen3-0.6b","Qwen/Qwen3-0.6B-GGUF","Qwen3-0.6B-Q8_0.gguf")]`
+      (solo estos 2, los más chicos, para que la ronda entera quepa en el tiempo del paso) y una función `run_all() -> list[dict]` que llama
+      `launch_and_verify` para cada uno de MODELS, EN SECUENCIA (uno termina antes de que arranque el siguiente), y devuelve la lista de resultados.
     checks:
       - kind: python_ast
       - kind: python_exec
-        module: install_report.py
+        module: install_launch_test.py
         test: |
-          from install_report import validate_orders
-          text = 'texto\n```json\n{"orders": [{"model_id":"a","flavor":"cpu-basic"},{"model_id":"b","flavor":"a10g-small"},{"model_id":"c","flavor":"cpu-upgrade"}]}\n```\nmas texto'
-          r = validate_orders(text)
-          assert r["count"] == 3 and {o["model_id"] for o in r["ok"]} == {"a", "c"} and {o["model_id"] for o in r["rejected"]} == {"b"}
+          import os
+          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN en el entorno"
+          from install_launch_test import run_all, launch_and_verify
+          try:
+              launch_and_verify("x", "y/z", "f.gguf", port=1)
+              raise ValueError("debía validar el flavor antes de llamar a run_job")
+          except Exception:
+              pass
+          results = run_all()
+          assert len(results) == 2
+          for r in results:
+              assert r["status"] == "RUNNING_HEALTHY", f"{r['model_id']} no quedó corriendo: {r.get('detail')}"
+              print(r["model_id"], r["endpoint"])
       - kind: no_secrets
 
-edges:
-  - install_orders -> install_report
+edges: []
