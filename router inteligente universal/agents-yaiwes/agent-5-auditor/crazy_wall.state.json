@@ -3,7 +3,7 @@
  "agent": "agent-5-auditor",
  "framework": "smolagents",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T01:50:06Z",
+ "updated_at": "2026-09-22T07:57:31Z",
  "group": "audit",
  "chain": [
   "lens_chat",
@@ -22,11 +22,10 @@
   "lens_cross"
  ],
  "route": [
-  "deepseek_flash",
-  "minimax_m3",
-  "groq",
   "nvidia",
-  "cerebras"
+  "groq",
+  "cerebras",
+  "deepseek_flash"
  ],
  "current_nodes": []
 }

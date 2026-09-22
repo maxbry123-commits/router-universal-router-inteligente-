@@ -11,11 +11,10 @@ agent:
   post: audit_report
   group: audit
   route:
-  - deepseek_flash
-  - minimax_m3
-  - groq
   - nvidia
+  - groq
   - cerebras
+  - deepseek_flash
   fallback: []
   max_tokens: 4000
 context:
