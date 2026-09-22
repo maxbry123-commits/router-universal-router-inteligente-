@@ -1,5 +1,3 @@
-# HANDOFF — publish_live
+# HANDOFF publish_live
 
-Estado: **PENDING_RETRY**
-
-Orden: TEMPLATE verbatim; Job 32GB; python_exec.
+PENDING_RETRY — sheriff+TEMPLATE

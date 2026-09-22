@@ -1,3 +1,3 @@
 # SUPERSEDED
 
-Usar publish_live.py (TEMPLATE). Job solo 32GB RAM.
+Usar publish_live.py + hardware_sheriff. Job solo máquina 32 GB RAM.
