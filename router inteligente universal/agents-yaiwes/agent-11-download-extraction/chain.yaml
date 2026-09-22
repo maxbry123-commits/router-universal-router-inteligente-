@@ -5,7 +5,7 @@ schema: yaiwes.chain/v1
 # El agente 5 (auditor) revisa su trabajo en su siguiente pasada; Claude lee el resultado del auditor, no revisa el detalle línea por línea.
 input_block: |
   Le das a un agente la responsabilidad de solo descargar y extracción de componentes tu solo luego revisa el agente revisa por ti
-  Descarga los componentes que necesitas para trabajar mientras se descargas vas haciendo el router (paso 3 del orden de 5 pasos, 2026-09-22 cc)
+  Coloca a Microsoft Agent Framework como ORQUESTADOR CENTRAL del router inteligente universal mándalo a descargar con los motores
 
 agent:
   id: agent-11-download-extraction
@@ -18,12 +18,10 @@ agent:
 context:
   text: |
     Pendiente de descargar/extraer, aparte de los 6 donantes ya bajados (Muse Code SDK, bucle de Muse Glimmer, MetaCua, CUA+MCP, SmolAgents,
-    PocketFlow) y de llama-cpp-nanbeige-fork/omniroute-readme: los 15 componentes de software de Jev/System One que dio el Director:
-    typesafe-ai/skills, typesafe-ai/typesafe-sdk-python, typesafe-ai/typesafe-sdk-js, typesafe-ai/system-one-adapter-python,
-    BunsDev/typesafe-router, gargpratyush/jev-router, 0xNatoshi/jev-codex-router, jkudish/jev-mcp, anasbekheit/typesafe-jev-mcp,
-    itsmostafa/typesafe-mcp, BYK/jev-mcp, GodsBoy/jev-agent-skill-router, Dicklesworthstone/skillranker, vinilana/jev-eval-agent,
-    haseeb-heaven/jev-system-one. De cada uno basta el README.md y, si existe, la carpeta principal de código fuente (src/ o el paquete
-    con el nombre del repo) — NO bajes node_modules, dist, ni carpetas de pruebas. Usa el mismo motor determinista
+    PocketFlow) y de llama-cpp-nanbeige-fork/omniroute-readme: los 15 componentes de Jev/System One (ver `jev_components.py`, ya escrito) y
+    ahora Microsoft Agent Framework (https://github.com/microsoft/agent-framework, MIT, orquestador central pedido por el Director) —
+    bajar su README.md y la carpeta principal de código (python/packages, si existe, o "python"). De cada uno basta el README.md y, si
+    existe, la carpeta principal de código fuente — NO bajes node_modules, dist, ni carpetas de pruebas. Usa el mismo motor determinista
     (`common/download_donors.py`, límite 150 KB por archivo, 2 MB por donante). NO instales nada, NO lances ningún Job, NO toques el Router.
 
 steps:
@@ -53,4 +51,18 @@ steps:
           assert JEV_COMPONENTS["jev-router"][0] == "https://github.com/gargpratyush/jev-router"
       - kind: no_secrets
 
-edges: []
+  - id: ms_agent_framework_donor
+    task: |
+      Escribe el módulo Python `ms_agent_framework_donor.py` (solo código, un único bloque ```python, solo biblioteca estándar) con la
+      tupla `MS_AGENT_FRAMEWORK = ("https://github.com/microsoft/agent-framework", ["README.md", "python"])`. Nada más en el archivo.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: ms_agent_framework_donor.py
+        test: |
+          from ms_agent_framework_donor import MS_AGENT_FRAMEWORK
+          assert MS_AGENT_FRAMEWORK == ("https://github.com/microsoft/agent-framework", ["README.md", "python"])
+      - kind: no_secrets
+
+edges:
+  - jev_components_list -> ms_agent_framework_donor
