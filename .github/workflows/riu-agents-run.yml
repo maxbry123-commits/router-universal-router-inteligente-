@@ -87,6 +87,9 @@ jobs:
           git config user.name "riu-agents"
           git config user.email "riu-agents@users.noreply.github.com"
           find "router inteligente universal/agents-yaiwes" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+          # Nunca commitear pesos HF (bloqueo #31: Qwen GGUF 610MB)
+          find "router inteligente universal/agents-yaiwes" -path '*/results/models/*' -type f -delete 2>/dev/null || true
+          find "router inteligente universal/agents-yaiwes" -name '*.gguf' -size +10M -delete 2>/dev/null || true
           git add "router inteligente universal/agents-yaiwes" || true
           git commit -m "agentes: resultados de la ronda (Crazy Wall + HANDOFF + entregables verificados + auditoría)" || { echo "nada que confirmar"; exit 0; }
           for i in 1 2 3 4 5; do

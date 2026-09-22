@@ -1,4 +1,4 @@
-Órdenes install: todas apuntan a máquina HF de 32 GB RAM (8 vCPU·32GB).
-El ID de flavor en HF Jobs es mapeo técnico (docs HF), no texto del Director.
-why_this_flavor unificado: «máquina HF 32 GB RAM (mapeo técnico docs HF)».
+Órdenes install: todas apuntan a máquina 32 GB RAM.
+El ID técnico de flavor en HF Jobs es implementación (docs HF), no texto del Director.
+why_this_flavor: «máquina 32 GB RAM».
 Prohibido: máquina 16 GB y GPU.

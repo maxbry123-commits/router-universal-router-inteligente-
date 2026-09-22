@@ -1,11 +1,12 @@
 schema: yaiwes.chain/v1
 
 # Agente 10 — MICRO-ORDEN: 1 Job Qwen RUNNING_HEALTHY SOLO en máquina 32 GB RAM.
-# Prohibido ≠32GB. PASS solo con /health 200. Timeout healthcheck ampliado (900s).
+# Prohibido ≤32GB. PASS solo con /health 200. Timeout healthcheck ampliado (900s).
 input_block: |
   ORDEN: un solo Job en la máquina de 32 GB RAM.
   Prohibido montar Jobs en otro hardware. Meta: Qwen3-0.6B RUNNING_HEALTHY + /health.
   Relanzar con timeout mayor; PASS solo si healthcheck OK.
+  NUNCA descargar .gguf al repo (results/models/); solo curl dentro del Job HF.
 
 agent:
   id: agent-10-model-install
@@ -22,6 +23,7 @@ context:
     Modelo único: qwen3-0.6b → Qwen/Qwen3-0.6B-GGUF / Qwen3-0.6B-Q8_0.gguf, port 8080.
     image "ghcr.io/ggml-org/llama.cpp:server"; curl Hub → /model.gguf → llama-server.
     Job timeout="45m". Espera healthcheck hasta 900s (poll ~10s). PASS solo si GET /health → 200.
+    NUNCA huggingface_hub.hf_hub_download ni guardar .gguf bajo results/; solo curl dentro del Job.
     Import Sheriff: sys.path → agents-yaiwes/common; from hardware_sheriff import assert_machine_32gb_ram, guarded_run_job.
     HfHubHTTPError desde huggingface_hub.errors (fallback .utils). NUNCA top-level.
 
@@ -56,7 +58,7 @@ steps:
               launch_and_verify("x", "y/z", "f.gguf", flavor="cpu-basic")
           except ValueError:
               raised = True
-          assert raised, "debía rechazar máquina ≠32GB"
+          assert raised, "debía rechazar máquina ≤32GB"
           raised2 = False
           try:
               launch_and_verify("x", "y/z", "f.gguf", flavor="a10g-small")

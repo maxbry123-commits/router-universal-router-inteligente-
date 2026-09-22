@@ -6,7 +6,7 @@
       "file": "Qwen3-0.6B-Q8_0.gguf",
       "flavor": "cpu-upgrade",
       "port": 8080,
-      "why_this_flavor": "máquina HF 32 GB RAM (mapeo técnico docs HF)",
+      "why_this_flavor": "máquina 32 GB RAM",
       "status": "PENDING_LAUNCH"
     },
     {
@@ -15,7 +15,7 @@
       "file": "Qwen3.5-0.8B-Q4_0.gguf",
       "flavor": "cpu-upgrade",
       "port": 8080,
-      "why_this_flavor": "máquina HF 32 GB RAM (mapeo técnico docs HF)",
+      "why_this_flavor": "máquina 32 GB RAM",
       "status": "PENDING_LAUNCH"
     },
     {
@@ -24,7 +24,7 @@
       "file": "",
       "flavor": "cpu-upgrade",
       "port": 8080,
-      "why_this_flavor": "máquina HF 32 GB RAM (mapeo técnico docs HF)",
+      "why_this_flavor": "máquina 32 GB RAM",
       "status": "PENDING_LAUNCH"
     },
     {
@@ -33,7 +33,7 @@
       "file": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
       "flavor": "cpu-upgrade",
       "port": 8080,
-      "why_this_flavor": "máquina HF 32 GB RAM (mapeo técnico docs HF)",
+      "why_this_flavor": "máquina 32 GB RAM",
       "status": "PENDING_LAUNCH"
     },
     {
@@ -42,7 +42,7 @@
       "file": "LFM2.5-1.2B-Thinking-Q4_K_M.gguf",
       "flavor": "cpu-upgrade",
       "port": 8080,
-      "why_this_flavor": "máquina HF 32 GB RAM (mapeo técnico docs HF)",
+      "why_this_flavor": "máquina 32 GB RAM",
       "status": "PENDING_LAUNCH"
     },
     {
@@ -51,7 +51,7 @@
       "file": "gemma-4-E2B_q4_0-it.gguf",
       "flavor": "cpu-upgrade",
       "port": 8080,
-      "why_this_flavor": "máquina HF 32 GB RAM (mapeo técnico docs HF)",
+      "why_this_flavor": "máquina 32 GB RAM",
       "status": "PENDING_LAUNCH"
     },
     {
@@ -60,7 +60,7 @@
       "file": "",
       "flavor": "cpu-upgrade",
       "port": 8080,
-      "why_this_flavor": "máquina HF 32 GB RAM (mapeo técnico docs HF)",
+      "why_this_flavor": "máquina 32 GB RAM",
       "status": "PENDING_LAUNCH"
     },
     {
@@ -69,9 +69,9 @@
       "file": "Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
       "flavor": "cpu-upgrade",
       "port": 8080,
-      "why_this_flavor": "máquina HF 32 GB RAM (mapeo técnico docs HF)",
+      "why_this_flavor": "máquina 32 GB RAM",
       "status": "PENDING_LAUNCH"
     }
   ],
-  "hardware_rule": "Solo máquina HF de 32 GB RAM (8 vCPU·32GB). Flavor técnico = mapeo docs HF; never GPU / never 16GB."
+  "hardware_rule": "Solo máquina 32 GB RAM (8 vCPU·32GB). ID técnico HF = implementación; never 16GB/GPU."
 }
