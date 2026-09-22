@@ -3,7 +3,7 @@
  "agent": "agent-10-model-install",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T23:29:24Z",
+ "updated_at": "2026-09-22T23:56:04Z",
  "group": "hf-install",
  "current_nodes": [
   "execute"
@@ -16,7 +16,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
-  "la prueba superó el tiempo"
+  "la prueba falló (exit=1): AttributeError: 'JobInfo' object has no attribute 'refresh'"
  ],
  "failed": [
   "execute"

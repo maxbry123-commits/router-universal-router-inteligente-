@@ -16,63 +16,57 @@ agent:
   fallback: []
   max_tokens: 2800
 context:
-  text: 'HARDWARE ÚNICO PERMITIDO: flavor exactamente "cpu-upgrade" (= 8 vCPU / 32
-    GB RAM en HF Jobs).
+  text: 'HARDWARE ÚNICO PERMITIDO: máquina de 32 GB RAM (flavor técnico HF "cpu-upgrade"
+    = 8 vCPU / 32 GB).
 
-    PROHIBIDO: cpu-basic (16 GB), GPU (a10g/t4/l4/etc.), cpu-xlarge u otros. Si el
-    código intenta otro flavor → ValueError ANTES de run_job.
+    PROHIBIDO: máquina 16GB (cpu-basic), GPU y cualquier otro. Sheriff: assert_machine_32gb_ram
+    + guarded_run_job.
 
-    Modelo único esta ronda: qwen3-0.6b → repo Qwen/Qwen3-0.6B-GGUF, file Qwen3-0.6B-Q8_0.gguf,
-    port 8080.
+    Modelo único: qwen3-0.6b → Qwen/Qwen3-0.6B-GGUF / Qwen3-0.6B-Q8_0.gguf, port 8080.
 
-    Patrón verificado: image "ghcr.io/ggml-org/llama.cpp:server", command bash:
+    image "ghcr.io/ggml-org/llama.cpp:server"; curl Hub → /model.gguf → llama-server.
 
-    `curl -fL https://huggingface.co/{repo}/resolve/main/{file} -o /model.gguf &&
-    /app/llama-server -m /model.gguf --host 0.0.0.0 --port 8080 -c 8192 -np 4 -cb
-    --cache-prompt --cache-ram 512 -fa on -ctk q8_0 -ctv q8_0`
+    Job timeout="45m". Espera healthcheck hasta 900s (poll ~10s). PASS solo si GET
+    /health → 200.
 
-    HfApi(token=os.environ["HF_TOKEN"]).run_job(..., flavor="cpu-upgrade", timeout="20m",
-    expose=[8080]);
+    NUNCA huggingface_hub.hf_hub_download ni guardar .gguf bajo results/; solo curl
+    dentro del Job.
 
-    esperar inspect_job stage=="RUNNING"; GET <endpoint>/health con Authorization
-    Bearer HF_TOKEN → 200 = RUNNING_HEALTHY.
+    Import Sheriff: sys.path → agents-yaiwes/common; from hardware_sheriff import
+    assert_machine_32gb_ram, guarded_run_job.
 
-    IMPORT: HfHubHTTPError NUNCA desde huggingface_hub top-level. Usar `from huggingface_hub.errors
-    import HfHubHTTPError`
-
-    (fallback `from huggingface_hub.utils import HfHubHTTPError`). HfApi sí: `from
-    huggingface_hub import HfApi`.
+    HfHubHTTPError desde huggingface_hub.errors (fallback .utils). NUNCA top-level.
 
     '
   max_chars: 40000
 task: "Escribe el módulo Python `install_launch_test.py` (solo código, un único bloque\
-  \ ```python, deps: huggingface_hub, requests).\nImports: os, time, requests; `from\
-  \ huggingface_hub import HfApi`; `from huggingface_hub.errors import HfHubHTTPError`\n\
-  (si falla el import de errors, fallback utils). NUNCA `from huggingface_hub import\
-  \ HfHubHTTPError`.\nFunción `launch_and_verify(model_id, repo, file, port=8080,\
-  \ flavor=\"cpu-upgrade\") -> dict`:\n  - Si flavor != \"cpu-upgrade\": raise ValueError(\"\
-  HARDWARE: solo cpu-upgrade 32GB permitido\") ANTES de run_job.\n  - URL: https://huggingface.co/{repo}/resolve/main/{file}\n\
-  \  - run_job(image=\"ghcr.io/ggml-org/llama.cpp:server\", command=[\"bash\",\"-lc\"\
-  , curl+llama-server del CONTEXTO],\n    flavor=\"cpu-upgrade\", timeout=\"20m\"\
-  , expose=[port]) con token HF_TOKEN.\n  - Espera hasta 300s: inspect_job RUNNING\
-  \ + GET endpoint/health 200.\n  - Devuelve {\"model_id\",\"job_id\",\"endpoint\"\
-  ,\"status\":\"RUNNING_HEALTHY\"|\"FAILED\",\"detail\",\"flavor\":\"cpu-upgrade\"\
-  }.\n`MODELS = [(\"qwen3-0.6b\",\"Qwen/Qwen3-0.6B-GGUF\",\"Qwen3-0.6B-Q8_0.gguf\"\
-  )]`  # SOLO este, 1 Job\n`run_all() -> list[dict]` llama launch_and_verify en secuencia\
-  \ para cada MODELS (un solo item).\n"
+  \ ```python, deps: huggingface_hub, requests).\nImports: os, sys, time, Path, requests;\
+  \ HfApi; HfHubHTTPError desde errors (fallback utils).\nAñade common/ al sys.path\
+  \ (parents[4]/common) y:\n  from hardware_sheriff import assert_machine_32gb_ram,\
+  \ guarded_run_job, HardwareSheriffError\nConstantes: MODELS = [(\"qwen3-0.6b\",\"\
+  Qwen/Qwen3-0.6B-GGUF\",\"Qwen3-0.6B-Q8_0.gguf\")]  # SOLO 1\n  JOB_TIMEOUT=\"45m\"\
+  ; HEALTH_WAIT_S=900; POLL_S=10\nFunción `launch_and_verify(model_id, repo, file,\
+  \ port=8080, flavor=\"cpu-upgrade\") -> dict`:\n  - ANTES de lanzar: assert_machine_32gb_ram(flavor=flavor);\
+  \ si HardwareSheriffError → raise ValueError(str(e))\n  - Lanzar SOLO con guarded_run_job(api,\
+  \ image=..., command=..., flavor=flavor, timeout=JOB_TIMEOUT, expose=[port])\n \
+  \ - Probar varios endpoints (job.endpoint, *.jobs.huggingface.co, *--port.hf.jobs)\n\
+  \  - Esperar hasta HEALTH_WAIT_S: stage RUNNING + GET .../health 200 con Bearer\
+  \ HF_TOKEN\n  - status RUNNING_HEALTHY solo si health 200; si no FAILED con detail\n\
+  \  - Devuelve {model_id, job_id, endpoint, status, detail, flavor}\n`run_all()`\
+  \ llama launch_and_verify solo para el único MODELS.\n"
 checks:
 - kind: python_ast
 - kind: python_exec
   module: install_launch_test.py
   test: "import os\nassert os.environ.get(\"HF_TOKEN\"), \"falta HF_TOKEN en el entorno\"\
-    \nfrom install_launch_test import run_all, launch_and_verify\n# debe rechazar\
-    \ hardware no-32GB\nraised = False\ntry:\n    launch_and_verify(\"x\", \"y/z\"\
-    , \"f.gguf\", flavor=\"cpu-basic\")\nexcept ValueError:\n    raised = True\nassert\
-    \ raised, \"debía rechazar cpu-basic (solo cpu-upgrade 32GB)\"\nraised2 = False\n\
-    try:\n    launch_and_verify(\"x\", \"y/z\", \"f.gguf\", flavor=\"a10g-small\"\
-    )\nexcept ValueError:\n    raised2 = True\nassert raised2, \"debía rechazar GPU\"\
-    \nresults = run_all()\nassert len(results) == 1, \"solo 1 modelo esta ronda\"\n\
-    r = results[0]\nassert r.get(\"flavor\") == \"cpu-upgrade\"\nassert r[\"status\"\
-    ] == \"RUNNING_HEALTHY\", f\"{r['model_id']} no quedó corriendo: {r.get('detail')}\"\
-    \nprint(r[\"model_id\"], r[\"endpoint\"], r.get(\"job_id\"))\n"
+    \nfrom install_launch_test import run_all, launch_and_verify\nraised = False\n\
+    try:\n    launch_and_verify(\"x\", \"y/z\", \"f.gguf\", flavor=\"cpu-basic\")\n\
+    except ValueError:\n    raised = True\nassert raised, \"debía rechazar máquina\
+    \ ≤32GB\"\nraised2 = False\ntry:\n    launch_and_verify(\"x\", \"y/z\", \"f.gguf\"\
+    , flavor=\"a10g-small\")\nexcept ValueError:\n    raised2 = True\nassert raised2,\
+    \ \"debía rechazar GPU\"\nresults = run_all()\nassert len(results) == 1, \"solo\
+    \ 1 modelo esta ronda\"\nr = results[0]\nassert r.get(\"flavor\") == \"cpu-upgrade\"\
+    \nassert r[\"status\"] == \"RUNNING_HEALTHY\", f\"{r['model_id']} no quedó corriendo:\
+    \ {r.get('detail')}\"\nprint(r[\"model_id\"], r[\"endpoint\"], r.get(\"job_id\"\
+    ))\n"
 - kind: no_secrets
