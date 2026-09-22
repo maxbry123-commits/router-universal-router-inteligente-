@@ -1,7 +1,7 @@
 name: RIU Jev Bench
 
-# Step 1-2 of the Director's order: really try to install and run Laya Multilingual, Decider-0.8B and Decider-2B (CPU only, no GPU,
-# no HF billing) on the same 8 router decisions, and report accuracy + latency for each. See common/jev_bench.py.
+# Step 1-2 of the Director's order: really try to install and run Laya (base + laya-typed-decisions fine-tuned), Decider-0.8B/2B and
+# Qwen3-0.6B-RLCD-Decision (CPU only, no GPU, no HF billing) on the same 8 router decisions. See common/jev_bench.py.
 
 on:
   workflow_dispatch:
@@ -27,5 +27,6 @@ jobs:
         run: |
           pip install laya --break-system-packages || echo "::warning title=RIU_JEVBENCH_PIP::laya no se pudo instalar por pip"
           pip install "git+https://github.com/Mapika/decider" --break-system-packages || echo "::warning title=RIU_JEVBENCH_PIP::decider no se pudo instalar desde ese repo"
+          pip install torch transformers --break-system-packages || echo "::warning title=RIU_JEVBENCH_PIP::torch/transformers no se pudieron instalar"
       - name: Bench
         run: python "router inteligente universal/agents-yaiwes/common/jev_bench.py"
