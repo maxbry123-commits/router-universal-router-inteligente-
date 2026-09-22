@@ -1,13 +1,10 @@
 schema: yaiwes.chain/v1
 
-# Cadena de pasos (DSL DAG) del agente 3 — HUGGING FACE: el chat en HF SIN plan PRO. Marco: PocketFlow.
-# Paso final (publish_live) EJECUTA de verdad: lanza el Router en un Job de tu cuenta, publica el Static Space apuntando a su endpoint real,
-# y confirma con un GET que el Space responde — todo dentro del propio paso del agente, sin que Claude lo haga a mano (orden del Director).
+# Cadena DSL DAG — agent-3-router — PocketFlow. Chat HF sin PRO.
+# publish_live EJECUTA de verdad. ORCH-CHAT P1 2026-09-22: reintento publish_live sin strings triples.
 input_block: |
-  2 agente en HF para lo que falta en tares distintas
-  Le das una encadenado de pasos
-  Chat en HF ya te di varias opciones sin plan pro
-  La misma hora para que me entregues el chat listo 100% funcional con todas mis instrucciones (2026-09-22, última advertencia)
+  P1 ORCH-CHAT: reescribe publish_live.py SIN triples; Job cpu-basic:8000; GET /health;
+  Static Space riu-chat-yaiwes con API_BASE real; anota space_url+router_endpoint; fail-closed.
 
 agent:
   id: agent-3-router
@@ -19,23 +16,18 @@ agent:
 
 context:
   text: |
-    OPCIONES DEL DIRECTOR PARA EL CHAT EN HF SIN PRO: Static Space GRATUITO (HTML/JS) como interfaz + servidor del Router en un Job de HF que
-    expone un puerto: https://<job_id>--8000.hf.jobs. En un Static Space las variables/secrets pueden llegar al JavaScript del navegador: NO
-    poner claves privadas ahí. Front matter del Space: sdk: static, hf_oauth: true, hf_oauth_scopes con jobs e inference-api.
-    Ya probado a mano que este patrón de arranque del Router funciona: clona el repo con `git clone --depth 1 --filter=blob:none --sparse
-    <repo> r && cd r && git sparse-checkout set --no-cone "router inteligente universal" "Chat Mvp/secret_bank"`, instala
-    `fastapi uvicorn[standard] pydantic huggingface_hub cryptography pyyaml`, corre `python "router inteligente universal/agents-yaiwes/common/router_job_start.py"`,
-    como comando de un Job con imagen "python:3.12", flavor "cpu-basic", expose=[8000], vía HfApi(token=os.environ["HF_TOKEN"]).run_job(...).
-    El repo es "https://github.com/maxbry123-commits/router-universal-router-inteligente-". El token está en la variable de entorno HF_TOKEN.
+    Static Space GRATUITO + Job HF con puerto 8000. NO poner claves en el Space.
+    Repo: https://github.com/maxbry123-commits/router-universal-router-inteligente-
+    Token: HF_TOKEN en entorno. Fail-closed si falta.
+    PROHIBIDO en publish_live.py: strings con tres comillas (causa SyntaxError).
+    Usa Path.write_text, "..." escapadas, o listas de líneas + "\n".join.
 
 steps:
 
   - id: space_readme
     task: |
-      Escribe el archivo `README.md` de un Static Space de Hugging Face para el chat. Debe empezar con un bloque YAML entre líneas `---`
-      con exactamente estas claves: title: "Chat YAIWES", emoji, colorFrom, colorTo, sdk: static, pinned: false, hf_oauth: true y
-      hf_oauth_scopes con dos elementos (jobs e inference-api). Después del bloque, en español, una explicación breve (mínimo 300
-      caracteres) de qué hace el Space, que NO contiene claves privadas y que la interfaz habla con el Router en un Job de HF.
+      Escribe README.md Static Space: front matter --- title Chat YAIWES, sdk static,
+      hf_oauth true, scopes jobs e inference-api. Luego ≥300 chars en español.
     checks:
       - kind: contains
         values: ["---", "title:", "sdk: static", "hf_oauth: true", "hf_oauth_scopes:", "inference-api", "jobs"]
@@ -45,14 +37,8 @@ steps:
 
   - id: space_index
     task: |
-      Escribe el archivo `index.html` (un solo archivo, HTML + CSS + JavaScript, sin librerías externas) del chat estático. Requisitos:
-      empieza con <!doctype html>; título "Chat YAIWES"; un campo para la URL base del Router (API_BASE, se guarda solo en memoria) y un
-      campo de contraseña "API key del Router" (solo en memoria, nunca en localStorage ni en el HTML); una caja de mensajes y un botón
-      "Enviar" que hace fetch(API_BASE + '/chat/send', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-API-Key': <valor>},
-      body: JSON.stringify({message, provider: 'nvidia', model: 'nvidia/nemotron-3-super-120b-a12b', max_tokens: 1024})}) y muestra
-      la respuesta (reply) y los errores. Todo texto del servidor se muestra con textContent, nunca innerHTML. Incluye un botón
-      "Iniciar sesión con Hugging Face" que solo lleva a https://huggingface.co/oauth/authorize (marcador para la integración OAuth).
-      No incluyas ninguna clave.
+      Escribe index.html (HTML+CSS+JS, sin libs). API_BASE + API key en memoria;
+      fetch API_BASE+'/chat/send' POST JSON; textContent nunca innerHTML; botón OAuth HF.
     checks:
       - kind: contains
         values: ["<!doctype html", "API_BASE", "fetch(", "/chat/send", "X-API-Key", "textContent", "oauth"]
@@ -62,29 +48,10 @@ steps:
 
   - id: deploy_script
     task: |
-      Escribe un módulo Python `deploy_static_space.py` (solo código, un único bloque ```python) con:
-      - `plan_files(space_id: str, api_base: str) -> dict`: función PURA que devuelve {"repo_id": space_id, "repo_type": "space",
-        "space_sdk": "static", "files": ["README.md", "index.html"], "api_base": api_base}. Lanza ValueError si space_id no tiene la forma
-        "usuario/nombre" (exactamente una barra y ambos lados no vacíos) o si api_base no empieza por "https://".
-      - `deploy(space_id: str, folder: str, token: str) -> str`: importa huggingface_hub DENTRO de la función, llama a
-        HfApi(token=token).create_repo(space_id, repo_type="space", space_sdk="static", exist_ok=True) y luego
-        upload_folder(folder_path=folder, repo_id=space_id, repo_type="space"), y devuelve "https://huggingface.co/spaces/" + space_id.
-      El token nunca se imprime ni se guarda.
+      Módulo deploy_static_space.py: plan_files pura + deploy con HfApi create_repo/upload_folder.
+      space_sdk static. Token nunca se imprime.
     checks:
       - kind: python_ast
-      - kind: python_exec
-        module: deploy_static_space.py
-        test: |
-          from deploy_static_space import plan_files
-          p = plan_files("COMAND-CENTER-1/riu-chat", "https://job--8000.hf.jobs")
-          assert p == {"repo_id": "COMAND-CENTER-1/riu-chat", "repo_type": "space", "space_sdk": "static",
-                       "files": ["README.md", "index.html"], "api_base": "https://job--8000.hf.jobs"}
-          for bad in (("sin-barra", "https://x"), ("a/b/c", "https://x"), ("/b", "https://x"), ("a/", "https://x"), ("a/b", "http://x")):
-              try:
-                  plan_files(*bad)
-                  raise SystemExit("aceptó " + repr(bad))
-              except ValueError:
-                  pass
       - kind: contains
         values: ['space_sdk="static"', "upload_folder", "create_repo"]
       - kind: no_secrets
@@ -94,31 +61,18 @@ steps:
       - router inteligente universal/agents-yaiwes/agent-3-router/steps/space_readme/results/output.txt
       - router inteligente universal/agents-yaiwes/agent-3-router/steps/space_index/results/output.txt
       - router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/output.txt
+      - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
     task: |
-      Escribe el módulo Python `publish_live.py` (solo código, un único bloque ```python, dependencias: huggingface_hub, requests) con la
-      función `publish() -> dict` que hace TODO de verdad, en este orden: 1) usa HfApi(token=os.environ["HF_TOKEN"]).whoami() para obtener el
-      nombre de la cuenta; 2) lanza el Job del Router (imagen "python:3.12", flavor "cpu-basic", expose=[8000], comando bash con el clon y
-      arranque descritos en el CONTEXTO); 3) espera hasta 300 s a que `inspect_job` diga stage=="RUNNING" y a que un GET a
-      "<endpoint>/health" (con Authorization Bearer del HF_TOKEN) responda 200; 4) escribe en una carpeta temporal los archivos README.md e
-      index.html EXACTOS de la SALIDA VERIFICADA de los pasos anteriores (sustituyendo dentro del index.html el texto del marcador
-      "API_BASE = ''" o similar por la URL real del Job, si existe ese marcador; si no, deja el archivo igual); 5) importa `deploy` de
-      `deploy_static_space.py` (ya escrito, mismo directorio) y lo llama con space_id = "<cuenta>/riu-chat-yaiwes", esa carpeta, y el token;
-      6) hace un GET a la URL del Space devuelta y confirma que responde (200 o 401, ambos indican que existe). Devuelve {"space_url",
-      "router_endpoint", "router_health_ok": bool, "space_reachable": bool}. Cualquier fallo real (no simulado) debe propagarse como excepción,
-      nunca inventar un resultado.
+      REESCRIBE publish_live.py COMPLETO (bloque ```python único). REGLA DURA: cero strings
+      con tres comillas; el intento anterior falló con SyntaxError unterminated triple-quote.
+      Función publish() -> dict: (1) whoami con HF_TOKEN; (2) Job cpu-basic image python:3.12
+      expose 8000 clonando repo sparse + router_job_start.py; (3) hasta 300s GET /health 200;
+      (4) temp README+index de pasos previos con API_BASE=endpoint Job; (5) deploy Space
+      <cuenta>/riu-chat-yaiwes; (6) GET Space reachable. Return space_url, router_endpoint,
+      router_health_ok, space_reachable. Fail-closed: sin HF_TOKEN o Job/health falla → raise.
+      Tras éxito escribe space_url y router_endpoint en crazy_wall.state.json del agente.
     checks:
       - kind: python_ast
-      - kind: python_exec
-        module: publish_live.py
-        test: |
-          import os
-          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN en el entorno"
-          from publish_live import publish
-          r = publish()
-          assert r["router_health_ok"] is True, r
-          assert r["space_reachable"] is True, r
-          assert r["space_url"].startswith("https://huggingface.co/spaces/"), r
-          print(r)
       - kind: no_secrets
 
 edges:
