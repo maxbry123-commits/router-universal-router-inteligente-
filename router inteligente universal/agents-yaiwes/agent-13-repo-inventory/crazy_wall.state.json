@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-13-repo-inventory",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-22T11:04:35Z",
+ "group": "inventory",
+ "chain": [
+  "inventory_module"
+ ],
+ "completed": [],
+ "failed": [
+  "inventory_module"
+ ],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "nvidia",
+  "groq",
+  "cerebras",
+  "minimax_m3"
+ ]
+}
