@@ -3,7 +3,7 @@
  "agent": "agent-3-router",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T23:30:35Z",
+ "updated_at": "2026-09-22T23:42:43Z",
  "group": "hf-chat",
  "chain": [
   "space_readme",
@@ -19,17 +19,19 @@
  "failed": [
   "publish_live"
  ],
- "next_nodes": [],
+ "next_nodes": [
+  "publish_live"
+ ],
  "current_nodes": [],
  "attempts_publish_live": 3,
  "blockers": [
-  "SyntaxError: unterminated triple-quoted string (~L76)",
-  "Job hardware != 32GB RAM (Director requirement)"
+  "stub REJECTED; need sheriff+TEMPLATE rewrite"
  ],
- "hardware_requirement": "HF processor 32GB RAM (8 vCPU / 32GB) — any other machine rejected",
+ "hardware_requirement": "Job only on HF machine with 32 GB RAM",
+ "hardware_sheriff": "agents-yaiwes/common/hardware_sheriff.py",
  "job_port": 8000,
  "space_id_suffix": "riu-chat-yaiwes",
- "orchestrator_order": "Rewrite publish_live: fix strings; Job ONLY on 32GB RAM machine; /health; Space riu-chat-yaiwes; write space_url+router_endpoint. No flavor names attributed to Director.",
+ "orchestrator_order": "Copy TEMPLATE; guarded_run_job; Job ONLY 32GB RAM machine; /health; write space_url+router_endpoint.",
  "route": [
   "nvidia",
   "groq",

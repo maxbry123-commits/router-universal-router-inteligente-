@@ -1,4 +1,4 @@
-"""publish_live: Job Router 32GB RAM + Static Space riu-chat-yaiwes."""
+"""publish_live: Job Router en maquina 32 GB RAM + Space estatico riu-chat-yaiwes."""
 from __future__ import annotations
 
 import base64
@@ -14,7 +14,8 @@ from huggingface_hub import HfApi, whoami
 
 PORT = 8000
 SPACE_SUFFIX = "riu-chat-yaiwes"
-FLAVOR_32GB = "cpu-upgrade"
+# Id tecnico HF Jobs que mapea a 32 GB RAM (detalle de implementacion; requisito = 32 GB).
+_FLAVOR_ID_32GB = "cpu-upgrade"
 ALLOWED_RAM_GB = 32
 
 AGENT_DIR = Path(__file__).resolve().parents[3]
@@ -23,13 +24,11 @@ YAIWES = Path(__file__).resolve().parents[4]
 if str(YAIWES) not in sys.path:
     sys.path.insert(0, str(YAIWES))
 
-try:
-    from common.hardware_sheriff import assert_machine_32gb_ram
-except Exception:  # pragma: no cover
-    def assert_machine_32gb_ram(*, flavor=None, ram_gb=None):
-        ok = (flavor == FLAVOR_32GB) or (ram_gb == ALLOWED_RAM_GB)
-        if not ok:
-            raise RuntimeError("SHERIFF FAIL: solo maquina 32 GB RAM")
+from common.hardware_sheriff import (  # noqa: E402
+    assert_machine_32gb_ram,
+    guarded_run_job,
+    HardwareSheriffError,
+)
 
 
 def _token() -> str:
@@ -138,7 +137,8 @@ def _endpoints(job_id: str, job) -> list:
 
 
 def publish() -> dict:
-    assert_machine_32gb_ram(flavor=FLAVOR_32GB)
+    # FAIL antes de lanzar si no es maquina 32 GB RAM
+    assert_machine_32gb_ram(flavor=_FLAVOR_ID_32GB)
     token = _token()
     info = whoami(token=token)
     name = info.get("name") or info.get("fullname") or ""
@@ -146,13 +146,11 @@ def publish() -> dict:
         raise RuntimeError("whoami without name")
     api = HfApi(token=token)
 
-    if not hasattr(api, "run_job"):
-        raise RuntimeError("HfApi.run_job unavailable")
-
-    job = api.run_job(
+    job = guarded_run_job(
+        api,
         image="python:3.12-slim",
         command=_job_command(),
-        flavor=FLAVOR_32GB,
+        flavor=_FLAVOR_ID_32GB,
         timeout="60m",
         env={"HF_TOKEN": token},
         expose=[PORT],
@@ -161,7 +159,7 @@ def publish() -> dict:
     if not job_id:
         raise RuntimeError("run_job returned no id")
 
-    flavor = getattr(job, "flavor", None) or FLAVOR_32GB
+    flavor = getattr(job, "flavor", None) or _FLAVOR_ID_32GB
     assert_machine_32gb_ram(flavor=str(flavor))
 
     router_endpoint = None
@@ -229,7 +227,6 @@ def publish() -> dict:
         "space_reachable": space_reachable,
         "hardware_ram_gb": ALLOWED_RAM_GB,
         "job_id": job_id,
-        "flavor": FLAVOR_32GB,
     }
 
     if CRAZY.exists():

@@ -1,10 +1,10 @@
 schema: yaiwes.chain/v1
 
-# agent-3-router — P1. Requisito hardware: máquina HF 32 GB RAM (Director).
+# agent-3-router — P1. Job SOLO en máquina HF 32 GB RAM.
 input_block: |
   Copia verbatim TEMPLATE publish_live.py de ORDEN-ORCH-CHAT.md.
-  Job SOLO en procesador HF 32 GB RAM (8 vCPU / 32GB). Otra máquina = rechazo.
-  GET /health. Space riu-chat-yaiwes. Anota space_url+router_endpoint. Fail-closed.
+  ANTES de run_job: common.hardware_sheriff (assert_machine_32gb_ram / guarded_run_job).
+  Job SOLO máquina 32 GB RAM. Otra = FAIL. GET /health. Space riu-chat-yaiwes.
 
 agent:
   id: agent-3-router
@@ -16,12 +16,10 @@ agent:
 
 context:
   text: |
-    Requisito Director (verbatim): Jobs/procesador HF de 32 GB RAM; 8 vCPU / 32GB.
-    Cualquier máquina que no sea esa = rechazo. No inventar nombres de flavor del Director.
-    Id técnico HF que cumple 32 GB RAM: cpu-upgrade (solo API).
-    Puerto 8000. Space estático riu-chat-yaiwes. HF_TOKEN obligatorio.
-    COPIA TEMPLATE de ORDEN-ORCH-CHAT.md verbatim. Cero strings triples rotos.
-    Usa Path.write_text o "\n".join(lineas) para README/HTML.
+    Candado: agents-yaiwes/common/hardware_sheriff.py
+    Requisito: Job en máquina 32 GB RAM. IDs técnicos HF son detalle de implementación.
+    Puerto 8000. Space riu-chat-yaiwes. HF_TOKEN obligatorio.
+    COPIA TEMPLATE de ORDEN-ORCH-CHAT.md verbatim. Cero triples rotos.
 
 steps:
   - id: space_readme
@@ -51,9 +49,10 @@ steps:
     context_file:
       - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
     task: |
-      Responde UN bloque python = TEMPLATE completo de ORDEN-ORCH-CHAT.md (verbatim).
-      publish() -> dict: space_url, router_endpoint, router_health_ok, space_reachable,
-      hardware_ram_gb (debe ser 32). Job SOLO máquina 32 GB RAM (cpu-upgrade). Fail-closed.
+      UN bloque python = TEMPLATE ORDEN-ORCH-CHAT.md (verbatim).
+      publish() usa guarded_run_job / assert_machine_32gb_ram.
+      Job SOLO máquina 32 GB RAM. Return space_url, router_endpoint, router_health_ok,
+      space_reachable, hardware_ram_gb==32.
     checks:
       - kind: python_ast
       - kind: python_exec
