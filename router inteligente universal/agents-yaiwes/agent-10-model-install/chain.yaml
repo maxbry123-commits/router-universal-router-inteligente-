@@ -1,10 +1,11 @@
 schema: yaiwes.chain/v1
 
-# Agente 10 — ORDEN Director 2026-09-22: 1 Job Qwen RUNNING_HEALTHY SOLO en cpu-upgrade (8 vCPU / 32 GB).
-# Prohibido cpu-basic, GPU y cualquier otro flavor. HfHubHTTPError solo desde huggingface_hub.errors (o .utils).
+# Agente 10 — MICRO-ORDEN: 1 Job Qwen RUNNING_HEALTHY SOLO en máquina 32 GB RAM.
+# Prohibido ≠32GB. PASS solo con /health 200. Timeout healthcheck ampliado (900s).
 input_block: |
-  ORDEN Director deadline 1h: un solo Job en la máquina de 32 GB RAM (flavor cpu-upgrade).
+  ORDEN: un solo Job en la máquina de 32 GB RAM.
   Prohibido montar Jobs en otro hardware. Meta: Qwen3-0.6B RUNNING_HEALTHY + /health.
+  Relanzar con timeout mayor; PASS solo si healthcheck OK.
 
 agent:
   id: agent-10-model-install
@@ -16,32 +17,32 @@ agent:
 
 context:
   text: |
-    HARDWARE ÚNICO PERMITIDO: flavor exactamente "cpu-upgrade" (= 8 vCPU / 32 GB RAM en HF Jobs).
-    PROHIBIDO: cpu-basic (16 GB), GPU (a10g/t4/l4/etc.), cpu-xlarge u otros. Si el código intenta otro flavor → ValueError ANTES de run_job.
-    Modelo único esta ronda: qwen3-0.6b → repo Qwen/Qwen3-0.6B-GGUF, file Qwen3-0.6B-Q8_0.gguf, port 8080.
-    Patrón verificado: image "ghcr.io/ggml-org/llama.cpp:server", command bash:
-    `curl -fL https://huggingface.co/{repo}/resolve/main/{file} -o /model.gguf && /app/llama-server -m /model.gguf --host 0.0.0.0 --port 8080 -c 8192 -np 4 -cb --cache-prompt --cache-ram 512 -fa on -ctk q8_0 -ctv q8_0`
-    HfApi(token=os.environ["HF_TOKEN"]).run_job(..., flavor="cpu-upgrade", timeout="20m", expose=[8080]);
-    esperar inspect_job stage=="RUNNING"; GET <endpoint>/health con Authorization Bearer HF_TOKEN → 200 = RUNNING_HEALTHY.
-    IMPORT: HfHubHTTPError NUNCA desde huggingface_hub top-level. Usar `from huggingface_hub.errors import HfHubHTTPError`
-    (fallback `from huggingface_hub.utils import HfHubHTTPError`). HfApi sí: `from huggingface_hub import HfApi`.
+    HARDWARE ÚNICO PERMITIDO: máquina de 32 GB RAM (flavor técnico HF "cpu-upgrade" = 8 vCPU / 32 GB).
+    PROHIBIDO: máquina 16GB (cpu-basic), GPU y cualquier otro. Sheriff: assert_machine_32gb_ram + guarded_run_job.
+    Modelo único: qwen3-0.6b → Qwen/Qwen3-0.6B-GGUF / Qwen3-0.6B-Q8_0.gguf, port 8080.
+    image "ghcr.io/ggml-org/llama.cpp:server"; curl Hub → /model.gguf → llama-server.
+    Job timeout="45m". Espera healthcheck hasta 900s (poll ~10s). PASS solo si GET /health → 200.
+    Import Sheriff: sys.path → agents-yaiwes/common; from hardware_sheriff import assert_machine_32gb_ram, guarded_run_job.
+    HfHubHTTPError desde huggingface_hub.errors (fallback .utils). NUNCA top-level.
 
 steps:
 
   - id: install_launch_test
     task: |
       Escribe el módulo Python `install_launch_test.py` (solo código, un único bloque ```python, deps: huggingface_hub, requests).
-      Imports: os, time, requests; `from huggingface_hub import HfApi`; `from huggingface_hub.errors import HfHubHTTPError`
-      (si falla el import de errors, fallback utils). NUNCA `from huggingface_hub import HfHubHTTPError`.
+      Imports: os, sys, time, Path, requests; HfApi; HfHubHTTPError desde errors (fallback utils).
+      Añade common/ al sys.path (parents[4]/common) y:
+        from hardware_sheriff import assert_machine_32gb_ram, guarded_run_job, HardwareSheriffError
+      Constantes: MODELS = [("qwen3-0.6b","Qwen/Qwen3-0.6B-GGUF","Qwen3-0.6B-Q8_0.gguf")]  # SOLO 1
+        JOB_TIMEOUT="45m"; HEALTH_WAIT_S=900; POLL_S=10
       Función `launch_and_verify(model_id, repo, file, port=8080, flavor="cpu-upgrade") -> dict`:
-        - Si flavor != "cpu-upgrade": raise ValueError("HARDWARE: solo cpu-upgrade 32GB permitido") ANTES de run_job.
-        - URL: https://huggingface.co/{repo}/resolve/main/{file}
-        - run_job(image="ghcr.io/ggml-org/llama.cpp:server", command=["bash","-lc", curl+llama-server del CONTEXTO],
-          flavor="cpu-upgrade", timeout="20m", expose=[port]) con token HF_TOKEN.
-        - Espera hasta 300s: inspect_job RUNNING + GET endpoint/health 200.
-        - Devuelve {"model_id","job_id","endpoint","status":"RUNNING_HEALTHY"|"FAILED","detail","flavor":"cpu-upgrade"}.
-      `MODELS = [("qwen3-0.6b","Qwen/Qwen3-0.6B-GGUF","Qwen3-0.6B-Q8_0.gguf")]`  # SOLO este, 1 Job
-      `run_all() -> list[dict]` llama launch_and_verify en secuencia para cada MODELS (un solo item).
+        - ANTES de lanzar: assert_machine_32gb_ram(flavor=flavor); si HardwareSheriffError → raise ValueError(str(e))
+        - Lanzar SOLO con guarded_run_job(api, image=..., command=..., flavor=flavor, timeout=JOB_TIMEOUT, expose=[port])
+        - Probar varios endpoints (job.endpoint, *.jobs.huggingface.co, *--port.hf.jobs)
+        - Esperar hasta HEALTH_WAIT_S: stage RUNNING + GET .../health 200 con Bearer HF_TOKEN
+        - status RUNNING_HEALTHY solo si health 200; si no FAILED con detail
+        - Devuelve {model_id, job_id, endpoint, status, detail, flavor}
+      `run_all()` llama launch_and_verify solo para el único MODELS.
     checks:
       - kind: python_ast
       - kind: python_exec
@@ -50,13 +51,12 @@ steps:
           import os
           assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN en el entorno"
           from install_launch_test import run_all, launch_and_verify
-          # debe rechazar hardware no-32GB
           raised = False
           try:
               launch_and_verify("x", "y/z", "f.gguf", flavor="cpu-basic")
           except ValueError:
               raised = True
-          assert raised, "debía rechazar cpu-basic (solo cpu-upgrade 32GB)"
+          assert raised, "debía rechazar máquina ≠32GB"
           raised2 = False
           try:
               launch_and_verify("x", "y/z", "f.gguf", flavor="a10g-small")
