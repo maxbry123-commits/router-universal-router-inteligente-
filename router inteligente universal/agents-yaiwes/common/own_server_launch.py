@@ -1,6 +1,8 @@
-"""Launches a REAL local model server on the Director's OWN Hugging Face account (his compute, his Job, NOT a third-party paid API, NOT
-downloaded anywhere else): llama.cpp's official server image, mounting the model weights straight from the Hub (hf://…:/model:ro, no download
-into any other machine), on cpu-basic (free flavor). Exposes a port; the Router's local_pool.py can then call it as just another endpoint."""
+"""Launches a REAL local model server on the Director's OWN Hugging Face account (his compute, his Job, cpu-basic, free) — NOT a third-party
+paid API, and the weights are fetched straight from the public Hub URL inside the Job itself (no separate download step anywhere else).
+FIX (2026-09-22): the `volumes=["hf://…"]` shortcut raised an internal error in this huggingface_hub version ('str' object has no attribute
+'to_dict'); replaced with a plain curl of the model's public resolve URL inside the container's own command — same result, no download
+outside the Job, still on the Director's own account, still cpu-basic, still no paid API."""
 from __future__ import annotations
 
 import os
@@ -15,22 +17,24 @@ PORT = 8080
 
 
 def note(title: str, msg: str, level: str = "notice") -> None:
+    print(f"::{title.upper()} {level}:: {msg}".replace("\n", " ")[:900], flush=True)
     print(f"::{level} title=RIU_OWNSERVER_{title}::{msg}".replace("\n", " ")[:900], flush=True)
 
 
 def main() -> int:
     token = os.environ["HF_TOKEN"]
     api = HfApi(token=token)
-    cmd = ["/app/llama-server", "-m", f"/model/{MODEL_FILE}", "--host", "0.0.0.0", "--port", str(PORT), "-c", "8192", "-np", "4", "-cb",
-           "--cache-prompt", "--cache-reuse", "256", "--cache-ram", "512", "-fa", "on", "-ctk", "q8_0", "-ctv", "q8_0"]
+    url = f"https://huggingface.co/{MODEL_REPO}/resolve/main/{MODEL_FILE}"
+    sh = (f"curl -fL '{url}' -o /model.gguf && /app/llama-server -m /model.gguf --host 0.0.0.0 --port {PORT} "
+          "-c 8192 -np 4 -cb --cache-prompt --cache-reuse 256 --cache-ram 512 -fa on -ctk q8_0 -ctv q8_0")
     try:
-        job = api.run_job(image="ghcr.io/ggml-org/llama.cpp:server", command=cmd, flavor="cpu-basic", timeout="30m",
-                          expose=[PORT], volumes=[f"hf://models/{MODEL_REPO}:/model:ro"])
+        job = api.run_job(image="ghcr.io/ggml-org/llama.cpp:server", command=["bash", "-lc", sh], flavor="cpu-basic",
+                          timeout="30m", expose=[PORT])
     except Exception as exc:  # noqa: BLE001
         note("LAUNCH_ERROR", f"{type(exc).__name__}: {str(exc)[:400]}", "warning")
         return 1
     note("JOB_ID", str(job.id))
-    t0, ok, url, urls, stage = time.time(), None, None, [], None
+    t0, ok, urls, stage, info = time.time(), None, [], None, None
     while time.time() - t0 < 480 and ok is None:
         info = api.inspect_job(job_id=job.id)
         stage = info.status.stage
@@ -54,7 +58,7 @@ def main() -> int:
             logs.append(str(line))
     except Exception as exc:  # noqa: BLE001
         logs.append(f"logs: {type(exc).__name__}")
-    note("STATE", f"stage={stage} health_ok_url={ok} urls_probadas={urls} logs_final={' | '.join(logs[-6:])[:500]}")
+    note("STATE", f"stage={stage} health_ok_url={ok} urls_probadas={urls} logs_final={' | '.join(logs[-8:])[:600]}")
     return 0 if ok else 1
 
 
