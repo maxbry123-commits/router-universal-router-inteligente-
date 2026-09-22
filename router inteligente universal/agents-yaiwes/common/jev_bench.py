@@ -1,7 +1,6 @@
-"""Benchmarks Laya Multilingual (322M), Decider-0.8B and Decider-2B on the 8 real router decisions the Director's research proposed,
-on a plain CPU runner (no GPU, no HF billing). Measures accuracy against the expected label, latency and whether the pip packages even
-install — real results only, a failed install is reported as a failure, never faked.
-"""
+"""Benchmarks Laya (laya-typed-decisions, the fine-tuned checkpoint), Decider-0.8B/2B and Qwen3-0.6B-RLCD-Decision on the 8 real router
+decisions the Director's research proposed, on a plain CPU runner (no GPU, no HF billing). Real results only.
+FIX (2026-09-22): the previous run read result["route"]["choice"]; Laya's real key is result["answers"]["route"]["choice"]."""
 from __future__ import annotations
 
 import time
@@ -29,15 +28,16 @@ def note(title: str, msg: str, level: str = "notice") -> None:
 
 
 def bench_decider(model_id: str) -> None:
+    tag = model_id.upper().replace("/", "_").replace(".", "_").replace("-", "_")
     try:
         from decider.infer import Decider  # type: ignore
     except Exception as exc:  # noqa: BLE001
-        note(model_id.upper().replace("/", "_").replace(".", "_") + "_INSTALL", f"NO DISPONIBLE: {type(exc).__name__}: {exc}", "warning")
+        note(tag + "_INSTALL", f"NO DISPONIBLE: {type(exc).__name__}: {exc}", "warning")
         return
     try:
         d = Decider(model_id)
     except Exception as exc:  # noqa: BLE001
-        note(model_id.upper().replace("/", "_").replace(".", "_") + "_LOAD", f"NO CARGÓ: {type(exc).__name__}: {exc}", "warning")
+        note(tag + "_LOAD", f"NO CARGÓ (confirmado por su README: está hecho para GH200/CUDA graphs, sin ruta de CPU): {type(exc).__name__}: {exc}", "warning")
         return
     hits, lat = 0, []
     for state, expected in CASES:
@@ -46,44 +46,79 @@ def bench_decider(model_id: str) -> None:
             result = d.system_one(state, QUESTIONS)
             route = (result.get("route") or {}).get("choice") if isinstance(result, dict) else None
         except Exception as exc:  # noqa: BLE001
-            note(model_id.upper().replace("/", "_").replace(".", "_") + "_CASE_ERROR", f"{state['task'][:40]}: {type(exc).__name__}", "warning")
+            note(tag + "_CASE_ERROR", f"{state['task'][:40]}: {type(exc).__name__}", "warning")
             continue
         lat.append((time.perf_counter() - t0) * 1000)
         hits += int(route == expected)
     if lat:
-        note(model_id.upper().replace("/", "_").replace(".", "_"), f"aciertos={hits}/{len(CASES)} latencia_media_ms={sum(lat) / len(lat):.1f}")
+        note(tag, f"aciertos={hits}/{len(CASES)} latencia_media_ms={sum(lat) / len(lat):.1f}")
 
 
-def bench_laya(model_id: str) -> None:
+def bench_laya(model_id: str, subfolder: str | None, label: str) -> None:
     try:
         import laya  # type: ignore
     except Exception as exc:  # noqa: BLE001
         note("LAYA_INSTALL", f"NO DISPONIBLE: {type(exc).__name__}: {exc}", "warning")
         return
     try:
-        agent = laya.load(model_id)
+        agent = laya.load(model_id, subfolder=subfolder) if subfolder else laya.load(model_id)
     except Exception as exc:  # noqa: BLE001
-        note("LAYA_LOAD", f"NO CARGÓ: {type(exc).__name__}: {exc}", "warning")
+        note(f"LAYA_{label}_LOAD", f"NO CARGÓ: {type(exc).__name__}: {exc}", "warning")
         return
     hits, lat = 0, []
     for state, expected in CASES:
         t0 = time.perf_counter()
         try:
             result = agent.predict(state, QUESTIONS)
-            route = (result.get("route") or {}).get("choice") if isinstance(result, dict) else None
+            route = (result.get("answers") or {}).get("route", {}).get("choice") if isinstance(result, dict) else None
         except Exception as exc:  # noqa: BLE001
-            note("LAYA_CASE_ERROR", f"{state['task'][:40]}: {type(exc).__name__}", "warning")
+            note(f"LAYA_{label}_CASE_ERROR", f"{state['task'][:40]}: {type(exc).__name__}", "warning")
             continue
         lat.append((time.perf_counter() - t0) * 1000)
         hits += int(route == expected)
     if lat:
-        note("LAYA_MULTILINGUAL", f"aciertos={hits}/{len(CASES)} latencia_media_ms={sum(lat) / len(lat):.1f}")
+        note(f"LAYA_{label}", f"aciertos={hits}/{len(CASES)} latencia_media_ms={sum(lat) / len(lat):.1f}")
+
+
+def bench_qwen_rlcd(model_id: str) -> None:
+    try:
+        import torch  # type: ignore
+        from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
+    except Exception as exc:  # noqa: BLE001
+        note("QWEN_RLCD_INSTALL", f"NO DISPONIBLE: {type(exc).__name__}: {exc}", "warning")
+        return
+    try:
+        tok = AutoTokenizer.from_pretrained(model_id)
+        model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float32)
+    except Exception as exc:  # noqa: BLE001
+        note("QWEN_RLCD_LOAD", f"NO CARGÓ en CPU: {type(exc).__name__}: {exc}", "warning")
+        return
+    hits, lat = 0, []
+    letters, opts = "ABCDEF", list(QUESTIONS["route"]["criteria"])
+    for state, expected in CASES:
+        prompt = f"Context: {state}\nQuestion: {QUESTIONS['route']['instructions']}\n" + "\n".join(f"{letters[i]}. {o}" for i, o in enumerate(opts)) + "\nAnswer: ("
+        t0 = time.perf_counter()
+        try:
+            ids = tok(prompt, return_tensors="pt")
+            with torch.no_grad():
+                logits = model(**ids).logits[0, -1]
+            opt_ids = [tok(letters[i], add_special_tokens=False).input_ids[0] for i in range(len(opts))]
+            choice = opts[int(torch.tensor([logits[i] for i in opt_ids]).argmax())]
+        except Exception as exc:  # noqa: BLE001
+            note("QWEN_RLCD_CASE_ERROR", f"{state['task'][:40]}: {type(exc).__name__}", "warning")
+            continue
+        lat.append((time.perf_counter() - t0) * 1000)
+        hits += int(choice == expected)
+    if lat:
+        note("QWEN3_0_6B_RLCD_DECISION", f"aciertos={hits}/{len(CASES)} latencia_media_ms={sum(lat) / len(lat):.1f}")
 
 
 def main() -> int:
-    bench_laya("convaiinnovations/laya-multilingual")
+    bench_laya("convaiinnovations/laya", None, "ENGLISH_BASE")
+    bench_laya("convaiinnovations/laya", "typed-decisions", "TYPED_DECISIONS_FINETUNED")
     bench_decider("Mapika/decider-0.8b")
     bench_decider("Mapika/decider-2b")
+    bench_qwen_rlcd("anthonym21/qwen3-0.6b-rlcd-decision")
     return 0
 
 
