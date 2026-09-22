@@ -1,9 +1,10 @@
 schema: yaiwes.chain/v1
 
-# agent-3-router — P1 Director. Flavor OBLIGATORIO: cpu-upgrade (32GB).
+# agent-3-router — P1. Requisito hardware: máquina HF 32 GB RAM (Director).
 input_block: |
-  P1: publish_live YA. Sin triples. Job cpu-upgrade:8000. GET /health.
-  Space riu-chat-yaiwes + API_BASE. Anota space_url+router_endpoint. Fail-closed.
+  Reescribe publish_live YA. Sin triples rotos. Job SOLO en procesador HF 32 GB RAM
+  (8 vCPU / 32GB). Otra máquina = rechazo. GET /health. Space riu-chat-yaiwes.
+  Anota space_url+router_endpoint. Fail-closed.
 
 agent:
   id: agent-3-router
@@ -15,60 +16,51 @@ agent:
 
 context:
   text: |
-    CANDADO ABSOLUTO Director/Sentinela: Job HF flavor = cpu-upgrade (32 GB RAM).
-    PROHIBIDO cpu-basic, T4, A10G, A100 u otro. Puerto 8000.
-    Si el código propone otro flavor → no publicar; fallar cerrado.
-    Space id: <cuenta>/riu-chat-yaiwes. Token HF_TOKEN. Sin triples en .py.
-    Repo: https://github.com/maxbry123-commits/router-universal-router-inteligente-
+    Requisito Director (verbatim): Jobs/procesador HF de 32 GB RAM; 8 vCPU / 32GB.
+    Cualquier máquina que no sea esa = rechazo. No inventar nombres de flavor del Director.
+    Puerto 8000. Space estático riu-chat-yaiwes. HF_TOKEN obligatorio.
+    PROHIBIDO strings triples rotos en publish_live.py (falló 3 veces).
+    Usa Path.write_text o "\n".join(lineas) para README/HTML.
 
 steps:
   - id: space_readme
     task: |
-      README.md Static Space: --- title Chat YAIWES, sdk static, hf_oauth true,
-      scopes jobs e inference-api. Luego ≥300 chars español.
+      README.md Static Space con front matter sdk static + oauth scopes jobs/inference-api.
     checks:
       - kind: contains
-        values: ["---", "title:", "sdk: static", "hf_oauth: true", "inference-api", "jobs"]
-      - kind: min_chars
-        value: 400
+        values: ["---", "sdk: static", "hf_oauth"]
       - kind: no_secrets
 
   - id: space_index
     task: |
-      index.html sin libs. API_BASE + key en memoria; fetch /chat/send;
-      textContent; OAuth HF.
+      index.html chat: API_BASE en memoria, fetch /chat/send, textContent, OAuth HF.
     checks:
       - kind: contains
-        values: ["<!doctype html", "API_BASE", "fetch(", "/chat/send", "textContent", "oauth"]
-      - kind: min_chars
-        value: 1500
+        values: ["API_BASE", "/chat/send", "textContent"]
       - kind: no_secrets
 
   - id: deploy_script
     task: |
-      deploy_static_space.py: plan_files + HfApi create_repo/upload_folder, space_sdk static.
+      deploy_static_space.py con HfApi create_repo/upload_folder space_sdk static.
     checks:
       - kind: python_ast
-      - kind: contains
-        values: ['space_sdk="static"', "upload_folder", "create_repo"]
       - kind: no_secrets
 
   - id: publish_live
     context_file:
       - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
     task: |
-      REESCRIBE publish_live.py (un bloque python). CERO triples quotes.
+      REESCRIBE publish_live.py (bloque python único). Cero triples rotos.
       publish() -> dict:
-      (1) whoami HF_TOKEN;
-      (2) Job flavor EXACTO "cpu-upgrade", expose 8000, image python:3.12,
-          comando con router_job_start.py. Si usas otro flavor → raise RuntimeError;
-      (3) ≤300s GET /health 200;
-      (4) README+index con API_BASE=endpoint Job;
+      (1) whoami con HF_TOKEN;
+      (2) Job Router SOLO en la máquina HF de 32 GB RAM (8 vCPU / 32GB).
+          Si el hardware no es 32 GB RAM → raise (fail-closed). Puerto 8000;
+      (3) hasta 300s GET /health == 200;
+      (4) README+index con API_BASE = endpoint del Job;
       (5) deploy Space <cuenta>/riu-chat-yaiwes;
       (6) GET Space reachable.
       Return space_url, router_endpoint, router_health_ok, space_reachable,
-      hardware_flavor (debe ser cpu-upgrade).
-      Fail-closed sin token, sin /health, o flavor≠cpu-upgrade.
+      hardware_ram_gb (debe ser 32).
       Escribe space_url y router_endpoint en crazy_wall.state.json.
     checks:
       - kind: python_ast

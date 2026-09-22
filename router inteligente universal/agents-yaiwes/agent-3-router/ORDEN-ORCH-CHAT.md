@@ -1,22 +1,24 @@
-# ORDEN ORCH-CHAT → agent-3 (P1) — 2026-09-22
+# ORDEN ORCH-CHAT → agent-3 (P1) — listo para dispatch
 
-**Deadline ~19:22 COT · META: chat desplegado**
+**META:** chat desplegado · **Deadline ~19:22 COT**
 
-## Hardware (verbatim Director + Revisor)
-- Requisito Director: Jobs en procesador HF **32 GB RAM** (8 vCPU / 32 GB).
-- `cpu-basic` = incumplimiento (no es 32 GB). **PROHIBIDO.**
-- Flavor HF que cumple 32 GB hoy: **`cpu-upgrade`**. Úsalo. No digas «el Director nombró cpu-upgrade»; di «cumple 32 GB».
-- Puerto **8000**. Job ≠ 32 GB → DETÉN.
+## Hecho
+space_readme · space_index · deploy_script
 
-## STOP actual (Revisor)
-`steps/publish_live/results/publish_live.py` L30 tiene `flavor="cpu-basic"` + SyntaxError (triples). **Reescribe el archivo completo.**
+## Falta (único)
+publish_live — BLOCKED (3 intentos)
 
-## Checklist P1
-1. `publish_live.py` válido (ast.parse OK), sin `'''`/`"""` rotos.
-2. Job `cpu-upgrade`, expose 8000, start via `common/router_job_start.py`.
-3. GET `/health` → 200.
-4. Static Space `riu-chat-yaiwes` con `API_BASE` = endpoint real.
-5. crazy_wall: `space_url` + `router_endpoint` + `hardware_flavor=cpu-upgrade`.
-6. Smoke chat público. Fail-closed sin HF_TOKEN.
+## Causas a corregir
+1. SyntaxError (~L76): string triple sin cerrar (HTML/README embebido).
+2. Job en hardware que NO es 32 GB RAM (p.ej. el de 2 vCPU / 16 GB). **Incumple Director.**
 
-No P2. No redeploy con cpu-basic.
+## Orden (verbatim Director: «procesador / Jobs HF de 32 GB RAM», «8 vCPU / 32GB»)
+1. Reescribe `publish_live.py` completo, **sin** strings triples rotos (usa Path.write_text / join de líneas).
+2. Lanza el Job del Router **solo** en la máquina HF de **32 GB RAM** (8 vCPU / 32 GB). Cualquier otra máquina = rechazo / fail-closed.
+3. Puerto 8000 → GET `/health` 200.
+4. Publica Static Space `riu-chat-yaiwes` con `API_BASE` = endpoint real del Job.
+5. Anota en crazy_wall: `space_url` + `router_endpoint` + evidencia de RAM 32 GB.
+6. Smoke: POST `/chat/send`. Sin token o sin /health → fail-closed.
+
+No inventes nombres de flavor «del Director». Solo el requisito: **32 GB RAM**.
+No P2. No reabrir pasos CLOSED.

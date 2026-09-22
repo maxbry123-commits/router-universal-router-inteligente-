@@ -1,9 +1,9 @@
-# REJECTED by Orquestador Chat + Revisor — do not execute
-# Reasons: SyntaxError (unclosed triples) + flavor=cpu-basic (not 32GB RAM)
-# Agent-3 must rewrite this module with flavor that meets 32GB (cpu-upgrade), port 8000.
+# REJECTED — no ejecutar
+# Causa: SyntaxError (triples) + Job en máquina != 32 GB RAM (requisito Director).
+# Agent-3 debe reescribir publish_live.py completo. Ver ../../ORDEN-ORCH-CHAT.md
 
 def publish():
     raise RuntimeError(
-        "REJECTED: rewrite publish_live.py — use cpu-upgrade (32GB RAM), port 8000, "
-        "fix /health, Space riu-chat-yaiwes. cpu-basic forbidden."
+        "REJECTED: rewrite publish_live.py — Job ONLY on HF 32GB RAM machine, "
+        "port 8000, /health, Space riu-chat-yaiwes. Fix unterminated strings."
     )
