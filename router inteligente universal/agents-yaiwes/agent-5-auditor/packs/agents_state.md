@@ -5,10 +5,11 @@
 ## agent-10-model-install: estado=CLOSED marco=pocketflow pasos_cerrados=['install_orders', 'install_report']
 - paso install_orders: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
 - paso install_report: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_report/results/install_report.py'] gaps=-
-## agent-11-download-extraction: estado=CLOSED marco=smolagents pasos_cerrados=['jev_components_list']
+## agent-11-download-extraction: estado=CLOSED marco=smolagents pasos_cerrados=['jev_components_list', 'ms_agent_framework_donor']
 - paso extend_download_list: BLOCKED modelo=- entregables=['router inteligente universal/agents-yaiwes/agent-11-download-extraction/steps/extend_download_list/results/extra_donors.py'] gaps=cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:
 Error code: 402 - {'message': 'Payment require
 - paso jev_components_list: CLOSED modelo=groq/openai/gpt-oss-120b entregables=['router inteligente universal/agents-yaiwes/agent-11-download-extraction/steps/jev_components_list/results/jev_components.py'] gaps=-
+- paso ms_agent_framework_donor: CLOSED modelo=groq/openai/gpt-oss-120b entregables=['router inteligente universal/agents-yaiwes/agent-11-download-extraction/steps/ms_agent_framework_donor/results/ms_agent_framework_donor.py'] gaps=-
 ## agent-12-yaiwes-router: estado=CLOSED marco=smolagents pasos_cerrados=['yaiwes_donor_list']
 - paso yaiwes_donor_list: CLOSED modelo=groq/openai/gpt-oss-120b entregables=['router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/steps/yaiwes_donor_list/results/yaiwes_donors.py'] gaps=-
 ## agent-13-repo-inventory: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
