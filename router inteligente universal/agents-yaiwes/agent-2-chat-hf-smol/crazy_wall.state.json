@@ -3,7 +3,7 @@
  "agent": "agent-2-chat-hf-smol",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-22T09:18:16Z",
+ "updated_at": "2026-09-22T10:12:08Z",
  "group": "chat",
  "chain": [
   "jobs_panel",

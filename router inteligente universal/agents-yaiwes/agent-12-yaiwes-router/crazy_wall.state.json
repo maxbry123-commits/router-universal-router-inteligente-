@@ -1,15 +1,15 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-11-download-extraction",
+ "agent": "agent-12-yaiwes-router",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-22T10:12:08Z",
- "group": "downloads",
+ "updated_at": "2026-09-22T10:14:15Z",
+ "group": "yaiwes-downloads",
  "chain": [
-  "jev_components_list"
+  "yaiwes_donor_list"
  ],
  "completed": [
-  "jev_components_list"
+  "yaiwes_donor_list"
  ],
  "failed": [],
  "next_nodes": [],

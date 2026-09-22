@@ -1,0 +1,67 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-12-yaiwes-router
+  framework: smolagents
+  group: yaiwes-downloads
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  - minimax_m3
+  fallback: []
+  max_tokens: 1800
+context:
+  text: 'Piezas a descargar (solo README.md + carpeta principal de código, límite
+    150 KB por archivo, 2 MB por donante, igual que el motor
+
+    que ya usa el agente 11 en `common/download_donors.py`): timesfm-core (https://github.com/google-research/timesfm,
+
+    ["README.md","timesfm-forecasting","AGENTS.md"]), hrm-text (https://github.com/sapientinc/HRM,
+    ["README.md"]), qwen-search-agent
+
+    (https://github.com/PeterGriffinJin/Search-R1, ["README.md"]), searxng (https://github.com/searxng/searxng,
+    ["README.md"]),
+
+    crawl4ai (https://github.com/unclecode/crawl4ai, ["README.md"]), searxng-mcp (https://github.com/TadMSTR/searxng-mcp,
+    ["README.md"]).
+
+    Destino: la carpeta de esta misma raíz, "➡️📂 router inteligente para agente Yaiwes/donors/<nombre>/".
+    NO instales nada con pip,
+
+    NO lances ningún Job, NO toques el Router principal ni esta carpeta fuera de "donors/".
+
+    '
+  max_chars: 40000
+task: 'Escribe el módulo Python `yaiwes_donors.py` (solo código, un único bloque ```python,
+  solo biblioteca estándar) con el dict
+
+  `YAIWES_DONORS` con EXACTAMENTE estas 6 claves: "timesfm-core", "hrm-text", "qwen-search-agent",
+  "searxng", "crawl4ai",
+
+  "searxng-mcp". Cada valor es una tupla (url_de_github, lista_de_rutas_para_sparse_checkout)
+  copiada EXACTA del CONTEXTO
+
+  (para "timesfm-core" la lista tiene 3 rutas; las demás tienen solo ["README.md"]).
+  No añadas ninguna otra clave ni cambies
+
+  ninguna URL.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: yaiwes_donors.py
+  test: "from yaiwes_donors import YAIWES_DONORS\nassert set(YAIWES_DONORS) == {\"\
+    timesfm-core\",\"hrm-text\",\"qwen-search-agent\",\"searxng\",\"crawl4ai\",\"\
+    searxng-mcp\"}\nassert YAIWES_DONORS[\"timesfm-core\"] == (\"https://github.com/google-research/timesfm\"\
+    , [\"README.md\",\"timesfm-forecasting\",\"AGENTS.md\"])\nassert YAIWES_DONORS[\"\
+    hrm-text\"][0] == \"https://github.com/sapientinc/HRM\"\nassert YAIWES_DONORS[\"\
+    searxng-mcp\"] == (\"https://github.com/TadMSTR/searxng-mcp\", [\"README.md\"\
+    ])\nfor url, paths in YAIWES_DONORS.values():\n    assert url.startswith(\"https://github.com/\"\
+    ) and isinstance(paths, list) and \"README.md\" in paths\n"
+- kind: no_secrets
