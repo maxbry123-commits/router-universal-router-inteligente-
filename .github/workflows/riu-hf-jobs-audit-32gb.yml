@@ -2,8 +2,11 @@ name: RIU HF Jobs Audit 32GB
 
 # Lista Jobs/Spaces activos y cancela compute ≠ máquina 32 GB RAM (flavor técnico cpu-upgrade = 8 vCPU/32GB).
 # Solo metadatos en logs; nunca imprime el token.
+# Watchdog Director: cada 30 min cancela Jobs que no sean máquina 32 GB RAM.
 
 on:
+  schedule:
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
