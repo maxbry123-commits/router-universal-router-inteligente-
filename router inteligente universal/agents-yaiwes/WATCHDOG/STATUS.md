@@ -1,10 +1,16 @@
-# WATCHDOG — estado de los agentes (2026-09-22 07:45:06Z)
+# WATCHDOG — estado de los agentes (2026-09-22 13:27:06Z)
 
-**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
+**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
 
 | agente | marco | estado | pasos cerrados | bloqueado en | GAPs |
 |---|---|---|---|---|---|
 | agent-1-chat-hf | pocketflow | CLOSED | 3/3 | - | - |
+| agent-10-model-install | pocketflow | CLOSED | 2/2 | - | - |
+| agent-11-download-extraction | smolagents | CLOSED | 2/2 | - | cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:
+Error code: 402 - {'message': 'Payment require | cerebras/gpt-oss-120b:AgentGenerationError:Error while generating output:
+Error code: 402 - {'message': 'Payment require |
+| agent-12-yaiwes-router | smolagents | CLOSED | 1/1 | - | - |
+| agent-13-repo-inventory | pocketflow | BLOCKED | 0/1 | inventory_module | la prueba falló (exit=1): AssertionError |
 | agent-2-chat-hf-smol | smolagents | CLOSED | 3/3 | - | - |
 | agent-3-router | pocketflow | CLOSED | 3/3 | - | - |
 | agent-4-router-smol | smolagents | CLOSED | 3/3 | - | - |
