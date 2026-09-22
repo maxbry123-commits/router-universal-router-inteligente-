@@ -9,8 +9,8 @@ re-run only works on what is pending. `agents-yaiwes/ROUTE.json` (edited by Clau
    every other step (NVIDIA first); 3) `route` as a last default. Every agent still records which provider/model actually answered
 (crazy_wall.state.json `provider`/`model`), so results can be compared per engine, not just per agent. A step may add
 `context_file: [repo-relative paths]` to its context. `agent.post: audit_report` builds the auditor's checklist after the chain.
-Time limits (an agent must never hang the run for an hour): every step has a wall-clock budget (STEP_SECONDS) and every SmolAgents model call
-has an HTTP timeout (CALL_SECONDS, no hidden retries).
+Time limits (an agent must never hang the run for an hour): every step has a wall-clock budget (STEP_SECONDS, raised 2026-09-22 per the
+Director so long steps like the auditor's model passes can finish) and every SmolAgents model call has an HTTP timeout (CALL_SECONDS).
 
 Run: python chain.py <agent_dir>     (env: RIU_BANK_PASSPHRASE)
 """
@@ -30,8 +30,8 @@ from common import boot  # noqa: E402
 
 MAX_PREV_CHARS = 5000
 MAX_FILE_CHARS = 14000
-STEP_SECONDS = 720
-CALL_SECONDS = 75.0
+STEP_SECONDS = 1500
+CALL_SECONDS = 120.0
 CODE_CHECKS = ("python_exec", "python_ast", "js_syntax")
 
 
