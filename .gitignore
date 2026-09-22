@@ -1,0 +1,3 @@
+# Never commit HF model weights downloaded by agent-10 (Jobs curl Hub inside container)
+router inteligente universal/agents-yaiwes/agent-10-model-install/steps/**/results/models/
+**/agent-10-model-install/steps/**/results/models/
