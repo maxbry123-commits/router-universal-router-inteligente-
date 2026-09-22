@@ -1,10 +1,8 @@
-# HANDOFF — agent-10-model-install (pocketflow)
+# HANDOFF — agent-10-model-install / install_orders
 
-Estado: **CLOSED**
+Estado: **CLOSED** (reescrito 2026-09-22)
 
 - group: hf-install
-- attempts: 2
-- model: nvidia/nvidia/nemotron-3-super-120b-a12b
-- gaps: falta '"orders"'; falta 'cpu-basic'
-
-Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.
+- hardware: **solo cpu-upgrade (32 GB)** — cpu-basic/GPU eliminados de órdenes
+- artifact: `results/orders.json`
+- gaps: ninguno (orden Director 32GB cumplida en artifact)
