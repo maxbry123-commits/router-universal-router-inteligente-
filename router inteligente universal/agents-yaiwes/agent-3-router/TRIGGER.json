@@ -1,7 +1,8 @@
 {
   "schema": "yaiwes.trigger/v1",
-  "run_id": "RUN-A3-001",
-  "input_block": "Tu prioridad es una sola los agentes y luego delegas\nPrioridad CHat y HF y modelos Ai en HF\nLlegas todos los tokens a los agentes\nLos agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas",
-  "requested_by": "claude-brain",
-  "source": "INPUT-VERBATIM-2026-09-21-p-4-agentes-pocketflow-smolagents.md"
+  "run_id": "RUN-A3-ORCH-CHAT-P1",
+  "input_block": "P1 ORCH-CHAT. Solo publish_live. Reescribe publish_live.py sin ''' ni \"\"\". Usa Path.write_text y concatenación. Job image python:3.12 flavor cpu-basic expose 8000. Espera GET /health 200. Deploy Static Space <cuenta>/riu-chat-yaiwes con API_BASE=endpoint del Job. Anota space_url y router_endpoint en crazy_wall y HANDOFF. Fail-closed si falta HF_TOKEN o Job falla. No toques pasos CLOSED.",
+  "requested_by": "orquestador-chat",
+  "source": "Sentinela+GrokBot-2026-09-22",
+  "deadline": "2026-09-22T19:15:00-05:00"
 }
