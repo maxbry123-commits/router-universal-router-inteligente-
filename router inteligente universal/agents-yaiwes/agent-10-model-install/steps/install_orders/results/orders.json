@@ -1,0 +1,77 @@
+{
+  "orders": [
+    {
+      "model_id": "qwen3-0.6b",
+      "repo": "Qwen/Qwen3-0.6B-GGUF",
+      "file": "Qwen3-0.6B-Q8_0.gguf",
+      "flavor": "cpu-upgrade",
+      "port": 8080,
+      "why_this_flavor": "ORDEN Director: unico hardware 32GB RAM (cpu-upgrade 8 vCPU)",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "qwen3.5-0.8b",
+      "repo": "ggml-org/Qwen3.5-0.8B-GGUF",
+      "file": "Qwen3.5-0.8B-Q4_0.gguf",
+      "flavor": "cpu-upgrade",
+      "port": 8080,
+      "why_this_flavor": "ORDEN Director: unico hardware 32GB RAM (cpu-upgrade 8 vCPU)",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "k2-horizon-0.9b",
+      "repo": "IFM/K2-Horizon-0.9B-GGUF",
+      "file": "",
+      "flavor": "cpu-upgrade",
+      "port": 8080,
+      "why_this_flavor": "ORDEN Director: unico hardware 32GB RAM (cpu-upgrade 8 vCPU)",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "lfm2.5-1.2b-instruct",
+      "repo": "LiquidAI/LFM2.5-1.2B-Instruct-GGUF",
+      "file": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+      "flavor": "cpu-upgrade",
+      "port": 8080,
+      "why_this_flavor": "ORDEN Director: unico hardware 32GB RAM (cpu-upgrade 8 vCPU)",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "lfm2.5-1.2b-thinking",
+      "repo": "LiquidAI/LFM2.5-1.2B-Thinking-GGUF",
+      "file": "LFM2.5-1.2B-Thinking-Q4_K_M.gguf",
+      "flavor": "cpu-upgrade",
+      "port": 8080,
+      "why_this_flavor": "ORDEN Director: unico hardware 32GB RAM (cpu-upgrade 8 vCPU)",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "gemma-4-e2b",
+      "repo": "google/gemma-4-E2B-it-qat-q4_0-gguf",
+      "file": "gemma-4-E2B_q4_0-it.gguf",
+      "flavor": "cpu-upgrade",
+      "port": 8080,
+      "why_this_flavor": "ORDEN Director: unico hardware 32GB RAM (cpu-upgrade 8 vCPU)",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "smollm3-3b",
+      "repo": "ggml-org/SmolLM3-3B-GGUF",
+      "file": "",
+      "flavor": "cpu-upgrade",
+      "port": 8080,
+      "why_this_flavor": "ORDEN Director: unico hardware 32GB RAM (cpu-upgrade 8 vCPU)",
+      "status": "PENDING_LAUNCH"
+    },
+    {
+      "model_id": "muse-glimmer-30b",
+      "repo": "meta-models/Muse-Glimmer-30B-GGUF",
+      "file": "Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf",
+      "flavor": "cpu-upgrade",
+      "port": 8080,
+      "why_this_flavor": "ORDEN Director: unico hardware 32GB RAM (cpu-upgrade 8 vCPU)",
+      "status": "PENDING_LAUNCH"
+    }
+  ],
+  "hardware_rule": "ONLY cpu-upgrade (8 vCPU / 32 GB). cpu-basic and GPU forbidden."
+}
