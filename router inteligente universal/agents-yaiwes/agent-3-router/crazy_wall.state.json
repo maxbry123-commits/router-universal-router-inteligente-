@@ -3,7 +3,7 @@
  "agent": "agent-3-router",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T23:42:43Z",
+ "updated_at": "2026-09-22T23:58:24Z",
  "group": "hf-chat",
  "chain": [
   "space_readme",
@@ -23,15 +23,15 @@
   "publish_live"
  ],
  "current_nodes": [],
- "attempts_publish_live": 3,
+ "attempts_publish_live": 5,
  "blockers": [
-  "stub REJECTED; need sheriff+TEMPLATE rewrite"
+  "#33 LLM envolvió publish_live.py en ```python + truncó (SyntaxError L1). TEMPLATE restaurado. Re-ejecutar verbatim SIN regenerar."
  ],
  "hardware_requirement": "Job only on HF machine with 32 GB RAM",
  "hardware_sheriff": "agents-yaiwes/common/hardware_sheriff.py",
  "job_port": 8000,
  "space_id_suffix": "riu-chat-yaiwes",
- "orchestrator_order": "Copy TEMPLATE; guarded_run_job; Job ONLY 32GB RAM machine; /health; write space_url+router_endpoint.",
+ "orchestrator_order": "DO NOT rewrite publish_live.py. Copy file bytes verbatim into response. python_exec publish(). Job ONLY 32GB.",
  "route": [
   "nvidia",
   "groq",

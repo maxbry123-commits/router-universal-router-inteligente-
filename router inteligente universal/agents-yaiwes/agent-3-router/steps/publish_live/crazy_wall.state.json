@@ -1,10 +1,10 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
  "step": "publish_live",
- "status": "BLOCKED",
- "updated_at": "2026-09-22T23:30:35Z",
- "attempts": 3,
- "last_error": "SyntaxError unterminated triple-quote — ORCH ordena reescritura sin triples + hardware 32GB only",
+ "status": "PENDING",
+ "updated_at": "2026-09-22T23:58:24Z",
+ "attempts": 5,
+ "last_error": "#33 SyntaxError: file started with markdown fence ```python and truncated",
  "hardware_lock": "32GB_RAM_ACTIVE_ONLY",
  "agent": "agent-3-router",
  "framework": "pocketflow",
@@ -15,13 +15,6 @@
  "next_nodes": [
   "sheriff"
  ],
- "provider": "nvidia",
- "model": "nvidia/nemotron-3-super-120b-a12b",
- "via": "route",
- "gaps": [
-  "Python inválido: invalid syntax (línea 1)"
- ],
- "failed": [
-  "execute"
- ]
+ "gaps": [],
+ "failed": []
 }
