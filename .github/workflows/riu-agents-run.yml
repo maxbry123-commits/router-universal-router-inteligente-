@@ -4,8 +4,9 @@ name: RIU Agents Run
 # Add an agent = add a folder with a chain.yaml. `only` runs a single agent (priority runs, e.g. the auditor) in its own concurrency group.
 # Frameworks: PocketFlow and SmolAgents (auditor = SmolAgents copy). Claude (the brain) only edits chains and agents-yaiwes/ROUTE.json (code -> MiniMax M3,
 # jobs -> DeepSeek V4 Flash) and dispatches this workflow; the agents execute, note their progress in their own crazy_wall.state.json / HANDOFF.md /
-# steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped. Keys: only the encrypted bank.
-# Time budget raised 2026-09-22 (Director's order) so multi-step agents like the auditor can finish in one run: 90 min per job, 90 min per agent process.
+# steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped. Keys: only the encrypted bank plus HF_TOKEN, needed
+# 2026-09-22 so an agent step's own Sheriff check can really launch and verify a model Job on the Director's HF account end-to-end, with no manual
+# step by Claude in between (Director's explicit order). Time budget: 90 min per job, 90 min per agent process.
 
 on:
   workflow_dispatch:
@@ -49,7 +50,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - run: pip install pocketflow smolagents openai fastapi httpx pydantic huggingface_hub pyyaml cryptography
+      - run: pip install pocketflow smolagents openai fastapi httpx pydantic huggingface_hub pyyaml cryptography requests
 
       - name: Build the auditor's evidence packs (deterministic)
         run: python "router inteligente universal/agents-yaiwes/common/audit_pack.py"
@@ -58,6 +59,7 @@ jobs:
         env:
           RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           ONLY: ${{ inputs.only }}
           PYTHONUTF8: '1'
           PYTHONIOENCODING: utf-8
