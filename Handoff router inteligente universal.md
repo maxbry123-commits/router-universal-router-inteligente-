@@ -174,3 +174,45 @@ Regla arquitectónica: **nunca cargar el dataset completo al LLM**. El Router co
 - No activar el plugin en producción hasta cumplir su governance gate (aprobación + ficha firmada). **Presencia/shadow PASS no equivale a integración runtime del Router Universal.**
 
 **Objetivo:** usar Mythos/YAIWES como capa externa de conocimiento y control cognitivo del Router Inteligente Universal, conservando a `RedUniversal`/hot-path existente como dueño del routing y al dataset como retrieval selectivo, no como router paralelo.
+
+
+## RIU Research Prepass nativo
+
+Estado:
+CODE_PRESENT / RUNTIME_NETWORK_TEST_PENDING.
+
+Objetivo:
+dar al agente un ContextPacket técnico antes de planificar/ejecutar, sin gastar
+tokens de un LLM en la fase de búsqueda.
+
+Flujo:
+INPUT_BLOCK verbatim
+-> SHA256
+-> QueryCompiler determinista
+-> 10 fuentes web
+-> GitHub
+-> Hugging Face
+-> dedupe/rank/budget
+-> context_packet.json + context.md
+-> Context Composer
+-> Router/Agent.
+
+Owner:
+el motor vive en la raíz existente de motores de búsqueda.
+No crea otro Router ni reemplaza RedUniversal.
+
+Fuente de trazabilidad:
+➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/➡️📂 motor de búsqueda/RESEARCH-PREPASS-TRAZABILIDAD.md
+
+Gates antes de integrar al hot-path:
+1. tests deterministas PASS;
+2. network smoke real;
+3. schema validation;
+4. no-secret-leak;
+5. budget/read-back;
+6. integración ContextComposer;
+7. canary con una tarea real.
+
+Regla:
+INPUT_BLOCK sigue siendo autoridad.
+ContextPacket es evidencia auxiliar.
