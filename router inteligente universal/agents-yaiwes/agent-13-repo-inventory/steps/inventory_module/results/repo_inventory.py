@@ -1,36 +1,38 @@
-def summarize(root_listing: list[dict]) -> dict:
+import json
+import os
+from typing import List, Dict
+
+def summarize(root_listing: List[Dict]) -> Dict:
     prefix = "Componente open soure router inteligente universal/"
+    top_level: Dict[str, Dict[str, int]] = {}
     total_files = 0
     total_bytes = 0
-    projects = {}
 
-    for item in root_listing:
-        if item.get("type") != "blob":
+    for entry in root_listing:
+        if entry.get("type") != "blob":
             continue
-        size = item.get("size", 0)
         total_files += 1
+        size = entry.get("size", 0)
         total_bytes += size
 
-        path = item.get("path", "")
+        path = entry.get("path", "")
         if not path.startswith(prefix):
             continue
-        remainder = path[len(prefix):]
-        # Ignore blobs directly in the root (no subfolder after prefix)
-        if not remainder:
+        rest = path[len(prefix):]
+        if not rest:
+            # blob directly under the root folder -> ignore for project stats
             continue
-        # Find first '/' to get the top-level project name
-        first_slash = remainder.find("/")
-        if first_slash == -1:
-            # This would be a blob like "prefix<name>" without trailing slash; treat as root blob -> ignore
+        # first component after the prefix is the project name
+        project = rest.split("/", 1)[0]
+        if not project:
             continue
-        project = remainder[:first_slash]
-        if project not in projects:
-            projects[project] = {"files": 0, "bytes": 0}
-        projects[project]["files"] += 1
-        projects[project]["bytes"] += size
+        if project not in top_level:
+            top_level[project] = {"files": 0, "bytes": 0}
+        top_level[project]["files"] += 1
+        top_level[project]["bytes"] += size
 
     return {
-        "top_level_projects": projects,
+        "top_level_projects": top_level,
         "total_files": total_files,
         "total_bytes": total_bytes,
     }

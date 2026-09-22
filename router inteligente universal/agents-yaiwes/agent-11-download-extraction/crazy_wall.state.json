@@ -3,7 +3,7 @@
  "agent": "agent-11-download-extraction",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-22T18:08:46Z",
+ "updated_at": "2026-09-22T21:23:44Z",
  "group": "downloads",
  "chain": [
   "jev_components_list",
