@@ -3,9 +3,12 @@
 Each step is executed by the agent's own framework runner (pocketflow_agent.py, smol_agent.py or auditor_agent.py): the step gets its own
 directory `steps/<id>/` (workflow.dag.yaml + TRIGGER.json + results/), the previous step's verified output is added to its context, and the
 chain is FAIL_CLOSED: if a step ends BLOCKED, the next steps do not run. Steps that already closed (state CLOSED + output) are SKIPPED, so a
-re-run only works on what is pending. `agents-yaiwes/ROUTE.json` (edited by Claude) sets the model route: `route_code` for steps that produce code
-(their checks compile or run Python/JavaScript: MiniMax M3 first), `route_jobs` for every other step (DeepSeek V4 Flash first), `route` as default.
-A step may add `context_file: [repo-relative paths]` to its context. `agent.post: audit_report` builds the auditor's checklist after the chain.
+re-run only works on what is pending. `agents-yaiwes/ROUTE.json` (edited by Claude) sets the model route. Priority order:
+1) `route_by_group[agent.group]`, if the agent's group has an explicit route (e.g. "chat" -> DeepSeek V4 Flash first, per the Director's order);
+2) otherwise `route_code` for steps that produce code (their checks compile or run Python/JavaScript: MiniMax M3 first) or `route_jobs` for
+   every other step (NVIDIA first); 3) `route` as a last default. Every agent still records which provider/model actually answered
+(crazy_wall.state.json `provider`/`model`), so results can be compared per engine, not just per agent. A step may add
+`context_file: [repo-relative paths]` to its context. `agent.post: audit_report` builds the auditor's checklist after the chain.
 Time limits (an agent must never hang the run for an hour): every step has a wall-clock budget (STEP_SECONDS) and every SmolAgents model call
 has an HTTP timeout (CALL_SECONDS, no hidden retries).
 
@@ -33,14 +36,18 @@ CODE_CHECKS = ("python_exec", "python_ast", "js_syntax")
 
 
 def step_agent(agent: dict[str, Any], st: dict[str, Any], routes: dict[str, Any]) -> dict[str, Any]:
-    """The agent block for one step: code steps use route_code (MiniMax M3 first), the rest route_jobs (DeepSeek V4 Flash first)."""
-    is_code = any(c.get("kind") in CODE_CHECKS for c in st.get("checks", []))
-    key = "route_code" if is_code else "route_jobs"
+    """The agent block for one step. route_by_group[agent.group] wins if set; else route_code/route_jobs by whether the step is code."""
     out = dict(agent)
-    if routes.get(key):
-        out["route"] = routes[key]
-    elif routes.get("route"):
-        out["route"] = routes["route"]
+    by_group = (routes.get("route_by_group") or {}).get(agent.get("group") or "")
+    if by_group:
+        out["route"] = by_group
+    else:
+        is_code = any(c.get("kind") in CODE_CHECKS for c in st.get("checks", []))
+        key = "route_code" if is_code else "route_jobs"
+        if routes.get(key):
+            out["route"] = routes[key]
+        elif routes.get("route"):
+            out["route"] = routes["route"]
     if "fallback" in routes:
         out["fallback"] = routes["fallback"]
     return out
