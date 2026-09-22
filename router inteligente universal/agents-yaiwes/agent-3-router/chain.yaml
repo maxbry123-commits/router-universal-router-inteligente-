@@ -1,10 +1,10 @@
 schema: yaiwes.chain/v1
 
-# agent-3-router — P1. Job SOLO en máquina HF 32 GB RAM.
+# agent-3-router — P1. Job SOLO máquina HF 32 GB RAM.
 input_block: |
-  Copia verbatim TEMPLATE publish_live.py de ORDEN-ORCH-CHAT.md.
-  ANTES de run_job: common.hardware_sheriff (assert_machine_32gb_ram / guarded_run_job).
-  Job SOLO máquina 32 GB RAM. Otra = FAIL. GET /health. Space riu-chat-yaiwes.
+  NO regeneres publish_live.py si results/ ya tiene AST válido y guarded_run_job.
+  Ejecuta publish() del TEMPLATE existente (verbatim). Job SOLO máquina 32 GB RAM.
+  GET /health. Space riu-chat-yaiwes. Anota space_url + router_endpoint.
 
 agent:
   id: agent-3-router
@@ -12,14 +12,17 @@ agent:
   group: hf-chat
   route: [nvidia, groq, cerebras]
   fallback: [minimax_m3]
-  max_tokens: 3200
+  max_tokens: 1600
 
 context:
   text: |
     Candado: agents-yaiwes/common/hardware_sheriff.py
-    Requisito: Job en máquina 32 GB RAM. IDs técnicos HF son detalle de implementación.
+    (assert_machine_32gb_ram / guarded_run_job).
+    Requisito: Job en máquina 32 GB RAM. IDs técnicos HF = detalle implementación.
+    Id técnico 32GB: cpu-upgrade (API; no del Director).
     Puerto 8000. Space riu-chat-yaiwes. HF_TOKEN obligatorio.
-    COPIA TEMPLATE de ORDEN-ORCH-CHAT.md verbatim. Cero triples rotos.
+    REGLA ANTI-SyntaxError: si results/publish_live.py ya importa guarded_run_job
+    y parsea, responde ese archivo verbatim. Cero reescritura.
 
 steps:
   - id: space_readme
@@ -48,17 +51,24 @@ steps:
   - id: publish_live
     context_file:
       - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
+      - router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py
     task: |
-      UN bloque python = TEMPLATE ORDEN-ORCH-CHAT.md (verbatim).
-      publish() usa guarded_run_job / assert_machine_32gb_ram.
-      Job SOLO máquina 32 GB RAM. Return space_url, router_endpoint, router_health_ok,
-      space_reachable, hardware_ram_gb==32.
+      Si results/publish_live.py ya es válido (guarded_run_job + publish),
+      UN bloque python = ese archivo verbatim (cero cambios).
+      publish() usa guarded_run_job; Job SOLO máquina 32 GB RAM;
+      return space_url, router_endpoint, router_health_ok, space_reachable, hardware_ram_gb==32.
     checks:
       - kind: python_ast
       - kind: python_exec
         module: publish_live.py
         test: |
-          import os
+          import os, ast
+          from pathlib import Path
+          src = Path("publish_live.py").read_text(encoding="utf-8")
+          ast.parse(src)
+          assert "guarded_run_job" in src
+          assert "assert_machine_32gb_ram" in src
+          assert "cpu-basic" not in src
           assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
           from publish_live import publish
           out = publish()

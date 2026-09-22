@@ -3,37 +3,19 @@
  "agent": "agent-3-router",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T23:50:07Z",
+ "updated_at": "2026-09-22T23:50:38Z",
  "group": "hf-chat",
- "chain": [
-  "space_readme",
-  "space_index",
-  "deploy_script",
-  "publish_live"
- ],
- "completed": [
-  "space_readme",
-  "space_index",
-  "deploy_script"
- ],
- "failed": [
-  "publish_live"
- ],
- "next_nodes": [],
+ "chain": ["space_readme", "space_index", "deploy_script", "publish_live"],
+ "completed": ["space_readme", "space_index", "deploy_script"],
+ "failed": ["publish_live"],
+ "next_nodes": ["publish_live"],
  "current_nodes": [],
- "attempts_publish_live": 3,
- "blockers": [
-  "stub REJECTED; need sheriff+TEMPLATE rewrite"
- ],
+ "attempts_publish_live": 4,
+ "blockers": ["#30 no space_url; push conflict; ejecutar TEMPLATE sin regenerar"],
  "hardware_requirement": "Job only on HF machine with 32 GB RAM",
  "hardware_sheriff": "agents-yaiwes/common/hardware_sheriff.py",
  "job_port": 8000,
  "space_id_suffix": "riu-chat-yaiwes",
- "orchestrator_order": "Copy TEMPLATE; guarded_run_job; Job ONLY 32GB RAM machine; /health; write space_url+router_endpoint.",
- "route": [
-  "nvidia",
-  "groq",
-  "cerebras",
-  "minimax_m3"
- ]
+ "orchestrator_order": "Execute existing publish_live.py verbatim via python_exec; Job ONLY 32GB RAM; write space_url.",
+ "route": ["nvidia", "groq", "cerebras", "minimax_m3"]
 }
