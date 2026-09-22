@@ -39,28 +39,26 @@ context:
     \ estatico riu-chat-yaiwes.\"\"\"\nfrom __future__ import annotations\n\nimport\
     \ base64\nimport json\nimport os\nimport sys\nimport tempfile\nimport time\nfrom\
     \ pathlib import Path\n\nimport requests\nfrom huggingface_hub import HfApi, whoami\n\
-    \nPORT = 8000\nSPACE_SUFFIX = \"riu-chat-yaiwes\"\n# Id tecnico HF Jobs que mapea\
-    \ a 32 GB RAM (detalle de implementacion; requisito =\n\n\nSALIDA VERIFICADA DEL\
-    \ PASO ANTERIOR (deploy_script):\n```python\ndef plan_files(space_id: str, api_base:\
-    \ str) -> dict:\n    \"\"\"\n    Returns a dict describing the static space to\
-    \ be created.\n    Raises ValueError if space_id is not in the form \"usuario/nombre\"\
-    \n    or if api_base does not start with \"https://\".\n    \"\"\"\n    if space_id.count(\"\
-    /\") != 1:\n        raise ValueError(\"space_id must contain exactly one '/'\"\
-    )\n    user, name = space_id.split(\"/\")\n    if not user or not name:\n    \
-    \    raise ValueError(\"space_id must have non-empty user and name parts\")\n\
-    \    if not api_base.startswith(\"https://\"):\n        raise ValueError(\"api_base\
-    \ must start with 'https://'\")\n    return {\n        \"repo_id\": space_id,\n\
-    \        \"repo_type\": \"space\",\n        \"space_sdk\": \"static\",\n     \
-    \   \"files\": [\"README.md\", \"index.html\"],\n        \"api_base\": api_base,\n\
-    \    }\n\n\ndef deploy(space_id: str, folder: str, token: str) -> str:\n    \"\
-    \"\"\n    Creates a static Hugging Face Space and uploads the contents of `folder`.\n\
-    \    Returns the URL of the created space.\n    The `token` is used only for authentication\
-    \ and is never printed or stored.\n    \"\"\"\n    from huggingface_hub import\
-    \ HfApi\n\n    api = HfApi(token=token)\n    api.create_repo(\n        repo_id=space_id,\n\
-    \        repo_type=\"space\",\n        space_sdk=\"static\",\n        exist_ok=True,\n\
-    \    )\n    api.upload_folder(\n        folder_path=folder,\n        repo_id=space_id,\n\
-    \        repo_type=\"space\",\n    )\n    return f\"https://huggingface.co/spaces/{space_id}\"\
-    \n```"
+    from agents_yaiwes\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (deploy_script):\n\
+    ```python\ndef plan_files(space_id: str, api_base: str) -> dict:\n    \"\"\"\n\
+    \    Returns a dict describing the static space to be created.\n    Raises ValueError\
+    \ if space_id is not in the form \"usuario/nombre\"\n    or if api_base does not\
+    \ start with \"https://\".\n    \"\"\"\n    if space_id.count(\"/\") != 1:\n \
+    \       raise ValueError(\"space_id must contain exactly one '/'\")\n    user,\
+    \ name = space_id.split(\"/\")\n    if not user or not name:\n        raise ValueError(\"\
+    space_id must have non-empty user and name parts\")\n    if not api_base.startswith(\"\
+    https://\"):\n        raise ValueError(\"api_base must start with 'https://'\"\
+    )\n    return {\n        \"repo_id\": space_id,\n        \"repo_type\": \"space\"\
+    ,\n        \"space_sdk\": \"static\",\n        \"files\": [\"README.md\", \"index.html\"\
+    ],\n        \"api_base\": api_base,\n    }\n\n\ndef deploy(space_id: str, folder:\
+    \ str, token: str) -> str:\n    \"\"\"\n    Creates a static Hugging Face Space\
+    \ and uploads the contents of `folder`.\n    Returns the URL of the created space.\n\
+    \    The `token` is used only for authentication and is never printed or stored.\n\
+    \    \"\"\"\n    from huggingface_hub import HfApi\n\n    api = HfApi(token=token)\n\
+    \    api.create_repo(\n        repo_id=space_id,\n        repo_type=\"space\"\
+    ,\n        space_sdk=\"static\",\n        exist_ok=True,\n    )\n    api.upload_folder(\n\
+    \        folder_path=folder,\n        repo_id=space_id,\n        repo_type=\"\
+    space\",\n    )\n    return f\"https://huggingface.co/spaces/{space_id}\"\n```"
   max_chars: 40000
 task: 'Si results/publish_live.py ya es válido (guarded_run_job + publish),
 

@@ -2,7 +2,7 @@
  "schema": "yaiwes.crazy-wall/v1",
  "step": "publish_live",
  "status": "BLOCKED",
- "updated_at": "2026-09-22T23:52:56Z",
+ "updated_at": "2026-09-22T23:58:43Z",
  "attempts": 3,
  "last_error": "retry: execute TEMPLATE verbatim (no regen)",
  "hardware_lock": "32GB_RAM_ACTIVE_ONLY",
@@ -16,8 +16,8 @@
   "sheriff"
  ],
  "gaps": [
-  "Python inválido: invalid syntax (línea 1)",
-  "la prueba falló (exit=1): SyntaxError: invalid syntax"
+  "Python inválido: unterminated triple-quoted string literal (detected at line 2) (línea 2)",
+  "la prueba falló (exit=1): SyntaxError: unterminated triple-quoted string literal (detected at line 2)"
  ],
  "failed": [
   "execute"
