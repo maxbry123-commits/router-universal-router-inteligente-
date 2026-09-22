@@ -2,18 +2,22 @@
   "schema": "yaiwes.crazy-wall/v1",
   "agent": "agent-3-router",
   "framework": "pocketflow",
-  "status": "PENDING",
-  "updated_at": "2026-09-22T23:26:00Z",
+  "status": "BLOCKED",
+  "updated_at": "2026-09-22T23:28:00Z",
   "group": "hf-chat",
   "chain": ["space_readme", "space_index", "deploy_script", "publish_live"],
   "completed": ["space_readme", "space_index", "deploy_script"],
-  "failed": [],
+  "failed": ["publish_live"],
   "next_nodes": ["publish_live"],
   "current_nodes": ["publish_live"],
-  "route": ["nvidia", "groq", "cerebras", "minimax_m3"],
-  "hardware_lock": "cpu-upgrade",
-  "hardware_ram_gb": 32,
+  "blockers": [
+    "SyntaxError triples en publish_live.py",
+    "flavor=cpu-basic incumple requisito Director 32GB RAM (Revisor)"
+  ],
+  "hardware_requirement": "32GB_RAM_8vCPU",
+  "hardware_flavor_allowed": ["cpu-upgrade"],
+  "hardware_flavor_forbidden": ["cpu-basic"],
   "job_port": 8000,
   "space_id_suffix": "riu-chat-yaiwes",
-  "orchestrator_order": "P1: publish_live sin triples; Job SOLO cpu-upgrade:8000; GET /health; Space riu-chat-yaiwes + API_BASE; crazy_wall space_url+router_endpoint; fail-closed. Deadline ~19:22 COT."
+  "orchestrator_order": "STOP cpu-basic. Reescribe publish_live: cpu-upgrade:8000 + /health + Space riu-chat-yaiwes. Fail-closed."
 }

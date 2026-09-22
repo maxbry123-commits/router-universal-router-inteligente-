@@ -1,9 +1,10 @@
 {
   "schema": "yaiwes.trigger/v1",
-  "run_id": "RUN-A3-CPU-UPGRADE-P1",
-  "input_block": "P1 Director/Sentinela. publish_live YA. Sin triples. Job HF flavor=cpu-upgrade puerto=8000 (32GB). PROHIBIDO cpu-basic/GPU. GET /health 200. Space riu-chat-yaiwes con API_BASE real. Anota space_url+router_endpoint. Fail-closed. DeepSeek V4 Flash hasta cerrar chat.",
+  "run_id": "RUN-A3-32GB-FIX-P1",
+  "input_block": "STOP cpu-basic. Reescribe publish_live.py sin triples. Job flavor=cpu-upgrade (cumple 32GB RAM Director). Puerto 8000. GET /health. Space riu-chat-yaiwes + API_BASE. Anota space_url+router_endpoint. Fail-closed. Prohibido redeploy cpu-basic.",
   "requested_by": "orquestador-chat",
-  "source": "SENTINELA-INPUT-EXTRACT-2026-09-22",
+  "source": "Revisor+Sentinela-2026-09-22",
   "deadline": "2026-09-22T19:22:00-05:00",
-  "hardware_lock": "cpu-upgrade"
+  "hardware_requirement_gb": 32,
+  "hardware_flavor": "cpu-upgrade"
 }
