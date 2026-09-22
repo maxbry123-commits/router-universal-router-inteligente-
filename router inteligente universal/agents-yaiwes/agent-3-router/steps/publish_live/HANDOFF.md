@@ -1,10 +1,5 @@
-# HANDOFF — agent-3-router (pocketflow)
+# HANDOFF — publish_live
 
-Estado: **BLOCKED**
+Estado: **PENDING_RETRY**
 
-- group: hf-chat
-- attempts: 3
-- model: nvidia/nvidia/nemotron-3-super-120b-a12b
-- gaps: Python inválido: invalid syntax (línea 1)
-
-Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.
+Orden: TEMPLATE verbatim; Job 32GB; python_exec.
