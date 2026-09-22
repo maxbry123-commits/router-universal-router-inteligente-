@@ -3,7 +3,7 @@
   "agent": "agent-3-router",
   "framework": "pocketflow",
   "status": "PENDING",
-  "updated_at": "2026-09-22T23:25:00Z",
+  "updated_at": "2026-09-22T23:26:00Z",
   "group": "hf-chat",
   "chain": ["space_readme", "space_index", "deploy_script", "publish_live"],
   "completed": ["space_readme", "space_index", "deploy_script"],
@@ -11,6 +11,9 @@
   "next_nodes": ["publish_live"],
   "current_nodes": ["publish_live"],
   "route": ["nvidia", "groq", "cerebras", "minimax_m3"],
-  "hardware_lock": "32GB_RAM_ACTIVE_ONLY",
-  "orchestrator_order": "P1 Director ~19:22 COT: publish_live SIN triples; Job SOLO 32GB RAM activo (prohibido otro CPU/GPU); GET /health; Space riu-chat-yaiwes; anotar space_url+router_endpoint; fail-closed."
+  "hardware_lock": "cpu-upgrade",
+  "hardware_ram_gb": 32,
+  "job_port": 8000,
+  "space_id_suffix": "riu-chat-yaiwes",
+  "orchestrator_order": "P1: publish_live sin triples; Job SOLO cpu-upgrade:8000; GET /health; Space riu-chat-yaiwes + API_BASE; crazy_wall space_url+router_endpoint; fail-closed. Deadline ~19:22 COT."
 }
