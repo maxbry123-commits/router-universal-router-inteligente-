@@ -5,6 +5,7 @@ schema: yaiwes.chain/v1
 # El agente 5 (auditor) revisa su trabajo en su siguiente pasada; Claude lee el resultado del auditor, no revisa el detalle línea por línea.
 input_block: |
   Le das a un agente la responsabilidad de solo descargar y extracción de componentes tu solo luego revisa el agente revisa por ti
+  Descarga los componentes que necesitas para trabajar mientras se descargas vas haciendo el router (paso 3 del orden de 5 pasos, 2026-09-22 cc)
 
 agent:
   id: agent-11-download-extraction
@@ -17,28 +18,39 @@ agent:
 context:
   text: |
     Pendiente de descargar/extraer, aparte de los 6 donantes ya bajados (Muse Code SDK, bucle de Muse Glimmer, MetaCua, CUA+MCP, SmolAgents,
-    PocketFlow): el fork de llama.cpp con la rama "nanbeige42" (necesario para servir Nanbeige4.2-3B), y el repo de Omniroute
-    (diegosouzapv/OmniRoute) SOLO para leer su README y su lista de proveedores — no instalarlo ni ejecutarlo. Usa el mismo motor determinista
-    (`common/download_donors.py`, límite 150 KB por archivo, 2 MB por donante) que ya bajó los 6 anteriores. NO instales nada, NO lances ningún
-    Job, NO toques el Router: solo bajar y dejar los archivos en `agents-yaiwes/donors/<nombre>/` con su commit exacto en `MANIFEST.json`.
+    PocketFlow) y de llama-cpp-nanbeige-fork/omniroute-readme: los 15 componentes de software de Jev/System One que dio el Director:
+    typesafe-ai/skills, typesafe-ai/typesafe-sdk-python, typesafe-ai/typesafe-sdk-js, typesafe-ai/system-one-adapter-python,
+    BunsDev/typesafe-router, gargpratyush/jev-router, 0xNatoshi/jev-codex-router, jkudish/jev-mcp, anasbekheit/typesafe-jev-mcp,
+    itsmostafa/typesafe-mcp, BYK/jev-mcp, GodsBoy/jev-agent-skill-router, Dicklesworthstone/skillranker, vinilana/jev-eval-agent,
+    haseeb-heaven/jev-system-one. De cada uno basta el README.md y, si existe, la carpeta principal de código fuente (src/ o el paquete
+    con el nombre del repo) — NO bajes node_modules, dist, ni carpetas de pruebas. Usa el mismo motor determinista
+    (`common/download_donors.py`, límite 150 KB por archivo, 2 MB por donante). NO instales nada, NO lances ningún Job, NO toques el Router.
 
 steps:
 
-  - id: extend_download_list
+  - id: jev_components_list
     task: |
-      Escribe el módulo Python `extra_donors.py` (solo código, un único bloque ```python, solo biblioteca estándar) con el dict `EXTRA_DONORS`
-      con EXACTAMENTE 2 claves: "llama-cpp-nanbeige-fork" con valor ("https://github.com/JamePeng/llama.cpp", ["README.md"]) — usa esa tupla
-      (url, lista de rutas en sparse-checkout) — y "omniroute-readme" con valor ("https://github.com/diegosouzapw/OmniRoute", ["README.md"]).
-      No añadas ninguna otra clave. No escribas nada que instale o ejecute algo, solo el diccionario.
+      Escribe el módulo Python `jev_components.py` (solo código, un único bloque ```python, solo biblioteca estándar) con el dict
+      `JEV_COMPONENTS` con EXACTAMENTE estas 15 claves (usa el nombre del repo en minúsculas, con guiones donde el nombre original los
+      tenga) y cada valor una tupla (url_de_github, lista_de_rutas_para_sparse_checkout): typesafe-skills, typesafe-sdk-python,
+      typesafe-sdk-js, system-one-adapter-python, typesafe-router, jev-router, jev-codex-router, jev-mcp-jkudish, typesafe-jev-mcp,
+      typesafe-mcp, jev-mcp-byk, jev-agent-skill-router, skillranker, jev-eval-agent, jev-system-one. Cada tupla: (url exacta del repo
+      de GitHub que dio el Director, ["README.md", "src"]). Los dos repos con nombre repetido "jev-mcp" (de jkudish y de BYK) deben
+      quedar como claves distintas: "jev-mcp-jkudish" y "jev-mcp-byk", cada uno con su URL correcta.
     checks:
       - kind: python_ast
       - kind: python_exec
-        module: extra_donors.py
+        module: jev_components.py
         test: |
-          from extra_donors import EXTRA_DONORS
-          assert set(EXTRA_DONORS) == {"llama-cpp-nanbeige-fork", "omniroute-readme"}
-          assert EXTRA_DONORS["llama-cpp-nanbeige-fork"][0].startswith("https://github.com/")
-          assert EXTRA_DONORS["omniroute-readme"][1] == ["README.md"]
+          from jev_components import JEV_COMPONENTS
+          assert len(JEV_COMPONENTS) == 15
+          assert set(JEV_COMPONENTS) == {"typesafe-skills","typesafe-sdk-python","typesafe-sdk-js","system-one-adapter-python",
+              "typesafe-router","jev-router","jev-codex-router","jev-mcp-jkudish","typesafe-jev-mcp","typesafe-mcp","jev-mcp-byk",
+              "jev-agent-skill-router","skillranker","jev-eval-agent","jev-system-one"}
+          for url, paths in JEV_COMPONENTS.values():
+              assert url.startswith("https://github.com/") and paths == ["README.md", "src"]
+          assert JEV_COMPONENTS["jev-mcp-jkudish"][0] != JEV_COMPONENTS["jev-mcp-byk"][0]
+          assert JEV_COMPONENTS["jev-router"][0] == "https://github.com/gargpratyush/jev-router"
       - kind: no_secrets
 
 edges: []
