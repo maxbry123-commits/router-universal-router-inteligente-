@@ -1,1 +1,5 @@
-{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "ORDEN Director deadline 1h: un solo Job en la máquina de 32 GB RAM (flavor cpu-upgrade).\nProhibido montar Jobs en otro hardware. Meta: Qwen3-0.6B RUNNING_HEALTHY + /health.\n"}
+{
+  "schema": "yaiwes.trigger/v1",
+  "run_id": "CHAIN-001",
+  "input_block": "ORDEN: un solo Job en la máquina de 32 GB RAM (8 vCPU·32GB).\nProhibido montar Jobs en otro hardware. Meta: Qwen3-0.6B RUNNING_HEALTHY + /health.\nFlavor ID HF = mapeo técnico docs HF, no texto del Director.\n"
+}
