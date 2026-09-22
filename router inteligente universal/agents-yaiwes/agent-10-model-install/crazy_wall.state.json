@@ -2,18 +2,16 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-10-model-install",
  "framework": "pocketflow",
- "status": "CLOSED",
- "updated_at": "2026-09-22T21:23:43Z",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-22T22:04:06Z",
  "group": "hf-install",
  "chain": [
-  "install_orders",
-  "install_report"
+  "install_launch_test"
  ],
- "completed": [
-  "install_orders",
-  "install_report"
+ "completed": [],
+ "failed": [
+  "install_launch_test"
  ],
- "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [

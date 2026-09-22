@@ -1,31 +1,49 @@
-import json
-import os
-from typing import List, Dict
+def summarize(root_listing):
+    """
+    Summarizes a repository listing.
 
-def summarize(root_listing: List[Dict]) -> Dict:
-    prefix = "Componente open soure router inteligente universal/"
-    top_level: Dict[str, Dict[str, int]] = {}
+    Args:
+        root_listing (list[dict]): List of dicts with keys:
+            - "path": str, full path using '/' separator
+            - "type": str, either "blob" or "tree"
+            - "size": int, size in bytes for blobs (ignored for trees)
+
+    Returns:
+        dict: {
+            "top_level_projects": {
+                <project_name>: {"files": <blob count>, "bytes": <total size>}
+            },
+            "total_files": <total number of blobs>,
+            "total_bytes": <sum of sizes of all blobs>
+        }
+    """
+    PREFIX = "Componente open soure router inteligente universal/"
+    top_level = {}
     total_files = 0
     total_bytes = 0
 
     for entry in root_listing:
         if entry.get("type") != "blob":
             continue
-        total_files += 1
+        path = entry.get("path", "")
         size = entry.get("size", 0)
+
+        # Update overall totals
+        total_files += 1
         total_bytes += size
 
-        path = entry.get("path", "")
-        if not path.startswith(prefix):
+        # Check if the blob belongs to a top‑level project under the prefix
+        if not path.startswith(PREFIX):
             continue
-        rest = path[len(prefix):]
-        if not rest:
-            # blob directly under the root folder -> ignore for project stats
+
+        remainder = path[len(PREFIX):]  # part after the prefix
+        # Ignore blobs directly in the root of the prefix (no subfolder)
+        if not remainder or '/' not in remainder:
             continue
-        # first component after the prefix is the project name
-        project = rest.split("/", 1)[0]
-        if not project:
-            continue
+
+        # The first component after the prefix is the project name
+        project = remainder.split('/', 1)[0]
+
         if project not in top_level:
             top_level[project] = {"files": 0, "bytes": 0}
         top_level[project]["files"] += 1

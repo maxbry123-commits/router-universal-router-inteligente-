@@ -1,0 +1,82 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-10-model-install
+  framework: pocketflow
+  group: hf-install
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  - minimax_m3
+  fallback: []
+  max_tokens: 2600
+context:
+  text: 'Modelos a instalar, activar y probar EN HF DE VERDAD (repo GGUF y archivo):
+    qwen3.5-0.8b (ggml-org/Qwen3.5-0.8B-GGUF,
+
+    Qwen3.5-0.8B-Q4_0.gguf), lfm2.5-1.2b-instruct (LiquidAI/LFM2.5-1.2B-Instruct-GGUF,
+    LFM2.5-1.2B-Instruct-Q4_K_M.gguf), qwen3-0.6b
+
+    (Qwen/Qwen3-0.6B-GGUF, Qwen3-0.6B-Q8_0.gguf), gemma-4-e2b (google/gemma-4-E2B-it-qat-q4_0-gguf,
+    gemma-4-E2B_q4_0-it.gguf). Ya se probó a
+
+    mano que este patrón funciona: imagen "ghcr.io/ggml-org/llama.cpp:server", comando
+    bash que hace `curl -fL <url pública de HF> -o
+
+    /model.gguf && /app/llama-server -m /model.gguf --host 0.0.0.0 --port 8080 -c
+    8192 -np 4 -cb --cache-prompt --cache-ram 512 -fa on -ctk
+
+    q8_0 -ctv q8_0`, flavor "cpu-basic", expose=[8080], vía `HfApi(token=...).run_job(...)`;
+    luego esperar con `inspect_job` a stage=="RUNNING"
+
+    y confirmar con un GET a "<endpoint>/health". El token está en la variable de
+    entorno HF_TOKEN, ya disponible en este mismo proceso.
+
+    '
+  max_chars: 40000
+task: 'Escribe el módulo Python `install_launch_test.py` (solo código, un único bloque
+  ```python, dependencias: huggingface_hub, requests) con
+
+  la función `launch_and_verify(model_id, repo, file, port=8080) -> dict`: construye
+  la URL pública `https://huggingface.co/{repo}/resolve/main/{file}`,
+
+  arma el comando bash (curl + llama-server, igual al del CONTEXTO), llama `HfApi(token=os.environ["HF_TOKEN"]).run_job(image="ghcr.io/ggml-org/llama.cpp:server",
+
+  command=["bash","-lc", comando], flavor="cpu-basic", timeout="20m", expose=[port])`,
+  y espera hasta 300 segundos revisando `inspect_job` y
+
+  probando `GET <endpoint>/health` (con el token en el header Authorization) hasta
+  que responda 200. Devuelve {"model_id", "job_id",
+
+  "endpoint", "status": "RUNNING_HEALTHY" o "FAILED", "detail"}. Nunca debe usar flavor
+  distinto de "cpu-basic"/"cpu-upgrade": si algo
+
+  pide otro, lanza ValueError antes de llamar a run_job.
+
+  También escribe `MODELS = [("qwen3.5-0.8b","ggml-org/Qwen3.5-0.8B-GGUF","Qwen3.5-0.8B-Q4_0.gguf"),
+  ("qwen3-0.6b","Qwen/Qwen3-0.6B-GGUF","Qwen3-0.6B-Q8_0.gguf")]`
+
+  (solo estos 2, los más chicos, para que la ronda entera quepa en el tiempo del paso)
+  y una función `run_all() -> list[dict]` que llama
+
+  `launch_and_verify` para cada uno de MODELS, EN SECUENCIA (uno termina antes de
+  que arranque el siguiente), y devuelve la lista de resultados.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: install_launch_test.py
+  test: "import os\nassert os.environ.get(\"HF_TOKEN\"), \"falta HF_TOKEN en el entorno\"\
+    \nfrom install_launch_test import run_all, launch_and_verify\ntry:\n    launch_and_verify(\"\
+    x\", \"y/z\", \"f.gguf\", port=1)\n    raise ValueError(\"debía validar el flavor\
+    \ antes de llamar a run_job\")\nexcept Exception:\n    pass\nresults = run_all()\n\
+    assert len(results) == 2\nfor r in results:\n    assert r[\"status\"] == \"RUNNING_HEALTHY\"\
+    , f\"{r['model_id']} no quedó corriendo: {r.get('detail')}\"\n    print(r[\"model_id\"\
+    ], r[\"endpoint\"])\n"
+- kind: no_secrets
