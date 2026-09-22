@@ -2,10 +2,12 @@ name: RIU Watchdog
 
 # Every hour: reads the agents' Crazy Walls, writes agents-yaiwes/WATCHDOG/STATUS.md and LOG.md, and re-dispatches `RIU Agents Run` for
 # pending agents (max 3 tries per set of closed steps). Deterministic: no LLM, no paid tokens. See README-WATCHDOG-NOTAS-DE-CLAUDE.md.
+# Also every 30 min: triggers RIU HF Jobs Audit 32GB (Claude Sentinela path) to cancel Jobs ≠ 32 GB RAM.
 
 on:
   schedule:
     - cron: '17 * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -20,6 +22,7 @@ jobs:
   watch:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Hourly Crazy Wall pass (also runs on */30 — cheap, deterministic)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,3 +48,12 @@ jobs:
             git pull --rebase origin main && git push origin HEAD:main && exit 0
             sleep 4
           done
+
+  hf_audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger HF Jobs Audit 32GB
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run riu-hf-jobs-audit-32gb.yml --ref main
