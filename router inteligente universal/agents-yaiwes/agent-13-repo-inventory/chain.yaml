@@ -1,0 +1,56 @@
+schema: yaiwes.chain/v1
+
+# Agente 13 — INVENTARIO DEL REPO (solo lectura, determinista). Marco: PocketFlow. Cataloga TODO lo que hay en el repo, sobre todo la carpeta
+# "Componente open soure router inteligente universal/" (proyectos completos vendidos ahí, sin catalogar) y cuenta archivos/tamaño por proyecto.
+# No borra, no mueve, no instala nada: solo lee y reporta.
+input_block: |
+  Incluso delega a un agente el inventario de los componentes el code todos los archivos del repo
+
+agent:
+  id: agent-13-repo-inventory
+  framework: pocketflow
+  group: inventory
+  route: [nvidia, groq, cerebras, deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    HECHOS: dentro de "Componente open soure router inteligente universal/" hay al menos estos proyectos completos, cada uno con miles de
+    archivos, vendidos ahí (no por los agentes propios, que solo bajan README + 150 KB por archivo): Chart.js, Durable-Task-Python,
+    Durable-Workflow-Server, LiteLLM, MCP-Python-SDK, Prefect, PyGithub, RouterArena, SGLang, Sentence-Transformers, Temporal-Python-SDK,
+    TypeScript. Dentro de LiteLLM hay `scripts/adaptive_router_demo/chat.html` y `dashboard.html` (demo de un router adaptativo).
+
+steps:
+
+  - id: inventory_module
+    task: |
+      Escribe el módulo Python `repo_inventory.py` (solo código, un único bloque ```python, solo biblioteca estándar: os, json) con la
+      función `summarize(root_listing: list[dict]) -> dict`. `root_listing` es una lista de dicts {"path": str, "type": "blob"|"tree", "size": int
+      (bytes, solo para blob)} que representa TODOS los archivos del árbol del repo (rutas completas, separadas por "/"). Devuelve
+      {"top_level_projects": dict, "total_files": int, "total_bytes": int}. "top_level_projects": para cada ruta que empieza con
+      "Componente open soure router inteligente universal/<nombre>/", agrupa por <nombre> con {"files": cantidad de blobs bajo esa ruta,
+      "bytes": suma de sus tamaños}. Ignora los blobs directamente en la raíz de "Componente open soure router inteligente universal/" (sin
+      subcarpeta). No toca el sistema de archivos real, solo procesa la lista recibida.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: repo_inventory.py
+        test: |
+          from repo_inventory import summarize
+          listing = [
+              {"path": "README.md", "type": "blob", "size": 100},
+              {"path": "Componente open soure router inteligente universal/LiteLLM/README.md", "type": "blob", "size": 500},
+              {"path": "Componente open soure router inteligente universal/LiteLLM/litellm/x.py", "type": "blob", "size": 300},
+              {"path": "Componente open soure router inteligente universal/Chart.js/README.md", "type": "blob", "size": 200},
+              {"path": "Componente open soure router inteligente universal/Chart.js", "type": "tree", "size": 0},
+              {"path": "Componente open soure router inteligente universal/raiz.txt", "type": "blob", "size": 50},
+          ]
+          r = summarize(listing)
+          assert r["top_level_projects"]["LiteLLM"] == {"files": 2, "bytes": 800}
+          assert r["top_level_projects"]["Chart.js"] == {"files": 1, "bytes": 200}
+          assert "raiz.txt" not in str(r["top_level_projects"])
+          assert r["total_files"] == 4 and r["total_bytes"] == 1150
+      - kind: no_secrets
+
+edges: []
