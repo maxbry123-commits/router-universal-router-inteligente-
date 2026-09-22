@@ -2,9 +2,9 @@ schema: yaiwes.chain/v1
 
 # agent-3-router — P1. Requisito hardware: máquina HF 32 GB RAM (Director).
 input_block: |
-  Reescribe publish_live YA. Sin triples rotos. Job SOLO en procesador HF 32 GB RAM
-  (8 vCPU / 32GB). Otra máquina = rechazo. GET /health. Space riu-chat-yaiwes.
-  Anota space_url+router_endpoint. Fail-closed.
+  Copia verbatim TEMPLATE publish_live.py de ORDEN-ORCH-CHAT.md.
+  Job SOLO en procesador HF 32 GB RAM (8 vCPU / 32GB). Otra máquina = rechazo.
+  GET /health. Space riu-chat-yaiwes. Anota space_url+router_endpoint. Fail-closed.
 
 agent:
   id: agent-3-router
@@ -12,14 +12,15 @@ agent:
   group: hf-chat
   route: [nvidia, groq, cerebras]
   fallback: [minimax_m3]
-  max_tokens: 2400
+  max_tokens: 3200
 
 context:
   text: |
     Requisito Director (verbatim): Jobs/procesador HF de 32 GB RAM; 8 vCPU / 32GB.
     Cualquier máquina que no sea esa = rechazo. No inventar nombres de flavor del Director.
+    Id técnico HF que cumple 32 GB RAM: cpu-upgrade (solo API).
     Puerto 8000. Space estático riu-chat-yaiwes. HF_TOKEN obligatorio.
-    PROHIBIDO strings triples rotos en publish_live.py (falló 3 veces).
+    COPIA TEMPLATE de ORDEN-ORCH-CHAT.md verbatim. Cero strings triples rotos.
     Usa Path.write_text o "\n".join(lineas) para README/HTML.
 
 steps:
@@ -50,20 +51,23 @@ steps:
     context_file:
       - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
     task: |
-      REESCRIBE publish_live.py (bloque python único). Cero triples rotos.
-      publish() -> dict:
-      (1) whoami con HF_TOKEN;
-      (2) Job Router SOLO en la máquina HF de 32 GB RAM (8 vCPU / 32GB).
-          Si el hardware no es 32 GB RAM → raise (fail-closed). Puerto 8000;
-      (3) hasta 300s GET /health == 200;
-      (4) README+index con API_BASE = endpoint del Job;
-      (5) deploy Space <cuenta>/riu-chat-yaiwes;
-      (6) GET Space reachable.
-      Return space_url, router_endpoint, router_health_ok, space_reachable,
-      hardware_ram_gb (debe ser 32).
-      Escribe space_url y router_endpoint en crazy_wall.state.json.
+      Responde UN bloque python = TEMPLATE completo de ORDEN-ORCH-CHAT.md (verbatim).
+      publish() -> dict: space_url, router_endpoint, router_health_ok, space_reachable,
+      hardware_ram_gb (debe ser 32). Job SOLO máquina 32 GB RAM (cpu-upgrade). Fail-closed.
     checks:
       - kind: python_ast
+      - kind: python_exec
+        module: publish_live.py
+        test: |
+          import os
+          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
+          from publish_live import publish
+          out = publish()
+          assert out.get("hardware_ram_gb") == 32
+          assert out.get("router_health_ok") is True
+          assert out.get("space_url")
+          assert out.get("router_endpoint")
+          print(out["space_url"], out["router_endpoint"], out.get("job_id"))
       - kind: no_secrets
 
 edges:
