@@ -1,8 +1,9 @@
 {
   "schema": "yaiwes.trigger/v1",
-  "run_id": "RUN-A3-ORCH-CHAT-P1",
-  "input_block": "P1 ORCH-CHAT. Solo publish_live. Reescribe publish_live.py sin ''' ni \"\"\". Usa Path.write_text y concatenación. Job image python:3.12 flavor cpu-basic expose 8000. Espera GET /health 200. Deploy Static Space <cuenta>/riu-chat-yaiwes con API_BASE=endpoint del Job. Anota space_url y router_endpoint en crazy_wall y HANDOFF. Fail-closed si falta HF_TOKEN o Job falla. No toques pasos CLOSED.",
+  "run_id": "RUN-A3-ORCH-32GB-P1",
+  "input_block": "URGENTE Director. publish_live YA. Sin strings triples. Job SOLO en procesador 32GB RAM activo (8vCPU/32GB). Prohibido cpu-basic/T4/A10/A100. GET /health 200. Static Space riu-chat-yaiwes con API_BASE real. Anota space_url y router_endpoint. Fail-closed sin HF_TOKEN o hardware distinto.",
   "requested_by": "orquestador-chat",
-  "source": "Sentinela+GrokBot-2026-09-22",
-  "deadline": "2026-09-22T19:15:00-05:00"
+  "source": "Director-via-GrokBot-2026-09-22",
+  "deadline": "2026-09-22T19:22:00-05:00",
+  "hardware_lock": "32GB_RAM_ACTIVE_ONLY"
 }

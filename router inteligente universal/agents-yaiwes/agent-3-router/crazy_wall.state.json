@@ -3,13 +3,14 @@
   "agent": "agent-3-router",
   "framework": "pocketflow",
   "status": "PENDING",
-  "updated_at": "2026-09-22T23:20:00Z",
+  "updated_at": "2026-09-22T23:25:00Z",
   "group": "hf-chat",
   "chain": ["space_readme", "space_index", "deploy_script", "publish_live"],
   "completed": ["space_readme", "space_index", "deploy_script"],
   "failed": [],
   "next_nodes": ["publish_live"],
-  "current_nodes": [],
+  "current_nodes": ["publish_live"],
   "route": ["nvidia", "groq", "cerebras", "minimax_m3"],
-  "orchestrator_order": "ORCH-CHAT-P1: reescribe publish_live.py SIN strings triples; Job cpu-basic:8000; GET /health; deploy Static Space riu-chat-yaiwes con API_BASE real; anota space_url+router_endpoint; fail-closed sin HF_TOKEN. Deadline 19:15 COT."
+  "hardware_lock": "32GB_RAM_ACTIVE_ONLY",
+  "orchestrator_order": "P1 Director ~19:22 COT: publish_live SIN triples; Job SOLO 32GB RAM activo (prohibido otro CPU/GPU); GET /health; Space riu-chat-yaiwes; anotar space_url+router_endpoint; fail-closed."
 }

@@ -1,25 +1,9 @@
 {
- "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-3-router",
- "framework": "pocketflow",
- "status": "BLOCKED",
- "updated_at": "2026-09-22T22:04:02Z",
- "group": "hf-chat",
- "current_nodes": [
-  "execute"
- ],
- "next_nodes": [
-  "sheriff"
- ],
- "provider": "nvidia",
- "model": "nvidia/nemotron-3-super-120b-a12b",
- "via": "route",
- "attempts": 3,
- "gaps": [
-  "Python inválido: unterminated triple-quoted string literal (detected at line 83) (línea 76)",
-  "la prueba falló (exit=1): SyntaxError: unterminated triple-quoted string literal (detected at line 83)"
- ],
- "failed": [
-  "execute"
- ]
+  "schema": "yaiwes.crazy-wall.step/v1",
+  "step": "publish_live",
+  "status": "PENDING",
+  "updated_at": "2026-09-22T23:25:00Z",
+  "attempts": 3,
+  "last_error": "SyntaxError unterminated triple-quote — ORCH ordena reescritura sin triples + hardware 32GB only",
+  "hardware_lock": "32GB_RAM_ACTIVE_ONLY"
 }
