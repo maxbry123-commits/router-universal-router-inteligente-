@@ -4,7 +4,8 @@ name: RIU Agents Run
 # Add an agent = add a folder with a chain.yaml. `only` runs a single agent (priority runs, e.g. the auditor) in its own concurrency group.
 # Frameworks: PocketFlow and SmolAgents (auditor = SmolAgents copy). Claude (the brain) only edits chains and agents-yaiwes/ROUTE.json (code -> MiniMax M3,
 # jobs -> DeepSeek V4 Flash) and dispatches this workflow; the agents execute, note their progress in their own crazy_wall.state.json / HANDOFF.md /
-# steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped. Keys: only the encrypted bank; every agent has a 30-minute budget.
+# steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped. Keys: only the encrypted bank.
+# Time budget raised 2026-09-22 (Director's order) so multi-step agents like the auditor can finish in one run: 90 min per job, 90 min per agent process.
 
 on:
   workflow_dispatch:
@@ -23,7 +24,7 @@ concurrency:
 jobs:
   agents:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,7 +69,7 @@ jobs:
           for d in agents-yaiwes/agent-*/; do
             d="${d%/}"
             if [ -f "$d/chain.yaml" ] && { [ -z "$ONLY" ] || [ "$(basename "$d")" = "$ONLY" ]; }; then
-              timeout 1800 python agents-yaiwes/chain.py "$d" > "/tmp/$(basename "$d").log" 2>&1 &
+              timeout 5400 python agents-yaiwes/chain.py "$d" > "/tmp/$(basename "$d").log" 2>&1 &
             fi
           done
           wait
