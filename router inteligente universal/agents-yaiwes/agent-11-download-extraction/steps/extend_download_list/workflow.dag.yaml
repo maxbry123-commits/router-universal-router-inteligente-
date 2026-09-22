@@ -1,0 +1,62 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-11-download-extraction
+  framework: smolagents
+  group: downloads
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  - minimax_m3
+  fallback: []
+  max_tokens: 1800
+context:
+  text: 'Pendiente de descargar/extraer, aparte de los 6 donantes ya bajados (Muse
+    Code SDK, bucle de Muse Glimmer, MetaCua, CUA+MCP, SmolAgents,
+
+    PocketFlow): el fork de llama.cpp con la rama "nanbeige42" (necesario para servir
+    Nanbeige4.2-3B), y el repo de Omniroute
+
+    (diegosouzapv/OmniRoute) SOLO para leer su README y su lista de proveedores —
+    no instalarlo ni ejecutarlo. Usa el mismo motor determinista
+
+    (`common/download_donors.py`, límite 150 KB por archivo, 2 MB por donante) que
+    ya bajó los 6 anteriores. NO instales nada, NO lances ningún
+
+    Job, NO toques el Router: solo bajar y dejar los archivos en `agents-yaiwes/donors/<nombre>/`
+    con su commit exacto en `MANIFEST.json`.
+
+    '
+  max_chars: 40000
+task: 'Escribe el módulo Python `extra_donors.py` (solo código, un único bloque ```python,
+  solo biblioteca estándar) con el dict `EXTRA_DONORS`
+
+  con EXACTAMENTE 2 claves: "llama-cpp-nanbeige-fork" con valor ("https://github.com/JamePeng/llama.cpp",
+  ["README.md"]) — usa esa tupla
+
+  (url, lista de rutas en sparse-checkout) — y "omniroute-readme" con valor ("https://github.com/diegosouzapw/OmniRoute",
+  ["README.md"]).
+
+  No añadas ninguna otra clave. No escribas nada que instale o ejecute algo, solo
+  el diccionario.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: extra_donors.py
+  test: 'from extra_donors import EXTRA_DONORS
+
+    assert set(EXTRA_DONORS) == {"llama-cpp-nanbeige-fork", "omniroute-readme"}
+
+    assert EXTRA_DONORS["llama-cpp-nanbeige-fork"][0].startswith("https://github.com/")
+
+    assert EXTRA_DONORS["omniroute-readme"][1] == ["README.md"]
+
+    '
+- kind: no_secrets

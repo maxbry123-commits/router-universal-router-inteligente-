@@ -1,0 +1,26 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-10-model-install",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-22T08:38:15Z",
+ "group": "hf-install",
+ "chain": [
+  "install_orders",
+  "install_report"
+ ],
+ "completed": [],
+ "failed": [
+  "install_orders"
+ ],
+ "next_nodes": [
+  "install_report"
+ ],
+ "current_nodes": [],
+ "route": [
+  "nvidia",
+  "groq",
+  "cerebras",
+  "deepseek_flash"
+ ]
+}
