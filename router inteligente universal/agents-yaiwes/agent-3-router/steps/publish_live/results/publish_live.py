@@ -12,7 +12,4 @@ from pathlib import Path
 
 import requests
 from huggingface_hub import HfApi, whoami
-
-PORT = 8000
-SPACE_SUFFIX = "riu-chat-yaiwes"
-# Id tecnico HF Jobs que mapea a 32 GB RAM (detalle de implementacion; requisito =
+from agents_yaiwes
