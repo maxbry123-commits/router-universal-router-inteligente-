@@ -1,82 +1,107 @@
 import os
 import time
-from huggingface_hub import HfApi
 import requests
+from huggingface_hub import HfApi
+try:
+    from huggingface_hub.errors import HfHubHTTPError
+except ImportError:
+    from huggingface_hub.utils import HfHubHTTPError  # noqa: F401
 
-def launch_and_verify(model_id: str, repo: str, file: str, port: int = 8080) -> dict:
-    # Validate flavor restriction
-    allowed_flavors = {"cpu-basic", "cpu-upgrade"}
-    flavor = "cpu-basic"  # as required by the task
-    if flavor not in allowed_flavors:
-        raise ValueError(f"Flavor '{flavor}' is not allowed. Use one of {allowed_flavors}")
+MODELS = [
+    ("qwen3-0.6b", "Qwen/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"),
+]
 
-    # Build public URL and bash command
+ALLOWED_FLAVOR = "cpu-upgrade"  # 8 vCPU / 32 GB — único permitido
+
+
+def launch_and_verify(model_id: str, repo: str, file: str, port: int = 8080, flavor: str = "cpu-upgrade") -> dict:
+    if flavor != ALLOWED_FLAVOR:
+        raise ValueError("HARDWARE: solo cpu-upgrade 32GB permitido")
+
     url = f"https://huggingface.co/{repo}/resolve/main/{file}"
     comando = (
         f"curl -fL {url} -o /model.gguf && "
         f"/app/llama-server -m /model.gguf --host 0.0.0.0 --port {port} "
-        "-c 8192 -np 4 -cb --cache-prompt --cache-ram 512 "
-        "-fa on -ctk q8_0 -ctv q8_0"
+        f"-c 8192 -np 4 -cb --cache-prompt --cache-ram 512 -fa on -ctk q8_0 -ctv q8_0"
     )
 
-    # Launch job on Hugging Face
     api = HfApi(token=os.environ["HF_TOKEN"])
     job = api.run_job(
         image="ghcr.io/ggml-org/llama.cpp:server",
         command=["bash", "-lc", comando],
-        flavor=flavor,
+        flavor=ALLOWED_FLAVOR,
         timeout="20m",
         expose=[port],
     )
-    job_id = job.id  # correct attribute for JobInfo
 
-    # Wait for job to become RUNNING and health endpoint to respond 200
-    endpoint = None
     start = time.time()
-    while time.time() - start < 300:  # 5 minutes max wait
-        info = api.inspect_job(job_id)
-        if getattr(info, "stage", None) == "RUNNING":
-            endpoint = getattr(info, "endpoint", None)
-            if endpoint:
-                health_url = f"{endpoint}/health"
-                try:
-                    resp = requests.get(
-                        health_url,
-                        headers={"Authorization": f"Bearer {os.environ['HF_TOKEN']}"},
-                        timeout=5,
-                    )
-                    if resp.status_code == 200:
-                        return {
-                            "model_id": model_id,
-                            "job_id": job_id,
-                            "endpoint": endpoint,
-                            "status": "RUNNING_HEALTHY",
-                            "detail": "",
-                        }
-                except Exception as e:
-                    # health check failed, continue waiting
-                    pass
+    job_info = None
+    while time.time() - start < 300:
+        try:
+            job_info = api.inspect_job(job.id)
+        except Exception:
+            time.sleep(5)
+            continue
+        status = getattr(job_info, "status", None)
+        stage = status
+        if hasattr(status, "stage"):
+            stage = status.stage
+        if str(stage).upper() in ("RUNNING", "JobStatus.RUNNING") or stage == "RUNNING":
+            break
+        time.sleep(5)
+    else:
+        return {
+            "model_id": model_id,
+            "job_id": getattr(job, "id", None),
+            "endpoint": None,
+            "status": "FAILED",
+            "detail": "Job did not reach RUNNING within timeout",
+            "flavor": ALLOWED_FLAVOR,
+        }
+
+    endpoint = None
+    runtime = getattr(job_info, "runtime", None)
+    if runtime:
+        if isinstance(runtime, list) and runtime:
+            endpoint = getattr(runtime[0], "url", None)
+        else:
+            endpoint = getattr(runtime, "url", None)
+    if not endpoint:
+        jid = getattr(job, "id", "unknown")
+        endpoint = f"https://{jid}--{port}.jobs.huggingface.co"
+
+    while time.time() - start < 300:
+        try:
+            resp = requests.get(
+                f"{endpoint}/health",
+                headers={"Authorization": f"Bearer {os.environ['HF_TOKEN']}"},
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                return {
+                    "model_id": model_id,
+                    "job_id": getattr(job, "id", None),
+                    "endpoint": endpoint,
+                    "status": "RUNNING_HEALTHY",
+                    "detail": "",
+                    "flavor": ALLOWED_FLAVOR,
+                }
+        except Exception:
+            pass
         time.sleep(5)
 
-    # If we exit the loop, something went wrong
     return {
         "model_id": model_id,
-        "job_id": job_id,
-        "endpoint": endpoint or "",
+        "job_id": getattr(job, "id", None),
+        "endpoint": endpoint,
         "status": "FAILED",
-        "detail": "Job did not become healthy within timeout",
+        "detail": "Health endpoint did not return 200 within timeout",
+        "flavor": ALLOWED_FLAVOR,
     }
 
 
-MODELS = [
-    ("qwen3.5-0.8b", "ggml-org/Qwen3.5-0.8B-GGUF", "Qwen3.5-0.8B-Q4_0.gguf"),
-    ("qwen3-0.6b", "Qwen/Qwen3-0.6B-GGUF", "Qwen3-0.6B-Q8_0.gguf"),
-]
-
-
-def run_all() -> list[dict]:
+def run_all() -> list:
     results = []
     for model_id, repo, file in MODELS:
-        result = launch_and_verify(model_id, repo, file)
-        results.append(result)
+        results.append(launch_and_verify(model_id, repo, file))
     return results
