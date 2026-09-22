@@ -1,0 +1,29 @@
+name: RIU Own Server Launch
+
+# URGENT: launches Qwen3.5-0.8B on the Director's OWN Hugging Face account (his Job, cpu-basic, free) — no download elsewhere, no paid API.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  launch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/agents-yaiwes/common/own_server_launch.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub requests
+      - name: Launch
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: python "router inteligente universal/agents-yaiwes/common/own_server_launch.py"
