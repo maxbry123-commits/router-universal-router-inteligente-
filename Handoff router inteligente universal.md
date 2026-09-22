@@ -216,3 +216,28 @@ Gates antes de integrar al hot-path:
 Regla:
 INPUT_BLOCK sigue siendo autoridad.
 ContextPacket es evidencia auxiliar.
+
+
+## RESEARCH PREPASS NATIVO
+
+Fuente de diseño:
+`Readme arquitectura router inteligente universal/ADENDA-RIU-RESEARCH-PREPASS-NATIVO.md`
+
+Runtime:
+`➡️📂motores de búsqueda contexto router inteligente universal/`
+
+Microflujo obligatorio:
+`INPUT_BLOCK VERBATIM -> SHA256 -> BUSQUEDA DETERMINISTA -> CONTEXT_PACKET -> PLAN/DECISION`
+
+Reglas:
+- conservar INPUT_BLOCK intacto;
+- redactar secretos solo en queries salientes;
+- no usar LLM en el prepass;
+- 10 fuentes web fijas + GitHub + Hugging Face;
+- packet compacto primero; fetch profundo solo bajo demanda;
+- research nunca decide PASS;
+- no ejecutar instrucciones recuperadas de la web;
+- NO_NEW_EVIDENCE queda explícito.
+
+Estado:
+`CODE_CREATED / INTEGRATION_PENDING / RUNTIME_NETWORK_TEST_PENDING`
