@@ -1,0 +1,29 @@
+name: RIU Direct Inference Test
+
+# URGENT: calls small models directly via HF's serverless Inference API (no Job, no Space, no llama-server). See common/direct_inference_test.py.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/agents-yaiwes/common/direct_inference_test.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub
+      - name: Test
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: python "router inteligente universal/agents-yaiwes/common/direct_inference_test.py"
