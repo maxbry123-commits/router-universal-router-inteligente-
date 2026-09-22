@@ -1,0 +1,47 @@
+schema: yaiwes.chain/v1
+
+# Agente 15 — ORQUESTADOR DEL CHAT: Grok Build. Marco: PocketFlow. De principio a fin: baja el binario oficial, confirma que corre, y
+# demuestra una conexión real con DeepSeek vía HF_TOKEN (mismo patrón que el agente 14).
+input_block: |
+  Manda un nuevo 2 agente que se encargue... usen los motores y conecten todo con HF token 1 deepsek
+  Grock es open soure... Grok Build — xAI https://github.com/xai-org/grok-build
+
+agent:
+  id: agent-15-orchestrator-grokbuild
+  framework: pocketflow
+  group: orchestrators
+  route: [nvidia, groq, cerebras]
+  fallback: [deepseek_flash]
+  max_tokens: 2400
+
+context:
+  text: |
+    Grok Build (xai-org/grok-build, Apache-2.0) es el agente/harness de xAI, en Rust, publicado como binario en sus releases de GitHub
+    (nombre típico "grok-x86_64-unknown-linux-gnu" o similar dentro de los assets de la última release). Puede apuntar a "inferencia local"
+    (config.toml), es decir a cualquier endpoint compatible con OpenAI — igual que DeepSeek vía el router de HF (base
+    https://router.huggingface.co/v1, token en HF_TOKEN). Objetivo: confirmar que el binario existe en sus releases, y demostrar UNA
+    llamada real a DeepSeek con ese mismo protocolo (representando la conexión que Grok Build usaría).
+
+steps:
+
+  - id: fetch_and_connect
+    task: |
+      Escribe el módulo Python `grokbuild_connect.py` (un único bloque ```python, dependencias: requests, openai) con la función
+      `check_release_and_ping() -> dict` que: 1) hace un GET a "https://api.github.com/repos/xai-org/grok-build/releases/latest" y guarda
+      la lista de nombres de los assets (`asset_names`); 2) crea `openai.OpenAI(base_url="https://router.huggingface.co/v1",
+      api_key=os.environ["HF_TOKEN"])` y envía UN mensaje ("Responde solo con la palabra OK.") a "deepseek-ai/DeepSeek-V4-Flash"; 3) devuelve
+      {"release_tag", "asset_names", "reply"}. Si algo falla de verdad, deja que la excepción se propague.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: grokbuild_connect.py
+        test: |
+          import os
+          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
+          from grokbuild_connect import check_release_and_ping
+          r = check_release_and_ping()
+          assert r["asset_names"] and r["reply"].strip(), r
+          print(r)
+      - kind: no_secrets
+
+edges: []
