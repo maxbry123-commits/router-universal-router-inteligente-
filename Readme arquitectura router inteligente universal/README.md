@@ -267,3 +267,33 @@ Verificación fresh: HF Job `6aad981352d0dbd7f1d6b827` consultó `https://router
 - Job fresh de provider discovery + smoke auth: `6aad981352d0dbd7f1d6b827`.
 - Workflow de prueba creado en TAREA-1: commit `c52feb559ad9a6e9ddc93c7ab319f86bef02cbb6`, run `35388761622`, job `105741917281`; se detuvo antes de inferencia porque `${{ secrets.HF_TOKEN }}` resolvió vacío en ese contexto. No atribuir ese fallo a los modelos.
 - Estado autoritativo: **20/20 PROVIDER_LIVE_VERIFIED; 0/20 REMOTE_INFERENCE_AUTHENTICATED_PASS con la credencial disponible en las pruebas actuales; GAP_AUTH pendiente**.
+
+
+## Research Prepass determinista
+
+El Router incorpora una capa previa de investigación sin LLM:
+
+INPUT_BLOCK verbatim
+-> Research Prepass
+-> ContextPacket
+-> Context Composer
+-> agente/modelo
+-> plan/ejecución.
+
+La capa reutiliza el motor websearch existente y añade:
+- source registry con 10 sitios técnicos;
+- GitHub REST Search;
+- Hugging Face Hub Search;
+- deduplicación/ranking;
+- presupuesto de contexto;
+- cache por hash;
+- provenance por registro.
+
+No adquiere ownership de routing.
+RedUniversal sigue siendo propietario único del routing.
+
+Ruta:
+➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/➡️📂 motor de búsqueda/
+
+Estado:
+CODE_PRESENT / RUNTIME_NETWORK_TEST_PENDING.
