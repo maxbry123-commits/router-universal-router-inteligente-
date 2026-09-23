@@ -1,63 +1,49 @@
 schema: yaiwes.chain/v1
 input_block: |
-  PRIORIDAD CHAT. Auditoría final independiente del Chat YAIWES contra las instrucciones del Director.
-  Claude/orquestador NO implementa: este agente solo audita evidencia. FAIL_CLOSED. Cero CLOSED falso.
+  PRIORIDAD CHAT. Este agente EJECUTA tareas del chat. NO audita, NO decide cierre, NO declara 100%.
+  Claude/orquestador audita y decide. FAIL_CLOSED.
 
 agent:
   id: agent-18-chat-final-auditor
   framework: pocketflow
-  group: audit
+  group: chat
   route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
-  max_tokens: 3500
+  max_tokens: 2800
 
 context:
   text: |
-    Audita SOLO CHAT y almacenamiento del chat. No mezclar Router general, Jev, TimesFM ni modelos locales salvo requisito directo del chat.
-    HECHO exige evidencia real: ruta existente, estado de agente, URL live o test.
-    El auditor NO puede correr hasta que agent-16 y agent-17 estén CLOSED con evidencia live.
+    Rol estricto: EJECUTOR.
+    Claude/orquestador hace la auditoría y define PASS/FAIL.
+    Reutiliza el Chat MVP existente. No crear otro chat ni otro Router.
+    Este agente debe trabajar solo en cerrar el cableado visible de Archivos/Memoria y almacenamiento del chat.
+    No escribir informes de auditoría.
 
 steps:
-  - id: wait_live
+  - id: storage_memory_panel
     task: |
-      Escribe SOLO Python en gate_live.py. Debe localizar el repo desde __file__, leer:
-      router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json y
-      router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json.
-      La función check() devuelve {"status":"READY"} SOLO si ambos status son CLOSED y existen sus results/output.txt.
-      En cualquier otro caso lanza RuntimeError con los estados observados. No inventar evidencia.
+      Escribe SOLO JavaScript en storage_memory_panel.js para el Chat MVP existente.
+      Debe definir initStorageMemoryPanel(container, fetchJson) y mostrar un panel persistente "Archivos / Memoria".
+      Debe permitir listar estado de almacenamiento con GET /chat/storage y subir documentos usando el endpoint existente del Chat MVP.
+      Debe usar textContent para datos del servidor, sin innerHTML con datos externos, sin secretos y sin inventar endpoints nuevos.
     checks:
-      - kind: python_ast
-      - kind: python_exec
-        module: gate_live.py
-        test: |
-          from gate_live import check
-          r = check()
-          assert r["status"] == "READY"
+      - kind: js_syntax
+        file: storage_memory_panel.js
+      - kind: contains
+        values: [initStorageMemoryPanel, /chat/storage, Archivos, Memoria]
       - kind: no_secrets
 
-  - id: final_chat_cross
-    context_file:
-      - Claude notas/INPUT-VERBATIM-2026-09-20-chat-mvp.md
-      - Claude notas/PLAN-MAESTRO-CHAT-MVP.md
-      - Claude notas/PLAN-ANEXO-B-STORAGE-Y-CHAT-OPEN-SOURCE.md
-      - router inteligente universal/agents-yaiwes/WATCHDOG/STATUS.md
-      - router inteligente universal/agents-yaiwes/agent-5-auditor/AUDIT-CHECKLIST.md
-      - router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json
-      - router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json
+  - id: wire_storage_memory
     task: |
-      Audita uno por uno los requisitos del CHAT: URL pública, OAuth, enviar/recibir mensaje, selector de modelos,
-      con/sin agente, cuentas GitHub, archivos/documentos, panel Archivos/Memoria, Secret Bank, trabajo paralelo,
-      Crazy Wall/handoff, almacenamiento solicitado y backend live.
-      Devuelve SOLO {"items":[...]} con mínimo 12 ítems. Cada ítem: id, quote textual del Director, status
-      HECHO/PARCIAL/PENDIENTE/REFUTADO/AMBIGUO, area, evidence (rutas reales), note y tarea.
-      No declares 100% por código presente solamente.
+      Escribe SOLO JavaScript en wire_storage_memory.js que conecte initStorageMemoryPanel al sistema de paneles existente del chat.
+      Debe reutilizar wirePanels/initVaultPanel/initRouterPanel/initJobsPanel si existen y añadir la sección Archivos / Memoria sin redefinirlos.
+      No audites ni declares PASS global.
     checks:
-      - kind: audit_json
-        min_items: 12
-        sources:
-          - Claude notas/INPUT-VERBATIM-2026-09-20-chat-mvp.md
-          - Claude notas/PLAN-MAESTRO-CHAT-MVP.md
+      - kind: js_syntax
+        file: wire_storage_memory.js
+      - kind: contains
+        values: [initStorageMemoryPanel, wirePanels, Archivos, Memoria]
       - kind: no_secrets
 
 edges:
-  - wait_live -> final_chat_cross
+  - storage_memory_panel -> wire_storage_memory
