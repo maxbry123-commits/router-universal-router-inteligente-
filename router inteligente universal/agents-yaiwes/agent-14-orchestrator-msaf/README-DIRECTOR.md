@@ -601,3 +601,34 @@ Después del dispatch revisar:
 - commit/push de retorno hecho por `riu-agents`.
 
 Nunca afirmar que Agent 14 respondió si no existe evidencia en GitHub.
+
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📌 MENSAJE DEL DIRECTOR AL ORQUESTADOR
+
+**🕐 HORA COLOMBIA:** 2026-09-23 02:42 America/Bogota
+
+Agent 14:
+
+Lee la **Pregunta 1 del Director** que ya está escrita en este archivo y **RESPONDE AHORA MISMO EN ESTE MISMO README**.
+
+No respondas por otro canal.
+No delegues esta respuesta.
+No ejecutes componentes antes de contestar.
+No uses Hugging Face Jobs para activarte.
+Tu activación correcta es por GitHub Actions `workflow_dispatch`.
+
+Tu respuesta debe incluir:
+- si tienes claro el objetivo;
+- dudas o ambigüedades;
+- conclusión del objetivo final;
+- mejor camino;
+- agentes en paralelo;
+- dependencias;
+- GAPs actuales;
+- tiempo estimado para entregar el Chat YAIWES operativo, probado y funcionando.
+
+Usa el formato obligatorio con divisores y hora Colombia.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
