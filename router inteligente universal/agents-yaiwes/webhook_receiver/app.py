@@ -1,16 +1,17 @@
-"""Webhook receiver Space: always-awake, listens for GitHub push events and makes sure the persistent Router Job is alive — launching a
-fresh one if the current LIVE_URL is unreachable. No GitHub Actions involved anywhere in this path."""
+"""Webhook receiver, as a Gradio Space (free hardware, no payment method needed) instead of Docker.
+Gradio's own FastAPI app (`demo.app`) gets the real /webhook route mounted on it — same logic as before, just a different Space type."""
 from __future__ import annotations
 
+import base64
 import os
 import re
 import time
 
+import gradio as gr
 import requests
-from fastapi import FastAPI, Request
+from fastapi import Request
 from huggingface_hub import HfApi
 
-app = FastAPI()
 REPO_RAW = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag"
 GH_CONTENTS_API = "https://api.github.com/repos/maxbry123-commits/router-universal-router-inteligente-/contents/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag"
 
@@ -55,15 +56,29 @@ def launch_router_job() -> str | None:
         return None
     get = requests.get(GH_CONTENTS_API, headers={"Authorization": "Bearer " + gh_token}, timeout=15).json()
     new_content = f"PAUSED=false\nLIVE_URL={ok}\n"
-    import base64
     requests.put(GH_CONTENTS_API, headers={"Authorization": "Bearer " + gh_token},
                 json={"message": "webhook: relanzado el Router central (URL nueva)", "content": base64.b64encode(new_content.encode()).decode(), "sha": get["sha"]}, timeout=15)
     return ok
 
 
-@app.get("/")
-def root() -> dict:
-    return {"status": "receptor de webhook vivo, esperando push de GitHub"}
+def status_check() -> str:
+    live = current_live_url()
+    if live and router_alive(live):
+        return f"Router vivo: {live}"
+    return f"Router NO responde (última URL conocida: {live}). Usa el webhook o el botón para relanzarlo."
+
+
+with gr.Blocks(title="RIU Webhook Receiver") as demo:
+    gr.Markdown("# Receptor de webhook del Router Inteligente Universal\nSiempre despierto. Revisa/relanza el Job del Router.")
+    out = gr.Textbox(label="Estado")
+    gr.Button("Revisar ahora").click(status_check, outputs=out)
+
+app = demo.app
+
+
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok", "receiver": "alive"}
 
 
 @app.post("/webhook")
@@ -74,3 +89,7 @@ async def webhook(request: Request) -> dict:
         return {"event": event, "action": "ROUTER_YA_VIVO", "url": live}
     new_url = launch_router_job()
     return {"event": event, "action": "ROUTER_RELANZADO" if new_url else "FALLO_AL_RELANZAR", "url": new_url}
+
+
+if __name__ == "__main__":
+    demo.launch(server_name="0.0.0.0", server_port=7860)
