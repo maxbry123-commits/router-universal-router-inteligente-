@@ -14,80 +14,30 @@ agent:
   - cerebras
   - minimax_m3
   fallback: []
-  max_tokens: 1200
+  max_tokens: 400
 context:
-  text: "Candado: hardware_sheriff.py. Solo máquina 32 GB RAM.\nRÉPLICA own_server_launch:\
-    \ image llama.cpp:server, curl GGUF en Job, /app/llama-server,\nflags -c 8192\
-    \ -np 4 -cb --cache-ram 512 -fa on -ctk/-ctv q8_0, puerto 8080.\nPoll: api.inspect_job\
-    \ + https://{job_id}--8080.hf.jobs/health.\nCOPIA TEMPLATE verbatim. Cero regeneración.\n\
-    \n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-10-model-install/ORDEN-HF.md\
-    \ ===\n# ORDEN HF — agent-10 install_launch_test (verbatim, sin fences)\n\nCopia\
-    \ verbatim el archivo en steps/install_launch_test/results/install_launch_test.py\n\
-    o el TEMPLATE tras BEGIN_TEMPLATE.\nPROHIBIDO regenerar. Poll con api.inspect_job\
-    \ (nunca .refresh en el objeto job).\nMétodo = own_server_launch.py (Qwen3.5-0.8B,\
-    \ /app/llama-server, --8080.hf.jobs).\nSolo máquina 32 GB RAM. NUNCA .gguf al\
-    \ repo.\n\nBEGIN_TEMPLATE\n\"\"\"install_launch_test — RÉPLICA verbatim del método\
-    \ own_server_launch que YA tiene /health OK.\nPROHIBIDO regenerar. Poll solo con\
-    \ api.inspect_job. Solo máquina 32 GB RAM.\nModelo vivo confirmado: Qwen3.5-0.8B\
-    \ → https://<job_id>--8080.hf.jobs/health\n\"\"\"\nfrom __future__ import annotations\n\
-    \nimport os\nimport sys\nimport time\nfrom pathlib import Path\n\nimport requests\n\
-    from huggingface_hub import HfApi\n\ntry:\n    from huggingface_hub.errors import\
-    \ HfHubHTTPError\nexcept Exception:  # pragma: no cover\n    from huggingface_hub.utils\
-    \ import HfHubHTTPError  # type: ignore\n\n_COMMON = Path(__file__).resolve().parents[4]\
+  text: "Copia GOLDEN/install_launch_test.py verbatim a results/install_launch_test.py.\n\
+    El wrapper llama own_server_launch.main(). Solo máquina 32 GB RAM.\n\n\n=== ARCHIVO\
+    \ router inteligente universal/agents-yaiwes/agent-10-model-install/GOLDEN/install_launch_test.py\
+    \ ===\n\"\"\"GOLDEN wrapper — NO regenerar. Ejecuta common/own_server_launch.py\
+    \ (método vivo Director).\nSolo máquina 32 GB RAM. Meta: RUNNING_HEALTHY vía /health\
+    \ en --8080.hf.jobs.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\n\
+    import sys\nfrom pathlib import Path\n\n_COMMON = Path(__file__).resolve().parents[4]\
     \ / \"common\"\nif str(_COMMON) not in sys.path:\n    sys.path.insert(0, str(_COMMON))\n\
-    from hardware_sheriff import HardwareSheriffError, assert_machine_32gb_ram, guarded_run_job\n\
-    \n# RÉPLICA del método vivo (own_server_launch.py) — 1 modelo esta ronda\nMODELS\
-    \ = [\n    (\"qwen3.5-0.8b\", \"ggml-org/Qwen3.5-0.8B-GGUF\", \"Qwen3.5-0.8B-Q4_0.gguf\"\
-    ),\n]\nJOB_TIMEOUT = \"45m\"\nHEALTH_WAIT_S = 900\nPOLL_S = 10\nPORT = 8080\n\
-    FLAVOR_32GB = \"cpu-upgrade\"\nIMAGE = \"ghcr.io/ggml-org/llama.cpp:server\"\n\
-    \n\ndef launch_and_verify(model_id, repo, file, port=PORT, flavor=FLAVOR_32GB)\
-    \ -> dict:\n    try:\n        assert_machine_32gb_ram(flavor=flavor)\n    except\
-    \ HardwareSheriffError as e:\n        raise ValueError(str(e)) from e\n\n    token\
-    \ = os.environ[\"HF_TOKEN\"]\n    api = HfApi(token=token)\n    url = f\"https://huggingface.co/{repo}/resolve/main/{file}\"\
-    \n    sh = (\n        f\"curl -fL '{url}' -o /model.gguf && /app/llama-server\
-    \ -m /model.gguf \"\n        f\"--host 0.0.0.0 --port {port} \"\n        \"-c\
-    \ 8192 -np 4 -cb --cache-prompt --cache-reuse 256 --cache-ram 512 \"\n       \
-    \ \"-fa on -ctk q8_0 -ctv q8_0\"\n    )\n    try:\n        job = guarded_run_job(\n\
-    \            api,\n            image=IMAGE,\n            command=[\"bash\", \"\
-    -lc\", sh],\n            flavor=flavor,\n            timeout=JOB_TIMEOUT,\n  \
-    \          expose=[port],\n        )\n    except HfHubHTTPError as e:  # pragma:\
-    \ no cover\n        return {\n            \"model_id\": model_id,\n          \
-    \  \"job_id\": None,\n            \"endpoint\": None,\n            \"status\"\
-    : \"FAILED\",\n            \"detail\": f\"run_job failed: {e}\",\n           \
-    \ \"flavor\": flavor,\n        }\n    except Exception as e:\n        return {\n\
-    \            \"model_id\": model_id,\n            \"job_id\": None,\n        \
-    \    \"endpoint\": None,\n            \"status\": \"FAILED\",\n            \"\
-    detail\": f\"sheriff/run_job: {type(e).__name__}: {e}\",\n            \"flavor\"\
-    : flavor,\n        }\n\n    job_id = getattr(job, \"id\", None)\n    headers =\
-    \ {\"Authorization\": f\"Bearer {token}\"}\n    start = time.time()\n    health_ok\
-    \ = False\n    endpoint = None\n    detail = \"\"\n\n    while time.time() - start\
-    \ < HEALTH_WAIT_S:\n        try:\n            info = api.inspect_job(job_id=job_id)\n\
-    \            stage = getattr(getattr(info, \"status\", None), \"stage\", None)\
-    \ or getattr(info, \"stage\", None)\n            cand = [\n                getattr(info,\
-    \ \"endpoint\", None),\n                getattr(job, \"endpoint\", None),\n  \
-    \              f\"https://{job_id}--{port}.hf.jobs\",\n                f\"https://{job_id}.jobs.huggingface.co\"\
-    ,\n            ]\n            urls = [str(u).rstrip(\"/\") for u in dict.fromkeys(cand)\
-    \ if u]\n            if stage in (\"ERROR\", \"COMPLETED\", \"CANCELED\", \"DELETED\"\
-    ):\n                detail = f\"Job ended early (stage={stage})\"\n          \
-    \      break\n            if stage != \"RUNNING\":\n                detail = f\"\
-    Job not RUNNING (stage={stage})\"\n                time.sleep(POLL_S)\n      \
-    \          continue\n            for u in urls:\n                try:\n      \
-    \              resp = requests.get(f\"{u}/health\", headers=headers, timeout=15)\n\
-    \                    if resp.status_code == 200:\n                        health_ok\
-    \ = True\n                        endpoint = u\n                        break\n\
-    \                    detail = f\"Health {resp.status_code} at {u}\"\n        \
-    \        except Exception as e:  # pragma: no cover\n                    detail\
-    \ = f\"health err {type(e).__name__} at {u}\"\n            if health_ok:\n   \
-    \             break\n        except Exception as e:  # pragma: no cover\n    \
-    \        detail = f\"Error during polling: {e}\"\n        time.sleep(POLL_S)\n\
-    \n    status = \"RUNNING_HEALTHY\" if health_ok else \"FAILED\"\n    if not health_ok\
-    \ and not detail:\n        detail = f\"Timeout waiting for /health ({HEALTH_WAIT_S}s)\"\
-    \n\n    return {\n        \"model_id\": model_id,\n        \"job_id\": job_id,\n\
-    \        \"endpoint\": endpoint,\n        \"status\": status,\n        \"detail\"\
-    : detail,\n        \"flavor\": flavor,\n    }\n\n\ndef run_all() -> list[dict]:\n\
-    \    return [launch_and_verify(mid, repo, file) for mid, repo, file in MODELS]\n\
-    \n\nif __name__ == \"__main__\":\n    for res in run_all():\n        print(res)\n\
-    \nEND_TEMPLATE\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/common/own_server_launch.py\
+    \nfrom hardware_sheriff import HardwareSheriffError, assert_machine_32gb_ram\n\
+    from own_server_launch import main as own_server_main\n\nFLAVOR_32GB = \"cpu-upgrade\"\
+    \n\n\ndef launch_and_verify(model_id=\"qwen3.5-0.8b\", repo=\"ggml-org/Qwen3.5-0.8B-GGUF\"\
+    , file=\"Qwen3.5-0.8B-Q4_0.gguf\", port=8080, flavor=FLAVOR_32GB):\n    try:\n\
+    \        assert_machine_32gb_ram(flavor=flavor)\n    except HardwareSheriffError\
+    \ as e:\n        raise ValueError(str(e)) from e\n    if flavor != FLAVOR_32GB:\n\
+    \        raise ValueError(f\"solo máquina 32 GB RAM, got {flavor}\")\n    code\
+    \ = own_server_main()\n    ok = code == 0\n    return {\n        \"model_id\"\
+    : model_id,\n        \"job_id\": None,\n        \"endpoint\": None,\n        \"\
+    status\": \"RUNNING_HEALTHY\" if ok else \"FAILED\",\n        \"detail\": \"own_server_launch.main\
+    \ exit=%s\" % code,\n        \"flavor\": flavor,\n    }\n\n\ndef run_all():\n\
+    \    return [launch_and_verify()]\n\n\nif __name__ == \"__main__\":\n    r = run_all()[0]\n\
+    \    print(r)\n    raise SystemExit(0 if r[\"status\"] == \"RUNNING_HEALTHY\"\
+    \ else 1)\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/common/own_server_launch.py\
     \ ===\n\"\"\"Launches a REAL local model server on the Director's OWN Hugging\
     \ Face account\n(his compute, his Job) — NOT a third-party paid API. Weights are\
     \ fetched from the\npublic Hub URL inside the Job. Solo máquina de 32 GB RAM (via\
@@ -130,34 +80,26 @@ context:
     \ logs_final={' | '.join(logs[-8:])[:600]}\")\n    return 0 if ok else 1\n\n\n\
     if __name__ == \"__main__\":\n    raise SystemExit(main())\n"
   max_chars: 40000
-task: 'NO regeneres código. Copia verbatim el TEMPLATE de ORDEN-HF.md
+task: 'Copia verbatim GOLDEN/install_launch_test.py a results/install_launch_test.py.
 
-  (o deja results/install_launch_test.py si ya es el TEMPLATE).
-
-  Debe contener inspect_job; no llamar .refresh al job.
-
-  Debe lanzar Qwen3.5-0.8B con guarded_run_job en máquina 32 GB RAM.
+  Un solo bloque python idéntico al GOLDEN. No inventes código.
 
   '
 checks:
 - kind: python_ast
 - kind: contains
   values:
-  - inspect_job
-  - Qwen3.5-0.8B
-  - guarded_run_job
-  - --8080.hf.jobs
+  - own_server_launch
+  - own_server_main
+  - assert_machine_32gb_ram
+  - cpu-upgrade
 - kind: python_exec
   module: install_launch_test.py
-  test: "import os\nassert os.environ.get(\"HF_TOKEN\"), \"falta HF_TOKEN en el entorno\"\
-    \nimport install_launch_test as m\nsrc = open(m.__file__).read()\nassert \"inspect_job\"\
-    \ in src, \"debe usar api.inspect_job\"\nassert \"api.inspect_job\" in src or\
-    \ \"inspect_job(\" in src\nassert \"JobInfo\" not in src or \"inspect_job\" in\
-    \ src\nassert \"Qwen3.5-0.8B\" in src\nfrom install_launch_test import run_all,\
-    \ launch_and_verify\nraised = False\ntry:\n    launch_and_verify(\"x\", \"y/z\"\
-    , \"f.gguf\", flavor=\"cpu-basic\")\nexcept ValueError:\n    raised = True\nassert\
-    \ raised, \"debía rechazar máquina ≠32GB\"\nresults = run_all()\nassert len(results)\
-    \ == 1\nr = results[0]\nassert r.get(\"flavor\") == \"cpu-upgrade\"\nassert r[\"\
-    status\"] == \"RUNNING_HEALTHY\", f\"{r.get('detail')}\"\nprint(r[\"model_id\"\
-    ], r[\"endpoint\"], r.get(\"job_id\"))\n"
+  test: "import os\nassert os.environ.get(\"HF_TOKEN\"), \"falta HF_TOKEN\"\nimport\
+    \ install_launch_test as m\nsrc = open(m.__file__).read()\nassert \"own_server_launch\"\
+    \ in src\nassert \"own_server_main\" in src\nfrom install_launch_test import run_all,\
+    \ launch_and_verify\nraised = False\ntry:\n    launch_and_verify(flavor=\"cpu-basic\"\
+    )\nexcept ValueError:\n    raised = True\nassert raised, \"debía rechazar 16GB\"\
+    \nresults = run_all()\nassert len(results) == 1\nassert results[0][\"status\"\
+    ] == \"RUNNING_HEALTHY\", results[0].get(\"detail\")\nprint(results[0])\n"
 - kind: no_secrets
