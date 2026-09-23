@@ -1,0 +1,51 @@
+{
+  "schema": "yaiwes.orchestrator-watchdog/v1",
+  "id": "AGENT15-GROK-WATCHDOG-5MIN",
+  "enabled": true,
+  "interval_seconds": 300,
+  "activation": {
+    "method": "existing_authorized_dispatcher_or_agent_runtime",
+    "forbidden": [
+      "GitHub Actions",
+      ".github/workflows",
+      "ChatGPT automation watchdog"
+    ]
+  },
+  "channel": "README-DIRECTOR.md",
+  "authority": "DIRECTOR",
+  "orchestrator": "agent-15-orchestrator-grok",
+  "orchestrator_mode": "ORCHESTRATOR_EXECUTOR",
+  "peer_orchestrator": "agent-14-orchestrator-msaf",
+  "ownership_rule": "ONE_NODE_ONE_OWNER_ORCHESTRATOR",
+  "managed_agents": [
+    "agent-4-router-smol",
+    "agent-8-router-local",
+    "agent-11-download-extraction",
+    "agent-12-yaiwes-router",
+    "agent-16-chat-space-oauth",
+    "agent-17-chat-backend-32gb",
+    "agent-18-chat-final-auditor",
+    "agent-19-chat-components-motors"
+  ],
+  "cycle": [
+    "READ README-DIRECTOR.md for new DIRECTOR instructions VERBATIM",
+    "READ Crazy Wall/HANDOFF/evidence of managed agents",
+    "CHECK owner_orchestrator before assigning or executing a node",
+    "DETECT GAPs, stale work, missing evidence and dependencies",
+    "IF GAP research repo + official Hugging Face + HF community + upstream OSS once",
+    "EXECUTE FIX when Grok Build runtime owns it; otherwise DELEGATE to authorized specialist",
+    "TEST and READ-BACK",
+    "APPEND Director-facing response with Colombia time",
+    "APPEND one valid JSON object in a separate fenced block"
+  ],
+  "hard_rules": [
+    "INPUT BLOCK VERBATIM 1:1",
+    "No GitHub Actions",
+    "No workflow modification",
+    "No canonical motor modification",
+    "No false PASS",
+    "No secret values in README/JSON/logs",
+    "Only Agents 4,8,11,12,16,17,18,19 may be delegated work",
+    "Violation of VERBATIM => TERMINATED_FOR_EXECUTION until Director authorization"
+  ]
+}
