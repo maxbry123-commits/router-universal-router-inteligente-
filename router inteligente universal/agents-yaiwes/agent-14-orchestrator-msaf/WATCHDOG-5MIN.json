@@ -105,9 +105,15 @@
     "No false PASS",
     "No secret values in README/JSON/logs",
     "CHAT_100 only with real end-to-end evidence",
-    "Agent 14 may execute only Microsoft Agent Framework runtime/orchestration work; specialty work delegates to authorized pool"
+    "AGENTE ORQUESTADOR MICROSOFT = ORCHESTRATOR_EXECUTOR",
+    "Read and write Director instructions only through README-DIRECTOR.md",
+    "Do not claim ACTIVE/RUNNING without runtime heartbeat"
   ],
   "orchestrator_mode": "ORCHESTRATOR_EXECUTOR",
   "peer_orchestrator": "agent-15-orchestrator-grok",
-  "ownership_rule": "ONE_NODE_ONE_OWNER_ORCHESTRATOR"
+  "ownership_rule": "ONE_NODE_ONE_OWNER_ORCHESTRATOR",
+  "display_name": "AGENTE ORQUESTADOR MICROSOFT",
+  "status_mode": "ARMED_UNTIL_RUNTIME_HEARTBEAT",
+  "require_runtime_heartbeat": true,
+  "heartbeat_destination": "README-DIRECTOR.md"
 }
