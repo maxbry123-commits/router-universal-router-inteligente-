@@ -1,0 +1,81 @@
+name: RIU Agent Inbox Poller
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'router inteligente universal/agents-yaiwes/inbox/*.json'
+  schedule:
+    # GitHub Actions minimum interval is 5 minutes.
+    # Offset from minute 0 to reduce top-of-hour congestion.
+    - cron: '2/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: riu-agent-inbox-poller
+  cancel-in-progress: false
+
+jobs:
+  poll-inbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install YAIWES agent runtime
+        run: pip install pocketflow smolagents openai fastapi httpx pydantic huggingface_hub pyyaml cryptography requests
+
+      - name: Process immutable JSON inbox
+        env:
+          RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
+          RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RIU_INBOX_MAX_TASKS: '4'
+          RIU_MAX_DELEGATION_DEPTH: '3'
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: utf-8
+          LC_ALL: C.UTF-8
+        run: python "router inteligente universal/agents-yaiwes/common/inbox_dispatcher.py"
+
+      - name: Commit receipts, agent outputs, Director responses and delegated inbox tasks
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "riu-agent-inbox"
+          git config user.email "riu-agent-inbox@users.noreply.github.com"
+
+          find "router inteligente universal/agents-yaiwes" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+          find "router inteligente universal/agents-yaiwes" -path '*/results/models/*' -type f -delete 2>/dev/null || true
+          find "router inteligente universal/agents-yaiwes" -name '*.gguf' -size +10M -delete 2>/dev/null || true
+
+          git add "router inteligente universal/agents-yaiwes" || true
+          if git diff --cached --quiet; then
+            echo "RIU_INBOX_COMMIT=NO_CHANGES"
+            exit 0
+          fi
+
+          git commit -m "agents: process JSON inbox tasks"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && {
+              echo "::notice title=RIU_INBOX_COMMIT::pushed"
+              exit 0
+            }
+            sleep 5
+          done
+
+          echo "::error title=RIU_INBOX_COMMIT::push failed after retries"
+          exit 1
