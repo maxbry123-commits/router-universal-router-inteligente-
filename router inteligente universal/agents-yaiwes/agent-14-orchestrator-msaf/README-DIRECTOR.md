@@ -558,3 +558,46 @@ Si el Director dice “activa Agent X”:
 `escribir tarea → commit GitHub → workflow_dispatch solo Agent X → esperar resultado → leer commit/evidencia`.
 
 No inventar otro mecanismo.
+
+---
+
+# 🔵 PROTOCOLO OFICIAL DE ACTIVACIÓN — DIRECTOR ↔ AGENTE ORQUESTADOR MICROSOFT
+
+## REGLA ABSOLUTA
+Para hablar con este agente **NO se usa Hugging Face Job**.
+
+El canal operativo es:
+
+`DIRECTOR → README-DIRECTOR.md → COMMIT/PUSH → GitHub Actions → RIU Agents Run → only=agent-14-orchestrator-msaf → chain.py → pocketflow_agent.py → dispatcher → LLM → Sheriff → respuesta → COMMIT/PUSH → README-DIRECTOR.md`
+
+## ACTIVACIÓN EXACTA
+1. El Director o Sol escribe la instrucción VERBATIM en este `README-DIRECTOR.md`.
+2. Se hace commit/push de la instrucción a `main`.
+3. Se hace **workflow_dispatch** del workflow existente:
+   `.github/workflows/riu-agents-run.yml`
+4. Input obligatorio:
+   `only=agent-14-orchestrator-msaf`
+5. Está PROHIBIDO dejar `only` vacío para una conversación con el Director, porque eso activaría el swarm.
+6. GitHub Runner ejecuta únicamente:
+   `python agents-yaiwes/chain.py agents-yaiwes/agent-14-orchestrator-msaf`
+7. Agent 14 procesa la instrucción mediante su runtime real.
+8. La respuesta debe quedar en este mismo `README-DIRECTOR.md`, además de su evidencia en Crazy Wall/HANDOFF/results.
+9. El workflow hace commit/push de los resultados a GitHub.
+10. Sol lee la respuesta del repo y se la muestra al Director. Sol NO responde por Agent 14.
+
+## HUGGING FACE
+HF queda **fuera del circuito de conversación Director ↔ Agent 14**.
+Solo puede intervenir si una tarea final autorizada requiere explícitamente operar un modelo/recurso de HF.
+Nunca usar un HF Job simplemente para hacer que Agent 14 lea o responda una instrucción.
+
+## VALIDACIÓN OBLIGATORIA
+Después del dispatch revisar:
+- run de `RIU Agents Run`;
+- que `only=agent-14-orchestrator-msaf`;
+- `crazy_wall.state.json`;
+- `HANDOFF.md`;
+- `steps/<nodo>/results/output.txt`;
+- respuesta añadida a este README;
+- commit/push de retorno hecho por `riu-agents`.
+
+Nunca afirmar que Agent 14 respondió si no existe evidencia en GitHub.
