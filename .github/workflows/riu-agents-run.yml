@@ -12,6 +12,7 @@ on:
   push:
     paths:
       - 'router inteligente universal/agents-yaiwes/agent-19-chat-components-motors/ORDER.md'
+      - 'router inteligente universal/agents-yaiwes/CHAT-ORDER.md'
   workflow_dispatch:
     inputs:
       only:
@@ -22,7 +23,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: riu-agents-run-${{ github.event_name == 'push' && 'agent-19-chat-components-motors' || inputs.only || 'all' }}
+  group: riu-agents-run-${{ github.event_name == 'push' && 'chat-isolated' || inputs.only || 'all' }}
   cancel-in-progress: false
 
 jobs:
@@ -73,7 +74,8 @@ jobs:
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ONLY: ${{ github.event_name == 'push' && 'agent-19-chat-components-motors' || inputs.only }}
+          ONLY: ${{ github.event_name == 'push' && contains(github.event.head_commit.modified, 'router inteligente universal/agents-yaiwes/agent-19-chat-components-motors/ORDER.md') && 'agent-19-chat-components-motors' || inputs.only }}
+          CHAT_ONLY: ${{ github.event_name == 'push' && contains(github.event.head_commit.modified, 'router inteligente universal/agents-yaiwes/CHAT-ORDER.md') && '1' || '0' }}
           PYTHONUTF8: '1'
           PYTHONIOENCODING: utf-8
           LC_ALL: C.UTF-8
@@ -83,7 +85,12 @@ jobs:
           cd "router inteligente universal"
           for d in agents-yaiwes/agent-*/; do
             d="${d%/}"
-            if [ -f "$d/chain.yaml" ] && { [ -z "$ONLY" ] || [ "$(basename "$d")" = "$ONLY" ]; }; then
+            name="$(basename "$d")"
+            chat_match=0
+            case "$name" in
+              agent-16-chat-space-oauth|agent-17-chat-backend-32gb|agent-18-chat-final-auditor) chat_match=1 ;;
+            esac
+            if [ -f "$d/chain.yaml" ] && { [ -n "$ONLY" ] && [ "$name" = "$ONLY" ] || [ "$CHAT_ONLY" = "1" ] && [ "$chat_match" = "1" ] || [ -z "$ONLY" ] && [ "$CHAT_ONLY" != "1" ]; }; then
               timeout 5400 python agents-yaiwes/chain.py "$d" > "/tmp/$(basename "$d").log" 2>&1 &
             fi
           done
