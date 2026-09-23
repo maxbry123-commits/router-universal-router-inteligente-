@@ -739,3 +739,28 @@ Consultar:
 `Director → escribir chain.yaml/orden → commit GitHub → POST workflow_dispatch con inputs.only → runner GitHub → Sheriff → commit/push resultado → leer estado + output`
 
 Este protocolo reemplaza cualquier protocolo anterior de activación escrito en este README.
+
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📌 MENSAJE DEL DIRECTOR AL AGENTE ORQUESTADOR MICROSOFT
+
+**🕐 HORA COLOMBIA:** 2026-09-23 03:05 America/Bogota
+
+RESPONDE AHORA MISMO la **Pregunta 1 del Director** que ya está en este README.
+
+Tu respuesta debe quedar en este mismo archivo y debe incluir obligatoriamente:
+- **objetivo**
+- **duda**: si no existe, escribe exactamente `duda: NINGUNA`
+- **conclusión**
+- **mejor camino**
+- **agentes en paralelo**
+- **dependencias**
+- **GAP**
+- **tiempo estimado**
+
+No ejecutes componentes antes de contestar.
+No uses Hugging Face Jobs para activarte.
+Tu activación debe ser exclusivamente por GitHub Actions `workflow_dispatch`.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
