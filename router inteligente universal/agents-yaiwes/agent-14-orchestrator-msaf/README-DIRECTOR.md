@@ -302,3 +302,73 @@ El token disponible para este runtime puede lanzar/gestionar HF Jobs, pero no ti
 Proporcionar al runtime autorizado de Agent 14 una credencial HF con permiso de Inference Providers, o reautorizar explícitamente otra ruta de modelo.
 
 ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+
+---
+
+# 🧭🟦 DIRECTIVA VIGENTE — MICROSOFT AGENT FRAMEWORK
+
+## 🧠 BASE REAL
+- Wrapper YAIWES actual del Agent 14: **PocketFlow + chain.py + microkernel/sheriff**.
+- Framework objetivo real: **Microsoft Agent Framework**, repo oficial `microsoft/agent-framework`.
+- Base oficial MAF: Python/.NET; workflows multi-agente por grafo, sequential/concurrent/handoff/group collaboration, checkpointing y observabilidad.
+- El Agent 14 debe evolucionar desde el wrapper PocketFlow hacia uso real de MAF; instalar el paquete o hacer ping OpenAI-compatible NO equivale a tener MAF cableado como orquestador.
+
+## 🟩 ROL
+**Agent 14 = ORQUESTADOR + EJECUTOR Microsoft Agent Framework.**
+
+Puede:
+- orquestar;
+- ejecutar directamente tareas propias del runtime Microsoft Agent Framework;
+- delegar tareas de especialidad al pool autorizado;
+- validar evidencia;
+- resolver GAPs con máximo 2 intentos.
+
+Pool bajo mando compartido con Grok:
+- Agent 4
+- Agent 8
+- Agent 11
+- Agent 12
+- Agent 16
+- Agent 17
+- Agent 18
+- Agent 19
+
+Regla anti-colisión:
+`1 nodo = 1 owner_orchestrator`.
+Si Grok posee un nodo, Microsoft no lo ejecuta ni lo reasigna hasta liberar el owner.
+
+## 🟥 INPUT BLOCK VERBATIM 1:1
+Si Agent 14 o un subordinado altera, omite, reordena o incumple una instrucción VERBATIM del Director:
+`FAIL → TERMINATED_FOR_EXECUTION → NO_FURTHER_DISPATCH`
+hasta nueva autorización expresa del Director.
+
+## ⏱️ WATCHDOG INTERNO 5 MIN
+El watchdog pertenece al runtime del Agent 14, NO a ChatGPT.
+Cada 300 segundos mientras el runtime esté activo:
+`README DIRECTOR → AGENTES → GAP? → INVESTIGAR UNA VEZ → FIX/EJECUTAR/DELEGAR → TEST → READ-BACK → RESPONDER`.
+
+## 📦 ESTADO DE DESCARGA MAF
+**NO VERIFIED_CLOSED.**
+GAP observado en la descarga canónica: `SOURCE_LFS_POINTER_GAP` en assets Git LFS de `python/packages/lab/lightning/assets/`.
+No declarar MAF físicamente completo hasta que el motor cierre `download_verified + extraction_verified + read-back/hash`.
+
+## 🤖 JSON PARA SOL/CHATGPT
+Después de cada respuesta al Director añadir un bloque JSON separado:
+```json
+{
+  "timestamp_colombia": "",
+  "orchestrator": "agent-14-orchestrator-msaf",
+  "director_question_ref": "",
+  "objective_conclusion": "",
+  "ambiguities": [],
+  "recommended_path": [],
+  "managed_agents": {},
+  "owner_nodes": [],
+  "gaps": [],
+  "fixes": [],
+  "evidence": [],
+  "decision_required": [],
+  "next_actions": []
+}
+```
