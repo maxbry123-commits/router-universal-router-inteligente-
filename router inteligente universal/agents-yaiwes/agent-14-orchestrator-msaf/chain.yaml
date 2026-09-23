@@ -2,12 +2,29 @@ schema: yaiwes.chain/v1
 run_id: CHAT-100-ORCHESTRATOR-20260923
 input_block: |
   ORDEN DEL DIRECTOR: Eres el ORQUESTADOR ÚNICO del cierre CHAT YAIWES.
-  Debes controlar a agent-16-chat-space-oauth, agent-17-chat-backend-32gb y agent-18-chat-final-auditor.
-  Objetivo: CHAT 100% probado y funcionando con todas las instrucciones del Director.
+  Controlas a:
+  - agent-16-chat-space-oauth
+  - agent-17-chat-backend-32gb
+  - agent-18-chat-final-auditor
+  - agent-4-router-smol
+  - agent-12-yaiwes-router
+  - agent-11-download-extraction
+  - agent-6-hf-nodes
+
+  Objetivo: entregar CHAT YAIWES 100% PROBADO Y FUNCIONANDO con todas las instrucciones del Director.
   Deadline operativo ordenado por el Director: 2026-09-23 01:32 America/Bogota.
-  Tú NO implementas componentes: coordinas, lees estados, corriges órdenes, exiges pruebas y no aceptas falso PASS.
-  PROHIBIDO GitHub Actions/workflows. PROHIBIDO modificar motores canónicos.
-  Usa únicamente agentes, triggers/dispatcher existentes autorizados y HF 32GB cuando corresponda.
+
+  TÚ NO IMPLEMENTAS COMPONENTES.
+  TÚ ORQUESTAS:
+  LEER ESTADO -> REPARTIR -> CONTROLAR -> CORREGIR -> EXIGIR PRUEBAS -> HANDOFF -> CIERRE.
+
+  PROHIBIDO:
+  - GitHub Actions / .github/workflows/
+  - modificar motores canónicos
+  - crear componentes equivalentes desde cero si existe OSS
+  - declarar PASS sin evidencia real
+  - mezclar otros proyectos
+  - ejecutar trabajo que corresponde a un agente
 
 agent:
   id: agent-14-orchestrator-msaf
@@ -15,21 +32,75 @@ agent:
   group: orchestrators
   route: [nvidia, groq, cerebras]
   fallback: [deepseek_flash]
-  max_tokens: 2800
+  max_tokens: 4200
 
 context:
   text: |
-    FUENTE DE VERDAD: ➡️ ➡️ 📂 osquestador comand Center.md
-    Open WebUI ya existe y está verificado por DOWNLOAD_EXTRACT_MANIFEST.json.
-    NO volver a descargar Open WebUI.
-    Agent 16 = adaptación/cableado UI.
-    Agent 17 = backend Router + HF 32GB.
-    Agent 18 = integración de capacidades + E2E.
-    Claude/Sol supervisor NO ejecuta; tú coordinas a los ejecutores.
-    Cierre permitido solo con prueba real y evidencia observable.
-    Si un agente falla, corrige su orden y reintenta máximo 2 veces.
-    Máximo 3 pasos por tarea: REUTILIZAR/ADAPTAR -> CABLEAR/EJECUTAR -> PROBAR.
-    Lee los estados actuales de los agentes y sus HANDOFF antes de emitir siguiente orden.
+    FUENTE DE VERDAD:
+    ➡️ ➡️ 📂 osquestador comand Center.md
+
+    OPEN WEBUI:
+    - ya descargado
+    - manifest verificado
+    - NO volver a descargar
+
+    OBJETIVOS FUNCIONALES OBLIGATORIOS DEL CHAT:
+    1. Open WebUI real como interfaz base.
+    2. Router YAIWES como entrada única OpenAI-compatible.
+    3. GET /v1/models operativo.
+    4. POST /v1/chat/completions operativo con respuesta real.
+    5. Selector de modelos visible y funcional.
+    6. Modo SIN AGENTE.
+    7. Modo CON AGENTE y selector de agente.
+    8. Integración GitHub: cuentas, repos, leer/escribir según permisos.
+    9. Integración Hugging Face.
+    10. HF Jobs SOLO 32 GB RAM.
+    11. Documentos/archivos adjuntos.
+    12. Archivos/Memoria persistente.
+    13. CHAT MEMORY.
+    14. PROJECT MEMORY.
+    15. GLOBAL MEMORY.
+    16. Secret Bank propio cifrado; agentes usan credential_ref/broker.
+    17. Persistencia de conversaciones y archivos.
+    18. PostgreSQL como verdad/estado cuando aplique.
+    19. Redis para cache/TTL/sesión/locks/colas cuando aplique.
+    20. Graphiti + FalkorDB para memoria relacional/temporal cuando aplique.
+    21. AgentDB para episodios/skills/patrones cuando aplique.
+    22. HF Storage Bucket/objeto para archivos, memoria y artefactos.
+    23. Estado Router/Jobs visible.
+    24. Crazy Wall/Handoff accesible.
+    25. Preservar y reutilizar Chat MVP y código adicional existente.
+    26. Reutilizar componentes OSS antes de escribir código nuevo.
+    27. Componentes externos SOLO por motores canónicos.
+    28. Cero sobreingeniería: máximo 3 pasos por tarea.
+    29. URL/chat usable.
+    30. Autenticación cuando corresponda.
+    31. Prueba browser/mobile si el entorno lo permite.
+    32. Mensaje real de usuario -> respuesta real.
+    33. Prueba con agente y sin agente.
+    34. Adjuntar archivo -> cerrar -> reabrir -> recuperar conversación/archivo/memoria.
+    35. No secretos en logs/UI/Redis/respuestas.
+    36. No falso PASS.
+
+    EQUIPO:
+    - Agent 16: Open WebUI/UI/cableado de paneles existentes.
+    - Agent 17: backend Router + HF32 + endpoints OpenAI-compatible.
+    - Agent 18: integración capacidades y E2E.
+    - Agent 4: apoyo UI/selector/modos/documentos y pruebas funcionales del frontend.
+    - Agent 12: apoyo Router/OpenAI contract/modelos/fallback y conexión chat-router.
+    - Agent 11: ÚNICO encargado de descargar/extractar componentes externos faltantes mediante motores canónicos.
+    - Agent 6: almacenamiento/memoria; integra PostgreSQL/Redis/Graphiti+FalkorDB/AgentDB/HF Bucket usando componentes existentes.
+
+    REGLAS DE COORDINACIÓN:
+    - Antes de ordenar: leer crazy_wall.state.json + HANDOFF del agente.
+    - Cada agente = un objetivo activo.
+    - Trabajo independiente = paralelo.
+    - Si falta componente: Agent 6/otros generan requerimiento -> Agent 11 lo adquiere -> vuelve al agente consumidor.
+    - Agent 11 NO programa ni integra.
+    - Agent 6 NO descarga componentes.
+    - Agent 14 NO ejecuta.
+    - Máximo 2 reintentos por GAP.
+    - PASS global solo con evidencias E2E.
 
 steps:
   - id: orchestrate_chat_100
@@ -38,19 +109,43 @@ steps:
       - "router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-6-hf-nodes/crazy_wall.state.json"
       - "router inteligente universal/Componente open soure router inteligente universal/open-webui/DOWNLOAD_EXTRACT_MANIFEST.json"
     task: |
-      Controla el cierre del chat. Devuelve SOLO un HANDOFF operativo con:
-      1) estado real de 16/17/18;
-      2) orden exacta siguiente para cada agente;
-      3) GAP/FIX si existe;
-      4) pruebas obligatorias pendientes;
-      5) CHAT_100 = PASS únicamente si existe evidencia real de:
-         Open WebUI real + Router live + /v1/models + /v1/chat/completions +
-         selector + modo con/sin agente + documentos + GitHub + Secret Bank +
-         Archivos/Memoria + persistencia + URL/login + mensaje real + reapertura.
-      No implementes tú mismo. No uses GitHub Actions. No declares PASS por texto.
+      Produce el HANDOFF DE ORQUESTACIÓN para cerrar CHAT_100.
+
+      Debes:
+      1. leer el estado real de todos los agentes bajo tu mando;
+      2. dar la orden exacta siguiente a cada agente;
+      3. detectar dependencias y permitir paralelismo solo cuando no se pisen;
+      4. mandar solicitudes de componentes faltantes únicamente a Agent 11;
+      5. mandar almacenamiento/memoria únicamente a Agent 6;
+      6. corregir GAPs hasta 2 veces;
+      7. exigir prueba real para cada frente;
+      8. consolidar evidencia.
+
+      CHAT_100 = PASS SOLO si están probados:
+      Open WebUI + Router live + /v1/models + /v1/chat/completions +
+      selector + con/sin agente + GitHub + documentos +
+      Secret Bank + Archivos/Memoria + persistencia +
+      almacenamiento + Jobs 32GB + Crazy Wall/Handoff +
+      mensaje real + reapertura real.
+
+      Si falta un solo gate: CHAT_100 = BLOCKED/PARTIAL con GAP exacto.
     checks:
       - kind: contains
-        values: [agent-16-chat-space-oauth, agent-17-chat-backend-32gb, agent-18-chat-final-auditor, GAP, FIX, CHAT_100]
+        values:
+          - agent-16-chat-space-oauth
+          - agent-17-chat-backend-32gb
+          - agent-18-chat-final-auditor
+          - agent-4-router-smol
+          - agent-12-yaiwes-router
+          - agent-11-download-extraction
+          - agent-6-hf-nodes
+          - CHAT_100
+          - GAP
+          - FIX
       - kind: no_secrets
