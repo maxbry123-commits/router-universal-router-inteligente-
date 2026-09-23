@@ -45,6 +45,11 @@ managed_agents:
   - agent-18-chat-final-auditor
   - agent-19-chat-components-motors
 
+director_contract:
+  schema_file: DSL-DAG-DIRECTOR.yaml
+  authority: REQUIRED
+  fail_closed_if_missing: true
+
 director_channel:
   file: README-DIRECTOR.md
   read_every_seconds: 300
@@ -60,6 +65,10 @@ watchdog_contract:
 
 steps:
   - id: director_control_loop
+    context_file:
+      - "router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/README-DIRECTOR.md"
+      - "router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/DSL-DAG-DIRECTOR.yaml"
+      - "router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/WATCHDOG-5MIN.json"
     task: |
       1. READ README-DIRECTOR.md and all objectives before acting.
       2. WRITE conclusion, best path, doubts/ambiguities and estimated completion window to README-DIRECTOR.md.
