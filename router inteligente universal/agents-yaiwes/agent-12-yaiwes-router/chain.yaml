@@ -1,51 +1,49 @@
 schema: yaiwes.chain/v1
-
-# Agente 12 — SOLO DESCARGA para el ROUTER YAIWES (independiente). Marco: SmolAgents. Baja README + código fuente de las piezas de
-# pronóstico (TimesFM) y búsqueda (Qwen3-0.6B Search + Search-R1 + SearXNG + Crawl4AI) a la carpeta de esa raíz nueva. NO instala nada,
-# NO ejecuta nada, NO toca el Router principal. Claude une las piezas después (por eso solo descarga).
+run_id: CHAT-100-AGENT12-ROUTER-SUPPORT
 input_block: |
-  Puedes poner una agente a descargar y luego tú me unos las piezas. Es parte el el imput sharck del agente de el proyecto
-  Usa varios modelos de pronostico TimesFM + HRM + Qwen3-0.6B Search Agent
+  ORDEN DE AGENT 14 / DIRECTOR:
+  Eres apoyo del Router YAIWES para el chat.
+  No descargas componentes.
+  No GitHub Actions.
+  No creas Router alternativo.
 
 agent:
   id: agent-12-yaiwes-router
   framework: smolagents
-  group: yaiwes-downloads
-  route: [deepseek_flash, minimax_m3, groq, nvidia, cerebras]
+  group: chat
+  route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
-  max_tokens: 1800
+  max_tokens: 3200
 
 context:
   text: |
-    Piezas a descargar (solo README.md + carpeta principal de código, límite 150 KB por archivo, 2 MB por donante, igual que el motor
-    que ya usa el agente 11 en `common/download_donors.py`): timesfm-core (https://github.com/google-research/timesfm,
-    ["README.md","timesfm-forecasting","AGENTS.md"]), hrm-text (https://github.com/sapientinc/HRM, ["README.md"]), qwen-search-agent
-    (https://github.com/PeterGriffinJin/Search-R1, ["README.md"]), searxng (https://github.com/searxng/searxng, ["README.md"]),
-    crawl4ai (https://github.com/unclecode/crawl4ai, ["README.md"]), searxng-mcp (https://github.com/TadMSTR/searxng-mcp, ["README.md"]).
-    Destino: la carpeta de esta misma raíz, "➡️📂 router inteligente para agente Yaiwes/donors/<nombre>/". NO instales nada con pip,
-    NO lances ningún Job, NO toques el Router principal ni esta carpeta fuera de "donors/".
+    Reutilizar:
+    - integration/chat_mvp/
+    - integration/huggingface/
+    - /v1/models
+    - /v1/chat/completions
+    - selector/provider routing existente.
+    Agent 17 es owner principal del backend.
 
 steps:
-
-  - id: yaiwes_donor_list
+  - id: router_chat_support
     task: |
-      Escribe el módulo Python `yaiwes_donors.py` (solo código, un único bloque ```python, solo biblioteca estándar) con el dict
-      `YAIWES_DONORS` con EXACTAMENTE estas 6 claves: "timesfm-core", "hrm-text", "qwen-search-agent", "searxng", "crawl4ai",
-      "searxng-mcp". Cada valor es una tupla (url_de_github, lista_de_rutas_para_sparse_checkout) copiada EXACTA del CONTEXTO
-      (para "timesfm-core" la lista tiene 3 rutas; las demás tienen solo ["README.md"]). No añadas ninguna otra clave ni cambies
-      ninguna URL.
-    checks:
-      - kind: python_ast
-      - kind: python_exec
-        module: yaiwes_donors.py
-        test: |
-          from yaiwes_donors import YAIWES_DONORS
-          assert set(YAIWES_DONORS) == {"timesfm-core","hrm-text","qwen-search-agent","searxng","crawl4ai","searxng-mcp"}
-          assert YAIWES_DONORS["timesfm-core"] == ("https://github.com/google-research/timesfm", ["README.md","timesfm-forecasting","AGENTS.md"])
-          assert YAIWES_DONORS["hrm-text"][0] == "https://github.com/sapientinc/HRM"
-          assert YAIWES_DONORS["searxng-mcp"] == ("https://github.com/TadMSTR/searxng-mcp", ["README.md"])
-          for url, paths in YAIWES_DONORS.values():
-              assert url.startswith("https://github.com/") and isinstance(paths, list) and "README.md" in paths
-      - kind: no_secrets
+      REUTILIZA/ADAPTA -> CABLEA -> PRUEBA.
+      Apoya a Agent 17 sin pisar archivos activos.
 
-edges: []
+      Objetivos:
+      - contrato OpenAI-compatible correcto;
+      - GET /v1/models;
+      - POST /v1/chat/completions;
+      - catálogo/selector coherente;
+      - modelo/proveedor seleccionado llega al Router;
+      - modo con agente/sin agente conserva routing;
+      - fallback solo cuando está autorizado;
+      - errores fail-closed;
+      - no secretos.
+
+      Entrega evidencia concreta y GAP/FIX.
+    checks:
+      - kind: contains
+        values: [/v1/models, /v1/chat/completions, Router, fallback, PRUEBA, GAP, FIX]
+      - kind: no_secrets
