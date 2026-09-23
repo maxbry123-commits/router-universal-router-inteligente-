@@ -764,10 +764,10 @@ LAST_LOOP:
   timestamp_colombia: "2026-09-22 21:11"
   nodo: COMMAND-CENTER-BOOTSTRAP
   step: STEP_6_UPDATE_COMMAND_CENTER
-  resultado: CORE_CREATED
-  test: PENDING_READBACK_AND_INPUT_APPEND
-  estado: EXECUTING
-  siguiente: APPEND_INPUTS_VERBATIM
+  resultado: "COMMAND_CENTER_CREATED + 49 INPUT SOURCES + HANDOFF_CABLED"
+  test: "READBACK_PASS: LOOP=true DSL=true OBJECTIVES=true OPENWEBUI=true MOTORS=true BOOT=true HANDOFF=true"
+  estado: STABLE
+  siguiente: "STEP_1_READ_COMMAND_CENTER → STEP_2_CHECK_CHAT_AGENTS"
 ```
 
 
@@ -6795,3 +6795,11 @@ Dime qué te falta para completar el chat ?
 Con respuestas a 1-8: construir capa de almacenamiento del chat (SQLite + adjuntos + ventana de documentos + caché) y selector de cuenta/agente; sin ellas, avanzar solo lo independiente: SQLite + adjuntos + documentos + caché en el gateway.
 
 ```
+
+
+## 13. BOOTSTRAP EVIDENCE
+- Read-back anterior: blob `7d7e4ca406364060cef799adb5d736bc62431b01`.
+- INPUT sources anexadas: **49**.
+- Claude boot cableado: `Claude notas/00-LEEME-PRIMERO.md`.
+- Handoff raíz cableado: `Handoff router inteligente universal.md`.
+- Gate: **COMMAND_CENTER_BOOTSTRAP=CLOSED**.
