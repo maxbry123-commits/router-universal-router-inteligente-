@@ -1,9 +1,13 @@
 schema: yaiwes.chain/v1
-
-# Agente 14 — ORQUESTADOR CENTRAL: Microsoft Agent Framework. Marco: PocketFlow. De principio a fin dentro de su propio paso.
+run_id: CHAT-100-ORCHESTRATOR-20260923
 input_block: |
-  Manda 2 agentes separados para que cada uno se encarguen usen los motores y conecten todo con HF token 1 deepsek
-  Coloca a Microsoft Agent Framework como ORQUESTADOR CENTRAL... mándalo a descargar con los motores y luego lo pones a que aprenda cómo funciona el router
+  ORDEN DEL DIRECTOR: Eres el ORQUESTADOR ÚNICO del cierre CHAT YAIWES.
+  Debes controlar a agent-16-chat-space-oauth, agent-17-chat-backend-32gb y agent-18-chat-final-auditor.
+  Objetivo: CHAT 100% probado y funcionando con todas las instrucciones del Director.
+  Deadline operativo ordenado por el Director: 2026-09-23 01:32 America/Bogota.
+  Tú NO implementas componentes: coordinas, lees estados, corriges órdenes, exiges pruebas y no aceptas falso PASS.
+  PROHIBIDO GitHub Actions/workflows. PROHIBIDO modificar motores canónicos.
+  Usa únicamente agentes, triggers/dispatcher existentes autorizados y HF 32GB cuando corresponda.
 
 agent:
   id: agent-14-orchestrator-msaf
@@ -11,34 +15,42 @@ agent:
   group: orchestrators
   route: [nvidia, groq, cerebras]
   fallback: [deepseek_flash]
-  max_tokens: 2400
+  max_tokens: 2800
 
 context:
   text: |
-    Microsoft Agent Framework (microsoft/agent-framework, MIT): paquete Python `pip install agent-framework`. Objetivo: instalarlo y
-    demostrar UNA llamada real a DeepSeek (deepseek-ai/DeepSeek-V4-Flash) por la API de HF (base https://router.huggingface.co/v1, token en
-    la variable de entorno HF_TOKEN), usando el cliente OpenAI-compatible (el mismo protocolo que expone Agent Framework).
+    FUENTE DE VERDAD: ➡️ ➡️ 📂 osquestador comand Center.md
+    Open WebUI ya existe y está verificado por DOWNLOAD_EXTRACT_MANIFEST.json.
+    NO volver a descargar Open WebUI.
+    Agent 16 = adaptación/cableado UI.
+    Agent 17 = backend Router + HF 32GB.
+    Agent 18 = integración de capacidades + E2E.
+    Claude/Sol supervisor NO ejecuta; tú coordinas a los ejecutores.
+    Cierre permitido solo con prueba real y evidencia observable.
+    Si un agente falla, corrige su orden y reintenta máximo 2 veces.
+    Máximo 3 pasos por tarea: REUTILIZAR/ADAPTAR -> CABLEAR/EJECUTAR -> PROBAR.
+    Lee los estados actuales de los agentes y sus HANDOFF antes de emitir siguiente orden.
 
 steps:
-
-  - id: install_and_connect
+  - id: orchestrate_chat_100
+    context_file:
+      - "➡️ ➡️ 📂 osquestador comand Center.md"
+      - "router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json"
+      - "router inteligente universal/Componente open soure router inteligente universal/open-webui/DOWNLOAD_EXTRACT_MANIFEST.json"
     task: |
-      Escribe el módulo Python `msaf_connect.py` (un único bloque ```python) con la función `connect_and_ping() -> dict` que: 1)
-      `import subprocess, sys; subprocess.run([sys.executable, "-m", "pip", "install", "-q", "agent-framework", "--break-system-packages"], check=True)`;
-      2) usa `openai.OpenAI(base_url="https://router.huggingface.co/v1", api_key=os.environ["HF_TOKEN"])` para enviar UN mensaje ("Responde
-      solo con la palabra OK.") al modelo "deepseek-ai/DeepSeek-V4-Flash"; 3) devuelve {"installed": True, "reply": texto}. Si algo falla de
-      verdad, deja que la excepción se propague.
+      Controla el cierre del chat. Devuelve SOLO un HANDOFF operativo con:
+      1) estado real de 16/17/18;
+      2) orden exacta siguiente para cada agente;
+      3) GAP/FIX si existe;
+      4) pruebas obligatorias pendientes;
+      5) CHAT_100 = PASS únicamente si existe evidencia real de:
+         Open WebUI real + Router live + /v1/models + /v1/chat/completions +
+         selector + modo con/sin agente + documentos + GitHub + Secret Bank +
+         Archivos/Memoria + persistencia + URL/login + mensaje real + reapertura.
+      No implementes tú mismo. No uses GitHub Actions. No declares PASS por texto.
     checks:
-      - kind: python_ast
-      - kind: python_exec
-        module: msaf_connect.py
-        test: |
-          import os
-          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
-          from msaf_connect import connect_and_ping
-          r = connect_and_ping()
-          assert r["installed"] is True and r["reply"].strip(), r
-          print(r)
+      - kind: contains
+        values: [agent-16-chat-space-oauth, agent-17-chat-backend-32gb, agent-18-chat-final-auditor, GAP, FIX, CHAT_100]
       - kind: no_secrets
-
-edges: []
