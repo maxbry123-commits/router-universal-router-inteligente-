@@ -1,7 +1,7 @@
 schema: yaiwes.chain/v1
 input_block: |
-  PRIORIDAD CHAT. Levantar el backend existente Chat MVP en Hugging Face Jobs SOLO máquina 32 GB RAM.
-  Claude/orquestador NO ejecuta: este agente ejecuta. FAIL_CLOSED. Tiempo máximo del Job: 60 minutos.
+  LEY PERMANENTE: NO crear backend/chat nuevo desde cero. Reutilizar Open WebUI + backend Chat MVP existente.
+  Conservar todo código adicional. Solo adaptar, cablear e incorporar. Claude audita; este agente ejecuta.
 
 agent:
   id: agent-17-chat-backend-32gb
@@ -9,41 +9,27 @@ agent:
   group: chat
   route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
-  max_tokens: 3000
+  max_tokens: 3200
 
 context:
   text: |
-    Reutiliza el código existente en router inteligente universal/integration/chat_mvp/.
-    Reutiliza common/hardware_sheriff.py: guarded_run_job bloquea cualquier flavor que no sea 32 GB.
-    HF Jobs permite expose=[8080] y Volume(type="bucket", source="COMAND-CENTER-1/yaiwes-v54", mount_path="/data").
-    Endpoint: https://<job_id>--8080.hf.jobs y requiere Bearer HF_TOKEN para el smoke.
-    NO crear un chat nuevo. NO descargar pesos de modelos. El backend llama al Router/Inference Providers.
-    Reusar un Job compatible si existe y está sano; si no, lanzar SOLO cpu-upgrade 32 GB, timeout 60m.
+    Base UI: Open WebUI descargado por agent-19 mediante motores canónicos.
+    Backend existente a conservar:
+    router inteligente universal/integration/chat_mvp/
+    router inteligente universal/integration/huggingface/
+    Secret Bank existente en Chat Mvp/secret_bank/.
+    Hardware: SOLO máquina HF 32 GB RAM. Nunca otra.
+    No descargar componentes en este agente. No GitHub Actions/git clone/curl/pip/npm como adquisición de componentes.
 
 steps:
-  - id: backend_live
+  - id: wire_existing_backend
     task: |
-      Escribe SOLO Python en chat_backend_32gb.py.
-      Debe usar HF_TOKEN y HfApi; validar 32 GB con assert_machine_32gb_ram/guarded_run_job antes de lanzar.
-      El Job usa una imagen Python, clona el repo público actual, instala solo dependencias necesarias y ejecuta
-      uvicorn integration.chat_mvp.app:app --host 0.0.0.0 --port 8080 desde la carpeta router inteligente universal.
-      Monta el Storage Bucket COMAND-CENTER-1/yaiwes-v54 en /data con Volume(type="bucket", ..., mount_path="/data")
-      y define RIU_DATA_DIR=/data. Expone 8080. Timeout máximo 60m.
-      Tras RUNNING, prueba GET /chat/providers con Authorization Bearer HF_TOKEN hasta HTTP 200.
-      Devuelve dict con job_id, endpoint, flavor, providers_http y status=RUNNING_HEALTHY.
-      Si el flavor no es exactamente la máquina de 32 GB o el smoke no da 200, falla cerrado.
-      No imprimas secretos.
+      Adapta/cablea Open WebUI al gateway/backend Chat MVP ya existente; NO escribas un chat/backend alternativo.
+      Conserva endpoints existentes, modo agente/sin agente, selector, documentos, GitHub, almacenamiento y Secret Bank.
+      Prepara la ejecución en HF 32 GB reutilizando hardware_sheriff/guarded_run_job existentes y Storage Bucket yaiwes-v54.
+      Si Open WebUI no fue descargado por agent-19, falla cerrado.
+      No elimines ni reemplaces el código adicional previo.
     checks:
-      - kind: python_ast
       - kind: contains
-        values: [guarded_run_job, cpu-upgrade, Volume, yaiwes-v54, /chat/providers, RUNNING_HEALTHY]
-      - kind: python_exec
-        module: chat_backend_32gb.py
-        test: |
-          from chat_backend_32gb import run
-          r = run()
-          assert r["flavor"] == "cpu-upgrade"
-          assert r["status"] == "RUNNING_HEALTHY"
-          assert r["providers_http"] == 200
-          assert r["endpoint"].endswith(".hf.jobs")
+        values: [open-webui, integration/chat_mvp, integration/huggingface, secret_bank, guarded_run_job, 32]
       - kind: no_secrets
