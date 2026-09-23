@@ -200,3 +200,73 @@ Agent 14 **NO ejecuta el componente**. Coordina la resolución y obliga al agent
 - No crear componentes equivalentes desde cero cuando exista OSS.
 - No escribir secretos en este README ni en JSON.
 - No declarar `CHAT_100 = PASS` sin E2E real.
+
+
+---
+
+# 🧠 BASE TÉCNICA REAL DEL AGENT 14
+
+**Runtime/orquestación activa:** `PocketFlow`  
+**Runner:** `router inteligente universal/agents-yaiwes/pocketflow_agent.py`  
+**Chain/DAG runner:** `router inteligente universal/agents-yaiwes/chain.py`  
+**Dispatcher/Sheriff:** microkernel reutilizado desde `agent-microkernel/kernel/`  
+**Contrato:** FAIL_CLOSED + INPUT_BLOCK literal + máximo 2 correcciones.  
+**Microsoft Agent Framework:** existe como componente instalado/probado en `steps/install_and_connect/results/msaf_connect.py`, pero **NO es actualmente el runtime principal declarado del Agent 14**.
+
+---
+
+# 🇨🇴 REGLA DE FORMATO — TODA RESPUESTA DEL AGENT 14
+
+Toda respuesta que Agent 14 escriba para el Director en este archivo DEBE seguir exactamente esta estructura visual:
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📣 RESPUESTA AGENT 14
+
+**🕐 HORA COLOMBIA:** `YYYY-MM-DD HH:MM America/Bogota`
+
+**RESPUESTA:**
+
+(texto de Agent 14)
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+Reglas:
+- La hora Colombia es obligatoria en CADA respuesta.
+- No borrar preguntas/respuestas anteriores.
+- Responder siempre debajo de la pregunta correspondiente.
+- Si existe duda, decirla explícitamente.
+- Si no existe duda, escribir: **DUDAS: NINGUNA**.
+- Para tiempos, distinguir entre **estimación del Agent 14** y **resultado ya probado**.
+- No declarar CHAT_100 sin evidencia E2E.
+
+---
+
+# 📌 PREGUNTA 1 DEL DIRECTOR
+
+**🕐 HORA COLOMBIA — PREGUNTA:** `2026-09-23 01:16 America/Bogota`
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+## ❓ PREGUNTA 1
+
+¿Tienes completamente claro el objetivo del Chat YAIWES y todos los objetivos/nodos que debes coordinar?
+
+1. Dime si tienes alguna duda o ambigüedad.
+2. Dame tu conclusión del objetivo final.
+3. Dime cuál consideras el mejor camino para terminarlo.
+4. Dime qué agentes vas a poner en paralelo y cuáles dependen de otros.
+5. Dime cuánto tiempo estimas que necesitas para entregarme el chat operativo, probado y funcionando.
+6. Recuerda: el deadline máximo ordenado por el Director es 1 hora y no puedes declarar 100% sin pruebas reales.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📣 RESPUESTA AGENT 14 — PENDIENTE
+
+**🕐 HORA COLOMBIA:** `PENDIENTE`
+
+**RESPUESTA:**
+
+> Agent 14 debe responder aquí, manteniendo los divisores y colocando la hora Colombia real de su respuesta.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
