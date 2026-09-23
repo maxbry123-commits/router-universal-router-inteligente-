@@ -265,6 +265,7 @@ steps:
 
 
 
+
   - id: director_close_audit
     context_file:
       - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
@@ -279,38 +280,24 @@ steps:
       - "router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json"
     append_output_to: "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
     task: |
-      AGENTE ORQUESTADOR MICROSOFT: responde TÚ MISMO la última instrucción del Director en README-DIRECTOR.md:
+      MENSAJE DEL DIRECTOR — VERBATIM:
 
-      "analiza el proyecto del chat que está en ejecución en Github y huggueface y dime qué falta para cerrar"
+      ➡️ analiza el proyecto del chat que está en ejecución en Github y huggueface y dime qué falta para cerrar
+
+      AGENTE ORQUESTADOR MICROSOFT debe responder por su runtime real.
+      La respuesta DEBE escribirse en:
+      router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md
 
       Reglas:
-      - analiza evidencia real disponible;
-      - separa CLOSED / RUNNING / BLOCKED / PENDING;
-      - indica exactamente qué falta para cerrar;
-      - indica GAP exacto y FIX mínimo;
-      - enumera pruebas/evidencia todavía necesarias;
-      - indica siguiente acción;
-      - si no tienes evidencia actual de Hugging Face, dilo como GAP y NO inventes estado;
-      - NO ejecutes componentes;
-      - NO lances Jobs;
-      - NO declares CHAT_100=PASS sin E2E real;
-      - responde con hora Colombia;
-      - la salida debe ser apta para añadirse verbatim al mismo README-DIRECTOR.md.
-
-      Formato:
-      ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
-      # 📣 RESPUESTA AGENTE ORQUESTADOR MICROSOFT
-      **🕐 HORA COLOMBIA:** <YYYY-MM-DD HH:MM America/Bogota>
-      **CERRADO:** <...>
-      **EN EJECUCIÓN:** <...>
-      **BLOQUEADO:** <...>
-      **FALTA PARA CERRAR:** <...>
-      **GAP:** <...>
-      **FIX MÍNIMO:** <...>
-      **PRUEBAS/EVIDENCIA PENDIENTE:** <...>
-      **SIGUIENTE ACCIÓN:** <...>
-      ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+      - analizar evidencia real de GitHub y del estado disponible de Hugging Face;
+      - indicar qué está cerrado, en ejecución, bloqueado y pendiente;
+      - decir exactamente qué falta para cerrar;
+      - indicar GAP exacto, FIX mínimo, pruebas/evidencia pendientes y siguiente acción;
+      - no inventar estado;
+      - no declarar PASS sin evidencia;
+      - incluir hora Colombia;
+      - no responder por otro canal.
     checks:
       - kind: contains
-        values: ["HORA COLOMBIA", "CERRADO", "EN EJECUCIÓN", "BLOQUEADO", "FALTA PARA CERRAR", "GAP", "FIX MÍNIMO", "PRUEBAS/EVIDENCIA PENDIENTE", "SIGUIENTE ACCIÓN"]
+        values: ["HORA COLOMBIA", "CERRADO", "EN EJECUCIÓN", "BLOQUEADO", "FALTA PARA CERRAR", "GAP", "FIX", "PRUEBAS", "SIGUIENTE ACCIÓN"]
       - kind: no_secrets
