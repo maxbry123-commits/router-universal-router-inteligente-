@@ -1,38 +1,36 @@
-import json
 import os
+import json
 
 def summarize(root_listing: list[dict]) -> dict:
+    prefix = "Componente open soure router inteligente universal/"
+    top_level_projects = {}
     total_files = 0
     total_bytes = 0
-    projects = {}
     
     for entry in root_listing:
-        path = entry["path"]
-        entry_type = entry["type"]
-        
-        # Only process blobs (files)
-        if entry_type != "blob":
+        if entry["type"] != "blob":
             continue
             
+        path = entry["path"]
+        size = entry.get("size", 0)
         total_files += 1
-        total_bytes += entry["size"]
+        total_bytes += size
         
-        # Check if path starts with the base directory
-        base = "Componente open soure router inteligente universal/"
-        if path.startswith(base):
-            # Get the part after the base
-            relative = path[len(base):]
-            # Check if there's a subdirectory (project name)
-            if "/" in relative:
-                project_name = relative.split("/")[0]
-                if project_name:
-                    if project_name not in projects:
-                        projects[project_name] = {"files": 0, "bytes": 0}
-                    projects[project_name]["files"] += 1
-                    projects[project_name]["bytes"] += entry["size"]
+        if path.startswith(prefix):
+            # Remove the prefix
+            rel_path = path[len(prefix):]
+            # Split to get the first segment after the prefix
+            parts = rel_path.split("/", 1)
+            if len(parts) >= 1 and parts[0]:
+                project_name = parts[0]
+                if project_name not in top_level_projects:
+                    top_level_projects[project_name] = {"files": 0, "bytes": 0}
+                top_level_projects[project_name]["files"] += 1
+                top_level_projects[project_name]["bytes"] += size
+        # else: ignore blobs not under the expected prefix
     
     return {
-        "top_level_projects": projects,
+        "top_level_projects": top_level_projects,
         "total_files": total_files,
         "total_bytes": total_bytes
     }

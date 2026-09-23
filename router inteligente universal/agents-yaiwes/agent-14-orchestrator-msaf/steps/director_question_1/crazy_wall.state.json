@@ -3,7 +3,7 @@
  "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T07:27:23Z",
+ "updated_at": "2026-09-23T07:54:27Z",
  "group": "orchestrators",
  "current_nodes": [
   "execute"
@@ -16,8 +16,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
-  "falta 'duda'",
-  "falta 'tiempo'"
+  "SIN_RUTA: hf/deepseek-ai/DeepSeek-V4-Flash:PROVIDER_ERROR:TimeoutError:request failed"
  ],
  "failed": [
   "execute"

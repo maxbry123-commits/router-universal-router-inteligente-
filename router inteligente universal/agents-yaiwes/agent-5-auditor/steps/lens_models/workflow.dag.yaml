@@ -236,26 +236,27 @@ context:
     - paso inventory_module: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router\
     \ inteligente universal/agents-yaiwes/agent-13-repo-inventory/steps/inventory_module/results/repo_inventory.py']\
     \ gaps=la prueba falló (exit=1): AssertionError\n## agent-14-orchestrator-msaf:\
-    \ estado=BLOCKED marco=pocketflow pasos_cerrados=['orchestrate_chat_100']\n- paso\
-    \ director_question_1: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[]\
-    \ gaps=falta 'duda'; falta 'tiempo'\n- paso install_and_connect: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b\
-    \ entregables=['router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/steps/install_and_connect/results/msaf_connect.py']\
+    \ estado=BLOCKED marco=pocketflow pasos_cerrados=['orchestrate_chat_100', 'director_model_probe']\n\
+    - paso director_model_probe: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[]\
+    \ gaps=-\n- paso director_question_1: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=[] gaps=falta 'duda'; falta 'tiempo'\n- paso install_and_connect:\
+    \ CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente\
+    \ universal/agents-yaiwes/agent-14-orchestrator-msaf/steps/install_and_connect/results/msaf_connect.py']\
     \ gaps=-\n- paso orchestrate_chat_100: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash\
     \ entregables=[] gaps=-\n## agent-15-orchestrator-grok: estado=CLOSED marco=smolagents\
-    \ pasos_cerrados=['director_control_loop']\n- paso director_control_loop: CLOSED\
-    \ modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-\n- paso verify_and_connect:\
-    \ CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente\
-    \ universal/agents-yaiwes/agent-15-orchestrator-grok/steps/verify_and_connect/results/grok_connect.py']\
+    \ pasos_cerrados=['director_control_loop', 'director_model_probe']\n- paso director_control_loop:\
+    \ CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-\n- paso\
+    \ director_model_probe: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[]\
+    \ gaps=-\n- paso verify_and_connect: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=['router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/steps/verify_and_connect/results/grok_connect.py']\
     \ gaps=-\n## agent-15-orchestrator-grokbuild: estado=BLOCKED marco=pocketflow\
     \ pasos_cerrados=[]\n- paso fetch_and_connect: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash\
     \ entregables=['router inteligente universal/agents-yaiwes/agent-15-orchestrator-grokbuild/steps/fetch_and_connect/results/grokbuild_connect.py']\
-    \ gaps=la prueba falló (exit=1): requests.exceptions.HTTPError: 404 Client Error:\
-    \ Not Found for url: https://api.github.com/rep\n## agent-16-chat-space-oauth:\
-    \ estado=BLOCKED marco=pocketflow pasos_cerrados=[]\n- paso adapt_openwebui: CLOSED\
-    \ modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-\n- paso adapt_openwebui_real:\
-    \ BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'Open\
-    \ WebUI'; falta 'Router'; falta 'GitHub'; falta 'Jobs'; falta 'Secret Bank'; falta\
-    \ 'Crazy Wall'; falta 'PRUEBA\n- paso publish_static_live: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash\
+    \ gaps=la prueba falló (exit=1): ValueError: No releases found\n## agent-16-chat-space-oauth:\
+    \ estado=CLOSED marco=pocketflow pasos_cerrados=['adapt_openwebui_real']\n- paso\
+    \ adapt_openwebui: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[]\
+    \ gaps=-\n- paso adapt_openwebui_real: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash\
+    \ entregables=[] gaps=-\n- paso publish_static_live: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash\
     \ entregables=['router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/steps/publish_static_live/results/publish_static_live.py']\
     \ gaps=Python inválido: unexpected character after line continuation character\
     \ (línea 17); falta 'private=False'; la prueba fal\n## agent-17-chat-backend-32gb:\
@@ -263,8 +264,8 @@ context:
     \ modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/steps/backend_live/results/chat_backend_32gb.py']\
     \ gaps=falta 'Volume'; la prueba falló (exit=1): ImportError: cannot import name\
     \ 'run' from 'chat_backend_32gb' (/home/runner/w\n- paso backend_router_live:\
-    \ BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'Open\
-    \ WebUI'; falta 'PRUEBA'\n- paso wire_existing_backend: VALIDATING modelo=deepseek-ai/DeepSeek-V4-Flash\
+    \ BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta '32GB';\
+    \ falta 'PRUEBA'\n- paso wire_existing_backend: VALIDATING modelo=deepseek-ai/DeepSeek-V4-Flash\
     \ entregables=[] gaps=-\n## agent-18-chat-final-auditor: estado=CLOSED marco=pocketflow\
     \ pasos_cerrados=['integrate_and_e2e']\n- paso integrate_additional_components:\
     \ BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'Archivos';\
@@ -298,13 +299,12 @@ context:
     \ modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-\n- paso job_spec:\
     \ CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente\
     \ universal/agents-yaiwes/agent-4-router-smol/steps/job_spec/results/job_spec.py']\
-    \ gaps=-\n- paso models_registry: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash\
-    \ entregables=['router inteligente universal/agents-yaiwes/\n\nSALIDA VERIFICADA\
-    \ DEL PASO ANTERIOR (lens_storage):\n{\"items\": [{\"id\": \"P2-01\", \"quote\"\
-    : \"Le conectas al chat dentro de huggueface almacenamiento su propio espacio\
-    \ y fusionas para crear un entorno llamado Mvp almacenamiento para ai\", \"status\"\
-    : \"PARCIAL\", \"area\": \"almacenamiento\", \"evidence\": [\"router inteligente\
-    \ universal/integration/chat_mvp/\", \"router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py\"\
+    \ gaps=-\n- paso models_registry: CLOSED modelo=hf/deepseek-ai/Deep\n\nSALIDA\
+    \ VERIFICADA DEL PASO ANTERIOR (lens_storage):\n{\"items\": [{\"id\": \"P2-01\"\
+    , \"quote\": \"Le conectas al chat dentro de huggueface almacenamiento su propio\
+    \ espacio y fusionas para crear un entorno llamado Mvp almacenamiento para ai\"\
+    , \"status\": \"PARCIAL\", \"area\": \"almacenamiento\", \"evidence\": [\"router\
+    \ inteligente universal/integration/chat_mvp/\", \"router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py\"\
     ], \"note\": \"Existe Static Space HF y el Chat MVP como integración, pero ningún\
     \ entregable del CONTEXTO nombra explícitamente el entorno Mvp almacenamiento\
     \ para ai.\", \"tarea\": \"agent-3-router debe documentar el Space HF llamado\

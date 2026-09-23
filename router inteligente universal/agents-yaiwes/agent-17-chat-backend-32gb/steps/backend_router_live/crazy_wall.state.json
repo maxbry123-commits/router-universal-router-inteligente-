@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-17-chat-backend-32gb",
  "framework": "pocketflow",
- "status": "BLOCKED",
- "updated_at": "2026-09-23T07:20:10Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T07:45:38Z",
  "group": "chat",
  "current_nodes": [
   "execute"
@@ -14,12 +14,17 @@
  "provider": "hf",
  "model": "deepseek-ai/DeepSeek-V4-Flash",
  "via": "route",
- "attempts": 3,
- "gaps": [
-  "falta '32GB'",
-  "falta 'PRUEBA'"
- ],
+ "attempts": 1,
+ "gaps": [],
  "failed": [
   "execute"
- ]
+ ],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "9204262c6d9472e6ed3e40ecd900a7aba66c9c71b1a208ad7d3034a7eaf821d1",
+   "chars": 1212
+  }
+ ],
+ "route_trace": []
 }

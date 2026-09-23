@@ -3,7 +3,7 @@
  "agent": "agent-15-orchestrator-grokbuild",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T07:20:15Z",
+ "updated_at": "2026-09-23T07:45:52Z",
  "group": "orchestrators",
  "current_nodes": [
   "execute"
@@ -16,7 +16,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
-  "la prueba falló (exit=1): ValueError: No releases found"
+  "la prueba falló (exit=1): RuntimeError: No non-draft release found"
  ],
  "failed": [
   "execute"

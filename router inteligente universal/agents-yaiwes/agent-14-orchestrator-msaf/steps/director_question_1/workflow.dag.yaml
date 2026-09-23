@@ -235,17 +235,17 @@ context:
     \ 1 hora.\n\n## \U0001F4CC PRIMERA RESPUESTA OBLIGATORIA\n\nResponde aquí mismo:\n\
     \n- si tienes claro todo\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json\
     \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-16-chat-space-oauth\"\
-    ,\n \"framework\": \"pocketflow\",\n \"status\": \"RUNNING\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:51Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"adapt_openwebui_real\"\
-    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\"\
-    : [\n  \"adapt_openwebui_real\"\n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n\
-    }\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T07:20:04Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"adapt_openwebui_real\"\
+    \n ],\n \"completed\": [\n  \"adapt_openwebui_real\"\n ],\n \"failed\": [],\n\
+    \ \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json\
     \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-17-chat-backend-32gb\"\
     ,\n \"framework\": \"pocketflow\",\n \"status\": \"RUNNING\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:51Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"backend_router_live\"\
-    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\"\
-    : [\n  \"backend_router_live\"\n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n\
-    }\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json\
+    : \"2026-09-23T07:45:25Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"backend_router_live\"\
+    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [\n  \"backend_router_live\"\
+    \n ],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\n ]\n}\n\n\
+    === ARCHIVO router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json\
     \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-18-chat-final-auditor\"\
     ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
     : \"2026-09-23T07:19:51Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"integrate_and_e2e\"\

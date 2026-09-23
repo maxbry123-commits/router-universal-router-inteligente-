@@ -147,7 +147,24 @@ context:
     ) or job.get(\"hardware\") or flavor\n        compute = job.get(\"compute\") or\
     \ {}\n        if isinstance(compute, Mapping):\n            flavor = compute.get(\"\
     flavor\") or flavor\n    gb = ram_gb_for_flavor(str(flavor) if flavor else None)\n\
-    \    return gb == ALLOWED_RAM_GB\n"
+    \    return gb == ALLOWED_RAM_GB\n\n\n=== ARCHIVO router inteligente universal/Componente\
+    \ open soure router inteligente universal/open-webui/DOWNLOAD_EXTRACT_MANIFEST.json\
+    \ ===\n{\n  \"bundle_bytes\": 15882421,\n  \"bundle_sha256\": \"f7a2fc250b400f305f245913df41856521f6e973c8c6e3c438f3a5e4e955f07f\"\
+    ,\n  \"extracted_tree\": {\n    \"bytes\": 43625476,\n    \"files\": 5065,\n \
+    \   \"sha256\": \"dd391139939bf7771ca531c2fcc076f084a634a5f0ca65e092767a6c5162c5fe\"\
+    \n  },\n  \"extraction_verified\": true,\n  \"max_github_blob_bytes\": 99614720,\n\
+    \  \"no_lfs\": true,\n  \"part_size_limit_bytes\": 12582912,\n  \"parts\": [\n\
+    \    {\n      \"bytes\": 12582912,\n      \"name\": \"open-webui.bundle.zip.part-0001\"\
+    ,\n      \"sha256\": \"16163f885f2fb445e2f1fede84341677fff9cd62f6c8cb5fbfbcc53e86806aea\"\
+    \n    },\n    {\n      \"bytes\": 3299509,\n      \"name\": \"open-webui.bundle.zip.part-0002\"\
+    ,\n      \"sha256\": \"d67480ec7e466b1036a21c01d64e5ec65d792c2fb83eeef642a74e183de2e724\"\
+    \n    }\n  ],\n  \"reconstruction_verified\": true,\n  \"schema\": \"yaiwes.hf.download-extract.v1\"\
+    ,\n  \"slug\": \"open-webui\",\n  \"source_bytes\": 43625476,\n  \"source_commit\"\
+    : \"8bd8b4fac5e059578ac0c74b3c18d11139f88b7d\",\n  \"source_files\": 5065,\n \
+    \ \"source_ref\": \"main\",\n  \"source_repo\": \"open-webui/open-webui\",\n \
+    \ \"source_tree\": {\n    \"bytes\": 43625476,\n    \"files\": 5065,\n    \"sha256\"\
+    : \"dd391139939bf7771ca531c2fcc076f084a634a5f0ca65e092767a6c5162c5fe\"\n  }\n\
+    }\n"
   max_chars: 40000
 task: 'REUTILIZA/ADAPTA -> CABLEA/EJECUTA -> PRUEBA.
 
@@ -162,6 +179,28 @@ task: 'REUTILIZA/ADAPTA -> CABLEA/EJECUTA -> PRUEBA.
   Debe quedar documentada la conexión Open WebUI -> Router.
 
   Si el runtime no permite una prueba real, BLOCKED con GAP exacto; nunca PASS simulado.
+
+
+  Termina tu respuesta SIEMPRE con este bloque exacto, letra por letra, rellenando
+  cada línea:
+
+  ```
+
+  CHECKLIST DE INTEGRACION
+
+  /health: <resultado>
+
+  /v1/models: <resultado>
+
+  /v1/chat/completions: <resultado>
+
+  32GB: <confirmado/no>
+
+  Open WebUI: <estado de la conexión>
+
+  PRUEBA: <qué prueba real se hizo>
+
+  ```
 
   '
 checks:
