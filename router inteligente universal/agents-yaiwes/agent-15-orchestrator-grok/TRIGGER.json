@@ -1,0 +1,7 @@
+{
+  "schema": "yaiwes.trigger/v1",
+  "run_id": "DIRECTOR-MODEL-PROBE-agent-15-orchestrator-grok",
+  "requested_by": "DIRECTOR",
+  "source": "README-DIRECTOR.md",
+  "input_block": "AGENTE ORQUESTADOR GROK BUILD: lee README-DIRECTOR.md.\nResponde tú mismo en ESE MISMO ARCHIVO la sección PRUEBA DE CONEXIÓN DEL DIRECTOR — MODELO IA.\nDebes informar únicamente evidencia de tu ejecución real: provider, modelo exacto, via/route, fallback si se usó y estado del runtime.\nIncluye hora Colombia.\nNo permitas que el supervisor escriba la respuesta por ti.\nSi no puedes ejecutar o no tienes modelo activo, responde el GAP exacto en README-DIRECTOR.md."
+}
