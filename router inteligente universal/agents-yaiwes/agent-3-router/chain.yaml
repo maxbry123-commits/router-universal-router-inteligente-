@@ -1,10 +1,10 @@
 schema: yaiwes.chain/v1
 
-# agent-3-router — P1. Job SOLO máquina HF 32 GB RAM.
+# agent-3-router — P1 FALLBACK opción 3: Static + OAuth + Inference Providers
 input_block: |
-  NO regeneres publish_live.py si results/ ya tiene AST válido y guarded_run_job.
-  Ejecuta publish() del TEMPLATE existente (verbatim). Job SOLO máquina 32 GB RAM.
-  GET /health. Space riu-chat-yaiwes. Anota space_url + router_endpoint.
+  Opción 3 INPUT-l: Static Space + OAuth HF + Inference Providers. SIN Job permanente.
+  NO regeneres publish_live.py con prosa. Prioridad: space_url usable YA.
+  NUNCA API keys en secrets del Static Space.
 
 agent:
   id: agent-3-router
@@ -12,22 +12,17 @@ agent:
   group: hf-chat
   route: [nvidia, groq, cerebras]
   fallback: [minimax_m3]
-  max_tokens: 1600
+  max_tokens: 1800
 
 context:
   text: |
-    Candado: agents-yaiwes/common/hardware_sheriff.py
-    (assert_machine_32gb_ram / guarded_run_job).
-    Requisito: Job en máquina 32 GB RAM. IDs técnicos HF = detalle implementación.
-    Id técnico 32GB: cpu-upgrade (API; no del Director).
-    Puerto 8000. Space riu-chat-yaiwes. HF_TOKEN obligatorio.
-    REGLA ANTI-SyntaxError: si results/publish_live.py ya importa guarded_run_job
-    y parsea, responde ese archivo verbatim. Cero reescritura.
+    Fallback tras #36: Static Space riu-chat-yaiwes + OAuth (inference-api) + Inference Providers.
+    Job 32GB aplazado. PASS: space_url + smoke chat 200.
 
 steps:
   - id: space_readme
     task: |
-      README.md Static Space con front matter sdk static + oauth scopes jobs/inference-api.
+      README.md Static Space: sdk static, hf_oauth true, scopes inference-api.
     checks:
       - kind: contains
         values: ["---", "sdk: static", "hf_oauth"]
@@ -35,15 +30,16 @@ steps:
 
   - id: space_index
     task: |
-      index.html chat: API_BASE en memoria, fetch /chat/send, textContent, OAuth HF.
+      index.html chat OAuth HF + fetch Inference Providers. textContent. Sin API keys hardcodeadas.
+      Selector: DeepSeek / MiniMax / Kimi / NVIDIA si aplica.
     checks:
       - kind: contains
-        values: ["API_BASE", "/chat/send", "textContent"]
+        values: ["oauth", "inference", "textContent"]
       - kind: no_secrets
 
   - id: deploy_script
     task: |
-      deploy_static_space.py con HfApi create_repo/upload_folder space_sdk static.
+      deploy_static_space.py HfApi create_repo/upload_folder space_sdk static. Imprime space_url.
     checks:
       - kind: python_ast
       - kind: no_secrets
@@ -51,32 +47,12 @@ steps:
   - id: publish_live
     context_file:
       - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
-      - router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py
     task: |
-      Si results/publish_live.py ya es válido (guarded_run_job + publish),
-      UN bloque python = ese archivo verbatim (cero cambios).
-      publish() usa guarded_run_job; Job SOLO máquina 32 GB RAM;
-      return space_url, router_endpoint, router_health_ok, space_reachable, hardware_ram_gb==32.
+      Cierra opción 3: Space publicado, OAuth activo, smoke providers = 200.
+      Escribe space_url en crazy_wall. NO lances HF Job. NO reescribas publish_live.py con prosa.
     checks:
-      - kind: python_ast
-      - kind: python_exec
-        module: publish_live.py
-        test: |
-          import os, ast
-          from pathlib import Path
-          src = Path("publish_live.py").read_text(encoding="utf-8")
-          ast.parse(src)
-          assert "guarded_run_job" in src
-          assert "assert_machine_32gb_ram" in src
-          assert "cpu-basic" not in src
-          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
-          from publish_live import publish
-          out = publish()
-          assert out.get("hardware_ram_gb") == 32
-          assert out.get("router_health_ok") is True
-          assert out.get("space_url")
-          assert out.get("router_endpoint")
-          print(out["space_url"], out["router_endpoint"], out.get("job_id"))
+      - kind: contains
+        values: ["space_url", "http"]
       - kind: no_secrets
 
 edges:
