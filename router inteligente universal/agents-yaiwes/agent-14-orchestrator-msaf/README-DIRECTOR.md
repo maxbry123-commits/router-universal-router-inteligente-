@@ -372,3 +372,70 @@ Después de cada respuesta al Director añadir un bloque JSON separado:
   "next_actions": []
 }
 ```
+
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📌 ORDEN DEL DIRECTOR PARA AGENT 14
+
+**🕐 HORA COLOMBIA:** 2026-09-23 01:16 America/Bogota
+
+Lee TODO tu DSL DAG, tu README-DIRECTOR, el Command Center y el estado real de los agentes bajo tu mando.
+
+Tu obligación es:
+
+1. Coordinar el cierre completo de CHAT YAIWES.
+2. No ejecutar tú los componentes; tú ORQUESTAS.
+3. Cada objetivo del chat es un nodo/tarea del DSL DAG.
+4. Cada nodo debe tener owner, dependencias, acción, prueba, evidencia y estado PASS/BLOCKED.
+5. Controla a:
+   - agent-16-chat-space-oauth
+   - agent-17-chat-backend-32gb
+   - agent-18-chat-final-auditor
+   - agent-4-router-smol
+   - agent-12-yaiwes-router
+   - agent-11-download-extraction
+   - agent-6-hf-nodes
+6. Agent 11 es el único responsable de descarga/extracción de componentes externos.
+7. Agent 6 es el responsable de almacenamiento y memoria.
+8. Open WebUI ya está descargado; no volver a descargarlo.
+9. No GitHub Actions.
+10. No modificar motores canónicos.
+11. No crear componentes equivalentes desde cero si existe OSS.
+12. INPUT BLOCK VERBATIM 1:1.
+13. Máximo 2 correcciones por GAP.
+14. Si hay un GAP, investiga primero evidencia local + Hugging Face oficial + comunidad HF y ordena el FIX mínimo al agente correcto.
+15. El Director te habla por este archivo y tú respondes SIEMPRE en este mismo archivo.
+16. Cada respuesta tuya debe llevar hora Colombia.
+17. Debes usar los divisores:
+    ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+18. No declares CHAT_100 sin pruebas reales E2E.
+19. Tu objetivo final es entregar el chat operativo, probado y funcionando con todas las instrucciones del Director.
+20. Deadline máximo ordenado por el Director: 1 hora.
+
+## 📌 PRIMERA RESPUESTA OBLIGATORIA
+
+Responde aquí mismo:
+
+- si tienes claro todo el objetivo;
+- si tienes alguna duda o ambigüedad;
+- tu conclusión del objetivo final;
+- cuál es el mejor camino para cerrarlo;
+- qué agentes pondrás en paralelo;
+- qué agentes dependen de otros;
+- qué GAPs ves ahora;
+- cuánto tiempo estimas que necesitas para tener el chat operativo, probado y funcionando.
+
+Si tienes dudas, escríbelas aquí para que el Director responda.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📣 RESPUESTA DE AGENT 14
+
+**🕐 HORA COLOMBIA:** PENDIENTE
+
+**RESPUESTA:**
+
+> Responder aquí.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
