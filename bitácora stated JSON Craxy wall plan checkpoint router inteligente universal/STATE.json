@@ -388,5 +388,35 @@
       "unify verification evidence",
       "governance gate before production activation"
     ]
+  },
+  "chat_priority_override": {
+    "active": true,
+    "activated_at": "2026-09-22T19:56:00-05:00",
+    "source": "Claude notas/ORQUESTADOR-CHAT-LOOP-2026-09-22-1956-COLOMBIA.md",
+    "director_goal": "CHAT_100_PERCENT_FUNCTIONAL",
+    "orchestrator_role": [
+      "AUDIT",
+      "REGISTER",
+      "ORDER_AGENTS",
+      "VERIFY_EVIDENCE"
+    ],
+    "orchestrator_forbidden": [
+      "IMPLEMENT_CHAT_CODE",
+      "DECLARE_CLOSED_WITHOUT_RUNTIME_EVIDENCE"
+    ],
+    "gates": [
+      "P0_LIVE_CHAT_URL_AND_ROUTER_SMOKE",
+      "P1_SELECTOR_PROVIDER_AGENT_MODE",
+      "P2_FILES_MEMORY_STORAGE_E2E",
+      "P3_SECRET_BANK_RUNTIME_NO_LEAK",
+      "P4_AUDITOR_FINAL_ZERO_BLOCKING_GAPS"
+    ],
+    "agent_status_at_start": {
+      "agent-1-chat-hf": "CLOSED_3_3",
+      "agent-2-chat-hf-smol": "CLOSED_3_3",
+      "agent-3-router": "PENDING_VERIFY_SMOKE_FAIL_401_404",
+      "agent-5-auditor": "BLOCKED_2_4"
+    },
+    "chat_100_percent": false
   }
 }
