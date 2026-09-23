@@ -1,0 +1,44 @@
+schema: yaiwes.chain/v1
+input_block: |
+  PRIORIDAD CHAT. Auditoría final independiente del Chat YAIWES contra las instrucciones del Director.
+  Claude/orquestador NO implementa: este agente solo audita evidencia. FAIL_CLOSED. Cero CLOSED falso.
+
+agent:
+  id: agent-18-chat-final-auditor
+  framework: smolagents
+  runner: auditor
+  post: audit_report
+  group: audit
+  route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
+  fallback: []
+  max_tokens: 3500
+
+context:
+  text: |
+    Audita SOLO CHAT y almacenamiento del chat. No mezclar Router general, Jev, TimesFM ni modelos locales salvo que sean requisito directo del chat.
+    HECHO exige evidencia real: ruta existente, estado de agente, URL live o test. PENDING si no existe evidencia.
+    Debes revisar especialmente agent-16-chat-space-oauth y agent-17-chat-backend-32gb cuando produzcan resultados.
+
+steps:
+  - id: final_chat_cross
+    context_file:
+      - Claude notas/INPUT-VERBATIM-2026-09-20-chat-mvp.md
+      - Claude notas/PLAN-MAESTRO-CHAT-MVP.md
+      - Claude notas/PLAN-ANEXO-B-STORAGE-Y-CHAT-OPEN-SOURCE.md
+      - router inteligente universal/agents-yaiwes/WATCHDOG/STATUS.md
+      - router inteligente universal/agents-yaiwes/agent-5-auditor/AUDIT-CHECKLIST.md
+    task: |
+      Audita uno por uno los requisitos del CHAT: URL pública, OAuth, enviar/recibir mensaje, selector de modelos,
+      con/sin agente, cuentas GitHub, archivos/documentos, panel Archivos/Memoria, Secret Bank, trabajo paralelo,
+      Crazy Wall/handoff, almacenamiento solicitado y backend live.
+      Devuelve SOLO {"items":[...]} con mínimo 12 ítems. Cada ítem: id, quote textual del Director, status
+      HECHO/PARCIAL/PENDIENTE/REFUTADO/AMBIGUO, area, evidence (rutas reales), note y tarea.
+      Si agent-16 o agent-17 no tiene evidencia LIVE, marca publicación/backend PENDIENTE.
+      No declares 100% por código presente solamente.
+    checks:
+      - kind: audit_json
+        min_items: 12
+        sources:
+          - Claude notas/INPUT-VERBATIM-2026-09-20-chat-mvp.md
+          - Claude notas/PLAN-MAESTRO-CHAT-MVP.md
+      - kind: no_secrets
