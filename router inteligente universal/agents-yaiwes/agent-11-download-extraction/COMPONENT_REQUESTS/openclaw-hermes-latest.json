@@ -1,7 +1,7 @@
 {
   "queue": [
     {
-      "id": "openclaw-ui-run-2026-09-23",
+      "id": "openclaw-latest-2026-09-23",
       "component": "OpenClaw + bundled Control UI",
       "source_repo": "openclaw/openclaw",
       "source_ref": "v2026.9.5",
@@ -12,8 +12,8 @@
       "publish": true
     },
     {
-      "id": "hermes-no-ui-run-2026-09-23",
-      "component": "Hermes Agent (no UI)",
+      "id": "hermes-agent-latest-2026-09-23",
+      "component": "Hermes Agent",
       "source_repo": "NousResearch/hermes-agent",
       "source_ref": "v2026.9.14",
       "slug": "hermes-agent",
