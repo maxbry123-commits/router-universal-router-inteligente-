@@ -87,6 +87,10 @@ jobs:
           git config user.name "riu-agents"
           git config user.email "riu-agents@users.noreply.github.com"
           find "router inteligente universal/agents-yaiwes" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+          # Restaurar GOLDEN agent-10 (impide commit de .py regenerado roto)
+          GOLDEN_A10="router inteligente universal/agents-yaiwes/agent-10-model-install/GOLDEN/install_launch_test.py"
+          DEST_A10="router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py"
+          if [ -f "$GOLDEN_A10" ]; then cp -f "$GOLDEN_A10" "$DEST_A10"; fi
           # Nunca commitear pesos HF (bloqueo #31: Qwen GGUF 610MB)
           find "router inteligente universal/agents-yaiwes" -path '*/results/models/*' -type f -delete 2>/dev/null || true
           find "router inteligente universal/agents-yaiwes" -name '*.gguf' -size +10M -delete 2>/dev/null || true

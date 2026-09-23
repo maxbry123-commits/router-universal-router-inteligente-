@@ -1,13 +1,10 @@
 schema: yaiwes.chain/v1
 
-# Agente 10 — RÉPLICA own_server_launch (Qwen3.5-0.8B RUNNING_HEALTHY, 32 GB).
-# TEMPLATE ORDEN-HF.md verbatim. NUNCA regenerar. Solo api.inspect_job.
+# agent-10 — GOLDEN wrapper → common/own_server_launch.py. Cero regeneración.
 input_block: |
-  Copia verbatim TEMPLATE install_launch_test.py de ORDEN-HF.md (o results/ ya escrito).
-  PROHIBIDO regenerar. Poll con api.inspect_job (nunca .refresh en el objeto job).
-  Método = common/own_server_launch.py. Modelo: Qwen3.5-0.8B en máquina 32 GB RAM.
-  Meta: RUNNING_HEALTHY + GET https://<job_id>--8080.hf.jobs/health = 200.
-  NUNCA descargar .gguf al repo.
+  NO regeneres código. Copia bytes de GOLDEN/install_launch_test.py a results/.
+  Fuente de verdad: common/own_server_launch.py (Qwen3.5-0.8B, 32 GB, --8080.hf.jobs).
+  Meta: RUNNING_HEALTHY + /health 200.
 
 agent:
   id: agent-10-model-install
@@ -15,54 +12,45 @@ agent:
   group: hf-install
   route: [deepseek_flash, minimax_m3, groq, nvidia, cerebras]
   fallback: []
-  max_tokens: 1200
+  max_tokens: 400
 
 context:
   text: |
-    Candado: hardware_sheriff.py. Solo máquina 32 GB RAM.
-    RÉPLICA own_server_launch: image llama.cpp:server, curl GGUF en Job, /app/llama-server,
-    flags -c 8192 -np 4 -cb --cache-ram 512 -fa on -ctk/-ctv q8_0, puerto 8080.
-    Poll: api.inspect_job + https://{job_id}--8080.hf.jobs/health.
-    COPIA TEMPLATE verbatim. Cero regeneración.
+    Copia GOLDEN/install_launch_test.py verbatim a results/install_launch_test.py.
+    El wrapper llama own_server_launch.main(). Solo máquina 32 GB RAM.
 
 steps:
   - id: install_launch_test
     context_file:
-      - router inteligente universal/agents-yaiwes/agent-10-model-install/ORDEN-HF.md
+      - router inteligente universal/agents-yaiwes/agent-10-model-install/GOLDEN/install_launch_test.py
       - router inteligente universal/agents-yaiwes/common/own_server_launch.py
     task: |
-      NO regeneres código. Copia verbatim el TEMPLATE de ORDEN-HF.md
-      (o deja results/install_launch_test.py si ya es el TEMPLATE).
-      Debe contener inspect_job; no llamar .refresh al job.
-      Debe lanzar Qwen3.5-0.8B con guarded_run_job en máquina 32 GB RAM.
+      Copia verbatim GOLDEN/install_launch_test.py a results/install_launch_test.py.
+      Un solo bloque python idéntico al GOLDEN. No inventes código.
     checks:
       - kind: python_ast
       - kind: contains
-        values: ["inspect_job", "Qwen3.5-0.8B", "guarded_run_job", "--8080.hf.jobs"]
+        values: ["own_server_launch", "own_server_main", "assert_machine_32gb_ram", "cpu-upgrade"]
       - kind: python_exec
         module: install_launch_test.py
         test: |
           import os
-          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN en el entorno"
+          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
           import install_launch_test as m
           src = open(m.__file__).read()
-          assert "inspect_job" in src, "debe usar api.inspect_job"
-          assert "api.inspect_job" in src or "inspect_job(" in src
-          assert "JobInfo" not in src or "inspect_job" in src
-          assert "Qwen3.5-0.8B" in src
+          assert "own_server_launch" in src
+          assert "own_server_main" in src
           from install_launch_test import run_all, launch_and_verify
           raised = False
           try:
-              launch_and_verify("x", "y/z", "f.gguf", flavor="cpu-basic")
+              launch_and_verify(flavor="cpu-basic")
           except ValueError:
               raised = True
-          assert raised, "debía rechazar máquina ≠32GB"
+          assert raised, "debía rechazar 16GB"
           results = run_all()
           assert len(results) == 1
-          r = results[0]
-          assert r.get("flavor") == "cpu-upgrade"
-          assert r["status"] == "RUNNING_HEALTHY", f"{r.get('detail')}"
-          print(r["model_id"], r["endpoint"], r.get("job_id"))
+          assert results[0]["status"] == "RUNNING_HEALTHY", results[0].get("detail")
+          print(results[0])
       - kind: no_secrets
 
 edges: []
