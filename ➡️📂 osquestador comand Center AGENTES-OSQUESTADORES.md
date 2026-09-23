@@ -5,7 +5,7 @@ Branch: main
 Schema: yaiwes.node-executor/xray-v2
 Mode: FAIL_CLOSED
 Scope: AGENTES + ORQUESTADORES ONLY
-Updated: 2026-09-22 22:02 America/Bogota
+Updated: 2026-09-22 22:13 America/Bogota
 
 ## OBJETIVO
 Dirigir exclusivamente agentes y orquestadores, sin mezclar tareas de otros frentes.
@@ -25,8 +25,9 @@ Dirigir exclusivamente agentes y orquestadores, sin mezclar tareas de otros fren
 - Credenciales solo por Router/broker/referencia; nunca copiarlas a archivos de agente.
 
 ## HANDOFF ACTUAL
-- Agent 14 — orquestador Microsoft Agent Framework: ⚪ SIN_ESTADO. Aún no está ejecutando una cadena.
-- Agent 15 — orquestador Grok: ⚪ SIN_ESTADO.
+- Agent 14 — orquestador Microsoft Agent Framework: ⛔ BLOCKED_REVALIDATION. Crazy Wall raíz declara CLOSED, pero HANDOFF conserva GAP "la prueba superó el tiempo". Existe evidencia exec exit=0, pero por FAIL_CLOSED no se acepta autocertificación contradictoria sin revalidación independiente.
+- Agent 15 — orquestador Grok: ⛔ BLOCKED. La cadena oficial terminó por timeout y el diseño de prueba consulta `xai-org/grok-build/releases/latest`, endpoint que devuelve 404 porque el repo oficial no publica GitHub Releases.
+- Agent 15 duplicado — `agent-15-orchestrator-grokbuild`: ⛔ BLOCKED_DUPLICATE. Misma responsabilidad que Agent 15 y mismo supuesto inválido sobre GitHub Releases. No reintentar hasta deduplicar y corregir el test.
 
 ## HANDOFF INTERNO
 Fuentes a leer antes de ejecutar:
@@ -64,23 +65,41 @@ ANTI_LOOP:
 ## AGENTES ACTUALES
 
 ### AGENT 14 — MICROSOFT AGENT FRAMEWORK
-Estado: SIN_ESTADO
+Estado: BLOCKED_REVALIDATION
 Rol objetivo: orquestador Microsoft Agent Framework.
+EVIDENCIA FRESH:
+- `crazy_wall.state.json` raíz: CLOSED, updated_at 2026-09-23T01:44:41Z.
+- step `install_and_connect`: registra exec exit=0 sobre `msaf_connect.py`.
+- HANDOFF del mismo step: conserva GAP `la prueba superó el tiempo`.
+GAP:
+- evidencia interna contradictoria; el agente no puede autocertificarse.
+FIX:
+- revalidar una sola vez con test independiente/read-back observable del resultado real.
 Regla: antes de cualquier implementación, comprobar componente OSS descargado/existente y reutilizarlo.
-No ejecutar una cadena hasta recibir objetivo concreto y handoff.
-PASS futuro:
+PASS:
 - componente real reutilizado
 - conectado al Router
 - credenciales por referencias
 - tarea real delegada
 - prueba observable
+- validación independiente sin contradicción
 
 ### AGENT 15 — GROK
-Estado: SIN_ESTADO
-Rol objetivo: orquestador Grok.
+Estado: BLOCKED
+Rol objetivo: orquestador Grok Build.
+EVIDENCIA FRESH:
+- `agent-15-orchestrator-grok/crazy_wall.state.json`: BLOCKED por `verify_and_connect (tiempo agotado)`.
+- `agent-15-orchestrator-grokbuild`: BLOCKED; GET a `https://api.github.com/repos/xai-org/grok-build/releases/latest` devolvió 404.
+- El repo oficial `xai-org/grok-build` sí existe; el GAP es el supuesto de GitHub Releases, no la existencia del componente.
+GAP:
+- prueba usa un endpoint de releases que no representa el método oficial de instalación.
+- existe duplicación de responsabilidad entre `agent-15-orchestrator-grok` y `agent-15-orchestrator-grokbuild`.
+FIX:
+- conservar un único Agent 15.
+- verificar el repo/instalador oficial o build source, después ejecutar una conexión real autorizada y probarla.
 Regla: no inventar implementación equivalente; usar integración real disponible/autorizada.
-No ejecutar una cadena hasta recibir objetivo concreto y handoff.
-PASS futuro:
+PASS:
+- un solo Agent 15 autoritativo
 - conexión real autorizada
 - conectado al Router
 - tarea real delegada
