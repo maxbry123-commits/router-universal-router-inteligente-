@@ -1,0 +1,40 @@
+schema: yaiwes.chain/v1
+
+# Agente 20 — Descarga SOLO de 2 motores nuevos: OpenClaw (MIT) y Rowboat Labs (Apache-2.0). Marco: SmolAgents.
+input_block: |
+  Monta 2 motores diferentes: 1 para open claw, 1 para Rowboat Labs osquestador open soure. Todos con destino de main en router inteligente universal.
+
+agent:
+  id: agent-20-openclaw-rowboat
+  framework: smolagents
+  group: downloads
+  route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
+  fallback: []
+  max_tokens: 1800
+
+context:
+  text: |
+    Confirmados reales: OpenClaw (github.com/openclaw/openclaw o el repo oficial vigente, MIT, agente que se conecta a cualquier LLM) y
+    Rowboat Labs (github.com/rowboatlabs/rowboat, Apache-2.0, orquestador multi-agente). Solo bajar README.md y la carpeta principal de
+    código (src/ o packages/), límite 150 KB por archivo, 2 MB por donante, con el mismo motor determinista `common/download_donors.py`
+    (agrégalos a su dict DONORS). Destino: `agents-yaiwes/donors/openclaw/` y `agents-yaiwes/donors/rowboat/`, commit a main. No instalar,
+    no ejecutar, no lanzar Jobs.
+
+steps:
+  - id: add_donors
+    task: |
+      Escribe el módulo Python `openclaw_rowboat_donors.py` (solo código, un único bloque ```python, solo biblioteca estándar) con el dict
+      `NEW_DONORS` con EXACTAMENTE 2 claves: "openclaw" -> ("https://github.com/openclaw/openclaw", ["README.md", "src"]) y "rowboat" ->
+      ("https://github.com/rowboatlabs/rowboat", ["README.md", "apps"]).
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: openclaw_rowboat_donors.py
+        test: |
+          from openclaw_rowboat_donors import NEW_DONORS
+          assert set(NEW_DONORS) == {"openclaw", "rowboat"}
+          assert NEW_DONORS["openclaw"] == ("https://github.com/openclaw/openclaw", ["README.md", "src"])
+          assert NEW_DONORS["rowboat"] == ("https://github.com/rowboatlabs/rowboat", ["README.md", "apps"])
+      - kind: no_secrets
+
+edges: []
