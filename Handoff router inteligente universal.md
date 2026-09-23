@@ -1,5 +1,8 @@
 # Handoff Router Inteligente Universal — ADN operativo
 
+> **PUNTO DE ENTRADA OPERATIVO:** `➡️ ➡️ 📂 osquestador comand Center.md` en `main`. Leerlo primero para objetivos, tareas, INPUT verbatim, agentes y LOOP; este Handoff mantiene ADN/provenance.
+
+
 Contrato: `tel.workflow/v3` · `FAIL_CLOSED_LOOP` · repo `maxbry123-commits/router-universal-router-inteligente-` · branch `main`.
 
 ## Estado consolidado
