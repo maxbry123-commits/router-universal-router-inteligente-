@@ -17,12 +17,17 @@ on:
       only:
         description: 'Run only this agent folder (e.g. agent-5-auditor). Empty = the whole swarm.'
         default: ''
+  push:
+    branches:
+      - main
+    paths:
+      - 'router inteligente universal/agents-yaiwes/agent-*/chain.yaml'
 
 permissions:
   contents: write
 
 concurrency:
-  group: riu-agents-run-${{ inputs.only || 'all' }}
+  group: riu-agents-run-${{ github.event_name }}-${{ inputs.only || github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -51,6 +56,44 @@ jobs:
             Claude notas/
           sparse-checkout-cone-mode: false
 
+      - name: Resolve single agent target from the trigger
+        shell: bash
+        env:
+          DISPATCH_ONLY: ${{ inputs.only }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            ONLY="${DISPATCH_ONLY:-}"
+            echo "TRIGGER_MODE=workflow_dispatch"
+            if [ -n "$ONLY" ]; then
+              echo "TARGET_AGENT=$ONLY"
+            else
+              echo "TARGET_AGENT=all"
+            fi
+          elif [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            mapfile -t AGENTS < <(
+              git diff --name-only "$PUSH_BEFORE" "$PUSH_AFTER" --                 'router inteligente universal/agents-yaiwes/agent-*/chain.yaml'               | sed -n 's#^router inteligente universal/agents-yaiwes/\(agent-[^/]*\)/chain.yaml$#\1#p'               | sort -u
+            )
+
+            if [ "${#AGENTS[@]}" -ne 1 ]; then
+              echo "::error title=RIU_PUSH_TRIGGER_FAIL_CLOSED::Expected exactly one changed agent chain.yaml; found ${#AGENTS[@]}"
+              printf 'changed_agent=%s\n' "${AGENTS[@]:-none}"
+              exit 2
+            fi
+
+            ONLY="${AGENTS[0]}"
+            echo "TRIGGER_MODE=push"
+            echo "TARGET_AGENT=$ONLY"
+          else
+            echo "::error title=RIU_TRIGGER_UNSUPPORTED::Unsupported event: $GITHUB_EVENT_NAME"
+            exit 2
+          fi
+
+          echo "ONLY=$ONLY" >> "$GITHUB_ENV"
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -74,7 +117,6 @@ jobs:
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ONLY: ${{ inputs.only }}
           PYTHONUTF8: '1'
           PYTHONIOENCODING: utf-8
           LC_ALL: C.UTF-8
