@@ -1,31 +1,69 @@
-# ⛔ CONTRATO ÚNICO DE ACTIVACIÓN DE AGENTES — CHAT YAIWES
+# 🔵 PROTOCOLO OFICIAL DE ACTIVACIÓN — CHAT YAIWES
 
-**Regla obligatoria del Director.**
+## FLUJO ÚNICO AUTORIZADO
 
-La ÚNICA vía autorizada para activar estos agentes es:
+**1. Escribir la tarea del agente.**  
+Guardar/actualizar en GitHub el archivo:
 
-`GitHub commit/push de la tarea → GitHub Actions workflow_dispatch → runner temporal de GitHub → agente ejecuta → commit/push del resultado al repo`
+`router inteligente universal/agents-yaiwes/<agente>/chain.yaml`
 
-## Flujo obligatorio
+Eso crea el commit/push con la tarea.
 
-1. Sol/Director escribe o actualiza la tarea del agente en `chain.yaml` (o su archivo de instrucciones autorizado) y hace commit/push en GitHub.
-2. Sol activa el workflow guardado mediante **GitHub Actions `workflow_dispatch`**, apuntando únicamente al agente solicitado.
-3. El runner temporal de GitHub ejecuta el runtime del agente.
-4. El agente usa el Router/LLM configurado, ejecuta su tarea y genera evidencia/resultado.
-5. El runner hace commit/push del resultado de vuelta al repositorio antes de finalizar.
+**2. Activar "correr ahora" por GitHub Actions.**  
+Hacer un POST a:
 
-## Prohibiciones
+`/repos/maxbry123-commits/router-universal-router-inteligente-/actions/workflows/riu-agents-run.yml/dispatches`
 
-- **PROHIBIDO usar Hugging Face Jobs para activar un agente.**
-- **PROHIBIDO sustituir el dispatch de GitHub por HF Jobs.**
-- HF Jobs solo pueden participar cuando la tarea final del agente requiera expresamente encender/probar un modelo o cómputo en Hugging Face.
-- No activar todo el swarm cuando el Director pidió un solo agente.
+Para un agente concreto, usar:
+
+```json
+{
+  "ref": "main",
+  "inputs": {
+    "only": "<carpeta-del-agente>"
+  }
+}
+```
+
+Para Agent 14:
+
+```json
+{
+  "ref": "main",
+  "inputs": {
+    "only": "agent-14-orchestrator-msaf"
+  }
+}
+```
+
+**IMPORTANTE:** el workflow actual define `only`; si se envía únicamente `{"ref":"main"}`, `ONLY` queda vacío y se ejecuta TODO el swarm. Para una conversación con un agente debe enviarse `inputs.only`.
+
+**3. El runner temporal de GitHub ejecuta solo.**  
+El código ya está guardado en el repo. El runner:
+- lee `chain.yaml`;
+- ejecuta el runtime del agente;
+- envía la tarea al modelo configurado;
+- valida la salida con Sheriff;
+- si pasa, guarda resultados;
+- hace commit/push de vuelta al repo.
+
+**4. Leer la respuesta real.**  
+Consultar:
+- `crazy_wall.state.json` → CLOSED/BLOCKED, proveedor/modelo/ruta;
+- `steps/<paso>/results/output.txt` → salida real producida;
+- cuando aplique, `README-DIRECTOR.md` → canal Director ↔ Orquestador.
+
+## PROHIBICIONES
+
+- No usar Hugging Face Jobs para activar agentes.
+- No sustituir el POST de `workflow_dispatch` por otro mecanismo.
+- HF Jobs solo pueden ser usados por una tarea final que necesite expresamente cómputo/modelos HF.
+- No activar todo el swarm para una conversación de un solo agente.
 - No responder en nombre del agente.
-- No declarar PASS sin resultado/evidencia real commiteada por el agente.
+- No declarar PASS sin evidencia real del runner y del Sheriff.
 
-## Regla para Sol
+## REGLA PARA SOL
 
-Si el Director dice “activa Agent X”:
-`escribir tarea → commit GitHub → workflow_dispatch solo Agent X → esperar resultado → leer commit/evidencia`.
+`Director → escribir chain.yaml/orden → commit GitHub → POST workflow_dispatch con inputs.only → runner GitHub → Sheriff → commit/push resultado → leer estado + output`
 
-No inventar otro mecanismo.
+Este protocolo reemplaza cualquier protocolo anterior de activación escrito en este README.
