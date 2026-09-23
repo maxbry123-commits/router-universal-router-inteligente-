@@ -3,14 +3,14 @@
  "agent": "agent-17-chat-backend-32gb",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T03:18:38Z",
+ "updated_at": "2026-09-23T05:37:21Z",
  "group": "chat",
  "chain": [
-  "wire_existing_backend"
+  "backend_router_live"
  ],
  "completed": [],
  "failed": [
-  "wire_existing_backend"
+  "backend_router_live"
  ],
  "next_nodes": [],
  "current_nodes": [],

@@ -1,0 +1,318 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-16-chat-space-oauth
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 3600
+context:
+  text: "RUTAS REALES VERIFICADAS:\n- router inteligente universal/Componente open\
+    \ soure router inteligente universal/open-webui/\n- router inteligente universal/integration/chat_mvp/chat_ui.html\n\
+    - router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js\n\
+    - router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js\n\
+    - router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js\n\
+    - router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js\n\
+    - router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py\n\
+    - router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py\n\
+    El CLOSED anterior fue inválido porque usó rutas equivocadas. Haz read-back real.\n\
+    \n\n=== ARCHIVO router inteligente universal/integration/chat_mvp/chat_ui.html\
+    \ ===\n<!doctype html>\n<html lang=\"es\">\n<head>\n<meta charset=\"utf-8\">\n\
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Chat\
+    \ RIU — Router Inteligente Universal</title>\n<style>\n  :root { --bg:#faf9f5;\
+    \ --fg:#1f1e1d; --mut:#6b6a68; --card:#fff; --line:#e4e1d8; --acc:#c96442; --warn:#a15c00;\
+    \ --err:#b3261e; --ok:#2f7d4f; }\n  @media (prefers-color-scheme: dark) { :root\
+    \ { --bg:#262624; --fg:#f0eee6; --mut:#a3a19a; --card:#30302e; --line:#41403d;\
+    \ --acc:#d97757; --warn:#e0a458; --err:#f2857d; --ok:#6fcf97; } }\n  * { box-sizing:border-box;\
+    \ }\n  html, body { height:100%; margin:0; }\n  body { background:var(--bg); color:var(--fg);\
+    \ font:15px/1.45 system-ui, -apple-system, \"Segoe UI\", sans-serif; display:flex;\
+    \ flex-direction:column; }\n  header { padding:8px 12px; border-bottom:1px solid\
+    \ var(--line); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }\n\
+    \  header h1 { font-size:16px; margin:0 auto 0 0; }\n  select, input, textarea,\
+    \ button { font:inherit; color:inherit; background:var(--card); border:1px solid\
+    \ var(--line); border-radius:8px; padding:6px 9px; max-width:100%; }\n  button\
+    \ { background:var(--acc); color:#fff; border:none; cursor:pointer; }\n  button.sec\
+    \ { background:var(--card); color:var(--fg); border:1px solid var(--line); }\n\
+    \  button:disabled { opacity:.5; cursor:not-allowed; }\n  #pill { font-size:12px;\
+    \ padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--mut);\
+    \ }\n  main { flex:1; min-height:0; display:grid; grid-template-columns:1fr 360px;\
+    \ }\n  @media (max-width:900px) { main { grid-template-columns:1fr; grid-template-rows:1fr\
+    \ auto; } #panel { max-height:45vh; } }\n  #chat { display:flex; flex-direction:column;\
+    \ min-height:0; }\n  #bar { padding:8px 12px; display:flex; flex-wrap:wrap; gap:6px;\
+    \ border-bottom:1px solid var(--line); align-items:center; }\n  #log { flex:1;\
+    \ overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px;\
+    \ }\n  .msg { max-width:min(760px, 94%); padding:9px 12px; border-radius:12px;\
+    \ border:1px solid var(--line); background:var(--card); white-space:pre-wrap;\
+    \ word-wrap:break-word; }\n  .user { align-self:flex-end; background:var(--acc);\
+    \ color:#fff; border-color:transparent; }\n  .meta { font-size:12px; color:var(--mut);\
+    \ margin-top:5px; } .meta.warn { color:var(--warn); }\n  .error { border-color:var(--err);\
+    \ color:var(--err); }\n  #chips { padding:0 12px; display:flex; flex-wrap:wrap;\
+    \ gap:6px; }\n  .chip { font-size:12px; padding:2px 8px; border-radius:999px;\
+    \ background:var(--card); border:1px solid var(--line); }\n  #compose { padding:8px\
+    \ 12px calc(8px + env(safe-area-inset-bottom, 0px)); border-top:1px solid var(--line);\
+    \ display:flex; gap:8px; }\n  textarea { flex:1; resize:none; min-height:44px;\
+    \ max-height:140px; }\n  #panel { border-left:1px solid var(--line); overflow-y:auto;\
+    \ padding:8px 12px; }\n  #tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;\
+    \ }\n  #tabs button { padding:4px 8px; font-size:13px; }\n  #tabs button.on {\
+    \ background:var(--acc); color:#fff; }\n  .tab { display:none; } .tab.on { display:block;\
+    \ }\n  .row { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; align-items:center;\
+    \ }\n  .item { border:1px solid var(--line); border-radius:8px; padding:6px 8px;\
+    \ margin:6px 0; font-size:13px; background:var(--card); }\n  pre { margin:0; white-space:pre-wrap;\
+    \ font-size:12px; }\n  label.k { display:block; font-size:12px; color:var(--mut);\
+    \ margin-top:6px; }\n  .k input { width:100%; }\n</style>\n</head>\n<body>\n<header>\n\
+    \  <h1>Chat RIU</h1>\n  <span id=\"pill\">sin conectar</span>\n  <input id=\"\
+    riukey\" type=\"password\" placeholder=\"API key del Router (MAXBRY-…)\" autocomplete=\"\
+    off\" style=\"width:230px\">\n  <button id=\"connect\">Conectar</button>\n</header>\n\
+    <main>\n  <section id=\"chat\">\n    <div id=\"bar\">\n      <select id=\"provider\"\
+    \ aria-label=\"Proveedor\"></select>\n      <select id=\"model\" aria-label=\"\
+    Modelo\" style=\"flex:1;min-width:180px\"></select>\n      <select id=\"mode\"\
+    \ aria-label=\"Modo\"><option value=\"direct\">Sin agente</option><option value=\"\
+    agent\">Con agente</option></select>\n      <select id=\"agent\" aria-label=\"\
+    Agente\" style=\"display:none\"></select>\n      <label title=\"Si repites una\
+    \ pregunta idéntica no se vuelve a cobrar\"><input id=\"cache\" type=\"checkbox\"\
+    \ checked> caché</label>\n      <label title=\"Ignora la caché y vuelve a preguntar\"\
+    ><input id=\"refresh\" type=\"checkbox\"> regenerar</label>\n      <button class=\"\
+    sec\" id=\"newchat\">Nuevo chat</button>\n    </div>\n    <div id=\"log\" aria-live=\"\
+    polite\"></div>\n    <div id=\"chips\"></div>\n    <div id=\"compose\">\n    \
+    \  <textarea id=\"input\" rows=\"1\" placeholder=\"Escribe un mensaje…  (Enter\
+    \ envía, Shift+Enter nueva línea)\"></textarea>\n      <button id=\"send\">Enviar</button>\n\
+    \    </div>\n  </section>\n  <aside id=\"panel\">\n    <div id=\"tabs\"></div>\n\
+    \    <div class=\"tab\" data-t=\"Documentos\">\n      <div class=\"row\"><input\
+    \ id=\"file\" type=\"file\" multiple><span class=\"meta\">Sube archivos: quedan\
+    \ en el almacenamiento y puedes adjuntarlos al chat.</span></div>\n      <div\
+    \ id=\"docs\"></div>\n    </div>\n    <div class=\"tab\" data-t=\"GitHub\">\n\
+    \      <div class=\"row\"><select id=\"ghacc\"></select><button class=\"sec\"\
+    \ id=\"ghwho\">Verificar</button><span id=\"ghlogin\" class=\"meta\"></span></div>\n\
+    \      <div class=\"row\"><select id=\"ghrepo\" style=\"flex:1\"></select><button\
+    \ class=\"sec\" id=\"ghrepos\">Cargar repos</button></div>\n      <div class=\"\
+    row\"><input id=\"ghpath\" placeholder=\"ruta/archivo.md\" style=\"flex:1\"><button\
+    \ class=\"sec\" id=\"ghread\">Leer y adjuntar</button></div>\n      <div class=\"\
+    row\"><input id=\"ghmsg\" placeholder=\"mensaje de commit\" style=\"flex:1\" value=\"\
+    chat: update from RIU chat\"><button id=\"ghcommit\">Guardar última respuesta</button></div>\n\
+    \      <div id=\"ghout\" class=\"meta\"></div>\n    </div>\n    <div class=\"\
+    tab\" data-t=\"Agentes\">\n      <div id=\"agents\"></div>\n      <label class=\"\
+    k\">id (minúsculas)<input id=\"ag_id\"></label><label class=\"k\">nombre<input\
+    \ id=\"ag_name\"></label>\n      <label class=\"k\">rol<input id=\"ag_role\" value=\"\
+    general\"></label><label class=\"k\">system prompt<textarea id=\"ag_prompt\" rows=\"\
+    3\" style=\"width:100%\"></textarea></label>\n      <div class=\"row\"><button\
+    \ id=\"ag_save\">Guardar agente</button></div>\n    </div>\n    <div class=\"\
+    tab\" data-t=\"Almacenamiento\">\n      <div class=\"row\"><button class=\"sec\"\
+    \ id=\"st_refresh\">Actualizar</button><button id=\"st_sync\">Sincronizar con\
+    \ bucket HF</button></div>\n      <pre id=\"st_out\"></pre>\n    </div>\n    <div\
+    \ class=\"tab\" data-t=\"Claves\">\n      <div class=\"meta\">Claves solo en memoria\
+    \ de esta pestaña (no se guardan). Si el servidor ya las tiene, déjalas vacías.</div>\n\
+    \      <div id=\"keys\"></div>\n      <label class=\"k\">GitHub token (cuenta\
+    \ adicional «byok»)<input id=\"k_gh\" type=\"password\" autocomplete=\"off\"></label>\n\
+    \    </div>\n  </aside>\n</main>\n<script>\n(function () {\n  var $ = function\
+    \ (id) { return document.getElementById(id); };\n  var S = { keys: {}, conv: null,\
+    \ lastReply: '', docs: [], attach: {}, providers: [] };\n  var TABS = ['Documentos',\
+    \ 'GitHub', 'Agentes', 'Almacenamiento', 'Claves'];\n\n  function el(tag, cls,\
+    \ text) { var e = document.createElement(tag); if (cls) e.className = cls; if\
+    \ (text != null) e.textContent = text; return e; }\n  function add(text, cls,\
+    \ meta, mcls) {\n    var d = el('div', 'msg ' + (cls || ''), text);\n    if (meta)\
+    \ d.appendChild(el('div', 'meta ' + (mcls || ''), meta));\n    $('log').appendChild(d);\
+    \ $('log').scrollTop = $('log').scrollHeight; return d;\n  }\n  function headers(extra)\
+    \ {\n    var h = { 'Content-Type': 'application/json', 'X-API-Key': $('riukey').value\
+    \ };\n    var pk = S.keys[$('provider').value]; if (pk) h['X-Provider-Key'] =\
+    \ pk;\n    var gk = $('k_gh').value; if (gk && $('ghacc').value === 'byok') h['X-GitHub-Token']\
+    \ = gk;\n    for (var k in (extra || {})) h[k] = extra[k];\n    return h;\n  }\n\
+    \  function api(path, opt) {\n    opt = opt || {}; opt.headers = headers(opt.headers);\n\
+    \    return fetch(path, opt).then(function (r) {\n      return r.json().then(function\
+    \ (j) { return { status: r.status, body: j }; }, function () { return { status:\
+    \ r.status, body: {} }; });\n    });\n  }\n  function fail(res) { return 'Error\
+    \ ' + res.status + ': ' + (res.body.detail || JSON.stringify(res.body)); }\n\n\
+    \  TABS.forEach(function (name, i) {\n    var b = el('button', 'sec', name); b.onclick\
+    \ = function () { show(name); }; b.dataset.t = name; $('tabs').appendChild(b);\n\
+    \  });\n  function show(name) {\n    document.querySelectorAll('#tabs button').forEach(function\
+    \ (b) { b.className = b.dataset.t === name ? 'on' : 'sec'; });\n    document.querySelectorAll('.tab').forEach(function\
+    \ (t) { t.className = 'tab' + (t.dataset.t === name ? ' on' : ''); });\n  }\n\
+    \  show('Documentos');\n\n  function buildKeys() {\n    $('keys').textContent\
+    \ = '';\n    S.providers.forEach(function (p) {\n      var l = el('label', 'k',\
+    \ p.label + (p.configured ? '  (servidor: configurado)' : '  (servidor: sin clave)'));\n\
+    \      var i = el('input'); i.type = 'password'; i.autocomplete = 'off'; i.placeholder\
+    \ = 'BYOK ' + p.id;\n      i.oninput = function () { S.keys[p.id] = i.value; };\
+    \ l.appendChild(i); $('keys').appendChild(l);\n    });\n  }\n\n  function loadModels()\
+    \ {\n    var p = $('provider').value; $('model').textContent = '';\n    return\
+    \ api('/chat/providers/' + p + '/models').then(function (res) {\n      if (res.status\
+    \ !== 200) { add(fail(res), 'error'); return; }\n      var first = null;\n   \
+    \   res.body.models.forEach(function (m) {\n        var o = el('option'); o.value\
+    \ = m.model_id || '';\n        var tag = m.certified ? 'certificado' : (m.state\
+    \ || '');\n        o.textContent = (m.suggested ? '★ ' : '') + (m.label || m.model_id)\
+    \ + (m.model_id && m.label !== m.model_id ? ' — ' + m.model_id : '') + '  [' +\
+    \ tag + (m.selectable ? '' : ' · no disponible: ' + (m.reason || '')) + ']';\n\
+    \        o.disabled = !m.selectable; $('model').appendChild(o);\n        if (m.selectable\
+    \ && !first) first = o;\n      });\n      if (first) first.selected = true;\n\
+    \    });\n  }\n\n  function loadAgents() {\n    return api('/chat/agents').then(function\
+    \ (res) {\n      if (res.status !== 200) return;\n      $('agent').textContent\
+    \ = ''; $('agents').textContent = '';\n      res.body.agents.forEach(function\
+    \ (a) {\n        var o = el('option', '', a.name + ' (' + a.id + ')'); o.value\
+    \ = a.id; $('agent').appendChild(o);\n        var d = el('div', 'item'); d.appendChild(el('b',\
+    \ '', a.name)); d.appendChild(el('div', 'meta', a.id + ' · ' + a.role));\n   \
+    \     var del = el('button', 'sec', 'Borrar'); del.onclick = function () { api('/chat/agents/'\
+    \ + a.id, { method: 'DELETE' }).then(loadAgents); };\n        d.appendChild(del);\
+    \ $('agents').appendChild(d);\n      });\n    });\n  }\n\n  function loadDocs()\
+    \ {\n    return api('/chat/documents').then(function (res) {\n      if (res.status\
+    \ !== 200) return;\n      $('docs').textContent = '';\n      res.body.documents.forEach(function\
+    \ (d) {\n        var box = el('div', 'item'); box.appendChild(el('b', '', d.name));\
+    \ box.appendChild(el('div', 'meta', d.mime + ' · ' + d.size + ' B' + (d.is_text\
+    \ ? '' : ' · no legible como texto')));\n        var row = el('div', 'row');\n\
+    \        if (d.is_text) { var c = el('input'); c.type = 'checkbox'; c.checked\
+    \ = !!S.attach[d.id]; c.onchange = function () { if (c.checked) S.attach[d.id]\
+    \ = d.name; else delete S.attach[d.id]; chips(); }; row.appendChild(c); row.appendChild(el('span',\
+    \ 'meta', 'adjuntar')); }\n        var del = el('button', 'sec', 'Borrar'); del.onclick\
+    \ = function () { delete S.attach[d.id]; chips(); api('/chat/documents/' + d.id,\
+    \ { method: 'DELETE' }).then(loadDocs); };\n        row.appendChild(del); box.appendChild(row);\
+    \ $('docs').appendChild(box);\n      });\n    });\n  }\n  function chips() {\n\
+    \    $('chips').textContent = '';\n    Object.keys(S.attach).forEach(function\
+    \ (id) { $('chips').appendChild(el('span', 'chip', '\U0001F4CE ' + S.attach[id]));\
+    \ });\n  }\n\n  function b64(buf) { var s = '', a = new Uint8Array(buf); for (var\
+    \ i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.subarray(i,\
+    \ i + 8192)); return btoa(s); }\n  $('file').onchange = function () {\n    Array.prototype.forEach.call($('file').files,\
+    \ function (f) {\n      f.arrayBuffer().then(function (buf) {\n        return\
+    \ api('/chat/documents', { method: 'POST', body: JSON.stringify({ name: f.name,\
+    \ mime: f.type || 'application/octet-stream', data_b64: b64(buf), conversation_id:\
+    \ S.conv }) });\n      }).then(function (res) { if (res.status !== 200) add(fail(res),\
+    \ 'error'); return loadDocs(); });\n    });\n    $('file').value = '';\n  };\n\
+    \n  function loadStorage() {\n    return Promise.all([api('/chat/storage'), api('/chat/usage')]).then(function\
+    \ (rs) {\n      $('st_out').textContent = JSON.stringify(rs[0].body, null, 2)\
+    \ + '\\n\\nCOSTOS (tokens)\\n' + JSON.stringify(rs[1].body.totals || {}, null,\
+    \ 2) +\n        '\\n\\nPor modelo\\n' + JSON.stringify(rs[1].body.models || [],\
+    \ null, 2);\n    });\n  }\n  $('st_refresh').onclick = loadStorage;\n  $('st_sync').onclick\
+    \ = function () { api('/chat/storage/sync', { method: 'POST' }).then(function\
+    \ (res) { $('st_out').textContent = res.status === 200 ? 'Sincronizado: ' + JSON.stringify(res.body)\
+    \ : fail(res); }); };\n\n  function loadGh() {\n    return api('/chat/github/accounts').then(function\
+    \ (res) {\n      if (res.status !== 200) return; $('ghacc').textContent = '';\n\
+    \      res.body.accounts.forEach(function (a) { var o = el('option', '', a.account\
+    \ + (a.configured ? '' : ' (sin token)')); o.value = a.account; $('ghacc').appendChild(o);\
+    \ });\n      if (!res.body.accounts.length) $('ghacc').appendChild(el('option',\
+    \ '', 'byok (pega token en Claves)')).value = 'byok';\n    });\n  }\n  $('ghwho').onclick\
+    \ = function () { api('/chat/github/whoami?account=' + encodeURIComponent($('ghacc').value)).then(function\
+    \ (res) { $('ghlogin').textContent = res.status === 200 ? '→ ' + res.body.login\
+    \ : fail(res); }); };\n  $('ghrepos').onclick = function () {\n    api('/chat/github/repos?account='\
+    \ + encodeURIComponent($('ghacc').value)).then(function (res) {\n      $('ghrepo').textContent\
+    \ = ''; if (res.status !== 200) { $('ghout').textContent = fail(res); return;\
+    \ }\n      res.body.repos.forEach(function (r) { var o = el('option', '', r.full_name\
+    \ + (r.private ? ' \U0001F512' : '')); o.value \n\n=== ARCHIVO router inteligente\
+    \ universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js\
+    \ ===\nfunction initVaultPanel(container, fetchJson) {\n    // Limpiar el contenedor\
+    \ (no es dato del servidor)\n    container.innerHTML = '';\n\n    const pwInput\
+    \ = document.createElement('input');\n    pwInput.type = 'password';\n    pwInput.placeholder\
+    \ = 'Contraseña maestra';\n    pwInput.style.marginBottom = '8px';\n\n    const\
+    \ unlockBtn = document.createElement('button');\n    unlockBtn.textContent = 'Desbloquear';\n\
+    \    unlockBtn.style.marginRight = '8px';\n\n    const lockBtn = document.createElement('button');\n\
+    \    lockBtn.textContent = 'Bloquear';\n\n    const statusEl = document.createElement('div');\n\
+    \    statusEl.style.marginTop = '8px';\n    statusEl.textContent = 'bloqueado';\
+    \ // estado inicial\n\n    container.append(pwInput, unlockBtn, lockBtn, statusEl);\n\
+    \n    async function handleUnlock() {\n        const passphrase = pwInput.value;\n\
+    \        pwInput.value = ''; // vaciar campo tras intentar desbloquear\n     \
+    \   const resp = await fetchJson('/vault/unlock', {\n            method: 'POST',\n\
+    \            body: JSON.stringify({ passphrase })\n        });\n        if (resp.status\
+    \ === 200) {\n            statusEl.textContent = 'desbloqueado';\n        } else\
+    \ {\n            statusEl.textContent = 'bloqueado';\n        }\n    }\n\n   \
+    \ async function handleLock() {\n        const resp = await fetchJson('/vault/lock',\
+    \ { method: 'POST' });\n        if (resp.status === 200) {\n            statusEl.textContent\
+    \ = 'bloqueado';\n        } else {\n            statusEl.textContent = 'bloqueado';\n\
+    \        }\n    }\n\n    unlockBtn.addEventListener('click', handleUnlock);\n\
+    \    lockBtn.addEventListener('click', handleLock);\n}\n\n\n=== ARCHIVO router\
+    \ inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js\
+    \ ===\nfunction initRouterPanel(container, fetchJson) {\n    container.innerHTML\
+    \ = '';\n\n    const btn = document.createElement('button');\n    btn.textContent\
+    \ = 'Actualizar estado del Router';\n    const output = document.createElement('div');\n\
+    \    output.style.whiteSpace = 'pre-line';\n\n    container.append(btn, output);\n\
+    \n    async function refresh() {\n        const resp = await fetchJson('/chat/router/status');\n\
+    \        if (resp.status === 200) {\n            const { deepseek_peak_now, limiter,\
+    \ groups } = resp.body;\n            const lines = [];\n            lines.push(`Hora\
+    \ pico de DeepSeek: ${deepseek_peak_now ? 'sí' : 'no'}`);\n            lines.push(`Concurrencia:\
+    \ ${limiter.slots} espacios (nivel ${limiter.tier})`);\n            for (const\
+    \ [groupName, info] of Object.entries(groups)) {\n                const authorized\
+    \ = info.authorized_fallback ? 'sí' : 'no';\n                const models = info.chain.map(c\
+    \ => c.model).join(' → ');\n                lines.push(`${groupName}: respaldo\
+    \ autorizado ${authorized} (authorized_fallback) — ${models}`);\n            }\n\
+    \            output.textContent = lines.join('\\n');\n        } else {\n     \
+    \       output.textContent = `Error ${resp.status}`;\n        }\n    }\n\n   \
+    \ btn.addEventListener('click', refresh);\n    refresh(); // initial load\n}\n\
+    \n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js\
+    \ ===\nfunction initJobsPanel(container, fetchJson) {\n  // Create textarea for\
+    \ JSON input\n  const textarea = document.createElement('textarea');\n  textarea.rows\
+    \ = 10;\n  textarea.cols = 60;\n  textarea.placeholder = 'Paste JSON array of\
+    \ jobs here';\n  container.appendChild(textarea);\n\n  // Create button\n  const\
+    \ button = document.createElement('button');\n  button.textContent = 'Ejecutar\
+    \ en paralelo';\n  container.appendChild(button);\n\n  // Create output container\
+    \ for results\n  const output = document.createElement('div');\n  container.appendChild(output);\n\
+    \n  // Handle click\n  button.addEventListener('click', function() {\n    let\
+    \ jobs;\n    try {\n      jobs = JSON.parse(textarea.value);\n      if (!Array.isArray(jobs))\
+    \ throw new Error('Expected a JSON array');\n    } catch (e) {\n      output.textContent\
+    \ = 'Error: ' + e.message;\n      return;\n    }\n\n    fetchJson('/chat/jobs/run',\
+    \ {\n      method: 'POST',\n      body: JSON.stringify({jobs: jobs, max_parallel:\
+    \ 8})\n    }).then(function(result) {\n      if (result.status >= 200 && result.status\
+    \ < 300) {\n        const data = result.body;\n        const lines = data.map(function(job)\
+    \ {\n          return job.id + ' - ' + job.status;\n        });\n        output.textContent\
+    \ = lines.join('\\n');\n      } else {\n        output.textContent = 'Error: HTTP\
+    \ ' + result.status;\n      }\n    }).catch(function(err) {\n      output.textContent\
+    \ = 'Error: ' + err.message;\n    });\n  });\n}\n\n\n=== ARCHIVO router inteligente\
+    \ universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py\
+    \ ===\nimport hashlib\nimport json\nfrom copy import deepcopy\n\n\ndef _compute_hash(prev:\
+    \ str, event: dict) -> str:\n    return hashlib.sha256(\n        (prev + json.dumps(event,\
+    \ sort_keys=True, ensure_ascii=False)).encode(\"utf-8\")\n    ).hexdigest()\n\n\
+    \ndef append_event(state: dict, event: dict) -> dict:\n    \"\"\"\n    Return\
+    \ a NEW state (does not mutate the received one) whose \"events\" list\n    (empty\
+    \ if absent) has one more element: {\"seq\": n, \"event\": event,\n    \"prev\"\
+    : hash of previous event or \"GENESIS\", \"hash\": sha256 hex of\n    (prev +\
+    \ json.dumps(event, sort_keys=True, ensure_ascii=False))}.\n    \"\"\"\n    new_state\
+    \ = deepcopy(state)\n    events = new_state.get(\"events\", [])\n    prev_hash\
+    \ = \"GENESIS\"\n    if events:\n        prev_hash = events[-1][\"hash\"]\n  \
+    \  seq = len(events) + 1\n    h = _compute_hash(prev_hash, event)\n    entry =\
+    \ {\n        \"seq\": seq,\n        \"event\": event,\n        \"prev\": prev_hash,\n\
+    \        \"hash\": h,\n    }\n    events.append(entry)\n    new_state[\"events\"\
+    ] = events\n    return new_state\n\n\ndef verify(state: dict) -> bool:\n    \"\
+    \"\"\n    True if the whole chain is consistent:\n    - seq are consecutive starting\
+    \ from 1,\n    - prev matches the previous event's hash (or \"GENESIS\" for the\
+    \ first),\n    - recalculated hash matches the stored hash.\n    \"\"\"\n    events\
+    \ = state.get(\"events\", [])\n    for i, entry in enumerate(events):\n      \
+    \  expected_seq = i + 1\n        if entry.get(\"seq\") != expected_seq:\n    \
+    \        return False\n        expected_prev = \"GENESIS\" if i == 0 else events[i\
+    \ - 1][\"hash\"]\n        if entry.get(\"prev\") != expected_prev:\n         \
+    \   return False\n        computed = _compute_hash(expected_prev, entry[\"event\"\
+    ])\n        if computed != entry.get(\"hash\"):\n            return False\n  \
+    \  return True\n\n\ndef render_handoff(state: dict) -> str:\n    \"\"\"\n    Markdown\
+    \ that starts with \"# HANDOFF\",\n    has the line \"## Eventos\" and then one\
+    \ line per event with its seq\n    and the value of event.get(\"texto\", \"\"\
+    ).\n    \"\"\"\n    lines = [\"# HANDOFF\", \"## Eventos\"]\n    for entry in\
+    \ state.get(\"events\", []):\n        seq = entry.get(\"seq\", \"\")\n       \
+    \ texto = entry.get(\"event\", {}).get(\"texto\", \"\")\n        lines.append(f\"\
+    - {seq}: {texto}\")\n    return \"\\n\".join(lines)\n"
+  max_chars: 40000
+task: 'REUTILIZA/ADAPTA -> CABLEA -> PRUEBA.
+
+  Integra las capacidades existentes del Chat MVP en Open WebUI, sin crear otra UI.
+
+  Conserva las fuentes originales. Registra ruta origen -> ruta de integración para:
+
+  Router/model selector, con/sin agente, documentos, GitHub, Jobs, Vault/Secret Bank
+  y Crazy Wall.
+
+  Verifica que Open WebUI existe por manifest antes de trabajar.
+
+  Entrega evidencia de archivos realmente tocados y prueba de que la UI integrada
+  carga sus capacidades.
+
+  No declares PASS si solo escribiste un plan.
+
+  '
+checks:
+- kind: contains
+  values:
+  - Open WebUI
+  - Router
+  - GitHub
+  - Jobs
+  - Secret Bank
+  - Crazy Wall
+  - PRUEBA
+- kind: no_secrets

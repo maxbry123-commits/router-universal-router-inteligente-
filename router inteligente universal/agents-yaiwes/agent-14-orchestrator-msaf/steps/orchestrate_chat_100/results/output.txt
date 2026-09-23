@@ -1,0 +1,33 @@
+GAP: agent-17-chat-backend-32gb y agent-18-chat-final-auditor están en estado BLOCKED con tareas fallidas sin evidencia de intento corregido ni HANDOFF de corrección. No hay suficiente información sobre por qué fallaron ni si se aplicó la regla de máximo 2 reintentos. Sin esos datos no puedo emitir una orden de cierre CHAT_100 = PASS.
+
+HANDOFF OPERATIVO:
+
+1) Estado real de agentes:
+   - agent-16-chat-space-oauth: CLOSED (completado: adapt_openwebui)
+   - agent-17-chat-backend-32gb: BLOCKED (falló: wire_existing_backend)
+   - agent-18-chat-final-auditor: BLOCKED (falló: integrate_additional_components)
+
+2) Orden exacta siguiente para cada agente:
+   - agent-16-chat-space-oauth: ESPERAR — No hay tarea pendiente.
+   - agent-17-chat-backend-32gb: REINTENTAR wire_existing_backend con orden corregida: revisar dependencias de Router existente, verificar conectividad con HF 32GB, cablear /v1/models y /v1/chat/completions. Máximo 2 intentos.
+   - agent-18-chat-final-auditor: REINTENTAR integrate_additional_components solo después de que agent-17 reporte PASS. En ese intento, integrar selector, modo con/sin agente, documentos, GitHub, Secret Bank, Archivos/Memoria, persistencia, URL/login, mensaje real y reapertura.
+
+3) GAP/FIX: GAP — Falta evidencia de qué causó los fallos en agent-17 y agent-18. Sin logs de error o HANDOFF de corrección, la orden actual es incompleta. FIX: antes de reintentar, cada agente debe reportar el motivo exacto del fallo y la orden corregida.
+
+4) Pruebas obligatorias pendientes (lista completa del Director):
+   - Open WebUI real
+   - Router live
+   - /v1/models funcional
+   - /v1/chat/completions funcional
+   - Selector de modelos
+   - Modo con/sin agente
+   - Documentos
+   - GitHub
+   - Secret Bank
+   - Archivos/Memoria
+   - Persistencia
+   - URL/login
+   - Mensaje real
+   - Reapertura
+
+5) CHAT_100 = FAIL — No hay evidencia real de ninguna de las pruebas. El proceso está bloqueado en backend.

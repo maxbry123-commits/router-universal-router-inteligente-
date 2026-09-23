@@ -1,0 +1,60 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-14-orchestrator-msaf
+  framework: pocketflow
+  group: orchestrators
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2800
+context:
+  text: "FUENTE DE VERDAD: ➡️ ➡️ \U0001F4C2 osquestador comand Center.md\nOpen WebUI\
+    \ ya existe y está verificado por DOWNLOAD_EXTRACT_MANIFEST.json.\nNO volver a\
+    \ descargar Open WebUI.\nAgent 16 = adaptación/cableado UI.\nAgent 17 = backend\
+    \ Router + HF 32GB.\nAgent 18 = integración de capacidades + E2E.\nClaude/Sol\
+    \ supervisor NO ejecuta; tú coordinas a los ejecutores.\nCierre permitido solo\
+    \ con prueba real y evidencia observable.\nSi un agente falla, corrige su orden\
+    \ y reintenta máximo 2 veces.\nMáximo 3 pasos por tarea: REUTILIZAR/ADAPTAR ->\
+    \ CABLEAR/EJECUTAR -> PROBAR.\nLee los estados actuales de los agentes y sus HANDOFF\
+    \ antes de emitir siguiente orden.\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-16-chat-space-oauth\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T03:18:50Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"adapt_openwebui\"\
+    \n ],\n \"completed\": [\n  \"adapt_openwebui\"\n ],\n \"failed\": [],\n \"next_nodes\"\
+    : [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\n ]\n}\n\n\
+    === ARCHIVO router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-17-chat-backend-32gb\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"BLOCKED\",\n \"updated_at\"\
+    : \"2026-09-23T03:18:38Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"wire_existing_backend\"\
+    \n ],\n \"completed\": [],\n \"failed\": [\n  \"wire_existing_backend\"\n ],\n\
+    \ \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-18-chat-final-auditor\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"BLOCKED\",\n \"updated_at\"\
+    : \"2026-09-23T03:19:12Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"integrate_additional_components\"\
+    \n ],\n \"completed\": [],\n \"failed\": [\n  \"integrate_additional_components\"\
+    \n ],\n \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}"
+  max_chars: 40000
+task: "Controla el cierre del chat. Devuelve SOLO un HANDOFF operativo con:\n1) estado\
+  \ real de 16/17/18;\n2) orden exacta siguiente para cada agente;\n3) GAP/FIX si\
+  \ existe;\n4) pruebas obligatorias pendientes;\n5) CHAT_100 = PASS únicamente si\
+  \ existe evidencia real de:\n   Open WebUI real + Router live + /v1/models + /v1/chat/completions\
+  \ +\n   selector + modo con/sin agente + documentos + GitHub + Secret Bank +\n \
+  \  Archivos/Memoria + persistencia + URL/login + mensaje real + reapertura.\nNo\
+  \ implementes tú mismo. No uses GitHub Actions. No declares PASS por texto.\n"
+checks:
+- kind: contains
+  values:
+  - agent-16-chat-space-oauth
+  - agent-17-chat-backend-32gb
+  - agent-18-chat-final-auditor
+  - GAP
+  - FIX
+  - CHAT_100
+- kind: no_secrets

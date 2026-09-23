@@ -1,4 +1,4 @@
-# DELEGACIÓN — lo que se manda hacer a los agentes (2026-09-23 03:25:16Z)
+# DELEGACIÓN — lo que se manda hacer a los agentes (2026-09-23 05:37:53Z)
 
 Sale de la auditoría de las notas del Director en 4 pasadas (28 requisitos: 6 HECHO, 22 por hacer). Prioridad del Director: SOLO el chat y los modelos de IA locales.
 

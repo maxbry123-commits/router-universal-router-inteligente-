@@ -1,0 +1,593 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-18-chat-final-auditor
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 3600
+context:
+  text: "Reutiliza capacidades existentes del Chat MVP y Open WebUI:\nArchivos/Memoria,\
+    \ Secret Bank, Router, Jobs, GitHub, agentes, selector y Crazy Wall.\nEl cierre\
+    \ requiere pruebas reales, no descripción.\nAgent 14 es el orquestador y decide\
+    \ siguiente orden; Claude/Sol supervisa.\n\n\n=== ARCHIVO router inteligente universal/integration/chat_mvp/router.py\
+    \ ===\n\"\"\"Chat MVP HTTP surface: providers, chat, agents, documents, GitHub\
+    \ accounts, storage, usage, DAG and graph.\n\nEvery /chat/* data endpoint requires\
+    \ a Router API key (env RIU_AGENT_API_KEYS or the certified MAXBRY keystore).\n\
+    Provider keys and GitHub tokens come from the server environment or from per-request\
+    \ BYOK headers\n(X-Provider-Key, X-Provider-Keys as JSON, X-GitHub-Token); they\
+    \ are never stored, logged or returned.\nChat turns go through the certified hot\
+    \ path: FastAPI -> Enchufe Gate -> RedUniversal -> provider executor.\nCost: response\
+    \ cache ON by default, prefix-stable prompts and a usage log (see core.py / usage.py).\n\
+    \"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nimport base64\n\
+    import json\nimport os\nimport tempfile\nfrom pathlib import Path\nfrom typing\
+    \ import Any, Callable\n\nfrom fastapi import APIRouter, Depends, Header, HTTPException\n\
+    from fastapi.responses import HTMLResponse\nfrom pydantic import BaseModel, Field\n\
+    \nfrom ..huggingface.api_key_auth import authenticate_api_key\nfrom ..huggingface.chat_catalog\
+    \ import cached_discovery, family_of, selector_models\nfrom . import core\nfrom\
+    \ . import dag as dagmod\nfrom . import dag_cli\nfrom . import github_tools as\
+    \ gh\nfrom . import providers as prov\nfrom .store import Store\nfrom .usage import\
+    \ UsageLog, normalize_usage\n\n_UI = Path(__file__).with_name(\"chat_ui.html\"\
+    )\n_store: Store | None = None\n\n\ndef get_store() -> Store:\n    global _store\n\
+    \    if _store is None:\n        default = Path(\"/data\") if os.access(\"/data\"\
+    , os.W_OK) else Path.cwd() / \"riu_data\"\n        _store = Store(os.getenv(\"\
+    RIU_DATA_DIR\") or default)\n    return _store\n\n\ndef set_store(store: Store\
+    \ | None) -> None:\n    global _store\n    _store = store\n\n\ndef _auth(\n  \
+    \  x_api_key: str | None = Header(default=None, alias=\"X-API-Key\"),\n    authorization:\
+    \ str | None = Header(default=None),\n) -> str:\n    candidate = x_api_key\n \
+    \   if not candidate and authorization and authorization.lower().startswith(\"\
+    bearer \"):\n        candidate = authorization[7:].strip()\n    try:\n       \
+    \ return authenticate_api_key(candidate)\n    except RuntimeError as exc:\n  \
+    \      raise HTTPException(status_code=401, detail=str(exc)) from exc\n\n\ndef\
+    \ sync_to_bucket(store: Store, bucket_id: str, token: str, *, fs_factory: Callable[...,\
+    \ Any] | None = None) -> dict[str, Any]:\n    \"\"\"Copy the SQLite snapshot and\
+    \ documents into an HF storage bucket (needs a write token).\"\"\"\n    if fs_factory\
+    \ is None:\n        from huggingface_hub import HfFileSystem as fs_factory  #\
+    \ noqa: N813\n    fs = fs_factory(token=token)\n    base = f\"buckets/{bucket_id}/riu-chat\"\
+    \n    files = 0\n    with tempfile.TemporaryDirectory() as tmp:\n        snap\
+    \ = store.snapshot(Path(tmp) / \"riu_chat.sqlite3\")\n        fs.pipe_file(f\"\
+    {base}/riu_chat.sqlite3\", snap.read_bytes())\n        files += 1\n    for doc\
+    \ in store.documents():\n        fs.pipe_file(f\"{base}/docs/{doc['id']}\", (store.dir\
+    \ / \"docs\" / doc[\"id\"]).read_bytes())\n        files += 1\n    return {\"\
+    bucket\": bucket_id, \"files\": files}\n\n\nclass SendReq(BaseModel):\n    message:\
+    \ str = Field(min_length=1, max_length=20000)\n    provider: str = \"hf\"\n  \
+    \  model: str\n    conversation_id: str | None = None\n    mode: str = \"direct\"\
+    \  # direct = sin agente, agent = con agente\n    agent_id: str | None = None\n\
+    \    doc_ids: list[str] = []\n    cache: bool = True  # exact-match response cache\
+    \ (skipped when temperature > 0)\n    refresh: bool = False  # bypass the cache\
+    \ read and overwrite the entry\n    max_tokens: int = Field(default=1024, ge=1,\
+    \ le=8192)\n    temperature: float | None = None\n    github: dict[str, str] |\
+    \ None = None  # {\"account\": ..., \"repo\": ...} provenance only\n\n\nclass\
+    \ DocReq(BaseModel):\n    name: str = Field(min_length=1, max_length=200)\n  \
+    \  mime: str = \"application/octet-stream\"\n    data_b64: str\n    conversation_id:\
+    \ str | None = None\n\n\nclass AgentReq(BaseModel):\n    id: str = Field(pattern=r\"\
+    ^[a-z0-9][a-z0-9_-]{1,63}$\")\n    name: str = Field(min_length=1, max_length=120)\n\
+    \    role: str = \"general\"\n    system_prompt: str = \"\"\n    models: list[str]\
+    \ = []\n\n\nclass CommitReq(BaseModel):\n    account: str\n    repo: str = Field(pattern=r\"\
+    ^[\\w.-]+/[\\w.-]+$\")\n    path: str = Field(min_length=1, max_length=300)\n\
+    \    content: str\n    message: str = Field(default=\"chat: update from RIU chat\"\
+    , max_length=200)\n    branch: str | None = None\n\n\nclass DagReq(BaseModel):\n\
+    \    dag: dict[str, Any]\n\n\ndef _gh_token(account: str, byok: str | None) ->\
+    \ str:\n    token = gh.token_for(account, byok)\n    if not token:\n        raise\
+    \ HTTPException(status_code=400, detail=\"GITHUB_ACCOUNT_NOT_CONFIGURED\")\n \
+    \   return token\n\n\ndef _gh(fn: Callable[..., Any], *args: Any, **kwargs: Any)\
+    \ -> Any:\n    try:\n        return fn(*args, **kwargs)\n    except gh.GitHubError\
+    \ as exc:\n        raise HTTPException(status_code=404 if str(exc.status) == \"\
+    404\" else 502, detail=str(exc)) from exc\n\n\ndef build_router() -> APIRouter:\n\
+    \    r = APIRouter()\n\n    @r.get(\"/chat\", response_class=HTMLResponse)\n \
+    \   def page() -> HTMLResponse:\n        return HTMLResponse(_UI.read_text(encoding=\"\
+    utf-8\"))\n\n    @r.get(\"/chat/providers\")\n    def providers() -> dict[str,\
+    \ Any]:\n        return {\"live_provider_inference\": core.live_enabled(),\n \
+    \               \"providers\": [{\"id\": k, \"label\": v[\"label\"], \"configured\"\
+    : prov.configured(k)} for k, v in prov.PROVIDERS.items()]}\n\n    @r.get(\"/chat/providers/{provider}/models\"\
+    )\n    def provider_models(provider: str, _owner: str = Depends(_auth),\n    \
+    \                    x_provider_key: str | None = Header(default=None, alias=\"\
+    X-Provider-Key\")) -> dict[str, Any]:\n        if provider not in prov.PROVIDERS:\n\
+    \            raise HTTPException(status_code=404, detail=\"PROVIDER_UNKNOWN\"\
+    )\n        if provider == \"hf\":\n            rows = selector_models(discovered=core.cached_discovery(),\
+    \ live_enabled=core.live_enabled())[\"models\"]\n            return {\"provider\"\
+    : \"hf\", \"models\": rows}\n        key = prov.resolve_key(provider, x_provider_key)\n\
+    \        if not key and provider != \"local\":\n            raise HTTPException(status_code=400,\
+    \ detail=\"PROVIDER_KEY_MISSING\")\n        try:\n            ids = prov.list_models(provider,\
+    \ key)\n        except prov.ProviderError as exc:\n            raise HTTPException(status_code=502,\
+    \ detail=str(exc)) from exc\n        ids = sorted(ids, key=lambda i: (family_of(i)\
+    \ is None, i))\n        return {\"provider\": provider, \"models\": [{\"label\"\
+    : i, \"model_id\": i, \"state\": \"PROVIDER_CATALOG\", \"certified\": False,\n\
+    \                                                  \"selectable\": True, \"suggested\"\
+    : family_of(i) is not None} for i in ids]}\n\n    @r.post(\"/chat/send\")\n  \
+    \  async def send(req: SendReq, owner: str = Depends(_auth),\n               \
+    \    x_provider_key: str | None = Header(default=None, alias=\"X-Provider-Key\"\
+    )) -> dict[str, Any]:\n        st = get_store()\n        if req.provider not in\
+    \ prov.PROVIDERS:\n            raise HTTPException(status_code=400, detail=\"\
+    PROVIDER_UNKNOWN\")\n        if req.mode not in {\"direct\", \"agent\"}:\n   \
+    \         raise HTTPException(status_code=400, detail=\"MODE_INVALID\")\n    \
+    \    agent = None\n        if req.mode == \"agent\":\n            agent = st.agent(req.agent_id\
+    \ or \"\")\n            if not agent:\n                raise HTTPException(status_code=400,\
+    \ detail=\"AGENT_NOT_FOUND\")\n        key = prov.resolve_key(req.provider, x_provider_key)\n\
+    \        if not key and req.provider != \"local\":\n            raise HTTPException(status_code=400,\
+    \ detail=f\"PROVIDER_KEY_MISSING:{req.provider}\")\n        certified = False\n\
+    \        if req.provider == \"hf\":\n            try:\n                certified\
+    \ = core.hf_gate(req.model)\n            except ValueError as exc:\n         \
+    \       raise HTTPException(status_code=400, detail=str(exc)) from exc\n     \
+    \   else:\n            try:\n                if req.model not in prov.list_models(req.provider,\
+    \ key):\n                    raise HTTPException(status_code=400, detail=\"MODEL_NOT_IN_PROVIDER_CATALOG\"\
+    )\n            except prov.ProviderError as exc:\n                raise HTTPException(status_code=502,\
+    \ detail=str(exc)) from exc\n        conv = req.conversation_id\n        if conv:\n\
+    \            row = st.conversation(conv)\n            if not row or row[\"owner\"\
+    ] != owner:\n                raise HTTPException(status_code=404, detail=\"CONVERSATION_NOT_FOUND\"\
+    )\n        # Prefix-stable order (provider prompt caching): agent prompt, documents\
+    \ sorted by id, history, new turn.\n        msgs: list[dict[str, str]] = []\n\
+    \        if agent and agent[\"system_prompt\"]:\n            msgs.append({\"role\"\
+    : \"system\", \"content\": agent[\"system_prompt\"]})\n        used_docs: list[str]\
+    \ = []\n        for did in sorted(set(req.doc_ids)):\n            doc, text =\
+    \ st.document(did), st.document_text(did)\n            if not doc or text is None:\n\
+    \                raise HTTPException(status_code=404, detail=f\"DOCUMENT_NOT_READABLE:{did}\"\
+    )\n            msgs.append({\"role\": \"system\", \"content\": f\"Documento adjunto\
+    \ «{doc['name']}»:\\n{text}\"})\n            used_docs.append(did)\n        if\
+    \ conv:\n            msgs += core.trim_history([{\"role\": m[\"role\"], \"content\"\
+    : m[\"content\"]} for m in st.messages(conv, limit=40)])\n        msgs.append({\"\
+    role\": \"user\", \"content\": req.message})\n        try:\n            result\
+    \ = await asyncio.to_thread(core.run_completion, st, owner, req.provider, key,\
+    \ req.model, msgs, req.max_tokens,\n                                         \
+    \    req.temperature, use_cache=req.cache, refresh=req.refresh)\n        except\
+    \ RuntimeError as exc:\n            raise HTTPException(status_code=502, detail=str(exc))\
+    \ from exc\n        reply = result[\"message\"].get(\"content\") or \"\"\n   \
+    \     if reply:\n            if not conv:\n                conv = st.new_conversation(req.message,\
+    \ agent[\"id\"] if agent else None, owner)\n            st.add_message(conv, \"\
+    user\", req.message)\n            st.add_message(conv, \"assistant\", reply, req.provider,\
+    \ req.model)\n            st.record_turn(conv_id=conv, owner=owner, provider=req.provider,\
+    \ model=req.model,\n                           agent_id=agent[\"id\"] if agent\
+    \ else None, doc_ids=used_docs,\n                           repo=(req.github or\
+    \ {}).get(\"repo\"))\n        return {\"conversation_id\": conv, \"reply\": reply,\
+    \ \"empty\": not reply, \"provider\": req.provider, \"model\": req.model,\n  \
+    \              \"certified\": certified, \"cached\": result[\"cached\"], \"finish_reason\"\
+    : result.get(\"finish_reason\"),\n                \"usage\": result.get(\"usage\"\
+    ), \"usage_normalized\": normalize_usage(result.get(\"usage\")),\n           \
+    \     \"docs_used\": used_docs, \"agent_id\": agent[\"id\"] if agent else None}\n\
+    \n    @r.get(\"/chat/usage\")\n    def usage(_owner: str = Depends(_auth)) ->\
+    \ dict[str, Any]:\n        return UsageLog(get_store()).summary()\n\n    @r.post(\"\
+    /chat/dag/run\")\n    async def dag_run(req: DagReq, owner: str = Depends(_auth),\n\
+    \                      x_provider_keys: str | None = Header(default=None, alias=\"\
+    X-Provider-Keys\")) -> dict[str, Any]:\n        keys: dict[str, str] = {}\n  \
+    \      if x_provider_keys:\n            try:\n                parsed = json.loads(x_provider_keys)\n\
+    \            except json.JSONDecodeError as exc:\n                raise HTTPException(status_code=400,\
+    \ detail=\"X_PROVIDER_KEYS_INVALID_JSON\") from exc\n            keys = {str(k):\
+    \ str(v) for k, v in parsed.items()} if isinstance(parsed, dict) else {}\n   \
+    \     st = get_store()\n        agents = {a[\"id\"]: a[\"system_prompt\"] for\
+    \ a in st.agents()}\n        try:\n            return await asyncio.to_thread(dagmod.run_dag,\
+    \ req.dag, dag_cli.build_executor(st, owner, keys),\n                        \
+    \                   agents=agents, known_providers=set(prov.PROVIDERS))\n    \
+    \    except dagmod.DagError as exc:\n            raise HTTPException(status_code=400,\
+    \ detail=f\"DAG_INVALID:{exc}\") from exc\n\n    @r.get(\"/chat/conversations\"\
+    )\n    def conversations(owner: str = Depends(_auth)) -> dict[str, Any]:\n   \
+    \     return {\"conversations\": get_store().conversations(owner)}\n\n    @r.get(\"\
+    /chat/conversations/{cid}\")\n    def conversation(cid: str, owner: str = Depends(_auth))\
+    \ -> dict[str, Any]:\n        st = get_store()\n        row = st.conversation(cid)\n\
+    \        if not row or row[\"owner\"] != owner:\n            raise HTTPException(status_code=404,\
+    \ detail=\"CONVERSATION_NOT_FOUND\")\n        return {\"conversation\": row, \"\
+    messages\": st.messages(cid, limit=200)}\n\n    @r.get(\"/chat/agents\")\n   \
+    \ def agents(_owner: str = Depends(_auth)) -> dict[str, Any]:\n        return\
+    \ {\"agents\": get_store().agents()}\n\n    @r.post(\"/chat/agents\")\n    def\
+    \ upsert_agent(req: AgentReq, _owner: str = Depends(_auth)) -> dict[str, Any]:\n\
+    \        get_store().upsert_agent(req.id, req.name, req.role, req.system_prompt,\
+    \ req.models)\n        return {\"agent\": get_store().agent(req.id)}\n\n    @r.delete(\"\
+    /chat/agents/{agent_id}\")\n    def delete_agent(agent_id: str, _owner: str =\
+    \ Depends(_auth)) -> dict[str, Any]:\n        if not get_store().delete_agent(agent_id):\n\
+    \            raise HTTPException(status_code=404, detail=\"AGENT_NOT_FOUND\")\n\
+    \        return {\"deleted\": agent_id}\n\n    @r.post(\"/chat/documents\")\n\
+    \    def upload(req: DocReq, _owner: str = Depends(_auth)) -> dict[str, Any]:\n\
+    \        try:\n            data = base64.b64decode(req.data_b64, validate=True)\n\
+    \        except Exception as exc:  # noqa: BLE001\n            raise HTTPException(status_code=400,\
+    \ detail=\"DOCUMENT_BASE64_INVALID\") from exc\n        st = get_store()\n   \
+    \     try:\n            doc = st.put_document(req.name, req.mime, data, req.conversation_id)\n\
+    \        except ValueError as exc:\n            raise HTTPException(status_code=413\
+    \ if \"LARGE\" in str(exc) else 400, detail=str(exc)) from exc\n        st.graph_node(f\"\
+    doc:{doc['id']}\", \"document\", doc[\"name\"])\n        return {\"document\"\
+    : doc}\n\n    @r.get(\"/chat/documents\")\n    def documents(_owner: str = Depends(_auth))\
+    \ -> dict[str, Any]:\n        return {\"documents\": get_store().documents()}\n\
+    \n    @r.get(\"/chat/documents/{did}\")\n    def document(did: str, _owner: str\
+    \ = Depends(_auth)) -> dict[str, Any]:\n        st = get_store()\n        doc\
+    \ = st.document(did)\n        if not doc:\n            raise HTTPException(status_code=404,\
+    \ detail=\"DOCUMENT_NOT_FOUND\")\n        return {\"document\": doc, \"preview\"\
+    : st.document_text\n\n=== ARCHIVO router inteligente universal/integration/chat_mvp/store.py\
+    \ ===\n\"\"\"SQLite-backed storage for the chat MVP: SQL, graph, cache and documents\
+    \ (stdlib only).\n\nFour storage systems share one data directory (mounted from\
+    \ an HF bucket in the Space):\n  sql        conversations, messages, agents  \
+    \    (SQLite)\n  graph      provenance graph: nodes + edges with valid_at (SQLite,\
+    \ Graphiti-shaped, no LLM extraction)\n  cache      response cache with TTL and\
+    \ hit counter (SQLite)\n  documents  attachments on disk, deduplicated by sha256,\
+    \ metadata in SQLite\n\"\"\"\nfrom __future__ import annotations\n\nimport hashlib\n\
+    import json\nimport sqlite3\nimport threading\nimport time\nimport uuid\nfrom\
+    \ pathlib import Path\nfrom typing import Any\n\nMAX_UPLOAD_BYTES = 10 * 1024\
+    \ * 1024\nTEXT_EXT = {\".md\", \".txt\", \".py\", \".js\", \".ts\", \".tsx\",\
+    \ \".jsx\", \".json\", \".yml\", \".yaml\", \".toml\", \".csv\", \".html\",\n\
+    \            \".css\", \".sql\", \".sh\", \".ini\", \".cfg\", \".rs\", \".go\"\
+    , \".java\", \".c\", \".h\", \".cpp\", \".xml\", \".log\"}\n\nSCHEMA = \"\"\"\n\
+    CREATE TABLE IF NOT EXISTS conversations(id TEXT PRIMARY KEY, title TEXT, agent_id\
+    \ TEXT, owner TEXT, created_at REAL);\nCREATE TABLE IF NOT EXISTS messages(id\
+    \ INTEGER PRIMARY KEY AUTOINCREMENT, conv_id TEXT, role TEXT, content TEXT, provider\
+    \ TEXT, model TEXT, created_at REAL);\nCREATE TABLE IF NOT EXISTS documents(id\
+    \ TEXT PRIMARY KEY, name TEXT, mime TEXT, size INTEGER, path TEXT, conv_id TEXT,\
+    \ is_text INTEGER, created_at REAL);\nCREATE TABLE IF NOT EXISTS cache(key TEXT\
+    \ PRIMARY KEY, value TEXT, expires_at REAL, hits INTEGER DEFAULT 0);\nCREATE TABLE\
+    \ IF NOT EXISTS graph_nodes(id TEXT PRIMARY KEY, kind TEXT, label TEXT, props\
+    \ TEXT, created_at REAL);\nCREATE TABLE IF NOT EXISTS graph_edges(id INTEGER PRIMARY\
+    \ KEY AUTOINCREMENT, src TEXT, dst TEXT, rel TEXT, valid_at REAL, props TEXT);\n\
+    CREATE TABLE IF NOT EXISTS agents(id TEXT PRIMARY KEY, name TEXT, role TEXT, system_prompt\
+    \ TEXT, models TEXT, created_at REAL);\n\"\"\"\n\nDEFAULT_AGENTS = (\n    (\"\
+    orquestador-g0\", \"Orquestador (Grupo 0)\", \"orquestacion\",\n     \"Eres el\
+    \ orquestador del Grupo 0. Descompones la tarea, decides qué agente o herramienta\
+    \ interviene y respondes con un plan breve y accionable.\"),\n    (\"seals-team-yaiwes-001\"\
+    , \"Seals Team YAIWES 001\", \"code\",\n     \"Eres un agente Seals Team YAIWES\
+    \ especializado en código. Produces parches mínimos y verificables, explicas solo\
+    \ lo necesario y señalas cualquier GAP.\"),\n)\n\n\nclass Store:\n    def __init__(self,\
+    \ data_dir: str | Path) -> None:\n        self.dir = Path(data_dir)\n        (self.dir\
+    \ / \"docs\").mkdir(parents=True, exist_ok=True)\n        self.db_path = self.dir\
+    \ / \"riu_chat.sqlite3\"\n        self._lock = threading.RLock()\n        self._db\
+    \ = sqlite3.connect(str(self.db_path), check_same_thread=False)\n        self._db.row_factory\
+    \ = sqlite3.Row\n        with self._lock:\n            self._db.executescript(SCHEMA)\n\
+    \            self._db.commit()\n        if not self.agents():\n            for\
+    \ aid, name, role, prompt in DEFAULT_AGENTS:\n                self.upsert_agent(aid,\
+    \ name, role, prompt, [])\n\n    # -- low level -----------------------------------------------------------------\n\
+    \    def _all(self, sql: str, params: tuple = ()) -> list[dict[str, Any]]:\n \
+    \       with self._lock:\n            return [dict(r) for r in self._db.execute(sql,\
+    \ params).fetchall()]\n\n    def _exec(self, sql: str, params: tuple = ()) ->\
+    \ int:\n        with self._lock:\n            cur = self._db.execute(sql, params)\n\
+    \            self._db.commit()\n            return cur.lastrowid or 0\n\n    #\
+    \ -- sql: conversations / messages ---------------------------------------------\n\
+    \    def new_conversation(self, title: str, agent_id: str | None, owner: str)\
+    \ -> str:\n        cid = uuid.uuid4().hex[:16]\n        self._exec(\"INSERT INTO\
+    \ conversations VALUES(?,?,?,?,?)\", (cid, title[:80], agent_id, owner, time.time()))\n\
+    \        return cid\n\n    def conversation(self, cid: str) -> dict[str, Any]\
+    \ | None:\n        rows = self._all(\"SELECT * FROM conversations WHERE id=?\"\
+    , (cid,))\n        return rows[0] if rows else None\n\n    def conversations(self,\
+    \ owner: str, limit: int = 50) -> list[dict[str, Any]]:\n        return self._all(\"\
+    SELECT * FROM conversations WHERE owner=? ORDER BY created_at DESC LIMIT ?\",\
+    \ (owner, limit))\n\n    def add_message(self, cid: str, role: str, content: str,\
+    \ provider: str | None = None, model: str | None = None) -> None:\n        self._exec(\"\
+    INSERT INTO messages(conv_id,role,content,provider,model,created_at) VALUES(?,?,?,?,?,?)\"\
+    ,\n                   (cid, role, content, provider, model, time.time()))\n\n\
+    \    def messages(self, cid: str, limit: int = 40) -> list[dict[str, Any]]:\n\
+    \        rows = self._all(\"SELECT role,content,provider,model,created_at FROM\
+    \ messages WHERE conv_id=? ORDER BY id DESC LIMIT ?\", (cid, limit))\n       \
+    \ return list(reversed(rows))\n\n    # -- documents -----------------------------------------------------------------\n\
+    \    def put_document(self, name: str, mime: str, data: bytes, conv_id: str |\
+    \ None = None) -> dict[str, Any]:\n        if not data:\n            raise ValueError(\"\
+    DOCUMENT_EMPTY\")\n        if len(data) > MAX_UPLOAD_BYTES:\n            raise\
+    \ ValueError(\"DOCUMENT_TOO_LARGE\")\n        did = hashlib.sha256(data).hexdigest()[:24]\n\
+    \        safe_name = Path(name).name[:120] or \"documento\"\n        is_text =\
+    \ int(mime.startswith(\"text/\") or mime in {\"application/json\", \"application/xml\"\
+    , \"application/x-yaml\"}\n                      or Path(safe_name).suffix.lower()\
+    \ in TEXT_EXT)\n        path = self.dir / \"docs\" / did\n        if not path.exists():\n\
+    \            path.write_bytes(data)\n        self._exec(\"INSERT OR REPLACE INTO\
+    \ documents VALUES(?,?,?,?,?,?,?,?)\",\n                   (did, safe_name, mime[:100],\
+    \ len(data), str(path), conv_id, is_text, time.time()))\n        return self.document(did)\
+    \ or {}\n\n    def document(self, did: str) -> dict[str, Any] | None:\n      \
+    \  rows = self._all(\"SELECT id,name,mime,size,conv_id,is_text,created_at FROM\
+    \ documents WHERE id=?\", (did,))\n        return rows[0] if rows else None\n\n\
+    \    def documents(self) -> list[dict[str, Any]]:\n        return self._all(\"\
+    SELECT id,name,mime,size,conv_id,is_text,created_at FROM documents ORDER BY created_at\
+    \ DESC\")\n\n    def document_text(self, did: str, limit: int = 12000) -> str\
+    \ | None:\n        rows = self._all(\"SELECT path,is_text FROM documents WHERE\
+    \ id=?\", (did,))\n        if not rows or not rows[0][\"is_text\"]:\n        \
+    \    return None\n        text = Path(rows[0][\"path\"]).read_bytes().decode(\"\
+    utf-8\", errors=\"replace\")\n        return text if len(text) <= limit else text[:limit]\
+    \ + \"\\n[... truncado]\"\n\n    def delete_document(self, did: str) -> bool:\n\
+    \        rows = self._all(\"SELECT path FROM documents WHERE id=?\", (did,))\n\
+    \        if not rows:\n            return False\n        Path(rows[0][\"path\"\
+    ]).unlink(missing_ok=True)\n        self._exec(\"DELETE FROM documents WHERE id=?\"\
+    , (did,))\n        return True\n\n    # -- cache ---------------------------------------------------------------------\n\
+    \    def cache_get(self, key: str) -> Any | None:\n        rows = self._all(\"\
+    SELECT value,expires_at FROM cache WHERE key=?\", (key,))\n        if not rows\
+    \ or rows[0][\"expires_at\"] < time.time():\n            return None\n       \
+    \ self._exec(\"UPDATE cache SET hits=hits+1 WHERE key=?\", (key,))\n        return\
+    \ json.loads(rows[0][\"value\"])\n\n    def cache_put(self, key: str, value: Any,\
+    \ ttl: float = 3600.0) -> None:\n        # Upsert keeps the hit counter when an\
+    \ entry is refreshed (total hits stay accurate).\n        self._exec(\"INSERT\
+    \ INTO cache(key,value,expires_at,hits) VALUES(?,?,?,0) \"\n                 \
+    \  \"ON CONFLICT(key) DO UPDATE SET value=excluded.value, expires_at=excluded.expires_at\"\
+    ,\n                   (key, json.dumps(value), time.time() + ttl))\n\n    # --\
+    \ graph ---------------------------------------------------------------------\n\
+    \    def graph_node(self, node_id: str, kind: str, label: str, **props: Any) ->\
+    \ None:\n        self._exec(\"INSERT INTO graph_nodes VALUES(?,?,?,?,?) ON CONFLICT(id)\
+    \ DO UPDATE SET label=excluded.label, props=excluded.props\",\n              \
+    \     (node_id, kind, label[:120], json.dumps(props), time.time()))\n\n    def\
+    \ graph_link(self, src: str, dst: str, rel: str, **props: Any) -> None:\n    \
+    \    self._exec(\"INSERT INTO graph_edges(src,dst,rel,valid_at,props) VALUES(?,?,?,?,?)\"\
+    , (src, dst, rel, time.time(), json.dumps(props)))\n\n    def graph_view(self,\
+    \ limit: int = 200) -> dict[str, Any]:\n        edges = self._all(\"SELECT src,dst,rel,valid_at\
+    \ FROM graph_edges ORDER BY id DESC LIMIT ?\", (limit,))\n        ids = {e[\"\
+    src\"] for e in edges} | {e[\"dst\"] for e in edges}\n        nodes = [n for n\
+    \ in self._all(\"SELECT id,kind,label FROM graph_nodes ORDER BY created_at DESC\
+    \ LIMIT ?\", (limit * 2,)) if n[\"id\"] in ids]\n        return {\"nodes\": nodes,\
+    \ \"edges\": edges}\n\n    def record_turn(self, *, conv_id: str, owner: str,\
+    \ provider: str, model: str, agent_id: str | None,\n                    doc_ids:\
+    \ list[str], repo: str | None = None) -> None:\n        self.graph_node(f\"owner:{owner}\"\
+    , \"owner\", owner)\n        self.graph_node(f\"conv:{conv_id}\", \"conversation\"\
+    , conv_id)\n        self.graph_node(f\"model:{provider}/{model}\", \"model\",\
+    \ f\"{provider}/{model}\")\n        self.graph_link(f\"owner:{owner}\", f\"conv:{conv_id}\"\
+    , \"started\")\n        self.graph_link(f\"conv:{conv_id}\", f\"model:{provider}/{model}\"\
+    , \"used_model\")\n        if agent_id:\n            self.graph_node(f\"agent:{agent_id}\"\
+    , \"agent\", agent_id)\n            self.graph_link(f\"conv:{conv_id}\", f\"agent:{agent_id}\"\
+    , \"ran_agent\")\n        for did in doc_ids:\n            doc = self.document(did)\n\
+    \            if doc:\n                self.graph_node(f\"doc:{did}\", \"document\"\
+    , doc[\"name\"])\n                self.graph_link(f\"conv:{conv_id}\", f\"doc:{did}\"\
+    , \"attached\")\n        if repo:\n            self.graph_node(f\"repo:{repo}\"\
+    , \"repo\", repo)\n            self.graph_link(f\"conv:{conv_id}\", f\"repo:{repo}\"\
+    , \"linked_repo\")\n\n    # -- agents --------------------------------------------------------------------\n\
+    \    def upsert_agent(self, agent_id: str, name: str, role: str, system_prompt:\
+    \ str, models: list[str]) -> None:\n        self._exec(\"INSERT INTO agents VALUES(?,?,?,?,?,?)\
+    \ ON CONFLICT(id) DO UPDATE SET name=excluded.name, role=excluded.role, system_prompt=excluded.system_prompt,\
+    \ models=excluded.models\",\n                   (agent_id, name, role, system_prompt,\
+    \ json.dumps(models), time.time()))\n\n    def agents(self) -> list[dict[str,\
+    \ Any]]:\n        rows = self._all(\"SELECT * FROM agents ORDER BY id\")\n   \
+    \     for r in rows:\n            r[\"models\"] = json.loads(r[\"models\"] or\
+    \ \"[]\")\n        return rows\n\n    def agent(self, agent_id: str) -> dict[str,\
+    \ Any] | None:\n        return next((a for a in self.agents() if a[\"id\"] ==\
+    \ agent_id), None)\n\n    def delete_agent(self, agent_id: str) -> bool:\n   \
+    \     exists = self.agent(agent_id) is not None\n        self._exec(\"DELETE FROM\
+    \ agents WHERE id=?\", (agent_id,))\n        return exists\n\n    # -- stats /\
+    \ snapshot ----------------------------------------------------------\n    def\
+    \ stats(self) -> dict[str, Any]:\n        one = lambda sql: (self._all(sql) or\
+    \ [{\"n\": 0}])[0][\"n\"] or 0  # noqa: E731\n        return {\n            \"\
+    sql\": {\"path\": str(self.db_path), \"conversations\": one(\"SELECT COUNT(*)\
+    \ n FROM conversations\"),\n                    \"messages\": one(\"SELECT COUNT(*)\
+    \ n FROM messages\"), \"agents\": one(\"SELECT COUNT(*) n FROM agents\")},\n \
+    \           \"graph\": {\"nodes\": one(\"SELECT COUNT(*) n FROM graph_nodes\"\
+    ), \"edges\": one(\"SELECT COUNT(*) n FROM graph_edges\")},\n            \"cache\"\
+    : {\"entries\": one(\"SELECT COUNT(*) n FROM cache\"), \"hits\": one(\"SELECT\
+    \ SUM(hits) n FROM cache\")},\n            \"documents\": {\"count\": one(\"SELECT\
+    \ COUNT(*) n FROM documents\"), \"bytes\": one(\"SELECT SUM(size) n FROM documents\"\
+    )},\n        }\n\n    def snapshot(self, dest: str | Path) -> Path:\n        dest\
+    \ = Path(dest)\n        target = sqlite3.connect(str(dest))\n        with self._lock:\n\
+    \            self._db.backup(target)\n        target.close()\n        return dest\n\
+    \n\n=== ARCHIVO router inteligente universal/integration/chat_mvp/jobs.py ===\n\
+    \"\"\"Parallel agent jobs through the Router: each job = one agent + one model\
+    \ + optional GitHub commit. No sandbox:\nthe commit uses the real account token\
+    \ selected by name. Each job is a single-node riu.dag/v1 plan, so it keeps the\n\
+    deterministic rules (literal input block, PASS only from `expect`, hash-chained\
+    \ ledger).\nConcurrency is capped (default 8) to protect provider rate limits.\n\
+    \"\"\"\nfrom __future__ import annotations\n\nimport asyncio\nfrom concurrent.futures\
+    \ import ThreadPoolExecutor\nfrom typing import Any\n\nfrom fastapi import APIRouter,\
+    \ Depends, Header, HTTPException\nfrom pydantic import BaseModel, Field\n\nfrom\
+    \ . import dag as dagmod\nfrom . import dag_cli\nfrom . import github_tools as\
+    \ gh\nfrom . import providers as prov\nfrom .router import _auth, get_store\n\
+    from .store import Store\n\nCOMMITTABLE = {\"PASS\"}\n\n\ndef _one(store: Store,\
+    \ owner: str, job: dict[str, Any], executor: Any, agents: dict[str, str],\n  \
+    \       github_byok: str | None, put_file: Any) -> dict[str, Any]:\n    plan =\
+    \ {\"schema\": dagmod.SCHEMA, \"id\": job[\"id\"], \"input_block\": job.get(\"\
+    input_block\") or job[\"instructions\"],\n            \"nodes\": [{\"id\": \"\
+    J\", \"stage\": \"worker\", \"agent\": job.get(\"agent_id\"), \"model\": {\"provider\"\
+    : job[\"provider\"], \"model\": job[\"model\"]},\n                       \"instructions\"\
+    : job[\"instructions\"], \"expect\": job.get(\"expect\"), \"retries\": int(job.get(\"\
+    retries\", 0)),\n                       \"max_tokens\": int(job.get(\"max_tokens\"\
+    , 1024))}]}\n    out: dict[str, Any] = {\"id\": job[\"id\"], \"agent_id\": job.get(\"\
+    agent_id\"), \"model\": f\"{job['provider']}/{job['model']}\", \"commit\": None,\
+    \ \"error\": None}\n    try:\n        res = dagmod.run_dag(plan, executor, agents=agents,\
+    \ known_providers=set(prov.PROVIDERS))\n    except dagmod.DagError as exc:\n \
+    \       return {**out, \"status\": \"INVALID\", \"error\": str(exc)}\n    node\
+    \ = res[\"nodes\"][\"J\"]\n    out.update(status=res[\"status\"], verdict=node[\"\
+    status\"], checks_failed=node.get(\"checks_failed\", []),\n               reply_preview=(node.get(\"\
+    reply\") or \"\")[:400], ledger_valid=res[\"ledger_valid\"])\n    target = job.get(\"\
+    github\")\n    if target:\n        allow = res[\"status\"] in COMMITTABLE or (target.get(\"\
+    allow_unverified\") and res[\"status\"] == \"UNVERIFIED\")\n        if not allow:\n\
+    \            out[\"error\"] = f\"NOT_COMMITTED_STATUS_{res['status']}\"\n    \
+    \        return out\n        token = gh.token_for(target[\"account\"], github_byok)\n\
+    \        if not token:\n            out[\"error\"] = \"GITHUB_ACCOUNT_NOT_CONFIGURED\"\
+    \n            return out\n        try:\n            out[\"commit\"] = put_file(token,\
+    \ target[\"repo\"], target[\"path\"], node[\"reply\"],\n                     \
+    \                target.get(\"message\") or f\"job {job['id']} by {job.get('agent_id')}\
+    \ ({res['status']})\", target.get(\"branch\"))\n        except gh.GitHubError\
+    \ as exc:\n            out[\"error\"] = str(exc)\n    return out\n\n\ndef run_jobs(store:\
+    \ Store, owner: str, jobs: list[dict[str, Any]], *, max_parallel: int = 8, keys:\
+    \ dict[str, str] | None = None,\n             github_byok: str | None = None,\
+    \ executor: Any = None, put_file: Any = None) -> list[dict[str, Any]]:\n    executor\
+    \ = executor or dag_cli.build_executor(store, owner, keys)\n    put_file = put_file\
+    \ or gh.put_file\n    agents = {a[\"id\"]: a[\"system_prompt\"] for a in store.agents()}\n\
+    \    with ThreadPoolExecutor(max_workers=max(1, min(max_parallel, len(jobs))))\
+    \ as pool:\n        return list(pool.map(lambda j: _one(store, owner, j, executor,\
+    \ agents, github_byok, put_file), jobs))\n\n\nclass JobReq(BaseModel):\n    id:\
+    \ str = Field(pattern=r\"^[A-Za-z0-9_.-]{1,64}$\")\n    agent_id: str | None =\
+    \ None\n    provider: str\n    model: str\n    instructions: str = Field(min_length=1,\
+    \ max_length=20000)\n    input_block: str | None = None\n    expect: dict[str,\
+    \ Any] | None = None\n    retries: int = Field(default=0, ge=0, le=2)\n    max_tokens:\
+    \ int = Field(default=1024, ge=1, le=8192)\n    github: dict[str, Any] | None\
+    \ = None  # {account, repo, path, message?, branch?, allow_unverified?}\n\n\n\
+    class JobsReq(BaseModel):\n    jobs: list[JobReq] = Field(min_length=1, max_length=100)\n\
+    \    max_parallel: int = Field(default=8, ge=1, le=32)\n\n\ndef build_jobs_router()\
+    \ -> APIRouter:\n    r = APIRouter()\n\n    @r.post(\"/chat/jobs/run\")\n    async\
+    \ def jobs_run(req: JobsReq, owner: str = Depends(_auth),\n                  \
+    \     x_provider_keys: str | None = Header(default=None, alias=\"X-Provider-Keys\"\
+    ),\n                       x_github_token: str | None = Header(default=None, alias=\"\
+    X-GitHub-Token\")) -> dict[str, Any]:\n        import json\n\n        keys: dict[str,\
+    \ str] = {}\n        if x_provider_keys:\n            try:\n                parsed\
+    \ = json.loads(x_provider_keys)\n            except json.JSONDecodeError as exc:\n\
+    \                raise HTTPException(status_code=400, detail=\"X_PROVIDER_KEYS_INVALID_JSON\"\
+    ) from exc\n            keys = {str(k): str(v) for k, v in parsed.items()} if\
+    \ isinstance(parsed, dict) else {}\n        st = get_store()\n        results\
+    \ = await asyncio.to_thread(run_jobs, st, owner, [j.model_dump() for j in req.jobs],\
+    \ max_parallel=req.max_parallel,\n                                          keys=keys,\
+    \ github_byok=x_github_token)\n        return {\"results\": results, \"passed\"\
+    : sum(1 for x in results if x.get(\"status\") == \"PASS\"), \"total\": len(results)}\n\
+    \n    return r\n\n\n=== ARCHIVO router inteligente universal/integration/chat_mvp/vault_api.py\
+    \ ===\n\"\"\"HTTP surface of the Secret Bank inside the chat: /vault (page), /vault/status|unlock|lock|credentials|rotate|import.\n\
+    \nEvery endpoint needs a Router API key. The passphrase is only used to open the\
+    \ bank in server memory; no endpoint returns a secret.\n\"\"\"\nfrom __future__\
+    \ import annotations\n\nfrom typing import Any\n\nfrom fastapi import APIRouter,\
+    \ Depends, HTTPException\nfrom fastapi.responses import HTMLResponse\nfrom pydantic\
+    \ import BaseModel, Field\n\nfrom .router import _auth\nfrom .vault_bridge import\
+    \ BankError, bridge\n\nPAGE = \"\"\"<!doctype html><html lang=\"es\"><head><meta\
+    \ charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"\
+    >\n<title>Banco secreto</title><style>body{font:16px system-ui;max-width:640px;margin:24px\
+    \ auto;padding:0 14px}input,button{font:inherit;padding:8px;margin:4px 0;width:100%;box-sizing:border-box}\n\
+    button{width:auto;margin-right:8px}pre{background:#0001;padding:10px;border-radius:8px;white-space:pre-wrap}</style></head><body>\n\
+    <h2>Banco secreto</h2><input id=\"k\" type=\"password\" placeholder=\"API key\
+    \ del Router (MAXBRY-…)\" autocomplete=\"off\">\n<input id=\"p\" type=\"password\"\
+    \ placeholder=\"Contraseña maestra (solo abre el banco en memoria)\" autocomplete=\"\
+    off\">\n<div><button id=\"u\">Desbloquear</button><button id=\"l\">Bloquear</button><button\
+    \ id=\"s\">Estado</button></div><pre id=\"o\"></pre>\n<script>var $=function(i){return\
+    \ document.getElementById(i)};function call(m,p,b){return fetch(p,{method:m,headers:{'Content-Type':'application/json','X-API-Key':$('k').value},body:b?JSON.stringify(b):undefined}).then(function(r){return\
+    \ r.json().then(function(j){return {s:r.status,b:j}})})}\nfunction show(r){$('o').textContent=r.s+'\
+    \ '+JSON.stringify(r.b,null,1)}\n$('u').onclick=function(){call('POST','/vault/unlock',{passphrase:$('p').value}).then(function(r){$('p').value='';show(r)})};\n\
+    $('l').onclick=function(){call('POST','/vault/lock').then(show)};$('s').onclick=function(){call('GET','/vault/status').then(show)};</script></body></html>\"\
+    \"\"\n\n\nclass UnlockReq(BaseModel):\n    passphrase: str = Field(min_length=1,\
+    \ max_length=256)\n\n\nclass PutReq(BaseModel):\n    ref: str = Field(pattern=r\"\
+    ^[a-z0-9][a-z0-9_.-]*/[a-z0-9][a-z0-9_.-]*$\")\n    secret: str = Field(min_length=1,\
+    \ max_length=4096)\n    scope: str = \"inference\"\n\n\nclass ImportReq(BaseModel):\n\
+    \    b64gz: str = Field(min_length=20, max_length=2_000_000)\n\n\ndef _run(fn:\
+    \ Any, *args: Any) -> Any:\n    try:\n        return fn(*args)\n    except BankError\
+    \ as exc:\n        code = str(exc)\n        status = {\"INVALID_PASSPHRASE\":\
+    \ 401, \"TOO_MANY_ATTEMPTS\": 429, \"VAULT_LOCKED\": 423, \"VAULT_MISSING\": 404,\
+    \ \"VAULT_EXISTS\": 409}.get(code, 400)\n        raise HTTPException(status_code=status,\
+    \ detail=code) from exc\n    except Exception as exc:  # noqa: BLE001 - vault\
+    \ errors are reported by code only, never with values\n        raise HTTPException(status_code=400,\
+    \ detail=type(exc).__name__) from exc\n\n\ndef build_vault_router() -> APIRouter:\n\
+    \    r = APIRouter()\n\n    @r.get(\"/vault\", response_class=HTMLResponse)\n\
+    \    def page() -> HTMLResponse:\n        return HTMLResponse(PAGE)\n\n    @r.get(\"\
+    /vault/status\")\n    def status(_owner: str = Depends(_auth)) -> dict[str, Any]:\n\
+    \        return bridge.status()\n\n    @r.post(\"/vault/unlock\")\n    def unlock(req:\
+    \ UnlockReq, _owner: str = Depends(_auth)) -> dict[str, Any]:\n        count =\
+    \ _run(bridge.unlock, req.passphrase)\n        return {\"unlocked\": True, \"\
+    credentials\": count}\n\n    @r.post(\"/vault/lock\")\n    def lock(_owner: str\
+    \ = Depends(_auth)) -> dict[str, Any]:\n        bridge.lock()\n        return\
+    \ {\"unlocked\": False}\n\n    @r.post(\"/vault/credentials\")\n    def put(req:\
+    \ PutReq, _owner: str = Depends(_auth)) -> dict[str, Any]:\n        _run(bridge.put,\
+    \ req.ref, req.secret, req.scope)\n        return {\"stored\": req.ref}\n\n  \
+    \  @r.post(\"/vault/rotate\")\n    def rotate(req: PutReq, _owner: str = Depends(_auth))\
+    \ -> dict[str, Any]:\n        _run(bridge.rotate, req.ref, req.secret)\n     \
+    \   return {\"rotated\": req.ref}\n\n    @r.post(\"/vault/import\")\n    def import_vault(req:\
+    \ ImportReq, _owner: str = Depends(_auth)) -> dict[str, Any]:\n        return\
+    \ {\"imported_bytes\": _run(bridge.import_b64gz, req.b64gz)}\n\n    return r\n\
+    \n\n=== ARCHIVO router inteligente universal/integration/chat_mvp/github_tools.py\
+    \ ===\n\"\"\"Multi-account GitHub tools for the chat MVP (stdlib only, REST).\n\
+    \nAccounts are labels mapped to ENV VAR NAMES (RIU_GITHUB_ACCOUNTS='{\"cuenta-1\"\
+    :\"GITHUB_TOKEN_1\"}'), or a\nper-request BYOK token. Tokens are never returned,\
+    \ logged or stored.\n\"\"\"\nfrom __future__ import annotations\n\nimport base64\n\
+    import json\nimport os\nimport urllib.error\nimport urllib.parse\nimport urllib.request\n\
+    from typing import Any, Callable, Mapping\n\nAPI = \"https://api.github.com\"\n\
+    MAX_FILE_BYTES = 200_000\nDEFAULT_ENV_TOKENS = (\"GITHUB_TOKEN_1\", \"GITHUB_TOKEN_2\"\
+    , \"GITHUB_TOKEN_3\", \"RIU_GITHUB_TOKEN\")\n\n\nclass GitHubError(RuntimeError):\n\
+    \    def __init__(self, status: int | str, message: str) -> None:\n        super().__init__(f\"\
+    GITHUB_ERROR:{status}:{message}\")\n        self.status = status\n\n\ndef accounts_from_env(env:\
+    \ Mapping[str, str] | None = None) -> dict[str, str]:\n    env = os.environ if\
+    \ env is None else env\n    raw = env.get(\"RIU_GITHUB_ACCOUNTS\", \"\")\n   \
+    \ if raw:\n        try:\n            parsed = json.loads(raw)\n        except\
+    \ json.JSONDecodeError:\n            return {}\n        return {str(k): str(v)\
+    \ for k, v in parsed.items()} if isinstance(parsed, dict) else {}\n    return\
+    \ {name: name for name in DEFAULT_ENV_TOKENS if env.get(name)}\n\n\ndef token_for(account:\
+    \ str, byok: str | None = None, env: Mapping[str, str] | None = None) -> str |\
+    \ None:\n    if byok:\n        return byok\n    env = os.environ if env is None\
+    \ else env\n    var = accounts_from_env(env).get(account)\n    return env.get(var)\
+    \ if var else None\n\n\ndef _http(method: str, url: str, token: str, body: dict[str,\
+    \ Any] | None) -> tuple[int, Any]:\n    headers = {\"Authorization\": \"Bearer\
+    \ \" + token, \"Accept\": \"application/vnd.github+json\",\n               \"\
+    X-GitHub-Api-Version\": \"2022-11-28\", \"User-Agent\": \"riu-chat-mvp\"}\n  \
+    \  data = json.dumps(body).encode(\"utf-8\") if body is not None else None\n \
+    \   req = urllib.request.Request(url, data=data, headers=headers, method=method)\n\
+    \    try:\n        with urllib.request.urlopen(req, timeout=25) as resp:  # noqa:\
+    \ S310 fixed https API host\n            return resp.status, json.loads(resp.read().decode(\"\
+    utf-8\") or \"null\")\n    except urllib.error.HTTPError as exc:\n        return\
+    \ exc.code, {\"message\": exc.read().decode(\"utf-8\", errors=\"replace\")[:160]}\n\
+    \    except Exception as exc:  # noqa: BLE001\n        raise GitHubError(type(exc).__name__,\
+    \ \"request failed\") from exc\n\n\ndef _call(http: Callable[..., tuple[int, Any]]\
+    \ | None, method: str, path: str, token: str, body: dict[str, Any] | None = None)\
+    \ -> Any:\n    status, data = (http or _http)(method, API + path, token, body)\n\
+    \    if status >= 400:\n        raise GitHubError(status, str((data or {}).get(\"\
+    message\", \"\"))[:120])\n    return data\n\n\ndef whoami(token: str, http: Callable[...,\
+    \ tuple[int, Any]] | None = None) -> str:\n    return str(_call(http, \"GET\"\
+    , \"/user\", token).get(\"login\", \"\"))\n\n\ndef list_repos(token: str, http:\
+    \ Callable[..., tuple[int, Any]] | None = None, per_page: int = 50) -> list[dict[str,\
+    \ Any]]:\n    data = _call(http, \"GET\", f\"/user/repos?per_page={per_page}&sort=updated\"\
+    , token)\n    return [{\"full_name\": r[\"full_name\"], \"private\": r[\"private\"\
+    ], \"default_branch\": r.get(\"default_branch\", \"main\")} for r in data]\n\n\
+    \ndef get_file(token: str, repo: str, path: str, ref: str | None = None, http:\
+    \ Callable[..., tuple[int, Any]] | None = None) -> dict[str, Any]:\n    q = f\"\
+    ?ref={urllib.parse.quote(ref)}\" if ref else \"\"\n    data = _call(http, \"GET\"\
+    , f\"/repos/{repo}/contents/{urllib.parse.quote(path)}{q}\", token)\n    if isinstance(data,\
+    \ list) or data.get(\"type\") != \"file\":\n        raise GitHubError(\"NOT_A_FILE\"\
+    , path)\n    if data.get(\"size\", 0) > MAX_FILE_BYTES:\n        raise GitHubError(\"\
+    FILE_TOO_LARGE\", f\"{data.get('size')} bytes\")\n    text = base64.b64decode(data.get(\"\
+    content\", \"\")).decode(\"utf-8\", errors=\"replace\")\n    return {\"path\"\
+    : data[\"path\"], \"sha\": data[\"sha\"], \"size\": data[\"size\"], \"text\":\
+    \ text}\n\n\ndef put_file(token: str, repo: str, path: str, text: str, message:\
+    \ str, branch: str | None = None,\n             http: Callable[..., tuple[int,\
+    \ Any]] | None = None) -> dict[str, Any]:\n    body: dict[str, Any] = {\"message\"\
+    : message, \"content\": base64.b64encode(text.encode(\"utf-8\")).decode(\"ascii\"\
+    )}\n    if branch:\n        body[\"branch\"] = branch\n    try:\n        body[\"\
+    sha\"] = get_file(token, repo, path, branch, http)[\"sha\"]\n    except GitHubError\
+    \ as exc:\n        if exc.status != 404:\n            raise\n    data = _call(http,\
+    \ \"PUT\", f\"/repos/{repo}/contents/{urllib.parse.quote(path)}\", token, body)\n\
+    \    return {\"path\": data[\"content\"][\"path\"], \"content_sha\": data[\"content\"\
+    ][\"sha\"], \"commit\": data[\"commit\"][\"sha\"]}\n\n\n=== ARCHIVO router inteligente\
+    \ universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py\
+    \ ===\nimport hashlib\nimport json\nfrom copy import deepcopy\n\n\ndef _compute_hash(prev:\
+    \ str, event: dict) -> str:\n    return hashlib.sha256(\n        (prev + json.dumps(event,\
+    \ sort_keys=True, ensure_ascii=False)).encode(\"utf-8\")\n    ).hexdigest()\n\n\
+    \ndef append_event(state: dict, event: dict) -> dict:\n    \"\"\"\n    Return\
+    \ a NEW state (does not mutate the received one) whose \"events\" list\n    (empty\
+    \ if absent) has one more element: {\"seq\": n, \"event\": event,\n    \"prev\"\
+    : hash of previous event or \"GENESIS\", \"hash\": sha256 hex of\n    (prev +\
+    \ json.dumps(event, sort_keys=True, ensure_ascii=False))}.\n    \"\"\"\n    new_state\
+    \ = deepcopy(state)\n    events = new_state.get(\"events\", [])\n    prev_hash\
+    \ = \"GENESIS\"\n    if events:\n        prev_hash = events[-1][\"hash\"]\n  \
+    \  seq = len(events) + 1\n    h = _compute_hash(prev_hash, event)\n    entry =\
+    \ {\n        \"seq\": seq,\n        \"event\": event,\n        \"prev\": prev_hash,\n\
+    \        \"hash\": h,\n    }\n    events.append(entry)\n    new_state[\"events\"\
+    ] = events\n    return new_state\n\n\ndef verify(state: dict) -> bool:\n    \"\
+    \"\"\n    True if the whole chain is consistent:\n    - seq are consecutive starting\
+    \ from 1,\n    - prev matches the previous event's hash (or \"GENESIS\" for the\
+    \ first),\n    - recalculated hash matches the stored hash.\n    \"\"\"\n    events\
+    \ = state.get(\"events\", [])\n    for i, entry in enumerate(events):\n      \
+    \  expected_seq = i + 1\n        if entry.get(\"seq\") != expected_seq:\n    \
+    \        return False\n        expected_prev = \"GENESIS\" if i == 0 else events[i\
+    \ - 1][\"hash\"]\n        if entry.get(\"prev\") != expected_prev:\n         \
+    \   return False\n        computed = _compute_hash(expected_prev, entry[\"event\"\
+    ])\n        if computed != entry.get(\"hash\"):\n            return False\n  \
+    \  return True\n\n\ndef render_handoff(state: dict) -> str:\n    \"\"\"\n    Markdown\
+    \ that starts with \"# HANDOFF\",\n    has the line \"## Eventos\" and then one\
+    \ line per event with its seq\n    and the value of event.get(\"texto\", \"\"\
+    ).\n    \"\"\"\n    lines = [\"# HANDOFF\", \"## Eventos\"]\n    for entry in\
+    \ state.get(\"events\", []):\n        seq = entry.get(\"seq\", \"\")\n       \
+    \ texto = entry.get(\"event\", {}).get(\"texto\", \"\")\n        lines.append(f\"\
+    - {seq}: {texto}\")\n    return \"\\n\".join(lines)\n"
+  max_chars: 40000
+task: 'REUTILIZA/ADAPTA -> CABLEA/EJECUTA -> PRUEBA.
+
+  Integra y prueba dentro del chat:
+
+  Archivos/Memoria + Secret Bank + Router + Jobs + GitHub + agentes + selector + Crazy
+  Wall.
+
+  E2E obligatorio:
+
+  abrir chat -> selector visible -> enviar mensaje -> recibir respuesta ->
+
+  modo sin agente -> modo con agente -> adjuntar documento ->
+
+  cerrar/reabrir -> recuperar conversación/documento/memoria.
+
+  Registra evidencia de cada prueba. Si una falla, GAP/FIX y máximo 2 reintentos.
+
+  No declares CHAT_100; Agent 14 y el supervisor hacen el cierre global.
+
+  '
+checks:
+- kind: contains
+  values:
+  - Archivos
+  - Memoria
+  - Secret Bank
+  - Router
+  - Jobs
+  - GitHub
+  - Crazy Wall
+  - E2E
+  - GAP
+  - FIX
+- kind: no_secrets

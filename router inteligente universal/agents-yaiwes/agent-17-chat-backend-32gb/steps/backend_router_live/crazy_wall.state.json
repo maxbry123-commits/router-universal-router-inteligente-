@@ -1,10 +1,10 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-15-orchestrator-grokbuild",
+ "agent": "agent-17-chat-backend-32gb",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T05:37:25Z",
- "group": "orchestrators",
+ "updated_at": "2026-09-23T05:37:21Z",
+ "group": "chat",
  "current_nodes": [
   "execute"
  ],
@@ -16,7 +16,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
-  "la prueba falló (exit=1): requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://api.github.com/repos/xai-org/grok-build/releases/latest"
+  "falta 'Open WebUI'"
  ],
  "failed": [
   "execute"

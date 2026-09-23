@@ -3,21 +3,18 @@
  "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-23T03:18:33Z",
+ "updated_at": "2026-09-23T05:37:14Z",
  "group": "orchestrators",
  "chain": [
-  "install_and_connect"
+  "orchestrate_chat_100"
  ],
  "completed": [
-  "install_and_connect"
+  "orchestrate_chat_100"
  ],
  "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
-  "nvidia",
-  "groq",
-  "cerebras",
-  "minimax_m3"
+  "deepseek_flash"
  ]
 }

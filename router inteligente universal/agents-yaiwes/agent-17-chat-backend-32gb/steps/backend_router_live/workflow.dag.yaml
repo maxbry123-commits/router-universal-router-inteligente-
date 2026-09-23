@@ -1,0 +1,176 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-17-chat-backend-32gb
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 3600
+context:
+  text: "REUTILIZAR:\n- router inteligente universal/integration/chat_mvp/app.py\n\
+    - router inteligente universal/integration/chat_mvp/\n- router inteligente universal/integration/huggingface/fastapi_gateway.py\n\
+    - router inteligente universal/integration/huggingface/chat_executor.py\n- router\
+    \ inteligente universal/agents-yaiwes/common/hardware_sheriff.py\nOpen WebUI ya\
+    \ está descargado y verificado.\nEndpoints existentes: /health, /v1/models, /v1/chat/completions.\n\
+    hardware_sheriff.py fija cpu-upgrade = 32GB y falla cerrado con cualquier otra\
+    \ RAM.\n\n\n=== ARCHIVO router inteligente universal/integration/chat_mvp/app.py\
+    \ ===\n\"\"\"RIU Chat MVP app: certified HF gateway routes plus the chat API,\
+    \ Secret Bank, Wordflow fleet, parallel jobs and policy routing.\n\nRun: uvicorn\
+    \ integration.chat_mvp.app:app --host 0.0.0.0 --port 7860\nCORS: RIU_CORS_ORIGINS\
+    \ (comma-separated, default \"*\") lets the static chat (a Hugging Face Static\
+    \ Space) call this API from the browser; the API key\nheader (X-API-Key) still\
+    \ protects every route except the public pages.\n\"\"\"\nfrom __future__ import\
+    \ annotations\n\nimport os\n\nfrom fastapi import FastAPI\nfrom fastapi.middleware.cors\
+    \ import CORSMiddleware\n\nfrom ..huggingface import fastapi_gateway as gateway\n\
+    from . import wordflow_agents\nfrom .jobs import build_jobs_router\nfrom .route_api\
+    \ import build_route_router\nfrom .router import build_router, get_store\nfrom\
+    \ .vault_api import build_vault_router\n\napp = FastAPI(title=\"Router Inteligente\
+    \ Universal - Chat MVP\", version=\"0.3.1\")\napp.add_middleware(CORSMiddleware,\
+    \ allow_origins=[o.strip() for o in os.getenv(\"RIU_CORS_ORIGINS\", \"*\").split(\"\
+    ,\") if o.strip()],\n                   allow_methods=[\"*\"], allow_headers=[\"\
+    *\"], allow_credentials=False)\n\n\n@app.on_event(\"startup\")\ndef _seed_wordflow_fleet()\
+    \ -> None:\n    wordflow_agents.seed(get_store())\n\n\napp.include_router(build_router())\
+    \  # first: its /chat serves the MVP UI\napp.include_router(build_vault_router())\
+    \  # /vault: Secret Bank unlock in memory\napp.include_router(build_jobs_router())\
+    \  # /chat/jobs/run: parallel agent jobs\napp.include_router(build_route_router())\
+    \  # /chat/route + /chat/router/status: resilient policy routing\napp.include_router(gateway.app.router)\
+    \  # /health, /v1/models, /v1/chat/completions, /chat/models\n\n\n=== ARCHIVO\
+    \ router inteligente universal/integration/huggingface/fastapi_gateway.py ===\n\
+    \"\"\"Single FastAPI gateway for Hugging Face models: certified path + chat MVP.\n\
+    \nRoutes stay thin: authentication is enforced at the HTTP boundary and valid\n\
+    requests continue through the persisted Enchufe Gate + RedUniversal.\n\nRIU_CHAT_ALLOW_PROVIDER_LIVE=1\
+    \ lets the chat ATTEMPT provider-live selector\nmodels (Kimi K3, MiniMax, DeepSeek\
+    \ V4 Flash/Pro). They are returned with\n`certified: false` until their gates\
+    \ close in model_registry.json.\n\"\"\"\nfrom __future__ import annotations\n\n\
+    import os\nfrom pathlib import Path\n\nfrom fastapi import FastAPI, Header, HTTPException\n\
+    from fastapi.responses import HTMLResponse\nfrom pydantic import BaseModel, Field\n\
+    \nfrom .api_key_auth import authenticate_api_key\nfrom .chat_catalog import cached_discovery,\
+    \ selectable_live_ids, selector_models\nfrom .chat_executor import make_executor\n\
+    from .huggingface_openai_chat import allowed_model_ids\nfrom .router_hot_path\
+    \ import route_chat_completion\n\nLIVE_ENV = \"RIU_CHAT_ALLOW_PROVIDER_LIVE\"\n\
+    _CHAT_UI = Path(__file__).with_name(\"chat_ui.html\")\n\napp = FastAPI(title=\"\
+    Router Inteligente Universal HF Gateway\", version=\"0.4.1\")\n\n\ndef live_enabled()\
+    \ -> bool:\n    return os.getenv(LIVE_ENV, \"\") == \"1\"\n\n\ndef _require_selectable(model_id:\
+    \ str) -> None:\n    \"\"\"Fail closed at the HTTP boundary so a rejected model\
+    \ is a 400, not a routing 503.\"\"\"\n    if model_id in allowed_model_ids():\n\
+    \        return\n    if not live_enabled():\n        raise ValueError(\"MODEL_NOT_IN_CERTIFIED_REGISTRY\"\
+    )\n    if model_id not in selectable_live_ids(discovered=cached_discovery()):\n\
+    \        raise ValueError(\"MODEL_NOT_SELECTABLE\")\n\n\nclass ChatMessage(BaseModel):\n\
+    \    role: str\n    content: str\n\n\nclass ChatRequest(BaseModel):\n    model:\
+    \ str\n    messages: list[ChatMessage]\n    max_tokens: int = Field(default=256,\
+    \ ge=1, le=4096)\n\n\n@app.get(\"/health\")\ndef health() -> dict[str, object]:\n\
+    \    return {\n        \"status\": \"ok\",\n        \"registry_count\": len(allowed_model_ids()),\n\
+    \        \"route\": \"FastAPI->EnchufeGate->RedUniversal->HFAdapter\",\n     \
+    \   \"auth\": \"RIU_AGENT_API_KEYS\",\n        \"chat\": \"/chat\",\n        \"\
+    live_provider_inference\": live_enabled(),\n    }\n\n\n@app.get(\"/v1/models\"\
+    )\ndef models() -> dict[str, object]:\n    return {\n        \"object\": \"list\"\
+    ,\n        \"data\": [{\"id\": model_id, \"object\": \"model\"} for model_id in\
+    \ sorted(allowed_model_ids())],\n    }\n\n\n@app.get(\"/chat\", response_class=HTMLResponse)\n\
+    def chat_page() -> HTMLResponse:\n    return HTMLResponse(_CHAT_UI.read_text(encoding=\"\
+    utf-8\"))\n\n\n@app.get(\"/chat/models\")\ndef chat_models() -> dict[str, object]:\n\
+    \    return selector_models(discovered=cached_discovery(), live_enabled=live_enabled())\n\
+    \n\n@app.post(\"/v1/chat/completions\")\nasync def chat(\n    req: ChatRequest,\n\
+    \    authorization: str | None = Header(default=None),\n    x_api_key: str | None\
+    \ = Header(default=None, alias=\"X-API-Key\"),\n) -> dict[str, object]:\n    candidate\
+    \ = x_api_key\n    if not candidate and authorization and authorization.lower().startswith(\"\
+    bearer \"):\n        candidate = authorization[7:].strip()\n    try:\n       \
+    \ agent_id = authenticate_api_key(candidate)\n        _require_selectable(req.model)\n\
+    \        result = await route_chat_completion(\n            model_id=req.model,\n\
+    \            messages=[m.model_dump() for m in req.messages],\n            max_tokens=req.max_tokens,\n\
+    \            executor=make_executor(allow_provider_live=live_enabled()),\n   \
+    \     )\n    except ValueError as exc:\n        raise HTTPException(status_code=400,\
+    \ detail=str(exc)) from exc\n    except RuntimeError as exc:\n        detail =\
+    \ str(exc)\n        status = 401 if detail.startswith(\"RIU_API_KEY_\") else 503\n\
+    \        raise HTTPException(status_code=status, detail=detail) from exc\n   \
+    \ return {\n        \"object\": \"chat.completion\",\n        \"model\": result[\"\
+    model\"],\n        \"agent_id\": agent_id,\n        \"certified\": bool(result.get(\"\
+    certified\", True)),\n        \"choices\": [\n            {\n                \"\
+    index\": 0,\n                \"message\": result[\"message\"],\n             \
+    \   \"finish_reason\": result[\"finish_reason\"],\n            }\n        ],\n\
+    \    }\n\n\n=== ARCHIVO router inteligente universal/integration/huggingface/chat_executor.py\
+    \ ===\n\"\"\"Chat MVP executor: certified path unchanged; live-provider attempts\
+    \ only when enabled.\"\"\"\nfrom __future__ import annotations\n\nimport os\n\
+    from typing import Any, Callable\n\nfrom . import huggingface_openai_chat as adapter\n\
+    from .chat_catalog import cached_discovery, selectable_live_ids\n\n\ndef _call_inference(*,\
+    \ token: str, model_id: str, messages: list[dict[str, str]], max_tokens: int)\
+    \ -> dict[str, Any]:\n    from huggingface_hub import InferenceClient\n\n    out\
+    \ = InferenceClient(token=token, timeout=60).chat_completion(model=model_id, messages=messages,\
+    \ max_tokens=max_tokens)\n    choice = out.choices[0]\n    return {\n        \"\
+    model\": model_id,\n        \"message\": {\"role\": choice.message.role, \"content\"\
+    : choice.message.content},\n        \"finish_reason\": choice.finish_reason,\n\
+    \    }\n\n\ndef make_executor(*, allow_provider_live: bool, discover: Callable[[],\
+    \ list[str]] = cached_discovery) -> Callable[..., dict[str, Any]]:\n    \"\"\"\
+    Return an executor with the same signature as adapter.chat_completion.\"\"\"\n\
+    \n    def executor(*, model_id: str, messages: list[dict[str, str]], max_tokens:\
+    \ int = 256) -> dict[str, Any]:\n        if model_id in adapter.allowed_model_ids():\n\
+    \            out = adapter.chat_completion(model_id=model_id, messages=messages,\
+    \ max_tokens=max_tokens)\n            return {**out, \"certified\": True}\n  \
+    \      if not allow_provider_live:\n            raise ValueError(\"MODEL_NOT_IN_CERTIFIED_REGISTRY\"\
+    )\n        if model_id not in selectable_live_ids(discovered=discover()):\n  \
+    \          raise ValueError(\"MODEL_NOT_SELECTABLE\")\n        token = os.getenv(\"\
+    HF_TOKEN\")\n        if not token:\n            raise RuntimeError(\"HF_TOKEN_REQUIRED\"\
+    )\n        out = _call_inference(token=token, model_id=model_id, messages=messages,\
+    \ max_tokens=max_tokens)\n        return {**out, \"certified\": False}\n\n   \
+    \ return executor\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/common/hardware_sheriff.py\
+    \ ===\n\"\"\"Sheriff duro: solo máquina HF con 32 GB RAM antes de run_job.\n\n\
+    Orden Director: procesador/máquina de 32 GB RAM; cualquier otra → FAIL y no lanzar.\n\
+    Los IDs técnicos de flavor HF son detalle de implementación (no texto del Director).\n\
+    \"\"\"\nfrom __future__ import annotations\n\nfrom typing import Any, Mapping\n\
+    \n# Capacidad RAM (GB) conocida por flavor técnico HF Jobs (docs HF).\n_FLAVOR_RAM_GB:\
+    \ dict[str, int] = {\n    \"cpu-basic\": 16,\n    \"cpu-upgrade\": 32,\n    \"\
+    t4-small\": 16,\n    \"t4-medium\": 32,\n    \"a10g-small\": 24,\n    \"a10g-large\"\
+    : 48,\n    \"a100-large\": 80,\n}\n\nALLOWED_RAM_GB = 32\n\n\nclass HardwareSheriffError(RuntimeError):\n\
+    \    \"\"\"La máquina pedida no es la de 32 GB RAM.\"\"\"\n\n\ndef ram_gb_for_flavor(flavor:\
+    \ str | None) -> int | None:\n    if not flavor:\n        return None\n    return\
+    \ _FLAVOR_RAM_GB.get(str(flavor).strip().lower())\n\n\ndef assert_machine_32gb_ram(*,\
+    \ flavor: str | None = None, ram_gb: int | None = None) -> None:\n    \"\"\"FAIL\
+    \ cerrado si la máquina no es 32 GB RAM.\"\"\"\n    gb = ram_gb if ram_gb is not\
+    \ None else ram_gb_for_flavor(flavor)\n    label = f\"flavor={flavor!r}\" if flavor\
+    \ else f\"ram_gb={ram_gb!r}\"\n    if gb is None:\n        raise HardwareSheriffError(\n\
+    \            f\"SHERIFF FAIL: máquina desconocida ({label}); solo se permite 32\
+    \ GB RAM. No lanzar.\"\n        )\n    if gb != ALLOWED_RAM_GB:\n        raise\
+    \ HardwareSheriffError(\n            f\"SHERIFF FAIL: máquina {label} tiene {gb}\
+    \ GB RAM; obligatorio {ALLOWED_RAM_GB} GB. No lanzar.\"\n        )\n\n\ndef guarded_run_job(api:\
+    \ Any, **kwargs: Any) -> Any:\n    \"\"\"Envuelve api.run_job: valida máquina\
+    \ 32 GB RAM y luego lanza.\"\"\"\n    flavor = kwargs.get(\"flavor\") or kwargs.get(\"\
+    hardware_flavor\")\n    assert_machine_32gb_ram(flavor=flavor)\n    return api.run_job(**kwargs)\n\
+    \n\ndef job_is_allowed_32gb(job: Any) -> bool:\n    \"\"\"True si un Job ya existente\
+    \ declara máquina 32 GB RAM.\"\"\"\n    flavor = None\n    for attr in (\"flavor\"\
+    , \"hardware\", \"machine_type\"):\n        flavor = getattr(job, attr, None)\
+    \ or flavor\n    if isinstance(job, Mapping):\n        flavor = job.get(\"flavor\"\
+    ) or job.get(\"hardware\") or flavor\n        compute = job.get(\"compute\") or\
+    \ {}\n        if isinstance(compute, Mapping):\n            flavor = compute.get(\"\
+    flavor\") or flavor\n    gb = ram_gb_for_flavor(str(flavor) if flavor else None)\n\
+    \    return gb == ALLOWED_RAM_GB\n"
+  max_chars: 40000
+task: 'REUTILIZA/ADAPTA -> CABLEA/EJECUTA -> PRUEBA.
+
+  Conecta Open WebUI al Router/OpenAI-compatible existente.
+
+  Usa SOLO el mecanismo trigger/dispatcher existente autorizado y HF Job de 32GB cuando
+  necesites runtime.
+
+  PASS exige prueba real de /health, GET /v1/models y POST /v1/chat/completions con
+  respuesta no vacía.
+
+  Debe quedar documentada la conexión Open WebUI -> Router.
+
+  Si el runtime no permite una prueba real, BLOCKED con GAP exacto; nunca PASS simulado.
+
+  '
+checks:
+- kind: contains
+  values:
+  - /health
+  - /v1/models
+  - /v1/chat/completions
+  - 32GB
+  - Open WebUI
+  - PRUEBA
+- kind: no_secrets
