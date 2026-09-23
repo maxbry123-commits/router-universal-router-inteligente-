@@ -110,3 +110,93 @@ Cada vez que exista una nueva orden del Director, Agent 14 debe responder aquí 
 ## CIERRE
 
 `CHAT_100 = PASS` solo cuando todas las pruebas reales exigidas por el DSL DAG estén cerradas con evidencia.
+
+
+---
+
+# ⏱️🟣 WATCHDOG DEL ORQUESTADOR — CICLO 5 MINUTOS
+
+**Contrato:** `WATCHDOG-5MIN.json`  
+**Intervalo solicitado por el Director:** **300 segundos / 5 minutos**  
+**Ámbito:** únicamente CHAT YAIWES y los agentes bajo Agent 14.
+
+> 🟥 **CRÍTICO** — bloqueo que impide CHAT_100.  
+> 🟧 **GAP ACTIVO** — problema con FIX en curso.  
+> 🟨 **EN VALIDACIÓN** — esperando prueba/evidencia.  
+> 🟩 **PASS VERIFICADO** — evidencia real cerrada.  
+> 🟦 **INFORMACIÓN / INVESTIGACIÓN** — hallazgo útil.  
+> 🟪 **DECISIÓN DEL DIRECTOR** — Agent 14 necesita respuesta del Director.
+
+## 📣 NOTA DEL ORQUESTADOR PARA EL DIRECTOR
+
+En **cada ciclo**, Agent 14 debe AÑADIR una nota grande y específica aquí, sin borrar las anteriores.
+
+Formato obligatorio:
+
+# 📣🟦 NOTA PARA EL DIRECTOR — CICLO <ID>
+
+## 🟩 ESTADO GENERAL
+Estado actual de CHAT_100 y porcentaje de nodos DSL cerrados con evidencia.
+
+## 👥🟦 AVANCE DE AGENTES
+Agente → nodo → estado → evidencia → siguiente acción.
+
+## 🟥 GAPS
+GAP exacto, causa raíz y nodo afectado.
+
+## 🔎🟦 INVESTIGACIÓN HUGGING FACE / COMUNIDAD
+Qué investigó, qué fuente oficial/comunitaria encontró y cómo soporta el FIX.
+No inventar URLs, documentación ni resultados.
+
+## 🛠️🟧 FIX ORDENADO
+Agente dueño del FIX, orden exacta, prueba exigida y límite de reintentos.
+
+## ❓🟪 DUDAS PARA EL DIRECTOR
+Si no hay dudas: **NINGUNA**.
+Si hay ambigüedad o hace falta una decisión de autoridad, preguntar aquí antes de inventar.
+
+## ⏭️🟨 SIGUIENTE CICLO
+Qué evidencia se comprobará en el próximo ciclo de 5 minutos.
+
+## 🤖 JSON PARA SOL/CHATGPT — BLOQUES SEPARADOS
+
+Este bloque es **orientado a máquina para el supervisor**, no es un canal secreto: el Director también puede verlo.
+
+Agent 14 debe escribir **un objeto JSON válido por bloque**, nunca mezclar prose dentro del JSON:
+
+```json
+{
+  "timestamp": "",
+  "cycle_id": "",
+  "director_input_sha_or_ref": "",
+  "dag": {
+    "pass": [],
+    "running": [],
+    "blocked": [],
+    "pending": []
+  },
+  "agents": {},
+  "gaps": [],
+  "research": [],
+  "fixes": [],
+  "decisions_required": [],
+  "next_actions": [],
+  "chat_100": "PASS|PARTIAL|BLOCKED"
+}
+```
+
+## 🔁 REGLA DE RESOLUCIÓN DE GAP
+
+`DETECTAR GAP → LEER EVIDENCIA LOCAL → INVESTIGAR HF OFICIAL + COMUNIDAD HF → ELEGIR FIX MÍNIMO → ORDENAR AL EJECUTOR → PROBAR → READ-BACK → PASS/BLOCKED`
+
+Agent 14 **NO ejecuta el componente**. Coordina la resolución y obliga al agente correspondiente a ejecutarla/probarla.
+
+## 🚫 PROHIBICIONES DEL WATCHDOG
+
+- No GitHub Actions.
+- No editar `.github/workflows/`.
+- No usar el watchdog global antiguo como sustituto.
+- No modificar motores canónicos.
+- No crear componentes equivalentes desde cero cuando exista OSS.
+- No escribir secretos en este README ni en JSON.
+- No declarar `CHAT_100 = PASS` sin E2E real.
