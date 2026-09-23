@@ -1,9 +1,8 @@
 """Jev-style decision layer for the Router: Choice / Score / Noul primitives (a state plus typed questions -> a typed
 answer with a probability), following TypeSafe AI's Jev interface (https://docs.typesafe.ai/api). Every call goes
-through the Router's own resilient dispatch (core.call_via_router: NVIDIA -> Groq -> Cerebras -> HF, already covered by
-39 passing tests), so this works TODAY without Vercel access. The Director's plan is to swap the target to the real
-`typesafe-ai/jev` (Vercel AI Gateway) or a local decision model (NanoJev / Laya / Decider) once unblocked; every call
-site here stays the same when that swap happens — only `model`/`base_url` changes.
+through the Router's own resilient dispatch (core.call_via_router), so this works TODAY without Vercel access.
+The provider key is resolved from the server environment / unlocked bank when the caller does not pass one
+(FIX 2026-09-23: before, key=None reached the provider and HF answered 401).
 """
 from __future__ import annotations
 
@@ -12,6 +11,7 @@ import re
 from typing import Any
 
 from . import core
+from . import providers as prov
 
 SYSTEM = ("Eres un evaluador de decisiones tipadas (estilo Jev/System One). Recibes un ESTADO y una PREGUNTA con su tipo. "
           "Respondes SOLO un objeto JSON, sin texto antes ni después, sin bloque de código.")
@@ -22,6 +22,7 @@ class JevError(RuntimeError):
 
 
 def _ask(provider: str, key: str | None, model: str, prompt: str, max_tokens: int) -> dict[str, Any]:
+    key = key or prov.resolve_key(provider)
     res = core.call_via_router(provider, key, model, [{"role": "system", "content": SYSTEM}, {"role": "user", "content": prompt}], max_tokens)
     text = (res.get("message") or {}).get("content") or ""
     m = re.search(r"\{.*\}", text, re.S)
