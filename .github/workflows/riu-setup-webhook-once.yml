@@ -1,0 +1,31 @@
+name: RIU Setup Webhook Once
+
+# ONE-TIME SETUP ONLY: creates the always-on HF Space that listens to a GitHub Webhook, and registers that Webhook.
+# After this runs once, the activation path is GitHub Webhook -> HF Space -> HF Job — no GitHub Actions in that path ever again.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/agents-yaiwes/common/setup_webhook_once.py
+            router inteligente universal/agents-yaiwes/common/webhook_space_app.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub requests
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          GH_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
+        run: python "router inteligente universal/agents-yaiwes/common/setup_webhook_once.py"
