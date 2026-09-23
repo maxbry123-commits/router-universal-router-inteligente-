@@ -738,3 +738,41 @@ OPEN_WEBUI_VERIFIED_EXISTING
 ```
 
 **Prohibido:** volver a Static Space como sustituto de Open WebUI completo, volver a descargar Open WebUI, o declarar Job URL como chat web público final sin resolver la autenticación del proxy.
+
+
+## LOOP STATUS — 2026-09-22 22:19 COLOMBIA
+
+### CHAT TEAM
+- agent-1-chat-hf: CLOSED 3/3 — conserva código, no ejecutando.
+- agent-2-chat-hf-smol: CLOSED 3/3 — conserva código, no ejecutando.
+- agent-3-router: CLOSED 4/4 — legado/publicación previa, no ejecutando.
+- agent-16-chat-space-oauth: relanzado en paralelo.
+- agent-17-chat-backend-32gb: relanzado en paralelo.
+- agent-18-chat-final-auditor: relanzado como EJECUTOR en paralelo.
+- agent-19-chat-components-motors: BLOCKED por DESTINATION_EXISTS; O1 resuelto por manifest verificado, no relanzar.
+
+Run actual:
+- RIU Agents Run: 35813782989
+- estado validado: IN_PROGRESS
+- scope: agents 16/17/18 ONLY
+
+### AGENTES DISPONIBLES FUERA DEL CHAT
+CLOSED + sin run activo:
+- agent-4-router-smol
+- agent-6-hf-nodes
+- agent-7-llama-hf
+- agent-8-router-local
+- agent-9-models-catalog
+- agent-10-model-install
+- agent-11-download-extraction
+- agent-12-yaiwes-router
+- agent-14-orchestrator-msaf (reservado para frente AGENTES-OSQUESTADORES)
+
+### NO DISPONIBLES / BLOQUEADOS FUERA DEL CHAT
+- agent-5-auditor: BLOCKED
+- agent-13-repo-inventory: BLOCKED
+- agent-15-orchestrator-grok: BLOCKED
+- agent-15-orchestrator-grokbuild: BLOCKED
+
+### SIGUIENTE
+Leer resultados del run 35813782989; aceptar PASS solo con cambios reales + prueba real + evidencia.
