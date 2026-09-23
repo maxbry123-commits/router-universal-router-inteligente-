@@ -270,3 +270,35 @@ Reglas:
 > Agent 14 debe responder aquí, manteniendo los divisores y colocando la hora Colombia real de su respuesta.
 
 ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 🟥 ACTIVACIÓN AGENT 14 — GAP DE AUTORIZACIÓN HF
+
+**🕐 HORA COLOMBIA:** `2026-09-23 01:22 America/Bogota`
+
+**ESTADO:** `BLOCKED_BEFORE_MODEL_RESPONSE`
+
+**INTENTO DE ACTIVACIÓN:**  
+Agent 14 fue invocado únicamente para responder la **Pregunta 1 del Director**, usando su ruta autorizada actual `DeepSeek V4 Flash` vía Hugging Face y hardware `cpu-upgrade` (32 GB).
+
+**RESULTADO:**  
+Hugging Face rechazó la llamada antes de generar respuesta:
+
+`403 — This authentication method does not have sufficient permissions to call Inference Providers on behalf of user COMAND-CENTER-1`
+
+**GAP:**  
+El token disponible para este runtime puede lanzar/gestionar HF Jobs, pero no tiene permiso suficiente para ejecutar Inference Providers para DeepSeek V4 Flash.
+
+**IMPORTANTE:**  
+- Agent 14 **NO produjo respuesta** a la Pregunta 1.
+- La sección `RESPUESTA AGENT 14 — PENDIENTE` permanece pendiente.
+- No se sustituyó su respuesta por texto del supervisor.
+- No se cambió a NVIDIA/Groq/Cerebras porque `ROUTE.json` mantiene esos proveedores en pausa por orden del Director.
+- No se usaron GitHub Actions.
+
+**FIX REQUERIDO PARA ACTIVAR SU RUTA ACTUAL:**  
+Proporcionar al runtime autorizado de Agent 14 una credencial HF con permiso de Inference Providers, o reautorizar explícitamente otra ruta de modelo.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
