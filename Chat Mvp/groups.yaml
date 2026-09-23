@@ -1,9 +1,10 @@
 schema: chat-mvp.groups/v1
-updated: "2026-09-20"
+updated: "2026-09-23"
 sources:
   - "RIU-0107 (INPUT BLOCK 05): listas de modelos por grupo del Director"
   - "RIU-0109 (respuestas del Director): ambas LFM2; eliminados MiroThinker-8B y yasserrmd/Neuro-Orchestrator-8B"
   - "Auditoría del catálogo del router de Hugging Face: run 35489878690 (138 modelos, 2026-09-20)"
+  - "2026-09-23: Director quitó Qwen3-0.6B del catálogo local (no borrar el modelo del Hub)"
 
 runtime_classes:
   serverless_verified: "Aparece en el catálogo del router de Hugging Face (Inference Providers). inference_smoke indica si se probó una respuesta real."
@@ -13,6 +14,7 @@ runtime_classes:
 removed_by_director:
   - "MiroThinker-8B"
   - "yasserrmd/Neuro-Orchestrator-8B"
+  - "Qwen/Qwen3-0.6B"
 
 chat_selector_families:
   description: "Modelos pedidos para el selector del chat (Paso 1). Ver integration/huggingface/chat_catalog.py."
@@ -37,7 +39,6 @@ groups:
       - {name: "LFM2.5-2.6B", model_id: "LiquidAI/LFM2.5-2.6B", role: "nueva generación, contexto 131072", runtime: hf_job_fallback}
       - {name: "Nemotron Nano 9B v2", model_id: "nvidia/NVIDIA-Nemotron-Nano-9B-v2", role: "razonamiento, arquitectura y reparación", runtime: hf_job_fallback}
       - {name: "Nanbeige4.2-3B", model_id: "Nanbeige/Nanbeige4.2-3B", role: "código / agentic", runtime: hf_job_fallback}
-      - {name: "Qwen3-0.6B", model_id: "Qwen/Qwen3-0.6B", role: "ultraligero, router, worker", runtime: hf_job_fallback, note: "503 en el gateway: ningún proveedor lo sirve (run 35489744898)"}
       - {name: "Qwen2.5-1.5B-Instruct", model_id: "Qwen/Qwen2.5-1.5B-Instruct", role: "worker ligero", runtime: hf_job_fallback, id_verified: false}
       - {name: "Qwen2.5-0.5B-Instruct", model_id: "Qwen/Qwen2.5-0.5B-Instruct", role: "worker ultraligero", runtime: hf_job_fallback, id_verified: false}
     code_work:
