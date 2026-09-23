@@ -1,4 +1,4 @@
-# WATCHDOG — estado de los agentes (2026-09-23 08:08:10Z)
+# WATCHDOG — estado de los agentes (2026-09-23 08:09:27Z)
 
 **Acción:** hay pendientes; una ronda ya está en curso: no se lanza otra
 
