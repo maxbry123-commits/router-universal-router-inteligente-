@@ -1,4 +1,4 @@
-# WATCHDOG — estado de los agentes (2026-09-23 01:54:09Z)
+# WATCHDOG — estado de los agentes (2026-09-23 02:03:49Z)
 
 **Acción:** hay pendientes; una ronda ya está en curso: no se lanza otra
 
@@ -17,6 +17,7 @@ Error code: 402 - {'message': 'Payment require |
 | agent-16-chat-space-oauth | ? | SIN_ESTADO | 0/0 | - | - |
 | agent-17-chat-backend-32gb | ? | SIN_ESTADO | 0/0 | - | - |
 | agent-18-chat-final-auditor | ? | SIN_ESTADO | 0/0 | - | - |
+| agent-19-chat-components-motors | ? | SIN_ESTADO | 0/0 | - | - |
 | agent-2-chat-hf-smol | smolagents | CLOSED | 3/3 | - | - |
 | agent-3-router | pocketflow | PENDING_VERIFY | 3/4 | - | Space inexistente o inaccesible sin auth real (smoke FAIL) |
 | agent-4-router-smol | smolagents | BLOCKED | 3/3 | paper_closed_sin_health_live | - |
