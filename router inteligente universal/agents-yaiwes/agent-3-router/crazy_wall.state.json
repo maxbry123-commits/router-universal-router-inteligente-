@@ -3,37 +3,16 @@
  "agent": "agent-3-router",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T00:02:38Z",
+ "updated_at": "2026-09-23T00:04:00Z",
  "group": "hf-chat",
- "chain": [
-  "space_readme",
-  "space_index",
-  "deploy_script",
-  "publish_live"
- ],
- "completed": [
-  "space_readme",
-  "space_index",
-  "deploy_script"
- ],
- "failed": [
-  "publish_live"
- ],
- "next_nodes": [],
- "current_nodes": [],
- "attempts_publish_live": 5,
- "blockers": [
-  "#33 LLM envolvió publish_live.py en ```python + truncó (SyntaxError L1). TEMPLATE restaurado. Re-ejecutar verbatim SIN regenerar."
- ],
- "hardware_requirement": "Job only on HF machine with 32 GB RAM",
- "hardware_sheriff": "agents-yaiwes/common/hardware_sheriff.py",
- "job_port": 8000,
+ "chain": ["space_readme", "space_index", "deploy_script", "publish_live"],
+ "completed": ["space_readme", "space_index", "deploy_script"],
+ "failed": ["publish_live"],
+ "next_nodes": ["publish_live"],
+ "attempts_publish_live": 6,
+ "blockers": ["#36 LLM prose in publish_live.py. FALLBACK option 3 Static+OAuth+Inference."],
+ "deploy_mode": "INPUT-l option 3 Static+OAuth+InferenceProviders",
+ "orchestrator_order": "Option 3: Static Space OAuth + Inference Providers; space_url; no Job this round.",
  "space_id_suffix": "riu-chat-yaiwes",
- "orchestrator_order": "DO NOT rewrite publish_live.py. Copy file bytes verbatim into response. python_exec publish(). Job ONLY 32GB.",
- "route": [
-  "nvidia",
-  "groq",
-  "cerebras",
-  "minimax_m3"
- ]
+ "route": ["nvidia", "groq", "cerebras", "minimax_m3"]
 }

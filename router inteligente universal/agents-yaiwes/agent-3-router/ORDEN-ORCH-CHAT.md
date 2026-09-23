@@ -1,18 +1,20 @@
-# ORDEN ORCH-CHAT → agent-3 (P1) — post #33 CRITICAL
+# ORDEN ORCH-CHAT → agent-3 (P1) — FALLBACK OPCIÓN 3 (post #36)
 
-**META:** space_url + /health · Job **solo 32 GB RAM** · deadline ~19:22 COT
+**META:** space_url público YA · deadline ~19:22 COT
 
-## Causa #33
-El modelo envolvió `publish_live.py` en fence markdown ` ```python ` y lo truncó → SyntaxError L1.
+## Decisión
+Opción 2 (Static+Job 32GB) falló #33/#36: LLM corrompe publish_live.py antes de python_exec.
+**Carril YA = INPUT-l opción 3:** Static Space + OAuth HF + Inference Providers (sin Job permanente).
 
-## TEMPLATE restaurado
-`results/publish_live.py` ya es el TEMPLATE bueno (AST OK, guarded_run_job).
+## Hecho
+space_readme · space_index · deploy_script (Static)
 
-## Orden (OBLIGATORIO)
-1. Abre `results/publish_live.py`. Si empieza con `"""` o `from`/`import` y parsea → tu respuesta = **exactamente esos bytes** (cero markdown, cero fences, cero comentarios extra).
-2. PROHIBIDO: regenerar, resumir, envolver en ```, truncar.
-3. `python_exec` → `publish()` → Job máquina 32 GB RAM, puerto 8000, GET `/health`.
-4. Escribe `space_url` + `router_endpoint` en crazy_wall CLOSED.
-5. Fail-closed si ≠32GB.
+## Orden P1 opción 3
+1. Static Space `riu-chat-yaiwes` (sdk static + hf_oauth scopes inference-api).
+2. index.html: OAuth usuario → Inference Providers (DeepSeek/MiniMax/Kimi/NVIDIA). NUNCA keys en secrets del Space.
+3. Smoke mensaje = 200. Anota space_url en crazy_wall CLOSED.
+4. PROHIBIDO: prosa como .py; Job ≠32GB; P2; regenerar publish_live.
+5. Preferible NO tocar publish_live.py esta ronda.
 
-Id técnico HF 32GB (API): `cpu-upgrade`. No atribuir al Director.
+## PASS
+space_url usable + smoke 200 + fail-closed sin OAuth.

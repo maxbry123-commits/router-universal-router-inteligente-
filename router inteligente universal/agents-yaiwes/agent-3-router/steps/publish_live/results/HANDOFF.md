@@ -1,3 +1,3 @@
-# HANDOFF publish_live
+# HANDOFF
 
-PENDING_RETRY — TEMPLATE restored after #33 markdown-fence SyntaxError; execute verbatim
+FALLBACK option 3 Static+OAuth+Inference after #36 prose SyntaxError
