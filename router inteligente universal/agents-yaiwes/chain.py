@@ -83,36 +83,20 @@ def append_step_output(st: dict[str, Any], out: Path) -> None:
 
 
 def append_output_to_director(st: dict[str, Any], text: str) -> None:
-    """Append a verified agent output to its Director channel and persist it through a GitHub credential from the unlocked bank."""
+    """Append verified agent output to the Director channel in the checked-out repo.
+    GitHub Actions later commits/pushes the modified file. No external compute trigger is used.
+    """
     rel = st.get("append_output_to")
     if not rel:
         return
-    repo = os.getenv("RIU_GITHUB_REPOSITORY")
-    branch = os.getenv("RIU_GITHUB_BRANCH", "main")
-    if not repo:
-        raise RuntimeError("DIRECTOR_CHANNEL_GITHUB_REPO_MISSING")
-    from integration.chat_mvp import github_tools as gh
-
-    accounts = gh.accounts_from_env()
-    if not accounts:
-        raise RuntimeError("DIRECTOR_CHANNEL_GITHUB_CREDENTIAL_MISSING")
-    last_error: Exception | None = None
+    target = boot.REPO / rel
+    if not target.is_file():
+        raise RuntimeError(f"DIRECTOR_CHANNEL_NOT_FOUND:{rel}")
     payload = text.rstrip() + "\n"
-    for account in accounts:
-        token = gh.token_for(account)
-        if not token:
-            continue
-        try:
-            current = gh.get_file(token, repo, rel, branch)
-            base = current["text"]
-            if payload.strip() in base:
-                return
-            merged = base.rstrip() + "\n\n" + payload
-            gh.put_file(token, repo, rel, merged, f"agent response: {st.get('id','director')}", branch)
-            return
-        except Exception as exc:  # try the next unlocked GitHub account without exposing credentials
-            last_error = exc
-    raise RuntimeError(f"DIRECTOR_CHANNEL_WRITE_FAILED:{type(last_error).__name__ if last_error else 'NO_TOKEN'}")
+    current = target.read_text(encoding="utf-8")
+    if payload.strip() in current:
+        return
+    target.write_text(current.rstrip() + "\n\n" + payload, encoding="utf-8")
 
 
 def already_closed(sd: Path) -> str | None:
