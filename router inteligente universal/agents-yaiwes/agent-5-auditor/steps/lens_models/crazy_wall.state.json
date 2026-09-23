@@ -2,13 +2,21 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-5-auditor",
  "framework": "smolagents",
- "status": "RUNNING",
- "updated_at": "2026-09-23T01:43:49Z",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-23T03:25:16Z",
  "group": "audit",
  "current_nodes": [
   "auditor"
  ],
  "next_nodes": [
   "sheriff"
- ]
+ ],
+ "failed": [
+  "auditor"
+ ],
+ "gaps": [
+  "hf/deepseek-ai/DeepSeek-V4-Flash:el Sheriff no dio PASS",
+  "hf/deepseek-ai/DeepSeek-V4-Flash:el Sheriff no dio PASS"
+ ],
+ "attempts": 2
 }

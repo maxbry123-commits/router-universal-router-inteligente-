@@ -9,10 +9,7 @@ agent:
   framework: pocketflow
   group: inventory
   route:
-  - nvidia
-  - groq
-  - cerebras
-  - minimax_m3
+  - deepseek_flash
   fallback: []
   max_tokens: 2000
 context:

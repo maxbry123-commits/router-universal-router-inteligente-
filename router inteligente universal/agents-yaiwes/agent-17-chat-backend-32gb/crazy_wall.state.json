@@ -3,22 +3,18 @@
  "agent": "agent-17-chat-backend-32gb",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T01:45:13Z",
+ "updated_at": "2026-09-23T03:18:38Z",
  "group": "chat",
  "chain": [
-  "backend_live"
+  "wire_existing_backend"
  ],
  "completed": [],
  "failed": [
-  "backend_live"
+  "wire_existing_backend"
  ],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
-  "deepseek_flash",
-  "minimax_m3",
-  "nvidia",
-  "groq",
-  "cerebras"
+  "deepseek_flash"
  ]
 }

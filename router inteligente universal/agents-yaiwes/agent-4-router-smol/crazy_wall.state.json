@@ -3,7 +3,7 @@
  "agent": "agent-4-router-smol",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-23T01:43:48Z",
+ "updated_at": "2026-09-23T03:18:34Z",
  "group": "hf-models",
  "chain": [
   "models_registry",

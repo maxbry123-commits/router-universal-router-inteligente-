@@ -1,3 +1,4 @@
+```python
 import os
 import requests
 from openai import OpenAI
@@ -46,3 +47,4 @@ def verify_and_ping() -> dict:
     reply = completion.choices[0].message.content
 
     return {"grok_build_release": tag_name, "reply": reply}
+```

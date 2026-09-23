@@ -1,0 +1,69 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-16-chat-space-oauth
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 3200
+context:
+  text: 'Open WebUI debe existir previamente en:
+
+    router inteligente universal/Componente open soure router inteligente universal/open-webui/
+
+    y solo puede llegar allí por agent-19 usando los motores canónicos.
+
+    Código adicional A CONSERVAR y reutilizar:
+
+    - router inteligente universal/integration/chat_mvp/chat_ui.html
+
+    - agent-1-chat-hf/steps/vault_panel/results/vault_panel.js
+
+    - agent-1-chat-hf/steps/router_panel/results/router_panel.js
+
+    - agent-1-chat-hf/steps/wire_panels/results/wire_panels.js
+
+    - agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js
+
+    - agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py
+
+    - agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py
+
+    PROHIBIDO sustituir Open WebUI por HTML/JS inventado.
+
+    '
+  max_chars: 40000
+task: 'Genera y EJECUTA un adaptador de integración que MODIFIQUE la copia descargada
+  de Open WebUI, no una UI nueva.
+
+  Debe conservar el código adicional existente y cablear sus capacidades (selector
+  Router/modelos, con/sin agente,
+
+  documentos, GitHub, jobs, Secret Bank y Crazy Wall) dentro de Open WebUI mediante
+  extensiones/configuración/adaptación.
+
+  No borres chat_ui.html ni los resultados de agentes 1/2: quedan como fuentes/adaptadores
+  reutilizados.
+
+  Si la carpeta open-webui no existe, falla con OPENWEBUI_COMPONENT_MISSING y no inventes
+  sustituto.
+
+  No descargues nada aquí.
+
+  '
+checks:
+- kind: contains
+  values:
+  - open-webui
+  - chat_ui.html
+  - vault_panel
+  - router_panel
+  - jobs_panel
+  - crazy_wall_chain
+- kind: no_secrets

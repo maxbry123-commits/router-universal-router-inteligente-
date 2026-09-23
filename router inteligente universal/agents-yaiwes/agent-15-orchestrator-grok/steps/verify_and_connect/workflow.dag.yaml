@@ -9,12 +9,8 @@ agent:
   framework: smolagents
   group: orchestrators
   route:
-  - nvidia
-  - groq
-  - cerebras
-  - minimax_m3
-  fallback:
   - deepseek_flash
+  fallback: []
   max_tokens: 2400
 context:
   text: 'Grok Build (xai-org/grok-build) es el agente/harness abierto de xAI (Rust,

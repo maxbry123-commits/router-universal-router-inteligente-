@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "LEY PERMANENTE: NO crear UI/componentes desde cero. Reutilizar Open WebUI y CONSERVAR el código adicional ya existente.\nEste agente EJECUTA incorporación de componentes adicionales; NO audita ni decide cierre.\n"}

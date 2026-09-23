@@ -1,0 +1,56 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-17-chat-backend-32gb
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 3200
+context:
+  text: 'Base UI: Open WebUI descargado por agent-19 mediante motores canónicos.
+
+    Backend existente a conservar:
+
+    router inteligente universal/integration/chat_mvp/
+
+    router inteligente universal/integration/huggingface/
+
+    Secret Bank existente en Chat Mvp/secret_bank/.
+
+    Hardware: SOLO máquina HF 32 GB RAM. Nunca otra.
+
+    No descargar componentes en este agente. No GitHub Actions/git clone/curl/pip/npm
+    como adquisición de componentes.
+
+    '
+  max_chars: 40000
+task: 'Adapta/cablea Open WebUI al gateway/backend Chat MVP ya existente; NO escribas
+  un chat/backend alternativo.
+
+  Conserva endpoints existentes, modo agente/sin agente, selector, documentos, GitHub,
+  almacenamiento y Secret Bank.
+
+  Prepara la ejecución en HF 32 GB reutilizando hardware_sheriff/guarded_run_job existentes
+  y Storage Bucket yaiwes-v54.
+
+  Si Open WebUI no fue descargado por agent-19, falla cerrado.
+
+  No elimines ni reemplaces el código adicional previo.
+
+  '
+checks:
+- kind: contains
+  values:
+  - open-webui
+  - integration/chat_mvp
+  - integration/huggingface
+  - secret_bank
+  - guarded_run_job
+  - 32
+- kind: no_secrets

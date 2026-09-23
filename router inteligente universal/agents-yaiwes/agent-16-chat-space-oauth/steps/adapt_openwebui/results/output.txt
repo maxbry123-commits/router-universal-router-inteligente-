@@ -1,0 +1,16 @@
+GAP: OPENWEBUI_COMPONENT_MISSING + verificaciones de código adicional fallidas.
+
+La tarea no puede ejecutarse porque se incumplen las condiciones previas requeridas por la LEY PERMANENTE y las comprobaciones del intento anterior:
+
+1. **OPENWEBUI_COMPONENT_MISSING**: La carpeta `router inteligente universal/Componente open soure router inteligente universal/open-webui/` no existe. Según el CONTEXTO, solo puede ser creada por agent-19 usando los motores canónicos. Sin este componente base descargado, no hay nada sobre lo que cablear el adaptador.
+
+2. **Código adicional faltante**: Las comprobaciones del intento anterior indican que los siguientes archivos/carpetas necesarios no existen:
+   - `router inteligente universal/integration/chat_mvp/chat_ui.html`
+   - `router inteligente universal/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js`
+   - `router inteligente universal/agent-1-chat-hf/steps/router_panel/results/router_panel.js`
+   - `router inteligente universal/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js`
+   - `router inteligente universal/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.js`
+
+Estos archivos son necesarios para la reutilización como extensiones/adaptaciones dentro de Open WebUI, tal como exige la LEY PERMANENTE.
+
+**Acción requerida**: Ejecutar primero agent-19 (para descargar Open WebUI mediante motores canónicos) y luego agent-1-chat-hf / agent-2-chat-hf-smol (para generar el código adicional a conservar y reutilizar).

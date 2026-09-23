@@ -1,10 +1,10 @@
-# HANDOFF — agent-13-repo-inventory (pocketflow)
+# HANDOFF — agent-18-chat-final-auditor (pocketflow)
 
 Estado: **BLOCKED**
 
-- group: inventory
+- group: chat
 - attempts: 3
 - model: hf/deepseek-ai/DeepSeek-V4-Flash
-- gaps: la prueba falló (exit=1): AssertionError
+- gaps: falta 'Archivos'; falta 'Memoria'; falta 'Secret Bank'; falta 'Router'; falta 'Jobs'; falta 'GitHub'; falta 'Crazy Wall'
 
 Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.

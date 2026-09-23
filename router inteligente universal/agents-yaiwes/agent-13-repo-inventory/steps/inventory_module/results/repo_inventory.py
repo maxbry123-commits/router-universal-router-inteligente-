@@ -1,42 +1,29 @@
 import os
 import json
 
-def summarize(root_listing):
-    """
-    Summariza el listado del repositorio.
-    
-    Parámetros:
-        root_listing (list[dict]): Lista de dicts con claves "path", "type" y opcional "size".
-    
-    Retorna:
-        dict: {"top_level_projects": dict, "total_files": int, "total_bytes": int}
-    """
+def summarize(root_listing: list[dict]) -> dict:
     prefix = "Componente open soure router inteligente universal/"
     top_level_projects = {}
     total_files = 0
     total_bytes = 0
 
-    for item in root_listing:
-        # Solo procesar blobs (archivos)
-        if item.get("type") != "blob":
-            continue
+    for entry in root_listing:
+        path = entry["path"]
+        typ = entry["type"]
+        if typ == "blob":
+            total_files += 1
+            total_bytes += entry["size"]
 
-        size = item.get("size", 0)
-        total_files += 1
-        total_bytes += size
-
-        path = item.get("path", "")
-        if path.startswith(prefix):
-            rest = path[len(prefix):]  # parte después del prefijo
-            # Ignorar archivos directamente en la raíz del prefijo (sin subcarpeta)
-            if '/' in rest:
-                project_name = rest.split('/', 1)[0]
-                if project_name:  # seguridad extra
-                    proj_data = top_level_projects.get(project_name)
-                    if proj_data is None:
+            if path.startswith(prefix):
+                # Remove prefix and split
+                remainder = path[len(prefix):]
+                parts = remainder.split("/", 1)
+                if len(parts) == 2:
+                    project_name = parts[0]
+                    if project_name not in top_level_projects:
                         top_level_projects[project_name] = {"files": 0, "bytes": 0}
                     top_level_projects[project_name]["files"] += 1
-                    top_level_projects[project_name]["bytes"] += size
+                    top_level_projects[project_name]["bytes"] += entry["size"]
 
     return {
         "top_level_projects": top_level_projects,
