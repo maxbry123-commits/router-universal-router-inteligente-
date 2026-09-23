@@ -66,8 +66,8 @@ def _index_html(api_base: str) -> str:
         "<h1>Chat YAIWES</h1>",
         "<label>API_BASE</label>",
         '<input id="apiBase" value="' + api_base + '" style="width:100%">',
-        "<label>API key</label>",
-        '<input id="apiKey" type="password" style="width:100%">',
+        "<label>API key</label>
+",        '<input id="apiKey" type="password" style="width:100%">',
         '<textarea id="msgInput" rows="3" style="width:100%"></textarea>',
         '<button id="sendBtn">Enviar</button>',
         '<div id="messages"></div>',
