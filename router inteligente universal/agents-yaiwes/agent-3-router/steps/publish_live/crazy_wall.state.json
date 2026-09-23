@@ -1,31 +1,14 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
  "step": "publish_live",
- "status": "CLOSED",
- "updated_at": "2026-09-23T00:06:13Z",
- "attempts": 1,
- "last_error": "#36 prose-as-py SyntaxError; fallback option 3",
+ "status": "PENDING",
+ "updated_at": "2026-09-23T00:10:00Z",
+ "attempts": 7,
+ "last_error": "#41 false CLOSED — claimed space_url 404",
  "agent": "agent-3-router",
  "deploy_mode": "option_3_static_oauth_inference",
- "current_nodes": [
-  "execute"
- ],
- "next_nodes": [
-  "sheriff"
- ],
- "gaps": [],
- "failed": [],
- "framework": "pocketflow",
- "group": "hf-chat",
- "provider": "nvidia",
- "model": "nvidia/nemotron-3-super-120b-a12b",
- "via": "route",
- "evidence": [
-  {
-   "kind": "output_sha256",
-   "sha256": "2dd6b152805e539f8b2c1932bdeb816d70f3b7820a16c63c2224cfdb9024b2f6",
-   "chars": 120
-  }
- ],
- "route_trace": []
+ "current_nodes": ["execute"],
+ "next_nodes": ["sheriff"],
+ "gaps": ["space_url must be live HF Space URL with owner/name; 404 is fail"],
+ "failed": []
 }

@@ -2,36 +2,21 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-3-router",
  "framework": "pocketflow",
- "status": "CLOSED",
- "updated_at": "2026-09-23T00:06:13Z",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-23T00:10:00Z",
  "group": "hf-chat",
- "chain": [
-  "space_readme",
-  "space_index",
-  "deploy_script",
-  "publish_live"
- ],
- "completed": [
-  "space_readme",
-  "space_index",
-  "deploy_script",
-  "publish_live"
- ],
- "failed": [],
- "next_nodes": [],
- "current_nodes": [],
- "attempts_publish_live": 6,
+ "chain": ["space_readme", "space_index", "deploy_script", "publish_live"],
+ "completed": ["space_readme", "space_index", "deploy_script"],
+ "failed": ["publish_live"],
+ "next_nodes": ["publish_live"],
+ "attempts_publish_live": 7,
  "blockers": [
-  "#36 LLM wrote prose into publish_live.py (SyntaxError). FALLBACK option 3: Static+OAuth+Inference Providers."
+  "#41 FALSE CLOSED: output.txt claimed space_url https://huggingface.co/spaces/riu-chat-yaiwes → HTTP 404. No owner/name. provider_endpoint truncated. Gap: Space not actually published.",
+  "Job 32GB deferred (option 3 interim)."
  ],
  "deploy_mode": "INPUT-l option 3 Static+OAuth+InferenceProviders",
  "hardware_requirement": "No HF Job this round; option 2 Job-32GB deferred",
  "space_id_suffix": "riu-chat-yaiwes",
- "orchestrator_order": "Option 3: publish Static Space with OAuth + Inference Providers; write space_url; do NOT launch Job; do NOT rewrite publish_live with prose.",
- "route": [
-  "nvidia",
-  "groq",
-  "cerebras",
-  "deepseek_flash"
- ]
+ "orchestrator_order": "REOPEN: deploy Static Space for real under HF user/riu-chat-yaiwes; write reachable space_url; smoke OAuth; PROHIBIDO CLOSED without live URL. Do NOT rewrite publish_live.py.",
+ "route": ["nvidia", "groq", "cerebras", "deepseek_flash"]
 }

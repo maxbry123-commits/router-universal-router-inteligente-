@@ -1,3 +1,3 @@
 # HANDOFF
 
-FALLBACK option 3 Static+OAuth+Inference after #36 prose SyntaxError
+BLOCKED — #41 false CLOSED (space_url 404). Need real deploy {owner}/riu-chat-yaiwes.
