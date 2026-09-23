@@ -1,10 +1,10 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
  "step": "publish_live",
- "status": "BLOCKED",
- "updated_at": "2026-09-22T23:58:43Z",
- "attempts": 3,
- "last_error": "retry: execute TEMPLATE verbatim (no regen)",
+ "status": "PENDING",
+ "updated_at": "2026-09-22T23:58:24Z",
+ "attempts": 5,
+ "last_error": "#33 SyntaxError: file started with markdown fence ```python and truncated",
  "hardware_lock": "32GB_RAM_ACTIVE_ONLY",
  "agent": "agent-3-router",
  "framework": "pocketflow",
@@ -15,14 +15,6 @@
  "next_nodes": [
   "sheriff"
  ],
- "gaps": [
-  "Python inválido: unterminated triple-quoted string literal (detected at line 2) (línea 2)",
-  "la prueba falló (exit=1): SyntaxError: unterminated triple-quoted string literal (detected at line 2)"
- ],
- "failed": [
-  "execute"
- ],
- "provider": "nvidia",
- "model": "nvidia/nemotron-3-super-120b-a12b",
- "via": "route"
+ "gaps": [],
+ "failed": []
 }
