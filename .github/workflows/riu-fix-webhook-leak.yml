@@ -1,0 +1,69 @@
+name: RIU Fix Webhook Leak (una sola vez)
+
+# 1) Corrige el conector: su chequeo de /health del Router iba SIN token de HF -> 401 -> creía el Router muerto -> relanzaba un Job
+#    de 32 GB en CADA push. Se añade el header Authorization.
+# 2) Deja vivo SOLO el Job de LIVE_URL (si responde) y cancela los demás Jobs del Router duplicados.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub requests
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os, re, requests
+          from huggingface_hub import HfApi, hf_hub_download
+          tok = os.environ["HF_TOKEN"]
+          api = HfApi(token=tok)
+          SPACE = "COMAND-CENTER-1/claude-github-mcp-backup"
+          p = hf_hub_download(SPACE, "app.py", repo_type="space", token=tok)
+          src = open(p, encoding="utf-8").read()
+          old = 'r = await c.get(url.rstrip("/") + "/health")'
+          new = 'r = await c.get(url.rstrip("/") + "/health", headers={"Authorization": "Bearer " + os.getenv("HF_TOKEN", "")})'
+          if old in src:
+              src = src.replace(old, new)
+              open("/tmp/app.py", "w", encoding="utf-8").write(src)
+              api.upload_file(path_or_fileobj="/tmp/app.py", path_in_repo="app.py", repo_id=SPACE, repo_type="space",
+                              commit_message="fix: health check del Router con token HF (evita relanzar Jobs en cada push)")
+              print("::notice title=RIU_FIX_APP::parche aplicado y subido al conector")
+          else:
+              print("::notice title=RIU_FIX_APP::ya estaba parcheado o no se encontró la línea")
+          flag = requests.get("https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag", timeout=15).text
+          m = re.search(r"^LIVE_URL=https://([0-9a-f]+)--", flag, re.M)
+          live_id = m.group(1) if m else None
+          live_ok = False
+          if live_id:
+              try:
+                  live_ok = requests.get(f"https://{live_id}--8000.hf.jobs/health", headers={"Authorization": "Bearer " + tok}, timeout=15).status_code == 200
+              except Exception:
+                  pass
+          running = [j for j in api.list_jobs() if j.status.stage in ("RUNNING", "SCHEDULING")]
+          kept, canceled = [], []
+          for j in running:
+              is_router = "router_job_persistent" in " ".join(j.command or [])
+              if not is_router:
+                  continue
+              if j.id == live_id and live_ok:
+                  kept.append(j.id); continue
+              if live_ok:
+                  api.cancel_job(job_id=j.id); canceled.append(j.id)
+          if not live_ok and running:
+              routers = [j for j in running if "router_job_persistent" in " ".join(j.command or [])]
+              if routers:
+                  kept.append(routers[0].id)
+                  for j in routers[1:]:
+                      api.cancel_job(job_id=j.id); canceled.append(j.id)
+          print(f"::notice title=RIU_JOBS::live_id={live_id} live_ok={live_ok} conservados={kept} cancelados={canceled} total_corriendo={len(running)}")
+          PY
