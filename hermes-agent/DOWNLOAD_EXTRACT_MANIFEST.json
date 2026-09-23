@@ -1,0 +1,63 @@
+{
+  "bundle_bytes": 77772312,
+  "bundle_sha256": "48d17ceeea6a54f7c86894c6d19834d6c2e0856e78753be7124669ba8e038dc9",
+  "extracted_tree": {
+    "bytes": 171854730,
+    "files": 13048,
+    "sha256": "e0feeb28b21609ba1a2d360c59d3127cc65b572754011e7fbc5b539d1cbd900d"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent.bundle.zip.part-0001",
+      "sha256": "7068fd49b01ed0f459c5b6750eee0c18819dcffe76407ef11ddde2546f407ea8"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent.bundle.zip.part-0002",
+      "sha256": "bf8f2e438df6296d9fead89dc23679581f5ee0a88d170da67db54a6842af5e23"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent.bundle.zip.part-0003",
+      "sha256": "331a84e38cb63e8992531be6313ce28c9e1aa3a322e8c5d6a483e882a5a1ce23"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent.bundle.zip.part-0004",
+      "sha256": "c12cab19f86031737a6fdbb35dad8121eb62f3f8eca87e9f3bf97821f8c7340f"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent.bundle.zip.part-0005",
+      "sha256": "d21d891a7a98ac4cc66614ad13700d4f9de0020ee83117d6823df20469d6933f"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent.bundle.zip.part-0006",
+      "sha256": "865d194ba5c8788a811d4738453ed02cdf954dffcebfd5ecac78b51977c312da"
+    },
+    {
+      "bytes": 2274840,
+      "name": "hermes-agent.bundle.zip.part-0007",
+      "sha256": "fd2166d55834bd9de0f50cdce12e2ad988139dc30e3506cf399742899f130751"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "hermes-agent",
+  "source_bytes": 171854730,
+  "source_commit": "345cd2b057a452236de401d3534b8502a7465e8d",
+  "source_files": 13048,
+  "source_ref": "v2026.9.14",
+  "source_repo": "NousResearch/hermes-agent",
+  "source_tree": {
+    "bytes": 171854730,
+    "files": 13048,
+    "sha256": "e0feeb28b21609ba1a2d360c59d3127cc65b572754011e7fbc5b539d1cbd900d"
+  }
+}
