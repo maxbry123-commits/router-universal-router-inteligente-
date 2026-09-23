@@ -1,0 +1,62 @@
+name: RIU Webhook Install en el conector
+
+# Mete la ruta /webhook dentro del MISMO Space del conector (una sola página), sin crear Spaces nuevos.
+# Seguridad: compila el app.py resultante ANTES de subirlo; si no compila, no sube nada y el conector queda igual.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/agents-yaiwes/webhook_receiver/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os, py_compile, traceback
+          from huggingface_hub import HfApi, hf_hub_download
+          SID = "COMAND-CENTER-1/claude-github-mcp-backup"
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          try:
+              orig = open(hf_hub_download(SID, "app.py", repo_type="space", token=os.environ["HF_TOKEN"])).read()
+              reqs = open(hf_hub_download(SID, "requirements.txt", repo_type="space", token=os.environ["HF_TOKEN"])).read()
+              if "/webhook" in orig:
+                  print("::notice title=RIU_WEBHOOK_INSTALL::ya estaba instalado, no se toca")
+                  raise SystemExit(0)
+              addon = open("router inteligente universal/agents-yaiwes/webhook_receiver/mcp_webhook_addon.py").read()
+              marker = 'if __name__ == "__main__":'
+              assert marker in orig, "no encontré el bloque main en app.py"
+              new = orig.replace(marker, addon + "\n\n" + marker, 1)
+              open("/tmp/app.py", "w").write(new)
+              py_compile.compile("/tmp/app.py", doraise=True)
+              if "huggingface_hub" not in reqs:
+                  reqs = reqs.rstrip("\n") + "\nhuggingface_hub\n"
+              open("/tmp/requirements.txt", "w").write(reqs)
+              api.add_space_secret(SID, "HF_TOKEN", os.environ["HF_TOKEN"])
+              api.upload_file(path_or_fileobj="/tmp/requirements.txt", path_in_repo="requirements.txt", repo_id=SID, repo_type="space",
+                              commit_message="webhook: añade huggingface_hub")
+              api.upload_file(path_or_fileobj="/tmp/app.py", path_in_repo="app.py", repo_id=SID, repo_type="space",
+                              commit_message="webhook: ruta /webhook para mantener vivo el Router central")
+              print("::notice title=RIU_WEBHOOK_INSTALL::OK https://comand-center-1-claude-github-mcp-backup.hf.space/webhook")
+          except SystemExit:
+              raise
+          except Exception as e:
+              print("::error title=RIU_WEBHOOK_INSTALL_ERROR::" + type(e).__name__ + ": " + str(e)[:500])
+              traceback.print_exc()
+              raise SystemExit(1)
+          PY
