@@ -1,6 +1,6 @@
-# WATCHDOG — estado de los agentes (2026-09-23 13:45:23Z)
+# WATCHDOG — estado de los agentes (2026-09-23 17:07:46Z)
 
-**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
 
 | agente | marco | estado | pasos cerrados | bloqueado en | GAPs |
 |---|---|---|---|---|---|
@@ -12,7 +12,8 @@ Error code: 402 - {'message': 'Payment require |
 | agent-12-yaiwes-router | smolagents | CLOSED | 2/1 | - | - |
 | agent-13-repo-inventory | pocketflow | BLOCKED | 0/1 | inventory_module | la prueba falló (exit=1): AssertionError |
 | agent-14-orchestrator-msaf | pocketflow | BLOCKED | 5/4 | director_close_audit | falta 'CERRADO' | falta 'EN EJECUCIÓN' |
-| agent-15-orchestrator-grok | smolagents | CLOSED | 4/3 | - | - |
+| agent-15-orchestrator-grok | smolagents | BLOCKED | 4/1 | inbox_director-close-audit-agent15-20260923-01 | hf/deepseek-ai/DeepSeek-V4-Flash:AgentGenerationError:Error while generating output:
+Request timed out. |
 | agent-15-orchestrator-grokbuild | pocketflow | BLOCKED | 0/1 | fetch_and_connect | la prueba falló (exit=1): KeyError: 'tag_name' |
 | agent-16-chat-space-oauth | pocketflow | CLOSED | 2/1 | - | Python inválido: unexpected character after line continuation character (línea 17) | falta 'private=False' |
 | agent-17-chat-backend-32gb | pocketflow | CLOSED | 1/1 | - | falta 'Volume' | la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/work/router-unive |
