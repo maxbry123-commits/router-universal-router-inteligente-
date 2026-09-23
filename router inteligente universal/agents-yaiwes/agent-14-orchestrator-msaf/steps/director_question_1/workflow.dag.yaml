@@ -236,25 +236,25 @@ context:
     \n- si tienes claro todo\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json\
     \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-16-chat-space-oauth\"\
     ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:20:04Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"adapt_openwebui_real\"\
+    : \"2026-09-23T08:08:05Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"adapt_openwebui_real\"\
     \n ],\n \"completed\": [\n  \"adapt_openwebui_real\"\n ],\n \"failed\": [],\n\
     \ \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
     \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json\
     \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-17-chat-backend-32gb\"\
-    ,\n \"framework\": \"pocketflow\",\n \"status\": \"RUNNING\",\n \"updated_at\"\
-    : \"2026-09-23T07:45:25Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"backend_router_live\"\
-    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [\n  \"backend_router_live\"\
-    \n ],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\n ]\n}\n\n\
-    === ARCHIVO router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T08:08:05Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"backend_router_live\"\
+    \n ],\n \"completed\": [\n  \"backend_router_live\"\n ],\n \"failed\": [],\n \"\
+    next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json\
     \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-18-chat-final-auditor\"\
     ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:51Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"integrate_and_e2e\"\
+    : \"2026-09-23T08:08:05Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"integrate_and_e2e\"\
     \n ],\n \"completed\": [\n  \"integrate_and_e2e\"\n ],\n \"failed\": [],\n \"\
     next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
     \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json\
     \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-4-router-smol\"\
     ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:52Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"chat_frontend_support\"\
+    : \"2026-09-23T07:45:26Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"chat_frontend_support\"\
     \n ],\n \"completed\": [\n  \"chat_frontend_support\"\n ],\n \"failed\": [],\n\
     \ \"next_nodes\": [],\n \"current_nodes\": [],\n \"gaps\": [\n  \"CLOSED paper\
     \ sin GET /health HTTP 200 live (regla Grok/Revisor). Reabierto.\",\n  \"Referencia\
@@ -263,13 +263,13 @@ context:
     \ universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json ===\n{\n\
     \ \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-12-yaiwes-router\"\
     ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:53Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"router_chat_support\"\
+    : \"2026-09-23T07:45:26Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"router_chat_support\"\
     \n ],\n \"completed\": [\n  \"router_chat_support\"\n ],\n \"failed\": [],\n \"\
     next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
     \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json\
     \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-11-download-extraction\"\
     ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:53Z\",\n \"group\": \"chat-components\",\n \"chain\": [\n\
+    : \"2026-09-23T07:45:26Z\",\n \"group\": \"chat-components\",\n \"chain\": [\n\
     \  \"acquire_requested_component\"\n ],\n \"completed\": [\n  \"acquire_requested_component\"\
     \n ],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\"\
     : [\n  \"deepseek_flash\"\n ]\n}\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (director_model_probe):\n\

@@ -3,12 +3,13 @@
  "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T07:54:27Z",
+ "updated_at": "2026-09-23T08:12:59Z",
  "group": "orchestrators",
  "chain": [
   "orchestrate_chat_100",
   "director_model_probe",
-  "director_question_1"
+  "director_question_1",
+  "director_close_audit"
  ],
  "completed": [
   "orchestrate_chat_100",
@@ -17,7 +18,9 @@
  "failed": [
   "director_question_1"
  ],
- "next_nodes": [],
+ "next_nodes": [
+  "director_close_audit"
+ ],
  "current_nodes": [],
  "route": [
   "deepseek_flash"
