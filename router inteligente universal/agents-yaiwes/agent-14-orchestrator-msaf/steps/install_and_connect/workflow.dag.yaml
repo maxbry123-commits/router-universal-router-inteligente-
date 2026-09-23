@@ -1,0 +1,63 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-14-orchestrator-msaf
+  framework: pocketflow
+  group: orchestrators
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  - minimax_m3
+  fallback:
+  - deepseek_flash
+  max_tokens: 2400
+context:
+  text: 'Microsoft Agent Framework (microsoft/agent-framework, MIT): paquete Python
+    `pip install agent-framework`. Objetivo: instalarlo y
+
+    demostrar UNA llamada real a DeepSeek (deepseek-ai/DeepSeek-V4-Flash) por la API
+    de HF (base https://router.huggingface.co/v1, token en
+
+    la variable de entorno HF_TOKEN), usando el cliente OpenAI-compatible (el mismo
+    protocolo que expone Agent Framework).
+
+    '
+  max_chars: 40000
+task: 'Escribe el módulo Python `msaf_connect.py` (un único bloque ```python) con
+  la función `connect_and_ping() -> dict` que: 1)
+
+  `import subprocess, sys; subprocess.run([sys.executable, "-m", "pip", "install",
+  "-q", "agent-framework", "--break-system-packages"], check=True)`;
+
+  2) usa `openai.OpenAI(base_url="https://router.huggingface.co/v1", api_key=os.environ["HF_TOKEN"])`
+  para enviar UN mensaje ("Responde
+
+  solo con la palabra OK.") al modelo "deepseek-ai/DeepSeek-V4-Flash"; 3) devuelve
+  {"installed": True, "reply": texto}. Si algo falla de
+
+  verdad, deja que la excepción se propague.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: msaf_connect.py
+  test: 'import os
+
+    assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
+
+    from msaf_connect import connect_and_ping
+
+    r = connect_and_ping()
+
+    assert r["installed"] is True and r["reply"].strip(), r
+
+    print(r)
+
+    '
+- kind: no_secrets

@@ -1,0 +1,55 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-18-chat-final-auditor
+  framework: pocketflow
+  group: audit
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  - minimax_m3
+  fallback: []
+  max_tokens: 3500
+context:
+  text: 'Audita SOLO CHAT y almacenamiento del chat. No mezclar Router general, Jev,
+    TimesFM ni modelos locales salvo requisito directo del chat.
+
+    HECHO exige evidencia real: ruta existente, estado de agente, URL live o test.
+
+    El auditor NO puede correr hasta que agent-16 y agent-17 estén CLOSED con evidencia
+    live.
+
+    '
+  max_chars: 40000
+task: 'Escribe SOLO Python en gate_live.py. Debe localizar el repo desde __file__,
+  leer:
+
+  router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json
+  y
+
+  router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json.
+
+  La función check() devuelve {"status":"READY"} SOLO si ambos status son CLOSED y
+  existen sus results/output.txt.
+
+  En cualquier otro caso lanza RuntimeError con los estados observados. No inventar
+  evidencia.
+
+  '
+checks:
+- kind: python_ast
+- kind: python_exec
+  module: gate_live.py
+  test: 'from gate_live import check
+
+    r = check()
+
+    assert r["status"] == "READY"
+
+    '
+- kind: no_secrets

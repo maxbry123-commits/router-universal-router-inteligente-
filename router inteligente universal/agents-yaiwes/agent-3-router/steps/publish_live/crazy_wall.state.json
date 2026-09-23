@@ -1,23 +1,32 @@
 {
-  "schema": "yaiwes.crazy-wall/v1",
-  "step": "publish_live",
-  "status": "PENDING_VERIFY",
-  "updated_at": "2026-09-23T00:32:00Z",
-  "attempts": 2,
-  "last_error": "SMOKE FAIL: API/PAGE 401 + .hf.space 404 sin auth",
-  "agent": "agent-3-router",
-  "deploy_mode": "option_3_static_oauth_inference",
-  "space_url": "https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes",
-  "current_nodes": [
-    "orch_smoke_verify"
-  ],
-  "next_nodes": [
-    "sheriff"
-  ],
-  "gaps": [
-    "Space inexistente o inaccesible sin auth real (smoke FAIL)"
-  ],
-  "failed": [],
-  "framework": "pocketflow",
-  "group": "hf-chat"
+ "schema": "yaiwes.crazy-wall/v1",
+ "step": "publish_live",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T01:43:54Z",
+ "attempts": 1,
+ "last_error": "SMOKE FAIL: API/PAGE 401 + .hf.space 404 sin auth",
+ "agent": "agent-3-router",
+ "deploy_mode": "option_3_static_oauth_inference",
+ "space_url": "https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "failed": [],
+ "framework": "pocketflow",
+ "group": "hf-chat",
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "e3feb8602f1a2a5b29726b5790d754c006b9165577710574663ea626a7ac164a",
+   "chars": 86
+  }
+ ],
+ "route_trace": []
 }

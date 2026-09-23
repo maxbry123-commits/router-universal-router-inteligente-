@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-15-orchestrator-grok",
+ "framework": "smolagents",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-23T02:23:48Z",
+ "group": "orchestrators",
+ "chain": [
+  "verify_and_connect"
+ ],
+ "completed": [],
+ "failed": [
+  "verify_and_connect (tiempo agotado)"
+ ],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "nvidia",
+  "groq",
+  "cerebras",
+  "minimax_m3"
+ ]
+}

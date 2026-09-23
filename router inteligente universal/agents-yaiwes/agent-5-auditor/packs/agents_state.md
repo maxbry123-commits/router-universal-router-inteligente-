@@ -18,13 +18,16 @@ Error code: 402 - {'message': 'Payment require
 ## agent-14-orchestrator-msaf: estado=? marco=? pasos_cerrados=[]
 ## agent-15-orchestrator-grok: estado=? marco=? pasos_cerrados=[]
 ## agent-15-orchestrator-grokbuild: estado=? marco=? pasos_cerrados=[]
+## agent-16-chat-space-oauth: estado=? marco=? pasos_cerrados=[]
+## agent-17-chat-backend-32gb: estado=? marco=? pasos_cerrados=[]
+## agent-18-chat-final-auditor: estado=? marco=? pasos_cerrados=[]
 ## agent-2-chat-hf-smol: estado=CLOSED marco=smolagents pasos_cerrados=['jobs_panel', 'fixed_template', 'crazy_wall_chain']
 - paso crazy_wall_chain: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py'] gaps=-
 - paso fixed_template: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py'] gaps=-
 - paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js'] gaps=-
-## agent-3-router: estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script', 'publish_live']
+## agent-3-router: estado=PENDING_VERIFY marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script', 'publish_live']
 - paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py'] gaps=-
-- paso publish_live: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/HANDOFF.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/PUBLISH_LIVE_REJECTED.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py'] gaps=-
+- paso publish_live: PENDING_VERIFY modelo=- entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/HANDOFF.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/PUBLISH_LIVE_REJECTED.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py'] gaps=Space inexistente o inaccesible sin auth real (smoke FAIL)
 - paso space_index: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
 - paso space_readme: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
 ## agent-4-router-smol: estado=BLOCKED marco=smolagents pasos_cerrados=[]
@@ -34,11 +37,11 @@ Error code: 402 - {'message': 'Payment require
 ## agent-6-hf-nodes: estado=CLOSED marco=pocketflow pasos_cerrados=['ram_plan', 'node_hop']
 - paso node_hop: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-6-hf-nodes/steps/node_hop/results/hf_hop.py'] gaps=-
 - paso ram_plan: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-6-hf-nodes/steps/ram_plan/results/hf_nodes.py'] gaps=-
-## agent-7-llama-hf: estado=BLOCKED marco=smolagents pasos_cerrados=[]
+## agent-7-llama-hf: estado=CLOSED marco=smolagents pasos_cerrados=['llama_cmd', 'hf_job', 'bench_report', 'serve_health']
 - paso bench_report: CLOSED modelo=hf/MiniMaxAI/MiniMax-M3 entregables=['router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/bench_report/results/bench_report.py'] gaps=-
 - paso hf_job: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/hf_job/results/hf_job.py'] gaps=-
 - paso llama_cmd: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/llama_cmd/results/llama_cmd.py'] gaps=-
-- paso serve_health: PENDING modelo=- entregables=['router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/serve_health/results/serve_health.py'] gaps=GOLDEN serve_health listo; falta Agents Run con /health 200
+- paso serve_health: CLOSED modelo=verbatim entregables=['router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/serve_health/results/serve_health.py'] gaps=-
 ## agent-8-router-local: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
 - paso local_pool: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-8-router-local/steps/local_pool/results/local_pool.py'] gaps=-
 - paso mirror_route: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-8-router-local/steps/mirror_route/results/mirror_route.py'] gaps=-

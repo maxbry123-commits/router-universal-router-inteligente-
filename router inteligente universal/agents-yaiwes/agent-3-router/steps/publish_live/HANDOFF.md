@@ -1,5 +1,10 @@
-# HANDOFF publish_live
+# HANDOFF — agent-3-router (pocketflow)
 
-PENDING_VERIFY — SMOKE FAIL sin sesión HF.
-API 401 · PAGE 401/title 404 · .hf.space 404.
-Gap: Space inexistente o inaccesible. PROHIBIDO CLOSED. Cero regen .py.
+Estado: **CLOSED**
+
+- group: hf-chat
+- attempts: 1
+- model: nvidia/nvidia/nemotron-3-super-120b-a12b
+- gaps: -
+
+Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.

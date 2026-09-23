@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-14-orchestrator-msaf",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T01:44:41Z",
+ "group": "orchestrators",
+ "chain": [
+  "install_and_connect"
+ ],
+ "completed": [
+  "install_and_connect"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "nvidia",
+  "groq",
+  "cerebras",
+  "minimax_m3"
+ ]
+}

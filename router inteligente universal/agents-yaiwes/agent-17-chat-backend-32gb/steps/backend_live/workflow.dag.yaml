@@ -1,0 +1,89 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-17-chat-backend-32gb
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  - minimax_m3
+  - nvidia
+  - groq
+  - cerebras
+  fallback: []
+  max_tokens: 3000
+context:
+  text: 'Reutiliza el código existente en router inteligente universal/integration/chat_mvp/.
+
+    Reutiliza common/hardware_sheriff.py: guarded_run_job bloquea cualquier flavor
+    que no sea 32 GB.
+
+    HF Jobs permite expose=[8080] y Volume(type="bucket", source="COMAND-CENTER-1/yaiwes-v54",
+    mount_path="/data").
+
+    Endpoint: https://<job_id>--8080.hf.jobs y requiere Bearer HF_TOKEN para el smoke.
+
+    NO crear un chat nuevo. NO descargar pesos de modelos. El backend llama al Router/Inference
+    Providers.
+
+    Reusar un Job compatible si existe y está sano; si no, lanzar SOLO cpu-upgrade
+    32 GB, timeout 60m.
+
+    '
+  max_chars: 40000
+task: 'Escribe SOLO Python en chat_backend_32gb.py.
+
+  Debe usar HF_TOKEN y HfApi; validar 32 GB con assert_machine_32gb_ram/guarded_run_job
+  antes de lanzar.
+
+  El Job usa una imagen Python, clona el repo público actual, instala solo dependencias
+  necesarias y ejecuta
+
+  uvicorn integration.chat_mvp.app:app --host 0.0.0.0 --port 8080 desde la carpeta
+  router inteligente universal.
+
+  Monta el Storage Bucket COMAND-CENTER-1/yaiwes-v54 en /data con Volume(type="bucket",
+  ..., mount_path="/data")
+
+  y define RIU_DATA_DIR=/data. Expone 8080. Timeout máximo 60m.
+
+  Tras RUNNING, prueba GET /chat/providers con Authorization Bearer HF_TOKEN hasta
+  HTTP 200.
+
+  Devuelve dict con job_id, endpoint, flavor, providers_http y status=RUNNING_HEALTHY.
+
+  Si el flavor no es exactamente la máquina de 32 GB o el smoke no da 200, falla cerrado.
+
+  No imprimas secretos.
+
+  '
+checks:
+- kind: python_ast
+- kind: contains
+  values:
+  - guarded_run_job
+  - cpu-upgrade
+  - Volume
+  - yaiwes-v54
+  - /chat/providers
+  - RUNNING_HEALTHY
+- kind: python_exec
+  module: chat_backend_32gb.py
+  test: 'from chat_backend_32gb import run
+
+    r = run()
+
+    assert r["flavor"] == "cpu-upgrade"
+
+    assert r["status"] == "RUNNING_HEALTHY"
+
+    assert r["providers_http"] == 200
+
+    assert r["endpoint"].endswith(".hf.jobs")
+
+    '
+- kind: no_secrets
