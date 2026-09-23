@@ -455,3 +455,286 @@ cerrado: true
 - Gate siguiente: cuando agent-19 = CLOSED con `VERIFIED_CLOSED + READ_BACK`, liberar 16/17/18 en paralelo.
 
 - 2026-09-22 21:41 Colombia: agent-19 run 35811312702 = IN_PROGRESS; step activo = Run the swarm. O1 ejecutándose. 16/17/18 retenidos hasta O1 VERIFIED_CLOSED para evitar sobreingeniería/retrabajo.
+
+
+## AUDITORÍA CHAT/HF — 4 PASADAS × 81 ARCHIVOS DE `Claude notas` — 2026-09-22 21:55 COLOMBIA
+
+### Método
+Cada uno de los **81 archivos** de `Claude notas/` fue cruzado con cuatro lentes independientes:
+
+1. **HF / hosting:** Space, Docker, Static, OAuth, Job, puerto, 7860, `hf.jobs`.
+2. **Chat / Open WebUI / cableado:** chat, Router, selector, agentes, documentos, archivos.
+3. **Datos / secretos:** Storage Bucket, PostgreSQL, Redis, Graphiti, FalkorDB, AgentDB, Secret Bank, SQLCipher, `credential_ref`.
+4. **Estado / contradicciones:** HECHO/PENDIENTE/BLOQUEADO/CERRADO, deploy, público/privado, PRO/no-PRO.
+
+Resultado: la arquitectura histórica contiene varias versiones incompatibles entre sí. Esta sección define la **alineación vigente**.
+
+### HALLAZGO 1 — Open WebUI YA ESTÁ DESCARGADO Y VERIFICADO
+
+Ruta real:
+`router inteligente universal/Componente open soure router inteligente universal/open-webui/`
+
+Manifest:
+`DOWNLOAD_EXTRACT_MANIFEST.json`
+
+Evidencia del motor:
+- source_repo: `open-webui/open-webui`
+- source_ref: `main`
+- source_commit: `8bd8b4fac5e059578ac0c74b3c18d11139f88b7d`
+- files: `5065`
+- source/extracted bytes: `43625476`
+- source/extracted tree SHA256: `dd391139939bf7771ca531c2fcc076f084a634a5f0ca65e092767a6c5162c5fe`
+- bundle SHA256: `f7a2fc250b400f305f245913df41856521f6e973c8c6e3c438f3a5e4e955f07f`
+- extraction_verified: `true`
+- reconstruction_verified: `true`
+- no_lfs: `true`
+
+**Conclusión:** `O1 = SATISFIED_BY_EXISTING_VERIFIED_COMPONENT`.
+No volver a descargar. Agent-19 quedó BLOCKED únicamente porque el motor protegió el destino existente:
+`DESTINATION_EXISTS: .../open-webui`.
+Eso es fail-closed correcto, no pérdida del componente.
+
+### HALLAZGO 2 — Open WebUI ES LA BASE CORRECTA Y YA TRAE GRAN PARTE DE LO PEDIDO
+
+La copia descargada declara soporte para:
+- APIs OpenAI-compatible.
+- modelos/agentes.
+- documentos/RAG.
+- memoria persistente.
+- PostgreSQL.
+- Redis.
+- S3/almacenamiento de archivos.
+- MCP/plugins/tools.
+- RBAC.
+- analítica/uso.
+- multi-model.
+
+Documentación oficial actual:
+- https://docs.openwebui.com/
+- https://docs.openwebui.com/getting-started/quick-start/
+- https://docs.openwebui.com/getting-started/quick-start/connect-a-provider/starting-with-openai-compatible/
+- https://docs.openwebui.com/reference/env-configuration/
+
+**Regla:** antes de crear paneles/funciones nuevas, comprobar si Open WebUI ya las tiene. Solo adaptar/cablear la diferencia YAIWES.
+
+### HALLAZGO 3 — CONTRATO CHAT ↔ ROUTER ALINEADO
+
+Open WebUI debe apuntar a **un solo Router YAIWES OpenAI-compatible**, no directamente a cada proveedor.
+
+Contrato mínimo:
+- `GET /v1/models` — discovery/selector.
+- `POST /v1/chat/completions` — chat.
+- Opcionales según necesidad: embeddings/audio/images/tools.
+
+Ruta:
+`Open WebUI → Router YAIWES → selector/modelo/agente → proveedor/HF/local → respuesta`.
+
+Código adicional existente del Chat MVP se conserva como adapters/extensiones:
+- selector YAIWES.
+- con agente / sin agente.
+- cuentas GitHub.
+- Jobs.
+- Secret Bank.
+- Crazy Wall/Handoff.
+- panel Archivos/Memoria cuando Open WebUI nativo no cubra la semántica YAIWES.
+
+### HALLAZGO 4 — HF ACTUAL: CUENTA SIN PRO
+
+Identidad verificada hoy:
+- namespace: `COMAND-CENTER-1`
+- account type: user
+- PRO: **NO**
+- OAuth visible: `jobs, openid, profile, read-mcp, read-repos`
+
+Hoy no existe/está accesible:
+- `COMAND-CENTER-1/riu-chat-yaiwes`
+- `yaiwes/riu-chat-yaiwes`
+
+### HALLAZGO 5 — CONTRADICCIÓN HISTÓRICA: DOCKER SPACE VS STATIC SPACE
+
+Notas viejas dicen simultáneamente:
+- `Space Docker privado con Open WebUI`.
+- `Static Space + OAuth`.
+- `Static Space + Job 32GB`.
+
+Estado oficial HF actual:
+- Static Spaces: gratis para todos.
+- Gradio/Docker Spaces: usan compute y **requieren plan pagado para crear** (PRO personal / Team o Enterprise org).
+- CPU Basic puede costar $0/h, pero eso NO elimina el requisito de plan para crear un Space compute.
+
+Fuentes:
+- https://huggingface.co/docs/hub/spaces-overview
+- https://huggingface.co/docs/hub/spaces-sdks-docker
+- https://huggingface.co/docs/hub/spaces-config-reference
+
+**Superseded mientras COMAND-CENTER-1 siga sin PRO:**
+- `PLAN-MAESTRO-CHAT-MVP F1 = crear Docker Space ahora`.
+- `RIU-0110 S3 = Space Docker con Open WebUI ahora`.
+
+No borrar las notas históricas; marcarlas conceptualmente como contexto antiguo.
+
+### HALLAZGO 6 — STATIC SPACE NO ES OPEN WEBUI COMPLETO
+
+Open WebUI es una aplicación con backend FastAPI + frontend Svelte y persistencia. Un Static Space puro solo sirve archivos estáticos.
+
+Por tanto:
+`Static Space ≠ Open WebUI completo`.
+
+Un Static Space sí puede servir:
+- shell/launcher.
+- cliente JS.
+- OAuth HF.
+- frontend adaptado.
+
+Pero convertir Open WebUI entero en un frontend estático separado requiere adaptación adicional y **no es la ruta mínima** mientras la regla sea evitar sobreingeniería.
+
+### HALLAZGO 7 — HF JOB 32GB SÍ SIRVE PARA BACKEND/TEMPORAL, PERO NO COMO URL WEB DIRECTA SIMPLE
+
+HF Jobs permite:
+- imagen Docker.
+- `flavor=cpu-upgrade` = 32 GB RAM.
+- `expose=[port]`.
+- endpoint `https://<job_id>--<port>.hf.jobs`.
+- Storage Bucket como volumen.
+
+Fuentes:
+- https://huggingface.co/docs/hub/jobs-configuration
+- https://huggingface.co/docs/hub/jobs-serving
+- https://huggingface.co/docs/hub/storage-buckets-access
+
+Limitación importante:
+- el puerto expuesto exige `Authorization: Bearer <HF token>`.
+- HF documenta que esos endpoints no son una URL de navegador directa normal.
+- el endpoint desaparece al terminar/cancelar el Job.
+
+**Uso correcto en YAIWES:** backend temporal, smoke, integración, Router, workers; no declararlo por sí solo como “chat web público final”.
+
+### HALLAZGO 8 — DÓNDE COLOCAR EL CHAT EN HF
+
+#### OBJETIVO FINAL HF-ONLY MÁS SIMPLE
+Si el Director habilita un plan que permita Docker Space:
+
+```text
+HF namespace: COMAND-CENTER-1
+└── Space: riu-chat-yaiwes
+    ├── SDK: Docker
+    ├── Open WebUI (base OSS)
+    ├── puerto: 7860 externo → Open WebUI interno 8080
+    ├── OPENAI_API_BASE_URL = Router YAIWES /v1
+    ├── DATABASE_URL = PostgreSQL
+    ├── REDIS_URL = Redis
+    └── volume /data = Storage Bucket
+```
+
+Storage Bucket:
+`COMAND-CENTER-1/yaiwes-v54 → /data`
+
+Dentro de `/data`:
+- `/data/open-webui/` — archivos/datos que deban persistir.
+- `/data/secret-bank/vault.db` — vault cifrado.
+- `/data/uploads/` — originales/adjuntos si se usa filesystem.
+- `/data/memory/` — artefactos persistentes que no vivan en PostgreSQL/Graph DB.
+
+#### ESTADO ACTUAL SIN PRO
+- Open WebUI: ya descargado en GitHub y listo para adaptación.
+- HF Job 32GB: válido para pruebas/live backend autenticado.
+- Docker Space final: bloqueado por plan actual.
+- Static Space: útil únicamente como frontend/launcher; NO sustituye Open WebUI completo.
+
+### HALLAZGO 9 — STORAGE BUCKET ES LA PERSISTENCIA HF CORRECTA
+
+HF actual recomienda Storage Buckets para persistencia; el disco del Space es efímero.
+
+Fuentes:
+- https://huggingface.co/docs/hub/spaces-storage
+- https://huggingface.co/docs/hub/storage-buckets
+- https://huggingface.co/docs/hub/storage-buckets-access
+- https://huggingface.co/docs/huggingface_hub/guides/manage-spaces
+
+Buckets se montan read-write en Spaces/Jobs.
+Repos/modelos/datasets se montan read-only.
+
+### HALLAZGO 10 — ALMACENAMIENTO Y MEMORIA ALINEADOS
+
+Arquitectura vigente:
+- PostgreSQL = verdad/estado/IDs/referencias/auditoría.
+- Redis = caché/TTL/sesiones/locks/colas; **sin secretos**.
+- Graphiti + FalkorDB = hechos/entidades/relaciones temporales.
+- AgentDB = episodios/skills/patrones/memoria del agente.
+- Storage Bucket = archivos originales + vault cifrado + artefactos.
+- Open WebUI = interfaz; no fuente de verdad única.
+
+IDs de unión:
+`project_id, conversation_id, memory_id, file_id, file_version, file_hash, chunk_id, source_uri`.
+
+### HALLAZGO 11 — SECRET BANK ALINEADO
+
+Regla:
+- valores de secretos solo dentro del vault cifrado.
+- Router/agentes trabajan con `credential_ref`.
+- SQLCipher para cifrado en reposo.
+- Argon2id para KDF.
+- Redis/Postgres/Graphiti/AgentDB solo pueden guardar referencias, nunca el secreto.
+- master passphrase vive solo en memoria durante sesión desbloqueada.
+
+Destino persistente HF propuesto:
+`/data/secret-bank/vault.db` sobre Storage Bucket privado.
+
+### HALLAZGO 12 — QUÉ SE CONSERVA DEL CÓDIGO YA HECHO
+
+Conservar, NO borrar:
+- `integration/chat_mvp/`
+- `integration/huggingface/`
+- Chat MVP HTML como referencia/fallback.
+- Vault panel.
+- Router panel.
+- Jobs panel.
+- fixed_template.
+- crazy_wall_chain.
+- Secret Bank.
+- GitHub accounts/connectors.
+- documentos/ingestión.
+
+Su rol cambia:
+**no son el chat base**; pasan a ser adapters/extensiones/backend reutilizado por Open WebUI.
+
+### HALLAZGO 13 — GAPS REALES RESTANTES DEL CHAT
+
+1. Adaptar Open WebUI descargado al Router YAIWES.
+2. Configurar `/v1/models` + `/v1/chat/completions` como conexión principal.
+3. Integrar solamente las capacidades YAIWES que Open WebUI no trae.
+4. Ejecutar smoke backend real en HF Job **solo 32 GB**.
+5. Verificar archivos/memoria/Secret Bank contra Storage Bucket.
+6. Resolver host final de navegador:
+   - Docker Space si se habilita plan compatible, o
+   - otra ruta explícitamente autorizada.
+7. E2E real: login → modelo → con/sin agente → mensaje → respuesta → archivo → reapertura/persistencia.
+
+### ACTUALIZACIÓN O1 / AGENT-19
+
+`agent-19-chat-components-motors` terminó BLOCKED después de 3 intentos con:
+`DESTINATION_EXISTS`.
+
+Después Claude auditó el destino y verificó el manifest del motor.
+
+**Estado orquestador corregido:**
+`O1 = CLOSED_BY_EXISTING_VERIFIED_COMPONENT`.
+
+No reintentar descarga.
+Siguiente delta mínimo:
+`O2/O3/O4 en paralelo → cablear/adaptar/probar`.
+
+### GATE DE ALINEACIÓN VIGENTE
+
+```text
+OPEN_WEBUI_VERIFIED_EXISTING
+→ ADAPT_TO_ROUTER
+→ WIRE_EXISTING_YAIWES_COMPONENTS
+→ HF_JOB_32GB_SMOKE
+→ STORAGE_BUCKET_PERSISTENCE_TEST
+→ HOSTING_GATE
+→ LIVE_BROWSER_E2E
+→ CHAT_100
+```
+
+**Prohibido:** volver a Static Space como sustituto de Open WebUI completo, volver a descargar Open WebUI, o declarar Job URL como chat web público final sin resolver la autenticación del proxy.
