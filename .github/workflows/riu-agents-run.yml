@@ -44,6 +44,7 @@ jobs:
             router inteligente universal/agents-yaiwes/
             Chat Mvp/secret_bank/
             Claude notas/
+            ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
@@ -68,6 +69,7 @@ jobs:
           RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ONLY: ${{ inputs.only }}
           PYTHONUTF8: '1'
           PYTHONIOENCODING: utf-8
