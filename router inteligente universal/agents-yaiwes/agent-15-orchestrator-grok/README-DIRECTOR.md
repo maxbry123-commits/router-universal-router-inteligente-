@@ -370,3 +370,46 @@ No respondas con configuración teórica. Responde únicamente con el proveedor/
 **ESTADO RUNTIME:** <operativo/bloqueado>
 **EVIDENCIA:** <evidencia observable de esta ejecución>
 ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+---
+
+# 🔵 PROTOCOLO OFICIAL DE ACTIVACIÓN — DIRECTOR ↔ AGENTE ORQUESTADOR GROK BUILD
+
+## REGLA ABSOLUTA
+Para hablar con este agente **NO se usa Hugging Face Job**.
+
+El canal operativo es:
+
+`DIRECTOR → README-DIRECTOR.md → COMMIT/PUSH → GitHub Actions → RIU Agents Run → only=agent-15-orchestrator-grok → chain.py → smol_agent.py → dispatcher/modelo → Sheriff → respuesta → COMMIT/PUSH → README-DIRECTOR.md`
+
+## ACTIVACIÓN EXACTA
+1. El Director o Sol escribe la instrucción VERBATIM en este `README-DIRECTOR.md`.
+2. Se hace commit/push de la instrucción a `main`.
+3. Se hace **workflow_dispatch** del workflow existente:
+   `.github/workflows/riu-agents-run.yml`
+4. Input obligatorio:
+   `only=agent-15-orchestrator-grok`
+5. Está PROHIBIDO dejar `only` vacío para una conversación con el Director, porque eso activaría el swarm.
+6. GitHub Runner ejecuta únicamente:
+   `python agents-yaiwes/chain.py agents-yaiwes/agent-15-orchestrator-grok`
+7. Agent 15 procesa la instrucción mediante su runtime real.
+8. La respuesta debe quedar en este mismo `README-DIRECTOR.md`, además de su evidencia en Crazy Wall/HANDOFF/results.
+9. El workflow hace commit/push de los resultados a GitHub.
+10. Sol lee la respuesta del repo y se la muestra al Director. Sol NO responde por Agent 15.
+
+## HUGGING FACE
+HF queda **fuera del circuito de conversación Director ↔ Agent 15**.
+Solo puede intervenir si una tarea final autorizada requiere explícitamente operar un modelo/recurso de HF.
+Nunca usar un HF Job simplemente para hacer que Agent 15 lea o responda una instrucción.
+
+## VALIDACIÓN OBLIGATORIA
+Después del dispatch revisar:
+- run de `RIU Agents Run`;
+- que `only=agent-15-orchestrator-grok`;
+- `crazy_wall.state.json`;
+- `HANDOFF.md`;
+- `steps/<nodo>/results/output.txt`;
+- respuesta añadida a este README;
+- commit/push de retorno hecho por `riu-agents`.
+
+Nunca afirmar que Agent 15 respondió si no existe evidencia en GitHub.
