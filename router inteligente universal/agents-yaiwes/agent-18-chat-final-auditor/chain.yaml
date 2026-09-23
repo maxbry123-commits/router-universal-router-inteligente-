@@ -1,7 +1,7 @@
 schema: yaiwes.chain/v1
 input_block: |
-  PRIORIDAD CHAT. Este agente EJECUTA tareas del chat. NO audita, NO decide cierre, NO declara 100%.
-  Claude/orquestador audita y decide. FAIL_CLOSED.
+  LEY PERMANENTE: NO crear UI/componentes desde cero. Reutilizar Open WebUI y CONSERVAR el código adicional ya existente.
+  Este agente EJECUTA incorporación de componentes adicionales; NO audita ni decide cierre.
 
 agent:
   id: agent-18-chat-final-auditor
@@ -9,41 +9,26 @@ agent:
   group: chat
   route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
-  max_tokens: 2800
+  max_tokens: 3000
 
 context:
   text: |
-    Rol estricto: EJECUTOR.
-    Claude/orquestador hace la auditoría y define PASS/FAIL.
-    Reutiliza el Chat MVP existente. No crear otro chat ni otro Router.
-    Este agente debe trabajar solo en cerrar el cableado visible de Archivos/Memoria y almacenamiento del chat.
-    No escribir informes de auditoría.
+    Base: Open WebUI descargado solo mediante motores canónicos por agent-19.
+    Código adicional a preservar:
+    agent-1: vault_panel.js, router_panel.js, wire_panels.js
+    agent-2: jobs_panel.js, fixed_template.py, crazy_wall_chain.py
+    Chat MVP actual: integration/chat_mvp/chat_ui.html y backend asociado.
+    No descargar componentes aquí. No borrar ni reescribir esas capacidades desde cero.
 
 steps:
-  - id: storage_memory_panel
+  - id: integrate_additional_components
     task: |
-      Escribe SOLO JavaScript en storage_memory_panel.js para el Chat MVP existente.
-      Debe definir initStorageMemoryPanel(container, fetchJson) y mostrar un panel persistente "Archivos / Memoria".
-      Debe permitir listar estado de almacenamiento con GET /chat/storage y subir documentos usando el endpoint existente del Chat MVP.
-      Debe usar textContent para datos del servidor, sin innerHTML con datos externos, sin secretos y sin inventar endpoints nuevos.
+      Integra en Open WebUI las capacidades adicionales ya existentes del Chat MVP:
+      Archivos/Memoria, Secret Bank, estado Router, Jobs, GitHub, agentes, selector, Crazy Wall/handoff.
+      Reutiliza/edita/cablea el código existente; no recrees esas funciones desde cero y no borres sus fuentes originales.
+      Si falta Open WebUI, falla OPENWEBUI_COMPONENT_MISSING.
+      La salida debe registrar exactamente qué código existente se conservó y dónde quedó cableado.
     checks:
-      - kind: js_syntax
-        file: storage_memory_panel.js
       - kind: contains
-        values: [initStorageMemoryPanel, /chat/storage, Archivos, Memoria]
+        values: [Open WebUI, Archivos, Memoria, Secret Bank, Router, Jobs, GitHub, Crazy Wall]
       - kind: no_secrets
-
-  - id: wire_storage_memory
-    task: |
-      Escribe SOLO JavaScript en wire_storage_memory.js que conecte initStorageMemoryPanel al sistema de paneles existente del chat.
-      Debe reutilizar wirePanels/initVaultPanel/initRouterPanel/initJobsPanel si existen y añadir la sección Archivos / Memoria sin redefinirlos.
-      No audites ni declares PASS global.
-    checks:
-      - kind: js_syntax
-        file: wire_storage_memory.js
-      - kind: contains
-        values: [initStorageMemoryPanel, wirePanels, Archivos, Memoria]
-      - kind: no_secrets
-
-edges:
-  - storage_memory_panel -> wire_storage_memory
