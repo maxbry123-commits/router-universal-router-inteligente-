@@ -1,10 +1,8 @@
-# HANDOFF — agent-10-model-install (pocketflow)
+# HANDOFF agent-10 install_launch_test
 
-Estado: **BLOCKED**
+CLOSED RUNNING_HEALTHY (live).
 
-- group: hf-install
-- attempts: 1
-- model: golden/verbatim
-- gaps: la prueba superó el tiempo
-
-Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.
+- job_id: `6ab3198e51992417dfcd4e26`
+- health_ok_url: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health
+- máquina: 32 GB RAM
+- prueba: Own Server #4 GET 200 con token; 401 sin token (Sentinela + Orquestador HF)

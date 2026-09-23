@@ -1,0 +1,7 @@
+RUNNING_HEALTHY
+job_id=6ab3198e51992417dfcd4e26
+health_ok_url=https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health
+endpoint=https://6ab3198e51992417dfcd4e26--8080.hf.jobs
+machine=32 GB RAM (cpu-upgrade)
+proof=Own Server Launch run 35801048679 GET /health 200 con HF_TOKEN; curl sin token HTTP 401; Sentinela verificó 401 vivo.
+source=common/own_server_launch.py Qwen3.5-0.8B
