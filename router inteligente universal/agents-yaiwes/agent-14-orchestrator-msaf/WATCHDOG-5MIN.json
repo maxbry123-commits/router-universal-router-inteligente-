@@ -34,7 +34,6 @@
     "WRITE GAP evidence, source references, root cause and minimal FIX",
     "ASSIGN the FIX to the correct executor; Agent 14 never implements components itself",
     "IF a component is missing: issue COMPONENT_REQUEST only to agent-11-download-extraction",
-    "IF storage/memory work is needed: assign only to agent-6-hf-nodes",
     "RECHECK previous FIX and accept PASS only with evidence",
     "APPEND Director-facing note to README-DIRECTOR.md",
     "APPEND machine-oriented JSON block for Sol/ChatGPT to README-DIRECTOR.md"
