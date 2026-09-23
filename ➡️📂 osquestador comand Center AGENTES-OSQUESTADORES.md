@@ -5,7 +5,7 @@ Branch: main
 Schema: yaiwes.node-executor/xray-v2
 Mode: FAIL_CLOSED
 Scope: AGENTES + ORQUESTADORES ONLY
-Updated: 2026-09-22 22:13 America/Bogota
+Updated: 2026-09-23 00:02 America/Bogota
 
 ## OBJETIVO
 Dirigir exclusivamente agentes y orquestadores, sin mezclar tareas de otros frentes.
@@ -29,6 +29,58 @@ Dirigir exclusivamente agentes y orquestadores, sin mezclar tareas de otros fren
 - Agent 15 — orquestador Grok: ⛔ BLOCKED. La cadena oficial terminó por timeout y el diseño de prueba consulta `xai-org/grok-build/releases/latest`, endpoint que devuelve 404 porque el repo oficial no publica GitHub Releases.
 - Agent 15 duplicado — `agent-15-orchestrator-grokbuild`: ⛔ BLOCKED_DUPLICATE. Misma responsabilidad que Agent 15 y mismo supuesto inválido sobre GitHub Releases. No reintentar hasta deduplicar y corregir el test.
 
+## CONTROL DE MANDO — AGENTES AUTORIZADOS
+
+ÚNICOS AGENTES QUE EL DIRECTOR AUTORIZA USAR:
+- Agent 4 — `agent-4-router-smol`
+- Agent 8 — `agent-8-router-local`
+- Agent 11 — `agent-11-download-extraction`
+- Agent 12 — `agent-12-yaiwes-router`
+- Agent 14 — `agent-14-orchestrator-msaf`
+- Agent 16 — `agent-16-chat-space-oauth`
+- Agent 17 — `agent-17-chat-backend-32gb`
+- Agent 18 — `agent-18-chat-final-auditor`
+- Agent 19 — `agent-19-chat-components-motors`
+
+REGLA DE AUTORIZACIÓN:
+- Cualquier otro Agent ID = NO_DISPATCH / SOLO_LECTURA_HISTÓRICA.
+- Agent 15 y `agent-15-orchestrator-grokbuild` existen en main pero NO están autorizados para ejecución.
+- No crear copias ni agentes nuevos sin autorización explícita del Director.
+- GitHub Actions / workflows = PROHIBIDO.
+- Este orquestador solo escribe en este Command Center y entrega órdenes a agentes autorizados.
+- Motores canónicos se usan sin modificarlos.
+
+### ESTADO DE PAUSA / INACTIVIDAD — READ-BACK FRESH
+Criterio operativo de pausa: `current_nodes=[]` = ningún nodo en ejecución.
+
+- Agent 4: CLOSED | current_nodes=[] | PAUSADO/INACTIVO ✅
+- Agent 8: CLOSED | current_nodes=[] | PAUSADO/INACTIVO ✅
+- Agent 11: CLOSED | current_nodes=[] | PAUSADO/INACTIVO ✅
+- Agent 12: CLOSED | current_nodes=[] | PAUSADO/INACTIVO ✅
+- Agent 14: CLOSED | current_nodes=[] | PAUSADO/INACTIVO ✅
+- Agent 16: CLOSED | current_nodes=[] | PAUSADO/INACTIVO ✅
+- Agent 17: BLOCKED | current_nodes=[] | DETENIDO ✅
+- Agent 18: BLOCKED | current_nodes=[] | DETENIDO ✅
+- Agent 19: BLOCKED | current_nodes=[] | DETENIDO ✅
+
+RESULTADO:
+- 0/9 agentes autorizados ejecutando.
+- 9/9 sin `current_nodes`.
+- No se despacha ninguna tarea hasta orden del Director.
+
+### TRAZABILIDAD — DOS ORQUESTADORES
+1. Microsoft Agent Framework
+   - Agente de descarga/extracción: Agent 11.
+   - Evidencia: `agent-11-download-extraction/chain.yaml` contiene `ms_agent_framework_donor` apuntando a `https://github.com/microsoft/agent-framework`.
+   - Commit histórico: `8dfafe42d6826837ce296ac25bdcb4d70d6d1a54` — "agente 11 también descarga Microsoft Agent Framework".
+   - Orquestador asociado después: Agent 14.
+
+2. Grok Build
+   - Trabajo histórico localizado en Agent 15 / `agent-15-orchestrator-grokbuild`.
+   - Ese agente intentó fetch/verificación de `xai-org/grok-build`.
+   - NO pertenece al roster autorizado actual y NO se usará.
+   - No encontré en main un segundo agente de descarga autorizado distinto de Agent 15 para Grok; no inventar uno.
+
 ## HANDOFF INTERNO
 Fuentes a leer antes de ejecutar:
 - Claude notas/
@@ -44,7 +96,7 @@ Fuentes a leer antes de ejecutar:
 2. ESTADO: revisar cada agente/orquestador y su Crazy Wall.
 3. INVESTIGAR: GitHub + Hugging Face + comunidad solo cuando falte evidencia.
 4. DELEGAR: orden exacta con contexto, origen, destino, restricciones y PASS.
-5. PARALELIZAR: repartir tareas independientes; crear copia de agente solo si es necesario.
+5. PARALELIZAR: repartir tareas independientes SOLO entre Agents 4, 8, 11, 12, 14, 16, 17, 18 y 19. Prohibido crear copias o nuevos agentes sin autorización explícita del Director.
 6. ACTUALIZAR: este archivo en DSL/DAG/FSM con estado, evidencia, GAP y FIX.
 7. REPORTAR: qué se hizo + qué queda.
 
