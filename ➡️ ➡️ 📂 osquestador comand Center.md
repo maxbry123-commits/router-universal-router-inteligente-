@@ -2819,3 +2819,493 @@ R4. Si NVIDIA está activa: Claude (cerebro) manda cadenas de tareas por el chat
 R5. Pregunta: ¿sirven las claves NVIDIA (todas)? ¿qué modelos responden? ¿DeepSeek V4 y Kimi K3? ¿las probaste, sí o no?
 
 ```
+
+
+<!-- INPUT_BATCH_02 -->
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-20-c-formato-y-nvidia.md
+BLOB_SHA: 995447aaa60eeb9b23c00903fb96e6f791755cfe
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-20 (c) — formato de respuesta y prueba de claves NVIDIA
+
+Anotado ANTES de ejecutar (regla del Director).
+
+---
+
+Para aclarar porque le  hablas como si yo fuera una ai 
+Respondió 200 ??? 
+Debes reducir el formato de salida a solo la repuesta simple corta sin detalles inecesarios 
+
+
+Sirven las api key de Nvidia que te di todas si no ? 
+Si  busca que modelos responde si responde deepsek v4 y Kimi k 3
+
+---
+
+## Cola 1 a 1
+EN CURSO: (a) responder en lenguaje simple y corto, sin jerga (nada de "200", "hot-path", etc.); (b) probar si sirven TODAS las claves NVIDIA; (c) buscar qué modelos responden con cada clave, en especial DeepSeek V4 y Kimi K3.
+EN COLA (sin iniciar): Q1 plantilla desde el YAML de Fables; Q2 Crazy Wall/handoff permanente en el chat; Q3 plantilla fija YAML+JSON+Python.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-20-chat-mvp.md
+BLOB_SHA: 82269ef6029ad233fed97ef0d10f3fa2b3a6fb17
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-20 — Chat MVP (prioridad única)
+
+Registrado sin editar el texto del Director (con sus errores de dictado). Los documentos pegados por él
+(análisis sobre Nanbeige/LFM/Decider/NanoJev/OpenJev/DeepSeek) NO se copian aquí: están referenciados al final.
+
+---
+
+Ok 
+Paso 1 dieme qué hay que decidir para que puedas terminar con referente al chat 
+Necesitas que pueda tu colocar los api key de mis modelos locales y los modelos de deepsek v4 flash y pro y Kimi k 3 mínimax M3 
+Que puedan operar en Github y huggueface 100%
+ autorizado 
+📌Que con el selector pueda cambiar de cuenta de Github diferente 
+📌Que los  modelos que yo seleccione trabaje con el pool de agente que yo te voy a decir pueda operar con agente y sin agente 
+📌 Le conectas al chat dentro de huggueface almacenamiento su propio espacio y fusionas para crear un entorno llamado Mvp almacenamiento para ai 
+Data base 
+SQL Little 
+Graphiti y graphyty 
+Caché 
+Que pueda subir archivos adjuntos y tener una ventana de documentos en almacenamiento y conectados cableado por medio de los 4 sistema de almacenamiento para agentes 
+Hasta que no termines esto no pasas a paso 2 
+Grupo para el chat 📌 
+comand Center y 
+Neuro-Orchestrator-8B — 8B — orquestación/agentic.
+MiroThinker-8B — 8B — razonamiento.
+LFM2.5-8B-A1B — 8B total / ~1B activo — subagentes, loops agentic.
+OpenThinker3-7B — 7B — razonamiento.
+LFM2-2.6B — 2.6B — worker rápido, clasificación y extracción
+Nemotron Nano 9B v2 — 9B — razonamiento, arquitectura y reparación.
+Nanbeige4.2-3B — 3B — 🧑‍💻 MODELO DE CODE / agentic
+Neuro-Orchestrator-8B — 8B — orquestación/agentic.
+MiroThinker-8B — 8B — razonamiento.
+LFM2.5-8B-A1B — 8B total / ~1B activo — subagentes, loops agentic.
+OpenThinker3-7B — 7B — razonamiento.
+Modelos que deben trabajar local por máximo 26 de ram  quanrificado para no saturar el procesador + caché 
+Muse Glimmer 30B — 30B — 🧑‍💻 MODELO DE CODE / agentic, multimodal.
+Laguna XS 2.1 — 33B total / 3B activos — 🧑‍💻 MODELO DE CODE / agentic, router y long-horizon.
+DeepSeek-Coder — variante/peso no especificado en tus archivos — 🧑‍💻 MODELO DE CODE.
+DeepSeek v4 flash 
+
+
+Paso 2📌 
+
+
+
+Paso 3 📌 
+
+Necesito que revises el router en el repo de router universal usa el router que hizo Fables los code están en los archivos 
+Luego necesito que uses lo que adelanto sol gpt y íntegras los componentes mínimos componentes para conseguir el siguiente objetivo 
+1. Vasmos a tener más de 50 agente con el nombre de agente Seals Team YAIWES necesito que operen con las api locales que te voy a define esos modelos locales no deben estar instalado a huggueface deben llamar al modelo remoto como lo indica hugguenface para no descargar el modelo y deben trabajar como mirror y duplicarse sines necesario 50 o 100 veces 
+Deben usar el dataset y los aceleradores que deberían o fueron instalados en huggueface 
+Necesito que si se satura los 3 procesadores de cómputo no se caiga salte a 7 procesadores más y si llega al número 10 o existe mucha latencia solo escala a deepsek v4 flash para el grupo 2 
+
+
+📌Para que sepas cómo vas a tener que clasificar el router o varios router ➡️➡️
+
+Grupo 1 📌  del wordflow loop code Yaiwes con el ejambre de agente Seals Team YAIWES 
+
+Grupo 2 📌 con los agente de el wordflow loops code Yaiwes con el pool de 20 agentes
+Solo para el grupo 2 si se satura el cómputo o hay mucha latencia el router cambia la api por al de deepsek v4 pero son 6 grupos de trabajo que requieren api key  especializada que te voy a decir 
+Como funciona o deberia funcionar router para grupo 2 
+1. Las 4 api de Nvidia y cerebras si no responde o los modelos no están disponibles el router Salta para mis api locales 
+2. Api locales del grupo 2 .
+Si las api locales de esta lista están saturadas o con latencia salta a 
+Deepsek v4 flash api 
+3. Usa deepsek v4 
+Así debería funcionar el router de grupo 2 
+También la biblioteca de skills de huggueface instalada para grupo 2 
+Caché 
+Limite de ram 
+
+
+➡️➡️➡️➡️➡️➡️
+
+
+Grupo 0📌 osquestador 
+comand Center y 
+Neuro-Orchestrator-8B — 8B — orquestación/agentic.
+MiroThinker-8B — 8B — razonamiento.
+LFM2.5-8B-A1B — 8B total / ~1B activo — subagentes, loops agentic.
+OpenThinker3-7B — 7B — razonamiento.
+➡️ 
+
+Grupo 1 📌 
+Para trabajo de arquitectura decidir y funciones sin generar code el router usa solo usa ➡️
+LFM2-2.6B — 2.6B — worker rápido, clasificación y extracción
+Nemotron Nano 9B v2 — 9B — razonamiento, arquitectura y reparación.
+Nanbeige4.2-3B — 3B — 🧑‍💻 MODELO DE CODE / agentic.
+Qwen3-0.6B — 0.6B — ultraligero/router/worker.
+Qwen2.5-1.5B-Instruct — 1.5B — worker ligero.
+Qwen2.5-0.5B-Instruct — 0.5B — worker ultraligero.
+
+📌Para trabajo de code el router canbia ➡️
+Qwen3.5-9B — 9B — 🧑‍💻 MODELO DE CODE principal local.
+KAT-Coder Q5 KAT-Coder Q5, Seed-Coder 8B, parámetros no indicados; Q5 = cuantización — 🧑‍💻 MODELO DE CODE, reparación/escalamiento
+
+➡️➡️➡️➡️➡️➡️➡️
+
+Grupo 2 📌
+Modelos que deben trabajar local por máximo 26 de ram  quanrificado para no saturar el procesador + caché 
+Muse Glimmer 30B — 30B — 🧑‍💻 MODELO DE CODE / agentic, multimodal.
+Laguna XS 2.1 — 33B total / 3B activos — 🧑‍💻 MODELO DE CODE / agentic, router y long-horizon.
+DeepSeek-Coder — variante/peso no especificado en tus archivos — 🧑‍💻 MODELO DE CODE.
+DeepSeek v4 flash 
+➡️➡️➡️➡️➡️➡️
+
+
+
+📌Grupo fromtend y fábrica de UI y interface UI staff pendientes por clasificación 
+OLMo-3-7B-RL-Zero — 7B — razonamiento/RL.
+Ternary-Bonsai-27B-GGUF — 27B — general; GGUF.
+OTel-2.0-LLM-31B-IT — 31B —
+debe estar instalado 
+Kandinsky-5.0-T2I-Lite — peso exacto no indicado — generación de imagen.
+Qwen-Image —
+FLUX.1-schnell —
+Wan2.2-Animate-14B — 14B — vídeo/animación.
+LTX-Video — peso exacto no indicado en tus archivos — vídeo.
+HunyuanVideo —
+OPT-125M — 125M — ultraligero/pruebas.
+Skywork-OR1-Math-7B — 7B — matemáticas/razonamiento.
+MiroThinker-8B — 8B — razonamiento.
+Neuro-Orchestrator-8B — 8B — orquestación/agentic.
+CrystalSonic-4B — 4B — ligero.
+Hunyuan-7B-Instruct — 7B — general.
+Yuan3.0-Flash — 40B total / ~3.7B activos — MoE.
+IBM todos los modelos 
+Granite-4.0-7B — 7B — general/enterprise.
+Granite-4.2-3B — 3B — ligero/general.
+Ling-3.0-flash
+Ling-3.0-flash-VL
+Qwen3-0.6B — 0.6B — ultraligero/router/worker.
+Qwen2.5-1.5B-Instruct — 1.5B — worker ligero.
+Gemma 4 e2a 
+LFM2.5-8B-A1B — 8B total / ~1B activo — subagentes, loops agentic.
+LFM2-2.6B — 2.6B — worker rápido, clasificación y extracción.
+
+
+➡️➡️➡️➡️➡️➡️➡️➡️
+
+los 3 métodos de procesamiento 
+Los necesito pero primero necesito resolver la prioridad de el chat con los requisitos que. Te puse como primer paso Mónico chat + deepsek v4 flash y pro + Kimi k 3+ Nvidia api + mínimax M3 + agentes que pasan por medio de el router con agente y sin agente   coneccion con el Github y huggueface Now 
+
+Después todo lo demás la prioridad CHat tu objetivo principal 
+
+Mis instrucciones imput block verbartin 1 a 1 la escribes en el claude notas + readme  arquitectura router inteligente universal+ Craxy wall bitácora stated JSON handoff 
+
+
+Alguna duda ? 
+
+Dieme si te quedo claro ? 
+
+Dime qué te falta para completar el chat ?
+
+
+Necesito que solo te enfoques en el chat lo demás lo dejas para siguiente tareas necesito el chat activo con mis api locales y con las api key de proveedores que te dije todo conectado a githu y huggueface el chat es tu prioridad
+
+
+Ese último punto es importante para tus 50 agentes: **compartir 2–3 modelos dentro de una sola máquina de 32 GB puede ser muy barato; el problema que tendremos que resolver es throughput/concurrencia de CPU, no tanto RAM ni precio.**
+
+Vamos a usar 
+NANBEIGE Q4 para los agentes como modelo de code principal 
+
+
+Necesito esta información que hagas esta prueba 
+
+Para tu router yo mediría estas cuatro variables reales por modelo: tokens_per_second, input_tokens, output_tokens y wall_time. Con unas 10 ejecuciones de 500 LOC
+📌Nanbeige 3B
+📌Qwen3.5-9B CPU
+📌🆘 Necesito quw
+Qwen3.5-9B
+→ GGUF Q4_K_M
+→ llama.cpp
+→ 8 threads
+→ benchmark real
+
+Nanbeige4.2-3B
+→ Q4_K_M
+→ comparar contra Q5_K_M
+mediría tres números:
+TTFT
+tokens/segundo
+pass rate del código
+Si Qwen 9B Q4 te da, por ejemplo, 10 tok/s, tus ~6.000 tokens para 500 LOC tardarían alrededor de 10 minutos. Si llegara a 20 tok/s, serían unos 5 minutos.
+Q4_K_M sería mi punto de partida para maximizar velocidad/precio en tus 32 GB. Luego probaría Q5_K_M únicamente si observas pérdida de calidad significativa en código.
+
+[Bloque pegado por el Director — análisis de arquitectura con Decider/NanoJev delante de DeepSeek: ver referencia al final]
+
+Paso 1 📌 investigación de todo
+
+Paso 2 📌 haces el plan como te enseñe 
+
+Paso 3 📌 
+Modo LOOP y bucle hasta terminar el objetivo 1 el chat no stop no escalas hasta terminar todas las tareas del chat no me exolicas no preguntas solo ejecutas si hay un gaps busca 20 maneras de resolverlo 
+Si algo no puedes avanzar o te bloquea  flag 🚩 sigues con lo que si puedes hacer y dejas los flag para el final 
+
+Inicia 
+
+
+
+Necesito el chat operativo y conectado y las pruebas para decidir
+
+---
+
+## Nota de la instrucción sobre Decider/NanoJev (verbatim de la frase dirigida a Claude dentro del bloque pegado)
+"...mínimax y Kimi k 3 lo vas aplicar en todas los modelos desde el principio incluso el chat"
+(la idea: Decider/NanoJev decide qué conservar → retriever/LFM pequeño compacta el contexto → modelo grande recibe evidence packet; medir deepseek_calls_avoided, input_tokens_removed, decision_latency, confidence, retry_rate y $/task).
+
+## Documentos pegados por el Director (referencia, no copiados)
+1. Análisis "25K tokens en ~54 min / 8 vCPU / Nanbeige Q4 / LFM2.5-8B-A1B / Decider-2B / NanoJev / router por dificultad".
+2. Análisis "aprovechar el batching de decisiones / shared-state OpenJev / abstención y escalamiento por confianza / Ask Council con NanoJev".
+3. Bloques "Sí. Ese es uno de los mejores lugares para poner Decider/NanoJev: delante de DeepSeek, como filtro de costo" (dos variantes).
+Estos análisis son de una fuente externa al repo; sus cifras no están verificadas por Claude en esta sesión.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-20-d-agentes-banco-secretos-nvidia.md
+BLOB_SHA: fb8ec32f0ed74af1196efe6145eadb728e210eb5
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-20 (d) — agentes delegados, banco de secretos propio, NVIDIA primero, modelos locales
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado. Los tokens `ghp_…` pegados están [REDACTADOS] (repo público).
+
+---
+
+Creas el agente buscador de información con los motores de búsqueda 
+
+Y uno que pueda escribir por mi en la web que tenga acceso con HF de cómputo para ir a la web escribir y hacer capture usa los agente de meta puedes conseguir una copia en el repo de agentes wordflow loop code Yaiwes usas el motor de búsqueda 
+
+También usas con las claves Api un micro agente que haga las descarga extracciónes y copiar y pegar 
+
+La idea es extender el trabajo delegar que trabajes más como osquestador y manager y solo intervenir cuando sea necesario 
+
+
+Token cuente 3 Github 
+Nombre 
+Planeta123-usa
+
+[TOKEN ghp REDACTADO]
+
+
+Token github cuenta 
+Nombre 
+abc1tienda-web
+
+[TOKEN ghp REDACTADO]
+
+
+Anota las token nuevos 
+No más Github secreto 
+Usa el banco de secreto propio pon un readme banco secreto para que otros entornos de Claude sepan como acceder 
+
+Prueba revisa que si está disponible en Nvidia y reliza varias pruebas 
+
+Pones esas si como de primero y con selector de modelo en el chat 
+Además de los modelos locales
+
+Tu hiciste las pruebas de los modelos locales cual es la repuesta el resultado muestramelo 
+
+Dime qué le falta haz una lista que le falta a el chat de todo lo que te he dado para hacer haz una lista
+
+---
+
+## Cola derivada 1 a 1 (sin reordenar ni añadir)
+D1. Agente buscador de información con los motores de búsqueda.
+D2. Agente que escriba por el Director en la web, con cómputo de HF, para ir a la web, escribir y hacer capturas; usar los agentes de Meta / una copia del repo `agentes` (wordflow loop code Yaiwes) y el motor de búsqueda.
+D3. Micro agente, con las claves API, que haga descargas, extracciones y copiar/pegar.
+D4. Meta: extender el trabajo, delegar; Claude como orquestador/manager, interviene solo cuando hace falta.
+D5. Anotar los tokens nuevos (`planeta123-usa` cuenta 3 y `abc1tienda-web`). "No más GitHub secreto": usar el banco de secretos propio y escribir un README del banco de secretos para que otros entornos de Claude sepan acceder.
+D6. Probar que NVIDIA esté disponible; varias pruebas.
+D7. Poner los modelos de NVIDIA primero y con selector de modelo en el chat, además de los modelos locales.
+D8. Mostrar las pruebas de los modelos locales: cuál es el resultado.
+D9. Lista de lo que le falta al chat de todo lo que el Director ha dado para hacer.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-20-e-banco-modelos-vercel-agentes-enchufe.md
+BLOB_SHA: be486d8252e971b006f6241485cee17667af3ac3
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-20 (e) — banco MVP, modelos a probar, Vercel, agentes mirror, enchufe Fables, trabajo en paralelo
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado. La contraseña maestra está [REDACTADA] (repo público).
+Adjuntos recibidos con el mensaje (5), solo nombres: `__enchufe_universal_parte_1_fusion_fables_Kimi_k_3_universal_plugin_bus_v2_integrated.py`, `_______JSON_para_IA__DSL___MAXBRY___YAIWES___NCT__este_es_el_enchufe_de_todas_las_fichas_de_code_del_sofware_...md`, `___enchufe_universal_parte_2_fusión_de_Kimi_k_3_y_fables_ficha_contract_v2.py`, `_MAX-SYSTEM-100X-FINAL-1.md`, `_MAVIS-PARALLEL-100X.md`.
+
+---
+
+Ok la contraseña maestra
+Es :
+[CONTRASEÑA MAESTRA REDACTADA]
+
+Resuelve lo del banco mvp y averigua cómo podemos activar 100 api para el router ya sea con la cuenta de huggueface con los agentes o con muestra api locales 
+
+Te di una lista de modelos locales para huggueface revisa te lo he dicho 5 veces incluso ibas hacer unas pruebas 
+
+
+Haz la prueba solo me interesa estos modelos los que estén disponibles 
+DeepSeek V4, Kimi K3, Kimi K2.6, GLM, mínimax
+
+
+Para la app del chat  antes de meterme en el plan pro ve si lo puedes meter el chat en un plan gratis temporal de vercel ya tines el plugins habilitad
+
+Temína las 8 puntos revisa mis notas imput block a ver qué más le falta al chat 
+
+La prueba es en el procesador HF 32 de ram que está habilitado 
+
+Inicia termina el chat now sin más rodeo revisa mis todos mis requerimientos y instrucciones que te di haces la lista se supone que hiciste un plan con mis instrucciones revisa todo y habilita busca la
+Manera 
+
+Luego vas a cableas con el plugins universal enchufe universal Fables a los agentes en el chat dese el repo de agente ➡️📂 wordflow loop code Yaiwes/
+Los buscas y haces un mirror con todos los agente para usarlos en el chat 
+Conectas en el  router inteligente universal de el chat trabajo en paralelo para poner trabajos asignados por agentes por separados sin sandbox es para que operen en Github en cualquiera de las cuentas 
+
+Usas el enchufe de Fables y el trabajo en paralelo pare el router para poner a trabajar esos equipos 
+
+Revisa estás Api Key a ver si funcionan si funciona se las pones al router inteligente universal con las de Nvidia 
+Si las de cerebras funciona la usas 
+
+Anota 1 a 1 imput block verbartin mis instrucciones 
+
+Revisa y haces una lista de que te falta para el chat según mis instrucciones y ejecuta todo en cadena solo para si es necesario que yo intervenga termina el chat now 
+
+Incia anotas  haces la lista de mis instrucciones y sigues sin detenerte  quiero solo resultados now
+
+---
+
+## Cola 1 a 1 (sin reordenar ni añadir)
+E1. Banco MVP: usar la contraseña maestra para dejar el banco funcionando.
+E2. Averiguar cómo activar 100 APIs para el Router (con la cuenta de Hugging Face y los agentes, o con nuestras APIs locales).
+E3. Probar SOLO estos modelos, los que estén disponibles: DeepSeek V4, Kimi K3, Kimi K2.6, GLM, MiniMax. La prueba es en el procesador HF de 32 GB de RAM habilitado.
+E4. Ver si el chat cabe en un plan gratis temporal de Vercel (el plugin está habilitado), antes de HF PRO.
+E5. Terminar los "8 puntos": revisar todas las notas/input blocks y hacer la lista de lo que le falta al chat según sus instrucciones; ejecutar todo en cadena, intervenir el Director solo si es necesario; terminar el chat ya.
+E6. Cablear con el plugin universal (Enchufe Universal de Fables) los agentes en el chat, desde el repo `agentes` carpeta `➡️📂 wordflow loop code Yaiwes/`: buscarlos y hacer un mirror de todos los agentes para usarlos en el chat.
+E7. Conectar en el Router Inteligente Universal del chat el trabajo en paralelo: trabajos asignados por agentes por separado, sin sandbox, para que operen en GitHub en cualquiera de las cuentas; usar el enchufe de Fables y el trabajo en paralelo del router para poner a trabajar esos equipos.
+E8. Revisar "estas API keys" para ver si funcionan; si funcionan, ponerlas al Router junto con las de NVIDIA; si Cerebras funciona, usarla.
+E9. Anotar 1 a 1 (input block verbatim) las instrucciones; hacer la lista de lo que le falta al chat; ejecutar en cadena; solo resultados.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-20-f-banco-nvidia-otro-equipo.md
+BLOB_SHA: a4c464b2062324b4e9620ab545346d619092d7c4
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-20 (f) — banco de claves NVIDIA para otro equipo
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Necesito si ya lo tienes me des el banco donde estan la claves de Nvidia para que Sonnet en otro equipo pueda usar de las 5 Api de envidia usar 4 en este momento que están parados porque no pueden avanzar sin eso 
+Y lo de Github secreto es horrible 
+
+
+Que me podrías dar y adelantar para que ellos puedan ir trabajando
+
+---
+
+## Cola 1 a 1
+F1. Entregar el banco con las claves NVIDIA para que Sonnet, en otro equipo, use 4 de las 5 claves ahora (están parados).
+F2. "Lo de GitHub Secrets es horrible": no seguir usándolo como banco.
+F3. Dar y adelantar lo que se pueda para que ese equipo empiece a trabajar ya.
+
+## Decisión de Claude para F1 (mínimo privilegio)
+Se entrega un banco APARTE solo con 4 claves NVIDIA (no el banco maestro, que tiene también Hugging Face y GitHub), con su propia contraseña que el Director da al equipo. El banco maestro no se comparte.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-g-h-handoff-router-picos.md
+BLOB_SHA: 55969ddcfdfffd5366819c1f725bf0beb15d4a47
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (g) y (h) — handoff, mini prompt, router para picos, terminar el chat
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+## (g) [mensaje anterior — solo se pudo anotar ahora; el turno anterior no tenía herramientas]
+
+Ok coloca la información y trazabilidad de en el documento de Claude notas y en , 📂 readme arquitectura router inteligente universal 
+
+Porque está información es sensible y no tengo notas de nada 
+
+Me das un promt para Claude para que tenga acceso con tus indicaciones. Y con tus recomendaciones incluía le pones como hacer el router o creas un archivo con toda esta información incluido el cómo conectar a las api y como hacer el router y que clave usar y me dan solo un mini promt y un enlace con el handoff para que Claude lo use como parche de recuperación y puedan operar
+
+## (h) [mensaje actual]
+
+Ok crealo 
+
+Prepara el router de tal manera que pueda resolver esos picos de problemas con esos problemas y termina todo lo que te falte del chat 
+
+
+
+Edite un imput con unos archivos quedo cortado como hago tu los vez o lo pegó de nuevo quedó cortado la salida por la ventana de trabajo de antropy?
+
+---
+
+## Cola 1 a 1
+G1/H1. Poner la información y la trazabilidad en `Claude notas/` y en `Readme arquitectura router inteligente universal/`.
+G2/H2. Crear el archivo único (handoff / parche de recuperación) con cómo conectar las APIs, cómo hacer el Router y qué clave usar; entregar solo mini prompt + enlace.
+H3. Preparar el Router para resolver los picos de problemas (los ya vistos: NVIDIA lenta bajo carga, claves caídas, hora pico de DeepSeek, saturación de cómputo).
+H4. Terminar todo lo que falte del chat.
+H5. Pregunta: un input editado con archivos quedó cortado; ¿Claude los ve o hay que pegarlo de nuevo? ¿se cortó por la ventana de trabajo?
+Respuesta a H5 (Claude): en el sandbox se ven los 5 adjuntos del 2026-09-20 (enchufe universal partes 1 y 2, JSON DSL del enchufe, MAX-SYSTEM-100X, MAVIS-PARALLEL-100X) y 2 capturas de GitHub (`abc1tienda-web`, `planeta123-usa`). El mensaje actual no trae adjuntos nuevos: si el editado perdió archivos, hay que subirlos otra vez como archivo (no pegados como texto).
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-i-busqueda-modelos-hf-kit.md
+BLOB_SHA: 78f7c894e596d9f41623393d6424468b3b41efaa
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (i) — motor de búsqueda, modelos en Hugging Face, kit del otro equipo
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Dame un chance antes de continuar 
+
+El motor de búsqueda de internet que ibas hacer esta listo para dárselo a el otra equipo? 
+
+Necesito que me ayudes anyes de continuar con lo del chat para ayudar al otro equipo 
+
+Averigua si está habitado esto en huggueface 
+Decider-2B.
+Qwen3-0.6B original
+Nanbeige4.2-3B
+Qwen3.5-9B Q4
+
+
+Luego dime si lo que le diste al otro equipo se conecta con el router de nosotros o es solo las api ?
+
+---
+
+## Cola 1 a 1
+I1. Pausa: no continuar con el chat hasta ayudar al otro equipo.
+I2. ¿El motor de búsqueda de internet está listo para dárselo al otro equipo?
+I3. Averiguar si están habilitados en Hugging Face: Decider-2B, Qwen3-0.6B original, Nanbeige4.2-3B, Qwen3.5-9B Q4.
+I4. Decir si lo entregado al otro equipo (kit NVIDIA) se conecta con nuestro Router o son solo las APIs.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-j-CORRECCION.md
+BLOB_SHA: e92ce0382926b5866f2eaa4f290cbabd8c65ff32
+
+```text
+# CORRECCIÓN a INPUT-VERBATIM-2026-09-21-j-definir-router-jev-vercel.md
+
+Error de Claude al copiar (no del Director): en el "Adjunto 2", el último párrafo quedó con una frase de más ("Jev propiamente dicho se consume como servicio/API. No necesitas instalar Jev en Hugging Face ni modificar tus modelos para que “usen Jev”…" repetida). Esa frase es del Adjunto 1, no del Adjunto 2. Por eso la "Nota" al final de la cola J (que atribuye la duplicación al Director) es FALSA: retirarla.
+Texto correcto del final del Adjunto 2 (una sola vez):
+"Mi diseño para YAIWES sería: Vercel Router → Jev oficial → PolicyEngine → METHOD-1/2/3 → Model Registry → HF Provider/Endpoint → Verifier. No necesitas instalar Jev en Hugging Face ni modificar tus modelos para que “usen Jev”; Jev decide y tu Router ejecuta."
+Además, en el Adjunto 2, la frase "Y ahí sí puedes conectarlo prácticamente todo tu inventario." se copió así por error; el original dice "Y ahí sí puedes conectar prácticamente todo tu inventario."
+El resto del archivo (mensaje del Director y cola J0-J7) es fiel al texto recibido. El mensaje del Director es la fuente primaria; los adjuntos son análisis externo no verificado.
+
+```
