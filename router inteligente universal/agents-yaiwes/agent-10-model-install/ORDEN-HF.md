@@ -1,14 +1,14 @@
 # ORDEN HF — agent-10 install_launch_test (verbatim, sin fences)
 
-Copia verbatim el archivo ya en steps/install_launch_test/results/install_launch_test.py
-O el TEMPLATE al final de este archivo (líneas tras BEGIN_TEMPLATE).
-PROHIBIDO regenerar. PROHIBIDO job.refresh. Usar api.inspect_job.
+Copia verbatim el archivo en steps/install_launch_test/results/install_launch_test.py
+o el TEMPLATE tras BEGIN_TEMPLATE.
+PROHIBIDO regenerar. Poll con api.inspect_job (nunca .refresh en el objeto job).
 Método = own_server_launch.py (Qwen3.5-0.8B, /app/llama-server, --8080.hf.jobs).
 Solo máquina 32 GB RAM. NUNCA .gguf al repo.
 
 BEGIN_TEMPLATE
 """install_launch_test — RÉPLICA verbatim del método own_server_launch que YA tiene /health OK.
-PROHIBIDO regenerar. PROHIBIDO job.refresh. Solo máquina 32 GB RAM.
+PROHIBIDO regenerar. Poll solo con api.inspect_job. Solo máquina 32 GB RAM.
 Modelo vivo confirmado: Qwen3.5-0.8B → https://<job_id>--8080.hf.jobs/health
 """
 from __future__ import annotations

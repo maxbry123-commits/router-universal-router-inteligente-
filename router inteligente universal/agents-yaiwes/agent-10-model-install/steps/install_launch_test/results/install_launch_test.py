@@ -1,5 +1,5 @@
 """install_launch_test — RÉPLICA verbatim del método own_server_launch que YA tiene /health OK.
-PROHIBIDO regenerar. PROHIBIDO job.refresh. Solo máquina 32 GB RAM.
+PROHIBIDO regenerar. Poll solo con api.inspect_job. Solo máquina 32 GB RAM.
 Modelo vivo confirmado: Qwen3.5-0.8B → https://<job_id>--8080.hf.jobs/health
 """
 from __future__ import annotations

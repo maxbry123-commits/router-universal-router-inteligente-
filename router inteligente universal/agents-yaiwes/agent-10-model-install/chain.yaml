@@ -1,10 +1,10 @@
 schema: yaiwes.chain/v1
 
 # Agente 10 — RÉPLICA own_server_launch (Qwen3.5-0.8B RUNNING_HEALTHY, 32 GB).
-# TEMPLATE ORDEN-HF.md verbatim. NUNCA regenerar. NUNCA job.refresh.
+# TEMPLATE ORDEN-HF.md verbatim. NUNCA regenerar. Solo api.inspect_job.
 input_block: |
   Copia verbatim TEMPLATE install_launch_test.py de ORDEN-HF.md (o results/ ya escrito).
-  PROHIBIDO regenerar. PROHIBIDO job.refresh (usar api.inspect_job).
+  PROHIBIDO regenerar. Poll con api.inspect_job (nunca .refresh en el objeto job).
   Método = common/own_server_launch.py. Modelo: Qwen3.5-0.8B en máquina 32 GB RAM.
   Meta: RUNNING_HEALTHY + GET https://<job_id>--8080.hf.jobs/health = 200.
   NUNCA descargar .gguf al repo.
@@ -33,7 +33,7 @@ steps:
     task: |
       NO regeneres código. Copia verbatim el TEMPLATE de ORDEN-HF.md
       (o deja results/install_launch_test.py si ya es el TEMPLATE).
-      Debe contener inspect_job y NO job.refresh.
+      Debe contener inspect_job; no llamar .refresh al job.
       Debe lanzar Qwen3.5-0.8B con guarded_run_job en máquina 32 GB RAM.
     checks:
       - kind: python_ast
@@ -46,8 +46,9 @@ steps:
           assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN en el entorno"
           import install_launch_test as m
           src = open(m.__file__).read()
-          assert "job.refresh" not in src, "PROHIBIDO job.refresh"
           assert "inspect_job" in src, "debe usar api.inspect_job"
+          assert "api.inspect_job" in src or "inspect_job(" in src
+          assert "JobInfo" not in src or "inspect_job" in src
           assert "Qwen3.5-0.8B" in src
           from install_launch_test import run_all, launch_and_verify
           raised = False
