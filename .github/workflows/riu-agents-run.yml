@@ -7,6 +7,9 @@ name: RIU Agents Run
 # steps/<id>/results/, and the results are committed back. Steps already CLOSED are skipped. Keys: only the encrypted bank plus HF_TOKEN, needed
 # 2026-09-22 so an agent step's own Sheriff check can really launch and verify a model Job on the Director's HF account end-to-end, with no manual
 # step by Claude in between (Director's explicit order). Time budget: 90 min per job, 90 min per agent process.
+# FIX 2026-09-23: sparse-checkout was missing the two root folders the motor_exec/context_file steps need (the download-engine folder and the
+# vendored OSS components folder), so those steps failed with "no existe" even though the files are really in the repo; and GITHUB_TOKEN was
+# not passed into the swarm's env, so the canonical download/publish engine could not push. Both added.
 
 on:
   workflow_dispatch:
@@ -42,6 +45,8 @@ jobs:
             router inteligente universal/verifier/
             router inteligente universal/agent-microkernel/
             router inteligente universal/agents-yaiwes/
+            router inteligente universal/Componente open soure router inteligente universal/
+            ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/
             Chat Mvp/secret_bank/
             Claude notas/
           sparse-checkout-cone-mode: false
@@ -68,6 +73,7 @@ jobs:
           RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ONLY: ${{ inputs.only }}
           PYTHONUTF8: '1'
           PYTHONIOENCODING: utf-8
