@@ -230,3 +230,35 @@ steps:
       - kind: contains
         values: ["RESPUESTA AGENT 14", "HORA COLOMBIA", "duda", "objetivo", "agentes", "GAP", "tiempo"]
       - kind: no_secrets
+
+
+  - id: director_model_probe
+    context_file:
+      - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
+      - "router inteligente universal/agents-yaiwes/ROUTE.json"
+    append_output_to: "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
+    task: |
+      AGENTE ORQUESTADOR MICROSOFT: responde TÚ MISMO la sección "PRUEBA DE CONEXIÓN DEL DIRECTOR — MODELO IA"
+      que está al final de README-DIRECTOR.md.
+
+      Debes usar únicamente evidencia de TU EJECUCIÓN ACTUAL.
+      Si logras una llamada real, informa provider, modelo exacto, via/route, fallback usado o no usado y estado.
+      Si no logras ejecutar, responde el GAP exacto. No inventes un modelo activo por leer ROUTE.json.
+
+      Devuelve únicamente este bloque listo para añadir verbatim al README:
+
+      ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+      # 📣 RESPUESTA DEL ORQUESTADOR — PRUEBA MODELO IA
+      **🕐 HORA COLOMBIA:** <hora real America/Bogota>
+      **PROVIDER:** <provider real o GAP>
+      **MODELO:** <modelo real o GAP>
+      **VIA/ROUTE:** <via/route real>
+      **FALLBACK:** <usado/no usado + cuál>
+      **ESTADO RUNTIME:** <operativo/bloqueado>
+      **EVIDENCIA:** <evidencia observable de esta ejecución>
+      ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+    checks:
+      - kind: contains
+        values: ["RESPUESTA DEL ORQUESTADOR", "HORA COLOMBIA", "PROVIDER", "MODELO", "VIA/ROUTE", "FALLBACK", "ESTADO RUNTIME", "EVIDENCIA"]
+      - kind: no_secrets
