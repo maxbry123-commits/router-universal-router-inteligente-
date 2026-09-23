@@ -2,7 +2,6 @@ schema: yaiwes.chain/v1
 run_id: CHAT-100-AGENT17-20260923
 input_block: |
   ORDEN DE AGENT 14 / DIRECTOR: cerrar backend real del Chat YAIWES y su conexión con Open WebUI.
-  Deadline del frente: 2026-09-23 01:32 America/Bogota.
   Solo HF 32 GB RAM. No GitHub Actions. No tocar motores. No crear backend alternativo.
 
 agent:
@@ -40,7 +39,18 @@ steps:
       PASS exige prueba real de /health, GET /v1/models y POST /v1/chat/completions con respuesta no vacía.
       Debe quedar documentada la conexión Open WebUI -> Router.
       Si el runtime no permite una prueba real, BLOCKED con GAP exacto; nunca PASS simulado.
+
+      Termina tu respuesta SIEMPRE con este bloque exacto, letra por letra, rellenando cada línea:
+      ```
+      CHECKLIST DE INTEGRACION
+      /health: <resultado>
+      /v1/models: <resultado>
+      /v1/chat/completions: <resultado>
+      32GB: <confirmado/no>
+      Open WebUI: <estado de la conexión>
+      PRUEBA: <qué prueba real se hizo>
+      ```
     checks:
       - kind: contains
-        values: [/health, /v1/models, /v1/chat/completions, 32GB, Open WebUI, PRUEBA]
+        values: ["/health", "/v1/models", "/v1/chat/completions", "32GB", "Open WebUI", "PRUEBA"]
       - kind: no_secrets
