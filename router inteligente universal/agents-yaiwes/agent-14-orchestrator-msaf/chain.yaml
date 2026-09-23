@@ -32,6 +32,11 @@ orchestration_peer:
   id: agent-15-orchestrator-grok
   ownership_rule: ONE_NODE_ONE_OWNER_ORCHESTRATOR
 
+director_contract:
+  schema_file: DSL-DAG-DIRECTOR.yaml
+  authority: REQUIRED
+  fail_closed_if_missing: true
+
 director_channel:
   file: README-DIRECTOR.md
   read_every_seconds: 300
@@ -120,7 +125,7 @@ context:
     - Antes de ordenar: leer crazy_wall.state.json + HANDOFF del agente.
     - Cada agente = un objetivo activo.
     - Trabajo independiente = paralelo.
-    - Si falta componente: Agent 6/otros generan requerimiento -> Agent 11 lo adquiere -> vuelve al agente consumidor.
+    - Si falta componente: el AGENTE ORQUESTADOR MICROSOFT genera requerimiento -> Agent 11 lo adquiere -> vuelve al agente consumidor.
     - Agent 11 NO programa ni integra.
     - Agent 14 puede ejecutar trabajo propio de Microsoft Agent Framework; delega trabajo de especialidad al pool autorizado.
     - Máximo 2 reintentos por GAP.
@@ -138,6 +143,7 @@ steps:
       - "router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json"
       - "router inteligente universal/Componente open soure router inteligente universal/open-webui/DOWNLOAD_EXTRACT_MANIFEST.json"
       - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/WATCHDOG-5MIN.json"
+      - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/DSL-DAG-DIRECTOR.yaml"
       - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
     task: |
       Produce el HANDOFF DE ORQUESTACIÓN para cerrar CHAT_100.
@@ -197,7 +203,6 @@ steps:
       - "router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json"
-      - "router inteligente universal/agents-yaiwes/agent-6-hf-nodes/crazy_wall.state.json"
     task: |
       RESPONDE EXCLUSIVAMENTE LA PREGUNTA 1 DEL DIRECTOR que está en README-DIRECTOR.md.
       Hora de activación Colombia: 2026-09-23 01:53 America/Bogota.
