@@ -83,7 +83,7 @@ RESULTADO:
 
 
 ## ORDEN ACTIVA — AGENT 11 — DESCARGA DOS ORQUESTADORES
-Estado inicial: DISPATCH_PENDING
+Estado inicial: DISPATCHED
 NODO: AGENT-11-DOWNLOAD-ORCHESTRATORS
 AGENTE AUTORIZADO: Agent 11 — agent-11-download-extraction
 OBJETIVO: descargar y verificar exactamente dos componentes externos usando exclusivamente el motor canónico de descarga + extracción.
@@ -108,7 +108,13 @@ PASS:
 - Grok Build => download_verified + extraction_verified + source_commit + tree/hash observable.
 - balance total=2, failed=0, pending=0.
 - verdict=VERIFIED_CLOSED.
-SIGUIENTE: despachar Agent 11 por HF Job 32 GB y auditar el resultado.
+HF_JOB:
+- id: 6ab3673351992417dfcd5ca3
+- flavor: cpu-upgrade (32 GB)
+- name: agent-11-download-orchestrators
+- estado al despacho: SCHEDULING
+- URL: https://huggingface.co/jobs/COMAND-CENTER-1/6ab3673351992417dfcd5ca3
+SIGUIENTE: esperar ejecución del Agent 11; auditar únicamente cuando exista estado terminal y evidencia del motor.
 
 ## HANDOFF INTERNO
 Fuentes a leer antes de ejecutar:
