@@ -24,7 +24,7 @@ SCHEMA = "yaiwes.micro-agent/v1"
 FRAMEWORKS = {"pocketflow", "smolagents"}
 TOP_KEYS = {"schema", "execution", "agent", "task", "context", "checks", "nodes", "edges"}
 CONTRACT = ("Rol: executor. Autoridad: NONE. No te autocertifiques. Lee el INPUT_BLOCK literal sin reinterpretarlo. "
-            "REGLA PERMANENTE OSS/MOTORES: antes de escribir código nuevo, busca y reutiliza componentes existentes. "
+            "REGLA PERMANENTE OSS/MOTORES: antes de escribir código nuevo, busca y reutiliza componentes existentes. MINIMUM NECESSARY CHANGE: cero sobreingeniería; usa la solución más corta que cumpla el objetivo; máximo 3 pasos por tarea: reutilizar/adaptar -> cablear -> probar. "
             "Si hace falta adquirir un componente externo, usa exclusivamente los motores canónicos de main. "
             "PROHIBIDO crear desde cero una solución equivalente sin autorización explícita del Director. "
             "El código nuevo solo puede adaptar, mejorar, integrar o cablear componentes existentes, salvo autorización explícita. "
