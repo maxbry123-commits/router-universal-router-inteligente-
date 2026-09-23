@@ -55,6 +55,14 @@ jobs:
       - name: Build the auditor's evidence packs (deterministic)
         run: python "router inteligente universal/agents-yaiwes/common/audit_pack.py"
 
+      - name: Restore GOLDEN agent-10 before swarm (anti-LLM regen)
+        shell: bash
+        run: |
+          GOLDEN_A10="router inteligente universal/agents-yaiwes/agent-10-model-install/GOLDEN/install_launch_test.py"
+          DEST_A10="router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py"
+          mkdir -p "$(dirname "$DEST_A10")"
+          if [ -f "$GOLDEN_A10" ]; then cp -f "$GOLDEN_A10" "$DEST_A10"; echo "GOLDEN restored pre-swarm"; fi
+
       - name: Run the swarm (every agent-* with a chain.yaml, in parallel)
         env:
           RIU_BANK_PASSPHRASE: ${{ secrets.RIU_RUNTIME_BANK_PASSPHRASE }}

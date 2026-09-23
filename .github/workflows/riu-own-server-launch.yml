@@ -1,6 +1,6 @@
 name: RIU Own Server Launch
 
-# URGENT: launches Qwen3.5-0.8B on the Director's OWN Hugging Face account (his Job, cpu-basic, free) — no download elsewhere, no paid API.
+# Lanza Qwen3.5-0.8B en la cuenta HF del Director (máquina 32 GB RAM) vía own_server_launch.py.
 
 on:
   workflow_dispatch:
@@ -11,13 +11,14 @@ permissions:
 jobs:
   launch:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           filter: blob:none
           sparse-checkout: |
             router inteligente universal/agents-yaiwes/common/own_server_launch.py
+            router inteligente universal/agents-yaiwes/common/hardware_sheriff.py
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
@@ -26,4 +27,5 @@ jobs:
       - name: Launch
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          PYTHONPATH: router inteligente universal/agents-yaiwes/common
         run: python "router inteligente universal/agents-yaiwes/common/own_server_launch.py"
