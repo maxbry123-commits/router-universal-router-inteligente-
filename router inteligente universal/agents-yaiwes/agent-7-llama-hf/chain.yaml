@@ -1,11 +1,11 @@
 schema: yaiwes.chain/v1
 
-# Agente 7 — HF: servidor llama.cpp con TODOS los aceleradores, caché reducida solo para modelos locales y UNA copia de pesos compartida por varias ranuras (espejo).
-# Marco: SmolAgents. Tarea entregada por el Director (2026-09-21 s y t).
+# Agente 7 - GOLDEN: llama_cmd/hf_job/bench_report + serve_health live.
+# Cero regeneracion LLM si existe GOLDEN/<module>.py (smol short-circuit).
 input_block: |
-  Ok espejo es que se puede usar el mismo peso del modelo ai por varias secciones al mismo tiempo sin copiar el modelo
-  Busca la manera de reducir el caché solo para los modelos locales o saturar el ram.
-  asegúrate que tenga el sistema que yo te di para acelerar modelo en huggueface busca mis notas
+  NO regeneres codigo. Copia bytes de GOLDEN/<module>.py a results/.
+  Pasos paper: llama_cmd, hf_job, bench_report.
+  Meta live: serve_health -> RUNNING_HEALTHY + GET /health 200 (32 GB cpu-upgrade; LFM2.5 o probe job vivo).
 
 agent:
   id: agent-7-llama-hf
@@ -13,28 +13,23 @@ agent:
   group: hf-llama
   route: [minimax_m3, deepseek_flash, groq, nvidia, cerebras]
   fallback: []
-  max_tokens: 2500
+  max_tokens: 800
 
 context:
   text: |
-    HECHOS: llama-server carga los pesos UNA vez (mmap) y los comparten sus ranuras: `-np N` ranuras, `-c` = ranuras * contexto_por_ranura (el contexto total se reparte),
-    `-cb` batching continuo, `--cache-prompt` y `--cache-reuse 256` reutilizan el prefijo, `--cache-ram MB` limita la caché de prompts en RAM (para no saturarla),
-    `-fa on` atención flash, `-ctk q8_0 -ctv q8_0` caché KV cuantizada (exige atención flash), `-t` hilos, `-md ARCHIVO` modelo borrador (decodificación especulativa),
-    `--mmproj ARCHIVO` visión. NO usar `--mlock` (fijaría la RAM). Un Job de HF se lanza con huggingface_hub.HfApi.run_job(image, command, flavor, timeout, volumes, expose=[puerto]);
-    `expose` es una LISTA de puertos; el endpoint es https://<job_id>--<puerto>.hf.jobs y exige un token de HF. Imagen: ghcr.io/ggml-org/llama.cpp:server; los pesos se montan
-    con el volumen hf://models/ORG/MODELO:/model:ro (lectura bajo demanda, sin copiar). Medido en un runner de 4 vCPU: Qwen3.5-0.8B Q4_0 pp256 154.7 t/s / tg128 28.2 t/s;
-    LFM2.5-1.2B Q4_K_M pp256 103.3 / tg128 30.4.
+    HECHOS: llama-server carga pesos UNA vez (mmap) compartidos por ranuras.
+    GOLDEN short-circuit: si existe GOLDEN/<module>.py, smol_agent lo usa verbatim (cero LLM).
+    serve_health: solo flavor cpu-upgrade (32 GB). Probe live job o lanza LFM2.5.
+    Referencia live: job 6ab3198e51992417dfcd4e26 GET /health 200.
 
 steps:
 
   - id: llama_cmd
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-7-llama-hf/GOLDEN/llama_cmd.py
     task: |
-      Escribe el módulo Python `llama_cmd.py` (solo código, un único bloque ```python, solo biblioteca estándar) con la función
-      `build_llama_cmd(model_path, slots=4, ctx_per_slot=4096, kv="q8_0", flash=True, cache_ram_mb=512, threads=8, draft_path=None, mmproj_path=None, port=8080) -> list[str]`
-      que devuelve la lista de argumentos (str) en este orden: "llama-server", "-m", model_path, "--host", "0.0.0.0", "--port", str(port), "-c", str(slots * ctx_per_slot), "-np", str(slots),
-      "-cb", "--cache-prompt", "--cache-reuse", "256", "--cache-ram", str(cache_ram_mb), "-t", str(threads); luego "-fa", "on" si flash o "-fa", "off" si no;
-      luego "-ctk", kv, "-ctv", kv SOLO si kv != "f16"; luego "-md", draft_path si draft_path; luego "--mmproj", mmproj_path si mmproj_path.
-      Lanza ValueError si kv no está en ("f16", "q8_0", "q4_0"), si kv != "f16" y flash es False, si slots < 1 o si ctx_per_slot < 512. Nunca incluye "--mlock".
+      Copia verbatim GOLDEN/llama_cmd.py a results/llama_cmd.py.
+      Un solo bloque python identico al GOLDEN. No inventes codigo.
     checks:
       - kind: python_ast
       - kind: python_exec
@@ -52,19 +47,17 @@ steps:
           for bad in (dict(kv="q4_0", flash=False), dict(slots=0), dict(ctx_per_slot=100), dict(kv="q2")):
               try:
                   build_llama_cmd("/model/m.gguf", **bad)
-                  raise SystemExit("aceptó " + str(bad))
+                  raise SystemExit("acepto " + str(bad))
               except ValueError:
                   pass
       - kind: no_secrets
 
   - id: hf_job
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-7-llama-hf/GOLDEN/hf_job.py
     task: |
-      Escribe el módulo Python `hf_job.py` (solo código, un único bloque ```python, solo biblioteca estándar; debe ser AUTOCONTENIDO: no importa otros módulos) con la función
-      `build_hf_job(repo, gguf_file, slots=4, ctx_per_slot=4096, flavor="cpu-upgrade", port=8080, kv="q8_0", cache_ram_mb=512) -> dict` que prepara los argumentos de HfApi.run_job para servir un GGUF
-      con UNA copia de pesos compartida por las ranuras: {"image": "ghcr.io/ggml-org/llama.cpp:server", "flavor": flavor, "expose": [port], "volumes": [f"hf://models/{repo}:/model:ro"],
-      "command": [...]}. El comando es la lista de argumentos de llama-server: "llama-server", "-m", f"/model/{gguf_file}", "--host", "0.0.0.0", "--port", str(port), "-c", str(slots * ctx_per_slot),
-      "-np", str(slots), "-cb", "--cache-prompt", "--cache-reuse", "256", "--cache-ram", str(cache_ram_mb), "-fa", "on", "-ctk", kv, "-ctv", kv. Lanza ValueError si repo no tiene la forma
-      "organizacion/nombre" (exactamente una barra y ambos lados no vacíos).
+      Copia verbatim GOLDEN/hf_job.py a results/hf_job.py.
+      Un solo bloque python identico al GOLDEN. No inventes codigo.
     checks:
       - kind: python_ast
       - kind: python_exec
@@ -82,18 +75,17 @@ steps:
           for bad in ("sin-barra", "a/b/c", "/b", "a/"):
               try:
                   build_hf_job(bad, "m.gguf")
-                  raise SystemExit("aceptó " + bad)
+                  raise SystemExit("acepto " + bad)
               except ValueError:
                   pass
       - kind: no_secrets
 
   - id: bench_report
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-7-llama-hf/GOLDEN/bench_report.py
     task: |
-      Escribe el módulo Python `bench_report.py` (solo código, un único bloque ```python, solo biblioteca estándar) con:
-      - `summarize(rows) -> str`: `rows` es la lista JSON de `llama-bench` (dicts con "n_prompt", "n_gen", "avg_ts"). Toma la fila con n_prompt > 0 y n_gen == 0 y la fila con n_gen > 0 y n_prompt == 0 y devuelve
-        f"pp{n_prompt}={avg_ts:.1f} t/s | tg{n_gen}={avg_ts:.1f} t/s".
-      - `slots_summary(results) -> list[str]`: `results` es una lista de tuplas (concurrencia, tokens_totales, segundos); devuelve una línea por tupla:
-        f"{c} simult.: {tokens/segundos:.1f} t/s total ({tokens/segundos/c:.1f} por agente)".
+      Copia verbatim GOLDEN/bench_report.py a results/bench_report.py.
+      Un solo bloque python identico al GOLDEN. No inventes codigo.
     checks:
       - kind: python_ast
       - kind: python_exec
@@ -105,6 +97,42 @@ steps:
           assert slots_summary([(1, 64, 2.0), (4, 256, 4.0)]) == ["1 simult.: 32.0 t/s total (32.0 por agente)", "4 simult.: 64.0 t/s total (16.0 por agente)"]
       - kind: no_secrets
 
+  - id: serve_health
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-7-llama-hf/GOLDEN/serve_health.py
+      - router inteligente universal/agents-yaiwes/common/own_server_launch.py
+      - router inteligente universal/agents-yaiwes/common/hardware_sheriff.py
+    task: |
+      Copia verbatim GOLDEN/serve_health.py a results/serve_health.py.
+      Un solo bloque python identico al GOLDEN. No inventes codigo.
+      Meta: RUNNING_HEALTHY via GET /health 200 (probe live o LFM2.5 en cpu-upgrade 32 GB).
+    checks:
+      - kind: python_ast
+      - kind: contains
+        values: ["own_server_main", "assert_machine_32gb_ram", "cpu-upgrade", "LFM2.5", "health"]
+      - kind: python_exec
+        module: serve_health.py
+        test: |
+          import os
+          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
+          import serve_health as m
+          src = open(m.__file__).read()
+          assert "own_server_main" in src
+          assert "cpu-upgrade" in src
+          from serve_health import run_all, launch_and_verify
+          raised = False
+          try:
+              launch_and_verify(flavor="cpu-basic")
+          except ValueError:
+              raised = True
+          assert raised, "debia rechazar 16GB"
+          results = run_all()
+          assert len(results) == 1
+          assert results[0]["status"] == "RUNNING_HEALTHY", results[0].get("detail")
+          print(results[0])
+      - kind: no_secrets
+
 edges:
   - llama_cmd -> hf_job
   - hf_job -> bench_report
+  - bench_report -> serve_health
