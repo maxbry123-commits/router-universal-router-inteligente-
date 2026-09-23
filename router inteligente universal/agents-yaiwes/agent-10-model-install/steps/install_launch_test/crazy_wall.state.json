@@ -2,23 +2,11 @@
   "schema": "yaiwes.crazy-wall/v1",
   "agent": "agent-10-model-install",
   "framework": "pocketflow",
-  "status": "CLOSED",
-  "updated_at": "2026-09-23T00:15:00Z",
+  "status": "BLOCKED",
+  "updated_at": "2026-09-23T00:16:30Z",
   "group": "hf-install",
-  "current_nodes": [],
-  "next_nodes": [],
-  "provider": "golden",
-  "model": "verbatim",
-  "via": "OWN_SERVER_LAUNCH_LIVE",
-  "attempts": 1,
-  "gaps": [],
-  "failed": [],
-  "evidence": {
-    "status": "RUNNING_HEALTHY",
-    "job_id": "6ab3198e51992417dfcd4e26",
-    "health_ok_url": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health",
-    "http_health_with_token": 200,
-    "http_health_without_token": 401,
-    "machine": "32 GB RAM"
-  }
+  "current_nodes": ["execute"],
+  "next_nodes": ["sheriff"],
+  "gaps": ["reabierto: falta Agents Run con GET /health 200"],
+  "failed": ["execute"]
 }

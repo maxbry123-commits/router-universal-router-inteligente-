@@ -2,21 +2,16 @@
   "schema": "yaiwes.crazy-wall/v1",
   "agent": "agent-10-model-install",
   "framework": "pocketflow",
-  "status": "CLOSED",
-  "updated_at": "2026-09-23T00:15:00Z",
+  "status": "BLOCKED",
+  "updated_at": "2026-09-23T00:16:30Z",
   "group": "hf-install",
   "chain": ["install_launch_test"],
-  "completed": ["install_launch_test"],
-  "failed": [],
-  "next_nodes": [],
+  "completed": [],
+  "failed": ["install_launch_test"],
+  "next_nodes": ["install_launch_test"],
   "current_nodes": [],
-  "evidence": {
-    "status": "RUNNING_HEALTHY",
-    "job_id": "6ab3198e51992417dfcd4e26",
-    "health_ok_url": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health",
-    "endpoint": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs",
-    "flavor": "cpu-upgrade",
-    "machine": "32 GB RAM",
-    "proof": "Own Server Launch #4 GET /health 200 con HF_TOKEN; GET sin token HTTP 401 (vivo). Verificado Sentinela + Orquestador HF."
-  }
+  "gaps": [
+    "Grok: cerrar solo cuando Agents Run pruebe GET /health 200 (no solo Own Server). #46 timeout. Reabierto.",
+    "live_job_pending_agents_proof=6ab3198e51992417dfcd4e26"
+  ]
 }
