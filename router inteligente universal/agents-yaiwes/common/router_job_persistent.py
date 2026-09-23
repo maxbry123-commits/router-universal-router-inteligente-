@@ -1,14 +1,16 @@
 """Starts the ROUTER inside a persistent Hugging Face Job so that many agents (50-100) can all talk to the SAME running Router at once,
 instead of a new one dying every time a GitHub Actions run finishes. Clones the repo fresh, places the encrypted bank, and runs uvicorn.
-Before serving each request, a lightweight middleware re-reads `agents-yaiwes/ROUTER_JOB_PAUSE.flag`: if it contains "PAUSED", the Router
-answers 503 instead of doing any work — this is the REMOTE pause switch: editing/pushing that one file pauses or resumes the Job without
-touching it directly. The file is re-read from disk on every request (cheap), so a change takes effect within the same request, no restart.
+Before serving each request, a lightweight middleware re-reads `agents-yaiwes/ROUTER_JOB_PAUSE.flag`: ONLY a line `PAUSED=true` pauses the
+Router (answers 503, /health still answers) — this is the REMOTE pause switch: editing/pushing that one file pauses or resumes the Job
+without touching it directly. The Job pulls the repo every 60 s and re-reads the file on every request, so no restart is needed.
+FIX 2026-09-23: before, the check was `"PAUSED" in text`, which is also true for `PAUSED=false` -> the Router was always paused.
 """
 from __future__ import annotations
 
 import base64
 import gzip
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -19,6 +21,7 @@ REPO_URL = "https://github.com/maxbry123-commits/router-universal-router-intelig
 CLONE_DIR = Path("/tmp/r")
 ROOT = CLONE_DIR / "router inteligente universal"
 PAUSE_FLAG = CLONE_DIR / "router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag"
+PAUSED_RE = re.compile(r"^\s*PAUSED\s*=\s*true\s*$", re.I | re.M)
 
 
 def sh(cmd: str) -> None:
@@ -40,17 +43,20 @@ def bank_text() -> str:
     return "".join(p.read_text().strip() for p in sorted(mk.glob("runtime-bank-v2.part*")))
 
 
+def is_paused() -> bool:
+    try:
+        return PAUSE_FLAG.exists() and bool(PAUSED_RE.search(PAUSE_FLAG.read_text()))
+    except OSError:
+        return False
+
+
 def install_pause_middleware(app) -> None:  # noqa: ANN001
     from fastapi import Request
     from fastapi.responses import JSONResponse
 
     @app.middleware("http")
     async def pause_gate(request: Request, call_next):  # noqa: ANN001, ANN202
-        try:
-            paused = PAUSE_FLAG.exists() and "PAUSED" in PAUSE_FLAG.read_text()
-        except OSError:
-            paused = False
-        if paused and request.url.path != "/health":
+        if is_paused() and request.url.path != "/health":
             return JSONResponse(status_code=503, content={"error": "ROUTER_JOB_PAUSED", "detail": "Pausado por el Director (ROUTER_JOB_PAUSE.flag). Sin cambios sin su autorización."})
         return await call_next(request)
 
