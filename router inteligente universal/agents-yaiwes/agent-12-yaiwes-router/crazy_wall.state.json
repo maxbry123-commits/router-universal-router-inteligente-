@@ -3,7 +3,7 @@
  "agent": "agent-12-yaiwes-router",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-23T08:08:06Z",
+ "updated_at": "2026-09-23T11:48:58Z",
  "group": "chat",
  "chain": [
   "router_chat_support"
@@ -16,5 +16,6 @@
  "current_nodes": [],
  "route": [
   "deepseek_flash"
- ]
+ ],
+ "router_connected": false
 }

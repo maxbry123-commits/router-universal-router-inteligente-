@@ -3,7 +3,7 @@
  "agent": "agent-4-router-smol",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-23T08:08:07Z",
+ "updated_at": "2026-09-23T11:48:58Z",
  "group": "chat",
  "chain": [
   "chat_frontend_support"
@@ -20,5 +20,6 @@
  ],
  "route": [
   "deepseek_flash"
- ]
+ ],
+ "router_connected": false
 }

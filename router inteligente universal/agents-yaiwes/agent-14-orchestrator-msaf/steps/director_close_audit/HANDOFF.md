@@ -1,10 +1,10 @@
 # HANDOFF — agent-14-orchestrator-msaf (pocketflow)
 
-Estado: **CLOSED**
+Estado: **BLOCKED**
 
 - group: orchestrators
-- attempts: 1
+- attempts: 3
 - model: hf/deepseek-ai/DeepSeek-V4-Flash
-- gaps: -
+- gaps: falta 'CERRADO'; falta 'EN EJECUCIÓN'; falta 'FALTA PARA CERRAR'
 
 Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.

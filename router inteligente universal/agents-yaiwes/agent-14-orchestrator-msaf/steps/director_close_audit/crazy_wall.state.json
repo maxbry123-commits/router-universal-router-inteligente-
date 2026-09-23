@@ -2,8 +2,9 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
- "status": "CLOSED",
- "updated_at": "2026-09-23T11:49:36Z",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-23T11:55:47Z",
+ "router_connected": false,
  "group": "orchestrators",
  "current_nodes": [
   "execute"
@@ -11,21 +12,16 @@
  "next_nodes": [
   "sheriff"
  ],
+ "gaps": [
+  "falta 'CERRADO'",
+  "falta 'EN EJECUCIÓN'",
+  "falta 'FALTA PARA CERRAR'"
+ ],
+ "attempts": 3,
  "provider": "hf",
  "model": "deepseek-ai/DeepSeek-V4-Flash",
  "via": "route",
- "attempts": 1,
- "gaps": [],
  "failed": [
   "execute"
- ],
- "router_connected": false,
- "evidence": [
-  {
-   "kind": "output_sha256",
-   "sha256": "8a20d289a2d84126f1c5303c5901b3bf36cf1f84625780a0d8891b207c780aa6",
-   "chars": 4607
-  }
- ],
- "route_trace": []
+ ]
 }
