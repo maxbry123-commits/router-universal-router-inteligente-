@@ -1,7 +1,7 @@
 schema: yaiwes.chain/v1
 run_id: CHAT-100-ORCHESTRATOR-20260923
 input_block: |
-  ORDEN DEL DIRECTOR: Eres el ORQUESTADOR ÚNICO del cierre CHAT YAIWES.
+  ORDEN DEL DIRECTOR: Eres el AGENTE ORQUESTADOR MICROSOFT, ORQUESTADOR + EJECUTOR del cierre CHAT YAIWES.
   Controlas a:
   - agent-16-chat-space-oauth
   - agent-17-chat-backend-32gb
@@ -31,6 +31,13 @@ input_block: |
 orchestration_peer:
   id: agent-15-orchestrator-grok
   ownership_rule: ONE_NODE_ONE_OWNER_ORCHESTRATOR
+
+director_channel:
+  file: README-DIRECTOR.md
+  read_every_seconds: 300
+  write_responses_to_same_file: true
+  verbatim: true
+  require_colombia_time: true
 
 watchdog_contract:
   file: WATCHDOG-5MIN.json
@@ -140,7 +147,7 @@ steps:
       2. dar la orden exacta siguiente a cada agente;
       3. detectar dependencias y permitir paralelismo solo cuando no se pisen;
       4. mandar solicitudes de componentes faltantes únicamente a Agent 11;
-      5. mandar almacenamiento/memoria únicamente a Agent 6;
+      5. asignar almacenamiento/memoria solo a un agente del pool autorizado con ownership explícito;
       6. corregir GAPs hasta 2 veces;
       7. exigir prueba real para cada frente;
       8. consolidar evidencia.
@@ -174,7 +181,7 @@ steps:
           - agent-4-router-smol
           - agent-12-yaiwes-router
           - agent-11-download-extraction
-                  - CHAT_100
+          - CHAT_100
           - GAP
           - FIX
       - kind: no_secrets
