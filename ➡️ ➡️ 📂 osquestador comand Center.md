@@ -453,3 +453,5 @@ cerrado: true
 - agent-19: orden ejecutable publicada; run exclusivo `35811312702`; estado observado: `QUEUED`.
 - agent-16/17/18: NO ejecutar todavía; dependen de O1 para evitar trabajo desperdiciado.
 - Gate siguiente: cuando agent-19 = CLOSED con `VERIFIED_CLOSED + READ_BACK`, liberar 16/17/18 en paralelo.
+
+- 2026-09-22 21:41 Colombia: agent-19 run 35811312702 = IN_PROGRESS; step activo = Run the swarm. O1 ejecutándose. 16/17/18 retenidos hasta O1 VERIFIED_CLOSED para evitar sobreingeniería/retrabajo.
