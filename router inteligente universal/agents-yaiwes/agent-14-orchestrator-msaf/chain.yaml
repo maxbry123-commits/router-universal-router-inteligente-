@@ -26,6 +26,19 @@ input_block: |
   - mezclar otros proyectos
   - ejecutar trabajo que corresponde a un agente
 
+watchdog_contract:
+  file: WATCHDOG-5MIN.json
+  interval_seconds: 300
+  channel: README-DIRECTOR.md
+  activation: existing_authorized_dispatcher_or_agent_runtime
+  rules:
+    - revisar nuevas instrucciones del Director cada ciclo
+    - revisar todos los agentes bajo mando cada ciclo
+    - investigar GAPs en Hugging Face oficial y comunidad antes de ordenar FIX
+    - Agent 14 coordina; nunca implementa por sí mismo
+    - responder siempre al Director en README-DIRECTOR.md
+    - añadir bloque JSON separado para Sol/ChatGPT
+
 agent:
   id: agent-14-orchestrator-msaf
   framework: pocketflow
@@ -114,6 +127,8 @@ steps:
       - "router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-6-hf-nodes/crazy_wall.state.json"
       - "router inteligente universal/Componente open soure router inteligente universal/open-webui/DOWNLOAD_EXTRACT_MANIFEST.json"
+      - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/WATCHDOG-5MIN.json"
+      - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
     task: |
       Produce el HANDOFF DE ORQUESTACIÓN para cerrar CHAT_100.
 
@@ -135,6 +150,18 @@ steps:
       mensaje real + reapertura real.
 
       Si falta un solo gate: CHAT_100 = BLOCKED/PARTIAL con GAP exacto.
+
+      WATCHDOG OBLIGATORIO CADA 300 SEGUNDOS mientras el runtime autorizado esté activo:
+      - leer nuevas instrucciones VERBATIM del README-DIRECTOR;
+      - leer estado y evidencia de todos los agentes bajo mando;
+      - detectar GAP/dependencia/conflicto;
+      - investigar primero repo + Hugging Face oficial + comunidad HF + upstream OSS relevante;
+      - documentar causa y fuentes;
+      - ordenar FIX mínimo al agente correcto;
+      - validar el FIX en el siguiente ciclo;
+      - escribir una NOTA GRANDE PARA EL DIRECTOR en README-DIRECTOR usando marcadores 🟥🟧🟨🟩🟦🟪;
+      - añadir después un bloque JSON separado para Sol/ChatGPT con estado estructurado.
+      Agent 14 no implementa el FIX: lo coordina y exige evidencia.
     checks:
       - kind: contains
         values:
