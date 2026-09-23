@@ -1,26 +1,17 @@
 {
- "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-8-router-local",
- "framework": "pocketflow",
- "status": "CLOSED",
- "updated_at": "2026-09-22T22:02:58Z",
- "group": "router-local",
- "chain": [
-  "local_pool",
-  "mirror_route"
- ],
- "completed": [
-  "local_pool",
-  "mirror_route"
- ],
- "failed": [],
- "next_nodes": [],
- "current_nodes": [],
- "route": [
-  "minimax_m3",
-  "deepseek_flash",
-  "groq",
-  "nvidia",
-  "cerebras"
- ]
+  "schema": "yaiwes.crazy-wall/v1",
+  "agent": "agent-8-router-local",
+  "framework": "pocketflow",
+  "status": "BLOCKED",
+  "updated_at": "2026-09-23T00:16:00Z",
+  "group": "router-local",
+  "chain": ["local_pool", "mirror_route"],
+  "completed": [],
+  "failed": ["paper_closed_sin_health_live"],
+  "next_nodes": ["local_pool", "mirror_route"],
+  "current_nodes": [],
+  "gaps": [
+    "CLOSED paper sin GET /health HTTP 200 live. Reabierto.",
+    "Referencia live agent-10: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health"
+  ]
 }
