@@ -22,7 +22,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: riu-agents-run-${{ inputs.only || 'all' }}
+  group: riu-agents-run-${{ github.event_name == 'push' && 'agent-19-chat-components-motors' || inputs.only || 'all' }}
   cancel-in-progress: false
 
 jobs:
