@@ -3,7 +3,7 @@
 - paso vault_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js'] gaps=-
 - paso wire_panels: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js'] gaps=-
 ## agent-10-model-install: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
-- paso install_launch_test: BLOCKED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py'] gaps=Python inválido: unterminated string literal (detected at line 4) (línea 4); la prueba falló (exit=1): SyntaxError: unte
+- paso install_launch_test: BLOCKED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py'] gaps=Python inválido: unterminated string literal (detected at line 5) (línea 5); la prueba falló (exit=1): SyntaxError: unte
 - paso install_orders: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_orders/results/orders.json'] gaps=-
 - paso install_report: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_report/results/install_report.py'] gaps=-
 ## agent-11-download-extraction: estado=CLOSED marco=smolagents pasos_cerrados=['jev_components_list', 'ms_agent_framework_donor']
