@@ -2,6 +2,7 @@ name: RIU Router Job Central
 
 # Launches the SINGLE persistent Router Job that 50-100 agents can all point to at once (common/router_job_persistent.py).
 # Passes GH_JOB_PUSH_TOKEN as a HF Job secret (never written to any repo file) so the Job's own auto-pull/push works.
+# FIX: the launch command must clone the repo itself BEFORE running the script (the script's own git-pull loop only refreshes it afterwards).
 
 on:
   workflow_dispatch:
@@ -32,9 +33,14 @@ jobs:
           import os, time, requests
           from huggingface_hub import HfApi
           api = HfApi(token=os.environ["HF_TOKEN"])
-          cmd = ("apt-get update -qq >/dev/null 2>&1 || true; command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
-                 "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml && "
-                 "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'")
+          cmd = (
+              "set -e; apt-get update -qq >/dev/null 2>&1 || true; "
+              "command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
+              "git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente- /tmp/r && "
+              "cd /tmp/r && "
+              "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests && "
+              "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'"
+          )
           job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor="cpu-upgrade", timeout=os.environ["LIFETIME"],
                             expose=[8000], secrets={"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]})
           print("::notice title=RIU_ROUTER_CENTRAL_JOB_ID::" + str(job.id))
@@ -42,7 +48,7 @@ jobs:
           while time.time() - t0 < 480 and ok is None:
               info = api.inspect_job(job_id=job.id)
               stage = info.status.stage
-              urls = [u for u in dict.fromkeys([getattr(info, "endpoint", None), getattr(job, "endpoint", None), f"https://{job.id}--8000.hf.jobs"]) if u]
+              urls = [u for u in dict.fromkeys([getattr(info, "endpoint", None), getattr(job, "endpoint", None), f"https://{job.id}--8000.hf.jobs"]) if u and "huggingface.co" not in u]
               if stage == "RUNNING":
                   for u in urls:
                       try:
@@ -60,5 +66,5 @@ jobs:
                   logs.append(str(line))
           except Exception as e:
               logs.append("logs: " + type(e).__name__)
-          print(f"::notice title=RIU_ROUTER_CENTRAL_STATE::stage={stage} health_ok_url={ok} urls={urls} logs_final={' | '.join(logs[-6:])[:500]}")
+          print(f"::notice title=RIU_ROUTER_CENTRAL_STATE::stage={stage} health_ok_url={ok} urls={urls} logs_final={' | '.join(logs[-8:])[:600]}")
           PY
