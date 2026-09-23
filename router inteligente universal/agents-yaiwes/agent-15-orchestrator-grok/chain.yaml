@@ -45,6 +45,13 @@ managed_agents:
   - agent-18-chat-final-auditor
   - agent-19-chat-components-motors
 
+director_channel:
+  file: README-DIRECTOR.md
+  read_every_seconds: 300
+  write_responses_to_same_file: true
+  verbatim: true
+  require_colombia_time: true
+
 watchdog_contract:
   file: WATCHDOG-5MIN.json
   interval_seconds: 300
