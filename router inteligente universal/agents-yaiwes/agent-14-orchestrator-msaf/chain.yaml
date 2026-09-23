@@ -263,3 +263,54 @@ steps:
         values: ["RESPUESTA AGENT 14", "HORA COLOMBIA", "duda", "objetivo", "agentes", "GAP", "tiempo"]
       - kind: no_secrets
 
+
+
+  - id: director_close_audit
+    context_file:
+      - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
+      - "➡️ ➡️ 📂 osquestador comand Center.md"
+      - "router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-19-chat-components-motors/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-8-router-local/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json"
+      - "router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json"
+    append_output_to: "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
+    task: |
+      AGENTE ORQUESTADOR MICROSOFT: responde TÚ MISMO la última instrucción del Director en README-DIRECTOR.md:
+
+      "analiza el proyecto del chat que está en ejecución en Github y huggueface y dime qué falta para cerrar"
+
+      Reglas:
+      - analiza evidencia real disponible;
+      - separa CLOSED / RUNNING / BLOCKED / PENDING;
+      - indica exactamente qué falta para cerrar;
+      - indica GAP exacto y FIX mínimo;
+      - enumera pruebas/evidencia todavía necesarias;
+      - indica siguiente acción;
+      - si no tienes evidencia actual de Hugging Face, dilo como GAP y NO inventes estado;
+      - NO ejecutes componentes;
+      - NO lances Jobs;
+      - NO declares CHAT_100=PASS sin E2E real;
+      - responde con hora Colombia;
+      - la salida debe ser apta para añadirse verbatim al mismo README-DIRECTOR.md.
+
+      Formato:
+      ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+      # 📣 RESPUESTA AGENTE ORQUESTADOR MICROSOFT
+      **🕐 HORA COLOMBIA:** <YYYY-MM-DD HH:MM America/Bogota>
+      **CERRADO:** <...>
+      **EN EJECUCIÓN:** <...>
+      **BLOQUEADO:** <...>
+      **FALTA PARA CERRAR:** <...>
+      **GAP:** <...>
+      **FIX MÍNIMO:** <...>
+      **PRUEBAS/EVIDENCIA PENDIENTE:** <...>
+      **SIGUIENTE ACCIÓN:** <...>
+      ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+    checks:
+      - kind: contains
+        values: ["HORA COLOMBIA", "CERRADO", "EN EJECUCIÓN", "BLOQUEADO", "FALTA PARA CERRAR", "GAP", "FIX MÍNIMO", "PRUEBAS/EVIDENCIA PENDIENTE", "SIGUIENTE ACCIÓN"]
+      - kind: no_secrets
