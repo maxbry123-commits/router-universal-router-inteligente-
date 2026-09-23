@@ -1,0 +1,76 @@
+name: RIU Agent 11 Canonical Download
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'router inteligente universal/agents-yaiwes/agent-11-download-extraction/COMPONENT_REQUESTS/*.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: riu-agent11-canonical-download
+  cancel-in-progress: false
+
+jobs:
+  canonical-download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      MOTOR_ROOT: '➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-'
+      QUEUE_FILE: 'router inteligente universal/agents-yaiwes/agent-11-download-extraction/COMPONENT_REQUESTS/openclaw-hermes-latest.json'
+      STATE_FILE: 'router inteligente universal/agents-yaiwes/agent-11-download-extraction/steps/acquire_requested_component/results/openclaw-hermes-download-state.json'
+      INDEX_PATH: 'router inteligente universal/agents-yaiwes/agent-11-download-extraction/steps/acquire_requested_component/results/openclaw-hermes-download-index.md'
+      DEST_REPO: 'maxbry123-commits/router-universal-router-inteligente-'
+      DEST_BRANCH: 'main'
+      DEST_ROOT: '.'
+      MAX_RETRIES: '3'
+      LOOP_SLEEP_SECONDS: '0'
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Verify canonical motor blobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          M2="$MOTOR_ROOT/📂Motor descarga de componentes y extracción de zip/motor_2_queue_download_extract.py"
+          ENG="$MOTOR_ROOT/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+
+          test "$(git hash-object "$M2")" = "84d566e2ee4e98e42eb3a864026d067d48caabd9"
+          test "$(git hash-object "$ENG")" = "91e6e4486692eab314be5c7130d8310d3c855397"
+          echo "CANONICAL_MOTOR_BLOBS=PASS"
+
+      - name: Execute canonical download + extract + publish motor
+        env:
+          ENGINE_PATH: ${{ env.MOTOR_ROOT }}/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py
+        run: |
+          python "$MOTOR_ROOT/📂Motor descarga de componentes y extracción de zip/motor_2_queue_download_extract.py"
+
+      - name: Read back published components from main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -f origin/main
+
+          test -f "openclaw/DOWNLOAD_EXTRACT_MANIFEST.json"
+          test -d "openclaw/code"
+          test -f "hermes-agent/DOWNLOAD_EXTRACT_MANIFEST.json"
+          test -d "hermes-agent/code"
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for name in ("openclaw","hermes-agent"):
+              m=json.loads((Path(name)/"DOWNLOAD_EXTRACT_MANIFEST.json").read_text())
+              assert m["extraction_verified"] is True
+              assert m["reconstruction_verified"] is True
+              print(name, m["source_ref"], m["source_commit"], m["extracted_tree"]["sha256"], "VERIFIED_CLOSED")
+          PY
