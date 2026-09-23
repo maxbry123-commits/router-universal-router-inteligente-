@@ -4,7 +4,7 @@ schema: yaiwes.chain/v1
 input_block: |
   Opción 3 INPUT-l: Static Space + OAuth HF + Inference Providers. SIN Job permanente.
   NO regeneres publish_live.py con prosa. Prioridad: space_url usable YA.
-  NUNCA API keys en secrets del Static Space.
+  NUNCA pongas API keys en secrets del Static Space.
 
 agent:
   id: agent-3-router
@@ -17,12 +17,13 @@ agent:
 context:
   text: |
     Fallback tras #36: Static Space riu-chat-yaiwes + OAuth (inference-api) + Inference Providers.
-    Job 32GB aplazado. PASS: space_url + smoke chat 200.
+    Job 32GB queda aplazado (opción 2 reintentará cuando el runner no reescriba .py).
+    PASS: space_url + smoke chat 200.
 
 steps:
   - id: space_readme
     task: |
-      README.md Static Space: sdk static, hf_oauth true, scopes inference-api.
+      README.md Static Space: sdk static, hf_oauth true, scopes inference-api (y jobs si aplica).
     checks:
       - kind: contains
         values: ["---", "sdk: static", "hf_oauth"]
@@ -30,8 +31,8 @@ steps:
 
   - id: space_index
     task: |
-      index.html chat OAuth HF + fetch Inference Providers. textContent. Sin API keys hardcodeadas.
-      Selector: DeepSeek / MiniMax / Kimi / NVIDIA si aplica.
+      index.html chat OAuth HF + fetch a Inference Providers. textContent. Sin API keys en JS hardcodeadas.
+      Selector modelos: DeepSeek / MiniMax / Kimi / NVIDIA si el provider lo expone.
     checks:
       - kind: contains
         values: ["oauth", "inference", "textContent"]
@@ -48,8 +49,10 @@ steps:
     context_file:
       - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
     task: |
-      Cierra opción 3: Space publicado, OAuth activo, smoke providers = 200.
-      Escribe space_url en crazy_wall. NO lances HF Job. NO reescribas publish_live.py con prosa.
+      Cierra el despliegue opción 3: asegura Space publicado, OAuth activo, smoke POST chat/providers = 200.
+      Escribe space_url (+ provider_endpoint si hay) en crazy_wall.
+      NO lances HF Job en esta ronda. NO reescribas publish_live.py.
+      Si debes emitir .py, copia TEMPLATE existente verbatim (CERO fences, CERO prosa).
     checks:
       - kind: contains
         values: ["space_url", "http"]

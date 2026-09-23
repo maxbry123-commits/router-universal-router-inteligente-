@@ -3,16 +3,38 @@
  "agent": "agent-3-router",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T00:04:00Z",
+ "updated_at": "2026-09-23T00:03:51Z",
  "group": "hf-chat",
- "chain": ["space_readme", "space_index", "deploy_script", "publish_live"],
- "completed": ["space_readme", "space_index", "deploy_script"],
- "failed": ["publish_live"],
- "next_nodes": ["publish_live"],
+ "chain": [
+  "space_readme",
+  "space_index",
+  "deploy_script",
+  "publish_live"
+ ],
+ "completed": [
+  "space_readme",
+  "space_index",
+  "deploy_script"
+ ],
+ "failed": [
+  "publish_live"
+ ],
+ "next_nodes": [
+  "publish_live"
+ ],
+ "current_nodes": [],
  "attempts_publish_live": 6,
- "blockers": ["#36 LLM prose in publish_live.py. FALLBACK option 3 Static+OAuth+Inference."],
+ "blockers": [
+  "#36 LLM wrote prose into publish_live.py (SyntaxError). FALLBACK option 3: Static+OAuth+Inference Providers."
+ ],
  "deploy_mode": "INPUT-l option 3 Static+OAuth+InferenceProviders",
- "orchestrator_order": "Option 3: Static Space OAuth + Inference Providers; space_url; no Job this round.",
+ "hardware_requirement": "No HF Job this round; option 2 Job-32GB deferred",
  "space_id_suffix": "riu-chat-yaiwes",
- "route": ["nvidia", "groq", "cerebras", "minimax_m3"]
+ "orchestrator_order": "Option 3: publish Static Space with OAuth + Inference Providers; write space_url; do NOT launch Job; do NOT rewrite publish_live with prose.",
+ "route": [
+  "nvidia",
+  "groq",
+  "cerebras",
+  "minimax_m3"
+ ]
 }

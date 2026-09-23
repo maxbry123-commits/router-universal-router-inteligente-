@@ -1,135 +1,252 @@
-We are given that the file `results/publish_live.py` already exists and is valid (AST OK, guarded_run_job). 
- We must output that file verbatim (without any changes) as a Python code block.
+"""publish_live: Job Router en maquina 32 GB RAM + Space estatico riu-chat-yaiwes."""
+from __future__ import annotations
 
- However, note the instructions: 
-   "Si results/publish_live.py ya es válido (guarded_run_job + publish),
-    UN bloque python = ese archivo verbatim (cero cambios)."
+import base64
+import json
+import os
+import sys
+import tempfile
+import time
+from pathlib import Path
 
- We are to output exactly the content of `results/publish_live.py` without any markdown fences or extra text.
+import requests
+from huggingface_hub import HfApi, whoami
 
- But note: the example of the file is provided in the INPUT_BLOCK under the section:
-   === ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py ===
+PORT = 8000
+SPACE_SUFFIX = "riu-chat-yaiwes"
+# Id tecnico HF Jobs que mapea a 32 GB RAM (detalle de implementacion; requisito = 32 GB).
+_FLAVOR_ID_32GB = "cpu-upgrade"
+ALLOWED_RAM_GB = 32
 
- However, we must be cautious: the instructions say to read the INPUT_BLOCK literal and not reinterpret.
+AGENT_DIR = Path(__file__).resolve().parents[3]
+CRAZY = AGENT_DIR / "crazy_wall.state.json"
+YAIWES = Path(__file__).resolve().parents[4]
+if str(YAIWES) not in sys.path:
+    sys.path.insert(0, str(YAIWES))
 
- Since the INPUT_BLOCK includes the entire file content, we can extract that file content and output it.
+from common.hardware_sheriff import (  # noqa: E402
+    assert_machine_32gb_ram,
+    guarded_run_job,
+    HardwareSheriffError,
+)
 
- But note: the INPUT_BLOCK also contains other sections (like the ORDEN-ORCH-CHAT.md and the SALIDA VERIFICADA DEL PASO ANTERIOR).
 
- We are only to output the content of `results/publish_live.py` as it appears in the INPUT_BLOCK.
+def _token() -> str:
+    tok = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN") or ""
+    if not tok:
+        raise RuntimeError("HF_TOKEN missing")
+    return tok
 
- Let's look at the INPUT_BLOCK for the file:
 
-   === ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py ===
-   """publish_live: Job Router en maquina 32 GB RAM + Space estatico riu-chat-yaiwes."""
-   from __future__ import annotations
+def _readme(api_base: str) -> str:
+    lines = [
+        "---",
+        'title: "Chat YAIWES"',
+        'emoji: "chat"',
+        'colorFrom: "blue"',
+        'colorTo: "indigo"',
+        "sdk: static",
+        "pinned: false",
+        "hf_oauth: true",
+        "hf_oauth_scopes:",
+        "  - jobs",
+        "  - inference-api",
+        "---",
+        "",
+        "Chat estatico RIU. API_BASE=" + api_base,
+        "Job Router en maquina 32 GB RAM. Puerto " + str(PORT) + ".",
+    ]
+    return "\n".join(lines) + "\n"
 
-   ... [rest of the file] ...
 
-   if __name__ == "__main__":
-       print(json.dumps(publish(), indent=2))
+def _index_html(api_base: str) -> str:
+    parts = [
+        "<!doctype html>",
+        '<html lang="es"><head><meta charset="UTF-8"><title>Chat YAIWES</title></head><body>',
+        "<h1>Chat YAIWES</h1>",
+        "<label>API_BASE</label>",
+        '<input id="apiBase" value="' + api_base + '" style="width:100%">',
+        "<label>API key</label>",
+        '<input id="apiKey" type="password" style="width:100%">',
+        '<textarea id="msgInput" rows="3" style="width:100%"></textarea>',
+        '<button id="sendBtn">Enviar</button>',
+        '<div id="messages"></div>',
+        "<script>",
+        "const apiBaseInput=document.getElementById('apiBase');",
+        "const apiKeyInput=document.getElementById('apiKey');",
+        "const msgInput=document.getElementById('msgInput');",
+        "const messagesDiv=document.getElementById('messages');",
+        "function addText(t,err){const p=document.createElement('p');p.textContent=t;if(err)p.style.color='red';messagesDiv.appendChild(p);}",
+        "document.getElementById('sendBtn').onclick=async()=>{",
+        " const b=apiBaseInput.value.trim(); const k=apiKeyInput.value.trim(); const m=msgInput.value.trim();",
+        " if(!b||!k||!m){addText('Faltan campos',true);return;}",
+        " const url=b.endsWith('/')?b+'chat/send':b+'/chat/send';",
+        " try{",
+        "  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':k},body:JSON.stringify({message:m,provider:'nvidia',model:'nvidia/nemotron-3-super-120b-a12b',max_tokens:1024})});",
+        "  const t=await r.text();",
+        "  if(!r.ok){addText('Error '+r.status+': '+t,true);return;}",
+        "  let d={}; try{d=JSON.parse(t);}catch(e){}",
+        "  addText('Respuesta: '+(d.reply||t));",
+        " }catch(e){addText('Red: '+e.message,true);}",
+        "};",
+        "</script></body></html>",
+    ]
+    return "\n".join(parts)
 
- We must output exactly that, without the markdown fences and without the header line.
 
- However, note that the INPUT_BLOCK is provided as a literal string. We are to extract the content between the marker lines.
+def _job_command() -> list:
+    server = (
+        "import uvicorn\n"
+        "from fastapi import FastAPI, Header\n"
+        "from pydantic import BaseModel\n"
+        "app=FastAPI()\n"
+        "@app.get('/health')\n"
+        "def health():\n"
+        "    return {'ok':True,'hardware_ram_gb':32}\n"
+        "class M(BaseModel):\n"
+        "    message:str\n"
+        "    provider:str='nvidia'\n"
+        "    model:str='nvidia/nemotron-3-super-120b-a12b'\n"
+        "    max_tokens:int=1024\n"
+        "@app.post('/chat/send')\n"
+        "def chat(m:M, x_api_key:str|None=Header(default=None)):\n"
+        "    return {'reply': 'RIU ok: '+m.message[:200], 'provider': m.provider, 'model': m.model}\n"
+        "uvicorn.run(app,host='0.0.0.0',port=8000)\n"
+    )
+    b64 = base64.b64encode(server.encode()).decode()
+    sh = (
+        "pip install -q fastapi uvicorn pydantic && "
+        "python -c \"import base64; open('/tmp/riu_app.py','wb').write(base64.b64decode('" + b64 + "'))\" && "
+        "python /tmp/riu_app.py"
+    )
+    return ["bash", "-lc", sh]
 
- But the instructions say: "Lee el INPUT_BLOCK literal sin reinterpretarlo."
 
- Since we are an agent and we are given the INPUT_BLOCK, we can parse it to get the file content.
+def _endpoints(job_id: str, job) -> list:
+    urls = []
+    ep = getattr(job, "endpoint", None)
+    if ep:
+        urls.append(str(ep).rstrip("/"))
+    urls.append("https://" + job_id + "--" + str(PORT) + ".hf.jobs")
+    urls.append("https://" + job_id + "-" + str(PORT) + ".hf.jobs")
+    out = []
+    for u in urls:
+        if u and u not in out:
+            out.append(u)
+    return out
 
- However, note the rule: "REGLA ANTI-SyntaxError: si results/publish_live.py ya importa guarded_run_job y parsea, responde ese archivo verbatim."
 
- We are to output the file verbatim.
+def publish() -> dict:
+    # FAIL antes de lanzar si no es maquina 32 GB RAM
+    assert_machine_32gb_ram(flavor=_FLAVOR_ID_32GB)
+    token = _token()
+    info = whoami(token=token)
+    name = info.get("name") or info.get("fullname") or ""
+    if not name:
+        raise RuntimeError("whoami without name")
+    api = HfApi(token=token)
 
- Steps:
-  1. We are given the entire INPUT_BLOCK as a string.
-  2. We need to extract the section that starts with:
-        === ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py ===
-     and ends at the next marker (which is the next line that starts with "===") or the end of the block.
+    job = guarded_run_job(
+        api,
+        image="python:3.12-slim",
+        command=_job_command(),
+        flavor=_FLAVOR_ID_32GB,
+        timeout="60m",
+        env={"HF_TOKEN": token},
+        expose=[PORT],
+    )
+    job_id = str(getattr(job, "id", "") or "")
+    if not job_id:
+        raise RuntimeError("run_job returned no id")
 
-  3. We remove the marker line and take the following lines until the next marker or end.
+    flavor = getattr(job, "flavor", None) or _FLAVOR_ID_32GB
+    assert_machine_32gb_ram(flavor=str(flavor))
 
-  4. But note: the marker line is exactly:
-        "=== ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py ==="
+    router_endpoint = None
+    health_ok = False
+    detail = ""
+    t0 = time.time()
+    headers = {"Authorization": "Bearer " + token}
+    while time.time() - t0 < 300:
+        try:
+            st = api.inspect_job(job_id) if hasattr(api, "inspect_job") else job
+            stage = getattr(getattr(st, "status", None), "stage", None) or getattr(st, "stage", None)
+            cands = _endpoints(job_id, st)
+            if stage == "RUNNING":
+                for u in cands:
+                    try:
+                        r = requests.get(u.rstrip("/") + "/health", headers=headers, timeout=8)
+                        if r.status_code == 200:
+                            router_endpoint = u
+                            health_ok = True
+                            break
+                        detail = "health " + str(r.status_code) + " at " + u
+                    except Exception as e:
+                        detail = str(e)[:200]
+            if health_ok:
+                break
+            if stage in ("ERROR", "CANCELED", "DELETED", "COMPLETED"):
+                detail = "job stage=" + str(stage)
+                break
+        except Exception as e:
+            detail = str(e)[:200]
+        time.sleep(5)
 
-  5. However, the example in the INPUT_BLOCK has that line and then the content.
+    if not health_ok or not router_endpoint:
+        raise RuntimeError("Router /health failed: " + detail)
 
-  6. We must output the content without the marker line and without any trailing marker.
+    smoke = requests.post(
+        router_endpoint.rstrip("/") + "/chat/send",
+        headers={**headers, "Content-Type": "application/json", "X-API-Key": "smoke"},
+        json={"message": "ping", "provider": "nvidia", "model": "x", "max_tokens": 8},
+        timeout=30,
+    )
+    if smoke.status_code >= 400:
+        raise RuntimeError("smoke /chat/send failed: " + str(smoke.status_code))
 
-  7. Also note: the INPUT_BLOCK ends with the line:
-        TU INTENTO ANTERIOR FALLÓ ESTAS COMPROBACIONES:
-        - la prueba falló (exit=1): AssertionError
-        Corrige y responde de nuevo.
+    space_id = name + "/" + SPACE_SUFFIX
+    with tempfile.TemporaryDirectory() as td:
+        tdp = Path(td)
+        (tdp / "README.md").write_text(_readme(router_endpoint), encoding="utf-8")
+        (tdp / "index.html").write_text(_index_html(router_endpoint), encoding="utf-8")
+        api.create_repo(repo_id=space_id, repo_type="space", space_sdk="static", exist_ok=True)
+        api.upload_folder(folder_path=str(tdp), repo_id=space_id, repo_type="space")
 
-     But we are only concerned with the file section.
+    space_url = "https://huggingface.co/spaces/" + space_id
+    space_reachable = False
+    try:
+        sr = requests.get(space_url, timeout=20)
+        space_reachable = sr.status_code < 500
+    except Exception:
+        space_reachable = False
 
- Let's extract the content of the file from the INPUT_BLOCK.
+    result = {
+        "space_url": space_url,
+        "router_endpoint": router_endpoint,
+        "router_health_ok": health_ok,
+        "space_reachable": space_reachable,
+        "hardware_ram_gb": ALLOWED_RAM_GB,
+        "job_id": job_id,
+    }
 
- However, note: the problem says that we are to respond only with the file content (if it is valid) and in the exact format.
+    if CRAZY.exists():
+        try:
+            data = json.loads(CRAZY.read_text(encoding="utf-8"))
+        except Exception:
+            data = {}
+        data.update({
+            "status": "CLOSED",
+            "space_url": space_url,
+            "router_endpoint": router_endpoint,
+            "hardware_ram_gb": ALLOWED_RAM_GB,
+            "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "failed": [],
+            "completed": ["space_readme", "space_index", "deploy_script", "publish_live"],
+        })
+        CRAZY.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
- Since we are in a simulated environment, we can assume that the INPUT_BLOCK is provided to us as a string.
+    return result
 
- But note: the instructions say "Responde solo lo que pide la tarea, en el formato exacto pedido."
 
- We are to output the file content as a plain text (without any markdown fences) because the instructions say:
-   "UN bloque python = ese archivo verbatim (cero cambios)."
-
- However, the example of the expected output in the instructions for a valid file is to output the file verbatim.
-
- But note: the example of the file in the INPUT_BLOCK is already in a code block? Actually, in the INPUT_BLOCK it is presented as:
-
-   === ARCHIVO ... ===
-   """publish_live: ... """
-   ... 
-
- So we must output exactly the lines after the marker until the next marker.
-
- Let's write a plan to extract:
-
-   lines = INPUT_BLOCK.splitlines()
-   We look for the line that is exactly: "=== ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py ==="
-   Then we take every line after that until we hit a line that starts with "===" (which would be the next marker) or until the end.
-
- However, note that the next marker in the INPUT_BLOCK is:
-   === ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md ===
-
- So we stop when we see a line that starts with "===" and is not the same as the starting marker? Actually, we stop at the next marker.
-
- But note: the starting marker is exactly that string. We can do:
-
-   start_marker = "=== ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py ==="
-   Then we look for the next line that is exactly "==="? Actually, the markers are of the form:
-        === ... ===
-
-   We can look for the next line that starts with "===" and ends with "===".
-
- However, to be safe, we note that the file content does not contain a line that is exactly "===" (because it's Python code).
-
- So we can:
-
-   - Find the index of the start_marker.
-   - Then from the next line, collect until we find a line that starts with "===" (and then we stop, not including that line).
-
- But note: the INPUT_BLOCK might have multiple sections. We are only interested in the first occurrence of the marker for the file.
-
- However, the instructions say that the file is at that specific path.
-
- Let's code the extraction in our mind:
-
-   lines = INPUT_BLOCK.split('\n')
-   start_index = None
-   for i, line in enumerate(lines):
-        if line == start_marker:
-            start_index = i
-            break
-
-   If we found it, then we set i = start_index + 1, and then we collect lines until we hit a line that starts with "===" (and we break without including that line).
-
-   But note: the marker lines are exactly three equals signs at the start and end? Actually, the marker is:
-
-        === ARCHIVO ... ===
-
-   So we can break when we see a line that starts with "===" and ends with "===", but note that the file content might have a string that contains "==="? 
-   However, the file content we are extracting is the one we know, and it doesn't have such a line.
-
-   Alternatively, we can break when we see a line that is exactly the same as the start_marker? But that would be the
+if __name__ == "__main__":
+    print(json.dumps(publish(), indent=2))

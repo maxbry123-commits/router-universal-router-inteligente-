@@ -10,11 +10,12 @@ Opción 2 (Static+Job 32GB) falló #33/#36: LLM corrompe publish_live.py antes d
 space_readme · space_index · deploy_script (Static)
 
 ## Orden P1 opción 3
-1. Static Space `riu-chat-yaiwes` (sdk static + hf_oauth scopes inference-api).
-2. index.html: OAuth usuario → Inference Providers (DeepSeek/MiniMax/Kimi/NVIDIA). NUNCA keys en secrets del Space.
-3. Smoke mensaje = 200. Anota space_url en crazy_wall CLOSED.
-4. PROHIBIDO: prosa como .py; Job ≠32GB; P2; regenerar publish_live.
-5. Preferible NO tocar publish_live.py esta ronda.
+1. Restaura/asegura Static Space `riu-chat-yaiwes` (sdk static + hf_oauth scopes: inference-api; jobs opcional).
+2. index.html: chat usa token OAuth del usuario; llama Inference Providers (DeepSeek/MiniMax/Kimi/NVIDIA según disponible). NUNCA keys en secrets del Space.
+3. API_BASE = endpoint Inference Providers (no placeholder). Smoke: enviar mensaje = 200.
+4. Anota space_url + evidencia OAuth en crazy_wall CLOSED.
+5. PROHIBIDO: regenerar publish_live con prosa; lanzar Job ≠32GB; P2.
+6. publish_live.py: si lo tocas, SOLO bytes del TEMPLATE limpio (primera línea `"""`, CERO fences). Preferible NO tocarlo en esta ronda — cierra Space+OAuth+Providers primero.
 
 ## PASS
-space_url usable + smoke 200 + fail-closed sin OAuth.
+space_url usable + GET health o smoke chat 200 + fail-closed sin OAuth.
