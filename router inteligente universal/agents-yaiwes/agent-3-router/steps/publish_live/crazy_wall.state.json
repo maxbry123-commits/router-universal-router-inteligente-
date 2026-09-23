@@ -1,9 +1,9 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
  "step": "publish_live",
- "status": "PENDING",
- "updated_at": "2026-09-23T00:03:51Z",
- "attempts": 6,
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T00:06:13Z",
+ "attempts": 1,
  "last_error": "#36 prose-as-py SyntaxError; fallback option 3",
  "agent": "agent-3-router",
  "deploy_mode": "option_3_static_oauth_inference",
@@ -14,5 +14,18 @@
   "sheriff"
  ],
  "gaps": [],
- "failed": []
+ "failed": [],
+ "framework": "pocketflow",
+ "group": "hf-chat",
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "2dd6b152805e539f8b2c1932bdeb816d70f3b7820a16c63c2224cfdb9024b2f6",
+   "chars": 120
+  }
+ ],
+ "route_trace": []
 }

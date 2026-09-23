@@ -1,12 +1,1 @@
-{
- "schema": "yaiwes.trigger/v1",
- "step": "publish_live",
- "action": "OPTION_3_STATIC_OAUTH_INFERENCE",
- "forbid_hf_job_this_round": true,
- "forbid_markdown_fences": true,
- "forbid_prose_as_python": true,
- "pass": [
-  "space_url"
- ],
- "updated_at": "2026-09-23T00:03:51Z"
-}
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "Opción 3 INPUT-l: Static Space + OAuth HF + Inference Providers. SIN Job permanente.\nNO regeneres publish_live.py con prosa. Prioridad: space_url usable YA.\nNUNCA pongas API keys en secrets del Static Space.\n"}

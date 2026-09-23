@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-3-router",
  "framework": "pocketflow",
- "status": "BLOCKED",
- "updated_at": "2026-09-23T00:03:51Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T00:06:13Z",
  "group": "hf-chat",
  "chain": [
   "space_readme",
@@ -14,14 +14,11 @@
  "completed": [
   "space_readme",
   "space_index",
-  "deploy_script"
- ],
- "failed": [
+  "deploy_script",
   "publish_live"
  ],
- "next_nodes": [
-  "publish_live"
- ],
+ "failed": [],
+ "next_nodes": [],
  "current_nodes": [],
  "attempts_publish_live": 6,
  "blockers": [
@@ -35,6 +32,6 @@
   "nvidia",
   "groq",
   "cerebras",
-  "minimax_m3"
+  "deepseek_flash"
  ]
 }
