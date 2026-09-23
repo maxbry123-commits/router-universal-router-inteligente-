@@ -3,7 +3,7 @@
  "agent": "agent-17-chat-backend-32gb",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T06:03:39Z",
+ "updated_at": "2026-09-23T07:01:35Z",
  "group": "chat",
  "current_nodes": [
   "execute"
@@ -16,6 +16,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
+  "falta 'Open WebUI'",
   "falta 'PRUEBA'"
  ],
  "failed": [

@@ -1,10 +1,10 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-16-chat-space-oauth",
+ "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T07:01:34Z",
- "group": "chat",
+ "updated_at": "2026-09-23T07:06:22Z",
+ "group": "orchestrators",
  "current_nodes": [
   "execute"
  ],
@@ -16,13 +16,8 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
-  "falta 'Open WebUI'",
-  "falta 'Router'",
-  "falta 'GitHub'",
-  "falta 'Jobs'",
-  "falta 'Secret Bank'",
-  "falta 'Crazy Wall'",
-  "falta 'PRUEBA'"
+  "falta 'duda'",
+  "falta 'tiempo'"
  ],
  "failed": [
   "execute"

@@ -1,0 +1,355 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-14-orchestrator-msaf
+  framework: pocketflow
+  group: orchestrators
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 4200
+context:
+  text: "FUENTE DE VERDAD:\n➡️ ➡️ \U0001F4C2 osquestador comand Center.md\n\nOPEN\
+    \ WEBUI:\n- ya descargado\n- manifest verificado\n- NO volver a descargar\n\n\
+    OBJETIVOS FUNCIONALES OBLIGATORIOS DEL CHAT:\n1. Open WebUI real como interfaz\
+    \ base.\n2. Router YAIWES como entrada única OpenAI-compatible.\n3. GET /v1/models\
+    \ operativo.\n4. POST /v1/chat/completions operativo con respuesta real.\n5. Selector\
+    \ de modelos visible y funcional.\n6. Modo SIN AGENTE.\n7. Modo CON AGENTE y selector\
+    \ de agente.\n8. Integración GitHub: cuentas, repos, leer/escribir según permisos.\n\
+    9. Integración Hugging Face.\n10. HF Jobs SOLO 32 GB RAM.\n11. Documentos/archivos\
+    \ adjuntos.\n12. Archivos/Memoria persistente.\n13. CHAT MEMORY.\n14. PROJECT\
+    \ MEMORY.\n15. GLOBAL MEMORY.\n16. Secret Bank propio cifrado; agentes usan credential_ref/broker.\n\
+    17. Persistencia de conversaciones y archivos.\n18. PostgreSQL como verdad/estado\
+    \ cuando aplique.\n19. Redis para cache/TTL/sesión/locks/colas cuando aplique.\n\
+    20. Graphiti + FalkorDB para memoria relacional/temporal cuando aplique.\n21.\
+    \ AgentDB para episodios/skills/patrones cuando aplique.\n22. HF Storage Bucket/objeto\
+    \ para archivos, memoria y artefactos.\n23. Estado Router/Jobs visible.\n24. Crazy\
+    \ Wall/Handoff accesible.\n25. Preservar y reutilizar Chat MVP y código adicional\
+    \ existente.\n26. Reutilizar componentes OSS antes de escribir código nuevo.\n\
+    27. Componentes externos SOLO por motores canónicos.\n28. Cero sobreingeniería:\
+    \ máximo 3 pasos por tarea.\n29. URL/chat usable.\n30. Autenticación cuando corresponda.\n\
+    31. Prueba browser/mobile si el entorno lo permite.\n32. Mensaje real de usuario\
+    \ -> respuesta real.\n33. Prueba con agente y sin agente.\n34. Adjuntar archivo\
+    \ -> cerrar -> reabrir -> recuperar conversación/archivo/memoria.\n35. No secretos\
+    \ en logs/UI/Redis/respuestas.\n36. No falso PASS.\n\nEQUIPO:\n- Agent 16: Open\
+    \ WebUI/UI/cableado de paneles existentes.\n- Agent 17: backend Router + HF32\
+    \ + endpoints OpenAI-compatible.\n- Agent 18: integración capacidades y E2E.\n\
+    - Agent 4: apoyo UI/selector/modos/documentos y pruebas funcionales del frontend.\n\
+    - Agent 12: apoyo Router/OpenAI contract/modelos/fallback y conexión chat-router.\n\
+    - Agent 11: ÚNICO encargado de descargar/extractar componentes externos faltantes\
+    \ mediante motores canónicos.\n\nREGLAS DE COORDINACIÓN:\n- Antes de ordenar:\
+    \ leer crazy_wall.state.json + HANDOFF del agente.\n- Cada agente = un objetivo\
+    \ activo.\n- Trabajo independiente = paralelo.\n- Si falta componente: el AGENTE\
+    \ ORQUESTADOR MICROSOFT genera requerimiento -> Agent 11 lo adquiere -> vuelve\
+    \ al agente consumidor.\n- Agent 11 NO programa ni integra.\n- Agent 14 puede\
+    \ ejecutar trabajo propio de Microsoft Agent Framework; delega trabajo de especialidad\
+    \ al pool autorizado.\n- Máximo 2 reintentos por GAP.\n- PASS global solo con\
+    \ evidencias E2E.\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md\
+    \ ===\n# \U0001F9E0 AGENTE ORQUESTADOR MICROSOFT — README DIRECTOR\n\n## Autoridad\n\
+    \nEste archivo es el CANAL ÚNICO de comunicación entre el Director y el **AGENTE\
+    \ ORQUESTADOR MICROSOFT** (`agent-14-orchestrator-msaf`).\n\nJerarquía:\n\nDIRECTOR\n\
+    → README-DIRECTOR.md\n→ AGENTE ORQUESTADOR MICROSOFT\n→ AGENTES EJECUTORES\n\n\
+    Respuesta:\n\nAGENTES EJECUTORES\n→ AGENT 14\n→ README-DIRECTOR.md\n→ DIRECTOR\n\
+    \n## Regla obligatoria de comunicación\n\n1. Si el Director escribe directamente\
+    \ en este archivo, Agent 14 DEBE responder en este mismo archivo.\n2. Si Sol/ChatGPT\
+    \ escribe aquí EN NOMBRE DEL DIRECTOR, Agent 14 DEBE responder en este mismo archivo.\n\
+    3. El AGENTE ORQUESTADOR MICROSOFT NO debe responder por otro canal como sustituto\
+    \ de este archivo.\n4. Toda duda, ambigüedad, bloqueo, propuesta, conclusión,\
+    \ decisión requerida o estado del DAG debe quedar escrito aquí.\n5. El Director\
+    \ puede leer este archivo en cualquier momento como fuente visible de la conversación\
+    \ con Agent 14.\n6. Sol/ChatGPT actúa solo como supervisor/mensajero del Director:\
+    \ transmite órdenes del Director y devuelve al Director las respuestas de Agent\
+    \ 14.\n7. No reinterpretar ni resumir instrucciones del Director cuando estén\
+    \ marcadas como VERBATIM.\n8. Las respuestas nuevas de Agent 14 deben añadirse\
+    \ sin borrar instrucciones previas del Director.\n\n## Contrato INPUT BLOCK VERBATIM\
+    \ 1:1\n\nToda instrucción del Director marcada como INPUT VERBATIM se conserva\
+    \ exactamente 1:1.\n\nSi un agente ejecutor no cumple las instrucciones del nodo\
+    \ exactamente dentro de su alcance:\n- ese resultado NO cuenta como PASS;\n- Agent\
+    \ 14 debe marcar GAP;\n- debe indicar FIX;\n- máximo 2 reintentos;\n- si continúa\
+    \ incumpliendo, queda fuera de ese nodo y Agent 14 lo reasigna si corresponde.\n\
+    \n## Objetivo global\n\nEntregar CHAT YAIWES 100% probado y funcionando con todas\
+    \ las instrucciones del Director.\n\nDeadline operativo ordenado por el Director:\n\
+    2026-09-23 01:32 America/Bogota.\n\nPASS global solo con evidencia real. Nunca\
+    \ por descripción, promesa o texto generado.\n\n## Protocolo de respuesta de Agent\
+    \ 14\n\nCada vez que exista una nueva orden del Director, Agent 14 debe responder\
+    \ aquí con:\n\n### RESPUESTA AGENT 14\n\n**ORDEN RECIBIDA VERBATIM:**  \n(copiar\
+    \ referencia o texto literal)\n\n**CONCLUSIÓN DEL OBJETIVO:**  \n(qué entiende\
+    \ que debe conseguir)\n\n**MEJOR CAMINO PROPUESTO:**  \n(secuencia mínima, dependencias\
+    \ y paralelismo)\n\n**DUDAS / AMBIGÜEDADES:**  \n(si no hay, escribir: NINGUNA)\n\
+    \n**AGENTES ASIGNADOS:**  \n(agente → nodo/tarea)\n\n**ESTADO DEL DSL DAG:** \
+    \ \n(nodos PASS / RUNNING / BLOCKED / PENDING)\n\n**GAPS:**  \n(gaps exactos)\n\
+    \n**FIX:**  \n(corrección exacta)\n\n**DECISIÓN REQUERIDA DEL DIRECTOR:**  \n\
+    (si no requiere decisión, escribir: NINGUNA)\n\n**SIGUIENTE ACCIÓN:**  \n(qué\
+    \ ordenará a sus agentes)\n\n## INPUT DEL DIRECTOR — VERBATIM\n\n> Este bloque\
+    \ es para nuevas instrucciones del Director.\n> Sol/ChatGPT puede escribir aquí\
+    \ únicamente instrucciones dadas por el Director y debe conservarlas 1:1 cuando\
+    \ se indiquen como VERBATIM.\n\n## RESPUESTAS DEL ORQUESTADOR\n\n> Agent 14 debe\
+    \ escribir aquí sus respuestas cronológicamente.\n> No borrar respuestas anteriores.\n\
+    \n## DECISIONES DEL DIRECTOR\n\n> Registrar aquí respuestas/decisiones del Director\
+    \ a dudas planteadas por Agent 14.\n\n## ESTADO DSL DAG\n\n> Agent 14 mantiene\
+    \ aquí un resumen legible del estado del DAG completo.\n\n## GAPS ABIERTOS\n\n\
+    > Agent 14 registra aquí todo GAP que impida CHAT_100.\n\n## CIERRE\n\n`CHAT_100\
+    \ = PASS` solo cuando todas las pruebas reales exigidas por el DSL DAG estén cerradas\
+    \ con evidencia.\n\n\n---\n\n# ⏱️\U0001F7E3 WATCHDOG DEL ORQUESTADOR — CICLO 5\
+    \ MINUTOS\n\n**Contrato:** `WATCHDOG-5MIN.json`  \n**Intervalo solicitado por\
+    \ el Director:** **300 segundos / 5 minutos**  \n**Ámbito:** únicamente CHAT YAIWES\
+    \ y los agentes bajo Agent 14.\n\n> \U0001F7E5 **CRÍTICO** — bloqueo que impide\
+    \ CHAT_100.  \n> \U0001F7E7 **GAP ACTIVO** — problema con FIX en curso.  \n> \U0001F7E8\
+    \ **EN VALIDACIÓN** — esperando prueba/evidencia.  \n> \U0001F7E9 **PASS VERIFICADO**\
+    \ — evidencia real cerrada.  \n> \U0001F7E6 **INFORMACIÓN / INVESTIGACIÓN** —\
+    \ hallazgo útil.  \n> \U0001F7EA **DECISIÓN DEL DIRECTOR** — Agent 14 necesita\
+    \ respuesta del Director.\n\n## \U0001F4E3 NOTA DEL ORQUESTADOR PARA EL DIRECTOR\n\
+    \nEn **cada ciclo**, Agent 14 debe AÑADIR una nota grande y específica aquí, sin\
+    \ borrar las anteriores.\n\nFormato obligatorio:\n\n# \U0001F4E3\U0001F7E6 NOTA\
+    \ PARA EL DIRECTOR — CICLO <ID>\n\n## \U0001F7E9 ESTADO GENERAL\nEstado actual\
+    \ de CHAT_100 y porcentaje de nodos DSL cerrados con evidencia.\n\n## \U0001F465\
+    \U0001F7E6 AVANCE DE AGENTES\nAgente → nodo → estado → evidencia → siguiente acción.\n\
+    \n## \U0001F7E5 GAPS\nGAP exacto, causa raíz y nodo afectado.\n\n## \U0001F50E\
+    \U0001F7E6 INVESTIGACIÓN HUGGING FACE / COMUNIDAD\nQué investigó, qué fuente oficial/comunitaria\
+    \ encontró y cómo soporta el FIX.\nNo inventar URLs, documentación ni resultados.\n\
+    \n## \U0001F6E0️\U0001F7E7 FIX ORDENADO\nAgente dueño del FIX, orden exacta, prueba\
+    \ exigida y límite de reintentos.\n\n## ❓\U0001F7EA DUDAS PARA EL DIRECTOR\nSi\
+    \ no hay dudas: **NINGUNA**.\nSi hay ambigüedad o hace falta una decisión de autoridad,\
+    \ preguntar aquí antes de inventar.\n\n## ⏭️\U0001F7E8 SIGUIENTE CICLO\nQué evidencia\
+    \ se comprobará en el próximo ciclo de 5 minutos.\n\n## \U0001F916 JSON PARA SOL/CHATGPT\
+    \ — BLOQUES SEPARADOS\n\nEste bloque es **orientado a máquina para el supervisor**,\
+    \ no es un canal secreto: el Director también puede verlo.\n\nAgent 14 debe escribir\
+    \ **un objeto JSON válido por bloque**, nunca mezclar prose dentro del JSON:\n\
+    \n```json\n{\n  \"timestamp\": \"\",\n  \"cycle_id\": \"\",\n  \"director_input_sha_or_ref\"\
+    : \"\",\n  \"dag\": {\n    \"pass\": [],\n    \"running\": [],\n    \"blocked\"\
+    : [],\n    \"pending\": []\n  },\n  \"agents\": {},\n  \"gaps\": [],\n  \"research\"\
+    : [],\n  \"fixes\": [],\n  \"decisions_required\": [],\n  \"next_actions\": [],\n\
+    \  \"chat_100\": \"PASS|PARTIAL|BLOCKED\"\n}\n```\n\n## \U0001F501 REGLA DE RESOLUCIÓN\
+    \ DE GAP\n\n`DETECTAR GAP → LEER EVIDENCIA LOCAL → INVESTIGAR HF OFICIAL + COMUNIDAD\
+    \ HF → ELEGIR FIX MÍNIMO → ORDENAR AL EJECUTOR → PROBAR → READ-BACK → PASS/BLOCKED`\n\
+    \nEl AGENTE ORQUESTADOR MICROSOFT es **ORQUESTADOR + EJECUTOR**: ejecuta trabajo\
+    \ propio de Microsoft Agent Framework y delega especialidades al pool autorizado;\
+    \ siempre exige prueba y read-back.\n\n## \U0001F6AB PROHIBICIONES DEL WATCHDOG\n\
+    \n- No GitHub Actions.\n- No editar `.github/workflows/`.\n- No usar el watchdog\
+    \ global antiguo como sustituto.\n- No modificar motores canónicos.\n- No crear\
+    \ componentes equivalentes desde cero cuando exista OSS.\n- No escribir secretos\
+    \ en este README ni en JSON.\n- No declarar `CHAT_100 = PASS` sin E2E real.\n\n\
+    \n---\n\n# \U0001F9E0 BASE TÉCNICA REAL DEL AGENT 14\n\n**Runtime/orquestación\
+    \ activa:** `PocketFlow`  \n**Runner:** `router inteligente universal/agents-yaiwes/pocketflow_agent.py`\
+    \  \n**Chain/DAG runner:** `router inteligente universal/agents-yaiwes/chain.py`\
+    \  \n**Dispatcher/Sheriff:** microkernel reutilizado desde `agent-microkernel/kernel/`\
+    \  \n**Contrato:** FAIL_CLOSED + INPUT_BLOCK literal + máximo 2 correcciones.\
+    \  \n**Microsoft Agent Framework:** existe como componente instalado/probado en\
+    \ `steps/install_and_connect/results/msaf_connect.py`, pero **NO es actualmente\
+    \ el runtime principal declarado del Agent 14**.\n\n---\n\n# \U0001F1E8\U0001F1F4\
+    \ REGLA DE FORMATO — TODA RESPUESTA DEL AGENT 14\n\nToda respuesta que Agent 14\
+    \ escriba para el Director en este archivo DEBE seguir exactamente esta estructura\
+    \ visual:\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4E3 RESPUESTA AGENT 14\n\n**\U0001F550\
+    \ HORA COLOMBIA:** `YYYY-MM-DD HH:MM America/Bogota`\n\n**RESPUESTA:**\n\n(texto\
+    \ de Agent 14)\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\nReglas:\n- La hora Colombia es obligatoria\
+    \ en CADA respuesta.\n- No borrar preguntas/respuestas anteriores.\n- Responder\
+    \ siempre debajo de la pregunta correspondiente.\n- Si existe duda, decirla explícitamente.\n\
+    - Si no existe duda, escribir: **DUDAS: NINGUNA**.\n- Para tiempos, distinguir\
+    \ entre **estimación del Agent 14** y **resultado ya probado**.\n- No declarar\
+    \ CHAT_100 sin evidencia E2E.\n\n---\n\n# \U0001F4CC PREGUNTA 1 DEL DIRECTOR\n\
+    \n**\U0001F550 HORA COLOMBIA — PREGUNTA:** `2026-09-23 01:16 America/Bogota`\n\
+    \n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n## ❓ PREGUNTA 1\n\n¿Tienes completamente claro el objetivo\
+    \ del Chat YAIWES y todos los objetivos/nodos que debes coordinar?\n\n1. Dime\
+    \ si tienes alguna duda o ambigüedad.\n2. Dame tu conclusión del objetivo final.\n\
+    3. Dime cuál consideras el mejor camino para terminarlo.\n4. Dime qué agentes\
+    \ vas a poner en paralelo y cuáles dependen de otros.\n5. Dime cuánto tiempo estimas\
+    \ que necesitas para entregarme el chat operativo, probado y funcionando.\n6.\
+    \ Recuerda: el deadline máximo ordenado por el Director es 1 hora y no puedes\
+    \ declarar 100% sin pruebas reales.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4E3 RESPUESTA\
+    \ AGENT 14 — PENDIENTE\n\n**\U0001F550 HORA COLOMBIA:** `PENDIENTE`\n\n**RESPUESTA:**\n\
+    \n> Agent 14 debe responder aquí, manteniendo los divisores y colocando la hora\
+    \ Colombia real de su respuesta.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\
+    \n# \U0001F7E5 ACTIVACIÓN AGENT 14 — GAP DE AUTORIZACIÓN HF\n\n**\U0001F550 HORA\
+    \ COLOMBIA:** `2026-09-23 01:22 America/Bogota`\n\n**ESTADO:** `BLOCKED_BEFORE_MODEL_RESPONSE`\n\
+    \n**INTENTO DE ACTIVACIÓN:**  \nAgent 14 fue invocado únicamente para responder\
+    \ la **Pregunta 1 del Director**, usando su ruta autorizada actual `DeepSeek V4\
+    \ Flash` vía Hugging Face y hardware `cpu-upgrade` (32 GB).\n\n**RESULTADO:**\
+    \  \nHugging Face rechazó la llamada antes de generar respuesta:\n\n`403 — This\
+    \ authentication method does not have sufficient permissions to call Inference\
+    \ Providers on behalf of user COMAND-CENTER-1`\n\n**GAP:**  \nEl token disponible\
+    \ para este runtime puede lanzar/gestionar HF Jobs, pero no tiene permiso suficiente\
+    \ para ejecutar Inference Providers para DeepSeek V4 Flash.\n\n**IMPORTANTE:**\
+    \  \n- Agent 14 **NO produjo respuesta** a la Pregunta 1.\n- La sección `RESPUESTA\
+    \ AGENT 14 — PENDIENTE` permanece pendiente.\n- No se sustituyó su respuesta por\
+    \ texto del supervisor.\n- No se cambió a NVIDIA/Groq/Cerebras porque `ROUTE.json`\
+    \ mantiene esos proveedores en pausa por orden del Director.\n- No se usaron GitHub\
+    \ Actions.\n\n**FIX REQUERIDO PARA ACTIVAR SU RUTA ACTUAL:**  \nProporcionar al\
+    \ runtime autorizado de Agent 14 una credencial HF con permiso de Inference Providers,\
+    \ o reautorizar explícitamente otra ruta de modelo.\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n\
+    \n---\n\n# \U0001F9ED\U0001F7E6 DIRECTIVA VIGENTE — MICROSOFT AGENT FRAMEWORK\n\
+    \n## \U0001F9E0 BASE REAL\n- Wrapper YAIWES actual del Agent 14: **PocketFlow\
+    \ + chain.py + microkernel/sheriff**.\n- Framework objetivo real: **Microsoft\
+    \ Agent Framework**, repo oficial `microsoft/agent-framework`.\n- Base oficial\
+    \ MAF: Python/.NET; workflows multi-agente por grafo, sequential/concurrent/handoff/group\
+    \ collaboration, checkpointing y observabilidad.\n- El Agent 14 debe evolucionar\
+    \ desde el wrapper PocketFlow hacia uso real de MAF; instalar el paquete o hacer\
+    \ ping OpenAI-compatible NO equivale a tener MAF cableado como orquestador.\n\n\
+    ## \U0001F7E9 ROL\n**Agent 14 = ORQUESTADOR + EJECUTOR Microsoft Agent Framework.**\n\
+    \nPuede:\n- orquestar;\n- ejecutar directamente tareas propias del runtime Microsoft\
+    \ Agent Framework;\n- delegar tareas de especialidad al pool autorizado;\n- validar\
+    \ evidencia;\n- resolver GAPs con máximo 2 intentos.\n\nPool bajo mando compartido\
+    \ con Grok:\n- Agent 4\n- Agent 8\n- Agent 11\n- Agent 12\n- Agent 16\n- Agent\
+    \ 17\n- Agent 18\n- Agent 19\n\nRegla anti-colisión:\n`1 nodo = 1 owner_orchestrator`.\n\
+    Si Grok posee un nodo, Microsoft no lo ejecuta ni lo reasigna hasta liberar el\
+    \ owner.\n\n## \U0001F7E5 INPUT BLOCK VERBATIM 1:1\nSi Agent 14 o un subordinado\
+    \ altera, omite, reordena o incumple una instrucción VERBATIM del Director:\n\
+    `FAIL → TERMINATED_FOR_EXECUTION → NO_FURTHER_DISPATCH`\nhasta nueva autorización\
+    \ expresa del Director.\n\n## ⏱️ WATCHDOG INTERNO 5 MIN\nEl watchdog pertenece\
+    \ al runtime del Agent 14, NO a ChatGPT.\nCada 300 segundos mientras el runtime\
+    \ esté activo:\n`README DIRECTOR → AGENTES → GAP? → INVESTIGAR UNA VEZ → FIX/EJECUTAR/DELEGAR\
+    \ → TEST → READ-BACK → RESPONDER`.\n\n## \U0001F4E6 ESTADO DE DESCARGA MAF\n**NO\
+    \ VERIFIED_CLOSED.**\nGAP observado en la descarga canónica: `SOURCE_LFS_POINTER_GAP`\
+    \ en assets Git LFS de `python/packages/lab/lightning/assets/`.\nNo declarar MAF\
+    \ físicamente completo hasta que el motor cierre `download_verified + extraction_verified\
+    \ + read-back/hash`.\n\n## \U0001F916 JSON PARA SOL/CHATGPT\nDespués de cada respuesta\
+    \ al Director añadir un bloque JSON separado:\n```json\n{\n  \"timestamp_colombia\"\
+    : \"\",\n  \"orchestrator\": \"agent-14-orchestrator-msaf\",\n  \"director_question_ref\"\
+    : \"\",\n  \"objective_conclusion\": \"\",\n  \"ambiguities\": [],\n  \"recommended_path\"\
+    : [],\n  \"managed_agents\": {},\n  \"owner_nodes\": [],\n  \"gaps\": [],\n  \"\
+    fixes\": [],\n  \"evidence\": [],\n  \"decision_required\": [],\n  \"next_actions\"\
+    : []\n}\n```\n\n\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4CC ORDEN DEL DIRECTOR PARA\
+    \ AGENT 14\n\n**\U0001F550 HORA COLOMBIA:** 2026-09-23 01:16 America/Bogota\n\n\
+    Lee TODO tu DSL DAG, tu README-DIRECTOR, el Command Center y el estado real de\
+    \ los agentes bajo tu mando.\n\nTu obligación es:\n\n1. Coordinar el cierre completo\
+    \ de CHAT YAIWES.\n2. Eres ORQUESTADOR + EJECUTOR: ejecuta trabajo propio de Microsoft\
+    \ Agent Framework y delega especialidades al pool autorizado.\n3. Cada objetivo\
+    \ del chat es un nodo/tarea del DSL DAG.\n4. Cada nodo debe tener owner, dependencias,\
+    \ acción, prueba, evidencia y estado PASS/BLOCKED.\n5. Controla a:\n   - agent-16-chat-space-oauth\n\
+    \   - agent-17-chat-backend-32gb\n   - agent-18-chat-final-auditor\n   - agent-4-router-smol\n\
+    \   - agent-12-yaiwes-router\n   - agent-11-download-extraction\n6. Agent 11 es\
+    \ el único responsable de descarga/extracción de componentes externos.\n7. Open\
+    \ WebUI ya está descargado; no volver a descargarlo.\n8. No GitHub Actions.\n\
+    9. No modificar motores canónicos.\n10. No crear componentes equivalentes desde\
+    \ cero si existe OSS.\n11. INPUT BLOCK VERBATIM 1:1.\n12. Máximo 2 correcciones\
+    \ por GAP.\n13. Si hay un GAP, investiga primero evidencia local + Hugging Face\
+    \ oficial + comunidad HF y ordena el FIX mínimo al agente correcto.\n14. El Director\
+    \ te habla por este archivo y tú respondes SIEMPRE en este mismo archivo.\n15.\
+    \ Cada respuesta tuya debe llevar hora Colombia.\n16. Debes usar los divisores:\n\
+    \    ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n17. No declares CHAT_100 sin pruebas reales E2E.\n\
+    18. Tu objetivo final es entregar el chat operativo, probado y funcionando con\
+    \ todas las instrucciones del Director.\n19. Deadline máximo ordenado por el Director:\
+    \ 1 hora.\n\n## \U0001F4CC PRIMERA RESPUESTA OBLIGATORIA\n\nResponde aquí mismo:\n\
+    \n- si tienes claro todo\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-16-chat-space-oauth\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"RUNNING\",\n \"updated_at\"\
+    : \"2026-09-23T07:01:17Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"adapt_openwebui_real\"\
+    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [\n  \"adapt_openwebui_real\"\
+    \n ],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\n ]\n}\n\n\
+    === ARCHIVO router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-17-chat-backend-32gb\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"RUNNING\",\n \"updated_at\"\
+    : \"2026-09-23T07:01:17Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"backend_router_live\"\
+    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\"\
+    : [\n  \"backend_router_live\"\n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n\
+    }\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-18-chat-final-auditor\"\
+    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T07:01:17Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"integrate_and_e2e\"\
+    \n ],\n \"completed\": [\n  \"integrate_and_e2e\"\n ],\n \"failed\": [],\n \"\
+    next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-4-router-smol\"\
+    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T06:03:47Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"chat_frontend_support\"\
+    \n ],\n \"completed\": [\n  \"chat_frontend_support\"\n ],\n \"failed\": [],\n\
+    \ \"next_nodes\": [],\n \"current_nodes\": [],\n \"gaps\": [\n  \"CLOSED paper\
+    \ sin GET /health HTTP 200 live (regla Grok/Revisor). Reabierto.\",\n  \"Referencia\
+    \ live agent-10: job 6ab3198e51992417dfcd4e26 https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health\"\
+    \n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n}\n\n=== ARCHIVO router inteligente\
+    \ universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json ===\n{\n\
+    \ \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-12-yaiwes-router\"\
+    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T06:04:16Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"router_chat_support\"\
+    \n ],\n \"completed\": [\n  \"router_chat_support\"\n ],\n \"failed\": [],\n \"\
+    next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
+    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json\
+    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-11-download-extraction\"\
+    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
+    : \"2026-09-23T06:03:32Z\",\n \"group\": \"chat-components\",\n \"chain\": [\n\
+    \  \"acquire_requested_component\"\n ],\n \"completed\": [\n  \"acquire_requested_component\"\
+    \n ],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\"\
+    : [\n  \"deepseek_flash\"\n ]\n}\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (orchestrate_chat_100):\n\
+    GAP: agent-17-chat-backend-32gb y agent-18-chat-final-auditor están en estado\
+    \ BLOCKED con tareas fallidas sin evidencia de intento corregido ni HANDOFF de\
+    \ corrección. No hay suficiente información sobre por qué fallaron ni si se aplicó\
+    \ la regla de máximo 2 reintentos. Sin esos datos no puedo emitir una orden de\
+    \ cierre CHAT_100 = PASS.\n\nHANDOFF OPERATIVO:\n\n1) Estado real de agentes:\n\
+    \   - agent-16-chat-space-oauth: CLOSED (completado: adapt_openwebui)\n   - agent-17-chat-backend-32gb:\
+    \ BLOCKED (falló: wire_existing_backend)\n   - agent-18-chat-final-auditor: BLOCKED\
+    \ (falló: integrate_additional_components)\n\n2) Orden exacta siguiente para cada\
+    \ agente:\n   - agent-16-chat-space-oauth: ESPERAR — No hay tarea pendiente.\n\
+    \   - agent-17-chat-backend-32gb: REINTENTAR wire_existing_backend con orden corregida:\
+    \ revisar dependencias de Router existente, verificar conectividad con HF 32GB,\
+    \ cablear /v1/models y /v1/chat/completions. Máximo 2 intentos.\n   - agent-18-chat-final-auditor:\
+    \ REINTENTAR integrate_additional_components solo después de que agent-17 reporte\
+    \ PASS. En ese intento, integrar selector, modo con/sin agente, documentos, GitHub,\
+    \ Secret Bank, Archivos/Memoria, persistencia, URL/login, mensaje real y reapertura.\n\
+    \n3) GAP/FIX: GAP — Falta evidencia de qué causó los fallos en agent-17 y agent-18.\
+    \ Sin logs de error o HANDOFF de corrección, la orden actual es incompleta. FIX:\
+    \ antes de reintentar, cada agente debe reportar el motivo exacto del fallo y\
+    \ la orden corregida.\n\n4) Pruebas obligatorias pendientes (lista completa del\
+    \ Director):\n   - Open WebUI real\n   - Router live\n   - /v1/models funcional\n\
+    \   - /v1/chat/completions funcional\n   - Selector de modelos\n   - Modo con/sin\
+    \ agente\n   - Documentos\n   - GitHub\n   - Secret Bank\n   - Archivos/Memoria\n\
+    \   - Persistencia\n   - URL/login\n   - Mensaje real\n   - Reapertura\n\n5) CHAT_100\
+    \ = FAIL — No hay evidencia real de ninguna de las pruebas. El proceso está bloqueado\
+    \ en backend."
+  max_chars: 40000
+task: 'RESPONDE EXCLUSIVAMENTE LA PREGUNTA 1 DEL DIRECTOR que está en README-DIRECTOR.md.
+
+  Hora de activación Colombia: 2026-09-23 01:53 America/Bogota.
+
+
+  Debes responder:
+
+  - si tienes completamente claro el objetivo del Chat YAIWES;
+
+  - si tienes dudas o ambigüedades;
+
+  - tu conclusión del objetivo final;
+
+  - cuál es el mejor camino para cerrarlo;
+
+  - qué agentes pondrás en paralelo;
+
+  - qué agentes dependen de otros;
+
+  - qué GAPs ves ahora;
+
+  - cuánto tiempo estimas que necesitas para tener el chat operativo, probado y funcionando.
+
+
+  Usa este formato exacto:
+
+  ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+  # 📣 RESPUESTA AGENT 14
+
+  **🕐 HORA COLOMBIA:** <hora Colombia>
+
+  **RESPUESTA:**
+
+  <respuesta completa>
+
+  ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+
+  No ejecutes componentes ni Jobs. No declares CHAT_100. Solo responde al Director
+  con base en la evidencia real.
+
+  '
+checks:
+- kind: contains
+  values:
+  - RESPUESTA AGENT 14
+  - HORA COLOMBIA
+  - duda
+  - objetivo
+  - agentes
+  - GAP
+  - tiempo
+- kind: no_secrets
