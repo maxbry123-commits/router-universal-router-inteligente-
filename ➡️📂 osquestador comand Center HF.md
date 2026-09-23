@@ -703,3 +703,21 @@ INICIA AHORA.
 - Paso 7: reportar qué quedó pendiente y qué se hizo.
 - Repetir siempre el mismo bucle de trabajo.
 
+
+
+## ORQUESTADOR STARTUP SNAPSHOT — 2026-09-22
+
+[NODO:BOOT-HF]
+[STEP:VALIDATE]
+[ACCIÓN:Read-back Command Center + Handoff HF + agentes HF + Jobs RUNNING]
+[RESULTADO:Scope HF_ONLY cargado. 10 Jobs RUNNING visibles; todos flavor cpu-upgrade. Agentes revisados: agent-6-hf-nodes=CLOSED, agent-7-llama-hf=CLOSED con GAP textual de health, agent-9-models-catalog=CLOSED con GAP textual de health, agent-10-model-install=CLOSED con evidencia RUNNING_HEALTHY.]
+[GAP:1) agent-7 y agent-9 tienen status CLOSED pero conservan GAP que contradice cierre FAIL_CLOSED. 2) Jobs activos usan curl directo para obtener GGUF; contradice CANONICAL_MOTORS_ONLY / no downloader propio. 3) Handoff mantiene GAP_AUTH_REMOTE_INFERENCE y GAP_ADAPTER_REGISTRY_SCHEMA abiertos.]
+[FIX:No aplicado en startup. Requiere delegación explícita a agentes y prueba real.]
+[TEST:HF Jobs ps status=RUNNING + inspect job 6ab3198e51992417dfcd4e26 => RUNNING, flavor cpu-upgrade. agent-10 crazy_wall registra GET /health 200 como evidencia previa.]
+[ESTADO:RESEARCH_PASS]
+[SIGUIENTE:Reconciliar primero contradicción CLOSED/GAP de agent-7 y agent-9; después reemplazar rutas curl por motor/mount canónico sin detener Jobs existentes sin orden del Director.]
+
+Regla de este takeover:
+- No se lanzó, canceló ni modificó ningún Job durante este startup.
+- No se tocaron proyectos fuera de HF_ONLY.
+- No se declara cierre global.
