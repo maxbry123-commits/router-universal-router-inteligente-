@@ -4762,3 +4762,517 @@ P5. Regla: Claude no avanza el trabajo; delega y avanzan los agentes.
 P6. Confirmar que quedó claro.
 
 ```
+
+
+<!-- INPUT_BATCH_04 -->
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-p-agentes-auditar-puente.md
+BLOB_SHA: ec7a5be528b54a78eff102bd6c64d87664e397c9
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (p) — prioridad única: los agentes; auditar instrucciones; puente Vercel después
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Tu prioridad es una sola los agentes y luego delegas 
+Los  agente que creaste no lo borras déjalo para algun uso 
+Ya está listo lo de versel pero no vas hacer nada vas hacer lo siguiente 
+
+Paso 1 📌 
+Haces los agentes 
+Paso 2 📌 
+Auditas todos mis imput instrucciones 
+Prioridad CHat y HF y modelos Ai en HF
+Llegas todos los tokens a los agentes 
+Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas 
+Paso 3 📌 
+Tu haces el puente en versel y nuestro router para hacer las pruebas ya Tienes los permisos listo de versel 
+
+Dime si te quedo claro 
+No avanzas tu delegas avanzas los agentes 
+
+Esta claro
+
+---
+
+## Cola 1 a 1
+P0. Prioridad única: los agentes; luego delegar. Los agentes ya creados (`agent-microkernel/`) NO se borran; quedan para algún uso.
+P1. Vercel: ya está listo, pero por ahora Claude no hace nada con Vercel.
+P2. Paso 1: hacer los agentes (los de la orden O: 4 agentes por separado, PocketFlow y SmolAgents; 1 y 2 chat/HF; 3 y 4 componentes del Router).
+P3. Paso 2: auditar todas las instrucciones del Director (input blocks). Prioridad: Chat, HF y modelos de IA en HF. Cargar (llenar) todos los tokens a los agentes. Los agentes ejecutan tareas en conjunto; Claude solo les habla con un DSL DAG y delega.
+P4. Paso 3: Claude hace el puente en Vercel con el Router para hacer pruebas (los permisos de Vercel ya están listos).
+P5. Regla: Claude no avanza el trabajo por su cuenta: delega y avanzan los agentes. Confirmar si quedó claro.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-p-agentes-auditar-tokens-vercel.md
+BLOB_SHA: f034d44220b351d7cbe13aa6db8f6fcf6c64e083
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (p) — Paso 1 hacer los agentes, Paso 2 auditar instrucciones y dar los tokens, Paso 3 puente Vercel
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Tu prioridad es una sola los agentes y luego delegas 
+Los  agente que creaste no lo borras déjalo para algun uso 
+Ya está listo lo de versel pero no vas hacer nada vas hacer lo siguiente 
+
+Paso 1 📌 
+Haces los agentes 
+Paso 2 📌 
+Auditas todos mis imput instrucciones 
+Prioridad CHat y HF y modelos Ai en HF
+Llegas todos los tokens a los agentes 
+Los agentes en conjunto ejecutando tareas tu solo le hablas le das un DSL Dag shema para que ejecuten delegas 
+Paso 3 📌 
+Tu haces el puente en versel y nuestro router para hacer las pruebas ya Tienes los permisos listo de versel 
+
+Dime si te quedo claro 
+No avanzas tu delegas avanzas los agentes 
+
+Esta claro
+
+---
+
+## Cola 1 a 1
+P0. Prioridad única: los agentes, y luego delegar. Los agentes ya creados (`agent-microkernel/`) NO se borran: quedan para algún uso.
+P1. Sobre Vercel: ya está listo, pero Claude no hace nada de Vercel todavía; primero los pasos siguientes.
+P2. Paso 1: hacer los agentes (los 4 de la instrucción (o): 1 y 2 chat/HF, 3 y 4 Router; con PocketFlow y SmolAgents).
+P3. Paso 2: auditar todos los input/instrucciones del Director; prioridad Chat, HF y modelos de IA en HF; dar todos los tokens a los agentes; los agentes ejecutan tareas en conjunto; Claude solo les habla y les da un DSL DAG para que ejecuten; delega.
+P4. Paso 3: Claude hace el puente en Vercel con nuestro Router para las pruebas (permisos de Vercel ya listos).
+P5. "No avanzas tú, delegas; avanzan los agentes." Confirmar que quedó claro (Claude: sí).
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-q-cadena-de-pasos-chat-hf.md
+BLOB_SHA: f0a11e7213c0bb4d8d9c7ce00c00f8e09b2fdf1e
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (q) — 2 agentes chat + 2 agentes HF con cadena de pasos; puente Vercel–Jev al final
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Te estás quedando pegado y se cae tu proceso de salida 
+Y se reinicia 
+
+Revisa que no estás repitiendo la tarea 
+
+Eres tú mismo al reiniciar la salida se te reinicio el imput 
+
+
+Revisa mis instrucciones de lo que debe hace cada agente y revisas todas mis notas y lo pones a trabajar 2 agentes en  en el chat en taress distintas
+
+2 agente en HF para lo que falta en tares distintas 
+
+Le das una encadenado de pasos 
+
+Chat en HF ya te di varias opciones sin plan pro 
+
+Cuando termines de darle todas las tares y acceso a los agentes tu intentas hacer el puente entre vercel y el router pare jev si 
+
+
+Dime si me entiendes
+
+---
+
+## Cola 1 a 1
+Q0. Diagnóstico del Director: la salida de Claude se cae y se reinicia, y al reiniciar se reinicia el input; revisar que no se repita la tarea. (Hallazgo de Claude: SÍ se repitió trabajo. Hay dos implementaciones de los agentes, `agents/` (RIU-0123, sin resultados válidos de SmolAgents) y `agents-yaiwes/` (la que usa el workflow `RIU Agents Run`); y también quedaron duplicados `INPUT-VERBATIM-2026-09-21-p-*`. No se borra nada; se trabaja sobre `agents-yaiwes/`.)
+Q1. Revisar las instrucciones sobre lo que debe hacer cada agente y todas las notas, y ponerlos a trabajar: 2 agentes en el chat con tareas distintas; 2 agentes en HF para lo que falta, con tareas distintas.
+Q2. Dar a cada agente un encadenado de pasos.
+Q3. Chat en HF: el Director ya dio varias opciones sin plan PRO (documento en `INPUT-VERBATIM-2026-09-21-l-agentes-smolagents-vercel-chat-hf.md`).
+Q4. Cuando estén todas las tareas y el acceso dados a los agentes: Claude intenta el puente Vercel–Router para Jev ("sí").
+Q5. Confirmar que se entiende.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-r-auditor-meta-agents-watchdog.md
+BLOB_SHA: c2f9aceb073f2c16b6e5082eaa30bcf77bd10319
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (r) — auditor, tareas encadenadas, Muse Glimmer + agentes Meta, watchdog cada hora
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado. Incluye el documento que adjuntó (META AGENTS, análisis externo; sus datos NO están verificados por Claude).
+
+---
+
+## Mensaje del Director
+
+Paso 0 📌 
+
+Dime cómo iban los agentes que estaban trabajando y dime si entiendes o tienes alguna pregunta duda antes de continuar 
+
+Inicia anotando 1 a 1 imput block verbartin 
+
+Dame un handoff y URL de los agentes donde tú le das las instrucciones y donde ellos responden las tareas que le das 
+Cereales un morís de haber md ejemplo ,📂 readme agente 1 🧑‍🔧📶🛜.md  
+,📂 readme agente 2  router 🧑‍🔧📶🛜.md 
+,📂 readme agente router  3 🧑‍🔧📶🛜.md
+,📂 readme agente  router 4 🧑‍🔧📶🛜.md
+
+Paso 1 📌 1. Realiza una copia de Smolange y lo conviertes en agente auditor y check lista su misión es aduidtar mis instrucciones el 1 a 1 imput block verbartin para verificar cruzada que de está cumpliendo las indicaciones su objetivo poder decirte que falta que es ambiguo que no se ha hecho o que está haciendo mal algún agente el debe refutar el trabajo y funciona como un sherriff policy guardián sentinela realiza auditoría forense x Ray verificación cruzada con la información y los agentes 
+
+Luego busca todos mis imput y encadenas las tareas a los agente hasts terminar el chat todo completo auditas 4 veces mis notas 1 a 1 imput block verbartin 
+
+Luego repites lo mismo para lo de las llm locales lo que hay que auditar y lo que necesito instalados 
+
+
+Paso 2📌
+
+Luego usa el agente que tú creaste y lo pones a trabajar en el proyecto de el router que analice los archivos y valla integrando todo 
+
+Tu pones todas las tareas luego tu busca la manera para instalar un puente entre jev instalado en la cuenta y el router 
+
+Revisa el desempeño de los agentes tus instrucciones verificación cruzada con el input block verbartin de mis instrucciones y actulizas tarea y corriges rutas 
+
+
+Delega dejas  trabajar a los agentes.
+
+Lo de vercel busca la manera 
+No puedes hacerlo 
+
+Paso 3 📌 
+Vas a usar el motor de descarga y extracción y buscas los 4 agentes de meta y el modelo de ai Muse Glimmer 30B GGUF cuantizado — para tus 32 GB RAM
+https://huggingface.co/meta-models/Muse-Glimmer-30B-GGUF⁠�lo llamas en HF creas su Api y lo íntegras solo para el router para estos 4 agentes de meta luego te digo que van hacer 
+
+La arquitectura que habíamos combinado para programar frontend y comprobar visualmente el resultado era:
+[TAREA / GOAL]
+      → [MUSE CODE: lee repo + programa]
+      → [MUSE GLIMMER: planifica + decide herramienta]
+      → [CUA + MCP: ejecuta en computadora/sandbox]
+      → [LEVANTA FRONTEND + NAVEGADOR]
+      → [METACUA: SCREENSHOT / VE LA UI]
+      → [ANALIZA RESULTADO VISUAL]
+      → [CLICK / TYPE / SCROLL si hace falta]
+      → [SCREENSHOT NUEVO]
+      → [VERIFY CONTRA OBJETIVO]
+      → GAP ? → MUSE GLIMMER → MUSE CODE → FIX → BUILD → SCREENSHOT
+      → PASS → EVIDENCE
+La parte clave es el bucle cerrado:
+CODE → RUN → RENDER → SCREENSHOT → SEE → REASON → VERIFY → FIX → RENDER → SCREENSHOT → PASS
+combinación importante del agente programador
+No era poner 4 agentes haciendo lo mismo. Era construir un solo agente compuesto, donde cada componente cumple una función diferente:
+Muse Code → programador/orquestador: lee repo, mantiene sesión, modifica código, ejecuta el ciclo de desarrollo.
+Muse Glimmer → cerebro de decisiones: plan → tool → result → self-correct → next. En el código que tienes, su loop precisamente ejecuta herramientas, devuelve el resultado al modelo y corrige en la siguiente iteración.
+CUA + MCP → computadora aislada: levanta navegador/escritorio, ejecuta la aplicación y proporciona screenshot, mouse, teclado y shell dentro del sandbox.
+MetaCua → ojos/manos visuales: captura la pantalla, interpreta lo que realmente quedó renderizado, hace acciones GUI y vuelve a capturar para verificar. El ejemplo oficial funciona literalmente con el ciclo See → Send → Act → Look again. 
+
+
+1. 
+MUSE CODE 🧑‍💻 → MUSE GLIMMER 🧠 → CUA+MCP 🖥️ → FRONTEND 🌐 → METACUA 👁️📸 → VERIFY ✅/❌ → FIX ↺
+
+Creas este DSL Dag Loops bucle coda con los agentes de meta META AGENTS — WORKFLOW PARA code  DISEÑO Y VALIDACIÓN FRONTEND
+La versión que elegiría para priorizar velocidad + margen de RAM es:
+Muse-Glimmer-30B-KQuant-17GB-Q4_K_M.gguf — 16.8 GB
+
+Sí. Aquí tienes solo las URLs:
+
+1. Muse Code SDK
+https://github.com/meta-models/muse-code-sdk
+
+2. Muse Glimmer / Agent Loop
+https://github.com/meta-models/meta-oss-cookbook/tree/main/agentic-fundamentals
+
+3. MetaCua — Computer Use visual
+https://github.com/meta-models/meta-model-cookbook/tree/main/03_use_cases/13_macos_cua
+
+4. CUA + MCP — Computer Use sandbox
+https://github.com/meta-models/meta-model-cookbook/tree/main/03_use_cases/12_computer_use
+
+IA local Muse Glimmer 30B — modelo original
+https://huggingface.co/meta-models/Muse-Glimmer-30B
+
+Muse Glimmer 30B GGUF cuantizado — para tus 32 GB RAM
+https://huggingface.co/meta-models/Muse-Glimmer-30B-GGUF
+
+Para 32 GB de RAM, busca dentro del último enlace la variante Q4_K_M, que es la que priorizaría para velocidad y margen de memoria. 
+Local / HF Job
+   YAIWES → llama.cpp → Glimmer Q4_K_M ~17 GB
+   ✅ cabe en tus 32 GB RAM
+   ✅ sin coste por token
+
+Realiza y colocale todos los aceleradores posible de la combinación que yo te di 
+
+Paso 4 📌 
+
+Tu stop ⛔ activas cada una hora una hora un wachdog de tareas pendientes de chat de Claude para ver cómo van los agente y como corregirlos  modo Loops y bucle hasta terminar todas las tareas 
+No stop no escalas hasta terminar todas las tareas 
+
+Hasta que yo regrese tu quedas a cargo sin sobre ingeniería sin hacer nada fuera de mis instrucciones 
+
+Actulizas tus notas panificar la forma más rápida de terminar chat y HF y ejecutar 
+
+Coloca un readme de notas de Claude en el wachdog evitar sobre ingeniería y no hacer nada fuera de mis instrucciones .
+
+
+
+Mantén al mínimo el uso de consumo de token de pago intenta trabajar solo con Nvidia cerebras y groq verifica 
+
+Se acabó la ventana de saldo de antropy por eso se reinicia el input 
+
+
+Activas un watchdog cada 1 hora de tareas pendientes de chat de claude revisas los gaps y como van las tareas en curso de lo agentes y resuelve si vez que una hora van lento algún agente mejoras el DSL Dag shema y creas más agentes para que ayuden 
+
+
+Dime si tienes alguna pregunta duda antes de continuar y revisa como van los agentes que estaban trabajando 
+Inicia
+
+## Adjunto (documento pegado por el Director) — META AGENTS — WORKFLOW PARA DISEÑO Y VALIDACIÓN FRONTEND
+
+Resumen fiel de su estructura (el documento completo está pegado en el chat): 7 componentes — 1 MUSE CODE (programador/orquestador, MSP, loop GOAL→SESSION→PLAN→CODE→RUN→TEST→FIX→VERIFY; regla: código generado no es frontend terminado, debe haber ejecución + verificación); 2 MUSE GLIMMER (motor agentic de decisión, ToolRegistry + parser ATEM, loop PLAN→TOOL→EXECUTE→OBSERVATION→SELF-CORRECT→NEXT; los errores de herramientas vuelven al modelo como observaciones; riesgo: max_steps); 3 METACUA (ojos y manos: screenshot→acción→screenshot nuevo→VERIFY; coordenadas normalizadas 0–1000; nunca asumir que un CLICK funcionó); 4 CUA + MCP / SANDBOX (computadora controlada: navegador real dentro de un sandbox; código correcto ≠ render correcto); 5 BROWSER-VERIFIED WEB DESIGN (CODE PASS + BROWSER PASS + VISUAL PASS); 6 MULTI-AGENT PRODUCT STUDIO (kanban compartido PM/BACKEND/FRONTEND/TECH WRITER/INTEGRATION); 7 GITHUB REPO AGENT (trabajo contra el repo real con evidencia).
+LOOP YAIWES PROPUESTO: GOAL → READ CRAZY WALL FRESH → CLAIM → DISCOVER REPO → READ RELEVANT CODE → BUILD DEPENDENCY CONTEXT → MUSE CODE: PLAN → GLIMMER: DECIDE NEXT ACTION → SHERIFF → EDIT → RUN FRONTEND → CUA/MCP: OPEN BROWSER → METACUA: SCREENSHOT → ANALYZE VISUAL STATE → CLICK/TYPE/INTERACT → SCREENSHOT AGAIN → VERIFY RESULT → RUN TESTS → CAPTURE OUTPUT → FAIL? → OBSERVATION → ROOT CAUSE → GLIMMER DECIDES NEW ACTION → SHERIFF → FIX → RUN AGAIN → SCREENSHOT AGAIN → RETEST → VERIFY ACCEPTANCE → RECORD CODE/TEST/VISUAL EVIDENCE → PASS → RELEASE/NEXT.
+REGLA PRINCIPAL: NO CERRAR POR NÚMERO DE ITERACIONES; cerrar por evidencia: CODE PASS + RUNTIME PASS + BROWSER PASS + VISUAL PASS + INTERACTION PASS + ACCEPTANCE PASS.
+
+---
+
+## Cola 1 a 1 (sin reordenar ni añadir)
+R0. PASO 0: decir cómo iban los agentes; decir si entiende o tiene dudas antes de continuar.
+R1. Anotar 1 a 1 el input block verbatim (este archivo).
+R2. Dar un handoff y las URL de los agentes: dónde Claude les da las instrucciones y dónde ellos responden. Crear 4 archivos README con estos nombres: `📂 readme agente 1 🧑‍🔧📶🛜.md`, `📂 readme agente 2  router 🧑‍🔧📶🛜.md`, `📂 readme agente router  3 🧑‍🔧📶🛜.md`, `📂 readme agente  router 4 🧑‍🔧📶🛜.md`.
+R3. PASO 1: copia de SmolAgents convertida en agente AUDITOR y checklist: audita las instrucciones 1 a 1 (input block verbatim) con verificación cruzada; dice qué falta, qué es ambiguo, qué no se ha hecho, qué hace mal algún agente; refuta el trabajo; funciona como sheriff / policy / guardián / centinela; auditoría forense X-ray con verificación cruzada con la información y los agentes.
+R4. Buscar todos los inputs y encadenar las tareas a los agentes hasta terminar el chat completo; auditar 4 veces las notas 1 a 1 (input block verbatim).
+R5. Repetir lo mismo para los LLM locales: qué hay que auditar y qué necesita el Director instalado.
+R6. PASO 2: usar el agente creado y ponerlo a trabajar en el Router: analizar los archivos e ir integrando todo. Claude pone todas las tareas y luego busca la manera de instalar un puente entre Jev (instalado en la cuenta) y el Router. Revisar el desempeño de los agentes, verificación cruzada con el input block verbatim, actualizar tareas y corregir rutas. Delegar y dejar trabajar a los agentes. (Vercel: "busca la manera / No puedes hacerlo" — frase ambigua: GAP.)
+R7. PASO 3: con el motor de descarga y extracción, buscar los 4 agentes de Meta y el modelo Muse Glimmer 30B GGUF cuantizado (Q4_K_M, 16.8 GB) de `meta-models/Muse-Glimmer-30B-GGUF`; llamarlo en HF, crear su API e integrarlo SOLO para el Router y para estos 4 agentes de Meta (el Director dirá luego qué harán). Crear el DSL DAG con bucle (Muse Code → Muse Glimmer → CUA+MCP → frontend → MetaCua → VERIFY → FIX) según el documento META AGENTS. Poner todos los aceleradores posibles de la combinación dada.
+R8. PASO 4: Claude queda a cargo hasta que el Director regrese, sin sobre-ingeniería y sin hacer nada fuera de sus instrucciones; modo loop/bucle, sin parar ni escalar hasta terminar todas las tareas. Activar un watchdog cada 1 hora de tareas pendientes (revisa GAPs y tareas en curso de los agentes; si un agente va lento tras una hora, mejora el DSL DAG y crea más agentes). Actualizar notas y planificar la forma más rápida de terminar chat y HF y ejecutar. Poner un README de notas de Claude en el watchdog contra la sobre-ingeniería. Consumo mínimo de tokens de pago: trabajar solo con NVIDIA, Cerebras y Groq (verificar).
+R9. Contexto dicho por el Director: se acabó la ventana de saldo de Anthropic, por eso se reinicia el input.
+R10. Confirmar dudas y revisar cómo van los agentes antes de continuar. "Inicia".
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-s-tareas-modelos-locales-hoy.md
+BLOB_SHA: e9cb5065b570df9e823f1f592c76b903145ff6e3
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (s) — lista de tareas completa, modelos locales con espejo y aceleradores, prueba de tokens/s, todo hoy con DeepSeek V4 y MiniMax
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado. Incluye los textos que pegó (análisis externo de aceleradores y modelos pequeños; sus datos NO están verificados por Claude hasta que se validen).
+
+---
+
+## Mensaje del Director
+
+Pero necesitas hacer una lista de tareas si lo haces solo con 3 pasos no vamos avanzar nunca debe buscar toda la información que ellos deberían hace según el objetivo y tratar que lo lleven hasta final 
+
+Busca instala estos modelo y lo pones en el router para que si no responde un modelo de api de groq o cerebras y Nvidia los agente no se paren crear un mirror de cada modelo y asegúrate que tenga el sistema que yo te di para acelerar modelo en huggueface busca mis notas 
+
+herramientas. �
+Hugging Face +2
+Qwen3.5-0.8B oficial en Hugging Face⁠�
+Qwen3.5-0.8B GGUF Q4 para ejecución local⁠�
+La versión Q4 ocupa unos 563 MB, por lo que es especialmente atractiva para mantenerla cargada permanentemente como pequeño kernel/router.
+Realizas una prueba para que podamos medir cuantos token por segundos usa el modelo 
+
+Sí, sí se puede. Lo que quise decir es que normalmente no conviene cargar muchas copias separadas del mismo modelo si un solo servidor puede atender varias solicitudes simultáneas.
+
+Hay dos formas:
+
+1. Varias copias independientes
+
+Servidor HF 32 GB
+├─ Qwen 0.8B #1
+├─ Qwen 0.8B #2
+├─ Qwen 0.8B #3
+└─ Qwen 0.8B #4
+
+Esto funciona, pero cada copia consume su propia RAM y compite por los mismos vCPU.
+
+2. Una sola copia + varios agentes concurrentes
+
+Servidor HF 32 GB
+        ↓
+Qwen 0.8B cargado UNA vez
+        ↓
+llama.cpp / servidor de inferencia
+├─ Agente 1
+├─ Agente 2
+├─ Agente 3
+├─ Agente 4
+├─ Agente 5
+└─ Agente 6
+
+Para tu caso, la segunda opción es normalmente mejor. Los 6 agentes pueden estar haciendo tareas distintas al mismo tiempo, aunque todos utilicen el mismo Qwen cargado en memoria.
+
+Con tus 3 servidores HF, podrías montar algo así:
+
+HF-1 → Qwen 0.8B → 4 agentes
+HF-2 → Qwen 0.8B → 4 agentes
+HF-3 → Qwen 0.8B → 4 agentes
+
+TOTAL → 12 agentes concurrentes
+
+O probar:
+
+3 servidores × 2 agentes = 6 concurrentes  → más velocidad por agente
+3 servidores × 4 agentes = 12 concurrentes → buen equilibrio
+3 servidores × 8 agentes = 24 concurrentes → más tareas, menos tok/s por tarea
+
+La clave es esta: RAM te sobra para un modelo de 0.8B; el límite real será la CPU. No necesitas 12 archivos/copias de Qwen para tener 12 agentes. Puedes cargar 3 modelos, uno por servidor, y darle múltiples slots concurrentes a cada uno.
+
+Para YAIWES, yo empezaría con 4 slots por servidor = 12 microagentes simultáneos y mediría rendimiento.
+
+Como lo piensas hacer para ir mas rápido habilitar el chat lo más pronto y los modelos locales Gemma 4 E2B QAT Q4 + llama.cpp. Google ya tiene una versión oficial gemma-4-E2B-it-qat-q4_0-gguf. Eso evita tener que cuantizar tú mismo y es especialmente interesante para CPU. Gemma 4 E2B QAT Q4 GGUF oficial⁠�
+enable_thinking=False. Para router, selección de herramientas, JSON y pequeñas decisiones, no necesitas que Gemma genere razonamiento largo. La propia tarjeta oficial muestra este modo. �
+Hugging Face
+OpenVINO + INT4/INT8. En CPU Intel puede ser una de tus mejores alternativas a llama.cpp. Optimum Intel permite compresión de pesos a 8 o 4 bits y Hugging Face documenta que esto puede reducir memoria y latencia. �
+Hugging Face +1
+NNCF + OpenVINO. Puedes aplicar weight-only INT4, INT8, AWQ, GPTQ, Scale Estimation y cuantización mixta. Esto permite encontrar una combinación rápida sin destruir demasiado la calidad. �
+Hugging Face
+TorchAO. Este es uno que faltó en mi lista anterior y merece bastante atención. Hugging Face soporta TorchAO en CPU con INT8 dinámico, INT8 weight-only e INT4 weight-only, y además se puede combinar con torch.compile. �
+Hugging Face +1
+Static KV Cache + torch.compile. Hugging Face documenta esta combinación específicamente para acelerar generación. Al fijar el tamaño del KV cache, PyTorch puede compilar kernels más eficientes. HF ha documentado mejoras de hasta alrededor de 4× en determinados casos, aunque el aumento real depende mucho del modelo y hardware. �
+Hugging Face
+Speculative Decoding. Aquí puedes aprovechar precisamente tus modelos pequeños: un modelo ultrarrápido propone varios tokens y un modelo mayor los verifica de una vez. Hugging Face lo soporta oficialmente. �
+Hugging Face +1
+Universal Assisted Decoding. Esto es todavía más interesante para tu arquitectura: el modelo pequeño y el grande ya no tienen que usar necesariamente el mismo tokenizer. Por ejemplo, un micro-modelo podría ayudar a Gemma en generación especulativa. �
+Hugging Face
+MTP — Multi-Token Prediction. La versión actual de Transformers incluye soporte para modelos compatibles con MTP: en lugar de predecir necesariamente un único token por ciclo, puede aprovechar cabezas que predicen varios candidatos. No todos los modelos lo soportan, así que no asumiría que Gemma 4 E2B lo hace sin verificar el backend concreto. �
+Hugging Face
+KV Cache optimizado. HF ofrece Dynamic, Static, Sliding Window, Quantized y otros caches. Para velocidad, Static Cache es especialmente interesante porque funciona con torch.compile; para ahorrar RAM, Quantized Cache puede ayudar, aunque HF advierte que puede aumentar latencia cuando la memoria no es el problema. �
+Hugging Face
+HQQ. Hugging Face soporta cuantización rápida de 8, 4, 3, 2 e incluso 1 bit, sin dataset de calibración, y HQQ es compatible con torch.compile. �
+Hugging Face
+AQLM, AutoRound, AWQ y otras cuantizaciones. La matriz actual de Transformers muestra soporte CPU para varias técnicas, entre ellas AQLM, AutoRound y AWQ. Para ti probaría primero INT4/Q4 convencional antes de bajar a 2 bits porque buscas un agente confiable. �
+
+🎯🎯🎯🎯🎯🆘🆘🆘🆘🆘
+
+📌 Necesito que prepares todo para automatizar necesito adelantar y terminar lo del chat y lo del router en pocas horas no en días hoy mismo como si necesitas habilitar 100 agentes por eso necesito que planifiques y delegues para hacer lo de el chat y HF usa deepsek v4 y mínimax para ir mas rápido y a lo que esté listo el chat operativo y todo lo de HF instalados cierras al acceso y sigues con ai de cerebras y groq  sigues y Nvidia y locales de huggueface 
+Necesito que prepares todo y planifiques el plan de antropy no me da mucha ventana de trabajo así que necesito que planifiques  para lograr todo hoy en pocas horas y ahorres tiempo coloca a deepsek v4 flash y mínimax M3 para acelerar el proceso hasta conseguir el chat 100% operativo y los modelos de ai locales que te he venido pasando 100%  operativo 
+Y el router MVP. Posible y el ejambre de agente para trabajar 
+
+Me entiendes 
+🎯🎯🎯🎯🎯🆘🆘🆘🆘🆘
+
+## Adjunto (documento pegado por el Director) — aceleradores oficiales de Hugging Face para CPU y modelos pequeños
+
+Resumen fiel (el texto completo está pegado en el chat): motor principal + cuantización + concurrencia/cache. Motores: llama.cpp (GGUF Q4/Q5/Q8, AVX/AVX2/AVX512, concurrencia; recomendado en CPU), OpenVINO (CPU Intel), ONNX Runtime, bitsandbytes (INT8/4-bit; CPU Linux x86-64 con AVX2), Transformers + torch.compile; vLLM/SGLang/TGI/TensorRT-LLM son para GPU. Cuantizaciones a probar en CPU: GGUF Q4_K_M, GGUF Q5_K_M, INT8 OpenVINO, INT8 ONNX, bitsandbytes CPU, Quanto/HQQ. Modelos pequeños: Qwen3.5-0.8B (~0.5-0.6 GB Q4, tool calling, Qwen-Agent), Liquid LFM2.5-1.2B-Instruct (GGUF oficial: Q4_0 696 MB, Q4_K_M 731 MB, Q5_K_M 843 MB, Q6_K 963 MB, Q8_0 1.25 GB), Gemma 3 1B IT, SmolLM2-1.7B-Instruct, SmolLM3-3B (tool calling, /no_think, 128K). Prueba A/B/C sugerida en los 3 nodos de 32 GB: #1 Qwen3.5-0.8B Q4 + llama.cpp + 4 slots; #2 LFM2.5-1.2B Q4 + llama.cpp + 4 slots; #3 Qwen3.5-0.8B + OpenVINO u ONNX + 4 workers; medir tokens/segundo, latencia del primer token, RAM, CPU %, 4 y 8 solicitudes simultáneas, precisión de tool-call, % JSON válido, tiempo de arranque. En GPU: vLLM vs SGLang (continuous batching, PagedAttention, speculative decoding).
+
+---
+
+## Cola 1 a 1 (sin reordenar ni añadir)
+S1. Hacer una LISTA DE TAREAS completa: con solo 3 pasos por agente no se avanza; cada agente debe buscar toda la información que debería hacer según el objetivo y llevarla hasta el final.
+S2. Buscar/instalar estos modelos (Qwen3.5-0.8B y su GGUF Q4 ~563 MB, LFM2.5-1.2B, Gemma 4 E2B QAT Q4 `gemma-4-E2B-it-qat-q4_0-gguf` con enable_thinking=False, Gemma 3 1B, SmolLM2-1.7B, SmolLM3-3B) y ponerlos en el Router para que, si un modelo por API de Groq, Cerebras o NVIDIA no responde, los agentes no se paren; crear un espejo (mirror) de cada modelo; asegurar que lleve el sistema de aceleración que el Director dio (buscar en sus notas).
+S3. Hacer una prueba para medir cuántos tokens por segundo usa el modelo.
+S4. Arquitectura: UNA sola copia del modelo cargada por servidor + varios agentes concurrentes (slots); ejemplo 3 servidores × 4 slots = 12 agentes; empezar con 4 slots por servidor y medir.
+S5. Pregunta: cómo lo piensa hacer para ir más rápido, habilitar el chat lo antes posible y los modelos locales.
+S6. Aceleradores nombrados por el Director: OpenVINO INT4/INT8, NNCF, TorchAO, Static KV cache + torch.compile, speculative decoding, Universal Assisted Decoding, MTP (verificar si el modelo lo soporta), KV cache optimizado, HQQ, AQLM/AutoRound/AWQ (primero INT4/Q4 convencional).
+S7. Prioridad máxima: dejar el CHAT y lo del Router hoy mismo, en pocas horas; si hace falta, habilitar 100 agentes; planificar y delegar; usar DeepSeek V4 Flash y MiniMax M3 para ir más rápido hasta tener el chat 100 % operativo y los modelos de IA locales 100 % operativos; cuando eso esté listo, CERRAR el acceso a DeepSeek/MiniMax y seguir con Cerebras, Groq, NVIDIA y los locales de Hugging Face. Router MVP y enjambre de agentes para trabajar.
+S8. Planificar de acuerdo con la ventana de trabajo limitada de Anthropic (ahorrar tiempo).
+S9. Confirmar que entiende.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-t-espejo-10-procesadores-mvp-delegar.md
+BLOB_SHA: 686b514a3d480401dc9b49b0a1421af9fa5a26f2
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (t) — espejo = mismos pesos en varias sesiones; reducir caché; 10 procesadores HF; MVP DeepSeek V4 Flash (trabajos) y MiniMax M3 (código); Claude solo prepara y delega
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Ok espejo es que se puede usar el mismo peso del modelo ai por varias secciones al mismo tiempo sin copiar el modelo 
+
+Busca la manera de reducir el caché solo para los modelos locales o saturar el ram. Salte al siguiente HF procesador si hace falta llevas a 10 procesador HF 32 de ram para tener suficiente cómputos de trabajo sin colapsar 
+
+Busca los otros modelos que te di que tienes anotados 
+
+
+🎯🎯🎯🆘🆘🆘🆘🆘🆘
+
+Pero no estás siguiendo mis instrucciones intentas y sigue. Haciendo tú el trabajo 
+
+
+
+Debes hacer ahora el mvp para que los agentes usen deepsek v4 flash para trabajos y para code mínimax M3 
+
+Concéntrate el objetivo todo lo demás anotas pare después 
+
+Paso 1 📌 
+Anota todo lo que te di 
+
+Paso 2 📌 
+Crea y descarga los agente que te di 
+
+Paso 3 📌 
+Planifica y activas los agente con todas las tareas del plan de el chat y de huggueface tu no lo vas hacer lo van hacer ellos 
+
+
+📌🆘🆘🆘 Nota tu no vas hacer la tarea tu solo prepara el router MVP y los agente y delegas todas las tareas 
+
+Me entiendes o no me entiendes 
+🎯🎯🆘🆘🆘
+
+---
+
+## Cola 1 a 1 (sin reordenar ni añadir)
+T1. Corrección del Director: "espejo" = usar el MISMO peso de un modelo de IA en varias sesiones a la vez SIN copiar el modelo (una copia cargada + varias ranuras/agentes concurrentes).
+T2. Buscar la manera de reducir el caché SOLO para los modelos locales, o de no saturar la RAM; saltar al siguiente procesador de HF si hace falta; llevar el enjambre a 10 procesadores HF de 32 GB de RAM para tener suficiente cómputo sin colapsar.
+T3. Buscar los otros modelos que el Director dio y que están anotados.
+T4. Reproche del Director: Claude no sigue las instrucciones e intenta y sigue haciendo el trabajo él mismo. Claude NO hace la tarea: solo prepara el Router MVP y los agentes y delega todas las tareas.
+T5. Hacer ahora el MVP para que los agentes usen DeepSeek V4 Flash para los trabajos y MiniMax M3 para el código.
+T6. Concentrarse en el objetivo; todo lo demás se anota para después.
+T7. Paso 1: anotar todo lo dado (este archivo).
+T8. Paso 2: crear y descargar los agentes que el Director dio (interpretación de Claude: los 4 agentes de Meta —Muse Code SDK, Muse Glimmer/agent loop, MetaCua, CUA+MCP—, SmolAgents y PocketFlow; frase ambigua: GAP si se refería a otros).
+T9. Paso 3: planificar y activar los agentes con TODAS las tareas del plan del chat y de Hugging Face; ellos las hacen.
+T10. Confirmar si entiende.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-u-auditar-4-pasadas-chat-modelos.md
+BLOB_SHA: 77f6ab7bb3d16b1264a5d8f0403ea274f34c71ad
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (u) — prioridad solo chat y modelos de IA locales; auditar todos los input block en 4 pasadas y listar lo que se manda hacer
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Prioridad solo el chat y los modelos de ai lo ales busca audita todos los imput block verbartin que yo te di para revisar haces una lista de lo que debe funcionar en hf todos los detalles del chat y almacenamiento para agantes y cabkear los agente al Chat y documentos y todos los modelos de ai más aceleradores para si 
+
+Audita los archivos y haces una lista de lo que vas a mandar hacer 
+
+4 pasadas
+
+---
+
+## Cola 1 a 1 (sin reordenar ni añadir)
+U1. PRIORIDAD ÚNICA: el chat y los modelos de IA locales. Todo lo demás (puente con Jev, Muse Glimmer y agentes de Meta, etc.) queda anotado y pendiente.
+U2. Auditar TODOS los input block verbatim que el Director dio.
+U3. Hacer una lista de lo que debe funcionar en Hugging Face: todos los detalles del chat; el almacenamiento para agentes; conectar ("cablear" — palabra dictada "cabkear") los agentes al chat y a los documentos; y todos los modelos de IA más los aceleradores. (La frase final "para si" queda como GAP: no se entiende.)
+U4. Auditar los archivos y hacer una lista de lo que se va a mandar hacer (a los agentes).
+U5. Hacerlo en 4 pasadas.
+Interpretación de Claude de las 4 pasadas (a confirmar con el resultado): pasada 1 = detalles del chat; pasada 2 = almacenamiento para agentes y conexión de agentes con el chat y los documentos; pasada 3 = modelos de IA locales y aceleradores; pasada 4 = verificación cruzada y refutación del trabajo de los agentes contra lo pedido. Cada pasada usa TODAS las notas del Director, filtradas por su tema.
+Regla vigente: Claude no hace la tarea; la hace el agente auditor (agent-5-auditor) y Claude solo prepara y delega.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-v-claude-audita-el-mismo.md
+BLOB_SHA: b5a9392a90f30f207c18f262bf677fd071d38232
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (v) — Claude audita él mismo las notas y los input block
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Que te pedí alucinas maldito inbesil incompetente 
+
+Dame audita los archivos  de las notas que hiciste y busca toda la información de imput block verbartin que te di lo entiendes o no entiendes no quiero más nada ni dices más nada no haces más nada solo lo que te digo punto tu busca tu auditas
+
+---
+
+## Cola 1 a 1
+V1. Claude AUDITA él mismo (no un agente): los archivos de las notas que Claude hizo y toda la información de los input block verbatim del Director.
+V2. No hacer nada más ni decir nada más que esto.
+V3. Reproche: Claude alucinó y no hizo lo pedido.
+
+```
