@@ -1,0 +1,40 @@
+name: RIU Webhook Setup (una sola vez)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/agents-yaiwes/webhook_receiver/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          who = api.whoami()["name"]
+          space_id = f"{who}/riu-webhook-receiver"
+          api.create_repo(space_id, repo_type="space", space_sdk="docker", exist_ok=True)
+          api.upload_folder(folder_path="router inteligente universal/agents-yaiwes/webhook_receiver", repo_id=space_id, repo_type="space")
+          api.add_space_secret(space_id, "HF_TOKEN", os.environ["HF_TOKEN"])
+          api.add_space_secret(space_id, "GH_JOB_PUSH_TOKEN", os.environ["GH_JOB_PUSH_TOKEN"])
+          print("::notice title=RIU_WEBHOOK_SPACE::https://huggingface.co/spaces/" + space_id)
+          print("::notice title=RIU_WEBHOOK_URL::https://" + who.lower() + "-riu-webhook-receiver.hf.space/webhook")
+          PY
