@@ -445,3 +445,11 @@ cerrado: true
 1. Releer estado de agentes del chat.
 2. Arrancar siguiente LOOP_7 desde O1 (agent-19), sin ejecutar el trabajo del agente.
 3. Actualizar este Command Center con cada delta real.
+
+## DELTA OPERATIVO — 2026-09-22 21:41 America/Bogota
+
+- Plan mínimo del chat: **O1 Open WebUI por motor → O2/O3/O4 cableado en paralelo → O5 smoke live**.
+- Regla: **máximo 3 pasos por tarea; cero sobreingeniería; no crear código equivalente desde cero**.
+- agent-19: orden ejecutable publicada; run exclusivo `35811312702`; estado observado: `QUEUED`.
+- agent-16/17/18: NO ejecutar todavía; dependen de O1 para evitar trabajo desperdiciado.
+- Gate siguiente: cuando agent-19 = CLOSED con `VERIFIED_CLOSED + READ_BACK`, liberar 16/17/18 en paralelo.
