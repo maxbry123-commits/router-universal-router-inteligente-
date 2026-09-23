@@ -1,5 +1,8 @@
 # 00-LEEME-PRIMERO — Índice, correcciones y estado consolidado (Claude notas)
 
+> **COMMAND CENTER PERMANENTE:** antes de este archivo leer `../➡️ ➡️ 📂 osquestador comand Center.md`. Ese archivo contiene la cola viva, INPUT_BLOCK verbatim, objetivos, delegación y LOOP DSL DAG; este archivo conserva contexto/provenance.
+
+
 Escrito 2026-09-18 (HEAD leído al escribir: `3e6fc2258c52dd23343bd5cf91dedead021d5504`, RIU-0100). Esto es una ADENDA a `memoria.md`: no lo reemplaza ni lo resume. Léelo primero; después `memoria.md`.
 
 ## 1. Orden de lectura para una cuenta nueva
