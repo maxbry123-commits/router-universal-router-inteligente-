@@ -1,17 +1,29 @@
 import os
 import requests
-from openai import OpenAI
+import openai
 
 def check_release_and_ping() -> dict:
-    # Step 1: Get latest release from xai-org/grok-build
-    url = "https://api.github.com/repos/xai-org/grok-build/releases/latest"
-    response = requests.get(url)
-    release_data = response.json()
-    release_tag = release_data["tag_name"]
-    asset_names = [asset["name"] for asset in release_data["assets"]]
+    # 1) GET releases de grok-build
+    url = "https://api.github.com/repos/xai-org/grok-build/releases"
+    resp = requests.get(url)
+    resp.raise_for_status()
+    releases = resp.json()
     
-    # Step 2: Send message to DeepSeek via HuggingFace router
-    client = OpenAI(
+    # buscar la latest (primer release si no hay tag "latest")
+    # filtrar drafts/prereleases
+    latest = None
+    for r in releases:
+        if not r.get("draft") and not r.get("prerelease"):
+            latest = r
+            break
+    if latest is None:
+        raise RuntimeError("No hay release no-draft ni no-prerelease en xai-org/grok-build")
+    
+    release_tag = latest["tag_name"]
+    asset_names = [a["name"] for a in latest.get("assets", [])]
+    
+    # 2) llamada a DeepSeek vía HF router
+    client = openai.OpenAI(
         base_url="https://router.huggingface.co/v1",
         api_key=os.environ["HF_TOKEN"]
     )

@@ -24,10 +24,12 @@ Error code: 402 - {'message': 'Payment require
 - paso inbox_director-close-audit-agent14-20260923-01: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso install_and_connect: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/steps/install_and_connect/results/msaf_connect.py'] gaps=-
 - paso orchestrate_chat_100: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
-## agent-15-orchestrator-grok: estado=CLOSED marco=smolagents pasos_cerrados=['director_control_loop', 'director_model_probe', 'director_close_audit']
+## agent-15-orchestrator-grok: estado=BLOCKED marco=smolagents pasos_cerrados=[]
 - paso director_close_audit: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso director_control_loop: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso director_model_probe: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
+- paso inbox_director-close-audit-agent15-20260923-01: BLOCKED modelo=- entregables=[] gaps=hf/deepseek-ai/DeepSeek-V4-Flash:AgentGenerationError:Error while generating output:
+Request timed out.
 - paso verify_and_connect: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/steps/verify_and_connect/results/grok_connect.py'] gaps=-
 ## agent-15-orchestrator-grokbuild: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
 - paso fetch_and_connect: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-15-orchestrator-grokbuild/steps/fetch_and_connect/results/grokbuild_connect.py'] gaps=la prueba falló (exit=1): KeyError: 'tag_name'
@@ -49,9 +51,8 @@ Error code: 402 - {'message': 'Payment require
 - paso crazy_wall_chain: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py'] gaps=-
 - paso fixed_template: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py'] gaps=-
 - paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js'] gaps=-
-## agent-20-openclaw-rowboat: estado=? marco=? pasos_cerrados=[]
+## agent-20-openclaw-rowboat: estado=CLOSED marco=smolagents pasos_cerrados=['add_donors']
+- paso add_donors: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-20-openclaw-rowboat/steps/add_donors/results/openclaw_rowboat_donors.py'] gaps=-
 ## agent-3-router: estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script', 'publish_live']
 - paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py'] gaps=-
-- paso publish_live: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/HANDOFF.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/PUBLISH_LIVE_REJECTED.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py'] gaps=-
-- paso space_index: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
-- paso space_readme: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[]
+- paso publish_live: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/HANDOFF.md', 'router inteligente universal/agent

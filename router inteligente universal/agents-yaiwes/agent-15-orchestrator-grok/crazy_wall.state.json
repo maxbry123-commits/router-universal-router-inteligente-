@@ -2,16 +2,20 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-15-orchestrator-grok",
  "framework": "smolagents",
- "status": "BLOCKED",
- "updated_at": "2026-09-23T13:56:12Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T20:29:54Z",
  "group": "orchestrators",
  "chain": [
-  "inbox_director-close-audit-agent15-20260923-01"
+  "director_control_loop",
+  "director_model_probe",
+  "director_close_audit"
  ],
- "completed": [],
- "failed": [
-  "inbox_director-close-audit-agent15-20260923-01"
+ "completed": [
+  "director_control_loop",
+  "director_model_probe",
+  "director_close_audit"
  ],
+ "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
