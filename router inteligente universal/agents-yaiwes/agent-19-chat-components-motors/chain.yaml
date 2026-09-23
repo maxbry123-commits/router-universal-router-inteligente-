@@ -1,0 +1,40 @@
+schema: yaiwes.chain/v1
+input_block: |
+  LEY PERMANENTE DEL DIRECTOR: NO crear componentes desde cero.
+  Para el CHAT usar componentes OSS existentes: motores canónicos -> descargar -> extraer -> adaptar/cablear -> incorporar.
+  Prohibido GitHub Actions como mecanismo de descarga, git clone/curl/wget/pip/npm directo para adquirir el componente.
+  Open WebUI es la base obligatoria del chat; la UI HTML propia no es solución final.
+
+agent:
+  id: agent-19-chat-components-motors
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
+  fallback: []
+  max_tokens: 2600
+
+context:
+  text: |
+    Motor canónico inmutable:
+    ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py
+    Cola:
+    ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/motor_2_queue_download_extract.py
+    Skill:
+    ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/➡️📂 skills descargar extraer zip copiar mover archivos readme.md
+    Fuente OSS obligatoria para UI chat: https://github.com/open-webui/open-webui (branch main).
+    Destino explícito autorizado: router inteligente universal/Componente open soure router inteligente universal/open-webui/
+    Motores INTOCABLES. PASS solo VERIFIED_CLOSED + read-back + hashes.
+
+steps:
+  - id: acquire_open_webui
+    task: |
+      Ejecuta SOLO el motor canónico de descarga+extracción para adquirir open-webui/open-webui@main.
+      No escribas downloader alternativo. No uses git clone/curl/wget/pip/npm para adquisición.
+      Configura SOURCE_REPO=open-webui/open-webui, SOURCE_REF=main, SLUG=open-webui,
+      DEST_REPO=maxbry123-commits/router-universal-router-inteligente-, DEST_BRANCH=main,
+      DEST_ROOT="router inteligente universal/Componente open soure router inteligente universal", PUBLISH=1.
+      Devuelve únicamente el JSON final del motor. PASS solo si verdict=VERIFIED_CLOSED y publish.verdict=PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED.
+    checks:
+      - kind: contains
+        values: [VERIFIED_CLOSED, open-webui]
+      - kind: no_secrets
