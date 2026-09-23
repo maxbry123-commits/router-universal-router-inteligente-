@@ -4,6 +4,7 @@ name: RIU Router Keys Setup (una sola vez)
 #    llamar a DeepSeek y sin RIU_AGENT_API_KEYS todas las rutas /chat/* respondían 401).
 # 2) Prueba real: /health, /chat/send (DeepSeek V4 Flash por HF) y /chat/jev.
 # 3) Si pasa: actualiza LIVE_URL, cancela el Router viejo, y deja el conector (Webhook) relanzando con las mismas 3 claves.
+# v2: espera hasta 15 min, pip sin -q y registro completo de etapa + logs si falla.
 
 on:
   workflow_dispatch:
@@ -14,7 +15,7 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/setup-python@v5
         with:
@@ -31,35 +32,37 @@ jobs:
           from huggingface_hub import HfApi, hf_hub_download
           hf, gh, rk, kj = os.environ["HF_TOKEN"], os.environ["GH_JOB_PUSH_TOKEN"], os.environ["ROUTER_KEY"], os.environ["KEYS_JSON"]
           api = HfApi(token=hf)
-          def note(t, m): print(f"::notice title={t}::{m}"[:1500], flush=True)
-          cmd = ("set -e; apt-get update -qq >/dev/null 2>&1 || true; command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
+          def note(t, m): print(f"::notice title={t}::{m}"[:3000], flush=True)
+          cmd = ("apt-get update -qq >/dev/null 2>&1 || true; command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
                  "git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente- /tmp/r && cd /tmp/r && "
-                 "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests && "
-                 "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'")
+                 "echo PIP_START && pip install --progress-bar off fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests 2>&1 | tail -n 3 && "
+                 "echo PIP_DONE && python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'")
           job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor="cpu-upgrade", timeout="6h", expose=[8000],
                             secrets={"GITHUB_TOKEN": gh, "HF_TOKEN": hf, "RIU_AGENT_API_KEYS": kj})
           url = f"https://{job.id}--8000.hf.jobs"
           note("RIU_NEW_JOB", job.id)
           H = {"Authorization": "Bearer " + hf}
-          ok, t0 = False, time.time()
-          while time.time() - t0 < 420:
+          ok, st, last_code, t0 = False, None, None, time.time()
+          while time.time() - t0 < 900:
               st = api.inspect_job(job_id=job.id).status.stage
               if st == "RUNNING":
                   try:
-                      if requests.get(url + "/health", headers=H, timeout=10).status_code == 200:
+                      rr = requests.get(url + "/health", headers=H, timeout=10)
+                      last_code = rr.status_code
+                      if rr.status_code == 200:
                           ok = True; break
-                  except Exception:
-                      pass
+                  except Exception as e:
+                      last_code = type(e).__name__
               if st in ("ERROR", "COMPLETED", "CANCELED", "DELETED"):
                   break
-              time.sleep(8)
-          note("RIU_HEALTH", f"ok={ok} url={url}")
+              time.sleep(10)
+          note("RIU_HEALTH", f"ok={ok} stage={st} last_health={last_code} segundos={int(time.time()-t0)} url={url}")
           if not ok:
               logs = []
               try:
-                  logs = [str(l) for l in api.fetch_job_logs(job_id=job.id)][-10:]
-              except Exception:
-                  pass
+                  logs = [str(l) for l in api.fetch_job_logs(job_id=job.id)][-30:]
+              except Exception as e:
+                  logs = [f"logs: {type(e).__name__}"]
               note("RIU_FAIL_LOGS", " | ".join(logs))
               api.cancel_job(job_id=job.id)
               raise SystemExit(1)
