@@ -1,6 +1,6 @@
-# WATCHDOG — estado de los agentes (2026-09-23 00:37:59Z)
+# WATCHDOG — estado de los agentes (2026-09-23 01:43:19Z)
 
-**Acción:** hay pendientes; una ronda ya está en curso: no se lanza otra
+**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
 
 | agente | marco | estado | pasos cerrados | bloqueado en | GAPs |
 |---|---|---|---|---|---|
@@ -14,6 +14,9 @@ Error code: 402 - {'message': 'Payment require |
 | agent-14-orchestrator-msaf | ? | SIN_ESTADO | 0/0 | - | - |
 | agent-15-orchestrator-grok | ? | SIN_ESTADO | 0/0 | - | - |
 | agent-15-orchestrator-grokbuild | ? | SIN_ESTADO | 0/0 | - | - |
+| agent-16-chat-space-oauth | ? | SIN_ESTADO | 0/0 | - | - |
+| agent-17-chat-backend-32gb | ? | SIN_ESTADO | 0/0 | - | - |
+| agent-18-chat-final-auditor | ? | SIN_ESTADO | 0/0 | - | - |
 | agent-2-chat-hf-smol | smolagents | CLOSED | 3/3 | - | - |
 | agent-3-router | pocketflow | PENDING_VERIFY | 3/4 | - | Space inexistente o inaccesible sin auth real (smoke FAIL) |
 | agent-4-router-smol | smolagents | BLOCKED | 3/3 | paper_closed_sin_health_live | - |
