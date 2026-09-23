@@ -1,0 +1,62 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-19-chat-components-motors
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 800
+context:
+  text: 'Motor canónico inmutable:
+
+    ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor
+    descarga de componentes y extracción de zip/hf_download_extract_engine.py
+
+    Fuente: https://github.com/open-webui/open-webui
+
+    Destino explícito:
+
+    router inteligente universal/Componente open soure router inteligente universal/open-webui/
+
+    PASS solo con ejecución real del motor + VERIFIED_CLOSED + publicación/read-back
+    verificados.
+
+    Prohibido: downloader alternativo, git clone/curl/wget/pip/npm para adquirir Open
+    WebUI.
+
+    '
+  max_chars: 40000
+task: 'Responde exactamente MOTOR_EXEC_REQUEST_OPEN_WEBUI.
+
+  El Sheriff ejecutará el motor canónico real con la configuración fijada por el Director.
+
+  No escribas código, no descargues por otro método y no declares PASS por texto.
+
+  '
+checks:
+- kind: contains
+  values:
+  - MOTOR_EXEC_REQUEST_OPEN_WEBUI
+- kind: motor_exec
+  path: ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor
+    descarga de componentes y extracción de zip/hf_download_extract_engine.py
+  timeout: 1800
+  env:
+    SOURCE_REPO: open-webui/open-webui
+    SOURCE_REF: main
+    SLUG: open-webui
+    DEST_REPO: maxbry123-commits/router-universal-router-inteligente-
+    DEST_BRANCH: main
+    DEST_ROOT: router inteligente universal/Componente open soure router inteligente
+      universal
+    PUBLISH: '1'
+  expect:
+    verdict: VERIFIED_CLOSED
+    publish.verdict: PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED
+- kind: no_secrets
