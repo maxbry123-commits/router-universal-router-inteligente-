@@ -17,6 +17,7 @@ Run: python chain.py <agent_dir>     (env: RIU_BANK_PASSPHRASE)
 from __future__ import annotations
 
 import json
+import os
 import sys
 import threading
 from pathlib import Path
@@ -81,6 +82,39 @@ def append_step_output(st: dict[str, Any], out: Path) -> None:
         fh.write("\n\n" + text.rstrip() + "\n")
 
 
+def append_output_to_director(st: dict[str, Any], text: str) -> None:
+    """Append a verified agent output to its Director channel and persist it through a GitHub credential from the unlocked bank."""
+    rel = st.get("append_output_to")
+    if not rel:
+        return
+    repo = os.getenv("RIU_GITHUB_REPOSITORY")
+    branch = os.getenv("RIU_GITHUB_BRANCH", "main")
+    if not repo:
+        raise RuntimeError("DIRECTOR_CHANNEL_GITHUB_REPO_MISSING")
+    from integration.chat_mvp import github_tools as gh
+
+    accounts = gh.accounts_from_env()
+    if not accounts:
+        raise RuntimeError("DIRECTOR_CHANNEL_GITHUB_CREDENTIAL_MISSING")
+    last_error: Exception | None = None
+    payload = text.rstrip() + "\n"
+    for account in accounts:
+        token = gh.token_for(account)
+        if not token:
+            continue
+        try:
+            current = gh.get_file(token, repo, rel, branch)
+            base = current["text"]
+            if payload.strip() in base:
+                return
+            merged = base.rstrip() + "\n\n" + payload
+            gh.put_file(token, repo, rel, merged, f"agent response: {st.get('id','director')}", branch)
+            return
+        except Exception as exc:  # try the next unlocked GitHub account without exposing credentials
+            last_error = exc
+    raise RuntimeError(f"DIRECTOR_CHANNEL_WRITE_FAILED:{type(last_error).__name__ if last_error else 'NO_TOKEN'}")
+
+
 def already_closed(sd: Path) -> str | None:
     state, out = sd / "crazy_wall.state.json", sd / "results" / "output.txt"
     if state.exists() and out.exists():
@@ -130,11 +164,17 @@ def main(agent_dir: str) -> int:
                 return orig_model(**kw)
 
         runner.OAIModel = timed_model
-    ids = [s["id"] for s in chain["steps"]]
+    steps = list(chain["steps"])
+    only_step = os.getenv("RIU_ONLY_STEP")
+    if only_step:
+        steps = [s for s in steps if s.get("id") == only_step]
+        if not steps:
+            raise SystemExit(f"RIU_ONLY_STEP no existe en chain.yaml: {only_step}")
+    ids = [s["id"] for s in steps]
     done: list[str] = []
     prev, prev_id, failed = "", None, None
     boot.write_state(agent_dir, aid, fw, "RUNNING", group=agent.get("group"), chain=ids, completed=[], failed=[], next_nodes=ids)
-    for i, st in enumerate(chain["steps"]):
+    for i, st in enumerate(steps):
         sd = Path(agent_dir) / "steps" / st["id"]
         text = already_closed(sd)
         if text is not None:
@@ -154,6 +194,12 @@ def main(agent_dir: str) -> int:
         out = sd / "results" / "output.txt"
         append_step_output(st, out)
         prev, prev_id = (out.read_text(encoding="utf-8") if out.exists() else ""), st["id"]
+        if st.get("append_output_to"):
+            try:
+                append_output_to_director(st, prev)
+            except Exception as exc:
+                failed = st["id"] + f" (director channel: {type(exc).__name__}:{str(exc)[:160]})"
+                break
     ok = failed is None
     boot.write_state(agent_dir, aid, fw, "CLOSED" if ok else "BLOCKED", current_nodes=[], completed=done, failed=[] if ok else [failed],
                      next_nodes=[] if ok else ids[len(done) + 1:])
