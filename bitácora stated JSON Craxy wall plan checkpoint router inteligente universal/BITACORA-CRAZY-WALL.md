@@ -548,3 +548,13 @@ Regla arquitectónica: **nunca cargar el dataset completo al LLM**. El Router co
 - No activar el plugin en producción hasta cumplir su governance gate (aprobación + ficha firmada). **Presencia/shadow PASS no equivale a integración runtime del Router Universal.**
 
 **Objetivo:** usar Mythos/YAIWES como capa externa de conocimiento y control cognitivo del Router Inteligente Universal, conservando a `RedUniversal`/hot-path existente como dueño del routing y al dataset como retrieval selectivo, no como router paralelo.
+
+
+## ORQUESTADOR-CHAT-LOOP — 2026-09-22 7:56 PM COLOMBIA
+- Mandato del Director: CHAT = prioridad absoluta; orquestador audita/registra/ordena, agentes ejecutan.
+- Fuente operativa: `Claude notas/ORQUESTADOR-CHAT-LOOP-2026-09-22-1956-COLOMBIA.md`.
+- Estado inicial: agent-1 CLOSED 3/3; agent-2 CLOSED 3/3; agent-3 PENDING_VERIFY con smoke FAIL 401/404; agent-5 BLOCKED 2/4.
+- Orden de cierre: P0 publicación live -> P1 selector/agente/proveedores -> P2 Archivos/Memoria+storage -> P3 Secret Bank runtime -> P4 auditoría E2E.
+- Regla FAIL_CLOSED: no CHAT_100_PERCENT sin URL live + conversación vía Router + selector + agente/sin agente + secret broker + adjunto/recuperación + storage + E2E PASS.
+- Anti-deriva: pausar prioridad de tareas no-chat mientras exista un gate bloqueante del chat.
+- Watchdog ChatGPT horario activado externamente para auditar pendientes y cambios del chat.
