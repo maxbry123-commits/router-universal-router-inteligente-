@@ -10,6 +10,16 @@
 
 ---
 
+## REGLA GLOBAL PARA TODOS LOS AGENTES
+
+- **REGLA PERMANENTE OSS/MOTORES:** antes de escribir código nuevo, buscar y reutilizar componentes existentes.
+- Si un componente externo hace falta, adquirirlo **solo** con los motores canónicos de `main`.
+- **PROHIBIDO** construir desde cero una solución equivalente sin autorización explícita del Director.
+- Código nuevo permitido únicamente para **adaptar, mejorar, integrar o cablear** componentes existentes.
+- GitHub Actions puede arrancar el harness del agente, pero **NO** reemplaza los motores como mecanismo de adquisición.
+- Si no existe componente adecuado o el motor no puede usarlo: `GAP: COMPONENT_OR_AUTHORIZATION_REQUIRED`.
+- Esta regla se aplica a **todos los agentes presentes y futuros**.
+
 ## 0. LEY DE AUTORIDAD
 
 1. **El Director define objetivo, prioridad y restricciones.**
