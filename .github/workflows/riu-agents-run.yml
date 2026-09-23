@@ -9,6 +9,9 @@ name: RIU Agents Run
 # step by Claude in between (Director's explicit order). Time budget: 90 min per job, 90 min per agent process.
 
 on:
+  push:
+    paths:
+      - 'router inteligente universal/agents-yaiwes/agent-19-chat-components-motors/ORDER.md'
   workflow_dispatch:
     inputs:
       only:
@@ -70,7 +73,7 @@ jobs:
           RIU_CHAT_ALLOW_PROVIDER_LIVE: '1'
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ONLY: ${{ inputs.only }}
+          ONLY: ${{ github.event_name == 'push' && 'agent-19-chat-components-motors' || inputs.only }}
           PYTHONUTF8: '1'
           PYTHONIOENCODING: utf-8
           LC_ALL: C.UTF-8
