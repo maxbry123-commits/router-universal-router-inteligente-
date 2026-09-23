@@ -15,33 +15,33 @@ agent:
   - deepseek_flash
   fallback:
   - minimax_m3
-  max_tokens: 1800
+  max_tokens: 1200
 context:
-  text: "Fallback tras #36: Static Space riu-chat-yaiwes + OAuth (inference-api) +\
-    \ Inference Providers.\nJob 32GB queda aplazado (opción 2 reintentará cuando el\
-    \ runner no reescriba .py).\nPASS: space_url + smoke chat 200.\n\n\n=== ARCHIVO\
-    \ router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md\
-    \ ===\n# ORDEN ORCH-CHAT → agent-3 (P1) — post #41 FALSE CLOSED\n\n**META:** space_url\
-    \ REAL y alcanzable · opción 3 Static+OAuth+Inference · Job 32GB APLAZADO\n\n\
-    ## Gap #41\noutput.txt inventó `https://huggingface.co/spaces/riu-chat-yaiwes`\
-    \ → HTTP 404 (falta owner). CLOSED inválido.\n\n## Orden\n1. Despliega Static\
-    \ Space real: `{HF_USER}/riu-chat-yaiwes` (sdk static + hf_oauth inference-api).\n\
-    2. Smoke: URL responde ≠404; OAuth o inference smoke.\n3. Escribe space_url completo\
-    \ (con owner) en crazy_wall. PROHIBIDO CLOSED sin URL live.\n4. NO regeneres publish_live.py.\
-    \ NO lances Job esta ronda.\n5. Documenta gap: Job 32GB aplazado.\n\n## PASS\n\
-    space_url HTTP&lt;400 + smoke; wall CLOSED solo entonces.\n\n\nSALIDA VERIFICADA\
-    \ DEL PASO ANTERIOR (deploy_script):\n```python\ndef plan_files(space_id: str,\
-    \ api_base: str) -> dict:\n    \"\"\"\n    Returns a dict describing the static\
-    \ space to be created.\n    Raises ValueError if space_id is not in the form \"\
-    usuario/nombre\"\n    or if api_base does not start with \"https://\".\n    \"\
-    \"\"\n    if space_id.count(\"/\") != 1:\n        raise ValueError(\"space_id\
-    \ must contain exactly one '/'\")\n    user, name = space_id.split(\"/\")\n  \
-    \  if not user or not name:\n        raise ValueError(\"space_id must have non-empty\
-    \ user and name parts\")\n    if not api_base.startswith(\"https://\"):\n    \
-    \    raise ValueError(\"api_base must start with 'https://'\")\n    return {\n\
-    \        \"repo_id\": space_id,\n        \"repo_type\": \"space\",\n        \"\
-    space_sdk\": \"static\",\n        \"files\": [\"README.md\", \"index.html\"],\n\
-    \        \"api_base\": api_base,\n    }\n\n\ndef deploy(space_id: str, folder:\
+  text: "GOLDEN publish_live.py ya crea Static Space + OAuth. Solo python_exec.\n\
+    Job 32GB aplazado. PROHIBIDO paper CLOSED.\n\n\n=== ARCHIVO router inteligente\
+    \ universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md ===\n# ORDEN ORCH-CHAT\
+    \ → agent-3 (P1) — post #47 FAIL (URL inventada 404)\n\n**META:** space_url REAL\
+    \ alcanzable · opción 3 Static+OAuth+Inference · Job 32GB APLAZADO\n\n## Gap #41/#47\n\
+    output.txt inventó `https://huggingface.co/spaces/riu-chat-yaiwes` → HTTP 404\
+    \ (sin owner). Paper CLOSED prohibido.\n\n## Orden (ejecutar, no reescribir)\n\
+    1. `python_exec` el `publish_live.py` YA en results/ (GOLDEN opción 3: create\
+    \ Static Space `{HF_USER}/riu-chat-yaiwes` + OAuth inference-api). **CERO regeneración\
+    \ del .py.**\n2. Smoke: GET space_url con owner → HTTP ≠404.\n3. Escribe `space_url`\
+    \ completo en crazy_wall como `PENDING_VERIFY`. **PROHIBIDO status CLOSED** (orch\
+    \ cierra tras verificar live).\n4. NO lances Job esta ronda.\n5. Documenta gap:\
+    \ Job 32GB aplazado.\n\n## PASS\nspace_url con owner + HTTP live ≠404 en output.txt.\
+    \ Wall PENDING_VERIFY (no CLOSED).\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (deploy_script):\n\
+    ```python\ndef plan_files(space_id: str, api_base: str) -> dict:\n    \"\"\"\n\
+    \    Returns a dict describing the static space to be created.\n    Raises ValueError\
+    \ if space_id is not in the form \"usuario/nombre\"\n    or if api_base does not\
+    \ start with \"https://\".\n    \"\"\"\n    if space_id.count(\"/\") != 1:\n \
+    \       raise ValueError(\"space_id must contain exactly one '/'\")\n    user,\
+    \ name = space_id.split(\"/\")\n    if not user or not name:\n        raise ValueError(\"\
+    space_id must have non-empty user and name parts\")\n    if not api_base.startswith(\"\
+    https://\"):\n        raise ValueError(\"api_base must start with 'https://'\"\
+    )\n    return {\n        \"repo_id\": space_id,\n        \"repo_type\": \"space\"\
+    ,\n        \"space_sdk\": \"static\",\n        \"files\": [\"README.md\", \"index.html\"\
+    ],\n        \"api_base\": api_base,\n    }\n\n\ndef deploy(space_id: str, folder:\
     \ str, token: str) -> str:\n    \"\"\"\n    Creates a static Hugging Face Space\
     \ and uploads the contents of `folder`.\n    Returns the URL of the created space.\n\
     \    The `token` is used only for authentication and is never printed or stored.\n\
@@ -51,14 +51,11 @@ context:
     \        folder_path=folder,\n        repo_id=space_id,\n        repo_type=\"\
     space\",\n    )\n    return f\"https://huggingface.co/spaces/{space_id}\"\n```"
   max_chars: 40000
-task: 'Cierra el despliegue opción 3: asegura Space publicado, OAuth activo, smoke
-  POST chat/providers = 200.
+task: 'python_exec results/publish_live.py verbatim. CERO fences. CERO regeneración.
 
-  Escribe space_url (+ provider_endpoint si hay) en crazy_wall.
+  Escribe space_url con owner. Status PENDING_VERIFY. PROHIBIDO CLOSED.
 
-  NO lances HF Job en esta ronda. NO reescribas publish_live.py.
-
-  Si debes emitir .py, copia TEMPLATE existente verbatim (CERO fences, CERO prosa).
+  NO lances HF Job.
 
   '
 checks:

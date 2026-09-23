@@ -17,6 +17,7 @@ from hardware_sheriff import HardwareSheriffError, assert_machine_32gb_ram
 from own_server_launch import main as own_server_main
 
 FLAVOR_32GB = "cpu-upgrade"
+# Job vivo propio (Own Server Launch #4) — reusar si /health 200
 KNOWN_JOB_ID = os.environ.get("RIU_LIVE_JOB_ID", "6ab3198e51992417dfcd4e26")
 PORT = 8080
 

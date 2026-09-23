@@ -1,2 +1,2 @@
-space_url: https://huggingface.co/spaces/riu-chat-yaiwes
-provider_endpoint: https://api-inference.huggingface.co/models/
+space_url: https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes
+status: PENDING_VERIFY

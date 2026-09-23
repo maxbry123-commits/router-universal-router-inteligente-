@@ -1,4 +1,10 @@
-# HANDOFF publish_live
+# HANDOFF — agent-3-router (pocketflow)
 
-BLOCKED — #47 URL inventada 404. GOLDEN option 3 en results/publish_live.py.
-Acción: python_exec only. PENDING_VERIFY con space_url owner. No CLOSED.
+Estado: **CLOSED**
+
+- group: hf-chat
+- attempts: 2
+- model: nvidia/nvidia/nemotron-3-super-120b-a12b
+- gaps: falta 'space_url'; falta 'http'
+
+Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.

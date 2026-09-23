@@ -1,5 +1,1 @@
-{
-  "schema": "yaiwes.trigger/v1",
-  "run_id": "CHAIN-001-OPT3-GOLDEN",
-  "input_block": "Opción 3: Static Space + OAuth HF + Inference Providers. SIN Job.\nEJECUTA publish_live.py existente (GOLDEN) con python_exec. NO regeneres el .py. CERO fences. CERO prosa.\nEscribe space_url con owner. PROHIBIDO CLOSED; usa PENDING_VERIFY.\nNUNCA API keys en secrets del Static Space.\n"
-}
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "Opción 3 INPUT-l: Static Space + OAuth HF + Inference Providers. SIN Job.\nEJECUTA publish_live.py GOLDEN con python_exec. NO regeneres el .py.\nPASS: space_url con owner + HTTP≠404. Status PENDING_VERIFY (no CLOSED).\nNUNCA API keys en secrets del Static Space.\n"}
