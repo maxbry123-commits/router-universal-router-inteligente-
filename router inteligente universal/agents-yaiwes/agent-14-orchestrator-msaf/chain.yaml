@@ -296,3 +296,4 @@ steps:
       - kind: contains
         values: ["HORA COLOMBIA", "CERRADO", "EN EJECUCIÓN", "BLOQUEADO", "FALTA PARA CERRAR", "GAP", "FIX", "PRUEBAS", "SIGUIENTE ACCIÓN"]
       - kind: no_secrets
+# DIRECTOR_TRIGGER_TEST_2026-09-23
