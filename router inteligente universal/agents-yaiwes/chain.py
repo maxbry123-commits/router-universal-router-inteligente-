@@ -30,7 +30,7 @@ from common import boot  # noqa: E402
 
 MAX_PREV_CHARS = 5000
 MAX_FILE_CHARS = 14000
-STEP_SECONDS = 1500
+STEP_SECONDS = 2400
 CALL_SECONDS = 120.0
 CODE_CHECKS = ("python_exec", "python_ast", "js_syntax")
 

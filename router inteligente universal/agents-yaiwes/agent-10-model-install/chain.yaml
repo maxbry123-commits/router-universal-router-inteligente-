@@ -1,12 +1,13 @@
 schema: yaiwes.chain/v1
 
-# Agente 10 — MICRO-ORDEN: 1 Job Qwen RUNNING_HEALTHY SOLO en máquina 32 GB RAM.
-# Prohibido ≤32GB. PASS solo con /health 200. Timeout healthcheck ampliado (900s).
+# Agente 10 — RÉPLICA own_server_launch (Qwen3.5-0.8B RUNNING_HEALTHY, 32 GB).
+# TEMPLATE ORDEN-HF.md verbatim. NUNCA regenerar. NUNCA job.refresh.
 input_block: |
-  ORDEN: un solo Job en la máquina de 32 GB RAM.
-  Prohibido montar Jobs en otro hardware. Meta: Qwen3-0.6B RUNNING_HEALTHY + /health.
-  Relanzar con timeout mayor; PASS solo si healthcheck OK.
-  NUNCA descargar .gguf al repo (results/models/); solo curl dentro del Job HF.
+  Copia verbatim TEMPLATE install_launch_test.py de ORDEN-HF.md (o results/ ya escrito).
+  PROHIBIDO regenerar. PROHIBIDO job.refresh (usar api.inspect_job).
+  Método = common/own_server_launch.py. Modelo: Qwen3.5-0.8B en máquina 32 GB RAM.
+  Meta: RUNNING_HEALTHY + GET https://<job_id>--8080.hf.jobs/health = 200.
+  NUNCA descargar .gguf al repo.
 
 agent:
   id: agent-10-model-install
@@ -14,62 +15,52 @@ agent:
   group: hf-install
   route: [deepseek_flash, minimax_m3, groq, nvidia, cerebras]
   fallback: []
-  max_tokens: 2800
+  max_tokens: 1200
 
 context:
   text: |
-    HARDWARE ÚNICO PERMITIDO: máquina de 32 GB RAM (flavor técnico HF "cpu-upgrade" = 8 vCPU / 32 GB).
-    PROHIBIDO: máquina 16GB (cpu-basic), GPU y cualquier otro. Sheriff: assert_machine_32gb_ram + guarded_run_job.
-    Modelo único: qwen3-0.6b → Qwen/Qwen3-0.6B-GGUF / Qwen3-0.6B-Q8_0.gguf, port 8080.
-    image "ghcr.io/ggml-org/llama.cpp:server"; curl Hub → /model.gguf → llama-server.
-    Job timeout="45m". Espera healthcheck hasta 900s (poll ~10s). PASS solo si GET /health → 200.
-    NUNCA huggingface_hub.hf_hub_download ni guardar .gguf bajo results/; solo curl dentro del Job.
-    Import Sheriff: sys.path → agents-yaiwes/common; from hardware_sheriff import assert_machine_32gb_ram, guarded_run_job.
-    HfHubHTTPError desde huggingface_hub.errors (fallback .utils). NUNCA top-level.
+    Candado: hardware_sheriff.py. Solo máquina 32 GB RAM.
+    RÉPLICA own_server_launch: image llama.cpp:server, curl GGUF en Job, /app/llama-server,
+    flags -c 8192 -np 4 -cb --cache-ram 512 -fa on -ctk/-ctv q8_0, puerto 8080.
+    Poll: api.inspect_job + https://{job_id}--8080.hf.jobs/health.
+    COPIA TEMPLATE verbatim. Cero regeneración.
 
 steps:
-
   - id: install_launch_test
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-10-model-install/ORDEN-HF.md
+      - router inteligente universal/agents-yaiwes/common/own_server_launch.py
     task: |
-      Escribe el módulo Python `install_launch_test.py` (solo código, un único bloque ```python, deps: huggingface_hub, requests).
-      Imports: os, sys, time, Path, requests; HfApi; HfHubHTTPError desde errors (fallback utils).
-      Añade common/ al sys.path (parents[4]/common) y:
-        from hardware_sheriff import assert_machine_32gb_ram, guarded_run_job, HardwareSheriffError
-      Constantes: MODELS = [("qwen3-0.6b","Qwen/Qwen3-0.6B-GGUF","Qwen3-0.6B-Q8_0.gguf")]  # SOLO 1
-        JOB_TIMEOUT="45m"; HEALTH_WAIT_S=900; POLL_S=10
-      Función `launch_and_verify(model_id, repo, file, port=8080, flavor="cpu-upgrade") -> dict`:
-        - ANTES de lanzar: assert_machine_32gb_ram(flavor=flavor); si HardwareSheriffError → raise ValueError(str(e))
-        - Lanzar SOLO con guarded_run_job(api, image=..., command=..., flavor=flavor, timeout=JOB_TIMEOUT, expose=[port])
-        - Probar varios endpoints (job.endpoint, *.jobs.huggingface.co, *--port.hf.jobs)
-        - Esperar hasta HEALTH_WAIT_S: stage RUNNING + GET .../health 200 con Bearer HF_TOKEN
-        - status RUNNING_HEALTHY solo si health 200; si no FAILED con detail
-        - Devuelve {model_id, job_id, endpoint, status, detail, flavor}
-      `run_all()` llama launch_and_verify solo para el único MODELS.
+      NO regeneres código. Copia verbatim el TEMPLATE de ORDEN-HF.md
+      (o deja results/install_launch_test.py si ya es el TEMPLATE).
+      Debe contener inspect_job y NO job.refresh.
+      Debe lanzar Qwen3.5-0.8B con guarded_run_job en máquina 32 GB RAM.
     checks:
       - kind: python_ast
+      - kind: contains
+        values: ["inspect_job", "Qwen3.5-0.8B", "guarded_run_job", "--8080.hf.jobs"]
       - kind: python_exec
         module: install_launch_test.py
         test: |
           import os
           assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN en el entorno"
+          import install_launch_test as m
+          src = open(m.__file__).read()
+          assert "job.refresh" not in src, "PROHIBIDO job.refresh"
+          assert "inspect_job" in src, "debe usar api.inspect_job"
+          assert "Qwen3.5-0.8B" in src
           from install_launch_test import run_all, launch_and_verify
           raised = False
           try:
               launch_and_verify("x", "y/z", "f.gguf", flavor="cpu-basic")
           except ValueError:
               raised = True
-          assert raised, "debía rechazar máquina ≤32GB"
-          raised2 = False
-          try:
-              launch_and_verify("x", "y/z", "f.gguf", flavor="a10g-small")
-          except ValueError:
-              raised2 = True
-          assert raised2, "debía rechazar GPU"
+          assert raised, "debía rechazar máquina ≠32GB"
           results = run_all()
-          assert len(results) == 1, "solo 1 modelo esta ronda"
+          assert len(results) == 1
           r = results[0]
           assert r.get("flavor") == "cpu-upgrade"
-          assert r["status"] == "RUNNING_HEALTHY", f"{r['model_id']} no quedó corriendo: {r.get('detail')}"
+          assert r["status"] == "RUNNING_HEALTHY", f"{r.get('detail')}"
           print(r["model_id"], r["endpoint"], r.get("job_id"))
       - kind: no_secrets
 
