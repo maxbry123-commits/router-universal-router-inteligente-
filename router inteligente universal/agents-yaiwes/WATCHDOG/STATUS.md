@@ -1,4 +1,4 @@
-# WATCHDOG — estado de los agentes (2026-09-23 07:41:11Z)
+# WATCHDOG — estado de los agentes (2026-09-23 08:03:28Z)
 
 **Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
 
@@ -11,13 +11,13 @@ Error code: 402 - {'message': 'Payment require | cerebras/gpt-oss-120b:AgentGene
 Error code: 402 - {'message': 'Payment require |
 | agent-12-yaiwes-router | smolagents | CLOSED | 2/1 | - | - |
 | agent-13-repo-inventory | pocketflow | BLOCKED | 0/1 | inventory_module | la prueba falló (exit=1): AssertionError |
-| agent-14-orchestrator-msaf | pocketflow | BLOCKED | 3/3 | director_question_1 | falta 'duda' | falta 'tiempo' |
+| agent-14-orchestrator-msaf | pocketflow | BLOCKED | 3/3 | director_question_1 | SIN_RUTA: hf/deepseek-ai/DeepSeek-V4-Flash:PROVIDER_ERROR:TimeoutError:request failed |
 | agent-15-orchestrator-grok | smolagents | CLOSED | 3/2 | - | - |
-| agent-15-orchestrator-grokbuild | pocketflow | BLOCKED | 0/1 | fetch_and_connect | la prueba falló (exit=1): ValueError: No releases found |
+| agent-15-orchestrator-grokbuild | pocketflow | BLOCKED | 0/1 | fetch_and_connect | la prueba falló (exit=1): RuntimeError: No non-draft release found |
 | agent-16-chat-space-oauth | pocketflow | CLOSED | 2/1 | - | Python inválido: unexpected character after line continuation character (línea 17) | falta 'private=False' |
-| agent-17-chat-backend-32gb | pocketflow | BLOCKED | 0/1 | backend_router_live | falta 'Volume' | la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/work/router-unive |
+| agent-17-chat-backend-32gb | pocketflow | CLOSED | 1/1 | - | falta 'Volume' | la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/work/router-unive |
 | agent-18-chat-final-auditor | pocketflow | CLOSED | 1/1 | - | falta 'Archivos' | falta 'Memoria' |
-| agent-19-chat-components-motors | pocketflow | BLOCKED | 0/1 | acquire_open_webui | motor canónico no existe: ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-intelige |
+| agent-19-chat-components-motors | pocketflow | BLOCKED | 0/1 | acquire_open_webui | motor falló (exit=1): RuntimeError: DESTINATION_EXISTS:router inteligente universal/Componente open soure router intelig |
 | agent-2-chat-hf-smol | smolagents | CLOSED | 3/3 | - | - |
 | agent-3-router | pocketflow | CLOSED | 4/4 | - | - |
 | agent-4-router-smol | smolagents | CLOSED | 4/1 | - | - |
