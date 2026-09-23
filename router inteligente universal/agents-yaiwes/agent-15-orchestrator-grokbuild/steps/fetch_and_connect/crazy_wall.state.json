@@ -3,7 +3,7 @@
  "agent": "agent-15-orchestrator-grokbuild",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T07:01:45Z",
+ "updated_at": "2026-09-23T07:20:15Z",
  "group": "orchestrators",
  "current_nodes": [
   "execute"
@@ -16,7 +16,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
-  "la prueba falló (exit=1): requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://api.github.com/repos/xai-org/grok-build/releases/latest"
+  "la prueba falló (exit=1): ValueError: No releases found"
  ],
  "failed": [
   "execute"

@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-16-chat-space-oauth",
  "framework": "pocketflow",
- "status": "BLOCKED",
- "updated_at": "2026-09-23T07:01:34Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T07:20:04Z",
  "group": "chat",
  "current_nodes": [
   "execute"
@@ -14,17 +14,17 @@
  "provider": "hf",
  "model": "deepseek-ai/DeepSeek-V4-Flash",
  "via": "route",
- "attempts": 3,
- "gaps": [
-  "falta 'Open WebUI'",
-  "falta 'Router'",
-  "falta 'GitHub'",
-  "falta 'Jobs'",
-  "falta 'Secret Bank'",
-  "falta 'Crazy Wall'",
-  "falta 'PRUEBA'"
- ],
+ "attempts": 1,
+ "gaps": [],
  "failed": [
   "execute"
- ]
+ ],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "5f49e707e26cd378ae1d304c9e8adeaca249f3f9ed13d39997ee9f68293fab4a",
+   "chars": 1565
+  }
+ ],
+ "route_trace": []
 }

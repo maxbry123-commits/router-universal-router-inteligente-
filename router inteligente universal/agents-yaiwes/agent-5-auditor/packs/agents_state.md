@@ -17,20 +17,22 @@ Error code: 402 - {'message': 'Payment require
 - paso yaiwes_donor_list: CLOSED modelo=groq/openai/gpt-oss-120b entregables=['router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/steps/yaiwes_donor_list/results/yaiwes_donors.py'] gaps=-
 ## agent-13-repo-inventory: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
 - paso inventory_module: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-13-repo-inventory/steps/inventory_module/results/repo_inventory.py'] gaps=la prueba falló (exit=1): AssertionError
-## agent-14-orchestrator-msaf: estado=CLOSED marco=pocketflow pasos_cerrados=['orchestrate_chat_100']
+## agent-14-orchestrator-msaf: estado=BLOCKED marco=pocketflow pasos_cerrados=['orchestrate_chat_100']
+- paso director_question_1: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'duda'; falta 'tiempo'
 - paso install_and_connect: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/steps/install_and_connect/results/msaf_connect.py'] gaps=-
 - paso orchestrate_chat_100: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
-## agent-15-orchestrator-grok: estado=CLOSED marco=smolagents pasos_cerrados=['verify_and_connect']
+## agent-15-orchestrator-grok: estado=CLOSED marco=smolagents pasos_cerrados=['director_control_loop']
+- paso director_control_loop: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso verify_and_connect: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/steps/verify_and_connect/results/grok_connect.py'] gaps=-
 ## agent-15-orchestrator-grokbuild: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
 - paso fetch_and_connect: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-15-orchestrator-grokbuild/steps/fetch_and_connect/results/grokbuild_connect.py'] gaps=la prueba falló (exit=1): requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://api.github.com/rep
 ## agent-16-chat-space-oauth: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
 - paso adapt_openwebui: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
-- paso adapt_openwebui_real: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'Router'; falta 'GitHub'; falta 'Jobs'; falta 'Secret Bank'; falta 'Crazy Wall'; falta 'PRUEBA'
+- paso adapt_openwebui_real: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'Open WebUI'; falta 'Router'; falta 'GitHub'; falta 'Jobs'; falta 'Secret Bank'; falta 'Crazy Wall'; falta 'PRUEBA
 - paso publish_static_live: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/steps/publish_static_live/results/publish_static_live.py'] gaps=Python inválido: unexpected character after line continuation character (línea 17); falta 'private=False'; la prueba fal
 ## agent-17-chat-backend-32gb: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
 - paso backend_live: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/steps/backend_live/results/chat_backend_32gb.py'] gaps=falta 'Volume'; la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/w
-- paso backend_router_live: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'PRUEBA'
+- paso backend_router_live: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'Open WebUI'; falta 'PRUEBA'
 - paso wire_existing_backend: VALIDATING modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 ## agent-18-chat-final-auditor: estado=CLOSED marco=pocketflow pasos_cerrados=['integrate_and_e2e']
 - paso integrate_additional_components: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'Archivos'; falta 'Memoria'; falta 'Secret Bank'; falta 'Router'; falta 'Jobs'; falta 'GitHub'; falta 'Crazy Wall'
@@ -50,5 +52,4 @@ Error code: 402 - {'message': 'Payment require
 ## agent-4-router-smol: estado=CLOSED marco=smolagents pasos_cerrados=['chat_frontend_support']
 - paso chat_frontend_support: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso job_spec: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/job_spec/results/job_spec.py'] gaps=-
-- paso models_registry: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/models_registry/results/hf_models_registry.py'] gaps=-
-- paso node_monitor: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-4-router-smol/steps/node_monitor/results/node_monito
+- paso models_registry: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/

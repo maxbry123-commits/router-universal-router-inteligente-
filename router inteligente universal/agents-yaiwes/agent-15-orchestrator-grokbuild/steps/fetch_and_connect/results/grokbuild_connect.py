@@ -3,17 +3,16 @@ import requests
 from openai import OpenAI
 
 def check_release_and_ping() -> dict:
-    # 1) Obtener última release de grok-build
-    url = "https://api.github.com/repos/xai-org/grok-build/releases/latest"
-    resp = requests.get(url, timeout=10)
+    # 1) GET releases de xai-org/grok-build (sin /latest que da 404)
+    resp = requests.get("https://api.github.com/repos/xai-org/grok-build/releases?per_page=1")
     resp.raise_for_status()
-    release = resp.json()
-    if not release:
-        raise Exception("No releases found")
-    
-    asset_names = [asset["name"] for asset in release.get("assets", [])]
-    release_tag = release.get("tag_name", "unknown")
-    
+    releases = resp.json()
+    if not releases:
+        raise ValueError("No releases found")
+    latest = releases[0]
+    tag = latest["tag_name"]
+    asset_names = [a["name"] for a in latest.get("assets", [])]
+
     # 2) Llamada a DeepSeek vía HF router
     client = OpenAI(
         base_url="https://router.huggingface.co/v1",
@@ -24,10 +23,9 @@ def check_release_and_ping() -> dict:
         messages=[{"role": "user", "content": "Responde solo con la palabra OK."}]
     )
     reply = completion.choices[0].message.content
-    
-    # 3) Resultado
+
     return {
-        "release_tag": release_tag,
+        "release_tag": tag,
         "asset_names": asset_names,
         "reply": reply
     }

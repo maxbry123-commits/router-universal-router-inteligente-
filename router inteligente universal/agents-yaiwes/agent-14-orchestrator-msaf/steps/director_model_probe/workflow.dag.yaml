@@ -233,112 +233,88 @@ context:
     18. Tu objetivo final es entregar el chat operativo, probado y funcionando con\
     \ todas las instrucciones del Director.\n19. Deadline máximo ordenado por el Director:\
     \ 1 hora.\n\n## \U0001F4CC PRIMERA RESPUESTA OBLIGATORIA\n\nResponde aquí mismo:\n\
-    \n- si tienes claro todo\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json\
-    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-16-chat-space-oauth\"\
-    ,\n \"framework\": \"pocketflow\",\n \"status\": \"RUNNING\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:51Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"adapt_openwebui_real\"\
-    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\"\
-    : [\n  \"adapt_openwebui_real\"\n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n\
-    }\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json\
-    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-17-chat-backend-32gb\"\
-    ,\n \"framework\": \"pocketflow\",\n \"status\": \"RUNNING\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:51Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"backend_router_live\"\
-    \n ],\n \"completed\": [],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\"\
-    : [\n  \"backend_router_live\"\n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n\
-    }\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json\
-    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-18-chat-final-auditor\"\
-    ,\n \"framework\": \"pocketflow\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:51Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"integrate_and_e2e\"\
-    \n ],\n \"completed\": [\n  \"integrate_and_e2e\"\n ],\n \"failed\": [],\n \"\
-    next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
-    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json\
-    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-4-router-smol\"\
-    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:52Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"chat_frontend_support\"\
-    \n ],\n \"completed\": [\n  \"chat_frontend_support\"\n ],\n \"failed\": [],\n\
-    \ \"next_nodes\": [],\n \"current_nodes\": [],\n \"gaps\": [\n  \"CLOSED paper\
-    \ sin GET /health HTTP 200 live (regla Grok/Revisor). Reabierto.\",\n  \"Referencia\
-    \ live agent-10: job 6ab3198e51992417dfcd4e26 https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health\"\
-    \n ],\n \"route\": [\n  \"deepseek_flash\"\n ]\n}\n\n=== ARCHIVO router inteligente\
-    \ universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json ===\n{\n\
-    \ \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-12-yaiwes-router\"\
-    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:53Z\",\n \"group\": \"chat\",\n \"chain\": [\n  \"router_chat_support\"\
-    \n ],\n \"completed\": [\n  \"router_chat_support\"\n ],\n \"failed\": [],\n \"\
-    next_nodes\": [],\n \"current_nodes\": [],\n \"route\": [\n  \"deepseek_flash\"\
-    \n ]\n}\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json\
-    \ ===\n{\n \"schema\": \"yaiwes.crazy-wall/v1\",\n \"agent\": \"agent-11-download-extraction\"\
-    ,\n \"framework\": \"smolagents\",\n \"status\": \"CLOSED\",\n \"updated_at\"\
-    : \"2026-09-23T07:19:53Z\",\n \"group\": \"chat-components\",\n \"chain\": [\n\
-    \  \"acquire_requested_component\"\n ],\n \"completed\": [\n  \"acquire_requested_component\"\
-    \n ],\n \"failed\": [],\n \"next_nodes\": [],\n \"current_nodes\": [],\n \"route\"\
-    : [\n  \"deepseek_flash\"\n ]\n}\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (director_model_probe):\n\
-    ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️\n\n# \U0001F4E3 RESPUESTA DEL ORQUESTADOR — PRUEBA MODELO\
-    \ IA\n**\U0001F550 HORA COLOMBIA:** 2026-09-23 01:28 America/Bogota\n**PROVIDER:**\
-    \ Hugging Face Inference Providers\n**MODELO:** deepseek-ai/DeepSeek-V4-Flash\n\
-    **VIA/ROUTE:** POST https://router.huggingface.co/hf-inference/models/deepseek-ai/DeepSeek-V4-Flash/v1/chat/completions\n\
-    **FALLBACK:** No usado — único proveedor autorizado\n**ESTADO RUNTIME:** \U0001F7E5\
-    \ BLOQUEADO\n**EVIDENCIA:** La solicitud HTTP POST fue rechazada por Hugging Face\
-    \ con `403 — This authentication method does not have sufficient permissions to\
-    \ call Inference Providers on behalf of user COMAND-CENTER-1`. El token disponible\
-    \ para este runtime puede lanzar/gestionar HF Jobs, pero no tiene permiso suficiente\
-    \ para ejecutar Inference Providers para DeepSeek V4 Flash. No se intentó fallback\
-    \ porque `ROUTE.json` mantiene NVIDIA, Groq, Cerebras y MiniMax M3 en pausa por\
-    \ orden del Director. El runtime de Agent 14 está bloqueado hasta recibir una\
-    \ credencial HF con permiso de Inference Providers o hasta que el Director reautorice\
-    \ explícitamente otra ruta de modelo.\n➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️"
+    \n- si tienes claro todo\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/ROUTE.json\
+    \ ===\n{\n  \"route_by_group\": {},\n  \"route_code\": [\"deepseek_flash\"],\n\
+    \  \"route_jobs\": [\"deepseek_flash\"],\n  \"route\": [\"deepseek_flash\"],\n\
+    \  \"fallback\": [],\n  \"nota\": \"PAUSADO 2026-09-22 por orden directa del Director:\
+    \ SOLO DeepSeek V4 Flash (deepseek-ai/DeepSeek-V4-Flash, vía la cuenta de Hugging\
+    \ Face, router.huggingface.co) para todos los agentes del Router. NVIDIA, Groq,\
+    \ Cerebras y MiniMax M3 quedan en pausa (fuera de toda ruta) hasta que el Director\
+    \ autorice reactivarlos. No cambiar sin su autorización.\"\n}\n\n\nSALIDA VERIFICADA\
+    \ DEL PASO ANTERIOR (orchestrate_chat_100):\nGAP: agent-17-chat-backend-32gb y\
+    \ agent-18-chat-final-auditor están en estado BLOCKED con tareas fallidas sin\
+    \ evidencia de intento corregido ni HANDOFF de corrección. No hay suficiente información\
+    \ sobre por qué fallaron ni si se aplicó la regla de máximo 2 reintentos. Sin\
+    \ esos datos no puedo emitir una orden de cierre CHAT_100 = PASS.\n\nHANDOFF OPERATIVO:\n\
+    \n1) Estado real de agentes:\n   - agent-16-chat-space-oauth: CLOSED (completado:\
+    \ adapt_openwebui)\n   - agent-17-chat-backend-32gb: BLOCKED (falló: wire_existing_backend)\n\
+    \   - agent-18-chat-final-auditor: BLOCKED (falló: integrate_additional_components)\n\
+    \n2) Orden exacta siguiente para cada agente:\n   - agent-16-chat-space-oauth:\
+    \ ESPERAR — No hay tarea pendiente.\n   - agent-17-chat-backend-32gb: REINTENTAR\
+    \ wire_existing_backend con orden corregida: revisar dependencias de Router existente,\
+    \ verificar conectividad con HF 32GB, cablear /v1/models y /v1/chat/completions.\
+    \ Máximo 2 intentos.\n   - agent-18-chat-final-auditor: REINTENTAR integrate_additional_components\
+    \ solo después de que agent-17 reporte PASS. En ese intento, integrar selector,\
+    \ modo con/sin agente, documentos, GitHub, Secret Bank, Archivos/Memoria, persistencia,\
+    \ URL/login, mensaje real y reapertura.\n\n3) GAP/FIX: GAP — Falta evidencia de\
+    \ qué causó los fallos en agent-17 y agent-18. Sin logs de error o HANDOFF de\
+    \ corrección, la orden actual es incompleta. FIX: antes de reintentar, cada agente\
+    \ debe reportar el motivo exacto del fallo y la orden corregida.\n\n4) Pruebas\
+    \ obligatorias pendientes (lista completa del Director):\n   - Open WebUI real\n\
+    \   - Router live\n   - /v1/models funcional\n   - /v1/chat/completions funcional\n\
+    \   - Selector de modelos\n   - Modo con/sin agente\n   - Documentos\n   - GitHub\n\
+    \   - Secret Bank\n   - Archivos/Memoria\n   - Persistencia\n   - URL/login\n\
+    \   - Mensaje real\n   - Reapertura\n\n5) CHAT_100 = FAIL — No hay evidencia real\
+    \ de ninguna de las pruebas. El proceso está bloqueado en backend."
   max_chars: 40000
-task: 'RESPONDE EXCLUSIVAMENTE LA PREGUNTA 1 DEL DIRECTOR que está en README-DIRECTOR.md.
+task: 'AGENTE ORQUESTADOR MICROSOFT: responde TÚ MISMO la sección "PRUEBA DE CONEXIÓN
+  DEL DIRECTOR — MODELO IA"
 
-  Hora de activación Colombia: 2026-09-23 01:53 America/Bogota.
-
-
-  Debes responder:
-
-  - si tienes completamente claro el objetivo del Chat YAIWES;
-
-  - si tienes dudas o ambigüedades;
-
-  - tu conclusión del objetivo final;
-
-  - cuál es el mejor camino para cerrarlo;
-
-  - qué agentes pondrás en paralelo;
-
-  - qué agentes dependen de otros;
-
-  - qué GAPs ves ahora;
-
-  - cuánto tiempo estimas que necesitas para tener el chat operativo, probado y funcionando.
+  que está al final de README-DIRECTOR.md.
 
 
-  Usa este formato exacto:
+  Debes usar únicamente evidencia de TU EJECUCIÓN ACTUAL.
+
+  Si logras una llamada real, informa provider, modelo exacto, via/route, fallback
+  usado o no usado y estado.
+
+  Si no logras ejecutar, responde el GAP exacto. No inventes un modelo activo por
+  leer ROUTE.json.
+
+
+  Devuelve únicamente este bloque listo para añadir verbatim al README:
+
 
   ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
 
-  # 📣 RESPUESTA AGENT 14
+  # 📣 RESPUESTA DEL ORQUESTADOR — PRUEBA MODELO IA
 
-  **🕐 HORA COLOMBIA:** <hora Colombia>
+  **🕐 HORA COLOMBIA:** <hora real America/Bogota>
 
-  **RESPUESTA:**
+  **PROVIDER:** <provider real o GAP>
 
-  <respuesta completa>
+  **MODELO:** <modelo real o GAP>
+
+  **VIA/ROUTE:** <via/route real>
+
+  **FALLBACK:** <usado/no usado + cuál>
+
+  **ESTADO RUNTIME:** <operativo/bloqueado>
+
+  **EVIDENCIA:** <evidencia observable de esta ejecución>
 
   ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
-
-
-  No ejecutes componentes ni Jobs. No declares CHAT_100. Solo responde al Director
-  con base en la evidencia real.
 
   '
 checks:
 - kind: contains
   values:
-  - RESPUESTA AGENT 14
+  - RESPUESTA DEL ORQUESTADOR
   - HORA COLOMBIA
-  - duda
-  - objetivo
-  - agentes
-  - GAP
-  - tiempo
+  - PROVIDER
+  - MODELO
+  - VIA/ROUTE
+  - FALLBACK
+  - ESTADO RUNTIME
+  - EVIDENCIA
 - kind: no_secrets
