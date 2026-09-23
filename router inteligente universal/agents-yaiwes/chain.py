@@ -65,6 +65,22 @@ def step_cfg(chain: dict[str, Any], agent: dict[str, Any], st: dict[str, Any], p
             "agent": agent, "context": {"text": ctx, "max_chars": 40000}, "task": st["task"], "checks": st["checks"]}
 
 
+def append_step_output(st: dict[str, Any], out: Path) -> None:
+    """Append a verified agent output verbatim to an explicitly configured repo file."""
+    rel = st.get("append_output_to")
+    if not rel or not out.exists():
+        return
+    target = (boot.REPO / str(rel)).resolve()
+    repo = boot.REPO.resolve()
+    if repo not in target.parents and target != repo:
+        raise RuntimeError("append_output_to fuera del repo")
+    if not target.exists():
+        raise RuntimeError(f"append_output_to no existe: {rel}")
+    text = out.read_text(encoding="utf-8")
+    with target.open("a", encoding="utf-8") as fh:
+        fh.write("\n\n" + text.rstrip() + "\n")
+
+
 def already_closed(sd: Path) -> str | None:
     state, out = sd / "crazy_wall.state.json", sd / "results" / "output.txt"
     if state.exists() and out.exists():
@@ -136,6 +152,7 @@ def main(agent_dir: str) -> int:
             break
         done.append(st["id"])
         out = sd / "results" / "output.txt"
+        append_step_output(st, out)
         prev, prev_id = (out.read_text(encoding="utf-8") if out.exists() else ""), st["id"]
     ok = failed is None
     boot.write_state(agent_dir, aid, fw, "CLOSED" if ok else "BLOCKED", current_nodes=[], completed=done, failed=[] if ok else [failed],
