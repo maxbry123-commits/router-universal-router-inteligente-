@@ -45,7 +45,14 @@
     "No canonical motor modification",
     "No false PASS",
     "No secret values in README/JSON/logs",
+    "Violation of VERBATIM => TERMINATED_FOR_EXECUTION until Director authorization",
     "Only Agents 4,8,11,12,16,17,18,19 may be delegated work",
-    "Violation of VERBATIM => TERMINATED_FOR_EXECUTION until Director authorization"
-  ]
+    "AGENTE ORQUESTADOR GROK BUILD = ORCHESTRATOR_EXECUTOR",
+    "Read and write Director instructions only through README-DIRECTOR.md",
+    "Do not claim ACTIVE/RUNNING without runtime heartbeat"
+  ],
+  "display_name": "AGENTE ORQUESTADOR GROK BUILD",
+  "status_mode": "ARMED_UNTIL_RUNTIME_HEARTBEAT",
+  "require_runtime_heartbeat": true,
+  "heartbeat_destination": "README-DIRECTOR.md"
 }
