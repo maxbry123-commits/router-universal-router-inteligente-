@@ -5,6 +5,7 @@ Every agent gets ALL the keys (NVIDIA, Groq, Cerebras, Hugging Face, GitHub) thr
 
 HEARTBEAT (2026-09-23): every write_state() also pings the central persistent Router Job's /health (its URL comes from
 `ROUTER_JOB_PAUSE.flag`, line "LIVE_URL=..."), and records "router_connected": true/false in the agent's own crazy_wall.state.json.
+The ping carries "Authorization: Bearer $HF_TOKEN" (hf.jobs endpoints reject calls without it).
 This is best-effort and NEVER blocks or fails the agent: if the Job is down or the URL is stale, the agent still runs normally.
 """
 from __future__ import annotations
@@ -106,7 +107,8 @@ def ping_router(agent_id: str) -> bool:
         return False
     try:
         import requests
-        r = requests.get(url.rstrip("/") + "/health", timeout=6)
+        headers = {"Authorization": "Bearer " + os.environ["HF_TOKEN"]} if os.environ.get("HF_TOKEN") else {}
+        r = requests.get(url.rstrip("/") + "/health", headers=headers, timeout=6)
         return r.status_code == 200
     except Exception:  # noqa: BLE001
         return False
