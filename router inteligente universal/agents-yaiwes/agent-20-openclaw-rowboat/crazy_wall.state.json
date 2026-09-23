@@ -1,0 +1,21 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-20-openclaw-rowboat",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T12:08:51Z",
+ "router_connected": false,
+ "group": "downloads",
+ "chain": [
+  "add_donors"
+ ],
+ "completed": [
+  "add_donors"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}
