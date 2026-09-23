@@ -1,1 +1,5 @@
-{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "Opción 3 INPUT-l: Static Space + OAuth HF + Inference Providers. SIN Job.\nEJECUTA publish_live.py GOLDEN con python_exec. NO regeneres el .py.\nPASS: space_url con owner + HTTP≠404. Status PENDING_VERIFY (no CLOSED).\nNUNCA API keys en secrets del Static Space.\n"}
+{
+  "schema": "yaiwes.trigger/v1",
+  "run_id": "CHAIN-001-PENDING-VERIFY",
+  "input_block": "PENDING_VERIFY post #49.\nSpace claimed: https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes\nPROHIBIDO CLOSED. Orch smoke OAuth/live first.\nCERO regen publish_live.py. CERO Job. CERO fences.\nPASS solo tras GET usable (200 público o smoke OAuth documentado).\n"
+}

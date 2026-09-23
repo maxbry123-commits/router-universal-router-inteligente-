@@ -1,33 +1,23 @@
 {
- "schema": "yaiwes.crazy-wall/v1",
- "step": "publish_live",
- "status": "CLOSED",
- "updated_at": "2026-09-23T00:22:56Z",
- "attempts": 2,
- "last_error": "#41 false CLOSED — claimed space_url 404",
- "agent": "agent-3-router",
- "deploy_mode": "option_3_static_oauth_inference",
- "current_nodes": [
-  "execute"
- ],
- "next_nodes": [
-  "sheriff"
- ],
- "gaps": [],
- "failed": [
-  "execute"
- ],
- "framework": "pocketflow",
- "group": "hf-chat",
- "provider": "nvidia",
- "model": "nvidia/nemotron-3-super-120b-a12b",
- "via": "route",
- "evidence": [
-  {
-   "kind": "output_sha256",
-   "sha256": "e3feb8602f1a2a5b29726b5790d754c006b9165577710574663ea626a7ac164a",
-   "chars": 86
-  }
- ],
- "route_trace": []
+  "schema": "yaiwes.crazy-wall/v1",
+  "step": "publish_live",
+  "status": "PENDING_VERIFY",
+  "updated_at": "2026-09-23T00:30:00Z",
+  "attempts": 2,
+  "last_error": "#49 paper CLOSED — smoke OAuth/live pending",
+  "agent": "agent-3-router",
+  "deploy_mode": "option_3_static_oauth_inference",
+  "space_url": "https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes",
+  "current_nodes": [
+    "orch_smoke_verify"
+  ],
+  "next_nodes": [
+    "sheriff"
+  ],
+  "gaps": [
+    "smoke OAuth/live con sesión HF pendiente"
+  ],
+  "failed": [],
+  "framework": "pocketflow",
+  "group": "hf-chat"
 }

@@ -1,38 +1,44 @@
 {
- "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-3-router",
- "framework": "pocketflow",
- "status": "CLOSED",
- "updated_at": "2026-09-23T00:22:56Z",
- "group": "hf-chat",
- "chain": [
-  "space_readme",
-  "space_index",
-  "deploy_script",
-  "publish_live"
- ],
- "completed": [
-  "space_readme",
-  "space_index",
-  "deploy_script",
-  "publish_live"
- ],
- "failed": [],
- "next_nodes": [],
- "attempts_publish_live": 8,
- "blockers": [
-  "#47 FAIL: output.txt claimed https://huggingface.co/spaces/riu-chat-yaiwes → HTTP 404 (no owner). Space not published.",
-  "Job 32GB deferred (option 3 interim)."
- ],
- "deploy_mode": "INPUT-l option 3 Static+OAuth+InferenceProviders",
- "hardware_requirement": "No HF Job this round; option 2 Job-32GB deferred",
- "space_id_suffix": "riu-chat-yaiwes",
- "orchestrator_order": "REOPEN: python_exec GOLDEN publish_live.py (option 3). Deploy {HF_USER}/riu-chat-yaiwes. Write reachable space_url. PENDING_VERIFY only. PROHIBIDO CLOSED without orch live GET. Do NOT rewrite publish_live.py.",
- "route": [
-  "nvidia",
-  "groq",
-  "cerebras",
-  "deepseek_flash"
- ],
- "current_nodes": []
+  "schema": "yaiwes.crazy-wall/v1",
+  "agent": "agent-3-router",
+  "framework": "pocketflow",
+  "status": "PENDING_VERIFY",
+  "updated_at": "2026-09-23T00:30:00Z",
+  "group": "hf-chat",
+  "chain": [
+    "space_readme",
+    "space_index",
+    "deploy_script",
+    "publish_live"
+  ],
+  "completed": [
+    "space_readme",
+    "space_index",
+    "deploy_script",
+    "publish_live"
+  ],
+  "failed": [],
+  "next_nodes": [
+    "orch_smoke_verify"
+  ],
+  "attempts_publish_live": 8,
+  "space_url": "https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes",
+  "space_id": "yaiwes/riu-chat-yaiwes",
+  "blockers": [
+    "#49 paper CLOSED sin smoke OAuth/live. Reabierto PENDING_VERIFY.",
+    "Unauth probe: HEAD 401 / body title 404; .hf.space 404. Falta smoke con sesión HF.",
+    "Job 32GB deferred (option 3 interim)."
+  ],
+  "deploy_mode": "INPUT-l option 3 Static+OAuth+InferenceProviders",
+  "hardware_requirement": "No HF Job this round; option 2 Job-32GB deferred",
+  "orchestrator_order": "PENDING_VERIFY: smoke OAuth/live on https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes. PROHIBIDO CLOSED until orch GET usable (200 public or OAuth smoke OK). CERO regen publish_live.py.",
+  "route": [
+    "nvidia",
+    "groq",
+    "cerebras",
+    "deepseek_flash"
+  ],
+  "current_nodes": [
+    "orch_smoke_verify"
+  ]
 }
