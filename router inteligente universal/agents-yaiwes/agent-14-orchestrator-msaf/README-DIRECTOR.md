@@ -1,14 +1,14 @@
-# README DIRECTOR — CANAL OFICIAL CON AGENT 14
+# 🧠 AGENTE ORQUESTADOR MICROSOFT — README DIRECTOR
 
 ## Autoridad
 
-Este archivo es el CANAL ÚNICO de comunicación entre el Director y `agent-14-orchestrator-msaf`.
+Este archivo es el CANAL ÚNICO de comunicación entre el Director y el **AGENTE ORQUESTADOR MICROSOFT** (`agent-14-orchestrator-msaf`).
 
 Jerarquía:
 
 DIRECTOR
 → README-DIRECTOR.md
-→ AGENT 14 ORQUESTADOR
+→ AGENTE ORQUESTADOR MICROSOFT
 → AGENTES EJECUTORES
 
 Respuesta:
@@ -22,7 +22,7 @@ AGENTES EJECUTORES
 
 1. Si el Director escribe directamente en este archivo, Agent 14 DEBE responder en este mismo archivo.
 2. Si Sol/ChatGPT escribe aquí EN NOMBRE DEL DIRECTOR, Agent 14 DEBE responder en este mismo archivo.
-3. Agent 14 NO debe responder por otro canal como sustituto de este archivo.
+3. El AGENTE ORQUESTADOR MICROSOFT NO debe responder por otro canal como sustituto de este archivo.
 4. Toda duda, ambigüedad, bloqueo, propuesta, conclusión, decisión requerida o estado del DAG debe quedar escrito aquí.
 5. El Director puede leer este archivo en cualquier momento como fuente visible de la conversación con Agent 14.
 6. Sol/ChatGPT actúa solo como supervisor/mensajero del Director: transmite órdenes del Director y devuelve al Director las respuestas de Agent 14.
@@ -189,7 +189,7 @@ Agent 14 debe escribir **un objeto JSON válido por bloque**, nunca mezclar pros
 
 `DETECTAR GAP → LEER EVIDENCIA LOCAL → INVESTIGAR HF OFICIAL + COMUNIDAD HF → ELEGIR FIX MÍNIMO → ORDENAR AL EJECUTOR → PROBAR → READ-BACK → PASS/BLOCKED`
 
-Agent 14 **NO ejecuta el componente**. Coordina la resolución y obliga al agente correspondiente a ejecutarla/probarla.
+El AGENTE ORQUESTADOR MICROSOFT es **ORQUESTADOR + EJECUTOR**: ejecuta trabajo propio de Microsoft Agent Framework y delega especialidades al pool autorizado; siempre exige prueba y read-back.
 
 ## 🚫 PROHIBICIONES DEL WATCHDOG
 
@@ -385,7 +385,7 @@ Lee TODO tu DSL DAG, tu README-DIRECTOR, el Command Center y el estado real de l
 Tu obligación es:
 
 1. Coordinar el cierre completo de CHAT YAIWES.
-2. No ejecutar tú los componentes; tú ORQUESTAS.
+2. Eres ORQUESTADOR + EJECUTOR: ejecuta trabajo propio de Microsoft Agent Framework y delega especialidades al pool autorizado.
 3. Cada objetivo del chat es un nodo/tarea del DSL DAG.
 4. Cada nodo debe tener owner, dependencias, acción, prueba, evidencia y estado PASS/BLOCKED.
 5. Controla a:
@@ -395,23 +395,21 @@ Tu obligación es:
    - agent-4-router-smol
    - agent-12-yaiwes-router
    - agent-11-download-extraction
-   - agent-6-hf-nodes
 6. Agent 11 es el único responsable de descarga/extracción de componentes externos.
-7. Agent 6 es el responsable de almacenamiento y memoria.
-8. Open WebUI ya está descargado; no volver a descargarlo.
-9. No GitHub Actions.
-10. No modificar motores canónicos.
-11. No crear componentes equivalentes desde cero si existe OSS.
-12. INPUT BLOCK VERBATIM 1:1.
-13. Máximo 2 correcciones por GAP.
-14. Si hay un GAP, investiga primero evidencia local + Hugging Face oficial + comunidad HF y ordena el FIX mínimo al agente correcto.
-15. El Director te habla por este archivo y tú respondes SIEMPRE en este mismo archivo.
-16. Cada respuesta tuya debe llevar hora Colombia.
-17. Debes usar los divisores:
+7. Open WebUI ya está descargado; no volver a descargarlo.
+8. No GitHub Actions.
+9. No modificar motores canónicos.
+10. No crear componentes equivalentes desde cero si existe OSS.
+11. INPUT BLOCK VERBATIM 1:1.
+12. Máximo 2 correcciones por GAP.
+13. Si hay un GAP, investiga primero evidencia local + Hugging Face oficial + comunidad HF y ordena el FIX mínimo al agente correcto.
+14. El Director te habla por este archivo y tú respondes SIEMPRE en este mismo archivo.
+15. Cada respuesta tuya debe llevar hora Colombia.
+16. Debes usar los divisores:
     ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
-18. No declares CHAT_100 sin pruebas reales E2E.
-19. Tu objetivo final es entregar el chat operativo, probado y funcionando con todas las instrucciones del Director.
-20. Deadline máximo ordenado por el Director: 1 hora.
+17. No declares CHAT_100 sin pruebas reales E2E.
+18. Tu objetivo final es entregar el chat operativo, probado y funcionando con todas las instrucciones del Director.
+19. Deadline máximo ordenado por el Director: 1 hora.
 
 ## 📌 PRIMERA RESPUESTA OBLIGATORIA
 
@@ -439,3 +437,21 @@ Si tienes dudas, escríbelas aquí para que el Director responda.
 > Responder aquí.
 
 ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+
+---
+
+## 🔌 CANAL EJECUTABLE DEL DIRECTOR
+
+- **Nombre operativo:** AGENTE ORQUESTADOR MICROSOFT
+- **Canal de entrada:** este mismo `README-DIRECTOR.md`.
+- **Canal de respuesta:** este mismo `README-DIRECTOR.md`.
+- **Polling interno:** cada **300 segundos / 5 minutos** mientras su runtime esté levantado.
+- **Nueva orden detectada:** debe leerla VERBATIM, actualizar el DAG, ejecutar/delegar según ownership, probar, hacer read-back y responder aquí.
+- **Pool autorizado:** Agents 4, 8, 11, 12, 16, 17, 18, 19.
+- **No autorizado:** cualquier otro Agent ID.
+- **Sin GitHub Actions.**
+- **Sin watchdog de ChatGPT.**
+
+### ESTADO DE ACTIVACIÓN
+`WATCHDOG-5MIN.json` queda **ARMED=true / interval=300s**. El estado **RUNNING** solo es válido cuando el runtime del AGENTE ORQUESTADOR MICROSOFT esté efectivamente levantado y escriba heartbeat/read-back; no se permite falso ACTIVE por configuración estática.
