@@ -2,11 +2,16 @@
 
 Tokens/keys: only through the encrypted bank (agent-microkernel/runtime-bank*): the passphrase comes from the environment.
 Every agent gets ALL the keys (NVIDIA, Groq, Cerebras, Hugging Face, GitHub) through the provider key pools / GitHub accounts.
+
+HEARTBEAT (2026-09-23): every write_state() also pings the central persistent Router Job's /health (its URL comes from
+`ROUTER_JOB_PAUSE.flag`, line "LIVE_URL=..."), and records "router_connected": true/false in the agent's own crazy_wall.state.json.
+This is best-effort and NEVER blocks or fails the agent: if the Job is down or the URL is stale, the agent still runs normally.
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -86,6 +91,27 @@ def load_context(cfg: dict[str, Any]) -> str:
     return (REPO / ctx["file"]).read_text(encoding="utf-8")[: int(ctx.get("max_chars", 4000))]
 
 
+def _router_live_url() -> str | None:
+    flag = HERE / "ROUTER_JOB_PAUSE.flag"
+    if not flag.exists():
+        return None
+    m = re.search(r"^LIVE_URL=(\S+)", flag.read_text(encoding="utf-8"), re.M)
+    return m.group(1) if m else None
+
+
+def ping_router(agent_id: str) -> bool:
+    """Best-effort heartbeat to the central persistent Router Job; never raises."""
+    url = _router_live_url()
+    if not url:
+        return False
+    try:
+        import requests
+        r = requests.get(url.rstrip("/") + "/health", timeout=6)
+        return r.status_code == 200
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def write_state(agent_dir: str | Path, agent_id: str, framework: str, status: str, **fields: Any) -> None:
     path = Path(agent_dir) / "crazy_wall.state.json"
     cur: dict[str, Any] = {}
@@ -95,7 +121,7 @@ def write_state(agent_dir: str | Path, agent_id: str, framework: str, status: st
         except json.JSONDecodeError:
             cur = {}
     cur.update({"schema": "yaiwes.crazy-wall/v1", "agent": agent_id, "framework": framework, "status": status,
-                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}, **fields)
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "router_connected": ping_router(agent_id)}, **fields)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(cur, ensure_ascii=False, indent=1), encoding="utf-8")
     os.replace(tmp, path)
