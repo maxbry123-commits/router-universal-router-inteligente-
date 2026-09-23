@@ -24,6 +24,11 @@ SCHEMA = "yaiwes.micro-agent/v1"
 FRAMEWORKS = {"pocketflow", "smolagents"}
 TOP_KEYS = {"schema", "execution", "agent", "task", "context", "checks", "nodes", "edges"}
 CONTRACT = ("Rol: executor. Autoridad: NONE. No te autocertifiques. Lee el INPUT_BLOCK literal sin reinterpretarlo. "
+            "REGLA PERMANENTE OSS/MOTORES: antes de escribir código nuevo, busca y reutiliza componentes existentes. "
+            "Si hace falta adquirir un componente externo, usa exclusivamente los motores canónicos de main. "
+            "PROHIBIDO crear desde cero una solución equivalente sin autorización explícita del Director. "
+            "El código nuevo solo puede adaptar, mejorar, integrar o cablear componentes existentes, salvo autorización explícita. "
+            "No sustituyas motores por git clone, curl, wget, downloader propio ni otra vía de adquisición. "
             "Responde solo lo que pide la tarea, en el formato exacto pedido. Si no puedes o falta evidencia, responde exactamente: GAP: <motivo>.")
 
 
