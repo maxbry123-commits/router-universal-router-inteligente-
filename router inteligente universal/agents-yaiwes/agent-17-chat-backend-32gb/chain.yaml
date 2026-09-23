@@ -1,7 +1,9 @@
 schema: yaiwes.chain/v1
+run_id: CHAT-100-AGENT17-20260923
 input_block: |
-  LEY PERMANENTE: NO crear backend/chat nuevo desde cero. Reutilizar Open WebUI + backend Chat MVP existente.
-  Conservar todo código adicional. Solo adaptar, cablear e incorporar. Claude audita; este agente ejecuta.
+  ORDEN DE AGENT 14 / DIRECTOR: cerrar backend real del Chat YAIWES y su conexión con Open WebUI.
+  Deadline del frente: 2026-09-23 01:32 America/Bogota.
+  Solo HF 32 GB RAM. No GitHub Actions. No tocar motores. No crear backend alternativo.
 
 agent:
   id: agent-17-chat-backend-32gb
@@ -9,27 +11,36 @@ agent:
   group: chat
   route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
-  max_tokens: 3200
+  max_tokens: 3600
 
 context:
   text: |
-    Base UI: Open WebUI descargado por agent-19 mediante motores canónicos.
-    Backend existente a conservar:
-    router inteligente universal/integration/chat_mvp/
-    router inteligente universal/integration/huggingface/
-    Secret Bank existente en Chat Mvp/secret_bank/.
-    Hardware: SOLO máquina HF 32 GB RAM. Nunca otra.
-    No descargar componentes en este agente. No GitHub Actions/git clone/curl/pip/npm como adquisición de componentes.
+    REUTILIZAR:
+    - router inteligente universal/integration/chat_mvp/app.py
+    - router inteligente universal/integration/chat_mvp/
+    - router inteligente universal/integration/huggingface/fastapi_gateway.py
+    - router inteligente universal/integration/huggingface/chat_executor.py
+    - router inteligente universal/agents-yaiwes/common/hardware_sheriff.py
+    Open WebUI ya está descargado y verificado.
+    Endpoints existentes: /health, /v1/models, /v1/chat/completions.
+    hardware_sheriff.py fija cpu-upgrade = 32GB y falla cerrado con cualquier otra RAM.
 
 steps:
-  - id: wire_existing_backend
+  - id: backend_router_live
+    context_file:
+      - "router inteligente universal/integration/chat_mvp/app.py"
+      - "router inteligente universal/integration/huggingface/fastapi_gateway.py"
+      - "router inteligente universal/integration/huggingface/chat_executor.py"
+      - "router inteligente universal/agents-yaiwes/common/hardware_sheriff.py"
+      - "router inteligente universal/Componente open soure router inteligente universal/open-webui/DOWNLOAD_EXTRACT_MANIFEST.json"
     task: |
-      Adapta/cablea Open WebUI al gateway/backend Chat MVP ya existente; NO escribas un chat/backend alternativo.
-      Conserva endpoints existentes, modo agente/sin agente, selector, documentos, GitHub, almacenamiento y Secret Bank.
-      Prepara la ejecución en HF 32 GB reutilizando hardware_sheriff/guarded_run_job existentes y Storage Bucket yaiwes-v54.
-      Si Open WebUI no fue descargado por agent-19, falla cerrado.
-      No elimines ni reemplaces el código adicional previo.
+      REUTILIZA/ADAPTA -> CABLEA/EJECUTA -> PRUEBA.
+      Conecta Open WebUI al Router/OpenAI-compatible existente.
+      Usa SOLO el mecanismo trigger/dispatcher existente autorizado y HF Job de 32GB cuando necesites runtime.
+      PASS exige prueba real de /health, GET /v1/models y POST /v1/chat/completions con respuesta no vacía.
+      Debe quedar documentada la conexión Open WebUI -> Router.
+      Si el runtime no permite una prueba real, BLOCKED con GAP exacto; nunca PASS simulado.
     checks:
       - kind: contains
-        values: [open-webui, integration/chat_mvp, integration/huggingface, secret_bank, guarded_run_job, 32]
+        values: [/health, /v1/models, /v1/chat/completions, 32GB, Open WebUI, PRUEBA]
       - kind: no_secrets
