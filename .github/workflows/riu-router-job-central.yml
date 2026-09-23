@@ -1,0 +1,64 @@
+name: RIU Router Job Central
+
+# Launches the SINGLE persistent Router Job that 50-100 agents can all point to at once (common/router_job_persistent.py).
+# Passes GH_JOB_PUSH_TOKEN as a HF Job secret (never written to any repo file) so the Job's own auto-pull/push works.
+
+on:
+  workflow_dispatch:
+    inputs:
+      lifetime:
+        description: 'Job lifetime (HF max per job)'
+        default: '6h'
+
+permissions:
+  contents: read
+
+jobs:
+  launch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub requests
+      - name: Launch
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
+          LIFETIME: ${{ inputs.lifetime }}
+        run: |
+          python - <<'PY'
+          import os, time, requests
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          cmd = ("apt-get update -qq >/dev/null 2>&1 || true; command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
+                 "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml && "
+                 "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'")
+          job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor="cpu-upgrade", timeout=os.environ["LIFETIME"],
+                            expose=[8000], secrets={"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]})
+          print("::notice title=RIU_ROUTER_CENTRAL_JOB_ID::" + str(job.id))
+          t0, ok, urls, stage = time.time(), None, [], None
+          while time.time() - t0 < 480 and ok is None:
+              info = api.inspect_job(job_id=job.id)
+              stage = info.status.stage
+              urls = [u for u in dict.fromkeys([getattr(info, "endpoint", None), getattr(job, "endpoint", None), f"https://{job.id}--8000.hf.jobs"]) if u]
+              if stage == "RUNNING":
+                  for u in urls:
+                      try:
+                          r = requests.get(u.rstrip("/") + "/health", headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]}, timeout=15)
+                          if r.status_code == 200:
+                              ok = u; break
+                      except Exception:
+                          pass
+              if stage in ("ERROR", "COMPLETED", "CANCELED", "DELETED"):
+                  break
+              time.sleep(10)
+          logs = []
+          try:
+              for line in api.fetch_job_logs(job_id=job.id):
+                  logs.append(str(line))
+          except Exception as e:
+              logs.append("logs: " + type(e).__name__)
+          print(f"::notice title=RIU_ROUTER_CENTRAL_STATE::stage={stage} health_ok_url={ok} urls={urls} logs_final={' | '.join(logs[-6:])[:500]}")
+          PY
