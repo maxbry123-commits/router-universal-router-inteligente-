@@ -1,0 +1,37 @@
+name: RIU HF Cleanup (orden del Director)
+
+# Borra los 4 Spaces de prueba. Conserva SOLO COMAND-CENTER-1/claude-github-mcp-backup (conector GitHub).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -U huggingface_hub
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          KEEP = "COMAND-CENTER-1/claude-github-mcp-backup"
+          for sid in ["COMAND-CENTER-1/owner_HF_1", "COMAND-CENTER-1/prueba-1", "COMAND-CENTER-1/COMAND-CENTER-MAXBRY", "COMAND-CENTER-1/yaiwes-ui-factory"]:
+              assert sid != KEEP
+              try:
+                  api.delete_repo(sid, repo_type="space")
+                  print(f"::notice title=RIU_CLEANUP_DELETED::{sid}")
+              except Exception as e:
+                  print(f"::warning title=RIU_CLEANUP_FAIL::{sid} {type(e).__name__}: {str(e)[:200]}")
+          left = [s.id for s in api.list_spaces(author="COMAND-CENTER-1")]
+          print("::notice title=RIU_CLEANUP_REMAINING::" + ", ".join(left))
+          PY
