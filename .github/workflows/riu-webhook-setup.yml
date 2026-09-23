@@ -32,7 +32,7 @@ jobs:
               api = HfApi(token=os.environ["HF_TOKEN"])
               who = api.whoami()["name"]
               space_id = f"{who}/riu-webhook-receiver"
-              api.create_repo(space_id, repo_type="space", space_sdk="docker", exist_ok=True)
+              api.create_repo(space_id, repo_type="space", space_sdk="gradio", exist_ok=True)
               api.upload_folder(folder_path="router inteligente universal/agents-yaiwes/webhook_receiver", repo_id=space_id, repo_type="space")
               try:
                   api.add_space_secret(space_id, "HF_TOKEN", os.environ["HF_TOKEN"])
