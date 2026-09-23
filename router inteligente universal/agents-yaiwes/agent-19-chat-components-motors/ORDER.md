@@ -14,3 +14,5 @@ RULES:
 - DO NOT delete existing Chat MVP additional code.
 - PASS only with motor verdict VERIFIED_CLOSED + publication/read-back verified.
 - After acquisition, stop. Claude/orchestrator will audit and assign adaptation/cabling separately.
+
+RE-DISPATCH 2026-09-22 21:40 COLOMBIA — concurrency isolated; execute now.
