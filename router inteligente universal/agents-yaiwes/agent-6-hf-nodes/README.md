@@ -1,35 +1,68 @@
-# 🔵 PROTOCOLO ÚNICO DE ACTIVACIÓN DE AGENTES — DIRECTOR
+# 🔵 PROTOCOLO OFICIAL DE ACTIVACIÓN — CHAT YAIWES
 
-Así, paso por paso:
+## PASO 1 — ESCRIBIR LA TAREA DEL AGENTE
 
-**1. Escribo la tarea del agente.** Llamo a una función que guarda un archivo en GitHub (`create_or_update_file`), con la ruta `agents-yaiwes/<agente>/chain.yaml` y el texto de la tarea adentro. Eso ya es un commit.
+Llamar a `create_or_update_file` para guardar/actualizar:
 
-**2. Aprieto el botón de "correr ahora".** Llamo a otra función (`github_api`, método POST) a esta dirección:
+`router inteligente universal/agents-yaiwes/<agente>/chain.yaml`
+
+El texto de la tarea queda dentro de `chain.yaml`. Ese write ya crea el commit/push en GitHub.
+
+## PASO 2 — ACTIVAR "CORRER AHORA"
+
+Llamar a `github_api` con método **POST** a:
 
 `/repos/maxbry123-commits/router-universal-router-inteligente-/actions/workflows/riu-agents-run.yml/dispatches`
 
-con:
+Para un agente concreto, el body correcto según el workflow ACTUAL es:
 
 ```json
-{"ref":"main"}
+{
+  "ref": "main",
+  "inputs": {
+    "only": "<carpeta-del-agente>"
+  }
+}
 ```
 
-Eso enciende la máquina de GitHub.
+Para Agent 14:
 
-**3. Ahí, sola, esa máquina hace esto** (código ya guardado en el repo, no se escribe cada vez):
-- Lee el `chain.yaml` del agente.
-- Le manda la tarea a DeepSeek (por la cuenta HF del Director).
-- Revisa la respuesta con el Sheriff.
-- Si pasa, guarda el resultado y hace commit/push solo.
+```json
+{
+  "ref": "main",
+  "inputs": {
+    "only": "agent-14-orchestrator-msaf"
+  }
+}
+```
 
-**4. Yo leo dónde respondió.** Se consulta:
-- `crazy_wall.state.json` → dice si quedó CLOSED o BLOCKED y qué modelo usó.
-- `steps/<paso>/results/output.txt` → contiene el texto real producido.
+**IMPORTANTE:** el workflow actual define `only` con default vacío. Si se manda solo `{"ref":"main"}`, `ONLY` queda vacío y se ejecuta TODO el swarm. Para enviar un mensaje a un solo agente es obligatorio `inputs.only`.
+
+## PASO 3 — GITHUB EJECUTA SOLO
+
+La máquina temporal de GitHub:
+- lee `chain.yaml`;
+- manda la tarea al modelo configurado;
+- valida la respuesta con Sheriff;
+- si pasa, guarda el resultado;
+- hace commit/push de vuelta al repositorio antes de apagarse.
+
+No se escribe ese runtime cada vez: ya está guardado en el repo.
+
+## PASO 4 — LEER DÓNDE RESPONDIÓ
+
+Usar `get_file`/lectura GitHub sobre:
+- `crazy_wall.state.json` → CLOSED/BLOCKED + provider/model/route;
+- `steps/<paso>/results/output.txt` → texto real producido;
+- `README-DIRECTOR.md` cuando el nodo tenga `append_output_to` para responder al Director.
 
 ## REGLA ABSOLUTA
 
-- Activar agentes por GitHub, usando el POST de `workflow_dispatch`.
-- NO usar Hugging Face Jobs para activar agentes.
-- HF Jobs solo intervienen si el resultado final de una tarea necesita explícitamente encender/probar un modelo en Hugging Face.
-- Sol no responde por el agente: lee el resultado real escrito por el runtime.
+`escribir chain.yaml → commit GitHub → github_api POST workflow_dispatch → runner GitHub → Sheriff → commit/push resultado → leer state/output`
+
+- No usar Hugging Face Jobs para activar agentes.
+- HF Jobs solo pueden aparecer dentro de una tarea final que expresamente necesite cómputo/modelos HF.
+- No activar todo el swarm para hablar con un solo agente.
+- No responder en nombre del agente.
+- No declarar PASS sin evidencia real.
 - Este protocolo REEMPLAZA cualquier protocolo anterior de activación escrito en este README.
