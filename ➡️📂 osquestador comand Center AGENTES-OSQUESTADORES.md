@@ -81,6 +81,35 @@ RESULTADO:
    - NO pertenece al roster autorizado actual y NO se usará.
    - No encontré en main un segundo agente de descarga autorizado distinto de Agent 15 para Grok; no inventar uno.
 
+
+## ORDEN ACTIVA — AGENT 11 — DESCARGA DOS ORQUESTADORES
+Estado inicial: DISPATCH_PENDING
+NODO: AGENT-11-DOWNLOAD-ORCHESTRATORS
+AGENTE AUTORIZADO: Agent 11 — agent-11-download-extraction
+OBJETIVO: descargar y verificar exactamente dos componentes externos usando exclusivamente el motor canónico de descarga + extracción.
+ORÍGENES:
+1. https://github.com/microsoft/agent-framework
+2. https://github.com/xai-org/grok-build
+MOTOR CANÓNICO:
+- ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/motor_2_queue_download_extract.py
+- engine: hf_download_extract_engine.py
+EJECUCIÓN:
+- HF Job 32 GB = flavor cpu-upgrade
+- Agent 11 ejecuta; Claude/orquestador NO descarga.
+RESTRICCIONES:
+- NO GitHub Actions.
+- NO modificar workflows.
+- NO modificar motores.
+- NO git clone/curl/wget para adquirir Microsoft Agent Framework o Grok Build fuera del motor canónico.
+- Máximo 2 reintentos.
+- Sin secretos en logs/resultados.
+PASS:
+- Microsoft Agent Framework => download_verified + extraction_verified + source_commit + tree/hash observable.
+- Grok Build => download_verified + extraction_verified + source_commit + tree/hash observable.
+- balance total=2, failed=0, pending=0.
+- verdict=VERIFIED_CLOSED.
+SIGUIENTE: despachar Agent 11 por HF Job 32 GB y auditar el resultado.
+
 ## HANDOFF INTERNO
 Fuentes a leer antes de ejecutar:
 - Claude notas/
