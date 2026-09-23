@@ -5,3 +5,4 @@
 - 2026-09-22 13:27:06Z · 11/13 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
 - 2026-09-22 18:08:18Z · 11/13 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
 - 2026-09-22 21:23:07Z · 11/13 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 3/3)
+- 2026-09-23 00:09:50Z · 10/16 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
