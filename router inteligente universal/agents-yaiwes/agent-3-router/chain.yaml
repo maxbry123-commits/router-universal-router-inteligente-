@@ -1,10 +1,11 @@
 schema: yaiwes.chain/v1
 
-# agent-3-router — P1 FALLBACK opción 3: Static + OAuth + Inference Providers
+# agent-3-router — P1 opción 3 GOLDEN: Static + OAuth + Inference Providers
 input_block: |
-  Opción 3 INPUT-l: Static Space + OAuth HF + Inference Providers. SIN Job permanente.
-  NO regeneres publish_live.py con prosa. Prioridad: space_url usable YA.
-  NUNCA pongas API keys en secrets del Static Space.
+  Opción 3 INPUT-l: Static Space + OAuth HF + Inference Providers. SIN Job.
+  EJECUTA publish_live.py GOLDEN con python_exec. NO regeneres el .py.
+  PASS: space_url con owner + HTTP≠404. Status PENDING_VERIFY (no CLOSED).
+  NUNCA API keys en secrets del Static Space.
 
 agent:
   id: agent-3-router
@@ -12,27 +13,25 @@ agent:
   group: hf-chat
   route: [nvidia, groq, cerebras]
   fallback: [minimax_m3]
-  max_tokens: 1800
+  max_tokens: 1200
 
 context:
   text: |
-    Fallback tras #36: Static Space riu-chat-yaiwes + OAuth (inference-api) + Inference Providers.
-    Job 32GB queda aplazado (opción 2 reintentará cuando el runner no reescriba .py).
-    PASS: space_url + smoke chat 200.
+    GOLDEN publish_live.py ya crea Static Space + OAuth. Solo python_exec.
+    Job 32GB aplazado. PROHIBIDO paper CLOSED.
 
 steps:
   - id: space_readme
     task: |
-      README.md Static Space: sdk static, hf_oauth true, scopes inference-api (y jobs si aplica).
+      README.md Static Space ya embebido en GOLDEN. No reescribas prosa.
     checks:
       - kind: contains
-        values: ["---", "sdk: static", "hf_oauth"]
+        values: ["sdk: static", "hf_oauth"]
       - kind: no_secrets
 
   - id: space_index
     task: |
-      index.html chat OAuth HF + fetch a Inference Providers. textContent. Sin API keys en JS hardcodeadas.
-      Selector modelos: DeepSeek / MiniMax / Kimi / NVIDIA si el provider lo expone.
+      index.html ya embebido en GOLDEN (OAuth + Inference Providers).
     checks:
       - kind: contains
         values: ["oauth", "inference", "textContent"]
@@ -40,7 +39,7 @@ steps:
 
   - id: deploy_script
     task: |
-      deploy_static_space.py HfApi create_repo/upload_folder space_sdk static. Imprime space_url.
+      Confirma publish_live.py AST OK. NO regeneres.
     checks:
       - kind: python_ast
       - kind: no_secrets
@@ -49,10 +48,9 @@ steps:
     context_file:
       - router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md
     task: |
-      Cierra el despliegue opción 3: asegura Space publicado, OAuth activo, smoke POST chat/providers = 200.
-      Escribe space_url (+ provider_endpoint si hay) en crazy_wall.
-      NO lances HF Job en esta ronda. NO reescribas publish_live.py.
-      Si debes emitir .py, copia TEMPLATE existente verbatim (CERO fences, CERO prosa).
+      python_exec results/publish_live.py verbatim. CERO fences. CERO regeneración.
+      Escribe space_url con owner. Status PENDING_VERIFY. PROHIBIDO CLOSED.
+      NO lances HF Job.
     checks:
       - kind: contains
         values: ["space_url", "http"]

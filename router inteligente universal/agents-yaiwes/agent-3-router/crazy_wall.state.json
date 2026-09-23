@@ -1,39 +1,43 @@
 {
- "schema": "yaiwes.crazy-wall/v1",
- "agent": "agent-3-router",
- "framework": "pocketflow",
- "status": "BLOCKED",
- "updated_at": "2026-09-23T00:16:01Z",
- "group": "hf-chat",
- "chain": [
-  "space_readme",
-  "space_index",
-  "deploy_script",
-  "publish_live"
- ],
- "completed": [
-  "space_readme",
-  "space_index",
-  "deploy_script"
- ],
- "failed": [
-  "publish_live"
- ],
- "next_nodes": [],
- "attempts_publish_live": 7,
- "blockers": [
-  "#41 FALSE CLOSED: output.txt claimed space_url https://huggingface.co/spaces/riu-chat-yaiwes → HTTP 404. No owner/name. provider_endpoint truncated. Gap: Space not actually published.",
-  "Job 32GB deferred (option 3 interim)."
- ],
- "deploy_mode": "INPUT-l option 3 Static+OAuth+InferenceProviders",
- "hardware_requirement": "No HF Job this round; option 2 Job-32GB deferred",
- "space_id_suffix": "riu-chat-yaiwes",
- "orchestrator_order": "REOPEN: deploy Static Space for real under HF user/riu-chat-yaiwes; write reachable space_url; smoke OAuth; PROHIBIDO CLOSED without live URL. Do NOT rewrite publish_live.py.",
- "route": [
-  "nvidia",
-  "groq",
-  "cerebras",
-  "deepseek_flash"
- ],
- "current_nodes": []
+  "schema": "yaiwes.crazy-wall/v1",
+  "agent": "agent-3-router",
+  "framework": "pocketflow",
+  "status": "BLOCKED",
+  "updated_at": "2026-09-23T00:20:00Z",
+  "group": "hf-chat",
+  "chain": [
+    "space_readme",
+    "space_index",
+    "deploy_script",
+    "publish_live"
+  ],
+  "completed": [
+    "space_readme",
+    "space_index",
+    "deploy_script"
+  ],
+  "failed": [
+    "publish_live"
+  ],
+  "next_nodes": [
+    "publish_live"
+  ],
+  "attempts_publish_live": 8,
+  "blockers": [
+    "#47 FAIL: output.txt claimed https://huggingface.co/spaces/riu-chat-yaiwes → HTTP 404 (no owner). Space not published.",
+    "Job 32GB deferred (option 3 interim)."
+  ],
+  "deploy_mode": "INPUT-l option 3 Static+OAuth+InferenceProviders",
+  "hardware_requirement": "No HF Job this round; option 2 Job-32GB deferred",
+  "space_id_suffix": "riu-chat-yaiwes",
+  "orchestrator_order": "REOPEN: python_exec GOLDEN publish_live.py (option 3). Deploy {HF_USER}/riu-chat-yaiwes. Write reachable space_url. PENDING_VERIFY only. PROHIBIDO CLOSED without orch live GET. Do NOT rewrite publish_live.py.",
+  "route": [
+    "nvidia",
+    "groq",
+    "cerebras",
+    "deepseek_flash"
+  ],
+  "current_nodes": [
+    "publish_live"
+  ]
 }

@@ -1,16 +1,16 @@
-# ORDEN ORCH-CHAT → agent-3 (P1) — post #41 FALSE CLOSED
+# ORDEN ORCH-CHAT → agent-3 (P1) — post #47 FAIL (URL inventada 404)
 
-**META:** space_url REAL y alcanzable · opción 3 Static+OAuth+Inference · Job 32GB APLAZADO
+**META:** space_url REAL alcanzable · opción 3 Static+OAuth+Inference · Job 32GB APLAZADO
 
-## Gap #41
-output.txt inventó `https://huggingface.co/spaces/riu-chat-yaiwes` → HTTP 404 (falta owner). CLOSED inválido.
+## Gap #41/#47
+output.txt inventó `https://huggingface.co/spaces/riu-chat-yaiwes` → HTTP 404 (sin owner). Paper CLOSED prohibido.
 
-## Orden
-1. Despliega Static Space real: `{HF_USER}/riu-chat-yaiwes` (sdk static + hf_oauth inference-api).
-2. Smoke: URL responde ≠404; OAuth o inference smoke.
-3. Escribe space_url completo (con owner) en crazy_wall. PROHIBIDO CLOSED sin URL live.
-4. NO regeneres publish_live.py. NO lances Job esta ronda.
+## Orden (ejecutar, no reescribir)
+1. `python_exec` el `publish_live.py` YA en results/ (GOLDEN opción 3: create Static Space `{HF_USER}/riu-chat-yaiwes` + OAuth inference-api). **CERO regeneración del .py.**
+2. Smoke: GET space_url con owner → HTTP ≠404.
+3. Escribe `space_url` completo en crazy_wall como `PENDING_VERIFY`. **PROHIBIDO status CLOSED** (orch cierra tras verificar live).
+4. NO lances Job esta ronda.
 5. Documenta gap: Job 32GB aplazado.
 
 ## PASS
-space_url HTTP&lt;400 + smoke; wall CLOSED solo entonces.
+space_url con owner + HTTP live ≠404 en output.txt. Wall PENDING_VERIFY (no CLOSED).

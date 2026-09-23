@@ -1,10 +1,4 @@
-# HANDOFF — agent-3-router (pocketflow)
+# HANDOFF publish_live
 
-Estado: **BLOCKED**
-
-- group: hf-chat
-- attempts: 3
-- model: nvidia/nvidia/nemotron-3-super-120b-a12b
-- gaps: falta 'http'
-
-Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.
+BLOCKED — #47 URL inventada 404. GOLDEN option 3 en results/publish_live.py.
+Acción: python_exec only. PENDING_VERIFY con space_url owner. No CLOSED.
