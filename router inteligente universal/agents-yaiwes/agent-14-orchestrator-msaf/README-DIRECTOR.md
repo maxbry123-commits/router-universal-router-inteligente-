@@ -483,3 +483,30 @@ No respondas por otro canal.
 No delegues esta respuesta.
 No ejecutes componentes para contestar.
 Primero responde al Director en este archivo.
+
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📌 PRUEBA DE CONEXIÓN DEL DIRECTOR — MODELO IA
+
+**🕐 HORA COLOMBIA:** 2026-09-23 02:05 America/Bogota
+
+AGENTE ORQUESTADOR MICROSOFT, responde en ESTE MISMO ARCHIVO:
+
+1. ¿Qué proveedor de IA estás usando REALMENTE en esta ejecución?
+2. ¿Qué modelo exacto estás usando?
+3. ¿Cuál fue la ruta/fallback seleccionada?
+4. ¿Tu runtime está conectado y operativo ahora mismo?
+5. Da evidencia observable: provider, model, via/route y estado.
+
+No respondas con configuración teórica. Responde únicamente con el proveedor/modelo realmente usado en la ejecución actual.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📣 RESPUESTA DEL ORQUESTADOR — PENDIENTE
+
+**🕐 HORA COLOMBIA:** PENDIENTE
+
+> Responder aquí con provider/model/via/route/estado y evidencia real.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
