@@ -149,6 +149,39 @@ def main(agent_dir: str) -> int:
 
         runner.OAIModel = timed_model
     steps = list(chain["steps"])
+
+    # Optional immutable JSON inbox task. The scheduler/push trigger points to one
+    # repo-relative instruction file; chain.py turns it into a single ephemeral
+    # step without modifying the agent's persistent chain.yaml.
+    instruction_rel = os.getenv("RIU_INSTRUCTION_FILE", "").strip()
+    if instruction_rel:
+        instruction_path = (boot.REPO / instruction_rel).resolve()
+        repo_root = boot.REPO.resolve()
+        if repo_root not in instruction_path.parents:
+            raise SystemExit("RIU_INSTRUCTION_FILE fuera del repo")
+        payload = json.loads(instruction_path.read_text(encoding="utf-8"))
+        if payload.get("schema") != "yaiwes.instruction/v1":
+            raise SystemExit("instruction JSON inválido: schema")
+        if payload.get("target_agent") != aid:
+            raise SystemExit("instruction JSON target_agent no coincide con agente")
+        task_id = str(payload.get("task_id") or "").strip()
+        instruction = str(payload.get("instruction") or "").strip()
+        if not task_id or not instruction:
+            raise SystemExit("instruction JSON requiere task_id + instruction")
+        safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in task_id)[:96]
+        context_files = [str(x) for x in (payload.get("context_files") or [])]
+        director_file = Path(agent_dir) / "README-DIRECTOR.md"
+        step = {
+            "id": f"inbox_{safe_id}",
+            "context_file": context_files + ([str(director_file.relative_to(boot.REPO))] if director_file.exists() else []),
+            "task": instruction,
+            "checks": payload.get("checks") or [{"kind": "no_secrets"}],
+        }
+        if director_file.exists():
+            step["append_output_to"] = str(director_file.relative_to(boot.REPO))
+        steps = [step]
+        chain["input_block"] = json.dumps(payload, ensure_ascii=False, indent=2)
+
     only_step = os.getenv("RIU_ONLY_STEP")
     if only_step:
         steps = [s for s in steps if s.get("id") == only_step]
