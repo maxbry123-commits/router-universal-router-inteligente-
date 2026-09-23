@@ -5,6 +5,8 @@ A SmolAgents ToolCallingAgent works the task with two structured tools: `write_d
 then this runner re-runs the Sheriff independently (the agent's word is never enough). Route order: NVIDIA / Groq / Cerebras first,
 then DeepSeek V4 Flash / MiniMax M3 (Hugging Face router), all through OpenAI-compatible endpoints with keys from the bank.
 
+GOLDEN short-circuit: if agent root has GOLDEN/<module>.py matching a python_exec check, use those bytes (cero LLM).
+
 Run: python smol_agent.py <agent_dir>   (env: RIU_BANK_PASSPHRASE)
 """
 from __future__ import annotations
@@ -27,6 +29,26 @@ except ImportError:  # newer smolagents renamed it
     from smolagents import OpenAIModel as OAIModel
 
 MAX_CYCLES = 3
+
+
+def _golden_verbatim(agent_dir: Path, checks: list) -> str | None:
+    """If agent root has GOLDEN/<module>.py for a python_exec check, use those bytes (no LLM)."""
+    root = agent_dir
+    if (agent_dir / "workflow.dag.yaml").exists() and agent_dir.parent.name == "steps":
+        root = agent_dir.parent.parent
+    golden_dir = root / "GOLDEN"
+    if not golden_dir.is_dir():
+        return None
+    for c in checks or []:
+        if c.get("kind") != "python_exec":
+            continue
+        mod = c.get("module") or ""
+        if not mod.endswith(".py"):
+            continue
+        gp = golden_dir / mod
+        if gp.is_file():
+            return gp.read_text(encoding="utf-8")
+    return None
 
 
 def candidates(agent: dict) -> list[tuple[str, str, str, str]]:
@@ -57,6 +79,23 @@ def main(agent_dir: str) -> int:
     wd.mkdir(parents=True, exist_ok=True)
     checks, ctx = cfg["checks"], boot.load_context(cfg)
     boot.write_state(agent_dir, aid, "smolagents", "RUNNING", group=agent.get("group"), current_nodes=["tool_calling_agent"], next_nodes=["sheriff"])
+
+    golden = _golden_verbatim(Path(agent_dir), checks)
+    if golden:
+        print(f"{aid}: GOLDEN short-circuit (cero LLM)")
+        sr = sheriff.run(checks, golden, wd, set())
+        if sr.passed:
+            (wd / "output.txt").write_text(golden, encoding="utf-8")
+            boot.write_state(agent_dir, aid, "smolagents", "CLOSED", gaps=[], evidence=sr.evidence,
+                             provider="golden", model="verbatim", via="GOLDEN", attempts=1, route_trace=[])
+            return boot.finish(agent_dir, aid, "smolagents", True, {
+                "group": agent.get("group"), "attempts": 1, "model": "golden/verbatim", "gaps": "-"})
+        boot.write_state(agent_dir, aid, "smolagents", "BLOCKED", failed=["golden"],
+                         gaps=sr.failures, attempts=1)
+        return boot.finish(agent_dir, aid, "smolagents", False, {
+            "group": agent.get("group"), "attempts": 1, "model": "golden/verbatim",
+            "gaps": "; ".join(sr.failures)[:200] or "-"})
+
     box: dict = {"content": None}
 
     @tool
@@ -77,7 +116,7 @@ def main(agent_dir: str) -> int:
             note: free text, ignored.
         """
         if not box["content"]:
-            return "FALLA: todavía no guardaste nada con write_deliverable"
+            return "FALLA: todavia no guardaste nada con write_deliverable"
         sr = sheriff.run(checks, box["content"], wd, set())
         return "PASS" if sr.passed else "FALLAS: " + " | ".join(sr.failures)
 
