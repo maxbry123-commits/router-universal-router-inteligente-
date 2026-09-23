@@ -1,0 +1,27 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-14-orchestrator-msaf",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T08:34:51Z",
+ "group": "orchestrators",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 2,
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "7213201946e3e2659e7d2f10bf32d1f2f28f72c73741d89a607b367689057d40",
+   "chars": 7698
+  }
+ ],
+ "route_trace": []
+}

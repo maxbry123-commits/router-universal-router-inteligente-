@@ -1,0 +1,12 @@
+{
+  "schema": "yaiwes.receipt/v1",
+  "task_id": "director-close-audit-agent14-20260923-01",
+  "target_agent": "agent-14-orchestrator-msaf",
+  "status": "CLOSED",
+  "runner_rc": 0,
+  "processed_at_utc": "2026-09-23T08:34:51.092432+00:00",
+  "instruction_file": "router inteligente universal/agents-yaiwes/inbox/director-close-audit-agent14-20260923-01.json",
+  "output_file": "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/steps/inbox_director-close-audit-agent14-20260923-01/results/output.txt",
+  "state_file": "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/crazy_wall.state.json",
+  "note": ""
+}

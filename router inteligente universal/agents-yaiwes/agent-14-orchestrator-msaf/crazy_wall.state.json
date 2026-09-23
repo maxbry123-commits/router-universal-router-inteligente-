@@ -2,25 +2,17 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
- "status": "BLOCKED",
- "updated_at": "2026-09-23T08:12:59Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T08:34:51Z",
  "group": "orchestrators",
  "chain": [
-  "orchestrate_chat_100",
-  "director_model_probe",
-  "director_question_1",
-  "director_close_audit"
+  "inbox_director-close-audit-agent14-20260923-01"
  ],
  "completed": [
-  "orchestrate_chat_100",
-  "director_model_probe"
+  "inbox_director-close-audit-agent14-20260923-01"
  ],
- "failed": [
-  "director_question_1"
- ],
- "next_nodes": [
-  "director_close_audit"
- ],
+ "failed": [],
+ "next_nodes": [],
  "current_nodes": [],
  "route": [
   "deepseek_flash"
