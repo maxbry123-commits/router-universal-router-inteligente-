@@ -126,6 +126,48 @@ def run(checks: list[dict[str, Any]], output: str, workdir: Path, owners: set[st
                 fails.append("node no está disponible para validar JavaScript")
             except subprocess.TimeoutExpired:
                 fails.append("la validación de JavaScript superó el tiempo")
+        elif kind == "motor_exec":
+            motor = REPO / c["path"]
+            if not motor.is_file():
+                fails.append("motor canónico no existe: " + c["path"])
+                continue
+            env = dict(__import__("os").environ)
+            env.update({str(k): str(v) for k, v in (c.get("env") or {}).items()})
+            try:
+                p = subprocess.run(
+                    [sys.executable, str(motor)],
+                    cwd=REPO,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=int(c.get("timeout", 1800)),
+                )
+                lines = [ln.strip() for ln in (p.stdout or "").splitlines() if ln.strip()]
+                payload = None
+                for ln in reversed(lines):
+                    try:
+                        obj = json.loads(ln)
+                        if isinstance(obj, dict):
+                            payload = obj
+                            break
+                    except json.JSONDecodeError:
+                        pass
+                evidence.append({"kind": "motor_exec", "exit": p.returncode, "path": c["path"],
+                                 "verdict": payload.get("verdict") if payload else None})
+                if p.returncode != 0:
+                    tail = (p.stderr or p.stdout or "").strip().splitlines()
+                    fails.append("motor falló (exit=%d): %s" % (p.returncode, tail[-1][:180] if tail else ""))
+                elif not payload:
+                    fails.append("motor no devolvió JSON final")
+                else:
+                    for k, v in (c.get("expect") or {}).items():
+                        cur = payload
+                        for part in str(k).split("."):
+                            cur = cur.get(part) if isinstance(cur, dict) else None
+                        if cur != v:
+                            fails.append(f"motor JSON {k}={cur!r}, esperado {v!r}")
+            except subprocess.TimeoutExpired:
+                fails.append("motor superó el tiempo permitido")
         elif kind == "python_exec":
             code = extract_code(output)
             workdir.mkdir(parents=True, exist_ok=True)
