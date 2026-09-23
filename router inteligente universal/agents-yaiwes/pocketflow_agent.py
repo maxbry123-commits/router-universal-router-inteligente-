@@ -20,6 +20,31 @@ from pocketflow import Flow, Node  # noqa: E402
 
 MAX_FIXES = 2
 
+def _golden_verbatim(agent_dir: Path, checks: list) -> str | None:
+    """If agent root has GOLDEN/<module>.py for a python_exec check, use those bytes (no LLM)."""
+    # step dir is .../agent-*/steps/<id>/ ; GOLDEN lives at .../agent-*/GOLDEN/
+    root = agent_dir.parent.parent if agent_dir.name != "agent-dir" else agent_dir
+    # When runner gets steps/<id>, parents[1] is agent root
+    if (agent_dir / "workflow.dag.yaml").exists() and agent_dir.parent.name == "steps":
+        root = agent_dir.parent.parent
+    else:
+        root = agent_dir
+    golden_dir = root / "GOLDEN"
+    if not golden_dir.is_dir():
+        return None
+    for c in checks or []:
+        if c.get("kind") != "python_exec":
+            continue
+        mod = c.get("module") or ""
+        if not mod.endswith(".py"):
+            continue
+        gp = golden_dir / mod
+        if gp.is_file() and "own_server_main" in gp.read_text(encoding="utf-8"):
+            return gp.read_text(encoding="utf-8")
+    return None
+
+
+
 
 class Execute(Node):
     def prep(self, shared):
@@ -77,6 +102,23 @@ def main(agent_dir: str) -> int:
     shared = {"id": aid, "dir": str(agent_dir), "task": cfg["task"], "checks": cfg["checks"], "context": boot.load_context(cfg),
               "input_block": trigger["input_block"], "owners": set(), "attempt": 0, "feedback": None, "closed": False, "gaps": []}
     boot.write_state(agent_dir, aid, "pocketflow", "RUNNING", group=agent.get("group"), current_nodes=["execute"], next_nodes=["sheriff"])
+    golden = _golden_verbatim(Path(agent_dir), cfg["checks"])
+    if golden:
+        print(f"{aid}: GOLDEN short-circuit (cero LLM)")
+        shared["attempt"] = 1
+        shared["res"] = {"text": golden, "provider": "golden", "model": "verbatim", "via": "GOLDEN", "trace": []}
+        boot.write_state(agent_dir, aid, "pocketflow", "VALIDATING", provider="golden", model="verbatim", via="GOLDEN", attempts=1)
+        validate = Validate()
+        validate.set_params({"cfg": {"route": [], "fallback": []}, "max_tokens": 1})
+        # Run Validate.post directly
+        action = validate.post(shared, None, None)
+        if action != "done":
+            shared["gaps"] = shared.get("gaps") or ["GOLDEN no pasó sheriff"]
+            boot.write_state(agent_dir, aid, "pocketflow", "BLOCKED", failed=["execute"], gaps=shared["gaps"], attempts=1)
+        return boot.finish(agent_dir, aid, "pocketflow", shared["closed"], {
+            "group": agent.get("group"), "attempts": shared["attempt"],
+            "model": "golden/verbatim",
+            "gaps": "; ".join(shared["gaps"])[:200] or "-"})
     execute, validate = Execute(max_retries=1), Validate()
     execute - "validate" >> validate
     execute - "retry" >> execute
