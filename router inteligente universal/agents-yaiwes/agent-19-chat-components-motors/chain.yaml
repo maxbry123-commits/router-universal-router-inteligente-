@@ -2,8 +2,8 @@ schema: yaiwes.chain/v1
 input_block: |
   LEY PERMANENTE DEL DIRECTOR: NO crear componentes desde cero.
   Para el CHAT usar componentes OSS existentes: motores canónicos -> descargar -> extraer -> adaptar/cablear -> incorporar.
-  Prohibido GitHub Actions como mecanismo de descarga, git clone/curl/wget/pip/npm directo para adquirir el componente.
   Open WebUI es la base obligatoria del chat; la UI HTML propia no es solución final.
+  Este agente EJECUTA el motor real. Claude/orquestador solo audita y ordena.
 
 agent:
   id: agent-19-chat-components-motors
@@ -11,30 +11,39 @@ agent:
   group: chat
   route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
-  max_tokens: 2600
+  max_tokens: 800
 
 context:
   text: |
     Motor canónico inmutable:
     ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py
-    Cola:
-    ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/motor_2_queue_download_extract.py
-    Skill:
-    ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/➡️📂 skills descargar extraer zip copiar mover archivos readme.md
-    Fuente OSS obligatoria para UI chat: https://github.com/open-webui/open-webui (branch main).
-    Destino explícito autorizado: router inteligente universal/Componente open soure router inteligente universal/open-webui/
-    Motores INTOCABLES. PASS solo VERIFIED_CLOSED + read-back + hashes.
+    Fuente: https://github.com/open-webui/open-webui
+    Destino explícito:
+    router inteligente universal/Componente open soure router inteligente universal/open-webui/
+    PASS solo con ejecución real del motor + VERIFIED_CLOSED + publicación/read-back verificados.
+    Prohibido: downloader alternativo, git clone/curl/wget/pip/npm para adquirir Open WebUI.
 
 steps:
   - id: acquire_open_webui
     task: |
-      Ejecuta SOLO el motor canónico de descarga+extracción para adquirir open-webui/open-webui@main.
-      No escribas downloader alternativo. No uses git clone/curl/wget/pip/npm para adquisición.
-      Configura SOURCE_REPO=open-webui/open-webui, SOURCE_REF=main, SLUG=open-webui,
-      DEST_REPO=maxbry123-commits/router-universal-router-inteligente-, DEST_BRANCH=main,
-      DEST_ROOT="router inteligente universal/Componente open soure router inteligente universal", PUBLISH=1.
-      Devuelve únicamente el JSON final del motor. PASS solo si verdict=VERIFIED_CLOSED y publish.verdict=PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED.
+      Responde exactamente MOTOR_EXEC_REQUEST_OPEN_WEBUI.
+      El Sheriff ejecutará el motor canónico real con la configuración fijada por el Director.
+      No escribas código, no descargues por otro método y no declares PASS por texto.
     checks:
       - kind: contains
-        values: [VERIFIED_CLOSED, open-webui]
+        values: [MOTOR_EXEC_REQUEST_OPEN_WEBUI]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env:
+          SOURCE_REPO: "open-webui/open-webui"
+          SOURCE_REF: "main"
+          SLUG: "open-webui"
+          DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-"
+          DEST_BRANCH: "main"
+          DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal"
+          PUBLISH: "1"
+        expect:
+          verdict: "VERIFIED_CLOSED"
+          publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"
       - kind: no_secrets
