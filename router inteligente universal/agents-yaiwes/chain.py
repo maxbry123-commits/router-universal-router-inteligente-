@@ -171,6 +171,16 @@ def main(agent_dir: str) -> int:
         safe_id = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in task_id)[:96]
         context_files = [str(x) for x in (payload.get("context_files") or [])]
         director_file = Path(agent_dir) / "README-DIRECTOR.md"
+        if payload.get("allow_delegation"):
+            instruction += """
+
+DELEGACIÓN AUTORIZADA:
+Si necesitas activar agentes subordinados, al FINAL de tu respuesta añade EXACTAMENTE este bloque:
+<YAIWES_DELEGATIONS_JSON>
+{"delegations":[{"target_agent":"agent-...","instruction":"orden exacta"}]}
+</YAIWES_DELEGATIONS_JSON>
+Solo usa agentes de tu pool autorizado. Si no necesitas delegar, NO incluyas el bloque.
+"""
         step = {
             "id": f"inbox_{safe_id}",
             "context_file": context_files + ([str(director_file.relative_to(boot.REPO))] if director_file.exists() else []),
