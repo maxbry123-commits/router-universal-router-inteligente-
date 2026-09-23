@@ -1,0 +1,89 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-11-download-extraction
+  framework: smolagents
+  group: chat-components
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2200
+context:
+  text: 'Motores canónicos:
+
+    ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/
+
+
+    Flujo obligatorio:
+
+    COMPONENT_REQUEST
+
+    -> validar ORIGEN
+
+    -> validar DESTINO EXPLÍCITO
+
+    -> motor canónico
+
+    -> descargar
+
+    -> reconstruir/extractar
+
+    -> hash/read-back
+
+    -> VERIFIED_CLOSED
+
+    -> HANDOFF a Agent 14
+
+    -> agente consumidor continúa.
+
+
+    Si no existe COMPONENT_REQUEST válido:
+
+    BLOCKED = COMPONENT_REQUEST_REQUIRED.
+
+    Nunca inventes un componente ni un destino.
+
+    '
+  max_chars: 40000
+task: 'Lee la orden de Agent 14.
+
+  Si contiene un COMPONENT_REQUEST con ORIGEN + DESTINO explícitos:
+
+  usa SOLO los motores canónicos para adquirir/extractar y valida read-back/hash.
+
+  Si falta alguno de esos campos, responde BLOCKED con COMPONENT_REQUEST_REQUIRED.
+
+
+  Tu HANDOFF debe contener:
+
+  COMPONENTE
+
+  ORIGEN
+
+  DESTINO
+
+  MOTOR
+
+  HASH/READ-BACK
+
+  ESTADO
+
+  GAP
+
+  SIGUIENTE_CONSUMIDOR
+
+  '
+checks:
+- kind: contains
+  values:
+  - COMPONENTE
+  - ORIGEN
+  - DESTINO
+  - MOTOR
+  - ESTADO
+  - GAP
+- kind: no_secrets

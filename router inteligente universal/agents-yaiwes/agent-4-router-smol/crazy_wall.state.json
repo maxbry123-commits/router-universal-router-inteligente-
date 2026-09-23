@@ -3,17 +3,13 @@
  "agent": "agent-4-router-smol",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-23T05:37:03Z",
- "group": "hf-models",
+ "updated_at": "2026-09-23T06:03:47Z",
+ "group": "chat",
  "chain": [
-  "models_registry",
-  "job_spec",
-  "node_monitor"
+  "chat_frontend_support"
  ],
  "completed": [
-  "models_registry",
-  "job_spec",
-  "node_monitor"
+  "chat_frontend_support"
  ],
  "failed": [],
  "next_nodes": [],
@@ -21,5 +17,8 @@
  "gaps": [
   "CLOSED paper sin GET /health HTTP 200 live (regla Grok/Revisor). Reabierto.",
   "Referencia live agent-10: job 6ab3198e51992417dfcd4e26 https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health"
+ ],
+ "route": [
+  "deepseek_flash"
  ]
 }

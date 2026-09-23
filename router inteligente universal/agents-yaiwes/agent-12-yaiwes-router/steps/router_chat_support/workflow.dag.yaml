@@ -1,0 +1,71 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-12-yaiwes-router
+  framework: smolagents
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 3200
+context:
+  text: 'Reutilizar:
+
+    - integration/chat_mvp/
+
+    - integration/huggingface/
+
+    - /v1/models
+
+    - /v1/chat/completions
+
+    - selector/provider routing existente.
+
+    Agent 17 es owner principal del backend.
+
+    '
+  max_chars: 40000
+task: 'REUTILIZA/ADAPTA -> CABLEA -> PRUEBA.
+
+  Apoya a Agent 17 sin pisar archivos activos.
+
+
+  Objetivos:
+
+  - contrato OpenAI-compatible correcto;
+
+  - GET /v1/models;
+
+  - POST /v1/chat/completions;
+
+  - catálogo/selector coherente;
+
+  - modelo/proveedor seleccionado llega al Router;
+
+  - modo con agente/sin agente conserva routing;
+
+  - fallback solo cuando está autorizado;
+
+  - errores fail-closed;
+
+  - no secretos.
+
+
+  Entrega evidencia concreta y GAP/FIX.
+
+  '
+checks:
+- kind: contains
+  values:
+  - /v1/models
+  - /v1/chat/completions
+  - Router
+  - fallback
+  - PRUEBA
+  - GAP
+  - FIX
+- kind: no_secrets

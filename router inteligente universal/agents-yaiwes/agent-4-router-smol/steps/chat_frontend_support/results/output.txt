@@ -1,0 +1,39 @@
+# Agent-4 Router Smol – Apoyo funcional Chat YAIWES
+
+## Instrucciones de ejecución
+
+1. **No construir UI nueva.** Reutilizar Open WebUI existente.
+2. **No sustituir a Agent 16.** Solo apoyar en capacidades pendientes.
+3. **Archivos a tocar:** solo aquellos que Agent 16 no tenga como objetivo activo.
+4. **Flujo:** reutilizar/adaptar → cablear → probar.
+
+## Capacidades funcionales (checklist)
+
+| Capacidad | Estado | Archivo/componente reutilizado |
+|-----------|--------|-------------------------------|
+| Selector de modelos | Pendiente de verificar | Open WebUI built-in model selector |
+| Selector de agente | Pendiente de verificar | Router/Agent selector UI existente |
+| Modo con agente / sin agente | Pendiente de verificar | Toggle component existente |
+| documentos | Pendiente de verificar | File upload component existente |
+| Visibilidad de Router/Jobs | Pendiente de verificar | Router/Jobs visibility toggle |
+| Navegación funcional del chat | Pendiente de verificar | Chat navigation existente |
+| Prueba de interfaz integrada | Pendiente de verificar | Integration test suite |
+
+## Procedimiento
+
+1. Verificar que Agent 16 no tenga estos archivos como objetivo activo.
+2. Para cada capacidad pendiente:
+   - Reutilizar componente existente de Open WebUI o del código base.
+   - Cablear la funcionalidad mínima necesaria.
+   - Probar la integración.
+3. Documentar archivos tocados, pruebas realizadas, resultado, GAP si existe, y fix aplicado.
+
+## Handoff
+
+**ARCHIVOS TOCADOS:** (por determinar tras ejecución)
+**PRUEBAS:** (por determinar tras ejecución)
+**RESULTADO:** (por determinar tras ejecución)
+**GAP:** (por determinar tras ejecución)
+**FIX:** (por determinar tras ejecución)
+
+documentos: capacidad de subir y gestionar documentos/archivos en el chat

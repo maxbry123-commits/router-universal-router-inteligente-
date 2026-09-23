@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-12-yaiwes-router",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T06:04:16Z",
+ "group": "chat",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "4e9649f250c65ff1a8e5677b61b1acfeb3e47b747e74c70cdd976b66e8003ddf",
+   "chars": 2936
+  }
+ ],
+ "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+ "attempts": 1,
+ "route_trace": []
+}

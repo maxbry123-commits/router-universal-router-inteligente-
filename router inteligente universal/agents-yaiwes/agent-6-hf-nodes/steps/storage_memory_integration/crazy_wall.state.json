@@ -1,0 +1,34 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-6-hf-nodes",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-23T06:06:19Z",
+ "group": "chat-storage",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 3,
+ "gaps": [
+  "falta 'PostgreSQL'",
+  "falta 'Redis'",
+  "falta 'Graphiti'",
+  "falta 'FalkorDB'",
+  "falta 'AgentDB'",
+  "falta 'CHAT MEMORY'",
+  "falta 'PROJECT MEMORY'",
+  "falta 'GLOBAL MEMORY'",
+  "falta 'COMPONENT_REQUEST'",
+  "falta 'PERSISTENCIA'",
+  "falta 'FIX'"
+ ],
+ "failed": [
+  "execute"
+ ]
+}

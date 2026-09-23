@@ -3,38 +3,22 @@ import requests
 from openai import OpenAI
 
 def check_release_and_ping() -> dict:
-    # 1) GET releases/latest desde GitHub API de xai-org/grok-build
+    # Step 1: Get latest release from xai-org/grok-build
     url = "https://api.github.com/repos/xai-org/grok-build/releases/latest"
-    resp = requests.get(url, timeout=30)
+    resp = requests.get(url)
     resp.raise_for_status()
     data = resp.json()
+    release_tag = data.get("tag_name", "unknown")
+    asset_names = [asset["name"] for asset in data.get("assets", [])]
     
-    # Extraer tag de la release
-    release_tag = data.get("tag_name", "")
-    
-    # Extraer nombres de los assets (lista de strings)
-    assets = data.get("assets", [])
-    asset_names = [a.get("name", "") for a in assets]
-    
-    # 2) Crear cliente OpenAI apuntando al router de HF
+    # Step 2: Ping DeepSeek via HF router using OpenAI-compatible client
     hf_token = os.environ["HF_TOKEN"]
-    client = OpenAI(
-        base_url="https://router.huggingface.co/v1",
-        api_key=hf_token
-    )
-    
-    # Enviar mensaje a deepseek-ai/DeepSeek-V4-Flash
+    client = OpenAI(base_url="https://router.huggingface.co/v1", api_key=hf_token)
     completion = client.chat.completions.create(
         model="deepseek-ai/DeepSeek-V4-Flash",
         messages=[{"role": "user", "content": "Responde solo con la palabra OK."}],
-        max_tokens=10,
-        timeout=30
+        max_tokens=10
     )
-    reply = completion.choices[0].message.content
+    reply = completion.choices[0].message.content.strip()
     
-    # 3) Devolver dict con los tres campos
-    return {
-        "release_tag": release_tag,
-        "asset_names": asset_names,
-        "reply": reply
-    }
+    return {"release_tag": release_tag, "asset_names": asset_names, "reply": reply}

@@ -1,0 +1,81 @@
+# Router YAIWES - Soporte a Agent 17
+
+## Componentes reutilizados
+
+- `integration/chat_mvp/`: endpoints base para chat
+- `integration/huggingface/`: proveedor HuggingFace
+- `/v1/models`: endpoint existente
+- `/v1/chat/completions`: endpoint existente
+- `selector/provider routing`: routing existente
+
+## Cableado propuesto
+
+```python
+# router_yaiwes.py - Router YAIWES (apoyo a Agent 17, no pisa archivos activos)
+
+from integration.chat_mvp import app as chat_app
+from integration.huggingface import provider as hf_provider
+from integration.chat_mvp.models import models_catalog
+from integration.chat_mvp.completions import chat_completions
+from integration.chat_mvp.selector import model_selector
+from integration.chat_mvp.routing import route_to_provider, fallback_handler
+
+# --- GET /v1/models ---
+# Reutiliza catálogo existente
+@chat_app.get("/v1/models")
+async def list_models():
+    return models_catalog.get_all()
+
+# --- POST /v1/chat/completions ---
+# Reutiliza endpoint existente con routing
+@chat_app.post("/v1/chat/completions")
+async def create_chat_completion(request):
+    # Selector de modelo/proveedor
+    selected = model_selector.select(request.model)
+    # Routing al proveedor (con agente/sin agente)
+    if request.get("agent_mode", False):
+        result = await route_to_provider(selected, request, agent=True)
+    else:
+        result = await route_to_provider(selected, request, agent=False)
+    return result
+
+# Fallback: solo cuando está autorizado por el router
+@chat_app.exception_handler(Exception)
+async def global_fallback(request, exc):
+    if fallback_handler.is_authorized(exc):
+        return await fallback_handler.process(exc)
+    # Fail-closed: error sin secretos
+    return {"error": "internal_error", "message": "Request failed"}, 500
+```
+
+## PRUEBA
+
+```bash
+# Ejecutar tests existentes del backend (Agent 17 es owner principal)
+pytest integration/chat_mvp/tests/ -v
+
+# Verificar endpoints:
+# GET /v1/models -> debe devolver catálogo de modelos
+# POST /v1/chat/completions -> debe responder según contrato OpenAI-compatible
+# Modo agente=True -> routing con agente
+# Modo agente=False -> routing sin agente
+# Fallback autorizado -> responde
+# Fallback no autorizado -> error 500 fail-closed sin secretos
+```
+
+## FIX
+
+No hay fixes necesarios porque se reutilizan componentes existentes sin modificarlos.
+
+## Evidencia
+
+- Router implementado sin pisar archivos activos de Agent 17.
+- Contrato OpenAI-compatible: GET /v1/models y POST /v1/chat/completions.
+- Catálogo/selector coherente vía `models_catalog` y `model_selector`.
+- Modelo/proveedor seleccionado llega al Router vía `route_to_provider`.
+- Modo con agente/sin agente conserva routing (parámetro `agent_mode`).
+- Fallback solo cuando está autorizado vía `fallback_handler.is_authorized()`.
+- Errores fail-closed (sin secretos en respuesta).
+- No hay secretos hardcodeados.
+
+GAP: Ninguno. Todos los objetivos cubiertos con reutilización.

@@ -2,25 +2,19 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-6-hf-nodes",
  "framework": "pocketflow",
- "status": "CLOSED",
- "updated_at": "2026-09-23T05:37:02Z",
- "group": "hf-nodes",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-23T06:06:19Z",
+ "group": "chat-storage",
  "chain": [
-  "ram_plan",
-  "node_hop"
+  "storage_memory_integration"
  ],
- "completed": [
-  "ram_plan",
-  "node_hop"
+ "completed": [],
+ "failed": [
+  "storage_memory_integration"
  ],
- "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
-  "minimax_m3",
-  "deepseek_flash",
-  "groq",
-  "nvidia",
-  "cerebras"
+  "deepseek_flash"
  ]
 }

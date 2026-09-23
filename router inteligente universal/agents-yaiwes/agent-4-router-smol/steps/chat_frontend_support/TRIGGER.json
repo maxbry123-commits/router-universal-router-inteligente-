@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAT-100-AGENT4-SUPPORT", "input_block": "ORDEN DE AGENT 14 / DIRECTOR:\nEres apoyo funcional del frontend Chat YAIWES.\nNo sustituyes a Agent 16 y no creas otra UI.\nReutiliza Open WebUI y el código existente.\nNo GitHub Actions. No motores. No descargas.\n"}

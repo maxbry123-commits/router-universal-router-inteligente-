@@ -3,23 +3,18 @@
  "agent": "agent-11-download-extraction",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-23T05:37:04Z",
- "group": "downloads",
+ "updated_at": "2026-09-23T06:03:32Z",
+ "group": "chat-components",
  "chain": [
-  "jev_components_list",
-  "ms_agent_framework_donor"
+  "acquire_requested_component"
  ],
  "completed": [
-  "jev_components_list",
-  "ms_agent_framework_donor"
+  "acquire_requested_component"
  ],
  "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
-  "nvidia",
-  "groq",
-  "cerebras",
-  "minimax_m3"
+  "deepseek_flash"
  ]
 }

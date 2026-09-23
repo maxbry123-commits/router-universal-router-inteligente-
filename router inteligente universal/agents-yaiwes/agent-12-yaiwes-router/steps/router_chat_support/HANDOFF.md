@@ -1,10 +1,10 @@
-# HANDOFF — agent-17-chat-backend-32gb (pocketflow)
+# HANDOFF — agent-12-yaiwes-router (smolagents)
 
-Estado: **BLOCKED**
+Estado: **CLOSED**
 
 - group: chat
-- attempts: 3
+- attempts: 1
 - model: hf/deepseek-ai/DeepSeek-V4-Flash
-- gaps: falta 'PRUEBA'
+- gaps: -
 
 Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.
