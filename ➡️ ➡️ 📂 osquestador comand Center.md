@@ -800,3 +800,14 @@ TRIGGER/EJECUCIÓN:
 
 REGLA:
 `DIRECTOR → COMMAND CENTER → AGENTE → TRIGGER HF EXISTENTE → JOB 32GB → EJECUCIÓN → TEST → CRAZY WALL/HANDOFF → READ-BACK → COMMAND CENTER`
+
+
+## CORRECCIÓN DE ESTADO CHAT — 2026-09-22
+
+- Run histórico 35813782989 terminó `completed/success`, pero ya NO es mecanismo autorizado y NO se usará de nuevo.
+- Agent 16 aparece `CLOSED` en Crazy Wall, PERO su `output.txt` declara `GAP: OPENWEBUI_COMPONENT_MISSING` y afirma falsamente que faltan archivos/componentes que sí existen. Por tanto:
+  `AGENT_16_GLOBAL_VERDICT = INVALID_CLOSED / REQUIRES_REAL_READBACK`.
+- Agent 17: `BLOCKED`.
+- Agent 18: `BLOCKED`.
+- Agent 19: `BLOCKED` por `DESTINATION_EXISTS`; O1 queda resuelto únicamente por el manifest real de Open WebUI ya descargado/verificado, no por su cierre de agente.
+- Ningún cierre global de CHAT puede usar el éxito del workflow como evidencia funcional.
