@@ -1,7 +1,8 @@
 schema: yaiwes.chain/v1
 input_block: |
-  PRIORIDAD CHAT. Publicar el chat YAIWES en Hugging Face Static Space gratis, con OAuth real y smoke live.
-  Claude/orquestador NO ejecuta: este agente ejecuta. FAIL_CLOSED. No marcar CLOSED sin URL pública comprobada.
+  LEY PERMANENTE: NO construir el chat desde cero. Base obligatoria = Open WebUI descargado por el motor canónico.
+  Conservar todo el código adicional ya creado para el Chat MVP y reutilizarlo como extensiones/adaptaciones.
+  Este agente EJECUTA adaptación/cableado; Claude audita.
 
 agent:
   id: agent-16-chat-space-oauth
@@ -9,39 +10,33 @@ agent:
   group: chat
   route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
-  max_tokens: 2600
+  max_tokens: 3200
 
 context:
   text: |
-    Evidencia oficial HF vigente: Static Spaces son gratis. OAuth de Spaces se activa con hf_oauth: true.
-    Para Static Space, usar el flujo cliente soportado por @huggingface/hub: oauthLoginUrl + oauthHandleRedirectIfPresent.
-    Scopes necesarios para este chat: inference-api, read-repos, write-repos, jobs; openid/profile vienen por defecto.
-    El script viejo de agent-3 no es evidencia de cierre. Debes usar whoami(HF_TOKEN) para el owner real y crear el Space PUBLICO.
-    Nombre objetivo: riu-chat-yaiwes. Nunca incrustar API keys en HTML/JS.
+    Open WebUI debe existir previamente en:
+    router inteligente universal/Componente open soure router inteligente universal/open-webui/
+    y solo puede llegar allí por agent-19 usando los motores canónicos.
+    Código adicional A CONSERVAR y reutilizar:
+    - router inteligente universal/integration/chat_mvp/chat_ui.html
+    - agent-1-chat-hf/steps/vault_panel/results/vault_panel.js
+    - agent-1-chat-hf/steps/router_panel/results/router_panel.js
+    - agent-1-chat-hf/steps/wire_panels/results/wire_panels.js
+    - agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js
+    - agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py
+    - agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py
+    PROHIBIDO sustituir Open WebUI por HTML/JS inventado.
 
 steps:
-  - id: publish_static_live
+  - id: adapt_openwebui
     task: |
-      Escribe SOLO Python en un archivo publish_static_live.py.
-      Debe: leer HF_TOKEN; obtener owner con whoami(token); crear o actualizar owner/riu-chat-yaiwes como Static Space PUBLICO
-      (private=False); subir README.md e index.html; README debe tener sdk: static, hf_oauth: true y scopes inference-api,
-      read-repos, write-repos y jobs. index.html debe implementar Sign in with HF usando el flujo cliente oficial de
-      @huggingface/hub (oauthLoginUrl y oauthHandleRedirectIfPresent), selector de modelo y envío a
-      https://router.huggingface.co/v1/chat/completions usando SOLO el accessToken OAuth del usuario.
-      Verifica con space_info y GET público que el Space existe y no devuelve 404. Espera propagación con reintentos acotados.
-      Devuelve dict con owner, space_id, space_url, http_code, oauth=true y status=LIVE.
-      No uses /auth/oauth-info inventado. No escribas ni imprimas tokens.
+      Genera y EJECUTA un adaptador de integración que MODIFIQUE la copia descargada de Open WebUI, no una UI nueva.
+      Debe conservar el código adicional existente y cablear sus capacidades (selector Router/modelos, con/sin agente,
+      documentos, GitHub, jobs, Secret Bank y Crazy Wall) dentro de Open WebUI mediante extensiones/configuración/adaptación.
+      No borres chat_ui.html ni los resultados de agentes 1/2: quedan como fuentes/adaptadores reutilizados.
+      Si la carpeta open-webui no existe, falla con OPENWEBUI_COMPONENT_MISSING y no inventes sustituto.
+      No descargues nada aquí.
     checks:
-      - kind: python_ast
       - kind: contains
-        values: [whoami, private=False, hf_oauth, inference-api, oauthLoginUrl, oauthHandleRedirectIfPresent, space_url]
-      - kind: python_exec
-        module: publish_static_live.py
-        test: |
-          from publish_static_live import run
-          r = run()
-          assert r["status"] == "LIVE"
-          assert r["oauth"] is True
-          assert r["http_code"] != 404 and r["http_code"] < 500
-          assert "/spaces/" in r["space_url"]
+        values: [open-webui, chat_ui.html, vault_panel, router_panel, jobs_panel, crazy_wall_chain]
       - kind: no_secrets
