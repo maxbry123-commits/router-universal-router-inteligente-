@@ -5276,3 +5276,239 @@ V2. No hacer nada más ni decir nada más que esto.
 V3. Reproche: Claude alucinó y no hizo lo pedido.
 
 ```
+
+
+<!-- INPUT_BATCH_05 -->
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-21-w-jev-router-auditoria-estado.md
+BLOB_SHA: 460b4fccb8408fd6f1511f907f346fd7d0321b7a
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-21 (w) — añadir Jev al Router, auditar qué falta, estado de agentes y claves
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Ok anota idiota esto 1 a 1 imput block verbartin prioridad 
+
+Ahora vas a añadir lo de jev a el router y ahora audita  que le falta al router para que funcione de mis instrucciones 
+
+Ya tu descargaste los agente que yo te dije ? Que están haciendo? Funciona las api key de Nvidia groq y cerebras prueba ?
+
+---
+
+## Cola 1 a 1 (sin reordenar ni añadir)
+W1. PRIORIDAD: añadir Jev al Router (ya autorizado; antes estaba en espera de OK).
+W2. Auditar qué le falta al Router para que funcione según todas las instrucciones del Director.
+W3. Pregunta: ¿ya se descargaron los agentes que el Director pidió? ¿Qué están haciendo?
+W4. Pregunta: ¿funcionan las claves de NVIDIA, Groq y Cerebras? Probarlas.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-22-bb-contrato-xray-v2-watchdog-gpt.md
+BLOB_SHA: 4a5f31a3367f4837872372b8b42188e6b4de99da
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-22 (bb) — contrato DSL DAG Sheriff formal, watchdog cada 30-60 min, GPT como supervisor adicional
+
+Registrado ANTES de ejecutar. El Director adjuntó el documento `yaiwes.node-executor/xray-v2` (contrato formal RESEARCH→EXECUTE→VALIDATE, FAIL_CLOSED, JSON obligatorio, máx. 2 reintentos, anti-loop, captura verbatim del input) — texto completo ya visible en el chat de esta fecha; se archiva como referencia en vez de duplicar sus ~260 líneas aquí. Es una versión más detallada del mismo método ya usado como base del Sheriff (`agent-microkernel/kernel/sheriff.py`) y de `chain.yaml`.
+
+---
+
+Exacto así es ahora coloca un wachdog activo para que te actives cada 30 minutos o cada 1 hora para estar pendiente mientras el sentinela supervisor detecta y revisa por ti 
+
+La única manes de no fallar es que trabajes deteminetista con los agentes si tus promt son ambiguos no funcionan 
+
+Así que cuidas esos todo debe ser un shema contrato DSL Dag shema sheriff 
+Como son agente puedes bloquear ciertas salidas para que no la caguén la clave está en ese sentido te di uno de ejemplo lo mejoras 100 veces 
+
+Tengo dentro a gpt sol si lo necesitas lo activo adicional con un wachdog con tu instruccion sirve solo como supervisor porque alucina 
+
+Analiza todo y planifica cada tarea antes de ejecutar anota todos 1 a 1 imput block verbartin 
+
+Incia te dejo todo en tus manos 
+
+Alguna pregunta?
+
+---
+
+## Cola 1 a 1
+BB1. Adoptar el contrato `yaiwes.node-executor/xray-v2` (RESEARCH→EXECUTE→VALIDATE, JSON obligatorio, FAIL_CLOSED) como la forma exigida de cada tarea de agente.
+BB2. Watchdog: Claude se activa cada 30-60 minutos, mientras el centinela (sheriff) supervisa y revisa por Claude en el medio.
+BB3. Regla de oro: trabajar determinista con los agentes; prompts ambiguos no funcionan.
+BB4. Todo debe ser esquema/contrato DSL DAG con Sheriff; como son agentes, se pueden bloquear ciertas salidas para que no se equivoquen — el documento adjunto es el ejemplo a mejorar "100 veces".
+BB5. El Director tiene un GPT disponible ("GPT Sol", nombre cortado); si Claude lo necesita, el Director lo activa como supervisor adicional, bajo instrucción de Claude — solo como supervisor, porque alucina (no como ejecutor).
+BB6. Analizar todo y planificar cada tarea antes de ejecutar; anotar todo 1 a 1 input block verbatim.
+BB7. "Inicia, te dejo todo en tus manos." Pregunta: ¿alguna duda?
+
+## Respuesta de Claude a BB7
+- Ya se sigue el mismo patrón (research→execute→validate con Sheriff determinista en `chain.yaml`); se va a endurecer contra este contrato formal (JSON obligatorio, máx. 2 reintentos, anti-loop) en la próxima ronda.
+- Watchdog: hoy corre cada hora (`riu-watchdog.yml`); se puede bajar a 30 min si se prefiere más reacción — Claude decide 1 hora por defecto salvo que el Director diga lo contrario.
+- GPT como supervisor adicional: para conectarlo de verdad, Claude necesitaría una clave de API de OpenAI (o el conector correspondiente) — sin eso no se puede invocar. Queda pendiente hasta que el Director la dé.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-22-cc-jev-ponytail-5-pasos.md
+BLOB_SHA: 549bdd94b85466e730967cfd22de9feb611d55da
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-22 (cc) — capa de presupuesto tipo Ponytail, sistema Jev completo, orden de 5 pasos
+
+Registrado ANTES de ejecutar. El Director pegó 4 documentos de investigación externa (no verificados por Claude hasta probarlos): (1) Ponytail+LiteLLM+context-compress+ContextCore+ContextBudget como capas de control de gasto; (2) arquitectura DSL/DAG con "plano de control" determinista y "plano de inteligencia" probabilístico, memoización por hash, presupuesto propagado por nodo; (3) Jev/Decider como capa externa de decisión ENCIMA del DSL/DAG, solo para ambigüedad real, con umbral de confianza; (4) plan de prueba: comparar Laya Multilingual (322M), Decider-0.8B y Decider-2B con 8 casos reales (dejar NanoJev y Qwen3-0.6B-RLCD para después); (5) lista de 15 componentes de software de Jev en GitHub (SDKs oficiales de TypeSafe, jev-router, jev-mcp, jev-agent-skill-router, etc.). Texto completo visible en el chat de esta fecha.
+
+---
+
+Ok no tengo a sol solo en chat si y conectado a Github si te sirve de algo me avisas 
+
+Pero creo que al usar la api de deepsek v4 flash usa sola eso vamos a tener buen resultado igual puede calcular un promedio un límite de token según el trabajo o usa algo parecido a Ponytail para controlar el flujo de trabajo. Usa eso añádelo como capa de todos los router 
+Descarga el sistema jev. Así vemos de una vez como funciona como capa externa. Coloca a el método jev/decidir y vemos cómo funciona 
+
+Usa los motores y descarga lo que necesitas. Instalamos todos esos de una vez y hc.
+
+Prepara el sistema jev y la capa jev que te di la información buscar + el router primero antes de mandar a los agentes anota todo esto 1 a 1 imput block verbartin 
+
+Trabaja así 
+0. Anota todo esto imput block verbartin 
+1. Instalas los modelos jev/modo
+2. Pruebas los modelos los dejas instalado y usas el que te dio mejor resultados de pruebas 
+3. Descarga los componentes que necesitas para trabajar mientas se descargas vas haciendo el router y el DSL Dag shema sheriff de los agentes 
+4. Incorporas los componentes al router y creas la capa externa del router 
+5. Envías los agentes a trabajar con sus asignaciones 
+
+Inicia ya tienes todo
+
+---
+
+## Cola 1 a 1
+CC1. Sol/GPT no tiene API; solo existe como chat conectado a GitHub. Queda anotado por si sirve más adelante; hoy no se puede invocar por API.
+CC2. Añadir una capa de presupuesto tipo Ponytail (promedio/límite de tokens según el trabajo) a TODOS los routers.
+CC3. Descargar el sistema Jev y probarlo como capa externa; poner el método Jev/Decider en marcha y ver cómo funciona.
+CC4. Orden de trabajo (0 a 5): 0 anotar; 1 instalar los modelos jev/modo; 2 probarlos y quedarse con el de mejor resultado; 3 descargar los componentes de software de Jev EN PARALELO mientras se avanza en el Router y en el esquema DSL DAG Sheriff de los agentes; 4 incorporar los componentes al Router y crear su capa externa; 5 mandar a los agentes a trabajar con sus asignaciones.
+CC5. "Inicia, ya tienes todo."
+
+## Nota de Claude
+El benchmark real (paso 1-2) se hace SOLO con procesador normal (sin GPU, sin HF Jobs de pago): son modelos de 322M a 2B parámetros, instalables por pip, corren bien en el runner gratuito de GitHub Actions. Si algún paquete (`pip install laya`, `pip install git+.../decider`) no existe o falla, se reporta el fallo real, no se inventa un resultado.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-22-dd-router-yaiwes-timesfm-hrm-busqueda.md
+BLOB_SHA: 4ef15e79a775e650e02c858aa28cdda04a741d9a
+
+```text
+INPUT VERBATIM DEL DIRECTOR — 2026-09-22 (dd). Texto completo en el chat de esa fecha (incluye 2 documentos de investigación externa sobre
+TimesFM —19 componentes oficiales de Google: repo, SDK Python, SKILL.md, AGENTS.md, check_system.py, forecast_csv.py, LoRA, colección de HF,
+BigQuery AI.FORECAST, Vertex Model Garden— y sobre un agente de búsqueda Qwen3-0.6B + Search-R1 + SearXNG + Crawl4AI + reranker).
+
+Resumen de instrucciones nuevas:
+1. TimesFM es para el "agente Yaiwes", parte del proyecto: instalar y dejar nota pendiente de un ROUTER ESPECIAL llamado "Yaiwes", independiente,
+   con su propio README de arquitectura.
+2. Poner un agente a descargar las piezas; Claude las une después. Es parte del "input shark" del agente del proyecto.
+3. Usa varios modelos de pronóstico: TimesFM + HRM + Qwen3-0.6B Search Agent.
+4. Anotar 1 a 1 en un README separado, y crear una raíz solo para ese router: "➡️📂 router inteligente para agente Yaiwes/".
+5. Pregunta: ¿ya empezaron a trabajar los agentes? ¿Cómo van?
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-22-ee-deepseek-chat-ficha-aplazada.md
+BLOB_SHA: 0f05c616a24b8d3c26161e274866e83086fef083
+
+```text
+INPUT VERBATIM DEL DIRECTOR — 2026-09-22 (ee). Texto completo en el chat de esa fecha. Resumen: DeepSeek V4 Flash SOLO para los agentes
+del chat; NVIDIA para los demás, registrando siempre qué modelo respondió (para poder medir resultados); confirma que hay HTML+resumen+código
+de Fables en el repo, describe la arquitectura de "fichas" (cada ficha es un router con capas adaptativas, es intermediaria de todo lo que pasa
+por el Router, agrupa y especializa, usa varios LLM según necesidad) — EXPLÍCITAMENTE aplazada ("eso lo terminamos apenas [terminemos] estas
+otras prioridades"); pide confirmación cuando todos los LLM locales estén listos en HF; anuncia que los agentes de Meta y Glimmer harán la UI del
+Router después; pide revisar que todos los aceleradores estén listos y funcionando; pide revisar si hace falta el harness de DeepSeek y
+descargarlo.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-22-ff-24-casos-hrm-lfm-groq-inventario.md
+BLOB_SHA: 29acf0f147f387c4c5881bbdbdc2b15438a07c65
+
+```text
+INPUT VERBATIM DEL DIRECTOR — 2026-09-22 (ff). Texto completo en el chat de esa fecha (incluye el paquete de 24 pruebas del Director/su
+investigación: Routing básico R01-R04, ¿Buscar en web? W01-W04, Caché C01-C04, Retries/loops L01-L04, Presupuesto B01-B04, Siguiente nodo del
+DAG D01-D04; y su ponderación: accuracy 35%, falsa escalada 20%, falsa ruta barata 20%, calibración 15%, latencia 5%, RAM 5%; y la confirmación
+de que `system-one-adapter-python` de TypeSafe es MIT y acepta endpoints compatibles con OpenAI).
+
+Resumen de instrucciones nuevas:
+1. No solo revisar qué modelo llaman con NVIDIA — revisar con todos los proveedores.
+2. Repetir la prueba de los modelos tipo Jev con el paquete de 24 casos (no 8), y añadir una comparación con HRM, Liquid (LFM) y Qwen 0.6B
+   como modelos generativos normales, sobre la misma prueba.
+3. Anotar y mandar a un equipo a descargar (el system-one-adapter-python, ya en la lista del agente 11).
+4. Revisar si la API de Groq está funcionando de verdad y activarla.
+5. Seguir delegando a los agentes.
+6. Delegar a un agente el INVENTARIO de los componentes: el código, todos los archivos del repo.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-22-gg-orquestadores-ms-agent-framework-grok.md
+BLOB_SHA: 709f7562f533d46ce971541abf6dbb55edcd8f60
+
+```text
+INPUT VERBATIM DEL DIRECTOR — 2026-09-22 (gg). Texto completo en el chat de esa fecha; incluye la plantilla NCT/APEX pegada por el
+Director (Bloques 1-8: P1 21 ítems, P2 19 ítems, P3 20 ítems, mapa mental de 10 vistas, lista de validación, 2 modos /arquitecto y
+/ejecutor, State JSON de recuperación, dashboard) — se usa como plantilla de los dos orquestadores, sin reducir nada (ver
+`agents-yaiwes/➡️📂 readme osquestador router inteligente.md`).
+
+Resumen de instrucciones nuevas:
+1. Agente adicional para "mirror" del chat: ventana selector donde Max marca uno o varios agentes (1 a 22+), les da un system prompt, y
+   los ejecuta.
+2. Un orquestador (el centinela ya pedido) que controle el trabajo de todos los agentes, use el sistema de memoria para controlar tareas e
+   información, y el almacenamiento vinculado a lo ya aprobado sobre la memoria del chat.
+3. Microsoft Agent Framework como ORQUESTADOR CENTRAL del Router Inteligente Universal: mandarlo a descargar con los motores; que
+   aprenda cómo funciona TODO el Router; auditar y crear un mapa mental completo; su ayudante es el centinela (sheriff/guardián/juez);
+   escribir/editar `➡️📂 readme osquestador router inteligente.md`.
+4. Grok como orquestador de los agentes DEL CHAT, mandado a descargar con un agente, con los motores.
+5. Aplicar la plantilla NCT/APEX (Bloques 1-8) a ambos orquestadores: 1 a 1, input block verbatim, se puede mejorar/editar, no reducir nada.
+6. Un agente hace el trabajo; Claude solo da instrucciones e información.
+7. PASO 1: actualización completa del contexto en Claude notas (Crazy Wall, bitácora, State JSON, handoff, arquitectura) de todo lo que
+   está en curso, cada agente, cada tarea pendiente, 1 a 1 input block verbatim, detallado.
+8. Limpieza de la memoria y del chat; autorización para borrar, para que no se sature.
+
+```
+
+### SOURCE: Claude notas/INPUT-VERBATIM-2026-09-22-y-3-roles-delegar-watchdog-jev.md
+BLOB_SHA: d77775428764a94b80b673e2e7264221cfaa028d
+
+```text
+# INPUT VERBATIM DEL DIRECTOR — 2026-09-22 (y) — API para equipo de 3 roles, delegar pendientes, activar modelos en el Router, watchdog con límites, pruebas Jev
+
+Registrado ANTES de ejecutar. Texto literal del Director, con sus errores de dictado.
+
+---
+
+Ok lo cambio a lo que terminemos con huggueface 
+
+Necesito que hagas  varias  cosas 
+1.📌. Necesito token Api para un equipo que está corriendo con 3 modelo pero que tengan en el router 1 para pensar y 1 para arquitectura y reparación de code y 1 para code 
+
+2📌. Necesito que la lista de pendientes se la des a los agente que tienes instalados en tu repo para que terminen lo que falta en huggueface de almacenamiento y de el chat
+Que usen deepsek v4 flash para terminar más rápido al teminar el chat lo cambias a mis modelos locales 
+
+
+3 📌 Tu solo Claude  Necesito que hagas los modelo todos activos en huggueface en el router y que el router ya los tenga activos debe tener la posiblidad de mirror de duplicarse o crear ciantas  api necesiten los agentes porque es un ejembre 
+
+4 📌 necesito que supervises los agantes le pones límites de procesamiento y de token o de tiempo para ejecutar o busques la manera de controlar el trabajo y que tú pongas un wachdog cada 30 minutos o 1 hora revisas y controlas como van pero necesito que delegues todo el trabajo 
+
+5.📌 Necesito que hagas las pruebas con las 2 modelos que te di que funciona como el sistema jev para probarlo con y sin toda la capa externa de jev que te di 
+
+
+Sabes hacerlo puedes delegar todo el trabajo pendiente menos lo de los modelo y lo De el router ?
+
+---
+
+## Cola 1 a 1
+Y1. API para un equipo que corre con 3 modelos en el Router, con roles: 1 "pensar" (razonamiento), 1 "arquitectura y reparación de código", 1 "código" (generación).
+Y2. Dar la lista de pendientes a los agentes del repo para que terminen almacenamiento y chat en HF; usar DeepSeek V4 Flash para ir más rápido; al terminar el chat, cambiar a los modelos locales del Director.
+Y3. SOLO Claude (no delegar): activar todos los modelos en HF dentro del Router, con capacidad de espejo/duplicarse o crear las APIs que los agentes necesiten (es un enjambre).
+Y4. Claude supervisa a los agentes: límites de procesamiento, de tokens y de tiempo de ejecución; watchdog cada 30-60 min; delegar todo el trabajo.
+Y5. Probar los 2 modelos "estilo Jev" (Decider/NanoJev) con y sin toda la capa externa de Jev.
+Y6. Pregunta directa: ¿sabe hacerlo, puede delegar todo lo pendiente menos modelos y Router?
+
+## Nota de Claude sobre Y1 (ambigüedad)
+"Un equipo que está corriendo con 3 modelos" no especifica destinatario ni si es NVIDIA/Groq/Cerebras o el banco. Se interpreta como: 3 roles dentro del Router propio (route_think, route_architecture, route_code), no un banco nuevo para otro equipo externo (no se mencionó "Opus/GPT/Fables" esta vez). Se avisa esta interpretación en la respuesta.
+
+```
