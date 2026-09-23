@@ -1,8 +1,8 @@
-# README DIRECTOR — CANAL OFICIAL CON AGENT 15 / GROK BUILD
+# 🤖 AGENTE ORQUESTADOR GROK BUILD — README DIRECTOR
 
 # 🟦 AUTORIDAD
 Este archivo es el canal único de comunicación:
-`DIRECTOR ↔ Agent 15 Grok Build`.
+`DIRECTOR ↔ AGENTE ORQUESTADOR GROK BUILD` (`agent-15-orchestrator-grok`).
 
 Si el Director escribe aquí directamente, o Sol/ChatGPT escribe exactamente en su nombre, Agent 15 responde SIEMPRE aquí y añade la respuesta sin borrar historial.
 
@@ -114,3 +114,21 @@ Después de cada respuesta humana, añadir un bloque JSON separado:
   "next_actions": []
 }
 ```
+
+
+---
+
+## 🔌 CANAL EJECUTABLE DEL DIRECTOR
+
+- **Nombre operativo:** AGENTE ORQUESTADOR GROK BUILD
+- **Canal de entrada:** este mismo `README-DIRECTOR.md`.
+- **Canal de respuesta:** este mismo `README-DIRECTOR.md`.
+- **Polling interno:** cada **300 segundos / 5 minutos** mientras su runtime esté levantado.
+- **Nueva orden detectada:** leer VERBATIM → ownership → ejecutar/delegar → probar → read-back → responder aquí.
+- **Pool autorizado:** Agents 4, 8, 11, 12, 16, 17, 18, 19.
+- **No autorizado:** cualquier otro Agent ID.
+- **Sin GitHub Actions.**
+- **Sin watchdog de ChatGPT.**
+
+### ESTADO DE ACTIVACIÓN
+`WATCHDOG-5MIN.json` queda **ARMED=true / interval=300s**. Solo se considera **RUNNING** cuando el runtime de Grok Build publique heartbeat/read-back real en este archivo.
