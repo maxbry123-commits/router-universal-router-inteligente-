@@ -3,7 +3,7 @@
  "agent": "agent-10-model-install",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-23T00:10:47Z",
+ "updated_at": "2026-09-23T00:13:42Z",
  "group": "hf-install",
  "current_nodes": [
   "execute"
@@ -11,13 +11,12 @@
  "next_nodes": [
   "sheriff"
  ],
- "provider": "nvidia",
- "model": "nvidia/nemotron-3-super-120b-a12b",
- "via": "route",
- "attempts": 3,
+ "provider": "golden",
+ "model": "verbatim",
+ "via": "GOLDEN",
+ "attempts": 1,
  "gaps": [
-  "Python inválido: unterminated string literal (detected at line 3) (línea 3)",
-  "la prueba falló (exit=1): SyntaxError: unterminated string literal (detected at line 3)"
+  "la prueba superó el tiempo"
  ],
  "failed": [
   "execute"
