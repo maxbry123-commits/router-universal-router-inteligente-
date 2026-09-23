@@ -1,0 +1,11 @@
+{
+  "schema": "yaiwes.crazy-wall/v1",
+  "agent": "agent-7-llama-hf",
+  "framework": "smolagents",
+  "status": "PENDING",
+  "updated_at": "2026-09-23T00:22:00Z",
+  "group": "hf-llama",
+  "current_nodes": [],
+  "next_nodes": ["serve_health"],
+  "gaps": ["GOLDEN serve_health listo; falta Agents Run con /health 200"]
+}

@@ -3,15 +3,16 @@
   "agent": "agent-7-llama-hf",
   "framework": "smolagents",
   "status": "BLOCKED",
-  "updated_at": "2026-09-23T00:16:00Z",
+  "updated_at": "2026-09-23T00:22:00Z",
   "group": "hf-llama",
-  "chain": ["llama_cmd", "hf_job", "bench_report"],
+  "chain": ["llama_cmd", "hf_job", "bench_report", "serve_health"],
   "completed": [],
-  "failed": ["paper_closed_sin_health_live"],
-  "next_nodes": ["llama_cmd", "hf_job", "bench_report"],
+  "failed": ["pending_serve_health_live"],
+  "next_nodes": ["serve_health"],
   "current_nodes": [],
   "gaps": [
-    "CLOSED paper sin GET /health HTTP 200 live. Reabierto.",
-    "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26"
+    "GOLDEN listo: llama_cmd/hf_job/bench_report/serve_health. Falta Agents Run only=agent-7-llama-hf con GET /health 200.",
+    "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26",
+    "serve_health: probe live o lanza LFM2.5 en cpu-upgrade (32 GB). Cero LLM regen."
   ]
 }

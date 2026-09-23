@@ -1,0 +1,5 @@
+{
+  "schema": "yaiwes.trigger/v1",
+  "run_id": "GOLDEN-A7-SERVE-HEALTH",
+  "input_block": "NO regeneres. Copia GOLDEN/serve_health.py. Meta RUNNING_HEALTHY GET /health 200 en 32GB cpu-upgrade."
+}
