@@ -21,21 +21,15 @@ context:
     \ Inference Providers.\nJob 32GB queda aplazado (opción 2 reintentará cuando el\
     \ runner no reescriba .py).\nPASS: space_url + smoke chat 200.\n\n\n=== ARCHIVO\
     \ router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md\
-    \ ===\n# ORDEN ORCH-CHAT → agent-3 (P1) — FALLBACK OPCIÓN 3 (post #36)\n\n**META:**\
-    \ space_url público YA · deadline ~19:22 COT\n\n## Decisión\nOpción 2 (Static+Job\
-    \ 32GB) falló #33/#36: LLM corrompe publish_live.py antes de python_exec.\n**Carril\
-    \ YA = INPUT-l opción 3:** Static Space + OAuth HF + Inference Providers (sin\
-    \ Job permanente).\n\n## Hecho\nspace_readme · space_index · deploy_script (Static)\n\
-    \n## Orden P1 opción 3\n1. Restaura/asegura Static Space `riu-chat-yaiwes` (sdk\
-    \ static + hf_oauth scopes: inference-api; jobs opcional).\n2. index.html: chat\
-    \ usa token OAuth del usuario; llama Inference Providers (DeepSeek/MiniMax/Kimi/NVIDIA\
-    \ según disponible). NUNCA keys en secrets del Space.\n3. API_BASE = endpoint\
-    \ Inference Providers (no placeholder). Smoke: enviar mensaje = 200.\n4. Anota\
-    \ space_url + evidencia OAuth en crazy_wall CLOSED.\n5. PROHIBIDO: regenerar publish_live\
-    \ con prosa; lanzar Job ≠32GB; P2.\n6. publish_live.py: si lo tocas, SOLO bytes\
-    \ del TEMPLATE limpio (primera línea `\"\"\"`, CERO fences). Preferible NO tocarlo\
-    \ en esta ronda — cierra Space+OAuth+Providers primero.\n\n## PASS\nspace_url\
-    \ usable + GET health o smoke chat 200 + fail-closed sin OAuth.\n\n\nSALIDA VERIFICADA\
+    \ ===\n# ORDEN ORCH-CHAT → agent-3 (P1) — post #41 FALSE CLOSED\n\n**META:** space_url\
+    \ REAL y alcanzable · opción 3 Static+OAuth+Inference · Job 32GB APLAZADO\n\n\
+    ## Gap #41\noutput.txt inventó `https://huggingface.co/spaces/riu-chat-yaiwes`\
+    \ → HTTP 404 (falta owner). CLOSED inválido.\n\n## Orden\n1. Despliega Static\
+    \ Space real: `{HF_USER}/riu-chat-yaiwes` (sdk static + hf_oauth inference-api).\n\
+    2. Smoke: URL responde ≠404; OAuth o inference smoke.\n3. Escribe space_url completo\
+    \ (con owner) en crazy_wall. PROHIBIDO CLOSED sin URL live.\n4. NO regeneres publish_live.py.\
+    \ NO lances Job esta ronda.\n5. Documenta gap: Job 32GB aplazado.\n\n## PASS\n\
+    space_url HTTP&lt;400 + smoke; wall CLOSED solo entonces.\n\n\nSALIDA VERIFICADA\
     \ DEL PASO ANTERIOR (deploy_script):\n```python\ndef plan_files(space_id: str,\
     \ api_base: str) -> dict:\n    \"\"\"\n    Returns a dict describing the static\
     \ space to be created.\n    Raises ValueError if space_id is not in the form \"\
