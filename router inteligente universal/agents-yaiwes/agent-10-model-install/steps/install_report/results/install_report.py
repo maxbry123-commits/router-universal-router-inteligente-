@@ -1,58 +1,41 @@
+"""install_report — solo máquina 32 GB RAM (flavor técnico cpu-upgrade).
+cpu-basic (=16GB) se rechaza. GPU se rechaza.
+"""
+from __future__ import annotations
+
 import json
 import re
+from typing import Any
+
+
+ALLOWED = frozenset({"cpu-upgrade"})  # solo 32 GB RAM
+
+
+def _extract_json(text: str) -> Any:
+    text = text.strip()
+    m = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+    blob = m.group(1).strip() if m else text
+    # try whole blob, else first {...}
+    try:
+        return json.loads(blob)
+    except json.JSONDecodeError:
+        i, j = blob.find("{"), blob.rfind("}")
+        if i >= 0 and j > i:
+            return json.loads(blob[i : j + 1])
+        raise
+
 
 def validate_orders(text: str) -> dict:
-    # Attempt to locate and parse JSON within the text
-    start = text.find('{')
-    if start == -1:
-        return {"ok": [], "rejected": [], "count": 0}
-    
-    data = None
-    # Try to parse a JSON object from start to various end positions
-    for end in range(len(text), start, -1):
-        substr = text[start:end]
-        try:
-            data = json.loads(substr)
-            break
-        except json.JSONDecodeError:
-            continue
-    
-    if data is None:
-        # Fallback: try to extract the "orders" array directly
-        orders_key = text.find('"orders":')
-        if orders_key == -1:
-            return {"ok": [], "rejected": [], "count": 0}
-        bracket_start = text.find('[', orders_key)
-        if bracket_start == -1:
-            return {"ok": [], "rejected": [], "count": 0}
-        stack = 0
-        for i in range(bracket_start, len(text)):
-            ch = text[i]
-            if ch == '[':
-                stack += 1
-            elif ch == ']':
-                stack -= 1
-                if stack == 0:
-                    orders_str = text[bracket_start:i+1]
-                    try:
-                        orders = json.loads(orders_str)
-                        data = {"orders": orders}
-                    except json.JSONDecodeError:
-                        data = {"orders": []}
-                    break
-        else:
-            data = {"orders": []}
-    
-    orders = data.get("orders", [])
-    if not isinstance(orders, list):
-        orders = []
-    
-    ok_list = []
-    rejected_list = []
+    data = _extract_json(text)
+    orders = data.get("orders", data if isinstance(data, list) else [])
+    ok, rejected = [], []
     for order in orders:
-        if isinstance(order, dict) and order.get("flavor") in ("cpu-basic", "cpu-upgrade"):
-            ok_list.append(order)
+        if not isinstance(order, dict):
+            rejected.append(order)
+            continue
+        flavor = order.get("flavor")
+        if flavor in ALLOWED:
+            ok.append(order)
         else:
-            rejected_list.append(order)
-    
-    return {"ok": ok_list, "rejected": rejected_list, "count": len(orders)}
+            rejected.append(order)
+    return {"ok": ok, "rejected": rejected, "count": len(orders)}
