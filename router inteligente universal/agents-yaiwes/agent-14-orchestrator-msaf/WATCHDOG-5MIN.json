@@ -1,0 +1,110 @@
+{
+  "schema": "yaiwes.orchestrator-watchdog/v1",
+  "id": "AGENT14-CHAT-WATCHDOG-5MIN",
+  "enabled": true,
+  "interval_seconds": 300,
+  "scope": "CHAT_YAIWES_ONLY",
+  "channel": "README-DIRECTOR.md",
+  "authority": "DIRECTOR",
+  "orchestrator": "agent-14-orchestrator-msaf",
+  "managed_agents": [
+    "agent-16-chat-space-oauth",
+    "agent-17-chat-backend-32gb",
+    "agent-18-chat-final-auditor",
+    "agent-4-router-smol",
+    "agent-12-yaiwes-router",
+    "agent-11-download-extraction",
+    "agent-6-hf-nodes"
+  ],
+  "activation": {
+    "method": "existing_authorized_dispatcher_or_agent_runtime",
+    "forbidden": [
+      "GitHub Actions",
+      ".github/workflows",
+      "global WATCHDOG/watchdog.py"
+    ]
+  },
+  "cycle": [
+    "READ README-DIRECTOR.md and detect new DIRECTOR instructions VERBATIM",
+    "READ crazy_wall.state.json and HANDOFF/results of every managed agent",
+    "BUILD node-by-node DSL DAG status: PASS/RUNNING/BLOCKED/PENDING",
+    "DETECT GAPs, stale work, conflicts, missing evidence and unmet dependencies",
+    "IF GAP: research official Hugging Face docs/Hub/community and relevant upstream community evidence before selecting a fix",
+    "WRITE GAP evidence, source references, root cause and minimal FIX",
+    "ASSIGN the FIX to the correct executor; Agent 14 never implements components itself",
+    "IF a component is missing: issue COMPONENT_REQUEST only to agent-11-download-extraction",
+    "IF storage/memory work is needed: assign only to agent-6-hf-nodes",
+    "RECHECK previous FIX and accept PASS only with evidence",
+    "APPEND Director-facing note to README-DIRECTOR.md",
+    "APPEND machine-oriented JSON block for Sol/ChatGPT to README-DIRECTOR.md"
+  ],
+  "gap_research": {
+    "priority": [
+      "existing repo evidence",
+      "official Hugging Face documentation",
+      "Hugging Face Hub model/space/repo documentation",
+      "Hugging Face community/forums/discussions",
+      "upstream OSS GitHub documentation/issues/discussions"
+    ],
+    "rules": [
+      "Do not invent facts or URLs",
+      "Prefer official/current sources",
+      "Record what source supports each FIX",
+      "Maximum 2 fix attempts per node before asking Director when authority or ambiguity blocks progress"
+    ]
+  },
+  "director_output": {
+    "destination": "README-DIRECTOR.md",
+    "style": {
+      "headings": "large_markdown_headings",
+      "color_markers": [
+        "🟥",
+        "🟧",
+        "🟨",
+        "🟩",
+        "🟦",
+        "🟪"
+      ],
+      "emojis": true,
+      "note_prefix": "📣 NOTA DEL ORQUESTADOR PARA EL DIRECTOR"
+    },
+    "required_sections": [
+      "ESTADO GENERAL",
+      "AVANCE AGENTES",
+      "GAPS",
+      "INVESTIGACIÓN HF/COMUNIDAD",
+      "FIX APLICADO/ORDENADO",
+      "DUDAS PARA EL DIRECTOR",
+      "SIGUIENTE CICLO"
+    ]
+  },
+  "supervisor_json_output": {
+    "destination": "README-DIRECTOR.md",
+    "visibility": "machine_oriented_not_secret",
+    "fenced_blocks": true,
+    "one_json_object_per_block": true,
+    "required_keys": [
+      "timestamp",
+      "cycle_id",
+      "director_input_sha_or_ref",
+      "dag",
+      "agents",
+      "gaps",
+      "research",
+      "fixes",
+      "decisions_required",
+      "next_actions",
+      "chat_100"
+    ]
+  },
+  "hard_rules": [
+    "INPUT BLOCK VERBATIM 1:1",
+    "Agent 14 only orchestrates; executors execute",
+    "No GitHub Actions",
+    "No workflow modification",
+    "No canonical motor modification",
+    "No false PASS",
+    "No secret values in README/JSON/logs",
+    "CHAT_100 only with real end-to-end evidence"
+  ]
+}
