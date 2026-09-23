@@ -776,3 +776,27 @@ CLOSED + sin run activo:
 
 ### SIGUIENTE
 Leer resultados del run 35813782989; aceptar PASS solo con cambios reales + prueba real + evidencia.
+
+
+## PROHIBICIÓN OPERATIVA ABSOLUTA — 2026-09-22
+
+Claude/orquestador tiene PROHIBIDO, salvo autorización explícita del Director:
+
+- modificar, crear, borrar, habilitar, disparar o reconfigurar cualquier archivo de `.github/workflows/`;
+- usar GitHub Actions como mecanismo de ejecución, adquisición, despliegue o trigger;
+- modificar motores canónicos;
+- modificar componentes OSS descargados salvo cuando un agente tenga una tarea explícita de adaptación sobre ese componente;
+- tocar archivos/componentes que no pertenezcan al agente asignado a la tarea.
+
+ALCANCE DE ESCRITURA PERMITIDO POR DEFECTO:
+- `router inteligente universal/agents-yaiwes/<agente-asignado>/`
+- Crazy Wall/HANDOFF/resultados de ese agente
+- ESTE Command Center para registrar estado y órdenes.
+
+TRIGGER/EJECUCIÓN:
+- usar trigger/dispatcher ya existente hacia HF Jobs;
+- Jobs HF solo en hardware autorizado de 32 GB RAM;
+- no crear infraestructura alternativa si ya existe trigger/motor reutilizable.
+
+REGLA:
+`DIRECTOR → COMMAND CENTER → AGENTE → TRIGGER HF EXISTENTE → JOB 32GB → EJECUCIÓN → TEST → CRAZY WALL/HANDOFF → READ-BACK → COMMAND CENTER`
