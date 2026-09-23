@@ -116,6 +116,72 @@ HF_JOB:
 - URL: https://huggingface.co/jobs/COMAND-CENTER-1/6ab3673351992417dfcd5ca3
 SIGUIENTE: esperar ejecución del Agent 11; auditar únicamente cuando exista estado terminal y evidencia del motor.
 
+
+
+## ORQUESTACIÓN DUAL VIGENTE — MICROSOFT + GROK
+
+### ORQUESTADORES / EJECUTORES
+- Agent 14 — `agent-14-orchestrator-msaf` = Microsoft Agent Framework.
+- Agent 15 — `agent-15-orchestrator-grok` = Grok Build.
+- `agent-15-orchestrator-grokbuild` = DUPLICATE_HISTORICAL / NO_DISPATCH.
+
+### POOL SUBORDINADO AUTORIZADO
+Únicamente:
+- Agent 4
+- Agent 8
+- Agent 11
+- Agent 12
+- Agent 16
+- Agent 17
+- Agent 18
+- Agent 19
+
+Agent 6 queda fuera del roster de mando actual.
+
+### REGLA ANTI-COLISIÓN
+`ONE_NODE_ONE_OWNER_ORCHESTRATOR`
+Cada nodo activo tiene exactamente un owner: Agent 14 o Agent 15.
+
+### CANALES DIRECTOR
+- Microsoft: `router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md`
+- Grok: `router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/README-DIRECTOR.md`
+
+Cada respuesta al Director:
+- separadores visuales ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+- hora Colombia
+- respuesta humana
+- bloque JSON separado para Sol/ChatGPT
+
+### WATCHDOGS INTERNOS DE AGENTE
+- Agent 14: `WATCHDOG-5MIN.json`
+- Agent 15: `WATCHDOG-5MIN.json`
+- intervalo: 300 segundos
+- NO son automations de ChatGPT
+- activación: dispatcher/runtime autorizado existente
+- GitHub Actions/workflows: prohibidos
+
+### ESTADO REAL DE DESCARGA
+Grok Build:
+- estado: VERIFIED_CLOSED según evidencia de la ejecución canónica del motor
+- source commit: `07e35a3dfeed2f200d319ef6c893b5ea286d9a51`
+- ZIP SHA256: `0a30eb6bef2482a1a7fbaba883b61562bde7c37ecd22d143eaa9d0288178a014`
+- tree SHA256: `e547e2b616102b5615d86fea7728d2726f16ebfe4889059c3b2a6590272c6ec2`
+
+Microsoft Agent Framework:
+- estado: GAP_DOWNLOAD_LFS
+- NO VERIFIED_CLOSED
+- GAP: `SOURCE_LFS_POINTER_GAP`
+- archivos reportados:
+  - `python/packages/lab/lightning/assets/train_math_agent.png`
+  - `python/packages/lab/lightning/assets/train_tau2_agent.png`
+- no declarar descarga completa hasta read-back/hash cerrado por el motor.
+
+### HANDOFF AGENT 11
+- step: `router inteligente universal/agents-yaiwes/agent-11-download-extraction/steps/acquire_requested_component/`
+- handoff: `HANDOFF.md`
+- resultado: `results/output.txt`
+- Nota: el step de GitHub está internamente contradictorio: Crazy Wall/HANDOFF dicen CLOSED, mientras `results/output.txt` dice BLOCKED por COMPONENT_REQUEST faltante. No usar ese CLOSED como prueba de adquisición física.
+
 ## HANDOFF INTERNO
 Fuentes a leer antes de ejecutar:
 - Claude notas/
