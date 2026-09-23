@@ -26,15 +26,27 @@ jobs:
           GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
         run: |
           python - <<'PY'
-          import os
+          import os, traceback
           from huggingface_hub import HfApi
-          api = HfApi(token=os.environ["HF_TOKEN"])
-          who = api.whoami()["name"]
-          space_id = f"{who}/riu-webhook-receiver"
-          api.create_repo(space_id, repo_type="space", space_sdk="docker", exist_ok=True)
-          api.upload_folder(folder_path="router inteligente universal/agents-yaiwes/webhook_receiver", repo_id=space_id, repo_type="space")
-          api.add_space_secret(space_id, "HF_TOKEN", os.environ["HF_TOKEN"])
-          api.add_space_secret(space_id, "GH_JOB_PUSH_TOKEN", os.environ["GH_JOB_PUSH_TOKEN"])
-          print("::notice title=RIU_WEBHOOK_SPACE::https://huggingface.co/spaces/" + space_id)
-          print("::notice title=RIU_WEBHOOK_URL::https://" + who.lower() + "-riu-webhook-receiver.hf.space/webhook")
+          try:
+              api = HfApi(token=os.environ["HF_TOKEN"])
+              who = api.whoami()["name"]
+              space_id = f"{who}/riu-webhook-receiver"
+              api.create_repo(space_id, repo_type="space", space_sdk="docker", exist_ok=True)
+              api.upload_folder(folder_path="router inteligente universal/agents-yaiwes/webhook_receiver", repo_id=space_id, repo_type="space")
+              try:
+                  api.add_space_secret(space_id, "HF_TOKEN", os.environ["HF_TOKEN"])
+                  api.add_space_secret(space_id, "GH_JOB_PUSH_TOKEN", os.environ["GH_JOB_PUSH_TOKEN"])
+              except AttributeError:
+                  import requests
+                  for k, v in (("HF_TOKEN", os.environ["HF_TOKEN"]), ("GH_JOB_PUSH_TOKEN", os.environ["GH_JOB_PUSH_TOKEN"])):
+                      r = requests.post(f"https://huggingface.co/api/spaces/{space_id}/secrets",
+                                        headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]}, json={"key": k, "value": v})
+                      print("::notice title=RIU_WEBHOOK_SECRET_FALLBACK::" + k + " status=" + str(r.status_code) + " " + r.text[:200])
+              print("::notice title=RIU_WEBHOOK_SPACE::https://huggingface.co/spaces/" + space_id)
+              print("::notice title=RIU_WEBHOOK_URL::https://" + who.lower() + "-riu-webhook-receiver.hf.space/webhook")
+          except Exception as e:
+              print("::error title=RIU_WEBHOOK_SETUP_ERROR::" + type(e).__name__ + ": " + str(e)[:600])
+              traceback.print_exc()
+              raise SystemExit(1)
           PY
