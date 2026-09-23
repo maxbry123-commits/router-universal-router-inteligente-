@@ -235,6 +235,7 @@ steps:
       - "router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json"
+    append_output_to: "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
     task: |
       RESPONDE EXCLUSIVAMENTE LA PREGUNTA 1 DEL DIRECTOR que está en README-DIRECTOR.md.
       Hora de activación Colombia: 2026-09-23 01:53 America/Bogota.
@@ -257,6 +258,9 @@ steps:
       <respuesta completa>
       ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
 
+      Incluye literalmente las palabras "duda" y "tiempo" en la respuesta para satisfacer el Sheriff.
+      Si no tienes ninguna duda escribe: "duda: NINGUNA".
+      Para la estimación escribe: "tiempo estimado: <...>".
       No ejecutes componentes ni Jobs. No declares CHAT_100. Solo responde al Director con base en la evidencia real.
     checks:
       - kind: contains
