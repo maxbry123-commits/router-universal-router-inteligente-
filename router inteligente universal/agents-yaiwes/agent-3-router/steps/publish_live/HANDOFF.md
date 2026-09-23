@@ -1,5 +1,5 @@
 # HANDOFF publish_live
 
-PENDING_VERIFY — #49 paper CLOSED revertido.
-space_url: https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes
-Falta smoke OAuth/live. Cero regen .py. Cero CLOSED.
+PENDING_VERIFY — SMOKE FAIL sin sesión HF.
+API 401 · PAGE 401/title 404 · .hf.space 404.
+Gap: Space inexistente o inaccesible. PROHIBIDO CLOSED. Cero regen .py.

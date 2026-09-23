@@ -2,9 +2,9 @@
   "schema": "yaiwes.crazy-wall/v1",
   "step": "publish_live",
   "status": "PENDING_VERIFY",
-  "updated_at": "2026-09-23T00:30:00Z",
+  "updated_at": "2026-09-23T00:32:00Z",
   "attempts": 2,
-  "last_error": "#49 paper CLOSED — smoke OAuth/live pending",
+  "last_error": "SMOKE FAIL: API/PAGE 401 + .hf.space 404 sin auth",
   "agent": "agent-3-router",
   "deploy_mode": "option_3_static_oauth_inference",
   "space_url": "https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes",
@@ -15,7 +15,7 @@
     "sheriff"
   ],
   "gaps": [
-    "smoke OAuth/live con sesión HF pendiente"
+    "Space inexistente o inaccesible sin auth real (smoke FAIL)"
   ],
   "failed": [],
   "framework": "pocketflow",

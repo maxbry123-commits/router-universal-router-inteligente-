@@ -3,7 +3,7 @@
   "agent": "agent-3-router",
   "framework": "pocketflow",
   "status": "PENDING_VERIFY",
-  "updated_at": "2026-09-23T00:30:00Z",
+  "updated_at": "2026-09-23T00:32:00Z",
   "group": "hf-chat",
   "chain": [
     "space_readme",
@@ -25,13 +25,13 @@
   "space_url": "https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes",
   "space_id": "yaiwes/riu-chat-yaiwes",
   "blockers": [
-    "#49 paper CLOSED sin smoke OAuth/live. Reabierto PENDING_VERIFY.",
-    "Unauth probe: HEAD 401 / body title 404; .hf.space 404. Falta smoke con sesión HF.",
+    "SMOKE FAIL (Sentinela+orch, sin sesión HF): API 401 Invalid username or password; PAGE HEAD 401; GET title 404; .hf.space 404.",
+    "Gap: Space inexistente o inaccesible sin auth real. NO PASS.",
     "Job 32GB deferred (option 3 interim)."
   ],
   "deploy_mode": "INPUT-l option 3 Static+OAuth+InferenceProviders",
   "hardware_requirement": "No HF Job this round; option 2 Job-32GB deferred",
-  "orchestrator_order": "PENDING_VERIFY: smoke OAuth/live on https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes. PROHIBIDO CLOSED until orch GET usable (200 public or OAuth smoke OK). CERO regen publish_live.py.",
+  "orchestrator_order": "PENDING_VERIFY. PROHIBIDO CLOSED. CERO regen publish_live.py. Esperar smoke OAuth con sesión HF del usuario (Sentinela). Si auth confirma Space muerto → re-DISPATCH con private=False.",
   "route": [
     "nvidia",
     "groq",
@@ -40,5 +40,13 @@
   ],
   "current_nodes": [
     "orch_smoke_verify"
-  ]
+  ],
+  "smoke": {
+    "result": "FAIL",
+    "api": 401,
+    "page_head": 401,
+    "page_title": "404 – Hugging Face",
+    "hf_space_host": 404,
+    "auth": false
+  }
 }
