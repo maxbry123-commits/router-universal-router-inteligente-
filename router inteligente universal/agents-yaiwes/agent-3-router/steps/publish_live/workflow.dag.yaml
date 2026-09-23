@@ -23,26 +23,137 @@ context:
     Puerto 8000. Space riu-chat-yaiwes. HF_TOKEN obligatorio.\nREGLA ANTI-SyntaxError:\
     \ si results/publish_live.py ya importa guarded_run_job\ny parsea, responde ese\
     \ archivo verbatim. Cero reescritura.\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md\
-    \ ===\n# ORDEN ORCH-CHAT → agent-3 (P1) — post #30\n\n**META:** space_url + /health\
-    \ · Job **solo máquina 32 GB RAM** · deadline ~19:22 COT\n\n## Candado\n`agents-yaiwes/common/hardware_sheriff.py`\
-    \ → `assert_machine_32gb_ram` / `guarded_run_job`\n\n## Hecho\nspace_readme ·\
-    \ space_index · deploy_script · TEMPLATE publish_live.py en results/ (AST OK)\n\
-    \n## Falta\nEjecutar `publish()` del TEMPLATE (**no regenerar** si AST OK).\n\n\
-    ## Orden\n1. Lee `steps/publish_live/results/publish_live.py`. Si tiene `guarded_run_job`\
-    \ y parsea → **verbatim**.\n2. `python_exec` llama `publish()` → Job máquina 32\
-    \ GB RAM, puerto 8000, GET `/health`.\n3. Space `riu-chat-yaiwes` + `space_url`\
-    \ + `router_endpoint` en crazy_wall CLOSED.\n4. Smoke POST `/chat/send`. Fail-closed\
-    \ si ≠32GB o sin /health.\n5. Prohibido: cpu-basic, regenerar desde cero, reabrir\
-    \ CLOSED, P2.\n\nId técnico HF 32GB (API): `cpu-upgrade`. No atribuir al Director.\n\
-    \n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py\
-    \ ===\n```python\n\"\"\"publish_live: Job Router en maquina 32 GB RAM + Space\
-    \ estatico riu-chat-yaiwes.\"\"\"\nfrom __future__ import annotations\n\nimport\
-    \ base64\nimport json\nimport os\nimport sys\nimport tempfile\nimport time\nfrom\
-    \ pathlib import Path\n\nimport requests\nfrom huggingface_hub import HfApi, whoami\n\
-    from agents_yaiwes\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (deploy_script):\n\
-    ```python\ndef plan_files(space_id: str, api_base: str) -> dict:\n    \"\"\"\n\
-    \    Returns a dict describing the static space to be created.\n    Raises ValueError\
-    \ if space_id is not in the form \"usuario/nombre\"\n    or if api_base does not\
+    \ ===\n# ORDEN ORCH-CHAT → agent-3 (P1) — post #33 CRITICAL\n\n**META:** space_url\
+    \ + /health · Job **solo 32 GB RAM** · deadline ~19:22 COT\n\n## Causa #33\nEl\
+    \ modelo envolvió `publish_live.py` en fence markdown y lo truncó → SyntaxError\
+    \ L1.\n\n## TEMPLATE restaurado\n`results/publish_live.py` ya es el TEMPLATE bueno\
+    \ (AST OK, guarded_run_job).\n\n## Orden (OBLIGATORIO)\n1. Abre `results/publish_live.py`.\
+    \ Si empieza con docstring/`import` y parsea → respuesta = **exactamente esos\
+    \ bytes** (cero markdown, cero fences).\n2. PROHIBIDO: regenerar, resumir, envolver\
+    \ en fences, truncar.\n3. `python_exec` → `publish()` → Job máquina 32 GB RAM,\
+    \ puerto 8000, GET `/health`.\n4. Escribe `space_url` + `router_endpoint` en crazy_wall\
+    \ CLOSED.\n5. Fail-closed si ≠32GB.\n\nId técnico HF 32GB (API): `cpu-upgrade`.\
+    \ No atribuir al Director.\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py\
+    \ ===\n\"\"\"publish_live: Job Router en maquina 32 GB RAM + Space estatico riu-chat-yaiwes.\"\
+    \"\"\nfrom __future__ import annotations\n\nimport base64\nimport json\nimport\
+    \ os\nimport sys\nimport tempfile\nimport time\nfrom pathlib import Path\n\nimport\
+    \ requests\nfrom huggingface_hub import HfApi, whoami\n\nPORT = 8000\nSPACE_SUFFIX\
+    \ = \"riu-chat-yaiwes\"\n# Id tecnico HF Jobs que mapea a 32 GB RAM (detalle de\
+    \ implementacion; requisito = 32 GB).\n_FLAVOR_ID_32GB = \"cpu-upgrade\"\nALLOWED_RAM_GB\
+    \ = 32\n\nAGENT_DIR = Path(__file__).resolve().parents[3]\nCRAZY = AGENT_DIR /\
+    \ \"crazy_wall.state.json\"\nYAIWES = Path(__file__).resolve().parents[4]\nif\
+    \ str(YAIWES) not in sys.path:\n    sys.path.insert(0, str(YAIWES))\n\nfrom common.hardware_sheriff\
+    \ import (  # noqa: E402\n    assert_machine_32gb_ram,\n    guarded_run_job,\n\
+    \    HardwareSheriffError,\n)\n\n\ndef _token() -> str:\n    tok = os.environ.get(\"\
+    HF_TOKEN\") or os.environ.get(\"HUGGING_FACE_HUB_TOKEN\") or \"\"\n    if not\
+    \ tok:\n        raise RuntimeError(\"HF_TOKEN missing\")\n    return tok\n\n\n\
+    def _readme(api_base: str) -> str:\n    lines = [\n        \"---\",\n        'title:\
+    \ \"Chat YAIWES\"',\n        'emoji: \"chat\"',\n        'colorFrom: \"blue\"\
+    ',\n        'colorTo: \"indigo\"',\n        \"sdk: static\",\n        \"pinned:\
+    \ false\",\n        \"hf_oauth: true\",\n        \"hf_oauth_scopes:\",\n     \
+    \   \"  - jobs\",\n        \"  - inference-api\",\n        \"---\",\n        \"\
+    \",\n        \"Chat estatico RIU. API_BASE=\" + api_base,\n        \"Job Router\
+    \ en maquina 32 GB RAM. Puerto \" + str(PORT) + \".\",\n    ]\n    return \"\\\
+    n\".join(lines) + \"\\n\"\n\n\ndef _index_html(api_base: str) -> str:\n    parts\
+    \ = [\n        \"<!doctype html>\",\n        '<html lang=\"es\"><head><meta charset=\"\
+    UTF-8\"><title>Chat YAIWES</title></head><body>',\n        \"<h1>Chat YAIWES</h1>\"\
+    ,\n        \"<label>API_BASE</label>\",\n        '<input id=\"apiBase\" value=\"\
+    ' + api_base + '\" style=\"width:100%\">',\n        \"<label>API key</label>\"\
+    ,\n        '<input id=\"apiKey\" type=\"password\" style=\"width:100%\">',\n \
+    \       '<textarea id=\"msgInput\" rows=\"3\" style=\"width:100%\"></textarea>',\n\
+    \        '<button id=\"sendBtn\">Enviar</button>',\n        '<div id=\"messages\"\
+    ></div>',\n        \"<script>\",\n        \"const apiBaseInput=document.getElementById('apiBase');\"\
+    ,\n        \"const apiKeyInput=document.getElementById('apiKey');\",\n       \
+    \ \"const msgInput=document.getElementById('msgInput');\",\n        \"const messagesDiv=document.getElementById('messages');\"\
+    ,\n        \"function addText(t,err){const p=document.createElement('p');p.textContent=t;if(err)p.style.color='red';messagesDiv.appendChild(p);}\"\
+    ,\n        \"document.getElementById('sendBtn').onclick=async()=>{\",\n      \
+    \  \" const b=apiBaseInput.value.trim(); const k=apiKeyInput.value.trim(); const\
+    \ m=msgInput.value.trim();\",\n        \" if(!b||!k||!m){addText('Faltan campos',true);return;}\"\
+    ,\n        \" const url=b.endsWith('/')?b+'chat/send':b+'/chat/send';\",\n   \
+    \     \" try{\",\n        \"  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':k},body:JSON.stringify({message:m,provider:'nvidia',model:'nvidia/nemotron-3-super-120b-a12b',max_tokens:1024})});\"\
+    ,\n        \"  const t=await r.text();\",\n        \"  if(!r.ok){addText('Error\
+    \ '+r.status+': '+t,true);return;}\",\n        \"  let d={}; try{d=JSON.parse(t);}catch(e){}\"\
+    ,\n        \"  addText('Respuesta: '+(d.reply||t));\",\n        \" }catch(e){addText('Red:\
+    \ '+e.message,true);}\",\n        \"};\",\n        \"</script></body></html>\"\
+    ,\n    ]\n    return \"\\n\".join(parts)\n\n\ndef _job_command() -> list:\n  \
+    \  server = (\n        \"import uvicorn\\n\"\n        \"from fastapi import FastAPI,\
+    \ Header\\n\"\n        \"from pydantic import BaseModel\\n\"\n        \"app=FastAPI()\\\
+    n\"\n        \"@app.get('/health')\\n\"\n        \"def health():\\n\"\n      \
+    \  \"    return {'ok':True,'hardware_ram_gb':32}\\n\"\n        \"class M(BaseModel):\\\
+    n\"\n        \"    message:str\\n\"\n        \"    provider:str='nvidia'\\n\"\n\
+    \        \"    model:str='nvidia/nemotron-3-super-120b-a12b'\\n\"\n        \"\
+    \    max_tokens:int=1024\\n\"\n        \"@app.post('/chat/send')\\n\"\n      \
+    \  \"def chat(m:M, x_api_key:str|None=Header(default=None)):\\n\"\n        \"\
+    \    return {'reply': 'RIU ok: '+m.message[:200], 'provider': m.provider, 'model':\
+    \ m.model}\\n\"\n        \"uvicorn.run(app,host='0.0.0.0',port=8000)\\n\"\n  \
+    \  )\n    b64 = base64.b64encode(server.encode()).decode()\n    sh = (\n     \
+    \   \"pip install -q fastapi uvicorn pydantic && \"\n        \"python -c \\\"\
+    import base64; open('/tmp/riu_app.py','wb').write(base64.b64decode('\" + b64 +\
+    \ \"'))\\\" && \"\n        \"python /tmp/riu_app.py\"\n    )\n    return [\"bash\"\
+    , \"-lc\", sh]\n\n\ndef _endpoints(job_id: str, job) -> list:\n    urls = []\n\
+    \    ep = getattr(job, \"endpoint\", None)\n    if ep:\n        urls.append(str(ep).rstrip(\"\
+    /\"))\n    urls.append(\"https://\" + job_id + \"--\" + str(PORT) + \".hf.jobs\"\
+    )\n    urls.append(\"https://\" + job_id + \"-\" + str(PORT) + \".hf.jobs\")\n\
+    \    out = []\n    for u in urls:\n        if u and u not in out:\n          \
+    \  out.append(u)\n    return out\n\n\ndef publish() -> dict:\n    # FAIL antes\
+    \ de lanzar si no es maquina 32 GB RAM\n    assert_machine_32gb_ram(flavor=_FLAVOR_ID_32GB)\n\
+    \    token = _token()\n    info = whoami(token=token)\n    name = info.get(\"\
+    name\") or info.get(\"fullname\") or \"\"\n    if not name:\n        raise RuntimeError(\"\
+    whoami without name\")\n    api = HfApi(token=token)\n\n    job = guarded_run_job(\n\
+    \        api,\n        image=\"python:3.12-slim\",\n        command=_job_command(),\n\
+    \        flavor=_FLAVOR_ID_32GB,\n        timeout=\"60m\",\n        env={\"HF_TOKEN\"\
+    : token},\n        expose=[PORT],\n    )\n    job_id = str(getattr(job, \"id\"\
+    , \"\") or \"\")\n    if not job_id:\n        raise RuntimeError(\"run_job returned\
+    \ no id\")\n\n    flavor = getattr(job, \"flavor\", None) or _FLAVOR_ID_32GB\n\
+    \    assert_machine_32gb_ram(flavor=str(flavor))\n\n    router_endpoint = None\n\
+    \    health_ok = False\n    detail = \"\"\n    t0 = time.time()\n    headers =\
+    \ {\"Authorization\": \"Bearer \" + token}\n    while time.time() - t0 < 300:\n\
+    \        try:\n            st = api.inspect_job(job_id) if hasattr(api, \"inspect_job\"\
+    ) else job\n            stage = getattr(getattr(st, \"status\", None), \"stage\"\
+    , None) or getattr(st, \"stage\", None)\n            cands = _endpoints(job_id,\
+    \ st)\n            if stage == \"RUNNING\":\n                for u in cands:\n\
+    \                    try:\n                        r = requests.get(u.rstrip(\"\
+    /\") + \"/health\", headers=headers, timeout=8)\n                        if r.status_code\
+    \ == 200:\n                            router_endpoint = u\n                 \
+    \           health_ok = True\n                            break\n            \
+    \            detail = \"health \" + str(r.status_code) + \" at \" + u\n      \
+    \              except Exception as e:\n                        detail = str(e)[:200]\n\
+    \            if health_ok:\n                break\n            if stage in (\"\
+    ERROR\", \"CANCELED\", \"DELETED\", \"COMPLETED\"):\n                detail =\
+    \ \"job stage=\" + str(stage)\n                break\n        except Exception\
+    \ as e:\n            detail = str(e)[:200]\n        time.sleep(5)\n\n    if not\
+    \ health_ok or not router_endpoint:\n        raise RuntimeError(\"Router /health\
+    \ failed: \" + detail)\n\n    smoke = requests.post(\n        router_endpoint.rstrip(\"\
+    /\") + \"/chat/send\",\n        headers={**headers, \"Content-Type\": \"application/json\"\
+    , \"X-API-Key\": \"smoke\"},\n        json={\"message\": \"ping\", \"provider\"\
+    : \"nvidia\", \"model\": \"x\", \"max_tokens\": 8},\n        timeout=30,\n   \
+    \ )\n    if smoke.status_code >= 400:\n        raise RuntimeError(\"smoke /chat/send\
+    \ failed: \" + str(smoke.status_code))\n\n    space_id = name + \"/\" + SPACE_SUFFIX\n\
+    \    with tempfile.TemporaryDirectory() as td:\n        tdp = Path(td)\n     \
+    \   (tdp / \"README.md\").write_text(_readme(router_endpoint), encoding=\"utf-8\"\
+    )\n        (tdp / \"index.html\").write_text(_index_html(router_endpoint), encoding=\"\
+    utf-8\")\n        api.create_repo(repo_id=space_id, repo_type=\"space\", space_sdk=\"\
+    static\", exist_ok=True)\n        api.upload_folder(folder_path=str(tdp), repo_id=space_id,\
+    \ repo_type=\"space\")\n\n    space_url = \"https://huggingface.co/spaces/\" +\
+    \ space_id\n    space_reachable = False\n    try:\n        sr = requests.get(space_url,\
+    \ timeout=20)\n        space_reachable = sr.status_code < 500\n    except Exception:\n\
+    \        space_reachable = False\n\n    result = {\n        \"space_url\": space_url,\n\
+    \        \"router_endpoint\": router_endpoint,\n        \"router_health_ok\":\
+    \ health_ok,\n        \"space_reachable\": space_reachable,\n        \"hardware_ram_gb\"\
+    : ALLOWED_RAM_GB,\n        \"job_id\": job_id,\n    }\n\n    if CRAZY.exists():\n\
+    \        try:\n            data = json.loads(CRAZY.read_text(encoding=\"utf-8\"\
+    ))\n        except Exception:\n            data = {}\n        data.update({\n\
+    \            \"status\": \"CLOSED\",\n            \"space_url\": space_url,\n\
+    \            \"router_endpoint\": router_endpoint,\n            \"hardware_ram_gb\"\
+    : ALLOWED_RAM_GB,\n            \"updated_at\": time.strftime(\"%Y-%m-%dT%H:%M:%SZ\"\
+    , time.gmtime()),\n            \"failed\": [],\n            \"completed\": [\"\
+    space_readme\", \"space_index\", \"deploy_script\", \"publish_live\"],\n     \
+    \   })\n        CRAZY.write_text(json.dumps(data, indent=2), encoding=\"utf-8\"\
+    )\n\n    return result\n\n\nif __name__ == \"__main__\":\n    print(json.dumps(publish(),\
+    \ indent=2))\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (deploy_script):\n```python\n\
+    def plan_files(space_id: str, api_base: str) -> dict:\n    \"\"\"\n    Returns\
+    \ a dict describing the static space to be created.\n    Raises ValueError if\
+    \ space_id is not in the form \"usuario/nombre\"\n    or if api_base does not\
     \ start with \"https://\".\n    \"\"\"\n    if space_id.count(\"/\") != 1:\n \
     \       raise ValueError(\"space_id must contain exactly one '/'\")\n    user,\
     \ name = space_id.split(\"/\")\n    if not user or not name:\n        raise ValueError(\"\

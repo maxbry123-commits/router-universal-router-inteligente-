@@ -1,9 +1,9 @@
 {
  "schema": "yaiwes.crazy-wall/v1",
  "step": "publish_live",
- "status": "PENDING",
- "updated_at": "2026-09-22T23:58:24Z",
- "attempts": 5,
+ "status": "BLOCKED",
+ "updated_at": "2026-09-23T00:02:38Z",
+ "attempts": 3,
  "last_error": "#33 SyntaxError: file started with markdown fence ```python and truncated",
  "hardware_lock": "32GB_RAM_ACTIVE_ONLY",
  "agent": "agent-3-router",
@@ -15,6 +15,14 @@
  "next_nodes": [
   "sheriff"
  ],
- "gaps": [],
- "failed": []
+ "gaps": [
+  "Python inválido: unterminated string literal (detected at line 5) (línea 5)",
+  "la prueba falló (exit=1): SyntaxError: unterminated string literal (detected at line 5)"
+ ],
+ "failed": [
+  "execute"
+ ],
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route"
 }
