@@ -10,6 +10,15 @@
 
 ---
 
+## REGLA ANTI-SOBREINGENIERÍA
+
+- Usar la solución mínima suficiente.
+- Máximo 3 pasos por tarea: **REUTILIZAR/ADAPTAR → CABLEAR → PROBAR**.
+- No crear capas, abstracciones, agentes, servicios, archivos o frameworks extra si no son necesarios.
+- No investigar de nuevo si ya existe evidencia suficiente.
+- No escribir código equivalente desde cero cuando ya existe componente OSS o código reutilizable.
+- Si el objetivo puede cerrarse con un cambio pequeño, está prohibido ampliarlo.
+
 ## REGLA GLOBAL PARA TODOS LOS AGENTES
 
 - **REGLA PERMANENTE OSS/MOTORES:** antes de escribir código nuevo, buscar y reutilizar componentes existentes.
