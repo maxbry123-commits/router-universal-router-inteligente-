@@ -3,7 +3,7 @@
 - paso vault_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js'] gaps=-
 - paso wire_panels: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js'] gaps=-
 ## agent-10-model-install: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
-- paso install_launch_test: BLOCKED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py'] gaps=Python inválido: unterminated string literal (detected at line 3) (línea 3); la prueba falló (exit=1): SyntaxError: unte
+- paso install_launch_test: BLOCKED modelo=verbatim entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py'] gaps=la prueba superó el tiempo
 - paso install_orders: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_orders/results/orders.json'] gaps=-
 - paso install_report: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_report/results/install_report.py'] gaps=-
 ## agent-11-download-extraction: estado=CLOSED marco=smolagents pasos_cerrados=['jev_components_list', 'ms_agent_framework_donor']
@@ -24,7 +24,7 @@ Error code: 402 - {'message': 'Payment require
 - paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js'] gaps=-
 ## agent-3-router: estado=BLOCKED marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script']
 - paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py'] gaps=-
-- paso publish_live: PENDING modelo=- entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/HANDOFF.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/PUBLISH_LIVE_REJECTED.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py'] gaps=space_url must be live HF Space URL with owner/name; 404 is fail
+- paso publish_live: BLOCKED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/HANDOFF.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/PUBLISH_LIVE_REJECTED.md', 'router inteligente universal/agents-yaiwes/agent-3-router/steps/publish_live/results/publish_live.py'] gaps=falta 'http'
 - paso space_index: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
 - paso space_readme: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=[] gaps=-
 ## agent-4-router-smol: estado=CLOSED marco=smolagents pasos_cerrados=['models_registry', 'job_spec', 'node_monitor']
