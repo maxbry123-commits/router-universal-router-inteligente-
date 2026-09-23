@@ -1,0 +1,47 @@
+schema: yaiwes.chain/v1
+input_block: |
+  PRIORIDAD CHAT. Publicar el chat YAIWES en Hugging Face Static Space gratis, con OAuth real y smoke live.
+  Claude/orquestador NO ejecuta: este agente ejecuta. FAIL_CLOSED. No marcar CLOSED sin URL pública comprobada.
+
+agent:
+  id: agent-16-chat-space-oauth
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
+  fallback: []
+  max_tokens: 2600
+
+context:
+  text: |
+    Evidencia oficial HF vigente: Static Spaces son gratis. OAuth de Spaces se activa con hf_oauth: true.
+    Para Static Space, usar el flujo cliente soportado por @huggingface/hub: oauthLoginUrl + oauthHandleRedirectIfPresent.
+    Scopes necesarios para este chat: inference-api, read-repos, write-repos, jobs; openid/profile vienen por defecto.
+    El script viejo de agent-3 no es evidencia de cierre. Debes usar whoami(HF_TOKEN) para el owner real y crear el Space PUBLICO.
+    Nombre objetivo: riu-chat-yaiwes. Nunca incrustar API keys en HTML/JS.
+
+steps:
+  - id: publish_static_live
+    task: |
+      Escribe SOLO Python en un archivo publish_static_live.py.
+      Debe: leer HF_TOKEN; obtener owner con whoami(token); crear o actualizar owner/riu-chat-yaiwes como Static Space PUBLICO
+      (private=False); subir README.md e index.html; README debe tener sdk: static, hf_oauth: true y scopes inference-api,
+      read-repos, write-repos y jobs. index.html debe implementar Sign in with HF usando el flujo cliente oficial de
+      @huggingface/hub (oauthLoginUrl y oauthHandleRedirectIfPresent), selector de modelo y envío a
+      https://router.huggingface.co/v1/chat/completions usando SOLO el accessToken OAuth del usuario.
+      Verifica con space_info y GET público que el Space existe y no devuelve 404. Espera propagación con reintentos acotados.
+      Devuelve dict con owner, space_id, space_url, http_code, oauth=true y status=LIVE.
+      No uses /auth/oauth-info inventado. No escribas ni imprimas tokens.
+    checks:
+      - kind: python_ast
+      - kind: contains
+        values: [whoami, private=False, hf_oauth, inference-api, oauthLoginUrl, oauthHandleRedirectIfPresent, space_url]
+      - kind: python_exec
+        module: publish_static_live.py
+        test: |
+          from publish_static_live import run
+          r = run()
+          assert r["status"] == "LIVE"
+          assert r["oauth"] is True
+          assert r["http_code"] != 404 and r["http_code"] < 500
+          assert "/spaces/" in r["space_url"]
+      - kind: no_secrets
