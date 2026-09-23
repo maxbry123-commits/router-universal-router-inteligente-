@@ -5,6 +5,12 @@ name: RIU Watchdog
 # Also every 30 min: triggers RIU HF Jobs Audit 32GB (Claude Sentinela path) to cancel Jobs ≠ 32 GB RAM.
 
 on:
+  push:
+    paths:
+      - 'router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/**'
+      - 'router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/**'
+      - 'router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/**'
+      - '.github/workflows/riu-watchdog.yml'
   schedule:
     - cron: '17 * * * *'
     - cron: '*/30 * * * *'
