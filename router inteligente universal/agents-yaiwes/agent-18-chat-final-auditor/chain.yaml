@@ -1,7 +1,10 @@
 schema: yaiwes.chain/v1
+run_id: CHAT-100-AGENT18-20260923
 input_block: |
-  LEY PERMANENTE: NO crear UI/componentes desde cero. Reutilizar Open WebUI y CONSERVAR el código adicional ya existente.
-  Este agente EJECUTA incorporación de componentes adicionales; NO audita ni decide cierre.
+  ORDEN DE AGENT 14 / DIRECTOR: ejecutar integración funcional y E2E del Chat YAIWES.
+  Aunque el nombre histórico dice final-auditor, tu rol aquí es EJECUTOR.
+  Deadline del frente: 2026-09-23 01:32 America/Bogota.
+  No GitHub Actions. No tocar motores. No duplicar componentes existentes.
 
 agent:
   id: agent-18-chat-final-auditor
@@ -9,26 +12,35 @@ agent:
   group: chat
   route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
-  max_tokens: 3000
+  max_tokens: 3600
 
 context:
   text: |
-    Base: Open WebUI descargado solo mediante motores canónicos por agent-19.
-    Código adicional a preservar:
-    agent-1: vault_panel.js, router_panel.js, wire_panels.js
-    agent-2: jobs_panel.js, fixed_template.py, crazy_wall_chain.py
-    Chat MVP actual: integration/chat_mvp/chat_ui.html y backend asociado.
-    No descargar componentes aquí. No borrar ni reescribir esas capacidades desde cero.
+    Reutiliza capacidades existentes del Chat MVP y Open WebUI:
+    Archivos/Memoria, Secret Bank, Router, Jobs, GitHub, agentes, selector y Crazy Wall.
+    El cierre requiere pruebas reales, no descripción.
+    Agent 14 es el orquestador y decide siguiente orden; Claude/Sol supervisa.
 
 steps:
-  - id: integrate_additional_components
+  - id: integrate_and_e2e
+    context_file:
+      - "router inteligente universal/integration/chat_mvp/router.py"
+      - "router inteligente universal/integration/chat_mvp/store.py"
+      - "router inteligente universal/integration/chat_mvp/jobs.py"
+      - "router inteligente universal/integration/chat_mvp/vault_api.py"
+      - "router inteligente universal/integration/chat_mvp/github_tools.py"
+      - "router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py"
     task: |
-      Integra en Open WebUI las capacidades adicionales ya existentes del Chat MVP:
-      Archivos/Memoria, Secret Bank, estado Router, Jobs, GitHub, agentes, selector, Crazy Wall/handoff.
-      Reutiliza/edita/cablea el código existente; no recrees esas funciones desde cero y no borres sus fuentes originales.
-      Si falta Open WebUI, falla OPENWEBUI_COMPONENT_MISSING.
-      La salida debe registrar exactamente qué código existente se conservó y dónde quedó cableado.
+      REUTILIZA/ADAPTA -> CABLEA/EJECUTA -> PRUEBA.
+      Integra y prueba dentro del chat:
+      Archivos/Memoria + Secret Bank + Router + Jobs + GitHub + agentes + selector + Crazy Wall.
+      E2E obligatorio:
+      abrir chat -> selector visible -> enviar mensaje -> recibir respuesta ->
+      modo sin agente -> modo con agente -> adjuntar documento ->
+      cerrar/reabrir -> recuperar conversación/documento/memoria.
+      Registra evidencia de cada prueba. Si una falla, GAP/FIX y máximo 2 reintentos.
+      No declares CHAT_100; Agent 14 y el supervisor hacen el cierre global.
     checks:
       - kind: contains
-        values: [Open WebUI, Archivos, Memoria, Secret Bank, Router, Jobs, GitHub, Crazy Wall]
+        values: [Archivos, Memoria, Secret Bank, Router, Jobs, GitHub, Crazy Wall, E2E, GAP, FIX]
       - kind: no_secrets
