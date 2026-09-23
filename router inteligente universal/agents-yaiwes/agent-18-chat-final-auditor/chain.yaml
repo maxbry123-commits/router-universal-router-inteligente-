@@ -5,9 +5,7 @@ input_block: |
 
 agent:
   id: agent-18-chat-final-auditor
-  framework: smolagents
-  runner: auditor
-  post: audit_report
+  framework: pocketflow
   group: audit
   route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
   fallback: []
@@ -15,11 +13,28 @@ agent:
 
 context:
   text: |
-    Audita SOLO CHAT y almacenamiento del chat. No mezclar Router general, Jev, TimesFM ni modelos locales salvo que sean requisito directo del chat.
-    HECHO exige evidencia real: ruta existente, estado de agente, URL live o test. PENDING si no existe evidencia.
-    Debes revisar especialmente agent-16-chat-space-oauth y agent-17-chat-backend-32gb cuando produzcan resultados.
+    Audita SOLO CHAT y almacenamiento del chat. No mezclar Router general, Jev, TimesFM ni modelos locales salvo requisito directo del chat.
+    HECHO exige evidencia real: ruta existente, estado de agente, URL live o test.
+    El auditor NO puede correr hasta que agent-16 y agent-17 estén CLOSED con evidencia live.
 
 steps:
+  - id: wait_live
+    task: |
+      Escribe SOLO Python en gate_live.py. Debe localizar el repo desde __file__, leer:
+      router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json y
+      router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json.
+      La función check() devuelve {"status":"READY"} SOLO si ambos status son CLOSED y existen sus results/output.txt.
+      En cualquier otro caso lanza RuntimeError con los estados observados. No inventar evidencia.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: gate_live.py
+        test: |
+          from gate_live import check
+          r = check()
+          assert r["status"] == "READY"
+      - kind: no_secrets
+
   - id: final_chat_cross
     context_file:
       - Claude notas/INPUT-VERBATIM-2026-09-20-chat-mvp.md
@@ -27,13 +42,14 @@ steps:
       - Claude notas/PLAN-ANEXO-B-STORAGE-Y-CHAT-OPEN-SOURCE.md
       - router inteligente universal/agents-yaiwes/WATCHDOG/STATUS.md
       - router inteligente universal/agents-yaiwes/agent-5-auditor/AUDIT-CHECKLIST.md
+      - router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json
+      - router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json
     task: |
       Audita uno por uno los requisitos del CHAT: URL pública, OAuth, enviar/recibir mensaje, selector de modelos,
       con/sin agente, cuentas GitHub, archivos/documentos, panel Archivos/Memoria, Secret Bank, trabajo paralelo,
       Crazy Wall/handoff, almacenamiento solicitado y backend live.
       Devuelve SOLO {"items":[...]} con mínimo 12 ítems. Cada ítem: id, quote textual del Director, status
       HECHO/PARCIAL/PENDIENTE/REFUTADO/AMBIGUO, area, evidence (rutas reales), note y tarea.
-      Si agent-16 o agent-17 no tiene evidencia LIVE, marca publicación/backend PENDIENTE.
       No declares 100% por código presente solamente.
     checks:
       - kind: audit_json
@@ -42,3 +58,6 @@ steps:
           - Claude notas/INPUT-VERBATIM-2026-09-20-chat-mvp.md
           - Claude notas/PLAN-MAESTRO-CHAT-MVP.md
       - kind: no_secrets
+
+edges:
+  - wait_live -> final_chat_cross
