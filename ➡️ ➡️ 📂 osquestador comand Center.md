@@ -412,18 +412,17 @@ tarea: crear memoria permanente y cablear handoff
 research: true
 community_query: true
 execute: true
-validate: pending_readback
-prueba_real: false
-estado: VALIDATING
-gap: "falta read-back del archivo recién publicado"
+validate: true
+prueba_real: true
+estado: CLOSED
+gap: null
 fix: null
 repeticion: 0
 instrucciones: true
-cerrado: false
+cerrado: true
 ```
 
 ### SIGUIENTE ACCIÓN AUTORIZADA
-1. Read-back de este archivo.
-2. Registrar SHA/commit.
-3. Releer estado de agentes del chat.
-4. Arrancar siguiente LOOP_7 desde O1 (agent-19), sin ejecutar el trabajo del agente.
+1. Releer estado de agentes del chat.
+2. Arrancar siguiente LOOP_7 desde O1 (agent-19), sin ejecutar el trabajo del agente.
+3. Actualizar este Command Center con cada delta real.
