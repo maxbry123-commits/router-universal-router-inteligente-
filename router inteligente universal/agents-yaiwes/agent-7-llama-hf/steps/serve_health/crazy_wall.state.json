@@ -1,11 +1,33 @@
 {
-  "schema": "yaiwes.crazy-wall/v1",
-  "agent": "agent-7-llama-hf",
-  "framework": "smolagents",
-  "status": "PENDING",
-  "updated_at": "2026-09-23T00:22:00Z",
-  "group": "hf-llama",
-  "current_nodes": [],
-  "next_nodes": ["serve_health"],
-  "gaps": ["GOLDEN serve_health listo; falta Agents Run con /health 200"]
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-7-llama-hf",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T00:30:22Z",
+ "group": "hf-llama",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "45e623686f0c2dd7f0e9b26415f4b06c9bdce37e9ea4f800bf8a5dd91231d3b9",
+   "chars": 4768
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "serve_health.py",
+   "sha256": "45e623686f0c2dd7f0e9b26415f4b06c9bdce37e9ea4f800bf8a5dd91231d3b9"
+  }
+ ],
+ "provider": "golden",
+ "model": "verbatim",
+ "via": "GOLDEN",
+ "attempts": 1,
+ "route_trace": []
 }

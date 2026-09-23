@@ -1,18 +1,34 @@
 {
-  "schema": "yaiwes.crazy-wall/v1",
-  "agent": "agent-7-llama-hf",
-  "framework": "smolagents",
-  "status": "BLOCKED",
-  "updated_at": "2026-09-23T00:22:00Z",
-  "group": "hf-llama",
-  "chain": ["llama_cmd", "hf_job", "bench_report", "serve_health"],
-  "completed": [],
-  "failed": ["pending_serve_health_live"],
-  "next_nodes": ["serve_health"],
-  "current_nodes": [],
-  "gaps": [
-    "GOLDEN listo: llama_cmd/hf_job/bench_report/serve_health. Falta Agents Run only=agent-7-llama-hf con GET /health 200.",
-    "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26",
-    "serve_health: probe live o lanza LFM2.5 en cpu-upgrade (32 GB). Cero LLM regen."
-  ]
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-7-llama-hf",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T00:30:22Z",
+ "group": "hf-llama",
+ "chain": [
+  "llama_cmd",
+  "hf_job",
+  "bench_report",
+  "serve_health"
+ ],
+ "completed": [
+  "llama_cmd",
+  "hf_job",
+  "bench_report",
+  "serve_health"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "gaps": [
+  "GOLDEN listo: llama_cmd/hf_job/bench_report/serve_health. Falta Agents Run only=agent-7-llama-hf con GET /health 200.",
+  "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26",
+  "serve_health: probe live o lanza LFM2.5 en cpu-upgrade (32 GB). Cero LLM regen."
+ ],
+ "route": [
+  "nvidia",
+  "groq",
+  "cerebras",
+  "minimax_m3"
+ ]
 }

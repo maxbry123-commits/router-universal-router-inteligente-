@@ -1,5 +1,1 @@
-{
-  "schema": "yaiwes.trigger/v1",
-  "run_id": "GOLDEN-A7-SERVE-HEALTH",
-  "input_block": "NO regeneres. Copia GOLDEN/serve_health.py. Meta RUNNING_HEALTHY GET /health 200 en 32GB cpu-upgrade."
-}
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "NO regeneres codigo. Copia bytes de GOLDEN/<module>.py a results/.\nPasos paper: llama_cmd, hf_job, bench_report.\nMeta live: serve_health -> RUNNING_HEALTHY + GET /health 200 (32 GB cpu-upgrade; LFM2.5 o probe job vivo).\n"}

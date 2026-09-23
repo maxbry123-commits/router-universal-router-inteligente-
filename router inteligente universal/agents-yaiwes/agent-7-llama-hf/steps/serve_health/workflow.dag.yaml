@@ -1,0 +1,209 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-7-llama-hf
+  framework: smolagents
+  group: hf-llama
+  route:
+  - nvidia
+  - groq
+  - cerebras
+  - minimax_m3
+  fallback: []
+  max_tokens: 800
+context:
+  text: "HECHOS: llama-server carga pesos UNA vez (mmap) compartidos por ranuras.\n\
+    GOLDEN short-circuit: si existe GOLDEN/<module>.py, smol_agent lo usa verbatim\
+    \ (cero LLM).\nserve_health: solo flavor cpu-upgrade (32 GB). Probe live job o\
+    \ lanza LFM2.5.\nReferencia live: job 6ab3198e51992417dfcd4e26 GET /health 200.\n\
+    \n\n=== ARCHIVO router inteligente universal/agents-yaiwes/agent-7-llama-hf/GOLDEN/serve_health.py\
+    \ ===\n\"\"\"GOLDEN serve_health - NO regenerar.\nMaquina 32 GB (cpu-upgrade)\
+    \ + LFM2.5, o probe live GET /health 200.\nMeta: RUNNING_HEALTHY. Cero regeneracion\
+    \ LLM.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\nimport sys\n\
+    import time\nfrom pathlib import Path\n\nimport requests\nfrom huggingface_hub\
+    \ import HfApi\n\n_COMMON = Path(__file__).resolve().parents[4] / \"common\"\n\
+    if str(_COMMON) not in sys.path:\n    sys.path.insert(0, str(_COMMON))\n\nfrom\
+    \ hardware_sheriff import HardwareSheriffError, assert_machine_32gb_ram, guarded_run_job\n\
+    \nFLAVOR_32GB = \"cpu-upgrade\"\nPORT = 8080\n# Job vivo de referencia (agent-10\
+    \ Own Server) - reusar si /health 200\nKNOWN_JOB_ID = os.environ.get(\"RIU_LIVE_JOB_ID\"\
+    , \"6ab3198e51992417dfcd4e26\")\n# LFM2.5 (meta agent-7) si hay que lanzar\nLFM_REPO\
+    \ = \"LiquidAI/LFM2.5-1.2B-Instruct-GGUF\"\nLFM_FILE = \"LFM2.5-1.2B-Instruct-Q4_K_M.gguf\"\
+    \n\n\ndef _probe_health(job_id: str, token: str) -> str | None:\n    base = f\"\
+    https://{job_id}--{PORT}.hf.jobs\"\n    try:\n        r = requests.get(\n    \
+    \        base.rstrip(\"/\") + \"/health\",\n            headers={\"Authorization\"\
+    : \"Bearer \" + token},\n            timeout=20,\n        )\n        if r.status_code\
+    \ == 200:\n            return base\n    except Exception:  # noqa: BLE001\n  \
+    \      return None\n    return None\n\n\ndef _launch_lfm(token: str) -> dict:\n\
+    \    \"\"\"Lanza LFM2.5 en cpu-upgrade (32 GB) y espera /health 200.\"\"\"\n \
+    \   api = HfApi(token=token)\n    url = f\"https://huggingface.co/{LFM_REPO}/resolve/main/{LFM_FILE}\"\
+    \n    sh = (\n        f\"curl -fL '{url}' -o /model.gguf && /app/llama-server\
+    \ -m /model.gguf \"\n        f\"--host 0.0.0.0 --port {PORT} \"\n        \"-c\
+    \ 16384 -np 4 -cb --cache-prompt --cache-reuse 256 --cache-ram 512 \"\n      \
+    \  \"-fa on -ctk q8_0 -ctv q8_0\"\n    )\n    job = guarded_run_job(\n       \
+    \ api,\n        image=\"ghcr.io/ggml-org/llama.cpp:server\",\n        command=[\"\
+    bash\", \"-lc\", sh],\n        flavor=FLAVOR_32GB,\n        timeout=\"30m\",\n\
+    \        expose=[PORT],\n    )\n    t0, ok = time.time(), None\n    while time.time()\
+    \ - t0 < 480 and ok is None:\n        info = api.inspect_job(job_id=job.id)\n\
+    \        stage = info.status.stage\n        cand = [\n            getattr(info,\
+    \ \"endpoint\", None),\n            getattr(job, \"endpoint\", None),\n      \
+    \      f\"https://{job.id}--{PORT}.hf.jobs\",\n        ]\n        urls = [u for\
+    \ u in dict.fromkeys(cand) if u]\n        if stage == \"RUNNING\":\n         \
+    \   for u in urls:\n                try:\n                    r = requests.get(\n\
+    \                        str(u).rstrip(\"/\") + \"/health\",\n               \
+    \         headers={\"Authorization\": \"Bearer \" + token},\n                \
+    \        timeout=15,\n                    )\n                    if r.status_code\
+    \ == 200:\n                        ok = str(u)\n                        break\n\
+    \                except Exception:  # noqa: BLE001\n                    pass\n\
+    \        if stage in (\"ERROR\", \"COMPLETED\", \"CANCELED\", \"DELETED\"):\n\
+    \            break\n        time.sleep(10)\n    if not ok:\n        return {\n\
+    \            \"model_id\": \"lfm2.5-1.2b\",\n            \"job_id\": str(job.id),\n\
+    \            \"endpoint\": None,\n            \"status\": \"FAILED\",\n      \
+    \      \"detail\": \"LFM launch sin /health 200\",\n            \"flavor\": FLAVOR_32GB,\n\
+    \        }\n    return {\n        \"model_id\": \"lfm2.5-1.2b\",\n        \"job_id\"\
+    : str(job.id),\n        \"endpoint\": ok,\n        \"health_ok_url\": ok.rstrip(\"\
+    /\") + \"/health\",\n        \"status\": \"RUNNING_HEALTHY\",\n        \"detail\"\
+    : \"GET /health 200 live (LFM2.5 launch)\",\n        \"flavor\": FLAVOR_32GB,\n\
+    \    }\n\n\ndef own_server_main() -> int:\n    \"\"\"Alias GOLDEN para short-circuit;\
+    \ lanza LFM si probe falla.\"\"\"\n    token = os.environ.get(\"HF_TOKEN\") or\
+    \ \"\"\n    if not token:\n        return 1\n    live = _probe_health(KNOWN_JOB_ID,\
+    \ token)\n    if live:\n        return 0\n    return 0 if _launch_lfm(token).get(\"\
+    status\") == \"RUNNING_HEALTHY\" else 1\n\n\ndef launch_and_verify(flavor=FLAVOR_32GB):\n\
+    \    try:\n        assert_machine_32gb_ram(flavor=flavor)\n    except HardwareSheriffError\
+    \ as e:\n        raise ValueError(str(e)) from e\n    if flavor != FLAVOR_32GB:\n\
+    \        raise ValueError(f\"solo maquina 32 GB RAM (cpu-upgrade), got {flavor}\"\
+    )\n    token = os.environ.get(\"HF_TOKEN\") or \"\"\n    if not token:\n     \
+    \   raise ValueError(\"falta HF_TOKEN\")\n    live = _probe_health(KNOWN_JOB_ID,\
+    \ token)\n    if live:\n        return {\n            \"model_id\": \"lfm2.5-1.2b\"\
+    ,\n            \"job_id\": KNOWN_JOB_ID,\n            \"endpoint\": live,\n  \
+    \          \"health_ok_url\": live.rstrip(\"/\") + \"/health\",\n            \"\
+    status\": \"RUNNING_HEALTHY\",\n            \"detail\": \"GET /health 200 live\
+    \ (reuse job)\",\n            \"flavor\": flavor,\n        }\n    return _launch_lfm(token)\n\
+    \n\ndef run_all():\n    return [launch_and_verify()]\n\n\nif __name__ == \"__main__\"\
+    :\n    r = run_all()[0]\n    print(r)\n    raise SystemExit(0 if r[\"status\"\
+    ] == \"RUNNING_HEALTHY\" else 1)\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/common/own_server_launch.py\
+    \ ===\n\"\"\"Launches a REAL local model server on the Director's OWN Hugging\
+    \ Face account\n(his compute, his Job) — NOT a third-party paid API. Weights are\
+    \ fetched from the\npublic Hub URL inside the Job. Solo máquina de 32 GB RAM (via\
+    \ guarded_run_job).\n\"\"\"\nfrom __future__ import annotations\n\nimport os\n\
+    import time\n\nimport requests\nfrom huggingface_hub import HfApi\n\nfrom hardware_sheriff\
+    \ import guarded_run_job\n\nMODEL_REPO = \"ggml-org/Qwen3.5-0.8B-GGUF\"\nMODEL_FILE\
+    \ = \"Qwen3.5-0.8B-Q4_0.gguf\"\nPORT = 8080\n# Máquina obligatoria: 32 GB RAM\
+    \ (nunca 16 GB / cpu-basic)\nFLAVOR_32GB = \"cpu-upgrade\"\n\n\ndef note(title:\
+    \ str, msg: str, level: str = \"notice\") -> None:\n    print(f\"::{title.upper()}\
+    \ {level}:: {msg}\".replace(\"\\n\", \" \")[:900], flush=True)\n    print(f\"\
+    ::{level} title=RIU_OWNSERVER_{title}::{msg}\".replace(\"\\n\", \" \")[:900],\
+    \ flush=True)\n\n\ndef main() -> int:\n    token = os.environ[\"HF_TOKEN\"]\n\
+    \    api = HfApi(token=token)\n    url = f\"https://huggingface.co/{MODEL_REPO}/resolve/main/{MODEL_FILE}\"\
+    \n    sh = (\n        f\"curl -fL '{url}' -o /model.gguf && /app/llama-server\
+    \ -m /model.gguf \"\n        f\"--host 0.0.0.0 --port {PORT} \"\n        \"-c\
+    \ 8192 -np 4 -cb --cache-prompt --cache-reuse 256 --cache-ram 512 \"\n       \
+    \ \"-fa on -ctk q8_0 -ctv q8_0\"\n    )\n    try:\n        job = guarded_run_job(\n\
+    \            api,\n            image=\"ghcr.io/ggml-org/llama.cpp:server\",\n\
+    \            command=[\"bash\", \"-lc\", sh],\n            flavor=FLAVOR_32GB,\n\
+    \            timeout=\"30m\",\n            expose=[PORT],\n        )\n    except\
+    \ Exception as exc:  # noqa: BLE001\n        note(\"LAUNCH_ERROR\", f\"{type(exc).__name__}:\
+    \ {str(exc)[:400]}\", \"warning\")\n        return 1\n    note(\"JOB_ID\", str(job.id))\n\
+    \    t0, ok, urls, stage, info = time.time(), None, [], None, None\n    while\
+    \ time.time() - t0 < 480 and ok is None:\n        info = api.inspect_job(job_id=job.id)\n\
+    \        stage = info.status.stage\n        cand = [\n            getattr(info,\
+    \ \"endpoint\", None),\n            getattr(job, \"endpoint\", None),\n      \
+    \      f\"https://{job.id}--{PORT}.hf.jobs\",\n            f\"https://{job.id}.jobs.huggingface.co\"\
+    ,\n        ]\n        urls = [u for u in dict.fromkeys(cand) if u]\n        if\
+    \ stage == \"RUNNING\":\n            for u in urls:\n                try:\n  \
+    \                  r = requests.get(\n                        str(u).rstrip(\"\
+    /\") + \"/health\",\n                        headers={\"Authorization\": \"Bearer\
+    \ \" + token},\n                        timeout=15,\n                    )\n \
+    \                   if r.status_code == 200:\n                        ok = u\n\
+    \                        break\n                except Exception:  # noqa: BLE001\n\
+    \                    pass\n        if stage in (\"ERROR\", \"COMPLETED\", \"CANCELED\"\
+    , \"DELETED\"):\n            break\n        time.sleep(10)\n    logs = []\n  \
+    \  try:\n        for line in api.fetch_job_logs(job_id=job.id):\n            logs.append(str(line))\n\
+    \    except Exception as exc:  # noqa: BLE001\n        logs.append(f\"logs: {type(exc).__name__}\"\
+    )\n    note(\"STATE\", f\"stage={stage} health_ok_url={ok} urls_probadas={urls}\
+    \ logs_final={' | '.join(logs[-8:])[:600]}\")\n    return 0 if ok else 1\n\n\n\
+    if __name__ == \"__main__\":\n    raise SystemExit(main())\n\n\n=== ARCHIVO router\
+    \ inteligente universal/agents-yaiwes/common/hardware_sheriff.py ===\n\"\"\"Sheriff\
+    \ duro: solo máquina HF con 32 GB RAM antes de run_job.\n\nOrden Director: procesador/máquina\
+    \ de 32 GB RAM; cualquier otra → FAIL y no lanzar.\nLos IDs técnicos de flavor\
+    \ HF son detalle de implementación (no texto del Director).\n\"\"\"\nfrom __future__\
+    \ import annotations\n\nfrom typing import Any, Mapping\n\n# Capacidad RAM (GB)\
+    \ conocida por flavor técnico HF Jobs (docs HF).\n_FLAVOR_RAM_GB: dict[str, int]\
+    \ = {\n    \"cpu-basic\": 16,\n    \"cpu-upgrade\": 32,\n    \"t4-small\": 16,\n\
+    \    \"t4-medium\": 32,\n    \"a10g-small\": 24,\n    \"a10g-large\": 48,\n  \
+    \  \"a100-large\": 80,\n}\n\nALLOWED_RAM_GB = 32\n\n\nclass HardwareSheriffError(RuntimeError):\n\
+    \    \"\"\"La máquina pedida no es la de 32 GB RAM.\"\"\"\n\n\ndef ram_gb_for_flavor(flavor:\
+    \ str | None) -> int | None:\n    if not flavor:\n        return None\n    return\
+    \ _FLAVOR_RAM_GB.get(str(flavor).strip().lower())\n\n\ndef assert_machine_32gb_ram(*,\
+    \ flavor: str | None = None, ram_gb: int | None = None) -> None:\n    \"\"\"FAIL\
+    \ cerrado si la máquina no es 32 GB RAM.\"\"\"\n    gb = ram_gb if ram_gb is not\
+    \ None else ram_gb_for_flavor(flavor)\n    label = f\"flavor={flavor!r}\" if flavor\
+    \ else f\"ram_gb={ram_gb!r}\"\n    if gb is None:\n        raise HardwareSheriffError(\n\
+    \            f\"SHERIFF FAIL: máquina desconocida ({label}); solo se permite 32\
+    \ GB RAM. No lanzar.\"\n        )\n    if gb != ALLOWED_RAM_GB:\n        raise\
+    \ HardwareSheriffError(\n            f\"SHERIFF FAIL: máquina {label} tiene {gb}\
+    \ GB RAM; obligatorio {ALLOWED_RAM_GB} GB. No lanzar.\"\n        )\n\n\ndef guarded_run_job(api:\
+    \ Any, **kwargs: Any) -> Any:\n    \"\"\"Envuelve api.run_job: valida máquina\
+    \ 32 GB RAM y luego lanza.\"\"\"\n    flavor = kwargs.get(\"flavor\") or kwargs.get(\"\
+    hardware_flavor\")\n    assert_machine_32gb_ram(flavor=flavor)\n    return api.run_job(**kwargs)\n\
+    \n\ndef job_is_allowed_32gb(job: Any) -> bool:\n    \"\"\"True si un Job ya existente\
+    \ declara máquina 32 GB RAM.\"\"\"\n    flavor = None\n    for attr in (\"flavor\"\
+    , \"hardware\", \"machine_type\"):\n        flavor = getattr(job, attr, None)\
+    \ or flavor\n    if isinstance(job, Mapping):\n        flavor = job.get(\"flavor\"\
+    ) or job.get(\"hardware\") or flavor\n        compute = job.get(\"compute\") or\
+    \ {}\n        if isinstance(compute, Mapping):\n            flavor = compute.get(\"\
+    flavor\") or flavor\n    gb = ram_gb_for_flavor(str(flavor) if flavor else None)\n\
+    \    return gb == ALLOWED_RAM_GB\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (bench_report):\n\
+    def summarize(rows):\n    \"\"\"Resume las filas de llama-bench en una linea pp/tg.\n\
+    \n    rows: lista de dicts con claves \"n_prompt\", \"n_gen\", \"avg_ts\".\n \
+    \   Busca la fila con n_prompt > 0 y n_gen == 0 (prompt-processing)\n    y la\
+    \ fila con n_gen > 0 y n_prompt == 0 (text-generation).\n    \"\"\"\n    pp_n_prompt\
+    \ = None\n    pp_avg_ts = None\n    tg_n_gen = None\n    tg_avg_ts = None\n  \
+    \  for row in rows:\n        n_prompt = row[\"n_prompt\"]\n        n_gen = row[\"\
+    n_gen\"]\n        avg_ts = row[\"avg_ts\"]\n        if pp_n_prompt is None and\
+    \ n_prompt > 0 and n_gen == 0:\n            pp_n_prompt = n_prompt\n         \
+    \   pp_avg_ts = avg_ts\n        if tg_n_gen is None and n_gen > 0 and n_prompt\
+    \ == 0:\n            tg_n_gen = n_gen\n            tg_avg_ts = avg_ts\n      \
+    \  if pp_n_prompt is not None and tg_n_gen is not None:\n            break\n \
+    \   if pp_n_prompt is None or tg_n_gen is None:\n        raise ValueError(\n \
+    \           \"summarize: rows debe incluir una fila con n_prompt>0 y n_gen==0\
+    \ \"\n            \"y otra con n_gen>0 y n_prompt==0\"\n        )\n    return\
+    \ f\"pp{pp_n_prompt}={pp_avg_ts:.1f} t/s | tg{tg_n_gen}={tg_avg_ts:.1f} t/s\"\n\
+    \n\ndef slots_summary(results):\n    \"\"\"Devuelve una linea por tupla (concurrencia,\
+    \ tokens_totales, segundos).\"\"\"\n    lines = []\n    for entry in results:\n\
+    \        c, tokens, segundos = entry\n        if segundos <= 0 or c <= 0:\n  \
+    \          raise ValueError(\"slots_summary: segundos y concurrencia deben ser\
+    \ > 0\")\n        tps_total = tokens / segundos\n        tps_por_agente = tps_total\
+    \ / c\n        lines.append(\n            f\"{c} simult.: {tps_total:.1f} t/s\
+    \ total ({tps_por_agente:.1f} por agente)\"\n        )\n    return lines\n"
+  max_chars: 40000
+task: 'Copia verbatim GOLDEN/serve_health.py a results/serve_health.py.
+
+  Un solo bloque python identico al GOLDEN. No inventes codigo.
+
+  Meta: RUNNING_HEALTHY via GET /health 200 (probe live o LFM2.5 en cpu-upgrade 32
+  GB).
+
+  '
+checks:
+- kind: python_ast
+- kind: contains
+  values:
+  - own_server_main
+  - assert_machine_32gb_ram
+  - cpu-upgrade
+  - LFM2.5
+  - health
+- kind: python_exec
+  module: serve_health.py
+  test: "import os\nassert os.environ.get(\"HF_TOKEN\"), \"falta HF_TOKEN\"\nimport\
+    \ serve_health as m\nsrc = open(m.__file__).read()\nassert \"own_server_main\"\
+    \ in src\nassert \"cpu-upgrade\" in src\nfrom serve_health import run_all, launch_and_verify\n\
+    raised = False\ntry:\n    launch_and_verify(flavor=\"cpu-basic\")\nexcept ValueError:\n\
+    \    raised = True\nassert raised, \"debia rechazar 16GB\"\nresults = run_all()\n\
+    assert len(results) == 1\nassert results[0][\"status\"] == \"RUNNING_HEALTHY\"\
+    , results[0].get(\"detail\")\nprint(results[0])\n"
+- kind: no_secrets
