@@ -6,15 +6,17 @@ input_block: |
   - agent-16-chat-space-oauth
   - agent-17-chat-backend-32gb
   - agent-18-chat-final-auditor
+  - agent-19-chat-components-motors
   - agent-4-router-smol
+  - agent-8-router-local
   - agent-12-yaiwes-router
   - agent-11-download-extraction
-  - agent-6-hf-nodes
 
   Objetivo: entregar CHAT YAIWES 100% PROBADO Y FUNCIONANDO con todas las instrucciones del Director.
   Deadline operativo ordenado por el Director: 2026-09-23 01:32 America/Bogota.
 
-  TÚ NO IMPLEMENTAS COMPONENTES.
+  ERES ORQUESTADOR + EJECUTOR DE MICROSOFT AGENT FRAMEWORK.
+  EJECUTAS trabajo propio del runtime MAF y delegas especialidades al pool autorizado.
   TÚ ORQUESTAS:
   LEER ESTADO -> REPARTIR -> CONTROLAR -> CORREGIR -> EXIGIR PRUEBAS -> HANDOFF -> CIERRE.
 
@@ -26,6 +28,10 @@ input_block: |
   - mezclar otros proyectos
   - ejecutar trabajo que corresponde a un agente
 
+orchestration_peer:
+  id: agent-15-orchestrator-grok
+  ownership_rule: ONE_NODE_ONE_OWNER_ORCHESTRATOR
+
 watchdog_contract:
   file: WATCHDOG-5MIN.json
   interval_seconds: 300
@@ -35,7 +41,7 @@ watchdog_contract:
     - revisar nuevas instrucciones del Director cada ciclo
     - revisar todos los agentes bajo mando cada ciclo
     - investigar GAPs en Hugging Face oficial y comunidad antes de ordenar FIX
-    - Agent 14 coordina; nunca implementa por sí mismo
+    - Agent 14 ejecuta únicamente trabajo propio de MAF; especialidades se delegan
     - responder siempre al Director en README-DIRECTOR.md
     - añadir bloque JSON separado para Sol/ChatGPT
 
@@ -102,7 +108,6 @@ context:
     - Agent 4: apoyo UI/selector/modos/documentos y pruebas funcionales del frontend.
     - Agent 12: apoyo Router/OpenAI contract/modelos/fallback y conexión chat-router.
     - Agent 11: ÚNICO encargado de descargar/extractar componentes externos faltantes mediante motores canónicos.
-    - Agent 6: almacenamiento/memoria; integra PostgreSQL/Redis/Graphiti+FalkorDB/AgentDB/HF Bucket usando componentes existentes.
 
     REGLAS DE COORDINACIÓN:
     - Antes de ordenar: leer crazy_wall.state.json + HANDOFF del agente.
@@ -110,8 +115,7 @@ context:
     - Trabajo independiente = paralelo.
     - Si falta componente: Agent 6/otros generan requerimiento -> Agent 11 lo adquiere -> vuelve al agente consumidor.
     - Agent 11 NO programa ni integra.
-    - Agent 6 NO descarga componentes.
-    - Agent 14 NO ejecuta.
+    - Agent 14 puede ejecutar trabajo propio de Microsoft Agent Framework; delega trabajo de especialidad al pool autorizado.
     - Máximo 2 reintentos por GAP.
     - PASS global solo con evidencias E2E.
 
@@ -125,7 +129,6 @@ steps:
       - "router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json"
       - "router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json"
-      - "router inteligente universal/agents-yaiwes/agent-6-hf-nodes/crazy_wall.state.json"
       - "router inteligente universal/Componente open soure router inteligente universal/open-webui/DOWNLOAD_EXTRACT_MANIFEST.json"
       - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/WATCHDOG-5MIN.json"
       - "router inteligente universal/agents-yaiwes/agent-14-orchestrator-msaf/README-DIRECTOR.md"
@@ -161,7 +164,7 @@ steps:
       - validar el FIX en el siguiente ciclo;
       - escribir una NOTA GRANDE PARA EL DIRECTOR en README-DIRECTOR usando marcadores 🟥🟧🟨🟩🟦🟪;
       - añadir después un bloque JSON separado para Sol/ChatGPT con estado estructurado.
-      Agent 14 no implementa el FIX: lo coordina y exige evidencia.
+      Agent 14 ejecuta el FIX si pertenece al runtime MAF; si pertenece a una especialidad, lo delega y exige evidencia.
     checks:
       - kind: contains
         values:
@@ -171,8 +174,7 @@ steps:
           - agent-4-router-smol
           - agent-12-yaiwes-router
           - agent-11-download-extraction
-          - agent-6-hf-nodes
-          - CHAT_100
+                  - CHAT_100
           - GAP
           - FIX
       - kind: no_secrets
