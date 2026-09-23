@@ -1,0 +1,103 @@
+{
+  "bundle_bytes": 176385900,
+  "bundle_sha256": "8958ebc7c8cc84063613e19c1b2b37139c07ff548f57d3ae8fda37c38386bb35",
+  "extracted_tree": {
+    "bytes": 605778657,
+    "files": 44948,
+    "sha256": "13270df05097a16321648c6c1ab587396b0aa93be8d171c3d28a6ff82753a11b"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0001",
+      "sha256": "c9e32c80820d3c7f9767b42d08a0765640972e988c74dee5fcf2271bdda1ee66"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0002",
+      "sha256": "d17e262fa606c6963a8119fd0fed0ceda2c9da8069a7f7df1711bac9f2ebd0ca"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0003",
+      "sha256": "87181781880759542ad47d81e78677d59ca413b8daa9d4f0c739a3906850f0fa"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0004",
+      "sha256": "5e4dd2057f952b851787c468148fd616885c78030d2a622fbfe61941314783ab"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0005",
+      "sha256": "7966deb89f45dfa5c4ec1b76a9597e5249cb5030a5cce1aecd1483695e4aadc5"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0006",
+      "sha256": "1ffa5d962b97ceda442bcded246b70d29fc21b5bb91111e55f5a1c6c405a9727"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0007",
+      "sha256": "43efea2c37b7214a1261507ce41619603e472761d61b70a7877cfa2e1265b6c9"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0008",
+      "sha256": "e3ed41e479ad3aebc6e808daacf35feb6c36ee6e97139a188b6c784fe2dafbb1"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0009",
+      "sha256": "a0be878d61b36ed80d712a5f6bbe9d0fe7a7818edce44583c67cb62a4c7b8adf"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0010",
+      "sha256": "47bca09aed4c867c456e8e4d785147f1acea82d7f3ffe2bb95f8066ed4b4cb6b"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0011",
+      "sha256": "171d31f6f902928f68849358af164cd58bf2d1d11ece64bf74b96f63c4e37753"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0012",
+      "sha256": "7211c5ccbb7698b1e555290ab9c8d01523c9a6281202b5af2f7a4691bf0d0724"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0013",
+      "sha256": "95a09019a9b4c302ef6089628fe21211c9925c524ff0a7bfa1b00c9f3d3f571e"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw.bundle.zip.part-0014",
+      "sha256": "32337d7106d6cfc15ca560e3cc0dfe04aee3e70c094888677788c1cc4a08241c"
+    },
+    {
+      "bytes": 225132,
+      "name": "openclaw.bundle.zip.part-0015",
+      "sha256": "881b35275fc0435894f42b5ddb46afb0650edab7a32dad5831e97f78d8a9e80e"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "openclaw",
+  "source_bytes": 605778657,
+  "source_commit": "ec9c1a13db8938e5a3eaa51fca2e981cde2395a9",
+  "source_files": 44948,
+  "source_ref": "v2026.9.5",
+  "source_repo": "openclaw/openclaw",
+  "source_tree": {
+    "bytes": 605778657,
+    "files": 44948,
+    "sha256": "13270df05097a16321648c6c1ab587396b0aa93be8d171c3d28a6ff82753a11b"
+  }
+}
