@@ -21,3 +21,4 @@
 - 2026-09-23 08:06:08Z · 15/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
 - 2026-09-23 08:08:10Z · 15/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
 - 2026-09-23 08:09:27Z · 15/20 agentes CLOSED · hay pendientes; una ronda ya está en curso: no se lanza otra
+- 2026-09-23 11:44:32Z · 16/20 agentes CLOSED · hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
