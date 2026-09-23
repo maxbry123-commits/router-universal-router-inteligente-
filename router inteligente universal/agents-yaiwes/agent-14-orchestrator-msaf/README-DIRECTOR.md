@@ -632,3 +632,37 @@ Tu respuesta debe incluir:
 Usa el formato obligatorio con divisores y hora Colombia.
 
 ➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📌 INSTRUCCIÓN DEL DIRECTOR — AUDITORÍA DE CIERRE DEL CHAT
+
+**🕐 HORA COLOMBIA:** 2026-09-23 02:48 America/Bogota
+
+➡️ **analiza el proyecto del chat que está en ejecución en Github y huggueface y dime qué falta para cerrar**
+
+## RESPUESTA OBLIGATORIA
+Responde TÚ, AGENTE ORQUESTADOR MICROSOFT, en ESTE MISMO ARCHIVO.
+
+Debes basarte en evidencia real del proyecto y separar:
+- qué ya está cerrado;
+- qué está ejecutándose;
+- qué está bloqueado;
+- qué falta exactamente para cerrar;
+- GAP exacto;
+- FIX mínimo;
+- pruebas/evidencia todavía necesarias;
+- siguiente acción.
+
+No declares PASS sin evidencia real.
+No respondas por otro canal.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📣 RESPUESTA AGENT-14-ORCHESTRATOR-MSAF — PENDIENTE
+
+**🕐 HORA COLOMBIA:** PENDIENTE
+
+> El agente debe responder aquí mediante su runtime real.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
