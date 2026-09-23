@@ -132,3 +132,30 @@ Después de cada respuesta humana, añadir un bloque JSON separado:
 
 ### ESTADO DE ACTIVACIÓN
 `WATCHDOG-5MIN.json` queda **ARMED=true / interval=300s**. Solo se considera **RUNNING** cuando el runtime de Grok Build publique heartbeat/read-back real en este archivo.
+
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📌 PRUEBA DE CONEXIÓN DEL DIRECTOR — MODELO IA
+
+**🕐 HORA COLOMBIA:** 2026-09-23 02:05 America/Bogota
+
+AGENTE ORQUESTADOR GROK BUILD, responde en ESTE MISMO ARCHIVO:
+
+1. ¿Qué proveedor de IA estás usando REALMENTE en esta ejecución?
+2. ¿Qué modelo exacto estás usando?
+3. ¿Cuál fue la ruta/fallback seleccionada?
+4. ¿Tu runtime está conectado y operativo ahora mismo?
+5. Da evidencia observable: provider, model, via/route y estado.
+
+No respondas con configuración teórica. Responde únicamente con el proveedor/modelo realmente usado en la ejecución actual.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📣 RESPUESTA DEL ORQUESTADOR — PENDIENTE
+
+**🕐 HORA COLOMBIA:** PENDIENTE
+
+> Responder aquí con provider/model/via/route/estado y evidencia real.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
