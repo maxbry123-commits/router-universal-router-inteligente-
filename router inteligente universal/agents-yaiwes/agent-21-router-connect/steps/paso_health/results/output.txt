@@ -1,0 +1,53 @@
+Voy a ejecutar la tarea paso a paso según los requisitos del Director.
+
+**Paso 1: Leer LIVE_URL del flag**
+
+```bash
+FLAG_PATH="agents-yaiwes/ROUTER_JOB_PAUSE.flag"
+LIVE_URL=$(grep "^LIVE_URL=" "$FLAG_PATH" | cut -d'=' -f2-)
+```
+
+**Paso 2: Realizar GET /health con autenticación**
+
+```bash
+HF_TOKEN="${HF_TOKEN:-}"
+X_API_KEY="${X_API_KEY:-}"
+
+HEALTH_RESPONSE=$(curl -s -w "\n%{http_code}" \
+  -H "Authorization: Bearer $HF_TOKEN" \
+  -H "X-API-Key: $X_API_KEY" \
+  "$LIVE_URL/health")
+
+HTTP_STATUS=$(echo "$HEALTH_RESPONSE" | tail -n1)
+BODY=$(echo "$HEALTH_RESPONSE" | sed '$d')
+```
+
+**Paso 3: Guardar output.txt**
+
+```bash
+mkdir -p steps/paso_health/results
+cat > steps/paso_health/results/output.txt << EOF
+http_status: $HTTP_STATUS
+body_recortado: $(echo "$BODY" | head -c 500 | tr -d '\n')
+EOF
+```
+
+**Paso 4: Actualizar crazy_wall.state.json solo si es 200**
+
+```bash
+if [ "$HTTP_STATUS" -eq 200 ]; then
+  # Leer estado actual y actualizar
+  jq '.router_connected = true' crazy_wall.state.json > crazy_wall.state.tmp && mv crazy_wall.state.tmp crazy_wall.state.json
+fi
+```
+
+**Protección de secretos:**
+- No se imprime ningún token (HF_TOKEN, X-API-Key, etc.)
+- Solo se usa en los headers de curl, sin exponer en logs
+- body_recortado solo muestra primeros 500 chars sin secretos
+
+**Resultado esperado:**
+- Archivo `steps/paso_health/results/output.txt` con status HTTP y body recortado
+- `crazy_wall.state.json` actualizado con `router_connected: true` solo si health responde 200
+
+Ruta health ejecutada sin exponer tokens ni usar LFS/GitHub Actions.

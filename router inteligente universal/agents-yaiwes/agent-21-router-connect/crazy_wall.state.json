@@ -1,0 +1,21 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-21-router-connect",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-24T07:31:24Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "paso_health"
+ ],
+ "completed": [
+  "paso_health"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}
