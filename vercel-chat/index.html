@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RIU Chat</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #0b0d10; color: #eee; }
+    main { max-width: 720px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 1.1rem; }
+    #log { min-height: 50vh; border: 1px solid #333; border-radius: 8px; padding: 12px; white-space: pre-wrap; }
+    form { display: flex; gap: 8px; margin-top: 12px; }
+    input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #444; background: #161a20; color: #fff; }
+    button { padding: 10px 16px; border: 0; border-radius: 8px; background: #6d5efc; color: #fff; }
+    .err { color: #ff8a8a; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>RIU Chat → procesador HF 32 GB</h1>
+    <div id="log">Listo. Escribe un mensaje.</div>
+    <form id="f">
+      <input id="m" autocomplete="off" placeholder="Mensaje" />
+      <button type="submit">Enviar</button>
+    </form>
+  </main>
+  <script>
+    const log = document.getElementById('log');
+    document.getElementById('f').onsubmit = async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('m').value.trim();
+      if (!msg) return;
+      document.getElementById('m').value = '';
+      log.textContent += '\n\nTú: ' + msg + '\n…';
+      try {
+        const r = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ message: msg })
+        });
+        const t = await r.text();
+        let data; try { data = JSON.parse(t); } catch { data = { raw: t }; }
+        log.textContent += '\nRIU: ' + (data.reply || data.error || t).slice(0, 4000);
+      } catch (err) {
+        log.textContent += '\nError: ' + err;
+      }
+    };
+  </script>
+</body>
+</html>
