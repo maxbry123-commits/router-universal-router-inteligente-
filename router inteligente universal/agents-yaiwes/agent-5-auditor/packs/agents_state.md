@@ -53,7 +53,7 @@ Request timed out.
 - paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js'] gaps=-
 ## agent-20-openclaw-rowboat: estado=CLOSED marco=smolagents pasos_cerrados=['add_donors']
 - paso add_donors: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-20-openclaw-rowboat/steps/add_donors/results/openclaw_rowboat_donors.py'] gaps=-
-## agent-21-router-connect: estado=? marco=? pasos_cerrados=[]
+## agent-21-router-connect: estado=CLOSED marco=pocketflow pasos_cerrados=['paso_health']
+- paso paso_health: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 ## agent-3-router: estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script', 'publish_live']
-- paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py'] gaps=-
-- paso publish_live: CLOSED modelo=nvidia/nemotron
+- paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-rout

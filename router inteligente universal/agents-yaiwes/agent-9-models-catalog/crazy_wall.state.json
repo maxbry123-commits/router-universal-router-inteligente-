@@ -3,7 +3,7 @@
  "agent": "agent-9-models-catalog",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-23T20:29:54Z",
+ "updated_at": "2026-09-24T10:18:20Z",
  "group": "hf-models",
  "chain": [
   "models_catalog",
@@ -20,5 +20,5 @@
   "CLOSED paper sin GET /health HTTP 200 live. Reabierto.",
   "Referencia live agent-10: job 6ab3198e51992417dfcd4e26 /health 200 con token"
  ],
- "router_connected": false
+ "router_connected": true
 }
