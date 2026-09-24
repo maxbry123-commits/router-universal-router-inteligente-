@@ -1,0 +1,21 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-22-grok-connect",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-24T23:48:33Z",
+ "router_connected": true,
+ "group": "orchestrators",
+ "chain": [
+  "paso_health"
+ ],
+ "completed": [
+  "paso_health"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}
