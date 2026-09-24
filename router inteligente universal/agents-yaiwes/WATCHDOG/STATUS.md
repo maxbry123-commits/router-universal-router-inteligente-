@@ -1,4 +1,4 @@
-# WATCHDOG — estado de los agentes (2026-09-24 19:13:51Z)
+# WATCHDOG — estado de los agentes (2026-09-24 19:21:22Z)
 
 **Acción:** hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
 
