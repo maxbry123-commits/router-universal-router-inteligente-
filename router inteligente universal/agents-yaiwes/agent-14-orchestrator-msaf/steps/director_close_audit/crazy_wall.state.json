@@ -3,7 +3,7 @@
  "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-24T10:25:11Z",
+ "updated_at": "2026-09-24T15:18:58Z",
  "router_connected": true,
  "group": "orchestrators",
  "current_nodes": [
@@ -13,7 +13,9 @@
   "sheriff"
  ],
  "gaps": [
-  "falta 'PRUEBAS'"
+  "falta 'CERRADO'",
+  "falta 'EN EJECUCIÓN'",
+  "falta 'FALTA PARA CERRAR'"
  ],
  "attempts": 3,
  "provider": "hf",
