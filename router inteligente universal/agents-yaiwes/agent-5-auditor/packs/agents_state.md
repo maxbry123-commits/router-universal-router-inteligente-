@@ -18,7 +18,7 @@ Error code: 402 - {'message': 'Payment require
 ## agent-13-repo-inventory: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
 - paso inventory_module: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-13-repo-inventory/steps/inventory_module/results/repo_inventory.py'] gaps=la prueba falló (exit=1): AssertionError
 ## agent-14-orchestrator-msaf: estado=BLOCKED marco=pocketflow pasos_cerrados=['orchestrate_chat_100', 'director_model_probe', 'director_question_1']
-- paso director_close_audit: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'PRUEBAS'
+- paso director_close_audit: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'CERRADO'; falta 'EN EJECUCIÓN'; falta 'FALTA PARA CERRAR'
 - paso director_model_probe: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso director_question_1: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso inbox_director-close-audit-agent14-20260923-01: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
@@ -56,4 +56,4 @@ Request timed out.
 ## agent-21-router-connect: estado=CLOSED marco=pocketflow pasos_cerrados=['paso_health']
 - paso paso_health: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 ## agent-3-router: estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script', 'publish_live']
-- paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-3-router/steps
+- paso deploy_script: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router intelig
