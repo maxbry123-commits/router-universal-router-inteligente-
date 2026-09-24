@@ -1,6 +1,6 @@
-# WATCHDOG — estado de los agentes (2026-09-24 15:11:06Z)
+# WATCHDOG — estado de los agentes (2026-09-24 15:19:48Z)
 
-**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
+**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 3/3)
 
 | agente | marco | estado | pasos cerrados | bloqueado en | GAPs |
 |---|---|---|---|---|---|
@@ -11,7 +11,7 @@ Error code: 402 - {'message': 'Payment require | cerebras/gpt-oss-120b:AgentGene
 Error code: 402 - {'message': 'Payment require |
 | agent-12-yaiwes-router | smolagents | CLOSED | 2/1 | - | - |
 | agent-13-repo-inventory | pocketflow | BLOCKED | 0/1 | inventory_module | la prueba falló (exit=1): AssertionError |
-| agent-14-orchestrator-msaf | pocketflow | BLOCKED | 5/4 | director_close_audit | falta 'PRUEBAS' |
+| agent-14-orchestrator-msaf | pocketflow | BLOCKED | 5/4 | director_close_audit | falta 'CERRADO' | falta 'EN EJECUCIÓN' |
 | agent-15-orchestrator-grok | smolagents | CLOSED | 4/3 | - | hf/deepseek-ai/DeepSeek-V4-Flash:AgentGenerationError:Error while generating output:
 Request timed out. |
 | agent-15-orchestrator-grokbuild | pocketflow | BLOCKED | 0/1 | fetch_and_connect | la prueba falló (exit=1): requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://api.github.com/rep |
