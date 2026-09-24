@@ -1,0 +1,33 @@
+schema: yaiwes.chain/v1
+input_block: |
+  ORDEN DIRECTOR: Agente 22 = conexión Grok al Router.
+  Ejecuta GET {LIVE_URL}/health (LIVE_URL del flag ROUTER_JOB_PAUSE.flag).
+  Headers del entorno: Authorization Bearer HF_TOKEN y X-API-Key.
+  El archivo output.txt debe empezar con dos líneas literales:
+  http_status: <codigo>
+  router_ok: <si o no>
+  Prohibido escribir un plan. Prohibido tokens. Prohibido LFS/Actions/Job descarga.
+agent:
+  id: agent-22-grok-connect
+  framework: pocketflow
+  group: orchestrators
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 400
+context:
+  text: |
+    Par: agent-15-orchestrator-grok.
+    Flag: router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag
+steps:
+  - id: paso_health
+    task: |
+      Hacer el GET /health de verdad. Escribir solo el resultado, no instrucciones.
+      línea 1: http_status: NNN
+      línea 2: router_ok: si|no
+      línea 3: live_url_host: (host sin query)
+      router_connected true solo si NNN=200.
+    checks:
+      - kind: contains
+        values: ["http_status:", "router_ok:"]
+      - kind: no_secrets
+edges: []
