@@ -1,0 +1,45 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR: DeepSeek Harness (deepseek-ai/deepseek-harness) como cerebro operativo del chat, delegado en un agente.
+  El Router YAIWES no desaparece: se conecta como plugin de modelos. Camino rápido primero; la capa de evolución va aparte y después.
+
+agent:
+  id: agent-38-deepseek-harness
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Camino rápido aprobado: CHAT → Harness → Memoria → Router YAIWES → LLM/Agente → Sheriff (puertas yaiwes.gate/v1) → respuesta.
+    Evolución (MemRL, SCOPE, Bayesian-Agent, MetaClaw, Continual/Meta/Life-Harness, MOSS) = fase 2, asíncrona, fuera del camino de cada mensaje.
+    Descarga solo con el motor canónico.
+
+steps:
+  - id: acquire_harness
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_DEEPSEEK_HARNESS.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_DEEPSEEK_HARNESS]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "deepseek-ai/deepseek-harness", SOURCE_REF: "main", SLUG: "deepseek-harness", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+  - id: plan_camino_rapido
+    task: |
+      Entrega el plan de integración del camino rápido en 8 pasos máximo: qué plugin del harness conecta con cada pieza existente
+      (openwebui_bridge, memory_adapter, Router /chat/send, agents_registry, gates/), archivo a crear en cada paso, prueba de éxito.
+      Si el harness exige Node o algo que no corre en CPU del Router, escríbelo como GAP. Lista la fase 2 (evolución) solo como pendiente.
+    checks:
+      - kind: min_chars
+        value: 500
+      - kind: no_secrets
+
+edges:
+  - [acquire_harness, plan_camino_rapido]
