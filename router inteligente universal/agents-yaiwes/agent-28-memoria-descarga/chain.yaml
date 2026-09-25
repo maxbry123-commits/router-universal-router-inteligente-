@@ -1,7 +1,8 @@
 schema: yaiwes.chain/v1
+# relanzado 2026-09-25 04:45: graphify, postgres, redis, redis-py, asyncpg ya existen (DESTINATION_EXISTS)
 input_block: |
-  DIRECTOR 2026-09-25: Agente que use los motores: revisa el historial de uso de los motores de descarga y extracción en main y replica.
-  No GitHub Actions. No HF Job. Memoria: PostgreSQL + Redis + Graphiti + FalkorDB + AgentDB + HF Storage Bucket + Graphify-Labs/graphify.
+  DIRECTOR 2026-09-25: descargar con el motor de descarga y extracción (no GitHub Actions, no HF Job):
+  memoria (Graphiti, FalkorDB), skills obligatorios (ECC, Agent Skills, Prompt Master) y staff (Codex, Claude Code).
 
 agent:
   id: agent-28-memoria-descarga
@@ -9,54 +10,89 @@ agent:
   group: chat
   route: [deepseek_flash]
   fallback: []
-  max_tokens: 800
+  max_tokens: 600
 
 context:
   text: |
-    Mismo motor y mismo patrón que agent-19 (CLOSED 2026-09-25 02:20 con Rowboat y MSAF).
-    PostgreSQL y Redis NO se descargan como código: se usan como servicio (GAP para agent-17).
-    AgentDB: repo exacto sin confirmar → GAP, no se descarga hasta confirmarlo.
+    Motor canónico, mismo patrón que agent-19 (CLOSED). Destino: Componente open soure router inteligente universal/<slug>.
+    GAP (repo exacto sin confirmar, no se descargan): mimo code, Memanto, Ponytail, Archify, AgentDB (posible dentro de ruflo, ya descargado).
 
 steps:
-  - id: acquire_graphify
-    task: |
-      Responde exactamente MOTOR_EXEC_REQUEST_GRAPHIFY.
+  - id: graphiti
+    task: "Responde exactamente MOTOR_EXEC_REQUEST_GRAPHITI."
     checks:
-      - kind: contains
-        values: [MOTOR_EXEC_REQUEST_GRAPHIFY]
-      - kind: motor_exec
-        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
-        timeout: 1800
-        env: {SOURCE_REPO: "Graphify-Labs/graphify", SOURCE_REF: "main", SLUG: "graphify", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
-        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
-      - kind: no_secrets
-
-  - id: acquire_graphiti
-    task: |
-      Responde exactamente MOTOR_EXEC_REQUEST_GRAPHITI.
-    checks:
-      - kind: contains
-        values: [MOTOR_EXEC_REQUEST_GRAPHITI]
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GRAPHITI]}
       - kind: motor_exec
         path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
         timeout: 1800
         env: {SOURCE_REPO: "getzep/graphiti", SOURCE_REF: "main", SLUG: "graphiti", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
         expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
-      - kind: no_secrets
-
-  - id: acquire_falkordb
-    task: |
-      Responde exactamente MOTOR_EXEC_REQUEST_FALKORDB.
+      - {kind: no_secrets}
+  - id: falkordb
+    task: "Responde exactamente MOTOR_EXEC_REQUEST_FALKORDB."
     checks:
-      - kind: contains
-        values: [MOTOR_EXEC_REQUEST_FALKORDB]
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_FALKORDB]}
       - kind: motor_exec
         path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
         timeout: 1800
         env: {SOURCE_REPO: "FalkorDB/falkordb-py", SOURCE_REF: "main", SLUG: "falkordb-py", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
         expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
-      - kind: no_secrets
+      - {kind: no_secrets}
+  - id: ecc
+    task: "Responde exactamente MOTOR_EXEC_REQUEST_ECC."
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_ECC]}
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "affaan-m/ECC", SOURCE_REF: "main", SLUG: "ecc", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - {kind: no_secrets}
+  - id: agentskills
+    task: "Responde exactamente MOTOR_EXEC_REQUEST_AGENTSKILLS."
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_AGENTSKILLS]}
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "agentskills/agentskills", SOURCE_REF: "main", SLUG: "agentskills", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - {kind: no_secrets}
+  - id: prompt_master
+    task: "Responde exactamente MOTOR_EXEC_REQUEST_PROMPTMASTER."
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_PROMPTMASTER]}
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "nidhinjs/prompt-master", SOURCE_REF: "main", SLUG: "prompt-master", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - {kind: no_secrets}
+  - id: codex
+    task: "Responde exactamente MOTOR_EXEC_REQUEST_CODEX."
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CODEX]}
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "openai/codex", SOURCE_REF: "main", SLUG: "codex", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - {kind: no_secrets}
+  - id: claude_code
+    task: "Responde exactamente MOTOR_EXEC_REQUEST_CLAUDECODE."
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CLAUDECODE]}
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "anthropics/claude-code", SOURCE_REF: "main", SLUG: "claude-code", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - {kind: no_secrets}
 
 edges:
-  - [acquire_graphify, acquire_graphiti]
-  - [acquire_graphiti, acquire_falkordb]
+  - [graphiti, falkordb]
+  - [falkordb, ecc]
+  - [ecc, agentskills]
+  - [agentskills, prompt_master]
+  - [prompt_master, codex]
+  - [codex, claude_code]
