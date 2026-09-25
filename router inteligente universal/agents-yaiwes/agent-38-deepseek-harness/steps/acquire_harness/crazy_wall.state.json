@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-38-deepseek-harness",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-25T05:00:05Z",
+ "router_connected": true,
+ "group": "chat",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 3,
+ "gaps": [
+  "motor falló (exit=1): RuntimeError: COMMAND_FAILED:git:128:fatal: couldn't find remote ref main"
+ ],
+ "failed": [
+  "execute"
+ ]
+}

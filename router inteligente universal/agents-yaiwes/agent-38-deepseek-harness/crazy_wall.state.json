@@ -1,0 +1,24 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-38-deepseek-harness",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-25T05:00:05Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "acquire_harness",
+  "plan_camino_rapido"
+ ],
+ "completed": [],
+ "failed": [
+  "acquire_harness"
+ ],
+ "next_nodes": [
+  "plan_camino_rapido"
+ ],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}
