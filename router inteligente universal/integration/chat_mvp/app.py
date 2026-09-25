@@ -3,9 +3,12 @@
 Run: uvicorn integration.chat_mvp.app:app --host 0.0.0.0 --port 7860
 CORS: RIU_CORS_ORIGINS (comma-separated, default "*") lets the static chat (a Hugging Face Static Space) call this API from the browser; the API key
 header (X-API-Key) still protects every route except the public pages.
+2026-09-25 (Opus, autorizado por el Director): ui_bridge montado para el chat de Vercel (/gh/accounts, /control/*, /groups).
+Se monta dentro de try: si falla, el Router sigue arriba sin esas rutas.
 """
 from __future__ import annotations
 
+import logging
 import os
 
 from fastapi import FastAPI
@@ -18,7 +21,7 @@ from .route_api import build_route_router
 from .router import build_router, get_store
 from .vault_api import build_vault_router
 
-app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.1")
+app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.2")
 app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in os.getenv("RIU_CORS_ORIGINS", "*").split(",") if o.strip()],
                    allow_methods=["*"], allow_headers=["*"], allow_credentials=False)
 
@@ -32,4 +35,10 @@ app.include_router(build_router())  # first: its /chat serves the MVP UI
 app.include_router(build_vault_router())  # /vault: Secret Bank unlock in memory
 app.include_router(build_jobs_router())  # /chat/jobs/run: parallel agent jobs
 app.include_router(build_route_router())  # /chat/route + /chat/router/status: resilient policy routing
+try:
+    from .ui_bridge import build_ui_bridge_router
+
+    app.include_router(build_ui_bridge_router())  # /gh/accounts, /control/*, /groups: Vercel chat
+except Exception as exc:  # never take the Router down for the UI bridge
+    logging.getLogger("riu").warning("ui_bridge no montado: %s", exc)
 app.include_router(gateway.app.router)  # /health, /v1/models, /v1/chat/completions, /chat/models
