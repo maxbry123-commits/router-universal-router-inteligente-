@@ -1,7 +1,10 @@
 schema: yaiwes.chain/v1
+# relanzado 2026-09-25 04:55 con objetivos del Director (input 7)
 input_block: |
-  DIRECTOR: Agente centinela supervisor juez guardián con watchdog activo que vigila cada 10 minutos que se cumplan
-  las instrucciones de Opus, ordena, controla y resuelve los GAPs o reactiva los agentes que no estén ejecutando.
+  DIRECTOR: Centinela supervisor juez guardián con watchdog cada 5–10 min: verifica que los agentes trabajen, reactiva, resuelve GAPs.
+  Mapa mental + diagrama de flujo en vivo del trabajo, actualizado cada hora en el MISMO archivo, con state JSON y Crazy Wall
+  (formato Mapa Mental v3.0 NCT/APEX y emojis de checklist; Archify para el diagrama). Usa Prompt Master para las órdenes.
+  Parte militar de los agentes. Todos centralizados en el chat como equipo.
 
 agent:
   id: agent-27-centinela
@@ -13,34 +16,59 @@ agent:
 
 context:
   text: |
-    Agentes a vigilar: 16, 17, 19, 24, 25, 26, 28, 29, 30, 31, 32, 33.
-    Estado de cada uno: agents-yaiwes/agent-*/crazy_wall.state.json (CLOSED / BLOCKED / sin archivo = no corrió).
-    Tablero: "Claude notas/CRAZY-WALL-CENTRAL-CHAT-2026-09-24.md".
-    Reactivar = volver a escribir el chain.yaml del agente (línea "# relanzado <hora>"), UN agente por push.
-    Límites: máximo 2 relanzamientos por agente; después, GAP para Opus. No tocar el Job del Router ni el Space. Solo deepseek_flash.
+    OBJETIVOS POR AGENTE (el juez solo da CERRADO con la prueba indicada):
+    16 UI Vercel → index.html + vercel.json en "router inteligente universal/vercel-ui/" y la web de Vercel responde.
+    17 Backend → openwebui_bridge.py + memory_adapter.py montados; /v1/models muestra los 2 modos.
+    19/28 Descargas → cada componente con PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED.
+    24 Memoria → lista mínima entregada (CLOSED).
+    25 Cableo agentes → /chat/agents lista todos + Hermes/Rowboat/MSAF.
+    26 Plan 4 objetivos → registro JSON del workflow para el botón +.
+    29 Gateway GitHub → /gh/repos lista repos de la cuenta 1.
+    30 Sandbox → /sandbox/order lanza un agente y devuelve estado.
+    31 Micro sistema → cada agente con CLAUDE.md, MEMORIA.md, SKILLS.md, inbox/.
+    32 Organizador → inventario + mapa de raíz única + script en prueba.
+    33 MCP → /mcp responde con 6 herramientas.
+    35 Puertas obligatorias → gates/ según "Claude notas/ESQUEMA-OBLIGATORIO-yaiwes-gate-v1.md", 4 pruebas pasan.
+    36 Panel de control → pausa/apagado/encendido + cola de órdenes + mini router.
+    37 Router gratuito → NVIDIA/Cerebras/Groq con chequeo de disponibilidad.
+    38 DeepSeek Harness → descargado + plan de camino rápido.
+    Reglas: reactivar = reescribir chain.yaml con "# relanzado <hora>", un agente por push, máx. 2 veces; luego GAP para Opus.
+    No tocar el Job del Router ni el Space. Sin claves en archivos.
 
 steps:
   - id: centinela_code
     task: |
-      Entrega el código Python completo de centinela.py que, ejecutado cada 10 minutos por el Job persistente del Router
-      (se llama desde router_job_persistent.py junto al git pull, sin crear Jobs nuevos):
-      1) lee el estado de los agentes de la lista; 2) si BLOCKED o sin estado tras 20 min, relanza (máx. 2);
-      3) si una salida output.txt contiene "GAP", lo copia al tablero; 4) escribe CENTINELA.state.json con la hora y el resumen;
-      5) usa el token de GitHub desde variable de entorno. Solo el código.
+      Entrega el código Python completo de centinela.py, llamado cada 10 minutos por el proceso persistente del Router (sin crear Jobs):
+      1) lee crazy_wall.state.json de cada agente de la lista; 2) BLOCKED o sin estado tras 20 min → relanza (máx. 2);
+      3) copia los GAPs de output.txt al tablero; 4) respeta AGENTS_PAUSE.flag (si PAUSED=true no relanza nada);
+      5) cada 60 min reescribe "Claude notas/MAPA-VIVO.md". Token GitHub desde variable de entorno. Solo el código.
     checks:
       - kind: python_ast
       - kind: min_chars
-        value: 800
+        value: 900
+      - kind: no_secrets
+
+  - id: mapa_vivo_plantilla
+    task: |
+      Entrega la plantilla de MAPA-VIVO.md que centinela.py rellena cada hora, con estas secciones en este orden:
+      🌐 VISIÓN GLOBAL; 📍 POSICIÓN ACTUAL; 🔗 DEPENDENCIAS; 📊 MADUREZ (barras ██░░ por bloque);
+      diagrama de flujo en bloque mermaid (agentes → estado actual, en curso resaltado);
+      🎖️ PARTE MILITAR (tabla agente | misión | estado | última hora | GAP);
+      checklist con 🎯 🏗️ 📌👣 ⚠️ 🔒 ✅ ⁉️ 🆕; y al final un bloque ```json con el STATE (actual, siguiente, bloqueados, aprobados).
+      Solo la plantilla con marcadores {…}.
+    checks:
+      - kind: contains
+        values: ["mermaid", "PARTE MILITAR", "STATE"]
       - kind: no_secrets
 
   - id: juez
     task: |
-      Entrega los criterios del juez: qué cuenta como CERRADO de verdad por agente (archivo real creado, prueba pasada),
-      en una tabla agente → prueba de éxito. GAPs al final.
+      Entrega el código Python de juez.py: por cada agente aplica la prueba de su objetivo de la lista y devuelve CERRADO_REAL o PENDIENTE con motivo.
+      Solo el código.
     checks:
-      - kind: min_chars
-        value: 300
+      - kind: python_ast
       - kind: no_secrets
 
 edges:
-  - [centinela_code, juez]
+  - [centinela_code, mapa_vivo_plantilla]
+  - [mapa_vivo_plantilla, juez]
