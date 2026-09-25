@@ -1,0 +1,28 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-24-almacenamiento",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T02:19:03Z",
+ "router_connected": true,
+ "group": "chat",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 1,
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "28b4fa50f51fdec45d3d02538f6463d0a41ceec0d7b07b3a844c5b213df24f0d",
+   "chars": 1184
+  }
+ ],
+ "route_trace": []
+}

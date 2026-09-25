@@ -1,0 +1,43 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-24-almacenamiento
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Almacenamiento decidido: SQL + grafo + caché + documentos; memoria por chat,
+    por proyecto y global; para el chat y los agentes.
+
+    Ya existe en el Router: /chat/storage, /chat/documents (router inteligente universal/integration/chat_mvp/store.py).
+
+    Componentes OSS ya descargados: carpeta "router inteligente universal/Componente
+    open soure router inteligente universal/".
+
+    Descargas: solo agent-19 con el motor canónico (pide SOURCE_REPO y SLUG).
+
+    Corre en CPU (HF cpu-upgrade 32 GB). Sin GPU. Solo deepseek_flash. Sin claves
+    en archivos.
+
+    '
+  max_chars: 40000
+task: 'Entrega la lista MÍNIMA de componentes open source para memoria permanente
+  del chat y los agentes,
+
+  una fila por pieza (SQL, grafo, caché, documentos/vectores): nombre, repo GitHub
+  owner/nombre, por qué, si corre en CPU.
+
+  Prefiere lo más simple que funcione en CPU. Máximo 5 piezas.
+
+  '
+checks:
+- kind: min_chars
+  value: 300
+- kind: no_secrets

@@ -57,4 +57,5 @@ Request timed out.
 - paso paso_health: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 ## agent-22-grok-connect: estado=CLOSED marco=pocketflow pasos_cerrados=['paso_health']
 - paso paso_health: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
-## agent-3-router: estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme', 'space_index'
+## agent-24-almacenamiento: estado=? marco=? pasos_cerrados=[]
+## agent-26-plan-4-objetivos: es

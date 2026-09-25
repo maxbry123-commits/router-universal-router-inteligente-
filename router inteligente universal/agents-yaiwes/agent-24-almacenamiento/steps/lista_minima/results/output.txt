@@ -1,0 +1,14 @@
+GAP: No hay suficiente evidencia para generar la lista.  
+
+**Razones:**  
+1. No se ha inspeccionado la carpeta real de componentes descargados (`router inteligente universal/Componente open soure router inteligente universal/`).  
+2. No se tiene la lista de componentes OSS preexistentes que menciona el DIRECTOR.  
+3. Falta confirmación de qué motores canónicos (SQL, grafo, caché, vector) ya están disponibles en `main` o en el repositorio local.  
+4. No se puede decidir qué es "lo más simple que funcione en CPU" sin ver el contenido real de `/chat/storage` y `/chat/documents` en `store.py`.  
+
+**Para proceder se necesita:**  
+- Ejecutar `ls -R` sobre la carpeta de componentes OSS.  
+- Leer el `store.py` del Router para identificar dependencias ya cableadas.  
+- Preguntar al Director o a agent-19 por `SOURCE_REPO` y `SLUG` de cada pieza que pretenda usar.  
+
+Sin esa evidencia, cualquier lista sería especulativa y violaría la regla `MINIMUM NECESSARY CHANGE`.

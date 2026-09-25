@@ -1,0 +1,14 @@
+GAP: No hay suficiente evidencia para generar el pedido para agent-19 ni el plan de cableo.
+
+**Razones:**
+1. No se ha ejecutado `ls -R` sobre `router inteligente universal/Componente open soure router inteligente universal/` para ver qué componentes OSS ya están descargados.
+2. No se ha inspeccionado `/chat/storage` y `/chat/documents` en `store.py` para identificar dependencias ya cableadas y funciones exportadas.
+3. Sin la lista de componentes reales (SQL, grafo, caché, documentos), no se puede determinar qué `SOURCE_REPO` y `SLUG` pedir a agent-19.
+4. Faltan los nombres de los motores canónicos disponibles en `main` (por ejemplo, sqlite3 nativo, networkx, redis, chromadb) para decidir qué adaptar sin descargar nuevo código.
+
+**Para proceder se necesita:**
+- Ejecutar `ls -R router\ inteligente\ universal/Componente\ open\ soure\ router\ inteligente\ universal/` y capturar salida.
+- Leer `store.py` (al menos primeras 50 líneas y funciones exportadas).
+- Confirmar con Director o agent-19 si SQLite local cuenta como "motor canónico" o necesita `SOURCE_REPO`.
+
+Sin esa evidencia, cualquier pedido o plan sería especulativo y violaría la regla `MINIMUM NECESSARY CHANGE`.

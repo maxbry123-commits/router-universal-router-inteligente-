@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-24-almacenamiento",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T02:19:03Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "lista_minima",
+  "pedido_descarga_y_cableo"
+ ],
+ "completed": [
+  "lista_minima",
+  "pedido_descarga_y_cableo"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}

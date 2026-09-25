@@ -1,0 +1,44 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-24-almacenamiento
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Almacenamiento decidido: SQL + grafo + caché + documentos; memoria por chat,\
+    \ por proyecto y global; para el chat y los agentes.\nYa existe en el Router:\
+    \ /chat/storage, /chat/documents (router inteligente universal/integration/chat_mvp/store.py).\n\
+    Componentes OSS ya descargados: carpeta \"router inteligente universal/Componente\
+    \ open soure router inteligente universal/\".\nDescargas: solo agent-19 con el\
+    \ motor canónico (pide SOURCE_REPO y SLUG).\nCorre en CPU (HF cpu-upgrade 32 GB).\
+    \ Sin GPU. Solo deepseek_flash. Sin claves en archivos.\n\n\nSALIDA VERIFICADA\
+    \ DEL PASO ANTERIOR (lista_minima):\nGAP: No hay suficiente evidencia para generar\
+    \ la lista.  \n\n**Razones:**  \n1. No se ha inspeccionado la carpeta real de\
+    \ componentes descargados (`router inteligente universal/Componente open soure\
+    \ router inteligente universal/`).  \n2. No se tiene la lista de componentes OSS\
+    \ preexistentes que menciona el DIRECTOR.  \n3. Falta confirmación de qué motores\
+    \ canónicos (SQL, grafo, caché, vector) ya están disponibles en `main` o en el\
+    \ repositorio local.  \n4. No se puede decidir qué es \"lo más simple que funcione\
+    \ en CPU\" sin ver el contenido real de `/chat/storage` y `/chat/documents` en\
+    \ `store.py`.  \n\n**Para proceder se necesita:**  \n- Ejecutar `ls -R` sobre\
+    \ la carpeta de componentes OSS.  \n- Leer el `store.py` del Router para identificar\
+    \ dependencias ya cableadas.  \n- Preguntar al Director o a agent-19 por `SOURCE_REPO`\
+    \ y `SLUG` de cada pieza que pretenda usar.  \n\nSin esa evidencia, cualquier\
+    \ lista sería especulativa y violaría la regla `MINIMUM NECESSARY CHANGE`."
+  max_chars: 40000
+task: "Con la lista anterior entrega:\n1) el pedido para agent-19: una línea por pieza\
+  \ con SOURCE_REPO y SLUG;\n2) el plan de cableo con store.py del Router: qué archivo\
+  \ tocar, qué función, y la prueba de éxito\n   (guardar un mensaje, reiniciar, volver\
+  \ a leerlo).\nGAPs al final.\n"
+checks:
+- kind: min_chars
+  value: 300
+- kind: no_secrets
