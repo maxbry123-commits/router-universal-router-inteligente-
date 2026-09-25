@@ -1,13 +1,14 @@
-# INPUT VERBATIM 7 — Director — 2026-09-25 (resumen fiel; texto completo en el chat)
-1. Verificar que los agentes trabajen; si no, el centinela con watchdog cada 5-10 min resuelve. Dar al centinela los objetivos de cada agente.
-2. Centralizar todos los agentes en el chat como equipo; Opus revisa Crazy Wall/bitácora/state/handoff, da órdenes, los orquestadores ejecutan. Objetivo final: el chat centraliza todos los proyectos; Opus es el cerebro, agentes y workflows ejecutan LOOPs.
-3. Mirrors de agentes si hace falta. Descargar Codex, mimo code y Claude Code (agente de descargas) y conectarlos al Router; incorporarlos al staff.
-4. Inventario + borrar archivos basura de trabajos anteriores + organizar en una raíz + parte militar de los agentes. Enjambre de agentes.
-5. Vía de órdenes centralizada (trigger 24/7) para Opus y botón en el chat para activar agentes. Centro de operaciones de programación temporal y emergencias.
-6. Esquema obligatorio en el Router: todo agente pasa por skills: ECC (affaan-m/ECC), Agent Skills (agentskills/agentskills), Ponytail; descargados con el motor y convertidos en paso obligatorio.
-7. Integrar Memanto (gestor de memoria de agentes).
-8. Al centinela: Prompt Master (nidhinjs/prompt-master); mapa mental + diagrama de flujo (Archify) actualizado cada hora en un mismo archivo, con state JSON + Crazy Wall; plantilla NCT/APEX Mapa Mental v3.0, modos /arquitecto y /ejecutor, dashboard.
-9. Apagado/pausa: pausar todos los agentes desde el chat con un botón y encender/pausar el Job de HF.
-10. Selector mini router: grupo orquestador → agentes → fuente API (NVIDIA, Cerebras, Groq, DeepSeek, HF local).
-11. Agentes que no programan → router con NVIDIA, Cerebras y Groq con chequeo de disponibilidad (autorización del Director).
-12. Calcular cada cuánto activar a Opus. Delegar todo. Inicia.
+# INPUT 7 — Director — 2026-09-25 (registro fiel; el documento "DeepSeek Harness como cerebro central" completo quedó en el chat de Opus)
+- Verificar que los agentes trabajen; si no, el centinela con watchdog cada 5–10 min resuelve. Darle al centinela los objetivos de cada agente.
+- Centralizar todos los agentes en el chat como equipo; Opus revisa Crazy Wall / bitácora / state JSON / handoff y da órdenes; orquestadores ejecutan, automatizado. Objetivo final: el chat centraliza todos los proyectos; Opus es el cerebro que revisa y decide; agentes y workflows ejecutan los loops.
+- Mirrors de agentes si hacen falta. Descargar Codex, MiMo Code y Claude Code con el agente de descargas; conectarlos al router; incorporarlos al staff.
+- Organizador/centinela: inventario, borrar basura de trabajos anteriores, organizar en una sola raíz, parte militar de los agentes, Crazy Wall organizado, cablear todos como enjambre.
+- Canal de órdenes centralizado (trigger 24/7 u otra idea) para Opus, y botón en el chat para que el Director los active, no solo conversando. Centro de operaciones de programación temporal y emergencias.
+- 🆘 Esquema obligatorio en el router: todo agente pasa por estos programas/skills; descargar con el motor; convertir en esquema de código de cumplimiento obligatorio (no como skill); Opus diseña el esquema para que el agente lo replique: ECC (affaan-m/ECC), Prompt Master (nidhinjs/prompt-master), Ponytail, Agent Skills (agentskills/agentskills).
+- Integrar Memanto (gestor de memoria de agentes). Prompt Master para el centinela.
+- Centinela: mapa mental + diagrama de flujo en vivo del trabajo, actualizado cada hora en el mismo archivo, con state JSON y Crazy Wall; usar Archify y el formato Mapa Mental v3.0 NCT/APEX (visión, arquitectura, posición, dependencias, entrada/salida, madurez, microflujo, ensamblaje, dashboard, emojis de checklist).
+- Apagado/pausa: pausar o apagar todos los agentes y encender/pausar el Job de HF con botón en el chat o con dos comandos.
+- Selector mini router: grupo orquestador → agentes → API de origen (NVIDIA, Cerebras, Groq, DeepSeek, HF local).
+- Agentes que no programan: router con NVIDIA, Cerebras y Groq con revisión de disponibilidad.
+- DeepSeek Harness (deepseek-ai/deepseek-harness) como cerebro operativo del chat, delegado en un agente.
+- Calcular cada cuánto activar a Opus. Delegar todas las tareas. Inicia.
