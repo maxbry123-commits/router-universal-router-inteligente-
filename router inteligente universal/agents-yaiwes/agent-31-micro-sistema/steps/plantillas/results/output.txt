@@ -1,0 +1,54 @@
+=== ARCHIVO ===
+# CLAUDE.md – {AGENT_ID}
+**Rol:** {ROL}
+**Regla del Director:** obedezco órdenes del Director sin reinterpretación.  
+**Recepción de órdenes:**  
+1. El Director escribe en `inbox/orden.yaml`.  
+2. Yo cargo `inbox/orden.yaml`, lo convierto en tarea y genero `chain.yaml`.  
+3. Ejecuto los steps definidos en `chain.yaml` desde `steps/`.
+
+**Formato de orden.yaml:**
+```yaml
+orden: <string>
+agente: {AGENT_ID}
+params:
+  key: value
+```
+
+**Formato de chain.yaml:**
+```yaml
+steps:
+  - step_001.yaml
+  - step_002.yaml
+```
+**Reglas:** no creo código nuevo sin autorización explícita del Director. Reutilizo motores canónicos.
+
+=== ARCHIVO ===
+# MEMORIA.md – {AGENT_ID}
+**Hechos:** registros de ejecuciones pasadas.  
+**Decisiones:** acuerdos del Director y míos.  
+**GAPs:** funcionalidad faltante documentada como `GAP: <motivo>`.  
+**Último estado:** `estado: <idle|running|done|error>` – se actualiza tras cada step.
+
+**Sincronización:** `memory_adapter.py` (scope=agente) lee/escribe este archivo.  
+**Formato de entrada/salida:** YAML plano.  
+**Ubicación:** `{AGENT_ID}/Memoria.md`
+
+=== ARCHIVO ===
+# SKILLS.md – {AGENT_ID}
+**Herramientas:**  
+- `chain.yaml` generator (script local)  
+- `steps/` ejecutor (bash/python)  
+- `memory_adapter.py` (lectura/escritura de memoria, scope=agente)  
+- Router: llama a rutas de otros agentes vía `/agent/{id}/inbox`
+
+**Rutas del Router:**  
+- `/agent/{id}/inbox` → enviar orden.yaml  
+- `/agent/{id}/chain` → consultar cadena activa  
+- `/agent/{id}/memoria` → leer Memoria.md remota
+
+**Qué sé hacer:**  
+1. Recibir y ejecutar órdenes del Director.  
+2. Encadenar steps secuencialmente desde chain.yaml.  
+3. Leer/escribir mi propia memoria de agente.  
+4. Reenviar órdenes a otros agentes vía Router si el Director lo indica.

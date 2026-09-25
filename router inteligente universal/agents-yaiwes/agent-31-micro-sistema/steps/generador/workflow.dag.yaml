@@ -1,0 +1,57 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-31-micro-sistema
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Agentes existentes: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,26,28,29,30,31,32,33,\
+    \ más Hermes (en main).\nCada agente ya tiene chain.yaml + crazy_wall.state.json\
+    \ + steps/. Memoria global vía memory_adapter.py (agent-17).\n\n\nSALIDA VERIFICADA\
+    \ DEL PASO ANTERIOR (plantillas):\n=== ARCHIVO ===\n# CLAUDE.md – {AGENT_ID}\n\
+    **Rol:** {ROL}\n**Regla del Director:** obedezco órdenes del Director sin reinterpretación.\
+    \  \n**Recepción de órdenes:**  \n1. El Director escribe en `inbox/orden.yaml`.\
+    \  \n2. Yo cargo `inbox/orden.yaml`, lo convierto en tarea y genero `chain.yaml`.\
+    \  \n3. Ejecuto los steps definidos en `chain.yaml` desde `steps/`.\n\n**Formato\
+    \ de orden.yaml:**\n```yaml\norden: <string>\nagente: {AGENT_ID}\nparams:\n  key:\
+    \ value\n```\n\n**Formato de chain.yaml:**\n```yaml\nsteps:\n  - step_001.yaml\n\
+    \  - step_002.yaml\n```\n**Reglas:** no creo código nuevo sin autorización explícita\
+    \ del Director. Reutilizo motores canónicos.\n\n=== ARCHIVO ===\n# MEMORIA.md\
+    \ – {AGENT_ID}\n**Hechos:** registros de ejecuciones pasadas.  \n**Decisiones:**\
+    \ acuerdos del Director y míos.  \n**GAPs:** funcionalidad faltante documentada\
+    \ como `GAP: <motivo>`.  \n**Último estado:** `estado: <idle|running|done|error>`\
+    \ – se actualiza tras cada step.\n\n**Sincronización:** `memory_adapter.py` (scope=agente)\
+    \ lee/escribe este archivo.  \n**Formato de entrada/salida:** YAML plano.  \n\
+    **Ubicación:** `{AGENT_ID}/Memoria.md`\n\n=== ARCHIVO ===\n# SKILLS.md – {AGENT_ID}\n\
+    **Herramientas:**  \n- `chain.yaml` generator (script local)  \n- `steps/` ejecutor\
+    \ (bash/python)  \n- `memory_adapter.py` (lectura/escritura de memoria, scope=agente)\
+    \  \n- Router: llama a rutas de otros agentes vía `/agent/{id}/inbox`\n\n**Rutas\
+    \ del Router:**  \n- `/agent/{id}/inbox` → enviar orden.yaml  \n- `/agent/{id}/chain`\
+    \ → consultar cadena activa  \n- `/agent/{id}/memoria` → leer Memoria.md remota\n\
+    \n**Qué sé hacer:**  \n1. Recibir y ejecutar órdenes del Director.  \n2. Encadenar\
+    \ steps secuencialmente desde chain.yaml.  \n3. Leer/escribir mi propia memoria\
+    \ de agente.  \n4. Reenviar órdenes a otros agentes vía Router si el Director\
+    \ lo indica."
+  max_chars: 40000
+task: 'Entrega el código Python completo de micro_sistema.py que, para cada carpeta
+  agent-*/ (y Hermes), crea si faltan
+
+  CLAUDE.md, MEMORIA.md, SKILLS.md e inbox/ con las plantillas, sin borrar nada existente,
+  y escribe un índice agents_index.json
+
+  {agent_id: {root, rol, estado}}. Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 600
+- kind: no_secrets
