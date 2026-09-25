@@ -1,8 +1,10 @@
 schema: yaiwes.chain/v1
+# relanzado 2026-09-25 (el primer push no se ejecutó)
 input_block: |
   DIRECTOR 2026-09-24: En el repo agentes existe un plan de trabajo pendiente para ejecutar un workflow.
   Un agente investiga el plan de ejecución y prepara el cableo con un agente orquestador que controle el proceso desde el chat.
   Destino: repo agentes raíz ➡️📂 wordflow loop code Yaiwes/ (plan de 4 objetivos). Informa a Opus.
+  DIRECTOR 2026-09-25: selector + para enrutar al chat este proyecto como workflow.
 
 agent:
   id: agent-26-plan-4-objetivos
@@ -14,21 +16,16 @@ agent:
 
 context:
   text: |
-    Plan maestro: https://github.com/maxbry123-commits/agentes/blob/main/Claude%20notas/PLAN-MAESTRO-4-OBJETIVOS.md
-    Anexo técnico: https://github.com/maxbry123-commits/agentes/blob/main/Claude%20notas/PLAN-ANEXO-B-SEALS-MECANISMOS.md
-    Destino del workflow: repo maxbry123-commits/agentes, carpeta raíz "➡️📂 wordflow loop code Yaiwes/"
-    Orquestador del chat: agent-14 (Microsoft Agent Framework). Alternativas: Rowboat, Hermes.
-    Router: el chat habla con los agentes por /chat/agents; los agentes se activan con push de chain.yaml.
-    Solo deepseek_flash. Sin GPU. Sin claves en archivos.
+    Plan maestro: maxbry123-commits/agentes "Claude notas/PLAN-MAESTRO-4-OBJETIVOS.md"
+    Anexo: maxbry123-commits/agentes "Claude notas/PLAN-ANEXO-B-SEALS-MECANISMOS.md"
+    Lectura de otros repos: GET /gh/file (agent-29). Destino: repo agentes "➡️📂 wordflow loop code Yaiwes/".
+    Orquestador del chat: agent-14 (MSAF); alternativas Rowboat, Hermes. Lanzar tareas: /gh/agent-launch.
 
 steps:
   - id: extraer_plan
     task: |
-      Con el plan maestro y el anexo, entrega:
-      1) los 4 objetivos en una línea cada uno;
-      2) la lista ordenada de tareas para cumplirlos, cada una con: agente sugerido, entrada, salida verificable, tiempo estimado;
-      3) qué falta en la carpeta destino para ejecutar el workflow.
-      Si no puedes leer un documento, escribe GAP: <documento> y no inventes su contenido.
+      Entrega: 1) los 4 objetivos en una línea cada uno; 2) tareas ordenadas con agente sugerido, entrada, salida verificable, tiempo;
+      3) qué falta en la carpeta destino. Si no puedes leer un documento escribe GAP: <documento> y no inventes su contenido.
     checks:
       - kind: min_chars
         value: 400
@@ -36,10 +33,8 @@ steps:
 
   - id: plan_cableo
     task: |
-      Con la salida anterior, entrega el plan de cableo:
-      cómo el orquestador agent-14 recibe órdenes desde el chat, lanza cada tarea como chain.yaml (un agente por push),
-      lee su crazy_wall.state.json y reporta al chat. Formato: pasos numerados, cada uno con archivo a crear y prueba de éxito.
-      Lista los GAPs al final.
+      Entrega el registro JSON del workflow para el selector + del chat
+      {nombre, repo, plan, orquestador, tareas:[{id, agente, chain_path}]} y los pasos para que agent-14 lo controle desde el chat. GAPs al final.
     checks:
       - kind: min_chars
         value: 400
