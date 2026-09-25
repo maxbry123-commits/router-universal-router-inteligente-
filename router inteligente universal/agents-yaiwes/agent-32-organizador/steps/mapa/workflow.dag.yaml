@@ -1,0 +1,37 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-32-organizador
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Hoy: agentes en "router inteligente universal/agents-yaiwes/agent-*", chat
+    en "router inteligente universal/integration/chat_mvp/",
+
+    UI Vercel en "router inteligente universal/vercel-ui/", notas en "Claude notas/",
+    Crazy Wall central en "Claude notas/CRAZY-WALL-CENTRAL-CHAT-2026-09-24.md".
+
+    Riesgo: el workflow riu-agents-run.yml, el Job del Router (git pull) y el webhook
+    leen rutas actuales. NO se mueve nada que rompa el Router (Job y Space: no tocar).
+
+    '
+  max_chars: 40000
+task: 'Entrega el árbol destino bajo "➡️📂 chat osquestador/" (chat/, agentes/, orquestadores/,
+  memoria/, workflows/, vercel-ui/, CRAZY_WALL.state.json, BITACORA.md)
+
+  y una tabla origen → destino. Marca con NO-MOVER lo que usan el Job, el webhook
+  o el workflow.
+
+  '
+checks:
+- kind: min_chars
+  value: 500
+- kind: no_secrets

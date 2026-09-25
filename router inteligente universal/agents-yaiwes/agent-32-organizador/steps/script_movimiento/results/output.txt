@@ -1,0 +1,100 @@
+```python
+#!/usr/bin/env python3
+"""reorganizar.py: Dry-run or copy to new root, respect NO-MOVER, merge CRAZY_WALL.state.json."""
+
+import argparse, json, os, shutil, sys
+from pathlib import Path
+
+NO_MOVE_PATTERNS = ["riu-agents-run.yml", ".github/workflows", "router/", "space/"]
+
+def is_no_move(path: Path) -> bool:
+    for pat in NO_MOVE_PATTERNS:
+        if pat in path.parts or pat in str(path):
+            return True
+    return False
+
+def gather_agents(base: Path) -> list:
+    """Return list of agent paths under base that contain crazy_wall.state.json."""
+    agents = []
+    for p in base.rglob("crazy_wall.state.json"):
+        agent_dir = p.parent
+        if "agent-" in agent_dir.name:
+            agents.append(agent_dir)
+    return agents
+
+def merge_state_json(agents: list, new_root: Path) -> dict:
+    merged = {"agents": {}, "chat": None, "moved_from": []}
+    for agent_dir in agents:
+        state_path = agent_dir / "crazy_wall.state.json"
+        if state_path.exists():
+            with open(state_path) as f:
+                data = json.load(f)
+            merged["agents"][agent_dir.name] = data
+    return merged
+
+def dry_run(sources: list, new_root: Path):
+    print(f"DRY-RUN: would create root: {new_root}")
+    print(f"DRY-RUN: would copy {len(sources)} agent dirs")
+    for src in sources:
+        dst = new_root / src.name
+        print(f"  copy {src} -> {dst}")
+    print(f"DRY-RUN: would create {new_root}/CRAZY_WALL.state.json")
+
+def apply_copy(sources: list, new_root: Path):
+    new_root.mkdir(parents=True, exist_ok=True)
+    for src in sources:
+        dst = new_root / src.name
+        if dst.exists():
+            print(f"SKIP {dst} already exists")
+            continue
+        shutil.copytree(src, dst, symlinks=True, ignore_dangling_symlinks=True)
+        # write MOVED.md at origin
+        moved_md = src / "MOVED.md"
+        moved_md.write_text(f"Moved to {dst}\nNo mover este directorio, todo contenido migrado a {new_root}\n")
+        print(f"COPIED {src} -> {dst}")
+    # write merged state
+    merged = merge_state_json(sources, new_root)
+    state_path = new_root / "CRAZY_WALL.state.json"
+    with open(state_path, "w") as f:
+        json.dump(merged, f, indent=2)
+    print(f"CREATED {state_path}")
+
+def main():
+    parser = argparse.ArgumentParser(description="Reorganizar repo: unir agentes y chat bajo una raíz.")
+    parser.add_argument("--apply", action="store_true", help="Ejecutar copia (por defecto dry-run)")
+    args = parser.parse_args()
+
+    old_root = Path("router inteligente universal")
+    if not old_root.exists():
+        print(f"ERROR: No se encuentra directorio base: {old_root}")
+        sys.exit(1)
+
+    new_root = Path("chat osquestrador")
+    agents_dir = old_root / "agents-yaiwes"
+    chat_dir = old_root / "integration" / "chat_mvp"
+
+    # Gather agent dirs (with crazy_wall.state.json), skip NO-MOVE
+    agent_sources = []
+    if agents_dir.exists():
+        for agent in agents_dir.iterdir():
+            if agent.is_dir() and "agent-" in agent.name:
+                if is_no_move(agent):
+                    print(f"SKIP (NO-MOVE): {agent}")
+                    continue
+                agent_sources.append(agent)
+
+    # Include chat dir if present and not NO-MOVE
+    chat_sources = []
+    if chat_dir.exists() and not is_no_move(chat_dir):
+        chat_sources.append(chat_dir)
+
+    all_sources = agent_sources + chat_sources
+
+    if args.apply:
+        apply_copy(all_sources, new_root)
+    else:
+        dry_run(all_sources, new_root)
+
+if __name__ == "__main__":
+    main()
+```
