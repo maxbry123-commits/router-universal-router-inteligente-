@@ -1,0 +1,34 @@
+name: Keep MCP Space Awake
+
+# Visita el Space del conector de Claude (COMAND-CENTER-1/claude-github-mcp-backup, cpu-basic 16 GB) cada 15 minutos
+# para que Hugging Face no lo duerma por inactividad. Si está dormido o parado, pide reiniciarlo con la API de HF.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Visitar y despertar el Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          SPACE="COMAND-CENTER-1/claude-github-mcp-backup"
+          URL="https://comand-center-1-claude-github-mcp-backup.hf.space"
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$URL/" || echo 000)
+          echo "Visita: $code"
+          stage=$(curl -s --max-time 30 -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/spaces/$SPACE/runtime" | python3 -c "import sys,json;print(json.load(sys.stdin).get('stage','?'))" 2>/dev/null || echo '?')
+          echo "Estado del Space: $stage"
+          case "$stage" in
+            SLEEPING|PAUSED|STOPPED|RUNTIME_ERROR)
+              echo "::warning::Space en $stage, pidiendo reinicio"
+              curl -s -X POST --max-time 30 -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/spaces/$SPACE/restart" -o /dev/null -w 'reinicio: %{http_code}\n'
+              ;;
+          esac
