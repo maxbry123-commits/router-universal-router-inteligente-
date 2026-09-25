@@ -1,0 +1,30 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-39-descargas-verificadas",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-25T05:48:22Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "memanto",
+  "ponytail",
+  "archify",
+  "mimo_code",
+  "agentdb"
+ ],
+ "completed": [],
+ "failed": [
+  "memanto"
+ ],
+ "next_nodes": [
+  "ponytail",
+  "archify",
+  "mimo_code",
+  "agentdb"
+ ],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}
