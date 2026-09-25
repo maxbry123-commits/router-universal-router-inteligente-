@@ -1,0 +1,82 @@
+```python
+# mini_router.py
+from fastapi import APIRouter, HTTPException
+from typing import Dict, List
+import json
+from pathlib import Path
+
+router = APIRouter(prefix="/groups")
+GROUPS_FILE = Path("groups.json")
+
+_GROUPS_CACHE: Dict[str, dict] = {}
+
+def _load_groups() -> Dict[str, dict]:
+    if not GROUPS_FILE.exists():
+        return {}
+    if GROUPS_FILE.stat().st_mtime == _GROUPS_CACHE.get("_mtime", 0):
+        return {k: v for k, v in _GROUPS_CACHE.items() if k != "_mtime"}
+    data = json.loads(GROUPS_FILE.read_text())
+    _GROUPS_CACHE.clear()
+    _GROUPS_CACHE["_mtime"] = GROUPS_FILE.stat().st_mtime
+    _GROUPS_CACHE.update(data)
+    return data
+
+def _save_groups(groups: Dict[str, dict]):
+    GROUPS_FILE.write_text(json.dumps(groups, indent=2))
+    _GROUPS_CACHE.clear()
+    _GROUPS_CACHE["_mtime"] = GROUPS_FILE.stat().st_mtime
+    _GROUPS_CACHE.update(groups)
+
+@router.get("/")
+async def list_groups() -> Dict[str, dict]:
+    return _load_groups()
+
+@router.post("/")
+async def create_group(group_data: dict) -> dict:
+    groups = _load_groups()
+    if group_data.get("grupo") in groups:
+        raise HTTPException(409, f"Group '{group_data['grupo']}' already exists")
+    
+    required_fields = ["grupo", "orquestador", "api_origen", "modelo", "agentes"]
+    for f in required_fields:
+        if f not in group_data:
+            raise HTTPException(400, f"Field '{f}' required")
+    
+    valid_apis = {"nvidia", "cerebras", "groq", "deepseek", "hf_local"}
+    if group_data["api_origen"] not in valid_apis:
+        raise HTTPException(400, f"api_origen must be one of {valid_apis}")
+    
+    if not isinstance(group_data["agentes"], list) or len(group_data["agentes"]) == 0:
+        raise HTTPException(400, "agentes must be a non-empty list")
+    
+    group = {
+        "orquestador": group_data["orquestador"],
+        "agentes": group_data["agentes"],
+        "api_origen": group_data["api_origen"],
+        "modelo": group_data["modelo"]
+    }
+    groups[group_data["grupo"]] = group
+    _save_groups(groups)
+    return {"status": "created", "grupo": group_data["grupo"], "data": group}
+
+@router.delete("/{grupo}")
+async def delete_group(grupo: str) -> dict:
+    groups = _load_groups()
+    if grupo not in groups:
+        raise HTTPException(404, f"Group '{grupo}' not found")
+    del groups[grupo]
+    _save_groups(groups)
+    return {"status": "deleted", "grupo": grupo}
+
+@router.get("/resolve/{agent_id}")
+async def resolve_agent(agent_id: str) -> dict:
+    groups = _load_groups()
+    for grupo, config in groups.items():
+        if agent_id in config["agentes"]:
+            return {
+                "grupo": grupo,
+                "proveedor": config["api_origen"],
+                "modelo": config["modelo"]
+            }
+    raise HTTPException(404, f"Agent '{agent_id}' not found in any group")
+```

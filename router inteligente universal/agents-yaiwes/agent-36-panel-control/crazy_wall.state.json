@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-36-panel-control",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T05:01:15Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "control_api",
+  "mini_router",
+  "botones_ui"
+ ],
+ "completed": [
+  "control_api",
+  "mini_router",
+  "botones_ui"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}

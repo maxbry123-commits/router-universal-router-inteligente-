@@ -1,0 +1,132 @@
+```html
+<!-- Panel de Control Centralizado - agent-36 -->
+<div id="panel-control" style="border:2px solid #ff6600; border-radius:12px; padding:20px; background:#1a1a2e; color:#eee; max-width:700px; margin:10px auto; font-family:'Segoe UI',sans-serif;">
+  <h3 style="margin-top:0; color:#ff6600; text-align:center;">🎛️ CENTRO DE OPERACIONES</h3>
+  
+  <!-- Fila 1: Botones de estado -->
+  <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:15px;">
+    <button id="btn-pausar" style="background:#ff4444; border:none; padding:8px 16px; border-radius:8px; color:white; cursor:pointer; font-size:14px;">⏸️ Pausar agentes</button>
+    <button id="btn-reanudar" style="background:#44aa44; border:none; padding:8px 16px; border-radius:8px; color:white; cursor:pointer; font-size:14px;">▶️ Reanudar</button>
+    <button id="btn-emergencia" style="background:#cc0000; border:none; padding:8px 16px; border-radius:8px; color:white; cursor:pointer; font-size:14px;">🛑 Parada emergencia</button>
+    <button id="btn-encender-job" style="background:#3366ff; border:none; padding:8px 16px; border-radius:8px; color:white; cursor:pointer; font-size:14px;">🔌 Encender Job</button>
+  </div>
+
+  <!-- Fila 2: Orden programada -->
+  <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:15px; padding:10px; background:#16213e; border-radius:8px;">
+    <span style="font-weight:bold; font-size:13px;">➕ ORDEN PROGRAMADA:</span>
+    <select id="sel-agente-orden" style="flex:1; min-width:100px; padding:5px; background:#0f3460; color:white; border:1px solid #ff6600; border-radius:4px;">
+      <option value="">-- agente --</option>
+    </select>
+    <input id="txt-orden" placeholder="Texto de la orden" style="flex:2; min-width:120px; padding:5px; background:#0f3460; color:white; border:1px solid #ff6600; border-radius:4px;">
+    <input id="txt-hora" type="datetime-local" style="padding:5px; background:#0f3460; color:white; border:1px solid #ff6600; border-radius:4px;">
+    <button id="btn-programar-orden" style="background:#ff6600; border:none; padding:6px 12px; border-radius:6px; color:white; cursor:pointer; font-size:13px;">Programar</button>
+  </div>
+
+  <!-- Fila 3: Selector mini router (grupo → agente → API) -->
+  <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; padding:10px; background:#16213e; border-radius:8px;">
+    <span style="font-weight:bold; font-size:13px;">📌 MINI ROUTER:</span>
+    <select id="sel-grupo" style="flex:1; min-width:100px; padding:5px; background:#0f3460; color:white; border:1px solid #ff6600; border-radius:4px;">
+      <option value="">-- grupo --</option>
+    </select>
+    <select id="sel-agente-router" style="flex:1; min-width:100px; padding:5px; background:#0f3460; color:white; border:1px solid #ff6600; border-radius:4px;" disabled>
+      <option value="">-- agente --</option>
+    </select>
+    <span id="txt-api-origen" style="background:#0f3460; padding:5px 10px; border-radius:4px; border:1px solid #555; min-width:80px; text-align:center; font-size:13px;">🛜 —</span>
+  </div>
+
+  <!-- Estado actual -->
+  <div style="font-size:12px; text-align:center; color:#aaa;">
+    <span>AGENTS: <span id="status-agents" style="color:#44aa44;">▶️ activos</span></span>
+    <span style="margin-left:15px;">ROUTER JOB: <span id="status-job" style="color:#44aa44;">✅ encendido</span></span>
+    <span style="margin-left:15px;">⏰ <span id="reloj-panel"></span></span>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // --- Referencias DOM ---
+  const $ = id => document.getElementById(id);
+  const btnPausar = $('btn-pausar');
+  const btnReanudar = $('btn-reanudar');
+  const btnEmergencia = $('btn-emergencia');
+  const btnEncenderJob = $('btn-encender-job');
+  const selGrupo = $('sel-grupo');
+  const selAgenteRouter = $('sel-agente-router');
+  const txtApiOrigen = $('txt-api-origen');
+  const selAgenteOrden = $('sel-agente-orden');
+  const txtOrden = $('txt-orden');
+  const txtHora = $('txt-hora');
+  const btnProgramar = $('btn-programar-orden');
+  const statusAgents = $('status-agents');
+  const statusJob = $('status-job');
+  const relojPanel = $('reloj-panel');
+
+  // --- Variables de estado interno ---
+  let gruposCache = {};
+  let apiOrigenMap = {}; // agente -> api_origen
+
+  // --- Reloj ---
+  function actualizarReloj() {
+    const ahora = new Date();
+    relojPanel.textContent = ahora.toLocaleString('es-ES', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+  setInterval(actualizarReloj, 1000);
+  actualizarReloj();
+
+  // --- Cargar lista de agentes desde el grupo orquestador (todas las API) ---
+  async function cargarAgentes() {
+    try {
+      const resp = await fetch('/gh/groups/');
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      gruposCache = await resp.json();
+      
+      // Reconstruir map agente -> api_origen y llenar selects
+      const agentesSet = new Set();
+      apiOrigenMap = {};
+      
+      Object.entries(gruposCache).forEach(([grupo, cfg]) => {
+        if (cfg.agentes && Array.isArray(cfg.agentes)) {
+          cfg.agentes.forEach(ag => {
+            agentesSet.add(ag);
+            apiOrigenMap[ag] = cfg.api_origen || 'desconocido';
+          });
+        }
+      });
+
+      // Llenar selGrupo
+      selGrupo.innerHTML = '<option value="">-- grupo --</option>';
+      Object.keys(gruposCache).forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = g + ' (' + (gruposCache[g].api_origen || '?') + ')';
+        selGrupo.appendChild(opt);
+      });
+
+      // Llenar selAgenteOrden con todos los agentes conocidos
+      selAgenteOrden.innerHTML = '<option value="">-- agente --</option>';
+      agentesSet.forEach(ag => {
+        const opt = document.createElement('option');
+        opt.value = ag;
+        opt.textContent = ag + ' [' + (apiOrigenMap[ag] || '?') + ']';
+        selAgenteOrden.appendChild(opt);
+      });
+
+      // Reset router si cambian grupos
+      selAgenteRouter.innerHTML = '<option value="">-- agente --</option>';
+      selAgenteRouter.disabled = true;
+      txtApiOrigen.textContent = '🛜 —';
+
+    } catch (e) {
+      console.warn('Error cargando grupos:', e);
+    }
+  }
+
+  // --- Al cambiar grupo, actualizar agentes del router ---
+  selGrupo.addEventListener('change', function() {
+    const grupo = this.value;
+    selAgenteRouter.innerHTML = '<option value="">

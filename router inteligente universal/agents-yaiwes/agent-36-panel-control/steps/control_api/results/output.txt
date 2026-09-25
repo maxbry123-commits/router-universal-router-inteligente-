@@ -1,0 +1,119 @@
+```python
+# control_panel.py
+from fastapi import APIRouter, HTTPException, Header, Body
+from typing import Optional, List, Dict, Any
+import json, os, asyncio, httpx, datetime, uuid
+from pathlib import Path
+
+router = APIRouter(prefix="/control")
+
+# File paths (centralized)
+AGENTS_FLAG = Path("AGENTS_PAUSE.flag")
+ROUTER_FLAG = Path("ROUTER_JOB_PAUSE.flag")
+ORDERS_FILE = Path("Claude notas/ORDENES.json")
+SECRETS_FILE = Path("secretos.json")
+
+def _read_flag(path: Path) -> bool:
+    if not path.exists():
+        return False
+    try:
+        data = json.loads(path.read_text())
+        return data.get("PAUSED", False)
+    except:
+        return False
+
+def _write_flag(path: Path, paused: bool):
+    path.write_text(json.dumps({"PAUSED": paused}))
+
+def _validate_api_key(x_api_key: Optional[str] = Header(None)):
+    if not x_api_key:
+        raise HTTPException(401, "X-API-Key header required")
+    expected = os.environ.get("CONTROL_API_KEY")
+    if not expected:
+        raise HTTPException(500, "CONTROL_API_KEY env not set")
+    if x_api_key != expected:
+        raise HTTPException(401, "Invalid API key")
+
+@router.post("/pause-agents")
+async def pause_agents(x_api_key: str = Header(None)):
+    _validate_api_key(x_api_key)
+    _write_flag(AGENTS_FLAG, True)
+    return {"status": "ok", "agents_paused": True}
+
+@router.post("/resume-agents")
+async def resume_agents(x_api_key: str = Header(None)):
+    _validate_api_key(x_api_key)
+    _write_flag(AGENTS_FLAG, False)
+    return {"status": "ok", "agents_paused": False}
+
+@router.post("/pause-router")
+async def pause_router(x_api_key: str = Header(None)):
+    _validate_api_key(x_api_key)
+    _write_flag(ROUTER_FLAG, True)
+    return {"status": "ok", "router_paused": True}
+
+@router.post("/resume-router")
+async def resume_router(x_api_key: str = Header(None)):
+    _validate_api_key(x_api_key)
+    _write_flag(ROUTER_FLAG, False)
+    return {"status": "ok", "router_paused": False}
+
+@router.post("/start-job")
+async def start_job(x_api_key: str = Header(None)):
+    _validate_api_key(x_api_key)
+    # Check /health first
+    async with httpx.AsyncClient(timeout=5) as client:
+        try:
+            resp = await client.get("http://localhost:8000/health")
+            if resp.status_code == 200:
+                return {"status": "skip", "reason": "health responded OK"}
+        except:
+            pass
+    # Not responding -> restart job via HF API
+    hf_token = os.environ.get("HF_TOKEN")
+    if not hf_token:
+        raise HTTPException(500, "HF_TOKEN env not set")
+    hf_endpoint = os.environ.get("HF_JOB_ENDPOINT", "https://huggingface.co/api/datasets/jobs")
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.post(
+            hf_endpoint,
+            headers={"Authorization": f"Bearer {hf_token}"},
+            json={"action": "start"}  # Adjust payload as needed
+        )
+        if resp.status_code not in (200, 201, 202):
+            raise HTTPException(502, f"HF job start failed: {resp.text}")
+    return {"status": "job_restarted"}
+
+@router.post("/order")
+async def add_order(
+    data: Dict[str, Any] = Body(...),
+    x_api_key: str = Header(None)
+):
+    _validate_api_key(x_api_key)
+    now = datetime.datetime.utcnow().isoformat()
+    order = {
+        "id": str(uuid.uuid4()),
+        "hora": now,
+        "agente": data.get("agente"),
+        "orden": data.get("orden"),
+        "prioridad": data.get("prioridad", "normal"),
+        "programada_para": data.get("programada_para"),
+        "estado": "pendiente"
+    }
+    if not order["agente"] or not order["orden"]:
+        raise HTTPException(400, "agente and orden required")
+    ORDERS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    existing = []
+    if ORDERS_FILE.exists():
+        existing = json.loads(ORDERS_FILE.read_text())
+    existing.append(order)
+    ORDERS_FILE.write_text(json.dumps(existing, indent=2))
+    return {"status": "added", "order": order}
+
+@router.post("/emergency-stop")
+async def emergency_stop(x_api_key: str = Header(None)):
+    _validate_api_key(x_api_key)
+    _write_flag(AGENTS_FLAG, True)
+    _write_flag(ROUTER_FLAG, True)
+    return {"status": "emergency_stop", "agents_paused": True, "router_paused": True}
+```

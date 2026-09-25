@@ -1,0 +1,74 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-36-panel-control
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Ya existe: ROUTER_JOB_PAUSE.flag (PAUSED=true/false) que pausa el Router\
+    \ por push. Encender el Job: POST a la API de HF Jobs con HF_TOKEN (variable de\
+    \ entorno).\nNuevo: AGENTS_PAUSE.flag (PAUSED=true/false) que el ejecutor y el\
+    \ centinela respetan.\nCola de órdenes: \"Claude notas/ORDENES.json\" [{id, hora,\
+    \ agente, orden, prioridad, programada_para, estado}]; el proceso persistente\
+    \ la lee cada minuto.\nRutas del Router: /gh/agent-launch, /gh/file. Secretos\
+    \ solo por nombre: NVIDIA_API_KEY_1..5, CEREBRAS_API_KEY_1..6, HF_TOKEN_*; Groq\
+    \ sin secreto (GAP).\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (mini_router):\n\
+    ```python\n# mini_router.py\nfrom fastapi import APIRouter, HTTPException\nfrom\
+    \ typing import Dict, List\nimport json\nfrom pathlib import Path\n\nrouter =\
+    \ APIRouter(prefix=\"/groups\")\nGROUPS_FILE = Path(\"groups.json\")\n\n_GROUPS_CACHE:\
+    \ Dict[str, dict] = {}\n\ndef _load_groups() -> Dict[str, dict]:\n    if not GROUPS_FILE.exists():\n\
+    \        return {}\n    if GROUPS_FILE.stat().st_mtime == _GROUPS_CACHE.get(\"\
+    _mtime\", 0):\n        return {k: v for k, v in _GROUPS_CACHE.items() if k !=\
+    \ \"_mtime\"}\n    data = json.loads(GROUPS_FILE.read_text())\n    _GROUPS_CACHE.clear()\n\
+    \    _GROUPS_CACHE[\"_mtime\"] = GROUPS_FILE.stat().st_mtime\n    _GROUPS_CACHE.update(data)\n\
+    \    return data\n\ndef _save_groups(groups: Dict[str, dict]):\n    GROUPS_FILE.write_text(json.dumps(groups,\
+    \ indent=2))\n    _GROUPS_CACHE.clear()\n    _GROUPS_CACHE[\"_mtime\"] = GROUPS_FILE.stat().st_mtime\n\
+    \    _GROUPS_CACHE.update(groups)\n\n@router.get(\"/\")\nasync def list_groups()\
+    \ -> Dict[str, dict]:\n    return _load_groups()\n\n@router.post(\"/\")\nasync\
+    \ def create_group(group_data: dict) -> dict:\n    groups = _load_groups()\n \
+    \   if group_data.get(\"grupo\") in groups:\n        raise HTTPException(409,\
+    \ f\"Group '{group_data['grupo']}' already exists\")\n    \n    required_fields\
+    \ = [\"grupo\", \"orquestador\", \"api_origen\", \"modelo\", \"agentes\"]\n  \
+    \  for f in required_fields:\n        if f not in group_data:\n            raise\
+    \ HTTPException(400, f\"Field '{f}' required\")\n    \n    valid_apis = {\"nvidia\"\
+    , \"cerebras\", \"groq\", \"deepseek\", \"hf_local\"}\n    if group_data[\"api_origen\"\
+    ] not in valid_apis:\n        raise HTTPException(400, f\"api_origen must be one\
+    \ of {valid_apis}\")\n    \n    if not isinstance(group_data[\"agentes\"], list)\
+    \ or len(group_data[\"agentes\"]) == 0:\n        raise HTTPException(400, \"agentes\
+    \ must be a non-empty list\")\n    \n    group = {\n        \"orquestador\": group_data[\"\
+    orquestador\"],\n        \"agentes\": group_data[\"agentes\"],\n        \"api_origen\"\
+    : group_data[\"api_origen\"],\n        \"modelo\": group_data[\"modelo\"]\n  \
+    \  }\n    groups[group_data[\"grupo\"]] = group\n    _save_groups(groups)\n  \
+    \  return {\"status\": \"created\", \"grupo\": group_data[\"grupo\"], \"data\"\
+    : group}\n\n@router.delete(\"/{grupo}\")\nasync def delete_group(grupo: str) ->\
+    \ dict:\n    groups = _load_groups()\n    if grupo not in groups:\n        raise\
+    \ HTTPException(404, f\"Group '{grupo}' not found\")\n    del groups[grupo]\n\
+    \    _save_groups(groups)\n    return {\"status\": \"deleted\", \"grupo\": grupo}\n\
+    \n@router.get(\"/resolve/{agent_id}\")\nasync def resolve_agent(agent_id: str)\
+    \ -> dict:\n    groups = _load_groups()\n    for grupo, config in groups.items():\n\
+    \        if agent_id in config[\"agentes\"]:\n            return {\n         \
+    \       \"grupo\": grupo,\n                \"proveedor\": config[\"api_origen\"\
+    ],\n                \"modelo\": config[\"modelo\"]\n            }\n    raise HTTPException(404,\
+    \ f\"Agent '{agent_id}' not found in any group\")\n```"
+  max_chars: 40000
+task: 'Entrega el fragmento HTML+JS para añadir a index.html del agente 16: panel
+  con botones ⏸️ Pausar agentes, ▶️ Reanudar,
+
+  🛑 Parada de emergencia, 🔌 Encender Job, ➕ Orden programada (agente, texto, hora),
+  y el selector de grupos
+
+  (📌 Grupo → agentes → 🛜 API de origen). Solo el código.
+
+  '
+checks:
+- kind: min_chars
+  value: 800
+- kind: no_secrets

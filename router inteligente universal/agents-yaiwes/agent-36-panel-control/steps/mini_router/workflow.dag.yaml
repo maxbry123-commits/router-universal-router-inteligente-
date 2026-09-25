@@ -1,0 +1,92 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-36-panel-control
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Ya existe: ROUTER_JOB_PAUSE.flag (PAUSED=true/false) que pausa el Router\
+    \ por push. Encender el Job: POST a la API de HF Jobs con HF_TOKEN (variable de\
+    \ entorno).\nNuevo: AGENTS_PAUSE.flag (PAUSED=true/false) que el ejecutor y el\
+    \ centinela respetan.\nCola de órdenes: \"Claude notas/ORDENES.json\" [{id, hora,\
+    \ agente, orden, prioridad, programada_para, estado}]; el proceso persistente\
+    \ la lee cada minuto.\nRutas del Router: /gh/agent-launch, /gh/file. Secretos\
+    \ solo por nombre: NVIDIA_API_KEY_1..5, CEREBRAS_API_KEY_1..6, HF_TOKEN_*; Groq\
+    \ sin secreto (GAP).\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (control_api):\n\
+    ```python\n# control_panel.py\nfrom fastapi import APIRouter, HTTPException, Header,\
+    \ Body\nfrom typing import Optional, List, Dict, Any\nimport json, os, asyncio,\
+    \ httpx, datetime, uuid\nfrom pathlib import Path\n\nrouter = APIRouter(prefix=\"\
+    /control\")\n\n# File paths (centralized)\nAGENTS_FLAG = Path(\"AGENTS_PAUSE.flag\"\
+    )\nROUTER_FLAG = Path(\"ROUTER_JOB_PAUSE.flag\")\nORDERS_FILE = Path(\"Claude\
+    \ notas/ORDENES.json\")\nSECRETS_FILE = Path(\"secretos.json\")\n\ndef _read_flag(path:\
+    \ Path) -> bool:\n    if not path.exists():\n        return False\n    try:\n\
+    \        data = json.loads(path.read_text())\n        return data.get(\"PAUSED\"\
+    , False)\n    except:\n        return False\n\ndef _write_flag(path: Path, paused:\
+    \ bool):\n    path.write_text(json.dumps({\"PAUSED\": paused}))\n\ndef _validate_api_key(x_api_key:\
+    \ Optional[str] = Header(None)):\n    if not x_api_key:\n        raise HTTPException(401,\
+    \ \"X-API-Key header required\")\n    expected = os.environ.get(\"CONTROL_API_KEY\"\
+    )\n    if not expected:\n        raise HTTPException(500, \"CONTROL_API_KEY env\
+    \ not set\")\n    if x_api_key != expected:\n        raise HTTPException(401,\
+    \ \"Invalid API key\")\n\n@router.post(\"/pause-agents\")\nasync def pause_agents(x_api_key:\
+    \ str = Header(None)):\n    _validate_api_key(x_api_key)\n    _write_flag(AGENTS_FLAG,\
+    \ True)\n    return {\"status\": \"ok\", \"agents_paused\": True}\n\n@router.post(\"\
+    /resume-agents\")\nasync def resume_agents(x_api_key: str = Header(None)):\n \
+    \   _validate_api_key(x_api_key)\n    _write_flag(AGENTS_FLAG, False)\n    return\
+    \ {\"status\": \"ok\", \"agents_paused\": False}\n\n@router.post(\"/pause-router\"\
+    )\nasync def pause_router(x_api_key: str = Header(None)):\n    _validate_api_key(x_api_key)\n\
+    \    _write_flag(ROUTER_FLAG, True)\n    return {\"status\": \"ok\", \"router_paused\"\
+    : True}\n\n@router.post(\"/resume-router\")\nasync def resume_router(x_api_key:\
+    \ str = Header(None)):\n    _validate_api_key(x_api_key)\n    _write_flag(ROUTER_FLAG,\
+    \ False)\n    return {\"status\": \"ok\", \"router_paused\": False}\n\n@router.post(\"\
+    /start-job\")\nasync def start_job(x_api_key: str = Header(None)):\n    _validate_api_key(x_api_key)\n\
+    \    # Check /health first\n    async with httpx.AsyncClient(timeout=5) as client:\n\
+    \        try:\n            resp = await client.get(\"http://localhost:8000/health\"\
+    )\n            if resp.status_code == 200:\n                return {\"status\"\
+    : \"skip\", \"reason\": \"health responded OK\"}\n        except:\n          \
+    \  pass\n    # Not responding -> restart job via HF API\n    hf_token = os.environ.get(\"\
+    HF_TOKEN\")\n    if not hf_token:\n        raise HTTPException(500, \"HF_TOKEN\
+    \ env not set\")\n    hf_endpoint = os.environ.get(\"HF_JOB_ENDPOINT\", \"https://huggingface.co/api/datasets/jobs\"\
+    )\n    async with httpx.AsyncClient(timeout=10) as client:\n        resp = await\
+    \ client.post(\n            hf_endpoint,\n            headers={\"Authorization\"\
+    : f\"Bearer {hf_token}\"},\n            json={\"action\": \"start\"}  # Adjust\
+    \ payload as needed\n        )\n        if resp.status_code not in (200, 201,\
+    \ 202):\n            raise HTTPException(502, f\"HF job start failed: {resp.text}\"\
+    )\n    return {\"status\": \"job_restarted\"}\n\n@router.post(\"/order\")\nasync\
+    \ def add_order(\n    data: Dict[str, Any] = Body(...),\n    x_api_key: str =\
+    \ Header(None)\n):\n    _validate_api_key(x_api_key)\n    now = datetime.datetime.utcnow().isoformat()\n\
+    \    order = {\n        \"id\": str(uuid.uuid4()),\n        \"hora\": now,\n \
+    \       \"agente\": data.get(\"agente\"),\n        \"orden\": data.get(\"orden\"\
+    ),\n        \"prioridad\": data.get(\"prioridad\", \"normal\"),\n        \"programada_para\"\
+    : data.get(\"programada_para\"),\n        \"estado\": \"pendiente\"\n    }\n \
+    \   if not order[\"agente\"] or not order[\"orden\"]:\n        raise HTTPException(400,\
+    \ \"agente and orden required\")\n    ORDERS_FILE.parent.mkdir(parents=True, exist_ok=True)\n\
+    \    existing = []\n    if ORDERS_FILE.exists():\n        existing = json.loads(ORDERS_FILE.read_text())\n\
+    \    existing.append(order)\n    ORDERS_FILE.write_text(json.dumps(existing, indent=2))\n\
+    \    return {\"status\": \"added\", \"order\": order}\n\n@router.post(\"/emergency-stop\"\
+    )\nasync def emergency_stop(x_api_key: str = Header(None)):\n    _validate_api_key(x_api_key)\n\
+    \    _write_flag(AGENTS_FLAG, True)\n    _write_flag(ROUTER_FLAG, True)\n    return\
+    \ {\"status\": \"emergency_stop\", \"agents_paused\": True, \"router_paused\"\
+    : True}\n```"
+  max_chars: 40000
+task: 'Entrega el código Python completo de mini_router.py (APIRouter, prefijo /groups):
+
+  grupos guardados en groups.json {grupo: {orquestador, agentes:[...], api_origen:
+  nvidia|cerebras|groq|deepseek|hf_local, modelo}};
+
+  GET/POST/DELETE /groups; resolve(agent_id) devuelve proveedor y modelo del grupo
+  del agente para que el ejecutor lo use. Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 600
+- kind: no_secrets
