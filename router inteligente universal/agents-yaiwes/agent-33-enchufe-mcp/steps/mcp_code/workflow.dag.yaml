@@ -1,0 +1,39 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-33-enchufe-mcp
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'El Router es FastAPI. Rutas a exponer como herramientas MCP: /chat/send,
+    /chat/agents, /sandbox/order, /sandbox/status,
+
+    /gh/agent-launch, /gh/agent-state, lectura del Crazy Wall central, /chat/storage.
+
+    Transporte: HTTP streamable en la ruta /mcp del mismo Router, protegido con X-API-Key.
+    Sin claves en archivos.
+
+    '
+  max_chars: 40000
+task: 'Entrega el código Python completo de mcp_plug.py que monta un servidor MCP
+  en /mcp (usa la librería oficial "mcp", FastMCP)
+
+  con las herramientas: enviar_chat, listar_agentes, ordenar_agente, estado_agente,
+  leer_crazy_wall, guardar_memoria.
+
+  Cada herramienta llama a la ruta interna del Router. Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 700
+- kind: no_secrets

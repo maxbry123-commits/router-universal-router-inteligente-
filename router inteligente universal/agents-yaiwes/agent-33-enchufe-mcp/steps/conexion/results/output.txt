@@ -1,0 +1,98 @@
+```python
+# app.py
+
+from fastapi import FastAPI, Request, HTTPException
+from mcp.server.fastmcp import FastMCP
+from httpx import AsyncClient
+
+app = FastAPI()
+mcp = FastMCP("agent-orchestrator")
+API_KEY = "secret-key-123"  # Cambiar por clave segura
+
+async def _call_router(path: str, method: str = "GET", data: dict = None):
+    async with AsyncClient() as client:
+        headers = {"X-API-Key": API_KEY}
+        url = f"http://localhost:8000{path}"
+        if method == "GET":
+            resp = await client.get(url, headers=headers)
+        else:
+            resp = await client.post(url, json=data, headers=headers)
+        return resp.json()
+
+@mcp.tool()
+async def enviar_chat(mensaje: str, agente: str = None) -> dict:
+    return await _call_router("/chat/send", "POST", {"mensaje": mensaje, "agente": agente})
+
+@mcp.tool()
+async def listar_agentes() -> list:
+    return await _call_router("/chat/agents")
+
+@mcp.tool()
+async def ordenar_agente(agente: str, accion: str) -> dict:
+    return await _call_router("/sandbox/order", "POST", {"agente": agente, "accion": accion})
+
+@mcp.tool()
+async def estado_agente(agente: str) -> dict:
+    return await _call_router(f"/sandbox/status/{agente}")
+
+@mcp.tool()
+async def leer_crazy_wall() -> dict:
+    return await _call_router("/gh/agent-launch")
+
+@mcp.tool()
+async def guardar_memoria(clave: str, valor: str) -> dict:
+    return await _call_router("/chat/storage", "POST", {"clave": clave, "valor": valor})
+
+@app.post("/mcp")
+async def mcp_endpoint(request: Request):
+    if request.headers.get("X-API-Key") != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+    body = await request.json()
+    return await mcp.handle_request(body)
+
+# Health check opcional
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+```
+
+## Cómo añadirlo como conector personalizado en Claude
+
+1. **Configuración del conector MCP en Claude Desktop** (claude_desktop_config.json):
+```json
+{
+  "mcpServers": {
+    "agent-orchestrator": {
+      "url": "https://live-url.com/mcp",
+      "headers": {
+        "X-API-Key": "secret-key-123"
+      },
+      "transport": "http-streamable"
+    }
+  }
+}
+```
+
+2. **Para URL estable desde Vercel**:
+- Crear un archivo `vercel.json` en la raíz:
+```json
+{
+  "rewrites": [
+    {
+      "source": "/mcp",
+      "destination": "https://tu-app.vercel.app/mcp"
+    }
+  ]
+}
+```
+- O usar un dominio personalizado fijo en Vercel (Settings > Domains)
+- Alternativa: usar ngrok con dominio fijo (`ngrok http 8000 --domain=tu-dominio.ngrok.io`) y actualizar la URL en la config de Claude
+
+## GAPs identificados
+
+1. **URL dinámica**: `LIVE_URL` cambia en cada relanzamiento. Sin Vercel/dominio fijo, hay que reconfigurar Claude manualmente cada vez
+2. **Autenticación débil**: La API Key va en el header de cada request (aceptable pero mejorable con JWT)
+3. **Sin HTTPS**: El server local va en HTTP, el conector MCP requiere HTTPS en producción
+4. **Ruta /sandbox/status/{agente}**: En el código se usa como POST pero debería ser GET con path param - corregir en el backend si corresponde
+5. **No hay rate limiting**: Proteger contra abusos añadiendo límite de requests por minuto
+6. **Sin logs de auditoría**: No se registran las llamadas MCP para debugging

@@ -1,0 +1,56 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-33-enchufe-mcp
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "El Router es FastAPI. Rutas a exponer como herramientas MCP: /chat/send,\
+    \ /chat/agents, /sandbox/order, /sandbox/status,\n/gh/agent-launch, /gh/agent-state,\
+    \ lectura del Crazy Wall central, /chat/storage.\nTransporte: HTTP streamable\
+    \ en la ruta /mcp del mismo Router, protegido con X-API-Key. Sin claves en archivos.\n\
+    \n\nSALIDA VERIFICADA DEL PASO ANTERIOR (mcp_code):\n```python\nfrom mcp.server.fastmcp\
+    \ import FastMCP\nfrom fastapi import FastAPI, Request, HTTPException\nfrom httpx\
+    \ import AsyncClient\n\napp = FastAPI()\nmcp = FastMCP(\"agent-orchestrator\"\
+    )\nAPI_KEY = \"secret-key\"\n\nasync def _call_router(path: str, method: str =\
+    \ \"GET\", data: dict = None):\n    async with AsyncClient() as client:\n    \
+    \    headers = {\"X-API-Key\": API_KEY}\n        url = f\"http://localhost:8000{path}\"\
+    \n        if method == \"GET\":\n            resp = await client.get(url, headers=headers)\n\
+    \        else:\n            resp = await client.post(url, json=data, headers=headers)\n\
+    \        return resp.json()\n\n@mcp.tool()\nasync def enviar_chat(mensaje: str,\
+    \ agente: str = None) -> dict:\n    return await _call_router(\"/chat/send\",\
+    \ \"POST\", {\"mensaje\": mensaje, \"agente\": agente})\n\n@mcp.tool()\nasync\
+    \ def listar_agentes() -> list:\n    return await _call_router(\"/chat/agents\"\
+    )\n\n@mcp.tool()\nasync def ordenar_agente(agente: str, accion: str) -> dict:\n\
+    \    return await _call_router(\"/sandbox/order\", \"POST\", {\"agente\": agente,\
+    \ \"accion\": accion})\n\n@mcp.tool()\nasync def estado_agente(agente: str) ->\
+    \ dict:\n    return await _call_router(f\"/sandbox/status/{agente}\")\n\n@mcp.tool()\n\
+    async def leer_crazy_wall() -> dict:\n    return await _call_router(\"/gh/agent-launch\"\
+    )\n\n@mcp.tool()\nasync def guardar_memoria(clave: str, valor: str) -> dict:\n\
+    \    return await _call_router(\"/chat/storage\", \"POST\", {\"clave\": clave,\
+    \ \"valor\": valor})\n\n@app.post(\"/mcp\")\nasync def mcp_endpoint(request: Request):\n\
+    \    if request.headers.get(\"X-API-Key\") != API_KEY:\n        raise HTTPException(status_code=403)\n\
+    \    body = await request.json()\n    return await mcp.handle_request(body)\n\
+    ```"
+  max_chars: 40000
+task: 'Entrega cómo montarlo en app.py (líneas exactas) y cómo el Director lo añade
+  como conector personalizado en Claude
+
+  (URL <LIVE_URL>/mcp). Nota: LIVE_URL cambia al relanzar el Job; propone cómo dar
+  una URL estable (redirección desde Vercel /mcp).
+
+  GAPs al final.
+
+  '
+checks:
+- kind: min_chars
+  value: 200
+- kind: no_secrets

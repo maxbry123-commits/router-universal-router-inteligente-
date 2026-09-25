@@ -1,0 +1,50 @@
+```python
+from mcp.server.fastmcp import FastMCP
+from fastapi import FastAPI, Request, HTTPException
+from httpx import AsyncClient
+
+app = FastAPI()
+mcp = FastMCP("agent-orchestrator")
+API_KEY = "secret-key"
+
+async def _call_router(path: str, method: str = "GET", data: dict = None):
+    async with AsyncClient() as client:
+        headers = {"X-API-Key": API_KEY}
+        url = f"http://localhost:8000{path}"
+        if method == "GET":
+            resp = await client.get(url, headers=headers)
+        else:
+            resp = await client.post(url, json=data, headers=headers)
+        return resp.json()
+
+@mcp.tool()
+async def enviar_chat(mensaje: str, agente: str = None) -> dict:
+    return await _call_router("/chat/send", "POST", {"mensaje": mensaje, "agente": agente})
+
+@mcp.tool()
+async def listar_agentes() -> list:
+    return await _call_router("/chat/agents")
+
+@mcp.tool()
+async def ordenar_agente(agente: str, accion: str) -> dict:
+    return await _call_router("/sandbox/order", "POST", {"agente": agente, "accion": accion})
+
+@mcp.tool()
+async def estado_agente(agente: str) -> dict:
+    return await _call_router(f"/sandbox/status/{agente}")
+
+@mcp.tool()
+async def leer_crazy_wall() -> dict:
+    return await _call_router("/gh/agent-launch")
+
+@mcp.tool()
+async def guardar_memoria(clave: str, valor: str) -> dict:
+    return await _call_router("/chat/storage", "POST", {"clave": clave, "valor": valor})
+
+@app.post("/mcp")
+async def mcp_endpoint(request: Request):
+    if request.headers.get("X-API-Key") != API_KEY:
+        raise HTTPException(status_code=403)
+    body = await request.json()
+    return await mcp.handle_request(body)
+```

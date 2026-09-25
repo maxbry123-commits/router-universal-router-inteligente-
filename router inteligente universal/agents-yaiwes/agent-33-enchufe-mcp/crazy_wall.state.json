@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-33-enchufe-mcp",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T02:50:10Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "mcp_code",
+  "conexion"
+ ],
+ "completed": [
+  "mcp_code",
+  "conexion"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}
