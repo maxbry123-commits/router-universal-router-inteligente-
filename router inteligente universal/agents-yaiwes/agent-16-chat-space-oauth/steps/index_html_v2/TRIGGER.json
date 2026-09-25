@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "DIRECTOR: Vercel es solo UI (repo conectado, despliega en cada push). Selector de modelos, con/sin agente, cuentas de GitHub,\nsubida de archivos anclada al almacenamiento, selector + para añadir workflows, panel de control (pausa/emergencia).\n"}
