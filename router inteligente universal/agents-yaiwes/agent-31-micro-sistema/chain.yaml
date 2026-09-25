@@ -1,0 +1,43 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR: Archivos cableados por agente para memoria y tareas donde reciben órdenes: Agente X → Claude.md, Memoria.md, Skills.md.
+  Cada agente con su propia raíz interna de trabajo, su micro sistema, enrutable.
+
+agent:
+  id: agent-31-micro-sistema
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Agentes existentes: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,26,28,29,30,31,32,33, más Hermes (en main).
+    Cada agente ya tiene chain.yaml + crazy_wall.state.json + steps/. Memoria global vía memory_adapter.py (agent-17).
+
+steps:
+  - id: plantillas
+    task: |
+      Entrega 3 plantillas cortas (máx. 25 líneas cada una) con marcadores {AGENT_ID} {ROL}:
+      CLAUDE.md (quién es, reglas del Director, cómo recibe órdenes: inbox/orden.yaml → chain.yaml),
+      MEMORIA.md (hechos, decisiones, GAPs, último estado; se sincroniza con memory_adapter scope=agente),
+      SKILLS.md (lo que sabe hacer, herramientas, rutas del Router). Separa cada una con una línea "=== ARCHIVO ===".
+    checks:
+      - kind: contains
+        values: ["CLAUDE.md", "MEMORIA.md", "SKILLS.md"]
+      - kind: no_secrets
+
+  - id: generador
+    task: |
+      Entrega el código Python completo de micro_sistema.py que, para cada carpeta agent-*/ (y Hermes), crea si faltan
+      CLAUDE.md, MEMORIA.md, SKILLS.md e inbox/ con las plantillas, sin borrar nada existente, y escribe un índice agents_index.json
+      {agent_id: {root, rol, estado}}. Solo el código.
+    checks:
+      - kind: python_ast
+      - kind: min_chars
+        value: 600
+      - kind: no_secrets
+
+edges:
+  - [plantillas, generador]
