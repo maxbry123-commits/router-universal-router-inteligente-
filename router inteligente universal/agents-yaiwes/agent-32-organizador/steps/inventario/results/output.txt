@@ -1,0 +1,102 @@
+```python
+#!/usr/bin/env python3
+"""inventario.py - Recorre el repo y genera INVENTARIO.json con clasificación y referencias."""
+import json
+import os
+from datetime import datetime
+from pathlib import Path
+from collections import defaultdict
+
+REPO_ROOT = Path(__file__).resolve().parent.parent  # asumiendo script en raíz o subcarpeta
+NO_BORRAR = {"Job del Router", "router_job_persistent.py", "ROUTER_JOB_PAUSE.flag",
+             "ROUTE.json", "chain.py", "common", "motores de descarga",
+             ".github", "Componente open soure", "Claude notas"}
+TIPOS_DIR = {
+    "agents-yaiwes": "agente",
+    "chat_mvp": "chat",
+    "vercel-ui": "componente",
+    "integration": "chat",
+    "router inteligente universal": "motor",
+    "Claude notas": "nota"
+}
+
+def clasificar(path: Path) -> str:
+    parent = path.parent.name.lower()
+    name = path.name.lower()
+    if path.suffix in (".py", ".js", ".ts", ".tsx", ".jsx", ".html", ".css"):
+        if "test" in name or "spec" in name:
+            return "basura_candidata" if "test" in name else "componente"
+        for key, tip in TIPOS_DIR.items():
+            if key in str(path):
+                return tip
+        return "componente"
+    if path.suffix == ".json":
+        if "inventario" in name:
+            return "nota"
+        referenciado = extraer_referencias(path)
+        if not referenciado:
+            return "basura_candidata"
+        return "nota"
+    if path.suffix in (".md", ".txt"):
+        if "Claude notas" in str(path):
+            return "nota"
+        return "nota"
+    if path.suffix in (".log", ".tmp", ".bak", ".swp"):
+        return "basura_candidata"
+    return "componente"
+
+def extraer_referencias(path: Path) -> list:
+    """Busca menciones de este archivo en otros .py, .md, .json del repo."""
+    refs = []
+    name = path.name
+    for other in REPO_ROOT.rglob("*"):
+        if other == path or other.is_dir():
+            continue
+        if other.suffix in (".py", ".md", ".json", ".js", ".ts", ".tsx"):
+            try:
+                content = other.read_text(errors="ignore", encoding="utf-8")
+                if name in content:
+                    refs.append(str(other.relative_to(REPO_ROOT)))
+            except Exception:
+                pass
+    return refs
+
+def es_basura(path: Path, tipo: str, referenciado: list) -> bool:
+    if path.name in NO_BORRAR or any(nb in str(path) for nb in NO_BORRAR):
+        return False
+    if tipo == "basura_candidata":
+        return True
+    # heurística simple: log, tmp, duplicado sin referencias
+    if path.suffix in (".log", ".tmp") and not referenciado:
+        return True
+    return False
+
+def inventario():
+    data = []
+    todos = list(REPO_ROOT.rglob("*"))
+    for path in todos:
+        if path.is_dir():
+            continue
+        rel = path.relative_to(REPO_ROOT)
+        tipo = clasificar(path)
+        size = path.stat().st_size if path.exists() else 0
+        mtime = datetime.fromtimestamp(path.stat().st_mtime).isoformat()
+        referenciado = extraer_referencias(path)
+        entry = {
+            "ruta": str(rel),
+            "tipo": tipo,
+            "tamaño": size,
+            "última_modificación": mtime,
+            "referenciado_por": referenciado,
+            "basura_candidata": es_basura(path, tipo, referenciado)
+        }
+        data.append(entry)
+    # ordenar por ruta
+    data.sort(key=lambda x: x["ruta"])
+    output = Path(REPO_ROOT / "INVENTARIO.json")
+    output.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"✅ INVENTARIO.json generado con {len(data)} entradas.")
+
+if __name__ == "__main__":
+    inventario()
+```

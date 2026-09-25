@@ -1,0 +1,192 @@
+```python
+#!/usr/bin/env python3
+"""reorganizar.py - Reorganiza el repositorio en una estructura unificada.
+--dry-run por defecto; --apply copia; --clean borra basura.
+"""
+import json
+import os
+import shutil
+from pathlib import Path
+from datetime import datetime
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+TARGET = REPO_ROOT / "➡️📂 chat osquestador"
+AGENT_ROOT = REPO_ROOT / "router inteligente universal" / "agents-yaiwes"
+CHAT_ROOT = REPO_ROOT / "integration" / "chat_mvp"
+UI_ROOT = REPO_ROOT / "vercel-ui"
+COMPONENT_ROOT = REPO_ROOT / "Componente open soure router inteligente universal"
+NOTAS_ROOT = REPO_ROOT / "Claude notas"
+
+# Agentes canónicos
+AGENTES = ["Hermes", "Rowboat", "MSAF", "Codex", "Claude Code"]
+
+# NO-MOVER y NO-BORRAR
+NO_TOUCH = {
+    "Job del Router", "router_job_persistent.py", "ROUTER_JOB_PAUSE.flag",
+    "ROUTE.json", "chain.py", "common", "motores de descarga",
+    ".github", "Componente open soure", "Claude notas"
+}
+
+def load_inventario():
+    inv_path = REPO_ROOT / "INVENTARIO.json"
+    if not inv_path.exists():
+        print("❌ INVENTARIO.json no encontrado. Ejecuta inventario.py primero.")
+        return []
+    with open(inv_path, encoding="utf-8") as f:
+        return json.load(f)
+
+def create_staff():
+    """Crea STAFF.json con todos los agentes."""
+    staff = {}
+    # Agentes existentes en agent-yaiwes
+    if AGENT_ROOT.exists():
+        for agent_dir in AGENT_ROOT.iterdir():
+            if agent_dir.is_dir() and "agent-" in agent_dir.name:
+                grupo = "militar" if any(x in agent_dir.name for x in ["militar", "tactico"]) else "civil"
+                staff[agent_dir.name] = {
+                    "rol": "agente",
+                    "raiz": str(agent_dir.relative_to(REPO_ROOT)),
+                    "grupo": grupo,
+                    "estado": "activo"
+                }
+    # Agentes descargados/canónicos
+    for agent in AGENTES:
+        staff[agent] = {
+            "rol": "agente",
+            "raiz": f"chatosquestador/agentes/{agent}/",
+            "grupo": "staff",
+            "estado": "pendiente"
+        }
+    # Crear directorios para agentes canónicos
+    for agent in AGENTES:
+        (TARGET / "agentes" / agent).mkdir(parents=True, exist_ok=True)
+    return staff
+
+def create_crazy_wall():
+    """Crea CRAZY_WALL.state.json vacío."""
+    wall = {
+        "bitacora": [],
+        "ultima_actualizacion": datetime.now().isoformat(),
+        "estado": "inicial"
+    }
+    return wall
+
+def copy_structure(dry_run=True):
+    """Copia la estructura unificada."""
+    if not dry_run:
+        TARGET.mkdir(parents=True, exist_ok=True)
+        (TARGET / "chat").mkdir(exist_ok=True)
+        (TARGET / "agentes").mkdir(exist_ok=True)
+        (TARGET / "orquestadores").mkdir(exist_ok=True)
+        (TARGET / "memoria").mkdir(exist_ok=True)
+        (TARGET / "workflows").mkdir(exist_ok=True)
+        (TARGET / "vercel-ui").mkdir(exist_ok=True)
+        
+        # Copiar chat existente
+        if CHAT_ROOT.exists():
+            shutil.copytree(CHAT_ROOT, TARGET / "chat", dirs_exist_ok=True)
+        
+        # Copiar agentes existentes
+        if AGENT_ROOT.exists():
+            for agent_dir in AGENT_ROOT.iterdir():
+                if agent_dir.is_dir():
+                    shutil.copytree(agent_dir, TARGET / "agentes" / agent_dir.name, dirs_exist_ok=True)
+        
+        # Copiar UI
+        if UI_ROOT.exists():
+            shutil.copytree(UI_ROOT, TARGET / "vercel-ui", dirs_exist_ok=True)
+        
+        # Crear STAFF.json
+        staff = create_staff()
+        staff_path = TARGET / "STAFF.json"
+        with open(staff_path, "w", encoding="utf-8") as f:
+            json.dump(staff, f, indent=2, ensure_ascii=False)
+        
+        # Crear CRAZY_WALL.state.json
+        wall = create_crazy_wall()
+        wall_path = TARGET / "CRAZY_WALL.state.json"
+        with open(wall_path, "w", encoding="utf-8") as f:
+            json.dump(wall, f, indent=2, ensure_ascii=False)
+        
+        print(f"✅ Estructura copiada a {TARGET}")
+    else:
+        print(f"🔍 Dry-run: se copiaría a {TARGET}")
+        print("   - chat/")
+        print("   - agentes/ (con todos los agentes)")
+        print("   - orquestadores/")
+        print("   - memoria/")
+        print("   - workflows/")
+        print("   - vercel-ui/")
+        print("   - STAFF.json")
+        print("   - CRAZY_WALL.state.json")
+
+def clean_basura(dry_run=True):
+    """Limpia archivos marcados como basura."""
+    inventario = load_inventario()
+    basura = [entry for entry in inventario if entry.get("basura_candidata")]
+    bitacora_path = TARGET / "BITACORA.md"
+    
+    if not basura:
+        print("✅ No hay basura para limpiar.")
+        return
+    
+    entries = []
+    for entry in basura:
+        path = REPO_ROOT / entry["ruta"]
+        
+        # Verificar que no está en NO_TOUCH
+        if any(nt in str(path) for nt in NO_TOUCH):
+            continue
+        
+        if not dry_run:
+            if path.exists():
+                path.unlink()
+                msg = f"🗑️ {entry['ruta']} ({entry['tamaño']} bytes)"
+                entries.append(f"- {msg} (borrado {datetime.now().isoformat()})")
+                print(msg)
+        else:
+            msg = f"🔍 Se borraría: {entry['ruta']} ({entry['tamaño']} bytes)"
+            entries.append(f"- {msg} (dry-run)")
+            print(msg)
+    
+    if not dry_run:
+        # Actualizar bitácora
+        bitacora_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(bitacora_path, "a", encoding="utf-8") as f:
+            f.write(f"\n## Limpieza {datetime.now().isoformat()}\n")
+            f.write("\n".join(entries))
+            f.write("\n")
+        print(f"✅ Bitácora actualizada en {bitacora_path}")
+    else:
+        print(f"🔍 Dry-run: {len(entries)} archivos serían borrados")
+
+def main():
+    import sys
+    
+    dry_run = True
+    apply = False
+    clean = False
+    
+    for arg in sys.argv[1:]:
+        if arg == "--apply":
+            apply = True
+            dry_run = False
+        elif arg == "--clean":
+            clean = True
+        elif arg == "--dry-run":
+            dry_run = True
+    
+    if clean:
+        if apply:
+            clean_basura(dry_run=False)
+        else:
+            clean_basura(dry_run=True)
+    
+    if apply:
+        copy_structure(dry_run=False)
+    else:
+        copy_structure(dry_run=True)
+
+if __name__ == "__main__":
+    main()
+```

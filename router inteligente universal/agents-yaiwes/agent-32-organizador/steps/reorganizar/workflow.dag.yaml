@@ -1,0 +1,91 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-32-organizador
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Hoy: agentes en \"router inteligente universal/agents-yaiwes/agent-*\", chat\
+    \ en \".../integration/chat_mvp/\", UI en \".../vercel-ui/\",\ncomponentes en\
+    \ \".../Componente open soure router inteligente universal/\", notas en \"Claude\
+    \ notas/\".\nNO-MOVER y NO-BORRAR nunca: Job del Router, router_job_persistent.py,\
+    \ ROUTER_JOB_PAUSE.flag, ROUTE.json, chain.py, common/,\nmotores de descarga,\
+    \ workflows de .github, Componente open soure, Claude notas (se archivan, no se\
+    \ borran).\nBasura = solo archivos de trabajo sin referencias (duplicados, tmp,\
+    \ logs viejos, salidas de pruebas) con evidencia.\n\n\nSALIDA VERIFICADA DEL PASO\
+    \ ANTERIOR (inventario):\n```python\n#!/usr/bin/env python3\n\"\"\"inventario.py\
+    \ - Recorre el repo y genera INVENTARIO.json con clasificación y referencias.\"\
+    \"\"\nimport json\nimport os\nfrom datetime import datetime\nfrom pathlib import\
+    \ Path\nfrom collections import defaultdict\n\nREPO_ROOT = Path(__file__).resolve().parent.parent\
+    \  # asumiendo script en raíz o subcarpeta\nNO_BORRAR = {\"Job del Router\", \"\
+    router_job_persistent.py\", \"ROUTER_JOB_PAUSE.flag\",\n             \"ROUTE.json\"\
+    , \"chain.py\", \"common\", \"motores de descarga\",\n             \".github\"\
+    , \"Componente open soure\", \"Claude notas\"}\nTIPOS_DIR = {\n    \"agents-yaiwes\"\
+    : \"agente\",\n    \"chat_mvp\": \"chat\",\n    \"vercel-ui\": \"componente\"\
+    ,\n    \"integration\": \"chat\",\n    \"router inteligente universal\": \"motor\"\
+    ,\n    \"Claude notas\": \"nota\"\n}\n\ndef clasificar(path: Path) -> str:\n \
+    \   parent = path.parent.name.lower()\n    name = path.name.lower()\n    if path.suffix\
+    \ in (\".py\", \".js\", \".ts\", \".tsx\", \".jsx\", \".html\", \".css\"):\n \
+    \       if \"test\" in name or \"spec\" in name:\n            return \"basura_candidata\"\
+    \ if \"test\" in name else \"componente\"\n        for key, tip in TIPOS_DIR.items():\n\
+    \            if key in str(path):\n                return tip\n        return\
+    \ \"componente\"\n    if path.suffix == \".json\":\n        if \"inventario\"\
+    \ in name:\n            return \"nota\"\n        referenciado = extraer_referencias(path)\n\
+    \        if not referenciado:\n            return \"basura_candidata\"\n     \
+    \   return \"nota\"\n    if path.suffix in (\".md\", \".txt\"):\n        if \"\
+    Claude notas\" in str(path):\n            return \"nota\"\n        return \"nota\"\
+    \n    if path.suffix in (\".log\", \".tmp\", \".bak\", \".swp\"):\n        return\
+    \ \"basura_candidata\"\n    return \"componente\"\n\ndef extraer_referencias(path:\
+    \ Path) -> list:\n    \"\"\"Busca menciones de este archivo en otros .py, .md,\
+    \ .json del repo.\"\"\"\n    refs = []\n    name = path.name\n    for other in\
+    \ REPO_ROOT.rglob(\"*\"):\n        if other == path or other.is_dir():\n     \
+    \       continue\n        if other.suffix in (\".py\", \".md\", \".json\", \"\
+    .js\", \".ts\", \".tsx\"):\n            try:\n                content = other.read_text(errors=\"\
+    ignore\", encoding=\"utf-8\")\n                if name in content:\n         \
+    \           refs.append(str(other.relative_to(REPO_ROOT)))\n            except\
+    \ Exception:\n                pass\n    return refs\n\ndef es_basura(path: Path,\
+    \ tipo: str, referenciado: list) -> bool:\n    if path.name in NO_BORRAR or any(nb\
+    \ in str(path) for nb in NO_BORRAR):\n        return False\n    if tipo == \"\
+    basura_candidata\":\n        return True\n    # heurística simple: log, tmp, duplicado\
+    \ sin referencias\n    if path.suffix in (\".log\", \".tmp\") and not referenciado:\n\
+    \        return True\n    return False\n\ndef inventario():\n    data = []\n \
+    \   todos = list(REPO_ROOT.rglob(\"*\"))\n    for path in todos:\n        if path.is_dir():\n\
+    \            continue\n        rel = path.relative_to(REPO_ROOT)\n        tipo\
+    \ = clasificar(path)\n        size = path.stat().st_size if path.exists() else\
+    \ 0\n        mtime = datetime.fromtimestamp(path.stat().st_mtime).isoformat()\n\
+    \        referenciado = extraer_referencias(path)\n        entry = {\n       \
+    \     \"ruta\": str(rel),\n            \"tipo\": tipo,\n            \"tamaño\"\
+    : size,\n            \"última_modificación\": mtime,\n            \"referenciado_por\"\
+    : referenciado,\n            \"basura_candidata\": es_basura(path, tipo, referenciado)\n\
+    \        }\n        data.append(entry)\n    # ordenar por ruta\n    data.sort(key=lambda\
+    \ x: x[\"ruta\"])\n    output = Path(REPO_ROOT / \"INVENTARIO.json\")\n    output.write_text(json.dumps(data,\
+    \ indent=2, ensure_ascii=False), encoding=\"utf-8\")\n    print(f\"✅ INVENTARIO.json\
+    \ generado con {len(data)} entradas.\")\n\nif __name__ == \"__main__\":\n    inventario()\n\
+    ```"
+  max_chars: 40000
+task: 'Entrega el código Python completo de reorganizar.py: --dry-run por defecto;
+  --apply copia a "➡️📂 chat osquestador/"
+
+  (chat/, agentes/, orquestadores/ con Hermes, Rowboat, MSAF, Codex, Claude Code;
+  memoria/, workflows/, vercel-ui/),
+
+  crea STAFF.json {agente: {rol, raíz, grupo, estado}} y un único CRAZY_WALL.state.json
+  agregado;
+
+  --clean borra SOLO lo marcado basura_candidata en INVENTARIO.json y registra cada
+  borrado en BITACORA.md. Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 800
+- kind: no_secrets

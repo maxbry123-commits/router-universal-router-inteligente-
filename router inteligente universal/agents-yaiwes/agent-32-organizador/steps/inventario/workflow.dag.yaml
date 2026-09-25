@@ -1,0 +1,46 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-32-organizador
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Hoy: agentes en "router inteligente universal/agents-yaiwes/agent-*", chat
+    en ".../integration/chat_mvp/", UI en ".../vercel-ui/",
+
+    componentes en ".../Componente open soure router inteligente universal/", notas
+    en "Claude notas/".
+
+    NO-MOVER y NO-BORRAR nunca: Job del Router, router_job_persistent.py, ROUTER_JOB_PAUSE.flag,
+    ROUTE.json, chain.py, common/,
+
+    motores de descarga, workflows de .github, Componente open soure, Claude notas
+    (se archivan, no se borran).
+
+    Basura = solo archivos de trabajo sin referencias (duplicados, tmp, logs viejos,
+    salidas de pruebas) con evidencia.
+
+    '
+  max_chars: 40000
+task: 'Entrega el código Python completo de inventario.py que recorre el repo y escribe
+  INVENTARIO.json:
+
+  por carpeta {ruta, tipo: agente|componente|chat|motor|nota|basura_candidata, tamaño,
+  última modificación, referenciado_por[]}.
+
+  basura_candidata solo si no está en NO-BORRAR y nadie lo referencia. Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 700
+- kind: no_secrets
