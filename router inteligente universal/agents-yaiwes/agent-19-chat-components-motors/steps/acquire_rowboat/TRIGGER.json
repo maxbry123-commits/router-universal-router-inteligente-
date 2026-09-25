@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "DIRECTOR 2026-09-24: un agente DESCARGA solo con los motores de descarga y extracción, con el destino fijado.\nOpen WebUI YA existe en destino (verificado: DESTINATION_EXISTS). Hermes ya está en main.\nFaltan: Rowboat y Microsoft Agent Framework.\n"}
