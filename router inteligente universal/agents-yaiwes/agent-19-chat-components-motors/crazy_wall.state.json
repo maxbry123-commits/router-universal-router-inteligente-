@@ -3,16 +3,21 @@
  "agent": "agent-19-chat-components-motors",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-25T01:08:16Z",
+ "updated_at": "2026-09-25T01:26:40Z",
  "group": "chat",
  "chain": [
-  "acquire_open_webui"
+  "acquire_open_webui",
+  "acquire_rowboat",
+  "acquire_msaf"
  ],
  "completed": [],
  "failed": [
   "acquire_open_webui"
  ],
- "next_nodes": [],
+ "next_nodes": [
+  "acquire_rowboat",
+  "acquire_msaf"
+ ],
  "current_nodes": [],
  "route": [
   "deepseek_flash"

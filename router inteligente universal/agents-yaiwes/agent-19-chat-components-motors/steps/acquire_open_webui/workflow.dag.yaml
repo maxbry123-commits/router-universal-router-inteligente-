@@ -18,25 +18,16 @@ context:
     ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor
     descarga de componentes y extracción de zip/hf_download_extract_engine.py
 
-    Fuente: https://github.com/open-webui/open-webui
+    Destino: router inteligente universal/Componente open soure router inteligente
+    universal/<slug>/
 
-    Destino explícito:
+    Si el componente ya existe en destino, el motor solo verifica (read-back) y cierra.
 
-    router inteligente universal/Componente open soure router inteligente universal/open-webui/
-
-    PASS solo con ejecución real del motor + VERIFIED_CLOSED + publicación/read-back
-    verificados.
-
-    Prohibido: downloader alternativo, git clone/curl/wget/pip/npm para adquirir Open
-    WebUI.
+    PASS solo con VERIFIED_CLOSED + PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED.
 
     '
   max_chars: 40000
 task: 'Responde exactamente MOTOR_EXEC_REQUEST_OPEN_WEBUI.
-
-  El Sheriff ejecutará el motor canónico real con la configuración fijada por el Director.
-
-  No escribas código, no descargues por otro método y no declares PASS por texto.
 
   '
 checks:
