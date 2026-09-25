@@ -1,31 +1,27 @@
-# CRAZY WALL CENTRAL — Centro de Operaciones YAIWES (actualizado 2026-09-25 04:56)
-Cerebro: Opus (revisa y decide). Ejecutan: agentes y workflows. Director: Max. Sin GPU. Sin claves en repo.
-Vercel = solo UI (conectado, despliega en cada push). Código en GitHub. Corre en el Router. HF = procesador.
-Otra sesión de Opus también trabajó el input 7 (agentes 28 y 35). Esta sesión no los duplica.
+# CRAZY WALL CENTRAL — Centro de Operaciones YAIWES (actualizado 2026-09-25 05:44)
+Cerebro: Opus. Ejecutan: agentes. Director: Max. Sin GPU. Sin claves en repo.
+Vercel = solo UI (vercel.json en raíz → sirve "router inteligente universal/vercel-ui/"). Código en GitHub. Corre en el Router. HF = procesador.
+
+## EMBUDO ENCONTRADO (05:40)
+Los agentes cierran su tarea pero el código queda solo en steps/*/results/output.txt: nadie lo coloca en su sitio ni lo monta en el Router.
+Solución sin cambiar el diseño: cada paso que produce un archivo usa `append_output_to` (ya existe en chain.py) sobre un archivo destino creado antes.
+Aplicado primero a la interfaz (agente 16). Siguiente: backend, con autorización del Director para montar en el Router.
 
 | Agente | Misión | Estado |
 |---|---|---|
-| 19 Descargas | Rowboat + MSAF (Open WebUI, Hermes ya estaban) | ✅ CLOSED |
-| 24 Memoria | Lista mínima | ✅ CLOSED |
-| 28 Descargas 2 | Graphify ✅, Graphiti ✅, FalkorDB ❌, ECC, Agent Skills, Prompt Master, Codex, Claude Code | ⚠️ BLOCKED en FalkorDB |
-| 35 Puertas obligatorias | ECC + Agent Skills + Ponytail como código. Diseño: Claude notas/ESQUEMA-OBLIGATORIO-yaiwes-gate-v1.md | 🏗️ (otra sesión) |
-| 16 UI Vercel | Selectores, botón + workflow, archivos | 🏗️ ronda 02:4x, revisar salida |
-| 17 Backend | Puente Open WebUI, modos, memoria | 🏗️ revisar salida |
-| 25 Cableo agentes | Todos + Hermes/Rowboat/MSAF | 🏗️ revisar salida |
-| 26 Plan 4 objetivos | Registro workflow botón + | 🏗️ revisar salida |
-| 29 Gateway GitHub | Acceso a todos los repos | 🏗️ revisar salida |
-| 30 Sandbox DSL | Orden → chain.yaml → agente | 🏗️ revisar salida |
-| 31 Micro sistema | CLAUDE/MEMORIA/SKILLS por agente | 🏗️ revisar salida |
-| 33 MCP | Enchufe para Opus | 🏗️ revisar salida |
-| 27 Centinela | Watchdog 10 min, objetivos por agente, MAPA-VIVO.md cada hora, parte militar, juez | 🆕 RELANZADO 04:54 |
-| 36 Panel de control | Pausa/emergencia/encender Job, cola ORDENES.json, mini router por grupos | 🆕 LANZADO 04:54 |
-| 37 Router gratuito | NVIDIA/Cerebras/Groq con salud, para agentes que no programan | 🆕 LANZADO 04:55 |
-| 38 DeepSeek Harness | Descarga + plan camino rápido (evolución = fase 2) | 🆕 LANZADO 04:55 |
-| 32 Organizador | Inventario, limpieza segura, raíz única, STAFF.json | 🆕 RELANZADO 04:55 |
+| 16 UI Vercel | index.html completo → vercel-ui/index.html | 🏗️ RELANZADO 05:42 (fallaba: HTML validado como JS y archivo cortado) |
+| 17 Backend | Puente Open WebUI + memoria | ✅ CLOSED (código en output.txt, falta montar) |
+| 19 / 24 | Descargas / lista memoria | ✅ CLOSED |
+| 28 Descargas 2 | Graphify ✅ Graphiti ✅ FalkorDB ❌ + ECC, Agent Skills, Prompt Master, Codex, Claude Code | ⚠️ BLOCKED en FalkorDB |
+| 39 Descargas verificadas | Memanto, Ponytail, Archify, MiMo Code, AgentDB | 🆕 LANZADO 05:42 |
+| 25, 26, 29, 30, 31, 33 | Cableo, plan 4 objetivos, gateway, sandbox, micro sistema, MCP | revisar salidas → montar |
+| 27 Centinela | watchdog, mapa vivo, parte militar, juez | 🏗️ |
+| 32, 35, 36, 37, 38 | Organizador, puertas, panel, router gratuito, harness | 🏗️ |
 
 ## GAPs
-- GAP-3: repos exactos sin confirmar → Memanto, Ponytail, Archify, MiMo Code, AgentDB (no se descargan hasta confirmarlos).
-- GAP-6: FalkorDB falló en agente 28 (el centinela lo reintenta; si sigue, Opus revisa).
-- GAP-7: Groq sin secreto en GitHub (crear GROQ_API_KEY).
-- GAP-5: URL del Router cambia al relanzar; propuesta del agente 33.
-- GAP-8: dos sesiones de Opus trabajando el mismo repo → riesgo de pisarse; unificar en una.
+- GAP-9 (bloquea el chat): montar en el Router (app.py) los archivos del backend + permitir llamadas desde Vercel (CORS). Toca el código del Router → requiere autorización del Director.
+- GAP-6: FalkorDB falló (agente 28).
+- GAP-7: Groq sin secreto.
+- GAP-5: URL del Router cambia al relanzar.
+- GAP-8: dos sesiones de Opus en el mismo repo.
+- GAP-3 RESUELTO: repos de Memanto, Ponytail, Archify, MiMo Code, AgentDB confirmados por el Director.
