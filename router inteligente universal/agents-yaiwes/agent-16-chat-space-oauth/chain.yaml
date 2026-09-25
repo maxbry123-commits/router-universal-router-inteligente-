@@ -1,8 +1,8 @@
 schema: yaiwes.chain/v1
+# relanzado 2026-09-25 05:43 — arreglo: el HTML se validaba como JS puro y max_tokens cortaba el archivo
 input_block: |
-  DIRECTOR: Vercel es solo UI (repo ya conectado a Vercel, despliega en cada push). Selector de modelos, con/sin agente,
-  cuentas de GitHub, subida de archivos anclada al almacenamiento, selector + para añadir workflows de otros proyectos
-  (ej. plan de 4 objetivos del repo agentes) y chatear con un agente encargado/orquestador.
+  DIRECTOR: Vercel es solo UI (repo conectado, despliega en cada push). Selector de modelos, con/sin agente, cuentas de GitHub,
+  subida de archivos anclada al almacenamiento, selector + para añadir workflows, panel de control (pausa/emergencia).
 
 agent:
   id: agent-16-chat-space-oauth
@@ -10,37 +10,35 @@ agent:
   group: chat
   route: [deepseek_flash]
   fallback: []
-  max_tokens: 2000
+  max_tokens: 8000
 
 context:
   text: |
-    Base: Open WebUI ya descargado. Reciclar chat_ui.html de chat_mvp.
-    Carpeta UI para Vercel: "router inteligente universal/vercel-ui/" (estática; todas las llamadas van a LIVE_URL del Router).
-    LIVE_URL se lee en runtime de: https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag
-    Cuentas GitHub: secretos GH_ACCOUNT_1..3 (solo nombres; el Router elige la clave). Nunca claves en el HTML.
-    Rutas: /v1/models, /v1/chat/completions, /chat/agents, /chat/documents, /chat/github/*, /chat/storage.
+    El archivo se sirve desde Vercel (estático). Todas las llamadas van al Router: LIVE_URL se lee al cargar la página de
+    https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag (línea LIVE_URL=).
+    El usuario pega su HF token y su X-API-Key una vez; se guardan solo en localStorage del navegador. Nunca claves en el HTML.
+    Rutas: GET /v1/models, POST /v1/chat/completions, GET /chat/agents, POST /chat/documents, GET /gh/accounts, POST /chat/storage,
+    POST /control/pause-agents, /control/resume-agents, /control/emergency-stop, /control/start-job, POST /control/order, GET/POST /groups.
 
 steps:
-  - id: vercel_json
+  - id: index_html_v2
+    append_output_to: "router inteligente universal/vercel-ui/index.html"
     task: |
-      Entrega vercel.json mínimo para servir "router inteligente universal/vercel-ui/" como sitio estático. Solo el JSON.
+      Escribe index.html completo en un solo archivo (CSS y JS dentro), empezando por <!DOCTYPE html> y terminando en </html>,
+      SIN bloques ``` ni texto fuera del HTML. Móvil primero, tema oscuro. Contiene:
+      1) barra superior: selector de modelo (/v1/models), interruptor "con agentes", selector de agente (/chat/agents),
+         selector de cuenta GitHub (/gh/accounts), selector de grupo (/groups);
+      2) área de chat con historial y campo de texto; enviar = POST /v1/chat/completions (modelo + "+agentes" si el interruptor está activo);
+      3) botón 📎 subir archivo → POST /chat/documents con chat_id;
+      4) botón ➕ workflow: nombre, repo, ruta del plan → POST /chat/storage;
+      5) panel ⚙️: ⏸️ pausar agentes, ▶️ reanudar, 🛑 emergencia, 🔌 encender Job, 🗓️ orden programada;
+      6) pantalla de ajustes para pegar HF token y X-API-Key (localStorage);
+      7) cada error se muestra en la pantalla en una línea sencilla.
     checks:
       - kind: contains
-        values: ["{"]
-      - kind: no_secrets
-
-  - id: index_html
-    task: |
-      Entrega index.html completo (un solo archivo, CSS y JS dentro) con:
-      selector de modelo (lee /v1/models), interruptor con agente / sin agente, selector de cuenta GitHub (lee /chat/github/accounts),
-      selector de agente (lee /chat/agents), botón + para añadir workflow (nombre + repo + ruta de plan; guarda con POST /chat/storage),
-      subida de archivos (POST /chat/documents con chat_id), área de chat y campo para pegar la API key del Router guardada solo en el navegador.
-      Solo el código.
-    checks:
-      - kind: js_syntax
+        values: ["<!DOCTYPE html>", "</html>", "/v1/chat/completions", "/chat/documents", "localStorage"]
       - kind: min_chars
-        value: 1500
+        value: 3000
       - kind: no_secrets
 
-edges:
-  - [vercel_json, index_html]
+edges: []
