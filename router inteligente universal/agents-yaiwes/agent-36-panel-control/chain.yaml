@@ -1,0 +1,61 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR: Apagado/pausa con dos comandos o botón en el chat: pausar/apagar todos los agentes y encender/pausar el Job de HF.
+  Canal de órdenes centralizado 24/7 para Opus y botón en el chat para que el Director active agentes (no solo conversando).
+  Centro de operaciones de programación temporal y emergencias.
+  Selector mini router: Grupo orquestador → Agente X/B/C → API de origen (NVIDIA, Cerebras, Groq, DeepSeek, HF local).
+
+agent:
+  id: agent-36-panel-control
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Ya existe: ROUTER_JOB_PAUSE.flag (PAUSED=true/false) que pausa el Router por push. Encender el Job: POST a la API de HF Jobs con HF_TOKEN (variable de entorno).
+    Nuevo: AGENTS_PAUSE.flag (PAUSED=true/false) que el ejecutor y el centinela respetan.
+    Cola de órdenes: "Claude notas/ORDENES.json" [{id, hora, agente, orden, prioridad, programada_para, estado}]; el proceso persistente la lee cada minuto.
+    Rutas del Router: /gh/agent-launch, /gh/file. Secretos solo por nombre: NVIDIA_API_KEY_1..5, CEREBRAS_API_KEY_1..6, HF_TOKEN_*; Groq sin secreto (GAP).
+
+steps:
+  - id: control_api
+    task: |
+      Entrega el código Python completo de control_panel.py (APIRouter, prefijo /control):
+      POST /control/pause-agents, POST /control/resume-agents (editan AGENTS_PAUSE.flag);
+      POST /control/pause-router, POST /control/resume-router (editan ROUTER_JOB_PAUSE.flag);
+      POST /control/start-job (relanza el Job con la API de HF solo si /health no responde);
+      POST /control/order {agente, orden, programada_para?, prioridad} añade a ORDENES.json;
+      POST /control/emergency-stop = pausa agentes + router en un solo paso. Protegido con X-API-Key. Solo el código.
+    checks:
+      - kind: python_ast
+      - kind: min_chars
+        value: 900
+      - kind: no_secrets
+
+  - id: mini_router
+    task: |
+      Entrega el código Python completo de mini_router.py (APIRouter, prefijo /groups):
+      grupos guardados en groups.json {grupo: {orquestador, agentes:[...], api_origen: nvidia|cerebras|groq|deepseek|hf_local, modelo}};
+      GET/POST/DELETE /groups; resolve(agent_id) devuelve proveedor y modelo del grupo del agente para que el ejecutor lo use. Solo el código.
+    checks:
+      - kind: python_ast
+      - kind: min_chars
+        value: 600
+      - kind: no_secrets
+
+  - id: botones_ui
+    task: |
+      Entrega el fragmento HTML+JS para añadir a index.html del agente 16: panel con botones ⏸️ Pausar agentes, ▶️ Reanudar,
+      🛑 Parada de emergencia, 🔌 Encender Job, ➕ Orden programada (agente, texto, hora), y el selector de grupos
+      (📌 Grupo → agentes → 🛜 API de origen). Solo el código.
+    checks:
+      - kind: min_chars
+        value: 800
+      - kind: no_secrets
+
+edges:
+  - [control_api, mini_router]
+  - [mini_router, botones_ui]
