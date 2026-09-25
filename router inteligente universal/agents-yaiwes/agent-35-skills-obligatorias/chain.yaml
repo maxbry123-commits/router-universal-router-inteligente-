@@ -1,0 +1,45 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-25: crear un esquema en el Router para que todos los agentes pasen por estos programas o skills
+  (ECC, Agent Skills, Ponytail), descargados con el motor, convertidos en esquema y encadenados como paso obligatorio para cada agente.
+
+agent:
+  id: agent-35-skills-obligatorias
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Skills descargadas por agent-28 en "Componente open soure router inteligente universal/": ecc, agentskills, prompt-master.
+    Ponytail: repo sin confirmar (GAP); su regla se aplica como texto: "primero la solución mínima que ya existe".
+    Formato skill: carpeta con SKILL.md (nombre + descripción arriba); se carga completo solo si la tarea lo necesita.
+    Ejecutor de agentes: agents-yaiwes/chain.py. No romper agentes existentes. Solo deepseek_flash.
+
+steps:
+  - id: esquema
+    task: |
+      Entrega skills_gate.yaml: lista ordenada de pasos obligatorios antes y después de cada paso de agente:
+      antes = cargar índice de skills (nombre + descripción), regla Ponytail (reusar lo existente), verificación de seguridad ECC;
+      después = verificación ECC (checks pasaron, sin claves), registro en memoria. Solo YAML.
+    checks:
+      - {kind: min_chars, value: 300}
+      - {kind: no_secrets}
+
+  - id: codigo
+    task: |
+      Entrega el código Python completo de skills_gate.py con:
+      load_index(root) → lista {nombre, descripcion, ruta} leyendo SKILL.md;
+      pick(task_text, index, k=3) → las skills relevantes por palabras clave;
+      pre(step) → devuelve el texto extra para el prompt (reglas Ponytail + skills elegidas);
+      post(step, output) → PASS/FAIL con motivo.
+      Y las 3 líneas exactas para llamarlo desde chain.py antes y después de cada paso. Solo el código.
+    checks:
+      - {kind: python_ast}
+      - {kind: min_chars, value: 700}
+      - {kind: no_secrets}
+
+edges:
+  - [esquema, codigo]
