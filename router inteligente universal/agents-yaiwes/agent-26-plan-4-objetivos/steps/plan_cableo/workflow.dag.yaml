@@ -1,0 +1,52 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-26-plan-4-objetivos
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Plan maestro: maxbry123-commits/agentes "Claude notas/PLAN-MAESTRO-4-OBJETIVOS.md"
+
+    Anexo: maxbry123-commits/agentes "Claude notas/PLAN-ANEXO-B-SEALS-MECANISMOS.md"
+
+    Lectura de otros repos: GET /gh/file (agent-29). Destino: repo agentes "➡️📂 wordflow
+    loop code Yaiwes/".
+
+    Orquestador del chat: agent-14 (MSAF); alternativas Rowboat, Hermes. Lanzar tareas:
+    /gh/agent-launch.
+
+
+
+    SALIDA VERIFICADA DEL PASO ANTERIOR (extraer_plan):
+
+    GAP: No tengo acceso para leer documentos del repositorio `maxbry123-commits/agentes`
+    (rutas: "Claude notas/PLAN-MAESTRO-4-OBJETIVOS.md" y "PLAN-ANEXO-B-SEALS-MECANISMOS.md"),
+    ni al repositorio destino `agentes "➡️📂 wordflow loop code Yaiwes/"`. Sin poder
+    leer esos documentos no puedo extraer los 4 objetivos ni determinar qué falta
+    en la carpeta destino.
+
+
+    GAP: maxbry123-commits/agentes "Claude notas/PLAN-MAESTRO-4-OBJETIVOS.md"
+
+    GAP: maxbry123-commits/agentes "Claude notas/PLAN-ANEXO-B-SEALS-MECANISMOS.md"
+
+    GAP: repo agentes "➡️📂 wordflow loop code Yaiwes/"'
+  max_chars: 40000
+task: 'Entrega el registro JSON del workflow para el selector + del chat
+
+  {nombre, repo, plan, orquestador, tareas:[{id, agente, chain_path}]} y los pasos
+  para que agent-14 lo controle desde el chat. GAPs al final.
+
+  '
+checks:
+- kind: min_chars
+  value: 400
+- kind: no_secrets

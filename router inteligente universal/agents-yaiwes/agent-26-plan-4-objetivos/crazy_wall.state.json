@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-26-plan-4-objetivos",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T02:48:25Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "extraer_plan",
+  "plan_cableo"
+ ],
+ "completed": [
+  "extraer_plan",
+  "plan_cableo"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}

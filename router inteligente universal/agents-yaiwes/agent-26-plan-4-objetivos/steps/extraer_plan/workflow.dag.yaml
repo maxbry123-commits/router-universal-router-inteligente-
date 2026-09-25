@@ -1,0 +1,38 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-26-plan-4-objetivos
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Plan maestro: maxbry123-commits/agentes "Claude notas/PLAN-MAESTRO-4-OBJETIVOS.md"
+
+    Anexo: maxbry123-commits/agentes "Claude notas/PLAN-ANEXO-B-SEALS-MECANISMOS.md"
+
+    Lectura de otros repos: GET /gh/file (agent-29). Destino: repo agentes "➡️📂 wordflow
+    loop code Yaiwes/".
+
+    Orquestador del chat: agent-14 (MSAF); alternativas Rowboat, Hermes. Lanzar tareas:
+    /gh/agent-launch.
+
+    '
+  max_chars: 40000
+task: 'Entrega: 1) los 4 objetivos en una línea cada uno; 2) tareas ordenadas con
+  agente sugerido, entrada, salida verificable, tiempo;
+
+  3) qué falta en la carpeta destino. Si no puedes leer un documento escribe GAP:
+  <documento> y no inventes su contenido.
+
+  '
+checks:
+- kind: min_chars
+  value: 400
+- kind: no_secrets
