@@ -1,0 +1,37 @@
+name: RIU Router Smoke (prueba rápida del Router vivo)
+
+# Prueba el Router que dice LIVE_URL, sin lanzar nada: /health, /chat/send (DeepSeek V4 Flash) y /chat/jev.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          ROUTER_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os, re, json, urllib.request
+          flag = urllib.request.urlopen("https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag").read().decode()
+          url = re.search(r"^LIVE_URL=(\S+)", flag, re.M).group(1)
+          H = {"Authorization": "Bearer " + os.environ["HF_TOKEN"], "X-API-Key": os.environ["ROUTER_KEY"], "Content-Type": "application/json"}
+          def call(path, body=None):
+              req = urllib.request.Request(url + path, data=json.dumps(body).encode() if body else None, headers=H, method="POST" if body else "GET")
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r:
+                      return r.status, r.read().decode()[:250]
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode()[:250]
+          for name, path, body in [("HEALTH", "/health", None),
+                                   ("CHAT_SEND", "/chat/send", {"message": "Responde solo con la palabra OK.", "provider": "hf", "model": "deepseek-ai/DeepSeek-V4-Flash", "max_tokens": 20, "cache": False}),
+                                   ("CHAT_JEV", "/chat/jev", {"kind": "noul", "state": {"tests_passed": True}, "instructions": "¿Los tests pasaron?", "provider": "hf", "model": "deepseek-ai/DeepSeek-V4-Flash"})]:
+              s, b = call(path, body)
+              print(f"::notice title=RIU_SMOKE_{name}::url={url} status={s} body={b}")
+          PY
