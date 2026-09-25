@@ -1,0 +1,62 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-25: Agente que use los motores: revisa el historial de uso de los motores de descarga y extracción en main y replica.
+  No GitHub Actions. No HF Job. Memoria: PostgreSQL + Redis + Graphiti + FalkorDB + AgentDB + HF Storage Bucket + Graphify-Labs/graphify.
+
+agent:
+  id: agent-28-memoria-descarga
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 800
+
+context:
+  text: |
+    Mismo motor y mismo patrón que agent-19 (CLOSED 2026-09-25 02:20 con Rowboat y MSAF).
+    PostgreSQL y Redis NO se descargan como código: se usan como servicio (GAP para agent-17).
+    AgentDB: repo exacto sin confirmar → GAP, no se descarga hasta confirmarlo.
+
+steps:
+  - id: acquire_graphify
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_GRAPHIFY.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_GRAPHIFY]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "Graphify-Labs/graphify", SOURCE_REF: "main", SLUG: "graphify", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+  - id: acquire_graphiti
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_GRAPHITI.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_GRAPHITI]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "getzep/graphiti", SOURCE_REF: "main", SLUG: "graphiti", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+  - id: acquire_falkordb
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_FALKORDB.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_FALKORDB]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "FalkorDB/falkordb-py", SOURCE_REF: "main", SLUG: "falkordb-py", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+edges:
+  - [acquire_graphify, acquire_graphiti]
+  - [acquire_graphiti, acquire_falkordb]
