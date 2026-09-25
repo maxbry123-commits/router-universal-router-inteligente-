@@ -1,0 +1,5 @@
+GAP: El director solicita un esquema en el Router que convierta los programas descargados en skills obligatorias, pero no se ha ejecutado ni autorizado el paso previo de descarga por agent-28. El contexto indica que existen en el sistema archivos en "Componente open soure router inteligente universal/" con ecc, agentskills y prompt-master, pero no hay evidencia de que agent-28 haya completado su tarea ni de que los SKILL.md tengan el formato requerido. Además, Ponytail es un GAP explícito (repo sin confirmar).
+
+Para cumplir estrictamente con la REGLA PERMANENTE OSS/MOTORES de no crear desde cero una solución equivalente sin autorización, no puedo generar el YAML sin que existan los componentes descargados verificables. La tarea requiere reutilizar o adaptar lo existente, pero no hay componentes en estado utilizable.
+
+GAP: faltan los skills descargados por agent-28 en formato SKILL.md verificable y la regla Ponytail en texto completo. Ejecute primero agent-28 para completar la descarga, confirme el contenido de SKILL.md en cada carpeta, y proporcione el texto exacto de la regla Ponytail.

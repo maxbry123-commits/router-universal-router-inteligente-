@@ -1,0 +1,43 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-35-skills-obligatorias
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Skills descargadas por agent-28 en "Componente open soure router inteligente
+    universal/": ecc, agentskills, prompt-master.
+
+    Ponytail: repo sin confirmar (GAP); su regla se aplica como texto: "primero la
+    solución mínima que ya existe".
+
+    Formato skill: carpeta con SKILL.md (nombre + descripción arriba); se carga completo
+    solo si la tarea lo necesita.
+
+    Ejecutor de agentes: agents-yaiwes/chain.py. No romper agentes existentes. Solo
+    deepseek_flash.
+
+    '
+  max_chars: 40000
+task: 'Entrega skills_gate.yaml: lista ordenada de pasos obligatorios antes y después
+  de cada paso de agente:
+
+  antes = cargar índice de skills (nombre + descripción), regla Ponytail (reusar lo
+  existente), verificación de seguridad ECC;
+
+  después = verificación ECC (checks pasaron, sin claves), registro en memoria. Solo
+  YAML.
+
+  '
+checks:
+- kind: min_chars
+  value: 300
+- kind: no_secrets

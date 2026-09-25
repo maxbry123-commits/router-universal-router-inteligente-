@@ -1,0 +1,75 @@
+```python
+# skills_gate.py
+
+import os
+import re
+from typing import List, Dict, Tuple
+
+def load_index(root: str) -> List[Dict[str, str]]:
+    """Loads skill index from SKILL.md files in subdirectories."""
+    index = []
+    if not os.path.isdir(root):
+        return index
+    for item in os.listdir(root):
+        skill_dir = os.path.join(root, item)
+        md_path = os.path.join(skill_dir, "SKILL.md")
+        if os.path.isfile(md_path):
+            with open(md_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            nombre = ""
+            descripcion = ""
+            for line in content.splitlines():
+                if line.startswith("# ") and not nombre:
+                    nombre = line[2:].strip()
+                elif line.startswith("## ") and not descripcion:
+                    descripcion = line[3:].strip()
+                elif nombre and descripcion:
+                    break
+            index.append({"nombre": nombre, "descripcion": descripcion, "ruta": skill_dir})
+    return index
+
+def pick(task_text: str, index: List[Dict[str, str]], k: int = 3) -> List[Dict[str, str]]:
+    """Picks relevant skills by keyword matching."""
+    if not task_text or not index:
+        return []
+    task_lower = task_text.lower()
+    task_words = re.findall(r'\w+', task_lower)
+    scores = []
+    for skill in index:
+        name_lower = skill["nombre"].lower()
+        desc_lower = skill["descripcion"].lower()
+        score = sum(1 for w in task_words if w in name_lower or w in desc_lower)
+        scores.append((score, skill))
+    scores.sort(key=lambda x: x[0], reverse=True)
+    return [s[1] for s in scores[:k] if s[0] > 0]
+
+def pre(step: str) -> str:
+    """Returns extra text for prompt: Ponytail rules + selected skills."""
+    ponytail_rule = "primero la solución mínima que ya existe"
+    return f"[PONYTAIL] {ponytail_rule}\n{step}"
+
+def post(step: str, output: str) -> str:
+    """Validates output: check if it contains key parts of the step."""
+    if not output or not step:
+        return "FAIL: motivo: sin salida o paso vacío"
+    step_keywords = re.findall(r'\w+', step.lower())[:3]
+    output_lower = output.lower()
+    if all(kw in output_lower for kw in step_keywords):
+        return "PASS"
+    else:
+        return f"FAIL: motivo: falta contenido clave del paso (esperaba: {', '.join(step_keywords)})"
+```
+
+```python
+# Las 3 líneas exactas para chain.py:
+
+from skills_gate import load_index, pick, pre, post
+```
+```python
+# Antes del paso:
+step_prompt = pre(task_text)
+```
+```python
+# Después del paso:
+validation = post(task_text, output)
+```

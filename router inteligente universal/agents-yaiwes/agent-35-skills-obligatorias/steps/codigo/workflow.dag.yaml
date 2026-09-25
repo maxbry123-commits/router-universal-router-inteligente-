@@ -1,0 +1,70 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-35-skills-obligatorias
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Skills descargadas por agent-28 en "Componente open soure router inteligente
+    universal/": ecc, agentskills, prompt-master.
+
+    Ponytail: repo sin confirmar (GAP); su regla se aplica como texto: "primero la
+    solución mínima que ya existe".
+
+    Formato skill: carpeta con SKILL.md (nombre + descripción arriba); se carga completo
+    solo si la tarea lo necesita.
+
+    Ejecutor de agentes: agents-yaiwes/chain.py. No romper agentes existentes. Solo
+    deepseek_flash.
+
+
+
+    SALIDA VERIFICADA DEL PASO ANTERIOR (esquema):
+
+    GAP: El director solicita un esquema en el Router que convierta los programas
+    descargados en skills obligatorias, pero no se ha ejecutado ni autorizado el paso
+    previo de descarga por agent-28. El contexto indica que existen en el sistema
+    archivos en "Componente open soure router inteligente universal/" con ecc, agentskills
+    y prompt-master, pero no hay evidencia de que agent-28 haya completado su tarea
+    ni de que los SKILL.md tengan el formato requerido. Además, Ponytail es un GAP
+    explícito (repo sin confirmar).
+
+
+    Para cumplir estrictamente con la REGLA PERMANENTE OSS/MOTORES de no crear desde
+    cero una solución equivalente sin autorización, no puedo generar el YAML sin que
+    existan los componentes descargados verificables. La tarea requiere reutilizar
+    o adaptar lo existente, pero no hay componentes en estado utilizable.
+
+
+    GAP: faltan los skills descargados por agent-28 en formato SKILL.md verificable
+    y la regla Ponytail en texto completo. Ejecute primero agent-28 para completar
+    la descarga, confirme el contenido de SKILL.md en cada carpeta, y proporcione
+    el texto exacto de la regla Ponytail.'
+  max_chars: 40000
+task: 'Entrega el código Python completo de skills_gate.py con:
+
+  load_index(root) → lista {nombre, descripcion, ruta} leyendo SKILL.md;
+
+  pick(task_text, index, k=3) → las skills relevantes por palabras clave;
+
+  pre(step) → devuelve el texto extra para el prompt (reglas Ponytail + skills elegidas);
+
+  post(step, output) → PASS/FAIL con motivo.
+
+  Y las 3 líneas exactas para llamarlo desde chain.py antes y después de cada paso.
+  Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 700
+- kind: no_secrets
