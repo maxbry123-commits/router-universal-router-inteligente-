@@ -1,0 +1,46 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-24: Revisa todos los componentes que debe llevar el sistema de almacenamiento; hay una lista de varios
+  componentes open source para que los agentes tengan memoria permanente. Organiza y delega. Sin sobre-ingeniería.
+
+agent:
+  id: agent-24-almacenamiento
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Almacenamiento decidido: SQL + grafo + caché + documentos; memoria por chat, por proyecto y global; para el chat y los agentes.
+    Ya existe en el Router: /chat/storage, /chat/documents (router inteligente universal/integration/chat_mvp/store.py).
+    Componentes OSS ya descargados: carpeta "router inteligente universal/Componente open soure router inteligente universal/".
+    Descargas: solo agent-19 con el motor canónico (pide SOURCE_REPO y SLUG).
+    Corre en CPU (HF cpu-upgrade 32 GB). Sin GPU. Solo deepseek_flash. Sin claves en archivos.
+
+steps:
+  - id: lista_minima
+    task: |
+      Entrega la lista MÍNIMA de componentes open source para memoria permanente del chat y los agentes,
+      una fila por pieza (SQL, grafo, caché, documentos/vectores): nombre, repo GitHub owner/nombre, por qué, si corre en CPU.
+      Prefiere lo más simple que funcione en CPU. Máximo 5 piezas.
+    checks:
+      - kind: min_chars
+        value: 300
+      - kind: no_secrets
+
+  - id: pedido_descarga_y_cableo
+    task: |
+      Con la lista anterior entrega:
+      1) el pedido para agent-19: una línea por pieza con SOURCE_REPO y SLUG;
+      2) el plan de cableo con store.py del Router: qué archivo tocar, qué función, y la prueba de éxito
+         (guardar un mensaje, reiniciar, volver a leerlo).
+      GAPs al final.
+    checks:
+      - kind: min_chars
+        value: 300
+      - kind: no_secrets
+
+edges:
+  - [lista_minima, pedido_descarga_y_cableo]
