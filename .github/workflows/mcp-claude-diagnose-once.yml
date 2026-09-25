@@ -1,0 +1,85 @@
+name: MCP Claude Diagnose Once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/mcp-claude-diagnose-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-space-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_MAXBRY123 || secrets.HF_TOKEN_1 }}
+      SPACE_ID: COMAND-CENTER-1/claude-github-mcp-backup
+    steps:
+      - name: Install HF client
+        run: python -m pip install --quiet huggingface_hub
+
+      - name: Inspect Space source without starting compute
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${HF_TOKEN:-}" ]; then
+            echo "::error::NO_HF_TOKEN_SECRET_AVAILABLE"
+            exit 2
+          fi
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+          from huggingface_hub import snapshot_download, HfApi
+
+          token=os.environ["HF_TOKEN"]
+          space=os.environ["SPACE_ID"]
+          root=Path("/tmp/mcp-space")
+          api=HfApi(token=token)
+
+          info=api.repo_info(space, repo_type="space")
+          print("SPACE_ID=", space)
+          print("SPACE_SHA=", getattr(info, "sha", None))
+          print("SPACE_PRIVATE=", getattr(info, "private", None))
+
+          snapshot_download(
+              repo_id=space,
+              repo_type="space",
+              token=token,
+              local_dir=str(root),
+              local_dir_use_symlinks=False,
+          )
+
+          files=sorted(p for p in root.rglob("*") if p.is_file() and ".git" not in p.parts)
+          print("\n=== FILES ===")
+          for p in files:
+              print(p.relative_to(root), p.stat().st_size)
+
+          allow_names={"README.md","Dockerfile","requirements.txt","pyproject.toml","package.json",
+                       "app.py","server.py","main.py","mcp_server.py","index.js","index.ts","server.js","server.ts"}
+          allow_ext={".py",".js",".ts",".json",".toml",".yaml",".yml",".md"}
+          secret_re=re.compile(r'(?i)(hf_[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})')
+
+          print("\n=== RELEVANT SOURCE ===")
+          total=0
+          for p in files:
+              rel=str(p.relative_to(root))
+              if not (p.name in allow_names or p.suffix.lower() in allow_ext):
+                  continue
+              if p.stat().st_size > 120000:
+                  continue
+              try:
+                  txt=p.read_text(errors="replace")
+              except Exception:
+                  continue
+              low=txt.lower()
+              if p.name not in allow_names and not any(k in low for k in ("mcp","oauth","auth","fastmcp","github")):
+                  continue
+              txt=secret_re.sub("***REDACTED***", txt)
+              if total + len(txt) > 180000:
+                  break
+              print(f"\n--- {rel} ---")
+              print(txt)
+              total += len(txt)
+          PY
