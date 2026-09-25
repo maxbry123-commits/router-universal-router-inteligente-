@@ -1,8 +1,8 @@
 schema: yaiwes.chain/v1
 input_block: |
   DIRECTOR 2026-09-24: un agente DESCARGA solo con los motores de descarga y extracción, con el destino fijado.
-  No GitHub Actions manual, no HF Job, ningún otro método. Open WebUI es la base del chat.
-  LEY: no crear componentes desde cero; motores canónicos -> descargar -> extraer -> publicar.
+  Open WebUI YA existe en destino (verificado: DESTINATION_EXISTS). Hermes ya está en main.
+  Faltan: Rowboat y Microsoft Agent Framework.
 
 agent:
   id: agent-19-chat-components-motors
@@ -17,32 +17,8 @@ context:
     Motor canónico inmutable:
     ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py
     Destino: router inteligente universal/Componente open soure router inteligente universal/<slug>/
-    Si el componente ya existe en destino, el motor solo verifica (read-back) y cierra.
-    PASS solo con VERIFIED_CLOSED + PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED.
 
 steps:
-  - id: acquire_open_webui
-    task: |
-      Responde exactamente MOTOR_EXEC_REQUEST_OPEN_WEBUI.
-    checks:
-      - kind: contains
-        values: [MOTOR_EXEC_REQUEST_OPEN_WEBUI]
-      - kind: motor_exec
-        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
-        timeout: 1800
-        env:
-          SOURCE_REPO: "open-webui/open-webui"
-          SOURCE_REF: "main"
-          SLUG: "open-webui"
-          DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-"
-          DEST_BRANCH: "main"
-          DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal"
-          PUBLISH: "1"
-        expect:
-          verdict: "VERIFIED_CLOSED"
-          publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"
-      - kind: no_secrets
-
   - id: acquire_rowboat
     task: |
       Responde exactamente MOTOR_EXEC_REQUEST_ROWBOAT.
@@ -88,5 +64,4 @@ steps:
       - kind: no_secrets
 
 edges:
-  - [acquire_open_webui, acquire_rowboat]
   - [acquire_rowboat, acquire_msaf]
