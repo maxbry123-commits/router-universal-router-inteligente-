@@ -1,0 +1,101 @@
+```python
+#!/usr/bin/env python3
+"""Agent-27: Centinela - vigila estado de agentes cada 10 min"""
+
+import os, json, time, re, sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+# Config
+AGENTS = [16, 17, 19, 24, 25, 26, 28, 29, 30, 31, 32, 33]
+BASE = Path("/home/user/agents-yaiwes")
+TOKEN = os.environ.get("GITHUB_TOKEN", "")
+TABLERO = Path("/home/user/Claude notas/CRAZY-WALL-CENTRAL-CHAT-2026-09-24.md")
+MAX_RELANZ = 2
+TIMEOUT_MIN = 20
+
+def hora_utc():
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def leer_estado(aid):
+    f = BASE / f"agent-{aid:02d}" / "crazy_wall.state.json"
+    if not f.exists():
+        return "NO_INICIADO"
+    try:
+        with open(f) as fh:
+            data = json.load(fh)
+        return data.get("status", "UNKNOWN").upper()
+    except:
+        return "ERROR_LECTURA"
+
+def contar_relanz(aid):
+    f = BASE / f"agent-{aid:02d}" / "chain.yaml"
+    if not f.exists():
+        return 0
+    with open(f) as fh:
+        content = fh.read()
+    return len(re.findall(r"# relanzado", content))
+
+def relanzar_agente(aid):
+    f = BASE / f"agent-{aid:02d}" / "chain.yaml"
+    if not f.exists():
+        return False
+    with open(f, "r") as fh:
+        lines = fh.readlines()
+    now = hora_utc()
+    lines.insert(0, f"# relanzado {now}\n")
+    with open(f, "w") as fh:
+        fh.writelines(lines)
+    return True
+
+def copiar_gap_tablero(aid, gap_line):
+    with open(TABLERO, "a") as f:
+        f.write(f"\n## GAP detectado en agent-{aid:02d} - {hora_utc()}\n{gap_line}\n")
+
+def procesar_agente(aid):
+    estado = leer_estado(aid)
+    now = hora_utc()
+    
+    if estado == "BLOCKED" or estado == "NO_INICIADO":
+        relanz = contar_relanz(aid)
+        if relanz < MAX_RELANZ:
+            ok = relanzar_agente(aid)
+            accion = "relanzado" if ok else "fallo_relanz"
+        else:
+            accion = "GAP_max_relanz"
+            copiar_gap_tablero(aid, "GAP: agente bloqueado/sin estado, max relanz alcanzado")
+    elif estado == "UNKNOWN":
+        accion = "sin_accion"
+    else:  # CLOSED u otro
+        accion = "ok"
+    
+    # Check output.txt for gaps
+    out = BASE / f"agent-{aid:02d}" / "output.txt"
+    if out.exists():
+        with open(out) as f:
+            for line in f:
+                if "GAP" in line:
+                    copiar_gap_tablero(aid, line.strip())
+    
+    return estado, accion
+
+def main():
+    resumen = {}
+    for aid in AGENTS:
+        estado, accion = procesar_agente(aid)
+        resumen[f"agent-{aid:02d}"] = {"estado": estado, "accion": accion}
+    
+    now = hora_utc()
+    state = {
+        "timestamp": now,
+        "resumen": resumen
+    }
+    state_file = Path("/home/user/CENTINELA.state.json")
+    with open(state_file, "w") as f:
+        json.dump(state, f, indent=2)
+    
+    print(f"[{now}] Centinela ejecutado. Estado: {json.dumps(resumen)}")
+
+if __name__ == "__main__":
+    main()
+```

@@ -1,0 +1,71 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-27-centinela
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Agentes a vigilar: 16, 17, 19, 24, 25, 26, 28, 29, 30, 31, 32, 33.\nEstado\
+    \ de cada uno: agents-yaiwes/agent-*/crazy_wall.state.json (CLOSED / BLOCKED /\
+    \ sin archivo = no corrió).\nTablero: \"Claude notas/CRAZY-WALL-CENTRAL-CHAT-2026-09-24.md\"\
+    .\nReactivar = volver a escribir el chain.yaml del agente (línea \"# relanzado\
+    \ <hora>\"), UN agente por push.\nLímites: máximo 2 relanzamientos por agente;\
+    \ después, GAP para Opus. No tocar el Job del Router ni el Space. Solo deepseek_flash.\n\
+    \n\nSALIDA VERIFICADA DEL PASO ANTERIOR (centinela_code):\n```python\n#!/usr/bin/env\
+    \ python3\n\"\"\"Agent-27: Centinela - vigila estado de agentes cada 10 min\"\"\
+    \"\n\nimport os, json, time, re, sys\nfrom datetime import datetime, timezone\n\
+    from pathlib import Path\n\n# Config\nAGENTS = [16, 17, 19, 24, 25, 26, 28, 29,\
+    \ 30, 31, 32, 33]\nBASE = Path(\"/home/user/agents-yaiwes\")\nTOKEN = os.environ.get(\"\
+    GITHUB_TOKEN\", \"\")\nTABLERO = Path(\"/home/user/Claude notas/CRAZY-WALL-CENTRAL-CHAT-2026-09-24.md\"\
+    )\nMAX_RELANZ = 2\nTIMEOUT_MIN = 20\n\ndef hora_utc():\n    return datetime.now(timezone.utc).strftime(\"\
+    %Y-%m-%dT%H:%M:%SZ\")\n\ndef leer_estado(aid):\n    f = BASE / f\"agent-{aid:02d}\"\
+    \ / \"crazy_wall.state.json\"\n    if not f.exists():\n        return \"NO_INICIADO\"\
+    \n    try:\n        with open(f) as fh:\n            data = json.load(fh)\n  \
+    \      return data.get(\"status\", \"UNKNOWN\").upper()\n    except:\n       \
+    \ return \"ERROR_LECTURA\"\n\ndef contar_relanz(aid):\n    f = BASE / f\"agent-{aid:02d}\"\
+    \ / \"chain.yaml\"\n    if not f.exists():\n        return 0\n    with open(f)\
+    \ as fh:\n        content = fh.read()\n    return len(re.findall(r\"# relanzado\"\
+    , content))\n\ndef relanzar_agente(aid):\n    f = BASE / f\"agent-{aid:02d}\"\
+    \ / \"chain.yaml\"\n    if not f.exists():\n        return False\n    with open(f,\
+    \ \"r\") as fh:\n        lines = fh.readlines()\n    now = hora_utc()\n    lines.insert(0,\
+    \ f\"# relanzado {now}\\n\")\n    with open(f, \"w\") as fh:\n        fh.writelines(lines)\n\
+    \    return True\n\ndef copiar_gap_tablero(aid, gap_line):\n    with open(TABLERO,\
+    \ \"a\") as f:\n        f.write(f\"\\n## GAP detectado en agent-{aid:02d} - {hora_utc()}\\\
+    n{gap_line}\\n\")\n\ndef procesar_agente(aid):\n    estado = leer_estado(aid)\n\
+    \    now = hora_utc()\n    \n    if estado == \"BLOCKED\" or estado == \"NO_INICIADO\"\
+    :\n        relanz = contar_relanz(aid)\n        if relanz < MAX_RELANZ:\n    \
+    \        ok = relanzar_agente(aid)\n            accion = \"relanzado\" if ok else\
+    \ \"fallo_relanz\"\n        else:\n            accion = \"GAP_max_relanz\"\n \
+    \           copiar_gap_tablero(aid, \"GAP: agente bloqueado/sin estado, max relanz\
+    \ alcanzado\")\n    elif estado == \"UNKNOWN\":\n        accion = \"sin_accion\"\
+    \n    else:  # CLOSED u otro\n        accion = \"ok\"\n    \n    # Check output.txt\
+    \ for gaps\n    out = BASE / f\"agent-{aid:02d}\" / \"output.txt\"\n    if out.exists():\n\
+    \        with open(out) as f:\n            for line in f:\n                if\
+    \ \"GAP\" in line:\n                    copiar_gap_tablero(aid, line.strip())\n\
+    \    \n    return estado, accion\n\ndef main():\n    resumen = {}\n    for aid\
+    \ in AGENTS:\n        estado, accion = procesar_agente(aid)\n        resumen[f\"\
+    agent-{aid:02d}\"] = {\"estado\": estado, \"accion\": accion}\n    \n    now =\
+    \ hora_utc()\n    state = {\n        \"timestamp\": now,\n        \"resumen\"\
+    : resumen\n    }\n    state_file = Path(\"/home/user/CENTINELA.state.json\")\n\
+    \    with open(state_file, \"w\") as f:\n        json.dump(state, f, indent=2)\n\
+    \    \n    print(f\"[{now}] Centinela ejecutado. Estado: {json.dumps(resumen)}\"\
+    )\n\nif __name__ == \"__main__\":\n    main()\n```"
+  max_chars: 40000
+task: 'Entrega los criterios del juez: qué cuenta como CERRADO de verdad por agente
+  (archivo real creado, prueba pasada),
+
+  en una tabla agente → prueba de éxito. GAPs al final.
+
+  '
+checks:
+- kind: min_chars
+  value: 300
+- kind: no_secrets
