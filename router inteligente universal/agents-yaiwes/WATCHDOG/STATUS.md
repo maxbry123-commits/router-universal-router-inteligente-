@@ -1,6 +1,6 @@
-# WATCHDOG — estado de los agentes (2026-09-25 01:34:16Z)
+# WATCHDOG — estado de los agentes (2026-09-25 02:42:22Z)
 
-**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+**Acción:** hay pendientes; una ronda ya está en curso: no se lanza otra
 
 | agente | marco | estado | pasos cerrados | bloqueado en | GAPs |
 |---|---|---|---|---|---|
@@ -18,11 +18,14 @@ Request timed out. |
 | agent-16-chat-space-oauth | pocketflow | CLOSED | 2/1 | - | Python inválido: unexpected character after line continuation character (línea 17) | falta 'private=False' |
 | agent-17-chat-backend-32gb | pocketflow | CLOSED | 1/1 | - | falta 'Volume' | la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/work/router-unive |
 | agent-18-chat-final-auditor | pocketflow | CLOSED | 1/1 | - | falta 'Archivos' | falta 'Memoria' |
-| agent-19-chat-components-motors | pocketflow | BLOCKED | 0/3 | acquire_open_webui | motor falló (exit=1): RuntimeError: DESTINATION_EXISTS:router inteligente universal/Componente open soure router intelig |
+| agent-19-chat-components-motors | pocketflow | CLOSED | 2/2 | - | motor falló (exit=1): RuntimeError: DESTINATION_EXISTS:router inteligente universal/Componente open soure router intelig |
 | agent-2-chat-hf-smol | smolagents | CLOSED | 3/3 | - | - |
 | agent-20-openclaw-rowboat | smolagents | CLOSED | 1/1 | - | - |
 | agent-21-router-connect | pocketflow | CLOSED | 1/1 | - | - |
 | agent-22-grok-connect | pocketflow | CLOSED | 1/1 | - | - |
+| agent-24-almacenamiento | pocketflow | CLOSED | 2/2 | - | - |
+| agent-26-plan-4-objetivos | ? | SIN_ESTADO | 0/0 | - | - |
+| agent-28-memoria-descarga | ? | SIN_ESTADO | 0/0 | - | - |
 | agent-3-router | pocketflow | CLOSED | 4/4 | - | - |
 | agent-4-router-smol | smolagents | CLOSED | 4/1 | - | - |
 | agent-5-auditor | smolagents | BLOCKED | 2/4 | lens_models | hf/deepseek-ai/DeepSeek-V4-Flash:el Sheriff no dio PASS | hf/deepseek-ai/DeepSeek-V4-Flash:el Sheriff no dio PASS |
