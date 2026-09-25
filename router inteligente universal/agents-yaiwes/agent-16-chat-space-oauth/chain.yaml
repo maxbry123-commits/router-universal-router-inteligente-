@@ -1,61 +1,46 @@
 schema: yaiwes.chain/v1
-run_id: CHAT-100-AGENT16-20260923
 input_block: |
-  ORDEN DE AGENT 14 / DIRECTOR: ejecutar el cableado de Open WebUI usando SOLO componentes existentes.
-  No redescargar Open WebUI. No GitHub Actions. No tocar motores. No crear UI paralela.
+  DIRECTOR: Vercel es solo UI (repo ya conectado a Vercel, despliega en cada push). Selector de modelos, con/sin agente,
+  cuentas de GitHub, subida de archivos anclada al almacenamiento, selector + para añadir workflows de otros proyectos
+  (ej. plan de 4 objetivos del repo agentes) y chatear con un agente encargado/orquestador.
 
 agent:
   id: agent-16-chat-space-oauth
   framework: pocketflow
   group: chat
-  route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
+  route: [deepseek_flash]
   fallback: []
-  max_tokens: 3600
+  max_tokens: 2000
 
 context:
   text: |
-    RUTAS REALES VERIFICADAS:
-    - router inteligente universal/Componente open soure router inteligente universal/open-webui/
-    - router inteligente universal/integration/chat_mvp/chat_ui.html
-    - router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js
-    - router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js
-    - router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js
-    - router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js
-    - router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py
-    - router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py
-    El CLOSED anterior fue inválido porque usó rutas equivocadas. Haz read-back real.
+    Base: Open WebUI ya descargado. Reciclar chat_ui.html de chat_mvp.
+    Carpeta UI para Vercel: "router inteligente universal/vercel-ui/" (estática; todas las llamadas van a LIVE_URL del Router).
+    LIVE_URL se lee en runtime de: https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag
+    Cuentas GitHub: secretos GH_ACCOUNT_1..3 (solo nombres; el Router elige la clave). Nunca claves en el HTML.
+    Rutas: /v1/models, /v1/chat/completions, /chat/agents, /chat/documents, /chat/github/*, /chat/storage.
 
 steps:
-  - id: adapt_openwebui_real
-    context_file:
-      - "router inteligente universal/Componente open soure router inteligente universal/open-webui/DOWNLOAD_EXTRACT_MANIFEST.json"
-      - "router inteligente universal/Componente open soure router inteligente universal/open-webui/code/package.json"
-      - "router inteligente universal/integration/chat_mvp/chat_ui.html"
-      - "router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js"
-      - "router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js"
-      - "router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js"
-      - "router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py"
+  - id: vercel_json
     task: |
-      REUTILIZA/ADAPTA -> CABLEA -> PRUEBA.
-      Integra las capacidades existentes del Chat MVP en Open WebUI, sin crear otra UI.
-      Conserva las fuentes originales. Registra ruta origen -> ruta de integración para:
-      Router/model selector, con/sin agente, documentos, GitHub, Jobs, Vault/Secret Bank y Crazy Wall.
-      Verifica que Open WebUI existe por manifest antes de trabajar.
-      Entrega evidencia de archivos realmente tocados y prueba de que la UI integrada carga sus capacidades.
-      No declares PASS si solo escribiste un plan.
-
-      Termina tu respuesta SIEMPRE con este bloque exacto, letra por letra, rellenando cada línea (no lo omitas ni lo reformules):
-      ```
-      CHECKLIST DE INTEGRACION
-      Open WebUI: <ruta o estado>
-      Router: <ruta o estado>
-      GitHub: <ruta o estado>
-      Jobs: <ruta o estado>
-      Secret Bank: <ruta o estado>
-      Crazy Wall: <ruta o estado>
-      PRUEBA: <qué prueba real se hizo>
-      ```
+      Entrega vercel.json mínimo para servir "router inteligente universal/vercel-ui/" como sitio estático. Solo el JSON.
     checks:
       - kind: contains
-        values: ["Open WebUI", "Router", "GitHub", "Jobs", "Secret Bank", "Crazy Wall", "PRUEBA"]
+        values: ["{"]
       - kind: no_secrets
+
+  - id: index_html
+    task: |
+      Entrega index.html completo (un solo archivo, CSS y JS dentro) con:
+      selector de modelo (lee /v1/models), interruptor con agente / sin agente, selector de cuenta GitHub (lee /chat/github/accounts),
+      selector de agente (lee /chat/agents), botón + para añadir workflow (nombre + repo + ruta de plan; guarda con POST /chat/storage),
+      subida de archivos (POST /chat/documents con chat_id), área de chat y campo para pegar la API key del Router guardada solo en el navegador.
+      Solo el código.
+    checks:
+      - kind: js_syntax
+      - kind: min_chars
+        value: 1500
+      - kind: no_secrets
+
+edges:
+  - [vercel_json, index_html]
