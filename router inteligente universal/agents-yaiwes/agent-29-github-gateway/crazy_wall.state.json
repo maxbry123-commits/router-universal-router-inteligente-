@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-29-github-gateway",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T02:47:57Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "gateway_code",
+  "cableo"
+ ],
+ "completed": [
+  "gateway_code",
+  "cableo"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}

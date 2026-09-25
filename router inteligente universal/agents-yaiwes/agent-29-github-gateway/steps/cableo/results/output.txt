@@ -1,0 +1,11 @@
+```python
+# Línea 1: Incluir el router en app.py
+from integration.chat_mvp.gh_gateway import router as gh_router
+
+# Línea 2: Montar el router en la aplicación
+app.include_router(gh_router)
+
+# Prueba de éxito (post-inclusión):
+# 1. Listar repos de cuenta 1: curl -X GET "http://localhost:8000/gh/repos?account=RIU_BOT" -H "X-API-Key: <key>"
+# 2. Leer un archivo: curl -X GET "http://localhost:8000/gh/file?repo=RIU_BOT/algun-repo&path=README.md" -H "X-API-Key: <key>"
+```

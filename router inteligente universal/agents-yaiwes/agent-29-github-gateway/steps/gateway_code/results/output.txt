@@ -1,0 +1,75 @@
+```python
+from fastapi import APIRouter, HTTPException, Query
+from typing import Optional
+import os
+import requests
+import json
+
+router = APIRouter(prefix="/gh")
+
+def get_gh_token(account: str) -> str:
+    env_map = {
+        "RIU_BOT": "GH_PAT_FINE_FULL",
+        "XDANIEL": "GH_CLASSIC_FULL_1",
+        "DANIELSES": "GH_CLASSIC_FULL_2",
+    }
+    key = env_map.get(account, "")
+    token = os.environ.get(key, "")
+    if not token and key:
+        token = os.environ.get("RIU_GITHUB_PAT_FULL_ACCESO", "")
+    if not token:
+        raise HTTPException(400, f"No token for {account}")
+    return token
+
+def gh_api(url: str, account: str, method: str = "GET", data: dict = None) -> dict:
+    token = get_gh_token(account)
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
+    resp = requests.request(method, url, headers=headers, json=data)
+    if resp.status_code >= 400:
+        raise HTTPException(500, f"GitHub error: {resp.text}")
+    return resp.json()
+
+@router.get("/accounts")
+def list_accounts():
+    return {"accounts": ["RIU_BOT", "XDANIEL", "DANIELSES"]}
+
+@router.get("/repos")
+def list_repos(account: str = Query(...)):
+    url = f"https://api.github.com/users/{account}/repos"
+    repos = gh_api(url, account)
+    return {"repos": [r["name"] for r in repos]}
+
+@router.get("/file")
+def get_file(repo: str, path: str, ref: str = "main"):
+    account = repo.split("/")[0]
+    url = f"https://api.github.com/repos/{repo}/contents/{path}?ref={ref}"
+    data = gh_api(url, account)
+    import base64
+    content = base64.b64decode(data["content"]).decode("utf-8")
+    return {"content": content, "sha": data["sha"]}
+
+@router.put("/file")
+def put_file(repo: str, path: str, content: str, sha: str = ""):
+    account = repo.split("/")[0]
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    payload = {"message": f"Update {path}", "content": __import__("base64").b64encode(content.encode()).decode(), "sha": sha}
+    return gh_api(url, account, "PUT", payload)
+
+@router.post("/agent-launch")
+def agent_launch(repo: str, agent_name: str, chain_yaml: str):
+    account = repo.split("/")[0]
+    path = f"agents/{agent_name}/chain.yaml"
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    payload = {"message": f"Activate agent {agent_name}", "content": __import__("base64").b64encode(chain_yaml.encode()).decode()}
+    return gh_api(url, account, "PUT", payload)
+
+@router.get("/agent-state")
+def agent_state(repo: str, agent: str):
+    account = repo.split("/")[0]
+    path = f"agents/{agent}/crazy_wall.state.json"
+    url = f"https://api.github.com/repos/{repo}/contents/{path}"
+    data = gh_api(url, account)
+    import base64
+    content = json.loads(base64.b64decode(data["content"]).decode("utf-8"))
+    return {"state": content}
+```

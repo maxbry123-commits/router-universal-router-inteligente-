@@ -1,0 +1,66 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-29-github-gateway
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Router FastAPI: router inteligente universal/integration/chat_mvp/ (ya tiene\
+    \ /chat/github/*).\nSecretos (solo nombres): GH_PAT_FINE_FULL, GH_CLASSIC_FULL_1,\
+    \ GH_CLASSIC_FULL_2, RIU_GITHUB_PAT_FULL_ACCESO, GH_ACCOUNT_1..3.\nLas claves\
+    \ se leen de variables de entorno. Nunca valores en archivos. Protegido con X-API-Key\
+    \ del Router.\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (gateway_code):\n```python\n\
+    from fastapi import APIRouter, HTTPException, Query\nfrom typing import Optional\n\
+    import os\nimport requests\nimport json\n\nrouter = APIRouter(prefix=\"/gh\")\n\
+    \ndef get_gh_token(account: str) -> str:\n    env_map = {\n        \"RIU_BOT\"\
+    : \"GH_PAT_FINE_FULL\",\n        \"XDANIEL\": \"GH_CLASSIC_FULL_1\",\n       \
+    \ \"DANIELSES\": \"GH_CLASSIC_FULL_2\",\n    }\n    key = env_map.get(account,\
+    \ \"\")\n    token = os.environ.get(key, \"\")\n    if not token and key:\n  \
+    \      token = os.environ.get(\"RIU_GITHUB_PAT_FULL_ACCESO\", \"\")\n    if not\
+    \ token:\n        raise HTTPException(400, f\"No token for {account}\")\n    return\
+    \ token\n\ndef gh_api(url: str, account: str, method: str = \"GET\", data: dict\
+    \ = None) -> dict:\n    token = get_gh_token(account)\n    headers = {\"Authorization\"\
+    : f\"Bearer {token}\", \"Accept\": \"application/vnd.github.v3+json\"}\n    resp\
+    \ = requests.request(method, url, headers=headers, json=data)\n    if resp.status_code\
+    \ >= 400:\n        raise HTTPException(500, f\"GitHub error: {resp.text}\")\n\
+    \    return resp.json()\n\n@router.get(\"/accounts\")\ndef list_accounts():\n\
+    \    return {\"accounts\": [\"RIU_BOT\", \"XDANIEL\", \"DANIELSES\"]}\n\n@router.get(\"\
+    /repos\")\ndef list_repos(account: str = Query(...)):\n    url = f\"https://api.github.com/users/{account}/repos\"\
+    \n    repos = gh_api(url, account)\n    return {\"repos\": [r[\"name\"] for r\
+    \ in repos]}\n\n@router.get(\"/file\")\ndef get_file(repo: str, path: str, ref:\
+    \ str = \"main\"):\n    account = repo.split(\"/\")[0]\n    url = f\"https://api.github.com/repos/{repo}/contents/{path}?ref={ref}\"\
+    \n    data = gh_api(url, account)\n    import base64\n    content = base64.b64decode(data[\"\
+    content\"]).decode(\"utf-8\")\n    return {\"content\": content, \"sha\": data[\"\
+    sha\"]}\n\n@router.put(\"/file\")\ndef put_file(repo: str, path: str, content:\
+    \ str, sha: str = \"\"):\n    account = repo.split(\"/\")[0]\n    url = f\"https://api.github.com/repos/{repo}/contents/{path}\"\
+    \n    payload = {\"message\": f\"Update {path}\", \"content\": __import__(\"base64\"\
+    ).b64encode(content.encode()).decode(), \"sha\": sha}\n    return gh_api(url,\
+    \ account, \"PUT\", payload)\n\n@router.post(\"/agent-launch\")\ndef agent_launch(repo:\
+    \ str, agent_name: str, chain_yaml: str):\n    account = repo.split(\"/\")[0]\n\
+    \    path = f\"agents/{agent_name}/chain.yaml\"\n    url = f\"https://api.github.com/repos/{repo}/contents/{path}\"\
+    \n    payload = {\"message\": f\"Activate agent {agent_name}\", \"content\": __import__(\"\
+    base64\").b64encode(chain_yaml.encode()).decode()}\n    return gh_api(url, account,\
+    \ \"PUT\", payload)\n\n@router.get(\"/agent-state\")\ndef agent_state(repo: str,\
+    \ agent: str):\n    account = repo.split(\"/\")[0]\n    path = f\"agents/{agent}/crazy_wall.state.json\"\
+    \n    url = f\"https://api.github.com/repos/{repo}/contents/{path}\"\n    data\
+    \ = gh_api(url, account)\n    import base64\n    content = json.loads(base64.b64decode(data[\"\
+    content\"]).decode(\"utf-8\"))\n    return {\"state\": content}\n```"
+  max_chars: 40000
+task: 'Entrega las 2 líneas exactas para incluir el router /gh en app.py y la prueba
+  de éxito
+
+  (listar repos de la cuenta 1 y leer un archivo). GAPs al final.
+
+  '
+checks:
+- kind: min_chars
+  value: 150
+- kind: no_secrets

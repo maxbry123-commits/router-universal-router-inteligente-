@@ -1,0 +1,45 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-29-github-gateway
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Router FastAPI: router inteligente universal/integration/chat_mvp/ (ya tiene
+    /chat/github/*).
+
+    Secretos (solo nombres): GH_PAT_FINE_FULL, GH_CLASSIC_FULL_1, GH_CLASSIC_FULL_2,
+    RIU_GITHUB_PAT_FULL_ACCESO, GH_ACCOUNT_1..3.
+
+    Las claves se leen de variables de entorno. Nunca valores en archivos. Protegido
+    con X-API-Key del Router.
+
+    '
+  max_chars: 40000
+task: 'Entrega el código Python completo de github_gateway.py (APIRouter FastAPI,
+  prefijo /gh) con:
+
+  GET /gh/accounts (nombres de cuenta), GET /gh/repos?account=, GET /gh/file?repo=&path=&ref=,
+
+  PUT /gh/file (crear/actualizar con sha), POST /gh/agent-launch (escribe chain.yaml
+  de un agente en un repo = lo activa),
+
+  GET /gh/agent-state?repo=&agent= (lee crazy_wall.state.json). Token por cuenta desde
+  variables de entorno.
+
+  Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 800
+- kind: no_secrets
