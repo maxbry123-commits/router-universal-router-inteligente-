@@ -1,0 +1,46 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR: Agente centinela supervisor juez guardián con watchdog activo que vigila cada 10 minutos que se cumplan
+  las instrucciones de Opus, ordena, controla y resuelve los GAPs o reactiva los agentes que no estén ejecutando.
+
+agent:
+  id: agent-27-centinela
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Agentes a vigilar: 16, 17, 19, 24, 25, 26, 28, 29, 30, 31, 32, 33.
+    Estado de cada uno: agents-yaiwes/agent-*/crazy_wall.state.json (CLOSED / BLOCKED / sin archivo = no corrió).
+    Tablero: "Claude notas/CRAZY-WALL-CENTRAL-CHAT-2026-09-24.md".
+    Reactivar = volver a escribir el chain.yaml del agente (línea "# relanzado <hora>"), UN agente por push.
+    Límites: máximo 2 relanzamientos por agente; después, GAP para Opus. No tocar el Job del Router ni el Space. Solo deepseek_flash.
+
+steps:
+  - id: centinela_code
+    task: |
+      Entrega el código Python completo de centinela.py que, ejecutado cada 10 minutos por el Job persistente del Router
+      (se llama desde router_job_persistent.py junto al git pull, sin crear Jobs nuevos):
+      1) lee el estado de los agentes de la lista; 2) si BLOCKED o sin estado tras 20 min, relanza (máx. 2);
+      3) si una salida output.txt contiene "GAP", lo copia al tablero; 4) escribe CENTINELA.state.json con la hora y el resumen;
+      5) usa el token de GitHub desde variable de entorno. Solo el código.
+    checks:
+      - kind: python_ast
+      - kind: min_chars
+        value: 800
+      - kind: no_secrets
+
+  - id: juez
+    task: |
+      Entrega los criterios del juez: qué cuenta como CERRADO de verdad por agente (archivo real creado, prueba pasada),
+      en una tabla agente → prueba de éxito. GAPs al final.
+    checks:
+      - kind: min_chars
+        value: 300
+      - kind: no_secrets
+
+edges:
+  - [centinela_code, juez]
