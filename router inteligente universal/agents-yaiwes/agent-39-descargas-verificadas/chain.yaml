@@ -1,0 +1,88 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-25: repos verificados — Memanto (moorcheh-ai/memanto), Ponytail (DietrichGebert/ponytail),
+  Archify (alksnd/archify), MiMo Code (XiaomiMiMo/MiMo-Code), AgentDB (ruvnet/agentdb). Descargar solo con el motor canónico.
+
+agent:
+  id: agent-39-descargas-verificadas
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 800
+
+context:
+  text: |
+    Mismo motor y patrón que agent-19 y agent-28. Si el destino ya existe, no es fallo del Director: el motor solo verifica.
+
+steps:
+  - id: memanto
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_MEMANTO.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_MEMANTO]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "moorcheh-ai/memanto", SOURCE_REF: "main", SLUG: "memanto", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+  - id: ponytail
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_PONYTAIL.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_PONYTAIL]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "DietrichGebert/ponytail", SOURCE_REF: "main", SLUG: "ponytail", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+  - id: archify
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_ARCHIFY.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_ARCHIFY]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "alksnd/archify", SOURCE_REF: "main", SLUG: "archify", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+  - id: mimo_code
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_MIMO_CODE.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_MIMO_CODE]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "XiaomiMiMo/MiMo-Code", SOURCE_REF: "main", SLUG: "mimo-code", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+  - id: agentdb
+    task: |
+      Responde exactamente MOTOR_EXEC_REQUEST_AGENTDB.
+    checks:
+      - kind: contains
+        values: [MOTOR_EXEC_REQUEST_AGENTDB]
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "ruvnet/agentdb", SOURCE_REF: "main", SLUG: "agentdb", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: "main", DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: "VERIFIED_CLOSED", publish.verdict: "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"}
+      - kind: no_secrets
+
+edges:
+  - [memanto, ponytail]
+  - [ponytail, archify]
+  - [archify, mimo_code]
+  - [mimo_code, agentdb]
