@@ -1,7 +1,6 @@
 name: Chat Router Space Deploy
 
 # Crea o actualiza el Space del chat (cpu-basic 16 GB, se despierta al abrirlo) y le pone las claves como secretos del Space.
-# Se ejecuta solo cuando cambia algo en "chat router/space/" o este archivo.
 
 on:
   push:
@@ -20,31 +19,56 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            chat router/space
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install -q -U huggingface_hub
       - name: Deploy Space
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          HF_A: ${{ secrets.HF_WRITE_TOKEN }}
+          HF_B: ${{ secrets.HF_TOKEN_MAXBRY123 }}
+          HF_C: ${{ secrets.HF_TOKEN_1 }}
           RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
-          GH_TOKEN_FOR_SPACE: ${{ secrets.RIU_GITHUB_PAT_FULL_ACCESO || secrets.GH_JOB_PUSH_TOKEN }}
+          GH_A: ${{ secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+          GH_B: ${{ secrets.GH_JOB_PUSH_TOKEN }}
         run: |
           python - <<'PY'
-          import os, pathlib
+          import os, pathlib, sys
           from huggingface_hub import HfApi
-          api = HfApi(token=os.environ["HF_TOKEN"])
-          owner = api.whoami()["name"]
+          api = owner = token = None
+          for name in ("HF_A", "HF_B", "HF_C"):
+              t = os.environ.get(name, "")
+              if not t:
+                  print(f"{name}: vacío"); continue
+              try:
+                  a = HfApi(token=t); w = a.whoami()
+                  role = (w.get("auth", {}).get("accessToken", {}) or {}).get("role")
+                  print(f"{name}: cuenta={w['name']} permiso={role}")
+                  if role in (None, "write", "fineGrained"):
+                      api, owner, token = a, w["name"], t; break
+              except Exception as e:
+                  print(f"{name}: error {type(e).__name__}: {str(e)[:160]}")
+          if not api:
+              print("::error::ningún token de HF sirve para escribir"); sys.exit(1)
           space = f"{owner}/chat-router"
-          api.create_repo(space, repo_type="space", space_sdk="docker", exist_ok=True, private=False)
-          readme = pathlib.Path("chat router/space/README.md")
-          readme.write_text("---\ntitle: Chat Router YAIWES\nemoji: 🛰️\ncolorFrom: blue\ncolorTo: gray\nsdk: docker\napp_port: 7860\npinned: false\n---\nChat del Router YAIWES.\n", encoding="utf-8")
-          for k, v in (("HF_TOKEN", os.environ["HF_TOKEN"]), ("RIU_ROUTER_API_KEY", os.environ.get("RIU_KEY", "")), ("GH_TOKEN", os.environ.get("GH_TOKEN_FOR_SPACE", ""))):
-              if v:
-                  api.add_space_secret(space, k, v)
-              else:
-                  print(f"::warning::falta el secreto {k}")
-          api.upload_folder(folder_path="chat router/space", repo_id=space, repo_type="space", commit_message="deploy chat router")
-          print(f"::notice title=CHAT_URL::https://huggingface.co/spaces/{space}")
-          print(f"::notice title=CHAT_DIRECT::https://{space.replace('/', '-').lower()}.hf.space")
+          try:
+              api.create_repo(space, repo_type="space", space_sdk="docker", exist_ok=True, private=False)
+          except Exception as e:
+              print(f"::error::crear Space: {type(e).__name__}: {str(e)[:300]}"); sys.exit(1)
+          pathlib.Path("chat router/space/README.md").write_text("---\ntitle: Chat Router YAIWES\nemoji: 🛰️\ncolorFrom: blue\ncolorTo: gray\nsdk: docker\napp_port: 7860\npinned: false\n---\nChat del Router YAIWES.\n", encoding="utf-8")
+          gh = os.environ.get("GH_A") or os.environ.get("GH_B") or ""
+          for k, v in (("HF_TOKEN", token), ("RIU_ROUTER_API_KEY", os.environ.get("RIU_KEY", "")), ("GH_TOKEN", gh)):
+              try:
+                  if v: api.add_space_secret(space, k, v)
+                  else: print(f"::warning::falta el secreto {k}")
+              except Exception as e:
+                  print(f"::warning::secreto {k}: {type(e).__name__}: {str(e)[:160]}")
+          try:
+              api.upload_folder(folder_path="chat router/space", repo_id=space, repo_type="space", commit_message="deploy chat router")
+          except Exception as e:
+              print(f"::error::subir archivos: {type(e).__name__}: {str(e)[:300]}"); sys.exit(1)
+          print(f"::notice title=CHAT_URL::https://{space.replace('/', '-').lower()}.hf.space")
           PY
