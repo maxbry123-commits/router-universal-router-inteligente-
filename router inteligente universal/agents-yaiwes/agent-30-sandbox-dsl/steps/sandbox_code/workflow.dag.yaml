@@ -1,0 +1,61 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-30-sandbox-dsl
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Formato DSL: schema yaiwes.chain/v1 (input_block, agent, context, steps[id,\
+    \ task, checks], edges). Ejecutor existente: agents-yaiwes/chain.py.\nActivar\
+    \ agente = escribir su chain.yaml (vía /gh/agent-launch del agent-29). Estado:\
+    \ crazy_wall.state.json.\nSolo deepseek_flash. Sin GPU. Sin claves en archivos.\n\
+    \n\nSALIDA VERIFICADA DEL PASO ANTERIOR (system_prompt):\n```yaml\nchain_yaml:\
+    \ |\n  schema: yaiwes.chain/v1\n  input_block: |\n    DIRECTOR: System prompt\
+    \ + sandbox en el chat: cuando mando una orden, ejecuta el DSL DAG schema en código\
+    \ del agente conectado a cada selector.\n  \n  agent: agent-30-sandbox-dsl\n \
+    \ \n  context:\n    agent_launch_path: \"/gh/agent-launch\"\n    state_path: \"\
+    crazy_wall.state.json\"\n    model: \"deepseek_flash\"\n    no_gpu: true\n   \
+    \ no_keys_in_files: true\n  \n  steps:\n    - id: parse_order\n      task: \"\
+    Parse the Director's order into structured DAG steps\"\n      checks:\n      \
+    \  - order_recognized: \"Orden identificada correctamente como DSL DAG\"\n   \
+    \     - selector_detected: \"Selector de agente extraído del mensaje\"\n    \n\
+    \    - id: generate_chain\n      task: \"Build chain.yaml with input_block, context,\
+    \ steps and edges\"\n      checks:\n        - valid_schema: \"chain.yaml sigue\
+    \ el schema yaiwes.chain/v1\"\n        - steps_defined: \"Al menos un paso definido\
+    \ con id, task y checks\"\n        - edges_present: \"Edges que conectan los pasos\
+    \ en orden\"\n    \n    - id: validate_chain\n      task: \"Validate chain.yaml\
+    \ against schema and execute dry run\"\n      checks:\n        - syntax_ok: \"\
+    YAML válido sin errores de parseo\"\n        - schema_ok: \"Cumple con yaiwes.chain/v1\
+    \ schema\"\n        - no_missing_refs: \"Referencias a pasos en edges existen\"\
+    \n    \n    - id: launch_agent\n      task: \"Write chain.yaml to /gh/agent-launch\
+    \ and trigger agent via agent-29\"\n      checks:\n        - file_written: \"\
+    chain.yaml escrito correctamente en la ruta\"\n        - agent_activated: \"Agente\
+    \ lanzado y estado reflejado en crazy_wall.state.json\"\n  \n  edges:\n    - from:\
+    \ parse_order\n      to: generate_chain\n    - from: generate_chain\n      to:\
+    \ validate_chain\n    - from: validate_chain\n      to: launch_agent\n```"
+  max_chars: 40000
+task: 'Entrega el código Python completo de sandbox_dsl.py (APIRouter FastAPI, prefijo
+  /sandbox):
+
+  POST /sandbox/order {agent_id, order, repo} → pide el YAML al modelo con el system
+  prompt, valida con yaml.safe_load
+
+  y el esquema mínimo, lo lanza con /gh/agent-launch y devuelve el run_id;
+
+  GET /sandbox/status?agent_id= → estado del crazy_wall.state.json. No ejecuta código
+  arbitrario del usuario. Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 800
+- kind: no_secrets

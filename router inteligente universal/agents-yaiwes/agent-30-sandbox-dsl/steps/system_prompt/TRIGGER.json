@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "DIRECTOR: System prompt + sandbox en el chat: cuando mando una orden, ejecuta el DSL DAG schema en código del agente conectado a cada selector.\n"}

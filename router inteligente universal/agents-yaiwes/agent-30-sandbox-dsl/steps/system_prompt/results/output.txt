@@ -1,0 +1,50 @@
+```yaml
+chain_yaml: |
+  schema: yaiwes.chain/v1
+  input_block: |
+    DIRECTOR: System prompt + sandbox en el chat: cuando mando una orden, ejecuta el DSL DAG schema en código del agente conectado a cada selector.
+  
+  agent: agent-30-sandbox-dsl
+  
+  context:
+    agent_launch_path: "/gh/agent-launch"
+    state_path: "crazy_wall.state.json"
+    model: "deepseek_flash"
+    no_gpu: true
+    no_keys_in_files: true
+  
+  steps:
+    - id: parse_order
+      task: "Parse the Director's order into structured DAG steps"
+      checks:
+        - order_recognized: "Orden identificada correctamente como DSL DAG"
+        - selector_detected: "Selector de agente extraído del mensaje"
+    
+    - id: generate_chain
+      task: "Build chain.yaml with input_block, context, steps and edges"
+      checks:
+        - valid_schema: "chain.yaml sigue el schema yaiwes.chain/v1"
+        - steps_defined: "Al menos un paso definido con id, task y checks"
+        - edges_present: "Edges que conectan los pasos en orden"
+    
+    - id: validate_chain
+      task: "Validate chain.yaml against schema and execute dry run"
+      checks:
+        - syntax_ok: "YAML válido sin errores de parseo"
+        - schema_ok: "Cumple con yaiwes.chain/v1 schema"
+        - no_missing_refs: "Referencias a pasos en edges existen"
+    
+    - id: launch_agent
+      task: "Write chain.yaml to /gh/agent-launch and trigger agent via agent-29"
+      checks:
+        - file_written: "chain.yaml escrito correctamente en la ruta"
+        - agent_activated: "Agente lanzado y estado reflejado en crazy_wall.state.json"
+  
+  edges:
+    - from: parse_order
+      to: generate_chain
+    - from: generate_chain
+      to: validate_chain
+    - from: validate_chain
+      to: launch_agent
+```
