@@ -1,6 +1,6 @@
-# WATCHDOG — estado de los agentes (2026-09-25 06:18:13Z)
+# WATCHDOG — estado de los agentes (2026-09-25 07:53:53Z)
 
-**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
+**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 2/3)
 
 | agente | marco | estado | pasos cerrados | bloqueado en | GAPs |
 |---|---|---|---|---|---|
@@ -14,8 +14,8 @@ Error code: 402 - {'message': 'Payment require |
 | agent-14-orchestrator-msaf | pocketflow | CLOSED | 6/4 | - | - |
 | agent-15-orchestrator-grok | smolagents | CLOSED | 4/3 | - | hf/deepseek-ai/DeepSeek-V4-Flash:AgentGenerationError:Error while generating output:
 Request timed out. |
-| agent-15-orchestrator-grokbuild | pocketflow | BLOCKED | 0/1 | fetch_and_connect | la prueba falló (exit=1): requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://api.github.com/rep |
-| agent-16-chat-space-oauth | pocketflow | RUNNING | 4/1 | - | JavaScript inválido: Node.js v22.23.2 | menos de 1500 caracteres |
+| agent-15-orchestrator-grokbuild | pocketflow | BLOCKED | 0/1 | fetch_and_connect | la prueba falló (exit=1): Exception: No releases found |
+| agent-16-chat-space-oauth | pocketflow | CLOSED | 4/1 | - | JavaScript inválido: Node.js v22.23.2 | menos de 1500 caracteres |
 | agent-17-chat-backend-32gb | pocketflow | CLOSED | 4/3 | - | falta 'Volume' | la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/work/router-unive |
 | agent-18-chat-final-auditor | pocketflow | CLOSED | 1/1 | - | falta 'Archivos' | falta 'Memoria' |
 | agent-19-chat-components-motors | pocketflow | CLOSED | 2/2 | - | motor falló (exit=1): RuntimeError: DESTINATION_EXISTS:router inteligente universal/Componente open soure router intelig |
@@ -31,7 +31,7 @@ Request timed out. |
 | agent-29-github-gateway | pocketflow | CLOSED | 2/2 | - | - |
 | agent-3-router | pocketflow | CLOSED | 4/4 | - | - |
 | agent-30-sandbox-dsl | pocketflow | CLOSED | 2/2 | - | - |
-| agent-31-micro-sistema | pocketflow | BLOCKED | 1/2 | generador | Python inválido: unterminated triple-quoted string literal (detected at line 18) (línea 10) |
+| agent-31-micro-sistema | pocketflow | BLOCKED | 1/2 | generador | Python inválido: unterminated string literal (detected at line 31) (línea 31) |
 | agent-32-organizador | pocketflow | CLOSED | 4/2 | - | - |
 | agent-33-enchufe-mcp | pocketflow | CLOSED | 2/2 | - | - |
 | agent-35-skills-obligatorias | pocketflow | CLOSED | 2/2 | - | - |
