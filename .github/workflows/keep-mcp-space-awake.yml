@@ -1,7 +1,9 @@
 name: Keep MCP Space Awake
 
-# Visita el Space del conector de Claude (COMAND-CENTER-1/claude-github-mcp-backup, cpu-basic 16 GB) cada 15 minutos
-# para que Hugging Face no lo duerma por inactividad. Si está dormido o parado, pide reiniciarlo con la API de HF.
+# Cada 15 minutos:
+#  1) visita el Space del conector de Claude y lo reinicia si está dormido/parado (respaldo gratis);
+#  2) comprueba que el Job KEEPER (HF cpu-basic 16 GB, siempre encendido) esté corriendo; si no, lo lanza.
+# El KEEPER mantiene despiertos el conector y el chat y enciende otro 16 GB en espera si hay carga (ver keeper.py).
 
 on:
   schedule:
@@ -12,23 +14,40 @@ permissions:
   contents: read
 
 jobs:
-  ping:
+  keep:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Visitar y despertar el Space
+      - name: Visitar y despertar el Space del conector
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
         run: |
           SPACE="COMAND-CENTER-1/claude-github-mcp-backup"
-          URL="https://comand-center-1-claude-github-mcp-backup.hf.space"
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$URL/" || echo 000)
-          echo "Visita: $code"
+          curl -s -o /dev/null -w 'visita: %{http_code}\n' --max-time 60 "https://comand-center-1-claude-github-mcp-backup.hf.space/" || true
           stage=$(curl -s --max-time 30 -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/spaces/$SPACE/runtime" | python3 -c "import sys,json;print(json.load(sys.stdin).get('stage','?'))" 2>/dev/null || echo '?')
           echo "Estado del Space: $stage"
           case "$stage" in
             SLEEPING|PAUSED|STOPPED|RUNTIME_ERROR)
-              echo "::warning::Space en $stage, pidiendo reinicio"
-              curl -s -X POST --max-time 30 -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/spaces/$SPACE/restart" -o /dev/null -w 'reinicio: %{http_code}\n'
-              ;;
+              curl -s -X POST --max-time 30 -H "Authorization: Bearer $HF_TOKEN" "https://huggingface.co/api/spaces/$SPACE/restart" -o /dev/null -w 'reinicio: %{http_code}\n' ;;
           esac
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q -U huggingface_hub
+      - name: Asegurar que el KEEPER (Job 16 GB) esté encendido
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          running = [j for j in api.list_jobs() if (j.status.stage or "").upper() in ("RUNNING", "STARTING") and "keeper.py" in " ".join(j.command or [])]
+          if running:
+              print(f"KEEPER encendido: {running[0].id}")
+          else:
+              url = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/keeper/keeper.py"
+              cmd = ["bash", "-c", "pip install -q huggingface_hub && python -c \"import urllib.request;urllib.request.urlretrieve('" + url + "','keeper.py')\" && python keeper.py"]
+              job = api.run_job(image="python:3.12-slim", command=cmd, flavor="cpu-basic", timeout="3d", secrets={"HF_TOKEN": os.environ["HF_TOKEN"]})
+              print(f"::notice::KEEPER lanzado: {job.id}")
+          PY
