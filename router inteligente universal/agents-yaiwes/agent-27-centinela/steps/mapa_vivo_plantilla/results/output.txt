@@ -1,0 +1,83 @@
+Aquí está la plantilla corregida con el bloque ````json STATE` incluido:
+
+```markdown
+# 🧠 MAPA-VIVO.md - CENTINELA (Autogenerado cada hora)
+_Última actualización: {TIMESTAMP_UTC}_
+
+---
+
+## 🌐 VISIÓN GLOBAL
+{MISIÓN_ACTUAL}
+
+---
+
+## 📍 POSICIÓN ACTUAL
+- **Agentes totales:** {AGENTES_TOTALES}
+- **Completados:** {COMPLETADOS}
+- **En curso:** {EN_CURSO}
+- **Bloqueados:** {BLOQUEADOS}
+- **Fase:** {FASE}
+
+---
+
+## 🔗 DEPENDENCIAS
+{DEPENDENCIAS_TEXTO}
+
+---
+
+## 📊 MADUREZ POR BLOQUE
+{MATRIZ_BARRAS}
+
+---
+
+## 📈 DIAGRAMA DE FLUJO (MERMAID)
+```mermaid
+flowchart LR
+    subgraph AgentPool["⚙️ Agentes"]
+        direction TB
+        {AGENT_NODES}
+    end
+    subgraph State["📊 Estado"]
+        direction TB
+        A1["{EN_CURSO_NODE}"]:::running
+        A2["{COMPLETADOS_NODE}"]:::done
+        A3["{BLOQUEADOS_NODE}"]:::blocked
+        A4["{PENDIENTES_NODE}"]:::pending
+    end
+    AgentPool --> State
+    {CURRENT_FLOW_LINKS}
+    classDef running fill:#4CAF50,stroke:#388E3C
+    classDef done fill:#9E9E9E,stroke:#616161
+    classDef blocked fill:#F44336,stroke:#D32F2F
+    classDef pending fill:#FFC107,stroke:#FF8F00
+```
+
+---
+
+## 🎖️ PARTE MILITAR
+
+| Agente | Misión | Estado | Última hora | GAP |
+|--------|--------|--------|-------------|-----|
+{PARTE_MILITAR_ROWS}
+
+---
+
+## ✅ CHECKLIST DE TRABAJO
+{CHECKLIST_ITEMS}
+
+---
+
+## 📦 STATE (JSON)
+```json
+{
+  "actual": "{AGENTE_ACTUAL}",
+  "siguiente": "{SIGUIENTE_AGENTE}",
+  "bloqueados": [{BLOQUEADOS_LIST}],
+  "aprobados": [{APROBADOS_LIST}],
+  "timestamp": "{TIMESTAMP_UTZ_ISO}",
+  "ultimo_cambio": "{ULTIMO_CAMBIO}"
+}
+```
+```
+
+Esta plantilla incluye el bloque ````json STATE` requerido con todos los marcadores necesarios.

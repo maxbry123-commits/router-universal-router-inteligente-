@@ -3,15 +3,17 @@
  "agent": "agent-27-centinela",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-25T02:51:20Z",
+ "updated_at": "2026-09-25T04:59:05Z",
  "router_connected": true,
  "group": "chat",
  "chain": [
   "centinela_code",
+  "mapa_vivo_plantilla",
   "juez"
  ],
  "completed": [
   "centinela_code",
+  "mapa_vivo_plantilla",
   "juez"
  ],
  "failed": [],
