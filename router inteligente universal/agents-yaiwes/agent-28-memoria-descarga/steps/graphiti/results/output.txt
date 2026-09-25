@@ -1,0 +1,1 @@
+GAP: no se puede determinar el slug exacto del repositorio de Graphiti para construir el request de descarga. El contexto indica "repo exacto sin confirmar" y solo se mencionan candidatos (mimo code, Memanto, Ponytail, Archify, AgentDB) sin confirmar cuál corresponde a Graphiti. Sin el slug concreto, no es posible emitir MOTOR_EXEC_REQUEST_GRAPHITI.

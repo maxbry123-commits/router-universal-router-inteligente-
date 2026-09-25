@@ -33,13 +33,18 @@ Request timed out.
 - paso verify_and_connect: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/steps/verify_and_connect/results/grok_connect.py'] gaps=-
 ## agent-15-orchestrator-grokbuild: estado=BLOCKED marco=pocketflow pasos_cerrados=[]
 - paso fetch_and_connect: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-15-orchestrator-grokbuild/steps/fetch_and_connect/results/grokbuild_connect.py'] gaps=la prueba falló (exit=1): requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://api.github.com/rep
-## agent-16-chat-space-oauth: estado=CLOSED marco=pocketflow pasos_cerrados=['adapt_openwebui_real']
+## agent-16-chat-space-oauth: estado=BLOCKED marco=pocketflow pasos_cerrados=['vercel_json']
 - paso adapt_openwebui: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso adapt_openwebui_real: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
+- paso index_html: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/steps/index_html/results/check.js'] gaps=JavaScript inválido: Node.js v22.23.2; menos de 1500 caracteres
 - paso publish_static_live: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/steps/publish_static_live/results/publish_static_live.py'] gaps=Python inválido: unexpected character after line continuation character (línea 17); falta 'private=False'; la prueba fal
-## agent-17-chat-backend-32gb: estado=CLOSED marco=pocketflow pasos_cerrados=['backend_router_live']
+- paso vercel_json: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
+## agent-17-chat-backend-32gb: estado=CLOSED marco=pocketflow pasos_cerrados=['modelos_modos', 'memoria_persistente', 'config_openwebui']
 - paso backend_live: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/steps/backend_live/results/chat_backend_32gb.py'] gaps=falta 'Volume'; la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/w
 - paso backend_router_live: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
+- paso config_openwebui: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
+- paso memoria_persistente: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
+- paso modelos_modos: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 - paso wire_existing_backend: VALIDATING modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
 ## agent-18-chat-final-auditor: estado=CLOSED marco=pocketflow pasos_cerrados=['integrate_and_e2e']
 - paso integrate_additional_components: BLOCKED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=falta 'Archivos'; falta 'Memoria'; falta 'Secret Bank'; falta 'Router'; falta 'Jobs'; falta 'GitHub'; falta 'Crazy Wall'
@@ -52,9 +57,4 @@ Request timed out.
 ## agent-2-chat-hf-smol: estado=CLOSED marco=smolagents pasos_cerrados=['jobs_panel', 'fixed_template', 'crazy_wall_chain']
 - paso crazy_wall_chain: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py'] gaps=-
 - paso fixed_template: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/fixed_template/results/fixed_template.py'] gaps=-
-- paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js'] gaps=-
-## agent-20-openclaw-rowboat: estado=CLOSED marco=smolagents pasos_cerrados=['add_donors']
-- paso add_donors: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-20-openclaw-rowboat/steps/add_donors/results/openclaw_rowboat_donors.py'] gaps=-
-## agent-21-router-connect: estado=CLOSED marco=pocketflow pasos_cerrados=['paso_health']
-- paso paso_health: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
-## agent-22-grok-connect: estado=CLOSED marco=pocketflow pas
+- paso jobs_panel: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router in

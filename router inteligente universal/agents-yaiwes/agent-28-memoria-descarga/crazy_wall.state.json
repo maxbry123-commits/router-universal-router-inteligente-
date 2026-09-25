@@ -3,21 +3,30 @@
  "agent": "agent-28-memoria-descarga",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-25T02:47:45Z",
+ "updated_at": "2026-09-25T04:50:14Z",
  "router_connected": true,
  "group": "chat",
  "chain": [
-  "acquire_graphify",
-  "acquire_graphiti",
-  "acquire_falkordb"
+  "graphiti",
+  "falkordb",
+  "ecc",
+  "agentskills",
+  "prompt_master",
+  "codex",
+  "claude_code"
  ],
- "completed": [],
+ "completed": [
+  "graphiti"
+ ],
  "failed": [
-  "acquire_graphify"
+  "falkordb"
  ],
  "next_nodes": [
-  "acquire_graphiti",
-  "acquire_falkordb"
+  "ecc",
+  "agentskills",
+  "prompt_master",
+  "codex",
+  "claude_code"
  ],
  "current_nodes": [],
  "route": [
