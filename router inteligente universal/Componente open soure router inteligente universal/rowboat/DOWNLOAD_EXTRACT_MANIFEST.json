@@ -1,0 +1,43 @@
+{
+  "bundle_bytes": 29110108,
+  "bundle_sha256": "ffef5d64f47052af74c97c8cf78241f0b2585ee1216a787b707f889cadc4f6ab",
+  "extracted_tree": {
+    "bytes": 39717878,
+    "files": 1515,
+    "sha256": "97c74bf5ae79f2b2f9bde82ee15d598d498a8c089639a2be7331682a0182c55e"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "rowboat.bundle.zip.part-0001",
+      "sha256": "bfb5ea2e05fdffd529269f77cf960898bfddcb669cfeb8f74e62897beff838e1"
+    },
+    {
+      "bytes": 12582912,
+      "name": "rowboat.bundle.zip.part-0002",
+      "sha256": "612ec446df3ec6ef06c8bf572125c5a9110fa82a08c6729b99db37743669f107"
+    },
+    {
+      "bytes": 3944284,
+      "name": "rowboat.bundle.zip.part-0003",
+      "sha256": "d918759d2e76f651518d7033bb0b2a109e8803c7376d594034424cf7c06d528e"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "rowboat",
+  "source_bytes": 39717878,
+  "source_commit": "d31c03813451ffab5a1c4e1d5870fbbb90ba6108",
+  "source_files": 1515,
+  "source_ref": "main",
+  "source_repo": "rowboatlabs/rowboat",
+  "source_tree": {
+    "bytes": 39717878,
+    "files": 1515,
+    "sha256": "97c74bf5ae79f2b2f9bde82ee15d598d498a8c089639a2be7331682a0182c55e"
+  }
+}
