@@ -1,0 +1,1 @@
+GAP: No se encontró chat_ui.html en el contexto ni en el repositorio. Sin un componente base reutilizable para el chat UI, no puedo entregar el código completo sin violar la regla de reutilización. Si autorizas la creación desde cero, lo haré.

@@ -2,16 +2,19 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-16-chat-space-oauth",
  "framework": "pocketflow",
- "status": "CLOSED",
- "updated_at": "2026-09-25T01:38:21Z",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-25T02:48:11Z",
  "group": "chat",
  "chain": [
-  "adapt_openwebui_real"
+  "vercel_json",
+  "index_html"
  ],
  "completed": [
-  "adapt_openwebui_real"
+  "vercel_json"
  ],
- "failed": [],
+ "failed": [
+  "index_html"
+ ],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
