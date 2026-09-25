@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import os
 import re
+import time
 
 import requests
 from fastapi import FastAPI, Request
@@ -21,7 +22,8 @@ AGENT_WFS = ("riu-agents-run.yml", "riu-watchdog.yml", "riu-agent-inbox-poller.y
 HF = os.getenv("HF_TOKEN", "")
 KEY = os.getenv("RIU_ROUTER_API_KEY", "")
 GH = os.getenv("GH_TOKEN", "")
-PROXY = ("v1/", "chat/", "gh/", "control/", "groups", "health")
+PROXY = ("v1/", "chat/", "control/", "groups", "workflows", "health")
+_cache: dict[str, tuple[float, object]] = {}
 
 app = FastAPI()
 
@@ -45,6 +47,7 @@ def write(path: str, text: str, msg: str) -> None:
     if sha:
         body["sha"] = sha
     gh("PUT", f"/contents/{requests.utils.quote(path)}", json=body)
+    _cache.clear()
 
 
 def set_paused(path: str, paused: bool) -> None:
@@ -53,18 +56,31 @@ def set_paused(path: str, paused: bool) -> None:
     write(path, "\n".join([f"PAUSED={'true' if paused else 'false'}"] + rest) + "\n", f"chat: PAUSED={paused}")
 
 
+def cached(key: str, ttl: float, fn):  # noqa: ANN001, ANN201
+    hit = _cache.get(key)
+    if hit and time.time() - hit[0] < ttl:
+        return hit[1]
+    val = fn()
+    _cache[key] = (time.time(), val)
+    return val
+
+
 def live_url() -> str:
-    m = re.search(r"LIVE_URL=(\S+)", read(FLAG)[0])
-    return m.group(1).rstrip("/") if m else ""
+    def get() -> str:
+        m = re.search(r"LIVE_URL=(\S+)", read(FLAG)[0])
+        return m.group(1).rstrip("/") if m else ""
+    return cached("url", 30, get)
 
 
 def router_alive(url: str) -> bool:
-    if not url:
-        return False
-    try:
-        return requests.get(url + "/health", headers={"Authorization": f"Bearer {HF}"}, timeout=8).status_code == 200
-    except requests.RequestException:
-        return False
+    def get() -> bool:
+        if not url:
+            return False
+        try:
+            return requests.get(url + "/health", headers={"Authorization": f"Bearer {HF}"}, timeout=8).status_code == 200
+        except requests.RequestException:
+            return False
+    return cached("alive:" + url, 15, get)
 
 
 @app.get("/")
@@ -74,25 +90,24 @@ def index() -> FileResponse:
 
 @app.get("/power/status")
 def status() -> dict:
-    url = live_url()
-    return {"router": "encendido" if router_alive(url) else "apagado",
+    return {"router": "encendido" if router_alive(live_url()) else "apagado",
             "agentes": "pausados" if "PAUSED=true" in read(AGENTS_FLAG)[0] else "activos"}
 
 
 @app.post("/power/router/on")
 def router_on() -> dict:
+    _cache.clear()
     if router_alive(live_url()):
         set_paused(FLAG, False)
         return {"ok": True, "estado": "ya estaba encendido"}
     set_paused(FLAG, False)
     r = gh("POST", f"/actions/workflows/{ROUTER_WF}/dispatches", json={"ref": "main", "inputs": {"lifetime": "6h"}})
-    return {"ok": r.status_code == 204, "estado": "encendiendo (tarda 2 a 5 minutos)"}
+    return {"ok": r.status_code == 204, "estado": "encendiendo (tarda 2 a 5 minutos)" if r.status_code == 204 else f"no se pudo encender ({r.status_code})"}
 
 
 @app.post("/power/router/off")
 def router_off() -> dict:
-    url = live_url()
-    m = re.match(r"https://([0-9a-f]+)--", url)
+    m = re.match(r"https://([0-9a-f]+)--", live_url())
     stopped = False
     if m:
         try:
@@ -102,7 +117,7 @@ def router_off() -> dict:
         except Exception:
             stopped = False
     set_paused(FLAG, True)
-    return {"ok": True, "estado": "apagado" if stopped else "en pausa"}
+    return {"ok": True, "estado": "Router apagado" if stopped else "Router en pausa"}
 
 
 @app.post("/power/agents/{accion}")
@@ -125,6 +140,9 @@ async def proxy(path: str, request: Request) -> Response:
     ct = request.headers.get("content-type")
     if ct:
         headers["Content-Type"] = ct
-    r = requests.request(request.method, f"{url}/{path}", params=dict(request.query_params), data=await request.body(),
-                         headers=headers, timeout=180)
+    try:
+        r = requests.request(request.method, f"{url}/{path}", params=dict(request.query_params), data=await request.body(),
+                             headers=headers, timeout=180)
+    except requests.RequestException as exc:
+        return JSONResponse({"error": f"El Router no respondió ({type(exc).__name__})"}, status_code=504)
     return Response(content=r.content, status_code=r.status_code, media_type=r.headers.get("content-type"))
