@@ -1,0 +1,116 @@
+```python
+import json
+import os
+import random
+import time
+from datetime import datetime
+from typing import Optional
+
+import httpx
+
+HEALTH_FILE = "free_pool_health.json"
+HEALTH_INTERVAL = 300  # 5 minutos
+LAST_CHECK = 0
+HEALTH_CACHE = {}
+
+PROVIDERS = {
+    "nvidia": {
+        "base_url": "https://integrate.api.nvidia.com/v1",
+        "key_names": [f"NVIDIA_API_KEY_{i}" for i in range(1, 6)],
+        "models": ["meta/llama-3.1-70b-instruct", "mistralai/mistral-7b-instruct-v0.3"]
+    },
+    "cerebras": {
+        "base_url": "https://api.cerebras.ai/v1",
+        "key_names": [f"CEREBRAS_API_KEY_{i}" for i in range(1, 7)],
+        "models": ["claude-3-haiku-20240307"]
+    },
+    "groq": {
+        "base_url": "https://api.groq.com/openai/v1",
+        "key_names": ["GROQ_API_KEY"],
+        "models": ["mixtral-8x7b-32768", "llama-3.1-70b-versatile", "gemma-7b-it"]
+    }
+}
+
+def _get_provider_key(provider: str) -> Optional[str]:
+    keys = []
+    for name in PROVIDERS[provider]["key_names"]:
+        val = os.getenv(name)
+        if val:
+            keys.append(val)
+    if not keys:
+        return None
+    return random.choice(keys)
+
+def _check_provider(provider: str) -> dict:
+    key = _get_provider_key(provider)
+    if not key:
+        return {"healthy": False, "error": "no_key", "latency": None, "timestamp": datetime.utcnow().isoformat()}
+    
+    cfg = PROVIDERS[provider]
+    start = time.time()
+    try:
+        # Intenta listar modelos como health check mínimo
+        resp = httpx.get(
+            f"{cfg['base_url']}/models",
+            headers={"Authorization": f"Bearer {key}"},
+            timeout=10.0
+        )
+        latency = time.time() - start
+        if resp.status_code == 200:
+            return {"healthy": True, "error": None, "latency": latency, "timestamp": datetime.utcnow().isoformat()}
+        else:
+            return {"healthy": False, "error": f"http_{resp.status_code}", "latency": latency, "timestamp": datetime.utcnow().isoformat()}
+    except Exception as e:
+        return {"healthy": False, "error": str(e), "latency": time.time() - start, "timestamp": datetime.utcnow().isoformat()}
+
+def _update_health():
+    global LAST_CHECK, HEALTH_CACHE
+    now = time.time()
+    if now - LAST_CHECK < HEALTH_INTERVAL:
+        return
+    LAST_CHECK = now
+    for provider in PROVIDERS:
+        HEALTH_CACHE[provider] = _check_provider(provider)
+    with open(HEALTH_FILE, "w") as f:
+        json.dump(HEALTH_CACHE, f, indent=2)
+
+def _find_healthy_provider() -> Optional[str]:
+    _update_health()
+    for provider in ["nvidia", "cerebras", "groq"]:
+        info = HEALTH_CACHE.get(provider, {})
+        if info.get("healthy"):
+            if _get_provider_key(provider):
+                return provider
+    return None
+
+def complete(messages: list, max_tokens: int = 1024) -> str:
+    provider = _find_healthy_provider()
+    if not provider:
+        # fallback a deepseek_flash (importación local para evitar ciclo)
+        from deepseek_flash import complete as flash_complete
+        return flash_complete(messages, max_tokens)
+    
+    cfg = PROVIDERS[provider]
+    key = _get_provider_key(provider)
+    model = random.choice(cfg["models"])
+    
+    try:
+        resp = httpx.post(
+            f"{cfg['base_url']}/chat/completions",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens
+            },
+            timeout=60.0
+        )
+        if resp.status_code == 200:
+            return resp.json()["choices"][0]["message"]["content"]
+        else:
+            raise ValueError(f"API error: {resp.status_code} {resp.text}")
+    except Exception as e:
+        # fallback recursivo (máximo 1 nivel)
+        from deepseek_flash import complete as flash_complete
+        return flash_complete(messages, max_tokens)
+```

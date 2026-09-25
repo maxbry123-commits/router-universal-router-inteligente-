@@ -1,0 +1,44 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-37-router-gratuito
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Secretos (solo nombres): NVIDIA_API_KEY_1..5, CEREBRAS_API_KEY_1..6. Groq:
+    no hay secreto todavía (GAP: el Director debe crear GROQ_API_KEY).
+
+    Agentes que programan (siguen con deepseek_flash): 16, 17, 25, 29, 30, 31, 33,
+    35, 36.
+
+    Agentes que no programan (van al router gratuito): 24, 26, 27 (mapa/parte), 32
+    (inventario), 38 (plan).
+
+    ROUTE.json existente en agents-yaiwes/ define las rutas; añadir una ruta nueva
+    "free_pool" sin tocar deepseek_flash.
+
+    '
+  max_chars: 40000
+task: 'Entrega el código Python completo de free_pool.py: lista de proveedores (nvidia,
+  cerebras, groq) con endpoint OpenAI-compatible,
+
+  chequeo de salud cada 5 min (petición mínima, tiempo y error guardados en free_pool_health.json),
+  rotación de claves por proveedor,
+
+  elige el primero sano y con cupo; si ninguno responde, cae a deepseek_flash. Función
+  complete(messages, max_tokens). Solo el código.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 800
+- kind: no_secrets

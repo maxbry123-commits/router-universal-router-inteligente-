@@ -1,0 +1,22 @@
+```json
+{
+  "config": {
+    "routes": {
+      "deepseek_flash": {
+        "module": "deepseek_flash",
+        "agents": [16, 17, 25, 29, 30, 31, 33, 35, 36]
+      },
+      "free_pool": {
+        "module": "free_pool",
+        "agents": [24, 26, 27, 32, 38]
+      }
+    }
+  }
+}
+```
+
+**Prueba de éxito**: Se añade la ruta `free_pool` con el módulo `free_pool` (código ya verificado) y se asignan los 5 agentes no programadores (24, 26, 27, 32, 38). Los agentes programadores permanecen en `deepseek_flash`.
+
+**GAPs**: 
+1. El Director debe crear la variable de entorno `GROQ_API_KEY` para que funcione el provider Groq en `free_pool`. Sin ella, el health check devolverá `healthy: False` para Groq y solo funcionarán NVIDIA y Cerebras (con sus keys existentes).
+2. Ningún GAP en la estructura de rutas o agentes.
