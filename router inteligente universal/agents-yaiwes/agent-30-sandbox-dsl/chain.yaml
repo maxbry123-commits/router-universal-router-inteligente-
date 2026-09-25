@@ -1,0 +1,42 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR: System prompt + sandbox en el chat: cuando mando una orden, ejecuta el DSL DAG schema en código del agente conectado a cada selector.
+
+agent:
+  id: agent-30-sandbox-dsl
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Formato DSL: schema yaiwes.chain/v1 (input_block, agent, context, steps[id, task, checks], edges). Ejecutor existente: agents-yaiwes/chain.py.
+    Activar agente = escribir su chain.yaml (vía /gh/agent-launch del agent-29). Estado: crazy_wall.state.json.
+    Solo deepseek_flash. Sin GPU. Sin claves en archivos.
+
+steps:
+  - id: system_prompt
+    task: |
+      Entrega el system prompt del chat (máx. 40 líneas): convierte la orden del Director en un chain.yaml válido yaiwes.chain/v1
+      para el agente elegido en el selector, con input_block literal, pasos de principio a fin y checks; responde SOLO el YAML.
+    checks:
+      - kind: contains
+        values: ["yaiwes.chain/v1"]
+      - kind: no_secrets
+
+  - id: sandbox_code
+    task: |
+      Entrega el código Python completo de sandbox_dsl.py (APIRouter FastAPI, prefijo /sandbox):
+      POST /sandbox/order {agent_id, order, repo} → pide el YAML al modelo con el system prompt, valida con yaml.safe_load
+      y el esquema mínimo, lo lanza con /gh/agent-launch y devuelve el run_id;
+      GET /sandbox/status?agent_id= → estado del crazy_wall.state.json. No ejecuta código arbitrario del usuario. Solo el código.
+    checks:
+      - kind: python_ast
+      - kind: min_chars
+        value: 800
+      - kind: no_secrets
+
+edges:
+  - [system_prompt, sandbox_code]
