@@ -3,25 +3,18 @@ import requests
 from openai import OpenAI
 
 def check_release_and_ping() -> dict:
-    # Step 1: Get latest release from GitHub
-    url = "https://api.github.com/repos/xai-org/grok-build/releases"
-    resp = requests.get(url, timeout=30)
+    # 1) GET última release de grok-build
+    url = "https://api.github.com/repos/xai-org/grok-build/releases/latest"
+    resp = requests.get(url)
     resp.raise_for_status()
-    releases = resp.json()
+    release = resp.json()
     
-    # Try latest first, otherwise fallback to first non-draft release
-    latest = None
-    for r in releases:
-        if not r.get("draft"):
-            latest = r
-            break
-    if latest is None:
-        raise Exception("No releases found")
+    # Extraer tag y nombres de assets
+    release_tag = release.get("tag_name", "")
+    assets = release.get("assets", [])
+    asset_names = [a["name"] for a in assets]
     
-    release_tag = latest["tag_name"]
-    asset_names = [asset["name"] for asset in latest["assets"]]
-    
-    # Step 2: Ping DeepSeek via HuggingFace router
+    # 2) Llamada a DeepSeek vía router HF
     client = OpenAI(
         base_url="https://router.huggingface.co/v1",
         api_key=os.environ["HF_TOKEN"]

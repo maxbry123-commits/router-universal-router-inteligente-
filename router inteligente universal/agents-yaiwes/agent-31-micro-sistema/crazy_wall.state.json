@@ -3,8 +3,8 @@
  "agent": "agent-31-micro-sistema",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-25T06:24:06Z",
- "router_connected": true,
+ "updated_at": "2026-09-25T08:21:05Z",
+ "router_connected": false,
  "group": "chat",
  "chain": [
   "plantillas",

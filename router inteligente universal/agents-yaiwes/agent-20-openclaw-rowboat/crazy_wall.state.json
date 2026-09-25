@@ -3,8 +3,8 @@
  "agent": "agent-20-openclaw-rowboat",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:04Z",
- "router_connected": true,
+ "updated_at": "2026-09-25T08:18:45Z",
+ "router_connected": false,
  "group": "downloads",
  "chain": [
   "add_donors"

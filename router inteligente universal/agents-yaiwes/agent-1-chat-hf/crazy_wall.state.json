@@ -3,7 +3,7 @@
  "agent": "agent-1-chat-hf",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:02Z",
+ "updated_at": "2026-09-25T08:18:43Z",
  "group": "chat",
  "chain": [
   "vault_panel",
@@ -25,5 +25,5 @@
   "nvidia",
   "cerebras"
  ],
- "router_connected": true
+ "router_connected": false
 }

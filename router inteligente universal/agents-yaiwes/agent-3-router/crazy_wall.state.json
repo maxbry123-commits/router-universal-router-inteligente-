@@ -3,7 +3,7 @@
  "agent": "agent-3-router",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:02Z",
+ "updated_at": "2026-09-25T08:18:43Z",
  "group": "hf-chat",
  "chain": [
   "space_readme",
@@ -45,5 +45,5 @@
   "hf_space_host": 404,
   "auth": false
  },
- "router_connected": true
+ "router_connected": false
 }

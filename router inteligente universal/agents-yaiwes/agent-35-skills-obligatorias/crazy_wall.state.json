@@ -3,8 +3,8 @@
  "agent": "agent-35-skills-obligatorias",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:02Z",
- "router_connected": true,
+ "updated_at": "2026-09-25T08:18:43Z",
+ "router_connected": false,
  "group": "chat",
  "chain": [
   "esquema",

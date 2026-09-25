@@ -3,7 +3,7 @@
  "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:02Z",
+ "updated_at": "2026-09-25T08:18:43Z",
  "group": "orchestrators",
  "chain": [
   "orchestrate_chat_100",
@@ -23,5 +23,5 @@
  "route": [
   "deepseek_flash"
  ],
- "router_connected": true
+ "router_connected": false
 }

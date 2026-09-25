@@ -3,8 +3,8 @@
  "agent": "agent-38-deepseek-harness",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-25T06:23:10Z",
- "router_connected": true,
+ "updated_at": "2026-09-25T08:18:55Z",
+ "router_connected": false,
  "group": "chat",
  "current_nodes": [
   "execute"
@@ -17,6 +17,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
+  "falta 'MOTOR_EXEC_REQUEST_DEEPSEEK_HARNESS'",
   "motor falló (exit=1): RuntimeError: COMMAND_FAILED:git:128:fatal: couldn't find remote ref main"
  ],
  "failed": [

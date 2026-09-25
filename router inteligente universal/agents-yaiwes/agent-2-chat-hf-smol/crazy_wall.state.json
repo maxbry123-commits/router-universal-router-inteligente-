@@ -3,7 +3,7 @@
  "agent": "agent-2-chat-hf-smol",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:04Z",
+ "updated_at": "2026-09-25T08:18:45Z",
  "group": "chat",
  "chain": [
   "jobs_panel",
@@ -25,5 +25,5 @@
   "nvidia",
   "cerebras"
  ],
- "router_connected": true
+ "router_connected": false
 }

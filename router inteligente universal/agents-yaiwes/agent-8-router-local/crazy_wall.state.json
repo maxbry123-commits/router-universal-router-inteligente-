@@ -3,7 +3,7 @@
  "agent": "agent-8-router-local",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:02Z",
+ "updated_at": "2026-09-25T08:18:43Z",
  "group": "router-local",
  "chain": [
   "local_pool",
@@ -20,5 +20,5 @@
   "CLOSED paper sin GET /health HTTP 200 live. Reabierto.",
   "Referencia live agent-10: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health"
  ],
- "router_connected": true
+ "router_connected": false
 }

@@ -3,7 +3,7 @@
  "agent": "agent-5-auditor",
  "framework": "smolagents",
  "status": "BLOCKED",
- "updated_at": "2026-09-25T06:25:47Z",
+ "updated_at": "2026-09-25T08:21:25Z",
  "group": "audit",
  "current_nodes": [
   "auditor"
@@ -19,5 +19,5 @@
   "hf/deepseek-ai/DeepSeek-V4-Flash:el Sheriff no dio PASS"
  ],
  "attempts": 2,
- "router_connected": true
+ "router_connected": false
 }

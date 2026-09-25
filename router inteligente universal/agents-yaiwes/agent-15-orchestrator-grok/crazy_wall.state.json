@@ -3,7 +3,7 @@
  "agent": "agent-15-orchestrator-grok",
  "framework": "smolagents",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:04Z",
+ "updated_at": "2026-09-25T08:18:45Z",
  "group": "orchestrators",
  "chain": [
   "director_control_loop",
@@ -21,5 +21,5 @@
  "route": [
   "deepseek_flash"
  ],
- "router_connected": true
+ "router_connected": false
 }

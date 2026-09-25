@@ -3,8 +3,8 @@
  "agent": "agent-28-memoria-descarga",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-25T06:23:09Z",
- "router_connected": true,
+ "updated_at": "2026-09-25T08:18:54Z",
+ "router_connected": false,
  "group": "chat",
  "current_nodes": [
   "execute"

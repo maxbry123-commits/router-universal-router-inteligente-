@@ -3,7 +3,7 @@
  "agent": "agent-10-model-install",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:02Z",
+ "updated_at": "2026-09-25T08:18:43Z",
  "group": "hf-install",
  "chain": [
   "install_launch_test"
@@ -22,5 +22,5 @@
   "machine": "32 GB RAM",
   "proof": "RIU Agents Run #48 only=agent-10-model-install: GOLDEN probe GET /health 200 con HF_TOKEN; curl sin token HTTP 401."
  },
- "router_connected": true
+ "router_connected": false
 }

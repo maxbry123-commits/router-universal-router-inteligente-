@@ -3,7 +3,7 @@
  "agent": "agent-16-chat-space-oauth",
  "framework": "pocketflow",
  "status": "CLOSED",
- "updated_at": "2026-09-25T06:23:02Z",
+ "updated_at": "2026-09-25T08:18:43Z",
  "group": "chat",
  "chain": [
   "index_html_v2"
@@ -17,5 +17,5 @@
  "route": [
   "deepseek_flash"
  ],
- "router_connected": true
+ "router_connected": false
 }

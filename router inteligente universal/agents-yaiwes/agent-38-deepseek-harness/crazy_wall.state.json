@@ -3,8 +3,8 @@
  "agent": "agent-38-deepseek-harness",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-25T06:23:11Z",
- "router_connected": true,
+ "updated_at": "2026-09-25T08:18:55Z",
+ "router_connected": false,
  "group": "chat",
  "chain": [
   "acquire_harness",
