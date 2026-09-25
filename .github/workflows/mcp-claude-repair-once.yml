@@ -1,0 +1,201 @@
+name: MCP Claude Repair Once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/mcp-claude-repair-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_MAXBRY123 || secrets.HF_TOKEN_1 }}
+      SPACE_ID: COMAND-CENTER-1/claude-github-mcp-backup
+    steps:
+      - name: Install repair client
+        run: python -m pip install --quiet huggingface_hub requests
+
+      - name: Repair Claude MCP OAuth
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${HF_TOKEN:-}" ]; then
+            echo "::error::NO_HF_TOKEN_SECRET_AVAILABLE"
+            exit 2
+          fi
+          python - <<'PY'
+          import os, re, secrets, time
+          from pathlib import Path
+          import requests
+          from huggingface_hub import HfApi, snapshot_download
+
+          token = os.environ["HF_TOKEN"]
+          space = os.environ["SPACE_ID"]
+          root = Path("/tmp/claude-mcp-space")
+          api = HfApi(token=token)
+
+          before = api.repo_info(space, repo_type="space")
+          print("BEFORE_SHA=" + str(getattr(before, "sha", "")))
+
+          snapshot_download(
+              repo_id=space,
+              repo_type="space",
+              token=token,
+              local_dir=str(root),
+          )
+
+          readme_path = root / "README.md"
+          app_path = root / "app.py"
+          readme = readme_path.read_text(encoding="utf-8")
+          app = app_path.read_text(encoding="utf-8")
+
+          if "hf_oauth: false" in readme:
+              readme = readme.replace("hf_oauth: false", "hf_oauth: true", 1)
+          elif "hf_oauth: true" not in readme:
+              raise RuntimeError("README metadata hf_oauth marker not found")
+
+          readme = readme.replace(
+              "- Requires sign-in: **OFF**",
+              "- Requires sign-in: **ON** (Hugging Face OAuth)"
+          )
+
+          old_import = "from fastmcp import FastMCP\n"
+          new_import = (
+              "from fastmcp import FastMCP\n"
+              "from fastmcp.server.auth import AuthContext\n"
+              "from fastmcp.server.auth.providers.huggingface import HuggingFaceProvider\n"
+              "from fastmcp.server.middleware import AuthMiddleware\n"
+          )
+          if "from fastmcp.server.auth.providers.huggingface import HuggingFaceProvider" not in app:
+              if old_import not in app:
+                  raise RuntimeError("FastMCP import marker not found")
+              app = app.replace(old_import, new_import, 1)
+
+          storage_line = 'STORAGE_ROOT = Path(os.getenv("HF_STORAGE_ROOT", "/data/repos"))\n'
+          oauth_constants = (
+              storage_line
+              + 'ALLOWED_HF_USER = os.getenv("ALLOWED_HF_USER", "COMAND-CENTER-1").strip()\n'
+              + 'SPACE_HOST = os.getenv("SPACE_HOST", "comand-center-1-claude-github-mcp-backup.hf.space").strip()\n'
+              + 'PUBLIC_BASE_URL = f"https://{SPACE_HOST}"\n'
+          )
+          if "ALLOWED_HF_USER =" not in app:
+              if storage_line not in app:
+                  raise RuntimeError("STORAGE_ROOT marker not found")
+              app = app.replace(storage_line, oauth_constants, 1)
+
+          start_marker = "mcp = FastMCP(\n"
+          end_marker = "\n\n\n@mcp.tool"
+          if "auth_provider = HuggingFaceProvider(" not in app:
+              start = app.find(start_marker)
+              if start < 0:
+                  raise RuntimeError("FastMCP constructor marker not found")
+              end = app.find(end_marker, start)
+              if end < 0:
+                  raise RuntimeError("First tool marker not found")
+
+              replacement = '''def _require_hf_owner(ctx: AuthContext) -> bool:
+              if ctx.token is None:
+                  return False
+              claims = ctx.token.claims or {}
+              username = str(claims.get("preferred_username") or "").strip()
+              return username.lower() == ALLOWED_HF_USER.lower()
+
+
+          auth_provider = HuggingFaceProvider(
+              client_id=_required_env("OAUTH_CLIENT_ID"),
+              client_secret=_required_env("OAUTH_CLIENT_SECRET"),
+              base_url=PUBLIC_BASE_URL,
+              required_scopes=["openid", "profile"],
+              valid_scopes=["openid", "profile"],
+              enable_cimd=True,
+          )
+
+          mcp = FastMCP(
+              name="Maxbry GitHub Backup",
+              instructions=(
+                  "Authenticated MCP endpoint for Claude Chat with GitHub capability supplied by a Space secret. "
+                  "Only the configured Hugging Face owner may access tools. "
+                  "Use explicit owner/repository/path values, read before destructive changes, and report GitHub SHAs."
+              ),
+              auth=auth_provider,
+              middleware=[AuthMiddleware(auth=_require_hf_owner)],
+          )'''
+              replacement = re.sub(r"(?m)^          ", "", replacement)
+              app = app[:start] + replacement + app[end:]
+
+          app = app.replace('"mcp_auth": "disabled"', '"mcp_auth": "huggingface_oauth"')
+
+          readme_path.write_text(readme, encoding="utf-8")
+          app_path.write_text(app, encoding="utf-8")
+
+          # Persistent signing key for OAuth proxy tokens; value never printed.
+          api.add_space_secret(space, "JWT_SIGNING_KEY", secrets.token_urlsafe(64))
+          api.add_space_variable(space, "ALLOWED_HF_USER", "COMAND-CENTER-1")
+
+          api.upload_file(
+              path_or_fileobj=str(readme_path),
+              path_in_repo="README.md",
+              repo_id=space,
+              repo_type="space",
+              commit_message="fix: enable OAuth/DCR for Claude MCP",
+          )
+          api.upload_file(
+              path_or_fileobj=str(app_path),
+              path_in_repo="app.py",
+              repo_id=space,
+              repo_type="space",
+              commit_message="fix: secure Claude MCP with Hugging Face OAuth",
+          )
+
+          after = api.repo_info(space, repo_type="space")
+          print("AFTER_SHA=" + str(getattr(after, "sha", "")))
+          print("PATCH_APPLIED=1")
+
+          base = "https://comand-center-1-claude-github-mcp-backup.hf.space"
+          ok = False
+          for attempt in range(1, 46):
+              try:
+                  r = requests.get(
+                      base + "/.well-known/oauth-authorization-server",
+                      timeout=10,
+                      allow_redirects=False,
+                  )
+                  print(f"PROBE_ATTEMPT={attempt} STATUS={r.status_code}")
+                  if r.status_code == 200:
+                      meta = r.json()
+                      reg = meta.get("registration_endpoint")
+                      authz = meta.get("authorization_endpoint")
+                      tok = meta.get("token_endpoint")
+                      print("OAUTH_METADATA=OK")
+                      print("HAS_REGISTRATION_ENDPOINT=" + ("1" if reg else "0"))
+                      print("HAS_AUTHORIZATION_ENDPOINT=" + ("1" if authz else "0"))
+                      print("HAS_TOKEN_ENDPOINT=" + ("1" if tok else "0"))
+                      if reg and authz and tok:
+                          probe = requests.post(
+                              reg,
+                              json={
+                                  "client_name": "claude-mcp-repair-probe",
+                                  "redirect_uris": ["https://example.com/oauth/callback"],
+                                  "grant_types": ["authorization_code", "refresh_token"],
+                                  "response_types": ["code"],
+                                  "token_endpoint_auth_method": "none",
+                              },
+                              timeout=10,
+                          )
+                          print("DCR_STATUS=" + str(probe.status_code))
+                          if probe.status_code in (200, 201):
+                              ok = True
+                              print("DCR=OK")
+                              break
+              except Exception as exc:
+                  print(f"PROBE_ATTEMPT={attempt} ERROR={type(exc).__name__}")
+              time.sleep(8)
+
+          if not ok:
+              raise RuntimeError("OAuth metadata/DCR did not become healthy in time")
+          PY
