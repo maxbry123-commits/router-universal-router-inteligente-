@@ -1,0 +1,159 @@
+```python
+import os
+import json
+import sqlite3
+import psycopg2
+import psycopg2.extras
+from typing import Optional, List, Dict, Any
+import aiohttp
+import asyncio
+
+class MemoryAdapter:
+    def __init__(self):
+        self.hf_token = os.environ.get("HF_TOKEN", "")
+        self.hf_bucket = os.environ.get("HF_BUCKET", "")
+        self.database_url = os.environ.get("DATABASE_URL", "")
+        self._pg_conn = None
+        self._sqlite_conn = None
+        
+    def _get_pg_connection(self):
+        if self._pg_conn is None and self.database_url:
+            self._pg_conn = psycopg2.connect(self.database_url)
+            self._pg_conn.autocommit = True
+        return self._pg_conn
+    
+    def _get_sqlite_connection(self):
+        if self._sqlite_conn is None:
+            self._sqlite_conn = sqlite3.connect("memory.db")
+            self._sqlite_conn.row_factory = sqlite3.Row
+            self._init_sqlite()
+        return self._sqlite_conn
+    
+    def _init_sqlite(self):
+        conn = self._get_sqlite_connection()
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS memory (
+                scope TEXT NOT NULL,
+                key TEXT NOT NULL,
+                text TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (scope, key)
+            )
+        """)
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_memory_scope_key ON memory(scope, key)
+        """)
+    
+    def _init_pg(self):
+        conn = self._get_pg_connection()
+        if conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS memory (
+                        scope TEXT NOT NULL,
+                        key TEXT NOT NULL,
+                        text TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (scope, key)
+                    )
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_memory_scope_key ON memory(scope, key)
+                """)
+    
+    def save(self, scope: str, key: str, text: str):
+        """Save memory to database and HF mirror"""
+        self._save_local(scope, key, text)
+        if self.hf_bucket:
+            asyncio.create_task(self._save_hf_mirror(scope, key, text))
+    
+    def load(self, scope: str, key: str) -> Optional[str]:
+        """Load memory from database"""
+        return self._load_local(scope, key)
+    
+    def search(self, scope: str, query: str) -> List[Dict[str, Any]]:
+        """Search memory by scope and query text"""
+        results = self._search_local(scope, query)
+        return results
+    
+    def _save_local(self, scope: str, key: str, text: str):
+        pg_conn = self._get_pg_connection()
+        if pg_conn:
+            with pg_conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO memory (scope, key, text) VALUES (%s, %s, %s) "
+                    "ON CONFLICT (scope, key) DO UPDATE SET text = EXCLUDED.text",
+                    (scope, key, text)
+                )
+        else:
+            conn = self._get_sqlite_connection()
+            conn.execute(
+                "INSERT OR REPLACE INTO memory (scope, key, text) VALUES (?, ?, ?)",
+                (scope, key, text)
+            )
+            conn.commit()
+    
+    def _load_local(self, scope: str, key: str) -> Optional[str]:
+        pg_conn = self._get_pg_connection()
+        if pg_conn:
+            with pg_conn.cursor() as cur:
+                cur.execute(
+                    "SELECT text FROM memory WHERE scope = %s AND key = %s",
+                    (scope, key)
+                )
+                row = cur.fetchone()
+                return row[0] if row else None
+        else:
+            conn = self._get_sqlite_connection()
+            cursor = conn.execute(
+                "SELECT text FROM memory WHERE scope = ? AND key = ?",
+                (scope, key)
+            )
+            row = cursor.fetchone()
+            return row[0] if row else None
+    
+    def _search_local(self, scope: str, query: str) -> List[Dict[str, Any]]:
+        pg_conn = self._get_pg_connection()
+        search_pattern = f"%{query}%"
+        if pg_conn:
+            with pg_conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT key, text FROM memory WHERE scope = %s AND text ILIKE %s LIMIT 50",
+                    (scope, search_pattern)
+                )
+                return [dict(row) for row in cur.fetchall()]
+        else:
+            conn = self._get_sqlite_connection()
+            cursor = conn.execute(
+                "SELECT key, text FROM memory WHERE scope = ? AND text LIKE ? LIMIT 50",
+                (scope, search_pattern)
+            )
+            return [{"key": row[0], "text": row[1]} for row in cursor.fetchall()]
+    
+    async def _save_hf_mirror(self, scope: str, key: str, text: str):
+        """Mirror memory to HF Storage Bucket"""
+        if not self.hf_bucket or not self.hf_token:
+            return
+        
+        endpoint = f"{self.hf_bucket}/{scope}/{key}"
+        headers = {
+            "Authorization": f"Bearer {self.hf_token}",
+            "Content-Type": "text/plain"
+        }
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.put(endpoint, data=text.encode(), headers=headers) as resp:
+                if resp.status != 200:
+                    print(f"HF mirror save failed for {scope}/{key}: {resp.status}")
+    
+    def initialize(self):
+        """Initialize database tables"""
+        if self.database_url:
+            self._init_pg()
+        else:
+            self._init_sqlite()
+
+# Singleton instance
+memory_adapter = MemoryAdapter()
+memory_adapter.initialize()
+```

@@ -1,0 +1,51 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-17-chat-backend-32gb
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: 'Open WebUI en: router inteligente universal/Componente open soure router
+    inteligente universal/open-webui/
+
+    Router (FastAPI): router inteligente universal/integration/chat_mvp/ (app.py,
+    router.py, route_api.py, store.py, providers.py)
+
+    Rutas existentes: /chat/send, /chat/agents, /chat/documents, /chat/github/*, /chat/storage,
+    /v1/chat/completions, /v1/models
+
+    LIVE_URL: leer ROUTER_JOB_PAUSE.flag. Headers: Authorization Bearer HF_TOKEN +
+    X-API-Key (secreto RIU_ROUTER_API_KEY). Nunca valores en archivos.
+
+    Memoria: PostgreSQL + Redis (como servicio) + Graphiti + FalkorDB + HF Storage
+    Bucket; hoy store.py. Solo deepseek_flash. CPU.
+
+    '
+  max_chars: 40000
+task: 'Entrega el código Python completo de un archivo nuevo openwebui_bridge.py para
+  chat_mvp que:
+
+  1) en /v1/models devuelve dos entradas: "deepseek-flash" (solo IA) y "deepseek-flash+agentes"
+  (IA + agentes);
+
+  2) en /v1/chat/completions, si el modelo termina en "+agentes", manda la orden a
+  /chat/agents; si no, a /chat/send;
+
+  3) guarda cada mensaje en store.py (chat_id, rol, texto) antes de responder.
+
+  Solo el código, sin explicaciones.
+
+  '
+checks:
+- kind: python_ast
+- kind: min_chars
+  value: 600
+- kind: no_secrets
