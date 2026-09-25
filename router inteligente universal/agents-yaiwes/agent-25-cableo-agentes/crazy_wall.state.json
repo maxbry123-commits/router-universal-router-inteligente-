@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-25-cableo-agentes",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T02:48:32Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "registro",
+  "prueba"
+ ],
+ "completed": [
+  "registro",
+  "prueba"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}

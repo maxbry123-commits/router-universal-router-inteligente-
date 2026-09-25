@@ -1,0 +1,114 @@
+```python
+# agents_registry.py
+import json
+import os
+import yaml
+import requests
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from pathlib import Path
+
+router = APIRouter(prefix="/chat/agents")
+
+AGENTS_DIR = "agents-yaiwes"
+ORCHESTRATORS = ["Hermes", "Rowboat", "MSAF"]
+INDEX_FILE = "agents_index.json"
+LAUNCH_URL = "http://localhost:8000/gh/agent-launch"
+STATE_URL = "http://localhost:8000/gh/agent-state"
+
+class OrderRequest(BaseModel):
+    action: str
+    params: dict = {}
+
+class ChatRequest(BaseModel):
+    message: str
+
+def load_agents():
+    agents = []
+    
+    # Try loading from index file first
+    if os.path.exists(INDEX_FILE):
+        with open(INDEX_FILE) as f:
+            index_data = json.load(f)
+        for entry in index_data:
+            agents.append({
+                "id": entry.get("id", ""),
+                "tipo": entry.get("tipo", "agente"),
+                "rol": entry.get("rol", ""),
+                "estado": "disponible"
+            })
+    else:
+        # Fallback: scan agent-* directories
+        for d in os.listdir(AGENTS_DIR):
+            if d.startswith("agent-") and os.path.isdir(os.path.join(AGENTS_DIR, d)):
+                agents.append({
+                    "id": d,
+                    "tipo": "agente",
+                    "rol": d.replace("agent-", "Agente "),
+                    "estado": "disponible"
+                })
+    
+    # Add orchestrators
+    for name in ORCHESTRATORS:
+        agents.append({
+            "id": name.lower(),
+            "tipo": "orquestador",
+            "rol": f"Orquestador {name}",
+            "estado": "disponible"
+        })
+    
+    return agents
+
+def get_system_prompt(agent_id):
+    """Read CLAUDE.md from orchestrator directory"""
+    for name in ORCHESTRATORS:
+        if agent_id == name.lower():
+            claude_path = Path(AGENTS_DIR) / name / "CLAUDE.md"
+            if claude_path.exists():
+                return claude_path.read_text()
+    return ""
+
+@router.get("")
+def list_agents():
+    return load_agents()
+
+@router.post("/{agent_id}/order")
+def order_agent(agent_id: str, order: OrderRequest):
+    # Write order to inbox
+    inbox_dir = Path("inbox")
+    inbox_dir.mkdir(exist_ok=True)
+    order_file = inbox_dir / f"{agent_id}.yaml"
+    
+    order_data = {"action": order.action, "params": order.params, "agent_id": agent_id}
+    with open(order_file, "w") as f:
+        yaml.dump(order_data, f, default_flow_style=False)
+    
+    # Launch agent
+    try:
+        response = requests.post(LAUNCH_URL, json={"agent_id": agent_id, "order_file": str(order_file)})
+        return {"status": "lanzado", "response": response.json()}
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Error launching agent: {str(e)}")
+
+@router.post("/{agent_id}/chat")
+def chat_with_agent(agent_id: str, chat: ChatRequest):
+    # Check if it's an orchestrator
+    is_orchestrator = agent_id in [name.lower() for name in ORCHESTRATORS]
+    
+    system_prompt = get_system_prompt(agent_id) if is_orchestrator else ""
+    
+    # Use deepseek_flash API
+    payload = {
+        "model": "deepseek_flash",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": chat.message}
+        ]
+    }
+    
+    try:
+        response = requests.post("http://localhost:11434/api/chat", json=payload)
+        return {"response": response.json().get("message", {}).get("content", "")}
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Error in chat: {str(e)}")
+```

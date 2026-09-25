@@ -1,0 +1,77 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-25-cableo-agentes
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Agentes: carpetas agents-yaiwes/agent-* (1..33). Hermes, Rowboat y MSAF en\
+    \ \"Componente open soure router inteligente universal/\".\nRuta del chat: /chat/agents.\
+    \ Índice agents_index.json lo genera agent-31. Lanzar = /gh/agent-launch (agent-29).\
+    \ Estado = /gh/agent-state.\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (registro):\n\
+    ```python\n# agents_registry.py\nimport json\nimport os\nimport yaml\nimport requests\n\
+    from fastapi import APIRouter, HTTPException\nfrom pydantic import BaseModel\n\
+    from pathlib import Path\n\nrouter = APIRouter(prefix=\"/chat/agents\")\n\nAGENTS_DIR\
+    \ = \"agents-yaiwes\"\nORCHESTRATORS = [\"Hermes\", \"Rowboat\", \"MSAF\"]\nINDEX_FILE\
+    \ = \"agents_index.json\"\nLAUNCH_URL = \"http://localhost:8000/gh/agent-launch\"\
+    \nSTATE_URL = \"http://localhost:8000/gh/agent-state\"\n\nclass OrderRequest(BaseModel):\n\
+    \    action: str\n    params: dict = {}\n\nclass ChatRequest(BaseModel):\n   \
+    \ message: str\n\ndef load_agents():\n    agents = []\n    \n    # Try loading\
+    \ from index file first\n    if os.path.exists(INDEX_FILE):\n        with open(INDEX_FILE)\
+    \ as f:\n            index_data = json.load(f)\n        for entry in index_data:\n\
+    \            agents.append({\n                \"id\": entry.get(\"id\", \"\"),\n\
+    \                \"tipo\": entry.get(\"tipo\", \"agente\"),\n                \"\
+    rol\": entry.get(\"rol\", \"\"),\n                \"estado\": \"disponible\"\n\
+    \            })\n    else:\n        # Fallback: scan agent-* directories\n   \
+    \     for d in os.listdir(AGENTS_DIR):\n            if d.startswith(\"agent-\"\
+    ) and os.path.isdir(os.path.join(AGENTS_DIR, d)):\n                agents.append({\n\
+    \                    \"id\": d,\n                    \"tipo\": \"agente\",\n \
+    \                   \"rol\": d.replace(\"agent-\", \"Agente \"),\n           \
+    \         \"estado\": \"disponible\"\n                })\n    \n    # Add orchestrators\n\
+    \    for name in ORCHESTRATORS:\n        agents.append({\n            \"id\":\
+    \ name.lower(),\n            \"tipo\": \"orquestador\",\n            \"rol\":\
+    \ f\"Orquestador {name}\",\n            \"estado\": \"disponible\"\n        })\n\
+    \    \n    return agents\n\ndef get_system_prompt(agent_id):\n    \"\"\"Read CLAUDE.md\
+    \ from orchestrator directory\"\"\"\n    for name in ORCHESTRATORS:\n        if\
+    \ agent_id == name.lower():\n            claude_path = Path(AGENTS_DIR) / name\
+    \ / \"CLAUDE.md\"\n            if claude_path.exists():\n                return\
+    \ claude_path.read_text()\n    return \"\"\n\n@router.get(\"\")\ndef list_agents():\n\
+    \    return load_agents()\n\n@router.post(\"/{agent_id}/order\")\ndef order_agent(agent_id:\
+    \ str, order: OrderRequest):\n    # Write order to inbox\n    inbox_dir = Path(\"\
+    inbox\")\n    inbox_dir.mkdir(exist_ok=True)\n    order_file = inbox_dir / f\"\
+    {agent_id}.yaml\"\n    \n    order_data = {\"action\": order.action, \"params\"\
+    : order.params, \"agent_id\": agent_id}\n    with open(order_file, \"w\") as f:\n\
+    \        yaml.dump(order_data, f, default_flow_style=False)\n    \n    # Launch\
+    \ agent\n    try:\n        response = requests.post(LAUNCH_URL, json={\"agent_id\"\
+    : agent_id, \"order_file\": str(order_file)})\n        return {\"status\": \"\
+    lanzado\", \"response\": response.json()}\n    except requests.RequestException\
+    \ as e:\n        raise HTTPException(status_code=500, detail=f\"Error launching\
+    \ agent: {str(e)}\")\n\n@router.post(\"/{agent_id}/chat\")\ndef chat_with_agent(agent_id:\
+    \ str, chat: ChatRequest):\n    # Check if it's an orchestrator\n    is_orchestrator\
+    \ = agent_id in [name.lower() for name in ORCHESTRATORS]\n    \n    system_prompt\
+    \ = get_system_prompt(agent_id) if is_orchestrator else \"\"\n    \n    # Use\
+    \ deepseek_flash API\n    payload = {\n        \"model\": \"deepseek_flash\",\n\
+    \        \"messages\": [\n            {\"role\": \"system\", \"content\": system_prompt},\n\
+    \            {\"role\": \"user\", \"content\": chat.message}\n        ]\n    }\n\
+    \    \n    try:\n        response = requests.post(\"http://localhost:11434/api/chat\"\
+    , json=payload)\n        return {\"response\": response.json().get(\"message\"\
+    , {}).get(\"content\", \"\")}\n    except requests.RequestException as e:\n  \
+    \      raise HTTPException(status_code=500, detail=f\"Error in chat: {str(e)}\"\
+    )\n```"
+  max_chars: 40000
+task: 'Entrega la prueba de éxito: listar agentes, mandar una orden al agente 13 y
+  leer su estado; hablar con Hermes. GAPs al final.
+
+  '
+checks:
+- kind: min_chars
+  value: 200
+- kind: no_secrets

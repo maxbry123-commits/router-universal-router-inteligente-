@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "DIRECTOR: Todos los agentes que están en el repo deben estar cableados con el chat. Hermes es un agente que está en main descargado.\nOrquestadores del chat: Microsoft Agent Framework, Rowboat, Hermes.\n"}

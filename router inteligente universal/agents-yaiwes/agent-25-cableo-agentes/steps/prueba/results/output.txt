@@ -1,0 +1,1 @@
+GAP: Falta evidencia de que agent-13 esté realmente desplegado y responda a órdenes. El endpoint /gh/agent-state no está implementado en el código proporcionado. Además, no hay confirmación de que Hermes esté accesible como orquestador con su CLAUDE.md correspondiente.
