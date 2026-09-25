@@ -1,0 +1,26 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-28-memoria-descarga",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-25T02:47:45Z",
+ "router_connected": true,
+ "group": "chat",
+ "chain": [
+  "acquire_graphify",
+  "acquire_graphiti",
+  "acquire_falkordb"
+ ],
+ "completed": [],
+ "failed": [
+  "acquire_graphify"
+ ],
+ "next_nodes": [
+  "acquire_graphiti",
+  "acquire_falkordb"
+ ],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ]
+}

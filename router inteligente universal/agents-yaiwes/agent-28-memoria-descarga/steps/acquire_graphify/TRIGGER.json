@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "DIRECTOR 2026-09-25: Agente que use los motores: revisa el historial de uso de los motores de descarga y extracción en main y replica.\nNo GitHub Actions. No HF Job. Memoria: PostgreSQL + Redis + Graphiti + FalkorDB + AgentDB + HF Storage Bucket + Graphify-Labs/graphify.\n"}

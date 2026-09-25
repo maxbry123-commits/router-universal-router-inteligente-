@@ -1,0 +1,49 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-28-memoria-descarga
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 800
+context:
+  text: 'Mismo motor y mismo patrón que agent-19 (CLOSED 2026-09-25 02:20 con Rowboat
+    y MSAF).
+
+    PostgreSQL y Redis NO se descargan como código: se usan como servicio (GAP para
+    agent-17).
+
+    AgentDB: repo exacto sin confirmar → GAP, no se descarga hasta confirmarlo.
+
+    '
+  max_chars: 40000
+task: 'Responde exactamente MOTOR_EXEC_REQUEST_GRAPHIFY.
+
+  '
+checks:
+- kind: contains
+  values:
+  - MOTOR_EXEC_REQUEST_GRAPHIFY
+- kind: motor_exec
+  path: ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor
+    descarga de componentes y extracción de zip/hf_download_extract_engine.py
+  timeout: 1800
+  env:
+    SOURCE_REPO: Graphify-Labs/graphify
+    SOURCE_REF: main
+    SLUG: graphify
+    DEST_REPO: maxbry123-commits/router-universal-router-inteligente-
+    DEST_BRANCH: main
+    DEST_ROOT: router inteligente universal/Componente open soure router inteligente
+      universal
+    PUBLISH: '1'
+  expect:
+    verdict: VERIFIED_CLOSED
+    publish.verdict: PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED
+- kind: no_secrets
