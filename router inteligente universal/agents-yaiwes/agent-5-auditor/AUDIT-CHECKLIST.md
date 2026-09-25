@@ -1,4 +1,4 @@
-# AUDIT-CHECKLIST — 2026-09-24 15:29:20Z
+# AUDIT-CHECKLIST — 2026-09-25 01:10:02Z
 
 Generado por el agente auditor (pasadas `lens_*`, validadas por el Sheriff: cada cita es textual del Director y cada evidencia existe en el repo) y unido de forma determinista. Refutado = el trabajo de un agente no cumple lo pedido.
 

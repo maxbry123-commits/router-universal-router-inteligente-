@@ -55,6 +55,6 @@ Request timed out.
 - paso add_donors: CLOSED modelo=hf/deepseek-ai/DeepSeek-V4-Flash entregables=['router inteligente universal/agents-yaiwes/agent-20-openclaw-rowboat/steps/add_donors/results/openclaw_rowboat_donors.py'] gaps=-
 ## agent-21-router-connect: estado=CLOSED marco=pocketflow pasos_cerrados=['paso_health']
 - paso paso_health: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
-## agent-22-grok-connect: estado=? marco=? pasos_cerrados=[]
-## agent-3-router: estado=CLOSED marco=pocketflow pasos_cerrados=['space_readme', 'space_index', 'deploy_script', 'publish_live']
--
+## agent-22-grok-connect: estado=CLOSED marco=pocketflow pasos_cerrados=['paso_health']
+- paso paso_health: CLOSED modelo=deepseek-ai/DeepSeek-V4-Flash entregables=[] gaps=-
+## agent-3-router:

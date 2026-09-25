@@ -4,31 +4,37 @@ import json
 def summarize(root_listing: list[dict]) -> dict:
     prefix = "Componente open soure router inteligente universal/"
     prefix_len = len(prefix)
-    
-    top_level = {}
+    projects = {}
     total_files = 0
     total_bytes = 0
     
-    for item in root_listing:
-        path = item["path"]
-        typ = item["type"]
+    for entry in root_listing:
+        path = entry["path"]
+        entry_type = entry["type"]
+        size = entry.get("size", 0)
         
-        if typ == "blob":
-            total_files += 1
-            total_bytes += item["size"]
+        # Only process blobs
+        if entry_type != "blob":
+            continue
             
-            # Check if it's under the prefix
-            if path.startswith(prefix):
-                rest = path[prefix_len:]
-                if "/" in rest:
-                    project_name = rest.split("/")[0]
-                    if project_name not in top_level:
-                        top_level[project_name] = {"files": 0, "bytes": 0}
-                    top_level[project_name]["files"] += 1
-                    top_level[project_name]["bytes"] += item["size"]
+        total_files += 1
+        total_bytes += size
+        
+        # Check if path starts with the prefix
+        if path.startswith(prefix) and len(path) > prefix_len:
+            # Get the part after prefix
+            rest = path[prefix_len:]
+            # Find the first component name (up to first "/")
+            slash_pos = rest.find("/")
+            if slash_pos > 0:
+                project_name = rest[:slash_pos]
+                if project_name not in projects:
+                    projects[project_name] = {"files": 0, "bytes": 0}
+                projects[project_name]["files"] += 1
+                projects[project_name]["bytes"] += size
     
     return {
-        "top_level_projects": top_level,
+        "top_level_projects": dict(sorted(projects.items())),
         "total_files": total_files,
         "total_bytes": total_bytes
     }

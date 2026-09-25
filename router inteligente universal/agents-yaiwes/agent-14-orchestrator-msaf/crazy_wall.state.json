@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-14-orchestrator-msaf",
  "framework": "pocketflow",
- "status": "BLOCKED",
- "updated_at": "2026-09-24T15:26:53Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T01:09:28Z",
  "group": "orchestrators",
  "chain": [
   "orchestrate_chat_100",
@@ -14,11 +14,10 @@
  "completed": [
   "orchestrate_chat_100",
   "director_model_probe",
-  "director_question_1"
- ],
- "failed": [
+  "director_question_1",
   "director_close_audit"
  ],
+ "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "route": [
