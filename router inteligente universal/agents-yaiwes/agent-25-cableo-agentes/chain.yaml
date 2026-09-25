@@ -1,0 +1,41 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR: Todos los agentes que están en el repo deben estar cableados con el chat. Hermes es un agente que está en main descargado.
+  Orquestadores del chat: Microsoft Agent Framework, Rowboat, Hermes.
+
+agent:
+  id: agent-25-cableo-agentes
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Agentes: carpetas agents-yaiwes/agent-* (1..33). Hermes, Rowboat y MSAF en "Componente open soure router inteligente universal/".
+    Ruta del chat: /chat/agents. Índice agents_index.json lo genera agent-31. Lanzar = /gh/agent-launch (agent-29). Estado = /gh/agent-state.
+
+steps:
+  - id: registro
+    task: |
+      Entrega el código Python completo de agents_registry.py (APIRouter, prefijo /chat/agents) que:
+      lee agents_index.json (o recorre agent-*/ si no existe), añade Hermes, Rowboat y MSAF como tipo "orquestador",
+      GET lista {id, tipo, rol, estado}; POST /chat/agents/{id}/order escribe inbox/orden.yaml y lanza el agente;
+      POST /chat/agents/{id}/chat conversa con el orquestador elegido usando deepseek_flash y su CLAUDE.md como system prompt. Solo el código.
+    checks:
+      - kind: python_ast
+      - kind: min_chars
+        value: 800
+      - kind: no_secrets
+
+  - id: prueba
+    task: |
+      Entrega la prueba de éxito: listar agentes, mandar una orden al agente 13 y leer su estado; hablar con Hermes. GAPs al final.
+    checks:
+      - kind: min_chars
+        value: 200
+      - kind: no_secrets
+
+edges:
+  - [registro, prueba]
