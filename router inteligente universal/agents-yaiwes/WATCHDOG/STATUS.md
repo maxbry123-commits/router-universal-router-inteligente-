@@ -1,4 +1,4 @@
-# WATCHDOG — estado de los agentes (2026-09-25 01:03:37Z)
+# WATCHDOG — estado de los agentes (2026-09-25 01:34:16Z)
 
 **Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
 
@@ -11,14 +11,14 @@ Error code: 402 - {'message': 'Payment require | cerebras/gpt-oss-120b:AgentGene
 Error code: 402 - {'message': 'Payment require |
 | agent-12-yaiwes-router | smolagents | CLOSED | 2/1 | - | - |
 | agent-13-repo-inventory | pocketflow | BLOCKED | 0/1 | inventory_module | la prueba falló (exit=1): AssertionError |
-| agent-14-orchestrator-msaf | pocketflow | BLOCKED | 5/4 | director_close_audit | falta 'CERRADO' | falta 'EN EJECUCIÓN' |
+| agent-14-orchestrator-msaf | pocketflow | CLOSED | 6/4 | - | - |
 | agent-15-orchestrator-grok | smolagents | CLOSED | 4/3 | - | hf/deepseek-ai/DeepSeek-V4-Flash:AgentGenerationError:Error while generating output:
 Request timed out. |
 | agent-15-orchestrator-grokbuild | pocketflow | BLOCKED | 0/1 | fetch_and_connect | la prueba falló (exit=1): requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://api.github.com/rep |
 | agent-16-chat-space-oauth | pocketflow | CLOSED | 2/1 | - | Python inválido: unexpected character after line continuation character (línea 17) | falta 'private=False' |
 | agent-17-chat-backend-32gb | pocketflow | CLOSED | 1/1 | - | falta 'Volume' | la prueba falló (exit=1): ImportError: cannot import name 'run' from 'chat_backend_32gb' (/home/runner/work/router-unive |
 | agent-18-chat-final-auditor | pocketflow | CLOSED | 1/1 | - | falta 'Archivos' | falta 'Memoria' |
-| agent-19-chat-components-motors | pocketflow | BLOCKED | 0/1 | acquire_open_webui | motor falló (exit=1): RuntimeError: DESTINATION_EXISTS:router inteligente universal/Componente open soure router intelig |
+| agent-19-chat-components-motors | pocketflow | BLOCKED | 0/3 | acquire_open_webui | motor falló (exit=1): RuntimeError: DESTINATION_EXISTS:router inteligente universal/Componente open soure router intelig |
 | agent-2-chat-hf-smol | smolagents | CLOSED | 3/3 | - | - |
 | agent-20-openclaw-rowboat | smolagents | CLOSED | 1/1 | - | - |
 | agent-21-router-connect | pocketflow | CLOSED | 1/1 | - | - |
