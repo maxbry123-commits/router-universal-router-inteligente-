@@ -1,0 +1,42 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR: Organiza el repo: todos los agentes y el chat en una sola raíz ➡️📂 chat osquestador, ordenado,
+  con un solo Crazy Wall / bitácora / state JSON dentro.
+
+agent:
+  id: agent-32-organizador
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+
+context:
+  text: |
+    Hoy: agentes en "router inteligente universal/agents-yaiwes/agent-*", chat en "router inteligente universal/integration/chat_mvp/",
+    UI Vercel en "router inteligente universal/vercel-ui/", notas en "Claude notas/", Crazy Wall central en "Claude notas/CRAZY-WALL-CENTRAL-CHAT-2026-09-24.md".
+    Riesgo: el workflow riu-agents-run.yml, el Job del Router (git pull) y el webhook leen rutas actuales. NO se mueve nada que rompa el Router (Job y Space: no tocar).
+
+steps:
+  - id: mapa
+    task: |
+      Entrega el árbol destino bajo "➡️📂 chat osquestador/" (chat/, agentes/, orquestadores/, memoria/, workflows/, vercel-ui/, CRAZY_WALL.state.json, BITACORA.md)
+      y una tabla origen → destino. Marca con NO-MOVER lo que usan el Job, el webhook o el workflow.
+    checks:
+      - kind: min_chars
+        value: 500
+      - kind: no_secrets
+
+  - id: script_movimiento
+    task: |
+      Entrega el código Python completo de reorganizar.py: modo --dry-run por defecto (solo imprime),
+      con --apply copia (no borra) a la nueva raíz, respeta NO-MOVER, crea un único CRAZY_WALL.state.json que agrega
+      todos los crazy_wall.state.json de agentes y deja un archivo MOVED.md en cada origen. Solo el código.
+    checks:
+      - kind: python_ast
+      - kind: min_chars
+        value: 600
+      - kind: no_secrets
+
+edges:
+  - [mapa, script_movimiento]
