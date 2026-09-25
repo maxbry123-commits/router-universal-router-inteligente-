@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Router YAIWES</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0b0d10;color:#d0d4dc;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100dvh;padding:0 .5rem .5rem}
+.app{max-width:680px;margin:0 auto;display:flex;flex-direction:column;min-height:100dvh;gap:.5rem;padding:.4rem 0}
+.bar,.row{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;background:#14181d;border-radius:1rem;padding:.5rem;border:1px solid #2a3038}
+select,button,.row input{font-size:.8rem;background:#1e242c;color:#d0d4dc;border:1px solid #2e3843;border-radius:1rem;padding:.4rem .65rem}
+select{flex:1 0 90px}
+button{cursor:pointer}
+.sw{display:flex;align-items:center;gap:.3rem;font-size:.75rem;background:#1a2028;padding:.35rem .6rem;border-radius:1rem;border:1px solid #2e3843}
+.st{font-size:.78rem;flex:1 0 100%;opacity:.85}
+.dot{display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#666;margin-right:.3rem}
+.on{background:#3ecf8e}.off{background:#e5534b}
+.chat{flex:1;background:#0f1318;border-radius:1rem;display:flex;flex-direction:column;border:1px solid #222a33;min-height:320px}
+.hist{flex:1;overflow-y:auto;padding:.7rem;display:flex;flex-direction:column;gap:.5rem;font-size:.92rem}
+.msg{padding:.45rem .7rem;border-radius:.9rem;max-width:88%;white-space:pre-wrap;word-break:break-word}
+.msg.a{background:#1f2b38;border-left:3px solid #4c9aff;align-self:flex-start}
+.msg.u{background:#1b2a3a;align-self:flex-end}
+.in{display:flex;gap:.3rem;padding:.45rem;border-top:1px solid #252e38}
+.in input{flex:1;background:#1a212a;border:1px solid #2e3a48;border-radius:1rem;padding:.6rem .8rem;color:#d0d4dc;font-size:.95rem}
+.in button{background:#2d3b4c;border:none;font-size:1rem;padding:.4rem 1rem}
+.row input{flex:1 1 120px}
+.err{color:#f99;font-size:.8rem;text-align:center;min-height:1.1rem}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="row">
+    <div class="st"><span class="dot" id="dR"></span>Router: <b id="sR">revisando…</b> &nbsp; <span class="dot" id="dA"></span>Agentes: <b id="sA">…</b></div>
+    <button data-p="router/on">🔌 Encender Router</button>
+    <button data-p="router/off">⏻ Apagar Router</button>
+    <button data-p="agents/on">▶️ Encender agentes</button>
+    <button data-p="agents/off">⏸️ Apagar agentes</button>
+  </div>
+
+  <div class="bar">
+    <select id="model"><option>modelo</option></select>
+    <label class="sw"><input type="checkbox" id="agentOn"> con agente</label>
+    <select id="agent"><option value="">agente</option></select>
+    <select id="gh"><option>cuenta GitHub</option></select>
+    <select id="group"><option>grupo</option></select>
+    <button id="wfBtn" title="Añadir workflow">➕</button>
+  </div>
+
+  <div class="chat">
+    <div class="hist" id="hist"><div class="msg a">Escribe tu mensaje. Con "con agente" activado, la orden va al agente elegido.</div></div>
+    <div class="in">
+      <button id="attach" title="Subir archivo">📎</button>
+      <input type="file" id="file" style="display:none">
+      <input type="text" id="txt" placeholder="Mensaje…">
+      <button id="send">➤</button>
+    </div>
+  </div>
+
+  <div class="row" id="wf" style="display:none">
+    <input id="wfName" placeholder="Nombre del workflow">
+    <input id="wfRepo" placeholder="Repo (ej. maxbry123-commits/agentes)">
+    <input id="wfPlan" placeholder="Ruta del plan">
+    <button id="wfSave">Guardar</button>
+  </div>
+
+  <div class="row">
+    <button data-c="emergency-stop">🛑 Emergencia</button>
+    <button id="orderBtn">🗓️ Orden programada</button>
+  </div>
+  <div class="err" id="err"></div>
+</div>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const say=m=>{$('err').textContent=m||''};
+  async function api(path,opt){
+    opt=opt||{};
+    const r=await fetch(path,{method:opt.method||'GET',headers:opt.body?{'Content-Type':'application/json'}:{},body:opt.body?JSON.stringify(opt.body):undefined});
+    let d={};try{d=await r.json()}catch(e){}
+    if(!r.ok)throw new Error(d.error||d.detail||('error '+r.status));
+    return d;
+  }
+  function add(c,t){const d=document.createElement('div');d.className='msg '+c;d.textContent=t;$('hist').appendChild(d);$('hist').scrollTop=1e9}
+  function fill(sel,items,first){const s=$(sel);s.innerHTML=first?'<option value="">'+first+'</option>':'';items.forEach(i=>{const o=document.createElement('option');o.value=i;o.text=i;s.add(o)})}
+
+  let loaded=false;
+  async function status(){
+    try{
+      const s=await api('/power/status');
+      $('sR').textContent=s.router;$('dR').className='dot '+(s.router==='encendido'?'on':'off');
+      $('sA').textContent=s.agentes;$('dA').className='dot '+(s.agentes==='activos'?'on':'off');
+      if(s.router==='encendido'&&!loaded){loaded=true;loadAll()}
+      return s;
+    }catch(e){say(e.message)}
+  }
+  async function loadAll(){
+    try{const d=await api('/v1/models');fill('model',(d.data||[]).map(m=>m.id))}catch(e){say(e.message)}
+    try{const d=await api('/chat/agents');fill('agent',(d.agents||d||[]).map(a=>a.id||a.name||a),'agente')}catch(e){}
+    try{const d=await api('/gh/accounts');fill('gh',d.accounts||[])}catch(e){}
+    try{const d=await api('/groups');fill('group',Object.keys(d||{}),'grupo')}catch(e){}
+  }
+  async function send(){
+    const text=$('txt').value.trim();if(!text)return;
+    add('u',text);$('txt').value='';say('');
+    try{
+      if($('agentOn').checked){
+        const ag=$('agent').value;if(!ag){add('a','Elige un agente arriba.');return}
+        await api('/control/order',{method:'POST',body:{agente:ag,orden:text}});
+        add('a','Orden enviada a '+ag+'.');
+      }else{
+        const d=await api('/v1/chat/completions',{method:'POST',body:{model:$('model').value,messages:[{role:'user',content:text}]}});
+        add('a',(d.choices&&d.choices[0].message.content)||JSON.stringify(d).slice(0,300));
+      }
+    }catch(e){add('a','No se pudo: '+e.message)}
+  }
+  $('send').onclick=send;
+  $('txt').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+  $('attach').onclick=()=>$('file').click();
+  $('file').onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    const fd=new FormData();fd.append('file',f);fd.append('chat_id','principal');
+    try{const r=await fetch('/chat/documents',{method:'POST',body:fd});if(!r.ok)throw new Error('error '+r.status);say('Archivo subido: '+f.name)}catch(err){say('No se pudo subir el archivo ('+err.message+')')}
+    e.target.value='';
+  };
+  $('wfBtn').onclick=()=>{$('wf').style.display=$('wf').style.display==='none'?'flex':'none'};
+  $('wfSave').onclick=async()=>{
+    const b={name:$('wfName').value.trim(),repo:$('wfRepo').value.trim(),plan_path:$('wfPlan').value.trim()};
+    if(!b.name||!b.repo||!b.plan_path){say('Completa nombre, repo y ruta del plan');return}
+    try{await api('/chat/storage',{method:'POST',body:b});say('Workflow guardado');$('wf').style.display='none'}catch(e){say(e.message)}
+  };
+  document.querySelectorAll('[data-p]').forEach(b=>b.onclick=async()=>{
+    try{const d=await api('/power/'+b.dataset.p,{method:'POST'});say(d.estado);setTimeout(status,3000)}catch(e){say(e.message)}
+  });
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=async()=>{
+    try{await api('/control/'+b.dataset.c,{method:'POST'});say('Emergencia: todo en pausa')}catch(e){say(e.message)}
+  });
+  $('orderBtn').onclick=async()=>{
+    const ag=$('agent').value||prompt('¿Para qué agente?');if(!ag)return;
+    const orden=prompt('Orden para '+ag+':');if(!orden)return;
+    const cuando=prompt('¿Cuándo? (vacío = ahora)')||null;
+    try{await api('/control/order',{method:'POST',body:{agente:ag,orden:orden,programada_para:cuando}});say('Orden programada guardada')}catch(e){say(e.message)}
+  };
+  (async()=>{
+    const s=await status();
+    if(s&&s.router!=='encendido'){say('Encendiendo el Router, tarda 2 a 5 minutos…');try{await api('/power/router/on',{method:'POST'})}catch(e){}}
+    setInterval(status,20000);
+  })();
+})();
+</script>
+</body>
+</html>
