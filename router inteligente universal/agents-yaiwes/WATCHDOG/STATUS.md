@@ -1,6 +1,6 @@
-# WATCHDOG — estado de los agentes (2026-09-24 22:35:29Z)
+# WATCHDOG — estado de los agentes (2026-09-25 01:03:37Z)
 
-**Acción:** hay pendientes; 3 reintentos sin avance: ESCALAR A CLAUDE (mejorar el DSL DAG, la ruta o crear agentes)
+**Acción:** hay pendientes; se lanzó `RIU Agents Run` (reintento 1/3)
 
 | agente | marco | estado | pasos cerrados | bloqueado en | GAPs |
 |---|---|---|---|---|---|
@@ -22,6 +22,7 @@ Request timed out. |
 | agent-2-chat-hf-smol | smolagents | CLOSED | 3/3 | - | - |
 | agent-20-openclaw-rowboat | smolagents | CLOSED | 1/1 | - | - |
 | agent-21-router-connect | pocketflow | CLOSED | 1/1 | - | - |
+| agent-22-grok-connect | pocketflow | CLOSED | 1/1 | - | - |
 | agent-3-router | pocketflow | CLOSED | 4/4 | - | - |
 | agent-4-router-smol | smolagents | CLOSED | 4/1 | - | - |
 | agent-5-auditor | smolagents | BLOCKED | 2/4 | lens_models | hf/deepseek-ai/DeepSeek-V4-Flash:el Sheriff no dio PASS | hf/deepseek-ai/DeepSeek-V4-Flash:el Sheriff no dio PASS |
