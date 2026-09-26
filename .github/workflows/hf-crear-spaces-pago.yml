@@ -1,0 +1,43 @@
+name: HF Crear Spaces OmniRoute (hardware de pago)
+
+# Prueba del Director 2026-09-26: crear los 5 Spaces con hardware de pago en la misma llamada
+# (create_repo(..., space_hardware="cpu-upgrade")), que la documentación oficial permite.
+# Para no quemar saldo: cada Space duerme tras 1 h sin uso (sleep_time=3600) y despierta al llamarlo.
+# Si algo falla, imprime el mensaje COMPLETO del error de HF (sin claves).
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/hf-crear-spaces-pago.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_1 }}
+    steps:
+      - run: pip install -q -U huggingface_hub
+      - name: Crear 5 Spaces en cpu-upgrade
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"]); who = api.whoami(); owner = who["name"]
+          role = (who.get("auth", {}).get("accessToken", {}) or {}).get("role")
+          print(f"::notice::cuenta={owner} permiso_token={role} tipo={who.get('type')} pro={who.get('isPro')}")
+          for i in range(1, 6):
+              rid = f"{owner}/omniroute-{i}"
+              try:
+                  if not api.repo_exists(rid, repo_type="space"):
+                      api.create_repo(rid, repo_type="space", space_sdk="docker", space_hardware="cpu-upgrade", space_sleep_time=3600, private=False)
+                  print(f"::notice::CREADO {rid} (cpu-upgrade, duerme tras 1 h)")
+              except Exception as e:
+                  resp = getattr(e, "response", None)
+                  body = resp.text[:600] if resp is not None else ""
+                  print(f"::warning::NO {rid}: {type(e).__name__} | {str(e)[:200]} | detalle HF: {body}")
+          PY
