@@ -1,0 +1,197 @@
+{
+  "schema": "yaiwes.inventario/v1",
+  "nodo": "S1_descargas_staff",
+  "generado": "2026-09-26T21:40:41Z",
+  "resumen": {
+    "total": 23,
+    "descargados": 16,
+    "gaps": 7
+  },
+  "componentes": [
+    {
+      "componente": "cua_mcp",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/agents-yaiwes/donors/meta-model-cookbook-12-computer-use",
+      "archivos": 2,
+      "bytes": 14933,
+      "hash": "sha256:798670b2623deba5bb3d9e527458f5c5152109cab9e8afe904835d07aff7d850"
+    },
+    {
+      "componente": "graphify",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/graphify",
+      "archivos": 99,
+      "bytes": 1100951,
+      "hash": "sha256:a459948ffc436cfa44c27d3151771d523753fd7cdaf276f68a8310c1da1f6044"
+    },
+    {
+      "componente": "graphiti",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/graphiti",
+      "archivos": 385,
+      "bytes": 29842085,
+      "hash": "sha256:fc086629c77a6152e3b61bef3bc775a486993cadf5074bf670dafecf84741ae3"
+    },
+    {
+      "componente": "hermes",
+      "estado": "DESCARGADO",
+      "ruta": "hermes-agent",
+      "archivos": 13030,
+      "bytes": 248972926,
+      "hash": "sha256:f9a467e2ea016a24ff5f146f3e1cdc515f9b7fbda3bd7455b4238422476b7d6d"
+    },
+    {
+      "componente": "litellm",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/litellm",
+      "archivos": 9795,
+      "bytes": 218583915,
+      "hash": "sha256:1c2deea9aa6f9542ca3929719a98765c9861abacb071d819e0502e80e7d36600"
+    },
+    {
+      "componente": "mcp_python_sdk",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/MCP-Python-SDK",
+      "archivos": 1662,
+      "bytes": 20776518,
+      "hash": "sha256:6788e07bf2274048ab76683f6248756199a9a54d5a8ba15710c03cb4717c29ad"
+    },
+    {
+      "componente": "memanto",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/memanto",
+      "archivos": 766,
+      "bytes": 31103843,
+      "hash": "sha256:b847536cc13cbeb109216a2b8b6520f4589f9ad74fa891852d9d6cb143660221"
+    },
+    {
+      "componente": "meta_agentic_fundamentals",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/agents-yaiwes/donors/meta-oss-cookbook-agentic-fundamentals",
+      "archivos": 4,
+      "bytes": 30976,
+      "hash": "sha256:22c0c6b6609b6f7ce1291d8e26d7df8317251431af5fffa45c07d527a24e1958"
+    },
+    {
+      "componente": "metacua",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/agents-yaiwes/donors/meta-model-cookbook-13-macos-cua",
+      "archivos": 47,
+      "bytes": 285865,
+      "hash": "sha256:96cc125fd55df824c9d278244e9a0e870a5d94807cd2fe54ae9c699f8609b575"
+    },
+    {
+      "componente": "microsoft_agent_framework",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/microsoft-agent-framework",
+      "archivos": 5401,
+      "bytes": 75801196,
+      "hash": "sha256:9e88796643e38e5e5e4f6510e7373db4ab8b24297018ad33a35520920a7b723e"
+    },
+    {
+      "componente": "muse_code",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/agents-yaiwes/donors/muse-code-sdk",
+      "archivos": 167,
+      "bytes": 1999844,
+      "hash": "sha256:182e60ab74dc7df19ee81ed0ca2aff419ef25cee3e200e9ca1362394471fa289"
+    },
+    {
+      "componente": "open_webui",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/open-webui",
+      "archivos": 5066,
+      "bytes": 59508971,
+      "hash": "sha256:946611830f71e855b0debf59828df7f93d58894f958613ded412a2ab4881f954"
+    },
+    {
+      "componente": "pocketflow",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/agents-yaiwes/donors/pocketflow",
+      "archivos": 60,
+      "bytes": 238200,
+      "hash": "sha256:112fd030635484f8de520649590fcebe559cf548597f1328c271cfd432311a01"
+    },
+    {
+      "componente": "rowboat",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/rowboat",
+      "archivos": 1519,
+      "bytes": 68829321,
+      "hash": "sha256:5f7670352101d3113e05658058402afab9a6a61c8feafe963a818fd33ef08702"
+    },
+    {
+      "componente": "ruflo",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/ruflo",
+      "archivos": 5622,
+      "bytes": 120716506,
+      "hash": "sha256:37fc667a91d7e80d92521e0684159f9dfa66e24080a1f6d25385895dc1842991"
+    },
+    {
+      "componente": "smolagents",
+      "estado": "DESCARGADO",
+      "ruta": "router inteligente universal/agents-yaiwes/donors/smolagents",
+      "archivos": 27,
+      "bytes": 590353,
+      "hash": "sha256:2ff97748190dbe8f4e8030a3181f3d914cccf380f2db4ec6c2a2d67f6c481ac1"
+    },
+    {
+      "componente": "claude_code",
+      "estado": "GAP",
+      "motivo": "ruta inexistente",
+      "rutas_buscadas": [
+        "router inteligente universal/Componente open soure router inteligente universal/claude-code"
+      ]
+    },
+    {
+      "componente": "codex",
+      "estado": "GAP",
+      "motivo": "ruta inexistente",
+      "rutas_buscadas": [
+        "router inteligente universal/Componente open soure router inteligente universal/codex"
+      ]
+    },
+    {
+      "componente": "grok_build_gui",
+      "estado": "GAP",
+      "motivo": "ruta inexistente",
+      "rutas_buscadas": [
+        "router inteligente universal/Componente open soure router inteligente universal/grok-build-gui"
+      ]
+    },
+    {
+      "componente": "grokbot",
+      "estado": "GAP",
+      "motivo": "ruta inexistente",
+      "rutas_buscadas": [
+        "router inteligente universal/Componente open soure router inteligente universal/grokbot"
+      ]
+    },
+    {
+      "componente": "mimo_code",
+      "estado": "GAP",
+      "motivo": "ruta inexistente",
+      "rutas_buscadas": [
+        "router inteligente universal/Componente open soure router inteligente universal/mimo-code"
+      ]
+    },
+    {
+      "componente": "muse_glimmer",
+      "estado": "GAP",
+      "motivo": "ruta inexistente",
+      "rutas_buscadas": [
+        "router inteligente universal/agents-yaiwes/donors/muse-glimmer"
+      ]
+    },
+    {
+      "componente": "omniroute",
+      "estado": "GAP",
+      "motivo": "carpeta vacía",
+      "ruta": "router inteligente universal/Componente open soure router inteligente universal/OmniRoute",
+      "archivos": 0,
+      "bytes": 0,
+      "hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

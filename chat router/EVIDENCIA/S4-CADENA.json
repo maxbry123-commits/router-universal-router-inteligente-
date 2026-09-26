@@ -1,0 +1,18 @@
+{
+  "schema": "yaiwes.evidencia/v1",
+  "nodo": "S4_cadena_rowboat_ruflo",
+  "generado": "2026-09-26T21:42:41Z",
+  "orden": "Prueba real del staff",
+  "ensayo": false,
+  "cierre": "ABIERTO",
+  "pasos": [
+    {
+      "agente": "rowboat",
+      "ok": false,
+      "error": "NINGUN_PROVEEDOR_DISPONIBLE: [{\"proveedor\": \"nvidia\", \"error\": \"400:{\\\"detail\\\":\\\"PROVIDER_KEY_MISSING\\\"}\"}, {\"proveedor\": \"cerebras\", \"error\": \"400:{\\\"detail\\\":\\\"PROVIDER_KEY_MISSING\\\"}\"}, {\"proveedor\": \"groq\", \"error\": \"400:{\\\"detail\\\":\\\"PROVIDER_KEY_MISSING\\\"}\"}, {\"proveedor\": \"deepseek\", \"error\": \"400:{\\\"detail\\\":\\\"PROVIDER_KEY_MISSING\\\"}\"}]",
+      "salida": "",
+      "segundos": 0.01
+    }
+  ],
+  "resultado": ""
+}
