@@ -1,0 +1,61 @@
+name: Replicar motores a todos los repos
+
+# Copia la carpeta completa de motores (descarga, extracción, zip, copiado y movimiento) desde este repo
+# a los repos frontend y agentes, en la misma ruta. Se ejecuta sola cuando cambia algún motor, o con el botón.
+# Nunca borra nada del destino fuera de esa carpeta. Deja un MOTORES_VERSION.json con el commit de origen.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/**'
+      - '.github/workflows/replicar-motores.yml'
+  workflow_dispatch:
+    inputs:
+      destinos:
+        description: "Repos destino separados por espacio"
+        default: "frontend agentes"
+
+permissions:
+  contents: read
+
+jobs:
+  replicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+      MOTORES: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-"
+      DESTINOS: ${{ inputs.destinos || 'frontend agentes' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-
+          sparse-checkout-cone-mode: false
+      - name: Copiar motores a cada repo
+        run: |
+          set -e
+          SRC_SHA="${GITHUB_SHA}"
+          for repo in $DESTINOS; do
+            echo "=== $repo ==="
+            rm -rf "/tmp/$repo"
+            git clone --depth 1 --filter=blob:none --no-checkout "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/${repo}.git" "/tmp/$repo"
+            cd "/tmp/$repo"
+            git sparse-checkout init --no-cone
+            printf '/%s/\n' "$MOTORES" > .git/info/sparse-checkout
+            git checkout -q
+            mkdir -p "$MOTORES"
+            rsync -a --exclude '__pycache__' "$GITHUB_WORKSPACE/$MOTORES/" "$MOTORES/"
+            printf '{"origen":"maxbry123-commits/router-universal-router-inteligente-","commit":"%s"}\n' "$SRC_SHA" > "$MOTORES/MOTORES_VERSION.json"
+            git config user.name "replicador-motores"; git config user.email "replicador-motores@users.noreply.github.com"
+            git add --sparse -A -- "$MOTORES"
+            if git commit -q -m "motores: replicados desde router (${SRC_SHA:0:7})"; then
+              for i in 1 2 3; do git pull -q --rebase origin HEAD && git push -q origin HEAD && break; sleep 5; done
+              echo "::notice::motores replicados en $repo"
+            else
+              echo "::notice::$repo ya tenía los motores al día"
+            fi
+            cd "$GITHUB_WORKSPACE"
+          done
