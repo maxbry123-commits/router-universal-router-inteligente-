@@ -1,0 +1,137 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-25: descargar en la fábrica UI los skills y herramientas de diseño (motor B). Varios motores: si uno se cae otro avanza.
+agent:
+  id: agent-41-motor-frontend-b
+  framework: pocketflow
+  group: chat
+  route: [nvidia, cerebras, groq]
+  fallback: [deepseek_flash]
+  max_tokens: 300
+context:
+  text: Motor canónico de descarga y extracción. Cada paso es independiente; si uno falla los demás siguen. Si el destino ya existe el motor solo verifica.
+  motor: &m "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+  destino: &d {DEST_REPO: "maxbry123-commits/frontend", DEST_BRANCH: main, DEST_ROOT: "UI YAIWES/componentes open soure UI YAIWES", PUBLISH: "1"}
+  espera: &e {verdict: VERIFIED_CLOSED, publish.verdict: PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED}
+steps:
+  - id: rare_ui
+    task: Responde exactamente MOTOR_EXEC_REQUEST_RARE_UI.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_RARE_UI]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "swamimalode07/rare-ui", SOURCE_REF: main, SLUG: "rare-ui"}}
+      - {kind: no_secrets}
+  - id: shadcn_skills
+    task: Responde exactamente MOTOR_EXEC_REQUEST_SHADCN_SKILLS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_SHADCN_SKILLS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "shadcn-labs/skills", SOURCE_REF: main, SLUG: "shadcn-skills"}}
+      - {kind: no_secrets}
+  - id: impeccable
+    task: Responde exactamente MOTOR_EXEC_REQUEST_IMPECCABLE.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_IMPECCABLE]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "pbakaus/impeccable", SOURCE_REF: main, SLUG: "impeccable"}}
+      - {kind: no_secrets}
+  - id: emil_skills
+    task: Responde exactamente MOTOR_EXEC_REQUEST_EMIL_SKILLS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_EMIL_SKILLS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "emilkowalski/skills", SOURCE_REF: main, SLUG: "emil-skills"}}
+      - {kind: no_secrets}
+  - id: ui_ux_pro_max_skill
+    task: Responde exactamente MOTOR_EXEC_REQUEST_UI_UX_PRO_MAX_SKILL.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_UI_UX_PRO_MAX_SKILL]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "nextlevelbuilder/ui-ux-pro-max-skill", SOURCE_REF: main, SLUG: "ui-ux-pro-max-skill"}}
+      - {kind: no_secrets}
+  - id: getdesign
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GETDESIGN.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GETDESIGN]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "MohtashamMurshid/getdesign", SOURCE_REF: main, SLUG: "getdesign"}}
+      - {kind: no_secrets}
+  - id: open_design
+    task: Responde exactamente MOTOR_EXEC_REQUEST_OPEN_DESIGN.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_OPEN_DESIGN]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "nexu-io/open-design", SOURCE_REF: main, SLUG: "open-design"}}
+      - {kind: no_secrets}
+  - id: magic_mcp
+    task: Responde exactamente MOTOR_EXEC_REQUEST_MAGIC_MCP.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_MAGIC_MCP]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "21st-dev/magic-mcp", SOURCE_REF: main, SLUG: "magic-mcp"}}
+      - {kind: no_secrets}
+  - id: caret_desktop
+    task: Responde exactamente MOTOR_EXEC_REQUEST_CARET_DESKTOP.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CARET_DESKTOP]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "precious112/caret-desktop", SOURCE_REF: main, SLUG: "caret-desktop"}}
+      - {kind: no_secrets}
+  - id: firecrawl_skills
+    task: Responde exactamente MOTOR_EXEC_REQUEST_FIRECRAWL_SKILLS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_FIRECRAWL_SKILLS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "firecrawl/skills", SOURCE_REF: main, SLUG: "firecrawl-skills"}}
+      - {kind: no_secrets}
+  - id: context7
+    task: Responde exactamente MOTOR_EXEC_REQUEST_CONTEXT7.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CONTEXT7]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "upstash/context7", SOURCE_REF: main, SLUG: "context7"}}
+      - {kind: no_secrets}
+  - id: Recordly
+    task: Responde exactamente MOTOR_EXEC_REQUEST_RECORDLY.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_RECORDLY]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "webadderallorg/Recordly", SOURCE_REF: main, SLUG: "Recordly"}}
+      - {kind: no_secrets}
+  - id: awesome_design_md
+    task: Responde exactamente MOTOR_EXEC_REQUEST_AWESOME_DESIGN_MD.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_AWESOME_DESIGN_MD]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "VoltAgent/awesome-design-md", SOURCE_REF: main, SLUG: "awesome-design-md"}}
+      - {kind: no_secrets}
+  - id: dachent_skills
+    task: Responde exactamente MOTOR_EXEC_REQUEST_DACHENT_SKILLS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_DACHENT_SKILLS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "dachent/skills", SOURCE_REF: main, SLUG: "dachent-skills"}}
+      - {kind: no_secrets}
+  - id: jpeetz_agent_skills
+    task: Responde exactamente MOTOR_EXEC_REQUEST_JPEETZ_AGENT_SKILLS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_JPEETZ_AGENT_SKILLS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "JPeetz/agent-skills", SOURCE_REF: main, SLUG: "jpeetz-agent-skills"}}
+      - {kind: no_secrets}
+  - id: vercel_agent_skills
+    task: Responde exactamente MOTOR_EXEC_REQUEST_VERCEL_AGENT_SKILLS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_VERCEL_AGENT_SKILLS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "vercel-labs/agent-skills", SOURCE_REF: main, SLUG: "vercel-agent-skills"}}
+      - {kind: no_secrets}
+  - id: AgentsORG_DESIGN
+    task: Responde exactamente MOTOR_EXEC_REQUEST_AGENTSORG_DESIGN.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_AGENTSORG_DESIGN]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "AgentsORG/DESIGN", SOURCE_REF: main, SLUG: "AgentsORG-DESIGN"}}
+      - {kind: no_secrets}
+  - id: anthropic_skills
+    task: Responde exactamente MOTOR_EXEC_REQUEST_ANTHROPIC_SKILLS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_ANTHROPIC_SKILLS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "anthropics/skills", SOURCE_REF: main, SLUG: "anthropic-skills"}}
+      - {kind: no_secrets}
+  - id: npxskillui
+    task: Responde exactamente MOTOR_EXEC_REQUEST_NPXSKILLUI.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_NPXSKILLUI]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "amaancoderx/npxskillui", SOURCE_REF: main, SLUG: "npxskillui"}}
+      - {kind: no_secrets}
+  - id: headroom
+    task: Responde exactamente MOTOR_EXEC_REQUEST_HEADROOM.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_HEADROOM]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "headroomlabs-ai/headroom", SOURCE_REF: main, SLUG: "headroom"}}
+      - {kind: no_secrets}
+edges: []
