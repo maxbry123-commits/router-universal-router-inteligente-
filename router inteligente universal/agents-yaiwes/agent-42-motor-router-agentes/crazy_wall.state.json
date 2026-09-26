@@ -1,0 +1,52 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-42-motor-router-agentes",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-26T01:51:32Z",
+ "router_connected": false,
+ "group": "chat",
+ "chain": [
+  "ruflo",
+  "CLI_Anything",
+  "deepseek_harness",
+  "GrokBot",
+  "grok_build_gui",
+  "grokbot_sdk",
+  "grokbot_shim",
+  "opencodex",
+  "clarc",
+  "source_intake_agent",
+  "superpowers",
+  "find_skills",
+  "llm_council",
+  "jev_gateway",
+  "claude_code"
+ ],
+ "completed": [],
+ "failed": [
+  "ruflo"
+ ],
+ "next_nodes": [
+  "CLI_Anything",
+  "deepseek_harness",
+  "GrokBot",
+  "grok_build_gui",
+  "grokbot_sdk",
+  "grokbot_shim",
+  "opencodex",
+  "clarc",
+  "source_intake_agent",
+  "superpowers",
+  "find_skills",
+  "llm_council",
+  "jev_gateway",
+  "claude_code"
+ ],
+ "current_nodes": [],
+ "route": [
+  "nvidia",
+  "cerebras",
+  "groq"
+ ]
+}
