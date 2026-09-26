@@ -1,0 +1,54 @@
+name: OmniRoute Deploy a los 5 Spaces
+
+# Sube OmniRoute oficial (diegosouzapw/OmniRoute, release/v3.8.51, su propio Dockerfile) a COMAND-CENTER-1/omniroute-1..5.
+# Sin UI para nosotros: solo se usa la API OpenAI-compatible en https://comand-center-1-omniroute-N.hf.space/v1
+# Seguridad: REQUIRE_API_KEY=true (nadie sin clave puede usarlo); contraseña inicial = RIU_ROUTER_API_KEY (secreto del Space).
+# Cada Space es una "cuenta" independiente: sus proveedores y claves se configuran por separado.
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/omniroute-deploy.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_1 }}
+      RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
+    steps:
+      - name: Bajar OmniRoute v3.8.51
+        run: |
+          git clone --depth 1 --branch release/v3.8.51 https://github.com/diegosouzapw/OmniRoute.git /tmp/omniroute
+          rm -rf /tmp/omniroute/.git
+          du -sh /tmp/omniroute
+      - run: pip install -q -U huggingface_hub
+      - name: Subir a los 5 Spaces
+        run: |
+          python - <<'PY'
+          import os, pathlib
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"]); owner = api.whoami()["name"]
+          src = pathlib.Path("/tmp/omniroute")
+          readme = "---\ntitle: OmniRoute {n}\nemoji: 🛰️\ncolorFrom: blue\ncolorTo: gray\nsdk: docker\napp_port: 20128\npinned: false\n---\nOmniRoute YAIWES #{n} — API OpenAI-compatible en /v1 (requiere clave).\n"
+          ok = []
+          for n in range(1, 6):
+              sid = f"{owner}/omniroute-{n}"
+              try:
+                  (src / "README.md").write_text(readme.format(n=n), encoding="utf-8")
+                  for k, v in {"APP_BIND_HOST": "0.0.0.0", "REQUIRE_API_KEY": "true", "OMNIROUTE_MEMORY_MB": "4096", "DATA_DIR": "/app/data"}.items():
+                      api.add_space_variable(sid, k, v)
+                  if os.environ.get("RIU_KEY"):
+                      api.add_space_secret(sid, "INITIAL_PASSWORD", os.environ["RIU_KEY"])
+                  api.upload_folder(folder_path=str(src), repo_id=sid, repo_type="space", commit_message="deploy OmniRoute v3.8.51 (API, clave obligatoria)",
+                                    ignore_patterns=["node_modules/**", "*.png", "*.jpg", "*.gif", "*.mp4", "images/**", "electron/**"])
+                  ok.append(sid); print(f"::notice::SUBIDO {sid}")
+              except Exception as e:
+                  print(f"::warning::FALLO {sid}: {type(e).__name__} {str(e)[:250]}")
+          print(f"::notice::OMNIROUTE_SUBIDOS={len(ok)}/5")
+          PY
