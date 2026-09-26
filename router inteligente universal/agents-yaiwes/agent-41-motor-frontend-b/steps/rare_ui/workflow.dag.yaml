@@ -1,0 +1,42 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-41-motor-frontend-b
+  framework: pocketflow
+  group: chat
+  route:
+  - nvidia
+  - cerebras
+  - groq
+  fallback:
+  - deepseek_flash
+  max_tokens: 300
+context:
+  text: Motor canónico de descarga y extracción. Cada paso es independiente; si uno
+    falla los demás siguen. Si el destino ya existe el motor solo verifica.
+  max_chars: 40000
+task: Responde exactamente MOTOR_EXEC_REQUEST_RARE_UI.
+checks:
+- kind: contains
+  values:
+  - MOTOR_EXEC_REQUEST_RARE_UI
+- kind: motor_exec
+  path: ➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor
+    descarga de componentes y extracción de zip/hf_download_extract_engine.py
+  timeout: 1800
+  expect:
+    verdict: VERIFIED_CLOSED
+    publish.verdict: PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED
+  env:
+    DEST_REPO: maxbry123-commits/frontend
+    DEST_BRANCH: main
+    DEST_ROOT: UI YAIWES/componentes open soure UI YAIWES
+    PUBLISH: '1'
+    SOURCE_REPO: swamimalode07/rare-ui
+    SOURCE_REF: main
+    SLUG: rare-ui
+- kind: no_secrets

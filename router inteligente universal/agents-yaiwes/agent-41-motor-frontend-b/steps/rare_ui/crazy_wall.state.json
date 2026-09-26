@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-41-motor-frontend-b",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-26T01:52:33Z",
+ "router_connected": false,
+ "group": "chat",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "attempts": 3,
+ "gaps": [
+  "motor falló (exit=1): fatal: unable to access 'https://github.com/maxbry123-commits/frontend.git/': The requested URL returned error: 403"
+ ],
+ "failed": [
+  "execute"
+ ]
+}

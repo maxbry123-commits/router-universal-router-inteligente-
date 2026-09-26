@@ -1,0 +1,62 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-41-motor-frontend-b",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-26T01:52:33Z",
+ "router_connected": false,
+ "group": "chat",
+ "chain": [
+  "rare_ui",
+  "shadcn_skills",
+  "impeccable",
+  "emil_skills",
+  "ui_ux_pro_max_skill",
+  "getdesign",
+  "open_design",
+  "magic_mcp",
+  "caret_desktop",
+  "firecrawl_skills",
+  "context7",
+  "Recordly",
+  "awesome_design_md",
+  "dachent_skills",
+  "jpeetz_agent_skills",
+  "vercel_agent_skills",
+  "AgentsORG_DESIGN",
+  "anthropic_skills",
+  "npxskillui",
+  "headroom"
+ ],
+ "completed": [],
+ "failed": [
+  "rare_ui"
+ ],
+ "next_nodes": [
+  "shadcn_skills",
+  "impeccable",
+  "emil_skills",
+  "ui_ux_pro_max_skill",
+  "getdesign",
+  "open_design",
+  "magic_mcp",
+  "caret_desktop",
+  "firecrawl_skills",
+  "context7",
+  "Recordly",
+  "awesome_design_md",
+  "dachent_skills",
+  "jpeetz_agent_skills",
+  "vercel_agent_skills",
+  "AgentsORG_DESIGN",
+  "anthropic_skills",
+  "npxskillui",
+  "headroom"
+ ],
+ "current_nodes": [],
+ "route": [
+  "nvidia",
+  "cerebras",
+  "groq"
+ ]
+}
