@@ -1,0 +1,41 @@
+name: MCP Restart Test Once
+
+# Prueba real pedida por el Director: reiniciar el Space del conector a propósito y comprobar
+# que las sesiones OAuth guardadas en disco sobreviven (Claude no debe pedir reconectar).
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/mcp-restart-test-once.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - run: python -m pip install --quiet huggingface_hub requests
+      - name: Reiniciar y esperar a que vuelva sano
+        env:
+          HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_MAXBRY123 || secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os, time, requests
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"]); space = "COMAND-CENTER-1/claude-github-mcp-backup"
+          print("antes:", api.get_space_runtime(space).stage)
+          api.restart_space(space); time.sleep(30)
+          base = "https://comand-center-1-claude-github-mcp-backup.hf.space"
+          for i in range(50):
+              try:
+                  r = requests.get(base + "/.well-known/oauth-authorization-server", timeout=10)
+                  if r.status_code == 200:
+                      print(f"::notice::SPACE_DE_VUELTA en {30 + i * 10}s"); break
+              except Exception:
+                  pass
+              time.sleep(10)
+          print("después:", api.get_space_runtime(space).stage, "| dormir tras:", api.get_space_runtime(space).sleep_time)
+          PY
