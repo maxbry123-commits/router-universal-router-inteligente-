@@ -3,7 +3,8 @@ name: Mini Router - Plan 4 Objetivos (agentes)
 # MINI ROUTER: ejecuta el loop del plan de 4 objetivos del repo maxbry123-commits/agentes
 # usando SOLO las APIs de NVIDIA, Cerebras y Groq (claves de este repo). Sin DeepSeek.
 # Proveedor de los agentes: cerebras (hay 6 claves aquí); la sonda del plan prueba NVIDIA/Cerebras/Groq y elige el más rápido.
-# Corre cada hora sola (revisión automática) y a mano con el botón. El resultado llega como PR al repo agentes; el Director decide el merge.
+# Corre cada hora sola y a mano con el botón. El resultado llega como rama + PR al repo agentes; el Director decide el merge.
+# 2026-09-26: arreglado el guardado (vuelta 1 perdió el resultado: git add fuera del sparse checkout, exit 128).
 
 on:
   schedule:
@@ -98,7 +99,7 @@ jobs:
           GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
         run: python "Claude notas/PLAN-OPUS/runner/plan_opus_loop.py" --grupo "$GRUPO" --max-nodos "$MAX_NODOS" | tee /tmp/resumen.txt
 
-      - name: Resultado como PR en el repo agentes
+      - name: Resultado como rama + PR en el repo agentes
         if: always()
         env:
           GH_TOKEN: ${{ secrets.RIU_GITHUB_PAT_FULL_ACCESO || secrets.GH_JOB_PUSH_TOKEN }}
@@ -107,11 +108,12 @@ jobs:
           git config user.name "mini-router-plan"
           git config user.email "mini-router@yaiwes.local"
           git checkout -b "$BR"
-          git add -A
+          git add --sparse -A || git add -A --ignore-errors || true
+          git status --short | head -50
           git commit -m "plan-opus (mini router ${PROVEEDOR}): vuelta ${{ github.run_id }} grupo ${GRUPO}" || { echo "sin cambios"; exit 0; }
-          git push origin "$BR"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/agentes.git" "HEAD:refs/heads/$BR"
           gh pr create --repo maxbry123-commits/agentes --base main --head "$BR" \
             --title "Plan Opus - mini router ${PROVEEDOR} - vuelta ${{ github.run_id }} (${GRUPO})" \
             --body "Vuelta del mini router (NVIDIA/Cerebras/Groq, sin DeepSeek). Revisar bitácora y evidencia/. Resumen: $(tail -1 /tmp/resumen.txt 2>/dev/null)" \
-            || echo "::warning::no se pudo abrir el PR automático; rama: $BR"
+            || echo "::warning::no se pudo abrir el PR automático; la rama $BR quedó subida"
           echo "### Mini router - vuelta ${{ github.run_id }}: rama \`$BR\` en maxbry123-commits/agentes" >> "$GITHUB_STEP_SUMMARY"
