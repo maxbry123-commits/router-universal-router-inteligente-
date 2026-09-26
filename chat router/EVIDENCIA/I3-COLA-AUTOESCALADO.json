@@ -1,0 +1,34 @@
+{
+  "schema": "yaiwes.evidencia/v1",
+  "nodo": "I3_cola_autoescalado",
+  "generado": "2026-09-26T21:43:59Z",
+  "umbrales": {
+    "16gb": 0.8,
+    "32gb": 0.85,
+    "tope_16": 3,
+    "tope_32": 10,
+    "inactividad_s": 900
+  },
+  "ronda_real_local": {
+    "uso": {
+      "cpu": 0.92,
+      "ram": 0.4
+    },
+    "pendientes": 1,
+    "workers": 1,
+    "encendidos": [
+      "local-6018"
+    ],
+    "apagados": []
+  },
+  "tarea": {
+    "id": "2425a08aa751",
+    "clase": "32gb",
+    "estado": "fallida",
+    "worker": "local-6018"
+  },
+  "pruebas_unitarias": "chat router/runtime/test_cola.py — 5 passed",
+  "lanzador_produccion": "LanzadorHFJob (requiere HF_TOKEN + autorizacion de gasto)",
+  "cierre": "ABIERTO",
+  "gap": "Job HF de pago no autorizado: autoescalado probado solo con LanzadorLocal."
+}

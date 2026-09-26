@@ -1,0 +1,81 @@
+{
+  "schema": "yaiwes.evidencia/v1",
+  "nodo": "S4_cadena_rowboat_ruflo",
+  "generado": "2026-09-26T21:42:41Z",
+  "orden": "Prueba de cableado del staff",
+  "ensayo": true,
+  "cierre": "ABIERTO",
+  "pasos": [
+    {
+      "agente": "rowboat",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] Rowboat recibió 98 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "ruflo",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] Ruflo recibió 119 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "claude_code",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] Claude Code (vía Router) recibió 121 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "grok",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] Grok (GrokBot / Grok Build GUI) recibió 129 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "claude_code",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] Claude Code (vía Router) recibió 143 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "muse_code",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] Muse Code recibió 102 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "muse_glimmer",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] Muse Glimmer recibió 107 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "metacua",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] MetaCUA recibió 126 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "cua_mcp",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] CUA+MCP recibió 125 caracteres",
+      "segundos": 0.0
+    },
+    {
+      "agente": "centinela",
+      "ok": true,
+      "ensayo": true,
+      "salida": "[ENSAYO] Agente centinela recibió 129 caracteres",
+      "segundos": 0.0
+    }
+  ],
+  "resultado": "[ENSAYO] Agente centinela recibió 129 caracteres"
+}

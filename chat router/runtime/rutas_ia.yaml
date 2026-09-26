@@ -1,0 +1,25 @@
+# Ruta de IA obligatoria del Director (plan, reglas_globales):
+# NVIDIA (hasta 4 claves, Kimi el más nuevo) -> Cerebras -> Groq -> DeepSeek V4 Flash al final. Sin APIs de Anthropic.
+# `preferencias` son patrones (subcadena, en orden) para elegir el modelo dentro del catálogo real del proveedor.
+schema: yaiwes.rutas/v1
+modos:
+  cascada:
+    descripcion: "Modo 1: cascada completa con aviso ROJO si un proveedor no responde."
+    orden: [nvidia, cerebras, groq, deepseek]
+  solo_deepseek:
+    descripcion: "Modo 2: solo DeepSeek V4 Flash."
+    orden: [deepseek]
+  local_hf:
+    descripcion: "Modo 3: una IA local/HF concreta."
+    orden: [hf]
+proveedores:
+  nvidia:
+    preferencias: ["kimi-k3", "kimi-k2", "kimi", "deepseek", "llama-3.3"]
+  cerebras:
+    preferencias: ["llama-3.3-70b", "llama3.3", "llama-4", "qwen-3"]
+  groq:
+    preferencias: ["llama-3.3-70b-versatile", "llama-3.3", "llama-3.1"]
+  deepseek:
+    preferencias: ["deepseek-chat", "deepseek-reasoner"]
+  hf:
+    preferencias: ["Qwen", "meta-llama", "deepseek"]

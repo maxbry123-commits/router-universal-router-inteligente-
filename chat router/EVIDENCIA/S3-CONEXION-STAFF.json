@@ -1,0 +1,105 @@
+{
+  "schema": "yaiwes.evidencia/v1",
+  "nodo": "S3_conectar_al_router",
+  "generado": "2026-09-26T21:42:15Z",
+  "router": {
+    "url": "http://127.0.0.1:8000",
+    "health": {
+      "status": "ok",
+      "registry_count": 2,
+      "route": "FastAPI->EnchufeGate->RedUniversal->HFAdapter",
+      "auth": "RIU_AGENT_API_KEYS",
+      "chat": "/chat",
+      "live_provider_inference": false
+    },
+    "proveedores_configurados": []
+  },
+  "resumen": {
+    "agentes": 16,
+    "registrados": 16,
+    "respondieron": null,
+    "cierre": "ABIERTO"
+  },
+  "agentes": [
+    {
+      "agente": "rowboat",
+      "rol": "orquestador_principal",
+      "registrado": true
+    },
+    {
+      "agente": "ruflo",
+      "rol": "flujo_y_enjambre",
+      "registrado": true
+    },
+    {
+      "agente": "claude_code",
+      "rol": "disena_y_revisa",
+      "registrado": true
+    },
+    {
+      "agente": "grok",
+      "rol": "ejecuta_mejoras",
+      "registrado": true
+    },
+    {
+      "agente": "muse_code",
+      "rol": "meta_programa",
+      "registrado": true
+    },
+    {
+      "agente": "muse_glimmer",
+      "rol": "meta_decide_y_corrige",
+      "registrado": true
+    },
+    {
+      "agente": "metacua",
+      "rol": "meta_navega_frontend",
+      "registrado": true
+    },
+    {
+      "agente": "cua_mcp",
+      "rol": "meta_computadora_de_pruebas",
+      "registrado": true
+    },
+    {
+      "agente": "hermes",
+      "rol": "apoyo",
+      "registrado": true
+    },
+    {
+      "agente": "msaf",
+      "rol": "apoyo",
+      "registrado": true
+    },
+    {
+      "agente": "codex",
+      "rol": "apoyo",
+      "registrado": true
+    },
+    {
+      "agente": "mimo_code",
+      "rol": "apoyo",
+      "registrado": true
+    },
+    {
+      "agente": "memanto",
+      "rol": "memoria",
+      "registrado": true
+    },
+    {
+      "agente": "graphiti",
+      "rol": "memoria",
+      "registrado": true
+    },
+    {
+      "agente": "graphify",
+      "rol": "memoria",
+      "registrado": true
+    },
+    {
+      "agente": "centinela",
+      "rol": "vigilante",
+      "registrado": true
+    }
+  ]
+}
