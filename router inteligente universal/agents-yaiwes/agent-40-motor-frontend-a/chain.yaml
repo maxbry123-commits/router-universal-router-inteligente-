@@ -1,0 +1,137 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-25: descargar en la fábrica UI los componentes de chat y panel (motor A). Varios motores: si uno se cae otro avanza.
+agent:
+  id: agent-40-motor-frontend-a
+  framework: pocketflow
+  group: chat
+  route: [nvidia, cerebras, groq]
+  fallback: [deepseek_flash]
+  max_tokens: 300
+context:
+  text: Motor canónico de descarga y extracción. Cada paso es independiente; si uno falla los demás siguen. Si el destino ya existe el motor solo verifica.
+  motor: &m "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+  destino: &d {DEST_REPO: "maxbry123-commits/frontend", DEST_BRANCH: main, DEST_ROOT: "UI YAIWES/componentes open soure UI YAIWES", PUBLISH: "1"}
+  espera: &e {verdict: VERIFIED_CLOSED, publish.verdict: PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED}
+steps:
+  - id: assistant_ui
+    task: Responde exactamente MOTOR_EXEC_REQUEST_ASSISTANT_UI.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_ASSISTANT_UI]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "assistant-ui/assistant-ui", SOURCE_REF: main, SLUG: "assistant-ui"}}
+      - {kind: no_secrets}
+  - id: tool_ui
+    task: Responde exactamente MOTOR_EXEC_REQUEST_TOOL_UI.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_TOOL_UI]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "assistant-ui/tool-ui", SOURCE_REF: main, SLUG: "tool-ui"}}
+      - {kind: no_secrets}
+  - id: CopilotKit
+    task: Responde exactamente MOTOR_EXEC_REQUEST_COPILOTKIT.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_COPILOTKIT]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "CopilotKit/CopilotKit", SOURCE_REF: main, SLUG: "CopilotKit"}}
+      - {kind: no_secrets}
+  - id: ag_ui
+    task: Responde exactamente MOTOR_EXEC_REQUEST_AG_UI.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_AG_UI]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "ag-ui-protocol/ag-ui", SOURCE_REF: main, SLUG: "ag-ui"}}
+      - {kind: no_secrets}
+  - id: Open_claude
+    task: Responde exactamente MOTOR_EXEC_REQUEST_OPEN_CLAUDE.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_OPEN_CLAUDE]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "Damienchakma/Open-claude", SOURCE_REF: main, SLUG: "Open-claude"}}
+      - {kind: no_secrets}
+  - id: grokchat
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GROKCHAT.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GROKCHAT]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "OleksiyM/grokchat", SOURCE_REF: main, SLUG: "grokchat"}}
+      - {kind: no_secrets}
+  - id: Grok_UI
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GROK_UI.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GROK_UI]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "joeynyc/Grok-UI", SOURCE_REF: main, SLUG: "Grok-UI"}}
+      - {kind: no_secrets}
+  - id: grok_react_ui
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GROK_REACT_UI.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GROK_REACT_UI]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "rajkstats/grok-react-ui", SOURCE_REF: main, SLUG: "grok-react-ui"}}
+      - {kind: no_secrets}
+  - id: furca_app
+    task: Responde exactamente MOTOR_EXEC_REQUEST_FURCA_APP.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_FURCA_APP]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "shobitb/furca-app", SOURCE_REF: main, SLUG: "furca-app"}}
+      - {kind: no_secrets}
+  - id: OpenRoom
+    task: Responde exactamente MOTOR_EXEC_REQUEST_OPENROOM.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_OPENROOM]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "MiniMax-AI/OpenRoom", SOURCE_REF: main, SLUG: "OpenRoom"}}
+      - {kind: no_secrets}
+  - id: open_claude_design
+    task: Responde exactamente MOTOR_EXEC_REQUEST_OPEN_CLAUDE_DESIGN.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_OPEN_CLAUDE_DESIGN]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "maxritter/open-claude-design", SOURCE_REF: main, SLUG: "open-claude-design"}}
+      - {kind: no_secrets}
+  - id: anthropic_chatbot
+    task: Responde exactamente MOTOR_EXEC_REQUEST_ANTHROPIC_CHATBOT.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_ANTHROPIC_CHATBOT]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "zvictor/anthropic-chatbot", SOURCE_REF: main, SLUG: "anthropic-chatbot"}}
+      - {kind: no_secrets}
+  - id: react_ui_gen
+    task: Responde exactamente MOTOR_EXEC_REQUEST_REACT_UI_GEN.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_REACT_UI_GEN]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "kevin-riveros/react-ui-gen", SOURCE_REF: main, SLUG: "react-ui-gen"}}
+      - {kind: no_secrets}
+  - id: claude_artifact_viewer
+    task: Responde exactamente MOTOR_EXEC_REQUEST_CLAUDE_ARTIFACT_VIEWER.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CLAUDE_ARTIFACT_VIEWER]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "claudecraft/claude-artifact-viewer", SOURCE_REF: main, SLUG: "claude-artifact-viewer"}}
+      - {kind: no_secrets}
+  - id: FileExplorer
+    task: Responde exactamente MOTOR_EXEC_REQUEST_FILEEXPLORER.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_FILEEXPLORER]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "conaticus/FileExplorer", SOURCE_REF: main, SLUG: "FileExplorer"}}
+      - {kind: no_secrets}
+  - id: filebrowser
+    task: Responde exactamente MOTOR_EXEC_REQUEST_FILEBROWSER.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_FILEBROWSER]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "filebrowser/filebrowser", SOURCE_REF: main, SLUG: "filebrowser"}}
+      - {kind: no_secrets}
+  - id: react_select
+    task: Responde exactamente MOTOR_EXEC_REQUEST_REACT_SELECT.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_REACT_SELECT]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "JedWatson/react-select", SOURCE_REF: main, SLUG: "react-select"}}
+      - {kind: no_secrets}
+  - id: react_searchable_dropdown
+    task: Responde exactamente MOTOR_EXEC_REQUEST_REACT_SEARCHABLE_DROPDOWN.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_REACT_SEARCHABLE_DROPDOWN]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "luciodale/react-searchable-dropdown", SOURCE_REF: main, SLUG: "react-searchable-dropdown"}}
+      - {kind: no_secrets}
+  - id: ClaudeHUD
+    task: Responde exactamente MOTOR_EXEC_REQUEST_CLAUDEHUD.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CLAUDEHUD]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "bbdaniels/ClaudeHUD", SOURCE_REF: main, SLUG: "ClaudeHUD"}}
+      - {kind: no_secrets}
+  - id: grok_app
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GROK_APP.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GROK_APP]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "qingchencloud/grok-app", SOURCE_REF: main, SLUG: "grok-app"}}
+      - {kind: no_secrets}
+edges: []
