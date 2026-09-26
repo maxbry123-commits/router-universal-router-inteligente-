@@ -1,0 +1,107 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-25: descargar en la raíz de agentes del Router el staff y el micro kernel (motor C).
+agent:
+  id: agent-42-motor-router-agentes
+  framework: pocketflow
+  group: chat
+  route: [nvidia, cerebras, groq]
+  fallback: [deepseek_flash]
+  max_tokens: 300
+context:
+  text: Motor canónico de descarga y extracción. Cada paso es independiente; si uno falla los demás siguen. Si el destino ya existe el motor solo verifica.
+  motor: &m "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+  destino: &d {DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: main, DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+  espera: &e {verdict: VERIFIED_CLOSED, publish.verdict: PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED}
+steps:
+  - id: ruflo
+    task: Responde exactamente MOTOR_EXEC_REQUEST_RUFLO.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_RUFLO]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "ruvnet/ruflo", SOURCE_REF: main, SLUG: "ruflo"}}
+      - {kind: no_secrets}
+  - id: CLI_Anything
+    task: Responde exactamente MOTOR_EXEC_REQUEST_CLI_ANYTHING.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CLI_ANYTHING]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "HKUDS/CLI-Anything", SOURCE_REF: main, SLUG: "CLI-Anything"}}
+      - {kind: no_secrets}
+  - id: deepseek_harness
+    task: Responde exactamente MOTOR_EXEC_REQUEST_DEEPSEEK_HARNESS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_DEEPSEEK_HARNESS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "deepseek-ai/deepseek-harness", SOURCE_REF: main, SLUG: "deepseek-harness"}}
+      - {kind: no_secrets}
+  - id: GrokBot
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GROKBOT.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GROKBOT]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "Franzferdinan51/GrokBot", SOURCE_REF: main, SLUG: "GrokBot"}}
+      - {kind: no_secrets}
+  - id: grok_build_gui
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GROK_BUILD_GUI.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GROK_BUILD_GUI]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "Jane-o-O-o-O/grok-build-gui", SOURCE_REF: main, SLUG: "grok-build-gui"}}
+      - {kind: no_secrets}
+  - id: grokbot_sdk
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GROKBOT_SDK.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GROKBOT_SDK]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "Adam91holt/grokbot-sdk", SOURCE_REF: main, SLUG: "grokbot-sdk"}}
+      - {kind: no_secrets}
+  - id: grokbot_shim
+    task: Responde exactamente MOTOR_EXEC_REQUEST_GROKBOT_SHIM.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_GROKBOT_SHIM]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "codeaashu/grokbot-shim", SOURCE_REF: main, SLUG: "grokbot-shim"}}
+      - {kind: no_secrets}
+  - id: opencodex
+    task: Responde exactamente MOTOR_EXEC_REQUEST_OPENCODEX.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_OPENCODEX]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "lidge-jun/opencodex", SOURCE_REF: main, SLUG: "opencodex"}}
+      - {kind: no_secrets}
+  - id: clarc
+    task: Responde exactamente MOTOR_EXEC_REQUEST_CLARC.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CLARC]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "marvinrichter/clarc", SOURCE_REF: main, SLUG: "clarc"}}
+      - {kind: no_secrets}
+  - id: source_intake_agent
+    task: Responde exactamente MOTOR_EXEC_REQUEST_SOURCE_INTAKE_AGENT.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_SOURCE_INTAKE_AGENT]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "dskemp/source-intake-agent", SOURCE_REF: main, SLUG: "source-intake-agent"}}
+      - {kind: no_secrets}
+  - id: superpowers
+    task: Responde exactamente MOTOR_EXEC_REQUEST_SUPERPOWERS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_SUPERPOWERS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "obra/superpowers", SOURCE_REF: main, SLUG: "superpowers"}}
+      - {kind: no_secrets}
+  - id: find_skills
+    task: Responde exactamente MOTOR_EXEC_REQUEST_FIND_SKILLS.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_FIND_SKILLS]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "axxt0/find-skills", SOURCE_REF: main, SLUG: "find-skills"}}
+      - {kind: no_secrets}
+  - id: llm_council
+    task: Responde exactamente MOTOR_EXEC_REQUEST_LLM_COUNCIL.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_LLM_COUNCIL]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "karpathy/llm-council", SOURCE_REF: main, SLUG: "llm-council"}}
+      - {kind: no_secrets}
+  - id: jev_gateway
+    task: Responde exactamente MOTOR_EXEC_REQUEST_JEV_GATEWAY.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_JEV_GATEWAY]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "vinilana/jev-gateway", SOURCE_REF: main, SLUG: "jev-gateway"}}
+      - {kind: no_secrets}
+  - id: claude_code
+    task: Responde exactamente MOTOR_EXEC_REQUEST_CLAUDE_CODE.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_CLAUDE_CODE]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "anthropics/claude-code", SOURCE_REF: main, SLUG: "claude-code"}}
+      - {kind: no_secrets}
+edges: []
