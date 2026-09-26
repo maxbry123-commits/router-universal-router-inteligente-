@@ -1,0 +1,32 @@
+name: MCP Space a gratis (una vez)
+
+# Orden del Director 2026-09-26: no pagar ~$22/mes por el conector. Ya no tiene OAuth (dirección secreta),
+# así que dormirse ya no desconecta a Claude: al usarlo despierta solo (~1 min) con la misma dirección.
+# Cambia el Space del conector de CPU Upgrade (pago) a CPU basic (gratis, 16 GB).
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/mcp-space-gratis-once.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bajar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: pip install -q -U huggingface_hub
+      - env:
+          HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"]); sid = "COMAND-CENTER-1/claude-github-mcp-backup"
+          api.request_space_hardware(sid, hardware="cpu-basic")
+          rt = api.get_space_runtime(sid)
+          print(f"::notice::CONECTOR_EN_GRATIS hardware={rt.requested_hardware or rt.hardware} estado={rt.stage}")
+          PY
