@@ -1,8 +1,8 @@
 {
   "route_by_group": {},
-  "route_code": ["deepseek_flash"],
-  "route_jobs": ["deepseek_flash"],
-  "route": ["deepseek_flash"],
-  "fallback": [],
-  "nota": "PAUSADO 2026-09-22 por orden directa del Director: SOLO DeepSeek V4 Flash (deepseek-ai/DeepSeek-V4-Flash, vía la cuenta de Hugging Face, router.huggingface.co) para todos los agentes del Router. NVIDIA, Groq, Cerebras y MiniMax M3 quedan en pausa (fuera de toda ruta) hasta que el Director autorice reactivarlos. No cambiar sin su autorización."
+  "route_code": ["nvidia", "cerebras", "groq"],
+  "route_jobs": ["nvidia", "cerebras", "groq"],
+  "route": ["nvidia", "cerebras", "groq"],
+  "fallback": ["deepseek_flash"],
+  "nota": "ORDEN DEL DIRECTOR 2026-09-25: primero NVIDIA (hasta 4 claves; si una no responde o está ocupada salta a la siguiente), luego Cerebras, luego Groq, y por último DeepSeek V4 Flash. Kimi K3 en NVIDIA si existe en su catálogo. Sin APIs de Anthropic. Una clave inválida (401/403) se salta sola. No cambiar sin autorización del Director."
 }
