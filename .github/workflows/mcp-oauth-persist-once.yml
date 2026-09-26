@@ -1,0 +1,93 @@
+name: MCP OAuth Persist Once
+
+# Orden del Director 2026-09-26: que la conexión del conector de Claude NO se caiga.
+# Causa: el login OAuth (HuggingFaceProvider de FastMCP) guarda clientes y tokens en MEMORIA; cada reinicio del Space los borra.
+# Arreglo: guardar clientes y tokens en el DISCO PERSISTENTE del Space (/data/oauth-store) con DiskStore.
+# Seguridad: si tras subir el cambio el OAuth no responde sano en ~6 min, se RESTAURA la versión anterior automáticamente.
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/mcp-oauth-persist-once.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  persist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_MAXBRY123 || secrets.HF_TOKEN_1 }}
+      SPACE_ID: COMAND-CENTER-1/claude-github-mcp-backup
+    steps:
+      - run: python -m pip install --quiet huggingface_hub requests
+      - name: Guardar sesiones OAuth en disco (con vuelta atrás automática)
+        run: |
+          python - <<'PY'
+          import os, time, shutil
+          from pathlib import Path
+          import requests
+          from huggingface_hub import HfApi, snapshot_download
+          api = HfApi(token=os.environ["HF_TOKEN"]); space = os.environ["SPACE_ID"]
+          root = Path("/tmp/space"); snapshot_download(repo_id=space, repo_type="space", token=os.environ["HF_TOKEN"], local_dir=str(root))
+          app_p, req_p = root / "app.py", root / "requirements.txt"
+          app0 = app_p.read_text(encoding="utf-8"); req0 = req_p.read_text(encoding="utf-8") if req_p.exists() else ""
+          if "OAUTH_STORE_DIR" in app0:
+              print("::notice::YA_APLICADO"); raise SystemExit(0)
+          marker = "auth_provider = HuggingFaceProvider("
+          if marker not in app0:
+              raise SystemExit("::error::no encontré HuggingFaceProvider en app.py")
+          helper = (
+              "def _oauth_store():\n"
+              "    \"\"\"Almacén persistente de clientes/tokens OAuth: sobrevive reinicios del Space.\"\"\"\n"
+              "    try:\n"
+              "        from key_value.aio.stores.disk import DiskStore\n"
+              "        d = os.getenv(\"OAUTH_STORE_DIR\", \"/data/oauth-store\")\n"
+              "        os.makedirs(d, exist_ok=True)\n"
+              "        return DiskStore(directory=d)\n"
+              "    except Exception as exc:  # nunca tumbar el Space por esto\n"
+              "        print(f\"OAUTH_STORE=memoria ({type(exc).__name__})\")\n"
+              "        return None\n\n\n"
+              "_OAUTH_STORE = _oauth_store()\n"
+              "_OAUTH_EXTRA = {\"client_storage\": _OAUTH_STORE} if _OAUTH_STORE is not None else {}\n\n\n"
+          )
+          app1 = app0.replace(marker, helper + marker, 1)
+          # añadir **_OAUTH_EXTRA dentro de la llamada: justo después de enable_cimd=True,
+          if "enable_cimd=True," in app1:
+              app1 = app1.replace("enable_cimd=True,", "enable_cimd=True,\n    **_OAUTH_EXTRA,", 1)
+          else:
+              raise SystemExit("::error::no encontré enable_cimd=True en HuggingFaceProvider")
+          req1 = req0 if "py-key-value-aio" in req0 else (req0.rstrip("\n") + "\npy-key-value-aio[disk]\n")
+          app_p.write_text(app1, encoding="utf-8"); req_p.write_text(req1, encoding="utf-8")
+          compile(app1, "app.py", "exec")  # comprobar sintaxis antes de subir
+
+          def upload(app_txt, req_txt, msg):
+              (root / "app.py").write_text(app_txt, encoding="utf-8"); (root / "requirements.txt").write_text(req_txt, encoding="utf-8")
+              api.upload_file(path_or_fileobj=str(root / "requirements.txt"), path_in_repo="requirements.txt", repo_id=space, repo_type="space", commit_message=msg)
+              api.upload_file(path_or_fileobj=str(root / "app.py"), path_in_repo="app.py", repo_id=space, repo_type="space", commit_message=msg)
+
+          def healthy(minutes=6):
+              base = "https://comand-center-1-claude-github-mcp-backup.hf.space"
+              end = time.time() + minutes * 60
+              while time.time() < end:
+                  try:
+                      r = requests.get(base + "/.well-known/oauth-authorization-server", timeout=10)
+                      if r.status_code == 200 and r.json().get("registration_endpoint"):
+                          return True
+                  except Exception:
+                      pass
+                  time.sleep(10)
+              return False
+
+          upload(app1, req1, "fix: OAuth sessions persist on disk (/data/oauth-store)")
+          time.sleep(45)
+          if healthy():
+              print("::notice::OAUTH_PERSISTENTE=OK (las sesiones sobreviven reinicios)")
+          else:
+              print("::warning::no quedó sano; restaurando versión anterior")
+              upload(app0, req0, "revert: restore previous app.py (persist fix unhealthy)")
+              print("::notice::RESTAURADO=" + ("OK" if healthy(8) else "REVISAR"))
+              raise SystemExit(1)
+          PY
