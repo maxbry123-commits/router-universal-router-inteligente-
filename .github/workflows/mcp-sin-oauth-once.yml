@@ -1,0 +1,83 @@
+name: MCP Sin OAuth Once
+
+# Orden del Director 2026-09-26 (autorización expresa: "elimina lo que sea"): quitar el login OAuth que añadió GPT
+# (pedía "Allow Access" a cada rato) y proteger el conector con una DIRECCIÓN SECRETA:
+#   https://comand-center-1-claude-github-mcp-backup.hf.space/<RIU_ROUTER_API_KEY>/mcp
+# El secreto sale del secreto de GitHub RIU_ROUTER_API_KEY -> secreto del Space MCP_SECRET_PATH. Nunca se imprime.
+# Si el conector no responde en la nueva dirección, se restaura la versión anterior automáticamente.
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/mcp-sin-oauth-once.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_MAXBRY123 || secrets.HF_TOKEN_1 }}
+      MCP_SECRET: ${{ secrets.RIU_ROUTER_API_KEY }}
+      SPACE_ID: COMAND-CENTER-1/claude-github-mcp-backup
+    steps:
+      - run: python -m pip install --quiet huggingface_hub requests
+      - name: Quitar OAuth y usar dirección secreta (con vuelta atrás)
+        run: |
+          python - <<'PY'
+          import os, time, requests
+          from pathlib import Path
+          from huggingface_hub import HfApi, snapshot_download
+          tok, space, secret = os.environ["HF_TOKEN"], os.environ["SPACE_ID"], os.environ.get("MCP_SECRET", "").strip()
+          if len(secret) < 20:
+              raise SystemExit("::error::falta RIU_ROUTER_API_KEY para la dirección secreta")
+          api = HfApi(token=tok)
+          root = Path("/tmp/sp"); snapshot_download(repo_id=space, repo_type="space", token=tok, local_dir=str(root))
+          p = root / "app.py"; old = p.read_text(encoding="utf-8"); new = old
+          for s in ("    auth=auth_provider,\n", "    middleware=[AuthMiddleware(auth=_require_hf_owner)],\n"):
+              new = new.replace(s, "")
+          run_old = 'mcp.run(transport="http", host="0.0.0.0", port=port)'
+          run_new = ('secret = os.getenv("MCP_SECRET_PATH", "").strip().strip("/")\n'
+                     '    if len(secret) < 20:\n'
+                     '        raise RuntimeError("MCP_SECRET_PATH requerido: sin OAuth el conector solo vive en una direccion secreta")\n'
+                     '    mcp.run(transport="http", host="0.0.0.0", port=port, path=f"/{secret}/mcp")')
+          if run_old not in new:
+              raise SystemExit("::error::no encontré mcp.run en app.py")
+          new = new.replace(run_old, run_new, 1)
+          if "auth=auth_provider" in new or "AuthMiddleware(auth=" in new:
+              raise SystemExit("::error::no pude quitar el OAuth limpiamente")
+          compile(new, "app.py", "exec")
+          api.add_space_secret(space, "MCP_SECRET_PATH", secret)
+
+          def up(txt, msg):
+              p.write_text(txt, encoding="utf-8")
+              api.upload_file(path_or_fileobj=str(p), path_in_repo="app.py", repo_id=space, repo_type="space", commit_message=msg)
+
+          def ok(minutes):
+              base = "https://comand-center-1-claude-github-mcp-backup.hf.space"
+              end = time.time() + minutes * 60
+              while time.time() < end:
+                  try:
+                      r = requests.post(f"{base}/{secret}/mcp", timeout=15,
+                                        headers={"Accept": "application/json, text/event-stream", "Content-Type": "application/json"},
+                                        json={"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                                              "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "prueba", "version": "1"}}})
+                      if r.status_code == 200:
+                          return True
+                  except Exception:
+                      pass
+                  time.sleep(10)
+              return False
+
+          up(new, "fix: sin OAuth, conector en direccion secreta (orden del Director)")
+          time.sleep(40)
+          if ok(8):
+              print("::notice::CONECTOR_SIN_OAUTH=OK (responde en la direccion secreta, sin pantallas de autorizacion)")
+          else:
+              print("::warning::no respondió; restaurando la versión anterior")
+              up(old, "revert: restaurar version anterior (sin OAuth no respondio)")
+              raise SystemExit(1)
+          PY
