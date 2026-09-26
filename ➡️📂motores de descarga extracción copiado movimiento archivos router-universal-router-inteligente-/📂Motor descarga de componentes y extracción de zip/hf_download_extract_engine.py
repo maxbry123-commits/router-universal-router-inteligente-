@@ -42,6 +42,21 @@ def acquire(work):
     run(['git','fetch','--depth=1','--filter=blob:none','origin',SOURCE_REF],d); run(['git','checkout','-q','--detach','FETCH_HEAD'],d)
     return d,run(['git','rev-parse','HEAD'],d)
 
+def strip_special(d):
+    """2026-09-26 (autorizado por el Director): los enlaces simbólicos y archivos especiales del ORIGEN ya no bloquean la descarga.
+    Se quitan del árbol fuente antes de empaquetar y quedan registrados en el manifiesto (skipped_special). El resto de controles no cambia."""
+    special=[]
+    for p in sorted(d.rglob('*'),key=lambda x:x.as_posix()):
+        if '.git' in p.parts: continue
+        try: m=p.lstat().st_mode
+        except FileNotFoundError: continue
+        if stat.S_ISLNK(m) or not (stat.S_ISREG(m) or stat.S_ISDIR(m)): special.append(p)
+    rels=[p.relative_to(d).as_posix() for p in special]
+    for p in special:
+        try: p.unlink()
+        except (FileNotFoundError, IsADirectoryError, PermissionError): pass
+    return rels
+
 def scan_tree(d,enforce_blob_limit=False):
     rows=[]; total=0; ptr=[]; special=[]; oversized=[]
     for p in sorted(d.rglob('*'),key=lambda x:x.as_posix()):
@@ -149,11 +164,11 @@ def main():
     if not SOURCE_REPO: raise SystemExit(json.dumps({'schema':SCHEMA,'verdict':'INPUT_GAP','detail':'SOURCE_REPO required'}))
     slug=SLUG or slug_default(SOURCE_REPO)
     with tempfile.TemporaryDirectory(prefix='yaiwes-hf-combined-') as td:
-        work=pathlib.Path(td); src,commit=acquire(work); rows,src_bytes=scan_tree(src); src_tree=tree_hash(src)
+        work=pathlib.Path(td); src,commit=acquire(work); skipped=strip_special(src); rows,src_bytes=scan_tree(src); src_tree=tree_hash(src)
         bundle=work/f'{slug}.bundle.zip'; make_zip(rows,bundle); bsha=sha256(bundle); parts_dir=work/'parts'; parts=split_bundle(bundle,parts_dir,slug)
         rebuilt=rebuild(parts_dir,parts,bsha); extracted=work/'extracted'; safe_extract(rebuilt,extracted); ext_tree=tree_hash(extracted)
         if ext_tree!=src_tree: raise RuntimeError('SOURCE_EXTRACTED_TREE_MISMATCH')
-        manifest={'schema':SCHEMA,'source_repo':SOURCE_REPO,'source_ref':SOURCE_REF,'source_commit':commit,'slug':slug,'source_files':len(rows),'source_bytes':src_bytes,'source_tree':src_tree,'bundle_bytes':bundle.stat().st_size,'bundle_sha256':bsha,'parts':parts,'part_size_limit_bytes':PART_SIZE,'max_github_blob_bytes':MAX_BLOB,'no_lfs':True,'reconstruction_verified':True,'extraction_verified':True,'extracted_tree':ext_tree}
+        manifest={'schema':SCHEMA,'source_repo':SOURCE_REPO,'source_ref':SOURCE_REF,'source_commit':commit,'slug':slug,'source_files':len(rows),'source_bytes':src_bytes,'source_tree':src_tree,'bundle_bytes':bundle.stat().st_size,'bundle_sha256':bsha,'parts':parts,'part_size_limit_bytes':PART_SIZE,'max_github_blob_bytes':MAX_BLOB,'no_lfs':True,'reconstruction_verified':True,'extraction_verified':True,'extracted_tree':ext_tree,'skipped_special_count':len(skipped),'skipped_special':skipped[:200]}
         mp=parts_dir/'DOWNLOAD_EXTRACT_MANIFEST.json'; mp.write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
         pub=publish(work,parts_dir,extracted,mp,slug) if PUBLISH else {'verdict':'DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED'}
         verdict='VERIFIED_CLOSED' if pub['verdict'] in {'DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED','PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED'} else pub['verdict']
