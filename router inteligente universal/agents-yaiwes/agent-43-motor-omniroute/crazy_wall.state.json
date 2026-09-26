@@ -1,0 +1,23 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-43-motor-omniroute",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-26T19:56:12Z",
+ "router_connected": false,
+ "group": "chat",
+ "chain": [
+  "omniroute"
+ ],
+ "completed": [],
+ "failed": [
+  "omniroute"
+ ],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "nvidia",
+  "cerebras",
+  "groq"
+ ]
+}
