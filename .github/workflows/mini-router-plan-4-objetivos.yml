@@ -1,0 +1,117 @@
+name: Mini Router - Plan 4 Objetivos (agentes)
+
+# MINI ROUTER: ejecuta el loop del plan de 4 objetivos del repo maxbry123-commits/agentes
+# usando SOLO las APIs de NVIDIA, Cerebras y Groq (claves de este repo). Sin DeepSeek.
+# Proveedor de los agentes: cerebras (hay 6 claves aquí); la sonda del plan prueba NVIDIA/Cerebras/Groq y elige el más rápido.
+# Corre cada hora sola (revisión automática) y a mano con el botón. El resultado llega como PR al repo agentes; el Director decide el merge.
+
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+    inputs:
+      grupo:
+        description: "Grupo (G1..G4 o all)"
+        type: choice
+        options: [all, G1, G2, G3, G4]
+        default: all
+      max_nodos:
+        description: "Nodos por grupo en esta vuelta"
+        default: "1"
+      proveedor:
+        description: "Proveedor de los agentes"
+        type: choice
+        options: [cerebras, groq, nvidia]
+        default: cerebras
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mini-router-plan-4-objetivos
+  cancel-in-progress: false
+
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      GRUPO: ${{ inputs.grupo || 'all' }}
+      MAX_NODOS: ${{ inputs.max_nodos || '1' }}
+      PROVEEDOR: ${{ inputs.proveedor || 'cerebras' }}
+    steps:
+      - name: Checkout del repo agentes (sparse, el repo pesa 16 GB)
+        uses: actions/checkout@v4
+        with:
+          repository: maxbry123-commits/agentes
+          token: ${{ secrets.RIU_GITHUB_PAT_FULL_ACCESO || secrets.GH_JOB_PUSH_TOKEN }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            Claude notas/PLAN-OPUS
+            Claude notas/PLAN-MAESTRO-4-OBJETIVOS.md
+            Claude notas/PLAN-ANEXO-C-2-PUNTOS-ADICIONALES.md
+            Claude notas/VERBATIM-01-node-executor-xray-v2.md
+            Claude notas/INVENTARIO-FORENSE-agent_sources.md
+          sparse-checkout-cone-mode: false
+
+      - name: Añadir motor coda de Fables (cola durable)
+        run: python3 -c "import subprocess; subprocess.run(['git','sparse-checkout','add','\U0001f4c2coda workflow persistencias/Fables enchufe universal'], check=True)"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Dependencias del runner
+        run: pip install pyyaml cryptography "litellm[proxy]"
+
+      - name: Instalar Claude Code, Codex, Open Code (corren con los modelos del mini router, no con Anthropic)
+        continue-on-error: true
+        run: npm install -g @anthropic-ai/claude-code @openai/codex opencode-ai
+
+      - name: Instalar Open Hands
+        continue-on-error: true
+        run: pip install openhands-ai
+
+      - name: Mini router - fijar proveedor sin DeepSeek
+        run: |
+          F="Claude notas/PLAN-OPUS/PROMPT-DSL-DAG-PLAN-OPUS.yaml"
+          if [ -f "$F" ]; then
+            sed -i -E "s/^([[:space:]]*proveedor_agentes:).*/\1 ${PROVEEDOR}/" "$F"
+            grep -n "proveedor_agentes" "$F" || echo "::warning::no encontré proveedor_agentes en el DAG"
+          fi
+
+      - name: Correr el loop del plan
+        env:
+          NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+          NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+          NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+          NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
+          CEREBRAS_API_KEY_1: ${{ secrets.CEREBRAS_API_KEY_1 }}
+          CEREBRAS_API_KEY_2: ${{ secrets.CEREBRAS_API_KEY_2 }}
+          CEREBRAS_API_KEY_3: ${{ secrets.CEREBRAS_API_KEY_3 }}
+          CEREBRAS_API_KEY_4: ${{ secrets.CEREBRAS_API_KEY_4 }}
+          GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
+        run: python "Claude notas/PLAN-OPUS/runner/plan_opus_loop.py" --grupo "$GRUPO" --max-nodos "$MAX_NODOS" | tee /tmp/resumen.txt
+
+      - name: Resultado como PR en el repo agentes
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.RIU_GITHUB_PAT_FULL_ACCESO || secrets.GH_JOB_PUSH_TOKEN }}
+        run: |
+          BR="plan-opus/mini-router-${GRUPO}-${{ github.run_id }}"
+          git config user.name "mini-router-plan"
+          git config user.email "mini-router@yaiwes.local"
+          git checkout -b "$BR"
+          git add -A
+          git commit -m "plan-opus (mini router ${PROVEEDOR}): vuelta ${{ github.run_id }} grupo ${GRUPO}" || { echo "sin cambios"; exit 0; }
+          git push origin "$BR"
+          gh pr create --repo maxbry123-commits/agentes --base main --head "$BR" \
+            --title "Plan Opus - mini router ${PROVEEDOR} - vuelta ${{ github.run_id }} (${GRUPO})" \
+            --body "Vuelta del mini router (NVIDIA/Cerebras/Groq, sin DeepSeek). Revisar bitácora y evidencia/. Resumen: $(tail -1 /tmp/resumen.txt 2>/dev/null)" \
+            || echo "::warning::no se pudo abrir el PR automático; rama: $BR"
+          echo "### Mini router - vuelta ${{ github.run_id }}: rama \`$BR\` en maxbry123-commits/agentes" >> "$GITHUB_STEP_SUMMARY"
