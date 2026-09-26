@@ -1,15 +1,19 @@
 name: RIU Router Job Central
 
-# Launches the SINGLE persistent Router Job that 50-100 agents can all point to at once (common/router_job_persistent.py).
+# Lanza el Job ÚNICO y persistente del Router (common/router_job_persistent.py).
+# 2026-09-26 (orden del Director): máquina HF de 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga.
+#   Al lanzar uno nuevo, cancela los Jobs de Router anteriores para no pagar dos.
 # Passes GH_JOB_PUSH_TOKEN as a HF Job secret (never written to any repo file) so the Job's own auto-pull/push works.
-# FIX: the launch command must clone the repo itself BEFORE running the script (the script's own git-pull loop only refreshes it afterwards).
 
 on:
   workflow_dispatch:
     inputs:
       lifetime:
-        description: 'Job lifetime (HF max per job)'
-        default: '6h'
+        description: 'Vida del Job'
+        default: '48h'
+      flavor:
+        description: 'Máquina HF (cpu-basic = 16 GB de pago)'
+        default: 'cpu-basic'
 
 permissions:
   contents: read
@@ -27,12 +31,14 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
-          LIFETIME: ${{ inputs.lifetime }}
+          LIFETIME: ${{ inputs.lifetime || '48h' }}
+          FLAVOR: ${{ inputs.flavor || 'cpu-basic' }}
         run: |
           python - <<'PY'
           import os, time, requests
           from huggingface_hub import HfApi
           api = HfApi(token=os.environ["HF_TOKEN"])
+          old = [j for j in api.list_jobs() if (j.status.stage or "").upper() in ("RUNNING", "STARTING") and "router_job_persistent.py" in " ".join(j.command or [])]
           cmd = (
               "set -e; apt-get update -qq >/dev/null 2>&1 || true; "
               "command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
@@ -41,30 +47,33 @@ jobs:
               "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests && "
               "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'"
           )
-          job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor="cpu-upgrade", timeout=os.environ["LIFETIME"],
-                            expose=[8000], secrets={"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]})
-          print("::notice title=RIU_ROUTER_CENTRAL_JOB_ID::" + str(job.id))
-          t0, ok, urls, stage = time.time(), None, [], None
+          lifetime = os.environ["LIFETIME"]
+          try:
+              job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=lifetime,
+                                expose=[8000], secrets={"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]})
+          except Exception as e:
+              print(f"::warning::vida {lifetime} rechazada ({str(e)[:120]}); reintento con 24h")
+              job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout="24h",
+                                expose=[8000], secrets={"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]})
+          print(f"::notice title=RIU_ROUTER_CENTRAL_JOB_ID::{job.id} flavor={os.environ['FLAVOR']}")
+          t0, ok, stage = time.time(), None, None
+          url = f"https://{job.id}--8000.hf.jobs"
           while time.time() - t0 < 480 and ok is None:
-              info = api.inspect_job(job_id=job.id)
-              stage = info.status.stage
-              urls = [u for u in dict.fromkeys([getattr(info, "endpoint", None), getattr(job, "endpoint", None), f"https://{job.id}--8000.hf.jobs"]) if u and "huggingface.co" not in u]
+              stage = api.inspect_job(job_id=job.id).status.stage
               if stage == "RUNNING":
-                  for u in urls:
-                      try:
-                          r = requests.get(u.rstrip("/") + "/health", headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]}, timeout=15)
-                          if r.status_code == 200:
-                              ok = u; break
-                      except Exception:
-                          pass
+                  try:
+                      if requests.get(url + "/health", headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]}, timeout=15).status_code == 200:
+                          ok = url
+                  except Exception:
+                      pass
               if stage in ("ERROR", "COMPLETED", "CANCELED", "DELETED"):
                   break
               time.sleep(10)
-          logs = []
-          try:
-              for line in api.fetch_job_logs(job_id=job.id):
-                  logs.append(str(line))
-          except Exception as e:
-              logs.append("logs: " + type(e).__name__)
-          print(f"::notice title=RIU_ROUTER_CENTRAL_STATE::stage={stage} health_ok_url={ok} urls={urls} logs_final={' | '.join(logs[-8:])[:600]}")
+          if ok:
+              for j in old:
+                  try:
+                      api.cancel_job(job_id=j.id); print(f"::notice::Router anterior apagado {j.id}")
+                  except Exception:
+                      pass
+          print(f"::notice title=RIU_ROUTER_CENTRAL_STATE::stage={stage} health_ok_url={ok}")
           PY
