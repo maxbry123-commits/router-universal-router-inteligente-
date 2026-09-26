@@ -1,13 +1,13 @@
 name: Keep MCP Space Awake
 
-# 1) Fija el Space del conector (CPU Upgrade, de pago) en "nunca dormir" (sleep time = -1). Así no se reinicia
-#    y no se pierden las sesiones de las IAs conectadas.
-# 2) Solo si el Space está caído de verdad (SLEEPING/PAUSED/STOPPED/RUNTIME_ERROR) lo despierta.
-# 3) Comprueba que el Job KEEPER (HF cpu-basic 16 GB) esté corriendo; si no, lo lanza.
+# El Space del conector (CPU Upgrade, de pago) está fijado en NUNCA DORMIR (sleep time = -1).
+# Este workflow solo vigila que siga así, y reinicia el Space únicamente si está en error.
+# 2026-09-26: se retira el KEEPER (Job 16 GB) y sus Jobs de espera: ya no hacen falta y gastaban saldo de HF.
+# Cada ejecución cancela cualquier KEEPER o Job de espera que siga encendido.
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -q -U huggingface_hub
-      - name: Nunca dormir + despertar solo si está caído
+      - name: Nunca dormir + apagar KEEPER y Jobs de espera
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
         run: |
@@ -34,29 +34,17 @@ jobs:
           rt = api.get_space_runtime(space)
           print(f"Estado: {rt.stage} | hardware: {rt.hardware} | dormir tras: {rt.sleep_time}")
           if rt.sleep_time != -1:
-              try:
-                  api.set_space_sleep_time(space, sleep_time=-1)
-                  print("::notice::Space fijado en NUNCA DORMIR")
-              except Exception as e:
-                  print(f"::warning::no se pudo fijar nunca dormir: {type(e).__name__}: {str(e)[:200]}")
-          if str(rt.stage).upper() in ("SLEEPING", "PAUSED", "STOPPED", "RUNTIME_ERROR"):
+              api.set_space_sleep_time(space, sleep_time=-1)
+              print("::notice::Space fijado en NUNCA DORMIR")
+          if str(rt.stage).upper() in ("RUNTIME_ERROR", "STOPPED"):
               api.restart_space(space)
-              print(f"::warning::Space estaba en {rt.stage}; despertado")
-          PY
-      - name: Asegurar que el KEEPER (Job 16 GB) esté encendido
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
-        run: |
-          python - <<'PY'
-          import os
-          from huggingface_hub import HfApi
-          api = HfApi(token=os.environ["HF_TOKEN"])
-          running = [j for j in api.list_jobs() if (j.status.stage or "").upper() in ("RUNNING", "STARTING") and "keeper.py" in " ".join(j.command or [])]
-          if running:
-              print(f"KEEPER encendido: {running[0].id}")
-          else:
-              url = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/keeper/keeper.py"
-              cmd = ["bash", "-c", "pip install -q huggingface_hub && python -c \"import urllib.request;urllib.request.urlretrieve('" + url + "','keeper.py')\" && python keeper.py"]
-              job = api.run_job(image="python:3.12-slim", command=cmd, flavor="cpu-basic", timeout="3d", secrets={"HF_TOKEN": os.environ["HF_TOKEN"]})
-              print(f"::notice::KEEPER lanzado: {job.id}")
+              print(f"::warning::Space estaba en {rt.stage}; reiniciado")
+          apagados = 0
+          for j in api.list_jobs():
+              cmd = " ".join(j.command or [])
+              if (j.status.stage or "").upper() in ("RUNNING", "STARTING") and ("keeper.py" in cmd or "EN ESPERA LISTO" in cmd):
+                  api.cancel_job(job_id=j.id)
+                  apagados += 1
+                  print(f"::notice::Job apagado: {j.id}")
+          print(f"Jobs de keeper/espera apagados: {apagados}")
           PY
