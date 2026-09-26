@@ -1,0 +1,48 @@
+name: STOP keeper HF (urgente)
+
+# Orden del Director 2026-09-26: apagar YA todo lo que Opus añadió en HF.
+# Cancela el Job KEEPER (keeper.py) y los Jobs en espera ("EN ESPERA LISTO"). NO reinicia el Space.
+# Deja el Space del conector en "nunca dormir" (sleep_time=-1) sin reiniciarlo. Se ejecuta una vez al subir este archivo.
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/stop-keeper-hf.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q -U huggingface_hub
+      - name: Cancelar keeper y jobs en espera; nunca dormir sin reiniciar
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          n = 0
+          for j in api.list_jobs():
+              cmd = " ".join(j.command or [])
+              if (j.status.stage or "").upper() in ("RUNNING", "STARTING") and ("keeper.py" in cmd or "EN ESPERA LISTO" in cmd):
+                  api.cancel_job(job_id=j.id); n += 1
+                  print(f"::notice::cancelado {j.id}")
+          print(f"::notice::jobs cancelados: {n}")
+          space = "COMAND-CENTER-1/claude-github-mcp-backup"
+          rt = api.get_space_runtime(space)
+          print(f"Space: {rt.stage} | hardware: {rt.hardware} | dormir tras: {rt.sleep_time}")
+          if rt.sleep_time != -1:
+              try:
+                  api.set_space_sleep_time(space, sleep_time=-1); print("::notice::Space en NUNCA DORMIR")
+              except Exception as e:
+                  print(f"::warning::nunca dormir falló: {type(e).__name__}: {str(e)[:200]}")
+          PY
