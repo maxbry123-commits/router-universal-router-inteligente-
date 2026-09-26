@@ -5,6 +5,6 @@ Estado: **BLOCKED**
 - group: chat
 - attempts: 3
 - model: nvidia/nvidia/nemotron-3-super-120b-a12b
-- gaps: motor falló (exit=1): RuntimeError: SOURCE_SPECIAL_FILE_GAP:crates,plugin/agents,plugin/commands,plugin/skills
+- gaps: motor falló (exit=1): RuntimeError: DESTINATION_EXISTS:router inteligente universal/Componente open soure router inteligente universal/ruflo
 
 Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.

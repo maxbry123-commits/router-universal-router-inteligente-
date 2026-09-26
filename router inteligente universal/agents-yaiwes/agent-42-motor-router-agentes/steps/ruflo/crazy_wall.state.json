@@ -3,7 +3,7 @@
  "agent": "agent-42-motor-router-agentes",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-26T01:51:32Z",
+ "updated_at": "2026-09-26T19:28:35Z",
  "router_connected": false,
  "group": "chat",
  "current_nodes": [
@@ -17,7 +17,7 @@
  "via": "route",
  "attempts": 3,
  "gaps": [
-  "motor falló (exit=1): RuntimeError: SOURCE_SPECIAL_FILE_GAP:crates,plugin/agents,plugin/commands,plugin/skills"
+  "motor falló (exit=1): RuntimeError: DESTINATION_EXISTS:router inteligente universal/Componente open soure router inteligente universal/ruflo"
  ],
  "failed": [
   "execute"
