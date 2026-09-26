@@ -1,0 +1,60 @@
+name: HF Crear Spaces y Memoria (una vez)
+
+# Prueba real con la herramienta oficial de HF (CLI `hf`, la que usa https://huggingface.co/new-space/agents.md):
+#  1) crear 5 Spaces Docker vacíos: COMAND-CENTER-1/omniroute-1..5 (CPU basic);
+#  2) crear el dataset COMAND-CENTER-1/yaiwes-hf-memoria y subirle README-HUGGINGFACE.md (copia en HF de la memoria de arquitectura).
+# Deja visible qué se pudo crear y qué no (sin claves en los registros).
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/hf-crear-spaces-y-memoria.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_1 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: README-HUGGINGFACE.md
+          sparse-checkout-cone-mode: false
+      - run: curl -LsSf https://hf.co/cli/install.sh | bash && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: pip install -q -U huggingface_hub
+      - name: Crear Spaces y memoria
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"]); owner = api.whoami()["name"]
+          ok, fail = [], []
+          for i in range(1, 6):
+              rid = f"{owner}/omniroute-{i}"
+              try:
+                  if not api.repo_exists(rid, repo_type="space"):
+                      api.create_repo(rid, repo_type="space", space_sdk="docker", private=False)
+                  ok.append(rid)
+              except Exception as e:
+                  fail.append(f"{rid}: {type(e).__name__} {str(e)[:120]}")
+          ds = f"{owner}/yaiwes-hf-memoria"
+          try:
+              api.create_repo(ds, repo_type="dataset", private=True, exist_ok=True)
+              api.upload_file(path_or_fileobj="README-HUGGINGFACE.md", path_in_repo="README.md", repo_id=ds, repo_type="dataset", commit_message="memoria HF desde GitHub")
+              print(f"::notice::MEMORIA_HF=OK https://huggingface.co/datasets/{ds}")
+          except Exception as e:
+              print(f"::warning::MEMORIA_HF=FALLO {type(e).__name__} {str(e)[:160]}")
+          print(f"::notice::SPACES_CREADOS={len(ok)} {' '.join(ok)}")
+          for f in fail: print(f"::warning::SPACE_NO_CREADO {f}")
+          PY
+      - name: Probar también con la CLI oficial `hf` (camino de agents.md)
+        if: always()
+        run: |
+          hf --version || true
+          hf repos create omniroute-cli-test --type space --space-sdk docker 2>&1 | tail -3 || true
