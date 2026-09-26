@@ -1,0 +1,25 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-26: instalar 5 cuentas diferentes del mismo OmniRoute y conectarlo a nuestro router; sin UI, solo GitHub + Hugging Face + nuestro router.
+  Repo verificado por el Director: https://github.com/diegosouzapw/OmniRoute (release v3.8.51).
+agent:
+  id: agent-43-motor-omniroute
+  framework: pocketflow
+  group: chat
+  route: [nvidia, cerebras, groq]
+  fallback: [deepseek_flash]
+  max_tokens: 300
+context:
+  text: Motor canónico de descarga y extracción (ya salta enlaces internos, acepta "ya descargado" y prueba main/master/HEAD).
+steps:
+  - id: omniroute
+    task: Responde exactamente MOTOR_EXEC_REQUEST_OMNIROUTE.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_OMNIROUTE]}
+      - kind: motor_exec
+        path: "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+        timeout: 1800
+        env: {SOURCE_REPO: "diegosouzapw/OmniRoute", SOURCE_REF: "release/v3.8.51", SLUG: "OmniRoute", DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: main, DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+        expect: {verdict: VERIFIED_CLOSED, publish.verdict: PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED}
+      - {kind: no_secrets}
+edges: []
