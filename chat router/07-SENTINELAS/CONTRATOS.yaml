@@ -87,17 +87,22 @@ tareas:
     required_files: [hermes_config.yaml, openclaw_config.yaml, hermes.md, arrancar_asistentes.sh, puente_asistentes.py, heartbeat.py, tests/test_asistentes.py, README.md]
     acceptance: "SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q && bash -n 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
     objective_checks:
-      - "grep -Eq 'nvidia|NVIDIA' 'chat router/05-AGENTES/asistentes/hermes_config.yaml'"
-      - "grep -q 'NVIDIA_API_KEY' 'chat router/05-AGENTES/asistentes/hermes_config.yaml'"
-      - "grep -Eq 'nvidia|NVIDIA' 'chat router/05-AGENTES/asistentes/openclaw_config.yaml'"
-      - "grep -q 'NVIDIA_API_KEY' 'chat router/05-AGENTES/asistentes/openclaw_config.yaml'"
+      - "grep -q 'planner_supervisor' 'chat router/05-AGENTES/asistentes/hermes_config.yaml'"
+      - "grep -q 'guardian_supervisor' 'chat router/05-AGENTES/asistentes/openclaw_config.yaml'"
+      - "grep -Eq 'integrate[.]api[.]nvidia[.]com|ROUTER' 'chat router/05-AGENTES/asistentes/hermes_config.yaml'"
+      - "grep -Eq 'integrate[.]api[.]nvidia[.]com|ROUTER' 'chat router/05-AGENTES/asistentes/openclaw_config.yaml'"
       - "! grep -Rqi 'ANTHROPIC_API_KEY' 'chat router/05-AGENTES/asistentes'"
       - "grep -q 'def preguntar' 'chat router/05-AGENTES/asistentes/puente_asistentes.py'"
       - "grep -q 'def emit' 'chat router/05-AGENTES/asistentes/puente_asistentes.py'"
+      - "grep -q 'SIMULADO' 'chat router/05-AGENTES/asistentes/puente_asistentes.py'"
       - "grep -q 'NO_REPLY' 'chat router/05-AGENTES/asistentes/heartbeat.py'"
       - "grep -q 'ALERTA' 'chat router/05-AGENTES/asistentes/heartbeat.py'"
-      - "grep -q 'HERMES_REF' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
-      - "grep -q 'OPENCLAW_REF' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+      - "grep -Eq 'HERMES_REF.*main|HERMES_REF.*[0-9a-f]{7,40}' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+      - "grep -Eq 'OPENCLAW_REF.*main|OPENCLAW_REF.*[0-9a-f]{7,40}' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+      - "! grep -Eq 'v2026[.]9[.]24|v2026[.]9[.]6' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+      - "grep -q 'pnpm' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+      - "grep -q 'openclaw gateway' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+      - "grep -Eq 'hermes gateway|hermes' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
     max_stall_minutes: 30
     dependencies: []
   T07:
