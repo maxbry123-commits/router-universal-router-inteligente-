@@ -44,3 +44,14 @@ REGLAS:
 - NO tocar T01-T04 ni T06-T08.
 - Máximo 500 líneas/archivo.
 - PASS solo con aceptación real exit 0 e informe real.
+
+
+## GAP DE FUENTE M16
+La tarea T05 referencia:
+chat router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md
+
+En la revisión actual de main esa ruta devuelve 404 y la búsqueda del repo no
+encuentra "M16" ni "Archify". NO inventar contenido faltante ni bloquear el trabajo
+buscando indefinidamente esa fuente. Para esta ejecución, T05.md + este contexto +
+CONTRATOS.yaml son la especificación operativa. Si la fuente M16 vuelve a aparecer,
+compararla antes de un cierre definitivo y registrar cualquier diferencia.
