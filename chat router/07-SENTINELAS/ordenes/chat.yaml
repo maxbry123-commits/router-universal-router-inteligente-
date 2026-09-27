@@ -1,8 +1,8 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-27T23:26Z
-loop_version: 0fb8da292b84d201
-observed_sha: c29bd175f6091d3f3da346131dd60eedfb795095
+generated_at: 2026-09-27T23:28Z
+loop_version: bd1b24f6007628c8
+observed_sha: a2d25c4eac4077b4150177a495d7036ec405bd8e
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
 priority_task: T05
