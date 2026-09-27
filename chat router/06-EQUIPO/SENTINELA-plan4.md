@@ -1,21 +1,21 @@
-# SENTINELA PLAN4 — 2026-09-27 12:36 UTC
+# SENTINELA PLAN4 — 2026-09-27 17:28 UTC
 (modelo: moonshotai/kimi-k3@NVIDIA_API_KEY_2)
 
-ESTADO: amarillo — hay trabajo documentado en el handoff, pero sin commits, PRs ni ejecuciones visibles que lo respalden.
+ESTADO: amarillo — el plan4 no muestra actividad verificable en los datos recibidos.
 
 AVANCE:
-- Manus completó M-0..M-7 (memoria cableada, 31 tests PASS, State Hub activo).
-- Opus avanza V-1 (paso 1 ✅, paso 2 parcial) y A-1 OmniRoute en prueba.
-- Existen 5 ramas plan-opus/* activas.
+- Existen 5 ramas de trabajo plan-opus (G1 x3, all x2), señal de trabajo previo.
+- El handoff corresponde al proyecto chat-yaiwes (M-0..M-7 completados), no a plan4.
+- Sin commits, PRs ni ejecuciones recientes visibles para plan4.
 
 DESVIOS DEL PLAN:
-- Sin commits recientes pese a ramas de trabajo activas: posible trabajo no empujado.
-- Sin ejecuciones del loop `mini-router-plan-4-objetivos.yml` visibles (debería correr cada hora).
-- FLAG-4: PARTE-2-B de V-1 sigue pendiente.
+- No hay commits recientes pese al loop horario definido (mini-router-plan-4-objetivos.yml).
+- No hay ejecuciones recientes registradas: el loop horario parece detenido o no reporta.
+- 5 ramas abiertas sin PRs: trabajo sin integrar.
 
 ORDENES CORRECTIVAS:
-1. Agente Opus: empujar commits pendientes de las ramas plan-opus/* o confirmar que están vacías.
-2. Agente de infra: verificar que el workflow `mini-router-plan-4-objetivos.yml` está habilitado y programado.
-3. Agente Opus: completar V-1 PARTE-2-B (docs HF 2-4, M10, docs 5-10, M12-M14) y reportar resultado de `prueba-omniroute-router.yml`.
+1. Agente de integración: abrir PRs desde las ramas plan-opus/G1-* y plan-opus/all-* hacia la rama principal, o cerrar las ramas obsoletas.
+2. Agente de infraestructura: verificar que el workflow mini-router-plan-4-objetivos.yml está activo y ejecutándose cada hora; registrar la última ejecución.
+3. Agente de estado: actualizar el handoff con el estado real de plan4 (el actual solo cubre chat-yaiwes).
 
-PARA OPUS: leer y publicar el resultado de `prueba-omniroute-router.yml` (A-1) y cerrar FLAG-4.
+PARA OPUS (solo si hay algo roto en Router/HF): nada
