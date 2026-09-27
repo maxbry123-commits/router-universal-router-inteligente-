@@ -1,11 +1,11 @@
 {
   "status": "ACTIVE",
-  "last_sha": "a2d25c4eac4077b4150177a495d7036ec405bd8e",
+  "last_sha": "be3baf96d7017466a4874fb0e044324ab69e5a9c",
   "last_failure": "NO_ENTREGADO",
-  "same_failure_count": 4,
+  "same_failure_count": 5,
   "evidence": {
-    "observed_sha": "a2d25c4eac4077b4150177a495d7036ec405bd8e",
-    "current_sha": "a2d25c4eac4077b4150177a495d7036ec405bd8e",
+    "observed_sha": "be3baf96d7017466a4874fb0e044324ab69e5a9c",
+    "current_sha": "be3baf96d7017466a4874fb0e044324ab69e5a9c",
     "executor_active": true,
     "workflow_false_green": false,
     "unauthorized_change": false,
@@ -22,9 +22,9 @@
     "priority_task": {
       "task_id": "T05",
       "status": "ACTIVE",
-      "attempt": 2,
+      "attempt": 3,
       "failure": "NO_ENTREGADO",
-      "next_action": "vigilar: Trabajar (Aider espejo)",
+      "next_action": "vigilar: Instalar Aider",
       "evidence": {
         "faltan": [
           "action_registry.py",
