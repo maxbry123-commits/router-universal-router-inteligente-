@@ -1,5 +1,5 @@
-# SENTINELA-PLAN4 — 2026-09-27T23:39Z
-(LOOP común · versión: bd1b24f6007628c8 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-PLAN4 — 2026-09-27T23:59Z
+(LOOP común · versión: 91fa6bebe5d21b17 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia, rama/PR o causa corregible.
 ESTADO LOOP: RESEARCH · missing_evidence:recent_commits_observed
@@ -17,15 +17,7 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El loop no ejecutó `git log` (o equivalente) en esta vuelta; la evidencia aportada son URLs de StackOverflow genéricas, no commits observados del repo sentinela-plan4.
-
-EVIDENCIA: 5 enlaces SO sobre Git/Python sin relación con commits recientes; ningún hash, rama, PR ni salida de `git log --oneline -n 5` adjunta.
-
-NO_REGENERAR: No volver a consultar StackOverflow ni reemitir la misma evidencia comunitaria; no declarar PASS; no crear ramas/PR vacíos solo para cumplir el check.
-
-REPARAR: 1) Ejecutar en el repo: `git fetch --all && git log --oneline -n 10 --all` y pegar la salida literal. 2) Si no hay commits nuevos, crear rama `sentinela/fix-evidence-loop` con un commit real (p.ej. documentar estado del plan en `PLAN4_STATUS.md`) y abrir PR. 3) Registrar la causa corregible en el log del loop: "falta paso de captura de commits en el pipeline".
-
-ACEPTACION: PASS solo cuando la vuelta incluya (a) salida literal de `git log` con hashes recientes, o (b) enlace a rama/PR creado, o (c) causa corregible documentada con su reparación aplicada.
+Sin respuesta LLM; conservar evidencia y reintentar investigación.
 
 CONTROL:
 - PASS no lo decide la LLM.
