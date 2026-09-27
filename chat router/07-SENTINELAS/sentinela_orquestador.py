@@ -137,6 +137,48 @@ def mirror_changed_files(tid: str) -> list[str]:
     return [line.strip() for line in out.splitlines() if line.strip()] if rc == 0 else []
 
 
+def auditar_ultimo_ejecutor(tid: str) -> dict:
+    """Lee el último job completado de la tarea y conserva anomalías recuperadas."""
+    rc, out = sh([
+        "gh", "run", "list", "-R", REPO, "-w", WF,
+        "-s", "completed", "--json", "databaseId,conclusion,createdAt", "-L", "12",
+    ])
+    if rc != 0:
+        return {}
+    for run in json.loads(out or "[]"):
+        run_id = run.get("databaseId")
+        _, jobs = sh([
+            "gh", "run", "view", str(run_id),
+            "-R", REPO, "--json", "jobs",
+        ])
+        for job in json.loads(jobs or "{}").get("jobs", []):
+            if job.get("name") != f"espejo ({tid})":
+                continue
+            job_id = job.get("databaseId")
+            lrc, log = sh([
+                "gh", "run", "view", str(run_id), "-R", REPO,
+                "--job", str(job_id), "--log",
+            ], timeout=90)
+            if lrc != 0:
+                log = ""
+            path_escapes = log.count("FAIL_PATH_ESCAPE")
+            no_tests = "pytest exit=5" in log or "acceptance exit: 5" in log
+            agent_ok_acceptance_bad = (
+                "aider terminó rc=0" in log
+                and ("VEREDICTO REVISE" in log or "acceptance exit: 0" not in log)
+            )
+            return {
+                "run_id": run_id,
+                "job_id": job_id,
+                "conclusion": run.get("conclusion"),
+                "path_escape_count": path_escapes,
+                "no_tests": no_tests,
+                "false_green_agent": agent_ok_acceptance_bad,
+                "recovered_deviation": bool(path_escapes),
+            }
+    return {}
+
+
 def verificar(tid: str, c: dict, prohibido: list[str]) -> dict:
     scope = pathlib.Path(c["scope"])
     faltan = [
@@ -151,6 +193,7 @@ def verificar(tid: str, c: dict, prohibido: list[str]) -> dict:
     ]
 
     changed = mirror_changed_files(tid)
+    executor_audit = auditar_ultimo_ejecutor(tid)
     task_spec = spec_tarea(tid, c, [])
     sheriff_ok, sheriff_reason = SentinelSheriff().validate_executor_paths(
         task_spec, changed
@@ -187,6 +230,8 @@ def verificar(tid: str, c: dict, prohibido: list[str]) -> dict:
         "faltan": faltan,
         "fugas": fugas,
         "changed_files": changed,
+        "executor_audit": executor_audit,
+        "recovered_deviation": bool(executor_audit.get("recovered_deviation")),
         "scope_escape": scope_escape,
         "objective_failures": objective_failures,
         "objective_drift": bool(objective_failures),
@@ -497,6 +542,19 @@ def main() -> None:
             }
             decision = loop.next_action(spec, st, common_evidence)
             st.update({"last_sha": head, "evidence": ev})
+            if ev.get("recovered_deviation"):
+                current_dev = {
+                    "type": "PATH_ESCAPE_RECOVERED",
+                    "count": ev.get("executor_audit", {}).get("path_escape_count", 0),
+                    "run_id": ev.get("executor_audit", {}).get("run_id"),
+                }
+                previous_dev = st.get("last_deviation", {})
+                st["deviation_count"] = (
+                    st.get("deviation_count", 0) + 1
+                    if previous_dev.get("type") == current_dev["type"]
+                    else 1
+                )
+                st["last_deviation"] = current_dev
 
             if decision["state"] == "PASS":
                 st.update({
