@@ -23,19 +23,18 @@
   },
   "T02": {
     "attempt": 2,
-    "last_sha": "605655b7562b0c27c45ad5210d6de235965b4fb0",
+    "last_sha": "f4349a5de216ee2bbdefeb0f9cc397af9bff59a4",
     "evidence": {
       "faltan": [],
       "fugas": [],
       "pytest_exit": 0,
-      "pytest_tail": "....                                                                     [100%]\n4 passed in 0.03s\n",
-      "informe": false,
-      "ultimo_commit": "eb48e8b65765b99d5b86fc9f02ffa90e746ea51f T02: sembrar colmena y flujo de ingeniería",
-      "veredicto": "REVISE",
-      "causa": "SIN_INFORME"
+      "pytest_tail": "....                                                                     [100%]\n4 passed in 0.04s\n",
+      "informe": true,
+      "ultimo_commit": "08ce81c1f53789440312683373f60e601c4c7d9b espejo T02: PASS (36354603324)",
+      "veredicto": "PASS"
     },
-    "status": "ACTIVE",
-    "last_failure": "SIN_INFORME",
+    "status": "PASS",
+    "last_failure": "",
     "research_packet": {
       "sentinel_id": "sentinela-t02",
       "failure": "SIN_INFORME",
@@ -79,7 +78,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar ejecutor",
+    "next_action": "ninguna",
     "research_findings": [
       {
         "state": "closed",
