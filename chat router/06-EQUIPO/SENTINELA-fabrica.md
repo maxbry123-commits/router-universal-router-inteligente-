@@ -1,5 +1,5 @@
-# SENTINELA-FABRICA — 2026-09-27T22:24Z
-(LOOP común · versión: 32590b52b309a8f0 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-FABRICA — 2026-09-27T22:25Z
+(LOOP común · versión: 9f361e1b004bffdb · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.
 ESTADO LOOP: REVISE · missing_evidence:recent_commits_observed
@@ -16,15 +16,15 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El bloque Fábrica UI se reportó sin adjuntar evidencia de commits recientes observados (git log verificable); la evidencia comunitaria aportada es genérica (SO sobre git, branch prediction, yield) y no prueba entregas reales del objetivo.
+CAUSA_RAIZ: El bloque Fábrica UI se reportó sin adjuntar evidencia observable de commits recientes (git log con hash, fecha y diff); el fallo missing_evidence:recent_commits_observed indica que la entrega se afirmó pero no se demostró.
 
-EVIDENCIA: Fallo literal=missing_evidence:recent_commits_observed. Ninguna URL de la evidencia apunta al repo, a un commit hash, ni a artefactos UI construidos; son preguntas de StackOverflow sin relación con el objetivo.
+EVIDENCIA: La evidencia comunitaria aportada (StackOverflow sobre git undo, branch, pull/fetch, yield, branch prediction) es genérica y no contiene ningún commit, hash, timestamp ni artefacto del repositorio sentinela-fabrica. Nada vincula esas URLs con entregas reales del bloque.
 
-NO_REGENERAR: No reintentar el cierre del bloque ni reemitir el reporte con la misma evidencia comunitaria; no declarar PASS bajo ninguna circunstancia.
+NO_REGENERAR: No regenerar código UI ni reejecutar la fábrica; el problema no es ausencia de código sino ausencia de prueba verificable. Regenerar solo produciría más entregas no comprobadas.
 
-REPARAR: 1) Ejecutar `git log --oneline -n 10` en sentinela-fabrica y pegar salida con hashes y fechas. 2) Adjuntar diff/stat de los commits que implementan la Fábrica UI. 3) Listar artefactos entregados (rutas de archivos, build exitoso, tests). 4) Mapear cada objetivo del bloque a su commit/artefacto correspondiente.
+REPARAR: Ejecutar en el repo: `git log --oneline -10 --format='%h %ad %s' --date=iso` y `git show --stat <hash>` por cada commit del bloque; adjuntar salida literal, más build/test exitoso y artefacto desplegado (URL o captura con timestamp).
 
-ACEPTACION: Solo se permite abrir el siguiente bloque cuando exista: log de commits recientes verificable + artefactos UI reales + trazabilidad objetivo→entrega, validados por Sentinela.
+ACEPTACION: El siguiente bloque solo se desbloquea cuando exista: (1) lista de commits con hash+fecha posteriores al inicio del bloque, (2) diff/stat por objetivo cumplido, (3) verificación de entrega real reproducible por un tercero.
 
 CONTROL:
 - PASS no lo decide la LLM.
