@@ -6,6 +6,7 @@ name: Sentinelas (chat, fabrica, plan4)
 #  3) pide a un modelo NVIDIA un informe corto: avance, desvíos del plan, órdenes correctivas,
 #  4) escribe "chat router/06-EQUIPO/SENTINELA-<proyecto>.md" (el Director y GPT lo leen ahí).
 # No modifica código: solo informa y ordena. Opus repara lo roto.
+# 2026-09-27 (Opus): modelos actualizados al catálogo vivo de NVIDIA (qwen3-coder-480b retirado 410; kimi-k2-instruct no disponible).
 
 on:
   schedule:
@@ -32,6 +33,8 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
       NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
       NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+      NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+      NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
       PROYECTO: ${{ matrix.proyecto }}
     steps:
       - uses: actions/checkout@v4
@@ -71,21 +74,22 @@ jobs:
           PARA OPUS (solo si hay algo roto en Router/HF): 1 línea o 'nada'
 
           ORDENES DEL DIRECTOR/GPT:\n{ordenes}\n\nPLAN/TAREA:\n{plan}\n\nCOMMITS RECIENTES:\n{commits}\n\nRAMAS DE TRABAJO:\n{ramas}\n\nPRs ABIERTOS:\n{prs}\n\nEJECUCIONES RECIENTES:\n{runs}\n\nHANDOFF:\n{handoff}"""
-          texto = None
-          for key in ("NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2"):
-              for model in ("qwen/qwen3-coder-480b-a35b-instruct", "moonshotai/kimi-k2-instruct", "deepseek-ai/deepseek-v3.1"):
+          texto, usado = None, None
+          for key in ("NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4"):
+              for model in ("moonshotai/kimi-k2.6", "deepseek-ai/deepseek-v4.1-flash", "moonshotai/kimi-k3"):
                   if texto or not os.environ.get(key): continue
                   body = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": 900, "temperature": 0.2}).encode()
                   req = urllib.request.Request("https://integrate.api.nvidia.com/v1/chat/completions", data=body,
                                                headers={"Authorization": "Bearer " + os.environ[key], "Content-Type": "application/json"})
                   try:
                       with urllib.request.urlopen(req, timeout=120) as r:
-                          texto = json.loads(r.read())["choices"][0]["message"]["content"]; usado = model
+                          texto = json.loads(r.read())["choices"][0]["message"]["content"]; usado = f"{model}@{key}"
                   except Exception as e:
-                      print(f"::warning::{model}: {type(e).__name__}")
+                      print(f"::warning::{model}@{key}: {type(e).__name__} {getattr(e, 'code', '')}")
           ahora = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
           out = pathlib.Path(f"chat router/06-EQUIPO/SENTINELA-{P}.md")
-          out.write_text(f"# SENTINELA {P.upper()} — {ahora}\n(modelo: {usado if texto else 'ninguno disponible'})\n\n{texto or 'Sin respuesta de los modelos NVIDIA en esta vuelta.'}\n", encoding="utf-8")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(f"# SENTINELA {P.upper()} — {ahora}\n(modelo: {usado or 'ninguno disponible'})\n\n{texto or 'Sin respuesta de los modelos NVIDIA en esta vuelta.'}\n", encoding="utf-8")
           print(out.read_text()[:1500])
           PY
       - run: |
