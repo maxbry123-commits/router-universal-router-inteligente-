@@ -61,7 +61,7 @@ tareas:
       - "grep -q 'tool_use' 'chat router/09-CLAUDE-CODE/normalizar.py'"
       - "grep -q 'tool_calls' 'chat router/09-CLAUDE-CODE/normalizar.py'"
       - "grep -q 'ANTHROPIC_BASE_URL' 'chat router/09-CLAUDE-CODE/iniciar_claude_code.sh'"
-      - "grep -Eq 'https://github.com|https://docs\.' 'chat router/09-CLAUDE-CODE/INVESTIGACION.md'"
+      - "grep -Eq 'https://github.com|https://docs[.]' 'chat router/09-CLAUDE-CODE/INVESTIGACION.md'"
     max_stall_minutes: 30
     dependencies: []
   T05:
