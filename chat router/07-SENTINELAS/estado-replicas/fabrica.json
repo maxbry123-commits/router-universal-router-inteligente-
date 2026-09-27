@@ -22,7 +22,7 @@
     "priority_task": {}
   },
   "next_action": "missing_evidence:recent_commits_observed",
-  "attempt": 18,
+  "attempt": 19,
   "loop_version": "bd1b24f6007628c8",
   "research_packet": {
     "sentinel_id": "sentinela-fabrica",
