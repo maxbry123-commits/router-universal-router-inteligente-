@@ -59,21 +59,19 @@ def mantener(db_path=DB_PATH):
             date_col = next((c for c in DATE_COLS if c in cols), None)
             if date_col is None:
                 continue
-            # Borra lo viejo tanto si la fecha es epoch (s o ms) como ISO-8601.
+            # Distingue epoch-segundos de epoch-milisegundos.
+            # Umbral 1e11: fechas Unix en segundos están ~1e9; en ms ~1e12.
             iso_cut = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(cut_s))
             cur = conn.execute(
                 f"DELETE FROM {table} WHERE "
-                f"(typeof({date_col}) IN ('integer','real') AND {date_col} < ?) OR "
+                f"(typeof({date_col}) IN ('integer','real') AND {date_col} > 0 "
+                f" AND {date_col} < 100000000000 AND {date_col} < ?) OR "
+                f"(typeof({date_col}) IN ('integer','real') AND {date_col} >= 100000000000 "
+                f" AND {date_col} < ?) OR "
                 f"(typeof({date_col}) = 'text' AND {date_col} < ?)",
-                (cut_ms if cut_ms else cut_s, iso_cut),
+                (cut_s, cut_ms, iso_cut),
             )
-            # Segundo pase por si las fechas numéricas están en segundos.
-            cur2 = conn.execute(
-                f"DELETE FROM {table} WHERE "
-                f"typeof({date_col}) IN ('integer','real') AND {date_col} < ? AND {date_col} > 0",
-                (cut_s,),
-            )
-            deleted += max(cur.rowcount, 0) + max(cur2.rowcount, 0)
+            deleted += max(cur.rowcount, 0)
         conn.commit()
         conn.execute("VACUUM")
         print(f"OK: {db_path} — borradas {deleted} filas, VACUUM hecho, "
