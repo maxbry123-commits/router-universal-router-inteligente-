@@ -53,10 +53,34 @@ jobs:
         run: python "chat router/07-SENTINELAS/sentinela_orquestador.py"
       - name: Guardar estado, correcciones e informe
         run: |
-          git config user.name "sentinela-orquestador"; git config user.email "sentinela@users.noreply.github.com"
-          git add --sparse "chat router/07-SENTINELAS/ESTADO-TAREAS.json" "chat router/07-SENTINELAS/informes/ORQUESTADOR.md" "chat router/06-ESPEJOS/tareas" || true
-          git commit -q -m "sentinela orquestador: estado y correcciones" || exit 0
-          for i in 1 2 3 4; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done
+          git config user.name "sentinela-orquestador"
+          git config user.email "sentinela@users.noreply.github.com"
+
+          # El sentinela solo persiste estos archivos. Cualquier modificación
+          # colateral de tests/imports se descarta antes de sincronizar.
+          git add --sparse             "chat router/07-SENTINELAS/ESTADO-TAREAS.json"             "chat router/07-SENTINELAS/informes/ORQUESTADOR.md"             "chat router/06-ESPEJOS/tareas" || true
+          git commit -q -m "sentinela orquestador: estado y correcciones" || true
+
+          find "chat router" -type d \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} + 2>/dev/null || true
+          find "chat router" -name '*.pyc' -delete 2>/dev/null || true
+          git reset --hard -q HEAD
+
+          PUSHED=0
+          for i in 1 2 3 4; do
+            if timeout 90s git pull -q --rebase origin main &&
+               timeout 90s git push -q origin HEAD:main; then
+              PUSHED=1
+              echo "::notice::SENTINELA_ESTADO_GUARDADO"
+              break
+            fi
+            git rebase --abort 2>/dev/null || true
+            git reset --hard -q HEAD
+            sleep 3
+          done
+          if [ "$PUSHED" -ne 1 ]; then
+            echo "::error::SENTINELA_PERSIST_FAIL: estado no llegó a main"
+            exit 1
+          fi
       - name: Relanzar espejos con corrección
         if: steps.s.outputs.relanzar != ''
         run: gh workflow run claude-code-espejos.yml -R maxbry123-commits/router-universal-router-inteligente- -f tareas="${{ steps.s.outputs.relanzar }}" && echo "::notice::relanzados ${{ steps.s.outputs.relanzar }}"
