@@ -280,8 +280,8 @@
     }
   },
   "T05": {
-    "attempt": 2,
-    "last_sha": "ded962c7533fe22edbc036b692c6508baf8fe75b",
+    "attempt": 3,
+    "last_sha": "174ab965945ede0dc7907040408cc3617cfd9d6b",
     "evidence": {
       "faltan": [
         "action_registry.py",
@@ -313,7 +313,7 @@
       "veredicto": "REVISE",
       "causa": "NO_ENTREGADO"
     },
-    "status": "ACTIVE",
+    "status": "REVISE",
     "last_failure": "NO_ENTREGADO",
     "research_packet": {
       "sentinel_id": "sentinela-t05",
@@ -360,7 +360,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "vigilar: Guardar (commit primero; PASS → main, si no → mirror/T0X)",
+    "next_action": "espejo relanzado",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
