@@ -144,6 +144,8 @@ jobs:
           for a in "${LISTA[@]}"; do a="$(echo "$a" | xargs)"; [ -z "$a" ] && continue; p="$ALC/$a"; mkdir -p "$(dirname "$p")"; [ -e "$p" ] || touch "$p"; FILES+=("$p"); NOMBRES="$NOMBRES
           $p"; done
           READS=()
+          SENTINEL_CONTEXT="chat router/06-ESPEJOS/tareas/${TAREA}-SENTINEL-CONTEXT.md"
+          [ -f "$SENTINEL_CONTEXT" ] && READS+=(--read "$SENTINEL_CONTEXT")
           if [ "$TAREA" = "T02" ]; then
             for f in "chat router/06-ESPEJOS/tareas/T02-CONTEXT.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && READS+=(--read "$f"); done
           elif [ "$TAREA" = "T04" ]; then
