@@ -295,30 +295,56 @@ def spec_tarea(tid: str, c: dict, research_pool: list[str]):
 
 
 def buscar_comunidad(tid: str, packet: dict) -> list[dict]:
-    query = (
-        packet.get("error_literal")
-        or packet.get("failure")
-        or "failure"
-    ).replace("\n", " ")[:120]
+    """Investiga el objetivo real: repos oficiales primero, luego issues/comunidad."""
+    failure = str(packet.get("failure", "")).strip()
+    objective = str(packet.get("objective", "")).strip()
+    literal = str(packet.get("error_literal", "")).replace("\n", " ").strip()
     findings: list[dict] = []
 
-    for repo in RESEARCH_REPOS.get(tid, []):
-        rc, out = sh([
-            "gh", "search", "issues", query,
-            "--repo", repo, "--limit", "5",
-            "--json", "title,url,state,updatedAt",
-        ])
-        if rc != 0:
-            continue
-        try:
-            for item in json.loads(out or "[]"):
-                item["source"] = f"GitHub:{repo}"
-                findings.append(item)
-                if len(findings) >= packet["max_sources"]:
-                    return findings
-        except json.JSONDecodeError:
-            pass
+    repos = RESEARCH_REPOS.get(tid, [])
+    for repo in repos:
+        findings.append({
+            "source": "Repositorio oficial/upstream",
+            "title": repo,
+            "url": f"https://github.com/{repo}",
+        })
+        if len(findings) >= packet["max_sources"]:
+            return findings
 
+    queries = []
+    if objective:
+        queries.append(objective[:120])
+    if literal:
+        queries.append(literal[:120])
+    if failure:
+        queries.append(failure[:120])
+
+    seen: set[str] = set()
+    for repo in repos:
+        for query in queries:
+            rc, out = sh([
+                "gh", "search", "issues", query,
+                "--repo", repo, "--limit", "3",
+                "--json", "title,url,state,updatedAt",
+            ])
+            if rc != 0:
+                continue
+            try:
+                for item in json.loads(out or "[]"):
+                    url = item.get("url", "")
+                    if not url or url in seen:
+                        continue
+                    seen.add(url)
+                    item["source"] = f"GitHub:{repo}"
+                    findings.append(item)
+                    if len(findings) >= packet["max_sources"]:
+                        return findings
+            except json.JSONDecodeError:
+                pass
+
+    # Comunidad independiente: usar objetivo/error, nunca una etiqueta interna
+    # como OBJECTIVE_DRIFT como consulta principal.
+    query = (literal or objective or failure or "software integration")[:120]
     try:
         url = (
             "https://api.stackexchange.com/2.3/search/advanced"
