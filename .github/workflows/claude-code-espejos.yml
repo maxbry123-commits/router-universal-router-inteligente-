@@ -147,7 +147,11 @@ jobs:
           READS=()
           SENTINEL_CONTEXT="chat router/06-ESPEJOS/tareas/${TAREA}-SENTINEL-CONTEXT.md"
           [ -f "$SENTINEL_CONTEXT" ] && READS+=(--read "$SENTINEL_CONTEXT")
-          if [ "$TAREA" = "T02" ]; then
+          if [ "$TAREA" = "T03" ]; then
+            for f in               "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md"               "chat router/06-ESPEJOS/tareas/T03-A-RUNTIME.md"               "chat router/06-ESPEJOS/tareas/T03-B-SUPERVISOR-DB.md"               "chat router/06-ESPEJOS/tareas/T03-C-CIERRE.md"; do
+              [ -f "$f" ] && READS+=(--read "$f")
+            done
+          elif [ "$TAREA" = "T02" ]; then
             for f in "chat router/06-ESPEJOS/tareas/T02-CONTEXT.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && READS+=(--read "$f"); done
           elif [ "$TAREA" = "T04" ]; then
             for f in "chat router/06-ESPEJOS/tareas/T04-CONTEXT.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
