@@ -1,11 +1,11 @@
 {
   "status": "ACTIVE",
-  "last_sha": "7413ff4a1a03048eb6091045c016b2000d49d2c5",
+  "last_sha": "4cfd13895d02a110d2f1291b5b1f768818512b32",
   "last_failure": "NO_ENTREGADO",
-  "same_failure_count": 4,
+  "same_failure_count": 5,
   "evidence": {
-    "observed_sha": "7413ff4a1a03048eb6091045c016b2000d49d2c5",
-    "current_sha": "7413ff4a1a03048eb6091045c016b2000d49d2c5",
+    "observed_sha": "4cfd13895d02a110d2f1291b5b1f768818512b32",
+    "current_sha": "4cfd13895d02a110d2f1291b5b1f768818512b32",
     "executor_active": true,
     "workflow_false_green": false,
     "unauthorized_change": false,
@@ -24,7 +24,7 @@
       "status": "ACTIVE",
       "attempt": 2,
       "failure": "NO_ENTREGADO",
-      "next_action": "esperar ejecutor",
+      "next_action": "vigilar: Guardar (commit primero; PASS → main, si no → mirror/T0X)",
       "evidence": {
         "faltan": [
           "pasarela.py",
