@@ -1,0 +1,30 @@
+schema: yaiwes.chain/v1
+input_block: |
+  DIRECTOR 2026-09-26: revisa que OpenClaw y Hermes sean las últimas versiones; si no, descárgalos de nuevo y sustituye.
+  Últimas verificadas: Hermes Agent v2026.9.24 (v0.21.5, NousResearch/hermes-agent) y OpenClaw v2026.9.6 (openclaw/openclaw).
+agent:
+  id: agent-44-motor-hermes-openclaw
+  framework: pocketflow
+  group: chat
+  route: [nvidia, cerebras, groq]
+  fallback: [deepseek_flash]
+  max_tokens: 300
+context:
+  text: Motor canónico. Slug con la versión para no pisar la copia anterior; la vieja se retira después de verificar la nueva.
+  motor: &m "➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/hf_download_extract_engine.py"
+  destino: &d {DEST_REPO: "maxbry123-commits/router-universal-router-inteligente-", DEST_BRANCH: main, DEST_ROOT: "router inteligente universal/Componente open soure router inteligente universal", PUBLISH: "1"}
+  espera: &e {verdict: VERIFIED_CLOSED, publish.verdict: PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED}
+steps:
+  - id: hermes
+    task: Responde exactamente MOTOR_EXEC_REQUEST_HERMES.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_HERMES]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "NousResearch/hermes-agent", SOURCE_REF: "v2026.9.24", SLUG: "hermes-agent-v2026.9.24"}}
+      - {kind: no_secrets}
+  - id: openclaw
+    task: Responde exactamente MOTOR_EXEC_REQUEST_OPENCLAW.
+    checks:
+      - {kind: contains, values: [MOTOR_EXEC_REQUEST_OPENCLAW]}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "openclaw/openclaw", SOURCE_REF: "v2026.9.6", SLUG: "openclaw-v2026.9.6"}}
+      - {kind: no_secrets}
+edges: []
