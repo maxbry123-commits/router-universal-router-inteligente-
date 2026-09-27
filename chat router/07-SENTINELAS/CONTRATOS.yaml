@@ -1,0 +1,78 @@
+# CONTRATOS + DSL DAG DEL SENTINELA ORQUESTADOR (inmutables salvo orden del Director)
+# El estado de una tarea NO lo escribe el agente: lo CALCULA el sentinela desde GitHub (archivos + pytest exit code + commit en main).
+# Estados finales: PASS · BLOCKED(causa demostrada) · ACTIVE. "Workflow success" NO es estado de tarea.
+schema: yaiwes.sentinela/v1
+
+dsl_dag_bucle:   # cada 20 min; continúa el intento anterior (no empieza de cero)
+  S1_OBSERVAR:     "HEAD sha de main + runs de espejos en curso + rama mirror/T0X"
+  S2_VERIFICAR:    "determinista por contrato: required_files existen y >0 bytes en main · sin rutas fugadas · pytest exit (0 PASS, 1 FIX_TESTS, 5 NO_TESTS=FAIL) · informe existe · commit espejo en main"
+  S3_CLASIFICAR:   "PASS | ACTIVE (espejo corriendo) | REVISE(causa) | BLOCKED(intentos>=3 o causa externa demostrada)"
+  S4_INVESTIGAR:   "solo si REVISE con causa no determinista: research packet (error literal + software + versión) → fuentes (min 3, max 20) → causa raíz + solución"
+  S5_ORDENAR:      "escribe '## CORRECCIÓN DEL SENTINELA (intento N)' en la tarea: causa, qué NO regenerar, qué arreglar, comando de aceptación"
+  S6_RELANZAR:     "dispara el espejo T0X (retoma su rama mirror/T0X)"
+  S7_REVERIFICAR:  "siguiente ciclo repite S1..S3 sobre el sha nuevo"
+  memoria_por_tarea: [last_sha, status, attempt, last_failure, research_packet, last_order, executor_run_id, evidence, next_action]
+  frescura: "un informe con observed_sha != HEAD es inválido"
+  autoridad: {PASS: "solo evidencia determinista", LLM: "solo investiga y redacta la orden; nunca decide PASS"}
+
+fuentes_investigacion:   # pool fijo; usar las pertinentes al error
+  - github issues/discussions/PRs/commits del componente afectado
+  - https://github.com/Aider-AI/aider/issues
+  - https://github.com/anthropics/claude-code/issues
+  - https://github.com/BerriAI/litellm/issues
+  - https://github.com/diegosouzapw/OmniRoute/issues
+  - https://github.com/NousResearch/hermes-agent/issues
+  - https://github.com/openclaw/openclaw/issues
+  - https://docs.pytest.org · https://stackoverflow.com · https://forums.developer.nvidia.com · https://docs.nvidia.com/nim
+
+prohibido_global: [".github/", "router inteligente universal/", "chat router/chat router/"]
+
+tareas:
+  T01:
+    objective: "Gobierno del equipo: Sheriff, Judge, Sentinel, contratos, MirrorManager (docs 22-23)"
+    scope: "chat router/05-AGENTES/gobierno"
+    required_files: [contratos.py, sheriff.py, judge.py, sentinel.py, mirror_manager.py, __init__.py, tests/test_gobierno.py, README.md]
+    acceptance: "python -m pytest 'chat router/05-AGENTES/gobierno' -q"
+    dependencies: []
+  T02:
+    objective: "Colmena YaiwesHive + EngineeringLoop llamando a nuestro Router"
+    scope: "chat router/05-AGENTES/colmena"
+    required_files: [router_cliente.py, agentes.py, colmena.py, __init__.py, tests/test_colmena.py, README.md]
+    acceptance: "SIMULADO=1 python -m pytest 'chat router/05-AGENTES/colmena' -q"
+    dependencies: [T01]
+  T03:
+    objective: "OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor con backoff, retención DB)"
+    scope: "chat router/08-OMNIROUTE"
+    required_files: [start_omniroute.sh, supervisor_omniroute.py, mantenimiento_db.py, tests/test_supervisor.py, DIAGNOSTICO.md, README.md]
+    acceptance: "python -m pytest 'chat router/08-OMNIROUTE' -q && bash -n 'chat router/08-OMNIROUTE/start_omniroute.sh'"
+    dependencies: []
+  T04:
+    objective: "Pasarela Anthropic↔NVIDIA para que Claude Code trabaje con nuestros modelos"
+    scope: "chat router/09-CLAUDE-CODE"
+    required_files: [pasarela.py, normalizar.py, iniciar_claude_code.sh, tests/test_normalizar.py, INVESTIGACION.md, README.md]
+    acceptance: "python -m pytest 'chat router/09-CLAUDE-CODE' -q"
+    dependencies: []
+  T05:
+    objective: "Funciones del chat: Action Registry, Council, rewind, compact, Archify, WORK"
+    scope: "chat router/10-CHAT-FUNCIONES"
+    required_files: [action_registry.py, council.py, rewind.py, compact.py, archify_cmd.py, work.py, rutas.py, tests/test_funciones.py, README.md]
+    acceptance: "SIMULADO=1 python -m pytest 'chat router/10-CHAT-FUNCIONES' -q"
+    dependencies: []
+  T06:
+    objective: "Hermes y OpenClaw como asistentes (forks) con modelos del Router + heartbeat"
+    scope: "chat router/05-AGENTES/asistentes"
+    required_files: [hermes_config.yaml, openclaw_config.yaml, hermes.md, arrancar_asistentes.sh, puente_asistentes.py, heartbeat.py, tests/test_asistentes.py, README.md]
+    acceptance: "SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
+    dependencies: []
+  T07:
+    objective: "Puerta de evidencia con los 12 goals (doc 26)"
+    scope: "chat router/11-EVIDENCIA"
+    required_files: [parser.py, goals.py, compilador_busquedas.py, buscadores.py, extractor.py, ranking.py, evidence_pack.py, verificador.py, puerta.py, tests/test_puerta.py, README.md]
+    acceptance: "SIMULADO=1 python -m pytest 'chat router/11-EVIDENCIA' -q"
+    dependencies: []
+  T08:
+    objective: "6 motores base de la Fábrica UI (doc 18)"
+    scope: "chat router/12-FABRICA-MOTORES"
+    required_files: [engine.py, capability_engine.py, canvas_engine.py, layout_engine.py, action_flow_engine.py, sandbox_engine.py, qa_engine.py, registry.py, tests/test_motores.py, README.md]
+    acceptance: "python -m pytest 'chat router/12-FABRICA-MOTORES' -q"
+    dependencies: []
