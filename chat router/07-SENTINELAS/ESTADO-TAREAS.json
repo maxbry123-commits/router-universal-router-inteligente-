@@ -112,12 +112,12 @@
   },
   "T03": {
     "attempt": 1,
-    "last_sha": "c36b04f368462b30de2c4f951d6d8d798455b97c",
+    "last_sha": "9801e05520c989b87a0e7314a8fe0d9094430bce",
     "evidence": {
       "faltan": [],
       "fugas": [],
       "pytest_exit": 0,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\n",
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.05s\n",
       "informe": true,
       "ultimo_commit": "36013c8bced86eda3d30ff47d69fe5880cc98f7e T03: probar retencion segura y bloqueo de puerto",
       "veredicto": "PASS"
