@@ -13,6 +13,7 @@ from contratos import Job, Result, State, Task  # noqa: E402
 from judge import Judge  # noqa: E402
 from mirror_manager import SYSTEM_MAP, MirrorManager  # noqa: E402
 from sentinel import Sentinel  # noqa: E402
+from sentinel_loop import (SentinelDAG, SentinelDSL, SentinelOrchestrator, SentinelResearchPlanner, SentinelSchemaValidator, SentinelSheriff, SentinelVerifier, SentinelGuardian, update_state)  # noqa: E402
 from sheriff import Sheriff  # noqa: E402
 
 
@@ -250,3 +251,85 @@ class TestAgentControl:
             attempt=3,
         )
         assert research["state"] == "RESEARCH"
+
+
+# ---------------- LOOP común de sentinelas ----------------
+
+class TestSentinelLoop:
+    def _spec(self):
+        return SentinelDSL.parse({
+            "sentinel_id": "sentinela-chat",
+            "objective": "cerrar T01 con evidencia",
+            "repository": "owner/repo",
+            "report_path": "chat router/06-EQUIPO/SENTINELA-chat.md",
+            "priority_goals": ["T01"],
+            "evidence_required": ["head_fresh", "priority_goal_observed"],
+            "research_sources": [f"fuente-{i}" for i in range(25)],
+            "max_attempts": 3,
+            "max_research_sources": 20,
+        })
+
+    def test_schema_dag_y_sheriff_compartidos(self):
+        spec = self._spec()
+        assert SentinelSchemaValidator().validate(spec) == (True, "PASS")
+        dag = SentinelDAG.build(spec)
+        assert ("ORDER", "EXECUTOR") in dag["edges"]
+        sheriff = SentinelSheriff()
+        assert sheriff.validate_write_paths([spec.report_path]) == (True, "PASS")
+        assert sheriff.validate_write_paths(["src/app.py"])[0] is False
+
+    def test_verifier_y_guardian_frescura(self):
+        spec = self._spec()
+        verifier = SentinelVerifier()
+        ok, issues = verifier.verify(spec, {
+            "observed_sha": "abc",
+            "current_sha": "abc",
+            "executor_active": False,
+            "workflow_false_green": False,
+            "objective_evidence": {
+                "head_fresh": True,
+                "priority_goal_observed": True,
+            },
+        })
+        assert ok and issues == []
+        stale = SentinelGuardian().inspect(
+            spec, {"attempt": 0},
+            {"observed_sha": "abc", "current_sha": "def"},
+        )
+        assert stale["action"] == "REOBSERVE"
+
+    def test_research_max_20_y_memoria_loop(self):
+        spec = self._spec()
+        packet = SentinelResearchPlanner.build(
+            spec, "TESTS_FALLAN", "FAILED test_merge"
+        )
+        assert packet["max_sources"] == 20
+        assert len(packet["sources"]) == 20
+
+        state = update_state(
+            {"attempt": 1, "last_failure": "TESTS_FALLAN", "same_failure_count": 1},
+            {"state": "REVISE", "reason": "TESTS_FALLAN"},
+            {"current_sha": "abc", "failure_class": "TESTS_FALLAN"},
+        )
+        assert state["attempt"] == 2
+        assert state["same_failure_count"] == 2
+
+    def test_orquestador_pass_active_revise(self):
+        spec = self._spec()
+        orch = SentinelOrchestrator()
+        base = {
+            "observed_sha": "abc",
+            "current_sha": "abc",
+            "executor_active": False,
+            "workflow_false_green": False,
+            "objective_evidence": {
+                "head_fresh": True,
+                "priority_goal_observed": True,
+            },
+        }
+        assert orch.next_action(spec, {"attempt": 0}, base)["state"] == "PASS"
+        active = dict(base, executor_active=True)
+        assert orch.next_action(spec, {"attempt": 0}, active)["state"] == "ACTIVE"
+        bad = dict(base)
+        bad["objective_evidence"] = {"head_fresh": True, "priority_goal_observed": False}
+        assert orch.next_action(spec, {"attempt": 0}, bad)["state"] == "REVISE"
