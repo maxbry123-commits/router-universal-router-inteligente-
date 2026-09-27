@@ -28,18 +28,17 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 4
-Proyecto/tarea: `chat-yaiwes` / `RIU-0120`
-Estado: **RUNNING**
-Fase: `B2_MEMORY_WIRED`
+Revisión: 13
+Proyecto/tarea: `chat-yaiwes` / `RIU-0121`
+Estado: **COMPLETED**
+Fase: `M7_RDC_VERIFIED`
 
 ### Último checkpoint
-Memoria SQLite cableada con scopes y reinicio; Dataset Yaiwes montado como recall read-only dentro del runtime chat. Endpoints /chat/memory y /chat/memory/dataset; memory_query añade contexto opcional. Storage reporta salud Dataset y sync HF sigue fail-closed. 39 pruebas PASS.
+M-0..M-7 COMPLETADOS: 13 componentes auditados; SQLite, State Hub y grafo fallback cableados; FalkorDB (927 archivos) y AgentDB (1456 archivos) descargados y read-back EXTRACTED_VERIFIED en GitHub. Action memoria PASS 31 tests. Secret Scan: 217 hallazgos baseline preexistentes; escaneo dirigido de memoria PASS. H-1 sigue reservado a Opus.
 
 ### Siguiente
-B-3: HF RW y servicios si autorizados
+H-1 reservado a Opus; no ejecutar HF RW ni despliegue Vercel
 <!-- YAIWES STATE HUB END -->
-
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121
 M-0 ✅ PASS — inventario real de 13 componentes con ruta y object ID; FalkorDB y AgentDB ausentes.
