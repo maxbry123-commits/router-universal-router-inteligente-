@@ -1,0 +1,53 @@
+name: Sentinela Orquestador (cada 20 min)
+
+# Bucle de recuperación de tareas T01-T08 (contrato: chat router/07-SENTINELAS/CONTRATOS.yaml).
+# OBSERVAR → VERIFICAR (determinista, decide PASS) → CLASIFICAR → INVESTIGAR (solo si falla) → ORDENAR → RELANZAR espejo → REVERIFICAR.
+# Memoria por tarea en chat router/07-SENTINELAS/ESTADO-TAREAS.json. Informe: chat router/07-SENTINELAS/informes/ORQUESTADOR.md.
+
+on:
+  schedule:
+    - cron: '10,30,50 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: sentinela-orquestador
+  cancel-in-progress: false
+
+jobs:
+  orquestar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+      NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+      NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+      NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+      NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+          fetch-depth: 50
+          sparse-checkout: |
+            chat router
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q pyyaml pytest fastapi httpx requests
+      - name: Bucle del sentinela
+        id: s
+        run: python "chat router/07-SENTINELAS/sentinela_orquestador.py"
+      - name: Guardar estado, correcciones e informe
+        run: |
+          git config user.name "sentinela-orquestador"; git config user.email "sentinela@users.noreply.github.com"
+          git add --sparse "chat router/07-SENTINELAS/ESTADO-TAREAS.json" "chat router/07-SENTINELAS/informes/ORQUESTADOR.md" "chat router/06-ESPEJOS/tareas" || true
+          git commit -q -m "sentinela orquestador: estado y correcciones" || exit 0
+          for i in 1 2 3 4; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done
+      - name: Relanzar espejos con corrección
+        if: steps.s.outputs.relanzar != ''
+        run: gh workflow run claude-code-espejos.yml -R maxbry123-commits/router-universal-router-inteligente- -f tareas="${{ steps.s.outputs.relanzar }}" && echo "::notice::relanzados ${{ steps.s.outputs.relanzar }}"
