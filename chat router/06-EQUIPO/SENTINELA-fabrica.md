@@ -1,4 +1,4 @@
-# SENTINELA-FABRICA — 2026-09-27T22:35Z
+# SENTINELA-FABRICA — 2026-09-27T22:47Z
 (LOOP común · versión: a3e6f375449cf9cf · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.
@@ -16,15 +16,15 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El bloque "Cerrar la Fábrica UI" no aporta evidencia de commits recientes observados en el repo (git log verificable); la evidencia comunitaria adjunta son preguntas genéricas de StackOverflow sin relación con el objetivo.
+CAUSA_RAIZ: El fallo `missing_evidence:recent_commits_observed` indica que Sentinela no observó commits recientes verificables en el repo; la evidencia aportada son resultados genéricos de StackOverflow, no pruebas del estado real del repositorio.
 
-EVIDENCIA: Fallo literal=missing_evidence:recent_commits_observed. Ninguna de las 5 URLs citadas documenta commits, cierres de objetivos ni entregas de sentinela-fabrica; son ruido de búsqueda (branch prediction, git undo, yield).
+EVIDENCIA: Los 5 ítems de "Evidencia comunidad" son preguntas populares de SO (branch prediction, git undo, git fetch/pull, yield) sin relación con la Fábrica UI ni con commits del proyecto. No hay hash, fecha, autor ni diff observable.
 
-NO_REGENERAR: No regenerar evidencia comunitaria ni sustituirla por más scraping; el fallo no es de fuentes externas sino de ausencia de inspección local del repositorio.
+NO_REGENERAR: No regenerar la Fábrica UI ni reintentar el bloque; el problema no es de código sino de ausencia de evidencia de entrega. Regenerar solo ocultaría el fallo.
 
-REPARAR: Ejecutar y adjuntar salida real de: `git log --oneline -n 10`, `git status`, y diff/listado de artefactos UI entregados por objetivo, con hash, fecha y archivo tocado por cada entrega.
+REPARAR: Ejecutar y adjuntar salida real de `git log --oneline -n 10` (con fecha y hash), `git status`, y diff de los archivos entregados del bloque actual; vincular cada objetivo de cierre con su commit correspondiente.
 
-ACEPTACION: PASS solo cuando cada objetivo cerrado tenga commit reciente observado (hash+fecha+mensaje) y artefacto verificable en disco; sin eso, el siguiente bloque queda bloqueado.
+ACEPTACION: Solo se permite avanzar al siguiente bloque cuando exista: (1) commits recientes observados con hash verificable, (2) mapeo objetivo→commit→archivo, (3) verificación de que la entrega funciona. Hasta entonces: estado = BLOQUEADO, no PASS.
 
 CONTROL:
 - PASS no lo decide la LLM.
