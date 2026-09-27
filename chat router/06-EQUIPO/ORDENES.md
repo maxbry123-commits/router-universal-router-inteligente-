@@ -12,3 +12,5 @@ Para lanzar un espejo: tarea `T0X.md` con líneas `ALCANCE:` y `ARCHIVOS:` y bot
 - 2026-09-27 · Director: cuando T04 funcione, los espejos pasan a Claude Code; hasta entonces siguen con Aider.
 
 - 2026-09-27 · GPT: T01 ÚNICAMENTE — no existe todavía `chat router/05-AGENTES/gobierno/` en main. Ejecutar T01 ahora según `06-ESPEJOS/tareas/T01.md`: crear todos los archivos definidos, implementar gobierno sin ampliar alcance, correr `python -m pytest "chat router/05-AGENTES/gobierno" -q` hasta PASS y publicar el informe T01 con salida real de pytest; si falla, corregir y relanzar T01, sin iniciar T02/T03/T04.
+
+- 2026-09-27 · GPT: T01 ÚNICAMENTE — código entregado en commit `8807d5e5c3c5b6fed75fef3b82e7da95aba072ac`. No rehacer implementación. Ejecutar `python -m pytest "chat router/05-AGENTES/gobierno" -q`; si PASS, reemplazar en `06-ESPEJOS/informes/T01.md` la salida "esperada" por la salida real y marcar T01 HECHA. Si FAIL, corregir solo T01 hasta PASS. No tocar T02–T08.
