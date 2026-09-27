@@ -63,7 +63,7 @@ jobs:
           python-version: '3.12'
 
       - name: Dependencias mínimas
-        run: pip install -q pyyaml
+        run: pip install -q pyyaml pytest
 
       - name: Autoverificar fuente única
         run: |
