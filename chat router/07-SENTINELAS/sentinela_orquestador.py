@@ -520,6 +520,7 @@ def main() -> None:
     estado = json.loads(ESTADO.read_text()) if ESTADO.exists() else {}
     head = sh(["git", "rev-parse", "HEAD"])[1].strip()
     activos = espejos_activos()
+    foreign_actives = sorted(t for t in activos if t != focus_tid)
     loop = SentinelOrchestrator()
 
     relanzar: list[str] = []
@@ -543,6 +544,24 @@ def main() -> None:
             ev = st.get("evidence", {})
             lineas.append(
                 f"| {tid} | WAITING_FOCUS | foco={focus_tid} | "
+                f"{st.get('attempt', 0)} | faltan {len(ev.get('faltan', []))} "
+                f"· pytest {ev.get('pytest_exit', '-')} |"
+            )
+            continue
+
+        if tid not in activos and foreign_actives:
+            st.update({
+                "status": "WAITING_EXECUTOR",
+                "last_sha": head,
+                "next_action": (
+                    "esperar ejecutor activo: " + ",".join(foreign_actives)
+                    + "; no lanzar segundo espejo"
+                ),
+            })
+            estado[tid] = st
+            ev = st.get("evidence", {})
+            lineas.append(
+                f"| {tid} | WAITING_EXECUTOR | activo={','.join(foreign_actives)} | "
                 f"{st.get('attempt', 0)} | faltan {len(ev.get('faltan', []))} "
                 f"· pytest {ev.get('pytest_exit', '-')} |"
             )
