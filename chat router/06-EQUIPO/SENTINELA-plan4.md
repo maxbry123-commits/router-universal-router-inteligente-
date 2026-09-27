@@ -1,4 +1,4 @@
-# SENTINELA-PLAN4 — 2026-09-27T23:09Z
+# SENTINELA-PLAN4 — 2026-09-27T23:15Z
 (LOOP común · versión: 1a36c3b6f8bb2dd9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia, rama/PR o causa corregible.
@@ -17,15 +17,15 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El loop no ejecutó `git log` (o equivalente) en esta vuelta; la evidencia aportada son URLs de StackOverflow genéricas, no commits observados del repo sentinela-plan4.
+CAUSA_RAIZ: El loop no ejecutó `git log` (ni equivalente) en esta vuelta; la evidencia aportada son URLs de StackOverflow genéricas, no commits observados del repo sentinela-plan4.
 
-EVIDENCIA: Fallo literal `missing_evidence:recent_commits_observed`; los 5 ítems de "Evidencia comunidad" son preguntas externas (branch prediction, git undo, git fetch/pull, yield) sin relación con commits recientes del objetivo.
+EVIDENCIA: Fallo literal `missing_evidence:recent_commits_observed`. Los 5 ítems de "Evidencia comunidad" son preguntas SO (branch prediction, git undo, fetch vs pull, yield) sin relación con commits recientes del plan; ninguna rama/PR ni hash de commit adjunto.
 
-NO_REGENERAR: No reintentar la misma vuelta con evidencia comunitaria; no declarar PASS; no recopilar más URLs de StackOverflow como sustituto de evidencia del repo.
+NO_REGENERAR: No volver a consultar StackOverflow ni reutilizar estas URLs como evidencia; no reintentar la vuelta sin instrumentar la captura de commits primero.
 
-REPARAR: Ejecutar en el repo: `git log --oneline -5` y `git status`; si no hay commits nuevos, crear rama `sentinela/loop-N`, commit con el artefacto de la vuelta y abrir PR; adjuntar salida cruda del comando como evidencia.
+REPARAR: 1) En cada vuelta del LOOP ejecutar `git log --oneline -5` y `git status` en sentinela-plan4 y adjuntar salida cruda. 2) Si no hay commits nuevos, crear rama `sentinela/loop-N` con commit de evidencia (artefacto de la vuelta) y abrir PR. 3) Registrar causa corregible si el repo está limpio: documentar por qué no hubo cambios.
 
-ACEPTACION: La próxima vuelta incluye hash de commit real + rama/PR verificable, o causa corregible documentada (p.ej. repo sin cambios, sin remote, sin permisos).
+ACEPTACION: Vuelta válida cuando exista (a) salida de `git log` con hashes recientes, o (b) enlace a rama/PR creada, o (c) causa corregible documentada con acción asignada.
 
 CONTROL:
 - PASS no lo decide la LLM.
