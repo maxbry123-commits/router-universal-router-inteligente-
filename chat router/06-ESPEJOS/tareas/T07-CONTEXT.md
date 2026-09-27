@@ -199,3 +199,20 @@ La arquitectura de T07 sigue siendo la definida por Documento 26.
 - no copiar README de otra tarea
 - máximo 500 líneas/archivo
 - PASS solo con aceptación real exit 0 + checks independientes
+
+
+## TRAZABILIDAD DEL INTENTO ANTERIOR
+Run: 36350637066
+Job: 108708537516
+Modelo: moonshotai/kimi-k3
+Aider: rc=0, ~23 s.
+Resultado real:
+- no creó parser.py/goals.py/etc.;
+- pytest terminó exit 5 (sin tests descubiertos);
+- el recuperador antiguo copió por error:
+  chat router/05-AGENTES/gobierno/README.md
+  → chat router/11-EVIDENCIA/README.md;
+- el push de recuperación terminó con HTTP 500;
+- no quedó mirror/T07.
+Conclusión: NO hay trabajo previo válido que preservar.
+La infraestructura de recuperación por basename ya fue eliminada; no repetir esa ruta.
