@@ -69,7 +69,13 @@ RESEARCH_REPOS = {
         "NousResearch/hermes-agent",
         "openclaw/openclaw",
     ],
-    "T07": ["pytest-dev/pytest"],
+    "T07": [
+        "HuskyInSalt/CRAG",
+        "anthonywchen/RARR",
+        "google-deepmind/long-form-factuality",
+        "amazon-science/RAGChecker",
+        "pytest-dev/pytest",
+    ],
     "T08": ["pytest-dev/pytest"],
 }
 
