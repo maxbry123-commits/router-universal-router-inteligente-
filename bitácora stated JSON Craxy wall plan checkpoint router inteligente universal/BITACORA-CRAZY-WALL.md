@@ -580,3 +580,7 @@ Regla arquitectónica: **nunca cargar el dataset completo al LLM**. El Router co
 
 ### RIU-0119 — corrección de alcance — 2026-09-27
 Se revirtieron los cambios no autorizados de `Chat Mvp/README.md` y `chat router/01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml`. Se mantienen únicamente: (1) cableado del código del chat, (2) puente de almacenamiento con fail-closed y sync simulado, (3) pruebas locales, (4) checkpoint/tareas en Crazy Wall y State Hub, y (5) handoff del chat. B-2/B-3 siguen pendientes porque no hay servicio operativo ni acceso HF autorizado para read-back real.
+
+
+### RIU-0120 — memoria y almacenamiento cableados — 2026-09-27
+Se organizó el adaptador dentro de `router inteligente universal/integration/chat_mvp/`. SQLite ahora ofrece memoria persistente por propietario y alcance (`conversation`, `project`, `global`, `agent`) con recuperación tras reinicio y enlaces al grafo. El plugin `dataset Yaiwes/` queda cableado como recall read-only; no recibe escrituras. Se añadieron `/chat/memory`, `/chat/memory/dataset` y `memory_query` opcional en `/chat/send`. `/chat/storage` informa la salud del Dataset y el sync HF continúa fail-closed sin bucket/token. Suite completa: 39 PASS. Graphiti, FalkorDB, Memanto, Graphify, AgentDB, PostgreSQL y Redis siguen sin servicio/contrato operativo verificable.

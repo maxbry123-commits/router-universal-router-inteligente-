@@ -33,14 +33,14 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` (nodo B-1) · FLAG-2
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 3
-Proyecto/tarea: `chat-yaiwes` / `RIU-0119`
+Revisión: 4
+Proyecto/tarea: `chat-yaiwes` / `RIU-0120`
 Estado: **RUNNING**
-Fase: `SCOPE_CORRECTED`
+Fase: `B2_MEMORY_WIRED`
 
 ### Último checkpoint
-Se revirtieron README y DAG no autorizados. Se conserva solo codigo, pruebas, Crazy Wall, BITACORA, STATE y HANDOFF autorizados. 26 pruebas PASS. SQLite y State Hub probados; HF bucket sigue simulado; servicios de memoria no conectados.
+Memoria SQLite cableada con scopes y reinicio; Dataset Yaiwes montado como recall read-only dentro del runtime chat. Endpoints /chat/memory y /chat/memory/dataset; memory_query añade contexto opcional. Storage reporta salud Dataset y sync HF sigue fail-closed. 39 pruebas PASS.
 
 ### Siguiente
-B-2: servicios y HF solo con contrato
+B-3: HF RW y servicios si autorizados
 <!-- YAIWES STATE HUB END -->

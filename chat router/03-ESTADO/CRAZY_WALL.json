@@ -11,6 +11,17 @@
       "summary": "Se revirtieron README y DAG no autorizados. Se conserva solo codigo, pruebas, Crazy Wall, BITACORA, STATE y HANDOFF autorizados. 26 pruebas PASS. SQLite y State Hub probados; HF bucket sigue simulado; servicios de memoria no conectados.",
       "updated_at": "2026-09-27T05:15:35Z",
       "last_event_seq": 3
+    },
+    "RIU-0120": {
+      "node_id": "RIU-0120",
+      "task": "RIU-0120",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "B2_MEMORY_WIRED",
+      "next": "B-3: HF RW y servicios si autorizados",
+      "summary": "Memoria SQLite cableada con scopes y reinicio; Dataset Yaiwes montado como recall read-only dentro del runtime chat. Endpoints /chat/memory y /chat/memory/dataset; memory_query añade contexto opcional. Storage reporta salud Dataset y sync HF sigue fail-closed. 39 pruebas PASS.",
+      "updated_at": "2026-09-27T05:22:56Z",
+      "last_event_seq": 4
     }
   }
 }
