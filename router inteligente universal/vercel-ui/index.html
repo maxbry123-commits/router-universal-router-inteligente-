@@ -83,6 +83,8 @@ button{cursor:pointer}
     if(!r.ok){let t='';try{t=await r.text()}catch(e){}throw new Error('El Router respondió con error '+r.status+(t?': '+t.slice(0,80):''))}
     return r.json();
   }
+  const CHAT_ID=(()=>{try{let id=localStorage.getItem('RIU_CHAT_ID');if(!id){id='vercel-'+(crypto.randomUUID?crypto.randomUUID():Date.now());localStorage.setItem('RIU_CHAT_ID',id)}return id}catch(e){return 'principal'}})();
+  async function saveDataset(data){const k=keys(),r=await fetch('/api/storage',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':k.api},body:JSON.stringify(data)});let d={};try{d=await r.json()}catch(e){}if(!r.ok||!d.saved)throw new Error(d.error||'DATASET_WRITE_FAILED');return d}
   function add(cls,text){const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;$('hist').appendChild(d);$('hist').scrollTop=1e9}
   function fill(sel,items,first){const s=$(sel);s.innerHTML=first?'<option value="">'+first+'</option>':'';items.forEach(i=>{const o=document.createElement('option');o.value=i.v;o.text=i.t;s.add(o)})}
 
@@ -102,9 +104,11 @@ button{cursor:pointer}
         if(!ag){add('a','Elige un agente arriba para mandarle la orden.');return}
         await api('/control/order',{method:'POST',body:{agente:ag,orden:text}});
         add('a','Orden enviada a '+ag+'. Queda en la cola de órdenes.');
+        try{await saveDataset({kind:'turn',conversation_id:CHAT_ID,user_message:text,assistant_message:'Orden enviada a '+ag+'. Queda en la cola de órdenes.',agent_id:ag,model:'agent-order'});say('Orden enviada · turno guardado en dataset privado')}catch(storeError){say('La orden fue enviada; falló el guardado en dataset: '+storeError.message)}
       }else{
         const d=await api('/v1/chat/completions',{method:'POST',body:{model:$('model').value,messages:[{role:'user',content:text}]}});
-        add('a',(d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||d.response||JSON.stringify(d).slice(0,300));
+        const answer=(d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||d.response||JSON.stringify(d).slice(0,300);add('a',answer);
+        try{await saveDataset({kind:'turn',conversation_id:CHAT_ID,user_message:text,assistant_message:answer,model:$('model').value});say('Chat conectado · turno guardado en dataset privado')}catch(storeError){say('El chat respondió; falló el guardado en dataset: '+storeError.message)}
       }
     }catch(e){add('a','No se pudo: '+e.message)}
   }
@@ -114,8 +118,7 @@ button{cursor:pointer}
   $('attach').onclick=()=>$('file').click();
   $('file').onchange=async e=>{
     const f=e.target.files[0];if(!f)return;
-    const fd=new FormData();fd.append('file',f);fd.append('chat_id','principal');
-    try{const r=await fetch(BASE+'/chat/documents',{method:'POST',headers:hdr(false),body:fd});if(!r.ok)throw new Error('error '+r.status);say('Archivo subido: '+f.name)}catch(err){say('No se pudo subir el archivo ('+err.message+')')}
+    try{if(f.size>2.8*1024*1024)throw new Error('límite de 2,8 MB');const buf=await f.arrayBuffer();let raw='';const bytes=new Uint8Array(buf);for(let i=0;i<bytes.length;i+=8192)raw+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));const data_b64=btoa(raw);await api('/chat/documents',{method:'POST',body:{name:f.name,mime:f.type||'application/octet-stream',data_b64,conversation_id:CHAT_ID}});await saveDataset({kind:'document',conversation_id:CHAT_ID,name:f.name,mime:f.type||'application/octet-stream',data_b64});say('Archivo subido al Router y guardado en dataset privado: '+f.name)}catch(err){say('No se pudo conectar/guardar el archivo ('+err.message+')')}
     e.target.value='';
   };
   $('wfBtn').onclick=()=>{$('wf').style.display=$('wf').style.display==='none'?'flex':'none'};
