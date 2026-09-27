@@ -281,7 +281,7 @@
   },
   "T05": {
     "attempt": 2,
-    "last_sha": "891f06ad86fb6688595d8af64fef64694e4c8647",
+    "last_sha": "ddde664de075708475d1ff7f7739d38e3f26218c",
     "evidence": {
       "faltan": [
         "action_registry.py",
@@ -313,7 +313,7 @@
       "veredicto": "REVISE",
       "causa": "NO_ENTREGADO"
     },
-    "status": "REVISE",
+    "status": "ACTIVE",
     "last_failure": "NO_ENTREGADO",
     "research_packet": {
       "sentinel_id": "sentinela-t05",
@@ -360,7 +360,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "espejo relanzado",
+    "next_action": "vigilar: Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -377,7 +377,18 @@
         "title": "pytest-dev/pytest",
         "url": "https://github.com/pytest-dev/pytest"
       }
-    ]
+    ],
+    "runtime": {
+      "executor_active": true,
+      "run_id": 36358304167,
+      "job_id": 108730331266,
+      "active_step": "Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)",
+      "active_step_age_minutes": 0
+    },
+    "supervision": {
+      "action": "WATCH",
+      "reason": "Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)"
+    }
   },
   "T06": {
     "attempt": 1,
