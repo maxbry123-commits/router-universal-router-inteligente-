@@ -576,3 +576,7 @@ Regla arquitectónica: **nunca cargar el dataset completo al LLM**. El Router co
 - `RIU Chat MVP Core Verify`: PASS, run `36295956839`. Pruebas locales combinadas: 26 PASS; `git diff --check`, sintaxis Python, JSON/JSONL/YAML y escaneo local de secretos PASS.
 - `RIU Secret Scan`: FAILURE, 217 hallazgos globales; las anotaciones del run apuntan a archivos de tests existentes de Hermes y cero anotaciones a las rutas de este delta. Se mantiene el scanner sin excepciones.
 - No se usaron credenciales ni se escribió en Hugging Face. Siguen abiertos B-2 (servicios/memoria conectados) y B-3 (read-back/recuperación real de adjuntos desde Bucket).
+
+
+### RIU-0119 — corrección de alcance — 2026-09-27
+Se revirtieron los cambios no autorizados de `Chat Mvp/README.md` y `chat router/01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml`. Se mantienen únicamente: (1) cableado del código del chat, (2) puente de almacenamiento con fail-closed y sync simulado, (3) pruebas locales, (4) checkpoint/tareas en Crazy Wall y State Hub, y (5) handoff del chat. B-2/B-3 siguen pendientes porque no hay servicio operativo ni acceso HF autorizado para read-back real.
