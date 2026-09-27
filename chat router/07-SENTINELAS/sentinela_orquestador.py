@@ -58,7 +58,11 @@ RESEARCH_REPOS = {
         "claude-server/claude-nim",
         "deepseek-ai/deepseek-harness",
     ],
-    "T05": ["pytest-dev/pytest"],
+    "T05": [
+        "fastapi/fastapi",
+        "karpathy/llm-council",
+        "pytest-dev/pytest",
+    ],
     "T06": ["NousResearch/hermes-agent", "openclaw/openclaw"],
     "T07": ["pytest-dev/pytest"],
     "T08": ["pytest-dev/pytest"],
