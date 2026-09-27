@@ -1,24 +1,35 @@
-# SENTINELA CHAT — 2026-09-27 20:11 UTC
-(modelo: deepseek-ai/deepseek-v4.1-flash@NVIDIA_API_KEY_1)
+# SENTINELA-CHAT — 2026-09-27T22:24Z
+(LOOP común · versión: 32590b52b309a8f0 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
-ESTADO: amarillo — sin commits, ramas, PRs ni ejecuciones visibles; T01 sigue sin carpeta en main según GPT.
+OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
+ESTADO LOOP: REVISE · TESTS_FALLAN
+OBSERVED_SHA: 07e8ab7f9494
 
-AVANCE:
-- Manus: M-0..M-7 COMPLETADOS, State Hub revisión 13, Action memoria PASS 31 tests.
-- Opus: V-1 paso 1 ✅, paso 2 parcial (PARTE-2-B pendiente); A-1 OmniRoute relanzado 27-sep 02:40 sin resultado leído.
-- Director: T01–T04 ordenadas; T03/T04 con investigación asignada a SENTINELA-chat.
+PRIORIDADES:
+1. T01 gobierno: código + tests reales + informe + commit en main
+2. T02 colmena conectada al Router
+3. T03 OmniRoute estable
+4. T04 Claude Code ↔ NVIDIA
+5. T05 funciones del chat
+6. T06 Hermes/OpenClaw asistentes
+7. T07 puerta de evidencia 12 goals
+8. T08 motores base de fábrica
 
-DESVIOS DEL PLAN:
-- T01 gobierno no existe en main (GPT lo confirma); Director la dio por activa.
-- V-1 paso 3 (auditoría cruzada) sin evidencia.
-- A-1 sin lectura de `prueba-omniroute-router.yml` tras relanzamiento.
-- FLAG-3 Groq sin clave; FLAG-4 PARTE-2-B pendiente.
+OBJETIVO ACTIVO:
+- tarea: T01
+- estado: REVISE
+- intento: 1
+- fallo: TESTS_FALLAN
+- siguiente: esperar; foco actual T02
 
-ORDENES CORRECTIVAS:
-1. Agente T01: crear `chat router/05-AGENTES/gobierno/` con archivos de `06-ESPEJOS/tareas/T01.md`, correr pytest hasta PASS y publicar informe con salida real.
-2. Opus: leer resultado de `prueba-omniroute-router.yml` y reportar run_id + anotaciones; si falla, corregir `start_omniroute.sh`.
-3. Opus: completar V-1 paso 2B (PARTE-2-B) y ejecutar paso 3 (auditoría 5 pasadas).
-4. SENTINELA-chat: entregar propuestas de corrección para T03 (OmniRoute issues/wiki) y T04 (claude-code issues) antes de relanzar espejos.
-5. Nadie: no iniciar T02/T03/T04 hasta que T01 esté en verde.
+INVESTIGACIÓN:
+- fuentes consultadas: 5
+- mínimo independiente objetivo: 3
 
-PARA OPUS: nada roto en Router/HF visible; falta leer run de A-1.
+Sin respuesta LLM; conservar evidencia y reintentar investigación.
+
+CONTROL:
+- PASS no lo decide la LLM.
+- Cada ciclo relee HEAD; un informe con SHA viejo queda inválido.
+- Si el mismo fallo se repite, escala a investigación antes de reintentar.
+- El sentinela solo puede escribir informes/órdenes, no código del objetivo.
