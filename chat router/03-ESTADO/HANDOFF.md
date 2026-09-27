@@ -1,34 +1,32 @@
 # HANDOFF — CHAT YAIWES (leer primero si continúas este trabajo)
-Actualizado: 2026-09-27 02:40 UTC por Opus. Director: Max.
+Actualizado: 2026-09-27 02:53 UTC por Opus. Director: Max.
 
-## Orden de lectura
-1. `../02-ARQUITECTURA/📂readme chat Arquitectura.md` (cómo es el sistema)
-2. `../01-PLAN/PLAN-MAESTRO-CHAT.yaml` (nodos A1…E1, qué falta y cómo se cierra cada uno)
-3. `../00-INSTRUCCIONES/` (todas las instrucciones del Director, verbatim, partes 1–5)
-4. Este archivo + `STATE.json` + `CRAZY_WALL.json` + `BITACORA.jsonl`
+## Orden de lectura (formato del plan de agentes)
+1. `../01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml` (reglas R01-R12, fuente de verdad M#/doc#, gobernanza, gap ladder, 12 goals, ask council, flags)
+2. `../01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml` (DAGs 0, A, B, C, D, E con pasos por nodo, orden y estado)
+3. `../02-ARQUITECTURA/📂readme chat Arquitectura.md`
+4. `../00-INSTRUCCIONES/` (verbatim del Director)
+NO EJECUTAR (superseded): `../01-PLAN/PLAN-MAESTRO-CHAT.yaml`, `../01-PLAN/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml`, `../01-PLAN/ORQUESTADOR-DE-TRABAJO.yaml` (su contenido está integrado en los nodos C-1..C-3).
 
-## Dónde estamos
-- **Nodo activo:** A1 — OmniRoute privado dentro del Router 16 GB. Prueba lanzada 27-sep 00:51 (`.github/workflows/prueba-omniroute-router.yml`). Revisar su resultado.
-- **Hecho:** Router en Job 16 GB de pago; OmniRoute arranca dentro (`router inteligente universal/keeper/start_omniroute.sh`) y el Router lo expone en `/omniroute/*`; conector MCP sin OAuth; forks de OpenClaw y Hermes; raíz del chat ordenada; limpieza de piezas sueltas.
-- **Siguiente:** A1 (confirmar) → B1 State Hub → A3 OmniRoute como proveedor del Router → A2 aviso Kimi K3/DeepSeek V4 en el chat → B2 memoria cableada con componentes ya descargados.
+## Nodo en curso y checkpoint
+- **V-1 (verbatim literal)**:
+  - paso 1 ✅ `INPUT-BLOCK-VERBATIM-PARTE-5-B-DOCS-22-23.md` y `INPUT-BLOCK-VERBATIM-PARTE-5-C-DOCS-24-26-M40.md` (literal completo).
+  - paso 2 ⏳ SIGUIENTE: subir `INPUT-BLOCK-VERBATIM-PARTE-2.md` con los documentos completos del 25-sep: guía de agentes (M2), Harness + Mapa Mental v3.0 (M7), docs HF 2-3-4 y M10 completo, docs 5-6-7 (M16), doc 9 completo con descripciones (M17), doc 8 micro resúmenes, doc 10 (M18), y mensajes M12, M13, M14 completos. Fuente: conversación de Opus 25–26 sep.
+  - paso 3 pendiente: auditoría cruzada 5 pasadas y lista de faltantes.
+- **A-1 (OmniRoute)**: prueba relanzada 27-sep 02:40 (`prueba-omniroute-router.yml`, relee la dirección en cada intento). La 1ª prueba fue inválida (usó dirección vieja). Leer resultado.
 
-## GAPs abiertos
-- G1: `ui_bridge.py` guarda grupos/workflows/órdenes en `chat router/data/`; esa carpeta se movió a `03-ESTADO/data/` → ajustar la constante `DATA` en `ui_bridge.py` (nodo B1).
-- G2: enlace del chat que desplegó Manus (el Director lo tiene) → nodo D1.
-- G3: Groq sin clave en secretos del Router.
-- G4: Parte 2 del verbatim (documentos del 25-sep) incompleta; está en la conversación de Opus.
+## Hecho
+Router en Job 16 GB de pago; OmniRoute arranca dentro (`router inteligente universal/keeper/start_omniroute.sh`) con puerta `/omniroute/*`; conector MCP sin OAuth; forks OpenClaw y Hermes; raíz ordenada; limpieza; plan en formato del plan de agentes (contrato + nodos).
 
-## Reglas para quien continúe
-Anotar cada instrucción nueva verbatim en `00-INSTRUCCIONES/` ANTES de ejecutar; 1 chat = 1 nodo en CRAZY_WALL; evento en BITACORA por cada cambio; no crear archivos fuera de esta raíz; no cambiar diseño/herramientas del Director sin autorización; todo modelo por nuestro Router.
+## Flags abiertos
+FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` (nodo B-1) · FLAG-2 enlace del chat de Manus (nodo D-1) · FLAG-3 Groq sin clave · FLAG-4 parte 2 del verbatim (nodo V-1 paso 2).
 
-## STATE (foto actual)
+## STATE
 ```json
-{"schema":"yaiwes.state/v1","proyecto":"chat-yaiwes","actualizado":"2026-09-27T02:40Z",
- "fase":"A","nodo_activo":"A1","hechos":["router_16gb","omniroute_dentro_arrancando","mcp_sin_oauth","forks_openclaw_hermes","raiz_ordenada"],
- "siguientes":["A1","B1","A3","A2","B2"],"gaps":["G1","G2","G3","G4"]}
+{"schema":"yaiwes.state/v1","proyecto":"chat-yaiwes","actualizado":"2026-09-27T02:53Z","nodos_en_curso":["V-1","A-1"],"v1_paso":2,"siguientes":["V-1.2","A-1","B-1"],"flags":["FLAG-1","FLAG-2","FLAG-3","FLAG-4"]}
 ```
 
 ## CRAZY WALL (1 chat = 1 nodo)
 ```json
-{"schema":"yaiwes.crazy-wall/v1","nodos":{"A1":{"status":"CLAIMED","agente":"opus","chat":"opus-2026-09-27","fase":"PRUEBA","siguiente":"revisar prueba-omniroute-router"}}}
+{"schema":"yaiwes.crazy-wall/v1","nodos":{"V-1":{"status":"CLAIMED","agente":"opus","fase":"PASO_2","siguiente":"subir PARTE-2 literal"},"A-1":{"status":"CLAIMED","agente":"opus","fase":"PRUEBA","siguiente":"leer prueba-omniroute-router"}}}
 ```
