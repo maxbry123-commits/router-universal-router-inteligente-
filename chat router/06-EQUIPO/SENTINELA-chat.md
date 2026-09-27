@@ -3,7 +3,7 @@
 
 OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
 ESTADO LOOP: ACTIVE · executor_active
-OBSERVED_SHA: 4cfd13895d02
+OBSERVED_SHA: 3ebdc3f266d3
 
 PRIORIDADES:
 1. T01 gobierno: código + tests reales + informe + commit en main
