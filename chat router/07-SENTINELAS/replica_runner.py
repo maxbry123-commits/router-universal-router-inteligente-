@@ -31,6 +31,7 @@ from sentinel_loop import (  # noqa: E402
 
 BASE = ROOT / "07-SENTINELAS"
 CFG_PATH = BASE / "REPLICAS.yaml"
+FOCUS_PATH = BASE / "FOCUS.yaml"
 
 
 def sh(cmd: list[str], timeout: int = 120) -> tuple[int, str]:
@@ -112,22 +113,36 @@ def load_json(path: str) -> dict:
         return {}
 
 
+def _task_view(tid: str, states: dict) -> dict:
+    st = states.get(tid, {})
+    return {
+        "task_id": tid,
+        "status": st.get("status", "UNKNOWN"),
+        "attempt": st.get("attempt", 0),
+        "failure": st.get("last_failure", ""),
+        "next_action": st.get("next_action", ""),
+        "evidence": st.get("evidence", {}),
+    }
+
+
 def select_priority_task(cfg: dict) -> dict:
     state_path = cfg.get("task_state_path")
     if not state_path:
         return {}
     states = load_json(state_path)
+
+    # La réplica chat comparte exactamente el mismo FOCUS que el orquestador.
+    # No salta a otra tarea hasta que el Director cambie FOCUS.yaml.
+    if FOCUS_PATH.is_file():
+        focus = yaml.safe_load(FOCUS_PATH.read_text(encoding="utf-8")) or {}
+        tid = str(focus.get("active_task", "")).strip()
+        if tid and tid in cfg.get("task_priority", []):
+            return _task_view(tid, states)
+
     for tid in cfg.get("task_priority", []):
         st = states.get(tid, {})
         if st.get("status") != "PASS":
-            return {
-                "task_id": tid,
-                "status": st.get("status", "UNKNOWN"),
-                "attempt": st.get("attempt", 0),
-                "failure": st.get("last_failure", ""),
-                "next_action": st.get("next_action", ""),
-                "evidence": st.get("evidence", {}),
-            }
+            return _task_view(tid, states)
     return {"task_id": "", "status": "ALL_PASS"}
 
 
