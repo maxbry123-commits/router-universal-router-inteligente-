@@ -82,10 +82,23 @@ tareas:
     max_stall_minutes: 30
     dependencies: []
   T06:
-    objective: "Hermes y OpenClaw como asistentes (forks) con modelos del Router + heartbeat"
+    objective: "Hermes y OpenClaw como asistentes del orquestador/chat usando nuestro Router/NVIDIA"
     scope: "chat router/05-AGENTES/asistentes"
     required_files: [hermes_config.yaml, openclaw_config.yaml, hermes.md, arrancar_asistentes.sh, puente_asistentes.py, heartbeat.py, tests/test_asistentes.py, README.md]
-    acceptance: "SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
+    acceptance: "SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q && bash -n 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+    objective_checks:
+      - "grep -Eq 'nvidia|NVIDIA' 'chat router/05-AGENTES/asistentes/hermes_config.yaml'"
+      - "grep -q 'NVIDIA_API_KEY' 'chat router/05-AGENTES/asistentes/hermes_config.yaml'"
+      - "grep -Eq 'nvidia|NVIDIA' 'chat router/05-AGENTES/asistentes/openclaw_config.yaml'"
+      - "grep -q 'NVIDIA_API_KEY' 'chat router/05-AGENTES/asistentes/openclaw_config.yaml'"
+      - "! grep -Rqi 'ANTHROPIC_API_KEY' 'chat router/05-AGENTES/asistentes'"
+      - "grep -q 'def preguntar' 'chat router/05-AGENTES/asistentes/puente_asistentes.py'"
+      - "grep -q 'def emit' 'chat router/05-AGENTES/asistentes/puente_asistentes.py'"
+      - "grep -q 'NO_REPLY' 'chat router/05-AGENTES/asistentes/heartbeat.py'"
+      - "grep -q 'ALERTA' 'chat router/05-AGENTES/asistentes/heartbeat.py'"
+      - "grep -q 'HERMES_REF' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+      - "grep -q 'OPENCLAW_REF' 'chat router/05-AGENTES/asistentes/arrancar_asistentes.sh'"
+    max_stall_minutes: 30
     dependencies: []
   T07:
     objective: "Puerta de evidencia con los 12 goals (doc 26)"
