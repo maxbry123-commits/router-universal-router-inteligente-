@@ -1,5 +1,5 @@
-# SENTINELA-PLAN4 — 2026-09-27T23:25Z
-(LOOP común · versión: 0fb8da292b84d201 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-PLAN4 — 2026-09-27T23:28Z
+(LOOP común · versión: bd1b24f6007628c8 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia, rama/PR o causa corregible.
 ESTADO LOOP: RESEARCH · missing_evidence:recent_commits_observed
