@@ -1,0 +1,94 @@
+name: Sentinelas (cada 20 min)
+
+# Orden del Director 2026-09-27: 3 sentinelas supervisores (chat, fábrica, plan de 4 objetivos) cada 20 minutos.
+# Cada uno: lee el plan y el estado de su proyecto + informes de espejos + últimos runs; escribe su informe;
+# si un espejo falló o se paró, lo relanza. Solo escribe en chat router/07-SENTINELAS/. Modelos de NUESTRO Router (NVIDIA/Cerebras).
+
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentinelas
+  cancel-in-progress: false
+
+jobs:
+  sentinela:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        proyecto: [chat, fabrica, cuatro-objetivos]
+    env:
+      PROY: ${{ matrix.proyecto }}
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+          fetch-depth: 1
+          sparse-checkout: |
+            chat router
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
+          pip install -q "litellm[proxy]"
+      - name: Puente de modelos (NVIDIA -> Cerebras)
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY_3 || secrets.NVIDIA_API_KEY_1 }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY_2 || secrets.CEREBRAS_API_KEY_1 }}
+        run: |
+          cat > /tmp/litellm.yaml <<'EOF'
+          model_list:
+            - model_name: sentinela
+              litellm_params: {model: nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct, api_key: os.environ/NVIDIA_API_KEY}
+            - model_name: sentinela-cerebras
+              litellm_params: {model: cerebras/qwen-3-coder-480b, api_key: os.environ/CEREBRAS_API_KEY}
+          router_settings: {num_retries: 2, fallbacks: [{sentinela: [sentinela-cerebras]}]}
+          litellm_settings: {drop_params: true}
+          general_settings: {master_key: sk-sentinela}
+          EOF
+          nohup litellm --config /tmp/litellm.yaml --port 4000 > /tmp/litellm.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:4000/health/liveliness >/dev/null && break; sleep 2; done
+      - name: Contexto del proyecto
+        run: |
+          mkdir -p ctx "chat router/07-SENTINELAS"
+          gh run list -R maxbry123-commits/router-universal-router-inteligente- -w claude-code-espejos.yml -L 10 --json databaseId,status,conclusion,displayTitle,createdAt > ctx/espejos_runs.json || true
+          case "$PROY" in
+            fabrica) gh api "repos/maxbry123-commits/frontend/commits?per_page=15" --jq '.[] | .commit.message' > ctx/commits.txt || true ;;
+            cuatro-objetivos) gh run list -R maxbry123-commits/router-universal-router-inteligente- -w mini-router-plan-4-objetivos.yml -L 5 --json databaseId,status,conclusion,createdAt > ctx/loop_runs.json || true
+                              gh pr list -R maxbry123-commits/agentes -L 5 --json number,title,createdAt > ctx/prs.json || true ;;
+            *) gh api "repos/maxbry123-commits/router-universal-router-inteligente-/commits?per_page=15" --jq '.[] | .commit.message' > ctx/commits.txt || true ;;
+          esac
+      - name: Revisar y reportar (Claude Code sentinela)
+        env:
+          ANTHROPIC_BASE_URL: http://localhost:4000
+          ANTHROPIC_AUTH_TOKEN: sk-sentinela
+          ANTHROPIC_MODEL: sentinela
+          ANTHROPIC_SMALL_FAST_MODEL: sentinela
+        run: |
+          timeout 900 claude -p "Eres el SENTINELA (supervisor, juez, guardián, sheriff, validador) del proyecto '${PROY}' del Director Max.
+          Lee: 'chat router/07-SENTINELAS/${PROY}.md' (tu misión), 'chat router/03-ESTADO/HANDOFF.md', 'chat router/01-PLAN/', 'chat router/06-ESPEJOS/informes/' y la carpeta ctx/.
+          Haz: 1) compara lo hecho contra el plan; 2) detecta desviaciones, errores, archivos fuera de lugar y trabajo parado; 3) escribe 'chat router/07-SENTINELAS/informes/${PROY}.md' (reescríbelo cada vez) con: ESTADO (verde/amarillo/rojo), HECHO, DESVIACIONES, ORDEN PARA EL AGENTE (instrucción corta y exacta), y 'ESPEJOS_A_RELANZAR: T0X,...' si alguno falló o lleva >2 h sin avanzar.
+          Solo escribe dentro de 'chat router/07-SENTINELAS/'. No toques código, Router, HF, secretos ni workflows. Sé breve." --dangerously-skip-permissions --max-turns 40 > /tmp/s.log 2>&1 || true
+          tail -20 /tmp/s.log
+      - name: Guardar informe y relanzar espejos caídos
+        if: always()
+        run: |
+          INF="chat router/07-SENTINELAS/informes/${PROY}.md"
+          git config user.name "sentinela-${PROY}"; git config user.email "sentinela@users.noreply.github.com"
+          [ -e "$INF" ] && git add -- "$INF"
+          git commit -q -m "sentinela ${PROY}: informe" && for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done || true
+          R=$(grep -m1 '^ESPEJOS_A_RELANZAR:' "$INF" 2>/dev/null | sed 's/^ESPEJOS_A_RELANZAR: *//' | tr -d ' ')
+          if [ -n "$R" ] && [ "$R" != "ninguno" ]; then gh workflow run claude-code-espejos.yml -R maxbry123-commits/router-universal-router-inteligente- -f tareas="$R" && echo "::notice::relanzados $R"; fi
