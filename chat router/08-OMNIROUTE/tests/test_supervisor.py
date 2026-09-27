@@ -81,6 +81,7 @@ def _mk_db(path):
     conn.execute("INSERT INTO call_logs (created_at) VALUES (?)", (old_iso,))
     conn.execute("INSERT INTO call_logs (created_at) VALUES (?)", (new_iso,))
     conn.execute("INSERT INTO proxy_logs (created_at) VALUES (?)", (old_s,))
+    conn.execute("INSERT INTO proxy_logs (created_at) VALUES (?)", (int(time.time()),))
     conn.commit()
     conn.close()
 
@@ -105,6 +106,37 @@ def test_mantenimiento_borra_viejo_y_conserva_nuevo(tmp_path):
     try:
         assert conn.execute("SELECT COUNT(*) FROM usage_history").fetchone()[0] == 1
         assert conn.execute("SELECT COUNT(*) FROM call_logs").fetchone()[0] == 1
-        assert conn.execute("SELECT COUNT(*) FROM proxy_logs").fetchone()[0] == 0
+        # Debe borrar el epoch-segundos viejo SIN borrar el reciente.
+        assert conn.execute("SELECT COUNT(*) FROM proxy_logs").fetchone()[0] == 1
     finally:
         conn.close()
+
+
+
+def test_supervisor_no_arranca_con_puerto_ocupado(monkeypatch, tmp_path):
+    """Si el puerto no se libera, main aplica backoff y NO llama start_process."""
+    monkeypatch.setattr(sup, "LOCK_FILE", str(tmp_path / "supervisor.lock"))
+    monkeypatch.setattr(sup.signal, "signal", lambda *args, **kwargs: None)
+
+    calls = {"wait": 0, "start": 0}
+
+    def fake_wait(*_args, **_kwargs):
+        calls["wait"] += 1
+        if calls["wait"] == 1:
+            return False
+        raise KeyboardInterrupt
+
+    def fake_start():
+        calls["start"] += 1
+        raise AssertionError("start_process no debe ejecutarse con puerto ocupado")
+
+    monkeypatch.setattr(sup, "wait_port_free", fake_wait)
+    monkeypatch.setattr(sup, "start_process", fake_start)
+    monkeypatch.setattr(sup, "backoff_delay", lambda _n: 0)
+    monkeypatch.setattr(sup.time, "sleep", lambda _s: None)
+
+    with pytest.raises(KeyboardInterrupt):
+        sup.main()
+
+    assert calls["wait"] == 2
+    assert calls["start"] == 0
