@@ -1,11 +1,11 @@
 name: Claude Code Espejos
 
 # Orden del Director 2026-09-27: espejos que trabajan solos con los modelos de NUESTRO Router (NVIDIA; sin Anthropic).
-# Motor de los espejos: AIDER (agente de programación open source, nativo para modelos OpenAI-compatibles como NVIDIA).
-#   Claude Code se probó primero: con Kimi K3 vía puente sus llamadas de herramientas se cortaban (tarea delegada T04 para arreglarlo).
-# Modelo: el que responde de verdad según probar_modelos.py (Kimi K3 > GLM-5 > DeepSeek V4 > otro NVIDIA).
-# Cada tarea declara ALCANCE (carpeta) y ARCHIVOS (lista separada por comas, relativa al ALCANCE): se crean vacíos y se pasan a Aider
-#   (sin la lista, Aider no escribe nada: vuelta del 27-sep 16:45).
+# Motor: AIDER (open source, nativo para modelos OpenAI-compatibles). Claude Code queda para cuando T04 (pasarela) funcione.
+# Modelo: el que responde de verdad según probar_modelos.py (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro NVIDIA).
+# Cada tarea declara ALCANCE (carpeta) y ARCHIVOS (lista, relativa al ALCANCE): se crean vacíos y se pasan a Aider.
+# 2026-09-27 (fix 3): Aider con --no-git (el checkout parcial bloqueaba su git add y no se guardaba nada) y regla de nombres
+#   (el modelo tomó una línea del diagrama como nombre de archivo). El guardado lo hace SIEMPRE este workflow.
 # Reglas duras: solo escribe dentro de su ALCANCE; NUNCA toca el Router, HF, secretos ni workflows. Vida máx.: 5 h.
 
 on:
@@ -13,7 +13,7 @@ on:
     inputs:
       tareas:
         description: "IDs de tarea separados por coma (archivos en chat router/06-ESPEJOS/tareas/)"
-        default: "T01,T02"
+        default: "T01,T02,T03,T04"
 
 permissions:
   contents: read
@@ -54,7 +54,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Instalar Aider
-        run: pip install -q aider-chat pyyaml pytest requests
+        run: pip install -q aider-chat pyyaml pytest requests fastapi httpx
       - name: Leer alcance y archivos de la tarea
         id: t
         run: |
@@ -66,7 +66,7 @@ jobs:
           test -n "$ARCH" || { echo "::error::la tarea no declara ARCHIVOS"; exit 1; }
           case "$ALC" in ".github"*|"router inteligente universal"*) echo "::error::alcance prohibido"; exit 1;; esac
           echo "alcance=$ALC" >> "$GITHUB_OUTPUT"; echo "archivos=$ARCH" >> "$GITHUB_OUTPUT"
-      - name: Elegir modelo que responde (Kimi K3 > GLM-5 > DeepSeek V4 > otro)
+      - name: Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)
         id: m
         run: |
           python "chat router/06-ESPEJOS/puente/probar_modelos.py" espejo sk-espejo
@@ -85,25 +85,29 @@ jobs:
           export OPENAI_API_KEY="${!CLAVE}"; export OPENAI_API_BASE="https://integrate.api.nvidia.com/v1"
           INF="chat router/06-ESPEJOS/informes/${TAREA}.md"
           mkdir -p "$ALC" "$(dirname "$INF")"; touch "$INF"
-          git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
-          FILES=("$INF")
+          FILES=("$INF"); NOMBRES="$INF"
           IFS=',' read -ra LISTA <<< "$ARCH"
-          for a in "${LISTA[@]}"; do a="$(echo "$a" | xargs)"; [ -z "$a" ] && continue; p="$ALC/$a"; mkdir -p "$(dirname "$p")"; [ -e "$p" ] || touch "$p"; FILES+=("$p"); done
+          for a in "${LISTA[@]}"; do a="$(echo "$a" | xargs)"; [ -z "$a" ] && continue; p="$ALC/$a"; mkdir -p "$(dirname "$p")"; [ -e "$p" ] || touch "$p"; FILES+=("$p"); NOMBRES="$NOMBRES
+          $p"; done
           READS=()
           for f in "chat router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-PARTE-5-B-DOCS-22-23.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && READS+=(--read "$f"); done
-          for f in $(grep -oE 'LEER: .*' "chat router/06-ESPEJOS/tareas/${TAREA}.md" | sed 's/^LEER: *//' | tr ',' '\n' | xargs -I{} echo "{}" | tr ' ' '\001'); do f="$(echo "$f" | tr '\001' ' ')"; [ -f "$f" ] && READS+=(--read "$f"); done
           { echo "Eres el espejo ${TAREA} del equipo YAIWES del Director Max."
-            echo "Escribe el contenido COMPLETO de TODOS los archivos que tienes en el chat (están vacíos: créalos). No pidas que te los peguen."
-            echo "SOLO edita esos archivos. PROHIBIDO tocar .github/, 'router inteligente universal/', secretos, HF. No escribas claves. Máx. 500 líneas por archivo."
+            echo "Los archivos del chat están VACÍOS: escribe el contenido COMPLETO de cada uno. No pidas que te los peguen."
+            echo "REGLA DE NOMBRES: antes de cada bloque de código escribe, en una línea sola, la RUTA EXACTA de uno de estos archivos (copiada tal cual):"
+            echo "$NOMBRES"
+            echo "No uses otras rutas ni pongas texto de diagramas como nombre de archivo. Los diagramas van DENTRO de README.md."
+            echo "PROHIBIDO tocar .github/, 'router inteligente universal/', secretos, HF. No escribas claves. Máx. 500 líneas por archivo."
             echo "Después ejecuta los tests y corrige hasta que pasen. Al final completa el informe ${INF}: archivos, salida real de tests y GAP."
             echo; echo "TAREA:"; cat "chat router/06-ESPEJOS/tareas/${TAREA}.md"; } > /tmp/tarea.txt
-          timeout 17400 aider --model "openai/${MODELO}" --yes-always --no-auto-commits --no-show-model-warnings \
+          timeout 17400 aider --model "openai/${MODELO}" --no-git --yes-always --no-show-model-warnings \
             --no-check-update --no-analytics --map-tokens 0 --edit-format whole "${READS[@]}" \
             --auto-test --test-cmd "python -m pytest '${ALC}' -q" \
             --message-file /tmp/tarea.txt "${FILES[@]}" > /tmp/aider.log 2>&1
           echo "::notice::aider terminó rc=$? modelo=${MODELO}"
-          tail -10 /tmp/aider.log | while read -r l; do echo "::notice::aider $(echo "$l" | head -c 220)"; done
-          echo "::notice::archivos con contenido: $(find "$ALC" -type f -size +0 | wc -l) de ${#FILES[@]}"
+          tail -8 /tmp/aider.log | while read -r l; do echo "::notice::aider $(echo "$l" | head -c 220)"; done
+          echo "::notice::archivos con contenido: $(find "$ALC" -type f -size +0 | wc -l) de $((${#FILES[@]}-1))"
+          find "$ALC" -type f -size +0 | head -20 | while read -r l; do echo "::notice::ok $l ($(wc -l < "$l") líneas)"; done
+          ( python -m pytest "$ALC" -q 2>&1 | tail -3 ) | while read -r l; do echo "::notice::tests $l"; done
       - name: Guardar solo lo que está dentro del alcance
         if: always()
         env:
@@ -112,8 +116,10 @@ jobs:
           git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
           git reset -q
           find "$ALC" -type f -size 0 -delete 2>/dev/null || true
-          [ -e "$ALC" ] && git add -- "$ALC"
-          INF="chat router/06-ESPEJOS/informes/${TAREA}.md"; [ -s "$INF" ] && git add -- "$INF"
+          find "$ALC" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+          [ -e "$ALC" ] && git add --sparse -- "$ALC"
+          INF="chat router/06-ESPEJOS/informes/${TAREA}.md"; [ -s "$INF" ] && git add --sparse -- "$INF"
           if git diff --cached --name-only | grep -qE '^(\.github/|router inteligente universal/)'; then echo "::error::fuera de alcance, no se guarda"; exit 1; fi
-          git commit -q -m "espejo ${TAREA}: trabajo (${GITHUB_RUN_ID})" || { echo "sin cambios"; exit 0; }
-          for i in 1 2 3 4 5; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 7; done
+          echo "::notice::a guardar: $(git diff --cached --name-only | wc -l) archivos"
+          git commit -q -m "espejo ${TAREA}: trabajo (${GITHUB_RUN_ID})" || { echo "::warning::sin cambios que guardar"; exit 0; }
+          for i in 1 2 3 4 5; do git pull -q --rebase origin main && git push -q origin HEAD:main && echo "::notice::GUARDADO en main" && break; sleep 7; done
