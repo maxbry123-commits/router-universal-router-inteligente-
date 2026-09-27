@@ -1,11 +1,10 @@
 name: Claude Code Espejos
 
 # Orden del Director 2026-09-27: espejos de Claude Code que trabajan solos con los modelos de NUESTRO Router
-# (NVIDIA primero, Cerebras de respaldo, vía LiteLLM; sin APIs de Anthropic). Cada espejo = 1 archivo de tarea.
-# Reglas duras: solo escribe dentro de su ALCANCE (una carpeta, declarada en la tarea); NUNCA toca el Router, HF, secretos ni workflows.
-# Vida máxima: 5 h. Resultado: commit directo a main SOLO de los archivos dentro de su alcance.
-# 2026-09-27 (3): el modelo elegido a mano estaba retirado por NVIDIA (410). Ahora el puente consulta los catálogos vivos
-#   de NVIDIA y Cerebras y elige el mejor disponible (Kimi > Qwen coder > DeepSeek > otros), y prueba antes de trabajar.
+# (NVIDIA con sus 4 claves; Cerebras si responde; vía LiteLLM; sin APIs de Anthropic). Cada espejo = 1 archivo de tarea.
+# Reglas duras: solo escribe dentro de su ALCANCE (una carpeta); NUNCA toca el Router, HF, secretos ni workflows. Vida máx.: 5 h.
+# El puente usa chat router/06-ESPEJOS/puente/probar_modelos.py: prueba cada modelo con cada clave y solo usa los que responden
+# (vueltas anteriores fallaron por modelo retirado 410, no habilitado 404 y Cerebras sin pago 402).
 
 on:
   workflow_dispatch:
@@ -55,7 +54,6 @@ jobs:
         run: |
           npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
           pip install -q "litellm[proxy]" pyyaml pytest requests
-          echo "::notice::claude $(claude --version 2>&1 | head -1)"
       - name: Leer alcance de la tarea
         id: t
         run: |
@@ -65,48 +63,21 @@ jobs:
           test -n "$ALC" || { echo "::error::la tarea no declara ALCANCE"; exit 1; }
           case "$ALC" in ".github"*|"router inteligente universal"*) echo "::error::alcance prohibido"; exit 1;; esac
           echo "alcance=$ALC" >> "$GITHUB_OUTPUT"
-      - name: Puente de modelos con catálogo vivo (NVIDIA -> Cerebras) + prueba real
+      - name: Puente con modelos probados (NVIDIA x4 claves + Cerebras si responde)
         env:
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY_1 }}
+          NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
           NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+          NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+          NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
           CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY_1 }}
         run: |
-          python - <<'PY'
-          import os, requests, yaml
-          def catalog(url, key):
-              try:
-                  r = requests.get(url, headers={"Authorization": f"Bearer {key}"}, timeout=20)
-                  return [m["id"] for m in r.json().get("data", [])]
-              except Exception:
-                  return []
-          prefs = ["kimi-k3", "kimi-k2", "qwen3-coder", "qwen3-235b", "deepseek-v4", "deepseek-v3", "gpt-oss-120b", "llama-4-maverick", "nemotron-super", "llama-3.3-70b"]
-          def pick(ids, n=2):
-              out = []
-              for p in prefs:
-                  out += sorted([i for i in ids if p in i.lower() and i not in out], reverse=True)
-              return out[:n]
-          nv = pick(catalog("https://integrate.api.nvidia.com/v1/models", os.environ["NVIDIA_API_KEY"]), 3)
-          cb = pick(catalog("https://api.cerebras.ai/v1/models", os.environ.get("CEREBRAS_API_KEY", "")), 2)
-          print(f"::notice::MODELOS NVIDIA={nv} CEREBRAS={cb}")
-          ml = []
-          for i, m in enumerate(nv):
-              ml.append({"model_name": "espejo", "litellm_params": {"model": f"nvidia_nim/{m}", "api_key": "os.environ/NVIDIA_API_KEY" if i % 2 == 0 else "os.environ/NVIDIA_API_KEY_2"}})
-          for m in cb:
-              ml.append({"model_name": "espejo-cerebras", "litellm_params": {"model": f"cerebras/{m}", "api_key": "os.environ/CEREBRAS_API_KEY"}})
-          if not ml:
-              raise SystemExit("::error::ni NVIDIA ni Cerebras devolvieron modelos")
-          if not nv:
-              for x in ml: x["model_name"] = "espejo"
-          cfg = {"model_list": ml, "router_settings": {"num_retries": 3, "fallbacks": [{"espejo": ["espejo-cerebras"]}] if nv and cb else []},
-                 "litellm_settings": {"drop_params": True}, "general_settings": {"master_key": "sk-espejo"}}
-          open("/tmp/litellm.yaml", "w").write(yaml.safe_dump(cfg))
-          PY
+          python "chat router/06-ESPEJOS/puente/probar_modelos.py" espejo sk-espejo
           nohup litellm --config /tmp/litellm.yaml --port 4000 > /tmp/litellm.log 2>&1 &
           for i in $(seq 1 45); do curl -sf -H "Authorization: Bearer sk-espejo" localhost:4000/health/liveliness >/dev/null && break; sleep 2; done
           R=$(curl -s -m 120 localhost:4000/v1/messages -H "x-api-key: sk-espejo" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
               -d '{"model":"espejo","max_tokens":20,"messages":[{"role":"user","content":"Responde solo: OK"}]}')
-          echo "::notice::PRUEBA_PUENTE $(echo "$R" | head -c 300)"
-          echo "$R" | grep -q '"content"' || { echo "::error::el puente no responde"; grep -iE "error|exception" /tmp/litellm.log | tail -6 | while read -r l; do echo "::warning::litellm $(echo "$l" | head -c 250)"; done; exit 1; }
+          echo "::notice::PRUEBA_PUENTE $(echo "$R" | head -c 250)"
+          echo "$R" | grep -q '"content"' || { echo "::error::el puente no responde"; exit 1; }
       - name: Trabajar (Claude Code espejo)
         env:
           ANTHROPIC_BASE_URL: http://localhost:4000
@@ -125,8 +96,7 @@ jobs:
           $(cat "chat router/06-ESPEJOS/tareas/${TAREA}.md")" --model espejo --dangerously-skip-permissions --max-turns 150 > /tmp/claude.log 2>&1
           RC=$?
           echo "::notice::claude terminó rc=$RC líneas=$(wc -l < /tmp/claude.log)"
-          tail -12 /tmp/claude.log | while read -r l; do echo "::notice::claude $(echo "$l" | head -c 250)"; done
-          grep -iE " error|exception" /tmp/litellm.log | tail -6 | while read -r l; do echo "::warning::litellm $(echo "$l" | head -c 250)"; done
+          tail -10 /tmp/claude.log | while read -r l; do echo "::notice::claude $(echo "$l" | head -c 250)"; done
       - name: Guardar solo lo que está dentro del alcance
         if: always()
         env:
