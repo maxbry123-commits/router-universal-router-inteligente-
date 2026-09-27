@@ -69,6 +69,17 @@ tareas:
     scope: "chat router/10-CHAT-FUNCIONES"
     required_files: [action_registry.py, council.py, rewind.py, compact.py, archify_cmd.py, work.py, rutas.py, tests/test_funciones.py, README.md]
     acceptance: "SIMULADO=1 python -m pytest 'chat router/10-CHAT-FUNCIONES' -q"
+    objective_checks:
+      - "grep -q 'def ejecutar' 'chat router/10-CHAT-FUNCIONES/action_registry.py'"
+      - "grep -q 'ask_council' 'chat router/10-CHAT-FUNCIONES/council.py'"
+      - "grep -q 'asyncio' 'chat router/10-CHAT-FUNCIONES/council.py'"
+      - "grep -q 'def volver' 'chat router/10-CHAT-FUNCIONES/rewind.py'"
+      - "grep -Eq 'flowchart|graph' 'chat router/10-CHAT-FUNCIONES/archify_cmd.py'"
+      - "grep -q 'RUNNING' 'chat router/10-CHAT-FUNCIONES/work.py'"
+      - "grep -Fq '/acciones/{action_id}' 'chat router/10-CHAT-FUNCIONES/rutas.py'"
+      - "grep -Fq '/council' 'chat router/10-CHAT-FUNCIONES/rutas.py'"
+      - "grep -Fq '/work' 'chat router/10-CHAT-FUNCIONES/rutas.py'"
+    max_stall_minutes: 30
     dependencies: []
   T06:
     objective: "Hermes y OpenClaw como asistentes (forks) con modelos del Router + heartbeat"
