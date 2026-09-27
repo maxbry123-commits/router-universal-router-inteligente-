@@ -1,13 +1,13 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-fabrica
-generated_at: 2026-09-27T23:24Z
-loop_version: c125d44a5eb50fd8
-observed_sha: f3cfea99f3b7ce271a3c7ac935dc0d7abe330766
+generated_at: 2026-09-27T23:26Z
+loop_version: 0fb8da292b84d201
+observed_sha: ''
 objective: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de
   permitir el siguiente bloque.
 priority_task: null
 state: RESEARCH
-reason: missing_evidence:recent_commits_observed
+reason: missing_observed_sha
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
 research_packet:
@@ -15,16 +15,16 @@ research_packet:
   objective: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes
     de permitir el siguiente bloque.
   task_scope: ''
-  failure: missing_evidence:recent_commits_observed
+  failure: missing_observed_sha
   error_literal: ''
   queries:
   - Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir
-    el siguiente bloque.  missing_evidence:recent_commits_observed
+    el siguiente bloque.  missing_observed_sha
   - Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir
     el siguiente bloque.
-  - missing_evidence:recent_commits_observed GitHub issue fix
-  - missing_evidence:recent_commits_observed Stack Overflow
-  - missing_evidence:recent_commits_observed developer community
+  - missing_observed_sha GitHub issue fix
+  - missing_observed_sha Stack Overflow
+  - missing_observed_sha developer community
   sources:
   - GitHub Issues del componente
   - GitHub Discussions del componente
@@ -54,20 +54,4 @@ research_packet:
   - do_not_regenerate
   - repair_steps
   - acceptance_check
-research_findings:
-- source: StackOverflow
-  title: Why is conditional processing of a sorted array faster than of an unsorted
-    array?
-  url: https://stackoverflow.com/questions/11227809/why-is-conditional-processing-of-a-sorted-array-faster-than-of-an-unsorted-array
-- source: StackOverflow
-  title: How do I undo the most recent local commits in Git?
-  url: https://stackoverflow.com/questions/927358/how-do-i-undo-the-most-recent-local-commits-in-git
-- source: StackOverflow
-  title: How do I delete a Git branch locally and remotely?
-  url: https://stackoverflow.com/questions/2003505/how-do-i-delete-a-git-branch-locally-and-remotely
-- source: StackOverflow
-  title: What is the difference between &#39;git pull&#39; and &#39;git fetch&#39;?
-  url: https://stackoverflow.com/questions/292357/what-is-the-difference-between-git-pull-and-git-fetch
-- source: StackOverflow
-  title: What does the &quot;yield&quot; keyword do in Python?
-  url: https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python
+research_findings: []
