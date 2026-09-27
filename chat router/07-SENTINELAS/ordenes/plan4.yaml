@@ -1,6 +1,6 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-plan4
-generated_at: 2026-09-27T23:06Z
+generated_at: 2026-09-27T23:07Z
 loop_version: 1a36c3b6f8bb2dd9
 observed_sha: 26569d4aec58cfe09408d5731c8842423dd2a1bd
 objective: 'Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia,
