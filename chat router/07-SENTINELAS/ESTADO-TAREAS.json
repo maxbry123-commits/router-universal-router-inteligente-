@@ -19,7 +19,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T07"
   },
   "T02": {
     "attempt": 2,
@@ -78,7 +78,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T05",
+    "next_action": "esperar; foco actual T07",
     "research_findings": [
       {
         "state": "closed",
@@ -168,7 +168,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T05",
+    "next_action": "esperar; foco actual T07",
     "research_findings": []
   },
   "T04": {
@@ -244,7 +244,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T05",
+    "next_action": "esperar; foco actual T07",
     "research_findings": [
       {
         "state": "closed",
@@ -360,7 +360,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "vigilar: Instalar Aider",
+    "next_action": "esperar; foco actual T07",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -419,11 +419,11 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: El directorio 'chat router/05-AGENTES/asistentes' no existe; nunca se generó ningún entregable (pytest exit=4, 0 fuentes encontradas). Fallo de entrega total, no de contenido.\nNO_REGENERAR: ninguno (no hay archivos previos que preservar).\nARREGLAR:\n1. Crear directorio 'chat router/05-AGENTES/asistentes' con __init__.py.\n2. Generar hermes_config.yaml y openclaw_config.yaml: nombre del asistente, modelo vía Router (base_url del router, fallback), system_prompt, intervalo_heartbeat.\n3. hermes.md: documentación del fork Hermes (rol, herramientas, límites).\n4. puente_asistentes.py: cliente que envía mensajes al Router y despacha respuesta al asistente activo; con SIMULADO=1 devuelve respuesta mock sin red.\n5. heartbeat.py: ping periódico al Router registrando estado vivo/muerto de cada asistente; en SIMULADO=1 usa reloj falso.\n6. arrancar_asistentes.sh: script que levanta ambos asistentes y el heartbeat (modo simulado si SIMULADO=1).\n7. tests/test_asistentes.py: tests de carga de configs, puente mock y heartbeat sin red.\n8. README.md: uso, arquitectura y modo simulado.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
     },
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T07"
   },
   "T07": {
-    "attempt": 1,
-    "last_sha": "504cba3982c3352dda88cd555c8c94cc40d88589",
+    "attempt": 2,
+    "last_sha": "55edf7b17a770166b311f69223b995f045c107c2",
     "evidence": {
       "faltan": [
         "parser.py",
@@ -439,9 +439,20 @@
         "README.md"
       ],
       "fugas": [],
+      "changed_files": [],
+      "executor_audit": {
+        "path_escape_count": 0,
+        "recovered_deviation": false,
+        "source": "informe"
+      },
+      "recovered_deviation": false,
+      "scope_escape": null,
+      "objective_failures": [],
+      "objective_drift": false,
       "pytest_exit": 4,
       "pytest_tail": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/11-EVIDENCIA\n\n",
       "informe": false,
+      "stale_report": false,
       "ultimo_commit": "",
       "veredicto": "REVISE",
       "causa": "NO_ENTREGADO"
@@ -449,11 +460,106 @@
     "status": "REVISE",
     "last_failure": "NO_ENTREGADO",
     "research_packet": {
-      "clave_busqueda": "NO_ENTREGADO",
-      "fuentes": [],
-      "analisis": "CAUSA_RAIZ: NO_ENTREGADO — el directorio 'chat router/11-EVIDENCIA' no existe; ninguno de los 11 archivos fue creado (fuentes=[]), por eso pytest da exit=4 (file or directory not found).\nNO_REGENERAR: ninguno (no hay archivos entregados).\nARREGLAR:\n1. Crear el directorio 'chat router/11-EVIDENCIA' (respetar el espacio en el nombre).\n2. Implementar los 11 archivos según doc 26: parser.py, goals.py, compilador_busquedas.py, buscadores.py, extractor.py, ranking.py, evidence_pack.py, verificador.py, puerta.py, tests/test_puerta.py, README.md.\n3. parser.py/goals.py: cargar y validar los 12 goals del doc 26.\n4. compilador_busquedas.py + buscadores.py: generar queries y ejecutar búsqueda; con SIMULADO=1 usar buscador simulado con fuentes deterministas (sin red).\n5. extractor.py + ranking.py: extraer pasajes y rankear evidencia por goal.\n6. evidence_pack.py + verificador.py + puerta.py: empaquetar evidencia, verificar cobertura de los 12 goals y emitir veredicto PASS/REVISE.\n7. tests/test_puerta.py: cubrir caso PASS con evidencia completa y REVISE con goals faltantes, todo en modo SIMULADO.\n8. README.md: documentar uso y el flag SIMULADO=1.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/11-EVIDENCIA' -q"
+      "sentinel_id": "sentinela-t07",
+      "objective": "Puerta de evidencia con los 12 goals (doc 26)",
+      "task_scope": "chat router/11-EVIDENCIA",
+      "failure": "NO_ENTREGADO",
+      "error_literal": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/11-EVIDENCIA\n\n",
+      "queries": [
+        "T07  NO_ENTREGADO",
+        "T07 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/11-EVIDENCIA",
+        "NO_ENTREGADO GitHub issue fix",
+        "NO_ENTREGADO Stack Overflow",
+        "NO_ENTREGADO developer community"
+      ],
+      "sources": [
+        "GitHub Issues del componente",
+        "GitHub Discussions del componente",
+        "GitHub Pull Requests del componente",
+        "GitHub commits recientes del componente",
+        "GitHub Community",
+        "Stack Overflow",
+        "Reddit /r/programming",
+        "Reddit de la tecnología afectada",
+        "Hacker News",
+        "NVIDIA Developer Forums",
+        "NVIDIA NIM / API documentation",
+        "Aider issues y docs",
+        "Claude Code issues y docs",
+        "LiteLLM issues y docs",
+        "pytest documentation",
+        "Python Discuss",
+        "Vercel discussions/docs",
+        "GitHub Actions docs/community",
+        "Issues/docs de OmniRoute, Hermes u OpenClaw",
+        "Repositorio upstream exacto del componente"
+      ],
+      "min_independent_sources": 3,
+      "max_sources": 20,
+      "required_output": [
+        "root_cause",
+        "evidence",
+        "do_not_regenerate",
+        "repair_steps",
+        "acceptance_check"
+      ]
     },
-    "next_action": "esperar; foco actual T05"
+    "next_action": "espejo relanzado",
+    "research_findings": [
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "HuskyInSalt/CRAG",
+        "url": "https://github.com/HuskyInSalt/CRAG"
+      },
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "anthonywchen/RARR",
+        "url": "https://github.com/anthonywchen/RARR"
+      },
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "google-deepmind/long-form-factuality",
+        "url": "https://github.com/google-deepmind/long-form-factuality"
+      },
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "amazon-science/RAGChecker",
+        "url": "https://github.com/amazon-science/RAGChecker"
+      },
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "pytest-dev/pytest",
+        "url": "https://github.com/pytest-dev/pytest"
+      },
+      {
+        "state": "open",
+        "title": "considering running CRAG on Mac M1 series computers?",
+        "updatedAt": "2024-04-22T07:52:41Z",
+        "url": "https://github.com/HuskyInSalt/CRAG/issues/12",
+        "source": "GitHub:HuskyInSalt/CRAG"
+      },
+      {
+        "state": "open",
+        "title": "nvidia-cublas-cu12 requirement is not satisfied",
+        "updatedAt": "2024-11-11T11:09:41Z",
+        "url": "https://github.com/google-deepmind/long-form-factuality/issues/12",
+        "source": "GitHub:google-deepmind/long-form-factuality"
+      },
+      {
+        "state": "open",
+        "title": "ValueError: axes don't match array",
+        "updatedAt": "2024-09-06T10:37:02Z",
+        "url": "https://github.com/amazon-science/RAGChecker/issues/12",
+        "source": "GitHub:amazon-science/RAGChecker"
+      },
+      {
+        "state": "closed",
+        "title": "list test dependencies better",
+        "updatedAt": "2015-06-15T20:30:06Z",
+        "url": "https://github.com/pytest-dev/pytest/issues/12",
+        "source": "GitHub:pytest-dev/pytest"
+      }
+    ]
   },
   "T08": {
     "attempt": 1,
@@ -486,6 +592,6 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T07"
   }
 }
