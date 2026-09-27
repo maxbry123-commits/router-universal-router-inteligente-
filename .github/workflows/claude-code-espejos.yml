@@ -1,0 +1,105 @@
+name: Claude Code Espejos
+
+# Orden del Director 2026-09-27: espejos de Claude Code que trabajan solos con los modelos de NUESTRO Router
+# (NVIDIA primero, Cerebras de respaldo, vía LiteLLM; sin APIs de Anthropic). Cada espejo = 1 archivo de tarea.
+# Reglas duras: solo escribe dentro de su "alcance" (declarado en la tarea); NUNCA toca el Router, HF, secretos ni workflows.
+# Vida máxima: 5 h. Resultado: commit directo a main SOLO de los archivos dentro de su alcance.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tareas:
+        description: "IDs de tarea separados por coma (archivos en chat router/06-ESPEJOS/tareas/)"
+        default: "T01,T02"
+
+permissions:
+  contents: read
+
+jobs:
+  preparar:
+    runs-on: ubuntu-latest
+    outputs:
+      lista: ${{ steps.l.outputs.lista }}
+    steps:
+      - id: l
+        run: echo "lista=$(echo '${{ inputs.tareas }}' | python3 -c 'import sys,json;print(json.dumps([t.strip() for t in sys.stdin.read().split(",") if t.strip()]))')" >> "$GITHUB_OUTPUT"
+
+  espejo:
+    needs: preparar
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        tarea: ${{ fromJson(needs.preparar.outputs.lista) }}
+    env:
+      TAREA: ${{ matrix.tarea }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar Claude Code + puente LiteLLM
+        run: |
+          npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
+          pip install -q "litellm[proxy]" pyyaml
+      - name: Leer alcance de la tarea
+        id: t
+        run: |
+          F="chat router/06-ESPEJOS/tareas/${TAREA}.md"
+          test -f "$F" || { echo "::error::no existe $F"; exit 1; }
+          ALC=$(grep -m1 '^ALCANCE:' "$F" | sed 's/^ALCANCE: *//')
+          test -n "$ALC" || { echo "::error::la tarea no declara ALCANCE"; exit 1; }
+          echo "alcance=$ALC" >> "$GITHUB_OUTPUT"
+      - name: Puente de modelos (NVIDIA -> Cerebras) para Claude Code
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY_1 }}
+          NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY_1 }}
+        run: |
+          cat > /tmp/litellm.yaml <<'EOF'
+          model_list:
+            - model_name: espejo
+              litellm_params: {model: nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct, api_key: os.environ/NVIDIA_API_KEY}
+            - model_name: espejo
+              litellm_params: {model: nvidia_nim/moonshotai/kimi-k2-instruct, api_key: os.environ/NVIDIA_API_KEY_2}
+            - model_name: espejo-cerebras
+              litellm_params: {model: cerebras/qwen-3-coder-480b, api_key: os.environ/CEREBRAS_API_KEY}
+          router_settings: {num_retries: 3, fallbacks: [{espejo: [espejo-cerebras]}]}
+          litellm_settings: {drop_params: true}
+          general_settings: {master_key: sk-espejo}
+          EOF
+          nohup litellm --config /tmp/litellm.yaml --port 4000 > /tmp/litellm.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:4000/health/liveliness >/dev/null && break; sleep 2; done
+      - name: Trabajar (Claude Code espejo)
+        env:
+          ANTHROPIC_BASE_URL: http://localhost:4000
+          ANTHROPIC_AUTH_TOKEN: sk-espejo
+          ANTHROPIC_MODEL: espejo
+          ANTHROPIC_SMALL_FAST_MODEL: espejo
+          DISABLE_TELEMETRY: "1"
+        run: |
+          REGLAS="Eres el espejo ${TAREA} del equipo YAIWES. Lee primero chat router/03-ESTADO/HANDOFF.md y chat router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml. SOLO puedes crear o editar archivos dentro de: ${{ steps.t.outputs.alcance }}. PROHIBIDO tocar: .github/, router inteligente universal/, ROUTER_JOB_PAUSE.flag, secretos, HF. No escribas claves. Reutiliza código descargado antes de escribir nuevo. Cada archivo con su prueba. Al terminar escribe chat router/06-ESPEJOS/informes/${TAREA}.md con: qué hiciste, archivos, pruebas y qué falta (GAP)."
+          timeout 17400 claude -p "$REGLAS
+
+          TAREA:
+          $(cat "chat router/06-ESPEJOS/tareas/${TAREA}.md")" --dangerously-skip-permissions --max-turns 150 > /tmp/claude.log 2>&1 || true
+          tail -40 /tmp/claude.log
+      - name: Guardar solo lo que está dentro del alcance
+        if: always()
+        env:
+          ALC: ${{ steps.t.outputs.alcance }}
+        run: |
+          git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
+          git reset -q
+          for p in $ALC "chat router/06-ESPEJOS/informes/${TAREA}.md"; do [ -e "$p" ] && git add -- "$p"; done
+          git diff --cached --name-only | grep -E '^(\.github/|router inteligente universal/)' && { echo "::error::fuera de alcance, no se guarda"; exit 1; } || true
+          git commit -q -m "espejo ${TAREA}: trabajo (${GITHUB_RUN_ID})" || { echo "sin cambios"; exit 0; }
+          for i in 1 2 3 4 5; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 7; done
