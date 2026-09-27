@@ -31,12 +31,13 @@ from sentinel_loop import (  # noqa: E402
 
 CONTRATOS = BASE / "CONTRATOS.yaml"
 REPLICAS = BASE / "REPLICAS.yaml"
+FOCUS = BASE / "FOCUS.yaml"
 ESTADO = BASE / "ESTADO-TAREAS.json"
 INFORME = BASE / "informes/ORQUESTADOR.md"
 TAREAS_DIR = ROOT / "06-ESPEJOS" / "tareas"
 REPO = "maxbry123-commits/router-universal-router-inteligente-"
 WF = "claude-code-espejos.yml"
-MAX_INTENTOS = 3
+MAX_INTENTOS = 5
 
 RESEARCH_REPOS = {
     "T01": ["pytest-dev/pytest", "Aider-AI/aider"],
@@ -261,6 +262,10 @@ def ordenar(tid: str, intento: int, ev: dict, rp: dict) -> None:
 def main() -> None:
     cfg = yaml.safe_load(CONTRATOS.read_text(encoding="utf-8"))
     replicas = yaml.safe_load(REPLICAS.read_text(encoding="utf-8"))
+    focus_cfg = yaml.safe_load(FOCUS.read_text(encoding="utf-8"))
+    focus_tid = str(focus_cfg.get("active_task", "")).strip()
+    if focus_tid not in cfg.get("tareas", {}):
+        raise SystemExit(f"focus inválido: {focus_tid}")
     research_pool = list(replicas.get("research_pool", []))
     estado = json.loads(ESTADO.read_text()) if ESTADO.exists() else {}
     head = sh(["git", "rev-parse", "HEAD"])[1].strip()
@@ -278,6 +283,20 @@ def main() -> None:
     for tid, c in cfg["tareas"].items():
         st = estado.get(tid, {"attempt": 0})
         spec = spec_tarea(tid, c, research_pool)
+
+        if tid != focus_tid:
+            st.update({
+                "status": st.get("status", "WAITING_FOCUS"),
+                "next_action": f"esperar; foco actual {focus_tid}",
+            })
+            estado[tid] = st
+            ev = st.get("evidence", {})
+            lineas.append(
+                f"| {tid} | WAITING_FOCUS | foco={focus_tid} | "
+                f"{st.get('attempt', 0)} | faltan {len(ev.get('faltan', []))} "
+                f"· pytest {ev.get('pytest_exit', '-')} |"
+            )
+            continue
 
         if tid in activos:
             st.update({"status": "ACTIVE", "last_sha": head, "next_action": "esperar ejecutor"})
@@ -338,7 +357,7 @@ def main() -> None:
     INFORME.parent.mkdir(parents=True, exist_ok=True)
     INFORME.write_text(
         "\n".join(lineas)
-        + f"\n\nRelanzados: {', '.join(relanzar) or 'ninguno'}\n",
+        + f"\n\nFoco: {focus_tid}\nRelanzados: {', '.join(relanzar) or 'ninguno'}\n",
         encoding="utf-8",
     )
     print("\n".join(lineas))
