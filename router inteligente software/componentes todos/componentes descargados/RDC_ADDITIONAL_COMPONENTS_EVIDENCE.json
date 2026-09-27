@@ -1,0 +1,21 @@
+{
+  "task_id": "RDC-ROUTER-MEMORY-20260927",
+  "components": [
+    {
+      "slug": "FalkorDB",
+      "status": "EXTRACTED_VERIFIED",
+      "target": "router inteligente software/componentes todos/componentes descargados/FalkorDB",
+      "source_commit": "55204c94bb6c8bc1684ada3d712a61f73f324067",
+      "files": 927,
+      "tree_sha256": "eefa1f497fa658468944061df60f2091b5fe7aa6148ca15539da92287db5bde6"
+    },
+    {
+      "slug": "AgentDB",
+      "status": "EXTRACTED_VERIFIED",
+      "target": "router inteligente software/componentes todos/componentes descargados/AgentDB",
+      "source_commit": "6cdefe451f6afe7395bc88d3587a0225d161089b",
+      "files": 1456,
+      "tree_sha256": "f0d6de242f2bc7b3117f669cdd7767283e6e847c71a369f132d5d351dd2872e8"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "agentdb",
+  "description": "AgentDB Marketplace: vector memory, episodic recall, causal graph, RL routing, and advanced retrieval — all backed by the agentdb npm package",
+  "owner": {
+    "name": "ruvnet",
+    "url": "https://github.com/ruvnet"
+  },
+  "plugins": [
+    {
+      "name": "agentdb-core",
+      "source": "./plugins/agentdb-core",
+      "description": "Foundation plugin — pattern store, search, stats. Surfaces agentdb_pattern_store, agentdb_pattern_search, agentdb_pattern_stats."
+    },
+    {
+      "name": "agentdb-memory",
+      "source": "./plugins/agentdb-memory",
+      "description": "Episodic replay (Reflexion) + skill library. /remember and /recall slash commands; agentdb-curator agent for nightly consolidation."
+    },
+    {
+      "name": "agentdb-causal",
+      "source": "./plugins/agentdb-causal",
+      "description": "Causal graph + hierarchical memory. /link and /explain-link slash commands; agentdb-investigator agent for root-cause traversal."
+    },
+    {
+      "name": "agentdb-learning",
+      "source": "./plugins/agentdb-learning",
+      "description": "RL + Thompson Sampling bandit. 9 algorithms (Q-Learning, PPO, MCTS, etc.); /learn-task and /route-task slash commands."
+    },
+    {
+      "name": "agentdb-graph",
+      "source": "./plugins/agentdb-graph",
+      "description": "Graph queries — Cypher execution, k-hop traversal, hyperedge search."
+    },
+    {
+      "name": "agentdb-search",
+      "source": "./plugins/agentdb-search",
+      "description": "Advanced retrieval — MMR diversity rerank, explainable recall, metadata filters, hybrid (BM25 + dense) search."
+    }
+  ]
+}
