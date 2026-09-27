@@ -1,7 +1,7 @@
 # CONTRATOS + DSL DAG DEL SENTINELA ORQUESTADOR (inmutables salvo orden del Director)
 # El estado de una tarea NO lo escribe el agente: lo CALCULA el sentinela desde GitHub (archivos + pytest exit code + commit en main).
 # Estados finales: PASS · BLOCKED(causa demostrada) · ACTIVE. "Workflow success" NO es estado de tarea.
-schema: yaiwes.sentinela/v1
+schema: yaiwes.sentinela/v1\nshared_core: "chat router/05-AGENTES/gobierno/sentinel_loop.py"\nreplicas_config: "chat router/07-SENTINELAS/REPLICAS.yaml"
 
 dsl_dag_bucle:   # cada 20 min; continúa el intento anterior (no empieza de cero)
   S1_OBSERVAR:     "HEAD sha de main + runs de espejos en curso + rama mirror/T0X"
@@ -31,7 +31,7 @@ tareas:
   T01:
     objective: "Gobierno del equipo: Sheriff, Judge, Sentinel, contratos, MirrorManager (docs 22-23)"
     scope: "chat router/05-AGENTES/gobierno"
-    required_files: [contratos.py, sheriff.py, judge.py, sentinel.py, mirror_manager.py, __init__.py, tests/test_gobierno.py, README.md]
+    required_files: [contratos.py, sheriff.py, judge.py, sentinel.py, mirror_manager.py, agent_control.py, sentinel_loop.py, __init__.py, tests/test_gobierno.py, README.md]
     acceptance: "python -m pytest 'chat router/05-AGENTES/gobierno' -q"
     dependencies: []
   T02:
