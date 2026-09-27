@@ -54,6 +54,15 @@ tareas:
     scope: "chat router/09-CLAUDE-CODE"
     required_files: [pasarela.py, normalizar.py, iniciar_claude_code.sh, tests/test_normalizar.py, INVESTIGACION.md, README.md]
     acceptance: "python -m pytest 'chat router/09-CLAUDE-CODE' -q"
+    objective_checks:
+      - "grep -q '/v1/messages' 'chat router/09-CLAUDE-CODE/pasarela.py'"
+      - "grep -q 'count_tokens' 'chat router/09-CLAUDE-CODE/pasarela.py'"
+      - "grep -q '/v1/models' 'chat router/09-CLAUDE-CODE/pasarela.py'"
+      - "grep -q 'tool_use' 'chat router/09-CLAUDE-CODE/normalizar.py'"
+      - "grep -q 'tool_calls' 'chat router/09-CLAUDE-CODE/normalizar.py'"
+      - "grep -q 'ANTHROPIC_BASE_URL' 'chat router/09-CLAUDE-CODE/iniciar_claude_code.sh'"
+      - "grep -Eq 'https://github.com|https://docs\.' 'chat router/09-CLAUDE-CODE/INVESTIGACION.md'"
+    max_stall_minutes: 30
     dependencies: []
   T05:
     objective: "Funciones del chat: Action Registry, Council, rewind, compact, Archify, WORK"
