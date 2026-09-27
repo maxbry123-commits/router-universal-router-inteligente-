@@ -1,0 +1,70 @@
+schema: yaiwes.sentinel-order/v1
+sentinel: sentinela-plan4
+generated_at: 2026-09-27T22:24Z
+loop_version: 32590b52b309a8f0
+observed_sha: 26569d4aec58cfe09408d5731c8842423dd2a1bd
+objective: 'Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia,
+  rama/PR o causa corregible.'
+priority_task: null
+state: REVISE
+reason: missing_evidence:recent_commits_observed
+executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
+  ejecutar aceptación real y devolver evidencia.
+research_packet:
+  sentinel_id: sentinela-plan4
+  failure: missing_evidence:recent_commits_observed
+  error_literal: ''
+  queries:
+  - 'Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia,
+    rama/PR o causa corregible.  missing_evidence:recent_commits_observed'
+  - 'Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia,
+    rama/PR o causa corregible.'
+  - missing_evidence:recent_commits_observed GitHub issue fix
+  - missing_evidence:recent_commits_observed Stack Overflow
+  - missing_evidence:recent_commits_observed developer community
+  sources:
+  - GitHub Issues del componente
+  - GitHub Discussions del componente
+  - GitHub Pull Requests del componente
+  - GitHub commits recientes del componente
+  - GitHub Community
+  - Stack Overflow
+  - Reddit /r/programming
+  - Reddit de la tecnología afectada
+  - Hacker News
+  - NVIDIA Developer Forums
+  - NVIDIA NIM / API documentation
+  - Aider issues y docs
+  - Claude Code issues y docs
+  - LiteLLM issues y docs
+  - pytest documentation
+  - Python Discuss
+  - Vercel discussions/docs
+  - GitHub Actions docs/community
+  - Issues/docs de OmniRoute, Hermes u OpenClaw
+  - Repositorio upstream exacto del componente
+  min_independent_sources: 3
+  max_sources: 20
+  required_output:
+  - root_cause
+  - evidence
+  - do_not_regenerate
+  - repair_steps
+  - acceptance_check
+research_findings:
+- source: StackOverflow
+  title: Why is conditional processing of a sorted array faster than of an unsorted
+    array?
+  url: https://stackoverflow.com/questions/11227809/why-is-conditional-processing-of-a-sorted-array-faster-than-of-an-unsorted-array
+- source: StackOverflow
+  title: How do I undo the most recent local commits in Git?
+  url: https://stackoverflow.com/questions/927358/how-do-i-undo-the-most-recent-local-commits-in-git
+- source: StackOverflow
+  title: How do I delete a Git branch locally and remotely?
+  url: https://stackoverflow.com/questions/2003505/how-do-i-delete-a-git-branch-locally-and-remotely
+- source: StackOverflow
+  title: What is the difference between &#39;git pull&#39; and &#39;git fetch&#39;?
+  url: https://stackoverflow.com/questions/292357/what-is-the-difference-between-git-pull-and-git-fetch
+- source: StackOverflow
+  title: What does the &quot;yield&quot; keyword do in Python?
+  url: https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python
