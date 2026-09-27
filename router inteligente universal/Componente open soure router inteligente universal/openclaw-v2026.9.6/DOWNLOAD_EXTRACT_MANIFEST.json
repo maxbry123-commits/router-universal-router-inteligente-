@@ -1,0 +1,108 @@
+{
+  "bundle_bytes": 188333525,
+  "bundle_sha256": "8c93dbe74ec728280e68f03e0030a2325f18542eabc3677e0f521343f18edff6",
+  "extracted_tree": {
+    "bytes": 645657373,
+    "files": 48573,
+    "sha256": "734eb9e42349870d93c7faf016c69d31855a6551c31d118a0a2ae0367a1ea184"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0001",
+      "sha256": "7e309dee6efdaec1010e0498ea992113a8c263a2c6ba06af99a7723aa844aa57"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0002",
+      "sha256": "67881978409d6b7b0fbb454ce62870c1f3562b3edb34c9ce70d63d0a67108bbc"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0003",
+      "sha256": "01ccd62ff2bb58c04ad4db326b073eed4e5e478dae8cae80ef571293c588860b"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0004",
+      "sha256": "c8860fa43d1118af5ae3f9c3780fd6206acc1dc56c45f1e01c12a9db0b06f487"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0005",
+      "sha256": "e6b7b894cc7d9fdbb10d5864f7a82a7d2c5dac732e6ec63a0c61ba0249fc4e30"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0006",
+      "sha256": "7796d693c5f0424f466ed5b9104424c568a673f9c39eb24a6b8bdd5c29c8d4cd"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0007",
+      "sha256": "48ca2e5214c95ae063bf6fc8134d3c8c7c7aa4a8c141e50000b1e8daa7416e1d"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0008",
+      "sha256": "9bf712f38c57994e53801d6f56986da948d50b6d4a72191a7a83c866e1c95b36"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0009",
+      "sha256": "f737d3f10ca5056138d3b4ad31728e32c67a529565f15a8d3e59af54ce055e60"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0010",
+      "sha256": "f5e2a9a47343a5727a837d831f648510b3a5eedfed7cf120d26a37ee391410b1"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0011",
+      "sha256": "941e5dc105aac8934d9684fe34580e8e4c0caacab5c3bddb5a1ff0c14d218b29"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0012",
+      "sha256": "c21fb480ab1db2d58efc597ef2228d34ce6f3511f2f6a599697336647e832208"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0013",
+      "sha256": "195f2747da8269711c89cd0213f2ad40ce2e8ad866080163cbf07bce34ad0a99"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0014",
+      "sha256": "156da5baec9bdcfee489f6a0507b690624682bc957089641035cea5224c8f7ff"
+    },
+    {
+      "bytes": 12172757,
+      "name": "openclaw-v2026.9.6.bundle.zip.part-0015",
+      "sha256": "79219da90711e691fc742bac5285b2d2bec07675625cc24254a07338aa3095e1"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    ".claude/skills",
+    "apps/macos/Tests/OpenClawIPCTests/GatewayTLSStoreFixture.swift"
+  ],
+  "skipped_special_count": 2,
+  "slug": "openclaw-v2026.9.6",
+  "source_bytes": 645657373,
+  "source_commit": "eb377ac59e6c9fd6c7705028034812becf00271b",
+  "source_files": 48573,
+  "source_ref": "v2026.9.6",
+  "source_repo": "openclaw/openclaw",
+  "source_tree": {
+    "bytes": 645657373,
+    "files": 48573,
+    "sha256": "734eb9e42349870d93c7faf016c69d31855a6551c31d118a0a2ae0367a1ea184"
+  }
+}
