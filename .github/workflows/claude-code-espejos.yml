@@ -2,7 +2,7 @@ name: Claude Code Espejos
 
 # Orden del Director 2026-09-27: espejos de Claude Code que trabajan solos con los modelos de NUESTRO Router
 # (NVIDIA primero, Cerebras de respaldo, vía LiteLLM; sin APIs de Anthropic). Cada espejo = 1 archivo de tarea.
-# Reglas duras: solo escribe dentro de su "alcance" (declarado en la tarea); NUNCA toca el Router, HF, secretos ni workflows.
+# Reglas duras: solo escribe dentro de su ALCANCE (una carpeta, declarada en la tarea); NUNCA toca el Router, HF, secretos ni workflows.
 # Vida máxima: 5 h. Resultado: commit directo a main SOLO de los archivos dentro de su alcance.
 
 on:
@@ -55,8 +55,9 @@ jobs:
         run: |
           F="chat router/06-ESPEJOS/tareas/${TAREA}.md"
           test -f "$F" || { echo "::error::no existe $F"; exit 1; }
-          ALC=$(grep -m1 '^ALCANCE:' "$F" | sed 's/^ALCANCE: *//')
+          ALC=$(grep -m1 '^ALCANCE:' "$F" | sed 's/^ALCANCE: *//; s/[[:space:]]*$//')
           test -n "$ALC" || { echo "::error::la tarea no declara ALCANCE"; exit 1; }
+          case "$ALC" in ".github"*|"router inteligente universal"*) echo "::error::alcance prohibido"; exit 1;; esac
           echo "alcance=$ALC" >> "$GITHUB_OUTPUT"
       - name: Puente de modelos (NVIDIA -> Cerebras) para Claude Code
         env:
@@ -85,8 +86,9 @@ jobs:
           ANTHROPIC_MODEL: espejo
           ANTHROPIC_SMALL_FAST_MODEL: espejo
           DISABLE_TELEMETRY: "1"
+          ALC: ${{ steps.t.outputs.alcance }}
         run: |
-          REGLAS="Eres el espejo ${TAREA} del equipo YAIWES. Lee primero chat router/03-ESTADO/HANDOFF.md y chat router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml. SOLO puedes crear o editar archivos dentro de: ${{ steps.t.outputs.alcance }}. PROHIBIDO tocar: .github/, router inteligente universal/, ROUTER_JOB_PAUSE.flag, secretos, HF. No escribas claves. Reutiliza código descargado antes de escribir nuevo. Cada archivo con su prueba. Al terminar escribe chat router/06-ESPEJOS/informes/${TAREA}.md con: qué hiciste, archivos, pruebas y qué falta (GAP)."
+          REGLAS="Eres el espejo ${TAREA} del equipo YAIWES. Lee primero 'chat router/03-ESTADO/HANDOFF.md' y 'chat router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml'. SOLO puedes crear o editar archivos dentro de la carpeta '${ALC}' y el informe 'chat router/06-ESPEJOS/informes/${TAREA}.md'. PROHIBIDO tocar: .github/, 'router inteligente universal/', ROUTER_JOB_PAUSE.flag, secretos, HF. No escribas claves. Reutiliza código descargado antes de escribir nuevo. Cada archivo con su prueba y ejecútala. Al terminar escribe el informe con: qué hiciste, archivos, pruebas (resultado real) y qué falta (GAP)."
           timeout 17400 claude -p "$REGLAS
 
           TAREA:
@@ -99,7 +101,8 @@ jobs:
         run: |
           git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
           git reset -q
-          for p in $ALC "chat router/06-ESPEJOS/informes/${TAREA}.md"; do [ -e "$p" ] && git add -- "$p"; done
-          git diff --cached --name-only | grep -E '^(\.github/|router inteligente universal/)' && { echo "::error::fuera de alcance, no se guarda"; exit 1; } || true
+          [ -e "$ALC" ] && git add -- "$ALC"
+          INF="chat router/06-ESPEJOS/informes/${TAREA}.md"; [ -e "$INF" ] && git add -- "$INF"
+          if git diff --cached --name-only | grep -qE '^(\.github/|router inteligente universal/)'; then echo "::error::fuera de alcance, no se guarda"; exit 1; fi
           git commit -q -m "espejo ${TAREA}: trabajo (${GITHUB_RUN_ID})" || { echo "sin cambios"; exit 0; }
           for i in 1 2 3 4 5; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 7; done
