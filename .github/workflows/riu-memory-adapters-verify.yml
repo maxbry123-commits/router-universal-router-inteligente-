@@ -1,0 +1,53 @@
+name: RIU Memory Adapters Verify
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'chat router/04-MEMORIA/**'
+      - 'chat router/03-ESTADO/MEMORIA-INVENTARIO.json'
+      - 'router inteligente universal/integration/chat_mvp/**'
+      - 'router inteligente universal/security/**'
+      - 'router inteligente universal/red/**'
+      - '.github/workflows/riu-memory-adapters-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-memory-cable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout memory cable
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            chat router/04-MEMORIA
+            chat router/03-ESTADO/MEMORIA-INVENTARIO.json
+            router inteligente universal/integration
+            router inteligente universal/security
+            router inteligente universal/red
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check fastapi httpx pytest pydantic pyyaml huggingface_hub
+      - name: Run memory adapter and chat regression
+        env:
+          PYTHONPATH: '${{ github.workspace }}/router inteligente universal:${{ github.workspace }}/chat router/04-MEMORIA:${{ github.workspace }}/router inteligente universal/security:${{ github.workspace }}/router inteligente universal/red'
+        run: |
+          python -m pytest -q -p no:cacheprovider \
+            'chat router/04-MEMORIA/tests/test_memoria_yaiwes.py' \
+            'router inteligente universal/tests/test_chat_mvp_pure.py' \
+            'router inteligente universal/tests/test_chat_mvp_app.py'
+      - name: Compile cable and assert no credentials in changed memory code
+        run: |
+          python -m py_compile \
+            'chat router/04-MEMORIA/memoria_yaiwes/__init__.py' \
+            'chat router/04-MEMORIA/tests/test_memoria_yaiwes.py'
+          ! grep -RInE 'hf_[A-Za-z0-9]{30,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-[A-Za-z0-9_-]{32,}' \
+            'chat router/04-MEMORIA' || { echo 'credential pattern found'; exit 1; }
