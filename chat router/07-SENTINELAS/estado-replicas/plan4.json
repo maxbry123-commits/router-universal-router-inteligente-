@@ -22,10 +22,12 @@
     "priority_task": {}
   },
   "next_action": "missing_evidence:recent_commits_observed",
-  "attempt": 5,
-  "loop_version": "a3e6f375449cf9cf",
+  "attempt": 6,
+  "loop_version": "5dc18a228bf60752",
   "research_packet": {
     "sentinel_id": "sentinela-plan4",
+    "objective": "Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia, rama/PR o causa corregible.",
+    "task_scope": "",
     "failure": "missing_evidence:recent_commits_observed",
     "error_literal": "",
     "queries": [
