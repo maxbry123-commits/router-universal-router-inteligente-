@@ -1,62 +1,14 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-27T23:19Z
-loop_version: 2b406ed4fafbae72
-observed_sha: 891f06ad86fb6688595d8af64fef64694e4c8647
+generated_at: 2026-09-27T23:23Z
+loop_version: c125d44a5eb50fd8
+observed_sha: 46d5f708f3d204887ad891c195aca34376ca5a07
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
 priority_task: T05
-state: REVISE
-reason: NO_ENTREGADO
+state: ACTIVE
+reason: executor_active
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
-research_packet:
-  sentinel_id: sentinela-chat
-  objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y
-    sin falsos verdes.
-  task_scope: ''
-  failure: NO_ENTREGADO
-  error_literal: '
-
-    no tests ran in 0.00s
-
-    ERROR: file or directory not found: chat router/10-CHAT-FUNCIONES
-
-
-    '
-  queries:
-  - T05  NO_ENTREGADO
-  - "T05 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/10-CHAT-FUNCIONES"
-  - NO_ENTREGADO GitHub issue fix
-  - NO_ENTREGADO Stack Overflow
-  - NO_ENTREGADO developer community
-  sources:
-  - GitHub Issues del componente
-  - GitHub Discussions del componente
-  - GitHub Pull Requests del componente
-  - GitHub commits recientes del componente
-  - GitHub Community
-  - Stack Overflow
-  - Reddit /r/programming
-  - Reddit de la tecnología afectada
-  - Hacker News
-  - NVIDIA Developer Forums
-  - NVIDIA NIM / API documentation
-  - Aider issues y docs
-  - Claude Code issues y docs
-  - LiteLLM issues y docs
-  - pytest documentation
-  - Python Discuss
-  - Vercel discussions/docs
-  - GitHub Actions docs/community
-  - Issues/docs de OmniRoute, Hermes u OpenClaw
-  - Repositorio upstream exacto del componente
-  min_independent_sources: 3
-  max_sources: 20
-  required_output:
-  - root_cause
-  - evidence
-  - do_not_regenerate
-  - repair_steps
-  - acceptance_check
+research_packet: null
 research_findings: []

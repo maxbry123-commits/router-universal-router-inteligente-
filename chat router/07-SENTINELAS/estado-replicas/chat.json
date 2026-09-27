@@ -1,12 +1,12 @@
 {
-  "status": "REVISE",
-  "last_sha": "891f06ad86fb6688595d8af64fef64694e4c8647",
+  "status": "ACTIVE",
+  "last_sha": "46d5f708f3d204887ad891c195aca34376ca5a07",
   "last_failure": "NO_ENTREGADO",
-  "same_failure_count": 1,
+  "same_failure_count": 2,
   "evidence": {
-    "observed_sha": "891f06ad86fb6688595d8af64fef64694e4c8647",
-    "current_sha": "891f06ad86fb6688595d8af64fef64694e4c8647",
-    "executor_active": false,
+    "observed_sha": "46d5f708f3d204887ad891c195aca34376ca5a07",
+    "current_sha": "46d5f708f3d204887ad891c195aca34376ca5a07",
+    "executor_active": true,
     "workflow_false_green": false,
     "unauthorized_change": false,
     "failure_class": "NO_ENTREGADO",
@@ -21,10 +21,10 @@
     "recent_runs": [],
     "priority_task": {
       "task_id": "T05",
-      "status": "REVISE",
-      "attempt": 1,
+      "status": "ACTIVE",
+      "attempt": 2,
       "failure": "NO_ENTREGADO",
-      "next_action": "esperar; foco actual T04",
+      "next_action": "vigilar: Trabajar (Aider espejo)",
       "evidence": {
         "faltan": [
           "action_registry.py",
@@ -38,18 +38,29 @@
           "README.md"
         ],
         "fugas": [],
+        "changed_files": [],
+        "executor_audit": {
+          "path_escape_count": 0,
+          "recovered_deviation": false,
+          "source": "informe"
+        },
+        "recovered_deviation": false,
+        "scope_escape": null,
+        "objective_failures": [],
+        "objective_drift": false,
         "pytest_exit": 4,
         "pytest_tail": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/10-CHAT-FUNCIONES\n\n",
         "informe": false,
+        "stale_report": false,
         "ultimo_commit": "",
         "veredicto": "REVISE",
         "causa": "NO_ENTREGADO"
       }
     }
   },
-  "next_action": "NO_ENTREGADO",
+  "next_action": "executor_active",
   "attempt": 7,
-  "loop_version": "2b406ed4fafbae72",
+  "loop_version": "c125d44a5eb50fd8",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
     "objective": "Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.",
