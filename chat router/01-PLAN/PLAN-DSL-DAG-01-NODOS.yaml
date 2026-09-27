@@ -89,7 +89,6 @@ dag_b_memoria:
   nodos:
     - id: B-1
       titulo: "State Hub (unico escritor de estado)"
-      status: "PASS_REMOTE_READBACK_CI_CORE_VERIFY_PASS"
       fuente_director: [doc24, M44]
       pasos:
         1: "state_hub.emit -> 03-ESTADO/BITACORA.jsonl -> STATE.json, CRAZY_WALL.json, HANDOFF.md (ruta del Router)"
@@ -102,7 +101,6 @@ dag_b_memoria:
       bloquea: [C-1]
     - id: B-2
       titulo: "Cablear memoria del Director (sin crear nada nuevo)"
-      status: "PARTIAL_BLOCKED_EXTERNAL_SERVICES"
       fuente_director: [M6, M44]
       componentes: [Graphiti, FalkorDB, Memanto, Graphify, AgentDB, "HF Storage Bucket", "PostgreSQL (servicio)", "Redis (servicio)"]
       pasos:
@@ -115,7 +113,6 @@ dag_b_memoria:
       depends_on: [A-1, B-1]
     - id: B-3
       titulo: "Archivos del chat anclados al almacenamiento"
-      status: "PARTIAL_SYNC_SIMULATED_RUNTIME_READBACK_PENDING"
       fuente_director: [M1, M16]
       pasos:
         1: "subida -> HF Bucket + indice en memoria"
