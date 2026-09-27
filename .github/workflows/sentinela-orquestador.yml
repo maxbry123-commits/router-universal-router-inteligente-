@@ -10,7 +10,7 @@ on:
     - cron: '*/5 * * * *'
   workflow_run:
     workflows: ["Claude Code Espejos"]
-    types: [requested, in_progress, completed]
+    types: [in_progress, completed]
   push:
     paths:
       - '.github/workflows/sentinela-orquestador.yml'
