@@ -1,0 +1,176 @@
+"""Tests del gobierno T01 (pytest). Mínimo 3 casos por clase: PASS y fallos."""
+import subprocess
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).parents[1]))
+
+from contratos import Job, Result, State, Task  # noqa: E402
+from judge import Judge  # noqa: E402
+from mirror_manager import SYSTEM_MAP, MirrorManager  # noqa: E402
+from sentinel import Sentinel  # noqa: E402
+from sheriff import Sheriff  # noqa: E402
+
+
+# ---------------- contratos ----------------
+
+class TestContratos:
+    def test_job_roundtrip(self):
+        job = Job(job_id="UI-001", objective="editor", acceptance=["drag"])
+        d = job.to_dict()
+        assert Job.from_dict(d).to_dict() == d
+
+    def test_job_falta_obligatorio(self):
+        with pytest.raises(ValueError):
+            Job.from_dict({"objective": "x"})
+        with pytest.raises(ValueError):
+            Job(job_id="", objective="x")
+
+    def test_result_roundtrip_y_status(self):
+        r = Result(job_id="J1", agent="grok_executor", status="PASS",
+                   next_action="CLAUDE_REVIEW")
+        assert Result.from_dict(r.to_dict()).agent == "grok_executor"
+        with pytest.raises(ValueError):
+            Result(job_id="J1", agent="a", status="QUIZAS")
+
+    def test_task_y_state(self):
+        t = Task(id="t1", objective="o", role="coder", dependencies=["t0"])
+        assert Task.from_dict(t.to_dict()).dependencies == ["t0"]
+        assert State.JUDGMENT.value == "JUDGMENT"
+        with pytest.raises(ValueError):
+            Task.from_dict({"id": "t1"})
+
+
+# ---------------- sheriff ----------------
+
+class TestSheriff:
+    def setup_method(self):
+        self.s = Sheriff()
+
+    def test_plan_valido(self):
+        plan = {"tasks": [
+            {"id": "a", "acceptance": ["ok"], "allowed_paths": ["src/"]},
+            {"id": "b", "acceptance": ["ok"], "dependencies": ["a"]},
+        ]}
+        assert self.s.validate(plan) == (True, "PASS")
+
+    def test_sin_acceptance(self):
+        plan = {"tasks": [{"id": "a"}]}
+        ok, motivo = self.s.validate(plan)
+        assert not ok and "aceptación" in motivo
+
+    def test_dependencia_invalida(self):
+        plan = {"tasks": [{"id": "a", "acceptance": ["x"],
+                           "dependencies": ["fantasma"]}]}
+        ok, motivo = self.s.validate(plan)
+        assert not ok and "Dependencia" in motivo
+
+    def test_rutas_prohibidas(self):
+        for ruta in ("/abs", "../traversal", ".github/workflows/x",
+                     "router inteligente universal/secreto"):
+            plan = {"tasks": [{"id": "a", "acceptance": ["x"],
+                               "allowed_paths": [ruta]}]}
+            ok, _ = self.s.validate(plan)
+            assert not ok, ruta
+
+
+# ---------------- judge ----------------
+
+class TestJudge:
+    def setup_method(self):
+        self.j = Judge()
+        self.ok = {"approve": True}
+
+    def test_pass(self):
+        ev = {"status": "PASS", "tests": ["t1"]}
+        assert self.j.decide({}, ev, self.ok, self.ok) == "PASS"
+
+    def test_revise_sin_evidencia_o_tests(self):
+        assert self.j.decide({}, {}, self.ok, self.ok) == "REVISE"
+        assert self.j.decide({}, {"status": "PASS"}, self.ok, self.ok) == "REVISE"
+
+    def test_revise_si_revisor_rechaza(self):
+        ev = {"status": "PASS", "tests": ["t"]}
+        assert self.j.decide({}, ev, {"approve": False}, self.ok) == "REVISE"
+
+    def test_block_unauthorized(self):
+        ev = {"status": "PASS", "tests": ["t"], "unauthorized_change": True}
+        assert self.j.decide({}, ev, self.ok, self.ok) == "BLOCK"
+
+
+# ---------------- sentinel ----------------
+
+class TestSentinel:
+    def test_continue(self):
+        assert Sentinel().inspect({"status": "RUNNING"}) == {"action": "CONTINUE"}
+
+    def test_error_recover_y_reassign_a_la_tercera(self):
+        s = Sentinel()
+        estado = {"status": "ERROR", "error": "boom"}
+        assert s.inspect(estado) == {"action": "RECOVER"}
+        assert s.inspect(estado) == {"action": "RECOVER"}
+        assert s.inspect(estado) == {"action": "REASSIGN"}
+
+    def test_stalled_y_unauthorized(self):
+        s = Sentinel()
+        assert s.inspect({"status": "STALLED"}) == {"action": "REASSIGN"}
+        assert s.inspect({"unauthorized_change": True}) == {"action": "BLOCK"}
+
+    def test_heartbeat_viejo(self):
+        viejo = (datetime.now(timezone.utc) - timedelta(minutes=31)).isoformat()
+        assert Sentinel().inspect({"status": "RUNNING", "heartbeat_at": viejo}) == {
+            "action": "REASSIGN"}
+        fresco = datetime.now(timezone.utc).isoformat()
+        assert Sentinel().inspect({"status": "RUNNING", "heartbeat_at": fresco}) == {
+            "action": "CONTINUE"}
+
+
+# ---------------- mirror manager ----------------
+
+@pytest.fixture
+def repo_git(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    (repo / "README.md").write_text("base\n")
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                    "commit", "-m", "init"], cwd=repo, check=True,
+                   capture_output=True)
+    return repo
+
+
+class TestMirrorManager:
+    def test_create_worktree(self, repo_git):
+        mm = MirrorManager(repo_git)
+        m = mm.create("job-1", "router")
+        assert Path(m["workspace"]).is_dir()
+        assert m["allowed_paths"] == SYSTEM_MAP["router"]["paths"]
+
+    def test_sistema_desconocido(self, repo_git):
+        with pytest.raises(ValueError):
+            MirrorManager(repo_git).create("job-x", "no-existe")
+
+    def test_diff_y_merge_selectivo(self, repo_git):
+        mm = MirrorManager(repo_git)
+        m = mm.create("job-2", "memory")
+        nuevo = Path(m["workspace"]) / "memory" / "nota.txt"
+        nuevo.parent.mkdir(parents=True, exist_ok=True)
+        nuevo.write_text("cambio\n")
+        ok, motivo = mm.merge_selectivo("job-2", Sheriff())
+        assert ok, motivo
+        assert (repo_git / "memory" / "nota.txt").read_text() == "cambio\n"
+
+    def test_merge_bloqueado_por_sheriff(self, repo_git):
+        mm = MirrorManager(repo_git)
+        m = mm.create("job-3", "router")
+        prohibido = Path(m["workspace"]) / ".github" / "x.yml"
+        prohibido.parent.mkdir(parents=True, exist_ok=True)
+        prohibido.write_text("mal\n")
+        ok, motivo = mm.merge_selectivo("job-3", Sheriff())
+        assert not ok and "prohibida" in motivo
+        mm.keep_for_debug("job-3")
+        assert mm.mirrors["job-3"]["debug"] is True
