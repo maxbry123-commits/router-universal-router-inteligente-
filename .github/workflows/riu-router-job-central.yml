@@ -4,6 +4,7 @@ name: RIU Router Job Central
 # 2026-09-26 (orden del Director): máquina HF de 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga.
 #   Dentro de la misma máquina: Router (puerto 8000) + OmniRoute oficial en segundo plano (127.0.0.1:20128, el Router lo alcanza por dentro).
 #   Al lanzar uno nuevo, cancela los Jobs de Router anteriores para no pagar dos.
+# 2026-09-27: añade httpx (lo usa el código de memoria nuevo; sin él el Router moría al arrancar).
 # Passes GH_JOB_PUSH_TOKEN and RIU_ROUTER_API_KEY as HF Job secrets (never written to any repo file).
 
 on:
@@ -47,7 +48,7 @@ jobs:
               "git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente- /tmp/r && "
               "cd /tmp/r && "
               "(bash 'router inteligente universal/keeper/start_omniroute.sh' &) ; "
-              "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests && "
+              "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests httpx && "
               "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'"
           )
           secrets = {"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]}
