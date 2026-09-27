@@ -1,7 +1,7 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-fabrica
-generated_at: 2026-09-27T23:19Z
-loop_version: 2b406ed4fafbae72
+generated_at: 2026-09-27T23:24Z
+loop_version: c125d44a5eb50fd8
 observed_sha: f3cfea99f3b7ce271a3c7ac935dc0d7abe330766
 objective: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de
   permitir el siguiente bloque.
