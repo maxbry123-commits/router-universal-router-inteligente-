@@ -1,11 +1,11 @@
 schema: yaiwes.sentinel-focus/v1
 mode: one_task_at_a_time
-active_task: T04
+active_task: T05
 advance: manual
-reason: "T04 Claude Code ↔ NVIDIA: crear primero tests, luego normalizador, pasarela y script; cerrar con pytest real antes de tocar T05-T08."
+reason: "T05 Funciones del chat: investigar el GAP del intento anterior, usar contexto compacto, vigilar scope/objetivo y cerrar antes de tocar T06-T08."
 rules:
   - "Nunca relanzar más de una tarea por ciclo."
   - "Si el ejecutor de active_task está activo: observar, no duplicar."
   - "Si aceptación PASS: cerrar y esperar nueva orden del Director."
-  - "Si falla: investigar causa exacta, ordenar corrección mínima y relanzar solo active_task."
+  - "Si falla: investigar causa exacta, crear contexto, ordenar corrección mínima y relanzar solo active_task."
   - "No regenerar archivos válidos."
