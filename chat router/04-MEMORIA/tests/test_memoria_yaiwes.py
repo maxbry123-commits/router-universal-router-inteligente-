@@ -50,6 +50,20 @@ def test_m1_health_reports_gaps_without_claiming_live_services(tmp_path):
     assert health["adapters"]["memanto"]["source_status"] == "PRESENT"
 
 
+def test_optional_remote_contract_replica_is_wired_without_leaking_endpoint(monkeypatch):
+    from memoria_yaiwes import ComponentAdapter
+
+    monkeypatch.setenv("RIU_MEMANTO_URL", "http://memory.invalid")
+    adapter = ComponentAdapter("memanto")
+    monkeypatch.setattr(adapter, "_request", lambda method, path, payload=None: {"ok": True, "path": path, "payload": payload})
+    saved = adapter.save("chat", "turno", {"texto": "hola"})
+    assert saved["status"] == "SAVED"
+    assert saved["response"]["payload"]["scope"] == "chat"
+    health = adapter.health()
+    assert health["configured"] is True
+    assert "memory.invalid" not in json.dumps(health)
+
+
 def test_m7_loader_mounts_health_and_save_routes(tmp_path, monkeypatch):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient

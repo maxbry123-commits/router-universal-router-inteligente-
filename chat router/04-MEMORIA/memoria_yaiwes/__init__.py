@@ -6,7 +6,7 @@ import os
 import sqlite3
 import socket
 import time
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 from pathlib import Path
 from typing import Any
@@ -163,7 +163,7 @@ class ComponentAdapter:
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
         if self._endpoint():
             try:
-                response = self._request("GET", f"/load?scope={scope}&key={key}")
+                response = self._request("GET", "/load?" + urlencode({"scope": scope, "key": key}))
                 return response.get("records", response if isinstance(response, list) else [])
             except Exception:  # noqa: BLE001
                 pass
@@ -172,7 +172,7 @@ class ComponentAdapter:
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
         if self._endpoint():
             try:
-                response = self._request("GET", f"/search?scope={scope}&query={query}&k={k}")
+                response = self._request("GET", "/search?" + urlencode({"scope": scope, "query": query, "k": k}))
                 return response.get("records", response if isinstance(response, list) else [])
             except Exception:  # noqa: BLE001
                 pass
