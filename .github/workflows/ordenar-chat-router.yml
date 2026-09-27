@@ -1,0 +1,34 @@
+name: Ordenar raíz chat router (una vez)
+
+# Orden del Director 2026-09-27: una sola raíz ordenada para el proyecto del chat (separado del Router Inteligente Universal).
+#   chat router/00-INSTRUCCIONES   → instrucciones del Director 1 a 1 (verbatim)
+#   chat router/01-PLAN            → plan + DSL DAG de cada paso
+#   chat router/02-ARQUITECTURA    → readme chat Arquitectura
+#   chat router/03-ESTADO          → Crazy Wall, bitácora, STATE.json, HANDOFF
+# Solo mueve archivos que ya están en "chat router/" (no borra nada).
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ordenar-chat-router.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  ordenar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd "chat router"
+          mkdir -p 00-INSTRUCCIONES 01-PLAN 02-ARQUITECTURA 03-ESTADO
+          for f in INPUT-BLOCK-VERBATIM-*.md; do [ -f "$f" ] && git mv "$f" 00-INSTRUCCIONES/; done
+          for f in PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml ORQUESTADOR-DE-TRABAJO.yaml; do [ -f "$f" ] && git mv "$f" 01-PLAN/; done
+          for f in HANDOFF-MAESTRO.md HANDOFF-CHAT-AGENTES-PLAN.md; do [ -f "$f" ] && git mv "$f" 03-ESTADO/; done
+          [ -d data ] && git mv data 03-ESTADO/data || true
+          cd ..
+          git rm -q .github/workflows/ordenar-chat-router.yml
+          git config user.name "orden-opus"; git config user.email "orden-opus@users.noreply.github.com"
+          git commit -q -m "chat router: raíz ordenada en 00-INSTRUCCIONES / 01-PLAN / 02-ARQUITECTURA / 03-ESTADO" && git push -q
