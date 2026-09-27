@@ -1,5 +1,5 @@
 name: Research Download Chain • Router Components
-run-name: RDC-ROUTER-ADDITIONAL-20260903 • ${{ github.run_id }}
+run-name: RDC-ROUTER-MEMORY-20260927 • ${{ github.run_id }}
 
 on:
   workflow_dispatch:
@@ -13,11 +13,11 @@ permissions:
 
 env:
   GIT_TERMINAL_PROMPT: "0"
-  TASK_ID: "RDC-ROUTER-ADDITIONAL-20260903"
+  TASK_ID: "RDC-ROUTER-MEMORY-20260927"
   SKILL_REPOSITORY: "maxbry123-commits/agentes"
   SKILL_REF: "05e3cd5f869ce17b9d6c44f36dee67800ce29ab7"
   DEST_ROOT: "router inteligente software/componentes todos/componentes descargados"
-  COMPONENTS_JSON: '[{"n":"01","slug":"LiteLLM","url":"https://github.com/BerriAI/litellm.git","requested":"https://github.com/BerriAI/litellm","ref":"658f50663d19f613a3f5caf998168da019764ad8"},{"n":"02","slug":"vLLM-Router","url":"https://github.com/llm-semantic-router/vllm-router.git","requested":"https://github.com/LLM-inference-router/vllm-router","ref":"5680dbe19b3f3d1f9bb062466d9f3f07136039b6"},{"n":"03","slug":"Temporal-Python-SDK","url":"https://github.com/temporalio/sdk-python.git","requested":"https://github.com/temporalio/sdk-python","ref":"d0e075c1e25b3371f0e0f5116d9c6626892e3eab"},{"n":"04","slug":"Durable-Task-Python","url":"https://github.com/microsoft/durabletask-python.git","requested":"https://github.com/microsoft/durabletask-python","ref":"46602d5221591b6aaeff1238cd0ec952419e2e29"},{"n":"05","slug":"Durable-Workflow-Server","url":"https://github.com/durable-workflow/server.git","requested":"https://github.com/durable-workflow/server","ref":"1636e53eb2e99d22fd8263e5d3192ce50cab799a"},{"n":"06","slug":"Prefect","url":"https://github.com/PrefectHQ/prefect.git","requested":"https://github.com/PrefectHQ/prefect","ref":"d63a95a49f48f869523781116d8adf2eb4118f32"}]'
+  COMPONENTS_JSON: '[{"n":"01","slug":"Graphiti","url":"https://github.com/getzep/graphiti.git","requested":"https://github.com/getzep/graphiti","ref":"ba4a9cb32495b6864160616f8dfa2b898f4a500c"},{"n":"02","slug":"Memanto","url":"https://github.com/moorcheh-ai/memanto.git","requested":"https://github.com/moorcheh-ai/memanto","ref":"0d9cbcb7431cdd5f47fe8f677e0ab5a1c7842898"},{"n":"03","slug":"Graphify","url":"https://github.com/Graphify-Labs/graphify.git","requested":"https://github.com/Graphify-Labs/graphify","ref":"91f4d120b630ee35c79bf3c75ccd186870a808f9"},{"n":"04","slug":"FalkorDB","url":"https://github.com/FalkorDB/FalkorDB.git","requested":"https://github.com/FalkorDB/FalkorDB","ref":"55204c94bb6c8bc1684ada3d712a61f73f324067"},{"n":"05","slug":"AgentDB","url":"https://github.com/ruvnet/agentdb.git","requested":"https://github.com/ruvnet/agentdb","ref":"6cdefe451f6afe7395bc88d3587a0225d161089b"},{"n":"06","slug":"PostgreSQL","url":"https://github.com/postgres/postgres.git","requested":"https://github.com/postgres/postgres","ref":"3c5d9d914fa5b8fb3f371dd97bdece032ca3598d"},{"n":"07","slug":"Redis","url":"https://github.com/redis/redis.git","requested":"https://github.com/redis/redis","ref":"20bb2cfc54aa08c8fdfb8c4c0a8b8258e811711e"}]'
 
 concurrency:
   group: extraction-single-writer-main
@@ -61,19 +61,21 @@ jobs:
 
           s=re.sub(r"^REPOS=.*$", "REPOS="+repr(repos), s, count=1, flags=re.M)
           s=s.replace("for number,slug,url in REPOS:", "for number,slug,url,ref in REPOS:")
-          old="sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(); guard_source_tree(root); shutil.rmtree(root/'.git',ignore_errors=True)"
-          new="""try:
-        run(['git','fetch','--depth','1','origin',ref],cwd=root)
-        run(['git','checkout','--detach',ref],cwd=root)
-        sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
-        if sha != ref:
-            raise RuntimeError(f'SOURCE_REF_MISMATCH expected={ref} actual={sha}')
-        guard_source_tree(root)
-    except Exception as e:
-        print(f'SKIP SOURCE GAP {number} {slug}: {e}',flush=True)
-        note(number=int(number),slug=slug,source=url,source_commit=ref,status='SKIPPED',reason=str(e))
-        skipped.append(number); shutil.rmtree(root,ignore_errors=True); continue
-    shutil.rmtree(root/'.git',ignore_errors=True)"""
+          old="sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(); guard_source_tree(root); shutil.rmtree(root/.git,ignore_errors=True)"
+          new = "\n".join([
+              "try:",
+              "    run(['git','fetch','--depth','1','origin',ref],cwd=root)",
+              "    run(['git','checkout','--detach',ref],cwd=root)",
+              "    sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()",
+              "    if sha != ref:",
+              "        raise RuntimeError(f'SOURCE_REF_MISMATCH expected={ref} actual={sha}')",
+              "    guard_source_tree(root)",
+              "except Exception as e:",
+              "    print(f'SKIP SOURCE GAP {number} {slug}: {e}',flush=True)",
+              "    note(number=int(number),slug=slug,source=url,source_commit=ref,status='SKIPPED',reason=str(e))",
+              "    skipped.append(number); shutil.rmtree(root,ignore_errors=True); continue",
+              "shutil.rmtree(root/.git,ignore_errors=True)",
+          ])
           if old not in s:
               raise SystemExit("ASSET_GAP: expected pinned edit anchor missing")
           s=s.replace(old,new)
