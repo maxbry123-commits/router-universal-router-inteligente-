@@ -1,11 +1,11 @@
 {
   "status": "ACTIVE",
-  "last_sha": "46d5f708f3d204887ad891c195aca34376ca5a07",
+  "last_sha": "c29bd175f6091d3f3da346131dd60eedfb795095",
   "last_failure": "NO_ENTREGADO",
-  "same_failure_count": 2,
+  "same_failure_count": 3,
   "evidence": {
-    "observed_sha": "46d5f708f3d204887ad891c195aca34376ca5a07",
-    "current_sha": "46d5f708f3d204887ad891c195aca34376ca5a07",
+    "observed_sha": "c29bd175f6091d3f3da346131dd60eedfb795095",
+    "current_sha": "c29bd175f6091d3f3da346131dd60eedfb795095",
     "executor_active": true,
     "workflow_false_green": false,
     "unauthorized_change": false,
@@ -60,7 +60,7 @@
   },
   "next_action": "executor_active",
   "attempt": 7,
-  "loop_version": "c125d44a5eb50fd8",
+  "loop_version": "0fb8da292b84d201",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
     "objective": "Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.",
