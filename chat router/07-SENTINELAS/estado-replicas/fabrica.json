@@ -1,11 +1,11 @@
 {
   "status": "RESEARCH",
-  "last_sha": "fb491a48bbd53488707b586691e16d3ac32c6139",
+  "last_sha": "7875ce7ab25d37c1d01cd60a84df73953c6ad1e2",
   "last_failure": "",
   "same_failure_count": 0,
   "evidence": {
-    "observed_sha": "fb491a48bbd53488707b586691e16d3ac32c6139",
-    "current_sha": "fb491a48bbd53488707b586691e16d3ac32c6139",
+    "observed_sha": "7875ce7ab25d37c1d01cd60a84df73953c6ad1e2",
+    "current_sha": "7875ce7ab25d37c1d01cd60a84df73953c6ad1e2",
     "executor_active": false,
     "workflow_false_green": false,
     "unauthorized_change": false,
@@ -22,8 +22,8 @@
     "priority_task": {}
   },
   "next_action": "missing_evidence:recent_commits_observed",
-  "attempt": 19,
-  "loop_version": "bd1b24f6007628c8",
+  "attempt": 20,
+  "loop_version": "91fa6bebe5d21b17",
   "research_packet": {
     "sentinel_id": "sentinela-fabrica",
     "objective": "Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.",
