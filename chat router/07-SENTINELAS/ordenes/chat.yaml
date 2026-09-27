@@ -1,14 +1,62 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-27T23:34Z
+generated_at: 2026-09-27T23:36Z
 loop_version: bd1b24f6007628c8
-observed_sha: be3baf96d7017466a4874fb0e044324ab69e5a9c
+observed_sha: b97210df5cd62a1a325ff28c358edb601e004245
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
-priority_task: T05
-state: ACTIVE
-reason: executor_active
+priority_task: T07
+state: RESEARCH
+reason: NO_ENTREGADO
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
-research_packet: null
+research_packet:
+  sentinel_id: sentinela-chat
+  objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y
+    sin falsos verdes.
+  task_scope: ''
+  failure: NO_ENTREGADO
+  error_literal: '
+
+    no tests ran in 0.00s
+
+    ERROR: file or directory not found: chat router/11-EVIDENCIA
+
+
+    '
+  queries:
+  - T07  NO_ENTREGADO
+  - "T07 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/11-EVIDENCIA"
+  - NO_ENTREGADO GitHub issue fix
+  - NO_ENTREGADO Stack Overflow
+  - NO_ENTREGADO developer community
+  sources:
+  - GitHub Issues del componente
+  - GitHub Discussions del componente
+  - GitHub Pull Requests del componente
+  - GitHub commits recientes del componente
+  - GitHub Community
+  - Stack Overflow
+  - Reddit /r/programming
+  - Reddit de la tecnología afectada
+  - Hacker News
+  - NVIDIA Developer Forums
+  - NVIDIA NIM / API documentation
+  - Aider issues y docs
+  - Claude Code issues y docs
+  - LiteLLM issues y docs
+  - pytest documentation
+  - Python Discuss
+  - Vercel discussions/docs
+  - GitHub Actions docs/community
+  - Issues/docs de OmniRoute, Hermes u OpenClaw
+  - Repositorio upstream exacto del componente
+  min_independent_sources: 3
+  max_sources: 20
+  required_output:
+  - root_cause
+  - evidence
+  - do_not_regenerate
+  - repair_steps
+  - acceptance_check
 research_findings: []
