@@ -322,7 +322,7 @@ def build_router() -> APIRouter:
         bucket = os.getenv("HF_BUCKET_ID") or ""
         return {**st.stats(), "data_dir": str(st.dir),
                 "hf_bucket": {"configured": bool(bucket), "id": bucket or None,
-                              "write_token": bool(os.getenv("HF_WRITE_TOKEN"))}}
+                              "write_token": bool(os.getenv("HF_WRITE_TOKEN") or os.getenv("HF_TOKEN"))}}
 
     @r.post("/chat/storage/sync")
     def storage_sync(_owner: str = Depends(_auth)) -> dict[str, Any]:
@@ -330,6 +330,8 @@ def build_router() -> APIRouter:
         token = os.getenv("HF_WRITE_TOKEN") or os.getenv("HF_TOKEN") or ""
         if not bucket:
             raise HTTPException(status_code=400, detail="HF_BUCKET_ID_NOT_SET")
+        if not token:
+            raise HTTPException(status_code=400, detail="HF_BUCKET_WRITE_TOKEN_NOT_SET")
         try:
             return sync_to_bucket(get_store(), bucket, token)
         except Exception as exc:  # noqa: BLE001

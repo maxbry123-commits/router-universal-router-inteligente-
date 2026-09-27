@@ -558,3 +558,14 @@ Regla arquitectónica: **nunca cargar el dataset completo al LLM**. El Router co
 - Regla FAIL_CLOSED: no CHAT_100_PERCENT sin URL live + conversación vía Router + selector + agente/sin agente + secret broker + adjunto/recuperación + storage + E2E PASS.
 - Anti-deriva: pausar prioridad de tareas no-chat mientras exista un gate bloqueante del chat.
 - Watchdog ChatGPT horario activado externamente para auditar pendientes y cambios del chat.
+
+
+## RIU-0119 — Chat: State Hub y almacenamiento (2026-09-27)
+
+- **B-1 PASS local / read-back GitHub pendiente:** el `ui_bridge` apunta a `chat router/03-ESTADO/data`; el State Hub escribe BITACORA JSONL append-only y reconstruye `STATE.json`, `CRAZY_WALL.json` y la sección marcada del `HANDOFF.md`. Prueba HTTP protegida: 3 eventos, rechazo sin configuración de auth, rechazo de key incorrecta, reconstrucción desde BITACORA y filtro de cadenas con apariencia de credencial.
+- **Storage que sí corre:** `Store` SQLite conserva conversaciones, mensajes, adjuntos, caché y grafo de procedencia. Se añadió cierre/reapertura y verificación de recuperación.
+- **Hugging Face Bucket:** sincronización actual de snapshot + adjuntos queda probada con filesystem simulado; falta acceso autorizado y read-back real. El endpoint ahora falla cerrado si falta bucket o token; no se usaron credenciales ni se hizo escritura remota.
+- **Inventario B-2:** Graphiti, Memanto y Graphify existen como fuentes descargadas, pero no conectadas. FalkorDB y AgentDB no se encontraron en el pool; PostgreSQL/Redis aparecen como fuentes, no como servicios configurados. No declarar memoria semántica/episódica conectada.
+- **Dataset conversacional:** no se encontró adaptador escritor activo para `COMAND-CENTER-1/yaiwes-hf-memoria`; el plugin del `dataset Yaiwes/` es read-only y distinto.
+- **Pruebas locales:** 17 PASS; 2 warnings de deprecación FastAPI. Ninguna prueba consume servicio externo.
+- **Estado operativo:** B-1 completo localmente, B-2 parcial/bloqueado por servicios y contratos de conexión; B-3 sync simulado, read-back y recuperación desde bucket pendientes. Siguiente: comprobar capacidad de escritura/read-back solo cuando el usuario/configuración lo autoricen; después, un servicio por vez y su reinicio/prueba.

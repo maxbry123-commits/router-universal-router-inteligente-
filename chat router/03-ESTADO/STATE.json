@@ -1,0 +1,16 @@
+{
+  "schema": "yaiwes.state/v1",
+  "revision": 1,
+  "updated_at": "2026-09-27T04:55:36Z",
+  "active_project": "chat-yaiwes",
+  "projects": {
+    "chat-yaiwes": {
+      "status": "RUNNING",
+      "progress": 0,
+      "active_tasks": [
+        "RIU-0119"
+      ],
+      "blocked_tasks": []
+    }
+  }
+}

@@ -209,3 +209,7 @@ class Store:
             self._db.backup(target)
         target.close()
         return dest
+
+    def close(self) -> None:
+        with self._lock:
+            self._db.close()

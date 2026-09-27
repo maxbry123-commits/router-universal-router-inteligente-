@@ -22,7 +22,7 @@ from integration.chat_mvp import github_tools as gh  # noqa: E402
 from integration.chat_mvp import providers as prov  # noqa: E402
 from integration.chat_mvp import router as rt  # noqa: E402
 from integration.chat_mvp.store import Store  # noqa: E402
-
+from integration.chat_mvp import ui_bridge  # noqa: E402
 H = {"X-API-Key": "k1"}
 KIMI = "moonshotai/Kimi-K3"
 
@@ -211,13 +211,20 @@ def test_github_accounts_switch_read_attach_and_commit(client, monkeypatch):
     assert "tok-one" not in json.dumps(accounts)
 
 
-def test_storage_graph_and_bucket_sync(client):
+def test_storage_graph_and_bucket_sync(client, monkeypatch):
     send(client, message="uno")
     stats = client.get("/chat/storage", headers=H).json()
     assert stats["sql"]["messages"] == 2 and stats["graph"]["edges"] >= 2 and stats["hf_bucket"]["configured"] is False
     graph = client.get("/chat/graph", headers=H).json()
     assert {"conversation", "model", "owner"} <= {n["kind"] for n in graph["nodes"]}
     assert client.post("/chat/storage/sync", headers=H).json()["detail"] == "HF_BUCKET_ID_NOT_SET"
+
+    monkeypatch.setenv("HF_BUCKET_ID", "test-owner/test-bucket")
+    monkeypatch.delenv("HF_WRITE_TOKEN", raising=False)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    missing_token = client.post("/chat/storage/sync", headers=H)
+    assert missing_token.status_code == 400
+    assert missing_token.json()["detail"] == "HF_BUCKET_WRITE_TOKEN_NOT_SET"
 
     written: dict[str, bytes] = {}
 
@@ -228,7 +235,74 @@ def test_storage_graph_and_bucket_sync(client):
         def pipe_file(self, path, data):
             written[path] = data
 
-    client.post("/chat/documents", json={"name": "n.txt", "mime": "text/plain", "data_b64": base64.b64encode(b"x").decode()}, headers=H)
+    uploaded = client.post("/chat/documents", json={"name": "n.txt", "mime": "text/plain", "data_b64": base64.b64encode(b"x").decode()}, headers=H)
+    document_id = uploaded.json()["document"]["id"]
     out = rt.sync_to_bucket(rt.get_store(), "u/b", "w", fs_factory=FakeFS)
     assert out == {"bucket": "u/b", "files": 2}
     assert written["buckets/u/b/riu-chat/riu_chat.sqlite3"].startswith(b"SQLite format 3")
+    assert written[f"buckets/u/b/riu-chat/docs/{document_id}"] == b"x"
+
+
+def test_ui_bridge_persists_chat_data_under_state_root():
+    assert ui_bridge.DATA == "chat router/03-ESTADO/data"
+    assert ui_bridge.ORDERS.startswith(ui_bridge.DATA + "/")
+    assert ui_bridge.GROUPS.startswith(ui_bridge.DATA + "/")
+    assert ui_bridge.WORKFLOWS.startswith(ui_bridge.DATA + "/")
+
+
+def test_state_hub_three_events_regenerate_state_and_handoff(client, monkeypatch):
+    remote = {ui_bridge.HANDOFF: "# HANDOFF CHAT YAIWES\n\nNotas previas conservadas.\n"}
+    writes = []
+    monkeypatch.setenv("RIU_ROUTER_API_KEY", "state-hub-test-key")
+
+    def fake_read(path):
+        return remote.get(path, ""), "sha-existing" if path in remote else None
+
+    def fake_write(path, text, message):
+        remote[path] = text
+        writes.append((path, message))
+
+    monkeypatch.setattr(ui_bridge, "_read", fake_read)
+    monkeypatch.setattr(ui_bridge, "_write", fake_write)
+    monkeypatch.delenv("RIU_ROUTER_API_KEY", raising=False)
+    events = [
+        {"type": "TASK_CLAIMED", "project": "chat-yaiwes", "task": "RIU-0119", "actor": "opus",
+         "phase": "INTEGRATE", "next": "VERIFY"},
+        {"type": "FILES_CHANGED", "project": "chat-yaiwes", "task": "RIU-0119", "actor": "opus", "files_changed": 5},
+        {"type": "CHECKPOINT_RECORDED", "project": "chat-yaiwes", "task": "RIU-0119", "actor": "opus",
+         "summary": "17 pruebas locales PASS; bucket simulado, sin credenciales.", "next": "B-2", "status": "RUNNING"},
+    ]
+    assert client.post("/state/events", json=events[0]).status_code == 503
+    monkeypatch.setenv("RIU_ROUTER_API_KEY", "state-hub-test-key")
+    assert client.post("/state/events", json=events[0]).status_code == 401
+    headers = {"X-API-Key": "state-hub-test-key"}
+    emitted = [client.post("/state/events", json=event, headers=headers) for event in events]
+    assert all(response.status_code == 200 for response in emitted)
+    emitted = [response.json() for response in emitted]
+
+    rows = [json.loads(line) for line in remote[ui_bridge.BITACORA].splitlines()]
+    state = json.loads(remote[ui_bridge.STATE])
+    wall = json.loads(remote[ui_bridge.CRAZY_WALL])
+    assert [row["seq"] for row in rows] == [1, 2, 3]
+    assert state["revision"] == 3 and state["projects"]["chat-yaiwes"]["active_tasks"] == ["RIU-0119"]
+    assert wall["nodes"]["RIU-0119"]["status"] == "RUNNING"
+    assert "Notas previas conservadas." in remote[ui_bridge.HANDOFF]
+    assert "17 pruebas locales PASS" in remote[ui_bridge.HANDOFF]
+    assert emitted[-1]["revision"] == 3
+    assert {ui_bridge.BITACORA, ui_bridge.STATE, ui_bridge.CRAZY_WALL, ui_bridge.HANDOFF} <= {path for path, _ in writes}
+
+    state_before, wall_before = remote[ui_bridge.STATE], remote[ui_bridge.CRAZY_WALL]
+    remote.pop(ui_bridge.STATE)
+    remote.pop(ui_bridge.CRAZY_WALL)
+    rebuilt_response = client.post("/state/rebuild", headers=headers)
+    assert rebuilt_response.status_code == 200
+    rebuilt = rebuilt_response.json()
+    assert rebuilt["revision"] == 3
+    assert remote[ui_bridge.STATE] == state_before
+    assert remote[ui_bridge.CRAZY_WALL] == wall_before
+
+    rejected = client.post("/state/events", headers=headers, json={
+        "type": "CHECKPOINT_RECORDED", "project": "chat-yaiwes", "task": "RIU-0119",
+        "actor": "opus", "summary": "hf_" + ("a" * 24),
+    })
+    assert rejected.status_code == 400 and rejected.json()["detail"] == "STATE_EVENT_SUMMARY_INVALID"

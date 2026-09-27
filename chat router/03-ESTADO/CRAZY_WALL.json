@@ -1,0 +1,16 @@
+{
+  "schema": "yaiwes.crazy-wall/v1",
+  "nodes": {
+    "RIU-0119": {
+      "node_id": "RIU-0119",
+      "task": "RIU-0119",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "B1_STATE_HUB_COMPLETE",
+      "next": "B2: conectar solo servicios disponibles y después cerrar B3 adjuntos",
+      "summary": "B-1: State Hub local; BITACORA reconstruye STATE/CRAZY_WALL/HANDOFF. Chat: SQLite persiste conversación/adjunto/grafo; bucket solo sync simulado. 17 pruebas locales PASS. Sin credenciales ni escritura remota; PostgreSQL, Redis, Graphiti/FalkorDB, Memanto, Graphify y AgentDB siguen pendientes de conexión verificable.",
+      "updated_at": "2026-09-27T04:55:36Z",
+      "last_event_seq": 1
+    }
+  }
+}

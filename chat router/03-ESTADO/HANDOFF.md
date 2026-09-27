@@ -30,3 +30,17 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` (nodo B-1) · FLAG-2
 ```json
 {"schema":"yaiwes.crazy-wall/v1","nodos":{"V-1":{"status":"CLAIMED","agente":"opus","fase":"PASO_2","siguiente":"subir PARTE-2 literal"},"A-1":{"status":"CLAIMED","agente":"opus","fase":"PRUEBA","siguiente":"leer prueba-omniroute-router"}}}
 ```
+
+<!-- YAIWES STATE HUB START -->
+## Estado operativo generado por State Hub
+Revisión: 1
+Proyecto/tarea: `chat-yaiwes` / `RIU-0119`
+Estado: **RUNNING**
+Fase: `B1_STATE_HUB_COMPLETE`
+
+### Último checkpoint
+B-1: State Hub local; BITACORA reconstruye STATE/CRAZY_WALL/HANDOFF. Chat: SQLite persiste conversación/adjunto/grafo; bucket solo sync simulado. 17 pruebas locales PASS. Sin credenciales ni escritura remota; PostgreSQL, Redis, Graphiti/FalkorDB, Memanto, Graphify y AgentDB siguen pendientes de conexión verificable.
+
+### Siguiente
+B2: conectar solo servicios disponibles y después cerrar B3 adjuntos
+<!-- YAIWES STATE HUB END -->

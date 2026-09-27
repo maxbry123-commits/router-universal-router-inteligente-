@@ -50,6 +50,23 @@ def test_store_four_systems(tmp_path):
     assert s.delete_document(binary["id"]) and not s.delete_document(binary["id"])
 
 
+def test_store_recovers_chat_document_and_graph_after_reopen(tmp_path):
+    store = Store(tmp_path)
+    cid = store.new_conversation("persistencia", None, "owner-test")
+    store.add_message(cid, "user", "recuerdo de prueba")
+    doc = store.put_document("nota.txt", "text/plain", b"adjunto de prueba", cid)
+    store.record_turn(conv_id=cid, owner="owner-test", provider="hf", model="test-model",
+                      agent_id=None, doc_ids=[doc["id"]])
+    store.close()
+
+    reopened = Store(tmp_path)
+    assert reopened.conversation(cid)["owner"] == "owner-test"
+    assert reopened.messages(cid)[0]["content"] == "recuerdo de prueba"
+    assert reopened.document_text(doc["id"]) == "adjunto de prueba"
+    assert {node["kind"] for node in reopened.graph_view()["nodes"]} >= {"conversation", "document"}
+    reopened.close()
+
+
 def test_providers_catalog_cache_chat_and_local(monkeypatch):
     prov._models_cache.clear()
     assert prov.list_models("cerebras", "k1", fetch=lambda url, k: {"data": [{"id": "b"}, {"id": "a"}, {"x": 1}]}) == ["a", "b"]
