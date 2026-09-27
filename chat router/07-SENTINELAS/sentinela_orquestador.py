@@ -23,10 +23,12 @@ GOBIERNO = ROOT / "05-AGENTES" / "gobierno"
 sys.path.insert(0, str(GOBIERNO))
 
 from sentinel_loop import (  # noqa: E402
+    SentinelContextBuilder,
     SentinelDSL,
     SentinelOrchestrator,
     SentinelResearchPlanner,
     SentinelSheriff,
+    SentinelSupervisor,
 )
 
 CONTRATOS = BASE / "CONTRATOS.yaml"
@@ -49,7 +51,13 @@ RESEARCH_REPOS = {
     "T01": ["pytest-dev/pytest", "Aider-AI/aider"],
     "T02": ["pytest-dev/pytest"],
     "T03": ["diegosouzapw/OmniRoute"],
-    "T04": ["anthropics/claude-code", "BerriAI/litellm"],
+    "T04": [
+        "anthropics/claude-code",
+        "BerriAI/litellm",
+        "codeaashu/free-claude-code",
+        "claude-server/claude-nim",
+        "deepseek-ai/deepseek-harness",
+    ],
     "T05": ["pytest-dev/pytest"],
     "T06": ["NousResearch/hermes-agent", "openclaw/openclaw"],
     "T07": ["pytest-dev/pytest"],
@@ -69,51 +77,133 @@ def ahora() -> str:
     return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
 
 
-def espejos_activos() -> set[str]:
+def espejos_activos() -> dict[str, dict]:
+    """Devuelve ejecutores activos con run/job/step para supervisión real."""
     rc, out = sh([
         "gh", "run", "list", "-R", REPO, "-w", WF,
         "-s", "in_progress", "--json", "databaseId", "-L", "10",
     ])
-    activos: set[str] = set()
+    activos: dict[str, dict] = {}
     if rc != 0:
         return activos
+    now = dt.datetime.now(dt.timezone.utc)
     for run in json.loads(out or "[]"):
+        run_id = run.get("databaseId")
         _, jobs = sh([
-            "gh", "run", "view", str(run["databaseId"]),
+            "gh", "run", "view", str(run_id),
             "-R", REPO, "--json", "jobs",
         ])
         for job in json.loads(jobs or "{}").get("jobs", []):
             name = job.get("name", "")
-            if job.get("status") != "completed" and "(" in name:
-                activos.add(name.split("(")[-1].rstrip(")"))
+            if job.get("status") == "completed" or "(" not in name:
+                continue
+            tid = name.split("(")[-1].rstrip(")")
+            steps = job.get("steps", [])
+            active_step = next(
+                (s for s in steps if s.get("status") == "in_progress"),
+                {},
+            )
+            age = 0
+            started = active_step.get("startedAt") or job.get("startedAt")
+            if started:
+                try:
+                    stamp = dt.datetime.fromisoformat(str(started).replace("Z", "+00:00"))
+                    age = max(0, int((now - stamp).total_seconds() // 60))
+                except ValueError:
+                    age = 0
+            activos[tid] = {
+                "executor_active": True,
+                "run_id": run_id,
+                "job_id": job.get("databaseId"),
+                "active_step": active_step.get("name") or "ejecutor activo",
+                "active_step_age_minutes": age,
+            }
     return activos
+
+
+def mirror_changed_files(tid: str) -> list[str]:
+    """Inspecciona una rama REVISE sin mezclarla con el worktree actual."""
+    ref = f"refs/remotes/origin/mirror/{tid}"
+    rc, _ = sh(["git", "ls-remote", "--exit-code", "--heads", "origin", f"mirror/{tid}"])
+    if rc != 0:
+        return []
+    rc, _ = sh([
+        "git", "fetch", "-q", "origin",
+        f"refs/heads/mirror/{tid}:{ref}",
+    ])
+    if rc != 0:
+        return []
+    rc, out = sh(["git", "diff", "--name-only", f"HEAD...{ref}"])
+    return [line.strip() for line in out.splitlines() if line.strip()] if rc == 0 else []
 
 
 def verificar(tid: str, c: dict, prohibido: list[str]) -> dict:
     scope = pathlib.Path(c["scope"])
     faltan = [
         f for f in c["required_files"]
-        if not (scope / f).is_file() or (scope / f).stat().st_size == 0
+        if not (scope / f).is_file() or (
+            (scope / f).name != "__init__.py" and (scope / f).stat().st_size == 0
+        )
     ]
     fugas = [
         p for p in prohibido
         if pathlib.Path(p).exists() and "chat router/chat router" in p
     ]
+
+    changed = mirror_changed_files(tid)
+    task_spec = spec_tarea(tid, c, [])
+    sheriff_ok, sheriff_reason = SentinelSheriff().validate_executor_paths(
+        task_spec, changed
+    )
+    scope_escape = None if sheriff_ok else sheriff_reason
+
     rc, out = sh(
         ["bash", "-c", c["acceptance"]],
         env={**os.environ, "SIMULADO": "1"},
     )
+
+    objective_failures: list[str] = []
+    if not faltan:
+        for check in c.get("objective_checks", []):
+            crc, cout = sh(
+                ["bash", "-c", check],
+                env={**os.environ, "SIMULADO": "1"},
+            )
+            if crc != 0:
+                objective_failures.append(
+                    f"{check} :: {cout[-300:].strip()}"
+                )
+
     informe = ROOT / "06-ESPEJOS" / "informes" / f"{tid}.md"
-    _, log = sh(["git", "log", "-1", "--format=%H %s", "--", c["scope"]])
+    _, log = sh(["git", "log", "-1", "--format=%H %ct %s", "--", c["scope"]])
+    _, report_log = sh(["git", "log", "-1", "--format=%ct", "--", str(informe)])
+    scope_parts = log.strip().split(maxsplit=2)
+    scope_ts = int(scope_parts[1]) if len(scope_parts) >= 2 and scope_parts[1].isdigit() else 0
+    report_ts = int(report_log.strip()) if report_log.strip().isdigit() else 0
+    informe_ok = informe.is_file() and informe.stat().st_size > 0
+    stale_report = bool(informe_ok and scope_ts and report_ts < scope_ts)
+
     ev = {
         "faltan": faltan,
         "fugas": fugas,
+        "changed_files": changed,
+        "scope_escape": scope_escape,
+        "objective_failures": objective_failures,
+        "objective_drift": bool(objective_failures),
         "pytest_exit": rc,
         "pytest_tail": out[-1600:],
-        "informe": informe.is_file() and informe.stat().st_size > 0,
-        "ultimo_commit": log.strip()[:160],
+        "informe": informe_ok,
+        "stale_report": stale_report,
+        "ultimo_commit": log.strip()[:200],
     }
-    if not faltan and not fugas and rc == 0 and ev["informe"]:
+
+    if scope_escape:
+        ev["veredicto"], ev["causa"] = "REVISE", "SCOPE_ESCAPE"
+    elif objective_failures:
+        ev["veredicto"], ev["causa"] = "REVISE", "OBJECTIVE_DRIFT"
+    elif stale_report:
+        ev["veredicto"], ev["causa"] = "REVISE", "STALE_REPORT"
+    elif not faltan and not fugas and rc == 0 and informe_ok:
         ev["veredicto"] = "PASS"
     elif faltan and len(faltan) == len(c["required_files"]):
         ev["veredicto"], ev["causa"] = "REVISE", "NO_ENTREGADO"
@@ -137,8 +227,13 @@ def spec_tarea(tid: str, c: dict, research_pool: list[str]):
         "priority_goals": [c["objective"]],
         "evidence_required": ["task_contract_observed", "task_pass"],
         "research_sources": research_pool,
+        "task_scope": c["scope"],
+        "required_files": c["required_files"],
+        "acceptance": c["acceptance"],
+        "objective_checks": c.get("objective_checks", []),
         "max_attempts": MAX_INTENTOS,
         "max_research_sources": 20,
+        "max_stall_minutes": int(c.get("max_stall_minutes", 30)),
     })
 
 
@@ -273,14 +368,27 @@ def investigar(tid: str, spec, ev: dict, intento: int) -> dict:
         f"faltan={ev['faltan']} pytest_exit={ev['pytest_exit']}\n"
         f"Error literal:\n{error}\n"
         f"Evidencia comunidad={json.dumps(findings, ensure_ascii=False)[:5000]}\n"
-        "Responde máximo 12 líneas: CAUSA_RAIZ, EVIDENCIA, NO_REGENERAR, "
-        "REPARAR, ACEPTACION."
+        "Identifica también GAPS de conocimiento/protocolo. "
+        "Responde máximo 12 líneas: CAUSA_RAIZ, EVIDENCIA, GAPS, "
+        "NO_REGENERAR, REPARAR, ACEPTACION."
     )
     return {
         "packet": packet,
         "fuentes": findings,
         "analisis": nvidia(prompt) or "sin respuesta del modelo; usar evidencia determinista",
     }
+
+
+def crear_contexto(tid: str, spec, ev: dict, rp: dict) -> None:
+    path = TAREAS_DIR / f"{tid}-SENTINEL-CONTEXT.md"
+    sheriff = SentinelSheriff()
+    ok, motivo = sheriff.validate_write_paths([str(path)])
+    if not ok:
+        raise RuntimeError(motivo)
+    path.write_text(
+        SentinelContextBuilder.build(spec, tid, ev, rp),
+        encoding="utf-8",
+    )
 
 
 def ordenar(tid: str, intento: int, ev: dict, rp: dict) -> None:
@@ -343,7 +451,24 @@ def main() -> None:
             continue
 
         if tid in activos:
-            st.update({"status": "ACTIVE", "last_sha": head, "next_action": "esperar ejecutor"})
+            runtime = activos[tid]
+            supervision = SentinelSupervisor().inspect(spec, runtime)
+            st.update({
+                "status": "ACTIVE",
+                "last_sha": head,
+                "runtime": runtime,
+                "supervision": supervision,
+                "next_action": f"vigilar: {supervision['reason']}",
+            })
+            if supervision["action"] in {"BLOCK", "INTERVENE", "RESEARCH"}:
+                run_id = runtime.get("run_id")
+                if run_id:
+                    sh(["gh", "run", "cancel", str(run_id), "-R", REPO], timeout=30)
+                st.update({
+                    "status": "RESEARCH",
+                    "last_failure": supervision["reason"],
+                    "next_action": "ejecutor detenido; investigar y recontextualizar",
+                })
         else:
             ev = verificar(tid, c, cfg.get("prohibido_global", []))
             common_evidence = {
@@ -352,9 +477,15 @@ def main() -> None:
                 "executor_active": False,
                 "workflow_false_green": False,
                 "unauthorized_change": bool(ev["fugas"]),
+                "scope_escape": bool(ev.get("scope_escape")),
+                "objective_drift": bool(ev.get("objective_drift")),
+                "stale_report": bool(ev.get("stale_report")),
                 "failure_class": ev.get("causa", ""),
                 "objective_evidence": {
                     "task_contract_observed": True,
+                    "scope_clean": not bool(ev.get("scope_escape")),
+                    "objective_checks_pass": not bool(ev.get("objective_failures")),
+                    "report_fresh": not bool(ev.get("stale_report")),
                     "task_pass": ev["veredicto"] == "PASS",
                 },
             }
@@ -374,11 +505,22 @@ def main() -> None:
                     "last_failure": ev.get("causa"),
                 })
             else:
-                st["attempt"] = st.get("attempt", 0) + 1
-                if ev.get("causa") in DETERMINISTIC_FAILURES:
-                    rp = diagnostico_determinista(tid, spec, ev, st["attempt"])
-                else:
+                previous_attempts = st.get("attempt", 0)
+                st["attempt"] = previous_attempts + 1
+                # Primer fallo puramente estructural puede resolverse directo.
+                # Si el agente YA falló una vez, existe un GAP: investigar antes
+                # de volver a empujarlo, aunque la causa sea determinista.
+                must_research = (
+                    previous_attempts >= 1
+                    or ev.get("causa") not in DETERMINISTIC_FAILURES
+                    or bool(ev.get("objective_drift"))
+                    or bool(ev.get("scope_escape"))
+                )
+                if must_research:
                     rp = investigar(tid, spec, ev, st["attempt"])
+                else:
+                    rp = diagnostico_determinista(tid, spec, ev, st["attempt"])
+                crear_contexto(tid, spec, ev, rp)
                 ordenar(tid, st["attempt"], ev, rp)
                 st.update({
                     "status": decision["state"],
