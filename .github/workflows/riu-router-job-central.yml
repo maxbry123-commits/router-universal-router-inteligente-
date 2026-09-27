@@ -5,7 +5,9 @@ name: RIU Router Job Central
 #   Dentro de la misma máquina: Router (puerto 8000) + OmniRoute oficial en segundo plano (127.0.0.1:20128, el Router lo alcanza por dentro).
 #   Al lanzar uno nuevo, cancela los Jobs de Router anteriores para no pagar dos.
 # 2026-09-27: añade httpx (lo usa el código de memoria nuevo; sin él el Router moría al arrancar).
-# Passes GH_JOB_PUSH_TOKEN and RIU_ROUTER_API_KEY as HF Job secrets (never written to any repo file).
+# 2026-09-27: el Router recibe las claves de proveedores (NVIDIA_API_KEY_1..4 y GROQ_API_KEY_1..7) como secretos del Job:
+#   el Router pregunta qué modelos responden con cada clave y usa los disponibles (common/routes.py). Cerebras eliminado.
+# Los secretos viajan como HF Job secrets (nunca se escriben en archivos del repo).
 
 on:
   workflow_dispatch:
@@ -36,6 +38,17 @@ jobs:
           RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
           LIFETIME: ${{ inputs.lifetime || '48h' }}
           FLAVOR: ${{ inputs.flavor || 'cpu-basic' }}
+          NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+          NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+          NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+          NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
+          GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
+          GROQ_API_KEY_2: ${{ secrets.GROQ_API_KEY_2 }}
+          GROQ_API_KEY_3: ${{ secrets.GROQ_API_KEY_3 }}
+          GROQ_API_KEY_4: ${{ secrets.GROQ_API_KEY_4 }}
+          GROQ_API_KEY_5: ${{ secrets.GROQ_API_KEY_5 }}
+          GROQ_API_KEY_6: ${{ secrets.GROQ_API_KEY_6 }}
+          GROQ_API_KEY_7: ${{ secrets.GROQ_API_KEY_7 }}
         run: |
           python - <<'PY'
           import os, time, requests
@@ -54,6 +67,13 @@ jobs:
           secrets = {"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]}
           if os.environ.get("RIU_KEY"):
               secrets["RIU_ROUTER_API_KEY"] = os.environ["RIU_KEY"]
+          n = 0
+          for pref, tope in (("NVIDIA_API_KEY_", 4), ("GROQ_API_KEY_", 7)):
+              for i in range(1, tope + 1):
+                  v = os.environ.get(f"{pref}{i}", "")
+                  if v:
+                      secrets[f"{pref}{i}"] = v; n += 1
+          print(f"::notice::claves de proveedores enviadas al Router: {n}")
           lifetime = os.environ["LIFETIME"]
           try:
               job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=lifetime,
