@@ -2,7 +2,8 @@
 skipped instead of blocking the agent) and the Hugging Face models `deepseek_flash` / `minimax_m3` wherever they appear in the route or the fallback.
 2026-09-25 Director: hasta 4 claves por proveedor (NVIDIA primero); si una no responde o está ocupada, se prueba la siguiente.
 2026-09-27 Director: el Router PREGUNTA primero qué modelos responden de verdad (sonda corta por clave) y prioriza
-  Kimi K3 → GLM-5 → DeepSeek V4 Flash → cualquier otro de NVIDIA que responda. Cerebras eliminado (pide pago). Groq como respaldo.
+  Kimi K3 → GLM-5 → DeepSeek V4 Flash → cualquier otro de NVIDIA que responda. Cerebras eliminado (pide pago). Groq como respaldo
+  (hasta 7 claves; modelos vivos hoy: gpt-oss-120b/20b, qwen3.8-27b). La sonda envía User-Agent (Groq devuelve 403 al de urllib).
   La sonda se cachea 15 min por (proveedor, clave) para no gastar llamadas."""
 from __future__ import annotations
 
@@ -16,14 +17,16 @@ from integration.chat_mvp import core
 from integration.chat_mvp import providers as prov
 from kernel import dispatcher
 
-MAX_KEYS = 4
-PRIORIDAD = ["kimi-k3", "glm-5", "deepseek-v4", "kimi-k2", "qwen3", "deepseek", "gpt-oss", "llama-4", "nemotron", "llama-3.3"]
+MAX_KEYS = {"nvidia": 4, "groq": 7}
+PRIORIDAD = ["kimi-k3", "glm-5", "deepseek-v4", "kimi-k2", "qwen3", "deepseek", "gpt-oss-120b", "gpt-oss", "llama-4", "nemotron", "llama-3.3"]
+NO_CHAT = ("whisper", "orpheus", "guard", "tts", "embed")
 EXCLUIDOS = {"cerebras"}
 _CACHE: dict[tuple[str, str], tuple[float, list[str]]] = {}
 _TTL = 900
 
 
 def _ranked(ids: list[str]) -> list[str]:
+    ids = [i for i in ids if not any(x in i.lower() for x in NO_CHAT)]
     out: list[str] = []
     for p in PRIORIDAD:
         out += sorted([i for i in ids if p in i.lower() and i not in out], reverse=True)
@@ -33,7 +36,8 @@ def _ranked(ids: list[str]) -> list[str]:
 def _responde(base: str, model: str, key: str) -> bool:
     body = json.dumps({"model": model, "messages": [{"role": "user", "content": "OK"}], "max_tokens": 2}).encode()
     req = urllib.request.Request(base.rstrip("/") + "/chat/completions", data=body,
-                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+                                 headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+                                          "User-Agent": "riu-chat-mvp"})
     try:
         with urllib.request.urlopen(req, timeout=25) as r:
             return r.status == 200
@@ -77,7 +81,7 @@ def candidates(agent: dict[str, Any]) -> list[tuple[str, str, str, str]]:
             continue
         used = 0
         for key in prov.env_keys(p):
-            if used >= MAX_KEYS:
+            if used >= MAX_KEYS.get(p, 4):
                 break
             vivos = disponibles(p, key)
             if not vivos:
