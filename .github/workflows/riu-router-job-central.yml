@@ -2,8 +2,9 @@ name: RIU Router Job Central
 
 # Lanza el Job ÚNICO y persistente del Router (common/router_job_persistent.py).
 # 2026-09-26 (orden del Director): máquina HF de 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga.
+#   Dentro de la misma máquina: Router (puerto 8000) + OmniRoute oficial en segundo plano (127.0.0.1:20128, el Router lo alcanza por dentro).
 #   Al lanzar uno nuevo, cancela los Jobs de Router anteriores para no pagar dos.
-# Passes GH_JOB_PUSH_TOKEN as a HF Job secret (never written to any repo file) so the Job's own auto-pull/push works.
+# Passes GH_JOB_PUSH_TOKEN and RIU_ROUTER_API_KEY as HF Job secrets (never written to any repo file).
 
 on:
   workflow_dispatch:
@@ -31,6 +32,7 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
+          RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
           LIFETIME: ${{ inputs.lifetime || '48h' }}
           FLAVOR: ${{ inputs.flavor || 'cpu-basic' }}
         run: |
@@ -44,17 +46,21 @@ jobs:
               "command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
               "git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente- /tmp/r && "
               "cd /tmp/r && "
+              "(bash 'router inteligente universal/keeper/start_omniroute.sh' &) ; "
               "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests && "
               "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'"
           )
+          secrets = {"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]}
+          if os.environ.get("RIU_KEY"):
+              secrets["RIU_ROUTER_API_KEY"] = os.environ["RIU_KEY"]
           lifetime = os.environ["LIFETIME"]
           try:
               job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=lifetime,
-                                expose=[8000], secrets={"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]})
+                                expose=[8000], secrets=secrets)
           except Exception as e:
               print(f"::warning::vida {lifetime} rechazada ({str(e)[:120]}); reintento con 24h")
               job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout="24h",
-                                expose=[8000], secrets={"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]})
+                                expose=[8000], secrets=secrets)
           print(f"::notice title=RIU_ROUTER_CENTRAL_JOB_ID::{job.id} flavor={os.environ['FLAVOR']}")
           t0, ok, stage = time.time(), None, None
           url = f"https://{job.id}--8000.hf.jobs"
