@@ -19,7 +19,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T02"
+    "next_action": "esperar; foco actual T03"
   },
   "T02": {
     "attempt": 2,
@@ -78,7 +78,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "ninguna",
+    "next_action": "esperar; foco actual T03",
     "research_findings": [
       {
         "state": "closed",
@@ -112,32 +112,24 @@
   },
   "T03": {
     "attempt": 1,
-    "last_sha": "504cba3982c3352dda88cd555c8c94cc40d88589",
+    "last_sha": "c36b04f368462b30de2c4f951d6d8d798455b97c",
     "evidence": {
-      "faltan": [
-        "start_omniroute.sh",
-        "supervisor_omniroute.py",
-        "mantenimiento_db.py",
-        "tests/test_supervisor.py",
-        "DIAGNOSTICO.md",
-        "README.md"
-      ],
+      "faltan": [],
       "fugas": [],
-      "pytest_exit": 4,
-      "pytest_tail": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/08-OMNIROUTE\n\n",
-      "informe": false,
-      "ultimo_commit": "",
-      "veredicto": "REVISE",
-      "causa": "NO_ENTREGADO"
+      "pytest_exit": 0,
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\n",
+      "informe": true,
+      "ultimo_commit": "36013c8bced86eda3d30ff47d69fe5880cc98f7e T03: probar retencion segura y bloqueo de puerto",
+      "veredicto": "PASS"
     },
-    "status": "REVISE",
-    "last_failure": "NO_ENTREGADO",
+    "status": "PASS",
+    "last_failure": "",
     "research_packet": {
       "clave_busqueda": "NO_ENTREGADO",
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T02"
+    "next_action": "ninguna"
   },
   "T04": {
     "attempt": 1,
@@ -166,7 +158,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: No se creó ningún archivo; el directorio 'chat router/09-CLAUDE-CODE' no existe, por eso pytest da exit=4 (file or directory not found). Es fallo de entrega total, no de código.\n\nNO_REGENERAR: ninguno (no hay archivos entregados).\n\nARREGLAR:\n1. Crear el directorio 'chat router/09-CLAUDE-CODE' (con espacio, tal cual lo invoca el veredicto).\n2. Escribir pasarela.py: servidor HTTP (FastAPI/Flask) que expone endpoint compatible Anthropic /v1/messages y traduce a la API de NVIDIA (integrate.api.nvidia.com/v1/chat/completions), con streaming SSE.\n3. Escribir normalizar.py: funciones puras de conversión request Anthropic→OpenAI/NVIDIA y response NVIDIA→Anthropic (roles, system, tool_use, stop_reason, usage).\n4. Escribir iniciar_claude_code.sh: lanza la pasarela y exporta ANTHROPIC_BASE_URL=http://localhost:PORT antes de ejecutar claude.\n5. Escribir tests/test_normalizar.py: tests unitarios de normalizar.py (mensajes, system, tools, respuesta) sin llamadas de red.\n6. Escribir INVESTIGACION.md (fuentes y diseño) y README.md (uso).\n\nACEPTACION: python -m pytest 'chat router/09-CLAUDE-CODE' -q"
     },
-    "next_action": "esperar; foco actual T02"
+    "next_action": "esperar; foco actual T03"
   },
   "T05": {
     "attempt": 1,
@@ -198,7 +190,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: El directorio 'chat router/10-CHAT-FUNCIONES' no existe; no se entregó ningún archivo (fuentes=[]), por eso pytest sale con código 4 (file not found).\nNO_REGENERAR: ninguno (no hay archivos entregados).\nARREGLAR:\n1. Crear el directorio 'chat router/10-CHAT-FUNCIONES' (respetar el espacio en el nombre).\n2. Implementar action_registry.py (registro/despacho de acciones), council.py (votación multi-agente), rewind.py (deshacer turnos), compact.py (compactar historial), archify_cmd.py (comando /archify), work.py (modo WORK).\n3. Crear rutas.py exponiendo el router del chat que conecta los comandos con el Action Registry.\n4. Escribir tests/test_funciones.py cubriendo cada función con SIMULADO=1 (sin llamadas reales a LLM/red).\n5. Añadir README.md describiendo comandos, arquitectura y cómo correr los tests.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/10-CHAT-FUNCIONES' -q"
     },
-    "next_action": "esperar; foco actual T02"
+    "next_action": "esperar; foco actual T03"
   },
   "T06": {
     "attempt": 1,
@@ -229,7 +221,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: El directorio 'chat router/05-AGENTES/asistentes' no existe; nunca se generó ningún entregable (pytest exit=4, 0 fuentes encontradas). Fallo de entrega total, no de contenido.\nNO_REGENERAR: ninguno (no hay archivos previos que preservar).\nARREGLAR:\n1. Crear directorio 'chat router/05-AGENTES/asistentes' con __init__.py.\n2. Generar hermes_config.yaml y openclaw_config.yaml: nombre del asistente, modelo vía Router (base_url del router, fallback), system_prompt, intervalo_heartbeat.\n3. hermes.md: documentación del fork Hermes (rol, herramientas, límites).\n4. puente_asistentes.py: cliente que envía mensajes al Router y despacha respuesta al asistente activo; con SIMULADO=1 devuelve respuesta mock sin red.\n5. heartbeat.py: ping periódico al Router registrando estado vivo/muerto de cada asistente; en SIMULADO=1 usa reloj falso.\n6. arrancar_asistentes.sh: script que levanta ambos asistentes y el heartbeat (modo simulado si SIMULADO=1).\n7. tests/test_asistentes.py: tests de carga de configs, puente mock y heartbeat sin red.\n8. README.md: uso, arquitectura y modo simulado.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
     },
-    "next_action": "esperar; foco actual T02"
+    "next_action": "esperar; foco actual T03"
   },
   "T07": {
     "attempt": 1,
@@ -263,7 +255,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: NO_ENTREGADO — el directorio 'chat router/11-EVIDENCIA' no existe; ninguno de los 11 archivos fue creado (fuentes=[]), por eso pytest da exit=4 (file or directory not found).\nNO_REGENERAR: ninguno (no hay archivos entregados).\nARREGLAR:\n1. Crear el directorio 'chat router/11-EVIDENCIA' (respetar el espacio en el nombre).\n2. Implementar los 11 archivos según doc 26: parser.py, goals.py, compilador_busquedas.py, buscadores.py, extractor.py, ranking.py, evidence_pack.py, verificador.py, puerta.py, tests/test_puerta.py, README.md.\n3. parser.py/goals.py: cargar y validar los 12 goals del doc 26.\n4. compilador_busquedas.py + buscadores.py: generar queries y ejecutar búsqueda; con SIMULADO=1 usar buscador simulado con fuentes deterministas (sin red).\n5. extractor.py + ranking.py: extraer pasajes y rankear evidencia por goal.\n6. evidence_pack.py + verificador.py + puerta.py: empaquetar evidencia, verificar cobertura de los 12 goals y emitir veredicto PASS/REVISE.\n7. tests/test_puerta.py: cubrir caso PASS con evidencia completa y REVISE con goals faltantes, todo en modo SIMULADO.\n8. README.md: documentar uso y el flag SIMULADO=1.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/11-EVIDENCIA' -q"
     },
-    "next_action": "esperar; foco actual T02"
+    "next_action": "esperar; foco actual T03"
   },
   "T08": {
     "attempt": 1,
@@ -296,6 +288,6 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T02"
+    "next_action": "esperar; foco actual T03"
   }
 }
