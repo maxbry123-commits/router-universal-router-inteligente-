@@ -1,8 +1,8 @@
-# SENTINELA-FABRICA — 2026-09-27T22:31Z
-(LOOP común · versión: 9f361e1b004bffdb · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-FABRICA — 2026-09-27T22:35Z
+(LOOP común · versión: a3e6f375449cf9cf · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.
-ESTADO LOOP: REVISE · missing_evidence:recent_commits_observed
+ESTADO LOOP: RESEARCH · missing_evidence:recent_commits_observed
 OBSERVED_SHA: f3cfea99f3b7
 
 PRIORIDADES:
@@ -18,13 +18,13 @@ INVESTIGACIÓN:
 
 CAUSA_RAIZ: El bloque "Cerrar la Fábrica UI" no aporta evidencia de commits recientes observados en el repo (git log verificable); la evidencia comunitaria adjunta son preguntas genéricas de StackOverflow sin relación con el objetivo.
 
-EVIDENCIA: Fallo literal=missing_evidence:recent_commits_observed. Ninguna de las 5 URLs citadas documenta commits, cierres de objetivos ni entregas de sentinela-fabrica; son ruido de búsqueda, no prueba de trabajo realizado.
+EVIDENCIA: Fallo literal=missing_evidence:recent_commits_observed. Ninguna de las 5 URLs citadas documenta commits, cierres de objetivos ni entregas de sentinela-fabrica; son ruido de búsqueda (branch prediction, git undo, yield).
 
-NO_REGENERAR: No regenerar evidencia comunitaria ni sustituirla por más enlaces; no declarar PASS bajo ninguna circunstancia; no avanzar al siguiente bloque.
+NO_REGENERAR: No regenerar evidencia comunitaria ni sustituirla por más scraping; el fallo no es de fuentes externas sino de ausencia de inspección local del repositorio.
 
-REPARAR: Ejecutar en el repo real: `git log --oneline -n 10` y `git status`, adjuntar salida cruda con hashes, fechas y mensajes que muestren los commits del cierre de la Fábrica UI; listar además los artefactos/entregas concretas (archivos, rutas) vinculados a cada objetivo cerrado.
+REPARAR: Ejecutar y adjuntar salida real de: `git log --oneline -n 10`, `git status`, y diff/listado de artefactos UI entregados por objetivo, con hash, fecha y archivo tocado por cada entrega.
 
-ACEPTACION: Solo se acepta cuando exista (1) salida de git log reciente y verificable, (2) mapeo objetivo→commit→artefacto entregado, (3) confirmación de que cada objetivo de la Fábrica UI tiene entrega real comprobada. Hasta entonces: BLOQUEADO.
+ACEPTACION: PASS solo cuando cada objetivo cerrado tenga commit reciente observado (hash+fecha+mensaje) y artefacto verificable en disco; sin eso, el siguiente bloque queda bloqueado.
 
 CONTROL:
 - PASS no lo decide la LLM.

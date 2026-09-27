@@ -1,12 +1,12 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-fabrica
-generated_at: 2026-09-27T22:31Z
-loop_version: 9f361e1b004bffdb
+generated_at: 2026-09-27T22:35Z
+loop_version: a3e6f375449cf9cf
 observed_sha: f3cfea99f3b7ce271a3c7ac935dc0d7abe330766
 objective: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de
   permitir el siguiente bloque.
 priority_task: null
-state: REVISE
+state: RESEARCH
 reason: missing_evidence:recent_commits_observed
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
