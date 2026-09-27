@@ -112,7 +112,7 @@
   },
   "T03": {
     "attempt": 2,
-    "last_sha": "abd11ac81973f646c217e34a143d42f38b31013f",
+    "last_sha": "41b966054ad89d3416691edb7341761472961195",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -123,7 +123,7 @@
       "veredicto": "REVISE",
       "causa": "TESTS_FALLAN"
     },
-    "status": "REVISE",
+    "status": "ACTIVE",
     "last_failure": "TESTS_FALLAN",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
@@ -168,7 +168,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "espejo relanzado",
+    "next_action": "esperar ejecutor",
     "research_findings": []
   },
   "T04": {
