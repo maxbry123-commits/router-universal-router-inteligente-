@@ -68,6 +68,7 @@ jobs:
       - name: Autoverificar fuente única
         run: |
           python -m py_compile             "chat router/05-AGENTES/gobierno/sentinel_loop.py"             "chat router/07-SENTINELAS/replica_runner.py"             "chat router/07-SENTINELAS/sentinela_orquestador.py"
+          python -m pytest "chat router/05-AGENTES/gobierno/tests/test_gobierno.py" -q
           python - <<'PY'
           import pathlib, yaml
           for p in (
