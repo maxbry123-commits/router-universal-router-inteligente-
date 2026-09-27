@@ -73,7 +73,7 @@ def wait_port_free(host, port, timeout=PORT_WAIT_TIMEOUT):
     t0 = time.time()
     while not port_free(host, port):
         if time.time() - t0 > timeout:
-            log(f"WARN: puerto {port} sigue ocupado tras {timeout}s; lanzo igualmente")
+            log(f"WARN: puerto {port} sigue ocupado tras {timeout}s; NO se relanza")
             return False
         time.sleep(1)
     return True
@@ -82,7 +82,7 @@ def wait_port_free(host, port, timeout=PORT_WAIT_TIMEOUT):
 def healthy():
     try:
         with urllib.request.urlopen(HEALTH_URL, timeout=5) as r:
-            return 200 <= r.status < 500
+            return 200 <= r.status < 300
     except Exception:
         return False
 
@@ -138,7 +138,12 @@ def main():
 
     failures = 0
     while True:
-        wait_port_free(HOST, PORT)
+        if not wait_port_free(HOST, PORT):
+            delay = backoff_delay(failures)
+            failures += 1
+            log(f"Puerto ocupado; reintento de supervisor en {delay}s")
+            time.sleep(delay)
+            continue
         log("Lanzando OmniRoute…")
         _proc = start_process()
         started = time.time()
