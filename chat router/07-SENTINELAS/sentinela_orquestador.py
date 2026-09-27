@@ -63,7 +63,12 @@ RESEARCH_REPOS = {
         "karpathy/llm-council",
         "pytest-dev/pytest",
     ],
-    "T06": ["NousResearch/hermes-agent", "openclaw/openclaw"],
+    "T06": [
+        "maxbry123-commits/hermes-agent",
+        "maxbry123-commits/openclaw",
+        "NousResearch/hermes-agent",
+        "openclaw/openclaw",
+    ],
     "T07": ["pytest-dev/pytest"],
     "T08": ["pytest-dev/pytest"],
 }
