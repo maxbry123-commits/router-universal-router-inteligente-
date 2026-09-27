@@ -1,0 +1,50 @@
+name: Limpieza de piezas sueltas (una vez)
+
+# Orden del Director 2026-09-27: eliminar lo que Opus creó y ya NO se usa. Solo borra la lista de abajo; nada más.
+# En uso y NO se tocan: riu-router-job-central.yml, mini-router-plan-4-objetivos.yml, replicar-motores.yml, riu-agents-run.yml,
+#   prueba-omniroute-router.yml, keeper/start_omniroute.sh, chat_mvp/ (ui_bridge.py, omniroute_proxy.py), agentes 40-44 (descargas), motores.
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/limpieza-una-vez.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  limpiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Borrar lo que ya no se usa
+        run: |
+          A="router inteligente universal/agents-yaiwes"
+          BORRAR=(
+            ".github/workflows/stop-keeper-hf.yml"
+            ".github/workflows/keep-mcp-space-awake.yml"
+            ".github/workflows/mcp-oauth-persist-once.yml"
+            ".github/workflows/mcp-restart-test-once.yml"
+            ".github/workflows/mcp-sin-oauth-once.yml"
+            ".github/workflows/mcp-space-gratis-once.yml"
+            ".github/workflows/hf-crear-spaces-y-memoria.yml"
+            ".github/workflows/hf-crear-spaces-pago.yml"
+            ".github/workflows/omniroute-deploy.yml"
+            ".github/workflows/pausar-spaces-omniroute.yml"
+            ".github/workflows/chat-router-space-deploy.yml"
+            "chat router/space"
+            "router inteligente universal/keeper/keeper.py"
+            "router inteligente universal/vercel-ui"
+            "vercel.json"
+            "$A/agent-24-almacenamiento" "$A/agent-25-cableo-agentes" "$A/agent-26-plan-4-objetivos" "$A/agent-27-centinela"
+            "$A/agent-28-memoria-descarga" "$A/agent-29-github-gateway" "$A/agent-30-sandbox-dsl" "$A/agent-31-micro-sistema"
+            "$A/agent-32-organizador" "$A/agent-33-enchufe-mcp" "$A/agent-35-skills-obligatorias" "$A/agent-36-panel-control"
+            "$A/agent-37-router-gratuito" "$A/agent-38-deepseek-harness" "$A/agent-39-descargas-verificadas"
+            ".github/workflows/limpieza-una-vez.yml"
+          )
+          for p in "${BORRAR[@]}"; do
+            if [ -e "$p" ]; then git rm -r -q -- "$p" && echo "borrado: $p"; fi
+          done
+          git config user.name "limpieza-opus"; git config user.email "limpieza-opus@users.noreply.github.com"
+          git commit -q -m "limpieza: quitar piezas sueltas que ya no se usan (orden del Director)" && git push -q || echo "nada que borrar"
