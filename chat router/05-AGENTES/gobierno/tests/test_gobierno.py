@@ -13,7 +13,7 @@ from contratos import Job, Result, State, Task  # noqa: E402
 from judge import Judge  # noqa: E402
 from mirror_manager import SYSTEM_MAP, MirrorManager  # noqa: E402
 from sentinel import Sentinel  # noqa: E402
-from sentinel_loop import (SentinelDAG, SentinelDSL, SentinelOrchestrator, SentinelResearchPlanner, SentinelSchemaValidator, SentinelSheriff, SentinelVerifier, SentinelGuardian, update_state)  # noqa: E402
+from sentinel_loop import (SentinelContextBuilder, SentinelDAG, SentinelDSL, SentinelOrchestrator, SentinelResearchPlanner, SentinelSchemaValidator, SentinelSheriff, SentinelSupervisor, SentinelVerifier, SentinelGuardian, update_state)  # noqa: E402
 from sheriff import Sheriff  # noqa: E402
 
 
@@ -265,8 +265,13 @@ class TestSentinelLoop:
             "priority_goals": ["T01"],
             "evidence_required": ["head_fresh", "priority_goal_observed"],
             "research_sources": [f"fuente-{i}" for i in range(25)],
+            "task_scope": "chat router/09-CLAUDE-CODE",
+            "required_files": ["pasarela.py", "tests/test_normalizar.py"],
+            "acceptance": "python -m pytest 'chat router/09-CLAUDE-CODE' -q",
+            "objective_checks": ["grep -q '/v1/messages' pasarela.py"],
             "max_attempts": 3,
             "max_research_sources": 20,
+            "max_stall_minutes": 30,
         })
 
     def test_schema_dag_y_sheriff_compartidos(self):
@@ -333,3 +338,81 @@ class TestSentinelLoop:
         bad = dict(base)
         bad["objective_evidence"] = {"head_fresh": True, "priority_goal_observed": False}
         assert orch.next_action(spec, {"attempt": 0}, bad)["state"] == "REVISE"
+
+
+
+class TestSentinelSupervisorYContexto:
+    def _spec(self):
+        return SentinelDSL.parse({
+            "sentinel_id": "sentinela-t04",
+            "objective": "Pasarela Anthropic hacia NVIDIA",
+            "repository": "owner/repo",
+            "report_path": "chat router/07-SENTINELAS/informes/T04.md",
+            "priority_goals": ["T04"],
+            "evidence_required": ["task_contract_observed", "task_pass"],
+            "task_scope": "chat router/09-CLAUDE-CODE",
+            "required_files": ["pasarela.py", "normalizar.py", "tests/test_normalizar.py"],
+            "acceptance": "python -m pytest 'chat router/09-CLAUDE-CODE' -q",
+            "objective_checks": [
+                "grep -q '/v1/messages' 'chat router/09-CLAUDE-CODE/pasarela.py'",
+            ],
+            "max_stall_minutes": 30,
+        })
+
+    def test_sheriff_detecta_scope_escape_del_ejecutor(self):
+        spec = self._spec()
+        s = SentinelSheriff()
+        assert s.validate_executor_paths(
+            spec, ["chat router/09-CLAUDE-CODE/pasarela.py"]
+        ) == (True, "PASS")
+        ok, reason = s.validate_executor_paths(
+            spec, ["chat router/05-AGENTES/gobierno/README.md"]
+        )
+        assert not ok and reason.startswith("scope_escape:")
+
+    def test_supervisor_detecta_falso_verde_y_stall(self):
+        spec = self._spec()
+        supervisor = SentinelSupervisor()
+        r = supervisor.inspect(spec, {
+            "executor_active": True,
+            "active_step": "Trabajar (Aider espejo)",
+            "agent_exit": 0,
+            "acceptance_exit": 5,
+        })
+        assert r == {"action": "INTERVENE", "reason": "false_green_agent"}
+
+        stalled = supervisor.inspect(spec, {
+            "executor_active": True,
+            "active_step": "Trabajar (Aider espejo)",
+            "active_step_age_minutes": 31,
+        })
+        assert stalled == {"action": "RESEARCH", "reason": "executor_stalled"}
+
+    def test_contexto_contiene_objetivo_evidencia_y_fuentes(self):
+        spec = self._spec()
+        text = SentinelContextBuilder.build(
+            spec,
+            "T04",
+            {"causa": "NO_TESTS", "faltan": ["tests/test_normalizar.py"], "pytest_exit": 5},
+            {
+                "analisis": "Investigar contrato Anthropic antes de corregir.",
+                "fuentes": [{
+                    "source": "GitHub",
+                    "title": "issue tool_use",
+                    "url": "https://example.test/issue",
+                }],
+            },
+        )
+        assert "Pasarela Anthropic hacia NVIDIA" in text
+        assert "tests/test_normalizar.py" in text
+        assert "https://example.test/issue" in text
+        assert "CHEQUEOS INDEPENDIENTES DEL OBJETIVO" in text
+
+    def test_guardian_interviene_desviacion(self):
+        spec = self._spec()
+        g = SentinelGuardian()
+        assert g.inspect(spec, {"attempt": 0}, {
+            "observed_sha": "a",
+            "current_sha": "a",
+            "scope_escape": True,
+        }) == {"action": "INTERVENE", "reason": "scope_escape"}
