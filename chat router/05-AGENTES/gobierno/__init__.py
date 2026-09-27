@@ -4,6 +4,7 @@ from .contratos import Job, Result, State, Task
 from .judge import Judge
 from .mirror_manager import MirrorManager, SYSTEM_MAP
 from .sentinel import Sentinel
+from .sentinel_loop import (SentinelDAG, SentinelDSL, SentinelGuardian, SentinelOrchestrator, SentinelResearchPlanner, SentinelSchemaValidator, SentinelSheriff, SentinelSpec, SentinelVerifier, update_state)
 from .sheriff import Sheriff
 
 __all__ = [
@@ -23,5 +24,15 @@ __all__ = [
     "MirrorManager",
     "SYSTEM_MAP",
     "Sentinel",
+    "SentinelDAG",
+    "SentinelDSL",
+    "SentinelGuardian",
+    "SentinelOrchestrator",
+    "SentinelResearchPlanner",
+    "SentinelSchemaValidator",
+    "SentinelSheriff",
+    "SentinelSpec",
+    "SentinelVerifier",
+    "update_state",
     "Sheriff",
 ]
