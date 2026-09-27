@@ -193,7 +193,14 @@ def verificar(tid: str, c: dict, prohibido: list[str]) -> dict:
     ]
 
     changed = mirror_changed_files(tid)
-    executor_audit = auditar_ultimo_ejecutor(tid)
+    informe = ROOT / "06-ESPEJOS" / "informes" / f"{tid}.md"
+    informe_text = informe.read_text(encoding="utf-8") if informe.is_file() else ""
+    path_escape_count = informe_text.count("FAIL_PATH_ESCAPE")
+    executor_audit = {
+        "path_escape_count": path_escape_count,
+        "recovered_deviation": path_escape_count > 0,
+        "source": "informe",
+    }
     task_spec = spec_tarea(tid, c, [])
     sheriff_ok, sheriff_reason = SentinelSheriff().validate_executor_paths(
         task_spec, changed
@@ -217,7 +224,6 @@ def verificar(tid: str, c: dict, prohibido: list[str]) -> dict:
                     f"{check} :: {cout[-300:].strip()}"
                 )
 
-    informe = ROOT / "06-ESPEJOS" / "informes" / f"{tid}.md"
     _, log = sh(["git", "log", "-1", "--format=%H %ct %s", "--", c["scope"]])
     _, report_log = sh(["git", "log", "-1", "--format=%ct", "--", str(informe)])
     scope_parts = log.strip().split(maxsplit=2)
