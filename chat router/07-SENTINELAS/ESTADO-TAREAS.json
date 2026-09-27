@@ -23,7 +23,7 @@
   },
   "T02": {
     "attempt": 2,
-    "last_sha": "58244869e24409d3b22f1d93672269ed36502ae5",
+    "last_sha": "605655b7562b0c27c45ad5210d6de235965b4fb0",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -34,7 +34,7 @@
       "veredicto": "REVISE",
       "causa": "SIN_INFORME"
     },
-    "status": "REVISE",
+    "status": "ACTIVE",
     "last_failure": "SIN_INFORME",
     "research_packet": {
       "sentinel_id": "sentinela-t02",
@@ -79,7 +79,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "espejo relanzado",
+    "next_action": "esperar ejecutor",
     "research_findings": [
       {
         "state": "closed",
