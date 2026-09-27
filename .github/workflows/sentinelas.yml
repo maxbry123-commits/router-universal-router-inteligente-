@@ -1,8 +1,11 @@
-name: Sentinelas (cada 20 min)
+name: Sentinelas (chat, fabrica, plan4)
 
-# Orden del Director 2026-09-27: 3 sentinelas supervisores (chat, fábrica, plan de 4 objetivos) cada 20 minutos.
-# Cada uno: lee el plan y el estado de su proyecto + informes de espejos + últimos runs; escribe su informe;
-# si un espejo falló o se paró, lo relanza. Solo escribe en chat router/07-SENTINELAS/. Modelos de NUESTRO Router (NVIDIA/Cerebras).
+# 3 sentinelas cada 20 minutos (orden del Director 2026-09-27). Cada una:
+#  1) junta el estado real (últimos commits, ramas mirror/*, PRs, handoff, plan),
+#  2) lee las órdenes del Director/GPT en "chat router/06-EQUIPO/ORDENES.md",
+#  3) pide a un modelo NVIDIA un informe corto: avance, desvíos del plan, órdenes correctivas,
+#  4) escribe "chat router/06-EQUIPO/SENTINELA-<proyecto>.md" (el Director y GPT lo leen ahí).
+# No modifica código: solo informa y ordena. Opus repara lo roto.
 
 on:
   schedule:
@@ -10,7 +13,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: sentinelas
@@ -19,76 +22,74 @@ concurrency:
 jobs:
   sentinela:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 8
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
-        proyecto: [chat, fabrica, cuatro-objetivos]
+        proyecto: [chat, fabrica, plan4]
     env:
-      PROY: ${{ matrix.proyecto }}
-      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+      NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+      NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+      PROYECTO: ${{ matrix.proyecto }}
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
-          fetch-depth: 1
           sparse-checkout: |
             chat router
           sparse-checkout-cone-mode: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      - name: Revisar y ordenar
+        run: |
+          python3 - <<'PY'
+          import os, json, subprocess, urllib.request, pathlib, datetime
+          P = os.environ["PROYECTO"]
+          CFG = {
+            "chat":    {"repo": "router-universal-router-inteligente-", "plan": "chat router/01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml", "tarea": "chat router/06-EQUIPO/TAREAS/chat-01.md"},
+            "fabrica": {"repo": "frontend", "plan": "chat router/06-EQUIPO/TAREAS/fabrica-01.md", "tarea": "chat router/06-EQUIPO/TAREAS/fabrica-01.md"},
+            "plan4":   {"repo": "agentes", "plan": None, "tarea": None},
+          }[P]
+          def gh(args):
+              r = subprocess.run(["gh", "api"] + args, capture_output=True, text=True)
+              return r.stdout[:6000]
+          commits = gh([f"repos/maxbry123-commits/{CFG['repo']}/commits?per_page=12", "--jq", ".[] | .commit.author.date + ' ' + (.commit.message|split(\"\\n\")[0])"])
+          ramas = gh([f"repos/maxbry123-commits/{CFG['repo']}/branches?per_page=50", "--jq", ".[] | select(.name|test(\"mirror/|plan-opus/\")) | .name"])
+          prs = gh([f"repos/maxbry123-commits/{CFG['repo']}/pulls?state=open&per_page=10", "--jq", ".[] | '#'+(.number|tostring)+' '+.title"])
+          runs = gh(["repos/maxbry123-commits/router-universal-router-inteligente-/actions/runs?per_page=15", "--jq", ".workflow_runs[] | .name+' '+.status+' '+(.conclusion//'')+' '+.created_at"])
+          def leer(p, n=5000):
+              try: return pathlib.Path(p).read_text(encoding="utf-8")[:n]
+              except Exception: return ""
+          plan = leer(CFG["plan"]) if CFG["plan"] else "Plan de 4 objetivos: repo agentes, Claude notas/PLAN-DSL-DAG-01-NODOS.yaml; loop: mini-router-plan-4-objetivos.yml cada hora."
+          ordenes = leer("chat router/06-EQUIPO/ORDENES.md", 3000)
+          handoff = leer("chat router/03-ESTADO/HANDOFF.md", 3000)
+          prompt = f"""Eres el SENTINELA (supervisor, juez, guardián, sheriff, validador) del proyecto '{P}' del Director Max.
+          Reglas: no inventes; solo lo que ves en los datos. Responde en español, corto, sin jerga, máximo 25 líneas, con este formato exacto:
+          ESTADO: (verde/amarillo/rojo) + 1 frase
+          AVANCE: 3 viñetas máximo
+          DESVIOS DEL PLAN: viñetas (o 'ninguno')
+          ORDENES CORRECTIVAS: viñetas numeradas, cada una ejecutable por un agente (o 'ninguna')
+          PARA OPUS (solo si hay algo roto en Router/HF): 1 línea o 'nada'
+
+          ORDENES DEL DIRECTOR/GPT:\n{ordenes}\n\nPLAN/TAREA:\n{plan}\n\nCOMMITS RECIENTES:\n{commits}\n\nRAMAS DE TRABAJO:\n{ramas}\n\nPRs ABIERTOS:\n{prs}\n\nEJECUCIONES RECIENTES:\n{runs}\n\nHANDOFF:\n{handoff}"""
+          texto = None
+          for key in ("NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2"):
+              for model in ("qwen/qwen3-coder-480b-a35b-instruct", "moonshotai/kimi-k2-instruct", "deepseek-ai/deepseek-v3.1"):
+                  if texto or not os.environ.get(key): continue
+                  body = json.dumps({"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": 900, "temperature": 0.2}).encode()
+                  req = urllib.request.Request("https://integrate.api.nvidia.com/v1/chat/completions", data=body,
+                                               headers={"Authorization": "Bearer " + os.environ[key], "Content-Type": "application/json"})
+                  try:
+                      with urllib.request.urlopen(req, timeout=120) as r:
+                          texto = json.loads(r.read())["choices"][0]["message"]["content"]; usado = model
+                  except Exception as e:
+                      print(f"::warning::{model}: {type(e).__name__}")
+          ahora = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+          out = pathlib.Path(f"chat router/06-EQUIPO/SENTINELA-{P}.md")
+          out.write_text(f"# SENTINELA {P.upper()} — {ahora}\n(modelo: {usado if texto else 'ninguno disponible'})\n\n{texto or 'Sin respuesta de los modelos NVIDIA en esta vuelta.'}\n", encoding="utf-8")
+          print(out.read_text()[:1500])
+          PY
       - run: |
-          npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
-          pip install -q "litellm[proxy]"
-      - name: Puente de modelos (NVIDIA -> Cerebras)
-        env:
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY_3 || secrets.NVIDIA_API_KEY_1 }}
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY_2 || secrets.CEREBRAS_API_KEY_1 }}
-        run: |
-          cat > /tmp/litellm.yaml <<'EOF'
-          model_list:
-            - model_name: sentinela
-              litellm_params: {model: nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct, api_key: os.environ/NVIDIA_API_KEY}
-            - model_name: sentinela-cerebras
-              litellm_params: {model: cerebras/qwen-3-coder-480b, api_key: os.environ/CEREBRAS_API_KEY}
-          router_settings: {num_retries: 2, fallbacks: [{sentinela: [sentinela-cerebras]}]}
-          litellm_settings: {drop_params: true}
-          general_settings: {master_key: sk-sentinela}
-          EOF
-          nohup litellm --config /tmp/litellm.yaml --port 4000 > /tmp/litellm.log 2>&1 &
-          for i in $(seq 1 30); do curl -sf localhost:4000/health/liveliness >/dev/null && break; sleep 2; done
-      - name: Contexto del proyecto
-        run: |
-          mkdir -p ctx "chat router/07-SENTINELAS"
-          gh run list -R maxbry123-commits/router-universal-router-inteligente- -w claude-code-espejos.yml -L 10 --json databaseId,status,conclusion,displayTitle,createdAt > ctx/espejos_runs.json || true
-          case "$PROY" in
-            fabrica) gh api "repos/maxbry123-commits/frontend/commits?per_page=15" --jq '.[] | .commit.message' > ctx/commits.txt || true ;;
-            cuatro-objetivos) gh run list -R maxbry123-commits/router-universal-router-inteligente- -w mini-router-plan-4-objetivos.yml -L 5 --json databaseId,status,conclusion,createdAt > ctx/loop_runs.json || true
-                              gh pr list -R maxbry123-commits/agentes -L 5 --json number,title,createdAt > ctx/prs.json || true ;;
-            *) gh api "repos/maxbry123-commits/router-universal-router-inteligente-/commits?per_page=15" --jq '.[] | .commit.message' > ctx/commits.txt || true ;;
-          esac
-      - name: Revisar y reportar (Claude Code sentinela)
-        env:
-          ANTHROPIC_BASE_URL: http://localhost:4000
-          ANTHROPIC_AUTH_TOKEN: sk-sentinela
-          ANTHROPIC_MODEL: sentinela
-          ANTHROPIC_SMALL_FAST_MODEL: sentinela
-        run: |
-          timeout 900 claude -p "Eres el SENTINELA (supervisor, juez, guardián, sheriff, validador) del proyecto '${PROY}' del Director Max.
-          Lee: 'chat router/07-SENTINELAS/${PROY}.md' (tu misión), 'chat router/03-ESTADO/HANDOFF.md', 'chat router/01-PLAN/', 'chat router/06-ESPEJOS/informes/' y la carpeta ctx/.
-          Haz: 1) compara lo hecho contra el plan; 2) detecta desviaciones, errores, archivos fuera de lugar y trabajo parado; 3) escribe 'chat router/07-SENTINELAS/informes/${PROY}.md' (reescríbelo cada vez) con: ESTADO (verde/amarillo/rojo), HECHO, DESVIACIONES, ORDEN PARA EL AGENTE (instrucción corta y exacta), y 'ESPEJOS_A_RELANZAR: T0X,...' si alguno falló o lleva >2 h sin avanzar.
-          Solo escribe dentro de 'chat router/07-SENTINELAS/'. No toques código, Router, HF, secretos ni workflows. Sé breve." --dangerously-skip-permissions --max-turns 40 > /tmp/s.log 2>&1 || true
-          tail -20 /tmp/s.log
-      - name: Guardar informe y relanzar espejos caídos
-        if: always()
-        run: |
-          INF="chat router/07-SENTINELAS/informes/${PROY}.md"
-          git config user.name "sentinela-${PROY}"; git config user.email "sentinela@users.noreply.github.com"
-          [ -e "$INF" ] && git add -- "$INF"
-          git commit -q -m "sentinela ${PROY}: informe" && for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done || true
-          R=$(grep -m1 '^ESPEJOS_A_RELANZAR:' "$INF" 2>/dev/null | sed 's/^ESPEJOS_A_RELANZAR: *//' | tr -d ' ')
-          if [ -n "$R" ] && [ "$R" != "ninguno" ]; then gh workflow run claude-code-espejos.yml -R maxbry123-commits/router-universal-router-inteligente- -f tareas="$R" && echo "::notice::relanzados $R"; fi
+          git config user.name "sentinela-${PROYECTO}"; git config user.email "sentinela@users.noreply.github.com"
+          git add "chat router/06-EQUIPO/SENTINELA-${PROYECTO}.md"
+          git commit -q -m "sentinela ${PROYECTO}: informe" || exit 0
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 3; done
