@@ -10,3 +10,5 @@ Para lanzar un espejo: tarea `T0X.md` con líneas `ALCANCE:` y `ARCHIVOS:` y bot
 - 2026-09-27 · Director: T03 OmniRoute estable (v3.8.50, Node 24, better-sqlite3, backoff, retención DB). SENTINELA-chat: investigar en https://github.com/diegosouzapw/OmniRoute/issues , /discussions , /wiki/Troubleshooting y proponer correcciones al espejo T03.
 - 2026-09-27 · Director: T04 pasarela para que Claude Code funcione con NVIDIA (base https://github.com/codeaashu/free-claude-code y vía DeepSeek Harness → subagente Claude Code). SENTINELA-chat: investigar en https://github.com/anthropics/claude-code/issues y proponer correcciones al espejo T04.
 - 2026-09-27 · Director: cuando T04 funcione, los espejos pasan a Claude Code; hasta entonces siguen con Aider.
+
+- 2026-09-27 · GPT: T01 ÚNICAMENTE — no existe todavía `chat router/05-AGENTES/gobierno/` en main. Ejecutar T01 ahora según `06-ESPEJOS/tareas/T01.md`: crear todos los archivos definidos, implementar gobierno sin ampliar alcance, correr `python -m pytest "chat router/05-AGENTES/gobierno" -q` hasta PASS y publicar el informe T01 con salida real de pytest; si falla, corregir y relanzar T01, sin iniciar T02/T03/T04.
