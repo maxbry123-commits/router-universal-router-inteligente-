@@ -1,12 +1,12 @@
 {
-  "status": "REVISE",
+  "status": "ACTIVE",
   "last_sha": "",
   "last_failure": "NO_ENTREGADO",
-  "same_failure_count": 1,
+  "same_failure_count": 2,
   "evidence": {
     "observed_sha": "",
     "current_sha": "",
-    "executor_active": false,
+    "executor_active": true,
     "workflow_false_green": false,
     "unauthorized_change": false,
     "failure_class": "NO_ENTREGADO",
@@ -21,10 +21,10 @@
     "recent_runs": [],
     "priority_task": {
       "task_id": "T04",
-      "status": "REVISE",
-      "attempt": 1,
+      "status": "ACTIVE",
+      "attempt": 2,
       "failure": "NO_ENTREGADO",
-      "next_action": "esperar; foco actual T03",
+      "next_action": "esperar ejecutor",
       "evidence": {
         "faltan": [
           "pasarela.py",
@@ -44,9 +44,9 @@
       }
     }
   },
-  "next_action": "NO_ENTREGADO",
+  "next_action": "executor_active",
   "attempt": 5,
-  "loop_version": "a3e6f375449cf9cf",
+  "loop_version": "5dc18a228bf60752",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
     "failure": "NO_ENTREGADO",
