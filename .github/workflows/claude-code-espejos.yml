@@ -83,6 +83,7 @@ jobs:
           ALC: ${{ steps.t.outputs.alcance }}
           ARCH: ${{ steps.t.outputs.archivos }}
         run: |
+          ESCAPES=0
           IFS=',' read -ra LISTA <<< "$ARCH"
           COMPLETE=1
           for a in "${LISTA[@]}"; do
@@ -168,6 +169,7 @@ jobs:
             --message-file /tmp/tarea.txt "${FILES[@]}" > /tmp/aider.log 2>&1
           echo "::notice::aider terminó rc=$? modelo=${MODELO}"
       - name: Recolocar archivos fugados al ALCANCE
+        id: pathfix
         env:
           ALC: ${{ steps.t.outputs.alcance }}
           ARCH: ${{ steps.t.outputs.archivos }}
@@ -186,11 +188,22 @@ jobs:
               if [ -s "$escaped" ]; then
                 mkdir -p "$(dirname "$dst")"
                 mv "$escaped" "$dst"
+                ESCAPES=$((ESCAPES+1))
                 echo "::warning::FAIL_PATH_ESCAPE recolocado $escaped -> $dst"
               fi
             fi
           done
           rm -rf "chat router/chat router" 2>/dev/null || true
+          echo "path_escapes=$ESCAPES" >> "$GITHUB_OUTPUT"
+          if [ "$ESCAPES" -gt 0 ]; then
+            INF="chat router/06-ESPEJOS/informes/${TAREA}.md"
+            {
+              echo
+              echo "## DESVIACIONES RECUPERADAS"
+              echo "FAIL_PATH_ESCAPE=${ESCAPES}"
+              echo "El workflow recolocó únicamente rutas duplicadas del mismo ALCANCE."
+            } >> "$INF"
+          fi
       - name: Veredicto determinista
         id: v
         env:
