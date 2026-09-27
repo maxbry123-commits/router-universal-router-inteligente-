@@ -151,6 +151,8 @@ jobs:
             for f in "chat router/06-ESPEJOS/tareas/T02-CONTEXT.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && READS+=(--read "$f"); done
           elif [ "$TAREA" = "T04" ]; then
             for f in "chat router/06-ESPEJOS/tareas/T04-CONTEXT.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
+          elif [ "$TAREA" = "T05" ]; then
+            for f in "chat router/06-ESPEJOS/tareas/T05-CONTEXT.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
           else
             for f in "chat router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-PARTE-5-B-DOCS-22-23.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && READS+=(--read "$f"); done
           fi
