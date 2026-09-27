@@ -1,6 +1,6 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-27T22:53Z
+generated_at: 2026-09-27T22:54Z
 loop_version: 5dc18a228bf60752
 observed_sha: ''
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin

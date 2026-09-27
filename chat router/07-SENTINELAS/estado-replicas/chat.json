@@ -2,7 +2,7 @@
   "status": "ACTIVE",
   "last_sha": "",
   "last_failure": "NO_ENTREGADO",
-  "same_failure_count": 2,
+  "same_failure_count": 3,
   "evidence": {
     "observed_sha": "",
     "current_sha": "",
