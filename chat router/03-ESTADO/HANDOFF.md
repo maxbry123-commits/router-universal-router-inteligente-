@@ -39,3 +39,15 @@ Memoria SQLite cableada con scopes y reinicio; Dataset Yaiwes montado como recal
 ### Siguiente
 B-3: HF RW y servicios si autorizados
 <!-- YAIWES STATE HUB END -->
+
+
+## Checkpoints DSL memoria/almacenamiento — RIU-0121
+M-0 ✅ PASS — inventario real de 13 componentes con ruta y object ID; FalkorDB y AgentDB ausentes.
+M-1 ✅ PASS — `chat router/04-MEMORIA/memoria_yaiwes/` y único loader `memoria_loader.py`; rutas `/memoria/*` fail-safe.
+M-2 ✅ PASS — SQLite existente reutilizado como fuente principal; memoria sobrevive reinicio.
+M-3 ✅ PASS — State Hub append-only y proyecciones regeneradas desde `BITACORA.jsonl`.
+M-4 ⚠️ PASS parcial — grafo SQLite fallback probado; Graphiti sin servicio y FalkorDB GAP.
+M-5 ⚠️ GAP controlado — Memanto descargado sin contrato runtime verificable; Graphify solo fuente read-only.
+M-6 ⚠️ GAP controlado — PostgreSQL, Redis y AgentDB sin servicio/runtime verificable; SQLite cubre fallback.
+M-7 ✅ PASS local — reinicio, búsqueda por relación y evento State Hub; 30 pruebas PASS.
+H-1 ⏸️ OPUS — puente HF/Bucket fuera del alcance de Manus; no ejecutado.

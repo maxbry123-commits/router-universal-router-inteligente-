@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS cache(key TEXT PRIMARY KEY, value TEXT, expires_at RE
 CREATE TABLE IF NOT EXISTS graph_nodes(id TEXT PRIMARY KEY, kind TEXT, label TEXT, props TEXT, created_at REAL);
 CREATE TABLE IF NOT EXISTS graph_edges(id INTEGER PRIMARY KEY AUTOINCREMENT, src TEXT, dst TEXT, rel TEXT, valid_at REAL, props TEXT);
 CREATE TABLE IF NOT EXISTS agents(id TEXT PRIMARY KEY, name TEXT, role TEXT, system_prompt TEXT, models TEXT, created_at REAL);
-CREATE TABLE IF NOT EXISTS memories(id TEXT PRIMARY KEY, owner TEXT, scope TEXT, content TEXT, source TEXT, conv_id TEXT, created_at REAL);
 """
 
 DEFAULT_AGENTS = (
@@ -154,36 +153,6 @@ class Store:
         nodes = [n for n in self._all("SELECT id,kind,label FROM graph_nodes ORDER BY created_at DESC LIMIT ?", (limit * 2,)) if n["id"] in ids]
         return {"nodes": nodes, "edges": edges}
 
-    # -- persistent memory ---------------------------------------------------------
-    def remember(self, owner: str, content: str, *, scope: str = "conversation", source: str = "chat",
-                 conv_id: str | None = None) -> dict[str, Any]:
-        text = " ".join(str(content or "").split())
-        if not text or len(text) > 12000:
-            raise ValueError("MEMORY_CONTENT_INVALID")
-        if scope not in {"conversation", "project", "global", "agent"}:
-            raise ValueError("MEMORY_SCOPE_INVALID")
-        mid = uuid.uuid4().hex[:24]
-        self._exec("INSERT INTO memories VALUES(?,?,?,?,?,?,?)", (mid, owner, scope, text, source[:80], conv_id, time.time()))
-        self.graph_node(f"memory:{mid}", "memory", text[:120], owner=owner, scope=scope, source=source)
-        if conv_id:
-            self.graph_node(f"conv:{conv_id}", "conversation", conv_id)
-            self.graph_link(f"conv:{conv_id}", f"memory:{mid}", "remembered")
-        return self.memory(mid) or {}
-
-    def memory(self, memory_id: str) -> dict[str, Any] | None:
-        rows = self._all("SELECT id,owner,scope,content,source,conv_id,created_at FROM memories WHERE id=?", (memory_id,))
-        return rows[0] if rows else None
-
-    def memories(self, owner: str, query: str = "", limit: int = 20) -> list[dict[str, Any]]:
-        terms = [term for term in " ".join(str(query or "").lower().split()).split(" ") if len(term) >= 2]
-        params: list[Any] = [owner]
-        where = ["owner=?"]
-        for term in terms[:8]:
-            where.append("lower(content) LIKE ?")
-            params.append(f"%{term}%")
-        params.append(max(1, min(int(limit), 100)))
-        return self._all(f"SELECT id,owner,scope,content,source,conv_id,created_at FROM memories WHERE {' AND '.join(where)} ORDER BY created_at DESC LIMIT ?", tuple(params))
-
     def record_turn(self, *, conv_id: str, owner: str, provider: str, model: str, agent_id: str | None,
                     doc_ids: list[str], repo: str | None = None) -> None:
         self.graph_node(f"owner:{owner}", "owner", owner)
@@ -230,8 +199,7 @@ class Store:
                     "messages": one("SELECT COUNT(*) n FROM messages"), "agents": one("SELECT COUNT(*) n FROM agents")},
             "graph": {"nodes": one("SELECT COUNT(*) n FROM graph_nodes"), "edges": one("SELECT COUNT(*) n FROM graph_edges")},
             "cache": {"entries": one("SELECT COUNT(*) n FROM cache"), "hits": one("SELECT SUM(hits) n FROM cache")},
-                    "documents": {"count": one("SELECT COUNT(*) n FROM documents"), "bytes": one("SELECT SUM(size) n FROM documents")},
-                    "memories": {"count": one("SELECT COUNT(*) n FROM memories")},
+            "documents": {"count": one("SELECT COUNT(*) n FROM documents"), "bytes": one("SELECT SUM(size) n FROM documents")},
         }
 
     def snapshot(self, dest: str | Path) -> Path:

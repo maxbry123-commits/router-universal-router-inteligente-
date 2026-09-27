@@ -22,6 +22,17 @@
       "summary": "Memoria SQLite cableada con scopes y reinicio; Dataset Yaiwes montado como recall read-only dentro del runtime chat. Endpoints /chat/memory y /chat/memory/dataset; memory_query añade contexto opcional. Storage reporta salud Dataset y sync HF sigue fail-closed. 39 pruebas PASS.",
       "updated_at": "2026-09-27T05:22:56Z",
       "last_event_seq": 4
+    },
+    "RIU-0121": {
+      "node_id": "RIU-0121",
+      "task": "RIU-0121",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "M7_INTEGRAL_TEST",
+      "next": "siguiente nodo DSL; H-1 reservado a Opus",
+      "summary": "M-7 PASS local: 3 pruebas de reinicio, grafo y State Hub; suite de memoria/chat/Secret Bank 30 PASS. H-1 no ejecutado; corresponde a Opus.",
+      "updated_at": "2026-09-27T05:49:08Z",
+      "last_event_seq": 12
     }
   }
 }

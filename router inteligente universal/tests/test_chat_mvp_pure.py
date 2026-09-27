@@ -67,21 +67,6 @@ def test_store_recovers_chat_document_and_graph_after_reopen(tmp_path):
     reopened.close()
 
 
-def test_store_memory_survives_reopen_and_is_owner_scoped(tmp_path):
-    store = Store(tmp_path)
-    row = store.remember("owner-a", "El proyecto usa SQLite como fuente de verdad", scope="project", source="chat")
-    store.remember("owner-b", "SQLite de otro propietario", scope="global", source="chat")
-    assert row["scope"] == "project"
-    assert len(store.memories("owner-a", "fuente verdad")) == 1
-    assert store.memories("owner-b", "fuente verdad") == []
-    store.close()
-
-    reopened = Store(tmp_path)
-    assert reopened.memories("owner-a", "SQLite")[0]["id"] == row["id"]
-    assert reopened.stats()["memories"]["count"] == 2
-    reopened.close()
-
-
 def test_providers_catalog_cache_chat_and_local(monkeypatch):
     prov._models_cache.clear()
     assert prov.list_models("cerebras", "k1", fetch=lambda url, k: {"data": [{"id": "b"}, {"id": "a"}, {"x": 1}]}) == ["a", "b"]

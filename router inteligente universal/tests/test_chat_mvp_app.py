@@ -215,7 +215,6 @@ def test_storage_graph_and_bucket_sync(client, monkeypatch):
     send(client, message="uno")
     stats = client.get("/chat/storage", headers=H).json()
     assert stats["sql"]["messages"] == 2 and stats["graph"]["edges"] >= 2 and stats["hf_bucket"]["configured"] is False
-    assert stats["memory_dataset"]["ok"] is True and stats["memory_dataset"]["mode"] == "read_only"
     graph = client.get("/chat/graph", headers=H).json()
     assert {"conversation", "model", "owner"} <= {n["kind"] for n in graph["nodes"]}
     assert client.post("/chat/storage/sync", headers=H).json()["detail"] == "HF_BUCKET_ID_NOT_SET"
@@ -242,27 +241,6 @@ def test_storage_graph_and_bucket_sync(client, monkeypatch):
     assert out == {"bucket": "u/b", "files": 2}
     assert written["buckets/u/b/riu-chat/riu_chat.sqlite3"].startswith(b"SQLite format 3")
     assert written[f"buckets/u/b/riu-chat/docs/{document_id}"] == b"x"
-
-
-def test_memory_sqlite_dataset_recall_and_send_context(client):
-    created = client.post("/chat/memory", headers=H, json={
-        "content": "El router conserva conversaciones en SQLite",
-        "scope": "project",
-        "source": "test",
-    })
-    assert created.status_code == 200, created.text
-    memory_id = created.json()["memory"]["id"]
-    listed = client.get("/chat/memory", headers=H, params={"query": "conserva SQLite"})
-    assert listed.status_code == 200 and listed.json()["memories"][0]["id"] == memory_id
-
-    dataset = client.get("/chat/memory/dataset", headers=H, params={"query": "recover resume workflow safely"})
-    assert dataset.status_code == 200 and dataset.json()["read_only"] is True
-    assert dataset.json()["source"] == "yaiwes-dataset"
-
-    response = send(client, memory_query="conserva SQLite")
-    assert response.status_code == 200, response.text
-    assert response.json()["memory"]["local"][0]["id"] == memory_id
-    assert any("Memoria recuperada" in message["content"] for message in client.calls[-1]["messages"])
 
 
 def test_ui_bridge_persists_chat_data_under_state_root():

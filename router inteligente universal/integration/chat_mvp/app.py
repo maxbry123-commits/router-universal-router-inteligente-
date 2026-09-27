@@ -44,8 +44,12 @@ except Exception as exc:  # never take the Router down for the UI bridge
     logging.getLogger("riu").warning("ui_bridge no montado: %s", exc)
 try:
     from .omniroute_proxy import build_omniroute_router
-
     app.include_router(build_omniroute_router())  # /omniroute/*: OmniRoute en la misma máquina
 except Exception as exc:  # never take the Router down for OmniRoute
     logging.getLogger("riu").warning("omniroute_proxy no montado: %s", exc)
+try:
+    from .memoria_loader import build_memory_router
+    app.include_router(build_memory_router())  # /memoria/*: memoria_yaiwes con fallback SQLite
+except Exception as exc:  # never take the Router down for memory GAPs
+    logging.getLogger("riu").warning("memoria_yaiwes no montada: %s", exc)
 app.include_router(gateway.app.router)  # /health, /v1/models, /v1/chat/completions, /chat/models
