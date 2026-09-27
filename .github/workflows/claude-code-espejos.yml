@@ -1,11 +1,13 @@
 name: Claude Code Espejos
 
-# Orden del Director 2026-09-27: espejos que trabajan solos con los modelos de NUESTRO Router (NVIDIA; sin Anthropic).
-# Motor: AIDER (open source, nativo para modelos OpenAI-compatibles). Claude Code queda para cuando T04 (pasarela) funcione.
+# Espejos que trabajan solos con los modelos de NUESTRO Router (NVIDIA; sin Anthropic). Motor: AIDER (open source).
 # Modelo: el que responde de verdad según probar_modelos.py (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro NVIDIA).
-# Cada tarea declara ALCANCE (carpeta) y ARCHIVOS (lista, relativa al ALCANCE): se crean vacíos y se pasan a Aider.
-# 2026-09-27 (fix 3): Aider con --no-git (el checkout parcial bloqueaba su git add y no se guardaba nada) y regla de nombres
-#   (el modelo tomó una línea del diagrama como nombre de archivo). El guardado lo hace SIEMPRE este workflow.
+# Cada tarea declara ALCANCE y ARCHIVOS. Contrato y verificación: chat router/07-SENTINELAS/CONTRATOS.yaml (Sentinela Orquestador).
+# 2026-09-27 (fix 4, prioridad 0 del Director): sin falsos verdes y sin perder trabajo:
+#   - retoma el trabajo previo de la rama mirror/T0X si existe;
+#   - recoloca archivos fugados (p. ej. "chat router/chat router/...") a su ruta del ALCANCE;
+#   - VERDICT determinista: archivos completos + pytest exit 0 (exit 5 = sin tests = FAIL);
+#   - COMMIT ANTES de sincronizar; PASS → main; si no → rama mirror/T0X (nada se pierde) y el job queda en rojo.
 # Reglas duras: solo escribe dentro de su ALCANCE; NUNCA toca el Router, HF, secretos ni workflows. Vida máx.: 5 h.
 
 on:
@@ -66,6 +68,15 @@ jobs:
           test -n "$ARCH" || { echo "::error::la tarea no declara ARCHIVOS"; exit 1; }
           case "$ALC" in ".github"*|"router inteligente universal"*) echo "::error::alcance prohibido"; exit 1;; esac
           echo "alcance=$ALC" >> "$GITHUB_OUTPUT"; echo "archivos=$ARCH" >> "$GITHUB_OUTPUT"
+      - name: Retomar trabajo previo (rama mirror/T0X)
+        env:
+          ALC: ${{ steps.t.outputs.alcance }}
+        run: |
+          if git ls-remote --exit-code --heads origin "mirror/${TAREA}" >/dev/null 2>&1; then
+            git fetch -q --depth 1 origin "mirror/${TAREA}"
+            git checkout -q FETCH_HEAD -- "$ALC" 2>/dev/null && echo "::notice::retomado trabajo previo de mirror/${TAREA}" || true
+            git reset -q
+          fi
       - name: Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)
         id: m
         run: |
@@ -92,34 +103,67 @@ jobs:
           READS=()
           for f in "chat router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-PARTE-5-B-DOCS-22-23.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && READS+=(--read "$f"); done
           { echo "Eres el espejo ${TAREA} del equipo YAIWES del Director Max."
-            echo "Los archivos del chat están VACÍOS: escribe el contenido COMPLETO de cada uno. No pidas que te los peguen."
+            echo "Los archivos vacíos del chat debes escribirlos COMPLETOS. Los que ya tienen contenido: corrígelos solo si hace falta (NO regeneres lo que funciona)."
             echo "REGLA DE NOMBRES: antes de cada bloque de código escribe, en una línea sola, la RUTA EXACTA de uno de estos archivos (copiada tal cual):"
             echo "$NOMBRES"
-            echo "No uses otras rutas ni pongas texto de diagramas como nombre de archivo. Los diagramas van DENTRO de README.md."
+            echo "No uses otras rutas. No antepongas 'chat router/' dos veces. Los diagramas van DENTRO de README.md."
             echo "PROHIBIDO tocar .github/, 'router inteligente universal/', secretos, HF. No escribas claves. Máx. 500 líneas por archivo."
-            echo "Después ejecuta los tests y corrige hasta que pasen. Al final completa el informe ${INF}: archivos, salida real de tests y GAP."
+            echo "Ejecuta los tests y corrige hasta que pasen. Al final completa el informe ${INF}: archivos, salida REAL de tests y GAP."
+            echo "Si la tarea tiene una sección 'CORRECCIÓN DEL SENTINELA', obedécela primero."
             echo; echo "TAREA:"; cat "chat router/06-ESPEJOS/tareas/${TAREA}.md"; } > /tmp/tarea.txt
           timeout 17400 aider --model "openai/${MODELO}" --no-git --yes-always --no-show-model-warnings \
             --no-check-update --no-analytics --map-tokens 0 --edit-format whole "${READS[@]}" \
             --auto-test --test-cmd "python -m pytest '${ALC}' -q" \
             --message-file /tmp/tarea.txt "${FILES[@]}" > /tmp/aider.log 2>&1
           echo "::notice::aider terminó rc=$? modelo=${MODELO}"
-          tail -8 /tmp/aider.log | while read -r l; do echo "::notice::aider $(echo "$l" | head -c 220)"; done
-          echo "::notice::archivos con contenido: $(find "$ALC" -type f -size +0 | wc -l) de $((${#FILES[@]}-1))"
-          find "$ALC" -type f -size +0 | head -20 | while read -r l; do echo "::notice::ok $l ($(wc -l < "$l") líneas)"; done
-          ( python -m pytest "$ALC" -q 2>&1 | tail -3 ) | while read -r l; do echo "::notice::tests $l"; done
-      - name: Guardar solo lo que está dentro del alcance
+      - name: Recolocar archivos fugados al ALCANCE
+        env:
+          ALC: ${{ steps.t.outputs.alcance }}
+          ARCH: ${{ steps.t.outputs.archivos }}
+        run: |
+          IFS=',' read -ra LISTA <<< "$ARCH"
+          for a in "${LISTA[@]}"; do a="$(echo "$a" | xargs)"; [ -z "$a" ] && continue; dst="$ALC/$a"
+            if [ ! -s "$dst" ]; then
+              src=$(find . -path ./.git -prune -o -type f -size +0 -path "*/$a" -print 2>/dev/null | grep -v "^./$ALC/" | head -1)
+              [ -n "$src" ] && mkdir -p "$(dirname "$dst")" && mv "$src" "$dst" && echo "::warning::FAIL_PATH_ESCAPE recolocado $src -> $dst"
+            fi
+          done
+          rm -rf "chat router/chat router" 2>/dev/null || true
+      - name: Veredicto determinista
+        id: v
+        env:
+          ALC: ${{ steps.t.outputs.alcance }}
+          ARCH: ${{ steps.t.outputs.archivos }}
+        run: |
+          find "$ALC" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+          IFS=',' read -ra LISTA <<< "$ARCH"; TOT=0; OK=0; FALTAN=""
+          for a in "${LISTA[@]}"; do a="$(echo "$a" | xargs)"; [ -z "$a" ] && continue; TOT=$((TOT+1))
+            case "$a" in */__init__.py|__init__.py) [ -e "$ALC/$a" ] || : > "$ALC/$a"; OK=$((OK+1)); continue;; esac
+            [ -s "$ALC/$a" ] && OK=$((OK+1)) || FALTAN="$FALTAN $a"; done
+          SIMULADO=1 python -m pytest "$ALC" -q > /tmp/pytest.txt 2>&1; RC=$?
+          tail -3 /tmp/pytest.txt | while read -r l; do echo "::notice::tests $l"; done
+          INF="chat router/06-ESPEJOS/informes/${TAREA}.md"
+          { echo; echo "## EVIDENCIA DEL WORKFLOW (${GITHUB_RUN_ID})"; echo "archivos: ${OK}/${TOT} · faltan:${FALTAN:- ninguno} · pytest exit: ${RC}"; echo '```'; tail -15 /tmp/pytest.txt; echo '```'; } >> "$INF"
+          if [ "$OK" -eq "$TOT" ] && [ "$RC" -eq 0 ]; then V=PASS; else V=REVISE; fi
+          echo "::notice::VEREDICTO ${V} archivos ${OK}/${TOT} pytest=${RC}"
+          echo "veredicto=$V" >> "$GITHUB_OUTPUT"
+      - name: Guardar (commit primero; PASS → main, si no → mirror/T0X)
         if: always()
         env:
           ALC: ${{ steps.t.outputs.alcance }}
+          V: ${{ steps.v.outputs.veredicto }}
         run: |
           git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
           git reset -q
-          find "$ALC" -type f -size 0 -delete 2>/dev/null || true
-          find "$ALC" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+          find "$ALC" -type f -size 0 ! -name '__init__.py' -delete 2>/dev/null || true
           [ -e "$ALC" ] && git add --sparse -- "$ALC"
           INF="chat router/06-ESPEJOS/informes/${TAREA}.md"; [ -s "$INF" ] && git add --sparse -- "$INF"
           if git diff --cached --name-only | grep -qE '^(\.github/|router inteligente universal/)'; then echo "::error::fuera de alcance, no se guarda"; exit 1; fi
-          echo "::notice::a guardar: $(git diff --cached --name-only | wc -l) archivos"
-          git commit -q -m "espejo ${TAREA}: trabajo (${GITHUB_RUN_ID})" || { echo "::warning::sin cambios que guardar"; exit 0; }
-          for i in 1 2 3 4 5; do git pull -q --rebase origin main && git push -q origin HEAD:main && echo "::notice::GUARDADO en main" && break; sleep 7; done
+          git commit -q -m "espejo ${TAREA}: ${V:-REVISE} (${GITHUB_RUN_ID})" || { echo "::warning::sin cambios"; exit 0; }
+          if [ "$V" = "PASS" ]; then
+            for i in 1 2 3 4 5; do git fetch -q origin main && git rebase -q origin/main && git push -q origin HEAD:main && echo "::notice::GUARDADO en main (PASS)" && exit 0; sleep 7; done
+            echo "::error::no se pudo publicar en main"; git push -q -f origin "HEAD:refs/heads/mirror/${TAREA}"; exit 1
+          else
+            git push -q -f origin "HEAD:refs/heads/mirror/${TAREA}" && echo "::warning::REVISE: trabajo guardado en rama mirror/${TAREA} (no en main)"
+            exit 1
+          fi
