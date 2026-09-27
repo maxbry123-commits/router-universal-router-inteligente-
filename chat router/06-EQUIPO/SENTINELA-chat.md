@@ -1,22 +1,24 @@
-# SENTINELA CHAT — 2026-09-27 17:20 UTC
-(modelo: moonshotai/kimi-k3@NVIDIA_API_KEY_2)
+# SENTINELA CHAT — 2026-09-27 20:11 UTC
+(modelo: deepseek-ai/deepseek-v4.1-flash@NVIDIA_API_KEY_1)
 
-ESTADO: amarillo — memoria (Manus) completada y verificada, pero Opus tiene V-1 y A-1 abiertos sin evidencia nueva.
+ESTADO: amarillo — sin commits, ramas, PRs ni ejecuciones visibles; T01 sigue sin carpeta en main según GPT.
 
 AVANCE:
-- M-0..M-7 COMPLETADOS: 13 componentes cableados, FalkorDB y AgentDB verificados, Action memoria PASS 31 tests.
-- V-1 paso 1 ✅ y paso 2 parcial (PARTE-2-A); PARTE-2-B y auditoría de 5 pasadas pendientes (FLAG-4).
-- A-1 OmniRoute: prueba relanzada 27-sep 02:40, sin resultado visible en los datos.
+- Manus: M-0..M-7 COMPLETADOS, State Hub revisión 13, Action memoria PASS 31 tests.
+- Opus: V-1 paso 1 ✅, paso 2 parcial (PARTE-2-B pendiente); A-1 OmniRoute relanzado 27-sep 02:40 sin resultado leído.
+- Director: T01–T04 ordenadas; T03/T04 con investigación asignada a SENTINELA-chat.
 
 DESVIOS DEL PLAN:
-- Sin commits, ramas, PRs ni ejecuciones visibles: no hay evidencia de actividad reciente pese a tareas CLAIMED.
-- PARTE-2-B del verbatim sigue pendiente (FLAG-4 abierto).
-- Resultado de `prueba-omniroute-router.yml` no reportado en HANDOFF.
+- T01 gobierno no existe en main (GPT lo confirma); Director la dio por activa.
+- V-1 paso 3 (auditoría cruzada) sin evidencia.
+- A-1 sin lectura de `prueba-omniroute-router.yml` tras relanzamiento.
+- FLAG-3 Groq sin clave; FLAG-4 PARTE-2-B pendiente.
 
 ORDENES CORRECTIVAS:
-1. Opus: leer el resultado de `prueba-omniroute-router.yml` y registrar run_id y estado en HANDOFF (A-1 paso 1).
-2. Opus: completar PARTE-2-B (docs HF 2-4, M10, docs 5-7, doc 9, doc 8, doc 10, M12-M14) y cerrar FLAG-4.
-3. Opus: ejecutar la verificación cruzada de 5 pasadas y listar faltantes en la sección AUDITORÍA (V-1 paso 3).
-4. Cualquier agente: confirmar que los commits de memoria de Manus están en la rama de trabajo (los datos no muestran commits).
+1. Agente T01: crear `chat router/05-AGENTES/gobierno/` con archivos de `06-ESPEJOS/tareas/T01.md`, correr pytest hasta PASS y publicar informe con salida real.
+2. Opus: leer resultado de `prueba-omniroute-router.yml` y reportar run_id + anotaciones; si falla, corregir `start_omniroute.sh`.
+3. Opus: completar V-1 paso 2B (PARTE-2-B) y ejecutar paso 3 (auditoría 5 pasadas).
+4. SENTINELA-chat: entregar propuestas de corrección para T03 (OmniRoute issues/wiki) y T04 (claude-code issues) antes de relanzar espejos.
+5. Nadie: no iniciar T02/T03/T04 hasta que T01 esté en verde.
 
-PARA OPUS: A-1 sigue sin evidencia: lee el run de la prueba OmniRoute y reporta resultado antes de tocar H-1.
+PARA OPUS: nada roto en Router/HF visible; falta leer run de A-1.
