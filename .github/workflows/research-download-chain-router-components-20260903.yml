@@ -61,7 +61,7 @@ jobs:
 
           s=re.sub(r"^REPOS=.*$", "REPOS="+repr(repos), s, count=1, flags=re.M)
           s=s.replace("for number,slug,url in REPOS:", "for number,slug,url,ref in REPOS:")
-          old="sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(); guard_source_tree(root); shutil.rmtree(root/.git,ignore_errors=True)"
+          old="sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(); guard_source_tree(root); shutil.rmtree(root/'.git',ignore_errors=True)"
           new = "\n".join([
               "try:",
               "    run(['git','fetch','--depth','1','origin',ref],cwd=root)",
