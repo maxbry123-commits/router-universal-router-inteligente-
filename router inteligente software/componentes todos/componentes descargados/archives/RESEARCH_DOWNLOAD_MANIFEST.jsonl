@@ -1,0 +1,2 @@
+{"number": 1, "parts": 1, "slug": "FalkorDB", "source": "https://github.com/FalkorDB/FalkorDB.git", "source_commit": "55204c94bb6c8bc1684ada3d712a61f73f324067", "status": "COMPLETE"}
+{"number": 2, "parts": 1, "slug": "AgentDB", "source": "https://github.com/ruvnet/agentdb.git", "source_commit": "6cdefe451f6afe7395bc88d3587a0225d161089b", "status": "COMPLETE"}
