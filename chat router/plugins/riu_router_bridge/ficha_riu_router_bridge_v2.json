@@ -1,0 +1,75 @@
+{
+  "artifact_id": "chat.riu_router_bridge",
+  "version": "0.1.0",
+  "estado": "testing",
+  "contract_hash": "sha256:28351fc4a7f962ce2f2167cf99d9e8e8b656b9a1985e48af876e30f347ed3bce",
+  "contrato": {
+    "rol": "transform",
+    "consume": {
+      "datatype": {"family": "riu.chat", "type": "request", "version": 1},
+      "schema_uri": "chat.router.request.v1"
+    },
+    "expone": {
+      "datatype": {"family": "riu.chat", "type": "response", "version": 1},
+      "schema_uri": "chat.router.response.v1"
+    },
+    "input_map": {
+      "health": "GET /health",
+      "storage_status": "GET /chat/storage",
+      "conversations": "GET /chat/conversations",
+      "conversation": "GET /chat/conversations/{conversation_id}",
+      "send_turn": "POST /chat/send",
+      "upload_text": "POST /chat/documents",
+      "graph": "GET /chat/graph"
+    },
+    "output_map": {"response": "JSON response from the Router"}
+  },
+  "ejecucion": {
+    "kind": "tool",
+    "transport": "importlib",
+    "runtime_type": "compute",
+    "entry_point": "chat router/plugins/riu_router_bridge/__init__.py:register",
+    "llm_ratio": 0.0,
+    "idempotente": false,
+    "max_steps": 1,
+    "allowed_actions": [
+      "router_health_read",
+      "storage_status_read",
+      "list_conversations_read",
+      "read_conversation",
+      "send_chat_turn",
+      "upload_text_document",
+      "graph_read"
+    ]
+  },
+  "seguridad": {
+    "sandbox": "process",
+    "permisos": ["network_https_to_configured_router"],
+    "limites": {
+      "timeout_ms": 20000,
+      "deadline_ms": 25000,
+      "max_response_bytes": 1000000,
+      "max_document_bytes": 2800000,
+      "allow_arbitrary_url": false,
+      "allow_huggingface_write": false,
+      "allow_github_write": false,
+      "allow_router_configuration_write": false
+    }
+  },
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "chat router/plugins/revocation_list.json"
+  },
+  "categoria": "transversal",
+  "etapa": "T",
+  "perfiles": {"n0": {"habilitada": true, "iteraciones": 1, "simulaciones": 0, "criticas": 0, "muestras_k": 1}},
+  "repeticion": {"max": 1, "condicion": "nunca", "backoff": "1000*2^n+rand(0,1000)"},
+  "repite_en": [],
+  "activacion": {"eventos": [], "wake_words": [], "condicion": "shadow_pass && operador_hermes_lo_habilita"},
+  "presupuesto": {"n0": {"max_tokens": 1, "max_ms": 20000, "max_costo_usd": 0.0}},
+  "telemetria": {"metricas": ["tiempo", "errores", "reintentos"], "span_otel": false},
+  "evidencia": {"produce": ["L1_static", "L2_build", "L3_runtime"], "destino": "chat router/plugins/evidence/"},
+  "failover": {"sustituible_por": [], "compensacion": "return_error_without_retry_or_fallback_write"},
+  "salud": {"metodo": "http", "heartbeat_interval_s": 30},
+  "trazas": {"task_id_requerido": true, "trace_id_requerido": true}
+}

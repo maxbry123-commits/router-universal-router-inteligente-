@@ -1,0 +1,3 @@
+name: riu-router-bridge
+version: "0.1.0"
+description: Read-only status and explicit chat/document tools for the existing RIU Router API.
