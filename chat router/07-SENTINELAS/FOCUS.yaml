@@ -1,8 +1,8 @@
 schema: yaiwes.sentinel-focus/v1
 mode: one_task_at_a_time
-active_task: T03
+active_task: T04
 advance: manual
-reason: "T03 OmniRoute: revisar correcciones de retención SQLite y bloqueo de puerto, ejecutar aceptación real y cerrar antes de tocar T04-T08."
+reason: "T04 Claude Code ↔ NVIDIA: crear primero tests, luego normalizador, pasarela y script; cerrar con pytest real antes de tocar T05-T08."
 rules:
   - "Nunca relanzar más de una tarea por ciclo."
   - "Si el ejecutor de active_task está activo: observar, no duplicar."
