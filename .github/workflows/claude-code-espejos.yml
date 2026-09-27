@@ -2,9 +2,11 @@ name: Claude Code Espejos
 
 # Orden del Director 2026-09-27: espejos que trabajan solos con los modelos de NUESTRO Router (NVIDIA; sin Anthropic).
 # Motor de los espejos: AIDER (agente de programación open source, nativo para modelos OpenAI-compatibles como NVIDIA).
-#   Claude Code se probó primero: con Kimi K3 vía puente sus llamadas de herramientas se cortaban (leía 1 archivo y paraba).
+#   Claude Code se probó primero: con Kimi K3 vía puente sus llamadas de herramientas se cortaban (tarea delegada T04 para arreglarlo).
 # Modelo: el que responde de verdad según probar_modelos.py (Kimi K3 > GLM-5 > DeepSeek V4 > otro NVIDIA).
-# Reglas duras: solo escribe dentro de su ALCANCE (una carpeta); NUNCA toca el Router, HF, secretos ni workflows. Vida máx.: 5 h.
+# Cada tarea declara ALCANCE (carpeta) y ARCHIVOS (lista separada por comas, relativa al ALCANCE): se crean vacíos y se pasan a Aider
+#   (sin la lista, Aider no escribe nada: vuelta del 27-sep 16:45).
+# Reglas duras: solo escribe dentro de su ALCANCE; NUNCA toca el Router, HF, secretos ni workflows. Vida máx.: 5 h.
 
 on:
   workflow_dispatch:
@@ -53,15 +55,17 @@ jobs:
           python-version: '3.12'
       - name: Instalar Aider
         run: pip install -q aider-chat pyyaml pytest requests
-      - name: Leer alcance de la tarea
+      - name: Leer alcance y archivos de la tarea
         id: t
         run: |
           F="chat router/06-ESPEJOS/tareas/${TAREA}.md"
           test -f "$F" || { echo "::error::no existe $F"; exit 1; }
           ALC=$(grep -m1 '^ALCANCE:' "$F" | sed 's/^ALCANCE: *//; s/[[:space:]]*$//')
+          ARCH=$(grep -m1 '^ARCHIVOS:' "$F" | sed 's/^ARCHIVOS: *//; s/[[:space:]]*$//')
           test -n "$ALC" || { echo "::error::la tarea no declara ALCANCE"; exit 1; }
+          test -n "$ARCH" || { echo "::error::la tarea no declara ARCHIVOS"; exit 1; }
           case "$ALC" in ".github"*|"router inteligente universal"*) echo "::error::alcance prohibido"; exit 1;; esac
-          echo "alcance=$ALC" >> "$GITHUB_OUTPUT"
+          echo "alcance=$ALC" >> "$GITHUB_OUTPUT"; echo "archivos=$ARCH" >> "$GITHUB_OUTPUT"
       - name: Elegir modelo que responde (Kimi K3 > GLM-5 > DeepSeek V4 > otro)
         id: m
         run: |
@@ -74,27 +78,32 @@ jobs:
       - name: Trabajar (Aider espejo)
         env:
           ALC: ${{ steps.t.outputs.alcance }}
+          ARCH: ${{ steps.t.outputs.archivos }}
           MODELO: ${{ steps.m.outputs.modelo }}
           CLAVE: ${{ steps.m.outputs.clave }}
         run: |
           export OPENAI_API_KEY="${!CLAVE}"; export OPENAI_API_BASE="https://integrate.api.nvidia.com/v1"
-          mkdir -p "$ALC/tests" "chat router/06-ESPEJOS/informes"
+          INF="chat router/06-ESPEJOS/informes/${TAREA}.md"
+          mkdir -p "$ALC" "$(dirname "$INF")"; touch "$INF"
           git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
+          FILES=("$INF")
+          IFS=',' read -ra LISTA <<< "$ARCH"
+          for a in "${LISTA[@]}"; do a="$(echo "$a" | xargs)"; [ -z "$a" ] && continue; p="$ALC/$a"; mkdir -p "$(dirname "$p")"; [ -e "$p" ] || touch "$p"; FILES+=("$p"); done
+          READS=()
+          for f in "chat router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-PARTE-5-B-DOCS-22-23.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && READS+=(--read "$f"); done
+          for f in $(grep -oE 'LEER: .*' "chat router/06-ESPEJOS/tareas/${TAREA}.md" | sed 's/^LEER: *//' | tr ',' '\n' | xargs -I{} echo "{}" | tr ' ' '\001'); do f="$(echo "$f" | tr '\001' ' ')"; [ -f "$f" ] && READS+=(--read "$f"); done
           { echo "Eres el espejo ${TAREA} del equipo YAIWES del Director Max."
-            echo "SOLO crea o edita archivos dentro de la carpeta '${ALC}' y el informe 'chat router/06-ESPEJOS/informes/${TAREA}.md'."
-            echo "PROHIBIDO tocar .github/, 'router inteligente universal/', secretos, HF. No escribas claves. Máximo 500 líneas por archivo."
-            echo "Crea TODOS los archivos pedidos con su contenido completo, ejecuta los tests y corrige hasta que pasen."
-            echo "Al final escribe el informe con: archivos creados, salida real de los tests y GAP (lo que falte)."
+            echo "Escribe el contenido COMPLETO de TODOS los archivos que tienes en el chat (están vacíos: créalos). No pidas que te los peguen."
+            echo "SOLO edita esos archivos. PROHIBIDO tocar .github/, 'router inteligente universal/', secretos, HF. No escribas claves. Máx. 500 líneas por archivo."
+            echo "Después ejecuta los tests y corrige hasta que pasen. Al final completa el informe ${INF}: archivos, salida real de tests y GAP."
             echo; echo "TAREA:"; cat "chat router/06-ESPEJOS/tareas/${TAREA}.md"; } > /tmp/tarea.txt
-          LEER=""
-          for f in "chat router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-PARTE-5-B-DOCS-22-23.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && LEER="$LEER --read \"$f\""; done
-          eval timeout 17400 aider --model "openai/${MODELO}" --yes-always --no-auto-commits --no-show-model-warnings \
-            --no-check-update --no-analytics --map-tokens 0 $LEER \
-            --auto-test --test-cmd "\"python -m pytest '${ALC}/tests' -q\"" \
-            --message-file /tmp/tarea.txt > /tmp/aider.log 2>&1
+          timeout 17400 aider --model "openai/${MODELO}" --yes-always --no-auto-commits --no-show-model-warnings \
+            --no-check-update --no-analytics --map-tokens 0 --edit-format whole "${READS[@]}" \
+            --auto-test --test-cmd "python -m pytest '${ALC}' -q" \
+            --message-file /tmp/tarea.txt "${FILES[@]}" > /tmp/aider.log 2>&1
           echo "::notice::aider terminó rc=$? modelo=${MODELO}"
-          tail -12 /tmp/aider.log | while read -r l; do echo "::notice::aider $(echo "$l" | head -c 220)"; done
-          echo "::notice::archivos en alcance: $(find "$ALC" -type f | wc -l)"
+          tail -10 /tmp/aider.log | while read -r l; do echo "::notice::aider $(echo "$l" | head -c 220)"; done
+          echo "::notice::archivos con contenido: $(find "$ALC" -type f -size +0 | wc -l) de ${#FILES[@]}"
       - name: Guardar solo lo que está dentro del alcance
         if: always()
         env:
@@ -102,8 +111,9 @@ jobs:
         run: |
           git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
           git reset -q
+          find "$ALC" -type f -size 0 -delete 2>/dev/null || true
           [ -e "$ALC" ] && git add -- "$ALC"
-          INF="chat router/06-ESPEJOS/informes/${TAREA}.md"; [ -e "$INF" ] && git add -- "$INF"
+          INF="chat router/06-ESPEJOS/informes/${TAREA}.md"; [ -s "$INF" ] && git add -- "$INF"
           if git diff --cached --name-only | grep -qE '^(\.github/|router inteligente universal/)'; then echo "::error::fuera de alcance, no se guarda"; exit 1; fi
           git commit -q -m "espejo ${TAREA}: trabajo (${GITHUB_RUN_ID})" || { echo "sin cambios"; exit 0; }
           for i in 1 2 3 4 5; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 7; done
