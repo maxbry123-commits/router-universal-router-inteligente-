@@ -7,7 +7,10 @@ name: Sentinela Orquestador (cada 20 min)
 
 on:
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: '*/5 * * * *'
+  workflow_run:
+    workflows: ["Claude Code Espejos"]
+    types: [requested, in_progress, completed]
   push:
     paths:
       - '.github/workflows/sentinela-orquestador.yml'
@@ -48,6 +51,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -q pyyaml pytest fastapi httpx requests
+      - name: Autoverificar sentinela
+        run: |
+          python -m py_compile             "chat router/05-AGENTES/gobierno/sentinel_loop.py"             "chat router/07-SENTINELAS/sentinela_orquestador.py"
+          python -m pytest "chat router/05-AGENTES/gobierno/tests/test_gobierno.py" -q
       - name: Bucle del sentinela
         id: s
         run: python "chat router/07-SENTINELAS/sentinela_orquestador.py"
