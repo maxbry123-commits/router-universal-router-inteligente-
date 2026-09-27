@@ -6,6 +6,7 @@ No contiene reglas de gobierno: importa el LOOP común desde
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import os
 import pathlib
@@ -42,6 +43,21 @@ def sh(cmd: list[str], timeout: int = 120) -> tuple[int, str]:
 
 def utc_now() -> str:
     return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+
+
+def loop_version() -> str:
+    """Huella única: las 3 réplicas deben ejecutar exactamente esta versión."""
+    paths = (
+        GOBIERNO / "sentinel_loop.py",
+        BASE / "replica_runner.py",
+        BASE / "REPLICAS.yaml",
+        BASE / "CONTRATOS.yaml",
+    )
+    h = hashlib.sha256()
+    for path in paths:
+        h.update(str(path).encode("utf-8"))
+        h.update(path.read_bytes())
+    return h.hexdigest()[:16]
 
 
 def gh_json(endpoint: str) -> object:
@@ -238,9 +254,10 @@ def write_report(
     report = pathlib.Path(spec.report_path)
     report.parent.mkdir(parents=True, exist_ok=True)
     priority = evidence.get("priority_task", {})
+    version = loop_version()
     lines = [
         f"# {spec.sentinel_id.upper()} — {utc_now()}",
-        f"(LOOP común · modelo investigador: {model})",
+        f"(LOOP común · versión: {version} · modelo investigador: {model})",
         "",
         f"OBJETIVO: {spec.objective}",
         f"ESTADO LOOP: {result['state']} · {result['reason']}",
@@ -287,6 +304,7 @@ def write_order(spec, cfg: dict, result: dict, evidence: dict, research: dict | 
         "schema": "yaiwes.sentinel-order/v1",
         "sentinel": spec.sentinel_id,
         "generated_at": utc_now(),
+        "loop_version": loop_version(),
         "observed_sha": evidence.get("observed_sha"),
         "objective": spec.objective,
         "priority_task": priority.get("task_id"),
@@ -361,6 +379,7 @@ def main() -> None:
         }
 
     state = update_state(previous, result, evidence)
+    state["loop_version"] = loop_version()
     if research:
         state["research_packet"] = research["packet"]
         state["research_findings"] = research["findings"]
@@ -372,6 +391,7 @@ def main() -> None:
     write_report(spec, cfg, state, result, evidence, research, model)
     print(json.dumps({
         "replica": replica,
+        "loop_version": loop_version(),
         "state": result["state"],
         "reason": result["reason"],
         "priority": priority.get("task_id") if priority else None,
