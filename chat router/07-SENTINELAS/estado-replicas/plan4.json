@@ -1,5 +1,5 @@
 {
-  "status": "REVISE",
+  "status": "RESEARCH",
   "last_sha": "26569d4aec58cfe09408d5731c8842423dd2a1bd",
   "last_failure": "",
   "same_failure_count": 0,
@@ -22,8 +22,8 @@
     "priority_task": {}
   },
   "next_action": "missing_evidence:recent_commits_observed",
-  "attempt": 3,
-  "loop_version": "9f361e1b004bffdb",
+  "attempt": 4,
+  "loop_version": "a3e6f375449cf9cf",
   "research_packet": {
     "sentinel_id": "sentinela-plan4",
     "failure": "missing_evidence:recent_commits_observed",
