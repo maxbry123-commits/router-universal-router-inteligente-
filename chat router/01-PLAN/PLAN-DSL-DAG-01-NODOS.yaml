@@ -89,7 +89,7 @@ dag_b_memoria:
   nodos:
     - id: B-1
       titulo: "State Hub (unico escritor de estado)"
-      status: "PASS_LOCAL_PENDING_GITHUB_READBACK"
+      status: "PASS_REMOTE_READBACK_CI_CORE_VERIFY_PASS"
       fuente_director: [doc24, M44]
       pasos:
         1: "state_hub.emit -> 03-ESTADO/BITACORA.jsonl -> STATE.json, CRAZY_WALL.json, HANDOFF.md (ruta del Router)"

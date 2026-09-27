@@ -33,14 +33,14 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` (nodo B-1) · FLAG-2
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 1
+Revisión: 2
 Proyecto/tarea: `chat-yaiwes` / `RIU-0119`
 Estado: **RUNNING**
-Fase: `B1_STATE_HUB_COMPLETE`
+Fase: `B1_REMOTE_READBACK_PASS`
 
 ### Último checkpoint
-B-1: State Hub local; BITACORA reconstruye STATE/CRAZY_WALL/HANDOFF. Chat: SQLite persiste conversación/adjunto/grafo; bucket solo sync simulado. 17 pruebas locales PASS. Sin credenciales ni escritura remota; PostgreSQL, Redis, Graphiti/FalkorDB, Memanto, Graphify y AgentDB siguen pendientes de conexión verificable.
+Commit f00d042249a5671579b51cb7b204a712d66ccfb8 y archivos clave confirmados en GitHub main. Chat MVP Core Verify PASS (run 36295956839). Secret Scan FAILURE: 217 hallazgos preexistentes en tests Hermes; 0 anotaciones en los archivos modificados y escáner local del diff PASS. Se preservó el scanner, sin excepciones ni secretos. 26 pruebas locales PASS; bucket solo simulado.
 
 ### Siguiente
-B2: conectar solo servicios disponibles y después cerrar B3 adjuntos
+B-2: servicios verificables; B-3: read-back HF si se autoriza
 <!-- YAIWES STATE HUB END -->

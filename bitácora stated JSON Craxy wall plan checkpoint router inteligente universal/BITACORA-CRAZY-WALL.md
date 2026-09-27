@@ -569,3 +569,10 @@ Regla arquitectónica: **nunca cargar el dataset completo al LLM**. El Router co
 - **Dataset conversacional:** no se encontró adaptador escritor activo para `COMAND-CENTER-1/yaiwes-hf-memoria`; el plugin del `dataset Yaiwes/` es read-only y distinto.
 - **Pruebas locales:** 17 PASS; 2 warnings de deprecación FastAPI. Ninguna prueba consume servicio externo.
 - **Estado operativo:** B-1 completo localmente, B-2 parcial/bloqueado por servicios y contratos de conexión; B-3 sync simulado, read-back y recuperación desde bucket pendientes. Siguiente: comprobar capacidad de escritura/read-back solo cuando el usuario/configuración lo autoricen; después, un servicio por vez y su reinicio/prueba.
+
+
+### RIU-0119 — cierre de B-1 y read-back CI — 2026-09-27
+- Commit publicado y leído de vuelta desde `main`: `f00d042249a5671579b51cb7b204a712d66ccfb8`; GitHub confirmó `chat router/03-ESTADO/STATE.json` y `ui_bridge.py`.
+- `RIU Chat MVP Core Verify`: PASS, run `36295956839`. Pruebas locales combinadas: 26 PASS; `git diff --check`, sintaxis Python, JSON/JSONL/YAML y escaneo local de secretos PASS.
+- `RIU Secret Scan`: FAILURE, 217 hallazgos globales; las anotaciones del run apuntan a archivos de tests existentes de Hermes y cero anotaciones a las rutas de este delta. Se mantiene el scanner sin excepciones.
+- No se usaron credenciales ni se escribió en Hugging Face. Siguen abiertos B-2 (servicios/memoria conectados) y B-3 (read-back/recuperación real de adjuntos desde Bucket).
