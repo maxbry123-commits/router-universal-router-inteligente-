@@ -1,0 +1,47 @@
+name: Prueba OmniRoute en el Router
+
+# Prueba real, sin UI: espera a que OmniRoute termine de construirse dentro de la máquina 16 GB del Router
+# y comprueba por la puerta del Router: /omniroute/status, /omniroute/v1/models y una respuesta real de chat.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Probar
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+          RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os, re, time, json, urllib.request
+          flag = urllib.request.urlopen("https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag?x=" + str(time.time())).read().decode()
+          base = re.search(r"LIVE_URL=(\S+)", flag).group(1).rstrip("/")
+          H = {"Authorization": "Bearer " + os.environ["HF_TOKEN"], "X-API-Key": os.environ.get("RIU_KEY", ""), "Content-Type": "application/json"}
+          def call(path, body=None, t=60):
+              req = urllib.request.Request(base + path, data=json.dumps(body).encode() if body else None, headers=H, method="POST" if body else "GET")
+              try:
+                  with urllib.request.urlopen(req, timeout=t) as r: return r.status, r.read().decode()[:600]
+              except urllib.error.HTTPError as e: return e.code, e.read().decode()[:600]
+              except Exception as e: return 0, type(e).__name__
+          t0 = time.time(); st = ""
+          while time.time() - t0 < 1800:
+              code, st = call("/omniroute/status")
+              if code == 200 and '"encendido"' in st: break
+              time.sleep(30)
+          print("::notice::STATUS " + st[:300])
+          code, models = call("/omniroute/v1/models")
+          print(f"::notice::MODELOS http={code} {models[:300]}")
+          mid = None
+          try: mid = json.loads(models)["data"][0]["id"]
+          except Exception: pass
+          if mid:
+              code, ans = call("/omniroute/v1/chat/completions", {"model": mid, "messages": [{"role": "user", "content": "Responde solo: OK"}], "max_tokens": 10}, 120)
+              print(f"::notice::CHAT modelo={mid} http={code} {ans[:300]}")
+          PY
