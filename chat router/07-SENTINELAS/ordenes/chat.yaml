@@ -1,11 +1,11 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-27T23:39Z
-loop_version: bd1b24f6007628c8
-observed_sha: 0bd97884a4aace2916e366482a5ef9ba8bdcd873
+generated_at: 2026-09-27T23:59Z
+loop_version: 91fa6bebe5d21b17
+observed_sha: ''
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
-priority_task: T07
+priority_task: T08
 state: RESEARCH
 reason: NO_ENTREGADO
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
@@ -20,13 +20,13 @@ research_packet:
 
     no tests ran in 0.00s
 
-    ERROR: file or directory not found: chat router/11-EVIDENCIA
+    ERROR: file or directory not found: chat router/12-FABRICA-MOTORES
 
 
     '
   queries:
-  - T07  NO_ENTREGADO
-  - "T07 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/11-EVIDENCIA"
+  - T08  NO_ENTREGADO
+  - "T08 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/12-FABRICA-MOTORES"
   - NO_ENTREGADO GitHub issue fix
   - NO_ENTREGADO Stack Overflow
   - NO_ENTREGADO developer community

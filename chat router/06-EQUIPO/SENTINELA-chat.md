@@ -1,9 +1,9 @@
-# SENTINELA-CHAT — 2026-09-27T23:39Z
-(LOOP común · versión: bd1b24f6007628c8 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-CHAT — 2026-09-27T23:59Z
+(LOOP común · versión: 91fa6bebe5d21b17 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
 ESTADO LOOP: RESEARCH · NO_ENTREGADO
-OBSERVED_SHA: 0bd97884a4aa
+OBSERVED_SHA: 
 
 PRIORIDADES:
 1. T01 gobierno: código + tests reales + informe + commit en main
@@ -16,11 +16,11 @@ PRIORIDADES:
 8. T08 motores base de fábrica
 
 OBJETIVO ACTIVO:
-- tarea: T07
+- tarea: T08
 - estado: REVISE
-- intento: 2
+- intento: 1
 - fallo: NO_ENTREGADO
-- siguiente: espejo relanzado
+- siguiente: esperar; foco actual T07
 
 INVESTIGACIÓN:
 - fuentes consultadas: 0
