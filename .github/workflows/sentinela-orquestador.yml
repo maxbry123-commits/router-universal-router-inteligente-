@@ -65,35 +65,28 @@ jobs:
           git config user.name "sentinela-orquestador"
           git config user.email "sentinela@users.noreply.github.com"
 
-          # Persistencia fail-closed y anti-carrera:
-          # si main avanzó mientras observábamos, recalculamos TODO el estado
-          # sobre el HEAD remoto nuevo antes de intentar guardar.
+          # Persistencia fail-closed sin recalcular investigación por commits
+          # independientes de las réplicas. Primero congelamos SOLO las salidas
+          # autorizadas; luego rebaseamos sobre main y publicamos.
+          find "chat router" -type d \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} + 2>/dev/null || true
+          find "chat router" -name '*.pyc' -delete 2>/dev/null || true
+
+          git add --sparse \
+            "chat router/07-SENTINELAS/ESTADO-TAREAS.json" \
+            "chat router/07-SENTINELAS/informes/ORQUESTADOR.md" \
+            "chat router/06-ESPEJOS/tareas" || true
+          git commit -q -m "sentinela orquestador: estado y correcciones" || true
+
           PUSHED=0
           for i in 1 2 3 4; do
-            find "chat router" -type d \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} + 2>/dev/null || true
-            find "chat router" -name '*.pyc' -delete 2>/dev/null || true
-
-            timeout 90s git fetch -q origin main || { sleep 3; continue; }
-            REMOTE_SHA="$(git rev-parse origin/main)"
-            LOCAL_SHA="$(git rev-parse HEAD)"
-
-            if [ "$REMOTE_SHA" != "$LOCAL_SHA" ]; then
-              echo "::notice::SENTINELA_REOBSERVE remote=$REMOTE_SHA local=$LOCAL_SHA"
-              git reset --hard -q origin/main
-              python "chat router/07-SENTINELAS/sentinela_orquestador.py"
-            fi
-
-            git add --sparse               "chat router/07-SENTINELAS/ESTADO-TAREAS.json"               "chat router/07-SENTINELAS/informes/ORQUESTADOR.md"               "chat router/06-ESPEJOS/tareas" || true
-
-            git commit -q -m "sentinela orquestador: estado y correcciones" || true
-
-            if timeout 90s git push -q origin HEAD:main; then
+            if timeout 90s git fetch -q origin main &&
+               timeout 90s git rebase -q origin/main &&
+               timeout 90s git push -q origin HEAD:main; then
               PUSHED=1
               echo "::notice::SENTINELA_ESTADO_GUARDADO"
               break
             fi
-
-            git reset --hard -q origin/main
+            git rebase --abort 2>/dev/null || true
             sleep 3
           done
 
