@@ -128,6 +128,15 @@ tareas:
   T08:
     objective: "6 motores base de la Fábrica UI (doc 18)"
     scope: "chat router/12-FABRICA-MOTORES"
-    required_files: [engine.py, capability_engine.py, canvas_engine.py, layout_engine.py, action_flow_engine.py, sandbox_engine.py, qa_engine.py, registry.py, tests/test_motores.py, README.md]
-    acceptance: "python -m pytest 'chat router/12-FABRICA-MOTORES' -q"
+    required_files: [engine.py, capability_engine.py, canvas_engine.py, layout_engine.py, action_flow_engine.py, sandbox_engine.py, qa_engine.py, registry.py, tests/__init__.py, tests/test_motores.py, README.md]
+    acceptance: "python -m pytest 'chat router/12-FABRICA-MOTORES' -q && ! grep -q 'pytest cache directory' 'chat router/12-FABRICA-MOTORES/README.md' && grep -qi 'Capability' 'chat router/12-FABRICA-MOTORES/README.md' && grep -qi 'Canvas' 'chat router/12-FABRICA-MOTORES/README.md' && grep -qi 'Layout' 'chat router/12-FABRICA-MOTORES/README.md' && grep -qi 'Action' 'chat router/12-FABRICA-MOTORES/README.md' && grep -qi 'Sandbox' 'chat router/12-FABRICA-MOTORES/README.md' && grep -qi 'QA' 'chat router/12-FABRICA-MOTORES/README.md'"
+    objective_checks:
+      - "grep -q 'class Engine' 'chat router/12-FABRICA-MOTORES/engine.py' && grep -q 'can_handle' 'chat router/12-FABRICA-MOTORES/engine.py' && grep -q 'execute' 'chat router/12-FABRICA-MOTORES/engine.py' && grep -q 'verify' 'chat router/12-FABRICA-MOTORES/engine.py'"
+      - "for e in ui.capability ui.canvas ui.layout ui.actions code.sandbox qa.visual; do grep -q \"$e\" 'chat router/12-FABRICA-MOTORES/registry.py' || exit 1; done"
+      - "grep -q 'asyncio.gather' 'chat router/12-FABRICA-MOTORES/registry.py'"
+      - "grep -q '44' 'chat router/12-FABRICA-MOTORES/qa_engine.py'"
+      - "grep -Eq 'bot[oó]n.*muerto|dead' 'chat router/12-FABRICA-MOTORES/action_flow_engine.py'"
+      - "! grep -q 'pytest cache directory' 'chat router/12-FABRICA-MOTORES/README.md'"
+      - "for n in Capability Canvas Layout Action Sandbox QA; do grep -qi \"$n\" 'chat router/12-FABRICA-MOTORES/README.md' || exit 1; done"
+    max_stall_minutes: 30
     dependencies: []

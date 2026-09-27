@@ -1,12 +1,12 @@
 schema: yaiwes.sentinel-focus/v1
 mode: one_task_at_a_time
-active_task: T07
+active_task: T08
 advance: manual
-reason: "T07 Evidence/Search Gate: implementar Documento 26 literal, 12 goals, búsqueda determinista, Evidence Pack y verificación posterior; esperar cualquier espejo activo y luego relanzar solo T07."
+reason: "Orden del Director: revisar exclusivamente T08, corregir falso verde de README/cache/fuente y vigilar un único relanzamiento hasta evidencia real."
 rules:
   - "Nunca relanzar más de una tarea por ciclo."
-  - "Si existe cualquier espejo activo de otra tarea: WAITING_EXECUTOR; no lanzar T07 todavía."
-  - "Si T07 está activo: observar, supervisar y no duplicar."
-  - "Si falla: investigar gap, crear contexto y relanzar solo T07."
-  - "PASS requiere aceptación real + checks independientes del objetivo."
+  - "Si existe cualquier espejo activo de otra tarea: WAITING_EXECUTOR; no lanzar T08 hasta que termine."
+  - "Si T08 está activo: observar, supervisar y no duplicar."
+  - "Si falla: usar T08-SENTINEL-CONTEXT.md, preservar motores válidos y relanzar solo T08."
+  - "PASS requiere aceptación real + objective_checks independientes + informe fresco."
   - "No regenerar archivos válidos."

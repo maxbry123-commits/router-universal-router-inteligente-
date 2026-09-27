@@ -249,6 +249,10 @@ jobs:
         run: |
           git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
           git reset -q
+          # No publicar artefactos de ejecución. Esto también elimina caches
+          # versionados por vueltas antiguas dentro del alcance de la tarea.
+          find "$ALC" -type d \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} + 2>/dev/null || true
+          find "$ALC" -name '*.pyc' -delete 2>/dev/null || true
           find "$ALC" -type f -size 0 ! -name '__init__.py' -delete 2>/dev/null || true
           [ -e "$ALC" ] && git add --sparse -- "$ALC"
           INF="chat router/06-ESPEJOS/informes/${TAREA}.md"; [ -s "$INF" ] && git add --sparse -- "$INF"

@@ -77,6 +77,15 @@ jobs:
             "chat router/06-ESPEJOS/tareas" || true
           git commit -q -m "sentinela orquestador: estado y correcciones" || true
 
+          # Nunca rebasear con residuos generados por tests/pytest/cache.
+          # Las salidas autorizadas ya quedaron congeladas en el commit anterior.
+          git reset --hard HEAD
+          test -z "$(git status --porcelain)" || {
+            echo "::error::SENTINELA_DIRTY_WORKTREE"
+            git status --porcelain
+            exit 1
+          }
+
           PUSHED=0
           for i in 1 2 3 4; do
             if timeout 90s git fetch -q origin main &&
