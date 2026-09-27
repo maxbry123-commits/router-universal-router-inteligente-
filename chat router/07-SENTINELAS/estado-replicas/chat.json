@@ -1,11 +1,11 @@
 {
   "status": "ACTIVE",
-  "last_sha": "e23bbf438493c71d8a2d372f0b025a38ec8b1061",
+  "last_sha": "132d88e6bdfaff2ad4b8376bac86155f39ae2c6e",
   "last_failure": "NO_ENTREGADO",
-  "same_failure_count": 9,
+  "same_failure_count": 10,
   "evidence": {
-    "observed_sha": "e23bbf438493c71d8a2d372f0b025a38ec8b1061",
-    "current_sha": "e23bbf438493c71d8a2d372f0b025a38ec8b1061",
+    "observed_sha": "132d88e6bdfaff2ad4b8376bac86155f39ae2c6e",
+    "current_sha": "132d88e6bdfaff2ad4b8376bac86155f39ae2c6e",
     "executor_active": true,
     "workflow_false_green": false,
     "unauthorized_change": false,
