@@ -1,0 +1,35 @@
+name: Diagnostico Router Job
+
+# Lee el estado y las últimas líneas del registro del Job del Router (el de LIVE_URL) para saber por qué está en error.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: pip install -q -U huggingface_hub
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python - <<'PY'
+          import os, re, urllib.request, itertools
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          flag = urllib.request.urlopen("https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag").read().decode()
+          jid = re.search(r"https://([0-9a-f]+)--", flag).group(1)
+          info = api.inspect_job(job_id=jid)
+          print(f"::notice::JOB {jid} stage={info.status.stage} msg={getattr(info.status,'message',None)} flavor={info.flavor}")
+          lines = list(api.fetch_job_logs(job_id=jid))
+          tail = [l for l in lines if l.strip()][-40:]
+          for l in tail:
+              print(l[:300])
+          errs = [l for l in lines if re.search(r"Error|Traceback|Killed|OOM|error", l)][-8:]
+          for e in errs:
+              print("::warning::" + e[:250])
+          PY
