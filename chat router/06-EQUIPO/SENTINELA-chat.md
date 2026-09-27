@@ -1,9 +1,9 @@
-# SENTINELA-CHAT — 2026-09-27T23:16Z
-(LOOP común · versión: 1a36c3b6f8bb2dd9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-CHAT — 2026-09-27T23:19Z
+(LOOP común · versión: 2b406ed4fafbae72 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
-ESTADO LOOP: RESEARCH · OBJECTIVE_DRIFT
-OBSERVED_SHA: 24e3ad411b8f
+ESTADO LOOP: REVISE · NO_ENTREGADO
+OBSERVED_SHA: 891f06ad86fb
 
 PRIORIDADES:
 1. T01 gobierno: código + tests reales + informe + commit en main
@@ -16,25 +16,25 @@ PRIORIDADES:
 8. T08 motores base de fábrica
 
 OBJETIVO ACTIVO:
-- tarea: T04
+- tarea: T05
 - estado: REVISE
-- intento: 3
-- fallo: OBJECTIVE_DRIFT
-- siguiente: espejo relanzado
+- intento: 1
+- fallo: NO_ENTREGADO
+- siguiente: esperar; foco actual T04
 
 INVESTIGACIÓN:
-- fuentes consultadas: 4
+- fuentes consultadas: 0
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El "13 passed in 0.04s" es un verde falso: 13 tests en 0.04s indica suite trivial/mockeada, no validación real de las tareas del Chat YAIWES. Además, la "evidencia comunidad" son issues #13 de repos ajenos (aider, pytest, claude-code, litellm) — coincidencia numérica literal, sin relación con sentinela-chat.
+CAUSA_RAIZ: Ruta con espacio "chat router/10-CHAT-FUNCIONES" pasada sin comillas a pytest → shell la parte en dos argumentos y ninguno existe; además el directorio probablemente no existe o está mal nombrado (¿"chat-router"?).
 
-EVIDENCIA: Ningún issue citado pertenece al repo objetivo; ninguno menciona YAIWES ni sentinela-chat. El log de pytest no muestra qué se testeó ni cobertura de las tareas pendientes.
+EVIDENCIA: Error literal "file or directory not found: chat router/10-CHAT-FUNCIONES" + "no tests ran in 0.00s". Evidencia comunidad=[] (vacía, sin verificación externa). No hay prueba de que existan tests en esa ruta.
 
-NO_REGENERAR: No re-ejecutar pytest esperando otro resultado; no buscar más issues "#13" en GitHub; no declarar PASS por conteo de tests.
+NO_REGENERAR: No crear tests ficticios ni renombrar archivos sin confirmar el árbol real; no marcar PASS por "0 fallos" (0 tests ejecutados ≠ verde).
 
-REPARAR: 1) Listar las tareas abiertas reales del Chat YAIWES (issues del repo propio, no externos). 2) Mapear cada tarea a un test concreto con aserción verificable. 3) Ejecutar suite con -v y cobertura, exigiendo trazabilidad tarea→test→evidencia.
+REPARAR: 1) Ejecutar `ls` / `find . -name "*CHAT-FUNCIONES*"` para localizar la ruta real. 2) Invocar pytest con comillas: `pytest "chat router/10-CHAT-FUNCIONES" -v` o corregir el nombre a `chat-router/...`. 3) Verificar que existan archivos `test_*.py` dentro. 4) Reejecutar y capturar salida completa.
 
-ACEPTACION: Cada tarea cerrada solo si existe test nombrado que la cubre, ejecutado en verde con salida verbose, y evidencia vinculada al repo sentinela-chat — no a repos de terceros.
+ACEPTACION: PASS solo si pytest encuentra la ruta, ejecuta ≥1 test real con resultado OK, y la evidencia se adjunta literal (comando + salida). Estado actual: NO_ENTREGADO.
 
 CONTROL:
 - PASS no lo decide la LLM.
