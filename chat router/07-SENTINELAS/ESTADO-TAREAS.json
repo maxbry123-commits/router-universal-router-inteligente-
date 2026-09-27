@@ -173,7 +173,7 @@
   },
   "T04": {
     "attempt": 2,
-    "last_sha": "c6ebabaeb28a77f6ae1526be3fb61c3ae462d1b2",
+    "last_sha": "c4d0d562e5da279a1d6edb68481a1438e7acda5d",
     "evidence": {
       "faltan": [
         "pasarela.py",
@@ -191,7 +191,7 @@
       "veredicto": "REVISE",
       "causa": "NO_ENTREGADO"
     },
-    "status": "REVISE",
+    "status": "ACTIVE",
     "last_failure": "NO_ENTREGADO",
     "research_packet": {
       "sentinel_id": "sentinela-t04",
@@ -236,7 +236,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "espejo relanzado",
+    "next_action": "esperar ejecutor",
     "research_findings": []
   },
   "T05": {
