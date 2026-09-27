@@ -1,0 +1,65 @@
+{
+  "bundle_bytes": 82695955,
+  "bundle_sha256": "7511dfe26568926a8d0c8577fb7fa430af4073a806ff203409b581d6b4cf569e",
+  "extracted_tree": {
+    "bytes": 185157635,
+    "files": 15075,
+    "sha256": "3c6a404b45e0ed704b28cc586f88a670d52f0af2c79dbd66658f9c6445f05f0a"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v2026.9.24.bundle.zip.part-0001",
+      "sha256": "7c0094abe6589602d6c961ef74ec858591e412d598b494d16988d68747a5f9fb"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v2026.9.24.bundle.zip.part-0002",
+      "sha256": "ba9a21845b8b9f32967fce9cfc47161d528ecce777751574e04dd743476132ee"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v2026.9.24.bundle.zip.part-0003",
+      "sha256": "97a60b202a9134107e44aa77ae94375dd56adaf1656bb09b1960f89f1b4ddb3c"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v2026.9.24.bundle.zip.part-0004",
+      "sha256": "442197155e4b3f4fe521cca058b783c755f12f72b65d89d7dbd52b48429bb836"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v2026.9.24.bundle.zip.part-0005",
+      "sha256": "d217012026bd7475c92135d25002224fc4e7657dc551f781a615b051c14aa3ce"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v2026.9.24.bundle.zip.part-0006",
+      "sha256": "f1a5f3b4b0a4702dc99d7242a06d5a58ff8af0a0a5db9856ae73bb9cf3187f3b"
+    },
+    {
+      "bytes": 7198483,
+      "name": "hermes-agent-v2026.9.24.bundle.zip.part-0007",
+      "sha256": "425fc833dacc2cdef214667de1b7e8be6912663aa88a12225f918428f9769a94"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "hermes-agent-v2026.9.24",
+  "source_bytes": 185157635,
+  "source_commit": "f97608f178d1ffeca59860195ab7da295f7c8e5f",
+  "source_files": 15075,
+  "source_ref": "v2026.9.24",
+  "source_repo": "NousResearch/hermes-agent",
+  "source_tree": {
+    "bytes": 185157635,
+    "files": 15075,
+    "sha256": "3c6a404b45e0ed704b28cc586f88a670d52f0af2c79dbd66658f9c6445f05f0a"
+  }
+}
