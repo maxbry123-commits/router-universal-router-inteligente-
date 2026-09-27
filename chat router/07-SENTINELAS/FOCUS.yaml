@@ -1,11 +1,12 @@
 schema: yaiwes.sentinel-focus/v1
 mode: one_task_at_a_time
-active_task: T05
+active_task: T07
 advance: manual
-reason: "T05 Funciones del chat: investigar el GAP del intento anterior, usar contexto compacto, vigilar scope/objetivo y cerrar antes de tocar T06-T08."
+reason: "T07 Evidence/Search Gate: implementar Documento 26 literal, 12 goals, búsqueda determinista, Evidence Pack y verificación posterior; esperar cualquier espejo activo y luego relanzar solo T07."
 rules:
   - "Nunca relanzar más de una tarea por ciclo."
-  - "Si el ejecutor de active_task está activo: observar, no duplicar."
-  - "Si aceptación PASS: cerrar y esperar nueva orden del Director."
-  - "Si falla: investigar causa exacta, crear contexto, ordenar corrección mínima y relanzar solo active_task."
+  - "Si existe cualquier espejo activo de otra tarea: WAITING_EXECUTOR; no lanzar T07 todavía."
+  - "Si T07 está activo: observar, supervisar y no duplicar."
+  - "Si falla: investigar gap, crear contexto y relanzar solo T07."
+  - "PASS requiere aceptación real + checks independientes del objetivo."
   - "No regenerar archivos válidos."
