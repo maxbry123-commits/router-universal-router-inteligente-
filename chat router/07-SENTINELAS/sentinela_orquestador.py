@@ -38,6 +38,12 @@ TAREAS_DIR = ROOT / "06-ESPEJOS" / "tareas"
 REPO = "maxbry123-commits/router-universal-router-inteligente-"
 WF = "claude-code-espejos.yml"
 MAX_INTENTOS = 5
+DETERMINISTIC_FAILURES = {
+    "NO_ENTREGADO",
+    "ARCHIVOS_INCOMPLETOS",
+    "NO_TESTS",
+    "SIN_INFORME",
+}
 
 RESEARCH_REPOS = {
     "T01": ["pytest-dev/pytest", "Aider-AI/aider"],
@@ -213,6 +219,44 @@ def nvidia(prompt: str) -> str:
     return ""
 
 
+def diagnostico_determinista(tid: str, spec, ev: dict, intento: int) -> dict:
+    """Evita gastar LLM/web cuando la causa ya está demostrada por evidencia local."""
+    causa = ev.get("causa", "UNKNOWN")
+    faltan = ev.get("faltan", [])
+    packet = SentinelResearchPlanner.build(
+        spec,
+        causa,
+        ev.get("pytest_tail", "")[-1000:],
+        {"component": tid},
+    )
+    if causa == "NO_ENTREGADO":
+        repair = (
+            f"Crear únicamente los archivos faltantes declarados por el contrato: {faltan}. "
+            "Seguir la tarea literal y ejecutar la aceptación real."
+        )
+        no_regen = "ninguno; no hay entrega válida en main"
+    elif causa == "ARCHIVOS_INCOMPLETOS":
+        repair = (
+            f"Conservar archivos existentes y completar solo los faltantes: {faltan}. "
+            "Después ejecutar la aceptación real."
+        )
+        no_regen = "todos los archivos existentes y no vacíos"
+    elif causa == "NO_TESTS":
+        repair = "Crear/corregir únicamente tests del alcance hasta que pytest descubra tests reales."
+        no_regen = "código existente que no esté implicado en el fallo"
+    else:
+        repair = "Completar únicamente el informe con salida real de la aceptación; no regenerar código válido."
+        no_regen = "todo el código existente"
+    analysis = (
+        f"CAUSA_RAIZ: {causa} demostrada por evidencia determinista.\n"
+        f"EVIDENCIA: faltan={faltan} pytest_exit={ev.get('pytest_exit')}.\n"
+        f"NO_REGENERAR: {no_regen}.\n"
+        f"REPARAR: {repair}\n"
+        f"ACEPTACION: {spec.objective} — ejecutar el comando contractual y exigir exit 0."
+    )
+    return {"packet": packet, "fuentes": [], "analisis": analysis}
+
+
 def investigar(tid: str, spec, ev: dict, intento: int) -> dict:
     error = ev.get("pytest_tail", "")[-1000:] or ev.get("causa", "")
     packet = SentinelResearchPlanner.build(
@@ -331,7 +375,10 @@ def main() -> None:
                 })
             else:
                 st["attempt"] = st.get("attempt", 0) + 1
-                rp = investigar(tid, spec, ev, st["attempt"])
+                if ev.get("causa") in DETERMINISTIC_FAILURES:
+                    rp = diagnostico_determinista(tid, spec, ev, st["attempt"])
+                else:
+                    rp = investigar(tid, spec, ev, st["attempt"])
                 ordenar(tid, st["attempt"], ev, rp)
                 st.update({
                     "status": decision["state"],
