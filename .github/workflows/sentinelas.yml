@@ -54,6 +54,20 @@ jobs:
       - name: Dependencias mínimas
         run: pip install -q pyyaml
 
+      - name: Autoverificar LOOP compartido
+        run: |
+          python -m py_compile             "chat router/05-AGENTES/gobierno/sentinel_loop.py"             "chat router/07-SENTINELAS/replica_runner.py"             "chat router/07-SENTINELAS/sentinela_orquestador.py"
+          python - <<'PY'
+          import pathlib, yaml
+          for p in (
+              "chat router/07-SENTINELAS/REPLICAS.yaml",
+              "chat router/07-SENTINELAS/CONTRATOS.yaml",
+          ):
+              data = yaml.safe_load(pathlib.Path(p).read_text(encoding="utf-8"))
+              assert isinstance(data, dict) and data, p
+          print("LOOP_CONFIG_PASS")
+          PY
+
       - name: LOOP común del sentinela
         run: python "chat router/07-SENTINELAS/replica_runner.py" --replica "$PROYECTO"
 
