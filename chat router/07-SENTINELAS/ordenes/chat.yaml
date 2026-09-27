@@ -1,14 +1,82 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-27T23:08Z
+generated_at: 2026-09-27T23:16Z
 loop_version: 1a36c3b6f8bb2dd9
-observed_sha: 78cc3ac293ab0c56c6ec0ec37fe569a9fdb594a5
+observed_sha: 24e3ad411b8f0ede99fe6e40d458b480031038cc
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
 priority_task: T04
-state: ACTIVE
-reason: executor_active
+state: RESEARCH
+reason: OBJECTIVE_DRIFT
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
-research_packet: null
-research_findings: []
+research_packet:
+  sentinel_id: sentinela-chat
+  objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y
+    sin falsos verdes.
+  task_scope: ''
+  failure: OBJECTIVE_DRIFT
+  error_literal: '.............                                                            [100%]
+
+    13 passed in 0.04s
+
+    '
+  queries:
+  - T04  OBJECTIVE_DRIFT
+  - 'T04 .............                                                            [100%]
+
+    13 passed in 0.04s'
+  - OBJECTIVE_DRIFT GitHub issue fix
+  - OBJECTIVE_DRIFT Stack Overflow
+  - OBJECTIVE_DRIFT developer community
+  sources:
+  - GitHub Issues del componente
+  - GitHub Discussions del componente
+  - GitHub Pull Requests del componente
+  - GitHub commits recientes del componente
+  - GitHub Community
+  - Stack Overflow
+  - Reddit /r/programming
+  - Reddit de la tecnología afectada
+  - Hacker News
+  - NVIDIA Developer Forums
+  - NVIDIA NIM / API documentation
+  - Aider issues y docs
+  - Claude Code issues y docs
+  - LiteLLM issues y docs
+  - pytest documentation
+  - Python Discuss
+  - Vercel discussions/docs
+  - GitHub Actions docs/community
+  - Issues/docs de OmniRoute, Hermes u OpenClaw
+  - Repositorio upstream exacto del componente
+  min_independent_sources: 3
+  max_sources: 20
+  required_output:
+  - root_cause
+  - evidence
+  - do_not_regenerate
+  - repair_steps
+  - acceptance_check
+research_findings:
+- state: closed
+  title: Feature Request / implement Backoff
+  updatedAt: '2023-06-04T18:11:12Z'
+  url: https://github.com/Aider-AI/aider/issues/13
+  source: GitHub:Aider-AI/aider
+- state: closed
+  title: 'INTERNALERROR on Wrapper '
+  updatedAt: '2015-06-15T20:30:08Z'
+  url: https://github.com/pytest-dev/pytest/issues/13
+  source: GitHub:pytest-dev/pytest
+- state: closed
+  title: Detect if underlying file has change between when diff was computed and apply
+  updatedAt: '2025-08-10T14:05:15Z'
+  url: https://github.com/anthropics/claude-code/issues/13
+  source: GitHub:anthropics/claude-code
+- state: closed
+  title: Show me details about my llm calls - breakdown models called, total costs,
+    by user ID
+  updatedAt: '2026-03-25T01:55:27Z'
+  url: https://github.com/BerriAI/litellm/issues/13
+  source: GitHub:BerriAI/litellm
