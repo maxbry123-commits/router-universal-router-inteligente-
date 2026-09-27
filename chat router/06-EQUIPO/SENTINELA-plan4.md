@@ -1,21 +1,22 @@
-# SENTINELA PLAN4 — 2026-09-27 17:28 UTC
-(modelo: moonshotai/kimi-k3@NVIDIA_API_KEY_2)
+# SENTINELA PLAN4 — 2026-09-27 20:13 UTC
+(modelo: deepseek-ai/deepseek-v4.1-flash@NVIDIA_API_KEY_1)
 
-ESTADO: amarillo — el plan4 no muestra actividad verificable en los datos recibidos.
+ESTADO: amarillo — hay conflicto entre la orden de GPT (T01 únicamente) y las órdenes activas del Director (T01–T04), y no hay commits ni ejecuciones recientes visibles.
 
 AVANCE:
-- Existen 5 ramas de trabajo plan-opus (G1 x3, all x2), señal de trabajo previo.
-- El handoff corresponde al proyecto chat-yaiwes (M-0..M-7 completados), no a plan4.
-- Sin commits, PRs ni ejecuciones recientes visibles para plan4.
+- State Hub reporta M-0..M-7 COMPLETADOS (RIU-0121, M7_RDC_VERIFIED); H-1 reservado a Opus.
+- Ramas plan-opus/G1-* presentes; sin PRs abiertos ni ejecuciones recientes listadas.
+- Handoff Opus: A-1 OmniRoute relanzado 27-sep 02:40; V-1 en PASO_2B; PARTE-2-B pendiente.
 
 DESVIOS DEL PLAN:
-- No hay commits recientes pese al loop horario definido (mini-router-plan-4-objetivos.yml).
-- No hay ejecuciones recientes registradas: el loop horario parece detenido o no reporta.
-- 5 ramas abiertas sin PRs: trabajo sin integrar.
+- GPT ordena T01 únicamente; Director mantiene T01–T04 activas → ambigüedad de alcance.
+- Sin evidencia de commits/ejecuciones que confirmen avance de T01 (gobierno) en main.
+- `chat router/05-AGENTES/gobierno/` no confirmado en main según GPT.
 
 ORDENES CORRECTIVAS:
-1. Agente de integración: abrir PRs desde las ramas plan-opus/G1-* y plan-opus/all-* hacia la rama principal, o cerrar las ramas obsoletas.
-2. Agente de infraestructura: verificar que el workflow mini-router-plan-4-objetivos.yml está activo y ejecutándose cada hora; registrar la última ejecución.
-3. Agente de estado: actualizar el handoff con el estado real de plan4 (el actual solo cubre chat-yaiwes).
+1. SENTINELA-chat: verificar en main si existe `chat router/05-AGENTES/gobierno/` y publicar evidencia (ruta + commit).
+2. Espejo T01: ejecutar según `06-ESPEJOS/tareas/T01.md`, correr `python -m pytest "chat router/05-AGENTES/gobierno" -q` hasta PASS y publicar informe con salida real.
+3. SENTINELA-chat: elevar a Director la contradicción T01 vs T01–T04 antes de lanzar T02/T03/T04.
+4. Opus: reportar resultado de `prueba-omniroute-router.yml` (A-1) y estado de PARTE-2-B.
 
-PARA OPUS (solo si hay algo roto en Router/HF): nada
+PARA OPUS: nada roto reportado en Router/HF; pendiente confirmar resultado A-1 y PARTE-2-B.
