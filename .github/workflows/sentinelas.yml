@@ -1,17 +1,27 @@
-name: Sentinelas (chat, fabrica, plan4)
+name: Sentinelas sincronizados (chat, fabrica, plan4)
 
-# Un solo LOOP compartido:
-# gobierno/sentinel_loop.py = reglas
-# 07-SENTINELAS/REPLICAS.yaml = configuración por réplica
-# 07-SENTINELAS/replica_runner.py = observación/investigación/orden
+# FUENTE ÚNICA:
+# - gobierno/sentinel_loop.py = cerebro compartido
+# - 07-SENTINELAS/replica_runner.py = runner compartido
+# - 07-SENTINELAS/REPLICAS.yaml = configuración por rol
 #
-# Flujo: DSL → DAG → Schema → Sheriff → OBSERVE → VERIFY → GUARDIAN
-#        → CLASSIFY → RESEARCH → ORDER → EXECUTOR → REVERIFY.
-# La LLM investiga/redacta; nunca decide PASS.
+# Cualquier cambio en una FUENTE del sistema sentinela despierta LAS 3 réplicas.
+# Las salidas generadas (informes/estado/ordenes) NO vuelven a disparar el workflow,
+# evitando loops infinitos.
 
 on:
   schedule:
     - cron: '*/20 * * * *'
+  push:
+    paths:
+      - '.github/workflows/sentinelas.yml'
+      - '.github/workflows/sentinela-orquestador.yml'
+      - 'chat router/05-AGENTES/gobierno/sentinel_loop.py'
+      - 'chat router/07-SENTINELAS/replica_runner.py'
+      - 'chat router/07-SENTINELAS/sentinela_orquestador.py'
+      - 'chat router/07-SENTINELAS/REPLICAS.yaml'
+      - 'chat router/07-SENTINELAS/CONTRATOS.yaml'
+      - 'chat router/07-SENTINELAS/FOCUS.yaml'
   workflow_dispatch:
 
 permissions:
@@ -19,8 +29,8 @@ permissions:
   actions: read
 
 concurrency:
-  group: sentinelas
-  cancel-in-progress: false
+  group: sentinelas-sincronizados-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   sentinela:
@@ -28,7 +38,7 @@ jobs:
     timeout-minutes: 12
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 3
       matrix:
         proyecto: [chat, fabrica, plan4]
     env:
@@ -38,6 +48,7 @@ jobs:
       NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
       NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
       PROYECTO: ${{ matrix.proyecto }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,7 +65,7 @@ jobs:
       - name: Dependencias mínimas
         run: pip install -q pyyaml
 
-      - name: Autoverificar LOOP compartido
+      - name: Autoverificar fuente única
         run: |
           python -m py_compile             "chat router/05-AGENTES/gobierno/sentinel_loop.py"             "chat router/07-SENTINELAS/replica_runner.py"             "chat router/07-SENTINELAS/sentinela_orquestador.py"
           python - <<'PY'
@@ -62,16 +73,17 @@ jobs:
           for p in (
               "chat router/07-SENTINELAS/REPLICAS.yaml",
               "chat router/07-SENTINELAS/CONTRATOS.yaml",
+              "chat router/07-SENTINELAS/FOCUS.yaml",
           ):
               data = yaml.safe_load(pathlib.Path(p).read_text(encoding="utf-8"))
               assert isinstance(data, dict) and data, p
           print("LOOP_CONFIG_PASS")
           PY
 
-      - name: LOOP común del sentinela
+      - name: Ejecutar misma versión del LOOP
         run: python "chat router/07-SENTINELAS/replica_runner.py" --replica "$PROYECTO"
 
-      - name: Guardar réplica
+      - name: Guardar réplica fail-closed
         run: |
           git config user.name "sentinela-${PROYECTO}"
           git config user.email "sentinela@users.noreply.github.com"
@@ -80,12 +92,66 @@ jobs:
             chat) REP="chat" ;;
             fabrica) REP="fabrica" ;;
             plan4) REP="plan4" ;;
+            *) echo "::error::replica desconocida"; exit 1 ;;
           esac
 
           git add --sparse             "chat router/06-EQUIPO/SENTINELA-${REP}.md"             "chat router/07-SENTINELAS/estado-replicas/${REP}.json"             "chat router/07-SENTINELAS/ordenes/${REP}.yaml"
 
-          git commit -q -m "sentinela ${PROYECTO}: LOOP común" || exit 0
-          for i in 1 2 3; do
-            git pull -q --rebase origin main && git push -q origin HEAD:main && break
+          git commit -q -m "sentinela ${PROYECTO}: sincronizar LOOP común" || true
+
+          # Eliminar residuos no autorizados antes del rebase.
+          find "chat router" -type d \( -name '__pycache__' -o -name '.pytest_cache' \) -prune -exec rm -rf {} + 2>/dev/null || true
+          find "chat router" -name '*.pyc' -delete 2>/dev/null || true
+          git reset --hard -q HEAD
+
+          PUSHED=0
+          for i in 1 2 3 4 5; do
+            if timeout 90s git pull -q --rebase origin main &&
+               timeout 90s git push -q origin HEAD:main; then
+              PUSHED=1
+              echo "::notice::SENTINELA_REPLICA_GUARDADA ${PROYECTO}"
+              break
+            fi
+            git rebase --abort 2>/dev/null || true
+            git reset --hard -q HEAD
             sleep 3
           done
+
+          if [ "$PUSHED" -ne 1 ]; then
+            echo "::error::SENTINELA_REPLICA_PERSIST_FAIL ${PROYECTO}"
+            exit 1
+          fi
+
+  coherencia:
+    needs: sentinela
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+          fetch-depth: 1
+          sparse-checkout: |
+            chat router/07-SENTINELAS/estado-replicas
+          sparse-checkout-cone-mode: false
+
+      - name: Confirmar que las 3 réplicas usan la misma versión
+        run: |
+          git pull -q origin main
+          python - <<'PY'
+          import json, pathlib
+          base = pathlib.Path("chat router/07-SENTINELAS/estado-replicas")
+          versions = {}
+          for name in ("chat", "fabrica", "plan4"):
+              p = base / f"{name}.json"
+              assert p.is_file(), f"falta estado de {name}"
+              data = json.loads(p.read_text(encoding="utf-8"))
+              version = data.get("loop_version")
+              assert version, f"{name} no registró loop_version"
+              versions[name] = version
+
+          unique = set(versions.values())
+          print("LOOP_VERSIONS", versions)
+          assert len(unique) == 1, f"réplicas desincronizadas: {versions}"
+          print("SENTINELAS_SYNC_PASS", unique.pop())
+          PY
