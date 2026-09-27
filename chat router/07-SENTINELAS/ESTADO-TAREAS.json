@@ -173,7 +173,7 @@
   },
   "T04": {
     "attempt": 2,
-    "last_sha": "ca5bbd5e187f40e551185df95c6ac0cc6da7a948",
+    "last_sha": "064f8a6fe8cf6271ba5681e2f7092c9f6e3712fc",
     "evidence": {
       "faltan": [
         "pasarela.py",
@@ -236,8 +236,19 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar ejecutor",
-    "research_findings": []
+    "next_action": "vigilar: Guardar (commit primero; PASS → main, si no → mirror/T0X)",
+    "research_findings": [],
+    "runtime": {
+      "executor_active": true,
+      "run_id": 36356463372,
+      "job_id": 108725075033,
+      "active_step": "Guardar (commit primero; PASS → main, si no → mirror/T0X)",
+      "active_step_age_minutes": 0
+    },
+    "supervision": {
+      "action": "WATCH",
+      "reason": "Guardar (commit primero; PASS → main, si no → mirror/T0X)"
+    }
   },
   "T05": {
     "attempt": 1,
