@@ -111,25 +111,65 @@
     ]
   },
   "T03": {
-    "attempt": 1,
-    "last_sha": "9801e05520c989b87a0e7314a8fe0d9094430bce",
+    "attempt": 2,
+    "last_sha": "abd11ac81973f646c217e34a143d42f38b31013f",
     "evidence": {
       "faltan": [],
       "fugas": [],
-      "pytest_exit": 0,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.05s\n",
+      "pytest_exit": 1,
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.13s\n",
       "informe": true,
       "ultimo_commit": "36013c8bced86eda3d30ff47d69fe5880cc98f7e T03: probar retencion segura y bloqueo de puerto",
-      "veredicto": "PASS"
+      "veredicto": "REVISE",
+      "causa": "TESTS_FALLAN"
     },
-    "status": "PASS",
-    "last_failure": "",
+    "status": "REVISE",
+    "last_failure": "TESTS_FALLAN",
     "research_packet": {
-      "clave_busqueda": "NO_ENTREGADO",
-      "fuentes": [],
-      "analisis": "sin respuesta del modelo"
+      "sentinel_id": "sentinela-t03",
+      "failure": "TESTS_FALLAN",
+      "error_literal": ".........                                                                [100%]\n9 passed in 2.13s\n",
+      "queries": [
+        "T03  TESTS_FALLAN",
+        "T03 .........                                                                [100%]\n9 passed in 2.13s",
+        "TESTS_FALLAN GitHub issue fix",
+        "TESTS_FALLAN Stack Overflow",
+        "TESTS_FALLAN developer community"
+      ],
+      "sources": [
+        "GitHub Issues del componente",
+        "GitHub Discussions del componente",
+        "GitHub Pull Requests del componente",
+        "GitHub commits recientes del componente",
+        "GitHub Community",
+        "Stack Overflow",
+        "Reddit /r/programming",
+        "Reddit de la tecnología afectada",
+        "Hacker News",
+        "NVIDIA Developer Forums",
+        "NVIDIA NIM / API documentation",
+        "Aider issues y docs",
+        "Claude Code issues y docs",
+        "LiteLLM issues y docs",
+        "pytest documentation",
+        "Python Discuss",
+        "Vercel discussions/docs",
+        "GitHub Actions docs/community",
+        "Issues/docs de OmniRoute, Hermes u OpenClaw",
+        "Repositorio upstream exacto del componente"
+      ],
+      "min_independent_sources": 3,
+      "max_sources": 20,
+      "required_output": [
+        "root_cause",
+        "evidence",
+        "do_not_regenerate",
+        "repair_steps",
+        "acceptance_check"
+      ]
     },
-    "next_action": "ninguna"
+    "next_action": "espejo relanzado",
+    "research_findings": []
   },
   "T04": {
     "attempt": 1,
