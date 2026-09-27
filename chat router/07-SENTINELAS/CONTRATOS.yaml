@@ -47,7 +47,7 @@ tareas:
     objective: "OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor con backoff, retención DB)"
     scope: "chat router/08-OMNIROUTE"
     required_files: [start_omniroute.sh, supervisor_omniroute.py, mantenimiento_db.py, tests/test_supervisor.py, DIAGNOSTICO.md, README.md]
-    acceptance: "python -m pytest 'chat router/08-OMNIROUTE' -q && bash -n 'chat router/08-OMNIROUTE/start_omniroute.sh'"
+    acceptance: "python -m pytest 'chat router/08-OMNIROUTE' -q && bash -n 'chat router/08-OMNIROUTE/start_omniroute.sh' && grep -q 'VALIDACIÓN EXTERNA DE CIERRE' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'NODE_VERSION_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'OMNIROUTE_REF_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'BETTER_SQLITE3_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'HEALTH_ENDPOINT_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'VEREDICTO_FINAL: PASS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && test $(grep -Ec 'https?://' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md') -ge 3"
     dependencies: []
   T04:
     objective: "Pasarela Anthropic↔NVIDIA para que Claude Code trabaje con nuestros modelos"
