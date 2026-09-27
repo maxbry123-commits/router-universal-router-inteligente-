@@ -30,6 +30,7 @@ jobs:
             router inteligente universal/integration
             router inteligente universal/security
             router inteligente universal/red
+            router inteligente universal/tests
           sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
