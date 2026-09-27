@@ -77,7 +77,49 @@ jobs:
             git checkout -q FETCH_HEAD -- "$ALC" 2>/dev/null && echo "::notice::retomado trabajo previo de mirror/${TAREA}" || true
             git reset -q
           fi
+      - name: Preflight determinista antes de IA
+        id: pre
+        env:
+          ALC: ${{ steps.t.outputs.alcance }}
+          ARCH: ${{ steps.t.outputs.archivos }}
+        run: |
+          IFS=',' read -ra LISTA <<< "$ARCH"
+          COMPLETE=1
+          for a in "${LISTA[@]}"; do
+            a="$(echo "$a" | xargs)"
+            [ -z "$a" ] && continue
+            case "$a" in
+              */__init__.py|__init__.py) [ -e "$ALC/$a" ] || COMPLETE=0 ;;
+              *) [ -s "$ALC/$a" ] || COMPLETE=0 ;;
+            esac
+          done
+
+          if [ "$COMPLETE" -eq 1 ]; then
+            python - "$TAREA" <<'PY' > /tmp/acceptance.sh
+          import sys, yaml
+          tid=sys.argv[1]
+          cfg=yaml.safe_load(open("chat router/07-SENTINELAS/CONTRATOS.yaml", encoding="utf-8"))
+          print(cfg["tareas"][tid]["acceptance"])
+          PY
+            set +e
+            bash /tmp/acceptance.sh > /tmp/preflight.txt 2>&1
+            RC=$?
+            set -e
+            tail -20 /tmp/preflight.txt || true
+            if [ "$RC" -eq 0 ]; then
+              echo "skip_ai=true" >> "$GITHUB_OUTPUT"
+              echo "::notice::PRECHECK PASS — se omite Aider/LLM"
+            else
+              echo "skip_ai=false" >> "$GITHUB_OUTPUT"
+              echo "::warning::PRECHECK FAIL rc=$RC — entra Aider solo para corregir"
+            fi
+          else
+            echo "skip_ai=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::PRECHECK incompleto — entra Aider"
+          fi
+
       - name: Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)
+        if: steps.pre.outputs.skip_ai != 'true'
         id: m
         run: |
           python "chat router/06-ESPEJOS/puente/probar_modelos.py" espejo sk-espejo
@@ -87,6 +129,7 @@ jobs:
           print("modelo=" + p["model"].split("/", 1)[1]); print("clave=" + p["api_key"].split("/")[1])
           PY
       - name: Trabajar (Aider espejo)
+        if: steps.pre.outputs.skip_ai != 'true'
         env:
           ALC: ${{ steps.t.outputs.alcance }}
           ARCH: ${{ steps.t.outputs.archivos }}
@@ -144,10 +187,19 @@ jobs:
           for a in "${LISTA[@]}"; do a="$(echo "$a" | xargs)"; [ -z "$a" ] && continue; TOT=$((TOT+1))
             case "$a" in */__init__.py|__init__.py) [ -e "$ALC/$a" ] || : > "$ALC/$a"; OK=$((OK+1)); continue;; esac
             [ -s "$ALC/$a" ] && OK=$((OK+1)) || FALTAN="$FALTAN $a"; done
-          SIMULADO=1 python -m pytest "$ALC" -q > /tmp/pytest.txt 2>&1; RC=$?
-          tail -3 /tmp/pytest.txt | while read -r l; do echo "::notice::tests $l"; done
+          python - "$TAREA" <<'PY' > /tmp/acceptance.sh
+          import sys, yaml
+          tid=sys.argv[1]
+          cfg=yaml.safe_load(open("chat router/07-SENTINELAS/CONTRATOS.yaml", encoding="utf-8"))
+          print(cfg["tareas"][tid]["acceptance"])
+          PY
+          set +e
+          bash /tmp/acceptance.sh > /tmp/pytest.txt 2>&1
+          RC=$?
+          set -e
+          tail -3 /tmp/pytest.txt | while read -r l; do echo "::notice::acceptance $l"; done
           INF="chat router/06-ESPEJOS/informes/${TAREA}.md"
-          { echo; echo "## EVIDENCIA DEL WORKFLOW (${GITHUB_RUN_ID})"; echo "archivos: ${OK}/${TOT} · faltan:${FALTAN:- ninguno} · pytest exit: ${RC}"; echo '```'; tail -15 /tmp/pytest.txt; echo '```'; } >> "$INF"
+          { echo; echo "## EVIDENCIA DEL WORKFLOW (${GITHUB_RUN_ID})"; echo "archivos: ${OK}/${TOT} · faltan:${FALTAN:- ninguno} · acceptance exit: ${RC}"; echo '```'; tail -15 /tmp/pytest.txt; echo '```'; } >> "$INF"
           if [ "$OK" -eq "$TOT" ] && [ "$RC" -eq 0 ]; then V=PASS; else V=REVISE; fi
           echo "::notice::VEREDICTO ${V} archivos ${OK}/${TOT} pytest=${RC}"
           echo "veredicto=$V" >> "$GITHUB_OUTPUT"
