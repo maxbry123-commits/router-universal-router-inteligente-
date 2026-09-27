@@ -1,0 +1,129 @@
+name: Equipo Claude Code (espejos)
+
+# Espejos de Claude Code trabajando en paralelo, cada uno en SU rama (main nunca se toca).
+# Modelos: NVIDIA (claves del Router) a través de un puente LiteLLM local → Claude Code no usa la API de Anthropic.
+# Cada espejo lee su tarea de "chat router/06-EQUIPO/TAREAS/<id>.md", trabaja hasta 5 h y deja rama + PR para que Opus revise.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tareas:
+        description: "IDs de tareas separados por coma"
+        default: "chat-01,fabrica-01"
+
+permissions:
+  contents: read
+
+jobs:
+  preparar:
+    runs-on: ubuntu-latest
+    outputs:
+      lista: ${{ steps.l.outputs.lista }}
+    steps:
+      - id: l
+        run: python3 -c "import json,os;print('lista='+json.dumps([t.strip() for t in os.environ['T'].split(',') if t.strip()]))" >> "$GITHUB_OUTPUT"
+        env:
+          T: ${{ inputs.tareas }}
+
+  espejo:
+    needs: preparar
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        tarea: ${{ fromJson(needs.preparar.outputs.lista) }}
+    env:
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
+      NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+      NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+      NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+      NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
+      TAREA: ${{ matrix.tarea }}
+    steps:
+      - name: Contexto (instrucciones y plan del Director)
+        uses: actions/checkout@v4
+        with:
+          path: contexto
+          persist-credentials: false
+          sparse-checkout: |
+            chat router
+          sparse-checkout-cone-mode: false
+      - name: Leer la tarea
+        id: t
+        run: |
+          python3 - <<'PY'
+          import os, re, pathlib
+          txt = pathlib.Path(f"contexto/chat router/06-EQUIPO/TAREAS/{os.environ['TAREA']}.md").read_text(encoding="utf-8")
+          meta = dict(re.findall(r"^(\w+):\s*\"?([^\"\n]+)\"?\s*$", txt.split("---")[1], re.M))
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              for k in ("repo", "rama_base", "carpeta_trabajo", "estado"):
+                  f.write(f"{k}={meta.get(k, '')}\n")
+          PY
+      - name: Repo de trabajo
+        run: |
+          git clone -q --depth 1 --branch "${{ steps.t.outputs.rama_base }}" --filter=blob:none --no-checkout \
+            "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/${{ steps.t.outputs.repo }}.git" trabajo
+          cd trabajo
+          git sparse-checkout init --no-cone
+          printf '/%s/\n/chat router/\n' "${{ steps.t.outputs.carpeta_trabajo }}" > .git/info/sparse-checkout
+          git checkout -q
+          git checkout -q -b "mirror/${TAREA}-${{ github.run_id }}"
+          cp -r "../contexto/chat router" ./.contexto-chat-router 2>/dev/null || true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar Claude Code + puente LiteLLM → NVIDIA
+        run: |
+          npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
+          pip install -q "litellm[proxy]" pytest
+          cat > /tmp/litellm.yaml <<'YML'
+          model_list:
+            - model_name: yaiwes
+              litellm_params: {model: nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct, api_key: os.environ/NVIDIA_API_KEY_1}
+            - model_name: yaiwes
+              litellm_params: {model: nvidia_nim/moonshotai/kimi-k2-instruct, api_key: os.environ/NVIDIA_API_KEY_2}
+            - model_name: yaiwes
+              litellm_params: {model: nvidia_nim/deepseek-ai/deepseek-v3.1, api_key: os.environ/NVIDIA_API_KEY_3}
+            - model_name: yaiwes
+              litellm_params: {model: nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct, api_key: os.environ/NVIDIA_API_KEY_4}
+            - model_name: "*"
+              litellm_params: {model: nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct, api_key: os.environ/NVIDIA_API_KEY_1}
+          router_settings: {num_retries: 3, allowed_fails: 2, cooldown_time: 30}
+          litellm_settings: {drop_params: true}
+          general_settings: {master_key: sk-yaiwes-local}
+          YML
+          nohup litellm --config /tmp/litellm.yaml --port 4000 > /tmp/litellm.log 2>&1 &
+          for i in $(seq 1 30); do curl -s localhost:4000/health/liveliness >/dev/null && break; sleep 2; done
+      - name: Trabajar (Claude Code espejo, hasta 5 h)
+        working-directory: trabajo
+        env:
+          ANTHROPIC_BASE_URL: http://127.0.0.1:4000
+          ANTHROPIC_AUTH_TOKEN: sk-yaiwes-local
+          ANTHROPIC_MODEL: yaiwes
+          ANTHROPIC_SMALL_FAST_MODEL: yaiwes
+          DISABLE_TELEMETRY: "1"
+        run: |
+          PROMPT="Eres un espejo de Claude Code del equipo YAIWES. Ejecuta COMPLETA la tarea de abajo, de principio a fin, sin pedir confirmación.
+          Los archivos del repo router (instrucciones, plan) están copiados en ./.contexto-chat-router/ (equivale a 'chat router/').
+          Trabaja SOLO dentro de '${{ steps.t.outputs.carpeta_trabajo }}'. Al final ejecuta las pruebas y corrige hasta que pasen.
+          Escribe un resumen de 10 líneas en '${{ steps.t.outputs.carpeta_trabajo }}/ENTREGA-${TAREA}.md' (qué hiciste, pruebas, pendientes).
+
+          $(cat "../contexto/chat router/06-EQUIPO/TAREAS/${TAREA}.md")"
+          timeout 18000 claude -p "$PROMPT" --dangerously-skip-permissions --max-turns 120 --output-format text | tail -200 || echo "::warning::el espejo terminó con error o por tiempo; se guarda lo avanzado"
+          tail -30 /tmp/litellm.log || true
+      - name: Guardar en su rama + PR
+        if: always()
+        working-directory: trabajo
+        run: |
+          rm -rf ./.contexto-chat-router
+          git config user.name "espejo-claude-code"; git config user.email "espejo@users.noreply.github.com"
+          git add --sparse -A "${{ steps.t.outputs.carpeta_trabajo }}" || true
+          git commit -q -m "espejo ${TAREA}: entrega (run ${{ github.run_id }})" || { echo "::warning::sin cambios"; exit 0; }
+          git push -q origin HEAD
+          gh pr create --repo "maxbry123-commits/${{ steps.t.outputs.repo }}" --base "${{ steps.t.outputs.rama_base }}" --head "mirror/${TAREA}-${{ github.run_id }}" \
+            --title "Espejo ${TAREA} (run ${{ github.run_id }})" --body "Entrega del espejo de Claude Code. Revisa ENTREGA-${TAREA}.md. Opus revisa antes del merge." || true
+          echo "::notice::rama mirror/${TAREA}-${{ github.run_id }} en ${{ steps.t.outputs.repo }}"
