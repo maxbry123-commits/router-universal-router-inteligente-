@@ -158,7 +158,7 @@ def auditar_ultimo_ejecutor(tid: str) -> dict:
             lrc, log = sh([
                 "gh", "run", "view", str(run_id), "-R", REPO,
                 "--job", str(job_id), "--log",
-            ], timeout=90)
+            ], timeout=30)
             if lrc != 0:
                 log = ""
             path_escapes = log.count("FAIL_PATH_ESCAPE")
