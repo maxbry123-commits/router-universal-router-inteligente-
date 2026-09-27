@@ -281,7 +281,7 @@
   },
   "T05": {
     "attempt": 2,
-    "last_sha": "ddde664de075708475d1ff7f7739d38e3f26218c",
+    "last_sha": "93b5e4ad7f3a7aa66c45b4baba8e3efdabf452a9",
     "evidence": {
       "faltan": [
         "action_registry.py",
@@ -360,7 +360,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "vigilar: Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)",
+    "next_action": "vigilar: Trabajar (Aider espejo)",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -382,12 +382,12 @@
       "executor_active": true,
       "run_id": 36358304167,
       "job_id": 108730331266,
-      "active_step": "Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)",
-      "active_step_age_minutes": 0
+      "active_step": "Trabajar (Aider espejo)",
+      "active_step_age_minutes": 1
     },
     "supervision": {
       "action": "WATCH",
-      "reason": "Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)"
+      "reason": "Trabajar (Aider espejo)"
     }
   },
   "T06": {
