@@ -92,7 +92,7 @@ def espejos_activos() -> dict[str, dict]:
         _, jobs = sh([
             "gh", "run", "view", str(run_id),
             "-R", REPO, "--json", "jobs",
-        ])
+        ], timeout=20)
         for job in json.loads(jobs or "{}").get("jobs", []):
             name = job.get("name", "")
             if job.get("status") == "completed" or "(" not in name:
@@ -141,8 +141,8 @@ def auditar_ultimo_ejecutor(tid: str) -> dict:
     """Lee el último job completado de la tarea y conserva anomalías recuperadas."""
     rc, out = sh([
         "gh", "run", "list", "-R", REPO, "-w", WF,
-        "-s", "completed", "--json", "databaseId,conclusion,createdAt", "-L", "12",
-    ])
+        "-s", "completed", "--json", "databaseId,conclusion,createdAt", "-L", "4",
+    ], timeout=20)
     if rc != 0:
         return {}
     for run in json.loads(out or "[]"):
