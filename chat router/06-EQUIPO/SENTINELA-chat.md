@@ -1,9 +1,9 @@
-# SENTINELA-CHAT — 2026-09-27T23:04Z
+# SENTINELA-CHAT — 2026-09-27T23:05Z
 (LOOP común · versión: 1a36c3b6f8bb2dd9 · modelo investigador: no requerido)
 
 OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
 ESTADO LOOP: ACTIVE · executor_active
-OBSERVED_SHA: 1b5e5278a534
+OBSERVED_SHA: e23bbf438493
 
 PRIORIDADES:
 1. T01 gobierno: código + tests reales + informe + commit en main
