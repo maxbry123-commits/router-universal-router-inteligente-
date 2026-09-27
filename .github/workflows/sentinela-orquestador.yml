@@ -16,6 +16,8 @@ on:
       - '.github/workflows/sentinela-orquestador.yml'
       - 'chat router/07-SENTINELAS/FOCUS.yaml'
       - 'chat router/07-SENTINELAS/CONTRATOS.yaml'
+      - 'chat router/07-SENTINELAS/sentinela_orquestador.py'
+      - 'chat router/07-SENTINELAS/REPLICAS.yaml'
       - 'chat router/06-EQUIPO/ORDENES.md'
       - 'chat router/06-ESPEJOS/tareas/**'
       - 'chat router/05-AGENTES/**'
