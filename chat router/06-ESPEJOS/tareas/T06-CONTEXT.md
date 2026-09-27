@@ -1,10 +1,9 @@
 # T06 — CONTEXTO COMPACTO DE EJECUCIÓN
 
-OBJETIVO: Hermes y OpenClaw como asistentes del orquestador/chat usando SOLO
-nuestro camino NVIDIA/OpenAI-compatible, sin Anthropic.
+OBJETIVO: integrar Hermes y OpenClaw como asistentes/supervisores del chat y
+orquestador usando SOLO nuestro Router/NVIDIA. No tocar el Router principal.
 
-ALCANCE ÚNICO:
-chat router/05-AGENTES/asistentes
+ALCANCE ÚNICO: chat router/05-AGENTES/asistentes
 
 ARCHIVOS:
 - hermes_config.yaml
@@ -13,78 +12,78 @@ ARCHIVOS:
 - arrancar_asistentes.sh
 - puente_asistentes.py
 - heartbeat.py
+- __init__.py
 - tests/__init__.py
 - tests/test_asistentes.py
 - README.md
 
-## Evidencia verificada en los forks
+## EVIDENCIA DE LOS FORKS REALES
 
 Hermes fork:
 - repo: https://github.com/maxbry123-commits/hermes-agent
-- main observado: ca16be564d0a95f86bd6da44bb41d39cde9db089
-- README actual: CLI hermes, hermes model, hermes gateway.
-- docs/providers: provider NVIDIA oficial usa NVIDIA_API_KEY.
-- también soporta endpoint OpenAI-compatible con OPENAI_BASE_URL/base_url.
-- config admite variables ${VAR_NAME}.
+- default branch real: main
+- README actual: CLI `hermes`, selector `hermes model`, gateway `hermes gateway`
+- soporta endpoints/modelos propios y proveedores OpenAI-compatible.
+- el ref literal `v2026.9.24` NO existe como tag en el fork actual.
+- pyproject actual usa version dinámica/placeholder 0.0.0; NO inferir versión por eso.
+- usar main/commit real del fork, no `git clone --branch v2026.9.24`.
 
 OpenClaw fork:
 - repo: https://github.com/maxbry123-commits/openclaw
-- main observado: 038b10b48de03f67c191ec6db15b484aebae8a9c
-- Gateway = plano de control.
-- config real: ~/.openclaw/openclaw.json (JSON5).
-- configuración tiene validación estricta; claves desconocidas impiden arrancar.
-- provider NVIDIA oficial: id nvidia, auth NVIDIA_API_KEY.
-- custom providers se declaran en models.providers con baseUrl/api/model list.
-- source install actual: pnpm workspace; no asumir npm install en raíz.
+- default branch real: main
+- package.json actual declara version 2026.9.6.
+- el ref literal `v2026.9.6` NO existe como tag en el fork actual.
+- config runtime nativa: ~/.openclaw/openclaw.json (JSON5), validación estricta.
+- custom providers viven bajo models.providers.
+- source install: pnpm install + pnpm build; npm install raíz NO soportado.
+- gateway real: `openclaw gateway ...`.
 
-## GAP de refs de la tarea
-Los refs escritos originalmente:
-- Hermes v2026.9.24
-- OpenClaw v2026.9.6
-NO existen como refs en los forks actuales (GitHub devuelve 404).
-NO inventar tags. Usar main del fork o un SHA real comprobado. El script debe
-permitir HERMES_REF/OPENCLAW_REF por env, con main como fallback.
+## REGLA SOBRE LOS YAML DE T06
 
-## Configuración preferida
-Hermes:
-- provider: nvidia
-- NVIDIA_API_KEY por env
-- modelo por env, Kimi K3 por defecto si está disponible en catálogo.
-- no guardar ninguna clave.
+`hermes_config.yaml` y `openclaw_config.yaml` son CONFIG DE NUESTRO ADAPTADOR.
+NO fingir que son los archivos nativos de los frameworks.
+El adaptador debe traducir esos YAML a variables/comandos/config nativa donde haga falta.
 
-OpenClaw:
-- provider/model compatible mediante configuración oficial.
-- NVIDIA_API_KEY por env.
-- config debe ser JSON5/esquema válido; no inventar root keys.
-- validar config/doctor antes de arrancar cuando no esté en SIMULADO.
-
-## Roles
+## ROLES
 Hermes = planner_supervisor:
 plan, critique, review, debate, delegate.
 
 OpenClaw = guardian_supervisor:
 plan, critique, review, debate, monitor, heartbeat.
 
-## Orden
-1. Escribir tests/test_asistentes.py primero (SIMULADO=1, cero red).
-2. hermes_config.yaml + openclaw_config.yaml.
-3. puente_asistentes.py + emit().
-4. heartbeat.py.
-5. arrancar_asistentes.sh.
-6. hermes.md + README.md.
-7. Ejecutar aceptación completa; corregir solo traceback real.
+## ROUTER
+- base OpenAI-compatible: https://integrate.api.nvidia.com/v1
+- modelo por env; Kimi K3 por defecto.
+- clave por NOMBRE de variable de entorno; jamás escribir secreto.
+- nunca Anthropic.
+- SIMULADO=1: cero red.
 
-## Estado/eventos
-- Nunca escribir STATE.json a mano.
-- Si existe State Hub usarlo.
-- fallback permitido: append JSONL a chat router/03-ESTADO/BITACORA.jsonl.
-- heartbeat >30 min sin actividad => ALERTA; sano => NO_REPLY.
+## ORDEN
+1. tests/test_asistentes.py primero.
+2. puente_asistentes.py + emit() + SIMULADO.
+3. heartbeat.py: >30 min sin heartbeat => ALERTA; normal => NO_REPLY.
+4. YAML adaptadores.
+5. arrancar_asistentes.sh usando comandos REALES:
+   - Hermes: main del fork y CLI/gateway Hermes.
+   - OpenClaw: main del fork, pnpm, openclaw gateway.
+6. hermes.md.
+7. README.
+8. pytest + bash -n; corregir solo traceback real.
 
-## Reglas
-- NO Anthropic.
-- NO claves hardcoded.
-- NO escribir fuera del ALCANCE, salvo emit() runtime al fallback declarado.
-- NO duplicar "chat router/".
-- NO copiar README de .pytest_cache u otra tarea.
-- Máximo 500 líneas/archivo.
-- PASS solo con pytest real exit 0 + bash -n + checks independientes.
+## STATE HUB
+No escribir STATE.json a mano.
+Si existe API/función State Hub, usarla.
+Fallback permitido: append JSONL a chat router/03-ESTADO/BITACORA.jsonl.
+
+## DESVIACIÓN DEL INTENTO ANTERIOR
+El run anterior generó archivos bajo:
+chat router/chat router/05-AGENTES/asistentes/...
+El recuperador viejo además tomó README de .pytest_cache.
+Eso ya fue corregido en infraestructura. NO repetir ni buscar archivos por basename.
+
+## PASS
+- archivos completos
+- SIMULADO=1 pytest exit 0
+- bash -n arrancar_asistentes.sh exit 0
+- checks independientes de roles/router/gateway/heartbeat
+- informe con salida real
