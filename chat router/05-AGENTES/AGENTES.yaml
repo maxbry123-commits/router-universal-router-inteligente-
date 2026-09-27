@@ -1,0 +1,58 @@
+# 05-AGENTES — EQUIPO DEL CHAT YAIWES (registro único)
+# Todos los agentes del chat viven aquí: cada uno tiene su carpeta con CLAUDE.md, MEMORIA.md, SKILLS.md, HANDOFF.md, inbox/.
+# El código fuente descargado NO se mueve (pesa GB): se referencia por ruta; los forks del Director se referencian por repo.
+# Todos usan NUESTRO Router (R05). Jerarquía = doc23. Cadena de ingeniería = doc22. Estado = State Hub (03-ESTADO).
+schema: yaiwes.agentes/v1
+router: "LIVE_URL en router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag · modelos por /chat/send y /omniroute/v1"
+codigo_descargado: "router inteligente universal/Componente open soure router inteligente universal/"
+
+jerarquia:   # niveles 0-8 (doc23)
+  - {nivel: 1, id: rowboat,   rol: director,            codigo: "Componente…/rowboat",                 carpeta: rowboat/}
+  - {nivel: 2, id: hermes,    rol: planner_supervisor,  fork: "maxbry123-commits/hermes-agent (v2026.9.24)", carpeta: hermes/}
+  - {nivel: 2, id: openclaw,  rol: guardian_supervisor, fork: "maxbry123-commits/openclaw (v2026.9.6)",      carpeta: openclaw/}
+  - {nivel: 3, id: sheriff,   rol: policy_gate,         tipo: codigo, carpeta: gobierno/}
+  - {nivel: 4, id: ruflo,     rol: swarm_orchestrator,  codigo: "Componente…/ruflo",                    carpeta: ruflo/}
+  - {nivel: 6, id: sentinel,  rol: runtime_watchdog,    tipo: codigo, carpeta: gobierno/}
+  - {nivel: 8, id: judge,     rol: final_verifier,      tipo: codigo, carpeta: gobierno/}
+
+colmena_ingenieria:   # nivel 5 — se replica por MIRROR (doc22, M43)
+  - {id: claude_architect,   rol: DESIGN_ONLY,            agente: "Claude Code (modelos del Router)", codigo: "Componente…/claude-code"}
+  - {id: grok_executor,      rol: IMPLEMENT,              agente: "Grok (GrokBot / Grok Build GUI)",  codigo: ["Componente…/GrokBot", "Componente…/grok-build-gui"]}
+  - {id: claude_reviewer,    rol: REVIEW_AND_CORRECT,     agente: "Claude Code (modelos del Router)"}
+  - {id: meta_1_code,        rol: CODE_REVIEW,            agente: "Muse Code",    codigo: "agents-yaiwes/donors/ (muse-code-sdk)"}
+  - {id: meta_2_tests,       rol: TEST_INTEGRATION,       agente: "Muse Glimmer", codigo: "agents-yaiwes/donors/ (meta-oss-cookbook)"}
+  - {id: meta_3_visual,      rol: VISUAL_UI_QA,           agente: "MetaCua",      codigo: "agents-yaiwes/donors/ (13_macos_cua)"}
+  - {id: meta_4_adversarial, rol: BREAK_FIND_IMPROVE,     agente: "CUA + MCP",    codigo: "agents-yaiwes/donors/ (12_computer_use)"}
+  - {id: meta_fixer,         rol: APPLY_META_CORRECTIONS, agente: "Muse Code"}
+
+apoyo: [ {id: msaf, codigo: "Componente…/microsoft-agent-framework"}, {id: codex}, {id: mimo_code, codigo: "Componente…/mimo-code"} ]
+
+grafo:   # aristas del equipo (M43 "todos como grafos conectados")
+  - [director, rowboat]
+  - [rowboat, hermes]
+  - [rowboat, openclaw]
+  - [hermes, sheriff]
+  - [openclaw, sheriff]
+  - [sheriff, ruflo]
+  - [ruflo, claude_architect]
+  - [claude_architect, grok_executor]
+  - [grok_executor, claude_reviewer]
+  - [claude_reviewer, grok_executor]      # corregir
+  - [claude_reviewer, meta_1_code]
+  - [claude_reviewer, meta_2_tests]
+  - [claude_reviewer, meta_3_visual]
+  - [claude_reviewer, meta_4_adversarial]
+  - [meta_1_code, meta_fixer]
+  - [meta_2_tests, meta_fixer]
+  - [meta_3_visual, meta_fixer]
+  - [meta_4_adversarial, meta_fixer]
+  - [meta_fixer, sentinel]
+  - [sentinel, hermes]
+  - [sentinel, openclaw]
+  - [hermes, judge]
+  - [openclaw, judge]
+
+por_hacer:   # nodos C-1..C-5 del plan (01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml)
+  - "C-1: arrancar hermes y openclaw con modelos del Router + State Hub + /chat/agents"
+  - "C-2: rowboat, ruflo; sheriff/sentinel/judge como código en gobierno/"
+  - "C-3: EngineeringLoop con la colmena; C-4: MirrorManager; C-5: acceso HF + todos los repos"
