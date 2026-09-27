@@ -1,6 +1,7 @@
 name: Prueba claves Groq
 
 # Prueba real de GROQ_API_KEY_1..7 (secretos del repo): catálogo de modelos por clave + 1 respuesta real.
+# 2026-09-27: con User-Agent explícito (Groq/Cloudflare devuelve 403 al agente por defecto de urllib).
 # Deja el resumen de modelos disponibles en los avisos (nunca imprime claves).
 
 on:
@@ -22,29 +23,32 @@ jobs:
       K6: ${{ secrets.GROQ_API_KEY_6 }}
       K7: ${{ secrets.GROQ_API_KEY_7 }}
     steps:
+      - run: pip install -q requests
       - run: |
           python3 - <<'PY'
-          import json, os, urllib.request
+          import os, requests
           B = "https://api.groq.com/openai/v1"
+          UA = {"User-Agent": "yaiwes-router/1.0 (+github actions)"}
           def call(path, key, body=None):
-              req = urllib.request.Request(B + path, data=json.dumps(body).encode() if body else None,
-                                           headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+              h = {**UA, "Authorization": f"Bearer {key}"}
               try:
-                  with urllib.request.urlopen(req, timeout=30) as r: return r.status, json.loads(r.read())
-              except urllib.error.HTTPError as e: return e.code, {}
-              except Exception as e: return 0, {"err": type(e).__name__}
+                  r = requests.post(B + path, json=body, headers=h, timeout=30) if body else requests.get(B + path, headers=h, timeout=30)
+                  return r.status_code, (r.json() if r.headers.get("content-type", "").startswith("application/json") else {"txt": r.text[:160]})
+              except Exception as e:
+                  return 0, {"err": type(e).__name__}
           vivas, modelos = 0, set()
           for i in range(1, 8):
               key = os.environ.get(f"K{i}", "")
               if not key: print(f"::warning::GROQ_API_KEY_{i} vacía"); continue
               code, data = call("/models", key)
               ids = [m["id"] for m in data.get("data", [])] if code == 200 else []
+              if code != 200: print(f"::warning::GROQ_API_KEY_{i} catalogo={code} detalle={str(data)[:160]}")
               modelos.update(ids)
               pref = next((m for m in ids if "kimi" in m), None) or next((m for m in ids if "llama-3.3-70b" in m), None) or (ids[0] if ids else None)
               ok = "-"
               if pref:
                   c2, d2 = call("/chat/completions", key, {"model": pref, "messages": [{"role": "user", "content": "Responde solo: OK"}], "max_tokens": 5})
-                  ok = f"{c2} {d2.get('choices', [{}])[0].get('message', {}).get('content', '')!r}" if c2 == 200 else str(c2)
+                  ok = f"{c2} {d2.get('choices', [{}])[0].get('message', {}).get('content', '')!r}" if c2 == 200 else f"{c2} {str(d2)[:120]}"
                   vivas += c2 == 200
               print(f"::notice::GROQ_API_KEY_{i}: catalogo={code} modelos={len(ids)} prueba[{pref}]={ok}")
           print(f"::notice::GROQ claves vivas {vivas}/7 · modelos: {', '.join(sorted(modelos))[:900]}")
