@@ -1,10 +1,10 @@
 name: Claude Code Espejos
 
-# Orden del Director 2026-09-27: espejos de Claude Code que trabajan solos con los modelos de NUESTRO Router
-# (NVIDIA con sus 4 claves; Cerebras si responde; vía LiteLLM; sin APIs de Anthropic). Cada espejo = 1 archivo de tarea.
+# Orden del Director 2026-09-27: espejos que trabajan solos con los modelos de NUESTRO Router (NVIDIA; sin Anthropic).
+# Motor de los espejos: AIDER (agente de programación open source, nativo para modelos OpenAI-compatibles como NVIDIA).
+#   Claude Code se probó primero: con Kimi K3 vía puente sus llamadas de herramientas se cortaban (leía 1 archivo y paraba).
+# Modelo: el que responde de verdad según probar_modelos.py (Kimi K3 > GLM-5 > DeepSeek V4 > otro NVIDIA).
 # Reglas duras: solo escribe dentro de su ALCANCE (una carpeta); NUNCA toca el Router, HF, secretos ni workflows. Vida máx.: 5 h.
-# El puente usa chat router/06-ESPEJOS/puente/probar_modelos.py: prueba cada modelo con cada clave y solo usa los que responden
-# (vueltas anteriores fallaron por modelo retirado 410, no habilitado 404 y Cerebras sin pago 402).
 
 on:
   workflow_dispatch:
@@ -36,6 +36,10 @@ jobs:
         tarea: ${{ fromJson(needs.preparar.outputs.lista) }}
     env:
       TAREA: ${{ matrix.tarea }}
+      NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+      NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+      NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+      NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,16 +48,11 @@ jobs:
           sparse-checkout: |
             chat router
           sparse-checkout-cone-mode: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Instalar Claude Code + puente LiteLLM
-        run: |
-          npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
-          pip install -q "litellm[proxy]" pyyaml pytest requests
+      - name: Instalar Aider
+        run: pip install -q aider-chat pyyaml pytest requests
       - name: Leer alcance de la tarea
         id: t
         run: |
@@ -63,40 +62,39 @@ jobs:
           test -n "$ALC" || { echo "::error::la tarea no declara ALCANCE"; exit 1; }
           case "$ALC" in ".github"*|"router inteligente universal"*) echo "::error::alcance prohibido"; exit 1;; esac
           echo "alcance=$ALC" >> "$GITHUB_OUTPUT"
-      - name: Puente con modelos probados (NVIDIA x4 claves + Cerebras si responde)
-        env:
-          NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
-          NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
-          NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
-          NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
-          CEREBRAS_API_KEY: ${{ secrets.CEREBRAS_API_KEY_1 }}
+      - name: Elegir modelo que responde (Kimi K3 > GLM-5 > DeepSeek V4 > otro)
+        id: m
         run: |
           python "chat router/06-ESPEJOS/puente/probar_modelos.py" espejo sk-espejo
-          nohup litellm --config /tmp/litellm.yaml --port 4000 > /tmp/litellm.log 2>&1 &
-          for i in $(seq 1 45); do curl -sf -H "Authorization: Bearer sk-espejo" localhost:4000/health/liveliness >/dev/null && break; sleep 2; done
-          R=$(curl -s -m 120 localhost:4000/v1/messages -H "x-api-key: sk-espejo" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
-              -d '{"model":"espejo","max_tokens":20,"messages":[{"role":"user","content":"Responde solo: OK"}]}')
-          echo "::notice::PRUEBA_PUENTE $(echo "$R" | head -c 250)"
-          echo "$R" | grep -q '"content"' || { echo "::error::el puente no responde"; exit 1; }
-      - name: Trabajar (Claude Code espejo)
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import yaml
+          p = yaml.safe_load(open("/tmp/litellm.yaml"))["model_list"][0]["litellm_params"]
+          print("modelo=" + p["model"].split("/", 1)[1]); print("clave=" + p["api_key"].split("/")[1])
+          PY
+      - name: Trabajar (Aider espejo)
         env:
-          ANTHROPIC_BASE_URL: http://localhost:4000
-          ANTHROPIC_API_KEY: sk-espejo
-          ANTHROPIC_MODEL: espejo
-          ANTHROPIC_SMALL_FAST_MODEL: espejo
-          DISABLE_TELEMETRY: "1"
-          DISABLE_AUTOUPDATER: "1"
           ALC: ${{ steps.t.outputs.alcance }}
+          MODELO: ${{ steps.m.outputs.modelo }}
+          CLAVE: ${{ steps.m.outputs.clave }}
         run: |
-          REGLAS="Eres el espejo ${TAREA} del equipo YAIWES. Lee primero 'chat router/03-ESTADO/HANDOFF.md' y 'chat router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml'. SOLO puedes crear o editar archivos dentro de la carpeta '${ALC}' y el informe 'chat router/06-ESPEJOS/informes/${TAREA}.md'. PROHIBIDO tocar: .github/, 'router inteligente universal/', ROUTER_JOB_PAUSE.flag, secretos, HF. No escribas claves. Reutiliza código descargado antes de escribir nuevo. Cada archivo con su prueba y ejecútala. Al terminar escribe el informe con: qué hiciste, archivos, pruebas (resultado real) y qué falta (GAP)."
-          mkdir -p "chat router/06-ESPEJOS/informes"
-          timeout 17400 claude -p "$REGLAS
-
-          TAREA:
-          $(cat "chat router/06-ESPEJOS/tareas/${TAREA}.md")" --model espejo --dangerously-skip-permissions --max-turns 150 > /tmp/claude.log 2>&1
-          RC=$?
-          echo "::notice::claude terminó rc=$RC líneas=$(wc -l < /tmp/claude.log)"
-          tail -10 /tmp/claude.log | while read -r l; do echo "::notice::claude $(echo "$l" | head -c 250)"; done
+          export OPENAI_API_KEY="${!CLAVE}"; export OPENAI_API_BASE="https://integrate.api.nvidia.com/v1"
+          mkdir -p "$ALC/tests" "chat router/06-ESPEJOS/informes"
+          git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
+          { echo "Eres el espejo ${TAREA} del equipo YAIWES del Director Max."
+            echo "SOLO crea o edita archivos dentro de la carpeta '${ALC}' y el informe 'chat router/06-ESPEJOS/informes/${TAREA}.md'."
+            echo "PROHIBIDO tocar .github/, 'router inteligente universal/', secretos, HF. No escribas claves. Máximo 500 líneas por archivo."
+            echo "Crea TODOS los archivos pedidos con su contenido completo, ejecuta los tests y corrige hasta que pasen."
+            echo "Al final escribe el informe con: archivos creados, salida real de los tests y GAP (lo que falte)."
+            echo; echo "TAREA:"; cat "chat router/06-ESPEJOS/tareas/${TAREA}.md"; } > /tmp/tarea.txt
+          LEER=""
+          for f in "chat router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-PARTE-5-B-DOCS-22-23.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && LEER="$LEER --read \"$f\""; done
+          eval timeout 17400 aider --model "openai/${MODELO}" --yes-always --no-auto-commits --no-show-model-warnings \
+            --no-check-update --no-analytics --map-tokens 0 $LEER \
+            --auto-test --test-cmd "\"python -m pytest '${ALC}/tests' -q\"" \
+            --message-file /tmp/tarea.txt > /tmp/aider.log 2>&1
+          echo "::notice::aider terminó rc=$? modelo=${MODELO}"
+          tail -12 /tmp/aider.log | while read -r l; do echo "::notice::aider $(echo "$l" | head -c 220)"; done
+          echo "::notice::archivos en alcance: $(find "$ALC" -type f | wc -l)"
       - name: Guardar solo lo que está dentro del alcance
         if: always()
         env:
