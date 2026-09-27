@@ -7,7 +7,7 @@ import sqlite3
 import socket
 import time
 from urllib.parse import urlparse
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 from pathlib import Path
 from typing import Any
 
@@ -116,6 +116,17 @@ class ComponentAdapter:
     def __init__(self, name: str) -> None:
         self.name = name
 
+    def _endpoint(self) -> str | None:
+        env_name = {"graphiti": "RIU_GRAPHITI_URL", "memanto": "RIU_MEMANTO_URL", "graphify": "RIU_GRAPHIFY_URL", "agentdb": "RIU_AGENTDB_URL"}.get(self.name)
+        return os.getenv(env_name) if env_name else None
+
+    def _request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
+        endpoint = (self._endpoint() or "").rstrip("/") + path
+        body = json.dumps(payload).encode("utf-8") if payload is not None else None
+        request = Request(endpoint, data=body, method=method, headers={"Content-Type": "application/json"})
+        with urlopen(request, timeout=3) as response:
+            return json.loads(response.read().decode("utf-8"))
+
     def health(self) -> dict[str, Any]:
         item = _component(self.name)
         downloaded = _downloaded(self.name)
@@ -142,12 +153,29 @@ class ComponentAdapter:
         return {"name": self.name, "source_status": source_status, "runtime_status": runtime_status, "configured": configured, "path": downloaded.get("target") or item.get("path"), "sha": downloaded.get("tree_sha256") or item.get("sha")}
 
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
+        if self._endpoint():
+            try:
+                return {"adapter": self.name, "status": "SAVED", "response": self._request("POST", "/save", {"scope": scope, "key": key, "data": data})}
+            except Exception:  # noqa: BLE001
+                pass
         return {"adapter": self.name, "status": "GAP", "reason": "no verified runtime contract"}
 
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
+        if self._endpoint():
+            try:
+                response = self._request("GET", f"/load?scope={scope}&key={key}")
+                return response.get("records", response if isinstance(response, list) else [])
+            except Exception:  # noqa: BLE001
+                pass
         return []
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
+        if self._endpoint():
+            try:
+                response = self._request("GET", f"/search?scope={scope}&query={query}&k={k}")
+                return response.get("records", response if isinstance(response, list) else [])
+            except Exception:  # noqa: BLE001
+                pass
         return []
 
 
@@ -165,13 +193,21 @@ class MemoryFacade:
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
         saved = self.sqlite.save(scope, key, data)
         self.graph.save(scope, key, data)
-        return {"status": "SAVED", "adapter": "sqlite", **saved}
+        replicas = {name: adapter.save(scope, key, data) for name, adapter in self.components.items() if adapter._endpoint()}
+        return {"status": "SAVED", "adapter": "sqlite", "replicas": replicas, **saved}
 
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
-        return self.sqlite.load(scope, key)
+        records = list(self.sqlite.load(scope, key))
+        for adapter in self.components.values():
+            records.extend(adapter.load(scope, key))
+        return records
 
     def search(self, scope: str, query: str, k: int = 10) -> dict[str, Any]:
-        return {"sqlite": self.sqlite.search(scope, query, k), "graph": self.graph.search(scope, query, k)}
+        results = {"sqlite": self.sqlite.search(scope, query, k), "graph": self.graph.search(scope, query, k)}
+        for name, adapter in self.components.items():
+            if adapter._endpoint():
+                results[name] = adapter.search(scope, query, k)
+        return results
 
 
 def build_memory(store: Any) -> MemoryFacade:
