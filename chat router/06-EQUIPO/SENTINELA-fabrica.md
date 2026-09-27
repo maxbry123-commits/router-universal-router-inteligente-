@@ -1,21 +1,19 @@
-# SENTINELA FABRICA — 2026-09-27 12:31 UTC
-(modelo: moonshotai/kimi-k3@NVIDIA_API_KEY_2)
+# SENTINELA FABRICA — 2026-09-27 17:22 UTC
+(modelo: deepseek-ai/deepseek-v4.1-flash@NVIDIA_API_KEY_1)
 
-ESTADO: rojo — la tarea fabrica-01 (6 motores) está activa pero no hay ningún trabajo visible: cero commits, ramas, PRs y ejecuciones.
+ESTADO: rojo — la tarea activa `fabrica-01` no muestra ningún avance verificable (0 commits, 0 ramas, 0 PRs, 0 ejecuciones).
 
 AVANCE:
-- Ningún archivo de `fabrica de UI INTERFACE fromtend/motores/` aparece en los datos.
-- El HANDOFF solo cubre chat-yaiwes (M-0..M-7 completados por Manus); no menciona la fábrica.
-- La orden del Director (27-sep) exige terminar chat y motores; los motores no han arrancado.
+- `chat-yaiwes` figura COMPLETED / M7_RDC_VERIFIED en State Hub.
+- `fabrica-01` está marcada activa pero sin evidencia de trabajo en el repo frontend.
+- Handoff solo cubre chat-yaiwes; no menciona motores.
 
 DESVIOS DEL PLAN:
-- Tarea fabrica-01 activa sin agente asignado ni ejecución lanzada (no se creó `TAREAS/fabrica-01.md` ni se pulsó el workflow, o no consta).
-- Sin evidencia de lectura del documento 18 ni del repo frontend.
+- `fabrica-01` sin commits, ramas, PRs ni ejecuciones: entregables 1–10 sin rastro.
+- Handoff desactualizado respecto a la orden del Director (motores pendientes, no reportados).
 
 ORDENES CORRECTIVAS:
-1. Agente coordinador: crear `TAREAS/fabrica-01.md` copiando el formato de `chat-01.md` y lanzar el workflow "Equipo Claude Code (espejos)" con id fabrica-01.
-2. Agente espejo: leer `chat router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-4.md` (doc 18) y la carpeta `fabrica de UI INTERFACE fromtend/` antes de escribir código.
-3. Agente espejo: entregar los 10 entregables dentro de `motores/` y dejar pasando `python -m pytest "fabrica de UI INTERFACE fromtend/motores/tests" -q`.
-4. Agente espejo: abrir PR contra main en repo frontend y registrar la ejecución para que el Sentinela pueda validar.
-
-PARA OPUS (solo si hay algo roto en Router/HF): nada
+1. Agente frontend: crear rama de trabajo para `fabrica-01` y commit inicial con `motores/engine.py` (clase `Engine` + `ENGINE_REGISTRY`).
+2. Agente frontend: subir `motores/registry/component_registry.json` con 10 componentes reales del banco UI YAIWES.
+3. Agente frontend: implementar los 5 motores restantes y `tests/test_motores.py`; ejecutar `python -m pytest "fabrica de UI INTERFACE fromtend/motores/tests" -q` y reportar salida.
+4. SENTINELA
