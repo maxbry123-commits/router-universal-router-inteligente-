@@ -2,8 +2,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
+import socket
 import time
+from urllib.parse import urlparse
+from urllib.request import urlopen
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +24,35 @@ def _load_inventory() -> dict[str, Any]:
 
 def _component(name: str) -> dict[str, Any]:
     return next((item for item in _load_inventory().get("components", []) if item.get("name") == name), {})
+
+
+def _downloaded(name: str) -> dict[str, Any]:
+    evidence = ROOT / "router inteligente software" / "componentes todos" / "componentes descargados" / "RDC_ADDITIONAL_COMPONENTS_EVIDENCE.json"
+    try:
+        rows = json.loads(evidence.read_text(encoding="utf-8")).get("components", [])
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+    return next((row for row in rows if str(row.get("slug", "")).lower() == name.lower()), {})
+
+
+def _http_probe(url: str) -> bool:
+    try:
+        with urlopen(url, timeout=1.5) as response:
+            return 200 <= response.status < 500
+    except Exception:  # noqa: BLE001 - health must never take down the Router
+        return False
+
+
+def _tcp_probe(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        with socket.create_connection((parsed.hostname or "127.0.0.1", parsed.port or 6379), timeout=1.5) as sock:
+            if parsed.scheme in {"redis", "rediss"}:
+                sock.sendall(b"*1\r\n$4\r\nPING\r\n")
+                return b"PONG" in sock.recv(64)
+            return True
+    except Exception:  # noqa: BLE001
+        return False
 
 
 class SQLiteAdapter:
@@ -78,14 +111,35 @@ class GraphSQLiteAdapter:
 
 
 class ComponentAdapter:
-    """Descriptor for a downloaded component; source presence is not live connectivity."""
+    """Optional runtime connector; downloaded source alone never means CONNECTED."""
 
     def __init__(self, name: str) -> None:
         self.name = name
 
     def health(self) -> dict[str, Any]:
         item = _component(self.name)
-        return {"name": self.name, "source_status": item.get("source_status", "GAP"), "runtime_status": item.get("runtime_status", "GAP"), "path": item.get("path"), "sha": item.get("sha")}
+        downloaded = _downloaded(self.name)
+        source_status = "PRESENT_DOWNLOADED" if downloaded.get("status") in {"EXTRACTED_VERIFIED", "VERIFIED_EXISTING"} else item.get("source_status", "GAP")
+        runtime_status = item.get("runtime_status", "GAP")
+        endpoint_env = {"falkordb": "RIU_FALKORDB_URL", "redis": "RIU_REDIS_URL", "graphiti": "RIU_GRAPHITI_URL", "memanto": "RIU_MEMANTO_URL", "graphify": "RIU_GRAPHIFY_URL", "agentdb": "RIU_AGENTDB_URL", "postgresql": "RIU_POSTGRES_DSN"}.get(self.name)
+        configured = bool(endpoint_env and os.getenv(endpoint_env))
+        if configured:
+            endpoint = os.environ[endpoint_env]
+            if self.name in {"falkordb", "redis"}:
+                live = _tcp_probe(endpoint)
+            elif self.name == "postgresql":
+                live = False
+                try:
+                    import psycopg
+                    with psycopg.connect(endpoint, connect_timeout=2) as conn:
+                        conn.execute("SELECT 1")
+                    live = True
+                except Exception:  # noqa: BLE001
+                    live = False
+            else:
+                live = _http_probe(endpoint)
+            runtime_status = "CONNECTED" if live else "GAP_UNREACHABLE"
+        return {"name": self.name, "source_status": source_status, "runtime_status": runtime_status, "configured": configured, "path": downloaded.get("target") or item.get("path"), "sha": downloaded.get("tree_sha256") or item.get("sha")}
 
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
         return {"adapter": self.name, "status": "GAP", "reason": "no verified runtime contract"}
