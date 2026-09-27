@@ -22,7 +22,7 @@
     "priority_task": {}
   },
   "next_action": "missing_evidence:recent_commits_observed",
-  "attempt": 2,
+  "attempt": 3,
   "loop_version": "9f361e1b004bffdb",
   "research_packet": {
     "sentinel_id": "sentinela-plan4",
