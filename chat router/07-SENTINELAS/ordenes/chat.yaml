@@ -1,31 +1,32 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-27T22:26Z
+generated_at: 2026-09-27T22:32Z
 loop_version: 9f361e1b004bffdb
-observed_sha: 8ae107d1428fb80e4ca71eedaa1ec2a59175a3e5
+observed_sha: c36b04f368462b30de2c4f951d6d8d798455b97c
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
-priority_task: T02
+priority_task: T03
 state: REVISE
-reason: missing_evidence:runs_observed
+reason: NO_ENTREGADO
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
 research_packet:
   sentinel_id: sentinela-chat
-  failure: missing_evidence:runs_observed
-  error_literal: '....                                                                     [100%]
+  failure: NO_ENTREGADO
+  error_literal: '
 
-    4 passed in 0.04s
+    no tests ran in 0.00s
+
+    ERROR: file or directory not found: chat router/08-OMNIROUTE
+
 
     '
   queries:
-  - T02  missing_evidence:runs_observed
-  - 'T02 ....                                                                     [100%]
-
-    4 passed in 0.04s'
-  - missing_evidence:runs_observed GitHub issue fix
-  - missing_evidence:runs_observed Stack Overflow
-  - missing_evidence:runs_observed developer community
+  - T03  NO_ENTREGADO
+  - "T03 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/08-OMNIROUTE"
+  - NO_ENTREGADO GitHub issue fix
+  - NO_ENTREGADO Stack Overflow
+  - NO_ENTREGADO developer community
   sources:
   - GitHub Issues del componente
   - GitHub Discussions del componente
@@ -55,19 +56,4 @@ research_packet:
   - do_not_regenerate
   - repair_steps
   - acceptance_check
-research_findings:
-- state: closed
-  title: generate-tests aware tmdir breaks if test id contains the path separator
-  updatedAt: '2015-06-15T20:29:54Z'
-  url: https://github.com/pytest-dev/pytest/issues/4
-  source: GitHub:pytest-dev/pytest
-- state: closed
-  title: OAuth error on a new project
-  updatedAt: '2025-08-09T14:04:40Z'
-  url: https://github.com/anthropics/claude-code/issues/4
-  source: GitHub:anthropics/claude-code
-- state: closed
-  title: Add support for replicate [code in ticket]
-  updatedAt: '2023-07-29T05:34:51Z'
-  url: https://github.com/BerriAI/litellm/issues/4
-  source: GitHub:BerriAI/litellm
+research_findings: []
