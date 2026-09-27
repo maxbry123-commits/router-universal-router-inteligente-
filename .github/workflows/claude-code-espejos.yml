@@ -169,10 +169,21 @@ jobs:
           ARCH: ${{ steps.t.outputs.archivos }}
         run: |
           IFS=',' read -ra LISTA <<< "$ARCH"
-          for a in "${LISTA[@]}"; do a="$(echo "$a" | xargs)"; [ -z "$a" ] && continue; dst="$ALC/$a"
+          for a in "${LISTA[@]}"; do
+            a="$(echo "$a" | xargs)"
+            [ -z "$a" ] && continue
+            dst="$ALC/$a"
+
+            # Solo recuperar desde el prefijo duplicado conocido que puede crear
+            # el agente. PROHIBIDO buscar por basename en todo el repo: un README
+            # de otra tarea nunca puede terminar dentro de este alcance.
             if [ ! -s "$dst" ]; then
-              src=$(find . -path ./.git -prune -o -type f -size +0 -path "*/$a" -print 2>/dev/null | grep -v "^./$ALC/" | head -1)
-              [ -n "$src" ] && mkdir -p "$(dirname "$dst")" && mv "$src" "$dst" && echo "::warning::FAIL_PATH_ESCAPE recolocado $src -> $dst"
+              escaped="chat router/$ALC/$a"
+              if [ -s "$escaped" ]; then
+                mkdir -p "$(dirname "$dst")"
+                mv "$escaped" "$dst"
+                echo "::warning::FAIL_PATH_ESCAPE recolocado $escaped -> $dst"
+              fi
             fi
           done
           rm -rf "chat router/chat router" 2>/dev/null || true
