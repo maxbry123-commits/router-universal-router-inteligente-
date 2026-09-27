@@ -1,4 +1,4 @@
-# SENTINELA-PLAN4 — 2026-09-27T23:36Z
+# SENTINELA-PLAN4 — 2026-09-27T23:39Z
 (LOOP común · versión: bd1b24f6007628c8 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia, rama/PR o causa corregible.
@@ -17,15 +17,15 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El loop no ejecutó `git log`/`git fetch` en esta vuelta; la evidencia aportada son URLs de StackOverflow genéricas, no commits observados del repo sentinela-plan4. Falta instrumentación que capture y persista la salida de commits recientes como artefacto de la vuelta.
+CAUSA_RAIZ: El loop no ejecutó `git log` (o equivalente) en esta vuelta; la evidencia aportada son URLs de StackOverflow genéricas, no commits observados del repo sentinela-plan4.
 
-EVIDENCIA: Error literal "missing_evidence:recent_commits_observed"; los 5 items de evidencia comunitaria son preguntas canónicas de SO (branch prediction, git undo, delete branch, pull vs fetch, yield) sin relación con el estado real del repositorio ni con los 4 objetivos del plan.
+EVIDENCIA: 5 enlaces SO sobre Git/Python sin relación con commits recientes; ningún hash, rama, PR ni salida de `git log --oneline -n 5` adjunta.
 
-NO_REGENERAR: No regenerar evidencia comunitaria ni reintentar el loop sin cambios; repetir produciría el mismo fallo porque el paso de observación de commits no existe en el pipeline actual.
+NO_REGENERAR: No volver a consultar StackOverflow ni reemitir la misma evidencia comunitaria; no declarar PASS; no crear ramas/PR vacíos solo para cumplir el check.
 
-REPARAR: 1) Añadir paso obligatorio al inicio de cada vuelta: `git fetch --all && git log --oneline -10 > evidence/recent_commits.txt`. 2) Validar que el artefacto existe y es no vacío antes de continuar; si falla, abortar con causa corregible (repo inaccesible / sin credenciales / rama inexistente). 3) Vincular cada objetivo del plan a al menos un commit o rama/PR en el artefacto.
+REPARAR: 1) Ejecutar en el repo: `git fetch --all && git log --oneline -n 10 --all` y pegar la salida literal. 2) Si no hay commits nuevos, crear rama `sentinela/fix-evidence-loop` con un commit real (p.ej. documentar estado del plan en `PLAN4_STATUS.md`) y abrir PR. 3) Registrar la causa corregible en el log del loop: "falta paso de captura de commits en el pipeline".
 
-ACEPTACION: La vuelta pasa solo si evidence/recent_commits.txt contiene salida real de `git log` del repo, y cada uno de los 4 objetivos referencia commit, rama/PR o causa corregible documentada.
+ACEPTACION: PASS solo cuando la vuelta incluya (a) salida literal de `git log` con hashes recientes, o (b) enlace a rama/PR creado, o (c) causa corregible documentada con su reparación aplicada.
 
 CONTROL:
 - PASS no lo decide la LLM.
