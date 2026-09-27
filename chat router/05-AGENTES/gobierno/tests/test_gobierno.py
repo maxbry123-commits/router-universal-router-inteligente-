@@ -8,6 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 
+from agent_control import (AgentDAG, AgentDSL, AgentOrchestrator, EvidenceVerifier, Guardian, Investigator, SchemaValidator)  # noqa: E402
 from contratos import Job, Result, State, Task  # noqa: E402
 from judge import Judge  # noqa: E402
 from mirror_manager import SYSTEM_MAP, MirrorManager  # noqa: E402
@@ -174,3 +175,78 @@ class TestMirrorManager:
         assert not ok and "prohibida" in motivo
         mm.keep_for_debug("job-3")
         assert mm.mirrors["job-3"]["debug"] is True
+
+
+# ---------------- control del agente ----------------
+
+class TestAgentControl:
+    def _spec(self):
+        return AgentDSL.parse({
+            "task_id": "T01",
+            "objective": "gobierno",
+            "scope": "chat router/05-AGENTES/gobierno",
+            "required_files": ["mirror_manager.py", "tests/test_gobierno.py"],
+            "acceptance_commands": [
+                'python -m pytest "chat router/05-AGENTES/gobierno" -q'
+            ],
+        })
+
+    def test_dsl_schema_y_dag(self):
+        spec = self._spec()
+        assert SchemaValidator().validate(spec) == (True, "PASS")
+        dag = AgentDAG.build(spec)
+        assert ("VERIFY", "GUARDIAN") in dag["edges"]
+        with pytest.raises(ValueError):
+            AgentDSL.parse({"task_id": "T01"})
+
+    def test_verificador_no_admite_falso_verde(self):
+        spec = self._spec()
+        verifier = EvidenceVerifier()
+        ok, issues = verifier.verify(spec, {
+            "files": [],
+            "test_exit_code": 5,
+            "tests_collected": 0,
+        })
+        assert not ok
+        assert "no_tests_collected" in issues
+        assert any(i.startswith("missing_files:") for i in issues)
+
+    def test_guardian_scope_y_git_sucio(self):
+        spec = self._spec()
+        guardian = Guardian()
+        assert guardian.inspect(spec, {
+            "changed_files": [".github/x.yml"]
+        })["action"] == "BLOCK"
+        assert guardian.inspect(spec, {
+            "changed_files": [],
+            "sync_attempted": True,
+            "dirty_worktree": True,
+        })["action"] == "REVISE"
+
+    def test_investigador_maximo_20_fuentes(self):
+        spec = self._spec()
+        packet = Investigator.prepare(
+            spec, "merge failed", {"tool": "git", "version": "2.55"}
+        )
+        assert packet["max_sources"] == 20
+        assert "root_cause" in packet["required_output"]
+
+    def test_orquestador_pass_revise_research(self):
+        spec = self._spec()
+        orch = AgentOrchestrator()
+        passed = {
+            "files": ["mirror_manager.py", "tests/test_gobierno.py"],
+            "test_exit_code": 0,
+            "tests_collected": 25,
+        }
+        assert orch.next_action(spec, passed)["state"] == "PASS"
+        revise = orch.next_action(
+            spec, {"files": [], "test_exit_code": 1, "tests_collected": 25},
+            attempt=1,
+        )
+        assert revise["state"] == "REVISE"
+        research = orch.next_action(
+            spec, {"files": [], "test_exit_code": 1, "tests_collected": 25},
+            attempt=3,
+        )
+        assert research["state"] == "RESEARCH"
