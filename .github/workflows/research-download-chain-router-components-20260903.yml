@@ -63,17 +63,17 @@ jobs:
           s=s.replace("for number,slug,url in REPOS:", "for number,slug,url,ref in REPOS:")
           old="sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(); guard_source_tree(root); shutil.rmtree(root/'.git',ignore_errors=True)"
           new = "\n".join([
-              "    try:",
-              "        run(['git','fetch','--depth','1','origin',ref],cwd=root)",
-              "        run(['git','checkout','--detach',ref],cwd=root)",
-              "        sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()",
-              "        if sha != ref:",
-              "            raise RuntimeError(f'SOURCE_REF_MISMATCH expected={ref} actual={sha}')",
-              "        guard_source_tree(root)",
-              "    except Exception as e:",
-              "        print(f'SKIP SOURCE GAP {number} {slug}: {e}',flush=True)",
-              "        note(number=int(number),slug=slug,source=url,source_commit=ref,status='SKIPPED',reason=str(e))",
-              "        skipped.append(number); shutil.rmtree(root,ignore_errors=True); continue",
+              "try:",
+              "    run(['git','fetch','--depth','1','origin',ref],cwd=root)",
+              "    run(['git','checkout','--detach',ref],cwd=root)",
+              "    sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()",
+              "    if sha != ref:",
+              "        raise RuntimeError(f'SOURCE_REF_MISMATCH expected={ref} actual={sha}')",
+              "    guard_source_tree(root)",
+              "except Exception as e:",
+              "    print(f'SKIP SOURCE GAP {number} {slug}: {e}',flush=True)",
+              "    note(number=int(number),slug=slug,source=url,source_commit=ref,status='SKIPPED',reason=str(e))",
+              "    skipped.append(number); shutil.rmtree(root,ignore_errors=True); continue",
               "    shutil.rmtree(root/'.git',ignore_errors=True)",
           ])
           if old not in s:
