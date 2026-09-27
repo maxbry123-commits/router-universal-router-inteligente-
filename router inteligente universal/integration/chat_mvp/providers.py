@@ -3,6 +3,8 @@
 Keys come from the unlocked Secret Bank (vault_hook), the server environment or, per request, a BYOK header.
 They are never logged, stored or echoed back; error messages carry only the HTTP status and a short provider message.
 NVIDIA is listed FIRST (principal provider) and has a pool of keys with failover (see core.py).
+2026-09-27 (Director): Groq con pool GROQ_API_KEY_1..7 (la 1 es inválida hoy; se salta sola). Cerebras sigue registrado pero
+  el enrutado de agentes lo excluye (pide pago).
 """
 from __future__ import annotations
 
@@ -21,7 +23,9 @@ PROVIDERS: dict[str, dict[str, Any]] = {
                "env": ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4", "NVIDIA_API_KEY_5")},
     "hf": {"label": "Hugging Face Router", "base": "https://router.huggingface.co/v1", "env": ("HF_TOKEN", "HF_TOKEN_1")},
     "cerebras": {"label": "Cerebras", "base": "https://api.cerebras.ai/v1", "env": ("CEREBRAS_API_KEY", "CEREBRAS_API_KEY_1")},
-    "groq": {"label": "Groq", "base": "https://api.groq.com/openai/v1", "env": ("GROQ_API_KEY", "GROQ_API_KEY_1")},
+    "groq": {"label": "Groq", "base": "https://api.groq.com/openai/v1",
+             "env": ("GROQ_API_KEY", "GROQ_API_KEY_1", "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4",
+                     "GROQ_API_KEY_5", "GROQ_API_KEY_6", "GROQ_API_KEY_7")},
     "deepseek": {"label": "DeepSeek API directa (caché de contexto nativa)", "base": "https://api.deepseek.com/v1", "env": ("DEEPSEEK_API_KEY",)},
     "moonshot": {"label": "Moonshot / Kimi API directa (caché de contexto nativa)", "base": "https://api.moonshot.ai/v1", "env": ("MOONSHOT_API_KEY",)},
     "minimax": {"label": "MiniMax API directa", "base": "https://api.minimax.io/v1", "env": ("MINIMAX_API_KEY",)},
