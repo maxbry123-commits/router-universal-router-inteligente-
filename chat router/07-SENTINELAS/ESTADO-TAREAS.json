@@ -281,7 +281,7 @@
   },
   "T05": {
     "attempt": 2,
-    "last_sha": "93b5e4ad7f3a7aa66c45b4baba8e3efdabf452a9",
+    "last_sha": "c94366eb30fdb3724e1a293e4e96006ebf159275",
     "evidence": {
       "faltan": [
         "action_registry.py",
@@ -383,7 +383,7 @@
       "run_id": 36358304167,
       "job_id": 108730331266,
       "active_step": "Trabajar (Aider espejo)",
-      "active_step_age_minutes": 1
+      "active_step_age_minutes": 3
     },
     "supervision": {
       "action": "WATCH",
