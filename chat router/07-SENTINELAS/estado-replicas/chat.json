@@ -1,11 +1,11 @@
 {
   "status": "RESEARCH",
-  "last_sha": "b97210df5cd62a1a325ff28c358edb601e004245",
+  "last_sha": "0bd97884a4aace2916e366482a5ef9ba8bdcd873",
   "last_failure": "NO_ENTREGADO",
-  "same_failure_count": 6,
+  "same_failure_count": 7,
   "evidence": {
-    "observed_sha": "b97210df5cd62a1a325ff28c358edb601e004245",
-    "current_sha": "b97210df5cd62a1a325ff28c358edb601e004245",
+    "observed_sha": "0bd97884a4aace2916e366482a5ef9ba8bdcd873",
+    "current_sha": "0bd97884a4aace2916e366482a5ef9ba8bdcd873",
     "executor_active": false,
     "workflow_false_green": false,
     "unauthorized_change": false,
@@ -22,9 +22,9 @@
     "priority_task": {
       "task_id": "T07",
       "status": "REVISE",
-      "attempt": 1,
+      "attempt": 2,
       "failure": "NO_ENTREGADO",
-      "next_action": "esperar; foco actual T05",
+      "next_action": "espejo relanzado",
       "evidence": {
         "faltan": [
           "parser.py",
@@ -40,9 +40,20 @@
           "README.md"
         ],
         "fugas": [],
+        "changed_files": [],
+        "executor_audit": {
+          "path_escape_count": 0,
+          "recovered_deviation": false,
+          "source": "informe"
+        },
+        "recovered_deviation": false,
+        "scope_escape": null,
+        "objective_failures": [],
+        "objective_drift": false,
         "pytest_exit": 4,
         "pytest_tail": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/11-EVIDENCIA\n\n",
         "informe": false,
+        "stale_report": false,
         "ultimo_commit": "",
         "veredicto": "REVISE",
         "causa": "NO_ENTREGADO"
@@ -50,7 +61,7 @@
     }
   },
   "next_action": "NO_ENTREGADO",
-  "attempt": 8,
+  "attempt": 9,
   "loop_version": "bd1b24f6007628c8",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
