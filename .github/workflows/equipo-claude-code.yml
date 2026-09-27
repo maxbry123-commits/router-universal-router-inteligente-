@@ -3,6 +3,7 @@ name: Equipo Claude Code (espejos)
 # Espejos de Claude Code trabajando en paralelo, cada uno en SU rama (main nunca se toca).
 # Modelos: NVIDIA (claves del Router) a través de un puente LiteLLM local → Claude Code no usa la API de Anthropic.
 # Cada espejo lee su tarea de "chat router/06-EQUIPO/TAREAS/<id>.md", trabaja hasta 5 h y deja rama + PR para que Opus revise.
+# 2026-09-27: diagnóstico visible (versión, puente, errores) y ANTHROPIC_API_KEY local para arranque sin login.
 
 on:
   workflow_dispatch:
@@ -66,10 +67,11 @@ jobs:
             "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/${{ steps.t.outputs.repo }}.git" trabajo
           cd trabajo
           git sparse-checkout init --no-cone
-          printf '/%s/\n/chat router/\n' "${{ steps.t.outputs.carpeta_trabajo }}" > .git/info/sparse-checkout
+          printf '/%s/\n' "${{ steps.t.outputs.carpeta_trabajo }}" > .git/info/sparse-checkout
           git checkout -q
           git checkout -q -b "mirror/${TAREA}-${{ github.run_id }}"
-          cp -r "../contexto/chat router" ./.contexto-chat-router 2>/dev/null || true
+          mkdir -p "${{ steps.t.outputs.carpeta_trabajo }}"
+          cp -r "../contexto/chat router" ./.contexto-chat-router
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -78,8 +80,9 @@ jobs:
           python-version: "3.12"
       - name: Instalar Claude Code + puente LiteLLM → NVIDIA
         run: |
-          npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
-          pip install -q "litellm[proxy]" pytest
+          npm install -g @anthropic-ai/claude-code 2>&1 | tail -3
+          echo "::notice::claude $(claude --version 2>&1 | head -1)"
+          pip install -q "litellm[proxy]" pytest 2>&1 | tail -2
           cat > /tmp/litellm.yaml <<'YML'
           model_list:
             - model_name: yaiwes
@@ -97,14 +100,20 @@ jobs:
           general_settings: {master_key: sk-yaiwes-local}
           YML
           nohup litellm --config /tmp/litellm.yaml --port 4000 > /tmp/litellm.log 2>&1 &
-          for i in $(seq 1 30); do curl -s localhost:4000/health/liveliness >/dev/null && break; sleep 2; done
+          ok=no; for i in $(seq 1 45); do curl -sf localhost:4000/health/liveliness >/dev/null && ok=si && break; sleep 2; done
+          echo "::notice::puente LiteLLM listo=$ok"
+          r=$(curl -s localhost:4000/v1/messages -H "x-api-key: sk-yaiwes-local" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
+              -d '{"model":"yaiwes","max_tokens":20,"messages":[{"role":"user","content":"Responde solo OK"}]}' | head -c 300)
+          echo "::notice::prueba puente: $r"
       - name: Trabajar (Claude Code espejo, hasta 5 h)
         working-directory: trabajo
         env:
           ANTHROPIC_BASE_URL: http://127.0.0.1:4000
+          ANTHROPIC_API_KEY: sk-yaiwes-local
           ANTHROPIC_AUTH_TOKEN: sk-yaiwes-local
           ANTHROPIC_MODEL: yaiwes
           ANTHROPIC_SMALL_FAST_MODEL: yaiwes
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
           DISABLE_TELEMETRY: "1"
         run: |
           PROMPT="Eres un espejo de Claude Code del equipo YAIWES. Ejecuta COMPLETA la tarea de abajo, de principio a fin, sin pedir confirmación.
@@ -113,8 +122,14 @@ jobs:
           Escribe un resumen de 10 líneas en '${{ steps.t.outputs.carpeta_trabajo }}/ENTREGA-${TAREA}.md' (qué hiciste, pruebas, pendientes).
 
           $(cat "../contexto/chat router/06-EQUIPO/TAREAS/${TAREA}.md")"
-          timeout 18000 claude -p "$PROMPT" --dangerously-skip-permissions --max-turns 120 --output-format text | tail -200 || echo "::warning::el espejo terminó con error o por tiempo; se guarda lo avanzado"
-          tail -30 /tmp/litellm.log || true
+          set +e
+          timeout 18000 claude -p "$PROMPT" --dangerously-skip-permissions --max-turns 120 --output-format text > /tmp/claude.out 2> /tmp/claude.err
+          rc=$?
+          echo "::notice::claude terminó con código $rc"
+          head -c 600 /tmp/claude.err | tr '\n' ' ' | sed 's/^/::warning::stderr: /'; echo
+          tail -c 800 /tmp/claude.out | tr '\n' ' ' | sed 's/^/::notice::salida: /'; echo
+          tail -5 /tmp/litellm.log | tr '\n' ' ' | sed 's/^/::notice::puente: /'; echo
+          exit 0
       - name: Guardar en su rama + PR
         if: always()
         working-directory: trabajo
