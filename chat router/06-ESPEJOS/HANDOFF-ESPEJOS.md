@@ -19,6 +19,19 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 
 | T10 | Selección automática de proveedores gratuitos sin UI; parche `auto/best-free` | `chat router/08-OMNIROUTE/autofree` | **PENDIENTE / NO ENTREGADA:** existe solo contrato `tareas/T10.md`; carpeta y los 6 archivos no existen en `main`. Requiere adaptar solución al runtime npm precompilado T03; NO reactivar build de fuente por defecto. | [Contrato](tareas/T10.md) · [Bitácora y conflicto de integración](../08-OMNIROUTE/README-BITACORA-T03.md) · no hay tests T10 |
 
+## T10 — aplicación progresiva de correcciones 2026-09-28
+
+**Motivo:** OmniRoute 3.8.50 precompilado arranca (T03 RUNTIME PASS), pero `auto/best-free` devolvió 502; upstream OpenCode 403 y Felo 400/429. **No confundir con OpenRouter ni con el cómputo HF**. [Bitácora T03](../08-OMNIROUTE/README-BITACORA-T03.md) · [contrato T10](tareas/T10.md).
+
+**Plan de implementación, una por una, sin build en runtime:**
+1. Auditar config rotación existente y habilitar solo `OMNIROUTE_ROTATE_ON_400` (código oficial admite variable, desactivada por defecto). No tratar 403 permanente como solucionable con reintentos.
+2. Crear herramienta de diagnóstico en `08-OMNIROUTE/autofree/`: `/health`, `/v1/models`, probes **solo explícitos** con tiempo/volumen limitados; verificar contenido y distinguir 400/403/418/429/502 sin secretos.
+3. Reutilizar `blockedProviders` y exclusiones nativas: generar recomendaciones basadas en evidencia; cambios de configuración de usuario únicamente opt-in y con snapshot/cas, jamás excluir toda la cuenta por fallo de un solo modelo.
+4. Pruebas locales deterministicamente con respuestas simuladas y lectura de main. Probar live solamente cuando existe objetivo permitido y conexión autorizada; no reintentar proveedores con rechazo de acceso.
+5. Documentar qué fue aplicado vs pendiente: los PRs posteriores a v3.8.50 se auditan, **no se copian hacks de identidad para superar 403 ni se compila el código fuente de nuevo**.
+
+**Estado al comenzar:** pasos 1–4 PENDIENTES, inferencia real PENDIENTE. Conservar T03 RUNTIME PASS.
+
 ## T09 — plan quirúrgico en 4 salidas
 1. **T09-A · inventario + espejo** — fijar `mirror/T09`, registrar fuentes exactas y comprobar que Open WebUI, LibreChat, big-AGI y Jan existen; no modificar código fuente.
 2. **T09-B · copia exacta** — copiar LibreChat, big-AGI y Jan debajo del bloque Open WebUI usando la política del motor canónico; preservar archivos de origen, sin reescritura ni recorte.
