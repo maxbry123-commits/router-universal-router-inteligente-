@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 5,
-    "last_sha": "37babd1f983963e2ebb85d3b5b66a2ac4c3f0bfa",
+    "last_sha": "26887978540667da9db58a98ddf2ad4d2615aedf",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -144,7 +144,7 @@
       "veredicto": "REVISE",
       "causa": "STALE_REPORT"
     },
-    "status": "REVISE",
+    "status": "ACTIVE",
     "last_failure": "STALE_REPORT",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
@@ -191,7 +191,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "espejo relanzado",
+    "next_action": "vigilar: Instalar Aider",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -201,8 +201,8 @@
     ],
     "runtime": {
       "executor_active": true,
-      "run_id": 36402706226,
-      "job_id": 108864127897,
+      "run_id": 36404497467,
+      "job_id": 108869887144,
       "active_step": "Instalar Aider",
       "active_step_age_minutes": 0
     },
