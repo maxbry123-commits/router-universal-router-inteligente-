@@ -2,10 +2,10 @@ schema: yaiwes.sentinel-focus/v1
 mode: one_task_at_a_time
 active_task: T03C2
 advance: manual
-reason: "OmniRoute: T03A, T03B y T03C1 ya tienen PASS; vigilar solo T03C2 documentación/gate. Al cerrar, pasar a T03 final."
+reason: "OmniRoute: T03A, T03B y T03C1 PASS. T03C2 ya tiene DIAGNOSTICO con VEREDICTO_FINAL PASS; generar informe real y cerrar solo este subgate."
 rules:
   - "Nunca relanzar más de una tarea por ciclo."
   - "Si el ejecutor de active_task está activo: observar, no duplicar."
   - "Si aceptación PASS: cerrar y esperar cambio explícito a T03 final."
-  - "Si falla: investigar causa exacta, crear contexto y relanzar solo active_task."
+  - "Si falla: corregir solo la causa exacta de T03C2."
   - "No regenerar T03A, T03B ni T03C1 ya válidos."
