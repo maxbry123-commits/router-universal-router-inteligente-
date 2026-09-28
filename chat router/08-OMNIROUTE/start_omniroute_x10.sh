@@ -54,6 +54,9 @@ export npm_config_audit=false
 export npm_config_fund=false
 export npm_config_foreground_scripts=false
 
+log "reparando lockfile incompleto del tag sin instalar paquetes…"
+npm install --package-lock-only --ignore-scripts --legacy-peer-deps --no-audit --no-fund >>"$LOG" 2>&1 \
+  || die "package-lock repair"
 log "npm ci upstream-safe (--ignore-scripts)…"
 npm ci --include=optional --no-audit --no-fund --legacy-peer-deps --ignore-scripts >>"$LOG" 2>&1 \
   || die "npm ci upstream-safe"
