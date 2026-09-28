@@ -54,6 +54,59 @@ installed="$(omniroute --version 2>/dev/null | tail -1 | tr -d '\r' || true)"
   || die "versión inesperada: '$installed' != '$OMNIROUTE_VERSION'"
 log "OmniRoute $installed precompilado OK"
 
+# T10-1: el combo auto/* de 3.8.50 incluye solo opencode/felo-web en
+# una allowlist compilada. Extender EXCLUSIVAMENTE esa lista en el bundle npm
+# con los proveedores del catálogo v3.8.50: noAuth=true, hasFree=true, llm.
+# Guardias: coincidencia única, escritura atómica e idempotencia.
+# No modifica paquetes upstream externos ni el código de otras funciones.
+# Si el bundle cambia de formato, no se parchea y el arranque sigue operativo.
+OMNIROUTE_DIST="$(npm root -g)/omniroute/dist"
+python3 - "$OMNIROUTE_DIST" >>"$LOG" 2>&1 <<'PY'
+import os
+import pathlib
+import re
+import sys
+
+dist = pathlib.Path(sys.argv[1])
+needle = re.compile(
+    rb'''new\s+Set\s*\(\s*\[\s*["']opencode["']\s*,\s*["']felo-web["']\s*\]\s*\)'''
+)
+free_llm = (
+    b'new Set(["opencode","felo-web","duckduckgo-web",'
+    b'"cloudflare-playground","theoldllm","chipotle","uncloseai","aihorde"])'
+)
+if not dist.is_dir():
+    print("T10_1=NOT_APPLIED (dist no existe)")
+    sys.exit(0)
+matches = []
+already = False
+for file in dist.rglob("*.js"):
+    if not file.is_file() or file.is_symlink():
+        continue
+    data = file.read_bytes()
+    if free_llm in data:
+        already = True
+    found = list(needle.finditer(data))
+    if found:
+        matches.extend((file, data, match) for match in found)
+if len(matches) == 1:
+    file, data, match = matches[0]
+    updated = data[:match.start()] + free_llm + data[match.end():]
+    temp = file.with_name(file.name + ".t10-tmp")
+    try:
+        temp.write_bytes(updated)
+        os.chmod(temp, file.stat().st_mode)
+        os.replace(temp, file)
+    finally:
+        if temp.exists():
+            temp.unlink()
+    print("T10_1=PATCHED (selector auto/*, candidatos no-auth gratuitos LLM)")
+elif not matches and already:
+    print("T10_1=ALREADY_PATCHED")
+else:
+    print(f"T10_1=NOT_APPLIED (coincidencias={len(matches)}; conservar bundle)")
+PY
+
 # 4. better-sqlite3 nativo en la ruta oficial de runtime.
 mkdir -p "$RUNTIME_DIR"
 if [ ! -f "$RUNTIME_DIR/package.json" ]; then
