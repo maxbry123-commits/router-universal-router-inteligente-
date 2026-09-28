@@ -1,5 +1,9 @@
 # OmniRoute T03 — despliegue estable en el Job del Router
 
+> **BITÁCORA COMPLETA / INICIO PARA OTRO AGENTE:** [README-BITACORA-T03.md](README-BITACORA-T03.md). Incluye commits, Jobs HF, pruebas x10/x1, `npm ci`, Turbopack, Webpack, fallo heap 4096, solución precompilada, gates, upstream gratuitos y protocolo LOOP. [Handoff](../06-ESPEJOS/HANDOFF-ESPEJOS.md) · [Informe T03](../06-ESPEJOS/informes/T03.md). 
+
+**Estado comprobado:** runtime y health **PASS** (`6aba04746b030d633f69bc1c`); generación gratis/no-auth desde HF **BLOCKED_UPSTREAM** (`CHAT_HTTP=502`). No sustituir el launcher actual por el build desde fuente.
+
 Objetivo: ejecutar OmniRoute `v3.8.50` dentro del Job HF de 16 GB con una sola instancia, healthcheck, límite de RAM, SQLite nativo y mantenimiento de DB.
 
 ## Arquitectura actual
