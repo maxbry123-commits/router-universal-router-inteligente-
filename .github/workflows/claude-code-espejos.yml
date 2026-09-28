@@ -75,6 +75,8 @@ jobs:
             T03A) B="mirror/T03" ;;
             T03B) B="mirror/T03-B" ;;
             T03C) B="mirror/T03-C" ;;
+            T03C1) B="mirror/T03-C1" ;;
+            T03C2) B="mirror/T03-C2" ;;
             *) B="mirror/$TAREA" ;;
           esac
           echo "branch=$B" >> "$GITHUB_OUTPUT"
@@ -166,6 +168,8 @@ jobs:
             for f in "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md" "chat router/06-ESPEJOS/tareas/T03-B-SUPERVISOR-DB.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
           elif [ "$TAREA" = "T03C" ]; then
             for f in "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md" "chat router/06-ESPEJOS/tareas/T03-C-CIERRE.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
+          elif [ "$TAREA" = "T03C1" ] || [ "$TAREA" = "T03C2" ]; then
+            for f in "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md" "chat router/06-ESPEJOS/tareas/T03-C-CIERRE.md" "chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md" "chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
           elif [ "$TAREA" = "T03" ]; then
             for f in "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md" "chat router/06-ESPEJOS/tareas/T03-A-RUNTIME.md" "chat router/06-ESPEJOS/tareas/T03-B-SUPERVISOR-DB.md" "chat router/06-ESPEJOS/tareas/T03-C-CIERRE.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
           elif [ "$TAREA" = "T02" ]; then
@@ -190,7 +194,12 @@ jobs:
             echo "Ejecuta los tests y corrige hasta que pasen. Al final completa el informe ${INF}: archivos, salida REAL de tests y GAP."
             echo "Si la tarea tiene una sección 'CORRECCIÓN DEL SENTINELA', obedécela primero."
             echo; echo "TAREA:"; cat "chat router/06-ESPEJOS/tareas/${TAREA}.md"; } > /tmp/tarea.txt
-          timeout 17400 aider --model "openai/${MODELO}" --no-git --yes-always --no-show-model-warnings \
+          AIDER_TIMEOUT=17400
+          case "$TAREA" in
+            T03C1|T03C2) AIDER_TIMEOUT=3540 ;;
+          esac
+          echo "::notice::aider_timeout=${AIDER_TIMEOUT}s tarea=${TAREA}"
+          timeout "$AIDER_TIMEOUT" aider --model "openai/${MODELO}" --no-git --yes-always --no-show-model-warnings \
             --no-check-update --no-analytics --map-tokens 0 --edit-format whole "${READS[@]}" \
             --auto-test --test-cmd "python -m pytest '${ALC}' -q" \
             --message-file /tmp/tarea.txt "${FILES[@]}" > /tmp/aider.log 2>&1
