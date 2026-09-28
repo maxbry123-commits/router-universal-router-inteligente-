@@ -7,12 +7,14 @@
 - Backoff real: 5s, 15s, 45s, 135s… (x3, tope 300 s).
 - Si RSS del proceso > RAM_LIMIT_BYTES (6 GB) → reinicio controlado.
 """
+import json
 import os
 import signal
 import socket
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 
 HOST = os.environ.get("APP_BIND_HOST", "127.0.0.1")
@@ -134,6 +136,47 @@ def rss_bytes(pid):
     return sum(_one_rss_bytes(p) for p in pids)
 
 
+
+def enable_native_model_lockout():
+    """Activa el bloqueo temporal nativo por MODELO cuando responde 403/404/429/5xx.
+
+    Reutiliza el estado/circuit-breaker de OmniRoute (no lista negra externa).
+    Preserva todos los valores personalizados y usa revisión CAS; si la API
+    de administración no lo permite, no cambia nada.
+    """
+    url = f"http://127.0.0.1:{PORT}/api/settings"
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            if response.status != 200:
+                return False
+            settings = json.loads(response.read(65536))
+        if not isinstance(settings, dict):
+            return False
+        config = settings.get("modelLockout")
+        if not isinstance(config, dict):
+            config = {}
+        if config.get("enabled") is True:
+            return True
+        revision = settings.get("settingsRevision")
+        if type(revision) is not int or revision < 0:
+            return False
+        # No alterar políticas personalizadas: usar defaults nativos si faltan.
+        patch = {"modelLockout": {**config, "enabled": True}, "expectedRevision": revision}
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(patch).encode("utf-8"),
+            method="PATCH",
+            headers={
+                "Content-Type": "application/json",
+                "If-Match": str(revision),
+            },
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            return response.status == 200
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        return False
+
+
 def start_process():
     env = dict(os.environ)
     env.setdefault("NODE_OPTIONS", "--max-old-space-size=4096")
@@ -201,6 +244,7 @@ def main():
         _proc = start_process()
         started = time.time()
         last_check = 0.0
+        lockout_attempts = 0
 
         while True:
             rc = _proc.poll()
@@ -215,6 +259,16 @@ def main():
                     log(f"RAM {rss // 1024**2} MB > 6 GB → reinicio controlado")
                     stop_process(_proc)
                     break
+                # T10-4: los modelos con errores confirmados salen del pool
+                # durante su cooldown nativo; reingresan al vencerlo.
+                # Máximo 3 intentos de configurar, sin afectar el healthcheck.
+                if lockout_attempts < 3 and healthy():
+                    lockout_attempts += 1
+                    if enable_native_model_lockout():
+                        log("T10-4: bloqueo temporal nativo de modelos ACTIVADO")
+                        lockout_attempts = 3
+                    else:
+                        log("T10-4: API ajustes no disponible; sin cambios")
                 if now - started > 60 and not healthy():
                     log("Healthcheck FAIL → reinicio")
                     stop_process(_proc)
