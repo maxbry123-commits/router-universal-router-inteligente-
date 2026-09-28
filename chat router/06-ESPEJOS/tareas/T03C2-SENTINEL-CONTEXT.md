@@ -9,10 +9,10 @@ ARCHIVOS OBLIGATORIOS:
 ACEPTACIÓN: grep -q 'VALIDACIÓN EXTERNA DE CIERRE' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'NODE_VERSION_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'OMNIROUTE_REF_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'BETTER_SQLITE3_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'HEALTH_ENDPOINT_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'VEREDICTO_FINAL:' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && test $(grep -Ec 'https?://' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md') -ge 3 && ! grep -q 'pytest cache directory' 'chat router/08-OMNIROUTE/README.md' && grep -qi 'OmniRoute' 'chat router/08-OMNIROUTE/README.md'
 
 EVIDENCIA ACTUAL:
-- causa: OBJECTIVE_DRIFT
+- causa: SCOPE_ESCAPE
 - faltan: []
 - pytest/acceptance exit: 1
-- scope_escape: False
+- scope_escape: True
 - objective_drift: True
 
 REGLAS:
@@ -31,6 +31,7 @@ CHEQUEOS INDEPENDIENTES DEL OBJETIVO:
 FUENTES ENCONTRADAS:
 - Repositorio oficial/upstream: diegosouzapw/OmniRoute https://github.com/diegosouzapw/OmniRoute
 - Repositorio oficial/upstream: WiseLibs/better-sqlite3 https://github.com/WiseLibs/better-sqlite3
+- StackOverflow: How to convert this code into Antlr Groovy Grammar v4? https://stackoverflow.com/questions/40997897/how-to-convert-this-code-into-antlr-groovy-grammar-v4
 
 ANÁLISIS DEL INVESTIGADOR:
 sin respuesta del modelo; usar evidencia determinista
