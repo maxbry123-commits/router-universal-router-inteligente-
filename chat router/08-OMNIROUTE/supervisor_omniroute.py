@@ -187,6 +187,8 @@ def start_process():
     env.setdefault("API_PORT", str(PORT))
     env.setdefault("REQUIRE_API_KEY", "false")
     env.setdefault("OMNIROUTE_ROTATE_ON_400", "true")
+    # T10-7: ante 429 sin Retry-After, evitar reintentos prematuros.
+    env.setdefault("OMNIROUTE_ROTATION_RATE_LIMIT_RESET_SECONDS", "180")
     env.setdefault("DATA_DIR", DATA_DIR)
     # --no-recovery: el backoff/restart pertenece a ESTE supervisor T03,
     # no al supervisor interno del CLI (evita doble relanzamiento).
