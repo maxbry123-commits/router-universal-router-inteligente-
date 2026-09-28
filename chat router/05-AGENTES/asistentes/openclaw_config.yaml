@@ -1,0 +1,17 @@
+schema: yaiwes.assistant/v1
+name: openclaw
+role: guardian_supervisor
+provider: openai_compatible
+base_url: https://integrate.api.nvidia.com/v1
+model_env: YAIWES_ASSISTANT_MODEL
+model_default: kimi-k3
+api_key_env: NVIDIA_API_KEY
+capabilities:
+  - plan
+  - critique
+  - review
+  - debate
+  - monitor
+  - heartbeat
+state_policy: emit_only
+heartbeat_minutes: 30
