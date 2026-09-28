@@ -84,6 +84,33 @@ tareas:
     max_stall_minutes: 30
     dependencies: []
 
+  T03C1:
+    objective: "OmniRoute C1: investigación externa verificable"
+    scope: "chat router/08-OMNIROUTE"
+    required_files: [VALIDACION-EXTERNA.md]
+    acceptance: "grep -q 'VALIDACION_T03C1: PASS' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md' && grep -q '#9576' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md' && grep -q '#9613' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md' && test $(grep -Ec 'https?://' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md') -ge 3"
+    objective_checks:
+      - "grep -qi 'v3.8.50' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md'"
+      - "grep -Eqi 'package[.]json|engines' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md'"
+      - "grep -Eqi 'health|monitoring' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md'"
+      - "grep -Eqi 'better-sqlite3' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md'"
+    max_stall_minutes: 60
+    dependencies: []
+
+  T03C2:
+    objective: "OmniRoute C2: documentación y gate final"
+    scope: "chat router/08-OMNIROUTE"
+    required_files: [DIAGNOSTICO.md, README.md]
+    acceptance: "grep -q 'VALIDACIÓN EXTERNA DE CIERRE' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'NODE_VERSION_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'OMNIROUTE_REF_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'BETTER_SQLITE3_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'HEALTH_ENDPOINT_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'VEREDICTO_FINAL:' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && test $(grep -Ec 'https?://' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md') -ge 3 && ! grep -q 'pytest cache directory' 'chat router/08-OMNIROUTE/README.md' && grep -qi 'OmniRoute' 'chat router/08-OMNIROUTE/README.md'"
+    objective_checks:
+      - "grep -q 'ENV_VARS_VERIFICADAS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md'"
+      - "grep -q 'START_COMMAND_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md'"
+      - "grep -q 'ISSUES_ABIERTOS_RELEVANTES' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md'"
+      - "grep -q 'RIESGO_RESIDUAL' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md'"
+      - "grep -q 'CAMBIOS_NECESARIOS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md'"
+    max_stall_minutes: 60
+    dependencies: []
+
   T04:
     objective: "Pasarela Anthropic↔NVIDIA para que Claude Code trabaje con nuestros modelos"
     scope: "chat router/09-CLAUDE-CODE"
