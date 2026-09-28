@@ -562,7 +562,18 @@ def main() -> None:
     estado = json.loads(ESTADO.read_text()) if ESTADO.exists() else {}
     head = sh(["git", "rev-parse", "HEAD"])[1].strip()
     activos = espejos_activos()
-    foreign_actives = sorted(t for t in activos if t not in focus_tids)
+
+    def related_to_focus(active_tid: str) -> bool:
+        if active_tid in focus_tids:
+            return True
+        # Si el foco es el padre T03, sus microtareas T03A/T03B/T03C*
+        # no deben bloquear la verificación final del padre.
+        return any(
+            focus == "T03" and active_tid.startswith("T03")
+            for focus in focus_tids
+        )
+
+    foreign_actives = sorted(t for t in activos if not related_to_focus(t))
     loop = SentinelOrchestrator()
 
     relanzar: list[str] = []
