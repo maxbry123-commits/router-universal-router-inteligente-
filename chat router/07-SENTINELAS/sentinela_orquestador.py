@@ -175,7 +175,17 @@ def mirror_changed_files(tid: str) -> list[str]:
     if rc != 0:
         return []
     rc, out = sh(["git", "diff", "--name-only", f"HEAD...{ref}"])
-    return [line.strip() for line in out.splitlines() if line.strip()] if rc == 0 else []
+    if rc != 0:
+        return []
+
+    # El workflow genera el informe fuera del scope de la tarea.
+    # No es una escritura del agente y no debe contarse como SCOPE_ESCAPE.
+    generated_report = f"chat router/06-ESPEJOS/informes/{tid}.md"
+    return [
+        line.strip()
+        for line in out.splitlines()
+        if line.strip() and line.strip() != generated_report
+    ]
 
 
 def auditar_ultimo_ejecutor(tid: str) -> dict:
