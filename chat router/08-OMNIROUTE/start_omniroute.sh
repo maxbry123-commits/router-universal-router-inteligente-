@@ -165,6 +165,67 @@ else:
     print("T10_3=PATCHED (OpenCode 403 => cooldown sin falso éxito)")
 PY403
 
+# T10-6: impedir que un combo acepte HTTP 200 con choices=[].
+# OmniRoute v3.8.50 valida el contenido de una respuesta, pero su rama
+# "choices vacías" devuelve valid:true. Cambiar solo ese caso para que
+# validateResponseQuality avise de fallo y el combo intente el siguiente.
+# Aplicación conservadora: localiza exactamente esa rama en el JS compilado,
+# sin modificar las respuestas de herramientas, razonamiento ni streaming.
+python3 - "$OMNIROUTE_DIST" >>"$LOG" 2>&1 <<'PY_EMPTY_CHOICES'
+import os
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(sys.argv[1])
+marker = b"/*T10_6_EMPTY_CHOICES*/"
+ident = rb"[A-Za-z_$][A-Za-z0-9_$]*"
+pattern = re.compile(
+    rb"if\s*\(\s*!\s*Array\.isArray\(\s*(?P<choices>" + ident
+    + rb")\s*\)\s*\|\|\s*(?P=choices)\.length\s*===?\s*0\s*\)"
+)
+if not root.is_dir():
+    print("T10_6=NOT_APPLIED (dist ausente)")
+    sys.exit(0)
+matches = []
+already = False
+for file in root.rglob("*.js"):
+    if not file.is_file() or file.is_symlink():
+        continue
+    data = file.read_bytes()
+    if marker in data:
+        already = True
+        continue
+    # La rama debe pertenecer al validador de calidad, no a otro parser.
+    if b"choice has no message object" not in data:
+        continue
+    for match in pattern.finditer(data):
+        if b"choice has no message object" in data[match.end():match.end() + 900]:
+            matches.append((file, data, match))
+if already:
+    print("T10_6=ALREADY_PATCHED")
+elif len(matches) != 1:
+    print(f"T10_6=NOT_APPLIED (coincidencias={len(matches)}; sin cambios)")
+else:
+    file, data, match = matches[0]
+    name = match.group("choices")
+    # Solo choices=[], no respuestas estructuradas o con otros formatos.
+    injection = (
+        b"if(Array.isArray(" + name + b")&&" + name + b".length===0)"
+        b'return{valid:false,reason:"empty_choices"};' + marker
+    )
+    patched = data[:match.start()] + injection + data[match.start():]
+    temp = file.with_name(file.name + ".t10-6-tmp")
+    try:
+        temp.write_bytes(patched)
+        os.chmod(temp, file.stat().st_mode)
+        os.replace(temp, file)
+    finally:
+        if temp.exists():
+            temp.unlink()
+    print("T10_6=PATCHED (choices=[] deja de ser éxito en fallback)")
+PY_EMPTY_CHOICES
+
 # 4. better-sqlite3 nativo en la ruta oficial de runtime.
 mkdir -p "$RUNTIME_DIR"
 if [ ! -f "$RUNTIME_DIR/package.json" ]; then
