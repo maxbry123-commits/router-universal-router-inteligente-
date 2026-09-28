@@ -1,4 +1,4 @@
-# SENTINELA-FABRICA — 2026-09-28T00:36Z
+# SENTINELA-FABRICA — 2026-09-28T00:41Z
 (LOOP común · versión: 9f25e8e246217db9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.
@@ -16,15 +16,7 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El bloque Fábrica UI se reportó sin adjuntar evidencia de commits recientes observados (git log verificable); la evidencia comunitaria aportada es genérica (SO sobre git/python) y no prueba entregas reales del objetivo.
-
-EVIDENCIA: Fallo literal=missing_evidence:recent_commits_observed. Los 5 enlaces son preguntas canónicas de StackOverflow sin relación con el repo ni con entregas UI; no hay hashes, fechas, diffs ni artefactos.
-
-NO_REGENERAR: No reintentar el bloque ni declarar avance; no sustituir evidencia con referencias externas; no cerrar objetivos por afirmación.
-
-REPARAR: Ejecutar y pegar salida real de `git log --oneline -n 10` y `git status` en sentinela-fabrica; listar archivos entregados por objetivo con diff o ruta verificable; vincular cada objetivo de la Fábrica UI a su commit/artefacto.
-
-ACEPTACION: Solo se abre el siguiente bloque cuando cada objetivo tenga commit reciente observado + artefacto comprobable; veredicto actual: FAIL (sin PASS).
+Sin respuesta LLM; conservar evidencia y reintentar investigación.
 
 CONTROL:
 - PASS no lo decide la LLM.
