@@ -196,7 +196,8 @@ jobs:
             echo; echo "TAREA:"; cat "chat router/06-ESPEJOS/tareas/${TAREA}.md"; } > /tmp/tarea.txt
           AIDER_TIMEOUT=17400
           case "$TAREA" in
-            T03C1|T03C2) AIDER_TIMEOUT=3540 ;;
+            T03C1) AIDER_TIMEOUT=1200 ;;
+            T03C2) AIDER_TIMEOUT=600 ;;
           esac
           echo "::notice::aider_timeout=${AIDER_TIMEOUT}s tarea=${TAREA}"
           timeout "$AIDER_TIMEOUT" aider --model "openai/${MODELO}" --no-git --yes-always --no-show-model-warnings \
