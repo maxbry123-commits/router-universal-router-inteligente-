@@ -53,4 +53,4 @@ Estado documentado:
 - T03-A runtime/Node: PASS.
 - T03-B supervisor/SQLite: PASS.
 - T03-C1 investigación externa: PASS.
-- T03-C2 documentación/gate: pendiente de aceptación final del contrato T03.
+- T03-C2 documentación/gate: contenido completo; pendiente solo de revalidación automática del contrato global T03.
