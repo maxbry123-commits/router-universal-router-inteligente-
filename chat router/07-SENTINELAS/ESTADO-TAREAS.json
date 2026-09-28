@@ -121,8 +121,8 @@
     ]
   },
   "T03": {
-    "attempt": 2,
-    "last_sha": "5a71d20dd65b6e511be7df28b2e8fdceb9d4f358",
+    "attempt": 3,
+    "last_sha": "332e1150d3180e6b63d169e721eda6cc93e6cdc5",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -137,24 +137,27 @@
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 0,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.04s\n",
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\n",
       "informe": true,
-      "stale_report": false,
-      "ultimo_commit": "d140f3606d295b7bcab6d1e7ae532e09cc62d9e6 1790561870 T03: alinear README con cierre global",
-      "veredicto": "PASS"
+      "stale_report": true,
+      "ultimo_commit": "aa96f9fef869ca74f08ada377f783179022a9e2e 1790564697 OmniRoute x10: una construcción, 10 instancias con puertos, datos y memoria propios, reinicio con espera",
+      "veredicto": "REVISE",
+      "causa": "STALE_REPORT"
     },
-    "status": "PASS",
-    "last_failure": "",
+    "status": "REVISE",
+    "last_failure": "STALE_REPORT",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
-      "failure": "TESTS_FALLAN",
-      "error_literal": ".........                                                                [100%]\n9 passed in 2.13s\n",
+      "objective": "OmniRoute estable v3.8.50 con Node soportado por upstream, better-sqlite3, supervisor con backoff, retención DB y auditoría externa",
+      "task_scope": "chat router/08-OMNIROUTE",
+      "failure": "STALE_REPORT",
+      "error_literal": ".........                                                                [100%]\n9 passed in 2.06s\n",
       "queries": [
-        "T03  TESTS_FALLAN",
-        "T03 .........                                                                [100%]\n9 passed in 2.13s",
-        "TESTS_FALLAN GitHub issue fix",
-        "TESTS_FALLAN Stack Overflow",
-        "TESTS_FALLAN developer community"
+        "T03  STALE_REPORT",
+        "T03 .........                                                                [100%]\n9 passed in 2.06s",
+        "STALE_REPORT GitHub issue fix",
+        "STALE_REPORT Stack Overflow",
+        "STALE_REPORT developer community"
       ],
       "sources": [
         "GitHub Issues del componente",
@@ -188,8 +191,14 @@
         "acceptance_check"
       ]
     },
-    "next_action": "ninguna",
-    "research_findings": []
+    "next_action": "espejo relanzado",
+    "research_findings": [
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "diegosouzapw/OmniRoute",
+        "url": "https://github.com/diegosouzapw/OmniRoute"
+      }
+    ]
   },
   "T04": {
     "attempt": 3,
