@@ -101,6 +101,11 @@ export OMNIROUTE_SERVER_HOST=127.0.0.1
 export PORT=20128
 export API_PORT=20128
 export REQUIRE_API_KEY=false
+# Rotación nativa del OmniRoute v3.8.50: 400 está desactivada por defecto.
+# Respetar un override explícito del operador; no altera el 403 de acceso denegado.
+export OMNIROUTE_ROTATE_ON_400="${OMNIROUTE_ROTATE_ON_400:-true}"
+# Nunca convertir un selector :free vacío en selección de pago.
+export OMNIROUTE_AUTO_FREE_FALLBACK_TO_FULL_POOL="${OMNIROUTE_AUTO_FREE_FALLBACK_TO_FULL_POOL:-false}"
 export NODE_OPTIONS=--max-old-space-size=4096
 export OMNIROUTE_MEMORY_MB=4096
 
