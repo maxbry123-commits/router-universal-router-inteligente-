@@ -1,11 +1,11 @@
 {
   "status": "RESEARCH",
-  "last_sha": "703033756dde0c282db93bcccc17152ca5964dba",
+  "last_sha": "cf144986b775a1664511bef8f40deab3d8437ce8",
   "last_failure": "",
   "same_failure_count": 0,
   "evidence": {
-    "observed_sha": "703033756dde0c282db93bcccc17152ca5964dba",
-    "current_sha": "703033756dde0c282db93bcccc17152ca5964dba",
+    "observed_sha": "cf144986b775a1664511bef8f40deab3d8437ce8",
+    "current_sha": "cf144986b775a1664511bef8f40deab3d8437ce8",
     "executor_active": false,
     "workflow_false_green": false,
     "unauthorized_change": false,
@@ -22,7 +22,7 @@
     "priority_task": {}
   },
   "next_action": "missing_evidence:recent_commits_observed",
-  "attempt": 31,
+  "attempt": 32,
   "loop_version": "9f25e8e246217db9",
   "research_packet": {
     "sentinel_id": "sentinela-fabrica",
