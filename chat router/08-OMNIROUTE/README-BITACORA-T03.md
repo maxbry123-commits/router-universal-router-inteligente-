@@ -147,6 +147,21 @@ ps -eo pid,ppid,rss,args | grep -E '[o]mniroute|[s]upervisor_omniroute'
 
 **Precisión:** estas fuentes explican fallos reproducidos en la comunidad. En nuestro entorno las *causas confirmadas* se asignan únicamente cuando un Job propio enseñó el síntoma exacto. Las ramas futuras upstream no sustituyen una versión validada por sí solas.
 
+## 5 bis. Investigación posterior al PASS: estado específico de T10 y otros free-tier
+
+**Hallazgo reproducible de repositorio (2026-09-28):** existe el [contrato T10](../06-ESPEJOS/tareas/T10.md) en `chat router/06-ESPEJOS/tareas/T10.md`, commit `03c7333223e9...`, pero al auditar `main` **no existe** el directorio esperado `chat router/08-OMNIROUTE/autofree/` ni sus ficheros prometidos `aplicar_parche_autofree.sh`, `parche_virtualFactory.py`, `prueba_autofree.py` o `tests/test_parche.py`. Por tanto, **T10 NO puede declararse implementada ni probarse con el gate de ese contrato**.
+
+**Conflicto de arquitectura:** T10 fue diseñada como parche TypeScript del fichero de fuente `open-sse/services/autoCombo/virtualFactory.ts` **entre `npm ci` y `npm run build`**. El arranque estable de T03 usa `npm install -g omniroute@3.8.50` precompilado y evita por completo esa fase; no basta con crear el archivo T10 para que altere el comportamiento del servidor precompilado. **No volver al build roto para integrar T10 sin rediseñar, investigar el bundle y probar su aceptación de forma aislada.**
+
+**Más evidencia upstream (NO verificada en el egress HF en esta investigación):**
+
+- [OmniRoute #13935](https://github.com/diegosouzapw/OmniRoute/issues/13935) y [discusión #13986](https://github.com/diegosouzapw/OmniRoute/discussions/13986): OpenCode Free devuelve 403 cuando el cliente no cumple su contrato; la rama de desarrollo menciona cambios, pero el paquete 3.8.50 no queda reparado por eso.
+- [OmniRoute #14327](https://github.com/diegosouzapw/OmniRoute/discussions/14327): comunidad también reporta bloqueo DDG 418 y catálogos UncloseAI caducos. No insistir con una IP rechazada ni intentar eludir sus controles.
+- [OmniRoute #4265](https://github.com/diegosouzapw/OmniRoute/issues/4265): Pollinations requiere claves para modelos premium, aunque algunos modelos básicos fueron catalogados como keyless; [#9827](https://github.com/diegosouzapw/OmniRoute/issues/9827) documenta que incluso conexiones anónimas pueden dar 401. Por ello **Pollinations no se marcará compatible con HF hasta obtener HTTP 200 y texto real**.
+- [Guía de free tiers](https://github.com/diegosouzapw/OmniRoute/blob/release/v3.8.51/docs/getting-started/FREE-TIERS-GUIDE.md): `noAuth` / `hasFree` son **metadatos** de descubrimiento y no implican acceso garantizado. Un proveedor con cuotas gratuitas puede requerir autenticación legítima.
+
+**Regla para siguiente cambio:** T03 no necesita tocar código de instalación. Si se decide ejecutar T10, primero crear un plan distinto compatible con el paquete precompilado o con build en una fase externa claramente separada del runtime; validar autorización y disponibilidad de cada proveedor antes de incluirlo en auto-ruteo, sin suplantar clientes ni evadir cuotas.
+
 ## 6. Contrato de continuación: bucle en microtareas con gates
 
 `LEER HANDOFF + README → IDENTIFICAR ÚNICO FALLO PENDIENTE → INVESTIGAR fuente/log upstream → ANOTAR HIPÓTESIS Y PRUEBA → CAMBIO QUIRÚRGICO SOLO SI HACE FALTA → GATE LOCAL → GATE RUNTIME → GATE CHAT → READ-BACK + INFORME → SIGUIENTE MICROTAREA`
