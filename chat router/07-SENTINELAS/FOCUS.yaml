@@ -1,11 +1,11 @@
 schema: yaiwes.sentinel-focus/v1
 mode: one_task_at_a_time
-active_task: T05
+active_task: T03
 advance: manual
-reason: "Cerrar T05 completa ya publicada en main."
+reason: "Cierre final OmniRoute: T03A, T03B y T03C1 PASS; T03C2 documentado. Ejecutar contrato T03 completo y cerrar solo con evidencia determinista."
 rules:
-  - "Solo revisar T05."
-  - "Ejecutar acceptance y objective_checks."
-  - "Si falla un check, corregir solo ese GAP; no regenerar todo."
-  - "PASS solo con archivos completos + pytest exit 0 + objective_checks + informe fresco."
-  - "No modificar otras tareas."
+  - "No relanzar T03A, T03B, T03C1 ni T03C2."
+  - "Ejecutar aceptación contractual completa de T03 sobre main actual."
+  - "PASS solo con pytest exit 0 + bash -n exit 0 + auditoría externa completa."
+  - "Si falla, corregir únicamente el gate exacto que falle."
+  - "No tocar T04-T08."
