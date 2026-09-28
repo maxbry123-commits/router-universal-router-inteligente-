@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 3,
-    "last_sha": "f6c37a1e4eef1f52ac38508192bb9d901b02b530",
+    "last_sha": "f3e0699b94233bfa364be71892d77cd647480961",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -137,15 +137,14 @@
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 0,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\n",
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.07s\n",
       "informe": true,
-      "stale_report": true,
+      "stale_report": false,
       "ultimo_commit": "aa96f9fef869ca74f08ada377f783179022a9e2e 1790564697 OmniRoute x10: una construcción, 10 instancias con puertos, datos y memoria propios, reinicio con espera",
-      "veredicto": "REVISE",
-      "causa": "STALE_REPORT"
+      "veredicto": "PASS"
     },
-    "status": "WAITING_EXECUTOR",
-    "last_failure": "STALE_REPORT",
+    "status": "PASS",
+    "last_failure": "",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
       "objective": "OmniRoute estable v3.8.50 con Node soportado por upstream, better-sqlite3, supervisor con backoff, retención DB y auditoría externa",
@@ -191,7 +190,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar ejecutor activo: T10; no lanzar segundo espejo",
+    "next_action": "ninguna",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
