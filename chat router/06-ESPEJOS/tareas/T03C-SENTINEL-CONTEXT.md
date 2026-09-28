@@ -32,14 +32,14 @@ FUENTES ENCONTRADAS:
 - StackOverflow: How to convert this code into Antlr Groovy Grammar v4? https://stackoverflow.com/questions/40997897/how-to-convert-this-code-into-antlr-groovy-grammar-v4
 
 ANÁLISIS DEL INVESTIGADOR:
-CAUSA_RAIZ: El contrato C exige el artefacto VALIDACION-EXTERNA.md (auditoría externa/cierre) y no existe en el entregable; además pytest_exit=1 indica suite roja, por lo que el sentinela marca SCOPE_ESCAPE (alcance declarado sin evidencia de cierre).
+CAUSA_RAIZ: El contrato C exige el artefacto VALIDACION-EXTERNA.md (auditoría externa/cierre) y no fue generado; además pytest_exit=1 indica suite roja, por lo que el cierre no es auditable. El SCOPE_ESCAPE sugiere que se trabajó fuera del alcance (posiblemente código/gramática ajeno, cf. evidencia ANTLR irrelevante) en lugar de producir el documento de validación.
 
-EVIDENCIA: Veredicto determinista REVISE con faltan=['VALIDACION-EXTERNA.md']; pytest exit 1; fuentes comunidad solo referencian repos upstream (OmniRoute, better-sqlite3) y un hilo SO de ANTLR irrelevante para el cierre — ninguna aporta validación externa.
+EVIDENCIA: Veredicto determinista REVISE con faltan=['VALIDACION-EXTERNA.md']; pytest_exit=1. Evidencia comunidad: repos OmniRoute y better-sqlite3 (stack real del proyecto) son pertinentes; el hilo StackOverflow de ANTLR/Groovy es ruido sin relación con el contrato C.
 
-GAPS: (1) No hay protocolo definido de quién/firma la auditoría externa ni formato mínimo del documento. (2) Falta criterio de qué tests deben pasar antes del cierre (umbral de pytest). (3) Sin evidencia de revisión por tercero (issue/PR externo, checklist firmado). (4) Desconocido si VALIDACION-EXTERNA.md requiere hash/commit de referencia.
+GAPS: (1) Protocolo no define plantilla obligatoria de VALIDACION-EXTERNA.md (secciones: alcance, hallazgos, resultado pytest, hash/commit, firmante externo). (2) No hay gate que bloquee cierre con pytest≠0. (3) Falta criterio de "auditoría externa": ¿quién/qué cuenta como externo? (4) Sin filtro de relevancia de evidencia comunitaria.
 
-NO_REGENERAR: No reescribir código de OmniRoute ni tests existentes; no tocar gramática ANTLR; no inventar una "auditoría" auto-firmada sin revisión real.
+NO_REGENERAR: No reescribir código de OmniRoute ni migraciones better-sqlite3 ya verificadas; no descartar evidencia de los repos oficiales; no tocar nada relacionado con ANTLR.
 
-REPARAR: (1) Ejecutar pytest, corregir fallos hasta exit=0 y guardar log. (2) Crear VALIDACION-EXTERNA.md en raíz con: alcance auditado, commit/hash, resultado pytest (exit 0 + resumen), checklist de contrato C, hallazgos y firma/identidad del auditor externo con fecha. (3) Referenciar evidencia verificable (enlace a PR/CI o revisor distinto del autor).
+REPARAR: (1) Corregir los tests fallidos hasta pytest_exit=0 y capturar salida. (2) Crear VALIDACION-EXTERNA.md en raíz con: commit SHA, resultado pytest completo, lista de archivos auditados, hallazgos, referencias a repos upstream, declaración de cierre del contrato C. (3) Confirmar que no hay cambios fuera del scope declarado.
 
-ACEPTACION: pytest_exit=0; VALIDACION-EXTERNA.md presente, con auditor identificable ≠ autor, resultados reproducibles y cierre explícito del contrato C; sentinela sin SCOPE_ESCAPE.
+ACEPTACION: pytest_exit=0; VALIDACION-EXTERNA.md presente con todas las secciones; veredicto determinista sin faltantes ni SCOPE_ESCAPE.

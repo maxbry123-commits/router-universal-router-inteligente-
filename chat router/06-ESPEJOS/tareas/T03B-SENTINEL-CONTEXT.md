@@ -12,8 +12,8 @@ ACEPTACIÓN: python -m pytest 'chat router/08-OMNIROUTE/tests/test_supervisor.py
 
 EVIDENCIA ACTUAL:
 - causa: SCOPE_ESCAPE
-- faltan: ['VALIDACION-SUPERVISOR-DB.md']
-- pytest/acceptance exit: 2
+- faltan: []
+- pytest/acceptance exit: 0
 - scope_escape: True
 - objective_drift: False
 
@@ -32,6 +32,17 @@ CHEQUEOS INDEPENDIENTES DEL OBJETIVO:
 FUENTES ENCONTRADAS:
 - Repositorio oficial/upstream: diegosouzapw/OmniRoute https://github.com/diegosouzapw/OmniRoute
 - Repositorio oficial/upstream: WiseLibs/better-sqlite3 https://github.com/WiseLibs/better-sqlite3
+- GitHub:WiseLibs/better-sqlite3: 32-bit build succeeds, throws exceptions at runtime about integer length https://github.com/WiseLibs/better-sqlite3/issues/9
 
 ANÁLISIS DEL INVESTIGADOR:
-sin respuesta del modelo; usar evidencia determinista
+CAUSA_RAIZ: SCOPE_ESCAPE con pytest_exit=0 y faltan=[] indica que los 9 tests pasan pero el diff toca archivos fuera del alcance declarado de T03B (supervisor + SQLite), o se modificaron archivos protegidos/no listados en el contrato B.
+
+EVIDENCIA: "9 passed in 2.12s" confirma corrección funcional; el veredicto determinista no reporta tests fallidos ni archivos faltantes, solo escape de scope → el problema es de límites del cambio, no de lógica.
+
+GAPS: (1) No se especifica qué archivos constituyen el scope permitido de T03B ni cuáles se tocaron de más. (2) Sin lista de archivos modificados no puedo señalar el escape exacto. (3) Protocolo: falta criterio de si archivos de config/fixtures cuentan como scope.
+
+NO_REGENERAR: No reescribir supervisor, capa SQLite ni los 9 tests — son correctos. No tocar lógica de negocio.
+
+REPARAR: Revertir/retirar del diff todo archivo fuera del contrato B (supervisor + persistencia SQLite). Mover cambios extra a su tarea correspondiente o eliminarlos. Verificar con `git diff --name-only` contra la lista de scope antes de reenviar.
+
+ACEPTACION: Diff limitado exclusivamente a archivos del contrato B, 9/9 tests en verde, veredicto sin SCOPE_ESCAPE.

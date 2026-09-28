@@ -595,45 +595,47 @@
     "next_action": "esperar; foco actual T03A,T03B,T03C"
   },
   "T03A": {
-    "attempt": 2,
-    "last_sha": "73555a9f38e1b291e6ff5022b30ebc5eb0219a0a",
+    "attempt": 3,
+    "last_sha": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8",
     "evidence": {
       "faltan": [
         "DIAGNOSTICO-RUNTIME.md"
       ],
       "fugas": [],
-      "changed_files": [],
+      "changed_files": [
+        "chat router/06-ESPEJOS/informes/T03A.md"
+      ],
       "executor_audit": {
         "path_escape_count": 0,
         "recovered_deviation": false,
         "source": "informe"
       },
       "recovered_deviation": false,
-      "scope_escape": null,
+      "scope_escape": "scope_escape:chat router/06-ESPEJOS/informes/T03A.md",
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 2,
       "pytest_tail": "grep: chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md: No such file or directory\n",
       "informe": true,
-      "stale_report": false,
-      "ultimo_commit": "8142ae4fa0a55b7516081f94f4bd7c3f95be7bf9 1790553873 espejo T03A: REVISE (36360645899)",
+      "stale_report": true,
+      "ultimo_commit": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8 1790554410 espejo T03B: PASS (36361044929)",
       "veredicto": "REVISE",
-      "causa": "ARCHIVOS_INCOMPLETOS"
+      "causa": "SCOPE_ESCAPE"
     },
     "status": "REVISE",
-    "last_failure": "ARCHIVOS_INCOMPLETOS",
+    "last_failure": "SCOPE_ESCAPE",
     "research_packet": {
       "sentinel_id": "sentinela-t03a",
       "objective": "OmniRoute contrato A: runtime e instalación reproducible",
       "task_scope": "chat router/08-OMNIROUTE",
-      "failure": "ARCHIVOS_INCOMPLETOS",
+      "failure": "SCOPE_ESCAPE",
       "error_literal": "grep: chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md: No such file or directory\n",
       "queries": [
-        "T03A  ARCHIVOS_INCOMPLETOS",
+        "T03A  SCOPE_ESCAPE",
         "T03A grep: chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md: No such file or directory",
-        "ARCHIVOS_INCOMPLETOS GitHub issue fix",
-        "ARCHIVOS_INCOMPLETOS Stack Overflow",
-        "ARCHIVOS_INCOMPLETOS developer community"
+        "SCOPE_ESCAPE GitHub issue fix",
+        "SCOPE_ESCAPE Stack Overflow",
+        "SCOPE_ESCAPE developer community"
       ],
       "sources": [
         "GitHub Issues del componente",
@@ -707,12 +709,10 @@
     "next_action": "espejo relanzado"
   },
   "T03B": {
-    "attempt": 2,
-    "last_sha": "73555a9f38e1b291e6ff5022b30ebc5eb0219a0a",
+    "attempt": 3,
+    "last_sha": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8",
     "evidence": {
-      "faltan": [
-        "VALIDACION-SUPERVISOR-DB.md"
-      ],
+      "faltan": [],
       "fugas": [],
       "changed_files": [
         "chat router/06-ESPEJOS/informes/T03B.md",
@@ -722,19 +722,19 @@
         "chat router/08-OMNIROUTE/tests/__pycache__/test_supervisor.cpython-312-pytest-9.1.1.pyc"
       ],
       "executor_audit": {
-        "path_escape_count": 0,
-        "recovered_deviation": false,
+        "path_escape_count": 1,
+        "recovered_deviation": true,
         "source": "informe"
       },
-      "recovered_deviation": false,
+      "recovered_deviation": true,
       "scope_escape": "scope_escape:chat router/06-ESPEJOS/informes/T03B.md",
       "objective_failures": [],
       "objective_drift": false,
-      "pytest_exit": 2,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory\n",
-      "informe": false,
+      "pytest_exit": 0,
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.12s\n",
+      "informe": true,
       "stale_report": false,
-      "ultimo_commit": "8142ae4fa0a55b7516081f94f4bd7c3f95be7bf9 1790553873 espejo T03A: REVISE (36360645899)",
+      "ultimo_commit": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8 1790554410 espejo T03B: PASS (36361044929)",
       "veredicto": "REVISE",
       "causa": "SCOPE_ESCAPE"
     },
@@ -745,10 +745,10 @@
       "objective": "OmniRoute contrato B: supervisor y SQLite",
       "task_scope": "chat router/08-OMNIROUTE",
       "failure": "SCOPE_ESCAPE",
-      "error_literal": ".........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory\n",
+      "error_literal": ".........                                                                [100%]\n9 passed in 2.12s\n",
       "queries": [
         "T03B  SCOPE_ESCAPE",
-        "T03B .........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory",
+        "T03B .........                                                                [100%]\n9 passed in 2.12s",
         "SCOPE_ESCAPE GitHub issue fix",
         "SCOPE_ESCAPE Stack Overflow",
         "SCOPE_ESCAPE developer community"
@@ -795,24 +795,33 @@
         "source": "Repositorio oficial/upstream",
         "title": "WiseLibs/better-sqlite3",
         "url": "https://github.com/WiseLibs/better-sqlite3"
+      },
+      {
+        "state": "closed",
+        "title": "32-bit build succeeds, throws exceptions at runtime about integer length",
+        "updatedAt": "2016-10-13T06:38:20Z",
+        "url": "https://github.com/WiseLibs/better-sqlite3/issues/9",
+        "source": "GitHub:WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "espejo relanzado"
+    "next_action": "espejo relanzado",
+    "deviation_count": 1,
+    "last_deviation": {
+      "type": "PATH_ESCAPE_RECOVERED",
+      "count": 1,
+      "run_id": null
+    }
   },
   "T03C": {
-    "attempt": 2,
-    "last_sha": "73555a9f38e1b291e6ff5022b30ebc5eb0219a0a",
+    "attempt": 3,
+    "last_sha": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8",
     "evidence": {
       "faltan": [
         "VALIDACION-EXTERNA.md"
       ],
       "fugas": [],
       "changed_files": [
-        "chat router/06-ESPEJOS/informes/T03C.md",
-        "chat router/08-OMNIROUTE/__pycache__/mantenimiento_db.cpython-312.pyc",
-        "chat router/08-OMNIROUTE/__pycache__/supervisor_omniroute.cpython-312.pyc",
-        "chat router/08-OMNIROUTE/tests/__pycache__/__init__.cpython-312.pyc",
-        "chat router/08-OMNIROUTE/tests/__pycache__/test_supervisor.cpython-312-pytest-9.1.1.pyc"
+        "chat router/06-ESPEJOS/informes/T03C.md"
       ],
       "executor_audit": {
         "path_escape_count": 0,
@@ -827,7 +836,7 @@
       "pytest_tail": "",
       "informe": false,
       "stale_report": false,
-      "ultimo_commit": "8142ae4fa0a55b7516081f94f4bd7c3f95be7bf9 1790553873 espejo T03A: REVISE (36360645899)",
+      "ultimo_commit": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8 1790554410 espejo T03B: PASS (36361044929)",
       "veredicto": "REVISE",
       "causa": "SCOPE_ESCAPE"
     },
