@@ -107,13 +107,23 @@ def espejos_activos() -> dict[str, dict]:
     if rc != 0:
         return activos
     now = dt.datetime.now(dt.timezone.utc)
-    for run in json.loads(out or "[]"):
+    try:
+        runs = json.loads(out or "[]")
+    except json.JSONDecodeError:
+        return activos
+    for run in runs:
         run_id = run.get("databaseId")
-        _, jobs = sh([
+        jobs_rc, jobs = sh([
             "gh", "run", "view", str(run_id),
             "-R", REPO, "--json", "jobs",
         ], timeout=20)
-        for job in json.loads(jobs or "{}").get("jobs", []):
+        if jobs_rc != 0:
+            continue
+        try:
+            job_items = json.loads(jobs or "{}").get("jobs", [])
+        except json.JSONDecodeError:
+            continue
+        for job in job_items:
             name = job.get("name", "")
             if job.get("status") == "completed" or "(" not in name:
                 continue
