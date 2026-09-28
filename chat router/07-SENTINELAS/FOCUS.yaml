@@ -1,13 +1,12 @@
 schema: yaiwes.sentinel-focus/v1
-mode: split_task_parallel
-parent_task: T03
-active_tasks: [T03A, T03B, T03C]
-advance: automatic_on_convergence
-reason: "OmniRoute dividido en tres contratos: A runtime/instalación, B supervisor/SQLite, C auditoría externa/cierre."
+mode: one_task_at_a_time
+active_task: T08
+advance: manual
+reason: "Cierre exclusivo T08: limpiar caches/pyc versionados, revalidar acceptance + objective_checks y persistir evidencia fresca."
 rules:
-  - "Solo T03A,T03B,T03C pueden ejecutarse durante este split."
-  - "Los tres pueden correr en paralelo; no duplicar un contrato ya activo."
-  - "Cada contrato conserva su mirror de recuperación."
-  - "Si un contrato falla: investigar su GAP, crear contexto y relanzar solo ese contrato."
-  - "T03 padre solo puede PASS cuando T03A/T03B/T03C están PASS y la aceptación global T03 sale 0."
-  - "No regenerar trabajo válido de otro contrato."
+  - "Nunca relanzar más de una tarea por ciclo."
+  - "Si T08 está activo: observar y no duplicar ejecutor."
+  - "Preservar motores y tests válidos; no regenerar si acceptance ya pasa."
+  - "PASS requiere required_files + acceptance exit 0 + objective_checks + informe fresco."
+  - "T08 publicado debe quedar sin __pycache__, .pytest_cache ni *.pyc."
+  - "No modificar otras tareas."
