@@ -2,7 +2,7 @@ schema: yaiwes.sentinel-focus/v1
 mode: one_task_at_a_time
 active_task: T03
 advance: manual
-reason: "Cierre final OmniRoute: T03A, T03B y T03C1 PASS; T03C2 documentado. Ejecutar contrato T03 completo y cerrar solo con evidencia determinista."
+reason: "Revalidación final limpia OmniRoute sobre HEAD actual: ejecutar contrato T03 completo; no relanzar subgates."
 rules:
   - "No relanzar T03A, T03B, T03C1 ni T03C2."
   - "Ejecutar aceptación contractual completa de T03 sobre main actual."
