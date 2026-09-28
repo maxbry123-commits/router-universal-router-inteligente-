@@ -139,15 +139,24 @@ def espejos_activos() -> dict[str, dict]:
     return activos
 
 
+def mirror_branch(tid: str) -> str:
+    return {
+        "T03A": "mirror/T03",
+        "T03B": "mirror/T03-B",
+        "T03C": "mirror/T03-C",
+    }.get(tid, f"mirror/{tid}")
+
+
 def mirror_changed_files(tid: str) -> list[str]:
     """Inspecciona una rama REVISE sin mezclarla con el worktree actual."""
-    ref = f"refs/remotes/origin/mirror/{tid}"
-    rc, _ = sh(["git", "ls-remote", "--exit-code", "--heads", "origin", f"mirror/{tid}"], timeout=20)
+    branch = mirror_branch(tid)
+    ref = f"refs/remotes/origin/{branch}"
+    rc, _ = sh(["git", "ls-remote", "--exit-code", "--heads", "origin", branch], timeout=20)
     if rc != 0:
         return []
     rc, _ = sh([
         "git", "fetch", "-q", "origin",
-        f"refs/heads/mirror/{tid}:{ref}",
+        f"refs/heads/{branch}:{ref}",
     ], timeout=20)
     if rc != 0:
         return []
