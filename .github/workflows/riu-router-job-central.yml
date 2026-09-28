@@ -2,17 +2,14 @@ name: RIU Router Job Central
 
 # Lanza el Job ÚNICO y persistente del Router (common/router_job_persistent.py).
 # Máquina HF 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga. Al lanzar uno nuevo, cancela los anteriores.
-# Dentro: Router (8000) + OmniRoute T03 estable: chat router/08-OMNIROUTE/start_omniroute.sh
-#   Usa el bundle npm oficial precompilado y 1 instancia en 20128. El wrapper x10 queda solo como compatibilidad (1 activa / 9 pausadas).
-# Secretos al Job (nunca en archivos): GITHUB_TOKEN, RIU_ROUTER_API_KEY, RIU_AGENT_API_KEYS, NVIDIA_API_KEY_1..4,
-#   GROQ_API_KEY_2..7, STORAGE_ENCRYPTION_KEY (fija, para OmniRoute).
+# 2026-09-28 (Director): OmniRoute DESCARTADO. Prueba 09:05: el programa arranca (1/1 vivo, catálogo 200) pero los proveedores
+#   gratis bloquean (OpenCode 403 "solo dentro de OpenCode", Felo 400/503) → no aporta respuestas; y dentro del Router lo tumbó (x10).
+#   El Router ya NO arranca OmniRoute. Modelos: NVIDIA (Kimi K3 / GLM-5.3) + Groq (claves 2-7) directos.
+# Secretos al Job (nunca en archivos): GITHUB_TOKEN, RIU_ROUTER_API_KEY, RIU_AGENT_API_KEYS, NVIDIA_API_KEY_1..4, GROQ_API_KEY_2..7.
 # Tras health OK, este workflow ESCRIBE LIVE_URL en el flag.
 # E2E verificado 2026-09-28: /chat/send → NVIDIA moonshotai/kimi-k3 → respuesta real.
 
 on:
-  push:
-    paths:
-      - '.github/omniroute-relaunch.trigger'
   workflow_dispatch:
     inputs:
       lifetime:
@@ -41,7 +38,6 @@ jobs:
           GH_WRITE: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
           RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
           RIU_AGENT_KEYS: ${{ secrets.RIU_AGENT_API_KEYS_JSON }}
-          OMNI_KEY: ${{ secrets.OMNIROUTE_STORAGE_ENCRYPTION_KEY }}
           LIFETIME: ${{ inputs.lifetime || '48h' }}
           FLAVOR: ${{ inputs.flavor || 'cpu-basic' }}
           NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
@@ -65,15 +61,11 @@ jobs:
               "command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
               "git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente- /tmp/r && "
               "cd /tmp/r && "
-              "OMNI='chat router/08-OMNIROUTE/start_omniroute.sh'; "
-              "[ -f \"$OMNI\" ] || OMNI='chat router/08-OMNIROUTE/start_omniroute_x10.sh'; "
-              "[ -f \"$OMNI\" ] || OMNI='router inteligente universal/keeper/start_omniroute.sh'; "
-              "(bash \"$OMNI\" >> /tmp/omniroute.log 2>&1 &) ; "
               "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests httpx && "
               "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'"
           )
           secrets = {"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]}
-          for env_name, sec_name in (("RIU_KEY", "RIU_ROUTER_API_KEY"), ("RIU_AGENT_KEYS", "RIU_AGENT_API_KEYS"), ("OMNI_KEY", "STORAGE_ENCRYPTION_KEY")):
+          for env_name, sec_name in (("RIU_KEY", "RIU_ROUTER_API_KEY"), ("RIU_AGENT_KEYS", "RIU_AGENT_API_KEYS")):
               if os.environ.get(env_name):
                   secrets[sec_name] = os.environ[env_name]
           n = 0
@@ -82,7 +74,7 @@ jobs:
                   v = os.environ.get(f"{pref}{i}", "")
                   if v:
                       secrets[f"{pref}{i}"] = v; n += 1
-          print(f"::notice::claves de proveedores enviadas: {n} · lista del Router: {'sí' if 'RIU_AGENT_API_KEYS' in secrets else 'NO'} · clave OmniRoute: {'sí' if 'STORAGE_ENCRYPTION_KEY' in secrets else 'NO'}")
+          print(f"::notice::claves de proveedores enviadas: {n} · lista del Router: {'sí' if 'RIU_AGENT_API_KEYS' in secrets else 'NO'}")
           lifetime = os.environ["LIFETIME"]
           try:
               job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=lifetime,
