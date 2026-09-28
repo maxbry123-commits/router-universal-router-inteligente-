@@ -121,8 +121,8 @@
     ]
   },
   "T03": {
-    "attempt": 3,
-    "last_sha": "a2272da3900192e62779a4bfb9ae26c99052c45d",
+    "attempt": 4,
+    "last_sha": "82f3854113adac490266620919ad8027f85f0d33",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -136,24 +136,25 @@
       "scope_escape": null,
       "objective_failures": [],
       "objective_drift": false,
-      "pytest_exit": 0,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.10s\n",
+      "pytest_exit": 1,
+      "pytest_tail": "...F.................                                                    [100%]\n=================================== FAILURES ===================================\n_______________________ test_apply_usa_compare_and_swap ________________________\n\n    def test_apply_usa_compare_and_swap():\n        with patch.object(block, \"_request\",\n                          side_effect=[(200, {\"settingsRevision\": 7,\n                                              \"blockedProviders\": [\"otro\"]}),\n                                       (200, {})]) as req:\n            assert block.main([\"--proveedor\", \"opencode\", \"--aplicar\"]) == 0\n        assert req.call_count == 2\n        assert req.call_args[1][\"revision\"] == 7\n>       assert req.call_args[1][\"data\"] == {\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n            \"blockedProviders\": [\"otro\", \"opencode\"], \"expectedRevision\": 7\n        }\nE       KeyError: 'data'\n\nchat router/08-OMNIROUTE/autofree/tests/test_bloqueos.py:43: KeyError\n----------------------------- Captured stdout call -----------------------------\n{\n  \"status\": \"APPLIED\",\n  \"current\": [\n    \"otro\"\n  ],\n  \"proposed\": [\n    \"otro\",\n    \"opencode\"\n  ],\n  \"settingsRevision\": 7,\n  \"http\": 200\n}\n=========================== short test summary info ============================\nFAILED chat router/08-OMNIROUTE/autofree/tests/test_bloqueos.py::test_apply_usa_compare_and_swap - KeyError: 'data'\n1 failed, 20 passed in 2.12s\n",
       "informe": true,
-      "stale_report": false,
-      "ultimo_commit": "3191bb927935263c88b580fb7452c52d401d0696 1790576112 docs(T03): alinear diagnóstico con solución precompilada",
-      "veredicto": "PASS"
+      "stale_report": true,
+      "ultimo_commit": "2c494c90f7f0f443a59af79186aa6235a823e456 1790584539 fix(T10-9): ocultar IDs obsoletos confirmados del catálogo mediante API nativa, opt-in",
+      "veredicto": "REVISE",
+      "causa": "STALE_REPORT"
     },
-    "status": "PASS",
-    "last_failure": "",
+    "status": "REVISE",
+    "last_failure": "STALE_REPORT",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
       "objective": "OmniRoute estable v3.8.50 con Node soportado por upstream, better-sqlite3, supervisor con backoff, retención DB y auditoría externa",
       "task_scope": "chat router/08-OMNIROUTE",
       "failure": "STALE_REPORT",
-      "error_literal": ".........                                                                [100%]\n9 passed in 2.06s\n",
+      "error_literal": "                             \"blockedProviders\": [\"otro\"]}),\n                                       (200, {})]) as req:\n            assert block.main([\"--proveedor\", \"opencode\", \"--aplicar\"]) == 0\n        assert req.call_count == 2\n        assert req.call_args[1][\"revision\"] == 7\n>       assert req.call_args[1][\"data\"] == {\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n            \"blockedProviders\": [\"otro\", \"opencode\"], \"expectedRevision\": 7\n        }\nE       KeyError: 'data'\n\nchat router/08-OMNIROUTE/autofree/tests/test_bloqueos.py:43: KeyError\n----------------------------- Captured stdout call -----------------------------\n{\n  \"status\": \"APPLIED\",\n  \"current\": [\n    \"otro\"\n  ],\n  \"proposed\": [\n    \"otro\",\n    \"opencode\"\n  ],\n  \"settingsRevision\": 7,\n  \"http\": 200\n}\n=========================== short test summary info ============================\nFAILED chat router/08-OMNIROUTE/autofree/tests/test_bloqueos.py::test_apply_usa_compare_and_swap - KeyError: 'data'\n1 failed, 20 passed in 2.12s\n",
       "queries": [
         "T03  STALE_REPORT",
-        "T03 .........                                                                [100%]\n9 passed in 2.06s",
+        "T03                              \"blockedProviders\": [\"otro\"]}),\n                                       (200, {})]) as req:\n            assert block.main([\"--proveedor\", \"opencode\", \"--aplicar\"]) == 0\n        assert req.call_count == 2\n        assert req.call_args[1][\"revision\"] == 7\n>       assert req.call_args[1][\"data\"] == {\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n            \"blockedProviders\": [\"otro\", \"opencode\"], \"expectedRevision\": 7\n        }\nE       KeyError: 'data'\n\nchat router/08-OMNIROUTE/autofree/tests/test_bloqueos.py:43: KeyError\n----------------------------- Captured stdout call -----------------------------\n{\n  \"status\": \"APPLIED\",\n  \"current\": [\n    \"otro\"\n  ],\n  \"proposed\": [\n    \"otro\",\n    \"opencode\"\n  ],\n  \"settingsRevision\": 7,\n  \"http\": 200\n}\n=========================== short test summary info ============================\nFAILED chat router/08-OMNIROUTE/autofree/tests/test_bloqueos.py::test_apply_usa_compare_and_swap - KeyError: 'data'\n1 failed, 20 passed in 2.12s",
         "STALE_REPORT GitHub issue fix",
         "STALE_REPORT Stack Overflow",
         "STALE_REPORT developer community"
@@ -190,7 +191,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "ninguna",
+    "next_action": "espejo relanzado",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
