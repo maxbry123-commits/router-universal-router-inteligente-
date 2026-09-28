@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 3,
-    "last_sha": "03c7333223e9a982e66e0c27381af5327c423ff7",
+    "last_sha": "f6c37a1e4eef1f52ac38508192bb9d901b02b530",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -144,7 +144,7 @@
       "veredicto": "REVISE",
       "causa": "STALE_REPORT"
     },
-    "status": "ACTIVE",
+    "status": "WAITING_EXECUTOR",
     "last_failure": "STALE_REPORT",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
@@ -191,7 +191,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "vigilar: Guardar (commit primero; PASS → main, si no → mirror/T0X)",
+    "next_action": "esperar ejecutor activo: T10; no lanzar segundo espejo",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
