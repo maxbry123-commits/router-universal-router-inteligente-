@@ -1,4 +1,4 @@
-# SENTINELA-PLAN4 — 2026-09-28T02:21Z
+# SENTINELA-PLAN4 — 2026-09-28T02:22Z
 (LOOP común · versión: 9f25e8e246217db9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia, rama/PR o causa corregible.
@@ -17,15 +17,15 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El loop no ejecutó `git log` (ni equivalente) en esta vuelta; la evidencia aportada son URLs de StackOverflow genéricas, no commits observados del repo sentinela-plan4.
+CAUSA_RAIZ: El loop no ejecutó `git log` (ni equivalente) en esta vuelta; la evidencia aportada son URLs de StackOverflow genéricas, no commits observados del repo. Falta de instrumentación, no de plan.
 
-EVIDENCIA: Fallo literal `missing_evidence:recent_commits_observed`. Los 5 ítems de "Evidencia comunidad" son preguntas externas (branch prediction, git undo, git fetch vs pull, yield) sin relación con commits recientes del objetivo.
+EVIDENCIA: Los 5 ítems son preguntas canónicas de SO (branch prediction, git undo, fetch vs pull, yield) sin relación con sentinela-plan4; ninguna referencia commit hash, rama ni PR del repositorio.
 
-NO_REGENERAR: No reintentar la misma vuelta con evidencia de comunidad; no declarar PASS; no sustituir `git log` por búsquedas web.
+NO_REGENERAR: No volver a consultar StackOverflow ni reemitir el plan; el fallo es de recolección local, no de conocimiento externo.
 
-REPARAR: 1) Ejecutar `git log --oneline -10` en sentinela-plan4 y adjuntar salida cruda. 2) Si no hay commits nuevos, crear rama `sentinela/fix-evidence-loop` con commit que documente la causa. 3) Añadir al loop un paso obligatorio que capture y valide `recent_commits_observed` antes de cerrar la vuelta.
+REPARAR: En la próxima vuelta ejecutar y capturar salida real: `git log --oneline -5`, `git status`, `git branch --show-current`; si no hay commits nuevos, crear rama `sentinela/fix-evidence` con commit mínimo (p.ej. actualizar EVIDENCE.md) y registrar hash.
 
-ACEPTACION: Vuelta válida solo si incluye salida de `git log` con hash+fecha ≤ esta iteración, o rama/PR verificable, o causa corregible registrada con commit asociado.
+ACEPTACION: PASS solo cuando la evidencia incluya ≥1 hash de commit observado en la salida de `git log` de esta vuelta, o rama/PR creado con enlace verificable, o causa corregible documentada con comando y salida.
 
 CONTROL:
 - PASS no lo decide la LLM.
