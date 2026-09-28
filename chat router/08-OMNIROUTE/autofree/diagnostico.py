@@ -14,6 +14,9 @@ import urllib.request
 
 
 PROMPT = "Responde exactamente OMNI_OK."
+# Prefijos no-auth de la familia LLM en el catálogo de OmniRoute 3.8.50.
+# La presencia en /v1/models NO significa que un proveedor funcione.
+AUTO_FREE_PREFIXES = ("unc", "horde", "felo", "ddgw", "oc")
 KNOWN_STOP = {
     "oc/big-pickle",       # prueba anterior: acceso OpenCode Free restringido
     "felo/felo-chat",      # prueba anterior: 400/429
@@ -70,6 +73,25 @@ def models_from_response(payload):
     }
 
 
+def select_free_models(available, limit=5):
+    """Elige como máximo un modelo anunciado por proveedor no-auth conocido.
+
+    No incorpora auto/* ni proveedores autenticados que podrían cobrar tokens.
+    El resultado es una lista para probar, NO una lista de modelos validados.
+    """
+    selected = []
+    for prefix in AUTO_FREE_PREFIXES:
+        names = sorted(
+            model for model in available
+            if model.startswith(prefix + "/") and model not in KNOWN_STOP
+        )
+        if names:
+            selected.append(names[0])
+        if len(selected) >= limit:
+            break
+    return selected
+
+
 def has_assistant_text(payload):
     """HTTP 200 sin contenido real NO es éxito."""
     if not isinstance(payload, dict):
@@ -111,7 +133,7 @@ def classify(status, payload):
     return "HTTP_ERROR"
 
 
-def audit(base, requested, timeout=12, include_known_failures=False):
+def audit(base, requested, timeout=12, include_known_failures=False, auto_free=False):
     base = local_base(base)
     health_code, _ = fetch_json(base, "/api/monitoring/health", timeout)
     model_code, model_payload = fetch_json(base, "/v1/models", timeout)
@@ -125,6 +147,9 @@ def audit(base, requested, timeout=12, include_known_failures=False):
     }
     if not (200 <= health_code < 300 and model_code == 200):
         return result
+    if auto_free:
+        requested = select_free_models(available)
+        result["auto_free_candidates"] = len(requested)
     for model in requested:
         if model in KNOWN_STOP and not include_known_failures:
             result["results"].append({"model": model, "classification": "SKIPPED_PREVIOUS_ACCESS_ERROR"})
@@ -153,22 +178,29 @@ def main(argv=None):
     parser.add_argument("--url", default="http://127.0.0.1:20128")
     parser.add_argument("--modelo", action="append", default=[],
                         help="ID exacto anunciado en /v1/models (máximo 5)")
+    parser.add_argument("--comprobar-gratis", action="store_true",
+                        help="Con autorización explícita: hasta 5 modelos no-auth "
+                             "del catálogo, 1 por proveedor y sin reintentos")
     parser.add_argument("--timeout", type=int, default=12)
     parser.add_argument("--reprobar-fallidos", action="store_true",
                         help="Permitir una única prueba manual de fallos ya observados")
     args = parser.parse_args(argv)
     if len(args.modelo) > 5 or len(args.modelo) != len(set(args.modelo)):
         parser.error("Máximo 5 modelos distintos por ejecución")
+    if args.comprobar_gratis and args.modelo:
+        parser.error("--comprobar-gratis y --modelo son excluyentes")
     if not 1 <= args.timeout <= 20:
         parser.error("--timeout debe estar entre 1 y 20 s")
     try:
-        result = audit(args.url, args.modelo, args.timeout, args.reprobar_fallidos)
+        result = audit(args.url, args.modelo, args.timeout, args.reprobar_fallidos,
+                       auto_free=args.comprobar_gratis)
     except ValueError as exc:
         parser.error(str(exc))
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if not (200 <= result["gateway_health_http"] < 300 and result["catalog_http"] == 200):
         return 2
-    if args.modelo and not any(x.get("classification") == "PASS" for x in result["results"]):
+    if (args.modelo or args.comprobar_gratis) and not any(
+            x.get("classification") == "PASS" for x in result["results"]):
         return 3
     return 0
 
