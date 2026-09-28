@@ -1,4 +1,4 @@
-# SENTINELA-FABRICA — 2026-09-28T01:48Z
+# SENTINELA-FABRICA — 2026-09-28T02:10Z
 (LOOP común · versión: 9f25e8e246217db9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.
@@ -16,15 +16,15 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El bloque Fábrica UI se reportó sin evidencia verificable de commits recientes; la evidencia aportada son URLs genéricas de StackOverflow (Git, Python, branch prediction) sin relación con el objetivo ni con el repositorio sentinela-fabrica.
+CAUSA_RAIZ: El bloque Fábrica UI no aporta evidencia de commits recientes observados (git log verificado); la evidencia comunitaria adjunta es genérica (SO sobre git/rendimiento) y no demuestra entregas reales del objetivo.
 
-EVIDENCIA: Ninguna. No hay hashes de commit, salida de `git log`, diff, ni artefactos de entrega. Los 5 enlaces son contenido comunitario reciclado, no prueba de trabajo real.
+EVIDENCIA: Fallo literal `missing_evidence:recent_commits_observed`. Ninguna de las 5 URLs de StackOverflow referencia el repo, la Fábrica UI ni commits concretos; son respuestas canónicas sin trazabilidad al trabajo.
 
-NO_REGENERAR: No aceptar listas de URLs externas como evidencia. No declarar PASS. No avanzar al siguiente bloque. No reinterpretar "evidencia comunidad" como entrega.
+NO_REGENERAR: No regenerar código UI ni reintentar el bloque; no aceptar evidencia comunitaria como sustituto de entregas; no declarar PASS.
 
-REPARAR: Exigir al ejecutor: (1) `git log --oneline -n 10` con hashes y fechas del repo sentinela-fabrica; (2) diff o lista de archivos modificados por objetivo; (3) resultado de verificación funcional (tests/build/demo) por cada objetivo de la Fábrica UI; (4) mapeo objetivo→commit→verificación.
+REPARAR: Ejecutar y adjuntar salida real de `git log --oneline -n 10` (con fecha/hora), `git status`, hash de commit, diff resumido (`git show --stat HEAD`) y artefacto de entrega (build/test OK) vinculado al objetivo del bloque.
 
-ACEPTACION: Bloque cerrado solo cuando cada objetivo tenga commit real observado en el repo + verificación ejecutada con salida adjunta. Estado actual: FAIL — missing_evidence:recent_commits_observed. Siguiente bloque: BLOQUEADO.
+ACEPTACION: Solo se desbloquea el siguiente bloque cuando exista commit reciente verificable en el repo, diff coherente con el objetivo de la Fábrica UI y prueba de ejecución exitosa adjunta.
 
 CONTROL:
 - PASS no lo decide la LLM.
