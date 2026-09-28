@@ -200,7 +200,7 @@ jobs:
             T03C2) AIDER_TIMEOUT=600 ;;
           esac
           echo "::notice::aider_timeout=${AIDER_TIMEOUT}s tarea=${TAREA}"
-          timeout "$AIDER_TIMEOUT" aider --model "openai/${MODELO}" --no-git --yes-always --no-show-model-warnings \
+          timeout -k 30s "$AIDER_TIMEOUT" aider --model "openai/${MODELO}" --no-git --yes-always --no-show-model-warnings \
             --no-check-update --no-analytics --map-tokens 0 --edit-format whole "${READS[@]}" \
             --auto-test --test-cmd "python -m pytest '${ALC}' -q" \
             --message-file /tmp/tarea.txt "${FILES[@]}" > /tmp/aider.log 2>&1
