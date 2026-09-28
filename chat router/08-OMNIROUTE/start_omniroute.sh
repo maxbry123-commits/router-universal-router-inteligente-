@@ -71,8 +71,15 @@ dist = pathlib.Path(sys.argv[1])
 needle = re.compile(
     rb'''new\s+Set\s*\(\s*\[\s*["']opencode["']\s*,\s*["']felo-web["']\s*\]\s*\)'''
 )
-free_llm = (
+# T10-8: upstream PR #14675 confirma 403 FreeTierError de OpenCode fuera
+# del cliente autorizado. Mantener llamadas directas; excluir solo de auto/*.
+# En bundles ya parcheados sustituir la lista anterior sin reinstalar npm.
+previous_free_llm = (
     b'new Set(["opencode","felo-web","duckduckgo-web",'
+    b'"cloudflare-playground","theoldllm","chipotle","uncloseai","aihorde"])'
+)
+free_llm = (
+    b'new Set(["felo-web","duckduckgo-web",'
     b'"cloudflare-playground","theoldllm","chipotle","uncloseai","aihorde"])'
 )
 if not dist.is_dir():
@@ -88,10 +95,13 @@ for file in dist.rglob("*.js"):
         already = True
     found = list(needle.finditer(data))
     if found:
-        matches.extend((file, data, match) for match in found)
+        matches.extend((file, data, m.start(), m.end()) for m in found)
+    prior_index = data.find(previous_free_llm)
+    if prior_index >= 0:
+        matches.append((file, data, prior_index, prior_index + len(previous_free_llm)))
 if len(matches) == 1:
-    file, data, match = matches[0]
-    updated = data[:match.start()] + free_llm + data[match.end():]
+    file, data, start, end = matches[0]
+    updated = data[:start] + free_llm + data[end:]
     temp = file.with_name(file.name + ".t10-tmp")
     try:
         temp.write_bytes(updated)
