@@ -34,3 +34,30 @@ diegosouzapw/OmniRoute, WiseLibs/better-sqlite3, nodejs/undici, sqlite.org (27-s
 - RESULTADO: **ALINEADO**
 - CAMBIO_REALIZADO: corregida documentación que incluía Node 20 por error.
 - NO_TOCADO: SQLite, supervisor, healthcheck, better-sqlite3, cierre externo.
+
+
+## VALIDACIÓN EXTERNA DE CIERRE — 2026-09-27
+
+Esta sección consolida evidencia ya validada en:
+- DIAGNOSTICO-RUNTIME.md
+- VALIDACION-SUPERVISOR-DB.md
+- VALIDACION-EXTERNA.md
+
+| PUNTO | FUENTE/URL | EVIDENCIA | NUESTRA CONFIG | VEREDICTO |
+|---|---|---|---|---|
+| Ref estable | https://github.com/diegosouzapw/OmniRoute/releases | v3.8.50 auditado | TAG=v3.8.50 | PASS |
+| Node | https://github.com/diegosouzapw/OmniRoute/blob/v3.8.50/package.json | engines permite Node 24; .nvmrc=24 | NODE_MAJOR=24 | PASS |
+| better-sqlite3 | https://github.com/diegosouzapw/OmniRoute/issues/9613 | binding nativo debe verificarse | rebuild + require() fail-closed | PASS_CON_GATE |
+| Health | https://github.com/diegosouzapw/OmniRoute/blob/v3.8.50/src/app/api/monitoring/health/route.ts | endpoint existe | /api/monitoring/health | PASS |
+| Node nightly | https://github.com/diegosouzapw/OmniRoute/issues/9576 | riesgo abierto sin shard causal probado | Node 24 por .nvmrc | RIESGO_RESIDUAL |
+
+NODE_VERSION_VERIFICADA: Node 24.x
+OMNIROUTE_REF_VERIFICADA: diegosouzapw/OmniRoute@v3.8.50
+BETTER_SQLITE3_VERIFICADO: gate de arranque exige require('better-sqlite3')
+HEALTH_ENDPOINT_VERIFICADO: /api/monitoring/health
+ENV_VARS_VERIFICADAS: DATA_DIR, APP_BIND_HOST, PORT, REQUIRE_API_KEY, STORAGE_ENCRYPTION_KEY, NODE_OPTIONS
+START_COMMAND_VERIFICADO: npm run start bajo supervisor_omniroute.py
+ISSUES_ABIERTOS_RELEVANTES: #9576; #9613 cerrado pero relevante para npm/binding
+RIESGO_RESIDUAL: compatibilidad nightly Node 24/26 y disponibilidad real del binding nativo en el Job
+CAMBIOS_NECESARIOS: ejecutar gate contractual completo en el entorno del workflow
+VEREDICTO_FINAL: REVISE
