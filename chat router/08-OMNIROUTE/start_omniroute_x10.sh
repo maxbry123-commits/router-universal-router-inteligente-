@@ -88,16 +88,17 @@ npm cache clean --force >>"$LOG" 2>&1 || true
 rm -rf /root/.npm/_cacache 2>/dev/null || true
 mem
 
-# Upstream documenta que Turbopack usa memoria nativa fuera del heap V8.
-# En 16 GB usamos Webpack + 2 workers y heap de build 6 GB.
+# Este despliegue es API-only: usar el perfil backend oficial de OmniRoute.
+# Conserva handlers API y stubea el dashboard durante el build, reduciendo el pico
+# desde ~16 GB (full build) a la clase ligera (~5–6 GB documentada upstream).
 export NEXT_TELEMETRY_DISABLED=1
 export OMNIROUTE_USE_TURBOPACK=0
-export CIRCLE_NODE_TOTAL=3
-export NODE_OPTIONS=--max-old-space-size=6144
+export CIRCLE_NODE_TOTAL=2
+export NODE_OPTIONS=--max-old-space-size=4096
 
-log "build Webpack limitado…"
-npm run build >>"$LOG" 2>&1 || die "build Webpack"
-log "build OK"
+log "build backend-only Webpack limitado…"
+npm run build:backend >>"$LOG" 2>&1 || die "build backend-only"
+log "build backend-only OK"
 mem
 
 # Runtime: volver al techo pequeño. Una instancia por defecto; escalar solo tras PASS.
