@@ -13,7 +13,7 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 |---|---|---|---|---|
 | T01 | Gobierno: Sheriff, Judge, Sentinel, contratos, MirrorManager | `chat router/05-AGENTES/gobierno` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T02 | Colmena: YaiwesHive + EngineeringLoop por el Router | `chat router/05-AGENTES/colmena` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
-| T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
+| T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | RECUPERACIÓN ACTIVA · OOM localizado en instalación/build, no en API | HF Job x10 `6ab9dc4052d0dbd7f1d9f760` OOMKilled 137 · prueba 1 instancia `6ab9f74152d0dbd7f1d9fe15` también OOMKilled 137 |
 | T04 | Pasarela Claude Code ↔ NVIDIA (free-claude-code) + vía DeepSeek Harness | `chat router/09-CLAUDE-CODE` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T09 | Suite multi-chat: Open WebUI + LibreChat + big-AGI + Jan; Hermes/OpenClaw por gateway común, sin usar sus UIs | `router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat` + `chat router/13-CHAT-UI-SUITE` | PASS FUNCIONAL · cierre manual GPT | `informes/T09.md` · main `92bb075fce8fe30b9efc4566e07391b08a2c9d39` · mirror `5a94d71e9785e37e8bf8871518c54a017f702e82` · 4/4 tests + HTTP PASS · gitlinks exactos |
 
@@ -22,6 +22,21 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 2. **T09-B · copia exacta** — copiar LibreChat, big-AGI y Jan debajo del bloque Open WebUI usando la política del motor canónico; preservar archivos de origen, sin reescritura ni recorte.
 3. **T09-C · cableado** — crear únicamente un overlay/adaptador fuera del código fuente de las UIs para exponer Hermes y OpenClaw como backends/agentes mediante el Router; no incorporar las UIs propias de Hermes/OpenClaw.
 4. **T09-D · sentinela + cierre** — read-back, hashes/rutas, aceptación determinista e informe `T09.md`; solo después publicar el cierre en main y actualizar esta tabla con SHA y PASS/FAIL real.
+
+## T03 — recuperación OOM 2026-09-28
+
+Diagnóstico confirmado antes de tocar runtime:
+- x10 instancias: HF `cpu-basic` 16 GB terminó `OOMKilled / exit 137`.
+- 1 sola instancia: volvió a terminar `OOMKilled / exit 137` antes de abrir `20128`; por tanto 10 instancias NO son la causa única.
+- prueba instrumentada upstream v3.8.50: `npm ci` simple falla; fallback `npm install` ejecuta postinstall generales (Playwright/Chromium, ONNX Runtime, etc.) y eleva RAM; luego `npm run build` con Turbopack llevó el cgroup hasta ~15.997 GB / 16 GB.
+- `better-sqlite3` cargó correctamente en la prueba instrumentada; no es la causa primaria.
+
+Plan quirúrgico:
+1. Sustituir instalación por la receta upstream reproducible: `npm ci --include=optional --no-audit --no-fund --legacy-peer-deps --ignore-scripts`.
+2. Ejecutar solo bindings/scripts nativos necesarios y validar `better-sqlite3` fail-closed.
+3. Compilar con `OMNIROUTE_USE_TURBOPACK=0`, workers limitados y heap de build controlado.
+4. Arrancar 1 instancia por defecto y exigir `health + /v1/models + chat model=auto` antes de escalar.
+5. Solo tras PASS actualizar esta sección y el informe T03 con evidencia real.
 
 ## Por qué no hubo evidencia antes (historial de fallos, ya corregidos)
 1. 11:34 Claude Code + LiteLLM: modelo NVIDIA retirado (410) → corregido con probar_modelos.py (catálogo vivo).
