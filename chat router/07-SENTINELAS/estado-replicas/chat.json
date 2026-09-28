@@ -1,16 +1,16 @@
 {
-  "status": "RESEARCH",
-  "last_sha": "a9fed9648637618ac6ec6279293219e90b11fa73",
-  "last_failure": "",
-  "same_failure_count": 0,
+  "status": "REVISE",
+  "last_sha": "5b301abc173768b4d6974d7d3546443dd27b96ff",
+  "last_failure": "STALE_REPORT",
+  "same_failure_count": 1,
   "evidence": {
-    "observed_sha": "a9fed9648637618ac6ec6279293219e90b11fa73",
-    "current_sha": "a9fed9648637618ac6ec6279293219e90b11fa73",
+    "observed_sha": "5b301abc173768b4d6974d7d3546443dd27b96ff",
+    "current_sha": "5b301abc173768b4d6974d7d3546443dd27b96ff",
     "executor_active": false,
     "workflow_false_green": false,
     "unauthorized_change": false,
-    "failure_class": "",
-    "error_literal": ".........                                                                [100%]\n9 passed in 2.10s\n",
+    "failure_class": "STALE_REPORT",
+    "error_literal": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/08-OMNIROUTE\n\n",
     "objective_evidence": {
       "head_fresh": true,
       "recent_commits_observed": false,
@@ -21,12 +21,19 @@
     "recent_runs": [],
     "priority_task": {
       "task_id": "T03",
-      "status": "PASS",
-      "attempt": 3,
-      "failure": "",
-      "next_action": "ninguna",
+      "status": "BLOCKED",
+      "attempt": 5,
+      "failure": "STALE_REPORT",
+      "next_action": "revisión de Opus/Director",
       "evidence": {
-        "faltan": [],
+        "faltan": [
+          "start_omniroute.sh",
+          "supervisor_omniroute.py",
+          "mantenimiento_db.py",
+          "tests/test_supervisor.py",
+          "DIAGNOSTICO.md",
+          "README.md"
+        ],
         "fugas": [],
         "changed_files": [],
         "executor_audit": {
@@ -38,30 +45,31 @@
         "scope_escape": null,
         "objective_failures": [],
         "objective_drift": false,
-        "pytest_exit": 0,
-        "pytest_tail": ".........                                                                [100%]\n9 passed in 2.10s\n",
+        "pytest_exit": 4,
+        "pytest_tail": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/08-OMNIROUTE\n\n",
         "informe": true,
-        "stale_report": false,
-        "ultimo_commit": "3191bb927935263c88b580fb7452c52d401d0696 1790576112 docs(T03): alinear diagnóstico con solución precompilada",
-        "veredicto": "PASS"
+        "stale_report": true,
+        "ultimo_commit": "3c679d1233f00f138290b923c056759d1f4f4aa4 1790592012 Opus: borrar T03/T10 OmniRoute (carpeta + tareas) y crear T11 chats instalados + memoria Hermes/OpenClaw + puente HF",
+        "veredicto": "REVISE",
+        "causa": "STALE_REPORT"
       }
     }
   },
-  "next_action": "missing_evidence:runs_observed",
-  "attempt": 18,
+  "next_action": "STALE_REPORT",
+  "attempt": 19,
   "loop_version": "9f25e8e246217db9",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
     "objective": "Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.",
     "task_scope": "",
-    "failure": "missing_evidence:runs_observed",
-    "error_literal": ".........                                                                [100%]\n9 passed in 2.10s\n",
+    "failure": "STALE_REPORT",
+    "error_literal": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/08-OMNIROUTE\n\n",
     "queries": [
-      "T03  missing_evidence:runs_observed",
-      "T03 .........                                                                [100%]\n9 passed in 2.10s",
-      "missing_evidence:runs_observed GitHub issue fix",
-      "missing_evidence:runs_observed Stack Overflow",
-      "missing_evidence:runs_observed developer community"
+      "T03  STALE_REPORT",
+      "T03 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/08-OMNIROUTE",
+      "STALE_REPORT GitHub issue fix",
+      "STALE_REPORT Stack Overflow",
+      "STALE_REPORT developer community"
     ],
     "sources": [
       "GitHub Issues del componente",
@@ -95,27 +103,5 @@
       "acceptance_check"
     ]
   },
-  "research_findings": [
-    {
-      "state": "closed",
-      "title": "wrong xpass on xfail-marked test function with failing setup",
-      "updatedAt": "2015-06-15T20:30:02Z",
-      "url": "https://github.com/pytest-dev/pytest/issues/9",
-      "source": "GitHub:pytest-dev/pytest"
-    },
-    {
-      "state": "closed",
-      "title": "Windows support planned?",
-      "updatedAt": "2025-08-09T14:10:49Z",
-      "url": "https://github.com/anthropics/claude-code/issues/9",
-      "source": "GitHub:anthropics/claude-code"
-    },
-    {
-      "state": "closed",
-      "title": "Add state handlers / observability",
-      "updatedAt": "2023-08-05T15:31:16Z",
-      "url": "https://github.com/BerriAI/litellm/issues/9",
-      "source": "GitHub:BerriAI/litellm"
-    }
-  ]
+  "research_findings": []
 }

@@ -1,13 +1,13 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-28T08:12Z
+generated_at: 2026-09-28T16:57Z
 loop_version: 9f25e8e246217db9
-observed_sha: a9fed9648637618ac6ec6279293219e90b11fa73
+observed_sha: 5b301abc173768b4d6974d7d3546443dd27b96ff
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
 priority_task: T03
-state: RESEARCH
-reason: missing_evidence:runs_observed
+state: REVISE
+reason: STALE_REPORT
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
 research_packet:
@@ -15,20 +15,21 @@ research_packet:
   objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y
     sin falsos verdes.
   task_scope: ''
-  failure: missing_evidence:runs_observed
-  error_literal: '.........                                                                [100%]
+  failure: STALE_REPORT
+  error_literal: '
 
-    9 passed in 2.10s
+    no tests ran in 0.00s
+
+    ERROR: file or directory not found: chat router/08-OMNIROUTE
+
 
     '
   queries:
-  - T03  missing_evidence:runs_observed
-  - 'T03 .........                                                                [100%]
-
-    9 passed in 2.10s'
-  - missing_evidence:runs_observed GitHub issue fix
-  - missing_evidence:runs_observed Stack Overflow
-  - missing_evidence:runs_observed developer community
+  - T03  STALE_REPORT
+  - "T03 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/08-OMNIROUTE"
+  - STALE_REPORT GitHub issue fix
+  - STALE_REPORT Stack Overflow
+  - STALE_REPORT developer community
   sources:
   - GitHub Issues del componente
   - GitHub Discussions del componente
@@ -58,19 +59,4 @@ research_packet:
   - do_not_regenerate
   - repair_steps
   - acceptance_check
-research_findings:
-- state: closed
-  title: wrong xpass on xfail-marked test function with failing setup
-  updatedAt: '2015-06-15T20:30:02Z'
-  url: https://github.com/pytest-dev/pytest/issues/9
-  source: GitHub:pytest-dev/pytest
-- state: closed
-  title: Windows support planned?
-  updatedAt: '2025-08-09T14:10:49Z'
-  url: https://github.com/anthropics/claude-code/issues/9
-  source: GitHub:anthropics/claude-code
-- state: closed
-  title: Add state handlers / observability
-  updatedAt: '2023-08-05T15:31:16Z'
-  url: https://github.com/BerriAI/litellm/issues/9
-  source: GitHub:BerriAI/litellm
+research_findings: []
