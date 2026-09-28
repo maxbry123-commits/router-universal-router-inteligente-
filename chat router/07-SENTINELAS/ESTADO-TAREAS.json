@@ -1,7 +1,7 @@
 {
   "T01": {
     "attempt": 1,
-    "last_sha": "76ac9a810e934a6d833cf23f5183b022822dc4aa",
+    "last_sha": "93251d02c4a8a25a6ea4ae8cd44631e944f97c9d",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -16,10 +16,10 @@
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 0,
-      "pytest_tail": ".................................                                        [100%]\n33 passed in 0.14s\n",
+      "pytest_tail": ".................................                                        [100%]\n33 passed in 0.09s\n",
       "informe": true,
       "stale_report": false,
-      "ultimo_commit": "1bdac75d02337a8bca3c76afd25e974d9bbf9309 1790553568 sentinela plan4: sincronizar LOOP común",
+      "ultimo_commit": "e2a3732c980db4940e356eb098d472150a1d7947 1790553694 sentinela orquestador: estado y correcciones",
       "veredicto": "PASS"
     },
     "status": "PASS",
