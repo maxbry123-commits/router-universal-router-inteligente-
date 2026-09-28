@@ -1,18 +1,18 @@
 {
-  "status": "RESEARCH",
-  "last_sha": "d19e8e646a898df6f426140c9ca1d015a6956a74",
+  "status": "REVISE",
+  "last_sha": "",
   "last_failure": "TESTS_FALLAN",
-  "same_failure_count": 1,
+  "same_failure_count": 2,
   "evidence": {
-    "observed_sha": "d19e8e646a898df6f426140c9ca1d015a6956a74",
-    "current_sha": "d19e8e646a898df6f426140c9ca1d015a6956a74",
+    "observed_sha": "",
+    "current_sha": "",
     "executor_active": false,
     "workflow_false_green": false,
     "unauthorized_change": false,
     "failure_class": "TESTS_FALLAN",
     "error_literal": "code = process.poll()\n            if check and retcode:\n>               raise CalledProcessError(retcode, process.args,\n                                         output=stdout, stderr=stderr)\nE               subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n\n/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/subprocess.py:571: CalledProcessError\n=========================== short test summary info ============================\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_diff_y_merge_selectivo - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-2']' returned non-zero exit status 128.\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_merge_bloqueado_por_sheriff - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n2 failed, 18 passed in 0.21s\n",
     "objective_evidence": {
-      "head_fresh": true,
+      "head_fresh": false,
       "recent_commits_observed": false,
       "runs_observed": false,
       "priority_goal_observed": true
@@ -38,7 +38,7 @@
     }
   },
   "next_action": "TESTS_FALLAN",
-  "attempt": 14,
+  "attempt": 15,
   "loop_version": "9f25e8e246217db9",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
