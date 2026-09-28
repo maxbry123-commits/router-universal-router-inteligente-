@@ -2,10 +2,10 @@ schema: yaiwes.sentinel-focus/v1
 mode: one_task_at_a_time
 active_task: T05
 advance: manual
-reason: "T03 ignorado por orden del Director; cierre exclusivo T05 ya implementado."
+reason: "Cerrar T05 completa ya publicada en main."
 rules:
   - "Solo revisar T05."
-  - "Si required_files + acceptance + objective_checks pasan: PASS."
-  - "No regenerar código T05 que ya pase."
-  - "No investigar ni relanzar si no existe GAP concreto."
-  - "No tocar T03 ni T06-T08."
+  - "Ejecutar acceptance y objective_checks."
+  - "Si falla un check, corregir solo ese GAP; no regenerar todo."
+  - "PASS solo con archivos completos + pytest exit 0 + objective_checks + informe fresco."
+  - "No modificar otras tareas."
