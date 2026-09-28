@@ -1,4 +1,4 @@
-# SENTINELA ORQUESTADOR — 2026-09-28T14:31Z · observed_sha 92155ce8d1
+# SENTINELA ORQUESTADOR — 2026-09-28T14:42Z · observed_sha d901bd8d4f
 
 | Tarea | Estado | Causa | Intento | Evidencia |
 |---|---|---|---|---|
