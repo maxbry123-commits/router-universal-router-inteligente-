@@ -17,11 +17,17 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 | T04 | Pasarela Claude Code ↔ NVIDIA (free-claude-code) + vía DeepSeek Harness | `chat router/09-CLAUDE-CODE` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T09 | Suite multi-chat: Open WebUI + LibreChat + big-AGI + Jan; Hermes/OpenClaw por gateway común, sin usar sus UIs | `router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat` + `chat router/13-CHAT-UI-SUITE` | PASS FUNCIONAL · cierre manual GPT | `informes/T09.md` · main `92bb075fce8fe30b9efc4566e07391b08a2c9d39` · mirror `5a94d71e9785e37e8bf8871518c54a017f702e82` · 4/4 tests + HTTP PASS · gitlinks exactos |
 
+| T10 | Selección automática de proveedores gratuitos sin UI; parche `auto/best-free` | `chat router/08-OMNIROUTE/autofree` | **PENDIENTE / NO ENTREGADA:** existe solo contrato `tareas/T10.md`; carpeta y los 6 archivos no existen en `main`. Requiere adaptar solución al runtime npm precompilado T03; NO reactivar build de fuente por defecto. | [Contrato](tareas/T10.md) · [Bitácora y conflicto de integración](../08-OMNIROUTE/README-BITACORA-T03.md) · no hay tests T10 |
+
 ## T09 — plan quirúrgico en 4 salidas
 1. **T09-A · inventario + espejo** — fijar `mirror/T09`, registrar fuentes exactas y comprobar que Open WebUI, LibreChat, big-AGI y Jan existen; no modificar código fuente.
 2. **T09-B · copia exacta** — copiar LibreChat, big-AGI y Jan debajo del bloque Open WebUI usando la política del motor canónico; preservar archivos de origen, sin reescritura ni recorte.
 3. **T09-C · cableado** — crear únicamente un overlay/adaptador fuera del código fuente de las UIs para exponer Hermes y OpenClaw como backends/agentes mediante el Router; no incorporar las UIs propias de Hermes/OpenClaw.
 4. **T09-D · sentinela + cierre** — read-back, hashes/rutas, aceptación determinista e informe `T09.md`; solo después publicar el cierre en main y actualizar esta tabla con SHA y PASS/FAIL real.
+
+### Cableado T03 ↔ T10 (verificado sin ejecutar)
+
+T03 ya pasó tests, puerto y health con el bundle npm precompilado. **T10 usa un parche de fuente que presupone `npm ci → npm run build`**, secuencia eliminada del runtime: sus archivos aún no existen en `main`; por tanto T10 **NO está completada y no mejora automáticamente el `CHAT_HTTP=502` externo**. Antes de tocar código, auditar [contrato T10](tareas/T10.md), [bitácora T03](../08-OMNIROUTE/README-BITACORA-T03.md), opciones legítimas de proveedor y la necesidad de un nuevo método compatible con el bundle. Prohibido volver a builds fallidos solo para probar esa hipótesis.
 
 ## T03 — recuperación OOM 2026-09-28
 
