@@ -1,11 +1,11 @@
 {
   "status": "RESEARCH",
-  "last_sha": "76ac9a810e934a6d833cf23f5183b022822dc4aa",
+  "last_sha": "ca8873e0c59000dfd05c9a4ad1b2311248fdd5b4",
   "last_failure": "",
   "same_failure_count": 0,
   "evidence": {
-    "observed_sha": "76ac9a810e934a6d833cf23f5183b022822dc4aa",
-    "current_sha": "76ac9a810e934a6d833cf23f5183b022822dc4aa",
+    "observed_sha": "ca8873e0c59000dfd05c9a4ad1b2311248fdd5b4",
+    "current_sha": "ca8873e0c59000dfd05c9a4ad1b2311248fdd5b4",
     "executor_active": false,
     "workflow_false_green": false,
     "unauthorized_change": false,
@@ -42,13 +42,13 @@
         "pytest_tail": ".................................                                        [100%]\n33 passed in 0.14s\n",
         "informe": true,
         "stale_report": false,
-        "ultimo_commit": "e22d777f944f697a76470c60e3ce6540d2912241 1790553528 T03 split: T03A.md",
+        "ultimo_commit": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8 1790554410 espejo T03B: PASS (36361044929)",
         "veredicto": "PASS"
       }
     }
   },
   "next_action": "missing_evidence:runs_observed",
-  "attempt": 16,
+  "attempt": 17,
   "loop_version": "9f25e8e246217db9",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
