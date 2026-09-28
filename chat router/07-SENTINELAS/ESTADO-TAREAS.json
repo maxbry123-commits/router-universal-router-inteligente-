@@ -1,7 +1,7 @@
 {
   "T01": {
     "attempt": 1,
-    "last_sha": "93251d02c4a8a25a6ea4ae8cd44631e944f97c9d",
+    "last_sha": "c33370db4b772356821c7aa30357ef1f76781d47",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -16,10 +16,10 @@
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 0,
-      "pytest_tail": ".................................                                        [100%]\n33 passed in 0.09s\n",
+      "pytest_tail": ".................................                                        [100%]\n33 passed in 0.14s\n",
       "informe": true,
       "stale_report": false,
-      "ultimo_commit": "e2a3732c980db4940e356eb098d472150a1d7947 1790553694 sentinela orquestador: estado y correcciones",
+      "ultimo_commit": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8 1790554410 espejo T03B: PASS (36361044929)",
       "veredicto": "PASS"
     },
     "status": "PASS",
