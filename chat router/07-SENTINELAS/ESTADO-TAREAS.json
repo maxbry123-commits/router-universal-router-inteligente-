@@ -19,7 +19,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T07"
+    "next_action": "esperar; foco actual T03A,T03B,T03C"
   },
   "T02": {
     "attempt": 2,
@@ -78,7 +78,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T07",
+    "next_action": "esperar; foco actual T03A,T03B,T03C",
     "research_findings": [
       {
         "state": "closed",
@@ -168,7 +168,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T07",
+    "next_action": "esperar; foco actual T03A,T03B,T03C",
     "research_findings": []
   },
   "T04": {
@@ -244,7 +244,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T07",
+    "next_action": "esperar; foco actual T03A,T03B,T03C",
     "research_findings": [
       {
         "state": "closed",
@@ -360,7 +360,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T07",
+    "next_action": "esperar; foco actual T03A,T03B,T03C",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -419,7 +419,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: El directorio 'chat router/05-AGENTES/asistentes' no existe; nunca se generó ningún entregable (pytest exit=4, 0 fuentes encontradas). Fallo de entrega total, no de contenido.\nNO_REGENERAR: ninguno (no hay archivos previos que preservar).\nARREGLAR:\n1. Crear directorio 'chat router/05-AGENTES/asistentes' con __init__.py.\n2. Generar hermes_config.yaml y openclaw_config.yaml: nombre del asistente, modelo vía Router (base_url del router, fallback), system_prompt, intervalo_heartbeat.\n3. hermes.md: documentación del fork Hermes (rol, herramientas, límites).\n4. puente_asistentes.py: cliente que envía mensajes al Router y despacha respuesta al asistente activo; con SIMULADO=1 devuelve respuesta mock sin red.\n5. heartbeat.py: ping periódico al Router registrando estado vivo/muerto de cada asistente; en SIMULADO=1 usa reloj falso.\n6. arrancar_asistentes.sh: script que levanta ambos asistentes y el heartbeat (modo simulado si SIMULADO=1).\n7. tests/test_asistentes.py: tests de carga de configs, puente mock y heartbeat sin red.\n8. README.md: uso, arquitectura y modo simulado.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
     },
-    "next_action": "esperar; foco actual T07"
+    "next_action": "esperar; foco actual T03A,T03B,T03C"
   },
   "T07": {
     "attempt": 2,
@@ -504,7 +504,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "espejo relanzado",
+    "next_action": "esperar; foco actual T03A,T03B,T03C",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -592,6 +592,234 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T07"
+    "next_action": "esperar; foco actual T03A,T03B,T03C"
+  },
+  "T03A": {
+    "attempt": 1,
+    "last_sha": "24a059df54e380c2be99ed8a22c11d7b9f81c6f9",
+    "evidence": {
+      "faltan": [
+        "DIAGNOSTICO-RUNTIME.md"
+      ],
+      "fugas": [],
+      "changed_files": [],
+      "executor_audit": {
+        "path_escape_count": 0,
+        "recovered_deviation": false,
+        "source": "informe"
+      },
+      "recovered_deviation": false,
+      "scope_escape": null,
+      "objective_failures": [],
+      "objective_drift": false,
+      "pytest_exit": 2,
+      "pytest_tail": "grep: chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md: No such file or directory\n",
+      "informe": false,
+      "stale_report": false,
+      "ultimo_commit": "b4fdd56f754fe0f83506ef40ecb2efb1c82ee89d 1790551429 sentinela chat: sincronizar LOOP común",
+      "veredicto": "REVISE",
+      "causa": "ARCHIVOS_INCOMPLETOS"
+    },
+    "status": "REVISE",
+    "last_failure": "ARCHIVOS_INCOMPLETOS",
+    "research_packet": {
+      "sentinel_id": "sentinela-t03a",
+      "objective": "OmniRoute contrato A: runtime e instalación reproducible",
+      "task_scope": "chat router/08-OMNIROUTE",
+      "failure": "ARCHIVOS_INCOMPLETOS",
+      "error_literal": "grep: chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md: No such file or directory\n",
+      "queries": [
+        "T03A  ARCHIVOS_INCOMPLETOS",
+        "T03A grep: chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md: No such file or directory",
+        "ARCHIVOS_INCOMPLETOS GitHub issue fix",
+        "ARCHIVOS_INCOMPLETOS Stack Overflow",
+        "ARCHIVOS_INCOMPLETOS developer community"
+      ],
+      "sources": [
+        "GitHub Issues del componente",
+        "GitHub Discussions del componente",
+        "GitHub Pull Requests del componente",
+        "GitHub commits recientes del componente",
+        "GitHub Community",
+        "Stack Overflow",
+        "Reddit /r/programming",
+        "Reddit de la tecnología afectada",
+        "Hacker News",
+        "NVIDIA Developer Forums",
+        "NVIDIA NIM / API documentation",
+        "Aider issues y docs",
+        "Claude Code issues y docs",
+        "LiteLLM issues y docs",
+        "pytest documentation",
+        "Python Discuss",
+        "Vercel discussions/docs",
+        "GitHub Actions docs/community",
+        "Issues/docs de OmniRoute, Hermes u OpenClaw",
+        "Repositorio upstream exacto del componente"
+      ],
+      "min_independent_sources": 3,
+      "max_sources": 20,
+      "required_output": [
+        "root_cause",
+        "evidence",
+        "do_not_regenerate",
+        "repair_steps",
+        "acceptance_check"
+      ]
+    },
+    "research_findings": [],
+    "next_action": "espejo relanzado"
+  },
+  "T03B": {
+    "attempt": 1,
+    "last_sha": "24a059df54e380c2be99ed8a22c11d7b9f81c6f9",
+    "evidence": {
+      "faltan": [
+        "VALIDACION-SUPERVISOR-DB.md"
+      ],
+      "fugas": [],
+      "changed_files": [],
+      "executor_audit": {
+        "path_escape_count": 0,
+        "recovered_deviation": false,
+        "source": "informe"
+      },
+      "recovered_deviation": false,
+      "scope_escape": null,
+      "objective_failures": [],
+      "objective_drift": false,
+      "pytest_exit": 2,
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory\n",
+      "informe": false,
+      "stale_report": false,
+      "ultimo_commit": "b4fdd56f754fe0f83506ef40ecb2efb1c82ee89d 1790551429 sentinela chat: sincronizar LOOP común",
+      "veredicto": "REVISE",
+      "causa": "ARCHIVOS_INCOMPLETOS"
+    },
+    "status": "REVISE",
+    "last_failure": "ARCHIVOS_INCOMPLETOS",
+    "research_packet": {
+      "sentinel_id": "sentinela-t03b",
+      "objective": "OmniRoute contrato B: supervisor y SQLite",
+      "task_scope": "chat router/08-OMNIROUTE",
+      "failure": "ARCHIVOS_INCOMPLETOS",
+      "error_literal": ".........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory\n",
+      "queries": [
+        "T03B  ARCHIVOS_INCOMPLETOS",
+        "T03B .........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory",
+        "ARCHIVOS_INCOMPLETOS GitHub issue fix",
+        "ARCHIVOS_INCOMPLETOS Stack Overflow",
+        "ARCHIVOS_INCOMPLETOS developer community"
+      ],
+      "sources": [
+        "GitHub Issues del componente",
+        "GitHub Discussions del componente",
+        "GitHub Pull Requests del componente",
+        "GitHub commits recientes del componente",
+        "GitHub Community",
+        "Stack Overflow",
+        "Reddit /r/programming",
+        "Reddit de la tecnología afectada",
+        "Hacker News",
+        "NVIDIA Developer Forums",
+        "NVIDIA NIM / API documentation",
+        "Aider issues y docs",
+        "Claude Code issues y docs",
+        "LiteLLM issues y docs",
+        "pytest documentation",
+        "Python Discuss",
+        "Vercel discussions/docs",
+        "GitHub Actions docs/community",
+        "Issues/docs de OmniRoute, Hermes u OpenClaw",
+        "Repositorio upstream exacto del componente"
+      ],
+      "min_independent_sources": 3,
+      "max_sources": 20,
+      "required_output": [
+        "root_cause",
+        "evidence",
+        "do_not_regenerate",
+        "repair_steps",
+        "acceptance_check"
+      ]
+    },
+    "research_findings": [],
+    "next_action": "espejo relanzado"
+  },
+  "T03C": {
+    "attempt": 1,
+    "last_sha": "24a059df54e380c2be99ed8a22c11d7b9f81c6f9",
+    "evidence": {
+      "faltan": [
+        "VALIDACION-EXTERNA.md"
+      ],
+      "fugas": [],
+      "changed_files": [],
+      "executor_audit": {
+        "path_escape_count": 0,
+        "recovered_deviation": false,
+        "source": "informe"
+      },
+      "recovered_deviation": false,
+      "scope_escape": null,
+      "objective_failures": [],
+      "objective_drift": false,
+      "pytest_exit": 1,
+      "pytest_tail": "",
+      "informe": false,
+      "stale_report": false,
+      "ultimo_commit": "b4fdd56f754fe0f83506ef40ecb2efb1c82ee89d 1790551429 sentinela chat: sincronizar LOOP común",
+      "veredicto": "REVISE",
+      "causa": "ARCHIVOS_INCOMPLETOS"
+    },
+    "status": "REVISE",
+    "last_failure": "ARCHIVOS_INCOMPLETOS",
+    "research_packet": {
+      "sentinel_id": "sentinela-t03c",
+      "objective": "OmniRoute contrato C: auditoría externa y cierre",
+      "task_scope": "chat router/08-OMNIROUTE",
+      "failure": "ARCHIVOS_INCOMPLETOS",
+      "error_literal": "",
+      "queries": [
+        "T03C  ARCHIVOS_INCOMPLETOS",
+        "T03C",
+        "ARCHIVOS_INCOMPLETOS GitHub issue fix",
+        "ARCHIVOS_INCOMPLETOS Stack Overflow",
+        "ARCHIVOS_INCOMPLETOS developer community"
+      ],
+      "sources": [
+        "GitHub Issues del componente",
+        "GitHub Discussions del componente",
+        "GitHub Pull Requests del componente",
+        "GitHub commits recientes del componente",
+        "GitHub Community",
+        "Stack Overflow",
+        "Reddit /r/programming",
+        "Reddit de la tecnología afectada",
+        "Hacker News",
+        "NVIDIA Developer Forums",
+        "NVIDIA NIM / API documentation",
+        "Aider issues y docs",
+        "Claude Code issues y docs",
+        "LiteLLM issues y docs",
+        "pytest documentation",
+        "Python Discuss",
+        "Vercel discussions/docs",
+        "GitHub Actions docs/community",
+        "Issues/docs de OmniRoute, Hermes u OpenClaw",
+        "Repositorio upstream exacto del componente"
+      ],
+      "min_independent_sources": 3,
+      "max_sources": 20,
+      "required_output": [
+        "root_cause",
+        "evidence",
+        "do_not_regenerate",
+        "repair_steps",
+        "acceptance_check"
+      ]
+    },
+    "research_findings": [],
+    "next_action": "espejo relanzado"
   }
 }
