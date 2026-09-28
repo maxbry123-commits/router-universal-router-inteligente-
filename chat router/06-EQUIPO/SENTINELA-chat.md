@@ -1,9 +1,9 @@
-# SENTINELA-CHAT — 2026-09-28T16:57Z
-(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: z-ai/glm-5.3@NVIDIA_API_KEY_2)
+# SENTINELA-CHAT — 2026-09-28T22:26Z
+(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: z-ai/glm-5.3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
 ESTADO LOOP: REVISE · STALE_REPORT
-OBSERVED_SHA: 5b301abc1737
+OBSERVED_SHA: 2ed5b0d21da6
 
 PRIORIDADES:
 1. T01 gobierno: código + tests reales + informe + commit en main
@@ -26,7 +26,7 @@ INVESTIGACIÓN:
 - fuentes consultadas: 0
 - mínimo independiente objetivo: 3
 
-**CAUSA_RAIZ:** pytest apunta a path inexistente `chat router/08-OMNIROUTE` (directorio renombrado/movido/eliminado, o espacio sin escapar en el comando). El reporte es STALE porque la config
+Sin respuesta LLM; conservar evidencia y reintentar investigación.
 
 CONTROL:
 - PASS no lo decide la LLM.
