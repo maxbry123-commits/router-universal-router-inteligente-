@@ -1,9 +1,9 @@
-# SENTINELA-CHAT — 2026-09-28T00:05Z
-(LOOP común · versión: a9dc69b2a1d74492 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-CHAT — 2026-09-28T00:31Z
+(LOOP común · versión: 250e936e9d893c74 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
-ESTADO LOOP: RESEARCH · TESTS_FALLAN
-OBSERVED_SHA: 
+ESTADO LOOP: REVISE · NO_ENTREGADO
+OBSERVED_SHA: 5caa5eeb1a85
 
 PRIORIDADES:
 1. T01 gobierno: código + tests reales + informe + commit en main
@@ -16,25 +16,25 @@ PRIORIDADES:
 8. T08 motores base de fábrica
 
 OBJETIVO ACTIVO:
-- tarea: T01
+- tarea: T08
 - estado: REVISE
 - intento: 1
-- fallo: TESTS_FALLAN
+- fallo: NO_ENTREGADO
 - siguiente: esperar; foco actual T03A,T03B,T03C
 
 INVESTIGACIÓN:
-- fuentes consultadas: 5
+- fuentes consultadas: 0
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: `git merge --no-ff mirror/job-N` falla con exit 128 en el entorno de test (repo temporal sin `user.name`/`user.email` configurados, o la rama mirror/job-N no existe porque el commit previo también falló silenciosamente). No es bug de lógica de merge, es setup del fixture git.
+CAUSA_RAIZ: Ruta con espacio "chat router/12-FABRICA-MOTORES" pasada sin comillas a pytest → el shell la parte en dos argumentos y ninguno existe; además el directorio probablemente no contiene tests (0 collected).
 
-EVIDENCIA: 2 tests fallan (test_diff_y_merge_selectivo, test_merge_bloqueado_por_sheriff), ambos en el mismo comando `git merge --no-ff`; 18 pasan. Exit 128 = error de git (identidad no configurada / ref inexistente), no conflicto de merge (que sería exit 1). Evidencia comunidad irrelevante (poetry/polars, sin relación).
+EVIDENCIA: Error literal "file or directory not found: chat router/12-FABRICA-MOTORES" + "no tests ran in 0.00s". Evidencia comunidad=[] (vacía, sin corroboración externa).
 
-NO_REGENERAR: No tocar la lógica de MirrorManager ni los otros 18 tests verdes; no "arreglar" mockeando subprocess (sería falso verde).
+NO_REGENERAR: No crear tests ficticios ni marcar verde; no renombrar el directorio sin verificar referencias (imports, CI, scripts) que usen "chat router".
 
-REPARAR: En el fixture/conftest del repo temporal de tests: `git config user.email "test@test"`, `git config user.name "Test"` (o `-c user.name=... -c user.email=...` en cada comando), y verificar que la rama `mirror/job-N` se crea con al menos 1 commit antes del merge. Capturar stderr del CalledProcessError para confirmar cuál de las dos causas es.
+REPARAR: 1) Verificar existencia real: `ls "chat router/12-FABRICA-MOTORES"`. 2) Invocar con comillas: `pytest "chat router/12-FABRICA-MOTORES" -v`. 3) Si no hay tests, localizar el path correcto de tests del Chat YAIWES (`find . -name "test_*.py" -path "*sentinela*"`). 4) Considerar renombrar a `chat_router` y actualizar referencias.
 
-ACEPTACION: `pytest chat router/05-AGENTES/gobierno/tests/test_gobierno.py -v` → 20 passed, 0 failed, ejecutado en entorno limpio (CI) sin config git global del usuario.
+ACEPTACION: `pytest "<path_correcto>"` ejecuta y reporta N tests collected con resultado real (pass/fail), evidencia pegada en la tarea; cero falsos verdes.
 
 CONTROL:
 - PASS no lo decide la LLM.
