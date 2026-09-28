@@ -29,7 +29,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "ninguna"
+    "next_action": "esperar; foco actual T03C2"
   },
   "T02": {
     "attempt": 2,
@@ -88,7 +88,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T01",
+    "next_action": "esperar; foco actual T03C2",
     "research_findings": [
       {
         "state": "closed",
@@ -178,7 +178,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T01",
+    "next_action": "esperar; foco actual T03C2",
     "research_findings": []
   },
   "T04": {
@@ -254,7 +254,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T01",
+    "next_action": "esperar; foco actual T03C2",
     "research_findings": [
       {
         "state": "closed",
@@ -370,7 +370,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T01",
+    "next_action": "esperar; foco actual T03C2",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -429,7 +429,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: El directorio 'chat router/05-AGENTES/asistentes' no existe; nunca se generó ningún entregable (pytest exit=4, 0 fuentes encontradas). Fallo de entrega total, no de contenido.\nNO_REGENERAR: ninguno (no hay archivos previos que preservar).\nARREGLAR:\n1. Crear directorio 'chat router/05-AGENTES/asistentes' con __init__.py.\n2. Generar hermes_config.yaml y openclaw_config.yaml: nombre del asistente, modelo vía Router (base_url del router, fallback), system_prompt, intervalo_heartbeat.\n3. hermes.md: documentación del fork Hermes (rol, herramientas, límites).\n4. puente_asistentes.py: cliente que envía mensajes al Router y despacha respuesta al asistente activo; con SIMULADO=1 devuelve respuesta mock sin red.\n5. heartbeat.py: ping periódico al Router registrando estado vivo/muerto de cada asistente; en SIMULADO=1 usa reloj falso.\n6. arrancar_asistentes.sh: script que levanta ambos asistentes y el heartbeat (modo simulado si SIMULADO=1).\n7. tests/test_asistentes.py: tests de carga de configs, puente mock y heartbeat sin red.\n8. README.md: uso, arquitectura y modo simulado.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
     },
-    "next_action": "esperar; foco actual T01"
+    "next_action": "esperar; foco actual T03C2"
   },
   "T07": {
     "attempt": 2,
@@ -514,7 +514,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T01",
+    "next_action": "esperar; foco actual T03C2",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -602,7 +602,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T01"
+    "next_action": "esperar; foco actual T03C2"
   },
   "T03A": {
     "attempt": 3,
@@ -716,7 +716,7 @@
         "url": "https://stackoverflow.com/questions/61756691/errno-2-no-such-file-or-directory-error-while-importing-a-python-script-from-a-s"
       }
     ],
-    "next_action": "esperar; foco actual T01"
+    "next_action": "esperar; foco actual T03C2"
   },
   "T03B": {
     "attempt": 3,
@@ -814,7 +814,7 @@
         "source": "GitHub:WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "esperar; foco actual T01",
+    "next_action": "esperar; foco actual T03C2",
     "deviation_count": 1,
     "last_deviation": {
       "type": "PATH_ESCAPE_RECOVERED",
@@ -914,7 +914,7 @@
         "url": "https://stackoverflow.com/questions/40997897/how-to-convert-this-code-into-antlr-groovy-grammar-v4"
       }
     ],
-    "next_action": "esperar; foco actual T01"
+    "next_action": "esperar; foco actual T03C2"
   },
   "T03C1": {
     "attempt": 2,
@@ -1028,54 +1028,46 @@
         "url": "https://stackoverflow.com/questions/61756691/errno-2-no-such-file-or-directory-error-while-importing-a-python-script-from-a-s"
       }
     ],
-    "next_action": "esperar; foco actual T01"
+    "next_action": "esperar; foco actual T03C2"
   },
   "T03C2": {
-    "attempt": 2,
-    "last_sha": "78b9d2ff43131af1161956205953b206c6ee2da5",
+    "attempt": 3,
+    "last_sha": "de4d444097f4a7bf0965e0768856675e778c4362",
     "evidence": {
       "faltan": [],
       "fugas": [],
-      "changed_files": [
-        "chat router/06-ESPEJOS/informes/T03C2.md"
-      ],
+      "changed_files": [],
       "executor_audit": {
         "path_escape_count": 0,
         "recovered_deviation": false,
         "source": "informe"
       },
       "recovered_deviation": false,
-      "scope_escape": "scope_escape:chat router/06-ESPEJOS/informes/T03C2.md",
-      "objective_failures": [
-        "grep -q 'ENV_VARS_VERIFICADAS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: ",
-        "grep -q 'START_COMMAND_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: ",
-        "grep -q 'ISSUES_ABIERTOS_RELEVANTES' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: ",
-        "grep -q 'RIESGO_RESIDUAL' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: ",
-        "grep -q 'CAMBIOS_NECESARIOS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: "
-      ],
-      "objective_drift": true,
-      "pytest_exit": 1,
+      "scope_escape": null,
+      "objective_failures": [],
+      "objective_drift": false,
+      "pytest_exit": 0,
       "pytest_tail": "",
       "informe": false,
       "stale_report": false,
-      "ultimo_commit": "b4c200825cbfa6f6e39500483b5c6e561ed327ea 1790555197 espejo T03A: PASS (36361819890)",
+      "ultimo_commit": "ca8873e0c59000dfd05c9a4ad1b2311248fdd5b4 1790559656 T03-C2: consolidar gate documental de cierre",
       "veredicto": "REVISE",
-      "causa": "SCOPE_ESCAPE"
+      "causa": "SIN_INFORME"
     },
     "status": "REVISE",
-    "last_failure": "SCOPE_ESCAPE",
+    "last_failure": "SIN_INFORME",
     "research_packet": {
       "sentinel_id": "sentinela-t03c2",
       "objective": "OmniRoute C2: documentación y gate final",
       "task_scope": "chat router/08-OMNIROUTE",
-      "failure": "SCOPE_ESCAPE",
-      "error_literal": "SCOPE_ESCAPE",
+      "failure": "SIN_INFORME",
+      "error_literal": "SIN_INFORME",
       "queries": [
-        "T03C2  SCOPE_ESCAPE",
-        "T03C2 SCOPE_ESCAPE",
-        "SCOPE_ESCAPE GitHub issue fix",
-        "SCOPE_ESCAPE Stack Overflow",
-        "SCOPE_ESCAPE developer community"
+        "T03C2  SIN_INFORME",
+        "T03C2 SIN_INFORME",
+        "SIN_INFORME GitHub issue fix",
+        "SIN_INFORME Stack Overflow",
+        "SIN_INFORME developer community"
       ],
       "sources": [
         "GitHub Issues del componente",
@@ -1119,13 +1111,8 @@
         "source": "Repositorio oficial/upstream",
         "title": "WiseLibs/better-sqlite3",
         "url": "https://github.com/WiseLibs/better-sqlite3"
-      },
-      {
-        "source": "StackOverflow",
-        "title": "How to convert this code into Antlr Groovy Grammar v4?",
-        "url": "https://stackoverflow.com/questions/40997897/how-to-convert-this-code-into-antlr-groovy-grammar-v4"
       }
     ],
-    "next_action": "esperar; foco actual T01"
+    "next_action": "espejo relanzado"
   }
 }
