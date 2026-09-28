@@ -1,4 +1,4 @@
-# SENTINELA-PLAN4 — 2026-09-28T00:39Z
+# SENTINELA-PLAN4 — 2026-09-28T01:19Z
 (LOOP común · versión: 9f25e8e246217db9 · modelo investigador: z-ai/glm-5.3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Mantener el plan de 4 objetivos en LOOP: cada vuelta debe producir evidencia, rama/PR o causa corregible.
@@ -17,9 +17,7 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-**CAUSA_RAIZ:** El recolector de evidencia consultó fuentes genéricas (preguntas populares de StackOverflow) en lugar del repositorio del plan; el filtro de dominio/tema no discrimina "commits recientes del repo" vs "resultados top de búsqueda".
-
-**EVIDENCIA:** Los 5 enlaces son preguntas atemporales top-voted de SO (branch prediction
+Sin respuesta LLM; conservar evidencia y reintentar investigación.
 
 CONTROL:
 - PASS no lo decide la LLM.
