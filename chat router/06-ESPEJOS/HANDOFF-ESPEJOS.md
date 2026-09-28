@@ -13,7 +13,7 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 |---|---|---|---|---|
 | T01 | Gobierno: Sheriff, Judge, Sentinel, contratos, MirrorManager | `chat router/05-AGENTES/gobierno` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T02 | Colmena: YaiwesHive + EngineeringLoop por el Router | `chat router/05-AGENTES/colmena` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
-| T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | RECUPERACIÓN ACTIVA · prueba del fix en curso con 1 instancia | OOM previo x10 `6ab9dc4052d0dbd7f1d9f760` · OOM previo x1 `6ab9f74152d0dbd7f1d9fe15` · prueba fix `6aba013252d0dbd7f1da005c` |
+| T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | RECUPERACIÓN ACTIVA · fix evita OOM, falta localizar fase bloqueada antes de 20128 | OOM previo x10 `6ab9dc4052d0dbd7f1d9f760` · OOM previo x1 `6ab9f74152d0dbd7f1d9fe15` · fix `6aba013252d0dbd7f1da005c` CANCELED sin OOM, ~12/16 GB estable |
 | T04 | Pasarela Claude Code ↔ NVIDIA (free-claude-code) + vía DeepSeek Harness | `chat router/09-CLAUDE-CODE` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T09 | Suite multi-chat: Open WebUI + LibreChat + big-AGI + Jan; Hermes/OpenClaw por gateway común, sin usar sus UIs | `router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat` + `chat router/13-CHAT-UI-SUITE` | PASS FUNCIONAL · cierre manual GPT | `informes/T09.md` · main `92bb075fce8fe30b9efc4566e07391b08a2c9d39` · mirror `5a94d71e9785e37e8bf8871518c54a017f702e82` · 4/4 tests + HTTP PASS · gitlinks exactos |
 
@@ -42,7 +42,8 @@ Ejecución GPT-5.6 Sol 2026-09-28 05:54 UTC:
 - validado que `build:backend` existe en upstream v3.8.50;
 - lanzada prueba aislada del script actual de `main` con `OMNIROUTE_INSTANCIAS=1`, sin clonar el monorepo completo, para medir el fix sin contaminación de memoria;
 - HF Job de prueba: `6aba013252d0dbd7f1da005c`;
-- gate pendiente: `20128 UP` + `health 200` + `/v1/models 200` + chat `auto/best-free` + estabilidad 60 s.
+- resultado: el Job fue `CANCELED` sin OOM; RAM se estabilizó ~11.99/16 GB y nunca abrió `20128`.
+- siguiente microtarea: diagnóstico ≤10 min con tail vivo de `/tmp/omniroute.log` para identificar si el bloqueo está en lockfile/install, `better-sqlite3`, `build:backend`/Webpack o arranque; NO relanzar pruebas anteriores ni modificar el lanzador hasta tener la fase exacta.
 
 ## Por qué no hubo evidencia antes (historial de fallos, ya corregidos)
 1. 11:34 Claude Code + LiteLLM: modelo NVIDIA retirado (410) → corregido con probar_modelos.py (catálogo vivo).
