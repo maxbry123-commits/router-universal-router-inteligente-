@@ -2,8 +2,8 @@ name: RIU Router Job Central
 
 # Lanza el Job ÚNICO y persistente del Router (common/router_job_persistent.py).
 # Máquina HF 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga. Al lanzar uno nuevo, cancela los anteriores.
-# Dentro: Router (8000) + OmniRoute x10 (orden del Director 2026-09-28): chat router/08-OMNIROUTE/start_omniroute_x10.sh
-#   (1 construcción estable T03 + 10 instancias en 20128, 20138 … 20218). Respaldo: script de 1 instancia de T03; luego el antiguo.
+# Dentro: Router (8000) + OmniRoute T03 estable: chat router/08-OMNIROUTE/start_omniroute.sh
+#   Usa el bundle npm oficial precompilado y 1 instancia en 20128. El wrapper x10 queda solo como compatibilidad (1 activa / 9 pausadas).
 # Secretos al Job (nunca en archivos): GITHUB_TOKEN, RIU_ROUTER_API_KEY, RIU_AGENT_API_KEYS, NVIDIA_API_KEY_1..4,
 #   GROQ_API_KEY_2..7, STORAGE_ENCRYPTION_KEY (fija, para OmniRoute).
 # Tras health OK, este workflow ESCRIBE LIVE_URL en el flag.
@@ -62,8 +62,8 @@ jobs:
               "command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
               "git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente- /tmp/r && "
               "cd /tmp/r && "
-              "OMNI='chat router/08-OMNIROUTE/start_omniroute_x10.sh'; "
-              "[ -f \"$OMNI\" ] || OMNI='chat router/08-OMNIROUTE/start_omniroute.sh'; "
+              "OMNI='chat router/08-OMNIROUTE/start_omniroute.sh'; "
+              "[ -f \"$OMNI\" ] || OMNI='chat router/08-OMNIROUTE/start_omniroute_x10.sh'; "
               "[ -f \"$OMNI\" ] || OMNI='router inteligente universal/keeper/start_omniroute.sh'; "
               "(bash \"$OMNI\" >> /tmp/omniroute.log 2>&1 &) ; "
               "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests httpx && "
