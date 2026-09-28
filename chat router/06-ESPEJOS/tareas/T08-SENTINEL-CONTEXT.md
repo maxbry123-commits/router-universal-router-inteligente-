@@ -54,3 +54,24 @@ Alcance estricto del reemplazo:
 5. Si los checks pasan, cerrar; si falla un check concreto, corregir solo ese check.
 
 La instancia anterior queda reemplazada para esta vuelta. No duplicar ejecutores T08.
+
+
+## SUPERVISIÓN FINAL T08
+Estado observado por el operador:
+- gates estáticos de Engine: PASS
+- ENGINE_REGISTRY + asyncio.gather: PASS
+- QA touch mínimo 44 px: PASS
+- detección de botón muerto: PASS
+- README de los 6 motores: PASS
+- GAP restante demostrado: artefactos versionados __pycache__/*.pyc
+- estado persistido del sentinela: STALE; debe recalcularse, no copiarse manualmente
+
+El sentinela T08 debe supervisar únicamente:
+1. required_files completos;
+2. acceptance exit 0;
+3. objective_checks completos;
+4. cero __pycache__, .pytest_cache o *.pyc en el scope publicado;
+5. informe T08 fresco respecto al último cambio del scope;
+6. tested/current SHA coherentes antes de PASS.
+
+El ejecutor nuevo debe preservar los motores válidos. Si acceptance ya pasa, no necesita regenerar código: la vuelta puede limitarse a limpiar artefactos, producir evidencia fresca y cerrar.
