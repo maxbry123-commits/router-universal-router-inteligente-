@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 3,
-    "last_sha": "d5f5107bd52e40fdd88c515792751fa7f593030c",
+    "last_sha": "03c7333223e9a982e66e0c27381af5327c423ff7",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -191,7 +191,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "vigilar: Instalar Aider",
+    "next_action": "vigilar: Guardar (commit primero; PASS → main, si no → mirror/T0X)",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -203,12 +203,12 @@
       "executor_active": true,
       "run_id": 36372627916,
       "job_id": 108771941572,
-      "active_step": "Instalar Aider",
+      "active_step": "Guardar (commit primero; PASS → main, si no → mirror/T0X)",
       "active_step_age_minutes": 0
     },
     "supervision": {
       "action": "WATCH",
-      "reason": "Instalar Aider"
+      "reason": "Guardar (commit primero; PASS → main, si no → mirror/T0X)"
     }
   },
   "T04": {
