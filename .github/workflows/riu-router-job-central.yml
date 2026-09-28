@@ -1,13 +1,12 @@
 name: RIU Router Job Central
 
 # Lanza el Job ÚNICO y persistente del Router (common/router_job_persistent.py).
-# 2026-09-26 (orden del Director): máquina HF de 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga.
-#   Dentro de la misma máquina: Router (puerto 8000) + OmniRoute oficial en segundo plano (127.0.0.1:20128, el Router lo alcanza por dentro).
-#   Al lanzar uno nuevo, cancela los Jobs de Router anteriores para no pagar dos.
-# 2026-09-27: añade httpx (lo usa el código de memoria nuevo; sin él el Router moría al arrancar).
-# 2026-09-27: el Router recibe las claves de proveedores (NVIDIA_API_KEY_1..4 y GROQ_API_KEY_1..7) como secretos del Job:
-#   el Router pregunta qué modelos responden con cada clave y usa los disponibles (common/routes.py). Cerebras eliminado.
-# Los secretos viajan como HF Job secrets (nunca se escriben en archivos del repo).
+# Máquina HF 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga. Al lanzar uno nuevo, cancela los anteriores.
+# Dentro: Router (8000) + OmniRoute (127.0.0.1:20128). OmniRoute: usa el script ESTABLE de T03 (chat router/08-OMNIROUTE, PASS 9 tests)
+#   si existe; si no, el antiguo keeper/start_omniroute.sh.
+# Secretos al Job (nunca en archivos): GITHUB_TOKEN, RIU_ROUTER_API_KEY, RIU_AGENT_API_KEYS (lista de claves que el Router acepta),
+#   NVIDIA_API_KEY_1..4, GROQ_API_KEY_1..7.
+# 2026-09-28: tras health OK, este workflow ESCRIBE LIVE_URL en el flag (antes quedaba apuntando a un Job apagado).
 
 on:
   workflow_dispatch:
@@ -35,7 +34,9 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
           GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
+          GH_WRITE: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
           RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
+          RIU_AGENT_KEYS: ${{ secrets.RIU_AGENT_API_KEYS_JSON }}
           LIFETIME: ${{ inputs.lifetime || '48h' }}
           FLAVOR: ${{ inputs.flavor || 'cpu-basic' }}
           NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
@@ -51,7 +52,7 @@ jobs:
           GROQ_API_KEY_7: ${{ secrets.GROQ_API_KEY_7 }}
         run: |
           python - <<'PY'
-          import os, time, requests
+          import base64, os, time, requests
           from huggingface_hub import HfApi
           api = HfApi(token=os.environ["HF_TOKEN"])
           old = [j for j in api.list_jobs() if (j.status.stage or "").upper() in ("RUNNING", "STARTING") and "router_job_persistent.py" in " ".join(j.command or [])]
@@ -60,20 +61,23 @@ jobs:
               "command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
               "git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente- /tmp/r && "
               "cd /tmp/r && "
-              "(bash 'router inteligente universal/keeper/start_omniroute.sh' &) ; "
+              "OMNI='chat router/08-OMNIROUTE/start_omniroute.sh'; [ -f \"$OMNI\" ] || OMNI='router inteligente universal/keeper/start_omniroute.sh'; "
+              "(bash \"$OMNI\" > /tmp/omniroute.log 2>&1 &) ; "
               "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests httpx && "
               "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'"
           )
           secrets = {"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]}
           if os.environ.get("RIU_KEY"):
               secrets["RIU_ROUTER_API_KEY"] = os.environ["RIU_KEY"]
+          if os.environ.get("RIU_AGENT_KEYS"):
+              secrets["RIU_AGENT_API_KEYS"] = os.environ["RIU_AGENT_KEYS"]
           n = 0
           for pref, tope in (("NVIDIA_API_KEY_", 4), ("GROQ_API_KEY_", 7)):
               for i in range(1, tope + 1):
                   v = os.environ.get(f"{pref}{i}", "")
                   if v:
                       secrets[f"{pref}{i}"] = v; n += 1
-          print(f"::notice::claves de proveedores enviadas al Router: {n}")
+          print(f"::notice::claves de proveedores enviadas: {n} · lista de claves del Router: {'sí' if os.environ.get('RIU_AGENT_KEYS') else 'NO'}")
           lifetime = os.environ["LIFETIME"]
           try:
               job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=lifetime,
@@ -97,6 +101,15 @@ jobs:
                   break
               time.sleep(10)
           if ok:
+              gh = {"Authorization": f"Bearer {os.environ['GH_WRITE']}", "Accept": "application/vnd.github+json"}
+              api_url = "https://api.github.com/repos/maxbry123-commits/router-universal-router-inteligente-/contents/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag"
+              for intento in range(3):
+                  cur = requests.get(api_url, headers=gh, timeout=20).json()
+                  body = {"message": f"flag: LIVE_URL {job.id} (lanzador)", "sha": cur.get("sha"),
+                          "content": base64.b64encode(f"PAUSED=false\nLIVE_URL={ok}\n".encode()).decode()}
+                  if requests.put(api_url, headers=gh, json=body, timeout=20).status_code in (200, 201):
+                      print(f"::notice::FLAG actualizado → {ok}"); break
+                  time.sleep(3)
               for j in old:
                   try:
                       api.cancel_job(job_id=j.id); print(f"::notice::Router anterior apagado {j.id}")
