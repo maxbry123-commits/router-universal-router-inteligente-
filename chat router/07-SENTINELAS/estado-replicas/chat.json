@@ -1,18 +1,18 @@
 {
-  "status": "REVISE",
-  "last_sha": "",
-  "last_failure": "TESTS_FALLAN",
-  "same_failure_count": 2,
+  "status": "RESEARCH",
+  "last_sha": "76ac9a810e934a6d833cf23f5183b022822dc4aa",
+  "last_failure": "",
+  "same_failure_count": 0,
   "evidence": {
-    "observed_sha": "",
-    "current_sha": "",
+    "observed_sha": "76ac9a810e934a6d833cf23f5183b022822dc4aa",
+    "current_sha": "76ac9a810e934a6d833cf23f5183b022822dc4aa",
     "executor_active": false,
     "workflow_false_green": false,
     "unauthorized_change": false,
-    "failure_class": "TESTS_FALLAN",
-    "error_literal": "code = process.poll()\n            if check and retcode:\n>               raise CalledProcessError(retcode, process.args,\n                                         output=stdout, stderr=stderr)\nE               subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n\n/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/subprocess.py:571: CalledProcessError\n=========================== short test summary info ============================\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_diff_y_merge_selectivo - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-2']' returned non-zero exit status 128.\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_merge_bloqueado_por_sheriff - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n2 failed, 18 passed in 0.21s\n",
+    "failure_class": "",
+    "error_literal": ".................................                                        [100%]\n33 passed in 0.14s\n",
     "objective_evidence": {
-      "head_fresh": false,
+      "head_fresh": true,
       "recent_commits_observed": false,
       "runs_observed": false,
       "priority_goal_observed": true
@@ -21,37 +21,47 @@
     "recent_runs": [],
     "priority_task": {
       "task_id": "T01",
-      "status": "REVISE",
+      "status": "PASS",
       "attempt": 1,
-      "failure": "TESTS_FALLAN",
-      "next_action": "esperar; foco actual T03C1,T03C2",
+      "failure": "",
+      "next_action": "ninguna",
       "evidence": {
         "faltan": [],
         "fugas": [],
-        "pytest_exit": 1,
-        "pytest_tail": "ncluding KeyboardInterrupt, communicate handled that.\n                process.kill()\n                # We don't call process.wait() as .__exit__ does that for us.\n                raise\n            retcode = process.poll()\n            if check and retcode:\n>               raise CalledProcessError(retcode, process.args,\n                                         output=stdout, stderr=stderr)\nE               subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n\n/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/subprocess.py:571: CalledProcessError\n=========================== short test summary info ============================\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_diff_y_merge_selectivo - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-2']' returned non-zero exit status 128.\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_merge_bloqueado_por_sheriff - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n2 failed, 18 passed in 0.21s\n",
+        "changed_files": [],
+        "executor_audit": {
+          "path_escape_count": 0,
+          "recovered_deviation": false,
+          "source": "informe"
+        },
+        "recovered_deviation": false,
+        "scope_escape": null,
+        "objective_failures": [],
+        "objective_drift": false,
+        "pytest_exit": 0,
+        "pytest_tail": ".................................                                        [100%]\n33 passed in 0.14s\n",
         "informe": true,
-        "ultimo_commit": "8807d5e5c3c5b6fed75fef3b82e7da95aba072ac espejo T01: trabajo (36344878757)",
-        "veredicto": "REVISE",
-        "causa": "TESTS_FALLAN"
+        "stale_report": false,
+        "ultimo_commit": "e22d777f944f697a76470c60e3ce6540d2912241 1790553528 T03 split: T03A.md",
+        "veredicto": "PASS"
       }
     }
   },
-  "next_action": "TESTS_FALLAN",
-  "attempt": 15,
+  "next_action": "missing_evidence:runs_observed",
+  "attempt": 16,
   "loop_version": "9f25e8e246217db9",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
     "objective": "Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.",
     "task_scope": "",
-    "failure": "TESTS_FALLAN",
-    "error_literal": "code = process.poll()\n            if check and retcode:\n>               raise CalledProcessError(retcode, process.args,\n                                         output=stdout, stderr=stderr)\nE               subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n\n/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/subprocess.py:571: CalledProcessError\n=========================== short test summary info ============================\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_diff_y_merge_selectivo - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-2']' returned non-zero exit status 128.\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_merge_bloqueado_por_sheriff - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n2 failed, 18 passed in 0.21s\n",
+    "failure": "missing_evidence:runs_observed",
+    "error_literal": ".................................                                        [100%]\n33 passed in 0.14s\n",
     "queries": [
-      "T01  TESTS_FALLAN",
-      "T01 code = process.poll()\n            if check and retcode:\n>               raise CalledProcessError(retcode, process.args,\n                                         output=stdout, stderr=stderr)\nE               subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n\n/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/subprocess.py:571: CalledProcessError\n=========================== short test summary info ============================\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_diff_y_merge_selectivo - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-2']' returned non-zero exit status 128.\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_merge_bloqueado_por_sheriff - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit status 128.\n2 failed, 18 passed in 0.21s",
-      "TESTS_FALLAN GitHub issue fix",
-      "TESTS_FALLAN Stack Overflow",
-      "TESTS_FALLAN developer community"
+      "T01  missing_evidence:runs_observed",
+      "T01 .................................                                        [100%]\n33 passed in 0.14s",
+      "missing_evidence:runs_observed GitHub issue fix",
+      "missing_evidence:runs_observed Stack Overflow",
+      "missing_evidence:runs_observed developer community"
     ],
     "sources": [
       "GitHub Issues del componente",
@@ -87,29 +97,32 @@
   },
   "research_findings": [
     {
-      "source": "StackOverflow",
-      "title": "poetry does not upgrade polars 15.16",
-      "url": "https://stackoverflow.com/questions/75220492/poetry-does-not-upgrade-polars-15-16"
+      "state": "closed",
+      "title": "When I drop all files, and add one I have traceback and aider exits.",
+      "updatedAt": "2023-07-03T14:09:43Z",
+      "url": "https://github.com/Aider-AI/aider/issues/33",
+      "source": "GitHub:Aider-AI/aider"
     },
     {
-      "source": "StackOverflow",
-      "title": "PoetryException failed to install gssapi-1.8.2.tar.gz",
-      "url": "https://stackoverflow.com/questions/75579081/poetryexception-failed-to-install-gssapi-1-8-2-tar-gz"
+      "state": "closed",
+      "title": "TypeError when module under test or function under test is named 'test'",
+      "updatedAt": "2015-06-15T20:30:38Z",
+      "url": "https://github.com/pytest-dev/pytest/issues/33",
+      "source": "GitHub:pytest-dev/pytest"
     },
     {
-      "source": "StackOverflow",
-      "title": "Error while installing jupyterlab with poetry",
-      "url": "https://stackoverflow.com/questions/75457205/error-while-installing-jupyterlab-with-poetry"
+      "state": "closed",
+      "title": "Add bash/emacs keybindings to move around options",
+      "updatedAt": "2025-08-11T14:07:13Z",
+      "url": "https://github.com/anthropics/claude-code/issues/33",
+      "source": "GitHub:anthropics/claude-code"
     },
     {
-      "source": "StackOverflow",
-      "title": "Which versions of fbs, PySide2, shiboken2 and python do you use to distribute Qt for Python project?",
-      "url": "https://stackoverflow.com/questions/58920035/which-versions-of-fbs-pyside2-shiboken2-and-python-do-you-use-to-distribute-qt"
-    },
-    {
-      "source": "StackOverflow",
-      "title": "Python&#39;s setuptools is failing to install at random in my Github Actions workflow",
-      "url": "https://stackoverflow.com/questions/78154502/pythons-setuptools-is-failing-to-install-at-random-in-my-github-actions-workflo"
+      "state": "closed",
+      "title": "Map timeout exceptions to something readable ",
+      "updatedAt": "2023-09-15T14:33:45Z",
+      "url": "https://github.com/BerriAI/litellm/issues/33",
+      "source": "GitHub:BerriAI/litellm"
     }
   ]
 }

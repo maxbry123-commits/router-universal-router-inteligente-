@@ -1,9 +1,9 @@
-# SENTINELA-CHAT — 2026-09-28T01:19Z
-(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: z-ai/glm-5.3@NVIDIA_API_KEY_1)
+# SENTINELA-CHAT — 2026-09-28T01:33Z
+(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
-ESTADO LOOP: REVISE · TESTS_FALLAN
-OBSERVED_SHA: 
+ESTADO LOOP: RESEARCH · missing_evidence:runs_observed
+OBSERVED_SHA: 76ac9a810e93
 
 PRIORIDADES:
 1. T01 gobierno: código + tests reales + informe + commit en main
@@ -17,13 +17,13 @@ PRIORIDADES:
 
 OBJETIVO ACTIVO:
 - tarea: T01
-- estado: REVISE
+- estado: PASS
 - intento: 1
-- fallo: TESTS_FALLAN
-- siguiente: esperar; foco actual T03C1,T03C2
+- fallo: ninguno registrado
+- siguiente: ninguna
 
 INVESTIGACIÓN:
-- fuentes consultadas: 5
+- fuentes consultadas: 4
 - mínimo independiente objetivo: 3
 
 Sin respuesta LLM; conservar evidencia y reintentar investigación.
