@@ -1,21 +1,39 @@
 # OmniRoute T03 — despliegue estable en el Job del Router
 
-Objetivo: ejecutar OmniRoute `v3.8.50` dentro del Job del Router con un runtime
-reproducible, una sola instancia, healthcheck, límite de RAM y mantenimiento SQLite.
+Objetivo: ejecutar OmniRoute `v3.8.50` dentro del Job HF de 16 GB con una sola instancia, healthcheck, límite de RAM, SQLite nativo y mantenimiento de DB.
+
+## Arquitectura actual
+
+`start_omniroute_x10.sh` mantiene compatibilidad con el launcher histórico, pero desde 2026-09-28 deja **1 instancia activa y 9 pausadas** y delega en `start_omniroute.sh`.
+
+`start_omniroute.sh` **no compila OmniRoute desde fuente**. Usa el bundle oficial precompilado publicado en npm:
+
+```bash
+OMNIROUTE_SKIP_POSTINSTALL=1 \
+npm install -g omniroute@3.8.50 \
+  --omit=optional --ignore-scripts --no-audit --no-fund
+```
+
+Después instala únicamente el runtime nativo necesario para SQLite:
+
+```bash
+npm install --prefix ~/.omniroute/runtime \
+  'better-sqlite3@^13.0.2' --no-audit --no-fund --silent
+```
+
+El binding se prueba contra una DB `:memory:` antes de arrancar. Si falla, el launcher aborta.
 
 ## Componentes
 
-- `start_omniroute.sh` — instala/verifica Node 24, clona `v3.8.50`,
-  ejecuta `npm ci`, reconstruye `better-sqlite3`, verifica el binding nativo,
-  compila y entrega el proceso al supervisor.
-- `supervisor_omniroute.py` — lock de instancia única, espera de puerto,
-  backoff 5/15/45..., healthcheck y reinicio por RAM > 6 GB.
-- `mantenimiento_db.py` — retención >7 días, `VACUUM` y
-  `PRAGMA mmap_size=134217728`.
-- `DIAGNOSTICO-RUNTIME.md` — validación T03-A.
-- `VALIDACION-SUPERVISOR-DB.md` — validación T03-B.
-- `VALIDACION-EXTERNA.md` — investigación externa T03-C1.
-- `DIAGNOSTICO.md` — diagnóstico consolidado.
+- `start_omniroute.sh` — Node 24, bundle npm precompilado v3.8.50, `better-sqlite3` nativo, entorno local-only y entrega al supervisor.
+- `start_omniroute_x10.sh` — compatibilidad histórica; 1 activa / 9 pausadas.
+- `supervisor_omniroute.py` — lock de instancia única, espera de puerto, backoff 5/15/45..., healthcheck, suma RSS del árbol CLI→server y reinicio sobre 6 GB.
+- `mantenimiento_db.py` — retención >7 días, `VACUUM` y `PRAGMA mmap_size=134217728`.
+- `DIAGNOSTICO.md` — diagnóstico y validación externa.
+
+## Por qué no se compila en el Job
+
+Las pruebas reales mostraron que el build desde fuente agotaba `cpu-basic` de 16 GB incluso con una sola instancia. El problema ocurría durante instalación/build antes de que el servidor llegara a abrir `20128`. El paquete npm oficial ya contiene `dist/server.js`, por lo que compilar Next.js dentro del Job era innecesario.
 
 ## Entorno requerido
 
@@ -33,7 +51,7 @@ La clave de cifrado debe permanecer estable entre reinicios.
 ## Arranque
 
 ```bash
-bash "chat router/08-OMNIROUTE/start_omniroute.sh"
+bash "chat router/08-OMNIROUTE/start_omniroute_x10.sh"
 ```
 
 Healthcheck:
@@ -42,15 +60,24 @@ Healthcheck:
 curl -fsS http://127.0.0.1:20128/api/monitoring/health
 ```
 
-## Validación local
+## Validación
 
 ```bash
 python -m pytest "chat router/08-OMNIROUTE" -q
 bash -n "chat router/08-OMNIROUTE/start_omniroute.sh"
+bash -n "chat router/08-OMNIROUTE/start_omniroute_x10.sh"
 ```
 
-Estado documentado:
-- T03-A runtime/Node: PASS.
-- T03-B supervisor/SQLite: PASS.
-- T03-C1 investigación externa: PASS.
-- T03-C2 documentación/gate: contenido completo; pendiente solo de revalidación automática del contrato global T03.
+Prueba live final HF Job `6aba04746b030d633f69bc1c`:
+
+```text
+9 passed in 2.09s
+ACCEPTANCE=PASS
+PORT_20128=PASS
+HEALTH_HTTP=200
+SUPERVISOR_STABILITY=PASS
+```
+
+## Estado de proveedores gratuitos
+
+El runtime de OmniRoute está operativo. `auto/best-free` alcanzó el router y formó un pool de 13 candidatos, pero en la prueba desde el egress de HF los upstream gratuitos respondieron OpenCode `403`, Felo `400/429`; pruebas aisladas dieron DuckDuckGo `418 ERR_BN_LIMIT` y UncloseAI `502`. Eso se trata como disponibilidad externa del proveedor, separada del PASS de runtime T03.
