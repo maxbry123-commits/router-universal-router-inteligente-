@@ -68,13 +68,26 @@ jobs:
           test -n "$ARCH" || { echo "::error::la tarea no declara ARCHIVOS"; exit 1; }
           case "$ALC" in ".github"*|"router inteligente universal"*) echo "::error::alcance prohibido"; exit 1;; esac
           echo "alcance=$ALC" >> "$GITHUB_OUTPUT"; echo "archivos=$ARCH" >> "$GITHUB_OUTPUT"
+      - name: Resolver rama mirror
+        id: mb
+        run: |
+          case "$TAREA" in
+            T03A) B="mirror/T03" ;;
+            T03B) B="mirror/T03-B" ;;
+            T03C) B="mirror/T03-C" ;;
+            *) B="mirror/$TAREA" ;;
+          esac
+          echo "branch=$B" >> "$GITHUB_OUTPUT"
+          echo "::notice::mirror=$B"
+
       - name: Retomar trabajo previo (rama mirror/T0X)
         env:
           ALC: ${{ steps.t.outputs.alcance }}
         run: |
-          if git ls-remote --exit-code --heads origin "mirror/${TAREA}" >/dev/null 2>&1; then
-            git fetch -q --depth 1 origin "mirror/${TAREA}"
-            git checkout -q FETCH_HEAD -- "$ALC" 2>/dev/null && echo "::notice::retomado trabajo previo de mirror/${TAREA}" || true
+          MIRROR="${{ steps.mb.outputs.branch }}"
+          if git ls-remote --exit-code --heads origin "$MIRROR" >/dev/null 2>&1; then
+            git fetch -q --depth 1 origin "$MIRROR"
+            git checkout -q FETCH_HEAD -- "$ALC" 2>/dev/null && echo "::notice::retomado trabajo previo de $MIRROR" || true
             git reset -q
           fi
       - name: Preflight determinista antes de IA
@@ -147,10 +160,14 @@ jobs:
           READS=()
           SENTINEL_CONTEXT="chat router/06-ESPEJOS/tareas/${TAREA}-SENTINEL-CONTEXT.md"
           [ -f "$SENTINEL_CONTEXT" ] && READS+=(--read "$SENTINEL_CONTEXT")
-          if [ "$TAREA" = "T03" ]; then
-            for f in               "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md"               "chat router/06-ESPEJOS/tareas/T03-A-RUNTIME.md"               "chat router/06-ESPEJOS/tareas/T03-B-SUPERVISOR-DB.md"               "chat router/06-ESPEJOS/tareas/T03-C-CIERRE.md"; do
-              [ -f "$f" ] && READS+=(--read "$f")
-            done
+          if [ "$TAREA" = "T03A" ]; then
+            for f in "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md" "chat router/06-ESPEJOS/tareas/T03-A-RUNTIME.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
+          elif [ "$TAREA" = "T03B" ]; then
+            for f in "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md" "chat router/06-ESPEJOS/tareas/T03-B-SUPERVISOR-DB.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
+          elif [ "$TAREA" = "T03C" ]; then
+            for f in "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md" "chat router/06-ESPEJOS/tareas/T03-C-CIERRE.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
+          elif [ "$TAREA" = "T03" ]; then
+            for f in "chat router/06-ESPEJOS/tareas/T03-CONTEXT.md" "chat router/06-ESPEJOS/tareas/T03-A-RUNTIME.md" "chat router/06-ESPEJOS/tareas/T03-B-SUPERVISOR-DB.md" "chat router/06-ESPEJOS/tareas/T03-C-CIERRE.md"; do [ -f "$f" ] && READS+=(--read "$f"); done
           elif [ "$TAREA" = "T02" ]; then
             for f in "chat router/06-ESPEJOS/tareas/T02-CONTEXT.md" "chat router/05-AGENTES/AGENTES.yaml"; do [ -f "$f" ] && READS+=(--read "$f"); done
           elif [ "$TAREA" = "T04" ]; then
@@ -246,6 +263,7 @@ jobs:
         env:
           ALC: ${{ steps.t.outputs.alcance }}
           V: ${{ steps.v.outputs.veredicto }}
+          MIRROR_BRANCH: ${{ steps.mb.outputs.branch }}
         run: |
           git config user.name "espejo-${TAREA}"; git config user.email "espejo@users.noreply.github.com"
           git reset -q
@@ -267,10 +285,10 @@ jobs:
               sleep 7
             done
             echo "::error::no se pudo publicar en main"
-            timeout 90s git push -q -f origin "HEAD:refs/heads/mirror/${TAREA}" || true
+            timeout 90s git push -q -f origin "HEAD:refs/heads/${MIRROR_BRANCH}" || true
             exit 1
           else
-            timeout 90s git push -q -f origin "HEAD:refs/heads/mirror/${TAREA}" &&
-              echo "::warning::REVISE: trabajo guardado en rama mirror/${TAREA} (no en main)"
+            timeout 90s git push -q -f origin "HEAD:refs/heads/${MIRROR_BRANCH}" &&
+              echo "::warning::REVISE: trabajo guardado en rama ${MIRROR_BRANCH} (no en main)"
             exit 1
           fi
