@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 5,
-    "last_sha": "3c679d1233f00f138290b923c056759d1f4f4aa4",
+    "last_sha": "ea1f4888748129a967466f5abdccb68b2fd9f6a4",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -144,7 +144,7 @@
       "veredicto": "REVISE",
       "causa": "STALE_REPORT"
     },
-    "status": "RESEARCH",
+    "status": "WAITING_EXECUTOR",
     "last_failure": "executor_stalled",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
@@ -191,7 +191,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "ejecutor detenido; investigar y recontextualizar",
+    "next_action": "esperar ejecutor activo: T11; no lanzar segundo espejo",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
