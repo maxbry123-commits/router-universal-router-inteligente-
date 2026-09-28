@@ -107,6 +107,64 @@ else:
     print(f"T10_1=NOT_APPLIED (coincidencias={len(matches)}; conservar bundle)")
 PY
 
+# T10-3: OpenCode v3.8.50 marca 403 como éxito en su ejecutor.
+# Corregir SOLO esa contabilidad: cooldown ante 403, nunca markSuccess.
+# Conservar la respuesta HTTP para que la capa de fallback decida.
+# Parche idempotente, de coincidencia única, sin recompilar ni cambiar identidad.
+python3 - "$OMNIROUTE_DIST" >>"$LOG" 2>&1 <<'PY403'
+import os
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(sys.argv[1])
+marker = b"/*T10_3_403_NOT_SUCCESS*/"
+identifier = rb"[A-Za-z_$][A-Za-z0-9_$]*"
+pattern = re.compile(
+    rb"(?P<mark>this\.markSuccess\(\s*(?P<account>" + identifier + rb")\s*\))"
+    rb"(?P<join>\s*;\s*return\s*|\s*,\s*)"
+    rb"this\.normalizeMuseSparkResponse\(\s*" + identifier
+    + rb"\s*,\s*(?P<result>" + identifier + rb")\s*\)"
+)
+if not root.is_dir():
+    print("T10_3=NOT_APPLIED (bundle dist ausente)")
+    sys.exit(0)
+
+matches = []
+already = False
+for file in root.rglob("*.js"):
+    if not file.is_file() or file.is_symlink():
+        continue
+    data = file.read_bytes()
+    if marker in data:
+        already = True
+    for match in pattern.finditer(data):
+        matches.append((file, data, match))
+
+if not matches and already:
+    print("T10_3=ALREADY_PATCHED")
+elif len(matches) != 1:
+    print(f"T10_3=NOT_APPLIED (coincidencias={len(matches)}; no se altera bundle)")
+else:
+    file, data, match = matches[0]
+    account = match.group("account")
+    result = match.group("result")
+    replacement = (
+        b"(" + result + b".response.status===403?this.markCooldown("
+        + account + b"):this.markSuccess(" + account + b"))" + marker
+    )
+    patched = data[:match.start("mark")] + replacement + data[match.end("mark"):]
+    temporary = file.with_name(file.name + ".t10-3-tmp")
+    try:
+        temporary.write_bytes(patched)
+        os.chmod(temporary, file.stat().st_mode)
+        os.replace(temporary, file)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    print("T10_3=PATCHED (OpenCode 403 => cooldown sin falso éxito)")
+PY403
+
 # 4. better-sqlite3 nativo en la ruta oficial de runtime.
 mkdir -p "$RUNTIME_DIR"
 if [ ! -f "$RUNTIME_DIR/package.json" ]; then
