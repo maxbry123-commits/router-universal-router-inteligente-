@@ -1,10 +1,10 @@
-# SENTINELA ORQUESTADOR — 2026-09-28T09:36Z · observed_sha 2688797854
+# SENTINELA ORQUESTADOR — 2026-09-28T10:40Z · observed_sha 3c679d1233
 
 | Tarea | Estado | Causa | Intento | Evidencia |
 |---|---|---|---|---|
 | T01 | WAITING_FOCUS | foco=T03 | 1 | faltan 0 · pytest 0 |
 | T02 | WAITING_FOCUS | foco=T03 | 2 | faltan 0 · pytest 0 |
-| T03 | ACTIVE | STALE_REPORT | 5 | faltan 0 · pytest 1 |
+| T03 | RESEARCH | executor_stalled | 5 | faltan 0 · pytest 1 |
 | T03A | WAITING_FOCUS | foco=T03 | 3 | faltan 1 · pytest 2 |
 | T03B | WAITING_FOCUS | foco=T03 | 3 | faltan 0 · pytest 0 |
 | T03C | WAITING_FOCUS | foco=T03 | 3 | faltan 1 · pytest 1 |

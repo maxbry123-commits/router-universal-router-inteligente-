@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 5,
-    "last_sha": "26887978540667da9db58a98ddf2ad4d2615aedf",
+    "last_sha": "3c679d1233f00f138290b923c056759d1f4f4aa4",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -144,8 +144,8 @@
       "veredicto": "REVISE",
       "causa": "STALE_REPORT"
     },
-    "status": "ACTIVE",
-    "last_failure": "STALE_REPORT",
+    "status": "RESEARCH",
+    "last_failure": "executor_stalled",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
       "objective": "OmniRoute estable v3.8.50 con Node soportado por upstream, better-sqlite3, supervisor con backoff, retención DB y auditoría externa",
@@ -191,7 +191,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "vigilar: Instalar Aider",
+    "next_action": "ejecutor detenido; investigar y recontextualizar",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -203,12 +203,12 @@
       "executor_active": true,
       "run_id": 36404497467,
       "job_id": 108869887144,
-      "active_step": "Instalar Aider",
-      "active_step_age_minutes": 0
+      "active_step": "Trabajar (Aider espejo)",
+      "active_step_age_minutes": 55
     },
     "supervision": {
-      "action": "WATCH",
-      "reason": "Instalar Aider"
+      "action": "RESEARCH",
+      "reason": "executor_stalled"
     }
   },
   "T04": {
