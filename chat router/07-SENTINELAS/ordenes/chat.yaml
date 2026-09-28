@@ -1,13 +1,13 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-28T00:35Z
+generated_at: 2026-09-28T00:40Z
 loop_version: 9f25e8e246217db9
-observed_sha: df5660f488a6bf4d78fd55f36bfe08b1b46e60e8
+observed_sha: d19e8e646a898df6f426140c9ca1d015a6956a74
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
-priority_task: T08
-state: REVISE
-reason: NO_ENTREGADO
+priority_task: T01
+state: RESEARCH
+reason: TESTS_FALLAN
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
 research_packet:
@@ -15,21 +15,34 @@ research_packet:
   objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y
     sin falsos verdes.
   task_scope: ''
-  failure: NO_ENTREGADO
-  error_literal: '
-
-    no tests ran in 0.00s
-
-    ERROR: file or directory not found: chat router/12-FABRICA-MOTORES
-
-
-    '
+  failure: TESTS_FALLAN
+  error_literal: "code = process.poll()\n            if check and retcode:\n>    \
+    \           raise CalledProcessError(retcode, process.args,\n                \
+    \                         output=stdout, stderr=stderr)\nE               subprocess.CalledProcessError:\
+    \ Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit\
+    \ status 128.\n\n/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/subprocess.py:571:\
+    \ CalledProcessError\n=========================== short test summary info ============================\n\
+    FAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_diff_y_merge_selectivo\
+    \ - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-2']'\
+    \ returned non-zero exit status 128.\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_merge_bloqueado_por_sheriff\
+    \ - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']'\
+    \ returned non-zero exit status 128.\n2 failed, 18 passed in 0.21s\n"
   queries:
-  - T08  NO_ENTREGADO
-  - "T08 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/12-FABRICA-MOTORES"
-  - NO_ENTREGADO GitHub issue fix
-  - NO_ENTREGADO Stack Overflow
-  - NO_ENTREGADO developer community
+  - T01  TESTS_FALLAN
+  - "T01 code = process.poll()\n            if check and retcode:\n>             \
+    \  raise CalledProcessError(retcode, process.args,\n                         \
+    \                output=stdout, stderr=stderr)\nE               subprocess.CalledProcessError:\
+    \ Command '['git', 'merge', '--no-ff', 'mirror/job-3']' returned non-zero exit\
+    \ status 128.\n\n/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/subprocess.py:571:\
+    \ CalledProcessError\n=========================== short test summary info ============================\n\
+    FAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_diff_y_merge_selectivo\
+    \ - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-2']'\
+    \ returned non-zero exit status 128.\nFAILED chat router/05-AGENTES/gobierno/tests/test_gobierno.py::TestMirrorManager::test_merge_bloqueado_por_sheriff\
+    \ - subprocess.CalledProcessError: Command '['git', 'merge', '--no-ff', 'mirror/job-3']'\
+    \ returned non-zero exit status 128.\n2 failed, 18 passed in 0.21s"
+  - TESTS_FALLAN GitHub issue fix
+  - TESTS_FALLAN Stack Overflow
+  - TESTS_FALLAN developer community
   sources:
   - GitHub Issues del componente
   - GitHub Discussions del componente
@@ -59,4 +72,21 @@ research_packet:
   - do_not_regenerate
   - repair_steps
   - acceptance_check
-research_findings: []
+research_findings:
+- source: StackOverflow
+  title: poetry does not upgrade polars 15.16
+  url: https://stackoverflow.com/questions/75220492/poetry-does-not-upgrade-polars-15-16
+- source: StackOverflow
+  title: PoetryException failed to install gssapi-1.8.2.tar.gz
+  url: https://stackoverflow.com/questions/75579081/poetryexception-failed-to-install-gssapi-1-8-2-tar-gz
+- source: StackOverflow
+  title: Error while installing jupyterlab with poetry
+  url: https://stackoverflow.com/questions/75457205/error-while-installing-jupyterlab-with-poetry
+- source: StackOverflow
+  title: Which versions of fbs, PySide2, shiboken2 and python do you use to distribute
+    Qt for Python project?
+  url: https://stackoverflow.com/questions/58920035/which-versions-of-fbs-pyside2-shiboken2-and-python-do-you-use-to-distribute-qt
+- source: StackOverflow
+  title: Python&#39;s setuptools is failing to install at random in my Github Actions
+    workflow
+  url: https://stackoverflow.com/questions/78154502/pythons-setuptools-is-failing-to-install-at-random-in-my-github-actions-workflo
