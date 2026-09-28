@@ -85,13 +85,28 @@ jobs:
       - name: Retomar trabajo previo (rama mirror/T0X)
         env:
           ALC: ${{ steps.t.outputs.alcance }}
+          ARCH: ${{ steps.t.outputs.archivos }}
         run: |
           MIRROR="${{ steps.mb.outputs.branch }}"
           if git ls-remote --exit-code --heads origin "$MIRROR" >/dev/null 2>&1; then
             git fetch -q --depth 1 origin "$MIRROR"
-            git checkout -q FETCH_HEAD -- "$ALC" 2>/dev/null && echo "::notice::retomado trabajo previo de $MIRROR" || true
+            IFS=',' read -ra LISTA <<< "$ARCH"
+            RECUP=0
+            for a in "${LISTA[@]}"; do
+              a="$(echo "$a" | xargs)"
+              [ -z "$a" ] && continue
+              dst="$ALC/$a"
+              if [ ! -s "$dst" ] && git cat-file -e "FETCH_HEAD:$ALC/$a" 2>/dev/null; then
+                mkdir -p "$(dirname "$dst")"
+                git show "FETCH_HEAD:$ALC/$a" > "$dst"
+                RECUP=$((RECUP+1))
+                echo "::notice::recuperado faltante desde $MIRROR -> $dst"
+              fi
+            done
+            echo "::notice::mirror_recuperados=$RECUP"
             git reset -q
           fi
+
       - name: Preflight determinista antes de IA
         id: pre
         env:
