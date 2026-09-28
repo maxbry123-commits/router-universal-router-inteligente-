@@ -13,7 +13,7 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 |---|---|---|---|---|
 | T01 | Gobierno: Sheriff, Judge, Sentinel, contratos, MirrorManager | `chat router/05-AGENTES/gobierno` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T02 | Colmena: YaiwesHive + EngineeringLoop por el Router | `chat router/05-AGENTES/colmena` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
-| T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | RECUPERACIÓN ACTIVA · OOM localizado en instalación/build, no en API | HF Job x10 `6ab9dc4052d0dbd7f1d9f760` OOMKilled 137 · prueba 1 instancia `6ab9f74152d0dbd7f1d9fe15` también OOMKilled 137 |
+| T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | RECUPERACIÓN ACTIVA · prueba del fix en curso con 1 instancia | OOM previo x10 `6ab9dc4052d0dbd7f1d9f760` · OOM previo x1 `6ab9f74152d0dbd7f1d9fe15` · prueba fix `6aba013252d0dbd7f1da005c` |
 | T04 | Pasarela Claude Code ↔ NVIDIA (free-claude-code) + vía DeepSeek Harness | `chat router/09-CLAUDE-CODE` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T09 | Suite multi-chat: Open WebUI + LibreChat + big-AGI + Jan; Hermes/OpenClaw por gateway común, sin usar sus UIs | `router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat` + `chat router/13-CHAT-UI-SUITE` | PASS FUNCIONAL · cierre manual GPT | `informes/T09.md` · main `92bb075fce8fe30b9efc4566e07391b08a2c9d39` · mirror `5a94d71e9785e37e8bf8871518c54a017f702e82` · 4/4 tests + HTTP PASS · gitlinks exactos |
 
@@ -37,6 +37,12 @@ Plan quirúrgico:
 3. Compilar con `OMNIROUTE_USE_TURBOPACK=0`, workers limitados y heap de build controlado.
 4. Arrancar 1 instancia por defecto y exigir `health + /v1/models + chat model=auto` antes de escalar.
 5. Solo tras PASS actualizar esta sección y el informe T03 con evidencia real.
+
+Ejecución GPT-5.6 Sol 2026-09-28 05:54 UTC:
+- validado que `build:backend` existe en upstream v3.8.50;
+- lanzada prueba aislada del script actual de `main` con `OMNIROUTE_INSTANCIAS=1`, sin clonar el monorepo completo, para medir el fix sin contaminación de memoria;
+- HF Job de prueba: `6aba013252d0dbd7f1da005c`;
+- gate pendiente: `20128 UP` + `health 200` + `/v1/models 200` + chat `auto/best-free` + estabilidad 60 s.
 
 ## Por qué no hubo evidencia antes (historial de fallos, ya corregidos)
 1. 11:34 Claude Code + LiteLLM: modelo NVIDIA retirado (410) → corregido con probar_modelos.py (catálogo vivo).
