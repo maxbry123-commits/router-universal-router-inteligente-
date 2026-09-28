@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 3,
-    "last_sha": "f3e0699b94233bfa364be71892d77cd647480961",
+    "last_sha": "a2272da3900192e62779a4bfb9ae26c99052c45d",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -137,10 +137,10 @@
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 0,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.07s\n",
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.10s\n",
       "informe": true,
       "stale_report": false,
-      "ultimo_commit": "aa96f9fef869ca74f08ada377f783179022a9e2e 1790564697 OmniRoute x10: una construcción, 10 instancias con puertos, datos y memoria propios, reinicio con espera",
+      "ultimo_commit": "3191bb927935263c88b580fb7452c52d401d0696 1790576112 docs(T03): alinear diagnóstico con solución precompilada",
       "veredicto": "PASS"
     },
     "status": "PASS",
