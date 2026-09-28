@@ -1,29 +1,21 @@
 # T05 — Funciones del chat
 
-Backend independiente para las funciones solicitadas del chat YAIWES.
-
-```text
-UI/Comando → Action Registry / FastAPI → Council | Rewind | Compact | Archify | WORK → JSON
-```
+Backend determinista de funciones solicitadas para el chat. En `SIMULADO=1` no realiza llamadas de red.
 
 | Botón/comando | action_id | función |
 |---|---|---|
-| Watchdog iniciar/parar | `watchdog.start/stop` | controla watchdog |
-| Run / Loop | `workflow.run` | inicia workflow |
-| Pause / Resume | `workflow.pause/resume` | pausa/reanuda |
-| Schedule / Cancel | `task.schedule/cancel` | agenda/cancela |
-| Pool | `pool.dispatch` | envía al pool |
-| Documento | `document.attach` | adjunta referencia |
-| Comando | `command.execute` | registra comando |
-| Memoria | `memory.search` | consulta memoria |
-| Browser | `browser.open` | abre URL |
-| Council | `council.ask` | consejo paralelo |
-| Rewind | `rewind` | vuelve a checkpoint |
-| Compact | `compact` | crea parche de recuperación |
-| Archify | `archify` | genera Mermaid |
+| Watchdog | watchdog.start/stop | Action Registry |
+| /run, /loop | workflow.run | Action Registry |
+| /schedule | task.schedule | Action Registry |
+| /rewind | rewind | checkpoints |
+| /compact | compact | compactación |
+| /council | council.ask | council paralelo |
+| /archify | archify | Mermaid |
+| WORK | /work | RUNNING/PAUSED/CANCELLED/DONE |
 
-Rutas: `POST /acciones/{action_id}`, `/council`, `/rewind`, `/compact`, `/archify`, `GET/POST /work`.
+Rutas FastAPI: `POST /acciones/{action_id}`, `POST /council`, `POST /rewind`, `POST /compact`, `POST /archify`, `GET/POST /work`.
 
+Aceptación:
 ```bash
 SIMULADO=1 python -m pytest "chat router/10-CHAT-FUNCIONES" -q
 ```

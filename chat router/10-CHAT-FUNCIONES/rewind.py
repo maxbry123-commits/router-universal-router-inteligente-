@@ -1,25 +1,15 @@
-"""Checkpoints en memoria por conversación/agente."""
+"""Checkpoints de conversación en memoria."""
 from __future__ import annotations
 from copy import deepcopy
-from typing import Any
+_STORE:dict[str,list[object]]={}
 
-_CHECKPOINTS: dict[str, list[Any]] = {}
+def guardar(conv_id:str,estado:object)->int:
+    if not conv_id: raise ValueError("conv_id requerido")
+    _STORE.setdefault(conv_id,[]).append(deepcopy(estado)); return len(_STORE[conv_id])
 
-def guardar(conv_id: str, estado: Any) -> int:
-    if not conv_id:
-        raise ValueError("conv_id requerido")
-    _CHECKPOINTS.setdefault(conv_id, []).append(deepcopy(estado))
-    return len(_CHECKPOINTS[conv_id])
-
-def volver(conv_id: str, pasos: int = 1) -> Any:
-    if pasos < 1:
-        raise ValueError("pasos debe ser >= 1")
-    items = _CHECKPOINTS.get(conv_id, [])
-    if len(items) <= pasos:
-        raise IndexError("checkpoint insuficiente")
-    for _ in range(pasos):
-        items.pop()
-    return deepcopy(items[-1])
-
-def historial(conv_id: str) -> list[Any]:
-    return deepcopy(_CHECKPOINTS.get(conv_id, []))
+def volver(conv_id:str,pasos:int=1)->object:
+    if pasos<1: raise ValueError("pasos >= 1")
+    items=_STORE.get(conv_id,[])
+    if not items: raise KeyError(conv_id)
+    idx=max(0,len(items)-1-pasos)
+    value=deepcopy(items[idx]); del items[idx+1:]; return value

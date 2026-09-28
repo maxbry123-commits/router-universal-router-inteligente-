@@ -1,90 +1,35 @@
-"""Router FastAPI para funciones del chat."""
+"""Rutas FastAPI de las funciones del chat."""
 from __future__ import annotations
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+import asyncio
+from fastapi import APIRouter,FastAPI,HTTPException
+try:
+ from . import action_registry,council,rewind,compact,archify_cmd,work
+except ImportError:
+ import action_registry,council,rewind,compact,archify_cmd,work
 
-from action_registry import ejecutar
-from council import ask_council
-from rewind import guardar, volver
-from compact import compactar
-from archify_cmd import archify
-import work
-
-class Payload(BaseModel):
-    payload: dict = {}
-
-class CouncilReq(BaseModel):
-    pregunta: str
-    modelos: int = 3
-
-class RewindReq(BaseModel):
-    conv_id: str
-    estado: dict | None = None
-    pasos: int = 1
-
-class CompactReq(BaseModel):
-    historial: list
-
-class ArchifyReq(BaseModel):
-    texto: str
-
-class WorkReq(BaseModel):
-    work_id: str
-    action: str = "create"
-    progress: int | None = None
-
-def build_router() -> APIRouter:
-    router = APIRouter()
-
-    @router.post("/acciones/{action_id}")
-    def acciones_route(action_id: str, req: Payload):
-        try:
-            return ejecutar(action_id, req.payload)
-        except (KeyError, ValueError, TypeError) as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
-
-    @router.post("/council")
-    async def council_route(req: CouncilReq):
-        return await ask_council(req.pregunta, req.modelos)
-
-    @router.post("/rewind")
-    def rewind_route(req: RewindReq):
-        try:
-            if req.estado is not None:
-                guardar(req.conv_id, req.estado)
-                return {"status": "PASS", "saved": True}
-            return {"status": "PASS", "estado": volver(req.conv_id, req.pasos)}
-        except (ValueError, IndexError) as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
-
-    @router.post("/compact")
-    def compact_route(req: CompactReq):
-        return compactar(req.historial)
-
-    @router.post("/archify")
-    def archify_route(req: ArchifyReq):
-        return archify(req.texto)
-
-    @router.get("/work")
-    def work_get():
-        return {"status": "PASS", "items": work.listar()}
-
-    @router.post("/work")
-    def work_post(req: WorkReq):
-        try:
-            if req.action == "create":
-                return work.crear(req.work_id)
-            if req.action == "pause":
-                return work.pausar(req.work_id)
-            if req.action == "cancel":
-                return work.cancelar(req.work_id)
-            if req.action == "retry":
-                return work.reintentar(req.work_id)
-            if req.action == "approve":
-                return work.aprobar(req.work_id)
-            if req.action == "progress" and req.progress is not None:
-                return work.progreso(req.work_id, req.progress)
-            raise ValueError("acción WORK inválida")
-        except (KeyError, ValueError) as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
-    return router
+def build_router()->FastAPI:
+    app=FastAPI(title="YAIWES Chat Functions")
+    @app.post("/acciones/{action_id}")
+    def accion(action_id:str,payload:dict):
+        try:return action_registry.ejecutar(action_id,payload)
+        except KeyError as e:raise HTTPException(404,str(e))
+    @app.post("/council")
+    async def council_route(payload:dict):return await council.ask_council(str(payload.get("pregunta","")),int(payload.get("modelos",3)))
+    @app.post("/rewind")
+    def rewind_route(payload:dict):return {"estado":rewind.volver(str(payload["conv_id"]),int(payload.get("pasos",1)))}
+    @app.post("/compact")
+    def compact_route(payload:dict):return compact.compactar(payload.get("historial",[]))
+    @app.post("/archify")
+    def archify_route(payload:dict):return {"mermaid":archify_cmd.archify(str(payload.get("texto","")))}
+    @app.get("/work")
+    def work_get():return work.listar()
+    @app.post("/work")
+    def work_post(payload:dict):
+        job_id=str(payload["id"]); op=payload.get("op","crear")
+        if op=="crear":return work.crear(job_id)
+        if op=="pausar":return work.pausar(job_id)
+        if op=="cancelar":return work.cancelar(job_id)
+        if op=="reintentar":return work.reintentar(job_id)
+        if op=="aprobar":return work.aprobar(job_id)
+        raise HTTPException(400,"op inválida")
+    return app

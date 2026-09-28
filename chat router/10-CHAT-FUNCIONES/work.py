@@ -1,49 +1,21 @@
-"""Estado de trabajos para la barra WORK."""
+"""Estado de trabajos del chat."""
 from __future__ import annotations
-from copy import deepcopy
-from typing import Any
-
-VALID = {"RUNNING", "PAUSED", "CANCELLED", "DONE"}
-_JOBS: dict[str, dict[str, Any]] = {}
-
-def crear(work_id: str, tareas: list[dict] | None = None) -> dict:
-    if not work_id:
-        raise ValueError("work_id requerido")
-    _JOBS[work_id] = {"id": work_id, "status": "RUNNING", "progress": 0,
-                      "tasks": deepcopy(tareas or [])}
-    return obtener(work_id)
-
-def obtener(work_id: str) -> dict:
-    if work_id not in _JOBS:
-        raise KeyError(work_id)
-    return deepcopy(_JOBS[work_id])
-
-def listar() -> list[dict]:
-    return [deepcopy(v) for v in _JOBS.values()]
-
-def _set(work_id: str, status: str) -> dict:
-    if status not in VALID:
-        raise ValueError(status)
-    _JOBS[work_id]["status"] = status
-    return obtener(work_id)
-
-def pausar(work_id: str) -> dict:
-    return _set(work_id, "PAUSED")
-
-def cancelar(work_id: str) -> dict:
-    return _set(work_id, "CANCELLED")
-
-def reintentar(work_id: str) -> dict:
-    return _set(work_id, "RUNNING")
-
-def aprobar(work_id: str) -> dict:
-    _JOBS[work_id]["progress"] = 100
-    return _set(work_id, "DONE")
-
-def progreso(work_id: str, porcentaje: int) -> dict:
-    if porcentaje < 0 or porcentaje > 100:
-        raise ValueError("progreso fuera de rango")
-    _JOBS[work_id]["progress"] = porcentaje
-    if porcentaje == 100:
-        _JOBS[work_id]["status"] = "DONE"
-    return obtener(work_id)
+from dataclasses import dataclass,asdict
+STATES={"RUNNING","PAUSED","CANCELLED","DONE"}
+@dataclass
+class Job:
+    id:str; status:str="RUNNING"; progress:int=0
+_JOBS:dict[str,Job]={}
+def crear(job_id:str)->dict:
+    if not job_id: raise ValueError("id requerido")
+    _JOBS[job_id]=Job(job_id); return asdict(_JOBS[job_id])
+def cambiar(job_id:str,status:str,progress:int|None=None)->dict:
+    if status not in STATES: raise ValueError(status)
+    job=_JOBS[job_id]; job.status=status
+    if progress is not None: job.progress=max(0,min(100,int(progress)))
+    return asdict(job)
+def pausar(job_id:str)->dict:return cambiar(job_id,"PAUSED")
+def cancelar(job_id:str)->dict:return cambiar(job_id,"CANCELLED")
+def reintentar(job_id:str)->dict:return cambiar(job_id,"RUNNING")
+def aprobar(job_id:str)->dict:return cambiar(job_id,"DONE",100)
+def listar()->list[dict]:return [asdict(x) for x in _JOBS.values()]
