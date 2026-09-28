@@ -17,6 +17,17 @@ PROMPT = "Responde exactamente OMNI_OK."
 # Prefijos no-auth de la familia LLM en el catálogo de OmniRoute 3.8.50.
 # La presencia en /v1/models NO significa que un proveedor funcione.
 AUTO_FREE_PREFIXES = ("unc", "horde", "felo", "ddgw", "oc")
+# Mapa de alias conocidos en el catálogo v3.8.50. Nunca afectar a pagos.
+NOAUTH_PROVIDER_BY_PREFIX = {
+    "unc": "uncloseai", "uncloseai": "uncloseai",
+    "horde": "aihorde", "aihorde": "aihorde",
+    "felo": "felo-web", "felo-web": "felo-web",
+    "ddgw": "duckduckgo-web", "duckduckgo-web": "duckduckgo-web",
+    "oc": "opencode", "opencode": "opencode",
+    "cfp": "cloudflare-playground", "cloudflare-playground": "cloudflare-playground",
+    "tllm": "theoldllm", "theoldllm": "theoldllm",
+    "pepper": "chipotle", "chipotle": "chipotle",
+}
 KNOWN_STOP = {
     "oc/big-pickle",       # prueba anterior: acceso OpenCode Free restringido
     "felo/felo-chat",      # prueba anterior: 400/429
@@ -33,13 +44,13 @@ def local_base(url):
     return url.rstrip("/")
 
 
-def fetch_json(base, endpoint, timeout=12, payload=None):
+def fetch_json(base, endpoint, timeout=12, payload=None, method=None):
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
     req = urllib.request.Request(
         base + endpoint,
         data=data,
         headers={"Content-Type": "application/json", "Accept": "application/json"},
-        method="POST" if payload is not None else "GET",
+        method=method or ("POST" if payload is not None else "GET"),
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as res:
@@ -133,7 +144,35 @@ def classify(status, payload):
     return "HTTP_ERROR"
 
 
-def audit(base, requested, timeout=12, include_known_failures=False, auto_free=False):
+def confirms_obsolete(status, payload):
+    """La ausencia de texto o el 429 NO prueban que el ID esté retirado."""
+    if status not in (404, 410) or not isinstance(payload, dict):
+        return False
+    error = payload.get("error")
+    return isinstance(error, dict) and error.get("code") in {
+        "model_not_found", "model_shutdown"
+    }
+
+
+def hide_obsolete_model(base, model, timeout=12):
+    """Oculta solo el ID confirmado vía API propia de OmniRoute (PATCH)."""
+    prefix, sep, model_id = model.partition("/")
+    provider = NOAUTH_PROVIDER_BY_PREFIX.get(prefix)
+    if not sep or not model_id or provider is None:
+        return "SKIPPED_UNKNOWN_PROVIDER"
+    endpoint = "/api/provider-models?provider=" + urllib.parse.quote(provider, safe="")
+    status, payload = fetch_json(
+        base, endpoint, timeout,
+        {"isHidden": True, "modelIds": [model_id]},
+        method="PATCH",
+    )
+    if status == 200 and isinstance(payload, dict) and payload.get("ok") is True:
+        return "HIDDEN_IN_CATALOG"
+    return "PATCH_REJECTED_HTTP_" + str(status)
+
+
+def audit(base, requested, timeout=12, include_known_failures=False, auto_free=False,
+          hide_obsolete=False):
     base = local_base(base)
     health_code, _ = fetch_json(base, "/api/monitoring/health", timeout)
     model_code, model_payload = fetch_json(base, "/v1/models", timeout)
@@ -164,12 +203,21 @@ def audit(base, requested, timeout=12, include_known_failures=False, auto_free=F
             "stream": False,
         })
         result["probe_count"] += 1
-        result["results"].append({
+        entry = {
             "model": model,
             "http": status,
             "classification": classify(status, payload),
             "assistant_text": has_assistant_text(payload),
-        })
+        }
+        # Solo con autorización explícita. No ocultar bloqueos temporales,
+        # errores de acceso ni respuestas vacías.
+        if hide_obsolete:
+            entry["catalog_update"] = (
+                hide_obsolete_model(base, model, timeout)
+                if confirms_obsolete(status, payload)
+                else "NOT_CONFIRMED_OBSOLETE"
+            )
+        result["results"].append(entry)
     return result
 
 
@@ -181,6 +229,9 @@ def main(argv=None):
     parser.add_argument("--comprobar-gratis", action="store_true",
                         help="Con autorización explícita: hasta 5 modelos no-auth "
                              "del catálogo, 1 por proveedor y sin reintentos")
+    parser.add_argument("--ocultar-obsoletos", action="store_true",
+                        help="PATCH local para ocultar solo modelos con 404/410 "
+                             "y código model_not_found/model_shutdown confirmado")
     parser.add_argument("--timeout", type=int, default=12)
     parser.add_argument("--reprobar-fallidos", action="store_true",
                         help="Permitir una única prueba manual de fallos ya observados")
@@ -189,11 +240,14 @@ def main(argv=None):
         parser.error("Máximo 5 modelos distintos por ejecución")
     if args.comprobar_gratis and args.modelo:
         parser.error("--comprobar-gratis y --modelo son excluyentes")
+    if args.ocultar_obsoletos and not (args.modelo or args.comprobar_gratis):
+        parser.error("--ocultar-obsoletos requiere --modelo o --comprobar-gratis")
     if not 1 <= args.timeout <= 20:
         parser.error("--timeout debe estar entre 1 y 20 s")
     try:
         result = audit(args.url, args.modelo, args.timeout, args.reprobar_fallidos,
-                       auto_free=args.comprobar_gratis)
+                       auto_free=args.comprobar_gratis,
+                       hide_obsolete=args.ocultar_obsoletos)
     except ValueError as exc:
         parser.error(str(exc))
     print(json.dumps(result, ensure_ascii=False, indent=2))
