@@ -1032,7 +1032,7 @@
   },
   "T03C2": {
     "attempt": 3,
-    "last_sha": "0b1fbbe6a455956e1c3137869db41f16e9e2daab",
+    "last_sha": "5839d23c141e8810b9da72ddcea02f8717a3bdf8",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -1119,7 +1119,7 @@
       "run_id": 36367377448,
       "job_id": 108756390581,
       "active_step": "Trabajar (Aider espejo)",
-      "active_step_age_minutes": 4
+      "active_step_age_minutes": 14
     },
     "supervision": {
       "action": "WATCH",
