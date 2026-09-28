@@ -19,7 +19,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T03A,T03B,T03C"
+    "next_action": "esperar; foco actual T03C1,T03C2"
   },
   "T02": {
     "attempt": 2,
@@ -78,7 +78,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03A,T03B,T03C",
+    "next_action": "esperar; foco actual T03C1,T03C2",
     "research_findings": [
       {
         "state": "closed",
@@ -168,7 +168,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03A,T03B,T03C",
+    "next_action": "esperar; foco actual T03C1,T03C2",
     "research_findings": []
   },
   "T04": {
@@ -244,7 +244,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03A,T03B,T03C",
+    "next_action": "esperar; foco actual T03C1,T03C2",
     "research_findings": [
       {
         "state": "closed",
@@ -360,7 +360,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03A,T03B,T03C",
+    "next_action": "esperar; foco actual T03C1,T03C2",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -419,7 +419,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: El directorio 'chat router/05-AGENTES/asistentes' no existe; nunca se generó ningún entregable (pytest exit=4, 0 fuentes encontradas). Fallo de entrega total, no de contenido.\nNO_REGENERAR: ninguno (no hay archivos previos que preservar).\nARREGLAR:\n1. Crear directorio 'chat router/05-AGENTES/asistentes' con __init__.py.\n2. Generar hermes_config.yaml y openclaw_config.yaml: nombre del asistente, modelo vía Router (base_url del router, fallback), system_prompt, intervalo_heartbeat.\n3. hermes.md: documentación del fork Hermes (rol, herramientas, límites).\n4. puente_asistentes.py: cliente que envía mensajes al Router y despacha respuesta al asistente activo; con SIMULADO=1 devuelve respuesta mock sin red.\n5. heartbeat.py: ping periódico al Router registrando estado vivo/muerto de cada asistente; en SIMULADO=1 usa reloj falso.\n6. arrancar_asistentes.sh: script que levanta ambos asistentes y el heartbeat (modo simulado si SIMULADO=1).\n7. tests/test_asistentes.py: tests de carga de configs, puente mock y heartbeat sin red.\n8. README.md: uso, arquitectura y modo simulado.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
     },
-    "next_action": "esperar; foco actual T03A,T03B,T03C"
+    "next_action": "esperar; foco actual T03C1,T03C2"
   },
   "T07": {
     "attempt": 2,
@@ -504,7 +504,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03A,T03B,T03C",
+    "next_action": "esperar; foco actual T03C1,T03C2",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -592,7 +592,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T03A,T03B,T03C"
+    "next_action": "esperar; foco actual T03C1,T03C2"
   },
   "T03A": {
     "attempt": 3,
@@ -706,7 +706,7 @@
         "url": "https://stackoverflow.com/questions/61756691/errno-2-no-such-file-or-directory-error-while-importing-a-python-script-from-a-s"
       }
     ],
-    "next_action": "espejo relanzado"
+    "next_action": "esperar; foco actual T03C1,T03C2"
   },
   "T03B": {
     "attempt": 3,
@@ -804,7 +804,7 @@
         "source": "GitHub:WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "espejo relanzado",
+    "next_action": "esperar; foco actual T03C1,T03C2",
     "deviation_count": 1,
     "last_deviation": {
       "type": "PATH_ESCAPE_RECOVERED",
@@ -902,6 +902,173 @@
         "source": "StackOverflow",
         "title": "How to convert this code into Antlr Groovy Grammar v4?",
         "url": "https://stackoverflow.com/questions/40997897/how-to-convert-this-code-into-antlr-groovy-grammar-v4"
+      }
+    ],
+    "next_action": "esperar; foco actual T03C1,T03C2"
+  },
+  "T03C1": {
+    "attempt": 1,
+    "last_sha": "956cf9ff01138dba0482b2eecbe4b3580a52c4ba",
+    "evidence": {
+      "faltan": [
+        "VALIDACION-EXTERNA.md"
+      ],
+      "fugas": [],
+      "changed_files": [],
+      "executor_audit": {
+        "path_escape_count": 0,
+        "recovered_deviation": false,
+        "source": "informe"
+      },
+      "recovered_deviation": false,
+      "scope_escape": null,
+      "objective_failures": [],
+      "objective_drift": false,
+      "pytest_exit": 2,
+      "pytest_tail": "grep: chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md: No such file or directory\n",
+      "informe": false,
+      "stale_report": false,
+      "ultimo_commit": "b4c200825cbfa6f6e39500483b5c6e561ed327ea 1790555197 espejo T03A: PASS (36361819890)",
+      "veredicto": "REVISE",
+      "causa": "NO_ENTREGADO"
+    },
+    "status": "REVISE",
+    "last_failure": "NO_ENTREGADO",
+    "research_packet": {
+      "sentinel_id": "sentinela-t03c1",
+      "objective": "OmniRoute C1: investigación externa verificable",
+      "task_scope": "chat router/08-OMNIROUTE",
+      "failure": "NO_ENTREGADO",
+      "error_literal": "grep: chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md: No such file or directory\n",
+      "queries": [
+        "T03C1  NO_ENTREGADO",
+        "T03C1 grep: chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md: No such file or directory",
+        "NO_ENTREGADO GitHub issue fix",
+        "NO_ENTREGADO Stack Overflow",
+        "NO_ENTREGADO developer community"
+      ],
+      "sources": [
+        "GitHub Issues del componente",
+        "GitHub Discussions del componente",
+        "GitHub Pull Requests del componente",
+        "GitHub commits recientes del componente",
+        "GitHub Community",
+        "Stack Overflow",
+        "Reddit /r/programming",
+        "Reddit de la tecnología afectada",
+        "Hacker News",
+        "NVIDIA Developer Forums",
+        "NVIDIA NIM / API documentation",
+        "Aider issues y docs",
+        "Claude Code issues y docs",
+        "LiteLLM issues y docs",
+        "pytest documentation",
+        "Python Discuss",
+        "Vercel discussions/docs",
+        "GitHub Actions docs/community",
+        "Issues/docs de OmniRoute, Hermes u OpenClaw",
+        "Repositorio upstream exacto del componente"
+      ],
+      "min_independent_sources": 3,
+      "max_sources": 20,
+      "required_output": [
+        "root_cause",
+        "evidence",
+        "do_not_regenerate",
+        "repair_steps",
+        "acceptance_check"
+      ]
+    },
+    "research_findings": [],
+    "next_action": "espejo relanzado"
+  },
+  "T03C2": {
+    "attempt": 1,
+    "last_sha": "956cf9ff01138dba0482b2eecbe4b3580a52c4ba",
+    "evidence": {
+      "faltan": [],
+      "fugas": [],
+      "changed_files": [],
+      "executor_audit": {
+        "path_escape_count": 0,
+        "recovered_deviation": false,
+        "source": "informe"
+      },
+      "recovered_deviation": false,
+      "scope_escape": null,
+      "objective_failures": [
+        "grep -q 'ENV_VARS_VERIFICADAS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: ",
+        "grep -q 'START_COMMAND_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: ",
+        "grep -q 'ISSUES_ABIERTOS_RELEVANTES' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: ",
+        "grep -q 'RIESGO_RESIDUAL' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: ",
+        "grep -q 'CAMBIOS_NECESARIOS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' :: "
+      ],
+      "objective_drift": true,
+      "pytest_exit": 1,
+      "pytest_tail": "",
+      "informe": false,
+      "stale_report": false,
+      "ultimo_commit": "b4c200825cbfa6f6e39500483b5c6e561ed327ea 1790555197 espejo T03A: PASS (36361819890)",
+      "veredicto": "REVISE",
+      "causa": "OBJECTIVE_DRIFT"
+    },
+    "status": "REVISE",
+    "last_failure": "OBJECTIVE_DRIFT",
+    "research_packet": {
+      "sentinel_id": "sentinela-t03c2",
+      "objective": "OmniRoute C2: documentación y gate final",
+      "task_scope": "chat router/08-OMNIROUTE",
+      "failure": "OBJECTIVE_DRIFT",
+      "error_literal": "OBJECTIVE_DRIFT",
+      "queries": [
+        "T03C2  OBJECTIVE_DRIFT",
+        "T03C2 OBJECTIVE_DRIFT",
+        "OBJECTIVE_DRIFT GitHub issue fix",
+        "OBJECTIVE_DRIFT Stack Overflow",
+        "OBJECTIVE_DRIFT developer community"
+      ],
+      "sources": [
+        "GitHub Issues del componente",
+        "GitHub Discussions del componente",
+        "GitHub Pull Requests del componente",
+        "GitHub commits recientes del componente",
+        "GitHub Community",
+        "Stack Overflow",
+        "Reddit /r/programming",
+        "Reddit de la tecnología afectada",
+        "Hacker News",
+        "NVIDIA Developer Forums",
+        "NVIDIA NIM / API documentation",
+        "Aider issues y docs",
+        "Claude Code issues y docs",
+        "LiteLLM issues y docs",
+        "pytest documentation",
+        "Python Discuss",
+        "Vercel discussions/docs",
+        "GitHub Actions docs/community",
+        "Issues/docs de OmniRoute, Hermes u OpenClaw",
+        "Repositorio upstream exacto del componente"
+      ],
+      "min_independent_sources": 3,
+      "max_sources": 20,
+      "required_output": [
+        "root_cause",
+        "evidence",
+        "do_not_regenerate",
+        "repair_steps",
+        "acceptance_check"
+      ]
+    },
+    "research_findings": [
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "diegosouzapw/OmniRoute",
+        "url": "https://github.com/diegosouzapw/OmniRoute"
+      },
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "WiseLibs/better-sqlite3",
+        "url": "https://github.com/WiseLibs/better-sqlite3"
       }
     ],
     "next_action": "espejo relanzado"

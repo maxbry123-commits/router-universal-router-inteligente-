@@ -1,18 +1,20 @@
-# SENTINELA ORQUESTADOR — 2026-09-28T00:15Z · observed_sha a8bc66c5fc
+# SENTINELA ORQUESTADOR — 2026-09-28T00:35Z · observed_sha 956cf9ff01
 
 | Tarea | Estado | Causa | Intento | Evidencia |
 |---|---|---|---|---|
-| T01 | WAITING_FOCUS | foco=T03A,T03B,T03C | 1 | faltan 0 · pytest 1 |
-| T02 | WAITING_FOCUS | foco=T03A,T03B,T03C | 2 | faltan 0 · pytest 0 |
-| T03 | WAITING_FOCUS | foco=T03A,T03B,T03C | 2 | faltan 0 · pytest 1 |
-| T03A | REVISE | SCOPE_ESCAPE | 3 | faltan 1 · pytest 2 |
-| T03B | REVISE | SCOPE_ESCAPE | 3 | faltan 0 · pytest 0 |
-| T03C | REVISE | SCOPE_ESCAPE | 3 | faltan 1 · pytest 1 |
-| T04 | WAITING_FOCUS | foco=T03A,T03B,T03C | 3 | faltan 0 · pytest 0 |
-| T05 | WAITING_FOCUS | foco=T03A,T03B,T03C | 3 | faltan 9 · pytest 4 |
-| T06 | WAITING_FOCUS | foco=T03A,T03B,T03C | 1 | faltan 8 · pytest 4 |
-| T07 | WAITING_FOCUS | foco=T03A,T03B,T03C | 2 | faltan 11 · pytest 4 |
-| T08 | WAITING_FOCUS | foco=T03A,T03B,T03C | 1 | faltan 10 · pytest 4 |
+| T01 | WAITING_FOCUS | foco=T03C1,T03C2 | 1 | faltan 0 · pytest 1 |
+| T02 | WAITING_FOCUS | foco=T03C1,T03C2 | 2 | faltan 0 · pytest 0 |
+| T03 | WAITING_FOCUS | foco=T03C1,T03C2 | 2 | faltan 0 · pytest 1 |
+| T03A | WAITING_FOCUS | foco=T03C1,T03C2 | 3 | faltan 1 · pytest 2 |
+| T03B | WAITING_FOCUS | foco=T03C1,T03C2 | 3 | faltan 0 · pytest 0 |
+| T03C | WAITING_FOCUS | foco=T03C1,T03C2 | 3 | faltan 1 · pytest 1 |
+| T03C1 | REVISE | NO_ENTREGADO | 1 | faltan 1 · pytest 2 |
+| T03C2 | REVISE | OBJECTIVE_DRIFT | 1 | faltan 0 · pytest 1 |
+| T04 | WAITING_FOCUS | foco=T03C1,T03C2 | 3 | faltan 0 · pytest 0 |
+| T05 | WAITING_FOCUS | foco=T03C1,T03C2 | 3 | faltan 9 · pytest 4 |
+| T06 | WAITING_FOCUS | foco=T03C1,T03C2 | 1 | faltan 8 · pytest 4 |
+| T07 | WAITING_FOCUS | foco=T03C1,T03C2 | 2 | faltan 11 · pytest 4 |
+| T08 | WAITING_FOCUS | foco=T03C1,T03C2 | 1 | faltan 10 · pytest 4 |
 
-Foco: T03A,T03B,T03C
-Relanzados: T03A, T03B, T03C
+Foco: T03C1,T03C2
+Relanzados: T03C1, T03C2
