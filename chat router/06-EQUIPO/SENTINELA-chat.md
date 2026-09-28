@@ -1,9 +1,9 @@
-# SENTINELA-CHAT — 2026-09-28T01:43Z
-(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-CHAT — 2026-09-28T01:47Z
+(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: no requerido)
 
 OBJETIVO: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin falsos verdes.
-ESTADO LOOP: RESEARCH · missing_evidence:runs_observed
-OBSERVED_SHA: ca8873e0c590
+ESTADO LOOP: ACTIVE · executor_active
+OBSERVED_SHA: de4d444097f4
 
 PRIORIDADES:
 1. T01 gobierno: código + tests reales + informe + commit en main
@@ -16,25 +16,11 @@ PRIORIDADES:
 8. T08 motores base de fábrica
 
 OBJETIVO ACTIVO:
-- tarea: T01
-- estado: PASS
-- intento: 1
-- fallo: ninguno registrado
-- siguiente: ninguna
-
-INVESTIGACIÓN:
-- fuentes consultadas: 4
-- mínimo independiente objetivo: 3
-
-CAUSA_RAIZ: El "33 passed in 0.14s" es salida de pytest (tests unitarios), no evidencia de ejecución real de las tareas del Chat YAIWES. El validador exige runs_observed (corridas observadas de las tareas), y solo hay tests verdes + issues de comunidad sin relación directa con YAIWES.
-
-EVIDENCIA: 33 tests pasan en 0.14s (demasiado rápido para tareas de chat reales → son unit tests triviales). Los 4 issues de GitHub son de repos ajenos (aider, pytest, claude-code, litellm) con id #33 coincidental, no evidencia de cierre de tareas YAIWES.
-
-NO_REGENERAR: No re-ejecutar pytest ni re-buscar issues #33 en GitHub; no aportan runs_observed. No declarar PASS.
-
-REPARAR: 1) Listar tareas del Chat YAIWES ordenadas por prioridad. 2) Ejecutar cada tarea en sentinela-chat y capturar log/artefacto observable por tarea (comando, salida, timestamp). 3) Adjuntar esa evidencia como runs_observed en el reporte.
-
-ACEPTACION: Cada tarea priorizada tiene al menos 1 run observado con salida real vinculada a sentinela-chat; el validador deja de reportar missing_evidence:runs_observed.
+- tarea: T03
+- estado: ACTIVE
+- intento: 2
+- fallo: TESTS_FALLAN
+- siguiente: esperar; foco actual T01
 
 CONTROL:
 - PASS no lo decide la LLM.

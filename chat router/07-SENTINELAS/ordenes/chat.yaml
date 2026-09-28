@@ -1,81 +1,14 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-28T01:43Z
+generated_at: 2026-09-28T01:47Z
 loop_version: 9f25e8e246217db9
-observed_sha: ca8873e0c59000dfd05c9a4ad1b2311248fdd5b4
+observed_sha: de4d444097f4a7bf0965e0768856675e778c4362
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
-priority_task: T01
-state: RESEARCH
-reason: missing_evidence:runs_observed
+priority_task: T03
+state: ACTIVE
+reason: executor_active
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
   ejecutar aceptación real y devolver evidencia.
-research_packet:
-  sentinel_id: sentinela-chat
-  objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y
-    sin falsos verdes.
-  task_scope: ''
-  failure: missing_evidence:runs_observed
-  error_literal: '.................................                                        [100%]
-
-    33 passed in 0.14s
-
-    '
-  queries:
-  - T01  missing_evidence:runs_observed
-  - 'T01 .................................                                        [100%]
-
-    33 passed in 0.14s'
-  - missing_evidence:runs_observed GitHub issue fix
-  - missing_evidence:runs_observed Stack Overflow
-  - missing_evidence:runs_observed developer community
-  sources:
-  - GitHub Issues del componente
-  - GitHub Discussions del componente
-  - GitHub Pull Requests del componente
-  - GitHub commits recientes del componente
-  - GitHub Community
-  - Stack Overflow
-  - Reddit /r/programming
-  - Reddit de la tecnología afectada
-  - Hacker News
-  - NVIDIA Developer Forums
-  - NVIDIA NIM / API documentation
-  - Aider issues y docs
-  - Claude Code issues y docs
-  - LiteLLM issues y docs
-  - pytest documentation
-  - Python Discuss
-  - Vercel discussions/docs
-  - GitHub Actions docs/community
-  - Issues/docs de OmniRoute, Hermes u OpenClaw
-  - Repositorio upstream exacto del componente
-  min_independent_sources: 3
-  max_sources: 20
-  required_output:
-  - root_cause
-  - evidence
-  - do_not_regenerate
-  - repair_steps
-  - acceptance_check
-research_findings:
-- state: closed
-  title: When I drop all files, and add one I have traceback and aider exits.
-  updatedAt: '2023-07-03T14:09:43Z'
-  url: https://github.com/Aider-AI/aider/issues/33
-  source: GitHub:Aider-AI/aider
-- state: closed
-  title: TypeError when module under test or function under test is named 'test'
-  updatedAt: '2015-06-15T20:30:38Z'
-  url: https://github.com/pytest-dev/pytest/issues/33
-  source: GitHub:pytest-dev/pytest
-- state: closed
-  title: Add bash/emacs keybindings to move around options
-  updatedAt: '2025-08-11T14:07:13Z'
-  url: https://github.com/anthropics/claude-code/issues/33
-  source: GitHub:anthropics/claude-code
-- state: closed
-  title: 'Map timeout exceptions to something readable '
-  updatedAt: '2023-09-15T14:33:45Z'
-  url: https://github.com/BerriAI/litellm/issues/33
-  source: GitHub:BerriAI/litellm
+research_packet: null
+research_findings: []

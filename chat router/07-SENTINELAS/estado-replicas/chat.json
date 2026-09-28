@@ -1,16 +1,16 @@
 {
-  "status": "RESEARCH",
-  "last_sha": "ca8873e0c59000dfd05c9a4ad1b2311248fdd5b4",
-  "last_failure": "",
-  "same_failure_count": 0,
+  "status": "ACTIVE",
+  "last_sha": "de4d444097f4a7bf0965e0768856675e778c4362",
+  "last_failure": "TESTS_FALLAN",
+  "same_failure_count": 1,
   "evidence": {
-    "observed_sha": "ca8873e0c59000dfd05c9a4ad1b2311248fdd5b4",
-    "current_sha": "ca8873e0c59000dfd05c9a4ad1b2311248fdd5b4",
-    "executor_active": false,
+    "observed_sha": "de4d444097f4a7bf0965e0768856675e778c4362",
+    "current_sha": "de4d444097f4a7bf0965e0768856675e778c4362",
+    "executor_active": true,
     "workflow_false_green": false,
     "unauthorized_change": false,
-    "failure_class": "",
-    "error_literal": ".................................                                        [100%]\n33 passed in 0.14s\n",
+    "failure_class": "TESTS_FALLAN",
+    "error_literal": ".........                                                                [100%]\n9 passed in 2.13s\n",
     "objective_evidence": {
       "head_fresh": true,
       "recent_commits_observed": false,
@@ -20,34 +20,24 @@
     "recent_commits": [],
     "recent_runs": [],
     "priority_task": {
-      "task_id": "T01",
-      "status": "PASS",
-      "attempt": 1,
-      "failure": "",
-      "next_action": "ninguna",
+      "task_id": "T03",
+      "status": "ACTIVE",
+      "attempt": 2,
+      "failure": "TESTS_FALLAN",
+      "next_action": "esperar; foco actual T01",
       "evidence": {
         "faltan": [],
         "fugas": [],
-        "changed_files": [],
-        "executor_audit": {
-          "path_escape_count": 0,
-          "recovered_deviation": false,
-          "source": "informe"
-        },
-        "recovered_deviation": false,
-        "scope_escape": null,
-        "objective_failures": [],
-        "objective_drift": false,
-        "pytest_exit": 0,
-        "pytest_tail": ".................................                                        [100%]\n33 passed in 0.14s\n",
+        "pytest_exit": 1,
+        "pytest_tail": ".........                                                                [100%]\n9 passed in 2.13s\n",
         "informe": true,
-        "stale_report": false,
-        "ultimo_commit": "a8bc66c5fc3118e104355d5b4a23df5b875e8ba8 1790554410 espejo T03B: PASS (36361044929)",
-        "veredicto": "PASS"
+        "ultimo_commit": "36013c8bced86eda3d30ff47d69fe5880cc98f7e T03: probar retencion segura y bloqueo de puerto",
+        "veredicto": "REVISE",
+        "causa": "TESTS_FALLAN"
       }
     }
   },
-  "next_action": "missing_evidence:runs_observed",
+  "next_action": "executor_active",
   "attempt": 17,
   "loop_version": "9f25e8e246217db9",
   "research_packet": {
