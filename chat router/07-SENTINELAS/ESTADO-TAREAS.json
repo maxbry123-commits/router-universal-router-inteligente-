@@ -291,114 +291,23 @@
   },
   "T05": {
     "attempt": 3,
-    "last_sha": "b14644d1330c0c8bf5dc275ed103787215addded",
+    "last_sha": "6192783b9fedcbca5414bc5bbc89f5d43ca83444",
     "evidence": {
-      "faltan": [
-        "action_registry.py",
-        "council.py",
-        "rewind.py",
-        "compact.py",
-        "archify_cmd.py",
-        "work.py",
-        "rutas.py",
-        "tests/test_funciones.py",
-        "README.md"
-      ],
+      "faltan": [],
       "fugas": [],
-      "changed_files": [],
-      "executor_audit": {
-        "path_escape_count": 0,
-        "recovered_deviation": false,
-        "source": "informe"
-      },
-      "recovered_deviation": false,
-      "scope_escape": null,
       "objective_failures": [],
       "objective_drift": false,
-      "pytest_exit": 4,
-      "pytest_tail": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/10-CHAT-FUNCIONES\n\n",
-      "informe": false,
+      "pytest_exit": 0,
+      "pytest_tail": ".......                                                                  [100%]\\n7 passed in 0.71s",
+      "informe": true,
       "stale_report": false,
-      "ultimo_commit": "",
-      "veredicto": "REVISE",
-      "causa": "NO_ENTREGADO"
+      "ultimo_commit": "e8ee3ad30282b65cb728eb4a1f08a9de10f6f121",
+      "veredicto": "PASS",
+      "causa": ""
     },
-    "status": "WAITING_EXECUTOR",
-    "last_failure": "NO_ENTREGADO",
-    "research_packet": {
-      "sentinel_id": "sentinela-t05",
-      "objective": "Funciones del chat: Action Registry, Council, rewind, compact, Archify, WORK",
-      "task_scope": "chat router/10-CHAT-FUNCIONES",
-      "failure": "NO_ENTREGADO",
-      "error_literal": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/10-CHAT-FUNCIONES\n\n",
-      "queries": [
-        "T05  NO_ENTREGADO",
-        "T05 \nno tests ran in 0.00s\nERROR: file or directory not found: chat router/10-CHAT-FUNCIONES",
-        "NO_ENTREGADO GitHub issue fix",
-        "NO_ENTREGADO Stack Overflow",
-        "NO_ENTREGADO developer community"
-      ],
-      "sources": [
-        "GitHub Issues del componente",
-        "GitHub Discussions del componente",
-        "GitHub Pull Requests del componente",
-        "GitHub commits recientes del componente",
-        "GitHub Community",
-        "Stack Overflow",
-        "Reddit /r/programming",
-        "Reddit de la tecnología afectada",
-        "Hacker News",
-        "NVIDIA Developer Forums",
-        "NVIDIA NIM / API documentation",
-        "Aider issues y docs",
-        "Claude Code issues y docs",
-        "LiteLLM issues y docs",
-        "pytest documentation",
-        "Python Discuss",
-        "Vercel discussions/docs",
-        "GitHub Actions docs/community",
-        "Issues/docs de OmniRoute, Hermes u OpenClaw",
-        "Repositorio upstream exacto del componente"
-      ],
-      "min_independent_sources": 3,
-      "max_sources": 20,
-      "required_output": [
-        "root_cause",
-        "evidence",
-        "do_not_regenerate",
-        "repair_steps",
-        "acceptance_check"
-      ]
-    },
-    "next_action": "esperar ejecutor activo: T03C2; no lanzar segundo espejo",
-    "research_findings": [
-      {
-        "source": "Repositorio oficial/upstream",
-        "title": "fastapi/fastapi",
-        "url": "https://github.com/fastapi/fastapi"
-      },
-      {
-        "source": "Repositorio oficial/upstream",
-        "title": "karpathy/llm-council",
-        "url": "https://github.com/karpathy/llm-council"
-      },
-      {
-        "source": "Repositorio oficial/upstream",
-        "title": "pytest-dev/pytest",
-        "url": "https://github.com/pytest-dev/pytest"
-      }
-    ],
-    "runtime": {
-      "executor_active": true,
-      "run_id": 36358891179,
-      "job_id": 108732003077,
-      "active_step": "Instalar Aider",
-      "active_step_age_minutes": 0
-    },
-    "supervision": {
-      "action": "WATCH",
-      "reason": "Instalar Aider"
-    }
+    "status": "PASS",
+    "last_failure": "",
+    "next_action": "cerrada; no relanzar T05"
   },
   "T06": {
     "attempt": 1,
