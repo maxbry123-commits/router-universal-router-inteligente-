@@ -1,5 +1,5 @@
-# SENTINELA-FABRICA — 2026-09-28T00:31Z
-(LOOP común · versión: 250e936e9d893c74 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
+# SENTINELA-FABRICA — 2026-09-28T00:36Z
+(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.
 ESTADO LOOP: RESEARCH · missing_evidence:recent_commits_observed
@@ -16,15 +16,15 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-CAUSA_RAIZ: El bloque "Cerrar la Fábrica UI" no aporta evidencia de commits recientes observados en el repo (git log verificable); la evidencia comunitaria adjunta son preguntas genéricas de StackOverflow sin relación con el objetivo.
+CAUSA_RAIZ: El bloque Fábrica UI se reportó sin adjuntar evidencia de commits recientes observados (git log verificable); la evidencia comunitaria aportada es genérica (SO sobre git/python) y no prueba entregas reales del objetivo.
 
-EVIDENCIA: Fallo literal `missing_evidence:recent_commits_observed`. Ninguna de las 5 URLs citadas documenta commits del proyecto sentinela-fabrica; son tutoriales de Git/Python ajenos a la entrega.
+EVIDENCIA: Fallo literal=missing_evidence:recent_commits_observed. Los 5 enlaces son preguntas canónicas de StackOverflow sin relación con el repo ni con entregas UI; no hay hashes, fechas, diffs ni artefactos.
 
-NO_REGENERAR: No regenerar la respuesta con la misma evidencia comunitaria; no sustituir evidencia de commits por enlaces externos; no declarar PASS.
+NO_REGENERAR: No reintentar el bloque ni declarar avance; no sustituir evidencia con referencias externas; no cerrar objetivos por afirmación.
 
-REPARAR: Ejecutar y pegar salida real de `git log --oneline -n 10` (con hashes y fechas) en el repo sentinela-fabrica, más diff/artefactos que demuestren el cierre de la Fábrica UI por objetivos (archivos tocados, tests, build).
+REPARAR: Ejecutar y pegar salida real de `git log --oneline -n 10` y `git status` en sentinela-fabrica; listar archivos entregados por objetivo con diff o ruta verificable; vincular cada objetivo de la Fábrica UI a su commit/artefacto.
 
-ACEPTACION: PASS solo cuando exista: (1) lista de commits recientes con hash+fecha+mensaje observados, (2) mapeo commit→objetivo de la Fábrica UI, (3) verificación reproducible (comandos ejecutados y salida).
+ACEPTACION: Solo se abre el siguiente bloque cuando cada objetivo tenga commit reciente observado + artefacto comprobable; veredicto actual: FAIL (sin PASS).
 
 CONTROL:
 - PASS no lo decide la LLM.

@@ -22,8 +22,8 @@
     "priority_task": {}
   },
   "next_action": "missing_evidence:recent_commits_observed",
-  "attempt": 22,
-  "loop_version": "250e936e9d893c74",
+  "attempt": 23,
+  "loop_version": "9f25e8e246217db9",
   "research_packet": {
     "sentinel_id": "sentinela-fabrica",
     "objective": "Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.",
