@@ -6,7 +6,7 @@ diegosouzapw/OmniRoute, WiseLibs/better-sqlite3, nodejs/undici, sqlite.org (27-s
 | # | Causa | Síntoma en /tmp/omniroute.log | Solución aplicada |
 |---|-------|-------------------------------|-------------------|
 | 1 | Versión preview 3.8.51 (rama release inestable; issue #14963 "release/v3.8.51 not green") | `ERR_MODULE_NOT_FOUND` al arrancar; tarball roto (mismo patrón que #7065 en 3.8.47) | Clonar tag estable **v3.8.50** (`git clone --branch v3.8.50`) |
-| 2 | Node fuera de rango (20 viejo / 22 / 26 no probado) | `Module did not self-register`, crashes de módulos nativos, banner naranja en login | **Node 24 LTS** vía nodesource; el script aborta si `node -v` no es v24.x. Rango oficial: `>=20.20.2 <21`, `>=22.22.2 <23`, `>=24.0.0 <27` |
+| 2 | Node fuera del rango oficial | `Module did not self-register`, crashes de módulos nativos o incompatibilidad de runtime | **Node 24** vía nodesource; el script aborta si `node -v` no es v24.x. Evidencia del tag exacto **v3.8.50**: `package.json.engines.node = ">=22.22.2 <23 || >=24.0.0 <27"` y `.nvmrc = 24`. Node 20 NO figura en el rango de v3.8.50. |
 | 3 | better-sqlite3 sin binario nativo válido | `dlopen` / `slice is not valid mach-o file` / `Could not locate the bindings file` | `npm rebuild better-sqlite3` + verificación `node -e "require('better-sqlite3')"`; si falla → **abortar** (nunca caer a sql.js: carga toda la DB en RAM) |
 | 4 | Heap V8 por defecto (~2 GB) insuficiente; modo COMBO con OOM abierto en 3.8.50 al rotar cuentas | `JavaScript heap out of memory`, proceso muerto (rc=134) | `NODE_OPTIONS=--max-old-space-size=4096`; **no** activar modo COMBO |
 | 5 | DB SQLite crece sin límite (usage_history/call_logs/proxy_logs) | Disco lleno en /tmp; consultas lentas; RAM alta | `mantenimiento_db.py`: retención >7 días + `VACUUM` + `PRAGMA mmap_size=134217728` (sqlite.org/docs → mmap.html) |
@@ -22,3 +22,15 @@ diegosouzapw/OmniRoute, WiseLibs/better-sqlite3, nodejs/undici, sqlite.org (27-s
     curl -s http://127.0.0.1:20128/api/monitoring/health
     tail -f /tmp/omniroute.log
     python3 mantenimiento_db.py   # idempotente
+
+
+## Verificación T03-A — runtime/Node
+
+- REF_VERIFICADO: `diegosouzapw/OmniRoute@v3.8.50`
+- PACKAGE_VERSION: `3.8.50`
+- NODE_ENGINES: `>=22.22.2 <23 || >=24.0.0 <27`
+- NVMRC: `24`
+- NUESTRA_CONFIG: `NODE_MAJOR=24`
+- RESULTADO: **ALINEADO**
+- CAMBIO_REALIZADO: corregida documentación que incluía Node 20 por error.
+- NO_TOCADO: SQLite, supervisor, healthcheck, better-sqlite3, cierre externo.
