@@ -173,5 +173,6 @@ tareas:
       - "grep -Eq 'bot[oó]n.*muerto|dead' 'chat router/12-FABRICA-MOTORES/action_flow_engine.py'"
       - "! grep -q 'pytest cache directory' 'chat router/12-FABRICA-MOTORES/README.md'"
       - "for n in Capability Canvas Layout Action Sandbox QA; do grep -qi \"$n\" 'chat router/12-FABRICA-MOTORES/README.md' || exit 1; done"
+      - "test -z \"$(find 'chat router/12-FABRICA-MOTORES' -type f -name '*.pyc' -print -quit)\" && test -z \"$(find 'chat router/12-FABRICA-MOTORES' -type d \\( -name '__pycache__' -o -name '.pytest_cache' \\) -print -quit)\""
     max_stall_minutes: 30
     dependencies: []
