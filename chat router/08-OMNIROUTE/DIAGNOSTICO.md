@@ -5,10 +5,10 @@ diegosouzapw/OmniRoute, WiseLibs/better-sqlite3, nodejs/undici, sqlite.org (27-s
 
 | # | Causa | Síntoma en /tmp/omniroute.log | Solución aplicada |
 |---|-------|-------------------------------|-------------------|
-| 1 | Versión preview 3.8.51 (rama release inestable; issue #14963 "release/v3.8.51 not green") | `ERR_MODULE_NOT_FOUND` al arrancar; tarball roto (mismo patrón que #7065 en 3.8.47) | Clonar tag estable **v3.8.50** (`git clone --branch v3.8.50`) |
+| 1 | Versión preview 3.8.51 (rama release inestable; issue #14963 "release/v3.8.51 not green") | `ERR_MODULE_NOT_FOUND` al arrancar; tarball roto (mismo patrón que #7065 en 3.8.47) | Usar paquete oficial precompilado **`omniroute@3.8.50`** desde npm; no compilar Next.js dentro del Job |
 | 2 | Node fuera del rango oficial | `Module did not self-register`, crashes de módulos nativos o incompatibilidad de runtime | **Node 24** vía nodesource; el script aborta si `node -v` no es v24.x. Evidencia del tag exacto **v3.8.50**: `package.json.engines.node = ">=22.22.2 <23 || >=24.0.0 <27"` y `.nvmrc = 24`. Node 20 NO figura en el rango de v3.8.50. |
-| 3 | better-sqlite3 sin binario nativo válido | `dlopen` / `slice is not valid mach-o file` / `Could not locate the bindings file` | `npm rebuild better-sqlite3` + verificación `node -e "require('better-sqlite3')"`; si falla → **abortar** (nunca caer a sql.js: carga toda la DB en RAM) |
-| 4 | Heap V8 por defecto (~2 GB) insuficiente; modo COMBO con OOM abierto en 3.8.50 al rotar cuentas | `JavaScript heap out of memory`, proceso muerto (rc=134) | `NODE_OPTIONS=--max-old-space-size=4096`; **no** activar modo COMBO |
+| 3 | better-sqlite3 sin binario nativo válido | `dlopen` / `slice is not valid mach-o file` / `Could not locate the bindings file` | Instalar `better-sqlite3@^13.0.2` en `~/.omniroute/runtime/` (ruta soportada upstream) + prueba real `:memory:`; si falla → **abortar** |
+| 4 | Compilar OmniRoute desde fuente dentro del Job 16 GB provoca OOM; Turbopack usa memoria nativa fuera del heap y el build completo también agota V8 | `OOMKilled / exit 137` antes de abrir `20128`; build observado hasta ~15.997/16 GB | **No compilar en runtime**: usar bundle npm precompilado; `NODE_OPTIONS=--max-old-space-size=4096` queda para el servidor |
 | 5 | DB SQLite crece sin límite (usage_history/call_logs/proxy_logs) | Disco lleno en /tmp; consultas lentas; RAM alta | `mantenimiento_db.py`: retención >7 días + `VACUUM` + `PRAGMA mmap_size=134217728` (sqlite.org/docs → mmap.html) |
 | 6 | Relanzado inmediato tras crash → puerto aún ocupado | `EADDRINUSE 127.0.0.1:20128` en bucle | Supervisor: `wait_port_free()` antes de relanzar + backoff 5/15/45…s (tope 300 s) + lock de instancia única + healthcheck cada 30 s + reinicio si RSS > 6 GB |
 | 7 | `STORAGE_ENCRYPTION_KEY` regenerada en cada arranque | Credenciales cifradas ilegibles tras reinicio ("Invalid API key" masivo, cf. issue #14927) | Clave **fija** desde variable de entorno; el script aborta si no está definida |
@@ -53,11 +53,40 @@ Esta sección consolida evidencia ya validada en:
 
 NODE_VERSION_VERIFICADA: Node 24.x
 OMNIROUTE_REF_VERIFICADA: diegosouzapw/OmniRoute@v3.8.50
-BETTER_SQLITE3_VERIFICADO: gate de arranque exige require('better-sqlite3')
+BETTER_SQLITE3_VERIFICADO: runtime `~/.omniroute/runtime/` probado con DB `:memory:`; evidencia live PASS
 HEALTH_ENDPOINT_VERIFICADO: /api/monitoring/health
 ENV_VARS_VERIFICADAS: DATA_DIR, APP_BIND_HOST, PORT, REQUIRE_API_KEY, STORAGE_ENCRYPTION_KEY, NODE_OPTIONS
-START_COMMAND_VERIFICADO: npm run start bajo supervisor_omniroute.py
+START_COMMAND_VERIFICADO: `omniroute serve --no-open --log --no-recovery --port 20128` bajo `supervisor_omniroute.py`
 ISSUES_ABIERTOS_RELEVANTES: #9576; #9613 cerrado pero relevante para npm/binding
-RIESGO_RESIDUAL: compatibilidad nightly Node 24/26 y disponibilidad real del binding nativo en el Job
-CAMBIOS_NECESARIOS: ninguno dentro del alcance T03; la instalación/prueba live en el Job corresponde al paso posterior de Opus
+RIESGO_RESIDUAL: disponibilidad/anti-abuse de proveedores gratuitos externos desde el egress de HF; runtime local validado
+CAMBIOS_NECESARIOS: aplicados 2026-09-28 — bundle npm precompilado, SQLite runtime nativo, supervisor CLI y x1 activa/x9 pausadas
 VEREDICTO_FINAL: PASS
+
+## RECUPERACIÓN OOM Y VALIDACIÓN LIVE — 2026-09-28
+
+### Evidencia causal
+
+- Job x10 `6ab9dc4052d0dbd7f1d9f760` → `OOMKilled / exit 137`.
+- Job x1 con build desde fuente `6ab9f74152d0dbd7f1d9fe15` → también `OOMKilled / exit 137`.
+- instrumentación del build mostró Turbopack/Next acercándose a `15.997 GB / 16 GB` antes del arranque.
+- `better-sqlite3` cargó correctamente durante el diagnóstico; no era la causa primaria.
+
+### Solución validada
+
+El launcher usa el paquete npm oficial que ya trae `dist/server.js`, omite opcionales/postinstall pesados e instala solo `better-sqlite3@^13.0.2` en la ruta de runtime oficial. El supervisor externo T03 ejecuta el CLI con `--no-recovery` para evitar doble supervisor.
+
+### Prueba exacta de main
+
+HF Job `6aba04746b030d633f69bc1c` terminó `COMPLETED`:
+
+```text
+9 passed in 2.09s
+ACCEPTANCE=PASS
+PORT_20128=PASS
+HEALTH_HTTP=200
+SUPERVISOR_STABILITY=PASS
+OmniRoute 3.8.50 precompilado OK
+better-sqlite3 nativo OK
+```
+
+`auto/best-free` alcanzó el motor de routing (`pool-size: 13`, `attempted: 3`) pero los upstream no-auth rechazaron el egress de HF. Este resultado se clasifica `BLOCKED_UPSTREAM`, separado del PASS de runtime.
