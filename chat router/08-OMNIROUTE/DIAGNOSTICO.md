@@ -59,5 +59,5 @@ ENV_VARS_VERIFICADAS: DATA_DIR, APP_BIND_HOST, PORT, REQUIRE_API_KEY, STORAGE_EN
 START_COMMAND_VERIFICADO: npm run start bajo supervisor_omniroute.py
 ISSUES_ABIERTOS_RELEVANTES: #9576; #9613 cerrado pero relevante para npm/binding
 RIESGO_RESIDUAL: compatibilidad nightly Node 24/26 y disponibilidad real del binding nativo en el Job
-CAMBIOS_NECESARIOS: ejecutar gate contractual completo en el entorno del workflow
-VEREDICTO_FINAL: REVISE
+CAMBIOS_NECESARIOS: ninguno dentro del alcance T03; la instalación/prueba live en el Job corresponde al paso posterior de Opus
+VEREDICTO_FINAL: PASS
