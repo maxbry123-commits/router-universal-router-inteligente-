@@ -29,7 +29,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T03C2"
+    "next_action": "esperar; foco actual T05"
   },
   "T02": {
     "attempt": 2,
@@ -88,7 +88,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03C2",
+    "next_action": "esperar; foco actual T05",
     "research_findings": [
       {
         "state": "closed",
@@ -178,7 +178,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03C2",
+    "next_action": "esperar; foco actual T05",
     "research_findings": []
   },
   "T04": {
@@ -254,7 +254,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03C2",
+    "next_action": "esperar; foco actual T05",
     "research_findings": [
       {
         "state": "closed",
@@ -291,7 +291,7 @@
   },
   "T05": {
     "attempt": 3,
-    "last_sha": "92ba6ad1e92c75834ce0977f74dc09376e9bd89b",
+    "last_sha": "b14644d1330c0c8bf5dc275ed103787215addded",
     "evidence": {
       "faltan": [
         "action_registry.py",
@@ -323,7 +323,7 @@
       "veredicto": "REVISE",
       "causa": "NO_ENTREGADO"
     },
-    "status": "ACTIVE",
+    "status": "WAITING_EXECUTOR",
     "last_failure": "NO_ENTREGADO",
     "research_packet": {
       "sentinel_id": "sentinela-t05",
@@ -370,7 +370,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03C2",
+    "next_action": "esperar ejecutor activo: T03C2; no lanzar segundo espejo",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -429,7 +429,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: El directorio 'chat router/05-AGENTES/asistentes' no existe; nunca se generó ningún entregable (pytest exit=4, 0 fuentes encontradas). Fallo de entrega total, no de contenido.\nNO_REGENERAR: ninguno (no hay archivos previos que preservar).\nARREGLAR:\n1. Crear directorio 'chat router/05-AGENTES/asistentes' con __init__.py.\n2. Generar hermes_config.yaml y openclaw_config.yaml: nombre del asistente, modelo vía Router (base_url del router, fallback), system_prompt, intervalo_heartbeat.\n3. hermes.md: documentación del fork Hermes (rol, herramientas, límites).\n4. puente_asistentes.py: cliente que envía mensajes al Router y despacha respuesta al asistente activo; con SIMULADO=1 devuelve respuesta mock sin red.\n5. heartbeat.py: ping periódico al Router registrando estado vivo/muerto de cada asistente; en SIMULADO=1 usa reloj falso.\n6. arrancar_asistentes.sh: script que levanta ambos asistentes y el heartbeat (modo simulado si SIMULADO=1).\n7. tests/test_asistentes.py: tests de carga de configs, puente mock y heartbeat sin red.\n8. README.md: uso, arquitectura y modo simulado.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
     },
-    "next_action": "esperar; foco actual T03C2"
+    "next_action": "esperar; foco actual T05"
   },
   "T07": {
     "attempt": 2,
@@ -514,7 +514,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T03C2",
+    "next_action": "esperar; foco actual T05",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -602,7 +602,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T03C2"
+    "next_action": "esperar; foco actual T05"
   },
   "T03A": {
     "attempt": 3,
@@ -716,7 +716,7 @@
         "url": "https://stackoverflow.com/questions/61756691/errno-2-no-such-file-or-directory-error-while-importing-a-python-script-from-a-s"
       }
     ],
-    "next_action": "esperar; foco actual T03C2"
+    "next_action": "esperar; foco actual T05"
   },
   "T03B": {
     "attempt": 3,
@@ -814,7 +814,7 @@
         "source": "GitHub:WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "esperar; foco actual T03C2",
+    "next_action": "esperar; foco actual T05",
     "deviation_count": 1,
     "last_deviation": {
       "type": "PATH_ESCAPE_RECOVERED",
@@ -914,7 +914,7 @@
         "url": "https://stackoverflow.com/questions/40997897/how-to-convert-this-code-into-antlr-groovy-grammar-v4"
       }
     ],
-    "next_action": "esperar; foco actual T03C2"
+    "next_action": "esperar; foco actual T05"
   },
   "T03C1": {
     "attempt": 2,
@@ -1028,7 +1028,7 @@
         "url": "https://stackoverflow.com/questions/61756691/errno-2-no-such-file-or-directory-error-while-importing-a-python-script-from-a-s"
       }
     ],
-    "next_action": "esperar; foco actual T03C2"
+    "next_action": "esperar; foco actual T05"
   },
   "T03C2": {
     "attempt": 3,
@@ -1113,7 +1113,7 @@
         "url": "https://github.com/WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "vigilar: Trabajar (Aider espejo)",
+    "next_action": "esperar; foco actual T05",
     "runtime": {
       "executor_active": true,
       "run_id": 36367377448,
