@@ -54,6 +54,8 @@ RESEARCH_REPOS = {
     "T03A": ["diegosouzapw/OmniRoute", "WiseLibs/better-sqlite3"],
     "T03B": ["diegosouzapw/OmniRoute", "WiseLibs/better-sqlite3"],
     "T03C": ["diegosouzapw/OmniRoute", "WiseLibs/better-sqlite3"],
+    "T03C1": ["diegosouzapw/OmniRoute", "WiseLibs/better-sqlite3"],
+    "T03C2": ["diegosouzapw/OmniRoute", "WiseLibs/better-sqlite3"],
     "T04": [
         "anthropics/claude-code",
         "BerriAI/litellm",
@@ -144,6 +146,8 @@ def mirror_branch(tid: str) -> str:
         "T03A": "mirror/T03",
         "T03B": "mirror/T03-B",
         "T03C": "mirror/T03-C",
+        "T03C1": "mirror/T03-C1",
+        "T03C2": "mirror/T03-C2",
     }.get(tid, f"mirror/{tid}")
 
 
