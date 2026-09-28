@@ -1,4 +1,4 @@
-# SENTINELA ORQUESTADOR — 2026-09-28T01:47Z · observed_sha de4d444097
+# SENTINELA ORQUESTADOR — 2026-09-28T01:48Z · observed_sha cfc20b4f54
 
 | Tarea | Estado | Causa | Intento | Evidencia |
 |---|---|---|---|---|
@@ -9,7 +9,7 @@
 | T03B | WAITING_FOCUS | foco=T03C2 | 3 | faltan 0 · pytest 0 |
 | T03C | WAITING_FOCUS | foco=T03C2 | 3 | faltan 1 · pytest 1 |
 | T03C1 | WAITING_FOCUS | foco=T03C2 | 2 | faltan 1 · pytest 2 |
-| T03C2 | REVISE | SIN_INFORME | 3 | faltan 0 · pytest 0 |
+| T03C2 | ACTIVE | SIN_INFORME | 3 | faltan 0 · pytest 0 |
 | T04 | WAITING_FOCUS | foco=T03C2 | 3 | faltan 0 · pytest 0 |
 | T05 | WAITING_FOCUS | foco=T03C2 | 3 | faltan 9 · pytest 4 |
 | T06 | WAITING_FOCUS | foco=T03C2 | 1 | faltan 8 · pytest 4 |
@@ -17,4 +17,4 @@
 | T08 | WAITING_FOCUS | foco=T03C2 | 1 | faltan 10 · pytest 4 |
 
 Foco: T03C2
-Relanzados: T03C2
+Relanzados: ninguno

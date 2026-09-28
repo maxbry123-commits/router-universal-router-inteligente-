@@ -1032,7 +1032,7 @@
   },
   "T03C2": {
     "attempt": 3,
-    "last_sha": "de4d444097f4a7bf0965e0768856675e778c4362",
+    "last_sha": "cfc20b4f540032d48a4f2274fa6b9d9d837ea969",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -1054,7 +1054,7 @@
       "veredicto": "REVISE",
       "causa": "SIN_INFORME"
     },
-    "status": "REVISE",
+    "status": "ACTIVE",
     "last_failure": "SIN_INFORME",
     "research_packet": {
       "sentinel_id": "sentinela-t03c2",
@@ -1113,6 +1113,17 @@
         "url": "https://github.com/WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "espejo relanzado"
+    "next_action": "vigilar: Run actions/checkout@v4",
+    "runtime": {
+      "executor_active": true,
+      "run_id": 36367377448,
+      "job_id": 108756390581,
+      "active_step": "Run actions/checkout@v4",
+      "active_step_age_minutes": 0
+    },
+    "supervision": {
+      "action": "WATCH",
+      "reason": "Run actions/checkout@v4"
+    }
   }
 }
