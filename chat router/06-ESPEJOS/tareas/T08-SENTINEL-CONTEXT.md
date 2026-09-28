@@ -75,3 +75,23 @@ El sentinela T08 debe supervisar únicamente:
 6. tested/current SHA coherentes antes de PASS.
 
 El ejecutor nuevo debe preservar los motores válidos. Si acceptance ya pasa, no necesita regenerar código: la vuelta puede limitarse a limpiar artefactos, producir evidencia fresca y cerrar.
+
+
+## EVIDENCIA FINAL DE CIERRE T08
+observed_main: 7614a0e6904f1e1922d6bc91f578cf5717f13999
+
+Verificación del operador:
+- 11/11 required_files: presentes.
+- pytest exacto T08: 14 passed in 2.76s, exit 0.
+- Engine contract: PASS.
+- seis ENGINE_REGISTRY capabilities + asyncio.gather: PASS.
+- QA mínimo táctil 44 px: PASS.
+- dead-button gate: PASS.
+- README Capability/Canvas/Layout/Action/Sandbox/QA: PASS.
+- __pycache__/.pytest_cache/*.pyc publicados: PASS (ninguno).
+- informe T08: revalidado después de la limpieza.
+
+Resultado esperado cuando el sentinela vuelva a observar T08:
+acceptance=PASS + objective_checks=PASS + report_fresh=PASS → PASS.
+
+No forzar ESTADO-TAREAS manualmente. El sentinela conserva autoridad del estado persistido.
