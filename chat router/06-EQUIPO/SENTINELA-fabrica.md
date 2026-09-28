@@ -1,4 +1,4 @@
-# SENTINELA-FABRICA — 2026-09-28T01:32Z
+# SENTINELA-FABRICA — 2026-09-28T01:43Z
 (LOOP común · versión: 9f25e8e246217db9 · modelo investigador: moonshotai/kimi-k3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.
