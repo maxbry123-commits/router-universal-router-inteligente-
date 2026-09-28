@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 5,
-    "last_sha": "052c5bf9cb4e37764b6ae9de3cd69d5b1492f361",
+    "last_sha": "af4a23d3bc2c092c9649b6106c51cdee32768cc7",
     "evidence": {
       "faltan": [
         "start_omniroute.sh",
