@@ -11,12 +11,12 @@ leer 1 archivo. Fallos concretos observados:
 - Subagentes/plugins piden `claude-opus-*` → modelo inexistente en NVIDIA.
 
 ## Fuentes consultadas
-1. **Free Claude Code** (github.com/codeaashu/free-claude-code, Python/FastAPI):
+1. **Free Claude Code** — https://github.com/codeaashu/free-claude-code (Python/FastAPI):
    proxy en :8082 que implementa `/v1/messages`, `/v1/messages/count_tokens`,
    `/v1/models`; mapea MODEL_OPUS/SONNET/HAIKU; convierte `reasoning_content`
    y `<think>` a bloques thinking; usa `ANTHROPIC_BASE_URL=http://localhost:8082`
    (raíz, no `/v1`) y `ANTHROPIC_AUTH_TOKEN`. Es la base de diseño elegida.
-2. **Claude-NIM Proxy** (github.com/claude-server/claude-nim, TypeScript/Bun):
+2. **Claude-NIM Proxy** — https://github.com/claude-server/claude-nim (TypeScript/Bun):
    traducción completa text/tool_use/tool_result, `tool_choice` auto/any/tool,
    system string|array → mensaje system, límite 10 MB, binding localhost.
    Confirma el contrato de traducción; descartado por requerir Bun/Node.
@@ -39,8 +39,7 @@ token-a-token upstream queda como mejora futura).
 - DeepSeek Harness → Claude Code como subagente:
   `dsh plugin add @deepseek-ai/dsh-subagent-claude-code` y
   `@deepseek-ai/dsh-hooks-claude-code`
-  (repo github.com/deepseek-ai/deepseek-harness — hoy devuelve 404, no
-  verificable).
+  Repositorio oficial verificado: https://github.com/deepseek-ai/deepseek-harness.
 - DeepSeek directo con endpoint Anthropic-compatible:
   `https://api.deepseek.com/anthropic` (requiere `DEEPSEEK_API_KEY`).
   Hoy NO disponible (sin clave; la URL responde "Authentication Fails") →
