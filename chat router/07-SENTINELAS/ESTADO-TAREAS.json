@@ -29,7 +29,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T03"
   },
   "T02": {
     "attempt": 2,
@@ -88,7 +88,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T05",
+    "next_action": "esperar; foco actual T03",
     "research_findings": [
       {
         "state": "closed",
@@ -122,19 +122,29 @@
   },
   "T03": {
     "attempt": 2,
-    "last_sha": "41b966054ad89d3416691edb7341761472961195",
+    "last_sha": "7807013c61dc1497d1346a2f1ec3e0c37758566b",
     "evidence": {
       "faltan": [],
       "fugas": [],
-      "pytest_exit": 1,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.13s\n",
+      "changed_files": [],
+      "executor_audit": {
+        "path_escape_count": 0,
+        "recovered_deviation": false,
+        "source": "informe"
+      },
+      "recovered_deviation": false,
+      "scope_escape": null,
+      "objective_failures": [],
+      "objective_drift": false,
+      "pytest_exit": 0,
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\n",
       "informe": true,
-      "ultimo_commit": "36013c8bced86eda3d30ff47d69fe5880cc98f7e T03: probar retencion segura y bloqueo de puerto",
-      "veredicto": "REVISE",
-      "causa": "TESTS_FALLAN"
+      "stale_report": false,
+      "ultimo_commit": "d140f3606d295b7bcab6d1e7ae532e09cc62d9e6 1790561870 T03: alinear README con cierre global",
+      "veredicto": "PASS"
     },
-    "status": "ACTIVE",
-    "last_failure": "TESTS_FALLAN",
+    "status": "PASS",
+    "last_failure": "",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
       "failure": "TESTS_FALLAN",
@@ -178,7 +188,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T05",
+    "next_action": "ninguna",
     "research_findings": []
   },
   "T04": {
@@ -254,7 +264,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T05",
+    "next_action": "esperar; foco actual T03",
     "research_findings": [
       {
         "state": "closed",
@@ -307,7 +317,7 @@
     },
     "status": "PASS",
     "last_failure": "",
-    "next_action": "cerrada; no relanzar T05"
+    "next_action": "esperar; foco actual T03"
   },
   "T06": {
     "attempt": 1,
@@ -338,7 +348,7 @@
       "fuentes": [],
       "analisis": "CAUSA_RAIZ: El directorio 'chat router/05-AGENTES/asistentes' no existe; nunca se generó ningún entregable (pytest exit=4, 0 fuentes encontradas). Fallo de entrega total, no de contenido.\nNO_REGENERAR: ninguno (no hay archivos previos que preservar).\nARREGLAR:\n1. Crear directorio 'chat router/05-AGENTES/asistentes' con __init__.py.\n2. Generar hermes_config.yaml y openclaw_config.yaml: nombre del asistente, modelo vía Router (base_url del router, fallback), system_prompt, intervalo_heartbeat.\n3. hermes.md: documentación del fork Hermes (rol, herramientas, límites).\n4. puente_asistentes.py: cliente que envía mensajes al Router y despacha respuesta al asistente activo; con SIMULADO=1 devuelve respuesta mock sin red.\n5. heartbeat.py: ping periódico al Router registrando estado vivo/muerto de cada asistente; en SIMULADO=1 usa reloj falso.\n6. arrancar_asistentes.sh: script que levanta ambos asistentes y el heartbeat (modo simulado si SIMULADO=1).\n7. tests/test_asistentes.py: tests de carga de configs, puente mock y heartbeat sin red.\n8. README.md: uso, arquitectura y modo simulado.\nACEPTACION: SIMULADO=1 python -m pytest 'chat router/05-AGENTES/asistentes' -q"
     },
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T03"
   },
   "T07": {
     "attempt": 2,
@@ -423,7 +433,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "esperar; foco actual T05",
+    "next_action": "esperar; foco actual T03",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -511,7 +521,7 @@
       "fuentes": [],
       "analisis": "sin respuesta del modelo"
     },
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T03"
   },
   "T03A": {
     "attempt": 3,
@@ -625,7 +635,7 @@
         "url": "https://stackoverflow.com/questions/61756691/errno-2-no-such-file-or-directory-error-while-importing-a-python-script-from-a-s"
       }
     ],
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T03"
   },
   "T03B": {
     "attempt": 3,
@@ -723,7 +733,7 @@
         "source": "GitHub:WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "esperar; foco actual T05",
+    "next_action": "esperar; foco actual T03",
     "deviation_count": 1,
     "last_deviation": {
       "type": "PATH_ESCAPE_RECOVERED",
@@ -823,7 +833,7 @@
         "url": "https://stackoverflow.com/questions/40997897/how-to-convert-this-code-into-antlr-groovy-grammar-v4"
       }
     ],
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T03"
   },
   "T03C1": {
     "attempt": 2,
@@ -937,7 +947,7 @@
         "url": "https://stackoverflow.com/questions/61756691/errno-2-no-such-file-or-directory-error-while-importing-a-python-script-from-a-s"
       }
     ],
-    "next_action": "esperar; foco actual T05"
+    "next_action": "esperar; foco actual T03"
   },
   "T03C2": {
     "attempt": 3,
@@ -1022,7 +1032,7 @@
         "url": "https://github.com/WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "esperar; foco actual T05",
+    "next_action": "esperar; foco actual T03",
     "runtime": {
       "executor_active": true,
       "run_id": 36367377448,
