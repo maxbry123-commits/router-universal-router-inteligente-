@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 4,
-    "last_sha": "82f3854113adac490266620919ad8027f85f0d33",
+    "last_sha": "9be94d5f7f19a79db541a0fb7b366e5c32c46021",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -144,7 +144,7 @@
       "veredicto": "REVISE",
       "causa": "STALE_REPORT"
     },
-    "status": "REVISE",
+    "status": "ACTIVE",
     "last_failure": "STALE_REPORT",
     "research_packet": {
       "sentinel_id": "sentinela-t03",
@@ -191,7 +191,7 @@
         "acceptance_check"
       ]
     },
-    "next_action": "espejo relanzado",
+    "next_action": "vigilar: Instalar Aider",
     "research_findings": [
       {
         "source": "Repositorio oficial/upstream",
@@ -201,14 +201,14 @@
     ],
     "runtime": {
       "executor_active": true,
-      "run_id": 36372627916,
-      "job_id": 108771941572,
-      "active_step": "Guardar (commit primero; PASS → main, si no → mirror/T0X)",
+      "run_id": 36402706226,
+      "job_id": 108864127897,
+      "active_step": "Instalar Aider",
       "active_step_age_minutes": 0
     },
     "supervision": {
       "action": "WATCH",
-      "reason": "Guardar (commit primero; PASS → main, si no → mirror/T0X)"
+      "reason": "Instalar Aider"
     }
   },
   "T04": {
