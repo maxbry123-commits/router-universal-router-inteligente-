@@ -40,3 +40,17 @@ Primero:
 
 Microflujo requerido en README:
 INPUT → Capability → Canvas → Layout → Action/Flow → Sandbox → QA → PASS|FAIL
+
+
+## REEMPLAZO DE EJECUTOR
+Orden del Director: sustituir la instancia anterior de T08 por una instancia nueva del espejo T08.
+
+Alcance estricto del reemplazo:
+1. NO regenerar engine.py, capability_engine.py, canvas_engine.py, layout_engine.py, action_flow_engine.py, sandbox_engine.py, qa_engine.py, registry.py ni tests/test_motores.py mientras los gates objetivos pasen.
+2. Corregir únicamente `README.md`, que hoy contiene texto de `.pytest_cache`.
+3. El README debe incluir micro resumen de Capability, Canvas, Layout, Action/Flow, Sandbox y QA y el flujo:
+   INPUT → Capability → Canvas → Layout → Action/Flow → Sandbox → QA → PASS|FAIL
+4. Ejecutar la aceptación T08 completa y registrar evidencia real.
+5. Si los checks pasan, cerrar; si falla un check concreto, corregir solo ese check.
+
+La instancia anterior queda reemplazada para esta vuelta. No duplicar ejecutores T08.
