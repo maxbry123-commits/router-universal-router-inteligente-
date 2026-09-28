@@ -2,3 +2,15 @@
 	path = router inteligente universal/Componente open soure router inteligente universal/OmniRoute
 	url = https://github.com/diegosouzapw/OmniRoute.git
 	branch = release/v3.8.51
+
+[submodule "router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/LibreChat"]
+	path = router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/LibreChat
+	url = https://github.com/danny-avila/LibreChat.git
+
+[submodule "router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/big-AGI"]
+	path = router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/big-AGI
+	url = https://github.com/enricoros/big-AGI.git
+
+[submodule "router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/Jan"]
+	path = router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/Jan
+	url = https://github.com/janhq/jan.git

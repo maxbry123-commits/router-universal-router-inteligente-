@@ -1,5 +1,5 @@
 # HANDOFF ESPEJOS — estado real por tarea (sin evidencia = NO ejecutado)
-Actualizado: 2026-09-28 03:00 UTC · GPT-5.6 Sol · Workflow histórico: `.github/workflows/claude-code-espejos.yml`
+Actualizado: 2026-09-28 03:08 UTC · GPT-5.6 Sol · Workflow histórico: `.github/workflows/claude-code-espejos.yml`
 Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archivos con contenido en su carpeta + informe con salida real de tests/aceptación.
 
 ## Cómo verificar (cualquiera: Director, GPT, otro Opus)
@@ -15,7 +15,7 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 | T02 | Colmena: YaiwesHive + EngineeringLoop por el Router | `chat router/05-AGENTES/colmena` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T04 | Pasarela Claude Code ↔ NVIDIA (free-claude-code) + vía DeepSeek Harness | `chat router/09-CLAUDE-CODE` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
-| T09 | Suite multi-chat: conservar Open WebUI y copiar debajo sus 3 chats disponibles (LibreChat, big-AGI, Jan), cableados a Hermes/OpenClaw sin usar las UIs propias de esos agentes | `router inteligente universal/Componente open soure router inteligente universal/open-webui` + `chat router/13-CHAT-UI-SUITE` | PLANIFICADA · ejecución manual GPT · mirror `mirror/T09` | fuentes verificadas en `frontend/main/UI YAIWES/componentes open soure UI YAIWES/` |
+| T09 | Suite multi-chat: Open WebUI + LibreChat + big-AGI + Jan; Hermes/OpenClaw por gateway común, sin usar sus UIs | `router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat` + `chat router/13-CHAT-UI-SUITE` | PASS FUNCIONAL · cierre manual GPT | `informes/T09.md` · mirror `5a94d71e9785e37e8bf8871518c54a017f702e82` · 4/4 tests + HTTP PASS · gitlinks exactos |
 
 ## T09 — plan quirúrgico en 4 salidas
 1. **T09-A · inventario + espejo** — fijar `mirror/T09`, registrar fuentes exactas y comprobar que Open WebUI, LibreChat, big-AGI y Jan existen; no modificar código fuente.
@@ -33,7 +33,7 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 NVIDIA_API_KEY_1: moonshotai/kimi-k3 = 200 · z-ai/glm-5.3 = 200 · z-ai/glm-5.3-flash = 200. Kimi K2.6 = 404 (no habilitado). DeepSeek V4.1 flash = timeout. Cerebras = 402 (pago).
 
 ## Siguiente paso (quien continúe)
-- T09: continuar exclusivamente desde `mirror/T09`; no declarar PASS sin read-back de las 3 copias, overlay Hermes/OpenClaw y aceptación determinista.
+- T09: cerrado funcionalmente; no relanzar. Las tres UIs alternativas quedaron como gitlinks/submódulos fijados a los commits exactos verificados y el gateway reutiliza T06.
 - Revisar la vuelta lanzada 19:35 con los 4 puntos de "Cómo verificar". Marcar cada tarea HECHA / FALLÓ(causa) en esta tabla.
 - T03 hecha → Opus revisa y copia `08-OMNIROUTE/start_omniroute.sh` al Router (`router inteligente universal/keeper/`) y relanza el Router 16 GB.
 - T04 hecha → probar Claude Code por la pasarela; si funciona, los espejos pasan a Claude Code.
