@@ -122,7 +122,7 @@
   },
   "T03": {
     "attempt": 2,
-    "last_sha": "7807013c61dc1497d1346a2f1ec3e0c37758566b",
+    "last_sha": "39cdda70af204d16dd23f8d0e6c1f9a5fce51b55",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -137,7 +137,7 @@
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 0,
-      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\n",
+      "pytest_tail": ".........                                                                [100%]\n9 passed in 2.23s\n",
       "informe": true,
       "stale_report": false,
       "ultimo_commit": "d140f3606d295b7bcab6d1e7ae532e09cc62d9e6 1790561870 T03: alinear README con cierre global",
