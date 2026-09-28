@@ -153,12 +153,18 @@ jobs:
         if: steps.pre.outputs.skip_ai != 'true'
         id: m
         run: |
-          python "chat router/06-ESPEJOS/puente/probar_modelos.py" espejo sk-espejo
-          python - <<'PY' >> "$GITHUB_OUTPUT"
+          if [ "$TAREA" = "T03C2" ]; then
+            echo "modelo=moonshotai/kimi-k3" >> "$GITHUB_OUTPUT"
+            echo "clave=NVIDIA_API_KEY_1" >> "$GITHUB_OUTPUT"
+            echo "::notice::microtarea T03C2 usa Kimi K3 validado; se omite probing"
+          else
+            python "chat router/06-ESPEJOS/puente/probar_modelos.py" espejo sk-espejo
+            python - <<'PY' >> "$GITHUB_OUTPUT"
           import yaml
           p = yaml.safe_load(open("/tmp/litellm.yaml"))["model_list"][0]["litellm_params"]
           print("modelo=" + p["model"].split("/", 1)[1]); print("clave=" + p["api_key"].split("/")[1])
           PY
+          fi
       - name: Trabajar (Aider espejo)
         if: steps.pre.outputs.skip_ai != 'true'
         env:
