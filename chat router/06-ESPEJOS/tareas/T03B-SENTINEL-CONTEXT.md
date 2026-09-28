@@ -11,10 +11,10 @@ ARCHIVOS OBLIGATORIOS:
 ACEPTACIÓN: python -m pytest 'chat router/08-OMNIROUTE/tests/test_supervisor.py' -q && grep -q 'VALIDACION_T03B: PASS' 'chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md'
 
 EVIDENCIA ACTUAL:
-- causa: ARCHIVOS_INCOMPLETOS
+- causa: SCOPE_ESCAPE
 - faltan: ['VALIDACION-SUPERVISOR-DB.md']
 - pytest/acceptance exit: 2
-- scope_escape: False
+- scope_escape: True
 - objective_drift: False
 
 REGLAS:
@@ -29,9 +29,9 @@ CHEQUEOS INDEPENDIENTES DEL OBJETIVO:
 - grep -q 'mmap_size' 'chat router/08-OMNIROUTE/mantenimiento_db.py'
 - grep -q 'VACUUM' 'chat router/08-OMNIROUTE/mantenimiento_db.py'
 
+FUENTES ENCONTRADAS:
+- Repositorio oficial/upstream: diegosouzapw/OmniRoute https://github.com/diegosouzapw/OmniRoute
+- Repositorio oficial/upstream: WiseLibs/better-sqlite3 https://github.com/WiseLibs/better-sqlite3
+
 ANÁLISIS DEL INVESTIGADOR:
-CAUSA_RAIZ: ARCHIVOS_INCOMPLETOS demostrada por evidencia determinista.
-EVIDENCIA: faltan=['VALIDACION-SUPERVISOR-DB.md'] pytest_exit=2.
-NO_REGENERAR: todos los archivos existentes y no vacíos.
-REPARAR: Conservar archivos existentes y completar solo los faltantes: ['VALIDACION-SUPERVISOR-DB.md']. Después ejecutar la aceptación real.
-ACEPTACION: OmniRoute contrato B: supervisor y SQLite — ejecutar el comando contractual y exigir exit 0.
+sin respuesta del modelo; usar evidencia determinista

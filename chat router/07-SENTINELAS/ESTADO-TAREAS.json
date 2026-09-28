@@ -595,8 +595,8 @@
     "next_action": "esperar; foco actual T03A,T03B,T03C"
   },
   "T03A": {
-    "attempt": 1,
-    "last_sha": "24a059df54e380c2be99ed8a22c11d7b9f81c6f9",
+    "attempt": 2,
+    "last_sha": "73555a9f38e1b291e6ff5022b30ebc5eb0219a0a",
     "evidence": {
       "faltan": [
         "DIAGNOSTICO-RUNTIME.md"
@@ -614,9 +614,9 @@
       "objective_drift": false,
       "pytest_exit": 2,
       "pytest_tail": "grep: chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md: No such file or directory\n",
-      "informe": false,
+      "informe": true,
       "stale_report": false,
-      "ultimo_commit": "b4fdd56f754fe0f83506ef40ecb2efb1c82ee89d 1790551429 sentinela chat: sincronizar LOOP común",
+      "ultimo_commit": "8142ae4fa0a55b7516081f94f4bd7c3f95be7bf9 1790553873 espejo T03A: REVISE (36360645899)",
       "veredicto": "REVISE",
       "causa": "ARCHIVOS_INCOMPLETOS"
     },
@@ -667,49 +667,91 @@
         "acceptance_check"
       ]
     },
-    "research_findings": [],
+    "research_findings": [
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "diegosouzapw/OmniRoute",
+        "url": "https://github.com/diegosouzapw/OmniRoute"
+      },
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "WiseLibs/better-sqlite3",
+        "url": "https://github.com/WiseLibs/better-sqlite3"
+      },
+      {
+        "source": "StackOverflow",
+        "title": "No such file or directory message",
+        "url": "https://stackoverflow.com/questions/57912862/no-such-file-or-directory-message"
+      },
+      {
+        "source": "StackOverflow",
+        "title": "Slim php, No such file or directory",
+        "url": "https://stackoverflow.com/questions/76778050/slim-php-no-such-file-or-directory"
+      },
+      {
+        "source": "StackOverflow",
+        "title": "Why am I getting &quot;ENOENT: no such file or directory, open&quot; when trying to save an image through multer&#39;s storage?",
+        "url": "https://stackoverflow.com/questions/63302086/why-am-i-getting-enoent-no-such-file-or-directory-open-when-trying-to-save-a"
+      },
+      {
+        "source": "StackOverflow",
+        "title": "&quot;No such file or directory&quot; protoc",
+        "url": "https://stackoverflow.com/questions/74929244/no-such-file-or-directory-protoc"
+      },
+      {
+        "source": "StackOverflow",
+        "title": "Errno 2 No such file or directory error while importing a python script from a sub-folder",
+        "url": "https://stackoverflow.com/questions/61756691/errno-2-no-such-file-or-directory-error-while-importing-a-python-script-from-a-s"
+      }
+    ],
     "next_action": "espejo relanzado"
   },
   "T03B": {
-    "attempt": 1,
-    "last_sha": "24a059df54e380c2be99ed8a22c11d7b9f81c6f9",
+    "attempt": 2,
+    "last_sha": "73555a9f38e1b291e6ff5022b30ebc5eb0219a0a",
     "evidence": {
       "faltan": [
         "VALIDACION-SUPERVISOR-DB.md"
       ],
       "fugas": [],
-      "changed_files": [],
+      "changed_files": [
+        "chat router/06-ESPEJOS/informes/T03B.md",
+        "chat router/08-OMNIROUTE/__pycache__/mantenimiento_db.cpython-312.pyc",
+        "chat router/08-OMNIROUTE/__pycache__/supervisor_omniroute.cpython-312.pyc",
+        "chat router/08-OMNIROUTE/tests/__pycache__/__init__.cpython-312.pyc",
+        "chat router/08-OMNIROUTE/tests/__pycache__/test_supervisor.cpython-312-pytest-9.1.1.pyc"
+      ],
       "executor_audit": {
         "path_escape_count": 0,
         "recovered_deviation": false,
         "source": "informe"
       },
       "recovered_deviation": false,
-      "scope_escape": null,
+      "scope_escape": "scope_escape:chat router/06-ESPEJOS/informes/T03B.md",
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 2,
       "pytest_tail": ".........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory\n",
       "informe": false,
       "stale_report": false,
-      "ultimo_commit": "b4fdd56f754fe0f83506ef40ecb2efb1c82ee89d 1790551429 sentinela chat: sincronizar LOOP común",
+      "ultimo_commit": "8142ae4fa0a55b7516081f94f4bd7c3f95be7bf9 1790553873 espejo T03A: REVISE (36360645899)",
       "veredicto": "REVISE",
-      "causa": "ARCHIVOS_INCOMPLETOS"
+      "causa": "SCOPE_ESCAPE"
     },
     "status": "REVISE",
-    "last_failure": "ARCHIVOS_INCOMPLETOS",
+    "last_failure": "SCOPE_ESCAPE",
     "research_packet": {
       "sentinel_id": "sentinela-t03b",
       "objective": "OmniRoute contrato B: supervisor y SQLite",
       "task_scope": "chat router/08-OMNIROUTE",
-      "failure": "ARCHIVOS_INCOMPLETOS",
+      "failure": "SCOPE_ESCAPE",
       "error_literal": ".........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory\n",
       "queries": [
-        "T03B  ARCHIVOS_INCOMPLETOS",
+        "T03B  SCOPE_ESCAPE",
         "T03B .........                                                                [100%]\n9 passed in 2.06s\ngrep: chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md: No such file or directory",
-        "ARCHIVOS_INCOMPLETOS GitHub issue fix",
-        "ARCHIVOS_INCOMPLETOS Stack Overflow",
-        "ARCHIVOS_INCOMPLETOS developer community"
+        "SCOPE_ESCAPE GitHub issue fix",
+        "SCOPE_ESCAPE Stack Overflow",
+        "SCOPE_ESCAPE developer community"
       ],
       "sources": [
         "GitHub Issues del componente",
@@ -743,49 +785,66 @@
         "acceptance_check"
       ]
     },
-    "research_findings": [],
+    "research_findings": [
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "diegosouzapw/OmniRoute",
+        "url": "https://github.com/diegosouzapw/OmniRoute"
+      },
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "WiseLibs/better-sqlite3",
+        "url": "https://github.com/WiseLibs/better-sqlite3"
+      }
+    ],
     "next_action": "espejo relanzado"
   },
   "T03C": {
-    "attempt": 1,
-    "last_sha": "24a059df54e380c2be99ed8a22c11d7b9f81c6f9",
+    "attempt": 2,
+    "last_sha": "73555a9f38e1b291e6ff5022b30ebc5eb0219a0a",
     "evidence": {
       "faltan": [
         "VALIDACION-EXTERNA.md"
       ],
       "fugas": [],
-      "changed_files": [],
+      "changed_files": [
+        "chat router/06-ESPEJOS/informes/T03C.md",
+        "chat router/08-OMNIROUTE/__pycache__/mantenimiento_db.cpython-312.pyc",
+        "chat router/08-OMNIROUTE/__pycache__/supervisor_omniroute.cpython-312.pyc",
+        "chat router/08-OMNIROUTE/tests/__pycache__/__init__.cpython-312.pyc",
+        "chat router/08-OMNIROUTE/tests/__pycache__/test_supervisor.cpython-312-pytest-9.1.1.pyc"
+      ],
       "executor_audit": {
         "path_escape_count": 0,
         "recovered_deviation": false,
         "source": "informe"
       },
       "recovered_deviation": false,
-      "scope_escape": null,
+      "scope_escape": "scope_escape:chat router/06-ESPEJOS/informes/T03C.md",
       "objective_failures": [],
       "objective_drift": false,
       "pytest_exit": 1,
       "pytest_tail": "",
       "informe": false,
       "stale_report": false,
-      "ultimo_commit": "b4fdd56f754fe0f83506ef40ecb2efb1c82ee89d 1790551429 sentinela chat: sincronizar LOOP común",
+      "ultimo_commit": "8142ae4fa0a55b7516081f94f4bd7c3f95be7bf9 1790553873 espejo T03A: REVISE (36360645899)",
       "veredicto": "REVISE",
-      "causa": "ARCHIVOS_INCOMPLETOS"
+      "causa": "SCOPE_ESCAPE"
     },
     "status": "REVISE",
-    "last_failure": "ARCHIVOS_INCOMPLETOS",
+    "last_failure": "SCOPE_ESCAPE",
     "research_packet": {
       "sentinel_id": "sentinela-t03c",
       "objective": "OmniRoute contrato C: auditoría externa y cierre",
       "task_scope": "chat router/08-OMNIROUTE",
-      "failure": "ARCHIVOS_INCOMPLETOS",
-      "error_literal": "",
+      "failure": "SCOPE_ESCAPE",
+      "error_literal": "SCOPE_ESCAPE",
       "queries": [
-        "T03C  ARCHIVOS_INCOMPLETOS",
-        "T03C",
-        "ARCHIVOS_INCOMPLETOS GitHub issue fix",
-        "ARCHIVOS_INCOMPLETOS Stack Overflow",
-        "ARCHIVOS_INCOMPLETOS developer community"
+        "T03C  SCOPE_ESCAPE",
+        "T03C SCOPE_ESCAPE",
+        "SCOPE_ESCAPE GitHub issue fix",
+        "SCOPE_ESCAPE Stack Overflow",
+        "SCOPE_ESCAPE developer community"
       ],
       "sources": [
         "GitHub Issues del componente",
@@ -819,7 +878,23 @@
         "acceptance_check"
       ]
     },
-    "research_findings": [],
+    "research_findings": [
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "diegosouzapw/OmniRoute",
+        "url": "https://github.com/diegosouzapw/OmniRoute"
+      },
+      {
+        "source": "Repositorio oficial/upstream",
+        "title": "WiseLibs/better-sqlite3",
+        "url": "https://github.com/WiseLibs/better-sqlite3"
+      },
+      {
+        "source": "StackOverflow",
+        "title": "How to convert this code into Antlr Groovy Grammar v4?",
+        "url": "https://stackoverflow.com/questions/40997897/how-to-convert-this-code-into-antlr-groovy-grammar-v4"
+      }
+    ],
     "next_action": "espejo relanzado"
   }
 }
