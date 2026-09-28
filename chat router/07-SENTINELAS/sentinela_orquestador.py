@@ -51,6 +51,9 @@ RESEARCH_REPOS = {
     "T01": ["pytest-dev/pytest", "Aider-AI/aider"],
     "T02": ["pytest-dev/pytest"],
     "T03": ["diegosouzapw/OmniRoute"],
+    "T03A": ["diegosouzapw/OmniRoute", "WiseLibs/better-sqlite3"],
+    "T03B": ["diegosouzapw/OmniRoute", "WiseLibs/better-sqlite3"],
+    "T03C": ["diegosouzapw/OmniRoute", "WiseLibs/better-sqlite3"],
     "T04": [
         "anthropics/claude-code",
         "BerriAI/litellm",
@@ -513,14 +516,20 @@ def main() -> None:
     cfg = yaml.safe_load(CONTRATOS.read_text(encoding="utf-8"))
     replicas = yaml.safe_load(REPLICAS.read_text(encoding="utf-8"))
     focus_cfg = yaml.safe_load(FOCUS.read_text(encoding="utf-8"))
-    focus_tid = str(focus_cfg.get("active_task", "")).strip()
-    if focus_tid not in cfg.get("tareas", {}):
-        raise SystemExit(f"focus inválido: {focus_tid}")
+    raw_focus = focus_cfg.get("active_tasks")
+    if isinstance(raw_focus, list) and raw_focus:
+        focus_tids = [str(t).strip() for t in raw_focus if str(t).strip()]
+    else:
+        focus_tids = [str(focus_cfg.get("active_task", "")).strip()]
+    invalid = [t for t in focus_tids if t not in cfg.get("tareas", {})]
+    if invalid:
+        raise SystemExit(f"focus inválido: {invalid}")
+    focus_label = ",".join(focus_tids)
     research_pool = list(replicas.get("research_pool", []))
     estado = json.loads(ESTADO.read_text()) if ESTADO.exists() else {}
     head = sh(["git", "rev-parse", "HEAD"])[1].strip()
     activos = espejos_activos()
-    foreign_actives = sorted(t for t in activos if t != focus_tid)
+    foreign_actives = sorted(t for t in activos if t not in focus_tids)
     loop = SentinelOrchestrator()
 
     relanzar: list[str] = []
@@ -535,15 +544,15 @@ def main() -> None:
         st = estado.get(tid, {"attempt": 0})
         spec = spec_tarea(tid, c, research_pool)
 
-        if tid != focus_tid:
+        if tid not in focus_tids:
             st.update({
                 "status": st.get("status", "WAITING_FOCUS"),
-                "next_action": f"esperar; foco actual {focus_tid}",
+                "next_action": f"esperar; foco actual {focus_label}",
             })
             estado[tid] = st
             ev = st.get("evidence", {})
             lineas.append(
-                f"| {tid} | WAITING_FOCUS | foco={focus_tid} | "
+                f"| {tid} | WAITING_FOCUS | foco={focus_label} | "
                 f"{st.get('attempt', 0)} | faltan {len(ev.get('faltan', []))} "
                 f"· pytest {ev.get('pytest_exit', '-')} |"
             )
@@ -669,6 +678,36 @@ def main() -> None:
             f"· pytest {ev.get('pytest_exit', '-')} |"
         )
 
+    # Convergencia de una tarea dividida: los agentes no deciden el PASS padre.
+    split_parent = str(focus_cfg.get("parent_task", "")).strip()
+    if len(focus_tids) > 1 and split_parent in cfg.get("tareas", {}):
+        child_states = {t: estado.get(t, {}).get("status") for t in focus_tids}
+        if all(v == "PASS" for v in child_states.values()):
+            rc, out = sh(
+                ["bash", "-c", cfg["tareas"][split_parent]["acceptance"]],
+                env={**os.environ, "SIMULADO": "1"},
+            )
+            pst = estado.get(split_parent, {"attempt": 0})
+            pst["split_convergence"] = {
+                "children": child_states,
+                "acceptance_exit": rc,
+                "tail": out[-1600:],
+                "observed_sha": head,
+            }
+            if rc == 0:
+                pst.update({
+                    "status": "PASS",
+                    "last_failure": "",
+                    "next_action": "split A/B/C convergió; cierre global PASS",
+                })
+            else:
+                pst.update({
+                    "status": "REVISE",
+                    "last_failure": "SPLIT_CONVERGENCE_FAIL",
+                    "next_action": "revisar gate global T03 después de A/B/C",
+                })
+            estado[split_parent] = pst
+
     ESTADO.write_text(
         json.dumps(estado, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -676,7 +715,7 @@ def main() -> None:
     INFORME.parent.mkdir(parents=True, exist_ok=True)
     INFORME.write_text(
         "\n".join(lineas)
-        + f"\n\nFoco: {focus_tid}\nRelanzados: {', '.join(relanzar) or 'ninguno'}\n",
+        + f"\n\nFoco: {focus_label}\nRelanzados: {', '.join(relanzar) or 'ninguno'}\n",
         encoding="utf-8",
     )
     print("\n".join(lineas))
