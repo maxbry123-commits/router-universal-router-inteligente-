@@ -10,6 +10,9 @@ name: RIU Router Job Central
 # E2E verificado 2026-09-28: /chat/send → NVIDIA moonshotai/kimi-k3 → respuesta real.
 
 on:
+  push:
+    paths:
+      - '.github/omniroute-relaunch.trigger'
   workflow_dispatch:
     inputs:
       lifetime:
