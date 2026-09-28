@@ -1,8 +1,9 @@
 name: Prueba OmniRoute en el Router
 
-# Prueba real, sin UI: espera a que OmniRoute termine de construirse dentro de la máquina 16 GB del Router
-# y comprueba por la puerta del Router: /omniroute/status, /omniroute/v1/models y una respuesta real de chat.
-# 2026-09-27: relee la dirección del Router (flag) en CADA intento (la 1ª prueba usó una dirección vieja tras un relanzamiento).
+# Prueba real, sin UI, de OmniRoute x10 dentro de la máquina 16 GB del Router (vía la puerta /omniroute del Router):
+#   espera hasta 35 min a que haya instancias vivas; informa cuántas de las 10 responden;
+#   /omniroute/v1/models; y respuesta real con model "auto" (OmniRoute elige gratis) y, si hay, el primer modelo del catálogo.
+# Relee LIVE_URL en cada intento. Nunca imprime claves.
 
 on:
   workflow_dispatch:
@@ -13,7 +14,7 @@ permissions:
 jobs:
   probar:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Probar
         env:
@@ -23,29 +24,38 @@ jobs:
           python3 - <<'PY'
           import os, re, time, json, urllib.request
           FLAG = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag"
-          H = {"Authorization": "Bearer " + os.environ["HF_TOKEN"], "X-API-Key": os.environ.get("RIU_KEY", ""), "Content-Type": "application/json"}
+          H = {"Authorization": "Bearer " + os.environ["HF_TOKEN"], "X-API-Key": os.environ.get("RIU_KEY", ""), "Content-Type": "application/json", "User-Agent": "riu-prueba"}
           def base():
               t = urllib.request.urlopen(FLAG + "?x=" + str(time.time())).read().decode()
               return re.search(r"LIVE_URL=(\S+)", t).group(1).rstrip("/")
           def call(path, body=None, t=60):
               req = urllib.request.Request(base() + path, data=json.dumps(body).encode() if body else None, headers=H, method="POST" if body else "GET")
               try:
-                  with urllib.request.urlopen(req, timeout=t) as r: return r.status, r.read().decode()[:600]
-              except urllib.error.HTTPError as e: return e.code, e.read().decode()[:600]
+                  with urllib.request.urlopen(req, timeout=t) as r: return r.status, r.read().decode()[:1500]
+              except urllib.error.HTTPError as e: return e.code, e.read().decode()[:800]
               except Exception as e: return 0, type(e).__name__
-          t0 = time.time(); st = ""
-          while time.time() - t0 < 1800:
+          t0, st, vivas = time.time(), "", 0
+          while time.time() - t0 < 2100:
               code, st = call("/omniroute/status")
-              if code == 200 and '"encendido"' in st: break
+              try: vivas = json.loads(st).get("vivas", 0)
+              except Exception: vivas = 0
+              if vivas >= 10 or (vivas and time.time() - t0 > 1500): break
               time.sleep(30)
-          print("::notice::ROUTER " + base())
-          print("::notice::STATUS " + st[:400])
+          print(f"::notice::ROUTER {base()}")
+          print(f"::notice::INSTANCIAS_VIVAS {vivas}/10 · {st[:500]}")
           code, models = call("/omniroute/v1/models")
           print(f"::notice::MODELOS http={code} {models[:300]}")
-          mid = None
-          try: mid = json.loads(models)["data"][0]["id"]
+          ok = False
+          cands = ["auto"]
+          try: cands.append(json.loads(models)["data"][0]["id"])
           except Exception: pass
-          if mid:
-              code, ans = call("/omniroute/v1/chat/completions", {"model": mid, "messages": [{"role": "user", "content": "Responde solo: OK"}], "max_tokens": 10}, 120)
-              print(f"::notice::CHAT modelo={mid} http={code} {ans[:300]}")
+          for m in cands:
+              code, ans = call("/omniroute/v1/chat/completions", {"model": m, "messages": [{"role": "user", "content": "Responde solo: OK"}], "max_tokens": 300}, 180)
+              txt = ""
+              try: txt = json.loads(ans)["choices"][0]["message"].get("content") or ""
+              except Exception: pass
+              print(f"::notice::CHAT modelo={m} http={code} respuesta={txt[:80]!r} {ans[:200] if not txt else ''}")
+              ok = ok or bool(txt.strip())
+          print(f"::notice::OMNIROUTE_VEREDICTO {'PASS' if ok and vivas else 'FAIL'} instancias={vivas}/10")
+          raise SystemExit(0 if ok and vivas else 1)
           PY
