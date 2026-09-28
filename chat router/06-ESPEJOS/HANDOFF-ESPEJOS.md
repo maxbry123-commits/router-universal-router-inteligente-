@@ -25,6 +25,13 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 
 ## T03 — recuperación OOM 2026-09-28
 
+**Lectura obligatoria antes de ejecutar T03/T10:** [Bitácora técnica íntegra, tests y decisiones](../08-OMNIROUTE/README-BITACORA-T03.md) · [README operativo](../08-OMNIROUTE/README.md) · [Informe de aceptación](informes/T03.md). **El build desde fuente ya fue sustituido por el bundle precompilado npm**: no repetir x10, Turbopack, `npm install` completo ni prueba heap de 4096 MB. Fuente actual `start_omniroute.sh` + supervisor; wrapper x10 mantiene 1 activa/9 pausadas. 
+
+**Bucle de trabajo vigente:** LEER TRAZABILIDAD → verificar SHA/Job/primer error causal → investigar documentación y comunidad → anotar microhipótesis → ejecutar solo cambio necesario → test local → health/modelos/chat (gates independientes) → read-back → registrar resultado. Límite histórico del Director: bloques de cómputo ≤10 minutos con reporte al cierre; no activar Jobs innecesarios. **RUNTIME=PASS** con HF `6aba04746b030d633f69bc1c` (9 tests, puerto, health 200, estabilidad); **FREE_NOAUTH_HF=BLOCKED_UPSTREAM** con `6aba06f36b030d633f69bc4c`; no confundir 502 externo con fallo de runtime. 
+
+**Investigación adicional documentada:** la comunidad OmniRoute registra OpenCode Free 403 como restricción del cliente, y DDG 418 como anti-abuse; no evadir medidas del proveedor. La continuación corresponde a comprobar modelos/cuotas permitidos y credenciales oficiales disponibles, no a alterar el build ya validado. 
+
+
 **Causa confirmada:** no eran las 10 instancias. Una sola instancia también moría porque el launcher compilaba OmniRoute desde fuente dentro del Job de 16 GB. `npm install` ejecutaba postinstall pesados y el build Next/Turbopack/webpack agotaba la memoria.
 
 **Solución aplicada:**
