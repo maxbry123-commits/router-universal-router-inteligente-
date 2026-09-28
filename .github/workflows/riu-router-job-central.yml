@@ -5,8 +5,9 @@ name: RIU Router Job Central
 # Dentro: Router (8000) + OmniRoute (127.0.0.1:20128). OmniRoute: usa el script ESTABLE de T03 (chat router/08-OMNIROUTE, PASS 9 tests)
 #   si existe; si no, el antiguo keeper/start_omniroute.sh.
 # Secretos al Job (nunca en archivos): GITHUB_TOKEN, RIU_ROUTER_API_KEY, RIU_AGENT_API_KEYS (lista de claves que el Router acepta),
-#   NVIDIA_API_KEY_1..4, GROQ_API_KEY_1..7.
-# 2026-09-28: tras health OK, este workflow ESCRIBE LIVE_URL en el flag (antes quedaba apuntando a un Job apagado).
+#   NVIDIA_API_KEY_1..4, GROQ_API_KEY_2..7 (la 1 era inválida y se borró), STORAGE_ENCRYPTION_KEY (fija, para OmniRoute).
+# Tras health OK, este workflow ESCRIBE LIVE_URL en el flag.
+# E2E verificado 2026-09-28: /chat/send → NVIDIA moonshotai/kimi-k3 → respuesta real.
 
 on:
   workflow_dispatch:
@@ -37,13 +38,13 @@ jobs:
           GH_WRITE: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
           RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
           RIU_AGENT_KEYS: ${{ secrets.RIU_AGENT_API_KEYS_JSON }}
+          OMNI_KEY: ${{ secrets.OMNIROUTE_STORAGE_ENCRYPTION_KEY }}
           LIFETIME: ${{ inputs.lifetime || '48h' }}
           FLAVOR: ${{ inputs.flavor || 'cpu-basic' }}
           NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
           NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
           NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
           NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
-          GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
           GROQ_API_KEY_2: ${{ secrets.GROQ_API_KEY_2 }}
           GROQ_API_KEY_3: ${{ secrets.GROQ_API_KEY_3 }}
           GROQ_API_KEY_4: ${{ secrets.GROQ_API_KEY_4 }}
@@ -67,17 +68,16 @@ jobs:
               "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'"
           )
           secrets = {"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]}
-          if os.environ.get("RIU_KEY"):
-              secrets["RIU_ROUTER_API_KEY"] = os.environ["RIU_KEY"]
-          if os.environ.get("RIU_AGENT_KEYS"):
-              secrets["RIU_AGENT_API_KEYS"] = os.environ["RIU_AGENT_KEYS"]
+          for env_name, sec_name in (("RIU_KEY", "RIU_ROUTER_API_KEY"), ("RIU_AGENT_KEYS", "RIU_AGENT_API_KEYS"), ("OMNI_KEY", "STORAGE_ENCRYPTION_KEY")):
+              if os.environ.get(env_name):
+                  secrets[sec_name] = os.environ[env_name]
           n = 0
-          for pref, tope in (("NVIDIA_API_KEY_", 4), ("GROQ_API_KEY_", 7)):
-              for i in range(1, tope + 1):
+          for pref, rango in (("NVIDIA_API_KEY_", range(1, 5)), ("GROQ_API_KEY_", range(2, 8))):
+              for i in rango:
                   v = os.environ.get(f"{pref}{i}", "")
                   if v:
                       secrets[f"{pref}{i}"] = v; n += 1
-          print(f"::notice::claves de proveedores enviadas: {n} · lista de claves del Router: {'sí' if os.environ.get('RIU_AGENT_KEYS') else 'NO'}")
+          print(f"::notice::claves de proveedores enviadas: {n} · lista del Router: {'sí' if 'RIU_AGENT_API_KEYS' in secrets else 'NO'} · clave OmniRoute: {'sí' if 'STORAGE_ENCRYPTION_KEY' in secrets else 'NO'}")
           lifetime = os.environ["LIFETIME"]
           try:
               job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=lifetime,
