@@ -1032,7 +1032,7 @@
   },
   "T03C2": {
     "attempt": 3,
-    "last_sha": "cfc20b4f540032d48a4f2274fa6b9d9d837ea969",
+    "last_sha": "29109468726a4de713b30a74a89bb426c7bf6653",
     "evidence": {
       "faltan": [],
       "fugas": [],
@@ -1113,17 +1113,17 @@
         "url": "https://github.com/WiseLibs/better-sqlite3"
       }
     ],
-    "next_action": "vigilar: Run actions/checkout@v4",
+    "next_action": "vigilar: Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)",
     "runtime": {
       "executor_active": true,
       "run_id": 36367377448,
       "job_id": 108756390581,
-      "active_step": "Run actions/checkout@v4",
-      "active_step_age_minutes": 0
+      "active_step": "Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)",
+      "active_step_age_minutes": 4
     },
     "supervision": {
       "action": "WATCH",
-      "reason": "Run actions/checkout@v4"
+      "reason": "Elegir modelo que responde (Kimi K3 > GLM-5.3 > DeepSeek V4 > otro)"
     }
   }
 }
