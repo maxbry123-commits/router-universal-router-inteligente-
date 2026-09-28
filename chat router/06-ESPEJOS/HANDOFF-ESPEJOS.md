@@ -13,7 +13,7 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 |---|---|---|---|---|
 | T01 | Gobierno: Sheriff, Judge, Sentinel, contratos, MirrorManager | `chat router/05-AGENTES/gobierno` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T02 | Colmena: YaiwesHive + EngineeringLoop por el Router | `chat router/05-AGENTES/colmena` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
-| T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | **PASS RUNTIME** · bundle npm precompilado · 1 activa / 9 pausadas · upstream gratis bloqueado fuera de T03 | `6aba04746b030d633f69bc1c`: 9/9 PASS · `20128` PASS · health 200 · supervisor estable · commits runtime `ed38cff9`, `726d1d5e`, `da5af9b5` |
+| T03 | OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor, retención) | `chat router/08-OMNIROUTE` | **PASS RUNTIME** · bundle npm precompilado · 1 activa / 9 pausadas · free no-auth HF = BLOCKED_UPSTREAM | `6aba04746b030d633f69bc1c`: 9/9 PASS · `20128` PASS · health 200 · supervisor estable · workflows corregidos `ab89ed4c`, `b7ba32a8` |
 | T04 | Pasarela Claude Code ↔ NVIDIA (free-claude-code) + vía DeepSeek Harness | `chat router/09-CLAUDE-CODE` | RELANZADA 19:35 · antes: SIN EVIDENCIA | ninguna todavía |
 | T09 | Suite multi-chat: Open WebUI + LibreChat + big-AGI + Jan; Hermes/OpenClaw por gateway común, sin usar sus UIs | `router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat` + `chat router/13-CHAT-UI-SUITE` | PASS FUNCIONAL · cierre manual GPT | `informes/T09.md` · main `92bb075fce8fe30b9efc4566e07391b08a2c9d39` · mirror `5a94d71e9785e37e8bf8871518c54a017f702e82` · 4/4 tests + HTTP PASS · gitlinks exactos |
 
@@ -43,7 +43,9 @@ Regla: una tarea solo cuenta como HECHA si hay commit de cierre en main + archiv
 - supervisor vivo después de la prueba → **PASS**;
 - log: `OmniRoute 3.8.50 precompilado OK` + `better-sqlite3 nativo OK`.
 
-**Separación de responsabilidades:** `auto/best-free` sí entró al router y creó un pool de 13 candidatos, pero los upstream gratuitos rechazaron el egress de HF: OpenCode 403 y Felo 400/429; DuckDuckGo devolvió 418 en prueba aislada y UncloseAI 502. Esto ya no es un fallo de arranque/RAM de OmniRoute. T03 runtime queda PASS; la disponibilidad de upstream gratuito se registra como bloqueo externo independiente.
+**Separación de responsabilidades:** `auto/best-free` sí entró al router y creó un pool de 13 candidatos, pero los upstream gratuitos rechazaron el egress de HF: OpenCode 403 y Felo 400/429; DuckDuckGo devolvió 418 y UncloseAI 502. Prueba directa no-auth `6aba06f36b030d633f69bc4c`: runtime HEALTH PASS, pero ninguno de los modelos probados devolvió contenido utilizable. Esto ya no es un fallo de arranque/RAM de OmniRoute. T03 runtime queda PASS; la disponibilidad de upstream gratuito se registra como bloqueo externo independiente.
+
+**Corrección de orquestación final:** Router central usa `start_omniroute.sh` como launcher principal (`ab89ed4c`); el workflow de prueba espera 1/1 y separa `RUNTIME` de `FREE_PROVIDER` (`b7ba32a8`).
 
 ## Por qué no hubo evidencia antes (historial de fallos, ya corregidos)
 1. 11:34 Claude Code + LiteLLM: modelo NVIDIA retirado (410) → corregido con probar_modelos.py (catálogo vivo).
