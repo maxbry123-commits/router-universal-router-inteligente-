@@ -44,11 +44,46 @@ tareas:
     acceptance: "SIMULADO=1 python -m pytest 'chat router/05-AGENTES/colmena' -q"
     dependencies: [T01]
   T03:
-    objective: "OmniRoute estable (v3.8.50, Node 24, better-sqlite3, supervisor con backoff, retención DB)"
+    objective: "OmniRoute estable v3.8.50 con Node soportado por upstream, better-sqlite3, supervisor con backoff, retención DB y auditoría externa"
     scope: "chat router/08-OMNIROUTE"
     required_files: [start_omniroute.sh, supervisor_omniroute.py, mantenimiento_db.py, tests/test_supervisor.py, DIAGNOSTICO.md, README.md]
     acceptance: "python -m pytest 'chat router/08-OMNIROUTE' -q && bash -n 'chat router/08-OMNIROUTE/start_omniroute.sh' && grep -q 'VALIDACIÓN EXTERNA DE CIERRE' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'NODE_VERSION_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'OMNIROUTE_REF_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'BETTER_SQLITE3_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'HEALTH_ENDPOINT_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'VEREDICTO_FINAL: PASS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && test $(grep -Ec 'https?://' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md') -ge 3"
     dependencies: []
+  T03A:
+    objective: "OmniRoute contrato A: runtime e instalación reproducible"
+    scope: "chat router/08-OMNIROUTE"
+    required_files: [start_omniroute.sh, DIAGNOSTICO-RUNTIME.md]
+    acceptance: "bash -n 'chat router/08-OMNIROUTE/start_omniroute.sh' && grep -q 'NODE_VERSION_DECISION' 'chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md' && grep -q 'BETTER_SQLITE3_INSTALL' 'chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md' && test $(grep -Ec 'https?://' 'chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md') -ge 2"
+    objective_checks:
+      - "grep -q 'v3.8.50' 'chat router/08-OMNIROUTE/start_omniroute.sh'"
+      - "grep -q 'better-sqlite3' 'chat router/08-OMNIROUTE/start_omniroute.sh'"
+    max_stall_minutes: 30
+    dependencies: []
+
+  T03B:
+    objective: "OmniRoute contrato B: supervisor y SQLite"
+    scope: "chat router/08-OMNIROUTE"
+    required_files: [supervisor_omniroute.py, mantenimiento_db.py, tests/test_supervisor.py, VALIDACION-SUPERVISOR-DB.md]
+    acceptance: "python -m pytest 'chat router/08-OMNIROUTE/tests/test_supervisor.py' -q && grep -q 'VALIDACION_T03B: PASS' 'chat router/08-OMNIROUTE/VALIDACION-SUPERVISOR-DB.md'"
+    objective_checks:
+      - "grep -q 'wait_port_free' 'chat router/08-OMNIROUTE/supervisor_omniroute.py'"
+      - "grep -q 'BACKOFF' 'chat router/08-OMNIROUTE/supervisor_omniroute.py'"
+      - "grep -q 'mmap_size' 'chat router/08-OMNIROUTE/mantenimiento_db.py'"
+      - "grep -q 'VACUUM' 'chat router/08-OMNIROUTE/mantenimiento_db.py'"
+    max_stall_minutes: 30
+    dependencies: []
+
+  T03C:
+    objective: "OmniRoute contrato C: auditoría externa y cierre"
+    scope: "chat router/08-OMNIROUTE"
+    required_files: [DIAGNOSTICO.md, README.md, VALIDACION-EXTERNA.md]
+    acceptance: "grep -q 'VALIDACIÓN EXTERNA DE CIERRE' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'NODE_VERSION_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'OMNIROUTE_REF_VERIFICADA' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'BETTER_SQLITE3_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'HEALTH_ENDPOINT_VERIFICADO' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'VEREDICTO_FINAL: PASS' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md' && grep -q 'VALIDACION_T03C: PASS' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md' && test $(grep -Ec 'https?://' 'chat router/08-OMNIROUTE/DIAGNOSTICO.md') -ge 3"
+    objective_checks:
+      - "grep -q '#9576' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md'"
+      - "grep -q '#9613' 'chat router/08-OMNIROUTE/VALIDACION-EXTERNA.md'"
+    max_stall_minutes: 30
+    dependencies: []
+
   T04:
     objective: "Pasarela Anthropic↔NVIDIA para que Claude Code trabaje con nuestros modelos"
     scope: "chat router/09-CLAUDE-CODE"
