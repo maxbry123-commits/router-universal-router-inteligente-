@@ -1,12 +1,16 @@
 schema: yaiwes.sentinel-focus/v1
-mode: one_task_at_a_time
-active_task: T08
+mode: split_parallel
+active_task: T03C1
+active_tasks: [T03C1, T03C2]
+parent_task: T03
 advance: manual
-reason: "Cierre exclusivo T08: limpiar caches/pyc versionados, revalidar acceptance + objective_checks y persistir evidencia fresca."
+reason: "OmniRoute/T03: A y B ya PASS. C se divide en dos mirrors disjuntos para cerrar en menos de 1 hora."
 rules:
-  - "Nunca relanzar más de una tarea por ciclo."
-  - "Si T08 está activo: observar y no duplicar ejecutor."
-  - "Preservar motores y tests válidos; no regenerar si acceptance ya pasa."
-  - "PASS requiere required_files + acceptance exit 0 + objective_checks + informe fresco."
-  - "T08 publicado debe quedar sin __pycache__, .pytest_cache ni *.pyc."
-  - "No modificar otras tareas."
+  - "Ejecutar exactamente dos mirrors: T03C1 y T03C2."
+  - "T03C1 solo escribe VALIDACION-EXTERNA.md."
+  - "T03C2 solo escribe DIAGNOSTICO.md y README.md."
+  - "No modificar start_omniroute.sh, supervisor_omniroute.py, mantenimiento_db.py ni tests."
+  - "No relanzar T03A ni T03B: ya tienen evidencia PASS."
+  - "Cada agente tiene limite de 3540 segundos de Aider."
+  - "El padre T03 solo puede PASS cuando C1 y C2 estén PASS y el acceptance global de T03 salga exit 0."
+  - "Si un child falla, investigar el GAP exacto y relanzar solo ese child."
