@@ -1,16 +1,16 @@
 {
   "status": "ACTIVE",
-  "last_sha": "5839d23c141e8810b9da72ddcea02f8717a3bdf8",
-  "last_failure": "TESTS_FALLAN",
-  "same_failure_count": 2,
+  "last_sha": "ae2785f384c066a30279b1fdf3c4375e0255b3e4",
+  "last_failure": "NO_ENTREGADO",
+  "same_failure_count": 1,
   "evidence": {
-    "observed_sha": "5839d23c141e8810b9da72ddcea02f8717a3bdf8",
-    "current_sha": "5839d23c141e8810b9da72ddcea02f8717a3bdf8",
+    "observed_sha": "ae2785f384c066a30279b1fdf3c4375e0255b3e4",
+    "current_sha": "ae2785f384c066a30279b1fdf3c4375e0255b3e4",
     "executor_active": true,
     "workflow_false_green": false,
     "unauthorized_change": false,
-    "failure_class": "TESTS_FALLAN",
-    "error_literal": ".........                                                                [100%]\n9 passed in 2.13s\n",
+    "failure_class": "NO_ENTREGADO",
+    "error_literal": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/10-CHAT-FUNCIONES\n\n",
     "objective_evidence": {
       "head_fresh": true,
       "recent_commits_observed": false,
@@ -20,20 +20,41 @@
     "recent_commits": [],
     "recent_runs": [],
     "priority_task": {
-      "task_id": "T03",
+      "task_id": "T05",
       "status": "ACTIVE",
-      "attempt": 2,
-      "failure": "TESTS_FALLAN",
+      "attempt": 3,
+      "failure": "NO_ENTREGADO",
       "next_action": "esperar; foco actual T03C2",
       "evidence": {
-        "faltan": [],
+        "faltan": [
+          "action_registry.py",
+          "council.py",
+          "rewind.py",
+          "compact.py",
+          "archify_cmd.py",
+          "work.py",
+          "rutas.py",
+          "tests/test_funciones.py",
+          "README.md"
+        ],
         "fugas": [],
-        "pytest_exit": 1,
-        "pytest_tail": ".........                                                                [100%]\n9 passed in 2.13s\n",
-        "informe": true,
-        "ultimo_commit": "36013c8bced86eda3d30ff47d69fe5880cc98f7e T03: probar retencion segura y bloqueo de puerto",
+        "changed_files": [],
+        "executor_audit": {
+          "path_escape_count": 0,
+          "recovered_deviation": false,
+          "source": "informe"
+        },
+        "recovered_deviation": false,
+        "scope_escape": null,
+        "objective_failures": [],
+        "objective_drift": false,
+        "pytest_exit": 4,
+        "pytest_tail": "\nno tests ran in 0.00s\nERROR: file or directory not found: chat router/10-CHAT-FUNCIONES\n\n",
+        "informe": false,
+        "stale_report": false,
+        "ultimo_commit": "",
         "veredicto": "REVISE",
-        "causa": "TESTS_FALLAN"
+        "causa": "NO_ENTREGADO"
       }
     }
   },

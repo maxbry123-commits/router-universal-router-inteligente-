@@ -1,11 +1,11 @@
 schema: yaiwes.sentinel-order/v1
 sentinel: sentinela-chat
-generated_at: 2026-09-28T02:10Z
+generated_at: 2026-09-28T02:13Z
 loop_version: 9f25e8e246217db9
-observed_sha: 5839d23c141e8810b9da72ddcea02f8717a3bdf8
+observed_sha: ae2785f384c066a30279b1fdf3c4375e0255b3e4
 objective: Cerrar las tareas del Chat YAIWES por prioridad, con evidencia real y sin
   falsos verdes.
-priority_task: T03
+priority_task: T05
 state: ACTIVE
 reason: executor_active
 executor_instruction: No regenerar trabajo válido. Corregir solo la causa demostrada,
