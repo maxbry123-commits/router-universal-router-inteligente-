@@ -18,7 +18,7 @@ import urllib.request
 HOST = os.environ.get("APP_BIND_HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "20128"))
 DATA_DIR = os.environ.get("DATA_DIR", "/tmp/omniroute-data")
-APP_DIR = os.environ.get("OMNIROUTE_APP_DIR", "/tmp/omniroute-app")
+APP_DIR = os.environ.get("OMNIROUTE_APP_DIR", "npm-global-prebuilt")
 LOCK_FILE = os.path.join(DATA_DIR, "supervisor.lock")
 HEALTH_URL = f"http://{HOST}:{PORT}/api/monitoring/health"
 HEALTH_INTERVAL = 30
@@ -87,7 +87,7 @@ def healthy():
         return False
 
 
-def rss_bytes(pid):
+def _one_rss_bytes(pid):
     try:
         with open(f"/proc/{pid}/status") as f:
             for line in f:
@@ -98,14 +98,66 @@ def rss_bytes(pid):
     return 0
 
 
+def _child_pids(pid):
+    """Devuelve descendientes Linux del proceso (CLI -> server.js)."""
+    descendants = set()
+    frontier = {int(pid)}
+    while frontier:
+        parents = frontier
+        frontier = set()
+        try:
+            entries = [x for x in os.listdir("/proc") if x.isdigit()]
+        except OSError:
+            return descendants
+        for entry in entries:
+            child = int(entry)
+            if child in descendants or child == pid:
+                continue
+            try:
+                with open(f"/proc/{child}/status") as f:
+                    ppid = None
+                    for line in f:
+                        if line.startswith("PPid:"):
+                            ppid = int(line.split()[1])
+                            break
+                if ppid in parents:
+                    descendants.add(child)
+                    frontier.add(child)
+            except (OSError, ValueError):
+                continue
+    return descendants
+
+
+def rss_bytes(pid):
+    """RSS del árbol completo: supervisor CLI + hijo dist/server.js."""
+    pids = {int(pid)} | _child_pids(int(pid))
+    return sum(_one_rss_bytes(p) for p in pids)
+
+
 def start_process():
     env = dict(os.environ)
     env.setdefault("NODE_OPTIONS", "--max-old-space-size=4096")
+    env.setdefault("OMNIROUTE_MEMORY_MB", "4096")
     env.setdefault("APP_BIND_HOST", HOST)
+    env.setdefault("OMNIROUTE_SERVER_HOST", HOST)
     env.setdefault("PORT", str(PORT))
+    env.setdefault("API_PORT", str(PORT))
     env.setdefault("REQUIRE_API_KEY", "false")
     env.setdefault("DATA_DIR", DATA_DIR)
-    return subprocess.Popen(["npm", "run", "start"], cwd=APP_DIR, env=env)
+    # --no-recovery: el backoff/restart pertenece a ESTE supervisor T03,
+    # no al supervisor interno del CLI (evita doble relanzamiento).
+    return subprocess.Popen(
+        [
+            "omniroute",
+            "serve",
+            "--no-open",
+            "--log",
+            "--no-recovery",
+            "--port",
+            str(PORT),
+        ],
+        env=env,
+    )
 
 
 def stop_process(proc, grace=15):
