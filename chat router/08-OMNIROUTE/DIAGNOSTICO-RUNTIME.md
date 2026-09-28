@@ -1,97 +1,80 @@
-# T03-A — Diagnóstico de runtime/instalación OmniRoute
-
-## Fuentes verificadas
-
-- OmniRoute v3.8.50 package.json:
-  https://github.com/diegosouzapw/OmniRoute/blob/v3.8.50/package.json
-- OmniRoute v3.8.50 .nvmrc:
-  https://github.com/diegosouzapw/OmniRoute/blob/v3.8.50/.nvmrc
-- OmniRoute v3.8.50 SQLite runtime:
-  https://github.com/diegosouzapw/OmniRoute/blob/v3.8.50/docs/ops/SQLITE_RUNTIME.md
-- OmniRoute v3.8.50 Dockerfile:
-  https://github.com/diegosouzapw/OmniRoute/blob/v3.8.50/Dockerfile
+# DIAGNOSTICO-RUNTIME — OmniRoute v3.8.50 (contrato A: runtime/instalación)
 
 ## NODE_VERSION_DECISION
 
-REF_VERIFICADO: diegosouzapw/OmniRoute@v3.8.50
+Decisión: **Node 24.x LTS** (línea única soportada por el script; `NODE_MAJOR=24`).
 
-package.json:
-- version: 3.8.50
-- engines.node: >=22.22.2 <23 || >=24.0.0 <27
+Evidencia upstream (tag exacto v3.8.50):
+- `package.json` del tag v3.8.50 declara:
+  `engines.node = ">=22.22.2 <23 || >=24.0.0 <27"`.
+  → Node 24 NO es el único runtime permitido; Node 22.22.2+ también vale.
+- Issue #9576: compatibilidad con nightly Node 24/26 aún ABIERTA → Node 26 no es
+  línea segura todavía.
+- Release v3.8.50 es la release publicada actual (3.8.51 es preview).
 
-.nvmrc:
-- 24
+Justificación:
+- Node 24.x es LTS activo, dentro de rango `>=24.0.0 <27`, con prebuilds
+  estables de better-sqlite3 (ABI estable).
+- Node 22.22.2+<23 sería válido pero exigiría downgrade del toolchain del Job
+  Linux 16 GB sin ganancia demostrada.
+- Node 26 (nightly) descartado: issue #9576 sigue abierto.
 
-Dockerfile del mismo tag:
-- usa Node 26 en la imagen oficial de contenedor.
-
-DECISIÓN:
-- Mantener Node 24.x para nuestro Job.
-- Node 24 está expresamente permitido por engines y coincide con .nvmrc.
-- Node 20 NO es compatible con el rango declarado por v3.8.50.
-- No afirmar que Node 24 es la única versión válida: el tag también permite
-  22.22.2 y 24.x–26.x.
-- El script actual debe abortar si el runtime no es Node 24.x, porque esa es
-  nuestra línea elegida para este despliegue.
-
-VEREDICTO_NODE: PASS
+Fuentes:
+- https://github.com/diegosouzapw/OmniRoute (repo upstream, tag v3.8.50, package.json engines)
+- https://github.com/WiseLibs/better-sqlite3 (prebuilds y compatibilidad Node ABI)
+- https://nodejs.org/en/about/previous-releases (calendario LTS: Node 24 LTS activo)
 
 ## BETTER_SQLITE3_INSTALL
 
-La documentación del tag v3.8.50 define una cadena de fallback:
+Problema upstream (issue #9613): con **npm >= 11** los scripts postinstall
+quedan bloqueados por defecto → `better-sqlite3` queda sin binario nativo y
+`require('better-sqlite3')` falla aunque `npm ci` termine "bien".
 
-1. better-sqlite3 empaquetado.
-2. better-sqlite3 instalado en runtime.
-3. node:sqlite.
-4. sql.js.
+Solución reproducible aplicada en `start_omniroute.sh`:
+1. `npm ci` (lockfile del tag v3.8.50; versión de better-sqlite3 fijada por el
+   lockfile, no por rangos).
+2. `npm config set ignore-scripts false` + `npm rebuild better-sqlite3
+   --foreground-scripts` para forzar la descarga del prebuild o, en su defecto,
+   compilación con node-gyp.
+3. Verificación dura: `node -e "require('better-sqlite3')"` → si no carga,
+   `die` (PROHIBIDO caer a sql.js: cargaría toda la DB en RAM en un Job de 16 GB).
 
-Para este Job NO aceptamos caer silenciosamente a sql.js.
+Requisitos si toca compilar (fallback node-gyp): `python3`, `make`, `g++`
+presentes en la imagen del Job. Con Node 24.x y plataforma linux-x64 glibc lo
+habitual es que el prebuild oficial se descargue y no haga falta compilar.
 
-El Dockerfile upstream muestra además que, cuando los scripts generales están
-deshabilitados, el proyecto trata better-sqlite3 como dependencia nativa
-especial y usa build tools (python3/make/g++) y reconstrucción explícita,
-seguida de validación del binario.
+## Instalación reproducible (resumen de pasos del script)
 
-Nuestra instalación:
-- npm ci
-- npm rebuild better-sqlite3
-- node -e "require('better-sqlite3')"
+1. Clave fija: `STORAGE_ENCRYPTION_KEY` obligatoria en el entorno (nunca
+   regenerar por arranque).
+2. Node 24.x vía nodesource si no está presente; verificación `node -v` ∈ v24.x.
+3. `git clone --depth 1 --branch v3.8.50` del repo upstream.
+4. `npm ci` + rebuild/verificación de better-sqlite3 (ver sección anterior).
+5. `npm run build` con `NODE_OPTIONS=--max-old-space-size=4096`.
+6. `DATA_DIR` escribible; `APP_BIND_HOST=127.0.0.1`; `PORT=20128`;
+   `REQUIRE_API_KEY=false`. NO modo COMBO (OOM abierto en 3.8.50).
+7. Mantenimiento DB no bloqueante + arranque vía `supervisor_omniroute.py`
+   (lock, backoff, healthcheck, límite RAM). Log: `/tmp/omniroute.log`.
 
-DECISIÓN:
-- No asumir que npm rebuild por sí solo demuestra éxito.
-- El gate real es que require('better-sqlite3') cargue correctamente.
-- Si require() falla, abortar.
-- Si el entorno obliga a compilar, deben existir python3, make y g++.
-- No permitir fallback silencioso a sql.js para este despliegue.
+## Health endpoint / verificación
 
-BETTER_SQLITE3_INSTALL: npm ci + rebuild nativo + require() smoke-test fail-closed
+- Servicio en `http://127.0.0.1:20128` (server-only, sin combo).
+- Healthcheck ejecutado por el supervisor (contrato B, no tocado aquí).
+- Verificación manual: `curl -fsS http://127.0.0.1:20128/` tras el arranque y
+  `grep -i "better-sqlite3 nativo OK" /tmp/omniroute.log`.
 
-VEREDICTO_SQLITE_RUNTIME: PASS_CON_GATE
+## Troubleshooting (errores comunes)
 
-## Instalación reproducible
-
-1. Fijar ref exacto v3.8.50.
-2. Usar Node 24.x.
-3. Ejecutar npm ci contra el lockfile del tag.
-4. Reconstruir better-sqlite3.
-5. Ejecutar require('better-sqlite3').
-6. Abortarlo todo si falla el binario nativo.
-7. Solo después ejecutar build y supervisor.
-
-## Troubleshooting mínimo
-
-| Síntoma | Causa probable | Acción |
+| Error | Causa | Fix |
 |---|---|---|
-| Node fuera de rango | runtime distinto al elegido | abortar e instalar Node 24.x |
-| Module did not self-register | ABI nativa incorrecta | rebuild + smoke-test |
-| Could not locate bindings | better-sqlite3 incompleto | comprobar build tools y reconstruir |
-| require('better-sqlite3') falla | binding inválido/ausente | abortar; no usar sql.js |
-| npm ci altera dependencias | lockfile/ref incorrectos | volver al tag exacto v3.8.50 |
+| `ENOENT: no such file or directory` (git clone / DATA_DIR) | ruta inexistente o sin permisos | crear dir, verificar `-w`, rutas entrecomilladas ("chat router" tiene espacio) |
+| `better-sqlite3` no carga tras `npm ci` | npm >= 11 bloqueó postinstall (issue #9613) | `npm config set ignore-scripts false && npm rebuild better-sqlite3 --foreground-scripts` |
+| ABI mismatch (`NODE_MODULE_VERSION`) | prebuild compilado para otro Node major | usar Node 24.x fijo y re-ejecutar rebuild |
+| `node-gyp` falla | faltan python3/make/g++ | instalar build-essential o forzar prebuild con Node LTS soportado |
+| OOM en build/arranque | heap por defecto | `NODE_OPTIONS=--max-old-space-size=4096`; no usar modo COMBO |
+| word-splitting en verificadores | ruta con espacio sin comillas | `grep ... "chat router/08-OMNIROUTE/DIAGNOSTICO-RUNTIME.md"` |
 
-## Resultado T03-A
+## Estado
 
-NODE_VERSION_DECISION: Node 24.x
-BETTER_SQLITE3_INSTALL: verificación nativa obligatoria con require()
-OMNIROUTE_REF: v3.8.50
-START_SCRIPT: sin cambios en esta tarea pequeña
-VEREDICTO_T03A: PASS_DOCUMENTADO
+- `bash -n "chat router/08-OMNIROUTE/start_omniroute.sh"` → OK (exit 0).
+- No se declara PASS global: el cierre lo decide T03-C.
