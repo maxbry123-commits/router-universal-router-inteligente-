@@ -1,0 +1,42 @@
+name: Prueba chat end-to-end (Router)
+
+# POST /chat/send → Router → proveedor/modelo → respuesta NO vacía. LIVE_URL del flag; HF_TOKEN + RIU_ROUTER_API_KEY. No imprime claves.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+      RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
+    steps:
+      - run: pip install -q requests
+      - run: |
+          python3 - <<'PY'
+          import os, re, time, requests
+          flag = requests.get("https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag", params={"x": time.time()}, timeout=20).text
+          base = re.search(r"LIVE_URL=(\S+)", flag).group(1).rstrip("/")
+          H = {"Authorization": f"Bearer {os.environ['HF_TOKEN']}", "X-API-Key": os.environ.get("RIU_KEY", ""), "User-Agent": "riu-e2e"}
+          print(f"::notice::ROUTER {base}")
+          for p in ("/health", "/chat/providers", "/omniroute/status"):
+              r = requests.get(base + p, headers=H, timeout=60); print(f"::notice::{p} {r.status_code} {r.text[:300]}")
+          ok = False
+          for body in ({"message": "Responde solo: OK", "max_tokens": 20},
+                       {"message": "Responde solo: OK", "provider": "nvidia", "model": "moonshotai/kimi-k3", "max_tokens": 20},
+                       {"message": "Responde solo: OK", "provider": "groq", "model": "openai/gpt-oss-120b", "max_tokens": 20}):
+              r = requests.post(base + "/chat/send", headers=H, json=body, timeout=120)
+              print(f"::notice::CHAT_SEND {body.get('provider','auto')} http={r.status_code} {r.text[:400]}")
+              try:
+                  j = r.json(); rep = j.get("reply") or (j.get("message") or {}).get("content") or j.get("content") or ""
+              except Exception:
+                  rep = ""
+              ok = ok or (r.status_code == 200 and bool(str(rep).strip()))
+          print(f"::notice::E2E_VEREDICTO {'PASS' if ok else 'FAIL'}")
+          raise SystemExit(0 if ok else 1)
+          PY
