@@ -1,11 +1,11 @@
 {
-  "status": "REVISE",
-  "last_sha": "2ed5b0d21da642de434e3aa72f7e05a45050bbab",
+  "status": "RESEARCH",
+  "last_sha": "e4ca36f560d33a6520c20e8fb9b2cf971c0e0873",
   "last_failure": "STALE_REPORT",
-  "same_failure_count": 2,
+  "same_failure_count": 3,
   "evidence": {
-    "observed_sha": "2ed5b0d21da642de434e3aa72f7e05a45050bbab",
-    "current_sha": "2ed5b0d21da642de434e3aa72f7e05a45050bbab",
+    "observed_sha": "e4ca36f560d33a6520c20e8fb9b2cf971c0e0873",
+    "current_sha": "e4ca36f560d33a6520c20e8fb9b2cf971c0e0873",
     "executor_active": false,
     "workflow_false_green": false,
     "unauthorized_change": false,
@@ -56,7 +56,7 @@
     }
   },
   "next_action": "STALE_REPORT",
-  "attempt": 20,
+  "attempt": 21,
   "loop_version": "9f25e8e246217db9",
   "research_packet": {
     "sentinel_id": "sentinela-chat",
