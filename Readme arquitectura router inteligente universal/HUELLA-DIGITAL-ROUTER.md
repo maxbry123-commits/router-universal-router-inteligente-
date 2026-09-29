@@ -31,14 +31,15 @@ Micro flujo: ORIGEN → PROTOCOLO → PUERTO → DESTINO.
 - Selector: hoy = grupos de cadenas en `resilience.py` (`default`, `code`, `minor`, `g2`). Sin subrouters ni perfiles intercambiables: PLANNED (propuesta de otra IA en ZIP, SIN VERIFICAR, ver handoff).
 - Micro flujo: ROUTER MÁSTER → GRUPO/CADENA → PROVEEDOR/MODELO → RESPUESTA.
 
-## D. Cadenas y modelos (verificado en `/chat/router/status` del Job vivo)
-| Grupo | Cadena |
-|---|---|
-| default | NVIDIA `nvidia/nemotron-3-super-120b-a12b` |
-| code | MiniMax → NVIDIA Nemotron (HF se salta: NOT_CONFIGURED) |
-| minor | DeepSeek V4 Flash (HF; se salta en hora pico) → Nemotron → MiniMax |
-| g2 | NVIDIA Nemotron → Groq `qwen/qwen3.8-27b` → (local: sin modelo) → DeepSeek V4 Flash |
-- Agentes (`agents-yaiwes/common/routes.py`): prueba qué modelos responden y prioriza Kimi K3 → GLM-5 → DeepSeek V4 → otros; hasta 4 claves NVIDIA y 7 Groq. Esto NO aplica al chat del Router (usa `resilience.py`): hoy el chat no tiene Kimi K3 ni GLM-5 en sus cadenas. Ese cambio no lo hice yo ni Opus: falta (orden del Director 2026-09-29, ver handoff).
+## D. Cadenas y modelos
+Lo que dice el código (`resilience.py`) y lo que quedó activo según `/chat/router/status` del Job vivo (smoke 36528065394):
+| Grupo | En el código | Activo hoy (lo que devolvió el estado) |
+|---|---|---|
+| default | NVIDIA Nemotron `nvidia/nemotron-3-super-120b-a12b` | NVIDIA Nemotron |
+| code | MiniMax (vía HF) → Nemotron | solo Nemotron (`hf:NOT_CONFIGURED`) |
+| minor | DeepSeek V4 Flash (vía HF) → Nemotron → MiniMax | solo Nemotron (`hf:NOT_CONFIGURED` ×2) |
+| g2 | Nemotron → Groq (`env`) → local (`env`) → DeepSeek V4 Flash (vía HF) | Nemotron → Groq `qwen/qwen3.8-27b` (local: `NO_MODEL_CONFIGURED`; HF: `NOT_CONFIGURED`) |
+- Agentes (`agents-yaiwes/common/routes.py`): prueban qué modelos responden y priorizan Kimi K3 → GLM-5 → DeepSeek V4 → otros; hasta 4 claves NVIDIA y 7 Groq. Esto NO aplica al chat del Router (usa `resilience.py`): hoy el chat no tiene Kimi K3 ni GLM-5 en sus cadenas. Yo solo cambié `EXCLUIDOS` (quité Cerebras) en ese archivo; las prioridades ya estaban. Poner Kimi K3 / GLM-5 en las cadenas del chat es orden nueva del Director (ver handoff) y NO está hecho.
 - Cerebras: eliminado del código (commit 7fa21739).
 
 ## H. Cómputo
@@ -81,7 +82,7 @@ flowchart LR
   S{"Selector de grupo<br/>default · code · minor · g2"}:::ok
   N["NVIDIA (4 claves)"]:::ok
   G["Groq · Qwen 3.8"]:::ok
-  D["DeepSeek V4 Flash (último)"]:::ok
+  D["DeepSeek V4 Flash (último)"]:::plan
   H["HF router (chat)"]:::bad
   L["IA local 32 GB<br/>(DFlash2, MTP)"]:::plan
   P["Plugin abierto + subrouters/perfiles"]:::plan
@@ -92,14 +93,14 @@ flowchart LR
   R --> S
   S --> N
   S --> G
-  S --> D
+  S -.-> D
   S -.-> H
   S -.->|PLANNED| L
   P -.->|PLANNED| S
   A -.->|PLANNED| R
   R --> M
 ```
-Leyenda: verde = EXISTENTE y probado · amarillo punteado = PROPUESTO (no construido) · rojo = BLOQUEADO.
+Leyenda: verde = EXISTENTE y probado · amarillo punteado = PROPUESTO o sin probar (DeepSeek V4 Flash va por HF, hoy no configurado) · rojo = BLOQUEADO.
 
 ## Q. Huella
 Commit `39709cf5` · esquema v1 · conexiones reales: C1–C4, C8 · recursos activos: 1 Job · desconectados: HF chat, local, autoescalado · bloqueos: provider=hf, `omniroute_proxy` ausente.
