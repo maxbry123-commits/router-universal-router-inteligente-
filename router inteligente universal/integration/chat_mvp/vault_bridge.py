@@ -1,4 +1,4 @@
-"""Bridge between the chat and the YAIWES Secret Bank (Chat Mvp/secret_bank/vault.py).
+"""Bridge between the chat and the YAIWES Secret Bank (Banco de claves/secret_bank/vault.py).
 
 * The master passphrase is never stored: the bank is unlocked in memory for a TTL (RIU_VAULT_TTL, default 1 h).
 * While unlocked, provider keys (nvidia/*, huggingface/*, ...) join the key pool via vault_hook (oldest credential first),
@@ -35,7 +35,7 @@ class BankError(RuntimeError):
 
 def _load_vault_module() -> Any:
     here = Path(__file__).resolve()
-    candidates = [here.parent / "secret_vault.py", *(p / "Chat Mvp" / "secret_bank" / "vault.py" for p in here.parents)]
+    candidates = [here.parent / "secret_vault.py", *(p / "Banco de claves" / "secret_bank" / "vault.py" for p in here.parents)]
     for path in candidates:
         if path.is_file():
             spec = importlib.util.spec_from_file_location("riu_secret_vault", path)
