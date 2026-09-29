@@ -121,8 +121,10 @@ jobs:
           sys.path.insert(0, ".")
           from integration.chat_mvp import model_pool, providers as prov, resilience as R
 
+          RES = []  # GitHub keeps only 10 annotations per step: collect everything and print it in a few chunks at the end
+
           def note(title, msg):
-              print("::notice title=%s::%s" % (title, msg))
+              RES.append("%s: %s" % (title, msg))
 
           note("B1_KEYS", "; ".join("%s=%d" % (p, len(prov.env_keys(p))) for p in ("nvidia", "groq", "hf")))
           note("B1_CHAIN_RESOLVED", " > ".join("%s/%s" % (e["provider"], e["model"]) for e in R.resolve_chain("default", __import__("datetime").datetime.now(__import__("datetime").timezone.utc))[0]))
@@ -191,4 +193,13 @@ jobs:
           note("B1_STATUS", json.dumps({"attempt_timeout_s": st["attempt_timeout_s"], "cooling": list(st["model_pool"]["cooling"]), "latency": st["latency_seconds"]}))
           md = c.get("/chat/router/models", headers=H)
           note("B1_MODELS_ENDPOINT", "%d %s" % (md.status_code, json.dumps(md.json().get("providers"))[:300]))
+          chunk, n = "", 0
+          for item in RES + [None]:
+              if item is None or len(chunk) + len(item) > 3000:
+                  if chunk:
+                      n += 1
+                      print("::notice title=B1_LIVE_%d::%s" % (n, chunk.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")))
+                  chunk = ""
+              if item is not None:
+                  chunk += (" || " if chunk else "") + item
           PY
