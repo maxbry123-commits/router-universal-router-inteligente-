@@ -1,0 +1,160 @@
+name: TMP Bloque1 cadena chat verify
+
+# TEMPORAL (Bloque 1, 2026-09-29). Se borra al terminar. Solo workflow_dispatch.
+# 1) Pruebas completas ANTES (main) y DESPUES (rama bloque1-cadena-chat) con el mismo conjunto de carpetas.
+# 2) Evidencia en vivo: lista de modelos de NVIDIA/Groq y la cadena real /chat/route, con el pool marcando modelos muertos.
+# Resultados como anotaciones ::notice / ::warning (legibles con la API de check-runs). Nunca se imprime un valor de secreto.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        ref: [main, bloque1-cadena-chat]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/agents-yaiwes/common/
+            router inteligente universal/api/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/tests/
+            router inteligente universal/verifier/
+            router inteligente universal/Banco de claves/
+            CLAUDE.md
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: pip install fastapi httpx pytest pydantic uvicorn huggingface_hub
+      - name: Full tests of the tests folder
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q -p no:cacheprovider "router inteligente universal/tests" 2>&1 | tee /tmp/pytest.txt
+          code=${PIPESTATUS[0]}
+          last=$(tail -n 1 /tmp/pytest.txt | tr -d '\r')
+          echo "::notice title=B1_${{ matrix.ref }}::exit=${code} | ${last}"
+          grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | sed 's/ - .*//' | sort | while IFS= read -r line; do echo "::warning title=B1_FAIL_${{ matrix.ref }}::${line}"; done
+          # The new / changed tests, verbose, on their own (only meaningful on the branch)
+          python -m pytest -q -p no:cacheprovider "router inteligente universal/tests/test_model_pool.py" "router inteligente universal/tests/test_resilience.py" "router inteligente universal/tests/test_nvidia_pool.py" 2>&1 | tail -n 3 | while IFS= read -r line; do echo "::notice title=B1_CHAIN_TESTS_${{ matrix.ref }}::${line}"; done
+          exit 0
+
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bloque1-cadena-chat
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/agents-yaiwes/common/
+            router inteligente universal/api/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/verifier/
+            CLAUDE.md
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install fastapi httpx pydantic uvicorn huggingface_hub
+      - name: Which chain models do NVIDIA and Groq list, and does the real chain answer?
+        env:
+          NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+          NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+          NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+          NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
+          GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
+          GROQ_API_KEY_2: ${{ secrets.GROQ_API_KEY_2 }}
+          GROQ_API_KEY_3: ${{ secrets.GROQ_API_KEY_3 }}
+          GROQ_API_KEY_4: ${{ secrets.GROQ_API_KEY_4 }}
+          GROQ_API_KEY_5: ${{ secrets.GROQ_API_KEY_5 }}
+          GROQ_API_KEY_6: ${{ secrets.GROQ_API_KEY_6 }}
+          GROQ_API_KEY_7: ${{ secrets.GROQ_API_KEY_7 }}
+          HF_TOKEN_1: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          cd "router inteligente universal"
+          python - <<'PY'
+          import json, os, secrets, sys, tempfile, time
+          key = "ci-" + secrets.token_hex(8)
+          os.environ["RIU_AGENT_API_KEYS"] = json.dumps({key: "ci-agent"})
+          os.environ["RIU_CHAT_ALLOW_PROVIDER_LIVE"] = "1"
+          os.environ["RIU_DATA_DIR"] = tempfile.mkdtemp()
+          sys.path.insert(0, ".")
+          from integration.chat_mvp import model_pool, providers as prov, resilience as R
+
+          def note(title, msg):
+              print("::notice title=%s::%s" % (title, msg))
+
+          note("B1_KEYS", "; ".join("%s=%d" % (p, len(prov.env_keys(p))) for p in ("nvidia", "groq", "hf")))
+          # 1) What each provider lists (the same call the pool makes)
+          want = {"nvidia": ["moonshotai/kimi-k3", "z-ai/glm-5.3", "nvidia/nemotron-3-super-120b-a12b"], "groq": ["qwen/qwen3.8-27b"]}
+          for p, models in want.items():
+              ids = None
+              for k in prov.env_keys(p):
+                  try:
+                      ids = set(prov.list_models(p, k)); break
+                  except Exception as e:
+                      note("B1_LIST_KEYFAIL", "%s %s" % (p, str(e)[:60]))
+              note("B1_LIST_" + p.upper(), "count=%s | %s" % (None if ids is None else len(ids), "; ".join("%s=%s" % (m, "LISTED" if ids and m in ids else "NOT_LISTED") for m in models)))
+              if ids:
+                  fam = sorted(i for i in ids if any(t in i.lower() for t in ("kimi", "glm", "qwen3", "deepseek-v4", "nemotron-3")))
+                  note("B1_FAMILIES_" + p.upper(), ", ".join(fam[:25]))
+          # 2) The real chain through /chat/route (real providers, real pool)
+          from fastapi.testclient import TestClient
+          from integration.chat_mvp.app import app
+          c = TestClient(app)
+          H = {"X-API-Key": key}
+
+          def ask(tag):
+              t0 = time.time()
+              try:
+                  r = c.post("/chat/route", headers=H, json={"group": "default", "message": "Reply with the single word OK", "max_tokens": 512})
+                  j = r.json()
+                  if r.status_code == 200:
+                      note("B1_ROUTE_" + tag, "200 %.1fs model=%s attempt=%s reply_len=%d | trace=%s" % (time.time() - t0, j["route"]["model"], j["route"]["attempt"], len(j["reply"]), j["trace"]))
+                  else:
+                      note("B1_ROUTE_" + tag, "%d %.1fs %s" % (r.status_code, time.time() - t0, json.dumps(j.get("detail"))[:300]))
+              except Exception as e:
+                  note("B1_ROUTE_" + tag, "EXC %s" % type(e).__name__)
+
+          ask("1_all_healthy")
+          model_pool.POOL.mark_bad("nvidia", "moonshotai/kimi-k3", "test: simulated dead")
+          ask("2_kimi_dead")
+          model_pool.POOL.mark_bad("nvidia", "z-ai/glm-5.3", "test: simulated dead")
+          ask("3_kimi_glm_dead")
+          model_pool.POOL.mark_bad("hf", "deepseek-ai/DeepSeek-V4-Flash", "test: simulated dead")
+          model_pool.POOL.mark_bad("groq", "qwen/qwen3.8-27b", "test: simulated dead")
+          ask("4_only_nemotron_left")
+          st = c.get("/chat/router/status", headers=H).json()
+          note("B1_STATUS", json.dumps({"attempt_timeout_s": st["attempt_timeout_s"], "cooling": list(st["model_pool"]["cooling"]), "latency": st["latency_seconds"]}))
+          md = c.get("/chat/router/models", headers=H)
+          note("B1_MODELS_ENDPOINT", "%d %s" % (md.status_code, json.dumps(md.json().get("providers"))[:300]))
+          PY
