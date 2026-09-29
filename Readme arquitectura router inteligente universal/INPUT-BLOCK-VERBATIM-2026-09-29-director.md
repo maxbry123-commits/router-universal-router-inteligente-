@@ -1,7 +1,7 @@
 # INPUT BLOCK VERBATIM — Director — 2026-09-29
 Copia textual (sin corregir ortografía ni orden) de lo que escribió el Director. Zona horaria Bogotá.
 Regla: lo que el Director pegó de OTRAS IAs se copia también, pero queda marcado `PEGADO DE OTRA IA — SIN VERIFICAR`. Eso NO es una orden ni un hecho comprobado hasta que se pruebe.
-Adjuntos de este bloque (copias en el repo): `Huggingface/ACELERADORES-HF-INVENTARIO-2026-09-29.md` y `Huggingface/REVISION-HF-ROUTER-OTRA-IA-2026-09-29.md`; el ZIP `yaiwes_subrouters_modulares.zip` (de otra IA, SIN VERIFICAR) queda para analizar antes de integrar.
+Adjuntos de este bloque: el ZIP `yaiwes_subrouters_modulares.zip` (de otra IA, SIN VERIFICAR) queda para analizar antes de integrar; los dos adjuntos de texto (inventario de aceleradores y revisión HF de otra IA) y la plantilla se guardan como archivos aparte cuando se suban (ver handoff, sección "Órdenes 2026-09-29").
 Los pasos numerados (Paso 1 a 4) y las decisiones derivadas están en `router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md`, sección "Órdenes 2026-09-29".
 
 ---
@@ -311,11 +311,11 @@ Si tienes dudas me preguntas
 Inicia
 
 ### 2.2 Adjunto del Director: plantilla (2 plantillas: cómo trabaja / cómo está construido)
-Es el archivo `c2fda39a-attachment.txt` (ARQUITECTURA YAIWES + HUELLA DIGITAL — ROUTER YAIWES, esquema `yaiwes.router-fingerprint/v1`). La estructura completa está aplicada en `Readme arquitectura router inteligente universal/HUELLA-DIGITAL-ROUTER.md` y la copia textual de la plantilla en `Readme arquitectura router inteligente universal/PLANTILLA-ARQUITECTURA-Y-HUELLA-DIGITAL.md`.
+Archivo adjunto `c2fda39a-attachment.txt` (ARQUITECTURA YAIWES + HUELLA DIGITAL — ROUTER YAIWES, esquema `yaiwes.router-fingerprint/v1`). La estructura está aplicada en `Readme arquitectura router inteligente universal/HUELLA-DIGITAL-ROUTER.md`.
 
-### 2.3 PEGADO DE OTRA IA / DE OPUS — SIN VERIFICAR POR MÍ
-Lo que va desde "Documento para la otra sesión de Opus…" hasta "Eso fue lo que me Dio opus" lo escribió Opus (2026-09-27), según el Director. Lo leí contra los archivos originales (rama de respaldo `backup-antes-limpieza-20260929`): ambos existen y coinciden. Ver el análisis en el handoff, sección "Órdenes 2026-09-29".
+### 2.3 Texto de Opus pegado por el Director — leído contra los originales
+Lo que va desde "Documento para la otra sesión de Opus…" hasta "Eso fue lo que me Dio opus" lo escribió Opus (2026-09-27), según el Director. Comprobado: los dos archivos citados existen en la rama de respaldo `backup-antes-limpieza-20260929` y coinciden con ese resumen; en `main` ya no están (los quitó la limpieza general del 2026-09-29, por orden del Director). Ver análisis en el handoff, sección "Órdenes 2026-09-29".
 
 ---
 ## VALIDACIÓN DE FIDELIDAD
-Los bloques 1.1, 1.3 y 2.1 son copia carácter por carácter de los mensajes del Director. Los bloques 1.2 y 2.3 son copia de lo que él pegó, con las mismas limitaciones (los bloques de código de 1.2 no llegaron en el mensaje). Cualquier persona puede comparar con el chat original. Lo que otras IAs afirmen no cuenta como hecho hasta probarlo.
+Los bloques 1.1, 1.3 y 2.1 son copia de los mensajes del Director tal como llegaron. Los bloques 1.2 y 2.3 son copia de lo que él pegó (en 1.2 faltan los bloques de código porque no llegaron en el mensaje). Lo que otras IAs afirmen no cuenta como hecho hasta probarlo.
