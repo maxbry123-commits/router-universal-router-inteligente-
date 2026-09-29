@@ -7,13 +7,15 @@ Problems seen in real tests (2026-09-20) and the answer to each:
   * DeepSeek peak hours (01-04 and 06-10 UTC, Mon-Fri)                -> in peak only MiniMax for code/minor tasks.
   * Provider down or saturated                                        -> fallback chain per group, ONLY where the Director
     authorized it (default chat since 2026-09-29, g2, code, minor). A group WITHOUT authorization reports NEEDS_DIRECTOR_AUTH so the brain can ask.
-Chains follow the Director's rule for group 2: NVIDIA -> Groq -> local API -> DeepSeek V4 Flash.
+Group 2 (Director's original rule: NVIDIA -> Groq -> local API -> DeepSeek V4 Flash) now reads Kimi K3 -> GLM 5.3 -> Groq -> local -> DeepSeek V4 Flash ->
+Nemotron last: that rewrite of g2 was made by Claude on 2026-09-29 to follow the Nemotron-last rule and needs the Director's OK (red in the handoff).
 2026-09-29 (Director, 05:15): the chat chain is Kimi K3 -> GLM 5.3 (NVIDIA) -> DeepSeek V4 Flash -> Qwen 3.8 (Groq) -> Nemotron LAST;
 the chat falls to the next option by itself (authorized_fallback), asks each provider which models are available (model_pool.py) and
-never waits more than RIU_CHAT_ATTEMPT_TIMEOUT seconds (default 30) on an option that is not the last one. Keys: NVIDIA 1-3 first, then 4 (pool
-order in providers.py); if NVIDIA is busy the chain goes on to Groq. Health is per key AND model, so a dead model does not put keys in cooldown.
-Once the time of an option is spent (RIU_CHAT_ATTEMPT_TIMEOUT) its remaining keys are not tried: the chain moves on at once (seen live: 30 s + 3 x 1 s
-of useless attempts on keys 2-4 before this rule).
+moves on after about RIU_CHAT_ATTEMPT_TIMEOUT seconds (default 30, times max_tokens/1024, never above 90) on an option that is not the last one (the last
+option gets one 90 s budget for all its keys). Keys: NVIDIA 1-3 first, then 4 (pool order in providers.py); failures older than the cooldown are forgotten,
+so keys 1-3 are preferred again after a blip. Health is per key AND model, so a dead model does not put keys in cooldown.
+Once the time of an option is spent its remaining keys are not tried: the chain moves on at once (seen live: 30 s + 3 x 1 s of useless attempts on
+keys 2-4 before this rule). A request error (400/422) is not the model's fault and never cools a model; a busy Router (ROUTER_SATURATED) neither.
 """
 from __future__ import annotations
 
@@ -57,20 +59,25 @@ def key_id(provider: str, key: str | None, model: str = "") -> str:
 
 
 class CircuitBreaker:
-    """Opens after `threshold` consecutive failures; lets one probe through after `cooldown` seconds."""
+    """Opens after `threshold` failures inside one `cooldown` window; lets one probe through after `cooldown` seconds.
+
+    Failures older than `cooldown` seconds are forgiven (a blip must not demote a key for ever: keys 1-3 are the priority, 4 the spare)."""
 
     def __init__(self, threshold: int = 3, cooldown: float = 120.0, clock: Callable[[], float] = time.monotonic) -> None:
         self.threshold, self.cooldown, self.clock = threshold, cooldown, clock
-        self._state: dict[str, list[float]] = {}
+        self._state: dict[str, list[float]] = {}  # kid -> [failures, time it opened (0 = closed), time of the last failure]
         self._lock = threading.Lock()
+
+    def _stale(self, st: list[float]) -> bool:
+        return st[0] < self.threshold and st[2] > 0 and self.clock() - st[2] >= self.cooldown
 
     def allow(self, kid: str) -> bool:
         with self._lock:
-            fails, opened = self._state.get(kid, [0, 0.0])
-            if fails < self.threshold:
+            st = self._state.get(kid, [0, 0.0, 0.0])
+            if st[0] < self.threshold:
                 return True
-            if self.clock() - opened >= self.cooldown:
-                self._state[kid] = [self.threshold - 1, opened]  # half-open: the next failure re-opens it
+            if self.clock() - st[1] >= self.cooldown:
+                self._state[kid] = [self.threshold - 1, st[1], self.clock()]  # half-open: the next failure re-opens it
                 return True
             return False
 
@@ -80,11 +87,15 @@ class CircuitBreaker:
 
     def fail(self, kid: str) -> None:
         with self._lock:
-            fails = self._state.get(kid, [0, 0.0])[0] + 1
-            self._state[kid] = [fails, self.clock() if fails >= self.threshold else 0.0]
+            st = self._state.get(kid, [0, 0.0, 0.0])
+            fails = (0 if self._stale(st) else st[0]) + 1
+            now = self.clock()
+            self._state[kid] = [fails, now if fails >= self.threshold else 0.0, now]
 
     def fails(self, kid: str) -> int:
-        return int(self._state.get(kid, [0, 0.0])[0])
+        """Recent failures (used to put the healthiest key first)."""
+        st = self._state.get(kid)
+        return 0 if st is None or self._stale(st) else int(st[0])
 
 
 class AdaptiveLimiter:
@@ -132,10 +143,17 @@ class Router:
 
     def execute(self, provider: str, keys: list[str | None], model: str, messages: list[dict[str, str]], max_tokens: int,
                 temperature: float | None, chat_fn: Callable[..., dict[str, Any]], errbox: dict[str, str] | None = None) -> dict[str, Any]:
-        self.limiter.acquire()
+        try:
+            self.limiter.acquire()
+        except Saturated:
+            if errbox is not None:
+                errbox["e"] = "ROUTER_SATURATED"  # core.call_via_router re-raises this text: run_policy must see that the Router was busy, not the model dead
+            raise
         try:
             ordered = self._ordered(provider, keys, model)
             if not ordered:
+                if errbox is not None:
+                    errbox["e"] = "ALL_KEYS_IN_COOLDOWN"
                 raise AllKeysFailed("ALL_KEYS_IN_COOLDOWN")
             last: Exception | None = None
             for key in ordered:
@@ -209,6 +227,9 @@ def resolve_chain(group: str, now: datetime, env: Mapping[str, str] | None = Non
     return chain, skipped
 
 
+REQUEST_ERRORS = ("PROVIDER_ERROR:400:", "PROVIDER_ERROR:422:")  # the request is the problem, not the model: never cool a model for these
+
+
 def attempt_timeout_s() -> float:
     """Seconds one NON-last option of a chain may take before the chat moves on (RIU_CHAT_ATTEMPT_TIMEOUT, default 30; <= 0 = no limit)."""
     try:
@@ -224,8 +245,9 @@ def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, t
 
     `pool` (model_pool.ModelPool, optional) filters options the provider does not list or that failed recently and learns from each
     result; it is ignored for groups without authorized fallback (skipping an option there would be a silent fallback).
-    Every option except the last gets a time limit so a slow model never blocks the chat; the last one keeps the full provider timeout.
-    The limit grows with the answer size (x max_tokens / 1024, never below the base), and providers.chat_timeout() never exceeds 90 s.
+    Every option except the last gets a time limit so a slow model never blocks the chat; the last one gets one full provider budget (90 s)
+    for ALL its keys together. The limit grows with the answer size (x max_tokens / 1024, never below the base) and never exceeds 90 s;
+    <= 0 means no limit at all. A request error (400/422) or a busy Router does not cool a model (see REQUEST_ERRORS).
     """
     policy = DEFAULT_POLICY.get(group) or DEFAULT_POLICY["default"]
     chain, trace = resolve_chain(group, now or datetime.now(timezone.utc), env)
@@ -233,28 +255,31 @@ def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, t
         raise RouteFailed("ROUTER_NO_ROUTE_AVAILABLE", trace)
     use_pool = pool if (pool is not None and policy["authorized_fallback"]) else None
     if use_pool is not None:
-        kept, skipped = use_pool.filter(chain)
+        kept, skipped = use_pool.filter(chain, probe=True)  # a real request: may take the single probe lease of a model whose cooldown ended
         trace.extend(skipped)
         if kept:
             chain = kept
         else:
             trace.append("POOL_EMPTY_TRY_ALL")  # never leave the chat without a route because of the pool
-    limit = (attempt_timeout_s() if attempt_timeout is None else attempt_timeout) * max(1.0, max_tokens / 1024)
+    base = attempt_timeout_s() if attempt_timeout is None else attempt_timeout
+    limit = min(prov.CHAT_TIMEOUT, base * max(1.0, max_tokens / 1024)) if base > 0 else 0.0
     for i, entry in enumerate(chain):
         if i > 0 and not policy["authorized_fallback"]:
             trace.append("FALLBACK_NOT_AUTHORIZED")
             raise RouteFailed("NEEDS_DIRECTOR_AUTH:" + trace[-2], trace)
         keys = prov.env_keys(entry["provider"]) or [None]
         is_last = i == len(chain) - 1
-        token = prov.ATTEMPT_DEADLINE.set(None if (is_last or limit <= 0) else time.monotonic() + limit)
+        budget = 0.0 if limit <= 0 else (prov.CHAT_TIMEOUT if is_last else limit)
+        token = prov.ATTEMPT_DEADLINE.set(time.monotonic() + budget if budget > 0 else None)
         try:
             out = call(entry["provider"], keys[0], entry["model"], messages, max_tokens, temperature)
             if use_pool is not None:
                 use_pool.mark_ok(entry["provider"], entry["model"])
             return {**out, "route": {**entry, "attempt": i + 1}, "trace": trace}
         except RuntimeError as exc:
-            if use_pool is not None and not isinstance(exc, Saturated) and "ROUTER_SATURATED" not in str(exc):
-                use_pool.mark_bad(entry["provider"], entry["model"], str(exc))  # a busy Router is not a dead model
+            busy = isinstance(exc, Saturated) or "ROUTER_SATURATED" in str(exc)
+            if use_pool is not None and not busy and not str(exc).startswith(REQUEST_ERRORS):
+                use_pool.mark_bad(entry["provider"], entry["model"], str(exc))  # a busy Router / a bad request is not a dead model
             trace.append(f"{entry['provider']}/{entry['model']}:{str(exc)[:80]}")
         finally:
             prov.ATTEMPT_DEADLINE.reset(token)
