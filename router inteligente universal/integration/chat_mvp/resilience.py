@@ -12,6 +12,8 @@ Chains follow the Director's rule for group 2: NVIDIA -> Groq -> local API -> De
 the chat falls to the next option by itself (authorized_fallback), asks each provider which models are available (model_pool.py) and
 never waits more than RIU_CHAT_ATTEMPT_TIMEOUT seconds (default 30) on an option that is not the last one. Keys: NVIDIA 1-3 first, then 4 (pool
 order in providers.py); if NVIDIA is busy the chain goes on to Groq. Health is per key AND model, so a dead model does not put keys in cooldown.
+Once the time of an option is spent (RIU_CHAT_ATTEMPT_TIMEOUT) its remaining keys are not tried: the chain moves on at once (seen live: 30 s + 3 x 1 s
+of useless attempts on keys 2-4 before this rule).
 """
 from __future__ import annotations
 
@@ -137,6 +139,9 @@ class Router:
                 raise AllKeysFailed("ALL_KEYS_IN_COOLDOWN")
             last: Exception | None = None
             for key in ordered:
+                deadline = prov.ATTEMPT_DEADLINE.get()
+                if last is not None and deadline is not None and time.monotonic() >= deadline:
+                    break  # time of this chain option is spent: the other keys are left untouched (no 1 s attempts marked as failures)
                 kid, t0 = key_id(provider, key, model), time.monotonic()
                 try:
                     out = chat_fn(provider, key, model, messages, max_tokens, temperature=temperature)
