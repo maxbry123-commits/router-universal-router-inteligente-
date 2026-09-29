@@ -4,9 +4,12 @@ Keys come from the unlocked Secret Bank (vault_hook), the server environment or,
 They are never logged, stored or echoed back; error messages carry only the HTTP status and a short provider message.
 NVIDIA is listed FIRST (principal provider) and has a pool of keys with failover (see core.py).
 2026-09-27 (Director): Groq con pool GROQ_API_KEY_1..7 (la 1 es inválida hoy; se salta sola). Cerebras ELIMINADO (Director 2026-09-29).
+2026-09-29 (Director, cadena de chat): ATTEMPT_DEADLINE limita el tiempo de UNA opción de la cadena para que un modelo lento no bloquee
+  el chat (ver resilience.run_policy). Sin deadline (None) el tiempo por llamada sigue siendo 90 s como antes.
 """
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import json
 import os
@@ -31,6 +34,18 @@ PROVIDERS: dict[str, dict[str, Any]] = {
 }
 MODELS_TTL = 300.0
 _models_cache: dict[tuple[str, str], tuple[float, list[str]]] = {}
+CHAT_TIMEOUT = 90.0
+# Absolute time.monotonic() deadline for the chain option being tried (set by resilience.run_policy; travels through
+# asyncio.run / asyncio.to_thread because both copy the context). None = no deadline.
+ATTEMPT_DEADLINE: contextvars.ContextVar[float | None] = contextvars.ContextVar("riu_attempt_deadline", default=None)
+
+
+def chat_timeout() -> float:
+    """Seconds one chat HTTP call may take: CHAT_TIMEOUT, cut to what is left of the current chain-option deadline (min 1 s)."""
+    deadline = ATTEMPT_DEADLINE.get()
+    if deadline is None:
+        return CHAT_TIMEOUT
+    return max(1.0, min(CHAT_TIMEOUT, deadline - time.monotonic()))
 
 
 class ProviderError(RuntimeError):
@@ -107,7 +122,7 @@ def chat(provider: str, key: str | None, model: str, messages: list[dict[str, st
     payload: dict[str, Any] = {"model": model, "messages": messages, "max_tokens": max_tokens}
     if temperature is not None:
         payload["temperature"] = temperature
-    data = (post or (lambda url, k, b: _http("POST", url, k, b, 90)))(base + "/chat/completions", key, payload)
+    data = (post or (lambda url, k, b: _http("POST", url, k, b, chat_timeout())))(base + "/chat/completions", key, payload)
     try:
         choice = data["choices"][0]
         content = choice["message"].get("content") or ""
