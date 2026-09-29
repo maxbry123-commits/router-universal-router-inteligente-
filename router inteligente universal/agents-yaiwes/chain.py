@@ -99,11 +99,31 @@ def append_output_to_director(st: dict[str, Any], text: str) -> None:
     target.write_text(current.rstrip() + "\n\n" + payload, encoding="utf-8")
 
 
+def _has_live_health_evidence(data: dict) -> bool:
+    """True only with live /health proof — paper CLOSED must not short-circuit serve_health."""
+    if data.get("health_ok_url"):
+        return True
+    ev = data.get("evidence")
+    if isinstance(ev, dict) and ev.get("health_ok_url"):
+        return True
+    if isinstance(ev, list):
+        for e in ev:
+            if not isinstance(e, dict):
+                continue
+            if e.get("health_ok_url") or e.get("kind") == "health_ok_url":
+                return True
+    return False
+
+
 def already_closed(sd: Path) -> str | None:
     state, out = sd / "crazy_wall.state.json", sd / "results" / "output.txt"
     if state.exists() and out.exists():
         try:
-            if json.loads(state.read_text(encoding="utf-8")).get("status") == "CLOSED":
+            data = json.loads(state.read_text(encoding="utf-8"))
+            if data.get("status") == "CLOSED":
+                # serve_health: forbid paper CLOSED without evidence.health_ok_url (forces python_exec)
+                if sd.name == "serve_health" and not _has_live_health_evidence(data):
+                    return None
                 return out.read_text(encoding="utf-8")
         except json.JSONDecodeError:
             return None
