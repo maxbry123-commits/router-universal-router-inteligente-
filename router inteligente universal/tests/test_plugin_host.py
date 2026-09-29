@@ -266,6 +266,23 @@ def test_chat_status_call_never_raises_without_the_router_dependencies(tmp_path)
     assert h.get("chat")["status"] in ("ready", "degraded")
 
 
+def test_one_hostile_ficha_never_wipes_the_rest_of_the_registry(tmp_path):
+    deep = "[" * 200000 + "]" * 200000  # RecursionError inside json.loads
+    huge = ficha("huge-timeout", seguridad={"sandbox": "none", "permisos": [], "limites": {"timeout_ms": 10 ** 400}})  # OverflowError
+    h = make_host(tmp_path, {"good": ficha("good"), "deep": deep, "huge-timeout": huge})
+    by_id = {p["id"]: p for p in h.list_plugins()}
+    assert set(by_id) == {"good", "deep", "huge-timeout"}, by_id.keys()
+    assert h.load_error is None and by_id["good"]["status"] != "invalid"
+    assert by_id["deep"]["status"] == "invalid" and by_id["huge-timeout"]["status"] in ("invalid", "ready", "degraded")
+
+
+def test_a_deeply_nested_state_file_is_ignored_not_fatal(tmp_path):
+    state = tmp_path / "state.json"
+    state.write_text("[" * 200000 + "]" * 200000, encoding="utf-8")
+    h = make_host(tmp_path, {"good": ficha("good")}, state=state)
+    assert [p["id"] for p in h.list_plugins()] == ["good"] and h.load_error is None
+
+
 # ---- HTTP / gate (need fastapi) ---------------------------------------------------------------------------------------
 KEY = {"X-API-Key": "k1"}
 
