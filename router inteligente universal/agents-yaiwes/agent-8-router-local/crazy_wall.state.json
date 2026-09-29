@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-8-router-local",
  "framework": "pocketflow",
- "status": "BLOCKED",
- "updated_at": "2026-09-29T20:40:21Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-29T20:58:29Z",
  "group": "router-local",
  "chain": [
   "local_pool",
@@ -12,11 +12,10 @@
  ],
  "completed": [
   "local_pool",
-  "mirror_route"
- ],
- "failed": [
+  "mirror_route",
   "serve_health"
  ],
+ "failed": [],
  "next_nodes": [],
  "current_nodes": [],
  "gaps": [

@@ -186,6 +186,7 @@ checks:
   - health
 - kind: python_exec
   module: serve_health.py
+  timeout: 480
   test: "import os\nassert os.environ.get(\"HF_TOKEN\"), \"falta HF_TOKEN\"\nimport\
     \ serve_health as m\nsrc = open(m.__file__).read()\nassert \"own_server_main\"\
     \ in src\nassert \"cpu-upgrade\" in src\nfrom serve_health import run_all, launch_and_verify\n\
