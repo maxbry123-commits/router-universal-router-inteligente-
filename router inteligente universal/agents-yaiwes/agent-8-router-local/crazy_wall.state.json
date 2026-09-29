@@ -3,7 +3,7 @@
  "agent": "agent-8-router-local",
  "framework": "pocketflow",
  "status": "BLOCKED",
- "updated_at": "2026-09-29T20:30:00Z",
+ "updated_at": "2026-09-29T20:40:21Z",
  "group": "router-local",
  "chain": [
   "local_pool",
@@ -14,17 +14,19 @@
   "local_pool",
   "mirror_route"
  ],
- "failed": [],
- "next_nodes": [
+ "failed": [
   "serve_health"
  ],
- "current_nodes": [
-  "serve_health"
- ],
+ "next_nodes": [],
+ "current_nodes": [],
  "gaps": [
   "falta Agents Run only=agent-8-router-local GET /health 200",
   "GOLDEN listo: local_pool/mirror_route/serve_health. LOOP 8. NO dispatch hasta P1 #111/#112.",
   "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26"
  ],
- "router_connected": false
+ "router_connected": true,
+ "route": [
+  "nvidia",
+  "groq"
+ ]
 }

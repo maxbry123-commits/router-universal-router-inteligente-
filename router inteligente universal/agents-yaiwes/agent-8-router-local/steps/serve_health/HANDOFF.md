@@ -1,8 +1,10 @@
-# HANDOFF — agent-8-router-local / serve_health
+# HANDOFF — agent-8-router-local (pocketflow)
 
-Estado: **PENDING**
+Estado: **BLOCKED**
 
 - group: router-local
-- GOLDEN: `GOLDEN/serve_health.py` (probe KNOWN_JOB_ID 6ab3198e51992417dfcd4e26 o LFM2.5 cpu-upgrade)
-- Meta: RUNNING_HEALTHY + GET /health 200 + health_ok_url + job_id
-- LOOP 8. NO dispatch hasta P1 #111/#112.
+- attempts: 1
+- model: golden/verbatim
+- gaps: la prueba superó el tiempo
+
+Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.

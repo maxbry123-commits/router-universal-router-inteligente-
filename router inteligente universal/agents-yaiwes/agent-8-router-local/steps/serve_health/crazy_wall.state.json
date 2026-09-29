@@ -2,19 +2,26 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-8-router-local",
  "framework": "pocketflow",
- "status": "PENDING",
- "updated_at": "2026-09-29T20:30:00Z",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-29T20:40:20Z",
  "group": "router-local",
  "current_nodes": [
-  "serve_health"
+  "execute"
  ],
  "next_nodes": [
   "sheriff"
  ],
  "gaps": [
-  "PENDING: falta Agents Run only=agent-8-router-local GET /health 200"
+  "la prueba superó el tiempo"
  ],
  "evidence": [],
- "attempts": 0,
- "route_trace": []
+ "attempts": 1,
+ "route_trace": [],
+ "router_connected": true,
+ "provider": "golden",
+ "model": "verbatim",
+ "via": "GOLDEN",
+ "failed": [
+  "execute"
+ ]
 }
