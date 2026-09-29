@@ -2,7 +2,9 @@ name: TMP Bloque1 cadena chat verify
 
 # TEMPORAL (Bloque 1, 2026-09-29). Se borra al terminar. Solo workflow_dispatch.
 # 1) Pruebas completas ANTES (main) y DESPUES (rama bloque1-cadena-chat) con el mismo conjunto de carpetas.
-# 2) Evidencia en vivo: lista de modelos de NVIDIA/Groq y la cadena real /chat/route, con el pool marcando modelos muertos.
+#    La lista de pruebas que fallan sale en UNA sola anotacion (ordenada + huella sha256) para comparar las dos listas exactas.
+# 2) Evidencia en vivo: lista de modelos de NVIDIA/Groq y la cadena real /chat/route y /chat/send provider=auto, con el pool
+#    marcando modelos muertos uno a uno (Kimi -> GLM -> DeepSeek -> Qwen Groq -> Nemotron -> todos marcados).
 # Resultados como anotaciones ::notice / ::warning (legibles con la API de check-runs). Nunca se imprime un valor de secreto.
 
 on:
@@ -53,9 +55,17 @@ jobs:
           code=${PIPESTATUS[0]}
           last=$(tail -n 1 /tmp/pytest.txt | tr -d '\r')
           echo "::notice title=B1_${{ matrix.ref }}::exit=${code} | ${last}"
-          grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | sed 's/ - .*//' | sort | while IFS= read -r line; do echo "::warning title=B1_FAIL_${{ matrix.ref }}::${line}"; done
-          # The new / changed tests, verbose, on their own (only meaningful on the branch)
-          python -m pytest -q -p no:cacheprovider "router inteligente universal/tests/test_model_pool.py" "router inteligente universal/tests/test_resilience.py" "router inteligente universal/tests/test_nvidia_pool.py" 2>&1 | tail -n 3 | while IFS= read -r line; do echo "::notice title=B1_CHAIN_TESTS_${{ matrix.ref }}::${line}"; done
+          fails=$(grep -E '^(FAILED|ERROR)' /tmp/pytest.txt | sed 's/ - .*//' | sort | tr '\n' ';')
+          count=$(grep -Ec '^(FAILED|ERROR)' /tmp/pytest.txt)
+          sha=$(printf '%s' "$fails" | sha256sum | cut -c1-16)
+          echo "::notice title=B1_FAILSET_${{ matrix.ref }}::count=${count} sha=${sha} | ${fails}"
+          # The new / changed tests on their own, with every test name listed (only meaningful on the branch)
+          python -m pytest -q -p no:cacheprovider -rA "router inteligente universal/tests/test_model_pool.py" "router inteligente universal/tests/test_resilience.py" "router inteligente universal/tests/test_nvidia_pool.py" > /tmp/chain.txt 2>&1
+          passed=$(grep -c '^PASSED' /tmp/chain.txt)
+          other=$(grep -E '^(FAILED|ERROR|SKIPPED)' /tmp/chain.txt | sed 's/ - .*//' | tr '\n' ';')
+          echo "::notice title=B1_CHAIN_TESTS_${{ matrix.ref }}::passed=${passed} | other=${other} | $(tail -n 1 /tmp/chain.txt)"
+          names=$(grep '^PASSED' /tmp/chain.txt | sed 's/^PASSED .*:://' | tr '\n' ';')
+          echo "::notice title=B1_CHAIN_NAMES_${{ matrix.ref }}::${names}"
           exit 0
 
   live:
@@ -107,6 +117,7 @@ jobs:
           os.environ["RIU_AGENT_API_KEYS"] = json.dumps({key: "ci-agent"})
           os.environ["RIU_CHAT_ALLOW_PROVIDER_LIVE"] = "1"
           os.environ["RIU_DATA_DIR"] = tempfile.mkdtemp()
+          os.environ["RIU_MODEL_COOLDOWN"] = "900"  # a model marked dead in this script stays skipped for the whole run
           sys.path.insert(0, ".")
           from integration.chat_mvp import model_pool, providers as prov, resilience as R
 
@@ -114,6 +125,7 @@ jobs:
               print("::notice title=%s::%s" % (title, msg))
 
           note("B1_KEYS", "; ".join("%s=%d" % (p, len(prov.env_keys(p))) for p in ("nvidia", "groq", "hf")))
+          note("B1_CHAIN_RESOLVED", " > ".join("%s/%s" % (e["provider"], e["model"]) for e in R.resolve_chain("default", __import__("datetime").datetime.now(__import__("datetime").timezone.utc))[0]))
           # 1) What each provider lists (the same call the pool makes)
           want = {"nvidia": ["moonshotai/kimi-k3", "z-ai/glm-5.3", "nvidia/nemotron-3-super-120b-a12b"], "groq": ["qwen/qwen3.8-27b"]}
           for p, models in want.items():
@@ -127,7 +139,7 @@ jobs:
               if ids:
                   fam = sorted(i for i in ids if any(t in i.lower() for t in ("kimi", "glm", "qwen3", "deepseek-v4", "nemotron-3")))
                   note("B1_FAMILIES_" + p.upper(), ", ".join(fam[:25]))
-          # 2) The real chain through /chat/route (real providers, real pool)
+          # 2) The real chain through /chat/route and /chat/send provider=auto (real providers, real pool)
           from fastapi.testclient import TestClient
           from integration.chat_mvp.app import app
           c = TestClient(app)
@@ -145,14 +157,36 @@ jobs:
               except Exception as e:
                   note("B1_ROUTE_" + tag, "EXC %s" % type(e).__name__)
 
+          def send(tag, message, cid=None):
+              t0 = time.time()
+              body = {"message": message, "provider": "auto"}
+              if cid:
+                  body["conversation_id"] = cid
+              try:
+                  r = c.post("/chat/send", headers=H, json=body)
+                  j = r.json()
+                  if r.status_code == 200:
+                      note("B1_SEND_" + tag, "200 %.1fs provider=%s model=%s auto=%s same_conversation=%s reply_len=%d | trace=%s" % (time.time() - t0, j.get("provider"), j.get("model"), j.get("auto"), (cid is None) or (j.get("conversation_id") == cid), len(j.get("reply") or ""), j.get("trace")))
+                      return j.get("conversation_id")
+                  note("B1_SEND_" + tag, "%d %.1fs %s" % (r.status_code, time.time() - t0, json.dumps(j.get("detail"))[:300]))
+              except Exception as e:
+                  note("B1_SEND_" + tag, "EXC %s" % type(e).__name__)
+              return cid
+
+          pool = model_pool.POOL
           ask("1_all_healthy")
-          model_pool.POOL.mark_bad("nvidia", "moonshotai/kimi-k3", "test: simulated dead")
+          cid = send("1_healthy", "Reply with the single word OK")
+          pool.mark_bad("nvidia", "moonshotai/kimi-k3", "test: simulated dead")
           ask("2_kimi_dead")
-          model_pool.POOL.mark_bad("nvidia", "z-ai/glm-5.3", "test: simulated dead")
+          send("2_kimi_dead_same_conversation", "Now reply with the single word DONE", cid)
+          pool.mark_bad("nvidia", "z-ai/glm-5.3", "test: simulated dead")
           ask("3_kimi_glm_dead")
-          model_pool.POOL.mark_bad("hf", "deepseek-ai/DeepSeek-V4-Flash", "test: simulated dead")
-          model_pool.POOL.mark_bad("groq", "qwen/qwen3.8-27b", "test: simulated dead")
-          ask("4_only_nemotron_left")
+          pool.mark_bad("hf", "deepseek-ai/DeepSeek-V4-Flash", "test: simulated dead")
+          ask("4_kimi_glm_deepseek_dead_expect_groq_qwen")
+          pool.mark_bad("groq", "qwen/qwen3.8-27b", "test: simulated dead")
+          ask("5_only_nemotron_left")
+          pool.mark_bad("nvidia", "nvidia/nemotron-3-super-120b-a12b", "test: simulated dead")
+          ask("6_all_marked_dead_pool_never_leaves_without_route")
           st = c.get("/chat/router/status", headers=H).json()
           note("B1_STATUS", json.dumps({"attempt_timeout_s": st["attempt_timeout_s"], "cooling": list(st["model_pool"]["cooling"]), "latency": st["latency_seconds"]}))
           md = c.get("/chat/router/models", headers=H)
