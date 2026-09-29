@@ -10,7 +10,7 @@ agent:
   id: agent-15-orchestrator-grokbuild
   framework: pocketflow
   group: orchestrators
-  route: [nvidia, groq, cerebras]
+  route: [nvidia, groq]
   fallback: [deepseek_flash]
   max_tokens: 2400
 

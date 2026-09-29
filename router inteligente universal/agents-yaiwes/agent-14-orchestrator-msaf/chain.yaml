@@ -61,7 +61,7 @@ agent:
   id: agent-14-orchestrator-msaf
   framework: pocketflow
   group: orchestrators
-  route: [nvidia, groq, cerebras]
+  route: [nvidia, groq]
   fallback: [deepseek_flash]
   max_tokens: 4200
 

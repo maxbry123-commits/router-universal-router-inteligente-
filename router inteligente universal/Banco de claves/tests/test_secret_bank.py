@@ -110,7 +110,7 @@ class SecretBankTests(unittest.TestCase):
         sid = sessions.login(self.path, PASS)
         vault = sessions.get(sid)
         vault.put("anthropic/primary", SECRET, allowed_agents=["agent-01"], allowed_models=["claude-x"], allowed_routes=["router"])
-        vault.put("cerebras/open", SECRET, allowed_agents=["*"], allowed_models=["*"], allowed_routes=["*"])
+        vault.put("groq/open", SECRET, allowed_agents=["*"], allowed_models=["*"], allowed_routes=["*"])
         vault.put("groq/none", SECRET)  # listas vacías = deniega
         broker = SecretBroker(sessions, clock=lambda: clock[0])
         seen = []
@@ -123,7 +123,7 @@ class SecretBankTests(unittest.TestCase):
                    {"agent": "agent-01", "model": "claude-x", "route": "externa"}):
             with self.assertRaises(PermissionDenied):
                 broker.with_secret(sid, "anthropic/primary", fn=lambda s: s, **kw)
-        self.assertEqual(broker.with_secret(sid, "cerebras/open", agent="x", model="y", route="z", fn=lambda s: 1), 1)
+        self.assertEqual(broker.with_secret(sid, "groq/open", agent="x", model="y", route="z", fn=lambda s: 1), 1)
         with self.assertRaises(PermissionDenied):
             broker.with_secret(sid, "groq/none", agent="x", model="y", route="z", fn=lambda s: s)
         with self.assertRaises(NotFound):

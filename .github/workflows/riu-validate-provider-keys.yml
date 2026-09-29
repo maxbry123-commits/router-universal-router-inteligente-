@@ -67,13 +67,3 @@ jobs:
           echo "NVIDIA_HTTP=${code}"
           [ "$code" = "200" ] && echo "NVIDIA_RESULT=PASS" || { echo "NVIDIA_RESULT=FAIL"; exit 1; }
 
-      - name: Validate Cerebras
-        env:
-          PROVIDER_KEY: ${{ secrets.CEREBRAS_API_KEY_1 }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "${PROVIDER_KEY:-}" ]; then echo "CEREBRAS_RESULT=GAP_SECRET_MISSING"; exit 0; fi
-          code=$(curl -sS -o /tmp/cerebras.json -w "%{http_code}" -H "Authorization: Bearer ${PROVIDER_KEY}" https://api.cerebras.ai/v1/models)
-          echo "CEREBRAS_HTTP=${code}"
-          [ "$code" = "200" ] && echo "CEREBRAS_RESULT=PASS" || { echo "CEREBRAS_RESULT=FAIL"; exit 1; }

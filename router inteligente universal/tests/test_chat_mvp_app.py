@@ -32,7 +32,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"k1": "agent-a", "k2": "agent-b"}')
     monkeypatch.setenv("RIU_CHAT_ALLOW_PROVIDER_LIVE", "1")
     monkeypatch.setenv("HF_TOKEN_1", "hf-test-not-a-secret")
-    for name in ("HF_TOKEN", "NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "CEREBRAS_API_KEY", "CEREBRAS_API_KEY_1", "RIU_GITHUB_ACCOUNTS", "RIU_PRICES_JSON"):
+    for name in ("HF_TOKEN", "NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "GROQ_API_KEY", "GROQ_API_KEY_1", "RIU_GITHUB_ACCOUNTS", "RIU_PRICES_JSON"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(core, "cached_discovery", lambda: [])
     monkeypatch.setattr(rt, "cached_discovery", lambda: [])
@@ -61,7 +61,7 @@ def test_page_providers_and_auth(client):
     page = client.get("/chat")
     assert page.status_code == 200 and "Chat RIU" in page.text and "/chat/send" in page.text
     body = client.get("/chat/providers").json()
-    assert {p["id"] for p in body["providers"]} == {"hf", "cerebras", "nvidia", "groq", "deepseek", "moonshot", "minimax", "local"}
+    assert {p["id"] for p in body["providers"]} == {"hf", "nvidia", "groq", "deepseek", "moonshot", "minimax", "local"}
     assert next(p for p in body["providers"] if p["id"] == "hf")["configured"] is True
     assert client.post("/chat/send", json={"message": "x", "model": KIMI}).status_code == 401
     assert client.get("/chat/agents").status_code == 401
@@ -94,10 +94,10 @@ def test_hf_gate_rejects_unselectable_models_and_flag_off(client, monkeypatch):
 
 
 def test_other_providers_use_catalog_and_byok(client):
-    r = client.post("/chat/send", json={"message": "hola", "provider": "cerebras", "model": "llama3.1-8b"},
+    r = client.post("/chat/send", json={"message": "hola", "provider": "groq", "model": "llama3.1-8b"},
                     headers={**H, "X-Provider-Key": "byok-key"})
-    assert r.status_code == 200 and client.calls[-1]["key"] == "byok-key" and client.calls[-1]["provider"] == "cerebras"
-    bad = client.post("/chat/send", json={"message": "hola", "provider": "cerebras", "model": "no-existe"},
+    assert r.status_code == 200 and client.calls[-1]["key"] == "byok-key" and client.calls[-1]["provider"] == "groq"
+    bad = client.post("/chat/send", json={"message": "hola", "provider": "groq", "model": "no-existe"},
                       headers={**H, "X-Provider-Key": "byok-key"})
     assert bad.status_code == 400 and bad.json()["detail"] == "MODEL_NOT_IN_PROVIDER_CATALOG"
     missing = client.post("/chat/send", json={"message": "hola", "provider": "nvidia", "model": "x"}, headers=H)
@@ -167,13 +167,13 @@ def test_usage_endpoint_reports_provider_cache_and_response_cache(client, monkey
 def test_dag_run_endpoint_executes_the_plan_and_reports_evidence(client):
     plan = {"schema": "riu.dag/v1", "id": "api-dag", "input_block": "INPUT LITERAL", "nodes": [
         {"id": "A", "model": {"provider": "hf", "model": KIMI}, "instructions": "di hola", "expect": {"contains": ["eco:"]}},
-        {"id": "B", "model": {"provider": "cerebras", "model": "llama3.1-8b"}, "instructions": "resume", "needs": ["A"], "expect": {"contains": ["eco:"]}},
+        {"id": "B", "model": {"provider": "groq", "model": "llama3.1-8b"}, "instructions": "resume", "needs": ["A"], "expect": {"contains": ["eco:"]}},
     ]}
-    r = client.post("/chat/dag/run", json={"dag": plan}, headers={**H, "X-Provider-Keys": json.dumps({"cerebras": "byok-c"})})
+    r = client.post("/chat/dag/run", json={"dag": plan}, headers={**H, "X-Provider-Keys": json.dumps({"groq": "byok-c"})})
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["status"] == "PASS" and body["ledger_valid"] is True and set(body["nodes"]) == {"A", "B"}
-    assert any(c["provider"] == "cerebras" and c["key"] == "byok-c" for c in client.calls)
+    assert any(c["provider"] == "groq" and c["key"] == "byok-c" for c in client.calls)
     assert "INPUT LITERAL" in client.calls[0]["messages"][1]["content"]
     bad = client.post("/chat/dag/run", json={"dag": {"schema": "x"}}, headers=H)
     assert bad.status_code == 400 and bad.json()["detail"].startswith("DAG_INVALID:")

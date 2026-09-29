@@ -10,7 +10,6 @@ Space, NUNCA en este archivo):
                         Kimi K3/K2.6, GLM, Qwen, etc. via router.huggingface.co)
   GROQ_API_KEY_1     -> Groq (Llama, Qwen, GPT-OSS, Kimi K2 instruct)
   NVIDIA_API_KEY_1   -> NVIDIA NIM (MiniMax M2, Llama, etc.)
-  CEREBRAS_API_KEY_1 -> Cerebras (Llama, Qwen)
 """
 import os
 import time
@@ -46,14 +45,6 @@ PROVIDERS = {
         "env_key": "NVIDIA_API_KEY_1",
         "models": [
             "minimaxai/minimax-m2.7",
-        ],
-    },
-    "Cerebras": {
-        "base_url": "https://api.cerebras.ai/v1",
-        "env_key": "CEREBRAS_API_KEY_1",
-        "models": [
-            "llama-3.3-70b",
-            "qwen-3-32b",
         ],
     },
 }

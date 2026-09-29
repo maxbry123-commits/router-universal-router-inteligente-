@@ -20,7 +20,7 @@ from kernel import dispatcher
 MAX_KEYS = {"nvidia": 4, "groq": 7}
 PRIORIDAD = ["kimi-k3", "glm-5", "deepseek-v4", "kimi-k2", "qwen3", "deepseek", "gpt-oss-120b", "gpt-oss", "llama-4", "nemotron", "llama-3.3"]
 NO_CHAT = ("whisper", "orpheus", "guard", "tts", "embed")
-EXCLUIDOS = {"cerebras"}
+EXCLUIDOS: set = set()
 _CACHE: dict[tuple[str, str], tuple[float, list[str]]] = {}
 _TTL = 900
 

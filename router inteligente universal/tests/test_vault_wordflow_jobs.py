@@ -124,11 +124,11 @@ def test_vault_api_requires_key_unlocks_puts_and_locks(client):
     ok = client.post("/vault/unlock", json={"passphrase": PASS}, headers=H)
     assert ok.status_code == 200 and ok.json()["credentials"] == 4
     assert not any(v in ok.text for v in SECRETS.values())
-    put = client.post("/vault/credentials", json={"ref": "cerebras/uno", "secret": "csk-TEST", "scope": "inference"}, headers=H)
+    put = client.post("/vault/credentials", json={"ref": "groq/uno", "secret": "csk-TEST", "scope": "inference"}, headers=H)
     assert put.status_code == 200 and "csk-TEST" not in put.text
-    assert client.get("/vault/status", headers=H).json()["credentials"][-1]["credential_ref"] in {"nvidia/uno", "nvidia/dos", "huggingface/primary", "github/planeta123", "cerebras/uno"}
+    assert client.get("/vault/status", headers=H).json()["credentials"][-1]["credential_ref"] in {"nvidia/uno", "nvidia/dos", "huggingface/primary", "github/planeta123", "groq/uno"}
     assert client.post("/vault/lock", headers=H).json() == {"unlocked": False}
-    assert client.post("/vault/credentials", json={"ref": "cerebras/dos", "secret": "x"}, headers=H).status_code == 423
+    assert client.post("/vault/credentials", json={"ref": "groq/dos", "secret": "x"}, headers=H).status_code == 423
 
 
 def test_wordflow_fleet_is_mirrored_as_14_agents(tmp_path):
@@ -197,11 +197,11 @@ def test_parallel_jobs_commit_only_verified_results_to_the_chosen_account(tmp_pa
 def test_jobs_endpoint_runs_through_the_router_core(client, monkeypatch):
     rt.get_store()
     wordflow_agents.seed(rt.get_store())
-    monkeypatch.setenv("CEREBRAS_API_KEY_1", "c-key")
+    monkeypatch.setenv("GROQ_API_KEY_1", "c-key")
     monkeypatch.setattr(core, "call_via_router", lambda provider, key, model, messages, max_tokens, temperature=None: {
         "message": {"role": "assistant", "content": "hecho zafiro"}, "finish_reason": "stop", "usage": {"prompt_tokens": 3, "completion_tokens": 2}})
-    body = {"jobs": [{"id": "a1", "agent_id": "wf-opencode", "provider": "cerebras", "model": "llama", "instructions": "zafiro", "expect": {"contains": ["zafiro"]}},
-                     {"id": "a2", "agent_id": "wf-aider", "provider": "cerebras", "model": "llama", "instructions": "zafiro", "expect": {"contains": ["nunca"]}}]}
+    body = {"jobs": [{"id": "a1", "agent_id": "wf-opencode", "provider": "groq", "model": "llama", "instructions": "zafiro", "expect": {"contains": ["zafiro"]}},
+                     {"id": "a2", "agent_id": "wf-aider", "provider": "groq", "model": "llama", "instructions": "zafiro", "expect": {"contains": ["nunca"]}}]}
     assert client.post("/chat/jobs/run", json=body).status_code == 401
     r = client.post("/chat/jobs/run", json=body, headers=H)
     assert r.status_code == 200, r.text

@@ -13,7 +13,7 @@ agent:
   id: agent-11-download-extraction
   framework: smolagents
   group: chat-components
-  route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
+  route: [deepseek_flash, minimax_m3, nvidia, groq]
   fallback: []
   max_tokens: 2200
 

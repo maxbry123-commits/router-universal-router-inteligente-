@@ -10,7 +10,7 @@ agent:
   id: agent-13-repo-inventory
   framework: pocketflow
   group: inventory
-  route: [nvidia, groq, cerebras, deepseek_flash]
+  route: [nvidia, groq, deepseek_flash]
   fallback: []
   max_tokens: 2000
 

@@ -13,7 +13,6 @@ agent:
   - minimax_m3
   - groq
   - nvidia
-  - cerebras
   fallback:
   - minimax_m3
   max_tokens: 1800

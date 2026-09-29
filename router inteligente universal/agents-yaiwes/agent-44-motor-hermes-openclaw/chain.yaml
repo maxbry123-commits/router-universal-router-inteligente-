@@ -6,7 +6,7 @@ agent:
   id: agent-44-motor-hermes-openclaw
   framework: pocketflow
   group: chat
-  route: [nvidia, cerebras, groq]
+  route: [nvidia, groq]
   fallback: [deepseek_flash]
   max_tokens: 300
 context:

@@ -69,12 +69,12 @@ def test_store_recovers_chat_document_and_graph_after_reopen(tmp_path):
 
 def test_providers_catalog_cache_chat_and_local(monkeypatch):
     prov._models_cache.clear()
-    assert prov.list_models("cerebras", "k1", fetch=lambda url, k: {"data": [{"id": "b"}, {"id": "a"}, {"x": 1}]}) == ["a", "b"]
+    assert prov.list_models("groq", "k1", fetch=lambda url, k: {"data": [{"id": "b"}, {"id": "a"}, {"x": 1}]}) == ["a", "b"]
 
     def boom(url, k):
         raise AssertionError("cache miss")
 
-    assert prov.list_models("cerebras", "k1", fetch=boom) == ["a", "b"]
+    assert prov.list_models("groq", "k1", fetch=boom) == ["a", "b"]
     out = prov.chat("nvidia", "k", "m", [{"role": "user", "content": "x"}], 5,
                     post=lambda u, k, b: {"choices": [{"message": {"content": None}, "finish_reason": "length"}], "usage": {"total_tokens": 3}})
     assert out["message"]["content"] == "" and out["finish_reason"] == "length"

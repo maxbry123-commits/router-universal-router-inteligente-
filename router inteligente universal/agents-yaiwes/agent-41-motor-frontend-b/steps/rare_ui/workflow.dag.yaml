@@ -10,7 +10,6 @@ agent:
   group: chat
   route:
   - nvidia
-  - cerebras
   - groq
   fallback:
   - deepseek_flash

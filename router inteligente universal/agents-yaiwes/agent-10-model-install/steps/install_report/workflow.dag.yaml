@@ -8,7 +8,7 @@ agent:
   id: agent-10-model-install
   framework: pocketflow
   group: hf-install
-  route: [nvidia, groq, cerebras, minimax_m3]
+  route: [nvidia, groq, minimax_m3]
   fallback: []
   max_tokens: 1200
 context:

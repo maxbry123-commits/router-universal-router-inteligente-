@@ -11,7 +11,6 @@ agent:
   route:
   - nvidia
   - groq
-  - cerebras
   fallback:
   - minimax_m3
   max_tokens: 1800

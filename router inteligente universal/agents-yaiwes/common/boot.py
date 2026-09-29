@@ -1,7 +1,7 @@
 """Shared boot for the Yaiwes agents: paths, YAML loading (fail-closed), bank opening, context, Crazy Wall state file.
 
 Tokens/keys: only through the encrypted bank (agent-microkernel/runtime-bank*): the passphrase comes from the environment.
-Every agent gets ALL the keys (NVIDIA, Groq, Cerebras, Hugging Face, GitHub) through the provider key pools / GitHub accounts.
+Every agent gets ALL the keys (NVIDIA, Groq, Hugging Face, GitHub) through the provider key pools / GitHub accounts.
 
 HEARTBEAT (2026-09-23): every write_state() also pings the central persistent Router Job's /health (its URL comes from
 `ROUTER_JOB_PAUSE.flag`, line "LIVE_URL=..."), and records "router_connected": true/false in the agent's own crazy_wall.state.json.

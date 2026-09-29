@@ -33,7 +33,7 @@ huggingface_accounts:
     credential_ref: "huggingface/primary"
     note: "Token de CI HF_TOKEN_1 (full access sobre esta cuenta) permanece en GitHub Secrets solo para el despliegue (D4)."
 model_provider_secrets_found_in_github:
-  - {repo: "maxbry123-commits/router-universal-router-inteligente-", names: ["CEREBRAS_API_KEY_1..6", "HF_TOKEN_1", "RIU_GITHUB_PAT_FULL_ACCESO"]}
+  - {repo: "maxbry123-commits/router-universal-router-inteligente-", names: ["HF_TOKEN_1", "RIU_GITHUB_PAT_FULL_ACCESO"]}
   - {repo: "maxbry123-commits/agentes", names: ["GROQ_API_KEY_1..7", "YAIWES_PUSH_TOKEN", "EXTERNAL_GH_B_TOKEN", "MAXBRY_123_TOKENS", "PLANETA_123_USA_CUENTA_C"]}
   - {repo: "frontend, comand-Center, Yaiwes, Agentes-motores-Wordflow-YAIWES", names: []}
 not_found_anywhere_checked: ["NVIDIA_API_KEY_*", "DEEPSEEK_API_KEY", "MINIMAX_API_KEY", "KIMI/MOONSHOT_API_KEY"]

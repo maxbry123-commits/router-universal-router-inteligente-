@@ -58,7 +58,7 @@ groups:
     cascade:
       status: "PASO_3_NO_IMPLEMENTADO"
       order:
-        - "4 API de NVIDIA y Cerebras"
+        - "4 API de NVIDIA y Groq"
         - "API locales del grupo 2"
         - "DeepSeek V4 Flash (API)"
     compute_policy:

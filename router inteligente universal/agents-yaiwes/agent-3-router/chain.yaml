@@ -11,7 +11,7 @@ agent:
   id: agent-3-router
   framework: pocketflow
   group: hf-chat
-  route: [nvidia, groq, cerebras]
+  route: [nvidia, groq]
   fallback: [minimax_m3]
   max_tokens: 1200
 

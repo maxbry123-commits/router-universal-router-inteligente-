@@ -1,5 +1,5 @@
 """Model dispatcher for the micro-agents.
-The route is an ordered list. Entries: `nvidia` / `groq` / `cerebras` (their own APIs) and `deepseek_flash` / `minimax_m3` (DeepSeek V4 Flash and
+The route is an ordered list. Entries: `nvidia` / `groq` (their own APIs) and `deepseek_flash` / `minimax_m3` (DeepSeek V4 Flash and
 MiniMax M3 through the Hugging Face router, paid by the HF account). Order is set by the Director (agents-yaiwes/ROUTE.json). `fallback` entries
 (same names) are tried only after the whole route. Every call goes through the Router core (Enchufe Gate -> RedUniversal -> adaptive limiter +
 per-key circuit breaker + key pool). Keys come from the unlocked bank (never from files).
@@ -14,7 +14,6 @@ from integration.chat_mvp import providers as prov
 PREFS = {
     "nvidia": ["nvidia/nemotron-3-super-120b-a12b"],
     "groq": ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "qwen/qwen3-32b", "openai/gpt-oss-20b"],
-    "cerebras": ["gpt-oss-120b", "qwen-3.8-27b"],
 }
 FALLBACK = {"deepseek_flash": "deepseek-ai/DeepSeek-V4-Flash", "minimax_m3": "MiniMaxAI/MiniMax-M3"}
 

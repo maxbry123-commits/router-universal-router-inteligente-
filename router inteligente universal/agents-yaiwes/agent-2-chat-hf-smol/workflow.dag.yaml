@@ -10,7 +10,7 @@ agent:
   id: agent-2-chat-hf-smol
   framework: smolagents
   group: chat-hf
-  route: [groq, cerebras, nvidia]
+  route: [groq, nvidia]
   fallback: [minimax_m3]
   max_tokens: 1800
 

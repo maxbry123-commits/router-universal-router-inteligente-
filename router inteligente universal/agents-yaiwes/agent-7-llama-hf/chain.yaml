@@ -11,7 +11,7 @@ agent:
   id: agent-7-llama-hf
   framework: smolagents
   group: hf-llama
-  route: [minimax_m3, deepseek_flash, groq, nvidia, cerebras]
+  route: [minimax_m3, deepseek_flash, groq, nvidia]
   fallback: []
   max_tokens: 800
 

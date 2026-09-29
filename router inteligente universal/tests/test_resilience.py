@@ -15,7 +15,7 @@ from integration.chat_mvp import providers as P  # noqa: E402
 from integration.chat_mvp import resilience as R  # noqa: E402
 
 ENV = ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4", "NVIDIA_API_KEY_5", "HF_TOKEN", "HF_TOKEN_1",
-       "CEREBRAS_API_KEY", "CEREBRAS_API_KEY_1", "RIU_LOCAL_BASE_URL", "RIU_G2_CEREBRAS_MODEL", "RIU_G2_LOCAL_MODEL")
+       "GROQ_API_KEY", "GROQ_API_KEY_1", "RIU_LOCAL_BASE_URL", "RIU_G2_GROQ_MODEL", "RIU_G2_LOCAL_MODEL")
 MON_OFF = datetime(2026, 9, 21, 12, 0, tzinfo=timezone.utc)
 MON_PEAK = datetime(2026, 9, 21, 7, 0, tzinfo=timezone.utc)
 
@@ -100,19 +100,19 @@ def test_chains_follow_the_directors_rules(monkeypatch):
     ch, skipped = R.resolve_chain("minor", MON_PEAK)  # DeepSeek peak hour: only MiniMax
     assert [c["model"] for c in ch] == ["MiniMaxAI/MiniMax-M3"] and "PEAK_ONLY_MINIMAX" in skipped
     ch, skipped = R.resolve_chain("g2", MON_OFF)
-    assert [c["provider"] for c in ch] == ["nvidia", "hf"] and "cerebras:NO_MODEL_CONFIGURED" in skipped and "local:NO_MODEL_CONFIGURED" in skipped
-    monkeypatch.setenv("CEREBRAS_API_KEY_1", "c")
-    env = {"RIU_G2_CEREBRAS_MODEL": "llama3.1-8b"}
-    assert [c["provider"] for c in R.resolve_chain("g2", MON_OFF, env)[0]] == ["nvidia", "cerebras", "hf"]
+    assert [c["provider"] for c in ch] == ["nvidia", "hf"] and "groq:NO_MODEL_CONFIGURED" in skipped and "local:NO_MODEL_CONFIGURED" in skipped
+    monkeypatch.setenv("GROQ_API_KEY_1", "c")
+    env = {"RIU_G2_GROQ_MODEL": "llama3.1-8b"}
+    assert [c["provider"] for c in R.resolve_chain("g2", MON_OFF, env)[0]] == ["nvidia", "groq", "hf"]
     ch, skipped = R.resolve_chain("g2", MON_PEAK, env)
-    assert [c["provider"] for c in ch] == ["nvidia", "cerebras"] and any("PEAK_HOUR" in s for s in skipped)
+    assert [c["provider"] for c in ch] == ["nvidia", "groq"] and any("PEAK_HOUR" in s for s in skipped)
 
 
 def test_policy_falls_back_only_where_authorized(monkeypatch):
     monkeypatch.setenv("NVIDIA_API_KEY_1", "n")
     monkeypatch.setenv("HF_TOKEN_1", "h")
-    monkeypatch.setenv("CEREBRAS_API_KEY_1", "c")
-    env = {"RIU_G2_CEREBRAS_MODEL": "llama3.1-8b"}
+    monkeypatch.setenv("GROQ_API_KEY_1", "c")
+    env = {"RIU_G2_GROQ_MODEL": "llama3.1-8b"}
     seen = []
 
     def call(provider, key, model, messages, max_tokens, temperature):
@@ -125,7 +125,7 @@ def test_policy_falls_back_only_where_authorized(monkeypatch):
     assert out["route"]["provider"] == "hf" and seen == ["hf"]  # MiniMax first for code
     seen.clear()
     out = R.run_policy("g2", [], 5, now=MON_OFF, call=call, env=env)
-    assert out["message"]["content"] == "por cerebras" and seen == ["nvidia", "cerebras"] and out["trace"]
+    assert out["message"]["content"] == "por groq" and seen == ["nvidia", "groq"] and out["trace"]
     monkeypatch.setitem(R.DEFAULT_POLICY, "strict", {"authorized_fallback": False, "chain": [R.NEMOTRON, R.MINIMAX]})
     with pytest.raises(R.RouteFailed) as exc:
         R.run_policy("strict", [], 5, now=MON_OFF, call=call)

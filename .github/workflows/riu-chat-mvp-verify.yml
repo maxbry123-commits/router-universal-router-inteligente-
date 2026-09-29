@@ -131,7 +131,6 @@ jobs:
         if: always()
         env:
           HF_TOKEN_1: ${{ secrets.HF_TOKEN_1 }}
-          CEREBRAS_API_KEY_1: ${{ secrets.CEREBRAS_API_KEY_1 }}
           NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
           GROQ_API_KEY_1: ${{ secrets.GROQ_API_KEY_1 }}
           GITHUB_TOKEN_1: ${{ secrets.GITHUB_TOKEN }}
@@ -173,7 +172,7 @@ jobs:
           ok = "Reply with the single word OK"
           for mid in ("moonshotai/Kimi-K3", "deepseek-ai/DeepSeek-V4-Flash", "deepseek-ai/DeepSeek-V4-Pro", "MiniMaxAI/MiniMax-M3"):
               out.append(send("hf:" + mid.split("/")[1], provider="hf", model=mid, message=ok)[0])
-          for pid in ("cerebras", "nvidia", "groq"):
+          for pid in ("nvidia", "groq"):
               r = c.get("/chat/providers/%s/models" % pid, headers=H)
               if r.status_code != 200:
                   out.append("%s models %d %s" % (pid, r.status_code, str(r.json().get("detail", ""))[:60]))

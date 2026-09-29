@@ -7,7 +7,7 @@ Problems seen in real tests (2026-09-20) and the answer to each:
   * DeepSeek peak hours (01-04 and 06-10 UTC, Mon-Fri)                -> in peak only MiniMax for code/minor tasks.
   * Provider down or saturated                                        -> fallback chain per group, ONLY where the Director
     authorized it (g2, code, minor). The default group does not fall back: it reports NEEDS_DIRECTOR_AUTH so the brain can ask.
-Chains follow the Director's rule for group 2: NVIDIA -> Cerebras -> local API -> DeepSeek V4 Flash.
+Chains follow the Director's rule for group 2: NVIDIA -> Groq -> local API -> DeepSeek V4 Flash.
 """
 from __future__ import annotations
 
@@ -163,7 +163,7 @@ DEFAULT_POLICY: dict[str, dict[str, Any]] = {
     "code": {"authorized_fallback": True, "chain": [MINIMAX, NEMOTRON]},
     "minor": {"authorized_fallback": True, "peak_only_minimax": True, "chain": [DEEPSEEK_FLASH, NEMOTRON, MINIMAX]},
     "g2": {"authorized_fallback": True, "chain": [NEMOTRON,
-                                                   {"provider": "cerebras", "model": "env:RIU_G2_CEREBRAS_MODEL"},
+                                                   {"provider": "groq", "model": "env:RIU_G2_GROQ_MODEL"},
                                                    {"provider": "local", "model": "env:RIU_G2_LOCAL_MODEL"},
                                                    DEEPSEEK_FLASH]},
 }

@@ -13,7 +13,6 @@ agent:
   - deepseek_flash
   - groq
   - nvidia
-  - cerebras
   fallback: []
   max_tokens: 2500
 context:

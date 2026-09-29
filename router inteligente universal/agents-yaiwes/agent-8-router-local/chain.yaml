@@ -10,7 +10,7 @@ agent:
   id: agent-8-router-local
   framework: pocketflow
   group: router-local
-  route: [minimax_m3, deepseek_flash, groq, nvidia, cerebras]
+  route: [minimax_m3, deepseek_flash, groq, nvidia]
   fallback: []
   max_tokens: 2500
 

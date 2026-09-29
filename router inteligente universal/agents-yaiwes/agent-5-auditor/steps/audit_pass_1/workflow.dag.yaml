@@ -15,7 +15,6 @@ agent:
   - minimax_m3
   - groq
   - nvidia
-  - cerebras
   fallback:
   - deepseek_flash
   max_tokens: 3000

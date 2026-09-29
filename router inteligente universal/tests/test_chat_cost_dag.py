@@ -133,7 +133,7 @@ def test_dag_validation_and_expect_checks():
 
 def test_dag_cli_runs_through_core_with_env_keys_and_never_leaks_them(tmp_path, monkeypatch):
     plan = {"schema": "riu.dag/v1", "id": "cli-t", "input_block": "literal", "nodes": [
-        {"id": "A", "model": {"provider": "cerebras", "model": "llama"}, "agent": "seals-team-yaiwes-001", "instructions": "di ok", "expect": {"contains": ["ok"]}},
+        {"id": "A", "model": {"provider": "groq", "model": "llama"}, "agent": "seals-team-yaiwes-001", "instructions": "di ok", "expect": {"contains": ["ok"]}},
         {"id": "B", "model": {"provider": "nvidia", "model": "x"}, "instructions": "y", "needs": ["A"], "expect": {"contains": ["z"]}}]}
     (tmp_path / "p.json").write_text(json.dumps(plan))
     seen = []
@@ -143,7 +143,7 @@ def test_dag_cli_runs_through_core_with_env_keys_and_never_leaks_them(tmp_path, 
         return {"message": {"role": "assistant", "content": "ok listo"}, "finish_reason": "stop", "usage": {"prompt_tokens": 5, "completion_tokens": 2}}
 
     monkeypatch.setattr(core, "call_via_router", fake)
-    monkeypatch.setenv("CEREBRAS_API_KEY_1", "ckey-not-a-secret")
+    monkeypatch.setenv("GROQ_API_KEY_1", "ckey-not-a-secret")
     for name in ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("RIU_DATA_DIR", str(tmp_path / "data"))

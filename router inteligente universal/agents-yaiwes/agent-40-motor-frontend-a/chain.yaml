@@ -5,7 +5,7 @@ agent:
   id: agent-40-motor-frontend-a
   framework: pocketflow
   group: chat
-  route: [nvidia, cerebras, groq]
+  route: [nvidia, groq]
   fallback: [deepseek_flash]
   max_tokens: 300
 context:

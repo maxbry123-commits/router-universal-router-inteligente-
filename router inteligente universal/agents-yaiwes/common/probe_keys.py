@@ -1,4 +1,4 @@
-"""Probe every provider key of the encrypted bank (NVIDIA, Groq, Cerebras): list models + one tiny chat each.
+"""Probe every provider key of the encrypted bank (NVIDIA, Groq): list models + one tiny chat each.
 Prints only the key's position and the HTTP status, never the key. Run: RIU_BANK_PASSPHRASE=... python probe_keys.py"""
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def main() -> int:
     from integration.chat_mvp import providers as prov
     from kernel import dispatcher
 
-    jobs = [(p, i, k) for p in ("nvidia", "groq", "cerebras") for i, k in enumerate(prov.env_keys(p), 1)]
+    jobs = [(p, i, k) for p in ("nvidia", "groq") for i, k in enumerate(prov.env_keys(p), 1)]
 
     def one(job: tuple[str, int, str]) -> tuple[str, int, str, str, str]:
         p, i, k = job
@@ -47,7 +47,7 @@ def main() -> int:
 
     with ThreadPoolExecutor(max_workers=6) as ex:
         res = list(ex.map(one, jobs))
-    for p in ("nvidia", "groq", "cerebras"):
+    for p in ("nvidia", "groq"):
         rows = [r for r in res if r[0] == p]
         print(f"::notice title=RIU_PROBE_{p.upper()}::" + " | ".join(f"k{i} models={s} chat={c} ({m})" for _, i, s, c, m in rows))
     return 0

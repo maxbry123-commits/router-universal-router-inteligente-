@@ -11,7 +11,7 @@ agent:
   id: agent-4-router-smol
   framework: smolagents
   group: chat
-  route: [deepseek_flash, minimax_m3, nvidia, groq, cerebras]
+  route: [deepseek_flash, minimax_m3, nvidia, groq]
   fallback: []
   max_tokens: 3200
 

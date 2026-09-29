@@ -67,7 +67,6 @@ jobs:
           BUCKET_ID: ${{ inputs.bucket_id }}
           HF_WRITE_TOKEN: ${{ secrets.HF_WRITE_TOKEN || secrets.HF_TOKEN_MAXBRY123 }}
           S_HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
-          S_CEREBRAS: ${{ secrets.CEREBRAS_API_KEY_1 }}
           S_NVIDIA: ${{ secrets.NVIDIA_API_KEY_1 }}
           S_GROQ: ${{ secrets.GROQ_API_KEY_1 }}
           S_DEEPSEEK: ${{ secrets.DEEPSEEK_API_KEY }}
@@ -100,7 +99,7 @@ jobs:
           except Exception as e:
               warn("RIU_DEPLOY_UPLOAD", "FAIL %s %s" % (type(e).__name__, str(e)[:120].replace(tok, "***")))
               raise SystemExit(0)
-          secrets_map = {"HF_TOKEN": "S_HF_TOKEN", "CEREBRAS_API_KEY": "S_CEREBRAS", "NVIDIA_API_KEY": "S_NVIDIA", "GROQ_API_KEY": "S_GROQ",
+          secrets_map = {"HF_TOKEN": "S_HF_TOKEN", "NVIDIA_API_KEY": "S_NVIDIA", "GROQ_API_KEY": "S_GROQ",
                          "DEEPSEEK_API_KEY": "S_DEEPSEEK", "MOONSHOT_API_KEY": "S_MOONSHOT", "MINIMAX_API_KEY": "S_MINIMAX",
                          "GH_PAT_FINE_FULL": "S_GH_FINE", "GH_ACCOUNT_3": "S_GH_PLANETA", "HF_WRITE_TOKEN": "HF_WRITE_TOKEN"}
           done, skipped = [], []

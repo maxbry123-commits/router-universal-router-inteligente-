@@ -7,7 +7,7 @@ from typing import Any
 import yaml
 
 SCHEMA = "yaiwes.micro-agent/v1"
-ROUTES = {"nvidia", "groq", "cerebras"}
+ROUTES = {"nvidia", "groq"}
 FALLBACKS = {"deepseek_flash", "minimax_m3"}
 ACTIONS = {"code", "plan", "docs", "summarize"}
 

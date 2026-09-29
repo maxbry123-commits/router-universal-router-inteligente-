@@ -22,7 +22,7 @@ from typing import Any
 from . import github_tools as gh
 from . import vault_hook
 
-PROVIDER_MAP = {"nvidia": "nvidia", "hf": "huggingface", "cerebras": "cerebras", "groq": "groq",
+PROVIDER_MAP = {"nvidia": "nvidia", "hf": "huggingface", "groq": "groq",
                 "deepseek": "deepseek", "moonshot": "moonshot", "minimax": "minimax"}
 DEFAULT_TTL = 3600.0
 MAX_FAILS = 5

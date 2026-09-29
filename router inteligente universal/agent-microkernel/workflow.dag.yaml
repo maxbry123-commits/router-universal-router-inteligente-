@@ -13,7 +13,7 @@ agents:
 
   code-agent:
     action: code
-    route: [nvidia, groq, cerebras]
+    route: [nvidia, groq]
     fallback: [minimax_m3]
     max_tokens: 1500
     task: |
@@ -42,7 +42,7 @@ agents:
 
   recurring-agent:
     action: plan
-    route: [nvidia, groq, cerebras]
+    route: [nvidia, groq]
     fallback: [deepseek_flash]
     max_tokens: 1400
     context:
@@ -61,7 +61,7 @@ agents:
 
   docs-agent:
     action: docs
-    route: [nvidia, groq, cerebras]
+    route: [nvidia, groq]
     fallback: [deepseek_flash]
     max_tokens: 1400
     task: |
@@ -80,7 +80,7 @@ agents:
 
   audit-agent:
     action: summarize
-    route: [nvidia, groq, cerebras]
+    route: [nvidia, groq]
     fallback: [deepseek_flash]
     depends_on: [code-agent, recurring-agent, docs-agent]
     max_tokens: 900
