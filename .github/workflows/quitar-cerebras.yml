@@ -30,8 +30,8 @@ jobs:
           git clone -q --filter=blob:none --no-checkout "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/router-universal-router-inteligente-.git" r
           cd r && git read-tree HEAD
           R="router inteligente universal"
-          { git ls-files -z -- ":(glob)$R/*" ; \
-            git ls-files -z -- "$R/integration" "$R/tests" "$R/agent-microkernel" "$R/gateway" "$R/Banco de claves" "$R/agents-yaiwes/common" ; \
+          { git ls-files -z -- "$R" ":(exclude)$R/Componente open soure router inteligente universal" ":(exclude)$R/Componentes del Router" ":(exclude)$R/vercel-ui" ":(exclude)$R/vercel-jev-bridge" ":(exclude)$R/agents-yaiwes" ; \
+            git ls-files -z -- "$R/agents-yaiwes/common" ; \
             git ls-files -z -- ':(glob)**/chain.yaml' ':(glob)**/workflow.dag.yaml' ; \
             git ls-files -z -- .github/workflows ; } | sort -zu > /tmp/materializar.z
           xargs -0 git checkout-index -f -- < /tmp/materializar.z
@@ -128,7 +128,7 @@ jobs:
           echo "$nuevos" > /tmp/nuevos.txt
           echo "::notice title=TESTS::antes=$(tail -1 /tmp/antes.txt) | despues=$(tail -1 /tmp/despues.txt) | nuevos_fallos=$(echo -n "$nuevos" | grep -c . || true)"
           [ -n "$nuevos" ] && echo "::warning title=NUEVOS_FALLOS::$(echo "$nuevos" | head -15 | tr '\n' ' ')" || true
-          cd .. && { git grep -l -i cerebras -- ':!*.md' ':!*.json' ':!*.jsonl' ':!*.txt' ':!*/results/*' ':!*/steps/*' ; } | head -20 | tr '\n' ' ' | sed 's/^/::notice title=RESTOS_CODIGO::/' || true
+          echo "::notice title=ERR_DESPUES::$(grep -E '^E  ' /tmp/despues.txt | sort | uniq -c | sort -rn | head -4 | tr '\n' ' ' | cut -c1-600)"
       - name: Subir
         if: ${{ inputs.apply == 'true' }}
         run: |
