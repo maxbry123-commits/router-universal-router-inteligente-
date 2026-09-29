@@ -11,32 +11,31 @@ agent:
   route:
   - nvidia
   - groq
-  - deepseek_flash
   fallback:
-  - minimax_m3
+  - deepseek_flash
   max_tokens: 1200
 context:
   text: "GOLDEN publish_live.py ya crea Static Space + OAuth. Solo python_exec.\n\
     Job 32GB aplazado. PROHIBIDO paper CLOSED.\n\n\n=== ARCHIVO router inteligente\
     \ universal/agents-yaiwes/agent-3-router/ORDEN-ORCH-CHAT.md ===\n# ORDEN ORCH-CHAT\
-    \ → agent-3 (P1) — post #49 paper CLOSED\n\n**META:** PENDING_VERIFY · space_url\
-    \ con owner · smoke OAuth/live · Job 32GB APLAZADO\n\n## Gap #49\nWall marcó CLOSED\
-    \ sin smoke. URL reportada: `https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes`\
-    \ (owner OK). Probe sin auth: HEAD 401 / .hf.space 404.\n\n## Orden\n1. **NO**\
-    \ regeneres `publish_live.py`.\n2. **NO** marques CLOSED.\n3. Status = `PENDING_VERIFY`\
-    \ hasta que orch/Sentinela confirmen smoke OAuth/live OK.\n4. No Job esta ronda.\n\
-    \n## PASS\nSmoke OAuth/live OK → orch cierra CLOSED. Sin smoke = sigue PENDING_VERIFY.\n\
-    \n\nSALIDA VERIFICADA DEL PASO ANTERIOR (deploy_script):\n```python\ndef plan_files(space_id:\
-    \ str, api_base: str) -> dict:\n    \"\"\"\n    Returns a dict describing the\
-    \ static space to be created.\n    Raises ValueError if space_id is not in the\
-    \ form \"usuario/nombre\"\n    or if api_base does not start with \"https://\"\
-    .\n    \"\"\"\n    if space_id.count(\"/\") != 1:\n        raise ValueError(\"\
-    space_id must contain exactly one '/'\")\n    user, name = space_id.split(\"/\"\
-    )\n    if not user or not name:\n        raise ValueError(\"space_id must have\
-    \ non-empty user and name parts\")\n    if not api_base.startswith(\"https://\"\
-    ):\n        raise ValueError(\"api_base must start with 'https://'\")\n    return\
-    \ {\n        \"repo_id\": space_id,\n        \"repo_type\": \"space\",\n     \
-    \   \"space_sdk\": \"static\",\n        \"files\": [\"README.md\", \"index.html\"\
+    \ → agent-3 (P1) — MICRO 2026-09-29\n\n**META:** PENDING_VERIFY · GOLDEN `private=False`\
+    \ · smoke live · Job 32GB APLAZADO\n\n## Hechos\n- Wall paper CLOSED reabierto.\n\
+    - Probe sin auth: API/PAGE **401**, `.hf.space` **404** → Space muerto o inaccesible.\n\
+    - TRIGGER root WAITING_GROK (22-sep) **INVALIDADO**.\n\n## Orden\n1. **python_exec**\
+    \ `results/publish_live.py` GOLDEN (ya con `private=False` + visibility). **CERO**\
+    \ regen/rewrite.\n2. **NO** marques CLOSED. Status = `PENDING_VERIFY`.\n3. No\
+    \ Job esta ronda.\n\n## PASS\n`space_url` live ≠401/404 + smoke OAuth → orch/Sentinela\
+    \ cierran CLOSED.\n\n\nSALIDA VERIFICADA DEL PASO ANTERIOR (deploy_script):\n\
+    ```python\ndef plan_files(space_id: str, api_base: str) -> dict:\n    \"\"\"\n\
+    \    Returns a dict describing the static space to be created.\n    Raises ValueError\
+    \ if space_id is not in the form \"usuario/nombre\"\n    or if api_base does not\
+    \ start with \"https://\".\n    \"\"\"\n    if space_id.count(\"/\") != 1:\n \
+    \       raise ValueError(\"space_id must contain exactly one '/'\")\n    user,\
+    \ name = space_id.split(\"/\")\n    if not user or not name:\n        raise ValueError(\"\
+    space_id must have non-empty user and name parts\")\n    if not api_base.startswith(\"\
+    https://\"):\n        raise ValueError(\"api_base must start with 'https://'\"\
+    )\n    return {\n        \"repo_id\": space_id,\n        \"repo_type\": \"space\"\
+    ,\n        \"space_sdk\": \"static\",\n        \"files\": [\"README.md\", \"index.html\"\
     ],\n        \"api_base\": api_base,\n    }\n\n\ndef deploy(space_id: str, folder:\
     \ str, token: str) -> str:\n    \"\"\"\n    Creates a static Hugging Face Space\
     \ and uploads the contents of `folder`.\n    Returns the URL of the created space.\n\
