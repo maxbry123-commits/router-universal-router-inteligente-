@@ -1,1 +1,160 @@
-@file:///workspace/router-universal/router inteligente universal/agents-yaiwes/agent-8-router-local/chain.yaml
+schema: yaiwes.chain/v1
+
+# Agente 8 — GOLDEN: local_pool/mirror_route + serve_health live (LOOP 8).
+# Cero regeneracion LLM si existe GOLDEN/<module>.py (pocketflow short-circuit).
+input_block: |
+  NO regeneres codigo. Copia bytes de GOLDEN/<module>.py a results/.
+  Pasos paper: local_pool, mirror_route.
+  Meta live: serve_health -> RUNNING_HEALTHY + GET /health 200 (32 GB cpu-upgrade; probe job vivo 6ab3198e51992417dfcd4e26 o LFM2.5).
+
+agent:
+  id: agent-8-router-local
+  framework: pocketflow
+  group: router-local
+  route: [minimax_m3, deepseek_flash, groq, nvidia]
+  fallback: []
+  max_tokens: 800
+
+context:
+  text: |
+    HECHOS: cada nodo local es un Job de HF que corre llama-server y expone https://<job_id>--<puerto>.hf.jobs; el acceso EXIGE cabecera "Authorization: Bearer <token de HF>".
+    GOLDEN short-circuit: si existe GOLDEN/<module>.py, pocketflow_agent lo usa verbatim (cero LLM).
+    serve_health: solo flavor cpu-upgrade (32 GB). Probe live job o lanza LFM2.5.
+    Referencia live: job 6ab3198e51992417dfcd4e26 GET /health 200.
+    Los modelos locales equivalentes (espejos) de las APIs: qwen3.5-0.8b (rápido/router), lfm2.5-1.2b-instruct (razonamiento pequeño), gemma-4-e2b.
+
+steps:
+
+  - id: local_pool
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-8-router-local/GOLDEN/local_pool.py
+    task: |
+      Copia verbatim GOLDEN/local_pool.py a results/local_pool.py.
+      Un solo bloque python identico al GOLDEN. No inventes codigo.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: local_pool.py
+        test: |
+          from local_pool import LocalPool
+          calls = []
+          def make_post(behavior):
+              def post(url, headers, body, timeout):
+                  calls.append(url)
+                  assert headers["Authorization"] == "Bearer t"
+                  b = behavior[url.split("/v1")[0]]
+                  if isinstance(b, Exception):
+                      raise b
+                  return b
+              return post
+          ok = (200, {"choices": [{"message": {"content": "hola"}}], "usage": {"total_tokens": 3}})
+          nodes = [{"id": "A", "base_url": "http://a", "models": ["q"]}, {"id": "B", "base_url": "http://b", "models": ["q", "l"]}]
+          t = [0.0]
+          pool = LocalPool(nodes, make_post({"http://a": TimeoutError("lento"), "http://b": ok}), token="t", clock=lambda: t[0], cooldown=60)
+          r = pool.chat("q", [{"role": "user", "content": "x"}])
+          assert r == {"node": "B", "text": "hola", "usage": {"total_tokens": 3}} and calls == ["http://a/v1/chat/completions", "http://b/v1/chat/completions"]
+          calls.clear()
+          pool.chat("q", [])
+          assert calls == ["http://b/v1/chat/completions"]
+          assert pool.states() == {"A": "COOLDOWN", "B": "OK"}
+          t[0] = 61.0
+          calls.clear()
+          pool.chat("q", [])
+          assert calls[0] == "http://a/v1/chat/completions" and pool.states()["A"] == "COOLDOWN"
+          try:
+              pool.chat("zzz", [])
+              raise SystemExit("aceptó un modelo desconocido")
+          except RuntimeError as e:
+              assert "NO_LOCAL_NODE" in str(e)
+          calls.clear()
+          p2 = LocalPool(nodes, make_post({"http://a": (400, {}), "http://b": ok}), token="t")
+          try:
+              p2.chat("q", [])
+              raise SystemExit("no lanzó ValueError")
+          except ValueError as e:
+              assert "400" in str(e) and calls == ["http://a/v1/chat/completions"]
+          p3 = LocalPool(nodes, make_post({"http://a": (503, {}), "http://b": OSError("caído")}), token="t")
+          try:
+              p3.chat("q", [])
+              raise SystemExit("no lanzó RuntimeError")
+          except RuntimeError as e:
+              assert "NO_LOCAL_NODE" in str(e)
+      - kind: no_secrets
+
+  - id: mirror_route
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-8-router-local/GOLDEN/mirror_route.py
+    task: |
+      Copia verbatim GOLDEN/mirror_route.py a results/mirror_route.py.
+      Un solo bloque python identico al GOLDEN. No inventes codigo.
+    checks:
+      - kind: python_ast
+      - kind: python_exec
+        module: mirror_route.py
+        test: |
+          from mirror_route import with_mirror
+          class P:
+              def __init__(self, fail=False):
+                  self.fail, self.calls = fail, []
+              def chat(self, model, messages, max_tokens=256):
+                  self.calls.append(model)
+                  if self.fail:
+                      raise RuntimeError("NO_LOCAL_NODE")
+                  return {"node": "HF-03", "text": "local:" + model}
+          m = {"groq": "qwen3.5-0.8b"}
+          assert with_mirror(lambda: "api", P(), m, "groq", []) == {"via": "api", "text": "api"}
+          def boom():
+              raise RuntimeError("PROVIDER_ERROR:503")
+          p = P()
+          assert with_mirror(boom, p, m, "groq", []) == {"via": "local", "node": "HF-03", "text": "local:qwen3.5-0.8b"} and p.calls == ["qwen3.5-0.8b"]
+          try:
+              with_mirror(boom, P(), m, "nvidia", [])
+              raise SystemExit("no relanzó")
+          except RuntimeError as e:
+              assert "PROVIDER_ERROR" in str(e) and "NO_ROUTE" not in str(e)
+          try:
+              with_mirror(boom, P(fail=True), m, "groq", [])
+              raise SystemExit("no lanzó NO_ROUTE")
+          except RuntimeError as e:
+              assert "NO_ROUTE" in str(e) and "PROVIDER_ERROR" in str(e) and "NO_LOCAL_NODE" in str(e)
+      - kind: no_secrets
+
+  - id: serve_health
+    context_file:
+      - router inteligente universal/agents-yaiwes/agent-8-router-local/GOLDEN/serve_health.py
+      - router inteligente universal/agents-yaiwes/common/own_server_launch.py
+      - router inteligente universal/agents-yaiwes/common/hardware_sheriff.py
+    task: |
+      Copia verbatim GOLDEN/serve_health.py a results/serve_health.py.
+      Un solo bloque python identico al GOLDEN. No inventes codigo.
+      Meta: RUNNING_HEALTHY via GET /health 200 (probe live o LFM2.5 en cpu-upgrade 32 GB).
+    checks:
+      - kind: python_ast
+      - kind: contains
+        values: ["own_server_main", "assert_machine_32gb_ram", "cpu-upgrade", "LFM2.5", "health"]
+      - kind: python_exec
+        module: serve_health.py
+        timeout: 480
+        test: |
+          import os
+          assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
+          import serve_health as m
+          src = open(m.__file__).read()
+          assert "own_server_main" in src
+          assert "cpu-upgrade" in src
+          from serve_health import run_all, launch_and_verify
+          raised = False
+          try:
+              launch_and_verify(flavor="cpu-basic")
+          except ValueError:
+              raised = True
+          assert raised, "debia rechazar 16GB"
+          results = run_all()
+          assert len(results) == 1
+          assert results[0]["status"] == "RUNNING_HEALTHY", results[0].get("detail")
+          print(results[0])
+      - kind: no_secrets
+
+edges:
+  - local_pool -> mirror_route
+  - mirror_route -> serve_health
