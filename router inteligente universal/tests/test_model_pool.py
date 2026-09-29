@@ -594,21 +594,21 @@ def test_the_wait_for_a_free_slot_is_not_charged_to_the_option_time():
     limiter = R.AdaptiveLimiter((1,), 5, 5)
     r = R.Router(R.CircuitBreaker(), limiter)
     limiter.acquire()  # the only slot is taken ...
-    threading.Timer(0.3, limiter.release).start()  # ... and comes free after 0.3 s
+    threading.Timer(0.6, limiter.release).start()  # ... and comes free after 0.6 s
     left = []
 
     def chat(provider, key, model, messages, max_tokens, temperature=None):
         left.append(P.ATTEMPT_DEADLINE.get() - time.monotonic())
         return {"message": {"content": "ok"}}
 
-    original = time.monotonic() + 1.0
+    original = time.monotonic() + 1.5
     token = P.ATTEMPT_DEADLINE.set(original)
     try:
         r.execute("nvidia", ["k"], "m", [], 5, None, chat)
         assert P.ATTEMPT_DEADLINE.get() == original  # what the request set is put back afterwards
     finally:
         P.ATTEMPT_DEADLINE.reset(token)
-    assert left[0] > 0.5  # ~1.0 s left for the model; without the fix the 0.3 s in the queue would have eaten it (~0.7 s)
+    assert left[0] > 1.2  # ~1.5 s left for the model; without the fix the 0.6 s in the queue would have eaten it (~0.9 s)
 
 
 def test_any_exception_from_one_option_moves_the_chain_on(monkeypatch):
