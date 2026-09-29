@@ -31,7 +31,7 @@ from typing import Any, Callable, Iterable, Mapping
 
 from . import providers as prov
 
-NO_FAILOVER = {400, 404, 410, 422}
+NO_FAILOVER = {400, 404, 410, 413, 422}
 PEAK_WINDOWS_UTC = ((1, 4), (6, 10))  # DeepSeek peak, verified in "Banco de claves/router_policy/peak.py" (source: DeepSeek docs)
 
 
