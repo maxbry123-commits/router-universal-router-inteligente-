@@ -163,6 +163,7 @@ def test_route_endpoints(tmp_path, monkeypatch):
 
     monkeypatch.setattr(core, "call_via_router", fake)
     monkeypatch.setitem(R.DEFAULT_POLICY, "strict", {"authorized_fallback": False, "chain": [R.NEMOTRON, R.MINIMAX]})
+    monkeypatch.setitem(R.DEFAULT_POLICY, "onlykimi", {"authorized_fallback": True, "chain": [R.KIMI_K3]})
     listing = {"nvidia": ["z-ai/glm-5.3", "nvidia/nemotron-3-super-120b-a12b"]}  # NVIDIA does not list Kimi in this test
     monkeypatch.setattr(model_pool, "POOL", model_pool.ModelPool(fetch=lambda p, k: listing.get(p, [])))
     rt.set_store(Store(tmp_path))
@@ -178,10 +179,20 @@ def test_route_endpoints(tmp_path, monkeypatch):
         dflt = client.post("/chat/route", json={"group": "default", "message": "hola"}, headers=H).json()
         assert dflt["route"]["provider"] == "nvidia" and dflt["route"]["model"] == "z-ai/glm-5.3"  # Kimi not listed -> GLM 5.3
         assert "nvidia/moonshotai/kimi-k3:NOT_LISTED" in dflt["trace"]
+        listed = client.get("/chat/providers").json()["providers"]
+        assert listed[0]["id"] == "auto" and listed[0]["configured"] is True and "hf" in [p["id"] for p in listed[1:]]  # "auto" first, the real providers after it
+        assert client.get("/chat/providers/auto/models").status_code == 401  # like every other provider: needs the API key
+        auto_models = client.get("/chat/providers/auto/models", headers=H).json()
+        assert auto_models["provider"] == "auto" and [(m["model_id"], m["selectable"]) for m in auto_models["models"]] == [("auto", True)]
         models = client.get("/chat/router/models", headers=H).json()
         assert models["providers"]["nvidia"] == {"configured": True, "listed": 2} and models["providers"]["groq"]["configured"] is False
         assert [c["model"] for c in models["groups"]["default"]["try_order"]][:1] == ["z-ai/glm-5.3"]
         assert client.get("/chat/router/models").status_code == 401
+        # same rules as run_policy: a group where the pool filters EVERYTHING out is tried whole; a group without authorization ignores the pool
+        assert models["groups"]["onlykimi"] == {"try_order": [{"provider": "nvidia", "model": "moonshotai/kimi-k3"}], "pool_used": True,
+                                                "skipped": ["nvidia/moonshotai/kimi-k3:NOT_LISTED", "POOL_EMPTY_TRY_ALL"]}
+        assert models["groups"]["strict"]["pool_used"] is False and models["groups"]["strict"]["skipped"] == []
+        assert [c["provider"] for c in models["groups"]["strict"]["try_order"]] == ["nvidia", "hf"]
         assert client.post("/chat/route", json={"group": "default", "message": "x", "agent_id": "nope"}, headers=H).status_code == 400
         monkeypatch.setattr(core, "call_via_router", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("PROVIDER_ERROR:TimeoutError:x")))
         auth = client.post("/chat/route", json={"group": "strict", "message": "hola"}, headers=H)
