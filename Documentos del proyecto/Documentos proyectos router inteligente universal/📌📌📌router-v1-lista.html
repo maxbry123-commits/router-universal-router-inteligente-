@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Router · Conexiones</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+:root{--n:#0D0D0F;--c:#1F1E1B;--c2:#252320;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--w:#F2EBD9;--g:#B8B0A0;--gd:#7E776B;--az:#3B82F6;--ok:#7FD1A8;--r:18px;--rs:10px;--serif:'Fraunces',serif;--sans:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--n);color:var(--w);font:14px/1.5 var(--sans);max-width:520px;margin:0 auto;padding:24px 20px;min-height:100vh}
+.lbl{font:500 11px/1 var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:10px}
+h1{font:500 32px/1.1 var(--serif);letter-spacing:-0.02em;margin-bottom:4px}
+.cnt{font:11px var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px}
+.cnt b{color:var(--w);font-weight:600}
+
+.search{background:var(--c);border:1px solid var(--b);border-radius:var(--rs);padding:10px 12px;width:100%;color:var(--w);font:13px var(--sans);outline:none;margin-bottom:8px}
+.search:focus{border-color:var(--az)}
+
+.filt{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.f{padding:5px 10px;background:var(--c);border:1px solid var(--b);border-radius:16px;font:11px var(--sans);color:var(--g);cursor:pointer}
+.f.on{background:var(--c2);color:var(--w);border-color:var(--b2)}
+
+.row{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
+.row:hover{border-color:var(--b2)}
+.r-ico{width:38px;height:38px;background:var(--c2);border:1px solid var(--b);border-radius:8px;display:grid;place-items:center;font:600 12px var(--sans);color:var(--g);flex-shrink:0}
+.r-info{flex:1;min-width:0}
+.r-name{font:500 13px var(--sans);color:var(--w);margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-type{font:11px var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.05em}
+
+.sw{position:relative;width:36px;height:20px;background:#3a3a3a;border-radius:10px;cursor:pointer;flex-shrink:0;border:0;padding:0}
+.sw::after{content:"";position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;left:2px;transition:all .2s}
+.sw.on{background:var(--az)}
+.sw.on::after{left:18px}
+
+.dot{width:7px;height:7px;border-radius:50%;position:absolute;top:-2px;right:-2px}
+.dot.ok{background:var(--ok)} .dot.off{background:#5a5a5a}
+
+.add{border:1px solid var(--b);background:transparent;color:var(--g);width:100%;padding:13px;border-radius:var(--r);font:500 12px var(--sans);cursor:pointer;margin:8px 0 14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.add:hover{border-color:var(--b2);color:var(--w)}
+
+.chat{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:14px;margin-top:8px}
+.chat-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.chat-l{font:500 10px var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.1em}
+.chat-tools{display:flex;gap:6px}
+.t{background:var(--c2);border:1px solid var(--b);color:var(--g);padding:3px 8px;border-radius:6px;font:11px var(--sans);cursor:pointer}
+.t:hover{border-color:var(--b2);color:var(--w)}
+.chat-row{display:flex;gap:8px}
+.chat-input{flex:1;background:var(--n);border:1px solid var(--b);color:var(--w);border-radius:var(--rs);padding:9px 12px;font:13px var(--sans);outline:none}
+.chat-input:focus{border-color:var(--az)}
+.chat-send{background:var(--w);color:#0D0D0F;border:0;padding:0 16px;border-radius:var(--rs);font:600 12px var(--sans);cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="lbl">Panel 1 · Conexiones + Chat AI</div>
+<h1>Conexiones</h1>
+<div class="cnt"><b>5</b> activas · <b>2</b> apagadas · <b>1</b> error · 8 total</div>
+
+<!-- buscarConexion + filtrarPorTipo + filtrarPorEstado -->
+<input class="search" id="q" placeholder="🔍 buscarConexion() — buscar..." />
+<div class="filt">
+  <div class="f on" data-f="all">Todas</div>
+  <div class="f" data-f="api">api</div>
+  <div class="f" data-f="mcp">mcp</div>
+  <div class="f" data-f="webhook">webhook</div>
+  <div class="f" data-f="repo">repo</div>
+  <div class="f" data-f="activas">activas</div>
+  <div class="f" data-f="error">error</div>
+</div>
+
+<!-- listarConexiones + renderizarConexion + toggleConexion + editarConexion -->
+<div class="row" data-id="github" data-tipo="api" data-estado="on">
+  <div class="r-ico" style="position:relative">GH<span class="dot ok"></span></div>
+  <div class="r-info"><div class="r-name">GitHub</div><div class="r-type">api · maxbry-router</div></div>
+  <button class="sw on" data-act="toggle"></button>
+</div>
+<div class="row" data-id="hf" data-tipo="ai" data-estado="on">
+  <div class="r-ico" style="position:relative">HF<span class="dot ok"></span></div>
+  <div class="r-info"><div class="r-name">HuggingFace</div><div class="r-type">ai · 5 nim keys</div></div>
+  <button class="sw on" data-act="toggle"></button>
+</div>
+<div class="row" data-id="vps" data-tipo="infra" data-estado="on">
+  <div class="r-ico" style="position:relative">VPS<span class="dot ok"></span></div>
+  <div class="r-info"><div class="r-name">VPS Contabo</div><div class="r-type">infra · 95.111.232.89</div></div>
+  <button class="sw on" data-act="toggle"></button>
+</div>
+<div class="row" data-id="telegram" data-tipo="webhook" data-estado="off">
+  <div class="r-ico" style="position:relative">TG<span class="dot off"></span></div>
+  <div class="r-info"><div class="r-name">Telegram</div><div class="r-type">webhook · @maxbry_bot</div></div>
+  <button class="sw" data-act="toggle"></button>
+</div>
+<div class="row" data-id="openrouter" data-tipo="ai" data-estado="err">
+  <div class="r-ico" style="position:relative">OR<span class="dot off"></span></div>
+  <div class="r-info"><div class="r-name">OpenRouter</div><div class="r-type">ai · timeout 30s</div></div>
+  <button class="sw" data-act="toggle"></button>
+</div>
+
+<!-- crearNuevaConexion -->
+<button class="add" onclick="location.href='router-v2a-entrada.html?id=new'">+ crearNuevaConexion()</button>
+
+<!-- Chat AI: abrirChatAI + enviarMensajeChat + limpiarChat + exportarChat + abrirConfiguracionChat -->
+<div class="chat">
+  <div class="chat-h">
+    <div class="chat-l">enviarMensajeChat() · OpenHand + M3</div>
+    <div class="chat-tools">
+      <div class="t" onclick="document.getElementById('log').innerHTML=''">limpiarChat()</div>
+      <div class="t" onclick="alert('exportarChat() → txt')">exportar</div>
+      <div class="t" onclick="location.href='router-v5-agente.html'">configurarChat()</div>
+    </div>
+  </div>
+  <div id="log"></div>
+  <div class="chat-row" style="margin-top:8px">
+    <input class="chat-input" id="ci" placeholder='abrirChatAI() — di: "conecta api github al vps"' />
+    <button class="chat-send" id="snd">enviar</button>
+  </div>
+  <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+    <div class="t" onclick="location.href='router-v4-conectores.html'">abrirConfiguracionConectores()</div>
+  </div>
+</div>
+
+<script>
+const $=i=>document.getElementById(i);
+
+// buscarConexion
+$('q').oninput = e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('.row').forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+};
+
+// filtrarPorTipo / filtrarPorEstado
+document.querySelectorAll('.f').forEach(f => f.onclick = () => {
+  document.querySelectorAll('.f').forEach(x => x.classList.remove('on'));
+  f.classList.add('on');
+  const v = f.dataset.f;
+  document.querySelectorAll('.row').forEach(r => {
+    r.style.display = (v === 'all' || r.dataset.tipo === v || r.dataset.estado === v) ? '' : 'none';
+  });
+});
+
+// toggleConexion
+document.querySelectorAll('[data-act=toggle]').forEach(b => b.onclick = e => {
+  e.stopPropagation();
+  b.classList.toggle('on');
+});
+
+// editarConexion / abrirDetalleConexion
+document.querySelectorAll('.row').forEach(r => r.onclick = () => {
+  location.href = 'router-v2a-entrada.html?id=' + r.dataset.id;
+});
+
+// enviarMensajeChat
+$('snd').onclick = () => {
+  const t = $('ci').value.trim();
+  if (!t) return;
+  const log = $('log');
+  log.innerHTML += `<div style="font-size:11px;color:var(--gd);margin-bottom:4px">tú: ${t}</div>`;
+  log.innerHTML += `<div style="font-size:11px;color:var(--ok);margin-bottom:8px">ai: ficha creada → <a style="color:var(--az);cursor:pointer" onclick="location.href='router-v2a-entrada.html'">abrir</a></div>`;
+  $('ci').value = '';
+};
+
+// eliminarConexion + duplicarConexion via long press
+document.querySelectorAll('.row').forEach(r => {
+  let press;
+  r.ontouchstart = () => press = setTimeout(() => {
+    if (confirm('eliminarConexion('+r.dataset.id+')?')) r.remove();
+  }, 800);
+  r.ontouchend = () => clearTimeout(press);
+});
+</script>
+</body>
+</html>

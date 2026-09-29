@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Router · 3 Paneles ⚫ · NCT</title><style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&family=IBM+Plex+Mono:wght@400;600&display=swap');
+:root{--n:#0D0D0F;--c:#161619;--b:#2A2A2F;--pa:#ECECEC;--l:#C9A24B;
+--m:#7FD1A8;--t:#C9C9CE;--az:#7FB4D1}*{box-sizing:border-box;margin:0}
+body{background:var(--n);color:var(--t);font:13px/1.5 'IBM Plex Mono',
+monospace;padding:12px;min-height:100vh}
+h1{font-family:'Fraunces',serif;color:var(--pa);font-size:clamp(19px,4vw,28px)}
+h2{font-size:12px;color:var(--l);letter-spacing:1.5px}
+.sub{color:#8A8A92;font-size:11px}
+.tri{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:760px){.tri{grid-template-columns:1fr}}
+.panel{background:var(--c);border:1px solid var(--b);border-radius:12px;
+padding:11px;min-height:260px;display:flex;flex-direction:column;gap:7px}
+select,input{background:#0D0D0F;color:var(--t);border:1px solid var(--b);
+border-radius:7px;padding:8px;font:inherit;width:100%}
+button{background:var(--l);color:#171204;border:0;padding:8px 12px;
+border-radius:7px;font:600 12px 'IBM Plex Mono';cursor:pointer}
+button.f{background:transparent;color:var(--l);border:1px solid var(--l)}
+button:focus-visible{outline:3px solid var(--m)}
+.item{background:#0D0D0F;border:1px solid var(--b);border-radius:8px;
+padding:7px 9px;display:flex;justify-content:space-between;gap:6px;
+font-size:12px}.item small{color:var(--az)}
+.item button{padding:1px 7px;font-size:10px;background:#2A2A2F;color:var(--pa)}
+.radio{display:flex;gap:6px;flex-wrap:wrap}
+.radio label{border:1px solid var(--b);border-radius:8px;padding:8px 10px;
+cursor:pointer;font-size:12px}
+.radio input{display:none}
+.radio input:checked+span{color:var(--m)}
+.radio label:has(input:checked){border-color:var(--m)}
+.contador{margin-left:auto;color:var(--m);font-size:11px}
+.chatbar{margin-top:12px;background:var(--c);border:1px solid var(--b);
+border-radius:12px;padding:10px;display:flex;gap:8px;flex-wrap:wrap}
+.chatbar input{flex:1;min-width:200px}
+pre{background:#0D0D0F;border:1px solid var(--b);border-radius:8px;
+padding:9px;font-size:10.5px;max-height:160px;overflow:auto;margin-top:10px}
+.flujo{text-align:center;color:var(--l);font-size:16px;margin-top:6px}
+</style></head><body>
+<h1>Router · 3 Paneles ⚫</h1>
+<span class="sub">entrada → receptor → salida · el chat de abajo
+auto-rellena los 3 paneles 🤖</span>
+<div class="tri">
+<section class="panel"><h2>1 · ENTRADAS <span class="contador"
+ id="cIn">0/100</span></h2>
+<select id="tIn"><option>api</option><option>mcp</option>
+<option>documento</option><option>webhook</option><option>chat</option>
+<option>repo</option><option>telegram</option><option>archivo</option></select>
+<input id="nIn" placeholder="nombre (ej: api_github)">
+<button id="bIn">＋ Añadir entrada</button>
+<div id="listaIn" style="overflow:auto;max-height:170px"></div></section>
+<section class="panel"><h2>2 · QUIÉN RECIBE</h2>
+<div class="radio" id="rec">
+<label><input type="radio" name="r" value="orquestador" checked>
+<span>🎅 Orquestador</span></label>
+<label><input type="radio" name="r" value="agente"><span>🧝 Agente</span></label>
+<label><input type="radio" name="r" value="chat"><span>💬 Chat</span></label>
+</div>
+<div class="flujo" id="flujo">📥 0 → 🎅 → 📤 0</div>
+<p class="sub">todo entra con token, cola y ledger — el Router que ya
+construimos (router/core.py) es quien manda aquí.</p></section>
+<section class="panel"><h2>3 · SALIDAS</h2>
+<select id="tOut"><option>vps</option><option>hf</option><option>repo</option>
+<option>agente</option><option>chat</option></select>
+<input id="nOut" placeholder="id destino (ej: HF1)">
+<button id="bOut">＋ Añadir salida</button>
+<div id="listaOut" style="overflow:auto;max-height:170px"></div></section>
+</div>
+<div class="chatbar">🤖
+<input id="chat" placeholder='di: "conecta el api de github y un documento
+al orquestador y manda al vps y a hf"'>
+<button id="bChat">Auto-rellenar</button>
+<button id="bExp" class="f">📦 Exportar → /puente/router/config</button></div>
+<pre id="out" hidden></pre>
+<script>
+const S={entradas:[],salidas:[]};const $=i=>document.getElementById(i);
+function pinta(){
+ $("cIn").textContent=S.entradas.length+"/100";
+ const li=$("listaIn");li.innerHTML="";
+ S.entradas.forEach((e,i)=>{const d=document.createElement("div");
+  d.className="item";d.innerHTML=`<span>📥 ${e.nombre}
+  <small>${e.tipo}</small></span>`;
+  const b=document.createElement("button");b.textContent="✕";
+  b.onclick=()=>{S.entradas.splice(i,1);pinta();};d.appendChild(b);
+  li.appendChild(d);});
+ const lo=$("listaOut");lo.innerHTML="";
+ S.salidas.forEach((e,i)=>{const d=document.createElement("div");
+  d.className="item";d.innerHTML=`<span>📤 ${e.id}
+  <small>${e.tipo}</small></span>`;
+  const b=document.createElement("button");b.textContent="✕";
+  b.onclick=()=>{S.salidas.splice(i,1);pinta();};d.appendChild(b);
+  lo.appendChild(d);});
+ const rec=document.querySelector("input[name=r]:checked").value;
+ const ico={orquestador:"🎅",agente:"🧝",chat:"💬"}[rec];
+ $("flujo").textContent=`📥 ${S.entradas.length} → ${ico} → 📤 ${S.salidas.length}`;}
+$("bIn").onclick=()=>{if(S.entradas.length>=100)return alert("techo 100");
+ S.entradas.push({tipo:$("tIn").value,
+  nombre:$("nIn").value.trim()||$("tIn").value+"_"+(S.entradas.length+1)});
+ $("nIn").value="";pinta();};
+$("bOut").onclick=()=>{S.salidas.push({tipo:$("tOut").value,
+ id:$("nOut").value.trim()||$("tOut").value.toUpperCase()+
+ (S.salidas.length+1)});$("nOut").value="";pinta();};
+document.querySelectorAll("input[name=r]").forEach(r=>r.onchange=pinta);
+// 🤖 el auto-rellenador local (mañana: POST /route perfil n1 via Router)
+$("bChat").onclick=()=>{
+ const t=$("chat").value.toLowerCase();
+ [["api","api"],["mcp","mcp"],["documento","documento"],["doc","documento"],
+  ["webhook","webhook"],["telegram","telegram"],["archivo","archivo"]]
+  .forEach(([k,tipo])=>{const m=t.match(new RegExp(k+"( de (\\w+))?"));
+   if(m)S.entradas.push({tipo,nombre:m[2]?tipo+"_"+m[2]:
+    tipo+"_"+(S.entradas.length+1)});});
+ if(t.includes("agente"))document.querySelector(
+  "input[value=agente]").checked=true;
+ else if(t.includes("chat "))document.querySelector(
+  "input[value=chat]").checked=true;
+ else document.querySelector("input[value=orquestador]").checked=true;
+ [["vps","VPS"],["hf","HF"],["repo","REPO"]].forEach(([k,id])=>{
+  if(t.includes(k))S.salidas.push({tipo:k,id:id+(S.salidas.length+1)});});
+ pinta();};
+$("bExp").onclick=()=>{
+ const rec=document.querySelector("input[name=r]:checked").value;
+ $("out").hidden=false;$("out").textContent="POST /puente/router/config\n"+
+  JSON.stringify({entradas:S.entradas,receptor:rec,salidas:S.salidas},
+  null,1);};
+pinta();
+</script></body></html>

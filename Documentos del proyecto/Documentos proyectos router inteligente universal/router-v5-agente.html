@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Router · Agente / AI</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+:root{--n:#0D0D0F;--c:#1F1E1B;--c2:#252320;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--w:#F2EBD9;--g:#B8B0A0;--gd:#7E776B;--az:#3B82F6;--r:18px;--rs:10px;--serif:'Fraunces',serif;--sans:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--n);color:var(--w);font:14px/1.5 var(--sans);max-width:520px;margin:0 auto;padding:24px 20px;min-height:100vh}
+.lbl{font:500 11px/1 var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:10px}
+h1{font:500 30px/1.1 var(--serif);letter-spacing:-0.02em;margin-bottom:4px}
+.sub{color:var(--g);font-size:13px;margin-bottom:18px}
+
+.field{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.lab{font:500 14px var(--serif);color:var(--w);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.lab small{font:500 10px var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.05em;font-weight:500}
+.hint{font:11px var(--sans);color:var(--gd);margin:8px 0;text-transform:uppercase;letter-spacing:0.05em}
+
+.opt{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--c2);border:1px solid var(--b);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:all .15s}
+.opt:hover{border-color:var(--b2)}
+.opt.on{border-color:var(--az);background:rgba(59,130,246,0.08)}
+.opt-i{width:32px;height:32px;background:var(--n);border:1px solid var(--b);border-radius:6px;display:grid;place-items:center;font:600 11px var(--sans);color:var(--az)}
+.opt.on .opt-i{background:var(--az);color:#fff;border-color:var(--az)}
+.opt-n{flex:1;font:500 13px var(--sans);color:var(--w)}
+.opt-d{color:var(--gd);font:11px var(--sans)}
+.opt-c{color:var(--az);font-weight:700;opacity:0;font-size:14px}
+.opt.on .opt-c{opacity:1}
+
+.txt{background:var(--c2);color:var(--w);border:1px solid var(--b);border-radius:var(--rs);padding:12px 14px;font:13px var(--sans);width:100%;outline:none;min-height:80px;resize:vertical;font-family:inherit;line-height:1.5}
+.txt:focus{border-color:var(--az)}
+
+.slider{width:100%;margin:6px 0 4px;-webkit-appearance:none;height:4px;background:var(--c2);border-radius:2px;outline:none}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--w);border-radius:50%;cursor:pointer}
+.slider::-moz-range-thumb{width:18px;height:18px;background:var(--w);border-radius:50%;cursor:pointer;border:0}
+.srow{display:flex;justify-content:space-between;font:11px var(--sans);color:var(--gd);margin-bottom:8px}
+
+.foot{display:flex;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--b)}
+.foot button{padding:13px;border-radius:var(--rs);font:600 11px var(--sans);cursor:pointer;border:1px solid var(--b);background:transparent;color:var(--g);text-transform:uppercase;letter-spacing:0.05em}
+.foot button:hover{border-color:var(--b2);color:var(--w)}
+.foot button.p{background:var(--w);color:var(--n);border-color:var(--w);flex:2}
+
+.t{background:var(--c2);border:1px solid var(--b);color:var(--g);padding:5px 10px;border-radius:6px;font:11px var(--sans);cursor:pointer;margin-top:8px;display:inline-block;margin-right:4px}
+.t:hover{border-color:var(--b2);color:var(--w)}
+</style>
+</head>
+<body>
+
+<div class="lbl">Panel 5 · Agente / AI</div>
+<h1>Configuración IA</h1>
+<p class="sub">14 funciones reales del spec</p>
+
+<!-- ID 74 listarAgentesDisponibles + 75 seleccionarAgenteChat + 76 configurarAgenteCustom -->
+<div class="field">
+  <div class="lab">Agente <small>· 74 listar / 75 seleccionar / 76 custom</small></div>
+  <div class="hint">listarAgentesDisponibles()</div>
+  <div class="opt on" data-g="ag"><div class="opt-i">OH</div><div class="opt-n">OpenHand</div><div class="opt-d">default</div><div class="opt-c">✓</div></div>
+  <div class="opt" data-g="ag"><div class="opt-i">CC</div><div class="opt-n">Claude Code</div><div class="opt-d">anthropics/claude-code</div><div class="opt-c">✓</div></div>
+  <div class="opt" data-g="ag"><div class="opt-i">OC</div><div class="opt-n">OpenClaw</div><div class="opt-d">openclaw/openclaw</div><div class="opt-c">✓</div></div>
+  <div class="opt" data-g="ag"><div class="opt-i">MM</div><div class="opt-n">MiMo Code</div><div class="opt-d">XiaomiMiMo/MiMo-Code</div><div class="opt-c">✓</div></div>
+  <div class="t" onclick="configurarAgenteCustom()">+ configurarAgenteCustom()</div>
+</div>
+
+<!-- ID 77 listarModelosDispon + 78 seleccionarModeloChat + 79 compararModelos -->
+<div class="field">
+  <div class="lab">Modelo <small>· 77 listar / 78 seleccionar / 79 comparar</small></div>
+  <div class="hint">listarModelosDispon() · 10 disponibles</div>
+  <div class="opt on" data-g="md"><div class="opt-i">M3</div><div class="opt-n">MiniMax M3</div><div class="opt-d">128k · $0.001/1k</div><div class="opt-c">✓</div></div>
+  <div class="opt" data-g="md"><div class="opt-i">M2</div><div class="opt-n">MiniMax M2.7</div><div class="opt-d">128k · $0.0005/1k</div><div class="opt-c">✓</div></div>
+  <div class="opt" data-g="md"><div class="opt-i">CS</div><div class="opt-n">Claude Sonnet 4</div><div class="opt-d">200k · $0.003/1k</div><div class="opt-c">✓</div></div>
+  <div class="opt" data-g="md"><div class="opt-i">GP</div><div class="opt-n">GPT-5</div><div class="opt-d">128k · $0.005/1k</div><div class="opt-c">✓</div></div>
+  <div class="t" onclick="compararModelos()">compararModelos()</div>
+</div>
+
+<!-- ID 80 editarSystemPromptChat + 81 resetPromptChat -->
+<div class="field">
+  <div class="lab">System Prompt <small>· 80 editar / 81 reset</small></div>
+  <div class="hint">editarSystemPromptChat()</div>
+  <textarea class="txt" id="pr">Eres OpenHand, el agente que arma fichas de conexión para el Router MAXBRY. Interpretas español natural y devuelves JSON estructurado: {entradas:[], anclajes:[], salidas:[], otras:{}}</textarea>
+  <div class="t" onclick="resetPromptChat()">resetPromptChat()</div>
+</div>
+
+<!-- ID 82 configTemperature / 83 configMaxTokens / 84 configTopP / 85 configFrecuenciaP / 86 configPresenciaP -->
+<div class="field">
+  <div class="lab">Parámetros <small>· 82-86</small></div>
+  <div class="hint">configTemperature</div>
+  <input type="range" min="0" max="1" step="0.1" value="0.7" class="slider" id="t1">
+  <div class="srow"><span>0</span><span id="v1">0.7</span><span>1</span></div>
+
+  <div class="hint">configMaxTokens</div>
+  <input type="range" min="256" max="8000" step="256" value="2048" class="slider" id="t2">
+  <div class="srow"><span>256</span><span id="v2">2048</span><span>8000</span></div>
+
+  <div class="hint">configTopP</div>
+  <input type="range" min="0" max="1" step="0.05" value="0.9" class="slider" id="t3">
+  <div class="srow"><span>0</span><span id="v3">0.9</span><span>1</span></div>
+
+  <div class="hint">configFrecuenciaP</div>
+  <input type="range" min="0" max="1" step="0.05" value="0" class="slider" id="t4">
+  <div class="srow"><span>0</span><span id="v4">0</span><span>1</span></div>
+
+  <div class="hint">configPresenciaP</div>
+  <input type="range" min="0" max="1" step="0.05" value="0" class="slider" id="t5">
+  <div class="srow"><span>0</span><span id="v5">0</span><span>1</span></div>
+</div>
+
+<div class="foot">
+  <button onclick="probarAgenteChat()">87 probarAgenteChat</button>
+  <button class="p" onclick="alert('seleccionarAgenteChat() + seleccionarModeloChat() guardados');location.href='router-v1-lista.html'">guardar</button>
+</div>
+
+<script>
+document.querySelectorAll('.opt').forEach(o => o.onclick = () => {
+  const g = o.dataset.g;
+  document.querySelectorAll(`[data-g="${g}"]`).forEach(x => x.classList.remove('on'));
+  o.classList.add('on');
+});
+['t1','t2','t3','t4','t5'].forEach((id, i) => {
+  const s = document.getElementById(id);
+  const v = document.getElementById('v'+(i+1));
+  s.oninput = () => v.textContent = s.value;
+});
+
+// 76 configurarAgenteCustom
+function configurarAgenteCustom() {
+  const n = prompt('nombre del nuevo agente:');
+  if (n) alert('configurarAgenteCustom(' + n + ') → creado');
+}
+// 79 compararModelos
+function compararModelos() {
+  alert('compararModelos([M3, M2, CS, GP]) → tabla comparativa');
+}
+// 81 resetPromptChat
+function resetPromptChat() {
+  document.getElementById('pr').value = 'Eres un agente genérico.';
+}
+// 87 probarAgenteChat
+function probarAgenteChat() {
+  const m = prompt('mensaje de prueba:');
+  if (m) alert('probarAgenteChat("' + m + '") → OK');
+}
+</script>
+</body>
+</html>

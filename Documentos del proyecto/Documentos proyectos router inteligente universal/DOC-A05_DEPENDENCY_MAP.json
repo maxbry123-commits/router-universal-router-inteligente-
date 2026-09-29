@@ -1,0 +1,333 @@
+{
+  "dependency_map_id": "MAXBRY-ROUTER-DEPMAP-001",
+  "mission_id": "MAXBRY-ROUTER-BACKEND-001",
+  "model": "FILE -> IMPORT -> DEPENDENCY -> FUNCTION -> COMPONENT -> DAG_NODE -> TASK -> CHAT_B",
+  "note": "TASK y CHAT_B se completan en TASK_DECOMPOSITION (siguiente paso). Aquí null = aún no asignado.",
+  "entries": [
+    {
+      "root_id": "R-001",
+      "file": "red/enchufe_gate.py",
+      "imports_externos": ["re", "dataclasses"],
+      "dependencias_internas": ["R-011", "R-005"],
+      "component": "C15",
+      "dag_node": "N03",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-002",
+      "file": "red/conectores.py",
+      "imports_externos": ["asyncio", "json", "os", "dataclasses", "typing", "httpx", "asyncpg", "aiomysql", "redis.asyncio"],
+      "dependencias_internas": ["R-001", "R-011"],
+      "component": "C16",
+      "dag_node": "N06",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-003",
+      "file": "red/red_universal.py",
+      "imports_externos": ["fnmatch"],
+      "dependencias_internas": ["R-002", "R-001"],
+      "component": "C17",
+      "dag_node": "N09",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-004",
+      "file": "infrastructure/backup/respaldo.py",
+      "imports_externos": ["hashlib", "json", "zipfile", "pathlib"],
+      "dependencias_internas": [],
+      "component": "C19",
+      "dag_node": "N04",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-005",
+      "file": "enchufe/validator_v2.py",
+      "imports_externos": ["re", "dataclasses"],
+      "dependencias_internas": [],
+      "component": "C05/C15",
+      "dag_node": "N02",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-010",
+      "file": "core/config.py",
+      "imports_externos": ["pydantic_settings", "os"],
+      "dependencias_internas": [],
+      "component": "C03",
+      "dag_node": "N01",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-011",
+      "file": "domain/schemas/enchufe_v2.py",
+      "imports_externos": ["pydantic"],
+      "dependencias_internas": ["R-005"],
+      "component": "C05",
+      "dag_node": "N02",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-012",
+      "file": "core/secret_vault.py",
+      "imports_externos": ["cryptography.fernet"],
+      "dependencias_internas": ["R-010"],
+      "component": "C04",
+      "dag_node": "N05",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-013",
+      "file": "infrastructure/storage/storage_protocol.py",
+      "imports_externos": ["typing"],
+      "dependencias_internas": ["R-010"],
+      "component": "C18",
+      "dag_node": "N08",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-014",
+      "file": "infrastructure/storage/postgres_adapter.py",
+      "imports_externos": ["asyncpg"],
+      "dependencias_internas": ["R-013"],
+      "component": "C18",
+      "dag_node": "N08",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-015",
+      "file": "infrastructure/storage/redis_adapter.py",
+      "imports_externos": ["redis.asyncio"],
+      "dependencias_internas": ["R-013"],
+      "component": "C18",
+      "dag_node": "N08",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-016",
+      "file": "domain/dsl/templates/T01_simple.yaml..T12_deep_reasoning.yaml",
+      "imports_externos": [],
+      "dependencias_internas": ["R-011"],
+      "component": "C07",
+      "dag_node": "N07",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-020",
+      "file": "domain/dsl/dag_parser.py",
+      "imports_externos": ["yaml", "json"],
+      "dependencias_internas": ["R-016"],
+      "component": "C06",
+      "dag_node": "N10",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-021",
+      "file": "core/auth.py",
+      "imports_externos": [],
+      "dependencias_internas": ["R-012"],
+      "component": "C20",
+      "dag_node": "N11",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-022",
+      "file": "core/ledger.py",
+      "imports_externos": ["hashlib", "json"],
+      "dependencias_internas": ["R-010"],
+      "component": "C21",
+      "dag_node": "N12",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-023",
+      "file": "engine/cost_optimizer.py",
+      "imports_externos": [],
+      "dependencias_internas": ["R-011"],
+      "component": "C12",
+      "dag_node": "N13",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-030",
+      "file": "engine/worker_pool.py",
+      "imports_externos": ["asyncio"],
+      "dependencias_internas": ["R-003", "R-023", "R-031"],
+      "component": "C09",
+      "dag_node": "N14",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-031",
+      "file": "domain/dsl/capability.json",
+      "imports_externos": [],
+      "dependencias_internas": ["R-011"],
+      "component": "C09",
+      "dag_node": "N14",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-032",
+      "file": "engine/resilience.py",
+      "imports_externos": ["time", "enum", "dataclasses"],
+      "dependencias_internas": ["R-003"],
+      "component": "C10",
+      "dag_node": "N15",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-033",
+      "file": "engine/semantic_cache.py",
+      "imports_externos": ["redis.asyncio"],
+      "dependencias_internas": ["R-015"],
+      "component": "C11",
+      "dag_node": "N16",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-034",
+      "file": "core/monitoring.py",
+      "imports_externos": [],
+      "dependencias_internas": ["R-022"],
+      "component": "C22",
+      "dag_node": "N17",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-035",
+      "file": "engine/sandbox/code_sandbox.py",
+      "imports_externos": [],
+      "dependencias_internas": ["R-012", "R-036", "R-037"],
+      "component": "C13",
+      "dag_node": "N18",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-036",
+      "file": "engine/sandbox/docker_backend.py",
+      "imports_externos": ["docker"],
+      "dependencias_internas": ["R-035"],
+      "component": "C13",
+      "dag_node": "N18",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-037",
+      "file": "engine/sandbox/subprocess_backend.py",
+      "imports_externos": ["subprocess", "resource"],
+      "dependencias_internas": ["R-035"],
+      "component": "C13",
+      "dag_node": "N18",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-040",
+      "file": "engine/dag_orchestrator.py",
+      "imports_externos": ["asyncio"],
+      "dependencias_internas": ["R-020", "R-030", "R-032", "R-035", "R-003", "R-022"],
+      "component": "C08",
+      "dag_node": "N19",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-041",
+      "file": "engine/windows_chain.py",
+      "imports_externos": [],
+      "dependencias_internas": ["R-035", "R-020"],
+      "component": "C14",
+      "dag_node": "N20",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-042",
+      "file": "api/middlewares/alcabala.py",
+      "imports_externos": ["starlette.middleware.base"],
+      "dependencias_internas": ["R-012", "R-011"],
+      "component": "C02",
+      "dag_node": "N21",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-043",
+      "file": "api/ws/events.py",
+      "imports_externos": ["fastapi.websockets"],
+      "dependencias_internas": ["R-034"],
+      "component": "C23",
+      "dag_node": "N22",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-050",
+      "file": "api/routers/connections.py",
+      "imports_externos": ["fastapi"],
+      "dependencias_internas": ["R-040", "R-042"],
+      "component": "C01",
+      "dag_node": "N23",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-051",
+      "file": "api/routers/connectors.py",
+      "imports_externos": ["fastapi"],
+      "dependencias_internas": ["R-002", "R-042"],
+      "component": "C01",
+      "dag_node": "N23",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-052",
+      "file": "api/routers/agent.py",
+      "imports_externos": ["fastapi"],
+      "dependencias_internas": ["R-040", "R-042"],
+      "component": "C01",
+      "dag_node": "N23",
+      "task": null,
+      "chat_b": null
+    },
+    {
+      "root_id": "R-053",
+      "file": "api/routers/extras.py",
+      "imports_externos": ["fastapi"],
+      "dependencias_internas": ["R-034", "R-043"],
+      "component": "C01",
+      "dag_node": "N23",
+      "task": null,
+      "chat_b": null
+    }
+  ],
+  "external_dependencies_summary": [
+    "fastapi", "pydantic>=2", "pydantic-settings", "cryptography",
+    "docker", "asyncpg", "aiomysql", "redis[async]", "httpx",
+    "pyyaml", "starlette"
+  ]
+}

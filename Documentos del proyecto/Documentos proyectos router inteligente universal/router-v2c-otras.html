@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Router · Ficha / Otras</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+:root{--n:#0D0D0F;--c:#1F1E1B;--c2:#252320;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--w:#F2EBD9;--g:#B8B0A0;--gd:#7E776B;--az:#3B82F6;--ok:#7FD1A8;--err:#E07A6B;--r:18px;--rs:10px;--serif:'Fraunces',serif;--sans:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--n);color:var(--w);font:14px/1.5 var(--sans);max-width:520px;margin:0 auto;padding:24px 20px;min-height:100vh}
+.lbl{font:500 11px/1 var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:8px}
+.crumb{font-size:12px;color:var(--gd);margin-bottom:6px}
+.crumb a{color:var(--g);text-decoration:none;cursor:pointer}
+h1{font:500 28px/1.1 var(--serif);letter-spacing:-0.02em;margin-bottom:4px}
+.doc{font:11px var(--sans);color:var(--gd);margin-bottom:14px}
+
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:4px}
+.tab{flex:1;padding:9px 4px;text-align:center;background:transparent;border:0;color:var(--g);font:500 10px var(--sans);cursor:pointer;border-radius:14px;text-transform:uppercase;letter-spacing:0.05em}
+.tab.on{background:var(--c2);color:var(--w);border:1px solid var(--b2)}
+
+.sec{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.sec-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sec-n{width:24px;height:24px;background:var(--c2);border:1px solid var(--b);border-radius:6px;display:grid;place-items:center;font:600 11px var(--sans);color:var(--az);flex-shrink:0}
+.sec-t{font:500 14px var(--serif);flex:1}
+.sec-c{font:11px var(--sans);color:var(--gd);background:var(--c2);padding:2px 8px;border-radius:6px}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.inp-lbl{font:500 9px var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.1em;margin:6px 0 3px;display:block}
+.inp{background:var(--c2);color:var(--w);border:1px solid var(--b);border-radius:var(--rs);padding:9px 12px;font:13px var(--sans);width:100%;outline:none;margin-bottom:6px}
+.inp:focus{border-color:var(--az)}
+.sel{background:var(--c2);color:var(--w);border:1px solid var(--b);border-radius:var(--rs);padding:9px 12px;font:13px var(--sans);width:100%;outline:none;margin-bottom:6px;appearance:none}
+.sel:focus{border-color:var(--az)}
+
+.tag{display:inline-block;padding:4px 10px;background:var(--c2);border:1px solid var(--b);border-radius:8px;font:11px var(--sans);color:var(--g);margin:2px 4px 2px 0}
+.tag.a{background:var(--w);color:var(--n);border-color:var(--w)}
+.tx{cursor:pointer;margin-left:5px;opacity:0.7}
+.tx:hover{opacity:1}
+
+.nav{display:flex;gap:8px;margin-top:18px}
+.nav button{flex:1;padding:12px;border-radius:var(--rs);font:600 11px var(--sans);cursor:pointer;border:1px solid var(--b);background:var(--c);color:var(--w);text-transform:uppercase;letter-spacing:0.05em}
+.nav button.p{background:var(--w);color:var(--n);border-color:var(--w)}
+.nav button:hover{border-color:var(--b2)}
+
+.foot{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--b)}
+.foot button{padding:12px;border-radius:var(--rs);font:500 12px var(--sans);cursor:pointer;border:1px solid var(--b);background:transparent;color:var(--g);text-transform:uppercase;letter-spacing:0.05em}
+.foot button:hover{border-color:var(--b2);color:var(--w)}
+.foot button.d{border-color:var(--b2);color:var(--err)}
+.foot button.p{background:var(--w);color:var(--n);border-color:var(--w);font-weight:600;flex:1}
+</style>
+</head>
+<body>
+
+<div class="lbl">Panel 2C · Ficha / Otras</div>
+<div class="crumb"><a onclick="location.href='router-v1-lista.html'">Inicio</a> › <a onclick="location.href='router-v1-lista.html'">Conexiones</a> › <strong>GitHub</strong></div>
+<h1>GitHub</h1>
+<div class="doc">Doc 3 de 3 · Otras configuraciones (15 fns reales)</div>
+
+<div class="tabs">
+  <button class="tab" onclick="location.href='router-v2a-entrada.html'">Entrada</button>
+  <button class="tab" onclick="location.href='router-v2b-anclaje.html'">Anclaje</button>
+  <button class="tab" onclick="location.href='router-v2b-anclaje.html#salida'">Salida</button>
+  <button class="tab on">Otras</button>
+</div>
+
+<div class="sec">
+  <div class="sec-h">
+    <div class="sec-n">4</div>
+    <div class="sec-t">OTRAS CONFIGURACIONES</div>
+    <div class="sec-c">15 fns</div>
+  </div>
+
+  <div class="row2">
+    <div><span class="inp-lbl">configPrioridad (1-10)</span><input class="inp" type="number" id="prio" min="1" max="10" value="8"></div>
+    <div><span class="inp-lbl">configTimeout (ms)</span><input class="inp" type="number" id="to" value="30000"></div>
+    <div><span class="inp-lbl">configReintentos</span><input class="inp" type="number" id="ret" min="0" max="10" value="3"></div>
+    <div><span class="inp-lbl">configRateLimit (rpm)</span><input class="inp" type="number" id="rpm" value="60"></div>
+    <div><span class="inp-lbl">configModoEnvio</span>
+      <select class="sel" id="modo"><option>primero</option><option>todos</option><option>espejo</option></select>
+    </div>
+    <div><span class="inp-lbl">configCostoMax USD</span><input class="inp" type="number" step="0.1" id="cst" value="2.0"></div>
+  </div>
+
+  <span class="inp-lbl">configNamespace</span>
+  <input class="inp" id="ns" value="repo.github.maxbry">
+
+  <span class="inp-lbl">configSchedule (cron)</span>
+  <input class="inp" id="sch" value="0 */4 * * *">
+
+  <span class="inp-lbl">configFallback</span>
+  <input class="inp" id="fb" value="openrouter → litellm → hf">
+
+  <span class="inp-lbl">configCredenciales (vault)</span>
+  <input class="inp" id="cred" value="env: GITHUB_TOKEN · rotación: 30d">
+
+  <span class="inp-lbl">configTags</span>
+  <div style="margin-bottom:8px">
+    <span class="tag a">api <span class="tx">×</span></span>
+    <span class="tag">webhook <span class="tx">×</span></span>
+    <span class="tag">repo <span class="tx">×</span></span>
+    <span class="tag">github <span class="tx">×</span></span>
+    <span class="tag" id="addTag">+</span>
+  </div>
+
+  <span class="inp-lbl">configACL / Permisos</span>
+  <div class="row2">
+    <div><span class="inp-lbl">Read</span><input class="inp" value="*"></div>
+    <div><span class="inp-lbl">Write</span><input class="inp" value="user,admin"></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button onclick="location.href='router-v2b-anclaje.html'">← Anterior</button>
+  <button class="p" onclick="guardarFicha()">Finalizar ✓</button>
+</div>
+
+<div class="foot">
+  <button class="d" onclick="if(confirm('borrarFicha(' + (id||'new') + ')?'))location.href='router-v1-lista.html'">borrarFicha</button>
+  <button onclick="probarFicha()">probarFicha</button>
+  <button class="p" onclick="guardarFicha()">guardarFicha</button>
+</div>
+
+<script>
+const id = new URLSearchParams(location.search).get('id');
+const $=i=>document.getElementById(i);
+
+// configTags
+$('addTag').onclick = () => {
+  const t = prompt('nuevo tag:');
+  if (!t) return;
+  const s = document.createElement('span');
+  s.className = 'tag a';
+  s.innerHTML = t + ' <span class="tx">×</span>';
+  s.querySelector('.tx').onclick = () => s.remove();
+  $('addTag').before(s);
+};
+document.querySelectorAll('.tx').forEach(t => t.onclick = () => t.parentElement.remove());
+
+// guardarFicha
+function guardarFicha() {
+  if (+$('cst').value > 100) return alert('costoMax > 100 no permitido');
+  if (+$('ret').value > 10) return alert('reintentos > 10 no permitido');
+  if (!$('ns').value.match(/^[a-z0-9.]+$/)) return alert('namespace inválido');
+  alert('guardarFicha() → ficha ' + (id||'new') + ' persistida');
+  location.href = 'router-v1-lista.html';
+}
+
+// probarFicha
+function probarFicha() {
+  alert('probarFicha() → end-to-end OK\nprioridad=' + $('prio').value + '\nmodo=' + $('modo').value);
+}
+</script>
+</body>
+</html>

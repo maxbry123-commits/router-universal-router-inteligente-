@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Router · Ficha / Entrada</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+:root{--n:#0D0D0F;--c:#1F1E1B;--c2:#252320;--b:rgba(255,255,255,0.08);--b2:rgba(255,255,255,0.14);--w:#F2EBD9;--g:#B8B0A0;--gd:#7E776B;--az:#3B82F6;--ok:#7FD1A8;--r:18px;--rs:10px;--serif:'Fraunces',serif;--sans:'Inter',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--n);color:var(--w);font:14px/1.5 var(--sans);max-width:520px;margin:0 auto;padding:24px 20px;min-height:100vh}
+.lbl{font:500 11px/1 var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.15em;display:block;margin-bottom:8px}
+.crumb{font-size:12px;color:var(--gd);margin-bottom:6px}
+.crumb a{color:var(--g);text-decoration:none;cursor:pointer}
+h1{font:500 28px/1.1 var(--serif);letter-spacing:-0.02em;margin-bottom:4px}
+.doc{font:11px var(--sans);color:var(--gd);margin-bottom:14px}
+
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:4px}
+.tab{flex:1;padding:9px 4px;text-align:center;background:transparent;border:0;color:var(--g);font:500 10px var(--sans);cursor:pointer;border-radius:14px;text-transform:uppercase;letter-spacing:0.05em}
+.tab.on{background:var(--c2);color:var(--w);border:1px solid var(--b2)}
+
+.sec{background:var(--c);border:1px solid var(--b);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.sec-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sec-n{width:24px;height:24px;background:var(--c2);border:1px solid var(--b);border-radius:6px;display:grid;place-items:center;font:600 11px var(--sans);color:var(--az);flex-shrink:0}
+.sec-t{font:500 14px var(--serif);flex:1}
+.sec-c{font:11px var(--sans);color:var(--gd);background:var(--c2);padding:2px 8px;border-radius:6px}
+
+.sel{background:var(--c2);color:var(--w);border:1px solid var(--b);border-radius:var(--rs);padding:10px 12px;font:13px var(--sans);width:100%;outline:none;margin-bottom:10px;appearance:none}
+.sel:focus{border-color:var(--az)}
+
+.slot{display:flex;align-items:center;gap:10px;background:var(--c2);border:1px solid var(--b);border-radius:var(--rs);padding:10px 12px;margin-bottom:6px;cursor:grab}
+.slot-k{font:600 10px var(--sans);color:var(--az);background:var(--n);border:1px solid var(--b);width:32px;height:24px;display:grid;place-items:center;border-radius:5px;flex-shrink:0}
+.slot-n{flex:1;font:500 12px var(--sans);color:var(--w);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot-v{font:10px var(--sans);color:var(--gd);text-transform:uppercase;letter-spacing:0.05em}
+.slot-act{display:flex;gap:4px}
+.slot-act button{background:transparent;border:0;color:var(--gd);cursor:pointer;padding:2px 5px;font-size:13px}
+.slot-act button:hover{color:var(--w)}
+.slot.off{opacity:0.5}
+
+.sw{position:relative;width:34px;height:18px;background:#3a3a3a;border-radius:9px;cursor:pointer;flex-shrink:0;border:0;padding:0}
+.sw::after{content:"";position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;left:2px;transition:all .2s}
+.sw.on{background:var(--az)}
+.sw.on::after{left:18px}
+
+.add-s{border:1px dashed var(--b2);background:transparent;color:var(--g);width:100%;padding:10px;border-radius:var(--rs);font:500 11px var(--sans);cursor:pointer;margin-top:6px}
+.add-s:hover{border-color:var(--az);color:var(--w)}
+
+.nav{display:flex;gap:8px;margin-top:18px}
+.nav button{flex:1;padding:12px;border-radius:var(--rs);font:600 11px var(--sans);cursor:pointer;border:1px solid var(--b);background:var(--c);color:var(--w);text-transform:uppercase;letter-spacing:0.05em}
+.nav button.p{background:var(--w);color:var(--n);border-color:var(--w)}
+.nav button:hover{border-color:var(--b2)}
+
+.fn{font:10px 'JetBrains Mono',monospace;color:var(--gd);background:var(--n);border:1px solid var(--b);padding:1px 6px;border-radius:4px;margin-left:6px}
+</style>
+</head>
+<body>
+
+<div class="lbl">Panel 2A · Ficha / Entrada</div>
+<div class="crumb"><a onclick="location.href='router-v1-lista.html'">Inicio</a> › <a onclick="location.href='router-v1-lista.html'">Conexiones</a> › <strong id="cn">GitHub</strong></div>
+<h1 id="th">GitHub</h1>
+<div class="doc">Doc 1 de 3 · Sección ENTRADA</div>
+
+<div class="tabs">
+  <button class="tab on">Entrada</button>
+  <button class="tab" onclick="location.href='router-v2b-anclaje.html'">Anclaje</button>
+  <button class="tab" onclick="location.href='router-v2b-anclaje.html#salida'">Salida</button>
+  <button class="tab" onclick="location.href='router-v2c-otras.html'">Otras</button>
+</div>
+
+<!-- SECCIÓN 1: ENTRADA (10 fns reales) -->
+<div class="sec">
+  <div class="sec-h">
+    <div class="sec-n">1</div>
+    <div class="sec-t">ENTRADA</div>
+    <div class="sec-c"><span id="cIn">3</span>/100</div>
+    <button class="sw on" id="secSw"></button>
+  </div>
+
+  <!-- seleccionarTipoEntrada -->
+  <select class="sel" id="tipo">
+    <option value="api">seleccionarTipoEntrada · api</option>
+    <option value="mcp">mcp</option>
+    <option value="webhook">webhook</option>
+    <option value="documento">documento</option>
+    <option value="chat">chat</option>
+    <option value="repo">repo</option>
+    <option value="telegram">telegram</option>
+    <option value="archivo">archivo</option>
+    <option value="stream">stream</option>
+    <option value="cron">cron</option>
+  </select>
+
+  <!-- seleccionarSistemaEntrada (lee del Panel 4) -->
+  <div style="font:10px var(--sans);color:var(--gd);margin:6px 0;text-transform:uppercase;letter-spacing:0.1em">seleccionarSistemaEntrada() · 3/100</div>
+  <div id="lst">
+    <div class="slot" draggable="true" data-i="0">
+      <span class="slot-k">A1</span><span class="slot-n">api_code</span><span class="slot-v">api</span>
+      <div class="slot-act">
+        <button class="sw on" data-act="tog"></button>
+        <button data-act="dup">⎘</button>
+        <button data-act="tst">⏵</button>
+        <button data-act="del">×</button>
+      </div>
+    </div>
+    <div class="slot" draggable="true" data-i="1">
+      <span class="slot-k">W1</span><span class="slot-n">webhook_push</span><span class="slot-v">webhook</span>
+      <div class="slot-act">
+        <button class="sw on" data-act="tog"></button>
+        <button data-act="dup">⎘</button>
+        <button data-act="tst">⏵</button>
+        <button data-act="del">×</button>
+      </div>
+    </div>
+    <div class="slot" draggable="true" data-i="2">
+      <span class="slot-k">R1</span><span class="slot-n">repo_branch</span><span class="slot-v">repo</span>
+      <div class="slot-act">
+        <button class="sw on" data-act="tog"></button>
+        <button data-act="dup">⎘</button>
+        <button data-act="tst">⏵</button>
+        <button data-act="del">×</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="add-s" id="add">+ agregarEntradaFicha() (1-100)</button>
+</div>
+
+<div class="nav">
+  <button onclick="location.href='router-v1-lista.html'">← Volver</button>
+  <button class="p" onclick="location.href='router-v2b-anclaje.html'">Siguiente →</button>
+</div>
+
+<script>
+const $=i=>document.getElementById(i);
+let inCount=3;
+
+// cargar nombre
+const id = new URLSearchParams(location.search).get('id');
+if (id) { $('cn').textContent = id; $('th').textContent = id; }
+
+// toggle sección
+$('secSw').onclick = () => $('secSw').classList.toggle('on');
+
+// agregarEntradaFicha + seleccionarTipoEntrada
+$('add').onclick = () => {
+  if (inCount >= 100) return alert('máx 100');
+  inCount++;
+  const t = $('tipo').value;
+  const k = String.fromCharCode(65 + (inCount-1)%26) + Math.ceil(inCount/26);
+  const s = document.createElement('div');
+  s.className = 'slot';
+  s.draggable = true;
+  s.dataset.i = inCount;
+  s.innerHTML = `<span class="slot-k">${k}</span><span class="slot-n">${t}_${inCount}</span><span class="slot-v">${t}</span>
+    <div class="slot-act">
+      <button class="sw on" data-act="tog"></button>
+      <button data-act="dup">⎘</button>
+      <button data-act="tst">⏵</button>
+      <button data-act="del">×</button>
+    </div>`;
+  bindSlot(s);
+  $('lst').appendChild(s);
+  $('cIn').textContent = inCount;
+};
+
+// toggleEntrada / duplicarEntrada / probarEntrada / eliminarEntradaFicha
+function bindSlot(s) {
+  s.querySelectorAll('.slot-act button').forEach(b => {
+    b.onclick = e => {
+      e.stopPropagation();
+      const a = b.dataset.act;
+      if (a === 'tog') b.classList.toggle('on');
+      else if (a === 'dup') { const n = s.cloneNode(true); s.parentNode.insertBefore(n, s.nextSibling); bindSlot(n); inCount++; $('cIn').textContent = inCount; }
+      else if (a === 'tst') { b.textContent = '✓'; setTimeout(()=>b.textContent='⏵', 1000); }
+      else if (a === 'del') { s.remove(); inCount--; $('cIn').textContent = inCount; }
+    };
+  });
+}
+document.querySelectorAll('.slot').forEach(bindSlot);
+
+// reordenarEntradas (drag & drop nativo)
+let dragEl;
+document.addEventListener('dragstart', e => { if (e.target.classList.contains('slot')) dragEl = e.target; });
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  if (dragEl && e.target.classList.contains('slot') && e.target !== dragEl) {
+    e.target.parentNode.insertBefore(dragEl, e.target.nextSibling);
+  }
+});
+
+// validarEntrada + configurarParamsEntrada
+$('lst').onclick = e => {
+  if (e.target.closest('.slot-act')) return;
+  const s = e.target.closest('.slot');
+  if (s) {
+    const params = prompt('configurarParamsEntrada() — endpoint, headers, auth:', '/api/v1/' + s.querySelector('.slot-n').textContent);
+    if (params !== null) s.querySelector('.slot-n').textContent = s.querySelector('.slot-n').textContent;
+    // validarEntrada simulada
+    if (s.querySelector('.slot-n').textContent && s.querySelector('.slot-v').textContent) {
+      s.style.borderColor = 'var(--ok)';
+    }
+  }
+};
+</script>
+</body>
+</html>

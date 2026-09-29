@@ -1,0 +1,430 @@
+# DOC-A03_WORKFLOW_DAG.yaml
+# ROLE: CHAT A — ARCHITECT
+# Este DAG controla el ORDEN DE CONSTRUCCIÓN del backend (no confundir con
+# las templates T01-T12 del producto, que son del RUNTIME del Router ya
+# construido). Cada nodo referencia un component_id de DOC-A02_ARCHITECTURE.
+# El runtime determinista (no el LLM) ejecuta/controla este DAG.
+
+dag_id: "MAXBRY-ROUTER-BUILD-DAG-001"
+mission_id: "MAXBRY-ROUTER-BACKEND-001"
+
+nodes:
+
+  - node_id: N01
+    name: "core.config"
+    role: "foundation"
+    objective: "Config inmutable desde env vars, fuente única de verdad"
+    input: "Variables de entorno"
+    output: "Objeto Config (frozen)"
+    depends_on: []
+    parallel_with: [N02, N03, N04]
+    files: ["core/config.py"]
+    root_ids: ["C03"]
+    schemas: []
+    contracts: []
+    tools: ["pydantic-settings"]
+    validation: "Boot fail-fast si falta variable requerida"
+    failure: "BLOCKER DEPENDENCY_MISSING"
+    recovery: "N/A — corregir .env y reintentar boot"
+    status: PENDING
+
+  - node_id: N02
+    name: "domain.schemas.enchufe"
+    role: "foundation"
+    objective: "Modelos Pydantic v2 espejo del JSON Schema Enchufe v2.0"
+    input: "FABLES_ENCHUFE_UNIVERSAL_v2.md (schema fuente)"
+    output: "domain/schemas/enchufe_v2.py"
+    depends_on: []
+    parallel_with: [N01, N03, N04]
+    files: ["domain/schemas/enchufe_v2.py"]
+    root_ids: ["C05"]
+    schemas: ["enchufe_universal_v2.0"]
+    contracts: ["Enchufe v2.0 JSON Schema"]
+    tools: ["pydantic v2"]
+    validation: "Test: ficha v1.5 válida debe validar bajo v2.0 con defaults aplicados"
+    failure: "SCHEMA_FAILURE"
+    recovery: "Corregir mapeo campo a campo contra el schema fuente"
+    status: PENDING
+
+  - node_id: N03
+    name: "red.enchufe_gate"
+    role: "reuse_extend"
+    objective: "Extender enchufe_gate.py existente de v1.5 a v2.0 sin romper compatibilidad"
+    input: "red/enchufe_gate.py (EXISTING_COMPLETE, 180 LOC)"
+    output: "red/enchufe_gate.py extendido"
+    depends_on: []
+    parallel_with: [N01, N02, N04]
+    files: ["red/enchufe_gate.py"]
+    root_ids: ["C15"]
+    schemas: ["enchufe_universal_v2.0"]
+    contracts: ["validar_contrato_conexion()"]
+    tools: []
+    validation: "22 invariantes v1.5 + 14 nuevas v2.0 (ver validator_v2.py)"
+    failure: "CONTRACT_FAILURE"
+    recovery: "N/A — PATCH sobre archivo real, no reescribir desde cero"
+    status: PENDING
+
+  - node_id: N04
+    name: "infrastructure.backup"
+    role: "reuse"
+    objective: "Integrar respaldo.py tal cual al repo"
+    input: "respaldo_py.pdf (EXISTING_COMPLETE, ~40 LOC)"
+    output: "infrastructure/backup/respaldo.py"
+    depends_on: []
+    parallel_with: [N01, N02, N03]
+    files: ["infrastructure/backup/respaldo.py"]
+    root_ids: ["C19"]
+    schemas: []
+    contracts: []
+    tools: []
+    validation: "Test: empaquetar()+verificar() round-trip sin archivos rotos"
+    failure: "INSUFFICIENT_EVIDENCE"
+    recovery: "N/A"
+    status: PENDING
+
+  - node_id: N05
+    name: "core.secret_vault"
+    role: "core"
+    objective: "Cifrado en reposo + rotación de credenciales (R1)"
+    input: "Config (N01)"
+    output: "core/secret_vault.py"
+    depends_on: [N01]
+    parallel_with: [N06, N07, N08]
+    files: ["core/secret_vault.py"]
+    root_ids: ["C04"]
+    schemas: []
+    contracts: ["CredentialManager.get() → token_ref"]
+    tools: ["cryptography.fernet"]
+    validation: "Test: ningún secreto en claro sale del módulo"
+    failure: "CONTRACT_FAILURE"
+    recovery: "Rotación manual si BYOK inválido"
+    status: PENDING
+
+  - node_id: N06
+    name: "red.conectores"
+    role: "reuse_extend"
+    objective: "Ampliar conectores.py (380 LOC existentes) con los [nuevo] de v6"
+    input: "red/conectores.py (EXISTING_PARTIAL) + N02, N03"
+    output: "red/conectores.py extendido"
+    depends_on: [N02, N03]
+    parallel_with: [N05, N07, N08]
+    files: ["red/conectores.py"]
+    root_ids: ["C16"]
+    schemas: ["enchufe_universal_v2.0"]
+    contracts: ["Protocol Conector: enviar()/sondear()"]
+    tools: ["httpx", "asyncpg", "aiomysql", "redis.asyncio"]
+    validation: "Test por conector nuevo (ver checklist resumen v6.md §10)"
+    failure: "CONTRACT_FAILURE"
+    recovery: "N/A — PATCH, no reescribir ConectorHTTP/MCP existentes"
+    status: PENDING
+
+  - node_id: N07
+    name: "domain.dsl.templates"
+    role: "domain"
+    objective: "Catálogo fijo T01-T12, el router nunca improvisa arquitectura"
+    input: "diseño_avanzado_router_inteligente.md (T01-T12 ya nombradas)"
+    output: "domain/dsl/templates/*.yaml"
+    depends_on: [N02]
+    parallel_with: [N05, N06, N08]
+    files: ["domain/dsl/templates/T01_simple.yaml", "...", "T12_deep_reasoning.yaml"]
+    root_ids: ["C07"]
+    schemas: ["enchufe_universal_v2.0"]
+    contracts: []
+    tools: []
+    validation: "Cada template pasa DAGParser sin ciclos"
+    failure: "ARCHITECTURE_CONFLICT"
+    recovery: "N/A"
+    status: PENDING
+
+  - node_id: N08
+    name: "infrastructure.storage"
+    role: "infrastructure"
+    objective: "Persistencia Postgres/Redis + interfaz plugin abstracta"
+    input: "Config (N01)"
+    output: "infrastructure/storage/*"
+    depends_on: [N01]
+    parallel_with: [N05, N06, N07]
+    files: ["infrastructure/storage/storage_protocol.py", "infrastructure/storage/postgres_adapter.py", "infrastructure/storage/redis_adapter.py"]
+    root_ids: ["C18"]
+    schemas: []
+    contracts: ["StorageProtocol: get/set/delete/list"]
+    tools: ["asyncpg", "redis.asyncio"]
+    validation: "Test de conexión + CRUD básico"
+    failure: "DEPENDENCY_MISSING"
+    recovery: "Reintento de conexión con backoff"
+    status: PENDING
+
+  - node_id: N09
+    name: "red.red_universal"
+    role: "reuse_extend"
+    objective: "Grafo de nodos + rutas fnmatch (350 LOC existentes, ya completo)"
+    input: "red/red_universal.py (EXISTING_COMPLETE) + N06"
+    output: "red/red_universal.py (sin cambios estructurales, solo registra nuevos conectores)"
+    depends_on: [N06, N03]
+    parallel_with: [N10, N11, N12, N13]
+    files: ["red/red_universal.py"]
+    root_ids: ["C17"]
+    schemas: []
+    contracts: []
+    tools: []
+    validation: "Test de resolución de rutas con los conectores nuevos de N06"
+    failure: "DEPENDENCY_MISSING"
+    recovery: "N/A"
+    status: PENDING
+
+  - node_id: N10
+    name: "domain.dsl.dag_parser"
+    role: "domain"
+    objective: "DAGParser: YAML/JSON → GraphExecutionPlan, detección de ciclos"
+    input: "N07 (templates)"
+    output: "domain/dsl/dag_parser.py"
+    depends_on: [N07]
+    parallel_with: [N09, N11, N12, N13]
+    files: ["domain/dsl/dag_parser.py"]
+    root_ids: ["C06"]
+    schemas: []
+    contracts: ["GraphExecutionPlan"]
+    tools: []
+    validation: "Test: grafo cíclico rechazado, grafo válido produce plan topológico"
+    failure: "ARCHITECTURE_CONFLICT"
+    recovery: "N/A"
+    status: PENDING
+
+  - node_id: N11
+    name: "core.auth"
+    role: "core"
+    objective: "R1 — Auth & API Key Manager del propio Router"
+    input: "N05 (vault)"
+    output: "core/auth.py"
+    depends_on: [N05]
+    parallel_with: [N09, N10, N12, N13]
+    files: ["core/auth.py"]
+    root_ids: ["C20"]
+    schemas: []
+    contracts: []
+    tools: []
+    validation: "Test: sesión inválida → 401, evento en ledger"
+    failure: "CONTRACT_FAILURE"
+    recovery: "N/A"
+    status: PENDING
+
+  - node_id: N12
+    name: "core.ledger"
+    role: "core"
+    objective: "R9 — Audit Logger hash-chain append-only"
+    input: "N01"
+    output: "core/ledger.py"
+    depends_on: [N01]
+    parallel_with: [N09, N10, N11, N13]
+    files: ["core/ledger.py"]
+    root_ids: ["C21"]
+    schemas: []
+    contracts: []
+    tools: []
+    validation: "Test: cadena de hashes íntegra, ningún evento se pierde"
+    failure: "INSUFFICIENT_EVIDENCE"
+    recovery: "N/A — append-only, sin rollback destructivo"
+    status: PENDING
+
+  - node_id: N13
+    name: "engine.cost_optimizer"
+    role: "engine"
+    objective: "Reordenar candidatos por costo en empate de score"
+    input: "N02 (schema, campo presupuesto)"
+    output: "engine/cost_optimizer.py"
+    depends_on: [N02]
+    parallel_with: [N09, N10, N11, N12]
+    files: ["engine/cost_optimizer.py"]
+    root_ids: ["C12"]
+    schemas: ["enchufe_universal_v2.0#presupuesto"]
+    contracts: []
+    tools: []
+    validation: "test_cost_optimizer_prioriza_barato_en_empate"
+    failure: "BLOCKER si presupuesto excedido sin política de degradación"
+    recovery: "Degrade a modelo más barato según policy"
+    status: PENDING
+
+  - node_id: N14
+    name: "engine.worker_pool"
+    role: "engine"
+    objective: "R2 Selector + R3 Cola/Balanceo + R4 Health"
+    input: "N09, N13"
+    output: "engine/worker_pool.py"
+    depends_on: [N09, N13]
+    parallel_with: [N15, N16, N17, N18]
+    files: ["engine/worker_pool.py", "domain/dsl/capability.json"]
+    root_ids: ["C09"]
+    schemas: []
+    contracts: []
+    tools: []
+    validation: "test_selector_especialidad_elige_top_score + batching batch_size=20 overlap=5"
+    failure: "DEPENDENCY_MISSING si no hay candidatos sanos"
+    recovery: "Reintenta con siguiente candidato de cola"
+    status: PENDING
+
+  - node_id: N15
+    name: "engine.resilience"
+    role: "engine"
+    objective: "R5 Retry + R6 Circuit Breaker"
+    input: "N09"
+    output: "engine/resilience.py"
+    depends_on: [N09]
+    parallel_with: [N14, N16, N17, N18]
+    files: ["engine/resilience.py"]
+    root_ids: ["C10"]
+    schemas: []
+    contracts: ["CircuitBreaker: CLOSED→OPEN→HALF_OPEN"]
+    tools: []
+    validation: "test_circuit_breaker_open_a_half_open"
+    failure: "N/A — el fallo ES el objeto de este módulo"
+    recovery: "Automática por ventana temporal (diseño ya completo en resumen v6.md)"
+    status: PENDING
+
+  - node_id: N16
+    name: "engine.semantic_cache"
+    role: "engine"
+    objective: "R8 — cache de respuestas similares"
+    input: "N08 (storage/Redis)"
+    output: "engine/semantic_cache.py"
+    depends_on: [N08]
+    parallel_with: [N14, N15, N17, N18]
+    files: ["engine/semantic_cache.py"]
+    root_ids: ["C11"]
+    schemas: []
+    contracts: []
+    tools: ["redis.asyncio", "vector similarity"]
+    validation: "test_semantic_cache_hit_y_miss"
+    failure: "Miss no es error"
+    recovery: "N/A"
+    status: PENDING
+
+  - node_id: N17
+    name: "core.monitoring"
+    role: "core"
+    objective: "R10 — métricas OTel-like, traces por trace_id"
+    input: "N12 (ledger)"
+    output: "core/monitoring.py"
+    depends_on: [N12]
+    parallel_with: [N14, N15, N16, N18]
+    files: ["core/monitoring.py"]
+    root_ids: ["C22"]
+    schemas: []
+    contracts: []
+    tools: []
+    validation: "Trace completo con latencia total al cerrar trace_id"
+    failure: "Degrada observabilidad, no bloquea ejecución"
+    recovery: "N/A"
+    status: PENDING
+
+  - node_id: N18
+    name: "engine.sandbox.code_sandbox"
+    role: "engine"
+    objective: "CodeSandbox dual: Docker + fallback subprocess"
+    input: "N05 (vault, para env_vars seguros)"
+    output: "engine/sandbox/code_sandbox.py + docker_backend.py + subprocess_backend.py"
+    depends_on: [N05]
+    parallel_with: [N14, N15, N16, N17]
+    files: ["engine/sandbox/code_sandbox.py", "engine/sandbox/docker_backend.py", "engine/sandbox/subprocess_backend.py"]
+    root_ids: ["C13"]
+    schemas: []
+    contracts: ["spin_container/inject_and_run/teardown paridad en ambos backends"]
+    tools: ["docker SDK"]
+    validation: "Test: timeout y max_memoria_mb se respetan en AMBOS backends (condición Ask Council #7)"
+    failure: "Timeout/OOM → kill + evidencia"
+    recovery: "teardown() garantizado en try/finally"
+    status: PENDING
+
+  - node_id: N19
+    name: "engine.dag_orchestrator"
+    role: "engine"
+    objective: "Ejecutar GraphExecutionPlan, checkpoints por nodo"
+    input: "N10, N14, N15, N18"
+    output: "engine/dag_orchestrator.py"
+    depends_on: [N10, N14, N15, N18]
+    parallel_with: [N20, N21]
+    files: ["engine/dag_orchestrator.py"]
+    root_ids: ["C08"]
+    schemas: []
+    contracts: []
+    tools: []
+    validation: "test_flujo_end_to_end"
+    failure: "Nodo falla → retry (N15) o propaga FAILED"
+    recovery: "Checkpoint — reanuda sin repetir nodos DONE"
+    status: PENDING
+
+  - node_id: N20
+    name: "engine.windows_chain"
+    role: "engine"
+    objective: "Generalización de ventanas/cadena.py a 1-100 ventanas configurables"
+    input: "N18 (sandbox), N10 (dag_parser para export)"
+    output: "engine/windows_chain.py"
+    depends_on: [N18, N10]
+    parallel_with: [N19, N21]
+    files: ["engine/windows_chain.py"]
+    root_ids: ["C14"]
+    schemas: []
+    contracts: []
+    tools: []
+    validation: "Espejo funcional del prototipo _ventanas_del_tren.html: pausa/breakpoint/intervención/export DSL"
+    failure: "Ventana falla → cadena se detiene, estado failed"
+    recovery: "Intervención manual (aplicar payload editado y continuar)"
+    status: PENDING
+
+  - node_id: N21
+    name: "api.middleware.alcabala"
+    role: "api"
+    objective: "InboundGatekeeper: firma, desencriptado, validación estricta"
+    input: "N05, N02"
+    output: "api/middlewares/alcabala.py"
+    depends_on: [N05, N02]
+    parallel_with: [N19, N20]
+    files: ["api/middlewares/alcabala.py"]
+    root_ids: ["C02"]
+    schemas: ["enchufe_universal_v2.0"]
+    contracts: []
+    tools: []
+    validation: "Fail closed: firma inválida nunca pasa"
+    failure: "Bloquea"
+    recovery: "N/A"
+    status: PENDING
+
+  - node_id: N22
+    name: "api.ws.events"
+    role: "api"
+    objective: "Canal WS/SSE tiempo real hacia paneles"
+    input: "N17 (monitoring)"
+    output: "api/ws/events.py"
+    depends_on: [N17]
+    parallel_with: [N19, N20, N21]
+    files: ["api/ws/events.py"]
+    root_ids: ["C23"]
+    schemas: []
+    contracts: ["connection.update, chat.token, cb.open, cost.update, queue.update"]
+    tools: []
+    validation: "Test de emisión de cada tipo de evento"
+    failure: "Cliente desconectado no bloquea backend"
+    recovery: "N/A (reconexión es responsabilidad del cliente)"
+    status: PENDING
+
+  - node_id: N23
+    name: "api.gateway"
+    role: "integration"
+    objective: "Integración final — expone las 98 funciones/endpoints de los 5 paneles"
+    input: "N19, N20, N21, N22"
+    output: "api/routers/* completos"
+    depends_on: [N19, N20, N21, N22]
+    parallel_with: []
+    files: ["api/routers/connections.py", "api/routers/connectors.py", "api/routers/agent.py", "api/routers/extras.py"]
+    root_ids: ["C01"]
+    schemas: []
+    contracts: ["contrato de API congelado — ver __router-funciones.md"]
+    tools: ["FastAPI"]
+    validation: "Regression completa contra el mapa de 98 funciones · integración final"
+    failure: "OUTPUT_SCHEMA_FAILURE si un endpoint no cumple el contrato ya diseñado para los paneles"
+    recovery: "N/A — es el nodo de integración final"
+    status: PENDING
+
+execution_notes: >
+  4 niveles de paralelismo: {N01,N02,N03,N04} → {N05,N06,N07,N08} →
+  {N09,N10,N11,N12,N13} → {N14,N15,N16,N17,N18} → {N19,N20,N21,N22} → N23.
+  El runtime determinista (no el LLM) controla avance/paralelismo/recovery.
