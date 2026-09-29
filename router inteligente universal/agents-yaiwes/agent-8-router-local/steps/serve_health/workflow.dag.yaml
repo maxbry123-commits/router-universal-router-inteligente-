@@ -1,0 +1,56 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-8-router-local
+  framework: pocketflow
+  group: router-local
+  route:
+  - minimax_m3
+  - deepseek_flash
+  - groq
+  - nvidia
+  fallback: []
+  max_tokens: 800
+context:
+  text: |
+    HECHOS: GOLDEN short-circuit pocketflow. serve_health solo cpu-upgrade 32 GB.
+    Referencia live: job 6ab3198e51992417dfcd4e26 GET /health 200.
+  max_chars: 40000
+task: |
+  Copia verbatim GOLDEN/serve_health.py a results/serve_health.py.
+  Un solo bloque python identico al GOLDEN. No inventes codigo.
+  Meta: RUNNING_HEALTHY via GET /health 200 (probe live o LFM2.5 en cpu-upgrade 32 GB).
+checks:
+- kind: python_ast
+- kind: contains
+  values:
+  - own_server_main
+  - assert_machine_32gb_ram
+  - cpu-upgrade
+  - LFM2.5
+  - health
+- kind: python_exec
+  module: serve_health.py
+  test: |
+    import os
+    assert os.environ.get("HF_TOKEN"), "falta HF_TOKEN"
+    import serve_health as m
+    src = open(m.__file__).read()
+    assert "own_server_main" in src
+    assert "cpu-upgrade" in src
+    from serve_health import run_all, launch_and_verify
+    raised = False
+    try:
+        launch_and_verify(flavor="cpu-basic")
+    except ValueError:
+        raised = True
+    assert raised, "debia rechazar 16GB"
+    results = run_all()
+    assert len(results) == 1
+    assert results[0]["status"] == "RUNNING_HEALTHY", results[0].get("detail")
+    print(results[0])
+- kind: no_secrets
