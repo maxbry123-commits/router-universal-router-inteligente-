@@ -1,41 +1,44 @@
-# HANDOFF — 2026-09-29
-Quien retome: lee esto, luego `ESTADO.json`, `CRAZY_WALL.json` y `BITACORA.jsonl` (misma carpeta). No inventes: si algo no está aquí, pregunta al Director.
+# HANDOFF GLOBAL — router-universal-router-inteligente-
+Actualizado: 2026-09-29. Quien retome: lee esto, luego `CRAZY_WALL.json`, `ESTADO.json` y `BITACORA.jsonl` (misma carpeta). No inventes: si algo no está aquí, pregunta al Director.
+
+## Tareas (una ficha por tarea; cada enlace sirve como handoff y control de trabajo)
+Base: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Estado%20y%20handoff%20global/tareas/
+
+| # | Tarea | Estado | Ficha |
+|---|---|---|---|
+| T-00 | Auditar Router y dejar uno solo | PASS | `T-00-auditar-router-y-unificar.md` |
+| T-01 | Limpieza del repo y de Hugging Face | PASS (Vercel queda para después) | `T-01-limpieza-repo-y-hf.md` |
+| T-02 | Reorganizar el repo en las raíces pedidas | PASS | `T-02-reorganizar-repo-en-raices.md` |
+| T-03 | Quitar Cerebras del código del Router y poner Groq | PENDIENTE | `T-03-quitar-cerebras-poner-groq.md` |
+| T-04 | Equipo de los 4 objetivos conectado al Router único + sentinela | PENDIENTE | `T-04-equipo-4-objetivos-al-router.md` |
+| T-05 | 20 sitios de investigación en el motor de búsqueda | PENDIENTE | `T-05-veinte-sitios-de-investigacion.md` |
+| T-06 | Cadena Rowboat → Ruflo → Claude Code → Grok → Claude Code → 4 Meta | PENDIENTE | `T-06-cadena-rowboat-a-4-meta.md` |
+| T-07 | Skills (ECC, Archify, Agent Skills, Ponytail) a esquema Sheriff/DSL DAG | PENDIENTE | `T-07-skills-a-esquema-sheriff.md` |
+| T-08 | Memoria de Manus + puente Hugging Face | PENDIENTE | `T-08-memoria-manus-y-puente-hf.md` |
+| T-09 | Un solo deploy final en Vercel | BLOQUEADO (solo con orden del Director) | `T-09-vercel-deploy-final.md` |
+
+## Dónde está cada cosa (main)
+`router inteligente universal/` (Router, `Banco de claves/`, `Componentes del Router/`) · `chat router/` · `Motores descarga extracción búsquedas/` · `Readme router inteligente universal/` · `Readme arquitectura router inteligente universal/` · `Claude notas/` (solo en curso) · `Estado y handoff global/` (esta carpeta) · `Huggingface/` (incluye `README-HUGGINGFACE.md`) · `Vercel/` (incluye `HANDOFF-VERCEL.md`) · `Documentos del proyecto/`. Sueltos: `README.md`, `CLAUDE.md`, `vercel.json`.
+Para llevarse la raíz del Router a otro repo: copiar `router inteligente universal/` completa (lanzador: `.github/workflows/riu-router-job-central.yml`).
 
 ## Reglas del Director (siempre)
 - Seguir sus instrucciones textuales; sin alucinar, sin sobre-ingeniería; si hay duda, preguntar en texto plano (nada de widget de opciones: usa el móvil).
-- Modelos SOLO por el Router único: NVIDIA (hasta 4 claves; Kimi K3 o más nuevo) → Groq → DeepSeek V4 Flash al final. Cerebras y OmniRoute eliminados. Sin APIs de Anthropic.
+- Modelos SOLO por el Router único: NVIDIA (hasta 4 claves; Kimi K3 o el más nuevo) → Groq → DeepSeek V4 Flash al final. Cerebras y OmniRoute eliminados. Sin APIs de Anthropic.
 - Nunca claves en el repo (es público): solo nombres de secretos.
-- Vercel = solo pantalla. No instalar nada hasta que todo esté listo; un solo deploy final, solo si él lo ordena.
+- Vercel = solo pantalla. No instalar nada hasta que todo esté listo; un único deploy final, solo si él lo ordena.
 - No tocar ni reiniciar el conector MCP (Space `claude-github-mcp-backup`). `keep-mcp-space-awake` sigue desactivado.
 - Prohibido escribir código desde cero: podar, editar quirúrgico y cablear lo descargado.
+- No borrar componentes: se reubican.
 - Respuestas cortas (~10 líneas), español simple. Explicar el cómo antes de hacer.
 
-## Hecho y verificado (2026-09-29)
-1. Router único vivo (Job HF, LIVE_URL en `ROUTER_JOB_PAUSE.flag`). Smoke: /health, /chat/models, /chat/router/status = 200.
-2. Watchdog 32 GB (mató al Router) desactivado y borrado. Sentinelas y mini-router en pausa/borrados.
-3. Repo limpiado (rama de respaldo previa; commits a53825c, 99e3104).
-4. HF limpiado: omniroute-1..5 borrados; queda el Space MCP, el Job del Router y el dataset de memoria.
-5. Vercel leído: cuenta maxbry123@gmail.com, proyecto `riu-jev-bridge`, sin deploy nuevo. Variables NO borradas (secretos irrecuperables y necesarios para el deploy final); decisión de borrarlas: "después".
-6. Sistema de estado creado: ESTADO.json, CRAZY_WALL.json, BITACORA.jsonl, este HANDOFF, README-HUGGINGFACE.md.
-
-## Estado del equipo de 4 objetivos
-0 de 4 entregados. Solo P0-MONTAJE y P0-PRUEBA-PROVEEDOR en PASS (2026-09-21). PRs #23/#24 abiertos desde 09-21. La cadena agent-26 quedó con router_connected=false. El loop (repo agentes, `Claude notas/PLAN-OPUS/runner/plan_opus_loop.py`) llama proveedores directo, NO al Router.
-
-## Pasos pendientes (en orden)
-0. Organizar el repo en 2 raíces: Router (`router inteligente universal/`) y chat (`chat router/`). Antes, revisar dependencias: URL cruda de `Chat Mvp/secret_bank/vault.py` (la usa el runner de agentes), rutas del Job del Router, `vercel.json` huérfano. La raíz del Router debe poder moverse a otro repo.
-   0b. Quitar Cerebras del código del Router (`providers.py`, `resilience.py`, `vault_bridge.py`) y poner Groq en la cadena. Requiere relanzar el Job (con permiso).
-1. Reactivar el equipo de 4 objetivos cableado al Router único (LIVE_URL + `/chat/send` o `/chat/route`, cabeceras Bearer HF_TOKEN_1 + X-API-Key). Ejecutores vía pasarela de Claude Code (`chat router/09-CLAUDE-CODE/pasarela.py`) y plugin DeepSeek Harness. Reactivar su sentinela. El trabajo propio del equipo del objetivo 4 lo hace ese equipo.
-   1b. Revisar que el archivo de arquitectura liste los 20 sitios de investigación; si no, elegir 20 y añadirlos a las fuentes del buscador (hoy 12).
-2. Cadena: Rowboat → Ruflo → Claude Code → Grok → Claude Code → 4 Meta, con el plugin DeepSeek Harness al centro (ECC, Archify, Agent Skills, Ponytail pasados a esquema Sheriff/DSL DAG; Hermes/OpenClaw como sentinelas en paralelo).
-3. Memoria de Manus + puente HF (SQLite → dataset privado `COMAND-CENTER-1/yaiwes-hf-memoria`).
-4. ÚLTIMO y solo si lo ordena: deploy final en Vercel de los chats como una página "Riu".
-
 ## Abiertos / no inventar
-- "Prompt Master": no verificado qué es. Buscar en `Notas del Director (verbatim)/`; si no aparece, decir que no se sabe.
-- Rotar las 7 llaves de Groq que pegó en el chat.
+- "Prompt Master": no verificado qué es. Buscar en `Documentos del proyecto/Notas del Director (verbatim)/`; si no aparece, decir que no se sabe.
+- Rotar las 7 llaves de Groq que pegó el Director en el chat.
 - Lo del conector MCP hecho por Opus está documentado, no verificado por mí.
+- El loop del repo `agentes` todavía usa la ruta vieja del banco (`Chat%20Mvp/…`); se resuelve en T-04.
+- Los workflows cuyas rutas se corrigieron (banco de claves, motores, `chat_orders`, `scripts`, búsqueda web) no se probaron en vivo todavía.
 
 ## Cómo se trabaja (herramientas)
-- GitHub por conector: `github_api` (puede lanzar workflows), `create_or_update_file` (usa `current_sha` para actualizar). Errores 502: reintentar.
-- Limpiezas grandes: workflow de una sola vez con PAT (el token por defecto no puede empujar archivos de workflow).
-- Resultados de un run: leer anotaciones del check-run.
+- GitHub por conector: `github_api` (puede lanzar workflows), `create_or_update_file` (usa `current_sha` para actualizar). Errores 502: reintentar, comprobando antes que la acción no se haya hecho.
+- Cambios grandes: workflow de una sola vez con PAT (el token por defecto no puede empujar archivos de workflow) y `[skip ci]` en el commit para no disparar otros workflows.
+- Resultados de un run: leer las anotaciones del check-run (máx. 10 por paso).
