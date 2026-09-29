@@ -85,10 +85,16 @@ def build_route_router() -> APIRouter:
         now = datetime.now(timezone.utc)
         asked = await asyncio.to_thread(model_pool.POOL.refresh)
         groups: dict[str, Any] = {}
-        for name in resilience.DEFAULT_POLICY:
+        for name, policy in resilience.DEFAULT_POLICY.items():  # same rules as resilience.run_policy, without taking a probe lease
             chain, _skipped = resilience.resolve_chain(name, now)
+            if not policy["authorized_fallback"]:
+                groups[name] = {"try_order": chain, "skipped": [], "pool_used": False}
+                continue
             kept, skipped = model_pool.POOL.filter(chain)
-            groups[name] = {"try_order": kept, "skipped": skipped}
+            if chain and not kept:
+                groups[name] = {"try_order": chain, "skipped": skipped + ["POOL_EMPTY_TRY_ALL"], "pool_used": True}
+            else:
+                groups[name] = {"try_order": kept, "skipped": skipped, "pool_used": True}
         return {"providers": asked, "model_pool": model_pool.POOL.snapshot(), "groups": groups}
 
     @r.post("/chat/jev")
