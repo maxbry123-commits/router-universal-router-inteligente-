@@ -164,6 +164,7 @@ def test_route_endpoints(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "call_via_router", fake)
     monkeypatch.setitem(R.DEFAULT_POLICY, "strict", {"authorized_fallback": False, "chain": [R.NEMOTRON, R.MINIMAX]})
     monkeypatch.setitem(R.DEFAULT_POLICY, "onlykimi", {"authorized_fallback": True, "chain": [R.KIMI_K3]})
+    monkeypatch.setitem(R.DEFAULT_POLICY, "nokeys", {"authorized_fallback": True, "chain": [R.QWEN_GROQ]})  # Groq has no key in this test: the chain is empty
     listing = {"nvidia": ["z-ai/glm-5.3", "nvidia/nemotron-3-super-120b-a12b"]}  # NVIDIA does not list Kimi in this test
     monkeypatch.setattr(model_pool, "POOL", model_pool.ModelPool(fetch=lambda p, k: listing.get(p, [])))
     rt.set_store(Store(tmp_path))
@@ -191,6 +192,7 @@ def test_route_endpoints(tmp_path, monkeypatch):
         # same rules as run_policy: a group where the pool filters EVERYTHING out is tried whole; a group without authorization ignores the pool
         assert models["groups"]["onlykimi"] == {"try_order": [{"provider": "nvidia", "model": "moonshotai/kimi-k3"}], "pool_used": True,
                                                 "skipped": ["nvidia/moonshotai/kimi-k3:NOT_LISTED", "POOL_EMPTY_TRY_ALL"]}
+        assert models["groups"]["nokeys"] == {"try_order": [], "skipped": [], "pool_used": True}  # an empty chain is reported empty, not as "pool emptied it"
         assert models["groups"]["strict"]["pool_used"] is False and models["groups"]["strict"]["skipped"] == []
         assert [c["provider"] for c in models["groups"]["strict"]["try_order"]] == ["nvidia", "hf"]
         assert client.post("/chat/route", json={"group": "default", "message": "x", "agent_id": "nope"}, headers=H).status_code == 400
@@ -255,3 +257,48 @@ def test_send_auto_uses_the_default_chain_and_keeps_the_conversation(tmp_path, m
         assert client.post("/chat/send", json={"message": "x", "provider": "nope", "model": "m"}, headers=H).json()["detail"] == "PROVIDER_UNKNOWN"
     finally:
         rt.set_store(None)
+
+
+def test_router_models_report_does_not_take_the_probe_lease(tmp_path, monkeypatch):
+    """GET /chat/router/models is only a report: a model whose cooldown ended must stay free for the next REAL request, however often the report is read."""
+    pytest.importorskip("fastapi")
+    pytest.importorskip("huggingface_hub")
+    from fastapi.testclient import TestClient
+
+    from integration.chat_mvp import app as chat_app
+    from integration.chat_mvp import model_pool
+    from integration.chat_mvp import router as rt
+    from integration.chat_mvp.store import Store
+
+    kimi = "moonshotai/kimi-k3"
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"k1": "agent-a"}')
+    monkeypatch.setenv("NVIDIA_API_KEY_1", "n")
+    now = [0.0]
+    pool = model_pool.ModelPool(fetch=lambda p, k: [kimi, "z-ai/glm-5.3", "nvidia/nemotron-3-super-120b-a12b"], clock=lambda: now[0], cooldown=10)
+    monkeypatch.setattr(model_pool, "POOL", pool)
+    rt.set_store(Store(tmp_path))
+    client = TestClient(chat_app.app)
+    H = {"X-API-Key": "k1"}
+    try:
+        pool.mark_bad("nvidia", kimi, "test")
+        now[0] = 11.0  # the cooldown is over: the next real request may probe Kimi
+        for _ in range(2):
+            body = client.get("/chat/router/models", headers=H).json()
+            assert [c["model"] for c in body["groups"]["default"]["try_order"]][:1] == [kimi]
+        assert pool._bad[("nvidia", kimi)][0] == 10.0  # the reports took no lease (a lease would have moved this to 11 + 30)
+    finally:
+        rt.set_store(None)
+
+
+def test_auto_is_listed_but_not_configured_when_no_provider_has_a_key(monkeypatch):
+    pytest.importorskip("fastapi")
+    pytest.importorskip("huggingface_hub")
+    from fastapi.testclient import TestClient
+
+    from integration.chat_mvp import app as chat_app
+
+    for spec in P.PROVIDERS.values():  # whatever keys the machine running the test has
+        for name in spec["env"]:
+            monkeypatch.delenv(name, raising=False)
+    first = TestClient(chat_app.app).get("/chat/providers").json()["providers"][0]
+    assert first["id"] == "auto" and first["configured"] is False
