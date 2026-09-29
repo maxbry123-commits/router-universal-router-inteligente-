@@ -1,0 +1,73 @@
+name: Sonda NVIDIA modelos (una vez)
+# Lista los modelos de NVIDIA (Kimi K3, GLM 5, DeepSeek V4, etc.) y prueba cada uno con 8 tokens. Solo lectura. Se borra sola.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO || secrets.GH_JOB_PUSH_TOKEN }}
+      NVIDIA_API_KEY_1: ${{ secrets.NVIDIA_API_KEY_1 }}
+      NVIDIA_API_KEY_2: ${{ secrets.NVIDIA_API_KEY_2 }}
+      NVIDIA_API_KEY_3: ${{ secrets.NVIDIA_API_KEY_3 }}
+      NVIDIA_API_KEY_4: ${{ secrets.NVIDIA_API_KEY_4 }}
+    steps:
+      - name: Sondear
+        run: |
+          cat > /tmp/s.py <<'EOF_PY'
+          import os, json, re, time, urllib.request
+          B = "https://integrate.api.nvidia.com/v1"
+          keys = [(i, os.environ.get("NVIDIA_API_KEY_%d" % i, "")) for i in (1, 2, 3, 4)]
+          print("::notice title=NV_CLAVES::presentes=%s" % [i for i, k in keys if k])
+          key = next((k for i, k in keys if k), "")
+          def call(path, body=None, k=key):
+              req = urllib.request.Request(B + path, data=(json.dumps(body).encode() if body else None),
+                                           headers={"Authorization": "Bearer " + k, "Content-Type": "application/json", "User-Agent": "riu-sonda"})
+              t = time.time()
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      return r.status, r.read().decode()[:400], round(time.time() - t, 1)
+              except Exception as e:
+                  code = getattr(e, "code", "ERR")
+                  try: txt = e.read().decode()[:200]
+                  except Exception: txt = str(e)[:200]
+                  return code, txt, round(time.time() - t, 1)
+          st, txt, _ = call("/models")
+          ids = []
+          if st == 200:
+              try:
+                  full = urllib.request.urlopen(urllib.request.Request(B + "/models", headers={"Authorization": "Bearer " + key, "User-Agent": "riu-sonda"}), timeout=60).read()
+                  ids = sorted(m["id"] for m in json.loads(full)["data"])
+              except Exception as e:
+                  print("::warning title=NV_LISTA_ERR::%s" % str(e)[:200])
+          print("::notice title=NV_TOTAL::status=%s modelos=%d" % (st, len(ids)))
+          pat = re.compile(r"kimi|glm|deepseek|qwen|minimax", re.I)
+          cand = [i for i in ids if pat.search(i)]
+          print("::notice title=NV_CANDIDATOS::" + " | ".join(cand)[:3000])
+          res = []
+          pri = [i for i in cand if re.search(r"kimi-k3|glm-?5|deepseek-?v4", i, re.I)] or cand[:8]
+          for m in pri[:10]:
+              s, t2, dt = call("/chat/completions", {"model": m, "messages": [{"role": "user", "content": "OK"}], "max_tokens": 8})
+              res.append("%s -> %s %ss %s" % (m, s, dt, ("" if s == 200 else t2[:90].replace("\n", " "))))
+          print("::notice title=NV_PRUEBA::" + " || ".join(res)[:3500])
+          # cuantas claves responden con el primer candidato
+          if pri:
+              r2 = []
+              for i, k in keys:
+                  if not k: continue
+                  s, _, dt = call("/chat/completions", {"model": pri[0], "messages": [{"role": "user", "content": "OK"}], "max_tokens": 4}, k)
+                  r2.append("key%d=%s" % (i, s))
+              print("::notice title=NV_CLAVES_PRUEBA::modelo=%s %s" % (pri[0], " ".join(r2)))
+          EOF_PY
+          python3 /tmp/s.py
+      - name: Borrarse
+        if: always()
+        run: |
+          git config --global user.name "riu-bot"; git config --global user.email "riu-bot@users.noreply.github.com"
+          git clone -q --filter=blob:none --no-checkout "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/router-universal-router-inteligente-.git" r
+          cd r && git read-tree HEAD && git rm -q --cached .github/workflows/sonda-nvidia.yml
+          git commit -q -m "sonda NVIDIA: se borra sola [skip ci]"
+          for i in 1 2 3; do git push -q origin HEAD:main && break || { git fetch -q origin main && git rebase -q origin/main; }; done
