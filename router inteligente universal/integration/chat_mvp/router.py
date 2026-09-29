@@ -240,7 +240,8 @@ def build_router() -> APIRouter:
             trace = getattr(exc, "trace", None)
             # A plain string on purpose: the current chat page writes `detail` into a sentence (an object would show as [object Object]).
             detail = f"{exc} | " + " ; ".join(trace) if (auto and trace) else str(exc)
-            raise HTTPException(status_code=502, detail=detail[:900]) from exc
+            busy = str(exc).startswith("ROUTER_SATURATED")  # the Router is busy, no model failed: 503 like /chat/route
+            raise HTTPException(status_code=503 if busy else 502, detail=detail[:900]) from exc
         reply = result["message"].get("content") or ""
         if reply:
             if not conv:
