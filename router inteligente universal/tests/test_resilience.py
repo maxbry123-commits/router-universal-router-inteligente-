@@ -252,7 +252,8 @@ def test_send_auto_uses_the_default_chain_and_keeps_the_conversation(tmp_path, m
         assert fourth["provider"] == "groq" and fourth["model"] == qwen
         dead.add(qwen)
         allfail = client.post("/chat/send", json={"message": "x", "provider": "auto"}, headers=H)
-        assert allfail.status_code == 502 and allfail.json()["detail"]["error"] == "ROUTER_ALL_ROUTES_FAILED" and allfail.json()["detail"]["trace"]
+        detail = allfail.json()["detail"]  # a plain string: the current chat page writes it into a sentence (an object showed as [object Object])
+        assert allfail.status_code == 502 and isinstance(detail, str) and detail.startswith("ROUTER_ALL_ROUTES_FAILED | ") and "kimi-k3" in detail
         assert client.post("/chat/send", json={"message": "x", "provider": "nvidia"}, headers=H).json()["detail"] == "MODEL_REQUIRED"
         assert client.post("/chat/send", json={"message": "x", "provider": "nope", "model": "m"}, headers=H).json()["detail"] == "PROVIDER_UNKNOWN"
     finally:
