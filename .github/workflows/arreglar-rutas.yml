@@ -1,0 +1,89 @@
+name: Arreglar rutas viejas (una vez, orden del Director 2026-09-29)
+
+# Tras la reorganizacion: busca rutas viejas (Chat Mvp, router inteligente software, ...) en codigo y arregla el puente del banco de claves.
+# apply=false: solo escanea y prueba. apply=true: sube un commit y se borra a si mismo.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "true = subir el commit"
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  rutas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO || secrets.GH_JOB_PUSH_TOKEN }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clonar con checkout parcial en lote
+        run: |
+          git config --global core.quotepath off
+          git config --global user.name "riu-bot"; git config --global user.email "riu-bot@users.noreply.github.com"
+          git clone -q --filter=blob:none --no-checkout "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/router-universal-router-inteligente-.git" r
+          cd r
+          git sparse-checkout init --no-cone
+          cat > .git/info/sparse-checkout <<'EOF_SP'
+          /.github/workflows/
+          /chat router/
+          /router inteligente universal/
+          !/router inteligente universal/Componente open soure router inteligente universal/
+          !/router inteligente universal/Componentes del Router/
+          !/router inteligente universal/vercel-ui/
+          !/router inteligente universal/vercel-jev-bridge/
+          !/router inteligente universal/agents-yaiwes/agent-*/
+          /router inteligente universal/agents-yaiwes/common/
+          EOF_SP
+          sed -i 's/^ *//' .git/info/sparse-checkout
+          git checkout -q main
+          git log --oneline -1
+      - name: Escaneo de rutas viejas
+        run: |
+          cd r
+          PAT='Chat( |%20)Mvp|router inteligente software|hermes-agent|Yaiwes Cognitive Control Plane|dataset Yaiwes|vercel-chat'
+          git grep -n -I -E "$PAT" -- '*.py' '*.yml' '*.yaml' '*.sh' '*.json' ':!*/results/*' ':!*BITACORA*' ':!*INPUT-BLOCK*' \
+            | grep -v -E "Componentes del Router/router inteligente software|Vercel/vercel-chat|Banco de claves" > /tmp/viejas.txt || true
+          echo "hits: $(wc -l < /tmp/viejas.txt)"
+          cut -d: -f1 /tmp/viejas.txt | sort | uniq -c | sort -rn | head -25 | awk '{printf "%s x%s | ", $2" "$3" "$4, $1}' | cut -c1-3500 | sed 's/^/::notice title=ARCHIVOS_CON_RUTA_VIEJA::/'
+          head -12 /tmp/viejas.txt | cut -c1-230 | tr '\n' '|' | sed 's/^/::notice title=EJEMPLOS::/'
+      - name: Tests ANTES
+        run: |
+          pip install -q pytest httpx pyyaml cryptography requests uvicorn -r "r/router inteligente universal/requirements.txt" 2>&1 | tail -1
+          cd "r/router inteligente universal"
+          timeout 900 python -m pytest tests "Banco de claves/tests" -q -p no:cacheprovider --maxfail=200 2>&1 | tail -400 > /tmp/antes.txt || true
+          grep -E "^(FAILED|ERROR)" /tmp/antes.txt | sed 's/ - .*//' | sort -u > /tmp/antes_fail.txt || true
+          echo "::notice title=ANTES::$(tail -1 /tmp/antes.txt)"
+      - name: Arreglar el puente del banco
+        run: |
+          python - <<'EOF_PY'
+          p = "r/router inteligente universal/integration/chat_mvp/vault_bridge.py"
+          t = open(p, encoding="utf-8").read()
+          n = t.replace('p / "Chat Mvp" / "secret_bank" / "vault.py"', 'p / "Banco de claves" / "secret_bank" / "vault.py"')
+          n = n.replace("(Chat Mvp/secret_bank/vault.py)", "(Banco de claves/secret_bank/vault.py)")
+          print("::notice title=PUENTE::" + ("cambiado" if n != t else "SIN CAMBIO"))
+          open(p, "w", encoding="utf-8").write(n)
+          EOF_PY
+      - name: Tests DESPUES
+        run: |
+          cd "r/router inteligente universal"
+          timeout 900 python -m pytest tests "Banco de claves/tests" -q -p no:cacheprovider --maxfail=200 2>&1 | tail -400 > /tmp/despues.txt || true
+          grep -E "^(FAILED|ERROR)" /tmp/despues.txt | sed 's/ - .*//' | sort -u > /tmp/despues_fail.txt || true
+          echo "::notice title=DESPUES::$(tail -1 /tmp/despues.txt)"
+          echo "::notice title=NUEVOS::$(comm -13 /tmp/antes_fail.txt /tmp/despues_fail.txt | head -10 | tr '\n' ' ')"
+          echo "::notice title=SIGUEN_FALLANDO::$(cat /tmp/despues_fail.txt | head -14 | cut -c1-110 | tr '\n' '|')"
+          echo "::notice title=ERR_DESPUES::$(grep -E '^E  ' /tmp/despues.txt | sort | uniq -c | sort -rn | head -4 | tr '\n' ' ' | cut -c1-500)"
+      - name: Subir
+        if: ${{ inputs.apply == 'true' }}
+        run: |
+          cd r
+          git rm -q --cached .github/workflows/arreglar-rutas.yml
+          git add -u
+          git commit -q -m "Router: el puente del banco busca Banco de claves (ruta nueva tras la reorganizacion) [skip ci]"
+          for i in 1 2 3; do git push -q origin HEAD:main && break || { git fetch -q origin main && git rebase -q origin/main; }; done
+          git log --oneline -1
