@@ -17,14 +17,15 @@
 Sueltos en la raíz: `CLAUDE.md`, `vercel.json` (Vercel lo lee desde la raíz; se queda hasta el deploy final), `.github`, `.gitmodules`, `.gitignore`, `.devcontainer`.
 
 ## Rutas que se corrigieron junto con el movimiento
-9 workflows (banco de claves, motores, `chat_orders`, `scripts`, búsqueda web), 2 archivos del agente 11 y 1 de memoria. Se borró `replicar-motores.yml` (ruido). El Router NO se movió: sus rutas no cambian.
+8 workflows (banco de claves, motores, `chat_orders`, `scripts`, búsqueda web), 2 archivos del agente 11 y 1 de memoria. Se borró `replicar-motores.yml` (ruido). El Router NO se movió: sus rutas no cambian.
 
 ## Pendiente de esta tarea
 - El loop de agentes (repo `agentes`, `plan_opus_loop.py` línea ~110) todavía baja el banco de la ruta vieja `Chat%20Mvp/…`. Se arregla en T-04 (ahí se reemplaza por el Router).
 - Los archivos `readme` viejos mencionan rutas anteriores en su texto (solo prosa; no rompen nada).
+- Falta probar en vivo los workflows tocados (solo se revisó que el texto quedó bien).
 
 ## Cómo se comprobó
-Ensayo en seco (run 36520932226) y aplicación (run 36521041442): raíz verificada por el listado del árbol; las 10 ediciones de rutas se leyeron después de subirse.
+Ensayo en seco (run 36520932226) y aplicación (run 36521041442): raíz verificada por el listado del árbol; las ediciones de rutas se leyeron después de subirse.
 
 ## Para mover la raíz del Router a otro repo
-Copiar la carpeta `router inteligente universal/` completa; los workflows que la lanzan están en `.github/workflows/riu-router-job-central.yml`.
+Copiar la carpeta `router inteligente universal/` completa; el workflow que la lanza es `.github/workflows/riu-router-job-central.yml`.
