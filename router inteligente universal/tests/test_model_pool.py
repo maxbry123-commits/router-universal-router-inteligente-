@@ -86,7 +86,7 @@ def test_pool_caches_lists_and_does_not_hammer_a_dead_provider(monkeypatch):
 
     def fetch(provider, key):
         calls.append(key)
-        raise RuntimeError("timeout")
+        raise P.ProviderError(401, "invalid key")  # an HTTP answer: the next key may work
 
     pool = MP.ModelPool(fetch=fetch, clock=clock)
     assert pool.listed("nvidia") is None and calls == ["n1", "n2"]  # at most 2 keys are tried
@@ -99,6 +99,22 @@ def test_pool_caches_lists_and_does_not_hammer_a_dead_provider(monkeypatch):
     good._fetch = lambda p, k: (_ for _ in ()).throw(RuntimeError("must not be asked again"))
     assert good.listed("nvidia") == frozenset({KIMI, GLM})  # cached for LIST_TTL
     assert MP.ModelPool(fetch=lambda p, k: []).listed("nvidia") is None  # an empty list means unknown, not "nothing is available"
+
+
+def test_a_slow_or_unreachable_provider_is_asked_only_once_per_turn(monkeypatch):
+    """Asking the list must never cost the chat more than one LIST_TIMEOUT per provider: after a timeout no other key is tried."""
+    monkeypatch.setenv("NVIDIA_API_KEY_1", "n1")
+    monkeypatch.setenv("NVIDIA_API_KEY_2", "n2")
+    calls = []
+
+    def fetch(provider, key):
+        calls.append(key)
+        raise P.ProviderError("TimeoutError", "request failed")
+
+    pool = MP.ModelPool(fetch=fetch)
+    assert pool.listed("nvidia") is None and calls == ["n1"]
+    chain = [{"provider": "nvidia", "model": KIMI}]
+    assert pool.filter(chain) == (chain, []) and calls == ["n1"]  # unknown list -> the model is tried anyway, and nobody asks again for a while
 
 
 def test_filter_drops_unlisted_and_cooling_but_keeps_order_and_unknowns(monkeypatch):
