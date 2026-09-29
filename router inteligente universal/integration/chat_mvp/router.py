@@ -13,6 +13,7 @@ import base64
 import json
 import os
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -143,12 +144,17 @@ def build_router() -> APIRouter:
 
     @r.get("/chat/providers")
     def providers() -> dict[str, Any]:
+        chain, _skipped = resilience.resolve_chain("default", datetime.now(timezone.utc))
+        auto = {"id": "auto", "label": "Automático (el Router elige el modelo y pasa al siguiente si uno falla)", "configured": bool(chain)}
         return {"live_provider_inference": core.live_enabled(),
-                "providers": [{"id": k, "label": v["label"], "configured": prov.configured(k)} for k, v in prov.PROVIDERS.items()]}
+                "providers": [auto] + [{"id": k, "label": v["label"], "configured": prov.configured(k)} for k, v in prov.PROVIDERS.items()]}
 
     @r.get("/chat/providers/{provider}/models")
     def provider_models(provider: str, _owner: str = Depends(_auth),
                         x_provider_key: str | None = Header(default=None, alias="X-Provider-Key")) -> dict[str, Any]:
+        if provider == "auto":  # one pseudo-model: the model is chosen by the chain of the "default" group on every turn
+            return {"provider": "auto", "models": [{"label": "Automático", "model_id": "auto", "state": "ROUTER_CHAIN", "certified": False,
+                                                    "selectable": True, "suggested": True}]}
         if provider not in prov.PROVIDERS:
             raise HTTPException(status_code=404, detail="PROVIDER_UNKNOWN")
         if provider == "hf":
