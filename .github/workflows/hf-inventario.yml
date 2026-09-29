@@ -1,0 +1,48 @@
+name: HF Inventario (solo lectura)
+
+# Lista Jobs, Spaces, datasets y modelos de la cuenta HF. No cancela, no borra, no reinicia nada. Nunca imprime el token.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventario:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q huggingface_hub
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          who = api.whoami()["name"]
+          print(f"::notice title=HF_QUIEN::{who}")
+          n = 0
+          for j in api.list_jobs(namespace=who):
+              st = getattr(getattr(j, "status", None), "stage", None)
+              if str(st).upper() in ("RUNNING", "STARTING", "SCHEDULED", "UPDATING"):
+                  n += 1
+                  print(f"::notice title=HF_JOB_VIVO::id={j.id} flavor={getattr(j,'flavor',None)} stage={st} created={getattr(j,'created_at',None)}")
+          print(f"::notice title=HF_JOBS_VIVOS::total={n}")
+          for s in api.list_spaces(author=who):
+              rt = None
+              try:
+                  r = api.get_space_runtime(s.id)
+                  rt = f"stage={r.stage} hw={r.hardware} req={r.requested_hardware} sleep={r.sleep_time}"
+              except Exception as e:
+                  rt = f"runtime_err={type(e).__name__}"
+              print(f"::notice title=HF_SPACE::{s.id} | {rt} | private={getattr(s,'private',None)} | mod={getattr(s,'last_modified',None)}")
+          for d in api.list_datasets(author=who):
+              print(f"::notice title=HF_DATASET::{d.id} | private={getattr(d,'private',None)} | mod={getattr(d,'last_modified',None)}")
+          for m in api.list_models(author=who):
+              print(f"::notice title=HF_MODEL::{m.id} | private={getattr(m,'private',None)} | mod={getattr(m,'last_modified',None)}")
+          PY
