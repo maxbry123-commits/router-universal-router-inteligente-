@@ -39,7 +39,7 @@ def _golden_verbatim(agent_dir: Path, checks: list) -> str | None:
         if not mod.endswith(".py"):
             continue
         gp = golden_dir / mod
-        if gp.is_file() and "own_server_main" in gp.read_text(encoding="utf-8"):
+        if gp.is_file():
             return gp.read_text(encoding="utf-8")
     return None
 
