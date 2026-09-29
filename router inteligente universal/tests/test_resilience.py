@@ -188,3 +188,59 @@ def test_route_endpoints(tmp_path, monkeypatch):
         assert auth.status_code == 409 and auth.json()["detail"]["error"].startswith("NEEDS_DIRECTOR_AUTH")
     finally:
         rt.set_store(None)
+
+
+def test_send_auto_uses_the_default_chain_and_keeps_the_conversation(tmp_path, monkeypatch):
+    """/chat/send with provider=auto: the Router picks the model (Kimi K3 -> GLM 5.3 -> ... -> Nemotron) and the chat keeps its history."""
+    pytest.importorskip("fastapi")
+    pytest.importorskip("huggingface_hub")
+    from fastapi.testclient import TestClient
+
+    from integration.chat_mvp import app as chat_app
+    from integration.chat_mvp import core, model_pool
+    from integration.chat_mvp import router as rt
+    from integration.chat_mvp.store import Store
+
+    kimi, glm, qwen, nemo = "moonshotai/kimi-k3", "z-ai/glm-5.3", "qwen/qwen3.8-27b", "nvidia/nemotron-3-super-120b-a12b"
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"k1": "agent-a"}')
+    monkeypatch.setenv("RIU_CHAT_ALLOW_PROVIDER_LIVE", "1")
+    monkeypatch.setenv("NVIDIA_API_KEY_1", "n")
+    monkeypatch.setenv("GROQ_API_KEY_1", "g")
+    monkeypatch.setattr(core, "cached_discovery", lambda: [])
+    dead: set[str] = set()
+    seen = []
+
+    def fake(provider, key, model, messages, max_tokens, temperature=None):
+        seen.append((provider, model, [m["role"] for m in messages]))
+        if model in dead:
+            raise RuntimeError("PROVIDER_ERROR:TimeoutError:request failed")
+        return {"message": {"role": "assistant", "content": "listo desde " + model}, "finish_reason": "stop",
+                "usage": {"prompt_tokens": 2, "completion_tokens": 1}}
+
+    monkeypatch.setattr(core, "call_via_router", fake)
+    listing = {"nvidia": [kimi, glm, nemo], "groq": [qwen]}
+    monkeypatch.setattr(model_pool, "POOL", model_pool.ModelPool(fetch=lambda p, k: listing.get(p, []), cooldown=100))
+    rt.set_store(Store(tmp_path))
+    client = TestClient(chat_app.app)
+    H = {"X-API-Key": "k1"}
+    try:
+        first = client.post("/chat/send", json={"message": "hola", "provider": "auto"}, headers=H)
+        j1 = first.json()
+        assert first.status_code == 200 and j1["provider"] == "nvidia" and j1["model"] == kimi and j1["auto"] is True and not any("kimi-k3" in t for t in j1["trace"])
+        assert j1["reply"] == "listo desde " + kimi and j1["cached"] is False and j1["conversation_id"]
+        dead.add(kimi)  # Kimi stops answering: the chat moves on by itself and still sends the history
+        second = client.post("/chat/send", json={"message": "sigue", "provider": "auto", "conversation_id": j1["conversation_id"]}, headers=H).json()
+        assert second["model"] == glm and second["conversation_id"] == j1["conversation_id"] and any("kimi-k3:PROVIDER_ERROR" in t for t in second["trace"])
+        assert seen[-1] == ("nvidia", glm, ["user", "assistant", "user"])
+        third = client.post("/chat/send", json={"message": "otra", "provider": "auto"}, headers=H).json()
+        assert third["model"] == glm and f"nvidia/{kimi}:COOLING" in third["trace"]  # Kimi is remembered as dead: no time lost on it
+        dead.update({glm, nemo})  # only Groq's Qwen is left before Nemotron... which is dead too
+        fourth = client.post("/chat/send", json={"message": "x", "provider": "auto"}, headers=H).json()
+        assert fourth["provider"] == "groq" and fourth["model"] == qwen
+        dead.add(qwen)
+        allfail = client.post("/chat/send", json={"message": "x", "provider": "auto"}, headers=H)
+        assert allfail.status_code == 502 and allfail.json()["detail"]["error"] == "ROUTER_ALL_ROUTES_FAILED" and allfail.json()["detail"]["trace"]
+        assert client.post("/chat/send", json={"message": "x", "provider": "nvidia"}, headers=H).json()["detail"] == "MODEL_REQUIRED"
+        assert client.post("/chat/send", json={"message": "x", "provider": "nope", "model": "m"}, headers=H).json()["detail"] == "PROVIDER_UNKNOWN"
+    finally:
+        rt.set_store(None)
