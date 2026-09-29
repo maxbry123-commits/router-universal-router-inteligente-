@@ -1,31 +1,319 @@
 {
   "schema": "yaiwes.crazy-wall/v2",
-  "actualizado_utc": "2026-09-29T16:20Z",
-  "actualizado_utc_anterior": "2026-09-29T05:30Z",
+  "actualizado_utc": "2026-09-29T21:30Z",
+  "actualizado_utc_anterior": "2026-09-29T16:20Z",
   "regla": "Un nodo pasa a PASS solo con evidencia real (commit, salida de prueba o aviso de job). Sin evidencia = PENDIENTE.",
-  "leyenda_marcas": {"✅": "PASS: ejecutado + probado + 4 pasadas de revision + 3 rondas limpias seguidas (regla 05:18)", "🟡": "HECHO_SIN_VERIFICAR: hecho sin probar o probado a medias", "🔴": "PENDIENTE", "⛔": "BLOQUEADO_POR_ORDEN"},
+  "leyenda_marcas": {
+    "✅": "PASS: ejecutado + probado + 4 pasadas de revision + 3 rondas limpias seguidas (regla 05:18)",
+    "🟡": "HECHO_SIN_VERIFICAR: hecho sin probar o probado a medias",
+    "🔴": "PENDIENTE",
+    "⛔": "BLOQUEADO_POR_ORDEN"
+  },
   "alcance": "Solo tareas que NO son del Router. Las del Router (T-00, T-01, T-03, T-10) estan en router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md",
   "alcance_checkpoint_1120": "Desde el checkpoint de las 11:20 (orden del Director 11:07) el muro incluye tambien los bloques del Router y del chat como plugin (nodos N-10 a N-19) como resumen con enlace; el detalle sigue en el handoff del Router. Ningun nodo nuevo esta en PASS.",
   "flujo_global": "OBJETIVO -> KERNEL -> DECIDIR -> WORKFLOW REAL -> RECURSOS REALES -> EJECUTAR -> OBSERVAR -> VERIFICAR -> EVIDENCIA -> CERRAR",
   "base_enlaces": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Estado%20y%20handoff%20global/tareas/",
   "nodos": [
-    {"id": "N-02", "tarea": "T-02", "nombre": "Reorganizar repo en las raices pedidas", "estado": "PASS", "depende": [], "evidencia": "B-0012 (commit 93c70073, runs 36520932226 y 36521041442)", "ficha": "T-02-reorganizar-repo-en-raices.md"},
-    {"id": "N-04", "tarea": "T-04", "nombre": "P1 Equipo 4 objetivos conectado al Router unico + sentinela reactivado", "estado": "PENDIENTE", "depende": [], "evidencia": "", "ficha": "T-04-equipo-4-objetivos-al-router.md", "nota": "Usa el Router segun CONECTAR-ROUTER.md; conviene que el Router ya tenga el codigo nuevo (T-03 del Router)"},
-    {"id": "N-05", "tarea": "T-05", "nombre": "20 sitios de investigacion en motor de busqueda (inicio) y Gaps (final)", "estado": "PENDIENTE", "depende": ["N-02"], "evidencia": "", "ficha": "T-05-veinte-sitios-de-investigacion.md"},
-    {"id": "N-06", "tarea": "T-06", "nombre": "P2 Cadena Rowboat-Ruflo-Claude Code-Grok-Claude Code-4 Meta con DeepSeek Harness", "estado": "PENDIENTE", "depende": ["N-04", "N-05"], "evidencia": "", "ficha": "T-06-cadena-rowboat-a-4-meta.md"},
-    {"id": "N-07", "tarea": "T-07", "nombre": "Skills ECC, Archify, Agent Skills, Ponytail convertidos a esquema Sheriff/DSL DAG", "estado": "PENDIENTE", "depende": ["N-05"], "evidencia": "", "ficha": "T-07-skills-a-esquema-sheriff.md"},
-    {"id": "N-08", "tarea": "T-08", "nombre": "P3 Memoria Manus + puente HF (dataset yaiwes-hf-memoria)", "estado": "PENDIENTE", "depende": ["N-06"], "evidencia": "", "ficha": "T-08-memoria-manus-y-puente-hf.md"},
-    {"id": "N-09", "tarea": "T-09", "nombre": "P4 Un solo despliegue del chat en Vercel (ultimo, solo con orden del Director)", "estado": "BLOQUEADO_POR_ORDEN", "depende": ["N-08"], "evidencia": "", "ficha": "T-09-vercel-deploy-final.md"},
-    {"id": "N-10", "tarea": "T-12/T-13/T-20", "nombre": "Bloque 1 · Cadena de modelos del chat dentro del Router (lista de modelos disponibles, Nemotron ultimo, plazo por opcion, cortacircuitos)", "estado": "HECHO_SIN_VERIFICAR", "marca": "🟡", "depende": [], "evidencia": "CI del flujo temporal tmp-bloque1-cadena-verify.yml: corridas 36557644179, 36561019462, 36562078042; 183 pasan en la rama contra 153 en main con el mismo conjunto de 14 fallos previos (fa97bc78c2a8e444); 42 pruebas de la cadena; mutaciones 27 de 28; cadena en vivo OK en el runner. NO es PASS: rondas 1 y 2 de auditoria no limpias; el Router vivo no corre este codigo", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 10)", "nota": "Rama bloque1-cadena-chat, sin unir a main. Faltan: salto directo a Groq (T-13), Hermes/OpenClaw"},
-    {"id": "N-11", "tarea": "Auditoria", "nombre": "Auditoria independiente del Bloque 1: 3 rondas limpias seguidas (regla 05:18)", "estado": "PENDIENTE", "marca": "🔴", "depende": ["N-10"], "evidencia": "Ronda 1: NO LIMPIA. Ronda 2: NO LIMPIA (correcciones subidas 11:14-11:18, SIN CI). Ronda 3: sin hacer", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (secciones 10.4 y 11)", "nota": "Sin 3 rondas limpias + 4 pasadas por tarea no hay PASS"},
-    {"id": "N-12", "tarea": "Activacion", "nombre": "Activar el Router: CI verde, unir rama a main, relanzar el Job, verificar, borrar workflows temporales", "estado": "PENDIENTE", "marca": "🔴", "depende": ["N-10", "N-11", "N-13"], "evidencia": "", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 14)", "nota": "Orden del Director 10:55 autoriza relanzar tras terminar. Huecos del lanzador: no pasa HF_TOKEN_1 ni RIU_CHAT_ALLOW_PROVIDER_LIVE=1. Job vivo 6abb503a6b030d633f6a2dca corre el codigo anterior. No tocar Vercel ni el Space MCP"},
-    {"id": "N-13", "tarea": "T-15", "nombre": "Bloque 2 · Plugin Host minimo con el chat como primer plugin (el chat es UN plugin mas)", "estado": "PENDIENTE", "marca": "🟡/🔴", "depende": [], "evidencia": "", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 15)", "nota": "EN CONSTRUCCION por otro agente; al 11:20 no hay codigo en la rama ni pruebas. Tribunal: falta el OK del Director. Sin cablear de Fables: failover, presupuesto por nivel, evidencia L1-L4, hot-swap, sandbox C13"},
-    {"id": "N-14", "tarea": "T-16/T-21/T-22/T-24", "nombre": "Bloque 3 · registro de fichas, compilador ficha a riu.dag/v1, agente operador, autodeteccion, gobernador de capacidad, ZIP de subrouters APAGADO, conectores plugin, dataset Yaiwes/Control Plane", "estado": "PENDIENTE", "marca": "🔴", "depende": ["N-13"], "evidencia": "", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 15)", "nota": "Va en rojo si no se llega. Conectores sin dependencias o llaves: rojo"},
-    {"id": "N-15", "tarea": "T-13", "nombre": "Regla 02:06 para Hermes y OpenClaw (prioridad NVIDIA 1-3, si ocupadas salta a la 4 o a Groq)", "estado": "PENDIENTE", "marca": "🔴", "depende": ["N-10"], "evidencia": "", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (T-13 y seccion 13)", "nota": "Hermes/OpenClaw no se tocaron; para el chat solo se cumple a medias (sin salto directo a Groq)"},
-    {"id": "N-16", "tarea": "Prioridad 2", "nombre": "Chat + agentes: DSL DAG con loops, agente orquestador, Hermes y OpenClaw (asistente, sheriff, sentinela, supervisor, juez, guardian, investigador de contexto, memoria/almacenamiento), harness DeepSeek, espejos (solo Hermes+OpenClaw o todo el equipo), varias UI de chat", "estado": "PENDIENTE", "marca": "🔴", "depende": ["N-12"], "evidencia": "", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 13)", "nota": "Orden 11:07: primero terminar el Router (prioridad 1); todo separado, nada monolitico"},
-    {"id": "N-17", "tarea": "Decisiones", "nombre": "Decisiones del Director D1-D13 (DeepSeek en pico, minor, g2, salto a Groq, respuesta vacia, plazo total, tribunal, huecos del lanzador, restos OmniRoute, notas de recuperacion, llaves Groq, Vercel, persistencia de plugins)", "estado": "PENDIENTE", "marca": "🔴", "depende": [], "evidencia": "", "ficha": "Claude notas/CHECKPOINT-2026-09-29-1100-router-chat-plugins.md (seccion 6)", "nota": "Cada una trae explicacion en palabras simples y el valor por defecto si no contesta"},
-    {"id": "N-18", "tarea": "T-11/T-14", "nombre": "IA local en la maquina de 32 GB (DFlash 2, MTP, Flash Attention, KV Q8, Qwen 3.8 Q4) y autoescalado 16 a 32 GB", "estado": "PENDIENTE", "marca": "🔴", "depende": ["N-12"], "evidencia": "", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (T-11, T-14)", "nota": "SOLO despues del Router y pendientes. Hoy no hay ninguna IA local corriendo (solo existe la puerta local)"},
-    {"id": "N-19", "tarea": "T-23", "nombre": "Pantalla final (modo manual y modo agente, cero friccion), Run UI y fichas verdes de Fables como prototipo", "estado": "PENDIENTE", "marca": "🔴", "depende": ["N-16"], "evidencia": "", "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (T-23)", "nota": "Al ULTIMO, con la skill de diseno que dara el Director. Vercel: un solo deploy final y solo con su orden (N-09)"}
+    {
+      "id": "N-02",
+      "tarea": "T-02",
+      "nombre": "Reorganizar repo en las raices pedidas",
+      "estado": "PASS",
+      "depende": [],
+      "evidencia": "B-0012 (commit 93c70073, runs 36520932226 y 36521041442)",
+      "ficha": "T-02-reorganizar-repo-en-raices.md"
+    },
+    {
+      "id": "N-04",
+      "tarea": "T-04",
+      "nombre": "P1 Equipo 4 objetivos conectado al Router unico + sentinela reactivado",
+      "estado": "PENDIENTE",
+      "depende": [],
+      "evidencia": "",
+      "ficha": "T-04-equipo-4-objetivos-al-router.md",
+      "nota": "Usa el Router segun CONECTAR-ROUTER.md; conviene que el Router ya tenga el codigo nuevo (T-03 del Router)"
+    },
+    {
+      "id": "N-05",
+      "tarea": "T-05",
+      "nombre": "20 sitios de investigacion en motor de busqueda (inicio) y Gaps (final)",
+      "estado": "PENDIENTE",
+      "depende": [
+        "N-02"
+      ],
+      "evidencia": "",
+      "ficha": "T-05-veinte-sitios-de-investigacion.md"
+    },
+    {
+      "id": "N-06",
+      "tarea": "T-06",
+      "nombre": "P2 Cadena Rowboat-Ruflo-Claude Code-Grok-Claude Code-4 Meta con DeepSeek Harness",
+      "estado": "PENDIENTE",
+      "depende": [
+        "N-04",
+        "N-05"
+      ],
+      "evidencia": "",
+      "ficha": "T-06-cadena-rowboat-a-4-meta.md"
+    },
+    {
+      "id": "N-07",
+      "tarea": "T-07",
+      "nombre": "Skills ECC, Archify, Agent Skills, Ponytail convertidos a esquema Sheriff/DSL DAG",
+      "estado": "PENDIENTE",
+      "depende": [
+        "N-05"
+      ],
+      "evidencia": "",
+      "ficha": "T-07-skills-a-esquema-sheriff.md"
+    },
+    {
+      "id": "N-08",
+      "tarea": "T-08",
+      "nombre": "P3 Memoria Manus + puente HF (dataset yaiwes-hf-memoria)",
+      "estado": "PENDIENTE",
+      "depende": [
+        "N-06"
+      ],
+      "evidencia": "",
+      "ficha": "T-08-memoria-manus-y-puente-hf.md"
+    },
+    {
+      "id": "N-09",
+      "tarea": "T-09",
+      "nombre": "P4 Un solo despliegue del chat en Vercel (ultimo, solo con orden del Director)",
+      "estado": "BLOQUEADO_POR_ORDEN",
+      "depende": [
+        "N-08"
+      ],
+      "evidencia": "",
+      "ficha": "T-09-vercel-deploy-final.md"
+    },
+    {
+      "id": "N-10",
+      "tarea": "T-12/T-13/T-20",
+      "nombre": "Bloque 1 · Cadena de modelos del chat dentro del Router (lista de modelos disponibles, Nemotron ultimo, plazo por opcion, cortacircuitos)",
+      "estado": "HECHO_SIN_VERIFICAR",
+      "marca": "🟡",
+      "depende": [],
+      "evidencia": "CI (cifras del archivo de hechos; no consulte las corridas): flujo temporal tmp-bloque1-cadena-verify.yml, corrida 36630393673 (ultima con codigo anterior a las correcciones de las 15:50): carpeta completa 212 pasan / 8 fallan / 6 error = MISMO conjunto que main (huella fa97bc78c2a8e444; main 153 pasan); cadena+host 71 pasan / 0 fallan; mutaciones unidad 25/25 y rutas 14/14; en vivo con llaves reales la cadena funciona escalon a escalon. Corridas previas 36627207547 (faltaba plugins/ en el sparse-checkout: no era fallo de codigo) y 36628329992; 36631448155 citada por el coordinador SIN resultado conocido. Rama en 69b2d6ec, blobs = local (comprobado). NO es PASS: rondas 1 a 4 NO LIMPIAS; el Router vivo no corre este codigo. Antes (11:20): CI del flujo temporal tmp-bloque1-cadena-verify.yml: corridas 36557644179, 36561019462, 36562078042; 183 pasan en la rama contra 153 en main con el mismo conjunto de 14 fallos previos (fa97bc78c2a8e444); 42 pruebas de la cadena; mutaciones 27 de 28; cadena en vivo OK en el runner. NO es PASS: rondas 1 y 2 de auditoria no limpias; el Router vivo no corre este codigo",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 10)",
+      "nota": "Rama bloque1-cadena-chat, sin unir a main. Faltan: salto directo a Groq (T-13), Hermes/OpenClaw · [16:30] Salto directo a Groq (T-13) y Hermes/OpenClaw siguen pendientes; ROUTER_SATURATED = 503 tambien en /chat/send auto; 413 = error de la peticion.",
+      "evidencia_1120": "CI del flujo temporal tmp-bloque1-cadena-verify.yml: corridas 36557644179, 36561019462, 36562078042; 183 pasan en la rama contra 153 en main con el mismo conjunto de 14 fallos previos (fa97bc78c2a8e444); 42 pruebas de la cadena; mutaciones 27 de 28; cadena en vivo OK en el runner. NO es PASS: rondas 1 y 2 de auditoria no limpias; el Router vivo no corre este codigo"
+    },
+    {
+      "id": "N-11",
+      "tarea": "Auditoria",
+      "nombre": "Auditoria independiente del Bloque 1: 3 rondas limpias seguidas (regla 05:18)",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-10"
+      ],
+      "evidencia": "Ronda 1: NO LIMPIA. Ronda 2: NO LIMPIA. Ronda 3: NO LIMPIA (3 ALTO doc/activacion, 5 MEDIO, 8 BAJO). Ronda 4: NO LIMPIA (hallazgos a-m abiertos, ver N-26). Ronda 5: sin hacer. Nada ✅.",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (secciones 10.4 y 11)",
+      "nota": "Sin 3 rondas limpias + 4 pasadas por tarea no hay PASS",
+      "evidencia_1120": "Ronda 1: NO LIMPIA. Ronda 2: NO LIMPIA (correcciones subidas 11:14-11:18, SIN CI). Ronda 3: sin hacer"
+    },
+    {
+      "id": "N-12",
+      "tarea": "Activacion",
+      "nombre": "Activar el Router: CI verde, unir rama a main, relanzar el Job, verificar, borrar workflows temporales",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-10",
+        "N-11",
+        "N-13"
+      ],
+      "evidencia": "EN CURSO por otro agente (segun el coordinador; no verificado por mi). Repo a las 16:31: rama NO unida a main; lanzador de main sin HF_TOKEN_1 en los secretos del Job; main en 9b1914e5.",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 14)",
+      "nota": "Orden del Director 10:55 autoriza relanzar tras terminar; 16:14: terminar el Router ya. CORREGIDO 16:30: el Job SI pone RIU_CHAT_ALLOW_PROVIDER_LIVE=1 (router_job_persistent.py:74); solo falta HF_TOKEN_1 (riesgo: es el token que controla los Jobs; mejor uno de inferencia, D14). Job vivo 6abb503a6b030d633f6a2dca corre el codigo anterior. No tocar Vercel ni el Space MCP.",
+      "evidencia_1120": ""
+    },
+    {
+      "id": "N-13",
+      "tarea": "T-15",
+      "nombre": "Bloque 2 · Plugin Host minimo con el chat como primer plugin (el chat es UN plugin mas)",
+      "estado": "HECHO_SIN_VERIFICAR",
+      "marca": "🟡",
+      "depende": [],
+      "evidencia": "Subido a la rama: integration/plugin_host/{host,api,__init__}.py, plugins/{chat,thinking-modes}/ficha.json, plugins/chat/plugin.py, plugins/README-ROJO.md, tests/test_plugin_host.py (22 funciones). Probado en CI: 71 pruebas cadena+host (corrida 36630393673, cifra del archivo de hechos). Correcciones de la ronda 4 solo en el shim local (test_plugin_host 18 pasan + 4 saltadas por FastAPI) hasta ver el CI. NO ✅.",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 15)",
+      "nota": "chat = ON por defecto; thinking-modes = OFF y sin codigo. Compuerta 503 'plugin chat apagado'; falla abierta. El chat sigue cableado directo en app.py (compuerta + estado). Falta: OK del Director al tribunal, failover, presupuesto por nivel, evidencia L1-L4, hot-swap, sandbox C13; aislamiento por proceso; CI permanente sin test_plugin_host.py.",
+      "estado_anterior_1120": "PENDIENTE / 🟡/🔴"
+    },
+    {
+      "id": "N-14",
+      "tarea": "T-16/T-21/T-22/T-24",
+      "nombre": "Bloque 3 · registro de fichas, compilador ficha a riu.dag/v1, agente operador, autodeteccion, gobernador de capacidad, ZIP de subrouters APAGADO, conectores plugin, dataset Yaiwes/Control Plane",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-13"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 15)",
+      "nota": "Va en rojo si no se llega. Conectores sin dependencias o llaves: rojo"
+    },
+    {
+      "id": "N-15",
+      "tarea": "T-13",
+      "nombre": "Regla 02:06 para Hermes y OpenClaw (prioridad NVIDIA 1-3, si ocupadas salta a la 4 o a Groq)",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-10"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (T-13 y seccion 13)",
+      "nota": "Hermes/OpenClaw no se tocaron; para el chat solo se cumple a medias (sin salto directo a Groq) · [16:30] ver N-20..N-25 (rama bloque2-agentes)"
+    },
+    {
+      "id": "N-16",
+      "tarea": "Prioridad 2",
+      "nombre": "Chat + agentes: DSL DAG con loops, agente orquestador, Hermes y OpenClaw (asistente, sheriff, sentinela, supervisor, juez, guardian, investigador de contexto, memoria/almacenamiento), harness DeepSeek, espejos (solo Hermes+OpenClaw o todo el equipo), varias UI de chat",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-12"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 13)",
+      "nota": "Orden 11:07: primero terminar el Router (prioridad 1); todo separado, nada monolitico · [16:30] ver N-20..N-25 (rama bloque2-agentes)"
+    },
+    {
+      "id": "N-17",
+      "tarea": "Decisiones",
+      "nombre": "Decisiones del Director D1-D13 (DeepSeek en pico, minor, g2, salto a Groq, respuesta vacia, plazo total, tribunal, huecos del lanzador, restos OmniRoute, notas de recuperacion, llaves Groq, Vercel, persistencia de plugins) + D14 (token de inferencia para el Job)",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [],
+      "evidencia": "",
+      "ficha": "Claude notas/CHECKPOINT-2026-09-29-1100-router-chat-plugins.md (seccion 6)",
+      "nota": "Cada una trae explicacion en palabras simples y el valor por defecto si no contesta"
+    },
+    {
+      "id": "N-18",
+      "tarea": "T-11/T-14",
+      "nombre": "IA local en la maquina de 32 GB (DFlash 2, MTP, Flash Attention, KV Q8, Qwen 3.8 Q4) y autoescalado 16 a 32 GB",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-12"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (T-11, T-14)",
+      "nota": "SOLO despues del Router y pendientes. Hoy no hay ninguna IA local corriendo (solo existe la puerta local)"
+    },
+    {
+      "id": "N-19",
+      "tarea": "T-23",
+      "nombre": "Pantalla final (modo manual y modo agente, cero friccion), Run UI y fichas verdes de Fables como prototipo",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-16"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (T-23)",
+      "nota": "Al ULTIMO, con la skill de diseno que dara el Director. Vercel: un solo deploy final y solo con su orden (N-09)"
+    },
+    {
+      "id": "N-20",
+      "tarea": "Prioridad 2",
+      "nombre": "DAG: nodos route:{group} y loop:{until,max_iterations} (PASSED/MAX_ITERATIONS/REPEATED_x3)",
+      "estado": "HECHO_SIN_VERIFICAR",
+      "marca": "🟡",
+      "depende": [
+        "N-16"
+      ],
+      "evidencia": "Rama bloque2-agentes: commits c918d4a6 (dag.py), 7124c25a (dag_cli group=), 645c5eca (tests/test_dag_route_loop.py). [skip ci]; no ejecutado por mi.",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20.G)",
+      "nota": "Sin CI; sin unir a main."
+    },
+    {
+      "id": "N-21",
+      "tarea": "Prioridad 2",
+      "nombre": "Espejo del equipo: solo Hermes+OpenClaw o equipo completo (dry-run por defecto)",
+      "estado": "HECHO_SIN_VERIFICAR",
+      "marca": "🟡",
+      "depende": [
+        "N-16"
+      ],
+      "evidencia": "Rama bloque2-agentes: chat router/05-AGENTES/gobierno/espejo_equipo.py (698a189f) y tests/test_espejo_equipo.py (3bc2cdb0). [skip ci]; no ejecutado por mi.",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20.G)",
+      "nota": "Sin CI; sin unir a main."
+    },
+    {
+      "id": "N-22",
+      "tarea": "Prioridad 2",
+      "nombre": "Restaurar chat router/03-ESTADO (9 archivos) y Claude notas/HANDOFF-PARCHE-RECUPERACION-2026-09-21.md desde la rama backup",
+      "estado": "HECHO_SIN_VERIFICAR",
+      "marca": "🟡",
+      "depende": [],
+      "evidencia": "Rama bloque2-agentes, commits de las 16:21 a las 16:23 (ultimo 197d1fc4). Sin unir a main.",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20.G)",
+      "nota": "Son copias VIEJAS de Opus con nombres iguales a los vigentes de Estado y handoff global/: no confundir."
+    },
+    {
+      "id": "N-23",
+      "tarea": "Prioridad 2",
+      "nombre": "Grupo de politica assistants + Hermes y OpenClaw apuntados al Router (regla 02:06)",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-12"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20.G)",
+      "nota": "Hoy el puente de asistentes es UNA llamada con prompt de rol a NVIDIA con una llave; sin commits para esto a las 16:31"
+    },
+    {
+      "id": "N-24",
+      "tarea": "Prioridad 2",
+      "nombre": "Envoltura del harness de DeepSeek (timeout -> degraded) en cada llamada",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-13"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20.G)",
+      "nota": "Hoy solo existe el patron (ADR-150 en ruflo-deepseek-harness); sin runtime"
+    },
+    {
+      "id": "N-25",
+      "tarea": "Prioridad 2",
+      "nombre": "Varias UI de chat apiladas, todas contra el Router",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-23"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20.G)",
+      "nota": "13-CHAT-UI-SUITE existe como PARCIAL; la UI final va al ultimo"
+    },
+    {
+      "id": "N-26",
+      "tarea": "Auditoria",
+      "nombre": "Hallazgos abiertos de la ronda 4 (a a m)",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-11"
+      ],
+      "evidencia": "",
+      "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20.F)",
+      "nota": "a GIL de un plugin congela el proceso; b riesgos del lanzador; c token que controla los Jobs dentro del Job; d CI permanente sin test_plugin_host; e relanzar pierde estado; f mascara de llaves; g texto de excepcion; h GET /plugins sincrono; i chat cableado directo; j llaves NVIDIA hasta _5; k sonda toma modelos por adelantado; l /chat/send sin auto bloquea el event loop; m concurrencia real 6 hilos"
+    }
   ],
-  "protegidos": ["Space HF claude-github-mcp-backup (conector MCP)", "Job del Router y su lanzador", "rama backup-antes-limpieza-20260929"]
+  "protegidos": [
+    "Space HF claude-github-mcp-backup (conector MCP)",
+    "Job del Router y su lanzador",
+    "rama backup-antes-limpieza-20260929"
+  ],
+  "actualizado_utc_anterior_2": "2026-09-29T05:30Z",
+  "alcance_checkpoint_1630": "Segunda pasada (~16:30): N-10..N-13 actualizados con el estado real (Plugin Host subido, rondas 3 y 4 NO LIMPIAS, CI 36630393673) y nodos nuevos N-20..N-26 (prioridad 2 y hallazgos de la ronda 4). Ningun nodo nuevo esta en PASS. Detalle: router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20)."
 }
