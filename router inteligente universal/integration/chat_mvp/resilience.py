@@ -6,8 +6,12 @@ Problems seen in real tests (2026-09-20) and the answer to each:
   * One NVIDIA key slow / 503 / 402                                   -> circuit breaker per key + healthiest-first order.
   * DeepSeek peak hours (01-04 and 06-10 UTC, Mon-Fri)                -> in peak only MiniMax for code/minor tasks.
   * Provider down or saturated                                        -> fallback chain per group, ONLY where the Director
-    authorized it (g2, code, minor). The default group does not fall back: it reports NEEDS_DIRECTOR_AUTH so the brain can ask.
+    authorized it (default chat since 2026-09-29, g2, code, minor). A group WITHOUT authorization reports NEEDS_DIRECTOR_AUTH so the brain can ask.
 Chains follow the Director's rule for group 2: NVIDIA -> Groq -> local API -> DeepSeek V4 Flash.
+2026-09-29 (Director, 05:15): the chat chain is Kimi K3 -> GLM 5.3 (NVIDIA) -> DeepSeek V4 Flash -> Qwen 3.8 (Groq) -> Nemotron LAST;
+the chat falls to the next option by itself (authorized_fallback), asks each provider which models are available (model_pool.py) and
+never waits more than RIU_CHAT_ATTEMPT_TIMEOUT seconds (default 30) on an option that is not the last one. Keys: NVIDIA 1-3 first, then 4 (pool
+order in providers.py); if NVIDIA is busy the chain goes on to Groq. Health is per key AND model, so a dead model does not put keys in cooldown.
 """
 from __future__ import annotations
 
@@ -45,8 +49,9 @@ def is_peak_utc(dt: datetime, holidays: Iterable[Any] = ()) -> bool:
     return any(start <= utc.hour < end for start, end in PEAK_WINDOWS_UTC)
 
 
-def key_id(provider: str, key: str | None) -> str:
-    return provider + ":" + hashlib.sha256((key or "").encode()).hexdigest()[:8]
+def key_id(provider: str, key: str | None, model: str = "") -> str:
+    """Health id of a key; with `model` the id is per (key, model): a model that times out must not put a healthy key in cooldown."""
+    return provider + ":" + hashlib.sha256((key or "").encode()).hexdigest()[:8] + ("|" + model if model else "")
 
 
 class CircuitBreaker:
@@ -119,20 +124,20 @@ class Router:
         self.limiter = limiter or AdaptiveLimiter()
         self.latency: dict[str, float] = {}
 
-    def _ordered(self, provider: str, keys: list[str | None]) -> list[str | None]:
-        allowed = [k for k in keys if self.breaker.allow(key_id(provider, k))]
-        return sorted(allowed, key=lambda k: self.breaker.fails(key_id(provider, k)))  # stable: healthiest first
+    def _ordered(self, provider: str, keys: list[str | None], model: str = "") -> list[str | None]:
+        allowed = [k for k in keys if self.breaker.allow(key_id(provider, k, model))]
+        return sorted(allowed, key=lambda k: self.breaker.fails(key_id(provider, k, model)))  # stable: healthiest first
 
     def execute(self, provider: str, keys: list[str | None], model: str, messages: list[dict[str, str]], max_tokens: int,
                 temperature: float | None, chat_fn: Callable[..., dict[str, Any]], errbox: dict[str, str] | None = None) -> dict[str, Any]:
         self.limiter.acquire()
         try:
-            ordered = self._ordered(provider, keys)
+            ordered = self._ordered(provider, keys, model)
             if not ordered:
                 raise AllKeysFailed("ALL_KEYS_IN_COOLDOWN")
             last: Exception | None = None
             for key in ordered:
-                kid, t0 = key_id(provider, key), time.monotonic()
+                kid, t0 = key_id(provider, key, model), time.monotonic()
                 try:
                     out = chat_fn(provider, key, model, messages, max_tokens, temperature=temperature)
                     self.breaker.ok(kid)
@@ -157,15 +162,20 @@ ROUTER = Router()
 MINIMAX = {"provider": "hf", "model": "MiniMaxAI/MiniMax-M3"}
 DEEPSEEK_FLASH = {"provider": "hf", "model": "deepseek-ai/DeepSeek-V4-Flash", "deepseek": True}
 NEMOTRON = {"provider": "nvidia", "model": "nvidia/nemotron-3-super-120b-a12b"}
+# Ids verified live 2026-09-29 (run 36543892304): NVIDIA kimi-k3 200 in 0.8 s, glm-5.3 200 in 1.3 s (there is no plain glm-5);
+# Groq qwen/qwen3.8-27b is served. z-ai/glm-5.3-flash and deepseek-ai/deepseek-v4.1-flash timed out on NVIDIA: NOT used.
+KIMI_K3 = {"provider": "nvidia", "model": "moonshotai/kimi-k3"}
+GLM_53 = {"provider": "nvidia", "model": "z-ai/glm-5.3"}
+QWEN_GROQ = {"provider": "groq", "model": "qwen/qwen3.8-27b"}
 
 DEFAULT_POLICY: dict[str, dict[str, Any]] = {
-    "default": {"authorized_fallback": False, "chain": [NEMOTRON]},
+    "default": {"authorized_fallback": True, "chain": [KIMI_K3, GLM_53, DEEPSEEK_FLASH, QWEN_GROQ, NEMOTRON]},
     "code": {"authorized_fallback": True, "chain": [MINIMAX, NEMOTRON]},
     "minor": {"authorized_fallback": True, "peak_only_minimax": True, "chain": [DEEPSEEK_FLASH, NEMOTRON, MINIMAX]},
-    "g2": {"authorized_fallback": True, "chain": [NEMOTRON,
+    "g2": {"authorized_fallback": True, "chain": [KIMI_K3, GLM_53,
                                                    {"provider": "groq", "model": "env:RIU_G2_GROQ_MODEL"},
                                                    {"provider": "local", "model": "env:RIU_G2_LOCAL_MODEL"},
-                                                   DEEPSEEK_FLASH]},
+                                                   DEEPSEEK_FLASH, NEMOTRON]},
 }
 
 
@@ -194,21 +204,52 @@ def resolve_chain(group: str, now: datetime, env: Mapping[str, str] | None = Non
     return chain, skipped
 
 
+def attempt_timeout_s() -> float:
+    """Seconds one NON-last option of a chain may take before the chat moves on (RIU_CHAT_ATTEMPT_TIMEOUT, default 30; <= 0 = no limit)."""
+    try:
+        return float(os.getenv("RIU_CHAT_ATTEMPT_TIMEOUT") or 30)
+    except ValueError:
+        return 30.0
+
+
 def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, temperature: float | None = None,
-               now: datetime | None = None, call: Callable[..., dict[str, Any]], env: Mapping[str, str] | None = None) -> dict[str, Any]:
-    """Run one request through the group's chain. `call(provider, key, model, messages, max_tokens, temperature)` does one route."""
+               now: datetime | None = None, call: Callable[..., dict[str, Any]], env: Mapping[str, str] | None = None,
+               pool: Any = None, attempt_timeout: float | None = None) -> dict[str, Any]:
+    """Run one request through the group's chain. `call(provider, key, model, messages, max_tokens, temperature)` does one route.
+
+    `pool` (model_pool.ModelPool, optional) filters options the provider does not list or that failed recently and learns from each
+    result; it is ignored for groups without authorized fallback (skipping an option there would be a silent fallback).
+    Every option except the last gets a time limit so a slow model never blocks the chat; the last one keeps the full provider timeout.
+    """
     policy = DEFAULT_POLICY.get(group) or DEFAULT_POLICY["default"]
     chain, trace = resolve_chain(group, now or datetime.now(timezone.utc), env)
     if not chain:
         raise RouteFailed("ROUTER_NO_ROUTE_AVAILABLE", trace)
+    use_pool = pool if (pool is not None and policy["authorized_fallback"]) else None
+    if use_pool is not None:
+        kept, skipped = use_pool.filter(chain)
+        trace.extend(skipped)
+        if kept:
+            chain = kept
+        else:
+            trace.append("POOL_EMPTY_TRY_ALL")  # never leave the chat without a route because of the pool
+    limit = attempt_timeout_s() if attempt_timeout is None else attempt_timeout
     for i, entry in enumerate(chain):
         if i > 0 and not policy["authorized_fallback"]:
             trace.append("FALLBACK_NOT_AUTHORIZED")
             raise RouteFailed("NEEDS_DIRECTOR_AUTH:" + trace[-2], trace)
         keys = prov.env_keys(entry["provider"]) or [None]
+        is_last = i == len(chain) - 1
+        token = prov.ATTEMPT_DEADLINE.set(None if (is_last or limit <= 0) else time.monotonic() + limit)
         try:
             out = call(entry["provider"], keys[0], entry["model"], messages, max_tokens, temperature)
+            if use_pool is not None:
+                use_pool.mark_ok(entry["provider"], entry["model"])
             return {**out, "route": {**entry, "attempt": i + 1}, "trace": trace}
         except RuntimeError as exc:
+            if use_pool is not None and not isinstance(exc, Saturated) and "ROUTER_SATURATED" not in str(exc):
+                use_pool.mark_bad(entry["provider"], entry["model"], str(exc))  # a busy Router is not a dead model
             trace.append(f"{entry['provider']}/{entry['model']}:{str(exc)[:80]}")
+        finally:
+            prov.ATTEMPT_DEADLINE.reset(token)
     raise RouteFailed("ROUTER_ALL_ROUTES_FAILED", trace)
