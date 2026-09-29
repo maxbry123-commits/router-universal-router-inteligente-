@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-7-llama-hf",
  "framework": "smolagents",
- "status": "CLOSED",
- "updated_at": "2026-09-29T23:18:58Z",
+ "status": "PARTIAL",
+ "updated_at": "2026-09-29T23:22:07Z",
  "group": "hf-llama",
  "chain": [
   "llama_cmd",
@@ -14,16 +14,19 @@
  "completed": [
   "llama_cmd",
   "hf_job",
-  "bench_report",
-  "serve_health"
+  "bench_report"
  ],
  "failed": [],
- "next_nodes": [],
- "current_nodes": [],
+ "next_nodes": [
+  "serve_health"
+ ],
+ "current_nodes": [
+  "serve_health"
+ ],
  "gaps": [
-  "GOLDEN listo: llama_cmd/hf_job/bench_report/serve_health. Falta Agents Run only=agent-7-llama-hf con GET /health 200.",
-  "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26",
-  "serve_health: probe live o lanza LFM2.5 en cpu-upgrade (32 GB). Cero LLM regen."
+  "serve_health REOPEN: exigir GET /health 200 live + evidence.health_ok_url. Paper CLOSED prohibido.",
+  "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26 (NO cancel/relaunch).",
+  "Máquina de 32 GB RAM. Cero LLM regen. only=agent-7-llama-hf debe ejecutar GOLDEN serve_health python_exec (timeout 480)."
  ],
  "route": [
   "nvidia",
