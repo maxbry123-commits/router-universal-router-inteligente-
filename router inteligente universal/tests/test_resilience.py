@@ -15,7 +15,8 @@ from integration.chat_mvp import providers as P  # noqa: E402
 from integration.chat_mvp import resilience as R  # noqa: E402
 
 ENV = ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4", "NVIDIA_API_KEY_5", "HF_TOKEN", "HF_TOKEN_1",
-       "GROQ_API_KEY", "GROQ_API_KEY_1", "RIU_LOCAL_BASE_URL", "RIU_G2_GROQ_MODEL", "RIU_G2_LOCAL_MODEL")
+       "GROQ_API_KEY", "GROQ_API_KEY_1", "RIU_LOCAL_BASE_URL", "RIU_G2_GROQ_MODEL", "RIU_G2_LOCAL_MODEL",
+       "RIU_CHAT_ATTEMPT_TIMEOUT", "RIU_MODEL_COOLDOWN")
 MON_OFF = datetime(2026, 9, 21, 12, 0, tzinfo=timezone.utc)
 MON_PEAK = datetime(2026, 9, 21, 7, 0, tzinfo=timezone.utc)
 
@@ -100,12 +101,14 @@ def test_chains_follow_the_directors_rules(monkeypatch):
     ch, skipped = R.resolve_chain("minor", MON_PEAK)  # DeepSeek peak hour: only MiniMax
     assert [c["model"] for c in ch] == ["MiniMaxAI/MiniMax-M3"] and "PEAK_ONLY_MINIMAX" in skipped
     ch, skipped = R.resolve_chain("g2", MON_OFF)
-    assert [c["provider"] for c in ch] == ["nvidia", "hf"] and "groq:NO_MODEL_CONFIGURED" in skipped and "local:NO_MODEL_CONFIGURED" in skipped
+    # 2026-09-29: Kimi K3 -> GLM 5.3 (NVIDIA) -> [Groq] -> [local] -> DeepSeek V4 Flash (HF) -> Nemotron LAST
+    assert [c["model"] for c in ch] == ["moonshotai/kimi-k3", "z-ai/glm-5.3", "deepseek-ai/DeepSeek-V4-Flash", "nvidia/nemotron-3-super-120b-a12b"]
+    assert "groq:NO_MODEL_CONFIGURED" in skipped and "local:NO_MODEL_CONFIGURED" in skipped
     monkeypatch.setenv("GROQ_API_KEY_1", "c")
     env = {"RIU_G2_GROQ_MODEL": "llama3.1-8b"}
-    assert [c["provider"] for c in R.resolve_chain("g2", MON_OFF, env)[0]] == ["nvidia", "groq", "hf"]
+    assert [c["provider"] for c in R.resolve_chain("g2", MON_OFF, env)[0]] == ["nvidia", "nvidia", "groq", "hf", "nvidia"]
     ch, skipped = R.resolve_chain("g2", MON_PEAK, env)
-    assert [c["provider"] for c in ch] == ["nvidia", "groq"] and any("PEAK_HOUR" in s for s in skipped)
+    assert [c["provider"] for c in ch] == ["nvidia", "nvidia", "groq", "nvidia"] and any("PEAK_HOUR" in s for s in skipped)
 
 
 def test_policy_falls_back_only_where_authorized(monkeypatch):
@@ -125,7 +128,7 @@ def test_policy_falls_back_only_where_authorized(monkeypatch):
     assert out["route"]["provider"] == "hf" and seen == ["hf"]  # MiniMax first for code
     seen.clear()
     out = R.run_policy("g2", [], 5, now=MON_OFF, call=call, env=env)
-    assert out["message"]["content"] == "por groq" and seen == ["nvidia", "groq"] and out["trace"]
+    assert out["message"]["content"] == "por groq" and seen == ["nvidia", "nvidia", "groq"] and out["trace"]  # Kimi, GLM fail -> Groq
     monkeypatch.setitem(R.DEFAULT_POLICY, "strict", {"authorized_fallback": False, "chain": [R.NEMOTRON, R.MINIMAX]})
     with pytest.raises(R.RouteFailed) as exc:
         R.run_policy("strict", [], 5, now=MON_OFF, call=call)
@@ -143,7 +146,7 @@ def test_route_endpoints(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
 
     from integration.chat_mvp import app as chat_app
-    from integration.chat_mvp import core
+    from integration.chat_mvp import core, model_pool
     from integration.chat_mvp import router as rt
     from integration.chat_mvp.store import Store
 
@@ -160,6 +163,8 @@ def test_route_endpoints(tmp_path, monkeypatch):
 
     monkeypatch.setattr(core, "call_via_router", fake)
     monkeypatch.setitem(R.DEFAULT_POLICY, "strict", {"authorized_fallback": False, "chain": [R.NEMOTRON, R.MINIMAX]})
+    listing = {"nvidia": ["z-ai/glm-5.3", "nvidia/nemotron-3-super-120b-a12b"]}  # NVIDIA does not list Kimi in this test
+    monkeypatch.setattr(model_pool, "POOL", model_pool.ModelPool(fetch=lambda p, k: listing.get(p, [])))
     rt.set_store(Store(tmp_path))
     client = TestClient(chat_app.app)
     H = {"X-API-Key": "k1"}
@@ -167,9 +172,16 @@ def test_route_endpoints(tmp_path, monkeypatch):
         assert client.get("/chat/router/status").status_code == 401
         st = client.get("/chat/router/status", headers=H).json()
         assert set(st["groups"]) >= {"default", "code", "minor", "g2"} and st["limiter"]["tiers"] == [3, 10]
+        assert st["groups"]["default"]["authorized_fallback"] is True and st["attempt_timeout_s"] == 30.0 and "cooling" in st["model_pool"]
         ok = client.post("/chat/route", json={"group": "code", "message": "haz X"}, headers=H)
         assert ok.status_code == 200 and ok.json()["route"]["provider"] == "hf" and seen[-1] == ("hf", "MiniMaxAI/MiniMax-M3")
-        assert client.post("/chat/route", json={"group": "default", "message": "hola"}, headers=H).json()["route"]["provider"] == "nvidia"
+        dflt = client.post("/chat/route", json={"group": "default", "message": "hola"}, headers=H).json()
+        assert dflt["route"]["provider"] == "nvidia" and dflt["route"]["model"] == "z-ai/glm-5.3"  # Kimi not listed -> GLM 5.3
+        assert "nvidia/moonshotai/kimi-k3:NOT_LISTED" in dflt["trace"]
+        models = client.get("/chat/router/models", headers=H).json()
+        assert models["providers"]["nvidia"] == {"configured": True, "listed": 2} and models["providers"]["groq"]["configured"] is False
+        assert [c["model"] for c in models["groups"]["default"]["try_order"]][:1] == ["z-ai/glm-5.3"]
+        assert client.get("/chat/router/models").status_code == 401
         assert client.post("/chat/route", json={"group": "default", "message": "x", "agent_id": "nope"}, headers=H).status_code == 400
         monkeypatch.setattr(core, "call_via_router", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("PROVIDER_ERROR:TimeoutError:x")))
         auth = client.post("/chat/route", json={"group": "strict", "message": "hola"}, headers=H)
