@@ -29,7 +29,7 @@ jobs:
               t = time.time()
               try:
                   with urllib.request.urlopen(req, timeout=60) as r:
-                      return r.status, r.read().decode()[:400], round(time.time() - t, 1)
+                      return r.status, r.read().decode(), round(time.time() - t, 1)
               except Exception as e:
                   code = getattr(e, "code", "ERR")
                   try: txt = e.read().decode()[:200]
@@ -39,8 +39,7 @@ jobs:
           ids = []
           if st == 200:
               try:
-                  full = urllib.request.urlopen(urllib.request.Request(B + "/models", headers={"Authorization": "Bearer " + key, "User-Agent": "riu-sonda"}), timeout=60).read()
-                  ids = sorted(m["id"] for m in json.loads(full)["data"])
+                  ids = sorted(m["id"] for m in json.loads(txt)["data"])
               except Exception as e:
                   print("::warning title=NV_LISTA_ERR::%s" % str(e)[:200])
           print("::notice title=NV_TOTAL::status=%s modelos=%d" % (st, len(ids)))
@@ -53,7 +52,6 @@ jobs:
               s, t2, dt = call("/chat/completions", {"model": m, "messages": [{"role": "user", "content": "OK"}], "max_tokens": 8})
               res.append("%s -> %s %ss %s" % (m, s, dt, ("" if s == 200 else t2[:90].replace("\n", " "))))
           print("::notice title=NV_PRUEBA::" + " || ".join(res)[:3500])
-          # cuantas claves responden con el primer candidato
           if pri:
               r2 = []
               for i, k in keys:
