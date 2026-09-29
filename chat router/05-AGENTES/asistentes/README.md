@@ -1,8 +1,8 @@
 # T06 — Asistentes Hermes + OpenClaw
 
-Adaptadores del chat/orquestador YAIWES. Hermes actúa como `planner_supervisor`; OpenClaw como `guardian_supervisor`. Ambos usan el Router/NVIDIA OpenAI-compatible; no se configura Anthropic.
+Adaptadores del chat/orquestador YAIWES. Hermes actúa como `planner_supervisor`; OpenClaw como `guardian_supervisor`. Ambos usan el grupo `assistants` del Router (NVIDIA/GLM/Groq/DeepSeek según su política; ninguna llamada directa a proveedores); no se configura Anthropic.
 
-Flujo: `chat/orquestador → puente → Hermes/OpenClaw → Router/NVIDIA → eventos → State Hub/BITACORA`.
+Flujo: `chat/orquestador → puente → Hermes/OpenClaw → Router `assistants` → eventos → State Hub/BITACORA`.
 
 | Asistente | Rol | Función |
 |---|---|---|
