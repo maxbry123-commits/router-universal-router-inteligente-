@@ -1,20 +1,18 @@
 {
   "schema": "yaiwes.crazy-wall/v2",
-  "actualizado_utc": "2026-09-29T04:30Z",
+  "actualizado_utc": "2026-09-29T05:30Z",
   "regla": "Un nodo pasa a PASS solo con evidencia real (commit, salida de prueba o aviso de job). Sin evidencia = PENDIENTE.",
+  "alcance": "Solo tareas que NO son del Router. Las del Router (T-00, T-01, T-03, T-10) estan en router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md",
   "flujo_global": "OBJETIVO -> KERNEL -> DECIDIR -> WORKFLOW REAL -> RECURSOS REALES -> EJECUTAR -> OBSERVAR -> VERIFICAR -> EVIDENCIA -> CERRAR",
   "base_enlaces": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Estado%20y%20handoff%20global/tareas/",
   "nodos": [
-    {"id": "N-00", "tarea": "T-00", "nombre": "Auditar Router y unificar", "estado": "PASS", "depende": [], "evidencia": "B-0001, B-0002, B-0003, B-0007", "ficha": "T-00-auditar-router-y-unificar.md"},
-    {"id": "N-01", "tarea": "T-01", "nombre": "Limpieza general repo y HF", "estado": "PASS", "depende": ["N-00"], "evidencia": "B-0005 (repo), B-0011 (HF); Vercel queda para despues por orden del Director", "ficha": "T-01-limpieza-repo-y-hf.md"},
-    {"id": "N-02", "tarea": "T-02", "nombre": "Reorganizar repo en las raices pedidas", "estado": "PASS", "depende": ["N-01"], "evidencia": "B-0012 (commit 93c70073, runs 36520932226 y 36521041442)", "ficha": "T-02-reorganizar-repo-en-raices.md"},
-    {"id": "N-03", "tarea": "T-03", "nombre": "Quitar Cerebras del codigo del Router y poner Groq", "estado": "PENDIENTE", "depende": ["N-01"], "evidencia": "", "ficha": "T-03-quitar-cerebras-poner-groq.md"},
-    {"id": "N-04", "tarea": "T-04", "nombre": "P1 Equipo 4 objetivos conectado al Router unico + sentinela reactivado", "estado": "PENDIENTE", "depende": ["N-03"], "evidencia": "", "ficha": "T-04-equipo-4-objetivos-al-router.md"},
+    {"id": "N-02", "tarea": "T-02", "nombre": "Reorganizar repo en las raices pedidas", "estado": "PASS", "depende": [], "evidencia": "B-0012 (commit 93c70073, runs 36520932226 y 36521041442)", "ficha": "T-02-reorganizar-repo-en-raices.md"},
+    {"id": "N-04", "tarea": "T-04", "nombre": "P1 Equipo 4 objetivos conectado al Router unico + sentinela reactivado", "estado": "PENDIENTE", "depende": [], "evidencia": "", "ficha": "T-04-equipo-4-objetivos-al-router.md", "nota": "Usa el Router segun CONECTAR-ROUTER.md; conviene que el Router ya tenga el codigo nuevo (T-03 del Router)"},
     {"id": "N-05", "tarea": "T-05", "nombre": "20 sitios de investigacion en motor de busqueda (inicio) y Gaps (final)", "estado": "PENDIENTE", "depende": ["N-02"], "evidencia": "", "ficha": "T-05-veinte-sitios-de-investigacion.md"},
     {"id": "N-06", "tarea": "T-06", "nombre": "P2 Cadena Rowboat-Ruflo-Claude Code-Grok-Claude Code-4 Meta con DeepSeek Harness", "estado": "PENDIENTE", "depende": ["N-04", "N-05"], "evidencia": "", "ficha": "T-06-cadena-rowboat-a-4-meta.md"},
     {"id": "N-07", "tarea": "T-07", "nombre": "Skills ECC, Archify, Agent Skills, Ponytail convertidos a esquema Sheriff/DSL DAG", "estado": "PENDIENTE", "depende": ["N-05"], "evidencia": "", "ficha": "T-07-skills-a-esquema-sheriff.md"},
     {"id": "N-08", "tarea": "T-08", "nombre": "P3 Memoria Manus + puente HF (dataset yaiwes-hf-memoria)", "estado": "PENDIENTE", "depende": ["N-06"], "evidencia": "", "ficha": "T-08-memoria-manus-y-puente-hf.md"},
-    {"id": "N-09", "tarea": "T-09", "nombre": "P4 Un solo despliegue en Vercel (ultimo, solo con orden del Director)", "estado": "BLOQUEADO_POR_ORDEN", "depende": ["N-08"], "evidencia": "", "ficha": "T-09-vercel-deploy-final.md"}
+    {"id": "N-09", "tarea": "T-09", "nombre": "P4 Un solo despliegue del chat en Vercel (ultimo, solo con orden del Director)", "estado": "BLOQUEADO_POR_ORDEN", "depende": ["N-08"], "evidencia": "", "ficha": "T-09-vercel-deploy-final.md"}
   ],
   "protegidos": ["Space HF claude-github-mcp-backup (conector MCP)", "Job del Router y su lanzador", "rama backup-antes-limpieza-20260929"]
 }
