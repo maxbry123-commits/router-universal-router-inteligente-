@@ -142,7 +142,14 @@ def publish() -> dict:
             repo_type="space",
             space_sdk="static",
             exist_ok=True,
+            private=False,
         )
+        try:
+            api.update_repo_visibility(
+                repo_id=space_id, private=False, repo_type="space"
+            )
+        except Exception:
+            pass
         api.upload_folder(
             folder_path=str(tdp),
             repo_id=space_id,
@@ -184,6 +191,7 @@ def publish() -> dict:
         "deploy_mode": "option3_static_oauth_inference",
         "job_deferred": True,
         "status": "PENDING_VERIFY",
+        "private": False,
     }
 
     if CRAZY.exists():
