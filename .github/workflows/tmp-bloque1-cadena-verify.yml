@@ -60,7 +60,7 @@ jobs:
           sha=$(printf '%s' "$fails" | sha256sum | cut -c1-16)
           echo "::notice title=B1_FAILSET_${{ matrix.ref }}::count=${count} sha=${sha} | ${fails}"
           # The new / changed tests on their own, with every test name listed (only meaningful on the branch)
-          python -m pytest -q -p no:cacheprovider -rA "router inteligente universal/tests/test_model_pool.py" "router inteligente universal/tests/test_resilience.py" "router inteligente universal/tests/test_nvidia_pool.py" > /tmp/chain.txt 2>&1
+          python -m pytest -q -p no:cacheprovider -rA "router inteligente universal/tests/test_model_pool.py" "router inteligente universal/tests/test_resilience.py" "router inteligente universal/tests/test_nvidia_pool.py" "router inteligente universal/tests/test_plugin_host.py" > /tmp/chain.txt 2>&1
           passed=$(grep -c '^PASSED' /tmp/chain.txt)
           other=$(grep -E '^(FAILED|ERROR|SKIPPED)' /tmp/chain.txt | sed 's/ - .*//' | tr '\n' ';')
           echo "::notice title=B1_CHAIN_TESTS_${{ matrix.ref }}::passed=${passed} | other=${other} | $(tail -n 1 /tmp/chain.txt)"
@@ -258,15 +258,26 @@ jobs:
           MUTS = {
            "unit": (UNIT, [
             (CH + "resilience.py", "return st[0] < self.threshold and st[2] > 0 and self.clock() - st[2] >= self.cooldown", "return False", "breaker never forgives"),
-            (CH + "resilience.py", 'REQUEST_ERRORS = ("PROVIDER_ERROR:400:", "PROVIDER_ERROR:422:")', 'REQUEST_ERRORS = ("NEVER",)', "400/422 cool the model"),
-            (CH + "model_pool.py", "            if probe:\n                self._bad[(provider, model)] = (now + PROBE_LEASE, hit[1])\n", "", "no probe lease"),
+            (CH + "resilience.py", 'REQUEST_ERRORS = ("PROVIDER_ERROR:400:", "PROVIDER_ERROR:413:", "PROVIDER_ERROR:422:")', 'REQUEST_ERRORS = ("NEVER",)', "400/422 cool the model"),
+            (CH + "model_pool.py", "            if probe:\n                until = now + PROBE_LEASE\n                self._bad[(provider, model)] = (until, hit[1])\n                if leased is not None:\n                    leased.append((provider, model, until))\n", "", "no probe lease"),
+            (CH + "resilience.py", "use_pool.release(provider, model, until)", "pass", "leases never given back"),
+            (CH + "resilience.py", 'raise RouteFailed("ROUTER_SATURATED", trace) from exc', "pass", "busy router does not stop the chain"),
+            (CH + "resilience.py", "except Exception as exc:  # noqa: BLE001 - whatever one option raises", "except RuntimeError as exc:  # noqa: BLE001 - whatever one option raises", "only RuntimeError moves the chain on"),
+            (CH + "resilience.py", "token = prov.ATTEMPT_DEADLINE.set(option_deadline + waited)", "token = None", "queue wait charged to the model"),
+            (CH + "resilience.py", "return value if math.isfinite(value) else 30.0", "return value", "nan/inf attempt timeout accepted"),
+            (CH + "resilience.py", 'use_pool.mark_ok(entry["provider"], entry["model"])', "pass", "success does not settle the pool"),
+            (CH + "resilience.py", "                    self.breaker.ok(kid)\n", "                    pass\n", "success does not clear the breaker"),
+            (CH + "resilience.py", "NO_FAILOVER = {400, 404, 410, 422}", "NO_FAILOVER = {400, 410, 422}", "404 retried on other keys"),
+            (CH + "resilience.py", "if last is not None and deadline is not None and time.monotonic() >= deadline:", "if deadline is not None and time.monotonic() >= deadline:", "first key skipped when time is spent"),
+            (CH + "model_pool.py", "if hit and hit[0] == until:", "if hit:", "release clears a newer cooldown"),
+            (CH + "resilience.py", 'text = str(exc) if isinstance(exc, RuntimeError) else f"{type(exc).__name__}:{exc}"', "text = str(exc)", "non-Runtime errors lose their type"),
             (CH + "resilience.py", 'errbox["e"] = "ROUTER_SATURATED"', "pass", "saturated text lost"),
             (CH + "resilience.py", "budget = 0.0 if limit <= 0 else (prov.CHAT_TIMEOUT if is_last else limit)", "budget = 0.0 if (limit <= 0 or is_last) else limit", "last option without budget"),
             (CH + "model_pool.py", "return value if math.isfinite(value) and value >= 0 else DEFAULT_COOLDOWN", "return value", "no cooldown validation"),
             (CH + "resilience.py", "limit = min(prov.CHAT_TIMEOUT, base * max(1.0, max_tokens / 1024)) if base > 0 else 0.0", "limit = base * max(1.0, max_tokens / 1024) if base > 0 else 0.0", "limit not capped at 90"),
             (CH + "model_pool.py", "            for stale in [k for k in prov._models_cache if k[0] == provider]:\n                prov._models_cache.pop(stale, None)\n", "            pass\n", "refresh does not drop cache"),
             (CH + "resilience.py", 'busy = isinstance(exc, Saturated) or "ROUTER_SATURATED" in str(exc)', "busy = False", "busy router marks models dead"),
-            (CH + "resilience.py", "kept, skipped = use_pool.filter(chain, probe=True)", "kept, skipped = use_pool.filter(chain)", "run_policy does not take the probe lease"),
+            (CH + "resilience.py", "kept, skipped = use_pool.filter(chain, probe=True, leased=leased)", "kept, skipped = use_pool.filter(chain, leased=leased)", "run_policy does not take the probe lease"),
             (CH + "model_pool.py", "DEFAULT_COOLDOWN = 120.0", "DEFAULT_COOLDOWN = 60.0", "default cooldown changed"),
             (CH + "resilience.py", 'use_pool = pool if (pool is not None and policy["authorized_fallback"]) else None', "use_pool = pool", "pool used in groups without authorization"),
             (CH + "resilience.py", "if last is not None and deadline is not None and time.monotonic() >= deadline:", "if False:", "keys still tried after the option time is spent"),
@@ -279,7 +290,7 @@ jobs:
             (CH + "router.py", 'body["auto"] = True', 'body["auto_"] = True', "auto flag missing in reply"),
             (CH + "router.py", "call=route_call, pool=model_pool.POOL)", "call=route_call)", "send auto without pool"),
             (CH + "router.py", 'if provider == "auto":  # one pseudo-model', 'if provider == "auto_":  # one pseudo-model', "auto has no pseudo-model"),
-            (CH + "router.py", 'detail={"error": str(exc), "trace": getattr(exc, "trace", None)} if auto else str(exc)', "detail=str(exc)", "502 without trace"),
+            (CH + "router.py", 'detail = f"{exc} | " + " ; ".join(trace) if (auto and trace) else str(exc)', "detail = str(exc)", "502 without trace"),
             (CH + "router.py", "        if reply:\n            if not conv:", "        if True:\n            if not conv:", "empty reply saved"),
             (CH + "route_api.py", "pool=model_pool.POOL)", "pool=None)", "/chat/route without pool"),
             (CH + "route_api.py", 'status = 409 if str(exc).startswith("NEEDS_DIRECTOR_AUTH") else 503', "status = 503", "no 409 for missing authorization"),
