@@ -219,7 +219,7 @@ class PluginHost:
             self._state_error = "archivo de estado con formato inesperado (se ignora)"
         except FileNotFoundError:
             pass
-        except (OSError, ValueError) as exc:
+        except (OSError, ValueError, RecursionError) as exc:
             self._state_error = f"archivo de estado ilegible ({type(exc).__name__}); se ignora"
         return {}
 
@@ -235,7 +235,7 @@ class PluginHost:
                 p.errors = check_v1(ficha, folder.name)
         except FileNotFoundError:
             p.errors = ["H00_sin_ficha_json"]
-        except (OSError, ValueError) as exc:
+        except (OSError, ValueError, RecursionError) as exc:
             p.errors = [f"H00_ficha_ilegible: {type(exc).__name__}"]
         if not p.errors and self.validator is not None:
             try:
@@ -244,22 +244,33 @@ class PluginHost:
             except Exception as exc:
                 p.errors = [f"H99_el_validador_fallo: {type(exc).__name__}"]
         if isinstance(ficha, dict):  # best effort for display, also when invalid
-            ph = ficha.get("plugin_host") if isinstance(ficha.get("plugin_host"), dict) else {}
-            ej = ficha.get("ejecucion") if isinstance(ficha.get("ejecucion"), dict) else {}
-            lim = ficha.get("seguridad", {}).get("limites", {}) if isinstance(ficha.get("seguridad"), dict) else {}
-            p.version, p.category = _str_or_none(ficha.get("version")), _str_or_none(ficha.get("categoria"))
-            p.entrypoint = _str_or_none(ej.get("entry_point")) or None
-            p.note = _str_or_none(ph.get("nota_roja")) or None
-            p.placeholder = ph.get("placeholder") is True
-            p.health_action = _str_or_none(ph.get("health_action"))
-            if isinstance(ej.get("allowed_actions"), list):
-                p.actions = tuple(a for a in ej["allowed_actions"] if isinstance(a, str))
-            ms = lim.get("timeout_ms") if isinstance(lim, dict) else None
-            if isinstance(ms, (int, float)) and not isinstance(ms, bool) and math.isfinite(ms) and ms > 0:
-                p.timeout_s = min(ms / 1000.0, MAX_TIMEOUT_S)
-            p.enabled = overrides.get(p.id, ph.get("enabled_default") is True)
+            try:
+                self._display_fields(p, ficha, overrides)
+            except Exception as exc:  # e.g. OverflowError from a 400-digit timeout: this ONE plugin is invalid, the rest keep loading
+                p.errors = p.errors + [f"H00_ficha_ilegible: {type(exc).__name__}"]
+                p.enabled = overrides.get(p.id, False)
         else:
             p.enabled = overrides.get(p.id, False)
+        return self._finish_load(p)
+
+    def _display_fields(self, p: Plugin, ficha: dict, overrides: dict[str, bool]) -> None:
+        ph = ficha.get("plugin_host") if isinstance(ficha.get("plugin_host"), dict) else {}
+        ej = ficha.get("ejecucion") if isinstance(ficha.get("ejecucion"), dict) else {}
+        lim = ficha.get("seguridad", {}).get("limites", {}) if isinstance(ficha.get("seguridad"), dict) else {}
+        p.version, p.category = _str_or_none(ficha.get("version")), _str_or_none(ficha.get("categoria"))
+        p.entrypoint = _str_or_none(ej.get("entry_point")) or None
+        p.note = _str_or_none(ph.get("nota_roja")) or None
+        p.placeholder = ph.get("placeholder") is True
+        p.health_action = _str_or_none(ph.get("health_action"))
+        if isinstance(ej.get("allowed_actions"), list):
+            p.actions = tuple(a for a in ej["allowed_actions"] if isinstance(a, str))
+        ms = lim.get("timeout_ms") if isinstance(lim, dict) else None
+        if isinstance(ms, (int, float)) and not isinstance(ms, bool) and math.isfinite(ms) and ms > 0:
+            p.timeout_s = min(ms / 1000.0, MAX_TIMEOUT_S)
+        p.enabled = overrides.get(p.id, ph.get("enabled_default") is True)
+
+    @staticmethod
+    def _finish_load(p: Plugin) -> Plugin:
         if p.errors:
             p.last_error = "; ".join(p.errors)[:500]
         elif p.placeholder:
