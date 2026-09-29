@@ -1,6 +1,7 @@
 {
   "schema": "yaiwes.estado/v1",
-  "actualizado_utc": "2026-09-29T05:30Z",
+  "actualizado_utc": "2026-09-29T16:20Z",
+  "actualizado_utc_anterior": "2026-09-29T05:30Z",
   "regla": "Solo hechos con evidencia. Lo no verificado dice SIN_VERIFICAR. Sin claves ni valores secretos.",
   "alcance": "Estado global del repo SIN lo del Router. Router, Hugging Face, Vercel, claves y Cerebras/Groq: ver router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md",
   "github": {
@@ -22,6 +23,239 @@
     "conocido": "plan_opus_loop.py (linea ~110) baja el banco de la ruta vieja Chat%20Mvp/...; se resuelve en T-04",
     "siguiente": "T-04: conectar el loop al Router unico (ver CONECTAR-ROUTER.md), reactivarlo y reactivar su sentinela"
   },
-  "tareas": "ver CRAZY_WALL.json (nodos N-02, N-04..N-09 con enlace a su ficha en tareas/)",
-  "pasos_pendientes": ["T-04 equipo 4 objetivos por el Router unico", "T-05 20 sitios", "T-06 cadena Rowboat a 4 Meta", "T-07 skills a esquema Sheriff", "T-08 memoria Manus + puente HF", "T-09 Vercel (ultimo, solo con orden)"]
+  "tareas": "ver CRAZY_WALL.json (nodos N-02, N-04..N-09 con enlace a su ficha en tareas/; y desde el checkpoint de las 11:20 los nodos N-10..N-19: Router, chat como plugin, Plugin Host, Bloque 3)",
+  "pasos_pendientes": ["T-04 equipo 4 objetivos por el Router unico", "T-05 20 sitios", "T-06 cadena Rowboat a 4 Meta", "T-07 skills a esquema Sheriff", "T-08 memoria Manus + puente HF", "T-09 Vercel (ultimo, solo con orden)"],
+  "checkpoint_2026_09_29_1120": {
+    "hora_bogota": "2026-09-29 ~11:20",
+    "orden": "Director 11:07: checkpoint progresivo en bitacora, estado JSON, handoff, Claude notas y Crazy Wall por si Anthropic se satura. Detalle completo: Claude notas/CHECKPOINT-2026-09-29-1100-router-chat-plugins.md",
+    "leyenda_marcas": {
+      "✅": "VERIFICADO (ejecutado + probado + 4 pasadas de revision + 3 rondas limpias seguidas, regla 05:18)",
+      "🟡": "HECHO SIN PROBAR / probado a medias",
+      "🔴": "PENDIENTE",
+      "⛔": "BLOQUEADO"
+    },
+    "resumen": "NADA esta ✅. Bloque 1 (cadena del chat en el Router) hecho y probado en CI en la rama bloque1-cadena-chat (🟡); rondas 1 y 2 de auditoria NO LIMPIAS; correcciones de la ronda 2 subidas a la rama SIN CI; el Router vivo no corre este codigo; Plugin Host en construccion por otro agente; Bloque 3 pendiente.",
+    "ordenes_director": {
+      "10:55": "textual segun el archivo de hechos: Ok termina el router y activalo / El chat es solo un plugins mas conectado al router -> autoriza relanzar el Job del Router tras terminarlo",
+      "11:07": "parafrasis (texto literal no esta en el repo): checkpoint progresivo; terminar el Router primero (prioridad 1) con un agente auditandolo en paralelo; luego chat + agentes (prioridad 2): DSL DAG con loops, agente orquestador, Hermes y OpenClaw como asistente/sheriff/sentinela/supervisor/juez/guardian/investigador de contexto/manipulacion de memoria y almacenamiento, harness de DeepSeek; espejo solo de Hermes+OpenClaw o de todo el equipo; varias UI de chat una debajo de otra, todo separado, nada monolitico",
+      "11:11": "parafrasis: delegar varias tareas a varios agentes (Claude escribe el codigo, ellos hacen lo demas) para terminar lo antes posible",
+      "05:18": "textual en INPUT-BLOCK-VERBATIM-2026-09-29-director-parte-4.md: 3 bucles + 4 pasadas por tarea terminada; sin eso no es ✅",
+      "05:15": "textual en INPUT-BLOCK-VERBATIM-2026-09-29-director-parte-3.md: cadena Kimi K3 > GLM 5.3 > DeepSeek V4 > Qwen 3.8 (Groq) > Nemotron ULTIMO; el Router pide a la API los modelos disponibles",
+      "02:06": "textual: El chat y los agentes de Hermes y open claw prioridad con Nvidia si esta ocupado las primeras 3 Salta a la 4 o a groq (alcance: chat y Hermes/OpenClaw; hoy solo el chat, a medias)"
+    },
+    "router_bloque1_cadena_chat": {
+      "marca": "🟡",
+      "estado": "HECHO Y PROBADO EN CI (codigo de la ronda 1); NO verificado",
+      "rama": "bloque1-cadena-chat (NO unida a main)",
+      "carpeta": "router inteligente universal/integration/chat_mvp/ (model_pool.py, resilience.py, route_api.py, router.py, providers.py) y router inteligente universal/tests/ (test_model_pool.py, test_resilience.py)",
+      "cadenas_DEFAULT_POLICY": {
+        "default": "kimi-k3 (nvidia) > glm-5.3 (nvidia) > DeepSeek-V4-Flash (hf, se salta en pico) > qwen/qwen3.8-27b (groq) > nemotron-3-super-120b-a12b (nvidia, ULTIMO)",
+        "code": "MiniMax-M3 (hf) > nemotron-3-super-120b-a12b (nvidia)",
+        "minor": "DeepSeek-V4-Flash (hf) > nemotron (nvidia) > MiniMax-M3 (hf); en pico solo MiniMax",
+        "g2": "kimi-k3 > glm-5.3 > groq (RIU_G2_GROQ_MODEL) > local (RIU_G2_LOCAL_MODEL) > DeepSeek-V4-Flash (se salta en pico) > nemotron"
+      },
+      "evidencia_ci": {
+        "flujo_temporal": "tmp-bloque1-cadena-verify.yml (vive en main, blob a86b3504; borrar al terminar)",
+        "corridas": [
+          "36557644179",
+          "36561019462",
+          "36562078042"
+        ],
+        "fuente": "archivo de hechos del checkpoint (no se consultaron las corridas)",
+        "carpeta_de_pruebas": "rama 183 pasan contra main 153; MISMO conjunto de 14 fallos previos (huella fa97bc78c2a8e444): no se rompio nada",
+        "pruebas_de_la_cadena": "42 pasan en CI",
+        "mutaciones": "27 de 28 detectadas; la sobreviviente (respuesta vacia guardada) se cubrio con una prueba nueva en test_resilience.py (blob ddc69404), sin corrida propia",
+        "en_vivo": "runner de CI con llaves reales (NO el Router vivo): Kimi > GLM > DeepSeek(hf) > Qwen(Groq) > Nemotron escalon por escalon OK y /chat/send provider auto mantiene la conversacion; Kimi K3 lento hoy (25-30 s en 2 de 3): el Router lo salta tras 30 s y lo recuerda 2 min"
+      }
+    },
+    "auditorias_independientes": {
+      "ronda_1": "NO LIMPIA (sin bloqueadores, con defectos reales). Corregido y con CI: Router saturado no marca modelo muerto; 400/422 no enfrian; plazo por opcion 30 s x tokens/1024 tope 90 s (ultima 90 s); llaves del mismo modelo no se siguen probando si se agoto el tiempo; cortacircuitos perdona fallos viejos; sonda unica",
+      "ronda_2": "NO LIMPIA (sin bloqueadores, con defectos reales). Subidas a la rama 11:14-11:18, SIN CI: (1) espera del limitador no se cobra al modelo; (2) cualquier excepcion de una opcion pasa a la siguiente; (3) Router saturado corta la cadena al instante y no enfria (503 en /chat/route; 502 con texto en /chat/send auto); (4) arriendos de sonda no usados se devuelven; (5) RIU_CHAT_ATTEMPT_TIMEOUT no finito vale 30; (6) el 502 de /chat/send es texto plano (<=900); (7) docstring del cortacircuitos a medias; (8) comentario de peak.py (ya corregido desde la ronda 1); (9) glm-5.3-flash y deepseek-v4.1-flash: arranque en frio NO CONFIRMADO, no se usan",
+      "para_verificado": "3 rondas limpias seguidas despues de que la ronda 2 tenga CI"
+    },
+    "estado_de_subida_ronda_2": {
+      "comprobado": "git fetch a las 11:20, rama en el commit cb229a12",
+      "resilience.py": "SUBIDO (blob de la rama = hash local c3043881)",
+      "model_pool.py": "SUBIDO (blob de la rama = hash local 34df8847)",
+      "router.py": "SUBIDO (blob de la rama = hash local 3b0445af)",
+      "route_api.py": "SUBIDO (blob de la rama = hash local 83d2e677)",
+      "providers.py": "SUBIDO (blob de la rama = hash local bd96dd07)",
+      "test_resilience.py": "SUBIDO (blob de la rama = hash local 26255aa3)",
+      "test_model_pool.py": "SUBIDO (blob de la rama = hash local cc5b8fa1)",
+      "test_chat_mvp_app.py": "SUBIDO (blob de la rama = hash local fd64ad22)"
+    },
+    "router_vivo": {
+      "job": "6abb503a6b030d633f6a2dca",
+      "corre_el_codigo_del_bloque_1": false,
+      "nota": "El Job vivo corre el codigo de main anterior al Bloque 1 (default = solo Nemotron; g2 = Nemotron > Groq > local > DeepSeek). Relanzar solo con el lanzador unico (.github/workflows/riu-router-job-central.yml): espera /health 200 del Job nuevo, escribe LIVE_URL en agents-yaiwes/ROUTER_JOB_PAUSE.flag y solo entonces cancela el viejo",
+      "huecos_del_lanzador": [
+        "no pasa HF_TOKEN_1 al Job",
+        "no pone RIU_CHAT_ALLOW_PROVIDER_LIVE=1"
+      ],
+      "pasos": [
+        "CI verde de la rama",
+        "plugin host minimo con el chat como primer plugin",
+        "unir a main",
+        "relanzar",
+        "verificar /health, /chat/router/status, /chat/send auto y la lista de plugins",
+        "borrar workflows temporales"
+      ]
+    },
+    "plugin_host_bloque_2": {
+      "marca": "🟡/🔴",
+      "estado": "EN CONSTRUCCION por otro agente; al 11:20 sin codigo en la rama ni pruebas",
+      "diseno": "plugins/<id>/ficha.json montados una vez por el Router; regla harness = envoltura obligatoria, removible, sin dependencia dura, ante fallo o timeout devuelve degraded sin tumbar el Router; NO se ejecuta codigo de terceros (exec de Fables no se copia); tribunal = comprobaciones automaticas + OK del Director (OK pendiente)",
+      "sin_cablear_de_fables": [
+        "failover declarativo",
+        "presupuesto por nivel",
+        "evidencia L1-L4",
+        "hot-swap",
+        "sandbox C13"
+      ]
+    },
+    "bloque_3": {
+      "marca": "🔴",
+      "pendiente": [
+        "registro de fichas",
+        "compilador ficha a riu.dag/v1",
+        "agente operador",
+        "autodeteccion",
+        "gobernador de capacidad paralelo/cola",
+        "ZIP yaiwes_subrouters_modulares.zip montado APAGADO con interruptor (revisar seguridad)",
+        "conectores plugin (HTTP, SSH, MCP, push al celular)",
+        "dataset Yaiwes y anclas del Control Plane (T-24)"
+      ]
+    },
+    "incidente_mutaciones": "mutate2.py se interrumpio a las 10:55 y dejo UNA mutacion en model_pool.py del arbol local; detectada por 3 fallos de pruebas locales antes de subir; restaurado (35/35); nada mutado llego al repo. Leccion: mutaciones en una COPIA o en CI; pruebas locales ANTES de cada push",
+    "lista_roja": [
+      "1. DeepSeek se salta en horas pico (01-04 y 06-10 UTC, lunes a viernes) en las cadenas default y g2 (en minor solo queda MiniMax) -> decision del Director.",
+      "2. El grupo minor deja a Nemotron segundo.",
+      "3. La reescritura del grupo g2 (Nemotron ultimo) necesita el OK del Director.",
+      "4. No hay salto directo a Groq cuando NVIDIA esta ocupada (regla 02:06): hoy solo funciona por el orden de llaves y la cadena. Hermes/OpenClaw sin tocar.",
+      "5. Una respuesta vacia de un modelo NO cuenta como fallo (no pasa al siguiente) -> decision.",
+      "6. Un fallo enfria el modelo 120 s para todos (diseno deliberado).",
+      "7. La cadena no tiene plazo TOTAL (hasta ~210-450 s) y se dice que Vercel tiene maxDuration 60 (no lo encontre en el repo: SIN VERIFICAR) -> decision.",
+      "8. El timeout HTTP es por lectura de socket, no de reloj de pared.",
+      "9. No hay single-flight en las llamadas a /models; /chat/router/models no tiene limite de frecuencia.",
+      "10. Los ids del proveedor hf (DeepSeek V4 Flash, MiniMax M3) no estan certificados y requieren RIU_CHAT_ALLOW_PROVIDER_LIVE=1 (hoy NO puesto en el Job) y HF_TOKEN_1 (hoy NO pasado al Job).",
+      "11. Restos de OmniRoute: .omniroute_proxy en app.py (dentro de un try) y .github/omniroute-relaunch.trigger.",
+      "12. Workflows temporales siguen en main (tmp-bloque1-cadena-verify.yml) -> borrar antes de terminar.",
+      "13. Persistencia del estado de plugins / interruptor entre reinicios del Job (el Job es efimero) sin resolver.",
+      "14. La UI no se toca (la opcion Automatico ya aparece en la lista del chat actual; UI final al ultimo).",
+      "15. La URL del Router cambia al relanzar -> RIU_ROUTER_URL de Vercel quedara vieja; NO se toca Vercel ni el Space MCP sin orden explicita.",
+      "16. Las rondas 1 y 2 de auditoria salieron NO LIMPIAS; se necesitan 3 rondas limpias seguidas para ✅."
+    ],
+    "decisiones_del_director": [
+      {
+        "id": "D1",
+        "tema": "DeepSeek en hora pico",
+        "explicacion": "Hoy el chat automatico se salta DeepSeek V4 Flash de 20:00 a 23:00 (domingo a jueves) y de 01:00 a 05:00 (lunes a viernes) hora de Bogota. Decidir si se deja asi o si se usa tambien en pico.",
+        "por_defecto": "se deja como esta (se salta)"
+      },
+      {
+        "id": "D2",
+        "tema": "Grupo minor",
+        "explicacion": "En el grupo minor Nemotron queda segundo (DeepSeek > Nemotron > MiniMax). Decidir si se cambia.",
+        "por_defecto": "se deja como esta"
+      },
+      {
+        "id": "D3",
+        "tema": "Grupo g2 reescrito",
+        "explicacion": "Claude reescribio g2 (Kimi K3 > GLM 5.3 > Groq > local > DeepSeek > Nemotron) para dejar Nemotron ultimo. Falta su OK.",
+        "por_defecto": "se deja reescrito hasta que diga otra cosa"
+      },
+      {
+        "id": "D4",
+        "tema": "Salto directo a Groq",
+        "explicacion": "Su regla de las 02:06 dice: si estan ocupadas las primeras 3 de NVIDIA, salta a la 4 o a Groq. Hoy se prueban las claves 1 a 4 dentro de cada modelo NVIDIA y luego la siguiente opcion de la cadena (GLM 5.3) antes de llegar a Groq. Confirmar si quiere el salto directo a Groq, y para el chat solo o tambien para Hermes y OpenClaw.",
+        "por_defecto": "no se toca hasta que confirme"
+      },
+      {
+        "id": "D5",
+        "tema": "Respuesta vacia",
+        "explicacion": "Si un modelo contesta vacio hoy cuenta como exito: no pasa al siguiente y no se guarda en el historial. Decidir si debe contar como fallo.",
+        "por_defecto": "se deja como esta"
+      },
+      {
+        "id": "D6",
+        "tema": "Plazo total de la cadena",
+        "explicacion": "No hay plazo total: con 5 opciones puede tardar de ~210 a ~450 s, y se dice que Vercel corta a los 60 s (SIN VERIFICAR). Decidir un tope total.",
+        "por_defecto": "sin tope hasta que decida"
+      },
+      {
+        "id": "D7",
+        "tema": "Tribunal de plugins",
+        "explicacion": "Propuesta de Claude: pruebas automaticas primero (contrato valido, limites, sin llamadas peligrosas) y, si el plugin puede actuar afuera (escribir en GitHub, entrar por SSH, gastar), pide su OK con un boton en el panel o una orden en el chat. Falta su OK a esta propuesta.",
+        "por_defecto": "se construye asi pero el OK sigue pendiente"
+      },
+      {
+        "id": "D8",
+        "tema": "Huecos del lanzador",
+        "explicacion": "El lanzador del Router no pasa HF_TOKEN_1 al Job ni pone RIU_CHAT_ALLOW_PROVIDER_LIVE=1. Sin eso el escalon DeepSeek V4 Flash fallaria. Plan: agregarlos al lanzador e informarle antes de relanzar.",
+        "por_defecto": "se le informa antes de relanzar"
+      },
+      {
+        "id": "D9",
+        "tema": "Restos de OmniRoute",
+        "explicacion": "Quedan .omniroute_proxy en app.py (dentro de un try, no rompe) y .github/omniroute-relaunch.trigger. Decidir si se borran.",
+        "por_defecto": "no se borran sin orden"
+      },
+      {
+        "id": "D10",
+        "tema": "Notas de recuperacion",
+        "explicacion": "Claude notas/HANDOFF-PARCHE-RECUPERACION-2026-09-21.md solo existe en la rama backup-antes-limpieza-20260929. Decidir si se restaura.",
+        "por_defecto": "no se restaura sin orden"
+      },
+      {
+        "id": "D11",
+        "tema": "Llaves de Groq",
+        "explicacion": "Rotar las 7 llaves de Groq que se pegaron en un chat (accion suya).",
+        "por_defecto": "pendiente suyo"
+      },
+      {
+        "id": "D12",
+        "tema": "Vercel y direccion del Router",
+        "explicacion": "Al relanzar, la URL del Router cambia y RIU_ROUTER_URL de Vercel queda vieja. NO se toca Vercel (ni el Space MCP) sin orden explicita; el despliegue final es uno solo y lo ordena el.",
+        "por_defecto": "no se toca"
+      },
+      {
+        "id": "D13",
+        "tema": "Estado de plugins entre reinicios",
+        "explicacion": "El Job del Router es efimero: el estado de los plugins y el interruptor se pierden al reiniciar. Falta decidir donde se guardan (regla: todo en GitHub; HF solo puente).",
+        "por_defecto": "sin resolver"
+      }
+    ],
+    "contradicciones_halladas": [
+      "La guia CONECTAR-ROUTER.md (version de la manana, no el archivo de hechos) decia llamar /chat/send sin provider y leer response/content/text/message: sin provider falla (rama: 400 MODEL_REQUIRED; main: 422 por falta de model) y el texto vuelve en reply; el cliente RouterCliente (chat router/05-AGENTES/colmena/router_cliente.py lineas 105-108 y 90) tiene el mismo error y no esta parcheado. provider auto solo existe en la rama: el Router vivo, por el codigo de main, daria 400 PROVIDER_UNKNOWN (no probado en vivo).",
+      "Router saturado: el archivo de hechos dice 503; en el codigo el 503 es solo de /chat/route (route_api.py); en /chat/send con auto cualquier RouteFailed sale como 502 con texto plano (router.py).",
+      "El comentario de peak.py figura como correccion de la ronda 2; ya estaba corregido en la rama desde la ronda 1 (commit 352327a4). En main sigue el comentario viejo hasta unir la rama.",
+      "Docstring del cortacircuitos (hecho 7 de la ronda 2): quedo a medias; su primera frase aun dice lets one probe through, y el codigo en half-open deja pasar a TODOS. La arquitectura tambien decia una prueba: corregido.",
+      "El salto de DeepSeek en hora pico tambien aplica al grupo minor (solo queda MiniMax), no solo a default y g2.",
+      "La tabla del handoff decia en T-13 que run_policy usa siempre la llave 1: incorrecto; core.key_pool expande al pool completo y Router.execute prueba las llaves por orden de salud.",
+      "Vercel/vercel-chat/api/chat.js llama a /chat/send con provider hf y model DeepSeek-V4-Flash fijos (no auto); y no aparece maxDuration 60 en ningun vercel.json del repo (no se consulto Vercel).",
+      "Cifras de pruebas: 168/8/0 (corrida 36526076292, conjunto de riu-chat-mvp-verify) frente a 153/8/6 (main, carpeta completa) NO estan reconciliadas (los 6 errores son de test_vault_wordflow_jobs, el grupo que el arreglo del puente del banco habia dejado en 0). 181 (corrida 36561019462) frente a 183 en la rama: el +2 coincide con las dos pruebas del commit 82209701. 42 pruebas de cadena en CI frente a 51 funciones test_ hoy en la rama (27+11+4 entonces; 35+12+4 ahora): la diferencia son pruebas anadidas despues, sin CI.",
+      "La cita de la regla del Director de las 02:06 en la arquitectura estaba parafraseada; ahora va textual, con su alcance (chat y agentes de Hermes y OpenClaw).",
+      "T-25: el pedido mencionaba T-11..T-25 pero ni el archivo de hechos ni el repo definen T-25; no se invento.",
+      "DeepSeek V4 Flash y MiniMax M3 (proveedor hf) no estan certificados: el registro model_registry.json solo certifica gpt2 y Qwen3-8B; la prueba en vivo del escalon DeepSeek(hf) se hizo en el runner CON RIU_CHAT_ALLOW_PROVIDER_LIVE=1 y HF_TOKEN_1, que el Job vivo no tiene."
+    ],
+    "proximos_pasos": [
+      "Comprobar que la ronda 2 (subida 11:14-11:18) pasa CI: los commits llevan [skip ci], hay que lanzar el flujo temporal o el CI permanente sobre la rama y leer el resultado (🔴 sin hacer).",
+      "Ronda 3 de auditoria independiente sobre el codigo con la ronda 2; repetir hasta 3 rondas limpias seguidas (solo entonces ✅).",
+      "Terminar el Plugin Host minimo con el chat como primer plugin (otro agente lo construye) y darle pruebas; luego revisarlo (🔴).",
+      "Arreglos chicos pendientes: dos huecos del lanzador (HF_TOKEN_1 y RIU_CHAT_ALLOW_PROVIDER_LIVE=1), primera frase del docstring del cortacircuitos, parche de RouterCliente (provider auto y leer reply). Ninguno se hizo en este checkpoint (no se editaron .py ni workflows).",
+      "Decisiones del Director (D1 a D13).",
+      "Unir la rama bloque1-cadena-chat a main, relanzar el Router con el lanzador unico (orden 10:55), verificar /health, /chat/router/status, /chat/send con provider auto y la lista de plugins, y borrar los workflows temporales.",
+      "Bloque 3 (registro de fichas, compilador, agente operador, autodeteccion, gobernador de capacidad, ZIP apagado, conectores plugin, dataset Yaiwes/Control Plane).",
+      "Prioridad 2 (orden 11:07): DSL DAG con loops, agente orquestador, Hermes y OpenClaw en sus roles, harness DeepSeek, espejos, varias UI de chat; todo separado.",
+      "Despues: IA local en la maquina de 32 GB, autoescalado, cruce con lo previo de Opus (T-17/T-18), pantalla final (al ultimo, con la skill de diseno del Director)."
+    ],
+    "donde_esta_cada_pieza": {
+      "resumen_tecnico_router": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (secciones 10 a 19)",
+      "como_conectar": "router inteligente universal/CONECTAR-ROUTER.md",
+      "arquitectura": "Readme arquitectura router inteligente universal/ARQUITECTURA-ROUTER-Y-CONEXIONES.md",
+      "nota_completa": "Claude notas/CHECKPOINT-2026-09-29-1100-router-chat-plugins.md",
+      "bitacora": "Estado y handoff global/BITACORA.jsonl (B-0022 a B-0029)",
+      "dichos_del_director": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-29-director*.md (parte 4 solo en main)"
+    }
+  }
 }
