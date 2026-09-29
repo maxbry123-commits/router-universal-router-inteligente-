@@ -208,3 +208,125 @@ jobs:
               if item is not None:
                   chunk += (" || " if chunk else "") + item
           PY
+
+  mutate:
+    # Mutation check (Director's rule 05:18: nothing is 100% without proof): break the code on purpose, one change at a time, and see that the tests notice.
+    # A mutation counts as KILLED when it makes at least one test fail that does not already fail without the mutation (known failures are subtracted).
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        set: [unit, routes]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bloque1-cadena-chat
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/agents-yaiwes/common/
+            router inteligente universal/api/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/tests/
+            router inteligente universal/verifier/
+            router inteligente universal/Banco de claves/
+            CLAUDE.md
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: pip install fastapi httpx pytest pydantic uvicorn huggingface_hub
+      - name: Mutations
+        env:
+          MUT_SET: ${{ matrix.set }}
+        run: |
+          cd "router inteligente universal"
+          python - <<'PY'
+          import os, subprocess, sys
+          CH = "integration/chat_mvp/"
+          SET = os.environ["MUT_SET"]
+          UNIT = ["tests/test_model_pool.py", "tests/test_resilience.py"]
+          ROUTES = ["tests/test_resilience.py", "tests/test_chat_mvp_app.py"]
+          MUTS = {
+           "unit": (UNIT, [
+            (CH + "resilience.py", "return st[0] < self.threshold and st[2] > 0 and self.clock() - st[2] >= self.cooldown", "return False", "breaker never forgives"),
+            (CH + "resilience.py", 'REQUEST_ERRORS = ("PROVIDER_ERROR:400:", "PROVIDER_ERROR:422:")', 'REQUEST_ERRORS = ("NEVER",)', "400/422 cool the model"),
+            (CH + "model_pool.py", "            if probe:\n                self._bad[(provider, model)] = (now + PROBE_LEASE, hit[1])\n", "", "no probe lease"),
+            (CH + "resilience.py", 'errbox["e"] = "ROUTER_SATURATED"', "pass", "saturated text lost"),
+            (CH + "resilience.py", "budget = 0.0 if limit <= 0 else (prov.CHAT_TIMEOUT if is_last else limit)", "budget = 0.0 if (limit <= 0 or is_last) else limit", "last option without budget"),
+            (CH + "model_pool.py", "return value if math.isfinite(value) and value >= 0 else DEFAULT_COOLDOWN", "return value", "no cooldown validation"),
+            (CH + "resilience.py", "limit = min(prov.CHAT_TIMEOUT, base * max(1.0, max_tokens / 1024)) if base > 0 else 0.0", "limit = base * max(1.0, max_tokens / 1024) if base > 0 else 0.0", "limit not capped at 90"),
+            (CH + "model_pool.py", "            for stale in [k for k in prov._models_cache if k[0] == provider]:\n                prov._models_cache.pop(stale, None)\n", "            pass\n", "refresh does not drop cache"),
+            (CH + "resilience.py", 'busy = isinstance(exc, Saturated) or "ROUTER_SATURATED" in str(exc)', "busy = False", "busy router marks models dead"),
+            (CH + "resilience.py", "kept, skipped = use_pool.filter(chain, probe=True)", "kept, skipped = use_pool.filter(chain)", "run_policy does not take the probe lease"),
+            (CH + "model_pool.py", "DEFAULT_COOLDOWN = 120.0", "DEFAULT_COOLDOWN = 60.0", "default cooldown changed"),
+            (CH + "resilience.py", 'use_pool = pool if (pool is not None and policy["authorized_fallback"]) else None', "use_pool = pool", "pool used in groups without authorization"),
+            (CH + "resilience.py", "if last is not None and deadline is not None and time.monotonic() >= deadline:", "if False:", "keys still tried after the option time is spent"),
+            (CH + "resilience.py", '"chain": [KIMI_K3, GLM_53, DEEPSEEK_FLASH, QWEN_GROQ, NEMOTRON]', '"chain": [NEMOTRON, KIMI_K3, GLM_53, DEEPSEEK_FLASH, QWEN_GROQ]', "Nemotron first instead of last"),
+           ]),
+           "routes": (ROUTES, [
+            (CH + "router.py", '[auto] + [{"id": k', '[{"id": k', "auto not listed first"),
+            (CH + "router.py", '"configured": bool(chain)}', '"configured": True}', "auto always configured"),
+            (CH + "router.py", 'used_provider, used_model, route_trace = out["route"]["provider"], out["route"]["model"], out["trace"]', 'used_provider, used_model, route_trace = "nvidia", "x", out["trace"]', "auto reports wrong model"),
+            (CH + "router.py", 'body["auto"] = True', 'body["auto_"] = True', "auto flag missing in reply"),
+            (CH + "router.py", "call=route_call, pool=model_pool.POOL)", "call=route_call)", "send auto without pool"),
+            (CH + "router.py", 'if provider == "auto":  # one pseudo-model', 'if provider == "auto_":  # one pseudo-model', "auto has no pseudo-model"),
+            (CH + "router.py", 'detail={"error": str(exc), "trace": getattr(exc, "trace", None)} if auto else str(exc)', "detail=str(exc)", "502 without trace"),
+            (CH + "router.py", "        if reply:\n            if not conv:", "        if True:\n            if not conv:", "empty reply saved"),
+            (CH + "route_api.py", "pool=model_pool.POOL)", "pool=None)", "/chat/route without pool"),
+            (CH + "route_api.py", 'status = 409 if str(exc).startswith("NEEDS_DIRECTOR_AUTH") else 503', "status = 503", "no 409 for missing authorization"),
+            (CH + "route_api.py", 'if not policy["authorized_fallback"]:', "if False:", "report uses pool for unauthorized groups"),
+            (CH + "route_api.py", "kept, skipped = model_pool.POOL.filter(chain)", "kept, skipped = model_pool.POOL.filter(chain, probe=True)", "report takes the probe lease"),
+            (CH + "route_api.py", "if chain and not kept:", "if not kept:", "empty chain reported as pool-emptied"),
+            (CH + "route_api.py", '"attempt_timeout_s": resilience.attempt_timeout_s(), ', '"attempt_timeout_": resilience.attempt_timeout_s(), ', "status lacks attempt timeout"),
+           ]),
+          }
+          files, muts = MUTS[SET]
+
+          def run():
+              r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rfE"] + files, capture_output=True, text=True, timeout=900)
+              fails = sorted({l.split(" - ")[0].split(" ", 1)[1] for l in r.stdout.splitlines() if l.startswith(("FAILED", "ERROR"))})
+              tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
+              return fails, tail
+
+          RES = []
+          base, tail = run()
+          RES.append("BASELINE[%s] known_failures=%d | %s | %s" % (SET, len(base), tail, "; ".join(base)[:600]))
+          killed = survived = bad = 0
+          for path, old, new, label in muts:
+              src = open(path, encoding="utf-8").read()
+              if src.count(old) != 1:
+                  RES.append("BAD_MUTATION %s (found %d times)" % (label, src.count(old)))
+                  bad += 1
+                  continue
+              open(path, "w", encoding="utf-8").write(src.replace(old, new))
+              try:
+                  fails, _tail = run()
+              finally:
+                  open(path, "w", encoding="utf-8").write(src)
+              new_fails = [f for f in fails if f not in base]
+              if new_fails:
+                  killed += 1
+                  RES.append("KILLED   %s -> %s" % (label, "; ".join(f.split("::")[-1] for f in new_fails)[:160]))
+              else:
+                  survived += 1
+                  RES.append("SURVIVED %s" % label)
+          RES.append("TOTAL[%s] killed=%d survived=%d bad=%d of %d" % (SET, killed, survived, bad, len(muts)))
+          chunk, n = "", 0
+          for item in RES + [None]:
+              if item is None or len(chunk) + len(item) > 3000:
+                  if chunk:
+                      n += 1
+                      print("::notice title=B1_MUT_%s_%d::%s" % (SET, n, chunk.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")))
+                  chunk = ""
+              if item is not None:
+                  chunk += (" || " if chunk else "") + item
+          PY
