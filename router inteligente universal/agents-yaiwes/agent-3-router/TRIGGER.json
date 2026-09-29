@@ -1,10 +1,11 @@
 {
   "schema": "yaiwes.trigger/v1",
-  "run_id": "RUN-A3-32GB-READY",
-  "input_block": "P1 listo para dispatch. Reescribe publish_live.py: (1) sin triples rotos (2) Job SOLO en máquina HF 32 GB RAM / 8 vCPU (cualquier otra = rechazo) (3) :8000 GET /health (4) Space riu-chat-yaiwes + API_BASE (5) crazy_wall space_url+router_endpoint (6) smoke /chat/send. Fail-closed. No atribuir nombres de flavor al Director.",
+  "run_id": "RUN-A3-OPT3-PUBLIC-2026-09-29",
+  "input_block": "P1 MICRO Sentinela: INVALIDATE WAITING_GROK stale 22-sep. Opcion 3 Static+OAuth. GOLDEN publish_live.py con private=False. python_exec ONLY. CERO rewrite/regen. Status PENDING_VERIFY. Job 32GB APLAZADO. PASS=space_url live!=401/404.",
   "requested_by": "orquestador-chat",
-  "source": "GrokBot+Revisor+Sentinela-aligned-2026-09-22",
-  "deadline": "2026-09-22T19:22:00-05:00",
-  "hardware_requirement": "32GB_RAM",
-  "dispatch_status": "WAITING_GROK_OR_DIRECTOR_AUTH"
+  "source": "Sentinela-MICRO-2026-09-29",
+  "deadline": "2026-09-29T23:59:00-05:00",
+  "hardware_requirement": "NONE_STATIC_OPTION3",
+  "dispatch_status": "ORCH_DISPATCH_READY",
+  "invalidates": "WAITING_GROK_OR_DIRECTOR_AUTH expired 2026-09-22"
 }
