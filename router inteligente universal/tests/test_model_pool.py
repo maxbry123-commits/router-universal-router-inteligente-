@@ -201,17 +201,19 @@ def test_pool_is_ignored_where_fallback_is_not_authorized(monkeypatch):
     assert not pool.cooling("nvidia", NEMO)
 
 
-def test_a_busy_router_is_not_a_dead_model(monkeypatch):
+def test_a_busy_router_stops_the_chain_at_once_and_is_not_a_dead_model(monkeypatch):
     all_keys(monkeypatch)
     pool = MP.ModelPool(fetch=lambda p, k: [])
+    seen = []
 
     def call(provider, key, model, messages, max_tokens, temperature):
-        if model == KIMI:
-            raise R.Saturated("ROUTER_SATURATED")
-        return {"message": {"content": "ok"}}
+        seen.append(model)
+        raise R.Saturated("ROUTER_SATURATED")
 
-    R.run_policy("default", [], 5, now=MON_OFF, call=call, pool=pool)
-    assert not pool.cooling("nvidia", KIMI)
+    with pytest.raises(R.RouteFailed, match="ROUTER_SATURATED") as exc:
+        R.run_policy("default", [], 5, now=MON_OFF, call=call, pool=pool)
+    assert seen == [KIMI]  # the limiter is shared by every option: GLM, DeepSeek... would each wait another 20 s for a slot
+    assert exc.value.trace[-1] == f"nvidia/{KIMI}:ROUTER_SATURATED" and not pool.cooling("nvidia", KIMI)
 
 
 def test_every_option_has_a_time_limit_and_the_last_one_gets_the_full_provider_budget(monkeypatch):
@@ -585,3 +587,148 @@ def test_nvidia_keys_1_2_3_then_4_through_the_real_hot_path(monkeypatch):
     tried.clear()
     out = R.run_policy("default", [], 5, now=MON_OFF, call=core.call_via_router)
     assert tried == [("n4", KIMI)]  # keys 1-3 have a recent failure for this model: the healthy one goes first
+
+
+# --- audit round 2 (2026-09-29): queue wait, busy router, any exception, lease given back, success settles, env typos ----------------------
+def test_the_wait_for_a_free_slot_is_not_charged_to_the_option_time():
+    limiter = R.AdaptiveLimiter((1,), 5, 5)
+    r = R.Router(R.CircuitBreaker(), limiter)
+    limiter.acquire()  # the only slot is taken ...
+    threading.Timer(0.3, limiter.release).start()  # ... and comes free after 0.3 s
+    left = []
+
+    def chat(provider, key, model, messages, max_tokens, temperature=None):
+        left.append(P.ATTEMPT_DEADLINE.get() - time.monotonic())
+        return {"message": {"content": "ok"}}
+
+    original = time.monotonic() + 1.0
+    token = P.ATTEMPT_DEADLINE.set(original)
+    try:
+        r.execute("nvidia", ["k"], "m", [], 5, None, chat)
+        assert P.ATTEMPT_DEADLINE.get() == original  # what the request set is put back afterwards
+    finally:
+        P.ATTEMPT_DEADLINE.reset(token)
+    assert left[0] > 0.85  # ~1.0 s left for the model; without the fix the 0.3 s in the queue would have eaten it (~0.7 s)
+
+
+def test_any_exception_from_one_option_moves_the_chain_on(monkeypatch):
+    all_keys(monkeypatch)
+    pool = MP.ModelPool(fetch=lambda p, k: [], cooldown=100)
+
+    def call(provider, key, model, messages, max_tokens, temperature):
+        if model == KIMI:
+            raise ValueError("registry unreadable")  # not a RuntimeError: it used to abort the whole chain with a 500
+        return {"message": {"content": "ok"}}
+
+    out = R.run_policy("default", [], 5, now=MON_OFF, call=call, pool=pool)
+    assert out["route"]["model"] == GLM and any(t.startswith(f"nvidia/{KIMI}:ValueError:registry") for t in out["trace"])
+    assert pool.cooling("nvidia", KIMI)
+
+
+def test_a_probe_lease_that_was_never_used_is_given_back(monkeypatch):
+    all_keys(monkeypatch)
+    clock = Clock()
+    pool = MP.ModelPool(fetch=lambda p, k: [], clock=clock, cooldown=100)
+    pool.mark_bad("groq", QWEN, "timeout")
+    clock.t += 101  # the cooldown of Qwen is over
+    out = R.run_policy("default", [], 5, now=MON_OFF, call=lambda *a: {"message": {"content": "ok"}}, pool=pool)
+    assert out["route"]["model"] == KIMI  # Kimi answered: Qwen was never tried, so nobody learned anything about it
+    assert not pool.cooling("groq", QWEN)  # the lease this request took is given back (it must not show COOLING for 30 s)
+    assert [c["model"] for c in pool.filter([{"provider": "groq", "model": QWEN}], probe=True)[0]] == [QWEN]  # the next request may probe it
+
+
+def test_a_probe_that_ends_without_a_verdict_gives_the_lease_back(monkeypatch):
+    all_keys(monkeypatch)
+    for error in (RuntimeError("PROVIDER_ERROR:400:bad request"), R.Saturated("ROUTER_SATURATED")):
+        clock = Clock()
+        pool = MP.ModelPool(fetch=lambda p, k: [], clock=clock, cooldown=100)
+        pool.mark_bad("nvidia", KIMI, "timeout")
+        clock.t += 101
+
+        def call(provider, key, model, messages, max_tokens, temperature, error=error):
+            if model == KIMI:
+                raise error
+            return {"message": {"content": "ok"}}
+
+        try:
+            R.run_policy("default", [], 5, now=MON_OFF, call=call, pool=pool)
+        except R.RouteFailed:
+            pass  # the busy Router ends the request; the bad request moves on to GLM
+        assert not pool.cooling("nvidia", KIMI), error  # neither a bad request nor a busy Router says anything about Kimi
+
+
+def test_release_only_gives_back_its_own_lease():
+    clock = Clock()
+    pool = MP.ModelPool(fetch=lambda p, k: [], clock=clock, cooldown=100)
+    chain = [{"provider": "nvidia", "model": KIMI}]
+    pool.mark_bad("nvidia", KIMI, "timeout")
+    clock.t += 101
+    leased: list = []
+    pool.filter(chain, probe=True, leased=leased)
+    assert len(leased) == 1 and leased[0][:2] == ("nvidia", KIMI)
+    pool.mark_bad("nvidia", KIMI, "another request's probe failed")  # a fresh cooldown replaced the lease
+    pool.release(*leased[0])
+    assert pool.cooling("nvidia", KIMI)  # the newer cooldown is untouched
+
+
+def test_a_success_settles_the_pool_and_the_breaker(monkeypatch):
+    all_keys(monkeypatch)
+    clock = Clock()
+    pool = MP.ModelPool(fetch=lambda p, k: [], clock=clock, cooldown=100)
+    pool.mark_bad("nvidia", KIMI, "timeout")
+    clock.t += 101
+    out = R.run_policy("default", [], 5, now=MON_OFF, call=lambda *a: {"message": {"content": "ok"}}, pool=pool)
+    assert out["route"]["model"] == KIMI and pool.snapshot()["cooling"] == {}  # the probe answered: Kimi is healthy again, no lease is left over
+    r = R.Router(R.CircuitBreaker(3, 120), R.AdaptiveLimiter((5,), 1, 2))
+    state = {"fail": True}
+
+    def chat(provider, key, model, messages, max_tokens, temperature=None):
+        if state["fail"]:
+            raise P.ProviderError(503, "x")
+        return {"message": {"content": "ok"}}
+
+    with pytest.raises(R.AllKeysFailed):
+        r.execute("nvidia", ["k"], "m", [], 5, None, chat)
+    kid = R.key_id("nvidia", "k", "m")
+    assert r.breaker.fails(kid) == 1
+    state["fail"] = False
+    r.execute("nvidia", ["k"], "m", [], 5, None, chat)
+    assert r.breaker.fails(kid) == 0  # one success forgives the failures of that key
+
+
+def test_a_404_is_never_retried_on_another_key_and_the_first_key_is_tried_even_when_the_time_is_spent():
+    r = R.Router(R.CircuitBreaker(3, 120), R.AdaptiveLimiter((5,), 1, 2))
+    tried = []
+
+    def not_found(provider, key, model, messages, max_tokens, temperature=None):
+        tried.append(key)
+        raise P.ProviderError(404, "model not found")
+
+    with pytest.raises(P.ProviderError):
+        r.execute("nvidia", ["a", "b"], "m", [], 5, None, not_found)
+    assert tried == ["a"]  # the model does not exist: no other key will find it
+    tried.clear()
+
+    def busy(provider, key, model, messages, max_tokens, temperature=None):
+        tried.append(key)
+        raise P.ProviderError(503, "x")
+
+    token = P.ATTEMPT_DEADLINE.set(time.monotonic() - 1.0)  # the time of this option is already spent
+    try:
+        with pytest.raises(R.AllKeysFailed):
+            r.execute("nvidia", ["c", "d"], "m2", [], 5, None, busy)
+    finally:
+        P.ATTEMPT_DEADLINE.reset(token)
+    assert tried == ["c"]  # the first key is always tried, the others are left alone once the time is spent
+
+
+def test_a_typo_in_the_attempt_timeout_setting_falls_back_to_30(monkeypatch):
+    for bad in ("abc", "nan", "inf", "-inf", "1e999"):
+        monkeypatch.setenv("RIU_CHAT_ATTEMPT_TIMEOUT", bad)
+        assert R.attempt_timeout_s() == 30.0, bad  # a typo must neither break the chat nor silently remove the limit
+    monkeypatch.setenv("RIU_CHAT_ATTEMPT_TIMEOUT", "12.5")
+    assert R.attempt_timeout_s() == 12.5
+    monkeypatch.setenv("RIU_CHAT_ATTEMPT_TIMEOUT", "0")
+    assert R.attempt_timeout_s() == 0.0  # 0 = no limit, on purpose
+    monkeypatch.setenv("RIU_CHAT_ATTEMPT_TIMEOUT", "")
+    assert R.attempt_timeout_s() == 30.0
