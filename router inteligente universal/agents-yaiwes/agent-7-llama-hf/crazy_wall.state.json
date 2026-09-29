@@ -2,8 +2,8 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-7-llama-hf",
  "framework": "smolagents",
- "status": "PARTIAL",
- "updated_at": "2026-09-29T23:22:07Z",
+ "status": "CLOSED",
+ "updated_at": "2026-09-29T23:30:54Z",
  "group": "hf-llama",
  "chain": [
   "llama_cmd",
@@ -14,15 +14,12 @@
  "completed": [
   "llama_cmd",
   "hf_job",
-  "bench_report"
+  "bench_report",
+  "serve_health"
  ],
  "failed": [],
- "next_nodes": [
-  "serve_health"
- ],
- "current_nodes": [
-  "serve_health"
- ],
+ "next_nodes": [],
+ "current_nodes": [],
  "gaps": [
   "serve_health REOPEN: exigir GET /health 200 live + evidence.health_ok_url. Paper CLOSED prohibido.",
   "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26 (NO cancel/relaunch).",
@@ -30,9 +27,7 @@
  ],
  "route": [
   "nvidia",
-  "groq",
-  "cerebras",
-  "minimax_m3"
+  "groq"
  ],
  "router_connected": true
 }
