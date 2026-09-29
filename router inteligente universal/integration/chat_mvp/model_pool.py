@@ -1,11 +1,14 @@
 """Model pool: which models each provider says are available, and which ones stopped answering (stdlib only).
 
-Director 2026-09-29 (05:15, verbatim idea): "el router debe pedir a la api la respuesta de modelos disponibles ... así si por algún
-motivo no responde el modelo, aunque tenga latencia, es mejor así no se bloquea y ya el router sabe la prioridad de cuáles modelos
-darle prioridad".  The PRIORITY is the chain of each group in resilience.DEFAULT_POLICY; this pool only says, right now, which
+Director 2026-09-29, 04:41 (verbatim, spelling as written): "El router debe pedir una lista de modelos disponibles así si si por algun motivo no
+responde el modelo aunque tenga latencia es mejor así no se bloques y ya el router sabe la la prioridad de cuáles modelos darle prioridad".
+Confirmed at 05:15 (verbatim): "Pero igual el router debe pedir a la api repuesta de modelos disponibles".
+The PRIORITY is the chain of each group in resilience.DEFAULT_POLICY; this pool only says, right now, which
 options of that chain are worth trying:
   * NOT_LISTED  the provider answered its /models list and the model is not there  -> skipped (cheap, no tokens spent).
   * COOLING     the model failed / timed out recently                              -> skipped for `cooldown` seconds.
+    When the cooldown ends ONE request probes the model (a lease of PROBE_LEASE seconds); the others keep skipping it until that probe
+    answers (mark_ok) or fails (mark_bad, new cooldown) or the lease runs out. Without this every waiting request would hit a dead model at once.
   * Unknown list (provider down, no key, empty list, or a provider whose ids are not checked) -> the model is TRIED anyway.
     (asking costs at most LIST_TIMEOUT = 6 s once per provider, then the answer is cached 5 min, or 60 s when unknown)
 If every option is filtered out the caller tries the whole chain (a pool can never leave the chat without a route).
@@ -15,6 +18,7 @@ Pending (marked red in the handoff): auto-discovery by model family when a provi
 """
 from __future__ import annotations
 
+import math
 import os
 import threading
 import time
@@ -29,6 +33,17 @@ LIST_TIMEOUT = 6.0
 LIST_TTL = 300.0
 UNKNOWN_RETRY = 60.0  # after a failed list, do not ask again for this long (the chat must not wait on it every turn)
 MAX_KEYS_TRIED = 2
+DEFAULT_COOLDOWN = 120.0
+PROBE_LEASE = 30.0  # after a cooldown ends, this long only ONE request may probe the model (see cooling(..., probe=True))
+
+
+def env_cooldown() -> float:
+    """RIU_MODEL_COOLDOWN in seconds; a value that is not a finite number >= 0 falls back to 120 (a typo in an env var must not break the chat)."""
+    try:
+        value = float(os.getenv("RIU_MODEL_COOLDOWN") or DEFAULT_COOLDOWN)
+    except ValueError:
+        return DEFAULT_COOLDOWN
+    return value if math.isfinite(value) and value >= 0 else DEFAULT_COOLDOWN
 
 
 def _default_fetch(provider: str, key: str | None) -> list[str]:
@@ -41,7 +56,7 @@ class ModelPool:
                  listable: Iterable[str] = LISTABLE) -> None:
         self._fetch = fetch or _default_fetch
         self.clock = clock
-        self.cooldown = float(os.getenv("RIU_MODEL_COOLDOWN") or 120) if cooldown is None else cooldown
+        self.cooldown = env_cooldown() if cooldown is None else cooldown
         self.listable = tuple(listable)
         self._bad: dict[tuple[str, str], tuple[float, str]] = {}
         self._listed: dict[str, tuple[float, frozenset[str] | None]] = {}
@@ -76,10 +91,19 @@ class ModelPool:
         return ids
 
     # --- what stopped answering ------------------------------------------------------------------
-    def cooling(self, provider: str, model: str) -> bool:
+    def cooling(self, provider: str, model: str, *, probe: bool = False) -> bool:
+        """True while the model must be skipped. With probe=True the FIRST caller after the cooldown gets False and takes a PROBE_LEASE-second
+        lease (the others still get True); mark_ok / mark_bad settle it. probe=False never changes anything (used for reports)."""
         with self._lock:
             hit = self._bad.get((provider, model))
-        return bool(hit and self.clock() < hit[0])
+            if not hit:
+                return False
+            now = self.clock()
+            if now < hit[0]:
+                return True
+            if probe:
+                self._bad[(provider, model)] = (now + PROBE_LEASE, hit[1])
+            return False
 
     def mark_bad(self, provider: str, model: str, why: str = "") -> None:
         with self._lock:
@@ -90,13 +114,14 @@ class ModelPool:
             self._bad.pop((provider, model), None)
 
     # --- use --------------------------------------------------------------------------------------
-    def filter(self, chain: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
-        """Keep the chain order; drop options that are cooling or not listed. Returns (kept, trace lines)."""
+    def filter(self, chain: list[dict[str, Any]], *, probe: bool = False) -> tuple[list[dict[str, Any]], list[str]]:
+        """Keep the chain order; drop options that are cooling or not listed. Returns (kept, trace lines).
+        probe=True is for a real request (it may take the single probe lease of a model whose cooldown ended); reports use the default."""
         kept: list[dict[str, Any]] = []
         skipped: list[str] = []
         for entry in chain:
             provider, model = entry["provider"], entry["model"]
-            if self.cooling(provider, model):
+            if self.cooling(provider, model, probe=probe):
                 skipped.append(f"{provider}/{model}:COOLING")
                 continue
             ids = self.listed(provider)
