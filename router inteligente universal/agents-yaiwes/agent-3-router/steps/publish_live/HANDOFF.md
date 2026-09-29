@@ -1,10 +1,11 @@
-# HANDOFF — agent-3-router (pocketflow)
+# HANDOFF — agent-3-router / publish_live
 
-Estado: **CLOSED**
+Estado: **PENDING_VERIFY**
 
-- group: hf-chat
-- attempts: 2
-- model: nvidia/nvidia/nemotron-3-super-120b-a12b
-- gaps: falta 'space_url'; falta 'http'
+- Paper CLOSED @ 2026-09-29T20:49Z **INVALIDADO** (smoke FAIL 401/404).
+- GOLDEN `publish_live.py` `private=False` — python_exec only, CERO regen LLM.
+- PASS: space_url live ≠401/404 + smoke OAuth → entonces CLOSED.
+- Sospecha: HF_TOKEN_1 runner / Space privado (API "Invalid username or password").
+- Job 32GB aplazado. Deadline TRIGGER 2026-09-29T23:59:00-05:00.
 
-Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.
+Orch-chat 2026-09-29 ~16:10 COT.
