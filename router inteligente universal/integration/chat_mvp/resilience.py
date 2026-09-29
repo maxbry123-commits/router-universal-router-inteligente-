@@ -240,7 +240,7 @@ def resolve_chain(group: str, now: datetime, env: Mapping[str, str] | None = Non
     return chain, skipped
 
 
-REQUEST_ERRORS = ("PROVIDER_ERROR:400:", "PROVIDER_ERROR:422:")  # the request is the problem, not the model: never cool a model for these
+REQUEST_ERRORS = ("PROVIDER_ERROR:400:", "PROVIDER_ERROR:413:", "PROVIDER_ERROR:422:")  # the request is the problem, not the model: never cool a model for these
 
 
 def attempt_timeout_s() -> float:
@@ -271,16 +271,16 @@ def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, t
     use_pool = pool if (pool is not None and policy["authorized_fallback"]) else None
     leased: list[tuple[str, str, float]] = []  # probe leases this request took (given back below when the model was never really tried)
     settled: set[tuple[str, str]] = set()  # options whose result was written to the pool (mark_ok / mark_bad)
-    if use_pool is not None:
-        kept, skipped = use_pool.filter(chain, probe=True, leased=leased)  # a real request: may take the single probe lease of a model whose cooldown ended
-        trace.extend(skipped)
-        if kept:
-            chain = kept
-        else:
-            trace.append("POOL_EMPTY_TRY_ALL")  # never leave the chat without a route because of the pool
-    base = attempt_timeout_s() if attempt_timeout is None else attempt_timeout
-    limit = min(prov.CHAT_TIMEOUT, base * max(1.0, max_tokens / 1024)) if base > 0 else 0.0
-    try:
+    try:  # starts here so leases taken by filter() are always given back, whatever happens next
+        if use_pool is not None:
+            kept, skipped = use_pool.filter(chain, probe=True, leased=leased)  # a real request: may take the single probe lease of a model whose cooldown ended
+            trace.extend(skipped)
+            if kept:
+                chain = kept
+            else:
+                trace.append("POOL_EMPTY_TRY_ALL")  # never leave the chat without a route because of the pool
+        base = attempt_timeout_s() if attempt_timeout is None else attempt_timeout
+        limit = min(prov.CHAT_TIMEOUT, base * max(1.0, max_tokens / 1024)) if base > 0 else 0.0
         for i, entry in enumerate(chain):
             if i > 0 and not policy["authorized_fallback"]:
                 trace.append("FALLBACK_NOT_AUTHORIZED")
