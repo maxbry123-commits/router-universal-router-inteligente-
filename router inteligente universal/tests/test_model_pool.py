@@ -212,6 +212,24 @@ def test_only_the_last_option_keeps_the_full_provider_timeout(monkeypatch):
     assert deadlines == [None] * 5
 
 
+def test_the_option_time_limit_grows_with_the_answer_size(monkeypatch):
+    all_keys(monkeypatch)
+    left = []
+
+    def call(provider, key, model, messages, max_tokens, temperature):
+        if P.ATTEMPT_DEADLINE.get() is not None:
+            left.append(P.ATTEMPT_DEADLINE.get() - time.monotonic())
+        raise RuntimeError("PROVIDER_ERROR:503:x")
+
+    with pytest.raises(R.RouteFailed):
+        R.run_policy("default", [], 4096, now=MON_OFF, call=call, attempt_timeout=10)
+    assert 38 < left[0] <= 40  # 10 s x (4096 / 1024)
+    left.clear()
+    with pytest.raises(R.RouteFailed):
+        R.run_policy("default", [], 100, now=MON_OFF, call=call, attempt_timeout=10)
+    assert 8 < left[0] <= 10  # a short answer never gets less than the base limit
+
+
 def test_deadline_cuts_the_http_timeout_and_travels_through_asyncio_and_threads():
     assert P.chat_timeout() == 90.0
     seen = []
@@ -266,3 +284,52 @@ def test_nvidia_keys_are_tried_1_2_3_then_4_and_a_busy_key_goes_last(monkeypatch
     tried.clear()
     r.execute("nvidia", P.env_keys("nvidia"), "m", [], 5, None, chat)
     assert tried == ["n4"]  # 1-3 have a recent failure: the healthy key 4 goes first now (they are retried after their cooldown)
+
+
+def test_a_slow_model_does_not_block_the_chat_real_socket(monkeypatch):
+    """Real HTTP server that answers model "slow" only after 8 s: the chat must move on after the per-option limit (2 s here; 30 s by
+    default, and 90 s would be the provider timeout), and remember that model as cooling."""
+    import http.server
+    import json
+    import threading
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):  # noqa: N802
+            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            if body.get("model") == "slow":
+                time.sleep(8)
+            data = json.dumps({"choices": [{"message": {"role": "assistant", "content": "hola de " + str(body.get("model"))},
+                                            "finish_reason": "stop"}]}).encode()
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            except OSError:
+                pass  # the client gave up on the slow option: expected
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    server.daemon_threads = True
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    monkeypatch.setenv("RIU_LOCAL_BASE_URL", f"http://127.0.0.1:{server.server_address[1]}/v1")
+    monkeypatch.setitem(R.DEFAULT_POLICY, "slowtest", {"authorized_fallback": True, "chain": [{"provider": "local", "model": "slow"},
+                                                                                             {"provider": "local", "model": "fast"}]})
+    pool = MP.ModelPool(fetch=lambda p, k: [], cooldown=100)
+
+    def call(provider, key, model, messages, max_tokens, temperature):
+        return R.ROUTER.execute(provider, [key], model, messages, max_tokens, temperature, P.chat)
+
+    t0 = time.monotonic()
+    try:
+        out = R.run_policy("slowtest", [{"role": "user", "content": "hola"}], 5, now=MON_OFF, call=call, attempt_timeout=2, pool=pool)
+    finally:
+        server.shutdown()
+        server.server_close()
+    elapsed = time.monotonic() - t0
+    assert out["route"]["model"] == "fast" and out["message"]["content"] == "hola de fast" and out["route"]["attempt"] == 2
+    assert elapsed < 6.5, elapsed  # holding on to the slow option would have taken 8 s here (90 s in production)
+    assert any(t.startswith("local/slow:") for t in out["trace"]) and pool.cooling("local", "slow")
