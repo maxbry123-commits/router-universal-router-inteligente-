@@ -1,5 +1,5 @@
-# Lanzador CENTRAL del Router (Job único de Hugging Face)
-#
+name: RIU Router Job Central
+
 # Lanza el Job ÚNICO y persistente del Router (common/router_job_persistent.py).
 # Máquina HF 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga. Al lanzar uno nuevo, cancela los anteriores.
 # 2026-09-28 (Director): OmniRoute DESCARTADO. Prueba 09:05: el programa arranca (1/1 vivo, catálogo 200) pero los proveedores
