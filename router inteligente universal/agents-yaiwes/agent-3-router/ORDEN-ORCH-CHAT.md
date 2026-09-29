@@ -1,15 +1,16 @@
-# ORDEN ORCH-CHAT → agent-3 (P1) — post #49 paper CLOSED
+# ORDEN ORCH-CHAT → agent-3 (P1) — MICRO 2026-09-29
 
-**META:** PENDING_VERIFY · space_url con owner · smoke OAuth/live · Job 32GB APLAZADO
+**META:** PENDING_VERIFY · GOLDEN `private=False` · smoke live · Job 32GB APLAZADO
 
-## Gap #49
-Wall marcó CLOSED sin smoke. URL reportada: `https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes` (owner OK). Probe sin auth: HEAD 401 / .hf.space 404.
+## Hechos
+- Wall paper CLOSED reabierto.
+- Probe sin auth: API/PAGE **401**, `.hf.space` **404** → Space muerto o inaccesible.
+- TRIGGER root WAITING_GROK (22-sep) **INVALIDADO**.
 
 ## Orden
-1. **NO** regeneres `publish_live.py`.
-2. **NO** marques CLOSED.
-3. Status = `PENDING_VERIFY` hasta que orch/Sentinela confirmen smoke OAuth/live OK.
-4. No Job esta ronda.
+1. **python_exec** `results/publish_live.py` GOLDEN (ya con `private=False` + visibility). **CERO** regen/rewrite.
+2. **NO** marques CLOSED. Status = `PENDING_VERIFY`.
+3. No Job esta ronda.
 
 ## PASS
-Smoke OAuth/live OK → orch cierra CLOSED. Sin smoke = sigue PENDING_VERIFY.
+`space_url` live ≠401/404 + smoke OAuth → orch/Sentinela cierran CLOSED.
