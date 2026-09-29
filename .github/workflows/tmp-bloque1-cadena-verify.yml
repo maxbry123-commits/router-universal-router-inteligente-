@@ -193,6 +193,11 @@ jobs:
           note("B1_STATUS", json.dumps({"attempt_timeout_s": st["attempt_timeout_s"], "cooling": list(st["model_pool"]["cooling"]), "latency": st["latency_seconds"]}))
           md = c.get("/chat/router/models", headers=H)
           note("B1_MODELS_ENDPOINT", "%d %s" % (md.status_code, json.dumps(md.json().get("providers"))[:300]))
+          g = md.json().get("groups", {}).get("default", {})
+          note("B1_MODELS_DEFAULT_ALL_DEAD", "pool_used=%s try_order=%s skipped=%s" % (g.get("pool_used"), [e["model"] for e in g.get("try_order", [])], g.get("skipped")))
+          pv = c.get("/chat/providers").json().get("providers", [])
+          am = c.get("/chat/providers/auto/models", headers=H)
+          note("B1_PROVIDERS_AUTO", "first=%s configured=%s | auto_models=%d %s" % (pv[0].get("id") if pv else None, pv[0].get("configured") if pv else None, am.status_code, json.dumps(am.json())[:200]))
           chunk, n = "", 0
           for item in RES + [None]:
               if item is None or len(chunk) + len(item) > 3000:
