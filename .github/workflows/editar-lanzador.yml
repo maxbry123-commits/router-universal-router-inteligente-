@@ -1,0 +1,40 @@
+name: Editar lanzador (una vez, orden del Director 2026-09-29)
+
+# Anade RIU_G2_GROQ_MODEL=qwen/qwen3.8-27b al entorno del Job del Router en el lanzador. Un cambio quirurgico. Se borra a si mismo.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  editar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO || secrets.GH_JOB_PUSH_TOKEN }}
+    steps:
+      - name: Editar y subir
+        run: |
+          git config --global user.name "riu-bot"; git config --global user.email "riu-bot@users.noreply.github.com"
+          git clone -q --filter=blob:none --no-checkout --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/router-universal-router-inteligente-.git" r
+          cd r
+          git sparse-checkout init --no-cone
+          printf '/.github/workflows/\n' > .git/info/sparse-checkout
+          git checkout -q main
+          python3 - <<'EOF_PY'
+          p = ".github/workflows/riu-router-job-central.yml"
+          t = open(p, encoding="utf-8").read()
+          old = "expose=[8000], secrets=secrets)"
+          new = 'expose=[8000], secrets=secrets, env={"RIU_G2_GROQ_MODEL": "qwen/qwen3.8-27b"})'
+          n = t.count(old)
+          print("::notice title=OCURRENCIAS::%d (se esperan 2)" % n)
+          if n != 2:
+              raise SystemExit("no coincide: no se cambia nada")
+          open(p, "w", encoding="utf-8").write(t.replace(old, new))
+          EOF_PY
+          git rm -q --cached .github/workflows/editar-lanzador.yml
+          git add -u
+          git commit -q -m "Router: el lanzador fija RIU_G2_GROQ_MODEL=qwen/qwen3.8-27b (Qwen 3.8 en Groq, verificado) [skip ci]"
+          for i in 1 2 3; do git push -q origin HEAD:main && break || { git fetch -q origin main && git rebase -q origin/main; }; done
+          git log --oneline -1
