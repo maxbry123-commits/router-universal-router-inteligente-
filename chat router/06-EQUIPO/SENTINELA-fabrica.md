@@ -1,5 +1,5 @@
-# SENTINELA-FABRICA — 2026-09-28T22:34Z
-(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: z-ai/glm-5.3-flash@NVIDIA_API_KEY_2)
+# SENTINELA-FABRICA — 2026-09-29T02:17Z
+(LOOP común · versión: 9f25e8e246217db9 · modelo investigador: z-ai/glm-5.3@NVIDIA_API_KEY_1)
 
 OBJETIVO: Cerrar la Fábrica UI por objetivos y comprobar entregas reales antes de permitir el siguiente bloque.
 ESTADO LOOP: RESEARCH · missing_evidence:recent_commits_observed
@@ -16,15 +16,11 @@ INVESTIGACIÓN:
 - fuentes consultadas: 5
 - mínimo independiente objetivo: 3
 
-**CAUSA_RAIZ:** El fallo `missing_evidence:recent_commits_observed` indica que el sentinela no observó commits recientes en el repositorio del bloque Fábrica UI; además el campo "Error literal" llegó vacío, señal de cadena de evidencia rota, no de código defectuoso.
+**CAUSA_RAIZ:** El bloqueo es legítimo: no existe evidencia de commits recientes en el repositorio del proyecto; lo aportado son enlaces Q&A genéricos de StackOverflow sobre conceptos de Git, no registros verificables del repo objetivo.
 
-**EVIDENCIA:** Las 5 referencias de comunidad (array ordenado, git undo, branches, pull/fetch, yield) son genéricas y no guardan relación con objetivos UI ni con verificación de entregas: son ruido, no prueba. No hay hashes de commit, diff, ni run de CI adjuntos.
+**EVIDENCIA:** Las 5 URLs tratan temas generales (deshacer commits, borrar ramas, pull vs fetch, yield, arrays ordenados); ninguna contiene hash de commit, fecha, autor, diff ni rama del proyecto → 0 commits observados → `missing_evidence:recent_commits_observed` se confirma.
 
-**NO_REGENERAR:** No regenerar el bloque ni reintentar generación: el problema es ausencia de entrega observable (commits), no calidad del código. Regenerar produciría más salida sin verificación.
-
-**REPARAR:** (1) Confirmar que los cambios de Fábrica UI existen y hacer `git commit` real con mensaje referenciando el objetivo; (2) `git push` a la rama/remoto correcto que lee el sentinela; (3) verificar ventana temporal del observador (commits dentro del periodo de chequeo); (4) adjuntar hash(es), diff y evidencia de CI al informe de cierre.
-
-**ACEPTACION:** El sentinela observa ≥1 commit reciente con hash visible en `git log`, el mensaje vincula el objetivo de Fábrica UI, y existe artefacto/CI correspondiente. Solo entonces se cierra el bloque y se habilita el siguiente. PASS no declarado.
+**NO_REGENERAR:** No regenerar la UI ni las specs para forzar el avance; no fabricar hashes ni reintentar el sentinela con los mismos enlaces; no declarar PASS sin salida cruda
 
 CONTROL:
 - PASS no lo decide la LLM.
