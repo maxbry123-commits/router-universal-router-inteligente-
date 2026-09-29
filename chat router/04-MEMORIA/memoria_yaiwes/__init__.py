@@ -27,7 +27,7 @@ def _component(name: str) -> dict[str, Any]:
 
 
 def _downloaded(name: str) -> dict[str, Any]:
-    evidence = ROOT / "router inteligente software" / "componentes todos" / "componentes descargados" / "RDC_ADDITIONAL_COMPONENTS_EVIDENCE.json"
+    evidence = ROOT / "router inteligente universal" / "Componentes del Router" / "router inteligente software" / "componentes todos" / "componentes descargados" / "RDC_ADDITIONAL_COMPONENTS_EVIDENCE.json"
     try:
         rows = json.loads(evidence.read_text(encoding="utf-8")).get("components", [])
     except (FileNotFoundError, json.JSONDecodeError):

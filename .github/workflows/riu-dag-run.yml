@@ -10,7 +10,7 @@ on:
     inputs:
       plan:
         description: 'Ruta del plan DAG dentro del repo'
-        default: 'chat_orders/ORDER-000-smoke.dag.json'
+        default: 'chat router/chat_orders/ORDER-000-smoke.dag.json'
 
 permissions:
   contents: write
@@ -33,7 +33,7 @@ jobs:
             router inteligente universal/red/
             router inteligente universal/security/
             router inteligente universal/verifier/
-            chat_orders/
+            chat router/chat_orders/
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
@@ -57,12 +57,12 @@ jobs:
         shell: bash
         run: |
           set +e
-          case "$PLAN" in chat_orders/*.dag.json) ;; *) echo "::error::el plan debe estar en chat_orders/*.dag.json"; exit 2;; esac
+          case "$PLAN" in "chat router/chat_orders/"*.dag.json) ;; *) echo "::error::el plan debe estar en chat_orders/*.dag.json"; exit 2;; esac
           name=$(basename "$PLAN" .dag.json)
           echo "name=$name" >> "$GITHUB_OUTPUT"
           root="$GITHUB_WORKSPACE"
           cd "router inteligente universal"
-          python -m integration.chat_mvp.dag_cli "$root/$PLAN" --out "$root/chat_orders/results/${name}.result.json"
+          python -m integration.chat_mvp.dag_cli "$root/$PLAN" --out "$root/chat router/chat_orders/results/${name}.result.json"
           code=$?
           echo "code=$code" >> "$GITHUB_OUTPUT"
           exit 0
@@ -75,7 +75,7 @@ jobs:
         run: |
           git config user.name "riu-dag-runner"
           git config user.email "riu-dag-runner@users.noreply.github.com"
-          git add chat_orders/results
+          git add "chat router/chat_orders/results"
           git commit -m "chat_orders: resultado de ${NAME} (riu.dag.result/v1)" || { echo "nada que confirmar"; exit 0; }
           for i in 1 2 3 4; do
             git pull --rebase origin main && git push origin HEAD:main && { echo "::notice title=RIU_DAG_COMMIT::pushed ${NAME}"; exit 0; }

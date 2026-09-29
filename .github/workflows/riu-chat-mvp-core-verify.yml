@@ -1,13 +1,13 @@
 name: RIU Chat MVP Core Verify
 
-# Verifica en runner real lo que vive en "Chat Mvp/": tests del Secret Bank y coherencia de groups.yaml / accounts.yaml.
+# Verifica en runner real lo que vive en "router inteligente universal/Banco de claves/": tests del Secret Bank y coherencia de groups.yaml / accounts.yaml.
 # Resultados como anotaciones (legibles por la API de check-runs). No imprime valores secretos.
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'Chat Mvp/**'
+      - 'router inteligente universal/Banco de claves/**'
       - '.github/workflows/riu-chat-mvp-core-verify.yml'
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            Chat Mvp
+            router inteligente universal/Banco de claves
           sparse-checkout-cone-mode: true
 
       - uses: actions/setup-python@v5
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          python -m pytest -q -p no:cacheprovider "Chat Mvp/tests" 2>&1 | tee /tmp/pytest.txt
+          python -m pytest -q -p no:cacheprovider "router inteligente universal/Banco de claves/tests" 2>&1 | tee /tmp/pytest.txt
           code=${PIPESTATUS[0]}
           last=$(tail -n 1 /tmp/pytest.txt | tr -d '\r')
           echo "::notice title=RIU_CHATMVP_TESTS::exit=${code} | ${last}"
@@ -46,8 +46,8 @@ jobs:
         run: |
           python - <<'PY'
           import re, yaml
-          g = yaml.safe_load(open("Chat Mvp/groups.yaml", encoding="utf-8"))
-          a = yaml.safe_load(open("Chat Mvp/accounts.yaml", encoding="utf-8"))
+          g = yaml.safe_load(open("router inteligente universal/Banco de claves/groups.yaml", encoding="utf-8"))
+          a = yaml.safe_load(open("router inteligente universal/Banco de claves/accounts.yaml", encoding="utf-8"))
           problems = []
           ids, names = [], []
           def walk(o):
@@ -79,7 +79,7 @@ jobs:
                   for v in o:
                       check_runtime(v)
           check_runtime(g["groups"]); check_runtime(g["chat_selector_families"])
-          text = open("Chat Mvp/accounts.yaml", encoding="utf-8").read() + open("Chat Mvp/groups.yaml", encoding="utf-8").read()
+          text = open("router inteligente universal/Banco de claves/accounts.yaml", encoding="utf-8").read() + open("router inteligente universal/Banco de claves/groups.yaml", encoding="utf-8").read()
           if re.search(r"\b(hf_|ghp_|github_pat_|sk-|nvapi-|csk-|gsk_)[A-Za-z0-9_-]{20,}", text):
               problems.append("posible credencial en los YAML")
           for acc in a["github_accounts"]:

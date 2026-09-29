@@ -30,7 +30,7 @@ jobs:
             router inteligente universal/security/
             router inteligente universal/verifier/
             router inteligente universal/agent-microkernel/
-            Chat Mvp/secret_bank/
+            router inteligente universal/Banco de claves/secret_bank/
             Claude notas/HANDOFF-PARCHE-RECUPERACION-2026-09-21.md
           sparse-checkout-cone-mode: false
 

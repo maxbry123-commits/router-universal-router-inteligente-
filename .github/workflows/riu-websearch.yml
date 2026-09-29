@@ -45,7 +45,7 @@ jobs:
 
           try:
               root = gh("git/trees/main")["tree"]
-              motores = next(e for e in root if "motores de descarga" in e["path"])
+              motores = next(e for e in root if e["path"].startswith("Motores descarga"))
               sub = gh("git/trees/%s?recursive=1" % motores["sha"])["tree"]
               blob = next(e for e in sub if e["path"].split("/")[-1] == "websearch_engine.py")
               dst = pathlib.Path("/tmp/websearch_engine.py")
