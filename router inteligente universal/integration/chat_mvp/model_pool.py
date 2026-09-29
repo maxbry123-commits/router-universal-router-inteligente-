@@ -7,6 +7,7 @@ options of that chain are worth trying:
   * NOT_LISTED  the provider answered its /models list and the model is not there  -> skipped (cheap, no tokens spent).
   * COOLING     the model failed / timed out recently                              -> skipped for `cooldown` seconds.
   * Unknown list (provider down, no key, empty list, or a provider whose ids are not checked) -> the model is TRIED anyway.
+    (asking costs at most LIST_TIMEOUT = 6 s once per provider, then the answer is cached 5 min, or 60 s when unknown)
 If every option is filtered out the caller tries the whole chain (a pool can never leave the chat without a route).
 Health is per (provider, model): a dead model never puts a healthy key in cooldown (see resilience.key_id).
 No network happens at import time or in `snapshot()`; `listed()` / `refresh()` do one short GET per provider and cache it.
@@ -63,8 +64,10 @@ class ModelPool:
         for key in prov.env_keys(provider)[:MAX_KEYS_TRIED]:
             try:
                 found = frozenset(self._fetch(provider, key))
-            except Exception:  # noqa: BLE001 - a list that cannot be read means "unknown", not "empty"
-                continue
+            except Exception as exc:  # noqa: BLE001 - a list that cannot be read means "unknown", not "empty"
+                if not isinstance(getattr(exc, "status", None), int):
+                    break  # timeout / no connection (not an HTTP answer): the provider is slow or down, another key will not help (and costs LIST_TIMEOUT again)
+                continue  # HTTP error (bad key, 429...): the next key may work
             if found:
                 ids = found
                 break
