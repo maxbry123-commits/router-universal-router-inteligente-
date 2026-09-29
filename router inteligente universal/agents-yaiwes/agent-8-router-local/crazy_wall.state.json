@@ -2,23 +2,29 @@
  "schema": "yaiwes.crazy-wall/v1",
  "agent": "agent-8-router-local",
  "framework": "pocketflow",
- "status": "CLOSED",
- "updated_at": "2026-09-25T08:18:43Z",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-29T20:30:00Z",
  "group": "router-local",
  "chain": [
   "local_pool",
-  "mirror_route"
+  "mirror_route",
+  "serve_health"
  ],
  "completed": [
   "local_pool",
   "mirror_route"
  ],
  "failed": [],
- "next_nodes": [],
- "current_nodes": [],
+ "next_nodes": [
+  "serve_health"
+ ],
+ "current_nodes": [
+  "serve_health"
+ ],
  "gaps": [
-  "CLOSED paper sin GET /health HTTP 200 live. Reabierto.",
-  "Referencia live agent-10: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health"
+  "falta Agents Run only=agent-8-router-local GET /health 200",
+  "GOLDEN listo: local_pool/mirror_route/serve_health. LOOP 8. NO dispatch hasta P1 #111/#112.",
+  "Referencia live: https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health job 6ab3198e51992417dfcd4e26"
  ],
  "router_connected": false
 }
