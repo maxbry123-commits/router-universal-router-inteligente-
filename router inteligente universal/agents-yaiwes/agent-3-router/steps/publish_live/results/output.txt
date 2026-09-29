@@ -1,3 +1,3 @@
 python_exec results/publish_live.py
-space_url: https://huggingface.co/spaces/owner/space-name
-status: PENDING_VERIFY
+space_url: https://huggingface.co/spaces/agent-3-router/static-space-demo
+Status: PENDING_VERIFY
