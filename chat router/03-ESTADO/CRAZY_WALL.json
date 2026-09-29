@@ -1,0 +1,38 @@
+{
+  "schema": "yaiwes.crazy-wall/v1",
+  "nodes": {
+    "RIU-0119": {
+      "node_id": "RIU-0119",
+      "task": "RIU-0119",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "SCOPE_CORRECTED",
+      "next": "B-2: servicios y HF solo con contrato",
+      "summary": "Se revirtieron README y DAG no autorizados. Se conserva solo codigo, pruebas, Crazy Wall, BITACORA, STATE y HANDOFF autorizados. 26 pruebas PASS. SQLite y State Hub probados; HF bucket sigue simulado; servicios de memoria no conectados.",
+      "updated_at": "2026-09-27T05:15:35Z",
+      "last_event_seq": 3
+    },
+    "RIU-0120": {
+      "node_id": "RIU-0120",
+      "task": "RIU-0120",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "B2_MEMORY_WIRED",
+      "next": "B-3: HF RW y servicios si autorizados",
+      "summary": "Memoria SQLite cableada con scopes y reinicio; Dataset Yaiwes montado como recall read-only dentro del runtime chat. Endpoints /chat/memory y /chat/memory/dataset; memory_query añade contexto opcional. Storage reporta salud Dataset y sync HF sigue fail-closed. 39 pruebas PASS.",
+      "updated_at": "2026-09-27T05:22:56Z",
+      "last_event_seq": 4
+    },
+    "RIU-0121": {
+      "node_id": "RIU-0121",
+      "task": "RIU-0121",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "M7_RDC_VERIFIED",
+      "next": "H-1 reservado a Opus; no ejecutar HF RW ni despliegue Vercel",
+      "summary": "M-0..M-7 COMPLETADOS: 13 componentes auditados; SQLite, State Hub y grafo fallback cableados; FalkorDB (927 archivos) y AgentDB (1456 archivos) descargados y read-back EXTRACTED_VERIFIED en GitHub. Action memoria PASS 31 tests. Secret Scan: 217 hallazgos baseline preexistentes; escaneo dirigido de memoria PASS. H-1 sigue reservado a Opus.",
+      "updated_at": "2026-09-27T07:36:28Z",
+      "last_event_seq": 13
+    }
+  }
+}
