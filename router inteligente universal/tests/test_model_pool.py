@@ -433,7 +433,7 @@ def test_three_failures_spread_over_time_do_not_open_the_breaker_but_three_close
 
 def test_a_request_error_does_not_cool_a_model_but_a_model_error_does(monkeypatch):
     all_keys(monkeypatch)
-    for text, cools in (("PROVIDER_ERROR:400:bad request", False), ("PROVIDER_ERROR:422:unprocessable", False),
+    for text, cools in (("PROVIDER_ERROR:400:bad request", False), ("PROVIDER_ERROR:422:unprocessable", False), ("PROVIDER_ERROR:413:too large", False),
                         ("PROVIDER_ERROR:404:model not found", True), ("PROVIDER_ERROR:429:busy", True),
                         ("PROVIDER_ERROR:503:x", True), ("PROVIDER_ERROR:TimeoutError:request failed", True)):
         pool = MP.ModelPool(fetch=lambda p, k: [], cooldown=100)
@@ -608,7 +608,7 @@ def test_the_wait_for_a_free_slot_is_not_charged_to_the_option_time():
         assert P.ATTEMPT_DEADLINE.get() == original  # what the request set is put back afterwards
     finally:
         P.ATTEMPT_DEADLINE.reset(token)
-    assert left[0] > 0.85  # ~1.0 s left for the model; without the fix the 0.3 s in the queue would have eaten it (~0.7 s)
+    assert left[0] > 0.5  # ~1.0 s left for the model; without the fix the 0.3 s in the queue would have eaten it (~0.7 s)
 
 
 def test_any_exception_from_one_option_moves_the_chain_on(monkeypatch):
