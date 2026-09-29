@@ -1,0 +1,40 @@
+name: HF borrar Spaces OmniRoute (una vez)
+
+# Orden del Director 2026-09-29: borrar SOLO omniroute-1..5 (pausados). El conector MCP claude-github-mcp-backup esta PROTEGIDO: el script lo rechaza.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  borrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q huggingface_hub
+      - env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN_1 }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          PROTEGIDOS = {"COMAND-CENTER-1/claude-github-mcp-backup"}
+          for i in range(1, 6):
+              sid = f"COMAND-CENTER-1/omniroute-{i}"
+              if sid in PROTEGIDOS:
+                  print(f"::error title=HF_PROTEGIDO::{sid}")
+                  continue
+              try:
+                  api.delete_repo(repo_id=sid, repo_type="space")
+                  print(f"::notice title=HF_BORRADO::{sid}")
+              except Exception as e:
+                  print(f"::warning title=HF_NO_BORRADO::{sid} {type(e).__name__}: {str(e)[:120]}")
+          quedan = [s.id for s in api.list_spaces(author="COMAND-CENTER-1")]
+          print(f"::notice title=HF_SPACES_QUE_QUEDAN::{quedan}")
+          PY
