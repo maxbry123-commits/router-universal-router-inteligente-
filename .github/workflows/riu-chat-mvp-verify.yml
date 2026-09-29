@@ -12,6 +12,9 @@ on:
       - '.github/workflows/riu-chat-mvp-verify.yml'
       - 'router inteligente universal/integration/huggingface/router_hot_path.py'
       - 'router inteligente universal/tests/test_hf_router_hot_path.py'
+      - 'router inteligente universal/integration/chat_mvp/**'
+      - 'router inteligente universal/tests/test_model_pool.py'
+      - 'router inteligente universal/tests/test_resilience.py'
 
 permissions:
   contents: read
@@ -56,6 +59,8 @@ jobs:
             "router inteligente universal/tests/test_chat_mvp_pure.py" \
             "router inteligente universal/tests/test_chat_cost_dag.py" \
             "router inteligente universal/tests/test_chat_mvp_app.py" \
+            "router inteligente universal/tests/test_resilience.py" \
+            "router inteligente universal/tests/test_model_pool.py" \
             "router inteligente universal/tests/test_keystore_auth.py" \
             "router inteligente universal/tests/test_hf_scheduler.py" \
             "router inteligente universal/tests/test_huggingface_openai_chat_registry.py" \

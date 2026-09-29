@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import time
+import urllib.error
 import urllib.request
 
 FLAG_URL = (
@@ -87,7 +88,7 @@ class RouterCliente:
             return data
         if not isinstance(data, dict):
             return json.dumps(data, ensure_ascii=False)
-        for key in ("response", "content", "text", "message"):
+        for key in ("reply", "response", "content", "text", "message"):
             value = data.get(key)
             if isinstance(value, str):
                 return value
@@ -103,6 +104,7 @@ class RouterCliente:
 
         url = self._live_url() + "/chat/send"
         body = json.dumps({
+            "provider": "auto",
             "message": f"[ROL={rol}]\n{prompt}",
             "max_tokens": self.max_tokens,
         }).encode("utf-8")
@@ -123,6 +125,15 @@ class RouterCliente:
                 with urllib.request.urlopen(request, timeout=120) as response:
                     data = json.loads(response.read().decode("utf-8", "replace"))
                 return self._extract_text(data)
+            except urllib.error.HTTPError as exc:
+                raw = exc.read().decode("utf-8", "replace")
+                try:
+                    raw = json.loads(raw).get("detail", raw)
+                except (ValueError, AttributeError):
+                    pass
+                last_error = RuntimeError(f"HTTP {exc.code}: {raw}")
+                if attempt < 2:
+                    time.sleep(1.0 * (attempt + 1))
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 if attempt < 2:

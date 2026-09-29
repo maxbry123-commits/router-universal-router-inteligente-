@@ -9,7 +9,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from . import core, jev, resilience
+from . import core, jev, model_pool, resilience
 from .router import _auth, get_store
 from .usage import UsageLog
 
@@ -57,7 +57,8 @@ def build_route_router() -> APIRouter:
                 msgs.append({"role": "system", "content": agent["system_prompt"]})
         msgs.append({"role": "user", "content": req.message})
         try:
-            out = await asyncio.to_thread(resilience.run_policy, req.group, msgs, req.max_tokens, temperature=req.temperature, call=_call)
+            out = await asyncio.to_thread(resilience.run_policy, req.group, msgs, req.max_tokens, temperature=req.temperature, call=_call,
+                                      pool=model_pool.POOL)
         except resilience.RouteFailed as exc:
             status = 409 if str(exc).startswith("NEEDS_DIRECTOR_AUTH") else 503
             raise HTTPException(status_code=status, detail={"error": str(exc), "trace": exc.trace}) from exc
@@ -75,7 +76,26 @@ def build_route_router() -> APIRouter:
             groups[name] = {"authorized_fallback": resilience.DEFAULT_POLICY[name]["authorized_fallback"], "chain": chain, "skipped": skipped}
         lim = resilience.ROUTER.limiter
         return {"deepseek_peak_now": resilience.is_peak_utc(now), "limiter": {"tier": lim.tier, "slots": lim.tiers[lim.tier], "tiers": list(lim.tiers)},
-                "latency_seconds": {k: round(v, 2) for k, v in resilience.ROUTER.latency.items()}, "groups": groups}
+                "latency_seconds": {k: round(v, 2) for k, v in resilience.ROUTER.latency.items()},
+                "attempt_timeout_s": resilience.attempt_timeout_s(), "model_pool": model_pool.POOL.snapshot(), "groups": groups}
+
+    @r.get("/chat/router/models")
+    async def router_models(_owner: str = Depends(_auth)) -> dict[str, Any]:
+        """Ask each provider again which models it lists (network, short timeout) and say which chain options are listed / cooling."""
+        now = datetime.now(timezone.utc)
+        asked = await asyncio.to_thread(model_pool.POOL.refresh)
+        groups: dict[str, Any] = {}
+        for name, policy in resilience.DEFAULT_POLICY.items():  # same rules as resilience.run_policy, without taking a probe lease
+            chain, _skipped = resilience.resolve_chain(name, now)
+            if not policy["authorized_fallback"]:
+                groups[name] = {"try_order": chain, "skipped": [], "pool_used": False}
+                continue
+            kept, skipped = model_pool.POOL.filter(chain)
+            if chain and not kept:
+                groups[name] = {"try_order": chain, "skipped": skipped + ["POOL_EMPTY_TRY_ALL"], "pool_used": True}
+            else:
+                groups[name] = {"try_order": kept, "skipped": skipped, "pool_used": True}
+        return {"providers": asked, "model_pool": model_pool.POOL.snapshot(), "groups": groups}
 
     @r.post("/chat/jev")
     async def jev_decide(req: JevReq, _owner: str = Depends(_auth)) -> dict[str, Any]:

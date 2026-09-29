@@ -15,7 +15,8 @@ from integration.chat_mvp import providers as P  # noqa: E402
 from integration.chat_mvp import resilience as R  # noqa: E402
 
 ENV = ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4", "NVIDIA_API_KEY_5", "HF_TOKEN", "HF_TOKEN_1",
-       "GROQ_API_KEY", "GROQ_API_KEY_1", "RIU_LOCAL_BASE_URL", "RIU_G2_GROQ_MODEL", "RIU_G2_LOCAL_MODEL")
+       "GROQ_API_KEY", "GROQ_API_KEY_1", "RIU_LOCAL_BASE_URL", "RIU_G2_GROQ_MODEL", "RIU_G2_LOCAL_MODEL",
+       "RIU_CHAT_ATTEMPT_TIMEOUT", "RIU_MODEL_COOLDOWN")
 MON_OFF = datetime(2026, 9, 21, 12, 0, tzinfo=timezone.utc)
 MON_PEAK = datetime(2026, 9, 21, 7, 0, tzinfo=timezone.utc)
 
@@ -100,12 +101,14 @@ def test_chains_follow_the_directors_rules(monkeypatch):
     ch, skipped = R.resolve_chain("minor", MON_PEAK)  # DeepSeek peak hour: only MiniMax
     assert [c["model"] for c in ch] == ["MiniMaxAI/MiniMax-M3"] and "PEAK_ONLY_MINIMAX" in skipped
     ch, skipped = R.resolve_chain("g2", MON_OFF)
-    assert [c["provider"] for c in ch] == ["nvidia", "hf"] and "groq:NO_MODEL_CONFIGURED" in skipped and "local:NO_MODEL_CONFIGURED" in skipped
+    # 2026-09-29: Kimi K3 -> GLM 5.3 (NVIDIA) -> [Groq] -> [local] -> DeepSeek V4 Flash (HF) -> Nemotron LAST
+    assert [c["model"] for c in ch] == ["moonshotai/kimi-k3", "z-ai/glm-5.3", "deepseek-ai/DeepSeek-V4-Flash", "nvidia/nemotron-3-super-120b-a12b"]
+    assert "groq:NO_MODEL_CONFIGURED" in skipped and "local:NO_MODEL_CONFIGURED" in skipped
     monkeypatch.setenv("GROQ_API_KEY_1", "c")
     env = {"RIU_G2_GROQ_MODEL": "llama3.1-8b"}
-    assert [c["provider"] for c in R.resolve_chain("g2", MON_OFF, env)[0]] == ["nvidia", "groq", "hf"]
+    assert [c["provider"] for c in R.resolve_chain("g2", MON_OFF, env)[0]] == ["nvidia", "nvidia", "groq", "hf", "nvidia"]
     ch, skipped = R.resolve_chain("g2", MON_PEAK, env)
-    assert [c["provider"] for c in ch] == ["nvidia", "groq"] and any("PEAK_HOUR" in s for s in skipped)
+    assert [c["provider"] for c in ch] == ["nvidia", "nvidia", "groq", "nvidia"] and any("PEAK_HOUR" in s for s in skipped)
 
 
 def test_policy_falls_back_only_where_authorized(monkeypatch):
@@ -125,7 +128,7 @@ def test_policy_falls_back_only_where_authorized(monkeypatch):
     assert out["route"]["provider"] == "hf" and seen == ["hf"]  # MiniMax first for code
     seen.clear()
     out = R.run_policy("g2", [], 5, now=MON_OFF, call=call, env=env)
-    assert out["message"]["content"] == "por groq" and seen == ["nvidia", "groq"] and out["trace"]
+    assert out["message"]["content"] == "por groq" and seen == ["nvidia", "nvidia", "groq"] and out["trace"]  # Kimi, GLM fail -> Groq
     monkeypatch.setitem(R.DEFAULT_POLICY, "strict", {"authorized_fallback": False, "chain": [R.NEMOTRON, R.MINIMAX]})
     with pytest.raises(R.RouteFailed) as exc:
         R.run_policy("strict", [], 5, now=MON_OFF, call=call)
@@ -143,7 +146,7 @@ def test_route_endpoints(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
 
     from integration.chat_mvp import app as chat_app
-    from integration.chat_mvp import core
+    from integration.chat_mvp import core, model_pool
     from integration.chat_mvp import router as rt
     from integration.chat_mvp.store import Store
 
@@ -160,6 +163,10 @@ def test_route_endpoints(tmp_path, monkeypatch):
 
     monkeypatch.setattr(core, "call_via_router", fake)
     monkeypatch.setitem(R.DEFAULT_POLICY, "strict", {"authorized_fallback": False, "chain": [R.NEMOTRON, R.MINIMAX]})
+    monkeypatch.setitem(R.DEFAULT_POLICY, "onlykimi", {"authorized_fallback": True, "chain": [R.KIMI_K3]})
+    monkeypatch.setitem(R.DEFAULT_POLICY, "nokeys", {"authorized_fallback": True, "chain": [R.QWEN_GROQ]})  # Groq has no key in this test: the chain is empty
+    listing = {"nvidia": ["z-ai/glm-5.3", "nvidia/nemotron-3-super-120b-a12b"]}  # NVIDIA does not list Kimi in this test
+    monkeypatch.setattr(model_pool, "POOL", model_pool.ModelPool(fetch=lambda p, k: listing.get(p, [])))
     rt.set_store(Store(tmp_path))
     client = TestClient(chat_app.app)
     H = {"X-API-Key": "k1"}
@@ -167,12 +174,160 @@ def test_route_endpoints(tmp_path, monkeypatch):
         assert client.get("/chat/router/status").status_code == 401
         st = client.get("/chat/router/status", headers=H).json()
         assert set(st["groups"]) >= {"default", "code", "minor", "g2"} and st["limiter"]["tiers"] == [3, 10]
+        assert st["groups"]["default"]["authorized_fallback"] is True and st["attempt_timeout_s"] == 30.0 and "cooling" in st["model_pool"]
         ok = client.post("/chat/route", json={"group": "code", "message": "haz X"}, headers=H)
         assert ok.status_code == 200 and ok.json()["route"]["provider"] == "hf" and seen[-1] == ("hf", "MiniMaxAI/MiniMax-M3")
-        assert client.post("/chat/route", json={"group": "default", "message": "hola"}, headers=H).json()["route"]["provider"] == "nvidia"
+        dflt = client.post("/chat/route", json={"group": "default", "message": "hola"}, headers=H).json()
+        assert dflt["route"]["provider"] == "nvidia" and dflt["route"]["model"] == "z-ai/glm-5.3"  # Kimi not listed -> GLM 5.3
+        assert "nvidia/moonshotai/kimi-k3:NOT_LISTED" in dflt["trace"]
+        listed = client.get("/chat/providers").json()["providers"]
+        assert listed[0]["id"] == "auto" and listed[0]["configured"] is True and "hf" in [p["id"] for p in listed[1:]]  # "auto" first, the real providers after it
+        assert client.get("/chat/providers/auto/models").status_code == 401  # like every other provider: needs the API key
+        auto_models = client.get("/chat/providers/auto/models", headers=H).json()
+        assert auto_models["provider"] == "auto" and [(m["model_id"], m["selectable"]) for m in auto_models["models"]] == [("auto", True)]
+        models = client.get("/chat/router/models", headers=H).json()
+        assert models["providers"]["nvidia"] == {"configured": True, "listed": 2} and models["providers"]["groq"]["configured"] is False
+        assert [c["model"] for c in models["groups"]["default"]["try_order"]][:1] == ["z-ai/glm-5.3"]
+        assert client.get("/chat/router/models").status_code == 401
+        # same rules as run_policy: a group where the pool filters EVERYTHING out is tried whole; a group without authorization ignores the pool
+        assert models["groups"]["onlykimi"] == {"try_order": [{"provider": "nvidia", "model": "moonshotai/kimi-k3"}], "pool_used": True,
+                                                "skipped": ["nvidia/moonshotai/kimi-k3:NOT_LISTED", "POOL_EMPTY_TRY_ALL"]}
+        assert models["groups"]["nokeys"] == {"try_order": [], "skipped": [], "pool_used": True}  # an empty chain is reported empty, not as "pool emptied it"
+        assert models["groups"]["strict"]["pool_used"] is False and models["groups"]["strict"]["skipped"] == []
+        assert [c["provider"] for c in models["groups"]["strict"]["try_order"]] == ["nvidia", "hf"]
         assert client.post("/chat/route", json={"group": "default", "message": "x", "agent_id": "nope"}, headers=H).status_code == 400
         monkeypatch.setattr(core, "call_via_router", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("PROVIDER_ERROR:TimeoutError:x")))
         auth = client.post("/chat/route", json={"group": "strict", "message": "hola"}, headers=H)
         assert auth.status_code == 409 and auth.json()["detail"]["error"].startswith("NEEDS_DIRECTOR_AUTH")
+    finally:
+        rt.set_store(None)
+
+
+def test_send_auto_uses_the_default_chain_and_keeps_the_conversation(tmp_path, monkeypatch):
+    """/chat/send with provider=auto: the Router picks the model (Kimi K3 -> GLM 5.3 -> ... -> Nemotron) and the chat keeps its history."""
+    pytest.importorskip("fastapi")
+    pytest.importorskip("huggingface_hub")
+    from fastapi.testclient import TestClient
+
+    from integration.chat_mvp import app as chat_app
+    from integration.chat_mvp import core, model_pool
+    from integration.chat_mvp import router as rt
+    from integration.chat_mvp.store import Store
+
+    kimi, glm, qwen, nemo = "moonshotai/kimi-k3", "z-ai/glm-5.3", "qwen/qwen3.8-27b", "nvidia/nemotron-3-super-120b-a12b"
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"k1": "agent-a"}')
+    monkeypatch.setenv("RIU_CHAT_ALLOW_PROVIDER_LIVE", "1")
+    monkeypatch.setenv("NVIDIA_API_KEY_1", "n")
+    monkeypatch.setenv("GROQ_API_KEY_1", "g")
+    monkeypatch.setattr(core, "cached_discovery", lambda: [])
+    dead: set[str] = set()
+    seen = []
+
+    def fake(provider, key, model, messages, max_tokens, temperature=None):
+        seen.append((provider, model, [m["role"] for m in messages]))
+        if model in dead:
+            raise RuntimeError("PROVIDER_ERROR:TimeoutError:request failed")
+        return {"message": {"role": "assistant", "content": "listo desde " + model}, "finish_reason": "stop",
+                "usage": {"prompt_tokens": 2, "completion_tokens": 1}}
+
+    monkeypatch.setattr(core, "call_via_router", fake)
+    listing = {"nvidia": [kimi, glm, nemo], "groq": [qwen]}
+    monkeypatch.setattr(model_pool, "POOL", model_pool.ModelPool(fetch=lambda p, k: listing.get(p, []), cooldown=100))
+    rt.set_store(Store(tmp_path))
+    client = TestClient(chat_app.app)
+    H = {"X-API-Key": "k1"}
+    try:
+        first = client.post("/chat/send", json={"message": "hola", "provider": "auto"}, headers=H)
+        j1 = first.json()
+        assert first.status_code == 200 and j1["provider"] == "nvidia" and j1["model"] == kimi and j1["auto"] is True and not any("kimi-k3" in t for t in j1["trace"])
+        assert j1["reply"] == "listo desde " + kimi and j1["cached"] is False and j1["conversation_id"]
+        dead.add(kimi)  # Kimi stops answering: the chat moves on by itself and still sends the history
+        second = client.post("/chat/send", json={"message": "sigue", "provider": "auto", "conversation_id": j1["conversation_id"]}, headers=H).json()
+        assert second["model"] == glm and second["conversation_id"] == j1["conversation_id"] and any("kimi-k3:PROVIDER_ERROR" in t for t in second["trace"])
+        assert seen[-1] == ("nvidia", glm, ["user", "assistant", "user"])
+        third = client.post("/chat/send", json={"message": "otra", "provider": "auto"}, headers=H).json()
+        assert third["model"] == glm and f"nvidia/{kimi}:COOLING" in third["trace"]  # Kimi is remembered as dead: no time lost on it
+        dead.update({glm, nemo})  # only Groq's Qwen is left before Nemotron... which is dead too
+        fourth = client.post("/chat/send", json={"message": "x", "provider": "auto"}, headers=H).json()
+        assert fourth["provider"] == "groq" and fourth["model"] == qwen
+        dead.add(qwen)
+        allfail = client.post("/chat/send", json={"message": "x", "provider": "auto"}, headers=H)
+        detail = allfail.json()["detail"]  # a plain string: the current chat page writes it into a sentence (an object showed as [object Object])
+        assert allfail.status_code == 502 and isinstance(detail, str) and detail.startswith("ROUTER_ALL_ROUTES_FAILED | ") and "kimi-k3" in detail
+        assert client.post("/chat/send", json={"message": "x", "provider": "nvidia"}, headers=H).json()["detail"] == "MODEL_REQUIRED"
+        assert client.post("/chat/send", json={"message": "x", "provider": "nope", "model": "m"}, headers=H).json()["detail"] == "PROVIDER_UNKNOWN"
+    finally:
+        rt.set_store(None)
+
+
+def test_router_models_report_does_not_take_the_probe_lease(tmp_path, monkeypatch):
+    """GET /chat/router/models is only a report: a model whose cooldown ended must stay free for the next REAL request, however often the report is read."""
+    pytest.importorskip("fastapi")
+    pytest.importorskip("huggingface_hub")
+    from fastapi.testclient import TestClient
+
+    from integration.chat_mvp import app as chat_app
+    from integration.chat_mvp import model_pool
+    from integration.chat_mvp import router as rt
+    from integration.chat_mvp.store import Store
+
+    kimi = "moonshotai/kimi-k3"
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"k1": "agent-a"}')
+    monkeypatch.setenv("NVIDIA_API_KEY_1", "n")
+    now = [0.0]
+    pool = model_pool.ModelPool(fetch=lambda p, k: [kimi, "z-ai/glm-5.3", "nvidia/nemotron-3-super-120b-a12b"], clock=lambda: now[0], cooldown=10)
+    monkeypatch.setattr(model_pool, "POOL", pool)
+    rt.set_store(Store(tmp_path))
+    client = TestClient(chat_app.app)
+    H = {"X-API-Key": "k1"}
+    try:
+        pool.mark_bad("nvidia", kimi, "test")
+        now[0] = 11.0  # the cooldown is over: the next real request may probe Kimi
+        for _ in range(2):
+            body = client.get("/chat/router/models", headers=H).json()
+            assert [c["model"] for c in body["groups"]["default"]["try_order"]][:1] == [kimi]
+        assert pool._bad[("nvidia", kimi)][0] == 10.0  # the reports took no lease (a lease would have moved this to 11 + 30)
+    finally:
+        rt.set_store(None)
+
+
+def test_auto_is_listed_but_not_configured_when_no_provider_has_a_key(monkeypatch):
+    pytest.importorskip("fastapi")
+    pytest.importorskip("huggingface_hub")
+    from fastapi.testclient import TestClient
+
+    from integration.chat_mvp import app as chat_app
+
+    for spec in P.PROVIDERS.values():  # whatever keys the machine running the test has
+        for name in spec["env"]:
+            monkeypatch.delenv(name, raising=False)
+    first = TestClient(chat_app.app).get("/chat/providers").json()["providers"][0]
+    assert first["id"] == "auto" and first["configured"] is False
+
+
+def test_send_auto_does_not_save_an_empty_reply(tmp_path, monkeypatch):
+    """A model that answers with nothing creates no conversation and no message: the chat reports the turn as empty."""
+    pytest.importorskip("fastapi")
+    pytest.importorskip("huggingface_hub")
+    from fastapi.testclient import TestClient
+
+    from integration.chat_mvp import app as chat_app
+    from integration.chat_mvp import core, model_pool
+    from integration.chat_mvp import router as rt
+    from integration.chat_mvp.store import Store
+
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"k1": "agent-a"}')
+    monkeypatch.setenv("RIU_CHAT_ALLOW_PROVIDER_LIVE", "1")
+    monkeypatch.setenv("NVIDIA_API_KEY_1", "n")
+    monkeypatch.setattr(core, "cached_discovery", lambda: [])
+    monkeypatch.setattr(core, "call_via_router", lambda *a, **k: {"message": {"role": "assistant", "content": ""}, "finish_reason": "stop",
+                                                                   "usage": {"prompt_tokens": 2, "completion_tokens": 0}})
+    monkeypatch.setattr(model_pool, "POOL", model_pool.ModelPool(fetch=lambda p, k: []))
+    rt.set_store(Store(tmp_path))
+    client = TestClient(chat_app.app)
+    try:
+        resp = client.post("/chat/send", json={"message": "hola", "provider": "auto"}, headers={"X-API-Key": "k1"})
+        body = resp.json()
+        assert resp.status_code == 200 and body["empty"] is True and body["reply"] == "" and body["conversation_id"] is None
     finally:
         rt.set_store(None)
