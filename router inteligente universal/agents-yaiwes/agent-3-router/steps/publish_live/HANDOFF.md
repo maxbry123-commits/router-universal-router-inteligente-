@@ -1,10 +1,11 @@
 # HANDOFF — agent-3-router (pocketflow)
 
-Estado: **CLOSED**
+Estado: **PENDING_VERIFY** (NO CLOSED)
 
 - group: hf-chat
-- attempts: 1
-- model: nvidia/nvidia/nemotron-3-super-120b-a12b
-- gaps: -
+- deploy: opción 3 Static + OAuth + Inference Providers
+- space_url candidate: https://huggingface.co/spaces/yaiwes/riu-chat-yaiwes
+- gap: smoke FAIL 401/404 → GOLDEN private=False + re-DISPATCH 2026-09-29
+- Job 32GB: APLAZADO
 
-Generado por el agente (determinista). El cerebro (Claude) lee `crazy_wall.state.json` y activa la siguiente tarea editando `chain.yaml` (o `workflow.dag.yaml`) y despachando `RIU Agents Run`. Ninguna clave aparece aquí.
+Orch cierra CLOSED solo tras live ≠401/404 + smoke OAuth.
