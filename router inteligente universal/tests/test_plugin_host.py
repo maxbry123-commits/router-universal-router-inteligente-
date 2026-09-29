@@ -369,8 +369,10 @@ def test_router_still_starts_if_the_plugin_host_cannot_be_imported():
             "sys.modules['integration.plugin_host.api'] = None  # makes `from ..plugin_host.api import ...` raise ImportError\n"
             f"sys.path.insert(0, {str(ROOT)!r})\n"
             "from integration.chat_mvp import app as a\n"
-            "paths = {getattr(r, 'path', '') for r in a.app.routes}\n"
-            "assert '/chat' in paths and '/chat/route' in paths and '/plugins' not in paths, sorted(paths)\n"
+            "from fastapi.testclient import TestClient\n"
+            "c = TestClient(a.app)  # by requests, not by route list: newer FastAPI hides included routes behind one wrapper\n"
+            "codes = (c.get('/plugins').status_code, c.get('/chat').status_code, c.get('/health').status_code)\n"
+            "assert codes[0] == 404 and codes[1] == 200 and codes[2] == 200, codes\n"
             "print('APP-OK')\n")
     r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=180, env=dict(os.environ))
     assert r.returncode == 0 and "APP-OK" in r.stdout, (r.stdout + r.stderr)[-1500:]
