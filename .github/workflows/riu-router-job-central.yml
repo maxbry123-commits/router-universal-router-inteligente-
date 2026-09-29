@@ -78,11 +78,11 @@ jobs:
           lifetime = os.environ["LIFETIME"]
           try:
               job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=lifetime,
-                                expose=[8000], secrets=secrets)
+                                expose=[8000], secrets=secrets, env={"RIU_G2_GROQ_MODEL": "qwen/qwen3.8-27b"})
           except Exception as e:
               print(f"::warning::vida {lifetime} rechazada ({str(e)[:120]}); reintento con 24h")
               job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout="24h",
-                                expose=[8000], secrets=secrets)
+                                expose=[8000], secrets=secrets, env={"RIU_G2_GROQ_MODEL": "qwen/qwen3.8-27b"})
           print(f"::notice title=RIU_ROUTER_CENTRAL_JOB_ID::{job.id} flavor={os.environ['FLAVOR']}")
           t0, ok, stage = time.time(), None, None
           url = f"https://{job.id}--8000.hf.jobs"
