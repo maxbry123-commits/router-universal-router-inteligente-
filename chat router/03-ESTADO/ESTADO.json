@@ -1,0 +1,70 @@
+{
+  "schema": "yaiwes.estado/v1",
+  "actualizado_utc": "2026-09-29T03:55Z",
+  "regla": "Solo hechos con evidencia. Lo no verificado dice SIN_VERIFICAR. Sin claves ni valores secretos.",
+  "router": {
+    "cantidad": 1,
+    "que_es": "Job de Hugging Face, maquina cpu-basic 16 GB, siempre encendido, se relanza con el lanzador unico",
+    "job_id_vivo": "6abb1ff352d0dbd7f1da8a58",
+    "vivo_desde_utc": "2026-09-29T02:18Z",
+    "direccion": "archivo router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag (linea LIVE_URL)",
+    "lanzador": ".github/workflows/riu-router-job-central.yml",
+    "aplicacion": "router inteligente universal/integration/chat_mvp/app.py",
+    "autenticacion": "Authorization Bearer (token HF) + cabecera X-API-Key (clave del Router)",
+    "evidencia": "riu-router-smoke run 36513612455 (2026-09-29T02:39Z) y hf-inventario run 36518646626 (03:46Z)",
+    "rutas_verificadas": {
+      "/health": "200",
+      "/chat/models": "200 (Kimi K3 moonshotai/Kimi-K3 listado por proveedores HF)",
+      "/v1/models": "200 pero solo 2 modelos chicos (no sirve para agentes)",
+      "/chat/router/status": "200: cadena default = NVIDIA nemotron-3-super-120b-a12b; g2 = NVIDIA; cerebras sin modelo; DeepSeek V4 Flash omitido en hora pico",
+      "/chat/send con provider hf": "400 PROVIDER_KEY_MISSING:hf (el Router no tiene clave HF de inferencia)"
+    },
+    "regla_unica": "Todo lo que se construya se conecta a este Router. No se crean routers nuevos."
+  },
+  "cerebras": {
+    "orden_director": "borrar del mapa",
+    "hecho": "workflow del mini-router y matriz eliminados; el enrutado de agentes ya lo excluye (routes.py EXCLUIDOS)",
+    "pendiente": "quitar del registro de proveedores y de la cadena g2 (providers.py, resilience.py, vault_bridge.py)"
+  },
+  "ruta_de_modelos_ordenada_por_director": "NVIDIA (hasta 4 claves; Kimi K3 o el mas nuevo) -> Groq -> DeepSeek V4 Flash al final. Sin APIs de Anthropic.",
+  "conector_mcp_claude": {
+    "donde": "Space HF COMAND-CENTER-1/claude-github-mcp-backup",
+    "estado": "RUNNING cpu-upgrade (verificado 2026-09-29T03:46Z)",
+    "proteccion": "NO tocar, NO reiniciar, NO borrar. keep-mcp-space-awake desactivado por orden del Director.",
+    "segun_opus_sin_verificar": "sin OAuth, direccion secreta, webhook que dispara el lanzador unico"
+  },
+  "vercel": {
+    "cuenta": "maxbry123@gmail.com (usuario maxbry123-8833, plan Hobby)",
+    "team_id": "team_hG9df7zIgfZFY0oxFFsIRr1u",
+    "proyecto": "riu-jev-bridge (prj_m8Lk3iaB3eN6dwlIq1ND2un8FWTD)",
+    "despliegue_vivo": false,
+    "ultimo_despliegue": "dpl_21eUp34LLfwrGR3YVxyjA3n1UqXC CANCELED 2026-09-29T03:39Z (despliegue automatico apagado)",
+    "variables_solo_nombres": ["RIU_CHAT_PASSWORD", "RIU_ROUTER_API_KEY", "RIU_ROUTER_URL", "HF_JOB_FLAVOR", "HF_TOKEN_1"],
+    "regla": "Se instala NADA hasta que todo este listo. Un solo despliegue final, solo cuando el Director lo ordene.",
+    "pendiente_decision_director": "borrar o conservar las variables (son secretas e irrecuperables)"
+  },
+  "huggingface": {
+    "cuenta": "COMAND-CENTER-1",
+    "jobs_vivos": 1,
+    "spaces": ["claude-github-mcp-backup (protegido)"],
+    "spaces_borrados_2026_09_29": ["omniroute-1", "omniroute-2", "omniroute-3", "omniroute-4", "omniroute-5"],
+    "datasets": ["yaiwes-hf-memoria (privado, memoria)"]
+  },
+  "github": {
+    "repo": "maxbry123-commits/router-universal-router-inteligente-",
+    "rama": "main",
+    "copia_de_seguridad": "rama backup-antes-limpieza-20260929 (commit 343b724)",
+    "limpieza_general": "commits a53825c y 99e3104 (2026-09-29T03:38-03:39Z)",
+    "workflows_antes_despues": "88 -> 28 (+ hf-inventario, hf-borrar-omniroute de un solo uso)",
+    "sentinelas": "PAUSADAS (sentinelas.yml y sentinela-orquestador.yml desactivados): generaban ~180 commits en 3 dias",
+    "vigilante_32gb": "ELIMINADO: cancelo el Router de 16 GB a las 21:15 hora Colombia (run 36511703509)"
+  },
+  "equipo_4_objetivos": {
+    "repo": "maxbry123-commits/agentes",
+    "estado": "NO ENTREGADO: 0 de 4 objetivos. Solo P0-MONTAJE y P0-PRUEBA-PROVEEDOR en PASS (2026-09-21).",
+    "evidencia": "bitacora del plan-opus (21-sep), PRs #23 y #24 abiertos, ninguna rama nueva desde el 21-sep, corridas del mini-router 26-28 sep sin resultado legible",
+    "lo_cerrado_del_25_sep": "agent-26 era una cadena de 2 pasos de investigacion cuyos resultados dicen GAP (no pudo leer el plan) y router_connected=false; ya eliminado",
+    "siguiente": "conectar el loop al Router unico, reactivarlo y reactivar su sentinela"
+  },
+  "pasos_pendientes": ["P0 organizar en 2 raices", "P1 equipo 4 objetivos por el Router unico", "P2 cadena Rowboat-Ruflo-Claude Code-Grok-Claude Code-4 Meta con DeepSeek Harness", "P3 memoria Manus + puente HF", "P4 Vercel (ultimo, solo con orden)"]
+}
