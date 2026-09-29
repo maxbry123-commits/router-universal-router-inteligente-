@@ -220,6 +220,7 @@ def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, t
     `pool` (model_pool.ModelPool, optional) filters options the provider does not list or that failed recently and learns from each
     result; it is ignored for groups without authorized fallback (skipping an option there would be a silent fallback).
     Every option except the last gets a time limit so a slow model never blocks the chat; the last one keeps the full provider timeout.
+    The limit grows with the answer size (x max_tokens / 1024, never below the base), and providers.chat_timeout() never exceeds 90 s.
     """
     policy = DEFAULT_POLICY.get(group) or DEFAULT_POLICY["default"]
     chain, trace = resolve_chain(group, now or datetime.now(timezone.utc), env)
@@ -233,7 +234,7 @@ def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, t
             chain = kept
         else:
             trace.append("POOL_EMPTY_TRY_ALL")  # never leave the chat without a route because of the pool
-    limit = attempt_timeout_s() if attempt_timeout is None else attempt_timeout
+    limit = (attempt_timeout_s() if attempt_timeout is None else attempt_timeout) * max(1.0, max_tokens / 1024)
     for i, entry in enumerate(chain):
         if i > 0 and not policy["authorized_fallback"]:
             trace.append("FALLBACK_NOT_AUTHORIZED")
