@@ -1,0 +1,19 @@
+{
+  "schema": "yaiwes.crazy-wall/v2",
+  "actualizado_utc": "2026-09-29T03:55Z",
+  "regla": "Un nodo pasa a PASS solo con evidencia real (commit, salida de prueba o aviso de job). Sin evidencia = PENDIENTE.",
+  "flujo_global": "OBJETIVO -> KERNEL -> DECIDIR -> WORKFLOW REAL -> RECURSOS REALES -> EJECUTAR -> OBSERVAR -> VERIFICAR -> EVIDENCIA -> CERRAR",
+  "nodos": [
+    {"id": "N-00", "nombre": "Auditar Router y unificar", "estado": "PASS", "depende": [], "evidencia": "B-0001..B-0007"},
+    {"id": "N-01", "nombre": "Limpieza general repo y HF", "estado": "PARCIAL", "depende": ["N-00"], "evidencia": "B-0005 (repo PASS); B-0008 (HF lanzado); falta reorganizar en 2 raices"},
+    {"id": "N-02", "nombre": "Dos raices: Router y Chat", "estado": "PENDIENTE", "depende": ["N-01"], "evidencia": ""},
+    {"id": "N-03", "nombre": "Quitar Cerebras del codigo del Router", "estado": "PENDIENTE", "depende": ["N-01"], "evidencia": ""},
+    {"id": "N-04", "nombre": "P1 Equipo 4 objetivos conectado al Router unico + sentinela reactivado", "estado": "PENDIENTE", "depende": ["N-03"], "evidencia": ""},
+    {"id": "N-05", "nombre": "20 sitios de investigacion en motor de busqueda (inicio) y Gaps (final)", "estado": "PENDIENTE", "depende": ["N-02"], "evidencia": ""},
+    {"id": "N-06", "nombre": "P2 Cadena Rowboat-Ruflo-Claude Code-Grok-Claude Code-4 Meta con DeepSeek Harness", "estado": "PENDIENTE", "depende": ["N-04", "N-05"], "evidencia": ""},
+    {"id": "N-07", "nombre": "Skills ECC, Archify, Agent Skills convertidos a esquema Sheriff/DSL DAG", "estado": "PENDIENTE", "depende": ["N-05"], "evidencia": ""},
+    {"id": "N-08", "nombre": "P3 Memoria Manus + puente HF (dataset yaiwes-hf-memoria)", "estado": "PENDIENTE", "depende": ["N-06"], "evidencia": ""},
+    {"id": "N-09", "nombre": "P4 Un solo despliegue en Vercel (ultimo, solo con orden del Director)", "estado": "BLOQUEADO_POR_ORDEN", "depende": ["N-08"], "evidencia": ""}
+  ],
+  "protegidos": ["Space HF claude-github-mcp-backup (conector MCP)", "Job del Router y su lanzador", "rama backup-antes-limpieza-20260929"]
+}
