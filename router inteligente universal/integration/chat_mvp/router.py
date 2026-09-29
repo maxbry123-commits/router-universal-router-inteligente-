@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 
 from ..huggingface.api_key_auth import authenticate_api_key
 from ..huggingface.chat_catalog import cached_discovery, family_of, selector_models
-from . import core
+from . import core, model_pool, resilience
 from . import dag as dagmod
 from . import dag_cli
 from . import github_tools as gh
@@ -79,8 +79,8 @@ def sync_to_bucket(store: Store, bucket_id: str, token: str, *, fs_factory: Call
 
 class SendReq(BaseModel):
     message: str = Field(min_length=1, max_length=20000)
-    provider: str = "hf"
-    model: str
+    provider: str = "hf"  # "auto" = the Router picks the model (chain of the "default" group in resilience.py); then `model` is ignored
+    model: str = ""
     conversation_id: str | None = None
     mode: str = "direct"  # direct = sin agente, agent = con agente
     agent_id: str | None = None
@@ -169,8 +169,11 @@ def build_router() -> APIRouter:
     async def send(req: SendReq, owner: str = Depends(_auth),
                    x_provider_key: str | None = Header(default=None, alias="X-Provider-Key")) -> dict[str, Any]:
         st = get_store()
-        if req.provider not in prov.PROVIDERS:
+        auto = req.provider == "auto"  # 2026-09-29: Kimi K3 -> GLM 5.3 -> DeepSeek V4 -> Qwen 3.8 (Groq) -> Nemotron, falls to the next by itself
+        if not auto and req.provider not in prov.PROVIDERS:
             raise HTTPException(status_code=400, detail="PROVIDER_UNKNOWN")
+        if not auto and not req.model:
+            raise HTTPException(status_code=400, detail="MODEL_REQUIRED")
         if req.mode not in {"direct", "agent"}:
             raise HTTPException(status_code=400, detail="MODE_INVALID")
         agent = None
@@ -178,11 +181,13 @@ def build_router() -> APIRouter:
             agent = st.agent(req.agent_id or "")
             if not agent:
                 raise HTTPException(status_code=400, detail="AGENT_NOT_FOUND")
-        key = prov.resolve_key(req.provider, x_provider_key)
-        if not key and req.provider != "local":
+        key = None if auto else prov.resolve_key(req.provider, x_provider_key)
+        if not auto and not key and req.provider != "local":
             raise HTTPException(status_code=400, detail=f"PROVIDER_KEY_MISSING:{req.provider}")
         certified = False
-        if req.provider == "hf":
+        if auto:
+            pass  # every option of the chain is checked by its own gate / provider list (resilience.run_policy + model_pool)
+        elif req.provider == "hf":
             try:
                 certified = core.hf_gate(req.model)
             except ValueError as exc:
@@ -212,24 +217,38 @@ def build_router() -> APIRouter:
         if conv:
             msgs += core.trim_history([{"role": m["role"], "content": m["content"]} for m in st.messages(conv, limit=40)])
         msgs.append({"role": "user", "content": req.message})
+        used_provider, used_model, route_trace = req.provider, req.model, None
         try:
-            result = await asyncio.to_thread(core.run_completion, st, owner, req.provider, key, req.model, msgs, req.max_tokens,
-                                             req.temperature, use_cache=req.cache, refresh=req.refresh)
+            if auto:
+                from .route_api import _call as route_call  # lazy: route_api imports this module
+
+                out = await asyncio.to_thread(resilience.run_policy, "default", msgs, req.max_tokens, temperature=req.temperature,
+                                              call=route_call, pool=model_pool.POOL)
+                used_provider, used_model, route_trace = out["route"]["provider"], out["route"]["model"], out["trace"]
+                result = {"message": out["message"], "finish_reason": out.get("finish_reason"), "usage": out.get("usage"), "cached": False}
+                UsageLog(st).record(owner=owner, provider=used_provider, model=used_model, usage=result["usage"], from_cache=False)
+            else:
+                result = await asyncio.to_thread(core.run_completion, st, owner, req.provider, key, req.model, msgs, req.max_tokens,
+                                                 req.temperature, use_cache=req.cache, refresh=req.refresh)
         except RuntimeError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
+            raise HTTPException(status_code=502, detail={"error": str(exc), "trace": getattr(exc, "trace", None)} if auto else str(exc)) from exc
         reply = result["message"].get("content") or ""
         if reply:
             if not conv:
                 conv = st.new_conversation(req.message, agent["id"] if agent else None, owner)
             st.add_message(conv, "user", req.message)
-            st.add_message(conv, "assistant", reply, req.provider, req.model)
-            st.record_turn(conv_id=conv, owner=owner, provider=req.provider, model=req.model,
+            st.add_message(conv, "assistant", reply, used_provider, used_model)
+            st.record_turn(conv_id=conv, owner=owner, provider=used_provider, model=used_model,
                            agent_id=agent["id"] if agent else None, doc_ids=used_docs,
                            repo=(req.github or {}).get("repo"))
-        return {"conversation_id": conv, "reply": reply, "empty": not reply, "provider": req.provider, "model": req.model,
+        body = {"conversation_id": conv, "reply": reply, "empty": not reply, "provider": used_provider, "model": used_model,
                 "certified": certified, "cached": result["cached"], "finish_reason": result.get("finish_reason"),
                 "usage": result.get("usage"), "usage_normalized": normalize_usage(result.get("usage")),
                 "docs_used": used_docs, "agent_id": agent["id"] if agent else None}
+        if auto:
+            body["auto"] = True
+            body["trace"] = route_trace  # why earlier options were skipped / failed (NOT_LISTED, COOLING, provider errors)
+        return body
 
     @r.get("/chat/usage")
     def usage(_owner: str = Depends(_auth)) -> dict[str, Any]:
