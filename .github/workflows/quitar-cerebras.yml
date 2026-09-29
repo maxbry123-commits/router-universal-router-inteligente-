@@ -38,9 +38,10 @@ jobs:
           tr '\0' '\n' < /tmp/materializar.z | wc -l
       - name: Tests ANTES
         run: |
-          pip install -q pytest fastapi httpx pyyaml cryptography requests pydantic uvicorn 2>&1 | tail -1
+          pip install -q pytest httpx pyyaml cryptography requests uvicorn -r "r/router inteligente universal/requirements.txt" 2>&1 | tail -1
           cd "r/router inteligente universal"
           timeout 900 python -m pytest tests "Banco de claves/tests" -q -p no:cacheprovider --maxfail=200 2>&1 | tail -400 > /tmp/antes.txt || true
+          echo "::notice title=ERR_ANTES::$(grep -E '^E  ' /tmp/antes.txt | sort | uniq -c | sort -rn | head -4 | tr '\n' ' ' | cut -c1-600)"
           grep -E "^(FAILED|ERROR)" /tmp/antes.txt | sed 's/ - .*//' | sort -u > /tmp/antes_fail.txt || true
           tail -1 /tmp/antes.txt; wc -l < /tmp/antes_fail.txt
       - name: Editar
