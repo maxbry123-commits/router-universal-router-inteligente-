@@ -23,19 +23,28 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Clonar y materializar solo lo necesario
+      - name: Clonar con checkout parcial en lote
         run: |
           git config --global core.quotepath off
           git config --global user.name "riu-bot"; git config --global user.email "riu-bot@users.noreply.github.com"
           git clone -q --filter=blob:none --no-checkout "https://x-access-token:${GH_TOKEN}@github.com/maxbry123-commits/router-universal-router-inteligente-.git" r
-          cd r && git read-tree HEAD
-          R="router inteligente universal"
-          { git ls-files -z -- "$R" ":(exclude)$R/Componente open soure router inteligente universal" ":(exclude)$R/Componentes del Router" ":(exclude)$R/vercel-ui" ":(exclude)$R/vercel-jev-bridge" ":(exclude)$R/agents-yaiwes" ; \
-            git ls-files -z -- "$R/agents-yaiwes/common" ; \
-            git ls-files -z -- ':(glob)**/chain.yaml' ':(glob)**/workflow.dag.yaml' ; \
-            git ls-files -z -- .github/workflows ; } | sort -zu > /tmp/materializar.z
-          xargs -0 git checkout-index -f -- < /tmp/materializar.z
-          tr '\0' '\n' < /tmp/materializar.z | wc -l
+          cd r
+          git sparse-checkout init --no-cone
+          cat > .git/info/sparse-checkout <<'EOF_SP'
+          /.github/workflows/
+          /router inteligente universal/
+          !/router inteligente universal/Componente open soure router inteligente universal/
+          !/router inteligente universal/Componentes del Router/
+          !/router inteligente universal/vercel-ui/
+          !/router inteligente universal/vercel-jev-bridge/
+          !/router inteligente universal/agents-yaiwes/
+          /router inteligente universal/agents-yaiwes/common/
+          chain.yaml
+          workflow.dag.yaml
+          EOF_SP
+          sed -i 's/^ *//' .git/info/sparse-checkout
+          git checkout -q main
+          git ls-files -t | grep -vc '^S' || true
       - name: Tests ANTES
         run: |
           pip install -q pytest httpx pyyaml cryptography requests uvicorn -r "r/router inteligente universal/requirements.txt" 2>&1 | tail -1
