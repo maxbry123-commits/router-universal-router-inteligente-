@@ -1,33 +1,32 @@
-# 🤗 README DEL ROUTER — Estado real y memoria de arquitectura YAIWES
-Actualizado: 2026-09-27. Cómo está montado hoy el Router, dónde vive cada pieza y cómo se usa. Sin claves: solo nombres de secretos.
+# README DEL ROUTER (Hugging Face) — estado real
+Actualizado: 2026-09-29. Solo lo verificado. Sin claves: solo nombres de secretos.
+Registro detallado: `chat router/03-ESTADO/` (ESTADO.json, CRAZY_WALL.json, BITACORA.jsonl, HANDOFF.md).
 
-## Cómo está montado (lo que se usa hoy)
-| Pieza | Dónde vive | Costo | Notas |
-|---|---|---|---|
-| **Router** (FastAPI) | Job HF **cpu-basic 16 GB de pago**, siempre encendido, vida 48 h y se relanza | ~$0.01/h (~$7/mes) | Lo lanza `.github/workflows/riu-router-job-central.yml`. Al lanzar uno nuevo apaga el anterior. Dirección actual en `router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag` (`LIVE_URL=`). |
-| **OmniRoute** v3.8.51 | **Dentro de la misma máquina** del Router, en `127.0.0.1:20128` | incluido | Arranca con `router inteligente universal/keeper/start_omniroute.sh`. El Router lo expone en `/omniroute/*` (`/omniroute/status`, `/omniroute/v1/models`, `/omniroute/v1/chat/completions`). Prueba: `.github/workflows/prueba-omniroute-router.yml`. |
-| **Conector MCP de Claude** | Space `COMAND-CENTER-1/claude-github-mcp-backup` | $0 (CPU basic) | Sin OAuth. Dirección secreta `/<MCP_SECRET_PATH>/mcp`. Pendiente: moverlo dentro de la máquina del Router con letrero fijo en Vercel. |
-| **Chat** (pantalla) | Vercel `riu-jev-bridge` → https://riu-jev-bridge.vercel.app | $0 | Función `/api` reenvía al Router con las claves de Vercel. Pendiente: base Open WebUI/chat descargado con skills del Director. |
+## Un solo Router
+| Pieza | Dónde vive | Notas |
+|---|---|---|
+| Router (FastAPI) | Job HF cpu-basic 16 GB, siempre encendido | Lo lanza `.github/workflows/riu-router-job-central.yml`, que corre `router inteligente universal/agents-yaiwes/common/router_job_persistent.py` (clona el repo, descifra el banco, levanta `integration.chat_mvp.app`, se actualiza cada 60 s). Lanzar uno nuevo apaga el anterior. Dirección: `router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag` (`LIVE_URL`). |
+| Conector MCP de Claude | Space `COMAND-CENTER-1/claude-github-mcp-backup` | PROTEGIDO, no tocar ni reiniciar. Hecho por Opus (documentado, no verificado por mí): sin OAuth, dirección secreta `/<MCP_SECRET_PATH>/mcp`, webhook al lanzador único, keep-awake desactivado. |
+| Memoria | Dataset privado `COMAND-CENTER-1/yaiwes-hf-memoria` | Puente pendiente (paso 3). |
+| Chat | Vercel `riu-jev-bridge` | Solo pantalla. Auto-deploy apagado. Un único deploy final solo cuando el Director lo ordene. |
 
 ## Cómo llamar al Router
-- Cabeceras: `Authorization: Bearer <HF_TOKEN>` (entrada al Job) + `X-API-Key: <RIU_ROUTER_API_KEY>`.
-- Rutas: `/health`, `/chat/send`, `/chat/providers`, `/chat/agents`, `/chat/documents`, `/chat/conversations`, `/chat/dag/run`, `/control/*`, `/groups`, `/workflows`, `/omniroute/*`.
+Cabeceras: `Authorization: Bearer <HF_TOKEN_1>` + `X-API-Key: <RIU_ROUTER_API_KEY>`.
+Verificado 2026-09-29 (smoke 36513612455): `/health` 200, `/chat/models` 200, `/chat/router/status` 200. `/v1/models` solo lista 2 modelos chicos (no sirve para agentes). `/chat/send` con provider=hf da 400 y `/chat/jev` con provider=hf da 503: no usar provider=hf.
+También montadas: `/chat/route`, `/chat/jobs/run`, `/memoria/*`, `/gh/*`, `/control/*`.
 
-## Rutas de IA
-NVIDIA (hasta 4 claves; Kimi más nuevo si existe) → Cerebras → Groq → DeepSeek V4 Flash al final. Sin APIs de Anthropic. OmniRoute añade sus proveedores gratuitos por `/omniroute/v1`.
+## Rutas de IA (orden del Director)
+NVIDIA (hasta 4 claves; Kimi K3 o el más nuevo) → Groq → DeepSeek V4 Flash al final. Sin APIs de Anthropic. **Cerebras eliminado por orden del Director** (aún queda en el código: `providers.py`, `resilience.py`, `vault_bridge.py`; pendiente quitarlo). OmniRoute eliminado.
+Estado hoy: la cadena por defecto usa NVIDIA `nvidia/nemotron-3-super-120b-a12b`; DeepSeek se salta en hora pico; Groq aún no está en ninguna cadena (pendiente).
 
-## Agentes y motores
-- Loop del plan de 4 objetivos: `.github/workflows/mini-router-plan-4-objetivos.yml` (cada hora; resultado como rama + PR en repo agentes, con copia de respaldo).
-- Descargas (motor canónico mejorado): cadenas `agents-yaiwes/agent-40..44`. Replicador de motores a todos los repos: `.github/workflows/replicar-motores.yml`.
+## Cuenta HF `COMAND-CENTER-1`
+Secretos (nombres): `HF_TOKEN_1`, `HF_WRITE_TOKEN`, `HF_TOKEN_MAXBRY123`.
+Inventario 2026-09-29: 1 Job vivo (el Router), 1 Space (el conector MCP), 1 dataset de memoria. `omniroute-1..5` borrados el 2026-09-29 (run 36518718390).
 
-## Cuenta HF
-`COMAND-CENTER-1` (secretos: `HF_TOKEN_1`, `HF_WRITE_TOKEN`, `HF_TOKEN_MAXBRY123`). Crear Spaces gratis por API → 402; con hardware de pago en la misma llamada → OK.
-Spaces `omniroute-1..5`: PAUSADOS (no cobran); OmniRoute vive ahora dentro del Router.
-
-## Planes y handoff
-`chat router/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml` · `chat router/HANDOFF-MAESTRO.md` · instrucciones del Director: `chat router/INPUT-BLOCK-VERBATIM-*.md`.
+## Incidente 2026-09-29
+El workflow `riu-hf-jobs-audit-32gb.yml` cancelaba cualquier Job que no fuera cpu-upgrade y mató al Router a las 02:15Z (run 36511703509). Se desactivó y se borró. Se relanzó el Router (02:18Z).
 
 ## Historial
 - 2026-09-25: GPT añade OAuth al conector (causa de desconexiones).
-- 2026-09-26: OAuth quitado, dirección secreta; motores mejorados y replicados; Router pasa a 16 GB de pago.
-- 2026-09-27: OmniRoute dentro de la máquina del Router; limpieza de piezas sueltas (keeper, Spaces de prueba, agentes 24–39 sin uso, vercel-ui viejo).
+- 2026-09-26: OAuth quitado, dirección secreta; Router a 16 GB de pago.
+- 2026-09-29: auditoría, limpieza del repo y de HF, sentinelas y mini-router en pausa, sistema de estado nuevo.
