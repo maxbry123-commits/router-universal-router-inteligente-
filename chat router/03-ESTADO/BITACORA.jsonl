@@ -1,0 +1,10 @@
+{"id":"B-0001","fecha":"2026-09-29","tipo":"auditoria","resumen":"Smoke del Router unico (run 36513612455): /health 200, /chat/models 200, /chat/router/status 200; /v1/models solo 2 modelos chicos; /chat/send provider=hf 400; /chat/jev provider=hf 503.","estado":"PASS"}
+{"id":"B-0002","fecha":"2026-09-29","tipo":"incidente","resumen":"El watchdog riu-hf-jobs-audit-32gb.yml cancelo el Job del Router (6abb082b) a las 02:15Z (run 36511703509) por no ser cpu-upgrade.","estado":"CERRADO"}
+{"id":"B-0003","fecha":"2026-09-29","tipo":"accion","resumen":"Workflow del watchdog 32gb desactivado y borrado; sentinelas y mini-router pausados.","estado":"HECHO"}
+{"id":"B-0004","fecha":"2026-09-29","tipo":"accion","resumen":"Rama de respaldo creada antes de limpiar el repo.","estado":"HECHO"}
+{"id":"B-0005","fecha":"2026-09-29","tipo":"accion","resumen":"Limpieza del repo en dos fases (commits a53825c, 99e3104) con limpieza-general.yml (PAT); el workflow se borro solo.","estado":"HECHO"}
+{"id":"B-0006","fecha":"2026-09-29","tipo":"lectura","resumen":"Vercel verificado: cuenta maxbry123@gmail.com, team maxbry123-8833s-projects, proyecto riu-jev-bridge; ultimo deploy CANCELED (auto-deploy apagado). Variables NO borradas.","estado":"PASS"}
+{"id":"B-0007","fecha":"2026-09-29","tipo":"lectura","resumen":"Inventario HF: 1 Job vivo (Router 6abb1ff3...), Space claude-github-mcp-backup RUNNING (protegido), omniroute-1..5 en pausa, dataset yaiwes-hf-memoria privado.","estado":"PASS"}
+{"id":"B-0008","fecha":"2026-09-29","tipo":"accion","resumen":"Lanzado hf-borrar-omniroute.yml para borrar omniroute-1..5 (guarda PROTEGIDOS para el Space MCP).","estado":"PENDIENTE_LEER_RESULTADO"}
+{"id":"B-0009","fecha":"2026-09-29","tipo":"verificacion","resumen":"Equipo de 4 objetivos: 0 de 4 entregados; solo P0-MONTAJE y P0-PRUEBA-PROVEEDOR PASS; PRs #23/#24 abiertos; agent-26 sin router (router_connected=false).","estado":"GAP"}
+{"id":"B-0010","fecha":"2026-09-29","tipo":"registro","resumen":"Creados ESTADO.json y CRAZY_WALL.json (nodos N-00..N-09) en chat router/03-ESTADO/.","estado":"HECHO"}
