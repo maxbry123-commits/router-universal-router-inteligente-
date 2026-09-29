@@ -18,9 +18,11 @@
   "next": null,
   "status": "VERIFIED_CLOSED",
   "checkpoint_vigente_del_proyecto": {
-    "nota": "Este archivo es del loop 1 (puente HF-GitHub) y NO cambio. El checkpoint vigente del Router, del chat como plugin y del Plugin Host (2026-09-29 ~11:20, nada ✅) esta aqui:",
-    "archivo": "Claude notas/CHECKPOINT-2026-09-29-1100-router-chat-plugins.md",
-    "estado_json": "Estado y handoff global/ESTADO.json (clave checkpoint_2026_09_29_1120)",
-    "bitacora": "Estado y handoff global/BITACORA.jsonl (B-0022 a B-0029)"
+    "nota": "Este archivo es del loop 1 (puente HF-GitHub) y NO cambio. El checkpoint vigente del Router, del chat como plugin y del Plugin Host (2026-09-29, segunda pasada ~16:30, nada ✅) esta aqui:",
+    "archivo": "Claude notas/CHECKPOINT-2026-09-29-1100-router-chat-plugins.md (seccion 12 = actualizacion de las 16:30)",
+    "estado_json": "Estado y handoff global/ESTADO.json (clave checkpoint_2026_09_29_1630; la de las 11:20 sigue como historial)",
+    "bitacora": "Estado y handoff global/BITACORA.jsonl (B-0022 a B-0029 a las 11:20; B-0030 a B-0038 a las 16:30)",
+    "nota_1120": "Este archivo es del loop 1 (puente HF-GitHub) y NO cambio. El checkpoint vigente del Router, del chat como plugin y del Plugin Host (2026-09-29 ~11:20, nada ✅) esta aqui:",
+    "handoff_router": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20)"
   }
 }
