@@ -6,6 +6,7 @@ header (X-API-Key) still protects every route except the public pages.
 2026-09-25 (Opus, autorizado por el Director): ui_bridge montado para el chat de Vercel (/gh/accounts, /control/*, /groups).
 2026-09-26 (Opus, orden del Director): puerta /omniroute hacia OmniRoute dentro de la misma máquina HF 16 GB.
 Ambos se montan dentro de try: si fallan, el Router sigue arriba sin esas rutas.
+2026-09-29 (orden del Director): plugin_host montado UNA vez (/plugins) y compuerta del chat (503 "plugin chat apagado" si el plugin chat esta apagado); dentro de try.
 """
 from __future__ import annotations
 
@@ -32,10 +33,20 @@ def _seed_wordflow_fleet() -> None:
     wordflow_agents.seed(get_store())
 
 
-app.include_router(build_router())  # first: its /chat serves the MVP UI
+_chat_deps: list = []
+try:
+    from ..plugin_host.api import build_plugin_router, chat_gate_dependencies
+
+    _chat_deps = chat_gate_dependencies()  # the chat is the first plugin: its routers below get this gate
+    app.include_router(build_plugin_router())  # /plugins, /plugins/{id}/enable|disable
+except Exception as exc:  # never take the Router down for the Plugin Host
+    _chat_deps = []
+    logging.getLogger("riu").warning("plugin_host no montado: %s", exc)
+
+app.include_router(build_router(), dependencies=_chat_deps)  # first: its /chat serves the MVP UI
 app.include_router(build_vault_router())  # /vault: Secret Bank unlock in memory
-app.include_router(build_jobs_router())  # /chat/jobs/run: parallel agent jobs
-app.include_router(build_route_router())  # /chat/route + /chat/router/status: resilient policy routing
+app.include_router(build_jobs_router(), dependencies=_chat_deps)  # /chat/jobs/run: parallel agent jobs
+app.include_router(build_route_router(), dependencies=_chat_deps)  # /chat/route + /chat/router/status: resilient policy routing
 try:
     from .ui_bridge import build_ui_bridge_router
 
