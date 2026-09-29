@@ -1,8 +1,8 @@
 # HANDOFF PROVISIONAL — Router inteligente universal
-Actualizado: 2026-09-29. Provisional: vale hasta que el chat se termine y se mueva a otro repo.
+Actualizado: 2026-09-29 (02:50 Bogotá). Provisional: vale hasta que el chat se termine y se mueva a otro repo.
 Alcance: SOLO el Router, sus conexiones, sus claves (solo nombres), Hugging Face y Vercel. Nada del chat, de las tareas en curso ni del equipo de agentes: eso vive aparte (`Estado y handoff global/`).
 Regla: solo hechos verificados. Lo no verificado dice SIN VERIFICAR.
-Guía para conectar otros repos/MCP: `CONECTAR-ROUTER.md` (misma carpeta).
+Guía para conectar otros repos/MCP: `CONECTAR-ROUTER.md` (misma carpeta). Radiografía del Router: `Readme arquitectura router inteligente universal/HUELLA-DIGITAL-ROUTER.md`. Palabras textuales del Director: `Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-29-director.md`.
 
 ## 0. Tareas del Router (todas las que tienen que ver con el Router viven aquí)
 | # | Tarea | Estado |
@@ -11,7 +11,51 @@ Guía para conectar otros repos/MCP: `CONECTAR-ROUTER.md` (misma carpeta).
 | T-01 | Limpieza de Hugging Face (la parte de Vercel queda para después, por orden del Director) | PASS (HF) · Vercel pendiente |
 | T-03 | Quitar Cerebras del Router y poner Groq | PASS · Router relanzado con el código nuevo y Groq Qwen 3.8 en la cadena g2 (smoke run 36528065394) |
 | T-10 | Conectar cualquier repo/MCP al Router único sin crear otro Router | DOCUMENTADO (`CONECTAR-ROUTER.md`) · sin probar desde otro repo |
+| T-11 | IA local en máquina de 32 GB (DFlash 2, MTP, etc.) | PLANIFICADO · DESPUÉS de terminar Router y pendientes (orden del Director) |
+| T-12 | Cadenas del chat con NVIDIA: Kimi K3 → GLM-5 → DeepSeek V4 Flash | PENDIENTE (hoy el chat solo tiene Nemotron; los agentes ya priorizan así) |
+| T-13 | Prioridad de claves: chat + Hermes + OpenClaw en NVIDIA 1–3; si ocupadas → 4 o Groq | PENDIENTE |
+| T-14 | Autoescalado 16→32 GB (sube al 80 %, duerme a los 5 min) | NO EXISTE · PENDIENTE |
+| T-15 | Plugin abierto en el Router (enchufe) para no tocar más el Router | PENDIENTE (falta comparar candidatos) |
+| T-16 | Selector de grupos/combinaciones + subrouters + thinking, sin romper el principal | PENDIENTE (ZIP de otra IA por analizar) |
+| T-17 | Verificación cruzada contra lo que hizo Opus | EN CURSO (resultado parcial abajo) |
+| T-18 | Prueba del Router y conectar al equipo del plan 4 objetivos (= T-04 global) | PENDIENTE |
+| T-19 | Revisar aceleradores HF y qué se puede usar en máquinas de 16 y 32 GB | PENDIENTE (inventario de otra IA recibido, SIN VERIFICAR) |
 
+## Órdenes 2026-09-29 (Director, 02:06 y 02:35) — plan de 4 pasos
+Regla: se planea todo y se sube UN SOLO Job a Hugging Face al final. Nada se instala antes.
+- Paso 1 (anotar textual): HECHO — `INPUT-BLOCK-VERBATIM-2026-09-29-director.md`. Fidelidad: los textos del Director están copiados tal como llegaron; lo pegado de otras IAs va marcado SIN VERIFICAR.
+- Paso 2 (motores de descarga): PENDIENTE — primero leer los commits de Opus sobre el motor de descarga y extracción; usar ese motor, no otro.
+- Paso 3 (archivos de Fables 5): en revisión. En main ya hay: `Documentos del proyecto/…/lote 1 documentos proyecto/…ENCHUFE_UNIVERSAL_v2….md`, `Documentos del proyecto/Notas del Director (verbatim)/DSL-FABLES-yaiwes-node-executor-xray-v2.md`, `enchufe/validator_v2.py` y `domain/schemas/enchufe_v2.py` (validador y esquema del enchufe v2), y en la carpeta de componentes ruflo `fable-harness.ts`. Falta confirmar si el resumen/código completo de Fables 5 está: si no, el Director sube los archivos donde se indique.
+- Paso 4 (integrar y probar): PENDIENTE hasta cerrar los pasos 2 y 3.
+
+### T-11 IA local (después)
+- Ajustes pedidos: DFlash 2, MTP, Flash Attention ON, caché KV K/V en Q8, Batch 256 (?), uBatch 128 (?). Los dos números con "?" NO están confirmados por el Director.
+- Dónde: un Job aparte de 32 GB. El Router ya tiene un proveedor `local` (variables `RIU_LOCAL_BASE_URL` y `RIU_LOCAL_API_KEY`), así que se conecta sin cambiar el código del Router; solo hay que dar dirección y modelo a la entrada `local` de la cadena.
+- Modelo: buscar uno de 1B–10B en Q4/GGUF (Qwen 3.8 si existe así); "faltan varios modelos" y se decide después. Según el inventario adjunto (SIN VERIFICAR por mí): DFlash 2 necesita el modelo base y su borrador compatibles; MTP solo sirve si el modelo trae cabezas MTP.
+- Nota de hardware: el Router de 16 GB no ejecuta modelos; no se instala nada ahí.
+
+### T-12 / T-13 Cadenas y claves NVIDIA
+- Verificado: no se tocaron las claves NVIDIA. En `agents-yaiwes/common/routes.py` yo solo cambié `EXCLUIDOS` (Cerebras); las prioridades Kimi K3 → GLM-5 → DeepSeek V4 ya estaban (hasta 4 claves NVIDIA y 7 Groq; si una no responde o está ocupada se prueba la siguiente; sondeo cacheado 15 min).
+- Ese orden vale para los agentes. La cadena del chat (`resilience.py`) hoy es solo Nemotron (y Groq en g2). Falta ponerle Kimi K3 y GLM-5 y la regla "NVIDIA 1–3, luego la 4 o Groq". Se hace con un ajuste de configuración, no reescribiendo el Router.
+
+### T-14 Autoescalado (Director)
+- Regla dada: el Router de 16 GB corre 24/7 (con el conector MCP) y es el que despierta a los demás; el siguiente procesador se enciende al llegar al 80 %; el de 32 GB se duerme a los 5 min sin llamadas. Hermes, chat y OpenClaw usan procesadores de 16 GB y saltan al siguiente según necesidad; los de 32 GB son para IA local, generar código y correr workflows por llamada.
+- Verificado en el código: NO está construido. `hf_scheduler.py` solo elige entre HF1/HF2/HF3 con tope de 95 % de RAM y nadie lo llama; `hf_jobs_compute.py` puede lanzar un Job pero solo si se lo piden. Opus lo dejó como pendiente B2.6 (con 80 %/85 % y 15 min; el Director ahora dice 80 % y 5 min: manda el Director).
+
+### T-15 Plugin abierto
+Candidatos: (a) `ruflo-deepseek-harness` (carpeta de plugins de ruflo, guiones Node), (b) enchufe universal de Fables v2 (validador + esquema, ya en `enchufe/` y `domain/schemas/`), (c) los archivos "enchufe universal parte 1 y 2" (bus de plugins de Fables + Kimi) que el Director subió antes: por leer. Decisión: comparar y dejar el que funcione mejor, sin reescribir el Router.
+
+### T-16 Selector / subrouters / thinking
+El ZIP de otra IA (`yaiwes_subrouters_modulares.zip`) trae 4 subrouters (instant, thinking, council, code), perfiles en un JSON y `GET /chat/subrouters/catalog`, apagado por defecto. SIN VERIFICAR, no aplicado. Se analiza antes de integrar. Hay que ubicar el dataset de "thinking" del repo que mencionó el Director.
+
+### T-17 Verificación cruzada con Opus (resultado parcial)
+- Los documentos de Opus (`chat router/03-ESTADO/OPUS-PENDIENTE.md` y `RECUPERACION-OMNIROUTE.yaml`, 2026-09-27) ya no están en main: la limpieza general del 2026-09-29 (orden del Director) los quitó. Existen en la rama `backup-antes-limpieza-20260929`.
+- No creé un Router nuevo. Sobre el Router de Opus solo hice: quitar Cerebras, poner Groq Qwen 3.8, corregir la ruta del banco tras la reorganización (`vault_bridge.py`) y fijar una variable en el lanzador. Pruebas: 168 pasan, 8 fallan (ya fallaban), 0 errores.
+- Construido por Opus y todavía presente (según su nota, no re-probado por mí hoy): chat con Kimi K3, Groq con las claves 2–7.
+- Pendiente de la lista de Opus que NO está construido: autoescalado, OmniRoute como proveedor (además el Director eliminó OmniRoute: esos puntos quedan CANCELADOS), aviso de modelos en el chat, montar módulos de los espejos, puente de almacenamiento HF. Nota: `app.py` todavía intenta montar `omniroute_proxy`, que no existe; el `try` lo tolera.
+- Falta: comparar archivo por archivo el código actual contra la rama de respaldo (solo la carpeta del Router) para confirmar que no se perdió nada con la reorganización.
+
+## T-00 a T-10 — detalle
 ### T-00 — Auditar el Router y dejar uno solo (PASS)
 Un solo Router vivo: un Job de Hugging Face. Rutas probadas con el smoke (secciones 2 y 3). Incidente del vigilante de 32 GB en la sección 8. Evidencia: BITACORA B-0001, B-0002, B-0003, B-0007.
 
