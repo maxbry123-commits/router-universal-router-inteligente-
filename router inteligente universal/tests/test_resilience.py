@@ -302,3 +302,31 @@ def test_auto_is_listed_but_not_configured_when_no_provider_has_a_key(monkeypatc
             monkeypatch.delenv(name, raising=False)
     first = TestClient(chat_app.app).get("/chat/providers").json()["providers"][0]
     assert first["id"] == "auto" and first["configured"] is False
+
+
+def test_send_auto_does_not_save_an_empty_reply(tmp_path, monkeypatch):
+    """A model that answers with nothing creates no conversation and no message: the chat reports the turn as empty."""
+    pytest.importorskip("fastapi")
+    pytest.importorskip("huggingface_hub")
+    from fastapi.testclient import TestClient
+
+    from integration.chat_mvp import app as chat_app
+    from integration.chat_mvp import core, model_pool
+    from integration.chat_mvp import router as rt
+    from integration.chat_mvp.store import Store
+
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"k1": "agent-a"}')
+    monkeypatch.setenv("RIU_CHAT_ALLOW_PROVIDER_LIVE", "1")
+    monkeypatch.setenv("NVIDIA_API_KEY_1", "n")
+    monkeypatch.setattr(core, "cached_discovery", lambda: [])
+    monkeypatch.setattr(core, "call_via_router", lambda *a, **k: {"message": {"role": "assistant", "content": ""}, "finish_reason": "stop",
+                                                                   "usage": {"prompt_tokens": 2, "completion_tokens": 0}})
+    monkeypatch.setattr(model_pool, "POOL", model_pool.ModelPool(fetch=lambda p, k: []))
+    rt.set_store(Store(tmp_path))
+    client = TestClient(chat_app.app)
+    try:
+        resp = client.post("/chat/send", json={"message": "hola", "provider": "auto"}, headers={"X-API-Key": "k1"})
+        body = resp.json()
+        assert resp.status_code == 200 and body["empty"] is True and body["reply"] == "" and body["conversation_id"] is None
+    finally:
+        rt.set_store(None)
