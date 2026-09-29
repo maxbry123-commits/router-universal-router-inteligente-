@@ -9,6 +9,8 @@ options of that chain are worth trying:
   * COOLING     the model failed / timed out recently                              -> skipped for `cooldown` seconds.
     When the cooldown ends ONE request probes the model (a lease of PROBE_LEASE seconds); the others keep skipping it until that probe
     answers (mark_ok) or fails (mark_bad, new cooldown) or the lease runs out. Without this every waiting request would hit a dead model at once.
+    A request that took the lease but never really tried the model (an earlier option answered, or the Router was busy, or the request itself was
+    bad) gives it back with release(): a healthy model must not show as COOLING for 30 s because of that.
   * Unknown list (provider down, no key, empty list, or a provider whose ids are not checked) -> the model is TRIED anyway.
     (asking costs at most LIST_TIMEOUT = 6 s once per provider, then the answer is cached 5 min, or 60 s when unknown)
 If every option is filtered out the caller tries the whole chain (a pool can never leave the chat without a route).
@@ -73,7 +75,7 @@ class ModelPool:
             if hit and now < hit[0] and not force:
                 return hit[1]
         if force:  # providers.list_models keeps its own 5-minute cache: drop it so "ask again" really asks again
-            for stale in [k for k in prov._models_cache if k[0] == provider]:
+            for stale in [k for k in list(prov._models_cache) if k[0] == provider]:  # list(): another thread may add keys meanwhile
                 prov._models_cache.pop(stale, None)
         ids: frozenset[str] | None = None
         for key in prov.env_keys(provider)[:MAX_KEYS_TRIED]:
@@ -91,9 +93,10 @@ class ModelPool:
         return ids
 
     # --- what stopped answering ------------------------------------------------------------------
-    def cooling(self, provider: str, model: str, *, probe: bool = False) -> bool:
+    def cooling(self, provider: str, model: str, *, probe: bool = False, leased: list[tuple[str, str, float]] | None = None) -> bool:
         """True while the model must be skipped. With probe=True the FIRST caller after the cooldown gets False and takes a PROBE_LEASE-second
-        lease (the others still get True); mark_ok / mark_bad settle it. probe=False never changes anything (used for reports)."""
+        lease (the others still get True); mark_ok / mark_bad settle it, release() gives it back. When `leased` is a list, (provider, model, until)
+        of a lease taken here is appended to it. probe=False never changes anything (used for reports)."""
         with self._lock:
             hit = self._bad.get((provider, model))
             if not hit:
@@ -102,7 +105,10 @@ class ModelPool:
             if now < hit[0]:
                 return True
             if probe:
-                self._bad[(provider, model)] = (now + PROBE_LEASE, hit[1])
+                until = now + PROBE_LEASE
+                self._bad[(provider, model)] = (until, hit[1])
+                if leased is not None:
+                    leased.append((provider, model, until))
             return False
 
     def mark_bad(self, provider: str, model: str, why: str = "") -> None:
@@ -113,15 +119,25 @@ class ModelPool:
         with self._lock:
             self._bad.pop((provider, model), None)
 
+    def release(self, provider: str, model: str, until: float) -> None:
+        """Give back a probe lease that was never settled: the model may be probed again at once. Only acts if the entry is still exactly
+        that lease (a newer mark_bad / lease of another request is left alone)."""
+        with self._lock:
+            hit = self._bad.get((provider, model))
+            if hit and hit[0] == until:
+                self._bad[(provider, model)] = (self.clock(), hit[1])
+
     # --- use --------------------------------------------------------------------------------------
-    def filter(self, chain: list[dict[str, Any]], *, probe: bool = False) -> tuple[list[dict[str, Any]], list[str]]:
+    def filter(self, chain: list[dict[str, Any]], *, probe: bool = False,
+               leased: list[tuple[str, str, float]] | None = None) -> tuple[list[dict[str, Any]], list[str]]:
         """Keep the chain order; drop options that are cooling or not listed. Returns (kept, trace lines).
-        probe=True is for a real request (it may take the single probe lease of a model whose cooldown ended); reports use the default."""
+        probe=True is for a real request (it may take the single probe lease of a model whose cooldown ended; pass `leased` to learn which);
+        reports use the default."""
         kept: list[dict[str, Any]] = []
         skipped: list[str] = []
         for entry in chain:
             provider, model = entry["provider"], entry["model"]
-            if self.cooling(provider, model, probe=probe):
+            if self.cooling(provider, model, probe=probe, leased=leased):
                 skipped.append(f"{provider}/{model}:COOLING")
                 continue
             ids = self.listed(provider)
