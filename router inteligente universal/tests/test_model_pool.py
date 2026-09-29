@@ -266,6 +266,31 @@ def test_a_dead_model_does_not_put_a_healthy_key_in_cooldown():
     assert r.execute("nvidia", ["a"], "alive", [], 5, None, chat)["message"]["content"] == "ok"  # ... the key is fine for other models
 
 
+def test_when_the_option_time_is_spent_the_other_keys_are_not_tried_or_blamed():
+    """Seen live (2026-09-29): GLM timed out at 30 s and keys 2-4 then got 1 s attempts (+3 s, and marked as failures)."""
+    r = R.Router(R.CircuitBreaker(3, 60), R.AdaptiveLimiter((5,), 1, 2))
+    tried = []
+
+    def chat(provider, key, model, messages, max_tokens, temperature=None):
+        tried.append(key)
+        time.sleep(0.15)  # slower than the option time below
+        raise P.ProviderError("TimeoutError", "request failed")
+
+    token = P.ATTEMPT_DEADLINE.set(time.monotonic() + 0.05)
+    try:
+        with pytest.raises(R.AllKeysFailed, match="TimeoutError"):
+            r.execute("nvidia", ["a", "b", "c"], "slow-model", [], 5, None, chat)
+    finally:
+        P.ATTEMPT_DEADLINE.reset(token)
+    assert tried == ["a"]  # the first key used the time; b and c were not tried ...
+    assert r.breaker.fails(R.key_id("nvidia", "a", "slow-model")) == 1
+    assert r.breaker.fails(R.key_id("nvidia", "b", "slow-model")) == 0 and r.breaker.fails(R.key_id("nvidia", "c", "slow-model")) == 0  # ... nor blamed
+    tried.clear()
+    with pytest.raises(R.AllKeysFailed):  # no deadline (last option of a chain): every key still gets its turn
+        r.execute("nvidia", ["a", "b", "c"], "other-model", [], 5, None, chat)
+    assert tried == ["a", "b", "c"]
+
+
 def test_nvidia_keys_are_tried_1_2_3_then_4_and_a_busy_key_goes_last(monkeypatch):
     for i in (4, 2, 1, 3):  # set in mixed order on purpose: the pool order is 1, 2, 3, 4
         monkeypatch.setenv(f"NVIDIA_API_KEY_{i}", f"n{i}")
