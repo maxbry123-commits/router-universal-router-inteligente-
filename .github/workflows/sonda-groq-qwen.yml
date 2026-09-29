@@ -1,0 +1,52 @@
+name: Sonda Groq Qwen (una vez, orden del Director 2026-09-29)
+
+# Lista los modelos de Groq que contienen "qwen" y prueba uno con 5 tokens. No imprime claves. Se borra sola al final.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      K2: ${{ secrets.GROQ_API_KEY_2 }}
+      K3: ${{ secrets.GROQ_API_KEY_3 }}
+      GH_TOKEN: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.GH_CLASSIC_FULL_2 || secrets.RIU_GITHUB_PAT_FULL_ACCESO || secrets.GH_JOB_PUSH_TOKEN }}
+    steps:
+      - name: Sonda
+        run: |
+          python3 - <<'EOF_PY'
+          import json, os, urllib.request
+          H = {"User-Agent": "riu-sonda/1.0", "Accept": "application/json"}
+          def call(url, key, body=None):
+              req = urllib.request.Request(url, data=json.dumps(body).encode() if body else None, method="POST" if body else "GET",
+                                           headers={**H, "Authorization": "Bearer " + key, "Content-Type": "application/json"})
+              with urllib.request.urlopen(req, timeout=40) as r:
+                  return json.loads(r.read().decode())
+          key = os.environ.get("K2") or os.environ.get("K3")
+          if not key:
+              print("::warning title=GROQ::sin clave GROQ_API_KEY_2/3 en el repo"); raise SystemExit(0)
+          try:
+              ids = sorted(m["id"] for m in call("https://api.groq.com/openai/v1/models", key)["data"])
+              print("::notice title=GROQ_MODELOS_QWEN::" + " | ".join(i for i in ids if "qwen" in i.lower()))
+              print("::notice title=GROQ_TODOS::" + " | ".join(ids)[:1500])
+          except Exception as e:
+              print("::warning title=GROQ_LISTA_ERROR::" + type(e).__name__ + " " + str(e)[:150]); raise SystemExit(0)
+          cand = [i for i in ids if "qwen" in i.lower() and "3.8" in i]
+          for mid in cand[:2]:
+              try:
+                  out = call("https://api.groq.com/openai/v1/chat/completions", key,
+                             {"model": mid, "messages": [{"role": "user", "content": "Responde solo: OK"}], "max_tokens": 8})
+                  print("::notice title=GROQ_PRUEBA_%s::%s" % (mid.replace("/", "_"), str(out["choices"][0]["message"].get("content"))[:60]))
+              except Exception as e:
+                  print("::warning title=GROQ_PRUEBA_ERROR_%s::%s %s" % (mid.replace("/", "_"), type(e).__name__, str(e)[:150]))
+          EOF_PY
+      - name: Borrarse
+        if: always()
+        run: |
+          U="https://api.github.com/repos/${{ github.repository }}/contents/.github/workflows/sonda-groq-qwen.yml"
+          SHA=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "$U" | python3 -c "import sys,json;print(json.load(sys.stdin).get('sha',''))")
+          [ -n "$SHA" ] && curl -s -X DELETE -H "Authorization: Bearer $GH_TOKEN" "$U" -d "{\"message\":\"sonda Groq Qwen: se borra sola [skip ci]\",\"sha\":\"$SHA\"}" | head -c 80
