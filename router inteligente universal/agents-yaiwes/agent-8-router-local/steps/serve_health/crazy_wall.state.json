@@ -1,0 +1,20 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-8-router-local",
+ "framework": "pocketflow",
+ "status": "PENDING",
+ "updated_at": "2026-09-29T20:30:00Z",
+ "group": "router-local",
+ "current_nodes": [
+  "serve_health"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [
+  "PENDING: falta Agents Run only=agent-8-router-local GET /health 200"
+ ],
+ "evidence": [],
+ "attempts": 0,
+ "route_trace": []
+}
