@@ -3,6 +3,7 @@ name: TMP Bloque2 verify
 # TEMPORAL (Bloque 2, 2026-09-29). Se borra al terminar. Solo workflow_dispatch.
 # tests: suite completa en main y en bloque2-agentes (lista de fallos ordenada + huella sha256) y archivos de prueba de la rama con -rA.
 # live: grupo assistants con las claves reales (cadena, puerta OpenAI, /chat/send auto). Resultados como anotaciones ::notice. Nunca se imprime un secreto.
+# (segundo commit sin [skip ci] para que GitHub registre el workflow)
 
 on:
   workflow_dispatch:
