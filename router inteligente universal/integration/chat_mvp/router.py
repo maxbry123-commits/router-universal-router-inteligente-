@@ -237,7 +237,10 @@ def build_router() -> APIRouter:
                 result = await asyncio.to_thread(core.run_completion, st, owner, req.provider, key, req.model, msgs, req.max_tokens,
                                                  req.temperature, use_cache=req.cache, refresh=req.refresh)
         except RuntimeError as exc:
-            raise HTTPException(status_code=502, detail={"error": str(exc), "trace": getattr(exc, "trace", None)} if auto else str(exc)) from exc
+            trace = getattr(exc, "trace", None)
+            # A plain string on purpose: the current chat page writes `detail` into a sentence (an object would show as [object Object]).
+            detail = f"{exc} | " + " ; ".join(trace) if (auto and trace) else str(exc)
+            raise HTTPException(status_code=502, detail=detail[:900]) from exc
         reply = result["message"].get("content") or ""
         if reply:
             if not conv:
