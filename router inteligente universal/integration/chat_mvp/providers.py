@@ -93,8 +93,10 @@ def _http(method: str, url: str, key: str | None, body: dict[str, Any] | None, t
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 https URLs from the fixed registry
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:160].replace("\n", " ")
-        raise ProviderError(exc.code, detail.replace(key, "***") if key else detail) from exc
+        detail = exc.read().decode("utf-8", errors="replace").replace("\n", " ")
+        if key:
+            detail = detail.replace(key, "***")  # mask BEFORE cutting: a cut through the key would leave a prefix of it
+        raise ProviderError(exc.code, detail[:160]) from exc
     except Exception as exc:  # noqa: BLE001
         raise ProviderError(type(exc).__name__, "request failed") from exc
 
