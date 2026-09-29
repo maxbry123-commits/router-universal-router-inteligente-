@@ -732,3 +732,18 @@ def test_a_typo_in_the_attempt_timeout_setting_falls_back_to_30(monkeypatch):
     assert R.attempt_timeout_s() == 0.0  # 0 = no limit, on purpose
     monkeypatch.setenv("RIU_CHAT_ATTEMPT_TIMEOUT", "")
     assert R.attempt_timeout_s() == 30.0
+
+
+def test_a_413_too_large_is_a_request_problem_no_other_key_no_breaker_no_cooling(monkeypatch):
+    r = R.Router(R.CircuitBreaker(3, 120), R.AdaptiveLimiter((5,), 1, 2))
+    tried = []
+
+    def too_large(provider, key, model, messages, max_tokens, temperature=None):
+        tried.append(key)
+        raise P.ProviderError(413, "request too large")
+
+    for _ in range(5):  # five big requests must not open the breaker of any key
+        with pytest.raises(P.ProviderError):
+            r.execute("nvidia", ["a", "b"], "m", [], 5, None, too_large)
+    assert tried == ["a"] * 5
+    assert r.breaker.allow(R.key_id("nvidia", "a", "m"))
