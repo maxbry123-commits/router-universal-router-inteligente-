@@ -1,0 +1,76 @@
+name: tmp-nvidia-diag
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      K1: ${{ secrets.NVIDIA_API_KEY_1 }}
+      K2: ${{ secrets.NVIDIA_API_KEY_2 }}
+      K3: ${{ secrets.NVIDIA_API_KEY_3 }}
+      K4: ${{ secrets.NVIDIA_API_KEY_4 }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -q requests
+      - name: script
+        run: |
+          cat > d.py <<'PY'
+          import os, sys, time, requests
+          B = "https://integrate.api.nvidia.com/v1"
+          M = {"kimi": "moonshotai/kimi-k3", "glm": "z-ai/glm-5.3", "nemo": "nvidia/nemotron-3-super-120b-a12b"}
+          def hdr(k): return {"Authorization": "Bearer " + k, "Content-Type": "application/json"}
+          def note(t, m): print("::notice title=%s::%s" % (t, m), flush=True)
+          def call(k, model, mt=16, stream=False):
+              t0 = time.time()
+              body = {"model": model, "messages": [{"role": "user", "content": "di OK"}], "max_tokens": mt}
+              try:
+                  if stream:
+                      body["stream"] = True
+                      r = requests.post(B + "/chat/completions", headers=hdr(k), json=body, timeout=60, stream=True)
+                      ttft = None
+                      for line in r.iter_lines():
+                          if line and ttft is None:
+                              ttft = time.time() - t0
+                      return "%s ttft=%s total=%.1fs" % (r.status_code, ("%.1fs" % ttft) if ttft else "none", time.time() - t0)
+                  r = requests.post(B + "/chat/completions", headers=hdr(k), json=body, timeout=60)
+                  ct = ""
+                  try:
+                      ct = (r.json().get("usage") or {}).get("completion_tokens", "")
+                  except Exception:
+                      pass
+                  return "%s %.1fs toks=%s %s" % (r.status_code, time.time() - t0, ct, "" if r.status_code == 200 else r.text[:120].replace(chr(10), " "))
+              except Exception as e:
+                  return "EXC %s %.1fs %s" % (type(e).__name__, time.time() - t0, str(e)[:100])
+          mode = sys.argv[1]
+          if mode == "key":
+              i = sys.argv[2]; k = os.environ["K" + i]; t0 = time.time()
+              try:
+                  r = requests.get(B + "/models", headers=hdr(k), timeout=60); s = "%s %.1fs" % (r.status_code, time.time() - t0)
+              except Exception as e:
+                  s = "EXC %s %.1fs" % (type(e).__name__, time.time() - t0)
+              note("K%s_models" % i, s)
+              for n, m in M.items():
+                  a = call(k, m); b = call(k, m)
+                  note("K%s_%s" % (i, n), "1a: " + a + " || 2a: " + b)
+          else:
+              k = os.environ["K1"]
+              for n in ("kimi", "glm", "nemo"):
+                  note("STREAM_K1_" + n, call(k, M[n], 16, True))
+              for n in ("kimi", "glm", "nemo"):
+                  note("MT256_K1_" + n, call(k, M[n], 256))
+          PY
+      - name: key 1
+        run: python d.py key 1
+      - name: key 2
+        run: python d.py key 2
+      - name: key 3
+        run: python d.py key 3
+      - name: key 4
+        run: python d.py key 4
+      - name: stream and max_tokens
+        run: python d.py extra
