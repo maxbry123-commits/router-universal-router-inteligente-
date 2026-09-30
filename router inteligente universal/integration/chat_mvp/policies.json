@@ -27,6 +27,32 @@
     }
    ]
   },
+  "assistants": {
+   "authorized_fallback": true,
+   "chain": [
+    {
+     "provider": "nvidia",
+     "model": "moonshotai/kimi-k3"
+    },
+    {
+     "provider": "nvidia",
+     "model": "z-ai/glm-5.3"
+    },
+    {
+     "provider": "groq",
+     "model": "qwen/qwen3.8-27b"
+    },
+    {
+     "provider": "hf",
+     "model": "deepseek-ai/DeepSeek-V4-Flash",
+     "deepseek": true
+    },
+    {
+     "provider": "nvidia",
+     "model": "nvidia/nemotron-3-super-120b-a12b"
+    }
+   ]
+  },
   "code": {
    "authorized_fallback": true,
    "chain": [
