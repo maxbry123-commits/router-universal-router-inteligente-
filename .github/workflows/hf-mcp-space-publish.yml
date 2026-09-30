@@ -2,6 +2,10 @@ name: HF MCP Space Publish (manual maintenance only)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".mcp-space-deploy-trigger"
 
 
 permissions:
@@ -28,86 +32,148 @@ jobs:
           curl -LsSf https://hf.co/cli/install.sh | bash
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Build surgical dual-MCP patch
+      - name: Build hardened Claude-compatible MCP patch
         run: |
           python - <<'PY'
           import py_compile
+          import re
           import urllib.request
 
           url = "https://huggingface.co/spaces/COMAND-CENTER-1/claude-github-mcp-backup/resolve/main/app.py"
           source = urllib.request.urlopen(url, timeout=30).read().decode("utf-8")
+
+          # Remove the unused OAuth provider. It was instantiated but never attached
+          # to FastMCP and only added another credential/expiry failure surface.
+          source = source.replace("from fastmcp.server.auth import AuthContext\n", "")
+          source = source.replace("from fastmcp.server.auth.providers.huggingface import HuggingFaceProvider\n", "")
+          source = source.replace("from fastmcp.server.middleware import AuthMiddleware\n", "")
+
+          auth_start = source.find("def _require_hf_owner(")
+          mcp_start = source.find("mcp = FastMCP(")
+          if auth_start != -1:
+              if mcp_start == -1 or mcp_start <= auth_start:
+                  raise SystemExit("ABORT: OAuth removal markers invalid")
+              source = source[:auth_start] + source[mcp_start:]
+
+          source = source.replace(
+              '"mcp_auth": "huggingface_oauth"',
+              '"mcp_auth": "secret_path_stateless"',
+          )
 
           marker = 'if __name__ == "__main__":'
           if marker not in source:
               raise SystemExit("ABORT: main block not found")
 
           head = source.split(marker, 1)[0]
+
+          # Add a public, non-secret health endpoint once.
+          if '@mcp.custom_route("/healthz"' not in head:
+              head += r'''
+from starlette.responses import JSONResponse as _HealthJSONResponse
+
+@mcp.custom_route("/healthz", methods=["GET"])
+async def _healthz(_request):
+    primary = bool(os.getenv("MCP_SECRET_PATH", "").strip())
+    secondary = bool(os.getenv("MCP_SECRET_HF", "").strip())
+    return _HealthJSONResponse({
+        "ok": True,
+        "server": "Maxbry GitHub Backup",
+        "transport": "streamable-http",
+        "stateless": True,
+        "mcp_paths_active": int(primary) + int(secondary),
+        "github_secret_present": bool(os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")),
+    })
+
+'''
+
           tail = r'''if __name__ == "__main__":
-              import uvicorn
+    import asyncio
+    import uvicorn
+    from starlette.responses import StreamingResponse
 
-              port = int(os.getenv("PORT", os.getenv("GRADIO_SERVER_PORT", "7860")))
+    port = int(os.getenv("PORT", os.getenv("GRADIO_SERVER_PORT", "7860")))
 
-              # Bridge 1: existing MCP route. Keep it active.
-              primary_secret = os.getenv("MCP_SECRET_PATH", "").strip().strip("/")
+    primary_secret = os.getenv("MCP_SECRET_PATH", "").strip().strip("/")
+    secondary_secret = os.getenv("MCP_SECRET_HF", "").strip().strip("/")
 
-              # Bridge 2: new MCP route. Optional until the secret exists.
-              secondary_secret = os.getenv("MCP_SECRET_HF", "").strip().strip("/")
+    if len(primary_secret) < 20:
+        raise RuntimeError("MCP_SECRET_PATH requerido y debe tener al menos 20 caracteres")
+    if secondary_secret and len(secondary_secret) < 20:
+        raise RuntimeError("MCP_SECRET_HF debe tener al menos 20 caracteres")
 
-              if len(primary_secret) < 20:
-                  raise RuntimeError(
-                      "MCP_SECRET_PATH requerido y debe tener al menos 20 caracteres"
-                  )
-              if secondary_secret and len(secondary_secret) < 20:
-                  raise RuntimeError(
-                      "MCP_SECRET_HF debe tener al menos 20 caracteres"
-                  )
+    primary_path = f"/{primary_secret}/mcp"
 
-              primary_path = f"/{primary_secret}/mcp"
-              alias_paths = []
-              if secondary_secret and secondary_secret != primary_secret:
-                  alias_paths.append(f"/{secondary_secret}/mcp")
+    alias_paths = []
+    if secondary_secret and secondary_secret != primary_secret:
+        # Existing recovery bridge.
+        alias_paths.append(f"/{secondary_secret}/mcp")
 
-              # Stateless HTTP survives Space restarts without stale MCP session IDs.
-              mcp_http_app = mcp.http_app(
-                  path=primary_path,
-                  stateless_http=True,
-              )
+        # Isolated connector slots: use one per long-lived Claude session.
+        # Distinct URLs reduce cross-session interference in Anthropic's remote MCP layer.
+        for slot in range(1, 5):
+            alias_paths.append(f"/{secondary_secret}/slot-{slot}/mcp")
 
-              class _MCPPathAlias:
-                  """Expose one FastMCP server through multiple secret paths."""
+    mcp_http_app = mcp.http_app(
+        path=primary_path,
+        stateless_http=True,
+    )
 
-                  def __init__(self, app, aliases, target):
-                      self.app = app
-                      self.aliases = set(aliases)
-                      self.target = target
+    class _ClaudeMCPCompat:
+        """Stateless MCP + GET/SSE compatibility + multiple isolated URL aliases."""
 
-                  async def __call__(self, scope, receive, send):
-                      if scope.get("type") in {"http", "websocket"}:
-                          path = scope.get("path", "")
-                          trailing = path.endswith("/")
-                          normalized = (
-                              path[:-1]
-                              if trailing and len(path) > 1
-                              else path
-                          )
+        def __init__(self, app, aliases, target):
+            self.app = app
+            self.aliases = set(aliases)
+            self.target = target
+            self.mcp_paths = {target, *self.aliases}
 
-                          if normalized in self.aliases:
-                              scope = dict(scope)
-                              rewritten = self.target + ("/" if trailing else "")
-                              scope["path"] = rewritten
-                              scope["raw_path"] = rewritten.encode("utf-8")
+        async def __call__(self, scope, receive, send):
+            if scope.get("type") == "http":
+                path = scope.get("path", "")
+                trailing = path.endswith("/")
+                normalized = path[:-1] if trailing and len(path) > 1 else path
 
-                      await self.app(scope, receive, send)
+                # Claude/Anthropic remote MCP clients may open an optional GET SSE
+                # listening stream. FastMCP stateless mode returns 405 by default,
+                # which some Claude versions incorrectly treat as a fatal disconnect.
+                # Serve a harmless keep-alive SSE stream instead.
+                if scope.get("method") == "GET" and normalized in self.mcp_paths:
+                    async def _events():
+                        yield b": connected\n\n"
+                        while True:
+                            await asyncio.sleep(15)
+                            yield b": keepalive\n\n"
 
-              app = _MCPPathAlias(
-                  mcp_http_app,
-                  alias_paths,
-                  primary_path,
-              )
+                    response = StreamingResponse(
+                        _events(),
+                        status_code=200,
+                        media_type="text/event-stream",
+                        headers={
+                            "Cache-Control": "no-cache, no-transform",
+                            "X-Accel-Buffering": "no",
+                        },
+                    )
+                    await response(scope, receive, send)
+                    return
 
-              print(f"MCP_PATHS_ACTIVE={1 + len(alias_paths)}")
-              uvicorn.run(app, host="0.0.0.0", port=port)
-          '''
+                if normalized in self.aliases:
+                    scope = dict(scope)
+                    rewritten = self.target + ("/" if trailing else "")
+                    scope["path"] = rewritten
+                    scope["raw_path"] = rewritten.encode("utf-8")
+
+            await self.app(scope, receive, send)
+
+    app = _ClaudeMCPCompat(
+        mcp_http_app,
+        alias_paths,
+        primary_path,
+    )
+
+    print(f"MCP_PATHS_ACTIVE={1 + len(alias_paths)}")
+    print("CLAUDE_GET_SSE_COMPAT=enabled")
+    uvicorn.run(app, host="0.0.0.0", port=port)
+'''
 
           patched = head + tail
           out = "/tmp/app.py"
@@ -115,12 +181,16 @@ jobs:
               f.write(patched)
 
           py_compile.compile(out, doraise=True)
-          assert "MCP_SECRET_PATH" in patched
-          assert "MCP_SECRET_HF" in patched
-          assert "stateless_http=True" in patched
-          assert "_MCPPathAlias" in patched
 
-          print("PATCH_OK dual-path + stateless + syntax")
+          assert "stateless_http=True" in patched
+          assert "MCP_SECRET_HF" in patched
+          assert "_ClaudeMCPCompat" in patched
+          assert "StreamingResponse" in patched
+          assert "slot-4" not in patched  # slot URLs are generated at runtime
+          assert "HuggingFaceProvider" not in patched
+          assert '@mcp.custom_route("/healthz"' in patched
+
+          print("PATCH_OK stateless + GET/SSE compat + 4 isolated connector slots + no unused OAuth")
           PY
 
       - name: Publish app.py to Hugging Face with OIDC
