@@ -297,3 +297,695 @@ Ruta:
 
 Estado:
 CODE_PRESENT / RUNTIME_NETWORK_TEST_PENDING.
+
+
+---
+
+## INPUT BLOCK VERBATIM — HF ROUTER CONTROL PLANE + PUENTE GITHUB — 2026-09-30
+
+Sí. Te dejo un **handoff copiable** con la trazabilidad exacta de lo que preparé para conectar **Hugging Face ↔ Router de GitHub**, separando lo que quedó en código de lo que todavía requiere activación en runtime.
+
+```markdown id="bjjc59"
+# HANDOFF — HF ROUTER CONTROL PLANE + PUENTE GITHUB
+Actualizado: 2026-09-30
+
+## 1. OBJETIVO
+
+Mantener UN Router principal en Hugging Face:
+
+GitHub
+  ↓
+HF Job permanente cpu-basic 16 GB
+  ↓
+FastAPI Router
+  ├── Plugin Host
+  ├── puente HTTP hacia otros routers
+  ├── control de workers HF
+  └── autoscaling 16/32 GB
+
+Política pedida:
+
+- 1 controlador HF 16 GB encendido de forma continua.
+- CPU >= 85% O RAM >= 85% → crear worker adicional.
+- Presión principalmente CPU → cpu-basic 16 GB.
+- Presión RAM → cpu-upgrade 32 GB.
+- Worker temporal sin trabajo durante 5 minutos → cancelarlo.
+- Máximo inicial: 4 workers.
+- Los workers NO pueden autoscalarse entre ellos.
+- El código fuente vive en GitHub.
+- Hugging Face ejecuta ese código.
+- FastAPI/HTTP es el puente hacia otros routers/componentes.
+
+
+# 2. REPO PRINCIPAL
+
+GitHub:
+
+maxbry123-commits/router-universal-router-inteligente-
+
+Raíz relevante:
+
+router inteligente universal/
+
+
+# 3. CONTROLADOR HF EXISTENTE
+
+Ya existía este sistema:
+
+.github/workflows/riu-router-job-central.yml
+
+        ↓
+
+router inteligente universal/
+agents-yaiwes/common/router_job_persistent.py
+
+        ↓
+
+HF Jobs API
+
+        ↓
+
+cpu-basic 16 GB
+
+        ↓
+
+FastAPI:
+integration/chat_mvp/app.py
+
+
+Último Job que verifiqué vivo:
+
+6abc32754c46ef1987032c93
+
+Flavor:
+
+cpu-basic
+
+RAM:
+
+16 GB
+
+Estado al comprobarlo:
+
+RUNNING
+
+
+IMPORTANTE:
+Ese Job arrancó ANTES de varios cambios nuevos.
+Aunque router_job_persistent.py actualiza el repo periódicamente,
+los módulos Python ya importados NO se recargan solos.
+
+Por tanto:
+
+CÓDIGO NUEVO EN MAIN = SÍ
+CARGADO EN EL JOB VIEJO = NO GARANTIZADO
+
+Para activar completamente el nuevo control plane hace falta UN relanzamiento
+controlado del Router.
+
+
+# 4. PUENTE PARA CONECTAR OTRO ROUTER
+
+Creé un plugin independiente:
+
+router inteligente universal/
+plugins/
+remote_router/
+  ├── __init__.py
+  ├── bridge.py
+  └── ficha.json
+
+
+## bridge.py
+
+Commit:
+
+f0bca256477b2d6d4aedc6bfeb9a4a77ac2a1e2d
+
+Función:
+
+Router principal HF
+    ↓
+Plugin Host
+    ↓
+remote_router
+    ↓
+HTTP / HTTPS
+    ↓
+otro Router
+
+
+Configuración por variables, SIN cambiar código:
+
+RIU_REMOTE_ROUTER_URL
+RIU_REMOTE_ROUTER_API_KEY
+RIU_REMOTE_ROUTER_AUTH_HEADER
+RIU_REMOTE_ROUTER_AUTH_PREFIX
+RIU_REMOTE_ROUTER_TIMEOUT_S
+
+Endpoints configurables:
+
+RIU_REMOTE_ROUTER_HEALTH_PATH
+default = /health
+
+RIU_REMOTE_ROUTER_MODELS_PATH
+default = /chat/models
+
+RIU_REMOTE_ROUTER_INVOKE_PATH
+default = /chat/send
+
+
+Acciones soportadas:
+
+status
+models
+invoke
+
+
+## ficha.json
+
+Commit:
+
+373456663be7103833673ab04c0237064b920dcc
+
+Registra el plugin en el Plugin Host existente.
+
+Estado por defecto:
+
+enabled_default = false
+
+Esto es intencional:
+el puente queda instalado pero apagado hasta poner la URL/API key
+del segundo Router.
+
+
+## __init__.py
+
+Commit:
+
+ac2b4f80de27c5bfd9c52362d94f9b0d3a95be81
+
+
+# 5. ENDPOINT GENÉRICO PARA LLAMAR PLUGINS
+
+Archivo modificado:
+
+router inteligente universal/
+integration/plugin_host/api.py
+
+Commit:
+
+7cd4f30f4d05ccb8cb45d29b43e86a6c312898af
+
+
+Añadí:
+
+POST /plugins/{plugin_id}/call/{action}
+
+
+Ejemplo conceptual:
+
+POST /plugins/remote_router/call/status
+
+POST /plugins/remote_router/call/models
+
+POST /plugins/remote_router/call/invoke
+
+
+Todo pasa por:
+
+PluginHost.call()
+
+Por tanto conserva:
+
+- registro de plugins
+- allowlist de acciones
+- timeout
+- estado on/off
+- manejo degradado de errores
+- autenticación del Router
+
+
+# 6. AUTOSCALER HF
+
+Archivo nuevo:
+
+router inteligente universal/
+integration/hf_worker_pool.py
+
+Commit:
+
+b0eb32a60fd38c5f1be057d1197d78d48de6eeec
+
+
+## Política implementada
+
+HF_AUTOSCALE_THRESHOLD
+default = 85
+
+HF_AUTOSCALE_IDLE_SECONDS
+default = 300
+
+HF_AUTOSCALE_SAMPLE_SECONDS
+default = 10
+
+HF_AUTOSCALE_HOT_SAMPLES
+default = 3
+
+HF_AUTOSCALE_MAX_WORKERS
+default = 4
+
+
+Micro flujo:
+
+CPU >= 85%
+      OR
+RAM >= 85%
+      ↓
+3 muestras calientes
+      ↓
+SCALE OUT
+
+
+Selección:
+
+CPU alta
+→ cpu-basic
+→ 16 GB
+
+RAM alta
+→ cpu-upgrade
+→ 32 GB
+
+
+Worker sin uso:
+
+idle >= 300 segundos
+→ HfApi.cancel_job()
+→ worker apagado
+
+
+Protección anti-recursión:
+
+HF_AUTOSCALE_CHILD=1
+
+Los workers secundarios reciben esa variable.
+
+Resultado:
+
+CONTROLADOR
+→ puede crear workers
+
+WORKER
+→ NO puede crear otros workers
+
+
+# 7. API DEL CONTROL PLANE
+
+Archivo nuevo:
+
+router inteligente universal/
+integration/hf_control_api.py
+
+Commit:
+
+c5e784579f4cb76adf2373c8ae266dabdda3cf7a
+
+
+Endpoints:
+
+GET /control/hf/status
+
+GET /control/hf/workers
+
+POST /control/hf/workers/ensure
+
+POST /control/hf/invoke
+
+
+Ejemplo:
+
+GET /control/hf/status
+
+devuelve conceptualmente:
+
+{
+  "role": "permanent-controller",
+  "threshold_percent": 85,
+  "idle_seconds": 300,
+  "cpu_percent": ...,
+  "ram_percent": ...,
+  "workers": [...],
+  "max_workers": 4,
+  "jobs_token_present": true/false
+}
+
+
+POST /control/hf/workers/ensure
+
+permite pedir:
+
+cpu-basic
+
+o
+
+cpu-upgrade
+
+
+POST /control/hf/invoke
+
+selecciona un worker vivo y envía la tarea.
+
+
+# 8. CABLEADO EN FASTAPI PRINCIPAL
+
+Archivo:
+
+router inteligente universal/
+integration/chat_mvp/app.py
+
+Commit:
+
+898cec426a0866e2ecca2d306dfcf341b9117466
+
+
+Se añadió montaje protegido:
+
+install_hf_control_plane(app)
+
+
+Resultado:
+
+FastAPI principal
+  ├── /health
+  ├── /chat/*
+  ├── /plugins/*
+  └── /control/hf/*
+
+
+Está dentro de try/except:
+
+si el control plane falla al cargar,
+NO debe tumbar el Router completo.
+
+
+# 9. LANZADOR HF 16 GB / WATCHDOG
+
+Archivo:
+
+.github/workflows/riu-router-job-central.yml
+
+
+Cambio principal:
+
+commit
+
+2297a64d8fa6d2d1a418942600d8610ea4dc17cf
+
+
+Luego parche de seguridad:
+
+79a55485e7f5db97607524ebd0f7d1b4bcc4ad6c
+
+
+Cambios realizados:
+
+- cpu-basic sigue siendo el controlador de 16 GB.
+- se añadió psutil.
+- se preparó el token específico:
+  HF_CONTROL_JOBS_TOKEN
+- se añadió vigilancia periódica.
+- objetivo de vida:
+  7d
+  ↓
+  fallback 48h
+  ↓
+  fallback 24h
+- antes de crear un reemplazo comprueba si ya existe
+  un controlador vivo.
+- NO debe crear otro controlador si el actual está sano.
+
+
+Watchdog:
+
+cada 30 minutos
+
+Router vivo
+→ no hacer nada
+
+Router desaparecido
+→ lanzar sustituto
+
+
+# 10. TOKEN QUE FALTA PARA ACTIVAR EL AUTOSCALER
+
+El token antiguo:
+
+HF_TOKEN_1
+
+dio:
+
+401 Unauthorized
+Invalid user token
+
+
+Por eso NO lo dejé como autoridad del nuevo autoscaler.
+
+
+Nuevo nombre preparado:
+
+HF_CONTROL_JOBS_TOKEN
+
+
+Debe tener permisos de Hugging Face Jobs suficientes para:
+
+- list_jobs
+- inspect_job
+- run_job
+- cancel_job
+
+
+Regla implementada:
+
+si HF_CONTROL_JOBS_TOKEN NO existe
+
+→ NO cancelar nada
+→ NO relanzar nada
+→ NO tocar el Router actual
+
+
+Esto quedó en:
+
+commit
+
+79a55485e7f5db97607524ebd0f7d1b4bcc4ad6c
+
+
+# 11. ESTADO REAL AL TERMINAR MI INTERVENCIÓN
+
+[PASS] Repo GitHub localizado.
+
+[PASS] Router principal FastAPI localizado.
+
+[PASS] Job HF 16 GB existente verificado RUNNING.
+
+[PASS] Plugin Host existente reutilizado.
+
+[PASS] remote_router creado.
+
+[PASS] puente HTTP/FastAPI preparado.
+
+[PASS] plugin registrado.
+
+[PASS] endpoint genérico /plugins/{id}/call/{action} creado.
+
+[PASS] hf_worker_pool creado.
+
+[PASS] umbral 85% implementado.
+
+[PASS] CPU → 16 GB.
+
+[PASS] RAM → 32 GB.
+
+[PASS] idle 5 min → cancel worker.
+
+[PASS] protección anti-autoscaling recursivo.
+
+[PASS] API /control/hf/* creada.
+
+[PASS] API montada en FastAPI principal.
+
+[PASS] workflow preparado para watchdog.
+
+[PASS] protección si falta HF_CONTROL_JOBS_TOKEN.
+
+[PENDIENTE] crear/configurar HF_CONTROL_JOBS_TOKEN con permiso Jobs.
+
+[PENDIENTE] relanzar UNA vez el controlador para cargar el código nuevo.
+
+[PENDIENTE] poner RIU_REMOTE_ROUTER_URL cuando se conozca
+            el runtime del otro Router.
+
+[PENDIENTE] poner RIU_REMOTE_ROUTER_API_KEY si el otro Router la necesita.
+
+[PENDIENTE] habilitar plugin remote_router.
+
+[PENDIENTE] smoke test real después del relanzamiento.
+
+
+# 12. ACTIVACIÓN FINAL QUE DEBE HACER EL SIGUIENTE AGENTE
+
+NO reconstruir nada.
+
+Secuencia:
+
+1. Verificar que existe:
+   HF_CONTROL_JOBS_TOKEN
+
+2. Confirmar permiso Hugging Face Jobs.
+
+3. Relanzar UNA SOLA VEZ:
+   RIU Router Job Central
+
+4. Esperar:
+   /health = 200
+
+5. Comprobar:
+   GET /control/hf/status
+
+Esperado:
+
+role = permanent-controller
+threshold_percent = 85
+idle_seconds = 300
+jobs_token_present = true
+
+
+6. Comprobar plugins:
+
+GET /plugins
+
+
+Debe aparecer:
+
+remote_router
+
+
+7. Configurar:
+
+RIU_REMOTE_ROUTER_URL=https://URL-RUNTIME-DEL-OTRO-ROUTER
+
+RIU_REMOTE_ROUTER_API_KEY=...
+
+
+8. Encender:
+
+POST /plugins/remote_router/enable
+
+
+9. Probar:
+
+POST /plugins/remote_router/call/status
+
+
+10. Probar llamada real:
+
+POST /plugins/remote_router/call/invoke
+
+
+# 13. ARQUITECTURA FINAL
+
+                   GITHUB
+                     │
+                     │ código fuente
+                     ▼
+          router-universal-router-inteligente-
+                     │
+                     │ workflow / clone
+                     ▼
+          HF CONTROLLER cpu-basic
+                 16 GB
+                     │
+       ┌─────────────┼──────────────┐
+       │             │              │
+       ▼             ▼              ▼
+    FastAPI      Plugin Host     HF Autoscaler
+       │             │              │
+       │             │              ├── CPU 85% → 16 GB
+       │             │              │
+       │             │              └── RAM 85% → 32 GB
+       │             │
+       │             ▼
+       │       remote_router
+       │             │
+       │          HTTPS
+       │             │
+       │             ▼
+       │        OTRO ROUTER
+       │
+       └── /control/hf/*
+              │
+              ▼
+          HF WORKERS
+              │
+      idle 5 minutos
+              │
+              ▼
+           CANCEL
+
+
+# 14. COMMITS DE TRAZABILIDAD
+
+f0bca256477b2d6d4aedc6bfeb9a4a77ac2a1e2d
+feat: add remote Router HTTP bridge plugin
+
+373456663be7103833673ab04c0237064b920dcc
+feat: register remote Router bridge plugin
+
+ac2b4f80de27c5bfd9c52362d94f9b0d3a95be81
+feat: initialize remote Router plugin package
+
+b0eb32a60fd38c5f1be057d1197d78d48de6eeec
+feat: add elastic HF worker pool
+
+c5e784579f4cb76adf2373c8ae266dabdda3cf7a
+feat: expose HF control plane API
+
+898cec426a0866e2ecca2d306dfcf341b9117466
+feat: mount HF autoscaling control plane
+
+7cd4f30f4d05ccb8cb45d29b43e86a6c312898af
+feat: expose authenticated plugin call bridge
+
+2297a64d8fa6d2d1a418942600d8610ea4dc17cf
+feat: keep one 16GB HF controller alive and pass autoscaler token
+
+79a55485e7f5db97607524ebd0f7d1b4bcc4ad6c
+fix: make HF controller watchdog wait safely for dedicated Jobs token
+
+
+# 15. REGLA CRÍTICA
+
+NO cancelar el Job HF actual simplemente porque el código cambió.
+
+Primero:
+
+TOKEN JOBS VÁLIDO
+→ revisión
+→ un único relanzamiento controlado
+→ health 200
+→ probar control plane
+→ después conectar remote_router
+
+No usar múltiples lanzadores simultáneos.
+No crear un segundo Router master.
+El diseño es:
+
+1 ROUTER MASTER
++
+PLUGINS
++
+WORKERS ELÁSTICOS
+```
+
+La aclaración más importante para quien lo reciba es esta: **yo dejé la infraestructura nueva en `main`, pero no afirmo que el Job HF que ya estaba corriendo haya cargado esos módulos nuevos**. Para cerrar la tarea correctamente necesitan configurar `HF_CONTROL_JOBS_TOKEN` y hacer **un solo relanzamiento controlado** del Router.
