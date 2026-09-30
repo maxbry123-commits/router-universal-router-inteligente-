@@ -1,0 +1,50 @@
+name: TMP cadena verify
+
+# TEMPORAL (Bloque 3, agente cadena). Se borra al terminar. Tests de politicas de cadena (policies.json) y suites vecinas.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [bloque3-cadena]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bloque3-cadena
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/adapters/
+            router inteligente universal/agents-yaiwes/common/
+            router inteligente universal/api/
+            router inteligente universal/domain/
+            router inteligente universal/enchufe/
+            router inteligente universal/engine/
+            router inteligente universal/gateway/
+            router inteligente universal/integration/
+            router inteligente universal/plugins/
+            router inteligente universal/red/
+            router inteligente universal/security/
+            router inteligente universal/tests/
+            router inteligente universal/verifier/
+            router inteligente universal/Banco de claves/
+            chat router/05-AGENTES/
+            CLAUDE.md
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: deps
+        run: pip install pytest fastapi httpx pydantic pyyaml
+      - name: tests cadena
+        working-directory: router inteligente universal
+        run: python -m pytest tests/test_policy_config.py tests/test_resilience.py tests/test_resilience_c10.py tests/test_model_pool.py -q -rA -p no:cacheprovider 2>&1 | tail -60
+      - name: suite chat_mvp
+        working-directory: router inteligente universal
+        run: python -m pytest tests/test_chat_mvp.py tests/test_chat_mvp_app.py tests/test_chat_mvp_pure.py -q -p no:cacheprovider 2>&1 | tail -30

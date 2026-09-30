@@ -21,12 +21,15 @@ free slot is not charged to the option's time limit. Any exception raised by one
 """
 from __future__ import annotations
 
+import copy
 import hashlib
+import json
 import math
 import os
 import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping
 
 from . import providers as prov
@@ -204,7 +207,7 @@ KIMI_K3 = {"provider": "nvidia", "model": "moonshotai/kimi-k3"}
 GLM_53 = {"provider": "nvidia", "model": "z-ai/glm-5.3"}
 QWEN_GROQ = {"provider": "groq", "model": "qwen/qwen3.8-27b"}
 
-DEFAULT_POLICY: dict[str, dict[str, Any]] = {
+CODE_POLICY: dict[str, dict[str, Any]] = {
     "default": {"authorized_fallback": True, "chain": [KIMI_K3, GLM_53, DEEPSEEK_FLASH, QWEN_GROQ, NEMOTRON]},
     # Hermes / OpenClaw / assistants (Director 02:06): NVIDIA first (keys 1-3, then the 4th, by key order inside each option), then Groq, DeepSeek, Nemotron LAST
     "assistants": {"authorized_fallback": True, "chain": [KIMI_K3, GLM_53, QWEN_GROQ, DEEPSEEK_FLASH, NEMOTRON]},
@@ -214,7 +217,44 @@ DEFAULT_POLICY: dict[str, dict[str, Any]] = {
                                                    {"provider": "groq", "model": "env:RIU_G2_GROQ_MODEL"},
                                                    {"provider": "local", "model": "env:RIU_G2_LOCAL_MODEL"},
                                                    DEEPSEEK_FLASH, NEMOTRON]},
+    # chat, Hermes and OpenClaw (Director 2026-09-30): Kimi K3 -> GLM 5.3 -> DeepSeek V4 -> Groq qwen (emergency tail), NO Nemotron.
+    # "timeout" = seconds this option may take (own limit, not the RIU_CHAT_ATTEMPT_TIMEOUT base of the other groups; capped by prov.CHAT_TIMEOUT).
+    "chat_nvidia": {"authorized_fallback": True, "chain": [{**KIMI_K3, "timeout": 90}, {**GLM_53, "timeout": 90}, {**DEEPSEEK_FLASH, "timeout": 90}, {**QWEN_GROQ, "timeout": 90}]},
+    "sdk": {"authorized_fallback": True, "chain": []},  # list pending from the Director: an empty chain answers ROUTER_NO_ROUTE_AVAILABLE, nothing else changes
 }
+
+POLICIES_FILE = Path(__file__).with_name("policies.json")
+
+
+def _valid_group(group: Any) -> bool:
+    if not isinstance(group, dict) or not isinstance(group.get("authorized_fallback"), bool) or not isinstance(group.get("chain"), list):
+        return False
+    for e in group["chain"]:
+        if not (isinstance(e, dict) and isinstance(e.get("provider"), str) and e["provider"] and isinstance(e.get("model"), str) and e["model"]):
+            return False
+        t = e.get("timeout")
+        if t is not None and (isinstance(t, bool) or not isinstance(t, (int, float)) or not math.isfinite(t) or t < 0):
+            return False
+    return True
+
+
+def load_policy(path: Any = None) -> dict[str, dict[str, Any]]:
+    """Chains per group: policies.json ("groups") over the in-code CODE_POLICY. A missing or invalid file, or an invalid group, falls back to the code
+    version of that group: the Router never fails because of this file."""
+    policy = copy.deepcopy(CODE_POLICY)
+    try:
+        groups = json.loads(Path(path or POLICIES_FILE).read_text(encoding="utf-8"))["groups"]
+        if not isinstance(groups, dict):
+            return policy
+    except Exception:  # noqa: BLE001 - missing file, bad JSON, wrong shape: keep the code policy
+        return policy
+    for name, group in groups.items():
+        if isinstance(name, str) and _valid_group(group):
+            policy[name] = group
+    return policy
+
+
+DEFAULT_POLICY: dict[str, dict[str, Any]] = load_policy()
 
 
 def resolve_chain(group: str, now: datetime, env: Mapping[str, str] | None = None) -> tuple[list[dict[str, Any]], list[str]]:
@@ -267,6 +307,7 @@ def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, t
     <= 0 means no limit at all. A request error (400/422) or a busy Router does not cool a model (see REQUEST_ERRORS).
     """
     policy = DEFAULT_POLICY.get(group) or DEFAULT_POLICY["default"]
+    opt_timeout = {(e["provider"], e["model"]): float(e["timeout"]) for e in policy["chain"] if e.get("timeout")}
     chain, trace = resolve_chain(group, now or datetime.now(timezone.utc), env)
     if not chain:
         raise RouteFailed("ROUTER_NO_ROUTE_AVAILABLE", trace)
@@ -289,7 +330,8 @@ def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, t
                 raise RouteFailed("NEEDS_DIRECTOR_AUTH:" + trace[-2], trace)
             keys = prov.env_keys(entry["provider"]) or [None]
             is_last = i == len(chain) - 1
-            budget = 0.0 if limit <= 0 else (prov.CHAT_TIMEOUT if is_last else limit)
+            own = opt_timeout.get((entry["provider"], entry["model"]))  # per-option timeout from the policy (chat_nvidia: 90 s each)
+            budget = min(own, prov.CHAT_TIMEOUT) if own else (0.0 if limit <= 0 else (prov.CHAT_TIMEOUT if is_last else limit))
             token = prov.ATTEMPT_DEADLINE.set(time.monotonic() + budget if budget > 0 else None)
             try:
                 out = call(entry["provider"], keys[0], entry["model"], messages, max_tokens, temperature)
