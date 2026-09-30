@@ -1,28 +1,35 @@
 {
-  "schema": "yaiwes.crazy-wall/v1",
-  "agent": "agent-10-model-install",
-  "framework": "pocketflow",
-  "status": "PARTIAL",
-  "updated_at": "2026-09-30T00:25:05Z",
-  "group": "hf-install",
-  "current_nodes": [],
-  "next_nodes": [],
-  "provider": "golden",
-  "model": "verbatim",
-  "via": "GOLDEN_PROBE_LIVE",
-  "attempts": 1,
-  "gaps": [
-    "REOPEN_LIVE_HEALTH_REPROBE_20260929: require GET /health 200 with HF_TOKEN on job 6ab3198e51992417dfcd4e26; 401 alone not enough"
-  ],
-  "failed": [],
-  "evidence": {
-    "status": "RUNNING_HEALTHY",
-    "job_id": "6ab3198e51992417dfcd4e26",
-    "health_ok_url": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health",
-    "http_health_with_token": 200,
-    "http_health_without_token": 401,
-    "agents_run": 48,
-    "reprobe_requested": true,
-    "reprobe_reason": "deadline_live_now_200_with_token"
-  }
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-10-model-install",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-30T00:31:51Z",
+ "group": "hf-install",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "golden",
+ "model": "verbatim",
+ "via": "GOLDEN",
+ "attempts": 1,
+ "gaps": [
+  "la prueba superó el tiempo"
+ ],
+ "failed": [
+  "execute"
+ ],
+ "evidence": {
+  "status": "RUNNING_HEALTHY",
+  "job_id": "6ab3198e51992417dfcd4e26",
+  "health_ok_url": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health",
+  "http_health_with_token": 200,
+  "http_health_without_token": 401,
+  "agents_run": 48,
+  "reprobe_requested": true,
+  "reprobe_reason": "deadline_live_now_200_with_token"
+ },
+ "router_connected": true
 }

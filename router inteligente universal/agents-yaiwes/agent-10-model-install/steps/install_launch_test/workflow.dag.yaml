@@ -11,30 +11,44 @@ agent:
   route:
   - nvidia
   - groq
-  - minimax_m3
-  fallback: []
+  fallback:
+  - deepseek_flash
   max_tokens: 400
 context:
   text: "Copia GOLDEN/install_launch_test.py verbatim a results/install_launch_test.py.\n\
     El wrapper llama own_server_launch.main(). Solo máquina 32 GB RAM.\n\n\n=== ARCHIVO\
     \ router inteligente universal/agents-yaiwes/agent-10-model-install/GOLDEN/install_launch_test.py\
-    \ ===\n\"\"\"GOLDEN wrapper — NO regenerar. Ejecuta common/own_server_launch.py\
-    \ (método vivo Director).\nSolo máquina 32 GB RAM. Meta: RUNNING_HEALTHY vía /health\
-    \ en --8080.hf.jobs.\n\"\"\"\nfrom __future__ import annotations\n\nimport os\n\
-    import sys\nfrom pathlib import Path\n\n_COMMON = Path(__file__).resolve().parents[4]\
+    \ ===\n\"\"\"GOLDEN wrapper — NO regenerar. Verifica /health live o lanza own_server_launch.\n\
+    Solo máquina 32 GB RAM. Meta: RUNNING_HEALTHY vía GET /health 200 en --8080.hf.jobs.\n\
+    \"\"\"\nfrom __future__ import annotations\n\nimport os\nimport sys\nfrom pathlib\
+    \ import Path\n\nimport requests\n\n_COMMON = Path(__file__).resolve().parents[4]\
     \ / \"common\"\nif str(_COMMON) not in sys.path:\n    sys.path.insert(0, str(_COMMON))\n\
     \nfrom hardware_sheriff import HardwareSheriffError, assert_machine_32gb_ram\n\
     from own_server_launch import main as own_server_main\n\nFLAVOR_32GB = \"cpu-upgrade\"\
-    \n\n\ndef launch_and_verify(model_id=\"qwen3.5-0.8b\", repo=\"ggml-org/Qwen3.5-0.8B-GGUF\"\
-    , file=\"Qwen3.5-0.8B-Q4_0.gguf\", port=8080, flavor=FLAVOR_32GB):\n    try:\n\
-    \        assert_machine_32gb_ram(flavor=flavor)\n    except HardwareSheriffError\
-    \ as e:\n        raise ValueError(str(e)) from e\n    if flavor != FLAVOR_32GB:\n\
-    \        raise ValueError(f\"solo máquina 32 GB RAM, got {flavor}\")\n    code\
-    \ = own_server_main()\n    ok = code == 0\n    return {\n        \"model_id\"\
-    : model_id,\n        \"job_id\": None,\n        \"endpoint\": None,\n        \"\
-    status\": \"RUNNING_HEALTHY\" if ok else \"FAILED\",\n        \"detail\": \"own_server_launch.main\
-    \ exit=%s\" % code,\n        \"flavor\": flavor,\n    }\n\n\ndef run_all():\n\
-    \    return [launch_and_verify()]\n\n\nif __name__ == \"__main__\":\n    r = run_all()[0]\n\
+    \n# Job vivo propio (Own Server Launch #4) — reusar si /health 200\nKNOWN_JOB_ID\
+    \ = os.environ.get(\"RIU_LIVE_JOB_ID\", \"6ab3198e51992417dfcd4e26\")\nPORT =\
+    \ 8080\n\n\ndef _probe_health(job_id: str, token: str) -> str | None:\n    base\
+    \ = f\"https://{job_id}--{PORT}.hf.jobs\"\n    try:\n        r = requests.get(\n\
+    \            base.rstrip(\"/\") + \"/health\",\n            headers={\"Authorization\"\
+    : \"Bearer \" + token},\n            timeout=20,\n        )\n        if r.status_code\
+    \ == 200:\n            return base\n    except Exception:  # noqa: BLE001\n  \
+    \      return None\n    return None\n\n\ndef launch_and_verify(model_id=\"qwen3.5-0.8b\"\
+    , repo=\"ggml-org/Qwen3.5-0.8B-GGUF\", file=\"Qwen3.5-0.8B-Q4_0.gguf\", port=8080,\
+    \ flavor=FLAVOR_32GB):\n    try:\n        assert_machine_32gb_ram(flavor=flavor)\n\
+    \    except HardwareSheriffError as e:\n        raise ValueError(str(e)) from\
+    \ e\n    if flavor != FLAVOR_32GB:\n        raise ValueError(f\"solo máquina 32\
+    \ GB RAM, got {flavor}\")\n    token = os.environ.get(\"HF_TOKEN\") or \"\"\n\
+    \    if not token:\n        raise ValueError(\"falta HF_TOKEN\")\n    live = _probe_health(KNOWN_JOB_ID,\
+    \ token)\n    if live:\n        return {\n            \"model_id\": model_id,\n\
+    \            \"job_id\": KNOWN_JOB_ID,\n            \"endpoint\": live,\n    \
+    \        \"health_ok_url\": live.rstrip(\"/\") + \"/health\",\n            \"\
+    status\": \"RUNNING_HEALTHY\",\n            \"detail\": \"GET /health 200 live\
+    \ (reuse job)\",\n            \"flavor\": flavor,\n        }\n    code = own_server_main()\n\
+    \    ok = code == 0\n    return {\n        \"model_id\": model_id,\n        \"\
+    job_id\": None,\n        \"endpoint\": None,\n        \"status\": \"RUNNING_HEALTHY\"\
+    \ if ok else \"FAILED\",\n        \"detail\": \"own_server_launch.main exit=%s\"\
+    \ % code,\n        \"flavor\": flavor,\n    }\n\n\ndef run_all():\n    return\
+    \ [launch_and_verify()]\n\n\nif __name__ == \"__main__\":\n    r = run_all()[0]\n\
     \    print(r)\n    raise SystemExit(0 if r[\"status\"] == \"RUNNING_HEALTHY\"\
     \ else 1)\n\n\n=== ARCHIVO router inteligente universal/agents-yaiwes/common/own_server_launch.py\
     \ ===\n\"\"\"Launches a REAL local model server on the Director's OWN Hugging\

@@ -1,33 +1,35 @@
 {
-  "schema": "yaiwes.crazy-wall/v1",
-  "agent": "agent-10-model-install",
-  "framework": "pocketflow",
-  "status": "PARTIAL",
-  "updated_at": "2026-09-30T00:25:05Z",
-  "group": "hf-install",
-  "chain": [
-    "install_launch_test"
-  ],
-  "completed": [],
-  "failed": [],
-  "next_nodes": [
-    "install_launch_test"
-  ],
-  "current_nodes": [
-    "install_launch_test"
-  ],
-  "evidence": {
-    "status": "RUNNING_HEALTHY",
-    "job_id": "6ab3198e51992417dfcd4e26",
-    "health_ok_url": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health",
-    "endpoint": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs",
-    "machine": "32 GB RAM",
-    "proof": "RIU Agents Run #48 only=agent-10-model-install: GOLDEN probe GET /health 200 con HF_TOKEN; curl sin token HTTP 401.",
-    "reprobe_requested": true,
-    "health_stale": true
-  },
-  "router_connected": false,
-  "gaps": [
-    "REOPEN_LIVE_HEALTH_REPROBE_20260929"
-  ]
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-10-model-install",
+ "framework": "pocketflow",
+ "status": "BLOCKED",
+ "updated_at": "2026-09-30T00:31:51Z",
+ "group": "hf-install",
+ "chain": [
+  "install_launch_test"
+ ],
+ "completed": [],
+ "failed": [
+  "install_launch_test"
+ ],
+ "next_nodes": [],
+ "current_nodes": [],
+ "evidence": {
+  "status": "RUNNING_HEALTHY",
+  "job_id": "6ab3198e51992417dfcd4e26",
+  "health_ok_url": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health",
+  "endpoint": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs",
+  "machine": "32 GB RAM",
+  "proof": "RIU Agents Run #48 only=agent-10-model-install: GOLDEN probe GET /health 200 con HF_TOKEN; curl sin token HTTP 401.",
+  "reprobe_requested": true,
+  "health_stale": true
+ },
+ "router_connected": true,
+ "gaps": [
+  "REOPEN_LIVE_HEALTH_REPROBE_20260929"
+ ],
+ "route": [
+  "nvidia",
+  "groq"
+ ]
 }
