@@ -1,6 +1,6 @@
 {
   "schema": "yaiwes.estado/v1",
-  "actualizado_utc": "2026-09-29T21:30Z",
+  "actualizado_utc": "2026-09-30T21:05Z",
   "actualizado_utc_anterior": "2026-09-29T16:20Z",
   "regla": "Solo hechos con evidencia. Lo no verificado dice SIN_VERIFICAR. Sin claves ni valores secretos.",
   "alcance": "Estado global del repo SIN lo del Router. Router, Hugging Face, Vercel, claves y Cerebras/Groq: ver router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md",
@@ -445,5 +445,35 @@
       "plugin_host": "router inteligente universal/integration/plugin_host/ y plugins/ (rama bloque1-cadena-chat)",
       "prioridad_2": "rama bloque2-agentes"
     }
+  },
+  "actualizado_utc_anterior_3": "2026-09-29T21:30Z",
+  "checkpoint_2026_09_30_notas": {
+    "fuentes": [
+      "INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "Claude notas/HANDOFF-GPT-HF-CONTROL-PLANE-2026-09-30.md"
+    ],
+    "en_curso": [
+      "Paso1 descarga harness x2 en 2 raices",
+      "Paso2 cadena Kimi->GLM->DeepSeek 90s/modelo, grupos JSON, plugin chat paralelo",
+      "Paso3 plugins harness/Fables/paralelo + MCP/HTTP/FastAPI",
+      "Paso4 puentes almacenamiento/datasets/skills/computo como plugins",
+      "Secretos GH/HF para el Router"
+    ],
+    "hecho_sin_probar": [
+      "Control plane HF de GPT en main (remote_router, hf_worker_pool, hf_control_api, /plugins/{id}/call/{action}, watchdog)"
+    ],
+    "pendiente": [
+      "Secreto HF_CONTROL_JOBS_TOKEN",
+      "UN relanzamiento",
+      "RIU_REMOTE_ROUTER_URL/API_KEY",
+      "habilitar remote_router",
+      "smoke test",
+      "auditoria 3 bucles + 4 pasadas"
+    ],
+    "bloqueado": [
+      "Cancelar/relanzar Job 6abc32754c46ef1987032c93 sin token valido"
+    ],
+    "computo": "12 GB 24/7 -> 16 GB al 80-85% -> 32 GB (orden 02:10); luego 15:47 dice plan 16 GB pago siempre encendido: ver Huecos detectados",
+    "regla": "EN_CURSO no es hecho; nada verde sin evidencia"
   }
 }
