@@ -1,6 +1,9 @@
 name: tmp-puentes-verify
 on:
   workflow_dispatch:
+  push:
+    branches: [bloque3-puentes]
+    paths: [".github/workflows/tmp-puentes-verify.yml"]
 permissions:
   contents: read
 jobs:
