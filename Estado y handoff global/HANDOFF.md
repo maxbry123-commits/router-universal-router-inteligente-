@@ -187,3 +187,31 @@ Las tareas del Router (T-00, T-01, T-03, T-10) ya no están aquí: ver el handof
 - GitHub por conector: `github_api` (puede lanzar workflows), `create_or_update_file` (usa `current_sha` para actualizar). Errores 502: reintentar, comprobando antes que la acción no se haya hecho.
 - Cambios grandes: workflow de una sola vez con PAT (el token por defecto no puede empujar archivos de workflow), checkout parcial en lote (rápido) y `[skip ci]` en el commit para no disparar otros workflows. El workflow se borra a sí mismo al aplicar.
 - Resultados de un run: leer las anotaciones del check-run (máx. 10 por paso).
+
+## Checkpoint 2026-09-30 (agente notas) — ordenes del Director y estado real
+Manda sobre los anteriores si se contradicen. Texto literal de las ordenes: `Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md`. Detalle del control plane HF de GPT: `Claude notas/HANDOFF-GPT-HF-CONTROL-PLANE-2026-09-30.md`.
+
+### Ordenes (resumen)
+- Paso 1: estudiar motor de busqueda/descarga y descargar 2 componentes iguales en 2 raices del harness de DeepSeek.
+- Paso 2: cadena Kimi K3 -> GLM 5 -> DeepSeek en el Router con tiempo; plugin de chat paralelo, solo conectar.
+- Paso 3: enchufe Fables, plugin harness DeepSeek, sistema paralelo; con MCP, HTTP y FastAPI.
+- Paso 4: puentes (almacenamiento HF, datasets repo/HF, biblioteca skills HF, computo) como plugins separados; datasets y skills = una conexion por llamada, fuera del Router.
+- 02:10: computo 12 GB 24/7; al 80-85% sube a 16 GB; si no alcanza, 32 GB. Vercel chat, Router, Hermes, OpenClaw y Osquestador conectados al harness de DeepSeek; el Router detecta quien esta activo.
+- 15:47: todo a agentes con limite de tiempo; Router con acceso a secretos GH/HF; salida minima pendiente / en curso / cerrado. Regla 05:18: 3 bucles + 4 pasadas por tarea.
+
+### Marcas
+- EN CURSO (delegado, sin evidencia; NO es hecho): descarga harness x2 en 2 raices (N-27); cadena Kimi->GLM->DeepSeek 90 s por modelo con grupos en JSON (N-28); plugins harness/Fables/paralelo + MCP/HTTP/FastAPI (N-29); puentes almacenamiento/datasets/skills/computo (N-30); secretos GH/HF para el Router (N-32).
+- HECHO SIN PROBAR: control plane HF de GPT en main, 9 commits, sin smoke test (N-31).
+- PENDIENTE: secreto HF_CONTROL_JOBS_TOKEN, UN relanzamiento, RIU_REMOTE_ROUTER_URL/API_KEY, habilitar remote_router, smoke test (N-33); auditoria final (N-35).
+- BLOQUEADO: cancelar o relanzar el Job vivo `6abc32754c46ef1987032c93` sin token valido (N-34).
+
+### Huecos detectados (2026-09-30)
+1. Computo contradictorio entre ordenes: 02:10 dice 12 GB base -> 16 -> 32; 15:47 dice plan de 16 GB pago siempre encendido. GPT implemento 16 GB (cpu-basic) y 32 GB (cpu-upgrade); el escalon de 12 GB no consta. Decide el Director.
+2. ESTADO.json y CRAZY_WALL.json estaban en 2026-09-29 21:30Z: no reflejaban nada del 30. Corregido aqui, pero N-10..N-26 (29/09) no se revisaron de nuevo.
+3. Los nodos de CRAZY_WALL no tienen campo de dueno: N-15, N-16, N-18, N-19, N-23, N-25 y los pasos T-04..T-09 no indican agente responsable. Falta asignar.
+4. El Job vivo `6abc32754c46ef1987032c93` no figura en las notas que lei (la bitacora cita el Job 6abb082b, cancelado por el watchdog 32 GB en B-0002). Hay que registrar cual es el Job vigente.
+5. La bitacora B-0002 habla de un watchdog `riu-hf-jobs-audit-32gb.yml` que cancelaba Jobs que no fueran cpu-upgrade; el listado de workflows que vi (arbol truncado) solo muestra `riu-router-job-central.yml`. SIN_VERIFICAR si el viejo sigue activo y choca con el escalado 16 GB.
+6. Mismo secreto en dos sitios: `HF_CONTROL_JOBS_TOKEN` lo espera el watchdog y GPT; la ronda 4 (N-26, punto c) ya advertia del riesgo de un token que controla Jobs dentro del Job. Sin dueno ni decision.
+7. Existen dos adendas casi iguales en `Readme arquitectura router inteligente universal/` (ADENDA-RIU-0108 en mayusculas y en minusculas): posible duplicado.
+8. T-08 (memoria Manus + puente HF) figura PENDIENTE desde el 29, pero el Director dice que GPT ya hizo el puente: falta decidir si N-08 se cierra o queda solo para almacenamiento permanente.
+9. No hay ficha de tarea en `Estado y handoff global/tareas/` para Pasos 1-4 ni para el control plane.
