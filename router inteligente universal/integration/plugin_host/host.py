@@ -293,6 +293,40 @@ class PluginHost:
             return p is None or p.status != "off"
 
     # ---- on/off switch ----------------------------------------------------------------------------------------------
+    def sync(self) -> dict[str, Any]:
+        """Rescan plugins/ without restarting: new folders load, deleted ones leave, a bad ficha only marks THAT plugin invalid.
+        Switch states come from the state file (reload); the runtime counters of plugins that stay are kept."""
+        importlib.invalidate_caches()  # a plugin folder created after start must be importable
+        with self._lock:
+            before = dict(self._plugins)
+        self.reload()
+        with self._lock:
+            for pid, p in self._plugins.items():
+                old = before.get(pid)
+                if old is not None:
+                    p.last_error, p.last_call_ms = old.last_error, old.last_call_ms
+            now = dict(self._plugins)
+        return {"added": sorted(set(now) - set(before)), "removed": sorted(set(before) - set(now)),
+                "invalid": sorted(i for i, p in now.items() if p.errors), "total": len(now), "load_error": self.load_error}
+
+    def start_autosync(self, interval_s: float) -> bool:
+        """Light daemon thread that calls sync() every interval_s (>=10). Returns False if already running."""
+        if getattr(self, "_autosync", None) is not None and self._autosync.is_alive():
+            return False
+        interval = max(10.0, float(interval_s))
+
+        def loop() -> None:
+            while True:
+                time.sleep(interval)
+                try:
+                    self.sync()
+                except Exception:  # noqa: BLE001 - never take the host down
+                    pass
+
+        self._autosync = threading.Thread(target=loop, name="plugin-autosync", daemon=True)
+        self._autosync.start()
+        return True
+
     def state_info(self) -> dict[str, Any]:
         """persisted: True/False = whether the last switch change reached the file (False: it lives in memory only); None = nothing changed yet."""
         return {"persisted": self._persisted, "error": self._state_error}
@@ -411,6 +445,12 @@ def get_host() -> PluginHost:
     with _host_lock:
         if _host is None:
             _host = PluginHost()
+            try:  # off by default: RIU_PLUGINS_AUTOSYNC_S=60 turns the periodic rescan on
+                secs = float(os.getenv("RIU_PLUGINS_AUTOSYNC_S") or 0)
+                if secs > 0:
+                    _host.start_autosync(secs)
+            except Exception:  # noqa: BLE001
+                pass
         return _host
 
 
