@@ -1,0 +1,45 @@
+{
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "hf_datasets",
+    "enabled_default": false,
+    "health_action": "status",
+    "nota_roja": "Conexion POR LLAMADA a datasets de HF (hub API + datasets-server) y al dataset del repo (HF_REPO_DATASET, por defecto COMAND-CENTER-1/yaiwes-hf-memoria). No guarda nada en el Router. HF_TOKEN opcional (solo para datasets privados)."
+  },
+  "artifact_id": "riu.plugins.hf_datasets",
+  "version": "0.1.0",
+  "estado": "testing",
+  "categoria": "pipeline",
+  "etapa": "P",
+  "contrato": {
+    "rol": "service"
+  },
+  "ejecucion": {
+    "kind": "api",
+    "transport": "http",
+    "runtime_type": "remote",
+    "entry_point": "plugins.hf_datasets.plugin:handle",
+    "idempotente": false,
+    "allowed_actions": [
+      "status",
+      "search",
+      "info",
+      "splits",
+      "rows",
+      "repo_tree"
+    ]
+  },
+  "seguridad": {
+    "sandbox": "none",
+    "permisos": [
+      "network:http"
+    ],
+    "limites": {
+      "timeout_ms": 60000
+    }
+  },
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "contracts/revocation_list.json"
+  }
+}
