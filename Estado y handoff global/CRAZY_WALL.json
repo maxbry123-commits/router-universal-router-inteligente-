@@ -1,13 +1,14 @@
 {
   "schema": "yaiwes.crazy-wall/v2",
-  "actualizado_utc": "2026-09-29T21:30Z",
+  "actualizado_utc": "2026-09-30T21:05Z",
   "actualizado_utc_anterior": "2026-09-29T16:20Z",
   "regla": "Un nodo pasa a PASS solo con evidencia real (commit, salida de prueba o aviso de job). Sin evidencia = PENDIENTE.",
   "leyenda_marcas": {
     "✅": "PASS: ejecutado + probado + 4 pasadas de revision + 3 rondas limpias seguidas (regla 05:18)",
     "🟡": "HECHO_SIN_VERIFICAR: hecho sin probar o probado a medias",
     "🔴": "PENDIENTE",
-    "⛔": "BLOQUEADO_POR_ORDEN"
+    "⛔": "BLOQUEADO_POR_ORDEN",
+    "🔵": "EN_CURSO: delegado a un agente, sin evidencia todavia (NO es hecho)"
   },
   "alcance": "Solo tareas que NO son del Router. Las del Router (T-00, T-01, T-03, T-10) estan en router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md",
   "alcance_checkpoint_1120": "Desde el checkpoint de las 11:20 (orden del Director 11:07) el muro incluye tambien los bloques del Router y del chat como plugin (nodos N-10 a N-19) como resumen con enlace; el detalle sigue en el handoff del Router. Ningun nodo nuevo esta en PASS.",
@@ -307,6 +308,125 @@
       "evidencia": "",
       "ficha": "router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20.F)",
       "nota": "a GIL de un plugin congela el proceso; b riesgos del lanzador; c token que controla los Jobs dentro del Job; d CI permanente sin test_plugin_host; e relanzar pierde estado; f mascara de llaves; g texto de excepcion; h GET /plugins sincrono; i chat cableado directo; j llaves NVIDIA hasta _5; k sonda toma modelos por adelantado; l /chat/send sin auto bloquea el event loop; m concurrencia real 6 hilos"
+    },
+    {
+      "id": "N-27",
+      "tarea": "Paso1",
+      "nombre": "Descarga del harness de DeepSeek: 2 componentes iguales en 2 raices distintas (estudiar motor busqueda/descarga)",
+      "estado": "EN_CURSO",
+      "marca": "🔵",
+      "depende": [],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Delegado a agente; sin evidencia"
+    },
+    {
+      "id": "N-28",
+      "tarea": "Paso2",
+      "nombre": "Cadena Kimi K3 -> GLM 5 -> DeepSeek, 90 s por modelo, grupos en JSON; plugin de chat solo-conectar en paralelo",
+      "estado": "EN_CURSO",
+      "marca": "🔵",
+      "depende": [
+        "N-10"
+      ],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Delegado a agente; sin evidencia"
+    },
+    {
+      "id": "N-29",
+      "tarea": "Paso3",
+      "nombre": "Plugins harness DeepSeek + Fables + sistema paralelo; conectividad MCP, HTTP, FastAPI",
+      "estado": "EN_CURSO",
+      "marca": "🔵",
+      "depende": [
+        "N-13"
+      ],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Delegado a agente; sin evidencia"
+    },
+    {
+      "id": "N-30",
+      "tarea": "Paso4",
+      "nombre": "Puentes como plugins: almacenamiento HF, datasets (repo y HF), biblioteca skills HF, computo. Datasets/skills = una conexion por llamada, fuera del Router. Revisar lo de GPT; si no sirve, usar lo de Manus (T-08)",
+      "estado": "EN_CURSO",
+      "marca": "🔵",
+      "depende": [
+        "N-08"
+      ],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Delegado a agente; sin evidencia"
+    },
+    {
+      "id": "N-31",
+      "tarea": "02:10",
+      "nombre": "Computo escalonado 12 -> 16 -> 32 GB al 80-85%; 24/7 para chat, Router, Hermes, OpenClaw, Osquestador, todos contra el harness de DeepSeek",
+      "estado": "HECHO_SIN_VERIFICAR",
+      "marca": "🟡",
+      "depende": [
+        "N-33"
+      ],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Codigo de GPT en main (hf_worker_pool, hf_control_api); sin prueba de humo. Ver HANDOFF-GPT. OJO: el escalon de 12 GB no aparece en el resumen de GPT"
+    },
+    {
+      "id": "N-32",
+      "tarea": "15:47",
+      "nombre": "Secretos de GitHub y HF accesibles al Router para que los agentes no se bloqueen",
+      "estado": "EN_CURSO",
+      "marca": "🔵",
+      "depende": [],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Delegado a agente; sin evidencia. Solo como secretos, nunca en archivos"
+    },
+    {
+      "id": "N-33",
+      "tarea": "GPT-HF",
+      "nombre": "Activar control plane HF: secreto HF_CONTROL_JOBS_TOKEN, UN relanzamiento, RIU_REMOTE_ROUTER_URL/API_KEY, habilitar remote_router, prueba de humo",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-32"
+      ],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Pendientes segun HANDOFF-GPT"
+    },
+    {
+      "id": "N-34",
+      "tarea": "GPT-HF",
+      "nombre": "Cancelar/relanzar el Job vivo 6abc32754c46ef1987032c93 sin token valido",
+      "estado": "BLOQUEADO_POR_ORDEN",
+      "marca": "⛔",
+      "depende": [
+        "N-33"
+      ],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Regla: no cancelar el Job vivo sin token valido; lo hace solo el coordinador"
+    },
+    {
+      "id": "N-35",
+      "tarea": "05:18",
+      "nombre": "Auditoria final de cierre: 3 bucles + 4 pasadas (instrucciones, codigo fuente, archivos/docs, ejecucion) por tarea terminada",
+      "estado": "PENDIENTE",
+      "marca": "🔴",
+      "depende": [
+        "N-27",
+        "N-28",
+        "N-29",
+        "N-30",
+        "N-31",
+        "N-32",
+        "N-33"
+      ],
+      "evidencia": "",
+      "ficha": "Readme arquitectura router inteligente universal/INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md",
+      "nota": "Nada es OK sin ellas"
     }
   ],
   "protegidos": [
@@ -315,5 +435,7 @@
     "rama backup-antes-limpieza-20260929"
   ],
   "actualizado_utc_anterior_2": "2026-09-29T05:30Z",
-  "alcance_checkpoint_1630": "Segunda pasada (~16:30): N-10..N-13 actualizados con el estado real (Plugin Host subido, rondas 3 y 4 NO LIMPIAS, CI 36630393673) y nodos nuevos N-20..N-26 (prioridad 2 y hallazgos de la ronda 4). Ningun nodo nuevo esta en PASS. Detalle: router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20)."
+  "alcance_checkpoint_1630": "Segunda pasada (~16:30): N-10..N-13 actualizados con el estado real (Plugin Host subido, rondas 3 y 4 NO LIMPIAS, CI 36630393673) y nodos nuevos N-20..N-26 (prioridad 2 y hallazgos de la ronda 4). Ningun nodo nuevo esta en PASS. Detalle: router inteligente universal/HANDOFF-PROVISIONAL-ROUTER.md (seccion 20).",
+  "actualizado_utc_anterior_3": "2026-09-29T21:30Z",
+  "alcance_2026_09_30": "Ordenes del Director 2026-09-30 (Paso1-4, 01:58, 02:10, 15:47, regla 05:18) en INPUT-BLOCK-VERBATIM-2026-09-30-director-parte-6.md; control plane HF de GPT en Claude notas/HANDOFF-GPT-HF-CONTROL-PLANE-2026-09-30.md"
 }
