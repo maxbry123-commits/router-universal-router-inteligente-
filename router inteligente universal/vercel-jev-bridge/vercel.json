@@ -1,0 +1,6 @@
+{
+  "functions": {
+    "api/direct.js": { "maxDuration": 120 },
+    "api/jev.js": { "maxDuration": 120 }
+  }
+}
