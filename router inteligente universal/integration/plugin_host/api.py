@@ -61,4 +61,14 @@ def build_plugin_router() -> APIRouter:
     def disable(plugin_id: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
         return _toggle(plugin_id, False)
 
+    @r.post("/plugins/{plugin_id}/call/{action}")
+    def call_plugin(
+        plugin_id: str,
+        action: str,
+        payload: dict[str, Any] | None = None,
+        _owner: str = Depends(_auth),
+    ) -> dict[str, Any]:
+        """Invoke a registered plugin through the mandatory PluginHost harness."""
+        return get_host().call(plugin_id, action, payload or {})
+
     return r
