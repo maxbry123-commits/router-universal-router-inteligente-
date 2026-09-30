@@ -1,6 +1,6 @@
 """Bridge between the chat and the YAIWES Secret Bank (Banco de claves/secret_bank/vault.py).
 
-* The master passphrase is never stored: the bank is unlocked in memory for a TTL (RIU_VAULT_TTL, default 1 h).
+* The master passphrase is never stored: the bank is unlocked in memory for a TTL (RIU_VAULT_AUTOLOCK_S; 0 = never, the default; legacy RIU_VAULT_TTL still honoured).
 * While unlocked, provider keys (nvidia/*, huggingface/*, ...) join the key pool via vault_hook (oldest credential first),
   and GitHub tokens (github/*) are exported as in-process env vars so the existing account selector sees them. Locking removes both.
 * Values are never returned by any method that leaves this module: only credential refs (names) are listed.
@@ -22,9 +22,91 @@ from typing import Any
 from . import github_tools as gh
 from . import vault_hook
 
-PROVIDER_MAP = {"nvidia": "nvidia", "hf": "huggingface", "groq": "groq",
-                "deepseek": "deepseek", "moonshot": "moonshot", "minimax": "minimax"}
-DEFAULT_TTL = 3600.0
+# Built-in fallback (used when providers.json is missing or invalid). New providers go in providers.json, one entry each.
+DEFAULT_PROVIDER_MAP = {"nvidia": "nvidia", "hf": "huggingface", "groq": "groq",
+                        "deepseek": "deepseek", "moonshot": "moonshot", "minimax": "minimax"}
+PROVIDER_MAP = DEFAULT_PROVIDER_MAP  # backwards-compatible name; live view: provider_map()
+AUTH_FORMATS = ("bearer", "x-api-key", "header", "query", "none")
+# Autolock: 0 = the bank never closes by itself (Director: 24/7). Set RIU_VAULT_AUTOLOCK_S=3600 to get the old 1 h behaviour.
+DEFAULT_AUTOLOCK_S = 0.0
+DEFAULT_TTL = DEFAULT_AUTOLOCK_S  # legacy alias
+_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_.-]*$")
+_PROV_CACHE: dict[str, Any] = {"sig": None, "data": None}
+
+
+def providers_file() -> Path:
+    env = os.getenv("RIU_VAULT_PROVIDERS_FILE")
+    return Path(env) if env else Path(__file__).resolve().parent / "providers.json"
+
+
+def _defaults() -> dict[str, dict[str, Any]]:
+    return {k: {"vault_provider": v, "auth": "bearer"} for k, v in DEFAULT_PROVIDER_MAP.items()}
+
+
+def _clean_entry(name: str, raw: Any) -> dict[str, Any] | None:
+    if isinstance(raw, str):
+        raw = {"vault_provider": raw}
+    if not isinstance(raw, dict) or not _NAME_RE.match(name):
+        return None
+    vp = raw.get("vault_provider") or name
+    auth = raw.get("auth") or "bearer"
+    base = raw.get("base_url")
+    env = raw.get("env")
+    if not (isinstance(vp, str) and _NAME_RE.match(vp)) or auth not in AUTH_FORMATS:
+        return None
+    if base is not None and not (isinstance(base, str) and base.startswith(("http://", "https://"))):
+        return None
+    if env is not None and not (isinstance(env, str) and re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", env)):
+        return None
+    out: dict[str, Any] = {"vault_provider": vp, "auth": auth}
+    if base:
+        out["base_url"] = base
+    if env:
+        out["env"] = env
+    if isinstance(raw.get("auth_header"), str) and raw["auth_header"]:
+        out["auth_header"] = raw["auth_header"]
+    return out
+
+
+def load_providers() -> dict[str, dict[str, Any]]:
+    """Built-in providers + providers.json entries (JSON wins). Missing/invalid file or entry -> skipped, never raises."""
+    path = providers_file()
+    try:
+        st = path.stat()
+        sig: Any = (str(path), st.st_mtime_ns, st.st_size)
+    except OSError:
+        return _defaults()
+    if _PROV_CACHE["sig"] == sig:
+        return dict(_PROV_CACHE["data"])
+    merged = _defaults()
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        entries = raw.get("providers", raw) if isinstance(raw, dict) else {}
+        for name, entry in (entries.items() if isinstance(entries, dict) else []):
+            if isinstance(name, str) and not name.startswith("_"):
+                clean = _clean_entry(name, entry)
+                if clean:
+                    merged[name] = clean
+    except (OSError, ValueError):
+        merged = _defaults()
+    _PROV_CACHE["sig"], _PROV_CACHE["data"] = sig, merged
+    return dict(merged)
+
+
+def provider_map() -> dict[str, str]:
+    return {k: v["vault_provider"] for k, v in load_providers().items()}
+
+
+def autolock_seconds() -> float:
+    """RIU_VAULT_AUTOLOCK_S wins, then legacy RIU_VAULT_TTL, else DEFAULT_AUTOLOCK_S. 0 (or negative) = never."""
+    for name in ("RIU_VAULT_AUTOLOCK_S", "RIU_VAULT_TTL"):
+        raw = os.getenv(name)
+        if raw not in (None, ""):
+            try:
+                return max(0.0, float(raw))
+            except ValueError:
+                continue
+    return DEFAULT_AUTOLOCK_S
 MAX_FAILS = 5
 LOCK_SECONDS = 600.0
 
@@ -78,7 +160,8 @@ class VaultBridge:
     def status(self) -> dict[str, Any]:
         alive = self._alive()
         out: dict[str, Any] = {"exists": self.path().is_file(), "unlocked": alive,
-                               "ttl_seconds": max(0, int(self._until - time.time())) if alive else 0}
+                               "ttl_seconds": (None if self._until == float("inf") else max(0, int(self._until - time.time()))) if alive else 0,
+                               "autolock_s": autolock_seconds()}
         if alive:
             out["credentials"] = [{k: r[k] for k in ("credential_ref", "provider", "account", "scope", "enabled")} for r in self._open.list()]
         return out
@@ -98,7 +181,8 @@ class VaultBridge:
                 self._fails.append(now)
                 raise BankError("INVALID_PASSPHRASE") from None
             self._open = opened
-            self._until = now + float(os.getenv("RIU_VAULT_TTL") or DEFAULT_TTL)
+            lock_after = autolock_seconds()
+            self._until = now + lock_after if lock_after > 0 else float("inf")
             vault_hook.set_provider_keys(self.provider_keys)
             self._export_github()
             return len(opened.list())
@@ -111,11 +195,12 @@ class VaultBridge:
 
     # -- reads used by the chat ---------------------------------------------------------
     def provider_keys(self, provider: str) -> list[str]:
-        if provider not in PROVIDER_MAP or not self._alive():
+        pmap = provider_map()
+        if provider not in pmap or not self._alive():
             return []
         keys: list[str] = []
         for rec in sorted(self._open.list(), key=lambda r: r["created_at"]):
-            if rec["provider"] == PROVIDER_MAP[provider] and rec["enabled"] and rec["scope"] != "github":
+            if rec["provider"] == pmap[provider] and rec["enabled"] and rec["scope"] != "github":
                 try:
                     keys.append(self._open.get_secret(rec["credential_ref"]))
                 except Exception:  # noqa: BLE001 - expired/disabled entries are skipped
