@@ -1,15 +1,18 @@
-name: HF MCP Space Publish
+name: HF MCP Space Publish (manual maintenance only)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/hf-mcp-space-publish.yml"
+
 
 permissions:
   id-token: write
   contents: read
+
+# Never overlap Space rebuilds. A rebuild can make an already-open Claude chat
+# keep a stale MCP tool catalog even after the server comes back.
+concurrency:
+  group: hf-mcp-space-publish
+  cancel-in-progress: false
 
 jobs:
   publish:
