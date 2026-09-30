@@ -35,7 +35,7 @@ jobs:
       - run: pip install -U huggingface_hub requests
       - name: Launch
         env:
-          HF_TOKEN: ${{ secrets.HF_CONTROL_JOBS_TOKEN || secrets.HF_TOKEN_1 }}
+          HF_TOKEN: ${{ secrets.HF_CONTROL_JOBS_TOKEN }}
           GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
           GH_WRITE: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
           RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
@@ -56,6 +56,9 @@ jobs:
           python - <<'PY'
           import base64, os, time, requests
           from huggingface_hub import HfApi
+          if not os.environ.get("HF_TOKEN", "").strip():
+              print("::notice::HF_CONTROL_JOBS_TOKEN no configurado; watchdog queda en espera sin tocar el Job actual")
+              raise SystemExit(0)
           api = HfApi(token=os.environ["HF_TOKEN"])
           old = [j for j in api.list_jobs() if (j.status.stage or "").upper() in ("RUNNING", "STARTING") and "router_job_persistent.py" in " ".join(j.command or [])]
           scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
