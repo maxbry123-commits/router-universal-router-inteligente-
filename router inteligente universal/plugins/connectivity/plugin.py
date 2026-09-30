@@ -99,6 +99,14 @@ def _mcp() -> dict[str, Any]:
     return {"status": "degraded", "source": src, "reason": "cliente configurado pero su conexion no se verifica aqui"}
 
 
+def _ssh() -> dict[str, Any]:
+    try:  # transporte opcional: plugin ssh_bridge (sin red, solo configuracion)
+        from plugins.ssh_bridge import plugin as _sb
+        return _sb.status()
+    except Exception as exc:
+        return {"status": "off", "reason": "ssh_bridge no disponible: " + type(exc).__name__}
+
+
 def _overall(parts: dict[str, dict[str, Any]]) -> str:
     states = [p["status"] for p in parts.values()]
     if all(s == "off" for s in states):
@@ -111,5 +119,5 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         return {"status": "ok", "config": {"fastapi_url": _self_url(), "http_allowlist": allowlist(), "mcp_configurado": _mcp_source() is not None}}
     if action != "check":
         return {"status": "degraded", "reason": "accion desconocida"}
-    parts = {"fastapi": _fastapi(), "http": _http(), "mcp": _mcp()}
+    parts = {"fastapi": _fastapi(), "http": _http(), "mcp": _mcp(), "ssh": _ssh()}
     return {"status": _overall(parts), "transports": parts}
