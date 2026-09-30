@@ -20,8 +20,6 @@ jobs:
       HF_OIDC_RESOURCE: spaces/COMAND-CENTER-1/claude-github-mcp-backup
 
     steps:
-      - uses: actions/checkout@v4
-
       - name: Install Hugging Face CLI
         run: |
           curl -LsSf https://hf.co/cli/install.sh | bash
