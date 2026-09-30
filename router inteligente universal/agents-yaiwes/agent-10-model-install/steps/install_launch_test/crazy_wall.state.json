@@ -1,34 +1,35 @@
 {
-  "schema": "yaiwes.crazy-wall/v1",
-  "agent": "agent-10-model-install",
-  "framework": "pocketflow",
-  "status": "PARTIAL",
-  "updated_at": "2026-09-30T00:34:48Z",
-  "group": "hf-install",
-  "current_nodes": [
-    "install_launch_test"
-  ],
-  "next_nodes": [
-    "install_launch_test"
-  ],
-  "provider": "golden",
-  "model": "verbatim",
-  "via": "GOLDEN",
-  "attempts": 1,
-  "gaps": [
-    "REOPEN_C_OWN_SERVER_20260929: #121 FAIL_PROBE python_exec default timeout 25s. chain.yaml timeout:1800. (C) own_server_launch 32GB if probe not 200; do not cancel existing job 6ab3198e51992417dfcd4e26.",
-    "Máquina de 32 GB RAM. only=agent-10-model-install."
-  ],
-  "failed": [],
-  "evidence": {
-    "status": "RUNNING_HEALTHY",
-    "job_id": "6ab3198e51992417dfcd4e26",
-    "health_ok_url": "https://6ab3198e51992417dfcd4e26--8080.hf.jobs/health",
-    "http_health_with_token": 200,
-    "http_health_without_token": 401,
-    "agents_run": 48,
-    "reprobe_requested": true,
-    "reprobe_reason": "deadline_live_now_200_with_token"
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-10-model-install",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-30T00:41:13Z",
+ "group": "hf-install",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "golden",
+ "model": "verbatim",
+ "via": "GOLDEN",
+ "attempts": 1,
+ "gaps": [],
+ "failed": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "f3558e700876043f7d79e84f3cbe923cc4e1d918969445da1c66c00bf14746f5",
+   "chars": 2445
   },
-  "router_connected": true
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "install_launch_test.py",
+   "sha256": "f3558e700876043f7d79e84f3cbe923cc4e1d918969445da1c66c00bf14746f5"
+  }
+ ],
+ "router_connected": true,
+ "route_trace": []
 }

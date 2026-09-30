@@ -107,6 +107,7 @@ checks:
   - assert_machine_32gb_ram
   - cpu-upgrade
 - kind: python_exec
+  timeout: 1800
   module: install_launch_test.py
   test: "import os\nassert os.environ.get(\"HF_TOKEN\"), \"falta HF_TOKEN\"\nimport\
     \ install_launch_test as m\nsrc = open(m.__file__).read()\nassert \"own_server_launch\"\

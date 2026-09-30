@@ -3,7 +3,7 @@
 - paso vault_panel: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js'] gaps=-
 - paso wire_panels: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/wire_panels/results/wire_panels.js'] gaps=-
 ## agent-10-model-install: estado=PARTIAL marco=pocketflow pasos_cerrados=[]
-- paso install_launch_test: PARTIAL modelo=verbatim entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py'] gaps=REOPEN_LIVE_HEALTH_REPROBE_20260929: require GET /health 200 with HF_TOKEN on job 6ab3198e51992417dfcd4e26; 401 alone no
+- paso install_launch_test: PARTIAL modelo=verbatim entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_launch_test/results/install_launch_test.py'] gaps=REOPEN_C_OWN_SERVER_20260929: #121 FAIL_PROBE python_exec default timeout 25s. chain.yaml timeout:1800. (C) own_server_l
 - paso install_orders: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_orders/results/orders.json'] gaps=-
 - paso install_report: CLOSED modelo=nvidia/nemotron-3-super-120b-a12b entregables=['router inteligente universal/agents-yaiwes/agent-10-model-install/steps/install_report/results/install_report.py'] gaps=-
 ## agent-11-download-extraction: estado=CLOSED marco=smolagents pasos_cerrados=['acquire_requested_component']
