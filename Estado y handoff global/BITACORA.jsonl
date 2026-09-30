@@ -40,3 +40,4 @@
 {"id": "B-0040", "fecha": "2026-09-30", "tipo": "hecho_sin_verificar", "resumen": "GPT dejo en main el control plane HF (commits f0bca25 3734566 ac2b4f8 b0eb32a c5e7845 898cec4 7cd4f30 2297a64 79a5548); sin prueba de humo. Detalle en Claude notas/HANDOFF-GPT-HF-CONTROL-PLANE-2026-09-30.md"}
 {"id": "B-0041", "fecha": "2026-09-30", "tipo": "en_curso", "resumen": "Delegadas a agentes y EN CURSO (no hechas): descarga harness x2, cadena Kimi->GLM->DeepSeek 90s, plugins harness/Fables/paralelo + MCP/HTTP/FastAPI, puentes almacenamiento/datasets/skills/computo, secretos GH/HF del Router"}
 {"id": "B-0042", "fecha": "2026-09-30", "tipo": "verificacion", "resumen": "Huecos detectados anotados en HANDOFF.md (seccion Huecos detectados 2026-09-30)"}
+{"id": "B-0043", "fecha": "2026-09-30", "tipo": "documentacion", "resumen": "organizador: README.md, HANDOFF-CABLEADO.md, CONECTAR-SDK-NUEVO.md y plugins/_plantilla_sdk en router inteligente universal; indice y pendientes reales"}

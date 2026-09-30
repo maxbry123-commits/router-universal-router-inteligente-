@@ -215,3 +215,6 @@ Manda sobre los anteriores si se contradicen. Texto literal de las ordenes: `Rea
 7. Existen dos adendas casi iguales en `Readme arquitectura router inteligente universal/` (ADENDA-RIU-0108 en mayusculas y en minusculas): posible duplicado.
 8. T-08 (memoria Manus + puente HF) figura PENDIENTE desde el 29, pero el Director dice que GPT ya hizo el puente: falta decidir si N-08 se cierra o queda solo para almacenamiento permanente.
 9. No hay ficha de tarea en `Estado y handoff global/tareas/` para Pasos 1-4 ni para el control plane.
+
+## Checkpoint 2026-09-30 (agente organizador)
+Nuevo mapa: `router inteligente universal/README.md`. Indice cableado, orden de lectura y pendientes reales: `router inteligente universal/HANDOFF-CABLEADO.md`. Procedimiento de SDK/claves nuevas: `router inteligente universal/CONECTAR-SDK-NUEVO.md` (el banco solo recibe claves por /vault/credentials con el Router vivo). Plantilla: `router inteligente universal/plugins/_plantilla_sdk/`. Lectura de los documentos largos de Fables fue parcial.
