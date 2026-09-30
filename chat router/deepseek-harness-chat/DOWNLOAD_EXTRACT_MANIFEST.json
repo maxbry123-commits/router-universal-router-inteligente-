@@ -1,0 +1,65 @@
+{
+  "bundle_bytes": 40589866,
+  "bundle_sha256": "fb63f8e1d0fd1c464097474c454fff9eaec5152241bd543a06b5d125a240cce1",
+  "extracted_tree": {
+    "bytes": 120295740,
+    "files": 14090,
+    "sha256": "5e4579a94c5878d54dafeabb25c88bd108b0375b04b0a32dda6edb927e9e5abe"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "deepseek-harness-chat.bundle.zip.part-0001",
+      "sha256": "121242494d31259a2e313da981883a3a4d817ef24b8e2513c4865929b6c668a1"
+    },
+    {
+      "bytes": 12582912,
+      "name": "deepseek-harness-chat.bundle.zip.part-0002",
+      "sha256": "4300e979bec3d8a6169ea6c9b2cde8494204cbf03a4cf33c81fe2bf8530897f0"
+    },
+    {
+      "bytes": 12582912,
+      "name": "deepseek-harness-chat.bundle.zip.part-0003",
+      "sha256": "74fabfe25cbd918d513aec50a1c8594e79f8c75eeb55cd0b318a52d509dee9a7"
+    },
+    {
+      "bytes": 2841130,
+      "name": "deepseek-harness-chat.bundle.zip.part-0004",
+      "sha256": "609b67fbf395d7a8c64e92cb46c1bf070724a3b706d89363ba94a690e5032335"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    ".agents/notes/implemented/CLAUDE.md",
+    ".agents/skills/agent-experience/SKILL.md",
+    ".claude/skills",
+    "CLAUDE.md",
+    "apps/cli/tests/profiles/acp/cordis.yml",
+    "packages/CLAUDE.md",
+    "snapshots/acp/escalation-approved/system-prompt.expected.md",
+    "snapshots/acp/escalation-approved/tool-schemas.expected.json",
+    "snapshots/acp/image-compaction/system-prompt.expected.md",
+    "snapshots/sdk/account-provider-signout/system-prompt.expected.md",
+    "snapshots/sdk/account-provider-signout/tool-schemas.expected.json",
+    "snapshots/session/agent-instructions/workspace/AGENTS.md",
+    "snapshots/session/agent-instructions/workspace/nested/AGENTS.md",
+    "vendor/CLAUDE.md"
+  ],
+  "skipped_special_count": 14,
+  "slug": "deepseek-harness-chat",
+  "source_bytes": 120295740,
+  "source_commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+  "source_files": 14090,
+  "source_ref": "master",
+  "source_repo": "deepseek-ai/deepseek-harness",
+  "source_tree": {
+    "bytes": 120295740,
+    "files": 14090,
+    "sha256": "5e4579a94c5878d54dafeabb25c88bd108b0375b04b0a32dda6edb927e9e5abe"
+  }
+}
