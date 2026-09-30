@@ -1,0 +1,25 @@
+:root {
+  --yaiwes-bg: #1B1B1B;
+  --yaiwes-surface: #202020;
+  --yaiwes-panel: #252525;
+  --yaiwes-card: #2A2A2A;
+  --yaiwes-selected: #3C3C3C;
+  --yaiwes-mask: #484848;
+  --yaiwes-border: #3A3A3A;
+  --yaiwes-border-strong: #525252;
+  --yaiwes-text: #EDEDED;
+  --yaiwes-text-secondary: #BFBFBF;
+  --yaiwes-text-tertiary: #A0A0A0;
+
+  --yaiwes-accent: #0848F7;
+  --yaiwes-success: #12D86A;
+  --yaiwes-danger: #FF475F;
+  --yaiwes-warning: #FF7B1A;
+  --yaiwes-white: #FFFFFF;
+  --yaiwes-gray-light: #DADADA;
+}
+
+.yaiwes-rare-ui {
+  color: var(--yaiwes-text);
+  background: var(--yaiwes-bg);
+}

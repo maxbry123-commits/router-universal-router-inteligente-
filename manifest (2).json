@@ -1,0 +1,13 @@
+{
+  "batch": "01-05",
+  "count": 5,
+  "components": [
+    "folder-component",
+    "bounce-sidebar",
+    "hook-sidebar",
+    "family-drawer",
+    "proximity-sidebar"
+  ],
+  "source_repo": "https://github.com/swamimalode07/rare-ui",
+  "strategy": "install upstream -> backup -> color-only codemod -> YAIWES adapters -> demo"
+}

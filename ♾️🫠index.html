@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es" data-theme="little">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1C1B1A">
+  <meta name="description" content="Laboratorio funcional de interfaces FROMTED × YAIWES. Siete temas visuales, acciones locales y puente remoto fail-closed.">
+  <title>FROMTED × YAIWES — Perfil visual</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./src/lib/actionBus.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" class="symbol-defs" aria-hidden="true">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.3 8.3 0 0 1-3.8-.9L3 21l1.9-5.7A8.3 8.3 0 0 1 4 11.5a8.5 8.5 0 0 1 17 0Z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2.3 2H19a2 2 0 0 1 2 2v10H3Z"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 3l2 1 2.2-.5 1.1 2 2.2 1-.4 2.3 1.4 1.7-1.4 1.8.4 2.2-2.2 1-1.1 2-2.2-.5-2 1-2-1-2.2.5-1.1-2-2.2-1 .4-2.2L3.5 10.5 5 8.8 4.6 6.5l2.2-1 1.1-2L10 4l2-1Z" transform="translate(0 1.5)"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 2.1 7.9L22 12l-7.9 2.1L12 22l-2.1-7.9L2 12l7.9-2.1Z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m3 20 18-8L3 4l2.5 7L14 12l-8.5 1Z"/></symbol>
+    <symbol id="i-attach" viewBox="0 0 24 24"><path d="m9 13 5.5-5.5a3 3 0 0 1 4.2 4.2l-8 8a5 5 0 0 1-7.1-7.1l8.4-8.4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 19h16"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="m9 3 6 6-2 3 4 4-1.5 1.5-4-4L8 16l-3-3 4-4Z"/><path d="m9 15-6 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="m12 3 10 18H2Z"/><path d="M12 9v5M12 17h.01"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 3"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18M12 3c5 5 5 13 0 18"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 18 6-6 4 4 3-3 4 5"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M5 2h10l5 5v15H5Z"/><path d="M15 2v5h5M8 12h9M8 16h9"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10M6 5a9 9 0 1 0 12 0"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M5 2h10l5 5v15H5Z"/><path d="M15 2v5h5"/></symbol>
+  </svg>
+  <div class="workspace" id="workspace">
+    <aside class="sidebar" aria-label="Navegación principal">
+      <div class="logo"><div class="logo-mark">Y<span>·</span></div><div><b>YAIWES</b><small>DESIGN STUDIO</small></div></div>
+      <div class="side-label" data-i18n="workspace">ESPACIO DE TRABAJO</div>
+      <nav id="sideNav" class="side-nav" aria-label="Secciones"></nav>
+      <div class="side-spacer"></div>
+      <div class="mini-preview"><span class="eyebrow" data-i18n="design_lock">PERFIL VISUAL</span><strong id="sidebarThemeName">Little · Principal</strong><small data-i18n="theme_lock_hint">Tokens conservados · vistas en revisión</small><button class="text-action" type="button" data-nav="settings"><span data-i18n="customize">Personalizar apariencia</span><svg class="icon"><use href="#i-chevron"/></svg></button></div>
+      <div class="sidebar-foot">FROMTED / YAIWES <span>v0.2 · REVIEW</span></div>
+    </aside>
+    <div class="main-shell">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="mobile-mark">Y·</span> YAIWES</div>
+        <div class="page-breadcrumb"><span data-i18n="product">FROMTED PRODUCT</span><svg class="icon"><use href="#i-chevron"/></svg><strong id="pageLocation">Chat</strong></div>
+        <div class="top-actions">
+          <div class="top-status" id="topBridgeStatus"><span class="signal neutral"></span><span data-i18n="not_connected">Sin backend</span></div>
+          <button type="button" class="icon-button" data-action="chat.export" id="quickExport" aria-label="Exportar" title="Exportar JSON"><svg class="icon"><use href="#i-download"/></svg></button>
+          <button type="button" class="avatar-button" data-nav="settings" aria-label="Configuración">Y</button>
+        </div>
+      </header>
+      <div class="content-grid">
+        <main class="main-content" id="mainContent" tabindex="-1" aria-live="polite"></main>
+        <aside class="inspector" id="inspector" aria-label="Panel de verificación"></aside>
+      </div>
+    </div>
+    <nav id="bottomNav" class="bottom-nav" aria-label="Navegación móvil"></nav>
+  </div>
+  <dialog id="sheet" class="sheet" aria-labelledby="sheetTitle"><div id="sheetInner"></div></dialog>
+  <input id="filePicker" type="file" multiple hidden aria-label="Seleccionar archivos locales">
+  <input id="restorePicker" type="file" accept="application/json" hidden aria-label="Importar estado JSON">
+  <div id="toastArea" class="toast-area" role="status" aria-live="polite"></div>
+</body>
+</html>
