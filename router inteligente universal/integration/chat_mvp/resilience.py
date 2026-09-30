@@ -257,6 +257,28 @@ def load_policy(path: Any = None) -> dict[str, dict[str, Any]]:
 DEFAULT_POLICY: dict[str, dict[str, Any]] = load_policy()
 
 
+def reload_policies(path: Any = None) -> dict[str, Any]:
+    """Re-read policies.json and update DEFAULT_POLICY in place (readers keep the same dict). Unreadable / invalid JSON / wrong shape
+    keeps the previous policy (ok False). Invalid groups inside a readable file are skipped and listed in "rejected"."""
+    try:
+        groups = json.loads(Path(path or POLICIES_FILE).read_text(encoding="utf-8"))["groups"]
+        if not isinstance(groups, dict):
+            raise ValueError("groups no es un objeto")
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "kept_previous": True, "error": f"{type(exc).__name__}: {str(exc)[:120]}", "groups": sorted(DEFAULT_POLICY)}
+    new = copy.deepcopy(CODE_POLICY)
+    rejected = []
+    for name, group in groups.items():
+        if isinstance(name, str) and _valid_group(group):
+            new[name] = group
+        else:
+            rejected.append(str(name))
+    for k in [k for k in DEFAULT_POLICY if k not in new]:
+        DEFAULT_POLICY.pop(k, None)
+    DEFAULT_POLICY.update(new)
+    return {"ok": True, "groups": sorted(DEFAULT_POLICY), "rejected": rejected}
+
+
 def resolve_chain(group: str, now: datetime, env: Mapping[str, str] | None = None) -> tuple[list[dict[str, Any]], list[str]]:
     env = os.environ if env is None else env
     policy = DEFAULT_POLICY.get(group) or DEFAULT_POLICY["default"]

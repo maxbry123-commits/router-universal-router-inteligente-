@@ -53,6 +53,18 @@ def build_plugin_router() -> APIRouter:
             out.append({**(host.get(plugin_id) or {"id": plugin_id}), "health": health})
         return {"plugins": out, "validator": host.validator_name, "state": host.state_info(), "load_error": host.load_error}
 
+    @r.post("/plugins/sync")
+    def sync_plugins(_owner: str = Depends(_auth)) -> dict[str, Any]:
+        """Rescan plugins/ now (new ones load, deleted ones leave, a bad ficha only marks that plugin invalid). No restart."""
+        return get_host().sync()
+
+    @r.post("/control/reload-policies")
+    def reload_policies(_owner: str = Depends(_auth)) -> dict[str, Any]:
+        """Re-read policies.json into the live chain policy; an invalid file keeps the previous policy."""
+        from ..chat_mvp.resilience import reload_policies as _reload
+
+        return _reload()
+
     @r.post("/plugins/{plugin_id}/enable")
     def enable(plugin_id: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
         return _toggle(plugin_id, True)
