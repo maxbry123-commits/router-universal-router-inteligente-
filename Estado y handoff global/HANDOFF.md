@@ -218,3 +218,8 @@ Manda sobre los anteriores si se contradicen. Texto literal de las ordenes: `Rea
 
 ## Checkpoint 2026-09-30 (agente organizador)
 Nuevo mapa: `router inteligente universal/README.md`. Indice cableado, orden de lectura y pendientes reales: `router inteligente universal/HANDOFF-CABLEADO.md`. Procedimiento de SDK/claves nuevas: `router inteligente universal/CONECTAR-SDK-NUEVO.md` (el banco solo recibe claves por /vault/credentials con el Router vivo). Plantilla: `router inteligente universal/plugins/_plantilla_sdk/`. Lectura de los documentos largos de Fables fue parcial.
+
+## Bloque 4 (union2, 2026-09-30)
+- Hecho y probado: banco configurable (providers.json + RIU_VAULT_AUTOLOCK_S), POST /plugins/sync y /control/reload-policies, guardian + plugin lifeguard, plugin ssh_bridge + transporte ssh.
+- Las fichas de lifeguard y hf_* se corrigieron (runtime_type compute, sandbox egress-allowlist): antes el host las marcaba invalid.
+- Pendiente: arrancar el guardian en HF con tokens reales (no probado en vivo), paramiko en requirements del Space, prueba real ssh contra un host.

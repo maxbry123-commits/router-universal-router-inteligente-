@@ -17,7 +17,7 @@
   "ejecucion": {
     "kind": "api",
     "transport": "http",
-    "runtime_type": "remote",
+    "runtime_type": "compute",
     "entry_point": "plugins.hf_datasets.plugin:handle",
     "idempotente": false,
     "allowed_actions": [
@@ -30,7 +30,7 @@
     ]
   },
   "seguridad": {
-    "sandbox": "none",
+    "sandbox": "egress-allowlist",
     "permisos": [
       "network:http"
     ],

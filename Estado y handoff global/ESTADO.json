@@ -476,5 +476,38 @@
     "computo": "12 GB 24/7 -> 16 GB al 80-85% -> 32 GB (orden 02:10); luego 15:47 dice plan 16 GB pago siempre encendido: ver Huecos detectados",
     "regla": "EN_CURSO no es hecho; nada verde sin evidencia"
   },
-  "checkpoint_2026_09_30_organizador": {"fecha": "2026-09-30", "agente": "organizador", "nota": "Creados router inteligente universal/README.md, HANDOFF-CABLEADO.md, CONECTAR-SDK-NUEVO.md y plugins/_plantilla_sdk. Lectura de docs largos parcial.", "pendientes": ["salvavidas sin vencimiento", "reinicio unico o boton recarga", "SSH", "bus Fables sin cablear", "regla cadena (propuesta)", "lista 10+ SDK", "15 claves SDK por recibir (via /vault/credentials con Router vivo)"]}
+  "checkpoint_2026_09_30_organizador": {
+    "fecha": "2026-09-30",
+    "agente": "organizador",
+    "nota": "Creados router inteligente universal/README.md, HANDOFF-CABLEADO.md, CONECTAR-SDK-NUEVO.md y plugins/_plantilla_sdk. Lectura de docs largos parcial.",
+    "pendientes": [
+      "salvavidas sin vencimiento",
+      "reinicio unico o boton recarga",
+      "SSH",
+      "bus Fables sin cablear",
+      "regla cadena (propuesta)",
+      "lista 10+ SDK",
+      "15 claves SDK por recibir (via /vault/credentials con Router vivo)"
+    ]
+  },
+  "union2_2026-09-30": {
+    "bloque4_en_main": [
+      "banco",
+      "recarga",
+      "salvavidas",
+      "ssh"
+    ],
+    "fichas_corregidas": [
+      "lifeguard",
+      "hf_storage",
+      "hf_datasets",
+      "hf_skills",
+      "hf_compute"
+    ],
+    "pendiente": [
+      "guardian en vivo en HF",
+      "prueba ssh real",
+      "paramiko en requirements Space"
+    ]
+  }
 }

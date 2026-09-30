@@ -11,19 +11,32 @@
   "estado": "testing",
   "categoria": "pipeline",
   "etapa": "P",
-  "contrato": { "rol": "service" },
+  "contrato": {
+    "rol": "service"
+  },
   "ejecucion": {
     "kind": "api",
     "transport": "http",
-    "runtime_type": "remote",
+    "runtime_type": "compute",
     "entry_point": "plugins.lifeguard.plugin:handle",
     "idempotente": false,
-    "allowed_actions": ["status", "plan", "relaunch"]
+    "allowed_actions": [
+      "status",
+      "plan",
+      "relaunch"
+    ]
   },
   "seguridad": {
-    "sandbox": "none",
-    "permisos": ["network:http"],
-    "limites": { "timeout_ms": 60000 }
+    "sandbox": "egress-allowlist",
+    "permisos": [
+      "network:http"
+    ],
+    "limites": {
+      "timeout_ms": 60000
+    }
   },
-  "firma": { "gpg_key_id": "PENDIENTE", "revocation_ref": "contracts/revocation_list.json" }
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "contracts/revocation_list.json"
+  }
 }

@@ -43,3 +43,8 @@ Sin GitHub Actions. Sin Router nuevo: edicion quirurgica del vivo. No lanzar ni 
 6. Lista de 10+ SDK "sol gpt": no la encontre en lo que lei; el campo sdk de policies.json espera la lista del Director. [PENDIENTE]
 7. 15 claves de SDK por recibir: entran por /vault/credentials con el Router vivo y el banco abierto; el banco NO admite escritura desde fuera (ver CONECTAR-SDK-NUEVO.md). Ademas PROVIDER_MAP solo conoce 6 proveedores y el banco se cierra solo tras 1 h. [BLOQUEADO]
 8. hf_storage: Storage Bucket real y enlace del chat de Manus (T-08). Watchdog espera el secreto de control de Jobs. [PENDIENTE]
+
+## Bloque 4 (union2, 2026-09-30)
+- Hecho y probado: banco configurable (providers.json + RIU_VAULT_AUTOLOCK_S), POST /plugins/sync y /control/reload-policies, guardian + plugin lifeguard, plugin ssh_bridge + transporte ssh.
+- Las fichas de lifeguard y hf_* se corrigieron (runtime_type compute, sandbox egress-allowlist): antes el host las marcaba invalid.
+- Pendiente: arrancar el guardian en HF con tokens reales (no probado en vivo), paramiko en requirements del Space, prueba real ssh contra un host.

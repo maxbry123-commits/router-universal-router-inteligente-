@@ -38,3 +38,9 @@ Para el indice completo de documentos y el orden de lectura: [HANDOFF-CABLEADO.m
 
 ## Limite de esta version del README
 Se escribio leyendo el codigo del Plugin Host, los plugins, el banco de claves y los handoffs/estado; los documentos largos (ARQUITECTURA-ROUTER-FICHAS-FABLES, ARQUITECTURA-ROUTER-Y-CONEXIONES, ADENDAS, INPUT-BLOCKs, los 3 archivos Python de enchufe/) se enlazan pero NO se releyeron completos. Quien retome debe leerlos antes de decidir sobre Fables.
+
+## Piezas nuevas (bloque 4, unidas a main)
+- Banco configurable: integration/chat_mvp/providers.json (proveedores extensibles sin tocar codigo) y autobloqueo con RIU_VAULT_AUTOLOCK_S.
+- Recarga en caliente: POST /plugins/sync (reescanea plugins/ sin reiniciar) y /control/reload-policies (recarga politicas).
+- Salvavidas 24/7 sin GitHub Actions: agents-yaiwes/common/guardian.py + plugin lifeguard (relanza al Router en HF; relaunch es dry-run salvo dry_run=false).
+- Puente SSH: plugin ssh_bridge (run/put/get a hosts de lista blanca en config.json, credenciales solo por env) y transporte ssh en el plugin connectivity.
