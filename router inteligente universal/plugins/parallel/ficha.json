@@ -1,12 +1,12 @@
 {
   "plugin_host": {
     "schema": "plugin_host/v1",
-    "id": "remote_router",
+    "id": "parallel",
     "enabled_default": false,
     "health_action": "status",
-    "nota_roja": "Puente HTTP/FastAPI listo. Solo requiere RIU_REMOTE_ROUTER_URL y, si aplica, RIU_REMOTE_ROUTER_API_KEY."
+    "nota_roja": "Sistema paralelo: N llamadas a plugins via host.call, max 8 en vuelo, con timeout."
   },
-  "artifact_id": "riu.plugins.remote_router",
+  "artifact_id": "riu.plugins.parallel",
   "version": "0.1.0",
   "estado": "testing",
   "categoria": "pipeline",
@@ -15,24 +15,21 @@
     "rol": "service"
   },
   "ejecucion": {
-    "kind": "api",
-    "transport": "http",
+    "kind": "code",
+    "transport": "importlib",
     "runtime_type": "compute",
-    "entry_point": "plugins.remote_router.bridge:handle",
+    "entry_point": "plugins.parallel.plugin:handle",
     "idempotente": false,
     "allowed_actions": [
       "status",
-      "models",
-      "invoke"
+      "run"
     ]
   },
   "seguridad": {
-    "sandbox": "egress-allowlist",
-    "permisos": [
-      "network:http"
-    ],
+    "sandbox": "none",
+    "permisos": [],
     "limites": {
-      "timeout_ms": 60000
+      "timeout_ms": 120000
     }
   },
   "firma": {

@@ -1,0 +1,1 @@
+{"http_allowlist": ["api.github.com", "huggingface.co"], "fastapi_health_path": "/health"}

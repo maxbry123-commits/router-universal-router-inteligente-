@@ -1,12 +1,12 @@
 {
   "plugin_host": {
     "schema": "plugin_host/v1",
-    "id": "remote_router",
+    "id": "fables_enchufe",
     "enabled_default": false,
     "health_action": "status",
-    "nota_roja": "Puente HTTP/FastAPI listo. Solo requiere RIU_REMOTE_ROUTER_URL y, si aplica, RIU_REMOTE_ROUTER_API_KEY."
+    "nota_roja": "Envoltura del unico tramo cableado de Fables: enchufe/validator_v2.py (validar)."
   },
-  "artifact_id": "riu.plugins.remote_router",
+  "artifact_id": "riu.plugins.fables_enchufe",
   "version": "0.1.0",
   "estado": "testing",
   "categoria": "pipeline",
@@ -15,24 +15,21 @@
     "rol": "service"
   },
   "ejecucion": {
-    "kind": "api",
-    "transport": "http",
+    "kind": "code",
+    "transport": "importlib",
     "runtime_type": "compute",
-    "entry_point": "plugins.remote_router.bridge:handle",
+    "entry_point": "plugins.fables_enchufe.plugin:handle",
     "idempotente": false,
     "allowed_actions": [
       "status",
-      "models",
-      "invoke"
+      "validate"
     ]
   },
   "seguridad": {
-    "sandbox": "egress-allowlist",
-    "permisos": [
-      "network:http"
-    ],
+    "sandbox": "none",
+    "permisos": [],
     "limites": {
-      "timeout_ms": 60000
+      "timeout_ms": 5000
     }
   },
   "firma": {

@@ -1,12 +1,12 @@
 {
   "plugin_host": {
     "schema": "plugin_host/v1",
-    "id": "remote_router",
+    "id": "deepseek_harness",
     "enabled_default": false,
     "health_action": "status",
-    "nota_roja": "Puente HTTP/FastAPI listo. Solo requiere RIU_REMOTE_ROUTER_URL y, si aplica, RIU_REMOTE_ROUTER_API_KEY."
+    "nota_roja": "Wrapper removible de la regla Fables s8 (harness de DeepSeek). Sin RIU_DEEPSEEK_HARNESS_URL responde degraded."
   },
-  "artifact_id": "riu.plugins.remote_router",
+  "artifact_id": "riu.plugins.deepseek_harness",
   "version": "0.1.0",
   "estado": "testing",
   "categoria": "pipeline",
@@ -18,11 +18,10 @@
     "kind": "api",
     "transport": "http",
     "runtime_type": "compute",
-    "entry_point": "plugins.remote_router.bridge:handle",
+    "entry_point": "plugins.deepseek_harness.plugin:handle",
     "idempotente": false,
     "allowed_actions": [
       "status",
-      "models",
       "invoke"
     ]
   },
@@ -32,7 +31,7 @@
       "network:http"
     ],
     "limites": {
-      "timeout_ms": 60000
+      "timeout_ms": 30000
     }
   },
   "firma": {
