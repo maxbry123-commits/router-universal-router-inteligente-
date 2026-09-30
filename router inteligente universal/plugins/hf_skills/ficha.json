@@ -1,0 +1,43 @@
+{
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "hf_skills",
+    "enabled_default": false,
+    "health_action": "status",
+    "nota_roja": "Conexion POR LLAMADA (solo lectura) a la biblioteca de skills de HF: repo real https://github.com/huggingface/skills, commit fijado abc20ae5 segun integration/huggingface/hf_skills_registry.json (GPT). GITHUB_TOKEN opcional. No guarda nada."
+  },
+  "artifact_id": "riu.plugins.hf_skills",
+  "version": "0.1.0",
+  "estado": "testing",
+  "categoria": "pipeline",
+  "etapa": "P",
+  "contrato": {
+    "rol": "service"
+  },
+  "ejecucion": {
+    "kind": "api",
+    "transport": "http",
+    "runtime_type": "remote",
+    "entry_point": "plugins.hf_skills.plugin:handle",
+    "idempotente": false,
+    "allowed_actions": [
+      "status",
+      "registry",
+      "list",
+      "read"
+    ]
+  },
+  "seguridad": {
+    "sandbox": "none",
+    "permisos": [
+      "network:http"
+    ],
+    "limites": {
+      "timeout_ms": 60000
+    }
+  },
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "contracts/revocation_list.json"
+  }
+}
