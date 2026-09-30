@@ -37,6 +37,8 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_CONTROL_JOBS_TOKEN }}
           GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
+          HF_TOKEN_1_SECRET: ${{ secrets.HF_TOKEN_1 }}
+          GH_AGENT_TOKEN: ${{ secrets.GH_AGENT_TOKEN }}
           GH_WRITE: ${{ secrets.GH_CLASSIC_FULL_1 || secrets.RIU_GITHUB_PAT_FULL_ACCESO }}
           RIU_KEY: ${{ secrets.RIU_ROUTER_API_KEY }}
           RIU_AGENT_KEYS: ${{ secrets.RIU_AGENT_API_KEYS_JSON }}
@@ -84,7 +86,9 @@ jobs:
           )
           secrets = {"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]}
           secrets["HF_CONTROL_JOBS_TOKEN"] = os.environ["HF_TOKEN"]  # solo control de Jobs/autoscaler
-          secrets["HF_TOKEN_1"] = os.environ["HF_TOKEN"]  # compatibilidad temporal con rutas que aun esperan este nombre
+          secrets["HF_TOKEN_1"] = os.environ.get("HF_TOKEN_1_SECRET") or os.environ["HF_TOKEN"]  # token de agentes (HF2); cae al de control si falta
+          if os.environ.get("GH_AGENT_TOKEN"):
+              secrets["GH_AGENT_TOKEN"] = os.environ["GH_AGENT_TOKEN"]  # escritura GitHub para agentes (nunca se imprime)
           for env_name, sec_name in (("RIU_KEY", "RIU_ROUTER_API_KEY"), ("RIU_AGENT_KEYS", "RIU_AGENT_API_KEYS")):
               if os.environ.get(env_name):
                   secrets[sec_name] = os.environ[env_name]
