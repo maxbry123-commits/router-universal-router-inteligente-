@@ -2,10 +2,9 @@ schema: yaiwes.assistant/v1
 name: hermes
 role: planner_supervisor
 provider: openai_compatible
-base_url: https://integrate.api.nvidia.com/v1
-model_env: YAIWES_ASSISTANT_MODEL
-model_default: kimi-k3
-api_key_env: NVIDIA_API_KEY
+base_url_env: RIU_ROUTER_URL   # se usa <RIU_ROUTER_URL>/v1/router
+model_default: assistants   # grupo del Router (o auto)
+api_key_env: RIU_ROUTER_API_KEY
 capabilities:
   - plan
   - critique

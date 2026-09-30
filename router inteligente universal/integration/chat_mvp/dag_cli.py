@@ -19,7 +19,13 @@ from .usage import UsageLog
 
 
 def build_executor(store: Store, owner: str, keys: dict[str, str] | None = None) -> Callable[..., dict[str, Any]]:
-    def executor(*, provider: str, model: str, messages: list[dict[str, str]], max_tokens: int) -> dict[str, Any]:
+    def executor(*, messages: list[dict[str, str]], max_tokens: int, provider: str | None = None, model: str | None = None,
+                 group: str | None = None) -> dict[str, Any]:
+        if group is not None:  # route node: the group's model chain, same callable and policy as /chat/route (lazy: needs fastapi)
+            from . import model_pool, resilience, route_api
+            out = resilience.run_policy(group, messages, max_tokens, call=route_api._call, pool=model_pool.POOL)
+            UsageLog(store).record(owner=owner, provider=out["route"]["provider"], model=out["route"]["model"], usage=out.get("usage"), from_cache=False)
+            return out
         if provider not in prov.PROVIDERS:
             raise ValueError("PROVIDER_UNKNOWN")
         key = (keys or {}).get(provider) or prov.resolve_key(provider)

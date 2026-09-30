@@ -61,7 +61,7 @@ def _simulated(rol: str) -> dict:
 
 
 class RouterCliente:
-    """POST /chat/send. En SIMULADO=1 nunca toca la red."""
+    """POST /chat/send (o /chat/route si se pasa `group`). En SIMULADO=1 nunca toca la red."""
 
     def __init__(self, live_url: str | None = None, max_tokens: int = 1200) -> None:
         self._url = live_url
@@ -98,16 +98,18 @@ class RouterCliente:
                     return nested
         return json.dumps(data, ensure_ascii=False)
 
-    def chat(self, prompt: str, rol: str) -> str:
+    def chat(self, prompt: str, rol: str, group: str | None = None) -> str:
         if os.environ.get("SIMULADO") == "1":
             return json.dumps(_simulated(rol), ensure_ascii=False)
 
-        url = self._live_url() + "/chat/send"
-        body = json.dumps({
-            "provider": "auto",
-            "message": f"[ROL={rol}]\n{prompt}",
-            "max_tokens": self.max_tokens,
-        }).encode("utf-8")
+        message = f"[ROL={rol}]\n{prompt}"
+        if group:  # grupo de política del Router (p. ej. "assistants"): cadena + fallback la decide el Router
+            url = self._live_url() + "/chat/route"
+            payload = {"group": group, "message": message, "max_tokens": self.max_tokens}
+        else:
+            url = self._live_url() + "/chat/send"
+            payload = {"provider": "auto", "message": message, "max_tokens": self.max_tokens}
+        body = json.dumps(payload).encode("utf-8")
         headers = {"Content-Type": "application/json"}
         hf = os.environ.get("HF_TOKEN")
         key = os.environ.get("RIU_ROUTER_API_KEY")

@@ -1,11 +1,18 @@
-"""riu.dag/v1 — DSL DAG runner: Claude (the brain) writes the plan, the Router executes it with the chosen models.
+"""riu.dag/v1 — deterministic DSL DAG runner: Claude (the brain) writes the plan, the Router executes it.
 
-Design rules (aligned with the executor/auditor DSL family, tel.workflow/v3):
+What it does:
   * `input_block` is the Director's instruction, passed to every node LITERALLY (no reinterpretation).
-  * The executor model has authority NONE and never certifies itself: PASS comes only from deterministic `expect` checks.
-  * A node without `expect` ends as DONE_UNVERIFIED, never PASS.
-  * Every attempt is written to a hash-chained ledger (tamper-evident); `verify_ledger` re-checks it.
-  * Failure path: retries (with the failed checks fed back) -> `escalate_to` model -> FAIL; dependents become BLOCKED.
+  * Nodes run in topological order (`needs`); the outputs of the needed nodes are given as context. A node whose dependency
+    did not end PASS/DONE_UNVERIFIED is BLOCKED.
+  * A node picks its model in exactly one of two ways: `model: {provider, model}` (explicit) or `route: {group}` (group in
+    ROUTE_GROUPS: the executor runs that group's model CHAIN, same policy as /chat/route).
+  * The executor model has authority NONE and never certifies itself: PASS comes only from deterministic `expect` checks
+    (`check_expect`). A node without `expect` ends as DONE_UNVERIFIED, never PASS.
+  * Failure path: `retries` (failed checks fed back) -> `escalate_to` model -> FAIL.
+  * `loop: {until, max_iterations 1..20}` re-runs the node (previous failed checks fed back) until `until` (same syntax as
+    `expect`) passes. Stop reasons: PASSED | MAX_ITERATIONS | REPEATED_x3 (same output+checks 3 times in a row). No sleeping,
+    no randomness. A loop node makes exactly one executor call per iteration (so it cannot combine with retries/escalate_to).
+  * Every attempt/iteration is written to a hash-chained ledger (tamper-evident); `verify_ledger` re-checks it.
 NOTE: the exact field names of Fables' DAG schema are pending the link from the Director; this schema is provisional.
 """
 from __future__ import annotations
@@ -22,6 +29,8 @@ EXECUTOR_CONTRACT = (
     "Lee el INPUT_BLOCK literal, sin reinterpretarlo. Responde únicamente lo que pide el nodo. "
     "Si no puedes o falta evidencia, responde exactamente: GAP: <motivo>."
 )
+ROUTE_GROUPS = ("default", "code", "minor", "g2")
+MAX_LOOP_ITERATIONS = 20
 Executor = Callable[..., dict[str, Any]]
 
 
@@ -50,10 +59,25 @@ def validate(dag: dict[str, Any], known_providers: set[str] | None = None) -> li
     for n in nodes:
         nid = n.get("id", "?")
         m = n.get("model") or {}
-        if not m.get("provider") or not m.get("model"):
-            errs.append(f"{nid}: model.provider y model.model son obligatorios")
+        if n.get("route") is not None:
+            r = n["route"]
+            if n.get("model"):
+                errs.append(f"{nid}: usa model o route, no ambos")
+            elif not isinstance(r, dict) or r.get("group") not in ROUTE_GROUPS:
+                errs.append(f"{nid}: route.group debe ser uno de {'/'.join(ROUTE_GROUPS)}")
+        elif not m.get("provider") or not m.get("model"):
+            errs.append(f"{nid}: model.provider y model.model son obligatorios (o route.group)")
         elif known_providers is not None and m["provider"] not in known_providers:
             errs.append(f"{nid}: proveedor desconocido {m['provider']}")
+        if n.get("loop") is not None:
+            lp = n["loop"]
+            mi = lp.get("max_iterations") if isinstance(lp, dict) else None
+            if not isinstance(lp, dict) or not isinstance(lp.get("until"), dict) or not lp["until"]:
+                errs.append(f"{nid}: loop.until debe ser un expect no vacío")
+            elif isinstance(mi, bool) or not isinstance(mi, int) or not 1 <= mi <= MAX_LOOP_ITERATIONS:
+                errs.append(f"{nid}: loop.max_iterations debe ser entero 1..{MAX_LOOP_ITERATIONS}")
+            if n.get("retries") or n.get("escalate_to"):
+                errs.append(f"{nid}: loop no se combina con retries/escalate_to")
         if not str(n.get("instructions", "")).strip():
             errs.append(f"{nid}: instructions vacío")
         for d in n.get("needs", []):
@@ -143,6 +167,24 @@ def _messages(dag: dict[str, Any], node: dict[str, Any], deps: dict[str, str], a
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
+def _call_node(executor: Executor, node: dict[str, Any], model: dict[str, Any], msgs: list[dict[str, str]]) -> tuple[str, dict[str, Any], bool, str | None, dict[str, str]]:
+    """One executor call. Returns (reply, usage, cached, error_text, ledger_id) where ledger_id has provider/model (+group for route nodes)."""
+    mt = int(node.get("max_tokens", 512))
+    ident = {"provider": model["provider"], "model": model["model"]} if model else {"provider": "route", "model": node["route"]["group"]}
+    try:
+        if model:
+            res = executor(provider=model["provider"], model=model["model"], messages=msgs, max_tokens=mt)
+        else:
+            res = executor(group=node["route"]["group"], messages=msgs, max_tokens=mt)
+            ri = res.get("route") or {}
+            ident = {"provider": ri.get("provider") or "route", "model": ri.get("model") or node["route"]["group"], "group": node["route"]["group"]}
+        return res["message"].get("content") or "", res.get("usage") or {}, bool(res.get("cached")), None, ident
+    except Exception as exc:  # noqa: BLE001 - executor failures are evidence, not crashes
+        if not model:
+            ident["group"] = node["route"]["group"]
+        return "", {}, False, f"{type(exc).__name__}: {str(exc)[:160]}", ident
+
+
 def run_dag(dag: dict[str, Any], executor: Executor, *, agents: dict[str, str] | None = None,
             known_providers: set[str] | None = None, dep_chars: int = 3000) -> dict[str, Any]:
     errs = validate(dag, known_providers)
@@ -162,43 +204,72 @@ def run_dag(dag: dict[str, Any], executor: Executor, *, agents: dict[str, str] |
             continue
         deps = {d: replies[d] for d in node.get("needs", [])}
         prompt_agent = agents.get(node.get("agent", "")) if node.get("agent") else None
-        models = [node["model"]] + ([node["escalate_to"]] if node.get("escalate_to") else [])
         attempts: list[dict[str, Any]] = []
         status, last_reply, last_fails = "FAIL", "", []
-        for mi, model in enumerate(models):
-            tries = 1 + (int(node.get("retries", 0)) if mi == 0 else 0)
-            feedback: list[str] | None = None
-            for _ in range(tries):
+        stop_reason: str | None = None
+
+        def record(model: dict[str, Any], msgs: list[dict[str, str]], reply: str, usage: dict[str, Any], cached: bool,
+                   exc_txt: str | None, ident: dict[str, str], fails: list[str], verdict: str, extra: dict[str, Any] | None = None) -> None:
+            nonlocal prev
+            entry = {"node": nid, "attempt": len(attempts) + 1, **ident, **(extra or {}),
+                     "prompt_sha256": _sha(json.dumps(msgs, sort_keys=True, ensure_ascii=False)), "reply_sha256": _sha(reply),
+                     "cached": cached, "verdict": verdict, "checks_failed": fails}
+            item = {**entry, "prev": prev, "hash": _entry_hash(prev, entry)}
+            prev = item["hash"]
+            ledger.append(item)
+            attempts.append({"model": f"{ident['provider']}/{ident['model']}", "verdict": verdict, "checks_failed": fails, **(extra or {})})
+            totals["calls"] += 0 if cached else 1
+            totals["cached_responses"] += 1 if cached else 0
+            totals["input"] += int(usage.get("prompt_tokens") or 0) if not cached else 0
+            totals["output"] += int(usage.get("completion_tokens") or 0) if not cached else 0
+            totals["cached_input"] += int(usage.get("prompt_cache_hit_tokens") or (usage.get("prompt_tokens_details") or {}).get("cached_tokens") or 0) if not cached else 0
+
+        if node.get("loop"):
+            until, max_it = node["loop"]["until"], int(node["loop"]["max_iterations"])
+            feedback = None
+            seen: list[tuple[str, tuple[str, ...]]] = []
+            for it in range(1, max_it + 1):
                 msgs = _messages(dag, node, deps, prompt_agent, feedback, dep_chars)
-                try:
-                    res = executor(provider=model["provider"], model=model["model"], messages=msgs, max_tokens=int(node.get("max_tokens", 512)))
-                    reply = res["message"].get("content") or ""
-                    usage, cached, exc_txt = res.get("usage") or {}, bool(res.get("cached")), None
-                except Exception as exc:  # noqa: BLE001 - executor failures are evidence, not crashes
-                    reply, usage, cached, exc_txt = "", {}, False, f"{type(exc).__name__}: {str(exc)[:160]}"
-                fails = [f"EXECUTOR_ERROR {exc_txt}"] if exc_txt else check_expect(reply, node.get("expect"))
-                verdict = "PASS" if (not fails and node.get("expect")) else ("DONE_UNVERIFIED" if not fails else "FAIL")
-                entry = {"node": nid, "attempt": len(attempts) + 1, "provider": model["provider"], "model": model["model"],
-                         "prompt_sha256": _sha(json.dumps(msgs, sort_keys=True, ensure_ascii=False)), "reply_sha256": _sha(reply),
-                         "cached": cached, "verdict": verdict, "checks_failed": fails}
-                item = {**entry, "prev": prev, "hash": _entry_hash(prev, entry)}
-                prev = item["hash"]
-                ledger.append(item)
-                attempts.append({"model": f"{model['provider']}/{model['model']}", "verdict": verdict, "checks_failed": fails})
-                totals["calls"] += 0 if cached else 1
-                totals["cached_responses"] += 1 if cached else 0
-                totals["input"] += int(usage.get("prompt_tokens") or 0) if not cached else 0
-                totals["output"] += int(usage.get("completion_tokens") or 0) if not cached else 0
-                totals["cached_input"] += int(usage.get("prompt_cache_hit_tokens") or (usage.get("prompt_tokens_details") or {}).get("cached_tokens") or 0) if not cached else 0
+                reply, usage, cached, exc_txt, ident = _call_node(executor, node, node.get("model") or {}, msgs)
+                fails = [f"EXECUTOR_ERROR {exc_txt}"] if exc_txt else check_expect(reply, until)
+                verdict = "PASS" if not fails else "FAIL"
+                record(node.get("model") or {}, msgs, reply, usage, cached, exc_txt, ident, fails, verdict, {"iteration": it})
                 last_reply, last_fails = reply, fails
-                if verdict in ("PASS", "DONE_UNVERIFIED"):
-                    status = verdict
+                seen.append((_sha(reply), tuple(fails)))
+                if not fails:
+                    status, stop_reason = "PASS", "PASSED"
+                    break
+                if len(seen) >= 3 and seen[-1] == seen[-2] == seen[-3]:
+                    stop_reason = "REPEATED_x3"
                     break
                 feedback = fails
-            if status in ("PASS", "DONE_UNVERIFIED"):
-                break
+            else:
+                stop_reason = "MAX_ITERATIONS"
+        else:
+            models = [node["model"]] if node.get("model") else [{}]
+            if node.get("escalate_to"):
+                models.append(node["escalate_to"])
+            for mi, model in enumerate(models):
+                tries = 1 + (int(node.get("retries", 0)) if mi == 0 else 0)
+                feedback = None
+                for _ in range(tries):
+                    msgs = _messages(dag, node, deps, prompt_agent, feedback, dep_chars)
+                    reply, usage, cached, exc_txt, ident = _call_node(executor, node, model, msgs)
+                    fails = [f"EXECUTOR_ERROR {exc_txt}"] if exc_txt else check_expect(reply, node.get("expect"))
+                    verdict = "PASS" if (not fails and node.get("expect")) else ("DONE_UNVERIFIED" if not fails else "FAIL")
+                    record(model, msgs, reply, usage, cached, exc_txt, ident, fails, verdict)
+                    last_reply, last_fails = reply, fails
+                    if verdict in ("PASS", "DONE_UNVERIFIED"):
+                        status = verdict
+                        break
+                    feedback = fails
+                if status in ("PASS", "DONE_UNVERIFIED"):
+                    break
         nodes_out[nid] = {"status": status, "attempts": attempts, "reply": last_reply[:6000], "reply_sha256": _sha(last_reply),
                           "checks_failed": [] if status != "FAIL" else last_fails}
+        if stop_reason:
+            nodes_out[nid]["stop_reason"] = stop_reason
+            nodes_out[nid]["iterations"] = len(attempts)
         replies[nid] = last_reply
     statuses = {v["status"] for v in nodes_out.values()}
     overall = "FAIL" if statuses & {"FAIL", "BLOCKED"} else ("UNVERIFIED" if "DONE_UNVERIFIED" in statuses else "PASS")

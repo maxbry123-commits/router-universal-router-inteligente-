@@ -48,6 +48,12 @@ app.include_router(build_vault_router())  # /vault: Secret Bank unlock in memory
 app.include_router(build_jobs_router(), dependencies=_chat_deps)  # /chat/jobs/run: parallel agent jobs
 app.include_router(build_route_router(), dependencies=_chat_deps)  # /chat/route + /chat/router/status: resilient policy routing
 try:
+    from .openai_route import build_openai_router
+
+    app.include_router(build_openai_router(), dependencies=_chat_deps)  # /v1/router/*: OpenAI-compatible door for Hermes/OpenClaw (base_url=<Router>/v1/router)
+except Exception as exc:  # never take the Router down for the OpenAI door
+    logging.getLogger("riu").warning("openai_route no montado: %s", exc)
+try:
     from .ui_bridge import build_ui_bridge_router
 
     app.include_router(build_ui_bridge_router())  # /gh/accounts, /control/*, /groups: Vercel chat

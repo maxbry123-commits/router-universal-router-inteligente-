@@ -206,6 +206,8 @@ QWEN_GROQ = {"provider": "groq", "model": "qwen/qwen3.8-27b"}
 
 DEFAULT_POLICY: dict[str, dict[str, Any]] = {
     "default": {"authorized_fallback": True, "chain": [KIMI_K3, GLM_53, DEEPSEEK_FLASH, QWEN_GROQ, NEMOTRON]},
+    # Hermes / OpenClaw / assistants (Director 02:06): NVIDIA first (keys 1-3, then the 4th, by key order inside each option), then Groq, DeepSeek, Nemotron LAST
+    "assistants": {"authorized_fallback": True, "chain": [KIMI_K3, GLM_53, QWEN_GROQ, DEEPSEEK_FLASH, NEMOTRON]},
     "code": {"authorized_fallback": True, "chain": [MINIMAX, NEMOTRON]},
     "minor": {"authorized_fallback": True, "peak_only_minimax": True, "chain": [DEEPSEEK_FLASH, NEMOTRON, MINIMAX]},
     "g2": {"authorized_fallback": True, "chain": [KIMI_K3, GLM_53,

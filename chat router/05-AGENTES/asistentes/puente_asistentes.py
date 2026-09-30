@@ -5,14 +5,17 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 from urllib import request
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "colmena"))
+from router_cliente import RouterCliente  # noqa: E402  (helper único hacia el Router)
 
 ROLES = {
     "hermes": "planner_supervisor",
     "openclaw": "guardian_supervisor",
 }
-BASE_URL = os.getenv("YAIWES_ROUTER_URL", "https://integrate.api.nvidia.com/v1").rstrip("/")
-MODEL = os.getenv("YAIWES_ASSISTANT_MODEL", "kimi-k3")
+GROUP = os.getenv("YAIWES_ASSISTANT_GROUP", "assistants")  # grupo de política del Router; el Router elige modelo/clave
 STATE_HUB_URL = os.getenv("YAIWES_STATE_HUB_URL", "").rstrip("/")
 BITACORA = Path(__file__).resolve().parents[2] / "03-ESTADO" / "BITACORA.jsonl"
 
@@ -30,7 +33,7 @@ def _post_json(url: str, payload: dict, headers: dict[str, str] | None = None) -
 
 
 def preguntar(agente: str, mensaje: str) -> str:
-    """Pregunta a Hermes/OpenClaw a través del Router/NVIDIA; SIMULADO no usa red."""
+    """Pregunta a Hermes/OpenClaw a través del grupo `assistants` del Router; SIMULADO no usa red."""
     if agente not in ROLES:
         raise ValueError(f"agente desconocido: {agente}")
     if not isinstance(mensaje, str) or not mensaje.strip():
@@ -38,26 +41,8 @@ def preguntar(agente: str, mensaje: str) -> str:
     if _simulado():
         return f"SIMULADO:{agente}:{ROLES[agente]}:{mensaje.strip()}"
 
-    token = os.getenv("NVIDIA_API_KEY") or os.getenv("RIU_ROUTER_API_KEY")
-    if not token:
-        raise RuntimeError("falta NVIDIA_API_KEY o RIU_ROUTER_API_KEY")
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {"role": "system", "content": f"Actúa como {ROLES[agente]} de YAIWES."},
-            {"role": "user", "content": mensaje},
-        ],
-        "temperature": 0.2,
-    }
-    result = _post_json(
-        f"{BASE_URL}/chat/completions",
-        payload,
-        {"Authorization": f"Bearer {token}"},
-    )
-    try:
-        return str(result["choices"][0]["message"]["content"])
-    except (KeyError, IndexError, TypeError) as exc:
-        raise RuntimeError("respuesta inválida del Router") from exc
+    # El Router (grupo `assistants`) elige modelo y rota claves; el puente no llama a ningún proveedor directo.
+    return RouterCliente(max_tokens=1024).chat(mensaje.strip(), ROLES[agente], group=GROUP)
 
 
 def emit(evento: dict) -> dict:

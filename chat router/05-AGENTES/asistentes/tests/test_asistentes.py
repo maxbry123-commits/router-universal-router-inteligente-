@@ -47,7 +47,8 @@ def test_configs_roles_router_y_sin_anthropic():
     claw = (HERE / "openclaw_config.yaml").read_text(encoding="utf-8")
     assert "planner_supervisor" in hermes
     assert "guardian_supervisor" in claw
-    assert "integrate.api.nvidia.com" in hermes + claw
+    assert "integrate.api.nvidia.com" not in hermes + claw
+    assert "assistants" in hermes and "assistants" in claw and "RIU_ROUTER_URL" in hermes + claw
     forbidden = "ANTHROPIC_" + "API_KEY"
     assert forbidden not in hermes + claw
 

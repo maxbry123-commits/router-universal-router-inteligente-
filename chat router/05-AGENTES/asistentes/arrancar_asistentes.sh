@@ -9,9 +9,10 @@ OPENCLAW_REF="${OPENCLAW_REF:-038b10b48de03f67c191ec6db15b484aebae8a9c}"
 HERMES_DIR="$ROOT/hermes-agent"
 OPENCLAW_DIR="$ROOT/openclaw"
 
-export OPENAI_BASE_URL="${OPENAI_BASE_URL:-https://integrate.api.nvidia.com/v1}"
-export OPENAI_API_KEY="${OPENAI_API_KEY:-${NVIDIA_API_KEY:-}}"
-export YAIWES_ASSISTANT_MODEL="${YAIWES_ASSISTANT_MODEL:-kimi-k3}"
+# Todo modelo pasa por el Router (grupo `assistants`); ver CONECTAR-AL-ROUTER.md
+export OPENAI_BASE_URL="${OPENAI_BASE_URL:-${RIU_ROUTER_URL:-}/v1/router}"
+export OPENAI_API_KEY="${OPENAI_API_KEY:-${RIU_ROUTER_API_KEY:-}}"
+export YAIWES_ASSISTANT_MODEL="${YAIWES_ASSISTANT_MODEL:-assistants}"
 
 clone_ref() {
   local repo="$1" dir="$2" ref="$3"

@@ -1,0 +1,44 @@
+# RECOVERY — parche de recuperación para cualquier Opus. Leer ANTES que nada. Formato compacto (solo para IA).
+# upd: 2026-09-27T16:46Z · dir: Max · lang_out: es, corto, sin jerga · rules: chat router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml (R01-R12)
+repos: {R: maxbry123-commits/router-universal-router-inteligente-, F: maxbry123-commits/frontend, A: maxbry123-commits/agentes}
+mcp: {conector: HF_Gith_Allow_Access, space: COMAND-CENTER-1/claude-github-mcp-backup, auth: secret_path(MCP_SECRET_PATH=RIU_ROUTER_API_KEY), oauth: OFF, hw: cpu-basic}
+owner_critico: opus   # SOLO Opus toca: Router, OmniRoute, HF, conector, secretos, lanzadores
+
+P1_router:   # R/"router inteligente universal/"
+  run: {wf: .github/workflows/riu-router-job-central.yml, hw: HF Job cpu-basic 16GB pago, life: 48h, cancela_anteriores: true, pip_extra: [httpx]}
+  live_url: "R/router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag:LIVE_URL"
+  auth_call: [Authorization: "Bearer HF_TOKEN", X-API-Key: RIU_ROUTER_API_KEY]
+  modelos: {route: [nvidia, groq], fallback: [deepseek_flash], prioridad: [kimi-k3, glm-5, deepseek-v4, any_nvidia_alive], sonda: "common/routes.py disponibles() cache 15m", cerebras: ELIMINADO_402}
+  verificado_2026-09-27: {nvidia_key1_kimi-k3: 200, kimi-k2.6: 404_all_keys, deepseek-v4.1-flash: timeout, cerebras: 402}
+  omniroute: {v: 3.8.51, where: "misma maquina 127.0.0.1:20128", start: "keeper/start_omniroute.sh", door: "/omniroute/*", test_wf: prueba-omniroute-router.yml, estado: PENDIENTE_PRUEBA_TRAS_RELANZAR, build_min: 10-20}
+  webhook_space: "dispara riu-router-job-central (aplicado 27-sep, verificar)"
+  diag_wf: diagnostico-router-job.yml
+  gaps: [G_groq_sin_claves_en_R, G_omniroute_no_probado, G_autoescalado_16/32_no_hecho, G_mcp_en_maquina16+letrero_vercel_no_hecho]
+
+P2_chat:   # R/"chat router/"
+  dirs: {00-INSTRUCCIONES: verbatim_M1..M44+docs, 01-PLAN: [PLAN-DSL-DAG-00-CONTRATO.yaml, PLAN-DSL-DAG-01-NODOS.yaml, DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml], 02-ARQUITECTURA: "📂readme chat Arquitectura.md", 03-ESTADO: [HANDOFF.md, RECOVERY.yaml, data/], 04-MEMORIA: manus, 05-AGENTES: AGENTES.yaml, 06-ESPEJOS: [tareas/, puente/probar_modelos.py, informes/], 06-EQUIPO: [ORDENES.md, SENTINELA-*.md, TAREAS/]}
+  ui: {vercel: riu-jev-bridge, auto_deploy: OFF(exit 0), rule: "1 deploy final ordenado por dir"}
+  nodos_estado: {V-1: parcial(falta PARTE-2-B), A-1: pendiente_prueba, B-1..B-3: manus, C-1..C-6: espejos_T01_T02, D-1: bloqueado(enlace chat Manus), E-1: pendiente}
+  gaps: [G_parte2B_verbatim, G_chat_base_no_aprobada, G_ui_bridge_DATA_path]
+
+P3_agentes_equipo:
+  registro: "R/chat router/05-AGENTES/AGENTES.yaml (jerarquia doc23 + colmena doc22 + grafo)"
+  forks: [maxbry123-commits/openclaw@v2026.9.6, maxbry123-commits/hermes-agent@v2026.9.24]
+  espejos: {wf: claude-code-espejos.yml, motor: aider(OpenAI-compat directo NVIDIA), modelo: probar_modelos.py, alcance: 1 carpeta, prohibido: [.github, "router inteligente universal"], vida: 5h}
+  espejos_historial: {claude_code_via_litellm: FALLA(tools cortadas con kimi-k3), aider: LANZADO 16:45 T01+T02}
+  tareas: {T01: "05-AGENTES/gobierno (sheriff, judge, sentinel, contratos, mirror_manager)", T02: "05-AGENTES/colmena (router_cliente, agentes, colmena)"}
+  sentinelas: {wf: sentinelas.yml, cada: 20m, proyectos: [chat, fabrica, plan4], out: "chat router/06-EQUIPO/SENTINELA-*.md", ordenes_in: "chat router/06-EQUIPO/ORDENES.md", modelos: [kimi-k2.6, deepseek-v4.1-flash, kimi-k3]}
+  dup: "07-SENTINELAS (opus) redundante con 06-EQUIPO (otra sesion): unificar en 06-EQUIPO"
+
+P4_plan4:   # A
+  loop: {wf: "R/.github/workflows/mini-router-plan-4-objetivos.yml", cada: 1h, prov: cerebras→CAMBIAR_A_nvidia(cerebras 402), out: "rama+PR en A + artifact"}
+  plan: "A/Claude notas/PLAN-MAESTRO-4-OBJETIVOS.md · A/Claude notas/PLAN-OPUS/"
+  gaps: [G_proveedor_cerebras_402_cambiar_input_default_a_nvidia]
+
+P5_fabrica_T3000:   # F
+  fabrica: "F/UI YAIWES/componentes open soure UI YAIWES/ (160+) · F/fabrica de UI INTERFACE fromtend/"
+  descargas: {motor: "R/➡️📂motores…/hf_download_extract_engine.py (salta symlinks, ya_presente=ok, main/master/HEAD)", cadenas: [agent-40, agent-41, agent-42, agent-43-omniroute, agent-44-hermes-openclaw], replicador: replicar-motores.yml(todos los repos)}
+  t3000: {dir: "F/T-3000 MOTOR AUTOEVOLUTION 👾/", entrada: 00-ENTRADA(3571 lineas, NO TOCAR), estado: SIN_CODIGO, regla: "discutir plan con dir antes de programar"}
+  motores_fabrica_doc18: {estado: NO_DELEGADO, base: [capability, canvas, layout, action_flow, sandbox, qa]}
+
+next_opus: [revisar_espejos_T01_T02(informes), prueba_omniroute, cambiar_plan4_a_nvidia, delegar_T03_motores_fabrica(F), unificar_sentinelas, V-1_parte2B, pedir_dir_GROQ_keys_en_R]
