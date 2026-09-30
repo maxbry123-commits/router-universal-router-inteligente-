@@ -1,0 +1,123 @@
+{
+ "_comment": "Chain policies per group (Router). A missing/invalid file or group falls back to resilience.CODE_POLICY. timeout = seconds per option (chat_nvidia: 90 each, no base 30 s). deepseek:true = skipped in DeepSeek peak (01-04 and 06-10 UTC Mon-Fri). peak_only_minimax = in peak only MiniMax. model env:NAME reads that env var. sdk: list pending from the Director.",
+ "groups": {
+  "default": {
+   "authorized_fallback": true,
+   "chain": [
+    {
+     "provider": "nvidia",
+     "model": "moonshotai/kimi-k3"
+    },
+    {
+     "provider": "nvidia",
+     "model": "z-ai/glm-5.3"
+    },
+    {
+     "provider": "hf",
+     "model": "deepseek-ai/DeepSeek-V4-Flash",
+     "deepseek": true
+    },
+    {
+     "provider": "groq",
+     "model": "qwen/qwen3.8-27b"
+    },
+    {
+     "provider": "nvidia",
+     "model": "nvidia/nemotron-3-super-120b-a12b"
+    }
+   ]
+  },
+  "code": {
+   "authorized_fallback": true,
+   "chain": [
+    {
+     "provider": "hf",
+     "model": "MiniMaxAI/MiniMax-M3"
+    },
+    {
+     "provider": "nvidia",
+     "model": "nvidia/nemotron-3-super-120b-a12b"
+    }
+   ]
+  },
+  "minor": {
+   "authorized_fallback": true,
+   "peak_only_minimax": true,
+   "chain": [
+    {
+     "provider": "hf",
+     "model": "deepseek-ai/DeepSeek-V4-Flash",
+     "deepseek": true
+    },
+    {
+     "provider": "nvidia",
+     "model": "nvidia/nemotron-3-super-120b-a12b"
+    },
+    {
+     "provider": "hf",
+     "model": "MiniMaxAI/MiniMax-M3"
+    }
+   ]
+  },
+  "g2": {
+   "authorized_fallback": true,
+   "chain": [
+    {
+     "provider": "nvidia",
+     "model": "moonshotai/kimi-k3"
+    },
+    {
+     "provider": "nvidia",
+     "model": "z-ai/glm-5.3"
+    },
+    {
+     "provider": "groq",
+     "model": "env:RIU_G2_GROQ_MODEL"
+    },
+    {
+     "provider": "local",
+     "model": "env:RIU_G2_LOCAL_MODEL"
+    },
+    {
+     "provider": "hf",
+     "model": "deepseek-ai/DeepSeek-V4-Flash",
+     "deepseek": true
+    },
+    {
+     "provider": "nvidia",
+     "model": "nvidia/nemotron-3-super-120b-a12b"
+    }
+   ]
+  },
+  "chat_nvidia": {
+   "authorized_fallback": true,
+   "chain": [
+    {
+     "provider": "nvidia",
+     "model": "moonshotai/kimi-k3",
+     "timeout": 90
+    },
+    {
+     "provider": "nvidia",
+     "model": "z-ai/glm-5.3",
+     "timeout": 90
+    },
+    {
+     "provider": "hf",
+     "model": "deepseek-ai/DeepSeek-V4-Flash",
+     "deepseek": true,
+     "timeout": 90
+    },
+    {
+     "provider": "groq",
+     "model": "qwen/qwen3.8-27b",
+     "timeout": 90
+    }
+   ]
+  },
+  "sdk": {
+   "authorized_fallback": true,
+   "chain": []
+  }
+ }
+}
