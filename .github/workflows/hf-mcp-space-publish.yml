@@ -1,0 +1,163 @@
+name: HF MCP Space Publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/hf-mcp-space-publish.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_REPO: COMAND-CENTER-1/claude-github-mcp-backup
+      HF_OIDC_RESOURCE: spaces/COMAND-CENTER-1/claude-github-mcp-backup
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Hugging Face CLI
+        run: |
+          curl -LsSf https://hf.co/cli/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build surgical dual-MCP patch
+        run: |
+          python - <<'PY'
+          import py_compile
+          import urllib.request
+
+          url = "https://huggingface.co/spaces/COMAND-CENTER-1/claude-github-mcp-backup/resolve/main/app.py"
+          source = urllib.request.urlopen(url, timeout=30).read().decode("utf-8")
+
+          marker = 'if __name__ == "__main__":'
+          if marker not in source:
+              raise SystemExit("ABORT: main block not found")
+
+          head = source.split(marker, 1)[0]
+          tail = r'''if __name__ == "__main__":
+              import uvicorn
+
+              port = int(os.getenv("PORT", os.getenv("GRADIO_SERVER_PORT", "7860")))
+
+              # Bridge 1: existing MCP route. Keep it active.
+              primary_secret = os.getenv("MCP_SECRET_PATH", "").strip().strip("/")
+
+              # Bridge 2: new MCP route. Optional until the secret exists.
+              secondary_secret = os.getenv("MCP_SECRET_HF", "").strip().strip("/")
+
+              if len(primary_secret) < 20:
+                  raise RuntimeError(
+                      "MCP_SECRET_PATH requerido y debe tener al menos 20 caracteres"
+                  )
+              if secondary_secret and len(secondary_secret) < 20:
+                  raise RuntimeError(
+                      "MCP_SECRET_HF debe tener al menos 20 caracteres"
+                  )
+
+              primary_path = f"/{primary_secret}/mcp"
+              alias_paths = []
+              if secondary_secret and secondary_secret != primary_secret:
+                  alias_paths.append(f"/{secondary_secret}/mcp")
+
+              # Stateless HTTP survives Space restarts without stale MCP session IDs.
+              mcp_http_app = mcp.http_app(
+                  path=primary_path,
+                  stateless_http=True,
+              )
+
+              class _MCPPathAlias:
+                  """Expose one FastMCP server through multiple secret paths."""
+
+                  def __init__(self, app, aliases, target):
+                      self.app = app
+                      self.aliases = set(aliases)
+                      self.target = target
+
+                  async def __call__(self, scope, receive, send):
+                      if scope.get("type") in {"http", "websocket"}:
+                          path = scope.get("path", "")
+                          trailing = path.endswith("/")
+                          normalized = (
+                              path[:-1]
+                              if trailing and len(path) > 1
+                              else path
+                          )
+
+                          if normalized in self.aliases:
+                              scope = dict(scope)
+                              rewritten = self.target + ("/" if trailing else "")
+                              scope["path"] = rewritten
+                              scope["raw_path"] = rewritten.encode("utf-8")
+
+                      await self.app(scope, receive, send)
+
+              app = _MCPPathAlias(
+                  mcp_http_app,
+                  alias_paths,
+                  primary_path,
+              )
+
+              print(f"MCP_PATHS_ACTIVE={1 + len(alias_paths)}")
+              uvicorn.run(app, host="0.0.0.0", port=port)
+          '''
+
+          patched = head + tail
+          out = "/tmp/app.py"
+          with open(out, "w", encoding="utf-8") as f:
+              f.write(patched)
+
+          py_compile.compile(out, doraise=True)
+          assert "MCP_SECRET_PATH" in patched
+          assert "MCP_SECRET_HF" in patched
+          assert "stateless_http=True" in patched
+          assert "_MCPPathAlias" in patched
+
+          print("PATCH_OK dual-path + stateless + syntax")
+          PY
+
+      - name: Publish app.py to Hugging Face with OIDC
+        run: |
+          hf upload "$HF_REPO" /tmp/app.py app.py             --repo-type space             --commit-message "fix: enable two persistent stateless MCP bridges"
+
+      - name: Verify Space rebuilt and source is live
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          import urllib.request
+
+          api = "https://huggingface.co/api/spaces/COMAND-CENTER-1/claude-github-mcp-backup"
+          raw = "https://huggingface.co/spaces/COMAND-CENTER-1/claude-github-mcp-backup/resolve/main/app.py"
+
+          for attempt in range(90):
+              with urllib.request.urlopen(api, timeout=20) as r:
+                  info = json.load(r)
+
+              stage = info.get("runtime", {}).get("stage")
+              sha = info.get("sha", "")
+              print(f"attempt={attempt} stage={stage} sha={sha[:12]}")
+
+              if stage == "RUNNING":
+                  source = urllib.request.urlopen(raw, timeout=20).read().decode("utf-8")
+                  if (
+                      "MCP_SECRET_HF" in source
+                      and "_MCPPathAlias" in source
+                      and "stateless_http=True" in source
+                  ):
+                      print("PASS: Space RUNNING with dual MCP bridge patch")
+                      raise SystemExit(0)
+
+              if stage in {"BUILD_ERROR", "RUNTIME_ERROR", "PAUSED"}:
+                  raise SystemExit(f"FAIL: Space stage={stage}")
+
+              time.sleep(5)
+
+          raise SystemExit("FAIL: timeout waiting for rebuilt Space")
+          PY
