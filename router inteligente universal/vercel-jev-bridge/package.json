@@ -1,0 +1,8 @@
+{
+  "name": "riu-jev-bridge",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "ai": "latest"
+  }
+}
