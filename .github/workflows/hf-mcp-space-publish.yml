@@ -2,10 +2,6 @@ name: HF MCP Space Publish (manual maintenance only)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".mcp-space-deploy-trigger"
 
 
 permissions:
