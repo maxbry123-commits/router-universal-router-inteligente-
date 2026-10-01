@@ -1,0 +1,26 @@
+[
+ {
+  "source_repo": "https://github.com/anthropics/skills",
+  "slug": "anthropic-skills",
+  "source_ref": "34040c9c568585f6929bedeaad110ad08f079624",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/D4Vinci/Scrapling",
+  "slug": "scrapling",
+  "source_ref": "2b160ee18bfee79bb0115e2d9e9c746c8d9bf4c9",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/ScrapeGraphAI/Scrapegraph-ai",
+  "slug": "scrapegraph-ai",
+  "source_ref": "c75c8084fae2d4f5ba01a8c218bc1168b67e3569",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/Panniantong/Agent-Reach",
+  "slug": "agent-reach",
+  "source_ref": "a19a171fa980a0785849596492e0af4db800c82f",
+  "publish": true
+ }
+]

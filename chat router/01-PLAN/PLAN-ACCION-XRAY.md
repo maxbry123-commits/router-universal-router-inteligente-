@@ -118,3 +118,9 @@ Comprobación ampliada del backend (separada del gate focalizado): 371 passed, 5
 - O4-18 Input Shark: HECHO — missing fields + normalized hash.
 - O4-19 E2E integration: 🚩 PENDIENTE.
 - O4-20 completion audit: 🚩 PENDIENTE.
+
+
+## INPUT-BLOCK VERBATIM (Director, 2026-10-01 — orden de base)
+
+- "Algo que quiero que escribas en el plan de trabajo es no elimines el sistema de harnes de deepsek como plugins con el chat ese debe ser la base que conecta Todo el wordflow loops code Yaiwes y lo que sea. Tambien Hermes y open claw funciona como base siempre del chat como asistente y sentinelas sin importar si se usa o no el wordflow loops code Yaiwes."
+- Regla: deepseek-harness (plugins con el chat) = BASE que conecta todo el wordflow; NO eliminar. Hermes + OpenClaw = base permanente del chat (asistente + sentinelas) con o sin wordflow.

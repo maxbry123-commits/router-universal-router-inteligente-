@@ -1,3 +1,21 @@
+# HANDOFF — CORTE 2026-10-01 (para el próximo Devin, retoma en ~3 días)
+
+## Leer primero, en este orden
+1. `chat router/03-ESTADO/memoria.md` — contexto COMPLETO: reglas del Director, estado técnico verificado, pendientes como DSL-DAG (P1..P8), gotchas de VM.
+2. `chat router/01-PLAN/PLAN-ACCION-XRAY.md` — mapa nodo→estado de los 4 objetivos + INPUT-BLOCK verbatim (incluye la orden de base: deepseek-harness=base que conecta todo, Hermes+OpenClaw=base permanente del chat, NO eliminar).
+3. `chat router/01-PLAN/ROOT-MAP-T11.yaml` — raíces canónicas.
+4. STATE.json / CRAZY_WALL.json / BITACORA.jsonl en esta misma carpeta.
+
+## Dónde quedó
+- Backend ~70%: wordflow copiado (397 archivos VERIFIED_CLOSED), recovery tipado, agent_router FAIL_CLOSED, LayerRunner+governance, ThinkingSystem, dedup canónico, SealsWorker+agent-45, orchestrator contracts+adapters+ledger+oracle gate, O4-19 E2E, skills_schema 24, seals_motors toolset, 6 descargas motor_2 VERIFIED_CLOSED publicadas en esta rama.
+- Pendiente siguiente sesión: P1 invocación real adapters O4-07..14 (configurar command_env), P2 cablear las 4 capabilities descargadas, P3 S-11/S-12, P4 O4-17/O4-20, P5-P7 flags (frontend gate no tocar hasta backend cerrado).
+
+## Cómo correr
+- venv `~/.venv-riu`; tests loop: `cd "chat router/wordflow loop code Yaiwes" && pytest runtime/tests -q` (conftest fija PYTHONPATH). 267 pass / 3 stale upstream.
+- Checkpoint: `python "chat router/03-ESTADO/watchdog_checkpoint.py" --summary "..."`.
+
+---
+
 # HANDOFF — CHAT YAIWES (leer primero si continúas este trabajo)
 Actualizado: 2026-09-27 05:45 UTC por Opus. Director: Max.
 
@@ -54,13 +72,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 58
+Revisión: 59
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-O4: contratos normalizados+adapters fail-closed (13 tests). Seals agent-45 + SealsWorker (4 tests). motor2: munder-difflin+archify publicados. Loop 267 pass.
+corte sesion: memoria.md + handoff completo para siguiente Devin en 3 dias
 
 ### Siguiente
 Continuar DAG existente
