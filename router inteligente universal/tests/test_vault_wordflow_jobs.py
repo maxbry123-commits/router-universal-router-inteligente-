@@ -17,15 +17,14 @@ if str(ROOT) not in sys.path:
 pytest.importorskip("fastapi")
 pytest.importorskip("huggingface_hub")
 
-from fastapi.testclient import TestClient  # noqa: E402
-
-from integration.chat_mvp import app as chat_app  # noqa: E402
-from integration.chat_mvp import core, jobs, wordflow_agents  # noqa: E402
-from integration.chat_mvp import github_tools as gh  # noqa: E402
-from integration.chat_mvp import providers as prov  # noqa: E402
-from integration.chat_mvp import router as rt  # noqa: E402
-from integration.chat_mvp import vault_bridge as vb  # noqa: E402
-from integration.chat_mvp.store import Store  # noqa: E402
+from fastapi.testclient import TestClient
+from integration.chat_mvp import app as chat_app
+from integration.chat_mvp import core, jobs, wordflow_agents
+from integration.chat_mvp import github_tools as gh
+from integration.chat_mvp import providers as prov
+from integration.chat_mvp import router as rt
+from integration.chat_mvp import vault_bridge as vb
+from integration.chat_mvp.store import Store
 
 PASS = "una-contrasena-de-prueba-larga"
 FAST_KDF = {"n": 2**10, "r": 8, "p": 1}

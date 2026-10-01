@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from integration.chat_mvp import providers as P  # noqa: E402
-from integration.chat_mvp import resilience as R  # noqa: E402
+from integration.chat_mvp import providers as P
+from integration.chat_mvp import resilience as R
 
 ENV = ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "HF_TOKEN", "HF_TOKEN_1", "GROQ_API_KEY", "GROQ_API_KEY_1", "RIU_LOCAL_BASE_URL",
        "RIU_G2_GROQ_MODEL", "RIU_G2_LOCAL_MODEL", "RIU_CHAT_ATTEMPT_TIMEOUT", "RIU_MODEL_COOLDOWN")
@@ -121,9 +121,16 @@ def test_other_groups_keep_base_timeout(monkeypatch):
     assert seen[0] is not None and seen[0] <= 5.0  # first (not last) option: base limit, unchanged behaviour
 
 
-def test_sdk_group_is_empty_and_does_not_break(monkeypatch):
+def test_sdk_group_resolves_openai_chain_and_does_not_break(monkeypatch):
+    # Director filled the sdk list in policies.json (2026-10-01): all openai.
     _keys(monkeypatch)
-    assert R.resolve_chain("sdk", MON_OFF) == ([], [])
-    with pytest.raises(R.RouteFailed):
+    chain, skipped = R.resolve_chain("sdk", MON_OFF)
+    assert chain == []  # no OPENAI_API_KEY in env
+    assert skipped == ["openai:NOT_CONFIGURED"] * 10
+    with pytest.raises(R.RouteFailed):  # empty resolved chain still fails closed
         R.run_policy("sdk", [], 5, now=MON_OFF, call=lambda *a: {})
+    monkeypatch.setenv("OPENAI_API_KEY", "k")
+    chain, skipped = R.resolve_chain("sdk", MON_OFF)
+    assert len(chain) == 10 and chain[0] == {"provider": "openai", "model": "gpt-6-luna"}
+    assert skipped == []
     assert R.resolve_chain("unknown_group", MON_OFF)[0] == R.resolve_chain("default", MON_OFF)[0]

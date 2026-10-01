@@ -90,7 +90,7 @@ def test_compilador_determinista():
 
 
 def test_buscadores_simulado_sin_red():
-    assert buscadores.SIMULADO is True
+    assert buscadores.simulado() is True
     res = buscadores.fanout([{"goal": "G06", "query": "proyecto latest release"}])
     assert res
     for r in res:
@@ -103,7 +103,7 @@ def test_fanout_falla_cerrado_por_motor_sin_perder_evidencia_local(monkeypatch):
     def github_unavailable(query, *, strict=False):
         raise OSError("github unavailable")
 
-    monkeypatch.setattr(buscadores, "SIMULADO", False)
+    monkeypatch.setenv("SIMULADO", "0")
     monkeypatch.setattr(buscadores, "buscar_github", github_unavailable)
     monkeypatch.setattr(buscadores, "buscar_local", lambda query, raiz: [{
         "query": query, "source": "local", "url": "repo://README.md",

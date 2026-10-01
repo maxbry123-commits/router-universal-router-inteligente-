@@ -13,7 +13,9 @@ import subprocess
 import urllib.error
 import urllib.request
 
-SIMULADO = os.environ.get("SIMULADO", "") == "1"
+
+def simulado() -> bool:
+    return os.environ.get("SIMULADO", "") == "1"
 
 
 def verificar_archivo(ruta):
@@ -27,7 +29,7 @@ def verificar_http(url):
     """Comprueba que una URL responde (2xx/3xx). En SIMULADO no hace red."""
     if not isinstance(url, str) or not url.startswith(("https://", "http://")):
         return {"check": "http", "target": url, "ok": False, "detalle": "url invalida"}
-    if SIMULADO:
+    if simulado():
         ok = url.startswith("http")
         return {"check": "http", "target": url, "ok": ok,
                 "detalle": "simulado" if ok else "url invalida"}
@@ -68,7 +70,7 @@ def verificar_tests(comando, cwd=None):
     if not isinstance(comando, str) or not comando.strip():
         return {"check": "tests", "target": comando, "ok": False,
                 "detalle": "comando no proporcionado"}
-    if SIMULADO:
+    if simulado():
         return {"check": "tests", "target": comando, "ok": True,
                 "detalle": "simulado: no se ejecuta"}
     try:

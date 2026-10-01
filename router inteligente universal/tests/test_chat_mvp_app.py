@@ -61,7 +61,7 @@ def test_page_providers_and_auth(client):
     page = client.get("/chat")
     assert page.status_code == 200 and "Chat RIU" in page.text and "/chat/send" in page.text
     body = client.get("/chat/providers").json()
-    assert {p["id"] for p in body["providers"]} == {"auto", "hf", "nvidia", "groq", "deepseek", "moonshot", "minimax", "local"}
+    assert {p["id"] for p in body["providers"]} == {"auto", "hf", "nvidia", "groq", "deepseek", "moonshot", "minimax", "openai", "local"}  # openai added by 8a01707f04
     assert body["providers"][0]["id"] == "auto"  # 2026-09-29: "Automático" (the Router picks the model with the default chain) is listed first
     assert next(p for p in body["providers"] if p["id"] == "hf")["configured"] is True
     assert client.post("/chat/send", json={"message": "x", "model": KIMI}).status_code == 401

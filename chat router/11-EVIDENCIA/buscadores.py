@@ -18,7 +18,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-SIMULADO = os.environ.get("SIMULADO", "") == "1"
+
+def simulado() -> bool:
+    return os.environ.get("SIMULADO", "") == "1"
 
 # Corpus simulado determinista: sin red, reproducible.
 _CORPUS_SIMULADO = [
@@ -92,7 +94,7 @@ def buscar_simulado(query):
 
 def buscar_github(query, token=None, *, strict=False):
     """GitHub Search API. Requiere red; token por env GITHUB_TOKEN."""
-    if SIMULADO:
+    if simulado():
         return buscar_simulado(query)
     token = token or os.environ.get("GITHUB_TOKEN")
     url = "https://api.github.com/search/repositories?q=" + urllib.parse.quote(query)
@@ -121,7 +123,7 @@ def buscar_github(query, token=None, *, strict=False):
 
 def buscar_url(query, url):
     """Descarga una URL de documentacion con urllib. Requiere red."""
-    if SIMULADO:
+    if simulado():
         return buscar_simulado(query)
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
@@ -189,7 +191,7 @@ def fanout(queries, raiz="."):
     resultados = []
     for q in queries:
         query = q["query"] if isinstance(q, dict) else q
-        if SIMULADO:
+        if simulado():
             resultados.extend(buscar_simulado(query))
         else:
             resultados.extend(buscar_github(query))
@@ -199,7 +201,7 @@ def fanout(queries, raiz="."):
 
 def fanout_observado(queries, raiz="."):
     """Recupera resultados sin ocultar fallos de los adaptadores autorizados."""
-    if SIMULADO:
+    if simulado():
         return {"results": fanout(queries, raiz=raiz), "observations": []}
     results = []
     observations = []

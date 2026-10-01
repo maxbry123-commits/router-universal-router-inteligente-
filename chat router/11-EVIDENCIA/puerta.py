@@ -20,7 +20,9 @@ import parser as parser_mod
 import ranking
 import verificador
 
-SIMULADO = os.environ.get("SIMULADO", "") == "1"
+
+def simulado() -> bool:
+    return os.environ.get("SIMULADO", "") == "1"
 
 PASS = "PASS"
 INCOMPLETE = "INCOMPLETE"

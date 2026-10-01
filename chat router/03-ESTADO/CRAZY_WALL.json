@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "Backend ampliado: cryptography declarada en requirements; 371 passed/5 failed/1 deselected en suite Router+memoria; conectores+banco 23 PASS; discrepancias config/modelos y E2E GitHub 502 quedan 🚩 PENDIENTE.",
-      "updated_at": "2026-10-01T15:12:07Z",
-      "last_event_seq": 51
+      "summary": "Contratos resueltos: openai en provider map, cadena sdk en CODE_POLICY, Qwen3-0.6B fuera del selector, path HANDOFF movido; SIMULADO dinamico para aislamiento de suite; 406 passed/1 failed en suite amplia.",
+      "updated_at": "2026-10-01T15:37:24Z",
+      "last_event_seq": 52
     }
   }
 }

@@ -8,7 +8,7 @@
     "Existing provider test disagrees with openai in origin/main"
   ],
   "checks": {
-    "focused_tests": "68 passed, 1 deselected, 29 warnings in 1.83s",
+    "focused_tests": "68 passed, 1 deselected, 29 warnings in 1.62s",
     "ruff_backend": "PASS"
   },
   "source_inventory_summary": {
@@ -3215,8 +3215,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/buscadores.py",
-      "sha256": "37363586553e4c7b5638fb4e3192b598576447b0d9a03389a1369e42ca19c3ed",
-      "bytes": 7904,
+      "sha256": "58201f6be64fb38c38e71440ca250a445ef313fd83cb913a15e05d00b9a57d22",
+      "bytes": 7937,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3259,8 +3259,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/puerta.py",
-      "sha256": "ed97dd973cb2b0605f5aa52f6e8d1d4cf4d89ee516ae8567e44da05816475e89",
-      "bytes": 5399,
+      "sha256": "d50e6f73175b41342d1023b1375c79bd66514efca46a77dc7ee81e57f0f47711",
+      "bytes": 5424,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3270,8 +3270,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/tests/test_puerta.py",
-      "sha256": "66a17a31e1dc45ae0208a000896cf3da2710872380a9a013558812cfa93eba4d",
-      "bytes": 12157,
+      "sha256": "5d38f3ae2581d6ce7ebb1111f7b9ef21d4a59468e21deef537886f1d81ac0d99",
+      "bytes": 12144,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3281,8 +3281,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/verificador.py",
-      "sha256": "3c10caf03f8c582e2893824789e88c4652ac5de00ce23982a0b2c7248cabbaa1",
-      "bytes": 5144,
+      "sha256": "8e423d594cd9ce303d618aa6e17782a2800548d82b2a298eb7d1543d718e537f",
+      "bytes": 5173,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3347,8 +3347,8 @@
     },
     {
       "file": "router inteligente universal/tests/test_chat_mvp_app.py",
-      "sha256": "254ce10b55b2e3d88a83844045681d64a2240a42eaa1c2a8170fdee2e676d059",
-      "bytes": 21908,
+      "sha256": "6fb10a9fbc78898a0b49f8dac174e6d0c1f2760d5ddb3a3984052263beed3405",
+      "bytes": 21948,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",

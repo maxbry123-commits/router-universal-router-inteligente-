@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from integration.huggingface.huggingface_openai_chat import (  # noqa: E402
+from integration.huggingface.huggingface_openai_chat import (
     allowed_model_ids,
     chat_completion,
     provider_live_model_ids,
@@ -20,8 +20,9 @@ def test_allowed_model_ids_does_not_raise_and_matches_runtime_verified() -> None
     # Regression for GAP_ADAPTER_REGISTRY_SCHEMA: registry()["models"] never
     # existed in V12/V13 and raised KeyError on every call.
     ids = allowed_model_ids()
+    # Qwen3-0.6B removed from the selector by catalog commit 2bebb191af
+    # ("sigue en el Hub, no se llama por API").
     assert ids == {
-        "Qwen/Qwen3-0.6B",
         "openai-community/gpt2",
         "Qwen/Qwen3-8B",
     }
