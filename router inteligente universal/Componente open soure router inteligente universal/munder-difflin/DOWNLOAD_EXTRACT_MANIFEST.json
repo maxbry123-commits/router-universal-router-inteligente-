@@ -1,0 +1,103 @@
+{
+  "bundle_bytes": 187239094,
+  "bundle_sha256": "a64f8df821c76c53364cc37b69b81c2e01340eea773e0fc665e31169ba525de3",
+  "extracted_tree": {
+    "bytes": 207131595,
+    "files": 2374,
+    "sha256": "6b88c2c3bdafb49877920dc6a31131ff4941957b0327c50a4fe52a6799c369be"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0001",
+      "sha256": "8bf654c4efa793baffcce3aa972c67803591f0176a43184c2c695a5fbfe3dc5d"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0002",
+      "sha256": "e4322a1c31fceb658b4e636d9e3e06c3ad512770bd3704ebd7ac5b132563231d"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0003",
+      "sha256": "7b4cdac9e408f0a5f9854838e56195dab6058e6f18fef4d81221fe7ef8d14013"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0004",
+      "sha256": "80922d8e2910d61988db841974a02bc71c6026c9dd59dd1a608590190533a466"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0005",
+      "sha256": "aca4fab427385ee7ab2b6033bf31baf00e15ff753fb7f7daccec1c0d30a48425"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0006",
+      "sha256": "40b697ee56e4941b96cdd65e746bf8c29cc3e7333c88c71923eb69435d83a3d5"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0007",
+      "sha256": "0e3f969c86b64ef0ab9c747dc692284b8734f289dc00a50151a755e86533a6c4"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0008",
+      "sha256": "fd83b57fefff8952eeb0e17777c2c1c3f11151b207830d4f8f05ae94fbd619e8"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0009",
+      "sha256": "a7ce02d610ac7ebafb19925a55cf821cefe80a89605cf9033951273cb563faa2"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0010",
+      "sha256": "d0e41b2cc02c13b94ea6f3c67a038e02594f2a234ec966888728b0a08d11a999"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0011",
+      "sha256": "d34ca716b1dfe3de10a53f2051492d9cd1c80b3b3dbca770e09310cb531e0c92"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0012",
+      "sha256": "762a192e5059d41a63ea0509ce9a1dd100032fa565145ad1024ce6cdddba7d42"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0013",
+      "sha256": "49476f153aa738c9c8311cb70e16736b59a70b1a911d0f9bf3072e8e632505eb"
+    },
+    {
+      "bytes": 12582912,
+      "name": "munder-difflin.bundle.zip.part-0014",
+      "sha256": "d569bab8778b428e4d8e9c05134b476cb50e4b05e90d645a01de2ae634f97209"
+    },
+    {
+      "bytes": 11078326,
+      "name": "munder-difflin.bundle.zip.part-0015",
+      "sha256": "ef9b7c0c0615f2fcdfd15ee9591ca3e00e84155a9e49564f34639f7fa6f09f6c"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "munder-difflin",
+  "source_bytes": 207131595,
+  "source_commit": "9f5c68218378b67a21d70e4d4957e94b05413d36",
+  "source_files": 2374,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/chaitanyagiri/munder-difflin",
+  "source_tree": {
+    "bytes": 207131595,
+    "files": 2374,
+    "sha256": "6b88c2c3bdafb49877920dc6a31131ff4941957b0327c50a4fe52a6799c369be"
+  }
+}
