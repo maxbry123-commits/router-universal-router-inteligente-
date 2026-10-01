@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 753792,
+  "bundle_sha256": "a0dd31ff4befcd03d4a29787d6f22985ce2ea27f78a8c80f9c91f27218fc7693",
+  "extracted_tree": {
+    "bytes": 1974678,
+    "files": 229,
+    "sha256": "19ba95fe50e96fb94d8260972cb50595ed31ada3f993e370b381a1e7718c5036"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 753792,
+      "name": "superpowers.bundle.zip.part-0001",
+      "sha256": "a0dd31ff4befcd03d4a29787d6f22985ce2ea27f78a8c80f9c91f27218fc7693"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "superpowers",
+  "source_bytes": 1974678,
+  "source_commit": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+  "source_files": 229,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/obra/superpowers",
+  "source_tree": {
+    "bytes": 1974678,
+    "files": 229,
+    "sha256": "19ba95fe50e96fb94d8260972cb50595ed31ada3f993e370b381a1e7718c5036"
+  }
+}
