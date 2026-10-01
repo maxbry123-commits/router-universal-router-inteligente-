@@ -27,6 +27,8 @@ PROVIDERS: dict[str, dict[str, Any]] = {
     "groq": {"label": "Groq", "base": "https://api.groq.com/openai/v1",
              "env": ("GROQ_API_KEY", "GROQ_API_KEY_1", "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4",
                      "GROQ_API_KEY_5", "GROQ_API_KEY_6", "GROQ_API_KEY_7")},
+    "openai": {"label": "OpenAI (SDK, 14 claves rotativas)", "base": "https://api.openai.com/v1",
+               "env": ("OPENAI_API_KEY", "OPENAI_API_KEY_1", "OPENAI_API_KEY_2", "OPENAI_API_KEY_3", "OPENAI_API_KEY_4", "OPENAI_API_KEY_5", "OPENAI_API_KEY_6", "OPENAI_API_KEY_7", "OPENAI_API_KEY_8", "OPENAI_API_KEY_9", "OPENAI_API_KEY_10", "OPENAI_API_KEY_11", "OPENAI_API_KEY_12", "OPENAI_API_KEY_13", "OPENAI_API_KEY_14")},
     "deepseek": {"label": "DeepSeek API directa (caché de contexto nativa)", "base": "https://api.deepseek.com/v1", "env": ("DEEPSEEK_API_KEY",)},
     "moonshot": {"label": "Moonshot / Kimi API directa (caché de contexto nativa)", "base": "https://api.moonshot.ai/v1", "env": ("MOONSHOT_API_KEY",)},
     "minimax": {"label": "MiniMax API directa", "base": "https://api.minimax.io/v1", "env": ("MINIMAX_API_KEY",)},
@@ -38,6 +40,9 @@ CHAT_TIMEOUT = 90.0
 # Absolute time.monotonic() deadline for the chain option being tried (set by resilience.run_policy; travels through
 # asyncio.run / asyncio.to_thread because both copy the context). None = no deadline.
 ATTEMPT_DEADLINE: contextvars.ContextVar[float | None] = contextvars.ContextVar("riu_attempt_deadline", default=None)
+
+
+OPENAI_NO_TEMPERATURE = ("gpt-5", "gpt-6", "o1", "o3", "o4")  # solo temperatura por defecto
 
 
 def chat_timeout() -> float:
@@ -121,8 +126,11 @@ def chat(provider: str, key: str | None, model: str, messages: list[dict[str, st
     base = base_url(provider)
     if not base:
         raise ProviderError("NO_BASE_URL", "provider has no base URL")
-    payload: dict[str, Any] = {"model": model, "messages": messages, "max_tokens": max_tokens}
-    if temperature is not None:
+    # OpenAI: modelos gpt nuevos piden max_completion_tokens (no max_tokens) y los de razonamiento no admiten temperature (confirmado: 400 con 0.7).
+    openai = provider == "openai"
+    payload: dict[str, Any] = {"model": model, "messages": messages,
+                               ("max_completion_tokens" if openai else "max_tokens"): max_tokens}
+    if temperature is not None and not (openai and model.startswith(OPENAI_NO_TEMPERATURE)):
         payload["temperature"] = temperature
     data = (post or (lambda url, k, b: _http("POST", url, k, b, chat_timeout())))(base + "/chat/completions", key, payload)
     try:

@@ -93,6 +93,7 @@ class HFWorkerPool:
             "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4",
             "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4",
             "GROQ_API_KEY_5", "GROQ_API_KEY_6", "GROQ_API_KEY_7",
+            *[f"OPENAI_API_KEY_{i}" for i in range(1, 15)],
         ]
         return {name: os.environ[name] for name in names if os.getenv(name)}
 

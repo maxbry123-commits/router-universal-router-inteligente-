@@ -1,1 +1,42 @@
-{"plugin_host": {"schema": "plugin_host/v1", "id": "banco", "enabled_default": false, "health_action": "status", "nota_roja": "Banco nuevo aislado (nvidia/groq/openai). Respaldo y fuente de rotacion: el Router NO depende de el. Abre con env RIU_BANK_MASTER. get_keys solo por llamada interna."}, "artifact_id": "riu.plugins.banco", "version": "0.1.0", "estado": "testing", "categoria": "pipeline", "etapa": "P", "contrato": {"rol": "service"}, "ejecucion": {"kind": "api", "transport": "inproc", "runtime_type": "compute", "entry_point": "plugins.banco.plugin:handle", "idempotente": true, "allowed_actions": ["status", "providers", "get_keys"]}, "seguridad": {"sandbox": "none", "permisos": ["fs:read"], "limites": {"timeout_ms": 30000}}, "firma": {"gpg_key_id": "PENDIENTE", "revocation_ref": "contracts/revocation_list.json"}}
+{
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "banco",
+    "enabled_default": false,
+    "health_action": "status",
+    "nota_roja": "Banco nuevo aislado (nvidia/groq/openai). Respaldo y fuente de rotacion: el Router NO depende de el. Abre con env RIU_BANK_MASTER. get_keys solo por llamada interna."
+  },
+  "artifact_id": "riu.plugins.banco",
+  "version": "0.1.0",
+  "estado": "testing",
+  "categoria": "pipeline",
+  "etapa": "P",
+  "contrato": {
+    "rol": "service"
+  },
+  "ejecucion": {
+    "kind": "api",
+    "transport": "inproc",
+    "runtime_type": "compute",
+    "entry_point": "plugins.banco.plugin:handle",
+    "idempotente": true,
+    "allowed_actions": [
+      "status",
+      "providers",
+      "get_keys"
+    ]
+  },
+  "seguridad": {
+    "sandbox": "egress-allowlist",
+    "permisos": [
+      "fs:read"
+    ],
+    "limites": {
+      "timeout_ms": 30000
+    }
+  },
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "contracts/revocation_list.json"
+  }
+}
