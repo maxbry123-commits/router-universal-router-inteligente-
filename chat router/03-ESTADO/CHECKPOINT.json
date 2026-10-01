@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T13:35:10Z",
+  "updated_at": "2026-10-01T13:48:43Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 37,
+  "bitacora_revision": 38,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -95,7 +95,9 @@
     "audit+guard+org+puerta": "30 passed (SIMULADO=1; busqueda/HTTP simulados en Puerta)",
     "provider_selection": "35 pass 1 fail: test expects 8, endpoint returns openai too; both source files unchanged vs origin/main",
     "browser": "BLOCKED: subscription usage limit on two testing_agent handoffs",
-    "CI": "latest revision has no checks; previous verify job never started due GitHub account billing lock"
+    "CI": "latest revision has no checks; previous verify job never started due GitHub account billing lock",
+    "hf_router_unauth": "401_auth_required",
+    "t06_hf_runtime": "BLOCKED_NO_CREDENTIALS"
   },
   "memory_audit": {
     "completed": "Encontrado código Manus: SQLite y grafo fallback; 8 pruebas locales PASS con PYTHONPATH del Router y 04-MEMORIA",
@@ -110,7 +112,8 @@
     "Test test_page_providers_and_auth espera 8 proveedores pero API devuelve tambien openai; sin cambiar test ni eliminar proveedor sin contrato.",
     "testing_agent returned subscription usage limit twice; no UI screenshots or recording.",
     "GitHub Actions verify did not start due billing lock; no job logs.",
-    "GitHub billing lock prevented verify job start; testing_agent subscription limit blocked UI coverage."
+    "GitHub billing lock prevented verify job start; testing_agent subscription limit blocked UI coverage.",
+    "T-06 del PR no esta en main; requiere entorno aislado para probar esa revision."
   ],
   "decisions": [
     "Decisión B: cada GET añade RESOURCE_READ a Bitácora sin cambiar estado funcional",
@@ -123,9 +126,10 @@
     "Mantener T-06 PARTIAL y todos los resultados browser PENDIENTE; no entregar HTML hasta segunda pasada real.",
     "Siguiente accion exacta: reanudar testing_agent cuando se restaure el cupo; corregir hallazgos y completar segunda pasada; despues recibir y validar plan de 100 pasos.",
     "No afirmar T-06 PASS; esperar cupo de testing_agent para prueba UI con capturas, matriz completa y segunda pasada.",
-    "Plan original de 100 pasos sigue sin recibido ni validado; guardia RECEPTION y reloj 0."
+    "Plan original de 100 pasos sigue sin recibido ni validado; guardia RECEPTION y reloj 0.",
+    "Usar Router HF 24/7 sin reinicio y no usar GitHub Actions; 401 no equivale a health PASS."
   ],
-  "reception_summary": "T-06 PARTIAL: sin browser por limite de testing_agent (2 intentos). Revision local: 30/30 tests focalizados PASS con SIMULADO=1 para Puerta de Evidencia; Ruff F/I PASS y node --check PASS. Seleccion previa 35 PASS y un fallo de catalogo openai; proveedor y expectativa tambien estan sin cambio en origin/main. PR #6 actualizado, plan 100 pasos ausente, reloj 0.",
+  "reception_summary": "Router HF main consultado sin modificar: /health, /chat/providers y /chat/ui/shell.html devuelven 401; credenciales no disponibles y codigo T-06 aun solo en PR. T-06 browser y segunda pasada pendientes.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",

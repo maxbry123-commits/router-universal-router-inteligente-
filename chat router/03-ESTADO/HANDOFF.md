@@ -18,6 +18,8 @@ P01–P08 se formalizaron en `../01-PLAN/DM-METODO-DAG.json` y se verifican medi
 
 Reanudación exacta: el PR #6 ya contiene el commit `9751dda766`. La selección focalizada tuvo 35 PASS y un FAIL: un test antiguo espera ocho proveedores y el API devuelve también `openai`; no se cambió la prueba ni el proveedor. El agente de prueba UI se intentó dos veces tras actualizar el PR; ambos intentos terminaron con `You've reached your ChatGPT subscription usage limit` sin ejecutar acciones, grabación, capturas ni segunda pasada. Reanudar el testing_agent cuando haya cupo disponible, revisar toda la matriz T-06 y reparar los fallos que encuentre. No inferir PASS ni entregar HTML al Director. GitHub Actions `verify` tampoco arrancó: su anotación de GitHub dice que la cuenta está bloqueada por un problema de facturación; el resultado no representa ejecución de tests.
 
+Orden posterior del Director: utilizar el Router permanente de Hugging Face en `main` para el cómputo de validación; no utilizar GitHub Actions. La dirección se lee de `router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag` en cada intento. El 2026-10-01, `GET /health`, `/chat/providers` y `/chat/ui/shell.html` respondieron 401 sin credenciales: esto prueba que la puerta responde, no que el Router ni T-06 estén sanos. No hay `HF_TOKEN` ni clave de API del Router disponibles en secretos de esta sesión. `origin/main` aún no contiene `chat router/ui/shell.html` ni el montaje de ese shell en `integration/chat_mvp/app.py`; el código T-06 está solo en el PR. No reiniciar el Job 24/7 ni suplantar la prueba UI con un healthcheck. Cuando se disponga de acceso, comprobar Job y versión en vivo de manera no destructiva; validar T-06 de la rama en un entorno aislado o local con navegador antes de entregar la interfaz.
+
 ## Orden de lectura
 0. `../01-PLAN/PLAN-DSL-DAG-UI.yaml` (plan T-01..T-10 del panel/chat, consolidado desde el documento subido; revisar `source_fidelity`)
 1. `../01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml` (reglas, fuente de verdad, gobernanza, 12 goals, flags)
@@ -46,13 +48,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 37
+Revisión: 38
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-T-06 PARTIAL: sin browser por limite de testing_agent (2 intentos). Revision local: 30/30 tests focalizados PASS con SIMULADO=1 para Puerta de Evidencia; Ruff F/I PASS y node --check PASS. Seleccion previa 35 PASS y un fallo de catalogo openai; proveedor y expectativa tambien estan sin cambio en origin/main. PR #6 actualizado, plan 100 pasos ausente, reloj 0.
+Router HF main consultado sin modificar: /health, /chat/providers y /chat/ui/shell.html devuelven 401; credenciales no disponibles y codigo T-06 aun solo en PR. T-06 browser y segunda pasada pendientes.
 
 ### Siguiente
 Recibir plan original
