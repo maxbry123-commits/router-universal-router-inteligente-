@@ -39,8 +39,10 @@ def _sha(text: str) -> str:
 
 
 def _scopes_overlap(a: list[str], b: list[str]) -> bool:
-    for x in a:
-        for y in b:
+    na = [s.rstrip("/") for s in a]
+    nb = [s.rstrip("/") for s in b]
+    for x in na:
+        for y in nb:
             if x == y or x.startswith(y + "/") or y.startswith(x + "/"):
                 return True
     return False
@@ -113,7 +115,8 @@ class ClaimManager:
         if self.expired(claim, now):
             claim["status"] = "EXPIRED"
             raise LeaseError(f"SIDE_EFFECT_DENIED_LEASE_EXPIRED:{claim_id}")
-        if not any(scope == s or scope.startswith(s + "/") for s in claim["write_scope"]):
+        norm = scope.rstrip("/")
+        if not any(norm == s.rstrip("/") or norm.startswith(s.rstrip("/") + "/") for s in claim["write_scope"]):
             raise LeaseError(f"SIDE_EFFECT_DENIED_SCOPE:{scope}")
 
 
