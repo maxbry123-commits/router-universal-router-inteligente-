@@ -2,6 +2,7 @@
   "_doc": "Secret Bank providers. One line per SDK: \"<chat name>\": {\"vault_provider\": \"<prefix of the ref stored as prefix/account>\", \"env\": \"<ENV_VAR name>\", \"base_url\": \"https://...\", \"auth\": \"bearer|x-api-key|header|query|none\"}. Only the name is required; vault_provider defaults to the name, auth to bearer. Invalid entries are skipped. Never put a key here.",
   "providers": {
     "nvidia": {"vault_provider": "nvidia", "env": "NVIDIA_API_KEY", "base_url": "https://integrate.api.nvidia.com/v1", "auth": "bearer"},
+    "openai": {"vault_provider": "openai", "env": "OPENAI_API_KEY", "base_url": "https://api.openai.com/v1", "auth": "bearer"},
     "hf": {"vault_provider": "huggingface", "env": "HF_TOKEN", "base_url": "https://router.huggingface.co/v1", "auth": "bearer"},
     "groq": {"vault_provider": "groq"},
     "deepseek": {"vault_provider": "deepseek"},
