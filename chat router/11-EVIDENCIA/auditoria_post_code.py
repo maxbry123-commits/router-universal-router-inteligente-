@@ -15,22 +15,27 @@ CODE = (
     "chat router/04-MEMORIA/memoria_yaiwes/__init__.py",
     "chat router/11-EVIDENCIA/auditoria_plan.py",
     "chat router/11-EVIDENCIA/auditoria_post_code.py",
+    "chat router/11-EVIDENCIA/auditoria_metodo.py",
     "chat router/11-EVIDENCIA/compilador_busquedas.py",
+    "chat router/11-EVIDENCIA/evidence_pack.py",
     "chat router/11-EVIDENCIA/parser.py",
     "chat router/11-EVIDENCIA/puerta.py",
     "chat router/11-EVIDENCIA/tests/test_puerta.py",
+    "chat router/11-EVIDENCIA/verificador.py",
     "router inteligente universal/integration/chat_mvp/memory_runtime.py",
     "router inteligente universal/integration/chat_mvp/memoria_loader.py",
     "router inteligente universal/integration/chat_mvp/router.py",
     "router inteligente universal/integration/chat_mvp/org_api.py",
     "router inteligente universal/integration/chat_mvp/ui_bridge.py",
     "router inteligente universal/tests/test_chat_mvp_app.py",
+    "router inteligente universal/tests/test_method_audit.py",
 )
 TESTS = (
     "router inteligente universal/tests/test_chat_mvp_app.py",
     "router inteligente universal/tests/test_org_api.py",
     "chat router/04-MEMORIA/tests/test_memoria_yaiwes.py",
     "chat router/11-EVIDENCIA/tests/test_puerta.py",
+    "router inteligente universal/tests/test_method_audit.py",
 )
 
 
@@ -48,7 +53,7 @@ def code_entry(path: str, tested: bool) -> dict:
     elif path.endswith("/auditoria_post_code.py"):
         wiring = "POST_AUDIT_EXECUTED_LOCALLY"
         evidence = "OUTPUT_JSON_READBACK_VERIFIED"
-    elif path.startswith("chat router/11-EVIDENCIA/"):
+    elif path.startswith("chat router/11-EVIDENCIA/") or path.endswith("/test_method_audit.py"):
         wiring = "LOCAL_GATE_TESTS" if tested else "🚩 PENDIENTE: GATE_NOT_TESTED"
         evidence = "LOCAL_DETERMINISTIC_TESTS_SIMULATED" if tested else "🚩 PENDIENTE: EXECUTION_NOT_DEMONSTRATED"
     else:

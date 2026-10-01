@@ -6,6 +6,8 @@ El Director dibujó «PLAN ORIGINAL — 100 tareas/pasos» como ejemplo del mét
 
 Guardia de tiempo: `checkpoint_guard.py` exige hoy 100 IDs, fuente y SHA-256 antes de `start`; es una implementación condicionada por aquella interpretación, no una condición para ejecutar los DAG existentes. Mantener su reloj en cero; para aplicarlo a T-01..T-12 hay que mapear pasos y dependencias reales, acordar la unidad de avance y probar la parada al 95 %. Durante trabajo activo invocar `heartbeat` cada 15 minutos, con read-back de Bitácora, STATE, Crazy Wall y HANDOFF. El guardia no es un temporizador autónomo cuando no se invoca. Una ejecución válida debe parar limpiamente a las 3 h 45 min o al 95 % de su plan validado y guardar pruebas, cambios, errores, decisiones, motores y siguiente acción antes del límite absoluto de cuatro horas.
 
+Actualización más reciente: el inventario del plan conserva 30 documentos y 82 skills con procedencia comprobada, 65 referencias principales, 5 diagramas y 12 capturas (82 imágenes con hash físico comprobado). La pasada post-código cubre 17 archivos; 64 pruebas focalizadas pasan, una prueba de proveedores se excluye por divergencia conocida y Ruff pasa. El chat ya guarda cada turno normal vía fachada SQLite con read-back y scope por propietario; los párrafos históricos de abajo que lo describen como pendiente reflejan un estado anterior. T-11-B rechaza claims inválidos y hash falso, y exige actor coherente en receipts; T-11-C inició compilación tipada y checksum de paquete, sin fanout de errores tipados aún. El checksum no autentica revisores. 🚩 PENDIENTE: identidad independiente, fanout/lease/replay/recovery, adapters externos, HF restore, OpenAI real y T-06 visual. Siguiente acción exacta: implementar fanout con observaciones de error por motor y comprobar aislamiento con pruebas locales; repetir auditoría y heartbeat. GitHub Actions no se usa como evidencia.
+
 Estado del DAG existente: T-01..T-04 y T-08..T-09 completos según State Hub; T-05, T-06 y T-10 parciales; T-07 bloqueado. La auditoría de GET sigue la decisión B. El PR existente es https://github.com/maxbry123-commits/router-universal-router-inteligente-/pull/6; no crear otro. Vercel permanece apagado. Siguiente acción: continuar pendientes del DAG sin esperar un archivo hipotético. Durante trabajo activo, invocar `python "chat router/03-ESTADO/checkpoint_guard.py" heartbeat` al menos cada 15 minutos; registra el evento append-only y verifica las proyecciones.
 
 ### Auditoría Manus y organización T-01 — 2026-10-01
@@ -52,13 +54,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 44
+Revisión: 46
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-X-Ray 4 pasadas: 30 documentos, 82 skills, 82 imágenes; auditoría post-código de 13 archivos, 56 pruebas focalizadas y Ruff PASS. T-11-A parser fail-closed y catálogo visual endurecido, con generator read-back 65+17.
+T-11-B local parcial y T-11-C iniciado: compiler tipado, hashes de EvidencePack y comprobación de origen. X-Ray 4 pasadas 30 documentos, 82 skills, 82 imágenes y 17 archivos de código; 64 pruebas focalizadas, Ruff PASS.
 
 ### Siguiente
 Continuar DAG existente

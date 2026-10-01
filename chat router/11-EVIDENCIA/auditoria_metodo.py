@@ -22,11 +22,16 @@ def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _receipt_valid(receipt: dict, root: Path, executor: str, independent: bool) -> bool:
+def _receipt_valid(
+    receipt: dict, root: Path, executor: str, independent: bool,
+    expected_actor: str | None = None,
+) -> bool:
     if not isinstance(receipt, dict) or receipt.get("status") != "PASS":
         return False
     actor = receipt.get("actor")
-    if not isinstance(actor, str) or not actor or (independent and actor == executor):
+    if not isinstance(actor, str) or not actor or (independent and actor == executor) or (
+        expected_actor is not None and actor != expected_actor
+    ):
         return False
     name = receipt.get("path")
     digest = receipt.get("sha256")
@@ -112,7 +117,7 @@ def audit(packet: dict, root: Path = ROOT, policy_path: Path = POLICY) -> dict:
         raise ValueError("INVALID_REVIEWERS")
     pending_reviews = sorted({
         actor for label in labels for actor in label["reviewers"]
-        if not _receipt_valid(reviews.get(actor, {}), root, executor, True)
+        if not _receipt_valid(reviews.get(actor, {}), root, executor, True, actor)
         or label["id"] not in reviews[actor].get("labels", [])
     })
     goals = [

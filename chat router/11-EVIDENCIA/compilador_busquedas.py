@@ -2,6 +2,8 @@
 
 Genera consultas a partir de plantillas por task_type y por goal (G01..G12).
 """
+import hashlib
+
 import goals
 
 # Plantillas adicionales por task_type.
@@ -43,7 +45,12 @@ def compilar(parsed, goal_ids=None):
     seen = set()
     out = []
     for q in queries:
-        if q["query"] not in seen:
-            seen.add(q["query"])
-            out.append(q)
+        normalized = " ".join(q["query"].split()).casefold()
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            out.append({
+                **q, "id": hashlib.sha256(normalized.encode("utf-8")).hexdigest(),
+                "text": q["query"], "source_scope": ["github", "local"],
+                "freshness": None, "required": True,
+            })
     return out

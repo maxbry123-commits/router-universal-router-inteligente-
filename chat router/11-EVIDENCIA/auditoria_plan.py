@@ -20,6 +20,7 @@ CATALOG = PLAN / "CATALOGO-REFERENCIAS-UI.json"
 EXTRA_CATALOG = PLAN / "CATALOGO-ANEXOS-VISUALES.json"
 OUTPUT = PLAN / "AUDITORIA-4-PASADAS.json"
 SOURCE = "aa8fed0631913783c77d3b9ad3fcca62e1978c11"
+SKILL_SOURCE = "cf6c5068b43800954cf9c33f878aeb87fea2501f"
 OLD_SKILLS = "📂 Skills Maxbry UI fromtend/"
 NEW_SKILLS = "chat router/01-PLAN/SKILLS-MAXBRY-UI/"
 
@@ -162,7 +163,7 @@ def build() -> dict:
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     extra = json.loads(EXTRA_CATALOG.read_text(encoding="utf-8"))
     documents = [audit_document(path, blob, preserved) for path, blob in original]
-    skill_sources = [(path, blob) for path, blob in entries("HEAD", OLD_SKILLS)]
+    skill_sources = [(path, blob) for path, blob in entries(SKILL_SOURCE, OLD_SKILLS)]
     skills = [audit_skill(path, blob, indexed) for path, blob in skill_sources]
     images = [audit_image(item) for item in catalog["items"] + extra["items"]]
     if (len(documents) != 30 or len(skills) != 82 or len(images) != 82

@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "X-Ray 4 pasadas: 30 documentos, 82 skills, 82 imágenes; auditoría post-código de 13 archivos, 56 pruebas focalizadas y Ruff PASS. T-11-A parser fail-closed y catálogo visual endurecido, con generator read-back 65+17.",
-      "updated_at": "2026-10-01T14:42:57Z",
-      "last_event_seq": 44
+      "summary": "T-11-B local parcial y T-11-C iniciado: compiler tipado, hashes de EvidencePack y comprobación de origen. X-Ray 4 pasadas 30 documentos, 82 skills, 82 imágenes y 17 archivos de código; 64 pruebas focalizadas, Ruff PASS.",
+      "updated_at": "2026-10-01T14:48:31Z",
+      "last_event_seq": 46
     }
   }
 }

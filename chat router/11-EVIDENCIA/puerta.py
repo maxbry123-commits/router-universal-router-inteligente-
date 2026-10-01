@@ -70,7 +70,7 @@ def _detalle_goals(pack, checks):
         elif gid == "G09":
             ok = (
                 checks_ok.get("tests") is True if requires_tests
-                else any(c["ok"] for c in checks if c["check"] in ("archivo", "http", "version", "tests"))
+                else any(c["ok"] for c in checks if c["check"] in ("archivo", "hash", "http", "version", "tests"))
             )
             nota = "ejecucion comprobada" if ok else "ejecucion no demostrada"
         elif gid == "G10":
@@ -114,7 +114,7 @@ def despues(entrada, resultado, pack=None, claims=None, raiz="."):
     # Veredicto.
     if pack.get("conflicts"):
         veredicto = CONTRADICTION
-    elif any(not c["ok"] for c in checks if c["check"] in ("restricciones", "archivo", "http", "version", "tests")):
+    elif any(not c["ok"] for c in checks):
         veredicto = FAIL
     elif not pack.get("known_facts") or pack.get("unknown"):
         veredicto = INCOMPLETE

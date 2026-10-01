@@ -173,3 +173,7 @@ def test_critical_label_requires_external_reviews(tmp_path):
         for actor in ("hermes", "openclaw", "sentinel")
     }
     assert auditoria.audit(packet, root=tmp_path)["verdict"] == "PASS"
+    packet["reviews"]["sentinel"]["actor"] = "verificador"
+    result = auditoria.audit(packet, root=tmp_path)
+    assert result["verdict"] == "INCOMPLETE"
+    assert result["pending_reviews"] == ["sentinel"]

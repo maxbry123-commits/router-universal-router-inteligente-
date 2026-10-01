@@ -3,6 +3,9 @@
 Campos: task, known_facts, requirements, constraints, conflicts, unknown, sources.
 Tope aproximado 2K-8K tokens (1 token ~ 4 caracteres).
 """
+import hashlib
+import json
+import re
 
 MAX_CARACTERES = 8_000 * 4
 
@@ -24,7 +27,7 @@ def construir(task, parsed, resultados_rankeados, hallazgos=None):
     vistos = set()
     for score, r in resultados_rankeados:
         snippet = (r.get("snippet") or "").strip()
-        if snippet and snippet not in vistos:
+        if snippet and r.get("url") and snippet not in vistos:
             vistos.add(snippet)
             fact = {
                 "fact": _recortar(snippet, 300),
@@ -59,12 +62,13 @@ def construir(task, parsed, resultados_rankeados, hallazgos=None):
     while total > MAX_CARACTERES and pack["known_facts"]:
         pack["known_facts"].pop()
         total = sum(len(str(v)) for v in pack.values())
+    canonical = json.dumps(pack, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    pack["packet_hash"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     return pack
 
 
 def detectar_conflictos(known_facts):
     """Detecta contradicciones simples entre hechos (p.ej. versiones distintas)."""
-    import re
     versiones = {}
     conflicts = []
     for f in known_facts:
@@ -77,8 +81,7 @@ def detectar_conflictos(known_facts):
     if len(set(recomendadas)) > 1:
         conflicts.append({
             "tipo": "version",
-            "detalle": "fuentes discrepan sobre la version vigente: %s"
-                       % ", ".join(sorted(set(recomendadas))),
+            "detalle": f"fuentes discrepan sobre la version vigente: {', '.join(sorted(set(recomendadas)))}",
         })
     return conflicts
 

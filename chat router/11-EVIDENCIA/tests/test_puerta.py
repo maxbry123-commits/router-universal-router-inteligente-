@@ -1,4 +1,6 @@
 """Tests SIMULADO de la Puerta de Evidencia T07. Cero red."""
+import hashlib
+import json
 import os
 import sys
 
@@ -8,15 +10,15 @@ os.environ["SIMULADO"] = "1"
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import parser as parser_mod          # noqa: E402
-import goals                          # noqa: E402
-import compilador_busquedas           # noqa: E402
-import buscadores                     # noqa: E402
-import extractor                      # noqa: E402
-import ranking                        # noqa: E402
-import evidence_pack as pack_mod      # noqa: E402
-import verificador                    # noqa: E402
-import puerta                         # noqa: E402
+import buscadores
+import compilador_busquedas
+import evidence_pack as pack_mod
+import extractor
+import goals
+import parser as parser_mod
+import puerta
+import ranking
+import verificador
 
 
 def test_parser_task_types():
@@ -69,7 +71,7 @@ def test_parser_t11_unknown_and_negated_instruction_fail_closed():
 
 
 def test_goals_12_presentes():
-    assert goals.GOAL_IDS == ["G%02d" % i for i in range(1, 13)]
+    assert goals.GOAL_IDS == [f"G{i:02}" for i in range(1, 13)]
     for gid in goals.GOAL_IDS:
         g = goals.get_goal(gid)
         assert g["entrada"] and g["salida"] and g["plantillas"]
@@ -82,6 +84,9 @@ def test_compilador_determinista():
     assert q1 == q2
     assert len(q1) >= 12
     assert any("latest release" in q["query"] for q in q1)
+    assert all(q["id"] and q["text"] == q["query"] and q["required"] for q in q1)
+    assert all(q["source_scope"] == ["github", "local"] for q in q1)
+    assert len({" ".join(q["text"].split()).casefold() for q in q1}) == len(q1)
 
 
 def test_buscadores_simulado_sin_red():
@@ -124,6 +129,13 @@ def test_evidence_pack_campos():
                   "conflicts", "unknown", "sources"):
         assert campo in pack
     assert pack["known_facts"]
+    assert all(fact["source"] for fact in pack["known_facts"])
+    assert pack["packet_hash"] == hashlib.sha256(
+        json.dumps(
+            {key: value for key, value in pack.items() if key != "packet_hash"},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
 
 
 def test_puerta_pass_completo():
@@ -184,3 +196,28 @@ def test_verificador_no_confia_en_ejecutor():
     assert check["ok"] is False
     check_http = verificador.verificar_http("https://docs.ejemplo.dev/proyecto")
     assert check_http["ok"] is True  # SIMULADO: valida forma, sin red
+
+
+def test_claims_falsos_y_no_verificables_fallan_cerrado(tmp_path):
+    file = tmp_path / "prueba.txt"
+    file.write_text("contenido original", encoding="utf-8")
+    good_hash = hashlib.sha256(file.read_bytes()).hexdigest()
+    pack = {
+        "parsed": parser_mod.parse("verifica el archivo"), "known_facts": [{"fact": "archivo"}],
+        "conflicts": [], "unknown": [], "sources": ["local"],
+    }
+    for claim in (
+        {"tipo": "hash", "ruta": str(file), "sha256": "0" * 64},
+        {"tipo": "otro", "ruta": str(file)},
+        {"tipo": "archivo", "ruta": str(tmp_path)},
+        {"tipo": "http", "url": None},
+        {"tipo": "tests", "comando": ""},
+        None,
+    ):
+        result = puerta.despues("verifica el archivo", {"claims": [claim]}, pack=pack)
+        assert result["veredicto"] == "FAIL"
+        assert any(not check["ok"] for check in result["checks"])
+    assert puerta.despues("verifica el archivo", {"claims": "invalido"}, pack=pack)["veredicto"] == "FAIL"
+    assert verificador.verificar_hash(str(file), good_hash)["ok"]
+    file.write_text("contenido alterado", encoding="utf-8")
+    assert not verificador.verificar_hash(str(file), good_hash)["ok"]
