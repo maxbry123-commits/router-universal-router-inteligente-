@@ -39,11 +39,12 @@ MARKS = {"router": "router_job_persistent.py", "guardian": "guardian.py"}
 ALIVE = ("RUNNING", "STARTING")
 DEAD = ("ERROR", "COMPLETED", "CANCELED", "DELETED")
 IMAGE = "python:3.12"
-GROQ_MODEL_ENV = {"RIU_G2_GROQ_MODEL": "qwen/qwen3.8-27b"}
+GROQ_MODEL_ENV = {"RIU_G2_GROQ_MODEL": "qwen/qwen3.8-27b", "RIU_VAULT_AUTOLOCK_S": "0", "RIU_PLUGINS_AUTOSYNC_S": "60"}
 # Secretos que el Router necesita (mismos nombres que el lanzador actual). Se COPIAN del env del guardian.
 PASSTHROUGH = (
     "GITHUB_TOKEN", "HF_CONTROL_JOBS_TOKEN", "HF_TOKEN_1", "GH_AGENT_TOKEN", "RIU_ROUTER_API_KEY", "RIU_AGENT_API_KEYS",
-    *[f"NVIDIA_API_KEY_{i}" for i in range(1, 5)], *[f"GROQ_API_KEY_{i}" for i in range(2, 8)],
+    *[f"NVIDIA_API_KEY_{i}" for i in range(1, 6)], *[f"GROQ_API_KEY_{i}" for i in range(1, 8)],
+    *[f"OPENAI_API_KEY_{i}" for i in range(1, 15)],
 )
 HttpFn = Callable[..., "tuple[int, bytes]"]
 
