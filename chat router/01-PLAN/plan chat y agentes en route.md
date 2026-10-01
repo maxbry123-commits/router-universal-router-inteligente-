@@ -309,4 +309,80 @@ nodes:
 
 
 
-  - 
+  - - id: T-05  
+    titulo: "Backend: endpoints de organizacion (solo lectura, alimentan UI)"  
+    needs: [T-04]  
+    pasos:  
+      1: "En router inteligente universal/integration/chat_mvp/router.py agregar GET  
+          /chat/org/graph (sirve chat router/03-ESTADO/AGENT_GRAPH.json),  
+          GET /chat/org/queue (lee chat router/EVIDENCIA/cola/tareas.json y  
+          workers.json de chat router/runtime/cola.py),  
+          GET /chat/org/bitacora (tail N lineas de 03-ESTADO/BITACORA.jsonl),  
+          GET /chat/org/dag/{id} (ledger completo de un run ejecutado)"  
+      2: "GET /chat/org/connectors (fichas del bus enchufe: id, status, health,  
+          puertos — spec §10.10-10.14), GET /chat/org/templates (DAG LOCKED  
+          §10.3-10.7, solo seleccion+ejecucion), GET /chat/org/engineering  
+          (toggles §10.9), GET /chat/org/files (adjuntos HF /memoria/* +  
+          anclas archivo→nodo DAG, registro MCP por proyecto)"  
+      3: "Todo endpoint es solo lectura y emite evento por State Hub; ninguna  
+          mutacion de estado sin Sheriff; errores devuelven JSON  
+          {status, detail} determinista, nunca texto libre"  
+    acceptance:  
+      - "cada endpoint responde 200 con datos reales o lista vacia"  
+      - "ningun endpoint muta estado (test de no-escritura)"  
+      - "respuestas validan contra schema fijo (contrato Event doc24)"  
+    evidence: [tests, respuestas_json]  
+    work_surface: BACKEND  
+  
+  - id: T-06  
+    titulo: "Frontend: shell + 4 paneles modulares + sub-vistas spec (archivos separados, NO monolito)"  
+    needs: [T-05]  
+    pasos:  
+      1: "chat router/ui/shell.{html,css,js}: sidebar + topbar segun spec  
+          §15-16; tema V07 grises #1B1B1B/#202020/#2A2A2A/#3C3C3C/#484848,  
+          acento #0848F7 solo en elemento activo; monta los paneles como  
+          fichas del bus enchufe (T-03); router de vistas interno; un unico  
+          cliente api.js que apunta a endpoints T-05 (NUNCA proveedores  
+          directos, NUNCA llave en el navegador)"  
+      2: "panel-chat.{js,html}: composer con modos Rapido/Pensar/Equilibrado,  
+          boton adjuntar, comandos slash, selector de rama (spec §9.1-9.3);  
+          fusionar funciones existentes de router inteligente universal/  
+          vercel-ui/index.html (selectores modelo/agente/GitHub/grupo,  
+          switch con-agente, botones pausa/reanudar/emergencia/encender  
+          router, orden programada); envia ordenes a /chat/* del Router"  
+      3: "panel-archivos.{js,html}: vista AUDITOR de Run UI YAIWES.html  
+          (buscar/anclar/enviar a agente); adjuntos → HF /memoria/* via  
+          /chat/org/files; cada ancla crea arista archivo→nodo en  
+          AGENT_GRAPH.json; registro MCP de archivos por proyecto"  
+      4: "panel-seguimiento.{js,html}: TREN (vagones = nodos del DAG en  
+          ejecucion con estado vivo) + VENTANAS (IN/OUT por paso +  
+          breakpoints) + ORQUESTA (pila de funciones, salida JSON) de  
+          Run UI YAIWES.html; mapa mental 10 vistas renderizado desde  
+          STATE.json/CRAZY_WALL.json (Vision Global, Arquitectura, Posicion  
+          Actual, Rompecabezas, Proposito, Entrada/Salida, Desbloquea,  
+          Madurez, Microflujo P1, Ensamblaje); estados de evidencia  
+          CREATED→TESTED→VERIFIED→READY→MERGED→BLOCKED (spec §11)"  
+      5: "panel-canvas.{js,html}: visor de imagenes/video/animacion con  
+          componentes RUI ya descargados (grid-reveal, fluid-orb,  
+          matrix-orb, step-player); fuente = adjuntos de panel-archivos"  
+      6: "sub-vistas del spec como modulos propios: conectores  
+          §10.10-10.14, templates LOCKED §10.3-10.7, run §10.8 (REGLA: solo  
+          seleccion+ejecucion, nunca editar DAG en runtime, SENTINEL  
+          bloquea), engineering §10.9, automatizaciones §7.11, habilidades  
+          §7.5. Datos solo de T-05; cero decision LLM en frontend; toda  
+          logica de estado en JS determinista"  
+    acceptance:  
+      - "shell monta los 4 paneles + sub-vistas sin errores de consola"  
+      - "cada panel consume su endpoint T-05 correspondiente"  
+      - "ningun archivo supera 500 LOC (R02); sin dependencias nuevas sin RDC"  
+      - "tema V07 verificado por read-back de colores en CSS"  
+    evidence: [screenshots, read-back_css, tests_endpoints]  
+    work_surface: FRONTEND
+
+
+Handoff completo: YAML plan + ejecución T-01..T-10
+Repositorio: maxbry123-commits/router-universal-router-inteligente- (ref: main). Recuperar el YAML completo de la conversación de planificación: escribir chat router/01-PLAN/PLAN-DSL-DAG-UI.yaml con input_blocks_verbatim (IB-01..IB-17 con las órdenes literales del Director) + nodos T-01..T-10, donde T-05 y T-06 usan EXACTAMENTE el texto del parche de arriba (eran las secciones truncadas). Luego ejecutar T-01..T-10 en loop sin preguntar: T-01 mover archivos sueltos de raíz a 📂 Skills Maxbry UI fromtend/ (componentes/, diseno/) incluyendo ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md; T-03 enchufe Fables→Router; T-04 nodo agent:+gates P1/P2/P3+AGENT_GRAPH.json; T-05/T-06 como el parche; T-07 solo RDC; T-08 trazabilidad por nodo
+
+ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md; T-03 enchufe Fables→Router; T-04 nodo agent:+gates P1/P2/P3+AGENT_GRAPH.json; T-05/T-06 como el parche; T-07 solo RDC; T-08 trazabilidad por nodo (BITACORA+STATE+CRAZY_WALL+HANDOFF+Devin notas+Claude notas); T-09 verificación vs spec sección por sección; T-10 cierre read-back, Vercel APAGADO. Reglas: reuse>patch>adapt>generate, max 500 LOC/bloque, evidencia+read-back, Judge/Sheriff en código, secrets solo como secrets (registrar rotación de los 4 tokens filtrados).
+
+
