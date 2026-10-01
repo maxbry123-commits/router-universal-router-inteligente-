@@ -1,0 +1,28 @@
+schema_id: skills_schema/motion-design-engineering.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Motion UI, easing, transiciones, microinteracciones
+work_surface: FRONTEND
+acceptance:
+- curvas de easing declaradas
+- sin transiciones por defecto del navegador
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/motion-design-engineering.json
+  sha256: pending
+oracle: check:easing_declarado
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

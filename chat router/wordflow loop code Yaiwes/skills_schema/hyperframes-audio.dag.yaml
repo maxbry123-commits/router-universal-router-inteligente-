@@ -1,0 +1,26 @@
+schema_id: skills_schema/hyperframes-audio.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Audio y automatización
+work_surface: FRONTEND
+acceptance: audio integrado en pipeline
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/hyperframes-audio.json
+  sha256: pending
+oracle: check:audio_pipeline
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

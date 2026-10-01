@@ -1,0 +1,29 @@
+schema_id: skills_schema/impeccable.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Tipografía, espaciado, layout, acabado visual
+work_surface: FRONTEND
+acceptance:
+- escala tipográfica coherente
+- espaciado en rejilla
+- sin overflow
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/impeccable.json
+  sha256: pending
+oracle: checks:tipografia+rejilla+overflow
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

@@ -1,0 +1,28 @@
+schema_id: skills_schema/21st-magic.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Generación de componentes UI via MCP (tool)
+work_surface: FRONTEND
+acceptance:
+- registrado como TOOL
+- contrato de llamada declarado
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/21st-magic.json
+  sha256: pending
+oracle: tool:mcp_call_contract
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

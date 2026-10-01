@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "N-2.5 agent_router FAIL_CLOSED, N-2.6 recovery tipado, N-2.7 stuck detector, LayerRunner+ThinkingSystem cableados, dedup task_runtime canonico en loop core. Tests loop 254 pass.",
-      "updated_at": "2026-10-01T18:29:19Z",
-      "last_event_seq": 57
+      "summary": "O4: contratos normalizados+adapters fail-closed (13 tests). Seals agent-45 + SealsWorker (4 tests). motor2: munder-difflin+archify publicados. Loop 267 pass.",
+      "updated_at": "2026-10-01T18:56:02Z",
+      "last_event_seq": 58
     }
   }
 }
