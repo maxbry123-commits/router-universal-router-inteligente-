@@ -55,6 +55,17 @@
       "summary": "Uploaded duplicate plan consolidated to 10 unique DAG nodes and 22 input blocks; dag.validate returns no errors; topological order T-01..T-10; read-back commit bf964cec58.",
       "updated_at": "2026-10-01T03:20:32Z",
       "last_event_seq": 15
+    },
+    "UI-T-03": {
+      "node_id": "UI-T-03",
+      "task": "UI-T-03",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T03_FABLES_METADATA_VALIDATED",
+      "next": "T-04",
+      "summary": "Fables catalog read-back commit 556287c954: 22 panel/agent metadata fichas registered INACTIVE, validator v2 rejects invalid, 7 focused tests passed; activation still requires tribunal approval and executable components.",
+      "updated_at": "2026-10-01T03:23:55Z",
+      "last_event_seq": 16
     }
   }
 }
