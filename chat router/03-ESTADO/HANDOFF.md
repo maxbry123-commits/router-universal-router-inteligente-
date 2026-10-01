@@ -29,16 +29,16 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 24
+Revisión: 26
 Proyecto/tarea: `chat-yaiwes` / `UI-T-10`
 Estado: **RUNNING**
-Fase: `T10_BROAD_TEST_GAPS`
+Fase: `T10_GLOBAL_READBACK`
 
 ### Último checkpoint
-Focused 20 tests pass; broad pytest tests gives 318 passed, 11 failed, 6 errors, 1 skipped, including missing cryptography and pytest-asyncio. Unscoped pytest collects vendored tests and aborts. Origin of failures on main not verified. See recovery notes and T-09 audit; Vercel remains off.
+T-05 contradiction closed by decision B. Remaining GAPs unchanged: T-06 browser API key and INACTIVE Fables panels, T-07 prescribed RDC workflow absent from main, no browser test or screenshots, CI job blocked by account billing lock, Vercel automatic deployment stays disabled. No global PASS declared.
 
 ### Siguiente
-Resume T-05 GAP
+T-06 HttpOnly session, Fables activation, T-07 RDC workflow
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121

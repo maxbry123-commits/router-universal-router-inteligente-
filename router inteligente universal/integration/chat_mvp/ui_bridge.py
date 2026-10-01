@@ -34,7 +34,7 @@ STATE = f"{STATE_DIR}/STATE.json"
 CRAZY_WALL = f"{STATE_DIR}/CRAZY_WALL.json"
 HANDOFF = f"{STATE_DIR}/HANDOFF.md"
 _STATE_LOCK = threading.RLock()
-_STATE_EVENT_TYPES = {"TASK_CLAIMED", "FILES_CHANGED", "CHECKPOINT_RECORDED", "TASK_BLOCKED", "TASK_COMPLETED", "TASK_RELEASED"}
+_STATE_EVENT_TYPES = {"TASK_CLAIMED", "FILES_CHANGED", "CHECKPOINT_RECORDED", "TASK_BLOCKED", "TASK_COMPLETED", "TASK_RELEASED", "RESOURCE_READ"}
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 _SECRET_LIKE = re.compile(r"\b(?:hf_[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})\b")
 _HANDOFF_START = "<!-- YAIWES STATE HUB START -->"
@@ -161,7 +161,11 @@ def _state_event(body: dict[str, Any], seq: int) -> dict[str, Any]:
 def _state_projection(events: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
     nodes: dict[str, dict[str, Any]] = {}
     active_project = None
+    last_functional_event = None
     for event in events:
+        if event["type"] == "RESOURCE_READ":
+            continue
+        last_functional_event = event
         project, task = event["project"], event["task"]
         active_project = project
         node = nodes.setdefault(task, {"node_id": task, "task": task, "project": project, "status": "PENDING"})
@@ -194,8 +198,8 @@ def _state_projection(events: list[dict[str, Any]]) -> tuple[dict[str, Any], dic
         if not project["active_tasks"] and not project["blocked_tasks"]:
             project["status"] = "COMPLETED"
 
-    revision = events[-1]["seq"] if events else 0
-    updated_at = events[-1]["at"] if events else None
+    revision = last_functional_event["seq"] if last_functional_event else 0
+    updated_at = last_functional_event["at"] if last_functional_event else None
     state = {"schema": "yaiwes.state/v1", "revision": revision, "updated_at": updated_at,
              "active_project": active_project, "projects": projects}
     crazy_wall = {"schema": "yaiwes.crazy-wall/v1", "nodes": nodes}
@@ -242,6 +246,8 @@ def _regenerate_state(events: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _emit_state_event(body: dict[str, Any]) -> dict[str, Any]:
+    if body.get("type") == "RESOURCE_READ":
+        raise HTTPException(status_code=400, detail="STATE_AUDIT_ONLY_FROM_GET")
     with _STATE_LOCK:
         current, _ = _read(BITACORA)
         events = _state_events(current)
@@ -250,6 +256,26 @@ def _emit_state_event(body: dict[str, Any]) -> dict[str, Any]:
         _write(BITACORA, log, f"state hub: {event['type']} {event['task']}")
         projection = _regenerate_state(events + [event])
         return {"ok": True, "event": event, **projection}
+
+
+def _emit_state_audit_event(resource: str, http_status: int) -> dict[str, Any]:
+    if resource not in {"graph", "queue", "bitacora", "dag", "connectors", "templates", "engineering", "files"}:
+        raise HTTPException(status_code=400, detail="STATE_AUDIT_RESOURCE_INVALID")
+    if http_status not in {200, 400, 404}:
+        raise HTTPException(status_code=400, detail="STATE_AUDIT_STATUS_INVALID")
+    with _STATE_LOCK:
+        current, _ = _read(BITACORA)
+        events = _state_events(current)
+        event = _state_event({
+            "type": "RESOURCE_READ", "project": "chat-yaiwes", "task": "UI-T-05",
+            "actor": "router", "summary": f"GET /chat/org/{resource} HTTP {http_status}",
+        }, (events[-1]["seq"] + 1) if events else 1)
+        log = current.rstrip() + ("\n" if current.strip() else "") + json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n"
+        _write(BITACORA, log, f"state hub: audit GET /chat/org/{resource}")
+        persisted, _ = _read(BITACORA)
+        if persisted != log:
+            raise HTTPException(status_code=503, detail="STATE_AUDIT_READBACK_FAILED")
+        return event
 
 
 def _rebuild_state() -> dict[str, Any]:

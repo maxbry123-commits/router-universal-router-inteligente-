@@ -83,11 +83,11 @@
       "task": "UI-T-05",
       "project": "chat-yaiwes",
       "status": "RUNNING",
-      "phase": "T05_READ_ONLY_PROJECTIONS",
-      "next": "T-06",
-      "summary": "Read-back 0db8b96523: eight authenticated read-only organization views, typed envelope, no-write test passed. GAP: State Hub GET audit event conflicts with no-write acceptance; no event falsely persisted. Live DAG HTTP run ledger, queue workers, engineering toggles, and MCP registry lack source and return empty until implemented.",
-      "updated_at": "2026-10-01T03:33:05Z",
-      "last_event_seq": 18
+      "phase": "T05_AUDIT_APPEND_ONLY",
+      "next": "T-06 GAPs",
+      "summary": "Director decision B applied: every GET /chat/org/* appends a RESOURCE_READ audit event to BITACORA.jsonl with read-back, while functional projection ignores those events so status, payload, workflow_state and business_state stay unchanged. POST /state/events rejects RESOURCE_READ. Deterministic errors are audited with their HTTP code and audit failure returns STATE_AUDIT_UNAVAILABLE 503. Evidence: tests/test_org_api.py, 4 passed.",
+      "updated_at": "2026-10-01T04:35:00Z",
+      "last_event_seq": 25
     },
     "UI-T-06": {
       "node_id": "UI-T-06",
@@ -138,11 +138,11 @@
       "task": "UI-T-10",
       "project": "chat-yaiwes",
       "status": "RUNNING",
-      "phase": "T10_BROAD_TEST_GAPS",
-      "next": "Resume T-05 GAP",
-      "summary": "Focused 20 tests pass; broad pytest tests gives 318 passed, 11 failed, 6 errors, 1 skipped, including missing cryptography and pytest-asyncio. Unscoped pytest collects vendored tests and aborts. Origin of failures on main not verified. See recovery notes and T-09 audit; Vercel remains off.",
-      "updated_at": "2026-10-01T03:39:47Z",
-      "last_event_seq": 24
+      "phase": "T10_GLOBAL_READBACK",
+      "next": "T-06 HttpOnly session, Fables activation, T-07 RDC workflow",
+      "summary": "T-05 contradiction closed by decision B. Remaining GAPs unchanged: T-06 browser API key and INACTIVE Fables panels, T-07 prescribed RDC workflow absent from main, no browser test or screenshots, CI job blocked by account billing lock, Vercel automatic deployment stays disabled. No global PASS declared.",
+      "updated_at": "2026-10-01T04:35:30Z",
+      "last_event_seq": 26
     }
   }
 }

@@ -31,4 +31,19 @@ Fecha de verificación estática: 2026-10-01T03:37:20Z. Fuente: `chat router/01-
 | §24 instrucciones para otra IA | GAP | El handoff documenta fuentes y primer nodo no PASS; faltan módulos para reconstruir el alcance completo. Retomar desde T-05. |
 | §25 resumen final | GAP | Cobertura parcial de navegación y paleta; continuar por los GAPs anteriores. |
 
-Otros GAPs del plan: T-05 pide auditar cada GET en State Hub y también prohíbe toda mutación; se prioriza el test de no escritura, sin afirmar eventos no emitidos. T-06 pide ninguna clave en navegador, pero la UI utiliza `X-API-Key` conservada solo en memoria JS; requiere sesión de servidor HttpOnly. T-07 exige `.github/workflows/research-download-chain-router-components-20260903.yml`, ausente tanto en esta rama como en `origin/main`; no se hizo descarga ni se fabricó evidencia. CI de GitHub Actions no inició por bloqueo de facturación, según anotación del job; esto no valida código.
+Otros GAPs del plan: T-06 pide ninguna clave en navegador, pero la UI utiliza `X-API-Key` conservada solo en memoria JS; requiere sesión de servidor HttpOnly. T-07 exige `.github/workflows/research-download-chain-router-components-20260903.yml`, ausente tanto en esta rama como en `origin/main`; no se hizo descarga ni se fabricó evidencia. CI de GitHub Actions no inició por bloqueo de facturación, según anotación del job; esto no valida código.
+
+## T-05 — decisión B del Director (auditoría ≠ mutación)
+
+La contradicción anterior quedó resuelta por decisión expresa del Director: cada GET de `/chat/org/*` añade un evento `RESOURCE_READ` append-only en `BITACORA.jsonl` como telemetría, y está prohibido que un GET cambie `status`, `payload`, `workflow_state`, `business_state` o cualquier dato del recurso leído.
+
+Implementación y evidencia en `tests/test_org_api.py`:
+
+- `ui_bridge._emit_state_audit_event` escribe solo en la bitácora, con read-back del contenido persistido, y no regenera `STATE.json` ni `CRAZY_WALL.json`.
+- `_state_projection` ignora los eventos `RESOURCE_READ`, así que la proyección funcional es idéntica antes y después de las lecturas.
+- `POST /state/events` rechaza `RESOURCE_READ` con `STATE_AUDIT_ONLY_FROM_GET`; ese tipo solo lo produce la capa de lectura.
+- Las respuestas de error deterministas (`DAG_ID_INVALID`, `DAG_NOT_FOUND`, `LIMIT_INVALID`) también se auditan con su código HTTP.
+- Si la auditoría no se puede persistir, la vista falla cerrado con `{"status":"error","detail":"STATE_AUDIT_UNAVAILABLE"}` y HTTP 503, sin devolver datos.
+- La prueba verifica secuencias crecientes, ausencia de escrituras en SQLite y archivos canónicos intactos.
+
+GAP restante de T-05: sin credencial de GitHub la escritura de auditoría no es posible, por lo que las ocho vistas responden 503 en un entorno sin `RIU_GITHUB_PAT_FULL_ACCESO`; no se ha verificado el recorrido HTTP real contra el repositorio.

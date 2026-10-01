@@ -18,16 +18,32 @@ from fastapi.testclient import TestClient
 
 from integration.chat_mvp import app as chat_app
 from integration.chat_mvp import router as rt
+from integration.chat_mvp import ui_bridge
 from integration.chat_mvp.store import Store
 
 
-def test_org_views_are_authenticated_real_and_read_only(tmp_path, monkeypatch):
+def test_org_views_audit_reads_without_changing_functional_state(tmp_path, monkeypatch):
     monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"key": "owner"}')
     store = Store(tmp_path)
     rt.set_store(store)
     client = TestClient(chat_app.app)
     state = ROOT.parent / "chat router/03-ESTADO"
     before = {path: path.read_bytes() for path in state.iterdir() if path.is_file()}
+    audit_log = tmp_path / "audit.jsonl"
+    audit_log.write_bytes((state / "BITACORA.jsonl").read_bytes())
+    original_events = ui_bridge._state_events(audit_log.read_text(encoding="utf-8"))
+    original_projection = ui_bridge._state_projection(original_events)
+
+    def read_audit(path):
+        assert path == ui_bridge.BITACORA
+        return audit_log.read_text(encoding="utf-8"), "test-sha"
+
+    def write_audit(path, text, _message):
+        assert path == ui_bridge.BITACORA
+        audit_log.write_text(text, encoding="utf-8")
+
+    monkeypatch.setattr(ui_bridge, "_read", read_audit)
+    monkeypatch.setattr(ui_bridge, "_write", write_audit)
     writes = store._db.total_changes
     try:
         for path, key in (
@@ -49,10 +65,38 @@ def test_org_views_are_authenticated_real_and_read_only(tmp_path, monkeypatch):
         assert client.get("/chat/org/bitacora?limit=201", headers={"X-API-Key": "key"}).json() == {
             "status": "error", "detail": "LIMIT_INVALID",
         }
+        assert client.get("/chat/org/bitacora?limit=invalid", headers={"X-API-Key": "key"}).json() == {
+            "status": "error", "detail": "LIMIT_INVALID",
+        }
         assert store._db.total_changes == writes
         assert before == {path: path.read_bytes() for path in before}
+        events = ui_bridge._state_events(audit_log.read_text(encoding="utf-8"))
+        reads = events[len(original_events):]
+        assert len(reads) == 11
+        assert [event["seq"] for event in reads] == list(range(original_events[-1]["seq"] + 1, events[-1]["seq"] + 1))
+        assert all(event["type"] == "RESOURCE_READ" and event["task"] == "UI-T-05" for event in reads)
+        assert [event["summary"] for event in reads[-2:]] == [
+            "GET /chat/org/bitacora HTTP 400", "GET /chat/org/bitacora HTTP 400",
+        ]
+        assert ui_bridge._state_projection(events) == original_projection
     finally:
         rt.set_store(None)
+
+
+def test_org_views_fail_closed_if_audit_cannot_be_recorded(monkeypatch):
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"key": "owner"}')
+    monkeypatch.setattr(ui_bridge, "_read", lambda _path: ("", None))
+
+    def fail_audit(_path, _text, _message):
+        raise OSError("write failed")
+
+    monkeypatch.setattr(ui_bridge, "_write", fail_audit)
+    client = TestClient(chat_app.app)
+    response = client.get("/chat/org/queue", headers={"X-API-Key": "key"})
+    assert response.status_code == 503
+    assert response.json() == {
+        "status": "error", "detail": "STATE_AUDIT_UNAVAILABLE",
+    }
 
 
 def test_org_shell_serves_modular_panels_and_locked_palette():
