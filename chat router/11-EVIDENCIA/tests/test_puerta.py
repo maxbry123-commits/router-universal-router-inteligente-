@@ -99,6 +99,39 @@ def test_buscadores_simulado_sin_red():
             assert campo in r
 
 
+def test_fanout_falla_cerrado_por_motor_sin_perder_evidencia_local(monkeypatch):
+    def github_unavailable(query, *, strict=False):
+        raise OSError("github unavailable")
+
+    monkeypatch.setattr(buscadores, "SIMULADO", False)
+    monkeypatch.setattr(buscadores, "buscar_github", github_unavailable)
+    monkeypatch.setattr(buscadores, "buscar_local", lambda query, raiz: [{
+        "query": query, "source": "local", "url": "repo://README.md",
+        "title": "README", "date": "", "snippet": "documentacion local",
+        "source_type": "local", "retrieved_at": "2026-10-01T00:00:00Z",
+    }])
+    observed = buscadores.fanout_observado([
+        {"id": "q1", "query": "documentacion", "source_scope": ["github", "local", "unknown"]},
+    ])
+    assert len(observed["results"]) == 1
+    assert observed["results"][0]["query_id"] == "q1"
+    assert observed["observations"] == [
+        {"query_id": "q1", "source": "github", "code": "OSError"},
+        {"query_id": "q1", "source": "unknown", "code": "UNAUTHORIZED_ADAPTER"},
+    ]
+    pack = puerta.antes("busca documentacion")
+    assert pack["known_facts"] and pack["observations"]
+    assert puerta.despues("busca documentacion", {"claims": []}, pack=pack)["veredicto"] == "INCOMPLETE"
+
+
+def test_busqueda_local_expone_timeout_sin_resultados_parciales(tmp_path, monkeypatch):
+    (tmp_path / "README.md").write_text("documentacion", encoding="utf-8")
+    clock = iter((0, 11))
+    monkeypatch.setattr(buscadores.time, "monotonic", lambda: next(clock, 11))
+    with pytest.raises(TimeoutError):
+        buscadores.buscar_local("documentacion", str(tmp_path))
+
+
 def test_extractor_fragmentos():
     texto = "# Titulo\n\nParrafo con version 2.3.1 vigente.\n\n```\npytest -q\n```"
     hall = extractor.extraer(texto, ["version", "pytest"])
@@ -150,6 +183,10 @@ def test_puerta_pass_completo():
     assert r["veredicto"] == "PASS"
     assert set(r["detalle_goals"].keys()) == set(goals.GOAL_IDS)
     assert all(d["ok"] for d in r["detalle_goals"].values())
+    pack["known_facts"][0]["fact"] = "afirmacion alterada tras la busqueda"
+    assert puerta.despues(
+        "busca la documentacion oficial del proyecto version 2.3.1", resultado, pack=pack,
+    )["veredicto"] == "INCOMPLETE"
 
 
 def test_puerta_incomplete_sin_evidencia(monkeypatch):

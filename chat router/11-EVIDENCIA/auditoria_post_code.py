@@ -16,6 +16,7 @@ CODE = (
     "chat router/11-EVIDENCIA/auditoria_plan.py",
     "chat router/11-EVIDENCIA/auditoria_post_code.py",
     "chat router/11-EVIDENCIA/auditoria_metodo.py",
+    "chat router/11-EVIDENCIA/buscadores.py",
     "chat router/11-EVIDENCIA/compilador_busquedas.py",
     "chat router/11-EVIDENCIA/evidence_pack.py",
     "chat router/11-EVIDENCIA/parser.py",

@@ -12,7 +12,7 @@ El trabajo existente se define en los DAG T-01..T-12 y sus contratos. `PLAN.json
 | Diseño | `ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md`, `REFERENCIAS-UI/`, `CATALOGO-REFERENCIAS-UI.json` | 65 referencias; T-06 pendiente de prueba completa |
 | Skills y componentes FROMTED | `SKILLS-MAXBRY-UI/diseno/`, `SKILLS-MAXBRY-UI/componentes/` | 82 archivos, movidos con Git conservando bytes; integración funcional pendiente |
 | Diagramas del Router y capturas adjuntas | `REFERENCIAS-UI/ARQUITECTURA-ROUTER/`, `REFERENCIAS-UI/ADJUNTOS-CHAT/`, `CATALOGO-ANEXOS-VISUALES.json` | 5 PNG del Router y 12 adjuntos del chat; catalogados como referencia |
-| Auditoría cruzada y siguientes acciones | `AUDITORIA-4-PASADAS.json`, `AUDITORIA-4-PASADAS-POST-CODE.json`, `PLAN-ACCION-XRAY.md` | 30 documentos, 82 skills, 82 imágenes y 17 archivos de código; gaps de ejecución explícitos |
+| Auditoría cruzada y siguientes acciones | `AUDITORIA-4-PASADAS.json`, `AUDITORIA-4-PASADAS-POST-CODE.json`, `PLAN-ACCION-XRAY.md` | 30 documentos, 82 skills, 82 imágenes y 18 archivos de código; gaps de ejecución explícitos |
 | Inventario T-06 | `T-06-INVENTARIO.md` | Controles y estados enumerados; resultados requieren prueba real en navegador |
 | Motor reutilizable | `../../Motores descarga extracción búsquedas/➡️📂motores de descarga extracción copiado movimiento archivos router-universal-router-inteligente-/📂Motor descarga de componentes y extracción de zip/` | Fuente examinada, no conectado en vivo |
 

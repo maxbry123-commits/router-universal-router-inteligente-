@@ -35,13 +35,18 @@ def antes(entrada, raiz="."):
     """Fase previa: parsea, compila consultas, busca, extrae, rankea y empaqueta."""
     parsed = parser_mod.parse(entrada)
     consultas = compilador_busquedas.compilar(parsed)
-    resultados = buscadores.fanout(consultas, raiz=raiz)
+    busqueda = buscadores.fanout_observado(consultas, raiz=raiz)
+    resultados = busqueda["results"]
     terminos = parsed["targets"] or [parsed["raw"][:40]]
     hallazgos = extractor.extraer_de_resultados(resultados, terminos)
     rankeados = ranking.rankear(resultados, entrada)
     pack = pack_mod.construir(entrada, parsed, rankeados, hallazgos)
     pack["parsed"] = parsed
     pack["queries"] = consultas
+    pack["observations"] = busqueda["observations"]
+    if busqueda["observations"]:
+        pack["unknown"].append("errores de motores de busqueda; evidencia incompleta")
+        pack["packet_hash"] = pack_mod.packet_hash(pack)
     return pack
 
 
@@ -116,7 +121,7 @@ def despues(entrada, resultado, pack=None, claims=None, raiz="."):
         veredicto = CONTRADICTION
     elif any(not c["ok"] for c in checks):
         veredicto = FAIL
-    elif not pack.get("known_facts") or pack.get("unknown"):
+    elif not pack_mod.verificar_packet(pack) or not pack.get("known_facts") or pack.get("unknown"):
         veredicto = INCOMPLETE
     elif all(d["ok"] for d in detalle.values()):
         veredicto = PASS

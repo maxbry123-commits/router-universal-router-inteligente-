@@ -4,6 +4,7 @@ Campos: task, known_facts, requirements, constraints, conflicts, unknown, source
 Tope aproximado 2K-8K tokens (1 token ~ 4 caracteres).
 """
 import hashlib
+import hmac
 import json
 import re
 
@@ -12,6 +13,25 @@ MAX_CARACTERES = 8_000 * 4
 # Fuentes con autoridad suficiente para abrir un conflicto de versiones.
 # Una fuente sin autoridad (p.ej. un blog) no contradice a la fuente oficial.
 _FUENTES_CON_AUTORIDAD = {"github", "docs", "local", "url"}
+_PACK_FIELDS = ("task", "known_facts", "requirements", "constraints", "conflicts", "unknown", "sources")
+
+
+def packet_hash(pack):
+    try:
+        canonical = json.dumps(
+            {field: pack[field] for field in _PACK_FIELDS},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        )
+    except (KeyError, TypeError, ValueError):
+        return None
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def verificar_packet(pack):
+    if not isinstance(pack, dict) or not isinstance(pack.get("packet_hash"), str):
+        return False
+    digest = packet_hash(pack)
+    return digest is not None and hmac.compare_digest(digest, pack["packet_hash"])
 
 
 def _recortar(texto, limite):
@@ -62,8 +82,7 @@ def construir(task, parsed, resultados_rankeados, hallazgos=None):
     while total > MAX_CARACTERES and pack["known_facts"]:
         pack["known_facts"].pop()
         total = sum(len(str(v)) for v in pack.values())
-    canonical = json.dumps(pack, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    pack["packet_hash"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    pack["packet_hash"] = packet_hash(pack)
     return pack
 
 

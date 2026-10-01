@@ -9,12 +9,14 @@ Motores:
 Resultados normalizados:
 {query, source, url, title, date, snippet, source_type, retrieved_at}
 """
+import datetime
+import json
 import os
 import re
-import json
-import datetime
-import urllib.request
+import time
+import urllib.error
 import urllib.parse
+import urllib.request
 
 SIMULADO = os.environ.get("SIMULADO", "") == "1"
 
@@ -88,7 +90,7 @@ def buscar_simulado(query):
     return resultados
 
 
-def buscar_github(query, token=None):
+def buscar_github(query, token=None, *, strict=False):
     """GitHub Search API. Requiere red; token por env GITHUB_TOKEN."""
     if SIMULADO:
         return buscar_simulado(query)
@@ -100,7 +102,9 @@ def buscar_github(query, token=None):
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-    except Exception:
+    except (urllib.error.URLError, OSError, ValueError):
+        if strict:
+            raise
         return []
     out = []
     for it in data.get("items", [])[:5]:
@@ -122,7 +126,7 @@ def buscar_url(query, url):
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
             cuerpo = resp.read(200_000).decode("utf-8", "replace")
-    except Exception:
+    except (urllib.error.URLError, OSError, ValueError):
         return []
     texto = re.sub(r"<[^>]+>", " ", cuerpo)
     texto = re.sub(r"\s+", " ", texto).strip()
@@ -136,19 +140,28 @@ def buscar_url(query, url):
     })]
 
 
-def buscar_local(query, raiz="."):
+def buscar_local(query, raiz=".", timeout=10):
     """Busqueda local en archivos de texto del repo."""
     terminos = [t for t in re.findall(r"\w+", query.lower()) if len(t) > 3]
     if not terminos:
         return []
+    if not os.path.isdir(raiz):
+        raise FileNotFoundError(raiz)
+    deadline = time.monotonic() + timeout
     out = []
     for dirpath, _dirs, files in os.walk(raiz):
+        if time.monotonic() >= deadline:
+            raise TimeoutError("local search deadline exceeded")
         if ".git" in dirpath:
             continue
         for fn in files:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("local search deadline exceeded")
             if not fn.endswith((".md", ".py", ".txt")):
                 continue
             ruta = os.path.join(dirpath, fn)
+            if os.path.islink(ruta):
+                continue
             try:
                 with open(ruta, "r", encoding="utf-8", errors="replace") as f:
                     contenido = f.read(50_000)
@@ -182,3 +195,24 @@ def fanout(queries, raiz="."):
             resultados.extend(buscar_github(query))
             resultados.extend(buscar_local(query, raiz))
     return resultados
+
+
+def fanout_observado(queries, raiz="."):
+    """Recupera resultados sin ocultar fallos de los adaptadores autorizados."""
+    if SIMULADO:
+        return {"results": fanout(queries, raiz=raiz), "observations": []}
+    results = []
+    observations = []
+    for item in queries:
+        query = item["query"]
+        query_id = item.get("id", "")
+        for source in item.get("source_scope", ["github", "local"]):
+            if source not in {"github", "local"}:
+                observations.append({"query_id": query_id, "source": source, "code": "UNAUTHORIZED_ADAPTER"})
+                continue
+            try:
+                found = buscar_github(query, strict=True) if source == "github" else buscar_local(query, raiz)
+                results.extend({**r, "query_id": query_id, "url_or_path": r["url"]} for r in found)
+            except (urllib.error.URLError, OSError, ValueError, TypeError, KeyError) as exc:
+                observations.append({"query_id": query_id, "source": source, "code": type(exc).__name__})
+    return {"results": results, "observations": observations}
