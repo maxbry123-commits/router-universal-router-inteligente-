@@ -41,13 +41,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 31
+Revisión: 32
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. Borrador de método Devin/ASK Council y simulaciones listo para aprobación, sin activar reglas; T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.
+Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. Borrador separa 7 etapas reales de programación de 12 goals, 12 ASK, 4 simulaciones y 3 refutaciones propuestas; reglas sin activar. T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.
 
 ### Siguiente
 Recibir plan original

@@ -1,8 +1,28 @@
-# Propuesta para aprobación — método de trabajo Devin / YAIWES
+# Auditoría del trabajo real + propuesta de método Devin / YAIWES
 
 **Estado:** BORRADOR, NO ACTIVADO. **Fecha:** 2026-10-01. **Ámbito:** programación o cualquier proyecto con entregables comprobables. **Decisor:** Director para incorporar el método; Judge determinista para declarar PASS de una ejecución concreta. Ninguna simulación de este documento equivale a una llamada real a Kimi, GLM, DeepSeek o NVIDIA.
 
 El proyecto ya tiene dos conjuntos distintos de doce goals: metas de producto en `PLAN-DSL-DAG-00-CONTRATO.yaml` y preguntas de la Puerta de Evidencia en `11-EVIDENCIA/goals.py`. También tiene un `ask_council` C01–C12 de gobernanza y un ASK COUNCIL histórico en `DOC-A00_MISSION_CONTRACT_ASK_COUNCIL.md`. Este último dice `AUTHORIZE` para otra misión; eso no aprueba este borrador. Aquí se propone una capa de revisión del método del ejecutor **sin reemplazar** esos contratos. Para evitar colisiones, sus IDs son `DM-G01..DM-G12` y `DM-C01..DM-C12`. Las recomendaciones de modelos son asesoría; nunca sustituyen la prueba ni el read-back.
+
+## Respuesta directa: qué hago realmente y qué propongo
+
+**Mi método de programación observado en esta sesión** está en la sección siguiente. Se basa en inspección de código, cambios acotados, pruebas ejecutadas, verificación del diff y registro de límites. No implica que yo ejecute siempre doce goals, doce agentes o cuatro simulaciones por cambio. Lo que quedó pendiente, como T-06 y servicios externos, **no** forma parte de un ciclo completado.
+
+**La propuesta para YAIWES** comienza en «12 goals del método» y termina en P01–P08. Convierte prácticas y fallos observados en controles más estrictos que todavía requieren tu aprobación, diseño, implementación y pruebas. Las cuatro simulaciones de este borrador son ejecuciones locales de funciones existentes; **no** son cuatro sesiones reales de ASK Cónsil con Kimi u otros proveedores.
+
+## Así trabajé para programar en esta sesión (flujo real)
+
+| Orden | Operación que ejecuté | Evidencia / límite |
+|---|---|---|
+| 1. Reconstruir la petición | Leí la conversación y los documentos indicados; busqué el plan faltante y comprobé las versiones subidas. | No inventé T-07..T-10 mientras no constaban. El primer plan estaba incompleto y la versión posterior tenía duplicados/YAML inválido. |
+| 2. Inspeccionar lo existente | Localicé handlers, tests, contratos, componentes descargados y documentación antes de tocar código. | La auditoría de memoria encontró SQLite y grafo fallback; encontró también que `/chat/send` aún no usa `memoria_yaiwes.save`. |
+| 3. Delimitar una modificación | Separé el trabajo por dependencia (T-05, T-06, guardia y memoria) y busqué una decisión humana cuando dos criterios de GET se contradecían. | El Director eligió la decisión B; no la sustituí por mi primera interpretación. |
+| 4. Implementar un delta | Edité archivos específicos, sin reemplazar los originales del Director, y usé la rama de trabajo/PR existente. | El evento `RESOURCE_READ`, la guardia y la consolidación de assets quedaron en commits distintos; T-06 siguió parcial. |
+| 5. Probar según el riesgo | Corrí pruebas focalizadas, Ruff y sintaxis; ejecuté una suite amplia para ver el alcance de los fallos, y delegué la prueba visual de UI autorizada. | 28 pruebas focalizadas pasaron; la suite amplia falló y no se comparó con `main`. La prueba visual reveló overflow y riesgo de clave en DOM, sin segunda pasada. |
+| 6. Contrastar lo dicho con el artefacto | Revisé resultados, diff y hashes; corregí el recuento de renames frente al read-back de Git. | 38 archivos consolidados: 37 renames 100 % y un README byte-idéntico. Ni fuente descargada ni archivo presente se marcaron runtime conectado. |
+| 7. Persistir y entregar con límites | Registré eventos y proyecciones en State Hub, actualicé el handoff, hice commit/push y revisé el PR y sus checks. | El nuevo plan continúa `AWAITING_UPLOAD`, sin reloj iniciado; el PR carece de checks CI ejecutados. Ninguna afirmación de PASS global procede de este paso. |
+
+Para otro proyecto aplicaría el mismo ciclo **entender → inspeccionar → acotar → cambiar → probar → leer de vuelta → entregar**, ajustando la evidencia al producto: CLI, API, interfaz, datos o documento. La Bitácora, Crazy Wall y los límites de 3 h 45 min son contratos específicos de YAIWES, no herramientas que inventaría para cada programa. La consulta a otros modelos o agentes no fue un requisito ni una prueba ejecutada para este análisis.
 
 ## X-Ray forense del trabajo de esta sesión
 
@@ -19,7 +39,7 @@ El proyecto ya tiene dos conjuntos distintos de doce goals: metas de producto en
 
 El ciclo que sí funcionó fue **leer contrato → inventariar fuente y estado → elegir un delta acotado → implementar → probar → leer de vuelta → registrar GAP → continuar**. Sus fallos en este caso fueron cobertura desigual, cierre prematuro potencial en el verificador y dependencias del plan aún sin comprobación. La revisión adversarial se añade donde cambia la decisión; no exige 12 modelos ni búsquedas repetidas para una tarea pequeña.
 
-## 12 goals del método: pregunta de entrada y comprobación de salida
+## Propuesta (no ejecutada como workflow completo): 12 goals de entrada y salida
 
 Cada gate guarda `id`, `pregunta_entrada`, `evidencia_previa`, `comprobacion_salida`, `evidencia_posterior` y `resultado` (`PASS`, `INCOMPLETE`, `CONTRADICTION`, `FAIL` o `NO_APLICA` con motivo). No se permite `PASS` por texto del ejecutor ni por un archivo existente cuando se requiere runtime.
 
@@ -40,7 +60,7 @@ Cada gate guarda `id`, `pregunta_entrada`, `evidencia_previa`, `comprobacion_sal
 
 **Regla de aplicabilidad:** para un informe sin código, DM-G09 pide validación de datos/citas y DM-G10 puede ser `NO_APLICA` motivado; para una UI con backend, ambos requieren evidencia real. El grupo no se autocalifica por mayoría: cualquier fallo crítico de seguridad, contrato o evidencia impide PASS. La matriz no modifica los goals del Director.
 
-## ASK Council: 12 pasos propuestos
+## Propuesta (no convocada como consejo real): ASK Council de 12 pasos
 
 Salida de cada paso: `{id, rol, pregunta, evidencia, objecion, recomendacion, estado, accion}`. Estados: `ACEPTAR`, `CONDICIONAR`, `BLOQUEAR`, `NO_APLICA`. El consejo asesora; el Director aprueba el método y el Judge con evidencia decide el cierre de la tarea.
 
