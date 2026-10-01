@@ -124,3 +124,5 @@ Comprobación ampliada del backend (separada del gate focalizado): 371 passed, 5
 
 - "Algo que quiero que escribas en el plan de trabajo es no elimines el sistema de harnes de deepsek como plugins con el chat ese debe ser la base que conecta Todo el wordflow loops code Yaiwes y lo que sea. Tambien Hermes y open claw funciona como base siempre del chat como asistente y sentinelas sin importar si se usa o no el wordflow loops code Yaiwes."
 - Regla: deepseek-harness (plugins con el chat) = BASE que conecta todo el wordflow; NO eliminar. Hermes + OpenClaw = base permanente del chat (asistente + sentinelas) con o sin wordflow.
+
+## LOTE SKILLS-UI 2026-10-01 (en descarga por motor_2 — queue motor2-skills-ui, 28 repos → Componente open soure/; lista completa en 03-ESTADO/memoria.md marcada 🚩 POR VERIFICAR INTEGRACIÓN).

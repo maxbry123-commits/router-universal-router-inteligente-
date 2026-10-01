@@ -47,3 +47,14 @@ P8. Suite completa ordenada final + evidencia global + README-ARQUITECTURA.
 - HF: HF_TOKEN_1_NEW (secreto sesión) — token publicado en chat, rotar al terminar.
 - Vercel: límite diario histórico en riu-jev-bridge; no usar como aceptación.
 - GitHub Actions billing bloqueado → no usar para aceptación (regla Director).
+
+
+## Regla nueva del Director (verbatim, 2026-10-01)
+- "Todo lo que sea del Api y almacenamiento y procesador de cómputo persistencia que necesite el wordflow se va a conectar a router principal."
+- "Coloca tu lo que haga falta... si vez que algo falta ustedes complementan." (los 4 archivos N-2.13 NO existen — el siguiente Devin puede complementar si aparecen o registrarlos como cubiertos por materiales equivalentes).
+
+## LOTE SKILLS-UI (descarga en curso, motor_2 cola `chat router/11-EVIDENCIA/motor2-skills-ui/queue.json`, 28 repos)
+- Raíz de destino en repo: `router inteligente universal/Componente open soure router inteligente universal/<slug>/` (commit pins + `code/` extraído, publicado por motor_2 en branch devin/1790824641-chat-agent-plan).
+- 🚩 TODA LA LISTA = "por verificar integración" (descargar ≠ integrado): npxskillui, recordly, rare-ui, shadcn-skills, firecrawl, firecrawl-cli, firecrawl-mcp-server, firecrawl-skills, emilkowalski-skills, impeccable, getdesign, open-design, headroom, ponytail, find-skills, superpowers, get-shit-done, claude-mem, context-mode, local-ultra-review, one-skill-to-rule-them-all, motionsites, caret-desktop, onlook, plasmic, webstudio, taste-skill, magic-mcp.
+- Ya existían (no repetidos): frontend-design, skill-creator, web-design-guidelines, react-best-practices, image-to-code, ui-ux-pro-max, design-to-code, frontend-design-codex, hyperframes×8, cinematic-scroll/web-design-studio, awesome-design.
+- Tarea de integración pendiente: tras veredicto motor_2, cablear las que apliquen como skills_schema + tool contracts (capacidades, no staff); web crawlers/context compressors entran como tools del wordflow conectados al router principal.
