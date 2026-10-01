@@ -29,16 +29,16 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 16
-Proyecto/tarea: `chat-yaiwes` / `UI-T-03`
+Revisión: 17
+Proyecto/tarea: `chat-yaiwes` / `UI-T-04`
 Estado: **COMPLETED**
-Fase: `T03_FABLES_METADATA_VALIDATED`
+Fase: `T04_AGENT_GATES_TESTED`
 
 ### Último checkpoint
-Fables catalog read-back commit 556287c954: 22 panel/agent metadata fichas registered INACTIVE, validator v2 rejects invalid, 7 focused tests passed; activation still requires tribunal approval and executable components.
+Read-back f21b7a3e82: agent nodes, Sheriff and Judge gates, P1 step/scope, P2 checkpoint and archive gate, P3 conflict stop, State Hub events, Codex graph; 17 focused tests passed. Live PASS still requires ACTIVE_TRUTH and trusted reviews/evidence; no provider call claimed.
 
 ### Siguiente
-T-04
+T-05
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121
