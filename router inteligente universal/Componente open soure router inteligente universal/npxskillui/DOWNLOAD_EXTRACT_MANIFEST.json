@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 313939,
+  "bundle_sha256": "f17ccfa623c6d71b693660cf994a40c28273ac8645e17f7acaa1506f7170a9df",
+  "extracted_tree": {
+    "bytes": 719805,
+    "files": 38,
+    "sha256": "68169f97e960bc3bb4e27c9e22332906fb440068b7cc2513aed9c807afeaf258"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 313939,
+      "name": "npxskillui.bundle.zip.part-0001",
+      "sha256": "f17ccfa623c6d71b693660cf994a40c28273ac8645e17f7acaa1506f7170a9df"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "npxskillui",
+  "source_bytes": 719805,
+  "source_commit": "bc913a8d3503d6b2a683e4a3ac04ffe7304ac510",
+  "source_files": 38,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/amaancoderx/npxskillui",
+  "source_tree": {
+    "bytes": 719805,
+    "files": 38,
+    "sha256": "68169f97e960bc3bb4e27c9e22332906fb440068b7cc2513aed9c807afeaf258"
+  }
+}
