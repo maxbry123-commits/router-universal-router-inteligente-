@@ -115,6 +115,7 @@ def project_checkpoint(checkpoint: dict) -> None:
             "summary": summary,
         },
         events[-1]["seq"] + 1,
+        ui_bridge._last_link(current.read_text(encoding="utf-8")),
     )
     text = current.read_text(encoding="utf-8").rstrip() + "\n"
     updated_log = text + json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n"
