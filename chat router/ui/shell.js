@@ -1,4 +1,4 @@
-import { api, setKey } from "./api.js";
+import { api } from "./api.js";
 import { mount as chat } from "./panel-chat.js";
 import { mount as archivos } from "./panel-archivos.js";
 import { mount as seguimiento } from "./panel-seguimiento.js";
@@ -11,9 +11,12 @@ const labels = { chat: "Chat", archivos: "Archivos", seguimiento: "Seguimiento",
 const panel = document.querySelector("#panel");
 const notice = document.querySelector("#notice");
 const tell = message => { notice.textContent = message || ""; };
-const routerKey = document.querySelector("#router-key");
 let cleanup;
-routerKey.addEventListener("input", () => { setKey(routerKey.value); document.querySelector("#connection").textContent = routerKey.value ? "Clave temporal" : "Sin conectar"; });
+const connection = document.querySelector("#connection");
+document.querySelector("#connect").addEventListener("click", () => window.location.reload());
+window.addEventListener("router-connection", event => {
+  connection.textContent = event.detail;
+});
 
 async function show(view) {
   if (!panels[view]) return;

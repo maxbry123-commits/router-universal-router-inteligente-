@@ -7,15 +7,17 @@ con detalle por goal (G01..G12).
 Regla del Director: la IA que ejecuto no cierra su propio trabajo;
 el cierre se decide con evidencia y comprobaciones independientes.
 """
+import json
 import os
+import sys
 
-import parser as parser_mod
-import goals as goals_mod
-import compilador_busquedas
 import buscadores
-import extractor
-import ranking
+import compilador_busquedas
 import evidence_pack as pack_mod
+import extractor
+import goals as goals_mod
+import parser as parser_mod
+import ranking
 import verificador
 
 SIMULADO = os.environ.get("SIMULADO", "") == "1"
@@ -48,6 +50,10 @@ def _detalle_goals(pack, checks):
     detalle = {}
     hay_evidencia = bool(pack.get("known_facts"))
     checks_ok = {c["check"]: c["ok"] for c in checks}
+    task_type = pack.get("parsed", {}).get("task_type", "UNKNOWN")
+    requires_tests = task_type in {
+        "MODIFY_CODE", "DEBUG", "TEST", "INSTALL", "DOWNLOAD", "EXTRACT", "DEPLOY",
+    }
     for gid in goals_mod.GOAL_IDS:
         ok = hay_evidencia
         nota = "evidencia documental" if hay_evidencia else "sin evidencia"
@@ -59,10 +65,16 @@ def _detalle_goals(pack, checks):
                 ok = checks_ok["version"]
                 nota = "version verificada" if ok else "version incorrecta"
         elif gid == "G09":
-            ok = any(c["ok"] for c in checks if c["check"] in ("archivo", "http")) or not checks
+            ok = (
+                checks_ok.get("tests") is True if requires_tests
+                else any(c["ok"] for c in checks if c["check"] in ("archivo", "http", "version", "tests"))
+            )
             nota = "ejecucion comprobada" if ok else "ejecucion no demostrada"
         elif gid == "G10":
-            if "tests" in checks_ok:
+            if requires_tests:
+                ok = checks_ok.get("tests") is True
+                nota = "tests pasan" if ok else "tests requeridos no demostrados"
+            elif "tests" in checks_ok:
                 ok = checks_ok["tests"]
                 nota = "tests pasan" if ok else "tests fallan"
         elif gid == "G11":
@@ -99,10 +111,7 @@ def despues(entrada, resultado, pack=None, claims=None, raiz="."):
     # Veredicto.
     if pack.get("conflicts"):
         veredicto = CONTRADICTION
-    elif any(c["check"] == "restricciones" and not c["ok"] for c in checks):
-        veredicto = FAIL
-    elif any(c["check"] in ("archivo", "http", "version", "tests") and not c["ok"]
-             for c in checks):
+    elif any(not c["ok"] for c in checks if c["check"] in ("restricciones", "archivo", "http", "version", "tests")):
         veredicto = FAIL
     elif not pack.get("known_facts") or pack.get("unknown"):
         veredicto = INCOMPLETE
@@ -121,8 +130,6 @@ def despues(entrada, resultado, pack=None, claims=None, raiz="."):
 
 
 if __name__ == "__main__":
-    import sys
-    import json
     entrada = " ".join(sys.argv[1:]) or "buscar documentacion de pytest"
     p = antes(entrada)
     r = despues(entrada, {"claims": []}, pack=p)

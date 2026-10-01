@@ -15,7 +15,6 @@ pytest.importorskip("fastapi")
 pytest.importorskip("huggingface_hub")
 
 from fastapi.testclient import TestClient
-
 from integration.chat_mvp import app as chat_app
 from integration.chat_mvp import router as rt
 from integration.chat_mvp import ui_bridge
@@ -112,6 +111,23 @@ def test_org_shell_serves_modular_panels_and_locked_palette():
     assert css.status_code == 200
     assert all(color in css.text for color in ("#1B1B1B", "#202020", "#2A2A2A", "#3C3C3C", "#484848", "#0848F7"))
     assert "localStorage" not in client.get("/chat/ui/api.js").text
+
+
+def test_browser_auth_uses_native_challenge_without_key_in_ui(monkeypatch):
+    monkeypatch.setenv("RIU_ROUTER_API_KEY", "local-test-key")
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"local-test-key": "owner"}')
+    client = TestClient(chat_app.app)
+    unauthorized = client.get("/chat/ui/shell.html")
+    assert unauthorized.status_code == 401
+    assert unauthorized.headers["www-authenticate"] == 'Basic realm="Router"'
+    authorized = client.get("/chat/ui/shell.html", auth=("router", "local-test-key"))
+    assert authorized.status_code == 200
+    assert "router-key" not in authorized.text
+    api_js = client.get("/chat/ui/api.js", auth=("router", "local-test-key"))
+    assert api_js.status_code == 200
+    assert "X-API-Key" not in api_js.text
+    assert client.get("/chat/providers", auth=("router", "wrong-key")).status_code == 401
+    assert client.get("/chat/providers", auth=("router", "local-test-key")).status_code == 200
 
 
 def test_media_only_serves_authenticated_safe_formats(tmp_path, monkeypatch):

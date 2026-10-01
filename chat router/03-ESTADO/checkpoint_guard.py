@@ -48,6 +48,28 @@ def load_plan() -> tuple[dict, list[str]]:
     ids = [step["id"] for step in steps]
     if len(set(ids)) != len(ids) or not all(isinstance(key, str) and key for key in ids):
         raise ValueError("PLAN_STEP_IDS_INVALID")
+    by_id = {step["id"]: step for step in steps}
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(step_id: str) -> None:
+        if step_id in visiting:
+            raise ValueError("PLAN_DEPENDENCY_CYCLE")
+        if step_id in visited:
+            return
+        visiting.add(step_id)
+        dependencies = by_id[step_id].get("needs", [])
+        if not isinstance(dependencies, list):
+            raise TypeError("PLAN_DEPENDENCIES_INVALID")
+        for dependency in dependencies:
+            if not isinstance(dependency, str) or dependency not in by_id:
+                raise ValueError("PLAN_DEPENDENCY_UNKNOWN")
+            visit(dependency)
+        visiting.remove(step_id)
+        visited.add(step_id)
+
+    for step_id in ids:
+        visit(step_id)
     source = plan.get("source_path")
     if not isinstance(source, str):
         raise TypeError("PLAN_SOURCE_MISSING")
@@ -113,6 +135,27 @@ def project_checkpoint(checkpoint: dict) -> None:
         raise OSError("CHECKPOINT_READBACK_FAILED")
 
 
+def verify_projection() -> int:
+    events = ui_bridge._state_events((STATE_DIR / "BITACORA.jsonl").read_text(encoding="utf-8"))
+    state, wall = ui_bridge._state_projection(events)
+    if not events:
+        raise ValueError("EMPTY_EVENT_LOG")
+    for name, expected in (("STATE.json", state), ("CRAZY_WALL.json", wall)):
+        path = STATE_DIR / name
+        try:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+        except (FileNotFoundError, json.JSONDecodeError):
+            existing = None
+        if existing != expected:
+            write_json(path, expected)
+        if json.loads(path.read_text(encoding="utf-8")) != expected:
+            raise OSError("PROJECTION_READBACK_FAILED")
+    checkpoint = json.loads(CHECKPOINT_PATH.read_text(encoding="utf-8"))
+    if checkpoint.get("bitacora_revision", 0) > state["revision"]:
+        raise ValueError("CHECKPOINT_REVISION_AHEAD")
+    return state["revision"]
+
+
 def update(command: str, completed: str | None) -> dict:
     plan, ids = load_plan()
     checkpoint = json.loads(CHECKPOINT_PATH.read_text(encoding="utf-8"))
@@ -155,9 +198,25 @@ def update(command: str, completed: str | None) -> dict:
     return checkpoint
 
 
-def heartbeat() -> dict:
+def heartbeat(
+    summary: str | None = None,
+    files: list[str] | None = None,
+    test_results: dict[str, str] | None = None,
+    errors: list[str] | None = None,
+    decisions: list[str] | None = None,
+) -> dict:
+    verify_projection()
     checkpoint = json.loads(CHECKPOINT_PATH.read_text(encoding="utf-8"))
     if checkpoint["status"] == "RECEPTION":
+        if summary:
+            checkpoint["reception_summary"] = summary
+        if files:
+            checkpoint["files_modified"] = list(dict.fromkeys(checkpoint.get("files_modified", []) + files))
+        if test_results:
+            checkpoint.setdefault("test_results", {}).update(test_results)
+        for key, values in (("errors", errors), ("decisions", decisions)):
+            if values:
+                checkpoint[key] = list(dict.fromkeys(checkpoint.get(key, []) + values))
         checkpoint["updated_at"] = iso(now())
         write_json(CHECKPOINT_PATH, checkpoint)
         project_checkpoint(checkpoint)
@@ -180,16 +239,29 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("start", "tick", "status", "heartbeat"))
     parser.add_argument("--completed", help="ID de un paso completado, solo con tick")
+    parser.add_argument("--summary", help="Resumen verificable para recepción")
+    parser.add_argument("--file", action="append", default=[], help="Archivo tocado")
+    parser.add_argument("--test-result", action="append", default=[], help="NOMBRE=RESULTADO")
+    parser.add_argument("--error", action="append", default=[], help="Error observado")
+    parser.add_argument("--decision", action="append", default=[], help="Decisión tomada")
     args = parser.parse_args()
     if args.completed and args.command != "tick":
         parser.error("--completed solo admite tick")
+    if args.command != "heartbeat" and (args.summary or args.file or args.test_result or args.error or args.decision):
+        parser.error("Anotaciones solo se admiten con heartbeat")
+    if any("=" not in result for result in args.test_result):
+        parser.error("--test-result requiere NOMBRE=RESULTADO")
     try:
         if args.command == "status":
             checkpoint = json.loads(CHECKPOINT_PATH.read_text(encoding="utf-8"))
             if checkpoint["status"] == "RUNNING":
                 checkpoint = update("tick", None)
         elif args.command == "heartbeat":
-            checkpoint = heartbeat()
+            checkpoint = heartbeat(
+                args.summary, args.file,
+                dict(result.split("=", 1) for result in args.test_result),
+                args.error, args.decision,
+            )
         else:
             checkpoint = update(args.command, args.completed)
     except (ValueError, TypeError, KeyError, OSError, json.JSONDecodeError) as exc:

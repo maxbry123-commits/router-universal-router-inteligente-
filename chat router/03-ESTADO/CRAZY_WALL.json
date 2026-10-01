@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "AWAITING_PLAN",
       "next": "Recibir plan original",
-      "summary": "Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. Borrador separa 7 etapas reales de programación de 12 goals, 12 ASK, 4 simulaciones y 3 refutaciones propuestas; reglas sin activar. T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.",
-      "updated_at": "2026-10-01T10:14:44Z",
-      "last_event_seq": 32
+      "summary": "T-06: inventario de 30 controles y responsive preparado; Basic browser auth probado localmente (5/5); segunda pasada visual pendiente. P01-P08 aprobados, auditoria metodo y catalogo de 65 referencias verificados. Plan 100 pasos aun sin validar, reloj detenido.",
+      "updated_at": "2026-10-01T13:28:21Z",
+      "last_event_seq": 35
     }
   }
 }

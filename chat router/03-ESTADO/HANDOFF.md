@@ -13,6 +13,9 @@ Código localizado: `../04-MEMORIA/memoria_yaiwes/__init__.py` y `../../router i
 
 Una segunda pasada de T-01 consolidó 38 archivos sueltos de referencias visuales, skills, manifiestos, scripts y laboratorio FROMTED en `../../📂 Skills Maxbry UI fromtend/diseno/` y `componentes/`. Git reconoce 37 renames 100 %; el README Rare UI original se conserva como copia con SHA-256 idéntico y el README raíz es ahora un índice del proyecto. Las imágenes de arquitectura permanecen junto a los diagramas del Router. Esto solo cierra la consolidación de archivos, no la validación visual de T-06; el laboratorio visual movido no se declara funcional. La próxima acción autorizada, mientras no llegue el nuevo plan, es documentar/verificar esta auditoría y registrar checkpoint; al llegar el enlace, validar el original antes de iniciar el reloj.
 
+### Continuación T-06 y método aprobado — 2026-10-01
+P01–P08 se formalizaron en `../01-PLAN/DM-METODO-DAG.json` y se verifican mediante `../11-EVIDENCIA/auditoria_metodo.py`; la presencia del contrato no acredita Sentinel, Hermes ni OpenClaw conectados. 65 imágenes se trasladaron a `../01-PLAN/REFERENCIAS-UI/` y se catalogaron individualmente, aún sin vincularse a componentes vivos ni revisión completa de secretos. Se agruparon T-11/T-12 y seis anexos originales. En `../01-PLAN/T-06-INVENTARIO.md` se enumeran controles, estados y dependencias; todos están pendientes de prueba real. El frontend ya no contiene campo ni variable de clave. `integration/chat_mvp/app.py` añade desafío Basic del navegador para assets UI con `RIU_ROUTER_API_KEY` y adapta las solicitudes al backend actual; la prueba local verifica 401/200 pero falta comprobar credenciales, consola, red, storage y responsive en navegador. No entregar al Director la prueba sin segunda pasada completa y matriz final. El plan nuevo continúa sin 100 pasos validados y reloj detenido.
+
 ## Orden de lectura
 0. `../01-PLAN/PLAN-DSL-DAG-UI.yaml` (plan T-01..T-10 del panel/chat, consolidado desde el documento subido; revisar `source_fidelity`)
 1. `../01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml` (reglas, fuente de verdad, gobernanza, 12 goals, flags)
@@ -41,13 +44,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 32
+Revisión: 35
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. Borrador separa 7 etapas reales de programación de 12 goals, 12 ASK, 4 simulaciones y 3 refutaciones propuestas; reglas sin activar. T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.
+T-06: inventario de 30 controles y responsive preparado; Basic browser auth probado localmente (5/5); segunda pasada visual pendiente. P01-P08 aprobados, auditoria metodo y catalogo de 65 referencias verificados. Plan 100 pasos aun sin validar, reloj detenido.
 
 ### Siguiente
 Recibir plan original

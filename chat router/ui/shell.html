@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>YAIWES · Organización</title>
   <link rel="stylesheet" href="/chat/ui/shell.css">
+  <link rel="stylesheet" href="/chat/ui/responsive.css">
   <script type="module" src="/chat/ui/shell.js"></script>
 </head>
 <body>
@@ -24,7 +25,7 @@
     <div class="workspace">
       <header class="topbar">
         <div><strong id="view-title">Chat</strong><small>Router Inteligente Universal · IMMUTABLE</small></div>
-        <div class="access"><label for="router-key">Acceso Router</label><input id="router-key" type="password" autocomplete="off" placeholder="Clave de sesión"><span id="connection">Sin conectar</span></div>
+        <div class="access"><button class="secondary" id="connect" type="button">Reintentar conexión</button><span id="connection" role="status">Sin verificar</span></div>
       </header>
       <main id="panel" aria-live="polite"></main>
       <div id="notice" role="status"></div>

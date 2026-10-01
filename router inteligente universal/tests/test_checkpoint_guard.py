@@ -41,12 +41,20 @@ def test_reception_heartbeat_projects_checkpoint_without_starting_clock(tmp_path
     monkeypatch.setattr(guard, "CHECKPOINT_PATH", checkpoint_path)
     monkeypatch.setattr(guard, "STATE_DIR", tmp_path)
 
-    checkpoint = guard.heartbeat()
+    checkpoint = guard.heartbeat(
+        summary="Método aprobado; catálogo de 65 referencias verificado.",
+        files=["chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json"],
+        test_results={"catalog": "65 verified"},
+        decisions=["Reusar componentes existentes antes de nuevas descargas"],
+    )
 
     events = [json.loads(line) for line in (tmp_path / "BITACORA.jsonl").read_text(encoding="utf-8").splitlines()]
     assert [item["seq"] for item in events] == [1, 2]
     assert events[1]["summary"] == checkpoint["reception_summary"]
     assert checkpoint["status"] == "RECEPTION"
+    assert checkpoint["reception_summary"] == events[1]["summary"]
+    assert checkpoint["test_results"]["catalog"] == "65 verified"
+    assert checkpoint["files_modified"] == ["chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json"]
     assert checkpoint["started_at"] is None
     assert checkpoint["bitacora_revision"] == 2
     assert json.loads((tmp_path / "STATE.json").read_text(encoding="utf-8"))["revision"] == 2

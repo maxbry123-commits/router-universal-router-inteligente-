@@ -5,6 +5,8 @@
 **Ámbito:** frontend FROMTED / YAIWES, escritorio y Android/móvil  
 **Estado:** APROBADO en sus decisiones indicadas; **NO** es una certificación de que todos los controles estén implementados.  
 **Referencia visual aceptada para el gris:** `FROMTED-YAIWES-PRUEBA-PALETA-V07.html` y sus capturas móvil/escritorio.  
+
+El índice verificable de las 65 capturas originales está en `../../chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json`; las imágenes se conservan con SHA-256 bajo `../../chat router/01-PLAN/REFERENCIAS-UI/`. Siguen siendo referencias, pendientes de revisión de secretos y validación T-06.
 **Norma:** preservar la interfaz original. La aprobación de colores **no autoriza** reconstruir el HTML anterior ni cambiar el comportamiento de los botones.
 
 ---
