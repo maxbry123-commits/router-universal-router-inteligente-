@@ -65,3 +65,56 @@ Comprobación ampliada del backend (separada del gate focalizado): 371 passed, 5
 - Tests nuevos: test_n26_typed_recovery_and_router.py (7), test_layer_runner.py (5), test_thinking_system.py (3). Suite loop: 254 passed / 3 stale (g009, g021, ficha loader) 🚩.
 - 🚩 N-2.10: truth_reconciler.py (43 LOC, sin importadores) vs source_truth_reconciler.py (105 LOC, testeado) — canónico=source_truth_reconciler; truth_reconciler queda deprecated (no borrado).
 - 🚩 N-2.13: los 4 archivos (execution_pipeline_dsl.py, -Copiar.md, PIPELINE_MASTER.md, INPUT_BLOCK.md) nunca fueron commiteados ni adjuntados en esta sesión — pendiente material.
+
+
+## MAPA NODO → ESTADO (4 objetivos, DAG PLAN-DSL-DAG-01-NODOS)
+
+### Objetivo 1 (componentes + skills schema + agentes)
+- N-1.1 materializar submodules en CI: 🚩 PENDIENTE — requiere GitHub Actions (bloqueado por diseño/billing).
+- N-1.2 inventario forense agent_sources: HECHO upstream — Claude notas/INVENTARIO-FORENSE-agent_sources.md existe.
+- N-1.3 mcode gitlink: 🚩 PENDIENTE — requiere Git Data API con permiso repo.
+- N-1.4 5 keys NVIDIA secrets+test real: 🚩 PENDIENTE — solo vía Actions; sandbox sin red NVIDIA.
+- N-1.5 24 skills→schema: HECHO — skills_schema/*.dag.yaml (24 archivos, 4 tests).
+- N-1.6 notas readme+Crazy Wall: HECHO — watchdog_checkpoint actualiza README/CRAZY_WALL/STATE.
+
+### Objetivo 2 (cerrar wordflow)
+- N-2.1 doble raíz X-Ray: HECHO (raíz emoji copiada; vacía y remanente identificadas).
+- N-2.2 mover 3 skills frontend: 🚩 PENDIENTE — fuente big-AGI 'Wordflow loop code Yaiwes/skills' no copiada (excluida del copy).
+- N-2.3 unificar raíces: 🚩 PENDIENTE — renombrar big-AGI requiere OK explícito (FLAG-6).
+- N-2.4 CheckpointManager durable: HECHO upstream (SQLite patch 2026-09-20).
+- N-2.5 deprecar agent_router→AgentFleetAdapter: HECHO (FAIL_CLOSED, tests).
+- N-2.6 recovery tipado: HECHO (RecoveryEngine + FAILURE_POLICY 7 kinds, tests).
+- N-2.7 stuck detector: HECHO (StuckDetector fingerprint x3→BLOCKED_STUCK, tests).
+- N-2.8 leer 7 archivos gobernanza: HECHO — veredicto REAL (7 gates deterministas, no stubs).
+- N-2.9 contracts/ + evidence/: HECHO — contenido real presente (fichas + ~55 evidencias G0xx).
+- N-2.10 reconciler dup: HECHO — canonico=source_truth_reconciler; truth_reconciler deprecated.
+- N-2.11 biblioteca RAG: 🚩 PENDIENTE — 13 subcarpetas vacías (skills_schema ahora alimenta).
+- N-2.12 equipo frontend loop: 🚩 PENDIENTE — FRONTEND gate (backend primero, regla Director).
+- N-2.13 leer 4 archivos: 🚩 PENDIENTE — nunca commiteados/adjuntados en esta sesión.
+- Extra: LayerRunner creado (gap upstream __init__→runner faltante); ThinkingSystem mirothinker cableado.
+
+### Objetivo 3 (Seals Team YAIWES como micro-worker)
+- S-01 baseline: HECHO — suite seals_core 44/45 (1 stale test_ejecutor contradictorio con SIM-01).
+- S-02 contracts+TaskContract/NodeResult: HECHO — seals_worker.py (4 tests).
+- S-03..S-10: cubiertos por seals_core existente (dag_engine/idempotencia/sheriff/stuck/crash_resume/worker_bootstrap/verificador/evidence) — verificados por suite upstream.
+- S-07A motores como Native Toolset: 🚩 PENDIENTE.
+- S-07B agent skills + web capabilities: 🚩 PENDIENTE.
+- S-11 prueba real 3 instancias desde Wordflow: 🚩 PENDIENTE.
+- S-12 completion audit: 🚩 PENDIENTE.
+- Agente staff creado: agents-yaiwes/agent-45-seals-team-yaiwes (chain.yaml+task_contract).
+
+### Objetivo 4 (orquestador/Command Center — staff propio, NO flota wordflow)
+- O4-00 baseline: HECHO (staff agents-yaiwes identificado como orquestador propio).
+- O4-01 source lock: HECHO — hermes/rowboat/msaf/orca/omniroute/deepseek/dagu/dbos/mcp presentes; munder-difflin+archify descargados vía motor_2 (VERIFIED_CLOSED, commits publicados).
+- O4-02 materialize faltantes: HECHO para los 2 faltantes; resto ya materializados.
+- O4-03 capability map: HECHO — orchestrator_adapters.COMPONENT_CAPABILITIES.
+- O4-04 Hermes brain: HECHO — create_global_goal solo caller=hermes.
+- O4-05 sheriff pre-exec: HECHO — sheriff_precheck.
+- O4-06 normalized contracts: HECHO — orchestrator_contracts (Mission/Task/ResultEnvelope/EvidenceRecord/OracleVerdict).
+- O4-07..O4-14 adapters: BASE — ComponentAdapter fail-closed + guardarraíl no-goal-mutation por componente; 🚩 invocación real por componente pendiente (runtimes no configurados: command_env ausentes).
+- O4-15 Evidence Ledger: HECHO — hash-chain + tamper/missing detectados (tests).
+- O4-16 Oracle post-exec: HECHO — oracle_verdict vía judge+verifier.
+- O4-17 Archify projection: 🚩 PENDIENTE.
+- O4-18 Input Shark: HECHO — missing fields + normalized hash.
+- O4-19 E2E integration: 🚩 PENDIENTE.
+- O4-20 completion audit: 🚩 PENDIENTE.
