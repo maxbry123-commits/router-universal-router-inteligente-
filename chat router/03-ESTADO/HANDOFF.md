@@ -18,9 +18,11 @@ P01–P08 se formalizaron en `../01-PLAN/DM-METODO-DAG.json` y se verifican medi
 
 Reanudación exacta: el PR #6 ya contiene el commit `9751dda766`. La selección focalizada tuvo 35 PASS y un FAIL: un test antiguo espera ocho proveedores y el API devuelve también `openai`; no se cambió la prueba ni el proveedor. El agente de prueba UI se intentó dos veces tras actualizar el PR; ambos intentos terminaron con `You've reached your ChatGPT subscription usage limit` sin ejecutar acciones, grabación, capturas ni segunda pasada. Reanudar el testing_agent cuando haya cupo disponible, revisar toda la matriz T-06 y reparar los fallos que encuentre. No inferir PASS ni entregar HTML al Director. GitHub Actions `verify` tampoco arrancó: su anotación de GitHub dice que la cuenta está bloqueada por un problema de facturación; el resultado no representa ejecución de tests.
 
-Orden posterior del Director: utilizar el Router permanente de Hugging Face en `main` para el cómputo de validación; no utilizar GitHub Actions. La dirección se lee de `router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag` en cada intento. El 2026-10-01, `GET /health`, `/chat/providers` y `/chat/ui/shell.html` respondieron 401 sin credenciales: esto prueba que la puerta responde, no que el Router ni T-06 estén sanos. No hay `HF_TOKEN` ni clave de API del Router disponibles en secretos de esta sesión. `origin/main` aún no contiene `chat router/ui/shell.html` ni el montaje de ese shell en `integration/chat_mvp/app.py`; el código T-06 está solo en el PR. No reiniciar el Job 24/7 ni suplantar la prueba UI con un healthcheck. Cuando se disponga de acceso, comprobar Job y versión en vivo de manera no destructiva; validar T-06 de la rama en un entorno aislado o local con navegador antes de entregar la interfaz.
+Orden posterior del Director: utilizar Hugging Face con `cpu-basic` (16 GB de RAM) para el cómputo de validación; no utilizar GitHub Actions. La dirección del Router permanente se lee de `router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag` en cada intento. El Director autorizó relanzarlo solo si está inactivo. Historial verificado: `cd735423ae` cambió LIVE_URL al Job `6abdc1b4404719ba376155b0` y `5e52e64d5d` amplió los secretos/env del guardian. Con token HF temporal entregado por canal seguro, `HfApi.inspect_job` confirmó `RUNNING`, flavor `cpu-basic`, y `GET /health` devolvió 200 el 2026-10-01; `/chat/providers` y `/v1/models` devolvieron 200. **No se reinició el Router permanente.** No almacenar ni copiar el token a estos archivos. `origin/main` aún no contiene `chat router/ui/shell.html`: esa ruta devuelve 404 en el Router permanente y T-06 permanece solo en el PR.
 
-El Director autorizó relanzar el Router nuevo solo si está inactivo. Historial verificado: `cd735423ae` cambió LIVE_URL al Job `6abdc1b4404719ba376155b0` y `5e52e64d5d` amplió los secretos/env del guardian de relanzamiento. El host conocido devuelve 401 sin autenticación y un ID inexistente devuelve 404; `HfApi.inspect_job` sin token devuelve 401 y la página del Job redirige a login. El estado del Job sigue indeterminado; no se ha reiniciado ni creado otro Job. `guardian.py` utiliza `HF_CONTROL_JOBS_TOKEN` y `GH_AGENT_TOKEN`; por defecto `GUARDIAN_DRY_RUN=1`. Obtener credenciales mediante canal seguro, inspeccionar la etapa y los logs, verificar health autenticado y solo si está detenido relanzar con los secretos previstos y read-back de la nueva URL.
+Verificación temporal en Hugging Face Jobs, sin secretos inyectados al Job: `6abe68d3404719ba3761892f` ejecutó en `cpu-basic` una copia dispersa de la rama del PR con `SIMULADO=1`; terminaron 30/30 pruebas focalizadas en `COMPLETED` (org API, checkpoint, auditoría de método y Puerta). Dos Jobs preparatorios fallaron por excluir directorios requeridos en la copia dispersa, no por un fallo demostrado en el checkout completo. El agente de pruebas de navegador volvió a terminar por límite de uso antes de abrir la UI (tercer intento total). No existen capturas ni segunda pasada: T-06 sigue `PARTIAL` y no se entrega HTML/URL como interfaz validada. Próxima acción T-06: recuperar capacidad de prueba en navegador, desplegar o servir la revisión del PR, ejecutar la matriz de controles/estados/responsive y repetir la pasada completa antes de declarar PASS.
+
+Vercel no se utilizó: la página del proyecto redirige a login y no hay integración Vercel conectada a esta sesión. La integración de GitHub respondió 403 al solicitar los nombres de secretos Actions, por lo que no se confirmó ningún token Vercel. El comentario del PR sobre cuota diaria es histórico; no se verificó el límite actual. El backend sigue parcial: faltan el guardado normal de chat en memoria, read-back y restauración HF, y evidencia de Graphiti/Graphify activos. El plan original de 100 pasos continúa sin recibir/validar, con el reloj detenido.
 
 ## Orden de lectura
 0. `../01-PLAN/PLAN-DSL-DAG-UI.yaml` (plan T-01..T-10 del panel/chat, consolidado desde el documento subido; revisar `source_fidelity`)
@@ -50,13 +52,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 39
+Revisión: 40
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-Historial del Router HF nuevo verificado (cd735423ae, 5e52e64d5d). Job conocido responde 401 sin auth; HfApi.inspect_job 401. Estado del Job indeterminado; reinicio autorizado solo tras confirmar que este detenido.
+Router HF 6abdc1b4404719ba376155b0 autenticado RUNNING cpu-basic, health 200; sin reinicio. Job temporal 6abe68d3404719ba3761892f completo con 30/30 pruebas focalizadas. T-06 UI bloqueada por limite del agente de pruebas; plan 100 pasos en recepcion.
 
 ### Siguiente
 Recibir plan original

@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "AWAITING_PLAN",
       "next": "Recibir plan original",
-      "summary": "Historial del Router HF nuevo verificado (cd735423ae, 5e52e64d5d). Job conocido responde 401 sin auth; HfApi.inspect_job 401. Estado del Job indeterminado; reinicio autorizado solo tras confirmar que este detenido.",
-      "updated_at": "2026-10-01T13:51:32Z",
-      "last_event_seq": 39
+      "summary": "Router HF 6abdc1b4404719ba376155b0 autenticado RUNNING cpu-basic, health 200; sin reinicio. Job temporal 6abe68d3404719ba3761892f completo con 30/30 pruebas focalizadas. T-06 UI bloqueada por limite del agente de pruebas; plan 100 pasos en recepcion.",
+      "updated_at": "2026-10-01T14:07:50Z",
+      "last_event_seq": 40
     }
   }
 }
