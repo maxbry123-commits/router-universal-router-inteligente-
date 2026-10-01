@@ -44,6 +44,17 @@
       "summary": "109 visual assets moved unchanged; git rename 100 percent and read-back confirmed; commit 97696e69e4.",
       "updated_at": "2026-10-01T03:18:57Z",
       "last_event_seq": 14
+    },
+    "UI-T-02": {
+      "node_id": "UI-T-02",
+      "task": "UI-T-02",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T02_YAML_VALIDATED",
+      "next": "T-03",
+      "summary": "Uploaded duplicate plan consolidated to 10 unique DAG nodes and 22 input blocks; dag.validate returns no errors; topological order T-01..T-10; read-back commit bf964cec58.",
+      "updated_at": "2026-10-01T03:20:32Z",
+      "last_event_seq": 15
     }
   }
 }

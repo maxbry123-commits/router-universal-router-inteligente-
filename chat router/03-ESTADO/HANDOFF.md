@@ -29,16 +29,16 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 14
-Proyecto/tarea: `chat-yaiwes` / `UI-T-01`
+Revisión: 15
+Proyecto/tarea: `chat-yaiwes` / `UI-T-02`
 Estado: **COMPLETED**
-Fase: `T01_READBACK`
+Fase: `T02_YAML_VALIDATED`
 
 ### Último checkpoint
-109 visual assets moved unchanged; git rename 100 percent and read-back confirmed; commit 97696e69e4.
+Uploaded duplicate plan consolidated to 10 unique DAG nodes and 22 input blocks; dag.validate returns no errors; topological order T-01..T-10; read-back commit bf964cec58.
 
 ### Siguiente
-T-02
+T-03
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121
