@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field
 
 from ..huggingface.api_key_auth import authenticate_api_key
 from ..huggingface.chat_catalog import cached_discovery, family_of, selector_models
-from . import core, model_pool, resilience
+from . import core, model_pool, org_api, resilience
 from . import dag as dagmod
 from . import dag_cli
 from . import github_tools as gh
@@ -151,6 +151,7 @@ def _gh(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 
 def build_router() -> APIRouter:
     r = APIRouter()
+    r.include_router(org_api.build_org_router(_auth, get_store, get_fables_catalog))
 
     @r.get("/chat/fichas")
     def fichas(_owner: str = Depends(_auth)) -> dict[str, Any]:
