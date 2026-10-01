@@ -143,6 +143,17 @@
       "summary": "T-05 contradiction closed by decision B. Remaining GAPs unchanged: T-06 browser API key and INACTIVE Fables panels, T-07 prescribed RDC workflow absent from main, no browser test or screenshots, CI job blocked by account billing lock, Vercel automatic deployment stays disabled. No global PASS declared.",
       "updated_at": "2026-10-01T04:35:30Z",
       "last_event_seq": 26
+    },
+    "PLAN-RECEPCION": {
+      "node_id": "PLAN-RECEPCION",
+      "task": "PLAN-RECEPCION",
+      "project": "chat-yaiwes",
+      "status": "BLOCKED",
+      "phase": "AWAITING_PLAN",
+      "next": "Recibir plan original",
+      "summary": "Modo recepcion: plan de 100 pasos sin subir; T-06 pausada; sin PASS visual. Reloj sin iniciar.",
+      "updated_at": "2026-10-01T08:24:57Z",
+      "last_event_seq": 27
     }
   }
 }

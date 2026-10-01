@@ -1,6 +1,13 @@
 # HANDOFF — CHAT YAIWES (leer primero si continúas este trabajo)
 Actualizado: 2026-09-27 05:45 UTC por Opus. Director: Max.
 
+## Recepción del nuevo plan — 2026-10-01
+El Director anunció un plan original de 100 pasos y nuevas mejoras, pero **aún no ha subido el archivo**. Leer primero `CHECKPOINT.json`, `../01-PLAN/PLAN.json` y luego este handoff. El plan de 100 pasos NO está validado ni en ejecución; no inventar pasos. T-06 quedó pausada por la recepción: se encontró overflow horizontal móvil, falta la prueba UI completa, capturas finales, comparación FROMTED y segunda pasada. No declarar PASS ni entregar HTML antes de completar la validación.
+
+Protocolo de reanudación: recibir el enlace del Director; descargar y leer el archivo original completo sin modificarlo; validar sus 100 IDs y dependencias; registrar ruta y SHA-256 en `PLAN.json` y marcarlo `VALIDATED`. Solo entonces ejecutar `python "chat router/03-ESTADO/checkpoint_guard.py" start`. Consultar `status` antes de cada paso y `tick --completed ID` después de cada paso verificado; consultar `status` también durante trabajos largos. El guardia sale con código 75 y graba un evento en Bitácora más las proyecciones STATE, Crazy Wall y HANDOFF cuando llega primero a 3 h 45 min desde `start` o a 95 de 100 pasos. El límite de cuatro horas es absoluto: parar antes de él, hacer read-back, guardar pruebas/archivos/errores/decisiones/estado de motores en `CHECKPOINT.json`, commit y push a la rama del PR. No seguir ejecutando al recibir 75. El guardia no se ejecuta por sí solo fuera de una sesión o proceso que lo invoque.
+
+Estado previo al nuevo plan: T-01..T-04 y T-08..T-09 completos según State Hub; T-05, T-06 y T-10 parciales; T-07 bloqueado. La auditoría de GET sigue la decisión B. El PR existente es https://github.com/maxbry123-commits/router-universal-router-inteligente-/pull/6; no crear otro. Vercel permanece apagado. La siguiente acción exacta es recibir el enlace, validar el original y recién entonces iniciar el reloj.
+
 ## Orden de lectura
 0. `../01-PLAN/PLAN-DSL-DAG-UI.yaml` (plan T-01..T-10 del panel/chat, consolidado desde el documento subido; revisar `source_fidelity`)
 1. `../01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml` (reglas, fuente de verdad, gobernanza, 12 goals, flags)
@@ -29,16 +36,16 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 26
-Proyecto/tarea: `chat-yaiwes` / `UI-T-10`
-Estado: **RUNNING**
-Fase: `T10_GLOBAL_READBACK`
+Revisión: 27
+Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
+Estado: **BLOCKED**
+Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-T-05 contradiction closed by decision B. Remaining GAPs unchanged: T-06 browser API key and INACTIVE Fables panels, T-07 prescribed RDC workflow absent from main, no browser test or screenshots, CI job blocked by account billing lock, Vercel automatic deployment stays disabled. No global PASS declared.
+Modo recepcion: plan de 100 pasos sin subir; T-06 pausada; sin PASS visual. Reloj sin iniciar.
 
 ### Siguiente
-T-06 HttpOnly session, Fables activation, T-07 RDC workflow
+Recibir plan original
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121
