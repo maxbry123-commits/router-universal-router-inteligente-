@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 _TASK_RUNTIME = (Path(__file__).resolve().parents[3]
-                 / "router inteligente universal/integration/chat_mvp/task_runtime.py")
+                 / "chat router/wordflow loop code Yaiwes/runtime/src/core/task_runtime.py")
 _spec = importlib.util.spec_from_file_location("yaiwes_task_runtime", _TASK_RUNTIME)
 _tr = importlib.util.module_from_spec(_spec)
 sys.modules[_spec.name] = _tr
