@@ -379,6 +379,133 @@ nodes:
     evidence: [screenshots, read-back_css, tests_endpoints]  
     work_surface: FRONTEND
 
+## T-06 — Frontend: shell + 4 paneles modulares + sub-vistas spec  
+## (archivos separados, NO monolito)  
+needs: [T-05]  
+  
+Pasos:  
+1. `chat router/ui/shell.{html,css,js}`: sidebar + topbar según spec §15-16;  
+   tema V07 grises #1B1B1B/#202020/#2A2A2A/#3C3C3C/#484848, acento #0848F7  
+   solo en elemento activo; monta los paneles como fichas del bus enchufe  
+   (T-03); router de vistas; cliente API único → endpoints T-05  
+   (nunca proveedores directos).  
+2. `panel-chat.{js,html}`: composer + modos Rápido/Pensar/Equilibrado +  
+   adjuntar + comandos slash + selector de rama (spec §9.1-9.3); fusionar  
+   funciones de `router inteligente universal/vercel-ui/index.html`  
+   (selectores modelo/agente/GitHub/grupo, botones de control) +  
+   componentes de `Run UI YAIWES.html`.  
+3. `panel-archivos.{js,html}`: vista AUDITOR de `Run UI YAIWES.html`:  
+   buscar/anclar/enviar a agente; adjuntos → HF `/memoria/*` vía  
+   `/chat/org/files`; ancla archivo → nodo DAG; registro MCP por proyecto.  
+4. `panel-seguimiento.{js,html}`: TREN (vagones = nodos del DAG en  
+   ejecución con estado vivo) + VENTANAS (IN/OUT por paso + breakpoints)  
+   + ORQUESTA (pila de funciones, salida JSON) de `Run UI YAIWES.html`;  
+   mapa mental 10 vistas renderizado desde STATE.json/CRAZY_WALL.json  
+   (Visión Global, Arquitectura, Posición Actual, Rompecabezas, Propósito,  
+   Entrada/Salida, Desbloquea, Madurez, Microflujo P1, Ensamblaje);  
+   estados de evidencia CREATED→TESTED→VERIFIED→READY→MERGED→BLOCKED  
+   (spec §11).  
+5. `panel-canvas.{js,html}`: visor de imágenes/video/animación con  
+   componentes RUI ya descargados (grid-reveal, fluid-orb, matrix-orb,  
+   step-player); fuente = adjuntos de panel-archivos.  
+6. Sub-vistas del spec como módulos propios: conectores §10.10-10.14,  
+   templates LOCKED §10.3-10.7, run §10.8 (REGLA: solo selección +  
+   ejecución, NUNCA editar DAG en runtime, SENTINEL bloquea),  
+   engineering §10.9, automatizaciones §7.11, habilidades §7.5.  
+   Datos solo de T-05; cero decisión LLM en frontend; toda lógica de  
+   estado en JS determinista.  
+  
+acceptance:  
+  - "shell monta los 4 paneles + sub-vistas sin errores de consola"  
+  - "cada panel consume su endpoint T-05 correspondiente"  
+  - "ningún archivo supera 500 LOC (R02); sin dependencias nuevas sin RDC"  
+  - "tema V07 verificado por read-back de colores en CSS"  
+evidence: [screenshots, read-back_css, tests_endpoints]  
+work_surface: FRONTEND  
+  
+  
+## T-07 — Componentes faltantes: solo vía motor RDC  
+needs: [T-06]  
+  
+Pasos:  
+1. Si un componente UI open-source falta, descargarlo SOLO con el workflow  
+   `.github/workflows/research-download-chain-router-components-20260903.yml`  
+   (COMPONENTS_JSON con url + ref pineado). Cero descarga manual.  
+2. Registrar evidencia `RDC_*_EVIDENCE.json` + `SOURCE_SHA256SUMS.txt`  
+   por cada descarga; gates del motor: CRC, unsafe paths, LFS pointers,  
+   límite 100MB.  
+3. Anotar en bitácora cada componente incorporado con sha256.  
+  
+acceptance:  
+  - "toda descarga tiene EVIDENCE.json con EXTRACTED_VERIFIED"  
+  - "ningún componente entró por vía manual"  
+evidence: [RDC_EVIDENCE.json, sha256sums, bitacora]  
+work_surface: BACKEND  
+  
+  
+## T-08 — Trazabilidad por nodo (obligatorio al cerrar cada T-xx)  
+needs: []   # corre transversal a todos los nodos  
+  
+Pasos:  
+1. Por cada nodo cerrado: evidencia + entrada en  
+   `chat router/03-ESTADO/BITACORA.jsonl` + actualizar `STATE.json` +  
+   `CRAZY_WALL.json` + `HANDOFF.md`.  
+2. Crear `Devin notas/NOTA-<fecha>-paneles.md` y nota paralela en  
+   `Claude notas/` con instrucciones de retomar desde el primer nodo  
+   no-PASS (parche de recuperación: cualquier IA carga STATE + este  
+   plan DSL y continúa sin contexto previo).  
+3. Registrar en bitácora el aviso de seguridad: los 4 tokens pegados  
+   en chat están comprometidos → revocar/regenerar; nuevos SOLO como  
+   secrets (GitHub/HF/Vercel), nunca en archivos.  
+  
+acceptance:  
+  - "cada nodo cerrado tiene su entrada en BITACORA.jsonl"  
+  - "STATE.json refleja estado real del último nodo"  
+  - "notas de recuperación existen y son suficientes para retomar"  
+evidence: [BITACORA.jsonl, STATE.json, notas]  
+work_surface: TRAZABILIDAD  
+  
+  
+## T-09 — Doble verificación contra la spec visual  
+needs: [T-06]  
+  
+Pasos:  
+1. Comparar lo construido sección por sección contra  
+   `📂 Skills Maxbry UI fromtend/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md`  
+   (paleta V07, geometría, contrato de componente universal §13,  
+   appState §14, HTML/CSS/JS §15-17, máquina Status §20, modelo de datos  
+   §21, mapa funcional §22).  
+2. Toda discrepancia → GAP documentado en bitácora con motivo +  
+   paso + timestamp; NADA se inventa ni se omite en silencio.  
+3. Cada sección verificada queda marcada VERIFIED con evidencia.  
+  
+acceptance:  
+  - "100% de las secciones del spec tienen estado VERIFIED o GAP"  
+  - "ningún componente existe en UI sin su sección de spec"  
+evidence: [tabla_verificacion, bitacora]  
+work_surface: FRONTEND+BACKEND  
+  
+  
+## T-10 — Cierre con read-back global (Vercel APAGADO)  
+needs: [T-06, T-07, T-08, T-09]  
+  
+Pasos:  
+1. Read-back global: todos los nodos PASS o GAP documentado; ledger  
+   válido; AGENT_GRAPH.json consistente con AGENTES.yaml.  
+2. Reportar bloqueos externos sin resolverlos inventando:  
+   PROVIDER_KEY_MISSING (EVIDENCIA/S4-CADENA.json), HF_TOKEN para  
+   LanzadorHFJob, autorización de gasto del Director.  
+3. Dejar repo listo para despliegue; Vercel queda APAGADO hasta  
+   autorización expresa del Director.  
+4. HANDOFF.md final + Devin notas + Claude notas con estado completo  
+   y siguiente acción explícita.  
+  
+acceptance:  
+  - "todos los nodos PASS o GAP documentado"  
+  - "Vercel sin desplegar, flag OFF confirmado por read-back"  
+  - "handoff final permite retomar sin contexto previo"  
+evidence: [read-back_global, HANDOFF.md, bitacora_final]  
+work_surface: CIERRE
 
 Handoff completo: YAML plan + ejecución T-01..T-10
 Repositorio: maxbry123-commits/router-universal-router-inteligente- (ref: main). Recuperar el YAML completo de la conversación de planificación: escribir chat router/01-PLAN/PLAN-DSL-DAG-UI.yaml con input_blocks_verbatim (IB-01..IB-17 con las órdenes literales del Director) + nodos T-01..T-10, donde T-05 y T-06 usan EXACTAMENTE el texto del parche de arriba (eran las secciones truncadas). Luego ejecutar T-01..T-10 en loop sin preguntar: T-01 mover archivos sueltos de raíz a 📂 Skills Maxbry UI fromtend/ (componentes/, diseno/) incluyendo ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md; T-03 enchufe Fables→Router; T-04 nodo agent:+gates P1/P2/P3+AGENT_GRAPH.json; T-05/T-06 como el parche; T-07 solo RDC; T-08 trazabilidad por nodo
