@@ -1,4 +1,10 @@
-"""Deterministic source-of-truth drift detector/reconciler."""
+"""Deterministic source-of-truth drift detector/reconciler.
+
+DEPRECATED (N-2.10): no tiene importadores. La autoridad canónica para
+reconciliación de fuentes es `source_truth_reconciler.reconcile_sources`
+(testeado). Este módulo reconciliaba documentos-truth por checkpoint_id;
+se conserva para referencia, no borrar.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass

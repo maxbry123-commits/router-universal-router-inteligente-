@@ -63,3 +63,22 @@ nodes:
   - id: activar_watchdog
     type: DETERMINISTIC
     action: "watchdog.py escanea inventario + Crazy Wall por trabajo pendiente"
+
+
+# ----------------------------------------------------------------------
+# SECCION EJECUTABLE - consumida por seals_core/dag_engine.py.
+# nodes: (arriba) es la narrativa del grafo; steps/edges es lo que el
+# engine valida fresco por tarea (P0-01: editar una edge cambia el flujo).
+# ----------------------------------------------------------------------
+
+steps:
+  - id: RESEARCH
+    action: "investigar/evaluar/disenar - tareas evaluar_componente y diseno_arquitectura"
+  - id: EXECUTE
+    action: "ejecutar determinista - tareas instalar_paquete y verificar_existencia"
+  - id: VALIDATE
+    action: "veredicto sheriff/oracle sobre la evidencia producida"
+
+edges:
+  - "RESEARCH->EXECUTE"
+  - "EXECUTE->VALIDATE"
