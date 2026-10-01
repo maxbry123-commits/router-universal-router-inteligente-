@@ -1,7 +1,7 @@
 {
   "schema": "yaiwes.state/v1",
-  "revision": 35,
-  "updated_at": "2026-10-01T13:28:21Z",
+  "revision": 36,
+  "updated_at": "2026-10-01T13:32:02Z",
   "active_project": "chat-yaiwes",
   "projects": {
     "chat-yaiwes": {

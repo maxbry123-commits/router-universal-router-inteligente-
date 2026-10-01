@@ -16,6 +16,8 @@ Una segunda pasada de T-01 consolidó 38 archivos sueltos de referencias visuale
 ### Continuación T-06 y método aprobado — 2026-10-01
 P01–P08 se formalizaron en `../01-PLAN/DM-METODO-DAG.json` y se verifican mediante `../11-EVIDENCIA/auditoria_metodo.py`; la presencia del contrato no acredita Sentinel, Hermes ni OpenClaw conectados. 65 imágenes se trasladaron a `../01-PLAN/REFERENCIAS-UI/` y se catalogaron individualmente, aún sin vincularse a componentes vivos ni revisión completa de secretos. Se agruparon T-11/T-12 y seis anexos originales. En `../01-PLAN/T-06-INVENTARIO.md` se enumeran controles, estados y dependencias; todos están pendientes de prueba real. El frontend ya no contiene campo ni variable de clave. `integration/chat_mvp/app.py` añade desafío Basic del navegador para assets UI con `RIU_ROUTER_API_KEY` y adapta las solicitudes al backend actual; la prueba local verifica 401/200 pero falta comprobar credenciales, consola, red, storage y responsive en navegador. No entregar al Director la prueba sin segunda pasada completa y matriz final. El plan nuevo continúa sin 100 pasos validados y reloj detenido.
 
+Reanudación exacta: el PR #6 ya contiene el commit `9751dda766`. La selección focalizada tuvo 35 PASS y un FAIL: un test antiguo espera ocho proveedores y el API devuelve también `openai`; no se cambió la prueba ni el proveedor. El agente de prueba UI se intentó dos veces tras actualizar el PR; ambos intentos terminaron con `You've reached your ChatGPT subscription usage limit` sin ejecutar acciones, grabación, capturas ni segunda pasada. Reanudar el testing_agent cuando haya cupo disponible, revisar toda la matriz T-06 y reparar los fallos que encuentre. No inferir PASS ni entregar HTML al Director. GitHub Actions `verify` tampoco arrancó: su anotación de GitHub dice que la cuenta está bloqueada por un problema de facturación; el resultado no representa ejecución de tests.
+
 ## Orden de lectura
 0. `../01-PLAN/PLAN-DSL-DAG-UI.yaml` (plan T-01..T-10 del panel/chat, consolidado desde el documento subido; revisar `source_fidelity`)
 1. `../01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml` (reglas, fuente de verdad, gobernanza, 12 goals, flags)
@@ -44,13 +46,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 35
+Revisión: 36
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-T-06: inventario de 30 controles y responsive preparado; Basic browser auth probado localmente (5/5); segunda pasada visual pendiente. P01-P08 aprobados, auditoria metodo y catalogo de 65 referencias verificados. Plan 100 pasos aun sin validar, reloj detenido.
+PR #6 commit 9751dda766: metodo P01-P08 y 65 referencias organizadas, auth local 5 PASS. T-06 PARTIAL: testing_agent devolvio limite de suscripcion dos veces sin ejecutar navegador; sin capturas, matriz final ni segunda pasada. CI no arranco por bloqueo de facturacion. Plan 100 pasos no validado; reloj en cero.
 
 ### Siguiente
 Recibir plan original

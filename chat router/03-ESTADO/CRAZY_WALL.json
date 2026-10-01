@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "AWAITING_PLAN",
       "next": "Recibir plan original",
-      "summary": "T-06: inventario de 30 controles y responsive preparado; Basic browser auth probado localmente (5/5); segunda pasada visual pendiente. P01-P08 aprobados, auditoria metodo y catalogo de 65 referencias verificados. Plan 100 pasos aun sin validar, reloj detenido.",
-      "updated_at": "2026-10-01T13:28:21Z",
-      "last_event_seq": 35
+      "summary": "PR #6 commit 9751dda766: metodo P01-P08 y 65 referencias organizadas, auth local 5 PASS. T-06 PARTIAL: testing_agent devolvio limite de suscripcion dos veces sin ejecutar navegador; sin capturas, matriz final ni segunda pasada. CI no arranco por bloqueo de facturacion. Plan 100 pasos no validado; reloj en cero.",
+      "updated_at": "2026-10-01T13:32:02Z",
+      "last_event_seq": 36
     }
   }
 }

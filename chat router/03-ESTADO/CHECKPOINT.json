@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T13:28:21Z",
+  "updated_at": "2026-10-01T13:32:02Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 35,
+  "bitacora_revision": 36,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -84,13 +84,14 @@
   },
   "test_results": {
     "focused_backend": "15 passed en tests/test_org_api.py, test_agent_dag_gates.py y test_fables_adapter.py antes de la pausa",
-    "ui": "Recorrido parcial interrumpido; no hay segunda pasada ni matriz final",
+    "ui": "T-06 BLOCKED: testing_agent subscription usage limit, 0 browser tests performed",
     "guard": "5 pruebas locales PASS: plan inválido no inicia, heartbeat en recepción, parada al 95 %, parada a las 3 h 45 min y proyección de State Hub; total focalizado 28 passed con memoria y Router",
     "memory": "8/8 pruebas focalizadas PASS; con guardia y regresiones del Router 28/28 PASS; Ruff y sintaxis JS/shell PASS",
     "broader_suite_prior": "318 passed, 11 failed, 6 errors, 1 skipped; sin comparación con main; no atribuir origen",
     "t06_auth": "5 passed",
     "method_guard_org_chat": "35 passed 1 failed: provider catalog includes openai but legacy test expects 8 providers",
-    "lint": "Ruff F,I PASS; JS node --check PASS"
+    "lint": "Ruff F,I PASS; JS node --check PASS",
+    "ci": "verify did not start: billing lock annotation"
   },
   "memory_audit": {
     "completed": "Encontrado código Manus: SQLite y grafo fallback; 8 pruebas locales PASS con PYTHONPATH del Router y 04-MEMORIA",
@@ -102,7 +103,9 @@
     "Desbordamiento horizontal observado en navegador bajo 720 px: contenido 693 px frente a 485 px disponibles alrededor de 500 px",
     "GETs organizativos responden 503 STATE_AUDIT_UNAVAILABLE sin credencial GitHub; sin test real de éxito remoto",
     "CI no inició: anotación de GitHub indica bloqueo de facturación",
-    "Test test_page_providers_and_auth espera 8 proveedores pero API devuelve tambien openai; sin cambiar test ni eliminar proveedor sin contrato."
+    "Test test_page_providers_and_auth espera 8 proveedores pero API devuelve tambien openai; sin cambiar test ni eliminar proveedor sin contrato.",
+    "testing_agent returned subscription usage limit twice; no UI screenshots or recording.",
+    "GitHub Actions verify did not start due billing lock; no job logs."
   ],
   "decisions": [
     "Decisión B: cada GET añade RESOURCE_READ a Bitácora sin cambiar estado funcional",
@@ -111,9 +114,11 @@
     "Propuesta metodológica DM-G01..12 / DM-C01..12 con 4 simulaciones y 3 refutaciones: borrador pendiente de aprobación del Director; ninguna regla activada",
     "Aclaración del Director: distinguir el flujo real de programación de las mejoras propuestas; el borrador separa ambas secciones",
     "P01-P08 aprobadas por el Director; auditoria determinista activada con niveles de verificacion independientes.",
-    "T-06: mantener resultado PENDIENTE hasta segunda pasada navegador desktop/tablet/mobile, red, consola y storage."
+    "T-06: mantener resultado PENDIENTE hasta segunda pasada navegador desktop/tablet/mobile, red, consola y storage.",
+    "Mantener T-06 PARTIAL y todos los resultados browser PENDIENTE; no entregar HTML hasta segunda pasada real.",
+    "Siguiente accion exacta: reanudar testing_agent cuando se restaure el cupo; corregir hallazgos y completar segunda pasada; despues recibir y validar plan de 100 pasos."
   ],
-  "reception_summary": "T-06: inventario de 30 controles y responsive preparado; Basic browser auth probado localmente (5/5); segunda pasada visual pendiente. P01-P08 aprobados, auditoria metodo y catalogo de 65 referencias verificados. Plan 100 pasos aun sin validar, reloj detenido.",
+  "reception_summary": "PR #6 commit 9751dda766: metodo P01-P08 y 65 referencias organizadas, auth local 5 PASS. T-06 PARTIAL: testing_agent devolvio limite de suscripcion dos veces sin ejecutar navegador; sin capturas, matriz final ni segunda pasada. CI no arranco por bloqueo de facturacion. Plan 100 pasos no validado; reloj en cero.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",
