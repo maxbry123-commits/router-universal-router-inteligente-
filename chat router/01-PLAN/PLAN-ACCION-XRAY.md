@@ -43,3 +43,25 @@ Comprobación ampliada del backend (separada del gate focalizado): 371 passed, 5
   - `test_g021_*`: el test exige prioridad descendente `('B','A')`; `parallel_scheduler` documenta y aplica `lower = more urgent` (convención Kernel/Mavis). El resto de la suite concuerda con ascendente; el test es el caso aislado.
   - `test_router_cliente_live` hace `os.environ.pop("SIMULADO")` global: ordena suites de forma que `11-EVIDENCIA` corra antes o aislar procesos; fragilidad preexistente, no de la copia.
 - Dedup pendiente 🚩: `task_runtime.py`/`mirror_factory.py`/`skill_runtime.py` propios solapan `crazywall_claim_gate`/`recovery`/`agent_fleet`/`uek` de wordflow; los módulos propios quedan cableados a contratos del repo (ui_bridge chain, tool_contracts, autoridad central) hasta consolidar.
+
+
+## INPUT-BLOCK VERBATIM (instrucciones 1 a 1 del Director)
+
+- "No los 18 agente no se conservan por eso no entiendes. Se conserva el plan que ya tu tenías que venías haciendo no el de el wordflow. Lo que vas hacer es que de los 4 objetivo que dice el plan de opus que falta lo vas añadir lo vas a crear pero adaptar a tus agente que yo te define con el plan que tú estabas haciendo solo réplicas el wordflow no el staff de agentes. Que haces ejemolo al osquestador rotboaw le añades complementos que exigen los 4 objetivos. Creas un agente nuevo llamado seal team YAIWES. Añades los componentes del objetivo 1. Pero mantienes el staff de agente de tu diseño de la arquitectura que yo te di."
+- "Integra mirothinker con un sistema thinking. Ya tenemos nuestro osquestador definido creo que no me estás entendiendo."
+- Respuesta registrada: opencode = capacidad "writer" y openhands = capacidad "fixer" como complementos invocables via adapter (fail-closed, claim+sheriff), no staff nuevo; mirothinker = capacidad de razonamiento. Staff del Director conservado.
+
+## FASE WORDFLOW-LOOP (delta tras copia de raíz)
+
+- N-2.4: `recovery/checkpoint.py` ya era durable SQLite (patch upstream 2026-09-20) — verificado.
+- N-2.5: `runtime/src/agent/agent_router.py` DEPRECATED → delega en AgentFleetAdapter + registry; FAIL_CLOSED sin match real (tested).
+- N-2.6: `recovery/engine.py` emite kind tipado (FAILURE_POLICY de task_runtime) por fallo; ESCALATE genérico solo cuando requires_human.
+- N-2.7: StuckDetector en RecoveryEngine (fingerprint x3 → BLOCKED_STUCK); tested.
+- N-2.8: los 7 archivos governance = gates reales deterministas (veredicto REAL, no stubs).
+- N-2.9: `wordflow_loop/contracts/` + `wordflow_loop/evidence/` ya contienen fichas y ~55 evidencias G0xx — verificado físicamente.
+- Gap upstream resuelto: `wordflow_loop/wordflow_loop/runner.py` (LayerRunner) no existía → creado cableando la cadena validator→sheriff→sentinel→supervisor→guardian→verifier→judge→ledger.
+- ThinkingSystem: `wordflow_loop/wordflow_loop/thinking_system.py` → mirothinker via AgentFleetAdapter, razonamiento sin autoridad de ejecución.
+- Dedup: `task_runtime.py` canónico único en `runtime/src/core/`; shim re-export en integration/chat_mvp; mirror_factory apunta al canónico.
+- Tests nuevos: test_n26_typed_recovery_and_router.py (7), test_layer_runner.py (5), test_thinking_system.py (3). Suite loop: 254 passed / 3 stale (g009, g021, ficha loader) 🚩.
+- 🚩 N-2.10: truth_reconciler.py (43 LOC, sin importadores) vs source_truth_reconciler.py (105 LOC, testeado) — canónico=source_truth_reconciler; truth_reconciler queda deprecated (no borrado).
+- 🚩 N-2.13: los 4 archivos (execution_pipeline_dsl.py, -Copiar.md, PIPELINE_MASTER.md, INPUT_BLOCK.md) nunca fueron commiteados ni adjuntados en esta sesión — pendiente material.
