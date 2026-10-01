@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 from ..huggingface.api_key_auth import authenticate_api_key
@@ -34,6 +34,7 @@ from .store import Store
 from .usage import UsageLog, normalize_usage
 
 _UI = Path(__file__).with_name("chat_ui.html")
+_ORG_UI = Path(__file__).resolve().parents[3] / "chat router/ui/shell.html"
 _store: Store | None = None
 _fables_catalog: FablesCatalog | None = None
 
@@ -152,6 +153,10 @@ def _gh(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 def build_router() -> APIRouter:
     r = APIRouter()
     r.include_router(org_api.build_org_router(_auth, get_store, get_fables_catalog))
+
+    @r.get("/chat/organization", response_class=HTMLResponse)
+    def organization() -> HTMLResponse:
+        return HTMLResponse(_ORG_UI.read_text(encoding="utf-8"))
 
     @r.get("/chat/fichas")
     def fichas(_owner: str = Depends(_auth)) -> dict[str, Any]:
@@ -371,6 +376,18 @@ def build_router() -> APIRouter:
         if not doc:
             raise HTTPException(status_code=404, detail="DOCUMENT_NOT_FOUND")
         return {"document": doc, "preview": st.document_text(did, limit=4000)}
+
+    @r.get("/chat/media/{did}")
+    def media(did: str, _owner: str = Depends(_auth)) -> FileResponse:
+        st = get_store()
+        doc = st.document(did)
+        allowed = {"image/png", "image/jpeg", "image/gif", "image/webp", "video/mp4", "video/webm"}
+        if not doc or doc["mime"] not in allowed:
+            raise HTTPException(status_code=404, detail="MEDIA_NOT_FOUND")
+        path = st.dir / "docs" / doc["id"]
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="MEDIA_NOT_FOUND")
+        return FileResponse(path, media_type=doc["mime"], headers={"X-Content-Type-Options": "nosniff"})
 
     @r.delete("/chat/documents/{did}")
     def delete_document(did: str, _owner: str = Depends(_auth)) -> dict[str, Any]:

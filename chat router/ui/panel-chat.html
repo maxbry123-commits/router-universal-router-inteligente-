@@ -1,0 +1,12 @@
+<h1>Chat del Router</h1>
+<section>
+  <div class="row"><label>Proveedor <select id="provider"><option value="auto">Automático</option></select></label>
+    <label>Modelo <select id="model"><option value="">Router elige</option></select></label>
+    <label>Agente <select id="agent"><option value="">Sin agente</option></select></label>
+    <label>Modo <select id="mode"><option value="fast">Rápido</option><option value="balanced" selected>Equilibrado</option><option value="think">Pensar</option></select></label>
+    <label>Grupo <select id="group"><option value="">Predeterminado</option></select></label></div>
+  <div class="row"><label>Cuenta GitHub <select id="github"><option value="">Ninguna</option></select></label><label>Rama <input id="branch" placeholder="main" disabled></label></div>
+  <div id="history" class="chat-history" role="log" aria-live="polite"></div>
+  <form id="composer"><textarea id="message" placeholder="Escribe una orden o /ayuda" required></textarea><div class="row"><button class="action">Enviar al Router</button><span class="muted">Las respuestas del agente pasan por el Router.</span></div></form>
+</section>
+<section><h2>Control</h2><div class="row"><button class="secondary" data-control="pause-agents">Pausar agentes</button><button class="secondary" data-control="resume-agents">Reanudar agentes</button><button class="secondary" data-control="emergency-stop">Emergencia</button><button class="secondary" data-control="resume-router">Encender Router</button></div></section>

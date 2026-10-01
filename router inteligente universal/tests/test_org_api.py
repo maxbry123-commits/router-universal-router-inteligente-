@@ -53,3 +53,35 @@ def test_org_views_are_authenticated_real_and_read_only(tmp_path, monkeypatch):
         assert before == {path: path.read_bytes() for path in before}
     finally:
         rt.set_store(None)
+
+
+def test_org_shell_serves_modular_panels_and_locked_palette():
+    client = TestClient(chat_app.app)
+    shell = client.get("/chat/organization")
+    assert shell.status_code == 200 and "shell.js" in shell.text
+    for name in ("chat", "archivos", "seguimiento", "canvas", "org"):
+        for extension in ("html", "js"):
+            result = client.get(f"/chat/ui/panel-{name}.{extension}")
+            assert result.status_code == 200
+            assert len(result.text.splitlines()) <= 500
+    css = client.get("/chat/ui/shell.css")
+    assert css.status_code == 200
+    assert all(color in css.text for color in ("#1B1B1B", "#202020", "#2A2A2A", "#3C3C3C", "#484848", "#0848F7"))
+    assert "localStorage" not in client.get("/chat/ui/api.js").text
+
+
+def test_media_only_serves_authenticated_safe_formats(tmp_path, monkeypatch):
+    monkeypatch.setenv("RIU_AGENT_API_KEYS", '{"key": "owner"}')
+    store = Store(tmp_path)
+    rt.set_store(store)
+    client = TestClient(chat_app.app)
+    try:
+        image = store.put_document("photo.png", "image/png", b"image-bytes")
+        html = store.put_document("page.html", "text/html", b"<script>bad()</script>")
+        assert client.get(f"/chat/media/{image['id']}").status_code == 401
+        result = client.get(f"/chat/media/{image['id']}", headers={"X-API-Key": "key"})
+        assert result.status_code == 200 and result.content == b"image-bytes"
+        assert result.headers["x-content-type-options"] == "nosniff"
+        assert client.get(f"/chat/media/{html['id']}", headers={"X-API-Key": "key"}).status_code == 404
+    finally:
+        rt.set_store(None)
