@@ -77,6 +77,17 @@
       "summary": "Read-back f21b7a3e82: agent nodes, Sheriff and Judge gates, P1 step/scope, P2 checkpoint and archive gate, P3 conflict stop, State Hub events, Codex graph; 17 focused tests passed. Live PASS still requires ACTIVE_TRUTH and trusted reviews/evidence; no provider call claimed.",
       "updated_at": "2026-10-01T03:30:08Z",
       "last_event_seq": 17
+    },
+    "UI-T-05": {
+      "node_id": "UI-T-05",
+      "task": "UI-T-05",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "T05_READ_ONLY_PROJECTIONS",
+      "next": "T-06",
+      "summary": "Read-back 0db8b96523: eight authenticated read-only organization views, typed envelope, no-write test passed. GAP: State Hub GET audit event conflicts with no-write acceptance; no event falsely persisted. Live DAG HTTP run ledger, queue workers, engineering toggles, and MCP registry lack source and return empty until implemented.",
+      "updated_at": "2026-10-01T03:33:05Z",
+      "last_event_seq": 18
     }
   }
 }

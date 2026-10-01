@@ -29,16 +29,16 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 17
-Proyecto/tarea: `chat-yaiwes` / `UI-T-04`
-Estado: **COMPLETED**
-Fase: `T04_AGENT_GATES_TESTED`
+Revisión: 18
+Proyecto/tarea: `chat-yaiwes` / `UI-T-05`
+Estado: **RUNNING**
+Fase: `T05_READ_ONLY_PROJECTIONS`
 
 ### Último checkpoint
-Read-back f21b7a3e82: agent nodes, Sheriff and Judge gates, P1 step/scope, P2 checkpoint and archive gate, P3 conflict stop, State Hub events, Codex graph; 17 focused tests passed. Live PASS still requires ACTIVE_TRUTH and trusted reviews/evidence; no provider call claimed.
+Read-back 0db8b96523: eight authenticated read-only organization views, typed envelope, no-write test passed. GAP: State Hub GET audit event conflicts with no-write acceptance; no event falsely persisted. Live DAG HTTP run ledger, queue workers, engineering toggles, and MCP registry lack source and return empty until implemented.
 
 ### Siguiente
-T-05
+T-06
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121
