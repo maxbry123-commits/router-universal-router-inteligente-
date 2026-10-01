@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T14:57:48Z",
+  "updated_at": "2026-10-01T15:12:07Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 50,
+  "bitacora_revision": 51,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -75,7 +75,8 @@
     "chat router/11-EVIDENCIA/auditoria_metodo.py",
     "chat router/11-EVIDENCIA/evidence_pack.py",
     "chat router/11-EVIDENCIA/buscadores.py",
-    "router inteligente universal/integration/chat_mvp/ui_bridge.py"
+    "router inteligente universal/integration/chat_mvp/ui_bridge.py",
+    "router inteligente universal/requirements.txt"
   ],
   "current_audit_files": [
     "chat router/01-PLAN/PROPUESTA-METODO-DEVIN-ASK-COUNCIL.md",
@@ -129,7 +130,9 @@
     "visual_catalog_generator": "65_plus_17_byte_identical",
     "focused": "68 passed; 1 deselected",
     "ruff": "PASS",
-    "checkpoint": "5 passed"
+    "checkpoint": "5 passed",
+    "broad": "371 passed; 5 failed; 1 deselected",
+    "connectors_vault": "23 passed"
   },
   "memory_audit": {
     "completed": "Encontrado código Manus: SQLite y grafo fallback; 8 pruebas locales PASS con PYTHONPATH del Router y 04-MEMORIA",
@@ -155,7 +158,8 @@
     "🚩 PENDIENTE: timeout duro local, verificación del packet_hash en la Puerta, autenticación de reviewers, lease/replay, T-06 visual",
     "🚩 PENDIENTE: cancelación dura de E/S local, autenticación reviewer, lease/replay/recovery, external runtime, T-06 visual",
     "🚩 PENDIENTE: eventos heredados sin hash, convergencia remota, cancelación dura local, reviewers externos, lease/recovery, T-06 visual",
-    "🚩 PENDIENTE: procedencia autenticada y timeout duro, integridad remota del historial, reviewers, lease/recovery, T-06 visual"
+    "🚩 PENDIENTE: procedencia autenticada y timeout duro, integridad remota del historial, reviewers, lease/recovery, T-06 visual",
+    "🚩 PENDIENTE: E2E GitHub 502, registro modelos, politica sdk, provider map openai, aislamiento SIMULADO"
   ],
   "decisions": [
     "Decisión B: cada GET añade RESOURCE_READ a Bitácora sin cambiar estado funcional",
@@ -181,9 +185,10 @@
     "Siguiente T-11-C timeout de búsqueda local y read-back del packet_hash, sin declarar backend terminado",
     "Siguiente: cancelación local segura y procedencia por hecho; luego event replay; no PASS global",
     "Siguiente: cierre de T-11-C plazo duro/procedencia; T-11-D integridad remota; no PASS global",
-    "Siguiente: timeout duro y procedencia T-11-C, luego convergencia remota T-11-D; no PASS global"
+    "Siguiente: timeout duro y procedencia T-11-C, luego convergencia remota T-11-D; no PASS global",
+    "Siguiente: resolver discrepancias de contratos y aislamiento de suite; luego timeout duro T-11-C"
   ],
-  "reception_summary": "T-11-C parcial: packet_hash incluye parser, consultas, observaciones y fuentes; 19 archivos auditados, 82 imágenes, 68 tests, Ruff PASS; T-11-D replay local parcial.",
+  "reception_summary": "Backend ampliado: cryptography declarada en requirements; 371 passed/5 failed/1 deselected en suite Router+memoria; conectores+banco 23 PASS; discrepancias config/modelos y E2E GitHub 502 quedan 🚩 PENDIENTE.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",

@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "T-11-C parcial: packet_hash incluye parser, consultas, observaciones y fuentes; 19 archivos auditados, 82 imágenes, 68 tests, Ruff PASS; T-11-D replay local parcial.",
-      "updated_at": "2026-10-01T14:57:48Z",
-      "last_event_seq": 50
+      "summary": "Backend ampliado: cryptography declarada en requirements; 371 passed/5 failed/1 deselected en suite Router+memoria; conectores+banco 23 PASS; discrepancias config/modelos y E2E GitHub 502 quedan 🚩 PENDIENTE.",
+      "updated_at": "2026-10-01T15:12:07Z",
+      "last_event_seq": 51
     }
   }
 }
