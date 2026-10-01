@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 94428,
+  "bundle_sha256": "fa5ad754b79e4382f0329f2b70dadefd8b33daebd0431339721a4fefffa68c6c",
+  "extracted_tree": {
+    "bytes": 194319,
+    "files": 68,
+    "sha256": "6fe9aab6560667680abea5f2f4dc14c9b0f8613abbc15baf88be4cb8a6d78b3f"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 94428,
+      "name": "firecrawl-skills.bundle.zip.part-0001",
+      "sha256": "fa5ad754b79e4382f0329f2b70dadefd8b33daebd0431339721a4fefffa68c6c"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "firecrawl-skills",
+  "source_bytes": 194319,
+  "source_commit": "28c134e8586268e2e9112a0f865bf1ddc3c4d4d6",
+  "source_files": 68,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/firecrawl/skills",
+  "source_tree": {
+    "bytes": 194319,
+    "files": 68,
+    "sha256": "6fe9aab6560667680abea5f2f4dc14c9b0f8613abbc15baf88be4cb8a6d78b3f"
+  }
+}
