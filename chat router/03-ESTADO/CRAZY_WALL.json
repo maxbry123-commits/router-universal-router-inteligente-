@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "wordflow loop integrado: conftest wiring, motores canonicos, 239/242 tests loop, ROOT-MAP root-11, 3 gaps stale upstream",
-      "updated_at": "2026-10-01T17:27:56Z",
-      "last_event_seq": 56
+      "summary": "N-2.5 agent_router FAIL_CLOSED, N-2.6 recovery tipado, N-2.7 stuck detector, LayerRunner+ThinkingSystem cableados, dedup task_runtime canonico en loop core. Tests loop 254 pass.",
+      "updated_at": "2026-10-01T18:29:19Z",
+      "last_event_seq": 57
     }
   }
 }
