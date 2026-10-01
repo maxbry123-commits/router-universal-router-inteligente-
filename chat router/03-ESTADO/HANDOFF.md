@@ -54,13 +54,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 55
+Revisión: 56
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-wordflow loop root copiada via motor_3 (397 files VERIFIED_CLOSED); 236/242 tests propios pasan; 6 stale upstream marcados pending
+wordflow loop integrado: conftest wiring, motores canonicos, 239/242 tests loop, ROOT-MAP root-11, 3 gaps stale upstream
 
 ### Siguiente
 Continuar DAG existente

@@ -69,3 +69,12 @@ roots:
       - "router inteligente universal/Banco de claves/"
       - "router inteligente universal/scripts/"
       - "chat router/00-INSTRUCCIONES/"
+  - id: "11"
+    name: "Wordflow LOOP Yaiwes (copiado de agentes via motor_3, VERIFIED_CLOSED)"
+    paths:
+      - "chat router/wordflow loop code Yaiwes/runtime/"
+      - "chat router/wordflow loop code Yaiwes/wordflow_loop/"
+      - "chat router/wordflow loop code Yaiwes/Crazy Wall Orquestador/"
+      - "chat router/wordflow loop code Yaiwes/backend/"
+      - "chat router/➡️📂motores de descarga extracción copiado movimiento archivos agentes/"
+      - "chat router/➡️📂 Wordflow LOOP Yaiwes/"

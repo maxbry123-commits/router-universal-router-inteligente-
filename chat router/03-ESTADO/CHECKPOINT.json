@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T17:19:55Z",
+  "updated_at": "2026-10-01T17:27:56Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 55,
+  "bitacora_revision": 56,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -202,7 +202,7 @@
     "Siguiente: timeout duro en busqueda local y procedencia independiente de facts",
     "Siguiente: procedencia independiente de facts y reintentar E2E GitHub con token"
   ],
-  "reception_summary": "wordflow loop root copiada via motor_3 (397 files VERIFIED_CLOSED); 236/242 tests propios pasan; 6 stale upstream marcados pending",
+  "reception_summary": "wordflow loop integrado: conftest wiring, motores canonicos, 239/242 tests loop, ROOT-MAP root-11, 3 gaps stale upstream",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",
