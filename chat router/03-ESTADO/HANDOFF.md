@@ -46,13 +46,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 36
+Revisión: 37
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-PR #6 commit 9751dda766: metodo P01-P08 y 65 referencias organizadas, auth local 5 PASS. T-06 PARTIAL: testing_agent devolvio limite de suscripcion dos veces sin ejecutar navegador; sin capturas, matriz final ni segunda pasada. CI no arranco por bloqueo de facturacion. Plan 100 pasos no validado; reloj en cero.
+T-06 PARTIAL: sin browser por limite de testing_agent (2 intentos). Revision local: 30/30 tests focalizados PASS con SIMULADO=1 para Puerta de Evidencia; Ruff F/I PASS y node --check PASS. Seleccion previa 35 PASS y un fallo de catalogo openai; proveedor y expectativa tambien estan sin cambio en origin/main. PR #6 actualizado, plan 100 pasos ausente, reloj 0.
 
 ### Siguiente
 Recibir plan original
