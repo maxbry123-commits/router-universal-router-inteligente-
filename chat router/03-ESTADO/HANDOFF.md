@@ -29,16 +29,16 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 18
-Proyecto/tarea: `chat-yaiwes` / `UI-T-05`
+Revisión: 24
+Proyecto/tarea: `chat-yaiwes` / `UI-T-10`
 Estado: **RUNNING**
-Fase: `T05_READ_ONLY_PROJECTIONS`
+Fase: `T10_BROAD_TEST_GAPS`
 
 ### Último checkpoint
-Read-back 0db8b96523: eight authenticated read-only organization views, typed envelope, no-write test passed. GAP: State Hub GET audit event conflicts with no-write acceptance; no event falsely persisted. Live DAG HTTP run ledger, queue workers, engineering toggles, and MCP registry lack source and return empty until implemented.
+Focused 20 tests pass; broad pytest tests gives 318 passed, 11 failed, 6 errors, 1 skipped, including missing cryptography and pytest-asyncio. Unscoped pytest collects vendored tests and aborts. Origin of failures on main not verified. See recovery notes and T-09 audit; Vercel remains off.
 
 ### Siguiente
-T-06
+Resume T-05 GAP
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121

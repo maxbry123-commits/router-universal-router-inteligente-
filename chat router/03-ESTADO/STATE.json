@@ -1,7 +1,7 @@
 {
   "schema": "yaiwes.state/v1",
-  "revision": 18,
-  "updated_at": "2026-10-01T03:33:05Z",
+  "revision": 24,
+  "updated_at": "2026-10-01T03:39:47Z",
   "active_project": "chat-yaiwes",
   "projects": {
     "chat-yaiwes": {
@@ -10,9 +10,13 @@
       "active_tasks": [
         "RIU-0119",
         "RIU-0120",
-        "UI-T-05"
+        "UI-T-05",
+        "UI-T-06",
+        "UI-T-10"
       ],
-      "blocked_tasks": []
+      "blocked_tasks": [
+        "UI-T-07"
+      ]
     }
   }
 }

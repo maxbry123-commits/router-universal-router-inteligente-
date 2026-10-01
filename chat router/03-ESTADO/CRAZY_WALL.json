@@ -88,6 +88,61 @@
       "summary": "Read-back 0db8b96523: eight authenticated read-only organization views, typed envelope, no-write test passed. GAP: State Hub GET audit event conflicts with no-write acceptance; no event falsely persisted. Live DAG HTTP run ledger, queue workers, engineering toggles, and MCP registry lack source and return empty until implemented.",
       "updated_at": "2026-10-01T03:33:05Z",
       "last_event_seq": 18
+    },
+    "UI-T-06": {
+      "node_id": "UI-T-06",
+      "task": "UI-T-06",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "T06_MODULAR_SHELL",
+      "next": "T-07",
+      "summary": "Read-back ccc470276b: shell, four panels, three read-only views and safe media endpoint; 20 focused tests pass, JS syntax and palette checked. GAP: no browser screenshots, Fables activation, HttpOnly session, template run, file anchors, ten mental views or RUI components.",
+      "updated_at": "2026-10-01T03:38:45Z",
+      "last_event_seq": 19
+    },
+    "UI-T-07": {
+      "node_id": "UI-T-07",
+      "task": "UI-T-07",
+      "project": "chat-yaiwes",
+      "status": "BLOCKED",
+      "phase": "T07_RDC_WORKFLOW_MISSING",
+      "next": "Provide approved RDC workflow",
+      "summary": "Prescribed research-download-chain-router-components-20260903.yml absent from work branch and origin/main. No components downloaded and no new RDC evidence claimed. Existing repository checksum evidence belongs to earlier components only.",
+      "updated_at": "2026-10-01T03:38:45Z",
+      "last_event_seq": 20
+    },
+    "UI-T-08": {
+      "node_id": "UI-T-08",
+      "task": "UI-T-08",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T08_RECOVERY_NOTES",
+      "next": "T-09",
+      "summary": "Recovery notes created under Devin notas and Claude notas; security warning recorded without token values. T-05 remains first incomplete node; state projections regenerated from append-only Bitacora.",
+      "updated_at": "2026-10-01T03:38:45Z",
+      "last_event_seq": 21
+    },
+    "UI-T-09": {
+      "node_id": "UI-T-09",
+      "task": "UI-T-09",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T09_STATIC_SPEC_AUDIT",
+      "next": "T-10",
+      "summary": "All 26 specification sections classified VERIFIED or GAP in VERIFICACION-UI-T09.md with reasons, next steps and timestamp. Static comparison only; visual browser testing and screenshots remain GAP pending user authorization.",
+      "updated_at": "2026-10-01T03:38:45Z",
+      "last_event_seq": 22
+    },
+    "UI-T-10": {
+      "node_id": "UI-T-10",
+      "task": "UI-T-10",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "T10_BROAD_TEST_GAPS",
+      "next": "Resume T-05 GAP",
+      "summary": "Focused 20 tests pass; broad pytest tests gives 318 passed, 11 failed, 6 errors, 1 skipped, including missing cryptography and pytest-asyncio. Unscoped pytest collects vendored tests and aborts. Origin of failures on main not verified. See recovery notes and T-09 audit; Vercel remains off.",
+      "updated_at": "2026-10-01T03:39:47Z",
+      "last_event_seq": 24
     }
   }
 }
