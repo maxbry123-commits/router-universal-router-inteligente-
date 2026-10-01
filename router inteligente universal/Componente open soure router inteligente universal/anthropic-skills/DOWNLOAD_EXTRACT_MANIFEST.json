@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 3953996,
+  "bundle_sha256": "ab6c00479158bbf765d17cb3e28e8932f58f11a5fa7c781ecc21b11f17cde2a8",
+  "extracted_tree": {
+    "bytes": 10987398,
+    "files": 419,
+    "sha256": "67c5d33864fb0037172a2b83eed5d717918554179251c421ba5fc3b6f56457a1"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 3953996,
+      "name": "anthropic-skills.bundle.zip.part-0001",
+      "sha256": "ab6c00479158bbf765d17cb3e28e8932f58f11a5fa7c781ecc21b11f17cde2a8"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "anthropic-skills",
+  "source_bytes": 10987398,
+  "source_commit": "34040c9c568585f6929bedeaad110ad08f079624",
+  "source_files": 419,
+  "source_ref": "34040c9c568585f6929bedeaad110ad08f079624",
+  "source_repo": "https://github.com/anthropics/skills",
+  "source_tree": {
+    "bytes": 10987398,
+    "files": 419,
+    "sha256": "67c5d33864fb0037172a2b83eed5d717918554179251c421ba5fc3b6f56457a1"
+  }
+}
