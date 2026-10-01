@@ -1,3 +1,4 @@
+Base de estos 22 componentes y scripts: 📂 Skills Maxbry UI fromtend/componentes/
 01. folder-component.tsx -> 01-folder-component-DESCARGAR.sh
 02. bounce-sidebar.tsx -> 02-bounce-sidebar-DESCARGAR.sh
 03. hook-sidebar.tsx -> 03-hook-sidebar-DESCARGAR.sh

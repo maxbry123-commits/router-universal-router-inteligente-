@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 15232870,
+  "bundle_sha256": "e00f634464f35da3eb10a9f958452990abd629e6ef68b0d017eaef8204737d84",
+  "extracted_tree": {
+    "bytes": 25169932,
+    "files": 678,
+    "sha256": "210cc470e3166a8b4f2c04d2f179cb0f730f3d30a4f079327e3c4011e01b37f9"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "getdesign.bundle.zip.part-0001",
+      "sha256": "046e1ea61819b6e80c69cf2bb4c61e295bff38c9618806c5fce3d2ea684f7c10"
+    },
+    {
+      "bytes": 2649958,
+      "name": "getdesign.bundle.zip.part-0002",
+      "sha256": "3148228230e4e6d6545f72b95ccf44570991a3333e1a7174596631832eb90491"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "getdesign",
+  "source_bytes": 25169932,
+  "source_commit": "0f76d06f5ca72869cc31cd947c854ee32286dab4",
+  "source_files": 678,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/MohtashamMurshid/getdesign",
+  "source_tree": {
+    "bytes": 25169932,
+    "files": 678,
+    "sha256": "210cc470e3166a8b4f2c04d2f179cb0f730f3d30a4f079327e3c4011e01b37f9"
+  }
+}

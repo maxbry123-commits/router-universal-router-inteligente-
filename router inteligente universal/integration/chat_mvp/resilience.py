@@ -28,9 +28,10 @@ import math
 import os
 import threading
 import time
+from collections.abc import Callable, Iterable, Mapping
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping
+from typing import Any
 
 from . import providers as prov
 
@@ -179,7 +180,7 @@ class Router:
                     self.breaker.ok(kid)
                     self.latency[provider + "/" + model] = 0.7 * self.latency.get(provider + "/" + model, time.monotonic() - t0) + 0.3 * (time.monotonic() - t0)
                     return out
-                except Exception as exc:  # noqa: BLE001 - anything from a provider counts against that key
+                except Exception as exc:
                     last = exc
                     if errbox is not None:
                         errbox["e"] = str(exc)
@@ -220,7 +221,17 @@ CODE_POLICY: dict[str, dict[str, Any]] = {
     # chat, Hermes and OpenClaw (Director 2026-09-30): Kimi K3 -> GLM 5.3 -> DeepSeek V4 -> Groq qwen (emergency tail), NO Nemotron.
     # "timeout" = seconds this option may take (own limit, not the RIU_CHAT_ATTEMPT_TIMEOUT base of the other groups; capped by prov.CHAT_TIMEOUT).
     "chat_nvidia": {"authorized_fallback": True, "chain": [{**KIMI_K3, "timeout": 90}, {**GLM_53, "timeout": 90}, {**DEEPSEEK_FLASH, "timeout": 90}, {**QWEN_GROQ, "timeout": 90}]},
-    "sdk": {"authorized_fallback": True, "chain": []},  # list pending from the Director: an empty chain answers ROUTER_NO_ROUTE_AVAILABLE, nothing else changes
+    "sdk": {"authorized_fallback": True, "chain": [  # Director list (policies.json, 2026-10-01): openai gpt-6-luna first
+        {"provider": "openai", "model": "gpt-6-luna", "timeout": 90},
+        {"provider": "openai", "model": "gpt-6.1-sol", "timeout": 90},
+        {"provider": "openai", "model": "gpt-6-sol", "timeout": 90},
+        {"provider": "openai", "model": "gpt-6-astra", "timeout": 90},
+        {"provider": "openai", "model": "gpt-5.6-sol", "timeout": 90},
+        {"provider": "openai", "model": "gpt-5.6-terra", "timeout": 90},
+        {"provider": "openai", "model": "gpt-5.6-luna", "timeout": 90},
+        {"provider": "openai", "model": "gpt-5.5", "timeout": 90},
+        {"provider": "openai", "model": "gpt-5.4", "timeout": 90},
+        {"provider": "openai", "model": "gpt-5.2", "timeout": 90}]},
 }
 
 POLICIES_FILE = Path(__file__).with_name("policies.json")
@@ -263,7 +274,7 @@ def reload_policies(path: Any = None) -> dict[str, Any]:
     try:
         groups = json.loads(Path(path or POLICIES_FILE).read_text(encoding="utf-8"))["groups"]
         if not isinstance(groups, dict):
-            raise ValueError("groups no es un objeto")
+            raise TypeError("groups no es un objeto")
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "kept_previous": True, "error": f"{type(exc).__name__}: {str(exc)[:120]}", "groups": sorted(DEFAULT_POLICY)}
     new = copy.deepcopy(CODE_POLICY)
@@ -361,7 +372,7 @@ def run_policy(group: str, messages: list[dict[str, str]], max_tokens: int, *, t
                     use_pool.mark_ok(entry["provider"], entry["model"])
                     settled.add((entry["provider"], entry["model"]))
                 return {**out, "route": {**entry, "attempt": i + 1}, "trace": trace}
-            except Exception as exc:  # noqa: BLE001 - whatever one option raises, the chain moves on (only RuntimeError was caught before)
+            except Exception as exc:
                 text = str(exc) if isinstance(exc, RuntimeError) else f"{type(exc).__name__}:{exc}"
                 if isinstance(exc, Saturated) or "ROUTER_SATURATED" in text:
                     # The limiter is shared by every option: trying the next one would wait another refuse_after (20 s) each. Stop now, the model is not dead.

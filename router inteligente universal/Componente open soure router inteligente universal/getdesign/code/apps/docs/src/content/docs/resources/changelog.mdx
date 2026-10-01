@@ -1,0 +1,21 @@
+---
+title: Changelog
+description: Notable changes to getdesign across all surfaces.
+---
+
+User-facing notes for the public surfaces. The repo [CHANGELOG](https://github.com/MohtashamMurshid/getdesign/blob/main/CHANGELOG.md) has the full engineering log.
+
+## Unreleased
+
+v1 is bring-your-own-key. Visual runs use your Daytona and OpenAI credentials. Hosted API calls need a WorkOS bearer token. There is no getdesign API key and no getdesign run billing.
+
+- **Dashboard.** Sign in at [dashboard.getdesign.app](https://dashboard.getdesign.app/). Settings stores encrypted provider keys. Agent starts a run. Overview and Runs list your extractions. Examples is a shared catalog. Capture failure stops the run; text-only is an explicit continue, not a silent fallback.
+- **API.** `GET /v1/design` and `/v1/design/stream` require WorkOS plus request-scoped provider headers. Markdown embeds screenshots as data URLs; JSON includes `images`.
+- **CLI.** `@getdesign/cli` runs on Bun, writes `./getdesign-runs/<slug>/design.md` plus a sibling `*.images/` directory, and has no REPL.
+- **SDK.** `@getdesign/sdk` runs the agent in-process on Bun with typed `getDesign` / `streamDesign` results, including `images[]`.
+- **Skill.** Portable `SKILL.md` via `npx skills add MohtashamMurshid/getdesign`. Uses the host agent's tools, not `@getdesign/agent`.
+- **Docs.** This site at [docs.getdesign.app](https://docs.getdesign.app/).
+
+## 0.0.0 — 2026-04-20
+
+Initial monorepo scaffold and marketing site.

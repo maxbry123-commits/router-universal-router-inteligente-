@@ -12,8 +12,9 @@ import os
 import re
 import sqlite3
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -122,7 +123,7 @@ class Vault:
         except OSError:
             pass
 
-    def unlock(self, passphrase: str) -> "UnlockedVault":
+    def unlock(self, passphrase: str) -> UnlockedVault:
         if not self.exists():
             raise NotFound("VAULT_MISSING")
         conn = sqlite3.connect(self.path)

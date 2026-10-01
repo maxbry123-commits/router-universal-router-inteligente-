@@ -1,0 +1,324 @@
+/*
+ * getdesign docs brand theme
+ * Ports tokens from apps/web/app/globals.css onto Starlight's theming hooks.
+ * All values sourced from the web app so docs stays visually consistent.
+ */
+
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/jetbrains-mono";
+
+:root,
+:root[data-theme="dark"] {
+  /* getdesign palette */
+  --gd-background: #0a0a0b;
+  --gd-surface-100: #101012;
+  --gd-surface-200: #141418;
+  --gd-surface-300: #1a1a20;
+  --gd-foreground: #ededee;
+  --gd-muted: rgba(237, 237, 238, 0.6);
+  --gd-subtle: rgba(237, 237, 238, 0.38);
+  --gd-faint: rgba(237, 237, 238, 0.12);
+  --gd-accent: #a3e635;
+  --gd-accent-dim: #65a30d;
+  --gd-accent-glow: rgba(163, 230, 53, 0.18);
+  --gd-border: rgba(255, 255, 255, 0.07);
+  --gd-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Starlight base surfaces */
+  --sl-color-bg: var(--gd-background);
+  --sl-color-bg-nav: var(--gd-background);
+  --sl-color-bg-sidebar: var(--gd-background);
+  --sl-color-bg-inline-code: var(--gd-surface-200);
+  --sl-color-bg-accent: var(--gd-accent-glow);
+  --sl-color-bg-selection: var(--gd-accent);
+
+  /* Starlight text */
+  --sl-color-white: var(--gd-foreground);
+  --sl-color-gray-1: var(--gd-foreground);
+  --sl-color-gray-2: rgba(237, 237, 238, 0.85);
+  --sl-color-gray-3: var(--gd-muted);
+  --sl-color-gray-4: var(--gd-subtle);
+  --sl-color-gray-5: var(--gd-faint);
+  --sl-color-gray-6: var(--gd-surface-200);
+  --sl-color-gray-7: var(--gd-surface-300);
+  --sl-color-black: var(--gd-background);
+  --sl-color-text: var(--gd-foreground);
+  --sl-color-text-accent: var(--gd-accent);
+  --sl-color-text-invert: #0a0a0b;
+
+  /* Starlight accents */
+  --sl-color-accent-low: color-mix(in srgb, var(--gd-accent) 12%, transparent);
+  --sl-color-accent: var(--gd-accent);
+  --sl-color-accent-high: var(--gd-accent-dim);
+
+  /* Starlight borders */
+  --sl-color-hairline: var(--gd-border);
+  --sl-color-hairline-light: var(--gd-border);
+  --sl-color-hairline-shade: var(--gd-border-strong);
+
+  /* Typography */
+  --sl-font:
+    "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --sl-font-system:
+    "Geist Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --sl-font-mono:
+    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+  --sl-font-system-mono: var(--sl-font-mono);
+
+  /* Sizing */
+  --sl-content-width: 48rem;
+  --sl-sidebar-width: 18rem;
+  --sl-nav-height: 3.75rem;
+}
+
+/* Force dark scheme; the getdesign brand is dark-first. */
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--gd-background);
+  color: var(--gd-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Selection matches the web app */
+*::selection {
+  background: var(--gd-accent);
+  color: #0a0a0b;
+}
+
+/* Subtle dashed rail under the top nav to echo the marketing site */
+header.header {
+  border-bottom: 1px dashed var(--gd-faint) !important;
+}
+
+/* Accent dot after top-level headings */
+.sl-markdown-content h1::after,
+.sl-markdown-content h2::after {
+  content: ".";
+  color: var(--gd-accent);
+  margin-left: 2px;
+}
+
+/* Sidebar headings feel like the marketing eyebrows */
+starlight-menu-button,
+.sidebar nav a[aria-current="page"] {
+  color: var(--gd-foreground);
+}
+
+.sidebar nav a {
+  color: var(--gd-muted);
+}
+
+.sidebar nav a:hover {
+  color: var(--gd-foreground);
+  background: var(--gd-surface-100);
+}
+
+.sidebar nav a[aria-current="page"] {
+  background: var(--gd-surface-200);
+  color: var(--gd-foreground);
+  border-left: 2px solid var(--gd-accent);
+}
+
+/* Inline code, kbd, samp */
+.sl-markdown-content :not(pre) > code {
+  background: var(--gd-surface-200);
+  border: 1px solid var(--gd-border);
+  color: var(--gd-accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Code blocks */
+.expressive-code,
+.expressive-code .frame {
+  border-radius: 10px;
+}
+
+/* Cards and panels */
+.sl-container {
+  max-width: 72rem;
+}
+
+/* Footer echoes the marketing site */
+.sl-footer,
+footer {
+  border-top: 1px dashed var(--gd-faint);
+  color: var(--gd-muted);
+}
+
+/* --------------------------------------------------------------------------
+ * Buttons — match the landing page (.btn-primary / .btn-ghost / .btn-accent)
+ * Starlight's <LinkButton> renders .sl-link-button with primary|secondary|minimal.
+ * We restyle those variants (plus hero .actions a, pagination, EditLink) so
+ * every CTA in the docs looks identical to the marketing site.
+ * ------------------------------------------------------------------------ */
+.sl-link-button,
+.hero .actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding: 0 0.9rem;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+@media (min-width: 50rem) {
+  .sl-link-button,
+  .hero .actions a {
+    height: 2.5rem;
+    padding: 0 1.05rem;
+    font-size: 13.5px;
+  }
+}
+
+.sl-link-button:hover,
+.hero .actions a:hover {
+  transform: translateY(-1px);
+}
+
+/* Primary = marketing .btn-primary (solid foreground on dark) */
+.sl-link-button.primary,
+.hero .actions a.primary {
+  background: var(--gd-foreground);
+  color: var(--gd-background) !important;
+  border-color: var(--gd-foreground);
+}
+.sl-link-button.primary:hover,
+.hero .actions a.primary:hover {
+  filter: brightness(0.92);
+  background: var(--gd-foreground);
+  color: var(--gd-background) !important;
+}
+
+/* Secondary = marketing .btn-ghost (transparent, strong border) */
+.sl-link-button.secondary,
+.hero .actions a.secondary {
+  background: transparent;
+  color: var(--gd-foreground) !important;
+  border-color: var(--gd-border-strong);
+}
+.sl-link-button.secondary:hover,
+.hero .actions a.secondary:hover {
+  background: var(--gd-surface-200);
+  border-color: var(--gd-border-strong);
+  color: var(--gd-foreground) !important;
+}
+
+/* Minimal = naked link with accent caret, matches in-copy CTAs */
+.sl-link-button.minimal,
+.hero .actions a.minimal {
+  background: transparent;
+  color: var(--gd-foreground) !important;
+  border-color: transparent;
+  padding-inline: 0;
+  height: auto;
+}
+.sl-link-button.minimal:hover,
+.hero .actions a.minimal:hover {
+  color: var(--gd-accent) !important;
+  transform: none;
+}
+
+/* Normalize the icon size inside buttons — Starlight defaults to 1.5rem */
+.sl-link-button svg,
+.hero .actions a svg {
+  width: 0.95em;
+  height: 0.95em;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+ * Cards / LinkCards — tighten corners + align with surface tokens
+ * ------------------------------------------------------------------------ */
+.sl-link-card,
+.card {
+  border-radius: 10px !important;
+  border: 1px solid var(--gd-border) !important;
+  background: var(--gd-surface-100) !important;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+.sl-link-card:hover,
+.card:hover {
+  border-color: var(--gd-border-strong) !important;
+  background: var(--gd-surface-200) !important;
+  transform: translateY(-1px);
+}
+
+/* Pagination links at the bottom of doc pages */
+.pagination-links a {
+  border-radius: 10px !important;
+  border-color: var(--gd-border) !important;
+  background: var(--gd-surface-100) !important;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+.pagination-links a:hover {
+  border-color: var(--gd-border-strong) !important;
+  background: var(--gd-surface-200) !important;
+  transform: translateY(-1px);
+}
+
+/* "Edit page" / "Last updated" footer actions */
+.sl-markdown-content a[rel~="nofollow"][href*="github.com"],
+.meta a {
+  color: var(--gd-muted);
+}
+.sl-markdown-content a[rel~="nofollow"][href*="github.com"]:hover,
+.meta a:hover {
+  color: var(--gd-foreground);
+}
+
+/* Focus ring across interactive elements echoes the accent */
+.sl-link-button:focus-visible,
+.sl-link-card:focus-visible,
+.pagination-links a:focus-visible,
+.hero .actions a:focus-visible {
+  outline: 2px solid var(--gd-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-link-button,
+  .hero .actions a,
+  .sl-link-card,
+  .pagination-links a {
+    transition: none;
+  }
+  .sl-link-button:hover,
+  .hero .actions a:hover,
+  .sl-link-card:hover,
+  .pagination-links a:hover {
+    transform: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

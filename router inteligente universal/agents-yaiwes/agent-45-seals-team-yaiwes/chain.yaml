@@ -1,0 +1,44 @@
+schema: yaiwes.chain/v1
+
+# Agente 45 — Seals Team YAIWES: micro-worker de integración de componentes.
+# Fusión (no desde cero): seals_core del wordflow (ejecutor+DAG+
+# idempotencia+sheriff_policy+stuck_detector+crash_resume+worker_bootstrap)
+# cableado tras SealsWorker.execute(TaskContract) -> NodeResult.
+
+input_block: |
+  Crear agente nuevo llamado Seals Team YAIWES como micro-worker
+  (NO orquestador). Firma: SealsWorker.execute(TaskContract) -> NodeResult.
+  Fusión de complementos de varios agentes ya existentes, cableado.
+
+agent:
+  id: agent-45-seals-team-yaiwes
+  framework: wordflow_loop
+  group: workers
+  role: micro_worker
+  route: [cerebras, claude]
+  fallback: []
+  max_tokens: 1800
+
+context:
+  text: |
+    Implementación canónica: chat router/wordflow loop code Yaiwes/backend/
+    Seals team YAIWES/seals_core/ (ejecutor, idempotencia, dag_engine,
+    sheriff_policy, stuck_detector, crash_resume, worker_bootstrap,
+    verificador, evidence). Adapter: seals_core/seals_worker.py.
+    Contrato de entrada: task_contract.json (schema seals-team.task-contract/v1).
+
+steps:
+  - id: worker_exec
+    task: |
+      Ejecutar un TaskContract tipado a través de SealsWorker y devolver
+      NodeResult tipado; FAIL_CLOSED si la ruta DAG no lo declara.
+    checks:
+      - kind: python_exec
+        module: seals_worker.py
+        test: |
+          from seals_worker import SealsWorker, TaskContract
+          r = SealsWorker().execute(TaskContract(tipo="verificar_existencia", nombre="ejecutor.py"))
+          assert r.status == "PASS" and r.evidencia["existe"] is True
+      - kind: no_secrets
+
+edges: []

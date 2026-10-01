@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 19072329,
+  "bundle_sha256": "c5570bbd6f63370aa036c706ae551fcf0b5a13549190d4c12c6e4130f35df619",
+  "extracted_tree": {
+    "bytes": 26679152,
+    "files": 1695,
+    "sha256": "80802d729d6d130315371b3cbb71e33656f35ee32a0dd636f82f3bb51123040e"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "onlook.bundle.zip.part-0001",
+      "sha256": "de6cdfc8979c7e0583f1aec36516cc803101db54d2682c2265f8393991a4f244"
+    },
+    {
+      "bytes": 6489417,
+      "name": "onlook.bundle.zip.part-0002",
+      "sha256": "4ab1ed3829243acda3431f758c8f8dbd63236ca9efcde71cdb59d3e33fe905a7"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "onlook",
+  "source_bytes": 26679152,
+  "source_commit": "423e2e924366419e418ee049093872d535eea41a",
+  "source_files": 1695,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/onlook-dev/onlook",
+  "source_tree": {
+    "bytes": 26679152,
+    "files": 1695,
+    "sha256": "80802d729d6d130315371b3cbb71e33656f35ee32a0dd636f82f3bb51123040e"
+  }
+}

@@ -1,0 +1,28 @@
+schema_id: skills_schema/taste.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Referencias de diseño para evitar UI genérica
+work_surface: FRONTEND
+acceptance:
+- la UI no coincide con patrón genérico
+- usa la referencia declarada
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/taste.json
+  sha256: pending
+oracle: diff:ui_vs_patron_generico
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

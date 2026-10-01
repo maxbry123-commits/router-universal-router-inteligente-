@@ -1,0 +1,3382 @@
+{
+  "schema": "yaiwes.plan-audit-post-code/v1",
+  "source_commit": "aa8fed0631913783c77d3b9ad3fcca62e1978c11",
+  "limits": [
+    "Local provider response is mocked; no OpenAI generation demonstrated",
+    "No external memory adapter or HF restore demonstrated",
+    "Images are metadata references; frontend and visual review pending",
+    "Existing provider test disagrees with openai in origin/main"
+  ],
+  "checks": {
+    "focused_tests": "68 passed, 1 deselected, 29 warnings in 1.58s",
+    "ruff_backend": "PASS"
+  },
+  "source_inventory_summary": {
+    "documents": 30,
+    "distinct_document_content": 27,
+    "document_duplicates": {
+      "5f42d655a9761ae2c46b0ea14b0cb8f60267d5837631bba23e790c65b2a31988": 3,
+      "0b168ead045f2c5f1fae480e89c97ab4add0f77da8d51c3c6155e46fd0a4e918": 2
+    },
+    "skills": 82,
+    "images": 82,
+    "documents_preserved": 30,
+    "skills_preserved": 82,
+    "images_hash_verified": 82,
+    "runtime_verified_by_this_audit": 0,
+    "visually_verified_by_this_audit": 0
+  },
+  "documents": [
+    {
+      "source": "chat router/01-PLAN/DESPLIEGUE-DETERMINISTA-UNIVERSAL-v2.md",
+      "current": "chat router/01-PLAN/ANEXOS/DESPLIEGUE-DETERMINISTA-UNIVERSAL-v2.md",
+      "source_blob": "3a0e39b61b30ce244aadc3337e1446afff61917b",
+      "sha256": "d622f7c486ab0c31e842385f207d06d35993ac9ab8caf045d7e47b2c8dfbf1b0",
+      "bytes": 5247,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 6,
+      "headings_sample": [
+        "DESPLIEGUE DETERMINISTA UNIVERSAL v2.0",
+        "Documento reusable para cualquier despliegue a GitHub — 0% LLM",
+        "1. ANÁLISIS DEL MÉTODO DE SONNET (v1.0) — SÍ LO ENTIENDO"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
+      "current": "chat router/01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
+      "source_blob": "8b1615c5c2afd485ddc900e8e0fb381140be8751",
+      "sha256": "6e25fb86d2bbab9937a7f5069270f31b7ef8e8dc4df8280cd77cbf8ae6791c7f",
+      "bytes": 4402,
+      "kind": "DSL",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "YAML_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 3,
+      "headings_sample": [
+        "DSL DAG — MEMORIA Y ALMACENAMIENTO (ejecuta: MANUS) + PUENTE HF (ejecuta: OPUS)",
+        "Fuente: Director M6, M40, M43, M44.4, doc24; auditoría de Manus 2026-09-27 (tabla de 13 componentes).",
+        "Regla madre: SOLO CABLEAR componentes ya descargados. No inventar, no sustituir, no fingir instalado. Lo que falte = GAP."
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+      "current": "chat router/01-PLAN/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+      "source_blob": "a1eacb874edf2a46a819ae45e6b19ca7364d2952",
+      "sha256": "fdf1f59a0ce93779f9889f56cc61b926b33c0612833fdea2de015d3b3975ee1b",
+      "bytes": 44714,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 115,
+      "headings_sample": [
+        "Especificación visual y funcional del panel — YAIWES / FROMTED / referencias",
+        "0. Cómo leer este archivo",
+        "1. Lenguaje visual global"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml",
+      "current": "chat router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml",
+      "source_blob": "58ec2d9858eee1a5bcfa65e77821d6b30eb196b4",
+      "sha256": "fb65fc6e5a2c64880444e92137166ef5bc6f70905ebc3446f1497af231caba5e",
+      "bytes": 11409,
+      "kind": "DSL",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "YAML_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 13,
+      "headings_sample": [
+        "=====================================================================",
+        "PLAN DSL DAG - PARTE 0: CONTRATO DE EJECUCION — CHAT YAIWES",
+        "Version 1.0 | 2026-09-27 | Opus. Formato copiado de agentes/Claude notas/PLAN-DSL-DAG-00-CONTRATO.yaml"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml",
+      "current": "chat router/01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml",
+      "source_blob": "0a2d76bd19479dca73bf216ff0ae461e3e131652",
+      "sha256": "314229bd96b18abad21185b7428b53bb26e4133310b3b37053ef9cf96e6dc673",
+      "bytes": 11877,
+      "kind": "DSL",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "YAML_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 26,
+      "headings_sample": [
+        "=====================================================================",
+        "PLAN DSL DAG - PARTE 1: NODOS — CHAT YAIWES",
+        "El contrato de ejecucion esta en: PLAN-DSL-DAG-00-CONTRATO.yaml. LEER EL CONTRATO PRIMERO."
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/PLAN-MAESTRO-CHAT.yaml",
+      "current": "chat router/01-PLAN/PLAN-MAESTRO-CHAT.yaml",
+      "source_blob": "5b0d3a9b780b60a8a3dfbc46b94ca6902fe4192a",
+      "sha256": "2f59d7f462d384e4a78b48c34bd37cbbfc995b44feb65009809c02f038751704",
+      "bytes": 8061,
+      "kind": "DSL",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "YAML_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 11,
+      "headings_sample": [
+        "PLAN MAESTRO — CHAT YAIWES (DSL DAG)",
+        "Formato inspirado en el plan de 4 objetivos (repo agentes: PLAN-DSL-DAG-00-CONTRATO / 01-NODOS) y en las instrucciones del Director.",
+        "Cada nodo cita de qué instrucción sale (ver ../00-INSTRUCCIONES: M1..M44, documentos 1..26)."
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM-2.md",
+      "current": "chat router/01-PLAN/T-12/T SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM-2.md",
+      "source_blob": "f8f04e0de8352ff016cc024bad6cfb0a7f8cf811",
+      "sha256": "5f42d655a9761ae2c46b0ea14b0cb8f60267d5837631bba23e790c65b2a31988",
+      "bytes": 17142,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 46,
+      "headings_sample": [
+        "SALIDA 2 📌 — T-12 BÚSQUEDA DE CONTEXTO DE COMUNIDAD SIN LLM",
+        "0. OBJETIVO",
+        "1. MOTOR DE BÚSQUEDA EXISTENTE EN MAIN"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM.md",
+      "current": "chat router/01-PLAN/T-12/T SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM-2.md",
+      "source_blob": "f8f04e0de8352ff016cc024bad6cfb0a7f8cf811",
+      "sha256": "5f42d655a9761ae2c46b0ea14b0cb8f60267d5837631bba23e790c65b2a31988",
+      "bytes": 17142,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 46,
+      "headings_sample": [
+        "SALIDA 2 📌 — T-12 BÚSQUEDA DE CONTEXTO DE COMUNIDAD SIN LLM",
+        "0. OBJETIVO",
+        "1. MOTOR DE BÚSQUEDA EXISTENTE EN MAIN"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-00-INPUT-BLOCK-VERBATIM.md",
+      "current": "chat router/01-PLAN/T-11/T-11-00-INPUT-BLOCK-VERBATIM.md",
+      "source_blob": "0c5f46b60f49499857270f56e4465f30179023df",
+      "sha256": "e48344f0350e3f2545d53f19419aafcf3797b20c028f0f4e49d41627d60aa8e3",
+      "bytes": 13010,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 30,
+      "headings_sample": [
+        "T-11 — INPUT BLOCK VERBATIM — DIRECTOR",
+        "IB-T11-01 — Aprobación de los 19 puntos",
+        "IB-T11-02 — Sistema espejo / paralelismo"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-01-DSL-DAG-MASTER.md",
+      "current": "chat router/01-PLAN/T-11/T-11-01-DSL-DAG-MASTER.md",
+      "source_blob": "1340f9f9481b8a07be1431b96e3a10e3f934021c",
+      "sha256": "85895cd2efedfd5ff9aaa3a2c9f14bd184f9fd5cff49c56f075fa3cba771cb1a",
+      "bytes": 11012,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 3,
+      "headings_sample": [
+        "T-11 — DSL/DAG MAESTRO — ENDURECIMIENTO, MIRRORS Y ARQUITECTURA AUDITABLE",
+        "Micro flujo global",
+        "Regla de compatibilidad"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-02-PROGRAMACION-NUEVO-01-A-19.md",
+      "current": "chat router/01-PLAN/T-11/T-11-02-PROGRAMACION-NUEVO-01-A-19.md",
+      "source_blob": "f75b903a078e64b1c7d00c8355fdd76eb4c2ab6f",
+      "sha256": "201837dc7b6906940b52c8baea2b46c7911c856f8df42d7d18855bd44c2769f6",
+      "bytes": 7829,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 22,
+      "headings_sample": [
+        "T-11 — PROGRAMACIÓN EXACTA DE NUEVO-01…NUEVO-19",
+        "NUEVO-01 — Input Parser determinista",
+        "NUEVO-02 — Query Compiler determinista"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-03-MIRROR-10-RAICES-TOOLS-SKILL-RUNTIME-1.md",
+      "current": "chat router/01-PLAN/T-11/T-11-03-MIRROR-10-RAICES-TOOLS-SKILL-RUNTIME-1.md",
+      "source_blob": "cd7621cccb5d28df3bddca395d7850f1765cb530",
+      "sha256": "0b168ead045f2c5f1fae480e89c97ab4add0f77da8d51c3c6155e46fd0a4e918",
+      "bytes": 4652,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 18,
+      "headings_sample": [
+        "T-11 — MIRROR FACTORY + 10 RAÍCES + TOOLING NATIVO",
+        "1. Mirror Factory",
+        "2. Separación en 10 raíces"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-03-MIRROR-10-RAICES-TOOLS-SKILL-RUNTIME.md",
+      "current": "chat router/01-PLAN/T-11/T-11-03-MIRROR-10-RAICES-TOOLS-SKILL-RUNTIME-1.md",
+      "source_blob": "cd7621cccb5d28df3bddca395d7850f1765cb530",
+      "sha256": "0b168ead045f2c5f1fae480e89c97ab4add0f77da8d51c3c6155e46fd0a4e918",
+      "bytes": 4652,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 18,
+      "headings_sample": [
+        "T-11 — MIRROR FACTORY + 10 RAÍCES + TOOLING NATIVO",
+        "1. Mirror Factory",
+        "2. Separación en 10 raíces"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-04-HUELLA-DIGITAL-ARCHITECTURE-XRAY.md",
+      "current": "chat router/01-PLAN/T-11/T-11-04-HUELLA-DIGITAL-ARCHITECTURE-XRAY.md",
+      "source_blob": "ddd84cd072955e18c0accd625fa50aa5afa47fd4",
+      "sha256": "71a9c9b3b263dd296f464c00241a052cf05048390019ae30e5103bd1dad83525",
+      "bytes": 3001,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 10,
+      "headings_sample": [
+        "T-11 — PLANTILLA OPERATIVA PARA README ARQUITECTURA / X-RAY",
+        "Regla maestra",
+        "Dos documentos derivados obligatorios"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-05-HANDOFF-TESTS-PASS-FAIL.md",
+      "current": "chat router/01-PLAN/T-11/T-11-05-HANDOFF-TESTS-PASS-FAIL.md",
+      "source_blob": "7fa243c77bfec6075da798eea09c76f28d280d0d",
+      "sha256": "b80d6dbb3c3eb3fda31d77bbe28e274a619d9e944246d4b9a632058deaa9d7d4",
+      "bytes": 3727,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 16,
+      "headings_sample": [
+        "T-11 — HANDOFF / TESTS / PASS-FAIL",
+        "Estado de entrada",
+        "Orden de trabajo"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-I-00-INPUT-BLOCK-VERBATIM.md",
+      "current": "chat router/01-PLAN/T-11/T-11-I-00-INPUT-BLOCK-VERBATIM.md",
+      "source_blob": "03b1a385f3dc8673be8150a0da834c4ee42a9259",
+      "sha256": "db6e7e4089c261a8548a5544888d431e2acacae74fa75bc9124dc544cd11bc94",
+      "bytes": 3135,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 4,
+      "headings_sample": [
+        "SALIDA 3 📌 — T-11-I — INPUT BLOCK VERBATIM",
+        "Confirmación",
+        "INPUT BLOCK VERBATIM"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-I-01-SKILL-RUNTIME-SCHEMA-CODE.md",
+      "current": "chat router/01-PLAN/T-11/T-11-I-01-SKILL-RUNTIME-SCHEMA-CODE.md",
+      "source_blob": "ee24f8aec9e6eb33a7a2750b0e9bede391a70e15",
+      "sha256": "c92a67167b5bf5a0bc6d08df93dc8d3100b7ac5f6253e094b98363e8a2dd9631",
+      "bytes": 4247,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 7,
+      "headings_sample": [
+        "T-11-I — CONTRATO UNIVERSAL SKILL → SCHEMA → CODE",
+        "Objetivo",
+        "Schema universal"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-I-02-SKILLS-CONVERTIDOS-A-SCHEMA.md",
+      "current": "chat router/01-PLAN/T-11/T-11-I-02-SKILLS-CONVERTIDOS-A-SCHEMA.md",
+      "source_blob": "8f792c00b9e1cab0dc5206e3beda4d8fb5b81403",
+      "sha256": "ea225d6a3d400e1487fecce92d03e995dd38f07ed2c738be884650b1779e6d1c",
+      "bytes": 8173,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 10,
+      "headings_sample": [
+        "T-11-I — SKILLS DEL DIRECTOR CONVERTIDOS A SCHEMA",
+        "SKILL-01 — ECC",
+        "SKILL-02 — Agent Skills"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-I-03-DSL-DAG-TESTS-HANDOFF.md",
+      "current": "chat router/01-PLAN/T-11/T-11-I-03-DSL-DAG-TESTS-HANDOFF.md",
+      "source_blob": "585ff679ed1a300e35dcf53f63473e4d717b763f",
+      "sha256": "493431e104a8c541510005aa4c407c7a96b9f83b829a7e132e9b8d7c0b90ce88",
+      "bytes": 6105,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 5,
+      "headings_sample": [
+        "T-11-I — DSL/DAG + TESTS + HANDOFF DEVIN",
+        "Estructura lógica",
+        "Tests obligatorios"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T-11-I-AUTONOMOUS-SKILL-INGEST-HERMES-OPENCLAW.md",
+      "current": "chat router/01-PLAN/T-11/T-11-I-AUTONOMOUS-SKILL-INGEST-HERMES-OPENCLAW.md",
+      "source_blob": "2f18db401ff53ecd5b2013e467efcb7dc4f2874e",
+      "sha256": "ac02d37c633c277844d63eb58e8cd7680674fb0d9202d698d47e5ec34884981e",
+      "bytes": 26305,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 50,
+      "headings_sample": [
+        "T-11-I+ — AUTONOMOUS SKILL INGEST",
+        "Hermes / Hitman + OpenClaw / Ovni",
+        "SKILL → SCHEMA → CODE → FABLES/DEEPSEEK HARNESS → TEST → REGISTRY → EXECUTABLE"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/T.SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM-1.md",
+      "current": "chat router/01-PLAN/T-12/T SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM-2.md",
+      "source_blob": "f8f04e0de8352ff016cc024bad6cfb0a7f8cf811",
+      "sha256": "5f42d655a9761ae2c46b0ea14b0cb8f60267d5837631bba23e790c65b2a31988",
+      "bytes": 17142,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 46,
+      "headings_sample": [
+        "SALIDA 2 📌 — T-12 BÚSQUEDA DE CONTEXTO DE COMUNIDAD SIN LLM",
+        "0. OBJETIVO",
+        "1. MOTOR DE BÚSQUEDA EXISTENTE EN MAIN"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/plan chat y agentes en route.md",
+      "current": "chat router/01-PLAN/plan chat y agentes en route.md",
+      "source_blob": "278cd707b84f525cfd3ba40bdf5ec6688bd02c56",
+      "sha256": "aa5cd0ee6cb713a3c9797a51eb6780309d8a279d01f1c4d64c7ba3c100b834fd",
+      "bytes": 40311,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 22,
+      "headings_sample": [
+        "============================================================",
+        "INPUT BLOCK VERBATIM — INSTRUCCIONES LITERALES DEL DIRECTOR",
+        "(copiadas tal cual de la conversacion, sin resumir ni editar)"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/🏗️🏗️🔌🔌 JSON para IA (DSL _ MAXBRY _ YAIWES _ NCT) este es el enchufe de todas las fichas de code del sofware el p...rdicacion para Ai y luego texto libre para mí y luego el Jason code del enchufe 🔌 🔌 🔌 🔌 🔌.md",
+      "current": "chat router/01-PLAN/ANEXOS/🏗️🏗️🔌🔌 JSON para IA (DSL _ MAXBRY _ YAIWES _ NCT) este es el enchufe de todas las fichas de code del sofware el p...rdicacion para Ai y luego texto libre para mí y luego el Jason code del enchufe 🔌 🔌 🔌 🔌 🔌.md",
+      "source_blob": "aa023a5c5124eb574bcaa63d0b69607f1d18590c",
+      "sha256": "128418715c79118161cadced713b3f58c32c875cb57dc21b60d3edca29f6399a",
+      "bytes": 12758,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 0,
+      "headings_sample": []
+    },
+    {
+      "source": "chat router/01-PLAN/📌MAVIS-PARALLEL-100X.md",
+      "current": "chat router/01-PLAN/ANEXOS/📌MAVIS-PARALLEL-100X.md",
+      "source_blob": "95cad7b996782f95b2f5b4a6c253224046eaec6f",
+      "sha256": "e27040cc58b2d8c4566043359f2115cf924454554ec689637506961d64d84e01",
+      "bytes": 57079,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 69,
+      "headings_sample": [
+        "⚡ Mavis Parallel 100x — Guía completa con código",
+        "ÍNDICE",
+        "1. Resumen ejecutivo"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/📌MAX-SYSTEM-100X-FINAL-1.md",
+      "current": "chat router/01-PLAN/ANEXOS/📌MAX-SYSTEM-100X-FINAL-1.md",
+      "source_blob": "b9bc9a7f56cf17607b863829213f7bcb0f8b8081",
+      "sha256": "6f9281123c002a99dbc9b9dbfeabf4d1e1987a90150eaa127845c647968449db",
+      "bytes": 43453,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 90,
+      "headings_sample": [
+        "🚀 SISTEMA MAX 10x — Paralelismo 100x + Multi-Sandbox + Memoria Persistente + Orquestador",
+        "ÍNDICE",
+        "PARTE 1 — INVESTIGACIÓN: Cómo mejorar 100x el paralelismo"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/🔌 enchufe universal parte 1 fusion fables Kimi k 3 universal_plugin_bus_v2_integrated.py",
+      "current": "chat router/01-PLAN/ANEXOS/🔌 enchufe universal parte 1 fusion fables Kimi k 3 universal_plugin_bus_v2_integrated.py",
+      "source_blob": "c017bb2c1a09c8bb738e1774d656d59340ab56d5",
+      "sha256": "5e4595a86bfd68a3c1fde70ba614ce7b9ec6ea4d6c867912e836cca33c626fc3",
+      "bytes": 30030,
+      "kind": "PYTHON_REFERENCE",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 14,
+      "headings_sample": [
+        "── Enums ──",
+        "── Data classes base ──",
+        "── Excepciones ──"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/🔌✅ enchufe universal parte 2 fusión de Kimi k 3 y fables ficha_contract_v2.py",
+      "current": "chat router/01-PLAN/ANEXOS/🔌✅ enchufe universal parte 2 fusión de Kimi k 3 y fables ficha_contract_v2.py",
+      "source_blob": "a72508027cc2458553ef6a2255a9aa33d9a77a21",
+      "sha256": "759d0d7855d8df106462b966bfc4ee543f24a3e789a27048f253159b58ff8d1a",
+      "bytes": 16967,
+      "kind": "PYTHON_REFERENCE",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 15,
+      "headings_sample": [
+        "──────────────────────────────────────────────────────────────",
+        "Constantes",
+        "──────────────────────────────────────────────────────────────"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/🧑‍💻README.md",
+      "current": "chat router/01-PLAN/ANEXOS/🧑‍💻README.md",
+      "source_blob": "4229335c18fe4f755e14167c1dc64d97fe9b005a",
+      "sha256": "89d1ac3a15f86ebfee2768373ce4bbbb02120ed2d8021e851485eb942e1f03c5",
+      "bytes": 3695,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 9,
+      "headings_sample": [
+        "YAIWES — Rowboat + Ruflo + Hermes + OpenClaw",
+        "Roles",
+        "Qué hace cada uno"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/🧑‍💻arquitectura chat agentes🎯🎯🎯🆘🆘🆘🆘🆘➡️ NO TOCAR ⚠️⚠️⚠️⚠️🎯🆘🆘🆘🆘.md",
+      "current": "chat router/01-PLAN/ANEXOS/🧑‍💻arquitectura chat agentes🎯🎯🎯🆘🆘🆘🆘🆘➡️ NO TOCAR ⚠️⚠️⚠️⚠️🎯🆘🆘🆘🆘.md",
+      "source_blob": "eef0cfdc84d776f036cd112813e4bf95791f1a4a",
+      "sha256": "6917e6f5967a91cec36cb458a6bf08b742f0d190d6430df357b26950cbd52ead",
+      "bytes": 54073,
+      "kind": "DOCUMENT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 16,
+      "headings_sample": [
+        "Goal\tAntes de ejecutar\tDespués de ejecutar",
+        "HANDOFF UI-001",
+        "Objetivo"
+      ]
+    },
+    {
+      "source": "chat router/01-PLAN/🧑‍💻pasted_content.txt",
+      "current": "chat router/01-PLAN/ANEXOS/🧑‍💻pasted_content.txt",
+      "source_blob": "05f2e2bf7de300e2125341c54310c5be22dcc276",
+      "sha256": "9559722e60265988b4c27a49e658135fd10353f42f089ed9b95dbb26eb19ac7a",
+      "bytes": 5331,
+      "kind": "INPUT",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: EXECUTION_AND_READBACK_PER_REQUIREMENT"
+      },
+      "heading_count": 1,
+      "headings_sample": [
+        "Componentes de memoria y almacenamiento"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/01-folder-component-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/01-folder-component-DESCARGAR.sh",
+      "source_blob": "c9b68b198675f961f7c35da27c114a631fa8535e",
+      "sha256": "c9c20b03799a4d91bb0d9b8d58b4ec9b9dde64f572d32533abf799681b5a6cd0",
+      "bytes": 437,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/01-folder-yaiwes.tsx",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/01-folder-yaiwes.tsx",
+      "source_blob": "892666cb59c9d2b048b3e4d3cd611686c71a1afd",
+      "sha256": "33d89c994a13f2fb6c95a2cf6ea33f348bdb09db9ea8491f2ddf3637e908afa4",
+      "bytes": 526,
+      "kind": "TSX",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "🚩 PENDIENTE: TSX_NOT_PARSED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/02-bounce-sidebar-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/02-bounce-sidebar-DESCARGAR.sh",
+      "source_blob": "41a815d3d482f91c0615ee9179677a9faa847bee",
+      "sha256": "662c6227da5535b09ef132d1129bc344fd5dd6311a57d295c01905731c0103d6",
+      "bytes": 431,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/02-bounce-sidebar-yaiwes.tsx",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/02-bounce-sidebar-yaiwes.tsx",
+      "source_blob": "82bb25c3c77989a46ba826a308b57c99cc2054a4",
+      "sha256": "0fde180859d139c691f956de3736ae817f201ccd3983b6f584c22cc5e99d813a",
+      "bytes": 698,
+      "kind": "TSX",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "🚩 PENDIENTE: TSX_NOT_PARSED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/03-hook-sidebar-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/03-hook-sidebar-DESCARGAR.sh",
+      "source_blob": "7253cfd5b75544ef484d5f8916e7f02aee69f255",
+      "sha256": "0059354d8947f3d5f040d4c9e5fbb267ad3ca5a1b94a6b60a8a1b4f753be2a8d",
+      "bytes": 425,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/03-hook-sidebar-yaiwes.tsx",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/03-hook-sidebar-yaiwes.tsx",
+      "source_blob": "a3fa36c1568ab5f04dcd5a54b7a58df6a9916d37",
+      "sha256": "811b6c2b0f85ac88a3f463bf2ad1bcc4df727d299ef8dc3b2176d87ee0aef005",
+      "bytes": 706,
+      "kind": "TSX",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "🚩 PENDIENTE: TSX_NOT_PARSED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/04-family-drawer-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/04-family-drawer-DESCARGAR.sh",
+      "source_blob": "a46d8fd57a668dbb7840896678f56167369a3c87",
+      "sha256": "a11ea17abef2a62c2cc8237aaca6289614fa4006a7c41adc1f55c49adaeab623",
+      "bytes": 428,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/04-family-drawer-yaiwes.tsx",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/04-family-drawer-yaiwes.tsx",
+      "source_blob": "05fa312916683c7cdd0504a0d0e3ecfa0135c13b",
+      "sha256": "9795ac54727597ea97aa87184f41a6d373840bcfcef27559df89a92e242f7386",
+      "bytes": 409,
+      "kind": "TSX",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "🚩 PENDIENTE: TSX_NOT_PARSED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/05-proximity-sidebar-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/05-proximity-sidebar-DESCARGAR.sh",
+      "source_blob": "49ab1720799bc1ed530da63b950eb672079e2b0e",
+      "sha256": "256ccbf140a84c56d03920b2382db6b2d3fe72d78864c33c3ee2d426257cbd5d",
+      "bytes": 440,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/05-proximity-sidebar-yaiwes.tsx",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/05-proximity-sidebar-yaiwes.tsx",
+      "source_blob": "a0b8ffb6e4b9554be00cf7998569e5b654f72b5d",
+      "sha256": "05156ad7259d11a8f27f1d0f3a23039bfe836b5c70a458bcb476ea2b71ade31c",
+      "bytes": 2117,
+      "kind": "TSX",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "🚩 PENDIENTE: TSX_NOT_PARSED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/06-duration-picker-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/06-duration-picker-DESCARGAR.sh",
+      "source_blob": "be94b7bf335ae7dfee988f5631e26d78403cec53",
+      "sha256": "e1fbcc1cde1b60a909fe00320072cb9241495909d813fab9191f5b269597ed57",
+      "bytes": 434,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/07-fluid-orb-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/07-fluid-orb-DESCARGAR.sh",
+      "source_blob": "62d2f00931af8fa57b285daf1e62be8f0411a921",
+      "sha256": "aed50e075b63f6054694eedadaa4e8825fe69d4ba7306b499d62c10da5fa2bec",
+      "bytes": 416,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/08-scroll-progress-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/08-scroll-progress-DESCARGAR.sh",
+      "source_blob": "8cd19727b275217ecb3aa3cbdc979fbbf2254322",
+      "sha256": "24caeeb581f08a41bc2dc4bfea0c492b3ec201d2333e9ed3656b8f13b0920de0",
+      "bytes": 434,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/09-code-block-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/09-code-block-DESCARGAR.sh",
+      "source_blob": "3d08330fb8016622e6e6eadd94c70b7062d565fa",
+      "sha256": "409f119c2cbbeed6d546f3541f2abdb5288e4b3b0836ea79ac4b2cd5cbe6def2",
+      "bytes": 419,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/10-otp-input-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/10-otp-input-DESCARGAR.sh",
+      "source_blob": "788cf80a3ee56fc63cf914db3df67e661e3e5cc1",
+      "sha256": "fc6352c944cf48c174078b57b0dd528d4651f845eb9322b63c67117fadd1516c",
+      "bytes": 416,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/11-gravity-letters-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/11-gravity-letters-DESCARGAR.sh",
+      "source_blob": "58a3ef1b77aa923a0743872ffbb906c67614e981",
+      "sha256": "a9de88cd166d2f66c642219f75cf616a5e337bc75a994851c00d0d07df95b8ff",
+      "bytes": 434,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/12-github-activity-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/12-github-activity-DESCARGAR.sh",
+      "source_blob": "a2ea952bd8ab026c01f3ddc704dbf29f659feb7e",
+      "sha256": "03df7a4dc7e2f1eb0ac5be1456e1c8c892169dcb86abeb02657e2e2b9635e3f1",
+      "bytes": 434,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/13-emoji-reaction-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/13-emoji-reaction-DESCARGAR.sh",
+      "source_blob": "2700e1d0c109b083cabb8c3cb2276b9464c9dcf7",
+      "sha256": "1180c073a13e046bbadbd464df3ff1a6105d0996fcad1f86bcb6818d5fb34ca4",
+      "bytes": 431,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/14-notification-bell-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/14-notification-bell-DESCARGAR.sh",
+      "source_blob": "122d5f02d215c398198b6eb311f82967a0945124",
+      "sha256": "a2c4c282ec406450236879f5402a012663c85889621fe0aad48c557c40664845",
+      "bytes": 440,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/15-step-player-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/15-step-player-DESCARGAR.sh",
+      "source_blob": "817175a77c4f751e1df24daebbe29d39f66ab29b",
+      "sha256": "84f2242066056993033fa01aaad7b557edc87b8d04311e17f72870005322e0e5",
+      "bytes": 422,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/16-grid-reveal-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/16-grid-reveal-DESCARGAR.sh",
+      "source_blob": "df74f330a504c5e1e76c8f1200f0811d470d3fba",
+      "sha256": "69af9f4e3b0a0f01ec73c5c305bb8ea089d47735532f1ed87d141364e300dd01",
+      "bytes": 422,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/17-gooey-nav-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/17-gooey-nav-DESCARGAR.sh",
+      "source_blob": "3c7ba1baca92cc7450da5cda643f91893e8fe951",
+      "sha256": "8de031c94efab99f89f89d0d314cab819c9250391641b3aabc1d0f599bfffff7",
+      "bytes": 416,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/18-delete-button-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/18-delete-button-DESCARGAR.sh",
+      "source_blob": "784ee6d1f2c5d5e97fa0d52c09c65c279ce09556",
+      "sha256": "8977a200f85835bc870c24bbbdc970b37e05ac0e1e8a47f149819d45082d8ebe",
+      "bytes": 428,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/19-animated-counter-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/19-animated-counter-DESCARGAR.sh",
+      "source_blob": "d2f45e27b0944b9c0747a43883800f223ca57b1e",
+      "sha256": "d13b378067407ce028fd58c745031a02ec2e3bf3bd5e43425d69e9e6fa3c4183",
+      "bytes": 437,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/20-matrix-orb-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/20-matrix-orb-DESCARGAR.sh",
+      "source_blob": "c32569dfc9bfc1de5a49b27d3f016bf028a08db4",
+      "sha256": "8a8eb5669070b51b3a9b73b61a01a027bb6c5b500a832fd0c4831563ade4b813",
+      "bytes": 419,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/21-task-list-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/21-task-list-DESCARGAR.sh",
+      "source_blob": "116881644be82e1fe3b4b52072b4769c8ab740b4",
+      "sha256": "7a8f63f278c3b08f0e9def8cdf8b6ec3327dd20720ac22e83b4c5d9d01582fcd",
+      "bytes": 416,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/22-voice-note-DESCARGAR.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/22-voice-note-DESCARGAR.sh",
+      "source_blob": "9e4b23165749606d0aa59b0b9d40ce7aae34a85e",
+      "sha256": "ac3db049eea4301a3b7df46c00265e597349c000264a928d45b88fed1c30a102",
+      "bytes": 419,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/DESCARGAR-CODIGO-ORIGINAL.py",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/DESCARGAR-CODIGO-ORIGINAL.py",
+      "source_blob": "fe92737e38f2ca0d20a79de30f9b1bdb4c80c369",
+      "sha256": "0a227b356184737770dd38ea677a9388b746e2d72826c0a3f5c4b790a930edcd",
+      "bytes": 733,
+      "kind": "PY",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/DESCARGAR-CODIGO-ORIGINAL.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/DESCARGAR-CODIGO-ORIGINAL.sh",
+      "source_blob": "934d41f54c5fbdba038ffe99443f4947b41ce096",
+      "sha256": "f3c2334ec76932078864ca6f668cde3d52619cf4f409a49b961e84658da49c39",
+      "bytes": 397,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/LISTA-22.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/LISTA-22.md",
+      "source_blob": "3b94d245c354bd49f70faeaaf970b2738ceaadc1",
+      "sha256": "dd2e41b2083c487ea1a2b4ca380766c9866dae519bb91b32c0f316aeaaad9cab",
+      "bytes": 1290,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/README (2).md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/README (2).md",
+      "source_blob": "8da4bf26a6bbb1fd6522aa08a62672d25b4626db",
+      "sha256": "1f70fc01407054e14bbc933ac7672126a312d19e345cda4fbccd484578dfa0af",
+      "bytes": 2169,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/README (3).md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/README (3).md",
+      "source_blob": "cb52db0a0d7cd3bd44081f2182943d3671feba0a",
+      "sha256": "7b14ff1d279665b7070521023177cdda0e8ffdf7cbb02ef91aaf5518b9cbd532",
+      "bytes": 1018,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/README (4).md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/README (4).md",
+      "source_blob": "8da4bf26a6bbb1fd6522aa08a62672d25b4626db",
+      "sha256": "1f70fc01407054e14bbc933ac7672126a312d19e345cda4fbccd484578dfa0af",
+      "bytes": 2169,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/README-1.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/README-1.md",
+      "source_blob": "cb52db0a0d7cd3bd44081f2182943d3671feba0a",
+      "sha256": "7b14ff1d279665b7070521023177cdda0e8ffdf7cbb02ef91aaf5518b9cbd532",
+      "bytes": 1018,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/README-RARE-UI-01-05.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/README-RARE-UI-01-05.md",
+      "source_blob": "8da4bf26a6bbb1fd6522aa08a62672d25b4626db",
+      "sha256": "1f70fc01407054e14bbc933ac7672126a312d19e345cda4fbccd484578dfa0af",
+      "bytes": 2169,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/README-RUI-YAIWES-LOTE-1.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/README-RUI-YAIWES-LOTE-1.md",
+      "source_blob": "27f68757e008a77ac6321f3e235402de25a73460",
+      "sha256": "98e79e330494736392a6edb723877fa2804e7d4e854045416d604d6dc6e595a8",
+      "bytes": 2471,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/RUI-22-ARCHIVOS-INDIVIDUALES.zip",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/RUI-22-ARCHIVOS-INDIVIDUALES.zip",
+      "source_blob": "911780e429899d458869fddc4bd6bcb26a82ff42",
+      "sha256": "01f48db2c44498ee35be6abe772282e114eda0bab58ecec118d2eb85868e6ea7",
+      "bytes": 9983,
+      "kind": "ZIP",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "ZIP_INTEGRITY_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/RUI-YAIWES-LOTE-1-TEST-REPORT.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/RUI-YAIWES-LOTE-1-TEST-REPORT.md",
+      "source_blob": "9daa5be205e2cf9696be4c4531f8e904ae6271d8",
+      "sha256": "1cc79025d03d3ce2bd382e189a5692b08051fb532a2d12501c5a204b4af4a161",
+      "bytes": 677,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/VERIFICAR-22.py",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/VERIFICAR-22.py",
+      "source_blob": "c7e1e6ab9bd14f5a416f861189f882d5ac49ab08",
+      "sha256": "cbc30bf362692c05ce8984a6ff98a89c1402395ec8ae829a570cc849e1bd398d",
+      "bytes": 880,
+      "kind": "PY",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/install-lote-1.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/install-lote-1.sh",
+      "source_blob": "a4c9793bac78e6d861668268290076185042026a",
+      "sha256": "b3924677995cb4411eea7cb98dcf0e27d87ffb762f67c0be6bee5bc211676883",
+      "bytes": 394,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/install-rui-01-05.sh",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/install-rui-01-05.sh",
+      "source_blob": "65e48ab18dc22d7f3b83b2753078384f6119f9e7",
+      "sha256": "892f2370a23b73bdda64ed78d4bcddea8eef4c859eae58b55f9481803274729a",
+      "bytes": 372,
+      "kind": "SH",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/manifest (2).json",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/manifest (2).json",
+      "source_blob": "f8784afbf6d1318b8f5c5fb7fde64ef440bcd847",
+      "sha256": "2797f329cd8deaa9ea0c7a914c6d9b6d9f5df3dac57fb3ca66fe8705a1994ad6",
+      "bytes": 324,
+      "kind": "JSON",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "JSON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/manifest-22.json",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/manifest-22.json",
+      "source_blob": "a9ec8a79f35d0a141253eec6ffeb3c406ed9e166",
+      "sha256": "ab7674bbd7d00a5a85ecd0862a6fd36c0fe51b71c63255be085e655754ac3fd0",
+      "bytes": 5623,
+      "kind": "JSON",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "JSON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/manifest.json",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/manifest.json",
+      "source_blob": "a6d706616d1fe334ed54da433ae0433507ceb528",
+      "sha256": "b72dddff738574a1fc43188c2a989e5074c40814bc7b9b233bb265475d6d413b",
+      "bytes": 752,
+      "kind": "JSON",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "JSON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/page.tsx",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/page.tsx",
+      "source_blob": "24cd3aab362feaa6882846bc87300493f0eba8c2",
+      "sha256": "8e7f4084a7f32fdea62c192e568b72f75073114e30b2162c57452341c4c00371",
+      "bytes": 1663,
+      "kind": "TSX",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "🚩 PENDIENTE: TSX_NOT_PARSED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/patch-lote-1.mjs",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/patch-lote-1.mjs",
+      "source_blob": "52e807b6d9fa5b9da008f42f2f6c29695d856f44",
+      "sha256": "fc2bb999e5d8e6c1687badaa1647e543550c363b8db149170c6b7a05c30484e5",
+      "bytes": 1808,
+      "kind": "MJS",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/rareui-yaiwes-theme.css",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/rareui-yaiwes-theme.css",
+      "source_blob": "80c98cdc2fe57b81918be7a6c0bee7fc9e4e0591",
+      "sha256": "4cd98c2fc0addcf1b2d40f3fceb7d15b016c3940e265ad8cf0cd0002ed04f8c6",
+      "bytes": 588,
+      "kind": "CSS",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/recolor-rui-01-05.mjs",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/recolor-rui-01-05.mjs",
+      "source_blob": "05000a27ec0499f9f6a210f00473b5f1fae54518",
+      "sha256": "098d00781046e9f66f79a00589aec17b07bfede7741638d15f9af8621ed5d343",
+      "bytes": 3687,
+      "kind": "MJS",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/componentes/rui-yaiwes.css",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/componentes/rui-yaiwes.css",
+      "source_blob": "adb15197e789aaba5bbeff1caf8515103dde7277",
+      "sha256": "96cb869a73545e3a7a4cfc60406f9f22853c414106e2fb65ca895f0981040678",
+      "bytes": 534,
+      "kind": "CSS",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+      "source_blob": "a1eacb874edf2a46a819ae45e6b19ca7364d2952",
+      "sha256": "fdf1f59a0ce93779f9889f56cc61b926b33c0612833fdea2de015d3b3975ee1b",
+      "bytes": 44714,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/FROMTED-YAIWES-COLORES-ICONOS-V09.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/FROMTED-YAIWES-COLORES-ICONOS-V09.html",
+      "source_blob": "c96daa623dd47ced613ef699cb47e1218c4fcaa6",
+      "sha256": "b2e1fb15d4bb70dbf98facb600c5633cfc8fc323a10673e3282c8c1646f24c67",
+      "bytes": 37778,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/FROMTED-YAIWES-LETRAS-GRIS-V10.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/FROMTED-YAIWES-LETRAS-GRIS-V10.html",
+      "source_blob": "444f9fe135ecc8695b6a0ae1e561e416dac29799",
+      "sha256": "36c85f10acbb2d53a3c403ba52b93aeb6b77d828721d407c00f0c752e0fb391f",
+      "bytes": 26236,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/FROMTED-YAIWES-PRUEBA-PALETA-V07.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/FROMTED-YAIWES-PRUEBA-PALETA-V07.html",
+      "source_blob": "81058729c2013acd517eea90e281786e2c0de481",
+      "sha256": "bbcb6b54c3027cdc4aa76b1785b4abce8dc25eb7a45866f164cef99a3d3fffbc",
+      "bytes": 95797,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/README-SKILL-FROMTED-YAIWES-GRIS-Y-LETRAS.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-FROMTED-YAIWES-GRIS-Y-LETRAS.md",
+      "source_blob": "e3b5a8a112b19222cc1b05bcc009c6febcc16f1b",
+      "sha256": "a46b567851a4cfabf12dac88d58e44b54858ff8aca078018ad5288e2fc245a3e",
+      "bytes": 20440,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/README-SKILL-PARTE-1-GRIS-PRINCIPAL.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-PARTE-1-GRIS-PRINCIPAL.md",
+      "source_blob": "8db274803c5d9b2698547ff9c50f6be6e7018082",
+      "sha256": "f287b74db2a1255982aec3ffd7060ad6f1ad52a6b20b15c72a1309f785e5d455",
+      "bytes": 15225,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/README-SKILL-PARTE-3-ICONOS-Y-EMOJIS-EN-REVISION.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-PARTE-3-ICONOS-Y-EMOJIS-EN-REVISION.md",
+      "source_blob": "06a105f0a3088acd830e56b025d9d70f0fb7fe81",
+      "sha256": "906d6c707273ce8150ccd522f8a3e3a5e66937595d8e097cfe08484d2805ca97",
+      "bytes": 12868,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/RUI-YAIWES-5-COMPONENTES-DEMO.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/RUI-YAIWES-5-COMPONENTES-DEMO.html",
+      "source_blob": "7663c7130458ab9d9897b13904640c9ef45382ff",
+      "sha256": "a0baf20003342d7a79f079d910670f252c15b6a1fe83bf017be67b0da366050e",
+      "bytes": 17112,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/RUI-YAIWES-LOTE-1-DEMO-1.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/RUI-YAIWES-LOTE-1-DEMO-1.html",
+      "source_blob": "4dca0ef039160df21a28ccd12a43b233db81c54b",
+      "sha256": "bacfeb93ba5d415c85199675a60cfdd81c4e222f1be5c63240f2bca4d9bd4015",
+      "bytes": 20136,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/RUI-YAIWES-LOTE-1-DEMO.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/RUI-YAIWES-LOTE-1-DEMO.html",
+      "source_blob": "4dca0ef039160df21a28ccd12a43b233db81c54b",
+      "sha256": "bacfeb93ba5d415c85199675a60cfdd81c4e222f1be5c63240f2bca4d9bd4015",
+      "bytes": 20136,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/SKILL-MAESTRO-FROMTED-YAIWES-BORRADOR.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/SKILL-MAESTRO-FROMTED-YAIWES-BORRADOR.md",
+      "source_blob": "ef8bb71f1c0ff446e109315ce315655c9683ec8c",
+      "sha256": "9458e784a044ab1d8eb640170f7af1f05b755e669c61f37b37fa98f63137c0e3",
+      "bytes": 9307,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/SKILL-PARTE-2-TIPOGRAFIA-EN-REVISION.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/SKILL-PARTE-2-TIPOGRAFIA-EN-REVISION.md",
+      "source_blob": "8be775d5055ff8e524ba7cdef344038d0a248831",
+      "sha256": "6bc1b7c598177ae7c669b6a7a060bfbe927674dc41b1859fad76d2c996c1d73a",
+      "bytes": 5309,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/UI-YAIWES-interface-lote-anotacion.zip",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/UI-YAIWES-interface-lote-anotacion.zip",
+      "source_blob": "9f5fd14849747bede1c43698ba001c3c5f59bd7c",
+      "sha256": "a53c9edc899311f7eb95d65dec1211384da675b913549cd64dd5ed6566186c09",
+      "bytes": 130664,
+      "kind": "ZIP",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "ZIP_INTEGRITY_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/YAIWES-CRAZY-WALL-1.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/YAIWES-CRAZY-WALL-1.html",
+      "source_blob": "d272f4b850384898d4aa0444a74e47037df11012",
+      "sha256": "f8d0b88816a1a4c577d0ff21d7382149022c551f0e2cf0a22b95e2d0fa3c88f8",
+      "bytes": 30570,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/YAIWES-CRAZY-WALL-2.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/YAIWES-CRAZY-WALL-2.html",
+      "source_blob": "288dddd5110995797a821b0270f4bb7e46a9255e",
+      "sha256": "56a20d650725e446d99fb6c93fea9c1fb76b475bc9c91b836b669fcbba0d1872",
+      "bytes": 60434,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/YAIWES-CRAZY-WALL.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/YAIWES-CRAZY-WALL.html",
+      "source_blob": "781eeeb55bcf66f7c64f6a4166aec8d5721122d5",
+      "sha256": "4869e97b16ba579b0ecad6ecbdfd906897756c1237d30c5e260c8be986f231cb",
+      "bytes": 35648,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/YAIWES-ICONOS-PRO-V12-1.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/YAIWES-ICONOS-PRO-V12-1.html",
+      "source_blob": "0b39183b6bd5f74e1d03e5dcf980510427476f65",
+      "sha256": "a8c3e59da6be2887c05542d09c28d7ac0ed3e173bd1f1e12e1be1958bee2435e",
+      "bytes": 27065,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/YAIWES-ICONOS-PRO-V12.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/YAIWES-ICONOS-PRO-V12.html",
+      "source_blob": "0b39183b6bd5f74e1d03e5dcf980510427476f65",
+      "sha256": "a8c3e59da6be2887c05542d09c28d7ac0ed3e173bd1f1e12e1be1958bee2435e",
+      "bytes": 27065,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/YAIWES-LETRAS-V11.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/YAIWES-LETRAS-V11.html",
+      "source_blob": "c83605242275418200c4de50cf8b04520efb8245",
+      "sha256": "5b3deda4c615b7c465023b568ad0333066120ea94d0a7c9adc2bda94631dec0a",
+      "bytes": 20763,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/YAIWES-PERFIL-VISUAL-DEMO.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/YAIWES-PERFIL-VISUAL-DEMO.html",
+      "source_blob": "f35852b54ff011a09e71303ef2e49a61fbcf70d8",
+      "sha256": "e79485dcaf9cead00084516e49d43f09082200af0f80a9897ef7839a1945071c",
+      "bytes": 49095,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/♾️🫠index.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/♾️🫠index.html",
+      "source_blob": "cf8c0319591e829c63358403afdb3e2f66fc3efa",
+      "sha256": "87f8371d03dea9ac97030359d5dbb0e339dd01ff8a7ee7c47ff28ce42a352cc5",
+      "bytes": 6253,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/⛳styles.css",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/⛳styles.css",
+      "source_blob": "4c19fe8483171e2e4bd31732a08316b93cd4d21a",
+      "sha256": "e310cc653ada3f9e577e1f2bdb17d9367af05077ab5a5b230ca15cf0bdace468",
+      "bytes": 26097,
+      "kind": "CSS",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/➡️manifest (3).json",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/➡️manifest (3).json",
+      "source_blob": "bbe6cdfbd00b08b24e22f44d4248fde1dfa1a0ec",
+      "sha256": "417321672451eb547d1c000fb2c608e7033340fcdbbe0a182637633005aba55e",
+      "bytes": 2063,
+      "kind": "JSON",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "JSON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/🏭ACCEPTANCE.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/🏭ACCEPTANCE.md",
+      "source_blob": "7aef129b532486adff146ced24116070fea68aee",
+      "sha256": "a86b11aad9d499bcc9f39268cb9533bee6edfac823029d7358016ebc4b0493bf",
+      "bytes": 3842,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/🐻vite.config.js",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/🐻vite.config.js",
+      "source_blob": "179f16702edca338a029da15c25fb4acb13c0fd0",
+      "sha256": "e8d750aefeaa903d365ff90668201aee93b82ae47eb151aec5c9d8943d4deacb",
+      "bytes": 113,
+      "kind": "JS",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/👾package.json",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/👾package.json",
+      "source_blob": "9805c51651485d7870e8519d01eb1f7c2de11450",
+      "sha256": "f4a01740f2964dccb5c59941a2bfb4b95c1d35b21ad83a591b7ae773fd4db9cf",
+      "bytes": 501,
+      "kind": "JSON",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "JSON_SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/📌playwright.config.js",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/📌playwright.config.js",
+      "source_blob": "ba94217250b13228136656f90924dcb9ed56e99f",
+      "sha256": "76d049fa3cbf691ae304a1931569e2650590c3f3cca2f054cfd5353ece1fb0ad",
+      "bytes": 379,
+      "kind": "JS",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/📲👨‍💻📳📱🖥️Run UI YAIWES.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/📲👨‍💻📳📱🖥️Run UI YAIWES.html",
+      "source_blob": "1893afd9b9d2e9251fea55d9c0aa76ed39eec0ae",
+      "sha256": "c93f1103ebba898138c325b9bb8f0dd8af75f52a636901323818ebe9dcb8aae4",
+      "bytes": 29416,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/😄SKILL.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
+      "source_blob": "2e6c760d8dc5157fa60945dbbcef5d0f0d9f2ac3",
+      "sha256": "f740d88b7b89c7e1677751dafa0803e7181c61590f537f400940b772defbbc4b",
+      "bytes": 12824,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/🚀app.js",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/🚀app.js",
+      "source_blob": "89c9de1188f093d76b8f4ad5d372b509d0053a61",
+      "sha256": "c8b958f5da7e4dbcf1886f568c21ebcb35a1610a2cd7cf5e4f3179caef1e5c73",
+      "bytes": 44088,
+      "kind": "JS",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "SYNTAX_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/🛜VERSION.md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/🛜VERSION.md",
+      "source_blob": "a42e3122fced32a73571a8b4f2060508634c2c28",
+      "sha256": "7638c967a1909b50c77d9b9cad9d25977af55cbd78ddd209ca6c4b208fbc8215",
+      "bytes": 1221,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/🤣README (5).md",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/🤣README (5).md",
+      "source_blob": "20a28e4e860c99d984c3836ded899c4de779344e",
+      "sha256": "fb7718a5aaa546afecb6c1120f3d94ae2db5f4097baa91e1ef3b59c61426cb39",
+      "bytes": 6097,
+      "kind": "MD",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "TEXT_UTF8_VALID",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    },
+    {
+      "source": "📂 Skills Maxbry UI fromtend/diseno/🥳index-standalone.html",
+      "current": "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/🥳index-standalone.html",
+      "source_blob": "6705c0e6d3a85950b557922a78113f9dda019f95",
+      "sha256": "0c62f784be6215f98338d17a19ec12126e379ab67795c9a568b4193ebed9a7b4",
+      "bytes": 77960,
+      "kind": "HTML",
+      "passes": {
+        "1_provenance": "PRESERVED_IN_BRANCH",
+        "2_structure": "HTML_TOKENIZED_NOT_BROWSER_VALIDATED",
+        "3_wiring": "🚩 PENDIENTE: RUNTIME_WIRING_NOT_DEMONSTRATED",
+        "4_evidence": "🚩 PENDIENTE: COMPONENT_TEST_AND_READBACK"
+      }
+    }
+  ],
+  "images": [
+    {
+      "id": "UI-REF-001",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio-1.png",
+      "sha256": "c7781bf40f2b97f17b25c4c2b76aa8f80db40d24bfe9a78a730613e607209ce9",
+      "bytes": 296389,
+      "width": 1440,
+      "height": 2201,
+      "duplicate_of": null,
+      "proposed_function": "Colores de estado, iconos y panel de escritorio V09",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio-1.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-002",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio.png",
+      "sha256": "c7781bf40f2b97f17b25c4c2b76aa8f80db40d24bfe9a78a730613e607209ce9",
+      "bytes": 296389,
+      "width": 1440,
+      "height": 2201,
+      "duplicate_of": "UI-REF-001",
+      "proposed_function": "Variante de colores e iconos V09",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-003",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-PALETA-GRIS-desktop.png",
+      "sha256": "34d621befdb240f08059129374609a47b62dcfa08604ee153448f8eae5789c15",
+      "bytes": 181238,
+      "width": 1440,
+      "height": 1534,
+      "duplicate_of": null,
+      "proposed_function": "Paleta de grises y jerarquía de superficies",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/FROMTED-YAIWES-PALETA-GRIS-desktop.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-004",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260908-042403_Grok.png",
+      "sha256": "8f1826c38305e4cfd80f8c9056099c10ad64de2a203ac54d4b5bf28d94af917d",
+      "bytes": 975505,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Referencia de selección de proyecto Grok",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260908-042403_Grok.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-005",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260924-014100_Firefox.png",
+      "sha256": "34fb0c34fc394803f7f8cedcb1ae88a155891b25e7fd3eb1cb84257a73cae98e",
+      "bytes": 246558,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Referencia de controles móviles en Firefox",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260924-014100_Firefox.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-006",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260926-215216_Manus.png",
+      "sha256": "d16bcb9f2ae534422ec3079bc4a78df4b7bf65404f30a03870f2ec6f569f4838",
+      "bytes": 148404,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: acceso e inicio de sesión",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260926-215216_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-007",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030938_Manus.png",
+      "sha256": "1d5464c773e02764d8d357e5d04b1dd5f169da5bf4bcb1a01367c695997532c7",
+      "bytes": 230033,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: formulario de conexión",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-030938_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-008",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030944_Manus.png",
+      "sha256": "ba352e286eb7eda82875e37494b1912b647851f8708387dbdd88884dd16e1f42",
+      "bytes": 202309,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: opciones de conexión",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-030944_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-009",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030948_Manus.png",
+      "sha256": "5c185f8c084ca9b36154c408eb86a0186abe6f23db2028bef415aa551aa43659",
+      "bytes": 232587,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: campos de conexión",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-030948_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-010",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030958_Manus.png",
+      "sha256": "10807a0bc1b94b0eec82fdde1897f5b69065fc5dba79a48cda092444f9acb84b",
+      "bytes": 182326,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: selector de conexión",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-030958_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-011",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031004_Manus.png",
+      "sha256": "0d29dd31ee67f2b6fba7bb355ba4816aadec5a776e308cb813c6aaac62b9711c",
+      "bytes": 172461,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: formulario y aviso",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031004_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-012",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031013_Manus.png",
+      "sha256": "aed717c2c9bca70d0f774746a9e623b5db285efc9439f8bb31f5a61e697251fb",
+      "bytes": 357529,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: opciones de tarea",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031013_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-013",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031023_Manus.png",
+      "sha256": "2cd32d2815e498f8ec25f9a16a6254f678b8997e6e01390ea17b9ac25c6b914c",
+      "bytes": 212947,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: lista de opciones",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031023_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-014",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031132_Manus.png",
+      "sha256": "1690e2472136c9c49aa549fd16d74a2f43d6bc4dbdae6d3b7c6708a0679feda0",
+      "bytes": 96622,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: tareas recientes",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031132_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-015",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031141_Manus.png",
+      "sha256": "6f62da26f9fe29e2df520280d2538d710070272e41860089e470852c60a8f265",
+      "bytes": 96622,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: permisos de conector",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031141_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-016",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031146_Manus.png",
+      "sha256": "e2eebe084b3b8aaec15e4322eb383c09cae1645aad535d63590452ca1f3b9feb",
+      "bytes": 59953,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: confirmación de conector",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031146_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-017",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031153_Manus.png",
+      "sha256": "0935aac8381afa863b6f872bef58114126173c3f17cfd05df79874d2c7d5615d",
+      "bytes": 187921,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: estado vacío",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031153_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-018",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031158_Manus.png",
+      "sha256": "f27e4eebce1022b1565ab403e5c56677487fa5b7aa3ddb3d13fa7a2d432f3962",
+      "bytes": 177787,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: cuenta y ajustes",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031158_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-019",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031226_Grok Bot.png",
+      "sha256": "7f5b72e987aca21f4558962c9b267bb42852a0d8d08361114d133c67effb1c3e",
+      "bytes": 195684,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Grok Bot: lista de agentes",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031226_Grok Bot.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-020",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031230_Grok Bot.png",
+      "sha256": "8ed29c1e65b343b8a34e5a7675a166c2a9d5f83e016359a5c7a6f1b265af0e4d",
+      "bytes": 245013,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Grok Bot: configuración superior",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031230_Grok Bot.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-021",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031235_Grok Bot.png",
+      "sha256": "5619a02f8738451aede6a242d17ccf5cfe3f7908171b3487c810d4389d145757",
+      "bytes": 192527,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Grok Bot: configuración inferior",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031235_Grok Bot.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-022",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031251_Grok Bot.png",
+      "sha256": "c57b40cdaa91c1c5b13346242300a6b27e2f580237003c1ff69127d41c55eb71",
+      "bytes": 306255,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Grok Bot: conversación y acciones",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031251_Grok Bot.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-023",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031315_Edge.png",
+      "sha256": "24163477df76a7433f4846960817c9c5c84402bdb136e2bb99a54a639946f7a6",
+      "bytes": 107273,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: acceso a chat",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031315_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-024",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031320_Edge.png",
+      "sha256": "a1556123e9c477036d679d09ef12947c89ada4e8fe94b0f3a764a4671d68680c",
+      "bytes": 144800,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: entrada del chat",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031320_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-025",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031325_Edge.png",
+      "sha256": "cf47af2f3f62e43a2b47024831b47d2449227dc2e40dfb7d14156ea89df255c3",
+      "bytes": 105166,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: conversación inicial",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031325_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-026",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031346_Edge.png",
+      "sha256": "a1badaed54c42531a1dfac3ce7e94889a568889578cefda16aca30548e2b1137",
+      "bytes": 118292,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: configuración de contexto",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031346_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-027",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031449_Edge.png",
+      "sha256": "65f958d293b20eeb10a5968d499b777616c4c02db6587a48e9d29cf234fbc100",
+      "bytes": 222721,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: selección de recursos",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031449_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-028",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031738_Edge.png",
+      "sha256": "0b28e97f92fdfd0700b15b0f93d00464493436ff170166ad3a9e387e13c90436",
+      "bytes": 237942,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: acción de conexión",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031738_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-029",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031746_Edge.png",
+      "sha256": "888ccf613b851b741ae7ac643d123e0fb9852c1941f6024a35e78e671241e5d0",
+      "bytes": 272665,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: modal de configuración",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031746_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-030",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031751_Edge.png",
+      "sha256": "8895bc340fc6857277519795f00f1296ac7bc4e794bc2dd3235d8a8c3c800fff",
+      "bytes": 215402,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: descripción de configuración",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031751_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-031",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031816_Edge.png",
+      "sha256": "5c03ea3aea77ddcc08746c8bb34a50553a88201eaeb7b112f66b7ed02e428f2a",
+      "bytes": 241513,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: formulario de ajuste",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031816_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-032",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031834_Edge.png",
+      "sha256": "9b5b3b793f426085449b3f39df954458f75562545bdcdddbb5c89c882207ea69",
+      "bytes": 326552,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: confirmación de ajuste",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031834_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-033",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031845_Edge.png",
+      "sha256": "9c3bf9f6e97f0ba92b12fab2fcec508c68318a0b1abfe33d3aee761904e411a8",
+      "bytes": 212307,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: sección de detalle",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031845_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-034",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031850_Edge.png",
+      "sha256": "c6da318d69532d13e6c3413060a30841b58a1cc2695cd261fd61bd9eec996ffd",
+      "bytes": 351224,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: parámetros de agente",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031850_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-035",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031854_Edge.png",
+      "sha256": "761132779ca01762a4a4f12abd6f7f9406a295b676361549c829b0a176fa31ae",
+      "bytes": 356807,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: permisos y texto",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031854_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-036",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031902_Edge.png",
+      "sha256": "174d4422be351ea4372e968199aec7b32e9f65aa1c29f55f7ddb12256e0b7484",
+      "bytes": 369494,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: controles de parámetros",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031902_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-037",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031909_Edge.png",
+      "sha256": "3de8fc11ca7bef1f503be717765350abf230e070cebfd5ab843faebb22b9923e",
+      "bytes": 378609,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: error o aviso contextual",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031909_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-038",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031930_Edge.png",
+      "sha256": "c0891fc47d2a1a73d2747f806b70aefcac77e3c12e5a7a357d47e8f73297ce2d",
+      "bytes": 273508,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: respuesta extensa del asistente",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031930_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-039",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031934_Edge.png",
+      "sha256": "250666f89f89420042fc4a39da67654b00045c1f096c3d6def44ac37b8380500",
+      "bytes": 299742,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: respuesta con secciones",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031934_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-040",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031952_Edge.png",
+      "sha256": "434ed8fbdd3d40c1791d76714678b32325e1a805c0dca23a0b8c2a3a2b9dc759",
+      "bytes": 372009,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: seguimiento de ejecución",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031952_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-041",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031957_Edge.png",
+      "sha256": "f65fb9c5f77a0d96b2d8143412936b31fbbac569fee08b2e0dd5791d12d4cf55",
+      "bytes": 233559,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: estado de ejecución",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-031957_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-042",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032036_Edge.png",
+      "sha256": "f703c7e753ca72523b11e93c9e63ffc68955a0501b2b1fe545fff45161c7aafb",
+      "bytes": 169774,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: resultado con bloques de código",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032036_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-043",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032048_Edge.png",
+      "sha256": "3a68262f8c3e66cd9c6d6deb63e3583c31dde36ea226acd41a253692562988c8",
+      "bytes": 226818,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: resultado revisado",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032048_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-044",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032052_Edge.png",
+      "sha256": "c688faf0075092ce21786c9c9c0eb5dbce436a14a2f2806be70aecb234b36283",
+      "bytes": 224710,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: controles de revisión",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032052_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-045",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+      "sha256": "2696e6827a31ee8c027b1680847b047dacff6d9ddf86cabafeb369e21026cf93",
+      "bytes": 217763,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: tarjetas de tarea",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032059_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-046",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032109_Edge.png",
+      "sha256": "2a0d578f4239013ef2649ffe64c7a736f57529983e2bc0f0db796634ebfa4b75",
+      "bytes": 339158,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: estado de tarjeta",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032109_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-047",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032116_Edge.png",
+      "sha256": "396661ca287762a36c354cd084e65a98d47a51245553fdcb564a5016b5e5d327",
+      "bytes": 403500,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: más opciones de tarjeta",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032116_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-048",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032251_Edge.png",
+      "sha256": "8ea5e44c34358cc982a54c591040cd0ba47f8985828e9af5009141449617d5a3",
+      "bytes": 316435,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: respuesta y resumen",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032251_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-049",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032335_Edge.png",
+      "sha256": "3ebf4c0eceafeb90f8eeabad47edc8dc47b66412a01a4119baa09d67467ba6b2",
+      "bytes": 197021,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: lista y navegación",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032335_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-050",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032339_Edge.png",
+      "sha256": "c9e328ffd56ee092345b14d1da9721634071a057ab38a75693142b9666512f31",
+      "bytes": 181301,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: navegación lateral",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032339_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-051",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032349_Edge.png",
+      "sha256": "3b685efc586ac72c8c2cf5812e6d47354b4f4ad8b4960806c1b3032ae66a7efa",
+      "bytes": 238547,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: tabla de estados",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032349_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-052",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032354_Edge.png",
+      "sha256": "12ca550a5d357b53ad4aa0b5cf1a72fcc981cf2d3d82310f1419c77e13287acb",
+      "bytes": 216832,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Edge: pestañas de ajustes",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032354_Edge.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-053",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+      "sha256": "f23725467c279a4729ef6a11df3907ced24372a24e45a61674a90751ed0dad03",
+      "bytes": 501552,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Grok: creación de bot",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032452_Grok.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-054",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032500_Grok.png",
+      "sha256": "0c0a9c182498bb96a8790c2aba4c79497a4b0ca41ca79aaafdef98f5e2cbdf63",
+      "bytes": 323256,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Grok: ajuste de bot",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032500_Grok.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-055",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+      "sha256": "f51e8412348cd1733eaacdf1ccccdcbf55f2802d6a3fb7a20219c802e56d2591",
+      "bytes": 167459,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Grok: selector de modelo",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032513_Grok.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-056",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032520_Grok.png",
+      "sha256": "86fb02ea0451209240970b70956144bfc35ff763b9f76e30472ac202b9b50725",
+      "bytes": 173309,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Grok: feedback de creación",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-032520_Grok.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-057",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-062346_Manus.png",
+      "sha256": "4dfeb41765911a7d8cb8c1d586c73b9d23867023af6e87f5e5fd081856cf2c7a",
+      "bytes": 218369,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Manus: acción de agente en móvil",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260927-062346_Manus.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-058",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-001856_Chrome.png",
+      "sha256": "bb2cdb4ea5251b4028c39dbe862ee123ad768bac494c885b85db6eaad3512ce4",
+      "bytes": 356333,
+      "width": 477,
+      "height": 476,
+      "duplicate_of": null,
+      "proposed_function": "Chrome: estructura de escritorio",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260929-001856_Chrome.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-059",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002034_Chrome.png",
+      "sha256": "f4c74f7ec65192cbca808927129c3db00eec14d948ff039f1bd76ee8011d33b9",
+      "bytes": 215067,
+      "width": 1027,
+      "height": 1199,
+      "duplicate_of": null,
+      "proposed_function": "Chrome: panel y métricas de escritorio",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260929-002034_Chrome.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-060",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002151_Chrome.png",
+      "sha256": "714d2d0f87bfa1933033dc36715119d5a2757cbc536b2f2b4af2c7bfbabdeb2a",
+      "bytes": 409797,
+      "width": 1080,
+      "height": 767,
+      "duplicate_of": null,
+      "proposed_function": "Chrome: lista de conectores",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260929-002151_Chrome.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-061",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002257_Chrome.png",
+      "sha256": "efce556213be6e3c02fba6757b9d3ed5377f1177d4137551a2808bc7f81ed3bf",
+      "bytes": 517093,
+      "width": 1043,
+      "height": 749,
+      "duplicate_of": null,
+      "proposed_function": "Chrome: cards y navegación",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260929-002257_Chrome.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-062",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002719_Chrome.png",
+      "sha256": "b00e265dcfd6b8d9b53ad7d73b273746bdc53d5409a1718e3836b2ee6dda4473",
+      "bytes": 454186,
+      "width": 1080,
+      "height": 727,
+      "duplicate_of": null,
+      "proposed_function": "Chrome: densidad de información y estados",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260929-002719_Chrome.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-063",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+      "sha256": "ba88c01eeaddbcba8b494fc0b6b6d8e8d1215fb0d8079aa0f66903772b37f83f",
+      "bytes": 257158,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Claude: chat y composición",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260929-172239_Claude.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-064",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+      "sha256": "6c3418946af3dbca542d82f9d447f58d8086d820b838e36865ed1181e5e52553",
+      "bytes": 219465,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Claude: conversación y revisión",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260929-204841_Claude.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-REF-065",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+      "sha256": "62e13bb9d26ce4957ed1c005e312dd5fa3021e030db4da98f70cb921303991d4",
+      "bytes": 299854,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Chrome: escritorio con paneles y acciones",
+      "source": "📂 Skills Maxbry UI fromtend/diseno/Screenshot_20260930-001144_Chrome.png",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-001",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+      "sha256": "72da4a525fa70f00ecd092f4f5dcc447af2e71b6df4d46470529257f3b19206e",
+      "bytes": 47112,
+      "width": 1400,
+      "height": 900,
+      "duplicate_of": null,
+      "proposed_function": "Diagrama de arquitectura del Router",
+      "source": "ARQUITECTURA-ROUTER",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-002",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-02-TOPOLOGY.png",
+      "sha256": "0315bd92cde86256b969a37ad3e2dd31e26a934a68503b8a77f83f435ce3552e",
+      "bytes": 55157,
+      "width": 1400,
+      "height": 900,
+      "duplicate_of": null,
+      "proposed_function": "Diagrama de arquitectura del Router",
+      "source": "ARQUITECTURA-ROUTER",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-003",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-03-CONTRACT.png",
+      "sha256": "fe285513646756c830eecaf168b7edb9e906fbb860aafb4f0bc9222d7294a071",
+      "bytes": 89709,
+      "width": 1400,
+      "height": 900,
+      "duplicate_of": null,
+      "proposed_function": "Diagrama de arquitectura del Router",
+      "source": "ARQUITECTURA-ROUTER",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-004",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-04-SETTINGS.png",
+      "sha256": "e9096bff9207767b31996c28e17c01ea3ab1c4dd6cb66f3f9a50f1ef5ed39b1f",
+      "bytes": 60505,
+      "width": 1400,
+      "height": 900,
+      "duplicate_of": null,
+      "proposed_function": "Diagrama de arquitectura del Router",
+      "source": "ARQUITECTURA-ROUTER",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-005",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-05-MOBILE.png",
+      "sha256": "602f7be1b2bf71b1ba2e2b43f91ece7a0eab6bc6ca6ce01ec5e9696d53bce38b",
+      "bytes": 41612,
+      "width": 380,
+      "height": 800,
+      "duplicate_of": null,
+      "proposed_function": "Diagrama de arquitectura del Router",
+      "source": "ARQUITECTURA-ROUTER",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-006",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+      "sha256": "7e3c8822d876d5dcefeaceed80bcc83b3a693dcdcda8a3b4decabc34ac72f97c",
+      "bytes": 390759,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-007",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052617_Edge.png",
+      "sha256": "34e59869bc7a8cad36d8afe4bf6fc153321c188abe5dd2a29a73a2e1ba028521",
+      "bytes": 262416,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-008",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge-2.png",
+      "sha256": "3a6d5e8759146d9f89c3a5b9908abd6c44e1e2cfdf26c61198672616cbb8c850",
+      "bytes": 323291,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-009",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge.png",
+      "sha256": "3a6d5e8759146d9f89c3a5b9908abd6c44e1e2cfdf26c61198672616cbb8c850",
+      "bytes": 323291,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": "UI-EXTRA-008",
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-010",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053130_Edge.png",
+      "sha256": "d9747c2b2adbf5095d433bc4b8067a2985dd042f53fa6449f68389b5fb609d94",
+      "bytes": 278373,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-011",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053144_Edge.png",
+      "sha256": "059fce3f3a613f06c702c960bbccc2f59da017085815a3537751caf4099df40f",
+      "bytes": 241703,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-012",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053202_Edge.png",
+      "sha256": "2b7f0af61986536ecbbb43a880ac95e9aa1bec49f358f4b1e34b04352e1a9012",
+      "bytes": 260465,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-013",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053222_Edge.png",
+      "sha256": "a80bfc3ce6040bdac559e0776cfa422686426d357b9a480fe92799556b9697e4",
+      "bytes": 380009,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-014",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053226_Edge.png",
+      "sha256": "baacd73871b1d410633b08a323958b473c50ed0bfa6ba60662dae9206da63872",
+      "bytes": 256963,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-015",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053235_Edge.png",
+      "sha256": "26515fa4a8c627f860f54ac4dc3f4af896be61afeeb150fef86a8011cb43ecc4",
+      "bytes": 288275,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-016",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053241_Edge.png",
+      "sha256": "85970a78397f724040fccc311d90927964df4a465ea9b0b78dbaea674eb52cad",
+      "bytes": 178164,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de conversación, propuesta o revisión del PR",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    },
+    {
+      "id": "UI-EXTRA-017",
+      "file": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-093043_Edge.png",
+      "sha256": "2482e346b6a4ca8861fb5e5e444c84504fde90e8a4f04653921e3fc25441291c",
+      "bytes": 279581,
+      "width": 1080,
+      "height": 2388,
+      "duplicate_of": null,
+      "proposed_function": "Captura de la selección GPT-6 Sol en la aplicación del usuario; evidencia visual de selección, no del modelo interno de Devin",
+      "source": "ADJUNTOS-CHAT",
+      "passes": {
+        "1_provenance": "CATALOG_HASH_VERIFIED",
+        "2_structure": "PNG_HEADER_AND_DIMENSIONS_VERIFIED; ROLE_CATALOG_ONLY",
+        "3_wiring": "BACKEND_CATALOG_METADATA_TESTED; 🚩 PENDIENTE: FRONTEND_NOT_CONNECTED",
+        "4_evidence": "HASH_READBACK_AND_LOCAL_API_TEST; 🚩 PENDIENTE: VISUAL_REVIEW"
+      }
+    }
+  ],
+  "code": [
+    {
+      "file": "chat router/04-MEMORIA/memoria_yaiwes/__init__.py",
+      "sha256": "ea11357be344970686b10b32ad0a5ee372540dff0b89411a6348efca27e728a9",
+      "bytes": 10548,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/auditoria_plan.py",
+      "sha256": "07369fcf77681bf14b5fbb447c0d6140fe73ac0b6c6e2f753387aaf3eeb8b422",
+      "bytes": 8398,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "INPUT_INVENTORY_BUILT_LOCALLY",
+        "4_evidence": "SOURCE_HASHES_AND_COUNTS_VERIFIED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/auditoria_post_code.py",
+      "sha256": "d06bc7d777c5069ce2f388f70b7577acc57e93e2ec2067be2daf429b949ad844",
+      "bytes": 5348,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "POST_AUDIT_EXECUTED_LOCALLY",
+        "4_evidence": "OUTPUT_JSON_READBACK_VERIFIED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/auditoria_metodo.py",
+      "sha256": "dd5b881d7735ffd5a3a8e0fddd3b1096e97ee8ffaa969364178cc57db90131bc",
+      "bytes": 6895,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/buscadores.py",
+      "sha256": "af6ba53db4b33bfd9e08cf5a3ba4ddd41cf6b8fc7a6e500a2fba6bfc8cc7b50b",
+      "bytes": 9216,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/compilador_busquedas.py",
+      "sha256": "f5d5a1b49cd2709f36b8e75c7beb82d070457e0288921bac7e90c313837435a0",
+      "bytes": 2372,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/evidence_pack.py",
+      "sha256": "43972d53ead48f6e6ff445e0c4015a876174df72a778ad7459545885a000463b",
+      "bytes": 5111,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/parser.py",
+      "sha256": "ba53a7202096818f560efecb749d5dd1986694ee184e80aded94337f5a486f2f",
+      "bytes": 3923,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/puerta.py",
+      "sha256": "d50e6f73175b41342d1023b1375c79bd66514efca46a77dc7ee81e57f0f47711",
+      "bytes": 5424,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/tests/test_puerta.py",
+      "sha256": "2ee525e091cdd6824c18f803061a7676e96571dba9e217043b2d2c32608c0b58",
+      "bytes": 12156,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "chat router/11-EVIDENCIA/verificador.py",
+      "sha256": "8e423d594cd9ce303d618aa6e17782a2800548d82b2a298eb7d1543d718e537f",
+      "bytes": 5173,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "router inteligente universal/integration/chat_mvp/memory_runtime.py",
+      "sha256": "2f8abecb0622143e062d4d35607a2fba819b9af99b4c7dcc4f62017cebd3a4f0",
+      "bytes": 1375,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
+      }
+    },
+    {
+      "file": "router inteligente universal/integration/chat_mvp/memoria_loader.py",
+      "sha256": "d35e20bea1dc47303e5fe74728704221955cbbbe7a5d712a8fa9179ee388673d",
+      "bytes": 2007,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
+      }
+    },
+    {
+      "file": "router inteligente universal/integration/chat_mvp/router.py",
+      "sha256": "9a8af52af1e1d87db2fe4aaa396273659923fd7b0673e0df8fdcdadade6977d0",
+      "bytes": 23928,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
+      }
+    },
+    {
+      "file": "router inteligente universal/integration/chat_mvp/org_api.py",
+      "sha256": "433a24384651dd0fe6f705cb30a7a30fb1eb5b06f72e5f11c8c457a064bbd386",
+      "bytes": 6956,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
+      }
+    },
+    {
+      "file": "router inteligente universal/integration/chat_mvp/ui_bridge.py",
+      "sha256": "d2650992a64de923e323e97d655b2549db4e17e381cb6a7d53f4a9b7f5983583",
+      "bytes": 18870,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
+      }
+    },
+    {
+      "file": "router inteligente universal/tests/test_chat_mvp_app.py",
+      "sha256": "6fb10a9fbc78898a0b49f8dac174e6d0c1f2760d5ddb3a3984052263beed3405",
+      "bytes": 21948,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
+      }
+    },
+    {
+      "file": "router inteligente universal/tests/test_method_audit.py",
+      "sha256": "8abd9d4ae2792f6d19daccca327a2f23eb2728ecffa7ab3fd86c092fca27bc57",
+      "bytes": 8317,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_GATE_TESTS",
+        "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "router inteligente universal/tests/test_org_api.py",
+      "sha256": "dfdd57c035157bee0da5f43211a85804d4aa0f92c51e1000292b23c45b081d9f",
+      "bytes": 8890,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
+      }
+    }
+  ]
+}

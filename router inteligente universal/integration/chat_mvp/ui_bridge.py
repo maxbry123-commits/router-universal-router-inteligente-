@@ -16,6 +16,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException
@@ -34,7 +35,7 @@ STATE = f"{STATE_DIR}/STATE.json"
 CRAZY_WALL = f"{STATE_DIR}/CRAZY_WALL.json"
 HANDOFF = f"{STATE_DIR}/HANDOFF.md"
 _STATE_LOCK = threading.RLock()
-_STATE_EVENT_TYPES = {"TASK_CLAIMED", "FILES_CHANGED", "CHECKPOINT_RECORDED", "TASK_BLOCKED", "TASK_COMPLETED", "TASK_RELEASED"}
+_STATE_EVENT_TYPES = {"TASK_CLAIMED", "FILES_CHANGED", "CHECKPOINT_RECORDED", "TASK_BLOCKED", "TASK_COMPLETED", "TASK_RELEASED", "RESOURCE_READ"}
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 _SECRET_LIKE = re.compile(r"\b(?:hf_[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})\b")
 _HANDOFF_START = "<!-- YAIWES STATE HUB START -->"
@@ -108,6 +109,10 @@ def _set_flag(path: str, paused: bool) -> None:
 def _state_events(text: str) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     last_seq = 0
+    seen_ids: set[str] = set()
+    versioned = False
+    chained = False
+    prev_link = None
     for line_no, line in enumerate(text.splitlines(), 1):
         if not line.strip():
             continue
@@ -115,16 +120,40 @@ def _state_events(text: str) -> list[dict[str, Any]]:
             event = json.loads(line)
         except json.JSONDecodeError as exc:
             raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_JSON:{line_no}") from exc
-        if not isinstance(event, dict) or not isinstance(event.get("seq"), int) or event["seq"] <= last_seq:
+        if not isinstance(event, dict) or type(event.get("seq")) is not int or event["seq"] <= last_seq:
             raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_SEQUENCE:{line_no}")
         if event.get("type") not in _STATE_EVENT_TYPES:
             raise HTTPException(status_code=409, detail=f"STATE_BITACORA_UNKNOWN_EVENT:{line_no}")
+        if event.get("schema") == "yaiwes.state-event/v2":
+            versioned = True
+            event_id = event.get("event_id")
+            digest = event.get("payload_hash")
+            if (
+                not isinstance(event_id, str)
+                or not re.fullmatch(r"[0-9a-f]{32}", event_id)
+                or event_id in seen_ids
+                or not isinstance(digest, str)
+                or digest != _event_hash(event)
+            ):
+                raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_HASH:{line_no}")
+            seen_ids.add(event_id)
+            chain_prev = event.get("chain_prev")
+            if isinstance(chain_prev, str):
+                expected = prev_link if prev_link is not None else _GENESIS
+                if chain_prev != expected:
+                    raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_CHAIN:{line_no}")
+                chained = True
+            elif chained:
+                raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_CHAIN:{line_no}")
+        elif versioned or "event_id" in event or "payload_hash" in event or "schema" in event:
+            raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_SCHEMA:{line_no}")
         last_seq = event["seq"]
+        prev_link = _event_link(event, line)
         events.append(event)
     return events
 
 
-def _state_event(body: dict[str, Any], seq: int) -> dict[str, Any]:
+def _state_event(body: dict[str, Any], seq: int, prev_link: str | None = None) -> dict[str, Any]:
     kind = str(body.get("type") or "")
     if kind not in _STATE_EVENT_TYPES:
         raise HTTPException(status_code=400, detail="STATE_EVENT_TYPE_INVALID")
@@ -155,13 +184,54 @@ def _state_event(body: dict[str, Any], seq: int) -> dict[str, Any]:
         if count < 0 or count > 10000:
             raise HTTPException(status_code=400, detail="STATE_EVENT_FILES_CHANGED_INVALID")
         event["files_changed"] = count
+    event["schema"] = "yaiwes.state-event/v2"
+    event["chain_prev"] = prev_link if prev_link else _GENESIS
+    event["event_id"] = uuid.uuid4().hex
+    event["payload_hash"] = _event_hash(event)
     return event
+
+
+def _event_hash(event: dict[str, Any]) -> str:
+    payload = {key: value for key, value in event.items() if key != "payload_hash"}
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+_GENESIS = "0" * 64
+
+
+def _line_digest(line: str) -> str:
+    return hashlib.sha256(line.encode("utf-8")).hexdigest()
+
+
+def _event_link(event: dict[str, Any], raw_line: str) -> str:
+    digest = event.get("payload_hash")
+    return digest if isinstance(digest, str) else _line_digest(raw_line)
+
+
+def _last_link(text: str) -> str | None:
+    last = ""
+    for line in text.splitlines():
+        if line.strip():
+            last = line
+    if not last:
+        return None
+    try:
+        event = json.loads(last)
+    except json.JSONDecodeError:
+        return _line_digest(last)
+    digest = event.get("payload_hash") if isinstance(event, dict) else None
+    return digest if isinstance(digest, str) else _line_digest(last)
 
 
 def _state_projection(events: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
     nodes: dict[str, dict[str, Any]] = {}
     active_project = None
+    last_functional_event = None
     for event in events:
+        if event["type"] == "RESOURCE_READ":
+            continue
+        last_functional_event = event
         project, task = event["project"], event["task"]
         active_project = project
         node = nodes.setdefault(task, {"node_id": task, "task": task, "project": project, "status": "PENDING"})
@@ -194,8 +264,8 @@ def _state_projection(events: list[dict[str, Any]]) -> tuple[dict[str, Any], dic
         if not project["active_tasks"] and not project["blocked_tasks"]:
             project["status"] = "COMPLETED"
 
-    revision = events[-1]["seq"] if events else 0
-    updated_at = events[-1]["at"] if events else None
+    revision = last_functional_event["seq"] if last_functional_event else 0
+    updated_at = last_functional_event["at"] if last_functional_event else None
     state = {"schema": "yaiwes.state/v1", "revision": revision, "updated_at": updated_at,
              "active_project": active_project, "projects": projects}
     crazy_wall = {"schema": "yaiwes.crazy-wall/v1", "nodes": nodes}
@@ -241,15 +311,48 @@ def _regenerate_state(events: list[dict[str, Any]]) -> dict[str, Any]:
             "crazy_wall_sha256": hashlib.sha256(wall_text.encode()).hexdigest()}
 
 
-def _emit_state_event(body: dict[str, Any]) -> dict[str, Any]:
-    with _STATE_LOCK:
+def _append_event(payload_body: dict[str, Any], audit: bool = False) -> dict[str, Any]:
+    """Append compare-and-swap: si otro escritor gana el PUT (sha 409),
+    re-lee y reintenta hasta 3 veces en vez de perder el evento."""
+    label = "AUDIT" if audit else "EVENT"
+    for attempt in range(3):
         current, _ = _read(BITACORA)
         events = _state_events(current)
-        event = _state_event(body, (events[-1]["seq"] + 1) if events else 1)
+        event = _state_event(payload_body, (events[-1]["seq"] + 1) if events else 1, _last_link(current))
         log = current.rstrip() + ("\n" if current.strip() else "") + json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n"
-        _write(BITACORA, log, f"state hub: {event['type']} {event['task']}")
+        try:
+            _write(BITACORA, log, f"state hub: {event['type']} {event['task']}")
+        except HTTPException as exc:
+            if exc.detail == "GitHub 409" and attempt < 2:
+                continue
+            raise
+        persisted, _ = _read(BITACORA)
+        if persisted != log:
+            raise HTTPException(status_code=503, detail=f"STATE_{label}_READBACK_FAILED")
+        if audit:
+            return event
         projection = _regenerate_state(events + [event])
         return {"ok": True, "event": event, **projection}
+    raise HTTPException(status_code=503, detail=f"STATE_{label}_CONFLICT")
+
+
+def _emit_state_event(body: dict[str, Any]) -> dict[str, Any]:
+    if body.get("type") == "RESOURCE_READ":
+        raise HTTPException(status_code=400, detail="STATE_AUDIT_ONLY_FROM_GET")
+    with _STATE_LOCK:
+        return _append_event(body)
+
+
+def _emit_state_audit_event(resource: str, http_status: int) -> dict[str, Any]:
+    if resource not in {"graph", "queue", "bitacora", "dag", "connectors", "templates", "engineering", "files", "visual-references"}:
+        raise HTTPException(status_code=400, detail="STATE_AUDIT_RESOURCE_INVALID")
+    if http_status not in {200, 400, 404, 503}:
+        raise HTTPException(status_code=400, detail="STATE_AUDIT_STATUS_INVALID")
+    with _STATE_LOCK:
+        return _append_event({
+            "type": "RESOURCE_READ", "project": "chat-yaiwes", "task": "UI-T-05",
+            "actor": "router", "summary": f"GET /chat/org/{resource} HTTP {http_status}",
+        }, audit=True)
 
 
 def _rebuild_state() -> dict[str, Any]:

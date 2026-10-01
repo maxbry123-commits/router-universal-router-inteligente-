@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 336319,
+  "bundle_sha256": "3d1a6c351334cc3743a18e84c051d43bb4c528aea96c763964c68d6b2be371b2",
+  "extracted_tree": {
+    "bytes": 1121651,
+    "files": 144,
+    "sha256": "00c3213118657d3e09265f2f0d241c25d89c7b37b53bacaa5791d3c8dd9c0aaf"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 336319,
+      "name": "firecrawl-cli.bundle.zip.part-0001",
+      "sha256": "3d1a6c351334cc3743a18e84c051d43bb4c528aea96c763964c68d6b2be371b2"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "firecrawl-cli",
+  "source_bytes": 1121651,
+  "source_commit": "bf5a7626604d50a43cd782297cbd28e53790e5c9",
+  "source_files": 144,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/firecrawl/cli",
+  "source_tree": {
+    "bytes": 1121651,
+    "files": 144,
+    "sha256": "00c3213118657d3e09265f2f0d241c25d89c7b37b53bacaa5791d3c8dd9c0aaf"
+  }
+}

@@ -12,6 +12,7 @@ import base64
 import gzip
 import importlib.util
 import json
+import logging
 import os
 import re
 import threading
@@ -24,7 +25,8 @@ from . import vault_hook
 
 # Built-in fallback (used when providers.json is missing or invalid). New providers go in providers.json, one entry each.
 DEFAULT_PROVIDER_MAP = {"nvidia": "nvidia", "hf": "huggingface", "groq": "groq",
-                        "deepseek": "deepseek", "moonshot": "moonshot", "minimax": "minimax"}
+                        "deepseek": "deepseek", "moonshot": "moonshot", "minimax": "minimax",
+                        "openai": "openai"}
 PROVIDER_MAP = DEFAULT_PROVIDER_MAP  # backwards-compatible name; live view: provider_map()
 AUTH_FORMATS = ("bearer", "x-api-key", "header", "query", "none")
 # Autolock: 0 = the bank never closes by itself (Director: 24/7). Set RIU_VAULT_AUTOLOCK_S=3600 to get the old 1 h behaviour.
@@ -203,8 +205,8 @@ class VaultBridge:
             if rec["provider"] == pmap[provider] and rec["enabled"] and rec["scope"] != "github":
                 try:
                     keys.append(self._open.get_secret(rec["credential_ref"]))
-                except Exception:  # noqa: BLE001 - expired/disabled entries are skipped
-                    continue
+                except Exception as exc:  # noqa: BLE001 - expired/disabled entries are skipped
+                    logging.getLogger(__name__).debug("key skipped: %s", exc)
         return keys
 
     def _export_github(self) -> None:
@@ -216,8 +218,8 @@ class VaultBridge:
                 continue
             try:
                 token = self._open.get_secret(rec["credential_ref"])
-            except Exception:  # noqa: BLE001
-                continue
+            except Exception as exc:  # noqa: BLE001
+                logging.getLogger(__name__).debug("gh record skipped: %s", exc)
             var = "RIU_VAULT_GH_" + re.sub(r"[^A-Z0-9]", "_", rec["account"].upper())
             os.environ[var] = token
             self._exported[var] = rec["account"]
@@ -257,7 +259,7 @@ class VaultBridge:
             raise BankError("VAULT_EXISTS")
         try:
             raw = gzip.decompress(base64.b64decode(b64, validate=True))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise BankError("VAULT_IMPORT_INVALID") from exc
         if not raw.startswith(b"SQLite format 3"):
             raise BankError("VAULT_IMPORT_INVALID")

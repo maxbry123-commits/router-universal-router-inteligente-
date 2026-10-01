@@ -1,0 +1,179 @@
+{
+  "schema": "yaiwes.agent_graph/v1",
+  "nodes": [
+    {
+      "id": "director",
+      "rol": "director"
+    },
+    {
+      "id": "rowboat",
+      "rol": "director"
+    },
+    {
+      "id": "hermes",
+      "rol": "planner_supervisor"
+    },
+    {
+      "id": "openclaw",
+      "rol": "guardian_supervisor"
+    },
+    {
+      "id": "sheriff",
+      "rol": "policy_gate"
+    },
+    {
+      "id": "ruflo",
+      "rol": "swarm_orchestrator"
+    },
+    {
+      "id": "sentinel",
+      "rol": "runtime_watchdog"
+    },
+    {
+      "id": "judge",
+      "rol": "final_verifier"
+    },
+    {
+      "id": "claude_architect",
+      "rol": "DESIGN_ONLY"
+    },
+    {
+      "id": "grok_executor",
+      "rol": "IMPLEMENT"
+    },
+    {
+      "id": "claude_reviewer",
+      "rol": "REVIEW_AND_CORRECT"
+    },
+    {
+      "id": "meta_1_code",
+      "rol": "CODE_REVIEW"
+    },
+    {
+      "id": "meta_2_tests",
+      "rol": "TEST_INTEGRATION"
+    },
+    {
+      "id": "meta_3_visual",
+      "rol": "VISUAL_UI_QA"
+    },
+    {
+      "id": "meta_4_adversarial",
+      "rol": "BREAK_FIND_IMPROVE"
+    },
+    {
+      "id": "meta_fixer",
+      "rol": "APPLY_META_CORRECTIONS"
+    },
+    {
+      "id": "msaf",
+      "rol": "support"
+    },
+    {
+      "id": "codex",
+      "rol": "FINAL_REVIEW_AND_CORRECT"
+    },
+    {
+      "id": "mimo_code",
+      "rol": "support"
+    }
+  ],
+  "edges": [
+    [
+      "director",
+      "rowboat"
+    ],
+    [
+      "rowboat",
+      "hermes"
+    ],
+    [
+      "rowboat",
+      "openclaw"
+    ],
+    [
+      "hermes",
+      "sheriff"
+    ],
+    [
+      "openclaw",
+      "sheriff"
+    ],
+    [
+      "sheriff",
+      "ruflo"
+    ],
+    [
+      "ruflo",
+      "claude_architect"
+    ],
+    [
+      "claude_architect",
+      "grok_executor"
+    ],
+    [
+      "grok_executor",
+      "claude_reviewer"
+    ],
+    [
+      "claude_reviewer",
+      "grok_executor"
+    ],
+    [
+      "claude_reviewer",
+      "meta_1_code"
+    ],
+    [
+      "claude_reviewer",
+      "meta_2_tests"
+    ],
+    [
+      "claude_reviewer",
+      "meta_3_visual"
+    ],
+    [
+      "claude_reviewer",
+      "meta_4_adversarial"
+    ],
+    [
+      "meta_1_code",
+      "meta_fixer"
+    ],
+    [
+      "meta_2_tests",
+      "meta_fixer"
+    ],
+    [
+      "meta_3_visual",
+      "meta_fixer"
+    ],
+    [
+      "meta_4_adversarial",
+      "meta_fixer"
+    ],
+    [
+      "meta_fixer",
+      "codex"
+    ],
+    [
+      "codex",
+      "sentinel"
+    ],
+    [
+      "sentinel",
+      "hermes"
+    ],
+    [
+      "sentinel",
+      "openclaw"
+    ],
+    [
+      "hermes",
+      "judge"
+    ],
+    [
+      "openclaw",
+      "judge"
+    ]
+  ]
+}

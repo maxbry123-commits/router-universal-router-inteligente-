@@ -1,0 +1,21 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build", "reference"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "reference": {
+      "outputs": ["src/content/docs/reference/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {},
+    "clean": {
+      "cache": false
+    }
+  }
+}

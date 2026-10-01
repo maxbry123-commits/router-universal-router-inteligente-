@@ -1,0 +1,142 @@
+[
+ {
+  "source_repo": "https://github.com/amaancoderx/npxskillui",
+  "slug": "npxskillui",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/webadderallorg/Recordly",
+  "slug": "recordly",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/swamimalode07/rare-ui",
+  "slug": "rare-ui",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/shadcn-labs/skills",
+  "slug": "shadcn-skills",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/firecrawl/firecrawl",
+  "slug": "firecrawl",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/firecrawl/cli",
+  "slug": "firecrawl-cli",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/firecrawl/firecrawl-mcp-server",
+  "slug": "firecrawl-mcp-server",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/firecrawl/skills",
+  "slug": "firecrawl-skills",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/emilkowalski/skills",
+  "slug": "emilkowalski-skills",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/pbakaus/impeccable",
+  "slug": "impeccable",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/MohtashamMurshid/getdesign",
+  "slug": "getdesign",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/nexu-io/open-design",
+  "slug": "open-design",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/headroomlabs-ai/headroom",
+  "slug": "headroom",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/DietrichGebert/ponytail",
+  "slug": "ponytail",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/axxt0/find-skills",
+  "slug": "find-skills",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/obra/superpowers",
+  "slug": "superpowers",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/gsd-build/get-shit-done",
+  "slug": "get-shit-done",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/thedotmack/claude-mem",
+  "slug": "claude-mem",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/mksglu/context-mode",
+  "slug": "context-mode",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/cogine-ai/local-ultra-review",
+  "slug": "local-ultra-review",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/rebelytics/one-skill-to-rule-them-all",
+  "slug": "one-skill-to-rule-them-all",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/aayushsoam/motionsites.ai",
+  "slug": "motionsites",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/precious112/caret-desktop",
+  "slug": "caret-desktop",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/onlook-dev/onlook",
+  "slug": "onlook",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/plasmicapp/plasmic",
+  "slug": "plasmic",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/webstudio-is/webstudio",
+  "slug": "webstudio",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/Leonxlnx/taste-skill",
+  "slug": "taste-skill",
+  "publish": true
+ },
+ {
+  "source_repo": "https://github.com/21st-dev/magic-mcp",
+  "slug": "magic-mcp",
+  "publish": true
+ }
+]

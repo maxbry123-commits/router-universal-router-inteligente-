@@ -1,0 +1,30 @@
+---
+title: Web
+description: Sign in to the dashboard, set up provider keys, and generate a design.md.
+---
+
+Use the [dashboard](https://dashboard.getdesign.app) to generate a `design.md` without installing the CLI or SDK. The [marketing site](https://www.getdesign.app) shows an animated sample, not a live run.
+
+## Pages
+
+| Page | Path | What it is |
+| --- | --- | --- |
+| Overview | `/` | Your completed runs, plus a short Examples preview |
+| Agent | `/agent` | Paste a public URL to start a private extraction |
+| Runs | `/runs` | Full history of your extractions |
+| Examples | `/sites` | Shared catalog of cached sites. Opening one does not spend provider credits |
+| Settings | `/account` | Provider keys and developer surface copy |
+
+## Setup
+
+1. Sign in through WorkOS.
+2. Save your Daytona and OpenAI keys under Settings → Provider keys.
+3. Open Agent and paste a public site URL.
+
+Both keys are required before a visual run starts. If capture fails, the run stops. You can choose Continue with text-only; that is an explicit choice, not a silent fallback.
+
+V1 has no getdesign API key and no getdesign run billing. You pay Daytona for browser capture and OpenAI for model usage. Costs and run duration vary by site.
+
+## What you get
+
+A generated `design.md` plus companion screenshots for visual runs. Follow progress on the run, then copy or download the result. You can publish a completed run to a public `/r/[id]` URL; that does not add it to Examples.

@@ -1,0 +1,186 @@
+{
+  "created_at": 1790881225,
+  "items": {
+    "0001:anthropic-skills": {
+      "attempts": 1,
+      "result": {
+        "bundle_bytes": 3953996,
+        "bundle_sha256": "ab6c00479158bbf765d17cb3e28e8932f58f11a5fa7c781ecc21b11f17cde2a8",
+        "elapsed_seconds": 49.27,
+        "extracted_tree": {
+          "bytes": 10987398,
+          "files": 419,
+          "sha256": "67c5d33864fb0037172a2b83eed5d717918554179251c421ba5fc3b6f56457a1"
+        },
+        "extraction_verified": true,
+        "max_github_blob_bytes": 99614720,
+        "no_lfs": true,
+        "part_size_limit_bytes": 12582912,
+        "parts": [
+          {
+            "bytes": 3953996,
+            "name": "anthropic-skills.bundle.zip.part-0001",
+            "sha256": "ab6c00479158bbf765d17cb3e28e8932f58f11a5fa7c781ecc21b11f17cde2a8"
+          }
+        ],
+        "publish": {
+          "commit": "76516549dba4da992a12905b0333dbb04dc31c6d",
+          "verdict": "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"
+        },
+        "reconstruction_verified": true,
+        "schema": "yaiwes.hf.download-extract.v1",
+        "slug": "anthropic-skills",
+        "source_bytes": 10987398,
+        "source_commit": "34040c9c568585f6929bedeaad110ad08f079624",
+        "source_files": 419,
+        "source_ref": "34040c9c568585f6929bedeaad110ad08f079624",
+        "source_repo": "https://github.com/anthropics/skills",
+        "source_tree": {
+          "bytes": 10987398,
+          "files": 419,
+          "sha256": "67c5d33864fb0037172a2b83eed5d717918554179251c421ba5fc3b6f56457a1"
+        },
+        "verdict": "VERIFIED_CLOSED"
+      },
+      "slug": "anthropic-skills",
+      "source_repo": "https://github.com/anthropics/skills",
+      "status": "VERIFIED_CLOSED"
+    },
+    "0002:scrapling": {
+      "attempts": 1,
+      "result": {
+        "bundle_bytes": 2553418,
+        "bundle_sha256": "b2868e16fc5f7a08ee29b0a7fa98f68cdcdd24d89d72b0e2f0956b757606dc5a",
+        "elapsed_seconds": 35.1,
+        "extracted_tree": {
+          "bytes": 4608034,
+          "files": 263,
+          "sha256": "f996d561b9f403ca52e8f48545d05f5395ac46cf489345b4ee768355f240da3c"
+        },
+        "extraction_verified": true,
+        "max_github_blob_bytes": 99614720,
+        "no_lfs": true,
+        "part_size_limit_bytes": 12582912,
+        "parts": [
+          {
+            "bytes": 2553418,
+            "name": "scrapling.bundle.zip.part-0001",
+            "sha256": "b2868e16fc5f7a08ee29b0a7fa98f68cdcdd24d89d72b0e2f0956b757606dc5a"
+          }
+        ],
+        "publish": {
+          "commit": "83d2f31c6b08bbd5eb6c2a3fc1d01019efc906e2",
+          "verdict": "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"
+        },
+        "reconstruction_verified": true,
+        "schema": "yaiwes.hf.download-extract.v1",
+        "slug": "scrapling",
+        "source_bytes": 4608034,
+        "source_commit": "2b160ee18bfee79bb0115e2d9e9c746c8d9bf4c9",
+        "source_files": 263,
+        "source_ref": "2b160ee18bfee79bb0115e2d9e9c746c8d9bf4c9",
+        "source_repo": "https://github.com/D4Vinci/Scrapling",
+        "source_tree": {
+          "bytes": 4608034,
+          "files": 263,
+          "sha256": "f996d561b9f403ca52e8f48545d05f5395ac46cf489345b4ee768355f240da3c"
+        },
+        "verdict": "VERIFIED_CLOSED"
+      },
+      "slug": "scrapling",
+      "source_repo": "https://github.com/D4Vinci/Scrapling",
+      "status": "VERIFIED_CLOSED"
+    },
+    "0003:scrapegraph-ai": {
+      "attempts": 1,
+      "result": {
+        "bundle_bytes": 3421776,
+        "bundle_sha256": "47fdbe5d8455e1a5a6e914ddee271825da5cdc739cf8353a815456b48b3c4ec4",
+        "elapsed_seconds": 16.56,
+        "extracted_tree": {
+          "bytes": 5558332,
+          "files": 390,
+          "sha256": "8b1a0422b20a74ee1a4df9121414a72521e3ebfee70d1a3c96ea6f5ebb5f1264"
+        },
+        "extraction_verified": true,
+        "max_github_blob_bytes": 99614720,
+        "no_lfs": true,
+        "part_size_limit_bytes": 12582912,
+        "parts": [
+          {
+            "bytes": 3421776,
+            "name": "scrapegraph-ai.bundle.zip.part-0001",
+            "sha256": "47fdbe5d8455e1a5a6e914ddee271825da5cdc739cf8353a815456b48b3c4ec4"
+          }
+        ],
+        "publish": {
+          "commit": "9385b9c88724b951a4acb76d0cc0b9eae4863e6e",
+          "verdict": "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"
+        },
+        "reconstruction_verified": true,
+        "schema": "yaiwes.hf.download-extract.v1",
+        "slug": "scrapegraph-ai",
+        "source_bytes": 5558332,
+        "source_commit": "c75c8084fae2d4f5ba01a8c218bc1168b67e3569",
+        "source_files": 390,
+        "source_ref": "c75c8084fae2d4f5ba01a8c218bc1168b67e3569",
+        "source_repo": "https://github.com/ScrapeGraphAI/Scrapegraph-ai",
+        "source_tree": {
+          "bytes": 5558332,
+          "files": 390,
+          "sha256": "8b1a0422b20a74ee1a4df9121414a72521e3ebfee70d1a3c96ea6f5ebb5f1264"
+        },
+        "verdict": "VERIFIED_CLOSED"
+      },
+      "slug": "scrapegraph-ai",
+      "source_repo": "https://github.com/ScrapeGraphAI/Scrapegraph-ai",
+      "status": "VERIFIED_CLOSED"
+    },
+    "0004:agent-reach": {
+      "attempts": 1,
+      "result": {
+        "bundle_bytes": 664630,
+        "bundle_sha256": "343d6e24d75c5c0cdb23e865e963944fe4e0ed3b5761359289e467f54d13185d",
+        "elapsed_seconds": 22.89,
+        "extracted_tree": {
+          "bytes": 1270538,
+          "files": 122,
+          "sha256": "dc3cc4eebd9bd40580843cbc0725c497520817b24a4794bdfacae819927896fc"
+        },
+        "extraction_verified": true,
+        "max_github_blob_bytes": 99614720,
+        "no_lfs": true,
+        "part_size_limit_bytes": 12582912,
+        "parts": [
+          {
+            "bytes": 664630,
+            "name": "agent-reach.bundle.zip.part-0001",
+            "sha256": "343d6e24d75c5c0cdb23e865e963944fe4e0ed3b5761359289e467f54d13185d"
+          }
+        ],
+        "publish": {
+          "commit": "88b018f855f453ec95bca38a8d298f04e64ca8af",
+          "verdict": "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"
+        },
+        "reconstruction_verified": true,
+        "schema": "yaiwes.hf.download-extract.v1",
+        "slug": "agent-reach",
+        "source_bytes": 1270538,
+        "source_commit": "a19a171fa980a0785849596492e0af4db800c82f",
+        "source_files": 122,
+        "source_ref": "a19a171fa980a0785849596492e0af4db800c82f",
+        "source_repo": "https://github.com/Panniantong/Agent-Reach",
+        "source_tree": {
+          "bytes": 1270538,
+          "files": 122,
+          "sha256": "dc3cc4eebd9bd40580843cbc0725c497520817b24a4794bdfacae819927896fc"
+        },
+        "verdict": "VERIFIED_CLOSED"
+      },
+      "slug": "agent-reach",
+      "source_repo": "https://github.com/Panniantong/Agent-Reach",
+      "status": "VERIFIED_CLOSED"
+    }
+  },
+  "schema": "yaiwes.frontend.download-extract-queue.v1"
+}

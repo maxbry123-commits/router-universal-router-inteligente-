@@ -1,0 +1,58 @@
+{
+  "name": "@getdesign/tools",
+  "version": "0.1.1",
+  "description": "Capture, crawl, extract, and render tools for generating design.md from live websites.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./crawler": {
+      "types": "./dist/crawler/index.d.ts",
+      "import": "./dist/crawler/index.js"
+    },
+    "./extractors": {
+      "types": "./dist/extractors/index.d.ts",
+      "import": "./dist/extractors/index.js"
+    },
+    "./daytona": {
+      "types": "./dist/daytona/index.d.ts",
+      "import": "./dist/daytona/index.js"
+    },
+    "./render": {
+      "types": "./dist/render/index.d.ts",
+      "import": "./dist/render/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@daytonaio/sdk": "^0.167.0",
+    "@getdesign/types": "workspace:*",
+    "cheerio": "^1.2.0",
+    "postcss": "^8.5.10",
+    "postcss-safe-parser": "^7.0.1",
+    "sharp": "^0.34.5",
+    "zod": "^4.3.6"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "bun run build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@getdesign/config": "workspace:*",
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
+  }
+}

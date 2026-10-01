@@ -33,6 +33,127 @@
       "summary": "M-0..M-7 COMPLETADOS: 13 componentes auditados; SQLite, State Hub y grafo fallback cableados; FalkorDB (927 archivos) y AgentDB (1456 archivos) descargados y read-back EXTRACTED_VERIFIED en GitHub. Action memoria PASS 31 tests. Secret Scan: 217 hallazgos baseline preexistentes; escaneo dirigido de memoria PASS. H-1 sigue reservado a Opus.",
       "updated_at": "2026-09-27T07:36:28Z",
       "last_event_seq": 13
+    },
+    "UI-T-01": {
+      "node_id": "UI-T-01",
+      "task": "UI-T-01",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T01_READBACK",
+      "next": "T-02",
+      "summary": "109 visual assets moved unchanged; git rename 100 percent and read-back confirmed; commit 97696e69e4.",
+      "updated_at": "2026-10-01T03:18:57Z",
+      "last_event_seq": 14
+    },
+    "UI-T-02": {
+      "node_id": "UI-T-02",
+      "task": "UI-T-02",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T02_YAML_VALIDATED",
+      "next": "T-03",
+      "summary": "Uploaded duplicate plan consolidated to 10 unique DAG nodes and 22 input blocks; dag.validate returns no errors; topological order T-01..T-10; read-back commit bf964cec58.",
+      "updated_at": "2026-10-01T03:20:32Z",
+      "last_event_seq": 15
+    },
+    "UI-T-03": {
+      "node_id": "UI-T-03",
+      "task": "UI-T-03",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T03_FABLES_METADATA_VALIDATED",
+      "next": "T-04",
+      "summary": "Fables catalog read-back commit 556287c954: 22 panel/agent metadata fichas registered INACTIVE, validator v2 rejects invalid, 7 focused tests passed; activation still requires tribunal approval and executable components.",
+      "updated_at": "2026-10-01T03:23:55Z",
+      "last_event_seq": 16
+    },
+    "UI-T-04": {
+      "node_id": "UI-T-04",
+      "task": "UI-T-04",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T04_AGENT_GATES_TESTED",
+      "next": "T-05",
+      "summary": "Read-back f21b7a3e82: agent nodes, Sheriff and Judge gates, P1 step/scope, P2 checkpoint and archive gate, P3 conflict stop, State Hub events, Codex graph; 17 focused tests passed. Live PASS still requires ACTIVE_TRUTH and trusted reviews/evidence; no provider call claimed.",
+      "updated_at": "2026-10-01T03:30:08Z",
+      "last_event_seq": 17
+    },
+    "UI-T-05": {
+      "node_id": "UI-T-05",
+      "task": "UI-T-05",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "T05_AUDIT_APPEND_ONLY",
+      "next": "T-06 GAPs",
+      "summary": "Director decision B applied: every GET /chat/org/* appends a RESOURCE_READ audit event to BITACORA.jsonl with read-back, while functional projection ignores those events so status, payload, workflow_state and business_state stay unchanged. POST /state/events rejects RESOURCE_READ. Deterministic errors are audited with their HTTP code and audit failure returns STATE_AUDIT_UNAVAILABLE 503. Evidence: tests/test_org_api.py, 4 passed.",
+      "updated_at": "2026-10-01T04:35:00Z",
+      "last_event_seq": 25
+    },
+    "UI-T-06": {
+      "node_id": "UI-T-06",
+      "task": "UI-T-06",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "T06_MODULAR_SHELL",
+      "next": "T-07",
+      "summary": "Read-back ccc470276b: shell, four panels, three read-only views and safe media endpoint; 20 focused tests pass, JS syntax and palette checked. GAP: no browser screenshots, Fables activation, HttpOnly session, template run, file anchors, ten mental views or RUI components.",
+      "updated_at": "2026-10-01T03:38:45Z",
+      "last_event_seq": 19
+    },
+    "UI-T-07": {
+      "node_id": "UI-T-07",
+      "task": "UI-T-07",
+      "project": "chat-yaiwes",
+      "status": "BLOCKED",
+      "phase": "T07_RDC_WORKFLOW_MISSING",
+      "next": "Provide approved RDC workflow",
+      "summary": "Prescribed research-download-chain-router-components-20260903.yml absent from work branch and origin/main. No components downloaded and no new RDC evidence claimed. Existing repository checksum evidence belongs to earlier components only.",
+      "updated_at": "2026-10-01T03:38:45Z",
+      "last_event_seq": 20
+    },
+    "UI-T-08": {
+      "node_id": "UI-T-08",
+      "task": "UI-T-08",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T08_RECOVERY_NOTES",
+      "next": "T-09",
+      "summary": "Recovery notes created under Devin notas and Claude notas; security warning recorded without token values. T-05 remains first incomplete node; state projections regenerated from append-only Bitacora.",
+      "updated_at": "2026-10-01T03:38:45Z",
+      "last_event_seq": 21
+    },
+    "UI-T-09": {
+      "node_id": "UI-T-09",
+      "task": "UI-T-09",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T09_STATIC_SPEC_AUDIT",
+      "next": "T-10",
+      "summary": "All 26 specification sections classified VERIFIED or GAP in VERIFICACION-UI-T09.md with reasons, next steps and timestamp. Static comparison only; visual browser testing and screenshots remain GAP pending user authorization.",
+      "updated_at": "2026-10-01T03:38:45Z",
+      "last_event_seq": 22
+    },
+    "UI-T-10": {
+      "node_id": "UI-T-10",
+      "task": "UI-T-10",
+      "project": "chat-yaiwes",
+      "status": "RUNNING",
+      "phase": "T10_GLOBAL_READBACK",
+      "next": "T-06 HttpOnly session, Fables activation, T-07 RDC workflow",
+      "summary": "T-05 contradiction closed by decision B. Remaining GAPs unchanged: T-06 browser API key and INACTIVE Fables panels, T-07 prescribed RDC workflow absent from main, no browser test or screenshots, CI job blocked by account billing lock, Vercel automatic deployment stays disabled. No global PASS declared.",
+      "updated_at": "2026-10-01T04:35:30Z",
+      "last_event_seq": 26
+    },
+    "PLAN-RECEPCION": {
+      "node_id": "PLAN-RECEPCION",
+      "task": "PLAN-RECEPCION",
+      "project": "chat-yaiwes",
+      "status": "BLOCKED",
+      "phase": "SCOPE_UNCONFIRMED",
+      "next": "Continuar DAG existente",
+      "summary": "corte sesion: memoria.md + handoff completo para siguiente Devin en 3 dias",
+      "updated_at": "2026-10-01T19:03:31Z",
+      "last_event_seq": 59
     }
   }
 }

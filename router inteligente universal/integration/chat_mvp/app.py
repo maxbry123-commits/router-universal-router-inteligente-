@@ -10,11 +10,16 @@ Ambos se montan dentro de try: si fallan, el Router sigue arriba sin esas rutas.
 """
 from __future__ import annotations
 
+import base64
+import binascii
+import hmac
 import logging
 import os
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from ..huggingface import fastapi_gateway as gateway
 from . import wordflow_agents
@@ -24,8 +29,32 @@ from .router import build_router, get_store
 from .vault_api import build_vault_router
 
 app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.3")
+app.mount("/chat/ui", StaticFiles(directory=Path(__file__).resolve().parents[3] / "chat router/ui"), name="chat-organization-ui")
 app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in os.getenv("RIU_CORS_ORIGINS", "*").split(",") if o.strip()],
                    allow_methods=["*"], allow_headers=["*"], allow_credentials=False)
+
+
+@app.middleware("http")
+async def browser_auth(request: Request, call_next):
+    expected = os.getenv("RIU_ROUTER_API_KEY", "")
+    authorization = request.headers.get("authorization", "")
+    challenge = {"WWW-Authenticate": 'Basic realm="Router"'}
+    if expected and authorization.lower().startswith("basic "):
+        try:
+            user, password = base64.b64decode(authorization[6:].strip(), validate=True).decode("utf-8").split(":", 1)
+        except (ValueError, UnicodeDecodeError, binascii.Error):
+            return Response(status_code=401, headers=challenge)
+        if user != "router" or not hmac.compare_digest(password, expected):
+            return Response(status_code=401, headers=challenge)
+        request.scope["headers"] = [
+            (name, value) for name, value in request.scope["headers"] if name.lower() != b"x-api-key"
+        ] + [(b"x-api-key", expected.encode("utf-8"))]
+    elif expected and request.url.path.startswith("/chat/ui/"):
+        return Response(status_code=401, headers=challenge)
+    response = await call_next(request)
+    if expected and response.status_code == 401:
+        response.headers["WWW-Authenticate"] = challenge["WWW-Authenticate"]
+    return response
 
 
 @app.on_event("startup")

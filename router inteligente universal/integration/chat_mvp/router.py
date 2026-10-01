@@ -13,26 +13,35 @@ import base64
 import json
 import os
 import tempfile
+import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 from ..huggingface.api_key_auth import authenticate_api_key
-from ..huggingface.chat_catalog import cached_discovery, family_of, selector_models
-from . import core, model_pool, resilience
+from ..huggingface.chat_catalog import (
+    cached_discovery,  # noqa: F401
+    family_of,
+    selector_models,
+)
+from . import core, dag_cli, model_pool, org_api, resilience, ui_bridge
 from . import dag as dagmod
-from . import dag_cli
 from . import github_tools as gh
 from . import providers as prov
+from .fables_adapter import FablesCatalog
+from .memory_runtime import memory, scope_for
 from .store import Store
 from .usage import UsageLog, normalize_usage
 
 _UI = Path(__file__).with_name("chat_ui.html")
+_ORG_UI = Path(__file__).resolve().parents[3] / "chat router/ui/shell.html"
 _store: Store | None = None
+_fables_catalog: FablesCatalog | None = None
 
 
 def get_store() -> Store:
@@ -46,6 +55,13 @@ def get_store() -> Store:
 def set_store(store: Store | None) -> None:
     global _store
     _store = store
+
+
+def get_fables_catalog() -> FablesCatalog:
+    global _fables_catalog
+    if _fables_catalog is None:
+        _fables_catalog = FablesCatalog()
+    return _fables_catalog
 
 
 def _auth(
@@ -64,7 +80,7 @@ def _auth(
 def sync_to_bucket(store: Store, bucket_id: str, token: str, *, fs_factory: Callable[..., Any] | None = None) -> dict[str, Any]:
     """Copy the SQLite snapshot and documents into an HF storage bucket (needs a write token)."""
     if fs_factory is None:
-        from huggingface_hub import HfFileSystem as fs_factory  # noqa: N813
+        from huggingface_hub import HfFileSystem as fs_factory
     fs = fs_factory(token=token)
     base = f"buckets/{bucket_id}/riu-chat"
     files = 0
@@ -121,6 +137,10 @@ class DagReq(BaseModel):
     dag: dict[str, Any]
 
 
+class FichaReq(BaseModel):
+    ficha: dict[str, Any]
+
+
 def _gh_token(account: str, byok: str | None) -> str:
     token = gh.token_for(account, byok)
     if not token:
@@ -137,6 +157,30 @@ def _gh(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 
 def build_router() -> APIRouter:
     r = APIRouter()
+    r.include_router(org_api.build_org_router(_auth, get_store, get_fables_catalog))
+
+    @r.get("/chat/organization", response_class=HTMLResponse)
+    def organization() -> HTMLResponse:
+        return HTMLResponse(_ORG_UI.read_text(encoding="utf-8"))
+
+    @r.get("/chat/fichas")
+    def fichas(_owner: str = Depends(_auth)) -> dict[str, Any]:
+        return {"fichas": get_fables_catalog().list()}
+
+    @r.get("/chat/fichas/{artifact_id}")
+    def ficha(artifact_id: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        entry = get_fables_catalog().get(artifact_id)
+        if entry is None:
+            raise HTTPException(status_code=404, detail="FICHA_NOT_FOUND")
+        return {"ficha": entry}
+
+    @r.post("/chat/fichas")
+    def register_ficha(req: FichaReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        try:
+            return {"ficha": get_fables_catalog().register(req.ficha)}
+        except ValueError as exc:
+            detail = str(exc)
+            raise HTTPException(status_code=409 if detail == "FICHA_ALREADY_REGISTERED" else 422, detail=detail) from exc
 
     @r.get("/chat", response_class=HTMLResponse)
     def page() -> HTMLResponse:
@@ -226,7 +270,7 @@ def build_router() -> APIRouter:
         used_provider, used_model, route_trace = req.provider, req.model, None
         try:
             if auto:
-                from .route_api import _call as route_call  # lazy: route_api imports this module
+                from .route_api import _call as route_call
 
                 out = await asyncio.to_thread(resilience.run_policy, "default", msgs, req.max_tokens, temperature=req.temperature,
                                               call=route_call, pool=model_pool.POOL)
@@ -258,6 +302,22 @@ def build_router() -> APIRouter:
         if auto:
             body["auto"] = True
             body["trace"] = route_trace  # why earlier options were skipped / failed (NOT_LISTED, COOLING, provider errors)
+        if reply:
+            memory_key = f"turn:{conv}:{uuid.uuid4().hex}"
+            payload = {"conversation_id": conv, "message": req.message, "reply": reply,
+                       "provider": used_provider, "model": used_model, "agent_id": body["agent_id"],
+                       "doc_ids": used_docs}
+            try:
+                facade = memory(st)
+                result = await asyncio.to_thread(facade.save, scope_for(owner, "chat"), memory_key, payload)
+                rows = await asyncio.to_thread(facade.load, scope_for(owner, "chat"), memory_key)
+                if not any(row.get("data") == payload for row in rows):
+                    raise RuntimeError("MEMORY_READBACK_FAILED")
+                replicas = result.get("replicas", {})
+                status = "PARTIAL" if any(row.get("status") == "GAP" for row in replicas.values()) else "SAVED"
+                body["memory"] = {"status": status, "key": memory_key, "adapter": "sqlite"}
+            except Exception as exc:  # noqa: BLE001 - Store already persisted the conversation
+                body["memory"] = {"status": "🚩 PENDIENTE", "reason": type(exc).__name__}
         return body
 
     @r.get("/chat/usage")
@@ -278,7 +338,10 @@ def build_router() -> APIRouter:
         agents = {a["id"]: a["system_prompt"] for a in st.agents()}
         try:
             return await asyncio.to_thread(dagmod.run_dag, req.dag, dag_cli.build_executor(st, owner, keys),
-                                           agents=agents, known_providers=set(prov.PROVIDERS))
+                                           agents=agents, known_providers=set(prov.PROVIDERS),
+                                           state_emit=ui_bridge._emit_state_event if any(
+                                               n.get("type") == "agent" for n in req.dag.get("nodes", [])
+                                               if isinstance(n, dict)) else None)
         except dagmod.DagError as exc:
             raise HTTPException(status_code=400, detail=f"DAG_INVALID:{exc}") from exc
 
@@ -313,7 +376,7 @@ def build_router() -> APIRouter:
     def upload(req: DocReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
         try:
             data = base64.b64decode(req.data_b64, validate=True)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise HTTPException(status_code=400, detail="DOCUMENT_BASE64_INVALID") from exc
         st = get_store()
         try:
@@ -334,6 +397,18 @@ def build_router() -> APIRouter:
         if not doc:
             raise HTTPException(status_code=404, detail="DOCUMENT_NOT_FOUND")
         return {"document": doc, "preview": st.document_text(did, limit=4000)}
+
+    @r.get("/chat/media/{did}")
+    def media(did: str, _owner: str = Depends(_auth)) -> FileResponse:
+        st = get_store()
+        doc = st.document(did)
+        allowed = {"image/png", "image/jpeg", "image/gif", "image/webp", "video/mp4", "video/webm"}
+        if not doc or doc["mime"] not in allowed:
+            raise HTTPException(status_code=404, detail="MEDIA_NOT_FOUND")
+        path = st.dir / "docs" / doc["id"]
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="MEDIA_NOT_FOUND")
+        return FileResponse(path, media_type=doc["mime"], headers={"X-Content-Type-Options": "nosniff"})
 
     @r.delete("/chat/documents/{did}")
     def delete_document(did: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
@@ -363,7 +438,7 @@ def build_router() -> APIRouter:
             raise HTTPException(status_code=400, detail="HF_BUCKET_WRITE_TOKEN_NOT_SET")
         try:
             return sync_to_bucket(get_store(), bucket, token)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             raise HTTPException(status_code=502, detail=f"BUCKET_SYNC_FAILED:{type(exc).__name__}") from exc
 
     @r.get("/chat/github/accounts")

@@ -1,5 +1,6 @@
 """FAST-CLOSE global E2E using the live public GitHub API as destination."""
 from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
@@ -10,9 +11,9 @@ for sub in ("security", "gateway"):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from fastapi.testclient import TestClient  # noqa: E402
-from api_key_manager import APIKeyManager  # noqa: E402
-from fastapi_app import create_app  # noqa: E402
+from api_key_manager import APIKeyManager
+from fastapi.testclient import TestClient
+from fastapi_app import create_app
 
 
 def test_api_key_manager_hash_only_rotate_revoke_and_100_slots() -> None:
@@ -60,7 +61,7 @@ def test_real_agent_key_fastapi_enchufe_red_github_verifier_response() -> None:
     response = client.post(
         "/v1/chat/completions",
         headers={"Authorization": f"Bearer {plain}"},
-        json={"model": "github/public", "messages": [{"role": "user", "content": "read handoff"}], "path": "Handoff router inteligente universal.md"},
+        json={"model": "github/public", "messages": [{"role": "user", "content": "read handoff"}], "path": "Estado y handoff global/HANDOFF.md"},
     )
     assert response.status_code == 200, response.text
     body = response.json()

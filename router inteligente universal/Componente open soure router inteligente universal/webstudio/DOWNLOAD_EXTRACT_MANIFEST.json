@@ -1,0 +1,58 @@
+{
+  "bundle_bytes": 66114957,
+  "bundle_sha256": "d364a0118ab5c827a5c58d80ed68ebddad76469c1273719d1b757b121fac6e35",
+  "extracted_tree": {
+    "bytes": 92917717,
+    "files": 4365,
+    "sha256": "6cf8201ba80a77db390669c8f4fdaedbe79042df1254c69f1aa69b83aa3a40cc"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "webstudio.bundle.zip.part-0001",
+      "sha256": "1851442f070c2c1f1ff5d6a3b3b82bdf8693c351e7f903a97c27d893eac51338"
+    },
+    {
+      "bytes": 12582912,
+      "name": "webstudio.bundle.zip.part-0002",
+      "sha256": "8b2fed11c2481036004dd0845badbc2441c12ceec6930677cbdbd9c298332e59"
+    },
+    {
+      "bytes": 12582912,
+      "name": "webstudio.bundle.zip.part-0003",
+      "sha256": "ddeb8abfdf71dd8be908efbac3846af9e02018bbeb61fda43c7dc5fb2e008c71"
+    },
+    {
+      "bytes": 12582912,
+      "name": "webstudio.bundle.zip.part-0004",
+      "sha256": "29f2f28b8403925ce70ff7fe51fbe6564c19c09447900aeffba7a2f18258eb7e"
+    },
+    {
+      "bytes": 12582912,
+      "name": "webstudio.bundle.zip.part-0005",
+      "sha256": "1c1a1178e0e87dad3d171316b5e6c7099acec53fd3f359cf099d4e3131e15e11"
+    },
+    {
+      "bytes": 3200397,
+      "name": "webstudio.bundle.zip.part-0006",
+      "sha256": "c857c1ef743c16bbf92ff428ff9a62ce32fbd9972bc7e0e434338446f3edb790"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "webstudio",
+  "source_bytes": 92917717,
+  "source_commit": "8e4c080d95d134f87784cbb6286b3c4acc152235",
+  "source_files": 4365,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/webstudio-is/webstudio",
+  "source_tree": {
+    "bytes": 92917717,
+    "files": 4365,
+    "sha256": "6cf8201ba80a77db390669c8f4fdaedbe79042df1254c69f1aa69b83aa3a40cc"
+  }
+}

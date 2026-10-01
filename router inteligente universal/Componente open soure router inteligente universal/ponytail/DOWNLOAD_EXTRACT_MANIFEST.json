@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 1218570,
+  "bundle_sha256": "59a3b614c7e28fdbd8433455e4bcae45e146085fa461068b1ca94c82b22a2a87",
+  "extracted_tree": {
+    "bytes": 1764814,
+    "files": 166,
+    "sha256": "4cc21f99b273f7eb2d9863c256946648af2ab22168a8e95bfb16288645654054"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1218570,
+      "name": "ponytail.bundle.zip.part-0001",
+      "sha256": "59a3b614c7e28fdbd8433455e4bcae45e146085fa461068b1ca94c82b22a2a87"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "ponytail",
+  "source_bytes": 1764814,
+  "source_commit": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156",
+  "source_files": 166,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/DietrichGebert/ponytail",
+  "source_tree": {
+    "bytes": 1764814,
+    "files": 166,
+    "sha256": "4cc21f99b273f7eb2d9863c256946648af2ab22168a8e95bfb16288645654054"
+  }
+}

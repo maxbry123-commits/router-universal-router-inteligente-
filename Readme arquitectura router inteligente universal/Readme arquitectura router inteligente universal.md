@@ -1,5 +1,11 @@
 # Router Inteligente Universal — Arquitectura / ADN / X-Ray
 
+## Estado de integración Chat YAIWES — 2026-10-01
+
+La arquitectura del chat y su auditoría de memoria están en `../chat router/02-ARQUITECTURA/📂readme chat Arquitectura.md`. La rama del PR incluye el loader `/memoria/*` con SQLite y grafo de respaldo probado localmente (8 pruebas focalizadas); Graphiti y Graphify están descargados, sin servicio/índice operativo verificado. El flujo normal `/chat/send` todavía no llama la fachada de memoria. El puente HF H-1 de respaldo y restauración sigue pendiente.
+
+Las referencias visuales de la raíz se agrupan en `../📂 Skills Maxbry UI fromtend/`, con capturas y skills en `diseno/` y componentes Rare UI en `componentes/`. El plan nuevo de 100 pasos sigue sin recibirse; `../chat router/03-ESTADO/CHECKPOINT.json` y `HANDOFF.md` indican la siguiente acción. Vercel automático permanece desactivado; no se declara PASS de T-06 ni de memoria integral.
+
 Contrato: `tel.workflow/v3` · modo `FAIL_CLOSED_LOOP` · rama `main`.
 
 ## Estado ejecutivo

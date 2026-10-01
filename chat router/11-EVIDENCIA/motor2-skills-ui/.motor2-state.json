@@ -1,0 +1,255 @@
+{
+  "created_at": 1790882342,
+  "items": {
+    "0001:npxskillui": {
+      "attempts": 1,
+      "result": {
+        "bundle_bytes": 313939,
+        "bundle_sha256": "f17ccfa623c6d71b693660cf994a40c28273ac8645e17f7acaa1506f7170a9df",
+        "elapsed_seconds": 36.62,
+        "extracted_tree": {
+          "bytes": 719805,
+          "files": 38,
+          "sha256": "68169f97e960bc3bb4e27c9e22332906fb440068b7cc2513aed9c807afeaf258"
+        },
+        "extraction_verified": true,
+        "max_github_blob_bytes": 99614720,
+        "no_lfs": true,
+        "part_size_limit_bytes": 12582912,
+        "parts": [
+          {
+            "bytes": 313939,
+            "name": "npxskillui.bundle.zip.part-0001",
+            "sha256": "f17ccfa623c6d71b693660cf994a40c28273ac8645e17f7acaa1506f7170a9df"
+          }
+        ],
+        "publish": {
+          "commit": "5007111af5a7974c399b670b658c9f68b8513211",
+          "verdict": "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"
+        },
+        "reconstruction_verified": true,
+        "schema": "yaiwes.hf.download-extract.v1",
+        "slug": "npxskillui",
+        "source_bytes": 719805,
+        "source_commit": "bc913a8d3503d6b2a683e4a3ac04ffe7304ac510",
+        "source_files": 38,
+        "source_ref": "HEAD",
+        "source_repo": "https://github.com/amaancoderx/npxskillui",
+        "source_tree": {
+          "bytes": 719805,
+          "files": 38,
+          "sha256": "68169f97e960bc3bb4e27c9e22332906fb440068b7cc2513aed9c807afeaf258"
+        },
+        "verdict": "VERIFIED_CLOSED"
+      },
+      "slug": "npxskillui",
+      "source_repo": "https://github.com/amaancoderx/npxskillui",
+      "status": "VERIFIED_CLOSED"
+    },
+    "0002:recordly": {
+      "attempts": 1,
+      "error": "Traceback (most recent call last):\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 161, in <module>\n    if __name__=='__main__': main()\n                             ^^^^^^\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 158, in main\n    pub=publish(work,parts_dir,extracted,mp,slug) if PUBLISH else {'verdict':'DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED'}\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 144, in publish\n    if actual['sha256']!=remote['extracted_tree']['sha256'] or actual['files']!=remote['extracted_tree']['files']: raise RuntimeError('READBACK_TREE_HASH_GAP')\n                                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: READBACK_TREE_HASH_GAP\n",
+      "slug": "recordly",
+      "source_repo": "https://github.com/webadderallorg/Recordly",
+      "status": "RETRY_PENDING"
+    },
+    "0003:rare-ui": {
+      "attempts": 1,
+      "result": {
+        "bundle_bytes": 9832511,
+        "bundle_sha256": "e6019c2637b5e96c51264a4db2fcfc10600fbebaa23818d3aca160d0c4ef1d2a",
+        "elapsed_seconds": 19.29,
+        "extracted_tree": {
+          "bytes": 11319098,
+          "files": 252,
+          "sha256": "fb03cddb6178ce1d916908519836bbf0664c1fc816105b94f6991c66de7346be"
+        },
+        "extraction_verified": true,
+        "max_github_blob_bytes": 99614720,
+        "no_lfs": true,
+        "part_size_limit_bytes": 12582912,
+        "parts": [
+          {
+            "bytes": 9832511,
+            "name": "rare-ui.bundle.zip.part-0001",
+            "sha256": "e6019c2637b5e96c51264a4db2fcfc10600fbebaa23818d3aca160d0c4ef1d2a"
+          }
+        ],
+        "publish": {
+          "commit": "b7e0ce37dffa921821de8b6955ba328001c16a37",
+          "verdict": "PUBLISHED_AND_EXTRACTED_READBACK_VERIFIED"
+        },
+        "reconstruction_verified": true,
+        "schema": "yaiwes.hf.download-extract.v1",
+        "slug": "rare-ui",
+        "source_bytes": 11319098,
+        "source_commit": "1d572f4b1862f5f6b1be61bb33380fede433e1df",
+        "source_files": 252,
+        "source_ref": "HEAD",
+        "source_repo": "https://github.com/swamimalode07/rare-ui",
+        "source_tree": {
+          "bytes": 11319098,
+          "files": 252,
+          "sha256": "fb03cddb6178ce1d916908519836bbf0664c1fc816105b94f6991c66de7346be"
+        },
+        "verdict": "VERIFIED_CLOSED"
+      },
+      "slug": "rare-ui",
+      "source_repo": "https://github.com/swamimalode07/rare-ui",
+      "status": "VERIFIED_CLOSED"
+    },
+    "0004:shadcn-skills": {
+      "attempts": 1,
+      "error": "Traceback (most recent call last):\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 161, in <module>\n    if __name__=='__main__': main()\n                             ^^^^^^\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 152, in main\n    work=pathlib.Path(td); src,commit=acquire(work); rows,src_bytes=scan_tree(src); src_tree=tree_hash(src)\n                                                                    ^^^^^^^^^^^^^^\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 57, in scan_tree\n    if special: raise RuntimeError('SOURCE_SPECIAL_FILE_GAP:'+','.join(special[:30]))\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: SOURCE_SPECIAL_FILE_GAP:.claude/skills/docs-i18n-zh,.claude/skills/unslop,.claude/skills/writing-great-skills\n",
+      "slug": "shadcn-skills",
+      "source_repo": "https://github.com/shadcn-labs/skills",
+      "status": "RETRY_PENDING"
+    },
+    "0005:firecrawl": {
+      "attempts": 1,
+      "error": "Traceback (most recent call last):\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 161, in <module>\n    if __name__=='__main__': main()\n                             ^^^^^^\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 158, in main\n    pub=publish(work,parts_dir,extracted,mp,slug) if PUBLISH else {'verdict':'DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED'}\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/repos/router-universal-router-inteligente-/chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py\", line 144, in publish\n    if actual['sha256']!=remote['extracted_tree']['sha256'] or actual['files']!=remote['extracted_tree']['files']: raise RuntimeError('READBACK_TREE_HASH_GAP')\n                                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: READBACK_TREE_HASH_GAP\n",
+      "slug": "firecrawl",
+      "source_repo": "https://github.com/firecrawl/firecrawl",
+      "status": "RETRY_PENDING"
+    },
+    "0006:firecrawl-cli": {
+      "attempts": 1,
+      "slug": "firecrawl-cli",
+      "source_repo": "https://github.com/firecrawl/cli",
+      "status": "RUNNING"
+    },
+    "0007:firecrawl-mcp-server": {
+      "attempts": 0,
+      "slug": "firecrawl-mcp-server",
+      "source_repo": "https://github.com/firecrawl/firecrawl-mcp-server",
+      "status": "PENDING"
+    },
+    "0008:firecrawl-skills": {
+      "attempts": 0,
+      "slug": "firecrawl-skills",
+      "source_repo": "https://github.com/firecrawl/skills",
+      "status": "PENDING"
+    },
+    "0009:emilkowalski-skills": {
+      "attempts": 0,
+      "slug": "emilkowalski-skills",
+      "source_repo": "https://github.com/emilkowalski/skills",
+      "status": "PENDING"
+    },
+    "0010:impeccable": {
+      "attempts": 0,
+      "slug": "impeccable",
+      "source_repo": "https://github.com/pbakaus/impeccable",
+      "status": "PENDING"
+    },
+    "0011:getdesign": {
+      "attempts": 0,
+      "slug": "getdesign",
+      "source_repo": "https://github.com/MohtashamMurshid/getdesign",
+      "status": "PENDING"
+    },
+    "0012:open-design": {
+      "attempts": 0,
+      "slug": "open-design",
+      "source_repo": "https://github.com/nexu-io/open-design",
+      "status": "PENDING"
+    },
+    "0013:headroom": {
+      "attempts": 0,
+      "slug": "headroom",
+      "source_repo": "https://github.com/headroomlabs-ai/headroom",
+      "status": "PENDING"
+    },
+    "0014:ponytail": {
+      "attempts": 0,
+      "slug": "ponytail",
+      "source_repo": "https://github.com/DietrichGebert/ponytail",
+      "status": "PENDING"
+    },
+    "0015:find-skills": {
+      "attempts": 0,
+      "slug": "find-skills",
+      "source_repo": "https://github.com/axxt0/find-skills",
+      "status": "PENDING"
+    },
+    "0016:superpowers": {
+      "attempts": 0,
+      "slug": "superpowers",
+      "source_repo": "https://github.com/obra/superpowers",
+      "status": "PENDING"
+    },
+    "0017:get-shit-done": {
+      "attempts": 0,
+      "slug": "get-shit-done",
+      "source_repo": "https://github.com/gsd-build/get-shit-done",
+      "status": "PENDING"
+    },
+    "0018:claude-mem": {
+      "attempts": 0,
+      "slug": "claude-mem",
+      "source_repo": "https://github.com/thedotmack/claude-mem",
+      "status": "PENDING"
+    },
+    "0019:context-mode": {
+      "attempts": 0,
+      "slug": "context-mode",
+      "source_repo": "https://github.com/mksglu/context-mode",
+      "status": "PENDING"
+    },
+    "0020:local-ultra-review": {
+      "attempts": 0,
+      "slug": "local-ultra-review",
+      "source_repo": "https://github.com/cogine-ai/local-ultra-review",
+      "status": "PENDING"
+    },
+    "0021:one-skill-to-rule-them-all": {
+      "attempts": 0,
+      "slug": "one-skill-to-rule-them-all",
+      "source_repo": "https://github.com/rebelytics/one-skill-to-rule-them-all",
+      "status": "PENDING"
+    },
+    "0022:motionsites": {
+      "attempts": 0,
+      "slug": "motionsites",
+      "source_repo": "https://github.com/aayushsoam/motionsites.ai",
+      "status": "PENDING"
+    },
+    "0023:caret-desktop": {
+      "attempts": 0,
+      "slug": "caret-desktop",
+      "source_repo": "https://github.com/precious112/caret-desktop",
+      "status": "PENDING"
+    },
+    "0024:onlook": {
+      "attempts": 0,
+      "slug": "onlook",
+      "source_repo": "https://github.com/onlook-dev/onlook",
+      "status": "PENDING"
+    },
+    "0025:plasmic": {
+      "attempts": 0,
+      "slug": "plasmic",
+      "source_repo": "https://github.com/plasmicapp/plasmic",
+      "status": "PENDING"
+    },
+    "0026:webstudio": {
+      "attempts": 0,
+      "slug": "webstudio",
+      "source_repo": "https://github.com/webstudio-is/webstudio",
+      "status": "PENDING"
+    },
+    "0027:taste-skill": {
+      "attempts": 0,
+      "slug": "taste-skill",
+      "source_repo": "https://github.com/Leonxlnx/taste-skill",
+      "status": "PENDING"
+    },
+    "0028:magic-mcp": {
+      "attempts": 0,
+      "slug": "magic-mcp",
+      "source_repo": "https://github.com/21st-dev/magic-mcp",
+      "status": "PENDING"
+    }
+  },
+  "schema": "yaiwes.frontend.download-extract-queue.v1"
+}

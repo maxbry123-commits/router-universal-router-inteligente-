@@ -1,0 +1,20 @@
+---
+title: Next.js runtime notes
+description: Choose the hosted API for Next.js integrations while SDK Node support is unverified.
+---
+
+The V1 execution SDK targets Bun servers. Node support is not verified, so a Next.js Node Route Handler is not a supported SDK integration yet. Do not import the SDK into a browser component or an edge runtime.
+
+## Use the hosted API
+
+For a Next.js integration, call the [HTTP API](/surfaces/api/) from your server. Forward the authenticated user's WorkOS access token and request-scoped Daytona and OpenAI keys over HTTPS. Keep provider keys out of client bundles, URLs, and logs. There is no getdesign API key.
+
+`GET /v1/design?url=<absolute-url>` returns Markdown after the run finishes. Add `format=json` for a structured result. Use `GET /v1/design/stream?url=<absolute-url>` for SSE progress followed by a result or error. SSE events are not Markdown chunks.
+
+Allow enough request time for browser capture and model generation, and handle authentication, missing credentials, and capture failures. Check your host's request-duration limits before using a route as a proxy.
+
+V1 has no getdesign run billing. Each run uses the caller's provider credentials, and the caller pays Daytona and OpenAI directly.
+
+## Run the SDK on Bun
+
+If you control a Bun server, follow the [SDK setup and typed event examples](/surfaces/sdk/). The SDK runs the agent in-process and does not need a WorkOS token.

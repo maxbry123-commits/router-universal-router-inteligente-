@@ -1,0 +1,72 @@
+---
+title: SDK
+description: Run the agent in-process on Bun with typed results and progress events.
+---
+
+The execution SDK runs the agent in-process on your Bun server using request-scoped Daytona and OpenAI credentials. It does not call the hosted API or need a WorkOS token. You pay the providers directly.
+
+It is not a browser or edge-runtime client. Node support is not promised for V1.
+
+```bash
+bun add @getdesign/sdk
+```
+
+## Usage
+
+```ts
+import { getDesign, streamDesign } from "@getdesign/sdk";
+
+const options = {
+  credentials: {
+    daytonaApiKey: process.env.DAYTONA_API_KEY,
+    openaiApiKey: process.env.OPENAI_API_KEY,
+  },
+};
+const result = await getDesign("https://stripe.com", options);
+console.log(result.markdown);
+
+// Alternative: run with progress events instead.
+for await (const event of streamDesign("https://stripe.com", options)) {
+  if (event.type === "progress") console.log(event.event);
+  if (event.type === "result") console.log(event.result.markdown);
+  if (event.type === "error") throw new Error(event.error.error);
+}
+```
+
+Each call starts a separate run. Use `getDesign` for a structured result or `streamDesign` for progress followed by a result or error. The stream does not yield Markdown chunks. Keep provider keys in server-side environment variables, never in browser code.
+
+## Options
+
+```ts
+await getDesign("https://stripe.com", {
+  ...options,
+  siteName: "Stripe",
+  visualRequirement: "require",
+  installI18nFonts: true,
+  measurementMode: "auto",
+});
+```
+
+`visualRequirement` defaults to `"require"`. Pass `"text_only_fallback"` to skip screenshots on purpose. Capture failure otherwise throws.
+
+## Images
+
+Visual results include `images`, an array of hero and full-page WebP captures with `path`, `alt`, `mimeType`, `imageBase64`, `width`, and `height`. Markdown references those relative paths. Write both the document and the files:
+
+```ts
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+
+const output = "./design-output";
+await mkdir(output, { recursive: true });
+for (const image of result.images) {
+  const path = join(output, image.path);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, Buffer.from(image.imageBase64, "base64"));
+}
+await writeFile(join(output, "design.md"), result.markdown);
+```
+
+`streamDesign` includes the same files on the final `result`. Progress events stay small and contain no image bytes.
+
+Full auto-generated reference lives at [SDK reference](/reference/sdk/).

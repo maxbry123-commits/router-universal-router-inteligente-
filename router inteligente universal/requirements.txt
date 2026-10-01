@@ -1,3 +1,5 @@
 fastapi>=0.115
 pydantic>=2.7
 huggingface_hub>=0.30
+PyYAML==6.0.3
+cryptography==48.0.0

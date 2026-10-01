@@ -83,7 +83,7 @@ GOALS = {
     },
 }
 
-GOAL_IDS = ["G%02d" % i for i in range(1, 13)]
+GOAL_IDS = [f"G{i:02d}" for i in range(1, 13)]
 
 
 def get_goal(goal_id):

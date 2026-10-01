@@ -1,0 +1,28 @@
+schema_id: skills_schema/cinematic-scroll.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Sitios cinematográficos con scroll, GSAP, Three.js, 3D interactivo
+work_surface: FRONTEND
+acceptance:
+- scroll cinemático implementado
+- GSAP/Three.js declarados
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/cinematic-scroll.json
+  sha256: pending
+oracle: check:cinematic_scroll
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

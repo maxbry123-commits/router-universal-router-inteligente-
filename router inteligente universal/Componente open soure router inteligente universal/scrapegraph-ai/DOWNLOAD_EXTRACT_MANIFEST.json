@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 3421776,
+  "bundle_sha256": "47fdbe5d8455e1a5a6e914ddee271825da5cdc739cf8353a815456b48b3c4ec4",
+  "extracted_tree": {
+    "bytes": 5558332,
+    "files": 390,
+    "sha256": "8b1a0422b20a74ee1a4df9121414a72521e3ebfee70d1a3c96ea6f5ebb5f1264"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 3421776,
+      "name": "scrapegraph-ai.bundle.zip.part-0001",
+      "sha256": "47fdbe5d8455e1a5a6e914ddee271825da5cdc739cf8353a815456b48b3c4ec4"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "scrapegraph-ai",
+  "source_bytes": 5558332,
+  "source_commit": "c75c8084fae2d4f5ba01a8c218bc1168b67e3569",
+  "source_files": 390,
+  "source_ref": "c75c8084fae2d4f5ba01a8c218bc1168b67e3569",
+  "source_repo": "https://github.com/ScrapeGraphAI/Scrapegraph-ai",
+  "source_tree": {
+    "bytes": 5558332,
+    "files": 390,
+    "sha256": "8b1a0422b20a74ee1a4df9121414a72521e3ebfee70d1a3c96ea6f5ebb5f1264"
+  }
+}

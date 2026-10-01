@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 664630,
+  "bundle_sha256": "343d6e24d75c5c0cdb23e865e963944fe4e0ed3b5761359289e467f54d13185d",
+  "extracted_tree": {
+    "bytes": 1270538,
+    "files": 122,
+    "sha256": "dc3cc4eebd9bd40580843cbc0725c497520817b24a4794bdfacae819927896fc"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 664630,
+      "name": "agent-reach.bundle.zip.part-0001",
+      "sha256": "343d6e24d75c5c0cdb23e865e963944fe4e0ed3b5761359289e467f54d13185d"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "agent-reach",
+  "source_bytes": 1270538,
+  "source_commit": "a19a171fa980a0785849596492e0af4db800c82f",
+  "source_files": 122,
+  "source_ref": "a19a171fa980a0785849596492e0af4db800c82f",
+  "source_repo": "https://github.com/Panniantong/Agent-Reach",
+  "source_tree": {
+    "bytes": 1270538,
+    "files": 122,
+    "sha256": "dc3cc4eebd9bd40580843cbc0725c497520817b24a4794bdfacae819927896fc"
+  }
+}

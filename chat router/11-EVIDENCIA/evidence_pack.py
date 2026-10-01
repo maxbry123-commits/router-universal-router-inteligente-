@@ -3,12 +3,52 @@
 Campos: task, known_facts, requirements, constraints, conflicts, unknown, sources.
 Tope aproximado 2K-8K tokens (1 token ~ 4 caracteres).
 """
+import hashlib
+import hmac
+import json
+import re
 
 MAX_CARACTERES = 8_000 * 4
 
 # Fuentes con autoridad suficiente para abrir un conflicto de versiones.
 # Una fuente sin autoridad (p.ej. un blog) no contradice a la fuente oficial.
 _FUENTES_CON_AUTORIDAD = {"github", "docs", "local", "url"}
+_PACK_FIELDS = (
+    "task", "known_facts", "requirements", "constraints", "conflicts",
+    "unknown", "sources", "parsed", "queries", "observations",
+)
+
+
+def packet_hash(pack):
+    try:
+        canonical = json.dumps(
+            {field: pack[field] for field in _PACK_FIELDS},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        )
+    except (KeyError, TypeError, ValueError):
+        return None
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def verificar_packet(pack):
+    if not isinstance(pack, dict) or not isinstance(pack.get("packet_hash"), str):
+        return False
+    facts = pack.get("known_facts")
+    sources = pack.get("sources")
+    if not isinstance(facts, list) or not isinstance(sources, list):
+        return False
+    if not all(isinstance(source, dict) and isinstance(source.get("url"), str) for source in sources):
+        return False
+    urls = {source["url"] for source in sources if source["url"]}
+    if not all(
+        isinstance(fact, dict)
+        and isinstance(fact.get("source"), str)
+        and fact["source"] in urls
+        for fact in facts
+    ):
+        return False
+    digest = packet_hash(pack)
+    return digest is not None and hmac.compare_digest(digest, pack["packet_hash"])
 
 
 def _recortar(texto, limite):
@@ -24,11 +64,12 @@ def construir(task, parsed, resultados_rankeados, hallazgos=None):
     vistos = set()
     for score, r in resultados_rankeados:
         snippet = (r.get("snippet") or "").strip()
-        if snippet and snippet not in vistos:
+        if snippet and r.get("url") and snippet not in vistos:
             vistos.add(snippet)
             fact = {
                 "fact": _recortar(snippet, 300),
                 "source": r.get("url", ""),
+                "query_id": r.get("query_id", ""),
                 "score": round(score, 4),
             }
             known_facts.append(fact)
@@ -45,26 +86,31 @@ def construir(task, parsed, resultados_rankeados, hallazgos=None):
     unknown = []
     if not known_facts:
         unknown.append("sin evidencia recuperada")
+    selected_facts = known_facts[:20]
+    source_by_url = {source["url"]: source for source in sources}
     pack = {
         "task": _recortar(task, 500),
-        "known_facts": known_facts[:20],
+        "known_facts": selected_facts,
         "requirements": list(parsed.get("requirements", [])),
         "constraints": list(parsed.get("constraints", [])),
         "conflicts": conflicts,
         "unknown": unknown,
-        "sources": sources[:20],
+        "sources": [source_by_url[url] for url in dict.fromkeys(fact["source"] for fact in selected_facts)],
+        "parsed": parsed,
+        "queries": [],
+        "observations": [],
     }
     # Tope aproximado de tokens.
     total = sum(len(str(v)) for v in pack.values())
     while total > MAX_CARACTERES and pack["known_facts"]:
         pack["known_facts"].pop()
         total = sum(len(str(v)) for v in pack.values())
+    pack["packet_hash"] = packet_hash(pack)
     return pack
 
 
 def detectar_conflictos(known_facts):
     """Detecta contradicciones simples entre hechos (p.ej. versiones distintas)."""
-    import re
     versiones = {}
     conflicts = []
     for f in known_facts:
@@ -77,8 +123,7 @@ def detectar_conflictos(known_facts):
     if len(set(recomendadas)) > 1:
         conflicts.append({
             "tipo": "version",
-            "detalle": "fuentes discrepan sobre la version vigente: %s"
-                       % ", ".join(sorted(set(recomendadas))),
+            "detalle": f"fuentes discrepan sobre la version vigente: {', '.join(sorted(set(recomendadas)))}",
         })
     return conflicts
 

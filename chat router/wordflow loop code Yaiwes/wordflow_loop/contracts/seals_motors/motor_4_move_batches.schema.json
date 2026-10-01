@@ -1,0 +1,15 @@
+{
+  "schema": "yaiwes.seals-motor-contract/v1",
+  "motor": "motor_4_move_batches",
+  "action": "move_verified",
+  "inputs": [
+    "SOURCE_DIR",
+    "DEST_DIR",
+    "STATE_FILE",
+    "BATCH_SIZE",
+    "COLLISION_POLICY",
+    "MAX_BATCHES"
+  ],
+  "output": "VERIFIED_CLOSED",
+  "rule": "FUENTE CANONICA -> blob SHA -> copia exacta -> read-back -> mismo SHA"
+}

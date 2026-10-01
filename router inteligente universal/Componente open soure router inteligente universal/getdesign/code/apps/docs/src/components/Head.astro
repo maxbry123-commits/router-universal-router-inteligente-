@@ -1,0 +1,46 @@
+---
+import Default from "@astrojs/starlight/components/Head.astro";
+import VtbotStarlight from "astro-vtbot/components/starlight/Base.astro";
+import { DOCS_ORIGIN as SITE_URL, MARKETING_ORIGIN as ORIGIN_URL } from "../lib/site";
+
+const { entry, id, head } = Astro.locals.starlightRoute;
+const canonical = head.find(({ tag, attrs }) => tag === "link" && attrs?.rel === "canonical")?.attrs?.href;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${ORIGIN_URL}#organization`,
+      name: "getdesign",
+      url: ORIGIN_URL,
+      logo: `${ORIGIN_URL}/icon.svg`,
+      sameAs: ["https://github.com/MohtashamMurshid/getdesign"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}#website`,
+      url: SITE_URL,
+      name: "getdesign docs",
+      description:
+        "Documentation for getdesign: the design system for any URL.",
+      publisher: { "@id": `${ORIGIN_URL}#organization` },
+      inLanguage: "en-US",
+    },
+    ...(id === "404" ? [] : [{
+      "@type": "TechArticle",
+      "@id": `${canonical}#article`,
+      url: canonical,
+      headline: entry.data.title,
+      inLanguage: "en-US",
+      isPartOf: { "@id": `${SITE_URL}#website` },
+    }]),
+  ],
+};
+---
+
+<VtbotStarlight>
+  <Default><slot /></Default>
+</VtbotStarlight>
+<meta name="theme-color" content="#0a0a0b" />
+<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")} />

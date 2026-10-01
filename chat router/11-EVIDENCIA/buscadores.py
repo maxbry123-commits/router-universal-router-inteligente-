@@ -9,14 +9,19 @@ Motores:
 Resultados normalizados:
 {query, source, url, title, date, snippet, source_type, retrieved_at}
 """
+import datetime
+import json
+import multiprocessing
 import os
 import re
-import json
-import datetime
-import urllib.request
+import time
+import urllib.error
 import urllib.parse
+import urllib.request
 
-SIMULADO = os.environ.get("SIMULADO", "") == "1"
+
+def simulado() -> bool:
+    return os.environ.get("SIMULADO", "") == "1"
 
 # Corpus simulado determinista: sin red, reproducible.
 _CORPUS_SIMULADO = [
@@ -88,9 +93,9 @@ def buscar_simulado(query):
     return resultados
 
 
-def buscar_github(query, token=None):
+def buscar_github(query, token=None, *, strict=False):
     """GitHub Search API. Requiere red; token por env GITHUB_TOKEN."""
-    if SIMULADO:
+    if simulado():
         return buscar_simulado(query)
     token = token or os.environ.get("GITHUB_TOKEN")
     url = "https://api.github.com/search/repositories?q=" + urllib.parse.quote(query)
@@ -100,7 +105,9 @@ def buscar_github(query, token=None):
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-    except Exception:
+    except (urllib.error.URLError, OSError, ValueError):
+        if strict:
+            raise
         return []
     out = []
     for it in data.get("items", [])[:5]:
@@ -117,12 +124,12 @@ def buscar_github(query, token=None):
 
 def buscar_url(query, url):
     """Descarga una URL de documentacion con urllib. Requiere red."""
-    if SIMULADO:
+    if simulado():
         return buscar_simulado(query)
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
             cuerpo = resp.read(200_000).decode("utf-8", "replace")
-    except Exception:
+    except (urllib.error.URLError, OSError, ValueError):
         return []
     texto = re.sub(r"<[^>]+>", " ", cuerpo)
     texto = re.sub(r"\s+", " ", texto).strip()
@@ -136,19 +143,28 @@ def buscar_url(query, url):
     })]
 
 
-def buscar_local(query, raiz="."):
+def buscar_local(query, raiz=".", timeout=10):
     """Busqueda local en archivos de texto del repo."""
     terminos = [t for t in re.findall(r"\w+", query.lower()) if len(t) > 3]
     if not terminos:
         return []
+    if not os.path.isdir(raiz):
+        raise FileNotFoundError(raiz)
+    deadline = time.monotonic() + timeout
     out = []
     for dirpath, _dirs, files in os.walk(raiz):
+        if time.monotonic() >= deadline:
+            raise TimeoutError("local search deadline exceeded")
         if ".git" in dirpath:
             continue
         for fn in files:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("local search deadline exceeded")
             if not fn.endswith((".md", ".py", ".txt")):
                 continue
             ruta = os.path.join(dirpath, fn)
+            if os.path.islink(ruta):
+                continue
             try:
                 with open(ruta, "r", encoding="utf-8", errors="replace") as f:
                     contenido = f.read(50_000)
@@ -171,14 +187,69 @@ def buscar_local(query, raiz="."):
     return out
 
 
+def _local_worker(query, raiz, timeout, cola):
+    try:
+        cola.put(("ok", buscar_local(query, raiz, timeout=timeout)))
+    except (OSError, ValueError, TypeError) as exc:
+        cola.put(("err", type(exc).__name__))
+
+
+def buscar_local_duro(query, raiz=".", timeout=10):
+    """buscar_local con deadline duro: un proceso hijo que se termina si se
+    queda bloqueado en E/S (la comprobacion cooperativa del deadline no
+    puede abortar una llamada de filesystem colgada). Devuelve [] si el
+    hijo no produce resultado a tiempo o si el proceso falla.
+    """
+    ctx = multiprocessing.get_context("fork")
+    cola = ctx.Queue()
+    hijo = ctx.Process(target=_local_worker, args=(query, raiz, timeout, cola), daemon=True)
+    hijo.start()
+    hijo.join(timeout + 2)
+    if hijo.is_alive():
+        hijo.terminate()
+        hijo.join(1)
+        if hijo.is_alive():
+            hijo.kill()
+            hijo.join()
+        raise TimeoutError("local search hard deadline exceeded")
+    try:
+        estado, payload = cola.get(timeout=1)
+    except Exception as exc:
+        raise OSError("local search worker produced no result") from exc
+    if estado == "err":
+        raise OSError(f"local search worker failed: {payload}")
+    return payload
+
+
 def fanout(queries, raiz="."):
     """Ejecuta el fan-out sobre la lista de consultas compiladas."""
     resultados = []
     for q in queries:
         query = q["query"] if isinstance(q, dict) else q
-        if SIMULADO:
+        if simulado():
             resultados.extend(buscar_simulado(query))
         else:
             resultados.extend(buscar_github(query))
             resultados.extend(buscar_local(query, raiz))
     return resultados
+
+
+def fanout_observado(queries, raiz="."):
+    """Recupera resultados sin ocultar fallos de los adaptadores autorizados."""
+    if simulado():
+        return {"results": fanout(queries, raiz=raiz), "observations": []}
+    results = []
+    observations = []
+    for item in queries:
+        query = item["query"]
+        query_id = item.get("id", "")
+        for source in item.get("source_scope", ["github", "local"]):
+            if source not in {"github", "local"}:
+                observations.append({"query_id": query_id, "source": source, "code": "UNAUTHORIZED_ADAPTER"})
+                continue
+            try:
+                found = buscar_github(query, strict=True) if source == "github" else buscar_local_duro(query, raiz)
+                results.extend({**r, "query_id": query_id, "url_or_path": r["url"]} for r in found)
+            except (urllib.error.URLError, OSError, ValueError, TypeError, KeyError) as exc:
+                observations.append({"query_id": query_id, "source": source, "code": type(exc).__name__})
+    return {"results": results, "observations": observations}

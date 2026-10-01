@@ -1,0 +1,78 @@
+{
+  "schema": "yaiwes.method-audit/v1",
+  "authority": {
+    "verbatim": [
+      "T-11/T-11-00-INPUT-BLOCK-VERBATIM.md",
+      "T-11/T-11-I-00-INPUT-BLOCK-VERBATIM.md"
+    ],
+    "method_source": "PROPUESTA-METODO-DEVIN-ASK-COUNCIL.md",
+    "reuse_first": "Antes de cada tarea, investigar componentes abiertos existentes o nuevos, verificar fuente, licencia, versión, hash, alcance y prueba; adaptar quirúrgicamente vía harness DeepSeek o Fables validado. La descarga no implica runtime conectado.",
+    "advisor": ["sentinel", "hermes", "openclaw"],
+    "final_verdict": "deterministic_judge",
+    "scope_changes": "director"
+  },
+  "observed_method": [
+    "reconstruir_peticion", "investigar_reuso_y_componentes_abiertos", "inspeccionar_existente", "delimitar_delta",
+    "implementar", "probar_por_riesgo", "contrastar_readback", "persistir_y_entregar"
+  ],
+  "goals": [
+    {"id": "DM-G01", "name": "Intención", "requires": ["mission"]},
+    {"id": "DM-G02", "name": "Fuente", "requires": ["source_hash"]},
+    {"id": "DM-G03", "name": "Límites", "requires": ["scope"]},
+    {"id": "DM-G04", "name": "Estado", "requires": ["state"]},
+    {"id": "DM-G05", "name": "Dependencias", "requires": ["dag"]},
+    {"id": "DM-G06", "name": "Reuso", "requires": ["reuse"]},
+    {"id": "DM-G07", "name": "Diseño y seguridad", "requires": ["security"]},
+    {"id": "DM-G08", "name": "Ejecución", "requires": ["diff"]},
+    {"id": "DM-G09", "name": "Prueba", "requires": ["tests"]},
+    {"id": "DM-G10", "name": "Integración", "requires": ["integration"]},
+    {"id": "DM-G11", "name": "Contradicción", "requires": ["refutation"]},
+    {"id": "DM-G12", "name": "Entrega y reanudación", "requires": ["readback", "handoff"]}
+  ],
+  "council": [
+    {"id": "DM-C01", "role": "director", "question": "intencion_y_entregable", "goal": "DM-G01"},
+    {"id": "DM-C02", "role": "archivista", "question": "fuente_version_hash_autoria", "goal": "DM-G02"},
+    {"id": "DM-C03", "role": "planificador", "question": "scope_permisos_prohibiciones", "goal": "DM-G03"},
+    {"id": "DM-C04", "role": "arquitecto", "question": "router_dag_y_enchufes", "goal": "DM-G04"},
+    {"id": "DM-C05", "role": "reuso", "question": "existente_antes_de_generar", "goal": "DM-G06"},
+    {"id": "DM-C06", "role": "integrador", "question": "entrada_adapter_runtime_readback", "goal": "DM-G10"},
+    {"id": "DM-C07", "role": "sentinel", "question": "secretos_permisos_efectos", "goal": "DM-G07"},
+    {"id": "DM-C08", "role": "ejecutor", "question": "delta_minimo", "goal": "DM-G08"},
+    {"id": "DM-C09", "role": "tester", "question": "pruebas_obligatorias", "goal": "DM-G09"},
+    {"id": "DM-C10", "role": "adversarial", "question": "refutaciones", "goal": "DM-G11"},
+    {"id": "DM-C11", "role": "sheriff", "question": "state_hub_readback", "goal": "DM-G12"},
+    {"id": "DM-C12", "role": "judge_director", "question": "veredicto_y_aprobacion", "goal": "DM-G12"}
+  ],
+  "layers": [
+    "intent", "source", "scope", "state", "dependencies", "reuse",
+    "design_security", "execution", "tests", "integration",
+    "contradiction", "handoff"
+  ],
+  "risk": {
+    "ui": ["browser", "responsive", "console", "network", "storage", "second_pass"],
+    "runtime": ["service_health", "operation", "integration"],
+    "memory": ["operation", "readback", "restart"],
+    "plan": ["dag", "source_hash"],
+    "code": ["tests", "diff"]
+  },
+  "component_gate": ["source_url", "source_commit", "license", "content_sha256", "extract_readback", "adapter", "tests", "sheriff"],
+  "review_owners": {
+    "security": ["sentinel", "openclaw"],
+    "dependencies": ["sentinel", "hermes"],
+    "integration": ["sentinel", "openclaw"],
+    "ui": ["sentinel", "hermes"],
+    "memory": ["sentinel", "openclaw"]
+  },
+  "changes": [
+    {"id": "P01", "node": "DM-G01..DM-G12", "needs": []},
+    {"id": "P02", "node": "DM-C01..DM-C12", "needs": ["P01"]},
+    {"id": "P03", "node": "evidence-gate", "needs": ["P01"]},
+    {"id": "P04", "node": "plan-validation", "needs": ["P01"]},
+    {"id": "P05", "node": "memory-inventory", "needs": ["P01"]},
+    {"id": "P06", "node": "ui-acceptance", "needs": ["P03"]},
+    {"id": "P07", "node": "checkpoint-replay", "needs": ["P04"]},
+    {"id": "P08", "node": "delivery-matrix", "needs": ["P02", "P03", "P05", "P06", "P07"]}
+  ],
+  "simulations": ["S1-plan-ausente", "S2-pass-documental", "S3-contradiccion", "S4-test-fallido"],
+  "refutations": ["R1-doce-preguntas-sin-tests", "R2-snapshot-sin-replay", "R3-agentes-sin-runtime"]
+}
