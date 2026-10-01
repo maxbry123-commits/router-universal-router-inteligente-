@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "Contratos resueltos: openai en provider map, cadena sdk en CODE_POLICY, Qwen3-0.6B fuera del selector, path HANDOFF movido; SIMULADO dinamico para aislamiento de suite; 406 passed/1 failed en suite amplia.",
-      "updated_at": "2026-10-01T15:37:24Z",
-      "last_event_seq": 52
+      "summary": "T-11-C timeout duro de busqueda local implementado (proceso hijo con terminate/kill); suite 406 passed/1 failed; E2E GitHub sigue bloqueado por rate limit externo; CI verify bloqueado por billing de la cuenta GitHub, no por codigo.",
+      "updated_at": "2026-10-01T15:42:06Z",
+      "last_event_seq": 53
     }
   }
 }

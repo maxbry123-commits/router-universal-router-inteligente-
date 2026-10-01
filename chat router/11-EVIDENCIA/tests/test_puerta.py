@@ -105,7 +105,7 @@ def test_fanout_falla_cerrado_por_motor_sin_perder_evidencia_local(monkeypatch):
 
     monkeypatch.setenv("SIMULADO", "0")
     monkeypatch.setattr(buscadores, "buscar_github", github_unavailable)
-    monkeypatch.setattr(buscadores, "buscar_local", lambda query, raiz: [{
+    monkeypatch.setattr(buscadores, "buscar_local", lambda query, raiz, timeout=10: [{
         "query": query, "source": "local", "url": "repo://README.md",
         "title": "README", "date": "", "snippet": "documentacion local",
         "source_type": "local", "retrieved_at": "2026-10-01T00:00:00Z",

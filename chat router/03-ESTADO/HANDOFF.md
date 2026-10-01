@@ -54,13 +54,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 52
+Revisión: 53
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-Contratos resueltos: openai en provider map, cadena sdk en CODE_POLICY, Qwen3-0.6B fuera del selector, path HANDOFF movido; SIMULADO dinamico para aislamiento de suite; 406 passed/1 failed en suite amplia.
+T-11-C timeout duro de busqueda local implementado (proceso hijo con terminate/kill); suite 406 passed/1 failed; E2E GitHub sigue bloqueado por rate limit externo; CI verify bloqueado por billing de la cuenta GitHub, no por codigo.
 
 ### Siguiente
 Continuar DAG existente

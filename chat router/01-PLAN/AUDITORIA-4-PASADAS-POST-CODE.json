@@ -8,7 +8,7 @@
     "Existing provider test disagrees with openai in origin/main"
   ],
   "checks": {
-    "focused_tests": "68 passed, 1 deselected, 29 warnings in 1.62s",
+    "focused_tests": "68 passed, 1 deselected, 29 warnings in 1.69s",
     "ruff_backend": "PASS"
   },
   "source_inventory_summary": {
@@ -3215,8 +3215,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/buscadores.py",
-      "sha256": "58201f6be64fb38c38e71440ca250a445ef313fd83cb913a15e05d00b9a57d22",
-      "bytes": 7937,
+      "sha256": "af6ba53db4b33bfd9e08cf5a3ba4ddd41cf6b8fc7a6e500a2fba6bfc8cc7b50b",
+      "bytes": 9216,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3270,8 +3270,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/tests/test_puerta.py",
-      "sha256": "5d38f3ae2581d6ce7ebb1111f7b9ef21d4a59468e21deef537886f1d81ac0d99",
-      "bytes": 12144,
+      "sha256": "2ee525e091cdd6824c18f803061a7676e96571dba9e217043b2d2c32608c0b58",
+      "bytes": 12156,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",

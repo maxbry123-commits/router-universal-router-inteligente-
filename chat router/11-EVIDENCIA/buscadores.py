@@ -11,6 +11,7 @@ Resultados normalizados:
 """
 import datetime
 import json
+import multiprocessing
 import os
 import re
 import time
@@ -186,6 +187,40 @@ def buscar_local(query, raiz=".", timeout=10):
     return out
 
 
+def _local_worker(query, raiz, timeout, cola):
+    try:
+        cola.put(("ok", buscar_local(query, raiz, timeout=timeout)))
+    except (OSError, ValueError, TypeError) as exc:
+        cola.put(("err", type(exc).__name__))
+
+
+def buscar_local_duro(query, raiz=".", timeout=10):
+    """buscar_local con deadline duro: un proceso hijo que se termina si se
+    queda bloqueado en E/S (la comprobacion cooperativa del deadline no
+    puede abortar una llamada de filesystem colgada). Devuelve [] si el
+    hijo no produce resultado a tiempo o si el proceso falla.
+    """
+    ctx = multiprocessing.get_context("fork")
+    cola = ctx.Queue()
+    hijo = ctx.Process(target=_local_worker, args=(query, raiz, timeout, cola), daemon=True)
+    hijo.start()
+    hijo.join(timeout + 2)
+    if hijo.is_alive():
+        hijo.terminate()
+        hijo.join(1)
+        if hijo.is_alive():
+            hijo.kill()
+            hijo.join()
+        raise TimeoutError("local search hard deadline exceeded")
+    try:
+        estado, payload = cola.get(timeout=1)
+    except Exception as exc:
+        raise OSError("local search worker produced no result") from exc
+    if estado == "err":
+        raise OSError(f"local search worker failed: {payload}")
+    return payload
+
+
 def fanout(queries, raiz="."):
     """Ejecuta el fan-out sobre la lista de consultas compiladas."""
     resultados = []
@@ -213,7 +248,7 @@ def fanout_observado(queries, raiz="."):
                 observations.append({"query_id": query_id, "source": source, "code": "UNAUTHORIZED_ADAPTER"})
                 continue
             try:
-                found = buscar_github(query, strict=True) if source == "github" else buscar_local(query, raiz)
+                found = buscar_github(query, strict=True) if source == "github" else buscar_local_duro(query, raiz)
                 results.extend({**r, "query_id": query_id, "url_or_path": r["url"]} for r in found)
             except (urllib.error.URLError, OSError, ValueError, TypeError, KeyError) as exc:
                 observations.append({"query_id": query_id, "source": source, "code": type(exc).__name__})
