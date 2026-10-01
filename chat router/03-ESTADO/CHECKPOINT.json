@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T09:29:57Z",
+  "updated_at": "2026-10-01T10:02:10Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 29,
+  "bitacora_revision": 31,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -48,10 +48,12 @@
     "chat router/03-ESTADO/STATE.json",
     "chat router/03-ESTADO/CRAZY_WALL.json",
     "chat router/03-ESTADO/HANDOFF.md",
+    "chat router/01-PLAN/PROPUESTA-METODO-DEVIN-ASK-COUNCIL.md",
     "Devin notas/NOTA-2026-10-01-paneles.md",
     "Claude notas/NOTA-2026-10-01-paneles.md"
   ],
   "current_audit_files": [
+    "chat router/01-PLAN/PROPUESTA-METODO-DEVIN-ASK-COUNCIL.md",
     "README.md",
     "chat router/02-ARQUITECTURA/📂readme chat Arquitectura.md",
     "Readme arquitectura router inteligente universal/Readme arquitectura router inteligente universal.md",
@@ -93,9 +95,10 @@
   "decisions": [
     "Decisión B: cada GET añade RESOURCE_READ a Bitácora sin cambiar estado funcional",
     "Pausar T-06 y no declarar PASS ni entregar UI al Director antes de segunda prueba completa",
-    "El reloj de 3 h 45 min inicia solo cuando el plan original nuevo esté recibido y validado"
+    "El reloj de 3 h 45 min inicia solo cuando el plan original nuevo esté recibido y validado",
+    "Propuesta metodológica DM-G01..12 / DM-C01..12 con 4 simulaciones y 3 refutaciones: borrador pendiente de aprobación del Director; ninguna regla activada"
   ],
-  "reception_summary": "Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.",
+  "reception_summary": "Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. Borrador de método Devin/ASK Council y simulaciones listo para aprobación, sin activar reglas; T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",
