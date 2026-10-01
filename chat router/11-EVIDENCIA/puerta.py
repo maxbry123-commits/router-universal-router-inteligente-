@@ -46,7 +46,7 @@ def antes(entrada, raiz="."):
     pack["observations"] = busqueda["observations"]
     if busqueda["observations"]:
         pack["unknown"].append("errores de motores de busqueda; evidencia incompleta")
-        pack["packet_hash"] = pack_mod.packet_hash(pack)
+    pack["packet_hash"] = pack_mod.packet_hash(pack)
     return pack
 
 

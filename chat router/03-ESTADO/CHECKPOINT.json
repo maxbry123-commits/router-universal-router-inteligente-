@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T14:55:23Z",
+  "updated_at": "2026-10-01T14:57:48Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 49,
+  "bitacora_revision": 50,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -127,7 +127,7 @@
     "post_code": "64_passed_1_deselected_ruff_PASS",
     "T11_gate_DAG": "48_passed",
     "visual_catalog_generator": "65_plus_17_byte_identical",
-    "focused": "67 passed; 1 deselected",
+    "focused": "68 passed; 1 deselected",
     "ruff": "PASS",
     "checkpoint": "5 passed"
   },
@@ -154,7 +154,8 @@
     "🚩 PENDIENTE: fanout tipado, timeouts por motor, receipts externos autenticados, lease/replay, adapters externos y T-06 visual",
     "🚩 PENDIENTE: timeout duro local, verificación del packet_hash en la Puerta, autenticación de reviewers, lease/replay, T-06 visual",
     "🚩 PENDIENTE: cancelación dura de E/S local, autenticación reviewer, lease/replay/recovery, external runtime, T-06 visual",
-    "🚩 PENDIENTE: eventos heredados sin hash, convergencia remota, cancelación dura local, reviewers externos, lease/recovery, T-06 visual"
+    "🚩 PENDIENTE: eventos heredados sin hash, convergencia remota, cancelación dura local, reviewers externos, lease/recovery, T-06 visual",
+    "🚩 PENDIENTE: procedencia autenticada y timeout duro, integridad remota del historial, reviewers, lease/recovery, T-06 visual"
   ],
   "decisions": [
     "Decisión B: cada GET añade RESOURCE_READ a Bitácora sin cambiar estado funcional",
@@ -179,9 +180,10 @@
     "Siguiente T-11-C fanout tipado con aislamiento de fallos; mantener sin PASS de identidad externa",
     "Siguiente T-11-C timeout de búsqueda local y read-back del packet_hash, sin declarar backend terminado",
     "Siguiente: cancelación local segura y procedencia por hecho; luego event replay; no PASS global",
-    "Siguiente: cierre de T-11-C plazo duro/procedencia; T-11-D integridad remota; no PASS global"
+    "Siguiente: cierre de T-11-C plazo duro/procedencia; T-11-D integridad remota; no PASS global",
+    "Siguiente: timeout duro y procedencia T-11-C, luego convergencia remota T-11-D; no PASS global"
   ],
-  "reception_summary": "T-11-D parcial: eventos v2 con ID/hash y replay local restauran snapshot; 19 archivos código auditados, 82 imágenes, 67 tests, Ruff PASS.",
+  "reception_summary": "T-11-C parcial: packet_hash incluye parser, consultas, observaciones y fuentes; 19 archivos auditados, 82 imágenes, 68 tests, Ruff PASS; T-11-D replay local parcial.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",

@@ -13,7 +13,10 @@ MAX_CARACTERES = 8_000 * 4
 # Fuentes con autoridad suficiente para abrir un conflicto de versiones.
 # Una fuente sin autoridad (p.ej. un blog) no contradice a la fuente oficial.
 _FUENTES_CON_AUTORIDAD = {"github", "docs", "local", "url"}
-_PACK_FIELDS = ("task", "known_facts", "requirements", "constraints", "conflicts", "unknown", "sources")
+_PACK_FIELDS = (
+    "task", "known_facts", "requirements", "constraints", "conflicts",
+    "unknown", "sources", "parsed", "queries", "observations",
+)
 
 
 def packet_hash(pack):
@@ -29,6 +32,20 @@ def packet_hash(pack):
 
 def verificar_packet(pack):
     if not isinstance(pack, dict) or not isinstance(pack.get("packet_hash"), str):
+        return False
+    facts = pack.get("known_facts")
+    sources = pack.get("sources")
+    if not isinstance(facts, list) or not isinstance(sources, list):
+        return False
+    if not all(isinstance(source, dict) and isinstance(source.get("url"), str) for source in sources):
+        return False
+    urls = {source["url"] for source in sources if source["url"]}
+    if not all(
+        isinstance(fact, dict)
+        and isinstance(fact.get("source"), str)
+        and fact["source"] in urls
+        for fact in facts
+    ):
         return False
     digest = packet_hash(pack)
     return digest is not None and hmac.compare_digest(digest, pack["packet_hash"])
@@ -68,14 +85,19 @@ def construir(task, parsed, resultados_rankeados, hallazgos=None):
     unknown = []
     if not known_facts:
         unknown.append("sin evidencia recuperada")
+    selected_facts = known_facts[:20]
+    source_by_url = {source["url"]: source for source in sources}
     pack = {
         "task": _recortar(task, 500),
-        "known_facts": known_facts[:20],
+        "known_facts": selected_facts,
         "requirements": list(parsed.get("requirements", [])),
         "constraints": list(parsed.get("constraints", [])),
         "conflicts": conflicts,
         "unknown": unknown,
-        "sources": sources[:20],
+        "sources": [source_by_url[url] for url in dict.fromkeys(fact["source"] for fact in selected_facts)],
+        "parsed": parsed,
+        "queries": [],
+        "observations": [],
     }
     # Tope aproximado de tokens.
     total = sum(len(str(v)) for v in pack.values())

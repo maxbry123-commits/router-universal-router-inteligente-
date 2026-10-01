@@ -189,6 +189,29 @@ def test_puerta_pass_completo():
     )["veredicto"] == "INCOMPLETE"
 
 
+def test_puerta_verifica_parser_consultas_observaciones_y_fuentes():
+    entrada = "busca la documentacion oficial del proyecto version 2.3.1"
+    resultado = {"claims": [
+        {"tipo": "http", "url": "https://docs.ejemplo.dev/proyecto"},
+        {"tipo": "version", "obtenida": "2.3.1", "esperada": "2.3.1"},
+        {"tipo": "tests", "comando": "pytest -q"},
+    ]}
+    original = puerta.antes(entrada)
+    assert puerta.despues(entrada, resultado, pack=original)["veredicto"] == "PASS"
+    for key, replacement in (
+        ("parsed", {"task_type": "UNKNOWN"}),
+        ("queries", []),
+        ("observations", [{"source": "github", "code": "OSError"}]),
+    ):
+        changed = json.loads(json.dumps(original))
+        changed[key] = replacement
+        assert puerta.despues(entrada, resultado, pack=changed)["veredicto"] == "INCOMPLETE"
+    changed = json.loads(json.dumps(original))
+    changed["sources"] = []
+    changed["packet_hash"] = pack_mod.packet_hash(changed)
+    assert puerta.despues(entrada, resultado, pack=changed)["veredicto"] == "INCOMPLETE"
+
+
 def test_puerta_incomplete_sin_evidencia(monkeypatch):
     monkeypatch.setattr(buscadores, "fanout", lambda qs, raiz=".": [])
     pack = puerta.antes("investiga algo sin fuentes")

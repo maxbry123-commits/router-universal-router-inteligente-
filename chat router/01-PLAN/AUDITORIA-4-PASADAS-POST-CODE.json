@@ -8,7 +8,7 @@
     "Existing provider test disagrees with openai in origin/main"
   ],
   "checks": {
-    "focused_tests": "67 passed, 1 deselected, 29 warnings in 1.56s",
+    "focused_tests": "68 passed, 1 deselected, 29 warnings in 1.56s",
     "ruff_backend": "PASS"
   },
   "source_inventory_summary": {
@@ -3237,8 +3237,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/evidence_pack.py",
-      "sha256": "8f8b397cd7e18763fa67cf9c1878aaa6947ae96e46bbce30b74f81a4dc724b4f",
-      "bytes": 4274,
+      "sha256": "43972d53ead48f6e6ff445e0c4015a876174df72a778ad7459545885a000463b",
+      "bytes": 5111,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3259,8 +3259,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/puerta.py",
-      "sha256": "76e269e1044c9161af60f549d460c8ad948f00b28a3f87bf3eb07abe20dc1ec9",
-      "bytes": 5403,
+      "sha256": "ed97dd973cb2b0605f5aa52f6e8d1d4cf4d89ee516ae8567e44da05816475e89",
+      "bytes": 5399,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3270,8 +3270,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/tests/test_puerta.py",
-      "sha256": "778909284c51f53b27931a9d307d742e343d12f04cd5e619060b3b35d15677e3",
-      "bytes": 11084,
+      "sha256": "66a17a31e1dc45ae0208a000896cf3da2710872380a9a013558812cfa93eba4d",
+      "bytes": 12157,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
