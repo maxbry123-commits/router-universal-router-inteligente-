@@ -20,6 +20,8 @@ Reanudación exacta: el PR #6 ya contiene el commit `9751dda766`. La selección 
 
 Orden posterior del Director: utilizar el Router permanente de Hugging Face en `main` para el cómputo de validación; no utilizar GitHub Actions. La dirección se lee de `router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag` en cada intento. El 2026-10-01, `GET /health`, `/chat/providers` y `/chat/ui/shell.html` respondieron 401 sin credenciales: esto prueba que la puerta responde, no que el Router ni T-06 estén sanos. No hay `HF_TOKEN` ni clave de API del Router disponibles en secretos de esta sesión. `origin/main` aún no contiene `chat router/ui/shell.html` ni el montaje de ese shell en `integration/chat_mvp/app.py`; el código T-06 está solo en el PR. No reiniciar el Job 24/7 ni suplantar la prueba UI con un healthcheck. Cuando se disponga de acceso, comprobar Job y versión en vivo de manera no destructiva; validar T-06 de la rama en un entorno aislado o local con navegador antes de entregar la interfaz.
 
+El Director autorizó relanzar el Router nuevo solo si está inactivo. Historial verificado: `cd735423ae` cambió LIVE_URL al Job `6abdc1b4404719ba376155b0` y `5e52e64d5d` amplió los secretos/env del guardian de relanzamiento. El host conocido devuelve 401 sin autenticación y un ID inexistente devuelve 404; `HfApi.inspect_job` sin token devuelve 401 y la página del Job redirige a login. El estado del Job sigue indeterminado; no se ha reiniciado ni creado otro Job. `guardian.py` utiliza `HF_CONTROL_JOBS_TOKEN` y `GH_AGENT_TOKEN`; por defecto `GUARDIAN_DRY_RUN=1`. Obtener credenciales mediante canal seguro, inspeccionar la etapa y los logs, verificar health autenticado y solo si está detenido relanzar con los secretos previstos y read-back de la nueva URL.
+
 ## Orden de lectura
 0. `../01-PLAN/PLAN-DSL-DAG-UI.yaml` (plan T-01..T-10 del panel/chat, consolidado desde el documento subido; revisar `source_fidelity`)
 1. `../01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml` (reglas, fuente de verdad, gobernanza, 12 goals, flags)
@@ -48,13 +50,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 38
+Revisión: 39
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-Router HF main consultado sin modificar: /health, /chat/providers y /chat/ui/shell.html devuelven 401; credenciales no disponibles y codigo T-06 aun solo en PR. T-06 browser y segunda pasada pendientes.
+Historial del Router HF nuevo verificado (cd735423ae, 5e52e64d5d). Job conocido responde 401 sin auth; HfApi.inspect_job 401. Estado del Job indeterminado; reinicio autorizado solo tras confirmar que este detenido.
 
 ### Siguiente
 Recibir plan original

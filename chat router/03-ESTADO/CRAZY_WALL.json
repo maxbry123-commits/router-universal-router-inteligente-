@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "AWAITING_PLAN",
       "next": "Recibir plan original",
-      "summary": "Router HF main consultado sin modificar: /health, /chat/providers y /chat/ui/shell.html devuelven 401; credenciales no disponibles y codigo T-06 aun solo en PR. T-06 browser y segunda pasada pendientes.",
-      "updated_at": "2026-10-01T13:48:43Z",
-      "last_event_seq": 38
+      "summary": "Historial del Router HF nuevo verificado (cd735423ae, 5e52e64d5d). Job conocido responde 401 sin auth; HfApi.inspect_job 401. Estado del Job indeterminado; reinicio autorizado solo tras confirmar que este detenido.",
+      "updated_at": "2026-10-01T13:51:32Z",
+      "last_event_seq": 39
     }
   }
 }

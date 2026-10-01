@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T13:48:43Z",
+  "updated_at": "2026-10-01T13:51:32Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 38,
+  "bitacora_revision": 39,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -97,7 +97,9 @@
     "browser": "BLOCKED: subscription usage limit on two testing_agent handoffs",
     "CI": "latest revision has no checks; previous verify job never started due GitHub account billing lock",
     "hf_router_unauth": "401_auth_required",
-    "t06_hf_runtime": "BLOCKED_NO_CREDENTIALS"
+    "t06_hf_runtime": "BLOCKED_NO_CREDENTIALS",
+    "hf_inspect_unauth": "401_auth_required",
+    "hf_job_stage": "UNKNOWN_NO_TOKEN"
   },
   "memory_audit": {
     "completed": "Encontrado código Manus: SQLite y grafo fallback; 8 pruebas locales PASS con PYTHONPATH del Router y 04-MEMORIA",
@@ -113,7 +115,8 @@
     "testing_agent returned subscription usage limit twice; no UI screenshots or recording.",
     "GitHub Actions verify did not start due billing lock; no job logs.",
     "GitHub billing lock prevented verify job start; testing_agent subscription limit blocked UI coverage.",
-    "T-06 del PR no esta en main; requiere entorno aislado para probar esa revision."
+    "T-06 del PR no esta en main; requiere entorno aislado para probar esa revision.",
+    "Sin HF_CONTROL_JOBS_TOKEN ni clave Router; falta comprobar estado del Job y no se puede ejecutar reinicio seguro."
   ],
   "decisions": [
     "Decisión B: cada GET añade RESOURCE_READ a Bitácora sin cambiar estado funcional",
@@ -127,9 +130,10 @@
     "Siguiente accion exacta: reanudar testing_agent cuando se restaure el cupo; corregir hallazgos y completar segunda pasada; despues recibir y validar plan de 100 pasos.",
     "No afirmar T-06 PASS; esperar cupo de testing_agent para prueba UI con capturas, matriz completa y segunda pasada.",
     "Plan original de 100 pasos sigue sin recibido ni validado; guardia RECEPTION y reloj 0.",
-    "Usar Router HF 24/7 sin reinicio y no usar GitHub Actions; 401 no equivale a health PASS."
+    "Usar Router HF 24/7 sin reinicio y no usar GitHub Actions; 401 no equivale a health PASS.",
+    "No relanzar a ciegas; obtener token HF y autenticar /health antes de intervenir."
   ],
-  "reception_summary": "Router HF main consultado sin modificar: /health, /chat/providers y /chat/ui/shell.html devuelven 401; credenciales no disponibles y codigo T-06 aun solo en PR. T-06 browser y segunda pasada pendientes.",
+  "reception_summary": "Historial del Router HF nuevo verificado (cd735423ae, 5e52e64d5d). Job conocido responde 401 sin auth; HfApi.inspect_job 401. Estado del Job indeterminado; reinicio autorizado solo tras confirmar que este detenido.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",
