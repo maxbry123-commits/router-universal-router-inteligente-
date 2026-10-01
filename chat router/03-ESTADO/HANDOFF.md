@@ -28,16 +28,16 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 13
-Proyecto/tarea: `chat-yaiwes` / `RIU-0121`
+Revisión: 14
+Proyecto/tarea: `chat-yaiwes` / `UI-T-01`
 Estado: **COMPLETED**
-Fase: `M7_RDC_VERIFIED`
+Fase: `T01_READBACK`
 
 ### Último checkpoint
-M-0..M-7 COMPLETADOS: 13 componentes auditados; SQLite, State Hub y grafo fallback cableados; FalkorDB (927 archivos) y AgentDB (1456 archivos) descargados y read-back EXTRACTED_VERIFIED en GitHub. Action memoria PASS 31 tests. Secret Scan: 217 hallazgos baseline preexistentes; escaneo dirigido de memoria PASS. H-1 sigue reservado a Opus.
+109 visual assets moved unchanged; git rename 100 percent and read-back confirmed; commit 97696e69e4.
 
 ### Siguiente
-H-1 reservado a Opus; no ejecutar HF RW ni despliegue Vercel
+T-02
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121

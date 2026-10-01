@@ -33,6 +33,17 @@
       "summary": "M-0..M-7 COMPLETADOS: 13 componentes auditados; SQLite, State Hub y grafo fallback cableados; FalkorDB (927 archivos) y AgentDB (1456 archivos) descargados y read-back EXTRACTED_VERIFIED en GitHub. Action memoria PASS 31 tests. Secret Scan: 217 hallazgos baseline preexistentes; escaneo dirigido de memoria PASS. H-1 sigue reservado a Opus.",
       "updated_at": "2026-09-27T07:36:28Z",
       "last_event_seq": 13
+    },
+    "UI-T-01": {
+      "node_id": "UI-T-01",
+      "task": "UI-T-01",
+      "project": "chat-yaiwes",
+      "status": "COMPLETED",
+      "phase": "T01_READBACK",
+      "next": "T-02",
+      "summary": "109 visual assets moved unchanged; git rename 100 percent and read-back confirmed; commit 97696e69e4.",
+      "updated_at": "2026-10-01T03:18:57Z",
+      "last_event_seq": 14
     }
   }
 }
