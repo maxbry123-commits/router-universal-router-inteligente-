@@ -32,7 +32,7 @@ def test_state_event_replay_recovers_missing_snapshot_and_rejects_corruption(tmp
     current = ui_bridge._state_event({
         "type": "CHECKPOINT_RECORDED", "project": "chat-yaiwes",
         "task": "T-11", "actor": "devin", "summary": "verificado",
-    }, 2)
+    }, 2, ui_bridge._event_link(legacy, json.dumps(legacy)))
     log = json.dumps(legacy) + "\n" + json.dumps(current) + "\n"
     records[ui_bridge.BITACORA] = log
     records[ui_bridge.HANDOFF] = "# Handoff\n"
@@ -48,10 +48,19 @@ def test_state_event_replay_recovers_missing_snapshot_and_rejects_corruption(tmp
     altered = {**current, "summary": "sin verificar"}
     with pytest.raises(HTTPException, match="STATE_BITACORA_INVALID_HASH"):
         ui_bridge._state_events(json.dumps(legacy) + "\n" + json.dumps(altered))
+    genesis = ui_bridge._state_event({
+        "type": "TASK_CLAIMED", "project": "chat-yaiwes", "task": "T-11", "actor": "devin",
+    }, 1)
     with pytest.raises(HTTPException, match="STATE_BITACORA_INVALID_SCHEMA"):
-        ui_bridge._state_events(json.dumps(current) + "\n" + json.dumps({**legacy, "seq": 3}))
+        ui_bridge._state_events(json.dumps(genesis) + "\n" + json.dumps({**legacy, "seq": 3}))
     with pytest.raises(HTTPException, match="STATE_BITACORA_INVALID_HASH"):
-        ui_bridge._state_events(json.dumps(current) + "\n" + json.dumps({**current, "seq": 3}))
+        ui_bridge._state_events(json.dumps(genesis) + "\n" + json.dumps({**genesis, "seq": 3}))
+    legacy_tampered = {**legacy, "at": "2099-01-01T00:00:00Z"}
+    with pytest.raises(HTTPException, match="STATE_BITACORA_INVALID_CHAIN"):
+        ui_bridge._state_events(json.dumps(legacy_tampered) + "\n" + json.dumps(current))
+    unchained = {k: v for k, v in current.items() if k != "chain_prev"}
+    with pytest.raises(HTTPException, match="STATE_BITACORA_INVALID_HASH"):
+        ui_bridge._state_events(json.dumps(legacy) + "\n" + json.dumps(unchained))
     monkeypatch.setattr(
         ui_bridge, "_write",
         lambda path, text, _msg: None if path == ui_bridge.BITACORA else records.__setitem__(path, text),
