@@ -1,0 +1,45 @@
+---
+title: CLI
+description: Run on Bun with your provider keys and write design.md to a local file.
+---
+
+`@getdesign/cli` runs locally on Bun. Set `DAYTONA_API_KEY` and `OPENAI_API_KEY` in your shell before starting a visual run, or pass them as flags. No WorkOS token or getdesign API key is needed for local execution. You pay the providers directly.
+
+## Install
+
+```bash
+bun add -g @getdesign/cli
+```
+
+or run ad-hoc:
+
+```bash
+bunx @getdesign/cli https://stripe.com
+```
+
+## One-shot
+
+```bash
+bunx @getdesign/cli https://stripe.com
+bunx @getdesign/cli https://stripe.com --out stripe.design.md
+bunx @getdesign/cli --url https://example.com --site-name Example --out ./designs
+```
+
+Without `--out`, output goes to `./getdesign-runs/<slug>/design.md`. Visual runs also write `design.images/hero.webp` and `design.images/full-page.webp` next to that file. A custom name such as `brand.md` uses `brand.images/`. Keep the document and directory together.
+
+Progress goes to stderr. The CLI requires a URL and does not provide an interactive REPL. Node support is not promised for V1.
+
+## Flags
+
+| Flag | Description |
+| --- | --- |
+| `--url <url>` | Source URL. A positional URL works too. |
+| `--out <path>` | Write the result to a file or directory. Directories and paths ending in `/` receive `design.md`. |
+| `--site-name <name>` | Override the detected site name. |
+| `--daytona-api-key <key>` | Daytona key for this run. Or `DAYTONA_API_KEY`. |
+| `--openai-api-key <key>` | OpenAI key for this run. Or `OPENAI_API_KEY`. |
+| `--text-only-fallback` | Skip screenshots on purpose and write labeled text-only output. Capture failure otherwise stops the run. |
+| `--version` | Print the installed version. |
+| `--help` | Show help. |
+
+Full auto-generated reference lives at [CLI reference](/reference/cli/).

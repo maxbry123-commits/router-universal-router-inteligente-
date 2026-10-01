@@ -1,0 +1,60 @@
+{
+  "name": "@getdesign/cli",
+  "version": "0.1.3",
+  "description": "Generate production-ready design.md specs from live websites in your terminal.",
+  "keywords": [
+    "design-system",
+    "design-system-generator",
+    "design.md",
+    "design-spec",
+    "design-tokens",
+    "website-analysis",
+    "visual-capture",
+    "landing-page",
+    "css",
+    "scraper",
+    "cli",
+    "agent",
+    "getdesign"
+  ],
+  "homepage": "https://getdesign.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MohtashamMurshid/getdesign.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MohtashamMurshid/getdesign/issues"
+  },
+  "license": "MIT",
+  "author": "getdesign",
+  "type": "module",
+  "bin": {
+    "getdesign": "./dist/getdesign.js"
+  },
+  "main": "./dist/getdesign.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "smoke": "bun ./src/getdesign.ts --help",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepublishOnly": "bun run build"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@getdesign/sdk": "workspace:*",
+    "unicode-animations": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13"
+  }
+}

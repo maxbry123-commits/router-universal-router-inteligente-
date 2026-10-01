@@ -1,0 +1,32 @@
+---
+title: Concepts
+description: What a design.md is, what it contains, and how it is grounded in the site's real CSS.
+---
+
+## What is a design.md?
+
+A `design.md` is a single Markdown file that describes a site's visual language in a form that is useful to both humans and code-generating agents. getdesign writes one by rendering the target URL in a real browser, reading computed styles, clustering tokens, and emitting nine sections.
+
+Visual runs also produce companion screenshots (hero and full-page WebP). Text-only mode omits them.
+
+## The nine sections
+
+These H2 titles are the frozen v1 contract:
+
+1. Visual Theme & Atmosphere
+2. Color Palette & Roles
+3. Typography Rules
+4. Component Stylings
+5. Layout Principles
+6. Depth & Elevation
+7. Interaction & Motion
+8. Responsive Behavior
+9. Agent Prompt Guide
+
+## Grounded in real CSS
+
+getdesign is not a static HTML scraper. It runs a real headless browser, walks the rendered DOM, and reads computed styles on representative nodes. Colors and type scales are clustered so that output reflects the site's actual decisions, not one-off values.
+
+## One agent, five surfaces
+
+[Web](/surfaces/web/), [API](/surfaces/api/), [CLI](/surfaces/cli/), and [SDK](/surfaces/sdk/) share `@getdesign/agent`. The [Skill](/surfaces/skill/) matches the same 9-section contract using the host agent's browser and file tools. A CLI result and a dashboard run should agree on the same site; Skill output follows the same headings without calling that agent package.

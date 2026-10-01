@@ -1,0 +1,65 @@
+{
+  "name": "@getdesign/sdk",
+  "version": "0.1.2",
+  "description": "Generate production-ready design.md specs from live websites with full-page visual capture.",
+  "keywords": [
+    "design-system",
+    "design-system-generator",
+    "design.md",
+    "design-spec",
+    "design-tokens",
+    "website-analysis",
+    "visual-capture",
+    "landing-page",
+    "css",
+    "scraper",
+    "sdk",
+    "typescript",
+    "agent",
+    "getdesign"
+  ],
+  "homepage": "https://getdesign.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MohtashamMurshid/getdesign.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MohtashamMurshid/getdesign/issues"
+  },
+  "license": "MIT",
+  "author": "getdesign",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepublishOnly": "bun run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@getdesign/agent": "workspace:*",
+    "@getdesign/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13",
+    "typescript": "^6.0.3"
+  }
+}
