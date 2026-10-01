@@ -1,9 +1,9 @@
 {
   "schema": "yaiwes.received-plan/v1",
-  "status": "AWAITING_UPLOAD",
+  "status": "SCOPE_UNCONFIRMED",
   "source_path": null,
   "source_sha256": null,
   "expected_steps": 100,
   "steps": [],
-  "note": "El Director aún no ha subido el plan nuevo. No inferir ni ejecutar tareas; preservar íntegro el archivo original y validar sus 100 pasos antes de iniciar el reloj."
+  "note": "El Director dibujó un ejemplo de checkpoint con 100 tareas/pasos en el mensaje de modo recepción. Este archivo auxiliar fue creado por Devin y no prueba que exista otro plan por subir. Los DAG existentes T-01..T-12 siguen siendo la fuente de trabajo; la guardia de 100 pasos no se inicia sin una lista concreta y no bloquea esas tareas."
 }

@@ -3,13 +3,12 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
 import socket
 import time
-from urllib.parse import urlencode, urlparse
-from urllib.request import Request, urlopen
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode, urlparse
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[3]
 INVENTORY = ROOT / "chat router" / "03-ESTADO" / "MEMORIA-INVENTARIO.json"
@@ -38,7 +37,7 @@ def _downloaded(name: str) -> dict[str, Any]:
 def _http_probe(url: str) -> bool:
     try:
         with urlopen(url, timeout=1.5) as response:
-            return 200 <= response.status < 500
+            return 200 <= response.status < 300
     except Exception:  # noqa: BLE001 - health must never take down the Router
         return False
 
@@ -61,26 +60,24 @@ class SQLiteAdapter:
     def __init__(self, store: Any) -> None:
         self.store = store
         self.db_path = Path(store.db_path)
-        self.db = sqlite3.connect(str(self.db_path), check_same_thread=False)
-        self.db.row_factory = sqlite3.Row
-        self.db.execute("CREATE TABLE IF NOT EXISTS memoria_yaiwes (id INTEGER PRIMARY KEY AUTOINCREMENT, scope TEXT NOT NULL, key TEXT NOT NULL, data TEXT NOT NULL, created_at REAL NOT NULL)")
-        self.db.commit()
+        store._exec("CREATE TABLE IF NOT EXISTS memoria_yaiwes (id INTEGER PRIMARY KEY AUTOINCREMENT, scope TEXT NOT NULL, key TEXT NOT NULL, data TEXT NOT NULL, created_at REAL NOT NULL)")
 
     def health(self) -> dict[str, Any]:
-        count = self.db.execute("SELECT COUNT(*) FROM memoria_yaiwes").fetchone()[0]
+        count = self.store._all("SELECT COUNT(*) AS n FROM memoria_yaiwes")[0]["n"]
         return {"name": self.name, "status": "CONNECTED", "mode": "primary", "records": count, "db": str(self.db_path)}
 
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
-        cur = self.db.execute("INSERT INTO memoria_yaiwes(scope,key,data,created_at) VALUES(?,?,?,?)", (scope, key, json.dumps(data, ensure_ascii=False), time.time()))
-        self.db.commit()
-        return {"adapter": self.name, "id": cur.lastrowid, "scope": scope, "key": key}
+        row_id = self.store._exec("INSERT INTO memoria_yaiwes(scope,key,data,created_at) VALUES(?,?,?,?)",
+                                  (scope, key, json.dumps(data, ensure_ascii=False), time.time()))
+        return {"adapter": self.name, "id": row_id, "scope": scope, "key": key}
 
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
-        rows = self.db.execute("SELECT id,scope,key,data FROM memoria_yaiwes WHERE scope=? AND key=? ORDER BY id DESC", (scope, key)).fetchall()
+        rows = self.store._all("SELECT id,scope,key,data FROM memoria_yaiwes WHERE scope=? AND key=? ORDER BY id DESC", (scope, key))
         return [{"id": row["id"], "scope": row["scope"], "key": row["key"], "data": json.loads(row["data"])} for row in rows]
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
-        rows = self.db.execute("SELECT id,scope,key,data FROM memoria_yaiwes WHERE scope=? AND (key LIKE ? OR data LIKE ?) ORDER BY id DESC LIMIT ?", (scope, f"%{query}%", f"%{query}%", k)).fetchall()
+        rows = self.store._all("SELECT id,scope,key,data FROM memoria_yaiwes WHERE scope=? AND (key LIKE ? OR data LIKE ?) ORDER BY id DESC LIMIT ?",
+                               (scope, f"%{query}%", f"%{query}%", k))
         return [{"id": row["id"], "scope": row["scope"], "key": row["key"], "data": json.loads(row["data"])} for row in rows]
 
 
@@ -107,7 +104,9 @@ class GraphSQLiteAdapter:
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
         q = str(query).lower()
-        return [node for node in self.store.graph_view(limit=max(k, 10)).get("nodes", []) if q in str(node.get("label", "")).lower()][:k]
+        prefix = f"memory:{scope}:"
+        return [node for node in self.store.graph_view(limit=max(k, 10)).get("nodes", [])
+                if node["id"].startswith(prefix) and q in str(node["label"]).lower()][:k]
 
 
 class ComponentAdapter:
@@ -156,8 +155,8 @@ class ComponentAdapter:
         if self._endpoint():
             try:
                 return {"adapter": self.name, "status": "SAVED", "response": self._request("POST", "/save", {"scope": scope, "key": key, "data": data})}
-            except Exception:  # noqa: BLE001
-                pass
+            except (OSError, ValueError, TypeError, KeyError) as exc:
+                return {"adapter": self.name, "status": "GAP", "reason": type(exc).__name__}
         return {"adapter": self.name, "status": "GAP", "reason": "no verified runtime contract"}
 
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
@@ -165,8 +164,8 @@ class ComponentAdapter:
             try:
                 response = self._request("GET", "/load?" + urlencode({"scope": scope, "key": key}))
                 return response.get("records", response if isinstance(response, list) else [])
-            except Exception:  # noqa: BLE001
-                pass
+            except (OSError, ValueError, TypeError, KeyError):
+                return []
         return []
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
@@ -174,8 +173,8 @@ class ComponentAdapter:
             try:
                 response = self._request("GET", "/search?" + urlencode({"scope": scope, "query": query, "k": k}))
                 return response.get("records", response if isinstance(response, list) else [])
-            except Exception:  # noqa: BLE001
-                pass
+            except (OSError, ValueError, TypeError, KeyError):
+                return []
         return []
 
 

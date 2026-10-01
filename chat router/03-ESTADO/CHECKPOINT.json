@@ -5,18 +5,18 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T14:07:50Z",
+  "updated_at": "2026-10-01T14:42:57Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
   "stop_at_completed_fraction": 0.95,
   "completed_steps": [],
-  "pending_steps": "Pendiente de recibir y validar los 100 pasos originales",
+  "pending_steps": "Continuar T-05, T-06, T-07 y T-10 del DAG existente; la lista auxiliar de 100 IDs no está definida",
   "current_dag": "../01-PLAN/PLAN-DSL-DAG-UI.yaml",
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 40,
+  "bitacora_revision": 44,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -38,7 +38,7 @@
     ],
     "pull_request": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/pull/6"
   },
-  "t06_visual_validation": "PAUSED_FOR_RECEPTION",
+  "t06_visual_validation": "PARTIAL_BROWSER_BLOCKED",
   "files_modified": [
     "chat router/01-PLAN/PLAN.json",
     "chat router/03-ESTADO/CHECKPOINT.json",
@@ -58,7 +58,19 @@
     "chat router/ui/shell.html",
     "router inteligente universal/integration/chat_mvp/app.py",
     "router inteligente universal/tests/test_org_api.py",
-    "chat router/02-ARQUITECTURA/📂readme chat Arquitectura.md"
+    "chat router/02-ARQUITECTURA/📂readme chat Arquitectura.md",
+    "chat router/01-PLAN/INDICE.md",
+    "README.md",
+    "chat router/01-PLAN/PLAN-ACCION-XRAY.md",
+    "chat router/01-PLAN/AUDITORIA-4-PASADAS.json",
+    "chat router/01-PLAN/AUDITORIA-4-PASADAS-POST-CODE.json",
+    "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
+    "chat router/11-EVIDENCIA/parser.py",
+    "chat router/11-EVIDENCIA/compilador_busquedas.py",
+    "chat router/11-EVIDENCIA/puerta.py",
+    "router inteligente universal/integration/chat_mvp/org_api.py",
+    "chat router/11-EVIDENCIA/auditoria_post_code.py",
+    "chat router/01-PLAN/catalogo_visual.py"
   ],
   "current_audit_files": [
     "chat router/01-PLAN/PROPUESTA-METODO-DEVIN-ASK-COUNCIL.md",
@@ -103,7 +115,13 @@
     "hf_router": "RUNNING_cpu-basic_health_200",
     "hf_temp_job": "6abe68d3404719ba3761892f_COMPLETED_30_passed",
     "t06_browser": "BLOCKED_agent_usage_limit",
-    "vercel": "LOGIN_REQUIRED_GITHUB_SECRETS_403"
+    "vercel": "LOGIN_REQUIRED_GITHUB_SECRETS_403",
+    "linked_plan_tree": "30_files_27_unique_blobs_preserved",
+    "router_exact_revision": "NOT_VERIFIED_health_200",
+    "xray_inventory": "30_documents_82_skills_82_images_hash_verified",
+    "post_code": "56_passed_1_deselected_ruff_PASS",
+    "T11_gate_DAG": "48_passed",
+    "visual_catalog_generator": "65_plus_17_byte_identical"
   },
   "memory_audit": {
     "completed": "Encontrado código Manus: SQLite y grafo fallback; 8 pruebas locales PASS con PYTHONPATH del Router y 04-MEMORIA",
@@ -121,7 +139,9 @@
     "GitHub billing lock prevented verify job start; testing_agent subscription limit blocked UI coverage.",
     "T-06 del PR no esta en main; requiere entorno aislado para probar esa revision.",
     "Sin HF_CONTROL_JOBS_TOKEN ni clave Router; falta comprobar estado del Job y no se puede ejecutar reinicio seguro.",
-    "Agente de pruebas devolvio limite de uso antes de abrir UI; Vercel requiere login y GitHub secrets 403."
+    "Agente de pruebas devolvio limite de uso antes de abrir UI; Vercel requiere login y GitHub secrets 403.",
+    "🚩 PENDIENTE: test_page_providers_and_auth espera ocho proveedores, origin/main incluye openai; contrato por resolver",
+    "🚩 PENDIENTE: proveedor OpenAI vs test heredado; T-11-B..K, adapters externos, HF restore y T-06 visual sin verificación"
   ],
   "decisions": [
     "Decisión B: cada GET añade RESOURCE_READ a Bitácora sin cambiar estado funcional",
@@ -137,9 +157,13 @@
     "Plan original de 100 pasos sigue sin recibido ni validado; guardia RECEPTION y reloj 0.",
     "Usar Router HF 24/7 sin reinicio y no usar GitHub Actions; 401 no equivale a health PASS.",
     "No relanzar a ciegas; obtener token HF y autenticar /health antes de intervenir.",
-    "No relanzar Router activo; no entregar T-06 sin navegador y segunda pasada."
+    "No relanzar Router activo; no entregar T-06 sin navegador y segunda pasada.",
+    "Corregida inferencia de archivo adicional: continuar con los DAG existentes; mantener guardia auxiliar de 100 IDs inactiva sin bloquear tareas.",
+    "Organización y auditoría de entrada completadas; siguientes contratos de T-11 se abordarán en backend antes de T-06 visual",
+    "Reusar parser/compilador/Puerta existentes; siguiente T-11-B claims/receipts independientes, backend antes de frontend",
+    "T-11-A parcial verificado; siguiente T-11-B claims y receipts independientes"
   ],
-  "reception_summary": "Router HF 6abdc1b4404719ba376155b0 autenticado RUNNING cpu-basic, health 200; sin reinicio. Job temporal 6abe68d3404719ba3761892f completo con 30/30 pruebas focalizadas. T-06 UI bloqueada por limite del agente de pruebas; plan 100 pasos en recepcion.",
+  "reception_summary": "X-Ray 4 pasadas: 30 documentos, 82 skills, 82 imágenes; auditoría post-código de 13 archivos, 56 pruebas focalizadas y Ruff PASS. T-11-A parser fail-closed y catálogo visual endurecido, con generator read-back 65+17.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",
@@ -152,5 +176,5 @@
     "security": "Cookies, Local Storage y Session Storage vacíos en consulta puntual; clave temporal visible como valor del input password en DOM/memoria; no declarar SECURITY PASS.",
     "local_only_evidence": "Capturas parciales en /home/ubuntu/screenshots y plan del agente en /home/ubuntu/t06; no son evidencia de aceptación ni parte del repositorio. Grabación final no confirmada."
   },
-  "next_exact_action": "Recibir enlace al archivo del Director, verificar contenido y 100 pasos, guardar su SHA-256 en PLAN.json, y solo entonces arrancar guardia de 3 h 45 min / 95 %."
+  "next_exact_action": "Continuar tareas pendientes de los DAG T-01..T-12 sin solicitar un archivo adicional; reanudar prueba de navegador T-06 cuando esté disponible."
 }

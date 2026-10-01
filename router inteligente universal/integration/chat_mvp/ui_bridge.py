@@ -259,9 +259,9 @@ def _emit_state_event(body: dict[str, Any]) -> dict[str, Any]:
 
 
 def _emit_state_audit_event(resource: str, http_status: int) -> dict[str, Any]:
-    if resource not in {"graph", "queue", "bitacora", "dag", "connectors", "templates", "engineering", "files"}:
+    if resource not in {"graph", "queue", "bitacora", "dag", "connectors", "templates", "engineering", "files", "visual-references"}:
         raise HTTPException(status_code=400, detail="STATE_AUDIT_RESOURCE_INVALID")
-    if http_status not in {200, 400, 404}:
+    if http_status not in {200, 400, 404, 503}:
         raise HTTPException(status_code=400, detail="STATE_AUDIT_STATUS_INVALID")
     with _STATE_LOCK:
         current, _ = _read(BITACORA)

@@ -3,7 +3,9 @@
 Convierte un input en lenguaje natural a una estructura:
 {task_type, targets, requirements, constraints, forbidden, verification}
 """
+import json
 import re
+import sys
 
 TASK_TYPES = [
     "SEARCH", "INSTALL", "DOWNLOAD", "EXTRACT", "DEPLOY", "MODIFY_CODE",
@@ -64,11 +66,14 @@ def _targets(text):
 
 def parse(text):
     """Parsea el input del usuario de forma determinista. Sin LLM."""
-    text = (text or "").strip()
+    text = text.strip() if isinstance(text, str) else ""
     low = text.lower()
-    task_type = "SEARCH"
+    forbidden_matches = list(_FORBIDDEN_RE.finditer(text))
+    task_type = "UNKNOWN"
     for pattern, ttype in _RULES:
-        if re.search(pattern, low):
+        matches = re.finditer(pattern, low)
+        if any(not any(block.start() <= match.start() < block.end() for block in forbidden_matches)
+               for match in matches):
             task_type = ttype
             break
     targets = _targets(text)
@@ -88,6 +93,4 @@ def parse(text):
 
 
 if __name__ == "__main__":
-    import sys
-    import json
     print(json.dumps(parse(" ".join(sys.argv[1:])), ensure_ascii=False, indent=2))

@@ -2,6 +2,8 @@
 import os
 import sys
 
+import pytest
+
 os.environ["SIMULADO"] = "1"
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -25,6 +27,45 @@ def test_parser_task_types():
     p = parser_mod.parse("busca la version de requests en github.com/psf/requests")
     assert p["task_type"] == "SEARCH"
     assert any("requests" in t for t in p["targets"])
+
+
+@pytest.mark.parametrize(("instruction", "expected"), [
+    ("busca documentación", "SEARCH"),
+    ("instala pytest", "INSTALL"),
+    ("descarga archivo", "DOWNLOAD"),
+    ("extrae paquete", "EXTRACT"),
+    ("despliega aplicación", "DEPLOY"),
+    ("modifica código", "MODIFY_CODE"),
+    ("depura error", "DEBUG"),
+    ("prueba el backend", "TEST"),
+    ("compara versiones", "COMPARE"),
+    ("audita el router", "AUDIT"),
+    ("investiga componentes", "RESEARCH"),
+    ("verifica el hash", "VERIFY"),
+])
+def test_parser_t11_known_inputs_are_deterministic(instruction, expected):
+    assert parser_mod.parse(instruction) == parser_mod.parse(instruction)
+    assert parser_mod.parse(instruction)["task_type"] == expected
+
+
+def test_parser_t11_unknown_and_negated_instruction_fail_closed():
+    assert parser_mod.parse("no deploy")["task_type"] == "UNKNOWN"
+    assert parser_mod.parse("no deploy")["forbidden"] == ["deploy"]
+    assert parser_mod.parse("quizá más adelante")["task_type"] == "UNKNOWN"
+    assert parser_mod.parse(None)["task_type"] == "UNKNOWN"
+    assert compilador_busquedas.compilar(parser_mod.parse("no deploy")) == []
+    assert parser_mod.parse("modifica código; no deploy")["task_type"] == "MODIFY_CODE"
+
+    pack = {
+        "parsed": parser_mod.parse("no deploy"),
+        "known_facts": [{"fact": "existe archivo"}],
+        "conflicts": [],
+        "unknown": [],
+        "sources": ["local"],
+    }
+    result = puerta.despues("no deploy", {"claims": []}, pack=pack)
+    assert result["veredicto"] == "INCOMPLETE"
+    assert not result["detalle_goals"]["G01"]["ok"]
 
 
 def test_goals_12_presentes():

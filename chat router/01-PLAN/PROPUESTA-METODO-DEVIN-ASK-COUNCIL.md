@@ -100,7 +100,7 @@ Se ejecutaron en el checkout actual; son pruebas puntuales de decisión, **no** 
 
 ## Lista concreta para aprobar e incorporar
 
-Estas propuestas están **PENDIENTES DE APROBACIÓN**. No se cambia aún código, reglas de PASS ni fuentes originales. El trabajo sobre el plan nuevo de 100 pasos seguirá su propio protocolo cuando el Director lo suba.
+Estas propuestas fueron aprobadas después de redactar este análisis; P01–P08 ya tienen un contrato ejecutable, aunque los revisores externos no están conectados. El ejemplo de 100 pasos del Director no demuestra que vaya a subir otro archivo: la guardia auxiliar permanece inactiva y los DAG existentes siguen en ejecución.
 
 | Prioridad | Cambio propuesto | Destino tras aprobación | Aceptación verificable |
 |---|---|---|---|
@@ -113,4 +113,4 @@ Estas propuestas están **PENDIENTES DE APROBACIÓN**. No se cambia aún código
 | P07 | Revisar entrada al checkpoint por replay y registrar cadencia real de 15 minutos durante trabajo activo, no mediante promesa de servicio autónomo. | State Hub y handoff. | Revisión monotónica y recuperación probada tras interrupción entre escrituras. |
 | P08 | Emitir un cierre de PR que diferencie pruebas locales, suite completa, CI, UI y servicios externos; diff y hashes leídos de vuelta. | Checklist de entrega en guía y handoff. | Nunca PASS global por PASS focalizado ni por mero archivo presente. |
 
-**Decisión solicitada:** aprobar toda la lista P01–P08, aprobar solo IDs indicados, o devolver cambios. Tras aprobación, implementar en el PR existente con pruebas y State Hub; revisar los archivos nuevos del Director por separado, preservando sus originales y sin arrancar el reloj antes de validar los 100 pasos.
+**Decisión posterior:** el Director aprobó P01–P08 y pidió incorporarlas al PR existente. Los archivos nuevos del Director se organizan conservando sus originales; no pedir un archivo adicional de 100 pasos como requisito de las tareas existentes.

@@ -1,6 +1,6 @@
 # T-06 — inventario funcional y validación pendiente
 
-Contrato: `PLAN-DSL-DAG-UI.yaml` (T-06), skill `../../📂 Skills Maxbry UI fromtend/diseno/😄SKILL.md` y paleta V07. Cada fila exige prueba en navegador con backend real. `PENDIENTE` no significa PASS.
+Contrato: `PLAN-DSL-DAG-UI.yaml` (T-06), skill `SKILLS-MAXBRY-UI/diseno/😄SKILL.md` y paleta V07. Cada fila exige prueba en navegador con backend real. `PENDIENTE` no significa PASS.
 
 | ID | Componente | Botón / función | Entrada | Acción | Salida esperada | Estado esperado | Dependencia | Resultado |
 |---|---|---|---|---|---|---|---|---|

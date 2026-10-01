@@ -31,7 +31,9 @@ def compilar(parsed, goal_ids=None):
     """Devuelve lista de consultas deterministas: [{goal, query}]."""
     goal_ids = goal_ids or goals.GOAL_IDS
     queries = []
-    task_type = parsed.get("task_type", "SEARCH")
+    task_type = parsed.get("task_type", "UNKNOWN")
+    if task_type not in TASK_TEMPLATES:
+        return []
     for gid in goal_ids:
         for tpl in goals.plantillas(gid):
             queries.append({"goal": gid, "query": _render(tpl, parsed)})

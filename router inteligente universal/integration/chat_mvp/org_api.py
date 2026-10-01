@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Callable
@@ -84,6 +85,46 @@ def build_org_router(auth: Callable, store: Callable, catalog: Callable) -> APIR
     @router.get("/connectors", response_model=OrgResponse)
     def connectors() -> dict:
         return _audited("connectors", _ok({"connectors": catalog().list()}))
+
+    @router.get("/visual-references", response_model=OrgResponse)
+    def visual_references() -> dict:
+        images = ROOT / "01-PLAN/REFERENCIAS-UI"
+        items = []
+        seen_ids: set[str] = set()
+        catalogs = (
+            ("CATALOGO-REFERENCIAS-UI.json", "yaiwes.visual-reference-catalog/v1"),
+            ("CATALOGO-ANEXOS-VISUALES.json", "yaiwes.visual-annex-catalog/v1"),
+        )
+        for name, schema in catalogs:
+            path = ROOT / "01-PLAN" / name
+            if not path.is_file():
+                return _audited("visual-references", _error("VISUAL_CATALOG_MISSING", 503), 503)
+            try:
+                catalog_data = _json(path, {})
+                if (not isinstance(catalog_data, dict) or catalog_data["schema"] != schema
+                        or not isinstance(catalog_data["items"], list)):
+                    raise TypeError("VISUAL_CATALOG_INVALID")
+                for item in catalog_data["items"]:
+                    if (not isinstance(item, dict) or not isinstance(item["id"], str)
+                            or not isinstance(item["file"], str) or not isinstance(item["function"], str)
+                            or not isinstance(item["sha256"], str)
+                            or not re.fullmatch(r"[0-9a-f]{64}", item["sha256"])
+                            or item["id"] in seen_ids):
+                        raise ValueError("VISUAL_CATALOG_ITEM_INVALID")
+                    seen_ids.add(item["id"])
+                    image = (ROOT.parent / item["file"]).resolve()
+                    if not image.is_relative_to(images.resolve()) or not image.is_file():
+                        return _audited("visual-references", _error("VISUAL_SOURCE_MISSING", 503), 503)
+                    if hashlib.sha256(image.read_bytes()).hexdigest() != item["sha256"]:
+                        return _audited("visual-references", _error("VISUAL_HASH_MISMATCH", 503), 503)
+                    items.append({"id": item["id"], "function": item["function"], "sha256": item["sha256"],
+                                  "duplicate_of": item["duplicate_of"], "classification": "REFERENCE_ONLY",
+                                  "backend": "CATALOG_METADATA_ONLY"})
+                if type(catalog_data["count"]) is not int or catalog_data["count"] != len(catalog_data["items"]):
+                    raise ValueError("VISUAL_CATALOG_COUNT_INVALID")
+            except (OSError, ValueError, TypeError, KeyError):
+                return _audited("visual-references", _error("VISUAL_CATALOG_INVALID", 503), 503)
+        return _audited("visual-references", _ok({"count": len(items), "items": items}))
 
     @router.get("/templates", response_model=OrgResponse)
     def templates() -> dict:

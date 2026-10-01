@@ -149,11 +149,11 @@
       "task": "PLAN-RECEPCION",
       "project": "chat-yaiwes",
       "status": "BLOCKED",
-      "phase": "AWAITING_PLAN",
-      "next": "Recibir plan original",
-      "summary": "Router HF 6abdc1b4404719ba376155b0 autenticado RUNNING cpu-basic, health 200; sin reinicio. Job temporal 6abe68d3404719ba3761892f completo con 30/30 pruebas focalizadas. T-06 UI bloqueada por limite del agente de pruebas; plan 100 pasos en recepcion.",
-      "updated_at": "2026-10-01T14:07:50Z",
-      "last_event_seq": 40
+      "phase": "SCOPE_UNCONFIRMED",
+      "next": "Continuar DAG existente",
+      "summary": "X-Ray 4 pasadas: 30 documentos, 82 skills, 82 imágenes; auditoría post-código de 13 archivos, 56 pruebas focalizadas y Ruff PASS. T-11-A parser fail-closed y catálogo visual endurecido, con generator read-back 65+17.",
+      "updated_at": "2026-10-01T14:42:57Z",
+      "last_event_seq": 44
     }
   }
 }

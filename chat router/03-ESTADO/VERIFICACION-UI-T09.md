@@ -1,6 +1,6 @@
 # T-09 — comparación con la especificación visual
 
-Fecha de verificación estática: 2026-10-01T03:37:20Z. Fuente: `chat router/01-PLAN/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md` (copia idéntica en `📂 Skills Maxbry UI fromtend/diseno/`). Evidencia implementada: `chat router/ui/`, `integration/chat_mvp/{app,router,org_api,fables_adapter}.py` y pruebas `tests/test_org_api.py`. VERIFIED indica lectura de código/prueba automatizada; no implica verificación visual en navegador.
+Fecha de verificación estática: 2026-10-01T03:37:20Z. Fuente: `chat router/01-PLAN/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md` (copia idéntica en `chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/`). Evidencia implementada: `chat router/ui/`, `integration/chat_mvp/{app,router,org_api,fables_adapter}.py` y pruebas `tests/test_org_api.py`. VERIFIED indica lectura de código/prueba automatizada; no implica verificación visual en navegador.
 
 | Sección | Estado | Evidencia, motivo del GAP y siguiente paso |
 | --- | --- | --- |

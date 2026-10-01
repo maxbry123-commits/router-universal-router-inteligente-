@@ -87,6 +87,92 @@ def test_send_hf_live_model_keeps_history_and_isolates_owners(client):
     assert other.status_code == 404
 
 
+def test_chat_turn_memory_readback_and_owner_isolation(client, tmp_path):
+    first = send(client, message="clave zafiro").json()
+    assert first["memory"]["status"] == "SAVED"
+    key = first["memory"]["key"]
+    mine = client.get("/memoria/load", headers=H, params={"scope": "chat", "key": key})
+    assert mine.status_code == 200
+    assert mine.json()["records"][0]["data"]["reply"] == "eco:clave zafiro"
+    other = {"X-API-Key": "k2"}
+    assert client.get("/memoria/load", headers=other, params={"scope": "chat", "key": key}).json()["records"] == []
+    assert not any(client.get("/memoria/search", headers=other, params={
+        "scope": "chat", "query": "zafiro"}).json()["results"].values())
+
+    rt.get_store().close()
+    reopened = Store(tmp_path)
+    rt.set_store(reopened)
+    assert client.get("/memoria/load", headers=H, params={"scope": "chat", "key": key}).json()["records"][0]["data"]["message"] == "clave zafiro"
+    assert len(reopened.messages(first["conversation_id"])) == 2
+
+
+def test_chat_reports_memory_gap_after_store_persists(client, monkeypatch):
+    def unavailable(store):
+        raise RuntimeError("MEMORY_UNAVAILABLE")
+
+    monkeypatch.setattr(rt, "memory", unavailable)
+    result = send(client).json()
+    assert result["memory"] == {"status": "🚩 PENDIENTE", "reason": "RuntimeError"}
+    assert len(rt.get_store().messages(result["conversation_id"])) == 2
+
+
+def test_visual_catalog_metadata_auth_and_hash_readback(client, monkeypatch):
+    from integration.chat_mvp import org_api, ui_bridge
+
+    monkeypatch.setattr(ui_bridge, "_emit_state_audit_event", lambda resource, status: {"resource": resource, "status": status})
+    assert client.get("/chat/org/visual-references").status_code == 401
+    response = client.get("/chat/org/visual-references", headers=H)
+    assert response.status_code == 200, response.text
+    items = response.json()["data"]["items"]
+    assert len(items) == 82
+    assert all(item["backend"] == "CATALOG_METADATA_ONLY" for item in items)
+    assert all("data_b64" not in item and "file" not in item for item in items)
+
+    original_json = org_api._json
+
+    def wrong_hash(path, fallback):
+        data = original_json(path, fallback)
+        if path.name == "CATALOGO-REFERENCIAS-UI.json":
+            return {**data, "items": [{**data["items"][0], "sha256": "0" * 64}]}
+        return data
+
+    monkeypatch.setattr(org_api, "_json", wrong_hash)
+    failed = client.get("/chat/org/visual-references", headers=H)
+    assert failed.status_code == 503 and failed.json()["detail"] == "VISUAL_HASH_MISMATCH"
+
+
+@pytest.mark.parametrize("corruption", (
+    "invalid_json", "wrong_count", "wrong_schema", "missing_file", "duplicate_id",
+))
+def test_visual_catalog_fails_closed_on_invalid_entries(client, monkeypatch, corruption):
+    from integration.chat_mvp import org_api, ui_bridge
+
+    monkeypatch.setattr(ui_bridge, "_emit_state_audit_event", lambda resource, status: {"resource": resource, "status": status})
+    original_json = org_api._json
+
+    def corrupted(path, fallback):
+        if path.name != "CATALOGO-REFERENCIAS-UI.json":
+            return original_json(path, fallback)
+        if corruption == "invalid_json":
+            raise json.JSONDecodeError("invalid", "{", 0)
+        catalog = original_json(path, fallback)
+        if corruption == "wrong_count":
+            return {**catalog, "count": catalog["count"] - 1}
+        if corruption == "wrong_schema":
+            return {**catalog, "schema": "unexpected"}
+        first = {**catalog["items"][0]}
+        if corruption == "missing_file":
+            first.pop("file")
+        else:
+            first["id"] = catalog["items"][1]["id"]
+        return {**catalog, "items": [first, *catalog["items"][1:]]}
+
+    monkeypatch.setattr(org_api, "_json", corrupted)
+    response = client.get("/chat/org/visual-references", headers=H)
+    assert response.status_code == 503
+    assert response.json() == {"status": "error", "detail": "VISUAL_CATALOG_INVALID"}
+
+
 def test_hf_gate_rejects_unselectable_models_and_flag_off(client, monkeypatch):
     assert send(client, model="Qwen/Qwen3.8-27B").json()["detail"] == "MODEL_NOT_SELECTABLE"
     monkeypatch.setenv("RIU_CHAT_ALLOW_PROVIDER_LIVE", "0")

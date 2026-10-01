@@ -11,9 +11,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PLAN = Path(__file__).resolve().parent
 IMAGES = PLAN / "REFERENCIAS-UI"
 OUTPUT = PLAN / "CATALOGO-REFERENCIAS-UI.json"
-SKILL = "📂 Skills Maxbry UI fromtend/diseno/😄SKILL.md"
-PALETTE = "📂 Skills Maxbry UI fromtend/diseno/README-SKILL-PARTE-1-GRIS-PRINCIPAL.md"
-SPEC = "📂 Skills Maxbry UI fromtend/diseno/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md"
+EXTRA_OUTPUT = PLAN / "CATALOGO-ANEXOS-VISUALES.json"
+SKILL = "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md"
+PALETTE = "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-PARTE-1-GRIS-PRINCIPAL.md"
+SPEC = "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md"
 
 # Orden alfabético de las capturas conservado en el catálogo de la fuente.
 ROLES = [
@@ -78,13 +79,54 @@ def build_catalog() -> dict:
             "source": "main + Git rename sin cambio de bytes", "items": entries}
 
 
+def build_extra_catalog() -> dict:
+    groups = {
+        "ARQUITECTURA-ROUTER": ("Diagrama de arquitectura del Router", 5),
+        "ADJUNTOS-CHAT": ("Captura de conversación, propuesta o revisión del PR", 12),
+    }
+    entries = []
+    seen: dict[str, str] = {}
+    for group, (role, expected) in groups.items():
+        files = sorted((IMAGES / group).glob("*.png"))
+        if len(files) != expected:
+            raise ValueError(f"EXTRA_IMAGE_COUNT_CHANGED:{group}")
+        for path in files:
+            data = path.read_bytes()
+            if data[:8] != b"\x89PNG\r\n\x1a\n":
+                raise ValueError(f"NOT_PNG:{path.name}")
+            width, height = struct.unpack(">II", data[16:24])
+            digest = hashlib.sha256(data).hexdigest()
+            entry = {
+                "id": f"UI-EXTRA-{len(entries) + 1:03}", "group": group,
+                "file": str(path.relative_to(ROOT)), "sha256": digest,
+                "duplicate_of": seen.get(digest), "bytes": len(data),
+                "width": width, "height": height, "function": role,
+                "classification": "REFERENCE_ONLY", "backend": "NOT_CONNECTED",
+                "verification": "🚩 PENDIENTE: integración funcional y read-back",
+            }
+            if path.name == "Screenshot_20261001-093043_Edge.png":
+                entry.update({
+                    "function": "Captura de la selección GPT-6 Sol en la aplicación del usuario; evidencia visual de selección, no del modelo interno de Devin",
+                    "backend": "CATALOG_METADATA_ONLY",
+                    "verification": "🚩 PENDIENTE: verificación independiente del modelo activo",
+                })
+            entries.append(entry)
+            seen.setdefault(digest, entries[-1]["id"])
+    return {"schema": "yaiwes.visual-annex-catalog/v1", "count": len(entries), "items": entries}
+
+
 def main() -> None:
     catalog = build_catalog()
+    extra = build_extra_catalog()
     OUTPUT.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    EXTRA_OUTPUT.write_text(json.dumps(extra, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if json.loads(OUTPUT.read_text(encoding="utf-8")) != catalog:
         raise OSError("CATALOG_READBACK_FAILED")
+    if json.loads(EXTRA_OUTPUT.read_text(encoding="utf-8")) != extra:
+        raise OSError("EXTRA_CATALOG_READBACK_FAILED")
     print(f"Verificadas {catalog['count']} referencias; duplicados: "
-          f"{sum(bool(item['duplicate_of']) for item in catalog['items'])}")
+          f"{sum(bool(item['duplicate_of']) for item in catalog['items'])}; "
+          f"{extra['count']} anexos visuales")
 
 
 if __name__ == "__main__":

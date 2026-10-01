@@ -60,6 +60,9 @@ def _detalle_goals(pack, checks):
         if gid == "G03":
             ok = checks_ok.get("restricciones", True)
             nota = "restricciones respetadas" if ok else "restriccion violada"
+        elif gid == "G01" and task_type == "UNKNOWN":
+            ok = False
+            nota = "intencion no reconocida"
         elif gid == "G06":
             if "version" in checks_ok:
                 ok = checks_ok["version"]

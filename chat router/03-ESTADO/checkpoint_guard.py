@@ -85,14 +85,14 @@ def project_checkpoint(checkpoint: dict) -> None:
     current = STATE_DIR / "BITACORA.jsonl"
     events = ui_bridge._state_events(current.read_text(encoding="utf-8"))
     phase = {
-        "RECEPTION": "AWAITING_PLAN",
+        "RECEPTION": "SCOPE_UNCONFIRMED",
         "RUNNING": "PLAN_100_RUNNING",
         "STOPPED": "STOP_CLEAN",
     }[checkpoint["status"]]
     if checkpoint["status"] == "RECEPTION":
         summary = checkpoint.get(
             "reception_summary",
-            "Modo recepcion: plan de 100 pasos sin subir; T-06 pausada; sin PASS visual. Reloj sin iniciar.",
+            "Guardia de 100 pasos sin lista definida; continuar DAG existente. T-06 sin PASS visual. Reloj sin iniciar.",
         )
     elif checkpoint["status"] == "RUNNING":
         summary = "Plan original de 100 pasos validado; reloj iniciado. CHECKPOINT.json registra el avance."
@@ -111,7 +111,7 @@ def project_checkpoint(checkpoint: dict) -> None:
             "actor": "devin",
             "phase": phase,
             "status": "BLOCKED" if checkpoint["status"] != "RUNNING" else "RUNNING",
-            "next": "Recibir plan original" if checkpoint["status"] == "RECEPTION" else "Ver CHECKPOINT.json",
+            "next": "Continuar DAG existente" if checkpoint["status"] == "RECEPTION" else "Ver CHECKPOINT.json",
             "summary": summary,
         },
         events[-1]["seq"] + 1,
