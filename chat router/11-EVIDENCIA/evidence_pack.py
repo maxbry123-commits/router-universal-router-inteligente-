@@ -69,6 +69,7 @@ def construir(task, parsed, resultados_rankeados, hallazgos=None):
             fact = {
                 "fact": _recortar(snippet, 300),
                 "source": r.get("url", ""),
+                "query_id": r.get("query_id", ""),
                 "score": round(score, 4),
             }
             known_facts.append(fact)

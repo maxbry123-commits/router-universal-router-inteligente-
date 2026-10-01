@@ -1,9 +1,9 @@
-# README ARQUITECTURA — YAIWES Router (watchdog 2026-10-01T16:11:14Z)
+# README ARQUITECTURA — YAIWES Router (watchdog 2026-10-01T17:19:55Z)
 
 Generado por watchdog_checkpoint.py — SOLO hechos verificados; lo no comprobado queda UNKNOWN/BLOCKED.
 
 ## Estado verificado
-- Suite local: task_runtime=12/12; skill_runtime=4/4; tool_contracts=4/4; org_api=6/6; gobierno=41/41; root_map=PASS
+- Suite local: UNKNOWN
 - ROOT-MAP-T11: PASS
 - Router permanente HF: RUNNING cpu-basic 16 GB, /health 200 (verificado 2026-10-01)
 - CI GitHub Actions verify: BLOCKED (cuenta con billing lock; job nunca arranca — no es código)

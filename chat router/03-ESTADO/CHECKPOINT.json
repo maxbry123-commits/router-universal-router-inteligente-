@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T15:42:06Z",
+  "updated_at": "2026-10-01T17:19:55Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 53,
+  "bitacora_revision": 55,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -134,7 +134,13 @@
     "ruff": "PASS",
     "checkpoint": "5 passed",
     "broad": "406 passed; 1 failed",
-    "connectors_vault": "23 passed"
+    "connectors_vault": "23 passed",
+    "task_runtime": "12/12",
+    "skill_runtime": "4/4",
+    "tool_contracts": "4/4",
+    "org_api": "6/6",
+    "gobierno": "41/41",
+    "root_map": "PASS"
   },
   "memory_audit": {
     "completed": "Encontrado código Manus: SQLite y grafo fallback; 8 pruebas locales PASS con PYTHONPATH del Router y 04-MEMORIA",
@@ -163,7 +169,9 @@
     "🚩 PENDIENTE: procedencia autenticada y timeout duro, integridad remota del historial, reviewers, lease/recovery, T-06 visual",
     "🚩 PENDIENTE: E2E GitHub 502, registro modelos, politica sdk, provider map openai, aislamiento SIMULADO",
     "🚩 PENDIENTE: E2E GitHub publico bloqueado por rate limit sin token (403), no defecto de codigo",
-    "🚩 PENDIENTE: E2E GitHub 403 rate limit sin token; CI verify bloqueado billing"
+    "🚩 PENDIENTE: E2E GitHub 403 rate limit sin token; CI verify bloqueado billing",
+    "CI verify bloqueado por billing de cuenta (no codigo)",
+    "E2E GitHub publico rate limit sin token"
   ],
   "decisions": [
     "Decisión B: cada GET añade RESOURCE_READ a Bitácora sin cambiar estado funcional",
@@ -194,7 +202,7 @@
     "Siguiente: timeout duro en busqueda local y procedencia independiente de facts",
     "Siguiente: procedencia independiente de facts y reintentar E2E GitHub con token"
   ],
-  "reception_summary": "T-11-C timeout duro de busqueda local implementado (proceso hijo con terminate/kill); suite 406 passed/1 failed; E2E GitHub sigue bloqueado por rate limit externo; CI verify bloqueado por billing de la cuenta GitHub, no por codigo.",
+  "reception_summary": "wordflow loop root copiada via motor_3 (397 files VERIFIED_CLOSED); 236/242 tests propios pasan; 6 stale upstream marcados pending",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",
