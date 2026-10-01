@@ -30,6 +30,7 @@ CODE = (
     "router inteligente universal/integration/chat_mvp/ui_bridge.py",
     "router inteligente universal/tests/test_chat_mvp_app.py",
     "router inteligente universal/tests/test_method_audit.py",
+    "router inteligente universal/tests/test_org_api.py",
 )
 TESTS = (
     "router inteligente universal/tests/test_chat_mvp_app.py",

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -14,11 +15,53 @@ if str(ROOT) not in sys.path:
 pytest.importorskip("fastapi")
 pytest.importorskip("huggingface_hub")
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from integration.chat_mvp import app as chat_app
 from integration.chat_mvp import router as rt
 from integration.chat_mvp import ui_bridge
 from integration.chat_mvp.store import Store
+
+
+def test_state_event_replay_recovers_missing_snapshot_and_rejects_corruption(tmp_path, monkeypatch):
+    records = {}
+    legacy = {
+        "seq": 1, "type": "TASK_CLAIMED", "at": "2026-09-30T00:00:00Z",
+        "project": "chat-yaiwes", "task": "T-11", "actor": "devin",
+    }
+    current = ui_bridge._state_event({
+        "type": "CHECKPOINT_RECORDED", "project": "chat-yaiwes",
+        "task": "T-11", "actor": "devin", "summary": "verificado",
+    }, 2)
+    log = json.dumps(legacy) + "\n" + json.dumps(current) + "\n"
+    records[ui_bridge.BITACORA] = log
+    records[ui_bridge.HANDOFF] = "# Handoff\n"
+    monkeypatch.setattr(ui_bridge, "_read", lambda path: (records.get(path, ""), None))
+    monkeypatch.setattr(ui_bridge, "_write", lambda path, text, _msg: records.__setitem__(path, text))
+
+    expected = ui_bridge._rebuild_state()
+    snapshot = records[ui_bridge.STATE]
+    del records[ui_bridge.STATE]
+    assert ui_bridge._rebuild_state() == expected
+    assert records[ui_bridge.STATE] == snapshot
+
+    altered = {**current, "summary": "sin verificar"}
+    with pytest.raises(HTTPException, match="STATE_BITACORA_INVALID_HASH"):
+        ui_bridge._state_events(json.dumps(legacy) + "\n" + json.dumps(altered))
+    with pytest.raises(HTTPException, match="STATE_BITACORA_INVALID_SCHEMA"):
+        ui_bridge._state_events(json.dumps(current) + "\n" + json.dumps({**legacy, "seq": 3}))
+    with pytest.raises(HTTPException, match="STATE_BITACORA_INVALID_HASH"):
+        ui_bridge._state_events(json.dumps(current) + "\n" + json.dumps({**current, "seq": 3}))
+    monkeypatch.setattr(
+        ui_bridge, "_write",
+        lambda path, text, _msg: None if path == ui_bridge.BITACORA else records.__setitem__(path, text),
+    )
+    with pytest.raises(HTTPException, match="STATE_EVENT_READBACK_FAILED"):
+        ui_bridge._emit_state_event({
+            "type": "TASK_COMPLETED", "project": "chat-yaiwes",
+            "task": "T-11", "actor": "devin",
+        })
+    assert records[ui_bridge.STATE] == snapshot
 
 
 def test_org_views_audit_reads_without_changing_functional_state(tmp_path, monkeypatch):

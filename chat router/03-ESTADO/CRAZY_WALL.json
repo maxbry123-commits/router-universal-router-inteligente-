@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "T-11-C parcial: 18 archivos código con cuatro pasadas, 66 pruebas focalizadas, Ruff PASS; gate rechaza paquetes alterados, fanout tipa errores y conserva fuente local.",
-      "updated_at": "2026-10-01T14:52:16Z",
-      "last_event_seq": 48
+      "summary": "T-11-D parcial: eventos v2 con ID/hash y replay local restauran snapshot; 19 archivos código auditados, 82 imágenes, 67 tests, Ruff PASS.",
+      "updated_at": "2026-10-01T14:55:23Z",
+      "last_event_seq": 49
     }
   }
 }

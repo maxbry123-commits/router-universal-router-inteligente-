@@ -8,7 +8,7 @@
     "Existing provider test disagrees with openai in origin/main"
   ],
   "checks": {
-    "focused_tests": "66 passed, 1 deselected, 29 warnings in 1.57s",
+    "focused_tests": "67 passed, 1 deselected, 29 warnings in 1.56s",
     "ruff_backend": "PASS"
   },
   "source_inventory_summary": {
@@ -3193,8 +3193,8 @@
     },
     {
       "file": "chat router/11-EVIDENCIA/auditoria_post_code.py",
-      "sha256": "8334c98e9192b1e585eda4e7387b1405b06cca9d1c6faaaa91d34cab1568eb94",
-      "bytes": 5290,
+      "sha256": "d06bc7d777c5069ce2f388f70b7577acc57e93e2ec2067be2daf429b949ad844",
+      "bytes": 5348,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3336,8 +3336,8 @@
     },
     {
       "file": "router inteligente universal/integration/chat_mvp/ui_bridge.py",
-      "sha256": "cb6c7215e8ce3339949d819ecccbcbb7aa55993db2b42c53863f8cda440db18f",
-      "bytes": 17439,
+      "sha256": "d2650992a64de923e323e97d655b2549db4e17e381cb6a7d53f4a9b7f5983583",
+      "bytes": 18870,
       "passes": {
         "1_provenance": "MODIFIED_FROM_HEAD",
         "2_structure": "PYTHON_SYNTAX_VALID",
@@ -3365,6 +3365,17 @@
         "2_structure": "PYTHON_SYNTAX_VALID",
         "3_wiring": "LOCAL_GATE_TESTS",
         "4_evidence": "LOCAL_DETERMINISTIC_TESTS_SIMULATED"
+      }
+    },
+    {
+      "file": "router inteligente universal/tests/test_org_api.py",
+      "sha256": "dfdd57c035157bee0da5f43211a85804d4aa0f92c51e1000292b23c45b081d9f",
+      "bytes": 8890,
+      "passes": {
+        "1_provenance": "MODIFIED_FROM_HEAD",
+        "2_structure": "PYTHON_SYNTAX_VALID",
+        "3_wiring": "LOCAL_INTEGRATION_TESTS",
+        "4_evidence": "LOCAL_TESTS_PASS_WITH_MOCKED_PROVIDER"
       }
     }
   ]

@@ -16,6 +16,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException
@@ -108,6 +109,8 @@ def _set_flag(path: str, paused: bool) -> None:
 def _state_events(text: str) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
     last_seq = 0
+    seen_ids: set[str] = set()
+    versioned = False
     for line_no, line in enumerate(text.splitlines(), 1):
         if not line.strip():
             continue
@@ -115,10 +118,25 @@ def _state_events(text: str) -> list[dict[str, Any]]:
             event = json.loads(line)
         except json.JSONDecodeError as exc:
             raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_JSON:{line_no}") from exc
-        if not isinstance(event, dict) or not isinstance(event.get("seq"), int) or event["seq"] <= last_seq:
+        if not isinstance(event, dict) or type(event.get("seq")) is not int or event["seq"] <= last_seq:
             raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_SEQUENCE:{line_no}")
         if event.get("type") not in _STATE_EVENT_TYPES:
             raise HTTPException(status_code=409, detail=f"STATE_BITACORA_UNKNOWN_EVENT:{line_no}")
+        if event.get("schema") == "yaiwes.state-event/v2":
+            versioned = True
+            event_id = event.get("event_id")
+            digest = event.get("payload_hash")
+            if (
+                not isinstance(event_id, str)
+                or not re.fullmatch(r"[0-9a-f]{32}", event_id)
+                or event_id in seen_ids
+                or not isinstance(digest, str)
+                or digest != _event_hash(event)
+            ):
+                raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_HASH:{line_no}")
+            seen_ids.add(event_id)
+        elif versioned or "event_id" in event or "payload_hash" in event or "schema" in event:
+            raise HTTPException(status_code=409, detail=f"STATE_BITACORA_INVALID_SCHEMA:{line_no}")
         last_seq = event["seq"]
         events.append(event)
     return events
@@ -155,7 +173,16 @@ def _state_event(body: dict[str, Any], seq: int) -> dict[str, Any]:
         if count < 0 or count > 10000:
             raise HTTPException(status_code=400, detail="STATE_EVENT_FILES_CHANGED_INVALID")
         event["files_changed"] = count
+    event["schema"] = "yaiwes.state-event/v2"
+    event["event_id"] = uuid.uuid4().hex
+    event["payload_hash"] = _event_hash(event)
     return event
+
+
+def _event_hash(event: dict[str, Any]) -> str:
+    payload = {key: value for key, value in event.items() if key != "payload_hash"}
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _state_projection(events: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -254,6 +281,9 @@ def _emit_state_event(body: dict[str, Any]) -> dict[str, Any]:
         event = _state_event(body, (events[-1]["seq"] + 1) if events else 1)
         log = current.rstrip() + ("\n" if current.strip() else "") + json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n"
         _write(BITACORA, log, f"state hub: {event['type']} {event['task']}")
+        persisted, _ = _read(BITACORA)
+        if persisted != log:
+            raise HTTPException(status_code=503, detail="STATE_EVENT_READBACK_FAILED")
         projection = _regenerate_state(events + [event])
         return {"ok": True, "event": event, **projection}
 
