@@ -1,0 +1,38 @@
+{
+  "bundle_bytes": 24571917,
+  "bundle_sha256": "4e4d5748f56304878cff520e3ac93239893e177d2089d11f7042d96c523683c6",
+  "extracted_tree": {
+    "bytes": 68446158,
+    "files": 3297,
+    "sha256": "9b769ae2100d606c1468e206e8d0d065c34026c8211329da68d9e5c4a3676bc5"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "impeccable.bundle.zip.part-0001",
+      "sha256": "5ee07699328304b1183062255ef61f51eb4276ab59b984fff02a1b64fbfa23ba"
+    },
+    {
+      "bytes": 11989005,
+      "name": "impeccable.bundle.zip.part-0002",
+      "sha256": "5312f77138f960e9f3cfde80bfef8c636adef61ee4fc237a3729b75a61b87a3b"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "impeccable",
+  "source_bytes": 68446158,
+  "source_commit": "14dafe9c8c2186a9608c7e96edfe7ee69a1923ec",
+  "source_files": 3297,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/pbakaus/impeccable",
+  "source_tree": {
+    "bytes": 68446158,
+    "files": 3297,
+    "sha256": "9b769ae2100d606c1468e206e8d0d065c34026c8211329da68d9e5c4a3676bc5"
+  }
+}
