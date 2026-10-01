@@ -1,0 +1,43 @@
+{
+  "bundle_bytes": 31529804,
+  "bundle_sha256": "a882f67f4f5f785f0b89a9ef58ad3e2860b52bc96a4812e537ea38fe3a0480ff",
+  "extracted_tree": {
+    "bytes": 60114440,
+    "files": 725,
+    "sha256": "d73af0c736e32cdf77030a1ce5471db38a9d5c36ca07d77597a89eabc4c2b14f"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "archify.bundle.zip.part-0001",
+      "sha256": "66264a485f67cd74f5ccadbfe4a814f7e7d5682e0f4356faba639aa2f218b749"
+    },
+    {
+      "bytes": 12582912,
+      "name": "archify.bundle.zip.part-0002",
+      "sha256": "13490df9364cd512d3cfdf995aa1b5d87bb511a578af2465541a6909ec38a856"
+    },
+    {
+      "bytes": 6363980,
+      "name": "archify.bundle.zip.part-0003",
+      "sha256": "79afe532c7bffae0fec2f566a52d17ff7c8ab12ece16793f7dddbc1e09eec506"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "archify",
+  "source_bytes": 60114440,
+  "source_commit": "d5a1333d7447c866a765adac7d4d062f2f02e4d2",
+  "source_files": 725,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/tt-a1i/archify",
+  "source_tree": {
+    "bytes": 60114440,
+    "files": 725,
+    "sha256": "d73af0c736e32cdf77030a1ce5471db38a9d5c36ca07d77597a89eabc4c2b14f"
+  }
+}
