@@ -34,13 +34,15 @@ jobs:
             router inteligente universal/security/
             router inteligente universal/verifier/
             chat router/chat_orders/
+            chat router/05-AGENTES/
+            chat router/03-ESTADO/
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - run: pip install huggingface_hub
+      - run: pip install huggingface_hub PyYAML==6.0.3
 
       - name: Run the DAG through the Router
         id: dag

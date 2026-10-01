@@ -25,7 +25,7 @@ colmena_ingenieria:   # nivel 5 — se replica por MIRROR (doc22, M43)
   - {id: meta_4_adversarial, rol: BREAK_FIND_IMPROVE,     agente: "CUA + MCP",    codigo: "agents-yaiwes/donors/ (12_computer_use)"}
   - {id: meta_fixer,         rol: APPLY_META_CORRECTIONS, agente: "Muse Code"}
 
-apoyo: [ {id: msaf, codigo: "Componente…/microsoft-agent-framework"}, {id: codex}, {id: mimo_code, codigo: "Componente…/mimo-code"} ]
+apoyo: [ {id: msaf, codigo: "Componente…/microsoft-agent-framework"}, {id: codex, rol: FINAL_REVIEW_AND_CORRECT}, {id: mimo_code, codigo: "Componente…/mimo-code"} ]
 
 grafo:   # aristas del equipo (M43 "todos como grafos conectados")
   - [director, rowboat]
@@ -46,7 +46,8 @@ grafo:   # aristas del equipo (M43 "todos como grafos conectados")
   - [meta_2_tests, meta_fixer]
   - [meta_3_visual, meta_fixer]
   - [meta_4_adversarial, meta_fixer]
-  - [meta_fixer, sentinel]
+  - [meta_fixer, codex]
+  - [codex, sentinel]
   - [sentinel, hermes]
   - [sentinel, openclaw]
   - [hermes, judge]

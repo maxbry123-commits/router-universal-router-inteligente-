@@ -15,6 +15,7 @@ from typing import Any, Callable
 from . import core, dag
 from . import providers as prov
 from .store import Store
+from .ui_bridge import _emit_state_event
 from .usage import UsageLog
 
 
@@ -47,7 +48,8 @@ def main(argv: list[str] | None = None) -> int:
     plan = json.loads(Path(args.plan).read_text(encoding="utf-8"))
     store = Store(os.getenv("RIU_DATA_DIR") or tempfile.mkdtemp())
     agents = {a["id"]: a["system_prompt"] for a in store.agents()}
-    result = dag.run_dag(plan, build_executor(store, args.owner), agents=agents, known_providers=set(prov.PROVIDERS))
+    result = dag.run_dag(plan, build_executor(store, args.owner), agents=agents, known_providers=set(prov.PROVIDERS),
+                         state_emit=_emit_state_event if any(n.get("type") == "agent" for n in plan["nodes"]) else None)
     result["usage_summary"] = UsageLog(store).summary()["totals"]
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)

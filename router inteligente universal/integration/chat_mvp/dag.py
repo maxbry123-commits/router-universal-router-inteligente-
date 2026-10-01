@@ -20,7 +20,10 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
+
+from . import agent_gates
 
 SCHEMA = "riu.dag/v1"
 RESULT_SCHEMA = "riu.dag.result/v1"
@@ -58,6 +61,10 @@ def validate(dag: dict[str, Any], known_providers: set[str] | None = None) -> li
         errs.append("ids duplicados")
     for n in nodes:
         nid = n.get("id", "?")
+        if n.get("type") == "agent":
+            errs.extend(f"{nid}: {error}" for error in agent_gates.validate_node(n))
+        elif n.get("type") not in (None, "model"):
+            errs.append(f"{nid}: tipo desconocido")
         m = n.get("model") or {}
         if n.get("route") is not None:
             r = n["route"]
@@ -158,8 +165,12 @@ def verify_ledger(ledger: list[dict[str, Any]]) -> bool:
 def _messages(dag: dict[str, Any], node: dict[str, Any], deps: dict[str, str], agent_prompt: str | None,
               feedback: list[str] | None, dep_chars: int) -> list[dict[str, str]]:
     system = EXECUTOR_CONTRACT + (f"\n\nAGENTE:\n{agent_prompt}" if agent_prompt else "")
+    if node.get("type") == "agent":
+        system += "\nDevuelve exclusivamente JSON compatible con yaiwes.result/v1. No declares aprobación de Sheriff o Judge."
     user = f"INPUT_BLOCK (literal):\n{dag['input_block']}\n\nNODO {node['id']}" + (f" [{node['stage']}]" if node.get("stage") else "")
     user += f"\nINSTRUCCIONES:\n{node['instructions']}"
+    if node.get("type") == "agent":
+        user += "\nJOB:\n" + json.dumps(node["input"], ensure_ascii=False, sort_keys=True)
     if deps:
         user += "\n\nSALIDAS DE NODOS PREVIOS:\n" + "\n".join(f"[{k}]\n{v[:dep_chars]}" for k, v in deps.items())
     if feedback:
@@ -186,7 +197,12 @@ def _call_node(executor: Executor, node: dict[str, Any], model: dict[str, Any], 
 
 
 def run_dag(dag: dict[str, Any], executor: Executor, *, agents: dict[str, str] | None = None,
-            known_providers: set[str] | None = None, dep_chars: int = 3000) -> dict[str, Any]:
+            known_providers: set[str] | None = None, dep_chars: int = 3000,
+            active_truth: dict[str, dict[str, Any]] | None = None,
+            state_emit: Callable[[dict[str, str]], dict[str, Any]] | None = None,
+            reviews: dict[str, dict[str, dict[str, Any]]] | None = None,
+            evidence: dict[str, dict[str, Any]] | None = None,
+            archive: Callable[[dict[str, Any]], bool] | None = None) -> dict[str, Any]:
     errs = validate(dag, known_providers)
     if errs:
         raise DagError("; ".join(errs))
@@ -196,8 +212,13 @@ def run_dag(dag: dict[str, Any], executor: Executor, *, agents: dict[str, str] |
     ledger: list[dict[str, Any]] = []
     totals = {"calls": 0, "input": 0, "output": 0, "cached_input": 0, "cached_responses": 0}
     prev = "GENESIS"
+    agent_nodes = [n["id"] for n in topo_order(dag["nodes"]) if n.get("type") == "agent"]
+    halted_by: str | None = None
     for node in topo_order(dag["nodes"]):
         nid = node["id"]
+        if halted_by:
+            nodes_out[nid] = {"status": "BLOCKED", "blocked_by": [halted_by]}
+            continue
         bad_deps = [d for d in node.get("needs", []) if nodes_out[d]["status"] not in ("PASS", "DONE_UNVERIFIED")]
         if bad_deps:
             nodes_out[nid] = {"status": "BLOCKED", "blocked_by": bad_deps}
@@ -223,6 +244,47 @@ def run_dag(dag: dict[str, Any], executor: Executor, *, agents: dict[str, str] |
             totals["input"] += int(usage.get("prompt_tokens") or 0) if not cached else 0
             totals["output"] += int(usage.get("completion_tokens") or 0) if not cached else 0
             totals["cached_input"] += int(usage.get("prompt_cache_hit_tokens") or (usage.get("prompt_tokens_details") or {}).get("cached_tokens") or 0) if not cached else 0
+
+        if node.get("type") == "agent":
+            position = agent_nodes.index(nid)
+            previous_pass = position == 0 or nodes_out[agent_nodes[position - 1]]["status"] == "PASS"
+            reason = agent_gates.preflight(node, position + 1, len(agent_nodes), previous_pass, active_truth)
+            if position and agent_nodes[position - 1] not in node.get("needs", []):
+                reason = "P1_STEP_DEPENDENCY_MISSING"
+            if state_emit is None:
+                reason = "STATE_HUB_UNAVAILABLE"
+            checkpoint: dict[str, Any] | None = None
+            did_call = False
+            if reason is None:
+                msgs = _messages(dag, node, deps, prompt_agent, None, dep_chars)
+                reply, usage, cached, exc_txt, ident = _call_node(executor, node, node.get("model") or {}, msgs)
+                did_call = True
+                reason = "EXECUTOR_ERROR" if exc_txt else None
+                if reason is None:
+                    failures = check_expect(reply, node.get("expect"))
+                    reason = "AGENT_EXPECT_FAILED" if failures else None
+                if reason is None:
+                    reason, checkpoint = agent_gates.postflight(node, reply, usage, (reviews or {}).get(nid),
+                                                                (evidence or {}).get(nid), archive)
+            status = "GAP" if reason else "PASS"
+            if state_emit is not None:
+                try:
+                    receipt = state_emit(agent_gates.event(node, status, reason.split(":", 1)[0] if reason else "VERIFIED"))
+                    if not receipt.get("ok"):
+                        raise ValueError("STATE_HUB_NO_RECEIPT")
+                except Exception:  # noqa: BLE001 - remote state failure must leave the agent blocked
+                    reason, status = "STATE_HUB_EMIT_FAILED", "GAP"
+            if did_call:
+                record(node.get("model") or {}, msgs, reply, usage, cached, exc_txt, ident,
+                       [reason] if reason else [], status, {"checkpoint": checkpoint} if checkpoint else None)
+            nodes_out[nid] = {"status": status, "attempts": attempts, "checks_failed": [reason] if reason else [],
+                              "checkpoint": checkpoint, "state": "needs_intervention" if reason else "verified"}
+            if reason:
+                nodes_out[nid]["rolled_back_to"] = agent_nodes[position - 1] if position else None
+                halted_by = nid
+            else:
+                replies[nid] = reply
+            continue
 
         if node.get("loop"):
             until, max_it = node["loop"]["until"], int(node["loop"]["max_iterations"])
@@ -272,7 +334,7 @@ def run_dag(dag: dict[str, Any], executor: Executor, *, agents: dict[str, str] |
             nodes_out[nid]["iterations"] = len(attempts)
         replies[nid] = last_reply
     statuses = {v["status"] for v in nodes_out.values()}
-    overall = "FAIL" if statuses & {"FAIL", "BLOCKED"} else ("UNVERIFIED" if "DONE_UNVERIFIED" in statuses else "PASS")
+    overall = "GAP" if "GAP" in statuses else ("FAIL" if statuses & {"FAIL", "BLOCKED"} else ("UNVERIFIED" if "DONE_UNVERIFIED" in statuses else "PASS"))
     return {"schema": RESULT_SCHEMA, "id": dag.get("id"), "status": overall, "nodes": nodes_out, "totals": totals,
             "ledger": ledger, "ledger_head": prev, "ledger_valid": verify_ledger(ledger),
             "input_block_sha256": _sha(dag["input_block"])}

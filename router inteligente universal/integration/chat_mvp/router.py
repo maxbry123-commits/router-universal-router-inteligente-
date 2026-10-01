@@ -28,6 +28,7 @@ from . import dag as dagmod
 from . import dag_cli
 from . import github_tools as gh
 from . import providers as prov
+from . import ui_bridge
 from .fables_adapter import FablesCatalog
 from .store import Store
 from .usage import UsageLog, normalize_usage
@@ -310,7 +311,10 @@ def build_router() -> APIRouter:
         agents = {a["id"]: a["system_prompt"] for a in st.agents()}
         try:
             return await asyncio.to_thread(dagmod.run_dag, req.dag, dag_cli.build_executor(st, owner, keys),
-                                           agents=agents, known_providers=set(prov.PROVIDERS))
+                                           agents=agents, known_providers=set(prov.PROVIDERS),
+                                           state_emit=ui_bridge._emit_state_event if any(
+                                               n.get("type") == "agent" for n in req.dag.get("nodes", [])
+                                               if isinstance(n, dict)) else None)
         except dagmod.DagError as exc:
             raise HTTPException(status_code=400, detail=f"DAG_INVALID:{exc}") from exc
 
