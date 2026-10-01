@@ -488,7 +488,168 @@ work_surface: FRONTEND+BACKEND
   
 ## T-10 — Cierre con read-back global (Vercel APAGADO)  
 needs: [T-06, T-07, T-08, T-09]  
+  ## CABECERA (inicio del archivo YAML)  
   
+schema: riu.dag/v1  
+id: plan-dag-ui-plataforma-yaiwes  
+fecha: "2026-10-01"  
+director: maxbry123-commits  
+repo: maxbry123-commits/router-universal-router-inteligente-  
+rama: main  
+descripcion: >  
+  Plataforma tipo Devin sobre el Router Universal Inteligente:  
+  DSL DAG determinista en chat router/, agentes como plugins via  
+  enchufe Fables (DeepSeek harness si falta algo), chat conectado  
+  al Router raiz, almacenamiento por puente HuggingFace, Vercel  
+  solo al cierre total.  
+  
+## INPUT BLOCKS VERBATIM (IB-01..IB-17)  
+IB-01: "trazabilidad de todo: Crazy Wall + bitácora + STATE JSON +  
+        handoff + Devin/Claude notas, trabajar organizadamente"  
+IB-02: "sistema DSL Dag schema determinista en chat router, 4-5  
+        chats base, orquestadores y agentes como plugins con  
+        harness de DeepSeek; leer main, motores de descarga y  
+        extracción, commit history; si necesitas un componente  
+        ese es el único método"  
+IB-03: "chat conectado al Router de la raíz; chat y agentes al  
+        puente de HuggingFace para almacenamiento; chat despliega  
+        en Vercel"  
+IB-04: "salidas siempre cortas: micro resumen + diagrama de flujo  
+        horizontal; solo estados cerrado/pendiente/en proceso/GAP;  
+        bloquea solo si no puedes resolver"  
+IB-05: "equipo de varios agentes: Claude Code, Grok, Codex,  
+        agentes Meta, orquestador Rowboat, Ruflo y otros con  
+        cadena de trabajo; posibilidad de hacer mirror de todo el  
+        equipo por cada tarea nueva"  
+IB-06: "Codex revisa al final y corrigiendo también"  
+IB-07: "al crear el mirror ya existe el sistema que crea  
+        automático los archivos de trabajo; los únicos que no  
+        hacen mirror son el orquestador; en el mirror Hermes y  
+        OpenClaw generan un mirror de sí mismos como agente hijo  
+        que depende de ellos + sentinel hijo; Hermes/OpenClaw  
+        central maneja el almacenamiento"  
+IB-08: "objetivo: plataforma de trabajo como Devin desde el punto  
+        de vista conceptual operativo organizativo; replicar  
+        métodos de organización/planificación; UI ventana separada  
+        para ver la organización; usar todos los componentes open  
+        source de UI y diseñar uno solo; yo te doy mis skills"  
+IB-09: "toda esta organización se puede crear en la UI y el  
+        runtime del workflow"  
+IB-10: "deja todo el plan dentro de GitHub en readme arquitectura  
+        + Crazy Wall + bitácora + STATE JSON + handoff + Devin  
+        notas + Claude notas — si se acaba el saldo otro plan de  
+        Devin u otra IA pueda continuar como parche de  
+        recuperación sin empezar desde 0 ni volver a explicar"  
+IB-11: "skills subidos: Maxbry UI frontend parte 1 2 3 + imágenes;  
+        propongo 4 paneles: 1) chat 2) archivos/documentos/  
+        conexión MCP cablear adjuntos a proyectos 3) seguimiento  
+        con todos los sistemas de organización que tú utilizas  
+        los mismos métodos de trabajo 4) canvas para visualizar  
+        imágenes videos animaciones; quería algo temporal pero si  
+        puedes hacerlo bien con todo mejor"  
+IB-12: "subir skills a 📂 Skills Maxbry UI fromtend/ en main;  
+        lo demás en la raíz del chat; plan de frontend y backend  
+        según las fotos + sistema de organización para que la AI  
+        no alucine; método de trabajo P1/P2/P3 + mapa mental +  
+        state JSON = obligatorio mantener; integrar cada panel  
+        visual de las imágenes funcionando como backend  
+        ejecutable; NO frontend+backend monolítico — dividir en  
+        paneles y archivos separados cableados con enchufe  
+        Fables/DeepSeek; otras IAs y sesiones de Devin deben  
+        poder retomar el trabajo en curso"  
+IB-13: "acomoda skills; concentrate en 3 objetivos sin sobre-  
+        ingeniería: 1) backend del UI y de los agentes 2) UI del  
+        frontend 3) mantener todo anotado para no alucinar ni  
+        dejar nada por integrar — plan de acción organizado; si  
+        necesitas componente open source descargarlo con el  
+        motor de descarga y extracción de main (revisar commit  
+        history de cómo lo usó Opus)"  
+IB-14: "enchufe: usar harness DeepSeek o enchufe Fables si es  
+        necesario — está en router inteligente universal/enchufe/  
+        (5 archivos: universal_plugin_bus_v2_integrated.py,  
+        ficha_contract_v2.py, validator_v2.py + 2 MD spec)"  
+IB-15: "Vercel: el code en Github; hasta que no tengas todo  
+        cerrado en Github no despliegues en Vercel"  
+IB-16: "0 prompts — todo Python ejecutable y YAML para reglas;  
+        todo determinista DSL DAG schema; sheriff validador  
+        verificación sentinela guardián todo muy controlado;  
+        elimina funciones de la LLM, crea motores, crea code  
+        ejecutable Python, reduce al mínimo la intervención de  
+        la AI para UI y backend"  
+IB-17: "plan plasmado 1:1 en GitHub con input block verbatim de  
+        lo que dije + el plan que hiciste; evitar acciones no  
+        necesarias y sobre-ingeniería; trabaja modo loops y  
+        bucle coda hasta terminar todas las tareas; no escalar  
+        preguntas; todo listo para desplegar pero NO desplegar  
+        en Vercel hasta terminar todo"  
+  
+## REGLAS GLOBALES (transversales a todos los nodos)  
+- reuse > patch > adapt > generate; máx 500 LOC por bloque  
+- evidencia + read-back para todo PASS; ningún LLM decide PASS  
+  (Judge/Sheriff = código)  
+- toda llamada de modelo por el Router; nunca proveedor directo  
+- descargas SOLO vía workflow RDC .github/workflows/  
+  research-download-chain-router-components-20260903.yml (ref pineado)  
+- 0 prompts: control determinista Python + YAML  
+- credenciales solo secrets; los 4 tokens pegados en chat están  
+  comprometidos → revocar/regenerar (registrar en bitácora)  
+- Vercel APAGADO hasta cierre + autorización del Director  
+- ante bloqueo: GAP + motivo + timestamp en BITACORA + siguiente nodo  
+  
+## T-01 — Ordenar skills en carpeta única  
+pasos:  
+  1. git mv de archivos sueltos en raíz (rare-ui-*-yaiwes.tsx,  
+     *-DESCARGAR.sh, manifest-22.json, VERIFICAR-22.py, HTMLs de  
+     tema, screenshots, 📲👨‍💻📳📱🖥️Run UI YAIWES.html,  
+     ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md) a  
+     📂 Skills Maxbry UI fromtend/ (componentes/ y diseno/)  
+  2. Todo lo demás del plan vive en chat router/  
+acceptance: ["raíz limpia de skills sueltos", "read-back de rutas"]  
+evidence: [read-back, bitácora]  
+  
+## T-02 — Plasmar plan completo en GitHub (ESTE ARCHIVO)  
+pasos:  
+  1. Escribir chat router/01-PLAN/PLAN-DSL-DAG-UI.yaml con  
+     input_blocks_verbatim IB-01..IB-17 + reglas + nodos  
+     T-01..T-10 completos (needs/pasos/acceptance/evidence/  
+     handoff/checkpoint por nodo) — el plan ES el DAG  
+     ejecutable y recuperable  
+acceptance: ["archivo existe y valida como riu.dag/v1"]  
+evidence: [commit, validación schema]  
+  
+## T-03 — Backend: enchufe Fables conectado al Router  
+needs: [T-01, T-02]  
+pasos:  
+  1. Leer los 5 archivos de router inteligente universal/enchufe/  
+  2. Conectar universal_plugin_bus_v2_integrated.py +  
+     ficha_contract_v2.py a integration/chat_mvp/router.py  
+  3. Cada panel UI y cada agente se registra como ficha  
+     validada por validator_v2.py (sheriff de plugins);  
+     si el bus no cubre un caso → adaptador DeepSeek harness  
+     como módulo separado, nunca reescribir el bus  
+acceptance: ["fichas registran y validan", "panel/agente sin  
+  ficha válida es rechazado"]  
+evidence: [tests, log del bus]  
+  
+## T-04 — Backend: tipo nodo agent: + gates P1/P2/P3 en código  
+needs: [T-03]  
+pasos:  
+  1. Tipo nodo agent: en ejecutor riu.dag/v1 con campos  
+     {agente, rol, allowed_paths, input(Job), output_schema  
+     (Result), puertas[sheriff,judge], emit(state_hub)}  
+  2. Roles desde 05-AGENTES/AGENTES.yaml (Codex revisor-  
+     corrector final tras meta_fixer); regla de mirrors:  
+     Rowboat exento; hijos Hermes/OpenClaw+sentinel por  
+     mirror; central = almacenamiento HF  
+  3. Gates P1/P2/P3 en código (middleware ejecutor):  
+     checklist booleano; sin avance sin paso anterior;  
+     validación jerarquía CORE>CONTRATOS>DECISIONES>GRAFO;  
+     fallo → GAP + BITACORA + stop; estados spec §20 incl.  
+     needs_intervention  
+  4. Generar 03-ESTADO/AGENT_GRAPH.json desde AGENTES.yaml  
+acceptance: ["DAG con nodos agent: ejecuta y pasa gates",  
+  "agente inválido rechazado", "AGENT_GRAPH.json valida"]  
+evidence: [tests, AGENT_GRAPH.json, ejecución]
 Pasos:  
 1. Read-back global: todos los nodos PASS o GAP documentado; ledger  
    válido; AGENT_GRAPH.json consistente con AGENTES.yaml.  
