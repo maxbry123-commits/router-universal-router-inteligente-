@@ -8,7 +8,7 @@
     "Existing provider test disagrees with openai in origin/main"
   ],
   "checks": {
-    "focused_tests": "68 passed, 1 deselected, 29 warnings in 1.69s",
+    "focused_tests": "68 passed, 1 deselected, 29 warnings in 1.58s",
     "ruff_backend": "PASS"
   },
   "source_inventory_summary": {
