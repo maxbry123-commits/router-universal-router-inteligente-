@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-01T08:24:57Z",
+  "updated_at": "2026-10-01T09:29:57Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -13,15 +13,29 @@
   "completed_steps": [],
   "pending_steps": "Pendiente de recibir y validar los 100 pasos originales",
   "current_dag": "../01-PLAN/PLAN-DSL-DAG-UI.yaml",
+  "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 27,
+  "bitacora_revision": 29,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
-    "completed": ["UI-T-01", "UI-T-02", "UI-T-03", "UI-T-04", "UI-T-08", "UI-T-09"],
-    "in_progress_or_partial": ["UI-T-05", "UI-T-06", "UI-T-10"],
-    "blocked": ["UI-T-07"],
+    "completed": [
+      "UI-T-01",
+      "UI-T-02",
+      "UI-T-03",
+      "UI-T-04",
+      "UI-T-08",
+      "UI-T-09"
+    ],
+    "in_progress_or_partial": [
+      "UI-T-05",
+      "UI-T-06",
+      "UI-T-10"
+    ],
+    "blocked": [
+      "UI-T-07"
+    ],
     "pull_request": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/pull/6"
   },
   "t06_visual_validation": "PAUSED_FOR_RECEPTION",
@@ -37,11 +51,39 @@
     "Devin notas/NOTA-2026-10-01-paneles.md",
     "Claude notas/NOTA-2026-10-01-paneles.md"
   ],
+  "current_audit_files": [
+    "README.md",
+    "chat router/02-ARQUITECTURA/📂readme chat Arquitectura.md",
+    "Readme arquitectura router inteligente universal/Readme arquitectura router inteligente universal.md",
+    "chat router/03-ESTADO/HANDOFF.md",
+    "chat router/03-ESTADO/CHECKPOINT.json",
+    "chat router/03-ESTADO/checkpoint_guard.py",
+    "router inteligente universal/tests/test_checkpoint_guard.py",
+    "chat router/03-ESTADO/BITACORA.jsonl",
+    "chat router/03-ESTADO/STATE.json",
+    "chat router/03-ESTADO/CRAZY_WALL.json"
+  ],
+  "visual_files_moved": {
+    "count": 38,
+    "destinations": [
+      "📂 Skills Maxbry UI fromtend/componentes/",
+      "📂 Skills Maxbry UI fromtend/diseno/"
+    ],
+    "readback": "37 renames Git 100%; README Rare UI original preservado con SHA-256 idéntico y README raíz convertido a índice; tras commit consultar git show --summary HEAD",
+    "scope": "Rare UI, FROMTED, capturas, documentos, scripts y laboratorio visual; originales preservados"
+  },
   "test_results": {
     "focused_backend": "15 passed en tests/test_org_api.py, test_agent_dag_gates.py y test_fables_adapter.py antes de la pausa",
     "ui": "Recorrido parcial interrumpido; no hay segunda pasada ni matriz final",
-    "guard": "4 pruebas locales PASS: plan inválido no inicia, parada al 95 %, parada a las 3 h 45 min y proyección de State Hub; total focalizado 19 passed",
+    "guard": "5 pruebas locales PASS: plan inválido no inicia, heartbeat en recepción, parada al 95 %, parada a las 3 h 45 min y proyección de State Hub; total focalizado 28 passed con memoria y Router",
+    "memory": "8/8 pruebas focalizadas PASS; con guardia y regresiones del Router 28/28 PASS; Ruff y sintaxis JS/shell PASS",
     "broader_suite_prior": "318 passed, 11 failed, 6 errors, 1 skipped; sin comparación con main; no atribuir origen"
+  },
+  "memory_audit": {
+    "completed": "Encontrado código Manus: SQLite y grafo fallback; 8 pruebas locales PASS con PYTHONPATH del Router y 04-MEMORIA",
+    "pending": "Conectar /chat/send a memoria_yaiwes.save y verificar Graphiti/FalkorDB, Memanto, Graphify, AgentDB, PostgreSQL, Redis y HF read/write",
+    "source_evidence": "Graphiti y Graphify descargados; FalkorDB y AgentDB EXTRACTED_VERIFIED en RDC posterior al inventario 27-sep",
+    "source_inventory_note": "MEMORIA-INVENTARIO.json conserva estado histórico de 27-sep; no interpretarlo como inventario live"
   },
   "errors": [
     "Desbordamiento horizontal observado en navegador bajo 720 px: contenido 693 px frente a 485 px disponibles alrededor de 500 px",
@@ -53,6 +95,7 @@
     "Pausar T-06 y no declarar PASS ni entregar UI al Director antes de segunda prueba completa",
     "El reloj de 3 h 45 min inicia solo cuando el plan original nuevo esté recibido y validado"
   ],
+  "reception_summary": "Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",

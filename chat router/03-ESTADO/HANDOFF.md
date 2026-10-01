@@ -6,7 +6,12 @@ El Director anunció un plan original de 100 pasos y nuevas mejoras, pero **aún
 
 Protocolo de reanudación: recibir el enlace del Director; descargar y leer el archivo original completo sin modificarlo; validar sus 100 IDs y dependencias; registrar ruta y SHA-256 en `PLAN.json` y marcarlo `VALIDATED`. Solo entonces ejecutar `python "chat router/03-ESTADO/checkpoint_guard.py" start`. Consultar `status` antes de cada paso y `tick --completed ID` después de cada paso verificado; consultar `status` también durante trabajos largos. El guardia sale con código 75 y graba un evento en Bitácora más las proyecciones STATE, Crazy Wall y HANDOFF cuando llega primero a 3 h 45 min desde `start` o a 95 de 100 pasos. El límite de cuatro horas es absoluto: parar antes de él, hacer read-back, guardar pruebas/archivos/errores/decisiones/estado de motores en `CHECKPOINT.json`, commit y push a la rama del PR. No seguir ejecutando al recibir 75. El guardia no se ejecuta por sí solo fuera de una sesión o proceso que lo invoque.
 
-Estado previo al nuevo plan: T-01..T-04 y T-08..T-09 completos según State Hub; T-05, T-06 y T-10 parciales; T-07 bloqueado. La auditoría de GET sigue la decisión B. El PR existente es https://github.com/maxbry123-commits/router-universal-router-inteligente-/pull/6; no crear otro. Vercel permanece apagado. La siguiente acción exacta es recibir el enlace, validar el original y recién entonces iniciar el reloj.
+Estado previo al nuevo plan: T-01..T-04 y T-08..T-09 completos según State Hub; T-05, T-06 y T-10 parciales; T-07 bloqueado. La auditoría de GET sigue la decisión B. El PR existente es https://github.com/maxbry123-commits/router-universal-router-inteligente-/pull/6; no crear otro. Vercel permanece apagado. La siguiente acción exacta es recibir el enlace, validar el original y recién entonces iniciar el reloj. Durante trabajo activo, invocar `python "chat router/03-ESTADO/checkpoint_guard.py" heartbeat` al menos cada 15 minutos: registra el evento append-only y verifica las proyecciones, incluso si el plan continúa en recepción. No existe temporizador independiente cuando el agente deja de trabajar.
+
+### Auditoría Manus y organización T-01 — 2026-10-01
+Código localizado: `../04-MEMORIA/memoria_yaiwes/__init__.py` y `../../router inteligente universal/integration/chat_mvp/memoria_loader.py`. Se comprobaron SQLite y grafo SQLite de respaldo con 8/8 pruebas focalizadas (`PYTHONPATH` del Router y de `04-MEMORIA`); `/memoria/*` está montado. `/chat/send` persiste mensajes en `Store` pero no llama a `memoria_yaiwes.save`, por lo que el microflujo completo del DSL sigue abierto. Graphiti y Graphify son código fuente descargado, sin servicio operativo demostrado; FalkorDB y AgentDB están `EXTRACTED_VERIFIED` en `RDC_ADDITIONAL_COMPONENTS_EVIDENCE.json`, pero tampoco están conectados. El inventario `MEMORIA-INVENTARIO.json` es un snapshot del 27-sep: conserva `GAP_ABSENT` previo a esa descarga; interpretar con la evidencia posterior y no como afirmación actual. Memanto, PostgreSQL, Redis y restauración HF H-1 siguen sin read-back funcional.
+
+Una segunda pasada de T-01 consolidó 38 archivos sueltos de referencias visuales, skills, manifiestos, scripts y laboratorio FROMTED en `../../📂 Skills Maxbry UI fromtend/diseno/` y `componentes/`. Git reconoce 37 renames 100 %; el README Rare UI original se conserva como copia con SHA-256 idéntico y el README raíz es ahora un índice del proyecto. Las imágenes de arquitectura permanecen junto a los diagramas del Router. Esto solo cierra la consolidación de archivos, no la validación visual de T-06; el laboratorio visual movido no se declara funcional. La próxima acción autorizada, mientras no llegue el nuevo plan, es documentar/verificar esta auditoría y registrar checkpoint; al llegar el enlace, validar el original antes de iniciar el reloj.
 
 ## Orden de lectura
 0. `../01-PLAN/PLAN-DSL-DAG-UI.yaml` (plan T-01..T-10 del panel/chat, consolidado desde el documento subido; revisar `source_fidelity`)
@@ -36,25 +41,25 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 27
+Revisión: 29
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `AWAITING_PLAN`
 
 ### Último checkpoint
-Modo recepcion: plan de 100 pasos sin subir; T-06 pausada; sin PASS visual. Reloj sin iniciar.
+Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.
 
 ### Siguiente
 Recibir plan original
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121
-M-0 ✅ PASS — inventario real de 13 componentes con ruta y object ID; FalkorDB y AgentDB ausentes.
+M-0 ✅ PASS histórico — inventario de 13 componentes de 27-sep; FalkorDB y AgentDB figuran ausentes en aquel snapshot, pero el RDC posterior verifica su fuente descargada.
 M-1 ✅ PASS — `chat router/04-MEMORIA/memoria_yaiwes/` y único loader `memoria_loader.py`; rutas `/memoria/*` fail-safe.
 M-2 ✅ PASS — SQLite existente reutilizado como fuente principal; memoria sobrevive reinicio.
 M-3 ✅ PASS — State Hub append-only y proyecciones regeneradas desde `BITACORA.jsonl`.
-M-4 ⚠️ PASS parcial — grafo SQLite fallback probado; Graphiti sin servicio y FalkorDB GAP.
+M-4 ⚠️ PASS parcial — grafo SQLite fallback probado; Graphiti sin servicio y FalkorDB con fuente descargada, sin runtime conectado.
 M-5 ⚠️ GAP controlado — Memanto descargado sin contrato runtime verificable; Graphify solo fuente read-only.
-M-6 ⚠️ GAP controlado — PostgreSQL, Redis y AgentDB sin servicio/runtime verificable; SQLite cubre fallback.
+M-6 ⚠️ GAP controlado — PostgreSQL y Redis sin servicio, AgentDB descargado sin runtime verificable; SQLite cubre fallback.
 M-7 ✅ PASS local — reinicio, búsqueda por relación y evento State Hub; 30 pruebas PASS.
 H-1 ⏸️ OPUS — puente HF/Bucket fuera del alcance de Manus; no ejecutado.

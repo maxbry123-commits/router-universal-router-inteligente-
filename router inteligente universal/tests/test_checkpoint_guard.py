@@ -25,6 +25,35 @@ def test_guard_requires_original_validated_plan(tmp_path, monkeypatch):
     assert json.loads(checkpoint_path.read_text(encoding="utf-8"))["status"] == "RECEPTION"
 
 
+def test_reception_heartbeat_projects_checkpoint_without_starting_clock(tmp_path, monkeypatch):
+    checkpoint_path = tmp_path / "CHECKPOINT.json"
+    checkpoint_path.write_text(json.dumps({
+        "status": "RECEPTION", "started_at": None, "completed_steps": [],
+        "stop_at_elapsed_seconds": 13500,
+        "reception_summary": "Auditoria de memoria verificada; plan sin recibir.",
+    }), encoding="utf-8")
+    event = guard.ui_bridge._state_event({
+        "type": "TASK_CLAIMED", "project": "chat-yaiwes",
+        "task": "UI-T-01", "actor": "devin",
+    }, 1)
+    (tmp_path / "BITACORA.jsonl").write_text(json.dumps(event) + "\n", encoding="utf-8")
+    (tmp_path / "HANDOFF.md").write_text("# Handoff\n", encoding="utf-8")
+    monkeypatch.setattr(guard, "CHECKPOINT_PATH", checkpoint_path)
+    monkeypatch.setattr(guard, "STATE_DIR", tmp_path)
+
+    checkpoint = guard.heartbeat()
+
+    events = [json.loads(line) for line in (tmp_path / "BITACORA.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [item["seq"] for item in events] == [1, 2]
+    assert events[1]["summary"] == checkpoint["reception_summary"]
+    assert checkpoint["status"] == "RECEPTION"
+    assert checkpoint["started_at"] is None
+    assert checkpoint["bitacora_revision"] == 2
+    assert json.loads((tmp_path / "STATE.json").read_text(encoding="utf-8"))["revision"] == 2
+    assert json.loads((tmp_path / "CRAZY_WALL.json").read_text(encoding="utf-8"))["nodes"]["PLAN-RECEPCION"]["status"] == "BLOCKED"
+    assert json.loads(checkpoint_path.read_text(encoding="utf-8")) == checkpoint
+
+
 def test_guard_stops_at_95_percent_and_preserves_source(tmp_path, monkeypatch):
     plan_path = tmp_path / "PLAN.json"
     checkpoint_path = tmp_path / "CHECKPOINT.json"

@@ -55,3 +55,13 @@ MEMORIA Y ALMACENAMIENTO (componentes del Director, solo cablear — M44.4)
 | Conector MCP | Space del conector (temporal) → irá a la máquina 16 GB | Funciona sin OAuth |
 | Agentes | `router inteligente universal/Componente open soure…/` + forks `maxbry123-commits/openclaw`, `/hermes-agent` | Descargados, sin conectar |
 | Estado del proyecto | `../03-ESTADO/` | Iniciado 27-sep |
+
+## 4. Auditoría de recuperación — 2026-10-01 (rama de trabajo)
+
+Este apartado describe el código comprobado en la rama del PR; el esquema de arriba es el objetivo de arquitectura y no demuestra servicios en producción.
+
+- Manus dejó `../04-MEMORIA/memoria_yaiwes/__init__.py`, el loader `integration/chat_mvp/memoria_loader.py` y las rutas autenticadas `/memoria/health`, `/memoria/save`, `/memoria/load`, `/memoria/search`. SQLite persiste tras reiniciar el proceso; el grafo SQLite ofrece un fallback de relación. La prueba local focalizada pasó 8/8 con `PYTHONPATH` que incluye el Router y `04-MEMORIA`.
+- Graphiti y Graphify tienen código fuente descargado, pero el adaptador solo detecta endpoints configurados y supone rutas HTTP genéricas; no hay servicio Graphiti/FalkorDB ni índice Graphify del chat verificado. FalkorDB y AgentDB figuran como `EXTRACTED_VERIFIED` en la evidencia RDC, sin runtime conectado. El inventario antiguo conserva `GAP_ABSENT` para ambos: leer la evidencia posterior antes de interpretar ese valor.
+- El envío normal `/chat/send` registra el turno en el store del Router y no invoca `memoria_yaiwes.save`; la prueba de memoria usa `/memoria/save`. El puente H-1 de snapshot/restauración HF, Memanto operativo, PostgreSQL y Redis siguen sin verificación de extremo a extremo. M-0..M-7 reflejan avance local con GAPs; no declarar cobertura integral de memoria.
+- El DAG T-01 reunió capturas y componentes visuales bajo `../../📂 Skills Maxbry UI fromtend/`. Una pasada adicional reunió 38 documentos FROMTED, scripts, manifiestos y archivos del laboratorio visual antes sueltos en la raíz: 37 renames Git 100 % y una copia de README Rare UI con SHA-256 idéntico. Las imágenes de arquitectura de la carpeta del Router permanecen con su documentación.
+- Durante la recepción del próximo plan, guardar un checkpoint al entrar y como máximo cada 15 minutos de trabajo activo; leer `../03-ESTADO/CHECKPOINT.json`, proyectar Bitácora → STATE/Crazy Wall/Handoff y hacer read-back. Esta cadencia requiere que el agente invoque la guardia: no es un daemon ni una Automation independiente. El reloj de 3 h 45 min / 95 % no empieza hasta validar el original de 100 pasos.

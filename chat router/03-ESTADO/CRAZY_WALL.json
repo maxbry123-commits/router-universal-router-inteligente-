@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "AWAITING_PLAN",
       "next": "Recibir plan original",
-      "summary": "Modo recepcion: plan de 100 pasos sin subir; T-06 pausada; sin PASS visual. Reloj sin iniciar.",
-      "updated_at": "2026-10-01T08:24:57Z",
-      "last_event_seq": 27
+      "summary": "Read-back T-01: 37 renames 100% y README Rare UI original conservado con SHA-256 identico; 38 archivos consolidados. Auditoria Manus: SQLite/grafo fallback 8/8; Graphiti/Graphify fuente, FalkorDB/AgentDB fuente RDC sin runtime; /chat/send no invoca memoria. T-06 sin PASS; plan nuevo sin recibir; reloj sin iniciar.",
+      "updated_at": "2026-10-01T09:29:57Z",
+      "last_event_seq": 29
     }
   }
 }

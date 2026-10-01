@@ -68,7 +68,10 @@ def project_checkpoint(checkpoint: dict) -> None:
         "STOPPED": "STOP_CLEAN",
     }[checkpoint["status"]]
     if checkpoint["status"] == "RECEPTION":
-        summary = "Modo recepcion: plan de 100 pasos sin subir; T-06 pausada; sin PASS visual. Reloj sin iniciar."
+        summary = checkpoint.get(
+            "reception_summary",
+            "Modo recepcion: plan de 100 pasos sin subir; T-06 pausada; sin PASS visual. Reloj sin iniciar.",
+        )
     elif checkpoint["status"] == "RUNNING":
         summary = "Plan original de 100 pasos validado; reloj iniciado. CHECKPOINT.json registra el avance."
     else:
@@ -152,9 +155,30 @@ def update(command: str, completed: str | None) -> dict:
     return checkpoint
 
 
+def heartbeat() -> dict:
+    checkpoint = json.loads(CHECKPOINT_PATH.read_text(encoding="utf-8"))
+    if checkpoint["status"] == "RECEPTION":
+        checkpoint["updated_at"] = iso(now())
+        write_json(CHECKPOINT_PATH, checkpoint)
+        project_checkpoint(checkpoint)
+    elif checkpoint["status"] == "RUNNING":
+        checkpoint = update("heartbeat", None)
+        if checkpoint["status"] == "RUNNING":
+            project_checkpoint(checkpoint)
+    else:
+        raise ValueError("PLAN_STOPPED")
+    checkpoint["bitacora_revision"] = json.loads(
+        (STATE_DIR / "STATE.json").read_text(encoding="utf-8")
+    )["revision"]
+    write_json(CHECKPOINT_PATH, checkpoint)
+    if json.loads(CHECKPOINT_PATH.read_text(encoding="utf-8")) != checkpoint:
+        raise OSError("CHECKPOINT_READBACK_FAILED")
+    return checkpoint
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("start", "tick", "status"))
+    parser.add_argument("command", choices=("start", "tick", "status", "heartbeat"))
     parser.add_argument("--completed", help="ID de un paso completado, solo con tick")
     args = parser.parse_args()
     if args.completed and args.command != "tick":
@@ -164,6 +188,8 @@ def main() -> int:
             checkpoint = json.loads(CHECKPOINT_PATH.read_text(encoding="utf-8"))
             if checkpoint["status"] == "RUNNING":
                 checkpoint = update("tick", None)
+        elif args.command == "heartbeat":
+            checkpoint = heartbeat()
         else:
             checkpoint = update(args.command, args.completed)
     except (ValueError, TypeError, KeyError, OSError, json.JSONDecodeError) as exc:
