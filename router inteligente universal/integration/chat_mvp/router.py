@@ -28,11 +28,13 @@ from . import dag as dagmod
 from . import dag_cli
 from . import github_tools as gh
 from . import providers as prov
+from .fables_adapter import FablesCatalog
 from .store import Store
 from .usage import UsageLog, normalize_usage
 
 _UI = Path(__file__).with_name("chat_ui.html")
 _store: Store | None = None
+_fables_catalog: FablesCatalog | None = None
 
 
 def get_store() -> Store:
@@ -46,6 +48,13 @@ def get_store() -> Store:
 def set_store(store: Store | None) -> None:
     global _store
     _store = store
+
+
+def get_fables_catalog() -> FablesCatalog:
+    global _fables_catalog
+    if _fables_catalog is None:
+        _fables_catalog = FablesCatalog()
+    return _fables_catalog
 
 
 def _auth(
@@ -121,6 +130,10 @@ class DagReq(BaseModel):
     dag: dict[str, Any]
 
 
+class FichaReq(BaseModel):
+    ficha: dict[str, Any]
+
+
 def _gh_token(account: str, byok: str | None) -> str:
     token = gh.token_for(account, byok)
     if not token:
@@ -137,6 +150,25 @@ def _gh(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
 
 def build_router() -> APIRouter:
     r = APIRouter()
+
+    @r.get("/chat/fichas")
+    def fichas(_owner: str = Depends(_auth)) -> dict[str, Any]:
+        return {"fichas": get_fables_catalog().list()}
+
+    @r.get("/chat/fichas/{artifact_id}")
+    def ficha(artifact_id: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        entry = get_fables_catalog().get(artifact_id)
+        if entry is None:
+            raise HTTPException(status_code=404, detail="FICHA_NOT_FOUND")
+        return {"ficha": entry}
+
+    @r.post("/chat/fichas")
+    def register_ficha(req: FichaReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        try:
+            return {"ficha": get_fables_catalog().register(req.ficha)}
+        except ValueError as exc:
+            detail = str(exc)
+            raise HTTPException(status_code=409 if detail == "FICHA_ALREADY_REGISTERED" else 422, detail=detail) from exc
 
     @r.get("/chat", response_class=HTMLResponse)
     def page() -> HTMLResponse:
