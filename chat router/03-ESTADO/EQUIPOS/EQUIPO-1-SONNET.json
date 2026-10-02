@@ -2,16 +2,15 @@
   "schema": "yaiwes.team-wall/v1",
   "equipo": "EQUIPO-1",
   "modelo": "Sonnet",
-  "estado_equipo": "EN_PAUSA",
-  "pausa": "Orden del Director 2026-10-02: 'No hagas el de Sonnet que se borró la salida del chat'. No se activa ni se reasigna hasta nueva orden. Las tareas S1-01 a S1-12 siguen en la cola sin tocar; CB-1 y CB-2 del plan de cierre quedan abiertos.",
+  "estado_equipo": "ACTIVO",
+  "reactivado": "2026-10-02: el Director corrió el prompt del equipo 1 y salió BLOCKED por la pausa. Se reactiva. (Pausa anterior: orden 'No hagas el de Sonnet que se borró la salida del chat'.)",
   "rol": "Lo crítico: conectar de verdad los componentes del orquestador (P1) y la prueba con 3 workers (P3)",
   "handoff_url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-1-SONNET.md",
-  "espera": "EN PAUSA (orden del Director). Al reactivarlo, la ronda 0 ya está cerrada.",
+  "espera": null,
   "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"],
   "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
   "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP, no se inventa. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
-  "ronda_actual": [],
-  "ronda_al_reactivar": ["S1-01", "S1-02", "S1-03"],
+  "ronda_actual": ["S1-01", "S1-02", "S1-03"],
   "cola": [
     {"id": "S1-01", "tarea": "Rowboat: fijar command_env y probar invocación real del adapter (O4-07)", "estado": "PENDIENTE"},
     {"id": "S1-02", "tarea": "MSAF: command_env + invocación real (O4-08)", "estado": "PENDIENTE"},
@@ -28,7 +27,8 @@
   ],
   "resultado": [],
   "bitacora": [
-    {"fecha_utc": "2026-10-02T08:23:00Z", "id_tarea": "S1-01", "evento": "Equipo puesto EN_PAUSA por orden del Director (se perdió la salida del chat de Sonnet). Sin tareas activas."}
+    {"fecha_utc": "2026-10-02T08:23:00Z", "id_tarea": "S1-01", "evento": "Equipo puesto EN_PAUSA por orden del Director"},
+    {"fecha_utc": "2026-10-02T08:40:00Z", "id_tarea": "S1-01", "evento": "Equipo REACTIVADO: el Director corrió el prompt y salió BLOCKED por la pausa; ronda_actual = S1-01, S1-02, S1-03"}
   ],
-  "handoff": {"objetivo": "", "estado": "EN_PAUSA por orden del Director", "archivos": [], "cambios": [], "fallos": [], "siguiente": "Nadie lo activa hasta nueva orden. Al reactivar: ronda_al_reactivar (S1-01 a S1-03)."}
+  "handoff": {"objetivo": "Conectar de verdad los 8 componentes del orquestador y la prueba de 3 workers", "estado": "ACTIVO, ronda 1 lista", "archivos": [], "cambios": [], "fallos": [], "siguiente": "S1-01, S1-02, S1-03"}
 }
