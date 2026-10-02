@@ -10,7 +10,6 @@ CONTROL = (".git", ".github", "ops/yaiwes", ROOT,
            "router inteligente universal/agent-microkernel",
            "chat router/03-ESTADO")
 IDENTIFIER = re.compile(r"[A-Za-z0-9_-]+\Z")
-OPENAI_MODEL_PREFIXES = ("gpt-", "o1", "o3", "o4", "openai/gpt-")
 
 
 def path(value):

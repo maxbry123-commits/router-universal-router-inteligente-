@@ -1,5 +1,5 @@
 schema: yaiwes.chain/v2
-request_id: req-48-xray-smoke
+request_id: req-49-xray-smoke
 agent:
   id: grok
   framework: openai-agents

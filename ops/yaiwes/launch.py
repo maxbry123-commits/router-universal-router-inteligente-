@@ -7,7 +7,6 @@ from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from contracts import OPENAI_MODEL_PREFIXES
 from github_store import GitHubStore
 
 BOOT = r'''
@@ -36,8 +35,8 @@ def hf(method, route, token, data=None):
         raise RuntimeError("HF_JOBS_HTTP_" + str(exc.code)) from None
 
 
-def launch(repo, queue_ref, model, github_token, openai_key, hf_token, namespace, base_url=None):
-    if not model.startswith(OPENAI_MODEL_PREFIXES):
+def launch(repo, queue_ref, model, github_token, openai_key, hf_token, namespace):
+    if not model.startswith(("gpt-", "o1", "o3", "o4")):
         raise ValueError("ONLY_OPENAI_MODELS_ALLOWED")
     store = GitHubStore(repo, github_token)
     control = store.read("ops/yaiwes/control.json", queue_ref, missing=True)
@@ -51,13 +50,11 @@ def launch(repo, queue_ref, model, github_token, openai_key, hf_token, namespace
     if any(item.get("status", {}).get("stage") in ("RUNNING", "SCHEDULING", "STARTING")
            for item in current):
         raise RuntimeError("SUPERVISOR_ALREADY_RUNNING")
-    environment = {"REPO": repo, "QUEUE_REF": queue_ref, "CODE_REF": queue_ref,
-                   "CODE_SHA": source_sha, "OPENAI_MODEL": model, "ADMIT_SECONDS": "21600"}
-    if base_url:
-        environment["OPENAI_BASE_URL"] = base_url
     job = hf("POST", namespace, hf_token, {
         "dockerImage": "python:3.12", "command": ["bash", "-lc", BOOT],
-        "arguments": [], "environment": environment,
+        "arguments": [],
+        "environment": {"REPO": repo, "QUEUE_REF": queue_ref, "CODE_REF": queue_ref,
+                        "CODE_SHA": source_sha, "OPENAI_MODEL": model, "ADMIT_SECONDS": "21600"},
         "secrets": {"AGENT_GITHUB_TOKEN": github_token, "OPENAI_API_KEY": openai_key},
         "flavor": "cpu-basic", "timeoutSeconds": 25200,
         "labels": {"name": "yaiwes-nine-mvp", "yaiwes": "supervisor"},
@@ -69,5 +66,4 @@ if __name__ == "__main__":
     print(json.dumps(launch(os.environ["REPO"], os.environ["QUEUE_REF"],
                             os.environ.get("OPENAI_MODEL", "gpt-4.1-mini"),
                             os.environ["AGENT_GITHUB_TOKEN"], os.environ["OPENAI_API_KEY"],
-                            os.environ["HF_TOKEN"], os.environ["HF_NAMESPACE"],
-                            os.environ.get("OPENAI_BASE_URL"))))
+                            os.environ["HF_TOKEN"], os.environ["HF_NAMESPACE"])))

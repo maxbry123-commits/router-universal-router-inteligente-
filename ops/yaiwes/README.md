@@ -11,7 +11,7 @@ Provide `HF_TOKEN`, `AGENT_GITHUB_TOKEN` and `OPENAI_API_KEY` as environment sec
 not command-line arguments or tracked files. Set `HF_NAMESPACE=COMAND-CENTER-1`,
 `REPO=maxbry123-commits/router-universal-router-inteligente-`, `QUEUE_REF` to the
 published feature branch containing `ops/yaiwes` and the request; optionally set
-`OPENAI_MODEL` (default `gpt-4.1-mini`; `openai/gpt-` models are also allowed). Optionally set `OPENAI_BASE_URL` for an OpenAI-compatible chat-completions endpoint such as `https://router.huggingface.co/v1`; `OPENAI_API_KEY` is then that endpoint's token. Run `python ops/yaiwes/launch.py`.
+`OPENAI_MODEL` (default `gpt-4.1-mini`). Run `python ops/yaiwes/launch.py`.
 
 First run only the Grok X-Ray smoke request. Its acceptance test initially fails
 until `STATE.json` is created, then verifies hashes against source bytes in Git.
