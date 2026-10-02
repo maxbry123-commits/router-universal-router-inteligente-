@@ -1,0 +1,96 @@
+# PLAN DSL DAG — Chat Agent Router Orchestration
+
+**Versión:** 2026-10-02  
+**Generado por:** Claude Haiku 4.5  
+**Para:** Sonnet + Opus via Vercel
+
+---
+
+## DAG Definición
+
+```yaml
+session:
+  id: "router-universal-sonnet-opus"
+  models: [sonnet, opus]
+  route: vercel
+  repo: "maxbry123-commits/router-universal-router-inteligente-"
+
+stages:
+  - stage: "load_context"
+    tasks:
+      - read_handoff: "chat router/03-ESTADO/HANDOFF.md"
+      - load_memory: "chat router/03-ESTADO/memoria"
+    output: context_loaded
+
+  - stage: "connect_github"
+    tasks:
+      - verify_access: hf_github_mcp
+      - list_branches: main, develop
+      - check_01_plan: "chat router/01-PLAN/"
+    output: github_connected
+
+  - stage: "verify_files"
+    tasks:
+      - list_files: "01-PLAN/"
+      - validate: input_blocks, orquestador, plan_dsl
+    output: files_verified
+
+  - stage: "connect_vercel"
+    model: sonnet
+    tasks:
+      - init_vercel_mcp: team_id required
+      - link_repo: router-universal
+      - defer_deploy: wait for stable commit
+    output: vercel_ready
+
+  - stage: "next_session_ready"
+    output: 
+      - handoff_url: "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/03-ESTADO/HANDOFF.md"
+      - memory_url: "https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/03-ESTADO/memoria"
+      - plan_files: "chat router/01-PLAN/"
+```
+
+---
+
+## Flujo Ejecución
+
+| Etapa | Actor | Entrada | Salida | Status |
+|-------|-------|---------|--------|--------|
+| Load Context | Haiku | HANDOFF + memoria | context ✅ | Done |
+| Connect GitHub | Haiku | MCP HF_GitHub | access ✅ | Done |
+| Verify Files | Haiku | 01-PLAN/ listing | verified ✅ | Done |
+| Connect Vercel | Sonnet | Vercel MCP | linked ⏳ | Next |
+| Router Setup | Opus | DSL + code | running ⏳ | Next |
+
+---
+
+## Reglas Aplicables
+
+```json
+{
+  "no_lfs": true,
+  "no_github_actions": true,
+  "vercel_only_stable": true,
+  "one_final_deploy": true,
+  "all_code_deterministic": true,
+  "sonnet_design_opus_execute": true,
+  "prompt_before_uncertain": true
+}
+```
+
+---
+
+## Próxima Sesión
+
+**Modelo:** Sonnet + Opus  
+**Entrada:** HANDOFF + memoria (arriba)  
+**Orden:**
+1. Cargar contexto
+2. Verificar GitHub access
+3. Conectar Vercel
+4. Iniciar orquestación dual
+
+---
+
+**Registrado:** 2026-10-02T07:07 UTC  
+**Por:** Claude Haiku 4.5 Session
