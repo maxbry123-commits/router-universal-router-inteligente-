@@ -1,0 +1,12 @@
+{
+  "schema": "yaiwes.xray-state/v1",
+  "observed": [],
+  "expected": [],
+  "present": [],
+  "missing": [],
+  "contradictions": [],
+  "not_verified": [],
+  "source_refs": [],
+  "artifact_sha256": null,
+  "checked_at": "2026-10-02T00:00:00Z"
+}
