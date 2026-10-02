@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT))
 stub = types.ModuleType("agents")
 stub.Agent = object
 stub.Runner = object
+stub.OpenAIChatCompletionsModel = object
 stub.function_tool = lambda func: func
 stub.set_tracing_disabled = lambda _: None
 sys.modules.setdefault("agents", stub)
