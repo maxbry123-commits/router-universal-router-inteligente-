@@ -1,0 +1,58 @@
+schema: yaiwes.chain-draft/v1
+write_policy:
+  status: BLOCKED_UNTIL_ENFORCED
+  output_schema: yaiwes.result/v1
+  sheriff: chat router/05-AGENTES/gobierno/sheriff.py
+  sentinel: chat router/05-AGENTES/gobierno/sentinel.py
+  source_write_paths:
+    - chat router/wordflow loop code Yaiwes/backend/Seals team YAIWES/seals_core/seals_worker.py
+    - chat router/wordflow loop code Yaiwes/backend/Seals team YAIWES/seals_core/evidence.py
+input_block: |
+  "Usa todos los agentes que te nombre"
+  "no Reescribes el code lo copias con el motor y cableado nada monolitico"
+  Misión completa: demostrar tres workers Seals aislados y su ledger en Wordflow.
+agent:
+  id: agent-45-seals-team-yaiwes
+  framework: pocketflow
+  group: workers
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+context:
+  text: |
+    Roles solicitados: Glimmer = pruebas/integración; Meta Code = corrección mínima.
+    Son roles de trabajo, NO executors acreditados por este YAML.
+    Código: chat router/wordflow loop code Yaiwes/backend/Seals team YAIWES/seals_core/;
+    chat router/wordflow loop code Yaiwes/runtime/tests/test_seals_wordflow_bridge.py.
+    La prueba de tres workers read-only ya existe; S-11 de producción sigue abierto.
+    No modificar Router; no Actions, LFS, instalación directa ni promoción a staff.
+steps:
+  - id: contrato
+    owner_role: glimmer
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-45-contrato.result.json
+    task: |
+      Reproducir los tests read-only, inspeccionar SealsWorker/TaskContract/NodeResult
+      e identificar qué falta para aislamiento real en producción sin sobreescribir
+      el instalador por motores. Separar mocks de runtime.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: workers
+    owner_role: meta_code
+    source_mutation: true
+    result_path: chat router/11-EVIDENCIA/delegacion-45-workers.result.json
+    task: |
+      Cablear tres instancias independientes al LayerRunner existente con límite de
+      permisos, evidencia por worker e idempotencia; Meta Code corrige solo el gap
+      confirmado y Glimmer cubre fallo de un worker y replay sin fuga cruzada.
+      Si no existe executor seguro, devolver GAP y no arrancar servicios.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: aceptar
+    owner_role: glimmer
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-45-aceptar.result.json
+    task: |
+      Entregar tres trazas separadas, hashes, test de aislamiento, ledger verificable
+      y read-back posterior; si solo se prueban workers read-only, marcar
+      S-11 BLOCKED en vez de certificar producción.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+edges: [[contrato, workers], [workers, aceptar]]

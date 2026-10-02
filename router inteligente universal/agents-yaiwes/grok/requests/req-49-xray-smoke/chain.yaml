@@ -1,0 +1,34 @@
+schema: yaiwes.chain/v2
+request_id: req-49-xray-smoke
+agent:
+  id: grok
+  framework: openai-agents
+input_block: |
+  "Después de resolver el job Luego buscas a grock está en main lo activas con una sdk DSl lo conviertes en un auditoría forense x Ray que te haga un stated JSON de la auditoría que audita imágenes y archivos y extrae que debe existir y hace verificación cruzada con el code fuente te lo va poniendo en el stated JSON que tú puedas leer y te sirva para ahorrar tiempo y token y como guía de que hay y falta"
+  Para este smoke test, produce solo el STATE.json forense de la delegación 46.
+  Distingue lo observado físicamente de lo esperado y lo no verificado. No declares
+  activo a Grok Build ni a otros agentes sin procesos y checkpoints reales.
+write_scope:
+  - chat router/11-EVIDENCIA/delegacion-46-grok-xray
+tests:
+  - [python, -m, unittest, discover, -s, ops/yaiwes/acceptance, -p, test_xray_state.py]
+steps:
+  - id: inventariar
+    task: |
+      Lee las delegaciones 17, 18, 19, 44, 45 y 46 bajo chat router/01-PLAN.
+      Identifica fuentes existentes y ausencias. Usa run_tests ahora para comprobar
+      que el test falla porque STATE.json todavía no existe.
+  - id: cruzar
+    task: |
+      Escribe STATE.json con schema yaiwes.xray-state/v1 y campos observed,
+      expected, present, missing, contradictions, not_verified, source_refs,
+      artifact_sha256 y checked_at. artifact_sha256 mapea cada ruta source_refs
+      al SHA-256 hexadecimal de los bytes reales de git show HEAD:ruta.
+      No hagas afirmaciones que no respalden esos archivos; registra los gaps.
+  - id: verificar
+    task: |
+      Ejecuta run_tests y corrige el STATE.json si falla. El test debe pasar
+      con hashes reales. No modifiques tests, controlador ni Router core.
+edges:
+  - [inventariar, cruzar]
+  - [cruzar, verificar]
