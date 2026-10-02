@@ -4,26 +4,485 @@
   "modelo": "Sol 🐻 3",
   "rol": "Lote SKILLS-UI: las 28 skills y componentes ya descargados, convertidos en skills_schema y contratos de herramienta (capacidades, no staff). Descargar no es integrar",
   "espera": "EQUIPO-2:H-04 CERRADO",
-  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "router inteligente universal/Componente open soure router inteligente universal/ (SOLO LEER)", "chat router/11-EVIDENCIA/motor2-skills-ui/ (SOLO LEER)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json"],
-  "prohibido": ["router inteligente universal/ salvo leer los componentes (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
-  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
-  "ronda_actual": ["C-01", "C-02", "C-03"],
-  "lote_28": ["npxskillui", "recordly", "rare-ui", "shadcn-skills", "firecrawl", "firecrawl-cli", "firecrawl-mcp-server", "firecrawl-skills", "emilkowalski-skills", "impeccable", "getdesign", "open-design", "headroom", "ponytail", "find-skills", "superpowers", "get-shit-done", "claude-mem", "context-mode", "local-ultra-review", "one-skill-to-rule-them-all", "motionsites", "caret-desktop", "onlook", "plasmic", "webstudio", "taste-skill", "magic-mcp"],
-  "cola": [
-    {"id": "C-01", "tarea": "Leer el veredicto de motor_2 de los 28 repos (11-EVIDENCIA/motor2-skills-ui/queue.json)", "estado": "PENDIENTE"},
-    {"id": "C-02", "tarea": "Clasificar cada repo: skill, herramienta o solo referencia; escribir la tabla en resultado", "estado": "PENDIENTE"},
-    {"id": "C-03", "tarea": "Grupo Firecrawl (firecrawl, firecrawl-cli, firecrawl-mcp-server, firecrawl-skills): skills_schema + contrato de herramienta", "estado": "PENDIENTE"},
-    {"id": "C-04", "tarea": "Grupo contexto (context-mode, headroom, ponytail, claude-mem): contrato de herramienta", "estado": "PENDIENTE"},
-    {"id": "C-05", "tarea": "Grupo diseño 1 (shadcn-skills, rare-ui, taste-skill, emilkowalski-skills, impeccable): skills_schema", "estado": "PENDIENTE"},
-    {"id": "C-06", "tarea": "Grupo diseño 2 (getdesign, open-design, npxskillui, magic-mcp): skills_schema o contrato", "estado": "PENDIENTE"},
-    {"id": "C-07", "tarea": "Grupo método (superpowers, get-shit-done, find-skills, local-ultra-review, one-skill-to-rule-them-all): skills_schema", "estado": "PENDIENTE"},
-    {"id": "C-08", "tarea": "Grupo apps (caret-desktop, onlook, plasmic, webstudio, motionsites, recordly): solo registrar capacidades; no integrar si es app de escritorio", "estado": "PENDIENTE"},
-    {"id": "C-09", "tarea": "Crawlers y compresores de contexto como herramientas del wordflow, conectados al Router principal por configuración (sin tocar el Router)", "estado": "PENDIENTE"},
-    {"id": "C-10", "tarea": "Test de contrato por grupo (falla cerrado)", "estado": "PENDIENTE"},
-    {"id": "C-11", "tarea": "Registrar todo en el capability map", "estado": "PENDIENTE"},
-    {"id": "C-12", "tarea": "Lista de GAPs: lo descargado que no se pudo integrar y por qué", "estado": "PENDIENTE"}
+  "alcance": [
+    "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)",
+    "router inteligente universal/Componente open soure router inteligente universal/ (SOLO LEER)",
+    "chat router/11-EVIDENCIA/motor2-skills-ui/ (SOLO LEER)",
+    "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json"
   ],
-  "resultado": [],
-  "bitacora": [],
-  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+  "prohibido": [
+    "router inteligente universal/ salvo leer los componentes (no tocar el Router)",
+    "LFS git",
+    "GitHub Actions",
+    "Hugging Face"
+  ],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": [
+    "C-01",
+    "C-02",
+    "C-03"
+  ],
+  "lote_28": [
+    "npxskillui",
+    "recordly",
+    "rare-ui",
+    "shadcn-skills",
+    "firecrawl",
+    "firecrawl-cli",
+    "firecrawl-mcp-server",
+    "firecrawl-skills",
+    "emilkowalski-skills",
+    "impeccable",
+    "getdesign",
+    "open-design",
+    "headroom",
+    "ponytail",
+    "find-skills",
+    "superpowers",
+    "get-shit-done",
+    "claude-mem",
+    "context-mode",
+    "local-ultra-review",
+    "one-skill-to-rule-them-all",
+    "motionsites",
+    "caret-desktop",
+    "onlook",
+    "plasmic",
+    "webstudio",
+    "taste-skill",
+    "magic-mcp"
+  ],
+  "cola": [
+    {
+      "id": "C-01",
+      "tarea": "Leer el veredicto de motor_2 de los 28 repos (11-EVIDENCIA/motor2-skills-ui/queue.json)",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "C-02",
+      "tarea": "Clasificar cada repo: skill, herramienta o solo referencia; escribir la tabla en resultado",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "C-03",
+      "tarea": "Grupo Firecrawl (firecrawl, firecrawl-cli, firecrawl-mcp-server, firecrawl-skills): skills_schema + contrato de herramienta",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "C-04",
+      "tarea": "Grupo contexto (context-mode, headroom, ponytail, claude-mem): contrato de herramienta",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "C-05",
+      "tarea": "Grupo diseño 1 (shadcn-skills, rare-ui, taste-skill, emilkowalski-skills, impeccable): skills_schema",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "C-06",
+      "tarea": "Grupo diseño 2 (getdesign, open-design, npxskillui, magic-mcp): skills_schema o contrato",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "C-07",
+      "tarea": "Grupo método (superpowers, get-shit-done, find-skills, local-ultra-review, one-skill-to-rule-them-all): skills_schema",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "C-08",
+      "tarea": "Grupo apps (caret-desktop, onlook, plasmic, webstudio, motionsites, recordly): solo registrar capacidades; no integrar si es app de escritorio",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "C-09",
+      "tarea": "Crawlers y compresores de contexto como herramientas del wordflow, conectados al Router principal por configuración (sin tocar el Router)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "C-10",
+      "tarea": "Test de contrato por grupo (falla cerrado)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "C-11",
+      "tarea": "Registrar todo en el capability map",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "C-12",
+      "tarea": "Lista de GAPs: lo descargado que no se pudo integrar y por qué",
+      "estado": "PENDIENTE"
+    }
+  ],
+  "resultado": [
+    {
+      "id_tarea": "C-01",
+      "equipo": "EQUIPO-5",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T07:37:00Z",
+      "accion": "Se leyó el veredicto real de motor_2: los 28 slugs esperados están presentes y los 28 tienen publish=true.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "sha256": "60a205a9d20f19703a7b3def2683073f1137c072e8b8e18c59d7828b78f3cc2b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "sha256": "061ca4f25102999546b963f52d6993c3af56ba94a8a1351fd96bfeec16913620"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comparar lote_28 de EQUIPO-5-SOL-3.json contra queue.json por slug y contar publish=true",
+        "ok": true,
+        "salida_resumen": "esperados=28; queue=28; faltantes=0; extras=0; publish_true=28"
+      },
+      "gap": null,
+      "siguiente": "C-02"
+    },
+    {
+      "id_tarea": "C-02",
+      "equipo": "EQUIPO-5",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T07:37:00Z",
+      "accion": "Clasificación de los 28 repos:\n01. npxskillui | herramienta | CLI Node que extrae sistemas de diseño y genera SKILL.md/.skill; tiene ejecución propia.\n02. recordly | herramienta | Aplicación de escritorio multiplataforma para producir demos; es una capacidad ejecutable, no un skill declarativo.\n03. rare-ui | solo referencia | Colección de componentes y animaciones UI; no expone contrato de agente, CLI o MCP verificable.\n04. shadcn-skills | skill | Repositorio declarado como colección de skills de Shadcn Labs.\n05. firecrawl | herramienta | API/plataforma web consumible por agentes para search, scrape y acceso a fuentes.\n06. firecrawl-cli | herramienta | CLI ejecutable para scrape, search y browsing; el runtime CLI es su superficie principal.\n07. firecrawl-mcp-server | herramienta | Servidor MCP oficial que expone scraping y búsqueda como tools.\n08. firecrawl-skills | skill | Catálogo Agent Skills con 34 skills distribuidas en core, build y workflows.\n09. emilkowalski-skills | skill | Repositorio de skills para diseñadores e ingenieros.\n10. impeccable | skill | Lenguaje/skill de diseño orientado a mejorar el comportamiento de harnesses de IA.\n11. getdesign | herramienta | Expone web, API, CLI y SDK; aunque exporta skill, su superficie principal es ejecutable.\n12. open-design | herramienta | Aplicación local y motor de diseño utilizado por coding agents y múltiples CLIs.\n13. headroom | herramienta | Librería, proxy y servidor MCP para comprimir contexto y salidas de tools.\n14. ponytail | skill | Agent skill/plugin de metodología YAGNI y prompt engineering.\n15. find-skills | herramienta | Herramienta npx para descubrir e instalar agent skills.\n16. superpowers | skill | Framework de agent skills y metodología de desarrollo.\n17. get-shit-done | skill | Sistema de meta-prompting y context engineering; funcionalmente skill/metodología, aunque upstream está archivado.\n18. claude-mem | herramienta | Motor persistente de memoria/contexto entre sesiones con infraestructura propia.\n19. context-mode | herramienta | Servidor MCP más hooks para optimización y persistencia de contexto.\n20. local-ultra-review | skill | Skill de code review con worktrees, lentes de revisión y verifier gating.\n21. one-skill-to-rule-them-all | skill | Meta-skill que crea, observa y mejora otros skills.\n22. motionsites | solo referencia | Upstream devolvió HTTP 451/DMCA durante la verificación; no se declara contrato ejecutable no verificable.\n23. caret-desktop | herramienta | Aplicación desktop que modifica código real y declara integración MCP.\n24. onlook | herramienta | Herramienta de diseño AI-first que edita código real de frontend.\n25. plasmic | herramienta | Builder visual ejecutable para React, apps, sitios y contenido.\n26. webstudio | herramienta | Builder visual open source con runtime propio y conexión a CMS.\n27. taste-skill | skill | Skill de diseño destinado a evitar UI genérica en agentes de código.\n28. magic-mcp | herramienta | Servidor MCP para buscar/generar/publicar componentes React/Tailwind desde el editor.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "sha256": "60a205a9d20f19703a7b3def2683073f1137c072e8b8e18c59d7828b78f3cc2b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "sha256": "061ca4f25102999546b963f52d6993c3af56ba94a8a1351fd96bfeec16913620"
+        }
+      ],
+      "prueba_real": {
+        "comando": "validar 28 slugs únicos y conteo por clase contra lote_28",
+        "ok": true,
+        "salida_resumen": "28/28 clasificados; skill=10; herramienta=16; solo referencia=2"
+      },
+      "gap": null,
+      "siguiente": "C-03"
+    },
+    {
+      "id_tarea": "C-03",
+      "equipo": "EQUIPO-5",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T07:37:00Z",
+      "accion": "Grupo Firecrawl integrado como contrato: 34 DAGs (13 core, 5 build, 16 workflows) y 3 entradas de capacidad para firecrawl, firecrawl_cli y firecrawl_mcp_server; sin lógica nueva y sin tocar el Router.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/firecrawl-skills/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/firecrawl-skills/code/README.md",
+          "sha256": "35a283a7c1f456776597c4d6374d2fa7418b0a7c4f13725984f30aac3a96e569"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "93bbbe5052ca02eed9cba37500799d06528e4bc31b1e9fa29a88c936ec5297c6"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-agent.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-agent.dag.yaml",
+          "sha256": "91672b3446033fd37e602a1d99dd8ddfd9c1a5293ac300b553a6dc8b76f14ca2"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-alexandria.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-alexandria.dag.yaml",
+          "sha256": "02ec216603493253d5993a197451db3a41fe788779ec4c61a16b14af152c15bb"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-crawl.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-crawl.dag.yaml",
+          "sha256": "b021cff1352abdd82fc0ea781a2b4924d90fc30592a36b42face0319cafa6c6b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-developer-index.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-developer-index.dag.yaml",
+          "sha256": "e07133fbb2eb9ad82faf5cca48ff6c2f5696470b33482cec6538a4f7e740688d"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-download.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-download.dag.yaml",
+          "sha256": "5419ed9bb45a770afb1ceb6f483e1546a59b1acd6d53ab4f43453c9db0a3bd73"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-interact.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-interact.dag.yaml",
+          "sha256": "d51e5464e87be04df4ce3f63648c1d017119f393fbbdd7cee897eadb68fa9b31"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-map.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-map.dag.yaml",
+          "sha256": "b4d438c57a0c623bc426f835d50b1c866b4bfb61002ffa02ecc941e69129aa65"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-monitor.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-monitor.dag.yaml",
+          "sha256": "77297d68ef518dcfd990c94fecfabac2986733cbcd62dce7df016bb3540681cc"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-parse.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-parse.dag.yaml",
+          "sha256": "0f10e87ec8a281f62382905b921908886f323825ba943729116c5ae06dad8de4"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-research-index.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-research-index.dag.yaml",
+          "sha256": "08b34e5c5fc7c707c1684b1f1806e1b43749334db028a7e2cd48318d83395729"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-scrape.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-scrape.dag.yaml",
+          "sha256": "a2540f9d984a535cfeb58e5af691a5ffa172caf325d043dec38d053503e12de8"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-search.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-search.dag.yaml",
+          "sha256": "39e651a8d2e7217de659595e7dd83bd4d1518bd3b3ef215df18003dd4471c0f5"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl.dag.yaml",
+          "sha256": "4836010164ce6162f69600dd8acab700157d9bbc78dbaca2d62c255d5ab9a20e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-interact.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build-interact.dag.yaml",
+          "sha256": "d9b6c7213519ed3d6facd08e02786d21079bc0b82df19528ea4a9e565ae9c952"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-onboarding.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build-onboarding.dag.yaml",
+          "sha256": "7993874ff4b839a02491f197301b1ebcd1a291752bcd4a5c11329717969e3115"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-scrape.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build-scrape.dag.yaml",
+          "sha256": "5b0c034b1a20a93b22c9cecc623a71617dc9a4b876a8075fb52da45c09b75cb0"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-search.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build-search.dag.yaml",
+          "sha256": "fcbb0e842ae10f0a6afb82c2637912c1c55a3fa454b4a22dc81d00233e34adac"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build.dag.yaml",
+          "sha256": "d699bbaa9cbcf2da8f596c70d4462025ab0971ca1ef3756b3b26ddc469f8174f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-company-directories.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-company-directories.dag.yaml",
+          "sha256": "919e8e1e54979dd135f21673ec837fbf84d7ce1bc97ff100896b18e222711ba5"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-competitive-intel.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-competitive-intel.dag.yaml",
+          "sha256": "f3d5066de157837d39111361059b4f1008394596514fe3cbd8bb7e82f2765400"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-dashboard-reporting.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-dashboard-reporting.dag.yaml",
+          "sha256": "580aa3f1efeb92702c8b6eac520b313dc3f360cc86d3da549d3d595944ab88d7"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-deep-research.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-deep-research.dag.yaml",
+          "sha256": "352191b1c685b1cda0a0c83e8b63eaeafd7776e114e0b802b66512631b655468"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-demo-walkthrough.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-demo-walkthrough.dag.yaml",
+          "sha256": "8ded7bf7568ddd666ffc388727b405a83c8d970c6023d94bde1a5ff675461fca"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-knowledge-base.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-knowledge-base.dag.yaml",
+          "sha256": "d28183cda2d213e964eb5edf010b2e54a06a01fdeb129055e056fbcf2eb7d9a5"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-knowledge-ingest.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-knowledge-ingest.dag.yaml",
+          "sha256": "b604a8d0fe62e527a98024142109d7991871eb18f865e6d6a926cf1d8011f7f1"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-lead-gen.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-lead-gen.dag.yaml",
+          "sha256": "984ffd1169d92d64db16c4905fb66c90a56eb01c8bab8c070053a14e2751ffff"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-lead-research.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-lead-research.dag.yaml",
+          "sha256": "b5dbd97192de1bbb19f146b99e7c2da2799a8b765d5474621adc08624b17a21b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-market-research.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-market-research.dag.yaml",
+          "sha256": "ff0903f9a586316466243a9f2a4e525bb43aaf45822df040796ff8b959ce3581"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-qa.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-qa.dag.yaml",
+          "sha256": "b1c359f1af515206abd7c7bacfcc07c5c21498825b27b5b1d1ebd002380e513e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-research-papers.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-research-papers.dag.yaml",
+          "sha256": "7928414f8c9405add6cf0dea0bc7dfcb5d418bbc784e56aed32261898151954e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-seo-audit.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-seo-audit.dag.yaml",
+          "sha256": "5c300d15f670b749c8aa0edde9a1e811743561e03a64f5606adec61a88b1dae0"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-shop.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-shop.dag.yaml",
+          "sha256": "2ba856205ac81f2ce77bfbe37038ad6752b0083fd269aa39af7dfb9e899c246f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-website-design-clone.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-website-design-clone.dag.yaml",
+          "sha256": "34b0d3ac1d3decc2e5dd64603e9fd42e8cd105c2563af736a0437e50783df4ab"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-workflows.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-workflows.dag.yaml",
+          "sha256": "8790d8943989f0f783f4de31ea6ae94f1ca331b66da2724e65403ad3fe4f5a3c"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "sha256": "061ca4f25102999546b963f52d6993c3af56ba94a8a1351fd96bfeec16913620"
+        }
+      ],
+      "prueba_real": {
+        "comando": "validar catálogo Firecrawl observado -> 34 nombres únicos; generar 34 yaiwes.skill-dag/v1; verificar 3 capability keys",
+        "ok": true,
+        "salida_resumen": "DAGs=34 únicos; core=13; build=5; workflows=16; capabilities=3"
+      },
+      "gap": null,
+      "siguiente": "Esperar activación del Director para la siguiente ronda; no ejecutar C-04 todavía."
+    }
+  ],
+  "bitacora": [
+    {
+      "fecha_utc": "2026-10-02T07:37:00Z",
+      "id_tarea": "C-01",
+      "evento": "CERRADO: queue motor2-skills-ui verificado 28/28 publish=true."
+    },
+    {
+      "fecha_utc": "2026-10-02T07:37:00Z",
+      "id_tarea": "C-02",
+      "evento": "CERRADO: 28 repos clasificados con razón; 10 skill, 16 herramienta, 2 solo referencia."
+    },
+    {
+      "fecha_utc": "2026-10-02T07:37:00Z",
+      "id_tarea": "C-03",
+      "evento": "CERRADO: 34 DAGs Firecrawl + 3 capacidades declaradas; Router no tocado."
+    }
+  ],
+  "handoff": {
+    "objetivo": "Cerrar RONDA 1 del lote SKILLS-UI sin exceder C-01..C-03.",
+    "estado": "RONDA 1 CERRADA; esperando activación del Director.",
+    "archivos": [
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+      "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-agent.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-alexandria.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-crawl.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-developer-index.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-download.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-interact.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-map.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-monitor.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-parse.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-research-index.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-scrape.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-search.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-interact.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-onboarding.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-scrape.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-search.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-company-directories.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-competitive-intel.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-dashboard-reporting.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-deep-research.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-demo-walkthrough.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-knowledge-base.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-knowledge-ingest.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-lead-gen.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-lead-research.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-market-research.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-qa.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-research-papers.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-seo-audit.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-shop.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-website-design-clone.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-workflows.dag.yaml"
+    ],
+    "cambios": [
+      "C-01 veredicto 28/28 confirmado",
+      "C-02 clasificación 28/28 registrada",
+      "C-03 34 DAGs Firecrawl creados",
+      "3 capacidades Firecrawl registradas en COMPONENT_CAPABILITIES"
+    ],
+    "fallos": [
+      "motionsites upstream respondió HTTP 451/DMCA; se clasificó como solo referencia y no se inventó contrato."
+    ],
+    "siguiente": "No ejecutar C-04 hasta que el Director cambie ronda_actual."
+  }
 }

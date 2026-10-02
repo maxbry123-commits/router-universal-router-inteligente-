@@ -60,6 +60,16 @@ COMPONENT_CAPABILITIES: dict[str, dict[str, Any]] = {
     "mcp":         {"provides": "capability_context_bus",
                     "forbidden": ("authority_transfer", "uncontrolled_context_write"),
                     "command_env": "YAIWES_MCP_COMMAND"},
+    "firecrawl": {"provides": "web_search_scrape_crawl",
+                   "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+                   "command_env": "YAIWES_FIRECRAWL_COMMAND"},
+    "firecrawl_cli": {"provides": "web_search_scrape_cli",
+                      "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+                      "command_env": "YAIWES_FIRECRAWL_CLI_COMMAND"},
+    "firecrawl_mcp_server": {"provides": "web_search_scrape_mcp",
+                             "forbidden": ("authority_transfer", "uncontrolled_context_write"),
+                             "command_env": "YAIWES_FIRECRAWL_MCP_COMMAND"},
+
 }
 
 
