@@ -1,0 +1,35 @@
+name: OpenAI API Probe
+
+on:
+  push:
+    paths:
+      - "tools/openai_api_probe.py"
+      - ".github/workflows/openai-api-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_PROBE_MODEL: gpt-6-luna
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify secret is configured
+        shell: bash
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::error::Repository secret OPENAI_API_KEY is missing."
+            exit 2
+          fi
+          echo "OPENAI_API_KEY is configured (value masked)."
+
+      - name: Test OpenAI authentication and billable request
+        run: python3 tools/openai_api_probe.py
