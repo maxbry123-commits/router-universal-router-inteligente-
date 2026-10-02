@@ -46,3 +46,5 @@ jobs:
           git add tools/openai_probe_public.pem
           git commit -m "ci: publish OpenAI probe public key" || exit 0
           git push
+
+# probe-bootstrap-trigger: secure temporary OpenAI key test
