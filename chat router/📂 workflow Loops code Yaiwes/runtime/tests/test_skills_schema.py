@@ -1,4 +1,4 @@
-"""N-1.5: 24 skills a schema DSL DAG — validación estructural obligatoria."""
+"""N-1.5: skills a schema DSL DAG — validación estructural obligatoria y extensible."""
 from pathlib import Path
 
 import yaml
@@ -9,8 +9,8 @@ _REQUIRED = {"schema_id", "schema", "objective", "work_surface",
 _ALL = sorted(p.name for p in _SCHEMAS.glob("*.dag.yaml"))
 
 
-def test_24_schemas_present():
-    assert len(_ALL) == 24, f"faltan schemas: {_ALL}"
+def test_schemas_present():
+    assert len(_ALL) >= 24, f"faltan schemas base: {_ALL}"
 
 
 def test_cada_schema_campos_obligatorios():
