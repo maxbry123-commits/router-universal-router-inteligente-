@@ -1,0 +1,28 @@
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-4",
+  "modelo": "Sol 🏭 2",
+  "rol": "P4: proyección Archify del Crazy Wall (O4-17), auditoría de cierre (O4-20) y pre-auditoría de los demás equipos para Claude",
+  "espera": "EQUIPO-2:H-04 CERRADO",
+  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/11-EVIDENCIA/", "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json"],
+  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main. Pre-auditar no reemplaza la auditoría de Claude.",
+  "ronda_actual": ["B-01", "B-02", "B-03"],
+  "cola": [
+    {"id": "B-01", "tarea": "Leer runtime/src/core/graph_visual_projection.build_crazy_wall_projection y anotar qué entrada espera", "estado": "PENDIENTE"},
+    {"id": "B-02", "tarea": "O4-17: generar la proyección Archify desde el ledger real", "estado": "PENDIENTE"},
+    {"id": "B-03", "tarea": "Guardar la proyección (HTML o SVG) en la carpeta de evidencia con sha256", "estado": "PENDIENTE"},
+    {"id": "B-04", "tarea": "Test de la proyección", "estado": "PENDIENTE"},
+    {"id": "B-05", "tarea": "O4-17: cierre con evidencia", "estado": "PENDIENTE"},
+    {"id": "B-06", "tarea": "O4-19: confirmar que el E2E sigue pasando", "estado": "PENDIENTE"},
+    {"id": "B-07", "tarea": "O4-20: auditoría de cierre de todos los nodos O4 (estado + evidencia de cada uno)", "estado": "PENDIENTE"},
+    {"id": "B-08", "tarea": "Mapa vivo: diagrama de flujo de los 8 EQUIPO-*.json (tareas por estado)", "estado": "PENDIENTE"},
+    {"id": "B-09", "tarea": "Pre-auditoría: resultados de EQUIPO-1 contra su evidencia", "estado": "PENDIENTE"},
+    {"id": "B-10", "tarea": "Pre-auditoría: resultados de EQUIPO-3 y EQUIPO-5 contra su evidencia", "estado": "PENDIENTE"},
+    {"id": "B-11", "tarea": "Pre-auditoría: resultados de EQUIPO-6 y EQUIPO-7 contra su evidencia", "estado": "PENDIENTE"},
+    {"id": "B-12", "tarea": "Lista de GAPs globales y siguiente acción", "estado": "PENDIENTE"}
+  ],
+  "resultado": [],
+  "bitacora": [],
+  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+}
