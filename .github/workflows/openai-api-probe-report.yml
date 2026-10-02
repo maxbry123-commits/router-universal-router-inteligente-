@@ -1,0 +1,51 @@
+name: OpenAI API Probe Report
+
+on:
+  push:
+    paths:
+      - ".github/workflows/openai-api-probe-report.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_PROBE_MODEL: gpt-6-luna
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run diagnostic without exposing secret
+        shell: bash
+        run: |
+          set +e
+          mkdir -p tools
+          if [ -z "$OPENAI_API_KEY" ]; then
+            printf '%s\n' '{"ok":false,"stage":"config","error":"OPENAI_API_KEY secret missing"}' > tools/openai_api_probe_result.json
+          else
+            python3 tools/openai_api_probe.py > tools/openai_api_probe_result.json 2>&1
+          fi
+          python3 - <<'PY'
+          import json
+          p="tools/openai_api_probe_result.json"
+          raw=open(p,encoding="utf-8",errors="replace").read().strip()
+          lines=[x for x in raw.splitlines() if x.strip()]
+          out={"raw_lines":[]}
+          for line in lines:
+              try: out["raw_lines"].append(json.loads(line))
+              except Exception: out["raw_lines"].append({"parse_error":line[:300]})
+          open(p,"w",encoding="utf-8").write(json.dumps(out,ensure_ascii=False,indent=2)+"\n")
+          PY
+
+      - name: Commit diagnostic result
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/openai_api_probe_result.json
+          git commit -m "ci: record OpenAI API probe result" || exit 0
+          git push
