@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Probe version: 1
 import json, os, sys, urllib.request, urllib.error
 
 API_KEY = os.getenv("OPENAI_API_KEY")
