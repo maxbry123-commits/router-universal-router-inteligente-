@@ -4,25 +4,275 @@
   "modelo": "Sol ☀️ 6",
   "rol": "Tarea 8: mirar las imágenes del plan y extraer las funciones de cada una (nueva auditoría). El catálogo actual describe las 12 capturas con la misma frase genérica; aquí se escribe la función real de cada imagen",
   "espera": null,
-  "alcance": ["chat router/01-PLAN/REFERENCIAS-UI/ (SOLO LEER)", "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json (SOLO LEER)", "chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json (SOLO LEER)", "chat router/01-PLAN/T-06-INVENTARIO.md (SOLO LEER)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json (aquí escribe)"],
-  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face", "tocar el frontend (sigue bloqueado hasta cerrar el backend)", "mover o renombrar imágenes"],
-  "reglas": "Máx 3 tareas por ronda. Commit y salir. Esta auditoría NO reemplaza la existente: se compara contra ella. Para cada imagen: función real, qué componente del chat o del Router muestra, y si el plan ya la cubre. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP.",
-  "ronda_actual": ["I-01", "I-02", "I-03"],
-  "cola": [
-    {"id": "I-01", "tarea": "Mirar las 5 imágenes de ARQUITECTURA-ROUTER (V1-01 a V1-05): extraer funciones, componentes y conexiones de cada una; escribir en resultado", "estado": "PENDIENTE"},
-    {"id": "I-02", "tarea": "Mirar las capturas ADJUNTOS-CHAT 1 a 4 (UI-EXTRA-006 a 009): función real de cada una, no la frase genérica", "estado": "PENDIENTE"},
-    {"id": "I-03", "tarea": "Mirar las capturas ADJUNTOS-CHAT 5 a 8 (UI-EXTRA-010 a 013): función real de cada una", "estado": "PENDIENTE"},
-    {"id": "I-04", "tarea": "Mirar las capturas ADJUNTOS-CHAT 9 a 12 (UI-EXTRA-014 a 017): función real de cada una", "estado": "PENDIENTE"},
-    {"id": "I-05", "tarea": "REFERENCIAS-UI lote 1 (imágenes 1 a 22 del catálogo): función de cada una", "estado": "PENDIENTE"},
-    {"id": "I-06", "tarea": "REFERENCIAS-UI lote 2 (imágenes 23 a 44): función de cada una", "estado": "PENDIENTE"},
-    {"id": "I-07", "tarea": "REFERENCIAS-UI lote 3 (imágenes 45 a 65): función de cada una", "estado": "PENDIENTE"},
-    {"id": "I-08", "tarea": "Comparar contra CATALOGO-ANEXOS-VISUALES.json y CATALOGO-REFERENCIAS-UI.json: marcar dónde la descripción actual es genérica o incorrecta", "estado": "PENDIENTE"},
-    {"id": "I-09", "tarea": "Mapa función -> control del chat usando T-06-INVENTARIO.md", "estado": "PENDIENTE"},
-    {"id": "I-10", "tarea": "Lista de funciones que se ven en las imágenes y el plan NO cubre (GAP)", "estado": "PENDIENTE"},
-    {"id": "I-11", "tarea": "Duplicados por sha256 (ya se sabe que UI-EXTRA-008 y 009 son iguales); confirmar y buscar más", "estado": "PENDIENTE"},
-    {"id": "I-12", "tarea": "Informe final de la auditoría de imágenes y handoff", "estado": "PENDIENTE"}
+  "alcance": [
+    "chat router/01-PLAN/REFERENCIAS-UI/ (SOLO LEER)",
+    "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json (SOLO LEER)",
+    "chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json (SOLO LEER)",
+    "chat router/01-PLAN/T-06-INVENTARIO.md (SOLO LEER)",
+    "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json (aquí escribe)"
   ],
-  "resultado": [],
-  "bitacora": [],
-  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+  "prohibido": [
+    "router inteligente universal/ (no tocar el Router)",
+    "LFS git",
+    "GitHub Actions",
+    "Hugging Face",
+    "tocar el frontend (sigue bloqueado hasta cerrar el backend)",
+    "mover o renombrar imágenes"
+  ],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Esta auditoría NO reemplaza la existente: se compara contra ella. Para cada imagen: función real, qué componente del chat o del Router muestra, y si el plan ya la cubre. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP.",
+  "ronda_actual": [],
+  "cola": [
+    {
+      "id": "I-01",
+      "tarea": "Mirar las 5 imágenes de ARQUITECTURA-ROUTER (V1-01 a V1-05): extraer funciones, componentes y conexiones de cada una; escribir en resultado",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "I-02",
+      "tarea": "Mirar las capturas ADJUNTOS-CHAT 1 a 4 (UI-EXTRA-006 a 009): función real de cada una, no la frase genérica",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "I-03",
+      "tarea": "Mirar las capturas ADJUNTOS-CHAT 5 a 8 (UI-EXTRA-010 a 013): función real de cada una",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "I-04",
+      "tarea": "Mirar las capturas ADJUNTOS-CHAT 9 a 12 (UI-EXTRA-014 a 017): función real de cada una",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "I-05",
+      "tarea": "REFERENCIAS-UI lote 1 (imágenes 1 a 22 del catálogo): función de cada una",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "I-06",
+      "tarea": "REFERENCIAS-UI lote 2 (imágenes 23 a 44): función de cada una",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "I-07",
+      "tarea": "REFERENCIAS-UI lote 3 (imágenes 45 a 65): función de cada una",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "I-08",
+      "tarea": "Comparar contra CATALOGO-ANEXOS-VISUALES.json y CATALOGO-REFERENCIAS-UI.json: marcar dónde la descripción actual es genérica o incorrecta",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "I-09",
+      "tarea": "Mapa función -> control del chat usando T-06-INVENTARIO.md",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "I-10",
+      "tarea": "Lista de funciones que se ven en las imágenes y el plan NO cubre (GAP)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "I-11",
+      "tarea": "Duplicados por sha256 (ya se sabe que UI-EXTRA-008 y 009 son iguales); confirmar y buscar más",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "I-12",
+      "tarea": "Informe final de la auditoría de imágenes y handoff",
+      "estado": "PENDIENTE"
+    }
+  ],
+  "resultado": [
+    {
+      "id_tarea": "I-01",
+      "equipo": "EQUIPO-8",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
+      "fecha_utc": "2026-10-02T08:45:15.531Z",
+      "accion": "Se abrieron y auditaron las 5 imágenes ARQUITECTURA-ROUTER, extrayendo función, componentes, conexiones y cobertura del plan.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+          "sha256": "72da4a525fa70f00ecd092f4f5dcc447af2e71b6df4d46470529257f3b19206e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-02-TOPOLOGY.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-02-TOPOLOGY.png",
+          "sha256": "0315bd92cde86256b969a37ad3e2dd31e26a934a68503b8a77f83f435ce3552e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-03-CONTRACT.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-03-CONTRACT.png",
+          "sha256": "fe285513646756c830eecaf168b7edb9e906fbb860aafb4f0bc9222d7294a071"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-04-SETTINGS.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-04-SETTINGS.png",
+          "sha256": "e9096bff9207767b31996c28e17c01ea3ab1c4dd6cb66f3f9a50f1ef5ed39b1f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-05-MOBILE.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-05-MOBILE.png",
+          "sha256": "602f7be1b2bf71b1ba2e2b43f91ece7a0eab6bc6ca6ce01ec5e9696d53bce38b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-01.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-01.md",
+          "sha256": "2e3cbd2ef39d0c8cd6888fcf4b18cf045ffb833e203a0b8c01b283c50cfb8367",
+          "commit": "3390f28"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Abrir bytes PNG reales de V1-01..V1-05 en la rama devin/1790824641-chat-agent-plan y comparar visualmente contra PLAN-DSL-DAG-UI/T-06.",
+        "ok": true,
+        "salida_resumen": "5/5 PNG legibles. Se distinguieron consola principal, topología, contrato, settings y variante móvil; no se reutilizó la descripción genérica del catálogo."
+      },
+      "gap": null,
+      "siguiente": "Esperar activación del Director; no ejecutar I-04 todavía."
+    },
+    {
+      "id_tarea": "I-02",
+      "equipo": "EQUIPO-8",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
+      "fecha_utc": "2026-10-02T08:45:15.531Z",
+      "accion": "Se abrieron y auditaron UI-EXTRA-006 a 009 y se identificaron chat/composer, visor de evidencia y ASK Council; se confirmó el duplicado 008/009.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+          "sha256": "7e3c8822d876d5dcefeaceed80bcc83b3a693dcdcda8a3b4decabc34ac72f97c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052617_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052617_Edge.png",
+          "sha256": "34e59869bc7a8cad36d8afe4bf6fc153321c188abe5dd2a29a73a2e1ba028521"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge-2.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge-2.png",
+          "sha256": "3a6d5e8759146d9f89c3a5b9908abd6c44e1e2cfdf26c61198672616cbb8c850"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge.png",
+          "sha256": "3a6d5e8759146d9f89c3a5b9908abd6c44e1e2cfdf26c61198672616cbb8c850"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-02.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-02.md",
+          "sha256": "9d3698ac3dcf89a7b783c29b3b5d2cfcb3761488848dc4584805b101379159aa",
+          "commit": "124cb7b"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Abrir bytes PNG reales de UI-EXTRA-006..009 y comparar contenido visual + sha256 del catálogo.",
+        "ok": true,
+        "salida_resumen": "4/4 PNG legibles. UI-EXTRA-008 y 009 son idénticos por sha256 3a6d5e8759146d9f89c3a5b9908abd6c44e1e2cfdf26c61198672616cbb8c850."
+      },
+      "gap": null,
+      "siguiente": "Esperar activación del Director; no ejecutar I-04 todavía."
+    },
+    {
+      "id_tarea": "I-03",
+      "equipo": "EQUIPO-8",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
+      "fecha_utc": "2026-10-02T08:45:15.531Z",
+      "accion": "Se abrieron y auditaron UI-EXTRA-010 a 013, distinguiendo visor de setup y el flujo GitHub PR overview/Changes/Description.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053130_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053130_Edge.png",
+          "sha256": "d9747c2b2adbf5095d433bc4b8067a2985dd042f53fa6449f68389b5fb609d94"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053144_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053144_Edge.png",
+          "sha256": "059fce3f3a613f06c702c960bbccc2f59da017085815a3537751caf4099df40f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053202_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053202_Edge.png",
+          "sha256": "2b7f0af61986536ecbbb43a880ac95e9aa1bec49f358f4b1e34b04352e1a9012"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053222_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053222_Edge.png",
+          "sha256": "a80bfc3ce6040bdac559e0776cfa422686426d357b9a480fe92799556b9697e4"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-03.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-03.md",
+          "sha256": "39af0ebd77cc1ed01cc147126f48e2b32bfb18d3b0e41698e03e2ecc59734038",
+          "commit": "5ce31e2"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Abrir bytes PNG reales de UI-EXTRA-010..013 y comparar funciones visibles contra T-06/T06-INVENTARIO.",
+        "ok": true,
+        "salida_resumen": "4/4 PNG legibles. 010 es visor documental; 011-013 muestran revisión de PR, diff y descripción, funciones no inventariadas como módulo propio en T-06."
+      },
+      "gap": null,
+      "siguiente": "Esperar activación del Director; no ejecutar I-04 todavía."
+    }
+  ],
+  "bitacora": [
+    {
+      "fecha_utc": "2026-10-02T08:45:15.531Z",
+      "id_tarea": "I-01",
+      "evento": "CERRADO: 5/5 diagramas ARQUITECTURA-ROUTER abiertos y auditados; evidencia I-01.md."
+    },
+    {
+      "fecha_utc": "2026-10-02T08:45:15.531Z",
+      "id_tarea": "I-02",
+      "evento": "CERRADO: UI-EXTRA-006..009 auditadas; duplicado 008/009 confirmado por sha256; evidencia I-02.md."
+    },
+    {
+      "fecha_utc": "2026-10-02T08:45:15.531Z",
+      "id_tarea": "I-03",
+      "evento": "CERRADO: UI-EXTRA-010..013 auditadas; flujo de revisión PR identificado; evidencia I-03.md."
+    }
+  ],
+  "handoff": {
+    "objetivo": "Auditar visualmente las imágenes del plan y extraer su función real sin inventar.",
+    "estado": "RONDA 1 CERRADA: I-01, I-02 e I-03 completadas; 13/13 imágenes legibles.",
+    "archivos": [
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-01.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-02.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-03.md"
+    ],
+    "cambios": [
+      "Se sustituyó la descripción genérica por funciones reales por imagen en la evidencia de ronda 1.",
+      "Se confirmó UI-EXTRA-008 = UI-EXTRA-009 por sha256.",
+      "Se separó cobertura existente de T-06 de funciones visuales aún no inventariadas."
+    ],
+    "fallos": [
+      "T-06 no cubre de forma equivalente la consola de satélites/topología/inspector/broadcast/transport/sandbox/timeout mostrada en I-01.",
+      "La referencia Settings muestra secreto HMAC en cliente/localStorage, incompatible con T06-F29.",
+      "T-06 no inventaría un módulo de revisión GitHub PR con overview/diff/Description-Discussion como el de UI-EXTRA-011..013."
+    ],
+    "siguiente": "SALIR y esperar que el Director active una nueva ronda; I-04, I-05+ siguen PENDIENTE."
+  }
 }
