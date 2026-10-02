@@ -1,0 +1,28 @@
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-8",
+  "modelo": "Sol ☀️ 6",
+  "rol": "Tarea 8: mirar las imágenes del plan y extraer las funciones de cada una (nueva auditoría). El catálogo actual describe las 12 capturas con la misma frase genérica; aquí se escribe la función real de cada imagen",
+  "espera": null,
+  "alcance": ["chat router/01-PLAN/REFERENCIAS-UI/ (SOLO LEER)", "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json (SOLO LEER)", "chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json (SOLO LEER)", "chat router/01-PLAN/T-06-INVENTARIO.md (SOLO LEER)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json (aquí escribe)"],
+  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face", "tocar el frontend (sigue bloqueado hasta cerrar el backend)", "mover o renombrar imágenes"],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Esta auditoría NO reemplaza la existente: se compara contra ella. Para cada imagen: función real, qué componente del chat o del Router muestra, y si el plan ya la cubre. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP.",
+  "ronda_actual": ["I-01", "I-02", "I-03"],
+  "cola": [
+    {"id": "I-01", "tarea": "Mirar las 5 imágenes de ARQUITECTURA-ROUTER (V1-01 a V1-05): extraer funciones, componentes y conexiones de cada una; escribir en resultado", "estado": "PENDIENTE"},
+    {"id": "I-02", "tarea": "Mirar las capturas ADJUNTOS-CHAT 1 a 4 (UI-EXTRA-006 a 009): función real de cada una, no la frase genérica", "estado": "PENDIENTE"},
+    {"id": "I-03", "tarea": "Mirar las capturas ADJUNTOS-CHAT 5 a 8 (UI-EXTRA-010 a 013): función real de cada una", "estado": "PENDIENTE"},
+    {"id": "I-04", "tarea": "Mirar las capturas ADJUNTOS-CHAT 9 a 12 (UI-EXTRA-014 a 017): función real de cada una", "estado": "PENDIENTE"},
+    {"id": "I-05", "tarea": "REFERENCIAS-UI lote 1 (imágenes 1 a 22 del catálogo): función de cada una", "estado": "PENDIENTE"},
+    {"id": "I-06", "tarea": "REFERENCIAS-UI lote 2 (imágenes 23 a 44): función de cada una", "estado": "PENDIENTE"},
+    {"id": "I-07", "tarea": "REFERENCIAS-UI lote 3 (imágenes 45 a 65): función de cada una", "estado": "PENDIENTE"},
+    {"id": "I-08", "tarea": "Comparar contra CATALOGO-ANEXOS-VISUALES.json y CATALOGO-REFERENCIAS-UI.json: marcar dónde la descripción actual es genérica o incorrecta", "estado": "PENDIENTE"},
+    {"id": "I-09", "tarea": "Mapa función -> control del chat usando T-06-INVENTARIO.md", "estado": "PENDIENTE"},
+    {"id": "I-10", "tarea": "Lista de funciones que se ven en las imágenes y el plan NO cubre (GAP)", "estado": "PENDIENTE"},
+    {"id": "I-11", "tarea": "Duplicados por sha256 (ya se sabe que UI-EXTRA-008 y 009 son iguales); confirmar y buscar más", "estado": "PENDIENTE"},
+    {"id": "I-12", "tarea": "Informe final de la auditoría de imágenes y handoff", "estado": "PENDIENTE"}
+  ],
+  "resultado": [],
+  "bitacora": [],
+  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+}
