@@ -31,12 +31,12 @@ roots:
       - "chat router/11-EVIDENCIA/buscadores.py"
       - "chat router/11-EVIDENCIA/verificador.py"
       - "chat router/11-EVIDENCIA/evidence_pack.py"
-      - "chat router/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md"
+      - "chat router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md"
   - id: "05"
     name: "Workflow"
     paths:
-      - "chat router/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml"
-      - "chat router/ORQUESTADOR-DE-TRABAJO.yaml"
+      - "chat router/01-PLAN/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml"
+      - "chat router/01-PLAN/ORQUESTADOR-DE-TRABAJO.yaml"
       - "router inteligente universal/integration/chat_mvp/dag.py"
 
   - id: "06"
