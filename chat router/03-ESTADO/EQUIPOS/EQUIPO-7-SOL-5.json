@@ -1,0 +1,28 @@
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-7",
+  "modelo": "Sol 👾 5",
+  "rol": "P8: tests finales, evidencia global y README de arquitectura; registrar los flags externos (P7) sin detener nada",
+  "espera": "EQUIPO-2:H-04 CERRADO (E-09 en adelante espera además a que cierren los equipos 1 a 6)",
+  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/03-ESTADO/EQUIPOS/ (leer los 8 JSON)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json"],
+  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face", "modificar tests upstream stale"],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": ["E-01", "E-02", "E-03"],
+  "cola": [
+    {"id": "E-01", "tarea": "Suite del loop (base 267 pass / 3 stale): correr y anotar", "estado": "PENDIENTE"},
+    {"id": "E-02", "tarea": "Suite seals_core (base 44/45): correr y anotar", "estado": "PENDIENTE"},
+    {"id": "E-03", "tarea": "Clasificar los 5 fallos de la suite ampliada (GitHub E2E 502 y 4 de configuración/modelos): causa de cada uno", "estado": "PENDIENTE"},
+    {"id": "E-04", "tarea": "Ruff: correr y anotar", "estado": "PENDIENTE"},
+    {"id": "E-05", "tarea": "Lista de tests que quedan stale (upstream) con su motivo; no se tocan", "estado": "PENDIENTE"},
+    {"id": "E-06", "tarea": "Registrar los flags externos P7 (N-1.1, N-1.3, N-1.4, N-2.12, N-2.13) como GAP, sin stop", "estado": "PENDIENTE"},
+    {"id": "E-07", "tarea": "Borrador de README-ARQUITECTURA a partir de ROOT-MAP-T11", "estado": "PENDIENTE"},
+    {"id": "E-08", "tarea": "Esperar el cierre de los equipos 1 a 6 (solo leer sus JSON)", "estado": "PENDIENTE"},
+    {"id": "E-09", "tarea": "Suite completa ordenada final", "estado": "PENDIENTE"},
+    {"id": "E-10", "tarea": "Evidencia global (path + sha256 de cada resultado)", "estado": "PENDIENTE"},
+    {"id": "E-11", "tarea": "README-ARQUITECTURA final", "estado": "PENDIENTE"},
+    {"id": "E-12", "tarea": "Informe final y GAPs", "estado": "PENDIENTE"}
+  ],
+  "resultado": [],
+  "bitacora": [],
+  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+}
