@@ -1,0 +1,26 @@
+schema_id: skills_schema/hyperframes-creative.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Diseño, concepto, tipografía, planificación visual
+work_surface: FRONTEND
+acceptance: planificación visual declarada
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/hyperframes-creative.json
+  sha256: pending
+oracle: check:visual_plan
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute
