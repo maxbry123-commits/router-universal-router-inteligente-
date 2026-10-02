@@ -1,0 +1,28 @@
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-6",
+  "modelo": "Sol 🧑‍💻 4",
+  "rol": "Memoria y almacenamiento, solo local. Lo que no corra se anota como GAP; nada de Hugging Face",
+  "espera": "EQUIPO-2:H-04 CERRADO",
+  "alcance": ["chat router/04-MEMORIA/", "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/03-ESTADO/MEMORIA-INVENTARIO.json", "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json"],
+  "prohibido": ["router inteligente universal/ (no tocar el Router; solo listar lo que necesita)", "LFS git", "GitHub Actions", "Hugging Face (el puente HF H-1 queda fuera)"],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": ["D-01", "D-02", "D-03"],
+  "cola": [
+    {"id": "D-01", "tarea": "Inventario de memoria con evidencia actual (refrescar MEMORIA-INVENTARIO sin borrar el histórico del 27-sep)", "estado": "PENDIENTE"},
+    {"id": "D-02", "tarea": "Graphify: contrato de herramienta de solo lectura (hoy solo es fuente descargada)", "estado": "PENDIENTE"},
+    {"id": "D-03", "tarea": "Graphiti: probar si corre local sin servicio; si no, GAP", "estado": "PENDIENTE"},
+    {"id": "D-04", "tarea": "FalkorDB: probar runtime local con la fuente ya extraída; si no, GAP", "estado": "PENDIENTE"},
+    {"id": "D-05", "tarea": "AgentDB (ruvnet/agentdb): probar runtime local; si no, GAP", "estado": "PENDIENTE"},
+    {"id": "D-06", "tarea": "Memanto: buscar su contrato runtime (CLI o API); si no, GAP", "estado": "PENDIENTE"},
+    {"id": "D-07", "tarea": "PostgreSQL y Redis: GAP documentado y fallback SQLite probado", "estado": "PENDIENTE"},
+    {"id": "D-08", "tarea": "Prueba de guardar y leer con read-back", "estado": "PENDIENTE"},
+    {"id": "D-09", "tarea": "Prueba de reinicio: la memoria sobrevive", "estado": "PENDIENTE"},
+    {"id": "D-10", "tarea": "Búsqueda por relación en el grafo de respaldo", "estado": "PENDIENTE"},
+    {"id": "D-11", "tarea": "Lista de lo que necesita el Router principal (API, almacenamiento, cómputo) para el Director; sin tocar el Router", "estado": "PENDIENTE"},
+    {"id": "D-12", "tarea": "Handoff de memoria con los GAPs que quedan", "estado": "PENDIENTE"}
+  ],
+  "resultado": [],
+  "bitacora": [],
+  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+}
