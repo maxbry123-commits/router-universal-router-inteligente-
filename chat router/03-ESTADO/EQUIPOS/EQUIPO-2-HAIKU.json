@@ -5,23 +5,24 @@
   "rol": "Organizar el repo y cablear lo sencillo. Solo copia con motor_3; borra únicamente con hash verificado y con permiso del Director",
   "handoff_url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-2-HAIKU.md",
   "espera": null,
-  "acceso_requerido": "Conector de GitHub en el chat de Haiku. Sin él no puede leer ni escribir (en su primer intento solo tenía Vercel MCP y se bloqueó). Si no lo tiene: GAP-ACCESO y Claude toma la cola.",
+  "acceso_requerido": "Conector de GitHub en el chat de Haiku. Sin él no puede leer ni escribir (en su primer intento solo tenía Vercel MCP y se bloqueó). Mientras no lo tenga, Claude ejecuta su cola por orden del Director ('sigue con Haiku').",
+  "decision_pendiente_del_director": "Los 5 archivos sueltos de chat router/: hay dos órdenes que chocan ('moverlos a 01-PLAN' y 'todo dentro de 📂 workflow Loops code Yaiwes'), y ROOT-MAP-T11.yaml cita 3 de ellos donde están hoy. H-06, H-09 y H-11 esperan esa decisión. Detalle en la evidencia de H-02.",
   "alcance": ["chat router/ (rama devin/1790824641-chat-agent-plan)", "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/11-EVIDENCIA/equipos/EQUIPO-2/"],
   "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face", "editar a mano STATE.json, BITACORA.jsonl, CRAZY_WALL.json"],
   "reglas": "Máx 3 tareas por ronda. Commit y salir. NO borrar nada hasta que la copia tenga el mismo hash que el original (0 diferencias) y el Director lo autorice. Sin evidencia no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
-  "ronda_actual": ["H-01", "H-02", "H-05"],
+  "ronda_actual": ["H-07", "H-08"],
   "cola": [
-    {"id": "H-01", "tarea": "Inventario (solo listar, sin mover nada): archivos y carpetas fuera de lugar dentro de chat router/; escribir la lista en resultado", "estado": "PENDIENTE"},
-    {"id": "H-02", "tarea": "Mapa de destino: para cada ítem de H-01, a qué subcarpeta de RAIZ-WL va (o si se queda donde está); sin inventar subcarpetas vacías", "estado": "PENDIENTE"},
+    {"id": "H-01", "tarea": "Inventario (solo listar, sin mover nada): archivos y carpetas fuera de lugar dentro de chat router/; escribir la lista en resultado", "estado": "CERRADO"},
+    {"id": "H-02", "tarea": "Mapa de destino: para cada ítem de H-01, a qué subcarpeta de RAIZ-WL va (o si se queda donde está); sin inventar subcarpetas vacías", "estado": "CERRADO"},
     {"id": "H-03", "tarea": "Crear RAIZ-WL como copia exacta de 'wordflow loop code Yaiwes/' (no mover, no borrar)", "estado": "CERRADO"},
     {"id": "H-04", "tarea": "Segunda pasada: comparar hash origen vs destino; 0 diferencias para CERRADO", "estado": "CERRADO"},
-    {"id": "H-05", "tarea": "Comparar '➡️📂 Wordflow LOOP Yaiwes/' contra RAIZ-WL; anotar qué archivos están solo en uno; copiar con motor_3 SOLO los que falten en RAIZ-WL (sin borrar)", "estado": "PENDIENTE"},
-    {"id": "H-06", "tarea": "Actualizar las rutas de ROOT-MAP-T11.yaml hacia RAIZ-WL", "estado": "PENDIENTE"},
+    {"id": "H-05", "tarea": "Comparar '➡️📂 Wordflow LOOP Yaiwes/' contra RAIZ-WL; anotar qué archivos están solo en uno; copiar con motor_3 SOLO los que falten en RAIZ-WL (sin borrar)", "estado": "CERRADO"},
+    {"id": "H-06", "tarea": "Actualizar las rutas de ROOT-MAP-T11.yaml hacia RAIZ-WL (espera la decisión del Director sobre los 5 archivos sueltos)", "estado": "ESPERA_DECISION"},
     {"id": "H-07", "tarea": "P5: copiar con motor_3 las 3 skills frontend de 'Wordflow loop code Yaiwes/skills' (big-AGI) a 'Skills agente/'; si la fuente no está, traerla con el motor de descarga", "estado": "PENDIENTE"},
     {"id": "H-08", "tarea": "P6 N-2.11: biblioteca RAG con sus 13 subcarpetas, solo con contenido real (no crear carpetas vacías)", "estado": "PENDIENTE"},
-    {"id": "H-09", "tarea": "Buscar referencias a la ruta vieja y corregirlas SOLO en archivos escritos a mano (ROOT-MAP, memoria.md, README). HANDOFF.md fuera del bloque State Hub. Tests: reportar, no tocar", "estado": "PENDIENTE"},
+    {"id": "H-09", "tarea": "Buscar referencias a la ruta vieja y corregirlas SOLO en archivos escritos a mano (ROOT-MAP, memoria.md, README). HANDOFF.md fuera del bloque State Hub. Tests: reportar, no tocar", "estado": "ESPERA_DECISION"},
     {"id": "H-10", "tarea": "Borrar los originales viejos SOLO si H-04 dio 0 diferencias Y el Director lo autoriza expresamente; en un commit separado; anotar qué se borró", "estado": "PENDIENTE"},
-    {"id": "H-11", "tarea": "Segunda pasada de organización: lo que siga suelto fuera de RAIZ-WL; anotarlo", "estado": "PENDIENTE"},
+    {"id": "H-11", "tarea": "Segunda pasada de organización: lo que siga suelto fuera de RAIZ-WL; anotarlo", "estado": "ESPERA_DECISION"},
     {"id": "H-12", "tarea": "Handoff final del equipo, nota en 'Devin notas/' y checkpoint con watchdog_checkpoint.py", "estado": "PENDIENTE"}
   ],
   "resultado": [
@@ -58,17 +59,97 @@
       },
       "gap": null,
       "siguiente": "H-01, H-02 y H-05 en la ronda 1"
+    },
+    {
+      "id_tarea": "H-01",
+      "equipo": "EQUIPO-2",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "Claude (Haiku sin acceso a GitHub)",
+      "fecha_utc": "2026-10-02T08:22:05Z",
+      "accion": "Inventario de lo suelto en chat router/: 5 archivos sueltos, 13 carpetas numeradas (falta la 08), 4 carpetas sin número y 4 carpetas con nombre parecido al Wordflow. Solo lectura.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md",
+          "sha256": "6759614bd896c6b849f56860ca09c52e2a06210507b951eb01cdba53c053f987",
+          "commit": "3e9fd06"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Listado de los árboles de git de chat router/ en la rama (y de la raíz del Wordflow)",
+        "ok": true,
+        "salida_resumen": "Listas completas en la evidencia. Hallazgo: la carpeta de motores (hash 4951574898a8) existe 3 veces idéntica."
+      },
+      "gap": null,
+      "siguiente": "H-02"
+    },
+    {
+      "id_tarea": "H-02",
+      "equipo": "EQUIPO-2",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "Claude",
+      "fecha_utc": "2026-10-02T08:22:05Z",
+      "accion": "Mapa de destino por ítem. Dos puntos quedan marcados para decisión del Director: los 5 archivos sueltos y las carpetas numeradas (ROOT-MAP-T11 las cita donde están hoy).",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md",
+          "sha256": "6759614bd896c6b849f56860ca09c52e2a06210507b951eb01cdba53c053f987",
+          "commit": "3e9fd06"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Cruce del inventario contra ROOT-MAP-T11.yaml (rutas citadas)",
+        "ok": true,
+        "salida_resumen": "ROOT-MAP-T11 cita 3 de los 5 archivos sueltos y las carpetas numeradas en su lugar actual; moverlas obliga a actualizarlo en el mismo paso."
+      },
+      "gap": {
+        "motivo": "Dos órdenes del Director chocan: mover los 5 archivos a 01-PLAN, o dejar todo dentro de 📂 workflow Loops code Yaiwes.",
+        "intento_fix": "Se propone dejar todo donde está y actualizar solo lo que se mueva; no se movió nada.",
+        "necesita": "Decisión del Director"
+      },
+      "siguiente": "H-06, H-09 y H-11 esperan la decisión; H-07 y H-08 pueden seguir"
+    },
+    {
+      "id_tarea": "H-05",
+      "equipo": "EQUIPO-2",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "Claude",
+      "fecha_utc": "2026-10-02T08:22:05Z",
+      "accion": "Se comparó '➡️📂 Wordflow LOOP Yaiwes' contra la raíz nueva: solo contiene la carpeta de motores y ya está idéntica dentro de la raíz nueva. Faltan 0 archivos, no se copió nada.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/➡️📂 Wordflow LOOP Yaiwes/",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/devin/1790824641-chat-agent-plan/chat%20router/%E2%9E%A1%EF%B8%8F%F0%9F%93%82%20Wordflow%20LOOP%20Yaiwes",
+          "sha256": "6759614bd896c6b849f56860ca09c52e2a06210507b951eb01cdba53c053f987",
+          "commit": "3e9fd06"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Comparar el hash de árbol de la carpeta de motores en la carpeta duplicada y en la raíz nueva",
+        "ok": true,
+        "salida_resumen": "Mismo hash de árbol 4951574898a81f0bd51a57ae99fa31c48b1d1e65 en ambas. 0 diferencias. El sha256 listado es el del archivo de evidencia, porque una carpeta no tiene sha256 propio."
+      },
+      "gap": null,
+      "siguiente": "H-07 y H-08"
     }
   ],
   "bitacora": [
-    {"fecha_utc": "2026-10-02T08:04:12Z", "id_tarea": "H-03", "evento": "Claude creó la raíz nueva (commit 7b52b8e) porque el chat de Haiku solo tenía Vercel MCP y no podía leer ni escribir en GitHub"}
+    {"fecha_utc": "2026-10-02T08:04:12Z", "id_tarea": "H-03", "evento": "Claude creó la raíz nueva (commit 7b52b8e) porque el chat de Haiku solo tenía Vercel MCP y no podía leer ni escribir en GitHub"},
+    {"fecha_utc": "2026-10-02T08:22:05Z", "id_tarea": "H-01", "evento": "Claude cerró H-01, H-02 y H-05 por orden del Director ('sigue con Haiku'); solo lectura, evidencia en commit 3e9fd06; H-06, H-09 y H-11 esperan decisión"}
   ],
   "handoff": {
     "objetivo": "Ordenar el repo dentro de 📂 workflow Loops code Yaiwes y cablear lo sencillo",
-    "estado": "Ronda 0 cerrada. Falta el acceso de Haiku a GitHub para la ronda 1.",
-    "archivos": ["chat router/📂 workflow Loops code Yaiwes/", "chat router/wordflow loop code Yaiwes/ (original, no borrar aún)"],
-    "cambios": ["Se creó la carpeta nueva como copia exacta (commit 7b52b8e)"],
+    "estado": "Cerradas H-01 a H-05. Esperan decisión del Director: H-06, H-09, H-11. Pendientes: H-07, H-08, H-10 (solo con permiso), H-12.",
+    "archivos": ["chat router/📂 workflow Loops code Yaiwes/", "chat router/wordflow loop code Yaiwes/ (original, no borrar aún)", "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md"],
+    "cambios": ["Se creó la carpeta nueva como copia exacta (commit 7b52b8e)", "Se agregó la evidencia de H-01, H-02 y H-05 (commit 3e9fd06). No se movió ni se borró nada más."],
     "fallos": ["Haiku no pudo acceder al repo: solo tenía Vercel MCP"],
-    "siguiente": "H-01, H-02, H-05 (ronda 1), con el conector de GitHub o ejecutadas por Claude"
+    "siguiente": "H-07 y H-08 (ronda 2), con el conector de GitHub o ejecutadas por Claude"
   }
 }
