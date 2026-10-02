@@ -1,0 +1,48 @@
+name: OpenAI Probe Key Bootstrap
+
+on:
+  push:
+    paths:
+      - ".github/workflows/openai-probe-key-bootstrap.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate admin token
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::GH_JOB_PUSH_TOKEN secret is missing"
+            exit 2
+          fi
+
+      - name: Generate one-time RSA channel and store private key as Actions secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out /tmp/openai_probe_private.pem >/dev/null 2>&1
+          openssl pkey -in /tmp/openai_probe_private.pem -pubout -out tools/openai_probe_public.pem
+          gh secret set OPENAI_PROBE_PRIVATE_KEY --repo "${{ github.repository }}" < /tmp/openai_probe_private.pem
+          rm -f /tmp/openai_probe_private.pem
+
+      - name: Commit public key
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/openai_probe_public.pem
+          git commit -m "ci: publish OpenAI probe public key" || exit 0
+          git push
