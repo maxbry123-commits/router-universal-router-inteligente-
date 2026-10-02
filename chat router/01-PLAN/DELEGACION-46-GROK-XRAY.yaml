@@ -1,0 +1,62 @@
+schema: yaiwes.chain-draft/v1
+write_policy:
+  status: BLOCKED_UNTIL_ENFORCED
+  output_schema: yaiwes.result/v1
+  sheriff: chat router/05-AGENTES/gobierno/sheriff.py
+  sentinel: chat router/05-AGENTES/gobierno/sentinel.py
+  source_write_paths: []
+  evidence_write_paths:
+    - chat router/11-EVIDENCIA/delegacion-46-grok-xray/STATE.json
+input_block: |
+  "Después de resolver el job Luego buscas a grock está en main lo activas con una sdk DSl lo conviertes en un auditoría forense x Ray que te haga un stated JSON de la auditoría que audita imágenes y archivos y extrae que debe existir y hace verificación cruzada con el code fuente te lo va poniendo en el stated JSON que tú puedas leer y te sirva para ahorrar tiempo y token y como guía de que hay y falta"
+  Grok es el noveno agente del mismo Job HF cpu-basic 16 GB. No usar GitHub Actions, LFS ni modificar Router.
+agent:
+  id: agent-15-orchestrator-grok
+  framework: smolagents
+  target_runtime: grok-build
+  group: audit
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 4200
+context:
+  text: |
+    Reutilizar agent-15-orchestrator-grok de main; SmolAgents como wrapper no demuestra
+    ejecución de Grok Build. No declarar activo el runtime Rust por encontrar su fuente.
+    Leer las otras cinco delegaciones de 01-PLAN; auditar únicamente después de
+    comprobar que el Job ejecutó SDKs reales y produjo resultados y hashes leíbles.
+    STATE.json de X-Ray es distinto del STATE.json del State Hub en 03-ESTADO.
+steps:
+  - id: inventariar
+    owner_role: grok
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-46-inventariar.result.json
+    task: |
+      Inventariar imágenes y archivos físicamente legibles de las cinco misiones:
+      ruta relativa, tipo detectado, tamaño, SHA-256, revisión/fuente. Distinguir
+      archivo real, puntero, referencia textual y ausencia. No inferir contenido
+      visual solo por nombre o hash. Registrar lo no accesible como NOT_VERIFIED.
+    checks: [{kind: no_secrets}]
+  - id: cruzar
+    owner_role: grok
+    source_mutation: false
+    evidence_mutation: true
+    result_path: chat router/11-EVIDENCIA/delegacion-46-cruzar.result.json
+    task: |
+      Cruzar cada componente esperado por las delegaciones con archivos, código
+      fuente, receipts tipados y pruebas. Escribir STATE.json en evidence_write_paths
+      con schema yaiwes.xray-state/v1: observed, expected, present, missing,
+      contradictions, not_verified, source_refs, artifact_sha256 y checked_at.
+      Cada afirmación lleva ruta y hash o evidencia de ausencia; no declarar PASS
+      por catálogo, foto, fuente descargada o respuesta textual.
+    checks: [{kind: no_secrets}]
+  - id: verificar
+    owner_role: grok
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-46-verificar.result.json
+    task: |
+      Leer nuevamente STATE.json y sus fuentes en una ejecución independiente:
+      comprobar hashes y rutas, coherencia con cinco misiones y resultados; mantener
+      BLOCK/REVISE si falta runtime Grok Build o evidencia física. Registrar
+      ledger, prueba y siguiente acción en el resultado tipado.
+    checks: [{kind: no_secrets}]
+edges: [[inventariar, cruzar], [cruzar, verificar]]

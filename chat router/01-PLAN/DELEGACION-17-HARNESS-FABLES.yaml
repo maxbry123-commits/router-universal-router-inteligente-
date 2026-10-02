@@ -1,0 +1,60 @@
+schema: yaiwes.chain-draft/v1
+write_policy:
+  status: BLOCKED_UNTIL_ENFORCED
+  output_schema: yaiwes.result/v1
+  sheriff: chat router/05-AGENTES/gobierno/sheriff.py
+  sentinel: chat router/05-AGENTES/gobierno/sentinel.py
+  source_write_paths:
+    - chat router/wordflow loop code Yaiwes/wordflow_loop/plugins/universal_plugin_bus_v2_integrated.py
+input_block: |
+  "Usa todos los agentes que te nombre"
+  "no Reescribes el code lo copias con el motor y cableado nada monolitico"
+  Misión completa: conectar el chat con Wordflow por Deepseek Harness y Fables.
+agent:
+  id: agent-17-chat-backend-32gb
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+context:
+  text: |
+    Roles solicitados: Claude Code = diseño/revisión; OpenCode = integración quirúrgica.
+    Su presencia en este texto NO prueba que sus ejecutores estén conectados.
+    Referencias: chat router/01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml;
+    router inteligente universal/integration/chat_mvp/tool_contracts.py;
+    chat router/wordflow loop code Yaiwes/wordflow_loop/orchestrator_adapters.py.
+    Deepseek Harness es base de plugins del chat; Hermes/OpenClaw siguen permanentes.
+    Usar solo puentes de plugin sin modificar Router; no LFS, Actions ni instalación directa.
+    El plugin harness requiere URL de runtime real; Fables hoy solo valida fichas.
+    El sufijo 32gb del ID es histórico: cómputo permitido solo HF cpu-basic 16 GB.
+steps:
+  - id: inspeccionar
+    owner_role: claude_code
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-17-inspeccionar.result.json
+    task: |
+      Identificar los executors reales de Deepseek Harness, Fables y OpenCode/Claude Code,
+      su entrada/salida y los gaps; citar rutas, pruebas y fuente fijada. No tratar un
+      manifest o un mock como runtime. Si falta un ejecutor, informar GAP.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: integrar
+    owner_role: opencode
+    source_mutation: true
+    result_path: chat router/11-EVIDENCIA/delegacion-17-integrar.result.json
+    task: |
+      Solo con ejecutores realmente disponibles: reutilizar el adapter existente para
+      pasar chat -> Deepseek Harness -> Wordflow -> Fables; conservar fallback fail-closed
+      y el chat con Hermes/OpenClaw sin Wordflow. Enumerar los archivos cambiados o
+      señalar GAP: MOTOR_NO_DISPONIBLE; nunca afirmar cambios solo por describirlos.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: verificar
+    owner_role: claude_code
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-17-verificar.result.json
+    task: |
+      Probar invocación real, resultado tipado, rechazo de runtime ausente y read-back
+      del ledger; entregar comandos, salida reproducible y estado PASS/BLOCKED.
+      Una respuesta textual no constituye prueba de ejecución.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+edges: [[inspeccionar, integrar], [integrar, verificar]]

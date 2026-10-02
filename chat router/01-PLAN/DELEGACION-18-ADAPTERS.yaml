@@ -1,0 +1,56 @@
+schema: yaiwes.chain-draft/v1
+write_policy:
+  status: BLOCKED_UNTIL_ENFORCED
+  output_schema: yaiwes.result/v1
+  sheriff: chat router/05-AGENTES/gobierno/sheriff.py
+  sentinel: chat router/05-AGENTES/gobierno/sentinel.py
+  source_write_paths:
+    - chat router/wordflow loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py
+input_block: |
+  "Usa todos los agentes que te nombre"
+  "no Reescribes el code lo copias con el motor y cableado nada monolitico"
+  Misión completa: cerrar invocación O4-07..14 y revisión final sin falsos PASS.
+agent:
+  id: agent-18-chat-final-auditor
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+context:
+  text: |
+    Rol solicitado: Codex = revisor-corrector final, no autor de veredicto
+    automático. Su executor todavía debe verificarse.
+    Código: chat router/wordflow loop code Yaiwes/wordflow_loop/orchestrator_adapters.py.
+    Rowboat y demás adapters fallan RUNTIME_UNAVAILABLE cuando falta comando;
+    no convertir catálogos o simulaciones en invocación real. No usar Router
+    salvo puente de plugin autorizado; no modificar Router ni usar Actions/LFS.
+steps:
+  - id: inventariar
+    owner_role: opencode
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-18-inventariar.result.json
+    task: |
+      Mapear O4-07..14 a adapter, fuente, comando configurado, entrada, salida
+      tipada y prueba existente. Registrar cada RUNTIME_UNAVAILABLE y ruta de
+      ejecución real sin instalar dependencias por vías prohibidas.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: ejercitar
+    owner_role: opencode
+    source_mutation: true
+    result_path: chat router/11-EVIDENCIA/delegacion-18-ejercitar.result.json
+    task: |
+      Con runtimes verificados, invocar cada adapter con TaskEnvelope real,
+      evidencia hash y ledger; corregir quirúrgicamente solo contratos rotos.
+      No marcar cerrado un adapter por disponer de su directorio o manifest.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: dictamen
+    owner_role: codex
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-18-dictamen.result.json
+    task: |
+      Codex revisa el diff y prueba fallos de identidad, hash y runtime ausente;
+      entregar tabla por O4-07..14 con comando, salida, read-back y GAP.
+      PASS por nodo solo con evidencia de ejecución comprobable por otro actor.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+edges: [[inventariar, ejercitar], [ejercitar, dictamen]]
