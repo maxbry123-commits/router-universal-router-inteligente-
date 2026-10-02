@@ -1,0 +1,31 @@
+schema: yaiwes.chain/v2
+request_id: req-50-meta-code-smoke
+agent:
+  id: meta_code
+  framework: openai-agents
+input_block: |
+  MVP de nueve workers: ejecuta solo esta tarea dentro de write_scope.
+  Produce chat router/11-EVIDENCIA/delegacion-50-meta-code-xray/STATE.json como JSON físico. Distingue observed, expected, present,
+  missing, contradictions y not_verified. No declares nada activo sin evidencia.
+write_scope:
+  - chat router/11-EVIDENCIA/delegacion-50-meta-code-xray
+tests:
+  - [python, -c, "import json,pathlib; s=json.loads(pathlib.Path('chat router/11-EVIDENCIA/delegacion-50-meta-code-xray/STATE.json').read_text()); assert s['schema']=='yaiwes.agent-state/v1'; assert s['agent_id']=='meta_code'; assert s['request_id']=='req-50-meta-code-smoke'"]
+steps:
+  - id: inventariar
+    task: |
+      Lee archivos relevantes bajo chat router/01-PLAN si están materializados.
+      Ejecuta run_tests primero; debe fallar porque STATE.json todavía no existe.
+  - id: producir
+    task: |
+      Escribe chat router/11-EVIDENCIA/delegacion-50-meta-code-xray/STATE.json con schema yaiwes.agent-state/v1, agent_id meta_code,
+      request_id req-50-meta-code-smoke, observed, expected, present, missing, contradictions,
+      not_verified, source_refs, artifact_sha256 y checked_at. source_refs solo
+      debe listar rutas reales leídas; artifact_sha256 debe usar SHA-256 de esos bytes.
+  - id: verificar
+    task: |
+      Ejecuta run_tests y corrige STATE.json hasta que pase. No modifiques tests,
+      controlador ni Router core.
+edges:
+  - [inventariar, producir]
+  - [producir, verificar]
