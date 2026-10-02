@@ -1,0 +1,28 @@
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-3",
+  "modelo": "Sol 🚀 1",
+  "rol": "P2: conectar como herramientas las 4 capacidades ya descargadas (no son agentes ni staff)",
+  "espera": "EQUIPO-2:H-04 CERRADO",
+  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json"],
+  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": ["A-01", "A-02", "A-03"],
+  "cola": [
+    {"id": "A-01", "tarea": "anthropic-skills: contrato de herramienta (capacidad, no staff) vía los contracts del orquestador", "estado": "PENDIENTE"},
+    {"id": "A-02", "tarea": "scrapling: contrato de herramienta", "estado": "PENDIENTE"},
+    {"id": "A-03", "tarea": "scrapegraph-ai: contrato de herramienta", "estado": "PENDIENTE"},
+    {"id": "A-04", "tarea": "agent-reach: contrato de herramienta", "estado": "PENDIENTE"},
+    {"id": "A-05", "tarea": "Prueba real de anthropic-skills con 1 entrada; guardar evidencia", "estado": "PENDIENTE"},
+    {"id": "A-06", "tarea": "Prueba real de scrapling con 1 entrada; guardar evidencia", "estado": "PENDIENTE"},
+    {"id": "A-07", "tarea": "Prueba real de scrapegraph-ai con 1 entrada; guardar evidencia", "estado": "PENDIENTE"},
+    {"id": "A-08", "tarea": "Prueba real de agent-reach con 1 entrada; guardar evidencia", "estado": "PENDIENTE"},
+    {"id": "A-09", "tarea": "Registrar las 4 en el capability map (ComponentAdapter fail-closed)", "estado": "PENDIENTE"},
+    {"id": "A-10", "tarea": "Añadir las 4 a skills_schema (.dag.yaml)", "estado": "PENDIENTE"},
+    {"id": "A-11", "tarea": "Test de contrato: si falta una capacidad, falla cerrado", "estado": "PENDIENTE"},
+    {"id": "A-12", "tarea": "Lista de GAPs de P2 con motivo e intento de arreglo", "estado": "PENDIENTE"}
+  ],
+  "resultado": [],
+  "bitacora": [],
+  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+}
