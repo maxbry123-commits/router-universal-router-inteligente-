@@ -1,0 +1,1 @@
+{"agent_id": "grok", "artifacts": {}, "base_sha": "bf9d1cf543b041a1401198fada1adfa488f969fb", "chain_sha256": "94e2fc143683d67276bbfd5141fda83d15c325c37471a91a431e4a0e4f9221c1", "done": [], "model": "gpt-4.1-mini", "pid": 59, "request_id": "req-49-xray-smoke", "state": "RUNNING", "updated_at_unix": 1790914779}
