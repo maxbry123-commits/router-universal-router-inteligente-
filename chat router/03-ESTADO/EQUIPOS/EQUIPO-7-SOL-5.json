@@ -4,25 +4,225 @@
   "modelo": "Sol 👾 5",
   "rol": "P8: tests finales, evidencia global y README de arquitectura; registrar los flags externos (P7) sin detener nada",
   "espera": "EQUIPO-2:H-04 CERRADO (E-09 en adelante espera además a que cierren los equipos 1 a 6)",
-  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/03-ESTADO/EQUIPOS/ (leer los 8 JSON)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json"],
-  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face", "modificar tests upstream stale"],
-  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
-  "ronda_actual": ["E-01", "E-02", "E-03"],
-  "cola": [
-    {"id": "E-01", "tarea": "Suite del loop (base 267 pass / 3 stale): correr y anotar", "estado": "PENDIENTE"},
-    {"id": "E-02", "tarea": "Suite seals_core (base 44/45): correr y anotar", "estado": "PENDIENTE"},
-    {"id": "E-03", "tarea": "Clasificar los 5 fallos de la suite ampliada (GitHub E2E 502 y 4 de configuración/modelos): causa de cada uno", "estado": "PENDIENTE"},
-    {"id": "E-04", "tarea": "Ruff: correr y anotar", "estado": "PENDIENTE"},
-    {"id": "E-05", "tarea": "Lista de tests que quedan stale (upstream) con su motivo; no se tocan", "estado": "PENDIENTE"},
-    {"id": "E-06", "tarea": "Registrar los flags externos P7 (N-1.1, N-1.3, N-1.4, N-2.12, N-2.13) como GAP, sin stop", "estado": "PENDIENTE"},
-    {"id": "E-07", "tarea": "Borrador de README-ARQUITECTURA a partir de ROOT-MAP-T11", "estado": "PENDIENTE"},
-    {"id": "E-08", "tarea": "Esperar el cierre de los equipos 1 a 6 (solo leer sus JSON)", "estado": "PENDIENTE"},
-    {"id": "E-09", "tarea": "Suite completa ordenada final", "estado": "PENDIENTE"},
-    {"id": "E-10", "tarea": "Evidencia global (path + sha256 de cada resultado)", "estado": "PENDIENTE"},
-    {"id": "E-11", "tarea": "README-ARQUITECTURA final", "estado": "PENDIENTE"},
-    {"id": "E-12", "tarea": "Informe final y GAPs", "estado": "PENDIENTE"}
+  "alcance": [
+    "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)",
+    "chat router/03-ESTADO/EQUIPOS/ (leer los 8 JSON)",
+    "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json"
   ],
-  "resultado": [],
-  "bitacora": [],
-  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+  "prohibido": [
+    "router inteligente universal/ (no tocar el Router)",
+    "LFS git",
+    "GitHub Actions",
+    "Hugging Face",
+    "modificar tests upstream stale"
+  ],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": [
+    "E-01",
+    "E-02",
+    "E-03"
+  ],
+  "cola": [
+    {
+      "id": "E-01",
+      "tarea": "Suite del loop (base 267 pass / 3 stale): correr y anotar",
+      "estado": "BLOQUEADO"
+    },
+    {
+      "id": "E-02",
+      "tarea": "Suite seals_core (base 44/45): correr y anotar",
+      "estado": "BLOQUEADO"
+    },
+    {
+      "id": "E-03",
+      "tarea": "Clasificar los 5 fallos de la suite ampliada (GitHub E2E 502 y 4 de configuración/modelos): causa de cada uno",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "E-04",
+      "tarea": "Ruff: correr y anotar",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "E-05",
+      "tarea": "Lista de tests que quedan stale (upstream) con su motivo; no se tocan",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "E-06",
+      "tarea": "Registrar los flags externos P7 (N-1.1, N-1.3, N-1.4, N-2.12, N-2.13) como GAP, sin stop",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "E-07",
+      "tarea": "Borrador de README-ARQUITECTURA a partir de ROOT-MAP-T11",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "E-08",
+      "tarea": "Esperar el cierre de los equipos 1 a 6 (solo leer sus JSON)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "E-09",
+      "tarea": "Suite completa ordenada final",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "E-10",
+      "tarea": "Evidencia global (path + sha256 de cada resultado)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "E-11",
+      "tarea": "README-ARQUITECTURA final",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "E-12",
+      "tarea": "Informe final y GAPs",
+      "estado": "PENDIENTE"
+    }
+  ],
+  "resultado": [
+    {
+      "id_tarea": "E-01",
+      "equipo": "EQUIPO-7",
+      "ronda": 1,
+      "estado": "BLOQUEADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T08:43:41.795Z",
+      "accion": "Se hizo el preflight de la suite del loop; la corrida no pudo iniciarse por falta de checkout y entorno ejecutable.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "sha256": "ebb06dd354867d275d951c1a3f6b00132e3b99a4af312f1f2124292829f1dcae"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+          "sha256": "f05dedc471788604e9485907a7c0b0e7379d8d973039b41e1429290de5a6bd63"
+        }
+      ],
+      "prueba_real": {
+        "comando": "test -d ~/.venv-riu; buscar checkout local; git ls-remote --heads https://github.com/maxbry123-commits/router-universal-router-inteligente-.git devin/1790824641-chat-agent-plan",
+        "ok": false,
+        "salida_resumen": "venv ausente; checkout ausente; git ls-remote falló por resolución DNS. pytest no se inició y no se registraron cifras base."
+      },
+      "gap": {
+        "motivo": "No hay checkout local ni ~/.venv-riu y el shell no tiene resolución de red hacia github.com.",
+        "intento_fix": "Se verificó venv/checkout y se intentó git ls-remote sin usar GitHub Actions ni Hugging Face.",
+        "necesita": "Sesión ejecutable con checkout de la rama y ~/.venv-riu disponible."
+      },
+      "siguiente": "Reintentar E-01 solo cuando exista el entorno de proyecto; no avanzar a E-04 en esta ronda."
+    },
+    {
+      "id_tarea": "E-02",
+      "equipo": "EQUIPO-7",
+      "ronda": 1,
+      "estado": "BLOQUEADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T08:43:41.795Z",
+      "accion": "Se hizo el preflight de seals_core; la corrida no pudo iniciarse por falta de checkout y entorno ejecutable.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "sha256": "ebb06dd354867d275d951c1a3f6b00132e3b99a4af312f1f2124292829f1dcae"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+          "sha256": "29dd89e07838ffb35bf46aa67c331804889f4fd473ae597df1303ea30588ada7"
+        }
+      ],
+      "prueba_real": {
+        "comando": "test -d ~/.venv-riu; buscar checkout local; verificar acceso git al repo antes de PYTHONPATH=seals_core pytest",
+        "ok": false,
+        "salida_resumen": "venv ausente; checkout ausente; acceso git del shell no disponible. pytest seals_core no se inició y no se registraron cifras base."
+      },
+      "gap": {
+        "motivo": "No hay checkout local ni ~/.venv-riu y el shell no tiene resolución de red hacia github.com.",
+        "intento_fix": "Se verificó venv/checkout y conectividad git sin usar GitHub Actions ni Hugging Face.",
+        "necesita": "Sesión ejecutable con checkout de la rama y ~/.venv-riu disponible."
+      },
+      "siguiente": "Reintentar E-02 solo cuando exista el entorno de proyecto; no avanzar a E-04 en esta ronda."
+    },
+    {
+      "id_tarea": "E-03",
+      "equipo": "EQUIPO-7",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T08:43:41.795Z",
+      "accion": "Se clasificaron las causas documentadas de cada fallo del baseline de la suite ampliada sin tocar Router ni tests.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/HANDOFF.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/HANDOFF.md",
+          "sha256": "2e3a3c116c1067d0453cccdb3b8615e4904f6f6faf27b0e786dde2e709efcc77"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/PLAN-ACCION-XRAY.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/PLAN-ACCION-XRAY.md",
+          "sha256": "0c1297037be998ba87b22adcefe61e4156d06365fa8d80d872f8ab5c6ed9f2c7"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
+          "sha256": "1b604cb98f5da96a26b85c5f5b162b5d748ed0bd582f4936fcd7fa127a46d973"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comparar chat router/03-ESTADO/HANDOFF.md con chat router/01-PLAN/PLAN-ACCION-XRAY.md y separar cada causa documentada",
+        "ok": true,
+        "salida_resumen": "Causas clasificadas por transporte externo, catálogo de modelos, política sdk y dos desalineaciones de proveedor openai; suite ampliada no rerun."
+      },
+      "gap": null,
+      "siguiente": "Esperar nueva ronda; E-04 y posteriores quedan sin ejecutar."
+    }
+  ],
+  "bitacora": [
+    {
+      "fecha_utc": "2026-10-02T08:43:41.795Z",
+      "id_tarea": "E-01",
+      "evento": "Preflight real: sin checkout/venv; pytest no iniciado; BLOQUEADO con GAP de entorno."
+    },
+    {
+      "fecha_utc": "2026-10-02T08:43:41.795Z",
+      "id_tarea": "E-02",
+      "evento": "Preflight real: sin checkout/venv; pytest seals_core no iniciado; BLOQUEADO con GAP de entorno."
+    },
+    {
+      "fecha_utc": "2026-10-02T08:43:41.795Z",
+      "id_tarea": "E-03",
+      "evento": "Clasificación causal documental completada y evidencia E-03.txt creada; CERRADO."
+    }
+  ],
+  "handoff": {
+    "objetivo": "Cerrar únicamente la RONDA 1 de EQUIPO-7: E-01, E-02 y E-03.",
+    "estado": "RONDA 1 registrada: E-01 y E-02 BLOQUEADO por entorno; E-03 CERRADO por clasificación documental.",
+    "archivos": [
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt"
+    ],
+    "cambios": [
+      "Se registraron resultados E-01..E-03 y estados de cola.",
+      "Se creó evidencia separada para cada tarea de la ronda."
+    ],
+    "fallos": [
+      "E-01: no existe checkout local ni ~/.venv-riu; shell sin resolución de github.com.",
+      "E-02: mismo bloqueo de entorno; pytest seals_core no se inició."
+    ],
+    "siguiente": "SALIR y esperar nueva ronda. No ejecutar E-04 ni posteriores. Reintentar E-01/E-02 solo con checkout y ~/.venv-riu."
+  }
 }

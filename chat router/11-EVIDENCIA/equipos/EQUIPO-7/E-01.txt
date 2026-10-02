@@ -1,0 +1,10 @@
+EQUIPO-7 · RONDA 1 · E-01
+Tarea: Suite del loop.
+Comando requerido: cd "chat router/📂 workflow Loops code Yaiwes" && source ~/.venv-riu/bin/activate && pytest runtime/tests -q
+Resultado de preflight real:
+- ~/.venv-riu: ABSENT
+- checkout local del repo: ABSENT
+- git ls-remote al repo: FALLÓ — Could not resolve host: github.com
+Conclusión: pytest NO se inició. No se registran cifras base como resultado nuevo.
+Estado: BLOQUEADO.
+GAP: se necesita una sesión con checkout de la rama y el entorno ~/.venv-riu disponible.

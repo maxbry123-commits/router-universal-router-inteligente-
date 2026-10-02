@@ -1,0 +1,10 @@
+EQUIPO-7 · RONDA 1 · E-02
+Tarea: Suite seals_core.
+Comando requerido: ejecutar pytest de seals_core desde backend/Seals team YAIWES con PYTHONPATH=seals_core.
+Resultado de preflight real:
+- ~/.venv-riu: ABSENT
+- checkout local del repo: ABSENT
+- git ls-remote al repo: FALLÓ — Could not resolve host: github.com
+Conclusión: pytest NO se inició. No se registran cifras base como resultado nuevo.
+Estado: BLOQUEADO.
+GAP: se necesita una sesión con checkout de la rama y el entorno ~/.venv-riu disponible.
