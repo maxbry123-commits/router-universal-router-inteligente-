@@ -1,0 +1,18 @@
+# ORQUESTADOR DE TRABAJO — cómo trabajan los agentes (según las instrucciones del Director)
+# Fuente: chat router/INPUT-BLOCK-VERBATIM-*.md (M2, M4, M6, M7, M16, M27, M28) + plan de 4 objetivos (repo agentes, Claude notas/PLAN-OPUS).
+# Autor: Opus. 2026-09-27. Pequeño y ejecutable: una orden entra por el chat → sale un resultado verificado al chat y al Crazy Wall.
+schema: yaiwes.orquestador/v1
+
+reglas_del_director_para_los_agentes:   # cómo deben trabajar, en sus palabras (resumen fiel)
+  - "La orden NO es una tarea simple: es una cadena completa de tareas de principio a fin (M2.4)."
+  - "Opus es el cerebro: planifica, reparte, audita GAPs; los agentes ejecutan (M2.2)."
+  - "Todo en DSL DAG determinista; lo no resuelto = GAP, nunca inventar (reglas)."
+  - "Centinela/supervisor/juez/guardián con watchdog: vigila cada 5-10 min, reactiva al que se para, resuelve GAPs (M2.6, M7)."
+  - "Cada agente con su micro sistema: CLAUDE.md, MEMORIA.md, SKILLS.md, HANDOFF.md, inbox/ (M6, M16)."
+  - "handoff.md automático: objetivo, estado, archivos, cambios, intentos, fallos, siguiente paso, con trazabilidad en GitHub (M16)."
+  - "Puertas obligatorias en código (no skills informativos): ECC, Prompt Master, Ponytail, Agent Skills (M7)."
+  - "Cadena: Rowboat orquesta, Ruflo mueve el flujo, Claude Code diseña, Grok ejecuta, Claude Code revisa, los 4 de Meta mejoran (M27 paso 4)."
+  - "Rutas IA: NVIDIA → Cerebras → Groq → DeepSeek V4 Flash al final; sin APIs de Anthropic (M28)."
+  - "Todo centralizado en el chat; el Director activa con un botón, no solo conversando (M7)."
+
+[... resto completo ...]
