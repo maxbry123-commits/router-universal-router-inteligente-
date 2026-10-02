@@ -1,0 +1,28 @@
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-2",
+  "modelo": "Haiku",
+  "rol": "RONDA 0: organizar el repo. Mover y cablear lo sencillo. Solo copia con motor_3; borra únicamente con hash verificado",
+  "espera": null,
+  "alcance": ["chat router/ (rama devin/1790824641-chat-agent-plan)", "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "Devin notas.md"],
+  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face", "editar a mano STATE.json, BITACORA.jsonl, CRAZY_WALL.json"],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. NO borrar nada hasta que la copia tenga el mismo hash que el original (0 diferencias). Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": ["H-01", "H-02", "H-03"],
+  "cola": [
+    {"id": "H-01", "tarea": "Inventario (solo listar, sin mover nada): archivos y carpetas fuera de lugar dentro de chat router/; escribir la lista en resultado", "estado": "PENDIENTE"},
+    {"id": "H-02", "tarea": "Mapa de destino: para cada ítem de H-01, a qué subcarpeta de RAIZ-WL va (o si se queda donde está); escribir el mapa en resultado", "estado": "PENDIENTE"},
+    {"id": "H-03", "tarea": "Crear RAIZ-WL copiando con motor_3 la carpeta 'wordflow loop code Yaiwes/' (hash + read-back; no mover, no borrar)", "estado": "PENDIENTE"},
+    {"id": "H-04", "tarea": "Segunda pasada: comparar hash origen vs destino; 0 diferencias para CERRADO. Al cerrar, los demás equipos pueden empezar", "estado": "PENDIENTE"},
+    {"id": "H-05", "tarea": "Copiar con motor_3 la carpeta duplicada '➡️📂 Wordflow LOOP Yaiwes/' dentro de RAIZ-WL (sin borrar)", "estado": "PENDIENTE"},
+    {"id": "H-06", "tarea": "Actualizar las rutas de ROOT-MAP-T11.yaml hacia RAIZ-WL", "estado": "PENDIENTE"},
+    {"id": "H-07", "tarea": "P5: copiar con motor_3 las 3 skills frontend de 'Wordflow loop code Yaiwes/skills' (big-AGI) a 'Skills agente/'; si la fuente no está, traerla con el motor de descarga", "estado": "PENDIENTE"},
+    {"id": "H-08", "tarea": "P6 N-2.11: biblioteca RAG con sus 13 subcarpetas, solo con contenido real (no crear carpetas vacías)", "estado": "PENDIENTE"},
+    {"id": "H-09", "tarea": "Buscar referencias a la ruta vieja y corregirlas SOLO en archivos escritos a mano (ROOT-MAP, memoria.md, README). HANDOFF.md fuera del bloque State Hub. Tests: reportar, no tocar", "estado": "PENDIENTE"},
+    {"id": "H-10", "tarea": "Borrar los originales viejos SOLO si H-04 dio 0 diferencias; en un commit separado; anotar qué se borró", "estado": "PENDIENTE"},
+    {"id": "H-11", "tarea": "Segunda pasada de organización: lo que siga suelto fuera de RAIZ-WL; anotarlo", "estado": "PENDIENTE"},
+    {"id": "H-12", "tarea": "Handoff final del equipo, nota en Devin notas.md y checkpoint con watchdog_checkpoint.py", "estado": "PENDIENTE"}
+  ],
+  "resultado": [],
+  "bitacora": [],
+  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+}
