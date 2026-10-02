@@ -1,0 +1,7 @@
+# PLAN DSL DAG — CHAT + EQUIPO DE AGENTES + INFRAESTRUCTURA (Router 16 GB)
+# Autor: Opus (orquestador). Director: Max. Fecha: 2026-09-26.
+# Fuente de las instrucciones: chat router/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL*.md (partes 1, 3, 4). Estado real: chat router/HANDOFF-MAESTRO.md
+# Nivel: mismo formato que el plan de 4 objetivos (nodos con quién ejecuta, audita y repara; entrada, salida verificable, cierre).
+schema: yaiwes.plan/v2
+
+[... contenido completo ...]
