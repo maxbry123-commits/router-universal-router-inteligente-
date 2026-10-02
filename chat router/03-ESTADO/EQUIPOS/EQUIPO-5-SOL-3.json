@@ -1,0 +1,29 @@
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-5",
+  "modelo": "Sol 🐻 3",
+  "rol": "Lote SKILLS-UI: las 28 skills y componentes ya descargados, convertidos en skills_schema y contratos de herramienta (capacidades, no staff). Descargar no es integrar",
+  "espera": "EQUIPO-2:H-04 CERRADO",
+  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "router inteligente universal/Componente open soure router inteligente universal/ (SOLO LEER)", "chat router/11-EVIDENCIA/motor2-skills-ui/ (SOLO LEER)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json"],
+  "prohibido": ["router inteligente universal/ salvo leer los componentes (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": ["C-01", "C-02", "C-03"],
+  "lote_28": ["npxskillui", "recordly", "rare-ui", "shadcn-skills", "firecrawl", "firecrawl-cli", "firecrawl-mcp-server", "firecrawl-skills", "emilkowalski-skills", "impeccable", "getdesign", "open-design", "headroom", "ponytail", "find-skills", "superpowers", "get-shit-done", "claude-mem", "context-mode", "local-ultra-review", "one-skill-to-rule-them-all", "motionsites", "caret-desktop", "onlook", "plasmic", "webstudio", "taste-skill", "magic-mcp"],
+  "cola": [
+    {"id": "C-01", "tarea": "Leer el veredicto de motor_2 de los 28 repos (11-EVIDENCIA/motor2-skills-ui/queue.json)", "estado": "PENDIENTE"},
+    {"id": "C-02", "tarea": "Clasificar cada repo: skill, herramienta o solo referencia; escribir la tabla en resultado", "estado": "PENDIENTE"},
+    {"id": "C-03", "tarea": "Grupo Firecrawl (firecrawl, firecrawl-cli, firecrawl-mcp-server, firecrawl-skills): skills_schema + contrato de herramienta", "estado": "PENDIENTE"},
+    {"id": "C-04", "tarea": "Grupo contexto (context-mode, headroom, ponytail, claude-mem): contrato de herramienta", "estado": "PENDIENTE"},
+    {"id": "C-05", "tarea": "Grupo diseño 1 (shadcn-skills, rare-ui, taste-skill, emilkowalski-skills, impeccable): skills_schema", "estado": "PENDIENTE"},
+    {"id": "C-06", "tarea": "Grupo diseño 2 (getdesign, open-design, npxskillui, magic-mcp): skills_schema o contrato", "estado": "PENDIENTE"},
+    {"id": "C-07", "tarea": "Grupo método (superpowers, get-shit-done, find-skills, local-ultra-review, one-skill-to-rule-them-all): skills_schema", "estado": "PENDIENTE"},
+    {"id": "C-08", "tarea": "Grupo apps (caret-desktop, onlook, plasmic, webstudio, motionsites, recordly): solo registrar capacidades; no integrar si es app de escritorio", "estado": "PENDIENTE"},
+    {"id": "C-09", "tarea": "Crawlers y compresores de contexto como herramientas del wordflow, conectados al Router principal por configuración (sin tocar el Router)", "estado": "PENDIENTE"},
+    {"id": "C-10", "tarea": "Test de contrato por grupo (falla cerrado)", "estado": "PENDIENTE"},
+    {"id": "C-11", "tarea": "Registrar todo en el capability map", "estado": "PENDIENTE"},
+    {"id": "C-12", "tarea": "Lista de GAPs: lo descargado que no se pudo integrar y por qué", "estado": "PENDIENTE"}
+  ],
+  "resultado": [],
+  "bitacora": [],
+  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+}
