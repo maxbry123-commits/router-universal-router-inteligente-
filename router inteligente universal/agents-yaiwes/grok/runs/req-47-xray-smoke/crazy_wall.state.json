@@ -1,0 +1,1 @@
+{"agent_id": "grok", "artifacts": {}, "base_sha": "0206fe1c8dc70015e5d9ae471175e3c2eb1f28bc", "chain_sha256": "e306b2ff4f8e28453f7250f05d006512302007ada4466ae7274d531dcaee66c2", "done": [], "model": "openai/gpt-oss-120b:fireworks-ai", "pid": 59, "request_id": "req-47-xray-smoke", "state": "RUNNING", "updated_at_unix": 1790914167}
