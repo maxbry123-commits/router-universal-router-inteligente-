@@ -4,25 +4,297 @@
   "modelo": "Sol 🚀 1",
   "rol": "P2: conectar como herramientas las 4 capacidades ya descargadas (no son agentes ni staff)",
   "espera": "EQUIPO-2:H-04 CERRADO",
-  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json"],
-  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
-  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
-  "ronda_actual": ["A-01", "A-02", "A-03"],
-  "cola": [
-    {"id": "A-01", "tarea": "anthropic-skills: contrato de herramienta (capacidad, no staff) vía los contracts del orquestador", "estado": "PENDIENTE"},
-    {"id": "A-02", "tarea": "scrapling: contrato de herramienta", "estado": "PENDIENTE"},
-    {"id": "A-03", "tarea": "scrapegraph-ai: contrato de herramienta", "estado": "PENDIENTE"},
-    {"id": "A-04", "tarea": "agent-reach: contrato de herramienta", "estado": "PENDIENTE"},
-    {"id": "A-05", "tarea": "Prueba real de anthropic-skills con 1 entrada; guardar evidencia", "estado": "PENDIENTE"},
-    {"id": "A-06", "tarea": "Prueba real de scrapling con 1 entrada; guardar evidencia", "estado": "PENDIENTE"},
-    {"id": "A-07", "tarea": "Prueba real de scrapegraph-ai con 1 entrada; guardar evidencia", "estado": "PENDIENTE"},
-    {"id": "A-08", "tarea": "Prueba real de agent-reach con 1 entrada; guardar evidencia", "estado": "PENDIENTE"},
-    {"id": "A-09", "tarea": "Registrar las 4 en el capability map (ComponentAdapter fail-closed)", "estado": "PENDIENTE"},
-    {"id": "A-10", "tarea": "Añadir las 4 a skills_schema (.dag.yaml)", "estado": "PENDIENTE"},
-    {"id": "A-11", "tarea": "Test de contrato: si falta una capacidad, falla cerrado", "estado": "PENDIENTE"},
-    {"id": "A-12", "tarea": "Lista de GAPs de P2 con motivo e intento de arreglo", "estado": "PENDIENTE"}
+  "alcance": [
+    "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)",
+    "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json"
   ],
-  "resultado": [],
-  "bitacora": [],
-  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+  "prohibido": [
+    "router inteligente universal/ (no tocar el Router)",
+    "LFS git",
+    "GitHub Actions",
+    "Hugging Face"
+  ],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": [
+    "A-01",
+    "A-02",
+    "A-03"
+  ],
+  "cola": [
+    {
+      "id": "A-01",
+      "tarea": "anthropic-skills: contrato de herramienta (capacidad, no staff) vía los contracts del orquestador",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "A-02",
+      "tarea": "scrapling: contrato de herramienta",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "A-03",
+      "tarea": "scrapegraph-ai: contrato de herramienta",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "A-04",
+      "tarea": "agent-reach: contrato de herramienta",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "A-05",
+      "tarea": "Prueba real de anthropic-skills con 1 entrada; guardar evidencia",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "A-06",
+      "tarea": "Prueba real de scrapling con 1 entrada; guardar evidencia",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "A-07",
+      "tarea": "Prueba real de scrapegraph-ai con 1 entrada; guardar evidencia",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "A-08",
+      "tarea": "Prueba real de agent-reach con 1 entrada; guardar evidencia",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "A-09",
+      "tarea": "Registrar las 4 en el capability map (ComponentAdapter fail-closed)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "A-10",
+      "tarea": "Añadir las 4 a skills_schema (.dag.yaml)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "A-11",
+      "tarea": "Test de contrato: si falta una capacidad, falla cerrado",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "A-12",
+      "tarea": "Lista de GAPs de P2 con motivo e intento de arreglo",
+      "estado": "PENDIENTE"
+    }
+  ],
+  "resultado": [
+    {
+      "id_tarea": "A-01",
+      "equipo": "EQUIPO-3",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol (EQUIPO-3 Sol 🚀 1)",
+      "fecha_utc": "2026-10-02T08:50:13.923Z",
+      "accion": "Se registró anthropic-skills como capacidad de herramienta fail-closed y se añadió su contrato DAG, sin tocar el router.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/anthropic-skills/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/anthropic-skills/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "sha256": "24f72038a5dce397658c021dee697dd1e8d5b6f4a4661a6e915a1000d2cd84da"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/anthropic-skills/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/anthropic-skills/code/README.md",
+          "sha256": "2fb9c4cc026366ea6e21c60cb23c908a4d27c62071819cc06beffaac102d0694"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "98a4ef63511b9d5a2376398625ef0a494f94f235d400b90d0d2c7b402f55144c",
+          "commit": "f9591b84"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+          "sha256": "e4a3994e08ec2ccac012ecfb980628edc8f2d2fa11dfd708afd8260e1954db3c",
+          "commit": "1bec72f8"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_skills_schema.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/tests/test_skills_schema.py",
+          "sha256": "36f722e186a09c318b6dc9ac107f21c0c05520c1ee0564de8ceccb01d0af38df",
+          "commit": "fa97c09b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+          "sha256": "28dc629b0fbdebfe9fe328916db355b1ce7c5fd6979abe2aa71ee1668d1f7c4e"
+        }
+      ],
+      "prueba_real": {
+        "comando": "read-back COMPONENT_CAPABILITIES[\"anthropic-skills\"] + anthropic-skills.dag.yaml; comprobar command_env y campos obligatorios",
+        "ok": true,
+        "salida_resumen": "PASS: capability=agent_skill_instruction_resource_library; command_env=YAIWES_ANTHROPIC_SKILLS_COMMAND; DAG completo; fuente extraction_verified=true."
+      },
+      "gap": null,
+      "siguiente": "A-02"
+    },
+    {
+      "id_tarea": "A-02",
+      "equipo": "EQUIPO-3",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol (EQUIPO-3 Sol 🚀 1)",
+      "fecha_utc": "2026-10-02T08:50:13.923Z",
+      "accion": "Se registró scrapling como capacidad de herramienta fail-closed y se añadió su contrato DAG, sin tocar el router.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapling/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapling/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "sha256": "865f30cce8daa3ac213d86991482b9d9225c27ccf3884a405c58fd9b988ebfed"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapling/code/pyproject.toml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapling/code/pyproject.toml",
+          "sha256": "0d124f6e5af885e5b189fed7a3b7f0c7c87ee7e10fb145c6250906f286e45a27"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "98a4ef63511b9d5a2376398625ef0a494f94f235d400b90d0d2c7b402f55144c",
+          "commit": "f9591b84"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapling.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/scrapling.dag.yaml",
+          "sha256": "c7bb9de749899964b4a1eacb3f9126e8a4af331dcde6be62aa06a329b00a6628",
+          "commit": "4c10714a"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_skills_schema.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/tests/test_skills_schema.py",
+          "sha256": "36f722e186a09c318b6dc9ac107f21c0c05520c1ee0564de8ceccb01d0af38df",
+          "commit": "fa97c09b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+          "sha256": "b52fe367c0fe9d24b0558248a1cd5ea0db1d01dbfc1563542711de857231c2fd",
+          "commit": "d04e5492"
+        }
+      ],
+      "prueba_real": {
+        "comando": "read-back COMPONENT_CAPABILITIES[\"scrapling\"] + scrapling.dag.yaml; comprobar command_env y campos obligatorios",
+        "ok": true,
+        "salida_resumen": "PASS: capability=adaptive_web_scraping_crawling; command_env=YAIWES_SCRAPLING_COMMAND; DAG completo; fuente extraction_verified=true."
+      },
+      "gap": null,
+      "siguiente": "A-03"
+    },
+    {
+      "id_tarea": "A-03",
+      "equipo": "EQUIPO-3",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol (EQUIPO-3 Sol 🚀 1)",
+      "fecha_utc": "2026-10-02T08:50:13.923Z",
+      "accion": "Se registró scrapegraph-ai como capacidad de herramienta fail-closed y se añadió su contrato DAG, sin tocar el router.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapegraph-ai/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapegraph-ai/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "sha256": "9322f0e4fc27b321b50ed69219a19832e691e41d0978cabc2bc6f5bfb13c90fa"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapegraph-ai/code/pyproject.toml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapegraph-ai/code/pyproject.toml",
+          "sha256": "237886e8d26ff692be3708168c97ea101791547b614e2bd4aecba5526055951c"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "98a4ef63511b9d5a2376398625ef0a494f94f235d400b90d0d2c7b402f55144c",
+          "commit": "f9591b84"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+          "sha256": "59f763037e1abb0c618bee9c7be7f2006416e381ca1100d7b6aa01bd6707605a",
+          "commit": "dd1feb92"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_skills_schema.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/tests/test_skills_schema.py",
+          "sha256": "36f722e186a09c318b6dc9ac107f21c0c05520c1ee0564de8ceccb01d0af38df",
+          "commit": "fa97c09b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+          "sha256": "70a9be006433860b225857e5882f8f34b23adaff5ae7417b38c0658fcbfd9e24",
+          "commit": "4b7d1b89"
+        }
+      ],
+      "prueba_real": {
+        "comando": "read-back COMPONENT_CAPABILITIES[\"scrapegraph-ai\"] + scrapegraph-ai.dag.yaml; comprobar command_env y campos obligatorios",
+        "ok": true,
+        "salida_resumen": "PASS: capability=llm_graph_web_document_extraction; command_env=YAIWES_SCRAPEGRAPH_AI_COMMAND; DAG completo; fuente extraction_verified=true."
+      },
+      "gap": null,
+      "siguiente": "SALIR; esperar nueva ronda del Director."
+    }
+  ],
+  "bitacora": [
+    {
+      "fecha_utc": "2026-10-02T08:50:13.923Z",
+      "id_tarea": "A-01",
+      "evento": "CERRADO: anthropic-skills como herramienta fail-closed; read-back PASS; evidencia A-01.txt."
+    },
+    {
+      "fecha_utc": "2026-10-02T08:50:13.923Z",
+      "id_tarea": "A-02",
+      "evento": "CERRADO: scrapling como herramienta fail-closed; read-back PASS; evidencia A-02.txt."
+    },
+    {
+      "fecha_utc": "2026-10-02T08:50:13.923Z",
+      "id_tarea": "A-03",
+      "evento": "CERRADO: scrapegraph-ai como herramienta fail-closed; read-back PASS; evidencia A-03.txt."
+    }
+  ],
+  "handoff": {
+    "objetivo": "Cerrar RONDA 1 de P2: contratos de herramienta A-01, A-02 y A-03.",
+    "estado": "RONDA_1_CERRADA",
+    "archivos": [
+      "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+      "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_skills_schema.py",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapling.dag.yaml",
+      "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json"
+    ],
+    "cambios": [
+      "anthropic-skills, scrapling y scrapegraph-ai registrados en COMPONENT_CAPABILITIES como herramientas fail-closed.",
+      "Tres schemas yaiwes.skill-dag/v1 creados y verificados por read-back.",
+      "test_skills_schema conserva baseline >=24 para permitir extensiones sin falso fallo de conteo.",
+      "Tres evidencias con sha256/provenance registradas."
+    ],
+    "fallos": [],
+    "siguiente": "SALIR. No ejecutar A-04 ni tareas posteriores hasta nueva ronda del Director."
+  }
 }
