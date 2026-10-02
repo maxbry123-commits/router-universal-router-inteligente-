@@ -1,0 +1,28 @@
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-1",
+  "modelo": "Sonnet",
+  "rol": "Lo crítico: conectar de verdad los componentes del orquestador (P1) y la prueba con 3 workers (P3)",
+  "espera": "EQUIPO-2:H-04 CERRADO",
+  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"],
+  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP, no se inventa. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": ["S1-01", "S1-02", "S1-03"],
+  "cola": [
+    {"id": "S1-01", "tarea": "Rowboat: fijar command_env y probar invocación real del adapter (O4-07)", "estado": "PENDIENTE"},
+    {"id": "S1-02", "tarea": "MSAF: command_env + invocación real (O4-08)", "estado": "PENDIENTE"},
+    {"id": "S1-03", "tarea": "Orca: command_env + invocación real (O4-09)", "estado": "PENDIENTE"},
+    {"id": "S1-04", "tarea": "OmniRoute: command_env local + invocación real, sin tocar el Router (O4-10)", "estado": "PENDIENTE"},
+    {"id": "S1-05", "tarea": "DeepSeek Harness: command_env + invocación real (O4-11)", "estado": "PENDIENTE"},
+    {"id": "S1-06", "tarea": "Munder Difflin: command_env + invocación real (O4-12)", "estado": "PENDIENTE"},
+    {"id": "S1-07", "tarea": "Dagu/DBOS: command_env + invocación real (O4-13)", "estado": "PENDIENTE"},
+    {"id": "S1-08", "tarea": "MCP: command_env + invocación real (O4-14)", "estado": "PENDIENTE"},
+    {"id": "S1-09", "tarea": "S-11: prueba real con 3 instancias Seals desde el Wordflow (3 workers aislados, evidencia por worker)", "estado": "PENDIENTE"},
+    {"id": "S1-10", "tarea": "S-12: auditoría de cierre de Seals", "estado": "PENDIENTE"},
+    {"id": "S1-11", "tarea": "Correr la suite del loop y anotar resultado contra la base 267 pass / 3 stale (no tocar tests upstream)", "estado": "PENDIENTE"},
+    {"id": "S1-12", "tarea": "Lista final de GAPs de P1 y P3 con motivo e intento de arreglo", "estado": "PENDIENTE"}
+  ],
+  "resultado": [],
+  "bitacora": [],
+  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+}
