@@ -1,0 +1,2 @@
+Filtro omniroute|deepseek|munder|dagu|dbos|mcp devolvio: MCP-Python-SDK, OmniRoute, firecrawl-mcp-server, magic-mcp, munder-difflin.
+No existe carpeta deepseek. Sin comando ejecutable que lea stdin.
