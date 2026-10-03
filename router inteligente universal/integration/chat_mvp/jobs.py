@@ -30,7 +30,7 @@ def _one(store: Store, owner: str, job: dict[str, Any], executor: Any, agents: d
                        "max_tokens": int(job.get("max_tokens", 1024))}]}
     out: dict[str, Any] = {"id": job["id"], "agent_id": job.get("agent_id"), "model": f"{job['provider']}/{job['model']}", "commit": None, "error": None}
     try:
-        res = dagmod.run_dag(plan, executor, agents=agents, known_providers=set(prov.PROVIDERS))
+        res = dagmod.run_dag(plan, executor, agents=agents, known_providers=set(prov.registry()))
     except dagmod.DagError as exc:
         return {**out, "status": "INVALID", "error": str(exc)}
     node = res["nodes"]["J"]

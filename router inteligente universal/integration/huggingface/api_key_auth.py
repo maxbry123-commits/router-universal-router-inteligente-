@@ -15,16 +15,19 @@ from .keystore_auth import verify_keystore_key
 
 
 def _keys() -> dict[str, str]:
-    raw = os.getenv("RIU_AGENT_API_KEYS", "")
-    if not raw:
-        return {}
-    try:
-        parsed = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError("RIU_AGENT_API_KEYS_INVALID_JSON") from exc
-    if not isinstance(parsed, dict):
-        raise RuntimeError("RIU_AGENT_API_KEYS_INVALID_FORMAT")
-    return {str(key): str(agent) for key, agent in parsed.items()}
+    merged: dict[str, str] = {}
+    for var in ("RIU_AGENT_API_KEYS", "RIU_AGENT_API_KEYS_2"):  # _2: extra keys (harness, door) without rewriting the first secret
+        raw = os.getenv(var, "")
+        if not raw:
+            continue
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(var + "_INVALID_JSON") from exc
+        if not isinstance(parsed, dict):
+            raise RuntimeError(var + "_INVALID_FORMAT")
+        merged.update({str(key): str(agent) for key, agent in parsed.items()})
+    return merged
 
 
 def authenticate_api_key(candidate: str | None) -> str:

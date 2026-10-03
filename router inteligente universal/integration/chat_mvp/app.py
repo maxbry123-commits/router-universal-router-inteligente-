@@ -112,4 +112,21 @@ try:
 except Exception as exc:  # never take the Router down for HF control plane
     logging.getLogger("riu").warning("hf_control_plane no montado: %s", exc)
 
+try:
+    from .control_plane import build_control_router, vault_autounlock
+
+    app.include_router(build_control_router())  # /lab/*, /fichas/*, /hf/*, /vault/autounlock: control maestro (Director 2026-10-03)
+
+    @app.on_event("startup")
+    def _vault_autounlock() -> None:
+        logging.getLogger("riu").warning("banco: %s", vault_autounlock().get("status"))  # never logs values
+except Exception as exc:  # never take the Router down for the control plane
+    logging.getLogger("riu").warning("control_plane no montado: %s", exc)
+try:
+    from .mcp_api import install_mcp
+
+    install_mcp(app)  # /mcp: MCP del Router (streamable HTTP, misma clave)
+except Exception as exc:  # never take the Router down for MCP
+    logging.getLogger("riu").warning("mcp no montado: %s", exc)
+
 app.include_router(gateway.app.router)  # /health, /v1/models, /v1/chat/completions, /chat/models

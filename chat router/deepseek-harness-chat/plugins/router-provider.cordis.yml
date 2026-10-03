@@ -1,0 +1,52 @@
+# DeepSeek Harness -> Router Universal como UNICO proveedor (Director 2026-10-03). Sin DeepSeek API, sin login DeepSeek.
+# Uso (desde la raiz del repo):
+#   MAXBRY_ROUTER_URL=https://<puerta-del-router>/v1/router MAXBRY_ROUTER_API_KEY=<clave del Router> DSH_TELEMETRY_MODE=DISABLED \
+#   dsh headless --patch 'chat router/deepseek-harness-chat/plugins/router-provider.cordis.yml' \
+#                --patch 'chat router/04-MEMORIA/plugin/harness-memoria.cordis.yml' "tarea"
+# Fase 1 de poda: solo disabled (nada se borra); el kernel Cordis, agent loop, tools, skills, sesiones y subagentes quedan igual.
+- id: llm-deepseek
+  disabled: true
+- id: llm-deepseek-account
+  disabled: true
+- id: deepseek-account
+  disabled: true
+- id: session-log-deepseek
+  disabled: true
+- id: plugin-package-inventory-deepseek
+  disabled: true
+- id: web-search-deepseek
+  disabled: true
+- id: tool-web
+  config:
+    search: false
+    fetch: true
+- id: session-telemetry-otel
+  disabled: true
+- id: agent-default-model
+  config:
+    provider: maxbry-router
+    model: auto
+- id: llm-pi-ai
+  config:
+    providers:
+      maxbry-router:
+        displayName: MAXBRY Router Universal
+        apiKeyEnv: MAXBRY_ROUTER_API_KEY
+        api: openai-completions
+        baseURL: !!js process.env.MAXBRY_ROUTER_URL || 'http://127.0.0.1:8000/v1/router'
+        compat:
+          supportsDeveloperRole: false
+          maxTokensField: max_tokens
+        models:
+          - id: auto
+            name: AUTO (cadena del Router)
+            contextWindow: 131072
+            maxTokens: 8192
+          - id: assistants
+            name: ASISTENTES
+            contextWindow: 131072
+            maxTokens: 8192
+          - id: code
+            name: CODIGO
+            contextWindow: 131072
+            maxTokens: 8192

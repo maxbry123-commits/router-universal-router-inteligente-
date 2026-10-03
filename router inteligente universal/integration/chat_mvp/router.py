@@ -247,7 +247,7 @@ def build_router() -> APIRouter:
         chain, _skipped = resilience.resolve_chain("default", datetime.now(timezone.utc))
         auto = {"id": "auto", "label": "Automático (el Router elige el modelo y pasa al siguiente si uno falla)", "configured": bool(chain)}
         return {"live_provider_inference": core.live_enabled(),
-                "providers": [auto] + [{"id": k, "label": v["label"], "configured": prov.configured(k)} for k, v in prov.PROVIDERS.items()]}
+                "providers": [auto] + [{"id": k, "label": v["label"], "configured": prov.configured(k)} for k, v in prov.registry().items()]}
 
     @r.get("/chat/providers/{provider}/models")
     def provider_models(provider: str, _owner: str = Depends(_auth),
@@ -255,7 +255,7 @@ def build_router() -> APIRouter:
         if provider == "auto":  # one pseudo-model: the model is chosen by the chain of the "default" group on every turn
             return {"provider": "auto", "models": [{"label": "Automático", "model_id": "auto", "state": "ROUTER_CHAIN", "certified": False,
                                                     "selectable": True, "suggested": True}]}
-        if provider not in prov.PROVIDERS:
+        if provider not in prov.registry():
             raise HTTPException(status_code=404, detail="PROVIDER_UNKNOWN")
         if provider == "hf":
             rows = selector_models(discovered=core.cached_discovery(), live_enabled=core.live_enabled())["models"]
@@ -276,7 +276,7 @@ def build_router() -> APIRouter:
                    x_provider_key: str | None = Header(default=None, alias="X-Provider-Key")) -> dict[str, Any]:
         st = get_store()
         auto = req.provider == "auto"  # 2026-09-29: Kimi K3 -> GLM 5.3 -> DeepSeek V4 -> Qwen 3.8 (Groq) -> Nemotron, falls to the next by itself
-        if not auto and req.provider not in prov.PROVIDERS:
+        if not auto and req.provider not in prov.registry():
             raise HTTPException(status_code=400, detail="PROVIDER_UNKNOWN")
         if not auto and not req.model:
             raise HTTPException(status_code=400, detail="MODEL_REQUIRED")
@@ -394,7 +394,7 @@ def build_router() -> APIRouter:
         agents = {a["id"]: a["system_prompt"] for a in st.agents()}
         try:
             return await asyncio.to_thread(dagmod.run_dag, req.dag, dag_cli.build_executor(st, owner, keys),
-                                           agents=agents, known_providers=set(prov.PROVIDERS),
+                                           agents=agents, known_providers=set(prov.registry()),
                                            state_emit=ui_bridge._emit_state_event if any(
                                                n.get("type") == "agent" for n in req.dag.get("nodes", [])
                                                if isinstance(n, dict)) else None)

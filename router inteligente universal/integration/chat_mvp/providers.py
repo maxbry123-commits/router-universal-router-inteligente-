@@ -40,6 +40,9 @@ CHAT_TIMEOUT = 90.0
 # Absolute time.monotonic() deadline for the chain option being tried (set by resilience.run_policy; travels through
 # asyncio.run / asyncio.to_thread because both copy the context). None = no deadline.
 ATTEMPT_DEADLINE: contextvars.ContextVar[float | None] = contextvars.ContextVar("riu_attempt_deadline", default=None)
+# OpenAI tool calling (Harness/agents through /v1/router): extra request fields (tools, tool_choice, ...) for the current call.
+# Set by openai_route; travels through asyncio.run / to_thread like ATTEMPT_DEADLINE. None = plain chat (old behaviour).
+EXTRA_PAYLOAD: contextvars.ContextVar[dict[str, Any] | None] = contextvars.ContextVar("riu_extra_payload", default=None)
 
 
 OPENAI_NO_TEMPERATURE = ("gpt-5", "gpt-6", "o1", "o3", "o4")  # solo temperatura por defecto
@@ -59,16 +62,33 @@ class ProviderError(RuntimeError):
         self.status = status
 
 
+def registry() -> dict[str, dict[str, Any]]:
+    """Built-in PROVIDERS + every OpenAI-compatible SDK declared in the Secret Bank providers file (vault_bridge providers.json /
+    RIU_VAULT_PROVIDERS_FILE) with a base_url: a new API added to the bank works without touching this code (Director 2026-10-03)."""
+    merged = dict(PROVIDERS)
+    try:
+        from .vault_bridge import load_providers
+        for name, entry in load_providers().items():
+            if name not in merged and entry.get("base_url"):
+                merged[name] = {"label": name + " (banco)", "base": entry["base_url"].rstrip("/"),
+                                "env": tuple(e for e in (entry.get("env"),) if e)}
+    except Exception:  # noqa: BLE001 - a broken providers file never breaks the built-in providers
+        pass
+    return merged
+
+
 def base_url(provider: str) -> str | None:
     if provider == "local":
         return (os.getenv("RIU_LOCAL_BASE_URL") or "").rstrip("/") or None
-    return PROVIDERS[provider]["base"]
+    entry = registry().get(provider)
+    return entry["base"] if entry else None
 
 
 def env_keys(provider: str) -> list[str]:
     """All distinct non-empty keys of the provider (pool order): unlocked Secret Bank first, then the server environment."""
     seen: list[str] = []
-    candidates = [*vault_hook.provider_keys(provider), *(os.getenv(name) for name in PROVIDERS[provider]["env"])]
+    entry = registry().get(provider) or {"env": ()}
+    candidates = [*vault_hook.provider_keys(provider), *(os.getenv(name) for name in entry["env"])]
     for value in candidates:
         if value and value not in seen:
             seen.append(value)
@@ -98,7 +118,7 @@ def _http(method: str, url: str, key: str | None, body: dict[str, Any] | None, t
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 https URLs from the fixed registry
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace").replace("\n", " ")
+        detail = " ".join(exc.read().decode("utf-8", errors="replace").split())  # compact: the error code fits in the cut
         if key:
             detail = detail.replace(key, "***")  # mask BEFORE cutting: a cut through the key would leave a prefix of it
         raise ProviderError(exc.code, detail[:160]) from exc
@@ -132,11 +152,17 @@ def chat(provider: str, key: str | None, model: str, messages: list[dict[str, st
                                ("max_completion_tokens" if openai else "max_tokens"): max_tokens}
     if temperature is not None and not (openai and model.startswith(OPENAI_NO_TEMPERATURE)):
         payload["temperature"] = temperature
+    extra = EXTRA_PAYLOAD.get()
+    if extra:
+        payload.update({k: v for k, v in extra.items() if k not in payload})
     data = (post or (lambda url, k, b: _http("POST", url, k, b, chat_timeout())))(base + "/chat/completions", key, payload)
     try:
         choice = data["choices"][0]
         content = choice["message"].get("content") or ""
     except (KeyError, IndexError, TypeError) as exc:
         raise ProviderError("BAD_RESPONSE", "no choices in provider response") from exc
-    return {"model": model, "message": {"role": "assistant", "content": content},
+    message: dict[str, Any] = {"role": "assistant", "content": content}
+    if choice["message"].get("tool_calls"):
+        message["tool_calls"] = choice["message"]["tool_calls"]
+    return {"model": model, "message": message,
             "finish_reason": choice.get("finish_reason"), "usage": data.get("usage")}

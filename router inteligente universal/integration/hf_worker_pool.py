@@ -23,7 +23,7 @@ THRESHOLD = float(os.getenv("HF_AUTOSCALE_THRESHOLD", "85"))
 IDLE_SECONDS = int(os.getenv("HF_AUTOSCALE_IDLE_SECONDS", "300"))
 SAMPLE_SECONDS = int(os.getenv("HF_AUTOSCALE_SAMPLE_SECONDS", "10"))
 HOT_SAMPLES = int(os.getenv("HF_AUTOSCALE_HOT_SAMPLES", "3"))
-MAX_WORKERS = int(os.getenv("HF_AUTOSCALE_MAX_WORKERS", "4"))
+MAX_WORKERS = int(os.getenv("HF_AUTOSCALE_MAX_WORKERS", "10"))
 PORT = 8000
 CHILD = os.getenv("HF_AUTOSCALE_CHILD", "0") == "1"
 
@@ -76,26 +76,32 @@ class HFWorkerPool:
         import psutil
         return float(psutil.cpu_percent(interval=0.2)), float(psutil.virtual_memory().percent)
 
-    def _command(self) -> str:
-        repo = "https://github.com/maxbry123-commits/router-universal-router-inteligente-"
-        return (
-            "set -e; "
-            "git clone --depth 1 " + repo + " /tmp/riu && "
-            "cd '/tmp/riu/router inteligente universal' && "
-            "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub "
-            "cryptography pyyaml requests httpx psutil && "
-            "uvicorn integration.chat_mvp.app:app --host 0.0.0.0 --port 8000"
-        )
+    def _command(self) -> list[str]:
+        from .hf_runtime import bootstrap_command
+
+        return bootstrap_command(PORT)  # code from the HF bucket bundle: no GitHub clone, no GitHub token in the worker
 
     def _forwarded_secrets(self) -> dict[str, str]:
-        names = [
-            "GITHUB_TOKEN", "RIU_ROUTER_API_KEY", "RIU_AGENT_API_KEYS",
-            "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4",
-            "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4",
-            "GROQ_API_KEY_5", "GROQ_API_KEY_6", "GROQ_API_KEY_7",
-            *[f"OPENAI_API_KEY_{i}" for i in range(1, 15)],
-        ]
-        return {name: os.environ[name] for name in names if os.getenv(name)}
+        from .hf_runtime import forwarded_secrets
+
+        out = forwarded_secrets()
+        if "HF_TOKEN" not in out and self.hf_token:
+            out["HF_TOKEN"] = self.hf_token  # the worker needs it to fetch the bundle and to be reached through hf.jobs
+        return out
+
+    def _headers(self) -> dict[str, str]:
+        """hf.jobs proxy wants an HF token (Authorization); the Router behind it wants its own key (X-API-Key)."""
+        headers = {"Authorization": "Bearer " + self.hf_token} if self.hf_token else {}
+        key = os.getenv("RIU_ROUTER_API_KEY", "")
+        if key:
+            headers["X-API-Key"] = key
+        return headers
+
+    def offload_target(self) -> "Worker | None":
+        """A running worker while this Router is hot (>= THRESHOLD): the OpenAI door forwards the request there."""
+        if CHILD or not (self.cpu_percent >= THRESHOLD or self.ram_percent >= THRESHOLD):
+            return None
+        return self.choose()
 
     def launch(self, flavor: str, reason: str) -> Worker:
         if not self.enabled:
@@ -107,12 +113,13 @@ class HFWorkerPool:
 
         job = self._api().run_job(
             image="python:3.12",
-            command=["bash", "-lc", self._command()],
+            command=self._command(),
             flavor=flavor,
             timeout=os.getenv("HF_AUTOSCALE_WORKER_TIMEOUT", "12h"),
             expose=[PORT],
             secrets=self._forwarded_secrets(),
-            env={"HF_AUTOSCALE_CHILD": "1"},
+            env={"HF_AUTOSCALE_CHILD": "1", "RIU_DATA_DIR": "/tmp/riu", "RIU_VAULT_PATH": "/tmp/riu/riu_vault.db",
+                 "RIU_VAULT_SOURCE": os.getenv("RIU_VAULT_SOURCE", ""), "RIU_CODE_BUNDLE": os.getenv("RIU_CODE_BUNDLE", "")},
         )
         now = time.time()
         worker = Worker(
@@ -185,8 +192,7 @@ class HFWorkerPool:
             worker = self.launch("cpu-basic", "first managed request")
             return {"status": "starting", "worker": worker.public(), "retry_after_s": 10}
 
-        key = os.getenv("RIU_ROUTER_API_KEY", "")
-        headers = {"X-API-Key": key} if key else {}
+        headers = self._headers()
         target = worker.url.rstrip("/") + os.getenv("HF_AUTOSCALE_WORKER_INVOKE_PATH", "/chat/send")
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(target, json=payload, headers=headers)
