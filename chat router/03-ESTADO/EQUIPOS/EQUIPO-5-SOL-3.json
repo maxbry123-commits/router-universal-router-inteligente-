@@ -71,17 +71,17 @@
     {
       "id": "C-04",
       "tarea": "Grupo contexto (context-mode, headroom, ponytail, claude-mem): contrato de herramienta",
-      "estado": "PENDIENTE"
+      "estado": "BLOQUEADO"
     },
     {
       "id": "C-05",
       "tarea": "Grupo diseño 1 (shadcn-skills, rare-ui, taste-skill, emilkowalski-skills, impeccable): skills_schema",
-      "estado": "PENDIENTE"
+      "estado": "BLOQUEADO"
     },
     {
       "id": "C-06",
       "tarea": "Grupo diseño 2 (getdesign, open-design, npxskillui, magic-mcp): skills_schema o contrato",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "C-07",
@@ -414,6 +414,92 @@
       },
       "gap": null,
       "siguiente": "Esperar activación del Director para la siguiente ronda; no ejecutar C-04 todavía."
+    },
+    {
+      "id_tarea": "C-04",
+      "equipo": "EQUIPO-5",
+      "ronda": 2,
+      "estado": "BLOQUEADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "accion": "Se intentó resolver el grupo contexto; claude-mem falta en la copia local obligatoria y, tras un reintento, la ruta sigue devolviendo 404.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "sha256": "feded4a5eb9c3bad824386b05a931ede1d4722b1099849e764d001fce686c521"
+        }
+      ],
+      "prueba_real": {
+        "comando": "GET router inteligente universal/Componente open soure router inteligente universal/claude-mem en branch devin/1790824641-chat-agent-plan; reintento único por API contents",
+        "ok": false,
+        "salida_resumen": "404 Not Found en intento inicial y en el único reintento; no se creó contrato parcial."
+      },
+      "gap": {
+        "motivo": "claude-mem no existe en la ruta local de componentes descargados.",
+        "intento_fix": "Se repitió una vez la lectura exacta por API contents; volvió a 404.",
+        "necesita": "Componente claude-mem disponible mediante los motores autorizados de descarga/extracción; no se inventa código."
+      },
+      "siguiente": "C-05"
+    },
+    {
+      "id_tarea": "C-05",
+      "equipo": "EQUIPO-5",
+      "ronda": 2,
+      "estado": "BLOQUEADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "accion": "Se intentó resolver el grupo diseño 1; shadcn-skills falta en la copia local obligatoria y, tras un reintento, la ruta sigue devolviendo 404.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "sha256": "feded4a5eb9c3bad824386b05a931ede1d4722b1099849e764d001fce686c521"
+        }
+      ],
+      "prueba_real": {
+        "comando": "GET router inteligente universal/Componente open soure router inteligente universal/shadcn-skills en branch devin/1790824641-chat-agent-plan; reintento único por API contents",
+        "ok": false,
+        "salida_resumen": "404 Not Found en intento inicial y en el único reintento; no se creó skills_schema parcial."
+      },
+      "gap": {
+        "motivo": "shadcn-skills no existe en la ruta local de componentes descargados.",
+        "intento_fix": "Se repitió una vez la lectura exacta por API contents; volvió a 404.",
+        "necesita": "Componente shadcn-skills disponible mediante los motores autorizados de descarga/extracción; no se inventa código."
+      },
+      "siguiente": "C-06"
+    },
+    {
+      "id_tarea": "C-06",
+      "equipo": "EQUIPO-5",
+      "ronda": 2,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "accion": "Se registraron contratos mínimos de herramienta para getdesign, open_design, npxskillui y magic_mcp en COMPONENT_CAPABILITIES.",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "703bfa554a5c7997c506cf978a005bb10fcfd817471618318ca10bdbd00cf01d"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "sha256": "feded4a5eb9c3bad824386b05a931ede1d4722b1099849e764d001fce686c521"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comprobar presencia de getdesign, open_design, npxskillui y magic_mcp en COMPONENT_CAPABILITIES",
+        "ok": true,
+        "salida_resumen": "4/4 claves presentes; cada contrato declara provides, forbidden y command_env; Router no modificado."
+      },
+      "gap": null,
+      "siguiente": "Siguiente PENDIENTE: C-07"
     }
   ],
   "bitacora": [
@@ -431,58 +517,40 @@
       "fecha_utc": "2026-10-02T07:37:00Z",
       "id_tarea": "C-03",
       "evento": "CERRADO: 34 DAGs Firecrawl + 3 capacidades declaradas; Router no tocado."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "id_tarea": "C-04",
+      "evento": "BLOQUEADO: claude-mem ausente; 404 tras reintento único."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "id_tarea": "C-05",
+      "evento": "BLOQUEADO: shadcn-skills ausente; 404 tras reintento único."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "id_tarea": "C-06",
+      "evento": "CERRADO: 4 contratos mínimos de herramienta registrados."
     }
   ],
   "handoff": {
-    "objetivo": "Cerrar RONDA 1 del lote SKILLS-UI sin exceder C-01..C-03.",
-    "estado": "RONDA 1 CERRADA; esperando activación del Director.",
+    "objetivo": "Procesar únicamente las 3 primeras tareas PENDIENTES: C-04, C-05, C-06.",
+    "estado": "C-04 BLOQUEADO; C-05 BLOQUEADO; C-06 CERRADO.",
     "archivos": [
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
       "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-agent.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-alexandria.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-crawl.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-developer-index.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-download.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-interact.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-map.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-monitor.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-parse.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-research-index.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-scrape.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-search.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-interact.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-onboarding.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-scrape.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-search.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-company-directories.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-competitive-intel.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-dashboard-reporting.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-deep-research.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-demo-walkthrough.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-knowledge-base.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-knowledge-ingest.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-lead-gen.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-lead-research.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-market-research.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-qa.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-research-papers.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-seo-audit.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-shop.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-website-design-clone.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-workflows.dag.yaml"
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json"
     ],
     "cambios": [
-      "C-01 veredicto 28/28 confirmado",
-      "C-02 clasificación 28/28 registrada",
-      "C-03 34 DAGs Firecrawl creados",
-      "3 capacidades Firecrawl registradas en COMPONENT_CAPABILITIES"
+      "C-04 registrado BLOQUEADO por ausencia local de claude-mem tras reintento único.",
+      "C-05 registrado BLOQUEADO por ausencia local de shadcn-skills tras reintento único.",
+      "C-06 registró 4 contratos mínimos de herramienta en COMPONENT_CAPABILITIES."
     ],
     "fallos": [
-      "motionsites upstream respondió HTTP 451/DMCA; se clasificó como solo referencia y no se inventó contrato."
+      "claude-mem: 404 local tras reintento.",
+      "shadcn-skills: 404 local tras reintento."
     ],
-    "siguiente": "No ejecutar C-04 hasta que el Director cambie ronda_actual."
+    "siguiente": "Siguiente tarea PENDIENTE en cola: C-07."
   }
 }

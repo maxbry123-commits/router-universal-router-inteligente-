@@ -70,6 +70,19 @@ COMPONENT_CAPABILITIES: dict[str, dict[str, Any]] = {
                              "forbidden": ("authority_transfer", "uncontrolled_context_write"),
                              "command_env": "YAIWES_FIRECRAWL_MCP_COMMAND"},
 
+    "getdesign": {"provides": "design_system_extraction_api_cli_sdk",
+                  "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+                  "command_env": "YAIWES_GETDESIGN_COMMAND"},
+    "open_design": {"provides": "local_design_generation_export",
+                    "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+                    "command_env": "YAIWES_OPEN_DESIGN_COMMAND"},
+    "npxskillui": {"provides": "design_system_extraction_skill_packaging",
+                   "forbidden": ("authority_transfer", "uncontrolled_context_write"),
+                   "command_env": "YAIWES_NPXSKILLUI_COMMAND"},
+    "magic_mcp": {"provides": "ui_component_search_generation_mcp",
+                  "forbidden": ("authority_transfer", "uncontrolled_context_write"),
+                  "command_env": "YAIWES_MAGIC_MCP_COMMAND"},
+
 }
 
 
