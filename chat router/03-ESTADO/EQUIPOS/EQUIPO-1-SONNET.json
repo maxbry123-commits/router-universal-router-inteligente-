@@ -626,6 +626,13 @@
       "resumen": "Motor oficial de descarga (hf_download_extract_engine) corrido segun cola motor2-skills-ui de Opus (28 repos). Ya estaban 23. Publicados y verificados por read-back en el repo, carpeta Componente open soure: shadcn-labs/skills (135), claude-mem (1859), plasmic, caret-desktop (470). Tambien copia en repo frontend: shadcn-skills, claude-mem, npxskillui, context7, Recordly, rare-ui. Motor sin editar.",
       "gaps": "motionsites.ai: GitHub responde 451 (bloqueo legal), no descargable. Harness deepseek ya estaba descargado (deepseek-ai/deepseek-harness 639ed01, 14090 archivos); build:lib no validado por memoria.",
       "siguiente": "Validar build del harness con mas memoria; organizar raices segun plantilla."
+    },
+    {
+      "id_tarea": "S1-24",
+      "estado": "CERRADO_REF",
+      "resumen": "Auditoria de los archivos de texto del plan (01-PLAN): 4 pasadas y 3 refutaciones automaticas. 73 archivos: {'PENDIENTE_RUTAS_FALTAN': 41, 'SIN_REFERENCIA_VERIFICABLE': 19, 'EJECUTADO_VERIFICADO': 13}. Detalle en 11-EVIDENCIA/equipos/EQUIPO-1/S1-24-AUDITORIA-PLAN.json y .md",
+      "gaps": "Rutas citadas por el plan que no existen (muchas apuntan a otros repos o a nombres antiguos); lista en el .md. Pendiente de ejecucion: renombrado de raiz Wordflow, cableado de skills, validacion del harness (build), E-09. Haiku (X-Ray T-11-04) y Sol (diagrama Archify) siguen PENDIENTES.",
+      "siguiente": "Resolver cada grupo de rutas faltantes, registrar en watchdog oficial."
     }
   ],
   "bitacora": [
@@ -738,6 +745,10 @@
     {
       "id_tarea": "S1-23",
       "nota": "Motor oficial de descarga (hf_download_extract_engine) corrido segun cola motor2-skills-ui de Opus (28 repos). Ya estaban 23. Publicados y verificados por read-back en el repo, carpeta Componente open soure: shadcn-labs/skills (135), claude-mem (1859), plasmic, caret-desktop (470). Tambien copia en repo frontend: shadcn-skills, claude-mem, npxskillui, context7, Recordly, rare-ui. Motor sin editar."
+    },
+    {
+      "id_tarea": "S1-24",
+      "nota": "Auditoria de los archivos de texto del plan (01-PLAN): 4 pasadas y 3 refutaciones automaticas. 73 archivos: {'PENDIENTE_RUTAS_FALTAN': 41, 'SIN_REFERENCIA_VERIFICABLE': 19, 'EJECUTADO_VERIFICADO': 13}. Detalle en 11-EVIDENCIA/equipos/EQUIPO-1/S1-24-AUDITORIA-PLAN.json y .md"
     }
   ],
   "handoff": {

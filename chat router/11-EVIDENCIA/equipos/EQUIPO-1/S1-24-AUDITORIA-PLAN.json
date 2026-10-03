@@ -1,0 +1,1775 @@
+{
+ "schema": "yaiwes.audit-plan/v1",
+ "metodo": "4 pasadas (1 inventario+parseo, 2 rutas citadas existen en HEAD, 3 IDs vs registro oficial, 4 clasificacion) + 3 refutaciones (r1 ruta no vacia, r2 ID cerrado en resultados de equipos, r3 ruta buscada en 5 prefijos por si se movio)",
+ "archivos": 73,
+ "resumen": {
+  "PENDIENTE_RUTAS_FALTAN": 41,
+  "SIN_REFERENCIA_VERIFICABLE": 19,
+  "EJECUTADO_VERIFICADO": 13
+ },
+ "detalle": [
+  {
+   "file": "01-PLAN/AUDITORIA-4-PASADAS-POST-CODE.json",
+   "sha256": "f555030b0613c03f",
+   "bytes": 153130,
+   "lines": 3383,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 143,
+    "existen": 0,
+    "faltan": 143,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "fromtend/componentes/01-folder-component-DESCARGAR.sh",
+    "fromtend/componentes/01-folder-yaiwes.ts",
+    "fromtend/componentes/02-bounce-sidebar-DESCARGAR.sh",
+    "fromtend/componentes/02-bounce-sidebar-yaiwes.ts",
+    "fromtend/componentes/03-hook-sidebar-DESCARGAR.sh",
+    "fromtend/componentes/03-hook-sidebar-yaiwes.ts",
+    "fromtend/componentes/04-family-drawer-DESCARGAR.sh",
+    "fromtend/componentes/04-family-drawer-yaiwes.ts"
+   ],
+   "p3_ids": {
+    "citados": 9,
+    "en_registro": 4,
+    "r2_cerrados": 0,
+    "sin_registro": [
+     "A-19",
+     "T-11-01",
+     "T-11-02",
+     "T-11-03",
+     "T-11-05"
+    ]
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/AUDITORIA-4-PASADAS.json",
+   "sha256": "d2aa72e5a9a0b6b3",
+   "bytes": 141422,
+   "lines": 3168,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 124,
+    "existen": 0,
+    "faltan": 124,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "fromtend/componentes/01-folder-component-DESCARGAR.sh",
+    "fromtend/componentes/01-folder-yaiwes.ts",
+    "fromtend/componentes/02-bounce-sidebar-DESCARGAR.sh",
+    "fromtend/componentes/02-bounce-sidebar-yaiwes.ts",
+    "fromtend/componentes/03-hook-sidebar-DESCARGAR.sh",
+    "fromtend/componentes/03-hook-sidebar-yaiwes.ts",
+    "fromtend/componentes/04-family-drawer-DESCARGAR.sh",
+    "fromtend/componentes/04-family-drawer-yaiwes.ts"
+   ],
+   "p3_ids": {
+    "citados": 9,
+    "en_registro": 4,
+    "r2_cerrados": 0,
+    "sin_registro": [
+     "A-19",
+     "T-11-01",
+     "T-11-02",
+     "T-11-03",
+     "T-11-05"
+    ]
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
+   "sha256": "9bff3141d293943e",
+   "bytes": 9909,
+   "lines": 245,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/CATALOGO-REFERENCIAS-UI.json",
+   "sha256": "65e85067e6412eaa",
+   "bytes": 68879,
+   "lines": 1503,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 0,
+    "faltan": 2,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "router/01-PLAN/SKILLS-MAXBRY-UI/diseno/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+    "router/01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-PARTE-1-GRIS-PRINCIPAL.md"
+   ],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/DM-METODO-DAG.json",
+   "sha256": "923f6042574e91fb",
+   "bytes": 4514,
+   "lines": 79,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 2,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 2,
+    "en_registro": 2,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
+   "sha256": "6e25fb86d2bbab99",
+   "bytes": 4402,
+   "lines": 74,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 5,
+    "existen": 4,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "chat_mvp/memoria_loader.py"
+   ],
+   "p3_ids": {
+    "citados": 9,
+    "en_registro": 9,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+   "sha256": "fdf1f59a0ce93779",
+   "bytes": 44714,
+   "lines": 2567,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/INDICE.md",
+   "sha256": "9e2ac48d9fa482ac",
+   "bytes": 4928,
+   "lines": 37,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 1,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 5,
+    "en_registro": 5,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-3.md",
+   "sha256": "5ed6d55b9f5e57b0",
+   "bytes": 18369,
+   "lines": 141,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 4,
+    "existen": 0,
+    "faltan": 4,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "./SKILL.md",
+    "./adapter.ts",
+    "github.com/HKUDS/CLI-Anything/blob/main/cli-anything-plugin/HARNESS.md",
+    "router/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-4.md",
+   "sha256": "6f284458dd260fb0",
+   "bytes": 32495,
+   "lines": 143,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 13,
+    "existen": 0,
+    "faltan": 13,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "20notas/PLAN-DSL-DAG-00-CONTRATO.yaml",
+    "20notas/PLAN-DSL-DAG-01-NODOS.yaml",
+    "20notas/PLAN-DSL-DAG-4-OBJETIVOS.yaml",
+    "20notas/PLAN-MAESTRO-4-OBJETIVOS.md",
+    "20notas/PLAN-OPUS/CENTRO-DE-CONTROL.yaml",
+    "20notas/PLAN-OPUS/CRAZY-WALL-BITACORA-PLAN-OPUS.json",
+    "20notas/PLAN-OPUS/HANDOFF-PLAN-OPUS.md",
+    "20notas/PLAN-OPUS/PROMPT-DSL-DAG-PLAN-OPUS.yaml"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md",
+   "sha256": "48aa73590c8314b0",
+   "bytes": 50391,
+   "lines": 607,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 16,
+    "existen": 1,
+    "faltan": 15,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "20notas/HANDOFF-RECUPERACION-2026-09-25-ROUTER-AGENTES-CHAT.md",
+    "20notas/PLAN-ANEXO-B-SEALS-MECANISMOS.md",
+    "20notas/PLAN-MAESTRO-4-OBJETIVOS.md",
+    "github.com/JPeetz/agent-skills/blob/main/design-to-code/SKILL.md",
+    "github.com/Leonxlnx/taste-skill/blob/main/skills/image-to-code-skill/SKILL.md",
+    "github.com/dachent/skills/blob/main/frontend-design-codex/SKILL.md",
+    "github.com/heygen-com/hyperframes/blob/main/docs/guides/skills.md",
+    "github.com/microsoft/playwright/blob/main/docs/src/getting-started-mcp.md"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ORQUESTADOR-DE-TRABAJO.yaml",
+   "sha256": "d5b4478dde72888e",
+   "bytes": 4790,
+   "lines": 50,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/PLAN-ACCION-XRAY.md",
+   "sha256": "232a3baf1bb424c6",
+   "bytes": 17997,
+   "lines": 129,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 7,
+    "existen": 4,
+    "faltan": 3,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "notas/INVENTARIO-FORENSE-agent_sources.md",
+    "recovery/checkpoint.py",
+    "recovery/engine.py"
+   ],
+   "p3_ids": {
+    "citados": 30,
+    "en_registro": 22,
+    "r2_cerrados": 0,
+    "sin_registro": [
+     "A-19",
+     "S-01",
+     "S-02",
+     "S-03",
+     "S-07A",
+     "S-10",
+     "T-11-02",
+     "T-11-05"
+    ]
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml",
+   "sha256": "fb65fc6e5a2c6488",
+   "bytes": 11409,
+   "lines": 173,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 13,
+    "existen": 1,
+    "faltan": 12,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "Claude.md/Memoria.md/Skills.md",
+    "STATE/CRAZY_WALL/HANDOFF/TASK.json",
+    "notas/PLAN-DSL-DAG-00-CONTRATO.yaml",
+    "router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-3.md",
+    "router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-4.md",
+    "router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md",
+    "router/00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-PARTE-5.md",
+    "router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml"
+   ],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/PLAN-DSL-DAG-01-NODOS.yaml",
+   "sha256": "314229bd96b18aba",
+   "bytes": 11877,
+   "lines": 275,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 6,
+    "existen": 2,
+    "faltan": 4,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    ".github/workflows/prueba-omniroute-router.yml",
+    "03-ESTADO/BITACORA.json",
+    "notas/PLAN-DSL-DAG-01-NODOS.yaml",
+    "router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml"
+   ],
+   "p3_ids": {
+    "citados": 14,
+    "en_registro": 8,
+    "r2_cerrados": 0,
+    "sin_registro": [
+     "C-2",
+     "C-3",
+     "C-4",
+     "C-5",
+     "D-2",
+     "D-3"
+    ]
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml",
+   "sha256": "837335e73ecc2097",
+   "bytes": 10958,
+   "lines": 131,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "router/HANDOFF-MAESTRO.md"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/PLAN-DSL-DAG-UI.yaml",
+   "sha256": "6f55524cf547c204",
+   "bytes": 41150,
+   "lines": 649,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 17,
+    "existen": 2,
+    "faltan": 15,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    ".github/workflows/research-download-chain-router-components-20260903.yml",
+    "03-ESTADO/BITACORA.json",
+    "CLAUDE.md/MEMORIA.md/SKILLS.md/HANDOFF.md",
+    "EVIDENCIA/S4-CADENA.json",
+    "STATE.json/CRAZY_WALL.json",
+    "fromtend/diseno/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+    "router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml",
+    "router/01-PLAN/PLAN-DSL-DAG-UI.yaml"
+   ],
+   "p3_ids": {
+    "citados": 11,
+    "en_registro": 10,
+    "r2_cerrados": 0,
+    "sin_registro": [
+     "C-5"
+    ]
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/PLAN-MAESTRO-CHAT.yaml",
+   "sha256": "2f59d7f462d384e4",
+   "bytes": 8061,
+   "lines": 147,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 3,
+    "existen": 0,
+    "faltan": 3,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "../03-ESTADO/STATE.json",
+    "03-ESTADO/AGENT_GRAPH.json",
+    "STATE.json/CRAZY_WALL.json/HANDOFF.md"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/PLAN.json",
+   "sha256": "a621752250f23c4f",
+   "bytes": 515,
+   "lines": 10,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 2,
+    "en_registro": 2,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/PROPUESTA-METODO-DEVIN-ASK-COUNCIL.md",
+   "sha256": "25e87e61ba160703",
+   "bytes": 18840,
+   "lines": 117,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 1,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "memoria_yaiwes/__init__.py"
+   ],
+   "p3_ids": {
+    "citados": 5,
+    "en_registro": 5,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ROOT-MAP-T11.yaml",
+   "sha256": "566be5a83ba56ae6",
+   "bytes": 3269,
+   "lines": 81,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 15,
+    "existen": 0,
+    "faltan": 15,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md",
+    "router/01-PLAN/ORQUESTADOR-DE-TRABAJO.yaml",
+    "router/01-PLAN/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml",
+    "router/05-AGENTES/gobierno/mirror_factory.py",
+    "router/11-EVIDENCIA/buscadores.py",
+    "router/11-EVIDENCIA/evidence_pack.py",
+    "router/11-EVIDENCIA/puerta.py",
+    "router/11-EVIDENCIA/verificador.py"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/T-06-INVENTARIO.md",
+   "sha256": "59081b1424dec1e2",
+   "bytes": 5029,
+   "lines": 41,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 2,
+    "en_registro": 2,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/catalogo_visual.py",
+   "sha256": "28dfcc695aec5d0a",
+   "bytes": 7320,
+   "lines": 134,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 0,
+    "faltan": 2,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "router/01-PLAN/SKILLS-MAXBRY-UI/diseno/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+    "router/01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-PARTE-1-GRIS-PRINCIPAL.md"
+   ],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/plan chat y agentes en route.md",
+   "sha256": "aa5cd0ee6cb713a3",
+   "bytes": 40311,
+   "lines": 677,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 19,
+    "existen": 4,
+    "faltan": 15,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    ".github/workflows/research-download-chain-router-components-20260903.yml",
+    "03-ESTADO/BITACORA.json",
+    "CLAUDE.md/MEMORIA.md/SKILLS.md/HANDOFF.md",
+    "EVIDENCIA/S4-CADENA.json",
+    "STATE.json/CRAZY_WALL.json",
+    "fromtend/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+    "router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml",
+    "router/01-PLAN/PLAN-DSL-DAG-UI.yaml"
+   ],
+   "p3_ids": {
+    "citados": 11,
+    "en_registro": 10,
+    "r2_cerrados": 0,
+    "sin_registro": [
+     "C-5"
+    ]
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/DESPLIEGUE-DETERMINISTA-UNIVERSAL-v2.md",
+   "sha256": "d622f7c486ab0c31",
+   "bytes": 5247,
+   "lines": 102,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 5,
+    "existen": 0,
+    "faltan": 5,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "despliegue/desplegador.py",
+    "despliegue/detector_version.py",
+    "despliegue/organizador.py",
+    "despliegue/subir_a_github.sh",
+    "despliegue/verificar.py"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/🏗️🏗️🔌🔌 JSON para IA (DSL _ MAXBRY _ YAIWES _ NCT) este es el enchufe de todas las fichas de code del sofware el p...rdicacion para Ai y luego texto libre para mí y luego el Jason code del enchufe 🔌 🔌 🔌 🔌 🔌.md",
+   "sha256": "128418715c791181",
+   "bytes": 12758,
+   "lines": 332,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "maxbry.dev/schemas/universal_module_contract.v1.5.json"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/📌MAVIS-PARALLEL-100X.md",
+   "sha256": "e27040cc58b2d8c4",
+   "bytes": 57079,
+   "lines": 2042,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 0,
+    "faltan": 2,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "path/to/file.txt",
+    "workspace/big_file.txt"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/📌MAX-SYSTEM-100X-FINAL-1.md",
+   "sha256": "6f9281123c002a99",
+   "bytes": 43453,
+   "lines": 1013,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "watchdog/sandbox_supervisor.py"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/🔌 enchufe universal parte 1 fusion fables Kimi k 3 universal_plugin_bus_v2_integrated.py",
+   "sha256": "5e4595a86bfd68a3",
+   "bytes": 30030,
+   "lines": 571,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/🔌✅ enchufe universal parte 2 fusión de Kimi k 3 y fables ficha_contract_v2.py",
+   "sha256": "759d0d7855d8df10",
+   "bytes": 16967,
+   "lines": 442,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "contracts/revocation_list.json"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/🧑‍💻README.md",
+   "sha256": "89d1ac3a15f86ebf",
+   "bytes": 3695,
+   "lines": 203,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 0,
+    "faltan": 2,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "src/x.py",
+    "tests/test_x.py"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/🧑‍💻arquitectura chat agentes🎯🎯🎯🆘🆘🆘🆘🆘➡️ NO TOCAR ⚠️⚠️⚠️⚠️🎯🆘🆘🆘🆘.md",
+   "sha256": "6917e6f5967a91ce",
+   "bytes": 54073,
+   "lines": 2540,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 0,
+    "faltan": 2,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    ".hermes.md/AGENTS.md",
+    "tasks/UI-001/TASK.json"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/ANEXOS/🧑‍💻pasted_content.txt",
+   "sha256": "9559722e60265988",
+   "bytes": 5331,
+   "lines": 73,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/DESCARGAR-CODIGO-ORIGINAL.py",
+   "sha256": "0a227b3561847377",
+   "bytes": 733,
+   "lines": 25,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/LISTA-22.md",
+   "sha256": "dd2e41b2083c487e",
+   "bytes": 1290,
+   "lines": 25,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 22,
+    "existen": 0,
+    "faltan": 22,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "components/ui/animated-counter.ts",
+    "components/ui/bounce-sidebar.ts",
+    "components/ui/code-block.ts",
+    "components/ui/delete-button.ts",
+    "components/ui/duration-picker.ts",
+    "components/ui/emoji-reaction.ts",
+    "components/ui/family-drawer.ts",
+    "components/ui/fluid-orb.ts"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/README (2).md",
+   "sha256": "1f70fc01407054e1",
+   "bytes": 2169,
+   "lines": 93,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 7,
+    "existen": 0,
+    "faltan": 7,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "app/rui-demo/page.ts",
+    "components/yaiwes/01-folder-yaiwes.ts",
+    "components/yaiwes/02-bounce-sidebar-yaiwes.ts",
+    "components/yaiwes/03-hook-sidebar-yaiwes.ts",
+    "components/yaiwes/04-family-drawer-yaiwes.ts",
+    "components/yaiwes/05-proximity-sidebar-yaiwes.ts",
+    "scripts/install-rui-01-05.sh"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/README (3).md",
+   "sha256": "7b14ff1d279665b7",
+   "bytes": 1018,
+   "lines": 57,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/README (4).md",
+   "sha256": "1f70fc01407054e1",
+   "bytes": 2169,
+   "lines": 93,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 7,
+    "existen": 0,
+    "faltan": 7,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "app/rui-demo/page.ts",
+    "components/yaiwes/01-folder-yaiwes.ts",
+    "components/yaiwes/02-bounce-sidebar-yaiwes.ts",
+    "components/yaiwes/03-hook-sidebar-yaiwes.ts",
+    "components/yaiwes/04-family-drawer-yaiwes.ts",
+    "components/yaiwes/05-proximity-sidebar-yaiwes.ts",
+    "scripts/install-rui-01-05.sh"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/README-1.md",
+   "sha256": "7b14ff1d279665b7",
+   "bytes": 1018,
+   "lines": 57,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/README-RARE-UI-01-05.md",
+   "sha256": "1f70fc01407054e1",
+   "bytes": 2169,
+   "lines": 93,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 7,
+    "existen": 0,
+    "faltan": 7,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "app/rui-demo/page.ts",
+    "components/yaiwes/01-folder-yaiwes.ts",
+    "components/yaiwes/02-bounce-sidebar-yaiwes.ts",
+    "components/yaiwes/03-hook-sidebar-yaiwes.ts",
+    "components/yaiwes/04-family-drawer-yaiwes.ts",
+    "components/yaiwes/05-proximity-sidebar-yaiwes.ts",
+    "scripts/install-rui-01-05.sh"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/README-RUI-YAIWES-LOTE-1.md",
+   "sha256": "98e79e3304947363",
+   "bytes": 2471,
+   "lines": 82,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/RUI-YAIWES-LOTE-1-TEST-REPORT.md",
+   "sha256": "1cc79025d03d3ce2",
+   "bytes": 677,
+   "lines": 16,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/VERIFICAR-22.py",
+   "sha256": "cbc30bf362692c05",
+   "bytes": 880,
+   "lines": 20,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/manifest (2).json",
+   "sha256": "2797f329cd8deaa9",
+   "bytes": 324,
+   "lines": 13,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/manifest-22.json",
+   "sha256": "ab7674bbd7d00a5a",
+   "bytes": 5623,
+   "lines": 139,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 44,
+    "existen": 0,
+    "faltan": 44,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "components/ui/animated-counter.ts",
+    "components/ui/bounce-sidebar.ts",
+    "components/ui/code-block.ts",
+    "components/ui/delete-button.ts",
+    "components/ui/duration-picker.ts",
+    "components/ui/emoji-reaction.ts",
+    "components/ui/family-drawer.ts",
+    "components/ui/fluid-orb.ts"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/componentes/manifest.json",
+   "sha256": "b72dddff738574a1",
+   "bytes": 752,
+   "lines": 37,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/ESPECIFICACION_VISUAL_PANEL_YAIWES_FROMTED.md",
+   "sha256": "fdf1f59a0ce93779",
+   "bytes": 44714,
+   "lines": 2567,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-FROMTED-YAIWES-GRIS-Y-LETRAS.md",
+   "sha256": "a46b567851a4cfab",
+   "bytes": 20440,
+   "lines": 402,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "FROMTED-YAIWES-IGUAL-AL-ORIGINAL-V03/SKILL.md"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-PARTE-1-GRIS-PRINCIPAL.md",
+   "sha256": "f287b74db2a12559",
+   "bytes": 15225,
+   "lines": 279,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 0,
+    "faltan": 2,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "FROMTED-YAIWES-IGUAL-AL-ORIGINAL-V03/SKILL.md",
+    "router/01-PLAN/CATALOGO-REFERENCIAS-UI.json"
+   ],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/README-SKILL-PARTE-3-ICONOS-Y-EMOJIS-EN-REVISION.md",
+   "sha256": "906d6c707273ce81",
+   "bytes": 12868,
+   "lines": 192,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/SKILL-MAESTRO-FROMTED-YAIWES-BORRADOR.md",
+   "sha256": "9458e784a044ab1d",
+   "bytes": 9307,
+   "lines": 110,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/SKILL-PARTE-2-TIPOGRAFIA-EN-REVISION.md",
+   "sha256": "6bc1b7c598177ae7",
+   "bytes": 5309,
+   "lines": 116,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/➡️manifest (3).json",
+   "sha256": "417321672451eb54",
+   "bytes": 2063,
+   "lines": 97,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "tests/run_browser_qa.py"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/🏭ACCEPTANCE.md",
+   "sha256": "a86b11aad9d499bc",
+   "bytes": 3842,
+   "lines": 48,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 2,
+    "existen": 0,
+    "faltan": 2,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "tests/qa-log.txt",
+    "tools/build_snapshot.py"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/👾package.json",
+   "sha256": "f4a01740f2964dcc",
+   "bytes": 501,
+   "lines": 19,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "tools/build_snapshot.py"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
+   "sha256": "f740d88b7b89c7e1",
+   "bytes": 12824,
+   "lines": 171,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/🛜VERSION.md",
+   "sha256": "7638c967a1909b50",
+   "bytes": 1221,
+   "lines": 17,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "SIN_REFERENCIA_VERIFICABLE"
+  },
+  {
+   "file": "01-PLAN/SKILLS-MAXBRY-UI/diseno/🤣README (5).md",
+   "sha256": "fb7718a5aaa546af",
+   "bytes": 6097,
+   "lines": 95,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "tests/run_browser_qa.py"
+   ],
+   "p3_ids": {
+    "citados": 0,
+    "en_registro": 0,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-00-INPUT-BLOCK-VERBATIM.md",
+   "sha256": "e48344f0350e3f25",
+   "bytes": 13010,
+   "lines": 491,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-01-DSL-DAG-MASTER.md",
+   "sha256": "85895cd2efedfd5f",
+   "bytes": 11012,
+   "lines": 262,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "./T-11-00-INPUT-BLOCK-VERBATIM.md"
+   ],
+   "p3_ids": {
+    "citados": 4,
+    "en_registro": 4,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-02-PROGRAMACION-NUEVO-01-A-19.md",
+   "sha256": "201837dc7b690694",
+   "bytes": 7829,
+   "lines": 348,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-03-MIRROR-10-RAICES-TOOLS-SKILL-RUNTIME-1.md",
+   "sha256": "0b168ead045f2c5f",
+   "bytes": 4652,
+   "lines": 209,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-03-MIRROR-10-RAICES-TOOLS-SKILL-RUNTIME.md",
+   "sha256": "0b168ead045f2c5f",
+   "bytes": 4652,
+   "lines": 209,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-04-HUELLA-DIGITAL-ARCHITECTURE-XRAY.md",
+   "sha256": "71a9c9b3b263dd29",
+   "bytes": 3001,
+   "lines": 138,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 2,
+    "en_registro": 2,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-05-HANDOFF-TESTS-PASS-FAIL.md",
+   "sha256": "b80d6dbb3c3eb3fd",
+   "bytes": 3727,
+   "lines": 146,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 3,
+    "en_registro": 3,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-I-00-INPUT-BLOCK-VERBATIM.md",
+   "sha256": "db6e7e4089c261a8",
+   "bytes": 3135,
+   "lines": 109,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-I-01-SKILL-RUNTIME-SCHEMA-CODE.md",
+   "sha256": "c92a67167b5bf5a0",
+   "bytes": 4247,
+   "lines": 192,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-I-02-SKILLS-CONVERTIDOS-A-SCHEMA.md",
+   "sha256": "ea225d6a3d400e14",
+   "bytes": 8173,
+   "lines": 420,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "runtime/skills/ecc/adapter.py"
+   ],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-I-03-DSL-DAG-TESTS-HANDOFF.md",
+   "sha256": "493431e104a8c541",
+   "bytes": 6105,
+   "lines": 246,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 0,
+    "existen": 0,
+    "faltan": 0,
+    "r1_vacias": 0
+   },
+   "faltan": [],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "EJECUTADO_VERIFICADO"
+  },
+  {
+   "file": "01-PLAN/T-11/T-11-I-AUTONOMOUS-SKILL-INGEST-HERMES-OPENCLAW.md",
+   "sha256": "ac02d37c633c2778",
+   "bytes": 26305,
+   "lines": 1547,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 8,
+    "existen": 0,
+    "faltan": 8,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "router/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml",
+    "router/05-AGENTES/AGENTES.yaml",
+    "router/runtime/skills_runtime/skills/gsd/CONTRACT.yaml",
+    "skills/example/CONTRACT.yaml",
+    "skills/example/adapter.py",
+    "skills/gsd/CONTRACT.yaml",
+    "skills/gsd/adapter.py",
+    "universal/integration/chat_mvp/router.py"
+   ],
+   "p3_ids": {
+    "citados": 1,
+    "en_registro": 1,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/T-12/T SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM-2.md",
+   "sha256": "5f42d655a9761ae2",
+   "bytes": 17142,
+   "lines": 920,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "BAsqueda/README.md"
+   ],
+   "p3_ids": {
+    "citados": 2,
+    "en_registro": 2,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/T-12/T SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM.md",
+   "sha256": "5f42d655a9761ae2",
+   "bytes": 17142,
+   "lines": 920,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "BAsqueda/README.md"
+   ],
+   "p3_ids": {
+    "citados": 2,
+    "en_registro": 2,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  },
+  {
+   "file": "01-PLAN/T-12/T.SALIDA-2-T12-BUSQUEDA-CONTEXTO-SIN-LLM-1.md",
+   "sha256": "5f42d655a9761ae2",
+   "bytes": 17142,
+   "lines": 920,
+   "p1_parse_ok": true,
+   "p2_rutas": {
+    "citadas": 1,
+    "existen": 0,
+    "faltan": 1,
+    "r1_vacias": 0
+   },
+   "faltan": [
+    "BAsqueda/README.md"
+   ],
+   "p3_ids": {
+    "citados": 2,
+    "en_registro": 2,
+    "r2_cerrados": 0,
+    "sin_registro": []
+   },
+   "p4_estado": "PENDIENTE_RUTAS_FALTAN"
+  }
+ ]
+}
