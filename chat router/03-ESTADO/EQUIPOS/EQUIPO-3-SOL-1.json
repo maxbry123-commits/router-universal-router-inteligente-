@@ -54,17 +54,17 @@
     {
       "id": "A-07",
       "tarea": "Prueba real de scrapegraph-ai con 1 entrada; guardar evidencia",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "A-08",
       "tarea": "Prueba real de agent-reach con 1 entrada; guardar evidencia",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "A-09",
       "tarea": "Registrar las 4 en el capability map (ComponentAdapter fail-closed)",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO_REF"
     },
     {
       "id": "A-10",
@@ -363,6 +363,96 @@
       },
       "gap": null,
       "siguiente": "SAL"
+    },
+    {
+      "id_tarea": "A-07",
+      "equipo": "EQUIPO-3",
+      "ronda": 3,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol (EQUIPO-3 Sol 🚀 1)",
+      "fecha_utc": "2026-10-03T00:44:14.530Z",
+      "accion": "Prueba real de extract_code de ScrapeGraphAI con una entrada fenced-code y salida guardada.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapegraph-ai/code/scrapegraphai/utils/cleanup_code.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapegraph-ai/code/scrapegraphai/utils/cleanup_code.py",
+          "sha256": "44d241aad43a7b442ee4c365b5117425d40fc80bf7a42a50cdda04b022a9503a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+          "sha256": "7e5d678c6be57393498418f48ccbfa44c397a6754e07a7cb6c37bb6ab12cb31a"
+        }
+      ],
+      "prueba_real": {
+        "comando": "extract_code sobre bloque python fenced",
+        "ok": true,
+        "salida_resumen": "PASS: input fenced-code -> output print(\"hola\")\\n."
+      },
+      "gap": null,
+      "siguiente": "A-08"
+    },
+    {
+      "id_tarea": "A-08",
+      "equipo": "EQUIPO-3",
+      "ronda": 3,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol (EQUIPO-3 Sol 🚀 1)",
+      "fecha_utc": "2026-10-03T00:44:14.530Z",
+      "accion": "Prueba real de scrub_url_credentials de Agent Reach con URL con credenciales/token y salida redactada.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/agent-reach/code/agent_reach/utils/text.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/agent-reach/code/agent_reach/utils/text.py",
+          "sha256": "6faf82ba308cb300377a14de66207c88284a3f3372facd5bfc2a412fdb93f3ae"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+          "sha256": "e9cf81c62a45045cbdfeb3e03dc473f20bbec69719ceb66fe804c3f222985424"
+        }
+      ],
+      "prueba_real": {
+        "comando": "scrub_url_credentials sobre URL con userinfo y token",
+        "ok": true,
+        "salida_resumen": "PASS: https://***@example.com/path?token=***&x=1"
+      },
+      "gap": null,
+      "siguiente": "A-09"
+    },
+    {
+      "id_tarea": "A-09",
+      "equipo": "EQUIPO-3",
+      "ronda": 3,
+      "estado": "CERRADO_REF",
+      "ejecutor": "GPT-5.6 Sol (EQUIPO-3 Sol 🚀 1)",
+      "fecha_utc": "2026-10-03T00:44:14.530Z",
+      "accion": "Las cuatro capacidades ya estaban registradas en COMPONENT_CAPABILITIES; cierre por referencia con read-back PASS.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "6dc84e5c82cfc91c2cc74aec76704a955f7e51017e2b3b00127cd5b64951e0d9"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+          "sha256": "28d362f65d34b7cb872a75cc08cdc68ea5a1ecdb5366de3270657a0f9aac7403"
+        }
+      ],
+      "prueba_real": {
+        "comando": "read-back de las 4 claves y sus command_env en COMPONENT_CAPABILITIES",
+        "ok": true,
+        "salida_resumen": "PASS: anthropic-skills, scrapling, scrapegraph-ai y agent-reach presentes y fail-closed por command_env."
+      },
+      "gap": null,
+      "siguiente": "SAL"
     }
   ],
   "bitacora": [
@@ -395,25 +485,38 @@
       "fecha_utc": "2026-10-03T00:31:32.658Z",
       "id_tarea": "A-06",
       "evento": "CERRADO: prueba real Scrapling; versión/capacidades leídas; evidencia guardada."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:44:14.530Z",
+      "id_tarea": "A-07",
+      "evento": "CERRADO: prueba real ScrapeGraphAI guardada."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:44:14.530Z",
+      "id_tarea": "A-08",
+      "evento": "CERRADO: prueba real Agent Reach guardada."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:44:14.530Z",
+      "id_tarea": "A-09",
+      "evento": "CERRADO_REF: las cuatro capacidades ya estaban registradas; read-back PASS."
     }
   ],
   "handoff": {
-    "objetivo": "Cerrar las tres primeras tareas PENDIENTES A-04, A-05 y A-06.",
-    "estado": "A-04_A-05_A-06_CERRADAS",
+    "objetivo": "Cerrar A-07, A-08 y A-09.",
+    "estado": "A-07_A-08_CERRADAS_A-09_CERRADO_REF",
     "archivos": [
-      "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/agent-reach.dag.yaml",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-04.txt",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-05.txt",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-06.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json"
     ],
     "cambios": [
-      "agent-reach registrado como herramienta fail-closed y DAG creado.",
-      "anthropic-skills probado con una entrada real y salida guardada.",
-      "scrapling probado con una entrada real y salida guardada."
+      "Prueba real scrapegraph-ai guardada.",
+      "Prueba real agent-reach guardada.",
+      "Capability map 4/4 confirmado por referencia."
     ],
     "fallos": [],
-    "siguiente": "A-07, A-08, A-09 quedan PENDIENTES; SAL."
+    "siguiente": "A-10, A-11, A-12 quedan PENDIENTES; SAL."
   }
 }

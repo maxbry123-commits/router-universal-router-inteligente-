@@ -1,0 +1,7 @@
+task=A-07
+component=scrapegraph-ai
+source_path=router inteligente universal/Componente open soure router inteligente universal/scrapegraph-ai/code/scrapegraphai/utils/cleanup_code.py
+source_sha256=44d241aad43a7b442ee4c365b5117425d40fc80bf7a42a50cdda04b022a9503a
+input=```python\nprint("hola")\n```
+output=print("hola")\n
+validation=PASS

@@ -1,0 +1,7 @@
+task=A-08
+component=agent-reach
+source_path=router inteligente universal/Componente open soure router inteligente universal/agent-reach/code/agent_reach/utils/text.py
+source_sha256=6faf82ba308cb300377a14de66207c88284a3f3372facd5bfc2a412fdb93f3ae
+input=https://user:pass@example.com/path?token=abc123&x=1
+output=https://***@example.com/path?token=***&x=1
+validation=PASS
