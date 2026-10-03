@@ -1,0 +1,5 @@
+munder-difflin: ls -> DOWNLOAD_EXTRACT_MANIFEST.json _archives code
+grep bin package.json (raiz y code/): sin resultado
+grep scripts pyproject.toml (raiz y code/): sin resultado
+ls bin cli code/bin code/cli: no existen
+Sin comando ejecutable que lea stdin.
