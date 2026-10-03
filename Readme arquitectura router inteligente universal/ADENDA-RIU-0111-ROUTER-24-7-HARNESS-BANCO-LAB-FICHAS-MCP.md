@@ -52,3 +52,12 @@ GitHub 5/5 OK; NVIDIA 5/5 OK; Groq 6/7 OK (groq-1 invalida); OpenAI 14 claves va
 - Recargar saldo OpenAI o quitar esas claves; renovar los 2 tokens HF del banco; borrar `groq-1`.
 - Motores de memoria (Graphiti, Graphify, Memanto, AgentDB, FalkorDB, PostgreSQL): siguen como GAP (tarea de Sonnet).
 - UI: los selectores de fichas, costo y aprobacion del mini router ya tienen sus rutas; falta dibujarlos en la interfaz.
+
+## Cierre verificado en produccion (2026-10-03, Opus)
+
+- Mini router T4: arranco con `vllm serve`, respondio HTTP 200, se apago y anoto el gasto (0.10 USD de 5 USD).
+- Kernel: relanzo el Router con el codigo nuevo (LAUNCH -> SWITCH -> CANCEL en `control/kernel-log.jsonl`).
+- MCP por la puerta publica: arreglado el error "Invalid Host header" (el SDK solo aceptaba localhost). La clave del Router sigue siendo obligatoria en `/mcp`.
+- Persistencia: memoria guardada por MCP, copiada al bucket, Router relanzado, y la memoria se leyo de vuelta.
+- Jobs HF: todos se crean en la org COMAND-CENTER-1 (`RIU_HF_NAMESPACE`). Logs de un Job: `GET /hf/compute/{id}?logs=40`.
+- Banco viejo `banco-nvidia-equipo.b64` (2026-09-21, otra clave maestra): sacado del banco activo y guardado en `archivo-bancos-viejos/` del bucket. Unico banco activo: `secret_bank/vault.db.gz.b64`. Borrarlo solo si el Director lo confirma.
