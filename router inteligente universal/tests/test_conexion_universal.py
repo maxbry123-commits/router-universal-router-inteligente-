@@ -137,3 +137,13 @@ def test_rutas_una_sola_raiz():
     assert tokens._ruta_espacio("tok:a/b", "x/y.md").endswith("router-inteligente-universal/espacios/tok_a_b/x/y.md")  # noqa: SLF001
     with pytest.raises(Exception):
         tokens._ruta_espacio("tok:a/b", "../otro/secreto")  # noqa: SLF001
+
+
+def test_validar_y_probar_no_necesitan_clave_pero_si_permiso(clave, registro):
+    app = candado.Candado(_ok_app)
+    con = _token(registro, "inst/g", ["chat", "fichas"])
+    sin = _token(registro, "inst/h", ["chat"])
+    assert _status(_asgi(app, "POST", "/secciones/validar", {"X-API-Key": sin})[0]) == 200
+    assert _status(_asgi(app, "POST", "/secciones/probar", {"X-API-Key": con})[0]) == 200
+    assert _status(_asgi(app, "POST", "/secciones/probar", {"X-API-Key": sin})[0]) == 403
+    assert _status(_asgi(app, "POST", "/secciones", {"X-API-Key": con})[0]) == 403  # publicar: solo Director

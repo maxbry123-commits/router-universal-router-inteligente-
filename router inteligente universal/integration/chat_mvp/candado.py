@@ -36,7 +36,7 @@ PERMISOS: list[tuple[str | None, re.Pattern[str], str]] = [(m, re.compile(p), pe
     ("POST", r"^/(v1/router/chat/completions|chat/send|chat/route|v1/chat/completions)$", "chat"),
     (None, r"^/memoria/", "memoria"),
     (None, r"^/espacio", "almacenamiento"),
-    ("POST", r"^/(secciones/[^/]+/run|fichas/[^/]+/run)$", "fichas"),
+    ("POST", r"^/(secciones/[^/]+/run|secciones/probar|fichas/[^/]+/run)$", "fichas"),
 ]]
 SOLO_DIRECTOR_O_PERMISO = {"computo", "terminal"}
 

@@ -201,6 +201,33 @@ def build_secciones_router(auth: Any) -> APIRouter:
         SECCIONES.cargar()
         return {"secciones": SECCIONES.lista()}
 
+    @r.post("/secciones/validar")  # sin clave del Director: solo revisa
+    def validar(req: SubirReq, _owner: str = Depends(auth)) -> dict[str, Any]:
+        try:
+            f = convertir(req.ficha)
+        except Exception as exc:  # noqa: BLE001
+            return {"valida": False, "error": str(exc)[:300]}
+        return {"valida": True, "nombre": _slug(str(req.ficha.get("nombre") or "")), "modo": req.ficha.get("modo"), "pasos": len(f.members)}
+
+    @r.post("/secciones/probar")  # sin clave del Director: corre la ficha SIN publicarla (permiso fichas)
+    async def probar(body: dict[str, Any], _owner: str = Depends(auth)) -> dict[str, Any]:
+        import asyncio
+
+        from .control_plane import run_ficha
+
+        raw, texto = body.get("ficha") or {}, str(body.get("input") or "")
+        if not texto:
+            raise HTTPException(status_code=422, detail="FALTA_INPUT")
+        try:
+            f = convertir(raw)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=422, detail=f"FICHA_INVALIDA:{str(exc)[:300]}") from exc
+        out = await asyncio.to_thread(run_ficha, f, texto)
+        nombres = [p.get("nombre") for p in raw.get("pasos") or []]
+        for i, step in enumerate(out["steps"]):
+            step["paso"] = nombres[i] if i < len(nombres) else step.get("role", "juez")
+        return {"prueba": True, "publicada": False, **out}
+
     @r.get("/secciones/{nombre}")
     def una(nombre: str, _owner: str = Depends(auth)) -> dict[str, Any]:
         item = SECCIONES.get(nombre)
