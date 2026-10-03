@@ -72,13 +72,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 63
+Revisión: 64
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-S1-26 raiz de motores sincronizada con la version canonica en chat router. PENDIENTE: Haiku auditoria forense X-Ray plantilla T-11-04; Sol GPT diagrama de flujo Archify usando lo de Haiku.
+ORDEN HY 2026-10-03: 5 pasos (1 memoria+puente HF via harness; 2 motores skills; 3 workflow operativo, HF job solo 16GB; 4 auditoria 4 pasadas; 5 skills DSL-DAG schema+Sheriff). Plan en 01-PLAN/ORDEN-HY-5-PASOS-CIERRE-MCP.md. PENDIENTE: puente MCP HF-almacenamiento (por confirmar), Haiku X-Ray, Sol diagrama.
 
 ### Siguiente
 Continuar DAG existente
