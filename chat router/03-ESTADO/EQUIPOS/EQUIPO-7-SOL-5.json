@@ -98,13 +98,13 @@
           "operacion": "leido",
           "path": "chat router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
           "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
-          "sha256": "ebb06dd354867d275d951c1a3f6b00132e3b99a4af312f1f2124292829f1dcae"
+          "sha256": "0beb8898c0ecf27d85d7d632145ca54e554cb5b46341ae6510bdbaaccda635e6"
         },
         {
           "operacion": "creado",
           "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
           "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
-          "sha256": "f05dedc471788604e9485907a7c0b0e7379d8d973039b41e1429290de5a6bd63"
+          "sha256": "f8e256f5522a16242a2321cbcddad6fa9c572bdb6393df335679e9b8c32f3c5c"
         }
       ],
       "prueba_real": {
@@ -132,13 +132,13 @@
           "operacion": "leido",
           "path": "chat router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
           "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
-          "sha256": "ebb06dd354867d275d951c1a3f6b00132e3b99a4af312f1f2124292829f1dcae"
+          "sha256": "0beb8898c0ecf27d85d7d632145ca54e554cb5b46341ae6510bdbaaccda635e6"
         },
         {
           "operacion": "creado",
           "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
           "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
-          "sha256": "29dd89e07838ffb35bf46aa67c331804889f4fd473ae597df1303ea30588ada7"
+          "sha256": "d2357acbc2b8b134b46d4f7c87ffc85050edf918c6c51915ce851f83a02d2159"
         }
       ],
       "prueba_real": {
@@ -166,19 +166,19 @@
           "operacion": "leido",
           "path": "chat router/03-ESTADO/HANDOFF.md",
           "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/HANDOFF.md",
-          "sha256": "2e3a3c116c1067d0453cccdb3b8615e4904f6f6faf27b0e786dde2e709efcc77"
+          "sha256": "fb649478b60760d3dc26984131852ea67c15379b6aa4ae4a5cac9bd264ff481f"
         },
         {
           "operacion": "leido",
           "path": "chat router/01-PLAN/PLAN-ACCION-XRAY.md",
           "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/PLAN-ACCION-XRAY.md",
-          "sha256": "0c1297037be998ba87b22adcefe61e4156d06365fa8d80d872f8ab5c6ed9f2c7"
+          "sha256": "232a3baf1bb424c69d4bb162bcb5096c34703c802b8e2489754e5a4bf705d27f"
         },
         {
           "operacion": "creado",
           "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
           "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
-          "sha256": "1b604cb98f5da96a26b85c5f5b162b5d748ed0bd582f4936fcd7fa127a46d973"
+          "sha256": "367705a023204b68e7ba0c2c5c8c9344a053e319168389fe1447565c256bdf6b"
         }
       ],
       "prueba_real": {
