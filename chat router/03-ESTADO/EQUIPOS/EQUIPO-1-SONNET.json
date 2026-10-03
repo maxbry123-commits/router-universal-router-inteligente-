@@ -422,6 +422,25 @@
       },
       "gap": null,
       "siguiente": "Ninguna"
+    },
+    {
+      "id_tarea": "S1-11",
+      "equipo": "EQUIPO-1",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T01:06:50Z",
+      "accion": "S1-11c: enlace simbolico a la ruta esperada solo en la maquina; 8 tests de motores en original y nueva.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11c.txt"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "8 passed en cada carpeta (antes 5 failed 3 passed). Era el nombre de la ruta, no el codigo."
+      },
+      "gap": null,
+      "siguiente": "Director: mover/renombrar la carpeta de motores a la ruta esperada."
     }
   ],
   "bitacora": [
@@ -490,6 +509,10 @@
     {
       "fecha_utc": "2026-10-03T00:52:18Z",
       "texto": "[2026-10-03T00:52:18Z] EQUIPO-1 DSL v2: S1-13 CERRADO"
+    },
+    {
+      "fecha_utc": "2026-10-03T01:06:50Z",
+      "texto": "[2026-10-03T01:06:50Z] EQUIPO-1 DSL v4: S1-11c CERRADO"
     }
   ],
   "handoff": {
