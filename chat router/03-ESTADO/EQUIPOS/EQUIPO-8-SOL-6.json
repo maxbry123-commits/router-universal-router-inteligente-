@@ -585,8 +585,8 @@
       "ronda": 3,
       "estado": "CERRADO",
       "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
-      "fecha_utc": "2026-10-03T00:47:15.964Z",
-      "accion": "Se inspeccionaron visualmente UI-REF-045..065 y se registró función real, componente y cobertura. UI-REF-045: PR Changes agrupado por tarea 'Definir el staff', con tarjetas de archivos Added, check de revisión, vista y menú; componente: revisión estructurada por tarea; cobertura T-06: no. | UI-REF-046: PR Description con Summary del runtime/cableado, puerta única Router y archivos nuevos; componente: descripción/resumen de PR; cobertura: no. | UI-REF-047: PR Description con evidencia, nodos abiertos y causas pendientes; componente: estado/evidencia de PR; cobertura: no. | UI-REF-048: overview del PR #5 con ramas, diff, Ready to merge, tabs y tarjeta Devin's analysis; componente: revisión/análisis de PR; cobertura: no. | UI-REF-049: settings Devin de Session agents: agente por defecto, API agent, plataforma y comandos; componente: defaults de sesión; cobertura: no completa. | UI-REF-050: gestión de comandos custom y Usage limits/batch limit; componente: comandos y límites de uso; cobertura: no. | UI-REF-051: políticas de Pull requests (share prompts, @Devin, acceso, reviewer, autor); componente: configuración PR; cobertura: no. | UI-REF-052: continuación de políticas PR, respuesta a bots y Security profiles; componente: seguridad/políticas de sesión; cobertura: no. | UI-REF-053: selector Grok Build/Heavy/Expert/Fast; componente: modo de respuesta; cobertura: sí por T06-F12. | UI-REF-054: composer Grok con chip 'Prueba conectores', modo Expert, adjuntar y voz; componente: chat/connector context/composer; cobertura: parcial. | UI-REF-055: formulario Nueva automatización con nombre, programación/activador, instrucciones y modo Auto; componente: automatizaciones; cobertura: no. | UI-REF-056: continuación de automatización con notificaciones push/correo; componente: automatizaciones/notificaciones; cobertura: no. | UI-REF-057: Manus sugiere crear una rama alternativa ('Probar rama ahora') manteniendo tarea original, sobre tarjeta de sitio dormido; componente: branching de tarea/intervención; cobertura: no. | UI-REF-058: escala/paleta de grises 958→800 con códigos hex; componente: tokens de color; cobertura: parcial por tema V07, sin editor equivalente. | UI-REF-059: paleta Grey 900/800 con #212121/#303030/#424242; componente: tokens de color; cobertura: parcial. | UI-REF-060: referencia de dashboard/feed oscuro con sidebar, hosts, mensajes y cards de contenido; componente: layout dashboard/feed; cobertura: no directa. | UI-REF-061: kit de controles oscuro: búsqueda, imagen, toggles, iconos sociales, sliders, botones y medidor; componente: librería de controles; cobertura: no directa. | UI-REF-062: dashboard Cofeed con sidebar, cards de facturas, gráfica, ratings y panel Quick Payment; componente: dashboard denso con métricas/cards; cobertura: no directa. | UI-REF-063: pantalla Claude Conectores con descubrimiento automático, lista de conectores y acciones Conectar/Desconectar; componente: conectores; cobertura: parcial por T06-F05 (solo lectura). | UI-REF-064: lista Claude de artefactos/documentos PY/MD con composer y selector Haiku 4.5; componente: archivos/artefactos + chat; cobertura: parcial por T06-F02/F24. | UI-REF-065: modal Configuración > Conectores con lista, tipo/estado, agregar/conectar y error OAuth de MCP_SECRET_HF; componente: administración de conectores/error; cobertura: parcial por T06-F05, sin mutaciones de conexión.",
+      "fecha_utc": "2026-10-03T00:47:57.213Z",
+      "accion": "Se inspeccionaron visualmente UI-REF-045..065 y se registró la función real por imagen. UI-REF-045: PR Changes con tarea 'Definir el staff' y tarjetas de archivos Added con expandir/ver/opciones; componente revisión PR por tarea; cobertura NO. | UI-REF-046: PR Description con Summary del plan ejecutable y puerta única agente→router_client→Router; componente descripción/resumen técnico de PR; cobertura NO. | UI-REF-047: PR Description sección 'Evidencia y nodos que siguen ABIERTOS' con artefactos, PROVIDER_KEY_MISSING y bloqueos; componente estado/evidencia del PR; cobertura NO. | UI-REF-048: overview del PR #5 Ready to merge con metadata, ramas, cambios y panel Devin's analysis; componente revisión/resumen PR; cobertura NO. | UI-REF-049: ajustes Devin 'Session agents' con agente por defecto, agente API, plataforma y Commands; componente configuración de agentes/sesiones; cobertura PARCIAL (T06-F11, no defaults/API/platform). | UI-REF-050: ajustes Devin Commands + Add Command y Usage limits/batch limit; componente comandos y límites; cobertura NO (solo consumo de slash existe, no administración/límites). | UI-REF-051: ajustes Pull requests con toggles Share prompts, @Devin, session access, reviewer y autor; componente política PR; cobertura NO. | UI-REF-052: continuación ajustes PR con participantes, bots y Security profiles; componente política PR/seguridad; cobertura NO. | UI-REF-053: selector Grok Build/Heavy/Expert/Fast sobre composer; componente selector de modo; cobertura SÍ (T06-F12). | UI-REF-054: chat Grok con tarea 'Prueba conectores', composer, modo Expert, micrófono/Hablar; componente chat; cobertura PARCIAL (T06-F01/F12/F16). | UI-REF-055: formulario 'Nueva automatización' con nombre, programación/activador e instrucciones + modo Auto; componente automatizaciones; cobertura SÍ a nivel de subvista del plan, sin control equivalente en T-06-INVENTARIO. | UI-REF-056: continuación Nueva automatización con notificaciones push/email; componente automatizaciones/notificaciones; cobertura SÍ a nivel de subvista del plan, sin control equivalente en inventario. | UI-REF-057: Manus muestra sugerencia de bifurcar tarea '¿Quieres una dirección diferente?' con 'Probar rama ahora'; componente branch/fork de tarea; cobertura NO. | UI-REF-058: muestras de paleta gris oscura con tonos 958/928/900/868/846/800 y hex; componente referencia de color; cobertura PARCIAL por tema V07. | UI-REF-059: muestras de paleta Grey 900/800 con #212121/#303030/#424242; componente referencia de color; cobertura PARCIAL por tema V07. | UI-REF-060: referencia de dashboard/feed oscuro con sidebar, hosts, cards y navegación; componente layout dashboard; cobertura PARCIAL como inspiración visual, no función equivalente. | UI-REF-061: kit UI oscuro con inputs, search, toggles, botones, iconos sociales, slider y gauge; componente biblioteca de controles; cobertura PARCIAL visual, no controles funcionales equivalentes. | UI-REF-062: dashboard financiero oscuro con sidebar, cards, gráfico, métricas y panel lateral; componente layout de alta densidad; cobertura PARCIAL visual, no función equivalente. | UI-REF-063: Claude 'Conectores' con descubrimiento, lista, contadores y conectar/desconectar; componente conectores; cobertura SÍ (T06-F05). | UI-REF-064: Claude con tarjetas de artefactos código/documento y composer con selector Haiku; componente conversación + artefactos; cobertura PARCIAL (T06-F01/F04/F24). | UI-REF-065: Claude Configuración > Conectores con tabla, estados Conectar y error de login MCP_SECRET_HF; componente gestión/estado de conectores; cobertura SÍ (T06-F05, estados error).",
       "archivos": [
         {
           "operacion": "leido",
@@ -716,9 +716,9 @@
         }
       ],
       "prueba_real": {
-        "comando": "Abrir visualmente los 21 PNG reales UI-REF-045..065 desde la rama de trabajo.",
+        "comando": "Abrir visualmente los 21 PNG reales UI-REF-045..065 desde la rama devin/1790824641-chat-agent-plan.",
         "ok": true,
-        "salida_resumen": "21/21 imágenes abiertas y diferenciadas: revisión PR/settings Devin, Grok, Manus, paletas/UI kits, dashboards y Claude conectores/artefactos."
+        "salida_resumen": "21/21 imágenes abiertas y clasificadas por función/componente/cobertura."
       },
       "gap": null,
       "siguiente": "I-08"
@@ -729,24 +729,56 @@
       "ronda": 3,
       "estado": "CERRADO",
       "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
-      "fecha_utc": "2026-10-03T00:47:15.964Z",
-      "accion": "Comparación de auditoría visual contra ambos catálogos. CATALOGO-ANEXOS-VISUALES: UI-EXTRA-001..005 son genéricos porque repiten 'Diagrama de arquitectura del Router' aunque muestran consola principal, topología, contrato, settings y móvil distintos. CATALOGO-ANEXOS-VISUALES: UI-EXTRA-006..016 son genéricos porque repiten 'Captura de conversación, propuesta o revisión del PR' y ocultan funciones distintas (chat, visor documental, PR Changes/Description/Discussion/Commits/Bugs). UI-EXTRA-017 es específica y consistente. CATALOGO-REFERENCIAS-UI: descripciones materialmente incorrectas: UI-REF-004,006,007,008,009,010,011,012,014,015,016,017,024,025,027,028,029,031,032,034,035,036,037,038,039,040,042,043,046,049,050,051,052,053,054,055,056,058,059,060,061,063,064,065. CATALOGO-REFERENCIAS-UI: descripciones genéricas/insuficientes aunque relacionadas: UI-REF-005,013,023,026,030,033,044,045,048,057,062. Las restantes revisadas describen de forma razonable su función principal.",
+      "fecha_utc": "2026-10-03T00:47:57.213Z",
+      "accion": "CATALOGO-ANEXOS-VISUALES: UI-EXTRA-001..005 están marcadas con la misma descripción genérica 'Diagrama de arquitectura del Router' aunque son MAIN, TOPOLOGY, CONTRACT, SETTINGS y MOBILE; UI-EXTRA-006..016 repiten 'Captura de conversación, propuesta o revisión del PR' pese a mostrar chat/composer, visor documental, ASK Council, PR overview/diff/description/discussion/commits/bugs; UI-EXTRA-017 sí es específica y coincide con el selector GPT-6 Sol. CATALOGO-REFERENCIAS-UI: descripciones materialmente incorrectas frente a la imagen=UI-REF-002,UI-REF-004,UI-REF-006,UI-REF-007,UI-REF-008,UI-REF-009,UI-REF-010,UI-REF-011,UI-REF-012,UI-REF-013,UI-REF-014,UI-REF-015,UI-REF-016,UI-REF-017,UI-REF-024,UI-REF-025,UI-REF-027,UI-REF-028,UI-REF-029,UI-REF-030,UI-REF-031,UI-REF-032,UI-REF-033,UI-REF-034,UI-REF-035,UI-REF-036,UI-REF-037,UI-REF-038,UI-REF-039,UI-REF-040,UI-REF-042,UI-REF-043,UI-REF-046,UI-REF-047,UI-REF-048,UI-REF-049,UI-REF-050,UI-REF-051,UI-REF-052,UI-REF-053,UI-REF-054,UI-REF-055,UI-REF-056,UI-REF-057,UI-REF-058,UI-REF-059,UI-REF-060,UI-REF-061,UI-REF-062,UI-REF-063,UI-REF-064,UI-REF-065; descripciones genéricas/incompletas=UI-REF-005,UI-REF-018,UI-REF-020,UI-REF-021,UI-REF-022,UI-REF-023,UI-REF-026,UI-REF-041,UI-REF-044,UI-REF-045; suficientemente específicas=UI-REF-001,UI-REF-003,UI-REF-019.",
       "archivos": [
         {
           "operacion": "leido",
-          "path": "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
-          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json"
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+          "sha256": "72da4a525fa70f00ecd092f4f5dcc447af2e71b6df4d46470529257f3b19206e"
         },
         {
           "operacion": "leido",
-          "path": "chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json",
-          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/CATALOGO-REFERENCIAS-UI.json"
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+          "sha256": "7e3c8822d876d5dcefeaceed80bcc83b3a693dcdcda8a3b4decabc34ac72f97c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-093043_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-093043_Edge.png",
+          "sha256": "2482e346b6a4ca8861fb5e5e444c84504fde90e8a4f04653921e3fc25441291c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio.png",
+          "sha256": "c7781bf40f2b97f17b25c4c2b76aa8f80db40d24bfe9a78a730613e607209ce9"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031320_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031320_Edge.png",
+          "sha256": "a1556123e9c477036d679d09ef12947c89ada4e8fe94b0f3a764a4671d68680c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "sha256": "f23725467c279a4729ef6a11df3907ced24372a24e45a61674a90751ed0dad03"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+          "sha256": "62e13bb9d26ce4957ed1c005e312dd5fa3021e030db4da98f70cb921303991d4"
         }
       ],
       "prueba_real": {
-        "comando": "Comparar las funciones observadas en I-01..I-07 con el campo function de CATALOGO-ANEXOS-VISUALES.json y CATALOGO-REFERENCIAS-UI.json.",
+        "comando": "Comparar las descripciones de CATALOGO-ANEXOS-VISUALES.json y CATALOGO-REFERENCIAS-UI.json contra las funciones observadas en las imágenes auditadas.",
         "ok": true,
-        "salida_resumen": "Marcadas entradas genéricas e incorrectas; los mayores desvíos están en EXTRA-001..016 y en múltiples UI-REF cuyos rótulos no describen la pantalla observada."
+        "salida_resumen": "Se marcaron descripciones repetidas, genéricas e incorrectas; UI-EXTRA-017 y UI-REF-001/003/019 quedan como referencias suficientemente específicas."
       },
       "gap": null,
       "siguiente": "I-09"
@@ -757,19 +789,44 @@
       "ronda": 3,
       "estado": "CERRADO",
       "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
-      "fecha_utc": "2026-10-03T00:47:15.964Z",
-      "accion": "Mapa función observada → control T-06. Chat/shell: T06-F01 Chat; T06-F09 proveedor; F10 modelo; F11 agente; F12 modo; F13 grupo; F14 cuenta GitHub; F15 rama (solo lectura); F16 enviar al Router. Archivos/canvas: T06-F02 Archivos; F21 buscar; F22 actualizar; F23 subir; F04 Canvas; F24 vista previa dinámica. Seguimiento: T06-F03 Seguimiento; F25 ID ejecución; F26 consultar ledger. Conectores/plantillas/ingeniería: T06-F05 Conectores; F06 Plantillas; F07 Ingeniería. Control/runtime: T06-F08 reintentar conexión; F17 pausar; F18 reanudar; F19 emergencia; F20 encender Router. UX/seguridad: T06-F27 responsive; F28 teclado/touch; F29 autenticación sin clave cliente; F30 red/consola. Funciones vistas SIN control equivalente en T-06: PR overview/Description/Discussion/Commits/Bugs/diff/merge/políticas PR; task/subtask management; Environment snapshots/blueprints/outposts; gestión de comandos custom/usage limits/security profiles; automatizaciones y notificaciones; branching de tarea; editor de tema/iconoteca; creación multimedia; inbox multi-bot; settings de cuenta/app; administración mutable Connect/Disconnect de conectores. Referencias cruzadas clave: UI-REF-053→F12; UI-REF-063/065→F05 parcial; UI-REF-064→F02/F24 parcial; UI-REF-023→F01/F16; UI-REF-025→F16 slash; UI-REF-026→F14/F15; UI-EXTRA-017→F10/F12.",
+      "fecha_utc": "2026-10-03T00:47:57.213Z",
+      "accion": "Mapa función→control T-06-INVENTARIO: Shell/chat→T06-F01; Archivos/lista→T06-F02; Seguimiento/grafo/cola/bitácora→T06-F03; Canvas/artefacto/media→T06-F04 y F24; Conectores/MCP→T06-F05; Plantillas→T06-F06; Ingeniería/read-only→T06-F07; reintento conexión→T06-F08; proveedor→T06-F09; modelo→T06-F10; agente→T06-F11; modo Fast/Expert/Rápido/Pensar/Equilibrado→T06-F12; grupo→T06-F13; cuenta GitHub→T06-F14; rama→T06-F15; composer/enviar→T06-F16; pausar/reanudar/emergencia/router→T06-F17..F20; buscar/actualizar/subir archivos→T06-F21..F23; ID ejecución/ledger→T06-F25..F26; responsive/touch→T06-F27..F28; autenticación→T06-F29; red/consola→T06-F30; PR overview/diff/merge/discussion/commits/bugs→SIN_CONTROL_T06; Environment snapshots/outposts/blueprints→SIN_CONTROL_T06; gestión de tareas/subtareas/telemetría→SIN_CONTROL_T06; administrar comandos/usage limits/políticas PR/security profiles→SIN_CONTROL_T06; crear automatización/notificaciones→SUBVISTA_PLAN_SIN_FILA_T06; multi-bot inbox/rutinas→SIN_CONTROL_T06; fork de tarea→SIN_CONTROL_T06",
       "archivos": [
         {
           "operacion": "leido",
-          "path": "chat router/01-PLAN/T-06-INVENTARIO.md",
-          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/T-06-INVENTARIO.md"
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "sha256": "f23725467c279a4729ef6a11df3907ced24372a24e45a61674a90751ed0dad03"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+          "sha256": "ba88c01eeaddbcba8b494fc0b6b6d8e8d1215fb0d8079aa0f66903772b37f83f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+          "sha256": "6c3418946af3dbca542d82f9d447f58d8086d820b838e36865ed1181e5e52553"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+          "sha256": "2696e6827a31ee8c027b1680847b047dacff6d9ddf86cabafeb369e21026cf93"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+          "sha256": "f51e8412348cd1733eaacdf1ccccdcbf55f2802d6a3fb7a20219c802e56d2591"
         }
       ],
       "prueba_real": {
-        "comando": "Cruzar las funciones visuales observadas con los IDs T06-F01..T06-F30 de T-06-INVENTARIO.md.",
+        "comando": "Cruzar las funciones visuales auditadas con las filas T06-F01..T06-F30 de chat router/01-PLAN/T-06-INVENTARIO.md.",
         "ok": true,
-        "salida_resumen": "Mapa cerrado para chat, archivos/canvas, seguimiento, conectores, controles, UX/seguridad y listado explícito de funciones sin control equivalente en T-06."
+        "salida_resumen": "Funciones con control existente quedaron ligadas a T06-F01..F30; funciones sin fila equivalente quedaron marcadas SIN_CONTROL_T06 o SUBVISTA_PLAN_SIN_FILA_T06."
       },
       "gap": null,
       "siguiente": "SAL; siguiente PENDIENTE I-10."
@@ -807,19 +864,19 @@
       "evento": "CERRADO: 22/22 UI-REF-023..044 inspeccionadas visualmente y funciones registradas en DESTINO."
     },
     {
-      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "fecha_utc": "2026-10-03T00:47:57.213Z",
       "id_tarea": "I-07",
-      "evento": "CERRADO: UI-REF-045..065 (21/21) inspeccionadas visualmente y registradas."
+      "evento": "CERRADO: UI-REF-045..065, 21/21 imágenes inspeccionadas y función real registrada."
     },
     {
-      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "fecha_utc": "2026-10-03T00:47:57.213Z",
       "id_tarea": "I-08",
-      "evento": "CERRADO: catálogos comparados; descripciones genéricas/incorrectas marcadas en resultado."
+      "evento": "CERRADO: catálogos comparados contra la auditoría visual; descripciones genéricas/incorrectas marcadas."
     },
     {
-      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "fecha_utc": "2026-10-03T00:47:57.213Z",
       "id_tarea": "I-09",
-      "evento": "CERRADO: mapa función→control T06-F01..F30 registrado, incluyendo funciones sin control equivalente."
+      "evento": "CERRADO: mapa función→T06-F01..F30 completado; funciones sin control equivalente identificadas."
     }
   ],
   "handoff": {
@@ -829,9 +886,9 @@
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json"
     ],
     "cambios": [
-      "I-07: 21 referencias finales UI-REF-045..065 clasificadas.",
-      "I-08: catálogos confrontados con la auditoría visual.",
-      "I-09: mapa función→control T-06 cerrado."
+      "I-07: 21/21 UI-REF-045..065 clasificadas.",
+      "I-08: catálogo de anexos y catálogo de 65 referencias contrastados con la función observada.",
+      "I-09: funciones visuales mapeadas contra T06-F01..F30 y marcadas cuando no existe control."
     ],
     "fallos": [],
     "siguiente": "I-10 es la siguiente tarea PENDIENTE. SAL."
