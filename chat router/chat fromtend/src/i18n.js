@@ -4,6 +4,8 @@ export const LANGUAGES = ["es", "en", "fr", "pt"];
 
 export const STRINGS = {
   es: {
+    tools: "Herramientas", selectors: "Selectores", controls: "Controles", chatMenu: "Menú del chat", documents: "Subir documentos", documentsActionId: "Subir documentos",
+    apply: "Aplicar", cancel: "Cancelar", modelSearch: "Buscar modelo", noResults: "Sin resultados", themeLittle: "Little", themeMatte: "Matte", themeBlanco: "Blanco",
     chatAria: "Chat", controlsAria: "Modelos y modos", selectorsAria: "Selectores configurables", togglesAria: "Ocho controles configurables", messagesAria: "Mensajes",
     defaultDescription: "Elige un modelo y configura las acciones para conectar tu backend.", slotMode: "Nivel {number}", slotSelector: "Selector {number}", slotToggle: "Control {number}", slotAction: "Función {number}",
     emptyTitle: "¿Qué vamos a construir hoy?", placeholder: "Escribe un mensaje…", messageAria: "Mensaje", fileInput: "Elegir archivos", closeWindow: "Cerrar",
@@ -26,6 +28,8 @@ export const STRINGS = {
     models: "Elegir modelo", modes: "Razonamiento", functions: "+ 12 funciones", attach: "Adjuntar", voice: "Voz", watchdog: "Watchdog", send: "Enviar ↗", skills: "Habilidades", connectors: "Conectores",
   },
   en: {
+    tools: "Tools", selectors: "Selectors", controls: "Controls", chatMenu: "Chat menu", documents: "Upload documents", documentsActionId: "Upload documents",
+    apply: "Apply", cancel: "Cancel", modelSearch: "Search models", noResults: "No results", themeLittle: "Little", themeMatte: "Matte", themeBlanco: "Light",
     chatAria: "Chat", controlsAria: "Models and modes", selectorsAria: "Configurable selectors", togglesAria: "Eight configurable controls", messagesAria: "Messages",
     defaultDescription: "Choose a model and configure actions to connect your backend.", slotMode: "Level {number}", slotSelector: "Selector {number}", slotToggle: "Control {number}", slotAction: "Function {number}",
     emptyTitle: "What shall we build today?", placeholder: "Write a message…", messageAria: "Message", fileInput: "Choose files", closeWindow: "Close",
@@ -48,6 +52,8 @@ export const STRINGS = {
     models: "Choose model", modes: "Reasoning", functions: "+ 12 functions", attach: "Attach", voice: "Voice", watchdog: "Watchdog", send: "Send ↗", skills: "Skills", connectors: "Connectors",
   },
   fr: {
+    tools: "Outils", selectors: "Sélecteurs", controls: "Commandes", chatMenu: "Menu du chat", documents: "Téléverser des documents", documentsActionId: "Téléverser des documents",
+    apply: "Appliquer", cancel: "Annuler", modelSearch: "Rechercher un modèle", noResults: "Aucun résultat", themeLittle: "Little", themeMatte: "Matte", themeBlanco: "Clair",
     chatAria: "Chat", controlsAria: "Modèles et modes", selectorsAria: "Sélecteurs configurables", togglesAria: "Huit commandes configurables", messagesAria: "Messages",
     defaultDescription: "Choisissez un modèle et configurez les actions pour connecter votre backend.", slotMode: "Niveau {number}", slotSelector: "Sélecteur {number}", slotToggle: "Commande {number}", slotAction: "Fonction {number}",
     emptyTitle: "Qu'allons-nous construire aujourd'hui ?", placeholder: "Écrivez un message…", messageAria: "Message", fileInput: "Choisir des fichiers", closeWindow: "Fermer",
@@ -70,6 +76,8 @@ export const STRINGS = {
     models: "Choisir un modèle", modes: "Raisonnement", functions: "+ 12 fonctions", attach: "Joindre", voice: "Voix", watchdog: "Watchdog", send: "Envoyer ↗", skills: "Compétences", connectors: "Connecteurs",
   },
   pt: {
+    tools: "Ferramentas", selectors: "Seletores", controls: "Controles", chatMenu: "Menu do chat", documents: "Enviar documentos", documentsActionId: "Enviar documentos",
+    apply: "Aplicar", cancel: "Cancelar", modelSearch: "Buscar modelos", noResults: "Sem resultados", themeLittle: "Little", themeMatte: "Matte", themeBlanco: "Claro",
     chatAria: "Chat", controlsAria: "Modelos e modos", selectorsAria: "Seletores configuráveis", togglesAria: "Oito controles configuráveis", messagesAria: "Mensagens",
     defaultDescription: "Escolha um modelo e configure as ações para conectar seu backend.", slotMode: "Nível {number}", slotSelector: "Seletor {number}", slotToggle: "Controle {number}", slotAction: "Função {number}",
     emptyTitle: "O que vamos construir hoje?", placeholder: "Escreva uma mensagem…", messageAria: "Mensagem", fileInput: "Escolher arquivos", closeWindow: "Fechar",

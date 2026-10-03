@@ -18,9 +18,21 @@ export function button(label, onClick, className = "") {
 }
 
 export function openWindow(title, content, closeLabel = "Cerrar") {
+  const opener = document.activeElement;
   const dialog = el("dialog", { class: "window", "aria-label": title });
-  dialog.append(el("header", { class: "window-header" }, el("h2", { text: title }), button(closeLabel, () => dialog.close(), "ghost")), content);
-  dialog.addEventListener("close", () => dialog.remove());
+  dialog.append(el("div", { class: "sheet-handle", "aria-hidden": "true" }),
+    el("header", { class: "window-header" }, el("h2", { text: title }), button(closeLabel, () => dialog.close(), "ghost")),
+    el("p", { class: "window-status", role: "status", "aria-live": "polite" }), content);
+  dialog.addEventListener("click", event => {
+    if (event.target !== dialog || dialog.getAttribute("aria-busy") === "true") return;
+    const rect = dialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+  });
+  dialog.addEventListener("close", () => {
+    dialog.remove();
+    const target = opener?.isConnected ? opener : document.querySelector('[data-control="tools"]');
+    target?.focus();
+  });
   document.body.append(dialog);
   dialog.showModal();
   return dialog;

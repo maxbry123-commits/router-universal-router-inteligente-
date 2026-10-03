@@ -2,7 +2,7 @@ import { el, openWindow } from "../dom.js";
 import { t } from "../i18n.js";
 
 export async function resourceWindow(title, actionId, context) {
-  const body = el("div", { class: "window-body" }, el("p", { class: "progress", text: t(context, "backendLoading") }));
+  const body = el("div", { class: "window-body" }, el("p", { class: "muted", text: t(context, "backendLoading") }));
   openWindow(title, body, t(context, "closeWindow"));
   try {
     const result = await context.execute(actionId);

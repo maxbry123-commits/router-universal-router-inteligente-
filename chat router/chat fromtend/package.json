@@ -3,10 +3,11 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check src/*.js && node --check src/actions/*.js && node --check src/components/*.js && node --check src/panels/*.js && node --check src/windows/*.js && node --check src/plugins/*.js && node --check scripts/*.mjs",
+    "check": "node scripts/check.mjs",
     "build:review": "node scripts/build-review.mjs"
   },
   "devDependencies": {
-    "esbuild": "0.24.2"
+    "esbuild": "0.25.12",
+    "linkedom": "0.18.12"
   }
 }

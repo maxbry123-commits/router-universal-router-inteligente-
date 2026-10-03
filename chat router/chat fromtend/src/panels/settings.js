@@ -1,5 +1,6 @@
 import { button, el } from "../dom.js";
 import { chatDescription, controlLabel, LANGUAGES, slotLabel, t } from "../i18n.js";
+import { themePicker } from "../components/theme-picker.js";
 
 function field(label, value, onChange, multiline = false) {
   const input = el(multiline ? "textarea" : "input", { class: "setting-input", "aria-label": label });
@@ -31,16 +32,7 @@ export function renderSettings(context) {
     el("p", { class: "muted", text: t(context, "settingsIntro") }),
     field(t(context, "chatTitle"), draft.title, value => { draft.title = value; }),
     field(t(context, "chatDescription"), chatDescription(context), value => { draft.description = value; }),
-    el("label", { class: "setting-field" }, el("span", { text: t(context, "theme") }), (() => {
-      const select = el("select", { "aria-label": t(context, "theme") });
-      for (const name of ["little", "matte", "blanco"]) {
-        const option = el("option", { value: name, text: name });
-        select.append(option);
-      }
-      select.value = draft.theme;
-      select.addEventListener("change", () => { draft.theme = select.value; });
-      return select;
-    })()),
+    themePicker(context, draft),
     el("label", { class: "setting-field" }, el("span", { text: t(context, "language") }), (() => {
       const select = el("select", { "aria-label": t(context, "language") });
       for (const locale of LANGUAGES) select.append(el("option", { value: locale, text: locale.toUpperCase() }));
@@ -50,7 +42,7 @@ export function renderSettings(context) {
     })()));
 
   const commands = el("div", { class: "settings-group" }, el("h3", { text: t(context, "backendConnections") }));
-  for (const key of ["modelsActionId", "modelActionId", "sendActionId", "attachActionId", "voiceActionId", "watchdogActionId", "skillsActionId", "connectorsActionId"]) {
+  for (const key of ["modelsActionId", "modelActionId", "sendActionId", "attachActionId", "documentsActionId", "voiceActionId", "watchdogActionId", "skillsActionId", "connectorsActionId"]) {
     commands.append(field(`${t(context, key)} · actionId`, draft[key], value => { draft[key] = value; }));
   }
 

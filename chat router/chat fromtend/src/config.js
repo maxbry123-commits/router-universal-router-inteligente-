@@ -4,6 +4,7 @@ export const CONTROL_LABELS = Object.freeze({
   models: "Elegir modelo", modes: "Razonamiento", functions: "+ 12 funciones",
   attach: "Adjuntar", voice: "Voz", watchdog: "Watchdog", send: "Enviar ↗",
   skills: "Habilidades", connectors: "Conectores",
+  tools: "Herramientas", selectors: "Selectores", controls: "Controles", chatMenu: "Menú del chat", documents: "Subir documentos",
 });
 
 const slots = (count, prefix) => Array.from({ length: count }, (_, i) => ({
@@ -26,6 +27,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   modelActionId: "",
   sendActionId: "chat.send",
   attachActionId: "chat.attach",
+  documentsActionId: "chat.attach",
   voiceActionId: "",
   watchdogActionId: "",
   skillsActionId: "",
@@ -53,7 +55,7 @@ const item = (value, fallback) => ({
 export function normalizeConfig(value = {}) {
   if (!value || typeof value !== "object") value = {};
   const result = {};
-  for (const key of ["title", "description", "modelsActionId", "modelActionId", "sendActionId", "attachActionId", "voiceActionId", "watchdogActionId", "skillsActionId", "connectorsActionId"]) {
+  for (const key of ["title", "description", "modelsActionId", "modelActionId", "sendActionId", "attachActionId", "documentsActionId", "voiceActionId", "watchdogActionId", "skillsActionId", "connectorsActionId"]) {
     result[key] = asString(value[key] ?? DEFAULT_CONFIG[key]);
   }
   result.theme = ["little", "matte", "blanco"].includes(value.theme) ? value.theme : "little";
