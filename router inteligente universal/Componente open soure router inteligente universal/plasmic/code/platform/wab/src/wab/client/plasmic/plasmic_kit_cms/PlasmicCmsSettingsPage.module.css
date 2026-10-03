@@ -1,0 +1,115 @@
+.root {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  justify-content: flex-start;
+  align-items: flex-start;
+  background: var(--token-iR8SeEwQZ);
+  min-width: 0;
+  min-height: 0;
+}
+.freeBox__q86AV {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  background: var(--token-iR8SeEwQZ);
+  min-width: 0;
+  min-height: 0;
+}
+.freeBox__iAyOg {
+  display: flex;
+  position: relative;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--token-hoA5qaM-91G);
+}
+.left {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+}
+.text___6B6St {
+  position: relative;
+  width: 100%;
+  height: auto;
+  max-width: 800px;
+  font-weight: 500;
+  font-size: 14px;
+  min-width: 0;
+}
+.details {
+  color: var(--token-UunsGa2Y3t3);
+}
+.right {
+  display: flex;
+  position: relative;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: 8px;
+}
+.duplicateButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__add11 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.text__luZtw {
+  height: auto;
+}
+.svg___0RyI5 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.saveButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg___9Mewo {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.svg__yMuaK {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.freeBox__zo006 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  background: var(--token-p-rw5DRJTx);
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+}
+.content {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  max-width: 800px;
+  min-width: 0;
+  min-height: 0;
+  padding: 1.25rem;
+}

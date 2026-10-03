@@ -1,0 +1,39 @@
+.root {
+  display: flex;
+  width: 100%;
+  height: auto;
+  position: relative;
+  flex-direction: column;
+  background: var(--token-aUCjnzhayS);
+  row-gap: 4px;
+  min-width: 0;
+  padding: 8px;
+  border-bottom: 1px solid var(--token-hoA5qaM-91G);
+}
+.intro:global(.__wab_instance) {
+  position: relative;
+}
+.svg__zfUTw {
+  position: relative;
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+}
+.components:global(.__wab_instance) {
+  position: relative;
+}
+.svg__n57Oc {
+  position: relative;
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+}
+.images:global(.__wab_instance) {
+  position: relative;
+}
+.svg__j4E20 {
+  position: relative;
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+}

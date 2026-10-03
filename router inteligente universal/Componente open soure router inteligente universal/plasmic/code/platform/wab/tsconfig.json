@@ -1,0 +1,71 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    // Excludes @types/jest, which storybook pulls in and whose globals
+    // conflict with vitest's.
+    "types": ["node", "vitest/globals", "jest-extended"],
+    "module": "esnext",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2016",
+      "es2017",
+      "es2018",
+      "es2019",
+      "es2020",
+      "esnext",
+      "esnext.asynciterable",
+      "esnext.array"
+    ],
+    // .js were causing problems.  Getting "Cannot compile namespaces" errors
+    // ([1]), and `String.format` in devtools.js was causing weird type
+    // inference issues with strings (especially causing JQuery.data() to
+    // break).
+    //
+    // [1]: https://github.com/Microsoft/TypeScript/issues/15230#issuecomment-466624686
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "alwaysStrict": true,
+    "paths": {
+      // Absolute import paths like "@/wab/shared/common"
+      // Should match "resolve.alias" in webpack.config.js
+      "@/*": ["./src/*"],
+      // Legacy bare src/ imports (previously resolved via baseUrl)
+      "src/*": ["./src/*"],
+      // socket.io only exports root; allow sub-path imports for module augmentations
+      "socket.io/dist/*": ["./node_modules/socket.io/dist/*"],
+      // @ts-rest/express subpath exports missing types
+      "@ts-rest/express/src/lib/types": [
+        "./node_modules/@ts-rest/express/src/lib/types"
+      ],
+      // typeorm 0.2.x subpath exports missing types
+      "typeorm": ["./node_modules/typeorm/index"],
+      "typeorm/*": ["./node_modules/typeorm/*"]
+    },
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "jsx": "react",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "noErrorTruncation": true,
+    "noFallthroughCasesInSwitch": true,
+    // Not worth it
+    "noImplicitAny": false,
+    // Not worth it
+    "noImplicitOverride": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    // Not worth it
+    "noPropertyAccessFromIndexSignature": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true
+  },
+  "include": ["src", "rsbuild.config.ts"],
+  "exclude": ["node_modules", "tools"]
+}

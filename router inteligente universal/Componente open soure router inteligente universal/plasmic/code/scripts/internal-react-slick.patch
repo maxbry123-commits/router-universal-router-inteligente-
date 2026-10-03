@@ -1,0 +1,42 @@
+diff --git a/platform/canvas-packages/esbuild.js b/platform/canvas-packages/esbuild.js
+index 7721ea4440..a5eb41d4e5 100644
+--- a/platform/canvas-packages/esbuild.js
++++ b/platform/canvas-packages/esbuild.js
+@@ -137,11 +137,11 @@ const clientConfigs = ["index", ...hostlessPkgNames].map((pkg) => ({
+     alias({
+       "react-slick": path.join(
+         process.cwd(),
+-        "node_modules/internal-react-slick/lib/index.js"
++        "node_modules/@plasmicforks/react-slick/lib/index.js"
+       ),
+       "@ant-design/react-slick": path.join(
+         process.cwd(),
+-        "node_modules/internal-react-slick/lib/index.js"
++        "node_modules/@plasmicforks/react-slick/lib/index.js"
+       ),
+       "@plasmicapp/host/registerComponent": path.join(
+         process.cwd(),
+diff --git a/platform/canvas-packages/internal_pkgs/react-slick/package.json b/platform/canvas-packages/internal_pkgs/react-slick/package.json
+index c0a0970158..e5139e4ff5 100644
+--- a/platform/canvas-packages/internal_pkgs/react-slick/package.json
++++ b/platform/canvas-packages/internal_pkgs/react-slick/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "react-slick",
++  "name": "@plasmicforks/react-slick",
+   "version": "0.28.1",
+   "description": " React port of slick carousel",
+   "main": "./lib",
+diff --git a/platform/canvas-packages/package.json b/platform/canvas-packages/package.json
+index bb5f8ec885..04f47acf29 100644
+--- a/platform/canvas-packages/package.json
++++ b/platform/canvas-packages/package.json
+@@ -76,7 +76,7 @@
+     "framer-motion": "^7.6.1",
+     "html-to-image": "^1.11.11",
+     "immer": "^10.0.3",
+-    "internal-react-slick": "link:./internal_pkgs/react-slick",
++    "@plasmicforks/react-slick": "*",
+     "isomorphic-fetch": "^3.0.0",
+     "jquery": "^3.7.1",
+     "lodash": "^4.17.21",

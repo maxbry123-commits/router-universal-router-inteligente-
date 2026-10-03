@@ -1,0 +1,4411 @@
+import {
+  Adoptee,
+  InsertionSpec,
+  calcOffset,
+  insertBySpec,
+} from "@/wab/client/Dnd";
+import {
+  notifyReferencingNode,
+  showError,
+} from "@/wab/client/ErrorNotifications";
+import { readClipboardPlasmicData } from "@/wab/client/clipboard/common";
+import {
+  AnimationClip,
+  FrameClip,
+  PasteStyleProps,
+  StyleClip,
+  TplClip,
+  isEmptyStyleClip,
+  isStyleClip,
+  isTplClip,
+  isTplsClip,
+} from "@/wab/client/clipboard/local";
+import { toast } from "@/wab/client/components/Messages";
+import { closestTaggedNonTextDomElt } from "@/wab/client/components/canvas/studio-canvas-util";
+import { promptExtractComponent } from "@/wab/client/components/modals/ExtractComponentModal";
+import { promptWrapInComponent } from "@/wab/client/components/modals/WrapInComponentModal";
+import { reactConfirm } from "@/wab/client/components/quick-modals";
+import { getTreeNodeVisibility } from "@/wab/client/components/sidebar-tabs/OutlineCtx";
+import {
+  ensureTplColumnRs,
+  ensureTplColumnsRs,
+  getScreenVariant,
+  makeTplColumn,
+} from "@/wab/client/components/sidebar-tabs/ResponsiveColumns/tpl-columns-utils";
+import { TargetBlockedTooltip } from "@/wab/client/components/sidebar/sidebar-helpers";
+import { OneShortcutCombo } from "@/wab/client/components/studio/Shortcuts";
+import { createAddTplComponent } from "@/wab/client/components/studio/add-drawer/AddDrawer";
+import { LinkButton } from "@/wab/client/components/widgets";
+import { AddTplItem, WRAPPERS_MAP } from "@/wab/client/definitions/insertables";
+import { getBoundingClientRect, getOffsetPoint } from "@/wab/client/dom";
+import { getBackgroundImageProps } from "@/wab/client/dom-utils";
+import { FocusHeuristics } from "@/wab/client/focus-heuristics";
+import { renderCantAddMsg } from "@/wab/client/messages/parenting-msgs";
+import {
+  getEventDataForTplComponent,
+  trackInsertItem,
+} from "@/wab/client/observability/events/insert-item";
+import {
+  DeleteTplResult,
+  computeTplsToDelete,
+  deleteTpl,
+} from "@/wab/client/operations/delete-tpl";
+import {
+  ExtractComponentResult,
+  extractComponent as extractComponentOp,
+} from "@/wab/client/operations/extract-component";
+import {
+  CantInsertTplReason,
+  InsertTplCtx,
+  PasteTplCtx,
+  adoptFixedPositionType as adoptFixedPositionTypeOp,
+  adoptFreePositionType as adoptFreePositionTypeOp,
+  adoptParentContainerStyleForVariant as adoptParentContainerStyleForVariantOp,
+  adoptParentContainerStyle as adoptParentContainerStyleOp,
+  adoptRelativePositionType as adoptRelativePositionTypeOp,
+  adoptStickyPositionType as adoptStickyPositionTypeOp,
+  canInsertTplAsChild,
+  canInsertTplAsParent,
+  canInsertTplAsSibling,
+  canPasteTplAt,
+  clearAllStyles as clearAllStylesOp,
+  convertTextBlockToContainer as convertTextBlockToContainerOp,
+  copyMixins as copyMixinsOp,
+  insertPastedTplAt,
+  insertTplAsChild,
+  insertTplAsParent,
+  pasteTpls,
+  transferStyleProps as transferStylePropsOp,
+} from "@/wab/client/operations/insert-tpl";
+import { renameTpl } from "@/wab/client/operations/rename-tpl";
+import { validateComponentExtraction } from "@/wab/client/operations/utils/validate-component-extraction";
+import { promptComponentName, promptPageName } from "@/wab/client/prompts";
+import { getComboForAction } from "@/wab/client/shortcuts/studio/studio-shortcuts";
+import { ComponentCtx } from "@/wab/client/studio-ctx/component-ctx";
+import { ViewCtx, ensureBaseRs } from "@/wab/client/studio-ctx/view-ctx";
+import { trackEvent } from "@/wab/client/tracking";
+import {
+  fontWeightOptions,
+  isValidFontWeight,
+} from "@/wab/client/typography-utils";
+import { UndoRecord } from "@/wab/client/undo-log";
+import {
+  canSetDisplayNone,
+  getContainerType,
+} from "@/wab/client/utils/tpl-client-utils";
+import { derefTokenRefs, isTokenRef } from "@/wab/commons/StyleToken";
+import { joinReactNodes } from "@/wab/commons/components/ReactUtil";
+import {
+  FrameViewMode,
+  isDuplicatableFrame,
+  isMixedArena,
+} from "@/wab/shared/Arenas";
+import { FRAME_LOWER } from "@/wab/shared/Labels";
+import { RSH, RuleSetHelpers } from "@/wab/shared/RuleSetHelpers";
+import {
+  getParentOrSlotSelection,
+  getSingleTextBlockFromArg,
+  getSlotParams,
+  getTplSlotDescendants,
+  isPlainTextTplSlot,
+  isTextBlockArg,
+} from "@/wab/shared/SlotUtils";
+import { $$$ } from "@/wab/shared/TplQuery";
+import {
+  ComponentCycleUserError,
+  NestedTplSlotsError,
+} from "@/wab/shared/UserError";
+import {
+  VariantCombo,
+  ensureBaseVariantSetting,
+  ensureVariantSetting,
+  isBaseVariant,
+  isGlobalVariant,
+  isPrivateStyleVariant,
+} from "@/wab/shared/Variants";
+import { AddItemKey, WrapItemKey } from "@/wab/shared/add-item-keys";
+import { toVarName } from "@/wab/shared/codegen/util";
+import {
+  hasMaxWidthVariant,
+  hasNonResponsiveColumnsStyle,
+  redistributeColumnsSizes,
+} from "@/wab/shared/columns-utils";
+import * as common from "@/wab/shared/common";
+import {
+  assert,
+  ensure,
+  ensureArray,
+  ensureInstance,
+  ensureString,
+  maybe,
+  omitNils,
+  switchType,
+  tuple,
+  withoutNils,
+} from "@/wab/shared/common";
+import * as Components from "@/wab/shared/core/components";
+import {
+  ComponentType,
+  isCodeComponent,
+  isFrameComponent,
+  isPageComponent,
+} from "@/wab/shared/core/components";
+import * as exprs from "@/wab/shared/core/exprs";
+import { mkImageAssetRef } from "@/wab/shared/core/image-assets";
+import {
+  SQ,
+  SelQuery,
+  Selectable,
+  isSelectable,
+} from "@/wab/shared/core/selection";
+import { siteFinalStyleTokensAllDeps } from "@/wab/shared/core/site-style-tokens";
+import {
+  allAnimationSequences,
+  allGlobalVariants,
+  allMixins,
+  isTplAttachedToSite,
+} from "@/wab/shared/core/sites";
+import { SlotSelection } from "@/wab/shared/core/slots";
+import {
+  findImplicitStatesOfNodesInTree,
+  getStateDisplayName,
+  isStateUsedInExpr,
+} from "@/wab/shared/core/states";
+import {
+  CONTENT_LAYOUT_FULL_BLEED,
+  WRAP_AS_PARENT_PROPS,
+  defaultCopyableStyleNames,
+  slotCssProps,
+} from "@/wab/shared/core/style-props";
+import { validateStylesForTpl } from "@/wab/shared/core/style-props-tpl";
+import { px } from "@/wab/shared/core/styles";
+import * as Tpls from "@/wab/shared/core/tpls";
+import {
+  RawTextLike,
+  isTplComponent,
+  isTplVariantable,
+} from "@/wab/shared/core/tpls";
+import * as ValNodes from "@/wab/shared/core/val-nodes";
+import {
+  ValComponent,
+  ValNode,
+  ValSlot,
+  ValTag,
+  isSelectableValNode,
+  slotContentValNode,
+} from "@/wab/shared/core/val-nodes";
+import { asTplOrSlotSelection } from "@/wab/shared/core/vals";
+import {
+  getCssInitial,
+  parseCssNumericNew,
+  tryGetCssInitial,
+} from "@/wab/shared/css";
+import { AddItemPrefs, getSimplifiedStyles } from "@/wab/shared/default-styles";
+import {
+  computeDefinedIndicator,
+  getTargetBlockingCombo,
+} from "@/wab/shared/defined-indicator";
+import {
+  EffectiveVariantSetting,
+  adaptEffectiveVariantSetting,
+} from "@/wab/shared/effective-variant-setting";
+import {
+  Box,
+  Pt,
+  Rect,
+  Side,
+  isStandardSide,
+  sideToOrient,
+} from "@/wab/shared/geom";
+import { isTagInline, isTagListContainer } from "@/wab/shared/html";
+import {
+  ContainerLayoutType,
+  ContainerType,
+  PositionLayoutType,
+  convertSelfContainerType,
+  getRshContainerType,
+  getRshPositionType,
+  isContainerTypeVariantable,
+} from "@/wab/shared/layoututils";
+import {
+  Animation,
+  ArenaFrame,
+  Component,
+  CustomCode,
+  Mixin,
+  ObjectPath,
+  Param,
+  RawText,
+  RichText,
+  StyleToken,
+  TplComponent,
+  TplNode,
+  TplSlot,
+  TplTag,
+  Variant,
+  VariantSetting,
+  isKnownArenaFrame,
+  isKnownExprText,
+  isKnownImageAssetRef,
+  isKnownNodeMarker,
+  isKnownRenderExpr,
+  isKnownTplComponent,
+  isKnownTplNode,
+  isKnownTplTag,
+} from "@/wab/shared/model/classes";
+import {
+  canAddChildren,
+  canAddChildrenToSlotSelection,
+  canAddSiblings,
+} from "@/wab/shared/parenting";
+import {
+  isSizeProp,
+  isTplAutoSizable,
+  isTplDefaultSized,
+  resetTplSize,
+} from "@/wab/shared/sizingutils";
+import { capitalizeFirst } from "@/wab/shared/strs";
+import {
+  makeVariantComboSorter,
+  sortedVariantSettingStack,
+} from "@/wab/shared/variant-sort";
+import {
+  TplVisibility,
+  getEffectiveTplVisibility,
+  isVisibilityHidden,
+  setTplVisibility,
+} from "@/wab/shared/visibility-utils";
+import * as Sentry from "@sentry/browser";
+import { notification } from "antd";
+import $ from "jquery";
+import L, { clamp, isArray } from "lodash";
+import pluralize from "pluralize";
+import React from "react";
+
+export class ViewOps {
+  _viewCtx: ViewCtx;
+
+  constructor(opts: { viewCtx: ViewCtx }) {
+    this._viewCtx = opts.viewCtx;
+  }
+
+  viewCtx() {
+    return this._viewCtx;
+  }
+
+  private change(f: () => void) {
+    this.viewCtx().change(f);
+  }
+
+  private valState() {
+    return this.viewCtx().valState();
+  }
+
+  private tplMgr() {
+    return this.viewCtx().tplMgr();
+  }
+
+  private site() {
+    return this.viewCtx().site;
+  }
+
+  private canvasCtx() {
+    return this.viewCtx().canvasCtx;
+  }
+
+  clipboard() {
+    return this.viewCtx().clipboard;
+  }
+
+  /**
+   * If the element is a text element or a component with just a single visible text slot, start editing it
+   * If the element is a component instance, enter in spotlight mode
+   * @param target
+   */
+  deepFocusElement(
+    target: JQuery | undefined | null,
+    trigger: "ctrl-click" | "dbl-click",
+  ) {
+    if (!target) {
+      return;
+    }
+
+    const selectable = this.viewCtx().dom2val(target);
+    const cloneKey = this.viewCtx().sel2cloneKey(selectable);
+
+    this.viewCtx().change(() => {
+      if (
+        selectable &&
+        this.tryEnterComponentContaining(selectable, trigger, cloneKey)
+      ) {
+        return;
+      }
+      this.tryEditText();
+    });
+  }
+
+  moveForward(tpl?: TplNode) {
+    tpl = tpl || this.viewCtx().focusedTpl() || undefined;
+    if (tpl) {
+      this.change(() => $$$(tpl!).moveForward());
+    }
+  }
+  moveBackward(tpl?: TplNode) {
+    tpl = tpl || this.viewCtx().focusedTpl() || undefined;
+    if (tpl) {
+      this.change(() => $$$(tpl!).moveBackward());
+    }
+  }
+
+  moveStart(tpl?: TplNode) {
+    tpl = tpl || this.viewCtx().focusedTpl() || undefined;
+    if (tpl) {
+      this.change(() => $$$(tpl!).moveStart());
+    }
+  }
+  moveEnd(tpl?: TplNode) {
+    tpl = tpl || this.viewCtx().focusedTpl() || undefined;
+    if (tpl) {
+      this.change(() => $$$(tpl!).moveEnd());
+    }
+  }
+
+  nudgePosition(dir: "left" | "right" | "up" | "down", large = false) {
+    const tpl = this.viewCtx().focusedTpl();
+
+    if (
+      this.studioCtx().focusedFrame() === this.viewCtx().arenaFrame() ||
+      (tpl && this.isRootNodeOfFrame(tpl))
+    ) {
+      // We should nudge the frame instead
+      const frame = this.viewCtx().arenaFrame();
+      const prop = ["left", "right"].includes(dir) ? "left" : "top";
+      if (frame[prop] != null) {
+        const cur = frame[prop] as number;
+        const amount =
+          1 * (large ? 10 : 1) * (["left", "up"].includes(dir) ? -1 : 1);
+        frame[prop] = cur + amount;
+      }
+      return;
+    }
+
+    if (!tpl || !Tpls.isTplTagOrComponent(tpl)) {
+      return;
+    }
+
+    const nudgeOrder = (delta: number) => {
+      if (delta >= 0) {
+        if (large) {
+          $$$(tpl).moveEnd();
+        } else {
+          $$$(tpl).moveForward();
+        }
+      } else {
+        if (large) {
+          $$$(tpl).moveStart();
+        } else {
+          $$$(tpl).moveBackward();
+        }
+      }
+    };
+
+    if (isKnownTplComponent(tpl.parent)) {
+      return nudgeOrder(["left", "up"].includes(dir) ? -1 : 1);
+    }
+
+    const parent = $$$(tpl).layoutParent().maybeOneTpl();
+    if (!Tpls.isTplTag(parent)) {
+      return;
+    }
+
+    const vtm = this.viewCtx().variantTplMgr();
+    const curExp = vtm.effectiveVariantSetting(tpl).rsh();
+    const targetExp = () => RSH(vtm.ensureCurrentVariantSetting(tpl).rs, tpl);
+
+    const parentExp = this.viewCtx()
+      .effectiveCurrentVariantSetting(parent)
+      .rsh();
+    const parentContainerType = getRshContainerType(parentExp);
+    const posType = getRshPositionType(curExp);
+
+    const nudgeAlignment = (
+      prop: string,
+      selfValue: string | undefined,
+      parentValue: string,
+      delta: number,
+    ) => {
+      const alignOrder = ["flex-start", "center", "flex-end"];
+      let curAlignSelf = selfValue;
+      if (!curAlignSelf || !alignOrder.includes(curAlignSelf)) {
+        // If no align-self is currently specified, we use the default based on
+        // what the parent's align-items is
+        curAlignSelf = alignOrder.includes(parentValue)
+          ? parentValue
+          : alignOrder[0];
+      }
+      const curIndex = alignOrder.indexOf(curAlignSelf);
+      const newIndex = large
+        ? delta >= 0
+          ? alignOrder.length - 1
+          : 0
+        : Math.min(alignOrder.length - 1, Math.max(0, curIndex + delta));
+      if (0 <= newIndex && newIndex < alignOrder.length) {
+        // Only set align-self we're within the index range (so if we're already
+        // on flex-start and we nudge -1, we don't do anything)
+        let newAlignSelf = alignOrder[newIndex];
+        if (newAlignSelf === parentValue) {
+          // If happens to be the same as parent, then set to auto
+          newAlignSelf = "auto";
+        }
+        targetExp().set(prop, newAlignSelf);
+      }
+    };
+
+    if (
+      posType === PositionLayoutType.free ||
+      posType === PositionLayoutType.fixed
+    ) {
+      const nudgePx = (prop: string, delta: number) => {
+        if (large) {
+          delta *= 10;
+        }
+        const cur = curExp.get(prop);
+        const curNum = (cur && parseInt(cur)) || 0;
+        targetExp().set(prop, `${curNum + delta}px`);
+      };
+
+      const oppositeSide = (side: "left" | "top") => {
+        if (side === "left") {
+          return "right";
+        }
+        return "bottom";
+      };
+
+      const getSideDir = (side: "left" | "top") => {
+        const hasSide = curExp.get(side) !== "auto";
+        const sideDir = hasSide ? side : oppositeSide(side);
+        const sideSignal = hasSide ? 1 : -1;
+        return { sideDir, sideSignal };
+      };
+
+      const leftDir = getSideDir("left");
+      const topDir = getSideDir("top");
+
+      switch (dir) {
+        case "left":
+          return nudgePx(leftDir.sideDir, -1 * leftDir.sideSignal);
+        case "right":
+          return nudgePx(leftDir.sideDir, 1 * leftDir.sideSignal);
+        case "up":
+          return nudgePx(topDir.sideDir, -1 * topDir.sideSignal);
+        case "down":
+          return nudgePx(topDir.sideDir, 1 * topDir.sideSignal);
+      }
+    } else if (
+      parentContainerType === ContainerLayoutType.flexRow ||
+      parentContainerType === ContainerLayoutType.flexColumn
+    ) {
+      const nudgeAlignSelf = (delta: number) => {
+        // When parent is flex-row and we press up or down, we want to switch alignment
+        // of this item between flex-start, center, and flex-end.
+        return nudgeAlignment(
+          "align-self",
+          curExp.get("align-self"),
+          parentExp.get("align-items"),
+          delta,
+        );
+      };
+      if (parentContainerType === ContainerLayoutType.flexRow) {
+        switch (dir) {
+          case "left":
+            return nudgeOrder(-1);
+          case "right":
+            return nudgeOrder(1);
+          case "up":
+            return nudgeAlignSelf(-1);
+          case "down":
+            return nudgeAlignSelf(1);
+        }
+      } else if (parentContainerType === ContainerLayoutType.flexColumn) {
+        switch (dir) {
+          case "left":
+            return nudgeAlignSelf(-1);
+          case "right":
+            return nudgeAlignSelf(1);
+          case "up":
+            return nudgeOrder(-1);
+          case "down":
+            return nudgeOrder(1);
+        }
+      }
+    } else if (parentContainerType === ContainerLayoutType.grid) {
+      switch (dir) {
+        case "left":
+          return nudgeOrder(-1);
+        case "right":
+          return nudgeOrder(1);
+        default:
+          return;
+      }
+    } else if (parentContainerType === ContainerLayoutType.contentLayout) {
+      const nudgeJustifySelf = (delta: number) => {
+        return nudgeAlignment(
+          "justify-self",
+          curExp.get("justify-self"),
+          parentExp.get("justify-items"),
+          delta,
+        );
+      };
+      switch (dir) {
+        case "left":
+          return nudgeJustifySelf(-1);
+        case "right":
+          return nudgeJustifySelf(1);
+        case "up":
+          return nudgeOrder(-1);
+        case "down":
+          return nudgeOrder(1);
+        default:
+          return;
+      }
+    }
+  }
+
+  /**
+   * Performs a quick frame rect change, without
+   * enforcing the reevaluation of the tpl tree
+   *
+   * @param rect
+   */
+  quicklyChangeFrameRect(
+    frame: ArenaFrame,
+    rect: {
+      width: number;
+      height: number;
+      top: number;
+      left: number;
+    },
+  ) {
+    // Even though the following styles will react to
+    // changes made to frame's top and left props,
+    // to make sure we have a smooth resizing,
+    // we directly update them here
+    if (this.studioCtx().isPositionManagedFrame(frame)) {
+      const domElt = this.viewCtx().canvasCtx.viewportContainer();
+      domElt.style.setProperty("width", `${rect.width}px`);
+      domElt.style.setProperty("height", `${rect.height}px`);
+
+      domElt.style.setProperty("top", `${rect.top}px`);
+      domElt.style.setProperty("left", `${rect.left}px`);
+    }
+
+    window.requestAnimationFrame(() => {
+      this.change(() => {
+        if (this.studioCtx().isPositionManagedFrame(frame)) {
+          frame.top = rect.top;
+          frame.left = rect.left;
+        }
+
+        this.studioCtx().changeFrameSize({
+          frame,
+          dim: "width",
+          amount: rect.width,
+        });
+        this.studioCtx().changeFrameSize({
+          frame,
+          dim: "height",
+          amount: rect.height,
+        });
+      });
+    });
+  }
+
+  nudgeSize(dim: "width" | "height", grow: boolean, large = false) {
+    const tpl = this.viewCtx().focusedTpl();
+
+    if (
+      this.studioCtx().focusedFrame() === this.viewCtx().arenaFrame() ||
+      (tpl && this.isRootNodeOfFrame(tpl))
+    ) {
+      // We should nudge the frame instead
+      const frame = this.viewCtx().arenaFrame();
+      const amount = 1 * (large ? 10 : 1) * (grow ? 1 : -1);
+      this.studioCtx().changeFrameSize({
+        dim: dim,
+        amount: frame[dim] + amount,
+      });
+      return;
+    }
+
+    if (!tpl || !Tpls.isTplTagOrComponent(tpl)) {
+      return;
+    }
+
+    const resizable = this.viewCtx().isFocusedResizeDraggable();
+    if (!resizable[dim]) {
+      return;
+    }
+
+    const parent = tpl.parent;
+    const vtm = this.viewCtx().variantTplMgr();
+    const targetExp = () => RSH(vtm.ensureCurrentVariantSetting(tpl).rs, tpl);
+
+    const parentExp = Tpls.isTplTag(parent)
+      ? vtm.effectiveVariantSetting(parent).rsh()
+      : undefined;
+    const parentContainerType = parentExp
+      ? getRshContainerType(parentExp)
+      : undefined;
+    const autoDim = isTplDefaultSized(tpl, vtm, dim);
+
+    if (
+      autoDim &&
+      parentExp &&
+      parentContainerType &&
+      parentContainerType.includes("flex")
+    ) {
+      const nudgeFlex = () => {
+        if (grow) {
+          targetExp().set("flex-grow", "1");
+        } else {
+          targetExp().set("flex-grow", "0");
+        }
+      };
+      const nudgeStretch = () => {
+        if (grow) {
+          targetExp().set("align-self", "stretch");
+        } else {
+          targetExp().set("align-self", "flex-start");
+        }
+      };
+      if (parentContainerType === ContainerLayoutType.flexRow) {
+        if (dim === "width") {
+          nudgeFlex();
+        } else {
+          nudgeStretch();
+        }
+      } else {
+        if (dim === "height") {
+          nudgeFlex();
+        } else {
+          nudgeStretch();
+        }
+      }
+    } else {
+      const delta = (large ? 10 : 1) * (grow ? 1 : -1);
+      const curNum = ensure(
+        this.viewCtx().focusedDomElt(),
+        "Unexpected undefined focusedDomElt when nudging size",
+      )[0].getBoundingClientRect()[dim];
+      targetExp().set(dim, `${Math.max(0, curNum + delta)}px`);
+    }
+  }
+
+  async wrapInComponent(target?: TplNode | TplNode[]): Promise<void> {
+    const targets = target
+      ? ensureArray(target)
+      : this.viewCtx().focusedTplsOrSlotSelections();
+    if (!targets || targets.length === 0) {
+      return;
+    }
+    const targetTpls = targets.filter((t) => isKnownTplNode(t)) as TplNode[];
+    if (targetTpls.length !== targets.length || !Tpls.areSiblings(targetTpls)) {
+      notification.error({
+        message: "Cannot wrap non-sibling nodes.",
+        description: "This is not supported at the moment.",
+      });
+      return;
+    }
+    const tpls =
+      targetTpls.length > 1 ? Tpls.sortByTreeOrder(targetTpls) : targetTpls;
+    if (Tpls.hasTextAncestor(tpls[0])) {
+      notification.error({
+        message: "Cannot wrap text inside rich text block into a component.",
+        description: "This feature is not supported at the moment.",
+      });
+      return;
+    }
+    const selectedComponent = await promptWrapInComponent({
+      studioCtx: this.studioCtx(),
+      component: this.viewCtx().currentComponent(),
+    });
+    if (!selectedComponent) {
+      return;
+    }
+    let moveRep = false;
+    if (
+      tpls.length === 1 &&
+      isTplVariantable(tpls[0]) &&
+      tpls[0].vsettings[0].dataRep
+    ) {
+      moveRep = !!(await reactConfirm({
+        message:
+          "You're wrapping a repeated element. Do you want to repeat the new component instance?",
+        confirmLabel: "Move repetition to component instance",
+        cancelLabel: "Wrap repeated items in the component children",
+      }));
+    }
+    const spec = createAddTplComponent(selectedComponent);
+    const extraInfo = spec.asyncExtraInfo
+      ? await spec.asyncExtraInfo(this.viewCtx().studioCtx)
+      : undefined;
+    if (extraInfo === false) {
+      return;
+    }
+    this.doWrap(spec, tpls, moveRep, extraInfo);
+  }
+
+  async wrapInContainer(
+    type: ContainerType,
+    target?: TplNode | TplNode[],
+  ): Promise<void> {
+    const targets = target
+      ? ensureArray(target)
+      : this.viewCtx().focusedTplsOrSlotSelections();
+    if (!targets || targets.length === 0) {
+      return;
+    }
+    const targetTpls = targets.filter((t) => isKnownTplNode(t)) as TplNode[];
+    if (targetTpls.length !== targets.length || !Tpls.areSiblings(targetTpls)) {
+      notification.error({
+        message: "Cannot wrap non-sibling nodes.",
+        description: "This is not supported at the moment.",
+      });
+      return;
+    }
+    const tpls =
+      targetTpls.length > 1 ? Tpls.sortByTreeOrder(targetTpls) : targetTpls;
+    if (Tpls.hasTextAncestor(tpls[0])) {
+      notification.error({
+        message: "Cannot wrap text inside rich text block into a container.",
+        description: "This feature is not supported at the moment.",
+      });
+      return;
+    }
+    let moveRep = false;
+    if (
+      tpls.length === 1 &&
+      isTplVariantable(tpls[0]) &&
+      tpls[0].vsettings[0].dataRep
+    ) {
+      moveRep = !!(await reactConfirm({
+        message:
+          "You're wrapping a repeated element. Do you want to repeat the new container?",
+        confirmLabel: "Move repetition to container",
+        cancelLabel: "Wrap repeated items in the container",
+      }));
+    }
+    const spec = WRAPPERS_MAP[
+      type === "flex-row" ? WrapItemKey.hstack : WrapItemKey.vstack
+    ] as AddTplItem;
+    const extraInfo = spec.asyncExtraInfo
+      ? await spec.asyncExtraInfo(this.viewCtx().studioCtx)
+      : undefined;
+    if (extraInfo === false) {
+      return;
+    }
+    this.doWrap(spec, tpls, moveRep, extraInfo);
+  }
+
+  private doWrap(
+    spec: AddTplItem<any>,
+    tpls: TplNode[],
+    moveRep: boolean,
+    extraInfo?: any,
+  ) {
+    let newNode: TplNode | null = null;
+    this.change(() => {
+      newNode = this.tryInsertInsertableSpec(
+        spec,
+        InsertRelLoc.wrap,
+        extraInfo,
+        tpls[0],
+      );
+      if (newNode) {
+        assert(
+          Tpls.isTplTag(newNode) ||
+            (Tpls.isTplComponent(newNode) && Tpls.hasChildrenSlot(newNode)),
+          "Container created by 'wrap in container' is expected to be TplTag or TplComponent with children slot",
+        );
+        for (let i = 1; i < tpls.length; i++) {
+          $$$(tpls[i]).detach();
+          $$$(newNode).append(tpls[i]);
+        }
+        this.viewCtx().selectNewTpl(newNode, true);
+        if (moveRep) {
+          assert(
+            Tpls.isTplVariantable(tpls[0]),
+            "moveRep should not be true if tpl is not variantable",
+          );
+          newNode.vsettings[0].dataRep = tpls[0].vsettings[0].dataRep;
+          tpls[0].vsettings[0].dataRep = null;
+        }
+      }
+    });
+    return newNode;
+  }
+
+  getNextCycledAutoLayoutType(tpl: TplTag) {
+    const rsh = this.viewCtx()
+      .variantTplMgr()
+      .effectiveVariantSetting(tpl)
+      .rsh();
+    const containerType = getRshContainerType(rsh);
+    const toggleTypes: ContainerType[] = ["free", "flex-row", "flex-column"];
+    const curIndex = Math.max(0, toggleTypes.indexOf(containerType));
+    const nextIndex = (curIndex + 1) % toggleTypes.length;
+    return toggleTypes[nextIndex];
+  }
+
+  private getUndoHead = () => this.viewCtx().studioCtx.undoLog.head();
+  private undoRecordAfterLastAutoLayoutGuess?: UndoRecord;
+  toggleAutoLayout(tpl = this.viewCtx().focusedTpl()) {
+    if (
+      tpl &&
+      Tpls.isTplTag(tpl) &&
+      Tpls.isTplContainer(tpl) &&
+      !Tpls.isCodeComponentRoot(tpl)
+    ) {
+      const { nextAutoLayoutType, reorderedChildren, isGuess } =
+        this.getNextAutoLayoutInfo(tpl);
+      this.viewCtx().change(() => {
+        this.convertContainerType(tpl, nextAutoLayoutType, reorderedChildren);
+      });
+      this.viewCtx().postEval(() => {
+        if (isGuess) {
+          this.undoRecordAfterLastAutoLayoutGuess = this.getUndoHead();
+        }
+      });
+    }
+  }
+
+  setHstackLayout(tpl = this.viewCtx().focusedTpl()) {
+    if (tpl) {
+      this.setStackLayout(tpl, "flex-row");
+    }
+  }
+
+  setVstackLayout(tpl = this.viewCtx().focusedTpl()) {
+    if (tpl) {
+      this.setStackLayout(tpl, "flex-column");
+    }
+  }
+
+  /**
+   * Perform stack conversion along with best-effort reordering of children
+   * based on any available current rendered positions.
+   */
+  setStackLayout(tpl: TplNode, desiredDir: ContainerType) {
+    if (
+      Tpls.isTplTag(tpl) &&
+      Tpls.isTplContainer(tpl) &&
+      !Tpls.isCodeComponentRoot(tpl)
+    ) {
+      const doit = (reorderedChildren?: TplNode[]) => {
+        this.viewCtx().change(() => {
+          this.convertContainerType(tpl, desiredDir, reorderedChildren);
+        });
+      };
+      const selectable = this.viewCtx().focusedTpl()
+        ? this.viewCtx().focusedSelectable()
+        : this.viewCtx().renderState.tpl2bestVal(
+            tpl,
+            this.viewCtx().focusedCloneKey(),
+          );
+      const rsh = this.viewCtx()
+        .variantTplMgr()
+        .effectiveVariantSetting(tpl)
+        .rsh();
+      if (selectable instanceof ValTag && getRshContainerType(rsh) === "free") {
+        const { children } = this.getContainerRectAndChildren(selectable);
+        const [_, reorderedChildren] = this.linearizeItems(
+          children,
+          desiredDir,
+        );
+        doit(reorderedChildren);
+      } else {
+        doit(tpl.children);
+      }
+    }
+  }
+
+  getNextAutoLayoutInfo(tpl: TplTag) {
+    const selectable = this.viewCtx().focusedTpl()
+      ? this.viewCtx().focusedSelectable()
+      : this.viewCtx().renderState.tpl2bestVal(
+          tpl,
+          this.viewCtx().focusedCloneKey(),
+        );
+    const rsh = this.viewCtx()
+      .variantTplMgr()
+      .effectiveVariantSetting(tpl)
+      .rsh();
+    const containerType = getRshContainerType(rsh);
+    let nextAutoLayoutType: ContainerType,
+      reorderedChildren: TplNode[] | undefined = undefined,
+      isGuess = false;
+    if (!(selectable instanceof ValTag)) {
+      // There's no visible DOM to guess based off of.  Just cycle through a
+      // standard ordering.
+      nextAutoLayoutType = this.getNextCycledAutoLayoutType(tpl);
+    } else if (containerType === "free") {
+      // It's a free container, so we guess based on the current DOM layout.
+      [nextAutoLayoutType, reorderedChildren] =
+        this.guessAutoLayoutType(selectable);
+      isGuess = true;
+    } else if (this.undoRecordAfterLastAutoLayoutGuess === this.getUndoHead()) {
+      // We just did an autolayout that was a guess, but the user requested
+      // another autolayout.  So we cycle through to the only other possible
+      // autolayout.
+      nextAutoLayoutType =
+        containerType === "flex-row" ? "flex-column" : "flex-row";
+    } else {
+      // If we didn't just do an autolayout and the element is auto-layout,
+      // then toggle back to free.
+      nextAutoLayoutType = "free";
+    }
+    return { nextAutoLayoutType, reorderedChildren, isGuess };
+  }
+
+  getPositionType(tpl: TplTag | TplComponent) {
+    const rsh = this.viewCtx()
+      .variantTplMgr()
+      .effectiveVariantSetting(tpl)
+      .rsh();
+    const positionType = getRshPositionType(rsh);
+    return positionType;
+  }
+
+  /**
+   * Omit desiredAxis to guess default the guess to be based on size.
+   */
+  private linearizeItems(
+    children: [TplNode, Rect][],
+    desiredDir?: ContainerType,
+  ): [ContainerType, TplNode[]] {
+    const centerToValNode = new Map<Pt, TplNode>();
+    const centers = children.map((child) => {
+      const center = Box.fromRect(child[1]).midpt();
+      centerToValNode.set(center, child[0]);
+      return center;
+    });
+    const bbox = centers.length > 0 && Box.enclosingPts(centers);
+    const reordered = (getMetric: (pt: Pt) => number) => {
+      return L.uniq(
+        L.sortBy(centers, getMetric).map((center) =>
+          ensure(
+            centerToValNode.get(center),
+            "All centers should be in centerToValNode map",
+          ),
+        ),
+      );
+    };
+    return desiredDir === "flex-row" || (bbox && bbox.width() > bbox.height())
+      ? ["flex-row", reordered((p) => p.x)]
+      : ["flex-column", reordered((p) => p.y)];
+  }
+
+  private doGuessAutoLayoutType(
+    container: Rect | undefined,
+    children: Array<[TplNode, Rect]>,
+  ): [ContainerType, TplNode[] | undefined] {
+    if (children.length < 2) {
+      // If there aren't multiple children, then just default based on if the
+      // parent is wider than taller.
+      if (container) {
+        return [
+          container.width > container.height ? "flex-row" : "flex-column",
+          undefined,
+        ];
+      } else {
+        return ["flex-row", undefined];
+      }
+    }
+    return this.linearizeItems(children);
+  }
+
+  private guessAutoLayoutType(
+    selectable: ValTag,
+  ): [ContainerType, TplNode[] | undefined] {
+    const { containerRect, children } =
+      this.getContainerRectAndChildren(selectable);
+    return this.doGuessAutoLayoutType(containerRect, children);
+  }
+
+  private getContainerRectAndChildren(selectable: ValTag) {
+    const sq = SQ(selectable, this.valState(), false);
+    const selectableDom = this.viewCtx().renderState.sel2dom(
+      selectable,
+      this.canvasCtx(),
+    );
+    const containerRect = selectableDom
+      ? getBoundingClientRect(...ensureArray(selectableDom))
+      : undefined;
+    const children = withoutNils(
+      sq
+        .children()
+        .toArrayOfValNodes()
+        .map((child) => {
+          const doms = this.viewCtx().renderState.sel2dom(
+            child,
+            this.canvasCtx(),
+          );
+          if (doms) {
+            const domElts = ensureArray(doms);
+            if (domElts.length > 0) {
+              const childRect = getBoundingClientRect(...domElts);
+              return tuple(child.tpl, childRect);
+            }
+          }
+          return undefined;
+        }),
+    );
+    return { containerRect, children };
+  }
+
+  autoSizeFocused() {
+    const tpl = this.viewCtx().focusedTpl();
+    if (tpl && Tpls.isTplTagOrComponent(tpl)) {
+      if (
+        this.isRootNodeOfFrame(tpl) &&
+        isPageComponent(this.viewCtx().arenaFrame().container.component)
+      ) {
+        // Can't auto-size page component roots
+        return;
+      }
+      const vtm = this.viewCtx().variantTplMgr();
+      if (isTplDefaultSized(tpl, vtm)) {
+        // Already auto-sized; nothing to do
+        return;
+      }
+      if (!isTplAutoSizable(tpl, vtm)) {
+        notification.error({
+          message: "You should not auto-size a free container",
+          description: "A free container cannot be sized by its content.",
+        });
+        return;
+      }
+      resetTplSize(tpl, vtm);
+    }
+  }
+
+  tryRenameParam(name: string, param: Param) {
+    this.tplMgr().renameParam(this.viewCtx().currentComponent(), param, name);
+  }
+
+  renameTpl(name: string, tpl: TplTag | TplComponent, component?: Component) {
+    component = component || $$$(tpl).owningComponent();
+    const result = renameTpl(tpl, name, {
+      component,
+      tplMgr: this.tplMgr(),
+    });
+    if (result.isErr()) {
+      notification.error({ message: result.error.message });
+    }
+  }
+
+  renameToken(name: string, token: StyleToken) {
+    name = name.trim();
+    if (name) {
+      const existingNames = this.site().styleTokens.map((t) => t.name);
+      name = common.uniqueName(existingNames, name, {
+        normalize: toVarName,
+      });
+      token.name = name;
+    }
+  }
+
+  private focusHeuristics() {
+    return new FocusHeuristics(
+      this.site(),
+      this.tplMgr(),
+      this.valState(),
+      this.viewCtx().currentComponentCtx(),
+      this.viewCtx().showDefaultSlotContents(),
+    );
+  }
+
+  private getFocusObjForEditText(
+    focusObj = this.viewCtx().focusedSelectable(),
+  ): ValNodes.ValTextTag | undefined {
+    if (!focusObj) {
+      return undefined;
+    }
+
+    // Make sure this is a valid in-context focusObject
+    focusObj = this.focusHeuristics().bestFocusTarget(focusObj, {
+      exact: true,
+    }).focusTarget;
+
+    if (!focusObj) {
+      return undefined;
+    }
+
+    // If focusObj is a SlotSelection or a ValSlot, and their only content is a
+    // single text node or if focusObj is a ValComponent that has only a single
+    // text slot, then we edit the text.
+    if (focusObj instanceof SlotSelection) {
+      const param = focusObj.slotParam;
+      const valComponent = focusObj.val;
+      if (valComponent) {
+        const vals = valComponent.slotArgs.get(param);
+        if (vals) {
+          if (vals.length === 1 && Tpls.isTplTextBlock(vals[0].tpl)) {
+            focusObj = vals[0];
+          }
+        }
+      }
+    } else if (focusObj instanceof ValSlot) {
+      const contents = focusObj.contents?.map(slotContentValNode);
+      if (
+        contents &&
+        contents.length === 1 &&
+        Tpls.isTplTextBlock(contents[0].tpl)
+      ) {
+        focusObj = contents[0];
+      }
+    } else if (focusObj instanceof ValComponent) {
+      const tpl = focusObj.tpl;
+      const textArg = getMergedTextArg(tpl);
+      if (textArg) {
+        const slotContent = new SlotSelection({
+          val: focusObj,
+          slotParam: textArg.param,
+        }).tryGetContent();
+
+        if (slotContent && slotContent.length === 1) {
+          focusObj = slotContent[0];
+        }
+      }
+    }
+
+    if (focusObj instanceof ValNodes.ValTextTag) {
+      if (!isTagInline(focusObj.tpl.tag)) {
+        // For block tags (li, h1, p, etc.), edit rich text root. Inline tags
+        // (span, strong, em, etc.) are edited directly.
+        const sq = SQ(focusObj, this.valState());
+        const valPath = sq.ancestors().toArray().reverse();
+        focusObj =
+          valPath.find((obj) => obj instanceof ValNodes.ValTextTag) ?? focusObj;
+      }
+
+      return this.viewCtx().renderState.tryGetUpdatedVal(
+        focusObj as ValNodes.ValTextTag,
+      );
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Checks if text editing is blocked. That happens in two cases:
+   *
+   * 1. The source of the text content is from some other variant that
+   * is blocking editing the target variant.
+   * 2. Text is generated from a custom code expression.
+   *
+   * If editing is blocked, returns an error message; otherwise returns
+   * undefined.
+   */
+  private textEditingIsBlocked(textValNode: ValTag): JSX.Element | undefined {
+    const vtm = this.viewCtx().variantTplMgr();
+    const effectiveVs = this.viewCtx().effectiveCurrentVariantSetting(
+      textValNode.tpl,
+    );
+    const source = effectiveVs.getTextSource(this.viewCtx());
+    if (!source) {
+      return undefined;
+    }
+    const indicator = computeDefinedIndicator(
+      this.site(),
+      this.viewCtx().currentComponent(),
+      source,
+      vtm.getTargetIndicatorComboForNode(textValNode.tpl),
+    );
+    const targetBlockingCombo = getTargetBlockingCombo([indicator]);
+    if (targetBlockingCombo) {
+      return (
+        <TargetBlockedTooltip
+          displayName="text"
+          combo={targetBlockingCombo}
+          studioCtx={this.studioCtx()}
+        />
+      );
+    }
+
+    return undefined;
+  }
+
+  tryEditText(
+    { focusObj } = {
+      focusObj: this.viewCtx().focusedSelectable(),
+    },
+  ) {
+    const textValNode = this.getFocusObjForEditText(focusObj);
+    if (!textValNode || this.viewCtx().isOutOfContext(textValNode.tpl)) {
+      return;
+    }
+
+    // The text node may not be rendered at all, especially for
+    // CanvasTextElement passed to code component.
+    const handle = textValNode.handle;
+    if (!handle || this.studioCtx().blockChanges) {
+      return;
+    }
+
+    const blockedText = this.textEditingIsBlocked(textValNode);
+    if (blockedText !== undefined) {
+      notification.warning({ message: blockedText });
+      return;
+    }
+    if (Tpls.isExprText(textValNode.text)) {
+      this.viewCtx().setTriggerEditingTextDataPicker(true);
+      return;
+    }
+    const editHandle = handle.enterEdit();
+    if (editHandle !== undefined) {
+      notification.warning({ message: blockedText });
+      return;
+    }
+    const variantTplMgr = this.viewCtx().variantTplMgr();
+
+    if (focusObj instanceof ValNodes.ValTextTag) {
+      this.viewCtx().setStudioFocusBySelectable(textValNode);
+    }
+    this.viewCtx().setEditingTextContext({
+      val: textValNode,
+      targetVs: variantTplMgr.ensureCurrentVariantSetting(textValNode.tpl),
+      draftText: maybe(textValNode.text, (text) =>
+        ensureInstance(text, RawText, RawTextLike),
+      ),
+      run: undefined,
+      editor: undefined,
+    });
+  }
+
+  saveText() {
+    // We could have double-called this from handleKeyDown then onBlur.
+    const editingTextContext = this.viewCtx().editingTextContext();
+    if (!editingTextContext) {
+      return;
+    }
+
+    // Note here we use textValNode as the value node, rather than calling
+    // this.getFocusObjForEditText(this.viewCtx().focusedSelectable()) because
+    // the viewCtx may have already lose the focus (e.g. when user clicked
+    // outside any frame)
+    const baseVariant = editingTextContext.val.tpl.vsettings[0].variants[0];
+
+    function saveTextToTpl(
+      tpl: TplTag,
+      targetVs: VariantSetting,
+      newText: RichText | RawTextLike | undefined,
+      newChildren?: TplNode[],
+    ) {
+      const uuidToTpl = new Map<string, TplNode>();
+      for (const child of tpl.children) {
+        uuidToTpl.set(child.uuid, child);
+      }
+
+      /**
+       * If uuidToTpl has tpl.uuid, update and return existing TplTag.
+       * Otherwise, create and return new TplTag.
+       */
+      function createOrUpdateTpl(tplTag: TplTag) {
+        const text = tplTag.vsettings[0].text as RawText | undefined;
+        if (uuidToTpl.has(tplTag.uuid)) {
+          // The TplTag in the marker already exists, so we just want to
+          // update its text with the text from newMarker.tpl.
+          const existingTpl = uuidToTpl.get(tplTag.uuid) as TplTag;
+          const vs = ensureVariantSetting(existingTpl, targetVs.variants);
+          saveTextToTpl(existingTpl, vs, text, tplTag.children);
+          return existingTpl;
+        }
+        // The TplTag didn't already exist. Preserve the source tpl's uuid (same as slate
+        // element uuid) to keep the cursor in place after rerender.
+        const newTpl = Tpls.clone(tplTag, true);
+        // Remap the entire subtree to baseVariant, or nodes with child tpls
+        // (e.g. bullet/number lists), are matched in ensureVariantSetting() as "existing"
+        // and a second base vsetting is added
+        const remapToBaseVariant = (node: TplNode) => {
+          for (const nodeVs of node.vsettings) {
+            if (isBaseVariant(nodeVs.variants)) {
+              nodeVs.variants = [baseVariant];
+            }
+          }
+          const tplChildren = (node as TplTag).children;
+          for (const child of tplChildren ?? []) {
+            remapToBaseVariant(child);
+          }
+        };
+        remapToBaseVariant(newTpl);
+        const vs = newTpl.vsettings[0];
+        saveTextToTpl(newTpl, vs, text, tplTag.children);
+        return newTpl;
+      }
+
+      if (isKnownExprText(newText)) {
+        targetVs.text = newText;
+      } else if (newText) {
+        // TplTag of text type.
+        const rawText = ensureInstance(newText, RawText, RawTextLike);
+        targetVs.text = new RawText({
+          text: rawText.text,
+          markers: rawText.markers.map((m) => {
+            const newMarker = Tpls.cloneMarker(m, undefined, true);
+            if (isKnownNodeMarker(newMarker)) {
+              newMarker.tpl = createOrUpdateTpl(newMarker.tpl as TplTag);
+            }
+            return newMarker;
+          }),
+        });
+        Tpls.fixTextChildren(tpl);
+      } else {
+        // TplTag of non-text type.
+        assert(
+          newChildren,
+          "newChildren cannot be undefined for non-text TplTag",
+        );
+        tpl.children = newChildren.map((c) => createOrUpdateTpl(c as TplTag));
+      }
+      Tpls.reconnectChildren(tpl);
+    }
+
+    if (
+      editingTextContext.draftText &&
+      editingTextContext.draftText !== editingTextContext.val.text
+    ) {
+      saveTextToTpl(
+        editingTextContext.val.tpl,
+        editingTextContext.targetVs,
+        editingTextContext.draftText,
+      );
+    }
+  }
+
+  focusedTpl() {
+    return this.viewCtx().focusedTpl();
+  }
+  tryEnterComponentContaining(
+    focusObj: Selectable,
+    trigger: "dbl-click" | "ctrl-click",
+    cloneKey?: string,
+  ) {
+    const container =
+      this.focusHeuristics().containingComponentWithinCurrentComponentCtx(
+        focusObj,
+      );
+    if (container != null) {
+      const containerCtx =
+        container.container != null
+          ? new ComponentCtx({ valComponent: container.container })
+          : null;
+      if (!containerCtx) {
+        notification.warning({
+          message: "You cannot edit imported components or code components.",
+        });
+        return false;
+      }
+      const codeComponent = isCodeComponent(
+        containerCtx.tplComponent().component,
+      );
+      const tplComponent = containerCtx.tplComponent().component;
+      const ownedBySite = this.tplMgr().isOwnedBySite(
+        containerCtx.tplComponent().component,
+      );
+      if (
+        codeComponent ||
+        !ownedBySite ||
+        !this.studioCtx().canEditComponent(tplComponent)
+      ) {
+        // Cannot edit master component of code component or external component.
+        notification.warning({
+          message: `You cannot edit ${
+            codeComponent ? "a code" : ownedBySite ? "this" : "an imported"
+          } component.`,
+        });
+        return false;
+      }
+      this.viewCtx().setCurrentComponentCtx(containerCtx);
+      const subtarget = this.focusHeuristics().bestFocusTarget(focusObj, {
+        exact: true,
+      });
+      this.viewCtx().setStudioFocusBySelectable(
+        subtarget.focusTarget,
+        cloneKey,
+      );
+      trackEvent("ComponentSpotlight", { trigger });
+      return true;
+    } else {
+      return false;
+    }
+  }
+  // Focus on either the given valNode/focusObj or the most reasonable containing
+  // component, according to bestFocusTarget.
+  tryFocusObj(
+    focusObj: Selectable,
+    opts: {
+      allowLocked?: boolean;
+      anchorCloneKey?: string;
+      appendToMultiSelection?: boolean;
+      exact: boolean;
+    },
+  ) {
+    // This focus request may have happened while the ViewCtx is still
+    // evaluating.  We do our best to look up the corresponding ValNode
+    // to try to select, but the ValNode may be obsolete / about to be
+    // replaced.  Usually this is fine, because the ValNode is pointing
+    // to a TplNode that still exists, and so when we are done evaluating,
+    // we will just fix the selection to point to the new ValNode instead.
+    // But it's possible that this ValNode is now referencing a TplNode
+    // that no longer exists.  In that case, we give up on the focus attempt.
+    // Note that whereas ValNode may be "obsolete", the TplNode is always
+    // up to date (model changes are guaranteed serially by StudioCtx).
+    const focusedObjTpl =
+      focusObj instanceof ValNode ? focusObj.tpl : focusObj.getTpl();
+    if (!isTplAttachedToSite(this.viewCtx().site, focusedObjTpl)) {
+      // give up
+      return;
+    }
+
+    const { componentCtx, focusTarget } =
+      this.focusHeuristics().bestFocusTarget(focusObj, {
+        ...opts,
+        curFocused: this.viewCtx().focusedSelectable(),
+      });
+    if (
+      this.viewCtx().focusedSelectable() === focusTarget &&
+      this.viewCtx().isFocusedViewCtx() &&
+      this.viewCtx().focusedCloneKey() === opts?.anchorCloneKey
+    ) {
+      return;
+    }
+
+    this.viewCtx().setCurrentComponentCtx(componentCtx || null);
+    return this.viewCtx().setStudioFocusBySelectable(
+      focusTarget,
+      opts?.anchorCloneKey,
+      opts,
+    );
+  }
+  tryHoverObj(
+    obj: Selectable | undefined,
+    opts: {
+      allowLocked?: boolean;
+      anchorCloneKey?: string;
+      exact: boolean;
+    },
+  ) {
+    if (this.studioCtx().showStackOfParents) {
+      return;
+    }
+    if (!obj) {
+      this.viewCtx().setViewCtxHoverBySelectable(null);
+      return;
+    }
+    const { focusTarget } = this.focusHeuristics().bestFocusTarget(obj, {
+      ...opts,
+      curFocused: this.viewCtx().focusedSelectable(),
+    });
+    if (focusTarget) {
+      if (focusTarget) {
+        this.viewCtx().setViewCtxHoverBySelectable(
+          focusTarget,
+          opts?.anchorCloneKey,
+        );
+      }
+    }
+  }
+
+  tryFocusDomElt(
+    $elt: JQuery,
+    opts: { appendToMultiSelection?: boolean; exact: boolean },
+  ) {
+    const focusable = this.viewCtx().dom2focusObj($elt);
+    const cloneKey = this.viewCtx().sel2cloneKey(focusable);
+
+    this.viewCtx().change(() => {
+      if (focusable != null) {
+        this.tryFocusObj(focusable, { ...opts, anchorCloneKey: cloneKey });
+      } else {
+        this.viewCtx().setStudioFocusBySelectable(null, undefined, opts);
+      }
+    });
+
+    return focusable;
+  }
+
+  tryHoverDomElt($elt: JQuery, opts: { exact: boolean }) {
+    const $closest = closestTaggedNonTextDomElt($elt, this.viewCtx(), {
+      excludeNonSelectable: true,
+    });
+    if (!$closest) {
+      return;
+    }
+
+    const focusable = this.viewCtx().dom2focusObj($closest);
+    const cloneKey = this.viewCtx().sel2cloneKey(focusable);
+
+    if (focusable) {
+      this.tryHoverObj(focusable, {
+        anchorCloneKey: cloneKey,
+        exact: opts.exact,
+      });
+    }
+  }
+  getFinalFocusable($elt: JQuery) {
+    const $closest = closestTaggedNonTextDomElt($elt, this.viewCtx(), {
+      excludeNonSelectable: true,
+    });
+
+    if (!$closest) {
+      return { val: null, focusedDom: null, focusedTpl: null };
+    }
+
+    const focusableSelectable = this.viewCtx().dom2focusObj($closest);
+    const cloneKey = this.viewCtx().sel2cloneKey(focusableSelectable);
+
+    if (!focusableSelectable) {
+      return { val: null, focusedDom: null, focusedTpl: null };
+    }
+    const { focusTarget } = this.focusHeuristics().bestFocusTarget(
+      focusableSelectable,
+      { exact: true },
+    );
+    return this.viewCtx().computeFocus(focusTarget, cloneKey);
+  }
+
+  _tryMoveSelect(
+    selector: (current: SelQuery) => SelQuery,
+    canSelectHiddenElement: boolean,
+    currentSelected: Selectable | null,
+  ): Selectable | undefined {
+    let candidate: Selectable | undefined;
+
+    do {
+      if (!currentSelected) {
+        return undefined;
+      }
+
+      candidate = selector(SQ(currentSelected, this.valState())).tryGet();
+      if (
+        !candidate ||
+        (candidate instanceof ValNode &&
+          !this.isSelectableValNode(candidate)) ||
+        currentSelected == candidate
+      ) {
+        return undefined;
+      }
+      currentSelected = candidate;
+    } while (!canSelectHiddenElement && !this.isSelectableVisible(candidate));
+
+    if (this.isSelectableVisible(candidate)) {
+      this.tryFocusObj(candidate, {
+        allowLocked: true,
+        anchorCloneKey: this.viewCtx().focusedCloneKey(),
+        exact: true,
+      });
+    }
+    return candidate;
+  }
+
+  _trySelect(
+    selector: (current: SelQuery) => SelQuery,
+    canSelectHiddenElement: boolean,
+  ): Selectable | undefined {
+    const selectable = this.viewCtx().focusedSelectable() as Selectable | null;
+
+    return this._tryMoveSelect(selector, canSelectHiddenElement, selectable);
+  }
+
+  private isSelectableValNode(node: ValNode) {
+    if (node.tpl.parent && isPlainTextTplSlot(node.tpl.parent)) {
+      // If this is the single text val node in a slot, then it shouldn't be selectable;
+      // instead, we always want to be selecting the parent slot
+      return false;
+    }
+    return isSelectableValNode(node);
+  }
+
+  tryNavParent() {
+    // Allow traversing full stack but only if we have hit the root element
+    // of a component's tree.  When selecting parent of slot arg, should
+    // stick to the same owner.
+    return this._trySelect(
+      (sq: /*TWZ*/ SelQuery) =>
+        sq.wrap(sq.parent().tryGet() || sq.parentFullstack().tryGet()),
+      false,
+    );
+  }
+  tryNavChild() {
+    const firstChild = this._trySelect(
+      (sq: /*TWZ*/ SelQuery) => sq.firstChild(),
+      true,
+    );
+    if (!firstChild) {
+      return undefined;
+    }
+
+    return this.isSelectableVisible(firstChild)
+      ? firstChild
+      : this._tryMoveSelect((x) => x.next(), false, firstChild);
+  }
+  tryNavPrev() {
+    return this._trySelect((x) => x.prev(), false);
+  }
+  tryNavNext() {
+    return this._trySelect((x) => x.next(), false);
+  }
+  async deleteFrame(arenaFrame: ArenaFrame) {
+    return this.viewCtx().studioCtx.siteOps().removeArenaFrame(arenaFrame);
+  }
+
+  clearFrameComboSettings(frame: ArenaFrame) {
+    return this.studioCtx().siteOps().clearFrameComboSettings(frame);
+  }
+
+  ungroup(tpl: TplNode) {
+    this.change(() => $$$(tpl).ungroup());
+    return true;
+  }
+
+  async tryDelete({
+    tpl: _target,
+    forceDelete,
+    skipCommentsConfirmation = false,
+  }: {
+    tpl?: TplNode | SlotSelection | (TplNode | SlotSelection | null)[] | null;
+    forceDelete?: boolean;
+    skipCommentsConfirmation?: boolean;
+  }) {
+    if (_target == null) {
+      _target = this.viewCtx().focusedTplsOrSlotSelections();
+    }
+
+    if (_target == null) {
+      return;
+    }
+
+    const targets = withoutNils(Array.isArray(_target) ? _target : [_target]);
+
+    if (targets.length === 0) {
+      return;
+    }
+
+    if (targets.some((t) => t instanceof SlotSelection)) {
+      // Only support clearing one SlotSelection at a time
+      if (targets.length > 1) {
+        notification.warning({
+          message:
+            "Removing multi-selections with slots is not supported at the moment.",
+        });
+        return;
+      }
+    }
+
+    // now targets is either a single SlotSelection or multiple tpls. We unwrap
+    // into just a list of TplNodes, and call prepareFocusedTpls() on it to remove
+    // redundant nodes (for example, if you have ancestor and descedant both
+    // selected, the descendant will be filtered out)
+    const tpls = Tpls.prepareFocusedTpls(
+      targets.flatMap((t) =>
+        t instanceof SlotSelection ? (this.getSlotTplContent(t) ?? []) : t,
+      ),
+    );
+
+    if (tpls.length === 0) {
+      return;
+    }
+
+    if (tpls.some((t) => t === this.viewCtx().currentCtxTplUserRoot())) {
+      notification.error({
+        message: "Cannot remove the root element",
+      });
+      return;
+    }
+
+    if (tpls.some((t) => this.isRootNodeOfStretchFrame(t))) {
+      // If any of the selection includes the root of a stretch frame,
+      // then just delete the frame, and there's nothing else to do!
+      common.spawn(this.deleteFrame(this.viewCtx().arenaFrame()));
+      return;
+    }
+
+    const vtm = this.viewCtx().variantTplMgr();
+    const currentCombo = vtm.getCurrentVariantCombo();
+    const component = Tpls.tryGetTplOwnerComponent(tpls[0]);
+    assert(component, "tpl must have an owning component");
+
+    const isHiding = !forceDelete && !isBaseVariant(currentCombo);
+
+    if (isHiding) {
+      this.change(() => {
+        for (const tpl of tpls) {
+          if (isTplVariantable(tpl)) {
+            const visibility = canSetDisplayNone(
+              this.studioCtx().codeComponentsRegistry,
+              tpl,
+            )
+              ? TplVisibility.DisplayNone
+              : TplVisibility.NotRendered;
+            setTplVisibility(tpl, currentCombo, visibility);
+          }
+        }
+        const onlyRootSelected = tpls.length === 1 && tpls[0].parent === null;
+        const key = common.mkShortId();
+        const description = (
+          <>
+            The item <strong>is now hidden</strong> on the current variant.{" "}
+            {!onlyRootSelected && (
+              <strong>
+                <LinkButton
+                  onClick={async () => {
+                    await this.tryDelete({
+                      tpl: tpls,
+                      forceDelete: true,
+                    });
+                    notification.destroy(key);
+                  }}
+                >
+                  Delete instead
+                </LinkButton>
+                .
+              </strong>
+            )}
+            <hr />
+            <strong>Tip:</strong> to delete an item from all variants, use
+            <OneShortcutCombo combo={getComboForAction("DELETE")} />.
+          </>
+        );
+        toast(description, { key });
+      });
+      return;
+    } else {
+      if (!skipCommentsConfirmation) {
+        const commentStatsBySubject =
+          this.studioCtx().commentsCtx.computedData().commentStatsBySubject;
+
+        const commentsCount = tpls
+          .flatMap((tpl) => Tpls.flattenTpls(tpl))
+          .reduce((count, tpl) => {
+            return (
+              count + (commentStatsBySubject.get(tpl.uuid)?.commentCount || 0)
+            );
+          }, 0);
+
+        if (commentsCount > 0) {
+          const isElementPlural = tpls.length > 1;
+          const isCommentPlural = commentsCount > 1;
+
+          const confirm = await reactConfirm({
+            title: `Delete ${
+              isElementPlural ? "elements" : "element"
+            } with unresolved ${isCommentPlural ? "comments" : "comment"}?`,
+            message: `${
+              isElementPlural ? "Elements include" : "Element includes"
+            } ${commentsCount} unresolved ${
+              isCommentPlural ? "comments" : "comment"
+            }. You will still be able to view the ${
+              isCommentPlural ? "comments" : "comment"
+            } in the comments panel.`,
+            confirmLabel: `Delete ${isElementPlural ? "elements" : "element"}`,
+            danger: true,
+          });
+
+          if (!confirm) {
+            return;
+          }
+        }
+      }
+
+      let deleteResult: DeleteTplResult | undefined;
+      this.change(() => {
+        const nextFocus = this.findNearestFocusable(tpls[0], {
+          excludeTpls: computeTplsToDelete(tpls),
+          visibleInCombo: currentCombo,
+        });
+
+        deleteResult = deleteTpl(tpls, {
+          component: component!,
+          site: this.site(),
+          vtm,
+        });
+
+        if (deleteResult.isOk() && nextFocus) {
+          if (nextFocus instanceof SlotSelection) {
+            this.viewCtx().setStudioFocusBySelectable(nextFocus);
+          } else {
+            if (Tpls.tryGetTplOwnerComponent(nextFocus)) {
+              this.viewCtx().setStudioFocusByTpl(nextFocus);
+            } else {
+              this.viewCtx().setStudioFocusByTpl(null);
+              const message = "nextFocus was deleted or wrong";
+              console.warn(message);
+              Sentry.captureMessage(message);
+            }
+          }
+        }
+      });
+
+      if (deleteResult?.isErr()) {
+        notifyReferencingNode(
+          "Cannot remove element",
+          deleteResult.error.message,
+          deleteResult.error.referencingNode,
+          this.studioCtx(),
+        );
+      }
+    }
+  }
+
+  private findNearestFocusable(
+    tpl: TplNode,
+    opts: {
+      excludeTpls?: TplNode[];
+      visibleInCombo?: VariantCombo;
+    },
+  ) {
+    const { excludeTpls = [], visibleInCombo } = opts;
+
+    // First prefer siblings
+    const isFocusable = (tpl2: TplNode) => {
+      if (excludeTpls.includes(tpl2)) {
+        return false;
+      }
+      if (isTplVariantable(tpl2) && visibleInCombo) {
+        return getEffectiveTplVisibility(tpl2, visibleInCombo) === "visible";
+      } else {
+        return true;
+      }
+    };
+
+    let curSibling: TplNode | undefined = $$$(tpl).next().maybeOneTpl();
+    while (curSibling) {
+      if (isFocusable(curSibling)) {
+        return curSibling;
+      }
+      curSibling = $$$(curSibling).next().maybeOneTpl();
+    }
+
+    curSibling = $$$(tpl).prev().maybeOneTpl();
+    while (curSibling) {
+      if (isFocusable(curSibling)) {
+        return curSibling;
+      }
+      curSibling = $$$(curSibling).prev().maybeOneTpl();
+    }
+
+    let curParent: TplNode | SlotSelection | undefined = $$$(tpl)
+      .parentOrSlotSelection()
+      .maybeOne();
+    while (curParent) {
+      if (curParent instanceof SlotSelection) {
+        return curParent;
+      } else if (isFocusable(curParent)) {
+        return curParent;
+      }
+      curParent = $$$(curParent).parentOrSlotSelection().maybeOne();
+    }
+
+    return undefined;
+  }
+
+  toggleBold() {
+    const vc = this.viewCtx();
+    if (vc) {
+      const tpl = vc.focusedTpl();
+      if (tpl && Tpls.isTplTextBlock(tpl)) {
+        const exp = vc.variantTplMgr().effectiveVariantSetting(tpl).rsh();
+        const rsh = vc.variantTplMgr().targetRshForNode(tpl);
+        const isBolded = exp.get("font-weight") === "700";
+        if (!isBolded) {
+          rsh.set("font-weight", "700");
+        } else {
+          if (vc.isEditingNonBaseVariant) {
+            rsh.set("font-weight", "400");
+          } else {
+            rsh.clear("font-weight");
+          }
+        }
+      }
+    }
+  }
+
+  updateFontSize(dir: number) {
+    const vc = this.viewCtx();
+    if (vc) {
+      const tpl = vc.focusedTpl();
+      if (tpl && Tpls.isTplTextBlock(tpl)) {
+        const exp = vc.variantTplMgr().effectiveVariantSetting(tpl).rsh();
+        const rsh = vc.variantTplMgr().targetRshForNode(tpl);
+
+        let fontSize = exp.get("font-size");
+        if (isTokenRef(fontSize)) {
+          fontSize = derefTokenRefs(
+            siteFinalStyleTokensAllDeps(this.site()),
+            fontSize,
+          );
+        }
+
+        const parsed = parseCssNumericNew(fontSize);
+
+        let num = 16;
+        let units = "px";
+        if (parsed) {
+          num = parsed.num;
+          units = parsed.units;
+        }
+
+        const newNum = Math.max(num + dir, 0);
+        rsh.set("font-size", `${newNum}${units}`);
+      }
+    }
+  }
+
+  updateFontWeight(dir: number) {
+    const vc = this.viewCtx();
+    if (vc) {
+      const tpl = vc.focusedTpl();
+      if (tpl && Tpls.isTplTextBlock(tpl)) {
+        const exp = vc
+          .variantTplMgr()
+          .effectiveVariantSetting(tpl)
+          .rshWithTheme();
+        const rsh = vc.variantTplMgr().targetRshForNode(tpl);
+
+        let fontFamily = exp.get("font-family");
+        if (fontFamily === "initial") {
+          fontFamily = "Arial";
+        }
+
+        const spec = this.studioCtx()
+          .fontManager.availFonts()
+          .find((s) => s.fontFamily === fontFamily);
+        const validWeights = fontWeightOptions.filter((option) => {
+          return isValidFontWeight(option.value, spec);
+        });
+
+        let fontWeight = exp.get("font-weight");
+        if (fontWeight === "normal") {
+          fontWeight = "400";
+        }
+
+        const idx = validWeights.findIndex(
+          (option) => option.value == fontWeight,
+        );
+
+        const newIdx = clamp(idx + dir, 0, validWeights.length - 1);
+        rsh.set("font-weight", validWeights[newIdx].value);
+      }
+    }
+  }
+
+  convertToLink(maybeTpl?: TplNode) {
+    const tpl = maybeTpl ?? this.viewCtx().focusedTpl();
+
+    // If the tpl is a text element or a non-atomic tag element, just turn
+    // its tag to "a" instead of wrapping in an "a" container.
+    if (Tpls.isTplTag(tpl)) {
+      if (
+        Tpls.isTplTextBlock(tpl) ||
+        (!Tpls.isAtomicTag(tpl.tag) && !isTagListContainer(tpl.tag))
+      ) {
+        tpl.tag = "a";
+        return;
+      }
+    }
+
+    if (Tpls.isTplTag(tpl) || Tpls.isTplComponent(tpl) || Tpls.isTplSlot(tpl)) {
+      const tplLink = Tpls.mkTplTag("a");
+      if (this.canInsertAsParent(tplLink, tpl, true)) {
+        this.insertAsParent(tplLink, tpl);
+
+        // Move repetition to newly created (link) tpl.
+        const baseVs = ensureVariantSetting(tplLink, tpl.vsettings[0].variants);
+        baseVs.dataRep = tpl.vsettings[0].dataRep;
+        tpl.vsettings[0].dataRep = null;
+      }
+    }
+  }
+
+  async cut() {
+    const copied = this.copy();
+    if (copied) {
+      if (isKnownArenaFrame(copied)) {
+        await this.studioCtx()
+          .siteOps()
+          .removeArenaFrame(copied, { pruneUnnamedComponent: false });
+      } else {
+        await this.tryDelete({
+          tpl: copied,
+          skipCommentsConfirmation: true,
+        });
+      }
+    }
+    return copied;
+  }
+  copy() {
+    const frame = this.viewCtx().studioCtx.focusedFrame();
+    if (frame) {
+      this.clipboard().copy(this.createFrameClip(frame));
+      return frame;
+    }
+
+    const focusedObjs = this.viewCtx().focusedTplsOrSlotSelections();
+    if (focusedObjs.length > 1) {
+      if (focusedObjs.some((node) => node instanceof SlotSelection)) {
+        notification.warning({
+          message:
+            "Copying multi-selections with slots is not supported at the moment.",
+        });
+        return undefined;
+      }
+      const nodes = Tpls.prepareFocusedTpls(focusedObjs);
+      this.clipboard().copy(nodes.map((t) => this.createTplClip(t)));
+      return nodes;
+    }
+
+    const obj = this.viewCtx().focusedTplOrSlotSelection();
+    if (obj) {
+      if (isKnownTplNode(obj)) {
+        const tplClip = this.createTplClip(obj);
+        this.clipboard().copy(tplClip);
+        return obj;
+      } else {
+        // obj is a SlotSelection; when you copy/paste SlotSelection, you probably
+        // intended to copy/paste the content?
+        const content = this.getSlotTplContent(obj);
+        if (content && content.length > 0) {
+          this.clipboard().copy(this.createTplClip(content[0]));
+          return content[0];
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private getSlotTplContent(obj: SlotSelection) {
+    const tplComponent = obj.getTpl();
+    const arg = $$$(tplComponent).getSlotArgForParam(obj.slotParam);
+    if (arg && isKnownRenderExpr(arg.expr) && arg.expr.tpl.length > 0) {
+      return [...arg.expr.tpl];
+    }
+    return undefined;
+  }
+
+  createTplClip(tpl: TplNode, component?: Component): TplClip {
+    return {
+      type: "tpl",
+      node: tpl,
+      component: component || this.viewCtx().currentComponent(),
+      activeVariants: Tpls.isTplVariantable(tpl)
+        ? [...this.viewCtx().variantTplMgr().getActivatedVariantsForNode(tpl)]
+        : undefined,
+    };
+  }
+
+  private createFrameClip(frame: ArenaFrame): FrameClip {
+    const newFrame = this.tplMgr().cloneFrame(frame, false);
+    return {
+      type: "frame",
+      frame: newFrame,
+    };
+  }
+
+  duplicate(
+    item:
+      | ArenaFrame
+      | TplNode
+      | null
+      | undefined = this.viewCtx().studioCtx.focusedFrame() ||
+      this.viewCtx().focusedTpl(),
+  ) {
+    if (!item) {
+      return;
+    }
+    if (isKnownArenaFrame(item)) {
+      if (
+        isDuplicatableFrame(
+          ensure(
+            this.studioCtx().currentArena,
+            "Unexpected undefined currentArena when trying to duplicate an ArenaFrame",
+          ),
+          item,
+        )
+      ) {
+        // Only duplicate custom frames
+        this.pasteFrameClip(this.createFrameClip(item), item);
+      } else {
+        // TODO: maybe we can?
+        notification.error({
+          message: "Cannot duplicate this artboard",
+        });
+      }
+    } else if (this.isRootNodeOfStretchFrame(item)) {
+      this.pasteFrameClip(this.createFrameClip(this.viewCtx().arenaFrame()));
+    } else if (isKnownTplNode(item) && canAddSiblings(item, item)) {
+      this.pasteNode(Tpls.clone(item), undefined, item, InsertRelLoc.after);
+    } else if (isKnownTplNode(item) && Tpls.isTplTextBlock(item.parent)) {
+      const parent = item.parent;
+      const vs = this.viewCtx()
+        .variantTplMgr()
+        .ensureCurrentVariantSetting(parent);
+      const newTpl = Tpls.duplicateMarkerTpl(vs.text as RawText, item);
+      this.viewCtx().selectNewTpl(newTpl);
+    }
+  }
+
+  /**
+   * Extract style clip from TPL node. Used for copying styles directly (Cmd+Option+C),
+   * and when pasting styles from a TplClip.
+   */
+  copyStyleHelper(tpl?: TplNode, cssProps?: string[]): StyleClip | undefined {
+    if (
+      !Tpls.isTplTag(tpl) &&
+      !(Tpls.isTplComponent(tpl) && isCodeComponent(tpl.component))
+    ) {
+      return;
+    }
+
+    const vs = this.viewCtx().variantTplMgr().effectiveVariantSetting(tpl);
+    const directExp = vs.rshWithoutMixins();
+    const ownExp = vs.rsh();
+    const inheritedExp = vs.rshWithParentStyleWithoutMixins();
+
+    const styleProps = cssProps || defaultCopyableStyleNames;
+    // Copy the element's own styles, plus values inherited from ancestors, but only
+    // for props the element doesn't style directly or via its mixins.
+    const props = Object.fromEntries(
+      common.withoutNilTuples(
+        styleProps.map((p) =>
+          tuple(
+            p,
+            ownExp.getRaw(p) != null
+              ? directExp.getRaw(p)
+              : inheritedExp.getRaw(p),
+          ),
+        ),
+      ),
+    );
+    const mixinUuids = vs.rs.mixins.map((m) => m.uuid);
+
+    // Copy animations from the ruleset
+    const animations: AnimationClip[] | undefined = vs.rs.animations?.map(
+      (anim) => ({
+        sequenceUuid: anim.sequence.uuid,
+        duration: anim.duration,
+        timingFunction: anim.timingFunction,
+        iterationCount: anim.iterationCount,
+        direction: anim.direction,
+        delay: anim.delay,
+        fillMode: anim.fillMode,
+        playState: anim.playState,
+      }),
+    );
+
+    return {
+      type: "style",
+      cssProps: props,
+      mixinUuids,
+      animations,
+    };
+  }
+
+  copyStyle(tpl?: TplNode, cssProps?: string[]) {
+    tpl = tpl || this.viewCtx().focusedTpl() || undefined;
+    const clip = this.copyStyleHelper(tpl, cssProps);
+
+    console.log("Copied styles", clip?.cssProps);
+    if (!clip) {
+      notification.warning({
+        message: "Cannot copy styles from this element",
+      });
+      return;
+    }
+
+    this.clipboard().copy(clip);
+    // Warn the user if there was nothing to copy.
+    if (isEmptyStyleClip(clip)) {
+      notification.info({
+        message: "This element has no styles of its own to copy",
+        description: "Its appearance comes from the project theme.",
+      });
+    }
+  }
+
+  async getPasteStylePropsFromClipboard(
+    targetTpl?: TplNode,
+    cssProps?: string[],
+  ): Promise<PasteStyleProps | undefined> {
+    // First try to paste from system clipboard
+    const data = await readClipboardPlasmicData();
+    if (data) {
+      const styleClip = JSON.parse(data);
+      if (isStyleClip(styleClip)) {
+        return { clip: styleClip, targetTpl, cssProps };
+      }
+    }
+
+    // Fall back to local clipboard
+    if (!this.clipboard().isSet()) {
+      notification.info({ message: "No styles available to paste" });
+      return;
+    }
+    const clip = this.clipboard().paste();
+
+    let styleClip: StyleClip | undefined;
+    const tplClip = isTplClip(clip)
+      ? clip
+      : isTplsClip(clip) && clip.length > 0
+        ? clip[0]
+        : undefined;
+
+    if (isStyleClip(clip)) {
+      styleClip = clip;
+    } else if (tplClip) {
+      styleClip = this.copyStyleHelper(tplClip.node);
+      if (!styleClip) {
+        notification.warning({
+          message: "Cannot extract styles from this element",
+        });
+        return;
+      }
+    } else {
+      notification.info({ message: "No styles available to paste" });
+      return;
+    }
+
+    return { clip: styleClip, targetTpl, cssProps };
+  }
+
+  pasteStyleClip(props: PasteStyleProps | undefined): boolean {
+    if (!props) {
+      return false;
+    }
+    const { clip, cssProps } = props;
+    const targetTpl =
+      props.targetTpl || this.viewCtx().focusedTpl() || undefined;
+    if (
+      !Tpls.isTplTag(targetTpl) &&
+      !(Tpls.isTplComponent(targetTpl) && isCodeComponent(targetTpl.component))
+    ) {
+      notification.warning({
+        message: "Cannot paste styles - must select an element",
+      });
+      return false;
+    }
+
+    const vs = this.viewCtx()
+      .variantTplMgr()
+      .ensureCurrentVariantSetting(targetTpl);
+    const exp = RSH(vs.rs, targetTpl);
+
+    const propsToCopy = cssProps
+      ? L.pick(clip.cssProps, cssProps)
+      : clip.cssProps;
+
+    const site = this.viewCtx().site;
+
+    // Tracks whether the paste did anything, so we can warn the user instead
+    // of appearing to be broken.
+    let appliedCount = 0;
+
+    const { valid } = validateStylesForTpl(
+      propsToCopy,
+      targetTpl,
+      this.viewCtx().variantTplMgr().effectiveRsh(targetTpl),
+      this.viewCtx().studioCtx.codeComponentsRegistry,
+    );
+    exp.merge(valid);
+    appliedCount += Object.keys(valid).length;
+
+    // Resolve UUIDs to Mixin instances from the site or direct dependencies.
+    if (clip.mixinUuids?.length) {
+      const availableMixins = allMixins(site, { includeDeps: "direct" });
+      const mixinsToAdd = clip.mixinUuids
+        .map((uuid) => availableMixins.find((m) => m.uuid === uuid))
+        .filter((m): m is Mixin => m !== undefined);
+
+      if (mixinsToAdd.length > 0) {
+        const newMixins = L.uniqBy(
+          [...vs.rs.mixins, ...mixinsToAdd],
+          (m) => m.name,
+        );
+        appliedCount += newMixins.length - vs.rs.mixins.length;
+        vs.rs.mixins = newMixins;
+      }
+    }
+
+    // Resolve animation sequence UUIDs and create Animation instances
+    const allAnimSequences = allAnimationSequences(site, {
+      includeDeps: "direct",
+    });
+
+    const animationsToAdd = withoutNils(
+      (clip.animations || []).map((animClip) => {
+        const sequence = allAnimSequences.find(
+          (seq) => seq.uuid === animClip.sequenceUuid,
+        );
+        if (!sequence) {
+          return undefined;
+        }
+        return new Animation({
+          sequence,
+          duration: animClip.duration,
+          timingFunction: animClip.timingFunction,
+          iterationCount: animClip.iterationCount,
+          direction: animClip.direction,
+          delay: animClip.delay,
+          fillMode: animClip.fillMode,
+          playState: animClip.playState,
+        });
+      }),
+    );
+
+    if (animationsToAdd.length > 0) {
+      // Merge new animations with existing ones, deduplicating by sequence
+      const newAnimations = L.uniqBy(
+        [...(vs.rs.animations ?? []), ...animationsToAdd],
+        (a) => a.sequence.uuid,
+      );
+      appliedCount += newAnimations.length - (vs.rs.animations?.length ?? 0);
+      vs.rs.animations = newAnimations;
+    }
+
+    if (appliedCount === 0) {
+      notification.warning({
+        message: "No styles were pasted",
+        description:
+          "The copied styles are empty, or none of them can be applied to this element.",
+      });
+      return false;
+    }
+
+    return true;
+  }
+
+  copyBgImageStyle(tpl?: TplNode) {
+    this.copyStyle(tpl, ["background"]);
+  }
+
+  tryStartSavingPreset(maybeTpl?: TplNode) {
+    if (this.studioCtx().freestyleState() || !this.studioCtx().isDevMode) {
+      return;
+    }
+    const tpl = maybeTpl ?? this.focusedTpl();
+    if (!tpl) {
+      return;
+    }
+    if (!Tpls.isTplComponent(tpl)) {
+      return;
+    }
+
+    const clip = this.createTplClip(tpl);
+    const presetTpl = this.adaptTplForPaste(clip, [this.site().globalVariant]);
+    if (presetTpl && Tpls.isTplComponent(presetTpl)) {
+      assert(
+        Tpls.isTplVariantable(presetTpl),
+        "If presetTpl is TplComponent it is also a TplNode",
+      );
+      const dom = this.viewCtx().focusedDomElt()?.get(0);
+      if (this.studioCtx().prepareSavingPresets(!!dom)) {
+        this.studioCtx().saveAsPresetState = {
+          tpl: presetTpl,
+          vc: this.viewCtx(),
+          dom,
+        };
+      }
+    }
+  }
+
+  adaptTplNodeForPaste = (
+    node: TplNode,
+    component: Component,
+    activeVariants: VariantCombo,
+    targetVariants?: VariantCombo,
+  ) => {
+    if (!Tpls.isTplVariantable(node)) {
+      return;
+    }
+    // Use all active variants (including global) so the effective
+    // variant setting matches what the user sees at copy time. This
+    // ensures that copying from e.g. a MobileScreen global variant
+    // pastes the MobileScreen styles into the target, not the base.
+    const allActiveVsettings = sortedVariantSettingStack(
+      node.vsettings,
+      activeVariants,
+      makeVariantComboSorter(this.site(), component),
+    );
+    const effectiveVs = new EffectiveVariantSetting(
+      node,
+      allActiveVsettings,
+      this.site(),
+      activeVariants,
+    );
+
+    // A cloned node carries ALL its variant settings, not just the
+    // one the user was viewing. For example, a node with settings for
+    // [base], [MobileScreen], and [Desktop] will have all three after
+    // cloning, even if only MobileScreen was being viewed at copy time.
+
+    // Active variants (both component and global) are flattened into
+    // the target variant setting via effectiveVs above, so the paste
+    // matches what the user sees. In addition, global variant settings
+    // and private style variant settings are preserved as separate
+    // variant settings on the pasted node, so responsive overrides
+    // (e.g., MobileScreen, Desktop) and interactive states (e.g.,
+    // :hover) carry across the paste — particularly important for
+    // cross-page paste where users expect responsive design intent
+    // to be retained without redoing per-variant overrides.
+    //
+    // Note: in the cross-component case, preserved global variant
+    // settings may end up on artboards that are hidden by default in
+    // the target component. The styles are still applied when those
+    // global variants become active; the user just won't see the
+    // override visually unless they enable the global variant artboard.
+    //
+    // The code below filters variant settings to those involving
+    // global or private style variants (component variants are only
+    // permitted if they were active at copy time, since they don't
+    // exist in the target component), strips component variants from
+    // their combos, then skips empty combos. Stripping can cause
+    // multiple vsettings to collapse to the same combo — e.g.,
+    // [red, MobileScreen] and [MobileScreen] both become [MobileScreen]
+    // after stripping component variant "red". These are merged via
+    // EffectiveVariantSetting so the combo-specific overrides from
+    // [red, MobileScreen] are reflected in the pasted [MobileScreen]
+    // setting.
+    const preservedVSettings = node.vsettings.filter((vs) =>
+      vs.variants.every(
+        (v) =>
+          isGlobalVariant(v) ||
+          activeVariants.includes(v) ||
+          isPrivateStyleVariant(v),
+      ),
+    );
+    preservedVSettings.forEach(
+      (vs) =>
+        (vs.variants = vs.variants.filter(
+          (v) => isGlobalVariant(v) || isPrivateStyleVariant(v),
+        )),
+    );
+    const effectiveVsMap = new Map<Variant[], EffectiveVariantSetting>();
+    for (const vs of preservedVSettings) {
+      if (vs.variants.length === 0) {
+        continue;
+      }
+
+      if (!effectiveVsMap.has(vs.variants)) {
+        const activeVSettings = sortedVariantSettingStack(
+          preservedVSettings.filter((_vs) =>
+            common.arrayEqIgnoreOrder(_vs.variants, vs.variants),
+          ),
+          vs.variants,
+          makeVariantComboSorter(this.site(), component),
+        );
+        effectiveVsMap.set(
+          vs.variants,
+          new EffectiveVariantSetting(
+            node,
+            activeVSettings,
+            this.site(),
+            vs.variants,
+          ),
+        );
+      }
+    }
+
+    node.vsettings = [];
+    const vtm = this.viewCtx().variantTplMgr();
+    const targetVs = targetVariants
+      ? ensureVariantSetting(node, targetVariants)
+      : vtm.ensureBaseVariantSetting(node);
+
+    adaptEffectiveVariantSetting(node, targetVs, effectiveVs, false);
+
+    for (const [variants, evs] of effectiveVsMap) {
+      const vs = ensureVariantSetting(node, variants);
+      adaptEffectiveVariantSetting(node, vs, evs, false);
+    }
+
+    if (Tpls.isTplTextBlock(node)) {
+      Tpls.fixTextChildren(node);
+    }
+  };
+
+  private adaptTplForPaste = (clip: TplClip, targetVariants?: VariantCombo) => {
+    const newTree = Tpls.clone(clip.node);
+    const newTpls = Tpls.flattenTplsBottomUp(newTree);
+    if (
+      isFrameComponent(this.viewCtx().currentComponent()) &&
+      getTplSlotDescendants(newTree).length > 0
+    ) {
+      notification.error({
+        message: `You can only paste slots into a component ${FRAME_LOWER}`,
+        description: `You can first convert this ${FRAME_LOWER} into a component.`,
+      });
+      return undefined;
+    }
+    const pastedImplicitStates = new Set(
+      findImplicitStatesOfNodesInTree(
+        clip.component,
+        clip.origNode ?? clip.node,
+      ),
+    );
+    const externalStates = clip.component.states.filter(
+      (s) => !pastedImplicitStates.has(s),
+    );
+    for (const state of externalStates) {
+      const refs = Tpls.findExprsInTree(clip.origNode ?? clip.node).filter(
+        ({ expr }) => isStateUsedInExpr(state, expr),
+      );
+      if (refs.length > 0) {
+        notification.error({
+          message: "Cannot paste elements",
+          description: `They contain a reference to "${getStateDisplayName(
+            state,
+          )}".`,
+        });
+        return;
+      }
+    }
+
+    Tpls.fixTplRefEpxrs(
+      newTpls,
+      clip.origNode ? Tpls.flattenTplsBottomUp(clip.origNode) : [],
+      (referencedTpl) => this.notifyMissingTplRef(null, referencedTpl),
+    );
+
+    newTpls.forEach((child) =>
+      this.adaptTplNodeForPaste(
+        child,
+        clip.component,
+        ensure(
+          clip.activeVariants,
+          "Unexpected undefined value for clip activeVariants",
+        ),
+        targetVariants,
+      ),
+    );
+    return newTree;
+  };
+
+  pasteTplClip({
+    clip,
+    cursorClientPt,
+    target,
+    loc,
+  }: {
+    clip: TplClip;
+    cursorClientPt?: Pt;
+    target?: TplNode | Selectable;
+    loc?: InsertRelLoc;
+  }) {
+    this.maybeFocus(target);
+    if (clip.component === this.viewCtx().currentComponent()) {
+      const node = Tpls.clone(clip.node);
+      // We are pasting a node in the same component context, so we only need
+      // to prune deleted variants.
+      if (Tpls.isTplVariantable(node)) {
+        const existingVariants = new Set([
+          ...allGlobalVariants(this.site(), {
+            excludeInactiveScreenVariants: true,
+          }),
+          ...Components.allComponentVariants(clip.component),
+        ]);
+        node.vsettings = node.vsettings.filter((vs) =>
+          vs.variants.every((v) => existingVariants.has(v)),
+        );
+      }
+      if (this.pasteNode(node, cursorClientPt, target, loc)) {
+        return node;
+      } else {
+        return undefined;
+      }
+    } else {
+      // Else, we are pasting a node from one component to another, so we need to do some
+      // surgery.  Specifically, we want to take the effective variant settings from
+      // when the node was copied, and store them as the base variant settings for the
+      // target viewCtx.  Why the base variant settings instead of the current variant
+      // settings?  It's hard to know what the user intended, but it seems better to populate
+      // the base than the current so that we don't end up with an empty base settings with
+      // no styling at all.
+      //
+      // The new node should still be conditionally visible in the current
+      // variant (in the standard way all newly created TplNodes are), via
+      // pasteNode.
+      const newTree = this.adaptTplForPaste(clip);
+      if (newTree) {
+        if (this.pasteNode(newTree, cursorClientPt, target, loc)) {
+          return newTree;
+        }
+      }
+      return undefined;
+    }
+  }
+
+  pasteTplClips({
+    clips,
+    cursorClientPt,
+    target,
+    loc,
+  }: {
+    clips: TplClip[];
+    cursorClientPt?: Pt;
+    target?: TplNode | Selectable;
+    loc?: InsertRelLoc;
+  }) {
+    const newTpls: TplNode[] = [];
+    let curTarget = target;
+    let curLoc = loc;
+    for (const c of clips) {
+      const clipResult = this.pasteTplClip({
+        clip: c,
+        cursorClientPt,
+        target: curTarget,
+        loc: curLoc,
+      });
+      if (clipResult && !isArray(clipResult)) {
+        newTpls.push(clipResult);
+        curTarget = clipResult;
+        curLoc = InsertRelLoc.after;
+      }
+    }
+    this.viewCtx().selectNewTpls(newTpls);
+    return newTpls;
+  }
+
+  /**
+   * Pastes multiple TplNodes as siblings. The first node is inserted at the
+   * given target/loc, and each subsequent node is inserted after the
+   * previously pasted one.
+   */
+  pasteNodes({
+    nodes,
+    cursorClientPt,
+    target = this.viewCtx().focusedTplOrSlotSelection() ||
+      this.viewCtx().tplRoot() ||
+      undefined,
+    loc,
+  }: {
+    nodes: TplNode[];
+    cursorClientPt?: Pt;
+    target?: TplNode | Selectable;
+    loc?: InsertRelLoc;
+  }) {
+    if (!target) {
+      notification.error({
+        message: "Choose where to paste",
+        description:
+          "You must first select an item.  Pasting will then paste into that item.",
+      });
+      return false;
+    }
+    if (nodes.length === 0) {
+      return false;
+    }
+
+    const targetTplOrSlotSelection = asTplOrSlotSelection(target);
+    const ctx = this.pasteTplCtx();
+    const insertLoc =
+      loc ??
+      getAutoInsertLoc(this.viewCtx(), nodes, targetTplOrSlotSelection, ctx);
+    if (!insertLoc) {
+      notification.error({
+        message: "Cannot paste here",
+        description:
+          "You cannot paste into or around the selected" +
+          " element. Try pasting elsewhere.",
+      });
+      return false;
+    }
+
+    this.maybeFocus(target);
+    const { pasted, errors } = pasteTpls(
+      nodes,
+      targetTplOrSlotSelection,
+      insertLoc,
+      ctx,
+      this.parentOffsetAt(cursorClientPt),
+    );
+    errors.forEach((reason) =>
+      this.notifyCantInsert("Cannot paste here", reason),
+    );
+
+    for (const tpl of pasted) {
+      if (isTplComponent(tpl)) {
+        trackInsertItem({
+          from: "copy-paste",
+          ...getEventDataForTplComponent(tpl),
+        });
+      }
+    }
+
+    const newTplSlots = pasted.flatMap((tpl) =>
+      Tpls.flattenTpls(tpl).filter(Tpls.isTplSlot),
+    );
+    if (newTplSlots.length > 0) {
+      notification.info({
+        message: `Auto-created ${pluralize("slot", newTplSlots.length)}`,
+        description: `You pasted ${
+          newTplSlots.length === 1 ? "a slot" : "some slots"
+        }, so ${
+          newTplSlots.length === 1 ? "a new slot was" : "new slots were"
+        } created in the "${ctx.component.name}" component.`,
+      });
+    }
+
+    const lastPasted = L.last(pasted);
+    if (lastPasted) {
+      this.viewCtx().selectNewTpl(
+        lastPasted,
+        false,
+        this.viewCtx().focusedSelectable(),
+      );
+    }
+    return !!lastPasted;
+  }
+
+  pasteFrameClip(clip: FrameClip, originalFrame?: ArenaFrame) {
+    this.studioCtx().siteOps().pasteFrameClip(clip, originalFrame);
+  }
+
+  /**
+   * Paste the given item.  The item is assumed to be the actual instance to
+   * insert - no further cloning is performed within this paste().
+   *
+   * When pasting frames, we are just creating a new view of the same component.
+   *  We do not clone the component itself.
+   *
+   * Returns true if the paste was successful
+   */
+  pasteNode(
+    newItem: TplNode,
+    cursorClientPt?: Pt,
+    target?: TplNode | Selectable,
+    location?: InsertRelLoc,
+  ): boolean {
+    return this.pasteNodes({
+      nodes: [newItem],
+      cursorClientPt,
+      target,
+      loc: location,
+    });
+  }
+
+  /**
+   * Focus on the given item if present.  (Never clears the focus.)
+   */
+  private maybeFocus(target: TplNode | Selectable | undefined) {
+    if (isKnownTplNode(target)) {
+      this.viewCtx().setStudioFocusByTpl(target);
+    } else if (isSelectable(target)) {
+      this.viewCtx().setStudioFocusBySelectable(target);
+    }
+
+    return this.viewCtx().focusedTplOrSlotSelection();
+  }
+
+  /**
+   * Context for the pure insert-tpl operation, wiring in the Studio-only
+   * leaves: canvas DOM offsets and the "Show default slot contents" UI gate.
+   */
+  private insertTplCtx(): InsertTplCtx {
+    return {
+      vtm: this.viewCtx().variantTplMgr(),
+      tplMgr: this.tplMgr(),
+      getDomOffset: (tpl) => this.getTplDomOffset(tpl),
+      canEditSlotDefaultContents: (slot) =>
+        !(
+          Tpls.getTplOwnerComponent(slot) ===
+            this.viewCtx().currentComponent() &&
+          !this.viewCtx().showingDefaultSlotContentsFor(
+            this.viewCtx().currentTplComponent(),
+          )
+        ),
+    };
+  }
+
+  private pasteTplCtx(): PasteTplCtx {
+    return {
+      ...this.insertTplCtx(),
+      site: this.site(),
+      component: this.viewCtx().currentComponent(),
+      ccRegistry: this.studioCtx().codeComponentsRegistry,
+    };
+  }
+
+  private parentOffsetAt(cursorClientPt: Pt | undefined) {
+    const $targetElt = this.viewCtx().focusedDomElt();
+    return $targetElt && cursorClientPt
+      ? calcOffset($targetElt[0], cursorClientPt, this.viewCtx())
+      : undefined;
+  }
+
+  private notifyCantInsert(title: string, reason: CantInsertTplReason) {
+    if (reason.type === "ComponentCycle") {
+      showError(new ComponentCycleUserError());
+    } else if (reason.type === "NestedSlots") {
+      showError(new NestedTplSlotsError());
+    } else {
+      notification.error({
+        message: title,
+        description: renderCantAddMsg(reason),
+      });
+    }
+  }
+
+  canInsertAsChild(
+    newItem: TplNode,
+    targetTplOrSlotSelection: TplNode | SlotSelection,
+    showErrors: boolean,
+  ) {
+    const reason = canInsertTplAsChild(
+      newItem,
+      targetTplOrSlotSelection,
+      this.insertTplCtx(),
+    );
+    if (reason !== true) {
+      if (showErrors) {
+        this.notifyCantInsert("Cannot insert here", reason);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  canInsertAsSibling(
+    newItem: TplNode,
+    target: TplNode | SlotSelection,
+    showErrors: boolean,
+  ) {
+    const reason = canInsertTplAsSibling(newItem, target, this.insertTplCtx());
+    if (reason !== true) {
+      if (showErrors) {
+        this.notifyCantInsert("Cannot insert sibling here", reason);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  tryInsertAt(
+    newItem: TplNode,
+    cursorClientPt: Pt | undefined,
+    loc: InsertRelLoc,
+    target: TplNode | Selectable,
+    preserveCloneKey?: boolean,
+  ): boolean {
+    if (!this.canInsertAt(newItem, asTplOrSlotSelection(target), loc, true)) {
+      return false;
+    }
+    this.insertAt(newItem, cursorClientPt, loc, target, preserveCloneKey);
+    return true;
+  }
+
+  canInsertAt(
+    newItem: TplNode,
+    target: TplNode | SlotSelection,
+    loc: InsertRelLoc,
+    showErrorNotification: boolean,
+  ) {
+    const reason = canPasteTplAt(newItem, target, loc, this.pasteTplCtx());
+    if (reason !== true) {
+      if (showErrorNotification) {
+        this.notifyCantInsert("Cannot insert here", reason);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  insertAt(
+    newItem: TplNode,
+    cursorClientPt: Pt | undefined,
+    loc: InsertRelLoc,
+    target: TplNode | Selectable,
+    preserveCloneKey?: boolean,
+  ) {
+    const targetTplOrSlotSelection = ensure(
+      this.maybeFocus(target),
+      "Unexpected undefined focus for target of insertion",
+    );
+    const result = insertPastedTplAt(
+      newItem,
+      targetTplOrSlotSelection,
+      loc,
+      this.pasteTplCtx(),
+      this.parentOffsetAt(cursorClientPt),
+    );
+    assert(result.isOk(), "Must be able to insert newItem at target");
+
+    this.viewCtx().selectNewTpl(
+      newItem,
+      false,
+      this.viewCtx().focusedSelectable(),
+      preserveCloneKey,
+    );
+  }
+
+  async extractComponent(tplNode?: TplNode) {
+    const tpl =
+      tplNode ||
+      ensure(
+        this.viewCtx().focusedTpl(),
+        "Should have focused tpl to be able to extract component",
+      );
+    const containingComponent = $$$(tpl).owningComponent();
+
+    const validationError = validateComponentExtraction(
+      tpl,
+      containingComponent,
+      this.site(),
+    );
+    if (validationError) {
+      this.notifyCannotExtractComponent(validationError);
+      return;
+    }
+    assert(
+      Tpls.isTplTagOrComponent(tpl),
+      "Extraction validation guarantees tpl is a tag or component",
+    );
+
+    const flattenedTpls = Tpls.flattenTpls(tpl);
+    const varRefs = Array.from(Components.findVarRefs(tpl));
+
+    const {
+      params: paramsUsedInExprs,
+      queries: queriesToCreateProps,
+      serverQueries: serverQueriesToCreateProps,
+    } = Components.findObjectsUsedInExprs(containingComponent, tpl);
+    const linkedParams = L.uniq([
+      ...flattenedTpls
+        .filter((t): t is TplSlot => Tpls.isTplSlot(t))
+        .map((slot) => slot.param),
+      ...varRefs
+        .map((r) => r.var)
+        .map((v) => Components.getParamForVar(containingComponent, v)),
+      ...paramsUsedInExprs,
+    ]);
+    const resp = await promptExtractComponent({
+      site: this.site(),
+      containingComponent,
+      linkedParams,
+      queriesToCreateProps,
+      serverQueriesToCreateProps,
+    });
+    if (!resp) {
+      return;
+    }
+
+    let extractResult: ExtractComponentResult | undefined;
+    this.change(() => {
+      extractResult = extractComponentOp({
+        site: this.site(),
+        containingComponent,
+        tpl,
+        name: resp.name,
+        resurfaceParams: true,
+        tplMgr: this.tplMgr(),
+        getCanvasEnvForTpl: this.viewCtx().getCanvasEnvForTpl.bind(
+          this.viewCtx(),
+        ),
+      });
+      if (extractResult.isErr()) {
+        this.notifyCannotExtractComponent(extractResult.error);
+        return;
+      }
+      const { tplComponent, warnings } = extractResult.value;
+      this.viewCtx().selectNewTpl(tplComponent, true);
+      if (tplComponent.component.name !== resp.name) {
+        this.studioCtx().maybeWarnComponentRenaming(
+          resp.name,
+          tplComponent.component.name,
+        );
+      }
+      for (const warning of warnings) {
+        notification.warning({
+          message: "Fallback omitted",
+          description: warning,
+          duration: 0,
+        });
+      }
+      const arena = this.viewCtx().studioCtx.currentArena;
+      const key = common.mkUuid();
+      notification.info({
+        key,
+        message: "Component created",
+        description: (
+          <>
+            <a
+              onClick={() => {
+                this.viewCtx().change(() => {
+                  if (this.site().components.includes(tplComponent.component)) {
+                    if (isMixedArena(arena)) {
+                      this.studioCtx()
+                        .siteOps()
+                        .createNewFrameForMixedArena(
+                          tplComponent.component,
+                          {},
+                        );
+                    } else {
+                      this.studioCtx().switchToComponentArena(
+                        tplComponent.component,
+                      );
+                    }
+                  }
+                });
+                notification.destroy(key);
+              }}
+            >
+              {isMixedArena(arena)
+                ? "[Edit component in new artboard]"
+                : "[Open component]"}
+            </a>
+          </>
+        ),
+        duration: 10,
+      });
+    });
+
+    if (extractResult?.isOk()) {
+      // Segment track
+      trackEvent("Create component", {
+        projectName: this.studioCtx().siteInfo.name,
+        componentName: extractResult.value.tplComponent.component.name,
+        type: "component",
+        action: "extract-tpl-to-component",
+      });
+    }
+  }
+  isEditing(domNode: HTMLElement | null = null) {
+    const editingTextContext = this.viewCtx().editingTextContext();
+    if (!editingTextContext) {
+      return false;
+    }
+    if (!domNode) {
+      return true;
+    }
+
+    // Check if the argument Node is the valNode we're editing (or a
+    // descendant). We check all ancestors to return true if any rich text
+    // ancestor of domNode is being edited.
+    const elements = [...$(domNode).parents(".__wab_editor")];
+    if ($(domNode).hasClass("__wab_editor")) {
+      elements.push(domNode);
+    }
+    const domVals = common.filterMapTruthy(elements, (e) =>
+      this.viewCtx().dom2val($(e)),
+    );
+
+    for (const domVal of domVals) {
+      if (
+        domVal instanceof ValNode &&
+        ValNodes.representsSameValNode(domVal, editingTextContext.val)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  insertFreestyle(
+    insertableSpec: AddTplItem,
+    insertionSpec: InsertionSpec,
+    place: Rect | Pt,
+    adoptees: Adoptee[],
+  ) {
+    assert(
+      insertionSpec.type !== "ErrorInsertion",
+      "insertionSpec type should not be ErrorInsertion",
+    );
+    const insertableKey = ensureString(insertableSpec.key);
+    const cmptTpl = insertableSpec.factory(
+      this.viewCtx(),
+      place instanceof Pt ? undefined : place,
+    );
+    if (!cmptTpl || !Tpls.isTplTag(cmptTpl)) {
+      return;
+    }
+    const isStack = ["hstack", "vstack", "stack"].includes(insertableKey);
+    ensureBaseRs(
+      this.viewCtx(),
+      cmptTpl,
+      omitNils({
+        ...(!(place instanceof Pt)
+          ? {
+              width: px(place.width),
+              height: px(place.height),
+            }
+          : undefined),
+        ...(isStack
+          ? getSimplifiedStyles(
+              insertableKey as AddItemKey,
+              this.site().activeTheme?.addItemPrefs as AddItemPrefs | undefined,
+            )
+          : {}),
+      }),
+    );
+
+    insertBySpec(this.viewCtx(), insertionSpec, cmptTpl, true);
+
+    //
+    // Determine what's lasso'd into the new element.
+    //
+
+    let uniqAdoptees = L.uniqBy(adoptees, (item) => item.val.tpl);
+    if (uniqAdoptees.length > 0 && !(place instanceof Pt)) {
+      // Remove any default content from cmptTpl, as we will be replacing them
+      // with the adoptees
+      $$$(cmptTpl).clear();
+      const parentRect = Box.fromRect(place).rect();
+
+      if (["hstack", "vstack"].includes(insertableKey)) {
+        uniqAdoptees = L.sortBy(uniqAdoptees, (item) =>
+          insertableKey === "hstack" ? item.domBox.left() : item.domBox.top(),
+        );
+      } else if (insertableKey === "stack") {
+        const [containerType, maybeReorderedTpl] = this.doGuessAutoLayoutType(
+          parentRect,
+          uniqAdoptees.map((item) => tuple(item.val.tpl, item.domBox.rect())),
+        );
+        ensureBaseRs(this.viewCtx(), cmptTpl, {
+          flexDirection: containerType === "flex-row" ? "row" : "column",
+        });
+        if (maybeReorderedTpl) {
+          uniqAdoptees = maybeReorderedTpl.map((tpl) =>
+            ensure(
+              uniqAdoptees.find((item) => item.val.tpl === tpl),
+              "Should find tpl in uniqAdoptees to reorder the array",
+            ),
+          );
+        }
+      }
+
+      for (const item of uniqAdoptees) {
+        const opts = isStack ? { keepFree: false } : undefined;
+        this.insertAsChild(item.val.tpl, cmptTpl, opts);
+      }
+    }
+
+    this.viewCtx().postEval(() => {
+      if (insertableKey === "text") {
+        this.tryEditText();
+      }
+    });
+  }
+
+  tryInsertAsSibling(
+    newNode: TplNode,
+    targetNode: TplNode,
+    loc: "before" | "after" | Side,
+  ) {
+    if (!this.canInsertAsSibling(newNode, targetNode, true)) {
+      return false;
+    }
+    this.insertAsSibling(newNode, targetNode, loc);
+    return true;
+  }
+
+  /**
+   * Inserts the argument `newNode` as a sibling to `targetNode`.  This will
+   * also adopt the parent container's container type for the newNode (so if
+   * parent is free, child becomes free; if parent is flex, child becomes
+   * relative, etc.)
+   */
+  insertAsSibling(
+    newNode: TplNode,
+    targetNode: TplNode,
+    loc: "before" | "after" | Side,
+  ) {
+    assert(
+      this.canInsertAsSibling(newNode, targetNode, false),
+      "Should be able to insert newNode as sibling of targetNode",
+    );
+    const targetParent = ensure(
+      getParentOrSlotSelection(targetNode),
+      "targetNode should have a targetParent to be used for inserting newNode",
+    );
+    if (loc === "before" || loc === "after") {
+      this.insertAsChild(
+        newNode,
+        targetParent,
+        loc === "before"
+          ? { beforeNode: targetNode }
+          : { afterNode: targetNode },
+      );
+    } else {
+      assert(
+        isStandardSide(loc),
+        "insertAsSibling: loc should be before | after | Side",
+      );
+      const spec = WRAPPERS_MAP[
+        sideToOrient(loc) === "horiz" ? WrapItemKey.hstack : WrapItemKey.vstack
+      ] as AddTplItem;
+      const newWrapper = this.doWrap(spec, [targetNode], true);
+      if (newWrapper) {
+        this.insertAsChild(
+          newNode,
+          newWrapper,
+          loc === "left" || loc === "top"
+            ? { beforeNode: targetNode }
+            : { afterNode: targetNode },
+        );
+      }
+    }
+  }
+
+  tryInsertAsChild(
+    newNode: TplNode,
+    newParent: TplNode | SlotSelection,
+    opts: {
+      parentOffset?: Pt;
+      forceFree?: boolean;
+      prepend?: boolean;
+      beforeNode?: TplNode;
+      afterNode?: TplNode;
+    } = {},
+  ) {
+    if (!this.canInsertAsChild(newNode, newParent, true)) {
+      return false;
+    }
+    this.insertAsChild(newNode, newParent, opts);
+    return true;
+  }
+
+  /**
+   * Inserts the argument `newNode` as the last child of `newParent`.  This
+   * will also adopt the parent container's container type for the `newNode`
+   * (so if parent is free, child becomes free; if parent is flex, child
+   * becomes relative, etc.)
+   * @param opts.parentOffset if parent is free, or if opts.forceFree is true,
+   *   then the
+   *   `newNode` will be absolutely positioned.  `parentOffset` specifies where
+   *   in the new parent container this node should be.
+   * @param opts.forceFree if parent is not free, usually the child will be
+   *   relatively- positioned.  You can force the child to still be foree by
+   *   passing true for forceFree.
+   * @param opts.keepFree if argument `newNode` has position free, keep it, else
+   *   use `newParent` container position to calculate the new child position.
+   *   Defaults to true.
+   */
+  insertAsChild(
+    newNode: TplNode,
+    newParent: TplNode | SlotSelection,
+    opts: {
+      parentOffset?: Pt;
+      forceFree?: boolean;
+      keepFree?: boolean;
+      prepend?: boolean;
+      beforeNode?: TplNode;
+      afterNode?: TplNode;
+    } = {},
+  ) {
+    const result = insertTplAsChild(
+      newNode,
+      newParent,
+      this.insertTplCtx(),
+      opts,
+    );
+    assert(
+      result.isOk(),
+      "Should be able to insert newParent as parent of newNode",
+    );
+  }
+
+  // Make sure that in all variant settings of tpl, props are all set to default
+  // value.
+  private ensureDefaultSetting(tpl: TplNode, props: Set<string> | undefined) {
+    if (props === undefined) {
+      tpl.vsettings.forEach((vs) => {
+        vs.rs.values = {};
+        vs.rs.mixins = [];
+      });
+      return;
+    }
+    const tag = isKnownTplTag(tpl) ? tpl.tag : "div";
+    tpl.vsettings.forEach((vs) => {
+      // read from mixins, but write goes to exp directly.
+      const exp = new EffectiveVariantSetting(
+        tpl,
+        [vs],
+        this.viewCtx().site,
+      ).rsh();
+      const writer = new RuleSetHelpers(vs.rs, tag);
+      for (const prop of props) {
+        if (exp.has(prop) || exp.get(prop) !== getCssInitial(prop, tag)) {
+          writer.set(prop, getCssInitial(prop, tag));
+        }
+      }
+    });
+  }
+
+  private copyMixins(fromNode: TplNode, toNode: TplNode) {
+    copyMixinsOp(fromNode, toNode, this.insertTplCtx());
+  }
+
+  private transferStyleProps(
+    fromNode: TplNode,
+    toNode: TplNode,
+    props?: string[],
+    clearProps?: string[],
+  ) {
+    transferStylePropsOp(
+      fromNode,
+      toNode,
+      this.insertTplCtx(),
+      props,
+      clearProps,
+    );
+  }
+
+  /**
+   * Inserts the argument `newNode` as a wrapping parent for the argument
+   * `child`. The `newNode` will adopt the positioning styles of the `child`,
+   * and the `child` will be converted to relatively-positioned within the
+   * parent.
+   */
+  insertAsParent(
+    newNode: TplTag | TplComponent | SlotSelection,
+    child: TplTag | TplComponent | TplSlot,
+  ) {
+    const result = insertTplAsParent(newNode, child, this.insertTplCtx());
+    assert(
+      result.isOk(),
+      "Should be able to insert newNode as parent of child",
+    );
+  }
+
+  canInsertAsParent(
+    newNode: TplNode | SlotSelection,
+    target: TplNode | SlotSelection,
+    showErrorNotification: boolean,
+  ) {
+    const reason = canInsertTplAsParent(newNode, target);
+    if (reason !== true) {
+      if (showErrorNotification) {
+        this.notifyCantInsert("Cannot wrap in container", reason);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  // If convertAtomically set to true, it means always convert tpl as the
+  // defaultContent of a slot.
+  convertToSlot(tpl: TplTag | TplComponent, convertAtomically?: boolean) {
+    // You cannot convert a tpl to a TplSlot if it's already a default content for
+    // some TplSlot!
+    if (
+      $$$(tpl)
+        .ancestors()
+        .toArrayOfTplNodes()
+        .find((n) => Tpls.isTplSlot(n))
+    ) {
+      notification.error({
+        message: "Error converting to a slot",
+        description:
+          "This element is already the default content for a slot; you cannot nest slots.",
+      });
+      return;
+    }
+
+    // You also cannot convert a tpl to a TplSlot if it already has TplSlot as a
+    // descendant!
+    const containedSlots = getTplSlotDescendants(tpl);
+    if (containedSlots.length > 0) {
+      notification.error({
+        message: "Error converting to a slot",
+        description: (
+          <>
+            This element already contains slots{" "}
+            {joinReactNodes(
+              containedSlots.map((s) => <code>{s.param.variable.name}</code>),
+              ", ",
+            )}
+            . You cannot nest slots.
+          </>
+        ),
+      });
+      return;
+    }
+
+    if (Tpls.hasTextAncestor(tpl)) {
+      notification.error({
+        message: "Cannot convert element inside rich text block to a slot.",
+        description: "This feature is not supported at the moment.",
+      });
+      return;
+    }
+
+    // And you cannot convert a tpl to a TplSlot if it contains VarRef Exprs as
+    // attrs or as args
+    const varRefs = Array.from(Components.findVarRefs(tpl));
+    if (varRefs.length > 0) {
+      notification.error({
+        message: "Error converting to a slot",
+        description: (
+          <>
+            This element contains elements linked to props{" "}
+            {joinReactNodes(
+              varRefs.map((r) => <code>{r.var.name}</code>),
+              ", ",
+            )}
+            .
+          </>
+        ),
+      });
+      return;
+    }
+
+    if (!convertAtomically && Tpls.canConvertInnerTextToSlot(tpl)) {
+      // If we're converting a non-div text block into a slot, or a div text block with
+      // non-typography styles then we turn the text block into a container first, and
+      // then convert the div-text block inside into the slot.
+      // The thinking is that is there's a `button` text block, and you turn it into a slot,
+      // you probably intended to turn the button text into a slot, not the whole button element.
+      tpl = ensure(
+        this.convertTextBlockToContainer(tpl, true),
+        "Unexpected undefined tpl after converting text to container",
+      );
+      this.convertToSlot(tpl.children[0] as TplTag, true);
+      return;
+    }
+
+    const component = $$$(tpl).owningComponent();
+    const slotParam = Components.addSlotParam(
+      this.site(),
+      component,
+      tpl.name || undefined,
+    );
+
+    if (Tpls.isTplComponent(tpl.parent)) {
+      // This tpl is currently an Arg to a TplComponent!  Just wrap it in a slot as-is
+      // as the defaultContents
+      const slot = this.viewCtx()
+        .variantTplMgr()
+        .mkSlot(slotParam, [Tpls.clone(tpl)]);
+      $$$(tpl).replaceWith(slot);
+      this.viewCtx().selectNewTpl(slot);
+      return;
+    }
+
+    if (Tpls.isTplContainer(tpl)) {
+      // To turn a container into a slot, we create a TplSlot as the only child of this
+      // node, and its defaultContent will be a new div containing the previous
+      // children of this node.  So instead of...
+      //   <div><blah>hello</blah></div>, it becomes
+      //   <div><slot><blah>hello</div></slot></div>.
+      // We keep the original wrapping div because it contains all the positioning /
+      // spacing / styling we expect to see for the slot content.
+      //
+      // Note that this is quite different from what we do for turning non-containers
+      // into slots; when you turn a container into a slot, we expect the container to
+      // still be part of the Component, rather than part of the defaultContents.
+      let defaultContents: TplNode[] = [];
+      const $$$children = $$$(tpl).children();
+      if ($$$children.length() > 0) {
+        defaultContents = $$$children
+          .remove({ deep: true })
+          .clone()
+          .toArrayOfTplNodes();
+      }
+      const slot = this.viewCtx()
+        .variantTplMgr()
+        .mkSlot(slotParam, defaultContents);
+      $$$(tpl).append(slot);
+      this.viewCtx().selectNewTpl(slot);
+      return;
+    }
+
+    // Now we're only dealing with atomic TplTag (text block, image, input) or TplComponent.
+    // To turn a non-container into a slot, we can't just replace the tpl with
+    // a TplSlot with tpl as the defaultContents.  That's because the tpl may have
+    // positioning styles that you'd want to wrap the TplSlot in.
+
+    const vtm = this.viewCtx().variantTplMgr();
+    // we need a parent
+    //   - if any of the vs has reference to mixin
+    //   - or, for non text node, any of the VariantSettings has any
+    //     WRAP_AS_PARENT_PROPS settings.
+    //   - or, for text node, any of the VariantSettings has any
+    //     non typography settings.
+    const useMixins = !!tpl.vsettings.find((vs) => vs.rs.mixins.length > 0);
+    const toCopyToParent = new Set<string>();
+
+    // If this is a text block, we will be converting it to a plain text TplSlot
+    const isTplText = Tpls.isTplTextBlock(tpl, "div");
+    tpl.vsettings.forEach((vs) => {
+      Object.keys(vs.rs.values).forEach((r) => {
+        // We only bother copying style props if any of the variants has a
+        // non-default style value
+        const val = vs.rs.values[r];
+        if (
+          val !== tryGetCssInitial(r, Tpls.isTplTag(tpl) ? tpl.tag : undefined)
+        ) {
+          if (isTplText) {
+            // For text blocks, we are converting into a plain text slot, so
+            // we want to copy all non-typography css to the parent
+            if (!slotCssProps.includes(r)) {
+              toCopyToParent.add(r);
+            }
+          } else if (WRAP_AS_PARENT_PROPS.includes(r)) {
+            // For everything else, we just want to copy all styles we usually
+            // copy when we wrap a new container as parent
+            toCopyToParent.add(r);
+          } else if (isSizeProp(r)) {
+            // We keep the size on `tpl` for TplComponent or TplImage; so only
+            // transfer the image to parent for other normal tags.  We avoid this
+            // for TplComponent because TplComponent has special size values like
+            // "default"
+            if (Tpls.isTplTag(tpl) && !Tpls.isTplImage(tpl)) {
+              toCopyToParent.add(r);
+            }
+          }
+        }
+      });
+    });
+
+    let newContainer;
+    let insertIndex = 0;
+    if (!tpl.parent || useMixins || toCopyToParent.size > 0) {
+      // So tpl has some positioning styles that we'd want in the wrapper.
+      // We create a new container with the positioning styles of tpl, then a slot
+      // as the child, then the tpl as the defaultContent (but without the positioning styles)
+      // We also always do this if tpl is the root node, because we can't have the root node
+      // be a TplSlot.
+      newContainer = vtm.mkTplTagX("div", undefined, undefined, true);
+      // attach the node before performing any variant settings change
+      $$$(tpl).wrap(newContainer);
+      // We remove deeply instead of just `replace` to remove all private
+      // style variants for `tpl`
+      $$$(tpl).remove({ deep: true });
+      const baseVs = vtm.ensureBaseVariantSetting(newContainer);
+      const containerType = getContainerType(
+        newContainer.parent,
+        this.viewCtx(),
+      );
+      if (containerType && containerType !== "free") {
+        convertSelfContainerType(RSH(baseVs.rs, newContainer), containerType);
+      }
+      this.copyMixins(tpl, newContainer as TplTag);
+      this.transferStyleProps(
+        tpl,
+        newContainer as TplTag,
+        Array.from(toCopyToParent),
+        [], // don't clear anything!
+      );
+    } else {
+      // Otherwise, there's no need for a new container, and we can just use the existing
+      // container as the parent of the TplSlot
+      newContainer = ensure(tpl.parent, "Unexpected TplSlot without parent");
+      insertIndex = switchType(newContainer)
+        .when(TplTag, (tag) => tag.children.findIndex((c) => c === tpl))
+        .when(TplSlot, (slot) =>
+          slot.defaultContents.findIndex((c) => c === tpl),
+        )
+        .elseUnsafe(() => -1);
+      insertIndex = Math.max(0, insertIndex);
+      $$$(tpl).remove({ deep: true });
+    }
+    const defaultContent = Tpls.clone(tpl);
+    this.ensureDefaultSetting(
+      defaultContent,
+      isTplText ? undefined : toCopyToParent,
+    );
+
+    const slot = this.viewCtx()
+      .variantTplMgr()
+      .mkSlot(slotParam, [defaultContent]);
+    $$$(newContainer).insertAt(slot, insertIndex);
+
+    if (isTplText) {
+      // For plain text slots, transfer styles from the text node to the TplSlot
+      this.copyMixins(tpl, slot);
+      this.transferStyleProps(tpl, slot, slotCssProps, []);
+      this.clearAllStyles(defaultContent as TplTag);
+    }
+    this.viewCtx().selectNewTpl(slot, true);
+  }
+
+  /**
+   * Converts tpl to responsive columns
+   * Try to convert each child of tpl to a column:
+   *  if the child is not a container:
+   *   it's created a column and the child is wrapped on it
+   *  if the child is a container with sytling that will be lost if transfomed
+   * to the column: it's created a column and the child is wrapped on it else:
+   * the container is converted to a column
+   */
+  convertToResponsiveColumns(tpl: TplTag) {
+    const variant = getScreenVariant(this.viewCtx());
+    const isBaseColumn = variant && !hasMaxWidthVariant(variant);
+
+    tpl.type = Tpls.TplTagType.Columns;
+    ensureTplColumnsRs(this.viewCtx(), tpl, variant, isBaseColumn);
+
+    $$$(tpl)
+      .children()
+      .toArrayOfTplNodes()
+      .forEach((child) => {
+        let new_child;
+        if (
+          Tpls.isTplContainer(child) &&
+          !hasNonResponsiveColumnsStyle(child)
+        ) {
+          (child as TplTag).type = Tpls.TplTagType.Column;
+          // erase the variant settings of this node because it's going to be transformed into
+          // a column and receive the variant settings of a new column
+          child.vsettings = [];
+          ensureTplColumnRs(this.viewCtx(), child);
+          new_child = child;
+        } else {
+          const column = makeTplColumn(this.viewCtx());
+          $$$(child).wrap(column);
+          new_child = column;
+        }
+
+        // after converting the element to a column or wrapping it in one, we can have elements
+        // that were free positioned before and then we need to update their style based on the
+        // parent style
+        $$$(new_child)
+          .children()
+          .toArrayOfTplNodes()
+          .forEach((nchild) => {
+            if (Tpls.isTplVariantable(nchild)) {
+              this.adoptParentContainerStyle(nchild, new_child, {
+                keepFree: true,
+              });
+            }
+          });
+      });
+
+    redistributeColumnsSizes(
+      tpl as Tpls.TplColumnsTag,
+      this.viewCtx().variantTplMgr(),
+      {
+        forceEqual: true,
+      },
+    );
+  }
+
+  transferTextStyleToSlot(text: TplTag, slot: TplSlot) {
+    this.copyMixins(text, slot);
+    this.transferStyleProps(text, slot, slotCssProps);
+  }
+
+  private clearAllStyles(tpl: TplNode) {
+    clearAllStylesOp(tpl);
+  }
+
+  /**
+   * Adopts the parent's container style across all variants where the parent's
+   * container style is specified.
+   */
+  adoptParentContainerStyle(
+    layoutChild: TplNode,
+    layoutParent: TplTag,
+    opts: { parentOffset?: Pt; forceFree?: boolean; keepFree?: boolean },
+  ) {
+    adoptParentContainerStyleOp(
+      layoutChild,
+      layoutParent,
+      opts,
+      this.insertTplCtx(),
+    );
+  }
+
+  /**
+   * Adopts the parent's container style for a specific variant
+   */
+  private adoptParentContainerStyleForVariant(
+    layoutChild: TplNode,
+    layoutParent: TplTag,
+    variantCombo: VariantCombo,
+    opts: { parentOffset?: Pt; forceFree?: boolean; keepFree?: boolean },
+  ) {
+    adoptParentContainerStyleForVariantOp(
+      layoutChild,
+      layoutParent,
+      variantCombo,
+      opts,
+      this.insertTplCtx(),
+    );
+  }
+
+  /**
+   * Adopts the "free" position type for the argument `node` for the argument
+   * `variant`.
+   *
+   * @param parentOffset If specified, then it is used as the left/top position
+   *   for the
+   * `node`.  If you specify "current" as parentOffset, then the current
+   * DOM offset will be used.  Note that this is a little weird, as the current
+   *   DOM offset may not actually reflect the argument `variant` you're using!
+   *    If not specified, then top/left are left unchanged.
+   *
+   * If we are converting from fixed position, then we are going to ignore
+   * offsets since it can represent a position outside of the parent, considering
+   * it can lead to bugs.
+   *
+   * If we are converting from relative position, then the width/height of
+   * current relatively-positioned DOM node will be explicitly set as the
+   *   width/height.
+   */
+  adoptFreePositionType(
+    node: TplTag | TplComponent,
+    variants: Variant[],
+    parentOffset?: Pt | "current",
+  ) {
+    adoptFreePositionTypeOp(node, variants, this.insertTplCtx(), parentOffset);
+  }
+
+  /**
+   * Adopts "auto" / relative position type for the argument `node` for the
+   * argument `variant`.
+   */
+  adoptRelativePositionType(
+    node: TplTag | TplComponent,
+    variantCombo: VariantCombo,
+  ) {
+    adoptRelativePositionTypeOp(node, variantCombo, this.insertTplCtx());
+  }
+
+  /**
+   * Adopts fixed position type for the argument `node`.
+   *
+   * Used the element offset to position the element properly.
+   */
+  adoptFixedPositionType(
+    node: TplTag | TplComponent,
+    variantCombo: VariantCombo,
+  ) {
+    adoptFixedPositionTypeOp(node, variantCombo, this.insertTplCtx());
+  }
+
+  /**
+   * Adopts sticky position type for the argument `node`.
+   */
+  adoptStickyPositionType(
+    node: TplTag | TplComponent,
+    variantCombo: VariantCombo,
+  ) {
+    adoptStickyPositionTypeOp(node, variantCombo, this.insertTplCtx());
+  }
+
+  convertContainerType(
+    tpl: TplTag,
+    type: ContainerType,
+    reorderedChildren: TplNode[] | undefined,
+  ) {
+    const layoutChildren = $$$(tpl)
+      .children()
+      .layoutContent()
+      .toArrayOfTplNodes();
+
+    const baseVs = ensureBaseVariantSetting(tpl);
+    const prevBaseContainerType = getRshContainerType(RSH(baseVs.rs, tpl));
+    const isNonVariantableConversion =
+      !isContainerTypeVariantable(prevBaseContainerType) ||
+      !isContainerTypeVariantable(type as ContainerLayoutType);
+    const vtm = this.viewCtx().variantTplMgr();
+    if (isNonVariantableConversion) {
+      if (!isContainerTypeVariantable(type)) {
+        // If the new container type is not variantable, then we must clear
+        // clear "display" from all variants except for the base
+        for (const vs of tpl.vsettings) {
+          if (isBaseVariant(vs.variants)) {
+            convertSelfContainerType(RSH(vs.rs, tpl), type);
+          } else {
+            RSH(vs.rs, tpl).clear("display");
+          }
+        }
+      } else {
+        // Else just do it for the current vs
+        convertSelfContainerType(
+          RSH(vtm.ensureCurrentVariantSetting(tpl).rs, tpl),
+          type,
+        );
+      }
+
+      if (reorderedChildren) {
+        this.tplMgr().reorderChildren(tpl, reorderedChildren);
+      }
+
+      // When doing a non-variantable conversion, the children must
+      // be reset in all variants, not just the current variants
+      for (const child of layoutChildren) {
+        if (isTplVariantable(child)) {
+          for (const vs of child.vsettings) {
+            this.adoptParentContainerStyleForVariant(child, tpl, vs.variants, {
+              keepFree: true,
+            });
+          }
+        }
+      }
+    } else {
+      // Now doing variantable conversion (among free, and flex),
+      // we just need to perform the conversion for the current
+      // variant
+      const rsh = RSH(vtm.ensureCurrentVariantSetting(tpl).rs, tpl);
+      const baseRsh = RSH(vtm.ensureBaseVariantSetting(tpl).rs, tpl);
+
+      const effectiveExp = vtm.effectiveVariantSetting(tpl).rsh();
+      const previousType = getRshContainerType(effectiveExp);
+      const combo = vtm.getTargetVariantComboForNode(tpl);
+      if (!convertSelfContainerType(rsh, type, baseRsh)) {
+        return;
+      }
+
+      if (reorderedChildren) {
+        this.tplMgr().reorderChildren(tpl, reorderedChildren);
+      }
+
+      // If both layout types aren't free we gonna keep the free elements in their positions
+      const keepFree =
+        previousType !== ContainerLayoutType.free &&
+        type !== ContainerLayoutType.free;
+
+      layoutChildren.forEach((child) => {
+        if (Tpls.isTplVariantable(child)) {
+          this.adoptParentContainerStyleForVariant(child, tpl, combo, {
+            keepFree,
+          });
+        }
+      });
+    }
+  }
+
+  convertTextBlockToContainer(
+    tpl: Tpls.TplTextTag,
+    inferFlexStyleFromChild = false,
+  ) {
+    const container = convertTextBlockToContainerOp(
+      tpl,
+      this.insertTplCtx(),
+      inferFlexStyleFromChild,
+    );
+    if (!container) {
+      notification.error({
+        message: "Cannot convert text inside rich text block to a container.",
+        description: "This feature is not supported at the moment.",
+      });
+      return undefined;
+    }
+    return container;
+  }
+
+  convertPictureToContainer(tpl: Tpls.TplPictureTag) {
+    // Convert into a div container
+    (tpl as TplTag).type = "other";
+    (tpl as TplTag).tag = "div";
+    for (const vs of tpl.vsettings) {
+      // For each vsetting, convert the image src ref into a
+      // background image layer
+      const srcAttr = vs.attrs.src;
+      if (!srcAttr) {
+        continue;
+      }
+
+      delete vs.attrs.src;
+
+      let imageUri: string | undefined = undefined;
+      if (isKnownImageAssetRef(srcAttr)) {
+        const asset = srcAttr.asset;
+        if (asset.dataUri) {
+          imageUri = mkImageAssetRef(asset);
+        }
+      } else {
+        imageUri = exprs.tryExtractString(srcAttr);
+      }
+
+      if (!imageUri) {
+        continue;
+      }
+
+      const props = getBackgroundImageProps(imageUri);
+      RSH(vs.rs, tpl).merge({
+        ...props,
+        display: "flex",
+      });
+    }
+  }
+
+  getTplDom(node: TplNode) {
+    const valNode = this.viewCtx().renderState.tpl2bestVal(
+      node,
+      this.viewCtx().focusedCloneKey(),
+    );
+    // Even if we valNode is not undefined, it might not have a DOM element if it's
+    // a component instance whose root node is not visible.
+    const maybeDom =
+      valNode &&
+      this.viewCtx().renderState.sel2dom(valNode, this.viewCtx().canvasCtx);
+    return maybeDom ? (common.asOne(maybeDom) as HTMLElement) : undefined;
+  }
+
+  private getTplDomOffset(node: TplNode) {
+    const dom = this.getTplDom(node);
+    return dom ? getOffsetPoint(dom) : undefined;
+  }
+
+  /**
+   * Returns true if TplNode is visible for current target variants
+   **/
+  getTargetTplVisibility = (tpl: TplNode) => {
+    const combo = this.viewCtx()
+      .variantTplMgr()
+      .getTargetVariantComboForNode(tpl);
+    return getEffectiveTplVisibility(tpl, combo);
+  };
+
+  /**
+   * Returns true if TplNode is visible for current active variants
+   **/
+  getEffectiveTplVisibility = (tpl: TplNode) => {
+    const combo = [
+      ...this.viewCtx().variantTplMgr().getActivatedVariantsForNode(tpl),
+    ];
+    return getEffectiveTplVisibility(tpl, combo);
+  };
+
+  isSelectableVisible = (selectable: Selectable) => {
+    return switchType(selectable)
+      .when(ValNode, (valNode) => {
+        if (!isTplVariantable(valNode.tpl)) {
+          return false;
+        }
+        const effectiveVisibility = this.getEffectiveTplVisibility(valNode.tpl);
+        const effectiveVs = this.viewCtx()
+          .variantTplMgr()
+          .effectiveVariantSetting(valNode.tpl);
+        return !isVisibilityHidden(
+          effectiveVisibility,
+          effectiveVs.dataCond,
+          () => this.viewCtx().getCanvasEnvForTpl(valNode.tpl),
+          {
+            projectFlags: this.viewCtx().projectFlags(),
+            component: valNode.valOwner?.tpl.component ?? null,
+            inStudio: true,
+          },
+        );
+      })
+      .when(SlotSelection, (slotSelection) => {
+        return (
+          getTreeNodeVisibility(this._viewCtx, slotSelection) ===
+          TplVisibility.Visible
+        );
+      })
+      .result();
+  };
+
+  setTplVisibility = (tpl: TplNode, visibility: TplVisibility) => {
+    const combo = this.viewCtx()
+      .variantTplMgr()
+      .getTargetVariantComboForNode(tpl, { forVisibility: true });
+    setTplVisibility(tpl, combo, visibility);
+    if (visibility === TplVisibility.Visible) {
+      this.viewCtx().resetAutoOpenState();
+    } else {
+      this.viewCtx().disabledAutoOpenUuid = tpl.uuid;
+    }
+  };
+
+  setDataCond = (tpl: TplNode, cond: CustomCode | ObjectPath) => {
+    const combo = this.viewCtx()
+      .variantTplMgr()
+      .getTargetVariantComboForNode(tpl, { forVisibility: true });
+    const vs = ensureVariantSetting(tpl, combo);
+    vs.dataCond = cond;
+  };
+
+  private getFocusedTplOrError() {
+    const tpl = this.viewCtx().focusedTpl(true);
+    if (!tpl) {
+      // Can make this more descriptive.
+      notification.error({
+        message: "Cannot insert into the selected element.",
+        description: "Choose a container to insert in.",
+      });
+    }
+    return tpl;
+  }
+
+  tryInsertInsertableSpec<T>(
+    spec: {
+      key?: AddItemKey | string;
+      factory: (viewCtx: ViewCtx, extraInfo: T) => TplNode | undefined;
+    },
+    loc: InsertRelLoc,
+    extraInfo: T,
+    target?: TplNode | SlotSelection,
+  ): TplNode | null {
+    let insertedTpl: TplNode | null = null;
+    this.change(() => {
+      const tpl =
+        target ||
+        this.viewCtx().focusedTplOrSlotSelection() ||
+        this.viewCtx().arenaFrame().container.component.tplTree;
+      const preserveCloneKey = !target;
+
+      if (!tpl) {
+        return;
+      }
+      const cmptTpl = spec.factory(this.viewCtx(), extraInfo);
+      if (!cmptTpl) {
+        return;
+      }
+      if (
+        isKnownTplNode(target) &&
+        this.isRootNodeOfFrame(target) &&
+        isPageComponent(this.viewCtx().arenaFrame().container.component)
+      ) {
+        if (Tpls.isTplVariantable(cmptTpl)) {
+          cmptTpl.vsettings.forEach((vs) => {
+            const rsh = RSH(vs.rs, cmptTpl);
+            rsh.set("width", CONTENT_LAYOUT_FULL_BLEED);
+            rsh.set("height", "stretch");
+          });
+        }
+      } else if (
+        tpl instanceof SlotSelection &&
+        isCodeComponent(tpl.getTpl().component)
+      ) {
+        // we don't know the layout of code component. So let's clear the position style
+        // of cmptTpl, which is generated by spec.factory by default.
+        if (Tpls.isTplVariantable(cmptTpl)) {
+          cmptTpl.vsettings.forEach((vs) => {
+            RSH(vs.rs, cmptTpl).clear("position");
+          });
+        }
+      }
+
+      // Ensure the newly created wrapping container is visible in the base variant
+      if (InsertRelLoc.wrap === loc && isKnownTplTag(cmptTpl)) {
+        const baseVs = cmptTpl.vsettings.find((vs) =>
+          isBaseVariant(vs.variants),
+        );
+        if (baseVs) {
+          setTplVisibility(cmptTpl, baseVs.variants, TplVisibility.Visible);
+        }
+      }
+      if (this.tryInsertAt(cmptTpl, undefined, loc, tpl, preserveCloneKey)) {
+        insertedTpl = cmptTpl;
+      }
+    });
+
+    if (spec.key === AddItemKey.text) {
+      // window.requestAnimationFrame(() => this.tryEditText());
+    }
+
+    if ([InsertRelLoc.append, InsertRelLoc.prepend].includes(loc)) {
+      const parentElement = this._viewCtx.focusedDomElt()?.[0]?.parentElement;
+      window.requestAnimationFrame(() =>
+        parentElement?.scrollTo(
+          parentElement?.scrollWidth,
+          parentElement?.scrollHeight,
+        ),
+      );
+    }
+
+    return insertedTpl;
+  }
+
+  isRootNodeOfStretchFrame(node: TplNode) {
+    return (
+      this.isRootNodeOfFrame(node) &&
+      this.viewCtx().arenaFrame().viewMode === FrameViewMode.Stretch
+    );
+  }
+
+  isFocusedOnRootOfStretchFrame() {
+    const tpl = this.viewCtx().focusedTpl();
+    return !!tpl && this.isRootNodeOfStretchFrame(tpl);
+  }
+
+  isRootNodeOfFrame(node: TplNode) {
+    const frame = this.viewCtx().arenaFrame();
+    return frame.container.component.tplTree === node;
+  }
+
+  async convertFrameToComponent(name?: string, type?: "component" | "page") {
+    const frame = this.viewCtx().arenaFrame();
+    if (!type) {
+      type = frame.viewMode === FrameViewMode.Stretch ? "page" : "component";
+    }
+    if (!name) {
+      name = await (type === "page"
+        ? promptPageName({ default: frame.name })
+        : promptComponentName({ default: frame.name }));
+    }
+    if (!name) {
+      return;
+    }
+    this.change(() => {
+      const component = this.viewCtx().component;
+
+      this.studioCtx()
+        .siteOps()
+        .tryRenameComponent(component, name as string);
+
+      component.type = ComponentType.Plain;
+
+      if (type === "page") {
+        this.tplMgr().convertComponentToPage(component);
+      }
+    });
+
+    // Segment track
+    trackEvent("Create component", {
+      projectName: this.studioCtx().siteInfo.name,
+      componentName: name,
+      type,
+      action: "extract-frame-to-component",
+    });
+  }
+
+  clearTargetVariants() {
+    const viewCtx = this.viewCtx();
+    viewCtx.currentComponentStackFrame().setTargetVariants([]);
+    viewCtx.globalFrame.setTargetVariants([]);
+  }
+
+  private studioCtx() {
+    return this.viewCtx().studioCtx;
+  }
+
+  renameNode(nameable: ArenaFrame | Tpls.TplNamable, name: string) {
+    if (isKnownArenaFrame(nameable) && nameable?.container.component.name) {
+      nameable.container.component.name = name;
+      nameable.name = "";
+    } else {
+      nameable.name = name;
+    }
+  }
+
+  private notifyMissingTplRef(
+    tplWithExpr: TplNode | null,
+    referencedTpl: TplNode,
+  ) {
+    const name = Tpls.isTplNamable(referencedTpl)
+      ? referencedTpl.name
+      : undefined;
+    const key = common.mkUuid();
+    notification.error({
+      key,
+      message: "Cannot create component",
+      description: (
+        <>
+          Selected elements contain reference to "
+          {name ?? capitalizeFirst(Tpls.summarizeTpl(referencedTpl))}
+          ".{" "}
+          {tplWithExpr && (
+            <a
+              onClick={() => {
+                this.viewCtx().setStudioFocusByTpl(tplWithExpr);
+                notification.destroy(key);
+              }}
+            >
+              [Go to reference]
+            </a>
+          )}
+        </>
+      ),
+    });
+  }
+
+  private notifyCannotExtractComponent(error: {
+    message: string;
+    referencingNode?: TplNode | null;
+  }) {
+    notifyReferencingNode(
+      "Cannot extract component",
+      error.message,
+      error.referencingNode,
+      this.studioCtx(),
+    );
+  }
+}
+
+export enum InsertRelLoc {
+  before = "before",
+  prepend = "prepend",
+  append = "append",
+  after = "after",
+  wrap = "wrap",
+  replace = "replace",
+}
+
+const AS_CHILD_LOC = [InsertRelLoc.prepend, InsertRelLoc.append];
+const AS_SIBLING_LOC = [InsertRelLoc.before, InsertRelLoc.after];
+export type AsChildInsertRelLoc = InsertRelLoc.prepend | InsertRelLoc.append;
+export type AsSiblingInsertRelLoc = InsertRelLoc.before | InsertRelLoc.after;
+
+export function isAsChildRelLoc(loc: InsertRelLoc): loc is AsChildInsertRelLoc {
+  return AS_CHILD_LOC.includes(loc);
+}
+export function isAsSiblingRelLoc(
+  loc: InsertRelLoc,
+): loc is AsSiblingInsertRelLoc {
+  return AS_SIBLING_LOC.includes(loc);
+}
+
+/**
+ * Returns the set of valid InsertRelLocs when inserting at the target node.
+ *
+ * Note that for slots, we determine whether we're editing default slot
+ * contents.  So it's not just a check of canAddChildren.  This is why we
+ * take viewCtx; without one, default slot contents are editable.
+ */
+export function getValidInsertLocs(
+  viewCtx: ViewCtx | undefined,
+  target: TplNode | SlotSelection,
+): Set<InsertRelLoc> {
+  const validLocs = new Set<InsertRelLoc>();
+
+  function addAll(locs: InsertRelLoc[]) {
+    locs.forEach((loc) => validLocs.add(loc));
+  }
+
+  if (target instanceof SlotSelection) {
+    if (canAddChildrenToSlotSelection(target)) {
+      addAll([InsertRelLoc.prepend, InsertRelLoc.append]);
+    }
+  } else {
+    if (canAddChildren(target)) {
+      if (Tpls.isTplSlot(target)) {
+        const owner = Tpls.getTplOwnerComponent(target);
+        if (!viewCtx || viewCtx.showingDefaultSlotContentsForComponent(owner)) {
+          // If we are focused on a ValSlot (so tpl is a TplSlot), and we are currently
+          // showing the default slot contents for the owning TplComponent, then
+          // we want to append to the slot as default content.
+          addAll(AS_CHILD_LOC);
+        }
+      } else {
+        addAll(AS_CHILD_LOC);
+      }
+    }
+
+    if (canAddSiblings(target)) {
+      addAll(AS_SIBLING_LOC);
+    }
+
+    if (Tpls.canBeWrapped(target)) {
+      addAll([InsertRelLoc.wrap]);
+    }
+  }
+
+  return validLocs;
+}
+
+/**
+ * Determines the preferred InsertRelLoc when inserting at the given node.
+ *
+ * Usually we try to append if possible (within), otherwise insert after
+ * (around).  We consult getValidInsertLocs for what's possible.
+ *
+ * But there are special cases, where although they *can* receive children (e.g.
+ * a component instance, or an h1 text block), we still prefer to insert around
+ * them.
+ */
+export function getPreferredInsertLocs(
+  viewCtx: ViewCtx | undefined,
+  target: TplNode | SlotSelection,
+): InsertRelLoc[] {
+  // Special cases
+  if (
+    isKnownTplNode(target) &&
+    canAddSiblings(target) &&
+    (Tpls.isTplComponent(target) ||
+      Tpls.isTplTextBlock(target) ||
+      Tpls.isTplImage(target))
+  ) {
+    return [InsertRelLoc.after, InsertRelLoc.before];
+  }
+
+  const rank: InsertRelLoc[] = [
+    InsertRelLoc.append,
+    InsertRelLoc.prepend,
+    InsertRelLoc.after,
+    InsertRelLoc.before,
+  ];
+  const validInsertLocs = getValidInsertLocs(viewCtx, target);
+  return rank.filter((r) => validInsertLocs.has(r));
+}
+
+/** Returns the first preferred InsertRelLoc at target for the first of newItems that fits. */
+export function getAutoInsertLoc(
+  viewCtx: ViewCtx | undefined,
+  newItems: TplNode[],
+  target: TplNode | SlotSelection,
+  ctx: PasteTplCtx,
+) {
+  const locs = getPreferredInsertLocs(viewCtx, target);
+  for (const newItem of newItems) {
+    const loc = locs.find(
+      (l) => canPasteTplAt(newItem, target, l, ctx) === true,
+    );
+    if (loc) {
+      return loc;
+    }
+  }
+  return undefined;
+}
+
+export function getFocusedInsertAnchor(viewCtx: ViewCtx) {
+  const target = viewCtx.focusedTplOrSlotSelection();
+  if (target) {
+    return target;
+  } else {
+    return viewCtx.tplRoot();
+  }
+}
+
+export function getMergedTextArg(tpl: TplComponent) {
+  const slotParams = getSlotParams(tpl.component)
+    .map((p) => {
+      if (p.mergeWithParent) {
+        const arg = $$$(tpl).getSlotArgForParam(p);
+        const maybeText = getSingleTextBlockFromArg(arg);
+        if (maybeText) {
+          return tuple(p, arg);
+        }
+      }
+      return undefined;
+    })
+    .filter(common.isNonNil);
+
+  if (slotParams.length === 0) {
+    return undefined;
+  } else if (slotParams.length === 1) {
+    return slotParams[0][1];
+  } else {
+    const childrenSlot = slotParams.find(
+      ([p, _t]) => p.variable.name === "children",
+    );
+    if (childrenSlot) {
+      return childrenSlot[1];
+    }
+    return slotParams[0][1];
+  }
+}
+
+export function getOnlyVisibleTextArg(viewCtx: ViewCtx, tpl: TplNode) {
+  const slotParams =
+    isTplComponent(tpl) && getSlotParams((tpl as TplComponent).component);
+  const visibleSlotParams =
+    slotParams &&
+    slotParams.filter(
+      (p) =>
+        getTreeNodeVisibility(
+          viewCtx,
+          new SlotSelection({ tpl: tpl as TplComponent, slotParam: p }),
+        ) === TplVisibility.Visible,
+    );
+  const arg =
+    visibleSlotParams &&
+    visibleSlotParams.length === 1 &&
+    $$$(tpl).getSlotArg(visibleSlotParams[0].variable.name);
+  return arg && isTextBlockArg(arg) ? arg : undefined;
+}

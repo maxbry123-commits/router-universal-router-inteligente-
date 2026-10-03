@@ -1,0 +1,113 @@
+.root {
+  display: inline-flex;
+  width: auto;
+  height: auto;
+  flex-direction: row;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+  justify-content: space-between;
+  background: var(--token-O4S7RMTqZ3);
+  min-height: 1.5rem;
+  border-radius: 4px;
+  padding: 4px 8px;
+  border-style: none;
+}
+.rootdeletable {
+  padding-right: 4px;
+  column-gap: 0px;
+  row-gap: 0px;
+}
+.rootsize_normalControl {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-right: 8px;
+}
+.root:focus:focus {
+  box-shadow: 0px 0px 0px 2px #0091ff80;
+  outline: none;
+}
+.slotTargetChildren {
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: pre;
+}
+.slotTargetChildren > :global(.__wab_text),
+.slotTargetChildren > :global(.__wab_expr_html_text),
+.slotTargetChildren > :global(.__wab_slot-string-wrapper),
+.slotTargetChildren > :global(.__wab_slot) > :global(.__wab_text),
+.slotTargetChildren > :global(.__wab_slot) > :global(.__wab_expr_html_text),
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot-string-wrapper),
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_text),
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_expr_html_text),
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_slot-string-wrapper),
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_text),
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_expr_html_text),
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_slot-string-wrapper) {
+  text-overflow: ellipsis;
+}
+.slotTargetChildren > *,
+.slotTargetChildren > :global(.__wab_slot) > *,
+.slotTargetChildren > :global(.__wab_slot) > :global(.__wab_slot) > *,
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > *,
+.slotTargetChildren > picture > img,
+.slotTargetChildren > :global(.__wab_slot) > picture > img,
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > picture
+  > img,
+.slotTargetChildren
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > :global(.__wab_slot)
+  > picture
+  > img {
+  overflow: hidden;
+}
+.closeIcon {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  color: var(--token-fVn5vRhXJxQ);
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+.root .closeIcon:hover {
+  color: rgb(36, 37, 38);
+}
+.rootdeletable .closeIcondeletable:hover {
+  color: var(--token-UunsGa2Y3t3);
+}
+.rootdeletable .closeIcondeletable:active {
+  color: var(--token-0IloF6TmFvF);
+}

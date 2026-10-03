@@ -1,0 +1,35 @@
+.root {
+  display: flex;
+  position: relative;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+}
+.freeBox {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  align-items: stretch;
+  justify-content: flex-start;
+  column-gap: 8px;
+}
+.slotTargetUrl {
+  font-family: "IBM Plex Mono";
+}
+.deleteBtn:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.svg {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.svg__jh5X3 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}

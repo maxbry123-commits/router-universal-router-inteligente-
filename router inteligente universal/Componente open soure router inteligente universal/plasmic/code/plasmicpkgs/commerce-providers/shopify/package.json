@@ -1,0 +1,51 @@
+{
+  "name": "@plasmicpkgs/commerce-shopify",
+  "version": "0.0.273",
+  "description": "Shopify provider for Plasmic commerce components.",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/commerce-providers/shopify"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/commerce-shopify.esm.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdx build",
+    "start": "tsdx watch",
+    "test": "vitest run",
+    "lint": "tsdx lint",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why",
+    "graphql-codegen": "graphql-codegen --config src/graphql-config.ts"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": "^5.0.3",
+    "@plasmicapp/host": "workspace:*",
+    "@types/debounce": "catalog:",
+    "@types/js-cookie": "catalog:",
+    "@types/node": "^14.18.63",
+    "@types/react": "catalog:",
+    "nock": "14.0.17",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsdx": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@plasmicapp/host": ">=1.0.0",
+    "react": ">=16.8.0"
+  },
+  "dependencies": {
+    "@plasmicpkgs/commerce": "workspace:*",
+    "debounce": "^1.2.1",
+    "js-cookie": "^3.0.5"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "@plasmicpkgs/react-awesome-reveal",
+  "version": "3.8.264",
+  "description": "Plasmic registration call for react-awesome-reveal",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/react-awesome-reveal"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/react-awesome-reveal.esm.js",
+  "files": [
+    "dist"
+  ],
+  "size-limit": [
+    {
+      "path": "dist/react-awesome-reveal.cjs.production.min.js",
+      "limit": "15 KB"
+    },
+    {
+      "path": "dist/react-awesome-reveal.esm.js",
+      "limit": "15 KB"
+    }
+  ],
+  "scripts": {
+    "build": "tsdx build",
+    "start": "tsdx watch",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "lint": "tsdx lint",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "devDependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "@types/node": "^14.18.63",
+    "@types/react": "catalog:",
+    "tsdx": "catalog:",
+    "tslib": "catalog:"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "react-awesome-reveal": "^4.2.12"
+  },
+  "peerDependencies": {
+    "@plasmicapp/host": ">=1.0.0",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  }
+}

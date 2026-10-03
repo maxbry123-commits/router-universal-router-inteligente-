@@ -1,0 +1,57 @@
+{
+  "name": "@plasmicpkgs/plasmic-basic-components",
+  "version": "0.0.291",
+  "description": "Assorted basic Plasmic code components: embeds, iframes, timers, conditionals, data providers, and more.",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/plasmic-basic-components"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/plasmic-basic-components.esm.js",
+  "files": [
+    "dist"
+  ],
+  "size-limit": [
+    {
+      "path": "dist/plasmic-basic-components.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/plasmic-basic-components.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "scripts": {
+    "build": "tsdx build",
+    "start": "tsdx watch",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "lint": "tsdx lint",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why",
+    "storybook": "storybook dev -p 6006 --no-open",
+    "build-storybook": "storybook build",
+    "test-storybook": "test-storybook"
+  },
+  "devDependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "@plasmicapp/query": "workspace:*",
+    "@types/node": "^14.18.63",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "tsdx": "catalog:",
+    "tslib": "catalog:"
+  },
+  "peerDependencies": {
+    "@plasmicapp/host": ">=1.0.0",
+    "@plasmicapp/query": "^0.1.64",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  }
+}

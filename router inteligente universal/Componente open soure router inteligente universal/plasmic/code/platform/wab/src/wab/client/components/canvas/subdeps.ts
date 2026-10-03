@@ -1,0 +1,104 @@
+import type { RepeatedElementFnType } from "@/wab/client/components/canvas/repeatedElement";
+import type * as PlasmicDataSourcesContext from "@plasmicapp/data-sources-context";
+import type {
+  DataContext,
+  DataCtxReader,
+  DataProvider,
+  PageParamsProvider,
+  PlasmicCanvasContext,
+  useDataEnv,
+  useGlobalActions,
+} from "@plasmicapp/host";
+import type * as ReactWeb from "@plasmicapp/react-web";
+import type * as PlasmicDataSources from "@plasmicapp/react-web/lib/data-sources";
+import type * as PlasmicQuery from "@plasmicapp/react-web/lib/query";
+import type domAlign from "dom-align";
+import type $ from "jquery";
+import type React from "react";
+import type ReactDOM from "react-dom";
+import type ReactDOMClient from "react-dom/client";
+import type * as jsxDevRuntime from "react/jsx-dev-runtime";
+import type * as jsxRuntime from "react/jsx-runtime";
+import type ResizeObserver from "resize-observer-polyfill";
+import type * as slate from "slate";
+import type * as slateDom from "slate-dom";
+import type * as slateHistory from "slate-history";
+import type * as slateReact from "slate-react";
+import type { SetOptional } from "type-fest";
+
+// Most (not all) of these deps are provided by @plasmicapp/host.
+// TODO: Clearly indicate where each dep comes from.
+export type SubDeps = {
+  hostVersion: string | undefined;
+  React: typeof React;
+  ReactDOM: typeof ReactDOM;
+  // Only available in @plasmicapp/host@>=2.0.0
+  ReactDOMClient?: typeof ReactDOMClient;
+  jsxRuntime?: typeof jsxRuntime;
+  jsxDevRuntime?: typeof jsxDevRuntime;
+  hostUtils: {
+    setPlasmicRootNode: (node: React.ReactElement | null) => void;
+    setRepeatedElementFn?: (fn: RepeatedElementFnType) => void;
+    registerRenderErrorListener: (listener: (err: Error) => void) => () => void;
+  };
+  repeatedElement: RepeatedElementFnType;
+  PlasmicCanvasContext?: typeof PlasmicCanvasContext;
+  PlasmicQuery?: typeof PlasmicQuery;
+  PageParamsProvider: typeof PageParamsProvider;
+  DataProvider: typeof DataProvider;
+  DataContext: typeof DataContext;
+  useDataEnv: typeof useDataEnv;
+  DataCtxReader: typeof DataCtxReader;
+  reactWeb: typeof ReactWeb;
+  // See canvas-ctx.ts for why dataSources has this type.
+  dataSources?: SetOptional<
+    typeof PlasmicDataSources,
+    "usePlasmicDataConfig" | "usePlasmicInvalidate" | "usePlasmicQueries"
+  >;
+  dataSourcesContext: typeof PlasmicDataSourcesContext;
+  useGlobalActions?: typeof useGlobalActions;
+} & CanvasPkgs;
+
+// Make sure this matches the type in canvas-packages/src/index.ts
+interface CanvasPkgs {
+  ResizeObserver: typeof ResizeObserver;
+  GenericErrorBoundary: React.ComponentType<{ className?: string }>;
+  slate: typeof slate;
+  slateDom: typeof slateDom;
+  slateHistory: typeof slateHistory;
+  slateReact: typeof slateReact;
+  localElement?: typeof Element;
+  createModal: (
+    props: Pick<ModalProps, InternalModalProps>,
+  ) => (restProps: Omit<ModalProps, InternalModalProps>) => JSX.Element;
+  createThumbnail: (
+    element: HTMLElement,
+    opts?: {
+      canvasWidth?: number;
+      canvasHeight?: number;
+      quality?: number;
+      filter?: (elem: HTMLElement) => boolean;
+      includeQueryParams?: boolean;
+    },
+  ) => Promise<string>;
+}
+
+type InternalModalProps =
+  | "title"
+  | "$"
+  | "containerSelector"
+  | "studioDocument"
+  | "domAlign"
+  | "popupWidth";
+
+interface ModalProps {
+  children?: React.ReactNode;
+  title: string;
+  containerSelector: string;
+  $: typeof $;
+  studioDocument: Document;
+  onClose: () => void;
+  show?: boolean;
+  domAlign: typeof domAlign;
+  popupWidth?: number;
+}

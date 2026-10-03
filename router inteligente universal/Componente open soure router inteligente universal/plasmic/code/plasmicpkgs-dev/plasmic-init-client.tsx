@@ -1,0 +1,90 @@
+"use client";
+
+import { PLASMIC } from "@/plasmic-init";
+import { registerWithDevMeta } from "@/plasmic-register-dev-meta";
+import { PlasmicRootProvider } from "@plasmicapp/loader-nextjs";
+import { registerAllCmsFunctions as registerPlasmicCms } from "@plasmicpkgs/cms";
+import { registerAll as registerCommerce } from "@plasmicpkgs/commerce";
+import { registerAll as registerShopify } from "@plasmicpkgs/commerce-shopify";
+import { registerContentful } from "@plasmicpkgs/contentful";
+import { registerFetch } from "@plasmicpkgs/fetch";
+import { registerGraphQL } from "@plasmicpkgs/graphql";
+import { registerVideo } from "@plasmicpkgs/plasmic-basic-components";
+import { registerAll as registerPlasmicCmsComponents } from "@plasmicpkgs/plasmic-cms";
+import { registerAll as registerStrapiComponents } from "@plasmicpkgs/plasmic-strapi";
+import { registerStrapi } from "@plasmicpkgs/strapi";
+import { registerWordpress } from "@plasmicpkgs/wordpress";
+import React from "react";
+
+function register() {
+  registerCommerce(PLASMIC);
+  registerContentful(PLASMIC);
+  registerFetch(PLASMIC);
+  registerGraphQL(PLASMIC);
+  registerPlasmicCms(PLASMIC);
+  registerPlasmicCmsComponents(PLASMIC);
+  registerShopify(PLASMIC);
+  registerStrapi(PLASMIC);
+  registerStrapiComponents(PLASMIC);
+  registerVideo(PLASMIC);
+  registerWordpress(PLASMIC);
+}
+
+const useDevNames = true; // set true to avoid conflicting with production hostless names
+if (useDevNames) {
+  registerWithDevMeta(PLASMIC, register);
+} else {
+  register();
+}
+
+/**
+ * ClientPlasmicRootProvider is a Client Component that passes in the loader for you.
+ *
+ * Why? Props passed from Server to Client Components must be serializable.
+ * https://beta.nextjs.org/docs/rendering/server-and-client-components#passing-props-from-server-to-client-components-serialization
+ * However, PlasmicRootProvider requires a loader, but the loader is NOT serializable.
+ *
+ * In a Server Component like app/<your-path>/path.tsx, rendering the following would not work:
+ *
+ * ```tsx
+ * import { PLASMIC } from "@/plasmic-init";
+ * import { PlasmicRootProvider } from "plasmicapp/loader-nextjs";
+ * export default function MyPage() {
+ *   const prefetchedData = await PLASMIC.fetchComponentData("YourPage");
+ *   return (
+ *     <PlasmicRootProvider
+ *       loader={PLASMIC} // ERROR: loader is not serializable
+ *       prefetchedData={prefetchedData}
+ *     >
+ *       {yourContent()}
+ *     </PlasmicRootProvider>;
+ *   );
+ * }
+ * ```
+ *
+ * Therefore, we define ClientPlasmicRootProvider as a Client Component (this file is marked "use client").
+ * ClientPlasmicRootProvider wraps the PlasmicRootProvider and passes in the loader for you,
+ * while allowing your Server Component to pass in prefetched data and other serializable props:
+ *
+ * ```tsx
+ * import { PLASMIC } from "@/plasmic-init";
+ * import { ClientPlasmicRootProvider } from "@/plasmic-init-client"; // changed
+ * export default function MyPage() {
+ *   const prefetchedData = await PLASMIC.fetchComponentData("YourPage");
+ *   return (
+ *     <ClientPlasmicRootProvider // don't pass in loader
+ *       prefetchedData={prefetchedData}
+ *     >
+ *       {yourContent()}
+ *     </ClientPlasmicRootProvider>;
+ *   );
+ * }
+ * ```
+ */
+export function ClientPlasmicRootProvider(
+  props: Omit<React.ComponentProps<typeof PlasmicRootProvider>, "loader">
+) {
+  return (
+    <PlasmicRootProvider loader={PLASMIC} {...props}></PlasmicRootProvider>
+  );
+}

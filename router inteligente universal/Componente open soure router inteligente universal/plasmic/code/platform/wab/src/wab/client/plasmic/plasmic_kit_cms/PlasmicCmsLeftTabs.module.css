@@ -1,0 +1,64 @@
+.root {
+  display: inline-flex;
+  position: relative;
+  width: auto;
+  height: 100%;
+  background: var(--token-iR8SeEwQZ);
+  flex-direction: column;
+  row-gap: 8px;
+  min-height: 0;
+  padding: 0.5rem;
+  border-right: 1px solid var(--token-bV4cCeIniS6);
+}
+.contentButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__mjTw {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+}
+.svg___2RUj3 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.schemaButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__ex3Ca {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+}
+.svg__qMfS3 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.listSectionSeparator:global(.__wab_instance) {
+  position: relative;
+  flex-shrink: 0;
+}
+.settingsButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__dp75 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+}
+.svg__fLxBt {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}

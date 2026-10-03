@@ -1,0 +1,54 @@
+{
+  "name": "create-plasmic-app",
+  "version": "0.0.180",
+  "description": "Create Plasmic-powered React apps",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "packages/create-plasmic-app"
+  },
+  "main": "./dist/lib.js",
+  "types": "./dist/lib.d.ts",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "bin": {
+    "create-plasmic-app": "./dist/index.js"
+  },
+  "scripts": {
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "coverage": "TEST_CWD=`pwd` pnpm -w test --coverage --passWithNoTests",
+    "build": "eslint 'src/**' && tsc",
+    "run-cpa": "pnpm build && tsx run-cpa.ts",
+    "create-plasmic-app": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/glob": "catalog:",
+    "@types/inquirer": "^8.2.13",
+    "@types/jest": "^26.0.24",
+    "@types/lodash": "catalog:",
+    "@types/node": "^14.18.63",
+    "@types/semver": "catalog:",
+    "@types/update-notifier": "^5.1.0",
+    "@types/validate-npm-package-name": "^3.0.2",
+    "@types/yargs": "^16.0.11",
+    "tsx": "catalog:"
+  },
+  "dependencies": {
+    "@plasmicapp/cli": "workspace:*",
+    "@sentry/node": "^6.2.2",
+    "chalk": "^4.1.0",
+    "execa": "^5.0.0",
+    "glob": "^7.1.6",
+    "inquirer": "^8.2.7",
+    "lodash": "^4.17.21",
+    "semver": "^7.3.5",
+    "upath": "^2.0.1",
+    "update-notifier": "^5.1.0",
+    "validate-npm-package-name": "^3.0.0",
+    "yargs": "^16.2.2"
+  }
+}

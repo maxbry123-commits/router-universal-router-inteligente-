@@ -1,0 +1,14 @@
+.root {
+  display: flex;
+  position: relative;
+  justify-self: flex-start;
+  border-bottom: 1px dotted var(--token-dED0FYPw-qtp);
+}
+.slotTargetChildren {
+  color: var(--token-dED0FYPw-qtp);
+  font-size: var(--token-XviUmtZ5j0iF);
+  line-height: var(--token-ND9WWUwuMDcO);
+}
+.text__gSlk {
+  position: relative;
+}

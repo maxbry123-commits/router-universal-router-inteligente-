@@ -1,0 +1,73 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  align-items: stretch;
+  justify-self: flex-start;
+  min-width: 0;
+}
+.controlBar {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-content: center;
+  min-width: 0;
+  padding: 8px 16px;
+}
+.controlBarwithoutControlBar {
+  display: none;
+}
+.numSelected {
+  position: relative;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  min-width: 120px;
+}
+.selectAll:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.deleteSelected:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.svg__rQOhJ {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  color: var(--token-wRTnrRwLX);
+  height: 1em;
+}
+.svg__fGucz {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.cancel:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.svg__duSe7 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  color: var(--token-wRTnrRwLX);
+  height: 1em;
+}
+.svg___6Hnn5 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}

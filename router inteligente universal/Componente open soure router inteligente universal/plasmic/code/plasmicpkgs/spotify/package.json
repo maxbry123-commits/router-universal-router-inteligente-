@@ -1,0 +1,55 @@
+{
+  "name": "@plasmicpkgs/plasmic-spotify",
+  "version": "0.0.39",
+  "description": "Plasmic Spotify components.",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/spotify"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "module": "dist/plasmic-spotify.esm.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "lint": "tsdx lint",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "peerDependencies": {
+    "react": ">=16"
+  },
+  "size-limit": [
+    {
+      "path": "dist/plasmic-spotify.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/plasmic-spotify.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "devDependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "tsdx": "catalog:",
+    "tslib": "catalog:"
+  },
+  "dependencies": {
+    "@plasmicapp/query": "workspace:*"
+  }
+}

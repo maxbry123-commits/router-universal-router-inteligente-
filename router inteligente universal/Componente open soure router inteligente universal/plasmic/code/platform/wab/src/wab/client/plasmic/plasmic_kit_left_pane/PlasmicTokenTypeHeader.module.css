@@ -1,0 +1,117 @@
+.root {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 16px 8px 2px;
+  border: 1px solid transparent;
+}
+.rootborder_top {
+  border-top: 1px solid var(--token-hoA5qaM-91G);
+}
+.rootborder_bottom {
+  border-bottom: 1px solid var(--token-hoA5qaM-91G);
+}
+.freeBox___2Aimk {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: 4px;
+}
+.iconContainer {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  align-items: center;
+  justify-content: flex-start;
+  transition-property: all;
+  transition-duration: 0.3s;
+  cursor: pointer;
+  -webkit-transition-property: all;
+  -webkit-transition-duration: 0.3s;
+}
+.svg__lV3Wg {
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+  color: var(--token-UunsGa2Y3t3);
+  transition-property: all;
+  transition-duration: 0.5s;
+  flex-shrink: 0;
+  -webkit-transition-property: all;
+  -webkit-transition-duration: 0.5s;
+}
+.svgisExpanded__lV3WgaTp {
+  transform: rotate3d(0, 0, 1, 90deg);
+}
+.freeBox__cp1Xx {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  align-items: stretch;
+  justify-content: flex-start;
+  column-gap: 8px;
+}
+.slotTargetTokenType {
+  font-weight: 500;
+}
+.freeBox__etXdI {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  background: var(--token-bV4cCeIniS6);
+  border-radius: 4px;
+  padding: 0px 6px;
+}
+.slotTargetGroupSize {
+  color: var(--token-UunsGa2Y3t3);
+  user-select: none;
+}
+.freeBox___36Lfh {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+}
+.addButton:global(.__wab_instance) {
+  flex-shrink: 0;
+  display: none;
+}
+.addButtonisExpanded:global(.__wab_instance) {
+  flex-shrink: 0;
+  display: flex;
+}
+.root:hover .addButton:global(.__wab_instance) {
+  flex-shrink: 0;
+  display: flex;
+}
+.svg__ihGm1 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+  width: 16px;
+  height: 16px;
+}
+.svg__jqg1 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  color: var(--token-UunsGa2Y3t3);
+  height: 1em;
+}

@@ -1,0 +1,106 @@
+.root {
+  display: flex;
+  position: relative;
+  column-gap: 8px;
+}
+.text {
+  position: relative;
+  color: var(--token-UunsGa2Y3t3);
+  width: 118px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  align-self: flex-start;
+  flex-shrink: 0;
+}
+.freeBox__ynHvD {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  row-gap: 8px;
+  min-width: 0;
+}
+.keyInput {
+  border-radius: 4px;
+  padding: 0.5rem;
+  border: 1px solid var(--token-eBt2ZgqRUCz);
+}
+.root .keyInput::placeholder {
+  color: var(--token-UunsGa2Y3t3);
+}
+.root .keyInput:focus {
+  box-shadow: 0px 0px 0px 2px #0091ff80;
+  outline: none;
+}
+.valueInput {
+  border-radius: 4px;
+  padding: 0.5rem;
+  border: 1px solid var(--token-eBt2ZgqRUCz);
+}
+.root .valueInput::placeholder {
+  color: var(--token-UunsGa2Y3t3);
+}
+.root .valueInput:focus {
+  box-shadow: 0px 0px 0px 2px #0091ff80;
+  outline: none;
+}
+.freeBox__pVez5 {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  row-gap: 4px;
+}
+.freeBoxshowAdd_hideDelete__pVez5RbWrKOQpov {
+  justify-content: flex-start;
+}
+.addButton:global(.__wab_instance) {
+  position: relative;
+  flex-shrink: 0;
+}
+.addButtonshowAdd:global(.__wab_instance) {
+  flex-shrink: 0;
+}
+.svg__wtQm {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: auto;
+  height: 1em;
+}
+.svg__k0Jtn {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  color: var(--token-UunsGa2Y3t3);
+  height: 1em;
+}
+.deleteButton:global(.__wab_instance) {
+  position: relative;
+  flex-shrink: 0;
+}
+.deleteButtonhideDelete:global(.__wab_instance) {
+  flex-shrink: 0;
+}
+.deleteButtonshowAdd_hideDelete:global(.__wab_instance) {
+  flex-shrink: 0;
+}
+.svg__jTAbX {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.root .svg__jTAbX:hover {
+  color: var(--token-590x3zVVS2z);
+}
+.svg__sAyTq {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  color: var(--token-UunsGa2Y3t3);
+  height: 1em;
+}

@@ -1,0 +1,60 @@
+{
+  "name": "@plasmicpkgs/plasmic-yotpo",
+  "version": "0.0.105",
+  "description": "Plasmic Yotpo components.",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/plasmic-yotpo"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "module": "dist/plasmic-yotpo.esm.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "lint": "tsdx lint",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "peerDependencies": {
+    "react": ">=16"
+  },
+  "size-limit": [
+    {
+      "path": "dist/plasmic-yotpo.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/plasmic-yotpo.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "devDependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "@plasmicapp/query": "workspace:*",
+    "@types/dlv": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsdx": "catalog:",
+    "tslib": "catalog:"
+  },
+  "dependencies": {
+    "@types/lodash": "catalog:",
+    "change-case": "^4.1.2",
+    "dlv": "^1.1.3",
+    "lodash": "^4.17.21"
+  }
+}

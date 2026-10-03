@@ -1,0 +1,326 @@
+# Developing Plasmic Studio: config and tooling guide
+
+## Config (optional)
+
+Write something like this in `~/.plasmic/secrets.json`:
+
+```
+{
+  "encryptionKey": "dummykey",
+  "google": {
+    "clientId": "SEE_GOOGLE_INSTRUCTIONS_BELOW",
+    "clientSecret": "SEE_GOOGLE_INSTRUCTIONS_BELOW"
+  },
+  "resendApiKey": "SET_THIS_TO_RESEND_API_KEY",
+  "smtpAuth": {
+    "user": "SET_THIS_TO_SMTP_USER",
+    "pass": "SET_THIS_TO_SMTP_KEY"
+  },
+  "segmentWriteKey": "ignorethis"
+}
+```
+
+You'll also need `~/.aws/credentials`, since various parts such as codegen/publish and Figma import use S3.
+
+## Database
+
+### Setup DB
+
+On project root directory, make sure the Postgresql server is running, and run:
+
+```
+pnpm db:setup
+pnpm db:reset # specify no_sudo=1 if `sudo -u postgres psql` doesn't work
+```
+
+### Reset DB State
+
+If you ever want to, you can reset the DB state by running (on project root):
+
+```
+pnpm db:reset # specify no_sudo=1 if `sudo -u postgres psql` doesn't work
+```
+
+> Important: remember clearing your browser cookies and restart any running servers.
+
+## Running Servers
+
+### Running Servers using screen
+
+From `platform/wab`, run all servers in screens:
+
+```
+bash tools/start.bash
+```
+
+If you'd like to disable type-checking for faster incremental dev-server builds,
+use:
+
+```
+NO_TYPECHECK=1 bash tools/start.bash
+```
+
+After start.bash, you'll automatically get three panes viewing various terminals, each one running some subset of procseses.
+
+### (Experimental) Running on different ports
+
+If you'd like to run on an alternate backend (app server) port:
+
+```
+BACKEND_PORT=3007 bash tools/start.bash
+```
+
+If you'd like to run on an alternate frontend (webpack dev server) port:
+
+```
+PORT=3006 bash tools/start.bash
+```
+
+If you'd like to run on an alternate database name:
+
+```
+WAB_DBNAME=altwab bash tools/start.bash
+```
+
+### (Incomplete) Running Servers manually
+
+(This just documents running things in wab, but you must also run things outside of wab.)
+
+In `wab` folder
+
+Run backend
+
+```
+pnpm backend
+```
+
+Run frontend client dev server
+
+```
+pnpm start
+```
+
+Run host client, just a proxy on port 3005 to the frontend
+
+```
+pnpm host-server
+```
+
+### Running Servers using pm2
+
+You can also use pm2 to manage all the server processes in dev environment.
+First, initialize the shell as:
+
+```
+workon wab
+. ~/.node/*/bin/activate
+```
+
+Install pm2 globally so you can use pm2 rather than "pnpm pm2"
+
+```
+npm install -g pm2
+```
+
+To start all processes, just
+
+```
+cd wab
+pm2 start pm2-dev.config.js
+```
+
+To stop all processes,
+
+```
+pm2 stop all
+```
+
+To delete all processes,
+
+```
+pm2 delete all
+```
+
+To inspect logs,
+
+```
+pm2 logs
+```
+
+Refer to https://pm2.keymetrics.io/docs/usage/quick-start/ for more usage information.
+
+## When pulling codebase
+
+Whenever you fetch the latest changes, most of the time, you just need to run:
+
+```
+pnpm install
+make
+# restart node server
+# restart webpack, once in a blue moon
+```
+
+But if something is still going wrong, try:
+
+```
+pnpm setup
+# restart node server
+# restart webpack, once in a blue moon
+```
+
+If the above doesn't fix the issue, try again but running `pnpm setup-all` instead.
+
+## SVG Icons
+
+For the in-flux SVG icons, install the icon fonts from https://github.com/keremciu/font-bundles
+
+## Plume special package
+
+To make sure your local database contains the latest version of the Plume
+package so that you can create components from Plume templates, run:
+
+```
+pnpm plume:dev update
+```
+
+If you don't do so, studio may show a NotFoundError when you open any new
+project.
+
+## Testing
+
+Run unit tests with:
+
+```
+bash tools/test.bash
+```
+
+## Migrating DB/model bundle schema
+
+To migrate bundles, create a new file in the `bundle-migrations` following the same format as existing files. Small example:
+
+```
+// wab/src/wab/server/bundle-migrations/XX-my-migration.ts
+
+import { UnsafeBundle } from "../../shared/bundles";
+
+export function migrate(bundle: UnsafeBundle) {
+    for (const [k, v] of Object.entries(bundle.map)) {
+        if (v.__type === "Rule") {
+            v.values = v.values;
+        }
+    }
+}
+```
+
+And that is!
+
+If you want to revert, simply remove the file and then restart the app server. WARNING: this will occur in data loss. If you can create a new migration instead, do so!
+
+In reality, you only have to worry about adding files and reverting files. Our deployment scripts will take care of the rest. Here's a brief explanation on how to do the changes in your local environment:
+
+- Migrating: add a new migration and restart the server.
+- Reverting: remove the migration and restart the server.
+
+## Migrating dev/test bundles
+
+We have some local JSON bundles for development/test purposes, which you also need to migrate.
+
+To migrate these, run:
+
+```bash
+pnpm migrate-dev-bundles
+```
+
+This runs any necessary migrations according to the version stamp.
+
+Then make sure you run the tests and update the snapshots.
+
+NOTE: This will first do a `git checkout` on the file, resetting to a fresh checkout state! This lets you repeatedly test and run your migration script on the file.
+
+## Debugging Studio
+
+Because Studio runs in a cross-origin iframe, debugging becomes a bit trickier.
+
+In particular, the React Devtools Chrome extension will not work. However, you can run the standalone React Devtools Electron package.
+
+Install and run `react-devtools`:
+
+```bash
+    npm install -g react-devtools
+    react-devtools
+```
+
+Alternatively you can run it with npx:
+
+```bash
+npx react-devtools
+```
+
+And now when you open up Studio with the devflag `?enableReactDevTools=true` and it should auto-connect.
+It should work for both dev server and prod.
+
+## Debugging Node Server
+
+You can use IntelliJ/Webstorm.
+
+Or use `node --inspect` to debug your node app using Chrome DevTools - just open about:inspect in Chrome as per
+<https://medium.com/@paul_irish/debugging-node-js-nightlies-with-chrome-devtools-7c4a1b95ae27>.
+
+## Ant
+
+We're opting to import all Ant styles wholesale and override their globals
+in antd-overrides.less. This allows for live theming (no dev server restarts
+necessary).
+
+## Maintaining dependencies
+
+Check what dependencies are not used (or missing):
+
+```
+pnpm knip:deps
+```
+
+Check what needs to be updated:
+
+```
+pnpm outdated
+```
+
+Update the dependencies:
+
+```
+pnpm up --latest
+```
+
+This will upgrade everything. You can also try selectively upgrading individual
+packages, but things get complicated with upgrading dependencies that are
+also indirect dependencies of other dependencies.
+
+## Alternate configs
+
+When pointing to a different DB, you currently have to make sure you locally
+edit ormconfig.json (used by typeorm CLI) and set the WAB_DBNAME env var.
+
+## Audit licenses of dependencies
+
+For node dependencies, do this from each project directory:
+
+    npx license-checker --csv --out license-checker.csv
+
+For Python dependencies, do this from each project directory:
+
+    pip-licenses --from=mixed -f csv > pip-licenses.csv
+
+## Production Build
+
+Run `pnpm build` to build client app for production. This takes a long time (>5m).
+
+You can test out your built artifact with:
+
+```
+  npm install -g local-web-server
+  cd build/
+  ws --spa index.html --rewrite '/api/(.*) -> http://localhost:3004/api/$1'
+```
+
+Then open http://localhost:8000.

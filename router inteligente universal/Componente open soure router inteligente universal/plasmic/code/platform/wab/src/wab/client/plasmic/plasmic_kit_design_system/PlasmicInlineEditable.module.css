@@ -1,0 +1,56 @@
+.root {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: auto;
+  height: auto;
+  position: relative;
+  cursor: pointer;
+  min-height: 1rem;
+  column-gap: 4px;
+}
+.rootediting {
+  min-width: 128px;
+}
+.rootdisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.slotTargetChildren {
+  font-size: 12px;
+  line-height: 1.25;
+}
+.textbox:global(.__wab_instance) {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.svg__o9Tey {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.svg__omIyo {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.slotTargetIcon {
+  font-size: 1rem;
+}
+.slotTargetIconmedium {
+  font-size: 1.25rem;
+}
+.svg__rbpDt {
+  position: relative;
+  object-fit: cover;
+  left: auto;
+  top: auto;
+  color: var(--token-UunsGa2Y3t3);
+  height: 1em;
+}

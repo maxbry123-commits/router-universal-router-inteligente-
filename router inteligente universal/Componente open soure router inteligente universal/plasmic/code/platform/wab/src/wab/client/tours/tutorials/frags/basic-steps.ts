@@ -1,0 +1,134 @@
+import {
+  TutorialEvent,
+  TutorialEventsType,
+} from "@/wab/client/tours/tutorials/tutorials-events";
+import {
+  addTextElement,
+  sleep,
+} from "@/wab/client/tours/tutorials/tutorials-helpers";
+import { STUDIO_ELEMENTS_TARGETS } from "@/wab/client/tours/tutorials/tutorials-targets";
+import {
+  OnNextCtx,
+  StudioTutorialStep,
+  TutorialStepFunctionality,
+} from "@/wab/client/tours/tutorials/tutorials-types";
+import { notification } from "antd";
+
+export function welcomeStepFunc({
+  content,
+  onNext,
+}: {
+  content: string;
+  onNext: TutorialStepFunctionality<OnNextCtx>["onNext"];
+}): StudioTutorialStep {
+  return {
+    name: "welcome",
+    content,
+    nextButtonText: "Let's go!",
+    target: "body",
+    placement: "center",
+    overlay: true,
+    onNext,
+  };
+}
+
+export const PORTFOLIO_WELCOME_TUTORIAL_STEP: StudioTutorialStep =
+  welcomeStepFunc({
+    content: `
+## Welcome, {FIRST_NAME}!
+
+Let's learn how the Plasmic Studio works and build your portfolio main page in 3 minutes. 🚀
+
+You will know how to:
+- 🔎 Navigate through the Studio UI
+- 📝 Edit your page content in the Studio
+- 🎨 Add and style elements
+- 🤓 Set SEO metadata for your page
+- 🚀 Publish your changes to the web
+
+Ready?
+  `,
+    onNext: undefined,
+  });
+
+export const CANVAS_ARTBOARDS_STEP: StudioTutorialStep = {
+  name: "canvas-artboards",
+  content: `
+## Artboards
+
+This is your canvas. It's where you design your page. You can add new elements, move them around, and style them.
+
+You can also add edit artboards specific to different screen sizes to achieve responsive design.
+`,
+  nextButtonText: "Next",
+  placement: "center",
+  target: STUDIO_ELEMENTS_TARGETS.canvasFrameContainer,
+  highlightTarget: STUDIO_ELEMENTS_TARGETS.canvasFrameContainer,
+};
+
+export function addElementStepFunc({
+  highlightTarget,
+  componentName,
+  onNext,
+}: {
+  highlightTarget: string;
+  componentName: string;
+  onNext: TutorialStepFunctionality<OnNextCtx>["onNext"];
+}): TutorialStepFunctionality<OnNextCtx> {
+  return {
+    target: STUDIO_ELEMENTS_TARGETS.studioAddDrawer,
+    placement: "right-start",
+    highlightTarget,
+    shouldAdvance: (event: TutorialEvent) => {
+      if (event.type !== TutorialEventsType.TplInserted) {
+        return false;
+      }
+      if (
+        event.params.itemKey !== componentName &&
+        event.params.itemSystemName !== componentName
+      ) {
+        notification.warning({
+          message: "Wrong component inserted",
+        });
+        return false;
+      }
+      return true;
+    },
+    triggers: [TutorialEventsType.TplInserted],
+    onNext,
+  };
+}
+
+export const OPEN_ADD_DRAWER_STEP_FUNC: TutorialStepFunctionality<OnNextCtx> = {
+  target: STUDIO_ELEMENTS_TARGETS.studioAddElement,
+  placement: "right",
+  highlightTarget: STUDIO_ELEMENTS_TARGETS.studioAddElement,
+  triggers: [TutorialEventsType.AddButtonClicked],
+  shouldAdvance: (event: TutorialEvent) => {
+    return event.type === TutorialEventsType.AddButtonClicked;
+  },
+  waitFor: async (ctx: OnNextCtx) => {
+    // Wait a bit for any layout shift to happen
+    await sleep(300);
+  },
+  postStepFlags: {
+    forceAddDrawerOpen: true,
+  },
+};
+
+export const ADD_TEXT_STEP: StudioTutorialStep = {
+  name: "add-text",
+  content: `
+Let's add a text element
+
+You can add it by clicking into the it or by dragging it from the insert menu.
+`,
+  ...addElementStepFunc({
+    highlightTarget: STUDIO_ELEMENTS_TARGETS.addTextBlock,
+    componentName: "text",
+    onNext: async (ctx: OnNextCtx) => {
+      await addTextElement(ctx.studioCtx);
+      ctx.studioCtx.switchLeftTab("outline");
+    },
+  }),
+};

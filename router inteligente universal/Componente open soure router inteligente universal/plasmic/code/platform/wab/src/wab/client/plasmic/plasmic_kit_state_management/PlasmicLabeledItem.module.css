@@ -1,0 +1,114 @@
+.root {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  position: relative;
+  column-gap: var(--token-uzWT6AFCY);
+  row-gap: 8px;
+  min-width: 0;
+  padding: 0px;
+}
+.rootlayout_vertical {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  column-gap: 0px;
+}
+.rootlayout_horizontal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: var(--token-uzWT6AFCY);
+  row-gap: 0px;
+}
+.freeBox__bXw82 {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  column-gap: 8px;
+  min-width: 0;
+}
+.freeBoxlayout_vertical__bXw821KxsP {
+  position: relative;
+  top: auto;
+  left: auto;
+  display: flex;
+  flex-direction: column;
+  row-gap: 8px;
+  column-gap: 0px;
+}
+.freeBox___0Gerh {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: var(--token-uzWT6AFCY);
+}
+.freeBoxlayout_horizontal___0GerhEsXmk {
+  width: 100px;
+  flex-shrink: 0;
+}
+.freeBoxlabelSize_half___0GerhhH4Fv {
+  width: 100%;
+  min-width: 0;
+}
+.freeBox__wrYhU {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0px;
+}
+.textbox__kv871:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.textboxlayout_vertical__kv8711KxsP:global(.__wab_instance) {
+  position: relative;
+  left: auto;
+  top: auto;
+}
+.svg__oazkb {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.svg__hkE1G {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.freeBox__oh2X {
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  display: none;
+  padding: 0px;
+}
+.freeBoxwithRightExtras__oh2XUUUj4 {
+  display: flex;
+}

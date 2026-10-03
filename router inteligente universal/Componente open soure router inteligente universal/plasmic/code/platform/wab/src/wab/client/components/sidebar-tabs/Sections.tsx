@@ -1,0 +1,1299 @@
+import {
+  hasSimplifiedMode,
+  isTplCodeComponentStyleable,
+} from "@/wab/client/code-components/code-components";
+import { ComponentPropsSection } from "@/wab/client/components/sidebar-tabs/ComponentPropsSection";
+import { CustomBehaviorsSection } from "@/wab/client/components/sidebar-tabs/CustomBehaviorsSection";
+import { EffectsPanelSection } from "@/wab/client/components/sidebar-tabs/EffectsSection";
+import { GridChildSection } from "@/wab/client/components/sidebar-tabs/GridChildSection";
+import {
+  HTMLAttributesSection,
+  TplTagSection,
+} from "@/wab/client/components/sidebar-tabs/HTMLAttributesSection";
+import { LayoutSection } from "@/wab/client/components/sidebar-tabs/LayoutSection";
+import { LinkSection } from "@/wab/client/components/sidebar-tabs/LinkSection";
+import { ListStyleSection } from "@/wab/client/components/sidebar-tabs/ListStyleSection";
+import {
+  MergedSlotsPropsSection,
+  MergedSlotsTextSection,
+} from "@/wab/client/components/sidebar-tabs/MergedSlotsSection";
+import { MixinsSection } from "@/wab/client/components/sidebar-tabs/MixinsSection";
+import { OverflowSection } from "@/wab/client/components/sidebar-tabs/OverflowSection";
+import { PositioningPanelSection } from "@/wab/client/components/sidebar-tabs/PositioningSection";
+import { RepeaterSection } from "@/wab/client/components/sidebar-tabs/RepeaterSection";
+import { RepeatingElementSection } from "@/wab/client/components/sidebar-tabs/RepeatingElementSection";
+import { ShadowsPanelSection } from "@/wab/client/components/sidebar-tabs/ShadowsSection";
+import { SimplifiedCodeComponentModeSection } from "@/wab/client/components/sidebar-tabs/SimplifiedCodeComponentModeSection";
+import {
+  PageSizePanelSection,
+  SizeSection,
+  SizeWidthOnlySection,
+} from "@/wab/client/components/sidebar-tabs/SizeSection";
+import { SpacingSection } from "@/wab/client/components/sidebar-tabs/SpacingSection";
+import InteractionsSection from "@/wab/client/components/sidebar-tabs/StateManagement/InteractionsSection";
+import { TransformPanelSection } from "@/wab/client/components/sidebar-tabs/TransformPanelSection";
+import { TransitionsPanelSection } from "@/wab/client/components/sidebar-tabs/TransitionsSection";
+import {
+  TextOnlySection,
+  TypographySection,
+} from "@/wab/client/components/sidebar-tabs/TypographySection";
+import { VariantsPickerPanel } from "@/wab/client/components/sidebar-tabs/VariantsPicker";
+import { VisibilitySection } from "@/wab/client/components/sidebar-tabs/VisibilitySection";
+import { BackgroundSection } from "@/wab/client/components/sidebar-tabs/background-section";
+import {
+  ColumnSection,
+  ColumnsPanelSection,
+} from "@/wab/client/components/sidebar-tabs/columns-section";
+import {
+  ImageSection,
+  ImageSectionForCodeComponent,
+} from "@/wab/client/components/sidebar-tabs/image-section";
+import { PrivateStyleVariantsPanel } from "@/wab/client/components/sidebar-tabs/private-style-variants-section";
+import { SlotSettingsSection } from "@/wab/client/components/sidebar-tabs/slot-section";
+import { SidebarSection } from "@/wab/client/components/sidebar/SidebarSection";
+import {
+  BorderPanelSection,
+  BorderRadiusSection,
+} from "@/wab/client/components/style-controls/BorderControls";
+import { OutlinePanelSection } from "@/wab/client/components/style-controls/OutlineControls";
+import {
+  TplExpsProvider,
+  mkStyleComponent,
+} from "@/wab/client/components/style-controls/StyleComponent";
+import { StudioCtx } from "@/wab/client/studio-ctx/StudioCtx";
+import { ViewCtx } from "@/wab/client/studio-ctx/view-ctx";
+import { PublicStyleSection } from "@/wab/shared/ApiSchema";
+import {
+  getAncestorSlotArg,
+  getAncestorTplSlot,
+  isTypographyNode,
+} from "@/wab/shared/SlotUtils";
+import { asOne, assert, ensure, ensureArray } from "@/wab/shared/common";
+import {
+  getComponentDisplayName,
+  isCodeComponent,
+  isCodeComponentTpl,
+  isPageComponent,
+} from "@/wab/shared/core/components";
+import {
+  isBackgroundValidForTpl,
+  isListStyleValidForTpl,
+  isOverflowValidForTpl,
+  isPositioningValidForTpl,
+  isSizeValidForTpl,
+  isTransformValidForTpl,
+  isTransitionValidForTpl,
+  isTypographyValidForTpl,
+} from "@/wab/shared/core/style-props-tpl";
+import {
+  EventHandlerKeyType,
+  TplColumnTag,
+  TplColumnsTag,
+  canToggleVisibility,
+  getAllEventHandlerOptions,
+  hasTextAncestor,
+  isComponentRoot,
+  isTplCodeComponent,
+  isTplColumn,
+  isTplColumns,
+  isTplComponent,
+  isTplContainer,
+  isTplIcon,
+  isTplImage,
+  isTplSlot,
+  isTplTag,
+  isTplTextBlock,
+  isTplVariantable,
+  resolveTplRoot,
+  resolvesToCodeComponent,
+} from "@/wab/shared/core/tpls";
+import { ValComponent } from "@/wab/shared/core/val-nodes";
+import { isGridTag } from "@/wab/shared/grid-utils";
+import { isTagListContainer } from "@/wab/shared/html";
+import {
+  TplComponent,
+  TplNode,
+  TplTag,
+  ensureKnownTplComponent,
+  isKnownClassNamePropType,
+} from "@/wab/shared/model/classes";
+import { canEditStyleSection } from "@/wab/shared/ui-config-utils";
+import { Alert } from "antd";
+import $ from "jquery";
+import { observer } from "mobx-react";
+import * as React from "react";
+
+export enum Section {
+  Tag = "tag",
+  RepeatingElement = "repeating-element",
+  CustomBehaviors = "custom-behavior",
+  HTMLAttributes = "html-attributes",
+  Link = "link",
+  PrivateStyleVariants = "private-style-variants",
+  ComponentProps = "component-props",
+  ComponentStyleProps = "component-style-props",
+  VariantsPicker = "variants-picker",
+  MissingPositionClass = "missing-position-class",
+  Mixins = "mixins",
+  Repeater = "repeater",
+  Visibility = "visibility",
+  Column = "column",
+  ColumnsPanel = "columns-panel",
+  GridChild = "grid-child",
+  Size = "size",
+  SizeWidthOnly = "size-width",
+  ImageCodeComponent = "image-code-component",
+  Image = "image",
+  ListStyle = "list-style",
+  Typography = "typography",
+  TextContentOnly = "text",
+  ComponentMergedSlotProps = "component-merged-slots-props",
+  ComponentMergedSlotText = "component-merged-slots-text",
+  ComponentMergedSlotTypography = "component-merged-slots-typography",
+  PositioningPanel = "positioning-panel",
+  Spacing = "spacing",
+  Layout = "layout",
+  Overflow = "overflow",
+  Background = "background",
+  Border = "border",
+  Outline = "outline",
+  ShadowsPanel = "shadows-panel",
+  EffectsPanel = "effects-panel",
+  TransitionsPanel = "transitions-panel",
+  TransformPanel = "transform-panel",
+  Interactions = "interactions",
+  SlotSettings = "slot-settings",
+  SimplifiedCodeComponentMode = "simplified-cc-mode",
+}
+
+type AllSectionsPresent<T> = {
+  [k in Section]: T;
+};
+
+/**
+ * Sets the visibility option for a Section
+ */
+interface SectionSetting {
+  /**
+   * If specified, then its visibility depends on how it is configured in UiConfig.
+   * If undefined, then its visibility is not configurable and depends on
+   * defaultContentEditorVisible
+   */
+  publicSection: PublicStyleSection | undefined;
+
+  /**
+   * If this section has no PublicStyleSection, or its PublicStyleSection config is
+   * set to "default", then this configures whether it is by default visible to
+   * a content editor
+   */
+  defaultContentEditorVisible?: boolean;
+}
+
+const SECTION_SETTINGS: AllSectionsPresent<SectionSetting> = {
+  [Section.Typography]: {
+    publicSection: PublicStyleSection.Typography,
+  },
+  [Section.TextContentOnly]: {
+    publicSection: PublicStyleSection.Typography,
+  },
+  [Section.ComponentMergedSlotText]: {
+    publicSection: PublicStyleSection.Typography,
+  },
+  [Section.ComponentMergedSlotTypography]: {
+    publicSection: PublicStyleSection.Typography,
+  },
+  [Section.Visibility]: { publicSection: PublicStyleSection.Visibility },
+  [Section.Background]: { publicSection: PublicStyleSection.Background },
+  [Section.ShadowsPanel]: { publicSection: PublicStyleSection.Shadows },
+  [Section.Layout]: { publicSection: PublicStyleSection.Layout },
+  [Section.GridChild]: { publicSection: PublicStyleSection.Layout },
+  [Section.Column]: { publicSection: PublicStyleSection.Layout },
+  [Section.ColumnsPanel]: { publicSection: PublicStyleSection.Layout },
+  [Section.Spacing]: { publicSection: PublicStyleSection.Spacing },
+  [Section.PositioningPanel]: { publicSection: PublicStyleSection.Positioning },
+  [Section.TransformPanel]: { publicSection: PublicStyleSection.Transform },
+  [Section.Size]: { publicSection: PublicStyleSection.Sizing },
+  [Section.SizeWidthOnly]: { publicSection: PublicStyleSection.Sizing },
+  [Section.TransitionsPanel]: { publicSection: PublicStyleSection.Transitions },
+  [Section.Overflow]: { publicSection: PublicStyleSection.Overflow },
+  [Section.Border]: { publicSection: PublicStyleSection.Border },
+  [Section.Outline]: { publicSection: PublicStyleSection.Outline },
+  [Section.EffectsPanel]: { publicSection: PublicStyleSection.Effects },
+  [Section.MissingPositionClass]: { publicSection: PublicStyleSection.Layout },
+  [Section.Interactions]: { publicSection: PublicStyleSection.Interactions },
+  [Section.CustomBehaviors]: {
+    publicSection: PublicStyleSection.CustomBehaviors,
+  },
+  [Section.RepeatingElement]: {
+    publicSection: PublicStyleSection.Repetition,
+  },
+  [Section.Repeater]: { publicSection: PublicStyleSection.Repetition },
+  [Section.Tag]: { publicSection: PublicStyleSection.Tag },
+  [Section.HTMLAttributes]: {
+    publicSection: PublicStyleSection.HTMLAttributes,
+  },
+  [Section.Link]: {
+    publicSection: PublicStyleSection.HTMLAttributes,
+  },
+  [Section.PrivateStyleVariants]: {
+    publicSection: PublicStyleSection.ElementStates,
+  },
+  [Section.Mixins]: { publicSection: PublicStyleSection.Mixins },
+
+  // never visible to content creators
+  [Section.SlotSettings]: { publicSection: undefined },
+
+  // always visible to content creators
+  [Section.ComponentProps]: {
+    publicSection: undefined,
+    defaultContentEditorVisible: true,
+  },
+  [Section.VariantsPicker]: {
+    publicSection: undefined,
+    defaultContentEditorVisible: true,
+  },
+  [Section.ComponentStyleProps]: {
+    publicSection: undefined,
+    defaultContentEditorVisible: true,
+  },
+  [Section.ImageCodeComponent]: {
+    publicSection: undefined,
+    defaultContentEditorVisible: true,
+  },
+  [Section.Image]: {
+    publicSection: undefined,
+    defaultContentEditorVisible: true,
+  },
+  [Section.ListStyle]: {
+    publicSection: undefined,
+    defaultContentEditorVisible: true,
+  },
+  [Section.ComponentMergedSlotProps]: {
+    publicSection: undefined,
+    defaultContentEditorVisible: true,
+  },
+  [Section.SimplifiedCodeComponentMode]: {
+    publicSection: undefined,
+    defaultContentEditorVisible: true,
+  },
+};
+
+function getSectionSetting(section: Section) {
+  return ensure(
+    SECTION_SETTINGS[section],
+    `No settings configured for section ${section}`,
+  );
+}
+
+//
+// The following groups can duplicate certain sections - meaning we want to show this section in both tabs.
+// Should do this sparingly.
+//
+
+const settingSections = new Set([
+  Section.SizeWidthOnly,
+  Section.Tag,
+  Section.RepeatingElement,
+  Section.CustomBehaviors,
+  Section.HTMLAttributes,
+  Section.Link,
+  Section.ComponentProps,
+  Section.VariantsPicker,
+  Section.Repeater,
+  Section.ImageCodeComponent,
+  Section.Image,
+  Section.Interactions,
+  Section.Visibility,
+  Section.TextContentOnly,
+  Section.SlotSettings,
+  Section.ComponentMergedSlotProps,
+  Section.ComponentMergedSlotText,
+  Section.SimplifiedCodeComponentMode,
+]);
+
+const styleSections = new Set([
+  Section.PrivateStyleVariants,
+  Section.Visibility,
+  Section.MissingPositionClass,
+  Section.Mixins,
+  Section.ImageCodeComponent,
+  Section.Image,
+  Section.Column,
+  Section.ColumnsPanel,
+  Section.GridChild,
+  Section.Size,
+  Section.ListStyle,
+  Section.Typography,
+  Section.PositioningPanel,
+  Section.Spacing,
+  Section.Layout,
+  Section.Overflow,
+  Section.Background,
+  Section.Border,
+  Section.Outline,
+  Section.ShadowsPanel,
+  Section.EffectsPanel,
+  Section.TransitionsPanel,
+  Section.TransformPanel,
+  Section.ComponentStyleProps,
+  Section.ComponentMergedSlotTypography,
+]);
+
+const htmlTagsWithAttributes = new Set([
+  "a",
+  "button",
+  "textarea",
+  "password",
+  "input",
+]);
+
+function getRenderBySection(
+  tpl: TplNode,
+  viewCtx: ViewCtx,
+  renderOpts: Map<Section, boolean>,
+) {
+  const isSlot = isTplSlot(tpl);
+  const isTag = isTplTag(tpl);
+  const isLink = isTplTag(tpl) && tpl.tag === "a";
+  const isColumns = isTplColumns(tpl);
+  const isColumn = isTplColumn(tpl);
+  const isGridChild =
+    isTplVariantable(tpl) && tpl.parent && isGridTag(tpl.parent);
+  // We show container settings for TplComponent of code component.
+  const codeComponentTpl = isCodeComponentTpl(tpl);
+  const isTagOrCodeComponentTpl = isTag || codeComponentTpl;
+  const resolvesToCodeComponentTpl = resolvesToCodeComponent(tpl);
+  const isContainerOrCodeComponentTpl = isTplContainer(tpl) || codeComponentTpl;
+  const isComponent = isTplComponent(tpl);
+  const styleAncestorSlot = getAncestorTplSlot(tpl, false);
+  const isRoot = isComponentRoot(tpl);
+  const component = viewCtx.currentComponent();
+  const isTypographyTpl = isTypographyNode(tpl);
+  const isIcon = isTplIcon(tpl);
+  const isAttachmentComp =
+    isComponent &&
+    isCodeComponent(tpl.component) &&
+    tpl.component.codeComponentMeta.isAttachment;
+  const isRichTextDescendant = hasTextAncestor(tpl);
+
+  let options: EventHandlerKeyType[] = [];
+
+  if (tpl.typeTag === "TplTag" || tpl.typeTag === "TplComponent") {
+    options = getAllEventHandlerOptions(tpl);
+  }
+
+  const missingPositionClass = resolvesToCodeComponentTpl
+    ? shouldAlertMissingPositionClass(viewCtx)
+    : false;
+  const showStyleSections = shouldShowStyleSections(
+    tpl,
+    viewCtx,
+    missingPositionClass,
+  );
+
+  const expsProvider = new TplExpsProvider(viewCtx, tpl as TplNode);
+  const sc = mkStyleComponent({
+    expsProvider,
+  });
+  const contentEditorMode = viewCtx.studioCtx.contentEditorMode;
+  const contentCreatorConfig = viewCtx.studioCtx.getCurrentUiConfig();
+
+  const getEnabledStyleSections = (tplInner: TplNode) => {
+    if (isTplCodeComponent(tplInner)) {
+      return viewCtx.getTplCodeComponentMeta(tplInner)?.styleSections;
+    }
+    if (isTplComponent(tplInner)) {
+      return getEnabledStyleSections(tplInner.component.tplTree);
+    }
+    return undefined;
+  };
+
+  const enabledStyleSections = getEnabledStyleSections(tpl) as
+    | PublicStyleSection[]
+    | boolean
+    | undefined;
+
+  const showSection = (section: Section) => {
+    const setting = getSectionSetting(section);
+    SECTION_SETTINGS[section];
+    const publicSection = setting.publicSection;
+    if (
+      enabledStyleSections &&
+      publicSection &&
+      Array.isArray(enabledStyleSections) &&
+      !enabledStyleSections.includes(publicSection) &&
+      // Positioning is always enabled if styling is enabled,
+      // which include `position` and `margin`
+      publicSection !== PublicStyleSection.Positioning &&
+      publicSection !== PublicStyleSection.Spacing
+    ) {
+      return false;
+    }
+    if (
+      contentEditorMode &&
+      publicSection &&
+      !contentCreatorConfig.styleSectionVisibilities?.[publicSection]
+    ) {
+      return false;
+    }
+    return true;
+  };
+
+  const showLink = isLink && showSection(Section.Link);
+  const map = new Map([
+    [
+      Section.SimplifiedCodeComponentMode,
+      () =>
+        isComponent &&
+        hasSimplifiedMode(viewCtx, tpl.component) && (
+          <SimplifiedCodeComponentModeSection tpl={tpl} viewCtx={viewCtx} />
+        ),
+    ],
+    [
+      Section.RepeatingElement,
+      () =>
+        (isTag || isComponent) &&
+        !isRoot && (
+          <RepeatingElementSection
+            key={`${tpl.uuid}-repeating`}
+            viewCtx={viewCtx}
+            tpl={tpl}
+          />
+        ),
+    ],
+    [
+      Section.ComponentProps,
+      () =>
+        isComponent && (
+          <ComponentPropsSection
+            key={`${tpl.uuid}-component-props`}
+            viewCtx={viewCtx}
+            tpl={tpl as TplComponent}
+            expsProvider={expsProvider}
+            tab="settings"
+          />
+        ),
+    ],
+    [
+      Section.ComponentStyleProps,
+      () =>
+        isComponent &&
+        codeComponentTpl &&
+        tpl.component.params.some((p) => isKnownClassNamePropType(p.type)) && (
+          <ComponentPropsSection
+            key={`${tpl.uuid}-component-props`}
+            viewCtx={viewCtx}
+            tpl={tpl as TplComponent}
+            expsProvider={expsProvider}
+            tab="style"
+          />
+        ),
+    ],
+    [
+      Section.VariantsPicker,
+      () =>
+        isComponent && (
+          <VariantsPickerPanel
+            key={`${tpl.uuid}-variants-picker`}
+            tpl={ensureKnownTplComponent(tpl)}
+          />
+        ),
+    ],
+    [
+      Section.MissingPositionClass,
+      () =>
+        !showStyleSections &&
+        missingPositionClass &&
+        isComponent &&
+        showSection(Section.MissingPositionClass) && (
+          <MissingPositionClassSection
+            key={`${tpl.uuid}-missing-class`}
+            tpl={tpl}
+          />
+        ),
+    ],
+    [
+      Section.Size,
+      () => {
+        if (isSizeValidForTpl(tpl) && showSection(Section.Size)) {
+          if (isRoot) {
+            // For root element of page, show special size section
+            if (isPageComponent(component)) {
+              return (
+                <PageSizePanelSection
+                  key={`${tpl.uuid}-page-size`}
+                  expsProvider={sc.props.expsProvider}
+                />
+              );
+            }
+          }
+          // Else, show normal size section
+          return (
+            <SizeSection
+              key={`${tpl.uuid}-size`}
+              expsProvider={sc.props.expsProvider}
+            />
+          );
+        }
+        return undefined;
+      },
+    ],
+    [
+      Section.SizeWidthOnly,
+      () => {
+        if (
+          isSizeValidForTpl(tpl) &&
+          !missingPositionClass &&
+          showSection(Section.SizeWidthOnly)
+        ) {
+          if (isRoot && isPageComponent(component)) {
+            // Can't change width of page root
+            return null;
+          }
+          // Else, show normal size section
+          return (
+            <SizeWidthOnlySection
+              key={`${tpl.uuid}-size-width`}
+              expsProvider={sc.props.expsProvider}
+            />
+          );
+        }
+        return undefined;
+      },
+    ],
+    [
+      Section.Spacing,
+      () =>
+        showSection(Section.Spacing) && (
+          <SpacingSection
+            key={`${tpl.uuid}-spacing`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.PositioningPanel,
+      () =>
+        isPositioningValidForTpl(tpl, expsProvider.mergedExp()) &&
+        showSection(Section.PositioningPanel) && (
+          <PositioningPanelSection
+            key={`${tpl.uuid}-positioning`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.Visibility,
+      () =>
+        canToggleVisibility(tpl, viewCtx) &&
+        showSection(Section.Visibility) && (
+          <VisibilitySection
+            key={`${tpl.uuid}-visibility`}
+            tpl={tpl}
+            viewCtx={viewCtx}
+            expsProvider={expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.Mixins,
+      () =>
+        canRenderMixins(tpl, viewCtx) &&
+        renderOpts.get(Section.Mixins) && (
+          <MixinsSection
+            key={`${tpl.uuid}-mixins`}
+            tpl={tpl}
+            viewCtx={viewCtx}
+          />
+        ),
+    ],
+    [
+      Section.PrivateStyleVariants,
+      () =>
+        canRenderPrivateStyleVariants(tpl, viewCtx) &&
+        renderOpts.get(Section.PrivateStyleVariants) && (
+          // Cannot have private variants if you are default slot content,
+          // as default slot content can only target base variant
+          <PrivateStyleVariantsPanel
+            key={`${tpl.uuid}-private-variants`}
+            tpl={tpl as TplTag}
+            viewCtx={viewCtx}
+            studioCtx={expsProvider.studioCtx}
+          />
+        ),
+    ],
+    [
+      Section.CustomBehaviors,
+      () =>
+        isTplVariantable(tpl) &&
+        !isColumn &&
+        !isComponentRoot(tpl) &&
+        !isAttachmentComp &&
+        !isSlot &&
+        showSection(Section.CustomBehaviors) &&
+        !isRichTextDescendant && (
+          <CustomBehaviorsSection
+            key={`${tpl.uuid}-custom-behaviors`}
+            tpl={tpl}
+            viewCtx={viewCtx}
+          />
+        ),
+    ],
+    [
+      Section.Repeater,
+      () =>
+        isTplComponent(tpl.parent) &&
+        getAncestorSlotArg(tpl)?.arg.param.isRepeated && (
+          <RepeaterSection
+            key={`${tpl.uuid}-repeater`}
+            tpl={tpl}
+            viewCtx={viewCtx}
+          />
+        ),
+    ],
+    [
+      Section.Column,
+      () =>
+        isColumn &&
+        showSection(Section.Column) && (
+          <ColumnSection
+            key={`${tpl.uuid}-column`}
+            viewCtx={viewCtx}
+            tpl={tpl as TplColumnTag}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.ColumnsPanel,
+      () =>
+        isColumns &&
+        showSection(Section.ColumnsPanel) && (
+          <ColumnsPanelSection
+            key={`${tpl.uuid}-columns`}
+            studioCtx={viewCtx.studioCtx}
+            expsProvider={sc.props.expsProvider}
+            tpl={tpl as TplColumnsTag}
+          />
+        ),
+    ],
+    [
+      Section.GridChild,
+      () =>
+        isGridChild &&
+        showSection(Section.GridChild) && (
+          <GridChildSection
+            key={`${tpl.uuid}-grid-child`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.ImageCodeComponent,
+      () =>
+        isComponent &&
+        isCodeComponent(tpl.component) &&
+        isImageCodeComponent(viewCtx) && (
+          <ImageSectionForCodeComponent
+            key={`${tpl.uuid}-image-code-component`}
+            expsProvider={sc.props.expsProvider as TplExpsProvider}
+          />
+        ),
+    ],
+    [
+      Section.Image,
+      () =>
+        isTplImage(tpl) && (
+          <ImageSection
+            key={`${tpl.uuid}-image`}
+            expsProvider={sc.props.expsProvider as TplExpsProvider}
+            ancestorSlot={styleAncestorSlot}
+          />
+        ),
+    ],
+    [
+      Section.ListStyle,
+      () =>
+        isListStyleValidForTpl(tpl) && (
+          <ListStyleSection
+            key={`${tpl.uuid}-list`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.Typography,
+      () =>
+        isTypographyValidForTpl(tpl) &&
+        showSection(Section.Typography) && (
+          <TypographySection
+            title={isContainerOrCodeComponentTpl ? "Typography" : "Text"}
+            key={`${tpl.uuid}-typography`}
+            expsProvider={sc.props.expsProvider}
+            ancestorSlot={styleAncestorSlot}
+            inheritableOnly={isContainerOrCodeComponentTpl && !isTypographyTpl}
+            viewCtx={viewCtx}
+          />
+        ),
+    ],
+    [
+      Section.TextContentOnly,
+      () =>
+        hasTextContent(tpl) &&
+        showSection(Section.Typography) &&
+        !showLink && (
+          <TextOnlySection
+            key={`${tpl.uuid}-text`}
+            expsProvider={sc.props.expsProvider}
+            viewCtx={viewCtx}
+          />
+        ),
+    ],
+    [
+      Section.Link,
+      () =>
+        showLink && (
+          <LinkSection
+            key={`${tpl.uuid}-link`}
+            viewCtx={viewCtx}
+            tpl={tpl as TplTag}
+            expsProvider={expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.Layout,
+      () =>
+        isContainerOrCodeComponentTpl &&
+        showSection(Section.Layout) && (
+          <LayoutSection
+            key={`${tpl.uuid}-layout`}
+            expsProvider={sc.props.expsProvider}
+            isCodeComponentTpl={codeComponentTpl}
+            allowConvert
+          />
+        ),
+    ],
+    [
+      Section.Overflow,
+      () =>
+        isOverflowValidForTpl(tpl) &&
+        showSection(Section.Overflow) && (
+          <OverflowSection
+            key={`${tpl.uuid}-overflow`}
+            expsProvider={expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.Background,
+      () =>
+        isBackgroundValidForTpl(tpl) &&
+        showSection(Section.Background) && (
+          <BackgroundSection
+            key={`${tpl.uuid}-background`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.Border,
+      () =>
+        isTagOrCodeComponentTpl &&
+        showSection(Section.Border) && (
+          <React.Fragment key={`${tpl.uuid}-border`}>
+            <BorderPanelSection
+              key={`${tpl.uuid}-border-width`}
+              expsProvider={sc.props.expsProvider}
+            />
+            <BorderRadiusSection
+              key={`${tpl.uuid}-border-radius`}
+              expsProvider={sc.props.expsProvider}
+            />
+          </React.Fragment>
+        ),
+    ],
+    [
+      Section.Outline,
+      () =>
+        isTagOrCodeComponentTpl &&
+        showSection(Section.Outline) && (
+          <OutlinePanelSection key={`${tpl.uuid}-outline`} />
+        ),
+    ],
+    [
+      Section.ShadowsPanel,
+      () =>
+        isTagOrCodeComponentTpl &&
+        showSection(Section.ShadowsPanel) && (
+          <ShadowsPanelSection
+            key={`${tpl.uuid}-shadow`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.EffectsPanel,
+      () =>
+        isTagOrCodeComponentTpl &&
+        showSection(Section.EffectsPanel) && (
+          <EffectsPanelSection
+            key={`${tpl.uuid}-effects`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.TransitionsPanel,
+      () =>
+        isTransitionValidForTpl(tpl) &&
+        showSection(Section.TransitionsPanel) && (
+          <TransitionsPanelSection
+            key={`${tpl.uuid}-transitions`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.TransformPanel,
+      () =>
+        isTransformValidForTpl(tpl) &&
+        showSection(Section.TransformPanel) && (
+          <TransformPanelSection
+            key={`${tpl.uuid}-transform`}
+            expsProvider={sc.props.expsProvider}
+          />
+        ),
+    ],
+    [
+      Section.Tag,
+      () =>
+        isTag &&
+        showSection(Section.Tag) && (
+          <TplTagSection
+            key={`${tpl.uuid}-tag`}
+            viewCtx={viewCtx}
+            tpl={tpl as TplTag}
+          />
+        ),
+    ],
+    [
+      Section.HTMLAttributes,
+      () =>
+        isTag &&
+        showSection(Section.HTMLAttributes) && (
+          <HTMLAttributesSection
+            key={`${tpl.uuid}-html-attrs`}
+            viewCtx={viewCtx}
+            tpl={tpl as TplTag}
+            expsProvider={expsProvider}
+            component={component}
+          />
+        ),
+    ],
+    [
+      Section.SlotSettings,
+      () => isSlot && <SlotSettingsSection expsProvider={expsProvider} />,
+    ],
+    [
+      Section.ComponentMergedSlotProps,
+      () =>
+        isTplComponent(tpl) && (
+          <MergedSlotsPropsSection tpl={tpl} viewCtx={viewCtx} tab="settings" />
+        ),
+    ],
+    [
+      Section.ComponentMergedSlotText,
+      () =>
+        isTplComponent(tpl) && (
+          <MergedSlotsTextSection tpl={tpl} viewCtx={viewCtx} tab="settings" />
+        ),
+    ],
+    [
+      Section.ComponentMergedSlotTypography,
+      () =>
+        isTplComponent(tpl) && (
+          <MergedSlotsTextSection tpl={tpl} viewCtx={viewCtx} tab="style" />
+        ),
+    ],
+    ...(isTplVariantable(tpl)
+      ? ([
+          [
+            Section.Interactions,
+            () =>
+              (isTag || isComponent) &&
+              options.length > 0 && (
+                <InteractionsSection
+                  key={`${tpl.uuid}-interactions`}
+                  sc={viewCtx.studioCtx}
+                  component={component}
+                  tpl={tpl}
+                  vc={viewCtx}
+                  expsProvider={expsProvider}
+                />
+              ),
+          ],
+        ] as const)
+      : []),
+  ]);
+
+  return new Map(
+    [...map.entries()].map(([name, render]) => [
+      name,
+      () =>
+        (showStyleSections ||
+          !isStyleSection(name) ||
+          name === Section.MissingPositionClass ||
+          name === Section.ComponentStyleProps) &&
+        render(),
+    ]),
+  );
+}
+
+function getOrderedSections(tpl: TplNode, viewCtx: ViewCtx): Set<Section> {
+  const orderedSections = new Set<Section>();
+
+  const pushIfNew = (...sections: Section[]) => {
+    sections.forEach((section) => {
+      if (!orderedSections.has(section)) {
+        orderedSections.add(section);
+      }
+    });
+  };
+
+  if (
+    isTplCodeComponent(tpl) &&
+    !isTplCodeComponentStyleable(viewCtx.studioCtx.codeComponentsRegistry, tpl)
+  ) {
+    // This code component explicitly opted out of styles
+    pushIfNew(Section.Visibility);
+    if (tpl.component.codeComponentMeta.isRepeatable) {
+      pushIfNew(Section.RepeatingElement);
+    }
+    pushIfNew(Section.ComponentProps);
+    pushIfNew(Section.CustomBehaviors);
+    pushIfNew(Section.Interactions);
+    pushIfNew(Section.ComponentStyleProps);
+    return orderedSections;
+  }
+
+  // Top Sections
+  pushIfNew(Section.PrivateStyleVariants);
+  pushIfNew(Section.Mixins);
+  pushIfNew(Section.Visibility);
+  pushIfNew(Section.RepeatingElement);
+  pushIfNew(Section.SizeWidthOnly);
+
+  pushIfNew(Section.SimplifiedCodeComponentMode);
+  // Priority Sections
+  if (isTplImage(tpl)) {
+    pushIfNew(Section.Image);
+  }
+  if (
+    isTplComponent(tpl) &&
+    isCodeComponent(tpl.component) &&
+    isImageCodeComponent(viewCtx)
+  ) {
+    pushIfNew(Section.ImageCodeComponent);
+  }
+  if (isTplTextBlock(tpl)) {
+    pushIfNew(Section.Tag);
+  }
+  if (isTplTag(tpl) && tpl.tag === "a") {
+    pushIfNew(Section.Link);
+  }
+  if (isTplTag(tpl) && htmlTagsWithAttributes.has(tpl.tag)) {
+    pushIfNew(Section.HTMLAttributes);
+  }
+  if (isTplTag(tpl) && isTagListContainer(tpl.tag)) {
+    pushIfNew(Section.ListStyle);
+  }
+  if (isTplComponent(tpl)) {
+    pushIfNew(Section.ComponentProps, Section.VariantsPicker);
+  }
+  if (isTypographyNode(tpl)) {
+    pushIfNew(Section.Typography);
+    pushIfNew(Section.TextContentOnly);
+  }
+  if (isTplContainer(tpl)) {
+    pushIfNew(
+      Section.Size,
+      Section.Layout,
+      Section.Spacing,
+      Section.Overflow,
+      Section.Background,
+    );
+  }
+  if (isTplColumn(tpl)) {
+    pushIfNew(Section.Column, Section.Spacing, Section.Background);
+  }
+  if (isTplColumns(tpl)) {
+    pushIfNew(
+      Section.Size,
+      Section.ColumnsPanel,
+      Section.Spacing,
+      Section.Overflow,
+      Section.Background,
+    );
+  }
+  if (isTplVariantable(tpl) && tpl.parent && isGridTag(tpl.parent)) {
+    pushIfNew(Section.GridChild);
+  }
+
+  pushIfNew(Section.Interactions);
+  if (isTplComponent(tpl)) {
+    pushIfNew(Section.ComponentMergedSlotText);
+    pushIfNew(Section.ComponentMergedSlotTypography);
+  }
+
+  // All sections with generic ordering
+  pushIfNew(Section.ComponentProps);
+  pushIfNew(Section.ComponentStyleProps);
+  pushIfNew(Section.VariantsPicker);
+  pushIfNew(Section.ComponentMergedSlotProps);
+  pushIfNew(Section.MissingPositionClass);
+  pushIfNew(Section.Size);
+  pushIfNew(Section.Spacing);
+  pushIfNew(Section.PositioningPanel);
+  pushIfNew(Section.Repeater);
+  pushIfNew(Section.Column);
+  pushIfNew(Section.ColumnsPanel);
+  pushIfNew(Section.GridChild);
+  pushIfNew(Section.ImageCodeComponent);
+  pushIfNew(Section.Image);
+  pushIfNew(Section.ListStyle);
+  if (!isTplContainer(tpl)) {
+    pushIfNew(Section.Typography);
+  }
+  pushIfNew(Section.TextContentOnly);
+  pushIfNew(Section.Layout);
+  pushIfNew(Section.Overflow);
+  pushIfNew(Section.Background);
+  pushIfNew(Section.Border);
+  pushIfNew(Section.Outline);
+  pushIfNew(Section.ShadowsPanel);
+  pushIfNew(Section.EffectsPanel);
+  pushIfNew(Section.TransitionsPanel);
+  pushIfNew(Section.TransformPanel);
+  pushIfNew(Section.Tag);
+  pushIfNew(Section.Link);
+  pushIfNew(Section.HTMLAttributes);
+  if (isTplContainer(tpl)) {
+    pushIfNew(Section.Typography);
+  }
+
+  pushIfNew(Section.CustomBehaviors);
+  pushIfNew(Section.SlotSettings);
+
+  pushIfNew(Section.ComponentMergedSlotText);
+  pushIfNew(Section.ComponentMergedSlotTypography);
+  pushIfNew(Section.ComponentMergedSlotProps);
+
+  const activeSections = Object.values(Section);
+  assert(
+    orderedSections.size === activeSections.length,
+    () =>
+      `All sections should be ordered; missing ${Array.from(orderedSections)
+        .filter((s) => !activeSections.includes(s))
+        .join(", ")}, extras ${activeSections
+        .filter((s) => !orderedSections.has(s))
+        .join(", ")}`,
+  );
+  return orderedSections;
+}
+
+function isSettingsSection(section: Section): boolean {
+  return settingSections.has(section);
+}
+
+function isStyleSection(section: Section): boolean {
+  return styleSections.has(section);
+}
+
+export type StyleTabFilter = "all" | "style-only" | "settings-only";
+
+export function getOrderedSectionRender(
+  tpl: TplNode,
+  viewCtx: ViewCtx,
+  renderOpts: Map<Section, boolean>,
+  styleTabFilter: StyleTabFilter,
+) {
+  const renderBySection = getRenderBySection(tpl, viewCtx, renderOpts);
+  const orderedSections = getOrderedSections(tpl, viewCtx);
+  return [...orderedSections]
+    .filter(
+      (section) =>
+        canEditSection(viewCtx.studioCtx, section) &&
+        ((styleTabFilter === "style-only" && isStyleSection(section)) ||
+          (styleTabFilter === "settings-only" && isSettingsSection(section))),
+    )
+    .map((section) =>
+      ensure(
+        renderBySection.get(section),
+        "All sections should have a render function",
+      ),
+    );
+}
+
+function isImageCodeComponent(vc: ViewCtx) {
+  const selectable = vc.focusedSelectable();
+  if (selectable instanceof ValComponent) {
+    const $doms =
+      ensureArray(vc.renderState.sel2dom(selectable, vc.canvasCtx)) ?? [];
+    return $doms.length > 0 && $doms.every((el) => el?.tagName === "IMG");
+  }
+  return false;
+}
+
+function shouldAlertMissingPositionClass(vc: ViewCtx) {
+  const selectable = vc.focusedSelectable();
+  if (selectable instanceof ValComponent) {
+    // Subscribe to changes to the DOM elt
+    vc.focusedDomElt();
+    return isCodeComponentMissingPositionClass(vc, selectable);
+  }
+  return false;
+}
+
+/**
+ * Always show style sections, unless it's a code component that
+ * - has missing className, so can't be styled at all, and does
+ * not specify `styleSections: true`
+ * - explicitly specified `styleSections: false` in registration
+ */
+function shouldShowStyleSections(
+  tpl: TplNode,
+  viewCtx: ViewCtx,
+  missingPositionClass: boolean,
+) {
+  if (isTplCodeComponent(tpl)) {
+    if (viewCtx.getTplCodeComponentMeta(tpl)?.styleSections === true) {
+      return true;
+    }
+    if (missingPositionClass) {
+      // className not being used
+      return false;
+    }
+    if (
+      !isTplCodeComponentStyleable(
+        viewCtx.studioCtx.codeComponentsRegistry,
+        tpl,
+      )
+    ) {
+      return false;
+    }
+  }
+  if (isTplComponent(tpl)) {
+    return shouldShowStyleSections(
+      tpl.component.tplTree,
+      viewCtx,
+      missingPositionClass,
+    );
+  }
+  return true;
+}
+
+export function isCodeComponentMissingPositionClass(
+  vc: ViewCtx,
+  val: ValComponent,
+) {
+  const $doms = $(asOne(vc.renderState.sel2dom(val, vc.canvasCtx)) ?? []);
+  if ($doms?.length && resolvesToCodeComponent(val.tpl)) {
+    const positionClassesSelector = val.className
+      ?.split(" ")
+      .map((className) => `.${className}`)
+      .join("");
+    if (positionClassesSelector && !$doms.is(positionClassesSelector)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const MissingPositionClassSection = observer(
+  function MissingPositionClassSection(props: { tpl: TplComponent }) {
+    const tplCodeComponent = resolveTplRoot(props.tpl);
+    if (!isCodeComponentTpl(tplCodeComponent)) {
+      return null;
+    }
+    const isNestedStructure = tplCodeComponent.uuid !== props.tpl.uuid;
+    const currentComponentName = getComponentDisplayName(props.tpl.component);
+    const codeComponentName = isNestedStructure
+      ? getComponentDisplayName(tplCodeComponent.component)
+      : currentComponentName;
+    return (
+      <SidebarSection>
+        <div className="panel-row mt-lg">
+          <Alert
+            type="warning"
+            message="Not able to style code component"
+            description={
+              <p>
+                <strong>
+                  Component {currentComponentName} does not support styling
+                </strong>
+                <br />
+                It looks like the{isNestedStructure ? " root " : " "}code
+                component {codeComponentName} does not make use of a "className"
+                prop, so you cannot set styles on the component.
+              </p>
+            }
+          />
+        </div>
+      </SidebarSection>
+    );
+  },
+);
+
+export function canEditSection(studioCtx: StudioCtx, section: Section) {
+  const uiConfig = studioCtx.getCurrentUiConfig();
+  const sectionSetting = getSectionSetting(section);
+  const publicSection = sectionSetting.publicSection;
+  const isContentCreator = studioCtx.contentEditorMode;
+  if (!publicSection) {
+    return isContentCreator
+      ? !!sectionSetting.defaultContentEditorVisible
+      : true;
+  } else {
+    return canEditStyleSection(uiConfig, publicSection, {
+      isContentCreator,
+      defaultContentEditorVisible: sectionSetting.defaultContentEditorVisible,
+    });
+  }
+}
+
+export function canRenderMixins(
+  tpl: TplNode,
+  viewCtx: ViewCtx,
+): tpl is TplNode {
+  const missingPositionClass = isCodeComponentTpl(tpl)
+    ? shouldAlertMissingPositionClass(viewCtx)
+    : false;
+  const showStyleSections = shouldShowStyleSections(
+    tpl,
+    viewCtx,
+    missingPositionClass,
+  );
+
+  return (
+    isTplVariantable(tpl) &&
+    showStyleSections &&
+    canEditSection(viewCtx.studioCtx, Section.Mixins)
+  );
+}
+
+export function canRenderPrivateStyleVariants(
+  tpl: TplNode,
+  viewCtx: ViewCtx,
+): tpl is TplTag {
+  const ancestorSlot = getAncestorTplSlot(tpl, true);
+  return (
+    isTplTag(tpl) &&
+    !ancestorSlot &&
+    canEditSection(viewCtx.studioCtx, Section.PrivateStyleVariants)
+  );
+}
+
+function hasTextContent(tpl: TplNode) {
+  return isTplTextBlock(tpl);
+}

@@ -1,0 +1,535 @@
+const TYPES = `Animation|AnimationSequence|AnyType|Arena|ArenaChild|ArenaFrame|ArenaFrameCell|ArenaFrameGrid|ArenaFrameRow|Arg|ArgType|BindingStruct|BoolType|Choice|ClassNamePropType|CodeComponentHelper|CodeComponentMeta|CodeComponentVariantMeta|CodeLibrary|CollectionExpr|ColorPropType|ColumnsConfig|ColumnsSetting|Component|ComponentArena|ComponentDataQuery|ComponentInstance|ComponentServerQuery|ComponentSwapSplitContent|ComponentTemplateInfo|ComponentVariantGroup|ComponentVariantSplitContent|CompositeExpr|CustomCode|CustomFunction|CustomFunctionExpr|DataSourceOpExpr|DataSourceTemplate|DataToken|DateRangeStrings|DateString|DefaultStylesClassNamePropType|DefaultStylesPropType|EventHandler|Expr|ExprText|FigmaComponentMapping|FunctionArg|FunctionExpr|FunctionType|GenericEventHandler|GlobalVariantGroup|GlobalVariantGroupParam|GlobalVariantSplitContent|HostLessPackageInfo|HrefType|ImageAsset|ImageAssetRef|Img|Interaction|KeyFrame|LabeledSelector|MapExpr|Marker|Mixin|MultiChoice|NameArg|NamedState|NodeMarker|Num|ObjectPath|PageArena|PageHref|PageMeta|Param|PlumeInfo|PlumeInstance|PrimitiveType|ProjectDependency|PropParam|QueryData|QueryInvalidationExpr|QueryRef|RandomSplitSlice|RawText|RenderExpr|RenderFuncType|RenderableType|Rep|RichText|Rule|RuleSet|Scalar|SegmentSplitSlice|SelectorRuleSet|Site|SlotParam|Split|SplitContent|SplitSlice|State|StateChangeHandlerParam|StateParam|StrongFunctionArg|StyleExpr|StyleMarker|StyleNode|StylePropType|StyleScopeClassNamePropType|StyleToken|StyleTokenOverride|StyleTokenRef|TargetType|TemplatedString|Text|Theme|ThemeLayoutSettings|ThemeStyle|Token|TplComponent|TplNode|TplRef|TplSlot|TplTag|Var|VarRef|Variant|VariantGroup|VariantGroupState|VariantSetting|VariantedRuleSet|VariantedValue|VariantsRef|VirtualRenderExpr`;
+
+const clientFiles = [
+  "platform/wab/src/wab/main.tsx",
+  "platform/wab/src/wab/client/**/*.ts",
+  "platform/wab/src/wab/client/**/*.tsx",
+];
+const serverFiles = [
+  "platform/wab/src/wab/server/**/*.ts",
+  "platform/wab/src/wab/server/**/*.tsx",
+];
+const testFiles = [
+  "**/*.spec.ts",
+  "**/*.spec.tsx",
+  "**/*-spec.ts",
+  "**/*-spec.tsx",
+  "**/*.stories.tsx",
+  "**/*.test.ts",
+  "**/*.test.tsx",
+  "**/__testonly__/**/*",
+  "**/__mocks__/**/*",
+];
+
+const fs = require("fs");
+const path = require("path");
+
+// Find all files in the repo with overlay, e.g. `foo.external.ts` -> `foo.ts`.
+// There are two stub types (see copy.bara.sky):
+//   - `.external.` : replaces files in both public and enterprise sync
+//   - `.public.`   : replaces files only in public sync
+function findOverlayTargets(root) {
+  const targets = [];
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (
+        entry.name.includes(".external.") ||
+        entry.name.includes(".public.")
+      ) {
+        targets.push(
+          path
+            .relative(__dirname, full)
+            .replace(".external", "")
+            .replace(".public", "")
+        );
+      }
+    }
+  };
+  walk(root);
+  return targets;
+}
+
+const internalFiles = ["**/enterprise/**", "**/internal/**", "**/*.internal*"];
+const overlayTargets = findOverlayTargets(
+  path.join(__dirname, "platform/wab/src")
+);
+
+// Public synced files can't import enterprise/internal code.
+const noEnterpriseImportPattern = {
+  group: internalFiles,
+  message:
+    "Either move this file under `enterprise/`/`internal/`, or add an `.external`/`.public`" +
+    "stub sibling to override it (see copy.bara.sky).",
+};
+
+// Shared by the top-level rule and the public-import guard override (which replaces it per-file).
+const restrictedImportPaths = [
+  {
+    name: "@plasmicapp/host",
+    importNames: ["registerComponent", "CodeComponentMeta"],
+    message: "Please import from @plasmicapp/host/registerComponent instead",
+  },
+  {
+    name: "antd",
+    importNames: ["Modal"],
+    message:
+      "Please use drop-in replacement src/wab/client/components/widgets/Modal.tsx instead",
+  },
+  {
+    name: "react-use",
+    importNames: ["useAsync", "useAsyncRetry", "useAsyncFn"],
+    message: "Please use useAsyncStrict()/useAsyncFnStrict() instead",
+  },
+  {
+    name: "react-use/lib/useAsync",
+    message: "Please use useAsyncStrict() instead",
+  },
+  {
+    name: "react-use/lib/useAsyncRetry",
+    message: "Please use useAsyncStrict() instead",
+  },
+  {
+    name: "react-use/lib/useAsyncFn",
+    message: "Please use useAsyncFnStrict() instead",
+  },
+];
+
+// Only test files may reference a module's `_testonly`.
+const restrictedTestonlySyntaxRule = {
+  selector:
+    ":matches(ImportSpecifier[imported.name=/^_testonly/], ExportSpecifier[local.name=/^_testonly/], MemberExpression[property.name=/^_testonly/])",
+  message:
+    "`_testonly` is only for tests. Please use the module's real exports.",
+};
+
+// Shared by every `no-restricted-syntax` rule, since an override replaces the
+// whole list rather than extending it.
+const restrictedSyntaxRules = [
+  {
+    selector: "CallExpression[callee.name='ensure'][arguments.length!=2]",
+    message: "`ensure` must always be invoked with a message.",
+  },
+  {
+    selector: "CallExpression[callee.name='assert'][arguments.length!=2]",
+    message: "`assert` must always be invoked with a message.",
+  },
+  {
+    selector: `CallExpression[callee.name='ensureInstance'][arguments.length=2] > Identifier[name=/\\b(${TYPES})\\b/]`,
+    message:
+      "ensureInstance cannot be called on model types. Use ensureKnownXXX instead.",
+  },
+  {
+    selector: `BinaryExpression[operator='instanceof'] > Identifier[name=/\\b(${TYPES})\\b/]`,
+    message:
+      "instanceof cannot be used with model types. Use isKnownXXX instead.",
+  },
+  restrictedTestonlySyntaxRule,
+];
+
+// Only test files may import from `__testonly__/`.
+const noTestImportPattern = {
+  group: ["**/__testonly__/*"],
+  message:
+    "Only test files can import files in `__testonly__/`. Please move this file inside `__testonly__/`",
+};
+
+module.exports = {
+  root: true,
+  ignorePatterns: [
+    ".tmp",
+    "build",
+    "node_modules",
+    "storybook-static",
+
+    // Examples lint themselves via their own `next lint`; also skipped in
+    // .lintstagedrc.js since eslint resolves `extends` before ignores.
+    "examples/",
+    "internal/",
+    "packages/host/src/type-utils.ts",
+    "platform/canvas-packages/internal_pkgs/",
+    "platform/wab/create-react-app-new/",
+    "platform/wab/deps/",
+    "platform/wab/public/static/",
+    "platform/wab/src/wab/client/plasmic/",
+    "platform/wab/src/wab/client/sandboxes/",
+    "platform/wab/src/wab/shared/model/classes.ts",
+    "platform/wab/src/wab/shared/model/classes-metas.ts",
+  ],
+  rules: {
+    curly: "error",
+    "no-restricted-properties": [
+      "error",
+      {
+        object: "L",
+        property: "remove",
+        message:
+          "Please use common.removeWhere() instead; L.remove() does not work well with mobx arrays",
+      },
+      {
+        object: "L",
+        property: "pull",
+        message:
+          "Please use common.remove() instead; L.pull() does not work well with mobx arrays",
+      },
+      {
+        object: "req",
+        property: "login",
+        message: "Please use doLogin() instead",
+      },
+      {
+        object: "req",
+        property: "logIn",
+        message: "Please use doLogin() instead",
+      },
+      {
+        object: "req",
+        property: "logout",
+        message: "Please use doLogout() instead",
+      },
+      {
+        object: "req",
+        property: "logOut",
+        message: "Please use doLogout() instead",
+      },
+      {
+        object: "window",
+        property: "prompt",
+        message:
+          "Please use reactPrompt() instead; window.prompt() does not work well with app hosting",
+      },
+      {
+        property: "findOneOrFail",
+        message:
+          "Please prefer `findExactlyOne` instead, to ensure no more than one row will match",
+      },
+    ],
+    "no-restricted-globals": [
+      "error",
+      {
+        name: "prompt",
+        message:
+          "Please use reactPrompt() instead; window.prompt() does not work well with app hosting",
+      },
+    ],
+    "no-restricted-imports": ["error", { paths: restrictedImportPaths }],
+    "no-restricted-syntax": ["warn", ...restrictedSyntaxRules],
+    "react/forbid-elements": [
+      "error",
+      {
+        forbid: [
+          {
+            element: "Link",
+            message:
+              "Please use <PublicLink> instead to make sure it works with app hosting",
+          },
+        ],
+      },
+    ],
+    "no-shadow": "error",
+    "no-debugger": "off",
+    "no-redeclare": "off",
+    "no-dupe-class-members": "off",
+    "no-unused-vars": "off",
+    "no-console": "off",
+    "no-var": "error",
+    "no-constant-condition": ["error", { checkLoops: false }],
+    "no-empty": ["error", { allowEmptyCatch: true }],
+    "prefer-const": "warn",
+    "prefer-spread": "off",
+    "@typescript-eslint/ban-types": [
+      "error",
+      {
+        extendDefaults: true,
+        types: {
+          // un-ban types banned by default
+          "{}": false,
+          Function: false,
+        },
+      },
+    ],
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/no-this-alias": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      },
+    ],
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/triple-slash-reference": [
+      "error",
+      {
+        types: "always",
+      },
+    ],
+  },
+  env: {
+    es6: true,
+    node: true,
+    browser: true,
+  },
+  parser: "@typescript-eslint/parser",
+  overrides: [
+    {
+      // Repo-wide guard. The wab overrides below replace this rule per-file
+      // and re-add the pattern alongside their own.
+      files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+      excludedFiles: testFiles,
+      rules: {
+        "@typescript-eslint/no-restricted-imports": [
+          "error",
+          { patterns: [noTestImportPattern] },
+        ],
+      },
+    },
+
+    {
+      files: [
+        "platform/wab/src/**/*.ts",
+        "platform/wab/src/**/*.tsx",
+        "platform/wab/src/wab/main.tsx",
+      ],
+      rules: {
+        "@typescript-eslint/switch-exhaustiveness-check": "error",
+        "no-shadow": "off",
+        "no-extra-boolean-cast": "off",
+        "@typescript-eslint/no-shadow": "error",
+        "@typescript-eslint/no-floating-promises": ["error", {}],
+        "@typescript-eslint/no-misused-promises": [
+          "error",
+          {
+            checksVoidReturn: {
+              attributes: false,
+              arguments: false,
+            },
+          },
+        ],
+        "@typescript-eslint/no-unused-vars": [
+          "warn",
+          {
+            argsIgnorePattern: "^_",
+            varsIgnorePattern: "^_",
+            caughtErrorsIgnorePattern: "^_",
+          },
+        ],
+        "no-inner-declarations": "off",
+        "@typescript-eslint/no-empty-function": "warn",
+        "@typescript-eslint/no-empty-interface": "warn",
+        "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
+        "@typescript-eslint/ban-ts-comment": "warn",
+        "import/no-extraneous-dependencies": [
+          "error",
+          {
+            devDependencies: testFiles,
+          },
+        ],
+        "no-relative-import-paths/no-relative-import-paths": [
+          "error",
+          {
+            rootDir: "platform/wab/src",
+            prefix: "@",
+          },
+        ],
+      },
+
+      overrides: [
+        {
+          files: serverFiles,
+          excludedFiles: testFiles,
+          rules: {
+            "@typescript-eslint/no-restricted-imports": [
+              "error",
+              {
+                patterns: [
+                  {
+                    group: ["**/client/*"],
+                    message:
+                      "Files in `server/` cannot import from `client/`. Please move this file inside `client/` or use `import type`",
+                    allowTypeImports: true,
+                  },
+                  noTestImportPattern,
+                  {
+                    group: ["mobx"],
+                    message:
+                      "Files in `server/` can only import mobx from `shared/import-mobx` or use `import type`",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          files: clientFiles,
+          excludedFiles: testFiles,
+          rules: {
+            "@typescript-eslint/no-restricted-imports": [
+              "error",
+              {
+                patterns: [
+                  {
+                    group: ["**/server/*"],
+                    message:
+                      "Files in `client/` cannot import from `server/`. Please move this file inside `server/` or use `import type`",
+                    allowTypeImports: true,
+                  },
+                  noTestImportPattern,
+                ],
+              },
+            ],
+          },
+        },
+        {
+          files: ["platform/wab/src/**/*.ts", "platform/wab/src/**/*.tsx"],
+          excludedFiles: [...clientFiles, ...serverFiles, ...testFiles],
+          rules: {
+            "@typescript-eslint/no-restricted-imports": [
+              "error",
+              {
+                patterns: [
+                  {
+                    // This override takes precedence over the previous ones, so we need to re-add some rules
+                    group: ["**/client/*"],
+                    message:
+                      "Only client files can import from `client/`. Please move this file inside `client/` or use `import type`",
+                    allowTypeImports: true,
+                  },
+                  {
+                    group: ["**/server/*"],
+                    message:
+                      "Only server files can import from `server/`. Please move this file inside `server/` or use `import type`",
+                    allowTypeImports: true,
+                  },
+                  noTestImportPattern,
+                  {
+                    group: ["mobx"],
+                    message:
+                      "Server files (not in `client/` folder) can only import mobx from `shared/import-mobx` or use `import type`",
+                    allowTypeImports: true,
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          files: ["platform/wab/src/**/*.ts", "platform/wab/src/**/*.tsx"],
+          // Files allowed to import from internalFiles. Includes files which are overlay targets,
+          // since they are replaced in the public sync.
+          excludedFiles: [...testFiles, ...internalFiles, ...overlayTargets],
+          rules: {
+            "no-restricted-imports": [
+              "error",
+              {
+                paths: restrictedImportPaths,
+                patterns: [noEnterpriseImportPattern],
+              },
+            ],
+          },
+        },
+      ],
+
+      parserOptions: {
+        ecmaVersion: 2017,
+        sourceType: "module",
+        ecmaFeatures: {
+          jsx: true,
+        },
+        project: ["./platform/wab/tsconfig.json"],
+      },
+    },
+
+    {
+      files: testFiles,
+      rules: {
+        // Tests may use `_testonly`.
+        "no-restricted-syntax": [
+          "warn",
+          ...restrictedSyntaxRules.filter(
+            (rule) => rule !== restrictedTestonlySyntaxRule
+          ),
+        ],
+      },
+    },
+
+    {
+      files: ["packages/cli/src/**/*.ts", "packages/cli/src/**/*.tsx"],
+      // Tests fall through to the testFiles override above.
+      excludedFiles: testFiles,
+      rules: {
+        "no-restricted-properties": [
+          "error",
+          {
+            object: "process",
+            property: "exit",
+            message:
+              "CLI can be used as a library. Please throw Error or HandledError instead.",
+          },
+          {
+            object: "console",
+            message:
+              "Please use `logger` so that consumers of the library can control logging.",
+          },
+        ],
+        "no-restricted-syntax": [
+          "error",
+          ...restrictedSyntaxRules,
+          {
+            selector:
+              "Identifier[name=/^(existsSync|readFileSync|renameSync|unlinkSync|writeFileSync)$/]",
+          },
+        ],
+      },
+    },
+  ],
+  plugins: [
+    "@typescript-eslint",
+    "react",
+    "import",
+    "eslint-plugin-no-relative-import-paths",
+  ],
+  extends: [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/typescript",
+  ],
+  settings: {
+    "import/resolver": {
+      typescript: true,
+      node: true,
+    },
+    react: {
+      version: "detect",
+    },
+  },
+  globals: {
+    globalThis: false, // means it is not writeable
+    analytics: false,
+    SocketIOClient: false,
+    JSX: false,
+    JQuery: false,
+    cy: false,
+    // Provided by vitest's `globals: true`.
+    afterAll: "readonly",
+    afterEach: "readonly",
+    beforeAll: "readonly",
+    beforeEach: "readonly",
+    describe: "readonly",
+    expect: "readonly",
+    it: "readonly",
+    test: "readonly",
+    vi: "readonly",
+  },
+};

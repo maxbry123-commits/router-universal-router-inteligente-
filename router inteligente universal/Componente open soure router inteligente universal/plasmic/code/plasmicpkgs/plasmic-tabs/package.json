@@ -1,0 +1,65 @@
+{
+  "version": "0.0.103",
+  "description": "Plasmic code components for building customizable tab interfaces.",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/plasmic-tabs"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "lint": "tsdx lint",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "peerDependencies": {
+    "react": ">=16"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "name": "@plasmicpkgs/plasmic-tabs",
+  "author": "Abdukhamid Latipov",
+  "module": "dist/plasmic-tabs.esm.js",
+  "size-limit": [
+    {
+      "path": "dist/plasmic-tabs.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/plasmic-tabs.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsdx": "catalog:",
+    "tslib": "catalog:"
+  },
+  "dependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "constate": "^3.3.2"
+  }
+}

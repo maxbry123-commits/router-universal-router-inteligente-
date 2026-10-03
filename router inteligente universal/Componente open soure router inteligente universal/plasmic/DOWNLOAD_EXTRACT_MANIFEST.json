@@ -1,0 +1,68 @@
+{
+  "bundle_bytes": 81218360,
+  "bundle_sha256": "ff071b1ca1d5e870b07eeff78dc904dc9a53ca5b3f72673d58f85f40826e3fb3",
+  "extracted_tree": {
+    "bytes": 221220258,
+    "files": 7751,
+    "sha256": "76e288b9c043dbb990bc3c16b75409d5c98b11f5373ba8d807a5611fcb65afce"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0001",
+      "sha256": "4bfe84b840ac7396f6a07d9637b3751d5036a939508f05dc0fc91973f3abe7ca"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0002",
+      "sha256": "7954e430f926681b23798ccc8e2431b5ac93090641e599856a83db05388b03d9"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0003",
+      "sha256": "652260ba90252ae1feb7bdbca8644d43c3c95390d0aaf3037b840d98d2b5f4c1"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0004",
+      "sha256": "ba90df379d42b5a478cd3856c864a85bffed4d3e7436769b5b53501b943f3fa7"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0005",
+      "sha256": "f28da57d819568c31b31bf06b3f8df4c43f2895f72491d439968a5bd2c8685df"
+    },
+    {
+      "bytes": 12582912,
+      "name": "plasmic.bundle.zip.part-0006",
+      "sha256": "919fdebc1f9045e2c95dd500af111cd41988d137dd158620c903bc587edf0c74"
+    },
+    {
+      "bytes": 5720888,
+      "name": "plasmic.bundle.zip.part-0007",
+      "sha256": "ae9661c6a8a7a2bd38c86dcceb782041ac647c209672da64b1b8ee1845a8792c"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    "AGENTS.md",
+    "platform/wab/AGENTS.md"
+  ],
+  "skipped_special_count": 2,
+  "slug": "plasmic",
+  "source_bytes": 221220258,
+  "source_commit": "33c965a5a7f0f38e28faf212fdf97dfbd8b6a910",
+  "source_files": 7751,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/plasmicapp/plasmic",
+  "source_tree": {
+    "bytes": 221220258,
+    "files": 7751,
+    "sha256": "76e288b9c043dbb990bc3c16b75409d5c98b11f5373ba8d807a5611fcb65afce"
+  }
+}

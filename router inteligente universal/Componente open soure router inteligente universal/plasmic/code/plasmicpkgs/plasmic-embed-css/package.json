@@ -1,0 +1,49 @@
+{
+  "name": "@plasmicpkgs/plasmic-embed-css",
+  "version": "0.1.246",
+  "description": "Plasmic embed css code components",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/plasmic-embed-css"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/plasmic-embed-css.esm.js",
+  "files": [
+    "dist"
+  ],
+  "size-limit": [
+    {
+      "path": "dist/plasmic-embed-css.cjs.production.min.js",
+      "limit": "20 KB"
+    },
+    {
+      "path": "dist/plasmic-embed-css.esm.js",
+      "limit": "20 KB"
+    }
+  ],
+  "scripts": {
+    "build": "tsdx build",
+    "start": "tsdx watch",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "lint": "tsdx lint",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "devDependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "@types/node": "^17.0.45",
+    "@types/react": "catalog:",
+    "tsdx": "catalog:",
+    "tslib": "catalog:"
+  },
+  "peerDependencies": {
+    "@plasmicapp/host": ">=1.0.0",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  }
+}

@@ -1,0 +1,292 @@
+/** @vitest-environment node */
+import { PublicApiTester } from "@/wab/server/__testonly__/api-tester";
+import {
+  createBackend,
+  createDatabase,
+} from "@/wab/server/__testonly__/backend-util";
+import { getLastBundleVersion } from "@/wab/server/db/BundleMigrator";
+import { ensureDbConnection } from "@/wab/server/db/DbCon";
+import { seedTestUserAndProjects } from "@/wab/server/db/DbInit";
+import { DbMgr, normalActor } from "@/wab/server/db/DbMgr";
+import { Project, User } from "@/wab/server/entities/Entities";
+import { _testonly } from "@/wab/server/routes/loader";
+import { Bundler } from "@/wab/shared/bundler";
+import { createSite } from "@/wab/shared/core/sites";
+
+describe("loader", () => {
+  let publicApi: PublicApiTester;
+  let baseURL: string;
+  let cleanup: () => Promise<void>;
+
+  let userToken: string;
+  let user: User;
+  let projects: Project[];
+  let polyfillProject: Project;
+
+  beforeAll(async () => {
+    const {
+      dburi,
+      dbname,
+      cleanup: cleanupDatabase,
+    } = await createDatabase("loader_test");
+    const con = await ensureDbConnection(dburi, dbname);
+    await con.synchronize();
+    await con.transaction(async (em) => {
+      const userAndProjects = await seedTestUserAndProjects(
+        em,
+        {
+          email: "user@example.com",
+        },
+        4,
+      );
+      user = userAndProjects.user;
+      projects = userAndProjects.projects;
+
+      const db = new DbMgr(em, normalActor(user.id));
+
+      const pat = await db.createPersonalApiToken(user.id);
+      userToken = pat.token;
+
+      // projects[0] has a mix of prefilled/un-prefilled versions
+      expect(await publish(db, projects[0], true)).toEqual("0.0.1");
+      expect(await publish(db, projects[0], true)).toEqual("0.0.2");
+      expect(await publish(db, projects[0], false)).toEqual("0.0.3");
+
+      // projects[1] has 2 prefilled versions
+      expect(await publish(db, projects[1], true)).toEqual("0.0.1");
+      expect(await publish(db, projects[1], true)).toEqual("0.0.2");
+
+      // projects[2] has 1 un-prefilled version
+      expect(await publish(db, projects[2], false)).toEqual("0.0.1");
+
+      // projects[3] is never published
+
+      // polyfillProject uses the hardcoded Angular polyfill project ID and has a prefilled version
+      const { project: polyfillProjectObj } = await db.createProject({
+        name: "Angular Polyfill Project",
+        projectId: _testonly.ANGULAR_POLYFILL_PROJECT_ID,
+      });
+      const site = createSite();
+      const siteBundle = new Bundler().bundle(
+        site,
+        "",
+        await getLastBundleVersion(),
+      );
+      await db.saveProjectRev({
+        projectId: polyfillProjectObj.id,
+        data: JSON.stringify(siteBundle),
+        revisionNum: 2,
+      });
+      expect(await publish(db, polyfillProjectObj, true)).toEqual("0.0.1");
+      polyfillProject = polyfillProjectObj;
+    });
+
+    const { host, cleanup: cleanupBackend } = await createBackend(dburi);
+    baseURL = host;
+
+    cleanup = async () => {
+      await cleanupBackend();
+      await cleanupDatabase();
+    };
+  });
+
+  beforeEach(async () => {
+    publicApi = new PublicApiTester(baseURL, {
+      "x-plasmic-api-user": user.email,
+      "x-plasmic-api-token": userToken,
+    });
+  });
+
+  afterEach(async () => {
+    await publicApi.dispose();
+  });
+
+  afterAll(async () => {
+    await cleanup();
+  });
+
+  it("fails code loader requests with no projectId", async () => {
+    const publishedRes = await publicApi.getPublishedLoaderAssets([], {});
+    expect(publishedRes.status()).toEqual(400);
+
+    const versionedRes = await publicApi.rawReq(
+      "get",
+      "/api/v1/loader/code/versioned?cb=23&platform=nextjs&loaderVersion=7",
+    );
+    expect(versionedRes.status()).toEqual(400);
+  });
+
+  it("resolves polyfill project", async () => {
+    const res = await publicApi.getPublishedLoaderAssets([polyfillProject], {
+      loaderVersion: "7",
+    });
+    expect(res.status()).toEqual(200);
+    const body = await res.json();
+    expect(body.redirectUrl).toEqual(
+      `/api/v1/loader/code/versioned?cb=23&platform=react&loaderVersion=7&projectId=${polyfillProject.id}%400.0.1`,
+    );
+    expect(res.headers()["cache-control"]).toEqual("s-maxage=30");
+  });
+
+  it("resolves 1 project", async () => {
+    const res = await publicApi.getPublishedLoaderAssets([projects[0]], {
+      loaderVersion: "7",
+    });
+    expect(res.status()).toEqual(302);
+    expect(res.headers()["location"]).toEqual(
+      `/api/v1/loader/code/versioned?cb=23&platform=react&loaderVersion=7&projectId=${projects[0].id}%400.0.2`,
+    );
+    expect(res.headers()["cache-control"]).toEqual("s-maxage=30");
+  });
+
+  it("resolves 2 projects, ids sorted for caching", async () => {
+    // a has a lesser id than b
+    let a: Project, b: Project;
+    if (projects[0].id < projects[1].id) {
+      a = projects[0];
+      b = projects[1];
+    } else {
+      a = projects[1];
+      b = projects[0];
+    }
+
+    // request in reverse order
+    const res = await publicApi.getPublishedLoaderAssets([b, a], {
+      loaderVersion: "7",
+    });
+    expect(res.status()).toEqual(302);
+    // expect in sorted order
+    expect(res.headers()["location"]).toEqual(
+      `/api/v1/loader/code/versioned?cb=23&platform=react&loaderVersion=7&projectId=${a.id}%400.0.2&projectId=${b.id}%400.0.2`,
+    );
+    expect(res.headers()["cache-control"]).toEqual("s-maxage=30");
+  });
+
+  it("fails if any project has no prefilled versions", async () => {
+    const res = await publicApi.getPublishedLoaderAssets(
+      [projects[0], projects[2]],
+      {},
+    );
+    expect(res.status()).toEqual(404);
+    expect(res.headers()["cache-control"]).toEqual(
+      "no-store, no-cache, must-revalidate, private",
+    );
+  });
+
+  it("fails if any project is unpublished", async () => {
+    const res = await publicApi.getPublishedLoaderAssets(
+      [projects[0], projects[3]],
+      {},
+    );
+    expect(res.status()).toEqual(400);
+    expect(res.headers()["cache-control"]).toEqual(
+      "no-store, no-cache, must-revalidate, private",
+    );
+  });
+
+  it("resolves component as HTML", async () => {
+    const redirectRes = await publicApi.getPublishedLoaderHtml(
+      projects[0],
+      "Homepage",
+    );
+    expect(redirectRes.status()).toEqual(302);
+    expect(redirectRes.headers()["location"]).toEqual(
+      `/api/v1/loader/html/versioned/${projects[0].id}@0.0.2/Homepage?cb=23&embedHydrate=0&hydrate=0&componentProps=%7B%7D&globalVariants=%5B%5D&prepass=0`,
+    );
+    expect(redirectRes.headers()["cache-control"]).toEqual("s-maxage=30");
+
+    const htmlRes = await publicApi.getPublishedLoaderHtml(
+      projects[0],
+      "Homepage",
+      { followRedirect: true },
+    );
+    expect(htmlRes.status()).toEqual(200);
+    expect(await htmlRes.text()).toInclude("Hello, world!");
+  });
+
+  it("resolves component as HTML with hydration", async () => {
+    const redirectRes = await publicApi.getPublishedLoaderHtml(
+      projects[0],
+      "Homepage?hydrate=1&embedHydrate=1",
+    );
+    expect(redirectRes.status()).toEqual(302);
+    expect(redirectRes.headers()["location"]).toEqual(
+      `/api/v1/loader/html/versioned/${projects[0].id}@0.0.2/Homepage?cb=23&embedHydrate=1&hydrate=1&componentProps=%7B%7D&globalVariants=%5B%5D&prepass=0`,
+    );
+    expect(redirectRes.headers()["cache-control"]).toEqual("s-maxage=30");
+
+    const htmlRes = await publicApi.getPublishedLoaderHtml(
+      projects[0],
+      "Homepage?hydrate=1&embedHydrate=1",
+      { followRedirect: true },
+    );
+    expect(htmlRes.status()).toEqual(200);
+    expect(await htmlRes.text()).toInclude("Hello, world!");
+  });
+
+  it("responds 404 if component does not exist", async () => {
+    const redirectRes = await publicApi.getPublishedLoaderHtml(
+      projects[0],
+      "NonExistentComponent",
+    );
+    expect(redirectRes.status()).toEqual(302);
+    expect(redirectRes.headers()["location"]).toEqual(
+      `/api/v1/loader/html/versioned/${projects[0].id}@0.0.2/NonExistentComponent?cb=23&embedHydrate=0&hydrate=0&componentProps=%7B%7D&globalVariants=%5B%5D&prepass=0`,
+    );
+    expect(redirectRes.headers()["cache-control"]).toEqual("s-maxage=30");
+
+    const htmlRes = await publicApi.getPublishedLoaderHtml(
+      projects[0],
+      "NonExistentComponent",
+      { followRedirect: true },
+    );
+    expect(htmlRes.status()).toEqual(404);
+    expect(await htmlRes.json()).toEqual({
+      error: {
+        name: "NotFoundError",
+        statusCode: 404,
+        message: `Error: Unable to find components NonExistentComponent (project ${projects[0].id})`,
+      },
+    });
+  });
+
+  it("sets a valid preview HTML ETag for non-Latin-1 component names", async () => {
+    const component = encodeURIComponent("平仮名s.php");
+
+    const htmlRes = await publicApi.getPreviewLoaderHtml(
+      projects[0],
+      component,
+    );
+    expect(htmlRes.status()).toEqual(404);
+    const etag = htmlRes.headers()["etag"];
+    expect(etag).toBeString();
+
+    const cachedRes = await publicApi.getPreviewLoaderHtml(
+      projects[0],
+      component,
+      { ifNoneMatch: etag },
+    );
+    expect(cachedRes.status()).toEqual(304);
+  });
+});
+
+async function publish(
+  db: DbMgr,
+  project: Project,
+  prefill: boolean,
+): Promise<string> {
+  let pkgVersion = (
+    await db.publishProject(project.id, undefined, [], "description")
+  ).pkgVersion;
+  if (prefill) {
+    pkgVersion = await db.updatePkgVersion(
+      pkgVersion.pkgId,
+      pkgVersion.version,
+      pkgVersion.branchId,
+      {
+        isPrefilled: true,
+      },
+    );
+  }
+  return pkgVersion.version;
+}

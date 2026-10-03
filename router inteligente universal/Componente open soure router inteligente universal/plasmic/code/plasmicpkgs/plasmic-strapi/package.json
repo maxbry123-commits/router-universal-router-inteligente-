@@ -1,0 +1,64 @@
+{
+  "name": "@plasmicpkgs/plasmic-strapi",
+  "version": "0.1.222",
+  "description": "Plasmic code components for fetching and rendering Strapi content.",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/plasmic-strapi"
+  },
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.esm.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm build:types && pnpm build:index",
+    "build:types": "tsc",
+    "build:index": "node ../../build.mjs ./src/index.tsx --use-client",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/index.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "dependencies": {
+    "@plasmicpkgs/strapi": "workspace:*",
+    "change-case": "^4.1.2"
+  },
+  "devDependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "@plasmicapp/query": "workspace:*",
+    "@types/dlv": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "catalog:"
+  }
+}

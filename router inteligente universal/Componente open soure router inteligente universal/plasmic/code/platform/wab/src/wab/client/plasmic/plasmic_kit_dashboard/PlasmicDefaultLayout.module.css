@@ -1,0 +1,303 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.header {
+  display: flex;
+  position: fixed;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  align-content: unset;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  right: 0;
+  background: var(--token-iR8SeEwQZ);
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border-bottom: 1px solid var(--token-hoA5qaM-91G);
+}
+.headerWrapper {
+  width: 100%;
+  max-width: 1280px;
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  align-content: unset;
+  padding-left: 1.25rem;
+  padding-right: 1rem;
+  min-width: 0;
+}
+.headerLogoLink {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+.headerLogo {
+  object-fit: cover;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.headerActions {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: 8px;
+}
+.upgradeButton:global(.__wab_instance) {
+  position: relative;
+  height: 2rem;
+}
+.svg__vF1 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.svg__uSFd {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.freeTrial:global(.__wab_instance) {
+  position: relative;
+}
+.freeBox__g4Hbj {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  align-content: unset;
+  flex-grow: 1;
+  margin-top: 49px;
+  min-height: 100vh;
+}
+.wrapper {
+  width: 100%;
+  max-width: 1280px;
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-width: 0;
+}
+@media (min-width: 0px) and (max-width: 768px) {
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    column-gap: 0px;
+  }
+}
+.sidebar {
+  display: flex;
+  position: fixed;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  width: 200px;
+  align-content: unset;
+  top: 49px;
+  left: auto;
+  z-index: 99;
+  bottom: 0;
+  overflow: auto;
+  background: var(--token-iR8SeEwQZ);
+  flex-shrink: 0;
+  padding: 8px;
+  border-right: 1px solid var(--token-hoA5qaM-91G);
+}
+@media (min-width: 0px) and (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    border-top-width: 0px;
+    border-right-width: 0px;
+    border-left-width: 0px;
+    position: relative;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    min-width: 0;
+    border-bottom: 1px solid rgb(228, 230, 235);
+  }
+}
+.nav {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  row-gap: 4px;
+}
+.allProjectsButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__bMtWr {
+  object-fit: cover;
+  position: relative;
+  height: 1em;
+}
+.svg___0SK83 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.myProjectsButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__gluGf {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.svg__ebJx {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.freeBox___1I5Dl {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  row-gap: 4px;
+}
+.freeBoxhideTeams___1I5Dl5Ktlm {
+  display: none;
+}
+.navTeamSection__fNQog:global(.__wab_instance) {
+  position: relative;
+}
+.svg__u8Mf {
+  display: flex;
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+.svg__yz3Vs {
+  display: flex;
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+.navFooter {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  row-gap: 4px;
+}
+.newTeamButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg___9DbPc {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.svg__fmNan {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.documentationButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg___2Eo9K {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.svg__qc8Uw {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.helpButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__lkX6 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.svg___9PUi {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.userButton:global(.__wab_instance) {
+  position: relative;
+}
+.freeBox__hmXkw {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.img__xzqEi {
+  object-fit: cover;
+  width: 24px;
+  height: 24px;
+  max-width: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.img__xzqEi > picture > img {
+  object-fit: cover;
+}
+.svg__dvFlL {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.main {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  margin-left: 200px;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+@media (min-width: 0px) and (max-width: 768px) {
+  .main {
+    margin: 0px;
+  }
+}

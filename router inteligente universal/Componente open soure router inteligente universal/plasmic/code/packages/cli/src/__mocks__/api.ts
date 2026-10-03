@@ -1,0 +1,445 @@
+import L from "lodash";
+import type {
+  ChecksumBundle,
+  ComponentBundle,
+  ProjectBundle,
+  ProjectIconsResponse,
+  ProjectIdAndToken,
+  ProjectMetaBundle,
+  ProjectVersionMeta,
+  RequiredPackages,
+  StyleConfigResponse,
+  StyleTokensMap,
+  VersionResolution,
+} from "../api";
+import { AuthConfig } from "../utils/config-utils";
+import { ensure } from "../utils/lang-utils";
+import * as semver from "../utils/semver";
+
+/**
+ * Store a simplified data model for use with testing
+ */
+// Keyed by (projectId, version)
+const PROJECTS: MockProject[] = [];
+export interface MockProject {
+  projectId: string;
+  branchName: string;
+  projectApiToken: string;
+  version: string;
+  projectName: string;
+  components: MockComponent[];
+  dependencies: {
+    [projectId: string]: string;
+  };
+}
+export interface MockComponent {
+  id: string;
+  name: string;
+  path?: string;
+  /** Emit Next.js RSC page wrappers. Requires `path`. */
+  rsc?: boolean;
+  projectId?: string;
+  branchName?: string;
+  version?: string;
+}
+
+export function clear() {
+  while (PROJECTS.length > 0) {
+    PROJECTS.shift();
+  }
+}
+
+function mockProjectToProjectVersionMeta(
+  mock: MockProject,
+  componentIdOrNames?: readonly string[],
+): ProjectVersionMeta {
+  return {
+    ...mock,
+    componentIds: mock.components
+      .filter(
+        (c) =>
+          !componentIdOrNames ||
+          componentIdOrNames.includes(c.name) ||
+          componentIdOrNames.includes(c.id),
+      )
+      .map((c) => c.id),
+    indirect: false,
+  };
+}
+
+/**
+ * Call this in test to setup the data model
+ * @param id componentId
+ * @param comp MockComponent
+ */
+export function addMockProject(proj: MockProject) {
+  const projectId = proj.projectId;
+  const branchName = proj.branchName;
+  const version = proj.version;
+  // Populate projectId and version into each component
+  // will be useful when reading / writing components to files
+  proj.components = proj.components.map((c) => {
+    return {
+      ...c,
+      projectId,
+      branchName,
+      version,
+    };
+  });
+
+  const existing = getMockProject(projectId, branchName, version);
+  if (!existing) {
+    PROJECTS.push(proj);
+  } else {
+    existing.components = proj.components;
+    existing.dependencies = proj.dependencies;
+  }
+}
+
+/**
+ * Used to interpret data that's stored in the "codegen" files from the Mock server
+ * @param data
+ */
+export function stringToMockComponent(
+  data?: string,
+): MockComponent | undefined {
+  if (!data) {
+    return;
+  }
+  const withoutComments = data.startsWith("//") ? data.slice(2) : data;
+  const cleaned = withoutComments.trim();
+  return JSON.parse(cleaned);
+}
+
+/**
+ * Used to write mock data into files for testing.
+ * Useful to see what version was written
+ * Need to prefix with a comment to satisfy the parser used in `fixAllImports`
+ * @param component
+ */
+function mockComponentToString(component: MockComponent): string {
+  return "// " + JSON.stringify(component);
+}
+
+export function getMockProject(
+  projectId: string,
+  branchName: string,
+  version: string,
+): MockProject | undefined {
+  return PROJECTS.find(
+    (m) =>
+      m.projectId === projectId &&
+      m.branchName === branchName &&
+      m.version === version,
+  );
+}
+
+/**
+ * Only fetch top-level components that match the projectId (optionally also componentIdOrNames + version)
+ * Does not crawl the dependency tree
+ * @param projectId
+ * @param branchName
+ * @param componentIdOrNames
+ * @param versionRange
+ */
+function getMockComponents(
+  projectId: string,
+  branchName: string,
+  version: string,
+  componentIdOrNames: readonly string[] | undefined,
+): MockComponent[] {
+  const project = getMockProject(projectId, branchName, version);
+  return !project
+    ? []
+    : project.components.filter(
+        (c) =>
+          !componentIdOrNames ||
+          componentIdOrNames.includes(c.id) ||
+          componentIdOrNames.includes(c.name),
+      );
+}
+
+function genFilename(base: string, suffix: string) {
+  return "Plasmic" + base + "." + suffix;
+}
+
+function genComponentBundle(
+  component: MockComponent,
+  lang: "ts" | "js",
+): ComponentBundle {
+  const ext = lang === "js" ? "jsx" : "tsx";
+  const isPage = component.path !== undefined;
+  const skeletonBaseName = isPage
+    ? component.path === "/"
+      ? "/index"
+      : component.path
+    : component.name;
+  return {
+    renderModule: mockComponentToString(component),
+    skeletonModule: mockComponentToString(component),
+    cssRules: `theClass {color: blue;}`,
+    renderModuleFileName: genFilename(component.name, ext),
+    skeletonModuleFileName: `${skeletonBaseName}.${ext}`,
+    cssFileName: genFilename(component.name, "css"),
+    componentName: component.name,
+    id: component.id,
+    scheme: "blackbox",
+    nameInIdToUuid: [],
+    isPage,
+    path: component.path,
+    // RSC wrappers arrive as TSX; the CLI converts them for JavaScript projects.
+    rscMetadata:
+      isPage && component.rsc
+        ? {
+            pageWrappers: {
+              server: {
+                module: mockComponentToString(component),
+                fileName: `Plasmic${component.name}Server.tsx`,
+              },
+              client: {
+                module: mockComponentToString(component),
+                fileName: `Client${component.name}.tsx`,
+              },
+            },
+          }
+        : undefined,
+  };
+}
+
+function genEmptyStyleTokensMap() {
+  return {
+    props: [],
+    global: {
+      meta: {
+        source: "plasmic.app" as const,
+      },
+    },
+  };
+}
+
+function genProjectMetaBundle(projectId: string): ProjectMetaBundle {
+  return {
+    projectId,
+    projectName: projectId,
+    cssFileName: genFilename(projectId, "css"),
+    cssRules: `theClass {color: green;}`,
+  };
+}
+
+function* getDeps(projects: ProjectVersionMeta[]) {
+  const queue: ProjectVersionMeta[] = [...projects];
+  while (queue.length > 0) {
+    const curr = ensure(queue.shift());
+    for (const [projectId, version] of L.toPairs(curr.dependencies)) {
+      const mockProject = ensure(getMockProject(projectId, "main", version));
+      const projectMeta = mockProjectToProjectVersionMeta(mockProject);
+      yield projectMeta;
+      queue.push(projectMeta);
+    }
+  }
+}
+
+export class PlasmicApi {
+  constructor(private auth: AuthConfig) {}
+
+  async genStyleConfig(): Promise<StyleConfigResponse> {
+    const result = {
+      defaultStyleCssFileName: genFilename("default", "css"),
+      defaultStyleCssRules: `theClass {color: red;}`,
+    };
+    return result;
+  }
+
+  async resolveSync(
+    projects: {
+      projectId: string;
+      branchName: string;
+      versionRange: string;
+      componentIdOrNames: readonly string[] | undefined;
+      projectApiToken?: string;
+    }[],
+    recursive?: boolean,
+  ): Promise<VersionResolution> {
+    const results: VersionResolution = {
+      projects: [],
+      dependencies: [],
+      conflicts: [],
+    };
+
+    // Get top level projects
+    projects.forEach((proj) => {
+      const availableProjects = Array.from(PROJECTS.values()).filter(
+        (p) => p.projectId === proj.projectId,
+      );
+      if (
+        !(
+          (this.auth.user && this.auth.token) ||
+          availableProjects.every(
+            (p) => p.projectApiToken === proj.projectApiToken,
+          )
+        )
+      ) {
+        throw new Error("No user+token, and project API tokens don't match");
+      }
+      const availableVersions = availableProjects.map((p) => p.version);
+      const version = semver.maxSatisfying(
+        availableVersions,
+        proj.versionRange,
+      );
+      if (version) {
+        const mockProject = ensure(
+          getMockProject(proj.projectId, proj.branchName, version),
+        );
+        const projectMeta = mockProjectToProjectVersionMeta(
+          mockProject,
+          proj.componentIdOrNames,
+        );
+        results.projects.push(projectMeta);
+      }
+    });
+
+    // Get dependencies
+    if (recursive) {
+      const deps = [...getDeps(results.projects)];
+      results.dependencies.push(...deps);
+    }
+
+    return results;
+  }
+
+  async getCurrentUser() {
+    return true;
+  }
+
+  async projectComponents(
+    projectId: string,
+    branchName: string,
+    opts: {
+      platform: string;
+      newCompScheme: "blackbox" | "direct";
+      // The list of existing components as [componentUuid, codeScheme]
+      existingCompScheme: Array<[string, "blackbox" | "direct"]>;
+      componentIdOrNames: readonly string[] | undefined;
+      version: string;
+      codeOpts?: { lang: "ts" | "js" };
+    },
+  ): Promise<ProjectBundle> {
+    const { componentIdOrNames, version } = opts;
+    if (PROJECTS.length <= 0) {
+      throw new Error("Remember to call __addMockProject first!");
+    }
+    const maybeTokenPair = this.lastProjectIdsAndTokens.find(
+      (pair) => pair.projectId === projectId,
+    );
+    const project = ensure(PROJECTS.find((p) => p.projectId === projectId));
+    if (
+      !(
+        (this.auth.user && this.auth.token) ||
+        project.projectApiToken === maybeTokenPair?.projectApiToken
+      )
+    ) {
+      throw new Error("No user+token and project API tokens don't match");
+    }
+    // Server also require tokens for the dependencies.
+    const deps = [...getDeps([mockProjectToProjectVersionMeta(project)])];
+    if (
+      !deps.every((dep) =>
+        this.lastProjectIdsAndTokens.find((p) => p.projectId === dep.projectId),
+      )
+    ) {
+      throw new Error(
+        "No user+token and project API tokens don't match on a dependency",
+      );
+    }
+    const mockComponents = getMockComponents(
+      projectId,
+      branchName,
+      version,
+      componentIdOrNames,
+    );
+    if (mockComponents.length <= 0) {
+      throw new Error(
+        `Code gen failed: no components match the parameters ${JSON.stringify(
+          { projectId, version, componentIdOrNames },
+          undefined,
+          2,
+        )}`,
+      );
+    }
+
+    const components = mockComponents.map((c) =>
+      genComponentBundle(c, opts.codeOpts?.lang ?? "ts"),
+    );
+    const result = {
+      components,
+      codeComponentMetas: [],
+      customFunctionMetas: [],
+      projectConfig: genProjectMetaBundle(projectId),
+      globalVariants: [],
+      usedTokens: genEmptyStyleTokensMap(),
+      iconAssets: [],
+      imageAssets: [],
+      checksums: {
+        renderModuleChecksums: components.map((c) => [c.id, c.renderModule]),
+        cssRulesChecksums: components.map((c) => [c.id, c.cssRules]),
+        imageChecksums: [],
+        iconChecksums: [],
+        globalVariantChecksums: [],
+        projectCssChecksum: "",
+        globalContextsChecksum: "",
+        splitsProviderChecksum: "",
+        styleTokensProviderChecksum: "",
+        dataTokensChecksum: "",
+        projectModuleChecksum: "",
+      } as ChecksumBundle,
+      usedNpmPackages: [],
+      externalCssImports: [],
+    };
+    return result;
+  }
+
+  async uploadBundle(
+    _projectId: string,
+    _bundleName: string,
+    _bundleJs: string,
+    _css: string[],
+    _metaJson: string,
+  ): Promise<StyleTokensMap> {
+    throw new Error("Unimplemented");
+  }
+
+  async projectStyleTokens(
+    _projectId: string,
+    _branchName: string,
+  ): Promise<StyleTokensMap> {
+    throw new Error("Unimplemented");
+  }
+
+  async projectIcons(
+    _projectId: string,
+    _branchName: string,
+  ): Promise<ProjectIconsResponse> {
+    throw new Error("Unimplemented");
+  }
+
+  async latestCodegenVersion(): Promise<string> {
+    return "0.0.1";
+  }
+
+  async requiredPackages(): Promise<RequiredPackages> {
+    return {
+      "@plasmicapp/loader": "0.0.1",
+      "@plasmicapp/cli": "0.0.1",
+      "@plasmicapp/host": "0.0.1",
+      "@plasmicapp/react-web": "0.0.1",
+      "@plasmicapp/react-web-runtime": "0.0.1",
+    };
+  }
+
+  connectSocket() {}
+
+  lastProjectIdsAndTokens: ProjectIdAndToken[] = [];
+  attachProjectIdsAndTokens(idsAndTokens: ProjectIdAndToken[]) {
+    this.lastProjectIdsAndTokens = idsAndTokens;
+  }
+}

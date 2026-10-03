@@ -1,0 +1,60 @@
+{
+  "name": "@plasmicpkgs/plasmic-cms",
+  "version": "0.0.333",
+  "description": "Plasmic code components for querying and rendering Plasmic CMS content.",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/plasmic-cms"
+  },
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.esm.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "20 KB"
+    },
+    {
+      "path": "dist/index.esm.js",
+      "limit": "20 KB"
+    }
+  ],
+  "scripts": {
+    "build": "pnpm build:types && pnpm build:index",
+    "build:types": "tsc",
+    "build:index": "node ../../build.mjs ./src/index.tsx",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "devDependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "@plasmicapp/query": "workspace:*",
+    "@types/node": "^17.0.45",
+    "@types/react": "catalog:"
+  },
+  "dependencies": {
+    "@plasmicpkgs/cms": "workspace:*",
+    "dayjs": "^1.11.23"
+  },
+  "peerDependencies": {
+    "@plasmicapp/host": ">=1.0.0",
+    "@plasmicapp/query": ">=0.1.0",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  }
+}

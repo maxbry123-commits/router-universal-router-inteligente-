@@ -1,0 +1,787 @@
+import { AppCtx } from "@/wab/client/app-ctx";
+import { isPlasmicPath } from "@/wab/client/cli-routes";
+import { HostConfig } from "@/wab/client/components/HostConfig";
+import { DataSourcePicker } from "@/wab/client/components/TopFrame/DataSourcePicker";
+import CloneProjectModal from "@/wab/client/components/TopFrame/TopBar/CloneProjectModal";
+import CodeModal from "@/wab/client/components/TopFrame/TopBar/CodeModal";
+import ProjectNameModal from "@/wab/client/components/TopFrame/TopBar/ProjectNameModal";
+import PublishFlowDialogWrapper from "@/wab/client/components/TopFrame/TopBar/PublishFlowDialogWrapper";
+import { showRegenerateSecretTokenModal } from "@/wab/client/components/TopFrame/TopBar/RegenerateSecretTokenModal";
+import ShareModal from "@/wab/client/components/TopFrame/TopBar/ShareModal";
+import UpsellModal from "@/wab/client/components/TopFrame/TopBar/UpsellModal";
+import { AppAuthSettingsModal } from "@/wab/client/components/app-auth/AppAuthSettings";
+import { CopilotChatDialog } from "@/wab/client/components/copilot/CopilotChatDialog";
+import { isAnonymousQuotaReached } from "@/wab/client/components/copilot/anonymous-chat";
+import { MergeModalWrapper } from "@/wab/client/components/merge/MergeFlow";
+import { ContentEditorConfigModal } from "@/wab/client/components/modals/ContentEditorConfigModal";
+import { EnableLocalizationModal } from "@/wab/client/components/modals/EnableLocalizationModal";
+import {
+  TopBarPromptBillingArgs,
+  promptTeamUpgrade,
+} from "@/wab/client/components/modals/PricingModal";
+import { FloatingWindowLayer } from "@/wab/client/components/widgets/FloatingWindow";
+import { IconButton } from "@/wab/client/components/widgets/IconButton";
+import { isAnyModalOpen } from "@/wab/client/components/widgets/open-modals";
+import { fileDragMonitor } from "@/wab/client/file-drag/file-drag-monitor";
+import {
+  TopFrameApi,
+  TopFrameApiArgs,
+  TopFrameApiResolveType,
+  TopFrameApiReturnType,
+} from "@/wab/client/frame-ctx/top-frame-api";
+import { useTopFrameCtx } from "@/wab/client/frame-ctx/top-frame-ctx";
+import CloseIcon from "@/wab/client/plasmic/plasmic_kit/PlasmicIcon__Close";
+import { useHistory, useLocation } from "@/wab/client/route/HistoryProvider";
+import { Shortcut } from "@/wab/client/shortcuts/shortcut";
+import { useBindShortcutHandlers } from "@/wab/client/shortcuts/shortcut-handler";
+import {
+  STUDIO_SHORTCUTS,
+  StudioShortcutAction,
+} from "@/wab/client/shortcuts/studio/studio-shortcuts";
+import {
+  TopFrameTourState,
+  TopFrameTours,
+} from "@/wab/client/tours/tutorials/TutorialTours";
+import {
+  ApiBranch,
+  ApiPermission,
+  ApiProject,
+  CopilotChatOpenOpts,
+  MergeSrcDst,
+  ProjectId,
+} from "@/wab/shared/ApiSchema";
+import { canUseChatCopilot } from "@/wab/shared/billing/billing-util";
+import { assert, asyncWrapper, mkUuid, spawn } from "@/wab/shared/common";
+import { isAdminTeamEmail } from "@/wab/shared/devflag-utils";
+import { LocalizationConfig } from "@/wab/shared/localization";
+import { getAccessLevelToResource } from "@/wab/shared/perms";
+import {
+  APP_ROUTES,
+  SEARCH_PARAM_COPILOT_CHAT,
+} from "@/wab/shared/route/app-routes";
+import { canEditUiConfig } from "@/wab/shared/ui-config-utils";
+import { message, notification } from "antd";
+import { Action, Location } from "history";
+import { observer } from "mobx-react";
+import { ExtendedKeyboardEvent } from "mousetrap";
+import React from "react";
+import * as Signals from "signals";
+
+export interface MergeModalContext {
+  subject: MergeSrcDst;
+}
+
+export interface TopFrameChromeProps {
+  appCtx: AppCtx;
+  project: ApiProject;
+  refreshProjectAndPerms: () => void;
+  isRefreshingProjectData: boolean;
+  pathname: string;
+  editorPerm: boolean;
+  perms: ApiPermission[];
+  refreshStudio: () => Promise<void>;
+  topFrameApi: TopFrameApi;
+
+  latestPublishedVersionData:
+    | { revisionId: string; version: string }
+    | undefined;
+  revisionNum: number;
+  noComponents: boolean;
+  isLocalizationEnabled: boolean;
+  showPublishModal: boolean;
+  keepPublishModalOpen: boolean;
+  mergeModalContext: MergeModalContext | undefined;
+  showShareModal: boolean;
+  showCodeModal: boolean;
+  showProjectNameModal: boolean;
+  showCloneProjectModal: boolean;
+  showHostModal: boolean;
+  showLocalizationModal: boolean;
+  showUiConfigModal: boolean;
+  showUpsellForm: TopBarPromptBillingArgs | undefined;
+  setShowUpsellForm: (_: undefined) => void;
+  showAppAuthModal: boolean;
+  studioModalOpen: boolean;
+  showCopilotChatModal: boolean;
+  copilotChatOpenOpts: CopilotChatOpenOpts | undefined;
+  subjectComponentInfo:
+    | {
+        pathOrComponent: string;
+        componentName: string;
+      }
+    | undefined;
+  activatedBranch: ApiBranch | undefined;
+  dataSourcePicker:
+    | {
+        args: TopFrameApiArgs<"pickDataSource">;
+        resolve: TopFrameApiResolveType<"pickDataSource">;
+      }
+    | undefined;
+  defaultPageRoleId: string | null | undefined;
+  setDefaultPageRoleId: (roleId: string | null | undefined) => void;
+  onboardingTour: TopFrameTourState;
+  refreshBranchData: () => void;
+  shouldShowRegenerateSecretTokenModal: boolean;
+  didShowRegenerateSecretTokenModal: () => void;
+}
+
+export const topFrameTourSignals = new Signals.Signal();
+
+export function TopFrameChrome({
+  appCtx,
+  project,
+  refreshProjectAndPerms,
+  isRefreshingProjectData,
+  pathname,
+  editorPerm,
+  perms,
+  refreshStudio,
+  topFrameApi,
+  refreshBranchData,
+  shouldShowRegenerateSecretTokenModal,
+  didShowRegenerateSecretTokenModal,
+  ...rest
+}: TopFrameChromeProps) {
+  const { hostFrameApiReady } = useTopFrameCtx();
+  const location = useLocation();
+  const fullPreview = !!APP_ROUTES.projectFullPreview.parse(
+    location.pathname,
+    false,
+  );
+  const projectTeam = appCtx
+    .getAllTeams()
+    .find((team) => team.id === project.teamId);
+  const canStartNewChat = canUseChatCopilot(
+    appCtx.selfInfo?.email,
+    projectTeam,
+    appCtx.appConfig,
+  );
+
+  React.useEffect(() => {
+    document.title = `${project.name} - Plasmic`;
+  }, [project.name]);
+
+  React.useEffect(() => {
+    if (shouldShowRegenerateSecretTokenModal) {
+      spawn(
+        showRegenerateSecretTokenModal({
+          appCtx,
+          project,
+        }),
+      );
+      didShowRegenerateSecretTokenModal();
+    }
+  }, [
+    appCtx,
+    project,
+    shouldShowRegenerateSecretTokenModal,
+    showRegenerateSecretTokenModal,
+    didShowRegenerateSecretTokenModal,
+  ]);
+
+  React.useEffect(() => {
+    if (fullPreview && appCtx.appConfig.showFullPreviewWarning) {
+      const accessLevel = getAccessLevelToResource(
+        { type: "project", resource: project },
+        appCtx.selfInfo,
+        perms,
+      );
+
+      const key = mkUuid();
+
+      // Don't show it to the project owner or for projects created by @plasmic.app users
+      if (
+        accessLevel !== "owner" &&
+        perms.every(
+          (perm) =>
+            perm.accessLevel !== "owner" ||
+            !isAdminTeamEmail(perm.email, appCtx.appConfig),
+        )
+      ) {
+        spawn(
+          message.open({
+            key,
+            content: (
+              <div className="rel fill-width" style={{ maxWidth: 400 }}>
+                <IconButton
+                  style={{ position: "absolute", right: 0, top: 0 }}
+                  onClick={() => message.destroy(key)}
+                >
+                  <CloseIcon />
+                </IconButton>
+                <big>
+                  You are previewing a page built in Plasmic <br />
+                  <br />
+                </big>
+                <p style={{ textAlign: "left" }}>
+                  Click{" "}
+                  <a
+                    href={APP_ROUTES.project.fill({
+                      projectId: project.id,
+                    })}
+                    target="_blank"
+                  >
+                    here
+                  </a>{" "}
+                  to open the project in the Studio.
+                  <br />
+                  <strong>Important</strong>: Notice this page might include and
+                  run third-party javascript, so be careful to not provide
+                  personal information or credentials while using it.
+                </p>
+              </div>
+            ),
+            duration: 0,
+            icon: [],
+            type: "info",
+          }),
+        );
+        return () => notification.destroy(key);
+      }
+    }
+    return () => {};
+  }, [fullPreview, appCtx, perms]);
+
+  return (
+    <>
+      {!fullPreview &&
+        (APP_ROUTES.projectDocs.parse(pathname, false) ? null : (
+          <>
+            <ProjectNameModal
+              project={project}
+              refreshProjectAndPerms={refreshProjectAndPerms}
+              showProjectNameModal={rest.showProjectNameModal}
+              setShowProjectNameModal={topFrameApi.setShowProjectNameModal}
+            />
+            <CloneProjectModal
+              project={project}
+              showCloneProjectModal={rest.showCloneProjectModal}
+              setShowCloneProjectModal={topFrameApi.setShowCloneProjectModal}
+            />
+            {rest.showHostModal && (
+              <HostConfig
+                appCtx={appCtx}
+                project={project}
+                onCancel={() => {
+                  spawn(topFrameApi.setShowHostModal(false));
+                }}
+                isRefreshingProjectData={isRefreshingProjectData}
+                onUpdate={async (canSkipRefresh) => {
+                  if (!canSkipRefresh) {
+                    await refreshStudio();
+                  } else {
+                    refreshBranchData();
+                    refreshProjectAndPerms();
+                  }
+                }}
+              />
+            )}
+            {rest.showUpsellForm && (
+              <UpsellModal
+                appCtx={appCtx}
+                {...rest.showUpsellForm}
+                setShowUpsellForm={rest.setShowUpsellForm}
+              />
+            )}
+            <PublishFlowDialogWrapper
+              project={project}
+              refreshProjectAndPerms={refreshProjectAndPerms}
+              activatedBranch={rest.activatedBranch}
+              editorPerm={editorPerm}
+              latestPublishedVersionData={rest.latestPublishedVersionData}
+              revisionNum={rest.revisionNum}
+              showPublishModal={rest.showPublishModal}
+              keepPublishModalOpen={rest.keepPublishModalOpen}
+              setShowPublishModal={topFrameApi.setShowPublishModal}
+              setShowCodeModal={topFrameApi.setShowCodeModal}
+            />
+            <MergeModalWrapper
+              project={project}
+              editorPerm={editorPerm}
+              latestPublishedVersionData={rest.latestPublishedVersionData}
+              revisionNum={rest.revisionNum}
+              mergeModalContext={rest.mergeModalContext}
+              setMergeModalContext={topFrameApi.setMergeModalContext}
+              setShowCodeModal={topFrameApi.setShowCodeModal}
+              currentBranch={rest.activatedBranch}
+            />
+            <ShareModal
+              refreshProjectAndPerms={refreshProjectAndPerms}
+              project={project}
+              perms={perms}
+              showShareModal={rest.showShareModal}
+              setShowShareModal={topFrameApi.setShowShareModal}
+            />
+            <CodeModal
+              project={project}
+              noComponents={rest.noComponents}
+              subjectComponentInfo={rest.subjectComponentInfo}
+              showCodeModal={rest.showCodeModal}
+              setShowCodeModal={topFrameApi.setShowCodeModal}
+            />
+            {rest.dataSourcePicker && (
+              <DataSourcePicker
+                {...rest.dataSourcePicker.args}
+                onSelected={async (result) => {
+                  if (result?.sourceId) {
+                    await appCtx.api.allowProjectToDataSource(
+                      result.sourceId,
+                      project.id,
+                    );
+                  }
+                  rest.dataSourcePicker?.resolve(result);
+                }}
+                onCanceled={() => {
+                  rest.dataSourcePicker?.resolve("CANCELED");
+                }}
+                project={project}
+              />
+            )}
+            {rest.showUiConfigModal && (
+              <ContentEditorConfigModal
+                title={`Studio UI for ${project.name}`}
+                appCtx={appCtx}
+                level={"project"}
+                onSubmit={async (newConfig) => {
+                  if (newConfig) {
+                    await appCtx.api.updateProjectMeta(project.id, {
+                      uiConfig: newConfig,
+                    });
+                  }
+                  await topFrameApi.setShowUiConfigModal(false);
+                  notification.info({
+                    message:
+                      "Changes in the configuration UI will only take place after refreshing the page",
+                    duration: 5,
+                  });
+                }}
+                onCancel={() => topFrameApi.setShowUiConfigModal(false)}
+                config={project.uiConfig ?? {}}
+              />
+            )}
+            {rest.showLocalizationModal && (
+              <EnableLocalizationModal
+                isLocalizationEnabled={rest.isLocalizationEnabled}
+                project={project}
+                onDone={() => topFrameApi.setShowLocalizationModal(false)}
+              />
+            )}
+            {rest.showAppAuthModal && (
+              <AppAuthSettingsModal
+                appCtx={appCtx}
+                project={project}
+                defaultPageRoleId={rest.defaultPageRoleId}
+                setDefaultPageRoleId={rest.setDefaultPageRoleId}
+                onCancel={() => topFrameApi.setShowAppAuthModal(false)}
+              />
+            )}
+            <FloatingWindowLayer>
+              {hostFrameApiReady && rest.showCopilotChatModal && editorPerm && (
+                <CopilotChat
+                  project={project}
+                  chatOpenOpts={rest.copilotChatOpenOpts}
+                  studioModalOpen={rest.studioModalOpen}
+                  canStartNewChat={canStartNewChat}
+                  onClose={() => topFrameApi.toggleCopilotChat()}
+                  onPlanReady={refreshProjectAndPerms}
+                />
+              )}
+            </FloatingWindowLayer>
+            <React.Suspense fallback={null}>
+              <TopFrameTours
+                appCtx={appCtx}
+                tourState={rest.onboardingTour}
+                projectId={project.id}
+                topFrameApi={topFrameApi}
+                changeTourState={topFrameApi.setOnboardingTour}
+              />
+            </React.Suspense>
+          </>
+        ))}
+      <ForwardShortcuts />
+      <ShareFileDrag />
+      <AnonymousChatUserStudioLock appCtx={appCtx} projectId={project.id} />
+    </>
+  );
+}
+
+function AnonymousChatUserStudioLock({
+  appCtx,
+  projectId,
+}: {
+  appCtx: AppCtx;
+  projectId: ProjectId;
+}) {
+  const { hostFrameApi, hostFrameApiReady } = useTopFrameCtx();
+
+  React.useEffect(() => {
+    if (hostFrameApiReady && !appCtx.selfInfo) {
+      spawn(
+        (async () => {
+          if (await isAnonymousQuotaReached(projectId)) {
+            await hostFrameApi.blockChanges();
+          }
+        })(),
+      );
+    }
+  }, [hostFrameApi, hostFrameApiReady, appCtx.selfInfo, projectId]);
+
+  return null;
+}
+
+/** Observes top frame modals, Studio's are relayed as `studioModalOpen`. */
+const CopilotChat = observer(function CopilotChat({
+  studioModalOpen,
+  ...props
+}: Omit<React.ComponentProps<typeof CopilotChatDialog>, "hiddenByModal"> & {
+  studioModalOpen: boolean;
+}) {
+  return (
+    <CopilotChatDialog
+      {...props}
+      hiddenByModal={studioModalOpen || isAnyModalOpen()}
+    />
+  );
+});
+
+function ShareFileDrag() {
+  const { hostFrameApi, hostFrameApiReady } = useTopFrameCtx();
+
+  React.useEffect(() => {
+    if (hostFrameApiReady) {
+      return fileDragMonitor.subscribeRemote((event) =>
+        spawn(hostFrameApi.onFileDragEventInTop(event)),
+      );
+    }
+    return undefined;
+  }, [hostFrameApi, hostFrameApiReady]);
+
+  return null;
+}
+
+function ForwardShortcuts() {
+  const { hostFrameApi, hostFrameApiReady } = useTopFrameCtx();
+  useBindShortcutHandlers(
+    document.body,
+    STUDIO_SHORTCUTS,
+    Object.fromEntries(
+      (
+        Object.entries(STUDIO_SHORTCUTS) as [StudioShortcutAction, Shortcut][]
+      ).map(([action, shortcut]) => [
+        action,
+        (e: ExtendedKeyboardEvent) => {
+          if (!hostFrameApiReady) {
+            // The host frame is not ready, just swallow the event.
+            return true;
+          }
+
+          const selection = document.getSelection();
+          if (
+            shortcut.action === "COPY" &&
+            selection &&
+            !selection.isCollapsed
+          ) {
+            // The top frame handles copying itself.
+            return false;
+          }
+
+          // The host frame handles everything else below this line.
+
+          if (shortcut.action === "COPY" || shortcut.action === "PASTE") {
+            // Copy/paste can't be forwarded/dispatched to the host frame.
+            // Focus on the host frame so the next user action is handled there.
+            spawn(hostFrameApi.focusOnWindow());
+          } else {
+            spawn(
+              hostFrameApi.forwardShortcut({
+                key: e.key,
+                shiftKey: e.shiftKey,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey,
+                code: e.code,
+                keyCode: e.keyCode,
+              }),
+            );
+          }
+          return true;
+        },
+      ]),
+    ),
+  );
+  return null;
+}
+
+export function useTopFrameState({
+  appCtx,
+  project,
+  forceUpdate,
+  toggleAdminMode,
+}: {
+  appCtx: AppCtx;
+  project: ApiProject | undefined;
+  forceUpdate: () => void;
+  toggleAdminMode: (val: boolean) => Promise<void>;
+}) {
+  const history = useHistory();
+  const currentLocation = useLocation();
+
+  const [latestPublishedVersionData, setLatestPublishedVersionData] =
+    React.useState<{ revisionId: string; version: string }>();
+  const [revisionNum, setRevisionNum] = React.useState(0);
+  const [showPublishModal, setShowPublishModal] = React.useState(false);
+  const [keepPublishModalOpen, setKeepPublishModalOpen] = React.useState(false);
+  const [mergeModalContext, setMergeModalContext] = React.useState<
+    MergeModalContext | undefined
+  >(undefined);
+  const [showShareModal, setShowShareModal] = React.useState(false);
+  const [showCodeModal, setShowCodeModal] = React.useState(false);
+  const [showCloneProjectModal, setShowCloneProjectModal] =
+    React.useState(false);
+  const [showProjectNameModal, setShowProjectNameModal] = React.useState(false);
+  const [showHostModal, setShowHostModal] = React.useState(false);
+  const [showUiConfigModal, setShowUiConfigModal] = React.useState(false);
+  const [showLocalizationModal, setShowLocalizationModal] =
+    React.useState(false);
+  const [
+    shouldShowRegenerateSecretTokenModal,
+    setShouldShowRegenerateSecretTokenModal,
+  ] = React.useState(false);
+  const didShowRegenerateSecretTokenModal = React.useCallback(
+    () => setShouldShowRegenerateSecretTokenModal(false),
+    [setShouldShowRegenerateSecretTokenModal],
+  );
+  const [showUpsellForm, setShowUpsellForm] = React.useState<
+    TopBarPromptBillingArgs | undefined
+  >(undefined);
+  const [showAppAuthModal, setShowAppAuthModal] = React.useState(false);
+  const [studioModalOpen, setStudioModalOpen] = React.useState(false);
+  // A new object per request, so a repeat request with identical text is still
+  // a state change that re-triggers the effect in an already open dialog.
+  const [copilotChatOpenOpts, setCopilotChatOpenOpts] = React.useState<
+    CopilotChatOpenOpts | undefined
+  >(undefined);
+
+  const showCopilotChatModal = React.useMemo(() => {
+    const searchParams = new URLSearchParams(currentLocation.search);
+    return searchParams.get(SEARCH_PARAM_COPILOT_CHAT) === "true";
+  }, [currentLocation.search]);
+
+  // The open options are scoped to one dialog session, clear when the dialog
+  // closes so the prompt can't come back prefilled on a later history navigation.
+  React.useEffect(() => {
+    if (!showCopilotChatModal) {
+      setCopilotChatOpenOpts(undefined);
+    }
+  }, [showCopilotChatModal]);
+
+  const [noComponents, setNoComponents] = React.useState(true);
+  const [subjectComponentInfo, setSubjectComponentInfo] = React.useState<{
+    pathOrComponent: string;
+    componentName: string;
+  }>();
+  const [activatedBranch, setActivatedBranch] = React.useState<
+    ApiBranch | undefined
+  >();
+  const [isLocalizationEnabled, setIsLocalizationEnabled] =
+    React.useState(false);
+  const [localizationScheme, setLocalizationScheme] = React.useState<
+    LocalizationConfig | undefined
+  >(undefined);
+  const [dataSourcePicker, setDataSourcePicker] = React.useState<{
+    args: Parameters<TopFrameApi["pickDataSource"]>[0];
+    resolve: (
+      result: Awaited<ReturnType<TopFrameApi["pickDataSource"]>>,
+    ) => void;
+  }>();
+  const [defaultPageRoleId, setDefaultPageRoleId] = React.useState<
+    string | null | undefined
+  >();
+
+  const [onboardingTour, setOnboardingTour] = React.useState<TopFrameTourState>(
+    {
+      run: false,
+      tour: "",
+      stepIndex: 0,
+    },
+  );
+
+  const topFrameApi = React.useMemo<TopFrameApi>(
+    () => ({
+      pushLocation(path, query, hash) {
+        validateNewLocation(path, history.location);
+        // history@5 doesn't resolve missing parts like history@4 did:
+        // a missing pathname means "stay here", missing search/hash clear.
+        history.push({
+          pathname: path ?? history.location.pathname,
+          search: query ?? "",
+          hash: hash ?? "",
+        });
+        forceUpdate();
+      },
+      replaceLocation(path, query, hash) {
+        validateNewLocation(path, history.location);
+        history.replace({
+          pathname: path ?? history.location.pathname,
+          search: query ?? "",
+          hash: hash ?? "",
+        });
+        forceUpdate();
+      },
+      registerLocationListener: (listener) => {
+        const unregister = history.listen(listener);
+
+        // replace host's initial location
+        listener({ location: history.location, action: Action.Replace });
+
+        return unregister;
+      },
+
+      setDocumentTitle: async (val: string) => {
+        document.title = val;
+      },
+      setPrimitiveValues: async (vals) => {
+        setNoComponents(vals.noComponents);
+        setRevisionNum(vals.revisionNum);
+        setIsLocalizationEnabled(vals.isLocalizationEnabled);
+        setLocalizationScheme(vals.localizationScheme);
+        setDefaultPageRoleId(vals.defaultPageRoleId);
+      },
+      setLatestPublishedVersionData: asyncWrapper(
+        setLatestPublishedVersionData,
+      ),
+      setSubjectComponentInfo: asyncWrapper(setSubjectComponentInfo),
+      setActivatedBranch: asyncWrapper((x) => {
+        setActivatedBranch(x);
+      }),
+      setMergeModalContext: asyncWrapper(setMergeModalContext),
+      setShowPublishModal: asyncWrapper(setShowPublishModal),
+      setKeepPublishModalOpen: asyncWrapper(setKeepPublishModalOpen),
+      setShowShareModal: asyncWrapper(setShowShareModal),
+      setShowCodeModal: asyncWrapper(setShowCodeModal),
+      setShowProjectNameModal: asyncWrapper(setShowProjectNameModal),
+      setShowCloneProjectModal: asyncWrapper(setShowCloneProjectModal),
+      setShowHostModal: asyncWrapper(setShowHostModal),
+      setShowLocalizationModal: asyncWrapper(setShowLocalizationModal),
+      setShowUiConfigModal: asyncWrapper(setShowUiConfigModal),
+      showRegenerateSecretTokenModal: async () =>
+        setShouldShowRegenerateSecretTokenModal(true),
+      setShowUpsellForm: asyncWrapper(setShowUpsellForm),
+      setShowAppAuthModal: asyncWrapper(setShowAppAuthModal),
+      setStudioModalOpen: asyncWrapper(setStudioModalOpen),
+      toggleCopilotChat: async () => {
+        const queryParams = new URLSearchParams(history.location.search);
+        if (queryParams.get(SEARCH_PARAM_COPILOT_CHAT) === "true") {
+          queryParams.delete(SEARCH_PARAM_COPILOT_CHAT);
+        } else {
+          queryParams.set(SEARCH_PARAM_COPILOT_CHAT, "true");
+        }
+        history.push({ search: queryParams.toString() });
+        forceUpdate();
+      },
+      openCopilotChat: async (opts) => {
+        setCopilotChatOpenOpts(opts);
+        const queryParams = new URLSearchParams(history.location.search);
+        if (queryParams.get(SEARCH_PARAM_COPILOT_CHAT) !== "true") {
+          queryParams.set(SEARCH_PARAM_COPILOT_CHAT, "true");
+          history.push({ search: queryParams.toString() });
+        }
+        forceUpdate();
+      },
+      onFileDragEventInHost: asyncWrapper((event) =>
+        fileDragMonitor.onRemoteEvent(event),
+      ),
+      setOnboardingTour: asyncWrapper(setOnboardingTour),
+      pickDataSource: async (opts) => {
+        return new Promise((resolve) => {
+          setDataSourcePicker({ args: opts, resolve });
+        }).finally(() =>
+          setDataSourcePicker(undefined),
+        ) as TopFrameApiReturnType<"pickDataSource">;
+      },
+      toggleAdminMode,
+      getCurrentTeam: async () => {
+        if (!project) {
+          return undefined;
+        }
+        return appCtx.getAllTeams().find((team) => team.id === project.teamId);
+      },
+      canEditProjectUiConfig: async () => {
+        const team = appCtx.getAllTeams().find((t) => t.id === project?.teamId);
+        if (!team || !project) {
+          return false;
+        }
+        return canEditUiConfig(
+          team,
+          { type: "project", resource: project },
+          appCtx.selfInfo,
+          appCtx.perms,
+        );
+      },
+      promptBilling: async () => {
+        const team = appCtx.getAllTeams().find((t) => t.id === project?.teamId);
+        if (!team || !project) {
+          return;
+        }
+        await promptTeamUpgrade(appCtx, team);
+      },
+    }),
+    [appCtx, project],
+  );
+
+  return {
+    topFrameApi,
+    latestPublishedVersionData,
+    revisionNum,
+    noComponents,
+    subjectComponentInfo,
+    activatedBranch,
+    isLocalizationEnabled,
+    localizationScheme,
+    dataSourcePicker,
+    showPublishModal,
+    keepPublishModalOpen,
+    mergeModalContext,
+    showShareModal,
+    showCodeModal,
+    showProjectNameModal,
+    showCloneProjectModal,
+    showHostModal,
+    showLocalizationModal,
+    showUiConfigModal,
+    showUpsellForm,
+    setShowUpsellForm,
+    showAppAuthModal,
+    studioModalOpen,
+    showCopilotChatModal,
+    copilotChatOpenOpts,
+    defaultPageRoleId,
+    setDefaultPageRoleId,
+    onboardingTour,
+    shouldShowRegenerateSecretTokenModal,
+    didShowRegenerateSecretTokenModal,
+  };
+}
+
+function validateNewLocation(
+  path: string | undefined,
+  previousLocation: Location,
+) {
+  if (!path) {
+    return; // query / hash changes only are okay
+  }
+
+  assert(isPlasmicPath(path), `${path} is not Plasmic`);
+
+  // https://app.shortcut.com/plasmic/story/20746/improve-isolation-to-support-arbitrary-code
+  if (APP_ROUTES.projectFullPreview.parse(previousLocation.pathname, false)) {
+    assert(
+      APP_ROUTES.projectFullPreview.parse(path, false),
+      `Cannot navigate from full preview mode to outside of it, from ${previousLocation.pathname} to ${path}`,
+    );
+  } else {
+    assert(
+      !APP_ROUTES.projectFullPreview.parse(path, false),
+      `Cannot navigate from studio to full preview mode, from ${previousLocation.pathname} to ${path}`,
+    );
+  }
+}

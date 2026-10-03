@@ -1,0 +1,53 @@
+{
+  "name": "@plasmicpkgs/react-scroll-parallax",
+  "version": "0.0.271",
+  "description": "Plasmic registration calls for react-scroll-parallax scroll effects.",
+  "homepage": "https://www.plasmic.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "plasmicpkgs/react-scroll-parallax"
+  },
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/react-scroll-parallax.esm.js",
+  "files": [
+    "dist"
+  ],
+  "size-limit": [
+    {
+      "path": "dist/react-scroll-parallax.cjs.production.min.js",
+      "limit": "40 KB"
+    },
+    {
+      "path": "dist/react-scroll-parallax.esm.js",
+      "limit": "40 KB"
+    }
+  ],
+  "scripts": {
+    "build": "tsdx build",
+    "start": "tsdx watch",
+    "test": "TEST_CWD=`pwd` pnpm -w test --passWithNoTests",
+    "lint": "tsdx lint",
+    "prepublishOnly": "npm run build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "devDependencies": {
+    "@plasmicapp/host": "workspace:*",
+    "@types/node": "^14.18.63",
+    "@types/react": "catalog:",
+    "tsdx": "catalog:",
+    "tslib": "catalog:"
+  },
+  "dependencies": {
+    "react-scroll-parallax": "^3.5.0",
+    "resize-observer-polyfill": "^1.5.1"
+  },
+  "peerDependencies": {
+    "@plasmicapp/host": ">=1.0.0",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  }
+}

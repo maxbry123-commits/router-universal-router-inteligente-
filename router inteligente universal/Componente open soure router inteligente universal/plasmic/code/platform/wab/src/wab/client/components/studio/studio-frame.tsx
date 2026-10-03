@@ -1,0 +1,293 @@
+import { reportError } from "@/wab/client/ErrorNotifications";
+import {
+  getLoginRouteWithContinuation,
+  parseProjectLocation,
+} from "@/wab/client/cli-routes";
+import HostUrlInput from "@/wab/client/components/HostUrlInput";
+import { PublicLink } from "@/wab/client/components/PublicLink";
+import { HostLoadTimeoutPrompt } from "@/wab/client/components/TopFrame/HostLoadTimeoutPrompt";
+import {
+  TopFrameChrome,
+  useTopFrameState,
+} from "@/wab/client/components/TopFrame/TopFrameChrome";
+import { TopFrameCopilotToolsBridge } from "@/wab/client/components/studio/TopFrameCopilotToolsBridge";
+import { useAppCtx } from "@/wab/client/contexts/AppContexts";
+import { buildPlasmicStudioArgsHash } from "@/wab/client/frame-ctx/plasmic-studio-args";
+import {
+  TopFrameCtxProvider,
+  handleIframeLoad,
+} from "@/wab/client/frame-ctx/top-frame-ctx";
+import { usePreventDefaultBrowserPinchToZoomBehavior } from "@/wab/client/hooks/usePreventDefaultBrowserPinchToZoomBehavior";
+import { useForceUpdate } from "@/wab/client/useForceUpdate";
+import { getHostUrl } from "@/wab/client/utils/app-hosting-utils";
+import { useBrowserNotification } from "@/wab/client/utils/useBrowserNotification";
+import { ForbiddenError } from "@/wab/shared/ApiErrors/errors";
+import {
+  ApiBranch,
+  ApiPermission,
+  ApiProject,
+  MainBranchId,
+  ProjectId,
+} from "@/wab/shared/ApiSchema";
+import { accessLevelRank, isUnownedProject } from "@/wab/shared/EntUtil";
+import { maybeOne, spawn } from "@/wab/shared/common";
+import { DEVFLAGS } from "@/wab/shared/devflags";
+import { getAccessLevelToResource } from "@/wab/shared/perms";
+import { APP_ROUTES } from "@/wab/shared/route/app-routes";
+import { notification } from "antd";
+import Modal from "antd/lib/modal/Modal";
+import { Location } from "history";
+import moize from "moize";
+import * as React from "react";
+import { useEffect } from "react";
+
+const whitelistedHosts = [
+  "https://studio.plasmic.app",
+  "https://plasmic.app",
+  "https://host.plasmicdev.com",
+];
+
+export function StudioFrame({
+  projectId,
+  refreshStudio,
+}: {
+  projectId: ProjectId;
+  refreshStudio: () => Promise<void>;
+}) {
+  const appCtx = useAppCtx();
+  const forceUpdate = useForceUpdate();
+  const [project, setProject] = React.useState<ApiProject>();
+  const [branch, setBranch] = React.useState<ApiBranch>();
+  const [editorPerm, setEditorPerm] = React.useState(false);
+  const [untrustedHost, setUntrustedHost] = React.useState(false);
+  const [perms, setPerms] = React.useState<ApiPermission[]>([]);
+  const [fetchProjectCount, setFetchProjectCount] = React.useState(0);
+  const [isRefreshingProjectData, setIsRefreshingProjectData] =
+    React.useState(false);
+  const refreshProjectAndPerms = React.useCallback(
+    () => setFetchProjectCount(fetchProjectCount + 1),
+    [fetchProjectCount],
+  );
+  const toggleAdminMode = React.useCallback(
+    async (newMode: boolean) => {
+      await appCtx.api.updateSelfAdminMode({
+        adminModeDisabled: newMode,
+      });
+      await appCtx.reloadAll();
+      await refreshStudio();
+    },
+    [appCtx, refreshStudio],
+  );
+
+  const fetchBranches = React.useCallback(
+    moize(
+      async () => (await appCtx.api.listBranchesForProject(projectId)).branches,
+      {
+        isPromise: true,
+        maxAge: 5 * 60 * 1000,
+        maxArgs: 0,
+      },
+    ),
+    [appCtx, projectId],
+  );
+
+  const refreshBranchData = React.useCallback(
+    () => [...fetchBranches.keys()].forEach((key) => fetchBranches.remove(key)),
+    [fetchBranches],
+  );
+
+  const previousLocation = React.useRef<Location>(appCtx.history.location);
+  React.useEffect(() => {
+    const dispose = appCtx.history.listen(({ location: newLocation }) => {
+      const oldBranchName = parseProjectLocation(
+        previousLocation.current,
+      )?.branchName;
+      const newBranchName = parseProjectLocation(newLocation)?.branchName;
+      if (project && oldBranchName !== newBranchName) {
+        spawn(
+          (async () => {
+            const branches = await fetchBranches();
+            const oldBranch = branches.find((b) => b.name === oldBranchName);
+            const newBranch = branches.find((b) => b.name === newBranchName);
+            if (
+              new URL(getHostUrl(project, oldBranch, appCtx.appConfig)).href !==
+              new URL(getHostUrl(project, newBranch, appCtx.appConfig)).href
+            ) {
+              await refreshStudio();
+            }
+          })(),
+        );
+      }
+      previousLocation.current = newLocation;
+    });
+    return dispose;
+  }, [appCtx, refreshStudio, project]);
+
+  usePreventDefaultBrowserPinchToZoomBehavior();
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        setIsRefreshingProjectData(true);
+        const [{ projects, perms: permissions }, { trustedHosts }] =
+          await Promise.all([
+            appCtx.api.getProjects({
+              query: "byIds",
+              projectIds: [projectId],
+            }),
+            appCtx.api.getTrustedHostsList(),
+          ]);
+        const proj = maybeOne(projects);
+        if (!proj) {
+          throw new ForbiddenError("Project not found");
+        }
+        let maybeBranch: ApiBranch | undefined = undefined;
+        const branchName = parseProjectLocation(
+          appCtx.history.location,
+        )?.branchName;
+        if (branchName && branchName !== MainBranchId) {
+          maybeBranch = (await fetchBranches()).find(
+            (b) => b.name === branchName,
+          );
+        }
+        const hostUrl = getHostUrl(proj, maybeBranch, appCtx.appConfig);
+        setBranch(maybeBranch);
+        const urlsOrDomains = [
+          ...trustedHosts.map((i) => i.hostUrl),
+          ...whitelistedHosts,
+          ...appCtx.appConfig.globalTrustedHosts,
+        ];
+        if (
+          (proj.hostUrl || DEVFLAGS.hostUrl) &&
+          !urlsOrDomains.includes(hostUrl) &&
+          !urlsOrDomains.includes(new URL(hostUrl).origin)
+        ) {
+          setUntrustedHost(true);
+        }
+        const userAccessLevel = appCtx.selfInfo
+          ? getAccessLevelToResource(
+              { type: "project", resource: proj },
+              appCtx.selfInfo,
+              permissions,
+            )
+          : "blocked";
+        setPerms(permissions);
+        const accessLevel =
+          accessLevelRank(userAccessLevel) >
+          accessLevelRank(proj.defaultAccessLevel)
+            ? userAccessLevel
+            : proj.defaultAccessLevel;
+        // An unowned project is editable by anyone, matching the server's permission check.
+        setEditorPerm(
+          accessLevelRank(accessLevel) >= accessLevelRank("content") ||
+            isUnownedProject(proj),
+        );
+        setProject(proj);
+        if (appCtx.appConfig.defaultHostUrl !== DEVFLAGS.defaultHostUrl) {
+          const message = `Mismatching host URLs! appConfig defaults to ${appCtx.appConfig.defaultHostUrl} while devflags points to ${DEVFLAGS.defaultHostUrl}`;
+          console.error(message);
+          reportError(new Error(message));
+        }
+        setIsRefreshingProjectData(false);
+      } catch (e) {
+        setIsRefreshingProjectData(false);
+        if (!appCtx.selfInfo) {
+          // User is not logged and project is not public.
+          await appCtx.history.replace(getLoginRouteWithContinuation());
+          return;
+        }
+        if (e.statusCode === 403) {
+          notification.error({
+            message: "Could not open project",
+            description:
+              "This project does not exist or you do not have access to it.",
+          });
+          return;
+        }
+        throw e;
+      }
+    };
+    spawn(fetchProject());
+  }, [projectId, setProject, fetchProjectCount]);
+
+  const { topFrameApi, ...topFrameChromeProps } = useTopFrameState({
+    appCtx,
+    project,
+    forceUpdate,
+    toggleAdminMode,
+  });
+
+  useBrowserNotification();
+
+  if (!project) {
+    return null;
+  }
+
+  const src = new URL(getHostUrl(project, branch, appCtx.appConfig));
+
+  if (untrustedHost) {
+    const hostOrigin = src.origin;
+    return (
+      <Modal open footer={null} title="Project is hosted by another app">
+        The project {project.name} is <i>app-hosted</i>. This means it's running
+        a third-party app that can show anything on screen, including the
+        Plasmic login screen. Only open projects that are hosted by domains you
+        trust! [
+        <a href="https://www.plasmic.app/learn/app-hosting/" target="_blank">
+          Learn more about app hosting
+        </a>
+        ].
+        <br />
+        <br />
+        Enter the domain <code>{hostOrigin}</code> to add it to your{" "}
+        <PublicLink href={APP_ROUTES.settings.fill({})}>
+          trusted list
+        </PublicLink>
+        .
+        <HostUrlInput
+          className="mv-xlg"
+          originOnly
+          placeholder={hostOrigin}
+          expectedOrigin={hostOrigin}
+          onConfirm={async (_url, parsedUrl) => {
+            if (appCtx.selfInfo) {
+              await appCtx.api.addTrustedHost(parsedUrl.origin);
+              location.reload();
+            }
+          }}
+        />
+      </Modal>
+    );
+  }
+
+  // We send the params via a hash parameter so that the host server cannot see them.
+  src.hash = buildPlasmicStudioArgsHash(appCtx.appConfigOverrides);
+
+  return (
+    <TopFrameCtxProvider projectId={projectId} topFrameApi={topFrameApi}>
+      {!untrustedHost && (
+        <HostLoadTimeoutPrompt project={project} editorPerm={editorPerm} />
+      )}
+      <TopFrameChrome
+        appCtx={appCtx}
+        pathname={location.pathname}
+        project={project}
+        refreshProjectAndPerms={refreshProjectAndPerms}
+        isRefreshingProjectData={isRefreshingProjectData}
+        editorPerm={editorPerm}
+        perms={perms}
+        refreshStudio={refreshStudio}
+        topFrameApi={topFrameApi}
+        refreshBranchData={refreshBranchData}
+        {...topFrameChromeProps}
+      />
+      <TopFrameCopilotToolsBridge />
+      <iframe
+        className={"studio-frame"}
+        src={src.toString()}
+        allow="clipboard-read *; clipboard-write *"
+        onLoad={handleIframeLoad}
+      />
+    </TopFrameCtxProvider>
+  );
+}

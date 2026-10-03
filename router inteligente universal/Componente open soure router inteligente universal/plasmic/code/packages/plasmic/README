@@ -1,0 +1,7 @@
+This package no longer forwards commands to `@plasmicapp/cli`. Running its
+`plasmic` command exits and asks you to use `@plasmicapp/cli` instead.
+
+Install the CLI and then authenticate:
+
+    npm install -g @plasmicapp/cli
+    plasmic auth

@@ -1,0 +1,141 @@
+.root:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.freeBox__bJFoi {
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  min-width: 0;
+  display: none;
+  padding: 8px;
+}
+.freeBoxshowInput__bJFoi6TmFq {
+  display: flex;
+}
+.textbox:global(.__wab_instance) {
+  max-width: 1100px;
+  height: 40px;
+}
+.svg__x8Zf8 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.svg__tXsqn {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.freeBox___05Thu {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  min-width: 0;
+  padding: 8px;
+}
+.items {
+  display: flex;
+  overflow: visible;
+  width: 100%;
+  max-width: 1100px;
+  flex-direction: row;
+  min-width: 0;
+}
+.cardPickerItem__kadg:global(.__wab_instance) {
+  position: relative;
+}
+.img__u6EpR {
+  position: relative;
+  object-fit: cover;
+  max-width: 100%;
+}
+.img__u6EpR > picture > img {
+  object-fit: cover;
+}
+.cardPickerItem__snDpd:global(.__wab_instance) {
+  position: relative;
+}
+.img__kKlF {
+  position: relative;
+  object-fit: cover;
+  max-width: 100%;
+}
+.img__kKlF > picture > img {
+  object-fit: cover;
+}
+.cardPickerItem__zba8E:global(.__wab_instance) {
+  position: relative;
+}
+.img__i57Px {
+  position: relative;
+  object-fit: cover;
+  max-width: 100%;
+}
+.img__i57Px > picture > img {
+  object-fit: cover;
+}
+.cardPickerItem__wRqwd:global(.__wab_instance) {
+  position: relative;
+}
+.img__cnMyC {
+  position: relative;
+  object-fit: cover;
+  max-width: 100%;
+}
+.img__cnMyC > picture > img {
+  object-fit: cover;
+}
+.cancelButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__srP7 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.text {
+  color: var(--token-UunsGa2Y3t3);
+}
+.svg__qszen {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.saveButton:global(.__wab_instance) {
+  position: relative;
+  display: none;
+}
+.svg__vKndu {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.svg__ovm4 {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}

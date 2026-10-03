@@ -1,0 +1,46 @@
+import { expect } from "@playwright/test";
+import { LOADER_NEXTJS_VERSIONS } from "../../../env";
+import { test } from "../../../fixtures";
+import {
+  NextJsContext,
+  setupNextJs,
+  teardownNextJs,
+} from "../../../nextjs/nextjs-setup";
+import { makeEnvName } from "../../setup-utils";
+
+test.describe(`Plasmic Radix UI Popover`, async () => {
+  for (const versions of LOADER_NEXTJS_VERSIONS) {
+    test.describe(makeEnvName({ type: "nextjs", ...versions }), async () => {
+      let ctx: NextJsContext;
+      test.beforeEach(async () => {
+        ctx = await setupNextJs({
+          bundleFile: "radix-ui/popover.json",
+          projectName: "Radix UI Popover",
+          removeComponentsPage: true,
+          ...versions,
+        });
+      });
+
+      test.afterEach(async () => {
+        await teardownNextJs(ctx);
+      });
+
+      const textId = "#popover-open-state-text";
+      const popoverContentLocator = `text="Here is the popover content."`;
+      test(`works`, async ({ page }) => {
+        await page.goto(`${ctx.host}/popover-test`);
+
+        await expect(page.locator(textId)).toHaveText("popover is closed");
+        await expect(page.locator(popoverContentLocator)).not.toBeVisible();
+
+        await page.locator(`text="Show popover"`).click();
+        await expect(page.locator(textId)).toHaveText("popover is open");
+        await expect(page.locator(popoverContentLocator)).toBeVisible();
+
+        await page.locator(`text="Elsewhere"`).click();
+        await expect(page.locator(textId)).toHaveText("popover is closed");
+        await expect(page.locator(popoverContentLocator)).not.toBeVisible();
+      });
+    });
+  }
+});

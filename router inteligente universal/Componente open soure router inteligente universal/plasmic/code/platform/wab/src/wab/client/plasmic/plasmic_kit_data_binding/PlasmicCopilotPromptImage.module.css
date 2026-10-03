@@ -1,0 +1,82 @@
+.root {
+  display: flex;
+  position: relative;
+}
+.root:focus-within:focus-within {
+  outline: none;
+}
+.root:focus-within .tooltip:global(.__wab_instance):global(.__wab_instance) {
+  outline: none;
+}
+.button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 0px;
+  border: 2px solid var(--token-CE-OiWjNhspe);
+}
+.root:hover .button {
+  border: 2px dashed var(--token-2ziDTor6aAuH);
+}
+.root:focus-within .button {
+  outline: none;
+  border-style: dashed;
+  border-color: var(--token-2ziDTor6aAuH);
+}
+.img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+.img > picture > img {
+  object-fit: cover;
+}
+.deleteOverlay {
+  flex-direction: row;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  height: auto;
+  width: auto;
+  cursor: pointer;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  display: none;
+  border-radius: 4px;
+}
+.root:hover .deleteOverlay {
+  display: flex;
+}
+.root:focus-within .deleteOverlay {
+  display: flex;
+  outline: none;
+}
+.deleteBackground {
+  display: flex;
+  flex-direction: row;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  background: var(--token-iDYSCk74HNX3);
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: auto;
+  height: auto;
+}
+.svg {
+  display: flex;
+  object-fit: cover;
+  color: var(--token-2ziDTor6aAuH);
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}

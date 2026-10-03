@@ -1,0 +1,55 @@
+export {
+  isPlasmicUndefinedDataErrorPromise,
+  throwIfPlasmicUndefinedDataError,
+} from "./common";
+export type { PlasmicUndefinedDataErrorPromise } from "./common";
+export { usePlasmicInvalidate } from "./hooks/usePlasmicDataOp";
+export { usePlasmicQueries } from "./serverQueries/client";
+export {
+  StatefulQueryResult as _StatefulQueryResult,
+  safeExecResult as _safeExecResult,
+  wrapPlasmicQueriesForMetadata,
+  type StateListener as _StateListener,
+  type StatefulQueryState as _StatefulQueryState,
+} from "./serverQueries/common";
+export {
+  makeQueryCacheKey,
+  matchesQueryCacheKey,
+} from "./serverQueries/makeQueryCacheKey";
+export { executePlasmicQueries } from "./serverQueries/server";
+export type {
+  PlasmicQuery,
+  PlasmicQueryResult,
+  QueryComponentNode,
+  QueryExecutionContext,
+} from "./serverQueries/types";
+
+// exports below are deprecated and will be removed in major version bump
+
+export { usePlasmicDataConfig } from "@plasmicapp/query";
+export { Fetcher, FetcherMeta } from "./components/Fetcher";
+export type { FetcherProps } from "./components/Fetcher";
+export { executePlasmicDataOp } from "./executor";
+export {
+  deriveFieldConfigs,
+  normalizeData,
+  useNormalizedData,
+} from "./helpers";
+export type { BaseFieldConfig, NormalizedData, QueryResult } from "./helpers";
+export {
+  makeCacheKey,
+  usePlasmicDataMutationOp,
+  usePlasmicDataOp,
+} from "./hooks/usePlasmicDataOp";
+export { executeServerQuery } from "./serverQueries/server";
+export type {
+  ClientQueryResult,
+  DataOp,
+  DataSourceSchema,
+  ManyRowsResult,
+  Pagination,
+  SingleRowResult,
+  TableFieldSchema,
+  TableFieldType,
+  TableSchema,
+} from "./types";

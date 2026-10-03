@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Redirecting to Plasmic...</title>
+  </head>
+  <body>
+    <script>
+      const authStatus = ${JSON.stringify(_authStatus)};
+      const publicUrl = ${JSON.stringify(_publicUrl)};
+
+      window.localStorage.setItem("authStatus", authStatus);
+
+      setTimeout(() => {
+        // Try to close the window if we opened it
+        if (window.opener) {
+          window.close();
+        }
+
+        // If the window is not closing for whatever reason, redirect to app
+        if (!window.closed) {
+          window.location.replace(publicUrl);
+        }
+      }, 0);
+    </script>
+  </body>
+</html>

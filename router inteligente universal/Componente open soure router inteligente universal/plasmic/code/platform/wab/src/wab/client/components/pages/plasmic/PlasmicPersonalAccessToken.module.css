@@ -1,0 +1,66 @@
+.root {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  column-gap: 8px;
+  padding: 0.5rem;
+}
+.freeBox {
+  display: flex;
+  position: relative;
+  align-items: center;
+  column-gap: 8px;
+}
+.freeBoxcopyState_copied {
+  width: auto;
+  flex-grow: 0;
+  flex-shrink: 1;
+  flex-basis: auto;
+  height: auto;
+  align-self: auto;
+}
+.svg___2Kau {
+  position: relative;
+  object-fit: cover;
+  max-width: 100%;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--token-UunsGa2Y3t3);
+  flex-shrink: 0;
+}
+.slotTargetTokenValue {
+  font-family: "IBM Plex Mono";
+}
+.copyLink {
+  position: relative;
+  width: auto;
+  height: auto;
+  flex-grow: 0;
+  flex-shrink: 1;
+  flex-basis: auto;
+  align-self: auto;
+  color: var(--token-HECc6yZMKR);
+  cursor: pointer;
+}
+.copyLinkcopyState_copied {
+  cursor: default;
+}
+.deleteBtn:global(.__wab_instance) {
+  max-width: 100%;
+  position: relative;
+}
+.svg__gp5XI {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.svg__hjkke {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}

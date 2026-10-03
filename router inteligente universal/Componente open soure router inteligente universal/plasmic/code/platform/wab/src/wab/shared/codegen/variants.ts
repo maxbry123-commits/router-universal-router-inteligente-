@@ -1,0 +1,342 @@
+import {
+  VariantGroupType,
+  isGlobalVariant,
+  isGlobalVariantGroup,
+} from "@/wab/shared/Variants";
+import { flattenComponent } from "@/wab/shared/cached-selectors";
+import {
+  makeGlobalVariantIdFileName,
+  makeUseClient,
+} from "@/wab/shared/codegen/react-p/serialize-utils";
+import { getReactWebPackageName } from "@/wab/shared/codegen/react-p/utils";
+import {
+  extractUsedGlobalVariantsForTokens,
+  extractUsedTokensForComponents,
+} from "@/wab/shared/codegen/style-tokens";
+import { ExportOpts } from "@/wab/shared/codegen/types";
+import {
+  DEFAULT_CONTEXT_VALUE,
+  jsLiteral,
+  jsString,
+  stripExtension,
+  toClassName,
+  toVarName,
+} from "@/wab/shared/codegen/util";
+import { xAddAll } from "@/wab/shared/common";
+import { allGlobalVariantGroups } from "@/wab/shared/core/sites";
+import { plasmicImgAttrStyles } from "@/wab/shared/core/style-props";
+import { createExpandedRuleSetMerger } from "@/wab/shared/core/styles";
+import { FinalToken } from "@/wab/shared/core/tokens";
+import { isTplTag, isTplVariantable } from "@/wab/shared/core/tpls";
+import { makeLayoutAwareRuleSet } from "@/wab/shared/layoututils";
+import {
+  Component,
+  Site,
+  StyleToken,
+  TplNode,
+  Variant,
+  VariantGroup,
+  VariantSetting,
+} from "@/wab/shared/model/classes";
+import L from "lodash";
+
+export interface GlobalVariantConfig {
+  // uuid of VariantGroup
+  id: string;
+
+  name: string;
+
+  // Content of the GlobalVariantContext file
+  contextModule: string;
+
+  // Name of the context file
+  contextFileName: string;
+
+  // VariantGroup.type of the exported VariantGroup
+  type: VariantGroupType;
+}
+
+export function exportGlobalVariantGroup(
+  vg: VariantGroup,
+  opts: Partial<ExportOpts>,
+): GlobalVariantConfig {
+  return {
+    id: vg.uuid,
+    name: toClassName(vg.param.variable.name),
+    contextModule: serializeGlobalVariantGroup(vg, opts),
+    contextFileName: opts.idFileNames
+      ? `${makeGlobalVariantIdFileName(vg)}.tsx`
+      : makeGlobalVariantGroupFileName(vg),
+    type: vg.type as VariantGroupType,
+  };
+}
+
+function serializeGlobalVariantGroup(
+  vg: VariantGroup,
+  opts: Partial<ExportOpts>,
+) {
+  const valueTypeName = makeGlobalVariantGroupValueTypeName(vg);
+  const contextName = makeGlobalVariantGroupContextName(vg);
+  const contextProviderName = makeGlobalVariantGroupContextProviderName(vg);
+  const contextType = makeGlobalVariantGroupContextType(vg);
+
+  let serializedHook = `
+export function ${makeGlobalVariantGroupUseName(vg)}() {
+  return React.useContext(${contextName});
+}
+  `;
+
+  if (vg.type === "global-screen") {
+    const variants = vg.variants.filter(
+      (v) => v.mediaQuery && v.mediaQuery.trim().length > 0,
+    );
+
+    serializedHook = `
+export const useScreenVariants = createUseScreenVariants(${jsLiteral(
+      vg.multi,
+    )},{
+  ${variants
+    .map((v) => `"${toVarName(v.name)}": "${v.mediaQuery}"`)
+    .join(",\n")}
+});
+    `;
+  } else {
+    if (opts.useGlobalVariantsSubstitutionApi) {
+      // We don't swap screen variants in the loader, so we only use the
+      // substitution API for the other global variant groups
+      serializedHook = `
+import { globalVariantHooks } from "@plasmicapp/loader-runtime-registry";
+
+export function ${makeGlobalVariantGroupUseName(vg)}() {
+  const maybeHook = globalVariantHooks["${vg.uuid}"];
+  return maybeHook ? maybeHook() : React.useContext(${contextName});
+}
+      `;
+    }
+  }
+
+  return `
+    /* eslint-disable */
+    /* tslint:disable */
+    // @ts-nocheck
+    /* prettier-ignore-start */
+
+    ${makeUseClient(opts)}
+
+    import * as React from "react";
+    import { createUseScreenVariants } from "${getReactWebPackageName(opts)}";
+
+    export type ${valueTypeName} = ${serializeVariantGroupMembersType(vg)};
+    export const ${contextName} = React.createContext<${contextType}>("${DEFAULT_CONTEXT_VALUE}" as any);
+    export function ${contextProviderName}(props: React.PropsWithChildren<{value: ${contextType}}>) {
+      return (
+        <${contextName}.Provider value={props.value}>
+          {props.children}
+        </${contextName}.Provider>
+      );
+    }
+    ${serializedHook}
+    export default ${contextName};
+    /* prettier-ignore-end */
+  `;
+}
+
+function makeGlobalVariantGroupValueTypeName(vg: VariantGroup) {
+  return `${toClassName(vg.param.variable.name)}Value`;
+}
+
+function makeGlobalVariantGroupContextType(vg: VariantGroup) {
+  const valueType = makeGlobalVariantGroupValueTypeName(vg);
+  return `${vg.multi ? `${valueType}[]` : valueType} | undefined`;
+}
+
+function makeGlobalVariantGroupContextName(vg: VariantGroup) {
+  return `${toClassName(vg.param.variable.name)}Context`;
+}
+
+export function makeGlobalVariantGroupContextProviderName(vg: VariantGroup) {
+  return `${makeGlobalVariantGroupContextName(vg)}Provider`;
+}
+
+export function makeGlobalVariantGroupUseName(vg: VariantGroup) {
+  return `use${toClassName(vg.param.variable.name)}`;
+}
+
+export function makeGlobalVariantGroupFileName(vg: VariantGroup) {
+  return `PlasmicGlobalVariant__${toClassName(vg.param.variable.name)}.tsx`;
+}
+
+export function makeUniqueUseScreenVariantsName(vg: VariantGroup) {
+  return `useScreenVariants${toVarName(vg.uuid)}`;
+}
+
+export function makeGlobalVariantGroupImportTemplate(
+  vg: VariantGroup,
+  relDir: string,
+  opts: { idFileNames?: boolean },
+) {
+  const fileName = opts.idFileNames
+    ? makeGlobalVariantIdFileName(vg)
+    : stripExtension(makeGlobalVariantGroupFileName(vg));
+  const imports =
+    vg.type === "global-screen"
+      ? [`useScreenVariants as ${makeUniqueUseScreenVariantsName(vg)}`]
+      : [
+          makeGlobalVariantGroupValueTypeName(vg),
+          makeGlobalVariantGroupUseName(vg),
+        ];
+  const importPath = `${relDir}/${fileName}`;
+
+  return `import {${imports.join(
+    ", ",
+  )}} from "${importPath}";  // plasmic-import: ${vg.uuid}/globalVariant`;
+}
+
+export function serializeVariantGroupMembersType(vg: VariantGroup) {
+  return vg.variants.map((v) => jsString(toVarName(v.name))).join(" | ");
+}
+
+export function extractUsedGlobalVariantsForComponents(
+  site: Site,
+  components: Component[],
+  usePlasmicImg: boolean,
+  allTokensDict?: Readonly<{ [uuid: string]: FinalToken<StyleToken> }>,
+) {
+  const usedGlobalVariants = new Set<Variant>();
+  for (const component of components) {
+    xAddAll(
+      usedGlobalVariants,
+      extractUsedGlobalVariantsForNodes(
+        site,
+        flattenComponent(component),
+        usePlasmicImg,
+      ),
+    );
+  }
+
+  xAddAll(
+    usedGlobalVariants,
+    extractUsedGlobalVariantsForTokens(
+      extractUsedTokensForComponents(site, components, {
+        expandMixins: true,
+        // We need to deref tokens also so that if this component uses a token
+        // that references another token, and _that_ token varies by global
+        // variant, then this component also needs to know when that global
+        // variant changes, to apply the right styles on the root element.
+        derefTokens: true,
+        allTokensDict,
+      }),
+      site,
+      allTokensDict,
+    ),
+  );
+  return usedGlobalVariants;
+}
+
+export function extractUsedGlobalVariantsForNodes(
+  site: Site,
+  nodes: TplNode[],
+  usePlasmicImg: boolean,
+) {
+  const usedGlobalVariants = new Set<Variant>();
+  const siteGlobalVariantGroups = allGlobalVariantGroups(site, {
+    includeDeps: "all",
+    excludeEmpty: true,
+    excludeInactiveScreenVariants: true,
+  });
+  for (const node of nodes) {
+    if (isTplVariantable(node)) {
+      for (const vs of node.vsettings) {
+        for (const v of getUsedGlobalVariantsForNonCss(
+          vs,
+          node,
+          usePlasmicImg,
+        )) {
+          if (
+            v.parent &&
+            isGlobalVariantGroup(v.parent) &&
+            siteGlobalVariantGroups.includes(v.parent)
+          ) {
+            usedGlobalVariants.add(v);
+          }
+        }
+      }
+    }
+  }
+  return usedGlobalVariants;
+}
+
+export function getUsedGlobalVariantsForNonCss(
+  vs: VariantSetting,
+  tpl: TplNode,
+  usePlasmicImg: boolean,
+) {
+  return vs.variants.filter((v) => {
+    if (isGlobalVariant(v)) {
+      const vg = v.parent;
+      if (vg && vg.type === "global-screen") {
+        const exp = createExpandedRuleSetMerger(
+          makeLayoutAwareRuleSet(vs.rs, false),
+          tpl,
+        );
+        // For GlobalScreen variants, we only add it as used if it contains
+        // non-css changes
+        if (
+          !!vs.text ||
+          !!vs.dataCond ||
+          !L.isEmpty(vs.attrs) ||
+          !L.isEmpty(vs.args)
+        ) {
+          return true;
+        }
+        if (
+          usePlasmicImg &&
+          isTplTag(tpl) &&
+          tpl.tag === "img" &&
+          plasmicImgAttrStyles.some((p) => exp.has(p))
+        ) {
+          return true;
+        }
+      } else {
+        // For all other Global variants, we always add as used, as they need
+        // to be explicitly toggled on and off, and we only know what is
+        // on and off by reading from the context.
+        return true;
+      }
+    }
+    return false;
+  });
+}
+
+export function serializeVariantArgsGroupType(vg: VariantGroup) {
+  const membersType = serializeVariantGroupMembersType(vg);
+  if (vg.variants.length === 0) {
+    return "never";
+  } else if (vg.multi) {
+    return `MultiChoiceArg<${membersType}>`;
+  } else if (
+    vg.variants.length === 1 &&
+    toVarName(vg.param.variable.name) === toVarName(vg.variants[0].name)
+  ) {
+    return `SingleBooleanChoiceArg<${membersType}>`;
+  } else {
+    return `SingleChoiceArg<${membersType}>`;
+  }
+}
+
+export function serializeVariantsArgsTypeContent(vgs: VariantGroup[]) {
+  if (vgs.length === 0) {
+    return "{}";
+  }
+
+  return `{
+    ${vgs
+      .map(
+        (vg) =>
+          `${toVarName(
+            vg.param.variable.name,
+          )}?: ${serializeVariantArgsGroupType(vg)}`,
+      )
+      .join("\n")}
+  }`;
+}

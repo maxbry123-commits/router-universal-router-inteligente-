@@ -1,0 +1,25 @@
+.root {
+  display: inline-flex;
+  flex-direction: row;
+  position: relative;
+  width: auto;
+  height: auto;
+  column-gap: 4px;
+}
+.rootmedium {
+  align-items: center;
+}
+.icon {
+  position: relative;
+  object-fit: cover;
+  width: 1rem;
+  height: 1rem;
+  color: var(--token-fVn5vRhXJxQ);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.iconmedium {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}

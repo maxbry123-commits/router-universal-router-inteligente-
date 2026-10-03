@@ -1,0 +1,410 @@
+import {
+  MentionableResources,
+  findMissingMentions,
+  getMentionUiId,
+  mkMentionableResources,
+} from "@/wab/client/components/copilot/resource-mention-utils";
+import { usePreviewCtx } from "@/wab/client/components/live/PreviewCtx";
+import { isAnyModalOpen } from "@/wab/client/components/widgets/open-modals";
+import { COPILOT_TOOLS } from "@/wab/client/copilot";
+import { fileDragMonitor } from "@/wab/client/file-drag/file-drag-monitor";
+import {
+  CopilotToolCallResult,
+  HostFrameApi,
+} from "@/wab/client/frame-ctx/host-frame-api";
+import { useHostFrameCtx } from "@/wab/client/frame-ctx/host-frame-ctx";
+import {
+  StudioAppUser,
+  StudioCtx,
+  useStudioCtx,
+} from "@/wab/client/studio-ctx/StudioCtx";
+import type { ViewCtx } from "@/wab/client/studio-ctx/view-ctx";
+import { ApiBranch, ArenaRef } from "@/wab/shared/ApiSchema";
+import {
+  getArenaRef,
+  isComponentArena,
+  isPageArena,
+} from "@/wab/shared/Arenas";
+import { findAllDataSourceOpExprForComponent } from "@/wab/shared/cached-selectors";
+import { getNormalizedComponentName } from "@/wab/shared/codegen/react-p/serialize-utils";
+import {
+  filterFalsy,
+  jsonClone,
+  maybe,
+  spawn,
+  withoutNils,
+} from "@/wab/shared/common";
+import type { AiOutputFormat } from "@/wab/shared/copilot/copilot-tool-types";
+import {
+  isFrameComponent,
+  isPageComponent,
+  isReusableComponent,
+} from "@/wab/shared/core/components";
+import { formatErrorMessage } from "@/wab/shared/error-handling";
+import { Component } from "@/wab/shared/model/classes";
+import { notification } from "antd";
+import { sortBy } from "lodash";
+import { autorun, computed } from "mobx";
+import { observer } from "mobx-react";
+import { ok } from "neverthrow";
+import React from "react";
+import { mutate as swrMutate } from "swr";
+
+import { useTopFrameApi } from "@/wab/client/contexts/AppContexts";
+import { LocalizationConfig } from "@/wab/shared/localization";
+
+export interface TopFrameObserverProps {
+  preview?: boolean;
+}
+
+function notifyMentionedResourceGone() {
+  notification.info({
+    message: "That resource no longer exists",
+    description: "It may have been deleted since it was mentioned.",
+  });
+}
+
+function trackArtboardFileDrags(studioCtx: StudioCtx): () => void {
+  const untrackByViewCtx = new Map<ViewCtx, () => void>();
+  const dispose = autorun(() => {
+    const viewCtxs = new Set(studioCtx.viewCtxs);
+    for (const [vc, untrack] of untrackByViewCtx) {
+      if (!viewCtxs.has(vc)) {
+        untrack();
+        untrackByViewCtx.delete(vc);
+      }
+    }
+    for (const vc of viewCtxs) {
+      if (!untrackByViewCtx.has(vc)) {
+        untrackByViewCtx.set(
+          vc,
+          fileDragMonitor.addWindowListeners(vc.canvasCtx.win()),
+        );
+      }
+    }
+  });
+  return () => {
+    dispose();
+    untrackByViewCtx.forEach((untrack) => untrack());
+  };
+}
+
+export const TopFrameObserver = observer(function _TopFrameObserver({
+  preview,
+}: TopFrameObserverProps) {
+  const hostFrameCtx = useHostFrameCtx();
+  const studioCtx = useStudioCtx();
+  const previewCtx = usePreviewCtx();
+  const topFrameApi = useTopFrameApi();
+
+  const hostFrameApi = React.useMemo<HostFrameApi>(
+    () => ({
+      switchLeftTab: async (tabKey, opts) =>
+        studioCtx.switchLeftTab(tabKey, opts),
+      refreshSiteInfo: async () => {
+        await studioCtx.refreshSiteInfo();
+      },
+      calculateNextPublishVersion: async () => {
+        const next = await studioCtx.calculateNextPublishVersion();
+        return next
+          ? {
+              changeLog: next.changeLog,
+              version: next.version,
+              releaseType: next.releaseType,
+            }
+          : undefined;
+      },
+      getLatestPublishedVersionId: async () => studioCtx.releases[0]?.id,
+      getProjectReleases: async (opts) => studioCtx.getProjectReleases(opts),
+      publishVersion: async (versionTags, versionDesc, branchId) =>
+        studioCtx.publish(versionTags, versionDesc, branchId),
+      focusOnWindow: async () => {
+        window.focus();
+      },
+      forwardShortcut: async ({
+        code,
+        ctrlKey,
+        key,
+        metaKey,
+        shiftKey,
+        keyCode,
+      }) => {
+        document.body.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            code,
+            ctrlKey,
+            key,
+            metaKey,
+            shiftKey,
+            keyCode,
+          }),
+        );
+        document.body.dispatchEvent(
+          new KeyboardEvent("keypress", {
+            code,
+            ctrlKey,
+            key,
+            metaKey,
+            shiftKey,
+            keyCode,
+          }),
+        );
+      },
+      updateLocalizationProjectFlags: async (
+        localization,
+        keyScheme,
+        tagPrefix,
+      ) => {
+        await studioCtx.change(() => {
+          studioCtx.site.flags.usePlasmicTranslation = localization;
+          if (keyScheme && localization) {
+            studioCtx.site.flags.keyScheme = keyScheme;
+            studioCtx.site.flags.tagPrefix = tagPrefix;
+          } else {
+            studioCtx.site.flags.keyScheme = undefined;
+            studioCtx.site.flags.tagPrefix = undefined;
+          }
+          notification.info({
+            message: `Localization is now ${
+              studioCtx.site.flags.usePlasmicTranslation ? "on" : "off"
+            }`,
+          });
+          return ok();
+        });
+      },
+      async switchToBranch(branch: ApiBranch | undefined): Promise<void> {
+        await studioCtx.switchToBranch(branch);
+      },
+      async mutateSWRKeys(keys: string[]): Promise<void> {
+        await Promise.all(keys.map((key) => swrMutate(key)));
+      },
+      async getUsedRolesInProject(): Promise<
+        { component: string; roleId: string }[]
+      > {
+        const roleUsage: { component: string; roleId: string }[] = [];
+        for (const component of studioCtx.site.components) {
+          if (isPageComponent(component)) {
+            if (component.pageMeta?.roleId) {
+              roleUsage.push({
+                component: component.name,
+                roleId: component.pageMeta.roleId,
+              });
+            }
+          }
+
+          const componentDataOps =
+            findAllDataSourceOpExprForComponent(component);
+          for (const componentDataOp of componentDataOps) {
+            if (componentDataOp?.roleId) {
+              roleUsage.push({
+                component: component.name,
+                roleId: componentDataOp.roleId,
+              });
+            }
+          }
+        }
+        return roleUsage;
+      },
+      async setDefaultPageRoleId(
+        roleId: string | null | undefined,
+      ): Promise<void> {
+        await studioCtx.change(() => {
+          studioCtx.site.defaultPageRoleId = roleId;
+          return ok();
+        });
+      },
+      async logAsAppUser(appUser: StudioAppUser): Promise<void> {
+        await studioCtx.logAsAppUser(appUser);
+        await studioCtx.refreshAppUserProperties();
+      },
+      async handleBranchMerged(): Promise<void> {
+        await studioCtx.handleBranchMerged();
+      },
+      async waitForStudioReady(): Promise<void> {
+        await studioCtx.awaitStudioReady();
+      },
+      async blockChanges(): Promise<void> {
+        studioCtx.blockChanges = true;
+      },
+      async executeCopilotToolCall(
+        toolName: string,
+        toolArgs: Record<string, unknown>,
+      ): Promise<CopilotToolCallResult> {
+        const copilotTool = COPILOT_TOOLS[toolName];
+
+        if (!copilotTool) {
+          return {
+            success: false,
+            error: {
+              message: `AI tool "${toolName}" not found.`,
+              type: "TOOL_NOT_FOUND",
+            },
+          };
+        }
+
+        try {
+          const output = await copilotTool.execute(studioCtx, toolArgs);
+          return { success: true, output };
+        } catch (err) {
+          return {
+            success: false,
+            error: {
+              message: formatErrorMessage(err),
+              type: "EXECUTION_FAILED",
+            },
+          };
+        }
+      },
+      async setPreferredAiOutputFormat(format: AiOutputFormat): Promise<void> {
+        studioCtx.setPreferredAiOutputFormat(format);
+      },
+      /**
+       * List the project resources that can be `@`-mentioned in Copilot Chat.
+       */
+      async listMentionableResources(): Promise<MentionableResources> {
+        const viewCtx = studioCtx.focusedViewCtx();
+        return mkMentionableResources({
+          site: studioCtx.site,
+          focusedComponent: viewCtx?.currentComponent(),
+          selectedTpls: withoutNils(viewCtx?.focusedTpls() ?? []),
+          getDepName: (dep) =>
+            studioCtx.projectDependencyManager.getNiceDepName(dep),
+        });
+      },
+      async getCurrentArena(): Promise<ArenaRef | undefined> {
+        return maybe(studioCtx.currentArena, getArenaRef);
+      },
+      async findMissingMentions(text: string): Promise<string[]> {
+        return findMissingMentions(text, studioCtx.site);
+      },
+      async navigateToMentionedResource(kind, uuid): Promise<void> {
+        const uiId = getMentionUiId(kind, uuid, studioCtx.site);
+        if (!uiId) {
+          notifyMentionedResourceGone();
+          return;
+        }
+        studioCtx.uiActionBus.dispatch(uiId, "jump");
+      },
+      async onFileDragEventInTop(event): Promise<void> {
+        fileDragMonitor.onRemoteEvent(event);
+      },
+    }),
+    [studioCtx],
+  );
+
+  React.useEffect(() => {
+    hostFrameCtx.onHostFrameApiReady(hostFrameApi);
+  }, [hostFrameApi]);
+
+  React.useEffect(() => trackArtboardFileDrags(studioCtx), [studioCtx]);
+  React.useEffect(
+    () =>
+      fileDragMonitor.subscribeRemote((event) =>
+        spawn(topFrameApi.onFileDragEventInHost(event)),
+      ),
+    [topFrameApi],
+  );
+
+  React.useEffect(() => {
+    const dispose = autorun(() => {
+      spawn(topFrameApi.setStudioModalOpen(isAnyModalOpen()));
+    });
+    return () => {
+      dispose();
+      spawn(topFrameApi.setStudioModalOpen(false));
+    };
+  }, [topFrameApi]);
+
+  React.useEffect(() => {
+    const noComponents = computed(
+      () =>
+        studioCtx.site.components.filter((c) => !isFrameComponent(c)).length ===
+        0,
+    );
+
+    // Get either (in descending preference):
+    //
+    // - the currently viewed or selected page/component (if mixed arena),
+    // - the page at /,
+    // - the first page lexicographically (by name),
+    // - the first component lexicographically,
+    // - or else undefined.
+    const subjectComponent = computed(
+      (): undefined | Component =>
+        [
+          isPageArena(studioCtx.currentArena)
+            ? studioCtx.currentArena.component
+            : isComponentArena(studioCtx.currentArena)
+              ? studioCtx.currentArena.component
+              : studioCtx.focusedViewCtx()?.component,
+          studioCtx.site.components.find(
+            (c) => isPageComponent(c) && c.pageMeta.path === "/",
+          ),
+          sortBy(
+            studioCtx.site.components.filter((c) => isPageComponent(c)),
+            (c) => c.name.toLowerCase(),
+          )[0],
+          sortBy(
+            studioCtx.site.components.filter((c) => isReusableComponent(c)),
+            (c) => c.name.toLowerCase(),
+          )[0],
+        ].filter(Boolean)[0],
+    );
+
+    const disposes = filterFalsy([
+      autorun(() => {
+        spawn(
+          topFrameApi.setPrimitiveValues({
+            noComponents: noComponents.get(),
+            revisionNum: studioCtx.revisionNum,
+            isLocalizationEnabled: !!studioCtx.site.flags.usePlasmicTranslation,
+            defaultPageRoleId: studioCtx.site.defaultPageRoleId,
+            localizationScheme: !!studioCtx.site.flags.keyScheme
+              ? ({
+                  keyScheme: studioCtx.site.flags.keyScheme,
+                  tagPrefix: studioCtx.site.flags.tagPrefix,
+                } as LocalizationConfig)
+              : undefined,
+          }),
+        );
+      }),
+      autorun(() => {
+        spawn(
+          topFrameApi.setLatestPublishedVersionData(
+            studioCtx.releases.length > 0 && studioCtx.releases[0].revisionId
+              ? {
+                  revisionId: studioCtx.releases[0].revisionId,
+                  version: studioCtx.releases[0].version,
+                }
+              : undefined,
+          ),
+        );
+      }),
+      autorun(() => {
+        const subjectComp = subjectComponent.get();
+        const componentInfo = subjectComp
+          ? {
+              pathOrComponent:
+                subjectComp.pageMeta?.path ??
+                getNormalizedComponentName(subjectComp),
+              componentName: getNormalizedComponentName(subjectComp),
+            }
+          : undefined;
+
+        spawn(topFrameApi.setSubjectComponentInfo(componentInfo));
+      }),
+      studioCtx.showBranching() &&
+        autorun(() => {
+          const branchInfo = studioCtx.dbCtx().branchInfo;
+          spawn(
+            topFrameApi.setActivatedBranch(
+              jsonClone(branchInfo ?? null) ?? undefined,
+            ),
+          );
+        }),
+    ]);
+    return () => disposes.forEach((f) => f());
+  }, [studioCtx, previewCtx, preview, topFrameApi]);
+
+  return null;
+});

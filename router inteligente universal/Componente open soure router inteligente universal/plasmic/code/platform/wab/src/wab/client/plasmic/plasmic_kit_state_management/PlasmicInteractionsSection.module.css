@@ -1,0 +1,41 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  align-items: center;
+  min-width: 0;
+}
+.freeBox {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  row-gap: 12px;
+  min-width: 0;
+  padding: 0px;
+}
+.handlerRow__zI5N2:global(.__wab_instance) {
+  position: relative;
+}
+.actionChip__n4HD:global(.__wab_instance) {
+  position: relative;
+}
+.handlerRow__n4Znq:global(.__wab_instance) {
+  position: relative;
+}
+.actionChip__wi95R:global(.__wab_instance) {
+  position: relative;
+}
+.handlerRow__hcLpt:global(.__wab_instance) {
+  position: relative;
+}
+.actionChip__ld50P:global(.__wab_instance) {
+  position: relative;
+}

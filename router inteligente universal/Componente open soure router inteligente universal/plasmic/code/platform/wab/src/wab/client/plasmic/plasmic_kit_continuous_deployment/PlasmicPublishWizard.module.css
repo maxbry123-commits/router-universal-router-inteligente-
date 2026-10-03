@@ -1,0 +1,128 @@
+.root {
+  display: inline-flex;
+  flex-direction: column;
+  position: relative;
+  width: auto;
+  height: auto;
+}
+.freeBox__nOs1D {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  max-width: 320px;
+  background: var(--token-iR8SeEwQZ);
+  column-gap: 8px;
+  border-radius: 4px;
+  padding: 16px;
+}
+.img {
+  position: relative;
+  object-fit: cover;
+  align-self: flex-start;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.img > picture > img {
+  object-fit: cover;
+}
+.freeBox__ybcji {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  row-gap: 16px;
+  min-width: 0;
+}
+.freeBox__q75N {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  column-gap: 12px;
+}
+.freeBox__nblJd {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  row-gap: 4px;
+}
+.text__qzEe {
+  font-weight: 500;
+}
+.text__xWr3 {
+  position: relative;
+  color: var(--token-t68i-MG5Bw);
+}
+.closeButton:global(.__wab_instance) {
+  position: relative;
+  flex-shrink: 0;
+}
+.svg__ldxfz {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  height: 1em;
+}
+.svg__rgZf {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  color: var(--token-UunsGa2Y3t3);
+  height: 1em;
+}
+.freeBox___7H4GJ {
+  display: flex;
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  align-self: flex-end;
+  column-gap: 8px;
+}
+.laterButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__wi8N {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.text___0QRy {
+  height: auto;
+  color: var(--token-UunsGa2Y3t3);
+  font-weight: 400;
+}
+.svg__lexrD {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 1em;
+}
+.connectButton:global(.__wab_instance) {
+  position: relative;
+}
+.svg__sijl {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}
+.svg__dqvOq {
+  display: flex;
+  position: relative;
+  object-fit: cover;
+  width: 16px;
+  height: 16px;
+}

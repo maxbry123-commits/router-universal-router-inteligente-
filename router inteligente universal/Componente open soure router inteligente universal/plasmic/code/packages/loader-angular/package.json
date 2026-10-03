@@ -1,0 +1,9 @@
+{
+  "name": "@plasmicapp/loader-angular",
+  "description": "(DEPRECATED) Plasmic loader SDK for Angular",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasmicapp/plasmic.git",
+    "directory": "packages/loader-angular"
+  }
+}

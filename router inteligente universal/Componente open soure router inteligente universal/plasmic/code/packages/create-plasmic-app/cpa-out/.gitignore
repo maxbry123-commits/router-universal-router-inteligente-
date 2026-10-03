@@ -1,0 +1,22 @@
+# https://jasonstitt.com/gitignore-whitelisting-patterns
+# Ignore everything
+*
+# But descend into directories
+!*/
+
+# Whitelist - only add files that we want to track
+!/.gitignore
+!**/package.json
+!**/plasmic.json
+!**/jsconfig.json
+!**/tsconfig.json
+!**/*.css
+!**/*.js
+!**/*.jsx
+!**/*.mjs
+!**/*.ts
+!**/*.tsx
+
+# for tanstack start
+.tanstack/
+.nitro/

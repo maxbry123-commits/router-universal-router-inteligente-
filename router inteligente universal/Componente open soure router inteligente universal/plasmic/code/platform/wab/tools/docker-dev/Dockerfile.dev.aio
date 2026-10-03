@@ -1,0 +1,61 @@
+# --- Build stage ---
+FROM node:24-alpine AS builder
+
+WORKDIR /plasmic
+
+# Install system deps
+RUN apk add --no-cache \
+    bash \
+    git \
+    curl \
+    wget \
+    python3 \
+    py3-pip \
+    postgresql-client \
+    build-base
+
+# pnpm via corepack; versions are pinned by the "packageManager" fields in the
+# repo root and platform/ package.jsons.
+RUN corepack enable pnpm
+
+# The repo root and platform/ are both pnpm workspaces, which need every
+# member's package.json to install, so there is no useful manifest-only copy
+# for layer caching; copy everything up front.
+COPY . .
+
+# Secrets setup and build tools
+RUN mkdir -p /tmp/.plasmic && \
+    cp platform/wab/tools/docker-dev/secrets.json /tmp/.plasmic/secrets.json && \
+    pnpm setup && \
+    pnpm setup:canvas-packages
+
+# --- Final stage ---
+FROM node:24-alpine
+
+# Create non-root user and prepare env
+RUN addgroup -S plasmic && \
+    adduser -S plasmic -G plasmic && \
+    apk add --no-cache git jq bash && \
+    corepack enable pnpm && \
+    echo "fs.inotify.max_user_watches=524288" >> /etc/sysctl.conf && \
+    sysctl -p && \
+    mkdir -p $HOME && \
+    chown -R plasmic:plasmic $HOME
+
+USER plasmic
+
+WORKDIR /plasmic/platform/wab
+
+# Copy built app and secrets with correct ownership
+COPY --chown=plasmic:plasmic --from=builder /plasmic /plasmic
+COPY --chown=plasmic:plasmic --from=builder /tmp/.plasmic /home/plasmic/.plasmic
+
+EXPOSE 3003 3004 3005
+
+ENTRYPOINT ["sh", "-c"]
+CMD [" jq '(.host = \"plasmic-db\") | (.password //= \"SEKRET\")' ormconfig.json > tmp.json && mv tmp.json ormconfig.json && \
+    pnpm typeorm migration:run && \
+    pnpm seed && \
+    cd /plasmic && \
+    pnpm dev \
+"]
