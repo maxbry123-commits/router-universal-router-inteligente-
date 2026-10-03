@@ -1,0 +1,46 @@
+schema: yaiwes.cierre-equipo-5/v1
+modo: CERRADO            # ningún nodo termina en "preguntar", "escalar" ni "BLOQUEADO"
+manda_sobre: [ronda_actual, "las 3 primeras PENDIENTE", HANDOFF-EQUIPO-5-SOL-3.md]
+reglas: "chat router/03-ESTADO/EQUIPOS/REGLAS-DURAS.md (todas)"
+
+# ------------------------------------------------------------
+# POR QUÉ DIO 404 (ya resuelto, no investigues)
+# ------------------------------------------------------------
+origenes_exactos:
+  claude-mem:    "https://github.com/thedotmack/claude-mem        (rama main, licencia Apache-2.0)"
+  shadcn-skills: "https://github.com/mattbx/shadcn-skills         (rama main, licencia MIT). NO uses shadcn-labs/skills: es otro repo"
+descarga: "SOLO con el motor de descarga y extracción de main (motor_2 + motor_3), al destino 'router inteligente universal/Componente open soure router inteligente universal/<slug>/'. Sin código nuevo."
+
+# ------------------------------------------------------------
+# DAG: 3 tareas, en este orden. Commit y push al cerrar CADA una.
+# ------------------------------------------------------------
+dag:
+  T1_C-04:
+    repo: claude-mem            # grupo contexto
+    hace: ["descarga desde el origen exacto", "contrato de herramienta (capacidad) + skills_schema <slug>.dag.yaml copiando el formato de uno existente", "1 prueba real de contrato ok=true"]
+  T2_C-05:
+    repo: shadcn-skills         # grupo diseño 1
+    hace: ["descarga desde el origen exacto", "skills_schema <slug>.dag.yaml (es skill, no herramienta)", "1 prueba real de contrato ok=true"]
+  T3_C-07:                      # grupo método, 5 repos, mismo procedimiento que usaste en C-03 y C-06
+    repos: [superpowers, get-shit-done, find-skills, local-ultra-review, one-skill-to-rule-them-all]
+    hace: ["para cada repo: usa el origen que ya registró motor_2 en queue.json (si dio 404, busca el nombre exacto con la API de búsqueda de GitHub y toma el de más estrellas con nombre idéntico)", "skills_schema + capacidad solo si C-02 lo clasificó como herramienta", "1 prueba de contrato por grupo"]
+
+# ------------------------------------------------------------
+# CÓMO SE CIERRA SIEMPRE (sin gaps, sin excusas)
+# ------------------------------------------------------------
+estados_permitidos: [CERRADO, CERRADO_REF]
+regla_cierre:
+  - "CERRADO: contrato registrado y prueba ok=true."
+  - "CERRADO_REF: si tras 1 reintento el origen sigue sin bajar (404, 451/DMCA, privado), la tarea se cierra clasificando el repo como 'solo referencia' en tu JSON (campo 'motivo' de una línea). Cuenta como cierre. NO existe BLOQUEADO para ti."
+  - "Un repo que falla NUNCA frena a los demás del grupo: sigues con el siguiente."
+no_pisar_a_otros:
+  git: "antes de CADA push: git pull --rebase. Empuja solo tus rutas. Si hay conflicto: pull --rebase y 1 reintento; si sigue, deja tus entradas en tu JSON y sigue."
+  orchestrator_adapters.py: "Sol 1 también agrega capacidades. Solo AGREGAS entradas nuevas al final del diccionario, con un comentario '# EQUIPO-5'. No cambies ni reordenes nada existente."
+  prohibido_editar: ["ROOT-MAP-T11.yaml", "chat router/01-PLAN/ (Sol 7 mueve archivos)", "cualquier EQUIPO-N-*.json que no sea EQUIPO-5-SOL-3.json"]
+
+# ------------------------------------------------------------
+# SALIDA ÚNICA
+# ------------------------------------------------------------
+salida: "una línea por tarea: C-0X | CERRADO|CERRADO_REF | commit <sha7>    — NADA MÁS: sin gaps, sin explicación, sin comentarios"
+escribir_resultado: "entrada por tarea en resultado[] con el esquema; estado en cola (CERRADO o CERRADO_REF); línea en bitacora; handoff actualizado. 1 commit por tarea."
+prohibido_siempre: [preguntar, escalar, esperar, explicar, BLOQUEADO, Hugging Face, GitHub Actions, LFS git, tocar el router, escribir código nuevo, verificar de más]
