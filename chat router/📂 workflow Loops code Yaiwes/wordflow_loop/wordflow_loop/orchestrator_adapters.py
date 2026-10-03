@@ -86,6 +86,11 @@ COMPONENT_CAPABILITIES: dict[str, dict[str, Any]] = {
                   "forbidden": ("authority_transfer", "uncontrolled_context_write"),
                   "command_env": "YAIWES_MAGIC_MCP_COMMAND"},
 
+    # EQUIPO-5
+    "find_skills": {"provides": "agent_skill_discovery_install",
+                    "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+                    "command_env": "YAIWES_FIND_SKILLS_COMMAND"},
+
 }
 
 
