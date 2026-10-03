@@ -1,0 +1,93 @@
+{
+  "bundle_bytes": 139905315,
+  "bundle_sha256": "945108fea89b4338eda9985a0e3b27c2461999e56a94f31fba7de0b16bbf966d",
+  "extracted_tree": {
+    "bytes": 162219096,
+    "files": 1859,
+    "sha256": "4d06a81e65cac1c14a9f2e1c95771cd0cebc61585a7b69a437ef6cdbcd825a01"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0001",
+      "sha256": "bb81bc2ffeb805188e09e693a36f7e88e59466c863f9c185a0f5c77d13a61ab5"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0002",
+      "sha256": "09daf4dba02f1db3b30c255b6c0f39a77880a6ba1c59c72a50ff5e6503819ed4"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0003",
+      "sha256": "9709558c97698ce51b55df9b94cbbad736b1551d85709c0a98268fa281224883"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0004",
+      "sha256": "05317b10ed1fea2a49e7ed52d1721f9d6d81a6695ffcdbcf0d1bcd42a196a5c5"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0005",
+      "sha256": "fd1ff52822f1d2d5880dec434feca14bec28205f2205f0f8afef66b740621e8a"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0006",
+      "sha256": "d8d1d2126d180d680ed73d4a001d48f313fe705d56135e410bb9d6cedc3f7a61"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0007",
+      "sha256": "1455f69bee5057f3df86f375f3f8432697a5fe6f8f38ec7d3c815a2750e1ea63"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0008",
+      "sha256": "ac267a60e407d56973cbb65ce3882abe26fcebe19ee87bbeb4836347e6837594"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0009",
+      "sha256": "fa81c296d88de55b6481ca3e100066afb97ba87ec803d277a4755f1d3a957635"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0010",
+      "sha256": "9b2f37cd10998e184d7301130d0486927cba9edf9173287fd1e2e3aba47ce68d"
+    },
+    {
+      "bytes": 12582912,
+      "name": "claude-mem.bundle.zip.part-0011",
+      "sha256": "b602184a6e5669069c69b0de9acf17c99407addfc157d87512cc63d9b6fca731"
+    },
+    {
+      "bytes": 1493283,
+      "name": "claude-mem.bundle.zip.part-0012",
+      "sha256": "cb3baf5c9c0922f69894e263ccc3407a7cb85e2d7d8e59c59c87297ca067b59f"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    "openclaw/skills/do/SKILL.md",
+    "openclaw/skills/make-plan/SKILL.md"
+  ],
+  "skipped_special_count": 2,
+  "slug": "claude-mem",
+  "source_bytes": 162219096,
+  "source_commit": "d87aff19ad1b0763ba88221f76bacd0774c6da80",
+  "source_files": 1859,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/thedotmack/claude-mem",
+  "source_tree": {
+    "bytes": 162219096,
+    "files": 1859,
+    "sha256": "4d06a81e65cac1c14a9f2e1c95771cd0cebc61585a7b69a437ef6cdbcd825a01"
+  }
+}

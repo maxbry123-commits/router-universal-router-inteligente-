@@ -1,0 +1,284 @@
+/**
+ * Retry helper that consumes ClassifiedProviderError.kind to decide whether to
+ * retry. Pattern adapted from open-agent-sdk's retry.ts (MIT) — exponential
+ * backoff with jitter, but driven by classified error kinds, not raw HTTP
+ * status codes.
+ *
+ * Used by GeminiProvider + OpenRouterProvider for fetch retries. Cap retries
+ * at 2 because POSTs to these APIs aren't strictly idempotent; we honor a
+ * provider-supplied request-id (best-effort) for dedup.
+ */
+
+import { ClassifiedProviderError, DEADLINE_EXCEEDED_CODE, isClassified } from './provider-errors.js';
+import { logger } from '../../utils/logger.js';
+import { DEFAULT_LLM_TIMEOUT_MS, SettingsDefaultsManager } from '../../shared/SettingsDefaultsManager.js';
+import { USER_SETTINGS_PATH } from '../../shared/paths.js';
+import { FIELD_OPTIMIZE_TIMEOUT_MS } from './field-optimizer.js';
+
+/**
+ * Parse Retry-After header (seconds or HTTP-date).
+ * Returns ms or undefined.
+ */
+export function parseRetryAfterMs(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (!Number.isNaN(seconds) && seconds >= 0) {
+    return Math.floor(seconds * 1000);
+  }
+  const dateMs = Date.parse(value);
+  if (!Number.isNaN(dateMs)) {
+    const delta = dateMs - Date.now();
+    return delta > 0 ? delta : 0;
+  }
+  return undefined;
+}
+
+export interface RetryOptions {
+  /** Maximum retry attempts (in addition to the initial attempt). Cap=2 by default for non-idempotent POSTs. */
+  maxRetries?: number;
+  /** Per-attempt timeout in ms. Default: CLAUDE_MEM_LLM_TIMEOUT_MS (resolveLlmTimeoutMs). */
+  perAttemptTimeoutMs?: number;
+  /** Base delay used for exponential backoff. Default 100ms. */
+  baseDelayMs?: number;
+  /** Cap for backoff delay. Default 30s. */
+  maxDelayMs?: number;
+  /** Tag for logging. */
+  label?: string;
+  /** External abort signal. */
+  abortSignal?: AbortSignal;
+  /**
+   * Classified kinds this call must NOT retry, even when `isRetryableKind`
+   * would.
+   *
+   * Exists for multi-key rotation. `rate_limit` is retryable against one key —
+   * waiting out a per-minute window is the right move when that key is all
+   * there is. With a pool it is the wrong move: the caller has another key that
+   * is not rate limited, and honoring `retryAfterMs` twice first spends the
+   * window it was trying to avoid. The pool wrapper passes the rotate-worthy
+   * kinds here so they reach it after the first failed request, while
+   * `transient` keeps retrying in place.
+   */
+  nonRetryableKinds?: readonly string[];
+}
+
+/** Bounds shared with the other CLAUDE_MEM_*_TIMEOUT_MS settings. */
+export const MAX_LLM_TIMEOUT_MS = 300_000;
+const LLM_TIMEOUT_BOUNDS = { min: 500, max: MAX_LLM_TIMEOUT_MS } as const;
+
+/**
+ * Bounds-check one CLAUDE_MEM_*_TIMEOUT_MS value (env or settings.json).
+ *
+ * Complete integer only. parseInt('90000ms') would silently accept a typo
+ * as 90000 — Greptile reproduced that on #3808. settings.json values come
+ * back as parsed JSON, so a bare number (90000) arrives as a number, not a
+ * string. Only a string or a number is accepted: String([90000]) would read
+ * as "90000". A falsy value (unset, empty) falls back without a warning.
+ *
+ * `fallbackMs` is the caller's own default, so each resolver keeps its default
+ * where the value lives instead of every caller inheriting one constant.
+ */
+function parseTimeoutMs(raw: unknown, keyName: string, fallbackMs: number): number {
+  if (!raw) return fallbackMs;
+  const trimmed = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '';
+  const parsed = /^\d+$/.test(trimmed) ? Number(trimmed) : Number.NaN;
+  if (
+    Number.isFinite(parsed)
+    && parsed >= LLM_TIMEOUT_BOUNDS.min
+    && parsed <= LLM_TIMEOUT_BOUNDS.max
+  ) {
+    return parsed;
+  }
+  logger.warn('SDK', `Invalid ${keyName}, using default`, {
+    value: raw,
+    min: LLM_TIMEOUT_BOUNDS.min,
+    max: LLM_TIMEOUT_BOUNDS.max,
+  });
+  return fallbackMs;
+}
+
+/**
+ * Per-attempt deadline for a provider request.
+ *
+ * The deadline catches a hung request; it must sit above normal latency, or it
+ * abandons work the backend already computed — and, on a metered backend, work
+ * that can still be billed. The old 30s did exactly that twice over: an Ollama
+ * backend measured a p99 of 29.8s (#3794), and the cmem.ai gateway runs p90
+ * 40–72s, p99 ~100–140s, so ~20% of its served requests were cut off. The
+ * default (DEFAULT_LLM_TIMEOUT_MS) now clears that tail; see its note.
+ *
+ * Resolved like every other CLAUDE_MEM_* setting — env override first, then
+ * ~/.claude-mem/settings.json — and on every call, so a settings change takes
+ * effect without a restart. Read here rather than through worker-utils'
+ * readTimeoutEnv, which pulls in the supervisor and telemetry.
+ */
+export function resolveLlmTimeoutMs(
+  env: NodeJS.ProcessEnv = process.env,
+  settingsPath: string = USER_SETTINGS_PATH,
+): number {
+  const raw = env.CLAUDE_MEM_LLM_TIMEOUT_MS
+    ?? SettingsDefaultsManager.loadFromFile(settingsPath, false).CLAUDE_MEM_LLM_TIMEOUT_MS;
+  return parseTimeoutMs(raw, 'CLAUDE_MEM_LLM_TIMEOUT_MS', DEFAULT_LLM_TIMEOUT_MS);
+}
+
+/**
+ * The remedy an expired deadline carries, naming the place the deadline is
+ * actually read from. Whenever the env var is set, resolveLlmTimeoutMs never
+ * reads settings.json (an unusable value falls back to the default, not to the
+ * file), so advising a settings.json edit then would change nothing.
+ */
+function llmTimeoutRemedy(): string {
+  return process.env.CLAUDE_MEM_LLM_TIMEOUT_MS === undefined
+    ? `Raise CLAUDE_MEM_LLM_TIMEOUT_MS in ~/.claude-mem/settings.json (up to ${LLM_TIMEOUT_BOUNDS.max}) if the backend is simply slow.`
+    : `Raise CLAUDE_MEM_LLM_TIMEOUT_MS (up to ${LLM_TIMEOUT_BOUNDS.max}) if the backend is simply slow. `
+      + 'It is set in your environment, which overrides ~/.claude-mem/settings.json, so change it there.';
+}
+
+/**
+ * Deadline for one oversized-field condensation pass (field-optimizer.ts).
+ *
+ * The field pass races a bounded model call against this deadline; on expiry
+ * the observation falls back to head/tail truncation, so a backend slower than
+ * the deadline silently loses field detail. The default is the observer
+ * request's (FIELD_OPTIMIZE_TIMEOUT_MS; see there for why).
+ * Resolved with the same env-first, then settings.json, per-call rules as
+ * resolveLlmTimeoutMs and sharing the same bounds, so it is reachable from
+ * configuration instead of being frozen in the shipped bundle.
+ */
+export function resolveFieldOptimizeTimeoutMs(
+  env: NodeJS.ProcessEnv = process.env,
+  settingsPath: string = USER_SETTINGS_PATH,
+): number {
+  const raw = env.CLAUDE_MEM_FIELD_OPTIMIZE_TIMEOUT_MS
+    ?? SettingsDefaultsManager.loadFromFile(settingsPath, false).CLAUDE_MEM_FIELD_OPTIMIZE_TIMEOUT_MS;
+  return parseTimeoutMs(raw, 'CLAUDE_MEM_FIELD_OPTIMIZE_TIMEOUT_MS', FIELD_OPTIMIZE_TIMEOUT_MS);
+}
+
+const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'label' | 'abortSignal' | 'perAttemptTimeoutMs' | 'nonRetryableKinds'>> = {
+  maxRetries: 2,
+  baseDelayMs: 100,
+  maxDelayMs: 30_000,
+};
+
+/** Returns true if a classified error is worth retrying. */
+export function isRetryableKind(err: unknown, nonRetryableKinds?: readonly string[]): boolean {
+  if (!isClassified(err)) {
+    // Unclassified errors are treated as transient (preserve old default).
+    return true;
+  }
+  if (nonRetryableKinds?.includes(err.kind)) return false;
+  return err.kind === 'transient' || err.kind === 'rate_limit';
+}
+
+/** Compute backoff delay: 100 * 2^attempt + random(50). Capped at maxDelayMs. */
+export function computeBackoffMs(attempt: number, opts: { baseDelayMs: number; maxDelayMs: number }): number {
+  const exponential = opts.baseDelayMs * Math.pow(2, attempt);
+  const jitter = Math.random() * 50;
+  return Math.min(exponential + jitter, opts.maxDelayMs);
+}
+
+/**
+ * Run `fn` with retry. `fn` receives an AbortSignal scoped to the current
+ * attempt's timeout. The classified error from `fn` (if any) drives the
+ * retry/no-retry decision. Honors `retryAfterMs` for rate_limit kind.
+ */
+export async function withRetry<T>(
+  fn: (attemptSignal: AbortSignal) => Promise<T>,
+  options: RetryOptions = {},
+): Promise<T> {
+  const opts = {
+    ...DEFAULT_OPTIONS,
+    ...options,
+    perAttemptTimeoutMs: options.perAttemptTimeoutMs ?? resolveLlmTimeoutMs(),
+  };
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
+    if (options.abortSignal?.aborted) {
+      throw new Error('Aborted');
+    }
+
+    // Per-attempt timeout via AbortController. Forward external aborts too.
+    const attemptController = new AbortController();
+    let deadlineExpired = false;
+    const timeoutHandle = setTimeout(() => {
+      deadlineExpired = true;
+      attemptController.abort();
+    }, opts.perAttemptTimeoutMs);
+    const onExternalAbort = () => attemptController.abort();
+    options.abortSignal?.addEventListener('abort', onExternalAbort, { once: true });
+
+    try {
+      return await fn(attemptController.signal);
+    } catch (err: unknown) {
+      lastError = err;
+
+      // Our own deadline, not a network blip. Retrying it in-loop against a
+      // backend that is already saturated is what turns a latency problem into
+      // a congestion collapse, so it throws immediately. It is still a
+      // transient condition: classified as such, the session preserves its
+      // buffered work for the next generator instead of finalizing with
+      // reason=null and dropping it. The code keeps it apart from a network
+      // fault — we abandoned a request the backend may still bill — and the
+      // action is the remedy the session-start warning shows for it.
+      if (deadlineExpired) {
+        throw new ClassifiedProviderError(
+          `${opts.label ?? 'Request'} exceeded the ${opts.perAttemptTimeoutMs}ms per-attempt deadline.`,
+          {
+            kind: 'transient',
+            code: DEADLINE_EXCEEDED_CODE,
+            action: llmTimeoutRemedy(),
+            cause: err,
+          },
+        );
+      }
+
+      if (!isRetryableKind(err, options.nonRetryableKinds)) {
+        throw err;
+      }
+
+      if (attempt === opts.maxRetries) {
+        throw err;
+      }
+
+      // Honor retryAfterMs from rate_limit errors; otherwise exponential backoff.
+      let delayMs: number;
+      if (isClassified(err) && err.kind === 'rate_limit' && err.retryAfterMs !== undefined) {
+        delayMs = err.retryAfterMs;
+      } else {
+        delayMs = computeBackoffMs(attempt, { baseDelayMs: opts.baseDelayMs, maxDelayMs: opts.maxDelayMs });
+      }
+
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.warn('SDK', `Retrying ${opts.label ?? 'fetch'} after ${delayMs}ms (attempt ${attempt + 1}/${opts.maxRetries})`, {
+        kind: isClassified(err) ? err.kind : 'unclassified',
+        message: errMsg.substring(0, 200),
+      });
+      // Abort-aware sleep: an external abort during backoff should exit
+      // immediately instead of waiting out the full delay.
+      await new Promise<void>((resolve, reject) => {
+        const signal = options.abortSignal;
+        if (signal?.aborted) {
+          reject(new Error('Aborted'));
+          return;
+        }
+        const timer = setTimeout(() => {
+          signal?.removeEventListener('abort', onAbort);
+          resolve();
+        }, delayMs);
+        const onAbort = () => {
+          clearTimeout(timer);
+          reject(new Error('Aborted'));
+        };
+        signal?.addEventListener('abort', onAbort, { once: true });
+      });
+    } finally {
+      clearTimeout(timeoutHandle);
+      options.abortSignal?.removeEventListener('abort', onExternalAbort);
+    }
+  }
+
+  // Reachable only if opts.maxRetries < 0 (loop never executed). The success
+  // and exhaustion paths both return/throw inside the loop. This guards
+  // pathological inputs and satisfies TypeScript's return-type exhaustiveness.
+  throw lastError ?? new Error('withRetry exited without an attempt (maxRetries < 0)');
+}
