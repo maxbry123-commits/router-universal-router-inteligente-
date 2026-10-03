@@ -1,0 +1,14 @@
+S1-11b nueva - Python 3.12.14 (uv venv), pytest + pyyaml
+11 failed, 269 passed, 31 warnings, 49 subtests passed in 1.09s
+--- tests que fallan:
+test_browser_use_adapter.py::test_ficha_v2_accepts_testing_contract
+test_canonical_motor_gate.py::test_copy_motor_blob_and_readback
+test_canonical_motor_gate.py::test_move_motor_blob_and_readback
+test_code_graph_controls_batch1.py::test_g009_no_unique_value_is_gap_and_review_is_required_for_value
+test_code_graph_controls_batch1.py::test_g021_priority_parallel_fan_in_and_cycle_fail_closed
+test_component_intake.py::test_download_queue_persistence_requires_authorization_and_readback
+test_component_intake.py::test_extract_adapter_runs_canonical_motor_and_verifies_readback
+test_component_intake.py::test_symlink_destination_and_archive_hash_mismatch_fail_closed
+test_existing_code_intake_g007.py::ExistingCodeIntakeTests::test_copy_runs_canonical_motor_and_reads_back
+test_existing_code_intake_g007.py::ExistingCodeIntakeTests::test_move_requires_separate_removal_authority
+test_existing_code_intake_g007.py::ExistingCodeIntakeTests::test_scope_and_content_fail_without_transfer

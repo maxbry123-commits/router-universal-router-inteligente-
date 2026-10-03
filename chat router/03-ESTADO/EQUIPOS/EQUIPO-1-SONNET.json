@@ -85,7 +85,7 @@
     {
       "id": "S1-11",
       "tarea": "Correr la suite del loop y anotar resultado contra la base 267 pass / 3 stale (no tocar tests upstream)",
-      "estado": "CERRADO"
+      "estado": "CERRADO_REF"
     },
     {
       "id": "S1-12",
@@ -355,6 +355,37 @@
       },
       "gap": null,
       "siguiente": "Ninguna"
+    },
+    {
+      "id_tarea": "S1-11",
+      "equipo": "EQUIPO-1",
+      "ronda": 3,
+      "estado": "CERRADO_REF",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T00:50:52Z",
+      "accion": "S1-11b: pytest runtime/tests -q en las dos carpetas con Python 3.12.14, clasificacion A/B/C, arreglo de instalacion (pyyaml) y 1 repeticion.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
+          "sha256": "8b358d16c63c3886b771aba4dfd90b98ead3ade6f0e1aaafa5563566d91a924a"
+        },
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-nueva.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-nueva.txt",
+          "sha256": "11db907f101045d239e70896f98991ed799e464c29aa322cb25d0c13b7fa49b3"
+        },
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
+          "sha256": "3c31e7d8f3f204a804bb4e1393ab32183b3d7a8018743c00efe9ad50f4bfae59"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Original y nueva: 11 failed, 269 passed. A=3 (base), B=8, C=0. Los 8 siguen tras el arreglo; lista exacta en S1-11b.md."
+      },
+      "gap": "8 fallos fuera de la base siguen tras el arreglo de instalacion",
+      "siguiente": "Ninguna"
     }
   ],
   "bitacora": [
@@ -411,6 +442,10 @@
     {
       "fecha_utc": "2026-10-03T00:48:09Z",
       "texto": "[2026-10-03T00:48:09Z] EQUIPO-1 DSL v2 T1: S1-01, S1-02, S1-03, S1-04, S1-05, S1-06, S1-07, S1-08 pasan a CERRADO_REF con su motivo"
+    },
+    {
+      "fecha_utc": "2026-10-03T00:50:52Z",
+      "texto": "[2026-10-03T00:50:52Z] EQUIPO-1 DSL v2: S1-11b CERRADO_REF | 8 fallos fuera de la base siguen tras el arreglo de instalacion"
     }
   ],
   "handoff": {
