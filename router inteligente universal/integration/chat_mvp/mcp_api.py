@@ -131,8 +131,12 @@ _STACK: contextlib.AsyncExitStack | None = None
 
 def install_mcp(app) -> None:  # noqa: ANN001
     mcp = build_mcp()
-    try:
-        sub = mcp.streamable_http_app(streamable_http_path="/", stateless_http=True)
+    try:  # the public door (hf.space) and the Job URL (*.hf.jobs) are not localhost: the SDK host check would answer
+        # "Invalid Host header". Off on purpose: _KeyGate below requires a Router key on every request.
+        from mcp.server.transport_security import TransportSecuritySettings
+
+        sub = mcp.streamable_http_app(streamable_http_path="/", stateless_http=True,
+                                      transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False))
     except TypeError:  # mcp 1.x: settings live on the server
         mcp.settings.streamable_http_path = "/"
         mcp.settings.stateless_http = True
