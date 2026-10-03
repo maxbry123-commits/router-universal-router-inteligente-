@@ -1,0 +1,2 @@
+Filtro omniroute|deepseek|munder|dagu|dbos|mcp: sin coincidencias para dagu ni dbos.
+Sin comando ejecutable que lea stdin.
