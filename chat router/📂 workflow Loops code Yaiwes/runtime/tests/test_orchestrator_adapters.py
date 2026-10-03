@@ -88,3 +88,8 @@ def test_input_shark_missing_fields():
     assert not r["complete"] and "global_goal" in r["missing_fields"]
     r2 = input_shark({"mission_id": "m1", "global_goal": "g", "allowed_roles": ["writer"]})
     assert r2["complete"] and r2["normalized_goal_sha"]
+
+def test_missing_capability_fails_closed():
+    with pytest.raises(AdapterError, match="UNKNOWN_COMPONENT:missing-capability"):
+        ComponentAdapter("missing-capability").capability()
+

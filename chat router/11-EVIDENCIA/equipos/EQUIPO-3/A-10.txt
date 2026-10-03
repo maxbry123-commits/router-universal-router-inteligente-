@@ -1,0 +1,6 @@
+A-10 | CERRADO_REF
+read-back: 4/4 DAGs ya presentes en skills_schema
+anthropic-skills.dag.yaml e4a3994e08ec2ccac012ecfb980628edc8f2d2fa11dfd708afd8260e1954db3c
+scrapling.dag.yaml c7bb9de749899964b4a1eacb3f9126e8a4af331dcde6be62aa06a329b00a6628
+scrapegraph-ai.dag.yaml 59f763037e1abb0c618bee9c7be7f2006416e381ca1100d7b6aa01bd6707605a
+agent-reach.dag.yaml 6f7fdd4f870789bfd56809f78f792881305e03172853e3d6aa1ce8d538849516

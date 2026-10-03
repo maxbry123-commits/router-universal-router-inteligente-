@@ -69,12 +69,12 @@
     {
       "id": "A-10",
       "tarea": "Añadir las 4 a skills_schema (.dag.yaml)",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO_REF"
     },
     {
       "id": "A-11",
       "tarea": "Test de contrato: si falta una capacidad, falla cerrado",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "A-12",
@@ -453,6 +453,84 @@
       },
       "gap": null,
       "siguiente": "SAL"
+    },
+    {
+      "id_tarea": "A-10",
+      "equipo": "EQUIPO-3",
+      "ronda": 4,
+      "estado": "CERRADO_REF",
+      "ejecutor": "GPT-5.6 Sol (EQUIPO-3 Sol 🚀 1)",
+      "fecha_utc": "2026-10-03T00:59:12Z",
+      "accion": "Las cuatro capacidades ya tenían sus cuatro contratos .dag.yaml en skills_schema; cierre por referencia con read-back 4/4.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+          "sha256": "e4a3994e08ec2ccac012ecfb980628edc8f2d2fa11dfd708afd8260e1954db3c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapling.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/scrapling.dag.yaml",
+          "sha256": "c7bb9de749899964b4a1eacb3f9126e8a4af331dcde6be62aa06a329b00a6628"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+          "sha256": "59f763037e1abb0c618bee9c7be7f2006416e381ca1100d7b6aa01bd6707605a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/agent-reach.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/agent-reach.dag.yaml",
+          "sha256": "6f7fdd4f870789bfd56809f78f792881305e03172853e3d6aa1ce8d538849516"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+          "sha256": "fc5871fa0395ed169ae580ec146e6989028b5ca5228676571a19bf8178b88400"
+        }
+      ],
+      "prueba_real": {
+        "comando": "read-back de anthropic-skills.dag.yaml, scrapling.dag.yaml, scrapegraph-ai.dag.yaml y agent-reach.dag.yaml",
+        "ok": true,
+        "salida_resumen": "PASS: 4/4 DAGs presentes con schema yaiwes.skill-dag/v1."
+      },
+      "gap": null,
+      "siguiente": "A-11"
+    },
+    {
+      "id_tarea": "A-11",
+      "equipo": "EQUIPO-3",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol (EQUIPO-3 Sol 🚀 1)",
+      "fecha_utc": "2026-10-03T00:59:12Z",
+      "accion": "Se añadió el test de contrato explícito para capacidad inexistente y se confirmó el fail-closed UNKNOWN_COMPONENT.",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/tests/test_orchestrator_adapters.py",
+          "sha256": "3245c3685cc47e33841cce04515c73610f80677e0ae8d5c3b26cd18c0b98c15f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+          "sha256": "88f9c07d908b4a9c6e256e489a43bd60203123e510938ec2695767dbd2437642"
+        }
+      ],
+      "prueba_real": {
+        "comando": "ComponentAdapter(\"missing-capability\").capability()",
+        "ok": true,
+        "salida_resumen": "PASS: AdapterError UNKNOWN_COMPONENT:missing-capability."
+      },
+      "gap": null,
+      "siguiente": "SAL"
     }
   ],
   "bitacora": [
@@ -500,23 +578,32 @@
       "fecha_utc": "2026-10-03T00:44:14.530Z",
       "id_tarea": "A-09",
       "evento": "CERRADO_REF: las cuatro capacidades ya estaban registradas; read-back PASS."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:59:12Z",
+      "id_tarea": "A-10",
+      "evento": "CERRADO_REF: 4/4 DAGs ya presentes; read-back PASS."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:59:12Z",
+      "id_tarea": "A-11",
+      "evento": "CERRADO: test fail-closed de capacidad inexistente añadido; UNKNOWN_COMPONENT PASS."
     }
   ],
   "handoff": {
-    "objetivo": "Cerrar A-07, A-08 y A-09.",
-    "estado": "A-07_A-08_CERRADAS_A-09_CERRADO_REF",
+    "objetivo": "Cerrar A-10 y A-11.",
+    "estado": "A-10_CERRADO_REF_A-11_CERRADO",
     "archivos": [
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+      "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_orchestrator_adapters.py",
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json"
     ],
     "cambios": [
-      "Prueba real scrapegraph-ai guardada.",
-      "Prueba real agent-reach guardada.",
-      "Capability map 4/4 confirmado por referencia."
+      "4/4 DAGs confirmados por referencia.",
+      "Test explícito de UNKNOWN_COMPONENT añadido."
     ],
     "fallos": [],
-    "siguiente": "A-10, A-11, A-12 quedan PENDIENTES; SAL."
+    "siguiente": "SAL"
   }
 }

@@ -1,0 +1,5 @@
+A-11 | CERRADO
+contract test: missing capability fails closed
+case: ComponentAdapter("missing-capability").capability()
+expected/observed isolated exact behavior: AdapterError UNKNOWN_COMPONENT:missing-capability
+repo test: runtime/tests/test_orchestrator_adapters.py::test_missing_capability_fails_closed
