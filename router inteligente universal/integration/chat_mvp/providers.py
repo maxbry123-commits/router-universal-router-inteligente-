@@ -164,5 +164,9 @@ def chat(provider: str, key: str | None, model: str, messages: list[dict[str, st
     message: dict[str, Any] = {"role": "assistant", "content": content}
     if choice["message"].get("tool_calls"):
         message["tool_calls"] = choice["message"]["tool_calls"]
+    elif not content.strip() and choice.get("finish_reason") != "length":
+        # reasoning models (e.g. Kimi K3) sometimes spend the turn on reasoning only: an empty answer is a failed option,
+        # so the chain moves to the next model instead of returning nothing to the client
+        raise ProviderError("EMPTY_CONTENT", "model returned no content")
     return {"model": model, "message": message,
             "finish_reason": choice.get("finish_reason"), "usage": data.get("usage")}

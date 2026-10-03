@@ -53,7 +53,7 @@ def _hf_token() -> str:
 def _fs():
     from huggingface_hub import HfFileSystem
 
-    return HfFileSystem(token=_hf_token())
+    return HfFileSystem(token=_hf_token(), skip_instance_cache=True)  # no stale listings (control files change)
 
 
 def _bucket() -> str | None:
