@@ -1,0 +1,34 @@
+schema: yaiwes.cierre-equipo-1/v5
+modo: CERRADO            # no existe BLOQUEADO, ni preguntar, ni escalar
+reglas: "chat router/03-ESTADO/EQUIPOS/REGLAS-DURAS.md (v2: todo cierra CERRADO o CERRADO_REF)"
+acceso: "misma ruta Vercel de siempre; claves por env, nunca impresas"
+correccion: >
+  S1-05 se cerró como CERRADO_REF por 'sin carpeta deepseek'. ERA UN ERROR: se buscó solo en la carpeta de componentes.
+  El harness SÍ está en el repo: 'chat router/deepseek-harness-chat/' (fuente deepseek-ai/deepseek-harness, rama master,
+  commit 639ed015, 14090 archivos, 4 partes sin LFS, extracción verificada). Su manifiesto: DOWNLOAD_EXTRACT_MANIFEST.json.
+  Es el enlace central del chat: el Wordflow se conecta al Router, al almacenamiento y al chat por medio del harness.
+no_pisar_a_otros:
+  solo_escribes: ["chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json", "chat router/11-EVIDENCIA/equipos/EQUIPO-1/"]
+  prohibido: "editar tests, escribir código, tocar orchestrator_adapters.py, skills_schema/, ROOT-MAP, 01-PLAN, JSON ajenos, editar archivos del Router. Usar el Enchufe Universal / plugins Fables por configuración SÍ está permitido (usar no es editar)."
+  git: "antes de CADA push: git pull --rebase; empuja solo tus rutas; si rechaza, pull --rebase y 1 reintento"
+salida: "NODO [EQUIPO-1] — <ID> | CERRADO|CERRADO_REF | COMMIT:<sha7>     (una línea por tarea, nada más). Al final: EQUIPO-1 FIN"
+
+dag:
+  T1_S1-05b:   # poner el harness como centro que conecta todo
+    pasos:
+      - "git -c core.quotepath=false ls-tree -r --name-only HEAD 'chat router/deepseek-harness-chat' | head -50  para ver si 'code/' tiene los archivos o solo están las partes en '_archives'"
+      - "SI 'code/' está vacío o incompleto: reconstruye con el motor de descarga y extracción que está en main. Lee cómo se usó en el historial: git log --oneline -- 'chat router/deepseek-harness-chat' y el commit 'fix(download): add gitignored…' para replicar el comando exacto. El manifiesto trae las 4 partes y su sha256: verifica cada una. No escribas código."
+      - "localiza la CLI: package.json de 'apps/cli' (campo 'bin') y su README; busca el modo sin interfaz (stdio / ACP / --help)"
+      - "instala lo mínimo según el lockfile (Node 22 viene en la máquina; pnpm o npm)"
+      - "prueba: <cli> --help debe salir con código 0. Si existe modo stdio/ACP: echo '{\"task\":\"ping\"}' | timeout 60 <cli ...>  -> código 0 y stdout no vacío"
+      - "export YAIWES_DEEPSEEK_HARNESS_COMMAND=<ese comando> SOLO en env de la máquina; invoca el adapter 'deepseek_harness' como en runtime/tests/test_orchestrator_adapters.py (adapter en solo lectura); guarda EQUIPO-1/S1-05b.txt con sha256"
+      - "si la CLI exige una clave de modelo DeepSeek que no está en el env: no la pidas; prueba hasta donde llegue sin clave"
+    cierra_en: "CERRADO si el adapter invoca bien el comando; CERRADO_REF con el error exacto y hasta dónde llegó (por ejemplo: arranca y responde --help, falta clave del modelo)"
+  T2_S1-05c:   # mapa de conexión, solo con hechos
+    pasos:
+      - "escribe EQUIPO-1/S1-05c.md: cómo el harness conecta el chat, el Router y el almacenamiento, SEGÚN lo que dicen ROOT-MAP-T11.yaml, HANDOFF.md y los planes (cita archivo y línea)"
+      - "lo que no esté escrito en un archivo no se inventa: ponlo en una lista 'sin evidencia'"
+    cierra_en: CERRADO
+  T3_HANDOFF: {id: S1-16, hace: "actualiza 'handoff' de tu JSON con el resultado; pasa S1-05 en tu cola a 'CERRADO_REF (corregida por S1-05b)'; 1 commit"}
+
+prohibido_siempre: [preguntar, escalar, esperar, explicar, BLOQUEADO, Hugging Face, GitHub Actions, LFS git, tocar el router, escribir código, verificar de más]
