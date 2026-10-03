@@ -1,0 +1,10 @@
+== ping directo
+exit=2
+stdout_bytes=1756
+                                                                                
+ Usage: mcp [OPTIONS] COMMAND [ARGS]...                                         
+                                                                                
+ MCP development tools                                   --stderr
+
+== adapter
+YAIWES_MCP_COMMAND=mcp -> ComponentAdapter("mcp").invoke(...) -> AdapterError: mcp_COMMAND_FAILED:2

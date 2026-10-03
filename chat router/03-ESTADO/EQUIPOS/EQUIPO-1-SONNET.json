@@ -62,7 +62,7 @@
     {
       "id": "S1-08",
       "tarea": "MCP: command_env + invocación real (O4-14)",
-      "estado": "PENDIENTE"
+      "estado": "BLOQUEADO"
     },
     {
       "id": "S1-09",
@@ -305,6 +305,27 @@
       },
       "gap": "sin carpeta dagu ni dbos en la rama",
       "siguiente": "Necesita un comando ya hecho que lea stdin y termine con exit 0."
+    },
+    {
+      "id_tarea": "S1-08",
+      "equipo": "EQUIPO-1",
+      "ronda": 2,
+      "estado": "BLOQUEADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T00:37:13Z",
+      "accion": "Escaneo de MCP-Python-SDK (script mcp = mcp.cli:app), instalacion de mcp[cli] en venv y un solo intento de ping por stdin.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+          "sha256": "9706c7d3f69b1483f8313975cc2172e82e166b99d1bf345e75544c9e0ffbeeda"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Existe el comando mcp. echo {task:ping} | mcp termino con exit=2 (muestra la ayuda: exige subcomando) y el adapter lanzo mcp_COMMAND_FAILED:2."
+      },
+      "gap": "mcp exige subcomando; ping salio exit 2",
+      "siguiente": "Necesita un comando ya hecho que lea stdin y termine con exit 0."
     }
   ],
   "bitacora": [
@@ -349,6 +370,10 @@
     {
       "fecha_utc": "2026-10-03T00:37:10Z",
       "texto": "[2026-10-03T00:37:10Z] EQUIPO-1 DSL cierre: S1-07 BLOQUEADO | gap: sin carpeta dagu ni dbos en la rama"
+    },
+    {
+      "fecha_utc": "2026-10-03T00:37:13Z",
+      "texto": "[2026-10-03T00:37:13Z] EQUIPO-1 DSL cierre: S1-08 BLOQUEADO | gap: mcp exige subcomando; ping salio exit 2"
     }
   ],
   "handoff": {
