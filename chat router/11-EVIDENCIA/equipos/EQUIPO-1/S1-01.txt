@@ -1,0 +1,4 @@
+TAREA S1-01 Rowboat | 2026-10-03T00:16:29Z
+HALLAZGO REAL: Rowboat es app de escritorio (apps/x) y servidor Harbor. El unico bin es harbor-stub (dist/main.js, @rowboat/harbor), un stub de servidor. No hay CLI documentado que reciba el payload por stdin y devuelva salida.
+GAP: No se ejecuto harbor-stub: requiere build de Harbor y no hay evidencia de que lea stdin. No se definio YAIWES_ROWBOAT_COMMAND.
+Variable de entorno requerida: YAIWES_ROWBOAT_COMMAND (no definida)

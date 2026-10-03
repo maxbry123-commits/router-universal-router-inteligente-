@@ -1,0 +1,4 @@
+TAREA S1-02 MSAF | 2026-10-03T00:16:29Z
+HALLAZGO REAL: Microsoft Agent Framework: el unico script de consola encontrado es devui (agent_framework_devui:main), una interfaz web de desarrollo. No hay comando que reciba el payload por stdin y devuelva salida.
+GAP: No se ejecuto devui: es servidor web, no encaja con el contrato stdin->stdout del adapter. No se definio YAIWES_MSAF_COMMAND.
+Variable de entorno requerida: YAIWES_MSAF_COMMAND (no definida)

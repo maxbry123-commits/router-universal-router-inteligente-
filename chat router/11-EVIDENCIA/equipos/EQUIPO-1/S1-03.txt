@@ -1,0 +1,4 @@
+TAREA S1-03 Orca | 2026-10-03T00:16:29Z
+HALLAZGO REAL: No existe carpeta del componente Orca en Componente open soure router inteligente universal. Solo aparecen articulos comparativos orca-vs-munder-difflin dentro de munder-difflin.
+GAP: Sin codigo de Orca en el repo no hay CLI que invocar. No se definio YAIWES_ORCA_COMMAND.
+Variable de entorno requerida: YAIWES_ORCA_COMMAND (no definida)

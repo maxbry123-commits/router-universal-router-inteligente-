@@ -7,28 +7,171 @@
   "rol": "Lo crítico: conectar de verdad los componentes del orquestador (P1) y la prueba con 3 workers (P3)",
   "handoff_url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-1-SONNET.md",
   "espera": null,
-  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"],
-  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
+  "alcance": [
+    "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)",
+    "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+  ],
+  "prohibido": [
+    "router inteligente universal/ (no tocar el Router)",
+    "LFS git",
+    "GitHub Actions",
+    "Hugging Face"
+  ],
   "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP, no se inventa. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
-  "ronda_actual": ["S1-01", "S1-02", "S1-03"],
+  "ronda_actual": [
+    "S1-01",
+    "S1-02",
+    "S1-03"
+  ],
   "cola": [
-    {"id": "S1-01", "tarea": "Rowboat: fijar command_env y probar invocación real del adapter (O4-07)", "estado": "PENDIENTE"},
-    {"id": "S1-02", "tarea": "MSAF: command_env + invocación real (O4-08)", "estado": "PENDIENTE"},
-    {"id": "S1-03", "tarea": "Orca: command_env + invocación real (O4-09)", "estado": "PENDIENTE"},
-    {"id": "S1-04", "tarea": "OmniRoute: command_env local + invocación real, sin tocar el Router (O4-10)", "estado": "PENDIENTE"},
-    {"id": "S1-05", "tarea": "DeepSeek Harness: command_env + invocación real (O4-11)", "estado": "PENDIENTE"},
-    {"id": "S1-06", "tarea": "Munder Difflin: command_env + invocación real (O4-12)", "estado": "PENDIENTE"},
-    {"id": "S1-07", "tarea": "Dagu/DBOS: command_env + invocación real (O4-13)", "estado": "PENDIENTE"},
-    {"id": "S1-08", "tarea": "MCP: command_env + invocación real (O4-14)", "estado": "PENDIENTE"},
-    {"id": "S1-09", "tarea": "S-11: prueba real con 3 instancias Seals desde el Wordflow (3 workers aislados, evidencia por worker)", "estado": "PENDIENTE"},
-    {"id": "S1-10", "tarea": "S-12: auditoría de cierre de Seals", "estado": "PENDIENTE"},
-    {"id": "S1-11", "tarea": "Correr la suite del loop y anotar resultado contra la base 267 pass / 3 stale (no tocar tests upstream)", "estado": "PENDIENTE"},
-    {"id": "S1-12", "tarea": "Lista final de GAPs de P1 y P3 con motivo e intento de arreglo", "estado": "PENDIENTE"}
+    {
+      "id": "S1-01",
+      "tarea": "Rowboat: fijar command_env y probar invocación real del adapter (O4-07)",
+      "estado": "BLOQUEADO"
+    },
+    {
+      "id": "S1-02",
+      "tarea": "MSAF: command_env + invocación real (O4-08)",
+      "estado": "BLOQUEADO"
+    },
+    {
+      "id": "S1-03",
+      "tarea": "Orca: command_env + invocación real (O4-09)",
+      "estado": "BLOQUEADO"
+    },
+    {
+      "id": "S1-04",
+      "tarea": "OmniRoute: command_env local + invocación real, sin tocar el Router (O4-10)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "S1-05",
+      "tarea": "DeepSeek Harness: command_env + invocación real (O4-11)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "S1-06",
+      "tarea": "Munder Difflin: command_env + invocación real (O4-12)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "S1-07",
+      "tarea": "Dagu/DBOS: command_env + invocación real (O4-13)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "S1-08",
+      "tarea": "MCP: command_env + invocación real (O4-14)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "S1-09",
+      "tarea": "S-11: prueba real con 3 instancias Seals desde el Wordflow (3 workers aislados, evidencia por worker)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "S1-10",
+      "tarea": "S-12: auditoría de cierre de Seals",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "S1-11",
+      "tarea": "Correr la suite del loop y anotar resultado contra la base 267 pass / 3 stale (no tocar tests upstream)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "S1-12",
+      "tarea": "Lista final de GAPs de P1 y P3 con motivo e intento de arreglo",
+      "estado": "PENDIENTE"
+    }
   ],
-  "resultado": [],
+  "resultado": [
+    {
+      "id_tarea": "S1-01",
+      "equipo": "EQUIPO-1",
+      "ronda": 1,
+      "estado": "BLOQUEADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T00:16:29Z",
+      "accion": "Busque el CLI real de Rowboat dentro de su carpeta para definir YAIWES_ROWBOAT_COMMAND. Rowboat es app de escritorio (apps/x) y servidor Harbor. El unico bin es harbor-stub (dist/main.js, @rowboat/harbor), un stub de servidor. No hay CLI documentado que reciba el payload por stdin y devuelva salida.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+          "sha256": "752c719ba501d682c0dcaa8d04b16ecac94b7396d88588d2bd73281b275dcdad"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Inspeccion real de la carpeta del componente en la rama; sin comando ejecutable que cumpla el contrato del adapter. Evidencia: chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt"
+      },
+      "gap": "No se ejecuto harbor-stub: requiere build de Harbor y no hay evidencia de que lea stdin. No se definio YAIWES_ROWBOAT_COMMAND.",
+      "siguiente": "Necesita que el Director indique el comando real de Rowboat (o un wrapper aprobado stdin->stdout) para invocarlo con ComponentAdapter."
+    },
+    {
+      "id_tarea": "S1-02",
+      "equipo": "EQUIPO-1",
+      "ronda": 1,
+      "estado": "BLOQUEADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T00:16:29Z",
+      "accion": "Busque el CLI real de MSAF dentro de su carpeta para definir YAIWES_MSAF_COMMAND. Microsoft Agent Framework: el unico script de consola encontrado es devui (agent_framework_devui:main), una interfaz web de desarrollo. No hay comando que reciba el payload por stdin y devuelva salida.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+          "sha256": "ec37a819ddad07a2c9c3ab804929e2f2462a43a9d92f7dfab5bac2596706fb25"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Inspeccion real de la carpeta del componente en la rama; sin comando ejecutable que cumpla el contrato del adapter. Evidencia: chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt"
+      },
+      "gap": "No se ejecuto devui: es servidor web, no encaja con el contrato stdin->stdout del adapter. No se definio YAIWES_MSAF_COMMAND.",
+      "siguiente": "Necesita que el Director indique el comando real de MSAF (o un wrapper aprobado stdin->stdout) para invocarlo con ComponentAdapter."
+    },
+    {
+      "id_tarea": "S1-03",
+      "equipo": "EQUIPO-1",
+      "ronda": 1,
+      "estado": "BLOQUEADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T00:16:29Z",
+      "accion": "Busque el CLI real de Orca dentro de su carpeta para definir YAIWES_ORCA_COMMAND. No existe carpeta del componente Orca en Componente open soure router inteligente universal. Solo aparecen articulos comparativos orca-vs-munder-difflin dentro de munder-difflin.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+          "sha256": "7494fc149b785ae143368aa2b68eca3d0fb74a87bd1498fd6398d6cfe076eb5c"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Inspeccion real de la carpeta del componente en la rama; sin comando ejecutable que cumpla el contrato del adapter. Evidencia: chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt"
+      },
+      "gap": "Sin codigo de Orca en el repo no hay CLI que invocar. No se definio YAIWES_ORCA_COMMAND.",
+      "siguiente": "Necesita que el Director indique el comando real de Orca (o un wrapper aprobado stdin->stdout) para invocarlo con ComponentAdapter."
+    }
+  ],
   "bitacora": [
-    {"fecha_utc": "2026-10-02T08:23:00Z", "id_tarea": "S1-01", "evento": "Equipo puesto EN_PAUSA por orden del Director"},
-    {"fecha_utc": "2026-10-02T08:40:00Z", "id_tarea": "S1-01", "evento": "Equipo REACTIVADO: el Director corrió el prompt y salió BLOCKED por la pausa; ronda_actual = S1-01, S1-02, S1-03"}
+    {
+      "fecha_utc": "2026-10-02T08:23:00Z",
+      "id_tarea": "S1-01",
+      "evento": "Equipo puesto EN_PAUSA por orden del Director"
+    },
+    {
+      "fecha_utc": "2026-10-02T08:40:00Z",
+      "id_tarea": "S1-01",
+      "evento": "Equipo REACTIVADO: el Director corrió el prompt y salió BLOCKED por la pausa; ronda_actual = S1-01, S1-02, S1-03"
+    },
+    {
+      "fecha_utc": "2026-10-03T00:16:29Z",
+      "texto": "[2026-10-03T00:16:29Z] EQUIPO-1 ronda 1: S1-01, S1-02 y S1-03 BLOQUEADAS (sin CLI real stdin->stdout en Rowboat, MSAF ni Orca). Evidencia en chat router/11-EVIDENCIA/equipos/EQUIPO-1/"
+    }
   ],
-  "handoff": {"objetivo": "Conectar de verdad los 8 componentes del orquestador y la prueba de 3 workers", "estado": "ACTIVO, ronda 1 lista", "archivos": [], "cambios": [], "fallos": [], "siguiente": "S1-01, S1-02, S1-03"}
+  "handoff": {
+    "objetivo": "Conectar de verdad los 8 componentes del orquestador y la prueba de 3 workers",
+    "estado": "ACTIVO, ronda 1 lista",
+    "archivos": [],
+    "cambios": [],
+    "fallos": [],
+    "siguiente": "S1-01, S1-02, S1-03"
+  }
 }
