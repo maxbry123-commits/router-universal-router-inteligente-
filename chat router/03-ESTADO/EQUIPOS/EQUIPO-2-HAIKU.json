@@ -21,9 +21,9 @@
   ],
   "reglas": "Máx 3 tareas por ronda. Commit y salir. NO borrar nada hasta que la copia tenga el mismo hash que el original (0 diferencias) y el Director lo autorice. Sin evidencia no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
   "ronda_actual": [
-    "H-06",
-    "H-09",
-    "H-07"
+    "H-07",
+    "H-08",
+    "H-11"
   ],
   "cola": [
     {
@@ -64,7 +64,7 @@
     {
       "id": "H-08",
       "tarea": "P6 N-2.11: biblioteca RAG con sus 13 subcarpetas, solo con contenido real (no crear carpetas vacías)",
-      "estado": "PENDIENTE"
+      "estado": "BLOQUEADO"
     },
     {
       "id": "H-09",
@@ -79,7 +79,7 @@
     {
       "id": "H-11",
       "tarea": "Segunda pasada de organización: lo que siga suelto fuera de RAIZ-WL; anotarlo",
-      "estado": "ESPERA_DECISION"
+      "estado": "CERRADO"
     },
     {
       "id": "H-12",
@@ -318,6 +318,86 @@
         "necesita": "La fuente real 'chat router/📂 workflow Loops code Yaiwes/skills/' y la ubicación física existente de 'Skills agente/' o una instrucción de ronda posterior que autorice traerlas con el motor de descarga/extracción de main."
       },
       "siguiente": "Salir de la ronda; no ejecutar H-08/H-11/H-12."
+    },
+    {
+      "id_tarea": "H-07",
+      "equipo": "EQUIPO-2",
+      "ronda": 2,
+      "estado": "BLOQUEADO",
+      "ejecutor": "Sol 7",
+      "fecha_utc": "2026-10-03T00:34:22.715Z",
+      "accion": "Se reintentó una vez la localización de la fuente skills/ y del destino Skills agente/; ambos siguen ausentes, por lo que no se copió ni creó contenido.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "sha256": "fe87088da80ee1d05f08b4a6bb71c192b5b61c0f39ba6f704ab9cb6c5da3147f"
+        }
+      ],
+      "prueba_real": {
+        "comando": "GET contents 'chat router/📂 workflow Loops code Yaiwes/skills/' y 'chat router/📂 workflow Loops code Yaiwes/Skills agente/' en devin/1790824641-chat-agent-plan",
+        "ok": false,
+        "salida_resumen": "fuente=NO_EXISTE; destino=NO_EXISTE"
+      },
+      "gap": {
+        "motivo": "No existen la fuente exacta skills/ ni el destino Skills agente/ requeridos por H-07.",
+        "intento_fix": "Retry único fresco sobre ambas rutas exactas; no se sustituyó por skills_schema/.",
+        "necesita": "Fuente física de las 3 skills frontend y destino físico Skills agente/ ya existente, o contenido traído por el motor autorizado."
+      },
+      "siguiente": "H-08"
+    },
+    {
+      "id_tarea": "H-08",
+      "equipo": "EQUIPO-2",
+      "ronda": 2,
+      "estado": "BLOQUEADO",
+      "ejecutor": "Sol 7",
+      "fecha_utc": "2026-10-03T00:34:22.715Z",
+      "accion": "Se verificó la RAIZ-WL para ubicar una biblioteca RAG existente; no hay ruta candidata y la tarea no define destino ni nombres de las 13 subcarpetas, así que no se inventó estructura.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "sha256": "fe87088da80ee1d05f08b4a6bb71c192b5b61c0f39ba6f704ab9cb6c5da3147f"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Leer árbol Git recursivo de RAIZ-WL y filtrar directorios por rag|biblioteca|library",
+        "ok": false,
+        "salida_resumen": "coincidencias=1; la definición H-08 no aporta ruta destino ni nombres de 13 subcarpetas"
+      },
+      "gap": {
+        "motivo": "Faltan ruta destino, nombres de las 13 subcarpetas y fuente de contenido real para H-08.",
+        "intento_fix": "Se buscó una estructura física existente en RAIZ-WL para reutilizarla; no hay coincidencias RAG/biblioteca/library.",
+        "necesita": "Definición física no ambigua o contenido fuente real existente que permita poblar las 13 subcarpetas sin inventar."
+      },
+      "siguiente": "H-11"
+    },
+    {
+      "id_tarea": "H-11",
+      "equipo": "EQUIPO-2",
+      "ronda": 2,
+      "estado": "CERRADO",
+      "ejecutor": "Sol 7",
+      "fecha_utc": "2026-10-03T00:34:22.715Z",
+      "accion": "Se hizo la segunda pasada de organización y se anotó lo que permanece fuera de RAIZ-WL; no quedan archivos sueltos directamente en chat router/.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "sha256": "fe87088da80ee1d05f08b4a6bb71c192b5b61c0f39ba6f704ab9cb6c5da3147f"
+        }
+      ],
+      "prueba_real": {
+        "comando": "GET contents 'chat router/' en devin/1790824641-chat-agent-plan y clasificar archivos vs directorios fuera de RAIZ-WL",
+        "ok": true,
+        "salida_resumen": "archivos_sueltos=0; directorios_fuera_raiz=20; sin mover ni borrar"
+      },
+      "gap": null,
+      "siguiente": "H-12; H-10 no ejecutar"
     }
   ],
   "bitacora": [
@@ -345,30 +425,39 @@
       "fecha_utc": "2026-10-02T08:36:30Z",
       "id_tarea": "H-07",
       "evento": "Sol 7 bloqueó H-07: no existen skills/ ni Skills agente/; no inventó ni creó carpetas vacías."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:34:22.715Z",
+      "id_tarea": "H-07",
+      "evento": "Sol 7 reintentó H-07 una vez: source skills/ y destino Skills agente/ siguen ausentes; BLOQUEADO."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:34:22.715Z",
+      "id_tarea": "H-08",
+      "evento": "Sol 7 bloqueó H-08: no hay ruta/nombres/fuente suficientes para crear 13 subcarpetas con contenido real sin inventar."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:34:22.715Z",
+      "id_tarea": "H-11",
+      "evento": "Sol 7 cerró H-11: segunda pasada anotada; archivos sueltos en chat router/=0, directorios fuera de RAIZ-WL=20."
     }
   ],
   "handoff": {
-    "objetivo": "Cerrar únicamente la ronda_actual de SOL 7: H-06, H-09, H-07.",
-    "estado": "H-06 CERRADO; H-09 CERRADO; H-07 BLOQUEADO por ausencia física de fuente y destino.",
+    "objetivo": "Cerrar únicamente la ronda 2 de SOL 7: H-07, H-08, H-11.",
+    "estado": "H-07 BLOQUEADO; H-08 BLOQUEADO; H-11 CERRADO.",
     "archivos": [
-      "chat router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md",
-      "chat router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-3.md",
-      "chat router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-4.md",
-      "chat router/01-PLAN/ORQUESTADOR-DE-TRABAJO.yaml",
-      "chat router/01-PLAN/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml",
-      "chat router/01-PLAN/ROOT-MAP-T11.yaml",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-06-H-09-H-07-ronda-1-sol7.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-2-HAIKU.json"
     ],
     "cambios": [
-      "5 archivos movidos de chat router/ a chat router/01-PLAN/ con el mismo blob Git.",
-      "ROOT-MAP-T11.yaml actualizado en las 3 rutas afectadas.",
-      "H-07 auditado sin inventar contenido; no se creó Skills agente/."
+      "H-07 reintentado una vez sin inventar fuente/destino.",
+      "H-08 verificado contra RAIZ-WL y bloqueado por definición física insuficiente.",
+      "H-11 segunda pasada de organización cerrada con inventario actual."
     ],
     "fallos": [
-      "H-07: falta chat router/📂 workflow Loops code Yaiwes/skills/.",
-      "H-07: no existe Skills agente/ en la rama."
+      "H-07: faltan skills/ y Skills agente/.",
+      "H-08: faltan ruta, nombres de 13 subcarpetas y fuente de contenido real."
     ],
-    "siguiente": "Salir. Rondas siguientes quedan fuera de esta ejecución."
+    "siguiente": "H-12 queda pendiente. H-10 no ejecutar."
   }
 }
