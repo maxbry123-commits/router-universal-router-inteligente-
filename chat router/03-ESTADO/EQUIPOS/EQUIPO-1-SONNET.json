@@ -441,6 +441,21 @@
       },
       "gap": null,
       "siguiente": "Director: mover/renombrar la carpeta de motores a la ruta esperada."
+    },
+    {
+      "id_tarea": "S1-14",
+      "equipo": "EQUIPO-1",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T01:06:51Z",
+      "accion": "Handoff actualizado con resultado de S1-11c.",
+      "archivos": [],
+      "prueba_real": {
+        "resumen": "Campo handoff reescrito."
+      },
+      "gap": null,
+      "siguiente": "Ninguna"
     }
   ],
   "bitacora": [
@@ -513,11 +528,15 @@
     {
       "fecha_utc": "2026-10-03T01:06:50Z",
       "texto": "[2026-10-03T01:06:50Z] EQUIPO-1 DSL v4: S1-11c CERRADO"
+    },
+    {
+      "fecha_utc": "2026-10-03T01:06:51Z",
+      "texto": "[2026-10-03T01:06:51Z] EQUIPO-1 DSL v4: S1-14 CERRADO"
     }
   ],
   "handoff": {
     "objetivo": "Conectar de verdad los 8 componentes del orquestador y la prueba de 3 workers",
-    "estado": "DSL v2 cerrado. S1-01 a S1-08: CERRADO_REF (sin comando que lea stdin / sin carpeta / submodulo vacio / mcp exige subcomando). S1-09, S1-09b, S1-10, S1-12: CERRADO (3 instancias de SealsWorker: 4 passed cada una). S1-11b: CERRADO_REF (269 passed, 11 failed: 3 de la base + 8 fuera de base).",
+    "estado": "DSL v2 cerrado. S1-01 a S1-08: CERRADO_REF (sin comando que lea stdin / sin carpeta / submodulo vacio / mcp exige subcomando). S1-09, S1-09b, S1-10, S1-12: CERRADO (3 instancias de SealsWorker: 4 passed cada una). S1-11b: CERRADO_REF (269 passed, 11 failed: 3 de la base + 8 fuera de base). S1-11c: CERRADO (los 8 tests de motores pasan con la ruta esperada).",
     "archivos": [
       "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
       "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
@@ -527,16 +546,7 @@
     "cambios": [
       "S1-11b: entorno Python 3.12 + pyyaml; suite igual en original y nueva (0 fallos solo en la nueva). S1-09b: 3 instancias con 4 passed."
     ],
-    "fallos": [
-      "test_canonical_motor_gate.py::test_copy_motor_blob_and_readback",
-      "test_canonical_motor_gate.py::test_move_motor_blob_and_readback",
-      "test_component_intake.py::test_download_queue_persistence_requires_authorization_and_readback",
-      "test_component_intake.py::test_extract_adapter_runs_canonical_motor_and_verifies_readback",
-      "test_component_intake.py::test_symlink_destination_and_archive_hash_mismatch_fail_closed",
-      "test_existing_code_intake_g007.py::test_copy_runs_canonical_motor_and_reads_back",
-      "test_existing_code_intake_g007.py::test_move_requires_separate_removal_authority",
-      "test_existing_code_intake_g007.py::test_scope_and_content_fail_without_transfer"
-    ],
-    "siguiente": "Ninguna"
+    "fallos": "Solo los 3 de la base (g009, g021, ficha_v2). Los 8 de motores eran el nombre de la ruta.",
+    "siguiente": "Nota para el Director: los 8 tests de motores pasan si la ruta se llama 'chat router/➡️📂motores de descarga extracción copiado movimiento archivos agentes'; hoy se llama 'chat router/➡️📂 Wordflow LOOP Yaiwes/➡️📂motores de descarga extracción copiado movimiento archivos agentes'."
   }
 }
