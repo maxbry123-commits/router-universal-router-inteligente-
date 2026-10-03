@@ -1,5 +1,7 @@
 # Router Inteligente Universal - README (arquitectura simple + mapa)
 
+> **2026-10-03 (Opus) — LEER PRIMERO:** Router 24/7 en HF Job 16 GB detras de la puerta fija `https://comand-center-1-claude-github-mcp-backup.hf.space` (micro-kernel renueva 20 min antes), Harness DeepSeek por el Router, banco auto-abierto, laboratorio, fichas vivas, MCP `/mcp/`, puente HF y mini router L4/T4. Guia completa: [ADENDA-RIU-0111](../Readme%20arquitectura%20router%20inteligente%20universal/ADENDA-RIU-0111-ROUTER-24-7-HARNESS-BANCO-LAB-FICHAS-MCP.md). Para conectar algo NO hace falta tocar el Router.
+
 Actualizado 2026-09-30 (agente organizador). Marcas: [HECHO] codigo en main; [SIN PROBAR] no probado en vivo; [PENDIENTE] no existe o no esta cableado; [BLOQUEADO] espera al Director. Nada aqui lleva claves.
 Para el indice completo de documentos y el orden de lectura: [HANDOFF-CABLEADO.md](HANDOFF-CABLEADO.md).
 

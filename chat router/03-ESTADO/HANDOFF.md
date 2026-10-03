@@ -72,13 +72,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 67
+Revisión: 68
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-S1-30 Opus: ruta memoria Harness->MCP->Router->HF bucket permanente probada e2e (restore+autosync en Router). PENDIENTE: Router 24/7 en HF (decision Hy), credencial LLM del harness, motores de memoria Graphiti/Graphify/Memanto/AgentDB/FalkorDB/PostgreSQL.
+S1-31 Opus: Router 24/7 (Job 16 GB + puerta fija + micro-kernel), Harness por el Router, banco, laboratorio, fichas, MCP, puente HF, mini router L4/T4. Guia: Readme arquitectura router inteligente universal/ADENDA-RIU-0111. PENDIENTE: saldo OpenAI, tokens HF banco, motores memoria (Sonnet), UI selectores.
 
 ### Siguiente
 Continuar DAG existente

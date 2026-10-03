@@ -524,7 +524,7 @@ def build_control_router() -> APIRouter:
     def hf_local_serve(req: ServeReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
         """Serve a model stored on HF (vLLM, OpenAI API) on a GPU Job and plug it as provider `local` of the Router."""
         _check_flavor(req.flavor)
-        job = _api().run_job(image="vllm/vllm-openai:latest", command=["--model", req.repo, "--port", "8000"],
+        job = _api().run_job(image="vllm/vllm-openai:latest", command=["vllm", "serve", req.repo, "--port", "8000"],
                              flavor=req.flavor, timeout=req.timeout, expose=[8000],
                              secrets={"HF_TOKEN": _hf_token()} if _hf_token() else None)
         url = f"https://{job.id}--8000.hf.jobs/v1"

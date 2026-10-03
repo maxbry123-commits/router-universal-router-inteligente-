@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "S1-30 Opus: ruta memoria Harness->MCP->Router->HF bucket permanente probada e2e (restore+autosync en Router). PENDIENTE: Router 24/7 en HF (decision Hy), credencial LLM del harness, motores de memoria Graphiti/Graphify/Memanto/AgentDB/FalkorDB/PostgreSQL.",
-      "updated_at": "2026-10-03T09:08:14Z",
-      "last_event_seq": 67
+      "summary": "S1-31 Opus: Router 24/7 (Job 16 GB + puerta fija + micro-kernel), Harness por el Router, banco, laboratorio, fichas, MCP, puente HF, mini router L4/T4. Guia: Readme arquitectura router inteligente universal/ADENDA-RIU-0111. PENDIENTE: saldo OpenAI, tokens HF banco, motores memoria (Sonnet), UI selectores.",
+      "updated_at": "2026-10-03T12:00:54Z",
+      "last_event_seq": 68
     }
   }
 }

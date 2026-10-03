@@ -21,3 +21,10 @@ Chat: Open WebUI (conectado al gateway del Router; MCP para intervenir en la con
 - Ninguna credencial en texto plano en este repo, en bases de datos, en logs ni en el chat. `riu-secret-scan.yml` lo vigila (383 archivos, 0 hallazgos el 2026-09-20).
 - Nada se declara integrado por existir la carpeta: cada pieza necesita un test que falle antes y pase después, en runner real (`riu-chat-mvp-core-verify.yml`).
 - Los modelos sin proveedor serverless quedan `hf_job_fallback` hasta cerrar la enmienda del contrato (`HF_JOB_EPHEMERAL_SERVING`) y la prueba S7.3.
+
+
+## 2026-10-03 (Opus): banco unico conectado al Router
+- El banco cifrado vive en el bucket HF `claude-github-mcp-backup-storage/.../secret_bank/vault.db.gz.b64` (copias `.bak-*`). El Router lo baja y lo abre solo al arrancar con el secreto `RIU_VAULT_PASSPHRASE` del Space (nunca en GitHub).
+- `secret_bank/providers.json` (mismo bucket): agrega una API/SDK compatible OpenAI con `base_url` y entra al Router sin tocar codigo.
+- Credenciales hoy: github 5, huggingface 2, nvidia 5, openai 14, groq 7, router 1 (`router/harness-dsh`, clave del Harness).
+- Laboratorio: `POST /lab/run` (puerta fija) prueba todo y guarda el informe. Handoff: [ADENDA-RIU-0111](../../Readme%20arquitectura%20router%20inteligente%20universal/ADENDA-RIU-0111-ROUTER-24-7-HARNESS-BANCO-LAB-FICHAS-MCP.md).
