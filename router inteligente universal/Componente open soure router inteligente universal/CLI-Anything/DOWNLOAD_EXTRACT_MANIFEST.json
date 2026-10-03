@@ -1,0 +1,55 @@
+{
+  "bundle_bytes": 50781565,
+  "bundle_sha256": "18c072565d9cf87d71b89c59230af4e70c8cdbebf29cf9614228ec090006640c",
+  "extracted_tree": {
+    "bytes": 63002622,
+    "files": 1872,
+    "sha256": "cb146b97a490b8ba8a92d14e2138def0f8befa337f98d43f2842c4db6d879118"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "CLI-Anything.bundle.zip.part-0001",
+      "sha256": "914b512761a119be3020b94b9734afc9d5f1d644fafc45e294acbcc63f27805a"
+    },
+    {
+      "bytes": 12582912,
+      "name": "CLI-Anything.bundle.zip.part-0002",
+      "sha256": "7a06fe519dbc38914e32c04ce58f608690e5d7e78b71887d4f8ff6afe53bdc3d"
+    },
+    {
+      "bytes": 12582912,
+      "name": "CLI-Anything.bundle.zip.part-0003",
+      "sha256": "a27f6bc6e1f3a712b7e7f19ba9981a8dd2cb40c608fc94490c5d63f04990beef"
+    },
+    {
+      "bytes": 12582912,
+      "name": "CLI-Anything.bundle.zip.part-0004",
+      "sha256": "6e05bb50e3f3bce11d802997991b36a59717680e8ecd297f8f93cdab0fb355cf"
+    },
+    {
+      "bytes": 449917,
+      "name": "CLI-Anything.bundle.zip.part-0005",
+      "sha256": "433cbf988b259fafcaa3cc8ad4f6927e7e029f2aa60251abab1763be1096a68e"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "CLI-Anything",
+  "source_bytes": 63002622,
+  "source_commit": "34f519533bc175d2fe287ab8316b0dd99bb9cc43",
+  "source_files": 1872,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/HKUDS/CLI-Anything",
+  "source_tree": {
+    "bytes": 63002622,
+    "files": 1872,
+    "sha256": "cb146b97a490b8ba8a92d14e2138def0f8befa337f98d43f2842c4db6d879118"
+  }
+}
