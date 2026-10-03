@@ -81,6 +81,21 @@
       "id": "I-12",
       "tarea": "Informe final de la auditoría de imágenes y handoff",
       "estado": "CERRADO"
+    },
+    {
+      "id": "I-13",
+      "tarea": "Reconstruir I-04.md hasta I-09.md con una fila por imagen abierta realmente, función, componente, cobertura y sha256.",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "I-14",
+      "tarea": "Crear I-COMPARACION.md comparando cada imagen contra ambos catálogos, sin descripciones nuevas vacías/genéricas.",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "I-15",
+      "tarea": "Crear I-FUNCIONES-FALTANTES.md con funciones visibles que no existen ni en el plan ni en el backend.",
+      "estado": "CERRADO"
     }
   ],
   "resultado": [
@@ -904,6 +919,144 @@
       },
       "gap": null,
       "siguiente": "SAL"
+    },
+    {
+      "id_tarea": "I-13",
+      "equipo": "EQUIPO-8",
+      "ronda": 5,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T02:20:25.478Z",
+      "accion": "Se reabrieron visualmente 69 PNG y se reconstruyeron I-04.md a I-09.md con una fila por imagen, función, componente, cobertura y sha256.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-04.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-04.md",
+          "sha256": "275216986f8df4570651c9f9c2fe80e1bdc07618d358eb492dedc9a0a7461194"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-05.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-05.md",
+          "sha256": "1f04b5b46af71cb6548eaa61f9286ab5b423756830ad924b556a9b7e15c029f6"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-06.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-06.md",
+          "sha256": "40af4f573b642153163bc34cb405e86177d0095e9fa7da52df27476c9937031c"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-07.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-07.md",
+          "sha256": "13acf0a04cecfefa594e88930535a15ae11ee3b1877bd683a9389d885f6c575e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-08.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-08.md",
+          "sha256": "28db5d4bd9eb44e02fce7f5b9ec3239c3bbdd05745adce2d448092809612615a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-09.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-09.md",
+          "sha256": "13a468edff4e2c79c137d4684b03aa43fa657ce6cf313ae349d46a0cf046e92d"
+        }
+      ],
+      "prueba_real": {
+        "comando": "abrir UI-EXTRA-014..017 y UI-REF-001..065 como bytes PNG base64 y describir cada imagen visualmente",
+        "ok": true,
+        "salida_resumen": "69/69 imágenes abiertas y descritas; ninguna fila depende del nombre del archivo; 0 descripciones nuevas vacías."
+      },
+      "gap": null,
+      "siguiente": "I-14"
+    },
+    {
+      "id_tarea": "I-14",
+      "equipo": "EQUIPO-8",
+      "ronda": 5,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T02:20:25.478Z",
+      "accion": "Se creó I-COMPARACION.md con comparación fila por fila contra CATALOGO-ANEXOS-VISUALES y CATALOGO-REFERENCIAS-UI.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/6b433bfe565cdaf1206709765c8861d937f40900/chat%20router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
+          "sha256": "9bff3141d293943e44cb314628d19dfb6b3b4c39e1b73accac7984bd8ce12593"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/6b433bfe565cdaf1206709765c8861d937f40900/chat%20router/01-PLAN/CATALOGO-REFERENCIAS-UI.json",
+          "sha256": "65e85067e6412eaaad05f5d6f89cfa6646f1477a34158fb19062be4046d7f16e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-COMPARACION.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-COMPARACION.md",
+          "sha256": "34aeb243bf940c42c74b7254580c7082719fec672c3cd51aaba1fc73cbfdb99c"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comparar 69 filas catálogo↔lectura visual y verificar que toda descripción nueva sea concreta/no vacía",
+        "ok": true,
+        "salida_resumen": "69/69 comparadas; cada catálogo marcado correcta/genérica/incorrecta; 0 descripciones nuevas vacías o genéricas."
+      },
+      "gap": null,
+      "siguiente": "I-15"
+    },
+    {
+      "id_tarea": "I-15",
+      "equipo": "EQUIPO-8",
+      "ronda": 5,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T02:20:25.478Z",
+      "accion": "Se creó I-FUNCIONES-FALTANTES.md con funciones observadas sin equivalente en T-06 ni en el backend actual.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/T-06-INVENTARIO.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/T-06-INVENTARIO.md",
+          "sha256": null
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/13-CHAT-UI-SUITE/gateway.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/13-CHAT-UI-SUITE/gateway.py",
+          "sha256": null
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/ui/panel-chat.js",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/ui/panel-chat.js",
+          "sha256": null
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/ui/panel-org.js",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/ui/panel-org.js",
+          "sha256": null
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-FUNCIONES-FALTANTES.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-FUNCIONES-FALTANTES.md",
+          "sha256": "7329c74c736a04492aadf3359c5f41229d78da640d4b8847982bf1affcb161cb"
+        }
+      ],
+      "prueba_real": {
+        "comando": "cruzar funciones observadas con T-06-INVENTARIO y superficies/endpoint reales de gateway.py + chat router/ui",
+        "ok": true,
+        "salida_resumen": "27 funciones/grupos funcionales visibles sin control/endpoint equivalente."
+      },
+      "gap": null,
+      "siguiente": "SAL"
     }
   ],
   "bitacora": [
@@ -966,21 +1119,44 @@
       "fecha_utc": "2026-10-03T00:48:22.728Z",
       "id_tarea": "I-12",
       "evento": "CERRADO: informe final y handoff de auditoría de imágenes completados."
+    },
+    {
+      "fecha_utc": "2026-10-03T02:20:25.478Z",
+      "id_tarea": "I-13",
+      "evento": "CERRADO: 69/69 imágenes abiertas; I-04..I-09 reconstruidos."
+    },
+    {
+      "fecha_utc": "2026-10-03T02:20:25.478Z",
+      "id_tarea": "I-14",
+      "evento": "CERRADO: I-COMPARACION fila por fila; 0 descripciones nuevas genéricas/vacías."
+    },
+    {
+      "fecha_utc": "2026-10-03T02:20:25.478Z",
+      "id_tarea": "I-15",
+      "evento": "CERRADO: 27 funciones/grupos ausentes de T-06 y backend documentados."
     }
   ],
   "handoff": {
-    "objetivo": "Auditar visualmente las imágenes del plan y extraer su función real sin inventar.",
-    "estado": "CERRADO: I-01..I-12 completadas.",
+    "objetivo": "Cerrar I-13, I-14 e I-15 con auditoría visual real.",
+    "estado": "I-13_CERRADO; I-14_CERRADO; I-15_CERRADO",
     "archivos": [
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-04.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-05.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-06.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-07.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-08.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-09.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-COMPARACION.md",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-FUNCIONES-FALTANTES.md",
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json"
     ],
     "cambios": [
-      "82 registros visuales auditados (17 anexos + 65 referencias UI).",
-      "Funciones no cubiertas por T-06 consolidadas.",
-      "2 grupos duplicados por sha256 confirmados.",
-      "Informe final y handoff cerrados."
+      "69 PNG reabiertos visualmente.",
+      "I-04..I-09 reconstruidos por imagen.",
+      "Comparación completa contra ambos catálogos.",
+      "Funciones visibles no cubiertas por plan/backend registradas."
     ],
     "fallos": [],
-    "siguiente": "SAL; cola sin tareas PENDIENTES."
+    "siguiente": "SAL"
   }
 }
