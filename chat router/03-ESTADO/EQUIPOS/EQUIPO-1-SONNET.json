@@ -647,6 +647,13 @@
       "resumen": "Raiz de motores en chat router sincronizada con la version canonica (16 archivos, diff -r identico, commit 77aafd764). ROOT-MAP-T11 FAIL aclarado: las 19 rutas que marca como faltantes existen en HEAD (git cat-file); el verificador falla solo cuando el checkout es parcial. Registro oficial regenerado con Haiku (X-Ray T-11-04) y Sol (diagrama Archify) como PENDIENTES.",
       "gaps": "Pendiente: cablear plugins al harness (chat, wordflow, memoria), E-09 suite final, runtimes de memoria (Graphiti/Graphify/Memanto/FalkorDB/AgentDB), motionsites (GitHub 451), renombrado de raiz Wordflow.",
       "siguiente": "Cablear plugins al harness y correr E-09."
+    },
+    {
+      "id_tarea": "S1-27",
+      "estado": "CERRADO_REF",
+      "resumen": "E-09 corrida: runtime/tests 278 pasan/3 fallan (base 267/3), seals_core 48/1 (base 44/45). Regresion propia de S1-26 corregida (engine bloqueado 91e6e448 restaurado). Memoria: graphiti, graphify y memanto ya descargados con manifiesto; FalkorDB/AgentDB/PostgreSQL ausentes = GAP documentado por el DSL. Evidencia S1-27-E09-Y-MEMORIA.md",
+      "gaps": "Falta cablear adapters graphiti/graphify/memanto. Repo frontend: publique ahi 6 componentes (usaba el destino por defecto del motor); Hy indica que frontend es FUENTE, no destino Wordflow; pendiente decidir si se retiran. Se bajaron claude-mem, shadcn-skills, plasmic y caret-desktop antes de la indicacion de no descargar sin autorizacion; sin mas descargas.",
+      "siguiente": "Tabla de skills por fila (nombre|fuente|commit|existe|SKILL.md|licencia|mecanismo|uso|evidencia) para las que el chat necesita."
     }
   ],
   "bitacora": [
@@ -771,6 +778,10 @@
     {
       "id_tarea": "S1-26",
       "nota": "Raiz de motores en chat router sincronizada con la version canonica (16 archivos, diff -r identico, commit 77aafd764). ROOT-MAP-T11 FAIL aclarado: las 19 rutas que marca como faltantes existen en HEAD (git cat-file); el verificador falla solo cuando el checkout es parcial. Registro oficial regenerado con Haiku (X-Ray T-11-04) y Sol (diagrama Archify) como PENDIENTES."
+    },
+    {
+      "id_tarea": "S1-27",
+      "nota": "E-09 corrida: runtime/tests 278 pasan/3 fallan (base 267/3), seals_core 48/1 (base 44/45). Regresion propia de S1-26 corregida (engine bloqueado 91e6e448 restaurado). Memoria: graphiti, graphify y memanto ya descargados con manifiesto; FalkorDB/AgentDB/PostgreSQL ausentes = GAP documentado por el DSL. Evidencia S1-27-E09-Y-MEMORIA.md"
     }
   ],
   "handoff": {
