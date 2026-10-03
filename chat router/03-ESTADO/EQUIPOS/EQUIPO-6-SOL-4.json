@@ -32,7 +32,7 @@
     {
       "id": "D-03",
       "tarea": "Graphiti: probar si corre local sin servicio; si no, GAP",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF"
     },
     {
       "id": "D-04",
@@ -149,10 +149,10 @@
       "id_tarea": "D-03",
       "equipo": "EQUIPO-6",
       "ronda": 1,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "GPT-5.6 Sol",
       "fecha_utc": "2026-10-02T08:43:00Z",
-      "accion": "Se probó la disponibilidad local de Graphiti sin servicio y se documentó el GAP exacto.",
+      "accion": "CERRADO_REF: Graphiti no corre localmente: no hay graphiti_core instalado ni backend de grafo/servicio configurado.",
       "archivos": [
         {
           "operacion": "creado",
@@ -167,11 +167,11 @@
         "salida_resumen": "graphiti_core -> ModuleNotFoundError; variables requeridas ausentes; puertos 6379 y 7687 -> ConnectionRefusedError. README exige backend de grafo y proveedor LLM/embedding para operación real."
       },
       "gap": {
-        "motivo": "El código fuente existe, pero este entorno no tiene graphiti_core instalado ni backend de grafo/servicio configurado; el adaptador existente es fail-closed y explícitamente no ejecuta Graphiti.",
+        "motivo": "Graphiti no corre localmente: no hay graphiti_core instalado ni backend de grafo/servicio configurado.",
         "intento_fix": "Se intentó clonar para ejecutar el paquete exacto, pero el contenedor no resuelve github.com; se inspeccionó la fuente por el conector GitHub y se hicieron probes locales de import/env/puertos.",
         "necesita": "Un runtime local con Graphiti instalado y un backend admitido (FalkorDB/Neo4j/Neptune/Kuzu), más proveedor LLM/embedding; no se autoriza levantarlo en esta ronda."
       },
-      "siguiente": "Director decide siguiente ronda; D-04 permanece PENDIENTE"
+      "siguiente": "SALIR; D-03 queda cerrado por referencia."
     },
     {
       "id_tarea": "D-04",
@@ -488,11 +488,16 @@
       "fecha_utc": "2026-10-03T00:49:00Z",
       "id_tarea": "D-12",
       "evento": "CERRADO: handoff de memoria creado con 8 GAPs restantes y fallback SQLite/graph SQLite probado."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:53:00Z",
+      "id_tarea": "D-03",
+      "evento": "CERRADO_REF: Graphiti no corre localmente: no hay graphiti_core instalado ni backend de grafo/servicio configurado."
     }
   ],
   "handoff": {
     "objetivo": "D-12: entregar handoff de memoria con los GAPs restantes.",
-    "estado": "D-12 CERRADO; no quedan tareas PENDIENTE en la cola.",
+    "estado": "D-03 CERRADO_REF; D-12 CERRADO; no quedan tareas PENDIENTE en la cola.",
     "archivos": [
       "chat router/04-MEMORIA/HANDOFF-MEMORIA-GAPS.json",
       "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
@@ -501,7 +506,8 @@
     "cambios": [
       "Handoff final consolidado con 8 GAPs externos/estructurales.",
       "SQLite, grafo SQLite y persistencia tras reinicio permanecen PASS.",
-      "Necesidades del Router quedan referenciadas sin tocar el Router."
+      "Necesidades del Router quedan referenciadas sin tocar el Router.",
+      "D-03 pasó de BLOQUEADO a CERRADO_REF: Graphiti no corre localmente: no hay graphiti_core instalado ni backend de grafo/servicio configurado."
     ],
     "fallos": [],
     "siguiente": "SALIR."
