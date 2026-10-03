@@ -633,6 +633,13 @@
       "resumen": "Auditoria de los archivos de texto del plan (01-PLAN): 4 pasadas y 3 refutaciones automaticas. 73 archivos: {'PENDIENTE_RUTAS_FALTAN': 41, 'SIN_REFERENCIA_VERIFICABLE': 19, 'EJECUTADO_VERIFICADO': 13}. Detalle en 11-EVIDENCIA/equipos/EQUIPO-1/S1-24-AUDITORIA-PLAN.json y .md",
       "gaps": "Rutas citadas por el plan que no existen (muchas apuntan a otros repos o a nombres antiguos); lista en el .md. Pendiente de ejecucion: renombrado de raiz Wordflow, cableado de skills, validacion del harness (build), E-09. Haiku (X-Ray T-11-04) y Sol (diagrama Archify) siguen PENDIENTES.",
       "siguiente": "Resolver cada grupo de rutas faltantes, registrar en watchdog oficial."
+    },
+    {
+      "id_tarea": "S1-25",
+      "estado": "CERRADO",
+      "resumen": "Harness DeepSeek: install OK, build:lib exit 0 (8 GB, solo), dsh --version 0.2.0-rc.2, dsh --profile headless --help OK. Evidencia S1-25-HARNESS-VALIDADO.md",
+      "gaps": "Falta correr una tarea real con modelo (necesita clave de proveedor); adaptador deepseek_harness del Wordflow no invocado.",
+      "siguiente": "Cablear plugins (chat, wordflow, memoria) al harness."
     }
   ],
   "bitacora": [
@@ -749,6 +756,10 @@
     {
       "id_tarea": "S1-24",
       "nota": "Auditoria de los archivos de texto del plan (01-PLAN): 4 pasadas y 3 refutaciones automaticas. 73 archivos: {'PENDIENTE_RUTAS_FALTAN': 41, 'SIN_REFERENCIA_VERIFICABLE': 19, 'EJECUTADO_VERIFICADO': 13}. Detalle en 11-EVIDENCIA/equipos/EQUIPO-1/S1-24-AUDITORIA-PLAN.json y .md"
+    },
+    {
+      "id_tarea": "S1-25",
+      "nota": "Harness DeepSeek: install OK, build:lib exit 0 (8 GB, solo), dsh --version 0.2.0-rc.2, dsh --profile headless --help OK. Evidencia S1-25-HARNESS-VALIDADO.md"
     }
   ],
   "handoff": {
