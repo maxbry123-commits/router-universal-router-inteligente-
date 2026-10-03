@@ -52,11 +52,11 @@ def build_hf_control_router() -> APIRouter:
         cpu_s, hilos = min(float(p.get("cpu_segundos", 0)), 600), min(int(p.get("hilos", 4)), 16)
         ram_gb, ram_s = min(float(p.get("ram_gb", 0)), 14), min(float(p.get("ram_segundos", 120)), 600)
 
-        def quemar() -> None:
-            fin = _t.time() + cpu_s
-            x = 0
-            while _t.time() < fin:
-                x = (x * 31 + 7) % 1000003
+        def quemar() -> None:  # proceso aparte: los hilos de Python no pasan de 1 nucleo (GIL); el cgroup cuenta los hijos
+            import subprocess
+            import sys
+
+            subprocess.Popen([sys.executable, "-c", f"import time\nfin=time.time()+{cpu_s}\nwhile time.time()<fin: pass"])
 
         def retener() -> None:
             bloque = bytearray(int(ram_gb * 1024 ** 3))
@@ -67,7 +67,7 @@ def build_hf_control_router() -> APIRouter:
 
         if cpu_s > 0:
             for _ in range(hilos):
-                threading.Thread(target=quemar, daemon=True).start()
+                quemar()
         if ram_gb > 0:
             threading.Thread(target=retener, daemon=True).start()
         return {"cpu_segundos": cpu_s, "hilos": hilos, "ram_gb": ram_gb, "ram_segundos": ram_s, "estado": POOL.status()}
