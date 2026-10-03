@@ -1,27 +1,27 @@
-# Handoff - laboratorio pruebas SDK / API (OpenAI)
+# Handoff: laboratorio pruebas SDK / API
+Actualizado: 2026-10-03. Quien continue: lee primero `README pruebas.md` de esta carpeta.
 
-Estado: plugin y motor SUBIDOS a main. NO ejecutado todavia: falta la clave del Router (X-API-Key) para abrir el banco y lanzar las pruebas.
+## Conexiones
+| Pieza | Donde | Estado |
+|---|---|---|
+| Motor | `Laboratorio Code de pruebas.py` | escrito por GPT; sin ejecutar |
+| Plugin | `router inteligente universal/plugins/openai_sdk_lab/` | subido 2026-10-03; apagado por defecto |
+| Banco | `vault_hook.provider_keys("openai")` | 14 claves segun el commit agent 30; sin verificar |
+| Router | LIVE_URL en `router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag` | vivo (health 200 el 2026-10-03) |
+| Arquitectura | `Readme arquitectura router inteligente universal/` y `router inteligente universal/HANDOFF-CABLEADO.md` | sin cambios |
 
-## Micro flujo
-main -> Router HF 16 GB (git pull cada 60 s) -> Plugin Host -> plugins/openai_sdk_lab -> vault_hook.provider_keys(openai) -> OpenAI SDK -> RESULTADOS-OPENAI-SDK.json
+## Flujo
+`LABORATORIO -> PLUGIN HOST -> PLUGIN -> VAULT_HOOK -> BANCO -> OPENAI -> RESUMEN SIN CLAVES -> RESULTADOS`
 
-## Donde esta cada cosa
-- Motor: Laboratorio Code de pruebas.py (esta carpeta)
-- Plugin: router inteligente universal/plugins/openai_sdk_lab/ (ficha.json + plugin.py), nace APAGADO
-- Banco: proveedor openai (claves OPENAI_API_KEY_1..14) y grupo sdk en policies.json, ya cableados por otros agentes; verificar con /chat/providers
-- Resultados: RESULTADOS-OPENAI-SDK.json (lo escribe el plugin con el token del Job; sin claves)
-
-## Pasos para ejecutar (siempre con Authorization: Bearer token HF y X-API-Key clave del Router)
-1. POST /plugins/sync (el Router recoge el plugin nuevo)
-2. POST /plugins/openai_sdk_lab/enable
-3. POST /vault/unlock con la clave del banco (solo en memoria; nunca en archivos)
-4. GET /plugins y leer el reason de openai_sdk_lab: N/14 claves PASS (si dice corriendo, repetir en 1 minuto)
-5. Si PASS: dejar el plugin encendido y confirmar que un agente usa el proveedor openai por el Router
-6. Si FAIL: anotar la causa por clave en el README; no inventar
-
-## Reglas del Director
-Sin GitHub Actions. Sin LFS. Sin tocar el nucleo del Router. Sin claves en archivos, logs ni resultados. Sin Router nuevo ni Jobs nuevos.
+## Pendiente (en orden)
+1. Clave del Router (X-API-Key) del Director: no esta en el repo; solo en secretos de GitHub.
+2. Correr los 4 pasos del README y anotar el resultado en el README.
+3. Si PASS: los agentes usan el SDK por el Router con el proveedor openai (grupo sdk de policies.json). Verificarlo en la misma corrida.
+4. Laboratorio temporal: al terminar, `POST /plugins/openai_sdk_lab/disable`.
 
 ## GAP
-- Clave del Router: no esta en el repo; la tiene el Director.
-- El paquete openai no esta en el pip del Router: el plugin lo instala solo si falta (al relanzar el Job se reinstala).
+- `openai` no esta en los pip del Router: el plugin lo instala la primera vez; tras relanzar el Job se reinstala solo. Para dejarlo fijo, anadir `openai` a los pip del guardian.
+- Un commit anterior (ci: trigger secure OpenAI probe) sugiere GitHub Actions, que esta prohibido. Sin verificar.
+
+## Reglas
+Sin GitHub Actions, sin LFS, sin Jobs nuevos, sin tocar el nucleo del Router, sin claves en el repo.
