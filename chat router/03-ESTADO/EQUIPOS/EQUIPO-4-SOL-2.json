@@ -80,7 +80,7 @@
     {
       "id": "B-12",
       "tarea": "Lista de GAPs globales y siguiente acción",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     }
   ],
   "resultado": [
@@ -245,6 +245,78 @@
       },
       "gap": null,
       "siguiente": "B-07"
+    },
+    {
+      "id_tarea": "B-12",
+      "equipo": "EQUIPO-4",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "accion": "Se consolidaron los GAPs globales y la siguiente acción a partir de resultado[], cola[] y handoff de los ocho equipos, sin editar archivos ajenos.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "sha256": "d6a67fd45a8979f018206212e481a66f6f54b5cd62d3b582520af708e181479d"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-2-HAIKU.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-2-HAIKU.json",
+          "sha256": "8cf2de8201fd65b8b1ec5183dee4d4224e72fff056e314513b6fb664c2581803"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "sha256": "bfb093d735e765c6770e272a0e2b512f964116fc5e97173784e3c60784f7cfc4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+          "sha256": "da5c926c370965bc080599009659a8fab9f8e786cb379e530fca6df77ddfef36"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "sha256": "2fcd4814ed7756e1753560b66e6254f89539592e8adb08e7da01fc64a82b40eb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "sha256": "1ddd91966a6006a6027cdd2eed1f2ad6ce35a56e3e539f40de324941111c7bbe"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json",
+          "sha256": "84f5f52d244d1b4339f8119f1a359bfe6f59bb0ba0e794a41843a22598f5176a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B-12-gaps-globales.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B-12-gaps-globales.json",
+          "sha256": "9ee48e5487ea2ff695bcf07e6ef4580b7a94214c930031e0b624610e19eac164"
+        }
+      ],
+      "prueba_real": {
+        "comando": "leer EQUIPO-1..8 y extraer estados PENDIENTE/CERRADO_REF/BLOQUEADO, gaps y handoff; consolidar siguiente acción global",
+        "ok": true,
+        "salida_resumen": "8/8 archivos de equipo leídos; 10 grupos de GAP global consolidados; siguiente acción global definida; ningún EQUIPO-N ajeno fue modificado."
+      },
+      "gap": null,
+      "siguiente": "SAL"
     }
   ],
   "bitacora": [
@@ -277,22 +349,25 @@
       "fecha_utc": "2026-10-03T00:46:25Z",
       "id_tarea": "B-06",
       "evento": "CERRADO: O4-19 E2E PASS 3/3."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "id_tarea": "B-12",
+      "evento": "CERRADO: GAPs globales y siguiente acción consolidados desde EQUIPO-1..8."
     }
   ],
   "handoff": {
-    "objetivo": "Continuar con las 3 primeras tareas PENDIENTE de la cola.",
-    "estado": "B-01..B-06 CERRADO",
+    "objetivo": "Cerrar B-12: lista de GAPs globales y siguiente acción.",
+    "estado": "B-12 CERRADO.",
     "archivos": [
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B-12-gaps-globales.json",
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json"
     ],
     "cambios": [
-      "B-04 test de proyección PASS 4/4",
-      "B-05 O4-17 cierre con evidencia y read-back",
-      "B-06 O4-19 E2E PASS 3/3"
+      "GAPs globales consolidados desde los 8 archivos de equipo.",
+      "Siguiente acción global definida sin modificar otros equipos."
     ],
     "fallos": [],
-    "siguiente": "B-07,B-08,B-09"
+    "siguiente": "SAL"
   }
 }

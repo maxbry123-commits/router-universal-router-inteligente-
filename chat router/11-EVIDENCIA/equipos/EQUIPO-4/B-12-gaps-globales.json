@@ -1,0 +1,128 @@
+{
+  "schema": "yaiwes.global-gaps/v1",
+  "equipo": "EQUIPO-4",
+  "tarea": "B-12",
+  "fecha_utc": "2026-10-03T00:25:00Z",
+  "fuente": "resultado[] + cola[] + handoff de EQUIPO-1..8",
+  "gaps_globales": [
+    {
+      "id": "G-01",
+      "equipos": [
+        "EQUIPO-1"
+      ],
+      "motivo": "Ocho adapters del orquestador quedaron CERRADO_REF por ausencia de un comando compatible stdin→stdout, componente ausente/submódulo vacío o MCP que exige subcomando.",
+      "siguiente_accion": "Director define/adopta comandos runtime ya existentes para Rowboat, MSAF, Orca, OmniRoute, DeepSeek Harness, Munder Difflin, Dagu/DBOS y MCP; luego repetir prueba de ComponentAdapter."
+    },
+    {
+      "id": "G-02",
+      "equipos": [
+        "EQUIPO-1"
+      ],
+      "motivo": "Suite runtime: 269 passed y 11 failed; 3 fallos son base conocida y 8 son adicionales en canonical motor gate, component intake y existing-code intake.",
+      "siguiente_accion": "Corregir solo los 8 fallos adicionales en sus módulos propietarios y repetir suite antes del cierre global."
+    },
+    {
+      "id": "G-03",
+      "equipos": [
+        "EQUIPO-2"
+      ],
+      "motivo": "H-07 no encuentra la fuente skills/ ni Skills agente/; H-08 carece de ruta/nombres/fuente real para biblioteca RAG; H-12 no ejecutó watchdog por DNS.",
+      "siguiente_accion": "Aportar fuentes/rutas reales y un checkout ejecutable; no inventar estructura. H-10 solo puede ejecutarse con autorización expresa del Director."
+    },
+    {
+      "id": "G-04",
+      "equipos": [
+        "EQUIPO-3"
+      ],
+      "motivo": "A-12 sigue PENDIENTE: falta consolidar la lista de GAPs de P2 con motivo e intento de arreglo.",
+      "siguiente_accion": "EQUIPO-3 cierra A-12 usando únicamente sus resultados/evidencias ya generados."
+    },
+    {
+      "id": "G-05",
+      "equipos": [
+        "EQUIPO-4"
+      ],
+      "motivo": "B-07..B-11 siguen PENDIENTE: auditoría O4, mapa vivo y pre-auditorías aún no están registradas en este DESTINO.",
+      "siguiente_accion": "EQUIPO-4 cierra B-07..B-11 sin modificar archivos de otros equipos."
+    },
+    {
+      "id": "G-06",
+      "equipos": [
+        "EQUIPO-5"
+      ],
+      "motivo": "Contexto, Diseño 1 y Apps no satisfacen todos los contratos/esquemas; claude-mem y shadcn-skills quedaron CERRADO_REF y C-10 conservó faltantes fail-closed.",
+      "siguiente_accion": "Resolver solo con fuentes/runtimes verificables los contratos faltantes; mantener CERRADO_REF donde no exista fuente válida."
+    },
+    {
+      "id": "G-07",
+      "equipos": [
+        "EQUIPO-6"
+      ],
+      "motivo": "Graphiti, Graphify, FalkorDB, AgentDB, Memanto, PostgreSQL y Redis no están demostrados como runtimes/servicios conectados; SQLite + grafo SQLite sí funcionan como fallback. D-03 conserva estado histórico BLOQUEADO.",
+      "siguiente_accion": "Director decide qué runtimes externos habilitar; el equipo propietario normaliza estados heredados a la política v2 cuando corresponda y conserva SQLite como fallback obligatorio."
+    },
+    {
+      "id": "G-08",
+      "equipos": [
+        "EQUIPO-7"
+      ],
+      "motivo": "E-09..E-12 siguen PENDIENTE y E-09 está gateado por cierre de equipos 1..6; Ruff quedó CERRADO_REF por falta de checkout/red y E-01/E-02 conservan estado histórico BLOQUEADO.",
+      "siguiente_accion": "Cerrar primero pendientes/gates de equipos 1..6; después ejecutar suite final E-09, evidencia E-10, arquitectura E-11 e informe E-12."
+    },
+    {
+      "id": "G-09",
+      "equipos": [
+        "EQUIPO-8"
+      ],
+      "motivo": "Auditoría visual cerrada, pero detectó funciones visibles sin control equivalente completo en T-06: flujo PR/diff/merge, gestión de tareas/subtareas, Environment, comandos/límites, security profiles, automatizaciones, multi-bot, settings y telemetría.",
+      "siguiente_accion": "Director decide cuáles funciones pasan a alcance; solo entonces crear controles/filas de plan correspondientes."
+    },
+    {
+      "id": "G-10",
+      "equipos": [
+        "EQUIPO-2",
+        "EQUIPO-3",
+        "EQUIPO-4",
+        "EQUIPO-6",
+        "EQUIPO-7"
+      ],
+      "motivo": "El gate global aún no está limpio: quedan PENDIENTE y estados históricos BLOQUEADO; por eso la suite final de EQUIPO-7 no puede ser cierre definitivo.",
+      "siguiente_accion": "Orden: decisión Director sobre H-10 → cerrar A-12 → cerrar B-07..B-11 → resolver/normalizar D-03/E-01/E-02 según v2 → ejecutar E-09..E-12."
+    }
+  ],
+  "siguiente_accion_global": "Desbloquear el gate de equipos 1..6 y después ejecutar la suite final de EQUIPO-7; no declarar cierre global mientras existan pendientes, estados históricos no normalizados o los 8 fallos adicionales de runtime.",
+  "fuentes": [
+    {
+      "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+      "sha256": "d6a67fd45a8979f018206212e481a66f6f54b5cd62d3b582520af708e181479d"
+    },
+    {
+      "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-2-HAIKU.json",
+      "sha256": "8cf2de8201fd65b8b1ec5183dee4d4224e72fff056e314513b6fb664c2581803"
+    },
+    {
+      "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+      "sha256": "bfb093d735e765c6770e272a0e2b512f964116fc5e97173784e3c60784f7cfc4"
+    },
+    {
+      "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+      "sha256": "da5c926c370965bc080599009659a8fab9f8e786cb379e530fca6df77ddfef36"
+    },
+    {
+      "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+      "sha256": "2fcd4814ed7756e1753560b66e6254f89539592e8adb08e7da01fc64a82b40eb"
+    },
+    {
+      "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+      "sha256": "1ddd91966a6006a6027cdd2eed1f2ad6ce35a56e3e539f40de324941111c7bbe"
+    },
+    {
+      "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+      "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+    },
+    {
+      "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json",
+      "sha256": "84f5f52d244d1b4339f8119f1a359bfe6f59bb0ba0e794a41843a22598f5176a"
+    }
+  ]
+}
