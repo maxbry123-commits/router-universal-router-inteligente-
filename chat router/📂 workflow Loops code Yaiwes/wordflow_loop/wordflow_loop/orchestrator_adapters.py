@@ -99,6 +99,19 @@ COMPONENT_CAPABILITIES: dict[str, dict[str, Any]] = {
                "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
                "command_env": "YAIWES_CONTEXT_MODE_COMMAND"},
 
+    "recordly": {"provides": "desktop_demo_recording_capture",
+                 "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+                 "command_env": "YAIWES_RECORDLY_COMMAND"},
+    "claude_mem": {"provides": "persistent_cross_session_memory_context",
+                   "forbidden": ("authority_transfer", "uncontrolled_context_write"),
+                   "command_env": "YAIWES_CLAUDE_MEM_COMMAND"},
+    "caret_desktop": {"provides": "desktop_ai_code_editing_mcp",
+                      "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+                      "command_env": "YAIWES_CARET_DESKTOP_COMMAND"},
+    "plasmic": {"provides": "visual_react_app_site_builder",
+                "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+                "command_env": "YAIWES_PLASMIC_COMMAND"},
+
     # EQUIPO-5
     "find_skills": {"provides": "agent_skill_discovery_install",
                     "forbidden": ("authority_transfer", "side_effect_without_sheriff"),

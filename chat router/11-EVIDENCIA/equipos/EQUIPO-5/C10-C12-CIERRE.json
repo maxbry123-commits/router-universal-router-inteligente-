@@ -1,0 +1,144 @@
+{
+  "schema": "yaiwes.evidence/equipo-5-c10-c12/v1",
+  "generated_at": "2026-10-03T01:01:49.919Z",
+  "tasks": {
+    "C-10": {
+      "contract_test_attempt_1": [
+        {
+          "group": "Firecrawl",
+          "ok": true,
+          "missing_schemas": [],
+          "missing_capabilities": []
+        },
+        {
+          "group": "Contexto",
+          "ok": false,
+          "missing_schemas": [
+            "ponytail"
+          ],
+          "missing_capabilities": [
+            "claude_mem"
+          ]
+        },
+        {
+          "group": "Diseño 1",
+          "ok": false,
+          "missing_schemas": [
+            "shadcn-skills",
+            "emilkowalski-skills"
+          ],
+          "missing_capabilities": []
+        },
+        {
+          "group": "Diseño 2",
+          "ok": true,
+          "missing_schemas": [],
+          "missing_capabilities": []
+        },
+        {
+          "group": "Método",
+          "ok": true,
+          "missing_schemas": [],
+          "missing_capabilities": []
+        },
+        {
+          "group": "Apps",
+          "ok": false,
+          "missing_schemas": [],
+          "missing_capabilities": [
+            "recordly",
+            "caret_desktop",
+            "plasmic"
+          ]
+        }
+      ],
+      "contract_test_retry": [
+        {
+          "group": "Firecrawl",
+          "ok": true,
+          "missing_schemas": [],
+          "missing_capabilities": []
+        },
+        {
+          "group": "Contexto",
+          "ok": false,
+          "missing_schemas": [
+            "ponytail"
+          ],
+          "missing_capabilities": [
+            "claude_mem"
+          ]
+        },
+        {
+          "group": "Diseño 1",
+          "ok": false,
+          "missing_schemas": [
+            "shadcn-skills",
+            "emilkowalski-skills"
+          ],
+          "missing_capabilities": []
+        },
+        {
+          "group": "Diseño 2",
+          "ok": true,
+          "missing_schemas": [],
+          "missing_capabilities": []
+        },
+        {
+          "group": "Método",
+          "ok": true,
+          "missing_schemas": [],
+          "missing_capabilities": []
+        },
+        {
+          "group": "Apps",
+          "ok": false,
+          "missing_schemas": [],
+          "missing_capabilities": [
+            "recordly",
+            "caret_desktop",
+            "plasmic"
+          ]
+        }
+      ],
+      "verdict": "CERRADO_REF",
+      "fail_closed": true
+    },
+    "C-11": {
+      "classified_tools_expected": 16,
+      "capability_keys_present_after_patch": [
+        "npxskillui",
+        "recordly",
+        "firecrawl",
+        "firecrawl_cli",
+        "firecrawl_mcp_server",
+        "getdesign",
+        "open_design",
+        "headroom",
+        "find_skills",
+        "claude_mem",
+        "context_mode",
+        "caret_desktop",
+        "onlook",
+        "plasmic",
+        "webstudio",
+        "magic_mcp"
+      ],
+      "missing_after_patch": [],
+      "verdict": "PASS"
+    },
+    "C-12": {
+      "gaps": [
+        "claude-mem: C-04 quedó CERRADO_REF; el runtime/source no pudo verificarse tras intento+reintento por fallo de resolución de github.com. El capability contract queda fail-closed hasta configurar runtime real.",
+        "ponytail: clasificado como skill, pero no existe ponytail.dag.yaml en skills_schema al ejecutar C-10.",
+        "shadcn-skills: C-05 quedó CERRADO_REF; el runtime/source no pudo verificarse tras intento+reintento por fallo de resolución de github.com y no existe shadcn-skills.dag.yaml.",
+        "emilkowalski-skills: clasificado como skill, pero no existe emilkowalski-skills.dag.yaml en skills_schema al ejecutar C-10.",
+        "rare-ui: clasificado como solo referencia; no expone contrato ejecutable verificado, por lo que no se registra como herramienta.",
+        "motionsites: clasificado como solo referencia por upstream 451/DMCA; no se declara runtime ejecutable.",
+        "Apps C-08 sigue PENDIENTE: recordly/caret-desktop/onlook/plasmic/webstudio quedan con contratos de capacidad fail-closed, pero su integración/runtime de app no se declara verificada por C-11.",
+        "C-09 sigue PENDIENTE: el cableado por configuración de crawlers/compresores hacia el Router principal no se declara cerrado desde C-10/C-12."
+      ],
+      "verdict": "PASS"
+    }
+  }
+}

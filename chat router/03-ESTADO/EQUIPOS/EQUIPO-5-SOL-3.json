@@ -101,17 +101,17 @@
     {
       "id": "C-10",
       "tarea": "Test de contrato por grupo (falla cerrado)",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO_REF"
     },
     {
       "id": "C-11",
       "tarea": "Registrar todo en el capability map",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "C-12",
       "tarea": "Lista de GAPs: lo descargado que no se pudo integrar y por qué",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     }
   ],
   "resultado": [
@@ -616,6 +616,84 @@
       },
       "gap": null,
       "siguiente": "SAL"
+    },
+    {
+      "id_tarea": "C-10",
+      "equipo": "EQUIPO-5",
+      "ronda": 4,
+      "estado": "CERRADO_REF",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T01:01:49.947Z",
+      "accion": "Test de contrato por grupo ejecutado fail-closed; intento y reintento conservaron faltantes en Contexto, Diseño 1 y Apps, por lo que se cierra como referencia sin inventar integración.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "sha256": "47f8ce6dec9e1d7812c5d70f085d07c8d201f3a10f43ec86dc01f29dd8a1e3c4"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Validar por grupo skills_schema + COMPONENT_CAPABILITIES; si falla, repetir una vez y cerrar fail-closed.",
+        "ok": false,
+        "salida_resumen": "[{\"group\":\"Firecrawl\",\"ok\":true,\"missing_schemas\":[],\"missing_capabilities\":[]},{\"group\":\"Contexto\",\"ok\":false,\"missing_schemas\":[\"ponytail\"],\"missing_capabilities\":[\"claude_mem\"]},{\"group\":\"Diseño 1\",\"ok\":false,\"missing_schemas\":[\"shadcn-skills\",\"emilkowalski-skills\"],\"missing_capabilities\":[]},{\"group\":\"Diseño 2\",\"ok\":true,\"missing_schemas\":[],\"missing_capabilities\":[]},{\"group\":\"Método\",\"ok\":true,\"missing_schemas\":[],\"missing_capabilities\":[]},{\"group\":\"Apps\",\"ok\":false,\"missing_schemas\":[],\"missing_capabilities\":[\"recordly\",\"caret_desktop\",\"plasmic\"]}]"
+      },
+      "gap": null,
+      "siguiente": "C-11"
+    },
+    {
+      "id_tarea": "C-11",
+      "equipo": "EQUIPO-5",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T01:01:49.947Z",
+      "accion": "Capability map completado para las 16 herramientas clasificadas. Se añadieron recordly, claude_mem, caret_desktop y plasmic; los contratos siguen fail-closed si falta su command_env/runtime.",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "756ae0fecaece38aa44d03f356a03c9f1ed39f361d79c11b5cfa01c72b5062aa"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "sha256": "47f8ce6dec9e1d7812c5d70f085d07c8d201f3a10f43ec86dc01f29dd8a1e3c4"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Extraer COMPONENT_CAPABILITIES y comprobar las 16 herramientas de C-02.",
+        "ok": true,
+        "salida_resumen": "16/16 presentes; faltantes=0; añadidos=recordly,claude_mem,caret_desktop,plasmic"
+      },
+      "gap": null,
+      "siguiente": "C-12"
+    },
+    {
+      "id_tarea": "C-12",
+      "equipo": "EQUIPO-5",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T01:01:49.947Z",
+      "accion": "Lista final de lo descargado/no integrado cerrada: claude-mem: C-04 quedó CERRADO_REF; el runtime/source no pudo verificarse tras intento+reintento por fallo de resolución de github.com. El capability contract queda fail-closed hasta configurar runtime real. | ponytail: clasificado como skill, pero no existe ponytail.dag.yaml en skills_schema al ejecutar C-10. | shadcn-skills: C-05 quedó CERRADO_REF; el runtime/source no pudo verificarse tras intento+reintento por fallo de resolución de github.com y no existe shadcn-skills.dag.yaml. | emilkowalski-skills: clasificado como skill, pero no existe emilkowalski-skills.dag.yaml en skills_schema al ejecutar C-10. | rare-ui: clasificado como solo referencia; no expone contrato ejecutable verificado, por lo que no se registra como herramienta. | motionsites: clasificado como solo referencia por upstream 451/DMCA; no se declara runtime ejecutable. | Apps C-08 sigue PENDIENTE: recordly/caret-desktop/onlook/plasmic/webstudio quedan con contratos de capacidad fail-closed, pero su integración/runtime de app no se declara verificada por C-11. | C-09 sigue PENDIENTE: el cableado por configuración de crawlers/compresores hacia el Router principal no se declara cerrado desde C-10/C-12.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "sha256": "47f8ce6dec9e1d7812c5d70f085d07c8d201f3a10f43ec86dc01f29dd8a1e3c4"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Cruzar C-02/C-04/C-05, skills_schema actual, capability map y estados C-08/C-09 sin ejecutar esas tareas.",
+        "ok": true,
+        "salida_resumen": "gaps=8; no se tocó router inteligente universal/, GitHub Actions, LFS ni Hugging Face"
+      },
+      "gap": null,
+      "siguiente": "SAL"
     }
   ],
   "bitacora": [
@@ -673,22 +751,39 @@
       "fecha_utc": "2026-10-03T00:58:53.239Z",
       "id_tarea": "C-09",
       "evento": "CERRADO: crawlers + compresores conectados por capability map/command_env; Router no tocado."
+    },
+    {
+      "fecha_utc": "2026-10-03T01:01:49.947Z",
+      "id_tarea": "C-10",
+      "evento": "CERRADO_REF: test de contrato por grupo ejecutado con un reintento y comportamiento fail-closed."
+    },
+    {
+      "fecha_utc": "2026-10-03T01:01:49.947Z",
+      "id_tarea": "C-11",
+      "evento": "CERRADO: capability map contiene 16/16 herramientas clasificadas."
+    },
+    {
+      "fecha_utc": "2026-10-03T01:01:49.947Z",
+      "id_tarea": "C-12",
+      "evento": "CERRADO: lista de gaps de integración registrada sin ejecutar C-08 ni C-09."
     }
   ],
   "handoff": {
-    "objetivo": "Cerrar C-08 y C-09.",
-    "estado": "C-08 CERRADO_REF; C-09 CERRADO.",
+    "objetivo": "Cierre solicitado C-10, C-11, C-12.",
+    "estado": "C-10 CERRADO_REF; C-11 CERRADO; C-12 CERRADO.",
     "archivos": [
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
       "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt"
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json"
     ],
     "cambios": [
-      "C-08 registró onlook y webstudio; desktop se dejó sin integración.",
-      "C-09 añadió headroom y context_mode junto a Firecrawl ya registrado."
+      "C-10: test por grupo con reintento y fail-closed.",
+      "C-11: 16/16 herramientas declaradas en COMPONENT_CAPABILITIES.",
+      "C-12: gaps reales consolidados; C-08 y C-09 permanecen sin ejecutar."
     ],
-    "fallos": [],
+    "fallos": [
+      "Contexto, Diseño 1 y Apps no satisfacen todos los contratos/esquemas requeridos en C-10; evidencia exacta en C10-C12-CIERRE.json."
+    ],
     "siguiente": "SAL"
   }
 }
