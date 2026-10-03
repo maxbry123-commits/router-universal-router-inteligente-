@@ -1,0 +1,41 @@
+schema: yaiwes.cierre-equipo-1/v2
+modo: CERRADO            # no existe BLOQUEADO, ni preguntar, ni escalar
+manda_sobre: [ronda_actual, "las 3 primeras PENDIENTE", DSL-EQUIPO-1-CIERRE.yaml, HANDOFF-EQUIPO-1-SONNET.md]
+reglas: "chat router/03-ESTADO/EQUIPOS/REGLAS-DURAS.md (v2: BLOQUEADO ya no existe; todo cierra CERRADO o CERRADO_REF)"
+acceso: "misma ruta Vercel que ya usaste. Claves por env, nunca impresas. Si el timeout 2700000 da error usa 300000 y recrea la máquina haciendo git pull."
+estado_inicial: "S1-09, S1-10, S1-11, S1-12 CERRADAS. S1-04 a S1-08 quedaron BLOQUEADAS: ya no se reintentan ni se investigan."
+no_pisar_a_otros:
+  solo_escribes: ["chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json", "chat router/11-EVIDENCIA/equipos/EQUIPO-1/"]
+  prohibido_editar: ["wordflow_loop/wordflow_loop/orchestrator_adapters.py", "skills_schema/", "ROOT-MAP-T11.yaml", "chat router/01-PLAN/", "tests", "EQUIPO-N-*.json ajenos"]
+  git: "antes de CADA push: git pull --rebase; empuja solo tus rutas; si rechaza, pull --rebase y 1 reintento."
+salida: "NODO [EQUIPO-1] — <ID> | CERRADO|CERRADO_REF | COMMIT:<sha7>     (una línea por tarea, NADA MÁS: sin gaps, sin explicación). Al final: EQUIPO-1 FIN"
+
+dag:
+  T1_REGLA_NUEVA:   # 1 minuto, sin pruebas
+    id: S1-04_a_S1-08 (también S1-01, S1-02, S1-03)
+    hace: "en EQUIPO-1-SONNET.json cambia el estado en cola de S1-01 a S1-08 de BLOQUEADO a CERRADO_REF, con motivo de una línea cada una (el que ya escribiste: sin comando que lea stdin / sin carpeta / submódulo vacío / mcp exige subcomando). No ejecutes nada."
+    cierra_en: CERRADO_REF
+  T2_ARREGLAR_LOS_8_FALLOS:   # lo más importante: la suite tiene 8 fallos fuera de la base 267/3
+    id: S1-11b
+    pasos:
+      - "sparse-checkout de las DOS carpetas: 'chat router/wordflow loop code Yaiwes' (original) y 'chat router/📂 workflow Loops code Yaiwes' (copia nueva)"
+      - "entorno: pip install uv && uv venv --python 3.12 /tmp/v312 && . /tmp/v312/bin/activate (la base 267/3 se midió con Python distinto de 3.14); pip install pytest + lo que pida UN import fallido (1 vuelta de pip)"
+      - "corre 'pytest runtime/tests -q' en LAS DOS carpetas y guarda las listas de fallos en EQUIPO-1/S1-11b-original.txt y S1-11b-nueva.txt"
+      - "clasifica cada fallo en una de tres, por regla: (A) falla en las dos y también falló en la base -> ya conocido; (B) falla en las dos y no está en la base -> entorno o dependencia: aplica el arreglo de instalación (pip) y vuelve a correr 1 vez; (C) falla SOLO en la nueva -> causa de ruta o de archivo movido: anota el test y la ruta exacta"
+      - "los fallos que queden tras el arreglo de instalación: CERRADO_REF con la lista exacta de tests (nombre) en EQUIPO-1/S1-11b.md"
+    cierra_en: "CERRADO si los fallos fuera de base bajaron a 0; si no, CERRADO_REF con la lista"
+  T3_LAS_4_PRUEBAS_DE_SEALS:   # en S-11 cada una de las 3 instancias falló 4 pruebas
+    id: S1-09b
+    pasos:
+      - "con el entorno 3.12 de T2, repite 1 vez las 3 instancias de S-11 como las corriste"
+      - "compara con el resultado anterior: ¿siguen las 4 pruebas fallando por instancia? Guarda EQUIPO-1/S1-09b.txt"
+    cierra_en: "CERRADO si pasan; CERRADO_REF con los nombres de las pruebas que siguen fallando"
+  T4_HANDOFF:
+    id: S1-13
+    hace: "actualiza 'handoff' de tu JSON con el resultado final de T1 a T3 (lista de tests que quedan fallando, si hay). 1 commit."
+
+reglas_de_cierre:
+  - "Cada nodo: 1 commit y 1 push al cerrar (no al final)."
+  - "Un fallo tiene UN reintento. Después se cierra CERRADO_REF con el motivo exacto. Nunca inventes una salida."
+  - "No escribas código nuevo, no edites tests, no escribas envoltorios."
+prohibido_siempre: [preguntar, escalar, esperar, explicar, BLOQUEADO, Hugging Face, GitHub Actions, LFS git, tocar el router, verificar de más]
