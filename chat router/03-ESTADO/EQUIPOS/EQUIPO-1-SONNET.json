@@ -27,42 +27,50 @@
     {
       "id": "S1-01",
       "tarea": "Rowboat: fijar command_env y probar invocación real del adapter (O4-07)",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF",
+      "motivo": "No se ejecuto harbor-stub: requiere build de Harbor y no hay evidencia de que lea stdin. No se definio YAIWES_ROWBOAT_COMMAND."
     },
     {
       "id": "S1-02",
       "tarea": "MSAF: command_env + invocación real (O4-08)",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF",
+      "motivo": "No se ejecuto devui: es servidor web, no encaja con el contrato stdin->stdout del adapter. No se definio YAIWES_MSAF_COMMAND."
     },
     {
       "id": "S1-03",
       "tarea": "Orca: command_env + invocación real (O4-09)",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF",
+      "motivo": "Sin codigo de Orca en el repo no hay CLI que invocar. No se definio YAIWES_ORCA_COMMAND."
     },
     {
       "id": "S1-04",
       "tarea": "OmniRoute: command_env local + invocación real, sin tocar el Router (O4-10)",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF",
+      "motivo": "OmniRoute es submodulo vacio sin comando"
     },
     {
       "id": "S1-05",
       "tarea": "DeepSeek Harness: command_env + invocación real (O4-11)",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF",
+      "motivo": "sin carpeta deepseek ni comando stdin"
     },
     {
       "id": "S1-06",
       "tarea": "Munder Difflin: command_env + invocación real (O4-12)",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF",
+      "motivo": "sin comando ejecutable que lea stdin"
     },
     {
       "id": "S1-07",
       "tarea": "Dagu/DBOS: command_env + invocación real (O4-13)",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF",
+      "motivo": "sin carpeta dagu ni dbos en la rama"
     },
     {
       "id": "S1-08",
       "tarea": "MCP: command_env + invocación real (O4-14)",
-      "estado": "BLOQUEADO"
+      "estado": "CERRADO_REF",
+      "motivo": "mcp exige subcomando; ping salio exit 2"
     },
     {
       "id": "S1-09",
@@ -90,7 +98,7 @@
       "id_tarea": "S1-01",
       "equipo": "EQUIPO-1",
       "ronda": 1,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
       "fecha_utc": "2026-10-03T00:16:29Z",
       "accion": "Busque el CLI real de Rowboat dentro de su carpeta para definir YAIWES_ROWBOAT_COMMAND. Rowboat es app de escritorio (apps/x) y servidor Harbor. El unico bin es harbor-stub (dist/main.js, @rowboat/harbor), un stub de servidor. No hay CLI documentado que reciba el payload por stdin y devuelva salida.",
@@ -111,7 +119,7 @@
       "id_tarea": "S1-02",
       "equipo": "EQUIPO-1",
       "ronda": 1,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
       "fecha_utc": "2026-10-03T00:16:29Z",
       "accion": "Busque el CLI real de MSAF dentro de su carpeta para definir YAIWES_MSAF_COMMAND. Microsoft Agent Framework: el unico script de consola encontrado es devui (agent_framework_devui:main), una interfaz web de desarrollo. No hay comando que reciba el payload por stdin y devuelva salida.",
@@ -132,7 +140,7 @@
       "id_tarea": "S1-03",
       "equipo": "EQUIPO-1",
       "ronda": 1,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
       "fecha_utc": "2026-10-03T00:16:29Z",
       "accion": "Busque el CLI real de Orca dentro de su carpeta para definir YAIWES_ORCA_COMMAND. No existe carpeta del componente Orca en Componente open soure router inteligente universal. Solo aparecen articulos comparativos orca-vs-munder-difflin dentro de munder-difflin.",
@@ -226,7 +234,7 @@
       "id_tarea": "S1-04",
       "equipo": "EQUIPO-1",
       "ronda": 2,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
       "fecha_utc": "2026-10-03T00:36:59Z",
       "accion": "Escaneo unico de la carpeta de OmniRoute en Componente open soure router inteligente universal.",
@@ -247,7 +255,7 @@
       "id_tarea": "S1-05",
       "equipo": "EQUIPO-1",
       "ronda": 2,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
       "fecha_utc": "2026-10-03T00:37:02Z",
       "accion": "Escaneo unico con git ls-tree | grep -iE sobre la carpeta de componentes buscando deepseek.",
@@ -268,7 +276,7 @@
       "id_tarea": "S1-06",
       "equipo": "EQUIPO-1",
       "ronda": 2,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
       "fecha_utc": "2026-10-03T00:37:06Z",
       "accion": "Escaneo unico de la carpeta munder-difflin (raiz y code/).",
@@ -289,7 +297,7 @@
       "id_tarea": "S1-07",
       "equipo": "EQUIPO-1",
       "ronda": 2,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
       "fecha_utc": "2026-10-03T00:37:10Z",
       "accion": "Escaneo unico con git ls-tree | grep -iE buscando dagu y dbos.",
@@ -310,7 +318,7 @@
       "id_tarea": "S1-08",
       "equipo": "EQUIPO-1",
       "ronda": 2,
-      "estado": "BLOQUEADO",
+      "estado": "CERRADO_REF",
       "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
       "fecha_utc": "2026-10-03T00:37:13Z",
       "accion": "Escaneo de MCP-Python-SDK (script mcp = mcp.cli:app), instalacion de mcp[cli] en venv y un solo intento de ping por stdin.",
@@ -399,6 +407,10 @@
     {
       "fecha_utc": "2026-10-03T00:37:17Z",
       "texto": "[2026-10-03T00:37:17Z] EQUIPO-1 DSL cierre: S1-12 CERRADO"
+    },
+    {
+      "fecha_utc": "2026-10-03T00:48:09Z",
+      "texto": "[2026-10-03T00:48:09Z] EQUIPO-1 DSL v2 T1: S1-01, S1-02, S1-03, S1-04, S1-05, S1-06, S1-07, S1-08 pasan a CERRADO_REF con su motivo"
     }
   ],
   "handoff": {
