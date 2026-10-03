@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "corte sesion: memoria.md + handoff completo para siguiente Devin en 3 dias",
-      "updated_at": "2026-10-01T19:03:31Z",
-      "last_event_seq": 59
+      "summary": "EQUIPO-1 cierre: 8 equipos auditados (AUDITORIA-FINAL.md, EVIDENCIA-GLOBAL.json); memoria Manus conectada al harness DeepSeek; Archify presente. PENDIENTE: Haiku hace auditoria forense X-Ray con la plantilla T-11-04 y Sol GPT hace el diagrama de flujo con Archify usando lo de Haiku.",
+      "updated_at": "2026-10-03T03:59:31Z",
+      "last_event_seq": 60
     }
   }
 }

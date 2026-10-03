@@ -604,6 +604,21 @@
       },
       "gap": null,
       "siguiente": "Ninguna"
+    },
+    {
+      "id_tarea": "S1-22",
+      "equipo": "EQUIPO-1",
+      "ronda": 7,
+      "estado": "CERRADO_REF",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T03:59:44Z",
+      "accion": "Registro oficial por watchdog_checkpoint.py (STATE, BITACORA, CRAZY_WALL, HANDOFF con hash valido). Anotado como PENDIENTE: Haiku hace la auditoria X-Ray con la plantilla T-11-04 y Sol GPT el diagrama de flujo con Archify.",
+      "archivos": [],
+      "prueba_real": {
+        "resumen": "watchdog checkpoint: DONE; la verificacion ROOT-MAP-T11 devolvio FAIL en este checkout."
+      },
+      "gap": "ROOT-MAP-T11 FAIL en la verificacion del watchdog",
+      "siguiente": "Revisar que raiz del ROOT-MAP falta en el checkout."
     }
   ],
   "bitacora": [
@@ -708,6 +723,10 @@
     {
       "fecha_utc": "2026-10-03T03:58:45Z",
       "texto": "[2026-10-03T03:58:45Z] EQUIPO-1: S1-21 CERRADO"
+    },
+    {
+      "fecha_utc": "2026-10-03T03:59:44Z",
+      "texto": "[2026-10-03T03:59:44Z] EQUIPO-1: S1-22 CERRADO_REF"
     }
   ],
   "handoff": {
@@ -723,6 +742,6 @@
       "S1-11b: entorno Python 3.12 + pyyaml; suite igual en original y nueva (0 fallos solo en la nueva). S1-09b: 3 instancias con 4 passed."
     ],
     "fallos": "Solo los 3 de la base (g009, g021, ficha_v2). Los 8 de motores eran el nombre de la ruta.",
-    "siguiente": "Repetir build:lib en maquina de 4 GB y probar el adapter deepseek_harness; el puente Router->Harness y el parche cordis quedan para cuando se pueda tocar el Router."
+    "siguiente": "Repetir build:lib en maquina de 4 GB y probar el adapter deepseek_harness; el puente Router->Harness y el parche cordis quedan para cuando se pueda tocar el Router. PENDIENTE anotado en el registro oficial: Haiku (auditoria X-Ray con T-11-04) y Sol GPT (diagrama de flujo con Archify, usando lo de Haiku)."
   }
 }
