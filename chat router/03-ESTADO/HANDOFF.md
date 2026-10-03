@@ -72,13 +72,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 68
+Revisión: 69
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-S1-31 Opus: Router 24/7 (Job 16 GB + puerta fija + micro-kernel), Harness por el Router, banco, laboratorio, fichas, MCP, puente HF, mini router L4/T4. Guia: Readme arquitectura router inteligente universal/ADENDA-RIU-0111. PENDIENTE: saldo OpenAI, tokens HF banco, motores memoria (Sonnet), UI selectores.
+Verificacion de componentes de memoria con trazabilidad: 6 de 6 presentes en main y rama (graphiti, memanto, graphify, agentdb, falkordb, postgresql). Inventario MEMORIA-INVENTARIO.json desactualizado (agentdb/falkordb GAP_ABSENT es falso). Runtime: graphiti, graphify y agentdb CONNECTED; falkordb, postgresql y memanto pendientes.
 
 ### Siguiente
 Continuar DAG existente
