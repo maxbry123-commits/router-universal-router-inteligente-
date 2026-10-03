@@ -28,6 +28,75 @@ PORT = 8000
 CHILD = os.getenv("HF_AUTOSCALE_CHILD", "0") == "1"
 
 
+WARMUP_SECONDS = int(os.getenv("HF_AUTOSCALE_WARMUP_SECONDS", "180"))  # no scaling while the Router itself boots
+
+
+def _read(path: str) -> str:
+    with open(path, encoding="utf-8") as fh:
+        return fh.read().strip()
+
+
+def _cpu_limit() -> float:
+    try:
+        quota, period = _read("/sys/fs/cgroup/cpu.max").split()[:2]
+        if quota != "max":
+            return max(0.1, int(quota) / int(period))
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        return float(len(os.sched_getaffinity(0)))
+    except Exception:  # noqa: BLE001
+        return float(os.cpu_count() or 1)
+
+
+def _cgroup_usage_s() -> float:
+    for line in _read("/sys/fs/cgroup/cpu.stat").splitlines():
+        if line.startswith("usage_usec "):
+            return int(line.split()[1]) / 1e6
+    raise RuntimeError("no usage_usec")
+
+
+def _tree_cpu_s() -> float:
+    import psutil
+
+    me = psutil.Process()
+    total = 0.0
+    for p in [me, *me.children(recursive=True)]:
+        try:
+            t = p.cpu_times()
+            total += t.user + t.system
+        except Exception:  # noqa: BLE001
+            pass
+    return total
+
+
+def _container_cpu_percent(window: float) -> tuple[float, str]:
+    limit = _cpu_limit()
+    for name, reader in (("cgroup", _cgroup_usage_s), ("proceso", _tree_cpu_s)):
+        try:
+            u0, t0 = reader(), time.monotonic()
+            time.sleep(window)
+            u1, t1 = reader(), time.monotonic()
+            return min(100.0, max(0.0, 100.0 * (u1 - u0) / ((t1 - t0) * limit))), name
+        except Exception:  # noqa: BLE001
+            continue
+    import psutil
+
+    return float(psutil.cpu_percent(interval=window)), "host"
+
+
+def _container_ram_percent() -> tuple[float, str]:
+    try:
+        limit = _read("/sys/fs/cgroup/memory.max")
+        if limit != "max":
+            return 100.0 * int(_read("/sys/fs/cgroup/memory.current")) / int(limit), "cgroup"
+    except Exception:  # noqa: BLE001
+        pass
+    import psutil
+
+    return float(psutil.virtual_memory().percent), "host"
+
+
 @dataclass
 class Worker:
     job_id: str
@@ -57,6 +126,8 @@ class HFWorkerPool:
         self.ram_percent = 0.0
         self.last_error: str | None = None
         self.last_scale_reason: str | None = None
+        self.metrics_source = ""
+        self.started_at = time.time()
 
     @property
     def hf_token(self) -> str:
@@ -73,8 +144,14 @@ class HFWorkerPool:
         return HfApi(token=self.hf_token)
 
     def _metrics(self) -> tuple[float, float]:
-        import psutil
-        return float(psutil.cpu_percent(interval=0.2)), float(psutil.virtual_memory().percent)
+        """CPU and RAM of THIS container (cgroup), not of the HF host machine.
+
+        psutil.cpu_percent() sees the whole shared host (always ~100% on HF Jobs), which made the pool start a worker
+        every 30 s with no traffic (Director audit 2026-10-03). Order: cgroup v2 -> own process tree -> psutil host."""
+        cpu = _container_cpu_percent(1.0)
+        ram = _container_ram_percent()
+        self.metrics_source = f"cpu:{cpu[1]} ram:{ram[1]}"
+        return cpu[0], ram[0]
 
     def _command(self) -> list[str]:
         from .hf_runtime import bootstrap_command
@@ -224,6 +301,8 @@ class HFWorkerPool:
             "max_workers": MAX_WORKERS,
             "jobs_token_present": bool(self.hf_token),
             "last_scale_reason": self.last_scale_reason,
+            "metrics_source": self.metrics_source,
+            "warmup_seconds": WARMUP_SECONDS,
             "last_error": self.last_error,
         }
 
@@ -236,7 +315,8 @@ class HFWorkerPool:
 
                 hot = self.cpu_percent >= THRESHOLD or self.ram_percent >= THRESHOLD
                 self._hot = self._hot + 1 if hot else 0
-                if self.enabled and self._hot >= HOT_SAMPLES:
+                warm = time.time() - self.started_at >= WARMUP_SECONDS
+                if self.enabled and warm and self._hot >= HOT_SAMPLES:
                     flavor = "cpu-upgrade" if self.ram_percent >= THRESHOLD else "cpu-basic"
                     reason = (
                         f"cpu={self.cpu_percent:.1f}% "
@@ -254,6 +334,7 @@ class HFWorkerPool:
     def start(self) -> None:
         if CHILD or self._thread is not None:
             return
+        self.started_at = time.time()
         self._thread = threading.Thread(target=self._loop, daemon=True, name="hf-worker-pool")
         self._thread.start()
 
