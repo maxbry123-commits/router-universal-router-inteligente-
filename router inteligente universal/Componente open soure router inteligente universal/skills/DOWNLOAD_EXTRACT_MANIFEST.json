@@ -1,0 +1,39 @@
+{
+  "bundle_bytes": 947137,
+  "bundle_sha256": "c502952de8988c3af87be257412fe591efc809334c37565dad00efcfbfda22d4",
+  "extracted_tree": {
+    "bytes": 1326283,
+    "files": 135,
+    "sha256": "040ea6cee4519b0b4517a928ffba71e07a30946b466f13751bf152e18e95a416"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 947137,
+      "name": "skills.bundle.zip.part-0001",
+      "sha256": "c502952de8988c3af87be257412fe591efc809334c37565dad00efcfbfda22d4"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    ".claude/skills/docs-i18n-zh",
+    ".claude/skills/unslop",
+    ".claude/skills/writing-great-skills"
+  ],
+  "skipped_special_count": 3,
+  "slug": "skills",
+  "source_bytes": 1326283,
+  "source_commit": "5316082202ab6a7e0779b16b5c58b846c006a460",
+  "source_files": 135,
+  "source_ref": "HEAD",
+  "source_repo": "https://github.com/shadcn-labs/skills",
+  "source_tree": {
+    "bytes": 1326283,
+    "files": 135,
+    "sha256": "040ea6cee4519b0b4517a928ffba71e07a30946b466f13751bf152e18e95a416"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Shadcn",
+      "description": "Validate and launch custom shadcn/ui registries.",
+      "skills": ["launch-shadcn-registry"]
+    },
+    {
+      "title": "Icons",
+      "description": "Generate, audit, and extend consistent SVG icon sets.",
+      "skills": ["icon-set-generator", "icon-set-audit", "icon-set-extend"]
+    },
+    {
+      "title": "Styling",
+      "description": "Migrate between styling systems.",
+      "skills": ["tailwind-to-stylex"]
+    },
+    {
+      "title": "Agents",
+      "description": "Refactor AI agent codebases.",
+      "skills": ["mastra-file-agents"]
+    }
+  ]
+}
