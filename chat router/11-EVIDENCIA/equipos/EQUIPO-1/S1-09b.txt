@@ -1,0 +1,15 @@
+S1-09b - 3 instancias aisladas de SealsWorker, Python 3.12.14 (uv venv), como en S-11
+--- instancia 1
+....                                                                     [100%]
+4 passed in 0.84s
+exit=0
+--- instancia 2
+....                                                                     [100%]
+4 passed in 0.85s
+exit=0
+--- instancia 3
+....                                                                     [100%]
+4 passed in 0.85s
+exit=0
+
+Comparacion con S1-09 (Python 3.14): 4 passed por instancia, exit=0. Ahora: igual en las 3 instancias. La primera corrida de S1-09 con 4 failed fue por copias sin dag_schema.yaml (FileNotFoundError), ya corregido.
