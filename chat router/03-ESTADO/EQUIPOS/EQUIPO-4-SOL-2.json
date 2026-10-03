@@ -17,9 +17,9 @@
   ],
   "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main. Pre-auditar no reemplaza la auditoría de Claude.",
   "ronda_actual": [
-    "B-04",
-    "B-05",
-    "B-06"
+    "B-07",
+    "B-08",
+    "B-09"
   ],
   "cola": [
     {
@@ -40,17 +40,17 @@
     {
       "id": "B-04",
       "tarea": "Test de la proyección",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "B-05",
       "tarea": "O4-17: cierre con evidencia",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "B-06",
       "tarea": "O4-19: confirmar que el E2E sigue pasando",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "B-07",
@@ -167,6 +167,84 @@
       },
       "gap": null,
       "siguiente": "B-04"
+    },
+    {
+      "id_tarea": "B-04",
+      "equipo": "EQUIPO-4",
+      "ronda": 2,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:46:25Z",
+      "accion": "Se ejecutó el test dirigido de la proyección con la implementación y casos vigentes de la rama en runner aislado.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "sha256": "3b62a7efce0c67209b3f526949980e0bca2e26047e6eccb323634ae033628e69"
+        }
+      ],
+      "prueba_real": {
+        "comando": "PYTHONPATH=/tmp/e4test pytest -q runtime/tests/test_graph_visual_projection_g026.py",
+        "ok": true,
+        "salida_resumen": "4 passed in 0.06s"
+      },
+      "gap": null,
+      "siguiente": "B-05"
+    },
+    {
+      "id_tarea": "B-05",
+      "equipo": "EQUIPO-4",
+      "ronda": 2,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:46:25Z",
+      "accion": "O4-17 cerrado con evidencia: la proyección HTML existe en la rama, fue leída de vuelta y conserva el sha256 registrado en B-03.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "sha256": "18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "sha256": "3b62a7efce0c67209b3f526949980e0bca2e26047e6eccb323634ae033628e69"
+        }
+      ],
+      "prueba_real": {
+        "comando": "read-back GitHub de crazy_wall_projection.html",
+        "ok": true,
+        "salida_resumen": "blob_sha=ff825fcadaa4578661504c33ddda15f0e3d617ee; size_chars=154384; sha256 B-03 confirmado=18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+      },
+      "gap": null,
+      "siguiente": "B-06"
+    },
+    {
+      "id_tarea": "B-06",
+      "equipo": "EQUIPO-4",
+      "ronda": 2,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:46:25Z",
+      "accion": "Se confirmó O4-19 ejecutando los tres escenarios E2E vigentes: fail→replan→pass, crash/resume idempotente y bloqueo Oracle con evidencia.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "sha256": "3b62a7efce0c67209b3f526949980e0bca2e26047e6eccb323634ae033628e69"
+        }
+      ],
+      "prueba_real": {
+        "comando": "PYTHONPATH=/tmp/e4test pytest -q tests/test_orchestrator_e2e.py",
+        "ok": true,
+        "salida_resumen": "3 passed in 0.05s"
+      },
+      "gap": null,
+      "siguiente": "B-07"
     }
   ],
   "bitacora": [
@@ -184,20 +262,37 @@
       "fecha_utc": "2026-10-03T00:30:33Z",
       "id_tarea": "B-03",
       "evento": "CERRADO: chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html; sha256=18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:46:25Z",
+      "id_tarea": "B-04",
+      "evento": "CERRADO: test dirigido de proyección PASS 4/4."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:46:25Z",
+      "id_tarea": "B-05",
+      "evento": "CERRADO: O4-17 evidencia HTML read-back; sha256=18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:46:25Z",
+      "id_tarea": "B-06",
+      "evento": "CERRADO: O4-19 E2E PASS 3/3."
     }
   ],
   "handoff": {
     "objetivo": "Continuar con las 3 primeras tareas PENDIENTE de la cola.",
-    "estado": "B-01,B-02,B-03 CERRADO",
+    "estado": "B-01..B-06 CERRADO",
     "archivos": [
       "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json"
     ],
     "cambios": [
-      "Proyección real guardada; projection_sha256=41475d8431453d1639d835b01e0ba73e0245540b3306a777af94d3c798089d72",
-      "HTML sha256=18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+      "B-04 test de proyección PASS 4/4",
+      "B-05 O4-17 cierre con evidencia y read-back",
+      "B-06 O4-19 E2E PASS 3/3"
     ],
     "fallos": [],
-    "siguiente": "B-04,B-05,B-06"
+    "siguiente": "B-07,B-08,B-09"
   }
 }
