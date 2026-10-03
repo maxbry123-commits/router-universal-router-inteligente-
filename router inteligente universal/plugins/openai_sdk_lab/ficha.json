@@ -1,13 +1,46 @@
 {
-  "plugin_host": {"schema": "plugin_host/v1", "id": "openai_sdk_lab", "enabled_default": false, "health_action": "status", "nota_roja": "Laboratorio temporal de pruebas del SDK de OpenAI. Apagado por defecto: encenderlo solo para probar. Sin clave en el repo; usa el banco abierto en memoria."},
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "openai_sdk_lab",
+    "enabled_default": false,
+    "health_action": "status",
+    "nota_roja": "Laboratorio temporal de pruebas del SDK de OpenAI. Nace apagado: el Director lo enciende para la prueba. Sin claves en el repo: usa el banco abierto en memoria."
+  },
   "artifact_id": "riu.plugins.openai_sdk_lab",
   "version": "0.1.0",
   "estado": "draft",
   "categoria": "pipeline",
   "etapa": "P",
-  "contrato": {"rol": "service"},
-  "ejecucion": {"kind": "api", "transport": "http", "runtime_type": "compute", "entry_point": "plugins.openai_sdk_lab.plugin:handle", "idempotente": false, "allowed_actions": ["status", "invoke"]},
-  "seguridad": {"sandbox": "egress-allowlist", "permisos": ["network:http"], "limites": {"timeout_ms": 110000}},
-  "firma": {"gpg_key_id": "PENDIENTE", "revocation_ref": "contracts/revocation_list.json"},
-  "conecta_con": {"plugin_anterior": "banco", "grupo_policies": "sdk", "proveedor_banco": "openai"}
+  "contrato": {
+    "rol": "service"
+  },
+  "ejecucion": {
+    "kind": "api",
+    "transport": "http",
+    "runtime_type": "compute",
+    "entry_point": "plugins.openai_sdk_lab.plugin:handle",
+    "idempotente": false,
+    "allowed_actions": [
+      "status",
+      "invoke"
+    ]
+  },
+  "seguridad": {
+    "sandbox": "egress-allowlist",
+    "permisos": [
+      "network:http"
+    ],
+    "limites": {
+      "timeout_ms": 110000
+    }
+  },
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "contracts/revocation_list.json"
+  },
+  "conecta_con": {
+    "plugin_anterior": "banco",
+    "grupo_policies": "sdk",
+    "proveedor_banco": "openai"
+  }
 }
