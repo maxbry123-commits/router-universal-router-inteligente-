@@ -1,4 +1,4 @@
-# README ARQUITECTURA — YAIWES Router (watchdog 2026-10-03T08:24:59Z)
+# README ARQUITECTURA — YAIWES Router (watchdog 2026-10-03T08:27:17Z)
 
 Generado por watchdog_checkpoint.py — SOLO hechos verificados; lo no comprobado queda UNKNOWN/BLOCKED.
 

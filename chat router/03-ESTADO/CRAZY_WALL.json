@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "ORDEN HY 2026-10-03: 5 pasos (1 memoria+puente HF via harness; 2 motores skills; 3 workflow operativo, HF job solo 16GB; 4 auditoria 4 pasadas; 5 skills DSL-DAG schema+Sheriff). Plan en 01-PLAN/ORDEN-HY-5-PASOS-CIERRE-MCP.md. PENDIENTE: puente MCP HF-almacenamiento (por confirmar), Haiku X-Ray, Sol diagrama.",
-      "updated_at": "2026-10-03T08:24:59Z",
-      "last_event_seq": 64
+      "summary": "S1-28 Paso 1 memoria: puente HF probado (roundtrip OK). PENDIENTE: conexion Router, MCP HF-almacenamiento, plugin harness, runtimes graphiti/graphify/memanto/falkordb/agentdb/postgres.",
+      "updated_at": "2026-10-03T08:27:17Z",
+      "last_event_seq": 65
     }
   }
 }

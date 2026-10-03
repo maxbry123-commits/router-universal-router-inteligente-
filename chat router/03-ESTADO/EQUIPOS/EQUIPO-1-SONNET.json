@@ -654,6 +654,12 @@
       "resumen": "E-09 corrida: runtime/tests 278 pasan/3 fallan (base 267/3), seals_core 48/1 (base 44/45). Regresion propia de S1-26 corregida (engine bloqueado 91e6e448 restaurado). Memoria: graphiti, graphify y memanto ya descargados con manifiesto; FalkorDB/AgentDB/PostgreSQL ausentes = GAP documentado por el DSL. Evidencia S1-27-E09-Y-MEMORIA.md",
       "gaps": "Falta cablear adapters graphiti/graphify/memanto. Repo frontend: publique ahi 6 componentes (usaba el destino por defecto del motor); Hy indica que frontend es FUENTE, no destino Wordflow; pendiente decidir si se retiran. Se bajaron claude-mem, shadcn-skills, plasmic y caret-desktop antes de la indicacion de no descargar sin autorizacion; sin mas descargas.",
       "siguiente": "Tabla de skills por fila (nombre|fuente|commit|existe|SKILL.md|licencia|mecanismo|uso|evidencia) para las que el chat necesita."
+    },
+    {
+      "id_tarea": "S1-28",
+      "estado": "CERRADO_REF",
+      "resumen": "Paso 1: puente HF de memoria escrito y probado (snapshot+restore con mismo sha256 en dataset privado). PENDIENTE: conectar al Router (no tocar), MCP HF-almacenamiento no existe en el Router, plugin del harness, runtimes graphiti/graphify/memanto/falkordb/agentdb/postgres = GAP. Evidencia S1-28-PASO1-MEMORIA-HF.md",
+      "gaps": "conexion al Router, MCP HF, plugin harness, runtimes"
     }
   ],
   "bitacora": [
@@ -782,6 +788,10 @@
     {
       "id_tarea": "S1-27",
       "nota": "E-09 corrida: runtime/tests 278 pasan/3 fallan (base 267/3), seals_core 48/1 (base 44/45). Regresion propia de S1-26 corregida (engine bloqueado 91e6e448 restaurado). Memoria: graphiti, graphify y memanto ya descargados con manifiesto; FalkorDB/AgentDB/PostgreSQL ausentes = GAP documentado por el DSL. Evidencia S1-27-E09-Y-MEMORIA.md"
+    },
+    {
+      "id_tarea": "S1-28",
+      "nota": "Paso 1: puente HF de memoria escrito y probado (snapshot+restore con mismo sha256 en dataset privado). PENDIENTE: conectar al Router (no tocar), MCP HF-almacenamiento no existe en el Router, plugin del harness, runtimes graphiti/graphify/memanto/falkordb/agentdb/postgres = GAP. Evidencia S1-28-PASO1-MEMORIA-HF.md"
     }
   ],
   "handoff": {
