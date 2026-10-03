@@ -20,6 +20,7 @@ Harness DeepSeek → plugin MCP `memoria` → Router (por la puerta fija) → ba
 | Agentes por MCP | `<puerta>/mcp/`, con la clave del Router. 13 herramientas: chat, catálogo, fichas, laboratorio, memoria, almacenamiento, cómputo HF |
 | Harness DeepSeek | `dsh headless --patch 'chat router/deepseek-harness-chat/plugins/router-provider.cordis.yml' --patch 'chat router/04-MEMORIA/plugin/harness-memoria.cordis.yml' "tarea"`. Variables: `MAXBRY_ROUTER_URL=<puerta>/v1/router`, `MAXBRY_ROUTER_API_KEY`, `RIU_ROUTER_URL=<puerta>`, `RIU_API_KEY`, `DSH_TELEMETRY_MODE=DISABLED` |
 | SSH | No existe en HF Jobs. Se cubre con HTTP + MCP |
+| Enchufe universal Fables | Los módulos del Router están registrados como plugins: `yaiwes.router.banco`, `laboratorio`, `fichas_maestras`, `puente_hf`, `mcp`, `memoria`, `autoscale` (lista: `GET /chat/fichas`) |
 
 ## 4. Banco de secretos
 - **Banco activo (único):** almacenamiento HF `claude-github-mcp-backup-storage/repos/router-universal-router-inteligente-/secret_bank/vault.db.gz.b64`, cifrado con la clave maestra del Director.

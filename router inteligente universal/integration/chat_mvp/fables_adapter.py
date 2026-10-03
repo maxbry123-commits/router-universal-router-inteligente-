@@ -79,6 +79,13 @@ class FablesCatalog:
     def seed(self) -> None:
         for panel in ("chat", "archivos", "seguimiento", "canvas"):
             self.register(self._ficha(f"yaiwes.panel.{panel}", "tool", f"chat router/ui/panel-{panel}.js"))
+        # Director 2026-10-03: todo se enchufa por el enchufe universal Fables (control maestro del Router 24/7)
+        base = "router inteligente universal/integration/"
+        for mod, path in (("banco", base + "chat_mvp/vault_bridge.py"), ("laboratorio", base + "chat_mvp/control_plane.py"),
+                          ("fichas_maestras", base + "chat_mvp/control_plane.py"), ("puente_hf", base + "chat_mvp/control_plane.py"),
+                          ("mcp", base + "chat_mvp/mcp_api.py"), ("memoria", "chat router/04-MEMORIA/plugin/memoria_mcp_server.py"),
+                          ("autoscale", base + "hf_worker_pool.py")):
+            self.register(self._ficha(f"yaiwes.router.{mod}", "tool", path))
         agents_path = ROOT / "chat router/05-AGENTES/AGENTES.yaml"
         if agents_path.exists():
             data = yaml.safe_load(agents_path.read_text(encoding="utf-8"))
