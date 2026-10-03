@@ -1,33 +1,27 @@
 # Laboratorio de pruebas API / SDK (temporal)
 
-**Estado: plugin subido a main y conectado al Router por el Plugin Host. Falta la primera corrida con las claves del banco; el resultado se anota abajo.**
-Correccion 2026-10-03: la version anterior de este README decia que el plugin y el handoff ya existian. No existian; ahora si.
+Estado: plugin y motor SUBIDOS a main. Pruebas NO ejecutadas todavia (falta abrir el banco en el Router vivo). Aun no hay resultados.
+
+(Correccion: una version anterior de este README decia laboratorio activo y citaba un plugin y un handoff que no existian. Era falso y se quito.)
 
 ## Que prueba
-Las claves de OpenAI del banco secreto, con el SDK oficial `openai`. Por cada clave:
-1. `models.list()` (/v1/models): cuenta las modelos.
-2. `responses.create()` (/v1/responses) con una frase de 16 tokens: genera.
-3. `/me`: solo informativo (no es un endpoint oficial de claves API).
-PASS de una clave = 1 y 2 bien. 14 claves esperadas x 3 = 42 comprobaciones.
+El SDK de OpenAI con las claves del banco secreto (proveedor openai). Por cada clave, 3 comprobaciones:
+1. /me (solo informativa: las claves de API normales suelen no tener ese endpoint)
+2. models.list() -> /v1/models
+3. responses.create() -> /v1/responses
+Una clave cuenta como PASS si pasan la 2 y la 3.
 
-## Flujo
-`main -> Router HF 16 GB (git pull cada 60 s) -> Plugin Host -> plugins/openai_sdk_lab -> vault_hook (banco abierto en memoria) -> OpenAI -> resumen sin claves -> RESULTADOS-OPENAI-SDK.json`
-
-## Reglas
-No se toca el nucleo del Router. Sin GitHub Actions. Sin LFS. Sin Jobs nuevos. Ninguna clave en el repo, logs ni resultados.
+## Micro flujo
+main -> Router HF 16 GB (git pull cada 60 s) -> Plugin Host -> plugins/openai_sdk_lab -> vault_hook (banco abierto en memoria) -> OpenAI SDK -> RESULTADOS-OPENAI-SDK.json
 
 ## Archivos
-- `README pruebas.md`: este archivo.
-- `Laboratorio Code de pruebas.py`: motor (lee `vault_hook.provider_keys("openai")`).
-- `Handoff laboratorio pruebas sdk api.md`: conexiones y pendientes.
-- `RESULTADOS-OPENAI-SDK.json`: lo escribe el plugin al correr (aun no existe).
-- `router inteligente universal/plugins/openai_sdk_lab/`: ficha.json + plugin.py.
+- Laboratorio Code de pruebas.py: el motor. No guarda ni imprime claves.
+- router inteligente universal/plugins/openai_sdk_lab/ (ficha.json + plugin.py): lo conecta al Router. Nace APAGADO.
+- Handoff laboratorio pruebas sdk api.md: pasos y conexiones.
+- RESULTADOS-OPENAI-SDK.json: lo escribe el plugin al terminar (sin claves).
 
-## Como se corre (4 pasos, con la clave del Router)
-1. `POST /plugins/sync`
-2. `POST /plugins/openai_sdk_lab/enable`
-3. `POST /vault/unlock` con la clave del banco
-4. `GET /plugins`: el health del plugin corre las pruebas y devuelve el resumen en `reason`.
+## Reglas
+Sin GitHub Actions. Sin LFS. Sin tocar el nucleo del Router. Sin claves en archivos, logs ni resultados.
 
 ## Resultados
-Pendiente de la primera corrida.
+PENDIENTE.
