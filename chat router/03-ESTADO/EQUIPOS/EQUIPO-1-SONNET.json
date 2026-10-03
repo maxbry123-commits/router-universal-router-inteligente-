@@ -51,7 +51,7 @@
     {
       "id": "S1-05",
       "tarea": "DeepSeek Harness: command_env + invocación real (O4-11)",
-      "estado": "CERRADO_REF",
+      "estado": "CERRADO_REF (corregida por S1-05b)",
       "motivo": "sin carpeta deepseek ni comando stdin"
     },
     {
@@ -475,6 +475,40 @@
       },
       "gap": "build:lib necesita mas de 2 GB de memoria; adapter no invocado",
       "siguiente": "Repetir build:lib en maquina de 4 GB y probar el adapter."
+    },
+    {
+      "id_tarea": "S1-05",
+      "equipo": "EQUIPO-1",
+      "ronda": 5,
+      "estado": "CERRADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T02:39:10Z",
+      "accion": "S1-05c: mapa de conexion del harness solo con hechos y lista sin evidencia.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05c.md"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Documento escrito con citas de archivo y linea."
+      },
+      "gap": null,
+      "siguiente": "Ninguna"
+    },
+    {
+      "id_tarea": "S1-16",
+      "equipo": "EQUIPO-1",
+      "ronda": 5,
+      "estado": "CERRADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T02:39:10Z",
+      "accion": "Handoff actualizado con resultado de S1-05b y S1-05c.",
+      "archivos": [],
+      "prueba_real": {
+        "resumen": "handoff y cola reescritos."
+      },
+      "gap": null,
+      "siguiente": "Ninguna"
     }
   ],
   "bitacora": [
@@ -555,11 +589,15 @@
     {
       "fecha_utc": "2026-10-03T02:37:45Z",
       "texto": "[2026-10-03T02:37:45Z] EQUIPO-1 DSL v5: S1-05b CERRADO_REF"
+    },
+    {
+      "fecha_utc": "2026-10-03T02:39:10Z",
+      "texto": "[2026-10-03T02:39:10Z] EQUIPO-1 DSL v5: S1-05c y S1-16 CERRADO"
     }
   ],
   "handoff": {
     "objetivo": "Conectar de verdad los 8 componentes del orquestador y la prueba de 3 workers",
-    "estado": "DSL v2 cerrado. S1-01 a S1-08: CERRADO_REF (sin comando que lea stdin / sin carpeta / submodulo vacio / mcp exige subcomando). S1-09, S1-09b, S1-10, S1-12: CERRADO (3 instancias de SealsWorker: 4 passed cada una). S1-11b: CERRADO_REF (269 passed, 11 failed: 3 de la base + 8 fuera de base). S1-11c: CERRADO (los 8 tests de motores pasan con la ruta esperada).",
+    "estado": "DSL v2 cerrado. S1-01 a S1-08: CERRADO_REF (sin comando que lea stdin / sin carpeta / submodulo vacio / mcp exige subcomando). S1-09, S1-09b, S1-10, S1-12: CERRADO (3 instancias de SealsWorker: 4 passed cada una). S1-11b: CERRADO_REF (269 passed, 11 failed: 3 de la base + 8 fuera de base). S1-11c: CERRADO (los 8 tests de motores pasan con la ruta esperada). DSL v5: S1-05b CERRADO_REF (harness presente y verificado; install y --help OK; build:lib murio por memoria 2 GB). S1-05c CERRADO (mapa con hechos).",
     "archivos": [
       "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
       "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
@@ -570,6 +608,6 @@
       "S1-11b: entorno Python 3.12 + pyyaml; suite igual en original y nueva (0 fallos solo en la nueva). S1-09b: 3 instancias con 4 passed."
     ],
     "fallos": "Solo los 3 de la base (g009, g021, ficha_v2). Los 8 de motores eran el nombre de la ruta.",
-    "siguiente": "Nota para el Director: los 8 tests de motores pasan si la ruta se llama 'chat router/➡️📂motores de descarga extracción copiado movimiento archivos agentes'; hoy se llama 'chat router/➡️📂 Wordflow LOOP Yaiwes/➡️📂motores de descarga extracción copiado movimiento archivos agentes'."
+    "siguiente": "Repetir build:lib en maquina de 4 GB y probar el adapter deepseek_harness; el puente Router->Harness y el parche cordis quedan para cuando se pueda tocar el Router."
   }
 }
