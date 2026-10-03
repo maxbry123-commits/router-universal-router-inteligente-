@@ -55,17 +55,17 @@
     {
       "id": "I-07",
       "tarea": "REFERENCIAS-UI lote 3 (imágenes 45 a 65): función de cada una",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "I-08",
       "tarea": "Comparar contra CATALOGO-ANEXOS-VISUALES.json y CATALOGO-REFERENCIAS-UI.json: marcar dónde la descripción actual es genérica o incorrecta",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "I-09",
       "tarea": "Mapa función -> control del chat usando T-06-INVENTARIO.md",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "I-10",
@@ -578,6 +578,201 @@
       },
       "gap": null,
       "siguiente": "SAL; siguiente PENDIENTE queda I-07."
+    },
+    {
+      "id_tarea": "I-07",
+      "equipo": "EQUIPO-8",
+      "ronda": 3,
+      "estado": "CERRADO",
+      "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
+      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "accion": "Se inspeccionaron visualmente UI-REF-045..065 y se registró función real, componente y cobertura. UI-REF-045: PR Changes agrupado por tarea 'Definir el staff', con tarjetas de archivos Added, check de revisión, vista y menú; componente: revisión estructurada por tarea; cobertura T-06: no. | UI-REF-046: PR Description con Summary del runtime/cableado, puerta única Router y archivos nuevos; componente: descripción/resumen de PR; cobertura: no. | UI-REF-047: PR Description con evidencia, nodos abiertos y causas pendientes; componente: estado/evidencia de PR; cobertura: no. | UI-REF-048: overview del PR #5 con ramas, diff, Ready to merge, tabs y tarjeta Devin's analysis; componente: revisión/análisis de PR; cobertura: no. | UI-REF-049: settings Devin de Session agents: agente por defecto, API agent, plataforma y comandos; componente: defaults de sesión; cobertura: no completa. | UI-REF-050: gestión de comandos custom y Usage limits/batch limit; componente: comandos y límites de uso; cobertura: no. | UI-REF-051: políticas de Pull requests (share prompts, @Devin, acceso, reviewer, autor); componente: configuración PR; cobertura: no. | UI-REF-052: continuación de políticas PR, respuesta a bots y Security profiles; componente: seguridad/políticas de sesión; cobertura: no. | UI-REF-053: selector Grok Build/Heavy/Expert/Fast; componente: modo de respuesta; cobertura: sí por T06-F12. | UI-REF-054: composer Grok con chip 'Prueba conectores', modo Expert, adjuntar y voz; componente: chat/connector context/composer; cobertura: parcial. | UI-REF-055: formulario Nueva automatización con nombre, programación/activador, instrucciones y modo Auto; componente: automatizaciones; cobertura: no. | UI-REF-056: continuación de automatización con notificaciones push/correo; componente: automatizaciones/notificaciones; cobertura: no. | UI-REF-057: Manus sugiere crear una rama alternativa ('Probar rama ahora') manteniendo tarea original, sobre tarjeta de sitio dormido; componente: branching de tarea/intervención; cobertura: no. | UI-REF-058: escala/paleta de grises 958→800 con códigos hex; componente: tokens de color; cobertura: parcial por tema V07, sin editor equivalente. | UI-REF-059: paleta Grey 900/800 con #212121/#303030/#424242; componente: tokens de color; cobertura: parcial. | UI-REF-060: referencia de dashboard/feed oscuro con sidebar, hosts, mensajes y cards de contenido; componente: layout dashboard/feed; cobertura: no directa. | UI-REF-061: kit de controles oscuro: búsqueda, imagen, toggles, iconos sociales, sliders, botones y medidor; componente: librería de controles; cobertura: no directa. | UI-REF-062: dashboard Cofeed con sidebar, cards de facturas, gráfica, ratings y panel Quick Payment; componente: dashboard denso con métricas/cards; cobertura: no directa. | UI-REF-063: pantalla Claude Conectores con descubrimiento automático, lista de conectores y acciones Conectar/Desconectar; componente: conectores; cobertura: parcial por T06-F05 (solo lectura). | UI-REF-064: lista Claude de artefactos/documentos PY/MD con composer y selector Haiku 4.5; componente: archivos/artefactos + chat; cobertura: parcial por T06-F02/F24. | UI-REF-065: modal Configuración > Conectores con lista, tipo/estado, agregar/conectar y error OAuth de MCP_SECRET_HF; componente: administración de conectores/error; cobertura: parcial por T06-F05, sin mutaciones de conexión.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+          "sha256": "2696e6827a31ee8c027b1680847b047dacff6d9ddf86cabafeb369e21026cf93"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032109_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032109_Edge.png",
+          "sha256": "2a0d578f4239013ef2649ffe64c7a736f57529983e2bc0f0db796634ebfa4b75"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032116_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032116_Edge.png",
+          "sha256": "396661ca287762a36c354cd084e65a98d47a51245553fdcb564a5016b5e5d327"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032251_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032251_Edge.png",
+          "sha256": "8ea5e44c34358cc982a54c591040cd0ba47f8985828e9af5009141449617d5a3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032335_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032335_Edge.png",
+          "sha256": "3ebf4c0eceafeb90f8eeabad47edc8dc47b66412a01a4119baa09d67467ba6b2"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032339_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032339_Edge.png",
+          "sha256": "c9e328ffd56ee092345b14d1da9721634071a057ab38a75693142b9666512f31"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032349_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032349_Edge.png",
+          "sha256": "3b685efc586ac72c8c2cf5812e6d47354b4f4ad8b4960806c1b3032ae66a7efa"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032354_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032354_Edge.png",
+          "sha256": "12ca550a5d357b53ad4aa0b5cf1a72fcc981cf2d3d82310f1419c77e13287acb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "sha256": "f23725467c279a4729ef6a11df3907ced24372a24e45a61674a90751ed0dad03"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032500_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032500_Grok.png",
+          "sha256": "0c0a9c182498bb96a8790c2aba4c79497a4b0ca41ca79aaafdef98f5e2cbdf63"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+          "sha256": "f51e8412348cd1733eaacdf1ccccdcbf55f2802d6a3fb7a20219c802e56d2591"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032520_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032520_Grok.png",
+          "sha256": "86fb02ea0451209240970b70956144bfc35ff763b9f76e30472ac202b9b50725"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-062346_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-062346_Manus.png",
+          "sha256": "4dfeb41765911a7d8cb8c1d586c73b9d23867023af6e87f5e5fd081856cf2c7a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-001856_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-001856_Chrome.png",
+          "sha256": "bb2cdb4ea5251b4028c39dbe862ee123ad768bac494c885b85db6eaad3512ce4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002034_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002034_Chrome.png",
+          "sha256": "f4c74f7ec65192cbca808927129c3db00eec14d948ff039f1bd76ee8011d33b9"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002151_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002151_Chrome.png",
+          "sha256": "714d2d0f87bfa1933033dc36715119d5a2757cbc536b2f2b4af2c7bfbabdeb2a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002257_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002257_Chrome.png",
+          "sha256": "efce556213be6e3c02fba6757b9d3ed5377f1177d4137551a2808bc7f81ed3bf"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002719_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002719_Chrome.png",
+          "sha256": "b00e265dcfd6b8d9b53ad7d73b273746bdc53d5409a1718e3836b2ee6dda4473"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+          "sha256": "ba88c01eeaddbcba8b494fc0b6b6d8e8d1215fb0d8079aa0f66903772b37f83f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+          "sha256": "6c3418946af3dbca542d82f9d447f58d8086d820b838e36865ed1181e5e52553"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+          "sha256": "62e13bb9d26ce4957ed1c005e312dd5fa3021e030db4da98f70cb921303991d4"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Abrir visualmente los 21 PNG reales UI-REF-045..065 desde la rama de trabajo.",
+        "ok": true,
+        "salida_resumen": "21/21 imágenes abiertas y diferenciadas: revisión PR/settings Devin, Grok, Manus, paletas/UI kits, dashboards y Claude conectores/artefactos."
+      },
+      "gap": null,
+      "siguiente": "I-08"
+    },
+    {
+      "id_tarea": "I-08",
+      "equipo": "EQUIPO-8",
+      "ronda": 3,
+      "estado": "CERRADO",
+      "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
+      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "accion": "Comparación de auditoría visual contra ambos catálogos. CATALOGO-ANEXOS-VISUALES: UI-EXTRA-001..005 son genéricos porque repiten 'Diagrama de arquitectura del Router' aunque muestran consola principal, topología, contrato, settings y móvil distintos. CATALOGO-ANEXOS-VISUALES: UI-EXTRA-006..016 son genéricos porque repiten 'Captura de conversación, propuesta o revisión del PR' y ocultan funciones distintas (chat, visor documental, PR Changes/Description/Discussion/Commits/Bugs). UI-EXTRA-017 es específica y consistente. CATALOGO-REFERENCIAS-UI: descripciones materialmente incorrectas: UI-REF-004,006,007,008,009,010,011,012,014,015,016,017,024,025,027,028,029,031,032,034,035,036,037,038,039,040,042,043,046,049,050,051,052,053,054,055,056,058,059,060,061,063,064,065. CATALOGO-REFERENCIAS-UI: descripciones genéricas/insuficientes aunque relacionadas: UI-REF-005,013,023,026,030,033,044,045,048,057,062. Las restantes revisadas describen de forma razonable su función principal.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/CATALOGO-REFERENCIAS-UI.json"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Comparar las funciones observadas en I-01..I-07 con el campo function de CATALOGO-ANEXOS-VISUALES.json y CATALOGO-REFERENCIAS-UI.json.",
+        "ok": true,
+        "salida_resumen": "Marcadas entradas genéricas e incorrectas; los mayores desvíos están en EXTRA-001..016 y en múltiples UI-REF cuyos rótulos no describen la pantalla observada."
+      },
+      "gap": null,
+      "siguiente": "I-09"
+    },
+    {
+      "id_tarea": "I-09",
+      "equipo": "EQUIPO-8",
+      "ronda": 3,
+      "estado": "CERRADO",
+      "ejecutor": "Sol ☀️ 6 (GPT-5.6 Sol)",
+      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "accion": "Mapa función observada → control T-06. Chat/shell: T06-F01 Chat; T06-F09 proveedor; F10 modelo; F11 agente; F12 modo; F13 grupo; F14 cuenta GitHub; F15 rama (solo lectura); F16 enviar al Router. Archivos/canvas: T06-F02 Archivos; F21 buscar; F22 actualizar; F23 subir; F04 Canvas; F24 vista previa dinámica. Seguimiento: T06-F03 Seguimiento; F25 ID ejecución; F26 consultar ledger. Conectores/plantillas/ingeniería: T06-F05 Conectores; F06 Plantillas; F07 Ingeniería. Control/runtime: T06-F08 reintentar conexión; F17 pausar; F18 reanudar; F19 emergencia; F20 encender Router. UX/seguridad: T06-F27 responsive; F28 teclado/touch; F29 autenticación sin clave cliente; F30 red/consola. Funciones vistas SIN control equivalente en T-06: PR overview/Description/Discussion/Commits/Bugs/diff/merge/políticas PR; task/subtask management; Environment snapshots/blueprints/outposts; gestión de comandos custom/usage limits/security profiles; automatizaciones y notificaciones; branching de tarea; editor de tema/iconoteca; creación multimedia; inbox multi-bot; settings de cuenta/app; administración mutable Connect/Disconnect de conectores. Referencias cruzadas clave: UI-REF-053→F12; UI-REF-063/065→F05 parcial; UI-REF-064→F02/F24 parcial; UI-REF-023→F01/F16; UI-REF-025→F16 slash; UI-REF-026→F14/F15; UI-EXTRA-017→F10/F12.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/T-06-INVENTARIO.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/T-06-INVENTARIO.md"
+        }
+      ],
+      "prueba_real": {
+        "comando": "Cruzar las funciones visuales observadas con los IDs T06-F01..T06-F30 de T-06-INVENTARIO.md.",
+        "ok": true,
+        "salida_resumen": "Mapa cerrado para chat, archivos/canvas, seguimiento, conectores, controles, UX/seguridad y listado explícito de funciones sin control equivalente en T-06."
+      },
+      "gap": null,
+      "siguiente": "SAL; siguiente PENDIENTE I-10."
     }
   ],
   "bitacora": [
@@ -610,20 +805,35 @@
       "fecha_utc": "2026-10-03T00:30:14.509Z",
       "id_tarea": "I-06",
       "evento": "CERRADO: 22/22 UI-REF-023..044 inspeccionadas visualmente y funciones registradas en DESTINO."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "id_tarea": "I-07",
+      "evento": "CERRADO: UI-REF-045..065 (21/21) inspeccionadas visualmente y registradas."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "id_tarea": "I-08",
+      "evento": "CERRADO: catálogos comparados; descripciones genéricas/incorrectas marcadas en resultado."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:47:15.964Z",
+      "id_tarea": "I-09",
+      "evento": "CERRADO: mapa función→control T06-F01..F30 registrado, incluyendo funciones sin control equivalente."
     }
   ],
   "handoff": {
     "objetivo": "Auditar visualmente las imágenes del plan y extraer su función real sin inventar.",
-    "estado": "I-04, I-05 e I-06 CERRADAS; 48/48 imágenes de esta ejecución abiertas.",
+    "estado": "I-07, I-08 e I-09 CERRADAS.",
     "archivos": [
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json"
     ],
     "cambios": [
-      "I-04: funciones reales de UI-EXTRA-014..017 registradas.",
-      "I-05: funciones reales de UI-REF-001..022 registradas.",
-      "I-06: funciones reales de UI-REF-023..044 registradas."
+      "I-07: 21 referencias finales UI-REF-045..065 clasificadas.",
+      "I-08: catálogos confrontados con la auditoría visual.",
+      "I-09: mapa función→control T-06 cerrado."
     ],
     "fallos": [],
-    "siguiente": "I-07 es la siguiente tarea PENDIENTE. SAL."
+    "siguiente": "I-10 es la siguiente tarea PENDIENTE. SAL."
   }
 }
