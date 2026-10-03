@@ -67,7 +67,7 @@
     {
       "id": "S1-09",
       "tarea": "S-11: prueba real con 3 instancias Seals desde el Wordflow (3 workers aislados, evidencia por worker)",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "S1-10",
@@ -148,6 +148,37 @@
       },
       "gap": "Sin codigo de Orca en el repo no hay CLI que invocar. No se definio YAIWES_ORCA_COMMAND.",
       "siguiente": "Necesita que el Director indique el comando real de Orca (o un wrapper aprobado stdin->stdout) para invocarlo con ComponentAdapter."
+    },
+    {
+      "id_tarea": "S1-09",
+      "equipo": "EQUIPO-1",
+      "ronda": 2,
+      "estado": "CERRADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T00:33:36Z",
+      "accion": "Prueba S-11: 3 instancias aisladas de SealsWorker (copias separadas de seals_core, cada una con su TMPDIR) corriendo tests/test_seals_worker.py con PYTHONPATH=seals_core.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker1.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker1.txt",
+          "sha256": "9dfcb1eba7c4f33ac564676927d9e4af464662dfe65c5723012a6831c7fbe247"
+        },
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker2.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker2.txt",
+          "sha256": "4a45e713805882566040e1621ae3dcd4fa2b2dfebbc38f7e53f7cf3c50176b6a"
+        },
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker3.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker3.txt",
+          "sha256": "b0e176849d62890f9b2b7fae15ee30ba9767335be4b2cf7167cc4b169445b507"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Las 3 instancias corrieron: 4 passed en cada una (exit=0). Una primera corrida falló por mi copia sin dag_schema.yaml y se repitió una vez."
+      },
+      "gap": null,
+      "siguiente": "Ninguna"
     }
   ],
   "bitacora": [
@@ -164,6 +195,10 @@
     {
       "fecha_utc": "2026-10-03T00:16:29Z",
       "texto": "[2026-10-03T00:16:29Z] EQUIPO-1 ronda 1: S1-01, S1-02 y S1-03 BLOQUEADAS (sin CLI real stdin->stdout en Rowboat, MSAF ni Orca). Evidencia en chat router/11-EVIDENCIA/equipos/EQUIPO-1/"
+    },
+    {
+      "fecha_utc": "2026-10-03T00:33:36Z",
+      "texto": "[2026-10-03T00:33:36Z] EQUIPO-1 DSL cierre: S1-09 CERRADO"
     }
   ],
   "handoff": {
