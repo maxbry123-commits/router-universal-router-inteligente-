@@ -1,0 +1,13 @@
+{
+  "schema": "yaiwes.team-evidence/v1",
+  "id_tarea": "D-11",
+  "equipo": "EQUIPO-6",
+  "fecha_utc": "2026-10-03T00:25:00Z",
+  "prueba_real": {
+    "comando": "comparar memoria_loader.py + memoria_yaiwes/__init__.py + Store SQLite/graph contra ROUTER-NEEDS-MEMORIA.json",
+    "ok": true,
+    "salida_resumen": "4/4 rutas /memoria documentadas; contrato health/save/load/search documentado; SQLite+graph_nodes+graph_edges documentados; 7 variables opcionales de runtime listadas; Router no modificado."
+  },
+  "archivo_necesidades": "chat router/04-MEMORIA/ROUTER-NEEDS-MEMORIA.json",
+  "sha256": "e399b5c4449f402cc281f0f6a8755f7a43080144ff89a4b706d93364667a5075"
+}

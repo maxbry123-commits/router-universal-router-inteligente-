@@ -1,0 +1,52 @@
+{
+  "schema": "yaiwes.router-memory-needs/v1",
+  "owner": "Director",
+  "regla": "Informativo; no modifica el Router.",
+  "api": {
+    "rutas": [
+      "GET /memoria/health",
+      "POST /memoria/save",
+      "GET /memoria/load",
+      "GET /memoria/search"
+    ],
+    "auth": "Dependencia _auth / X-API-Key del Router existente.",
+    "contrato": "MemoryFacade: health(), save(scope,key,data), load(scope,key), search(scope,query,k)."
+  },
+  "almacenamiento": {
+    "obligatorio": [
+      "RIU_DATA_DIR persistente para riu_chat.sqlite3 y docs/",
+      "SQLite como fuente principal de escritura",
+      "graph_nodes y graph_edges en el mismo SQLite como fallback de grafo"
+    ],
+    "opcional_por_config": [
+      "RIU_GRAPHITI_URL",
+      "RIU_FALKORDB_URL",
+      "RIU_MEMANTO_URL",
+      "RIU_GRAPHIFY_URL",
+      "RIU_AGENTDB_URL",
+      "RIU_POSTGRES_DSN",
+      "RIU_REDIS_URL"
+    ]
+  },
+  "computo": {
+    "obligatorio": [
+      "Runtime Python del Router con sqlite3",
+      "FastAPI/Pydantic ya usados por memoria_loader"
+    ],
+    "opcional": [
+      "Graphiti + backend de grafo + proveedor LLM/embedding",
+      "FalkorDB service",
+      "Memanto runtime",
+      "Graphify runtime de solo lectura",
+      "AgentDB runtime",
+      "PostgreSQL service",
+      "Redis service"
+    ],
+    "fallback": "Si los servicios opcionales no están conectados, memoria local continúa con SQLite + grafo SQLite."
+  },
+  "prohibido": [
+    "Hugging Face en este equipo",
+    "tocar router inteligente universal/"
+  ],
+  "accion_director": "Configurar solo los runtimes/variables opcionales que decida habilitar; mantener SQLite persistente como fallback obligatorio."
+}

@@ -1,1 +1,473 @@
-{"schema":"yaiwes.team-wall/v1","equipo":"EQUIPO-6","modelo":"Sol 🧑‍💻 4","rol":"Memoria y almacenamiento, solo local. Lo que no corra se anota como GAP; nada de Hugging Face","espera":"EQUIPO-2:H-04 CERRADO","alcance":["chat router/04-MEMORIA/","RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)","chat router/03-ESTADO/MEMORIA-INVENTARIO.json","chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json"],"prohibido":["router inteligente universal/ (no tocar el Router; solo listar lo que necesita)","LFS git","GitHub Actions","Hugging Face (el puente HF H-1 queda fuera)"],"reglas":"Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.","ronda_actual":["D-01","D-02","D-03"],"cola":[{"id":"D-01","tarea":"Inventario de memoria con evidencia actual (refrescar MEMORIA-INVENTARIO sin borrar el histórico del 27-sep)","estado":"CERRADO"},{"id":"D-02","tarea":"Graphify: contrato de herramienta de solo lectura (hoy solo es fuente descargada)","estado":"CERRADO"},{"id":"D-03","tarea":"Graphiti: probar si corre local sin servicio; si no, GAP","estado":"BLOQUEADO"},{"id":"D-04","tarea":"FalkorDB: probar runtime local con la fuente ya extraída; si no, GAP","estado":"CERRADO_REF"},{"id":"D-05","tarea":"AgentDB (ruvnet/agentdb): probar runtime local; si no, GAP","estado":"CERRADO_REF"},{"id":"D-06","tarea":"Memanto: buscar su contrato runtime (CLI o API); si no, GAP","estado":"CERRADO"},{"id":"D-07","tarea":"PostgreSQL y Redis: GAP documentado y fallback SQLite probado","estado":"CERRADO"},{"id":"D-08","tarea":"Prueba de guardar y leer con read-back","estado":"CERRADO"},{"id":"D-09","tarea":"Prueba de reinicio: la memoria sobrevive","estado":"CERRADO"},{"id":"D-10","tarea":"Búsqueda por relación en el grafo de respaldo","estado":"PENDIENTE"},{"id":"D-11","tarea":"Lista de lo que necesita el Router principal (API, almacenamiento, cómputo) para el Director; sin tocar el Router","estado":"PENDIENTE"},{"id":"D-12","tarea":"Handoff de memoria con los GAPs que quedan","estado":"PENDIENTE"}],"resultado":[{"id_tarea":"D-01","equipo":"EQUIPO-6","ronda":1,"estado":"CERRADO","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-02T08:43:00Z","accion":"Se refrescó el inventario actual de nueve componentes sin borrar el histórico del 27-sep; SQLite y grafo SQLite quedaron demostrados localmente y los demás estados se registraron sin inflarlos.","archivos":[{"operacion":"modificado","path":"chat router/03-ESTADO/MEMORIA-INVENTARIO.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/MEMORIA-INVENTARIO.json","sha256":"8c25bbb6f3bc4fa4b2cb228b9899c9bea505bd8fc8356acaa214997ead48e7d7"},{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json","sha256":"c3852346a109891223d2432f529dd356448aef42b371de41dac426e3e00fce2f"}],"prueba_real":{"comando":"python stdlib probe: sqlite create/insert/select + graph_nodes/graph_edges read-back + socket/env/import probes","ok":true,"salida_resumen":"SQLite PASS; graph-SQLite PASS; localhost 6379/5432/7687 sin servicio; Graphify/Graphiti no instalados; FalkorDB y AgentDB fuente EXTRACTED_VERIFIED según evidencia existente."},"gap":{"motivo":"Graphiti, Graphify, FalkorDB, AgentDB, Memanto, PostgreSQL y Redis no están demostrados como runtimes conectados en esta ejecución.","intento_fix":"Se verificaron fuentes, variables, puertos locales y fallback SQLite; no se levantaron servicios fuera de la ronda.","necesita":"Rondas D-03 a D-07 según cola; Director activa la siguiente ronda."},"siguiente":"D-02 y D-03 de esta misma ronda"},{"id_tarea":"D-02","equipo":"EQUIPO-6","ronda":1,"estado":"CERRADO","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-02T08:43:00Z","accion":"Se definió un contrato Graphify estrictamente de solo lectura limitado a query/path/explain sobre grapify-out/graph.json.","archivos":[{"operacion":"creado","path":"chat router/04-MEMORIA/GRAPHIFY-READONLY-CONTRACT.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/04-MEMORIA/GRAPHIFY-READONLY-CONTRACT.json","sha256":"859a72610ac8aea39dceeae7125d2d5274395f7762742bf1bd10ebae58397c04"},{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDEENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json","sha256":"5ebadd7edf1245dfa85a8fb4b2f15f3948cdfd404365f8334bc5e73fb1afa7ba"}],"prueba_real":{"comando":"comparar contrato contra README/pyproject de Graphify: query, path, explain; negar build/add/update/watch/hooks/export/MCP","ok":true,"salida_resumen":"Contrato contiene solo operaciones de lectura documentadas y fail-closed si graph.json o runtime no existen."},"gap":null,"siguiente":"D-03"},{"id_tarea":"D-03","equipo":"EQUIPO-6","ronda":1,"estado":"BLOQUEADO","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-02T08:43:00Z","accion":"Se probó la disponibilidad local de Graphiti sin servicio y se documentó el GAP exacto.","archivos":[{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json","sha256":"b39a1d6ada0371e83f60c552458b925a3ec8a1b687074ba321d1ff37e248aba6"}],"prueba_real":{"comando":"python: import graphiti_core; comprobar RIU_GRAPHITI_URL/OPENAI_API_KEY/NEO4J_URI/FALKORDB_URI; socket 127.0.0.1:6379 y :7687","ok":false,"salida_resumen":"graphiti_core -> ModuleNotFoundError; variables requeridas ausentes; puertos 6379 y 7687 -> ConnectionRefusedError. README exige backend de grafo y proveedor LLM/embedding para operación real."},"gap":{"motivo":"El código fuente existe, pero este entorno no tiene graphiti_core instalado ni backend de grafo/servicio configurado; el adaptador existente es fail-closed y explícitamente no ejecuta Graphiti.","intento_fix":"Se intentó clonar para ejecutar el paquete exacto, pero el contenedor no resuelve github.com; se inspeccionó la fuente por el conector GitHub y se hicieron probes locales de import/env/puertos.","necesita":"Un runtime local con Graphiti instalado y un backend admitido (FalkorDB/Neo4j/Neptune/Kuzu), más proveedor LLM/embedding; no se autoriza levantarlo en esta ronda."},"siguiente":"Director decide siguiente ronda; D-04 permanece PENDIENTE"},{"id_tarea":"D-04","equipo":"EQUIPO-6","ronda":2,"estado":"CERRADO_REF","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-03T00:26:00Z","accion":"CERRADO_REF: FalkorDB tiene fuente extraída pero no runtime local/endpoint/servicio disponible.","archivos":[{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json","sha256":"849933e561a40033350fc09792c59837be30b31d239750c66a3bf8fc0f534567"}],"prueba_real":{"comando":"python local probe: import falkordb; command -v falkordb-server/falkordb; RIU_FALKORDB_URL; socket 127.0.0.1:6379; un reintento igual","ok":false,"salida_resumen":"Fuente EXTRACTED_VERIFIED; falkordb module=false; binary=null; RIU_FALKORDB_URL=false; 127.0.0.1:6379 -> ConnectionRefusedError en intento y reintento."},"gap":{"motivo":"FalkorDB no corre en este runtime: no hay módulo/cliente o binario instalado, no hay endpoint configurado y no hay servicio en 6379.","intento_fix":"Un reintento del mismo probe real confirmó el mismo estado; no se levantó servicio ni se tocó el Router.","necesita":"Runtime local con FalkorDB instalado/arrancado o endpoint RIU_FALKORDB_URL válido."},"siguiente":"D-05"},{"id_tarea":"D-05","equipo":"EQUIPO-6","ronda":2,"estado":"CERRADO_REF","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-03T00:26:00Z","accion":"CERRADO_REF: AgentDB tiene fuente extraída pero no paquete/CLI/endpoint local disponible.","archivos":[{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json","sha256":"425c4e33bce6024dfa433b2af93c359d69111ffb90bd74c78fb9315bd95670f4"}],"prueba_real":{"comando":"python/npm local probe: import agentdb; command -v agentdb; RIU_AGENTDB_URL; npm list agentdb --depth=0 --json; un reintento","ok":false,"salida_resumen":"Fuente EXTRACTED_VERIFIED y package.json define CLI agentdb; module=false; binary=null; RIU_AGENTDB_URL=false; npm list rc=1 y no contiene agentdb."},"gap":{"motivo":"AgentDB no corre en este runtime: la fuente existe en el repo, pero el paquete/CLI no está instalado localmente y no hay endpoint configurado.","intento_fix":"Un reintento con npm list confirmó que AgentDB no está instalado; no se instalaron dependencias ni se tocó el Router.","necesita":"Runtime local con paquete AgentDB construido/instalado o endpoint RIU_AGENTDB_URL válido."},"siguiente":"D-06"},{"id_tarea":"D-06","equipo":"EQUIPO-6","ronda":2,"estado":"CERRADO","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-03T00:26:00Z","accion":"Se identificó y documentó el contrato runtime real de Memanto: CLI y REST API local.","archivos":[{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json","sha256":"0c617d64c20a376f6557e20097e427b0c592d2706db503848694f0e8b1c05aad"}],"prueba_real":{"comando":"comparar README + pyproject.toml + docker-compose.yml de Memanto para identificar contrato runtime","ok":true,"salida_resumen":"CLI entrypoint memanto.cli.main:app; REST local con `memanto serve`; readiness GET http://localhost:8000/ready; `memanto ui`; on-prem usa Docker + Ollama."},"gap":null,"siguiente":"D-07 queda PENDIENTE"},{"id_tarea":"D-07","equipo":"EQUIPO-6","ronda":3,"estado":"CERRADO","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-03T00:30:00Z","accion":"Se documentó PostgreSQL/Redis sin servicio local y se probó SQLite como fallback con escritura y read-back PASS.","archivos":[{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json","sha256":"f7a34b681717d95c4f2fd250d5a53c9d626b8e31af021394d0a0160b33c46fc3"}],"prueba_real":{"comando":"python stdlib: socket 127.0.0.1:5432 y :6379 + sqlite create/insert/select fallback","ok":true,"salida_resumen":"PostgreSQL 5432 y Redis 6379 rechazaron conexión; SQLite fallback insert/select read-back PASS."},"gap":{"motivo":"PostgreSQL y Redis no tienen servicio local activo.","intento_fix":"Se ejecutó la prueba requerida del fallback SQLite y pasó.","necesita":"Ninguno para cerrar D-07; servicios externos quedan referenciados como no disponibles localmente."},"siguiente":"D-08"},{"id_tarea":"D-08","equipo":"EQUIPO-6","ronda":3,"estado":"CERRADO","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-03T00:30:00Z","accion":"Se ejecutó una escritura SQLite y el read-back devolvió exactamente el payload guardado.","archivos":[{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json","sha256":"699e38423810d03ac8a2b6165d4c972d402c047cc94487dc2602c2db77af0bd9"}],"prueba_real":{"comando":"python sqlite3: INSERT scope=chat key=turno-d08 payload={texto:hola,n:8}; SELECT read-back","ok":true,"salida_resumen":"Read-back PASS; payload recuperado: {texto:hola,n:8}."},"gap":null,"siguiente":"D-09"},{"id_tarea":"D-09","equipo":"EQUIPO-6","ronda":3,"estado":"CERRADO","ejecutor":"GPT-5.6 Sol","fecha_utc":"2026-10-03T00:30:00Z","accion":"Se cerró y reabrió la base SQLite y la memoria previamente guardada sobrevivió al reinicio de conexión.","archivos":[{"operacion":"creado","path":"chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json","url":"https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json","sha256":"5b358041f05129887d303e8cd600ebea85ee41ba73049a3945e54ec77a299289"}],"prueba_real":{"comando":"cerrar conexión SQLite; reabrir misma DB; SELECT scope=chat key=turno-d08","ok":true,"salida_resumen":"Restart read-back PASS; DB persistente existe y conserva el payload."},"gap":null,"siguiente":"D-10 queda PENDIENTE"}],"bitacora":[{"fecha_utc":"2026-10-02T08:43:00Z","id_tarea":"D-01","evento":"CERRADO: inventario actual agregado sin borrar histórico; SQLite y graph-SQLite PASS, demás runtimes explícitos GAP/no verificados."},{"fecha_utc":"2026-10-02T08:43:00Z","id_tarea":"D-02","evento":"CERRADO: contrato Graphify READ_ONLY creado con query/path/explain y mutaciones denegadas."},{"fecha_utc":"2026-10-02T08:43:00Z","id_tarea":"D-03","evento":"BLOQUEADO: Graphiti no corre localmente en este entorno sin runtime/backend/servicio; evidencia registrada."},{"fecha_utc":"2026-10-03T00:26:00Z","id_tarea":"D-04","evento":"BLOQUEADO: fuente FalkorDB extraída, pero runtime local/endpoint/puerto 6379 no disponible tras un reintento."},{"fecha_utc":"2026-10-03T00:26:00Z","id_tarea":"D-05","evento":"BLOQUEADO: fuente AgentDB extraída, pero paquete/CLI/endpoint local no disponible tras un reintento."},{"fecha_utc":"2026-10-03T00:26:00Z","id_tarea":"D-06","evento":"CERRADO: contrato runtime Memanto identificado como CLI + REST API local con readiness en :8000/ready."},{"fecha_utc":"2026-10-03T00:30:00Z","id_tarea":"D-04","evento":"CERRADO_REF: FalkorDB sin runtime local/endpoint/servicio."},{"fecha_utc":"2026-10-03T00:30:00Z","id_tarea":"D-05","evento":"CERRADO_REF: AgentDB sin paquete/CLI/endpoint local."},{"fecha_utc":"2026-10-03T00:30:00Z","id_tarea":"D-07","evento":"CERRADO: PostgreSQL/Redis sin servicio local documentados; fallback SQLite PASS."},{"fecha_utc":"2026-10-03T00:30:00Z","id_tarea":"D-08","evento":"CERRADO: guardar + read-back SQLite PASS."},{"fecha_utc":"2026-10-03T00:30:00Z","id_tarea":"D-09","evento":"CERRADO: persistencia tras cerrar/reabrir SQLite PASS."}],"handoff":{"objetivo":"Convertir D-04/D-05 a CERRADO_REF y cerrar solo D-07/D-08/D-09.","estado":"D-04 CERRADO_REF; D-05 CERRADO_REF; D-07 CERRADO; D-08 CERRADO; D-09 CERRADO.","archivos":["chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json","chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json","chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json"],"cambios":["D-04 y D-05 reclasificados a CERRADO_REF.","D-07 fallback SQLite verificado.","D-08 save/read-back verificado.","D-09 persistencia tras reapertura verificada."],"fallos":[],"siguiente":"SALIR; D-10 permanece PENDIENTE."}}
+{
+  "schema": "yaiwes.team-wall/v1",
+  "equipo": "EQUIPO-6",
+  "modelo": "Sol 🧑‍💻 4",
+  "rol": "Memoria y almacenamiento, solo local. Lo que no corra se anota como GAP; nada de Hugging Face",
+  "espera": "EQUIPO-2:H-04 CERRADO",
+  "alcance": [
+    "chat router/04-MEMORIA/",
+    "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)",
+    "chat router/03-ESTADO/MEMORIA-INVENTARIO.json",
+    "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json"
+  ],
+  "prohibido": [
+    "router inteligente universal/ (no tocar el Router; solo listar lo que necesita)",
+    "LFS git",
+    "GitHub Actions",
+    "Hugging Face (el puente HF H-1 queda fuera)"
+  ],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
+  "ronda_actual": [
+    "D-01",
+    "D-02",
+    "D-03"
+  ],
+  "cola": [
+    {
+      "id": "D-01",
+      "tarea": "Inventario de memoria con evidencia actual (refrescar MEMORIA-INVENTARIO sin borrar el histórico del 27-sep)",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "D-02",
+      "tarea": "Graphify: contrato de herramienta de solo lectura (hoy solo es fuente descargada)",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "D-03",
+      "tarea": "Graphiti: probar si corre local sin servicio; si no, GAP",
+      "estado": "BLOQUEADO"
+    },
+    {
+      "id": "D-04",
+      "tarea": "FalkorDB: probar runtime local con la fuente ya extraída; si no, GAP",
+      "estado": "CERRADO_REF"
+    },
+    {
+      "id": "D-05",
+      "tarea": "AgentDB (ruvnet/agentdb): probar runtime local; si no, GAP",
+      "estado": "CERRADO_REF"
+    },
+    {
+      "id": "D-06",
+      "tarea": "Memanto: buscar su contrato runtime (CLI o API); si no, GAP",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "D-07",
+      "tarea": "PostgreSQL y Redis: GAP documentado y fallback SQLite probado",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "D-08",
+      "tarea": "Prueba de guardar y leer con read-back",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "D-09",
+      "tarea": "Prueba de reinicio: la memoria sobrevive",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "D-10",
+      "tarea": "Búsqueda por relación en el grafo de respaldo",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "D-11",
+      "tarea": "Lista de lo que necesita el Router principal (API, almacenamiento, cómputo) para el Director; sin tocar el Router",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "D-12",
+      "tarea": "Handoff de memoria con los GAPs que quedan",
+      "estado": "PENDIENTE"
+    }
+  ],
+  "resultado": [
+    {
+      "id_tarea": "D-01",
+      "equipo": "EQUIPO-6",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T08:43:00Z",
+      "accion": "Se refrescó el inventario actual de nueve componentes sin borrar el histórico del 27-sep; SQLite y grafo SQLite quedaron demostrados localmente y los demás estados se registraron sin inflarlos.",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/03-ESTADO/MEMORIA-INVENTARIO.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/MEMORIA-INVENTARIO.json",
+          "sha256": "8c25bbb6f3bc4fa4b2cb228b9899c9bea505bd8fc8356acaa214997ead48e7d7"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json",
+          "sha256": "c3852346a109891223d2432f529dd356448aef42b371de41dac426e3e00fce2f"
+        }
+      ],
+      "prueba_real": {
+        "comando": "python stdlib probe: sqlite create/insert/select + graph_nodes/graph_edges read-back + socket/env/import probes",
+        "ok": true,
+        "salida_resumen": "SQLite PASS; graph-SQLite PASS; localhost 6379/5432/7687 sin servicio; Graphify/Graphiti no instalados; FalkorDB y AgentDB fuente EXTRACTED_VERIFIED según evidencia existente."
+      },
+      "gap": {
+        "motivo": "Graphiti, Graphify, FalkorDB, AgentDB, Memanto, PostgreSQL y Redis no están demostrados como runtimes conectados en esta ejecución.",
+        "intento_fix": "Se verificaron fuentes, variables, puertos locales y fallback SQLite; no se levantaron servicios fuera de la ronda.",
+        "necesita": "Rondas D-03 a D-07 según cola; Director activa la siguiente ronda."
+      },
+      "siguiente": "D-02 y D-03 de esta misma ronda"
+    },
+    {
+      "id_tarea": "D-02",
+      "equipo": "EQUIPO-6",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T08:43:00Z",
+      "accion": "Se definió un contrato Graphify estrictamente de solo lectura limitado a query/path/explain sobre grapify-out/graph.json.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/04-MEMORIA/GRAPHIFY-READONLY-CONTRACT.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/04-MEMORIA/GRAPHIFY-READONLY-CONTRACT.json",
+          "sha256": "859a72610ac8aea39dceeae7125d2d5274395f7762742bf1bd10ebae58397c04"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDEENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json",
+          "sha256": "5ebadd7edf1245dfa85a8fb4b2f15f3948cdfd404365f8334bc5e73fb1afa7ba"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comparar contrato contra README/pyproject de Graphify: query, path, explain; negar build/add/update/watch/hooks/export/MCP",
+        "ok": true,
+        "salida_resumen": "Contrato contiene solo operaciones de lectura documentadas y fail-closed si graph.json o runtime no existen."
+      },
+      "gap": null,
+      "siguiente": "D-03"
+    },
+    {
+      "id_tarea": "D-03",
+      "equipo": "EQUIPO-6",
+      "ronda": 1,
+      "estado": "BLOQUEADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-02T08:43:00Z",
+      "accion": "Se probó la disponibilidad local de Graphiti sin servicio y se documentó el GAP exacto.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json",
+          "sha256": "b39a1d6ada0371e83f60c552458b925a3ec8a1b687074ba321d1ff37e248aba6"
+        }
+      ],
+      "prueba_real": {
+        "comando": "python: import graphiti_core; comprobar RIU_GRAPHITI_URL/OPENAI_API_KEY/NEO4J_URI/FALKORDB_URI; socket 127.0.0.1:6379 y :7687",
+        "ok": false,
+        "salida_resumen": "graphiti_core -> ModuleNotFoundError; variables requeridas ausentes; puertos 6379 y 7687 -> ConnectionRefusedError. README exige backend de grafo y proveedor LLM/embedding para operación real."
+      },
+      "gap": {
+        "motivo": "El código fuente existe, pero este entorno no tiene graphiti_core instalado ni backend de grafo/servicio configurado; el adaptador existente es fail-closed y explícitamente no ejecuta Graphiti.",
+        "intento_fix": "Se intentó clonar para ejecutar el paquete exacto, pero el contenedor no resuelve github.com; se inspeccionó la fuente por el conector GitHub y se hicieron probes locales de import/env/puertos.",
+        "necesita": "Un runtime local con Graphiti instalado y un backend admitido (FalkorDB/Neo4j/Neptune/Kuzu), más proveedor LLM/embedding; no se autoriza levantarlo en esta ronda."
+      },
+      "siguiente": "Director decide siguiente ronda; D-04 permanece PENDIENTE"
+    },
+    {
+      "id_tarea": "D-04",
+      "equipo": "EQUIPO-6",
+      "ronda": 2,
+      "estado": "CERRADO_REF",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:26:00Z",
+      "accion": "CERRADO_REF: FalkorDB tiene fuente extraída pero no runtime local/endpoint/servicio disponible.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json",
+          "sha256": "849933e561a40033350fc09792c59837be30b31d239750c66a3bf8fc0f534567"
+        }
+      ],
+      "prueba_real": {
+        "comando": "python local probe: import falkordb; command -v falkordb-server/falkordb; RIU_FALKORDB_URL; socket 127.0.0.1:6379; un reintento igual",
+        "ok": false,
+        "salida_resumen": "Fuente EXTRACTED_VERIFIED; falkordb module=false; binary=null; RIU_FALKORDB_URL=false; 127.0.0.1:6379 -> ConnectionRefusedError en intento y reintento."
+      },
+      "gap": {
+        "motivo": "FalkorDB no corre en este runtime: no hay módulo/cliente o binario instalado, no hay endpoint configurado y no hay servicio en 6379.",
+        "intento_fix": "Un reintento del mismo probe real confirmó el mismo estado; no se levantó servicio ni se tocó el Router.",
+        "necesita": "Runtime local con FalkorDB instalado/arrancado o endpoint RIU_FALKORDB_URL válido."
+      },
+      "siguiente": "D-05"
+    },
+    {
+      "id_tarea": "D-05",
+      "equipo": "EQUIPO-6",
+      "ronda": 2,
+      "estado": "CERRADO_REF",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:26:00Z",
+      "accion": "CERRADO_REF: AgentDB tiene fuente extraída pero no paquete/CLI/endpoint local disponible.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json",
+          "sha256": "425c4e33bce6024dfa433b2af93c359d69111ffb90bd74c78fb9315bd95670f4"
+        }
+      ],
+      "prueba_real": {
+        "comando": "python/npm local probe: import agentdb; command -v agentdb; RIU_AGENTDB_URL; npm list agentdb --depth=0 --json; un reintento",
+        "ok": false,
+        "salida_resumen": "Fuente EXTRACTED_VERIFIED y package.json define CLI agentdb; module=false; binary=null; RIU_AGENTDB_URL=false; npm list rc=1 y no contiene agentdb."
+      },
+      "gap": {
+        "motivo": "AgentDB no corre en este runtime: la fuente existe en el repo, pero el paquete/CLI no está instalado localmente y no hay endpoint configurado.",
+        "intento_fix": "Un reintento con npm list confirmó que AgentDB no está instalado; no se instalaron dependencias ni se tocó el Router.",
+        "necesita": "Runtime local con paquete AgentDB construido/instalado o endpoint RIU_AGENTDB_URL válido."
+      },
+      "siguiente": "D-06"
+    },
+    {
+      "id_tarea": "D-06",
+      "equipo": "EQUIPO-6",
+      "ronda": 2,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:26:00Z",
+      "accion": "Se identificó y documentó el contrato runtime real de Memanto: CLI y REST API local.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json",
+          "sha256": "0c617d64c20a376f6557e20097e427b0c592d2706db503848694f0e8b1c05aad"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comparar README + pyproject.toml + docker-compose.yml de Memanto para identificar contrato runtime",
+        "ok": true,
+        "salida_resumen": "CLI entrypoint memanto.cli.main:app; REST local con `memanto serve`; readiness GET http://localhost:8000/ready; `memanto ui`; on-prem usa Docker + Ollama."
+      },
+      "gap": null,
+      "siguiente": "D-07 queda PENDIENTE"
+    },
+    {
+      "id_tarea": "D-07",
+      "equipo": "EQUIPO-6",
+      "ronda": 3,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:30:00Z",
+      "accion": "Se documentó PostgreSQL/Redis sin servicio local y se probó SQLite como fallback con escritura y read-back PASS.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json",
+          "sha256": "f7a34b681717d95c4f2fd250d5a53c9d626b8e31af021394d0a0160b33c46fc3"
+        }
+      ],
+      "prueba_real": {
+        "comando": "python stdlib: socket 127.0.0.1:5432 y :6379 + sqlite create/insert/select fallback",
+        "ok": true,
+        "salida_resumen": "PostgreSQL 5432 y Redis 6379 rechazaron conexión; SQLite fallback insert/select read-back PASS."
+      },
+      "gap": {
+        "motivo": "PostgreSQL y Redis no tienen servicio local activo.",
+        "intento_fix": "Se ejecutó la prueba requerida del fallback SQLite y pasó.",
+        "necesita": "Ninguno para cerrar D-07; servicios externos quedan referenciados como no disponibles localmente."
+      },
+      "siguiente": "D-08"
+    },
+    {
+      "id_tarea": "D-08",
+      "equipo": "EQUIPO-6",
+      "ronda": 3,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:30:00Z",
+      "accion": "Se ejecutó una escritura SQLite y el read-back devolvió exactamente el payload guardado.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json",
+          "sha256": "699e38423810d03ac8a2b6165d4c972d402c047cc94487dc2602c2db77af0bd9"
+        }
+      ],
+      "prueba_real": {
+        "comando": "python sqlite3: INSERT scope=chat key=turno-d08 payload={texto:hola,n:8}; SELECT read-back",
+        "ok": true,
+        "salida_resumen": "Read-back PASS; payload recuperado: {texto:hola,n:8}."
+      },
+      "gap": null,
+      "siguiente": "D-09"
+    },
+    {
+      "id_tarea": "D-09",
+      "equipo": "EQUIPO-6",
+      "ronda": 3,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:30:00Z",
+      "accion": "Se cerró y reabrió la base SQLite y la memoria previamente guardada sobrevivió al reinicio de conexión.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json",
+          "sha256": "5b358041f05129887d303e8cd600ebea85ee41ba73049a3945e54ec77a299289"
+        }
+      ],
+      "prueba_real": {
+        "comando": "cerrar conexión SQLite; reabrir misma DB; SELECT scope=chat key=turno-d08",
+        "ok": true,
+        "salida_resumen": "Restart read-back PASS; DB persistente existe y conserva el payload."
+      },
+      "gap": null,
+      "siguiente": "D-10 queda PENDIENTE"
+    },
+    {
+      "id_tarea": "D-10",
+      "equipo": "EQUIPO-6",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "accion": "Se ejecutó búsqueda por relación sobre el grafo SQLite de respaldo y devolvió los nodos relacionados esperados.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+          "sha256": "1a0828fd4e91cf1bb77556e380bf2063a607a8a773745e0cae5964c569876653"
+        }
+      ],
+      "prueba_real": {
+        "comando": "sqlite3 fallback graph: JOIN graph_edges->graph_nodes WHERE src='scope:proyecto:demo' AND rel='contains'; luego WHERE src='memory:proyecto:demo:alpha' AND rel='related_to'",
+        "ok": true,
+        "salida_resumen": "contains devolvió alpha,beta (2 resultados); related_to devolvió beta (1 resultado). La búsqueda por relación del grafo SQLite de respaldo PASS."
+      },
+      "gap": null,
+      "siguiente": "D-11"
+    },
+    {
+      "id_tarea": "D-11",
+      "equipo": "EQUIPO-6",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "accion": "Se registró para el Director la lista exacta de necesidades del Router principal en API, almacenamiento y cómputo, sin tocar el Router.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/04-MEMORIA/ROUTER-NEEDS-MEMORIA.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/04-MEMORIA/ROUTER-NEEDS-MEMORIA.json",
+          "sha256": "e399b5c4449f402cc281f0f6a8755f7a43080144ff89a4b706d93364667a5075"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json",
+          "sha256": "954ec31a290319fa9d194c622b622c2ec6a21f1efdcc4776eb57d22d7f97137f"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comparar memoria_loader.py + memoria_yaiwes/__init__.py + Store SQLite/graph contra ROUTER-NEEDS-MEMORIA.json",
+        "ok": true,
+        "salida_resumen": "4/4 rutas /memoria documentadas; contrato health/save/load/search documentado; SQLite+graph_nodes+graph_edges documentados; 7 variables opcionales de runtime listadas; Router no modificado."
+      },
+      "gap": null,
+      "siguiente": "D-12 permanece PENDIENTE"
+    }
+  ],
+  "bitacora": [
+    {
+      "fecha_utc": "2026-10-02T08:43:00Z",
+      "id_tarea": "D-01",
+      "evento": "CERRADO: inventario actual agregado sin borrar histórico; SQLite y graph-SQLite PASS, demás runtimes explícitos GAP/no verificados."
+    },
+    {
+      "fecha_utc": "2026-10-02T08:43:00Z",
+      "id_tarea": "D-02",
+      "evento": "CERRADO: contrato Graphify READ_ONLY creado con query/path/explain y mutaciones denegadas."
+    },
+    {
+      "fecha_utc": "2026-10-02T08:43:00Z",
+      "id_tarea": "D-03",
+      "evento": "BLOQUEADO: Graphiti no corre localmente en este entorno sin runtime/backend/servicio; evidencia registrada."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:26:00Z",
+      "id_tarea": "D-04",
+      "evento": "BLOQUEADO: fuente FalkorDB extraída, pero runtime local/endpoint/puerto 6379 no disponible tras un reintento."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:26:00Z",
+      "id_tarea": "D-05",
+      "evento": "BLOQUEADO: fuente AgentDB extraída, pero paquete/CLI/endpoint local no disponible tras un reintento."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:26:00Z",
+      "id_tarea": "D-06",
+      "evento": "CERRADO: contrato runtime Memanto identificado como CLI + REST API local con readiness en :8000/ready."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:30:00Z",
+      "id_tarea": "D-04",
+      "evento": "CERRADO_REF: FalkorDB sin runtime local/endpoint/servicio."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:30:00Z",
+      "id_tarea": "D-05",
+      "evento": "CERRADO_REF: AgentDB sin paquete/CLI/endpoint local."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:30:00Z",
+      "id_tarea": "D-07",
+      "evento": "CERRADO: PostgreSQL/Redis sin servicio local documentados; fallback SQLite PASS."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:30:00Z",
+      "id_tarea": "D-08",
+      "evento": "CERRADO: guardar + read-back SQLite PASS."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:30:00Z",
+      "id_tarea": "D-09",
+      "evento": "CERRADO: persistencia tras cerrar/reabrir SQLite PASS."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "id_tarea": "D-10",
+      "evento": "CERRADO: búsqueda por relación en grafo SQLite fallback PASS."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:25:00Z",
+      "id_tarea": "D-11",
+      "evento": "CERRADO: necesidades API/almacenamiento/cómputo del Router registradas para el Director; Router no tocado."
+    }
+  ],
+  "handoff": {
+    "objetivo": "Cerrar únicamente D-10 y D-11.",
+    "estado": "D-10 CERRADO; D-11 CERRADO.",
+    "archivos": [
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+      "chat router/04-MEMORIA/ROUTER-NEEDS-MEMORIA.json",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json"
+    ],
+    "cambios": [
+      "D-10 relación contains/related_to verificada en grafo SQLite fallback.",
+      "D-11 lista de necesidades del Router creada sin modificar el Router."
+    ],
+    "fallos": [],
+    "siguiente": "SALIR; D-12 permanece PENDIENTE."
+  }
+}

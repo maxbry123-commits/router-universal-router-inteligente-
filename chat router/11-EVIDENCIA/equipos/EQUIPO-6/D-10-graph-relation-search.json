@@ -1,0 +1,38 @@
+{
+  "schema": "yaiwes.team-evidence/v1",
+  "id_tarea": "D-10",
+  "equipo": "EQUIPO-6",
+  "fecha_utc": "2026-10-03T00:25:00Z",
+  "prueba_real": {
+    "comando": "sqlite3 fallback graph: JOIN graph_edges->graph_nodes WHERE src='scope:proyecto:demo' AND rel='contains'; luego WHERE src='memory:proyecto:demo:alpha' AND rel='related_to'",
+    "ok": true,
+    "salida_resumen": "contains devolvió alpha,beta (2 resultados); related_to devolvió beta (1 resultado). La búsqueda por relación del grafo SQLite de respaldo PASS."
+  },
+  "datos": {
+    "contains": [
+      {
+        "src": "scope:proyecto:demo",
+        "dst": "memory:proyecto:demo:alpha",
+        "rel": "contains",
+        "kind": "memory",
+        "label": "alpha"
+      },
+      {
+        "src": "scope:proyecto:demo",
+        "dst": "memory:proyecto:demo:beta",
+        "rel": "contains",
+        "kind": "memory",
+        "label": "beta"
+      }
+    ],
+    "related_to": [
+      {
+        "src": "memory:proyecto:demo:alpha",
+        "dst": "memory:proyecto:demo:beta",
+        "rel": "related_to",
+        "kind": "memory",
+        "label": "beta"
+      }
+    ]
+  }
+}
