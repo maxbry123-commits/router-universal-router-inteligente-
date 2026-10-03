@@ -91,13 +91,13 @@ def build_mcp():  # noqa: ANN201
     async def hf_compute_run(command: list[str], image: str = "python:3.12", flavor: str = "cpu-basic", timeout: str = "30m") -> dict[str, Any]:
         """Computo HF para cualquier cosa conectada al Router (HF Job pagado)."""
         cp._check_flavor(flavor)  # noqa: SLF001
-        job = cp._api().run_job(image=image, command=command, flavor=flavor, timeout=timeout)  # noqa: SLF001
+        job = cp._api().run_job(namespace=cp.JOB_NS, image=image, command=command, flavor=flavor, timeout=timeout)  # noqa: SLF001
         return {"job_id": job.id, "flavor": flavor}
 
     @mcp.tool()
     async def hf_job_status(job_id: str) -> dict[str, Any]:
         """Estado de un HF Job."""
-        j = cp._api().inspect_job(job_id=job_id)  # noqa: SLF001
+        j = cp._api().inspect_job(namespace=cp.JOB_NS, job_id=job_id)  # noqa: SLF001
         return {"job_id": job_id, "stage": str(getattr(j.status, "stage", ""))}
 
     return mcp

@@ -392,6 +392,34 @@ class HardwareReq(BaseModel):
     relaunch_now: bool = False
 
 
+JOB_NS = os.getenv("RIU_HF_NAMESPACE", "COMAND-CENTER-1")  # HF org that owns and pays the Jobs
+
+
+def job_log_tail(job_id: str, lines: int = 40, wait_s: float = 8.0) -> list[str]:
+    """Last log lines of a Job (read for at most wait_s seconds: a running Job streams forever)."""
+    import queue
+    import threading
+
+    q: queue.Queue = queue.Queue()
+
+    def pump() -> None:
+        try:
+            for line in _api().fetch_job_logs(job_id=job_id, namespace=JOB_NS):
+                q.put(str(line))
+        except Exception as exc:  # noqa: BLE001
+            q.put("LOG_ERROR:" + type(exc).__name__)
+
+    threading.Thread(target=pump, daemon=True).start()
+    out: list[str] = []
+    end = time.time() + wait_s
+    while time.time() < end:
+        try:
+            out.append(q.get(timeout=max(0.1, end - time.time())))
+        except queue.Empty:
+            break
+    return [ln[-300:] for ln in out[-lines:]]
+
+
 def _api():  # noqa: ANN202
     from huggingface_hub import HfApi
 
@@ -462,7 +490,7 @@ def build_control_router() -> APIRouter:
         info: dict[str, Any] = {}
         if job_id:
             try:
-                j = api.inspect_job(job_id=job_id)
+                j = api.inspect_job(namespace=JOB_NS, job_id=job_id)
                 info = {"job_id": job_id, "stage": str(getattr(j.status, "stage", "")), "flavor": getattr(j, "flavor", None)}
             except Exception as exc:  # noqa: BLE001
                 info = {"job_id": job_id, "error": type(exc).__name__}
@@ -506,25 +534,28 @@ def build_control_router() -> APIRouter:
     def hf_compute(req: ComputeReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
         """Compute for anything connected to the Router: one paid HF Job, no new router or process to open by hand."""
         _check_flavor(req.flavor)
-        job = _api().run_job(image=req.image, command=req.command, flavor=req.flavor, timeout=req.timeout,
+        job = _api().run_job(namespace=JOB_NS, image=req.image, command=req.command, flavor=req.flavor, timeout=req.timeout,
                              expose=req.expose or None, env=req.env or None)
         return {"job_id": job.id, "flavor": req.flavor, "urls": [f"https://{job.id}--{p}.hf.jobs" for p in req.expose]}
 
     @r.get("/hf/compute/{job_id}")
-    def hf_compute_status(job_id: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
-        j = _api().inspect_job(job_id=job_id)
-        return {"job_id": job_id, "stage": str(getattr(j.status, "stage", "")), "message": getattr(j.status, "message", None)}
+    def hf_compute_status(job_id: str, logs: int = 0, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        j = _api().inspect_job(namespace=JOB_NS, job_id=job_id)
+        out = {"job_id": job_id, "stage": str(getattr(j.status, "stage", "")), "message": getattr(j.status, "message", None)}
+        if logs > 0:
+            out["logs"] = job_log_tail(job_id, min(logs, 200))
+        return out
 
     @r.delete("/hf/compute/{job_id}")
     def hf_compute_cancel(job_id: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
-        _api().cancel_job(job_id=job_id)
+        _api().cancel_job(namespace=JOB_NS, job_id=job_id)
         return {"job_id": job_id, "status": "CANCELED"}
 
     @r.post("/hf/local/serve")
     def hf_local_serve(req: ServeReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
         """Serve a model stored on HF (vLLM, OpenAI API) on a GPU Job and plug it as provider `local` of the Router."""
         _check_flavor(req.flavor)
-        job = _api().run_job(image="vllm/vllm-openai:latest", command=["vllm", "serve", req.repo, "--port", "8000"],
+        job = _api().run_job(namespace=JOB_NS, image="vllm/vllm-openai:latest", command=["vllm", "serve", req.repo, "--port", "8000"],
                              flavor=req.flavor, timeout=req.timeout, expose=[8000],
                              secrets={"HF_TOKEN": _hf_token()} if _hf_token() else None)
         url = f"https://{job.id}--8000.hf.jobs/v1"

@@ -111,7 +111,7 @@ class HFWorkerPool:
             if len(live) >= MAX_WORKERS:
                 raise RuntimeError("max workers reached")
 
-        job = self._api().run_job(
+        job = self._api().run_job(namespace=os.getenv("RIU_HF_NAMESPACE", "COMAND-CENTER-1"), 
             image="python:3.12",
             command=self._command(),
             flavor=flavor,
@@ -142,7 +142,7 @@ class HFWorkerPool:
             ids = list(self._workers)
         for job_id in ids:
             try:
-                info = api.inspect_job(job_id=job_id)
+                info = api.inspect_job(namespace=os.getenv("RIU_HF_NAMESPACE", "COMAND-CENTER-1"), job_id=job_id)
                 stage = str(getattr(info.status, "stage", "") or "").upper()
                 with self._lock:
                     worker = self._workers.get(job_id)
@@ -168,7 +168,7 @@ class HFWorkerPool:
         api = self._api()
         for worker in candidates:
             try:
-                api.cancel_job(job_id=worker.job_id)
+                api.cancel_job(namespace=os.getenv("RIU_HF_NAMESPACE", "COMAND-CENTER-1"), job_id=worker.job_id)
                 with self._lock:
                     worker.state = "canceled"
                 cancelled.append(worker.job_id)
