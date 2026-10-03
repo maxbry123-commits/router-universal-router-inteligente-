@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-03T08:27:17Z",
+  "updated_at": "2026-10-03T08:44:22Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 65,
+  "bitacora_revision": 66,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -202,7 +202,7 @@
     "Siguiente: timeout duro en busqueda local y procedencia independiente de facts",
     "Siguiente: procedencia independiente de facts y reintentar E2E GitHub con token"
   ],
-  "reception_summary": "S1-28 Paso 1 memoria: puente HF probado (roundtrip OK). PENDIENTE: conexion Router, MCP HF-almacenamiento, plugin harness, runtimes graphiti/graphify/memanto/falkordb/agentdb/postgres.",
+  "reception_summary": "S1-29: memoria enchufada al harness como MCP; correccion S1-28 (Router si monta /memoria y tiene sync_to_bucket); CLI-Anything descargado. PENDIENTE: e2e con Router, carga en dsh, runtimes GAP.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",

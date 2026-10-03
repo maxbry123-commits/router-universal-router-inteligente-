@@ -660,6 +660,12 @@
       "estado": "CERRADO_REF",
       "resumen": "Paso 1: puente HF de memoria escrito y probado (snapshot+restore con mismo sha256 en dataset privado). PENDIENTE: conectar al Router (no tocar), MCP HF-almacenamiento no existe en el Router, plugin del harness, runtimes graphiti/graphify/memanto/falkordb/agentdb/postgres = GAP. Evidencia S1-28-PASO1-MEMORIA-HF.md",
       "gaps": "conexion al Router, MCP HF, plugin harness, runtimes"
+    },
+    {
+      "id_tarea": "S1-29",
+      "estado": "CERRADO_REF",
+      "resumen": "Memoria enchufada al DeepSeek Harness como plugin MCP (7 tools, list_tools OK, HF health OK; Router no corriendo en la prueba). Corregido: el Router SI monta /memoria/* y tiene sync_to_bucket. CLI-Anything descargado con el motor (1872 archivos, VERIFIED_CLOSED). Pendiente: prueba punta a punta con Router, cargar en dsh, runtimes GAP. Evidencia S1-29-MEMORIA-HARNESS-Y-CLI-ANYTHING.md",
+      "gaps": "prueba e2e con Router, carga en dsh, runtimes memoria"
     }
   ],
   "bitacora": [
@@ -792,6 +798,10 @@
     {
       "id_tarea": "S1-28",
       "nota": "Paso 1: puente HF de memoria escrito y probado (snapshot+restore con mismo sha256 en dataset privado). PENDIENTE: conectar al Router (no tocar), MCP HF-almacenamiento no existe en el Router, plugin del harness, runtimes graphiti/graphify/memanto/falkordb/agentdb/postgres = GAP. Evidencia S1-28-PASO1-MEMORIA-HF.md"
+    },
+    {
+      "id_tarea": "S1-29",
+      "nota": "Memoria enchufada al DeepSeek Harness como plugin MCP (7 tools, list_tools OK, HF health OK; Router no corriendo en la prueba). Corregido: el Router SI monta /memoria/* y tiene sync_to_bucket. CLI-Anything descargado con el motor (1872 archivos, VERIFIED_CLOSED). Pendiente: prueba punta a punta con Router, cargar en dsh, runtimes GAP. Evidencia S1-29-MEMORIA-HARNESS-Y-CLI-ANYTHING.md"
     }
   ],
   "handoff": {

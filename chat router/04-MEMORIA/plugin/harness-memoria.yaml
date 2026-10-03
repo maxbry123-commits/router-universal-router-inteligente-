@@ -1,0 +1,12 @@
+# Entrada para el DeepSeek Harness (@deepseek-ai/dsh-mcp-client): memoria como plugin, separado del workflow.
+- id: mcp-memoria
+  name: '@deepseek-ai/dsh-mcp-client'
+  config:
+    serverName: memoria
+    transport: stdio
+    command: python3
+    args: ['chat router/04-MEMORIA/plugin/memoria_mcp_server.py']
+    env:
+      RIU_ROUTER_URL: !!js process.env.RIU_ROUTER_URL
+      RIU_API_KEY: !!js process.env.RIU_API_KEY
+      HF_TOKEN: !!js process.env.HF_TOKEN

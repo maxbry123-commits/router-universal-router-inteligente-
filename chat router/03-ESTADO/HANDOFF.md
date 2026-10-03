@@ -72,13 +72,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 65
+Revisión: 66
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-S1-28 Paso 1 memoria: puente HF probado (roundtrip OK). PENDIENTE: conexion Router, MCP HF-almacenamiento, plugin harness, runtimes graphiti/graphify/memanto/falkordb/agentdb/postgres.
+S1-29: memoria enchufada al harness como MCP; correccion S1-28 (Router si monta /memoria y tiene sync_to_bucket); CLI-Anything descargado. PENDIENTE: e2e con Router, carga en dsh, runtimes GAP.
 
 ### Siguiente
 Continuar DAG existente

@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "S1-28 Paso 1 memoria: puente HF probado (roundtrip OK). PENDIENTE: conexion Router, MCP HF-almacenamiento, plugin harness, runtimes graphiti/graphify/memanto/falkordb/agentdb/postgres.",
-      "updated_at": "2026-10-03T08:27:17Z",
-      "last_event_seq": 65
+      "summary": "S1-29: memoria enchufada al harness como MCP; correccion S1-28 (Router si monta /memoria y tiene sync_to_bucket); CLI-Anything descargado. PENDIENTE: e2e con Router, carga en dsh, runtimes GAP.",
+      "updated_at": "2026-10-03T08:44:22Z",
+      "last_event_seq": 66
     }
   }
 }
