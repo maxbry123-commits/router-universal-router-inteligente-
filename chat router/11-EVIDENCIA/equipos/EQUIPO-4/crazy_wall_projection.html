@@ -1,0 +1,2637 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Crazy Wall — Archify projection</title>
+<style>body{font-family:system-ui,sans-serif;margin:24px}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #bbb;padding:6px;vertical-align:top;text-align:left}code,pre{white-space:pre-wrap;word-break:break-word}.grid{display:grid;grid-template-columns:repeat(6,minmax(100px,1fr));gap:8px}.card{border:1px solid #aaa;padding:10px;border-radius:8px}</style></head>
+<body><h1>Crazy Wall — Archify projection</h1>
+<p>Fuentes reales: TASK-NODES.json + CHECKPOINT.json. Projection SHA256: <code>41475d8431453d1639d835b01e0ba73e0245540b3306a777af94d3c798089d72</code></p>
+<div class="grid"><div class="card"><b>tasks</b><br>41</div><div class="card"><b>queue</b><br>17</div><div class="card"><b>gaps</b><br>28</div><div class="card"><b>agents</b><br>6</div><div class="card"><b>evidence</b><br>86</div><div class="card"><b>checkpoints</b><br>1</div></div>
+<h2>Nodos</h2><table><thead><tr><th>ID</th><th>Tipo</th><th>Estado</th><th>Owner</th><th>Label</th></tr></thead><tbody><tr><td>CL-001</td><td>task</td><td>PASS</td><td>CHATGPT_CURRENT_RUN</td><td>X-Ray forense fresh de raíz Wordflow, agent_sources, runtime, adapters, motores y Crazy Wall; reconciliar presencia física vs integración real.</td></tr><tr><td>CL-002</td><td>task</td><td>IN_PROGRESS</td><td>CHATGPT_CURRENT_RUN</td><td>Cerrar descarga/extracción/publicación de componentes públicos MiniMax/Kimi al destino exacto agent_sources con provenance, hash y read-back.</td></tr><tr><td>CL-003</td><td>task</td><td>IN_PROGRESS</td><td>CHATGPT_CURRENT_RUN</td><td>Resolver adquisición oficial NPM de @minimax-ai/code/mcode con versión/integridad exactas y publicación verificable.</td></tr><tr><td>CL-004</td><td>task</td><td>IN_PROGRESS</td><td>CHATGPT_CURRENT_RUN</td><td>Resolver kimi-code y kimi-cli bloqueados por symlinks sin debilitar motores; mantener provenance y seguridad.</td></tr><tr><td>CL-005</td><td>task</td><td>PENDING</td><td></td><td>Reconciliar manifiestos y destino: ningún componente cuenta como entregado sin presencia física + hash/read-back en main.</td></tr><tr><td>CL-006</td><td>task</td><td>PENDING</td><td></td><td>X-Ray 1×1 de los 20 agent_sources y nuevas adquisiciones; clasificar AGENT/SKILL/SDK/UI/PLUGIN/INFRA/REFERENCE y ADOPT/ADAPT/REJECT.</td></tr><tr><td>CL-007</td><td>task</td><td>PENDING</td><td></td><td>Expandir Agent Fleet sólo con agentes reales, conservando 18 existentes y añadiendo nuevos únicamente con contrato/roles/transporte demostrados.</td></tr><tr><td>CL-008</td><td>task</td><td>PENDING</td><td></td><td>Implementar/verificar transporte ACP/stdio u otro transporte oficial requerido para Mini-Agent, Kimi Code y mcode; normalizar eventos/resultados sin chain-of-thought.</td></tr><tr><td>CL-009</td><td>task</td><td>PENDING</td><td></td><td>Integrar Meta Agent Cookbook como skills/patrones y Meta Muse Code SDK como sesión/continuidad/approval/resume, salvo X-Ray contrario.</td></tr><tr><td>CL-010</td><td>task</td><td>PENDING</td><td></td><td>Integrar infraestructura MiniMax mmx/Plugins/MCP/MCP-JS/Coding-Plan-MCP detrás de ports/bus existentes; no crear bus paralelo.</td></tr><tr><td>CL-011</td><td>task</td><td>PENDING</td><td></td><td>Integrar kimi-agent-sdk/kimi-agent-rs como SDK/transport y Kimi-Researcher como research capability si pasa NO_VALUE_GAP; kimi-cli legacy/fallback salvo valor demostrado.</td></tr><tr><td>CL-012</td><td>task</td><td>PENDING</td><td></td><td>Ejecutar probes/tests 1×1 de runtime, health, behavior, failure fail-closed, sandbox, memory y read-back; reparar GAP y repetir.</td></tr><tr><td>CL-013</td><td>task</td><td>PENDING</td><td></td><td>Verificación cruzada global y cierre: Crazy Wall/STATE/CHECKPOINT/HANDOFF, duplicados/orphans/rutas rotas, 3 refutaciones, 100% gates en scope.</td></tr><tr><td>CLAUDE-AGENT-REVIEW-01</td><td>task</td><td>PENDING</td><td></td><td>Revisar 1×1 los agentes/fuentes nuevos MiniMax/Kimi/mcode y los agent_sources existentes para decidir integración real en Frontend y Wordflow Code Yaiwes. Clasificar AGENT/SDK/UI/PLUGIN/INFRA/REFERENCE y ADOPT/ADAPT/REJECT; no confundir presencia de source con runtime integrado.</td></tr><tr><td>CLAUDE-FRONTEND-CODE-INTEGRATION-02</td><td>task</td><td>PENDING</td><td></td><td>Diseñar y ejecutar integración selectiva de los agentes aprobados dentro de Frontend y Wordflow Code Yaiwes mediante adapters/ports existentes. Para Frontend revisar capacidades de UI/agent-surface/importación/preview; para Code revisar fleet, transporte, SDK/MCP/stdio/ACP y contratos. Reutilizar arquitectura existente y no crear buses/runtimes duplicados.</td></tr><tr><td>CLAUDE-INTEGRATION-VALIDATION-04</td><td>task</td><td>PENDING</td><td></td><td>Validar de extremo a extremo las integraciones aprobadas de Frontend + Code + mejoras LOOP/workflow: runtime/health/behavior/failure, reload/resume/checkpoint, trazabilidad, hashes/read-back y regresiones. Documentar GAPS y repararlos antes de marcar PASS; actualizar README arquitectura, HANDOFF, STATE/CHECKPOINT y evidencia.</td></tr><tr><td>CLAUDE-LOOP-WORKFLOW-REUSE-03</td><td>task</td><td>PENDING</td><td></td><td>Auditar los mecanismos LOOP, workflow, planning, retry, resume, checkpoint, fan-out/fan-in, agent handoff y supervisión presentes en los agentes MiniMax/Kimi y fuentes existentes. Extraer únicamente patrones con valor demostrado para mejorar Workflow LOOP Code Yaiwes; clasificar cada mecanismo REUSE/ADAPT/REJECT y cablearlo al workflow existente sin introducir un segundo scheduler/orquestador.</td></tr><tr><td>COMP-BROWSER-USE</td><td>task</td><td>RUNNING</td><td>SOL_ORCHESTRATOR</td><td>Adquirir e integrar Browser Use 0.13.10 como tool de navegador para nodos web: motor canónico → Ficha/Fables → test; no scheduler.</td></tr><tr><td>G-006</td><td>task</td><td>PASS</td><td>SOL_2</td><td>Crear code nuevo solo cuando G-005 demuestre que no existe pieza adecuada; ABI/Protocol + módulo mínimo + tests + registro Fables.</td></tr><tr><td>G-007</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Ingestar code existente con REUSE/PATCH/ADAPT, provenance y copy/move solo con motores canónicos + read-back.</td></tr><tr><td>G-008</td><td>task</td><td>PASS</td><td>SOL_1</td><td>Neutralizar comportamiento inseguro antes de ejecución con gates y sustitución benigna justificada.</td></tr><tr><td>G-009</td><td>task</td><td>PASS</td><td>SOL_1</td><td>Implementar NO_VALUE_GAP para rechazar componentes sin valor con alternativas y reviewer.</td></tr><tr><td>G-011</td><td>task</td><td>PASS</td><td>SOL_1</td><td>Verificar recepción/copy/move mediante motores canónicos dentro del LOOP con blobs/read-back.</td></tr><tr><td>G-012</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar intake download/extract: schema + queue + adapter a motores + hash/path safety/read-back.</td></tr><tr><td>G-013</td><td>task</td><td>PASS</td><td>SOL_1</td><td>Reconciliar fuentes de verdad README/HANDOFF/PLAN/RECOVERY/STATE/CHECKPOINT y cerrar drift con prueba.</td></tr><tr><td>G-014</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar memoria de 18 agentes: 18 memorias + loader determinista + test de pre-injection.</td></tr><tr><td>G-015</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar 12 GOALS entrada/salida: schema + runner + Council/simulaciones/refutaciones/cross-check + evidencia.</td></tr><tr><td>G-016</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar Chat A ↔ Chat B localizando/adaptando Chat A o demostrando NOT_FOUND.</td></tr><tr><td>G-017</td><td>task</td><td>PASS</td><td>SOL_GPT_USER_DIRECTED_TAKEOVER</td><td>Reemplazar PASS/health estáticos por deployment determinista con checks reales, rollback y evidencia.</td></tr><tr><td>G-018</td><td>task</td><td>PASS</td><td>SOL_2</td><td>Integrar Enchufe Universal Fables: source proof + Ficha/contract + registro + test; sin bus paralelo.</td></tr><tr><td>G-019</td><td>task</td><td>PASS</td><td>SOL_1</td><td>Auditar Wordflow completo: inventario/capabilities/duplicados/huérfanos/rutas rotas/code no usado + ledger.</td></tr><tr><td>G-021</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar cola/paralelismo: priority/dependencies/fan-out/fan-in/dedup/idempotency/concurrency/backpressure + tests.</td></tr><tr><td>G-022</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar sandbox → reviewer → deploy con aislamiento enforceable y pruebas de rechazo/promoción.</td></tr><tr><td>G-023</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar Hugging Face bridge solo para datasets/skills/modelos/recursos verificados, sin secretos ni HF CI.</td></tr><tr><td>G-024</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar frontera determinismo/LLM con matriz y enforcement; LLM nunca autoriza ejecución.</td></tr><tr><td>G-025</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar matriz MAVIS/PARALLEL ADOPT/ADAPT/REJECT y benchmark solo cuando una claim de rendimiento lo requiera.</td></tr><tr><td>G-026</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar UI/visual LOOP con el mínimo stack reutilizable; Graphify visual primero, sin añadir Sigma si no hace falta.</td></tr><tr><td>G-027</td><td>task</td><td>PASS</td><td>SOL_2</td><td>Integrar Graphiti para contexto/provenance/memoria temporal mediante motor + adapter + Ficha/Fables + sandbox test.</td></tr><tr><td>G-028</td><td>task</td><td>PASS</td><td>SOL_2</td><td>Integrar Graphology solo si aporta al estado/visualización de grafo mediante motor + serializer/adapter + test.</td></tr><tr><td>G-029</td><td>task</td><td>PASS</td><td>ASTRA_GPT_LOOP</td><td>Cerrar planificación organizada con matriz ADOPT/ADAPT/REJECT; REUSE DAGEngine+MavisPool por defecto.</td></tr><tr><td>G-030</td><td>task</td><td>PASS</td><td>SOL_1</td><td>Cerrar Crazy Wall multiagente: ownership/version/idempotency/claim/release/conflict + tests.</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>agent</td><td>ASSIGNED</td><td>ASTRA_GPT_LOOP</td><td>ASTRA_GPT_LOOP</td></tr><tr><td>agent:CHATGPT_CURRENT_RUN</td><td>agent</td><td>ASSIGNED</td><td>CHATGPT_CURRENT_RUN</td><td>CHATGPT_CURRENT_RUN</td></tr><tr><td>agent:SOL_1</td><td>agent</td><td>ASSIGNED</td><td>SOL_1</td><td>SOL_1</td></tr><tr><td>agent:SOL_2</td><td>agent</td><td>ASSIGNED</td><td>SOL_2</td><td>SOL_2</td></tr><tr><td>agent:SOL_GPT_USER_DIRECTED_TAKEOVER</td><td>agent</td><td>ASSIGNED</td><td>SOL_GPT_USER_DIRECTED_TAKEOVER</td><td>SOL_GPT_USER_DIRECTED_TAKEOVER</td></tr><tr><td>agent:SOL_ORCHESTRATOR</td><td>agent</td><td>ASSIGNED</td><td>SOL_ORCHESTRATOR</td><td>SOL_ORCHESTRATOR</td></tr><tr><td>checkpoint:WFLOOP-CODE-GRAPH-20260911-0019</td><td>checkpoint</td><td>CODE_GRAPH_30_OF_30_PRESERVED__CLOSURE_PLAN_ACTIVE__CL002_IN_PROGRESS</td><td>CHATGPT_CURRENT_RUN</td><td>WFLOOP-CODE-GRAPH-20260911-0019</td></tr><tr><td>evidence:00f11840ddc34ddd</td><td>evidence</td><td>RECORDED</td><td></td><td>wordflow_loop/evidence/G021_PARALLEL_SCHEDULER_KERNEL_WIRING_2026-09-12.json</td></tr><tr><td>evidence:01834800b425afc5</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G017_DETERMINISTIC_DEPLOYMENT_CLOSURE_2026-09-15.json</td></tr><tr><td>evidence:0852153735036c20</td><td>evidence</td><td>RECORDED</td><td></td><td>four_test_gate:PASS_4_OF_4</td></tr><tr><td>evidence:08f302fb45beee21</td><td>evidence</td><td>RECORDED</td><td></td><td>github_actions_run:34931798702</td></tr><tr><td>evidence:0b4f2426eb057ae2</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aacd25a5c02253cfb1466cf: fresh Motor3 kimi-code 4471/4471 and kimi-cli 988/988; failed=0; destination symlinks=0</td></tr><tr><td>evidence:0c722252ed81321e</td><td>evidence</td><td>RECORDED</td><td></td><td>pytest:PASS_9_OF_9</td></tr><tr><td>evidence:0e62139d63acdf03</td><td>evidence</td><td>RECORDED</td><td></td><td>commit:449080bfd34c28ec6df13e529f5795c7820b7309</td></tr><tr><td>evidence:0f3732883b4acb2e</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G008_UNSAFE_BEHAVIOR_GATE_2026-09-11.json</td></tr><tr><td>evidence:0febf24d94239ffe</td><td>evidence</td><td>RECORDED</td><td></td><td>agent_sources/mcode exists physically with package.json + SOURCE_NPM.json; @minimax-ai/code pinned 0.4.10, shasum f4564e4fe8c92f4f496efb75e9718b28716be126</td></tr><tr><td>evidence:101cf6298e7f6f19</td><td>evidence</td><td>RECORDED</td><td></td><td>repo:main physical root read-back</td></tr><tr><td>evidence:120ea36479520dbb</td><td>evidence</td><td>RECORDED</td><td></td><td>gate:yaiwes.no_value_gap/v1</td></tr><tr><td>evidence:1363e1c5d1feb89f</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G006_CODE_GENERATION_POLICY_2026-09-12.json</td></tr><tr><td>evidence:13957934c7f6b5b6</td><td>evidence</td><td>RECORDED</td><td></td><td>repro:artifact_router_NameError_List_not_defined</td></tr><tr><td>evidence:147cfd7dc7707740</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G018_FABLES_EXACT_BLOB_PYTEST_2026-09-12.json</td></tr><tr><td>evidence:189452df00f285c8</td><td>evidence</td><td>RECORDED</td><td></td><td>runtime_probe:bwrap_netlink_operation_not_permitted</td></tr><tr><td>evidence:1a882c0e746d7fa6</td><td>evidence</td><td>RECORDED</td><td></td><td>wordflow_loop/evidence/G022_BACKEND_MATRIX_BLOCKER_2026-09-12.json</td></tr><tr><td>evidence:1ab34a20a7f244ef</td><td>evidence</td><td>RECORDED</td><td></td><td>hf_classification_job:6aa5c7ab5527934177ed1d37</td></tr><tr><td>evidence:1e738e6157acbaaa</td><td>evidence</td><td>RECORDED</td><td></td><td>adjacent:PASS_5_OF_5</td></tr><tr><td>evidence:20e9800699470fe6</td><td>evidence</td><td>RECORDED</td><td></td><td>duplicates:34_STAGING_MIRROR</td></tr><tr><td>evidence:2425db080f97a703</td><td>evidence</td><td>RECORDED</td><td></td><td>repro:huggingface_connection_static_ACTIVE_HEALTHY</td></tr><tr><td>evidence:2560173c08d334cf</td><td>evidence</td><td>RECORDED</td><td></td><td>Git Data exact-blob pilot: source blob b13e833219334a15562ff31833e4ea9388954cdb recreated with identical SHA in target object DB; bulk source transfer then blocked by connector security before any branch commit</td></tr><tr><td>evidence:2bebf1ad24e0f3fb</td><td>evidence</td><td>RECORDED</td><td></td><td>claim_commit:b8b63ab34f85e919166c0905f4b1e55af6dad594</td></tr><tr><td>evidence:2c92b3be326fd0c9</td><td>evidence</td><td>RECORDED</td><td></td><td>blob_readback:PASS_5_OF_5_EXACT</td></tr><tr><td>evidence:2d81e44dc059ae55</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G014_AGENT_MEMORY_PREINJECTION_2026-09-11.json</td></tr><tr><td>evidence:2e7cb508b1cee8f5</td><td>evidence</td><td>RECORDED</td><td></td><td>local_harness:PASS_6_OF_6</td></tr><tr><td>evidence:35e97550598099d4</td><td>evidence</td><td>RECORDED</td><td></td><td>wordflow_loop/evidence/G023_HUGGINGFACE_PUBLIC_BRIDGE_2026-09-12.json</td></tr><tr><td>evidence:37775bb163fb688a</td><td>evidence</td><td>RECORDED</td><td></td><td>sandbox_microtest:BLOCKED_SANDBOX_EXPECTED</td></tr><tr><td>evidence:3921e0be2820c9cf</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aacd2af5c02253cfb1466e9: fresh Motor2 verification mmx CLI 186, Code Plugins 602, MiniMax MCP 28, MCP JS 38, Coding Plan MCP 27, Kimi Agent RS 172, Kimi Researcher 16; all extraction/hash verified</td></tr><tr><td>evidence:3be0b42db218ef59</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G027_GRAPHITI_TEMPORAL_ADAPTER_2026-09-12.json</td></tr><tr><td>evidence:3c4e034fe92e045f</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G012_COMPONENT_INTAKE_2026-09-12.json</td></tr><tr><td>evidence:40a14d7a49dfcda8</td><td>evidence</td><td>RECORDED</td><td></td><td>unittest:PASS_5_OF_5</td></tr><tr><td>evidence:4151adc9c533d57c</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G029_PLANNING_STACK_DECISION_2026-09-12.json</td></tr><tr><td>evidence:41714f47dcda3296</td><td>evidence</td><td>RECORDED</td><td></td><td>unittest:PASS_11_OF_11</td></tr><tr><td>evidence:41f2980fe34e5df1</td><td>evidence</td><td>RECORDED</td><td></td><td>wordflow_loop/evidence/G022_SANDBOX_FAIL_CLOSED_BLOCKER_2026-09-12.json</td></tr><tr><td>evidence:4448135b1039994a</td><td>evidence</td><td>RECORDED</td><td></td><td>repair_commit:a7d9b763304b1cbe5bf01e083f0ed8cf9c34e1a1</td></tr><tr><td>evidence:463ab9148f606a27</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aabc049f76d6a098a712c01: kimi-agent-sdk, kimi-agent-rs, Kimi-Researcher VERIFIED_CLOSED; kimi-cli blocked by symlink fail-closed</td></tr><tr><td>evidence:4924339d765d1631</td><td>evidence</td><td>RECORDED</td><td></td><td>unittest:PASS_8_OF_8</td></tr><tr><td>evidence:4a72b3a91905b6f0</td><td>evidence</td><td>RECORDED</td><td></td><td>runtime_probe:unshare_uid_map_operation_not_permitted</td></tr><tr><td>evidence:4c4d5b69475bc66c</td><td>evidence</td><td>RECORDED</td><td></td><td>truth_readback:PASS_8_OF_8</td></tr><tr><td>evidence:4d30732c017b6232</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G007_EXISTING_CODE_CANONICAL_TRANSFER_2026-09-12.json</td></tr><tr><td>evidence:4d38c706af4f0209</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aabbfbc5527934177eedf37: canonical Motor 2 execution; MiniMax GitHub components verified in dry-run; kimi-code blocked by symlink fail-closed</td></tr><tr><td>evidence:524ed4c33980d497</td><td>evidence</td><td>RECORDED</td><td></td><td>audit_report_sha256:c39505cec5fa9b938d1caed5cbfcb3a2ee9484a4349d7136e778f3d2ede005a1</td></tr><tr><td>evidence:53a6b4cf0037a1eb</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G024_LLM_DETERMINISTIC_BOUNDARY_2026-09-12.json</td></tr><tr><td>evidence:5524bc0da04bb35f</td><td>evidence</td><td>RECORDED</td><td></td><td>runtime_activation:FAIL_CLOSED_UNTIL_G022</td></tr><tr><td>evidence:5a12c5242c0d0414</td><td>evidence</td><td>RECORDED</td><td></td><td>pytest:PASS_4_OF_4</td></tr><tr><td>evidence:5a246141843daf53</td><td>evidence</td><td>RECORDED</td><td></td><td>test_commit:1c58fae8e5a6ad34d43ee9893a7607ee0cdff330</td></tr><tr><td>evidence:5e238b6a92fb14e3</td><td>evidence</td><td>RECORDED</td><td></td><td>commit:018ac893bfb3495ea3fb4c26cd32af68b2dbf559</td></tr><tr><td>evidence:5e241eb3e6631bb8</td><td>evidence</td><td>RECORDED</td><td></td><td>evidence_commit:304e85a77286b116c3dac33056ff03b6cc167042</td></tr><tr><td>evidence:628de289f3bd8181</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G016_CHAT_A_CHAT_B_SOURCE_PROOF_2026-09-12.json</td></tr><tr><td>evidence:6852bd9fdf96ee27</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aac90a25c02253cfb145899: secret-ref probe confirmed GITHUB_TOKEN_PRESENT without exposing value</td></tr><tr><td>evidence:6d2dedb2391323fa</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G022_PHYSICAL_SANDBOX_CLOSURE_2026-09-15.json</td></tr><tr><td>evidence:7843a307d67e807d</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aacd2945c02253cfb1466e7: Motor3 verification mcode 0.4.10 = 760/760 files and OpenRoom = 255/255; failed=0</td></tr><tr><td>evidence:78e8d2707c887df7</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 wordflow loop code Yaiwes/wordflow_loop/agent_sources</td></tr><tr><td>evidence:7e0b571112c9b793</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G015_GOALS12_INPUT_OUTPUT_RUNNER_2026-09-11.json</td></tr><tr><td>evidence:80194c409de0fa24</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aac8eec5c02253cfb145844: mcode --version = 0.4.10 runtime validation</td></tr><tr><td>evidence:848e7bb34b846ad1</td><td>evidence</td><td>RECORDED</td><td></td><td>broken_internal_imports:0</td></tr><tr><td>evidence:879fd2c9f15decfb</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 wordflow loop code Yaiwes/wordflow_loop/wordflow_loop/agent_fleet/agent_fleet_registry.json</td></tr><tr><td>evidence:87c2be0a1ecd7e6d</td><td>evidence</td><td>RECORDED</td><td></td><td>commit:c15f769c36166fe52a7fa72b8134cc49e30a1320</td></tr><tr><td>evidence:89acf0cc098a5453</td><td>evidence</td><td>RECORDED</td><td></td><td>unittest:PASS_6_OF_6</td></tr><tr><td>evidence:8cba4fdc58caa71c</td><td>evidence</td><td>RECORDED</td><td></td><td>hf_audit_job:6aa5c76221047bf1b037e8ee</td></tr><tr><td>evidence:92cb25d10883ad2e</td><td>evidence</td><td>RECORDED</td><td></td><td>test_commit:525a76af888e17310069ab745dda47115191725e</td></tr><tr><td>evidence:99bd9ab7117ff8e5</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G025_MAVIS_PATTERN_MATRIX_2026-09-12.json</td></tr><tr><td>evidence:a75421b54292df3f</td><td>evidence</td><td>RECORDED</td><td></td><td>live_hf_api:PASS_3_OF_3</td></tr><tr><td>evidence:ac8b147840c20680</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aabc077f76d6a098a712c0b: canonical Motor 1 ZIP extraction also rejects kimi-code/kimi-cli symlinks</td></tr><tr><td>evidence:aff567450cd07576</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G030_CRAZYWALL_CLAIM_GATE_2026-09-11.json</td></tr><tr><td>evidence:b2eb8a2b9c122137</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aacd2415c02253cfb1466c9: fresh Motor2 verification MiniMax Mini-Agent 366/366 and Kimi Agent SDK 296/296; failed=0</td></tr><tr><td>evidence:b6b15fc8e48c9880</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G013_CANONICAL_RECONCILIATION_2026-09-11.json</td></tr><tr><td>evidence:bdbf52ce98ec5651</td><td>evidence</td><td>RECORDED</td><td></td><td>orphans:42_REFERENCED_ACTIVE+1_STAGING_ONLY_REFERENCE</td></tr><tr><td>evidence:beb1a10d4aaf83f7</td><td>evidence</td><td>RECORDED</td><td></td><td>checkpoint:WFLOOP-CODE-GRAPH-20260911-0019</td></tr><tr><td>evidence:c0c56f27081df332</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G028_GRAPHOLOGY_NO_VALUE_2026-09-12.json</td></tr><tr><td>evidence:c34fabf78be53076</td><td>evidence</td><td>RECORDED</td><td></td><td>uek_cache_microtest:PASS_SEEDED_HIT</td></tr><tr><td>evidence:d12ec521a231f9c3</td><td>evidence</td><td>RECORDED</td><td></td><td>MOTOR-CODE-LOCK verified: motor_1=a52d5dc0e6ff26f75d753b848dcc1a40c5dd4500; motor_2=84d566e2ee4e98e42eb3a864026d067d48caabd9; engine=91e6e4486692eab314be5c7130d8310d3c855397</td></tr><tr><td>evidence:d39782c73997ce5a</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G011_CANONICAL_COPY_MOVE_MOTORS_2026-09-11.json</td></tr><tr><td>evidence:da3511beb4b03048</td><td>evidence</td><td>RECORDED</td><td></td><td>adapter_commit:81bdb0522aa0bc6bb6c55f0336dc81d69b6dd2d8</td></tr><tr><td>evidence:db6732c41b0876ba</td><td>evidence</td><td>RECORDED</td><td></td><td>motor:NOT_REQUIRED_NO_TRANSFER</td></tr><tr><td>evidence:dbb76b60a4a42c3c</td><td>evidence</td><td>RECORDED</td><td></td><td>claim_commit:14e9f158951ac14688cf7612fcc20fe892c34191</td></tr><tr><td>evidence:dcb158a00e8deb84</td><td>evidence</td><td>RECORDED</td><td></td><td>HF job 6aacd2945c02253cfb1466e7: @minimax-ai/code@0.4.10 npm artifact shasum f4564e4fe8c92f4f496efb75e9718b28716be126; Motor3 copied/verified 760/760 files; failed=0</td></tr><tr><td>evidence:dcc5c17ec48cf37f</td><td>evidence</td><td>RECORDED</td><td></td><td>pytest:PASS_7_OF_7</td></tr><tr><td>evidence:dd8a82a08a914850</td><td>evidence</td><td>RECORDED</td><td></td><td>broken_required_paths:0</td></tr><tr><td>evidence:e8ce325a201225e4</td><td>evidence</td><td>RECORDED</td><td></td><td>agent_sources/kimi_code gitlink=1fddc16e3ea2de4c26a18acd764380adf9e2ed64; agent_sources/kimi_cli gitlink=86f136422a0aae6b217ea49e7ea1d2e8a1defcd2; both read-back mode 160000</td></tr><tr><td>evidence:ebe77cfb33473245</td><td>evidence</td><td>RECORDED</td><td></td><td>main commit 28a47f47b7f127ba400c0bcbbb930daa424f6d85: 12 MiniMax/Kimi GitHub sources mounted in agent_sources as mode-160000 pinned gitlinks; read-back tree aa2e2b79b60fe48349fc03998f97560fdbf965d4; all expected paths present</td></tr><tr><td>evidence:f3263b2070c96450</td><td>evidence</td><td>RECORDED</td><td></td><td>AGENT_SOURCE_MOUNT_MANIFEST_2026-09-18.json + .gitmodules read-back PASS</td></tr><tr><td>evidence:f60832c67e6cc1c7</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G026_CRAZY_WALL_VISUAL_PROJECTION_2026-09-12.json</td></tr><tr><td>evidence:fbf9743b808ee58b</td><td>evidence</td><td>RECORDED</td><td></td><td>gate_result:NO_VALUE_GAP</td></tr><tr><td>evidence:fc1a80b7c85bbf97</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G019_GLOBAL_WORDFLOW_AUDIT_2026-09-12.json</td></tr><tr><td>evidence:ff7d3567af8472a2</td><td>evidence</td><td>RECORDED</td><td></td><td>➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G009_NO_VALUE_GAP_2026-09-11.json</td></tr><tr><td>gap:009da13e0b35af01</td><td>gap</td><td>RECORDED</td><td></td><td>GITLINK_MOUNT_PRESENT_BUT_FULL_VENDOR_TREE_NOT_EMBEDDED_IN_SUPERPROJECT</td></tr><tr><td>gap:1ff6e2dd0067219e</td><td>gap</td><td>RECORDED</td><td></td><td>MOUNTED_AS_UPSTREAM_GITLINKS__MATERIALIZED_SYMLINK_FREE_VENDOR_TREES_NOT_EMBEDDED</td></tr><tr><td>gap:2997eb12b5fe6aee</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: performance claims had no deterministic benchmark evidence gate</td></tr><tr><td>gap:2e2743526b279b80</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: 25-pattern ADOPT/ADAPT/REJECT matrix was missing</td></tr><tr><td>gap:3015988f6778c260</td><td>gap</td><td>RECORDED</td><td></td><td>MCODE_FULL_PACKAGE_BYTES_NOT_VENDORED__NPM_PIN_MOUNT_ONLY</td></tr><tr><td>gap:4828e0175c452f27</td><td>gap</td><td>RECORDED</td><td></td><td>RUNTIME_EXECUTION_REMAINS_GATED_BY_G022</td></tr><tr><td>gap:49ac7df24b8aef09</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: external orchestrators lacked a concrete-gap admission gate</td></tr><tr><td>gap:4aad8128c0ed9df1</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: canonical Fables dependency G-018 verified</td></tr><tr><td>gap:500e4d815bc5ef27</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: Graphiti had source proof but no thin temporal adapter/Ficha binding</td></tr><tr><td>gap:5144d75706d20bab</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: renderer contract incorrectly preferred Graphology+Sigma</td></tr><tr><td>gap:5ac46b0b68280a7b</td><td>gap</td><td>RECORDED</td><td></td><td>FINAL_AGENT_SOURCES_PUBLICATION_PENDING</td></tr><tr><td>gap:5d9703f906487fc8</td><td>gap</td><td>RECORDED</td><td></td><td>KIMI_SYMLINK_GAP delegated to CL-004</td></tr><tr><td>gap:673fc86a0926afd2</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: dedicated generation-policy tests were missing</td></tr><tr><td>gap:a3834f63ef0a2827</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: priority direction conflicted with canonical Kernel/Mavis queues</td></tr><tr><td>gap:a7f5dbc684ad0637</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: public pinned model/dataset/skill/resource metadata bridge was missing</td></tr><tr><td>gap:b6e72b4ed75a92c4</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: exact reproducible pytest execution was missing</td></tr><tr><td>gap:bad899205b7920ee</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: SOURCE_OF_TRUTH_DRIFT at checkpoint 0019</td></tr><tr><td>gap:bb3f35c8ebf31043</td><td>gap</td><td>RECORDED</td><td></td><td>PUBLISH_TRANSPORT_SECURITY_GATE: canonical Motor2 PUBLISH=1 launch and bulk cross-repo source transfer are blocked by connected-tool security controls; no GitHub Actions used; no partial branch publication</td></tr><tr><td>gap:c3e8d2a09960e757</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: real Crazy Wall sources were not projected into required visual panels</td></tr><tr><td>gap:c92d0203e9b2cf05</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: HF connection no longer fabricates ACTIVE/HEALTHY without probe</td></tr><tr><td>gap:c950b085c29888f2</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED_BY_CONDITIONAL_REJECTION: no unique capability for current graph visualization requirement</td></tr><tr><td>gap:d83f43dd9e995040</td><td>gap</td><td>RECORDED</td><td></td><td>MCode NPM acquisition belongs to CL-003</td></tr><tr><td>gap:de12e15aeafd2597</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: uek_cluster broken src.uek.cache_engine import via REUSE SmartCache</td></tr><tr><td>gap:e11ee9de8d8ce525</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: comparative planning matrix was missing</td></tr><tr><td>gap:ecf6821ad9b5c1cf</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: scheduler was not wired to Kernel.run</td></tr><tr><td>gap:ee3b11b8d7681587</td><td>gap</td><td>RECORDED</td><td></td><td>REVIEW_ONLY: runtime/src/spec/healing_engine.py staging-only reference; no auto-delete</td></tr><tr><td>gap:f3bfd0b11e9a24cd</td><td>gap</td><td>RECORDED</td><td></td><td>Graphology remains available as source if a future concrete capability gap appears</td></tr><tr><td>gap:f62a845e41b74b98</td><td>gap</td><td>RECORDED</td><td></td><td>RESOLVED: HF artifact route is importable and rejects mock acquisition</td></tr></tbody></table>
+<h2>Aristas</h2><table><thead><tr><th>Origen</th><th>Tipo</th><th>Destino</th></tr></thead><tbody><tr><td>CL-001</td><td>unblocks</td><td>CL-002</td></tr><tr><td>CL-001</td><td>unblocks</td><td>CL-003</td></tr><tr><td>CL-001</td><td>unblocks</td><td>CL-004</td></tr><tr><td>CL-001</td><td>has_evidence</td><td>evidence:101cf6298e7f6f19</td></tr><tr><td>CL-001</td><td>has_evidence</td><td>evidence:78e8d2707c887df7</td></tr><tr><td>CL-001</td><td>has_evidence</td><td>evidence:879fd2c9f15decfb</td></tr><tr><td>CL-002</td><td>unblocks</td><td>CL-005</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:2560173c08d334cf</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:3921e0be2820c9cf</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:463ab9148f606a27</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:4d38c706af4f0209</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:6852bd9fdf96ee27</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:7843a307d67e807d</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:ac8b147840c20680</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:b2eb8a2b9c122137</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:d12ec521a231f9c3</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:ebe77cfb33473245</td></tr><tr><td>CL-002</td><td>has_evidence</td><td>evidence:f3263b2070c96450</td></tr><tr><td>CL-003</td><td>unblocks</td><td>CL-005</td></tr><tr><td>CL-003</td><td>has_evidence</td><td>evidence:0febf24d94239ffe</td></tr><tr><td>CL-003</td><td>has_evidence</td><td>evidence:80194c409de0fa24</td></tr><tr><td>CL-003</td><td>has_evidence</td><td>evidence:dcb158a00e8deb84</td></tr><tr><td>CL-004</td><td>unblocks</td><td>CL-005</td></tr><tr><td>CL-004</td><td>has_evidence</td><td>evidence:0b4f2426eb057ae2</td></tr><tr><td>CL-004</td><td>has_evidence</td><td>evidence:e8ce325a201225e4</td></tr><tr><td>CL-005</td><td>unblocks</td><td>CL-006</td></tr><tr><td>CL-005</td><td>unblocks</td><td>CLAUDE-AGENT-REVIEW-01</td></tr><tr><td>CL-006</td><td>unblocks</td><td>CL-007</td></tr><tr><td>CL-006</td><td>unblocks</td><td>CL-009</td></tr><tr><td>CL-006</td><td>unblocks</td><td>CL-010</td></tr><tr><td>CL-006</td><td>unblocks</td><td>CL-011</td></tr><tr><td>CL-007</td><td>unblocks</td><td>CL-008</td></tr><tr><td>CL-008</td><td>unblocks</td><td>CL-012</td></tr><tr><td>CL-009</td><td>unblocks</td><td>CL-012</td></tr><tr><td>CL-010</td><td>unblocks</td><td>CL-012</td></tr><tr><td>CL-011</td><td>unblocks</td><td>CL-012</td></tr><tr><td>CL-012</td><td>unblocks</td><td>CL-013</td></tr><tr><td>CLAUDE-AGENT-REVIEW-01</td><td>unblocks</td><td>CLAUDE-FRONTEND-CODE-INTEGRATION-02</td></tr><tr><td>CLAUDE-AGENT-REVIEW-01</td><td>unblocks</td><td>CLAUDE-LOOP-WORKFLOW-REUSE-03</td></tr><tr><td>CLAUDE-FRONTEND-CODE-INTEGRATION-02</td><td>unblocks</td><td>CLAUDE-INTEGRATION-VALIDATION-04</td></tr><tr><td>CLAUDE-LOOP-WORKFLOW-REUSE-03</td><td>unblocks</td><td>CLAUDE-INTEGRATION-VALIDATION-04</td></tr><tr><td>G-006</td><td>has_evidence</td><td>evidence:0c722252ed81321e</td></tr><tr><td>G-006</td><td>has_evidence</td><td>evidence:1363e1c5d1feb89f</td></tr><tr><td>G-006</td><td>has_evidence</td><td>evidence:5e238b6a92fb14e3</td></tr><tr><td>G-006</td><td>has_evidence</td><td>evidence:92cb25d10883ad2e</td></tr><tr><td>G-007</td><td>has_evidence</td><td>evidence:4d30732c017b6232</td></tr><tr><td>G-008</td><td>has_evidence</td><td>evidence:0f3732883b4acb2e</td></tr><tr><td>G-009</td><td>has_evidence</td><td>evidence:ff7d3567af8472a2</td></tr><tr><td>G-011</td><td>unblocks</td><td>G-007</td></tr><tr><td>G-011</td><td>unblocks</td><td>G-012</td></tr><tr><td>G-011</td><td>has_evidence</td><td>evidence:d39782c73997ce5a</td></tr><tr><td>G-012</td><td>has_evidence</td><td>evidence:3c4e034fe92e045f</td></tr><tr><td>G-013</td><td>unblocks</td><td>G-019</td></tr><tr><td>G-013</td><td>has_evidence</td><td>evidence:4c4d5b69475bc66c</td></tr><tr><td>G-013</td><td>has_evidence</td><td>evidence:b6b15fc8e48c9880</td></tr><tr><td>G-013</td><td>has_evidence</td><td>evidence:beb1a10d4aaf83f7</td></tr><tr><td>G-013</td><td>has_evidence</td><td>evidence:dcc5c17ec48cf37f</td></tr><tr><td>G-014</td><td>has_evidence</td><td>evidence:2d81e44dc059ae55</td></tr><tr><td>G-015</td><td>has_evidence</td><td>evidence:7e0b571112c9b793</td></tr><tr><td>G-016</td><td>has_evidence</td><td>evidence:628de289f3bd8181</td></tr><tr><td>G-017</td><td>has_evidence</td><td>evidence:01834800b425afc5</td></tr><tr><td>G-017</td><td>has_evidence</td><td>evidence:0852153735036c20</td></tr><tr><td>G-017</td><td>has_evidence</td><td>evidence:08f302fb45beee21</td></tr><tr><td>G-018</td><td>unblocks</td><td>G-006</td></tr><tr><td>G-018</td><td>unblocks</td><td>G-027</td></tr><tr><td>G-018</td><td>unblocks</td><td>G-028</td></tr><tr><td>G-018</td><td>has_evidence</td><td>evidence:147cfd7dc7707740</td></tr><tr><td>G-018</td><td>has_evidence</td><td>evidence:2c92b3be326fd0c9</td></tr><tr><td>G-018</td><td>has_evidence</td><td>evidence:5a12c5242c0d0414</td></tr><tr><td>G-018</td><td>has_evidence</td><td>evidence:87c2be0a1ecd7e6d</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:1ab34a20a7f244ef</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:20e9800699470fe6</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:37775bb163fb688a</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:41714f47dcda3296</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:4448135b1039994a</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:524ed4c33980d497</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:848e7bb34b846ad1</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:8cba4fdc58caa71c</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:bdbf52ce98ec5651</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:c34fabf78be53076</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:db6732c41b0876ba</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:dd8a82a08a914850</td></tr><tr><td>G-019</td><td>has_evidence</td><td>evidence:fc1a80b7c85bbf97</td></tr><tr><td>G-021</td><td>unblocks</td><td>G-025</td></tr><tr><td>G-021</td><td>unblocks</td><td>G-029</td></tr><tr><td>G-021</td><td>has_evidence</td><td>evidence:00f11840ddc34ddd</td></tr><tr><td>G-021</td><td>has_evidence</td><td>evidence:0e62139d63acdf03</td></tr><tr><td>G-021</td><td>has_evidence</td><td>evidence:4924339d765d1631</td></tr><tr><td>G-022</td><td>unblocks</td><td>G-017</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:0852153735036c20</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:08f302fb45beee21</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:189452df00f285c8</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:1a882c0e746d7fa6</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:1e738e6157acbaaa</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:2bebf1ad24e0f3fb</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:40a14d7a49dfcda8</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:41f2980fe34e5df1</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:4a72b3a91905b6f0</td></tr><tr><td>G-022</td><td>has_evidence</td><td>evidence:6d2dedb2391323fa</td></tr><tr><td>G-023</td><td>has_evidence</td><td>evidence:13957934c7f6b5b6</td></tr><tr><td>G-023</td><td>has_evidence</td><td>evidence:2425db080f97a703</td></tr><tr><td>G-023</td><td>has_evidence</td><td>evidence:35e97550598099d4</td></tr><tr><td>G-023</td><td>has_evidence</td><td>evidence:89acf0cc098a5453</td></tr><tr><td>G-023</td><td>has_evidence</td><td>evidence:a75421b54292df3f</td></tr><tr><td>G-023</td><td>has_evidence</td><td>evidence:dbb76b60a4a42c3c</td></tr><tr><td>G-024</td><td>has_evidence</td><td>evidence:53a6b4cf0037a1eb</td></tr><tr><td>G-025</td><td>has_evidence</td><td>evidence:99bd9ab7117ff8e5</td></tr><tr><td>G-026</td><td>has_evidence</td><td>evidence:f60832c67e6cc1c7</td></tr><tr><td>G-027</td><td>has_evidence</td><td>evidence:2e7cb508b1cee8f5</td></tr><tr><td>G-027</td><td>has_evidence</td><td>evidence:3be0b42db218ef59</td></tr><tr><td>G-027</td><td>has_evidence</td><td>evidence:5524bc0da04bb35f</td></tr><tr><td>G-027</td><td>has_evidence</td><td>evidence:5a246141843daf53</td></tr><tr><td>G-027</td><td>has_evidence</td><td>evidence:da3511beb4b03048</td></tr><tr><td>G-028</td><td>has_evidence</td><td>evidence:120ea36479520dbb</td></tr><tr><td>G-028</td><td>has_evidence</td><td>evidence:5e241eb3e6631bb8</td></tr><tr><td>G-028</td><td>has_evidence</td><td>evidence:c0c56f27081df332</td></tr><tr><td>G-028</td><td>has_evidence</td><td>evidence:fbf9743b808ee58b</td></tr><tr><td>G-029</td><td>has_evidence</td><td>evidence:4151adc9c533d57c</td></tr><tr><td>G-030</td><td>has_evidence</td><td>evidence:aff567450cd07576</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-007</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-012</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-014</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-015</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-016</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-021</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-022</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-023</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-024</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-025</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-026</td></tr><tr><td>agent:ASTRA_GPT_LOOP</td><td>owns</td><td>G-029</td></tr><tr><td>agent:CHATGPT_CURRENT_RUN</td><td>owns</td><td>CL-001</td></tr><tr><td>agent:CHATGPT_CURRENT_RUN</td><td>owns</td><td>CL-002</td></tr><tr><td>agent:CHATGPT_CURRENT_RUN</td><td>owns</td><td>CL-003</td></tr><tr><td>agent:CHATGPT_CURRENT_RUN</td><td>owns</td><td>CL-004</td></tr><tr><td>agent:SOL_1</td><td>owns</td><td>G-008</td></tr><tr><td>agent:SOL_1</td><td>owns</td><td>G-009</td></tr><tr><td>agent:SOL_1</td><td>owns</td><td>G-011</td></tr><tr><td>agent:SOL_1</td><td>owns</td><td>G-013</td></tr><tr><td>agent:SOL_1</td><td>owns</td><td>G-019</td></tr><tr><td>agent:SOL_1</td><td>owns</td><td>G-030</td></tr><tr><td>agent:SOL_2</td><td>owns</td><td>G-006</td></tr><tr><td>agent:SOL_2</td><td>owns</td><td>G-018</td></tr><tr><td>agent:SOL_2</td><td>owns</td><td>G-027</td></tr><tr><td>agent:SOL_2</td><td>owns</td><td>G-028</td></tr><tr><td>agent:SOL_GPT_USER_DIRECTED_TAKEOVER</td><td>owns</td><td>G-017</td></tr><tr><td>agent:SOL_ORCHESTRATOR</td><td>owns</td><td>COMP-BROWSER-USE</td></tr><tr><td>gap:009da13e0b35af01</td><td>reported_for</td><td>CL-002</td></tr><tr><td>gap:1ff6e2dd0067219e</td><td>reported_for</td><td>CL-004</td></tr><tr><td>gap:2997eb12b5fe6aee</td><td>reported_for</td><td>G-025</td></tr><tr><td>gap:2e2743526b279b80</td><td>reported_for</td><td>G-025</td></tr><tr><td>gap:3015988f6778c260</td><td>reported_for</td><td>CL-003</td></tr><tr><td>gap:4828e0175c452f27</td><td>reported_for</td><td>G-027</td></tr><tr><td>gap:49ac7df24b8aef09</td><td>reported_for</td><td>G-029</td></tr><tr><td>gap:4aad8128c0ed9df1</td><td>reported_for</td><td>G-006</td></tr><tr><td>gap:500e4d815bc5ef27</td><td>reported_for</td><td>G-027</td></tr><tr><td>gap:5144d75706d20bab</td><td>reported_for</td><td>G-026</td></tr><tr><td>gap:5ac46b0b68280a7b</td><td>reported_for</td><td>CL-003</td></tr><tr><td>gap:5ac46b0b68280a7b</td><td>reported_for</td><td>CL-004</td></tr><tr><td>gap:5d9703f906487fc8</td><td>reported_for</td><td>CL-002</td></tr><tr><td>gap:673fc86a0926afd2</td><td>reported_for</td><td>G-006</td></tr><tr><td>gap:a3834f63ef0a2827</td><td>reported_for</td><td>G-021</td></tr><tr><td>gap:a7f5dbc684ad0637</td><td>reported_for</td><td>G-023</td></tr><tr><td>gap:b6e72b4ed75a92c4</td><td>reported_for</td><td>G-018</td></tr><tr><td>gap:bad899205b7920ee</td><td>reported_for</td><td>G-013</td></tr><tr><td>gap:bb3f35c8ebf31043</td><td>reported_for</td><td>CL-002</td></tr><tr><td>gap:c3e8d2a09960e757</td><td>reported_for</td><td>G-026</td></tr><tr><td>gap:c92d0203e9b2cf05</td><td>reported_for</td><td>G-023</td></tr><tr><td>gap:c950b085c29888f2</td><td>reported_for</td><td>G-028</td></tr><tr><td>gap:d83f43dd9e995040</td><td>reported_for</td><td>CL-002</td></tr><tr><td>gap:de12e15aeafd2597</td><td>reported_for</td><td>G-019</td></tr><tr><td>gap:e11ee9de8d8ce525</td><td>reported_for</td><td>G-029</td></tr><tr><td>gap:ecf6821ad9b5c1cf</td><td>reported_for</td><td>G-021</td></tr><tr><td>gap:ee3b11b8d7681587</td><td>reported_for</td><td>G-019</td></tr><tr><td>gap:f3bfd0b11e9a24cd</td><td>reported_for</td><td>G-028</td></tr><tr><td>gap:f62a845e41b74b98</td><td>reported_for</td><td>G-023</td></tr></tbody></table>
+<h2>Proyección canónica</h2><pre>{
+  &quot;schema&quot;: &quot;yaiwes.visual_graph/v1&quot;,
+  &quot;nodes&quot;: [
+    {
+      &quot;id&quot;: &quot;CL-001&quot;,
+      &quot;label&quot;: &quot;X-Ray forense fresh de raíz Wordflow, agent_sources, runtime, adapters, motores y Crazy Wall; reconciliar presencia física vs integración real.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002&quot;,
+      &quot;label&quot;: &quot;Cerrar descarga/extracción/publicación de componentes públicos MiniMax/Kimi al destino exacto agent_sources con provenance, hash y read-back.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;IN_PROGRESS&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-003&quot;,
+      &quot;label&quot;: &quot;Resolver adquisición oficial NPM de @minimax-ai/code/mcode con versión/integridad exactas y publicación verificable.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;IN_PROGRESS&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-004&quot;,
+      &quot;label&quot;: &quot;Resolver kimi-code y kimi-cli bloqueados por symlinks sin debilitar motores; mantener provenance y seguridad.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;IN_PROGRESS&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-005&quot;,
+      &quot;label&quot;: &quot;Reconciliar manifiestos y destino: ningún componente cuenta como entregado sin presencia física + hash/read-back en main.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-006&quot;,
+      &quot;label&quot;: &quot;X-Ray 1×1 de los 20 agent_sources y nuevas adquisiciones; clasificar AGENT/SKILL/SDK/UI/PLUGIN/INFRA/REFERENCE y ADOPT/ADAPT/REJECT.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-007&quot;,
+      &quot;label&quot;: &quot;Expandir Agent Fleet sólo con agentes reales, conservando 18 existentes y añadiendo nuevos únicamente con contrato/roles/transporte demostrados.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-008&quot;,
+      &quot;label&quot;: &quot;Implementar/verificar transporte ACP/stdio u otro transporte oficial requerido para Mini-Agent, Kimi Code y mcode; normalizar eventos/resultados sin chain-of-thought.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-009&quot;,
+      &quot;label&quot;: &quot;Integrar Meta Agent Cookbook como skills/patrones y Meta Muse Code SDK como sesión/continuidad/approval/resume, salvo X-Ray contrario.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-010&quot;,
+      &quot;label&quot;: &quot;Integrar infraestructura MiniMax mmx/Plugins/MCP/MCP-JS/Coding-Plan-MCP detrás de ports/bus existentes; no crear bus paralelo.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-011&quot;,
+      &quot;label&quot;: &quot;Integrar kimi-agent-sdk/kimi-agent-rs como SDK/transport y Kimi-Researcher como research capability si pasa NO_VALUE_GAP; kimi-cli legacy/fallback salvo valor demostrado.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-012&quot;,
+      &quot;label&quot;: &quot;Ejecutar probes/tests 1×1 de runtime, health, behavior, failure fail-closed, sandbox, memory y read-back; reparar GAP y repetir.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-013&quot;,
+      &quot;label&quot;: &quot;Verificación cruzada global y cierre: Crazy Wall/STATE/CHECKPOINT/HANDOFF, duplicados/orphans/rutas rotas, 3 refutaciones, 100% gates en scope.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-AGENT-REVIEW-01&quot;,
+      &quot;label&quot;: &quot;Revisar 1×1 los agentes/fuentes nuevos MiniMax/Kimi/mcode y los agent_sources existentes para decidir integración real en Frontend y Wordflow Code Yaiwes. Clasificar AGENT/SDK/UI/PLUGIN/INFRA/REFERENCE y ADOPT/ADAPT/REJECT; no confundir presencia de source con runtime integrado.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-FRONTEND-CODE-INTEGRATION-02&quot;,
+      &quot;label&quot;: &quot;Diseñar y ejecutar integración selectiva de los agentes aprobados dentro de Frontend y Wordflow Code Yaiwes mediante adapters/ports existentes. Para Frontend revisar capacidades de UI/agent-surface/importación/preview; para Code revisar fleet, transporte, SDK/MCP/stdio/ACP y contratos. Reutilizar arquitectura existente y no crear buses/runtimes duplicados.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-INTEGRATION-VALIDATION-04&quot;,
+      &quot;label&quot;: &quot;Validar de extremo a extremo las integraciones aprobadas de Frontend + Code + mejoras LOOP/workflow: runtime/health/behavior/failure, reload/resume/checkpoint, trazabilidad, hashes/read-back y regresiones. Documentar GAPS y repararlos antes de marcar PASS; actualizar README arquitectura, HANDOFF, STATE/CHECKPOINT y evidencia.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-LOOP-WORKFLOW-REUSE-03&quot;,
+      &quot;label&quot;: &quot;Auditar los mecanismos LOOP, workflow, planning, retry, resume, checkpoint, fan-out/fan-in, agent handoff y supervisión presentes en los agentes MiniMax/Kimi y fuentes existentes. Extraer únicamente patrones con valor demostrado para mejorar Workflow LOOP Code Yaiwes; clasificar cada mecanismo REUSE/ADAPT/REJECT y cablearlo al workflow existente sin introducir un segundo scheduler/orquestador.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;COMP-BROWSER-USE&quot;,
+      &quot;label&quot;: &quot;Adquirir e integrar Browser Use 0.13.10 como tool de navegador para nodos web: motor canónico → Ficha/Fables → test; no scheduler.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;RUNNING&quot;,
+      &quot;owner&quot;: &quot;SOL_ORCHESTRATOR&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-006&quot;,
+      &quot;label&quot;: &quot;Crear code nuevo solo cuando G-005 demuestre que no existe pieza adecuada; ABI/Protocol + módulo mínimo + tests + registro Fables.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_2&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-007&quot;,
+      &quot;label&quot;: &quot;Ingestar code existente con REUSE/PATCH/ADAPT, provenance y copy/move solo con motores canónicos + read-back.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-008&quot;,
+      &quot;label&quot;: &quot;Neutralizar comportamiento inseguro antes de ejecución con gates y sustitución benigna justificada.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_1&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-009&quot;,
+      &quot;label&quot;: &quot;Implementar NO_VALUE_GAP para rechazar componentes sin valor con alternativas y reviewer.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_1&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-011&quot;,
+      &quot;label&quot;: &quot;Verificar recepción/copy/move mediante motores canónicos dentro del LOOP con blobs/read-back.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_1&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-012&quot;,
+      &quot;label&quot;: &quot;Cerrar intake download/extract: schema + queue + adapter a motores + hash/path safety/read-back.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-013&quot;,
+      &quot;label&quot;: &quot;Reconciliar fuentes de verdad README/HANDOFF/PLAN/RECOVERY/STATE/CHECKPOINT y cerrar drift con prueba.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_1&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-014&quot;,
+      &quot;label&quot;: &quot;Cerrar memoria de 18 agentes: 18 memorias + loader determinista + test de pre-injection.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-015&quot;,
+      &quot;label&quot;: &quot;Cerrar 12 GOALS entrada/salida: schema + runner + Council/simulaciones/refutaciones/cross-check + evidencia.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-016&quot;,
+      &quot;label&quot;: &quot;Cerrar Chat A ↔ Chat B localizando/adaptando Chat A o demostrando NOT_FOUND.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-017&quot;,
+      &quot;label&quot;: &quot;Reemplazar PASS/health estáticos por deployment determinista con checks reales, rollback y evidencia.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_GPT_USER_DIRECTED_TAKEOVER&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-018&quot;,
+      &quot;label&quot;: &quot;Integrar Enchufe Universal Fables: source proof + Ficha/contract + registro + test; sin bus paralelo.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_2&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019&quot;,
+      &quot;label&quot;: &quot;Auditar Wordflow completo: inventario/capabilities/duplicados/huérfanos/rutas rotas/code no usado + ledger.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_1&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-021&quot;,
+      &quot;label&quot;: &quot;Cerrar cola/paralelismo: priority/dependencies/fan-out/fan-in/dedup/idempotency/concurrency/backpressure + tests.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022&quot;,
+      &quot;label&quot;: &quot;Cerrar sandbox → reviewer → deploy con aislamiento enforceable y pruebas de rechazo/promoción.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-023&quot;,
+      &quot;label&quot;: &quot;Cerrar Hugging Face bridge solo para datasets/skills/modelos/recursos verificados, sin secretos ni HF CI.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-024&quot;,
+      &quot;label&quot;: &quot;Cerrar frontera determinismo/LLM con matriz y enforcement; LLM nunca autoriza ejecución.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-025&quot;,
+      &quot;label&quot;: &quot;Cerrar matriz MAVIS/PARALLEL ADOPT/ADAPT/REJECT y benchmark solo cuando una claim de rendimiento lo requiera.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-026&quot;,
+      &quot;label&quot;: &quot;Cerrar UI/visual LOOP con el mínimo stack reutilizable; Graphify visual primero, sin añadir Sigma si no hace falta.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-027&quot;,
+      &quot;label&quot;: &quot;Integrar Graphiti para contexto/provenance/memoria temporal mediante motor + adapter + Ficha/Fables + sandbox test.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_2&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-028&quot;,
+      &quot;label&quot;: &quot;Integrar Graphology solo si aporta al estado/visualización de grafo mediante motor + serializer/adapter + test.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_2&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-029&quot;,
+      &quot;label&quot;: &quot;Cerrar planificación organizada con matriz ADOPT/ADAPT/REJECT; REUSE DAGEngine+MavisPool por defecto.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-030&quot;,
+      &quot;label&quot;: &quot;Cerrar Crazy Wall multiagente: ownership/version/idempotency/claim/release/conflict + tests.&quot;,
+      &quot;type&quot;: &quot;task&quot;,
+      &quot;status&quot;: &quot;PASS&quot;,
+      &quot;owner&quot;: &quot;SOL_1&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;tasks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;label&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;type&quot;: &quot;agent&quot;,
+      &quot;status&quot;: &quot;ASSIGNED&quot;,
+      &quot;owner&quot;: &quot;ASTRA_GPT_LOOP&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;agents&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:CHATGPT_CURRENT_RUN&quot;,
+      &quot;label&quot;: &quot;CHATGPT_CURRENT_RUN&quot;,
+      &quot;type&quot;: &quot;agent&quot;,
+      &quot;status&quot;: &quot;ASSIGNED&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;agents&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_1&quot;,
+      &quot;label&quot;: &quot;SOL_1&quot;,
+      &quot;type&quot;: &quot;agent&quot;,
+      &quot;status&quot;: &quot;ASSIGNED&quot;,
+      &quot;owner&quot;: &quot;SOL_1&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;agents&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_2&quot;,
+      &quot;label&quot;: &quot;SOL_2&quot;,
+      &quot;type&quot;: &quot;agent&quot;,
+      &quot;status&quot;: &quot;ASSIGNED&quot;,
+      &quot;owner&quot;: &quot;SOL_2&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;agents&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_GPT_USER_DIRECTED_TAKEOVER&quot;,
+      &quot;label&quot;: &quot;SOL_GPT_USER_DIRECTED_TAKEOVER&quot;,
+      &quot;type&quot;: &quot;agent&quot;,
+      &quot;status&quot;: &quot;ASSIGNED&quot;,
+      &quot;owner&quot;: &quot;SOL_GPT_USER_DIRECTED_TAKEOVER&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;agents&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_ORCHESTRATOR&quot;,
+      &quot;label&quot;: &quot;SOL_ORCHESTRATOR&quot;,
+      &quot;type&quot;: &quot;agent&quot;,
+      &quot;status&quot;: &quot;ASSIGNED&quot;,
+      &quot;owner&quot;: &quot;SOL_ORCHESTRATOR&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;agents&quot;
+    },
+    {
+      &quot;id&quot;: &quot;checkpoint:WFLOOP-CODE-GRAPH-20260911-0019&quot;,
+      &quot;label&quot;: &quot;WFLOOP-CODE-GRAPH-20260911-0019&quot;,
+      &quot;type&quot;: &quot;checkpoint&quot;,
+      &quot;status&quot;: &quot;CODE_GRAPH_30_OF_30_PRESERVED__CLOSURE_PLAN_ACTIVE__CL002_IN_PROGRESS&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;checkpoints&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:00f11840ddc34ddd&quot;,
+      &quot;label&quot;: &quot;wordflow_loop/evidence/G021_PARALLEL_SCHEDULER_KERNEL_WIRING_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:01834800b425afc5&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G017_DETERMINISTIC_DEPLOYMENT_CLOSURE_2026-09-15.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:0852153735036c20&quot;,
+      &quot;label&quot;: &quot;four_test_gate:PASS_4_OF_4&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:08f302fb45beee21&quot;,
+      &quot;label&quot;: &quot;github_actions_run:34931798702&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:0b4f2426eb057ae2&quot;,
+      &quot;label&quot;: &quot;HF job 6aacd25a5c02253cfb1466cf: fresh Motor3 kimi-code 4471/4471 and kimi-cli 988/988; failed=0; destination symlinks=0&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:0c722252ed81321e&quot;,
+      &quot;label&quot;: &quot;pytest:PASS_9_OF_9&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:0e62139d63acdf03&quot;,
+      &quot;label&quot;: &quot;commit:449080bfd34c28ec6df13e529f5795c7820b7309&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:0f3732883b4acb2e&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G008_UNSAFE_BEHAVIOR_GATE_2026-09-11.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:0febf24d94239ffe&quot;,
+      &quot;label&quot;: &quot;agent_sources/mcode exists physically with package.json + SOURCE_NPM.json; @minimax-ai/code pinned 0.4.10, shasum f4564e4fe8c92f4f496efb75e9718b28716be126&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:101cf6298e7f6f19&quot;,
+      &quot;label&quot;: &quot;repo:main physical root read-back&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:120ea36479520dbb&quot;,
+      &quot;label&quot;: &quot;gate:yaiwes.no_value_gap/v1&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:1363e1c5d1feb89f&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G006_CODE_GENERATION_POLICY_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:13957934c7f6b5b6&quot;,
+      &quot;label&quot;: &quot;repro:artifact_router_NameError_List_not_defined&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:147cfd7dc7707740&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G018_FABLES_EXACT_BLOB_PYTEST_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:189452df00f285c8&quot;,
+      &quot;label&quot;: &quot;runtime_probe:bwrap_netlink_operation_not_permitted&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:1a882c0e746d7fa6&quot;,
+      &quot;label&quot;: &quot;wordflow_loop/evidence/G022_BACKEND_MATRIX_BLOCKER_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:1ab34a20a7f244ef&quot;,
+      &quot;label&quot;: &quot;hf_classification_job:6aa5c7ab5527934177ed1d37&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:1e738e6157acbaaa&quot;,
+      &quot;label&quot;: &quot;adjacent:PASS_5_OF_5&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:20e9800699470fe6&quot;,
+      &quot;label&quot;: &quot;duplicates:34_STAGING_MIRROR&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:2425db080f97a703&quot;,
+      &quot;label&quot;: &quot;repro:huggingface_connection_static_ACTIVE_HEALTHY&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:2560173c08d334cf&quot;,
+      &quot;label&quot;: &quot;Git Data exact-blob pilot: source blob b13e833219334a15562ff31833e4ea9388954cdb recreated with identical SHA in target object DB; bulk source transfer then blocked by connector security before any branch commit&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:2bebf1ad24e0f3fb&quot;,
+      &quot;label&quot;: &quot;claim_commit:b8b63ab34f85e919166c0905f4b1e55af6dad594&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:2c92b3be326fd0c9&quot;,
+      &quot;label&quot;: &quot;blob_readback:PASS_5_OF_5_EXACT&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:2d81e44dc059ae55&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G014_AGENT_MEMORY_PREINJECTION_2026-09-11.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:2e7cb508b1cee8f5&quot;,
+      &quot;label&quot;: &quot;local_harness:PASS_6_OF_6&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:35e97550598099d4&quot;,
+      &quot;label&quot;: &quot;wordflow_loop/evidence/G023_HUGGINGFACE_PUBLIC_BRIDGE_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:37775bb163fb688a&quot;,
+      &quot;label&quot;: &quot;sandbox_microtest:BLOCKED_SANDBOX_EXPECTED&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:3921e0be2820c9cf&quot;,
+      &quot;label&quot;: &quot;HF job 6aacd2af5c02253cfb1466e9: fresh Motor2 verification mmx CLI 186, Code Plugins 602, MiniMax MCP 28, MCP JS 38, Coding Plan MCP 27, Kimi Agent RS 172, Kimi Researcher 16; all extraction/hash verified&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:3be0b42db218ef59&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G027_GRAPHITI_TEMPORAL_ADAPTER_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:3c4e034fe92e045f&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G012_COMPONENT_INTAKE_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:40a14d7a49dfcda8&quot;,
+      &quot;label&quot;: &quot;unittest:PASS_5_OF_5&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:4151adc9c533d57c&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G029_PLANNING_STACK_DECISION_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:41714f47dcda3296&quot;,
+      &quot;label&quot;: &quot;unittest:PASS_11_OF_11&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:41f2980fe34e5df1&quot;,
+      &quot;label&quot;: &quot;wordflow_loop/evidence/G022_SANDBOX_FAIL_CLOSED_BLOCKER_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:4448135b1039994a&quot;,
+      &quot;label&quot;: &quot;repair_commit:a7d9b763304b1cbe5bf01e083f0ed8cf9c34e1a1&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:463ab9148f606a27&quot;,
+      &quot;label&quot;: &quot;HF job 6aabc049f76d6a098a712c01: kimi-agent-sdk, kimi-agent-rs, Kimi-Researcher VERIFIED_CLOSED; kimi-cli blocked by symlink fail-closed&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:4924339d765d1631&quot;,
+      &quot;label&quot;: &quot;unittest:PASS_8_OF_8&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:4a72b3a91905b6f0&quot;,
+      &quot;label&quot;: &quot;runtime_probe:unshare_uid_map_operation_not_permitted&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:4c4d5b69475bc66c&quot;,
+      &quot;label&quot;: &quot;truth_readback:PASS_8_OF_8&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:4d30732c017b6232&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G007_EXISTING_CODE_CANONICAL_TRANSFER_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:4d38c706af4f0209&quot;,
+      &quot;label&quot;: &quot;HF job 6aabbfbc5527934177eedf37: canonical Motor 2 execution; MiniMax GitHub components verified in dry-run; kimi-code blocked by symlink fail-closed&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:524ed4c33980d497&quot;,
+      &quot;label&quot;: &quot;audit_report_sha256:c39505cec5fa9b938d1caed5cbfcb3a2ee9484a4349d7136e778f3d2ede005a1&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:53a6b4cf0037a1eb&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G024_LLM_DETERMINISTIC_BOUNDARY_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:5524bc0da04bb35f&quot;,
+      &quot;label&quot;: &quot;runtime_activation:FAIL_CLOSED_UNTIL_G022&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:5a12c5242c0d0414&quot;,
+      &quot;label&quot;: &quot;pytest:PASS_4_OF_4&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:5a246141843daf53&quot;,
+      &quot;label&quot;: &quot;test_commit:1c58fae8e5a6ad34d43ee9893a7607ee0cdff330&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:5e238b6a92fb14e3&quot;,
+      &quot;label&quot;: &quot;commit:018ac893bfb3495ea3fb4c26cd32af68b2dbf559&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:5e241eb3e6631bb8&quot;,
+      &quot;label&quot;: &quot;evidence_commit:304e85a77286b116c3dac33056ff03b6cc167042&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:628de289f3bd8181&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G016_CHAT_A_CHAT_B_SOURCE_PROOF_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:6852bd9fdf96ee27&quot;,
+      &quot;label&quot;: &quot;HF job 6aac90a25c02253cfb145899: secret-ref probe confirmed GITHUB_TOKEN_PRESENT without exposing value&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:6d2dedb2391323fa&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G022_PHYSICAL_SANDBOX_CLOSURE_2026-09-15.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:7843a307d67e807d&quot;,
+      &quot;label&quot;: &quot;HF job 6aacd2945c02253cfb1466e7: Motor3 verification mcode 0.4.10 = 760/760 files and OpenRoom = 255/255; failed=0&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:78e8d2707c887df7&quot;,
+      &quot;label&quot;: &quot;➡️📂 wordflow loop code Yaiwes/wordflow_loop/agent_sources&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:7e0b571112c9b793&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G015_GOALS12_INPUT_OUTPUT_RUNNER_2026-09-11.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:80194c409de0fa24&quot;,
+      &quot;label&quot;: &quot;HF job 6aac8eec5c02253cfb145844: mcode --version = 0.4.10 runtime validation&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:848e7bb34b846ad1&quot;,
+      &quot;label&quot;: &quot;broken_internal_imports:0&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:879fd2c9f15decfb&quot;,
+      &quot;label&quot;: &quot;➡️📂 wordflow loop code Yaiwes/wordflow_loop/wordflow_loop/agent_fleet/agent_fleet_registry.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:87c2be0a1ecd7e6d&quot;,
+      &quot;label&quot;: &quot;commit:c15f769c36166fe52a7fa72b8134cc49e30a1320&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:89acf0cc098a5453&quot;,
+      &quot;label&quot;: &quot;unittest:PASS_6_OF_6&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:8cba4fdc58caa71c&quot;,
+      &quot;label&quot;: &quot;hf_audit_job:6aa5c76221047bf1b037e8ee&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:92cb25d10883ad2e&quot;,
+      &quot;label&quot;: &quot;test_commit:525a76af888e17310069ab745dda47115191725e&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:99bd9ab7117ff8e5&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G025_MAVIS_PATTERN_MATRIX_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:a75421b54292df3f&quot;,
+      &quot;label&quot;: &quot;live_hf_api:PASS_3_OF_3&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:ac8b147840c20680&quot;,
+      &quot;label&quot;: &quot;HF job 6aabc077f76d6a098a712c0b: canonical Motor 1 ZIP extraction also rejects kimi-code/kimi-cli symlinks&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:aff567450cd07576&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G030_CRAZYWALL_CLAIM_GATE_2026-09-11.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:b2eb8a2b9c122137&quot;,
+      &quot;label&quot;: &quot;HF job 6aacd2415c02253cfb1466c9: fresh Motor2 verification MiniMax Mini-Agent 366/366 and Kimi Agent SDK 296/296; failed=0&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:b6b15fc8e48c9880&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G013_CANONICAL_RECONCILIATION_2026-09-11.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:bdbf52ce98ec5651&quot;,
+      &quot;label&quot;: &quot;orphans:42_REFERENCED_ACTIVE+1_STAGING_ONLY_REFERENCE&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:beb1a10d4aaf83f7&quot;,
+      &quot;label&quot;: &quot;checkpoint:WFLOOP-CODE-GRAPH-20260911-0019&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:c0c56f27081df332&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G028_GRAPHOLOGY_NO_VALUE_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:c34fabf78be53076&quot;,
+      &quot;label&quot;: &quot;uek_cache_microtest:PASS_SEEDED_HIT&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:d12ec521a231f9c3&quot;,
+      &quot;label&quot;: &quot;MOTOR-CODE-LOCK verified: motor_1=a52d5dc0e6ff26f75d753b848dcc1a40c5dd4500; motor_2=84d566e2ee4e98e42eb3a864026d067d48caabd9; engine=91e6e4486692eab314be5c7130d8310d3c855397&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:d39782c73997ce5a&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G011_CANONICAL_COPY_MOVE_MOTORS_2026-09-11.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:da3511beb4b03048&quot;,
+      &quot;label&quot;: &quot;adapter_commit:81bdb0522aa0bc6bb6c55f0336dc81d69b6dd2d8&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:db6732c41b0876ba&quot;,
+      &quot;label&quot;: &quot;motor:NOT_REQUIRED_NO_TRANSFER&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:dbb76b60a4a42c3c&quot;,
+      &quot;label&quot;: &quot;claim_commit:14e9f158951ac14688cf7612fcc20fe892c34191&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:dcb158a00e8deb84&quot;,
+      &quot;label&quot;: &quot;HF job 6aacd2945c02253cfb1466e7: @minimax-ai/code@0.4.10 npm artifact shasum f4564e4fe8c92f4f496efb75e9718b28716be126; Motor3 copied/verified 760/760 files; failed=0&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:dcc5c17ec48cf37f&quot;,
+      &quot;label&quot;: &quot;pytest:PASS_7_OF_7&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:dd8a82a08a914850&quot;,
+      &quot;label&quot;: &quot;broken_required_paths:0&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:e8ce325a201225e4&quot;,
+      &quot;label&quot;: &quot;agent_sources/kimi_code gitlink=1fddc16e3ea2de4c26a18acd764380adf9e2ed64; agent_sources/kimi_cli gitlink=86f136422a0aae6b217ea49e7ea1d2e8a1defcd2; both read-back mode 160000&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:ebe77cfb33473245&quot;,
+      &quot;label&quot;: &quot;main commit 28a47f47b7f127ba400c0bcbbb930daa424f6d85: 12 MiniMax/Kimi GitHub sources mounted in agent_sources as mode-160000 pinned gitlinks; read-back tree aa2e2b79b60fe48349fc03998f97560fdbf965d4; all expected paths present&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:f3263b2070c96450&quot;,
+      &quot;label&quot;: &quot;AGENT_SOURCE_MOUNT_MANIFEST_2026-09-18.json + .gitmodules read-back PASS&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:f60832c67e6cc1c7&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G026_CRAZY_WALL_VISUAL_PROJECTION_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:fbf9743b808ee58b&quot;,
+      &quot;label&quot;: &quot;gate_result:NO_VALUE_GAP&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:fc1a80b7c85bbf97&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G019_GLOBAL_WORDFLOW_AUDIT_2026-09-12.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;evidence:ff7d3567af8472a2&quot;,
+      &quot;label&quot;: &quot;➡️📂 Wordflow LOOP Yaiwes/wordflow_loop/evidence/G009_NO_VALUE_GAP_2026-09-11.json&quot;,
+      &quot;type&quot;: &quot;evidence&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:009da13e0b35af01&quot;,
+      &quot;label&quot;: &quot;GITLINK_MOUNT_PRESENT_BUT_FULL_VENDOR_TREE_NOT_EMBEDDED_IN_SUPERPROJECT&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:1ff6e2dd0067219e&quot;,
+      &quot;label&quot;: &quot;MOUNTED_AS_UPSTREAM_GITLINKS__MATERIALIZED_SYMLINK_FREE_VENDOR_TREES_NOT_EMBEDDED&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:2997eb12b5fe6aee&quot;,
+      &quot;label&quot;: &quot;RESOLVED: performance claims had no deterministic benchmark evidence gate&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:2e2743526b279b80&quot;,
+      &quot;label&quot;: &quot;RESOLVED: 25-pattern ADOPT/ADAPT/REJECT matrix was missing&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:3015988f6778c260&quot;,
+      &quot;label&quot;: &quot;MCODE_FULL_PACKAGE_BYTES_NOT_VENDORED__NPM_PIN_MOUNT_ONLY&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:4828e0175c452f27&quot;,
+      &quot;label&quot;: &quot;RUNTIME_EXECUTION_REMAINS_GATED_BY_G022&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:49ac7df24b8aef09&quot;,
+      &quot;label&quot;: &quot;RESOLVED: external orchestrators lacked a concrete-gap admission gate&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:4aad8128c0ed9df1&quot;,
+      &quot;label&quot;: &quot;RESOLVED: canonical Fables dependency G-018 verified&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:500e4d815bc5ef27&quot;,
+      &quot;label&quot;: &quot;RESOLVED: Graphiti had source proof but no thin temporal adapter/Ficha binding&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:5144d75706d20bab&quot;,
+      &quot;label&quot;: &quot;RESOLVED: renderer contract incorrectly preferred Graphology+Sigma&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:5ac46b0b68280a7b&quot;,
+      &quot;label&quot;: &quot;FINAL_AGENT_SOURCES_PUBLICATION_PENDING&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:5d9703f906487fc8&quot;,
+      &quot;label&quot;: &quot;KIMI_SYMLINK_GAP delegated to CL-004&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:673fc86a0926afd2&quot;,
+      &quot;label&quot;: &quot;RESOLVED: dedicated generation-policy tests were missing&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:a3834f63ef0a2827&quot;,
+      &quot;label&quot;: &quot;RESOLVED: priority direction conflicted with canonical Kernel/Mavis queues&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:a7f5dbc684ad0637&quot;,
+      &quot;label&quot;: &quot;RESOLVED: public pinned model/dataset/skill/resource metadata bridge was missing&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:b6e72b4ed75a92c4&quot;,
+      &quot;label&quot;: &quot;RESOLVED: exact reproducible pytest execution was missing&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:bad899205b7920ee&quot;,
+      &quot;label&quot;: &quot;RESOLVED: SOURCE_OF_TRUTH_DRIFT at checkpoint 0019&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:bb3f35c8ebf31043&quot;,
+      &quot;label&quot;: &quot;PUBLISH_TRANSPORT_SECURITY_GATE: canonical Motor2 PUBLISH=1 launch and bulk cross-repo source transfer are blocked by connected-tool security controls; no GitHub Actions used; no partial branch publication&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:c3e8d2a09960e757&quot;,
+      &quot;label&quot;: &quot;RESOLVED: real Crazy Wall sources were not projected into required visual panels&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:c92d0203e9b2cf05&quot;,
+      &quot;label&quot;: &quot;RESOLVED: HF connection no longer fabricates ACTIVE/HEALTHY without probe&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:c950b085c29888f2&quot;,
+      &quot;label&quot;: &quot;RESOLVED_BY_CONDITIONAL_REJECTION: no unique capability for current graph visualization requirement&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:d83f43dd9e995040&quot;,
+      &quot;label&quot;: &quot;MCode NPM acquisition belongs to CL-003&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:de12e15aeafd2597&quot;,
+      &quot;label&quot;: &quot;RESOLVED: uek_cluster broken src.uek.cache_engine import via REUSE SmartCache&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:e11ee9de8d8ce525&quot;,
+      &quot;label&quot;: &quot;RESOLVED: comparative planning matrix was missing&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:ecf6821ad9b5c1cf&quot;,
+      &quot;label&quot;: &quot;RESOLVED: scheduler was not wired to Kernel.run&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:ee3b11b8d7681587&quot;,
+      &quot;label&quot;: &quot;REVIEW_ONLY: runtime/src/spec/healing_engine.py staging-only reference; no auto-delete&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:f3bfd0b11e9a24cd&quot;,
+      &quot;label&quot;: &quot;Graphology remains available as source if a future concrete capability gap appears&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:f62a845e41b74b98&quot;,
+      &quot;label&quot;: &quot;RESOLVED: HF artifact route is importable and rejects mock acquisition&quot;,
+      &quot;type&quot;: &quot;gap&quot;,
+      &quot;status&quot;: &quot;RECORDED&quot;,
+      &quot;owner&quot;: &quot;&quot;,
+      &quot;priority&quot;: 0,
+      &quot;group&quot;: &quot;gaps&quot;
+    }
+  ],
+  &quot;edges&quot;: [
+    {
+      &quot;id&quot;: &quot;CL-001-&gt;CL-002:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-001&quot;,
+      &quot;target&quot;: &quot;CL-002&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-001-&gt;CL-003:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-001&quot;,
+      &quot;target&quot;: &quot;CL-003&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-001-&gt;CL-004:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-001&quot;,
+      &quot;target&quot;: &quot;CL-004&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-001-&gt;evidence:101cf6298e7f6f19:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-001&quot;,
+      &quot;target&quot;: &quot;evidence:101cf6298e7f6f19&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-001-&gt;evidence:78e8d2707c887df7:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-001&quot;,
+      &quot;target&quot;: &quot;evidence:78e8d2707c887df7&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-001-&gt;evidence:879fd2c9f15decfb:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-001&quot;,
+      &quot;target&quot;: &quot;evidence:879fd2c9f15decfb&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;CL-005:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;CL-005&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:2560173c08d334cf:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:2560173c08d334cf&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:3921e0be2820c9cf:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:3921e0be2820c9cf&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:463ab9148f606a27:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:463ab9148f606a27&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:4d38c706af4f0209:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:4d38c706af4f0209&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:6852bd9fdf96ee27:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:6852bd9fdf96ee27&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:7843a307d67e807d:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:7843a307d67e807d&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:ac8b147840c20680:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:ac8b147840c20680&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:b2eb8a2b9c122137:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:b2eb8a2b9c122137&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:d12ec521a231f9c3:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:d12ec521a231f9c3&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:ebe77cfb33473245:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:ebe77cfb33473245&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-002-&gt;evidence:f3263b2070c96450:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-002&quot;,
+      &quot;target&quot;: &quot;evidence:f3263b2070c96450&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-003-&gt;CL-005:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-003&quot;,
+      &quot;target&quot;: &quot;CL-005&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-003-&gt;evidence:0febf24d94239ffe:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-003&quot;,
+      &quot;target&quot;: &quot;evidence:0febf24d94239ffe&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-003-&gt;evidence:80194c409de0fa24:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-003&quot;,
+      &quot;target&quot;: &quot;evidence:80194c409de0fa24&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-003-&gt;evidence:dcb158a00e8deb84:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-003&quot;,
+      &quot;target&quot;: &quot;evidence:dcb158a00e8deb84&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-004-&gt;CL-005:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-004&quot;,
+      &quot;target&quot;: &quot;CL-005&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-004-&gt;evidence:0b4f2426eb057ae2:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-004&quot;,
+      &quot;target&quot;: &quot;evidence:0b4f2426eb057ae2&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-004-&gt;evidence:e8ce325a201225e4:has_evidence&quot;,
+      &quot;source&quot;: &quot;CL-004&quot;,
+      &quot;target&quot;: &quot;evidence:e8ce325a201225e4&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-005-&gt;CL-006:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-005&quot;,
+      &quot;target&quot;: &quot;CL-006&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-005-&gt;CLAUDE-AGENT-REVIEW-01:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-005&quot;,
+      &quot;target&quot;: &quot;CLAUDE-AGENT-REVIEW-01&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-006-&gt;CL-007:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-006&quot;,
+      &quot;target&quot;: &quot;CL-007&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-006-&gt;CL-009:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-006&quot;,
+      &quot;target&quot;: &quot;CL-009&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-006-&gt;CL-010:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-006&quot;,
+      &quot;target&quot;: &quot;CL-010&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-006-&gt;CL-011:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-006&quot;,
+      &quot;target&quot;: &quot;CL-011&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-007-&gt;CL-008:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-007&quot;,
+      &quot;target&quot;: &quot;CL-008&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-008-&gt;CL-012:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-008&quot;,
+      &quot;target&quot;: &quot;CL-012&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-009-&gt;CL-012:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-009&quot;,
+      &quot;target&quot;: &quot;CL-012&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-010-&gt;CL-012:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-010&quot;,
+      &quot;target&quot;: &quot;CL-012&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-011-&gt;CL-012:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-011&quot;,
+      &quot;target&quot;: &quot;CL-012&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-012-&gt;CL-013:unblocks&quot;,
+      &quot;source&quot;: &quot;CL-012&quot;,
+      &quot;target&quot;: &quot;CL-013&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-AGENT-REVIEW-01-&gt;CLAUDE-FRONTEND-CODE-INTEGRATION-02:unblocks&quot;,
+      &quot;source&quot;: &quot;CLAUDE-AGENT-REVIEW-01&quot;,
+      &quot;target&quot;: &quot;CLAUDE-FRONTEND-CODE-INTEGRATION-02&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-AGENT-REVIEW-01-&gt;CLAUDE-LOOP-WORKFLOW-REUSE-03:unblocks&quot;,
+      &quot;source&quot;: &quot;CLAUDE-AGENT-REVIEW-01&quot;,
+      &quot;target&quot;: &quot;CLAUDE-LOOP-WORKFLOW-REUSE-03&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-FRONTEND-CODE-INTEGRATION-02-&gt;CLAUDE-INTEGRATION-VALIDATION-04:unblocks&quot;,
+      &quot;source&quot;: &quot;CLAUDE-FRONTEND-CODE-INTEGRATION-02&quot;,
+      &quot;target&quot;: &quot;CLAUDE-INTEGRATION-VALIDATION-04&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-LOOP-WORKFLOW-REUSE-03-&gt;CLAUDE-INTEGRATION-VALIDATION-04:unblocks&quot;,
+      &quot;source&quot;: &quot;CLAUDE-LOOP-WORKFLOW-REUSE-03&quot;,
+      &quot;target&quot;: &quot;CLAUDE-INTEGRATION-VALIDATION-04&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-006-&gt;evidence:0c722252ed81321e:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-006&quot;,
+      &quot;target&quot;: &quot;evidence:0c722252ed81321e&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-006-&gt;evidence:1363e1c5d1feb89f:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-006&quot;,
+      &quot;target&quot;: &quot;evidence:1363e1c5d1feb89f&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-006-&gt;evidence:5e238b6a92fb14e3:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-006&quot;,
+      &quot;target&quot;: &quot;evidence:5e238b6a92fb14e3&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-006-&gt;evidence:92cb25d10883ad2e:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-006&quot;,
+      &quot;target&quot;: &quot;evidence:92cb25d10883ad2e&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-007-&gt;evidence:4d30732c017b6232:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-007&quot;,
+      &quot;target&quot;: &quot;evidence:4d30732c017b6232&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-008-&gt;evidence:0f3732883b4acb2e:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-008&quot;,
+      &quot;target&quot;: &quot;evidence:0f3732883b4acb2e&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-009-&gt;evidence:ff7d3567af8472a2:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-009&quot;,
+      &quot;target&quot;: &quot;evidence:ff7d3567af8472a2&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-011-&gt;G-007:unblocks&quot;,
+      &quot;source&quot;: &quot;G-011&quot;,
+      &quot;target&quot;: &quot;G-007&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-011-&gt;G-012:unblocks&quot;,
+      &quot;source&quot;: &quot;G-011&quot;,
+      &quot;target&quot;: &quot;G-012&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-011-&gt;evidence:d39782c73997ce5a:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-011&quot;,
+      &quot;target&quot;: &quot;evidence:d39782c73997ce5a&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-012-&gt;evidence:3c4e034fe92e045f:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-012&quot;,
+      &quot;target&quot;: &quot;evidence:3c4e034fe92e045f&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-013-&gt;G-019:unblocks&quot;,
+      &quot;source&quot;: &quot;G-013&quot;,
+      &quot;target&quot;: &quot;G-019&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-013-&gt;evidence:4c4d5b69475bc66c:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-013&quot;,
+      &quot;target&quot;: &quot;evidence:4c4d5b69475bc66c&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-013-&gt;evidence:b6b15fc8e48c9880:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-013&quot;,
+      &quot;target&quot;: &quot;evidence:b6b15fc8e48c9880&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-013-&gt;evidence:beb1a10d4aaf83f7:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-013&quot;,
+      &quot;target&quot;: &quot;evidence:beb1a10d4aaf83f7&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-013-&gt;evidence:dcc5c17ec48cf37f:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-013&quot;,
+      &quot;target&quot;: &quot;evidence:dcc5c17ec48cf37f&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-014-&gt;evidence:2d81e44dc059ae55:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-014&quot;,
+      &quot;target&quot;: &quot;evidence:2d81e44dc059ae55&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-015-&gt;evidence:7e0b571112c9b793:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-015&quot;,
+      &quot;target&quot;: &quot;evidence:7e0b571112c9b793&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-016-&gt;evidence:628de289f3bd8181:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-016&quot;,
+      &quot;target&quot;: &quot;evidence:628de289f3bd8181&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-017-&gt;evidence:01834800b425afc5:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-017&quot;,
+      &quot;target&quot;: &quot;evidence:01834800b425afc5&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-017-&gt;evidence:0852153735036c20:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-017&quot;,
+      &quot;target&quot;: &quot;evidence:0852153735036c20&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-017-&gt;evidence:08f302fb45beee21:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-017&quot;,
+      &quot;target&quot;: &quot;evidence:08f302fb45beee21&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-018-&gt;G-006:unblocks&quot;,
+      &quot;source&quot;: &quot;G-018&quot;,
+      &quot;target&quot;: &quot;G-006&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-018-&gt;G-027:unblocks&quot;,
+      &quot;source&quot;: &quot;G-018&quot;,
+      &quot;target&quot;: &quot;G-027&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-018-&gt;G-028:unblocks&quot;,
+      &quot;source&quot;: &quot;G-018&quot;,
+      &quot;target&quot;: &quot;G-028&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-018-&gt;evidence:147cfd7dc7707740:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-018&quot;,
+      &quot;target&quot;: &quot;evidence:147cfd7dc7707740&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-018-&gt;evidence:2c92b3be326fd0c9:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-018&quot;,
+      &quot;target&quot;: &quot;evidence:2c92b3be326fd0c9&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-018-&gt;evidence:5a12c5242c0d0414:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-018&quot;,
+      &quot;target&quot;: &quot;evidence:5a12c5242c0d0414&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-018-&gt;evidence:87c2be0a1ecd7e6d:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-018&quot;,
+      &quot;target&quot;: &quot;evidence:87c2be0a1ecd7e6d&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:1ab34a20a7f244ef:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:1ab34a20a7f244ef&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:20e9800699470fe6:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:20e9800699470fe6&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:37775bb163fb688a:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:37775bb163fb688a&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:41714f47dcda3296:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:41714f47dcda3296&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:4448135b1039994a:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:4448135b1039994a&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:524ed4c33980d497:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:524ed4c33980d497&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:848e7bb34b846ad1:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:848e7bb34b846ad1&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:8cba4fdc58caa71c:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:8cba4fdc58caa71c&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:bdbf52ce98ec5651:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:bdbf52ce98ec5651&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:c34fabf78be53076:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:c34fabf78be53076&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:db6732c41b0876ba:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:db6732c41b0876ba&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:dd8a82a08a914850:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:dd8a82a08a914850&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-019-&gt;evidence:fc1a80b7c85bbf97:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-019&quot;,
+      &quot;target&quot;: &quot;evidence:fc1a80b7c85bbf97&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-021-&gt;G-025:unblocks&quot;,
+      &quot;source&quot;: &quot;G-021&quot;,
+      &quot;target&quot;: &quot;G-025&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-021-&gt;G-029:unblocks&quot;,
+      &quot;source&quot;: &quot;G-021&quot;,
+      &quot;target&quot;: &quot;G-029&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-021-&gt;evidence:00f11840ddc34ddd:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-021&quot;,
+      &quot;target&quot;: &quot;evidence:00f11840ddc34ddd&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-021-&gt;evidence:0e62139d63acdf03:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-021&quot;,
+      &quot;target&quot;: &quot;evidence:0e62139d63acdf03&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-021-&gt;evidence:4924339d765d1631:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-021&quot;,
+      &quot;target&quot;: &quot;evidence:4924339d765d1631&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;G-017:unblocks&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;G-017&quot;,
+      &quot;type&quot;: &quot;unblocks&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:0852153735036c20:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:0852153735036c20&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:08f302fb45beee21:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:08f302fb45beee21&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:189452df00f285c8:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:189452df00f285c8&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:1a882c0e746d7fa6:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:1a882c0e746d7fa6&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:1e738e6157acbaaa:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:1e738e6157acbaaa&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:2bebf1ad24e0f3fb:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:2bebf1ad24e0f3fb&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:40a14d7a49dfcda8:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:40a14d7a49dfcda8&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:41f2980fe34e5df1:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:41f2980fe34e5df1&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:4a72b3a91905b6f0:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:4a72b3a91905b6f0&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-022-&gt;evidence:6d2dedb2391323fa:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-022&quot;,
+      &quot;target&quot;: &quot;evidence:6d2dedb2391323fa&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-023-&gt;evidence:13957934c7f6b5b6:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-023&quot;,
+      &quot;target&quot;: &quot;evidence:13957934c7f6b5b6&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-023-&gt;evidence:2425db080f97a703:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-023&quot;,
+      &quot;target&quot;: &quot;evidence:2425db080f97a703&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-023-&gt;evidence:35e97550598099d4:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-023&quot;,
+      &quot;target&quot;: &quot;evidence:35e97550598099d4&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-023-&gt;evidence:89acf0cc098a5453:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-023&quot;,
+      &quot;target&quot;: &quot;evidence:89acf0cc098a5453&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-023-&gt;evidence:a75421b54292df3f:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-023&quot;,
+      &quot;target&quot;: &quot;evidence:a75421b54292df3f&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-023-&gt;evidence:dbb76b60a4a42c3c:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-023&quot;,
+      &quot;target&quot;: &quot;evidence:dbb76b60a4a42c3c&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-024-&gt;evidence:53a6b4cf0037a1eb:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-024&quot;,
+      &quot;target&quot;: &quot;evidence:53a6b4cf0037a1eb&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-025-&gt;evidence:99bd9ab7117ff8e5:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-025&quot;,
+      &quot;target&quot;: &quot;evidence:99bd9ab7117ff8e5&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-026-&gt;evidence:f60832c67e6cc1c7:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-026&quot;,
+      &quot;target&quot;: &quot;evidence:f60832c67e6cc1c7&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-027-&gt;evidence:2e7cb508b1cee8f5:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-027&quot;,
+      &quot;target&quot;: &quot;evidence:2e7cb508b1cee8f5&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-027-&gt;evidence:3be0b42db218ef59:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-027&quot;,
+      &quot;target&quot;: &quot;evidence:3be0b42db218ef59&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-027-&gt;evidence:5524bc0da04bb35f:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-027&quot;,
+      &quot;target&quot;: &quot;evidence:5524bc0da04bb35f&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-027-&gt;evidence:5a246141843daf53:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-027&quot;,
+      &quot;target&quot;: &quot;evidence:5a246141843daf53&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-027-&gt;evidence:da3511beb4b03048:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-027&quot;,
+      &quot;target&quot;: &quot;evidence:da3511beb4b03048&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-028-&gt;evidence:120ea36479520dbb:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-028&quot;,
+      &quot;target&quot;: &quot;evidence:120ea36479520dbb&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-028-&gt;evidence:5e241eb3e6631bb8:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-028&quot;,
+      &quot;target&quot;: &quot;evidence:5e241eb3e6631bb8&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-028-&gt;evidence:c0c56f27081df332:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-028&quot;,
+      &quot;target&quot;: &quot;evidence:c0c56f27081df332&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-028-&gt;evidence:fbf9743b808ee58b:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-028&quot;,
+      &quot;target&quot;: &quot;evidence:fbf9743b808ee58b&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-029-&gt;evidence:4151adc9c533d57c:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-029&quot;,
+      &quot;target&quot;: &quot;evidence:4151adc9c533d57c&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;G-030-&gt;evidence:aff567450cd07576:has_evidence&quot;,
+      &quot;source&quot;: &quot;G-030&quot;,
+      &quot;target&quot;: &quot;evidence:aff567450cd07576&quot;,
+      &quot;type&quot;: &quot;has_evidence&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-007:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-007&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-012:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-012&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-014:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-014&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-015:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-015&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-016:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-016&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-021:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-021&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-022:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-022&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-023:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-023&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-024:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-024&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-025:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-025&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-026:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-026&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:ASTRA_GPT_LOOP-&gt;G-029:owns&quot;,
+      &quot;source&quot;: &quot;agent:ASTRA_GPT_LOOP&quot;,
+      &quot;target&quot;: &quot;G-029&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:CHATGPT_CURRENT_RUN-&gt;CL-001:owns&quot;,
+      &quot;source&quot;: &quot;agent:CHATGPT_CURRENT_RUN&quot;,
+      &quot;target&quot;: &quot;CL-001&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:CHATGPT_CURRENT_RUN-&gt;CL-002:owns&quot;,
+      &quot;source&quot;: &quot;agent:CHATGPT_CURRENT_RUN&quot;,
+      &quot;target&quot;: &quot;CL-002&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:CHATGPT_CURRENT_RUN-&gt;CL-003:owns&quot;,
+      &quot;source&quot;: &quot;agent:CHATGPT_CURRENT_RUN&quot;,
+      &quot;target&quot;: &quot;CL-003&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:CHATGPT_CURRENT_RUN-&gt;CL-004:owns&quot;,
+      &quot;source&quot;: &quot;agent:CHATGPT_CURRENT_RUN&quot;,
+      &quot;target&quot;: &quot;CL-004&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_1-&gt;G-008:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_1&quot;,
+      &quot;target&quot;: &quot;G-008&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_1-&gt;G-009:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_1&quot;,
+      &quot;target&quot;: &quot;G-009&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_1-&gt;G-011:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_1&quot;,
+      &quot;target&quot;: &quot;G-011&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_1-&gt;G-013:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_1&quot;,
+      &quot;target&quot;: &quot;G-013&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_1-&gt;G-019:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_1&quot;,
+      &quot;target&quot;: &quot;G-019&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_1-&gt;G-030:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_1&quot;,
+      &quot;target&quot;: &quot;G-030&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_2-&gt;G-006:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_2&quot;,
+      &quot;target&quot;: &quot;G-006&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_2-&gt;G-018:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_2&quot;,
+      &quot;target&quot;: &quot;G-018&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_2-&gt;G-027:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_2&quot;,
+      &quot;target&quot;: &quot;G-027&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_2-&gt;G-028:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_2&quot;,
+      &quot;target&quot;: &quot;G-028&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_GPT_USER_DIRECTED_TAKEOVER-&gt;G-017:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_GPT_USER_DIRECTED_TAKEOVER&quot;,
+      &quot;target&quot;: &quot;G-017&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;agent:SOL_ORCHESTRATOR-&gt;COMP-BROWSER-USE:owns&quot;,
+      &quot;source&quot;: &quot;agent:SOL_ORCHESTRATOR&quot;,
+      &quot;target&quot;: &quot;COMP-BROWSER-USE&quot;,
+      &quot;type&quot;: &quot;owns&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:009da13e0b35af01-&gt;CL-002:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:009da13e0b35af01&quot;,
+      &quot;target&quot;: &quot;CL-002&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:1ff6e2dd0067219e-&gt;CL-004:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:1ff6e2dd0067219e&quot;,
+      &quot;target&quot;: &quot;CL-004&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:2997eb12b5fe6aee-&gt;G-025:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:2997eb12b5fe6aee&quot;,
+      &quot;target&quot;: &quot;G-025&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:2e2743526b279b80-&gt;G-025:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:2e2743526b279b80&quot;,
+      &quot;target&quot;: &quot;G-025&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:3015988f6778c260-&gt;CL-003:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:3015988f6778c260&quot;,
+      &quot;target&quot;: &quot;CL-003&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:4828e0175c452f27-&gt;G-027:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:4828e0175c452f27&quot;,
+      &quot;target&quot;: &quot;G-027&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:49ac7df24b8aef09-&gt;G-029:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:49ac7df24b8aef09&quot;,
+      &quot;target&quot;: &quot;G-029&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:4aad8128c0ed9df1-&gt;G-006:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:4aad8128c0ed9df1&quot;,
+      &quot;target&quot;: &quot;G-006&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:500e4d815bc5ef27-&gt;G-027:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:500e4d815bc5ef27&quot;,
+      &quot;target&quot;: &quot;G-027&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:5144d75706d20bab-&gt;G-026:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:5144d75706d20bab&quot;,
+      &quot;target&quot;: &quot;G-026&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:5ac46b0b68280a7b-&gt;CL-003:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:5ac46b0b68280a7b&quot;,
+      &quot;target&quot;: &quot;CL-003&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:5ac46b0b68280a7b-&gt;CL-004:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:5ac46b0b68280a7b&quot;,
+      &quot;target&quot;: &quot;CL-004&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:5d9703f906487fc8-&gt;CL-002:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:5d9703f906487fc8&quot;,
+      &quot;target&quot;: &quot;CL-002&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:673fc86a0926afd2-&gt;G-006:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:673fc86a0926afd2&quot;,
+      &quot;target&quot;: &quot;G-006&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:a3834f63ef0a2827-&gt;G-021:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:a3834f63ef0a2827&quot;,
+      &quot;target&quot;: &quot;G-021&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:a7f5dbc684ad0637-&gt;G-023:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:a7f5dbc684ad0637&quot;,
+      &quot;target&quot;: &quot;G-023&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:b6e72b4ed75a92c4-&gt;G-018:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:b6e72b4ed75a92c4&quot;,
+      &quot;target&quot;: &quot;G-018&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:bad899205b7920ee-&gt;G-013:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:bad899205b7920ee&quot;,
+      &quot;target&quot;: &quot;G-013&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:bb3f35c8ebf31043-&gt;CL-002:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:bb3f35c8ebf31043&quot;,
+      &quot;target&quot;: &quot;CL-002&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:c3e8d2a09960e757-&gt;G-026:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:c3e8d2a09960e757&quot;,
+      &quot;target&quot;: &quot;G-026&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:c92d0203e9b2cf05-&gt;G-023:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:c92d0203e9b2cf05&quot;,
+      &quot;target&quot;: &quot;G-023&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:c950b085c29888f2-&gt;G-028:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:c950b085c29888f2&quot;,
+      &quot;target&quot;: &quot;G-028&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:d83f43dd9e995040-&gt;CL-002:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:d83f43dd9e995040&quot;,
+      &quot;target&quot;: &quot;CL-002&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:de12e15aeafd2597-&gt;G-019:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:de12e15aeafd2597&quot;,
+      &quot;target&quot;: &quot;G-019&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:e11ee9de8d8ce525-&gt;G-029:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:e11ee9de8d8ce525&quot;,
+      &quot;target&quot;: &quot;G-029&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:ecf6821ad9b5c1cf-&gt;G-021:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:ecf6821ad9b5c1cf&quot;,
+      &quot;target&quot;: &quot;G-021&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:ee3b11b8d7681587-&gt;G-019:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:ee3b11b8d7681587&quot;,
+      &quot;target&quot;: &quot;G-019&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:f3bfd0b11e9a24cd-&gt;G-028:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:f3bfd0b11e9a24cd&quot;,
+      &quot;target&quot;: &quot;G-028&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    },
+    {
+      &quot;id&quot;: &quot;gap:f62a845e41b74b98-&gt;G-023:reported_for&quot;,
+      &quot;source&quot;: &quot;gap:f62a845e41b74b98&quot;,
+      &quot;target&quot;: &quot;G-023&quot;,
+      &quot;type&quot;: &quot;reported_for&quot;
+    }
+  ],
+  &quot;renderer_contract&quot;: {
+    &quot;current&quot;: &quot;renderer_agnostic_json&quot;,
+    &quot;enrichment_preference&quot;: &quot;graphify&quot;,
+    &quot;graphify_runtime_verified&quot;: false,
+    &quot;graphology_required&quot;: false,
+    &quot;sigma_required&quot;: false,
+    &quot;core_dependency&quot;: false
+  },
+  &quot;sha256&quot;: &quot;41475d8431453d1639d835b01e0ba73e0245540b3306a777af94d3c798089d72&quot;,
+  &quot;source_contracts&quot;: [
+    &quot;yaiwes.crazywall-dag/v1&quot;,
+    &quot;tel.workflow/v4&quot;
+  ],
+  &quot;queue&quot;: [
+    {
+      &quot;id&quot;: &quot;CL-002&quot;,
+      &quot;status&quot;: &quot;IN_PROGRESS&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-003&quot;,
+      &quot;status&quot;: &quot;IN_PROGRESS&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-004&quot;,
+      &quot;status&quot;: &quot;IN_PROGRESS&quot;,
+      &quot;owner&quot;: &quot;CHATGPT_CURRENT_RUN&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-005&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-006&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-007&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-008&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-009&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-010&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-011&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-012&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CL-013&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-AGENT-REVIEW-01&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-FRONTEND-CODE-INTEGRATION-02&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-INTEGRATION-VALIDATION-04&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;CLAUDE-LOOP-WORKFLOW-REUSE-03&quot;,
+      &quot;status&quot;: &quot;PENDING&quot;,
+      &quot;owner&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;COMP-BROWSER-USE&quot;,
+      &quot;status&quot;: &quot;RUNNING&quot;,
+      &quot;owner&quot;: &quot;SOL_ORCHESTRATOR&quot;
+    }
+  ],
+  &quot;panels&quot;: {
+    &quot;tasks&quot;: 41,
+    &quot;queue&quot;: 17,
+    &quot;gaps&quot;: 28,
+    &quot;agents&quot;: 6,
+    &quot;evidence&quot;: 86,
+    &quot;checkpoints&quot;: 1
+  }
+}</pre></body></html>

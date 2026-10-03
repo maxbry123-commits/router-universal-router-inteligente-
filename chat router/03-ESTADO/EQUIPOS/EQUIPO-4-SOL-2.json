@@ -4,25 +4,200 @@
   "modelo": "Sol 🏭 2",
   "rol": "P4: proyección Archify del Crazy Wall (O4-17), auditoría de cierre (O4-20) y pre-auditoría de los demás equipos para Claude",
   "espera": "EQUIPO-2:H-04 CERRADO",
-  "alcance": ["RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)", "chat router/11-EVIDENCIA/", "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json"],
-  "prohibido": ["router inteligente universal/ (no tocar el Router)", "LFS git", "GitHub Actions", "Hugging Face"],
-  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main. Pre-auditar no reemplaza la auditoría de Claude.",
-  "ronda_actual": ["B-01", "B-02", "B-03"],
-  "cola": [
-    {"id": "B-01", "tarea": "Leer runtime/src/core/graph_visual_projection.build_crazy_wall_projection y anotar qué entrada espera", "estado": "PENDIENTE"},
-    {"id": "B-02", "tarea": "O4-17: generar la proyección Archify desde el ledger real", "estado": "PENDIENTE"},
-    {"id": "B-03", "tarea": "Guardar la proyección (HTML o SVG) en la carpeta de evidencia con sha256", "estado": "PENDIENTE"},
-    {"id": "B-04", "tarea": "Test de la proyección", "estado": "PENDIENTE"},
-    {"id": "B-05", "tarea": "O4-17: cierre con evidencia", "estado": "PENDIENTE"},
-    {"id": "B-06", "tarea": "O4-19: confirmar que el E2E sigue pasando", "estado": "PENDIENTE"},
-    {"id": "B-07", "tarea": "O4-20: auditoría de cierre de todos los nodos O4 (estado + evidencia de cada uno)", "estado": "PENDIENTE"},
-    {"id": "B-08", "tarea": "Mapa vivo: diagrama de flujo de los 8 EQUIPO-*.json (tareas por estado)", "estado": "PENDIENTE"},
-    {"id": "B-09", "tarea": "Pre-auditoría: resultados de EQUIPO-1 contra su evidencia", "estado": "PENDIENTE"},
-    {"id": "B-10", "tarea": "Pre-auditoría: resultados de EQUIPO-3 y EQUIPO-5 contra su evidencia", "estado": "PENDIENTE"},
-    {"id": "B-11", "tarea": "Pre-auditoría: resultados de EQUIPO-6 y EQUIPO-7 contra su evidencia", "estado": "PENDIENTE"},
-    {"id": "B-12", "tarea": "Lista de GAPs globales y siguiente acción", "estado": "PENDIENTE"}
+  "alcance": [
+    "RAIZ-WL (chat router/📂 workflow Loops code Yaiwes/)",
+    "chat router/11-EVIDENCIA/",
+    "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json"
   ],
-  "resultado": [],
-  "bitacora": [],
-  "handoff": {"objetivo": "", "estado": "", "archivos": [], "cambios": [], "fallos": [], "siguiente": ""}
+  "prohibido": [
+    "router inteligente universal/ (no tocar el Router)",
+    "LFS git",
+    "GitHub Actions",
+    "Hugging Face"
+  ],
+  "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main. Pre-auditar no reemplaza la auditoría de Claude.",
+  "ronda_actual": [
+    "B-04",
+    "B-05",
+    "B-06"
+  ],
+  "cola": [
+    {
+      "id": "B-01",
+      "tarea": "Leer runtime/src/core/graph_visual_projection.build_crazy_wall_projection y anotar qué entrada espera",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "B-02",
+      "tarea": "O4-17: generar la proyección Archify desde el ledger real",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "B-03",
+      "tarea": "Guardar la proyección (HTML o SVG) en la carpeta de evidencia con sha256",
+      "estado": "CERRADO"
+    },
+    {
+      "id": "B-04",
+      "tarea": "Test de la proyección",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "B-05",
+      "tarea": "O4-17: cierre con evidencia",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "B-06",
+      "tarea": "O4-19: confirmar que el E2E sigue pasando",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "B-07",
+      "tarea": "O4-20: auditoría de cierre de todos los nodos O4 (estado + evidencia de cada uno)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "B-08",
+      "tarea": "Mapa vivo: diagrama de flujo de los 8 EQUIPO-*.json (tareas por estado)",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "B-09",
+      "tarea": "Pre-auditoría: resultados de EQUIPO-1 contra su evidencia",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "B-10",
+      "tarea": "Pre-auditoría: resultados de EQUIPO-3 y EQUIPO-5 contra su evidencia",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "B-11",
+      "tarea": "Pre-auditoría: resultados de EQUIPO-6 y EQUIPO-7 contra su evidencia",
+      "estado": "PENDIENTE"
+    },
+    {
+      "id": "B-12",
+      "tarea": "Lista de GAPs globales y siguiente acción",
+      "estado": "PENDIENTE"
+    }
+  ],
+  "resultado": [
+    {
+      "id_tarea": "B-01",
+      "equipo": "EQUIPO-4",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:30:33Z",
+      "accion": "Se leyó build_crazy_wall_projection: recibe TASK-NODES y CHECKPOINT y devuelve una proyección yaiwes.visual_graph/v1 sellada con nodos, aristas, cola, paneles y sha256.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/src/core/graph_visual_projection.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/src/core/graph_visual_projection.py",
+          "sha256": "0ea3060afc6f4b5d73dd23e2559693166ab4d26f7432054590ffd1925fcabaa0"
+        }
+      ],
+      "prueba_real": {
+        "comando": "lectura directa de runtime/src/core/graph_visual_projection.py",
+        "ok": true,
+        "salida_resumen": "Firma confirmada: build_crazy_wall_projection(task_nodes_document, checkpoint_document) -> dict sellado."
+      },
+      "gap": null,
+      "siguiente": "B-02"
+    },
+    {
+      "id_tarea": "B-02",
+      "equipo": "EQUIPO-4",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:30:33Z",
+      "accion": "Se generó la proyección Crazy Wall desde TASK-NODES.json y CHECKPOINT.json reales usando el contrato exacto de build_crazy_wall_projection.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/Crazy Wall Orquestador/TASK-NODES.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/Crazy%20Wall%20Orquestador/TASK-NODES.json",
+          "sha256": "b40d9dfa8530e0ae718569310c45cd696f77957ff83cdf498209b1e3c92d844b"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/Crazy Wall Orquestador/CHECKPOINT.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/Crazy%20Wall%20Orquestador/CHECKPOINT.json",
+          "sha256": "205fd8a4b15bca7eca8862928226fb04bedd985db82051eb3ff5927d5b8fac48"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "sha256": "18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+        }
+      ],
+      "prueba_real": {
+        "comando": "build_crazy_wall_projection(TASK-NODES.json, CHECKPOINT.json)",
+        "ok": true,
+        "salida_resumen": "PASS: tasks=41, queue=17, gaps=28, agents=6, evidence=86, checkpoints=1, projection_sha256=41475d8431453d1639d835b01e0ba73e0245540b3306a777af94d3c798089d72"
+      },
+      "gap": null,
+      "siguiente": "B-03"
+    },
+    {
+      "id_tarea": "B-03",
+      "equipo": "EQUIPO-4",
+      "ronda": 1,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:30:33Z",
+      "accion": "Se guardó la proyección HTML en la carpeta de evidencia de EQUIPO-4 y se calculó su sha256.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "sha256": "18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+        }
+      ],
+      "prueba_real": {
+        "comando": "sha256(crazy_wall_projection.html)",
+        "ok": true,
+        "salida_resumen": "18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+      },
+      "gap": null,
+      "siguiente": "B-04"
+    }
+  ],
+  "bitacora": [
+    {
+      "fecha_utc": "2026-10-03T00:30:33Z",
+      "id_tarea": "B-01",
+      "evento": "CERRADO: contrato de build_crazy_wall_projection leído."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:30:33Z",
+      "id_tarea": "B-02",
+      "evento": "CERRADO: proyección real generada; sha256=41475d8431453d1639d835b01e0ba73e0245540b3306a777af94d3c798089d72."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:30:33Z",
+      "id_tarea": "B-03",
+      "evento": "CERRADO: chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html; sha256=18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14."
+    }
+  ],
+  "handoff": {
+    "objetivo": "Continuar con las 3 primeras tareas PENDIENTE de la cola.",
+    "estado": "B-01,B-02,B-03 CERRADO",
+    "archivos": [
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json"
+    ],
+    "cambios": [
+      "Proyección real guardada; projection_sha256=41475d8431453d1639d835b01e0ba73e0245540b3306a777af94d3c798089d72",
+      "HTML sha256=18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+    ],
+    "fallos": [],
+    "siguiente": "B-04,B-05,B-06"
+  }
 }
