@@ -72,13 +72,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 60
+Revisión: 62
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-EQUIPO-1 cierre: 8 equipos auditados (AUDITORIA-FINAL.md, EVIDENCIA-GLOBAL.json); memoria Manus conectada al harness DeepSeek; Archify presente. PENDIENTE: Haiku hace auditoria forense X-Ray con la plantilla T-11-04 y Sol GPT hace el diagrama de flujo con Archify usando lo de Haiku.
+S1-25 harness DeepSeek validado. S1-24 auditoria plan. S1-26 raiz de motores copiada a chat router (ROOT-MAP-T11). PENDIENTE: Haiku auditoria forense X-Ray con plantilla T-11-04 y Sol GPT diagrama de flujo con Archify usando lo de Haiku.
 
 ### Siguiente
 Continuar DAG existente
