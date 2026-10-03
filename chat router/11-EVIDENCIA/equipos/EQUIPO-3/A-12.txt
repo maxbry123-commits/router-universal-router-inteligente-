@@ -1,0 +1,7 @@
+A-12 | LISTA DE GAPS P2
+scope=EQUIPO-3 P2 A-01..A-11
+open_gaps=0
+A-09=CERRADO_REF | motivo=las cuatro capacidades ya estaban registradas en COMPONENT_CAPABILITIES | intento_arreglo=read-back de las 4 claves y command_env; PASS
+A-10=CERRADO_REF | motivo=los cuatro contratos .dag.yaml ya estaban presentes | intento_arreglo=read-back 4/4 DAGs; PASS
+A-01..A-08,A-11=CERRADO | gap=null
+resultado=PASS: 11/11 tareas previas cerradas o cerradas por referencia; 0 gaps no resueltos; no remediacion pendiente
