@@ -13,6 +13,7 @@ test("the named HTML entry points to separately editable CSS and JS modules", ()
     assert.ok(existsSync(join(root, file)));
   }
   assert.ok(!html.includes("<style"));
+  assert.match(html, /No se cargaron los módulos del chat/);
   assert.deepEqual([...html.matchAll(/<script\b[^>]*>/g)].map(match => match[0]), [
     '<script type="module" src="./src/app.js">'
   ]);

@@ -70,8 +70,8 @@ export function normalizeConfig(value = {}) {
   return result;
 }
 
-export function readConfig(storage = globalThis.localStorage) {
-  try { return normalizeConfig(JSON.parse(storage.getItem(STORAGE_KEY) || "{}")); }
+export function readConfig(storage) {
+  try { return normalizeConfig(JSON.parse((storage ?? globalThis.localStorage).getItem(STORAGE_KEY) || "{}")); }
   catch { return normalizeConfig(); }
 }
 

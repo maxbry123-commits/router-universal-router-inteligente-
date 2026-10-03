@@ -21,8 +21,12 @@ const context = {
   showChat() { context.refresh(); },
   showSettings() { app.replaceChildren(renderSettings(context)); },
   updateConfig(draft) {
-    context.config = saveConfig(draft);
+    context.config = normalizeConfig(draft);
+    let persisted = true;
+    try { saveConfig(context.config); }
+    catch { persisted = false; }
     if (!context.config.models.some(model => model.id === context.selection.modelId)) context.selection.modelId = "";
+    return persisted;
   },
   setModels(models) {
     context.updateConfig(normalizeConfig({ ...context.config, models }));

@@ -21,5 +21,6 @@ test("configuration persists without serializing File or runtime state", () => {
   assert.deepEqual(readConfig(storage), saved);
   assert.ok(![...store.values()][0].includes("private"));
   assert.deepEqual(readConfig({ getItem: () => "not json" }), normalizeConfig());
+  assert.deepEqual(readConfig({ getItem: () => { throw new Error("Storage blocked"); } }), normalizeConfig());
   assert.deepEqual(normalizeConfig(null), normalizeConfig());
 });

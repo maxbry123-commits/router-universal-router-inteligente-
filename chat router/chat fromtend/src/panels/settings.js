@@ -82,7 +82,11 @@ export function renderSettings(context) {
     if (draft.models.some(model => !model.id || !model.label) || draft.selectors.some(slot => slot.options.some(option => !option.id || !option.label))) {
       feedback.textContent = t(context, "missingNames"); return;
     }
-    try { context.updateConfig(draft); context.showChat(); context.notice(t(context, "settingsSaved")); }
+    try {
+      const persisted = context.updateConfig(draft);
+      context.showChat();
+      context.notice(t(context, persisted ? "settingsSaved" : "settingsTemporary"), !persisted);
+    }
     catch (error) { feedback.textContent = error.message; }
   }, "primary");
   root.append(header, intro, commands, labels, models, group(t(context, "modesGroup"), draft.modes, context), selectors,
