@@ -28,3 +28,5 @@ Chat: Open WebUI (conectado al gateway del Router; MCP para intervenir en la con
 - `secret_bank/providers.json` (mismo bucket): agrega una API/SDK compatible OpenAI con `base_url` y entra al Router sin tocar codigo.
 - Credenciales hoy: github 5, huggingface 2, nvidia 5, openai 14, groq 7, router 1 (`router/harness-dsh`, clave del Harness).
 - Laboratorio: `POST /lab/run` (puerta fija) prueba todo y guarda el informe. Handoff: [ADENDA-RIU-0111](../../Readme%20arquitectura%20router%20inteligente%20universal/ADENDA-RIU-0111-ROUTER-24-7-HARNESS-BANCO-LAB-FICHAS-MCP.md).
+
+- Handoff vigente del Router y del banco: `router inteligente universal/HANDOFF-ROUTER-UNIVERSAL-OPUS.md`. En el banco HF hay `secret_bank/LEEME-HANDOFF.md` (router de respaldo T4/L4). Groq-1 borrada el 2026-10-03 (invalida); copia previa `vault.db.gz.b64.bak-202610032044`.

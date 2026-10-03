@@ -61,3 +61,12 @@ GitHub 5/5 OK; NVIDIA 5/5 OK; Groq 6/7 OK (groq-1 invalida); OpenAI 14 claves va
 - Persistencia: memoria guardada por MCP, copiada al bucket, Router relanzado, y la memoria se leyo de vuelta.
 - Jobs HF: todos se crean en la org COMAND-CENTER-1 (`RIU_HF_NAMESPACE`). Logs de un Job: `GET /hf/compute/{id}?logs=40`.
 - Banco viejo `banco-nvidia-equipo.b64` (2026-09-21, otra clave maestra): sacado del banco activo y guardado en `archivo-bancos-viejos/` del bucket. Unico banco activo: `secret_bank/vault.db.gz.b64`. Borrarlo solo si el Director lo confirma.
+
+## Auditoria 2026-10-03 noche (Opus, pedida por el Director)
+
+- OpenAI: 14 claves validas, sin saldo (`credit_balance_exhausted`), confirmado tambien con el SDK oficial.
+- Groq: groq-1 borrada del banco (invalida); groq-2..7 responden.
+- Ruta harness DeepSeek -> memoria -> Router -> HF -> reinicio: OK en produccion.
+- Autoscale: media la maquina HF compartida (siempre 100 %) y encendia relevos sin trafico; ahora mide el contenedor (cgroup) y tiene 3 min de gracia. Se cancelaron 27 Jobs sobrantes, incluido un Router viejo del 2026-10-02 y un guardian del 2026-10-01. Queda 1 solo Job: el Router.
+- SDK openai, groq y anthropic instalados en el Router.
+- Handoff e indice: `router inteligente universal/HANDOFF-ROUTER-UNIVERSAL-OPUS.md`.
