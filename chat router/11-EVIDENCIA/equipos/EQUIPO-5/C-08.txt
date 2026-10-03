@@ -1,0 +1,11 @@
+task=C-08
+status=CERRADO_REF
+test=source classification + capability policy
+recordly_desktop=true
+onlook_hosted=true
+webstudio_hosted=true
+registered=onlook,webstudio
+not_integrated_desktop=recordly,caret-desktop
+reference_unavailable=plasmic,motionsites
+adapter_sha256=e6151fdfb470e5d36fef2693631439a1ac54d26623cf267c019142da6955da09
+validation=PASS

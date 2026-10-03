@@ -91,12 +91,12 @@
     {
       "id": "C-08",
       "tarea": "Grupo apps (caret-desktop, onlook, plasmic, webstudio, motionsites, recordly): solo registrar capacidades; no integrar si es app de escritorio",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO_REF"
     },
     {
       "id": "C-09",
       "tarea": "Crawlers y compresores de contexto como herramientas del wordflow, conectados al Router principal por configuración (sin tocar el Router)",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "C-10",
@@ -526,6 +526,96 @@
       },
       "gap": null,
       "siguiente": "C-08"
+    },
+    {
+      "id_tarea": "C-08",
+      "equipo": "EQUIPO-5",
+      "ronda": 4,
+      "estado": "CERRADO_REF",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:58:53.239Z",
+      "accion": "Grupo apps cerrado por referencia: onlook y webstudio registrados como capacidades web; apps de escritorio no integradas; plasmic y motionsites quedan solo referencia por ausencia de fuente verificable en la ruta autorizada.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/onlook/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/onlook/code/README.md",
+          "sha256": "92fbf0110a4ffc2245e5d83a1516b2b9281f6f9d4a2c687524f5ec5f2683b5b0"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/webstudio/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/webstudio/code/README.md",
+          "sha256": "7bf0b6e21c0328b786d91684e0abb8298477b9ba16993712d0f132193584e0cc"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/recordly/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/recordly/code/README.md",
+          "sha256": "8fe29746eabe74c144f554508342d698d2c4922bc5ee56b448f00097495fc262"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "e6151fdfb470e5d36fef2693631439a1ac54d26623cf267c019142da6955da09"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+          "sha256": "875fa6b965c1a4e208fd9c73b77e93100ed11d40e8f9a2109396ff9c14a22f14"
+        }
+      ],
+      "prueba_real": {
+        "comando": "clasificar superficies desde README y validar política del capability map",
+        "ok": true,
+        "salida_resumen": "PASS: recordly=desktop; onlook=hosted/web; webstudio=hosted/web; registradas onlook+webstudio; desktop no integrado."
+      },
+      "gap": null,
+      "siguiente": "C-09"
+    },
+    {
+      "id_tarea": "C-09",
+      "equipo": "EQUIPO-5",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:58:53.239Z",
+      "accion": "Crawlers y compresores conectados como herramientas fail-closed mediante COMPONENT_CAPABILITIES/command_env: Firecrawl existente + Headroom + Context Mode; Router no modificado.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/headroom/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/headroom/code/README.md",
+          "sha256": "e8cb1c249cce0ce66587cc3b77c1e74fa74714e71d924537f9d02cdb8f9802d6"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/context-mode/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/context-mode/code/README.md",
+          "sha256": "6cc274722b7fdc7ed1636a88eeeeeb650d85ed219cc5c7e391e629b9a7eb2d05"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "e6151fdfb470e5d36fef2693631439a1ac54d26623cf267c019142da6955da09"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt",
+          "sha256": "216916bf9fac4d982664722d43a80b92b1e966d1d78ca888a4ef8536e6e42880"
+        }
+      ],
+      "prueba_real": {
+        "comando": "read-back lógico de 5 capability keys en el mapa fail-closed",
+        "ok": true,
+        "salida_resumen": "PASS: firecrawl, firecrawl_cli, firecrawl_mcp_server, headroom, context_mode presentes; cada nuevo tool usa command_env; Router no tocado."
+      },
+      "gap": null,
+      "siguiente": "SAL"
     }
   ],
   "bitacora": [
@@ -573,22 +663,30 @@
       "fecha_utc": "2026-10-03T00:25:00Z",
       "id_tarea": "C-07",
       "evento": "CERRADO: 5 skills_schema + 1 capacidad find_skills; prueba de contrato de grupo ok=true."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:58:53.239Z",
+      "id_tarea": "C-08",
+      "evento": "CERRADO_REF: onlook/webstudio registrados; desktop no integrado; referencias no verificables preservadas."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:58:53.239Z",
+      "id_tarea": "C-09",
+      "evento": "CERRADO: crawlers + compresores conectados por capability map/command_env; Router no tocado."
     }
   ],
   "handoff": {
-    "objetivo": "DSL cierre EQUIPO-5 completado.",
-    "estado": "C-04 CERRADO_REF; C-05 CERRADO_REF; C-07 CERRADO.",
+    "objetivo": "Cerrar C-08 y C-09.",
+    "estado": "C-08 CERRADO_REF; C-09 CERRADO.",
     "archivos": [
       "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
       "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/superpowers.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/get-shit-done.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/find-skills.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/local-ultra-review.dag.yaml",
-      "chat router/📂 workflow Loops code Yaiwes/skills_schema/one-skill-to-rule-them-all.dag.yaml"
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt"
     ],
     "cambios": [
-      "C-07 cerró grupo método con 5 DAG y una capacidad find_skills."
+      "C-08 registró onlook y webstudio; desktop se dejó sin integración.",
+      "C-09 añadió headroom y context_mode junto a Firecrawl ya registrado."
     ],
     "fallos": [],
     "siguiente": "SAL"

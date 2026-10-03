@@ -86,6 +86,19 @@ COMPONENT_CAPABILITIES: dict[str, dict[str, Any]] = {
                   "forbidden": ("authority_transfer", "uncontrolled_context_write"),
                   "command_env": "YAIWES_MAGIC_MCP_COMMAND"},
 
+    "onlook": {"provides": "visual_ai_code_editor_web",
+               "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+               "command_env": "YAIWES_ONLOOK_COMMAND"},
+    "webstudio": {"provides": "visual_web_development_platform",
+               "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+               "command_env": "YAIWES_WEBSTUDIO_COMMAND"},
+    "headroom": {"provides": "context_compression_proxy_mcp",
+               "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+               "command_env": "YAIWES_HEADROOM_COMMAND"},
+    "context_mode": {"provides": "context_sandbox_persistence_mcp",
+               "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
+               "command_env": "YAIWES_CONTEXT_MODE_COMMAND"},
+
     # EQUIPO-5
     "find_skills": {"provides": "agent_skill_discovery_install",
                     "forbidden": ("authority_transfer", "side_effect_without_sheriff"),
