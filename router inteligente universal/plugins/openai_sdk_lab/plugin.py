@@ -1,6 +1,7 @@
-# Plugin openai_sdk_lab: laboratorio TEMPORAL de pruebas del SDK de OpenAI.
-# Lee las claves del banco secreto ya abierto en memoria (vault_hook). Nada de claves en el repo.
-# status -> corre el motor (cache 10 min) y devuelve un resumen sin claves. invoke -> resultado limpio.
+"""Plugin openai_sdk_lab: laboratorio TEMPORAL de pruebas del SDK de OpenAI dentro del Router (no toca el Router).
+Entra por el Plugin Host (health_action = status). Las claves NO estan en el repo: salen del banco secreto ya abierto en
+memoria (vault_hook.provider_keys openai). Motor: Laboratorio Code de pruebas.py (carpeta del laboratorio). status corre las
+pruebas (maximo 1 vez cada 10 min), devuelve un resumen sin claves y sube el detalle saneado a RESULTADOS-OPENAI-SDK.json."""
 from __future__ import annotations
 
 import base64
@@ -14,21 +15,25 @@ import threading
 import time
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-CARPETA = chr(0x1F4C2) + ' laboratorio pruebas api sdk'
-LAB = Path(__file__).resolve().parents[3] / CARPETA
-ENGINE = LAB / 'Laboratorio Code de pruebas.py'
-REPO = 'maxbry123-commits/router-universal-router-inteligente-'
-RESULT_PATH = CARPETA + '/RESULTADOS-OPENAI-SDK.json'
-SECRETO = re.compile('(sk-[A-Za-z0-9_-]{8,}|gh[ps]_[A-Za-z0-9]{10,}|github_pat_[A-Za-z0-9_]{10,}|hf_[A-Za-z0-9]{10,})')
+LAB_DIR = "📂 laboratorio pruebas api sdk"
+ENGINE = "Laboratorio Code de pruebas.py"
+RESULTS = "RESULTADOS-OPENAI-SDK.json"
+REPO = "maxbry123-commits/router-universal-router-inteligente-"
+TTL_OK = 600
+TTL_BLOCKED = 30
+
 _lock = threading.Lock()
-_state: dict[str, Any] = {'t': 0.0, 'res': None, 'running': False}
+_state: dict[str, Any] = {"t": 0.0, "ttl": 0, "out": None, "running": False}
+_SECRET = re.compile(r"(sk-[A-Za-z0-9_-]{8,}|gh[ps]_[A-Za-z0-9]{10,}|hf_[A-Za-z0-9]{10,})")
 
 
-def _engine():
-    spec = importlib.util.spec_from_file_location('lab_engine', str(ENGINE))
+def _engine() -> Any:
+    path = Path(__file__).resolve().parents[3] / LAB_DIR / ENGINE
+    spec = importlib.util.spec_from_file_location("lab_openai_engine", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -38,88 +43,107 @@ def _ensure_sdk() -> None:
     try:
         import openai  # noqa: F401
     except ImportError:
-        subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'openai'], check=False, timeout=100)
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "openai"], check=False, timeout=100, capture_output=True)
 
 
-def _limpio(res: dict) -> dict:
-    return json.loads(SECRETO.sub('[REDACTADO]', json.dumps(res, ensure_ascii=False, default=str)))
-
-
-def _rows(res: dict) -> list:
-    for v in res.values():
-        if isinstance(v, list) and v and isinstance(v[0], dict) and 'key_index' in v[0]:
-            return v
+def _rows(obj: Any) -> list[dict[str, Any]]:
+    if isinstance(obj, list) and obj and all(isinstance(x, dict) and "key_index" in x for x in obj):
+        return obj
+    if isinstance(obj, dict):
+        for value in obj.values():
+            found = _rows(value)
+            if found:
+                return found
     return []
 
 
-def _ok(row: dict) -> bool:
-    return bool((row.get('models') or {}).get('ok')) and bool((row.get('responses') or {}).get('ok'))
+def _why(row: dict[str, Any]) -> str:
+    for part in ("responses", "models"):
+        blk = row.get(part) or {}
+        if not blk.get("ok"):
+            return str(blk.get("status_code") or blk.get("error_type") or "?")
+    return "?"
 
 
-def _resumen(res: dict) -> tuple[str, str]:
-    if res.get('status') == 'blocked':
-        return 'degraded', 'sin resultados: ' + str(res.get('reason', '?'))
+def _summarize(res: Any) -> dict[str, Any]:
     rows = _rows(res)
-    buenas = sum(1 for r in rows if _ok(r))
-    texto = '%d/%d claves PASS (models+responses) - checks %s/%s' % (buenas, len(rows), res.get('checks_pass'), res.get('checks_total'))
-    return ('ok' if rows and buenas == len(rows) else 'degraded'), texto
+    if not rows:
+        why = res.get("reason") if isinstance(res, dict) else None
+        return {"status": "degraded", "reason": "sin resultados: " + str(why or "desconocido")[:120]}
+    good = [r for r in rows if (r.get("models") or {}).get("ok") and (r.get("responses") or {}).get("ok")]
+    me_ok = sum(1 for r in rows if (r.get("me") or {}).get("ok"))
+    bad = [str(r.get("key_index")) + ":" + _why(r) for r in rows if r not in good]
+    text = "PASS %d/%d claves (models+responses); me %d/%d informativo" % (len(good), len(rows), me_ok, len(rows))
+    if bad:
+        text += "; FALLAN " + ",".join(bad)[:110]
+    return {"status": "ok" if len(good) == len(rows) else "degraded", "reason": text}
 
 
-def _publish(res: dict) -> None:
-    tok = os.environ.get('GITHUB_TOKEN', '')
+def _clean(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: _clean(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_clean(v) for v in obj]
+    if isinstance(obj, str):
+        return _SECRET.sub("[REDACTADO]", obj)
+    return obj
+
+
+def _push(doc: dict[str, Any]) -> str:
+    tok = os.environ.get("GITHUB_TOKEN")
     if not tok:
-        return
+        return "sin GITHUB_TOKEN"
+    api = "https://api.github.com/repos/" + REPO + "/contents/" + urllib.parse.quote(LAB_DIR + "/" + RESULTS)
+    hdr = {"Authorization": "Bearer " + tok, "User-Agent": "riu-lab", "Accept": "application/vnd.github+json"}
+    sha = None
     try:
-        url = 'https://api.github.com/repos/%s/contents/%s' % (REPO, urllib.parse.quote(RESULT_PATH))
-        h = {'Authorization': 'Bearer ' + tok, 'User-Agent': 'riu-lab', 'Accept': 'application/vnd.github+json'}
-        sha = None
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=20) as r:
-                sha = json.loads(r.read()).get('sha')
-        except Exception:
-            sha = None
-        estado, texto = _resumen(res)
-        cuerpo = {'fecha_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'estado': estado, 'resumen': texto, 'resultado': _limpio(res)}
-        data = {'message': 'lab: resultados OpenAI SDK [skip ci]', 'content': base64.b64encode(json.dumps(cuerpo, ensure_ascii=False, indent=1).encode()).decode()}
-        if sha:
-            data['sha'] = sha
-        urllib.request.urlopen(urllib.request.Request(url, data=json.dumps(data).encode(), headers=h, method='PUT'), timeout=25).read()
-    except Exception:
+        with urllib.request.urlopen(urllib.request.Request(api, headers=hdr), timeout=20) as r:
+            sha = json.loads(r.read()).get("sha")
+    except Exception:  # noqa: BLE001
         pass
+    body = {"message": "lab: resultados OpenAI SDK (plugin openai_sdk_lab) [skip ci]", "branch": "main",
+            "content": base64.b64encode(json.dumps(doc, ensure_ascii=False, indent=2).encode()).decode()}
+    if sha:
+        body["sha"] = sha
+    req = urllib.request.Request(api, data=json.dumps(body).encode(), headers={**hdr, "Content-Type": "application/json"}, method="PUT")
+    try:
+        with urllib.request.urlopen(req, timeout=25):
+            return "detalle subido al repo"
+    except Exception as exc:  # noqa: BLE001
+        return "no se pudo subir: " + type(exc).__name__
 
 
-def _worker() -> None:
+def _work() -> None:
     try:
         _ensure_sdk()
         res = _engine().run_all()
+        out = _summarize(res)
+        if _rows(res):
+            ttl = TTL_OK
+            doc = _clean({"fecha": datetime.now(timezone.utc).isoformat(timespec="seconds"), "plugin": "openai_sdk_lab", "resumen": out, "resultado": res})
+            out = {"status": out["status"], "reason": (out["reason"] + " | " + _push(doc))[:280]}
+        else:
+            ttl = TTL_BLOCKED
     except Exception as exc:  # noqa: BLE001
-        res = {'status': 'blocked', 'reason': 'ERROR_' + type(exc).__name__}
+        out, ttl = {"status": "degraded", "reason": "fallo del laboratorio: " + type(exc).__name__}, TTL_BLOCKED
     with _lock:
-        _state.update(res=res, t=time.time(), running=False)
-    if res.get('status') != 'blocked':
-        _publish(res)
+        _state.update(t=time.time(), ttl=ttl, out=out, running=False)
 
 
-def _run(wait: float = 100.0):
+def handle(action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    if action not in ("status", "invoke"):
+        return {"status": "error", "reason": "accion desconocida: " + str(action)}
+    force = action == "invoke" or bool((payload or {}).get("force"))
     with _lock:
-        res = _state['res']
-        ttl = 30 if (res or {}).get('status') == 'blocked' else 600
-        if (res is None or time.time() - _state['t'] > ttl) and not _state['running']:
-            _state['running'] = True
-            threading.Thread(target=_worker, daemon=True).start()
-    fin = time.time() + wait
-    while _state['running'] and time.time() < fin:
+        if _state["out"] is not None and not force and time.time() - _state["t"] < _state["ttl"]:
+            return _state["out"]
+        if not _state["running"]:
+            _state["running"] = True
+            threading.Thread(target=_work, daemon=True, name="openai_sdk_lab").start()
+    end = time.time() + 105
+    while time.time() < end:
+        with _lock:
+            if not _state["running"]:
+                return _state["out"]
         time.sleep(0.5)
-    return None if _state['running'] else _state['res']
-
-
-def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
-    if action not in ('status', 'invoke'):
-        return {'status': 'error', 'reason': 'accion desconocida: ' + str(action)}
-    res = _run()
-    if res is None:
-        return {'status': 'degraded', 'reason': 'corriendo las pruebas; repite en 1 minuto'}
-    estado, texto = _resumen(res)
-    if action == 'invoke':
-        return {'status': estado, 'reason': texto, 'resultado': _limpio(res)}
-    return {'status': estado, 'reason': texto}
+    return {"status": "degraded", "reason": "corriendo; consulta de nuevo en 1 minuto"}
