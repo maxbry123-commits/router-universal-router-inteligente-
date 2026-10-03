@@ -566,6 +566,44 @@
       },
       "gap": "Runtimes sin instalar",
       "siguiente": "Ninguna"
+    },
+    {
+      "id_tarea": "S1-20",
+      "equipo": "EQUIPO-1",
+      "ronda": 7,
+      "estado": "CERRADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T03:58:45Z",
+      "accion": "E-10 (gap de Sol): evidencia global de los 8 equipos, 112 entradas.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EVIDENCIA-GLOBAL.json"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Generado de los 8 EQUIPO-N-*.json; sha256 muestreado por equipo."
+      },
+      "gap": null,
+      "siguiente": "Ninguna"
+    },
+    {
+      "id_tarea": "S1-21",
+      "equipo": "EQUIPO-1",
+      "ronda": 7,
+      "estado": "CERRADO",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T03:58:45Z",
+      "accion": "E-12 (gap de Sol): auditoria final CB-1 a CB-9 con muestreo sha256.",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/AUDITORIA-FINAL.md"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "Generado de los 8 EQUIPO-N-*.json; sha256 muestreado por equipo."
+      },
+      "gap": null,
+      "siguiente": "Ninguna"
     }
   ],
   "bitacora": [
@@ -662,6 +700,14 @@
     {
       "fecha_utc": "2026-10-03T03:31:18Z",
       "texto": "[2026-10-03T03:31:18Z] EQUIPO-1 pasos 1-3: S1-19 CERRADO_REF"
+    },
+    {
+      "fecha_utc": "2026-10-03T03:58:45Z",
+      "texto": "[2026-10-03T03:58:45Z] EQUIPO-1: S1-20 CERRADO"
+    },
+    {
+      "fecha_utc": "2026-10-03T03:58:45Z",
+      "texto": "[2026-10-03T03:58:45Z] EQUIPO-1: S1-21 CERRADO"
     }
   ],
   "handoff": {

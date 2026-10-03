@@ -1,0 +1,3107 @@
+{
+  "schema": "yaiwes.evidencia-global/v1",
+  "generado_utc": "2026-10-03T03:58:22Z",
+  "fuente": "los 8 EQUIPO-N-*.json",
+  "resultado": [
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-01",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+          "sha256": "752c719ba501d682c0dcaa8d04b16ecac94b7396d88588d2bd73281b275dcdad"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-02",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+          "sha256": "ec37a819ddad07a2c9c3ab804929e2f2462a43a9d92f7dfab5bac2596706fb25"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-03",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+          "sha256": "7494fc149b785ae143368aa2b68eca3d0fb74a87bd1498fd6398d6cfe076eb5c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-09",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker1.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker1.txt",
+          "sha256": "9dfcb1eba7c4f33ac564676927d9e4af464662dfe65c5723012a6831c7fbe247"
+        },
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker2.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker2.txt",
+          "sha256": "4a45e713805882566040e1621ae3dcd4fa2b2dfebbc38f7e53f7cf3c50176b6a"
+        },
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker3.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker3.txt",
+          "sha256": "b0e176849d62890f9b2b7fae15ee30ba9767335be4b2cf7167cc4b169445b507"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-11",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11.txt",
+          "sha256": "9ffcb6e4e38a7291272c78fcaf15086c2fd8916d491bef47417fbe145c6277d7"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-10",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-10.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-10.md",
+          "sha256": "d205ece3b8c7509a26105df4453ed836640b0f7f23b0ec87d0f86daed4b9f030"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-04",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-04.txt",
+          "sha256": "349ffeade42ad5dd40db1f4a524e2aefe50e7ca3bace9f5b287fc602e1410054"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-05",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05.txt",
+          "sha256": "7ed460679c95e8ce3fc96bda90220c72c0d5f4626fca7d194fb7d63cd5564d27"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-06",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-06.txt",
+          "sha256": "2cd3a879b60a4cd55bf234d38f22ac1d528130165bc05e13190ed857ce55d158"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-07",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-07.txt",
+          "sha256": "c4a9d02fd6debdac5f1f005fc2f7eff28b21ee5a7525c72dda02f3615f713cc7"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-08",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+          "sha256": "9706c7d3f69b1483f8313975cc2172e82e166b99d1bf345e75544c9e0ffbeeda"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-12",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-12.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-12.md",
+          "sha256": "85edaffb697584d43fd047a771946b945d3eb93a40e43fa73b2babb3e514ffe3"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-11",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
+          "sha256": "8b358d16c63c3886b771aba4dfd90b98ead3ade6f0e1aaafa5563566d91a924a"
+        },
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-nueva.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-nueva.txt",
+          "sha256": "11db907f101045d239e70896f98991ed799e464c29aa322cb25d0c13b7fa49b3"
+        },
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
+          "sha256": "3c31e7d8f3f204a804bb4e1393ab32183b3d7a8018743c00efe9ad50f4bfae59"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-09",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09b.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09b.txt",
+          "sha256": "be616655a9677bd511995a68b121385fec52853c4a245858d14c270be9c92e2f"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-13",
+      "estado": "CERRADO",
+      "archivos": []
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-11",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11c.txt"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-14",
+      "estado": "CERRADO",
+      "archivos": []
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-05",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05b.txt"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-05",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05c.md"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-16",
+      "estado": "CERRADO",
+      "archivos": []
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-17",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-17-ARCHIFY-RUTA.md"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-18",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-18-ARBOL-REAL.md"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-1",
+      "id_tarea": "S1-19",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-19-MEMORIA-HARNESS.yaml"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-03",
+      "estado": "CERRADO",
+      "archivos": []
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-04",
+      "estado": "CERRADO",
+      "archivos": []
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-01",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md",
+          "sha256": "6759614bd896c6b849f56860ca09c52e2a06210507b951eb01cdba53c053f987",
+          "commit": "3e9fd06"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-02",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-01-H-02-H-05-inventario-mapa.md",
+          "sha256": "6759614bd896c6b849f56860ca09c52e2a06210507b951eb01cdba53c053f987",
+          "commit": "3e9fd06"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-05",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/➡️📂 Wordflow LOOP Yaiwes/",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/devin/1790824641-chat-agent-plan/chat%20router/%E2%9E%A1%EF%B8%8F%F0%9F%93%82%20Wordflow%20LOOP%20Yaiwes",
+          "sha256": "6759614bd896c6b849f56860ca09c52e2a06210507b951eb01cdba53c053f987",
+          "commit": "3e9fd06"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-06",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "copiado",
+          "path": "chat router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md",
+          "sha256": "48aa73590c8314b0d9b152e527f18fad429b2dd25a6e2a4beca73e647b663696"
+        },
+        {
+          "operacion": "copiado",
+          "path": "chat router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-3.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-3.md",
+          "sha256": "5ed6d55b9f5e57b0eb00bc033e6e1335f50fb195e5dbcfbe4ef886ccae476fec"
+        },
+        {
+          "operacion": "copiado",
+          "path": "chat router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-4.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL-PARTE-4.md",
+          "sha256": "6f284458dd260fb03bce62b17f16adfe06de0636b2089746fb3485ed83e55bf9"
+        },
+        {
+          "operacion": "copiado",
+          "path": "chat router/01-PLAN/ORQUESTADOR-DE-TRABAJO.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/ORQUESTADOR-DE-TRABAJO.yaml",
+          "sha256": "d5b4478dde72888eed331ebd1983fde07389a5027fe682025fe97321ec312bf6"
+        },
+        {
+          "operacion": "copiado",
+          "path": "chat router/01-PLAN/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml",
+          "sha256": "837335e73ecc209789593ae4f27b756113fa55d170ca146e3b4c9dbfec882bc8"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-06-H-09-H-07-ronda-1-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-06-H-09-H-07-ronda-1-sol7.md",
+          "sha256": "d93c4df8022153d75de692a5d60409600d0decf8bae02aa97b04069329a73b37"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-09",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/01-PLAN/ROOT-MAP-T11.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/ROOT-MAP-T11.yaml",
+          "sha256": "566be5a83ba56ae631445a43f98a3a311bf9541ebd61ab3f7af934ceac5a2d8b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-06-H-09-H-07-ronda-1-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-06-H-09-H-07-ronda-1-sol7.md",
+          "sha256": "d93c4df8022153d75de692a5d60409600d0decf8bae02aa97b04069329a73b37"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-07",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/adapters/seals_motors/motor_3_copy_batches.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/adapters/seals_motors/motor_3_copy_batches.py",
+          "sha256": "964ec046fa04226b903d4a7a3110eb3d0e24a1a026664c8307f948bdafbd30fe"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-06-H-09-H-07-ronda-1-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-06-H-09-H-07-ronda-1-sol7.md",
+          "sha256": "d93c4df8022153d75de692a5d60409600d0decf8bae02aa97b04069329a73b37"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-07",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "sha256": "fe87088da80ee1d05f08b4a6bb71c192b5b61c0f39ba6f704ab9cb6c5da3147f"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-08",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "sha256": "fe87088da80ee1d05f08b4a6bb71c192b5b61c0f39ba6f704ab9cb6c5da3147f"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-11",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-07-H-08-H-11-ronda-2-sol7.md",
+          "sha256": "fe87088da80ee1d05f08b4a6bb71c192b5b61c0f39ba6f704ab9cb6c5da3147f"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-2",
+      "id_tarea": "H-12",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "Devin notas/NOTA-2026-10-03-equipo-2-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/Devin%20notas/NOTA-2026-10-03-equipo-2-sol7.md",
+          "sha256": "53bd00e6ad60ce732563fb67ef13fdefb166a63cc3b53e8fe62d0b26c53c9c59"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/watchdog_checkpoint.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/watchdog_checkpoint.py",
+          "sha256": "35b0dee238e3d5de0030967218e605e28fa7a1c01664c4a8b896d71e1c2c156a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-2/H-12-ronda-final-sol7.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-2/H-12-ronda-final-sol7.md",
+          "sha256": "76b5098cb019ff4381ea4c1b27c17d42f7c3fab360d64138b529c7781295004d"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-01",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/anthropic-skills/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/anthropic-skills/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "sha256": "24f72038a5dce397658c021dee697dd1e8d5b6f4a4661a6e915a1000d2cd84da"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/anthropic-skills/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/anthropic-skills/code/README.md",
+          "sha256": "2fb9c4cc026366ea6e21c60cb23c908a4d27c62071819cc06beffaac102d0694"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "98a4ef63511b9d5a2376398625ef0a494f94f235d400b90d0d2c7b402f55144c",
+          "commit": "f9591b84"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+          "sha256": "e4a3994e08ec2ccac012ecfb980628edc8f2d2fa11dfd708afd8260e1954db3c",
+          "commit": "1bec72f8"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_skills_schema.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/tests/test_skills_schema.py",
+          "sha256": "36f722e186a09c318b6dc9ac107f21c0c05520c1ee0564de8ceccb01d0af38df",
+          "commit": "fa97c09b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+          "sha256": "28dc629b0fbdebfe9fe328916db355b1ce7c5fd6979abe2aa71ee1668d1f7c4e"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-02",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapling/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapling/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "sha256": "865f30cce8daa3ac213d86991482b9d9225c27ccf3884a405c58fd9b988ebfed"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapling/code/pyproject.toml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapling/code/pyproject.toml",
+          "sha256": "0d124f6e5af885e5b189fed7a3b7f0c7c87ee7e10fb145c6250906f286e45a27"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "98a4ef63511b9d5a2376398625ef0a494f94f235d400b90d0d2c7b402f55144c",
+          "commit": "f9591b84"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapling.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/scrapling.dag.yaml",
+          "sha256": "c7bb9de749899964b4a1eacb3f9126e8a4af331dcde6be62aa06a329b00a6628",
+          "commit": "4c10714a"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_skills_schema.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/tests/test_skills_schema.py",
+          "sha256": "36f722e186a09c318b6dc9ac107f21c0c05520c1ee0564de8ceccb01d0af38df",
+          "commit": "fa97c09b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+          "sha256": "b52fe367c0fe9d24b0558248a1cd5ea0db1d01dbfc1563542711de857231c2fd",
+          "commit": "d04e5492"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-03",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapegraph-ai/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapegraph-ai/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "sha256": "9322f0e4fc27b321b50ed69219a19832e691e41d0978cabc2bc6f5bfb13c90fa"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapegraph-ai/code/pyproject.toml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapegraph-ai/code/pyproject.toml",
+          "sha256": "237886e8d26ff692be3708168c97ea101791547b614e2bd4aecba5526055951c"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "98a4ef63511b9d5a2376398625ef0a494f94f235d400b90d0d2c7b402f55144c",
+          "commit": "f9591b84"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+          "sha256": "59f763037e1abb0c618bee9c7be7f2006416e381ca1100d7b6aa01bd6707605a",
+          "commit": "dd1feb92"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_skills_schema.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/tests/test_skills_schema.py",
+          "sha256": "36f722e186a09c318b6dc9ac107f21c0c05520c1ee0564de8ceccb01d0af38df",
+          "commit": "fa97c09b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+          "sha256": "70a9be006433860b225857e5882f8f34b23adaff5ae7417b38c0658fcbfd9e24",
+          "commit": "4b7d1b89"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-04",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/agent-reach/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/agent-reach/DOWNLOAD_EXTRACT_MANIFEST.json",
+          "sha256": "54d0d911ed762a8f3873f388a935efac6bdbd2da7d9b18fbd960f42b6ca189bf"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/agent-reach/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/agent-reach/code/README.md",
+          "sha256": "7b723bcd4e5992c37ad1c25c3a2badd89c723a105b787fde9d1aa19a215f7ff7"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "cc5d4c4bb841fe9a99fe5602482f517060b9f43ab761f45fbb5b38006f288c89"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/agent-reach.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/agent-reach.dag.yaml",
+          "sha256": "6f7fdd4f870789bfd56809f78f792881305e03172853e3d6aa1ce8d538849516"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-04.txt",
+          "sha256": "5e7cbf5c20f37e0cb16794baaf8ac7dbb62435c2bbadfda5840b76675fc0111f"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-05",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/anthropic-skills/code/skills/skill-creator/SKILL.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/anthropic-skills/code/skills/skill-creator/SKILL.md",
+          "sha256": "dcd4803e61e913e6fc27294184cd3a71f09f5e924ff20c8a9a20173e7b3c2bcf"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-05.txt",
+          "sha256": "621c5d403df60824d40a7a6ff043c1463f85fa6e2787c4a97c4b09c58f325ae7"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-06",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapling/code/scrapling/__init__.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapling/code/scrapling/__init__.py",
+          "sha256": "c77a1bb065a2a0f78296f3b555f2522af68aee7f9d8e6b6ecc5c393bb396ec88"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-06.txt",
+          "sha256": "a070ff2c4bee273e61f33066913e0ae0607a1065e8f34432cac3bf5b0168fc41"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-07",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/scrapegraph-ai/code/scrapegraphai/utils/cleanup_code.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/scrapegraph-ai/code/scrapegraphai/utils/cleanup_code.py",
+          "sha256": "44d241aad43a7b442ee4c365b5117425d40fc80bf7a42a50cdda04b022a9503a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+          "sha256": "7e5d678c6be57393498418f48ccbfa44c397a6754e07a7cb6c37bb6ab12cb31a"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-08",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/agent-reach/code/agent_reach/utils/text.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/agent-reach/code/agent_reach/utils/text.py",
+          "sha256": "6faf82ba308cb300377a14de66207c88284a3f3372facd5bfc2a412fdb93f3ae"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+          "sha256": "e9cf81c62a45045cbdfeb3e03dc473f20bbec69719ceb66fe804c3f222985424"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-09",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "6dc84e5c82cfc91c2cc74aec76704a955f7e51017e2b3b00127cd5b64951e0d9"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+          "sha256": "28d362f65d34b7cb872a75cc08cdc68ea5a1ecdb5366de3270657a0f9aac7403"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-10",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/anthropic-skills.dag.yaml",
+          "sha256": "e4a3994e08ec2ccac012ecfb980628edc8f2d2fa11dfd708afd8260e1954db3c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapling.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/scrapling.dag.yaml",
+          "sha256": "c7bb9de749899964b4a1eacb3f9126e8a4af331dcde6be62aa06a329b00a6628"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/scrapegraph-ai.dag.yaml",
+          "sha256": "59f763037e1abb0c618bee9c7be7f2006416e381ca1100d7b6aa01bd6707605a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/agent-reach.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/agent-reach.dag.yaml",
+          "sha256": "6f7fdd4f870789bfd56809f78f792881305e03172853e3d6aa1ce8d538849516"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+          "sha256": "fc5871fa0395ed169ae580ec146e6989028b5ca5228676571a19bf8178b88400"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-11",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/tests/test_orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/tests/test_orchestrator_adapters.py",
+          "sha256": "3245c3685cc47e33841cce04515c73610f80677e0ae8d5c3b26cd18c0b98c15f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+          "sha256": "88f9c07d908b4a9c6e256e489a43bd60203123e510938ec2695767dbd2437642"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-3",
+      "id_tarea": "A-12",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-12.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-12.txt",
+          "sha256": "b92341675aa4f4c3fdda68221faa2c01b32fb28998558909095e71ba6edb87db"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-01",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/runtime/src/core/graph_visual_projection.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/runtime/src/core/graph_visual_projection.py",
+          "sha256": "0ea3060afc6f4b5d73dd23e2559693166ab4d26f7432054590ffd1925fcabaa0"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-02",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/Crazy Wall Orquestador/TASK-NODES.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/Crazy%20Wall%20Orquestador/TASK-NODES.json",
+          "sha256": "b40d9dfa8530e0ae718569310c45cd696f77957ff83cdf498209b1e3c92d844b"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/Crazy Wall Orquestador/CHECKPOINT.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/Crazy%20Wall%20Orquestador/CHECKPOINT.json",
+          "sha256": "205fd8a4b15bca7eca8862928226fb04bedd985db82051eb3ff5927d5b8fac48"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "sha256": "18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-03",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "sha256": "18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-04",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "sha256": "3b62a7efce0c67209b3f526949980e0bca2e26047e6eccb323634ae033628e69"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-05",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+          "sha256": "18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "sha256": "3b62a7efce0c67209b3f526949980e0bca2e26047e6eccb323634ae033628e69"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-06",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+          "sha256": "3b62a7efce0c67209b3f526949980e0bca2e26047e6eccb323634ae033628e69"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-12",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "sha256": "d6a67fd45a8979f018206212e481a66f6f54b5cd62d3b582520af708e181479d"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-2-HAIKU.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-2-HAIKU.json",
+          "sha256": "8cf2de8201fd65b8b1ec5183dee4d4224e72fff056e314513b6fb664c2581803"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "sha256": "bfb093d735e765c6770e272a0e2b512f964116fc5e97173784e3c60784f7cfc4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+          "sha256": "da5c926c370965bc080599009659a8fab9f8e786cb379e530fca6df77ddfef36"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "sha256": "2fcd4814ed7756e1753560b66e6254f89539592e8adb08e7da01fc64a82b40eb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "sha256": "1ddd91966a6006a6027cdd2eed1f2ad6ce35a56e3e539f40de324941111c7bbe"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json",
+          "sha256": "84f5f52d244d1b4339f8119f1a359bfe6f59bb0ba0e794a41843a22598f5176a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B-12-gaps-globales.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B-12-gaps-globales.json",
+          "sha256": "9ee48e5487ea2ff695bcf07e6ef4580b7a94214c930031e0b624610e19eac164"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-07",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B-07-o4-completion-audit.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B-07-o4-completion-audit.json",
+          "sha256": "25ecc85a283e52ec6f66a6531e6554a4fa5466e7e64e1b75765613e0e28fd0e3"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-08",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B-08-mapa-vivo-equipos.html",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-4/B-08-mapa-vivo-equipos.html",
+          "sha256": "806631fcb3e94e52f06d5d5ef3a53e7b1a44d6d5ca86e323a4752b9eba8bf841"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-09",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "sha256": "68b174bbe7efb43461fecbce7af99a7e1e9a176c55376eee2e3acda88bbbc1f6"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+          "sha256": "752c719ba501d682c0dcaa8d04b16ecac94b7396d88588d2bd73281b275dcdad"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+          "sha256": "ec37a819ddad07a2c9c3ab804929e2f2462a43a9d92f7dfab5bac2596706fb25"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+          "sha256": "7494fc149b785ae143368aa2b68eca3d0fb74a87bd1498fd6398d6cfe076eb5c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-04.txt",
+          "sha256": "349ffeade42ad5dd40db1f4a524e2aefe50e7ca3bace9f5b287fc602e1410054"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05.txt",
+          "sha256": "7ed460679c95e8ce3fc96bda90220c72c0d5f4626fca7d194fb7d63cd5564d27"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-06.txt",
+          "sha256": "2cd3a879b60a4cd55bf234d38f22ac1d528130165bc05e13190ed857ce55d158"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-07.txt",
+          "sha256": "c4a9d02fd6debdac5f1f005fc2f7eff28b21ee5a7525c72dda02f3615f713cc7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+          "sha256": "9706c7d3f69b1483f8313975cc2172e82e166b99d1bf345e75544c9e0ffbeeda"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker1.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker1.txt",
+          "sha256": "9dfcb1eba7c4f33ac564676927d9e4af464662dfe65c5723012a6831c7fbe247"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker2.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker2.txt",
+          "sha256": "4a45e713805882566040e1621ae3dcd4fa2b2dfebbc38f7e53f7cf3c50176b6a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker3.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker3.txt",
+          "sha256": "b0e176849d62890f9b2b7fae15ee30ba9767335be4b2cf7167cc4b169445b507"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-10.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-10.md",
+          "sha256": "d205ece3b8c7509a26105df4453ed836640b0f7f23b0ec87d0f86daed4b9f030"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11.txt",
+          "sha256": "9ffcb6e4e38a7291272c78fcaf15086c2fd8916d491bef47417fbe145c6277d7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-12.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-12.md",
+          "sha256": "85edaffb697584d43fd047a771946b945d3eb93a40e43fa73b2babb3e514ffe3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
+          "sha256": "8b358d16c63c3886b771aba4dfd90b98ead3ade6f0e1aaafa5563566d91a924a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-nueva.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-nueva.txt",
+          "sha256": "11db907f101045d239e70896f98991ed799e464c29aa322cb25d0c13b7fa49b3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
+          "sha256": "3c31e7d8f3f204a804bb4e1393ab32183b3d7a8018743c00efe9ad50f4bfae59"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09b.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09b.txt",
+          "sha256": "be616655a9677bd511995a68b121385fec52853c4a245858d14c270be9c92e2f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11c.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11c.txt",
+          "sha256": "0508cd41a65f6143eb9b0fff92c7ddb7b1accb15511d3bb1e2660e338c0a0271"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-10",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "sha256": "bfb093d735e765c6770e272a0e2b512f964116fc5e97173784e3c60784f7cfc4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "sha256": "2fcd4814ed7756e1753560b66e6254f89539592e8adb08e7da01fc64a82b40eb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+          "sha256": "28dc629b0fbdebfe9fe328916db355b1ce7c5fd6979abe2aa71ee1668d1f7c4e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+          "sha256": "b52fe367c0fe9d24b0558248a1cd5ea0db1d01dbfc1563542711de857231c2fd"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+          "sha256": "70a9be006433860b225857e5882f8f34b23adaff5ae7417b38c0658fcbfd9e24"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-04.txt",
+          "sha256": "5e7cbf5c20f37e0cb16794baaf8ac7dbb62435c2bbadfda5840b76675fc0111f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-05.txt",
+          "sha256": "621c5d403df60824d40a7a6ff043c1463f85fa6e2787c4a97c4b09c58f325ae7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-06.txt",
+          "sha256": "a070ff2c4bee273e61f33066913e0ae0607a1065e8f34432cac3bf5b0168fc41"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+          "sha256": "7e5d678c6be57393498418f48ccbfa44c397a6754e07a7cb6c37bb6ab12cb31a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+          "sha256": "e9cf81c62a45045cbdfeb3e03dc473f20bbec69719ceb66fe804c3f222985424"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+          "sha256": "28d362f65d34b7cb872a75cc08cdc68ea5a1ecdb5366de3270657a0f9aac7403"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+          "sha256": "fc5871fa0395ed169ae580ec146e6989028b5ca5228676571a19bf8178b88400"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+          "sha256": "88f9c07d908b4a9c6e256e489a43bd60203123e510938ec2695767dbd2437642"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "sha256": "60a205a9d20f19703a7b3def2683073f1137c072e8b8e18c59d7828b78f3cc2b"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "sha256": "061ca4f25102999546b963f52d6993c3af56ba94a8a1351fd96bfeec16913620"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "sha256": "feded4a5eb9c3bad824386b05a931ede1d4722b1099849e764d001fce686c521"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/superpowers.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/superpowers.dag.yaml",
+          "sha256": "f989a28f31b9f3b403f43cb6a9e2aa82d7563911651a47e00e1a369e3700d845"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/get-shit-done.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/get-shit-done.dag.yaml",
+          "sha256": "06406c83277f402db448b0d4aab6a4830f490782b0c710b79f36d8b70d4fe3bb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/find-skills.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/find-skills.dag.yaml",
+          "sha256": "5fa64436a86caa72a6ca4cf7c2df0d7c81bb823034e29d4ec6006bddf1b0c8cc"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/local-ultra-review.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/local-ultra-review.dag.yaml",
+          "sha256": "57cf45ff2046e588d4a3f0dd7b7d9745708f9c719cbb1221e7564c5410accdb8"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/one-skill-to-rule-them-all.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/one-skill-to-rule-them-all.dag.yaml",
+          "sha256": "e7df5e14953144bd27c0336b53e831869723481b133f9a741f33c497c5773b62"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+          "sha256": "875fa6b965c1a4e208fd9c73b77e93100ed11d40e8f9a2109396ff9c14a22f14"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt",
+          "sha256": "216916bf9fac4d982664722d43a80b92b1e966d1d78ca888a4ef8536e6e42880"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "sha256": "cfcee03b9cd3612958342ae6c0a4e04b9e94bd8e4ac433354b512de133b33bb6"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-4",
+      "id_tarea": "B-11",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "sha256": "1ddd91966a6006a6027cdd2eed1f2ad6ce35a56e3e539f40de324941111c7bbe"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json",
+          "sha256": "c3852346a109891223d2432f529dd356448aef42b371de41dac426e3e00fce2f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json",
+          "sha256": "5ebadd7edf1245dfa85a8fb4b2f15f3948cdfd404365f8334bc5e73fb1afa7ba"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json",
+          "sha256": "b39a1d6ada0371e83f60c552458b925a3ec8a1b687074ba321d1ff37e248aba6"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json",
+          "sha256": "849933e561a40033350fc09792c59837be30b31d239750c66a3bf8fc0f534567"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json",
+          "sha256": "425c4e33bce6024dfa433b2af93c359d69111ffb90bd74c78fb9315bd95670f4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json",
+          "sha256": "0c617d64c20a376f6557e20097e427b0c592d2706db503848694f0e8b1c05aad"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json",
+          "sha256": "f7a34b681717d95c4f2fd250d5a53c9d626b8e31af021394d0a0160b33c46fc3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json",
+          "sha256": "699e38423810d03ac8a2b6165d4c972d402c047cc94487dc2602c2db77af0bd9"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json",
+          "sha256": "5b358041f05129887d303e8cd600ebea85ee41ba73049a3945e54ec77a299289"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+          "sha256": "1a0828fd4e91cf1bb77556e380bf2063a607a8a773745e0cae5964c569876653"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json",
+          "sha256": "954ec31a290319fa9d194c622b622c2ec6a21f1efdcc4776eb57d22d7f97137f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+          "sha256": "819c1634811a658adf8dc3ade99eef57c0b836fee5bdd8fe3c90072b7ccbe864"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+          "sha256": "f8e256f5522a16242a2321cbcddad6fa9c572bdb6393df335679e9b8c32f3c5c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+          "sha256": "d2357acbc2b8b134b46d4f7c87ffc85050edf918c6c51915ce851f83a02d2159"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
+          "sha256": "367705a023204b68e7ba0c2c5c8c9344a053e319168389fe1447565c256bdf6b"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-04.txt",
+          "sha256": "2a5200a96fa1bbcbf3dca01ab5ddac72d1e97d07c1caf0a3712a68bf8d75d79e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-05.txt",
+          "sha256": "519df9c279504db64bc69a9a4cc21e413dfaba7f8931cb3e5700de801213ee41"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-06.txt",
+          "sha256": "c4a50a9dfe31c691d9f515d90d9ba922f75cd7b360c8fe535041a728fa88dc29"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-07.txt",
+          "sha256": "3138884cd9b92d97ab711a152e69b687606b29737180ea268e7be8519ff24fa7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-08.txt",
+          "sha256": "6ee6272586c35cabd3fa640a20016b7868dbe75cdf714046687aabee256d0f14"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-01",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "sha256": "60a205a9d20f19703a7b3def2683073f1137c072e8b8e18c59d7828b78f3cc2b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "sha256": "061ca4f25102999546b963f52d6993c3af56ba94a8a1351fd96bfeec16913620"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-02",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "sha256": "60a205a9d20f19703a7b3def2683073f1137c072e8b8e18c59d7828b78f3cc2b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "sha256": "061ca4f25102999546b963f52d6993c3af56ba94a8a1351fd96bfeec16913620"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-03",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/firecrawl-skills/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/firecrawl-skills/code/README.md",
+          "sha256": "35a283a7c1f456776597c4d6374d2fa7418b0a7c4f13725984f30aac3a96e569"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "93bbbe5052ca02eed9cba37500799d06528e4bc31b1e9fa29a88c936ec5297c6"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-agent.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-agent.dag.yaml",
+          "sha256": "91672b3446033fd37e602a1d99dd8ddfd9c1a5293ac300b553a6dc8b76f14ca2"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-alexandria.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-alexandria.dag.yaml",
+          "sha256": "02ec216603493253d5993a197451db3a41fe788779ec4c61a16b14af152c15bb"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-crawl.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-crawl.dag.yaml",
+          "sha256": "b021cff1352abdd82fc0ea781a2b4924d90fc30592a36b42face0319cafa6c6b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-developer-index.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-developer-index.dag.yaml",
+          "sha256": "e07133fbb2eb9ad82faf5cca48ff6c2f5696470b33482cec6538a4f7e740688d"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-download.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-download.dag.yaml",
+          "sha256": "5419ed9bb45a770afb1ceb6f483e1546a59b1acd6d53ab4f43453c9db0a3bd73"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-interact.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-interact.dag.yaml",
+          "sha256": "d51e5464e87be04df4ce3f63648c1d017119f393fbbdd7cee897eadb68fa9b31"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-map.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-map.dag.yaml",
+          "sha256": "b4d438c57a0c623bc426f835d50b1c866b4bfb61002ffa02ecc941e69129aa65"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-monitor.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-monitor.dag.yaml",
+          "sha256": "77297d68ef518dcfd990c94fecfabac2986733cbcd62dce7df016bb3540681cc"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-parse.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-parse.dag.yaml",
+          "sha256": "0f10e87ec8a281f62382905b921908886f323825ba943729116c5ae06dad8de4"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-research-index.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-research-index.dag.yaml",
+          "sha256": "08b34e5c5fc7c707c1684b1f1806e1b43749334db028a7e2cd48318d83395729"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-scrape.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-scrape.dag.yaml",
+          "sha256": "a2540f9d984a535cfeb58e5af691a5ffa172caf325d043dec38d053503e12de8"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-search.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-search.dag.yaml",
+          "sha256": "39e651a8d2e7217de659595e7dd83bd4d1518bd3b3ef215df18003dd4471c0f5"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl.dag.yaml",
+          "sha256": "4836010164ce6162f69600dd8acab700157d9bbc78dbaca2d62c255d5ab9a20e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-interact.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build-interact.dag.yaml",
+          "sha256": "d9b6c7213519ed3d6facd08e02786d21079bc0b82df19528ea4a9e565ae9c952"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-onboarding.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build-onboarding.dag.yaml",
+          "sha256": "7993874ff4b839a02491f197301b1ebcd1a291752bcd4a5c11329717969e3115"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-scrape.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build-scrape.dag.yaml",
+          "sha256": "5b0c034b1a20a93b22c9cecc623a71617dc9a4b876a8075fb52da45c09b75cb0"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build-search.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build-search.dag.yaml",
+          "sha256": "fcbb0e842ae10f0a6afb82c2637912c1c55a3fa454b4a22dc81d00233e34adac"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-build.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-build.dag.yaml",
+          "sha256": "d699bbaa9cbcf2da8f596c70d4462025ab0971ca1ef3756b3b26ddc469f8174f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-company-directories.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-company-directories.dag.yaml",
+          "sha256": "919e8e1e54979dd135f21673ec837fbf84d7ce1bc97ff100896b18e222711ba5"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-competitive-intel.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-competitive-intel.dag.yaml",
+          "sha256": "f3d5066de157837d39111361059b4f1008394596514fe3cbd8bb7e82f2765400"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-dashboard-reporting.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-dashboard-reporting.dag.yaml",
+          "sha256": "580aa3f1efeb92702c8b6eac520b313dc3f360cc86d3da549d3d595944ab88d7"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-deep-research.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-deep-research.dag.yaml",
+          "sha256": "352191b1c685b1cda0a0c83e8b63eaeafd7776e114e0b802b66512631b655468"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-demo-walkthrough.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-demo-walkthrough.dag.yaml",
+          "sha256": "8ded7bf7568ddd666ffc388727b405a83c8d970c6023d94bde1a5ff675461fca"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-knowledge-base.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-knowledge-base.dag.yaml",
+          "sha256": "d28183cda2d213e964eb5edf010b2e54a06a01fdeb129055e056fbcf2eb7d9a5"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-knowledge-ingest.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-knowledge-ingest.dag.yaml",
+          "sha256": "b604a8d0fe62e527a98024142109d7991871eb18f865e6d6a926cf1d8011f7f1"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-lead-gen.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-lead-gen.dag.yaml",
+          "sha256": "984ffd1169d92d64db16c4905fb66c90a56eb01c8bab8c070053a14e2751ffff"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-lead-research.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-lead-research.dag.yaml",
+          "sha256": "b5dbd97192de1bbb19f146b99e7c2da2799a8b765d5474621adc08624b17a21b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-market-research.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-market-research.dag.yaml",
+          "sha256": "ff0903f9a586316466243a9f2a4e525bb43aaf45822df040796ff8b959ce3581"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-qa.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-qa.dag.yaml",
+          "sha256": "b1c359f1af515206abd7c7bacfcc07c5c21498825b27b5b1d1ebd002380e513e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-research-papers.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-research-papers.dag.yaml",
+          "sha256": "7928414f8c9405add6cf0dea0bc7dfcb5d418bbc784e56aed32261898151954e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-seo-audit.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-seo-audit.dag.yaml",
+          "sha256": "5c300d15f670b749c8aa0edde9a1e811743561e03a64f5606adec61a88b1dae0"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-shop.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-shop.dag.yaml",
+          "sha256": "2ba856205ac81f2ce77bfbe37038ad6752b0083fd269aa39af7dfb9e899c246f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-website-design-clone.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-website-design-clone.dag.yaml",
+          "sha256": "34b0d3ac1d3decc2e5dd64603e9fd42e8cd105c2563af736a0437e50783df4ab"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/firecrawl-workflows.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/firecrawl-workflows.dag.yaml",
+          "sha256": "8790d8943989f0f783f4de31ea6ae94f1ca331b66da2724e65403ad3fe4f5a3c"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "sha256": "061ca4f25102999546b963f52d6993c3af56ba94a8a1351fd96bfeec16913620"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-04",
+      "estado": "CERRADO_REF",
+      "archivos": []
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-05",
+      "estado": "CERRADO_REF",
+      "archivos": []
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-06",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "703bfa554a5c7997c506cf978a005bb10fcfd817471618318ca10bdbd00cf01d"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "sha256": "feded4a5eb9c3bad824386b05a931ede1d4722b1099849e764d001fce686c521"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-07",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/superpowers.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/superpowers.dag.yaml",
+          "sha256": "f989a28f31b9f3b403f43cb6a9e2aa82d7563911651a47e00e1a369e3700d845"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/get-shit-done.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/get-shit-done.dag.yaml",
+          "sha256": "06406c83277f402db448b0d4aab6a4830f490782b0c710b79f36d8b70d4fe3bb"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/find-skills.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/find-skills.dag.yaml",
+          "sha256": "5fa64436a86caa72a6ca4cf7c2df0d7c81bb823034e29d4ec6006bddf1b0c8cc"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/local-ultra-review.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/local-ultra-review.dag.yaml",
+          "sha256": "57cf45ff2046e588d4a3f0dd7b7d9745708f9c719cbb1221e7564c5410accdb8"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/one-skill-to-rule-them-all.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/one-skill-to-rule-them-all.dag.yaml",
+          "sha256": "e7df5e14953144bd27c0336b53e831869723481b133f9a741f33c497c5773b62"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-08",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/onlook/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/onlook/code/README.md",
+          "sha256": "92fbf0110a4ffc2245e5d83a1516b2b9281f6f9d4a2c687524f5ec5f2683b5b0"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/webstudio/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/webstudio/code/README.md",
+          "sha256": "7bf0b6e21c0328b786d91684e0abb8298477b9ba16993712d0f132193584e0cc"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/recordly/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/recordly/code/README.md",
+          "sha256": "8fe29746eabe74c144f554508342d698d2c4922bc5ee56b448f00097495fc262"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "e6151fdfb470e5d36fef2693631439a1ac54d26623cf267c019142da6955da09"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+          "sha256": "875fa6b965c1a4e208fd9c73b77e93100ed11d40e8f9a2109396ff9c14a22f14"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-09",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/headroom/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/headroom/code/README.md",
+          "sha256": "e8cb1c249cce0ce66587cc3b77c1e74fa74714e71d924537f9d02cdb8f9802d6"
+        },
+        {
+          "operacion": "leido",
+          "path": "router inteligente universal/Componente open soure router inteligente universal/context-mode/code/README.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/2a82723d345aaae4582aac5a49cd4174afcc8961/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/context-mode/code/README.md",
+          "sha256": "6cc274722b7fdc7ed1636a88eeeeeb650d85ed219cc5c7e391e629b9a7eb2d05"
+        },
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "e6151fdfb470e5d36fef2693631439a1ac54d26623cf267c019142da6955da09"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt",
+          "sha256": "216916bf9fac4d982664722d43a80b92b1e966d1d78ca888a4ef8536e6e42880"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-10",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "sha256": "47f8ce6dec9e1d7812c5d70f085d07c8d201f3a10f43ec86dc01f29dd8a1e3c4"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-11",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+          "sha256": "756ae0fecaece38aa44d03f356a03c9f1ed39f361d79c11b5cfa01c72b5062aa"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "sha256": "47f8ce6dec9e1d7812c5d70f085d07c8d201f3a10f43ec86dc01f29dd8a1e3c4"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-5",
+      "id_tarea": "C-12",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "sha256": "47f8ce6dec9e1d7812c5d70f085d07c8d201f3a10f43ec86dc01f29dd8a1e3c4"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-01",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/03-ESTADO/MEMORIA-INVENTARIO.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/MEMORIA-INVENTARIO.json",
+          "sha256": "8c25bbb6f3bc4fa4b2cb228b9899c9bea505bd8fc8356acaa214997ead48e7d7"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json",
+          "sha256": "c3852346a109891223d2432f529dd356448aef42b371de41dac426e3e00fce2f"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-02",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/04-MEMORIA/GRAPHIFY-READONLY-CONTRACT.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/04-MEMORIA/GRAPHIFY-READONLY-CONTRACT.json",
+          "sha256": "859a72610ac8aea39dceeae7125d2d5274395f7762742bf1bd10ebae58397c04"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDEENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json",
+          "sha256": "5ebadd7edf1245dfa85a8fb4b2f15f3948cdfd404365f8334bc5e73fb1afa7ba"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-03",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json",
+          "sha256": "b39a1d6ada0371e83f60c552458b925a3ec8a1b687074ba321d1ff37e248aba6"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-04",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json",
+          "sha256": "849933e561a40033350fc09792c59837be30b31d239750c66a3bf8fc0f534567"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-05",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json",
+          "sha256": "425c4e33bce6024dfa433b2af93c359d69111ffb90bd74c78fb9315bd95670f4"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-06",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json",
+          "sha256": "0c617d64c20a376f6557e20097e427b0c592d2706db503848694f0e8b1c05aad"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-07",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json",
+          "sha256": "f7a34b681717d95c4f2fd250d5a53c9d626b8e31af021394d0a0160b33c46fc3"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-08",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json",
+          "sha256": "699e38423810d03ac8a2b6165d4c972d402c047cc94487dc2602c2db77af0bd9"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-09",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json",
+          "sha256": "5b358041f05129887d303e8cd600ebea85ee41ba73049a3945e54ec77a299289"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-10",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+          "sha256": "1a0828fd4e91cf1bb77556e380bf2063a607a8a773745e0cae5964c569876653"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-11",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/04-MEMORIA/ROUTER-NEEDS-MEMORIA.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/04-MEMORIA/ROUTER-NEEDS-MEMORIA.json",
+          "sha256": "e399b5c4449f402cc281f0f6a8755f7a43080144ff89a4b706d93364667a5075"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json",
+          "sha256": "954ec31a290319fa9d194c622b622c2ec6a21f1efdcc4776eb57d22d7f97137f"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-6",
+      "id_tarea": "D-12",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/04-MEMORIA/HANDOFF-MEMORIA-GAPS.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/04-MEMORIA/HANDOFF-MEMORIA-GAPS.json",
+          "sha256": "1f6ba2ef12e9b31ae253be004b4bd0e5458e43faa41a9a03d19e97aaef2bdc4a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+          "sha256": "819c1634811a658adf8dc3ade99eef57c0b836fee5bdd8fe3c90072b7ccbe864"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-01",
+      "estado": "BLOQUEADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "sha256": "0beb8898c0ecf27d85d7d632145ca54e554cb5b46341ae6510bdbaaccda635e6"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+          "sha256": "f8e256f5522a16242a2321cbcddad6fa9c572bdb6393df335679e9b8c32f3c5c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-02",
+      "estado": "BLOQUEADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "sha256": "0beb8898c0ecf27d85d7d632145ca54e554cb5b46341ae6510bdbaaccda635e6"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+          "sha256": "d2357acbc2b8b134b46d4f7c87ffc85050edf918c6c51915ce851f83a02d2159"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-03",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/HANDOFF.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/HANDOFF.md",
+          "sha256": "fb649478b60760d3dc26984131852ea67c15379b6aa4ae4a5cac9bd264ff481f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/PLAN-ACCION-XRAY.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/PLAN-ACCION-XRAY.md",
+          "sha256": "232a3baf1bb424c69d4bb162bcb5096c34703c802b8e2489754e5a4bf705d27f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
+          "sha256": "367705a023204b68e7ba0c2c5c8c9344a053e319168389fe1447565c256bdf6b"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-04",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-7-SOL-5.md",
+          "sha256": "0beb8898c0ecf27d85d7d632145ca54e554cb5b46341ae6510bdbaaccda635e6"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-04.txt",
+          "sha256": "2a5200a96fa1bbcbf3dca01ab5ddac72d1e97d07c1caf0a3712a68bf8d75d79e"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-05",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/PLAN-ACCION-XRAY.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/PLAN-ACCION-XRAY.md",
+          "sha256": "232a3baf1bb424c69d4bb162bcb5096c34703c802b8e2489754e5a4bf705d27f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-05.txt",
+          "sha256": "519df9c279504db64bc69a9a4cc21e413dfaba7f8931cb3e5700de801213ee41"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-06",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/PLAN-ACCION-XRAY.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/PLAN-ACCION-XRAY.md",
+          "sha256": "232a3baf1bb424c69d4bb162bcb5096c34703c802b8e2489754e5a4bf705d27f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-06.txt",
+          "sha256": "c4a50a9dfe31c691d9f515d90d9ba922f75cd7b360c8fe535041a728fa88dc29"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-07",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/ROOT-MAP-T11.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/ROOT-MAP-T11.yaml",
+          "sha256": "566be5a83ba56ae631445a43f98a3a311bf9541ebd61ab3f7af934ceac5a2d8b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/📂 workflow Loops code Yaiwes/README-ARQUITECTURA-BACKEND.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/README-ARQUITECTURA-BACKEND.md",
+          "sha256": "47c62fa90c543ef04047bb3ee4ce52ca4534cf1117ff0963b87c2ab38dd03145"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-07.txt",
+          "sha256": "3138884cd9b92d97ab711a152e69b687606b29737180ea268e7be8519ff24fa7"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-08",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "sha256": "f6fbbbf73bf19e1fe511030c04f1537058de50fd7f04509a77906425e99d21bf"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-2-HAIKU.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-2-HAIKU.json",
+          "sha256": "7d42e2ddd0cdff3ad17859af347e6ed5d42eb828ea7aac2e5840105a58d39949"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "sha256": "d8a9b57daa828772b9415bbdc4ac004420cd613b2fe9c9002d89de8c5a981b0e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+          "sha256": "7ff1a28566f12059d8a4eb968a20f90fed1e874955c75fbf034afee1d9dc0016"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "sha256": "aa5c0cce8573d9b30dc2c67c5f525a2e093db5568a206c7e9f0f705ffb2d39fe"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "sha256": "e82faa8580857186f6aa2777f1f71f11c93e70d1e2df32bc558c42df6ec3db9f"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-08.txt",
+          "sha256": "6ee6272586c35cabd3fa640a20016b7868dbe75cdf714046687aabee256d0f14"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-01",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-02",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-09",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-10",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-11",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-7",
+      "id_tarea": "E-12",
+      "estado": "CERRADO_REF",
+      "archivos": [
+        {
+          "operacion": "modificado",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-01",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+          "sha256": "72da4a525fa70f00ecd092f4f5dcc447af2e71b6df4d46470529257f3b19206e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-02-TOPOLOGY.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-02-TOPOLOGY.png",
+          "sha256": "0315bd92cde86256b969a37ad3e2dd31e26a934a68503b8a77f83f435ce3552e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-03-CONTRACT.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-03-CONTRACT.png",
+          "sha256": "fe285513646756c830eecaf168b7edb9e906fbb860aafb4f0bc9222d7294a071"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-04-SETTINGS.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-04-SETTINGS.png",
+          "sha256": "e9096bff9207767b31996c28e17c01ea3ab1c4dd6cb66f3f9a50f1ef5ed39b1f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-05-MOBILE.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-05-MOBILE.png",
+          "sha256": "602f7be1b2bf71b1ba2e2b43f91ece7a0eab6bc6ca6ce01ec5e9696d53bce38b"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-01.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-01.md",
+          "sha256": "2e3cbd2ef39d0c8cd6888fcf4b18cf045ffb833e203a0b8c01b283c50cfb8367",
+          "commit": "3390f28"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-02",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+          "sha256": "7e3c8822d876d5dcefeaceed80bcc83b3a693dcdcda8a3b4decabc34ac72f97c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052617_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052617_Edge.png",
+          "sha256": "34e59869bc7a8cad36d8afe4bf6fc153321c188abe5dd2a29a73a2e1ba028521"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge-2.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge-2.png",
+          "sha256": "3a6d5e8759146d9f89c3a5b9908abd6c44e1e2cfdf26c61198672616cbb8c850"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052636_Edge.png",
+          "sha256": "3a6d5e8759146d9f89c3a5b9908abd6c44e1e2cfdf26c61198672616cbb8c850"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-02.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-02.md",
+          "sha256": "9d3698ac3dcf89a7b783c29b3b5d2cfcb3761488848dc4584805b101379159aa",
+          "commit": "124cb7b"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-03",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053130_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053130_Edge.png",
+          "sha256": "d9747c2b2adbf5095d433bc4b8067a2985dd042f53fa6449f68389b5fb609d94"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053144_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053144_Edge.png",
+          "sha256": "059fce3f3a613f06c702c960bbccc2f59da017085815a3537751caf4099df40f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053202_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053202_Edge.png",
+          "sha256": "2b7f0af61986536ecbbb43a880ac95e9aa1bec49f358f4b1e34b04352e1a9012"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053222_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053222_Edge.png",
+          "sha256": "a80bfc3ce6040bdac559e0776cfa422686426d357b9a480fe92799556b9697e4"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-03.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-03.md",
+          "sha256": "39af0ebd77cc1ed01cc147126f48e2b32bfb18d3b0e41698e03e2ecc59734038",
+          "commit": "5ce31e2"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-04",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053226_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053226_Edge.png",
+          "sha256": "baacd73871b1d410633b08a323958b473c50ed0bfa6ba60662dae9206da63872"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053235_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053235_Edge.png",
+          "sha256": "26515fa4a8c627f860f54ac4dc3f4af896be61afeeb150fef86a8011cb43ecc4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053241_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-053241_Edge.png",
+          "sha256": "85970a78397f724040fccc311d90927964df4a465ea9b0b78dbaea674eb52cad"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-093043_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-093043_Edge.png",
+          "sha256": "2482e346b6a4ca8861fb5e5e444c84504fde90e8a4f04653921e3fc25441291c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-05",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio-1.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio-1.png",
+          "sha256": "c7781bf40f2b97f17b25c4c2b76aa8f80db40d24bfe9a78a730613e607209ce9"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio.png",
+          "sha256": "c7781bf40f2b97f17b25c4c2b76aa8f80db40d24bfe9a78a730613e607209ce9"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-PALETA-GRIS-desktop.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-PALETA-GRIS-desktop.png",
+          "sha256": "34d621befdb240f08059129374609a47b62dcfa08604ee153448f8eae5789c15"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260908-042403_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260908-042403_Grok.png",
+          "sha256": "8f1826c38305e4cfd80f8c9056099c10ad64de2a203ac54d4b5bf28d94af917d"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260924-014100_Firefox.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260924-014100_Firefox.png",
+          "sha256": "34fb0c34fc394803f7f8cedcb1ae88a155891b25e7fd3eb1cb84257a73cae98e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260926-215216_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260926-215216_Manus.png",
+          "sha256": "d16bcb9f2ae534422ec3079bc4a78df4b7bf65404f30a03870f2ec6f569f4838"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030938_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030938_Manus.png",
+          "sha256": "1d5464c773e02764d8d357e5d04b1dd5f169da5bf4bcb1a01367c695997532c7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030944_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030944_Manus.png",
+          "sha256": "ba352e286eb7eda82875e37494b1912b647851f8708387dbdd88884dd16e1f42"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030948_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030948_Manus.png",
+          "sha256": "5c185f8c084ca9b36154c408eb86a0186abe6f23db2028bef415aa551aa43659"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030958_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-030958_Manus.png",
+          "sha256": "10807a0bc1b94b0eec82fdde1897f5b69065fc5dba79a48cda092444f9acb84b"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031004_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031004_Manus.png",
+          "sha256": "0d29dd31ee67f2b6fba7bb355ba4816aadec5a776e308cb813c6aaac62b9711c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031013_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031013_Manus.png",
+          "sha256": "aed717c2c9bca70d0f774746a9e623b5db285efc9439f8bb31f5a61e697251fb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031023_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031023_Manus.png",
+          "sha256": "2cd32d2815e498f8ec25f9a16a6254f678b8997e6e01390ea17b9ac25c6b914c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031132_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031132_Manus.png",
+          "sha256": "1690e2472136c9c49aa549fd16d74a2f43d6bc4dbdae6d3b7c6708a0679feda0"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031141_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031141_Manus.png",
+          "sha256": "6f62da26f9fe29e2df520280d2538d710070272e41860089e470852c60a8f265"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031146_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031146_Manus.png",
+          "sha256": "e2eebe084b3b8aaec15e4322eb383c09cae1645aad535d63590452ca1f3b9feb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031153_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031153_Manus.png",
+          "sha256": "0935aac8381afa863b6f872bef58114126173c3f17cfd05df79874d2c7d5615d"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031158_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031158_Manus.png",
+          "sha256": "f27e4eebce1022b1565ab403e5c56677487fa5b7aa3ddb3d13fa7a2d432f3962"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031226_Grok Bot.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031226_Grok%20Bot.png",
+          "sha256": "7f5b72e987aca21f4558962c9b267bb42852a0d8d08361114d133c67effb1c3e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031230_Grok Bot.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031230_Grok%20Bot.png",
+          "sha256": "8ed29c1e65b343b8a34e5a7675a166c2a9d5f83e016359a5c7a6f1b265af0e4d"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031235_Grok Bot.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031235_Grok%20Bot.png",
+          "sha256": "5619a02f8738451aede6a242d17ccf5cfe3f7908171b3487c810d4389d145757"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031251_Grok Bot.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031251_Grok%20Bot.png",
+          "sha256": "c57b40cdaa91c1c5b13346242300a6b27e2f580237003c1ff69127d41c55eb71"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-06",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031315_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031315_Edge.png",
+          "sha256": "24163477df76a7433f4846960817c9c5c84402bdb136e2bb99a54a639946f7a6"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031320_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031320_Edge.png",
+          "sha256": "a1556123e9c477036d679d09ef12947c89ada4e8fe94b0f3a764a4671d68680c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031325_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031325_Edge.png",
+          "sha256": "cf47af2f3f62e43a2b47024831b47d2449227dc2e40dfb7d14156ea89df255c3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031346_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031346_Edge.png",
+          "sha256": "a1badaed54c42531a1dfac3ce7e94889a568889578cefda16aca30548e2b1137"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031449_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031449_Edge.png",
+          "sha256": "65f958d293b20eeb10a5968d499b777616c4c02db6587a48e9d29cf234fbc100"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031738_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031738_Edge.png",
+          "sha256": "0b28e97f92fdfd0700b15b0f93d00464493436ff170166ad3a9e387e13c90436"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031746_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031746_Edge.png",
+          "sha256": "888ccf613b851b741ae7ac643d123e0fb9852c1941f6024a35e78e671241e5d0"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031751_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031751_Edge.png",
+          "sha256": "8895bc340fc6857277519795f00f1296ac7bc4e794bc2dd3235d8a8c3c800fff"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031816_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031816_Edge.png",
+          "sha256": "5c03ea3aea77ddcc08746c8bb34a50553a88201eaeb7b112f66b7ed02e428f2a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031834_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031834_Edge.png",
+          "sha256": "9b5b3b793f426085449b3f39df954458f75562545bdcdddbb5c89c882207ea69"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031845_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031845_Edge.png",
+          "sha256": "9c3bf9f6e97f0ba92b12fab2fcec508c68318a0b1abfe33d3aee761904e411a8"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031850_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031850_Edge.png",
+          "sha256": "c6da318d69532d13e6c3413060a30841b58a1cc2695cd261fd61bd9eec996ffd"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031854_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031854_Edge.png",
+          "sha256": "761132779ca01762a4a4f12abd6f7f9406a295b676361549c829b0a176fa31ae"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031902_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031902_Edge.png",
+          "sha256": "174d4422be351ea4372e968199aec7b32e9f65aa1c29f55f7ddb12256e0b7484"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031909_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031909_Edge.png",
+          "sha256": "3de8fc11ca7bef1f503be717765350abf230e070cebfd5ab843faebb22b9923e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031930_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031930_Edge.png",
+          "sha256": "c0891fc47d2a1a73d2747f806b70aefcac77e3c12e5a7a357d47e8f73297ce2d"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031934_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031934_Edge.png",
+          "sha256": "250666f89f89420042fc4a39da67654b00045c1f096c3d6def44ac37b8380500"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031952_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031952_Edge.png",
+          "sha256": "434ed8fbdd3d40c1791d76714678b32325e1a805c0dca23a0b8c2a3a2b9dc759"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031957_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031957_Edge.png",
+          "sha256": "f65fb9c5f77a0d96b2d8143412936b31fbbac569fee08b2e0dd5791d12d4cf55"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032036_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032036_Edge.png",
+          "sha256": "f703c7e753ca72523b11e93c9e63ffc68955a0501b2b1fe545fff45161c7aafb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032048_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032048_Edge.png",
+          "sha256": "3a68262f8c3e66cd9c6d6deb63e3583c31dde36ea226acd41a253692562988c8"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032052_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032052_Edge.png",
+          "sha256": "c688faf0075092ce21786c9c9c0eb5dbce436a14a2f2806be70aecb234b36283"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-07",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+          "sha256": "2696e6827a31ee8c027b1680847b047dacff6d9ddf86cabafeb369e21026cf93"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032109_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032109_Edge.png",
+          "sha256": "2a0d578f4239013ef2649ffe64c7a736f57529983e2bc0f0db796634ebfa4b75"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032116_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032116_Edge.png",
+          "sha256": "396661ca287762a36c354cd084e65a98d47a51245553fdcb564a5016b5e5d327"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032251_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032251_Edge.png",
+          "sha256": "8ea5e44c34358cc982a54c591040cd0ba47f8985828e9af5009141449617d5a3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032335_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032335_Edge.png",
+          "sha256": "3ebf4c0eceafeb90f8eeabad47edc8dc47b66412a01a4119baa09d67467ba6b2"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032339_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032339_Edge.png",
+          "sha256": "c9e328ffd56ee092345b14d1da9721634071a057ab38a75693142b9666512f31"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032349_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032349_Edge.png",
+          "sha256": "3b685efc586ac72c8c2cf5812e6d47354b4f4ad8b4960806c1b3032ae66a7efa"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032354_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032354_Edge.png",
+          "sha256": "12ca550a5d357b53ad4aa0b5cf1a72fcc981cf2d3d82310f1419c77e13287acb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "sha256": "f23725467c279a4729ef6a11df3907ced24372a24e45a61674a90751ed0dad03"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032500_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032500_Grok.png",
+          "sha256": "0c0a9c182498bb96a8790c2aba4c79497a4b0ca41ca79aaafdef98f5e2cbdf63"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+          "sha256": "f51e8412348cd1733eaacdf1ccccdcbf55f2802d6a3fb7a20219c802e56d2591"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032520_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032520_Grok.png",
+          "sha256": "86fb02ea0451209240970b70956144bfc35ff763b9f76e30472ac202b9b50725"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-062346_Manus.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-062346_Manus.png",
+          "sha256": "4dfeb41765911a7d8cb8c1d586c73b9d23867023af6e87f5e5fd081856cf2c7a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-001856_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-001856_Chrome.png",
+          "sha256": "bb2cdb4ea5251b4028c39dbe862ee123ad768bac494c885b85db6eaad3512ce4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002034_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002034_Chrome.png",
+          "sha256": "f4c74f7ec65192cbca808927129c3db00eec14d948ff039f1bd76ee8011d33b9"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002151_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002151_Chrome.png",
+          "sha256": "714d2d0f87bfa1933033dc36715119d5a2757cbc536b2f2b4af2c7bfbabdeb2a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002257_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002257_Chrome.png",
+          "sha256": "efce556213be6e3c02fba6757b9d3ed5377f1177d4137551a2808bc7f81ed3bf"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002719_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-002719_Chrome.png",
+          "sha256": "b00e265dcfd6b8d9b53ad7d73b273746bdc53d5409a1718e3836b2ee6dda4473"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+          "sha256": "ba88c01eeaddbcba8b494fc0b6b6d8e8d1215fb0d8079aa0f66903772b37f83f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+          "sha256": "6c3418946af3dbca542d82f9d447f58d8086d820b838e36865ed1181e5e52553"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+          "sha256": "62e13bb9d26ce4957ed1c005e312dd5fa3021e030db4da98f70cb921303991d4"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-08",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ARQUITECTURA-ROUTER/V1-01-MAIN.png",
+          "sha256": "72da4a525fa70f00ecd092f4f5dcc447af2e71b6df4d46470529257f3b19206e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-052554_Edge.png",
+          "sha256": "7e3c8822d876d5dcefeaceed80bcc83b3a693dcdcda8a3b4decabc34ac72f97c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-093043_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/ADJUNTOS-CHAT/Screenshot_20261001-093043_Edge.png",
+          "sha256": "2482e346b6a4ca8861fb5e5e444c84504fde90e8a4f04653921e3fc25441291c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/FROMTED-YAIWES-COLORES-ICONOS-V09-escritorio.png",
+          "sha256": "c7781bf40f2b97f17b25c4c2b76aa8f80db40d24bfe9a78a730613e607209ce9"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031320_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-031320_Edge.png",
+          "sha256": "a1556123e9c477036d679d09ef12947c89ada4e8fe94b0f3a764a4671d68680c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "sha256": "f23725467c279a4729ef6a11df3907ced24372a24e45a61674a90751ed0dad03"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260930-001144_Chrome.png",
+          "sha256": "62e13bb9d26ce4957ed1c005e312dd5fa3021e030db4da98f70cb921303991d4"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-09",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032452_Grok.png",
+          "sha256": "f23725467c279a4729ef6a11df3907ced24372a24e45a61674a90751ed0dad03"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-172239_Claude.png",
+          "sha256": "ba88c01eeaddbcba8b494fc0b6b6d8e8d1215fb0d8079aa0f66903772b37f83f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260929-204841_Claude.png",
+          "sha256": "6c3418946af3dbca542d82f9d447f58d8086d820b838e36865ed1181e5e52553"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032059_Edge.png",
+          "sha256": "2696e6827a31ee8c027b1680847b047dacff6d9ddf86cabafeb369e21026cf93"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/REFERENCIAS-UI/Screenshot_20260927-032513_Grok.png",
+          "sha256": "f51e8412348cd1733eaacdf1ccccdcbf55f2802d6a3fb7a20219c802e56d2591"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-10",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-11",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/CATALOGO-REFERENCIAS-UI.json"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-12",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-8-SOL-6.json"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-13",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-04.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-04.md",
+          "sha256": "275216986f8df4570651c9f9c2fe80e1bdc07618d358eb492dedc9a0a7461194"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-05.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-05.md",
+          "sha256": "1f04b5b46af71cb6548eaa61f9286ab5b423756830ad924b556a9b7e15c029f6"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-06.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-06.md",
+          "sha256": "40af4f573b642153163bc34cb405e86177d0095e9fa7da52df27476c9937031c"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-07.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-07.md",
+          "sha256": "13acf0a04cecfefa594e88930535a15ae11ee3b1877bd683a9389d885f6c575e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-08.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-08.md",
+          "sha256": "28db5d4bd9eb44e02fce7f5b9ec3239c3bbdd05745adce2d448092809612615a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-09.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-09.md",
+          "sha256": "13a468edff4e2c79c137d4684b03aa43fa657ce6cf313ae349d46a0cf046e92d"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-14",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/6b433bfe565cdaf1206709765c8861d937f40900/chat%20router/01-PLAN/CATALOGO-ANEXOS-VISUALES.json",
+          "sha256": "9bff3141d293943e44cb314628d19dfb6b3b4c39e1b73accac7984bd8ce12593"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/CATALOGO-REFERENCIAS-UI.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/6b433bfe565cdaf1206709765c8861d937f40900/chat%20router/01-PLAN/CATALOGO-REFERENCIAS-UI.json",
+          "sha256": "65e85067e6412eaaad05f5d6f89cfa6646f1477a34158fb19062be4046d7f16e"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-COMPARACION.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-COMPARACION.md",
+          "sha256": "34aeb243bf940c42c74b7254580c7082719fec672c3cd51aaba1fc73cbfdb99c"
+        }
+      ]
+    },
+    {
+      "equipo": "EQUIPO-8",
+      "id_tarea": "I-15",
+      "estado": "CERRADO",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/01-PLAN/T-06-INVENTARIO.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/01-PLAN/T-06-INVENTARIO.md",
+          "sha256": null
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/13-CHAT-UI-SUITE/gateway.py",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/13-CHAT-UI-SUITE/gateway.py",
+          "sha256": null
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/ui/panel-chat.js",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/ui/panel-chat.js",
+          "sha256": null
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/ui/panel-org.js",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/ui/panel-org.js",
+          "sha256": null
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-8/I-FUNCIONES-FALTANTES.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-8/I-FUNCIONES-FALTANTES.md",
+          "sha256": "7329c74c736a04492aadf3359c5f41229d78da640d4b8847982bf1affcb161cb"
+        }
+      ]
+    }
+  ]
+}
