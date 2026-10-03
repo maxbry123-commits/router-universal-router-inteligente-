@@ -1,0 +1,55 @@
+name: Import Maxbry Router code
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  import-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout destination
+        uses: actions/checkout@v6
+        with:
+          path: target
+          fetch-depth: 1
+
+      - name: Checkout Maxbry Router source
+        uses: actions/checkout@v6
+        with:
+          repository: maxbry123-commits/maxbry-router
+          path: source-router
+          fetch-depth: 1
+
+      - name: Copy source code only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/target"
+          mkdir -p IMPORTED_CODE/MAXBRY_ROUTER
+
+          find "$GITHUB_WORKSPACE/source-router" -type f \( \
+            -name '*.py' -o -name '*.js' -o -name '*.jsx' -o -name '*.mjs' -o -name '*.cjs' -o \
+            -name '*.ts' -o -name '*.tsx' -o -name '*.css' -o -name '*.scss' -o -name '*.html' -o \
+            -name '*.htm' -o -name '*.vue' -o -name '*.svelte' -o -name '*.sh' -o -name '*.bash' -o \
+            -name '*.go' -o -name '*.rs' -o -name '*.java' -o -name '*.c' -o -name '*.h' -o \
+            -name '*.cpp' -o -name '*.hpp' -o -name '*.rb' -o -name '*.php' -o -name '*.kt' \
+          \) -print0 | while IFS= read -r -d '' f; do
+            rel="${f#"$GITHUB_WORKSPACE/source-router/"}"
+            mkdir -p "IMPORTED_CODE/MAXBRY_ROUTER/$(dirname "$rel")"
+            cp "$f" "IMPORTED_CODE/MAXBRY_ROUTER/$rel"
+          done
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add IMPORTED_CODE/MAXBRY_ROUTER
+          if git diff --cached --quiet; then
+            echo 'No Maxbry Router code changes to import.'
+            exit 0
+          fi
+          git commit -m 'chore: import Maxbry Router source code'
+          git push
