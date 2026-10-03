@@ -16,11 +16,7 @@
     "Hugging Face"
   ],
   "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main. Pre-auditar no reemplaza la auditoría de Claude.",
-  "ronda_actual": [
-    "B-07",
-    "B-08",
-    "B-09"
-  ],
+  "ronda_actual": [],
   "cola": [
     {
       "id": "B-01",
@@ -65,17 +61,17 @@
     {
       "id": "B-09",
       "tarea": "Pre-auditoría: resultados de EQUIPO-1 contra su evidencia",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "B-10",
       "tarea": "Pre-auditoría: resultados de EQUIPO-3 y EQUIPO-5 contra su evidencia",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "B-11",
       "tarea": "Pre-auditoría: resultados de EQUIPO-6 y EQUIPO-7 contra su evidencia",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     },
     {
       "id": "B-12",
@@ -365,6 +361,468 @@
       },
       "gap": null,
       "siguiente": "B-09 permanece PENDIENTE"
+    },
+    {
+      "id_tarea": "B-09",
+      "equipo": "EQUIPO-4",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T01:07:30Z",
+      "accion": "Pre-auditoría de EQUIPO-1 completada contra evidencia actual: 18 artefactos históricos conservan el sha256 declarado; S1-11c existe, pero su entrada nueva no declara sha256 y S1-14 no declara archivos. Además, varias entradas antiguas siguen usando el esquema legado.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+          "sha256": "68b174bbe7efb43461fecbce7af99a7e1e9a176c55376eee2e3acda88bbbc1f6"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+          "sha256": "752c719ba501d682c0dcaa8d04b16ecac94b7396d88588d2bd73281b275dcdad"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+          "sha256": "ec37a819ddad07a2c9c3ab804929e2f2462a43a9d92f7dfab5bac2596706fb25"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+          "sha256": "7494fc149b785ae143368aa2b68eca3d0fb74a87bd1498fd6398d6cfe076eb5c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-04.txt",
+          "sha256": "349ffeade42ad5dd40db1f4a524e2aefe50e7ca3bace9f5b287fc602e1410054"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05.txt",
+          "sha256": "7ed460679c95e8ce3fc96bda90220c72c0d5f4626fca7d194fb7d63cd5564d27"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-06.txt",
+          "sha256": "2cd3a879b60a4cd55bf234d38f22ac1d528130165bc05e13190ed857ce55d158"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-07.txt",
+          "sha256": "c4a9d02fd6debdac5f1f005fc2f7eff28b21ee5a7525c72dda02f3615f713cc7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+          "sha256": "9706c7d3f69b1483f8313975cc2172e82e166b99d1bf345e75544c9e0ffbeeda"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker1.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker1.txt",
+          "sha256": "9dfcb1eba7c4f33ac564676927d9e4af464662dfe65c5723012a6831c7fbe247"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker2.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker2.txt",
+          "sha256": "4a45e713805882566040e1621ae3dcd4fa2b2dfebbc38f7e53f7cf3c50176b6a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker3.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09-worker3.txt",
+          "sha256": "b0e176849d62890f9b2b7fae15ee30ba9767335be4b2cf7167cc4b169445b507"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-10.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-10.md",
+          "sha256": "d205ece3b8c7509a26105df4453ed836640b0f7f23b0ec87d0f86daed4b9f030"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11.txt",
+          "sha256": "9ffcb6e4e38a7291272c78fcaf15086c2fd8916d491bef47417fbe145c6277d7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-12.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-12.md",
+          "sha256": "85edaffb697584d43fd047a771946b945d3eb93a40e43fa73b2babb3e514ffe3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-original.txt",
+          "sha256": "8b358d16c63c3886b771aba4dfd90b98ead3ade6f0e1aaafa5563566d91a924a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-nueva.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b-nueva.txt",
+          "sha256": "11db907f101045d239e70896f98991ed799e464c29aa322cb25d0c13b7fa49b3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11b.md",
+          "sha256": "3c31e7d8f3f204a804bb4e1393ab32183b3d7a8018743c00efe9ad50f4bfae59"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09b.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-09b.txt",
+          "sha256": "be616655a9677bd511995a68b121385fec52853c4a245858d14c270be9c92e2f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11c.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-1/S1-11c.txt",
+          "sha256": "0508cd41a65f6143eb9b0fff92c7ddb7b1accb15511d3bb1e2660e338c0a0271"
+        }
+      ],
+      "prueba_real": {
+        "comando": "lectura de EQUIPO-1-SONNET.json + recomputación sha256 de 18 evidencias declaradas + read-back de S1-11c.txt",
+        "ok": true,
+        "salida_resumen": "18/18 sha256 históricos coinciden; S1-11c leído (sha256=0508cd41a65f6143eb9b0fff92c7ddb7b1accb15511d3bb1e2660e338c0a0271); hallazgos de esquema en S1-11c/S1-14 y entradas legado."
+      },
+      "gap": {
+        "motivo": "EQUIPO-1 no está totalmente alineado al esquema vigente: S1-11c carece de sha256 en archivos, S1-14 carece de evidencia y varias entradas antiguas usan prueba_real/gap legados.",
+        "intento_fix": "Se verificó la evidencia existente sin editar archivos de EQUIPO-1, como exige la tarea.",
+        "necesita": "EQUIPO-1/Claude debe normalizar solo su propio JSON si se exige conformidad total."
+      },
+      "siguiente": "B-10"
+    },
+    {
+      "id_tarea": "B-10",
+      "equipo": "EQUIPO-4",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T01:07:30Z",
+      "accion": "Pre-auditoría de EQUIPO-3 y EQUIPO-5 completada. EQUIPO-3: 11/11 artefactos de evidencia por tarea verificados. EQUIPO-5: 10/11 artefactos muestreados coinciden; C10-C12-CIERRE.json cambió respecto al sha256 registrado y C-04/C-05 están CERRADO_REF sin archivos.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+          "sha256": "bfb093d735e765c6770e272a0e2b512f964116fc5e97173784e3c60784f7cfc4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+          "sha256": "2fcd4814ed7756e1753560b66e6254f89539592e8adb08e7da01fc64a82b40eb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-01.txt",
+          "sha256": "28dc629b0fbdebfe9fe328916db355b1ce7c5fd6979abe2aa71ee1668d1f7c4e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-02.txt",
+          "sha256": "b52fe367c0fe9d24b0558248a1cd5ea0db1d01dbfc1563542711de857231c2fd"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-03.txt",
+          "sha256": "70a9be006433860b225857e5882f8f34b23adaff5ae7417b38c0658fcbfd9e24"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-04.txt",
+          "sha256": "5e7cbf5c20f37e0cb16794baaf8ac7dbb62435c2bbadfda5840b76675fc0111f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-05.txt",
+          "sha256": "621c5d403df60824d40a7a6ff043c1463f85fa6e2787c4a97c4b09c58f325ae7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-06.txt",
+          "sha256": "a070ff2c4bee273e61f33066913e0ae0607a1065e8f34432cac3bf5b0168fc41"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-07.txt",
+          "sha256": "7e5d678c6be57393498418f48ccbfa44c397a6754e07a7cb6c37bb6ab12cb31a"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-08.txt",
+          "sha256": "e9cf81c62a45045cbdfeb3e03dc473f20bbec69719ceb66fe804c3f222985424"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-09.txt",
+          "sha256": "28d362f65d34b7cb872a75cc08cdc68ea5a1ecdb5366de3270657a0f9aac7403"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-10.txt",
+          "sha256": "fc5871fa0395ed169ae580ec146e6989028b5ca5228676571a19bf8178b88400"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-3/A-11.txt",
+          "sha256": "88f9c07d908b4a9c6e256e489a43bd60203123e510938ec2695767dbd2437642"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/motor2-skills-ui/queue.json",
+          "sha256": "60a205a9d20f19703a7b3def2683073f1137c072e8b8e18c59d7828b78f3cc2b"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/RONDA-1-C01-C03.json",
+          "sha256": "061ca4f25102999546b963f52d6993c3af56ba94a8a1351fd96bfeec16913620"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/SIGUIENTE-C04-C06.json",
+          "sha256": "feded4a5eb9c3bad824386b05a931ede1d4722b1099849e764d001fce686c521"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/superpowers.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/superpowers.dag.yaml",
+          "sha256": "f989a28f31b9f3b403f43cb6a9e2aa82d7563911651a47e00e1a369e3700d845"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/get-shit-done.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/get-shit-done.dag.yaml",
+          "sha256": "06406c83277f402db448b0d4aab6a4830f490782b0c710b79f36d8b70d4fe3bb"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/find-skills.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/find-skills.dag.yaml",
+          "sha256": "5fa64436a86caa72a6ca4cf7c2df0d7c81bb823034e29d4ec6006bddf1b0c8cc"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/local-ultra-review.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/local-ultra-review.dag.yaml",
+          "sha256": "57cf45ff2046e588d4a3f0dd7b7d9745708f9c719cbb1221e7564c5410accdb8"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/📂 workflow Loops code Yaiwes/skills_schema/one-skill-to-rule-them-all.dag.yaml",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/%F0%9F%93%82%20workflow%20Loops%20code%20Yaiwes/skills_schema/one-skill-to-rule-them-all.dag.yaml",
+          "sha256": "e7df5e14953144bd27c0336b53e831869723481b133f9a741f33c497c5773b62"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C-08.txt",
+          "sha256": "875fa6b965c1a4e208fd9c73b77e93100ed11d40e8f9a2109396ff9c14a22f14"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C-09.txt",
+          "sha256": "216916bf9fac4d982664722d43a80b92b1e966d1d78ca888a4ef8536e6e42880"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-5/C10-C12-CIERRE.json",
+          "sha256": "cfcee03b9cd3612958342ae6c0a4e04b9e94bd8e4ac433354b512de133b33bb6"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comparar sha256 de evidencias por tarea de EQUIPO-3 y EQUIPO-5 contra sus resultado[]",
+        "ok": true,
+        "salida_resumen": "E3 11/11 match. E5 10/11 match; C10-C12-CIERRE.json actual=cfcee03b9cd3612958342ae6c0a4e04b9e94bd8e4ac433354b512de133b33bb6 vs registrado=47f8ce6dec9e1d7812c5d70f085d07c8d201f3a10f43ec86dc01f29dd8a1e3c4; C-04/C-05 sin archivos."
+      },
+      "gap": {
+        "motivo": "EQUIPO-5 tiene deriva de evidencia: C10-C12-CIERRE.json ya no coincide con el hash registrado y su contenido aún menciona C-08/C-09 como pendientes aunque el JSON actual los marca cerrados; C-04/C-05 CERRADO_REF no tienen archivos.",
+        "intento_fix": "Se leyó y recalculó el artefacto actual sin editar EQUIPO-5.",
+        "necesita": "EQUIPO-5/Claude debe reconciliar hashes/estado si se requiere evidencia inmutable."
+      },
+      "siguiente": "B-11"
+    },
+    {
+      "id_tarea": "B-11",
+      "equipo": "EQUIPO-4",
+      "ronda": 4,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T01:07:30Z",
+      "accion": "Pre-auditoría de EQUIPO-6 y EQUIPO-7 completada. Los 12 artefactos de evidencia por tarea de EQUIPO-6 y los 8 de EQUIPO-7 conservan su sha256; quedan estados BLOQUEADO heredados y la evidencia E-08 referencia snapshots mutables de EQUIPO-1..6 que ya cambiaron.",
+      "archivos": [
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+          "sha256": "1ddd91966a6006a6027cdd2eed1f2ad6ce35a56e3e539f40de324941111c7bbe"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json",
+          "sha256": "4ec7d447144bf5cab56d5b026fe8181e581ab367ecf286a683d2128f6cd9b69c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-01-inventario-ronda1.json",
+          "sha256": "c3852346a109891223d2432f529dd356448aef42b371de41dac426e3e00fce2f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-02-graphify-readonly.json",
+          "sha256": "5ebadd7edf1245dfa85a8fb4b2f15f3948cdfd404365f8334bc5e73fb1afa7ba"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json",
+          "sha256": "b39a1d6ada0371e83f60c552458b925a3ec8a1b687074ba321d1ff37e248aba6"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json",
+          "sha256": "849933e561a40033350fc09792c59837be30b31d239750c66a3bf8fc0f534567"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json",
+          "sha256": "425c4e33bce6024dfa433b2af93c359d69111ffb90bd74c78fb9315bd95670f4"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json",
+          "sha256": "0c617d64c20a376f6557e20097e427b0c592d2706db503848694f0e8b1c05aad"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json",
+          "sha256": "f7a34b681717d95c4f2fd250d5a53c9d626b8e31af021394d0a0160b33c46fc3"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json",
+          "sha256": "699e38423810d03ac8a2b6165d4c972d402c047cc94487dc2602c2db77af0bd9"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json",
+          "sha256": "5b358041f05129887d303e8cd600ebea85ee41ba73049a3945e54ec77a299289"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
+          "sha256": "1a0828fd4e91cf1bb77556e380bf2063a607a8a773745e0cae5964c569876653"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json",
+          "sha256": "954ec31a290319fa9d194c622b622c2ec6a21f1efdcc4776eb57d22d7f97137f"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+          "sha256": "819c1634811a658adf8dc3ade99eef57c0b836fee5bdd8fe3c90072b7ccbe864"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-01.txt",
+          "sha256": "f8e256f5522a16242a2321cbcddad6fa9c572bdb6393df335679e9b8c32f3c5c"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-02.txt",
+          "sha256": "d2357acbc2b8b134b46d4f7c87ffc85050edf918c6c51915ce851f83a02d2159"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-03.txt",
+          "sha256": "367705a023204b68e7ba0c2c5c8c9344a053e319168389fe1447565c256bdf6b"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-04.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-04.txt",
+          "sha256": "2a5200a96fa1bbcbf3dca01ab5ddac72d1e97d07c1caf0a3712a68bf8d75d79e"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-05.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-05.txt",
+          "sha256": "519df9c279504db64bc69a9a4cc21e413dfaba7f8931cb3e5700de801213ee41"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-06.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-06.txt",
+          "sha256": "c4a50a9dfe31c691d9f515d90d9ba922f75cd7b360c8fe535041a728fa88dc29"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-07.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-07.txt",
+          "sha256": "3138884cd9b92d97ab711a152e69b687606b29737180ea268e7be8519ff24fa7"
+        },
+        {
+          "operacion": "leido",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-7/E-08.txt",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-7/E-08.txt",
+          "sha256": "6ee6272586c35cabd3fa640a20016b7868dbe75cdf714046687aabee256d0f14"
+        }
+      ],
+      "prueba_real": {
+        "comando": "comparar sha256 de 12 evidencias EQUIPO-6 y 8 evidencias EQUIPO-7; contrastar referencias E-08 con snapshots actuales de EQUIPO-1..6",
+        "ok": true,
+        "salida_resumen": "E6 12/12 match; E7 8/8 match. D-03 y E-01/E-02 siguen BLOQUEADO; los hashes de E-08 para EQUIPO-1..6 no coinciden con snapshots actuales porque esos JSON mutables cambiaron después."
+      },
+      "gap": {
+        "motivo": "Estados BLOQUEADO heredados contradicen REGLAS-DURAS v2 y E-08 usa hashes de archivos de equipo mutables que quedaron obsoletos tras cambios concurrentes.",
+        "intento_fix": "Se verificó evidencia actual sin editar EQUIPO-6 ni EQUIPO-7.",
+        "necesita": "Los equipos dueños/Claude deben convertir los BLOQUEADO heredados a CERRADO_REF y usar snapshots inmutables si se exige estabilidad de E-08."
+      },
+      "siguiente": "SALIR"
     }
   ],
   "bitacora": [
@@ -412,21 +870,44 @@
       "fecha_utc": "2026-10-03T00:55:00Z",
       "id_tarea": "B-08",
       "evento": "CERRADO: mapa vivo generado para 8 equipos / 96 tareas con estado concurrente preservado."
+    },
+    {
+      "fecha_utc": "2026-10-03T01:07:30Z",
+      "id_tarea": "B-09",
+      "evento": "CERRADO: pre-auditoría EQUIPO-1; 18/18 hashes históricos OK; hallazgos de esquema en S1-11c/S1-14."
+    },
+    {
+      "fecha_utc": "2026-10-03T01:07:30Z",
+      "id_tarea": "B-10",
+      "evento": "CERRADO: pre-auditoría EQUIPO-3/EQUIPO-5; E3 11/11 OK; deriva detectada en C10-C12-CIERRE.json."
+    },
+    {
+      "fecha_utc": "2026-10-03T01:07:30Z",
+      "id_tarea": "B-11",
+      "evento": "CERRADO: pre-auditoría EQUIPO-6/EQUIPO-7; evidencias por tarea OK; BLOQUEADO heredado y snapshots E-08 obsoletos."
     }
   ],
   "handoff": {
-    "objetivo": "Cerrar únicamente B-07 y B-08 sin pisar B-12 ni tareas de otros equipos.",
-    "estado": "B-07 CERRADO; B-08 CERRADO; B-12 ya CERRADO; B-09..B-11 PENDIENTE.",
+    "objetivo": "Pre-auditorías B-09, B-10 y B-11 cerradas sin editar archivos de otros equipos.",
+    "estado": "B-01..B-12 CERRADO; cola sin PENDIENTE.",
     "archivos": [
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B-07-o4-completion-audit.json",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-4/B-08-mapa-vivo-equipos.html",
-      "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json"
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-3-SOL-1.json",
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-5-SOL-3.json",
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json",
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-7-SOL-5.json"
     ],
     "cambios": [
-      "O4-20 auditado con 21/21 nodos y evidencia.",
-      "Mapa vivo de 8 equipos regenerado tras conflicto concurrente."
+      "B-09: EQUIPO-1 pre-auditado; hashes históricos OK; esquema nuevo incompleto en S1-11c/S1-14.",
+      "B-10: EQUIPO-3 evidencia OK; EQUIPO-5 con deriva de C10-C12 y C-04/C-05 sin archivos.",
+      "B-11: EQUIPO-6/EQUIPO-7 evidencias por tarea OK; estados BLOQUEADO heredados y E-08 obsoleto detectados."
     ],
-    "fallos": [],
-    "siguiente": "SALIR; B-09..B-11 sin tocar."
+    "fallos": [
+      "EQUIPO-1: S1-11c sin sha256 y S1-14 sin evidencia.",
+      "EQUIPO-5: C10-C12-CIERRE.json hash actual distinto al registrado; C-04/C-05 sin archivos.",
+      "EQUIPO-6/EQUIPO-7: estados BLOQUEADO heredados; E-08 hashes de snapshots ya cambiaron."
+    ],
+    "siguiente": "COLA VACÍA; SALIR."
   }
 }
