@@ -1,60 +1,33 @@
-# Laboratorio de pruebas API / SDK
+# Laboratorio de pruebas API / SDK (temporal)
 
-Estado: **LABORATORIO ACTIVO — conectado al Router por Plugin Host**.
+**Estado: plugin subido a main y conectado al Router por el Plugin Host. Falta la primera corrida con las claves del banco; el resultado se anota abajo.**
+Correccion 2026-10-03: la version anterior de este README decia que el plugin y el handoff ya existian. No existian; ahora si.
 
-Objetivo: mantener un punto único, auditable y reutilizable para comprobar APIs/SDK sin modificar el núcleo del Router. Este laboratorio no guarda claves, tokens ni contraseñas en el repositorio.
+## Que prueba
+Las claves de OpenAI del banco secreto, con el SDK oficial `openai`. Por cada clave:
+1. `models.list()` (/v1/models): cuenta las modelos.
+2. `responses.create()` (/v1/responses) con una frase de 16 tokens: genera.
+3. `/me`: solo informativo (no es un endpoint oficial de claves API).
+PASS de una clave = 1 y 2 bien. 14 claves esperadas x 3 = 42 comprobaciones.
 
 ## Flujo
+`main -> Router HF 16 GB (git pull cada 60 s) -> Plugin Host -> plugins/openai_sdk_lab -> vault_hook (banco abierto en memoria) -> OpenAI -> resumen sin claves -> RESULTADOS-OPENAI-SDK.json`
 
-`main → Router HF activo → git pull periódico → Plugin Host autosync → plugins/openai_sdk_lab → banco secreto desbloqueado en memoria → OpenAI API/SDK → resultado saneado`
+## Reglas
+No se toca el nucleo del Router. Sin GitHub Actions. Sin LFS. Sin Jobs nuevos. Ninguna clave en el repo, logs ni resultados.
 
 ## Archivos
+- `README pruebas.md`: este archivo.
+- `Laboratorio Code de pruebas.py`: motor (lee `vault_hook.provider_keys("openai")`).
+- `Handoff laboratorio pruebas sdk api.md`: conexiones y pendientes.
+- `RESULTADOS-OPENAI-SDK.json`: lo escribe el plugin al correr (aun no existe).
+- `router inteligente universal/plugins/openai_sdk_lab/`: ficha.json + plugin.py.
 
-- `README pruebas.md` — arquitectura, método y resultados.
-- `Laboratorio Code de pruebas.py` — motor real de pruebas.
-- `Handoff laboratorio pruebas sdk api.md` — handoff y trazabilidad de conexiones.
-- Adaptador runtime: `router inteligente universal/plugins/openai_sdk_lab/plugin.py`.
-- Contrato Plugin Host: `router inteligente universal/plugins/openai_sdk_lab/ficha.json`.
-
-## Contrato de prueba OpenAI
-
-Por cada clave OpenAI disponible en el banco:
-
-1. Identidad HTTP: `GET https://api.openai.com/v1/me`.
-2. Catálogo por SDK: `client.models.list()` → `/v1/models`.
-3. Generación por SDK: `client.responses.create(...)` → `/v1/responses`.
-
-La prueba nunca devuelve ni escribe claves. Solo registra índice de credencial, estado HTTP/código de error, modelo usado, tiempo y PASS/FAIL.
-
-## Conexiones canónicas
-
-Arquitectura del Router:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Readme%20arquitectura%20router%20inteligente%20universal/ARQUITECTURA-ROUTER-Y-CONEXIONES.md
-
-Arquitectura de fichas / enchufe:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Readme%20arquitectura%20router%20inteligente%20universal/ARQUITECTURA-ROUTER-FICHAS-FABLES.md
-
-Banco secreto implementado:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Readme%20arquitectura%20router%20inteligente%20universal/ADENDA-RIU-0110-secret-bank-implementado.md
-
-Handoff global:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/Estado%20y%20handoff%20global/HANDOFF.md
-
-Handoff del Router:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/HANDOFF-PROVISIONAL-ROUTER.md
-
-## Estado del Router usado por el laboratorio
-
-- Job controlador: `6abf9d1a404719ba37622215`.
-- Hardware: `cpu-basic` / 16 GB.
-- `PAUSED=false`.
-- Plugin Host ya está montado en el Router.
-- `RIU_PLUGINS_AUTOSYNC_S=60`: nuevos plugins se reescanean sin reiniciar el Router.
+## Como se corre (4 pasos, con la clave del Router)
+1. `POST /plugins/sync`
+2. `POST /plugins/openai_sdk_lab/enable`
+3. `POST /vault/unlock` con la clave del banco
+4. `GET /plugins`: el health del plugin corre las pruebas y devuelve el resumen en `reason`.
 
 ## Resultados
-
-### Última ejecución
-
-`PENDIENTE_DE_EJECUCION_LIVE`
-
-La sección se actualiza después de la corrida real. No se considera PASS hasta tener evidencia devuelta por el plugin desde el Router vivo.
+Pendiente de la primera corrida.
