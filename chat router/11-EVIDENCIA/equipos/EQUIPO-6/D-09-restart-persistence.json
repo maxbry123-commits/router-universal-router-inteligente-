@@ -1,0 +1,1 @@
+{"schema":"yaiwes.team-evidence/v1","task":"D-09","equipo":"EQUIPO-6","fecha_utc":"2026-10-03T00:30:00Z","prueba_real":{"comando":"cerrar conexión SQLite; reabrir misma DB; SELECT scope=chat key=turno-d08","restart_readback":true,"db_exists":true,"db_size_bytes":12288},"resultado":"CERRADO"}

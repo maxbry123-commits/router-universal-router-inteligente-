@@ -1,0 +1,1 @@
+{"schema":"yaiwes.team-evidence/v1","task":"D-08","equipo":"EQUIPO-6","fecha_utc":"2026-10-03T00:30:00Z","prueba_real":{"comando":"python sqlite3: INSERT scope=chat key=turno-d08 payload={texto:hola,n:8}; SELECT read-back","save_readback":true,"payload":{"texto":"hola","n":8}},"resultado":"CERRADO"}
