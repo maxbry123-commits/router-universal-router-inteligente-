@@ -456,6 +456,25 @@
       },
       "gap": null,
       "siguiente": "Ninguna"
+    },
+    {
+      "id_tarea": "S1-05",
+      "equipo": "EQUIPO-1",
+      "ronda": 5,
+      "estado": "CERRADO_REF",
+      "ejecutor": "Claude Sonnet 5.5 (via sandbox Vercel)",
+      "fecha_utc": "2026-10-03T02:37:45Z",
+      "accion": "S1-05b: harness DeepSeek presente (14090 archivos, 4 partes verificadas). pnpm install OK y dsh --help exit 0; el modo headless exige build:lib que se mato por memoria (exit 137, 2 GB).",
+      "archivos": [
+        {
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-1/S1-05b.txt"
+        }
+      ],
+      "prueba_real": {
+        "resumen": "install exit 0; --help exit 0; build:lib exit 137"
+      },
+      "gap": "build:lib necesita mas de 2 GB de memoria; adapter no invocado",
+      "siguiente": "Repetir build:lib en maquina de 4 GB y probar el adapter."
     }
   ],
   "bitacora": [
@@ -532,6 +551,10 @@
     {
       "fecha_utc": "2026-10-03T01:06:51Z",
       "texto": "[2026-10-03T01:06:51Z] EQUIPO-1 DSL v4: S1-14 CERRADO"
+    },
+    {
+      "fecha_utc": "2026-10-03T02:37:45Z",
+      "texto": "[2026-10-03T02:37:45Z] EQUIPO-1 DSL v5: S1-05b CERRADO_REF"
     }
   ],
   "handoff": {

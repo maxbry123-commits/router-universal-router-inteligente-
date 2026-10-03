@@ -1,0 +1,9 @@
+S1-05b harness DeepSeek (dsh 0.2.0-rc.2)
+code/: 14090 archivos presentes; 4 partes sha256 = manifiesto: OK (extraction_verified y reconstruction_verified true, no_lfs true)
+CLI: apps/cli bin dsh -> lib/bin.js (no existe, es salida de build)
+pnpm install --frozen-lockfile: exit 0 (38.6 s, copia en /tmp, repo intacto)
+pnpm dsh --help: exit 0
+pnpm dsh --profile headless ping: exit 1, faltan lib/typert.host.js (salida de build:lib)
+pnpm run build:lib: exit 137 (Killed por memoria; maquina 2 GB)
+adapter deepseek_harness: no invocado (no hay comando que arranque el perfil headless sin build)
+Siguiente: correr build:lib en maquina con 4 GB (2 vCPU) y repetir ping
