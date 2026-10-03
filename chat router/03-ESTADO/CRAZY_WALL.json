@@ -151,9 +151,9 @@
       "status": "BLOCKED",
       "phase": "SCOPE_UNCONFIRMED",
       "next": "Continuar DAG existente",
-      "summary": "Verificacion de componentes de memoria con trazabilidad: 6 de 6 presentes en main y rama (graphiti, memanto, graphify, agentdb, falkordb, postgresql). Inventario MEMORIA-INVENTARIO.json desactualizado (agentdb/falkordb GAP_ABSENT es falso). Runtime: graphiti, graphify y agentdb CONNECTED; falkordb, postgresql y memanto pendientes.",
-      "updated_at": "2026-10-03T20:54:17Z",
-      "last_event_seq": 69
+      "summary": "Reorganizacion: harness plugins/ (harness DeepSeek + plugin memoria) y memoria/ como raiz unica (antes 04-MEMORIA); referencias vivas corregidas; motores graphiti, graphify y agentdb levantados desde memoria/motores; cadena plugin del harness -> Router -> motores verificada.",
+      "updated_at": "2026-10-03T22:37:22Z",
+      "last_event_seq": 70
     }
   }
 }

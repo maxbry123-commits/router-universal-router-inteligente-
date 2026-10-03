@@ -1,4 +1,4 @@
-# Sidecar de graphify: SOLO LECTURA (contrato: chat router/04-MEMORIA/GRAPHIFY-READONLY-CONTRACT.json).
+# Sidecar de graphify: SOLO LECTURA (contrato: chat router/memoria/GRAPHIFY-READONLY-CONTRACT.json).
 # Construye graph.json con el extractor AST local de graphify (sin LLM) sobre un corpus de codigo y lo consulta.
 import argparse
 import os

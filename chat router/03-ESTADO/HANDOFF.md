@@ -72,13 +72,13 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 69
+Revisión: 70
 Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
 Estado: **BLOCKED**
 Fase: `SCOPE_UNCONFIRMED`
 
 ### Último checkpoint
-Verificacion de componentes de memoria con trazabilidad: 6 de 6 presentes en main y rama (graphiti, memanto, graphify, agentdb, falkordb, postgresql). Inventario MEMORIA-INVENTARIO.json desactualizado (agentdb/falkordb GAP_ABSENT es falso). Runtime: graphiti, graphify y agentdb CONNECTED; falkordb, postgresql y memanto pendientes.
+Reorganizacion: harness plugins/ (harness DeepSeek + plugin memoria) y memoria/ como raiz unica (antes 04-MEMORIA); referencias vivas corregidas; motores graphiti, graphify y agentdb levantados desde memoria/motores; cadena plugin del harness -> Router -> motores verificada.
 
 ### Siguiente
 Continuar DAG existente

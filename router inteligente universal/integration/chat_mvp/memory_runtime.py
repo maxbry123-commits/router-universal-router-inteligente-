@@ -8,7 +8,7 @@ from typing import Protocol, cast
 
 from .store import Store
 
-PACKAGE_DIR = Path(__file__).resolve().parents[3] / "chat router" / "04-MEMORIA" / "memoria_yaiwes"
+PACKAGE_DIR = Path(__file__).resolve().parents[3] / "chat router" / "memoria" / "memoria_yaiwes"
 
 
 class Memory(Protocol):

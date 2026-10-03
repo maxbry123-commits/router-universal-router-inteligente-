@@ -8,10 +8,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 INVENTORY = ROOT / "chat router/03-ESTADO/MEMORIA-INVENTARIO.json"
 ADAPTERS = {
-    "sqlite": "chat router/04-MEMORIA/memoria_yaiwes/__init__.py",
+    "sqlite": "chat router/memoria/memoria_yaiwes/__init__.py",
     "state-hub": "chat router/03-ESTADO/checkpoint_guard.py",
-    "graphiti": "chat router/04-MEMORIA/memoria_yaiwes/__init__.py",
-    "graphify": "chat router/04-MEMORIA/memoria_yaiwes/__init__.py",
+    "graphiti": "chat router/memoria/memoria_yaiwes/__init__.py",
+    "graphify": "chat router/memoria/memoria_yaiwes/__init__.py",
 }
 
 

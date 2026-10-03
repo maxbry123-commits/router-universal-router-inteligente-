@@ -83,7 +83,7 @@ class FablesCatalog:
         base = "router inteligente universal/integration/"
         for mod, path in (("banco", base + "chat_mvp/vault_bridge.py"), ("laboratorio", base + "chat_mvp/control_plane.py"),
                           ("fichas_maestras", base + "chat_mvp/control_plane.py"), ("puente_hf", base + "chat_mvp/control_plane.py"),
-                          ("mcp", base + "chat_mvp/mcp_api.py"), ("memoria", "chat router/04-MEMORIA/plugin/memoria_mcp_server.py"),
+                          ("mcp", base + "chat_mvp/mcp_api.py"), ("memoria", "chat router/harness plugins/memoria/memoria_mcp_server.py"),
                           ("autoscale", base + "hf_worker_pool.py")):
             self.register(self._ficha(f"yaiwes.router.{mod}", "tool", path))
         agents_path = ROOT / "chat router/05-AGENTES/AGENTES.yaml"

@@ -42,7 +42,7 @@ roots:
   - id: "06"
     name: "Memoria"
     paths:
-      - "chat router/04-MEMORIA/"
+      - "chat router/memoria/"
       - "router inteligente universal/integration/chat_mvp/memory_runtime.py"
       - "router inteligente universal/integration/chat_mvp/memoria_loader.py"
   - id: "07"

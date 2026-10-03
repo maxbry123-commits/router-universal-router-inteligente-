@@ -12,7 +12,7 @@ from auditoria_plan import PLAN, ROOT, build, sha256
 
 OUTPUT = PLAN / "AUDITORIA-4-PASADAS-POST-CODE.json"
 CODE = (
-    "chat router/04-MEMORIA/memoria_yaiwes/__init__.py",
+    "chat router/memoria/memoria_yaiwes/__init__.py",
     "chat router/11-EVIDENCIA/auditoria_plan.py",
     "chat router/11-EVIDENCIA/auditoria_post_code.py",
     "chat router/11-EVIDENCIA/auditoria_metodo.py",
@@ -35,7 +35,7 @@ CODE = (
 TESTS = (
     "router inteligente universal/tests/test_chat_mvp_app.py",
     "router inteligente universal/tests/test_org_api.py",
-    "chat router/04-MEMORIA/tests/test_memoria_yaiwes.py",
+    "chat router/memoria/tests/test_memoria_yaiwes.py",
     "chat router/11-EVIDENCIA/tests/test_puerta.py",
     "router inteligente universal/tests/test_method_audit.py",
 )

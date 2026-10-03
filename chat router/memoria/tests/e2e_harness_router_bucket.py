@@ -4,7 +4,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from huggingface_hub import HfFileSystem
 REPO='/vercel/repo'
-SRV=StdioServerParameters(command='python3', args=['chat router/04-MEMORIA/plugin/memoria_mcp_server.py'], cwd=REPO,
+SRV=StdioServerParameters(command='python3', args=['chat router/harness plugins/memoria/memoria_mcp_server.py'], cwd=REPO,
     env={**os.environ, 'RIU_ROUTER_URL':'http://127.0.0.1:8000', 'RIU_API_KEY':'k-opus-test'})
 def start(d):
     subprocess.run(['/vercel/start_router.sh'], env={**os.environ,'RIU_DATA_DIR':d}, check=True)

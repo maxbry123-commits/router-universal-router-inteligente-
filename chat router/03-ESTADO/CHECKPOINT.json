@@ -5,7 +5,7 @@
   "source_path": null,
   "source_sha256": null,
   "started_at": null,
-  "updated_at": "2026-10-03T20:54:17Z",
+  "updated_at": "2026-10-03T22:37:22Z",
   "elapsed_seconds": 0,
   "stop_at_elapsed_seconds": 13500,
   "hard_limit_seconds": 14400,
@@ -16,7 +16,7 @@
   "memory_dag": "../01-PLAN/DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml",
   "state": "STATE.json",
   "bitacora": "BITACORA.jsonl",
-  "bitacora_revision": 69,
+  "bitacora_revision": 70,
   "crazy_wall": "CRAZY_WALL.json",
   "handoff": "HANDOFF.md",
   "previous_plan_t01_t10": {
@@ -141,7 +141,7 @@
     "org_api": "6/6",
     "gobierno": "41/41",
     "root_map": "PASS",
-    "Router": "31/31 en entorno limpio; 04-MEMORIA=7/7"
+    "Router": "31/31 (entorno limpio); memoria=7/7"
   },
   "memory_audit": {
     "completed": "Encontrado código Manus: SQLite y grafo fallback; 8 pruebas locales PASS con PYTHONPATH del Router y 04-MEMORIA",
@@ -203,7 +203,7 @@
     "Siguiente: timeout duro en busqueda local y procedencia independiente de facts",
     "Siguiente: procedencia independiente de facts y reintentar E2E GitHub con token"
   ],
-  "reception_summary": "Verificacion de componentes de memoria con trazabilidad: 6 de 6 presentes en main y rama (graphiti, memanto, graphify, agentdb, falkordb, postgresql). Inventario MEMORIA-INVENTARIO.json desactualizado (agentdb/falkordb GAP_ABSENT es falso). Runtime: graphiti, graphify y agentdb CONNECTED; falkordb, postgresql y memanto pendientes.",
+  "reception_summary": "Reorganizacion: harness plugins/ (harness DeepSeek + plugin memoria) y memoria/ como raiz unica (antes 04-MEMORIA); referencias vivas corregidas; motores graphiti, graphify y agentdb levantados desde memoria/motores; cadena plugin del harness -> Router -> motores verificada.",
   "motors": {
     "state_hub": "Proyección local verificable; escritura GitHub en runtime sin credencial",
     "ui_t06": "Prueba funcional/visual parcial; defecto responsive por corregir",

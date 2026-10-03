@@ -8,7 +8,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 ROUTER_ROOT = ROOT / "router inteligente universal"
-MEMORY_ROOT = ROOT / "04-MEMORIA"
+MEMORY_ROOT = ROOT / "memoria"
 if str(ROUTER_ROOT) not in sys.path:
     sys.path.insert(0, str(ROUTER_ROOT))
 if str(MEMORY_ROOT) not in sys.path:
