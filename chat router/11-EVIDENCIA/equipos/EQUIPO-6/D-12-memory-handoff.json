@@ -1,0 +1,25 @@
+{
+  "schema": "yaiwes.evidence/v1",
+  "equipo": "EQUIPO-6",
+  "id_tarea": "D-12",
+  "generated_utc": "2026-10-03T00:49:00Z",
+  "artifact": {
+    "path": "chat router/04-MEMORIA/HANDOFF-MEMORIA-GAPS.json",
+    "sha256": "1f6ba2ef12e9b31ae253be004b4bd0e5458e43faa41a9a03d19e97aaef2bdc4a"
+  },
+  "validation": {
+    "command": "python stdlib json validation: parse handoff; assert 8 open_gaps; unique ids; reason/needs/evidence present; SQLite + graph SQLite PASS",
+    "ok": true,
+    "output": "PASS: handoff parseable; open_gaps=8; unique_ids=8; required_fields=PASS; sqlite=PASS; graph_sqlite_fallback=PASS"
+  },
+  "remaining_gaps": [
+    "GRAPHITI_RUNTIME",
+    "GRAPHIFY_RUNTIME",
+    "FALKORDB_RUNTIME",
+    "AGENTDB_RUNTIME",
+    "MEMANTO_RUNTIME",
+    "POSTGRESQL_SERVICE",
+    "REDIS_SERVICE",
+    "HF_BRIDGE_OUT_OF_SCOPE"
+  ]
+}

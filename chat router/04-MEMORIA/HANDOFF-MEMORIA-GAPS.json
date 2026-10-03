@@ -1,0 +1,87 @@
+{
+  "schema": "yaiwes.memory-handoff/v1",
+  "equipo": "EQUIPO-6",
+  "generated_utc": "2026-10-03T00:49:00Z",
+  "status": "HANDOFF_READY",
+  "working_local": {
+    "sqlite": {
+      "status": "PASS",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-08-save-readback.json"
+    },
+    "graph_sqlite_fallback": {
+      "status": "PASS",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json"
+    },
+    "restart_persistence": {
+      "status": "PASS",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-09-restart-persistence.json"
+    }
+  },
+  "open_gaps": [
+    {
+      "id": "GRAPHITI_RUNTIME",
+      "component": "Graphiti",
+      "reason": "graphiti_core no está instalado y no hay backend de grafo/servicio ni proveedor LLM/embedding configurado.",
+      "needs": "Runtime local con Graphiti instalado, backend admitido y proveedor LLM/embedding.",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-03-graphiti-local-probe.json"
+    },
+    {
+      "id": "GRAPHIFY_RUNTIME",
+      "component": "Graphify",
+      "reason": "Existe fuente/contrato READ_ONLY, pero no se demostró runtime o servicio conectado.",
+      "needs": "Runtime local demostrable que cumpla GRAPHIFY-READONLY-CONTRACT.json.",
+      "evidence": "chat router/04-MEMORIA/GRAPHIFY-READONLY-CONTRACT.json"
+    },
+    {
+      "id": "FALKORDB_RUNTIME",
+      "component": "FalkorDB",
+      "reason": "Fuente extraída, pero sin módulo/cliente o binario instalado, endpoint configurado ni servicio en 6379.",
+      "needs": "FalkorDB local arrancado o RIU_FALKORDB_URL válido.",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-04-falkordb-local-probe.json"
+    },
+    {
+      "id": "AGENTDB_RUNTIME",
+      "component": "AgentDB",
+      "reason": "Fuente extraída, pero paquete/CLI no instalado y sin endpoint configurado.",
+      "needs": "Paquete AgentDB construido/instalado o RIU_AGENTDB_URL válido.",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-05-agentdb-local-probe.json"
+    },
+    {
+      "id": "MEMANTO_RUNTIME",
+      "component": "Memanto",
+      "reason": "Contrato CLI/REST identificado, pero su runtime no fue levantado ni probado en esta cola.",
+      "needs": "Runtime local Memanto con readiness /ready demostrado.",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-06-memanto-runtime-contract.json"
+    },
+    {
+      "id": "POSTGRESQL_SERVICE",
+      "component": "PostgreSQL",
+      "reason": "No hay servicio local activo en 5432.",
+      "needs": "Servicio PostgreSQL local si el Director decide habilitarlo; SQLite ya cubre fallback.",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json"
+    },
+    {
+      "id": "REDIS_SERVICE",
+      "component": "Redis",
+      "reason": "No hay servicio local activo en 6379.",
+      "needs": "Servicio Redis local si el Director decide habilitarlo; SQLite ya cubre fallback.",
+      "evidence": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-07-postgres-redis-fallback.json"
+    },
+    {
+      "id": "HF_BRIDGE_OUT_OF_SCOPE",
+      "component": "Hugging Face bridge H-1",
+      "reason": "Queda fuera por regla explícita de esta cola y no fue ejecutado.",
+      "needs": "Decisión del Director fuera de EQUIPO-6 y fuera de esta rama de trabajo de memoria.",
+      "evidence": "chat router/03-ESTADO/EQUIPOS/HANDOFF/HANDOFF-EQUIPO-6-SOL-4.md"
+    }
+  ],
+  "router_needs": "chat router/04-MEMORIA/ROUTER-NEEDS-MEMORIA.json",
+  "restrictions": [
+    "No tocar router inteligente universal/",
+    "No Hugging Face",
+    "No GitHub Actions",
+    "No LFS git"
+  ],
+  "next_owner": "Director",
+  "next_action": "Decidir qué runtimes externos habilitar; mantener SQLite + graph SQLite como fallback local probado hasta entonces."
+}

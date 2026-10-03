@@ -17,11 +17,7 @@
     "Hugging Face (el puente HF H-1 queda fuera)"
   ],
   "reglas": "Máx 3 tareas por ronda. Commit y salir. Sin evidencia (path + sha256) no hay CERRADO. Lo no resuelto = GAP. Si falta un componente: no escribir código, traerlo con los motores de descarga y extracción de main.",
-  "ronda_actual": [
-    "D-01",
-    "D-02",
-    "D-03"
-  ],
+  "ronda_actual": [],
   "cola": [
     {
       "id": "D-01",
@@ -81,7 +77,7 @@
     {
       "id": "D-12",
       "tarea": "Handoff de memoria con los GAPs que quedan",
-      "estado": "PENDIENTE"
+      "estado": "CERRADO"
     }
   ],
   "resultado": [
@@ -386,6 +382,40 @@
       },
       "gap": null,
       "siguiente": "D-12 permanece PENDIENTE"
+    },
+    {
+      "id_tarea": "D-12",
+      "equipo": "EQUIPO-6",
+      "ronda": 5,
+      "estado": "CERRADO",
+      "ejecutor": "GPT-5.6 Sol",
+      "fecha_utc": "2026-10-03T00:49:00Z",
+      "accion": "Se creó el handoff final de memoria con los GAPs restantes, los fallbacks locales probados y la siguiente decisión requerida del Director.",
+      "archivos": [
+        {
+          "operacion": "creado",
+          "path": "chat router/04-MEMORIA/HANDOFF-MEMORIA-GAPS.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/04-MEMORIA/HANDOFF-MEMORIA-GAPS.json",
+          "sha256": "1f6ba2ef12e9b31ae253be004b4bd0e5458e43faa41a9a03d19e97aaef2bdc4a"
+        },
+        {
+          "operacion": "creado",
+          "path": "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+          "url": "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/devin/1790824641-chat-agent-plan/chat%20router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+          "sha256": "819c1634811a658adf8dc3ade99eef57c0b836fee5bdd8fe3c90072b7ccbe864"
+        }
+      ],
+      "prueba_real": {
+        "comando": "python stdlib json validation: parse handoff; assert 8 open_gaps; unique ids; reason/needs/evidence present; SQLite + graph SQLite PASS",
+        "ok": true,
+        "salida_resumen": "PASS: handoff parseable; open_gaps=8; unique_ids=8; required_fields=PASS; sqlite=PASS; graph_sqlite_fallback=PASS"
+      },
+      "gap": {
+        "motivo": "Permanecen GAPs de runtime/servicio externos: Graphiti, Graphify, FalkorDB, AgentDB, Memanto, PostgreSQL, Redis y puente HF fuera de alcance.",
+        "intento_fix": "Se consolidaron motivos, evidencia y requisitos exactos; SQLite + grafo SQLite continúan como fallback local probado.",
+        "necesita": "Decisión del Director sobre qué runtimes externos habilitar."
+      },
+      "siguiente": "SALIR; no quedan tareas PENDIENTE en la cola."
     }
   ],
   "bitacora": [
@@ -453,21 +483,27 @@
       "fecha_utc": "2026-10-03T00:25:00Z",
       "id_tarea": "D-11",
       "evento": "CERRADO: necesidades API/almacenamiento/cómputo del Router registradas para el Director; Router no tocado."
+    },
+    {
+      "fecha_utc": "2026-10-03T00:49:00Z",
+      "id_tarea": "D-12",
+      "evento": "CERRADO: handoff de memoria creado con 8 GAPs restantes y fallback SQLite/graph SQLite probado."
     }
   ],
   "handoff": {
-    "objetivo": "Cerrar únicamente D-10 y D-11.",
-    "estado": "D-10 CERRADO; D-11 CERRADO.",
+    "objetivo": "D-12: entregar handoff de memoria con los GAPs restantes.",
+    "estado": "D-12 CERRADO; no quedan tareas PENDIENTE en la cola.",
     "archivos": [
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-10-graph-relation-search.json",
-      "chat router/04-MEMORIA/ROUTER-NEEDS-MEMORIA.json",
-      "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-11-router-needs.json"
+      "chat router/04-MEMORIA/HANDOFF-MEMORIA-GAPS.json",
+      "chat router/11-EVIDENCIA/equipos/EQUIPO-6/D-12-memory-handoff.json",
+      "chat router/03-ESTADO/EQUIPOS/EQUIPO-6-SOL-4.json"
     ],
     "cambios": [
-      "D-10 relación contains/related_to verificada en grafo SQLite fallback.",
-      "D-11 lista de necesidades del Router creada sin modificar el Router."
+      "Handoff final consolidado con 8 GAPs externos/estructurales.",
+      "SQLite, grafo SQLite y persistencia tras reinicio permanecen PASS.",
+      "Necesidades del Router quedan referenciadas sin tocar el Router."
     ],
     "fallos": [],
-    "siguiente": "SALIR; D-12 permanece PENDIENTE."
+    "siguiente": "SALIR."
   }
 }
