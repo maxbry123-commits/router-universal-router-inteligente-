@@ -1,0 +1,9 @@
+task=A-04
+component=agent-reach
+source_repo=https://github.com/Panniantong/Agent-Reach
+source_commit=a19a171fa980a0785849596492e0af4db800c82f
+source_tree_sha256=dc3cc4eebd9bd40580843cbc0725c497520817b24a4794bdfacae819927896fc
+extraction_verified=true
+input={"operation":"contract"}
+output={"capability":"internet_channel_routing_diagnostics","command_env":"YAIWES_AGENT_REACH_COMMAND","dag":"agent-reach.dag.yaml"}
+validation=PASS

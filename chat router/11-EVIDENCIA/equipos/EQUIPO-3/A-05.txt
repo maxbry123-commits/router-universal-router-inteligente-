@@ -1,0 +1,6 @@
+task=A-05
+component=anthropic-skills
+source_path=router inteligente universal/Componente open soure router inteligente universal/anthropic-skills/code/skills/skill-creator/SKILL.md
+input=Quiero crear una skill desde cero y medir su rendimiento.
+output={"selected_skill":"skill-creator","trigger_match":true}
+validation=PASS

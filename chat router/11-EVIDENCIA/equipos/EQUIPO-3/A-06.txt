@@ -1,0 +1,6 @@
+task=A-06
+component=scrapling
+source_path=router inteligente universal/Componente open soure router inteligente universal/scrapling/code/scrapling/__init__.py
+input={"operation":"capabilities"}
+output={"version":"0.4.15","capabilities":["Selector","Fetcher","AsyncFetcher","StealthyFetcher","DynamicFetcher"]}
+validation=PASS
