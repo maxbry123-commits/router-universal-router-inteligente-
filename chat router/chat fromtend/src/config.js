@@ -1,6 +1,6 @@
 export const STORAGE_KEY = "yaiwes.chat.frontend.v1";
 export const CONTROL_LABELS = Object.freeze({
-  configure: "Configurar", back: "Volver al chat", save: "Guardar configuración",
+  configure: "Configurar", back: "Volver al chat", save: "Guardar configuración", close: "Nuevo chat", export: "Exportar chat",
   models: "Elegir modelo", modes: "Razonamiento", functions: "+ 12 funciones",
   attach: "Adjuntar", voice: "Voz", watchdog: "Watchdog", send: "Enviar ↗",
   skills: "Habilidades", connectors: "Conectores",
@@ -18,10 +18,11 @@ export const DEFAULT_CONFIG = Object.freeze({
   title: "Chat YAIWES",
   description: "Elige un modelo y configura las acciones para conectar tu backend.",
   theme: "little",
+  locale: "es",
   labels: CONTROL_LABELS,
   descriptions: {},
   models: [],
-  modelsActionId: "",
+  modelsActionId: "chat.models",
   modelActionId: "",
   sendActionId: "chat.send",
   attachActionId: "chat.attach",
@@ -56,6 +57,7 @@ export function normalizeConfig(value = {}) {
     result[key] = asString(value[key] ?? DEFAULT_CONFIG[key]);
   }
   result.theme = ["little", "matte", "blanco"].includes(value.theme) ? value.theme : "little";
+  result.locale = ["es", "en", "fr", "pt"].includes(value.locale) ? value.locale : "es";
   result.labels = Object.fromEntries(Object.entries(CONTROL_LABELS).map(([key, label]) => [key, asString(value.labels?.[key]) || label]));
   result.descriptions = Object.fromEntries(Object.keys(CONTROL_LABELS).map(key => [key, asString(value.descriptions?.[key])]));
   result.models = Array.isArray(value.models) ? value.models.slice(0, 100).map((model, index) => ({

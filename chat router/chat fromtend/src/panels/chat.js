@@ -14,36 +14,45 @@ import { toggleRecording } from "../actions/record-voice.js";
 import { attachments } from "../components/attachments.js";
 import { messageStream } from "../components/message-stream.js";
 import { namedButton } from "../components/named-button.js";
+import { brandMark } from "../components/mark.js";
+import { closeChat, exportChat } from "../actions/chat-session.js";
+import { chatDescription, controlLabel, slotLabel, t } from "../i18n.js";
 
 const selectors = [openSelector1, openSelector2, openSelector3, openSelector4, openSelector5];
 
 export function renderChat(context) {
-  const root = el("section", { class: "chat-panel panel", "aria-label": "Chat" });
+  const root = el("section", { class: "chat-panel panel", "aria-label": t(context, "chatAria") });
   const top = el("header", { class: "topbar" },
-    el("div", { class: "brand" }, el("span", { class: "brand-mark", "aria-hidden": "true", text: "✳" }),
+    el("div", { class: "brand" }, brandMark("brand-mark"),
       el("div", {}, el("h1", { text: context.config.title }), el("span", { class: "muted", text: "Wordflow · Chat" }))),
-    namedButton(context, "configure", () => context.showSettings(), "ghost"));
+    el("div", { class: "top-actions" },
+      namedButton(context, "close", () => closeChat(context), "ghost"),
+      namedButton(context, "export", () => {
+        try { exportChat(context); context.notice(t(context, "exportStarted")); }
+        catch (error) { context.notice(error.message, true); }
+      }, "ghost"),
+      namedButton(context, "configure", () => context.showSettings(), "ghost")));
   const mode = context.config.modes.find(item => item.id === context.selection.modeId);
   const model = context.config.models.find(item => item.id === context.selection.modelId);
-  const controls = el("nav", { class: "control-row", "aria-label": "Modelos y modos" },
-    namedButton(context, "models", () => openModels(context), "pill", model?.label || context.config.labels.models),
-    namedButton(context, "modes", () => openModes(context), "pill", mode?.label || context.config.labels.modes));
-  const selectorBar = el("div", { class: "selector-row", "aria-label": "Selectores configurables" });
+  const controls = el("nav", { class: "control-row", "aria-label": t(context, "controlsAria") },
+    namedButton(context, "models", () => openModels(context), "pill", model?.label || controlLabel(context, "models")),
+    namedButton(context, "modes", () => openModes(context), "pill", mode ? slotLabel(context, mode) : controlLabel(context, "modes")));
+  const selectorBar = el("div", { class: "selector-row", "aria-label": t(context, "selectorsAria") });
   context.config.selectors.forEach((slot, i) => {
-    const node = button(slot.label, () => selectors[i](context), "chip");
+    const node = button(slotLabel(context, slot), () => selectors[i](context), "chip");
     if (slot.description) node.title = slot.description;
     selectorBar.append(node);
   });
-  const toggleBar = el("div", { class: "toggle-row", "aria-label": "Ocho controles configurables" });
+  const toggleBar = el("div", { class: "toggle-row", "aria-label": t(context, "togglesAria") });
   context.config.toggles.forEach(slot => {
-    const node = button(slot.label, async () => {
+    const node = button(slotLabel(context, slot), async () => {
       const enabled = !context.selection.toggles[slot.id];
       node.disabled = true;
       try {
         await context.execute(slot.actionId, { controlId: slot.id, enabled });
         context.selection.toggles[slot.id] = enabled;
         node.setAttribute("aria-pressed", String(enabled));
-        context.notice(`${slot.label}: ${enabled ? "encendido" : "apagado"} confirmado.`);
+        context.notice(t(context, "toggleConfirmed", { name: slotLabel(context, slot), state: t(context, enabled ? "on" : "off") }));
       } catch (error) { context.notice(error.message, true); }
       finally { node.disabled = false; }
     }, "toggle");
@@ -52,21 +61,21 @@ export function renderChat(context) {
     toggleBar.append(node);
   });
   const welcome = context.messages.length ? null : el("div", { class: "welcome" },
-    el("span", { class: "welcome-icon", "aria-hidden": "true", text: "✳" }),
-    el("h2", { text: "¿Qué vamos a construir hoy?" }),
-    el("p", { class: "muted", text: context.config.description }));
+    brandMark("welcome-icon"),
+    el("h2", { text: t(context, "emptyTitle") }),
+    el("p", { class: "muted", text: chatDescription(context) }));
   const stream = messageStream(context);
   const { input, list } = attachments(context);
-  const textarea = el("textarea", { rows: "2", placeholder: "Escribe un mensaje…", "aria-label": "Mensaje" });
+  const textarea = el("textarea", { rows: "2", placeholder: t(context, "placeholder"), "aria-label": t(context, "messageAria") });
   textarea.value = context.draft;
   textarea.addEventListener("input", () => { context.draft = textarea.value; });
   const send = namedButton(context, "send", () => sendMessage(context, textarea, send), "primary");
   textarea.addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); send.click(); }
   });
-  const voice = namedButton(context, "voice", () => toggleRecording(context, voice), "ghost", context.recorder?.state === "recording" ? `Detener ${context.config.labels.voice}` : context.config.labels.voice);
+  const voice = namedButton(context, "voice", () => toggleRecording(context, voice), "ghost", context.recorder?.state === "recording" ? t(context, "stopRecording", { name: controlLabel(context, "voice") }) : controlLabel(context, "voice"));
   const watchdog = namedButton(context, "watchdog", async () => {
-    try { await context.execute(context.config.watchdogActionId); context.notice("Watchdog: confirmado por el backend."); }
+    try { await context.execute(context.config.watchdogActionId); context.notice(t(context, "watchdogConfirmed")); }
     catch (error) { context.notice(error.message, true); }
   }, "ghost");
   const toolbar = el("div", { class: "composer-tools" },

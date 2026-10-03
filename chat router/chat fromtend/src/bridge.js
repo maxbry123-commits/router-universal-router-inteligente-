@@ -6,9 +6,13 @@ export class ActionError extends Error {
   }
 }
 
+export function dispatchLocalAction(actionId, payload = {}, host = globalThis) {
+  host.dispatchEvent?.(new CustomEvent("yaiwes:ui-action", { detail: { actionId, payload } }));
+}
+
 export async function executeAction(actionId, payload = {}, host = globalThis) {
   if (!actionId) throw new ActionError("ACTION_UNCONFIGURED");
-  host.dispatchEvent?.(new CustomEvent("yaiwes:ui-action", { detail: { actionId, payload } }));
+  dispatchLocalAction(actionId, payload, host);
   const execute = host.YAIWES_PLUGIN_BRIDGE?.execute;
   if (typeof execute !== "function") throw new ActionError("BRIDGE_MISSING");
   try {

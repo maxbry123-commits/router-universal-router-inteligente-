@@ -3,6 +3,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check src/*.js && node --check src/actions/*.js && node --check src/components/*.js && node --check src/panels/*.js && node --check src/windows/*.js"
+    "check": "node --check src/*.js && node --check src/actions/*.js && node --check src/components/*.js && node --check src/panels/*.js && node --check src/windows/*.js && node --check src/plugins/*.js"
   }
 }

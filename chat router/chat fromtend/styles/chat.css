@@ -8,18 +8,19 @@ button:disabled { opacity: .55; cursor: wait; }
 #app { min-height: 100dvh; }
 .panel { max-width: 1040px; margin: 0 auto; padding: 18px 24px; }
 .chat-panel { min-height: 100dvh; display: flex; flex-direction: column; gap: 18px; }
-.topbar, .brand, .control-row, .selector-row, .toggle-row, .composer-tools, .settings-header, .window-header { display: flex; align-items: center; gap: 10px; }
+.topbar, .brand, .top-actions, .control-row, .selector-row, .toggle-row, .composer-tools, .settings-header, .window-header { display: flex; align-items: center; gap: 10px; }
 .topbar, .settings-header { justify-content: space-between; }
-.brand-mark, .welcome-icon { font-size: 32px; color: var(--text-bright); }
+.topbar { flex-wrap: wrap; }
+.brand-mark, .welcome-icon { width: 32px; height: 32px; color: var(--text-bright); flex: none; }
 h1, h2, h3, p { margin: 0; }
-h1 { font-size: 20px; line-height: 1.15; color: var(--text-bright); }
-h2 { font-size: 25px; color: var(--text-bright); }
+h1 { font-size: 16px; line-height: 1.2; color: var(--text-bright); }
+h2 { font-size: 20px; color: var(--text-bright); }
 h3 { font-size: 16px; color: var(--text-bright); }
 .muted { color: var(--text-secondary); }
 .control-row, .selector-row, .toggle-row { flex-wrap: wrap; }
 button { border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text-primary); padding: 9px 13px; }
 button:hover { background: var(--card-hover); }
-.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 700; }
+.primary { background: var(--accent); border-color: var(--accent); color: var(--primary-text); font-weight: 700; }
 .primary:hover { background: var(--accent-hover); }
 .pill { border-radius: 99px; font-weight: 600; }
 .chip { border-radius: 99px; font-size: 13px; }
@@ -29,7 +30,7 @@ button:hover { background: var(--card-hover); }
 .ghost { border-color: transparent; background: transparent; }
 .conversation { flex: 1; min-height: 200px; display: flex; flex-direction: column; align-items: stretch; }
 .welcome { margin: auto; text-align: center; max-width: 560px; display: grid; justify-items: center; gap: 10px; padding: 28px 0; }
-.welcome-icon { font-size: 64px; opacity: .35; }
+.welcome-icon { width: 64px; height: 64px; opacity: .35; }
 .messages { display: flex; flex-direction: column; gap: 14px; }
 .message { max-width: min(80%, 650px); padding: 13px 16px; border-radius: 12px; background: var(--surface); white-space: pre-wrap; overflow-wrap: anywhere; }
 .message.user { align-self: flex-end; background: var(--card-hover); }
@@ -44,12 +45,15 @@ button:hover { background: var(--card-hover); }
 #status { position: fixed; bottom: 0; right: 0; max-width: min(480px, 100%); background: var(--surface); color: var(--text-secondary); margin: 0; padding: 0 14px; border-radius: 10px 0 0 0; }
 #status:not(:empty) { padding: 8px 14px; border: 1px solid var(--border-strong); }
 .error, #status.error { color: var(--status-red); }
+.progress, #status.progress { color: var(--status-green); }
 .window { width: min(540px, calc(100% - 24px)); max-height: min(75dvh, 750px); background: var(--surface); color: var(--text-primary); border: 1px solid var(--border-strong); border-radius: 12px; padding: 0; }
 .window::backdrop { background: rgba(0,0,0,.7); }
 .window-header { padding: 16px; border-bottom: 1px solid var(--border); justify-content: space-between; }
 .window-body { padding: 16px; display: grid; gap: 12px; overflow: auto; max-height: 62dvh; }
-.option-list { display: grid; gap: 8px; }
+.option-list { display: grid; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 4px; }
 .option { text-align: left; width: 100%; padding: 13px; }
+.option.selected { display: flex; justify-content: space-between; align-items: center; }
+.option.selected::after { content: "✓"; color: var(--status-blue); margin-left: auto; }
 .resource { display: grid; gap: 3px; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .settings { display: grid; gap: 20px; padding-bottom: 55px; }
 .settings-group { display: grid; gap: 12px; background: var(--surface); padding: 18px; border-radius: 12px; }
