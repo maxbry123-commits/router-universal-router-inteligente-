@@ -1,0 +1,4 @@
+OmniRoute: git ls-tree HEAD -> 160000 commit 1603c86e06da473e0fffb3802585e052219ac353 (gitlink)
+git sparse-checkout add: fatal: not a directory
+ls: vacio
+Sin comando ejecutable que lea stdin.
