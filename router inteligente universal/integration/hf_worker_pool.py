@@ -36,17 +36,22 @@ def _read(path: str) -> str:
         return fh.read().strip()
 
 
+CORES_POR_FLAVOR = {"cpu-basic": 2.0, "cpu-upgrade": 8.0}
+
+
 def _cpu_limit() -> float:
+    """Nucleos PAGADOS del procesador (cpu-basic=2, cpu-upgrade=8). HF deja ver y usar nucleos de mas (cpu.max=max y
+    afinidad de toda la maquina), asi que contar esos dejaba la CPU en ~30 % aunque el Router estuviera lleno."""
+    env = os.getenv("RIU_CPU_CORES") or CORES_POR_FLAVOR.get(os.getenv("RIU_FLAVOR", ""), 0)
+    if env:
+        return float(env)
     try:
         quota, period = _read("/sys/fs/cgroup/cpu.max").split()[:2]
         if quota != "max":
             return max(0.1, int(quota) / int(period))
     except Exception:  # noqa: BLE001
         pass
-    try:
-        return float(len(os.sched_getaffinity(0)))
-    except Exception:  # noqa: BLE001
-        return float(os.cpu_count() or 1)
+    return 2.0  # cpu-basic, el procesador fijo del Router
 
 
 def _cgroup_usage_s() -> float:
