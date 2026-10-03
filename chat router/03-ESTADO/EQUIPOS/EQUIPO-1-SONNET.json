@@ -666,6 +666,12 @@
       "estado": "CERRADO_REF",
       "resumen": "Memoria enchufada al DeepSeek Harness como plugin MCP (7 tools, list_tools OK, HF health OK; Router no corriendo en la prueba). Corregido: el Router SI monta /memoria/* y tiene sync_to_bucket. CLI-Anything descargado con el motor (1872 archivos, VERIFIED_CLOSED). Pendiente: prueba punta a punta con Router, cargar en dsh, runtimes GAP. Evidencia S1-29-MEMORIA-HARNESS-Y-CLI-ANYTHING.md",
       "gaps": "prueba e2e con Router, carga en dsh, runtimes memoria"
+    },
+    {
+      "id_tarea": "S1-30",
+      "estado": "CERRADO_REF",
+      "resumen": "(Opus) Ruta memoria cerrada y probada: Harness->MCP memoria->Router->SQLite->HF bucket privado yaiwes-memoria-storage (autosync) ->Router nuevo restaura. Router: restore_from_bucket + autosync. dsh real arranca el plugin; falta credencial LLM. Tests Router 31/31, memoria 7/7. Pendiente: Router 24/7 en HF (decision Hy), credencial LLM harness, motores de memoria. Evidencia S1-30-OPUS-RUTA-MEMORIA-HARNESS-ROUTER-HF.md",
+      "gaps": "Router 24/7 en HF, credencial LLM harness, motores memoria"
     }
   ],
   "bitacora": [
@@ -802,6 +808,10 @@
     {
       "id_tarea": "S1-29",
       "nota": "Memoria enchufada al DeepSeek Harness como plugin MCP (7 tools, list_tools OK, HF health OK; Router no corriendo en la prueba). Corregido: el Router SI monta /memoria/* y tiene sync_to_bucket. CLI-Anything descargado con el motor (1872 archivos, VERIFIED_CLOSED). Pendiente: prueba punta a punta con Router, cargar en dsh, runtimes GAP. Evidencia S1-29-MEMORIA-HARNESS-Y-CLI-ANYTHING.md"
+    },
+    {
+      "id_tarea": "S1-30",
+      "nota": "(Opus) Ruta memoria cerrada y probada: Harness->MCP memoria->Router->SQLite->HF bucket privado yaiwes-memoria-storage (autosync) ->Router nuevo restaura. Router: restore_from_bucket + autosync. dsh real arranca el plugin; falta credencial LLM. Tests Router 31/31, memoria 7/7. Pendiente: Router 24/7 en HF (decision Hy), credencial LLM harness, motores de memoria. Evidencia S1-30-OPUS-RUTA-MEMORIA-HARNESS-ROUTER-HF.md"
     }
   ],
   "handoff": {

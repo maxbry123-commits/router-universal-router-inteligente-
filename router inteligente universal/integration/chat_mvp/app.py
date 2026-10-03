@@ -62,6 +62,13 @@ def _seed_wordflow_fleet() -> None:
     wordflow_agents.seed(get_store())
 
 
+@app.on_event("startup")
+def _bucket_autosync() -> None:
+    from .router import start_bucket_autosync
+
+    start_bucket_autosync()  # HF bucket = almacenamiento permanente (restore en get_store, sync al cambiar)
+
+
 _chat_deps: list = []
 try:
     from ..plugin_host.api import build_plugin_router, chat_gate_dependencies

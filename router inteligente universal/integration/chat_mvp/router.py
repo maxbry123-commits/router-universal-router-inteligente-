@@ -11,8 +11,11 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import logging
 import os
 import tempfile
+import threading
+import time
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -48,7 +51,15 @@ def get_store() -> Store:
     global _store
     if _store is None:
         default = Path("/data") if os.access("/data", os.W_OK) else Path.cwd() / "riu_data"
-        _store = Store(os.getenv("RIU_DATA_DIR") or default)
+        data_dir = Path(os.getenv("RIU_DATA_DIR") or default)
+        bucket = os.getenv("HF_BUCKET_ID")
+        token = os.getenv("HF_WRITE_TOKEN") or os.getenv("HF_TOKEN") or ""
+        if bucket and token and not (data_dir / "riu_chat.sqlite3").exists():
+            try:  # permanent storage: a fresh Router starts from the last HF bucket snapshot
+                restore_from_bucket(data_dir, bucket, token)
+            except Exception as exc:  # never take the Router down for storage GAPs
+                logging.getLogger("riu").warning("bucket restore omitido: %s", type(exc).__name__)
+        _store = Store(data_dir)
     return _store
 
 
@@ -75,6 +86,51 @@ def _auth(
         return authenticate_api_key(candidate)
     except RuntimeError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+
+def restore_from_bucket(data_dir: str | Path, bucket_id: str, token: str, *, fs_factory: Callable[..., Any] | None = None) -> dict[str, Any]:
+    """Inverse of sync_to_bucket: bring the SQLite snapshot and documents back from the HF bucket."""
+    if fs_factory is None:
+        from huggingface_hub import HfFileSystem as fs_factory
+    fs = fs_factory(token=token)
+    base = f"buckets/{bucket_id}/riu-chat"
+    data_dir = Path(data_dir)
+    if not fs.exists(f"{base}/riu_chat.sqlite3"):
+        return {"bucket": bucket_id, "restored": 0}
+    (data_dir / "docs").mkdir(parents=True, exist_ok=True)
+    (data_dir / "riu_chat.sqlite3").write_bytes(fs.cat_file(f"{base}/riu_chat.sqlite3"))
+    files = 1
+    if fs.exists(f"{base}/docs"):
+        for path in fs.ls(f"{base}/docs", detail=False):
+            (data_dir / "docs" / Path(path).name).write_bytes(fs.cat_file(path))
+            files += 1
+    return {"bucket": bucket_id, "restored": files}
+
+
+def start_bucket_autosync(interval_s: float | None = None) -> threading.Thread | None:
+    """Background sync to the HF bucket whenever the SQLite store changed (RIU_AUTOSYNC_SECONDS, 0 = off)."""
+    interval = float(os.getenv("RIU_AUTOSYNC_SECONDS", "60") if interval_s is None else interval_s)
+    bucket = os.getenv("HF_BUCKET_ID")
+    token = os.getenv("HF_WRITE_TOKEN") or os.getenv("HF_TOKEN") or ""
+    if interval <= 0 or not bucket or not token:
+        return None
+
+    def loop() -> None:
+        last = -1
+        while True:
+            time.sleep(interval)
+            try:
+                store = get_store()
+                changes = store._db.total_changes
+                if changes != last:
+                    sync_to_bucket(store, bucket, token)
+                    last = changes
+            except Exception as exc:  # keep trying; never crash the Router
+                logging.getLogger("riu").warning("bucket autosync fallo: %s", type(exc).__name__)
+
+    thread = threading.Thread(target=loop, name="riu-bucket-autosync", daemon=True)
+    thread.start()
+    return thread
 
 
 def sync_to_bucket(store: Store, bucket_id: str, token: str, *, fs_factory: Callable[..., Any] | None = None) -> dict[str, Any]:

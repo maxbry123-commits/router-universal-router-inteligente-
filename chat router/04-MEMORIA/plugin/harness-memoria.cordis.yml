@@ -1,0 +1,15 @@
+# Overlay del DeepSeek Harness (dsh --patch): memoria + almacenamiento como plugin MCP, separado del workflow.
+# Ruta: Harness -> MCP memoria (este plugin) -> Router /memoria/* y /chat/storage* -> HF Storage Bucket permanente.
+# Uso (desde la raiz del repo): RIU_ROUTER_URL=... RIU_API_KEY=... dsh headless --patch 'chat router/04-MEMORIA/plugin/harness-memoria.cordis.yml' "tarea"
+- insert:
+    - id: mcp-memoria
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: memoria
+        transport: stdio
+        command: python3
+        args: ['chat router/04-MEMORIA/plugin/memoria_mcp_server.py']
+        cwd: !!js process.cwd()
+        env:
+          RIU_ROUTER_URL: !!js process.env.RIU_ROUTER_URL || 'http://127.0.0.1:8000'
+          RIU_API_KEY: !!js process.env.RIU_API_KEY || ''
