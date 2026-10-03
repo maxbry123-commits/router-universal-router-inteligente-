@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 
-DEFAULT_BUNDLE = "buckets/COMAND-CENTER-1/yaiwes-memoria-storage/code/router-bundle.tar.gz"
+DEFAULT_BUNDLE = "buckets/COMAND-CENTER-1/yaiwes-memoria-storage/router-inteligente-universal/codigo/router-bundle.tar.gz"
 PORT = 8000
 
 
@@ -34,7 +34,7 @@ def bootstrap_command(port: int = PORT, bundle: str | None = None) -> list[str]:
 
 
 FORWARDED_SECRETS = (
-    "HF_TOKEN", "HF_CONTROL_JOBS_TOKEN", "RIU_VAULT_PASSPHRASE", "RIU_AGENT_API_KEYS", "RIU_AGENT_API_KEYS_2", "RIU_ROUTER_API_KEY",
+    "HF_TOKEN", "HF_CONTROL_JOBS_TOKEN", "RIU_VAULT_PASSPHRASE", "RIU_DIRECTOR_KEY_HASH", "RIU_AGENT_API_KEYS", "RIU_AGENT_API_KEYS_2", "RIU_ROUTER_API_KEY",
     "GITHUB_TOKEN", "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4",
     "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4", "GROQ_API_KEY_5", "GROQ_API_KEY_6", "GROQ_API_KEY_7",
     *[f"OPENAI_API_KEY_{i}" for i in range(1, 15)], "ANTHROPIC_API_KEY",

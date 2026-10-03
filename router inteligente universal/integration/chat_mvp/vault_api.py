@@ -50,6 +50,11 @@ def _run(fn: Any, *args: Any) -> Any:
         raise HTTPException(status_code=400, detail=type(exc).__name__) from exc
 
 
+def _persistido(res: dict[str, Any]) -> dict[str, Any]:
+    """Solo informa cuando el banco se guardo en el almacenamiento HF (en local no hay nada que guardar)."""
+    return {"almacenamiento": res["status"]} if res.get("status") != "SKIPPED" else {}
+
+
 def build_vault_router() -> APIRouter:
     r = APIRouter()
 
@@ -74,15 +79,22 @@ def build_vault_router() -> APIRouter:
     @r.post("/vault/credentials")
     def put(req: PutReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
         _run(bridge.put, req.ref, req.secret, req.scope)
-        return {"stored": req.ref}
+        from .control_plane import bank_persist
+
+        return {"stored": req.ref, **_persistido(bank_persist())}
 
     @r.post("/vault/rotate")
     def rotate(req: PutReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
         _run(bridge.rotate, req.ref, req.secret)
-        return {"rotated": req.ref}
+        from .control_plane import bank_persist
+
+        return {"rotated": req.ref, **_persistido(bank_persist())}
 
     @r.post("/vault/import")
     def import_vault(req: ImportReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
-        return {"imported_bytes": _run(bridge.import_b64gz, req.b64gz)}
+        out = {"imported_bytes": _run(bridge.import_b64gz, req.b64gz)}
+        from .control_plane import bank_persist
+
+        return {**out, **_persistido(bank_persist())}
 
     return r

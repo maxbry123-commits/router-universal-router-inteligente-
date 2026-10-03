@@ -12,8 +12,10 @@ import os
 from typing import Any
 
 try:  # mcp 2.x
+    from mcp.server.mcpserver import Context
     from mcp.server.mcpserver import MCPServer as _Server
 except ImportError:  # mcp 1.x
+    from mcp.server.fastmcp import Context
     from mcp.server.fastmcp import FastMCP as _Server
 
 
@@ -45,8 +47,10 @@ def build_mcp():  # noqa: ANN201
         return store._all("SELECT id, version, parent, created FROM fichas ORDER BY created DESC LIMIT 200")  # noqa: SLF001
 
     @mcp.tool()
-    async def ficha_create(ficha: dict[str, Any], base_id: str = "") -> dict[str, Any]:
-        """Crea una ficha (o espejo de base_id con cambios). mode: single|queue|parallel|council; members: 1-20."""
+    async def ficha_create(ficha: dict[str, Any], base_id: str = "", ctx: Context = None) -> dict[str, Any]:
+        """Crea una ficha (o espejo de base_id con cambios). Solo con la clave del Director (cabecera X-Director-Key)."""
+        if not _director(ctx):
+            return {"status": "DENEGADO", "detail": "CLAVE_DIRECTOR_REQUERIDA"}
         return cp.ficha_save(get_store(), cp.FichaReq(base_id=base_id or None, ficha=ficha))
 
     @mcp.tool()
@@ -65,19 +69,19 @@ def build_mcp():  # noqa: ANN201
         return cp.lab_last() or {"status": "SIN_INFORMES"}
 
     @mcp.tool()
-    async def memoria_save(scope: str, key: str, data: Any) -> dict[str, Any]:
+    async def memoria_save(scope: str, key: str, data: Any, ctx: Context = None) -> dict[str, Any]:
         """Guarda en la memoria del Router."""
-        return memory(get_store()).save("mcp:" + scope, key, data)
+        return memory(get_store()).save(_scope(ctx, scope), key, data)
 
     @mcp.tool()
-    async def memoria_load(scope: str, key: str) -> list[dict[str, Any]]:
+    async def memoria_load(scope: str, key: str, ctx: Context = None) -> list[dict[str, Any]]:
         """Lee de la memoria del Router."""
-        return memory(get_store()).load("mcp:" + scope, key)
+        return memory(get_store()).load(_scope(ctx, scope), key)
 
     @mcp.tool()
-    async def memoria_search(scope: str, query: str, k: int = 10) -> Any:
+    async def memoria_search(scope: str, query: str, k: int = 10, ctx: Context = None) -> Any:
         """Busca en la memoria del Router."""
-        return memory(get_store()).search("mcp:" + scope, query, k)
+        return memory(get_store()).search(_scope(ctx, scope), query, k)
 
     @mcp.tool()
     async def almacenamiento_sync() -> dict[str, Any]:
@@ -88,8 +92,11 @@ def build_mcp():  # noqa: ANN201
         return await asyncio.to_thread(sync_to_bucket, get_store(), bucket, token)
 
     @mcp.tool()
-    async def hf_compute_run(command: list[str], image: str = "python:3.12", flavor: str = "cpu-basic", timeout: str = "30m") -> dict[str, Any]:
-        """Computo HF para cualquier cosa conectada al Router (HF Job pagado)."""
+    async def hf_compute_run(command: list[str], image: str = "python:3.12", flavor: str = "cpu-basic", timeout: str = "30m",
+                             ctx: Context = None) -> dict[str, Any]:
+        """Computo HF pagado: token con permiso "computo" o clave del Director."""
+        if not (_director(ctx) or "computo" in _permisos(ctx)):
+            return {"status": "DENEGADO", "detail": "PERMISO_COMPUTO_REQUERIDO"}
         cp._check_flavor(flavor)  # noqa: SLF001
         job = cp._api().run_job(namespace=cp.JOB_NS, image=image, command=command, flavor=flavor, timeout=timeout)  # noqa: SLF001
         return {"job_id": job.id, "flavor": flavor}
@@ -100,7 +107,77 @@ def build_mcp():  # noqa: ANN201
         j = cp._api().inspect_job(namespace=cp.JOB_NS, job_id=job_id)  # noqa: SLF001
         return {"job_id": job_id, "stage": str(getattr(j.status, "stage", ""))}
 
+    @mcp.tool()
+    async def quien_soy(ctx: Context = None) -> dict[str, Any]:
+        """Con que token/clave estoy conectado y que permisos tengo."""
+        return {"dueno": _owner(ctx), "permisos": _permisos(ctx)}
+
+    @mcp.tool()
+    async def secciones_listar() -> dict[str, Any]:
+        """Fichas montadas como secciones (carpeta fichas/ del Router)."""
+        from .secciones import SECCIONES
+
+        return {"secciones": SECCIONES.lista()}
+
+    @mcp.tool()
+    async def seccion_run(nombre: str, input: str, ctx: Context = None) -> dict[str, Any]:  # noqa: A002
+        """Pasa un texto por todos los pasos de una seccion."""
+        from .secciones import ejecutar
+
+        return await asyncio.to_thread(ejecutar, nombre, input, _owner(ctx))
+
+    @mcp.tool()
+    async def espacio_guardar(ruta: str, texto: str, ctx: Context = None) -> dict[str, Any]:
+        """Guarda un archivo de texto en el almacenamiento propio de este token."""
+        from .tokens import _fs, _ruta_espacio
+
+        await asyncio.to_thread(_fs().pipe_file, _ruta_espacio(_owner(ctx), ruta), texto.encode("utf-8"))
+        return {"guardado": ruta}
+
+    @mcp.tool()
+    async def espacio_leer(ruta: str, ctx: Context = None) -> dict[str, Any]:
+        """Lee un archivo de texto del almacenamiento propio de este token."""
+        from .tokens import _fs, _ruta_espacio
+
+        data = await asyncio.to_thread(_fs().cat_file, _ruta_espacio(_owner(ctx), ruta))
+        return {"ruta": ruta, "texto": data.decode("utf-8", errors="replace")}
+
+    @mcp.tool()
+    async def ventana_estado() -> dict[str, Any]:
+        """Estado vivo del Router: conectados, banco (sin claves), laboratorio, secciones, tokens."""
+        from . import ventana
+
+        return await asyncio.to_thread(ventana.todo)
+
     return mcp
+
+
+def _state(ctx: Any) -> dict[str, Any]:
+    try:
+        return ctx.request_context.request.scope.get("state") or {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _owner(ctx: Any) -> str:
+    return str(_state(ctx).get("riu_owner") or "mcp")
+
+
+def _director(ctx: Any) -> bool:
+    return bool(_state(ctx).get("riu_director"))
+
+
+def _permisos(ctx: Any) -> list[str]:
+    from .tokens import registro_de_dueno
+
+    rec = registro_de_dueno(_owner(ctx))
+    return list((rec or {}).get("permisos") or [])
+
+
+def _scope(ctx: Any, scope: str) -> str:
+    from .memory_runtime import scope_for
+
+    return scope_for(_owner(ctx), scope)
 
 
 class _KeyGate:

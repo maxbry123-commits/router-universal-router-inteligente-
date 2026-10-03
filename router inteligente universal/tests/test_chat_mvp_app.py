@@ -326,8 +326,8 @@ def test_storage_graph_and_bucket_sync(client, monkeypatch):
     document_id = uploaded.json()["document"]["id"]
     out = rt.sync_to_bucket(rt.get_store(), "u/b", "w", fs_factory=FakeFS)
     assert out == {"bucket": "u/b", "files": 2}
-    assert written["buckets/u/b/riu-chat/riu_chat.sqlite3"].startswith(b"SQLite format 3")
-    assert written[f"buckets/u/b/riu-chat/docs/{document_id}"] == b"x"
+    assert written["buckets/u/b/router-inteligente-universal/memoria/riu_chat.sqlite3"].startswith(b"SQLite format 3")
+    assert written[f"buckets/u/b/router-inteligente-universal/memoria/docs/{document_id}"] == b"x"
 
 
 def test_ui_bridge_persists_chat_data_under_state_root():

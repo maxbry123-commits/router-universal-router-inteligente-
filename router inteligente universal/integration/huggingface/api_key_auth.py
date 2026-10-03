@@ -37,6 +37,14 @@ def authenticate_api_key(candidate: str | None) -> str:
     for expected, agent_id in _keys().items():
         if hmac.compare_digest(candidate, expected):
             return agent_id
+    try:  # tokens de conexion universal (banco/tokens.json, solo huellas)
+        from ..chat_mvp.tokens import REGISTRO, dueno
+
+        rec = REGISTRO.buscar(candidate)
+        if rec is not None:
+            return dueno(rec)
+    except ImportError:
+        pass
     agent_id = verify_keystore_key(candidate)
     if agent_id:
         return agent_id

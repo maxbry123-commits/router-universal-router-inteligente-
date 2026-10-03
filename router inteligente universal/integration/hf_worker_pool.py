@@ -196,7 +196,9 @@ class HFWorkerPool:
             expose=[PORT],
             secrets=self._forwarded_secrets(),
             env={"HF_AUTOSCALE_CHILD": "1", "RIU_DATA_DIR": "/tmp/riu", "RIU_VAULT_PATH": "/tmp/riu/riu_vault.db",
-                 "RIU_VAULT_SOURCE": os.getenv("RIU_VAULT_SOURCE", ""), "RIU_CODE_BUNDLE": os.getenv("RIU_CODE_BUNDLE", "")},
+                 "RIU_VAULT_SOURCE": os.getenv("RIU_VAULT_SOURCE", ""), "RIU_CODE_BUNDLE": os.getenv("RIU_CODE_BUNDLE", ""),
+                 "RIU_VAULT_PROVIDERS_SOURCE": os.getenv("RIU_VAULT_PROVIDERS_SOURCE", ""), "RIU_ROOT": os.getenv("RIU_ROOT", ""),
+                 "HF_BUCKET_ID": os.getenv("HF_BUCKET_ID", "")},
         )
         now = time.time()
         worker = Worker(

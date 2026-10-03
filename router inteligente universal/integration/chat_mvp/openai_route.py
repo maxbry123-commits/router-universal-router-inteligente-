@@ -164,6 +164,15 @@ async def _offload(req: OAChatReq) -> dict[str, Any] | None:
     return None
 
 
+def _ficha_amarrada(owner: str) -> str | None:
+    if not owner.startswith("tok:"):
+        return None
+    from .tokens import registro_de_dueno
+
+    rec = registro_de_dueno(owner)
+    return (rec or {}).get("ficha") or None
+
+
 def build_openai_router() -> APIRouter:
     r = APIRouter()
 
@@ -178,6 +187,18 @@ def build_openai_router() -> APIRouter:
         msgs = clean_messages(req.messages)
         extra = {k: v for k, v in (req.model_extra or {}).items() if k in PASS_FIELDS and v is not None}
         max_tokens = min(req.max_tokens or req.max_completion_tokens or 1024, 32768)
+        amarrada = _ficha_amarrada(owner)
+        if amarrada:
+            from .secciones import ejecutar
+
+            texto = next((m["content"] for m in reversed(msgs) if m["role"] == "user" and m.get("content")), "")
+            res = await asyncio.to_thread(ejecutar, amarrada, texto, owner)
+            body = {"id": "chatcmpl-" + uuid.uuid4().hex[:24], "object": "chat.completion", "created": int(time.time()),
+                    "model": f"seccion/{res['seccion']}",
+                    "choices": [{"index": 0, "message": {"role": "assistant", "content": res.get("final") or ""}, "finish_reason": "stop"}],
+                    "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                    "riu": {"seccion": res["seccion"], "pasos": [{k: s.get(k) for k in ("paso", "model", "ok", "ms")} for s in res["steps"]]}}
+            return _sse(body) if sse else body
         offloaded = await _offload(req)
         if offloaded is not None:
             return _sse(offloaded) if sse else offloaded

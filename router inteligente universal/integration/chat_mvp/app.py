@@ -129,4 +129,35 @@ try:
 except Exception as exc:  # never take the Router down for MCP
     logging.getLogger("riu").warning("mcp no montado: %s", exc)
 
+try:  # Conexion universal + candado + ventana status (Director 2026-10-03)
+    from starlette.middleware import Middleware
+
+    from . import secciones, tokens, ventana
+    from .candado import Candado
+    from .router import _auth as _riu_auth
+
+    app.user_middleware.append(Middleware(Candado))  # el mas interno: despues de CORS y del login del navegador
+    app.include_router(tokens.build_tokens_router(_riu_auth))  # /tokens, /espacio, /terminal
+    app.include_router(secciones.build_secciones_router(_riu_auth))  # /secciones (fichas = secciones vivas)
+    app.include_router(ventana.build_ventana_router(_riu_auth))  # /ventana
+
+    @app.on_event("startup")
+    async def _conexion_universal() -> None:
+        import asyncio
+        import concurrent.futures
+
+        import anyio.to_thread
+
+        hilos = int(os.getenv("RIU_HILOS", "1000"))
+        asyncio.get_running_loop().set_default_executor(concurrent.futures.ThreadPoolExecutor(max_workers=hilos))
+        anyio.to_thread.current_default_thread_limiter().total_tokens = hilos
+        tokens.iniciar()
+        secciones.iniciar()
+        ventana.iniciar()
+        from .control_plane import iniciar_banco_vivo
+
+        iniciar_banco_vivo()
+except Exception as exc:  # never take the Router down for the universal connection layer
+    logging.getLogger("riu").warning("conexion universal no montada: %s", exc)
+
 app.include_router(gateway.app.router)  # /health, /v1/models, /v1/chat/completions, /chat/models

@@ -36,6 +36,7 @@ from . import core, dag_cli, model_pool, org_api, resilience, ui_bridge
 from . import dag as dagmod
 from . import github_tools as gh
 from . import providers as prov
+from . import rutas
 from .fables_adapter import FablesCatalog
 from .memory_runtime import memory, scope_for
 from .store import Store
@@ -93,7 +94,7 @@ def restore_from_bucket(data_dir: str | Path, bucket_id: str, token: str, *, fs_
     if fs_factory is None:
         from huggingface_hub import HfFileSystem as fs_factory
     fs = fs_factory(token=token)
-    base = f"buckets/{bucket_id}/riu-chat"
+    base = f"buckets/{bucket_id}/{rutas.MEMORIA}"
     data_dir = Path(data_dir)
     if not fs.exists(f"{base}/riu_chat.sqlite3"):
         return {"bucket": bucket_id, "restored": 0}
@@ -138,7 +139,7 @@ def sync_to_bucket(store: Store, bucket_id: str, token: str, *, fs_factory: Call
     if fs_factory is None:
         from huggingface_hub import HfFileSystem as fs_factory
     fs = fs_factory(token=token)
-    base = f"buckets/{bucket_id}/riu-chat"
+    base = f"buckets/{bucket_id}/{rutas.MEMORIA}"
     files = 0
     with tempfile.TemporaryDirectory() as tmp:
         snap = store.snapshot(Path(tmp) / "riu_chat.sqlite3")

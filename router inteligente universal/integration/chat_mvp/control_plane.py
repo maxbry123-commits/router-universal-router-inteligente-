@@ -32,12 +32,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from . import providers as prov
+from . import rutas
 from .router import _auth, get_store
 
 log = logging.getLogger("riu")
 HF_NS = os.getenv("RIU_HF_NAMESPACE", "COMAND-CENTER-1")
-REGISTRY_PATH = "control/router-current.json"
-DESIRED_PATH = "control/router-desired.json"
+REGISTRY_PATH = rutas.REGISTRY
+DESIRED_PATH = rutas.DESIRED
 MAX_MEMBERS = 20
 SDK_MODULES = ("openai", "anthropic", "groq", "huggingface_hub", "mcp", "httpx", "google.genai")
 
@@ -221,7 +222,7 @@ def lab_run(store: Any = None) -> dict[str, Any]:
     store = store or get_store()
     store._exec("CREATE TABLE IF NOT EXISTS lab_runs(run_id TEXT PRIMARY KEY, ts REAL, body TEXT)")  # noqa: SLF001
     store._exec("INSERT INTO lab_runs(run_id, ts, body) VALUES(?,?,?)", (report["run_id"], report["ts"], json.dumps(report, ensure_ascii=False)))  # noqa: SLF001
-    report["bucket"] = bucket_write_json("lab/latest.json", report) and bucket_write_json(f"lab/reports/{report['run_id']}.json", report)
+    report["bucket"] = bucket_write_json(f"{rutas.LABORATORIO}/latest.json", report) and bucket_write_json(f"{rutas.LABORATORIO}/reports/{report['run_id']}.json", report)
     return report
 
 
@@ -315,6 +316,11 @@ def _member_call(f: Ficha, m: Member, text: str) -> dict[str, Any]:
 def ficha_run(store: Any, fid: str, text: str) -> dict[str, Any]:
     data = ficha_get(store, fid)
     f = Ficha(**{k: v for k, v in data.items() if k not in {"id", "version", "parent", "created"}})
+    return {"ficha": fid, "version": data["version"], **run_ficha(f, text)}
+
+
+def run_ficha(f: Ficha, text: str) -> dict[str, Any]:
+    """Motor comun: fichas guardadas (SQLite) y secciones de la carpeta fichas/ (secciones.py)."""
     steps: list[dict[str, Any]] = []
     final: str | None
     if f.mode == "single":
@@ -339,7 +345,7 @@ def ficha_run(store: Any, fid: str, text: str) -> dict[str, Any]:
             verdict = _member_call(f, Member(**{**judge.model_dump(), "template": tmpl}), joined)
             steps.append({**verdict, "role": "juez"})
             final = verdict.get("content")
-    return {"ficha": fid, "version": data["version"], "mode": f.mode, "final": final, "steps": steps}
+    return {"mode": f.mode, "final": final, "steps": steps}
 
 
 def catalog() -> dict[str, Any]:
@@ -565,3 +571,74 @@ def build_control_router() -> APIRouter:
                 "nota": "usable cuando el Job este RUNNING y vLLM haya cargado el modelo"}
 
     return r
+
+
+# ---------------------------------------------------------------- banco vivo (Director 2026-10-03)
+_BANK_SHA: dict[str, str | None] = {"vault": None, "providers": None}
+
+
+def bank_refresh() -> dict[str, Any]:
+    """Relee el banco del almacenamiento HF: si alguien agrego claves (100 nuevas), el Router las usa sin reiniciar."""
+    from .vault_bridge import bridge
+
+    src, psrc = os.getenv("RIU_VAULT_SOURCE", ""), os.getenv("RIU_VAULT_PROVIDERS_SOURCE", "")
+    passphrase = os.getenv("RIU_VAULT_PASSPHRASE", "")
+    if not src or not passphrase or not _hf_token():
+        return {"status": "SKIPPED"}
+    changed = []
+    raw = _fs().cat_file(src)
+    h = hashlib.sha256(raw).hexdigest()
+    if h != _BANK_SHA["vault"]:
+        path = bridge.path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(gzip.decompress(base64.b64decode(raw)))
+        bridge.lock()
+        bridge.unlock(passphrase)
+        _BANK_SHA["vault"] = h
+        changed.append("banco")
+    target = os.getenv("RIU_VAULT_PROVIDERS_FILE")
+    if psrc and target:
+        praw = _fs().cat_file(psrc)
+        ph = hashlib.sha256(praw).hexdigest()
+        if ph != _BANK_SHA["providers"]:
+            json.loads(praw)
+            Path(target).write_bytes(praw)
+            _BANK_SHA["providers"] = ph
+            changed.append("providers")
+    return {"status": "RELOADED" if changed else "SAME", "cambios": changed}
+
+
+def bank_persist() -> dict[str, Any]:
+    """Despues de agregar/rotar claves por /vault (con clave del Director): copia de respaldo + banco nuevo al almacenamiento HF."""
+    from .vault_bridge import bridge
+
+    src = os.getenv("RIU_VAULT_SOURCE", "")
+    if not src or not _hf_token():
+        return {"status": "SKIPPED"}
+    fs = _fs()
+    try:
+        fs.pipe_file(src + ".bak-" + time.strftime("%Y%m%d%H%M%S"), fs.cat_file(src))
+    except Exception:  # noqa: BLE001 - first bank has no previous copy
+        pass
+    data = base64.b64encode(gzip.compress(bridge.path().read_bytes()))
+    fs.pipe_file(src, data)
+    _BANK_SHA["vault"] = hashlib.sha256(data).hexdigest()
+    return {"status": "PERSISTED"}
+
+
+def iniciar_banco_vivo() -> None:
+    import threading
+
+    intervalo = float(os.getenv("RIU_BANK_RELOAD_S", "300"))
+
+    def bucle() -> None:
+        while True:
+            time.sleep(intervalo)
+            try:
+                r = bank_refresh()
+                if r.get("cambios"):
+                    log.warning("banco vivo: %s", r)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("banco vivo fallo: %s", type(exc).__name__)
+
+    threading.Thread(target=bucle, name="riu-banco-vivo", daemon=True).start()
