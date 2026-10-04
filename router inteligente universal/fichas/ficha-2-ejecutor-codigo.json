@@ -1,0 +1,10 @@
+{
+  "nombre": "ficha-2-ejecutor-codigo",
+  "descripcion": "INTERNA ficha 2: codigo, refactor y revision (Groq Qwen 3.8). Respaldo: ficha-2-ejecutor-codigo-respaldo.",
+  "modo": "unico",
+  "anclaje_system_prompt": "Responde en español.",
+  "pasos": [{"nombre": "responde", "modelo": "groq:qwen/qwen3.8-27b", "system_prompt": "Eres el ejecutor de codigo de la ficha 2. Respondes y ejecutas tu solo.", "instruccion": "{input}", "max_tokens": 2048}],
+  "juez": null,
+  "conectividad": {"tokens_permitidos": ["*"], "vias": ["http", "mcp"]},
+  "notas": "Director 2026-10-04."
+}
