@@ -1,0 +1,10 @@
+{
+  "nombre": "ficha-1-glm-5",
+  "descripcion": "Ficha 1: solo GLM 5.3 (NVIDIA) responde y ejecuta.",
+  "modo": "unico",
+  "anclaje_system_prompt": "Responde en español.",
+  "pasos": [{"nombre": "responde", "modelo": "nvidia:z-ai/glm-5.3", "system_prompt": "Eres GLM 5.3. Respondes y ejecutas tu solo.", "instruccion": "{input}", "max_tokens": 2048}],
+  "juez": null,
+  "conectividad": {"tokens_permitidos": ["*"], "vias": ["http", "mcp"]},
+  "notas": "Director 2026-10-04. Si se agota una clave pasa a otra clave del mismo modelo; nunca cambia de modelo."
+}
