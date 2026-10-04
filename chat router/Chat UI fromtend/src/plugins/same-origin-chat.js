@@ -144,6 +144,19 @@ export function createSameOriginChatBridge(fetchImpl) {
         if (!Array.isArray(data.results) || typeof data.total !== "number") throw new Error("INVALID_JOBS_RESPONSE");
         return { ok: true, jobs: data.results, passed: data.passed, total: data.total };
       }
+      if (actionId === "chat.memoria.health") {
+        const data = await request("/memoria/health");
+        if (!data || typeof data !== "object") throw new Error("INVALID_MEMORIA_RESPONSE");
+        return { ok: true, health: data };
+      }
+      if (actionId === "chat.memoria.search") {
+        const query = String(payload.query || "").slice(0, 500);
+        const scope = String(payload.scope || "chat").slice(0, 64);
+        if (!query.trim()) throw new Error("MEMORIA_QUERY_EMPTY");
+        const data = await request("/memoria/search?scope=" + encodeURIComponent(scope) + "&query=" + encodeURIComponent(query) + "&k=10");
+        if (!data || !Array.isArray(data.results)) throw new Error("INVALID_MEMORIA_RESPONSE");
+        return { ok: true, results: data.results };
+      }
       if (actionId === "chat.github.accounts") {
         const data = await request("/chat/github/accounts");
         if (!Array.isArray(data.accounts)) throw new Error("INVALID_GH_ACCOUNTS_RESPONSE");

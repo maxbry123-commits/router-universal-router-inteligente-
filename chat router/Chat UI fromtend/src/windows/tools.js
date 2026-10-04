@@ -12,6 +12,7 @@ import { openFichas } from "./fichas.js";
 import { openComponents } from "./components.js";
 import { openAgents, openConversations } from "./agents.js";
 import { openGithub } from "./github.js";
+import { openMemoria } from "./memoria.js";
 
 export function openTools(context, pickFiles) {
   const list = el("div", { class: "option-list" });
@@ -27,6 +28,7 @@ export function openTools(context, pickFiles) {
     ["agents", "connectors", () => openAgents(context), true],
     ["conversations", "file", () => openConversations(context), true],
     ["github", "connectors", () => openGithub(context), true],
+    ["memoria", "grid", () => openMemoria(context), true],
     ["selectors", "grid", () => openSelectors(context), true],
     ["controls", "controls", () => openControls(context), true],
     ["functions", "plus", () => openActions(context), true],
