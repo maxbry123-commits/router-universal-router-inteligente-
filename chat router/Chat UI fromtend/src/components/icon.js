@@ -1,5 +1,6 @@
 import { el } from "../dom.js";
 import { v12Svg } from "../icons-v12.js";
+import { readTypography } from "../typography/state.js";
 
 // Asigna los iconos V12 de la skill a los controles de producción;
 // los que no tienen equivalente V12 conservan su trazo local.
@@ -25,7 +26,17 @@ const paths = {
   export: "M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5",
 };
 
+const SLOT_OF = { send: "send", attach: "attach", more: "tools", chevron: "back" };
+
 export function icon(name) {
+  const slot = SLOT_OF[name];
+  if (slot) {
+    const custom = readTypography().icons?.[slot];
+    if (custom) {
+      const node = v12Svg(custom, "icon svg-icon");
+      if (node.innerHTML) return node;
+    }
+  }
   const v12Id = V12_MAP[name];
   if (v12Id) {
     const node = v12Svg(v12Id, "icon svg-icon");

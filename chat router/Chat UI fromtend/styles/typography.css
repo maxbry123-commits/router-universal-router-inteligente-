@@ -14,3 +14,13 @@
 .typo-mobile p { margin: 0; }
 .typo-mobile button { justify-self: start; }
 @media (max-width: 720px) { .typo-editor { grid-template-columns: 1fr; } }
+.typo-presets .chip { font-size: 11px; }
+.typo-signals .chip { width: 30px; height: 30px; padding: 0; background: var(--chip-accent); border-radius: 50%; }
+.typo-scale { display: flex; align-items: center; gap: 10px; }
+.typo-scale input[type="range"] { flex: 1; accent-color: var(--status-blue); }
+.typo-grises { border: 1px solid var(--border, #393939); border-radius: 10px; padding: 10px; display: grid; gap: 6px; }
+.typo-grises h4 { margin: 0 0 4px; font-size: 11px; }
+.typo-gris-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+.typo-gris-row > span:last-child { display: flex; align-items: center; gap: 6px; }
+.typo-gris-sw { width: 14px; height: 14px; border-radius: 4px; border: 1px solid #ffffff44; display: inline-block; }
+.icon-assign { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }

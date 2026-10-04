@@ -7,13 +7,16 @@ const SELECTORS = {
   input: ".composer textarea",
   output: ".message.assistant",
   button: "button",
-  meta: ".sub, .muted, #status",
+  symbol: ".icon svg, .svg-icon, .icon",
+  label: ".eyebrow, .preview-label, .window-heading .eyebrow, [data-control-label]",
+  helper: ".helper, .preview-helper, .attachment, .result-note",
+  status: ".sub, .muted, #status, .panel-state, .state",
 };
 
-const props = row => [
+const props = (row, scale) => [
   ["color", row.color],
   ["font-family", FONTS[row.font]],
-  ["font-size", row.size + "px"],
+  ["font-size", "calc(" + row.size + "px * " + scale + ")"],
   ["font-weight", String(row.weight)],
   ["letter-spacing", row.tracking + "px"],
   ["line-height", String(row.lineHeight)],
@@ -30,11 +33,15 @@ export function applyTypography(state, doc = document) {
     styleNode.id = "yaiwes-typography";
     (doc.head || doc.documentElement).append(styleNode);
   }
-  const rules = TEXT_ROLES.filter(role => role !== "placeholder").map(role => {
-    const declaration = props(state[role]).map(([name, value]) => name + ":" + value).join(";");
-    return SELECTORS[role] + "{" + declaration + "}";
-  });
-  const ph = props(state.placeholder).filter(([name]) => name !== "text-decoration" && name !== "text-align");
+  const roles = state.roles || state;
+  const scale = (state.scale || 100) / 100;
+  const rules = [":root{--status-blue:" + state.signal + ";--blue:" + state.signal + ";--on:" + state.signal + "}"];
+  for (const role of TEXT_ROLES.filter(r => r !== "placeholder")) {
+    if (!SELECTORS[role]) continue;
+    const declaration = props(roles[role], scale).map(([name, value]) => name + ":" + value).join(";");
+    rules.push(SELECTORS[role] + "{" + declaration + "}");
+  }
+  const ph = props(roles.placeholder, scale).filter(([name]) => name !== "text-decoration" && name !== "text-align");
   rules.push(".composer textarea::placeholder{" + ph.map(([n, v]) => n + ":" + v).join(";") + "}");
   styleNode.textContent = rules.join("\n");
   return styleNode;
