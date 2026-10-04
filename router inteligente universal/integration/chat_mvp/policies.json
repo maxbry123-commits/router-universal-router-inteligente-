@@ -1,5 +1,5 @@
 {
- "_comment": "Chain policies per group (Router). A missing/invalid file or group falls back to resilience.CODE_POLICY. timeout = seconds per option (chat_nvidia: 90 each, no base 30 s). deepseek:true = skipped in DeepSeek peak (01-04 and 06-10 UTC Mon-Fri). peak_only_minimax = in peak only MiniMax. model env:NAME reads that env var. sdk: list pending from the Director.",
+ "_comment": "Chain policies per group (Router). A missing/invalid file or group falls back to resilience.CODE_POLICY. timeout = seconds per option (chat_nvidia: 90 each, no base 30 s). deepseek:true = skipped in DeepSeek peak (01-04 and 06-10 UTC Mon-Fri). peak_only_minimax = in peak only MiniMax. model env:NAME reads that env var. sdk: list pending from the Director. Grupos f1_* y f2_* (Director 2026-10-04): los usan las fichas; f1_* = un solo modelo con espera de 90 s (nunca cambia de modelo); f2_glm = GLM 96 s y si no responde Nemotron 3.5 Lightning y luego muse-glimmer; f2_lightning = Nemotron 3.5 Lightning y si no responde muse-glimmer.",
  "groups": {
   "default": {
    "authorized_fallback": true,
@@ -144,6 +144,30 @@
   "sdk": {
    "authorized_fallback": true,
    "chain": [{"provider": "openai", "model": "gpt-6-luna", "timeout": 90}, {"provider": "openai", "model": "gpt-6.1-sol", "timeout": 90}, {"provider": "openai", "model": "gpt-6-sol", "timeout": 90}, {"provider": "openai", "model": "gpt-6-astra", "timeout": 90}, {"provider": "openai", "model": "gpt-5.6-sol", "timeout": 90}, {"provider": "openai", "model": "gpt-5.6-terra", "timeout": 90}, {"provider": "openai", "model": "gpt-5.6-luna", "timeout": 90}, {"provider": "openai", "model": "gpt-5.5", "timeout": 90}, {"provider": "openai", "model": "gpt-5.4", "timeout": 90}, {"provider": "openai", "model": "gpt-5.2", "timeout": 90}]
+  },
+  "f1_kimi": {
+   "authorized_fallback": true,
+   "chain": [{"provider": "nvidia", "model": "moonshotai/kimi-k3", "timeout": 90}]
+  },
+  "f1_nemotron": {
+   "authorized_fallback": true,
+   "chain": [{"provider": "nvidia", "model": "nvidia/nemotron-3-super-120b-a12b", "timeout": 90}]
+  },
+  "f1_lightning": {
+   "authorized_fallback": true,
+   "chain": [{"provider": "nvidia", "model": "nvidia/nemotron-3.5-lightning-30b-a3b", "timeout": 90}]
+  },
+  "f1_groq_qwen": {
+   "authorized_fallback": true,
+   "chain": [{"provider": "groq", "model": "qwen/qwen3.8-27b", "timeout": 90}]
+  },
+  "f2_glm": {
+   "authorized_fallback": true,
+   "chain": [{"provider": "nvidia", "model": "z-ai/glm-5.3", "timeout": 96}, {"provider": "nvidia", "model": "nvidia/nemotron-3.5-lightning-30b-a3b", "timeout": 90}, {"provider": "nvidia", "model": "meta/muse-glimmer-30b", "timeout": 90}]
+  },
+  "f2_lightning": {
+   "authorized_fallback": true,
+   "chain": [{"provider": "nvidia", "model": "nvidia/nemotron-3.5-lightning-30b-a3b", "timeout": 90}, {"provider": "nvidia", "model": "meta/muse-glimmer-30b", "timeout": 90}]
   }
  }
 }
