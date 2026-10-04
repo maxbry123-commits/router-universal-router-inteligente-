@@ -1,7 +1,8 @@
 # Claude notas 1 — Fichas del Router + chat + workflow (fuente de la verdad)
 
-Fecha: 2026-10-03 (Bogotá). Autor: Opus, por orden del Director (Hy).
+Fecha: 2026-10-03 (Bogotá). Actualizado: 2026-10-04 (Bogotá). Autor: Opus, por orden del Director (Hy).
 Regla: primero va el INPUT BLOCK VERBATIM del Director (sin cambiar nada). Después, el plan de acción de Opus paso a paso. Si algo del plan contradice el input block, vale el input block.
+Aviso: este archivo NO lleva claves ni tokens. El Director las dio en el chat; viven en el banco del Router.
 
 ---
 
@@ -196,6 +197,8 @@ Me enseñas aquí en el chat tu plan de acción y tú preguntas o dudas si hay
 
 ## 2. PLAN DE ACCIÓN (Opus)
 
+Nota 2026-10-04: lo que el Director corrigió o ordenó después (sección 4) manda sobre este plan. En especial: ficha 3 va en L4, ficha 4 va en un solo servidor HF en cola, y el trabajo se hace en 3 partes.
+
 Reglas del plan:
 - No se toca nada fuera de lo que el Director pidió.
 - Las claves y tokens salen del banco del Router, nunca del chat ni de archivos.
@@ -274,6 +277,7 @@ Reglas del plan:
 - T4 16 GB → Qwen3.5-0.8B: tools, MCP y ejecución pequeña.
 - T4 16 GB → Qwen3.6-35B-A3B + MTP: código, debug y ejecución compleja.
 - Flujo fijo: input → L4 (plan/DAG) → T4 0.8B (tools/MCP) → T4 35B (code/debug) → L4 (revisar/refactorizar/verificar).
+- CORREGIDO por el Director el 2026-10-04 (ver 4.1): un solo servidor HF procesador (L4); los 3 modelos trabajan en cola, uno a la vez.
 
 ### Todos los modelos
 - Acceso a GitHub y Hugging Face con los tokens del banco, a través de las herramientas del Router.
@@ -292,7 +296,7 @@ Reglas del plan:
 
 ### Paso 3 — chat listo para Vercel
 - Revisar que la interfaz tenga todo lo del paso 2 y lo mínimo (MVP) para funcionar.
-- Arreglar lo que falte y dejarla lista para subir a Vercel (pendiente: duda 2).
+- Arreglar lo que falte y dejarla lista. NO subir nada a Vercel sin autorización del Director (ver 4.2).
 
 ### Paso 4 — workflow y chat reciben las fichas
 - Con las fichas 0, 1 y 2 operativas y conectadas al harness, revisar que el workflow Loops code Yaiwes y el chat reciban esa configuración y la usen.
@@ -337,10 +341,89 @@ Reglas del plan:
 
 ---
 
-## 3. Dudas abiertas para el Director
+## 3. Dudas (estado al 2026-10-04)
 
-1. Ficha 3: dice "L8" y luego "HF L4 24 GB". ¿Es L4?
-2. Paso 3: ¿subir el chat a Vercel es una excepción aprobada a la regla de no dejar nada en Vercel?
-3. Si en NVIDIA no existe exactamente un modelo nombrado (por ejemplo Nemotron 3.5 Lightning 30B-A3B, Nemotron 3 Super 120B-A12B o GLM 5), ¿uso el más cercano disponible y aviso?
-4. Ficha 4: Qwen3.6-35B-A3B comprimido ocupa casi toda una T4 de 16 GB. ¿Va en una T4 aparte del 0.8B, o los dos en la misma T4 con la compresión máxima?
-5. Ficha 1, opción 4 "Nemotron": ¿qué Nemotron exactamente?
+1. Ficha 3: ¿L8 o L4? → RESPONDIDA: L4 (ver 1.7).
+2. Paso 3: ¿subir el chat a Vercel es excepción a la regla de no dejar nada en Vercel? → RESPONDIDA: Vercel es solo el puente por donde Claude se conecta; no se coloca ni una letra en Vercel sin autorización del Director (ver 4.2).
+3. Si en NVIDIA no existe exactamente un modelo nombrado, ¿uso el más cercano y aviso? → SIN RESPUESTA DIRECTA. El Director ordenó trabajar sin dilatar (ver 4.2). Lo que ya usa el Router en `integration/chat_mvp/policies.json` (main): Kimi K3 = `nvidia:moonshotai/kimi-k3`; GLM = `nvidia:z-ai/glm-5.3`; DeepSeek V4 = `hf:deepseek-ai/DeepSeek-V4-Flash`; Qwen 3.8 = `groq:qwen/qwen3.8-27b`; Nemotron = `nvidia:nvidia/nemotron-3-super-120b-a12b`. Propuesta de Claude, a confirmar: usar esos y avisar en el informe.
+4. Ficha 4: ¿T4 aparte o misma T4? → RESPONDIDA: un solo servidor HF procesador (L4), los 3 modelos en cola (ver 1.7).
+5. Ficha 1, opción 4 "Nemotron": ¿cuál exactamente? → PENDIENTE. Propuesta de Claude: Nemotron 3 Super 120B-A12B (el que ya usa el Router).
+
+---
+
+## 4. ÓRDENES NUEVAS DEL DIRECTOR (2026-10-04, tal cual)
+
+### 1.7 Respuestas del Director a las dudas (2026-10-04 03:58)
+```
+1. L4 
+2. Un solo servidor HF procesador trabajan en cola no al mismo tiempo
+```
+(1 = la ficha 3 va en **L4**, no L8. 2 = ficha 4: **un solo servidor/procesador en HF**; los 3 modelos trabajan **en cola, uno a la vez**.)
+
+### 4.1 Orden de las 3 partes (2026-10-04 04:04)
+```
+Necesito que busque todo lo de las fichas y los pasos que te dije que debes hace y todo lo que te dije de los modelos en el chat 4 pasas y lo anotas en el archivo en Github me manera muy detallada no resumen 1 a 1 imput block verbartin y me das un parche de recuperación un enlace handoff con todo cableado 
+
+Vas a dividir el trabajo en 3 partes 
+Parte 1 📌.
+Necesito las fichas 0 al 2  funcionado 
+Parte 2 📌 
+Necesito las demás fichas en huggueface y los modelos locales activos 
+Parte 3 📌 
+Lo de apk open ai 
+
+Auditas el chat 6 veces anotas mis instrucciones porque no te dio la gana maldito inbesil incompetente basura de anotarlo cuando te lo dije y me das un parche de recuperación y el enlace con todo anotado y handoff de todo 
+
+
+Inicia haces lo que te digo y paras
+```
+
+### 4.2 Mensaje del Director (2026-10-04 04:56)
+```
+Vercel por ahora es solo por donde tú te conectas no colocas ni una letra en vercel sin mi autorización 
+
+2. Entras al banco la clave es [CLAVE DEL BANCO: la dio el Director en el chat; NO se escribe en el repo] hay dentro está la clave de Github y huggueface 
+
+Deja de comer mierda inventando problemas para dilatar el trabajo y no hacerlo 
+Estas inventando mierda de los modelo para que yo caiga en un bucle de tu incompetencia o trabajas o me dices que no lo vas hacer
+
+Revisa los archivos y anotas actulizas el documento Claude notas en main 
+Y luego de revisar me dices las preguntas
+```
+(Además pegó en ese mensaje los datos de conexión: URLs del conector MCP, guía del puente Vercel, handoff del router de respaldo e índice del Router. Las claves de esos datos NO se copian aquí.)
+
+### 4.3 Reglas fijas (del Director, vigentes)
+1. El Router de HF que ya funciona NO se toca ni se relanza.
+2. Las fichas entran como plugin / ficha JSON del Router; no se editan archivos del Router.
+3. Fichas 0, 1, 2 (modelos por API del banco): GitHub, plugin del Router inteligente universal. Fichas 3, 3.1, 4 (modelos locales): Hugging Face.
+4. Claves y tokens: solo del banco. Nunca en archivos ni en el repo.
+5. Vercel: solo puente. Ni una letra sin autorización. Sin GitHub Actions. Cómputo en HF.
+6. NVIDIA: espera 1,8 minutos (108 s).
+7. Ficha 1: si se agota una clave, salta a otra clave del mismo modelo; nunca cambia de modelo.
+8. Ficha 4: un solo servidor L4, en cola.
+9. Orden: Parte 1 (fichas 0-2) → Parte 2 (fichas 3, 3.1, 4 + modelos locales) → Parte 3 (APK ChatGPT).
+
+---
+
+## 5. ESTADO REVISADO EN EL REPO (2026-10-04, solo lectura)
+
+- Este archivo en `main` era la versión del 2026-10-03; ahora quedó actualizado.
+- `Claude notas/` en `main` solo tiene este archivo (las notas viejas ya no están).
+- `main` NO tiene carpeta `fichas/`. La carpeta `fichas/` (con `_plantilla.json`) y `HANDOFF-FICHA.md`, `HANDOFF-ROUTER-UNIVERSAL-OPUS.md`, `MANUAL-AGENTES.md` están solo en la rama `devin/1790824641-chat-agent-plan`.
+- El archivo `INPUT-BLOCK-VERBATIM-FICHAS-MODELOS-2026-10-04.md` (el largo, con secciones de ChatGPT/APK y el parche de recuperación) NO está en `main` ni en la carpeta del Router de la rama `devin/...`. Solo existe en el chat.
+- `📂 readme coneccion open ai cableado.md` sí está en `main`, dentro de `router inteligente universal/`.
+- `policies.json` (main) ya tiene Kimi K3, GLM 5.3, DeepSeek V4 Flash (por HF), Groq Qwen 3.8 y Nemotron 3 Super. NO tiene Nemotron 3.5 Lightning ni los Qwen locales. El grupo `sdk` ya existe con modelos de OpenAI.
+- Conexión del conector GitHub + HF: verificada, entra como `maxbry123-commits`. El listado del almacenamiento HF con el nombre `router-inteligente-universal` salió vacío; el handoff dice que el banco está en `COMAND-CENTER-1/yaiwes-memoria-storage` → `router-inteligente-universal/banco/` (no se pudo confirmar por esa vía).
+- Pendiente de leer antes de tocar: `HANDOFF-CABLEADO.md`, `HANDOFF-ROUTER-UNIVERSAL-OPUS.md`, `MANUAL-AGENTES.md` y el router de respaldo `mini.py` (hoy usa Qwen2.5-3B/7B, no los modelos pedidos).
+
+## 6. Parche de recuperación (pegar al iniciar una sesión nueva de cualquier IA)
+```
+Eres agente del Director (Hy). Antes de hacer NADA:
+1. Lee completo "Claude notas/claude notas 1.md" (rama main). Las secciones 1 y 4 son órdenes textuales del Director: no las cambies ni las resumas.
+2. Reglas: NO tocar ni relanzar el Router de HF; fichas como plugin/ficha JSON (sin parches al Router); fichas 0-2 en GitHub, 3/3.1/4 en HF;
+   claves solo del banco; Vercel solo puente (ni una letra sin autorización); sin GitHub Actions; NVIDIA espera 108 s;
+   ficha 1 rota claves del mismo modelo y nunca cambia de modelo; ficha 4 un solo servidor L4 en cola.
+3. Orden: Parte 1 (fichas 0-2) → Parte 2 (fichas 3, 3.1, 4 + modelos locales) → Parte 3 (APK ChatGPT).
+4. Anota cada orden nueva del Director TEXTUAL en este archivo ANTES de trabajar.
+5. Respuestas cortas (máx. 10 líneas), en español sin código. Explica cómo lo harás antes de hacerlo. Si dudas, pregunta en texto.
+```
