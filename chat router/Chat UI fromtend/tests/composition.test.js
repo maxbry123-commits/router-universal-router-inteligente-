@@ -31,7 +31,7 @@ test("plus menu exposes distinct document and attachment commands without stacke
   const { document, context } = fixture({ attachActionId: "files.attach", documentsActionId: "documents.upload" });
   const commands = [];
   const first = openTools(context, actionId => commands.push(actionId));
-  assert.equal(first.querySelectorAll(".option").length, 9);
+  assert.equal(first.querySelectorAll(".option").length, 10);
   assert.ok(first.querySelector('[data-control="plugins"]'));
   assert.ok(first.querySelector('[data-control="fichas"]'));
   first.querySelector('[data-control="documents"]').click();

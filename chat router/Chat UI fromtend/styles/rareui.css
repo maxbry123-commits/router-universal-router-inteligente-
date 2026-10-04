@@ -1,0 +1,50 @@
+.rui-catalog { display: grid; gap: 14px; }
+.rui-demo { border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: grid; gap: 8px; }
+.rui-folder-tab { width: 100%; text-align: left; }
+.rui-folder.open .rui-folder-tab { border-color: var(--accent); }
+.rui-folder-body { display: grid; gap: 6px; padding-top: 6px; }
+.rui-bounce { display: none; flex-direction: column; gap: 4px; }
+.rui-bounce.open { display: flex; }
+.rui-bounce.open button { animation: rui-bounce-in .35s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes rui-bounce-in { from { transform: translateX(-14px); opacity: 0; } to { transform: none; opacity: 1; } }
+.rui-hook { display: flex; }
+.rui-hook-list { display: none; gap: 4px; }
+.rui-hook.open .rui-hook-list { display: flex; }
+.rui-family-group button { display: block; width: 100%; text-align: left; margin-top: 4px; }
+.rui-proximity { display: flex; gap: 6px; }
+.rui-prox-item { transition: transform .15s; }
+.rui-duration { display: flex; align-items: center; gap: 10px; }
+.rui-orb { width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle at var(--ox, 50%) var(--oy, 40%), var(--accent, #0848f7), var(--card) 70%); }
+.rui-scroll { height: 4px; background: var(--card); border-radius: 999px; }
+.rui-scroll-bar { height: 100%; width: 0; background: var(--accent); border-radius: 999px; }
+.rui-scroll-box { max-height: 80px; overflow-y: auto; }
+.rui-code-head { display: flex; align-items: center; gap: 8px; }
+.rui-code { background: var(--card); padding: 10px; border-radius: 10px; overflow-x: auto; margin: 0; }
+.rui-otp { display: flex; gap: 6px; }
+.rui-otp input { width: 34px; height: 40px; text-align: center; }
+.rui-gravity span { display: inline-block; animation: rui-drop .5s both; }
+@keyframes rui-drop { from { transform: translateY(-14px); opacity: 0; } to { transform: none; opacity: 1; } }
+.rui-activity { display: grid; grid-template-rows: repeat(7, 8px); grid-auto-flow: column; gap: 2px; }
+.rui-activity-cell { width: 8px; height: 8px; border-radius: 2px; background: var(--card); }
+.rui-activity-cell[data-level="1"] { background: color-mix(in srgb, var(--status-green) 30%, var(--card)); }
+.rui-activity-cell[data-level="2"] { background: color-mix(in srgb, var(--status-green) 55%, var(--card)); }
+.rui-activity-cell[data-level="3"] { background: color-mix(in srgb, var(--status-green) 80%, var(--card)); }
+.rui-activity-cell[data-level="4"] { background: var(--status-green); }
+.rui-reactions { display: flex; gap: 6px; }
+.rui-bell { position: relative; }
+.rui-bell-badge { position: absolute; top: -4px; right: -4px; background: var(--status-red); color: #fff; border-radius: 999px; font-size: 10px; padding: 1px 5px; }
+.rui-steps { display: flex; align-items: center; gap: 10px; }
+.rui-grid-reveal { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rui-grid-cell { background: var(--card); border-radius: 8px; padding: 12px; opacity: 0; transform: translateY(8px); transition: all .3s; }
+.rui-grid-reveal.shown .rui-grid-cell { opacity: 1; transform: none; }
+.rui-gooey { position: relative; display: flex; gap: 4px; }
+.rui-gooey-marker { position: absolute; top: 0; left: 0; height: 100%; background: var(--selection-fill); border-radius: 10px; transition: all .25s; z-index: 0; }
+.rui-gooey button { position: relative; z-index: 1; }
+.rui-delete.armed { border-color: var(--status-red); color: var(--status-red); }
+.rui-counter { font-size: 24px; font-weight: 700; }
+.rui-matrix { position: relative; width: 90px; height: 90px; border-radius: 50%; background: var(--card); }
+.rui-matrix-dot { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); transform: translate(calc((var(--mx, .5) - .5) * 10px), calc((var(--my, .5) - .5) * 10px)); }
+.rui-tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rui-task { display: flex; justify-content: space-between; align-items: center; background: var(--card); border-radius: 8px; padding: 8px 10px; }
+.rui-voice-wrap { display: inline-flex; align-items: center; gap: 6px; }
+.rui-voice[aria-pressed="true"] { color: var(--status-red); }

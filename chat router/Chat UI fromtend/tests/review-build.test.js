@@ -11,7 +11,7 @@ execFileSync(process.execPath, [build]);
 const html = readFileSync(new URL("../chat Yaiwes fromtend.revisar.html", import.meta.url), "utf8");
 
 test("standalone review contains only the real bundled source, with no external modules or test fixtures", () => {
-  assert.equal(Array.from(html.matchAll(/<style>/g)).length, 4);
+  assert.equal(Array.from(html.matchAll(/<style>/g)).length, 5);
   assert.equal(Array.from(html.matchAll(/<script>/g)).length, 1);
   assert.doesNotMatch(html, /<script[^>]*src=|<link[^>]*stylesheet|type="module"/);
   assert.doesNotMatch(html, /linkedom|Configured description|Purpose 11|Function 11/);

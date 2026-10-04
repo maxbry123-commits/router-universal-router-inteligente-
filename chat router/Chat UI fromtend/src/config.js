@@ -3,7 +3,7 @@ export const CONTROL_LABELS = Object.freeze({
   configure: "Configurar", back: "Volver al chat", save: "Guardar configuración", close: "Nuevo chat", export: "Exportar chat",
   models: "Elegir modelo", modes: "Razonamiento", functions: "+ 12 funciones",
   attach: "Adjuntar", voice: "Voz", watchdog: "Watchdog", send: "Enviar ↗",
-  skills: "Habilidades", connectors: "Conectores", plugins: "Plugins del Router", fichas: "Fichas del Router",
+  skills: "Habilidades", connectors: "Conectores", plugins: "Plugins del Router", fichas: "Fichas del Router", components: "Componentes UI",
   tools: "Herramientas", selectors: "Selectores", controls: "Controles", chatMenu: "Menú del chat", documents: "Subir documentos",
 });
 
