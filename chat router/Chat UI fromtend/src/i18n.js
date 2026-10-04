@@ -4,7 +4,8 @@ export const LANGUAGES = ["es", "en", "fr", "pt"];
 
 export const STRINGS = {
   es: {
-    tools: "Herramientas", selectors: "Selectores", controls: "Controles", chatMenu: "Menú del chat", documents: "Subir documentos", documentsActionId: "Subir documentos", plugins: "Plugins del Router", fichas: "Fichas del Router", components: "Componentes UI", agents: "Agentes del Router", conversations: "Conversaciones",
+    tools: "Herramientas", selectors: "Selectores", controls: "Controles", chatMenu: "Menú del chat", documents: "Subir documentos", documentsActionId: "Subir documentos", plugins: "Plugins del Router", fichas: "Fichas del Router", components: "Componentes UI", agents: "Agentes del Router", conversations: "Conversaciones", github: "GitHub",
+    ghAccount: "Cuenta", ghRepos: "Listar repos", ghReadFile: "Leer archivo", ghCommit: "Commit", ghAttach: "Adjuntar a documentos", ghAccountsLoaded: "{n} cuentas del Router.", ghReposLoaded: "{n} repos del Router.", ghFileLoaded: "Archivo {p} leído.", ghCommitDone: "Commit confirmado por GitHub.",
     componentsDesc: "Los 22 componentes Rare UI portados de la skill; interacción real local, sin datos falsos.",
     iconLibrary: "Biblioteca de iconos V12", iconLibraryDesc: "54 prototipos en revisión; filtra, previsualiza y copia SVG localmente. Copiar no asigna una acción al backend.", iconCopied: "SVG de {name} copiado.", iconCopyFailed: "El navegador no permitió copiar el SVG.",
     typography: "Tipografía", typo_title: "Título", typo_subtitle: "Subtítulo", typo_body: "Texto", typo_input: "Entrada", typo_placeholder: "Placeholder", typo_output: "Salida", typo_button: "Botón", typo_meta: "Meta",
@@ -34,7 +35,8 @@ export const STRINGS = {
     models: "Elegir modelo", modes: "Razonamiento", functions: "+ 12 funciones", attach: "Adjuntar", voice: "Voz", watchdog: "Watchdog", send: "Enviar ↗", skills: "Habilidades", connectors: "Conectores",
   },
   en: {
-    tools: "Tools", selectors: "Selectors", controls: "Controls", chatMenu: "Chat menu", documents: "Upload documents", documentsActionId: "Upload documents", plugins: "Router plugins", fichas: "Router fichas", components: "UI components", agents: "Router agents", conversations: "Conversations",
+    tools: "Tools", selectors: "Selectors", controls: "Controls", chatMenu: "Chat menu", documents: "Upload documents", documentsActionId: "Upload documents", plugins: "Router plugins", fichas: "Router fichas", components: "UI components", agents: "Router agents", conversations: "Conversations", github: "GitHub",
+    ghAccount: "Account", ghRepos: "List repos", ghReadFile: "Read file", ghCommit: "Commit", ghAttach: "Attach to documents", ghAccountsLoaded: "{n} Router accounts.", ghReposLoaded: "{n} Router repos.", ghFileLoaded: "File {p} read.", ghCommitDone: "Commit confirmed by GitHub.",
     componentsDesc: "The 22 Rare UI components ported from the skill; real local interaction, no fake data.",
     iconLibrary: "V12 icon library", iconLibraryDesc: "54 prototypes under review; filter, preview and copy SVG locally. Copying does not assign a backend action.", iconCopied: "SVG for {name} copied.", iconCopyFailed: "The browser could not copy the SVG.",
     typography: "Typography", typo_title: "Title", typo_subtitle: "Subtitle", typo_body: "Body", typo_input: "Input", typo_placeholder: "Placeholder", typo_output: "Output", typo_button: "Button", typo_meta: "Meta",
@@ -64,7 +66,8 @@ export const STRINGS = {
     models: "Choose model", modes: "Reasoning", functions: "+ 12 functions", attach: "Attach", voice: "Voice", watchdog: "Watchdog", send: "Send ↗", skills: "Skills", connectors: "Connectors",
   },
   fr: {
-    tools: "Outils", selectors: "Sélecteurs", controls: "Commandes", chatMenu: "Menu du chat", documents: "Téléverser des documents", documentsActionId: "Téléverser des documents", plugins: "Plugins du Router", fichas: "Fiches du Router", components: "Composants UI", agents: "Agents du Router", conversations: "Conversations",
+    tools: "Outils", selectors: "Sélecteurs", controls: "Commandes", chatMenu: "Menu du chat", documents: "Téléverser des documents", documentsActionId: "Téléverser des documents", plugins: "Plugins du Router", fichas: "Fiches du Router", components: "Composants UI", agents: "Agents du Router", conversations: "Conversations", github: "GitHub",
+    ghAccount: "Compte", ghRepos: "Lister les repos", ghReadFile: "Lire le fichier", ghCommit: "Commit", ghAttach: "Joindre aux documents", ghAccountsLoaded: "{n} comptes du Router.", ghReposLoaded: "{n} repos du Router.", ghFileLoaded: "Fichier {p} lu.", ghCommitDone: "Commit confirmé par GitHub.",
     componentsDesc: "Les 22 composants Rare UI portés de la skill ; interaction locale réelle, sans données fausses.",
     iconLibrary: "Bibliothèque d’icônes V12", iconLibraryDesc: "54 prototypes en révision ; filtrer, prévisualiser et copier un SVG local. La copie n’assigne pas d’action backend.", iconCopied: "SVG de {name} copié.", iconCopyFailed: "Le navigateur n’a pas permis de copier le SVG.",
     typography: "Typographie", typo_title: "Titre", typo_subtitle: "Sous-titre", typo_body: "Texte", typo_input: "Saisie", typo_placeholder: "Placeholder", typo_output: "Sortie", typo_button: "Bouton", typo_meta: "Méta",
@@ -94,7 +97,8 @@ export const STRINGS = {
     models: "Choisir un modèle", modes: "Raisonnement", functions: "+ 12 fonctions", attach: "Joindre", voice: "Voix", watchdog: "Watchdog", send: "Envoyer ↗", skills: "Compétences", connectors: "Connecteurs",
   },
   pt: {
-    tools: "Ferramentas", selectors: "Seletores", controls: "Controles", chatMenu: "Menu do chat", documents: "Enviar documentos", documentsActionId: "Enviar documentos", plugins: "Plugins do Router", fichas: "Fichas do Router", components: "Componentes UI", agents: "Agentes do Router", conversations: "Conversas",
+    tools: "Ferramentas", selectors: "Seletores", controls: "Controles", chatMenu: "Menu do chat", documents: "Enviar documentos", documentsActionId: "Enviar documentos", plugins: "Plugins do Router", fichas: "Fichas do Router", components: "Componentes UI", agents: "Agentes do Router", conversations: "Conversas", github: "GitHub",
+    ghAccount: "Conta", ghRepos: "Listar repos", ghReadFile: "Ler arquivo", ghCommit: "Commit", ghAttach: "Anexar a documentos", ghAccountsLoaded: "{n} contas do Router.", ghReposLoaded: "{n} repos do Router.", ghFileLoaded: "Arquivo {p} lido.", ghCommitDone: "Commit confirmado pelo GitHub.",
     componentsDesc: "Os 22 componentes Rare UI portados da skill; interação local real, sem dados falsos.",
     iconLibrary: "Biblioteca de ícones V12", iconLibraryDesc: "54 protótipos em revisão; filtre, visualize e copie SVG localmente. Copiar não atribui uma ação backend.", iconCopied: "SVG de {name} copiado.", iconCopyFailed: "O navegador não permitiu copiar o SVG.",
     typography: "Tipografia", typo_title: "Título", typo_subtitle: "Subtítulo", typo_body: "Texto", typo_input: "Entrada", typo_placeholder: "Placeholder", typo_output: "Saída", typo_button: "Botão", typo_meta: "Meta",

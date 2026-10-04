@@ -128,6 +128,45 @@ export function createSameOriginChatBridge(fetchImpl) {
         if (!data || typeof data !== "object") throw new Error("INVALID_USAGE_RESPONSE");
         return { ok: true, usage: data };
       }
+      if (actionId === "chat.github.accounts") {
+        const data = await request("/chat/github/accounts");
+        if (!Array.isArray(data.accounts)) throw new Error("INVALID_GH_ACCOUNTS_RESPONSE");
+        return { ok: true, items: data.accounts.map(row => ({
+          id: String(row.account || ""),
+          label: String(row.account || ""),
+          description: row.configured ? String(row.source || "configured") : "NOT_CONFIGURED",
+        })).filter(row => row.id) };
+      }
+      if (actionId === "chat.github.repos") {
+        const account = String(payload.account || "").trim();
+        if (!/^[\w.-]{1,64}$/.test(account)) throw new Error("GH_ACCOUNT_INVALID");
+        const data = await request("/chat/github/repos?account=" + encodeURIComponent(account));
+        if (!Array.isArray(data.repos)) throw new Error("INVALID_GH_REPOS_RESPONSE");
+        return { ok: true, repos: data.repos };
+      }
+      if (actionId === "chat.github.file") {
+        const account = String(payload.account || "");
+        const repo = String(payload.repo || "");
+        const path = String(payload.path || "");
+        if (!/^[\w.-]{1,64}$/.test(account) || !/^[\w./-]{1,200}$/.test(repo) ||
+            !/^[\w./\-áéíóúñÁÉÍÓÚÑ ]{1,300}$/u.test(path)) throw new Error("GH_FILE_INPUT_INVALID");
+        const data = await request("/chat/github/file?account=" + encodeURIComponent(account) +
+          "&repo=" + encodeURIComponent(repo) + "&path=" + encodeURIComponent(path) +
+          (payload.ref ? "&ref=" + encodeURIComponent(String(payload.ref)) : "") +
+          (payload.attach === true ? "&attach=true" : ""));
+        if (!data || typeof data.sha !== "string" || typeof data.text !== "string") throw new Error("INVALID_GH_FILE_RESPONSE");
+        return { ok: true, file: { path: data.path, sha: data.sha, size: data.size, text: data.text }, document: data.document || null };
+      }
+      if (actionId === "chat.github.commit") {
+        const { account, repo, path, content, message, branch } = payload;
+        if (typeof account !== "string" || typeof repo !== "string" || typeof path !== "string" ||
+            typeof content !== "string" || !content.length || typeof message !== "string" || !message.trim()) {
+          throw new Error("GH_COMMIT_INPUT_INVALID");
+        }
+        const data = await request("/chat/github/commit", { account, repo, path, content, message: message.trim(), branch: branch || undefined });
+        if (!data || typeof data !== "object") throw new Error("INVALID_GH_COMMIT_RESPONSE");
+        return { ok: true, commit: data };
+      }
       if (actionId === "chat.dagRun") {
         if (!payload.dag || typeof payload.dag !== "object" || Array.isArray(payload.dag)) {
           throw new Error("DAG_INVALID_JSON");
