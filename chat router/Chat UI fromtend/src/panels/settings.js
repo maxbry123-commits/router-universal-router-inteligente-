@@ -4,6 +4,7 @@ import { themePicker } from "../components/theme-picker.js";
 import { DEFAULT_CONFIG } from "../config.js";
 import { exportSettings, importSettings } from "../actions/settings-transfer.js";
 import { openIconLibrary } from "../windows/icon-library.js";
+import { openTypography } from "../windows/typography.js";
 
 function field(label, value, onChange, multiline = false) {
   const input = el(multiline ? "textarea" : "input", { class: "setting-input", "aria-label": label });
