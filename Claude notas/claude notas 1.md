@@ -214,20 +214,20 @@ Reglas del plan:
 - Candado: crear, listar, apagar o cambiar tokens exige la clave del Director (el Router responde 403 sin ella).
 - Orden 05:11: la ficha 0 NO se conecta todavía al harness de DeepSeek.
 
-### Ficha 1 — un solo modelo, elegido en el selector
-- Cinco opciones separadas en el selector:
-  1. Nvidia Kimi K3
-  2. Nvidia DeepSeek V4 (DeepSeek V4 Flash por HF, el que ya usa el Router)
-  3. Nvidia GLM 5 (GLM 5.3, el que ya usa el Router)
-  4. Nemotron (Nemotron 3 Super 120B-A12B, confirmado por el Director 05:01)
-  5. Groq Qwen 3.8
+### Ficha 1 — un solo modelo, elegido en el selector — MONTADA el 2026-10-04 (ver 5, salida 3); 4 de 5 responden
+- Cinco opciones separadas en el selector (cada una es una ficha de un solo paso, nombre `ficha-1-<modelo>`):
+  1. Nvidia Kimi K3 → `ficha-1-kimi-k3` (responde)
+  2. Nvidia DeepSeek V4 (DeepSeek V4 Flash por HF) → `ficha-1-deepseek-v4` (NO responde: el Router contesta `MODEL_NOT_SELECTABLE`)
+  3. Nvidia GLM 5 (GLM 5.3) → `ficha-1-glm-5` (responde)
+  4. Nemotron (Nemotron 3 Super 120B-A12B, confirmado por el Director 05:01) → `ficha-1-nemotron` (responde)
+  5. Groq Qwen 3.8 → `ficha-1-groq-qwen-3-8` (responde)
 - Solo actúa el modelo elegido: responde y ejecuta.
-- Si una clave de ese proveedor se agota, el Router pasa a la siguiente clave (API) del mismo modelo. Nunca cambia de modelo. Si no queda ninguna clave, sale un mensaje de error (Director 05:11).
-- Acceso a GitHub y Hugging Face: el modelo usa herramientas del Router; los tokens salen del banco.
-- NVIDIA: espera hasta 1,8 minutos (108 s) la respuesta.
-- Prueba: una pregunta y una acción en GitHub/HF por cada modelo; además, forzar una clave agotada y ver que pasa a la siguiente del mismo modelo.
+- Si una clave de ese proveedor se agota, el Router pasa a la siguiente clave (API) del mismo modelo. Nunca cambia de modelo. Si no queda ninguna clave, sale un mensaje de error (Director 05:11). Comprobado: al pedir un modelo que no existe, el Router da error y NO salta a otro modelo.
+- Acceso a GitHub y Hugging Face: el modelo usa herramientas del Router; los tokens salen del banco. (Pendiente de la parte final del plan: asegurar ese acceso en todas las fichas.)
+- NVIDIA: espera hasta 1,8 minutos (108 s) la respuesta. NO aplicado todavía: el Router tiene 90 s en su política y cambiarlo exige tocar un archivo del Router (ver duda 11).
+- Prueba hecha: una pregunta por modelo, todos mostraron en el informe el modelo que contestó.
 
-### Ficha 2 — consejo (ask consil) + ejecución
+### Ficha 2 — consejo (ask consil) + ejecución — MONTADA el 2026-10-04 (ver 5, salida 3)
 - Flujo:
   1. input
   2. Nvidia DeepSeek V4
@@ -235,17 +235,17 @@ Reglas del plan:
   4. Groq Qwen 3.8
   5. Nvidia Kimi K3 decide
   6. Groq Qwen 3.8 ejecuta como agente con tools
-- Saltos: si se acaba el saldo de Groq, salta a Nvidia DeepSeek; si no responde, pasa a Nemotron y ejecuta.
+- Cómo quedó (el motor de fichas del Router hace consejo + juez pero no un ejecutor después del juez):
+  - Tramo 1, ficha `ficha-2` (modo consejo): DeepSeek V4, GLM 5.3 y Groq Qwen 3.8 opinan; Kimi K3 es el juez y escribe en la primera línea `ROL: tools | codigo | frontend | general`.
+  - Tramo 2, fichas internas de un paso, que llama el agente (harness, Hermes, OpenClaw) según el ROL: `ficha-2-ejecutor-general` (Groq Qwen 3.8) con respaldo `ficha-2-ejecutor-general-respaldo` (Nemotron 3 Super); `ficha-2-ejecutor-tools` (Nemotron 3.5 Lightning por NVIDIA); `ficha-2-ejecutor-codigo` (Groq Qwen 3.8) con respaldo `ficha-2-ejecutor-codigo-respaldo` (Nemotron 3 Super); `ficha-2-ejecutor-frontend` (DeepSeek V4 Flash).
+  - La regla de saltos (si falla Groq, usar el respaldo) la aplica el agente que llama: si la ficha principal responde con error, llama a la de respaldo. El Router no tiene saltos entre fichas.
+- Saltos pedidos por el Director: si se acaba el saldo de Groq, salta a Nvidia DeepSeek; si no responde, pasa a Nemotron y ejecuta. El salto por NVIDIA DeepSeek no se usa porque ese modelo no responde (se pasa directo a Nemotron).
 - Roles dentro de la ficha 2:
   - **Arquitectura y planificación:** el consejo. Su resultado llena información al chat, al orquestador, a Hermes y a OpenClaw.
   - **Ejecutar, tool plugins y tareas agénticas sin code:** Nemotron 3.5 Lightning 30B-A3B, por NVIDIA (agente ejecutor, no en HF; orden 05:46).
   - **Code, refactoría y revisión:** 1) Groq Qwen 3.8; si no está disponible, 2) Nemotron 3 Super 120B-A12B.
   - **Frontend:** DeepSeek V4 Flash.
-- Lo que hay que programar en el motor de fichas:
-  - el paso "ejecutor" después del juez;
-  - la elección de modelo por rol (tools / code / frontend);
-  - la cadena de saltos propia de cada rol.
-- Prueba: una tarea de arquitectura, una de code y una de frontend, viendo qué modelo actuó en cada paso.
+- Pruebas hechas: consejo con una tarea real (GLM, Qwen y el juez Kimi respondieron; DeepSeek falló por `MODEL_NOT_SELECTABLE`); cada ejecutor con una pregunta corta (todos responden menos frontend/DeepSeek).
 
 ### Ficha 3 — Qwen 3.8 solo en el router de Hugging Face (L4 24 GB)
 - Qwen3.8-27B Q3_K_XL, solo texto, servido con llama.cpp con estos parámetros:
@@ -277,7 +277,7 @@ Reglas del plan:
 
 ### Paso 2 — selector de fichas en el chat
 - Buscar en `chat router/` la interfaz del chat (frontend).
-- Agregar un selector con las fichas 1 (los 5 modelos por separado), 2, 3, 3.1 y 4. La ficha 0 no va en el selector.
+- Agregar un selector con las fichas 1 (los 5 modelos por separado), 2, 3, 3.1 y 4. La ficha 0 no va en el selector. Las fichas internas `ficha-2-ejecutor-*` NO deben aparecer en el selector.
 - El selector lee la lista viva de fichas del Router: una ficha nueva aparece sola.
 
 ### Paso 3 — chat listo para Vercel
@@ -338,6 +338,8 @@ Reglas del plan:
 7. Token HF de escritura para el job → RESUELTA (05:46): el Director lo dio en el chat (nombre `HF_TOKEN_1_NEW`). No se guarda en archivos; conviene cambiarlo cuando todo esté estable, porque quedó escrito en el chat.
 8. Cuantizaciones elegidas por Claude (0.8B en Q8_0, 35B en UD-Q3_K_XL de 17,2 GB) → RESPONDIDA por el Director (15:31): el modelo bajado "no corre". El Director dará otros modelos. Hasta entonces, no se baja nada más.
 9. "Ficha 5": en las notas no existe; Claude la toma como la 3.1 (sin respuesta del Director).
+10. (NUEVA, PENDIENTE) DeepSeek V4: el Router no deja elegir ningún modelo DeepSeek de forma directa (`MODEL_NOT_SELECTABLE`, probado con 6 modelos de HF); por NVIDIA `deepseek-v4.1-flash` no responde (se queda esperando más de 140 s). Afecta `ficha-1-deepseek-v4`, el miembro DeepSeek de `ficha-2` y `ficha-2-ejecutor-frontend`. Opciones para el Director: (a) permitir DeepSeek elegido de forma directa en el Router (toca un archivo del Router: pide su OK); (b) otro modelo para esos puestos; (c) usar el grupo `minor` del Router, que lleva DeepSeek primero pero puede contestar otro modelo (rompe la regla de "nunca cambia de modelo" en la ficha 1).
+11. (NUEVA, PENDIENTE) Espera de NVIDIA a 1,8 minutos (108 s): hoy el Router espera 90 s por modelo (`policies.json`, grupo `chat_nvidia`). Kimi K3 llegó a tardar 64 s en una prueba. Subirlo a 108 s exige cambiar ese archivo del Router.
 
 ---
 
@@ -481,6 +483,18 @@ Luego te doy otros modelos
 Realiza ficha 0 ya opus hizo lo de la memoria revisa puede que ya esté listo ficha 0 para no Reaver el trabajo revisa primero
 ```
 
+### 4.9 Fichas 1 y 2 (2026-10-04 15:40 a 15:43)
+```
+Ya está lista ?
+```
+```
+Sigue con las ficha 1 a la 2 primero explícame cómo la vez hacer la distribución de trabajo simple y corto
+```
+```
+Si aprobado haz las 2 fichas
+```
+(Claude explicó el plan y el Director lo aprobó: fichas 1 y 2 como fichas del Router, consejo con juez y ejecutor por rol.)
+
 ### 4.7 Reglas fijas (del Director, vigentes)
 1. El Router de HF que ya funciona NO se toca ni se relanza.
 2. Las fichas entran como plugin / ficha JSON del Router; no se editan archivos del Router.
@@ -501,9 +515,10 @@ Realiza ficha 0 ya opus hizo lo de la memoria revisa puede que ya esté listo fi
 
 ### Repo
 - `Claude notas/` en `main` solo tiene este archivo.
-- `main` NO tiene carpeta `fichas/`. La carpeta `fichas/` (con `_plantilla.json`) y `HANDOFF-FICHA.md`, `HANDOFF-ROUTER-UNIVERSAL-OPUS.md`, `MANUAL-AGENTES.md` están solo en la rama `devin/1790824641-chat-agent-plan`.
+- `main` NO tiene carpeta `fichas/`. La carpeta `fichas/` y `HANDOFF-FICHA.md`, `HANDOFF-ROUTER-UNIVERSAL-OPUS.md`, `MANUAL-AGENTES.md` están solo en la rama `devin/1790824641-chat-agent-plan`.
+- Las copias de las fichas 1 y 2 están en la rama `devin/1790824641-chat-agent-plan`, carpeta `router inteligente universal/fichas/` (12 archivos `.json`, ver salida 3).
 - El archivo largo `INPUT-BLOCK-VERBATIM-FICHAS-MODELOS-2026-10-04.md` NO está en el repo; solo existe en el chat.
-- `policies.json` (main) ya tiene Kimi K3, GLM 5.3, DeepSeek V4 Flash (por HF), Groq Qwen 3.8 y Nemotron 3 Super. NO tiene Nemotron 3.5 Lightning ni los Qwen locales.
+- `policies.json` (main) ya tiene Kimi K3, GLM 5.3, DeepSeek V4 Flash (por HF), Groq Qwen 3.8 y Nemotron 3 Super. NO tiene Nemotron 3.5 Lightning ni los Qwen locales (Nemotron 3.5 Lightning sí está en el catálogo de NVIDIA y responde: `nvidia:nvidia/nemotron-3.5-lightning-30b-a3b`).
 - Memoria (rama `devin/...`): vive en `chat router/memoria/` (antes `chat router/04-MEMORIA`, movida el 2026-10-03); el plugin del harness está en `chat router/harness plugins/memoria`. Flujo: harness → Router `/memoria/*` → motores → almacenamiento HF. Limitaciones conocidas (HANDOFF-MEMORIA-GAPS.json): Graphiti, Graphify, FalkorDB, AgentDB, Memanto, PostgreSQL y Redis siguen sin servicio; SQLite + grafo SQLite cubren como respaldo y están probados.
 
 ### Salida 1 — Paso 1 (job de descarga): TERMINADA (2026-10-04, ~05:55)
@@ -519,18 +534,21 @@ Realiza ficha 0 ya opus hizo lo de la memoria revisa puede que ya esté listo fi
 ### Salida 2 — Paso 2 (ficha 0): TERMINADA (2026-10-04, ~15:45)
 - Revisión previa (solo lectura): la memoria ya estaba hecha y viva (`/memoria/health`: SQLite conectado con 1.293 registros y grafo de respaldo conectado). La ficha 0 como tal NO existía: el Router tenía 0 tokens y 0 fichas montadas.
 - Lo que se creó (nada más): un token `ficha-0/principal` (instancia `ficha-0`) con permisos exactos `memoria`, `almacenamiento` y `computo`, límite 600 llamadas por minuto. El token quedó guardado en el banco como `router/ficha-0` (banco respondió PERSISTED). No se escribió en ningún archivo ni en el chat.
-- Pruebas hechas con ese token (todas pasaron):
-  - quién soy: nombre y permisos correctos, activo;
-  - memoria: guardar y leer de vuelta (registro 1294, ámbito `ficha-0`, llave `prueba`; queda como registro de prueba);
-  - almacenamiento: guardar, leer y borrar un archivo de prueba;
-  - cómputo: job `6ac2b873404719ba37650990` COMPLETED, imprimió "ficha0 computo ok";
-  - candado: listar tokens sin la clave del Director → 403 `CLAVE_DIRECTOR_REQUERIDA`;
-  - sin IA: pedir chat con ese token → 403 `TOKEN_SIN_PERMISO:chat`.
-- NO está conectada al harness de DeepSeek (orden 05:11). El Router vivo no se tocó. Vercel: solo una máquina temporal de puente, ya apagada.
+- Pruebas hechas con ese token (todas pasaron): quién soy; memoria (guardar y leer; queda un registro de prueba 1294, ámbito `ficha-0`); almacenamiento (guardar, leer, borrar); cómputo (job `6ac2b873404719ba37650990` COMPLETED); candado (listar tokens sin clave del Director → 403); sin IA (chat con ese token → 403 `TOKEN_SIN_PERMISO:chat`).
+- NO está conectada al harness de DeepSeek (orden 05:11).
 - Notas para el que siga: crear un token exige el campo `instancia` (si falta, error 422); el nombre completo queda `instancia/nombre`.
 
+### Salida 3 — Paso 3 (fichas 1 y 2): MONTADAS Y PROBADAS EN EL ROUTER, FALTA HARNESS (2026-10-04, ~16:00)
+- Revisión previa: el Router tenía 0 fichas montadas; en GitHub solo existía `_plantilla.json`. El motor de fichas (`secciones.py`) soporta modos cadena, paralelo, consejo (con juez) y único; no tiene "ejecutor después del juez" ni saltos entre fichas.
+- Publicadas con la clave del Director (12 fichas, todas `estado: ok` en `GET /secciones`): `ficha-1-kimi-k3`, `ficha-1-deepseek-v4`, `ficha-1-glm-5`, `ficha-1-nemotron`, `ficha-1-groq-qwen-3-8`, `ficha-2`, `ficha-2-ejecutor-general`, `ficha-2-ejecutor-general-respaldo`, `ficha-2-ejecutor-tools`, `ficha-2-ejecutor-codigo`, `ficha-2-ejecutor-codigo-respaldo`, `ficha-2-ejecutor-frontend`. Viven en `router-inteligente-universal/fichas/` del almacenamiento HF; copia en GitHub (rama `devin/...`, `router inteligente universal/fichas/`).
+- Respuesta real de cada modelo (prueba "responde OK"): Kimi K3 OK (6 a 64 s); GLM 5.3 OK; Nemotron 3 Super OK; Groq Qwen 3.8 OK; Nemotron 3.5 Lightning OK (NVIDIA); DeepSeek V4 Flash (HF) y todos los DeepSeek de HF: `MODEL_NOT_SELECTABLE`; DeepSeek V4.1 Flash por NVIDIA: sin respuesta tras 140 s.
+- Consejo `ficha-2` con una tarea real: GLM y Qwen opinaron, DeepSeek falló, Kimi K3 (juez) entregó la decisión ("# Decisión del consejo ...") en unos 13 s.
+- Comprobado: pedir un modelo que no existe da error y no cambia de modelo (cumple la ficha 1).
+- NO hecho: conectar al harness de DeepSeek; selector del chat; espera de NVIDIA a 108 s (ver duda 11).
+- Router vivo no se tocó. Vercel: solo máquinas temporales de puente, apagadas.
+
 ### Siguiente tarea
-- Salida 3 — Paso 3: montar las fichas 1 y 2, conectarlas al Router y al harness de DeepSeek, revisar y confirmar. Antes de ejecutar: revisar qué hay ya hecho (fichas en `fichas/` de la rama `devin/...`, motor de fichas del Router), mostrar cómo se hace y recién ahí hacerlo.
+- Terminar la salida 3: conectar las fichas 1 y 2 al harness de DeepSeek (leer `chat router/harness plugins/deepseek-harness-chat/plugins/router-provider.cordis.yml` y el token que usa el harness), revisar y confirmar. Antes: esperar la decisión del Director sobre DeepSeek (duda 10) y la espera de NVIDIA (duda 11). Después: salida 4 (fichas 3, 3.1 y 4).
 
 ## 6. Parche de recuperación (pegar al iniciar una sesión nueva de cualquier IA)
 ```
@@ -540,7 +558,7 @@ Eres agente del Director (Hy). Antes de hacer NADA:
    claves solo del banco; Vercel solo puente (ni una letra sin autorización); sin GitHub Actions; NVIDIA espera 108 s;
    ficha 1 rota claves del mismo modelo y nunca cambia de modelo (sin claves: mensaje de error); ficha 4 como en 4.5;
    Nemotron 3.5 Lightning va por NVIDIA, no se baja a HF; revisar qué ya está hecho antes de crear; no bajar modelos que no corran en su GPU.
-3. Orden: una salida por paso (4.4). Parte 1 (fichas 0-2) → Parte 2 (fichas 3, 3.1, 4 + modelos locales) → Parte 3 (APK ChatGPT). Salidas 1 y 2 hechas; sigue la salida 3.
+3. Orden: una salida por paso (4.4). Parte 1 (fichas 0-2) → Parte 2 (fichas 3, 3.1, 4 + modelos locales) → Parte 3 (APK ChatGPT). Salidas 1 y 2 hechas; salida 3: fichas montadas, falta harness y decisión DeepSeek.
 4. Anota cada orden nueva del Director TEXTUAL en este archivo ANTES de trabajar.
 5. Respuestas cortas (máx. 10 líneas), en español sin código. Explica cómo lo harás antes de hacerlo. Si dudas, pregunta en texto.
 ```
