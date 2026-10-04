@@ -12,9 +12,9 @@ echo "== PASO clon: $(git log -1 --format=%h)"
 python -m venv /v-graphiti && /v-graphiti/bin/pip -q install "$C/graphiti/code[kuzu]" httpx > /tmp/pip1.log 2>&1; echo "== PASO graphiti: $?"
 python -m venv /v-graphify && /v-graphify/bin/pip -q install "$C/graphify/code" > /tmp/pip2.log 2>&1; echo "== PASO graphify: $?"
 pip -q install click pytest "$C/redis-py" "$C/haystack" > /tmp/pip3.log 2>&1; echo "== PASO redis-py+haystack: $?"
-pip -q install "$C/pydantic-ai/pydantic-ai/pydantic_ai_slim" > /tmp/pip4.log 2>&1; echo "== PASO pydantic-ai: $? $(tail -1 /tmp/pip4.log | cut -c1-150)"
+pip -q install "$C/pydantic-ai/pydantic-ai/pydantic_graph" "$C/pydantic-ai/pydantic-ai/pydantic_ai_slim" > /tmp/pip4.log 2>&1; echo "== PASO pydantic-ai: $? $(tail -1 /tmp/pip4.log | cut -c1-150)"
 (cd "$DL/AgentDB" && npm install --no-audit --no-fund --loglevel=error && npm run build:ts) > /tmp/agentdb.log 2>&1; echo "== PASO agentdb: $([ -f "$DL/AgentDB/dist/src/index.js" ] && echo compilado || echo NO)"
-echo "== PASO $(bash 'chat router/memoria/motores/compilar_motores.sh')"
+bash 'chat router/memoria/motores/compilar_motores.sh' | sed 's/^/== PASO /'
 grep -iE 'error|FALLO' /tmp/compilar_motores.log | tail -5 | cut -c1-200
 export PY_GRAPHITI=/v-graphiti/bin/python PY_GRAPHIFY=/v-graphify/bin/python PY=python
 . 'chat router/memoria/motores/levantar_motores.sh'

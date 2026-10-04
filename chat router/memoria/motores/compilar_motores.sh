@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
-# Compila y arranca FalkorDB (modulo de grafos sobre redis-server) y PostgreSQL desde el codigo ya bajado.
-# Para la maquina del Router / job de HF (Debian, root). Uso: bash 'chat router/memoria/motores/compilar_motores.sh'
+# Arranca FalkorDB (modulo de grafos sobre redis-server) y PostgreSQL para la memoria. MVP:
+# PostgreSQL: compila el codigo bajado; si falla, usa el paquete oficial de Debian (no bloquea).
+# FalkorDB: modulo oficial ya compilado (lo que su repo indica por defecto); si no baja, intenta cargo build del codigo bajado.
 set -u
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 C="$RAIZ/router inteligente universal/Componente open soure router inteligente universal"
 DL="$RAIZ/router inteligente universal/Componentes del Router/router inteligente software/componentes todos/componentes descargados"
 LOG=/tmp/compilar_motores.log
 apt-get update -qq >/dev/null 2>&1
-apt-get install -y -qq build-essential bison flex pkg-config libreadline-dev zlib1g-dev redis-server curl clang cmake >>"$LOG" 2>&1
+apt-get install -y -qq build-essential bison flex pkg-config libreadline-dev zlib1g-dev redis-server curl libgomp1 >>"$LOG" 2>&1
 if [ ! -x /opt/pg/bin/psql ]; then
-  (cd "$C/postgres" && ./configure --prefix=/opt/pg --without-icu --without-readline >>"$LOG" 2>&1 && make -j"$(nproc)" >>"$LOG" 2>&1 && make install >>"$LOG" 2>&1) || echo 'FALLO_COMPILAR_POSTGRES'
+  if (cd "$C/postgres" && ./configure --prefix=/opt/pg --without-icu --without-readline >>"$LOG" 2>&1 && make -j"$(nproc)" >>"$LOG" 2>&1 && make install >>"$LOG" 2>&1); then
+    echo 'postgres: compilado del codigo bajado'
+  else
+    echo 'postgres: fallo al compilar el codigo bajado, causa:'; grep -iE 'error' "$LOG" | tail -3 | cut -c1-200
+    apt-get install -y -qq postgresql >>"$LOG" 2>&1 && ln -sfn "$(ls -d /usr/lib/postgresql/*/ | head -1)" /opt/pg && echo 'postgres: paquete oficial instalado'
+  fi
 fi
 if [ -x /opt/pg/bin/initdb ]; then
   id pg >/dev/null 2>&1 || useradd -m pg
@@ -18,8 +24,10 @@ if [ -x /opt/pg/bin/initdb ]; then
   sleep 3; /opt/pg/bin/createdb -h 127.0.0.1 -p 5433 -U memoria memoria >>"$LOG" 2>&1 || true
 fi
 if [ ! -f /opt/falkordb.so ]; then
-  command -v cargo >/dev/null || { curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal >>"$LOG" 2>&1; . "$HOME/.cargo/env"; }
-  (cd "$DL/FalkorDB" && cargo build --release >>"$LOG" 2>&1) && cp "$(ls "$DL"/FalkorDB/target/release/*.so | head -1)" /opt/falkordb.so || echo 'FALLO_COMPILAR_FALKORDB'
+  for a in falkordb-x64.so falkordb.so; do curl -sSfL -o /opt/falkordb.so "https://github.com/FalkorDB/FalkorDB/releases/latest/download/$a" 2>>"$LOG" && break; rm -f /opt/falkordb.so; done
+  [ -f /opt/falkordb.so ] && echo 'falkordb: modulo oficial descargado' || {
+    command -v cargo >/dev/null || { curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal >>"$LOG" 2>&1; . "$HOME/.cargo/env"; }
+    (cd "$DL/FalkorDB" && cargo build --release >>"$LOG" 2>&1) && cp "$(ls "$DL"/FalkorDB/target/release/*.so | head -1)" /opt/falkordb.so && echo 'falkordb: compilado del codigo bajado' || echo 'FALLO_FALKORDB'; }
 fi
-[ -f /opt/falkordb.so ] && redis-server --port 6390 --loadmodule /opt/falkordb.so --daemonize yes >>"$LOG" 2>&1
-echo "compilados -> postgres: $([ -x /opt/pg/bin/psql ] && echo si || echo NO) | falkordb: $([ -f /opt/falkordb.so ] && echo si || echo NO)"
+[ -f /opt/falkordb.so ] && redis-server --port 6390 --loadmodule /opt/falkordb.so --daemonize yes >>"$LOG" 2>&1; sleep 2
+echo "listos -> postgres: $([ -x /opt/pg/bin/psql ] && echo si || echo NO) | falkordb: $(redis-cli -p 6390 GRAPH.LIST >/dev/null 2>&1 && echo si || echo NO)"
