@@ -29,5 +29,15 @@ if [ ! -f /opt/falkordb.so ]; then
     command -v cargo >/dev/null || { curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal >>"$LOG" 2>&1; . "$HOME/.cargo/env"; }
     (cd "$DL/FalkorDB" && cargo build --release >>"$LOG" 2>&1) && cp "$(ls "$DL"/FalkorDB/target/release/*.so | head -1)" /opt/falkordb.so && echo 'falkordb: compilado del codigo bajado' || echo 'FALLO_FALKORDB'; }
 fi
-[ -f /opt/falkordb.so ] && redis-server --port 6390 --loadmodule /opt/falkordb.so --daemonize yes >>"$LOG" 2>&1; sleep 2
+if [ -f /opt/falkordb.so ]; then
+  if ! redis-server --version | grep -qE 'v=(7[.][2-9]|[89][.])'; then  # FalkorDB pide Redis 7.2 o mayor; Debian trae 7.0
+    curl -fsSL https://packages.redis.io/gpg | gpg --dearmor --yes -o /usr/share/keyrings/redis.gpg 2>>"$LOG"
+    echo "deb [signed-by=/usr/share/keyrings/redis.gpg] https://packages.redis.io/deb $(. /etc/os-release; echo $VERSION_CODENAME) main" > /etc/apt/sources.list.d/redis.list
+    apt-get update -qq >/dev/null 2>&1
+    V=$(apt-cache madison redis-server | awk '{print $3}' | grep -E '^6:7[.]4' | head -1)
+    apt-get install -y -qq --allow-downgrades redis-server${V:+=$V} redis-tools${V:+=$V} >>"$LOG" 2>&1
+  fi
+  redis-server --port 6390 --loadmodule /opt/falkordb.so --daemonize yes --logfile /tmp/redis6390.log >>"$LOG" 2>&1; sleep 2
+  redis-cli -p 6390 GRAPH.LIST >/dev/null 2>&1 || { echo "falkordb: no cargo en $(redis-server --version | cut -c1-40), causa:"; tail -3 /tmp/redis6390.log | cut -c1-200; }
+fi
 echo "listos -> postgres: $([ -x /opt/pg/bin/psql ] && echo si || echo NO) | falkordb: $(redis-cli -p 6390 GRAPH.LIST >/dev/null 2>&1 && echo si || echo NO)"
