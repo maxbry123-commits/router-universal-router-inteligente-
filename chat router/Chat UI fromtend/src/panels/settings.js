@@ -132,7 +132,7 @@ export function renderSettings(context) {
     }
     catch (error) { feedback.textContent = error.message; }
   }, "primary");
-  root.append(header, intro, icons, commands, labels, models, group(t(context, "modesGroup"), draft.modes, context), selectors,
+  root.append(header, intro, icons, typography, commands, labels, models, group(t(context, "modesGroup"), draft.modes, context), selectors,
     group(t(context, "togglesGroup"), draft.toggles, context), group(t(context, "actionsGroup"), draft.actions, context), transfer, feedback, save);
   return root;
 }
