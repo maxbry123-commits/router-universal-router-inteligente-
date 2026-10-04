@@ -1,0 +1,10 @@
+{
+  "nombre": "ficha-2-ejecutor-codigo-respaldo",
+  "descripcion": "INTERNA ficha 2: respaldo de codigo (Nemotron 3 Super).",
+  "modo": "unico",
+  "anclaje_system_prompt": "Responde en español.",
+  "pasos": [{"nombre": "responde", "modelo": "nvidia:nvidia/nemotron-3-super-120b-a12b", "system_prompt": "Eres el ejecutor de codigo de respaldo de la ficha 2. Respondes y ejecutas tu solo.", "instruccion": "{input}", "max_tokens": 2048}],
+  "juez": null,
+  "conectividad": {"tokens_permitidos": ["*"], "vias": ["http", "mcp"]},
+  "notas": "Director 2026-10-04."
+}
