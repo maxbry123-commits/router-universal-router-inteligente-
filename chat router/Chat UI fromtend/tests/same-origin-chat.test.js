@@ -118,3 +118,21 @@ test("ficha directory reads the Router on every request and stays closed until t
   const missing = createSameOriginChatBridge(async () => response({ detail: "Not Found" }, 404));
   await assert.rejects(missing.execute("chat.fichas"), /BACKEND_HTTP_404/);
 });
+
+test("agents, conversations, usage and storage read live router endpoints", async () => {
+  const seen = [];
+  const fetchImpl = async path => {
+    seen.push(path);
+    if (path === "/chat/agents") return response({ agents: [{ id: "agent-1", status: "ready" }, { id: "deepseek-bot" }] });
+    if (path === "/chat/conversations") return response({ conversations: [{ id: "c1", title: "Chat" }] });
+    if (path === "/chat/usage") return response({ total: 3 });
+    if (path === "/chat/storage") return response({ bytes: 10 });
+    throw Error("UNEXPECTED:" + path);
+  };
+  const bridge = createSameOriginChatBridge(fetchImpl);
+  assert.deepEqual((await bridge.execute("chat.agents")).items.map(a => a.id), ["agent-1"]);
+  assert.equal((await bridge.execute("chat.conversations")).items[0].id, "c1");
+  assert.deepEqual((await bridge.execute("chat.usage")).usage, { total: 3 });
+  assert.deepEqual((await bridge.execute("chat.storage")).storage, { bytes: 10 });
+  assert.deepEqual(seen, ["/chat/agents", "/chat/conversations", "/chat/usage", "/chat/storage"]);
+});

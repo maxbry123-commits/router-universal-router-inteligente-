@@ -10,6 +10,7 @@ import { openConnectors } from "./connectors.js";
 import { openPlugins } from "./plugins.js";
 import { openFichas } from "./fichas.js";
 import { openComponents } from "./components.js";
+import { openAgents, openConversations } from "./agents.js";
 
 export function openTools(context, pickFiles) {
   const list = el("div", { class: "option-list" });
@@ -22,6 +23,8 @@ export function openTools(context, pickFiles) {
     ["plugins", "connectors", () => openPlugins(context), true],
     ["fichas", "grid", () => openFichas(context), true],
     ["components", "grid", () => openComponents(context), true],
+    ["agents", "connectors", () => openAgents(context), true],
+    ["conversations", "file", () => openConversations(context), true],
     ["selectors", "grid", () => openSelectors(context), true],
     ["controls", "controls", () => openControls(context), true],
     ["functions", "plus", () => openActions(context), true],

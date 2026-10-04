@@ -104,6 +104,35 @@ export function createSameOriginChatBridge(fetchImpl) {
         if (data.ficha?.id !== payload.id) throw new Error("INVALID_FICHA_RESPONSE");
         return { ok: true, ficha: data.ficha };
       }
+      if (actionId === "chat.agents") {
+        const data = await request("/chat/agents");
+        if (!Array.isArray(data.agents)) throw new Error("INVALID_AGENTS_RESPONSE");
+        return { ok: true, items: data.agents.map(agent => ({
+          id: String(agent.id || agent.agent_id || ""),
+          label: String(agent.label || agent.name || agent.id || agent.agent_id || ""),
+          description: String(agent.status || agent.model || "UNKNOWN"),
+        })).filter(agent => agent.id && !/deepseek/i.test(agent.id)) };
+      }
+      if (actionId === "chat.conversations") {
+        const data = await request("/chat/conversations");
+        const items = Array.isArray(data.conversations) ? data.conversations : [];
+        if (!Array.isArray(data.conversations)) throw new Error("INVALID_CONVERSATIONS_RESPONSE");
+        return { ok: true, items: items.map(item => ({
+          id: String(item.id || ""),
+          label: String(item.title || item.id || ""),
+          description: String(item.updated_at || item.status || "UNKNOWN"),
+        })).filter(item => item.id) };
+      }
+      if (actionId === "chat.usage") {
+        const data = await request("/chat/usage");
+        if (!data || typeof data !== "object") throw new Error("INVALID_USAGE_RESPONSE");
+        return { ok: true, usage: data };
+      }
+      if (actionId === "chat.storage") {
+        const data = await request("/chat/storage");
+        if (!data || typeof data !== "object") throw new Error("INVALID_STORAGE_RESPONSE");
+        return { ok: true, storage: data };
+      }
       if (actionId === "chat.models") {
         const { providers } = await request("/chat/providers");
         if (!Array.isArray(providers)) throw new Error("INVALID_PROVIDERS_RESPONSE");
