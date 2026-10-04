@@ -1,1 +1,1 @@
-export const panel03 = Object.freeze({ id: "panel-03", status: "NOT_IMPLEMENTED" });
+export { renderTracking as panel03 } from "./tracking.js";

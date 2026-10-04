@@ -1,1 +1,1 @@
-export const panel04 = Object.freeze({ id: "panel-04", status: "NOT_IMPLEMENTED" });
+export { renderCanvas as panel04 } from "./canvas.js";

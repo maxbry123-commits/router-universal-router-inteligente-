@@ -1,4 +1,11 @@
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MEDIA_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "video/mp4", "video/webm"]);
+
+function documentId(payload) {
+  const id = payload.id;
+  if (typeof id !== "string" || !/^[a-zA-Z0-9_-]{1,128}$/.test(id)) throw new Error("DOCUMENT_ID_INVALID");
+  return encodeURIComponent(id);
+}
 
 function allowedModel(modelId) {
   if (typeof modelId !== "string" || /deepseek|(^|\/)auto(\/|$)/i.test(modelId)) return false;
@@ -40,6 +47,30 @@ export function createSameOriginChatBridge(fetchImpl) {
   return {
     resetSession() { conversationId = null; sessionVersion++; },
     async execute(actionId, payload = {}) {
+      if (actionId === "chat.documents") {
+        const data = await request("/chat/documents");
+        if (!Array.isArray(data.documents)) throw new Error("INVALID_DOCUMENTS_RESPONSE");
+        return { ok: true, documents: data.documents };
+      }
+      if (actionId === "chat.document") {
+        const data = await request(`/chat/documents/${documentId(payload)}`);
+        if (!data.document || typeof data.document.id !== "string" || data.document.id !== payload.id) {
+          throw new Error("INVALID_DOCUMENT_RESPONSE");
+        }
+        return { ok: true, document: data.document, preview: typeof data.preview === "string" ? data.preview : null };
+      }
+      if (actionId === "chat.media") {
+        const response = await fetchImpl(`/chat/media/${documentId(payload)}`, { credentials: "same-origin", cache: "no-store" });
+        if (!response.ok) throw new Error(`BACKEND_HTTP_${response.status}`);
+        const blob = await response.blob();
+        if (!MEDIA_TYPES.has(blob.type) || !blob.size || blob.size > MAX_UPLOAD_BYTES) throw new Error("MEDIA_TYPE_OR_SIZE_INVALID");
+        return { ok: true, media: blob };
+      }
+      if (actionId === "chat.graph") {
+        const data = await request("/chat/graph");
+        if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) throw new Error("INVALID_GRAPH_RESPONSE");
+        return { ok: true, nodes: data.nodes, edges: data.edges };
+      }
       if (actionId === "chat.models") {
         const { providers } = await request("/chat/providers");
         if (!Array.isArray(providers)) throw new Error("INVALID_PROVIDERS_RESPONSE");
