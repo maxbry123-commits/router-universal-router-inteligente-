@@ -3,6 +3,7 @@ import { chatDescription, controlLabel, LANGUAGES, slotLabel, t } from "../i18n.
 import { themePicker } from "../components/theme-picker.js";
 import { DEFAULT_CONFIG } from "../config.js";
 import { exportSettings, importSettings } from "../actions/settings-transfer.js";
+import { openIconLibrary } from "../windows/icon-library.js";
 
 function field(label, value, onChange, multiline = false) {
   const input = el(multiline ? "textarea" : "input", { class: "setting-input", "aria-label": label });
@@ -53,6 +54,16 @@ export function renderSettings(context) {
   for (const key of ["modelsActionId", "modelActionId", "sendActionId", "attachActionId", "documentsActionId", "voiceActionId", "watchdogActionId", "skillsActionId", "connectorsActionId"]) {
     commands.append(field(`${t(context, key)} · actionId`, draft[key], value => { draft[key] = value; }));
   }
+
+  const icons = el("section", { class: "settings-group" },
+    el("h3", { text: t(context, "iconLibrary") }),
+    el("p", { class: "muted", text: t(context, "iconLibraryDesc") }),
+    button(t(context, "iconLibrary"), () => openIconLibrary(context), "ghost"));
+
+  const typography = el("section", { class: "settings-group" },
+    el("h3", { text: t(context, "typography") }),
+    el("p", { class: "muted", text: t(context, "typoDesc") }),
+    button(t(context, "typography"), () => openTypography(context), "ghost"));
 
   const transfer = el("section", { class: "settings-group" }, el("h3", { text: t(context, "configExport") }));
   const transferStatus = el("p", { role: "status" });
@@ -121,7 +132,7 @@ export function renderSettings(context) {
     }
     catch (error) { feedback.textContent = error.message; }
   }, "primary");
-  root.append(header, intro, commands, labels, models, group(t(context, "modesGroup"), draft.modes, context), selectors,
+  root.append(header, intro, icons, commands, labels, models, group(t(context, "modesGroup"), draft.modes, context), selectors,
     group(t(context, "togglesGroup"), draft.toggles, context), group(t(context, "actionsGroup"), draft.actions, context), transfer, feedback, save);
   return root;
 }

@@ -82,3 +82,39 @@ test("host bridge wins; file protocol never installs HTTP transport", () => {
   assert.equal(installSameOriginChatBridge(host), true);
   assert.equal(typeof host.YAIWES_PLUGIN_BRIDGE.execute, "function");
 });
+
+test("plugin inventory comes from the live endpoint and excludes forbidden providers", async () => {
+  const paths = [];
+  const bridge = createSameOriginChatBridge(async (path, options) => {
+    paths.push([path, options.method, options.credentials]);
+    return response({ plugins: [
+      { id: "chat", status: "READY" }, { id: "deepseek-inference", status: "READY" },
+    ] });
+  });
+  assert.deepEqual(await bridge.execute("chat.plugins"), {
+    ok: true, items: [{ id: "chat", label: "chat", description: "READY" }],
+  });
+  assert.deepEqual(paths, [["/plugins", "GET", "same-origin"]]);
+  const invalid = createSameOriginChatBridge(async () => response({ plugins: null }));
+  await assert.rejects(invalid.execute("chat.plugins"), /INVALID_PLUGINS_RESPONSE/);
+});
+
+test("ficha directory reads the Router on every request and stays closed until that API exists", async () => {
+  const paths = [];
+  const bridge = createSameOriginChatBridge(async path => {
+    paths.push(path);
+    if (path === "/chat/fichas") return response({ fichas: [
+      { id: "ficha.0", status: "READY" }, { id: "ficha.1", status: "READY" },
+      { id: "ficha.3.1", status: "testing" }, { id: "ficha.5", status: "testing" },
+      { id: "deepseek.model", status: "READY" },
+    ] });
+    if (path === "/chat/fichas/ficha.3.1") return response({ ficha: { id: "ficha.3.1" } });
+    throw new Error("UNEXPECTED_PATH");
+  });
+  assert.deepEqual((await bridge.execute("chat.fichas")).items.map(item => item.id), ["ficha.1", "ficha.3.1", "ficha.5"]);
+  assert.equal((await bridge.execute("chat.ficha", { id: "ficha.3.1" })).ficha.id, "ficha.3.1");
+  await assert.rejects(bridge.execute("chat.ficha", { id: "../escape" }), /FICHA_ID_INVALID/);
+  assert.deepEqual(paths, ["/chat/fichas", "/chat/fichas/ficha.3.1"]);
+  const missing = createSameOriginChatBridge(async () => response({ detail: "Not Found" }, 404));
+  await assert.rejects(missing.execute("chat.fichas"), /BACKEND_HTTP_404/);
+});

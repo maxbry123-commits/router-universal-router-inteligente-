@@ -4,6 +4,8 @@ import { renderChat } from "./panels/chat.js";
 import { renderFiles } from "./panels/files.js";
 import { renderTracking } from "./panels/tracking.js";
 import { renderCanvas } from "./panels/canvas.js";
+import { readTypography } from "./typography/state.js";
+import { applyTypography } from "./typography/apply.js";
 import { el, button } from "./dom.js";
 
 const panels = {
@@ -40,6 +42,7 @@ function renderShell() {
 }
 
 installSameOriginChatBridge();
+applyTypography(readTypography());
 context = createChatContext(document.getElementById("app"), document.getElementById("status"),
   { render: renderShell, onChat: () => navigate("chat") });
 context.refresh();

@@ -7,6 +7,7 @@ import { openSelectors } from "../src/windows/selectors.js";
 import { openControls } from "../src/windows/controls.js";
 import { openActions } from "../src/windows/actions.js";
 import { renderSettings } from "../src/panels/settings.js";
+import { openFichas } from "../src/windows/fichas.js";
 
 test("chat uses a compact header and composer, not permanent selector/toggle strips", () => {
   const { document, context } = fixture();
@@ -30,7 +31,9 @@ test("plus menu exposes distinct document and attachment commands without stacke
   const { document, context } = fixture({ attachActionId: "files.attach", documentsActionId: "documents.upload" });
   const commands = [];
   const first = openTools(context, actionId => commands.push(actionId));
-  assert.equal(first.querySelectorAll(".option").length, 7);
+  assert.equal(first.querySelectorAll(".option").length, 9);
+  assert.ok(first.querySelector('[data-control="plugins"]'));
+  assert.ok(first.querySelector('[data-control="fichas"]'));
   first.querySelector('[data-control="documents"]').click();
   assert.deepEqual(commands, ["documents.upload"]);
   assert.equal(document.querySelectorAll("dialog[open]").length, 0);
@@ -39,6 +42,28 @@ test("plus menu exposes distinct document and attachment commands without stacke
   openTools(context, () => {}).querySelector('[data-control="selectors"]').click();
   assert.equal(document.querySelectorAll("dialog[open]").length, 1);
   assert.equal(document.querySelectorAll("[data-selector]").length, 5);
+});
+
+test("ficha picker reads and refreshes live entries, then reads the selected ficha", async () => {
+  const calls = [];
+  let items = [{ id: "ficha.1", label: "ficha.1" }];
+  const { document, context } = fixture({}, async (action, payload) => {
+    calls.push([action, payload]);
+    if (action === "chat.fichas") return { ok: true, items };
+    if (action === "chat.ficha") return { ok: true, ficha: { id: payload.id, status: "testing" } };
+    throw new Error("NOT_CONFIGURED");
+  });
+  openFichas(context);
+  await settle();
+  assert.equal(document.querySelectorAll("dialog .option").length, 1);
+  document.querySelector("dialog .option").click();
+  await settle();
+  assert.ok(document.querySelector("dialog .window-body [role='status']").textContent.includes("ficha.1"));
+  items = [{ id: "ficha.2", label: "ficha.2" }];
+  document.querySelector("dialog .window-body .ghost").click();
+  await settle();
+  assert.equal(document.querySelector("dialog .option").textContent, "ficha.2");
+  assert.deepEqual(calls.map(([action]) => action), ["chat.fichas", "chat.ficha", "chat.fichas"]);
 });
 
 test("all five selector launchers open their own named window with configured descriptions", () => {

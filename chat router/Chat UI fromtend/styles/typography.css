@@ -1,0 +1,16 @@
+.typo-window { width: min(1040px, calc(100% - 24px)); }
+.typo-editor { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; padding: 16px; overflow-y: auto; }
+.typo-col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.typo-col-actions { gap: 8px; }
+.typo-role-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.typo-controls { display: grid; gap: 10px; }
+.typo-controls select, .typo-controls input[type="number"], .typo-sample-input { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary); padding: 8px; }
+.typo-sample { min-height: 40px; margin: 0; padding: 10px; background: var(--card); border: 1px dashed var(--border-strong); border-radius: 10px; }
+.typo-swatch { width: 26px; height: 26px; padding: 0; border-radius: 50%; background: var(--chip-accent); border: 2px solid transparent; }
+.typo-swatch[aria-pressed="true"] { border-color: var(--text-bright); }
+.typo-toggles { display: flex; flex-wrap: wrap; gap: 12px; }
+.typo-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+.typo-mobile { display: grid; gap: 8px; padding: 14px; background: var(--module, #2a2a2a); border-radius: 24px; border: 1px solid var(--border); max-width: 260px; }
+.typo-mobile p { margin: 0; }
+.typo-mobile button { justify-self: start; }
+@media (max-width: 720px) { .typo-editor { grid-template-columns: 1fr; } }

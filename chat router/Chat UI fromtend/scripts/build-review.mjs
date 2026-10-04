@@ -7,6 +7,8 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const source = await readFile(join(root, "chat Yaiwes fromtend.html"), "utf8");
 const tokens = await readFile(join(root, "styles/tokens.css"), "utf8");
 const chat = await readFile(join(root, "styles/chat.css"), "utf8");
+const icons = await readFile(join(root, "styles/icon-library.css"), "utf8");
+const typo = await readFile(join(root, "styles/typography.css"), "utf8");
 const result = await build({
   entryPoints: [join(root, "src/app.js")],
   bundle: true,
@@ -17,12 +19,12 @@ const result = await build({
   logLevel: "silent",
 });
 
-const cssLinks = ["./styles/tokens.css", "./styles/chat.css"];
+const cssLinks = ["./styles/tokens.css", "./styles/chat.css", "./styles/icon-library.css", "./styles/typography.css"];
 let html = source;
 for (const link of cssLinks) {
   const tag = `<link rel="stylesheet" href="${link}">`;
   if (!html.includes(tag)) throw new Error(`Falta el enlace CSS: ${link}`);
-  html = html.replace(tag, `<style>${(link.includes("tokens") ? tokens : chat).replaceAll("</style", "<\\/style")}</style>`);
+  html = html.replace(tag, `<style>${(link.includes("tokens") ? tokens : link.includes("icon-library") ? icons : link.includes("typography") ? typo : chat).replaceAll("</style", "<\\/style")}</style>`);
 }
 const moduleTag = '<script type="module" src="./src/app.js"></script>';
 if (!html.includes(moduleTag) || result.outputFiles.length !== 1 || !html.includes("</body>")) {

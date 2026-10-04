@@ -5,7 +5,7 @@ import { build } from "esbuild";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 let html = await readFile(join(root, "paneles Yaiwes fromtend.html"), "utf8");
-for (const name of ["tokens", "chat", "shell"]) {
+for (const name of ["tokens", "chat", "icon-library", "typography", "shell"]) {
   const link = `<link rel="stylesheet" href="./styles/${name}.css">`;
   if (!html.includes(link)) throw new Error(`CSS_NOT_LINKED:${name}`);
   const css = await readFile(join(root, "styles", `${name}.css`), "utf8");

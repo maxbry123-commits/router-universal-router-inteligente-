@@ -7,6 +7,8 @@ import { openSelectors } from "./selectors.js";
 import { openControls } from "./controls.js";
 import { openSkills } from "./skills.js";
 import { openConnectors } from "./connectors.js";
+import { openPlugins } from "./plugins.js";
+import { openFichas } from "./fichas.js";
 
 export function openTools(context, pickFiles) {
   const list = el("div", { class: "option-list" });
@@ -16,6 +18,8 @@ export function openTools(context, pickFiles) {
     ["documents", "file", () => pickFiles(context.config.documentsActionId), false],
     ["skills", "grid", () => openSkills(context), true],
     ["connectors", "connectors", () => openConnectors(context), true],
+    ["plugins", "connectors", () => openPlugins(context), true],
+    ["fichas", "grid", () => openFichas(context), true],
     ["selectors", "grid", () => openSelectors(context), true],
     ["controls", "controls", () => openControls(context), true],
     ["functions", "plus", () => openActions(context), true],

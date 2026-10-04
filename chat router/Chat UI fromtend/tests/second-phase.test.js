@@ -94,7 +94,7 @@ test("Run/Wall inventory remains exact and unavailable DAG ledger never claims s
 test("standalone four-panel review bundles source without external imports", () => {
   execFileSync(process.execPath, [fileURLToPath(new URL("../scripts/build-shell-review.mjs", import.meta.url))]);
   const html = readFileSync(new URL("../paneles Yaiwes fromtend.revisar.html", import.meta.url), "utf8");
-  assert.equal([...html.matchAll(/<style>/g)].length, 3);
+  assert.equal([...html.matchAll(/<style>/g)].length, 5);
   assert.equal([...html.matchAll(/<script>/g)].length, 1);
   assert.doesNotMatch(html, /<script[^>]*src=|<link[^>]*stylesheet|type="module"/);
   const { document, window } = fixture({}, undefined, html);

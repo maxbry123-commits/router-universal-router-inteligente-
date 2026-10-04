@@ -7,6 +7,14 @@ function documentId(payload) {
   return encodeURIComponent(id);
 }
 
+function fichaId(payload) {
+  const id = payload.id;
+  if (typeof id !== "string" || !/^[a-zA-Z0-9_.-]{1,128}$/.test(id) || id === "." || id === "..") {
+    throw new Error("FICHA_ID_INVALID");
+  }
+  return encodeURIComponent(id);
+}
+
 function allowedModel(modelId) {
   if (typeof modelId !== "string" || /deepseek|(^|\/)auto(\/|$)/i.test(modelId)) return false;
   const slash = modelId.indexOf("/");
@@ -70,6 +78,31 @@ export function createSameOriginChatBridge(fetchImpl) {
         const data = await request("/chat/graph");
         if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) throw new Error("INVALID_GRAPH_RESPONSE");
         return { ok: true, nodes: data.nodes, edges: data.edges };
+      }
+      if (actionId === "chat.plugins") {
+        const data = await request("/plugins");
+        if (!Array.isArray(data.plugins)) throw new Error("INVALID_PLUGINS_RESPONSE");
+        return { ok: true, items: data.plugins.map(plugin => ({
+          id: String(plugin.id || ""), label: String(plugin.id || ""),
+          description: String(plugin.status || "UNKNOWN"),
+        })).filter(plugin => plugin.id && !/deepseek/i.test(plugin.id)) };
+      }
+      if (actionId === "chat.fichas") {
+        const data = await request("/chat/fichas");
+        if (!Array.isArray(data.fichas)) throw new Error("INVALID_FICHAS_RESPONSE");
+        const fichas = data.fichas.filter(ficha =>
+          typeof ficha?.id === "string" && ficha.id &&
+          !/(^|[.\/_-])(?:ficha[.\/_-]?)?0(?:$|[.\/_-])/i.test(ficha.id) &&
+          !/deepseek/i.test(ficha.id));
+        return { ok: true, items: fichas.map(ficha => ({
+          id: ficha.id, label: ficha.id, description: String(ficha.status || "UNKNOWN"),
+        })) };
+      }
+      if (actionId === "chat.ficha") {
+        const id = fichaId(payload);
+        const data = await request(`/chat/fichas/${id}`);
+        if (data.ficha?.id !== payload.id) throw new Error("INVALID_FICHA_RESPONSE");
+        return { ok: true, ficha: data.ficha };
       }
       if (actionId === "chat.models") {
         const { providers } = await request("/chat/providers");
