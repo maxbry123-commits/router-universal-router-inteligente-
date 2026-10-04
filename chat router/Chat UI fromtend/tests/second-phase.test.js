@@ -94,15 +94,19 @@ test("Run/Wall inventory remains exact and unavailable DAG ledger never claims s
 test("standalone four-panel review bundles source without external imports", () => {
   execFileSync(process.execPath, [fileURLToPath(new URL("../scripts/build-shell-review.mjs", import.meta.url))]);
   const html = readFileSync(new URL("../paneles Yaiwes fromtend.revisar.html", import.meta.url), "utf8");
-  assert.equal([...html.matchAll(/<style>/g)].length, 6);
+  assert.equal([...html.matchAll(/<style>/g)].length, 8);
   assert.equal([...html.matchAll(/<script>/g)].length, 1);
   assert.doesNotMatch(html, /<script[^>]*src=|<link[^>]*stylesheet|type="module"/);
   const { document, window } = fixture({}, undefined, html);
   const host = { document, window, location: { protocol: "file:" }, structuredClone, CustomEvent, console, setTimeout, clearTimeout, queueMicrotask };
   Object.defineProperty(host, "localStorage", { get() { throw new Error("STORAGE_BLOCKED"); } });
   runInNewContext(document.querySelector("script").textContent, host, { timeout: 1000 });
-  assert.equal(document.querySelectorAll(".workspace-nav button").length, 4);
+  assert.equal(document.querySelectorAll(".workspace-nav button").length, 6);
   assert.equal(document.querySelectorAll(".chat-panel button").length, 8);
   document.querySelector('[data-panel="files"]').click();
   assert.ok(document.querySelector('[aria-label="Archivos"]'));
+  document.querySelector('[data-panel="run"]').click();
+  assert.ok(document.querySelector(".run-app"), "Run panel must mount the ported YAIWES Run shell");
+  document.querySelector('[data-panel="wall"]').click();
+  assert.ok(document.querySelector(".wall"), "Crazy Wall panel must mount the ported wall shell");
 });

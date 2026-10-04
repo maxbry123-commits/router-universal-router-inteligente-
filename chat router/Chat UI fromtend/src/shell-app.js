@@ -4,6 +4,8 @@ import { renderChat } from "./panels/chat.js";
 import { renderFiles } from "./panels/files.js";
 import { renderTracking } from "./panels/tracking.js";
 import { renderCanvas } from "./panels/canvas.js";
+import { renderRun } from "./panels/run.js";
+import { renderWall } from "./panels/wall.js";
 import { readTypography } from "./typography/state.js";
 import { applyTypography } from "./typography/apply.js";
 import { el, button } from "./dom.js";
@@ -13,6 +15,8 @@ const panels = {
   files: ["Archivos", renderFiles],
   tracking: ["Seguimiento", renderTracking],
   canvas: ["Canvas", renderCanvas],
+  run: ["Run", renderRun],
+  wall: ["Crazy Wall", renderWall],
 };
 let active = "chat";
 let currentPanel;
