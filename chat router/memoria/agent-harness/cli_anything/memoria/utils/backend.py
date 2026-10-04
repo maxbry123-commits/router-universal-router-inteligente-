@@ -12,7 +12,7 @@ MOTORES = {
     'agentdb': ('RIU_AGENTDB_URL', 'http', False, 'sin servicio: arrancar memoria/motores/levantar_motores.sh'),
     'graphiti': ('RIU_GRAPHITI_URL', 'http', False, 'sin servicio: arrancar memoria/motores/levantar_motores.sh'),
     'graphify': ('RIU_GRAPHIFY_URL', 'http', True, 'sin servicio: arrancar memoria/motores/levantar_motores.sh'),
-    'memanto': ('RIU_MEMANTO_URL', 'http', False, 'GAP: su motor es el servidor Moorcheh (nube o Docker+Ollama); sin ese servidor no hay motor'),
+    'memanto': ('RIU_MEMANTO_URL', 'http', False, 'sin servicio: memoria/motores/levantar_motores.sh'),
     'falkordb': ('RIU_FALKORDB_HTTP_URL', 'http', False, 'sin servicio: memoria/motores/compilar_motores.sh y levantar_motores.sh'),
     'postgresql': ('RIU_POSTGRESQL_HTTP_URL', 'http', False, 'sin servicio: memoria/motores/compilar_motores.sh y levantar_motores.sh'),
 }
