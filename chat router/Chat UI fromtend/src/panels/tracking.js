@@ -6,12 +6,14 @@ export function renderTracking(context) {
   const state = el("p", { class: "panel-state pending", role: "status", "aria-live": "polite", text: "Pendiente de consulta al Router" });
   const graph = el("div", { class: "panel-results" });
   const id = el("input", { class: "setting-input", placeholder: "ID de ejecución", "aria-label": "ID de ejecución" });
+  const dagInput = el("textarea", { class: "setting-input", placeholder: "JSON del DAG (plantilla del Router; no se inventa)", "aria-label": "JSON del DAG", rows: "3" });
   let revision = 0;
   const root = el("section", { class: "workspace-panel", "aria-label": "Seguimiento" },
     el("header", { class: "workspace-heading" }, el("h2", { text: "Seguimiento" }),
       el("p", { class: "sub", text: "El grafo de procedencia no equivale a un ledger de ejecución." })),
     el("div", { class: "workspace-toolbar" }, button("Actualizar procedencia", load),
-      button("Uso del Router", usage), button("Conversaciones vivas", conversations), id, button("Consultar ledger", ledger)),
+      button("Uso del Router", usage), button("Conversaciones vivas", conversations), id, button("Consultar ledger", ledger),
+      dagInput, button("Ejecutar DAG real", dagRun)),
     state, graph, renderRunViews(), renderWallViews());
   async function load() {
     const current = ++revision;
@@ -66,6 +68,25 @@ export function renderTracking(context) {
       if (!root.isConnected) return;
       state.className = "panel-state error";
       state.textContent = "Conversaciones no disponibles: " + error.message;
+    }
+  }
+  async function dagRun() {
+    let dag;
+    try { dag = JSON.parse(dagInput.value); }
+    catch { state.className = "panel-state error"; state.textContent = "DAG_JSON_INVALID: pega el JSON del DAG del Router."; return; }
+    state.className = "panel-state pending progress";
+    state.textContent = "Ejecutando DAG en el Router…";
+    try {
+      const response = await context.execute("chat.dagRun", { dag });
+      if (!root.isConnected) return;
+      graph.replaceChildren(el("h3", { text: "DAG ejecutado (respuesta real del Router)" }),
+        el("pre", { text: JSON.stringify(response.dag, null, 2) }));
+      state.className = "panel-state";
+      state.textContent = "DAG confirmado por el Router.";
+    } catch (error) {
+      if (!root.isConnected) return;
+      state.className = "panel-state error";
+      state.textContent = "DAG no ejecutado: " + error.message;
     }
   }
   async function ledger() {

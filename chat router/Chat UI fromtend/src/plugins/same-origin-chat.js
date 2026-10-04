@@ -128,6 +128,14 @@ export function createSameOriginChatBridge(fetchImpl) {
         if (!data || typeof data !== "object") throw new Error("INVALID_USAGE_RESPONSE");
         return { ok: true, usage: data };
       }
+      if (actionId === "chat.dagRun") {
+        if (!payload.dag || typeof payload.dag !== "object" || Array.isArray(payload.dag)) {
+          throw new Error("DAG_INVALID_JSON");
+        }
+        const data = await request("/chat/dag/run", { dag: payload.dag });
+        if (!data || typeof data !== "object") throw new Error("INVALID_DAG_RESPONSE");
+        return { ok: true, dag: data };
+      }
       if (actionId === "chat.storage") {
         const data = await request("/chat/storage");
         if (!data || typeof data !== "object") throw new Error("INVALID_STORAGE_RESPONSE");
