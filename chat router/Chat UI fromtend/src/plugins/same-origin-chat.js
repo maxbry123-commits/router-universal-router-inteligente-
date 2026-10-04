@@ -128,6 +128,22 @@ export function createSameOriginChatBridge(fetchImpl) {
         if (!data || typeof data !== "object") throw new Error("INVALID_USAGE_RESPONSE");
         return { ok: true, usage: data };
       }
+      if (actionId === "chat.routerStatus") {
+        const data = await request("/chat/router/status");
+        if (!data || typeof data !== "object") throw new Error("INVALID_ROUTER_STATUS_RESPONSE");
+        return { ok: true, status: data };
+      }
+      if (actionId === "chat.jobs") {
+        const jobs = payload.jobs;
+        if (!Array.isArray(jobs) || !jobs.length || jobs.length > 8 ||
+            jobs.some(job => !job || typeof job.id !== "string" || typeof job.provider !== "string" ||
+              typeof job.model !== "string" || typeof job.instructions !== "string" || /deepseek/i.test(job.provider + "/" + job.model))) {
+          throw new Error("JOBS_INPUT_INVALID");
+        }
+        const data = await request("/chat/jobs/run", { jobs });
+        if (!Array.isArray(data.results) || typeof data.total !== "number") throw new Error("INVALID_JOBS_RESPONSE");
+        return { ok: true, jobs: data.results, passed: data.passed, total: data.total };
+      }
       if (actionId === "chat.github.accounts") {
         const data = await request("/chat/github/accounts");
         if (!Array.isArray(data.accounts)) throw new Error("INVALID_GH_ACCOUNTS_RESPONSE");
