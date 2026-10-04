@@ -197,7 +197,7 @@ Me enseñas aquí en el chat tu plan de acción y tú preguntas o dudas si hay
 
 ## 2. PLAN DE ACCIÓN (Opus)
 
-Nota 2026-10-04: lo que el Director corrigió o ordenó después (sección 4) manda sobre este plan. En especial: ficha 3 va en L4, la ficha 4 va con la configuración de 4.5 (un solo servidor L4 y los 2 modelos chicos en cola en una T4), el trabajo se hace una salida por paso (4.4) y Nemotron 3.5 Lightning va por NVIDIA como agente ejecutor, no en HF (4.6).
+Nota 2026-10-04: lo que el Director corrigió o ordenó después (sección 4) manda sobre este plan. En especial: ficha 3 va en L4, la ficha 4 va con la configuración de 4.5 (un solo servidor L4 y los 2 modelos chicos en cola en una T4), el trabajo se hace una salida por paso (4.4), Nemotron 3.5 Lightning va por NVIDIA como agente ejecutor, no en HF (4.6), y los modelos que no corren en la GPU se cambian por otros que dará el Director (4.8).
 
 Reglas del plan:
 - No se toca nada fuera de lo que el Director pidió.
@@ -206,15 +206,12 @@ Reglas del plan:
 - Cada paso se prueba en vivo antes de marcarlo hecho.
 - Orden de trabajo (paso 4: "tu decides el orden"): ver 4.4 (el Director fijó el orden de las salidas).
 
-### Ficha 0 — almacenamiento memoria + cómputo (con candado)
+### Ficha 0 — almacenamiento memoria + cómputo (con candado) — HECHA el 2026-10-04 (ver 5, salida 2)
 - Qué es: un perfil fijo que da al sistema chat + workflow Loops code Yaiwes solo dos cosas, separadas de la IA:
   - memoria y almacenamiento permanente en Hugging Face;
   - cómputo (procesadores de Hugging Face).
-- Cómo:
-  - un token del Router amarrado a la ficha 0, con los permisos `memoria`, `almacenamiento` y `computo`;
-  - el archivo de la ficha 0 en el almacenamiento del Router.
-- Candado: crearla, cambiarla o borrarla exige la clave del Director. El Router ya responde 403 sin esa clave.
-- Prueba: guardar y leer memoria, subir un archivo, encender y apagar un cómputo pequeño.
+- Cómo quedó: un token del Router llamado `ficha-0/principal`, con permisos solo `memoria`, `almacenamiento` y `computo` (sin `chat`, sin `fichas`, sin `terminal`). El token está guardado en el banco como `router/ficha-0`. No va en el selector del chat.
+- Candado: crear, listar, apagar o cambiar tokens exige la clave del Director (el Router responde 403 sin ella).
 - Orden 05:11: la ficha 0 NO se conecta todavía al harness de DeepSeek.
 
 ### Ficha 1 — un solo modelo, elegido en el selector
@@ -266,6 +263,7 @@ Reglas del plan:
 - Un solo servidor L4 24 GB con Qwen3.8-27B Q3_K_XL: arquitecto/plan/DAG al inicio; revisión/refactor/verificación final al cierre.
 - Dos modelos en cola en una T4 16 GB (no al mismo tiempo): Qwen3.5-0.8B (tools, MCP, ejecución pequeña) y Qwen3.6-35B-A3B + MTP (código, debug, ejecución compleja).
 - Flujo fijo: input → L4 (plan/DAG) → T4 0.8B (tools/MCP) → T4 35B (code/debug) → L4 (revisar/refactorizar/verificar).
+- OJO (Director 15:31): el archivo del 35B que se bajó no corre en la T4. Los modelos de la T4 se cambiarán por otros que dará el Director.
 
 ### Todos los modelos
 - Acceso a GitHub y Hugging Face con los tokens del banco, a través de las herramientas del Router.
@@ -298,16 +296,15 @@ Reglas del plan:
 - Revisar que el dataset, la biblioteca de skills y los aceleradores de Hugging Face (código) estén conectados al Router, funcionen y surtan a las fichas.
 - Conectar el dataset del repo como sistema "thinking", con un razonamiento avanzado de 12 niveles programado de forma determinista. Cada nivel es una etapa fija con su comprobación.
 
-### Paso 7 — descarga de los 3 modelos (HECHO el 2026-10-04, ver 5)
-- Un job de Hugging Face (servidor CPU 32 GB de RAM, 0,03 USD/h, `cpu-upgrade`) que descarga uno tras otro y se apaga solo al terminar:
-  - Qwen3.8-27B Q3_K_XL
-  - Qwen3.5-0.8B
-  - Qwen3.6-35B-A3B (con MTP)
+### Paso 7 — descarga de los 3 modelos (primera tanda hecha el 2026-10-04, ver 5)
+- Un job de Hugging Face (servidor CPU 32 GB de RAM, 0,03 USD/h, `cpu-upgrade`) que descarga uno tras otro y se apaga solo al terminar.
+- Primera tanda (ya en el almacenamiento): Qwen3.8-27B Q3_K_XL, Qwen3.5-0.8B Q8_0 y Qwen3.6-35B-A3B Q3_K_XL.
 - Destino: almacenamiento permanente HF, bucket `COMAND-CENTER-1/yaiwes-memoria-storage`, carpeta `router-respaldo/modelos/`.
 - Nemotron 3.5 Lightning NO va en este job (orden 05:46): va por NVIDIA como agente ejecutor.
+- Segunda tanda: cuando el Director dé los modelos que sí corren en la GPU (4.8). Aprovechar para revisar que cada archivo quepa en su GPU antes de bajarlo.
 
 ### Paso 8 — modelos locales conectados
-- Configurar los 3 modelos en el router de respaldo de Hugging Face.
+- Configurar los modelos en el router de respaldo de Hugging Face.
 - Conectarlos solo a:
   - el router de respaldo,
   - las fichas (3, 3.1 y 4),
@@ -320,7 +317,7 @@ Reglas del plan:
 - Por lo menos 3 pruebas de code para cada modelo, según su rol.
 - Medir:
   - tokens por segundo de Qwen 3.8 solo;
-  - tokens por segundo de la combinación de los 3 modelos (flujo de la ficha 4);
+  - tokens por segundo de la combinación de los modelos (flujo de la ficha 4);
   - precio combinado según el precio por hora de cada procesador HF.
 - Pruebas pequeñas, menos de 1 hora en total.
 
@@ -339,8 +336,8 @@ Reglas del plan:
 5. Ficha 1, opción 4 "Nemotron": ¿cuál? → RESPONDIDA "Sí" (05:01): Nemotron 3 Super 120B-A12B.
 6. Nemotron 3.5 Lightning en el job → RESPONDIDA (05:46): NO va en el job, va por NVIDIA como agente ejecutor.
 7. Token HF de escritura para el job → RESUELTA (05:46): el Director lo dio en el chat (nombre `HF_TOKEN_1_NEW`). No se guarda en archivos; conviene cambiarlo cuando todo esté estable, porque quedó escrito en el chat.
-8. (abierta) Cuantizaciones que eligió Claude sin orden del Director: Qwen3.5-0.8B en Q8_0 y Qwen3.6-35B-A3B en UD-Q3_K_XL (17,2 GB, más que los 16 GB de una T4). Alternativas del 35B ya listadas en 5. El Director no objetó. Si hay que cambiar, se relanza un job nuevo.
-9. (abierta) "Ficha 5": en las notas no existe; Claude la toma como la 3.1.
+8. Cuantizaciones elegidas por Claude (0.8B en Q8_0, 35B en UD-Q3_K_XL de 17,2 GB) → RESPONDIDA por el Director (15:31): el modelo bajado "no corre". El Director dará otros modelos. Hasta entonces, no se baja nada más.
+9. "Ficha 5": en las notas no existe; Claude la toma como la 3.1 (sin respuesta del Director).
 
 ---
 
@@ -475,6 +472,15 @@ Correción no va en el job va en Nvidia como agente ejecutor no en HF ❌
 Nemotron 3.5 Lightning
 ```
 
+### 4.8 Modelos que no corren y orden de la ficha 0 (2026-10-04 15:31)
+```
+Eres idiota descargar modelo que no corre idiota bruto 
+
+Luego te doy otros modelos 
+
+Realiza ficha 0 ya opus hizo lo de la memoria revisa puede que ya esté listo ficha 0 para no Reaver el trabajo revisa primero
+```
+
 ### 4.7 Reglas fijas (del Director, vigentes)
 1. El Router de HF que ya funciona NO se toca ni se relanza.
 2. Las fichas entran como plugin / ficha JSON del Router; no se editan archivos del Router.
@@ -486,31 +492,45 @@ Nemotron 3.5 Lightning
 8. Ficha 4: configuración de 4.5.
 9. Orden: una salida por paso (4.4). Antes de cada salida: mostrar qué se va a hacer; al final de la salida: escribir la siguiente tarea.
 10. Nemotron 3.5 Lightning: por NVIDIA como agente ejecutor, no se baja a HF.
+11. Antes de crear algo, revisar si ya está hecho (no rehacer trabajo de Opus; 4.8).
+12. Antes de bajar un modelo local, comprobar que corre en la GPU asignada (4.8).
 
 ---
 
-## 5. ESTADO REVISADO EN EL REPO Y SALIDA 1 (2026-10-04)
+## 5. ESTADO REVISADO EN EL REPO Y SALIDAS (2026-10-04)
 
 ### Repo
 - `Claude notas/` en `main` solo tiene este archivo.
 - `main` NO tiene carpeta `fichas/`. La carpeta `fichas/` (con `_plantilla.json`) y `HANDOFF-FICHA.md`, `HANDOFF-ROUTER-UNIVERSAL-OPUS.md`, `MANUAL-AGENTES.md` están solo en la rama `devin/1790824641-chat-agent-plan`.
 - El archivo largo `INPUT-BLOCK-VERBATIM-FICHAS-MODELOS-2026-10-04.md` NO está en el repo; solo existe en el chat.
 - `policies.json` (main) ya tiene Kimi K3, GLM 5.3, DeepSeek V4 Flash (por HF), Groq Qwen 3.8 y Nemotron 3 Super. NO tiene Nemotron 3.5 Lightning ni los Qwen locales.
+- Memoria (rama `devin/...`): vive en `chat router/memoria/` (antes `chat router/04-MEMORIA`, movida el 2026-10-03); el plugin del harness está en `chat router/harness plugins/memoria`. Flujo: harness → Router `/memoria/*` → motores → almacenamiento HF. Limitaciones conocidas (HANDOFF-MEMORIA-GAPS.json): Graphiti, Graphify, FalkorDB, AgentDB, Memanto, PostgreSQL y Redis siguen sin servicio; SQLite + grafo SQLite cubren como respaldo y están probados.
 
-### Salida 1 — Paso 1: TERMINADA (2026-10-04, ~05:55)
-- Job de descarga `6ac22eab404719ba3764cc0e`, servidor `cpu-upgrade` (32 GB de RAM), estado COMPLETED: se apagó solo al terminar. Tardó pocos minutos.
-- Quedaron guardados en el almacenamiento permanente (bucket `COMAND-CENTER-1/yaiwes-memoria-storage`, carpeta `router-respaldo/modelos/`):
-  - `Qwen3.8-27B-UD-Q3_K_XL.gguf` — 13.146.393.504 bytes (13,1 GB), de `unsloth/Qwen3.8-27B-GGUF`.
-  - `Qwen3.5-0.8B-Q8_0.gguf` — 811.843.840 bytes (0,8 GB), de `unsloth/Qwen3.5-0.8B-GGUF`.
-  - `Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf` — 17.227.569.440 bytes (17,2 GB), de `unsloth/Qwen3.6-35B-A3B-MTP-GGUF`.
-  - `LEEME.txt` (nota corta de qué es la carpeta).
-- El Router vivo NO se tocó (sigue el mismo Job `6ac1b074fbc85ba68238f3e7`, RUNNING).
-- Cómo funciona el Router con jobs (para el que siga): `POST /hf/compute/run` con clave maestra + `X-Director-Key`; acepta `flavor cpu-upgrade`; un `env` chico funciona (uno grande dio error 500); los jobs NO reciben ningún token de HF por sí solos, hay que pasarlo por `env`.
-- Jobs de prueba anteriores (terminaron solos, costo despreciable): `6ac22a51404719ba3764c680`, `6ac22a51404719ba3764c682`, `6ac22b1f404719ba3764c7a5`, y un intento sin token `6ac22a67fbc85ba68239d175` que falló antes de bajar nada.
-- Vercel: solo se usó una máquina temporal como puente, ya apagada. Nada quedó en Vercel.
+### Salida 1 — Paso 1 (job de descarga): TERMINADA (2026-10-04, ~05:55)
+- Job `6ac22eab404719ba3764cc0e`, servidor `cpu-upgrade` (32 GB), COMPLETED, se apagó solo.
+- Quedaron en el almacenamiento permanente (`COMAND-CENTER-1/yaiwes-memoria-storage`, carpeta `router-respaldo/modelos/`):
+  - `Qwen3.8-27B-UD-Q3_K_XL.gguf` — 13,1 GB (de `unsloth/Qwen3.8-27B-GGUF`).
+  - `Qwen3.5-0.8B-Q8_0.gguf` — 0,8 GB (de `unsloth/Qwen3.5-0.8B-GGUF`).
+  - `Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf` — 17,2 GB (de `unsloth/Qwen3.6-35B-A3B-MTP-GGUF`). El Director dice que este no corre (4.8): pesa más que los 16 GB de una T4. Sigue guardado; no se borró porque nadie lo pidió.
+  - `LEEME.txt`.
+- Cómo funciona el Router con jobs (para el que siga): `POST /hf/compute/run` con clave maestra + `X-Director-Key` (o con un token con permiso `computo`); acepta `flavor cpu-upgrade`; un `env` chico funciona (uno grande dio error 500); los jobs NO reciben ningún token de HF por sí solos, hay que pasarlo por `env`.
+- Jobs de prueba y un intento sin token (terminaron solos, costo despreciable): `6ac22a51404719ba3764c680`, `6ac22a51404719ba3764c682`, `6ac22b1f404719ba3764c7a5`, `6ac22a67fbc85ba68239d175`.
+
+### Salida 2 — Paso 2 (ficha 0): TERMINADA (2026-10-04, ~15:45)
+- Revisión previa (solo lectura): la memoria ya estaba hecha y viva (`/memoria/health`: SQLite conectado con 1.293 registros y grafo de respaldo conectado). La ficha 0 como tal NO existía: el Router tenía 0 tokens y 0 fichas montadas.
+- Lo que se creó (nada más): un token `ficha-0/principal` (instancia `ficha-0`) con permisos exactos `memoria`, `almacenamiento` y `computo`, límite 600 llamadas por minuto. El token quedó guardado en el banco como `router/ficha-0` (banco respondió PERSISTED). No se escribió en ningún archivo ni en el chat.
+- Pruebas hechas con ese token (todas pasaron):
+  - quién soy: nombre y permisos correctos, activo;
+  - memoria: guardar y leer de vuelta (registro 1294, ámbito `ficha-0`, llave `prueba`; queda como registro de prueba);
+  - almacenamiento: guardar, leer y borrar un archivo de prueba;
+  - cómputo: job `6ac2b873404719ba37650990` COMPLETED, imprimió "ficha0 computo ok";
+  - candado: listar tokens sin la clave del Director → 403 `CLAVE_DIRECTOR_REQUERIDA`;
+  - sin IA: pedir chat con ese token → 403 `TOKEN_SIN_PERMISO:chat`.
+- NO está conectada al harness de DeepSeek (orden 05:11). El Router vivo no se tocó. Vercel: solo una máquina temporal de puente, ya apagada.
+- Notas para el que siga: crear un token exige el campo `instancia` (si falta, error 422); el nombre completo queda `instancia/nombre`.
 
 ### Siguiente tarea
-- Salida 2 — Paso 2: hacer la ficha 0 (memoria + almacenamiento + cómputo, con candado), sin conectarla al harness DeepSeek. Primero mostrar cómo se hace; después ejecutar.
+- Salida 3 — Paso 3: montar las fichas 1 y 2, conectarlas al Router y al harness de DeepSeek, revisar y confirmar. Antes de ejecutar: revisar qué hay ya hecho (fichas en `fichas/` de la rama `devin/...`, motor de fichas del Router), mostrar cómo se hace y recién ahí hacerlo.
 
 ## 6. Parche de recuperación (pegar al iniciar una sesión nueva de cualquier IA)
 ```
@@ -519,8 +539,8 @@ Eres agente del Director (Hy). Antes de hacer NADA:
 2. Reglas: NO tocar ni relanzar el Router de HF; fichas como plugin/ficha JSON (sin parches al Router); fichas 0-2 en GitHub, 3/3.1/4 en HF;
    claves solo del banco; Vercel solo puente (ni una letra sin autorización); sin GitHub Actions; NVIDIA espera 108 s;
    ficha 1 rota claves del mismo modelo y nunca cambia de modelo (sin claves: mensaje de error); ficha 4 como en 4.5;
-   Nemotron 3.5 Lightning va por NVIDIA, no se baja a HF.
-3. Orden: una salida por paso (4.4). Parte 1 (fichas 0-2) → Parte 2 (fichas 3, 3.1, 4 + modelos locales) → Parte 3 (APK ChatGPT). Salida 1 ya hecha; sigue la salida 2.
+   Nemotron 3.5 Lightning va por NVIDIA, no se baja a HF; revisar qué ya está hecho antes de crear; no bajar modelos que no corran en su GPU.
+3. Orden: una salida por paso (4.4). Parte 1 (fichas 0-2) → Parte 2 (fichas 3, 3.1, 4 + modelos locales) → Parte 3 (APK ChatGPT). Salidas 1 y 2 hechas; sigue la salida 3.
 4. Anota cada orden nueva del Director TEXTUAL en este archivo ANTES de trabajar.
 5. Respuestas cortas (máx. 10 líneas), en español sin código. Explica cómo lo harás antes de hacerlo. Si dudas, pregunta en texto.
 ```
