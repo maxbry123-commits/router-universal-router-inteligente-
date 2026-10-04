@@ -197,7 +197,7 @@ Me enseñas aquí en el chat tu plan de acción y tú preguntas o dudas si hay
 
 ## 2. PLAN DE ACCIÓN (Opus)
 
-Nota 2026-10-04: lo que el Director corrigió o ordenó después (sección 4) manda sobre este plan. En especial: ficha 3 va en L4, la ficha 4 va con la configuración de 4.5 (un solo servidor L4 y los 2 modelos chicos en cola en una T4), y el trabajo se hace una salida por paso (4.4).
+Nota 2026-10-04: lo que el Director corrigió o ordenó después (sección 4) manda sobre este plan. En especial: ficha 3 va en L4, la ficha 4 va con la configuración de 4.5 (un solo servidor L4 y los 2 modelos chicos en cola en una T4), el trabajo se hace una salida por paso (4.4) y Nemotron 3.5 Lightning va por NVIDIA como agente ejecutor, no en HF (4.6).
 
 Reglas del plan:
 - No se toca nada fuera de lo que el Director pidió.
@@ -241,7 +241,7 @@ Reglas del plan:
 - Saltos: si se acaba el saldo de Groq, salta a Nvidia DeepSeek; si no responde, pasa a Nemotron y ejecuta.
 - Roles dentro de la ficha 2:
   - **Arquitectura y planificación:** el consejo. Su resultado llena información al chat, al orquestador, a Hermes y a OpenClaw.
-  - **Ejecutar, tool plugins y tareas agénticas sin code:** Nemotron 3.5 Lightning 30B-A3B.
+  - **Ejecutar, tool plugins y tareas agénticas sin code:** Nemotron 3.5 Lightning 30B-A3B, por NVIDIA (agente ejecutor, no en HF; orden 05:46).
   - **Code, refactoría y revisión:** 1) Groq Qwen 3.8; si no está disponible, 2) Nemotron 3 Super 120B-A12B.
   - **Frontend:** DeepSeek V4 Flash.
 - Lo que hay que programar en el motor de fichas:
@@ -298,13 +298,13 @@ Reglas del plan:
 - Revisar que el dataset, la biblioteca de skills y los aceleradores de Hugging Face (código) estén conectados al Router, funcionen y surtan a las fichas.
 - Conectar el dataset del repo como sistema "thinking", con un razonamiento avanzado de 12 niveles programado de forma determinista. Cada nivel es una etapa fija con su comprobación.
 
-### Paso 7 — descarga de los 3 modelos (+ Nemotron 3.5 Lightning, orden 05:30)
+### Paso 7 — descarga de los 3 modelos (HECHO el 2026-10-04, ver 5)
 - Un job de Hugging Face (servidor CPU 32 GB de RAM, 0,03 USD/h, `cpu-upgrade`) que descarga uno tras otro y se apaga solo al terminar:
   - Qwen3.8-27B Q3_K_XL
   - Qwen3.5-0.8B
   - Qwen3.6-35B-A3B (con MTP)
-  - Nemotron 3.5 Lightning 30B-A3B (orden del Director 05:30; cuantización por confirmar)
 - Destino: almacenamiento permanente HF, bucket `COMAND-CENTER-1/yaiwes-memoria-storage`, carpeta `router-respaldo/modelos/`.
+- Nemotron 3.5 Lightning NO va en este job (orden 05:46): va por NVIDIA como agente ejecutor.
 
 ### Paso 8 — modelos locales conectados
 - Configurar los 3 modelos en el router de respaldo de Hugging Face.
@@ -337,8 +337,10 @@ Reglas del plan:
 3. Si en NVIDIA no existe exactamente un modelo nombrado, ¿uso el más cercano y aviso? → RESPONDIDA "Sí" (05:01): GLM 5 = `nvidia:z-ai/glm-5.3`; DeepSeek V4 = `hf:deepseek-ai/DeepSeek-V4-Flash`; avisar en el informe.
 4. Ficha 4: ¿T4 aparte o misma T4? → RESPONDIDA (ver 1.7 y 4.5): un solo servidor L4 y los 2 modelos chicos en cola en T4.
 5. Ficha 1, opción 4 "Nemotron": ¿cuál? → RESPONDIDA "Sí" (05:01): Nemotron 3 Super 120B-A12B.
-6. (nueva, 05:30) Nemotron 3.5 Lightning: ¿qué cuantización bajar? y las cuantizaciones de Qwen3.5-0.8B y Qwen3.6-35B-A3B (el Director solo fijó Q3_K_XL para el 27B). → PENDIENTE (ver 5).
-7. (nueva) Falta un token HF de escritura para el job de descarga (ver 5, bloqueo). → PENDIENTE.
+6. Nemotron 3.5 Lightning en el job → RESPONDIDA (05:46): NO va en el job, va por NVIDIA como agente ejecutor.
+7. Token HF de escritura para el job → RESUELTA (05:46): el Director lo dio en el chat (nombre `HF_TOKEN_1_NEW`). No se guarda en archivos; conviene cambiarlo cuando todo esté estable, porque quedó escrito en el chat.
+8. (abierta) Cuantizaciones que eligió Claude sin orden del Director: Qwen3.5-0.8B en Q8_0 y Qwen3.6-35B-A3B en UD-Q3_K_XL (17,2 GB, más que los 16 GB de una T4). Alternativas del 35B ya listadas en 5. El Director no objetó. Si hay que cambiar, se relanza un job nuevo.
+9. (abierta) "Ficha 5": en las notas no existe; Claude la toma como la 3.1.
 
 ---
 
@@ -456,10 +458,21 @@ Un solo servidor de L4 y 2 modelos en cola en T4
 Inicia salida 1
 ```
 
-### 4.6 Modelo extra para el job (2026-10-04 05:30; el mensaje llegó cortado)
+### 4.6 Modelo extra y su corrección (2026-10-04 05:30 y 05:46)
 ```
 Monta en el job también este modelo . 
 NVIDIA asegura que Nemotron 3.5 Lightning
+```
+(El mensaje de las 05:30 llegó cortado.)
+```
+HF_TOKEN_1_NEW
+
+[TOKEN HF: lo dio el Director en el chat; NO se escribe en el repo]
+
+Correción no va en el job va en Nvidia como agente ejecutor no en HF ❌
+
+
+Nemotron 3.5 Lightning
 ```
 
 ### 4.7 Reglas fijas (del Director, vigentes)
@@ -472,10 +485,11 @@ NVIDIA asegura que Nemotron 3.5 Lightning
 7. Ficha 1: si se agota una clave, salta a otra clave del mismo modelo; nunca cambia de modelo; si no queda ninguna, mensaje de error.
 8. Ficha 4: configuración de 4.5.
 9. Orden: una salida por paso (4.4). Antes de cada salida: mostrar qué se va a hacer; al final de la salida: escribir la siguiente tarea.
+10. Nemotron 3.5 Lightning: por NVIDIA como agente ejecutor, no se baja a HF.
 
 ---
 
-## 5. ESTADO REVISADO EN EL REPO Y SALIDA 1 (2026-10-04, 05:3x)
+## 5. ESTADO REVISADO EN EL REPO Y SALIDA 1 (2026-10-04)
 
 ### Repo
 - `Claude notas/` en `main` solo tiene este archivo.
@@ -483,24 +497,20 @@ NVIDIA asegura que Nemotron 3.5 Lightning
 - El archivo largo `INPUT-BLOCK-VERBATIM-FICHAS-MODELOS-2026-10-04.md` NO está en el repo; solo existe en el chat.
 - `policies.json` (main) ya tiene Kimi K3, GLM 5.3, DeepSeek V4 Flash (por HF), Groq Qwen 3.8 y Nemotron 3 Super. NO tiene Nemotron 3.5 Lightning ni los Qwen locales.
 
-### Salida 1 — Paso 1 (job de descarga): hallazgos
-- Modelos con nombre exacto en Hugging Face (todos existen):
-  - `unsloth/Qwen3.8-27B-GGUF` → `Qwen3.8-27B-UD-Q3_K_XL.gguf` (13,1 GB).
-  - `unsloth/Qwen3.5-0.8B-GGUF` → `Qwen3.5-0.8B-Q8_0.gguf` (0,8 GB). El Director no dijo cuantización; Claude propone Q8_0 (hay Q4_K_M y UD-Q3_K_XL de 0,5 GB).
-  - `unsloth/Qwen3.6-35B-A3B-MTP-GGUF` → `Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf` (17,2 GB). OJO: pesa más que los 16 GB de una T4. Más chicas del mismo repo: UD-Q2_K_XL 12,6 GB, UD-IQ3_XXS 14,1 GB, UD-IQ3_S 15,3 GB.
-  - `unsloth/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF` (orden 05:30) → `...-UD-Q3_K_XL.gguf` (21,2 GB) o `...-UD-Q4_K_M.gguf` (25,3 GB). También existe en ggml-org, bartowski y lmstudio-community.
-- Clave del Director: funciona la del mensaje 04:56; la del 05:11 da 403.
-- El Router acepta jobs: `POST /hf/compute/run` con `flavor: cpu-upgrade` funciona (8 vCPU, 32 GB). Un `env` chico funciona; un `env` grande dio error 500.
-- Los jobs que lanza el Router NO reciben ningún token de Hugging Face (solo `GPG_KEY` y `HF_DATASETS_TRUST_REMOTE_CODE`).
-- Job de descarga `6ac22a67fbc85ba68239d175`: falló a propósito antes de bajar nada (sin token), código 2. No se descargó ni se escribió nada en el almacenamiento.
-- Jobs de prueba (terminaron solos, costo despreciable): `6ac22a51404719ba3764c680`, `6ac22a51404719ba3764c682`, `6ac22b1f404719ba3764c7a5`.
-- Destino previsto: bucket `COMAND-CENTER-1/yaiwes-memoria-storage`, carpeta `router-respaldo/modelos/`.
-
-### Bloqueo
-- Para escribir en el almacenamiento permanente, el job necesita un token HF de escritura. Ese token está en el banco (`huggingface/token-1-new`), pero el Router no entrega claves y el archivo del banco vive en el almacenamiento privado, al que no se llega sin otro token HF.
+### Salida 1 — Paso 1: TERMINADA (2026-10-04, ~05:55)
+- Job de descarga `6ac22eab404719ba3764cc0e`, servidor `cpu-upgrade` (32 GB de RAM), estado COMPLETED: se apagó solo al terminar. Tardó pocos minutos.
+- Quedaron guardados en el almacenamiento permanente (bucket `COMAND-CENTER-1/yaiwes-memoria-storage`, carpeta `router-respaldo/modelos/`):
+  - `Qwen3.8-27B-UD-Q3_K_XL.gguf` — 13.146.393.504 bytes (13,1 GB), de `unsloth/Qwen3.8-27B-GGUF`.
+  - `Qwen3.5-0.8B-Q8_0.gguf` — 811.843.840 bytes (0,8 GB), de `unsloth/Qwen3.5-0.8B-GGUF`.
+  - `Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf` — 17.227.569.440 bytes (17,2 GB), de `unsloth/Qwen3.6-35B-A3B-MTP-GGUF`.
+  - `LEEME.txt` (nota corta de qué es la carpeta).
+- El Router vivo NO se tocó (sigue el mismo Job `6ac1b074fbc85ba68238f3e7`, RUNNING).
+- Cómo funciona el Router con jobs (para el que siga): `POST /hf/compute/run` con clave maestra + `X-Director-Key`; acepta `flavor cpu-upgrade`; un `env` chico funciona (uno grande dio error 500); los jobs NO reciben ningún token de HF por sí solos, hay que pasarlo por `env`.
+- Jobs de prueba anteriores (terminaron solos, costo despreciable): `6ac22a51404719ba3764c680`, `6ac22a51404719ba3764c682`, `6ac22b1f404719ba3764c7a5`, y un intento sin token `6ac22a67fbc85ba68239d175` que falló antes de bajar nada.
+- Vercel: solo se usó una máquina temporal como puente, ya apagada. Nada quedó en Vercel.
 
 ### Siguiente tarea
-- Repetir el Paso 1 (job de descarga) apenas haya token HF de escritura. Después: Paso 2 (ficha 0, sin conectar al harness).
+- Salida 2 — Paso 2: hacer la ficha 0 (memoria + almacenamiento + cómputo, con candado), sin conectarla al harness DeepSeek. Primero mostrar cómo se hace; después ejecutar.
 
 ## 6. Parche de recuperación (pegar al iniciar una sesión nueva de cualquier IA)
 ```
@@ -508,8 +518,9 @@ Eres agente del Director (Hy). Antes de hacer NADA:
 1. Lee completo "Claude notas/claude notas 1.md" (rama main). Las secciones 1 y 4 son órdenes textuales del Director: no las cambies ni las resumas.
 2. Reglas: NO tocar ni relanzar el Router de HF; fichas como plugin/ficha JSON (sin parches al Router); fichas 0-2 en GitHub, 3/3.1/4 en HF;
    claves solo del banco; Vercel solo puente (ni una letra sin autorización); sin GitHub Actions; NVIDIA espera 108 s;
-   ficha 1 rota claves del mismo modelo y nunca cambia de modelo (sin claves: mensaje de error); ficha 4 como en 4.5.
-3. Orden: una salida por paso (4.4). Parte 1 (fichas 0-2) → Parte 2 (fichas 3, 3.1, 4 + modelos locales) → Parte 3 (APK ChatGPT).
+   ficha 1 rota claves del mismo modelo y nunca cambia de modelo (sin claves: mensaje de error); ficha 4 como en 4.5;
+   Nemotron 3.5 Lightning va por NVIDIA, no se baja a HF.
+3. Orden: una salida por paso (4.4). Parte 1 (fichas 0-2) → Parte 2 (fichas 3, 3.1, 4 + modelos locales) → Parte 3 (APK ChatGPT). Salida 1 ya hecha; sigue la salida 2.
 4. Anota cada orden nueva del Director TEXTUAL en este archivo ANTES de trabajar.
 5. Respuestas cortas (máx. 10 líneas), en español sin código. Explica cómo lo harás antes de hacerlo. Si dudas, pregunta en texto.
 ```
