@@ -54,6 +54,10 @@ test("unsupported operations, providers, upload state and backend failures stay 
   await assert.rejects(mismatch.execute("chat.send", base), /BACKEND_MODEL_MISMATCH/);
   const denied = createSameOriginChatBridge(async () => response({ detail: "Unauthorized" }, 401));
   await assert.rejects(denied.execute("chat.send", base), /BACKEND_HTTP_401/);
+  const deniedHtml = createSameOriginChatBridge(async () => ({
+    ok: false, status: 401, json: async () => { throw new SyntaxError("Not JSON"); },
+  }));
+  await assert.rejects(deniedHtml.execute("chat.send", base), /BACKEND_HTTP_401/);
 });
 
 test("an in-flight old reply cannot attach to a newly reset chat", async () => {

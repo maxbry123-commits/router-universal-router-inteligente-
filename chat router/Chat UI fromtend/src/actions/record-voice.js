@@ -8,10 +8,15 @@ export async function toggleRecording(context, buttonNode) {
     context.notice(t(context, "voiceUnavailable"), true);
     return;
   }
+  const sessionVersion = context.sessionVersion || 0;
+  let stream;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if ((context.sessionVersion || 0) !== sessionVersion) {
+      stream.getTracks().forEach(track => track.stop());
+      return;
+    }
     const recorder = new MediaRecorder(stream);
-    const sessionVersion = context.sessionVersion || 0;
     const chunks = [];
     context.recorder = recorder;
     recorder.addEventListener("dataavailable", event => { if (event.data.size) chunks.push(event.data); });
@@ -20,17 +25,25 @@ export async function toggleRecording(context, buttonNode) {
       buttonNode.setAttribute("aria-label", controlLabel(context, "voice"));
       buttonNode.setAttribute("title", controlLabel(context, "voice"));
       buttonNode.setAttribute("aria-pressed", "false");
-      if ((context.sessionVersion || 0) !== sessionVersion) { context.recorder = null; return; }
+      if ((context.sessionVersion || 0) !== sessionVersion) {
+        if (context.recorder === recorder) context.recorder = null;
+        return;
+      }
       try {
         await context.execute(context.config.voiceActionId, { audio: new Blob(chunks, { type: recorder.mimeType }), mimeType: recorder.mimeType });
-        context.notice(t(context, "audioConfirmed"));
-      } catch (error) { context.notice(error.message, true); }
-      context.recorder = null;
+        if ((context.sessionVersion || 0) === sessionVersion) context.notice(t(context, "audioConfirmed"));
+      } catch (error) {
+        if ((context.sessionVersion || 0) === sessionVersion) context.notice(error.message, true);
+      }
+      if (context.recorder === recorder) context.recorder = null;
     });
     recorder.start();
     buttonNode.setAttribute("aria-label", t(context, "stopRecording", { name: controlLabel(context, "voice") }));
     buttonNode.setAttribute("title", t(context, "stopRecording", { name: controlLabel(context, "voice") }));
     buttonNode.setAttribute("aria-pressed", "true");
     context.notice(t(context, "recording"));
-  } catch (error) { context.notice(`VOICE_UNAVAILABLE: ${error.message}`, true); }
+  } catch (error) {
+    stream?.getTracks().forEach(track => track.stop());
+    context.notice(`VOICE_UNAVAILABLE: ${error.message}`, true);
+  }
 }

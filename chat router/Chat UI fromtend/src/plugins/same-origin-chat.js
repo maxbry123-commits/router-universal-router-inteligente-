@@ -28,7 +28,10 @@ export function createSameOriginChatBridge(fetchImpl) {
     });
     let data;
     try { data = await response.json(); }
-    catch { throw new Error(`BACKEND_INVALID_JSON:${response.status}`); }
+    catch {
+      if (!response.ok) throw new Error(`BACKEND_HTTP_${response.status}`);
+      throw new Error(`BACKEND_INVALID_JSON:${response.status}`);
+    }
     if (!response.ok) throw new Error(`BACKEND_HTTP_${response.status}: ${String(data.detail || data.error || "")}`);
     if (!data || typeof data !== "object") throw new Error("BACKEND_INVALID_RESPONSE");
     return data;
