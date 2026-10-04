@@ -1,4 +1,13 @@
 import { el } from "../dom.js";
+import { v12Svg } from "../icons-v12.js";
+
+// Asigna los iconos V12 de la skill a los controles de producción;
+// los que no tienen equivalente V12 conservan su trazo local.
+const V12_MAP = {
+  more: "menu", settings: "settings", voice: "mic", shield: "shield",
+  send: "send", grid: "grid", controls: "sliders", file: "file",
+  connectors: "plug", export: "download", attach: "link",
+};
 
 const paths = {
   plus: "M12 5v14M5 12h14",
@@ -17,5 +26,10 @@ const paths = {
 };
 
 export function icon(name) {
+  const v12Id = V12_MAP[name];
+  if (v12Id) {
+    const node = v12Svg(v12Id, "icon svg-icon");
+    if (node.innerHTML) return node;
+  }
   return el("svg", { class: "icon", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.7", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" }, el("path", { d: paths[name] }));
 }
