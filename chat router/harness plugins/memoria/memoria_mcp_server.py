@@ -65,5 +65,47 @@ def almacenamiento_sync() -> Any:
     return _call("POST", "/chat/storage/sync")
 
 
+# --- Orquestador determinista (CLI-Anything harness en chat router/memoria/agent-harness). Sin LLM. ---
+import json as _json
+import subprocess as _sp
+import sys as _sys
+from pathlib import Path as _Path
+
+_HARNESS = _Path(__file__).resolve().parents[2] / 'memoria' / 'agent-harness'
+
+
+def _orq(*args: str) -> Any:
+    env = {**os.environ, 'PYTHONPATH': str(_HARNESS)}
+    try:
+        r = _sp.run([_sys.executable, '-m', 'cli_anything.memoria', '--json', *args], capture_output=True, text=True, timeout=60, env=env)
+        return _json.loads(r.stdout) if r.stdout.strip() else {'status': 'GAP', 'stderr': r.stderr[-200:]}
+    except Exception as exc:  # noqa: BLE001
+        return {'status': 'GAP', 'reason': type(exc).__name__}
+
+
+@mcp.tool()
+def orquestador_estado() -> Any:
+    """Estado (CONNECTED o GAP) de cada motor del pool de memoria y almacenamiento. Determinista, sin LLM."""
+    return _orq('motores', 'estado')
+
+
+@mcp.tool()
+def orquestador_guardar(scope: str, key: str, data: dict) -> Any:
+    """Guarda data en todos los motores conectados que permiten escribir."""
+    return _orq('memoria', 'guardar', scope, key, _json.dumps(data))
+
+
+@mcp.tool()
+def orquestador_cargar(scope: str, key: str) -> Any:
+    """Lee (scope, key) del primer motor, por prioridad fija, que lo tenga."""
+    return _orq('memoria', 'cargar', scope, key)
+
+
+@mcp.tool()
+def orquestador_buscar(scope: str, query: str, k: int = 10) -> Any:
+    """Busca en todos los motores y fusiona el resultado sin repetidos."""
+    return _orq('memoria', 'buscar', scope, query, '--k', str(k))
+
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
