@@ -1,32 +1,7 @@
-# Chat Mvp
+# Banco de claves
 
-Raíz de construcción del chat MVP del Router Inteligente Universal (plan: `bitácora stated JSON Craxy wall plan checkpoint router inteligente universal/RIU-0108-PLAN-MAESTRO-CHAT-MVP.md`; decisiones: `RIU-0109-...`; avance: `RIU-0110-...`).
-Regla del Director: aquí solo va lo del chat. El gateway del Router ya probado sigue en `router inteligente universal/integration/huggingface/` y se reutiliza, no se copia.
+Código del banco cifrado del Router (`secret_bank/`: SQLite + AES-256-GCM, la clave sale de la clave maestra del Director con scrypt y nunca se guarda).
 
-## Qué hay aquí y en qué estado está (2026-09-20)
-| Carpeta / archivo | Salida del plan | Estado |
-|---|---|---|
-| `groups.yaml` | S1, S7 | HECHO y validado en runner (20 modelos, 0 problemas); gobierna el selector |
-| `accounts.yaml` | S1, S5 | HECHO; solo alias, nunca tokens; faltan los logins de `abc123` y `planeta 123` |
-| `secret_bank/vault.py`, `session.py`, `broker.py` | S2.1-2.3 | HECHO: 9 tests pasan en runner real |
-| `secret_bank/` API, integración con el gateway, página `/bank`, copia cifrada a HF, passkey | S2.4-2.8 | PENDIENTE |
-| `deploy/` | S3 | PENDIENTE (Space Docker con Open WebUI + gateway) |
-| `storage/` | S4 | PENDIENTE (PostgreSQL, Redis, FalkorDB + Graphiti, AgentDB, ingestión) |
-| `tests/` | — | `test_secret_bank.py` |
+**Todo lo que necesitas saber del banco (dónde vive, qué tiene, cómo se agregan claves): [`HANDOFF-BANCO.md`](HANDOFF-BANCO.md).**
 
-## Decisiones vigentes
-Chat: Open WebUI (conectado al gateway del Router; MCP para intervenir en la conversación). Almacenamiento: Hugging Face (Space Docker + Storage Bucket). Secret Bank: AES-256-GCM + contraseña maestra (passkey/WebAuthn después). Graph DB: FalkorDB (no Kuzu). Graphty no se instala. HF Jobs como fallback de modelos sin proveedor (con enmienda de contrato pendiente).
-
-## Reglas
-- Ninguna credencial en texto plano en este repo, en bases de datos, en logs ni en el chat. `riu-secret-scan.yml` lo vigila (383 archivos, 0 hallazgos el 2026-09-20).
-- Nada se declara integrado por existir la carpeta: cada pieza necesita un test que falle antes y pase después, en runner real (`riu-chat-mvp-core-verify.yml`).
-- Los modelos sin proveedor serverless quedan `hf_job_fallback` hasta cerrar la enmienda del contrato (`HF_JOB_EPHEMERAL_SERVING`) y la prueba S7.3.
-
-
-## 2026-10-03 (Opus): banco unico conectado al Router
-- El banco cifrado vive en el bucket HF `claude-github-mcp-backup-storage/.../secret_bank/vault.db.gz.b64` (copias `.bak-*`). El Router lo baja y lo abre solo al arrancar con el secreto `RIU_VAULT_PASSPHRASE` del Space (nunca en GitHub).
-- `secret_bank/providers.json` (mismo bucket): agrega una API/SDK compatible OpenAI con `base_url` y entra al Router sin tocar codigo.
-- Credenciales hoy: github 5, huggingface 2, nvidia 5, openai 14, groq 7, router 1 (`router/harness-dsh`, clave del Harness).
-- Laboratorio: `POST /lab/run` (puerta fija) prueba todo y guarda el informe. Handoff: [ADENDA-RIU-0111](../../Readme%20arquitectura%20router%20inteligente%20universal/ADENDA-RIU-0111-ROUTER-24-7-HARNESS-BANCO-LAB-FICHAS-MCP.md).
-
-- Handoff vigente del Router y del banco: `router inteligente universal/HANDOFF-ROUTER-UNIVERSAL-OPUS.md`. En el banco HF hay `secret_bank/LEEME-HANDOFF.md` (router de respaldo T4/L4). Groq-1 borrada el 2026-10-03 (invalida); copia previa `vault.db.gz.b64.bak-202610032044`.
+Reglas: ninguna clave en este repo; agregar, rotar o importar claves exige la clave del Director.

@@ -1,0 +1,36 @@
+{
+  "nombre": "mi-ficha",
+  "descripcion": "Que hace esta ficha (una frase).",
+  "modo": "cadena",
+  "anclaje_system_prompt": "Reglas que valen para TODOS los pasos (opcional).",
+  "pasos": [
+    {
+      "nombre": "paso-1",
+      "modelo": "auto",
+      "system_prompt": "",
+      "instruccion": "{input}",
+      "max_tokens": 1024,
+      "temperature": null,
+      "dataset": null
+    }
+  ],
+  "juez": null,
+  "conectividad": {
+    "tokens_permitidos": [
+      "*"
+    ],
+    "vias": [
+      "http",
+      "mcp"
+    ],
+    "nota": "patrones de nombres de token: 'instancia-A/*'"
+  },
+  "notas": "",
+  "_ayuda": {
+    "modo": "cadena = cada paso recibe la salida del anterior | paralelo = todos a la vez | consejo = todos + juez | unico = solo el primero",
+    "modelo": "auto | grupo (assistants, code...) | proveedor:modelo (nvidia:moonshotai/kimi-k3, groq:qwen/qwen3.8-27b, local:...)",
+    "instruccion": "texto que recibe el modelo; {input} se reemplaza por la entrada o por la salida del paso anterior",
+    "dataset": "opcional {'repo': 'COMAND-CENTER-1/mi-dataset', 'file': 'anclaje.md'}: texto de anclaje desde un dataset HF",
+    "pasos": "de 1 a 20 pasos; el orden es el orden de ejecucion"
+  }
+}
