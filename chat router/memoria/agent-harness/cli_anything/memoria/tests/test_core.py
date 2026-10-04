@@ -52,6 +52,7 @@ def falso(solo_lectura=False):
 def pool(monkeypatch):
     for n in TODOS:
         monkeypatch.delenv('RIU_%s_URL' % n, raising=False)
+        monkeypatch.delenv('RIU_%s_HTTP_URL' % n, raising=False)
     servidores = []
     for nombre, ro in (('AGENTDB', False), ('GRAPHITI', False), ('GRAPHIFY', True)):
         s, u = falso(ro)
@@ -97,5 +98,6 @@ def test_determinista(pool):
 def test_sin_motores_sale_con_error(monkeypatch):
     for n in TODOS:
         monkeypatch.delenv('RIU_%s_URL' % n, raising=False)
+        monkeypatch.delenv('RIU_%s_HTTP_URL' % n, raising=False)
     code, d = correr('memoria', 'guardar', 'p', 'k', '{}')
     assert code == 1 and d['ok'] is False
