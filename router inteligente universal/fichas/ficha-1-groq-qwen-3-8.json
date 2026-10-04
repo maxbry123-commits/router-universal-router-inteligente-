@@ -1,0 +1,10 @@
+{
+  "nombre": "ficha-1-groq-qwen-3-8",
+  "descripcion": "Ficha 1: solo Qwen 3.8 (Groq) responde y ejecuta.",
+  "modo": "unico",
+  "anclaje_system_prompt": "Responde en español.",
+  "pasos": [{"nombre": "responde", "modelo": "groq:qwen/qwen3.8-27b", "system_prompt": "Eres Qwen 3.8. Respondes y ejecutas tu solo.", "instruccion": "{input}", "max_tokens": 2048}],
+  "juez": null,
+  "conectividad": {"tokens_permitidos": ["*"], "vias": ["http", "mcp"]},
+  "notas": "Director 2026-10-04. Si se agota una clave pasa a otra clave del mismo modelo; nunca cambia de modelo."
+}
