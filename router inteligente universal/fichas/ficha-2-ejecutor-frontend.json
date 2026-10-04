@@ -1,0 +1,10 @@
+{
+  "nombre": "ficha-2-ejecutor-frontend",
+  "descripcion": "INTERNA ficha 2: frontend (DeepSeek V4 Flash).",
+  "modo": "unico",
+  "anclaje_system_prompt": "Responde en español.",
+  "pasos": [{"nombre": "responde", "modelo": "hf:deepseek-ai/DeepSeek-V4-Flash", "system_prompt": "Eres el ejecutor de frontend de la ficha 2. Respondes y ejecutas tu solo.", "instruccion": "{input}", "max_tokens": 2048}],
+  "juez": null,
+  "conectividad": {"tokens_permitidos": ["*"], "vias": ["http", "mcp"]},
+  "notas": "Director 2026-10-04. ESTADO: el Router responde MODEL_NOT_SELECTABLE para DeepSeek elegido de forma directa; pendiente decision del Director."
+}
