@@ -94,19 +94,23 @@ test("all twelve functions retain their configured commands and visible descript
   assert.deepEqual(calls, [{ actionId: "function.11", payload: { functionId: "action-12", modelId: "" } }]);
 });
 
-test("settings preserves every slot, command and editable name with four visual palettes", () => {
+test("settings preserves every slot, command and editable name with seven palette panels", () => {
   const { document, context } = fixture();
   const settings = renderSettings(context);
   document.body.append(settings);
-  assert.deepEqual(Array.from(settings.querySelectorAll("[data-theme-option]")).map(node => node.getAttribute("data-theme-option")), ["gris", "little", "matte", "blanco"]);
+  assert.deepEqual(Array.from(settings.querySelectorAll("[data-theme-option]")).map(node => node.getAttribute("data-theme-option")), ["gris", "little", "matte", "blanco", "crystal", "orange", "blue"]);
+  assert.equal(settings.querySelectorAll(".theme-sample").length, 7);
+  assert.equal(settings.querySelectorAll(".theme-color").length, 35);
+  assert.ok(settings.textContent.includes("Paleta de referencia · no aprobada"));
   assert.equal(settings.querySelectorAll("details").length, 33 + Object.keys(context.config.labels).length);
   assert.ok(settings.querySelector('[aria-label="Subir documentos · actionId"]'));
-  settings.querySelector('[data-theme-option="blanco"]').click();
+  settings.querySelector('[data-theme-option="blue"]').click();
   assert.equal(context.config.theme, "gris");
+  assert.equal(settings.querySelector('[data-theme-option="blue"]').getAttribute("aria-pressed"), "true");
   settings.querySelector('[aria-label="Título del chat"]').value = "Mi chat";
   settings.querySelector('[aria-label="Título del chat"]').dispatchEvent(new document.defaultView.Event("input"));
   settings.querySelector(".primary").click();
-  assert.equal(context.config.theme, "blanco");
+  assert.equal(context.config.theme, "blue");
   assert.equal(context.config.title, "Mi chat");
   assert.equal(context.chatOpened, true);
   assert.deepEqual([context.config.selectors.length, context.config.toggles.length, context.config.modes.length, context.config.actions.length], [5, 8, 8, 12]);

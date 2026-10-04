@@ -14,6 +14,8 @@ test("maintains exact slot counts and stable ids after editing", () => {
   assert.equal(DEFAULT_CONFIG.models.length, 0);
   assert.equal(config.theme, "gris");
   assert.equal(normalizeConfig({ theme: "little" }).theme, "little");
+  for (const theme of ["crystal", "orange", "blue"]) assert.equal(normalizeConfig({ theme }).theme, theme);
+  assert.equal(normalizeConfig({ theme: "unknown" }).theme, "gris");
 });
 
 test("configuration persists without serializing File or runtime state", () => {

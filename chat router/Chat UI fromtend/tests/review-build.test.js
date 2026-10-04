@@ -31,5 +31,5 @@ test("standalone bundled JavaScript initializes chat and settings in a Node DOM 
   assert.equal(document.querySelector("#app > p[role='alert']"), null);
   document.querySelector('[data-control="configure"]').click();
   assert.ok(document.querySelector(".settings"));
-  assert.equal(document.querySelectorAll("[data-theme-option]").length, 4);
+  assert.equal(document.querySelectorAll("[data-theme-option]").length, 7);
 });

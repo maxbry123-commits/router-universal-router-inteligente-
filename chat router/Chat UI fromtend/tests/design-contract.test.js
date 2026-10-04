@@ -4,12 +4,13 @@ import { readFileSync } from "node:fs";
 
 const read = path => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("gris V07 is primary while the three older Maxbry themes remain intact", () => {
+test("seven distinct Maxbry palettes include Gris V07 and the three reference candidates", () => {
   const tokens = read("../styles/tokens.css");
   const css = read("../styles/chat.css");
   for (const hex of ["#1C1B1A", "#2A2927", "#F5F4F0", "#A8A29E", "#C65D3B", "#0a0a0d", "#141417", "#202025", "#2563eb", "#ff5500", "#f4f4f5", "#18181b", "#3f3f46"]) assert.ok(tokens.includes(hex));
-  for (const hex of ["#1B1B1B", "#202020", "#252525", "#2A2A2A", "#3C3C3C", "#484848", "#3A3A3A", "#525252", "#FAFAFA", "#EDEDED", "#BFBFBF", "#A0A0A0"]) assert.ok(tokens.includes(hex));
-  assert.deepEqual(Array.from(tokens.matchAll(/\[data-theme="([^"]+)"\]/g), match => match[1]), ["gris", "little", "matte", "blanco"]);
+  for (const hex of ["#1B1B1B", "#202020", "#252525", "#2A2A2A", "#3C3C3C", "#484848", "#3A3A3A", "#525252", "#FAFAFA", "#EDEDED", "#BFBFBF", "#A0A0A0", "#0848F7", "#12D86A", "#FF475F", "#FF7B1A", "#DADADA", "#F8F8F8"]) assert.ok(tokens.includes(hex));
+  for (const hex of ["#0c1421", "#b8f5fa", "#100e0d", "#ef823c", "#0a1424", "#66b7ff"]) assert.ok(tokens.includes(hex));
+  assert.deepEqual(Array.from(tokens.matchAll(/\[data-theme="([^"]+)"\]/g), match => match[1]), ["gris", "little", "matte", "blanco", "crystal", "orange", "blue"]);
   assert.match(tokens, /--selection-fill: var\(--module-selected\)/);
   assert.match(css, /\.pending, #status\.pending/);
   assert.match(css, /\.progress, #status\.progress/);
