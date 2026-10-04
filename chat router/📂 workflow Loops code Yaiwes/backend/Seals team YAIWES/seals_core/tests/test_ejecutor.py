@@ -21,7 +21,7 @@ def test_verificar_existencia_archivo_real():
 def test_verificar_existencia_archivo_inexistente():
     tarea = {"tipo": "verificar_existencia", "nombre": "esto_no_existe_123.xyz"}
     resultado = ejecutar_tarea(tarea)
-    assert resultado["status"] == "PASS"
+    assert resultado["status"] == "GAP"  # modo FAIL_CLOSED: un archivo que falta es GAP con motivo
     assert resultado["evidencia"]["existe"] is False
 
 

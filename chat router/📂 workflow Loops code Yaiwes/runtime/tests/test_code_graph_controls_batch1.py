@@ -46,9 +46,9 @@ def test_g008_unsafe_call_is_blocked_and_neutralized():
 
 
 def test_g009_no_unique_value_is_gap_and_review_is_required_for_value():
-    duplicate = ValueAssessment("dup", 0, 4, 1, 1, 1, "APPROVE")
+    duplicate = ValueAssessment("dup", 0, 4, 1, 1, 1, "REJECT", "rev-1", True)  # regla G-009 vigente: revisor independiente
     assert decide_value(duplicate).verdict == "NO_VALUE_GAP"
-    useful = ValueAssessment("useful", 2, 1, 1, 1, 2, "APPROVE")
+    useful = ValueAssessment("useful", 2, 1, 1, 1, 2, "APPROVE", "rev-1", True)
     assert decide_value(useful).verdict == "VALUE_CONFIRMED"
     pending = ValueAssessment("pending", 2, 0, 1, 1, 1, "PENDING")
     assert decide_value(pending).verdict == "REVIEW_REQUIRED"
@@ -90,7 +90,7 @@ def test_g021_priority_parallel_fan_in_and_cycle_fail_closed():
         TaskEnvelope("C", 2, "c", ("A", "B")),
     ]
     plan = plan_tasks(tasks, max_concurrency=2)
-    assert plan.batches == (("B", "A"), ("C",))
+    assert plan.batches == (("A", "B"), ("C",))  # regla G-021 vigente: numero menor = mas prioridad
     with pytest.raises(SchedulerError, match="CYCLE_DETECTED"):
         plan_tasks([
             TaskEnvelope("X", 1, "x", ("Y",)),
