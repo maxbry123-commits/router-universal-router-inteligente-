@@ -1,4 +1,0 @@
-# ssh (bloque4)
-Plugin `router inteligente universal/plugins/ssh_bridge/` (enabled_default false): acciones status/run/put/get. paramiko perezoso (falta -> degraded). Lista blanca de hosts en config.json (vacia por defecto), comandos solo de allowed_commands sin metacaracteres, o allow_any (config del host Y payload). Credenciales solo por env: SSH_BRIDGE_KEY_<HOST> o SSH_BRIDGE_PASSWORD_<HOST>; host key estricta con SSH_BRIDGE_KNOWN_HOSTS. put/get max 64 KB bajo sftp_root. connectivity: transporte ssh anadido (+9 lineas, usa ssh_bridge.status, sin red).
-Pendiente: banco de claves (hoy solo env); paramiko en requirements del Router; prueba real contra un host (no hay host); test de ficha con el host de plugins.
-Nuevo host: 1) anadir entrada en config.json hosts (host,user,allowed_commands,sftp_root). 2) poner SSH_BRIDGE_KEY_<NOMBRE> en el entorno y known_hosts. 3) habilitar el plugin y llamar status.
