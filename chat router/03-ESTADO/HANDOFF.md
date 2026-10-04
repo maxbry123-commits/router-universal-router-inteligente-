@@ -72,16 +72,16 @@ FLAG-1 `ui_bridge.py` DATA → `chat router/03-ESTADO/data` · FLAG-2 enlace cha
 
 <!-- YAIWES STATE HUB START -->
 ## Estado operativo generado por State Hub
-Revisión: 70
-Proyecto/tarea: `chat-yaiwes` / `PLAN-RECEPCION`
-Estado: **BLOCKED**
-Fase: `SCOPE_UNCONFIRMED`
+Revisión: 71
+Proyecto/tarea: `router-inteligente-universal` / `ROUTER-UNIVERSAL`
+Estado: **COMPLETED**
+Fase: `VERIFIED_IN_PRODUCTION`
 
 ### Último checkpoint
-Reorganizacion: harness plugins/ (harness DeepSeek + plugin memoria) y memoria/ como raiz unica (antes 04-MEMORIA); referencias vivas corregidas; motores graphiti, graphify y agentdb levantados desde memoria/motores; cadena plugin del harness -> Router -> motores verificada.
+Router relanzado con validar/probar fichas; 1000 conexiones simultaneas 1000/1000; memoria 1000/1000 aislada por token; candado del Director OK; banco con 42 claves (tokens GitHub/HF del Director guardados); tokens de prueba borrados. Docs: router inteligente universal/MANUAL-AGENTES.md, HANDOFF-FICHA.md, Banco de claves/HANDOFF-BANCO.md, HANDOFF-ROUTER-UNIVERSAL-OPUS.md (commit fdbb67f).
 
 ### Siguiente
-Continuar DAG existente
+Director: orden final del repo y primera ficha (HANDOFF-FICHA.md)
 <!-- YAIWES STATE HUB END -->
 
 ## Checkpoints DSL memoria/almacenamiento — RIU-0121
