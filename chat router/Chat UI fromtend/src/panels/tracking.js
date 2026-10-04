@@ -10,7 +10,8 @@ export function renderTracking(context) {
   const root = el("section", { class: "workspace-panel", "aria-label": "Seguimiento" },
     el("header", { class: "workspace-heading" }, el("h2", { text: "Seguimiento" }),
       el("p", { class: "sub", text: "El grafo de procedencia no equivale a un ledger de ejecución." })),
-    el("div", { class: "workspace-toolbar" }, button("Actualizar procedencia", load), id, button("Consultar ledger", ledger)),
+    el("div", { class: "workspace-toolbar" }, button("Actualizar procedencia", load),
+      button("Uso del Router", usage), button("Conversaciones vivas", conversations), id, button("Consultar ledger", ledger)),
     state, graph, renderRunViews(), renderWallViews());
   async function load() {
     const current = ++revision;
@@ -32,6 +33,39 @@ export function renderTracking(context) {
       if (current !== revision || !root.isConnected) return;
       state.className = "panel-state error";
       state.textContent = `No se pudo leer procedencia: ${error.message}`;
+    }
+  }
+  async function usage() {
+    state.className = "panel-state pending progress";
+    state.textContent = "Consultando uso del Router…";
+    try {
+      const response = await context.execute("chat.usage");
+      if (!root.isConnected) return;
+      graph.replaceChildren(el("h3", { text: "Uso del Router (real)" }),
+        el("pre", { text: JSON.stringify(response.usage, null, 2) }));
+      state.className = "panel-state";
+      state.textContent = "Uso leído del Router.";
+    } catch (error) {
+      if (!root.isConnected) return;
+      state.className = "panel-state error";
+      state.textContent = "Uso no disponible: " + error.message;
+    }
+  }
+  async function conversations() {
+    state.className = "panel-state pending progress";
+    state.textContent = "Consultando conversaciones…";
+    try {
+      const response = await context.execute("chat.conversations");
+      if (!root.isConnected) return;
+      graph.replaceChildren(el("h3", { text: "Conversaciones vivas: " + response.items.length }),
+        ...response.items.map(item =>
+          el("p", { class: "workspace-row", text: item.id + " · " + item.label + " · " + item.description })));
+      state.className = "panel-state";
+      state.textContent = "Conversaciones leídas del Router.";
+    } catch (error) {
+      if (!root.isConnected) return;
+      state.className = "panel-state error";
+      state.textContent = "Conversaciones no disponibles: " + error.message;
     }
   }
   async function ledger() {
