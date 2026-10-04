@@ -30,6 +30,7 @@ if [ ! -f /opt/falkordb.so ]; then
     (cd "$DL/FalkorDB" && cargo build --release >>"$LOG" 2>&1) && cp "$(ls "$DL"/FalkorDB/target/release/*.so | head -1)" /opt/falkordb.so && echo 'falkordb: compilado del codigo bajado' || echo 'FALLO_FALKORDB'; }
 fi
 if [ -f /opt/falkordb.so ]; then
+  chmod 755 /opt/falkordb.so  # Redis exige permiso de ejecucion en el modulo
   if ! redis-server --version | grep -qE 'v=(7[.][2-9]|[89][.])'; then  # FalkorDB pide Redis 7.2 o mayor; Debian trae 7.0
     curl -fsSL https://packages.redis.io/gpg | gpg --dearmor --yes -o /usr/share/keyrings/redis.gpg 2>>"$LOG"
     echo "deb [signed-by=/usr/share/keyrings/redis.gpg] https://packages.redis.io/deb $(. /etc/os-release; echo $VERSION_CODENAME) main" > /etc/apt/sources.list.d/redis.list
