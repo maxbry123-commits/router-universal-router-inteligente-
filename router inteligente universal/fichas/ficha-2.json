@@ -1,0 +1,14 @@
+{
+  "nombre": "ficha-2",
+  "descripcion": "Ficha 2: consejo (ask consil). DeepSeek V4, GLM 5 y Qwen 3.8 opinan; Kimi K3 decide y marca el rol del ejecutor.",
+  "modo": "consejo",
+  "anclaje_system_prompt": "Responde en español. Eres parte de un consejo de arquitectura. Se concreto y breve.",
+  "pasos": [
+    {"nombre": "deepseek-v4", "modelo": "hf:deepseek-ai/DeepSeek-V4-Flash", "system_prompt": "Eres consejero de arquitectura y planificacion.", "instruccion": "Propon arquitectura y plan por pasos para: {input}", "max_tokens": 1200},
+    {"nombre": "glm-5", "modelo": "nvidia:z-ai/glm-5.3", "system_prompt": "Eres consejero de arquitectura y planificacion.", "instruccion": "Propon arquitectura y plan por pasos para: {input}", "max_tokens": 1200},
+    {"nombre": "groq-qwen-3-8", "modelo": "groq:qwen/qwen3.8-27b", "system_prompt": "Eres consejero de arquitectura y planificacion.", "instruccion": "Propon arquitectura y plan por pasos para: {input}", "max_tokens": 1200}
+  ],
+  "juez": {"nombre": "kimi-k3-decide", "modelo": "nvidia:moonshotai/kimi-k3", "system_prompt": "Eres el decisor del consejo.", "instruccion": "Decide el plan final por pasos. La primera linea debe ser ROL: tools o codigo o frontend o general. Propuestas del consejo: {input}", "max_tokens": 1800},
+  "conectividad": {"tokens_permitidos": ["*"], "vias": ["http", "mcp"]},
+  "notas": "Director 2026-10-04. Tramo 2: segun el ROL que marca Kimi se llama ficha-2-ejecutor-<rol> (con respaldo si falla). ESTADO: el miembro DeepSeek V4 da MODEL_NOT_SELECTABLE; el consejo sigue con GLM, Qwen y el juez Kimi."
+}
