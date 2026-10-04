@@ -495,6 +495,11 @@ Si aprobado haz las 2 fichas
 ```
 (Claude explicó el plan y el Director lo aprobó: fichas 1 y 2 como fichas del Router, consejo con juez y ejecutor por rol.)
 
+### 4.10 Revisar modelos de NVIDIA (2026-10-04 16:03)
+```
+Revisa que modelos te responde Nvidia y te digo que hacer para cambiar a deepsek
+```
+
 ### 4.7 Reglas fijas (del Director, vigentes)
 1. El Router de HF que ya funciona NO se toca ni se relanza.
 2. Las fichas entran como plugin / ficha JSON del Router; no se editan archivos del Router.
@@ -546,6 +551,12 @@ Si aprobado haz las 2 fichas
 - Comprobado: pedir un modelo que no existe da error y no cambia de modelo (cumple la ficha 1).
 - NO hecho: conectar al harness de DeepSeek; selector del chat; espera de NVIDIA a 108 s (ver duda 11).
 - Router vivo no se tocó. Vercel: solo máquinas temporales de puente, apagadas.
+
+### Salida 3b - modelos que responde NVIDIA hoy (2026-10-04, ~16:10)
+- Probados 58 de los 81 modelos del catalogo NVIDIA (se saltaron embeddings, seguridad, vision y similares) con una pregunta corta y hasta 105 s de espera.
+- RESPONDEN (13), con su tiempo: google/gemma-4-31b-it 28,6 s; meta/muse-glimmer-30b 1,5 s; moonshotai/kimi-k3 35,7 s; nvidia/ising-calibration-1.5-31b 0,5 s; nvidia/nemotron-3-nano-omni-30b-a3b-reasoning 0,8 s; nvidia/nemotron-3-super-120b-a12b 0,5 s; nvidia/nemotron-3-ultra-550b-a55b 4,4 s; nvidia/nemotron-3.5-lightning-30b-a3b 2,6 s; nvidia/riva-translate-4b-instruct-v1.1 5,5 s; nvidia/riva-translate-4b-instruct-v2 24,1 s; openai/gpt-oss-20b 2,5 s; poolside/laguna-xs-2.1 0,2 s; z-ai/glm-5.3 8,2 s.
+- NO RESPONDEN HOY (45): deepseek-ai/deepseek-v4.1-flash, deepseek-ai/deepseek-coder-6.7b-instruct, moonshotai/kimi-k2.6, z-ai/glm-5.3-flash, nvidia/nemotron-nano-3-30b-a3b, nvidia/llama-3.1-nemotron-ultra-253b-v1, nvidia/llama-3.1-nemotron-70b-instruct, nvidia/llama-3.1-nemotron-51b-instruct, nvidia/nemotron-4-340b-instruct, mistralai (large, large-2, codestral, mixtral, 7b), nv-mistralai/mistral-nemo-12b-instruct, writer/palmyra (4 modelos), ibm/granite (4), google (codegemma x2, gemma-2b, gemma-3 x2, recurrentgemma, diffusiongemma), meta/codellama-70b, meta/llama2-70b, 01-ai/yi-large, ai21labs/jamba, aisingapore/sea-lion, bigcode/starcoder2, databricks/dbrx, microsoft/phi-3.5-moe, zyphra/zamba2, nvidia (riva-translate-4b-instruct, vila, cosmos-reason2-8b, llama3-chatqa, mistral-nemo-minitron-8b, ai-synthetic-video-detector).
+- Conclusion: DeepSeek no responde por NVIDIA hoy. Esperando que el Director diga como cambiar a DeepSeek (duda 10).
 
 ### Siguiente tarea
 - Terminar la salida 3: conectar las fichas 1 y 2 al harness de DeepSeek (leer `chat router/harness plugins/deepseek-harness-chat/plugins/router-provider.cordis.yml` y el token que usa el harness), revisar y confirmar. Antes: esperar la decisión del Director sobre DeepSeek (duda 10) y la espera de NVIDIA (duda 11). Después: salida 4 (fichas 3, 3.1 y 4).
