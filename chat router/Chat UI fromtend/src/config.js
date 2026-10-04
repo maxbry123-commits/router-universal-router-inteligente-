@@ -18,7 +18,7 @@ const slots = (count, prefix) => Array.from({ length: count }, (_, i) => ({
 export const DEFAULT_CONFIG = Object.freeze({
   title: "Chat YAIWES",
   description: "Elige un modelo y configura las acciones para conectar tu backend.",
-  theme: "little",
+  theme: "gris",
   locale: "es",
   labels: CONTROL_LABELS,
   descriptions: {},
@@ -58,7 +58,7 @@ export function normalizeConfig(value = {}) {
   for (const key of ["title", "description", "modelsActionId", "modelActionId", "sendActionId", "attachActionId", "documentsActionId", "voiceActionId", "watchdogActionId", "skillsActionId", "connectorsActionId"]) {
     result[key] = asString(value[key] ?? DEFAULT_CONFIG[key]);
   }
-  result.theme = ["little", "matte", "blanco"].includes(value.theme) ? value.theme : "little";
+  result.theme = ["gris", "little", "matte", "blanco"].includes(value.theme) ? value.theme : "gris";
   result.locale = ["es", "en", "fr", "pt"].includes(value.locale) ? value.locale : "es";
   result.labels = Object.fromEntries(Object.entries(CONTROL_LABELS).map(([key, label]) => [key, asString(value.labels?.[key]) || label]));
   result.descriptions = Object.fromEntries(Object.keys(CONTROL_LABELS).map(key => [key, asString(value.descriptions?.[key])]));

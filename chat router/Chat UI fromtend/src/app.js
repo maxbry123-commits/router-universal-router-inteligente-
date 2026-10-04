@@ -17,7 +17,7 @@ const context = {
   notice(message, error = false, pending = false) {
     clearTimeout(statusTimer);
     status.textContent = message;
-    status.className = error ? "error" : pending ? "pending" : "";
+    status.className = error ? "error" : pending ? "pending progress" : "";
     const windowStatus = document.querySelector("dialog[open] .window-status");
     if (windowStatus) { windowStatus.textContent = message; windowStatus.className = `window-status ${status.className}`; }
     if (!pending) statusTimer = setTimeout(() => { status.textContent = ""; }, error ? 8000 : 3500);

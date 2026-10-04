@@ -55,6 +55,7 @@ h3 { font-size: 14px; }
 #status { position: fixed; top: calc(74px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: max-content; max-width: min(480px, calc(100% - 24px)); background: var(--card); color: var(--text-secondary); margin: 0; border-radius: 12px; z-index: 60; overflow-wrap: anywhere; }
 #status:not(:empty) { padding: 10px 12px; border: 1px solid var(--border-strong); }
 .error, #status.error { color: var(--status-red); }
+.pending, #status.pending { color: var(--text-secondary); }
 .progress, #status.progress { color: var(--status-green); }
 .window { width: min(480px, calc(100% - 24px)); max-height: 85dvh; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border-strong); border-radius: 12px; padding: 0; overflow: hidden; }
 .window[open] { display: flex; flex-direction: column; }
@@ -92,7 +93,7 @@ h3 { font-size: 14px; }
 .setting-input, .setting-field select { width: 100%; min-width: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary); padding: 10px; }
 .setting-field select option { background: var(--card); }
 .setting-field textarea { min-height: 96px; resize: vertical; }
-.theme-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.theme-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .theme-option { min-width: 0; display: grid; gap: 8px; text-align: left; padding: 8px; font-size: 12px; border-radius: 12px; }
 .theme-option[aria-pressed="true"] { border-color: var(--selection-border); }
 .theme-option[aria-pressed="true"] .theme-label::after { content: " ✓"; color: var(--text-bright); }

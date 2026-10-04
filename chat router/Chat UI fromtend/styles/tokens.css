@@ -1,4 +1,14 @@
-:root, [data-theme="little"] {
+:root, [data-theme="gris"] {
+  --bg: #1B1B1B; --surface: #202020; --surface-alt: #252525;
+  --card: #2A2A2A; --card-hover: #2A2A2A; --module-selected: #3C3C3C;
+  --mask-panel: #484848; --border: #3A3A3A; --border-strong: #525252;
+  --text: #FAFAFA; --text-bright: #FAFAFA; --text-primary: #EDEDED;
+  --text-secondary: #BFBFBF; --text-tertiary: #A0A0A0;
+  --accent: #EDEDED; --accent-hover: #FAFAFA; --primary-text: #1B1B1B;
+  --selection-border: var(--border-strong); --selection-fill: var(--module-selected);
+  --status-blue: #76aaff; --status-green: #56c981; --status-red: #ff8a8a;
+}
+[data-theme="little"] {
   --sub: var(--text-secondary);
   --bg: #1C1B1A; --surface: #2A2927; --card: #2A2927; --card-hover: #353330;
   --border: rgba(255,255,255,.1); --border-strong: rgba(255,255,255,.18);

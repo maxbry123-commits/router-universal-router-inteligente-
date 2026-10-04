@@ -26,10 +26,10 @@ test("standalone bundled JavaScript initializes chat and settings in a Node DOM 
   const host = { document, window, location: { protocol: "file:" }, structuredClone, CustomEvent, console, setTimeout, clearTimeout };
   Object.defineProperty(host, "localStorage", { get() { throw new Error("STORAGE_BLOCKED"); } });
   runInNewContext(script, host, { timeout: 1000, filename: "chat-review-bundle.js" });
-  assert.equal(document.documentElement.dataset.theme, "little");
+  assert.equal(document.documentElement.dataset.theme, "gris");
   assert.equal(document.querySelectorAll(".chat-panel button").length, 8);
   assert.equal(document.querySelector("#app > p[role='alert']"), null);
   document.querySelector('[data-control="configure"]').click();
   assert.ok(document.querySelector(".settings"));
-  assert.equal(document.querySelectorAll("[data-theme-option]").length, 3);
+  assert.equal(document.querySelectorAll("[data-theme-option]").length, 4);
 });

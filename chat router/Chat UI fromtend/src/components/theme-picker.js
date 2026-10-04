@@ -3,7 +3,7 @@ import { t } from "../i18n.js";
 
 export function themePicker(context, draft) {
   const options = el("div", { class: "theme-options", role: "group", "aria-label": t(context, "theme") });
-  for (const [id, key] of [["little", "themeLittle"], ["matte", "themeMatte"], ["blanco", "themeBlanco"]]) {
+  for (const [id, key] of [["gris", "themeGris"], ["little", "themeLittle"], ["matte", "themeMatte"], ["blanco", "themeBlanco"]]) {
     const node = button("", () => {
       draft.theme = id;
       for (const option of options.children) option.setAttribute("aria-pressed", String(option === node));

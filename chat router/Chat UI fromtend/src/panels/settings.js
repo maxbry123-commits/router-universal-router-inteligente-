@@ -1,6 +1,8 @@
 import { button, el } from "../dom.js";
 import { chatDescription, controlLabel, LANGUAGES, slotLabel, t } from "../i18n.js";
 import { themePicker } from "../components/theme-picker.js";
+import { DEFAULT_CONFIG } from "../config.js";
+import { exportSettings, importSettings } from "../actions/settings-transfer.js";
 
 function field(label, value, onChange, multiline = false) {
   const input = el(multiline ? "textarea" : "input", { class: "setting-input", "aria-label": label });
@@ -25,6 +27,12 @@ function group(title, items, context, edit) {
 
 export function renderSettings(context) {
   const draft = structuredClone(context.config);
+  const replaceConfig = config => {
+    const persisted = context.updateConfig(config);
+    context.selection = { modelId: "", modeId: "mode-1", selectors: {}, toggles: {} };
+    context.showSettings();
+    return persisted;
+  };
   const root = el("section", { class: "settings panel", "aria-label": t(context, "settingsAria") });
   const header = el("header", { class: "settings-header" },
     button(`← ${controlLabel(context, "back")}`, () => context.showChat(), "ghost"), el("h1", { text: t(context, "settingsTitle") }));
@@ -45,6 +53,38 @@ export function renderSettings(context) {
   for (const key of ["modelsActionId", "modelActionId", "sendActionId", "attachActionId", "documentsActionId", "voiceActionId", "watchdogActionId", "skillsActionId", "connectorsActionId"]) {
     commands.append(field(`${t(context, key)} · actionId`, draft[key], value => { draft[key] = value; }));
   }
+
+  const transfer = el("section", { class: "settings-group" }, el("h3", { text: t(context, "configExport") }));
+  const transferStatus = el("p", { role: "status" });
+  const fileInput = el("input", { type: "file", accept: ".json,application/json", hidden: true, "aria-label": t(context, "configImport") });
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files?.[0];
+    fileInput.value = "";
+    if (!file) return;
+    try {
+      const imported = await importSettings(file);
+      if (!window.confirm(t(context, "configImportConfirm"))) return;
+      const persisted = replaceConfig(imported);
+      context.notice(t(context, persisted ? "configImported" : "settingsTemporary"), !persisted);
+    } catch {
+      transferStatus.textContent = t(context, "configInvalid");
+      transferStatus.className = "error";
+    }
+  });
+  transfer.append(
+    fileInput,
+    button(t(context, "configExport"), () => {
+      try { exportSettings(context.config); context.notice(t(context, "configExported")); }
+      catch (error) { transferStatus.textContent = error.message; transferStatus.className = "error"; }
+    }),
+    button(t(context, "configImport"), () => fileInput.click()),
+    button(t(context, "configReset"), () => {
+      if (!window.confirm(t(context, "configResetConfirm"))) return;
+      const persisted = replaceConfig(DEFAULT_CONFIG);
+      context.notice(t(context, persisted ? "configResetDone" : "settingsTemporary"), !persisted);
+    }),
+    transferStatus
+  );
 
   const labels = el("section", { class: "settings-group" }, el("h3", { text: t(context, "namesAndDescriptions") }));
   for (const key of Object.keys(draft.labels)) {
@@ -82,6 +122,6 @@ export function renderSettings(context) {
     catch (error) { feedback.textContent = error.message; }
   }, "primary");
   root.append(header, intro, commands, labels, models, group(t(context, "modesGroup"), draft.modes, context), selectors,
-    group(t(context, "togglesGroup"), draft.toggles, context), group(t(context, "actionsGroup"), draft.actions, context), feedback, save);
+    group(t(context, "togglesGroup"), draft.toggles, context), group(t(context, "actionsGroup"), draft.actions, context), transfer, feedback, save);
   return root;
 }

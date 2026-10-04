@@ -94,15 +94,15 @@ test("all twelve functions retain their configured commands and visible descript
   assert.deepEqual(calls, [{ actionId: "function.11", payload: { functionId: "action-12", modelId: "" } }]);
 });
 
-test("settings preserves every slot, command and editable name with three visual palettes", () => {
+test("settings preserves every slot, command and editable name with four visual palettes", () => {
   const { document, context } = fixture();
   const settings = renderSettings(context);
   document.body.append(settings);
-  assert.deepEqual(Array.from(settings.querySelectorAll("[data-theme-option]")).map(node => node.getAttribute("data-theme-option")), ["little", "matte", "blanco"]);
+  assert.deepEqual(Array.from(settings.querySelectorAll("[data-theme-option]")).map(node => node.getAttribute("data-theme-option")), ["gris", "little", "matte", "blanco"]);
   assert.equal(settings.querySelectorAll("details").length, 33 + Object.keys(context.config.labels).length);
   assert.ok(settings.querySelector('[aria-label="Subir documentos · actionId"]'));
   settings.querySelector('[data-theme-option="blanco"]').click();
-  assert.equal(context.config.theme, "little");
+  assert.equal(context.config.theme, "gris");
   settings.querySelector('[aria-label="Título del chat"]').value = "Mi chat";
   settings.querySelector('[aria-label="Título del chat"]').dispatchEvent(new document.defaultView.Event("input"));
   settings.querySelector(".primary").click();
@@ -110,6 +110,39 @@ test("settings preserves every slot, command and editable name with three visual
   assert.equal(context.config.title, "Mi chat");
   assert.equal(context.chatOpened, true);
   assert.deepEqual([context.config.selectors.length, context.config.toggles.length, context.config.modes.length, context.config.actions.length], [5, 8, 8, 12]);
+});
+
+test("settings reset requires confirmation and replaces saved commands without removing the panel", () => {
+  const { document, window, context } = fixture({ theme: "little", sendActionId: "custom.send" });
+  context.selection.toggles["toggle-1"] = true;
+  window.confirm = () => false;
+  const settings = renderSettings(context);
+  document.body.append(settings);
+  const reset = [...settings.querySelectorAll("button")].find(node => node.textContent === "Restablecer configuración");
+  reset.click();
+  assert.equal(context.config.sendActionId, "custom.send");
+  window.confirm = () => true;
+  reset.click();
+  assert.equal(context.config.sendActionId, "chat.send");
+  assert.equal(context.config.theme, "gris");
+  assert.deepEqual(context.selection.toggles, {});
+  assert.equal(context.settingsOpened, true);
+});
+
+test("settings import requires confirmation and replaces the selection only after a valid file", async () => {
+  const { document, window, context } = fixture({ sendActionId: "custom.send" });
+  const settings = renderSettings(context);
+  document.body.append(settings);
+  const fileInput = settings.querySelector('input[type="file"]');
+  const data = JSON.stringify({ format: "yaiwes-chat-settings", version: 1, config: context.config });
+  Object.defineProperty(fileInput, "files", { value: [{ size: data.length, text: async () => data }] });
+  window.confirm = () => false;
+  fileInput.dispatchEvent(new window.Event("change")); await settle();
+  assert.equal(context.settingsOpened, undefined);
+  window.confirm = () => true;
+  fileInput.dispatchEvent(new window.Event("change")); await settle();
+  assert.equal(context.settingsOpened, true);
+  assert.equal(context.config.sendActionId, "custom.send");
 });
 
 test("app surfaces errors inside the active sheet and expires its toast", async t => {

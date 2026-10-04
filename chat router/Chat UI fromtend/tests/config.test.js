@@ -12,6 +12,8 @@ test("maintains exact slot counts and stable ids after editing", () => {
   assert.equal(config.modes[0].actionId, "mode.deep");
   assert.deepEqual(config.selectors[0].options[0], { id: "file", label: "Archivo", actionId: "file.pick" });
   assert.equal(DEFAULT_CONFIG.models.length, 0);
+  assert.equal(config.theme, "gris");
+  assert.equal(normalizeConfig({ theme: "little" }).theme, "little");
 });
 
 test("configuration persists without serializing File or runtime state", () => {
