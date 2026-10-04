@@ -500,6 +500,18 @@ Si aprobado haz las 2 fichas
 Revisa que modelos te responde Nvidia y te digo que hacer para cambiar a deepsek
 ```
 
+### 4.11 Espera de NVIDIA y prueba de modelos (2026-10-04 16:20 a 16:38)
+```
+Revisa si lo pusiste a 1.5 min de repuesta ?
+```
+```
+1.5 minutos
+```
+```
+Haz la prueba idiota para poder decidir el modelo
+```
+(Claude midio: una ficha que pide un modelo de NVIDIA que no responde espero mas de 245 s sin cortar; el limite de 90 s del Router solo vale dentro de la cadena chat_nvidia. El Director fijo 1,5 minutos = 90 s; falta decidir donde se aplica: politica del Router o lado del harness.)
+
 ### 4.7 Reglas fijas (del Director, vigentes)
 1. El Router de HF que ya funciona NO se toca ni se relanza.
 2. Las fichas entran como plugin / ficha JSON del Router; no se editan archivos del Router.
@@ -557,6 +569,24 @@ Revisa que modelos te responde Nvidia y te digo que hacer para cambiar a deepsek
 - RESPONDEN (13), con su tiempo: google/gemma-4-31b-it 28,6 s; meta/muse-glimmer-30b 1,5 s; moonshotai/kimi-k3 35,7 s; nvidia/ising-calibration-1.5-31b 0,5 s; nvidia/nemotron-3-nano-omni-30b-a3b-reasoning 0,8 s; nvidia/nemotron-3-super-120b-a12b 0,5 s; nvidia/nemotron-3-ultra-550b-a55b 4,4 s; nvidia/nemotron-3.5-lightning-30b-a3b 2,6 s; nvidia/riva-translate-4b-instruct-v1.1 5,5 s; nvidia/riva-translate-4b-instruct-v2 24,1 s; openai/gpt-oss-20b 2,5 s; poolside/laguna-xs-2.1 0,2 s; z-ai/glm-5.3 8,2 s.
 - NO RESPONDEN HOY (45): deepseek-ai/deepseek-v4.1-flash, deepseek-ai/deepseek-coder-6.7b-instruct, moonshotai/kimi-k2.6, z-ai/glm-5.3-flash, nvidia/nemotron-nano-3-30b-a3b, nvidia/llama-3.1-nemotron-ultra-253b-v1, nvidia/llama-3.1-nemotron-70b-instruct, nvidia/llama-3.1-nemotron-51b-instruct, nvidia/nemotron-4-340b-instruct, mistralai (large, large-2, codestral, mixtral, 7b), nv-mistralai/mistral-nemo-12b-instruct, writer/palmyra (4 modelos), ibm/granite (4), google (codegemma x2, gemma-2b, gemma-3 x2, recurrentgemma, diffusiongemma), meta/codellama-70b, meta/llama2-70b, 01-ai/yi-large, ai21labs/jamba, aisingapore/sea-lion, bigcode/starcoder2, databricks/dbrx, microsoft/phi-3.5-moe, zyphra/zamba2, nvidia (riva-translate-4b-instruct, vila, cosmos-reason2-8b, llama3-chatqa, mistral-nemo-minitron-8b, ai-synthetic-video-detector).
 - Conclusion: DeepSeek no responde por NVIDIA hoy. Esperando que el Director diga como cambiar a DeepSeek (duda 10).
+
+### Salida 3c - prueba comparativa para elegir reemplazo de DeepSeek (2026-10-04, ~16:50)
+- Tres tareas iguales por modelo, enviadas por una ficha de un paso: (1) plan de arquitectura en 5 pasos, (2) archivo HTML con CSS de una tarjeta de perfil, (3) funcion de Python es_palindromo revisada ejecutando 3 pruebas. Solo mide velocidad y si cumple lo pedido; no juzga calidad fina.
+- Nemotron 3 Super 120B: arquitectura 3,8 s (226 palabras, 5 pasos); frontend 7,5 s OK; codigo 1,3 s OK.
+- Nemotron 3 Ultra 550B: arquitectura 15,4 s (179 palabras, 5 pasos); frontend 16,8 s OK; codigo 4,2 s OK.
+- Nemotron 3.5 Lightning 30B: arquitectura 6,2 s (116 palabras, 5 pasos); frontend 11,8 s NO cumple; codigo 10,4 s OK.
+- Nemotron 3 Nano Omni 30B: arquitectura 23,4 s (89 palabras, 5 pasos); frontend 16,3 s OK; codigo 1,4 s OK.
+- gpt-oss-20b: arquitectura 10,5 s (115 palabras, 5 pasos); frontend 25,5 s OK; codigo 2,1 s OK.
+- Gemma 4 31B: arquitectura 45,1 s (138 palabras, 5 pasos); frontend 47,3 s OK; codigo 34,3 s OK.
+- muse-glimmer-30b: arquitectura 9,0 s (76 palabras, 5 pasos); frontend 3,5 s NO cumple; codigo 1,7 s OK.
+- laguna-xs-2.1: arquitectura 9,3 s (107 palabras, 5 pasos); frontend 8,9 s OK; codigo 0,8 s OK.
+- GLM 5.3: arquitectura 80,1 s (116 palabras, 5 pasos); frontend 110 s NO (se paso del tiempo); codigo 32,6 s OK.
+- Kimi K3: arquitectura 62,0 s (144 palabras, 5 pasos); frontend 29,9 s OK; codigo 69,7 s OK.
+- Groq Qwen 3.8: arquitectura 5,8 s (156 palabras, 8 puntos numerados); frontend 2,5 s OK; codigo 1,2 s OK.
+- Con la espera de 1,5 min (90 s): GLM 5.3 queda justo (80 s) y fallo el frontend (mas de 90 s); Kimi K3 entra (62 a 70 s).
+- Tokens del harness: se crearon 6 tokens amarrados a cada ficha (harness/ficha-1-kimi-k3, ficha-1-deepseek-v4, ficha-1-glm-5, ficha-1-nemotron, ficha-1-groq-qwen-3-8 y ficha-2), todos activos, con permisos chat y fichas. El guardado en el banco como router/harness-<ficha> y la prueba del chat por token NO estan verificados: la salida se perdio por un corte del puente.
+- Hallazgo: el chat del Router NO acepta nombres de ficha como modelo (solo auto, un grupo o proveedor:modelo). Las fichas se usan por POST /secciones/<nombre>/run, por la herramienta MCP seccion_run o con un token amarrado a la ficha.
+- Harness: router-provider.cordis.yml define un solo proveedor maxbry-router con modelos auto, assistants y code. Falta agregar un proveedor por ficha con su token y poner la espera de 90 s (no se sabe que clave de espera acepta el harness).
 
 ### Siguiente tarea
 - Terminar la salida 3: conectar las fichas 1 y 2 al harness de DeepSeek (leer `chat router/harness plugins/deepseek-harness-chat/plugins/router-provider.cordis.yml` y el token que usa el harness), revisar y confirmar. Antes: esperar la decisión del Director sobre DeepSeek (duda 10) y la espera de NVIDIA (duda 11). Después: salida 4 (fichas 3, 3.1 y 4).
