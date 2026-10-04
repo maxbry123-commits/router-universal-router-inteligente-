@@ -5,6 +5,7 @@ import json
 import re
 
 from ..utils import backend as B
+from . import fusion
 
 
 def _tokens(s: str) -> set:
@@ -61,7 +62,8 @@ class Orquestador:
                     continue
                 vistos[clave] = {'scope': rec.get('scope'), 'key': rec.get('key'), 'data': rec.get('data'),
                                  'puntaje': len(q & _tokens(str(rec.get('key', '')) + ' ' + dato)), 'motores': [e['motor']], 'orden': orden}
-        res = sorted(vistos.values(), key=lambda x: (-x['puntaje'], x['orden'], str(x['key'])))[:k]
+        res, metodo = fusion.ordenar(query, list(vistos.values()))
+        res = res[:k]
         for x in res:
             x.pop('orden')
-        return {'consulta': query, 'resultados': res}
+        return {'consulta': query, 'metodo': metodo, 'resultados': res}

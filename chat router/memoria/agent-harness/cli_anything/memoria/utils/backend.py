@@ -12,9 +12,9 @@ MOTORES = {
     'agentdb': ('RIU_AGENTDB_URL', 'http', False, 'sin servicio: arrancar memoria/motores/levantar_motores.sh'),
     'graphiti': ('RIU_GRAPHITI_URL', 'http', False, 'sin servicio: arrancar memoria/motores/levantar_motores.sh'),
     'graphify': ('RIU_GRAPHIFY_URL', 'http', True, 'sin servicio: arrancar memoria/motores/levantar_motores.sh'),
-    'memanto': ('RIU_MEMANTO_URL', 'http', False, 'GAP: pide Docker+Ollama o clave de la nube Moorcheh'),
-    'falkordb': ('RIU_FALKORDB_URL', 'tcp', False, 'GAP: codigo Rust sin compilar (compilador y Redis)'),
-    'postgresql': ('RIU_POSTGRESQL_URL', 'tcp', False, 'GAP: codigo fuente sin compilar'),
+    'memanto': ('RIU_MEMANTO_URL', 'http', False, 'GAP: su motor es el servidor Moorcheh (nube o Docker+Ollama); sin ese servidor no hay motor'),
+    'falkordb': ('RIU_FALKORDB_HTTP_URL', 'http', False, 'sin servicio: memoria/motores/compilar_motores.sh y levantar_motores.sh'),
+    'postgresql': ('RIU_POSTGRESQL_HTTP_URL', 'http', False, 'sin servicio: memoria/motores/compilar_motores.sh y levantar_motores.sh'),
 }
 ORDEN = ['agentdb', 'graphiti', 'graphify', 'memanto', 'falkordb', 'postgresql']  # prioridad fija: hace el resultado determinista
 
