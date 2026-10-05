@@ -292,6 +292,29 @@ S1 leer ──▶ S2 plugin de fichas ──▶ S3 conexiones ──▶ S4 ficha
 
 ---
 
+## 7b. ORDEN Y ESTADO 2026-10-04 23:07 (Router reactivado, seguridades del L4, solo 16 GB, chat en Vercel)
+
+Orden textual del Director:
+```
+Ok vas activar el router y revisa que el servidor L4 no quede prendido que funciones el prendido y apagado como si tienes que colocarle 3 sistema de seguridad
+
+Revisa que el servidor que vas activar y los que se encienden en cadena el router sea solo los de HF cpu 16 ram
+
+Reactivas el router
+
+Luego me subes el chat a vercel solo la UI INTERFACE visual cuidado te pones a subir el code a vercel
+
+Inicia
+```
+
+Resultado (2026-10-05 04:20 UTC):
+- Space de la puerta reanudado (HF acepto el reinicio; antes daba 402 por creditos). El Space sigue en cpu-upgrade (32 GB, 0,03 USD/h): pedir cpu-basic por la API da 402; cambiarlo a mano en los ajustes del Space.
+- Router vivo: un solo job, cpu-basic (16 GB). Autoscaler, /hf/compute/run y /hf/hardware limitados a cpu-basic (hf_worker_pool.py, hf_control_api.py, chat_mvp/control_plane.py). Paquete anterior guardado como router-bundle.tar.gz.bak-20261005041122.
+- puente_chat v0.2.0 con 5 seguridades del L4: (1) se apaga 30 s tras terminar la salida; (2) a los 5 min sin pedidos; (3) tope duro de HF de 1200 s (20 min, fuera del contenedor); (4) barrendero del Router: cada llamada de estado cancela L4 de mas de 20 min; (5) un solo L4 a la vez. Remoto: acciones apagar y apagar_todo.
+- Probado: el L4 A se cancelo solo al encender el L4 B; apagar_todo apago el L4 vivo; ciclo completo HF: listo en 115 s, respondio, se apago solo 40 s despues; al final solo queda el job del Router. Los 3 L4 de prueba tenian timeout 1200.
+- Token del chat: banco router/chat-ui-cierre (el valor no se puede leer del banco; el Director lo pide a Opus).
+- Vercel (proyecto riu-jev-bridge): raiz = chat router/chat frontend, sin paso de compilacion ignorado, ligado a GitHub main. Despliegue dpl_n63Dra1AqEsvi81wAiZF9nsQgpBi READY (tardo unos 7,5 min). Solo UI: /api/chat da 404; harnessUrl apunta a la puerta fija del Router. Cada push a main se publica solo (unos 7 a 8 min por la talla del repo, 8,3 GB). El repo de GitHub es publico.
+
 ## 8. PARCHE DE RECUPERACIÓN (pegar al iniciar una sesión nueva)
 ```
 Eres agente del Director (Hy). Antes de hacer NADA:
