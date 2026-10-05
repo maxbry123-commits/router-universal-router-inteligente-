@@ -1,0 +1,3 @@
+#agents-list .item,#roles-list .item,#agents-tasks .item{white-space:pre-wrap}
+#agents-list .badge,#roles-list .badge{margin-left:8px}
+#agents-tasks{max-height:40vh}

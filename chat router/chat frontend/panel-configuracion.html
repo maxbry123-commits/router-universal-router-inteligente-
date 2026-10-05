@@ -1,0 +1,27 @@
+<h1>Configuración de UI</h1>
+<p class="muted">Preferencias visuales locales del navegador. No guardan claves ni sustituyen memoria del Router.</p>
+<section>
+  <h2>Apariencia</h2>
+  <div class="row">
+    <label>Tema <select id="ui-theme"><option value="gris">Gris V07 (principal)</option><option value="little">Little</option><option value="matte">Matte</option><option value="blanco">Blanco</option></select></label>
+    <label>Tamaño del texto <input id="ui-scale" type="range" min="85" max="130" step="5" value="100"></label>
+    <output id="scale-value" for="ui-scale">100 %</output>
+    <label><input id="ui-motion" type="checkbox"> Reducir animaciones</label>
+  </div>
+  <p id="preferences-status" role="status" class="muted">Preferencias cargadas.</p>
+  <div class="row">
+    <button id="ui-export" class="secondary" type="button">Exportar ajustes JSON</button>
+    <label>Importar ajustes JSON <input id="ui-import" type="file" accept="application/json,.json"></label>
+    <button id="ui-reset" class="secondary" type="button">Restablecer ajustes</button>
+  </div>
+</section>
+<div class="grid">
+  <section><h2>Conectores</h2><label>Buscar conector <input id="connectors-search" type="search" placeholder="ID o tipo"></label><p id="connectors-status" role="status" class="muted">Consultando Router…</p><div id="connectors-list" class="list"></div></section>
+  <section><h2>Engineering Control</h2><p id="engineering-status" role="status" class="muted">Consultando Router…</p><div id="engineering-list" class="list"></div></section>
+</div>
+<section>
+  <h2>Diseño en revisión</h2>
+  <p class="muted">Editor de tipografía V10 e iconos/emoji V12: pendientes de aprobación funcional. Rare UI: referencias de componentes, integración pendiente de pruebas. Idiomas adicionales: pendiente de traducción completa.</p>
+  <p class="muted">Los controles de MCP, GitHub, HF, SSH, evidencia y circuit breaker sólo se mostrarán como editables cuando el Router publique contratos autorizados y verificables.</p>
+</section>
+<button id="config-reload" class="secondary" type="button">Actualizar conexiones</button>

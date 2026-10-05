@@ -1,29 +1,87 @@
 import { node } from "./api.js";
 
-export async function mount(root, { api, tell }) {
-  try {
-    const [graph, queue, bitacora] = await Promise.all([
-      api("/chat/org/graph"), api("/chat/org/queue"), api("/chat/org/bitacora?limit=30")
+export async function mount(root, { api }) {
+  let disposed = false;
+  const read = async (path, statusId, listId, render) => {
+    const status = root.querySelector(statusId);
+    const list = root.querySelector(listId);
+    status.textContent = "Consultando Router…";
+    list.replaceChildren();
+    try {
+      const result = await api(path);
+      if (disposed) return;
+      render(result.data, list);
+      if (!list.children.length) list.append(node("p", "Sin registros.", "muted"));
+      status.textContent = "Consulta completada";
+    } catch (error) {
+      if (disposed) return;
+      status.textContent = `No disponible: ${error.message}`;
+      list.append(node("p", "No hay datos confirmados.", "muted"));
+    }
+  };
+  const load = () => {
+    root.querySelector("#template-selection").textContent = "Sin plantilla seleccionada.";
+    return Promise.all([
+    read("/chat/org/graph", "#wall-status", "#wall", (data, list) => {
+      const graph = data.graph || {};
+      list.append(node("div", `Grafo: ${(graph.nodes || []).length} nodos · ${(graph.edges || []).length} aristas`, "item"));
+      const wall = data.crazy_wall || {};
+      const state = data.state || {};
+      for (const [project, item] of Object.entries(state.projects || {})) {
+        list.append(node("div", `${project} · ${item.status || "sin estado"} · ${(item.active_tasks || []).length} tareas activas · ${(item.blocked_tasks || []).length} bloqueadas`, "item"));
+      }
+      for (const item of Object.values(wall.nodes || {})) {
+        list.append(node("div", `${item.node_id || item.task} · ${item.status || "sin estado"} · ${item.phase || ""} · siguiente: ${item.next || "no publicado"}`, "item"));
+      }
+    }),
+    read("/chat/org/queue", "#queue-status", "#queue", (data, list) => {
+      for (const task of data.tasks || []) list.append(node("div",
+        `${task.id || task.task || "Tarea"} · ${task.status || task.estado || "estado no publicado"}`, "item"));
+      list.append(node("div", `Workers: ${(data.workers || []).length}`, "item"));
+    }),
+    read("/chat/org/templates", "#templates-status", "#templates", (data, list) => {
+      for (const template of data.templates || []) {
+        const button = node("button",
+          `${template.id} · ${template.title} · ${template.locked ? "LOCKED" : "estado no publicado"}`, "secondary");
+        button.type = "button";
+        button.addEventListener("click", () => {
+          for (const other of list.querySelectorAll("button")) other.setAttribute("aria-pressed", String(other === button));
+          root.querySelector("#template-selection").textContent = `Seleccionada: ${template.id}. La selección no ejecuta el DAG.`;
+        });
+        button.setAttribute("aria-pressed", "false");
+        list.append(button);
+      }
+    }),
+    read("/chat/org/bitacora?limit=30", "#events-status", "#events", (data, list) => {
+      for (const item of (data.events || []).slice().reverse()) {
+        list.append(node("div", `${item.task || item.id || "Evento"} · ${item.status || "sin estado"} · ${item.phase || ""} · ${item.summary || ""}`, "item"));
+      }
+    })
     ]);
-    const train = root.querySelector("#train");
-    for (const agent of graph.data.graph.nodes || []) {
-      train.append(node("div", `${agent.id} · ${agent.rol}`, "item"));
-    }
-    if (!train.children.length) train.append(node("p", "Sin agentes registrados", "muted"));
-    const work = root.querySelector("#queue");
-    for (const task of queue.data.tasks || []) work.append(node("div", JSON.stringify(task), "item"));
-    if (!work.children.length) work.append(node("p", "Sin tareas en cola", "muted"));
-    const events = root.querySelector("#events");
-    for (const item of (bitacora.data.events || []).toReversed()) {
-      const row = node("div", `${item.task} · ${item.status} · ${item.phase || ""} · ${item.summary || ""}`, "item");
-      events.append(row);
-    }
-  } catch (error) { tell(error.message); }
-  root.querySelector("#run-load").addEventListener("click", async () => {
+  };
+  root.querySelector("#tracking-reload").addEventListener("click", () => { void load(); });
+  root.querySelector("#run-form").addEventListener("submit", async event => {
+    event.preventDefault();
     const id = root.querySelector("#run-id").value.trim();
-    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(id)) { tell("ID de run inválido"); return; }
-    try { const result = await api(`/chat/org/dag/${encodeURIComponent(id)}`);
-      root.querySelector("#ledger").textContent = JSON.stringify(result.data.run.ledger || [], null, 2); }
-    catch (error) { tell(error.message); }
+    const status = root.querySelector("#run-status");
+    const list = root.querySelector("#ledger");
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(id)) { status.textContent = "ID de run inválido."; return; }
+    status.textContent = "Consultando ledger del Router…";
+    list.replaceChildren();
+    try {
+      const response = await api(`/chat/org/dag/${encodeURIComponent(id)}`);
+      if (disposed) return;
+      const run = response.data.run;
+      status.textContent = `Run ${id} · ${run.status || "sin veredicto publicado"} · ledger ${run.ledger_valid === true ? "íntegro según Router" : "integridad no confirmada"}`;
+      for (const [nodeId, entry] of Object.entries(run.nodes || {})) {
+        list.append(node("div", `${nodeId} · ${entry.status || "sin estado"} · ${entry.state || ""}`, "item"));
+      }
+      for (const item of run.ledger || []) {
+        list.append(node("div", `${item.node_id || item.node || item.id || "Nodo"} · ${item.status || item.verdict || "sin estado"} · ${item.phase || ""}`, "item"));
+      }
+      if (!list.children.length) list.append(node("p", "Sin entradas de ledger.", "muted"));
+    } catch (error) { if (!disposed) status.textContent = `No disponible: ${error.message}`; }
   });
+  await load();
+  return () => { disposed = true; };
 }

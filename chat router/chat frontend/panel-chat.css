@@ -1,0 +1,4 @@
+.chat-history{min-height:300px}
+#composer{display:grid;gap:12px}
+#composer textarea{min-height:115px}
+#composer .row{justify-content:space-between}
