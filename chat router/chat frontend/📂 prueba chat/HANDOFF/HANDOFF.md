@@ -48,8 +48,10 @@ El documento de especificación describe la UI a partir de 74 capturas y contien
 ## Estado actual
 ### SALIDA 1
 - [x] Crear raíz y normas.
-- [ ] Colocar y verificar versiones v001 de código recuperado.
-- [ ] Tras read-back/Preview, eliminar origen antiguo si corresponde.
+- [x] Colocar versiones v001 de Chat, Configuración, Canvas media, Planificación y Agente Swarm.
+- [x] Read-back confirma que los cinco HTML v001 existen en sus carpetas independientes.
+- [ ] Vercel Preview del HEAD actual: `PENDING`; no declarar validación de navegador todavía.
+- [ ] Eliminar `nuevo/` sólo después de que el Preview nuevo responda; el origen se conserva mientras el gate VERIFY está pendiente.
 
 ### SALIDA 2 — NO EJECUTAR EN SALIDA 1
 - [ ] Mover Skill + imágenes.
