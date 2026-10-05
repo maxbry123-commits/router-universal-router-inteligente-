@@ -67,6 +67,12 @@ export async function mount(root, { api }) {
     link.click();
     status.textContent = "Descarga de preferencias solicitada.";
   });
+  root.querySelector("#ui-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(preferences, null, 2));
+      status.textContent = "Ajustes copiados al portapapeles.";
+    } catch { status.textContent = "El navegador no permitió copiar al portapapeles."; }
+  });
   root.querySelector("#ui-import").addEventListener("change", async event => {
     const file = event.target.files[0];
     if (!file) return;
