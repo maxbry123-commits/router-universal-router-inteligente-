@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat nuevo · YAIWES</title>
+  <link rel="stylesheet" href="./base.css"><link rel="stylesheet" href="./panel-chat.css">
+  <script src="../config.js"></script><script type="module" src="./panel-chat.js"></script>
+</head>
+<body><div class="shell">
+  <aside class="sidebar"><div class="brand">Y</div><nav aria-label="Paneles">
+    <a href="./panel-chat.html" aria-current="page">Chat nuevo</a>
+    <a href="./panel-media.html">Imágenes y videos</a>
+    <a href="./panel-agentes.html">Multiagente</a>
+    <a href="./panel-seguimiento.html">Seguimiento y planificación</a>
+    <a href="./panel-configuracion.html">Configuración de UI</a>
+  </nav></aside>
+  <div class="workspace"><header class="topbar"><strong>Chat nuevo · Router Inteligente Universal</strong></header>
+  <main><h1>Chat nuevo</h1><p class="muted">Pantalla adicional. El chat actual permanece separado.</p>
+    <section>
+      <div class="row"><label>Modelo (ficha) <select id="ficha"></select></label>
+        <label>Proveedor <select id="provider"><option value="auto">Automático</option></select></label>
+        <label>Modelo <select id="model"><option value="">Router elige</option></select></label>
+        <label>Agente <select id="agent"><option value="">Sin agente</option></select></label>
+        <label>Modo <select id="mode"><option value="fast">Rápido</option><option value="balanced" selected>Equilibrado</option><option value="think">Pensar</option></select></label>
+      </div>
+      <div id="history" class="chat-history" role="log" aria-live="polite"></div>
+      <form id="composer"><label for="message">Mensaje</label><textarea id="message" required placeholder="Escribe un mensaje"></textarea><button class="action" type="submit">Enviar al Router</button></form>
+    </section>
+  </main><p id="notice" role="status"></p></div>
+</div></body>
+</html>

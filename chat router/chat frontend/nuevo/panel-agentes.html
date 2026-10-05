@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multiagente · YAIWES</title>
+  <link rel="stylesheet" href="./base.css"><link rel="stylesheet" href="./panel-agentes.css">
+  <script src="../config.js"></script><script type="module" src="./panel-agentes.js"></script>
+</head>
+<body><div class="shell">
+  <aside class="sidebar"><div class="brand">Y</div><nav aria-label="Paneles">
+    <a href="./panel-chat.html">Chat nuevo</a>
+    <a href="./panel-media.html">Imágenes y videos</a>
+    <a href="./panel-agentes.html" aria-current="page">Multiagente</a>
+    <a href="./panel-seguimiento.html">Seguimiento y planificación</a>
+    <a href="./panel-configuracion.html">Configuración de UI</a>
+  </nav></aside>
+  <div class="workspace"><header class="topbar"><strong>Multiagente</strong></header><main>
+<h1>Multiagente</h1>
+<p class="muted">Estado consultado al Router. El modo agente para enviar mensajes se selecciona en Chat.</p>
+<div class="grid">
+  <section><h2>Agentes disponibles</h2><p id="agents-status" role="status" class="muted">Consultando…</p><div id="agents-list" class="list"></div></section>
+  <section><h2>Grafo de roles</h2><p id="roles-status" role="status" class="muted">Consultando…</p><div id="roles-list" class="list"></div></section>
+</div>
+<section><h2>Tareas y subtareas</h2><p id="tasks-status" role="status" class="muted">Consultando cola…</p><div id="agents-tasks" class="list"></div></section>
+<section>
+  <h2>Habilidades y automatizaciones</h2>
+  <p class="muted">Catálogo, programación y notificaciones: pendientes de contrato de escritura y lectura en el Router. Ninguna habilidad descargada se considera instalada.</p>
+  <h2>Intervención humana</h2>
+  <p class="muted">Las decisiones sobre tareas requieren autorización y read-back del Router; esta vista sólo consulta la cola.</p>
+</section>
+<button id="agents-reload" class="secondary" type="button">Actualizar estados</button>
+</main><p id="notice" role="status"></p></div></div></body>
+</html>
