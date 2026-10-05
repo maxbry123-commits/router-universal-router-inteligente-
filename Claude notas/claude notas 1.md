@@ -407,3 +407,18 @@ Sin una de las dos, pausar primero deja al Router sin quien lo renueve: se apaga
 3. Las 4 claves nuevas del Router: ponerlas en Vercel, en el puente y en el harness.
 4. El L4 (`l4x1`, 24 GB) no se toca: sigue bajo pedido.
 5. Probar de punta a punta y despues borrar la copia vieja del banco en GitHub.
+
+
+## 11. Continuación ejecutada — 2026-10-05 (Codex)
+
+Orden vigente del Director: servidor HF de 32 GB, interfaz en Vercel; replicar la arquitectura existente, conectar modelos, fichas, memoria, herramientas e internet por HTTP; sin escalado ni pruebas innecesarias.
+
+- Router activo: Job `6ac40a4b404719ba37658c12`, cpu-upgrade, 32 GB. URL vigente en `router inteligente universal/LIVE_URL.json`. Space antiguo permanece PAUSED.
+- Renovación instalada: `riu_kernel.py`, schedule `6ac40924fbc85ba6823aca1b`, cada diez minutos. Sucesor de 32 GB, conservación de memoria y retirada del anterior. Sin escalado.
+- Banco vivo cifrado en HF: 43 entradas; nuevas credenciales de administración y hash del Director guardadas en el banco. Referencias `router/runtime-admin-32gb`, `router/runtime-director-hash`; nunca valores en notas o GitHub. Clave de chat existente `router/chat-ui-director`, permisos necesarios habilitados.
+- puente_chat v0.4.1: siete modelos de la ficha, herramientas internet_leer/internet_buscar, GitHub y HF, selección sin cambiar de modelo, chat_async/resultado para evitar el límite HTTP.
+- Memoria SQLite persistida en el bucket y recuperación por sesión; almacenamiento HTTP operativo. Los siete modelos respondieron usando herramientas reales y guardaron memoria; ambos modelos HF encendieron y apagaron el L4 correctamente.
+- UI estática `https://riu-jev-bridge.vercel.app`, resuelve LIVE_URL y consulta las respuestas asincrónicas. Se corrigió el header del puente de Authorization a X-API-Key, porque Authorization recibía 401 en el nuevo servidor.
+- Los antiguos Router de 16 GB y las instancias intermedias se retiraron después de verificar sus sucesores. Evidencia funcional en el bucket `laboratorio/recovery-http.json`, `recovery-memory.json`, `recovery-hf-models.json`.
+
+Protocolo y recuperación vigentes: `README-CONEXION-CHAT-HARNESS.md`. Las secciones anteriores conservan el historial; esta sección manda sobre la pausa y las direcciones antiguas.

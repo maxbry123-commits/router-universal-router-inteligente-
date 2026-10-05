@@ -47,7 +47,7 @@ async function puenteRouter(base, body, qs, headers) {
   }
   const h = { 'Content-Type': 'application/json' };
   const pw = headers['X-Chat-Password'] || sessionStorage.getItem('riu_clave');
-  if (pw) h['Authorization'] = 'Bearer ' + pw;
+  if (pw) h['X-API-Key'] = pw;
   const r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) });
   const env = await r.json().catch(() => ({}));
   if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
