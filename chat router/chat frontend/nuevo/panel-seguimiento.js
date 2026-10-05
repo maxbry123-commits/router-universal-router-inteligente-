@@ -3,6 +3,7 @@ import { tell } from "./base.js";
 
 export async function mount(root, { api }) {
   let disposed = false;
+  let runRequest = 0;
   const read = async (path, statusId, listId, render) => {
     const status = root.querySelector(statusId);
     const list = root.querySelector(listId);
@@ -63,15 +64,16 @@ export async function mount(root, { api }) {
   root.querySelector("#tracking-reload").addEventListener("click", () => { void load(); });
   root.querySelector("#run-form").addEventListener("submit", async event => {
     event.preventDefault();
+    const request = ++runRequest;
     const id = root.querySelector("#run-id").value.trim();
     const status = root.querySelector("#run-status");
     const list = root.querySelector("#ledger");
+    list.replaceChildren();
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(id)) { status.textContent = "ID de run inválido."; return; }
     status.textContent = "Consultando ledger del Router…";
-    list.replaceChildren();
     try {
       const response = await api(`/chat/org/dag/${encodeURIComponent(id)}`);
-      if (disposed) return;
+      if (disposed || request !== runRequest) return;
       const run = response.data.run;
       status.textContent = `Run ${id} · ${run.status || "sin veredicto publicado"} · ledger ${run.ledger_valid === true ? "íntegro según Router" : "integridad no confirmada"}`;
       for (const [nodeId, entry] of Object.entries(run.nodes || {})) {
@@ -81,10 +83,10 @@ export async function mount(root, { api }) {
         list.append(node("div", `${item.node_id || item.node || item.id || "Nodo"} · ${item.status || item.verdict || "sin estado"} · ${item.phase || ""}`, "item"));
       }
       if (!list.children.length) list.append(node("p", "Sin entradas de ledger.", "muted"));
-    } catch (error) { if (!disposed) status.textContent = `No disponible: ${error.message}`; }
+    } catch (error) { if (!disposed && request === runRequest) status.textContent = `No disponible: ${error.message}`; }
   });
   await load();
-  return () => { disposed = true; };
+  return () => { disposed = true; runRequest++; };
 }
 
 void mount(document, { api }).catch(error => tell(error.message));

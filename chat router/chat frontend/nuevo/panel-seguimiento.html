@@ -26,6 +26,7 @@
 <section>
   <h2>Ledger, evidencia y Judge</h2>
   <form id="run-form" class="row"><label>ID de ejecución <input id="run-id" required pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" placeholder="ID del run"></label><button class="secondary" type="submit">Consultar run</button></form>
+  <p class="muted">Cada consulta descarta el ledger anterior; un error no conserva evidencia de otro run.</p>
   <p id="run-status" role="status" class="muted">Sin ejecución seleccionada.</p>
   <div id="ledger" class="list"></div>
   <p class="muted">CREATED → TESTED → VERIFIED → READY → MERGED; BLOCKED si falla la evidencia. El estado sólo se lee del run; esta pantalla no emite veredictos.</p>
