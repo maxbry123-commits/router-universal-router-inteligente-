@@ -117,6 +117,8 @@ export async function mount(root, { api, tell }) {
       list.append(button);
     }
     if (!matching.length) list.append(node("p", "No hay archivos para este filtro.", "muted"));
+    root.querySelector("#media-count").textContent =
+      matching.length === files.length ? `${files.length} archivos.` : `${matching.length} de ${files.length} archivos coinciden con el filtro.`;
   };
   const reload = async () => {
     status.textContent = "Consultando archivos del Router…";
