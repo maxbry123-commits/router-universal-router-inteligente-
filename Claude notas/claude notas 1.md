@@ -367,3 +367,28 @@ Eres agente del Director (Hy). Antes de hacer NADA:
 3. Sigue el plan de la sección 5, una salida a la vez. Antes de cada salida muestra el siguiente paso; al terminar anota aquí y para.
 4. Respuestas cortas (máx. 10 líneas), en español sin código. Si dudas, pregunta en texto.
 ```
+
+## 9. SERVIDOR UNICO EN HF CPU 16 GB DE PAGO (orden del Director, 2026-10-05)
+
+**Regla:** solo 2 cosas encendidas. 1) El Router en **HF Jobs `cpu-basic` (2 vCPU, 16 GB, 0,01 USD/h), 24/7**. 2) El **L4 `l4x1` (1 GPU L4 de 24 GB)** solo bajo pedido: NO se toca (verificado en la tabla oficial de HF). El Space `claude-github-mcp-backup` (`cpu-upgrade`, 32 GB) **se pausa**. Los conectores de Claude no se usan (el acceso es por la maquina de Vercel).
+
+**Flujo nuevo:**
+```
+Chat (Vercel, solo UI) -> puente /api/chat -> lee LIVE_URL (flag en GitHub) -> Router en HF Job 16 GB (24/7)
+                                                                   +-> L4 24 GB bajo pedido (sin cambios)
+Router job = Router + riu_kernel (se renueva solo, flota hasta 10, escribe LIVE_URL)
+```
+
+**Tareas:**
+1. `riu_kernel.py` en `main`: renovacion propia antes de vencer (primero el sucesor sano, luego se apaga el viejo); flota (CPU 85% -> otro job igual, hasta 10; replica sin trafico 5 min -> se apaga; tope 20 encendidos por hora); escribe LIVE_URL y la lista de replicas en el flag de GitHub.
+2. Arranque del job: el mismo de hoy (bundle del deposito) + `riu_kernel.py` en segundo plano.
+3. Lanzar el job nuevo con las mismas variables y las mismas 7 claves: HF_CONTROL_JOBS_TOKEN, HF_TOKEN, RIU_AGENT_API_KEYS, RIU_AGENT_API_KEYS_2, RIU_DIRECTOR_KEY_HASH, RIU_ROUTER_API_KEY, RIU_VAULT_PASSPHRASE (+ GITHUB_TOKEN para escribir el flag).
+4. Puente `/api/chat`: usar LIVE_URL del flag en vez de la puerta y poner las cabeceras que ponia la puerta (token de HF para el proxy de jobs + token de la ficha).
+5. Actualizar Vercel (RIU_ROUTER_URL), el chat y el README de Opus.
+6. Probar: el Router responde por LIVE_URL, la flota mide CPU, el L4 sigue encendiendose bajo pedido.
+7. Pausar el Space.
+
+**Decision pendiente del Director (bloquea el orden):** los valores de 5 claves (RIU_AGENT_API_KEYS, RIU_AGENT_API_KEYS_2, RIU_DIRECTOR_KEY_HASH, RIU_ROUTER_API_KEY, RIU_VAULT_PASSPHRASE) solo viven dentro del Space; HF no deja leerlos.
+- A: el Director da esos 5 valores -> se pausa el Space primero.
+- B: el Space lanza por ultima vez el job nuevo con sus propias claves -> despues se pausa.
+Sin una de las dos, pausar primero deja al Router sin quien lo renueve: se apaga al vencer (quedan unas 9 h) y no se puede relanzar.
