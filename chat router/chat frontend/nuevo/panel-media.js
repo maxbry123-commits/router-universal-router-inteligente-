@@ -66,6 +66,24 @@ export async function mount(root, { api, tell }) {
           render();
         });
         actions.append(pinButton);
+        const remove = node("button", "Eliminar registro", "secondary");
+        remove.type = "button";
+        let armed = false;
+        remove.addEventListener("click", async () => {
+          if (!armed) { armed = true; remove.textContent = "Confirmar eliminación"; return; }
+          remove.disabled = true;
+          try {
+            await api(`/chat/documents/${encodeURIComponent(file.id)}`, { method: "DELETE" });
+            if (disposed) return;
+            selected = undefined;
+            clearPreview();
+            status.textContent = `Registro ${file.id} eliminado en el Router.`;
+            await reload();
+          } catch (error) {
+            if (!disposed) { armed = false; remove.disabled = false; remove.textContent = "Eliminar registro"; tell(error.message); }
+          }
+        });
+        actions.append(remove);
         const request = previewRequest;
         preview.textContent = "Cargando vista previa…";
         try {
@@ -81,7 +99,7 @@ export async function mount(root, { api, tell }) {
             const link = node("a", "Descargar archivo");
             link.href = currentUrl;
             link.download = file.name;
-            actions.append(link);
+            actions.prepend(link);
           } else {
             const result = await api(`/chat/documents/${encodeURIComponent(file.id)}`);
             if (disposed || request !== previewRequest) return;
