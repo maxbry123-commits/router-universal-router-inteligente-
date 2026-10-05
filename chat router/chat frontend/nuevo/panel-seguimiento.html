@@ -27,7 +27,7 @@
   <section><h2>Cola de ejecución</h2><p class="muted">Los workers se listan sólo con los campos publicados por la cola.</p><p id="queue-status" role="status" class="muted">Consultando…</p><div id="queue" class="list"></div></section>
 </div>
 <section><h2>Plantillas DAG inmutables</h2><p id="templates-status" role="status" class="muted">Consultando…</p><p id="template-selection" class="muted">Sin plantilla seleccionada.</p><div id="templates" class="list"></div></section>
-<section><h2>Bitácora</h2><p class="muted">Los eventos con ID de run abren su ledger; no ejecutan nada.</p><label>Límite de eventos <select id="events-limit"><option value="10">10</option><option value="30" selected>30</option><option value="100">100</option></select></label><p id="events-status" role="status" class="muted">Consultando…</p><div id="events" class="list"></div></section>
+<section><h2>Bitácora</h2><p class="muted">Los eventos con ID de run abren su ledger; no ejecutan nada. La fecha se muestra sólo cuando el evento la publica.</p><label>Límite de eventos <select id="events-limit"><option value="10">10</option><option value="30" selected>30</option><option value="100">100</option></select></label><p id="events-status" role="status" class="muted">Consultando…</p><div id="events" class="list"></div></section>
 <section>
   <h2>Ledger, evidencia y Judge</h2>
   <form id="run-form" class="row"><label>ID de ejecución <input id="run-id" required pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" placeholder="ID del run"></label><button class="secondary" type="submit">Consultar run</button></form>
