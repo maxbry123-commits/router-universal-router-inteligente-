@@ -5,7 +5,10 @@ export async function mount(root, { api }) {
   let disposed = false;
   const sections = [
     { path: "/chat/agents", key: "agents", list: "#agents-list", status: "#agents-status",
-      format: agent => `${agent.name || agent.id} · ${agent.description || agent.role || "sin descripción"}` },
+      format: agent => {
+        const models = Array.isArray(agent.models) && agent.models.length ? ` · modelos: ${agent.models.join(", ")}` : "";
+        return `${agent.name || agent.id} · ${agent.description || agent.role || "sin descripción"}${models}`;
+      } },
     { path: "/chat/org/graph", key: "graph", list: "#roles-list", status: "#roles-status",
       format: item => `${item.id} · ${item.rol || item.role || "sin rol"}` },
     { path: "/chat/org/queue", key: "tasks", list: "#agents-tasks", status: "#tasks-status",
