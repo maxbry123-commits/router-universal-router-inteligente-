@@ -7,7 +7,7 @@
     "nota_roja": "testing: puente del chat (papel del harness). Director 2026-10-04."
   },
   "artifact_id": "riu.plugins.puente_chat",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "estado": "testing",
   "categoria": "pipeline",
   "etapa": "P",
@@ -27,7 +27,9 @@
       "estado",
       "apagar",
       "apagar_todo",
-      "herramientas_estado"
+      "herramientas_estado",
+      "chat_async",
+      "resultado"
     ]
   },
   "seguridad": {

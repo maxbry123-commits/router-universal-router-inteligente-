@@ -9,6 +9,8 @@ Memoria: antes de responder busca contexto en /memoria (scope chat:<sesion>); de
 from __future__ import annotations
 
 import json
+from contextvars import ContextVar
+_DEADLINE = ContextVar("riu_chat_deadline", default=None)
 import time
 import urllib.error
 import urllib.request
@@ -17,7 +19,7 @@ from typing import Any
 NS = "COMAND-CENTER-1"
 DUENO = "chat-ui"
 ETIQUETA_L4 = "router-respaldo-l4"
-TOPE_TOTAL_S = 100
+TOPE_TOTAL_S = 90
 MAX_PASOS = 6
 _CACHE_H = {}
 FICHAS = {
@@ -39,6 +41,10 @@ ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO"
 
 
 def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float = 60) -> tuple[int, Any]:
+    deadline = _DEADLINE.get()
+    if deadline is not None:
+        espera = min(espera, deadline - time.monotonic())
+        if espera <= 0: return 0, {'error': 'TIEMPO_TOTAL_AGOTADO'}
     req = urllib.request.Request(url, data=json.dumps(cuerpo).encode() if cuerpo is not None else None, method=metodo,
                                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", "User-Agent": "riu-chat-mvp", "Accept": "application/json"})
     try:
@@ -51,6 +57,8 @@ def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float =
             return e.code, json.loads(texto)
         except ValueError:
             return e.code, {"error": texto[:200]}
+    except (TimeoutError, urllib.error.URLError):
+        return 0, {'error': 'PROVEEDOR_TIMEOUT_O_RED'}
 
 
 def _tokens_hf() -> list[str]:
@@ -195,6 +203,9 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
         if resta < 2:
             break
         cuerpo = {'model': modelo, 'messages': mensajes, 'max_tokens': max_tokens}
+        if modelo == 'z-ai/glm-5.3':
+            cuerpo['reasoning_effort'] = 'low'
+            cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
         if tools:
             cuerpo['tools'] = tools
             cuerpo['tool_choice'] = 'auto'
@@ -222,10 +233,11 @@ def _llamar_l4(url, modelo, mensajes, max_tokens, tools):
 def _bucle(llamar, mensajes):
     h = _herr()
     usadas = []
-    fin = time.monotonic() + TOPE_TOTAL_S
+    fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
     con_tools = True
     pasos = 0
     while True:
+        if time.monotonic() >= fin: return {'error':'TIEMPO_TOTAL_AGOTADO'}, usadas
         s, d = llamar(mensajes, h.TOOLS if con_tools else None)
         if s == 400 and con_tools and not usadas:
             con_tools = False  # este modelo no admite herramientas: responde sin ellas
@@ -244,7 +256,7 @@ def _bucle(llamar, mensajes):
             except ValueError:
                 args = {}
             res = h.ejecutar(f.get('name', ''), args)
-            usadas.append({'herramienta': f.get('name', ''), 'ok': not res.startswith('ERROR')})
+            usadas.append({'herramienta': f.get('name', ''), 'ok': not res.startswith(('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0'))})
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:12000]})
         pasos += 1
         if pasos >= MAX_PASOS or time.monotonic() >= fin:
@@ -261,8 +273,9 @@ def _chat(p):
         return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
+    _DEADLINE.set(time.monotonic() + (96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S))
     ctx = _contexto(sesion, pregunta) if pregunta else ''
-    sistema = _herr().SISTEMA
+    sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
     if ctx:
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
     mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
@@ -342,3 +355,33 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "apagar_todo":
         return _apagar_todo()
     return {"error": "ACCION_DESCONOCIDA"}
+
+# Long model calls are polled through HTTP, so browser requests do not expire at the HF ingress.
+import concurrent.futures as _cf
+import threading as _threading
+import secrets as _secrets
+_ASYNC_POOL = _cf.ThreadPoolExecutor(max_workers=16, thread_name_prefix='riu-chat')
+_ASYNC_LOCK = _threading.Lock()
+_ASYNC_REQUESTS = {}
+_original_handle = handle
+def handle(action, payload):
+    if action == 'chat_async':
+        with _ASYNC_LOCK:
+            now=time.time()
+            for key, (future, created) in list(_ASYNC_REQUESTS.items()):
+                if now-created>900 and future.done(): del _ASYNC_REQUESTS[key]
+            if sum(not f.done() for f,_ in _ASYNC_REQUESTS.values())>=16:
+                return {'error':'CHAT_OCUPADO_REINTENTA'}
+            key=_secrets.token_urlsafe(24)
+            future=_ASYNC_POOL.submit(_chat,dict(payload))
+            _ASYNC_REQUESTS[key]=(future,now)
+        return {'estado':'procesando','proceso_id':key}
+    if action == 'resultado':
+        key=str(payload.get('proceso_id') or '')
+        with _ASYNC_LOCK: item=_ASYNC_REQUESTS.get(key)
+        if not item: return {'error':'PROCESO_NO_EXISTE'}
+        future,_=item
+        if not future.done():return {'estado':'procesando','proceso_id':key}
+        try:return future.result()
+        except Exception as exc:return {'error':'CHAT_FAILED','detalle':type(exc).__name__}
+    return _original_handle(action,payload)

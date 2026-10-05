@@ -257,7 +257,8 @@ def internet_leer(a):
         if q.scheme not in ('http', 'https') or not q.hostname or q.username or q.password:
             raise ValueError('URL_PUBLICA_REQUERIDA')
         addresses = socket.getaddrinfo(q.hostname, q.port or (443 if q.scheme == 'https' else 80))
-        if not addresses or any(not ipaddress.ip_address(x[4][0]).is_global for x in addresses):
+        if (q.hostname.lower() not in {'huggingface.co', 'api.github.com', 'github.com', 'raw.githubusercontent.com'}
+            and (not addresses or any(not ipaddress.ip_address(x[4][0]).is_global for x in addresses))):
             raise ValueError('SOLO_INTERNET_PUBLICO')
     class Redirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -288,3 +289,5 @@ TOOLS.extend([
 ])
 FUNCS.update({'internet_leer':internet_leer,'internet_buscar':internet_buscar})
 SISTEMA += ' Tambien tienes internet_buscar e internet_leer para consultar la web publica.'
+
+SISTEMA += ' Si una herramienta falla, explica el error; no inventes su resultado.'

@@ -48,11 +48,23 @@ async function puenteRouter(base, body, qs, headers) {
   const h = { 'Content-Type': 'application/json' };
   const pw = headers['X-Chat-Password'] || sessionStorage.getItem('riu_clave');
   if (pw) h['Authorization'] = 'Bearer ' + pw;
-  const r = await fetch(base.replace(/[/]+$/, '') + '/' + accion, { method: 'POST', headers: h, body: JSON.stringify(payload) });
+  const r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) });
   const env = await r.json().catch(() => ({}));
   if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
   if (!r.ok || env.status !== 'ok') return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
-  const p = env.result || {};
+  let p = env.result || {};
+  if (p.estado === 'procesando' && p.proceso_id) {
+    const deadline = Date.now() + 150000;
+    const proceso = p.proceso_id;
+    while (p.estado === 'procesando') {
+      if (Date.now() > deadline) return { status: 504, ok: false, p: { error: 'La llamada superó el tiempo de respuesta' } };
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const poll = await fetch(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }) });
+      const envelope = await poll.json().catch(() => ({}));
+      if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
+      p = envelope.result || {};
+    }
+  }
   if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
   if (p.error) return { status: 502, ok: false, p };
   return { status: 200, ok: true, p };
