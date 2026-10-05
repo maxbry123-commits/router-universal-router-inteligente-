@@ -1,6 +1,7 @@
-# Ficha respaldo-hf -> harness DeepSeek (directo, sin pasar por el Router de GitHub). El harness NO se edita: este patch es parte de la ficha.
+# Ficha respaldo-hf -> harness DeepSeek (directo por HTTP, sin pasar por el Router de GitHub). El harness NO se edita: este patch es parte de la ficha.
 # Uso: RESPALDO_HF_URL=https://<job>--8080.hf.jobs HF_TOKEN=<token HF del banco> DSH_TELEMETRY_MODE=DISABLED \
 #   dsh headless --patch 'router inteligente universal/fichas/respaldo-hf/harness-respaldo.cordis.yml' "tarea"
+# Cada job sirve UN modelo (el que se encendio): qwen3.8-27b o qwen3.6-35b.
 - id: llm-deepseek
   disabled: true
 - id: llm-deepseek-account
@@ -12,7 +13,7 @@
 - id: agent-default-model
   config:
     provider: respaldo-hf
-    model: Qwen3.6-35B-A3B-UD-Q3_K_XL
+    model: qwen3.6-35b
 - id: llm-pi-ai
   config:
     providers:
@@ -25,11 +26,11 @@
           supportsDeveloperRole: false
           maxTokensField: max_tokens
         models:
-          - id: Qwen3.8-27B-UD-Q3_K_XL
+          - id: qwen3.8-27b
             name: Qwen 3.8 27B (arquitectura, plan, revision)
             contextWindow: 16384
             maxTokens: 4096
-          - id: Qwen3.6-35B-A3B-UD-Q3_K_XL
+          - id: qwen3.6-35b
             name: Qwen 3.6 35B (codigo, ejecucion)
             contextWindow: 16384
             maxTokens: 4096
