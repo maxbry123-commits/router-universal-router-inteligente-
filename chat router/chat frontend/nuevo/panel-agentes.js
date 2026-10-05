@@ -10,7 +10,11 @@ export async function mount(root, { api }) {
         return `${agent.name || agent.id} · ${agent.description || agent.role || "sin descripción"}${models}`;
       } },
     { path: "/chat/org/graph", key: "graph", list: "#roles-list", status: "#roles-status",
-      format: item => `${item.id} · ${item.rol || item.role || "sin rol"}` },
+      format: item => {
+        const skills = Array.isArray(item.skills) ? item.skills : Array.isArray(item.habilidades) ? item.habilidades : [];
+        const suffix = skills.length ? ` · habilidades: ${skills.join(", ")}` : "";
+        return `${item.id} · ${item.rol || item.role || "sin rol"}${suffix}`;
+      } },
     { path: "/chat/org/queue", key: "tasks", list: "#agents-tasks", status: "#tasks-status",
       format: item => `${item.id || item.task || "Tarea"} · ${item.status || item.estado || "sin estado publicado"}` }
   ];
