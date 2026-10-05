@@ -31,6 +31,9 @@ export async function mount(root, { api }) {
   let connectors = [];
   let connectorsLoaded = false;
   let connectorsRequest = 0;
+  let engineering = [];
+  let engineeringLoaded = false;
+  let engineeringRequest = 0;
   let preferences = stored();
   const status = root.querySelector("#preferences-status");
   const theme = root.querySelector("#ui-theme");
@@ -108,37 +111,53 @@ export async function mount(root, { api }) {
     }
     if (!list.children.length) list.append(node("p", "Sin conectores para este filtro.", "muted"));
   };
+  const showEngineering = () => {
+    const query = root.querySelector("#engineering-search").value.toLocaleLowerCase();
+    const list = root.querySelector("#engineering-list");
+    list.replaceChildren();
+    if (!engineeringLoaded) {
+      list.append(node("p", "No hay datos confirmados.", "muted"));
+      return;
+    }
+    const matching = engineering.filter(entry =>
+      `${entry.id || ""} ${entry.name || ""} ${entry.description || ""} ${entry.descripcion || ""} ${entry.status || ""}`.toLocaleLowerCase().includes(query));
+    for (const entry of matching) {
+      const fields = [
+        entry.id || entry.name || "Control",
+        entry.status || "sin estado publicado",
+        entry.enabled === true ? "habilitado" : entry.enabled === false ? "deshabilitado" : "",
+        entry.description || entry.descripcion || ""
+      ].filter(Boolean);
+      list.append(node("div", fields.join(" · "), "item"));
+    }
+    if (!matching.length) list.append(node("p", "Sin controles para este filtro.", "muted"));
+  };
   const read = async (path, field, targetId, statusId) => {
     const list = root.querySelector(targetId);
     const indicator = root.querySelector(statusId);
     indicator.textContent = "Consultando Router…";
     list.replaceChildren();
-    const request = field === "connectors" ? ++connectorsRequest : 0;
+    const request = field === "connectors" ? ++connectorsRequest : field === "toggles" ? ++engineeringRequest : 0;
     if (field === "connectors") connectorsLoaded = false;
+    if (field === "toggles") engineeringLoaded = false;
     try {
       const response = await api(path);
-      if (disposed || (field === "connectors" && request !== connectorsRequest)) return;
+      if (disposed || (field === "connectors" && request !== connectorsRequest) || (field === "toggles" && request !== engineeringRequest)) return;
       const entries = response.data[field] || [];
       if (field === "connectors") {
         connectors = entries;
         connectorsLoaded = true;
         showConnectors();
-      } else {
-        for (const entry of entries) {
-          const fields = [
-            entry.id || entry.name || "Control",
-            entry.status || "sin estado publicado",
-            entry.enabled === true ? "habilitado" : entry.enabled === false ? "deshabilitado" : "",
-            entry.description || entry.descripcion || ""
-          ].filter(Boolean);
-          list.append(node("div", fields.join(" · "), "item"));
-        }
-        if (!entries.length) list.append(node("p", "Sin controles publicados.", "muted"));
+      } else if (field === "toggles") {
+        engineering = entries;
+        engineeringLoaded = true;
+        showEngineering();
       }
       indicator.textContent = `${entries.length} registros consultados · sólo lectura`;
     } catch (error) {
-      if (disposed || (field === "connectors" && request !== connectorsRequest)) return;
+      if (disposed || (field === "connectors" && request !== connectorsRequest) || (field === "toggles" && request !== engineeringRequest)) return;
       if (field === "connectors") { connectors = []; connectorsLoaded = false; }
+      if (field === "toggles") { engineering = []; engineeringLoaded = false; showEngineering(); }
       list.append(node("p", "No hay datos confirmados.", "muted"));
       indicator.textContent = `No disponible: ${error.message}`;
     }
@@ -148,6 +167,7 @@ export async function mount(root, { api }) {
     read("/chat/org/engineering", "toggles", "#engineering-list", "#engineering-status")
   ]);
   root.querySelector("#connectors-search").addEventListener("input", showConnectors);
+  root.querySelector("#engineering-search").addEventListener("input", showEngineering);
   root.querySelector("#config-reload").addEventListener("click", () => { void load(); });
   render();
   await load();
