@@ -11,6 +11,7 @@ export async function mount(root, { api, tell }) {
   };
   const fichas = window.RIU_CONFIG?.modelos || [];
   for (const m of fichas) { const o = node('option', m.etiqueta); o.value = m.id; root.querySelector('#ficha').append(o); }
+  if (window.RIU_CONFIG?.defecto) root.querySelector('#ficha').value = window.RIU_CONFIG.defecto;
   try {
     const providers = await api("/chat/providers");
     select("#provider", (providers.providers || []).filter(item => item.id !== "auto"), "id", "label");
@@ -41,7 +42,7 @@ export async function mount(root, { api, tell }) {
     try {
       const body = { message, ficha: root.querySelector('#ficha').value, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
-      const answer = window.RIU_CONFIG?.harnessUrl ? await window.RIU_HARNESS(body) : await api("/chat/send", { method: "POST", body });
+      const answer = window.RIU_CONFIG?.harnessUrl ? await window.RIU_HARNESS({ model: body.ficha, message, max_tokens, avisar: (t) => history.append(node('div', t, 'item message')) }) : await api("/chat/send", { method: "POST", body });
       history.append(node("div", answer.reply || "Sin respuesta", "item message"));
       if (answer.job_id) { window.__riuJob = answer.job_id; root.querySelector('#apagar-respaldo').hidden = false; }
       history.scrollTop = history.scrollHeight;
@@ -56,9 +57,7 @@ export async function mount(root, { api, tell }) {
     const cfg = window.RIU_CONFIG || {};
     if (!window.__riuJob) { tell('No hay respaldo encendido'); return; }
     try {
-      const k = sessionStorage.getItem('riu_ficha0') || prompt('Token de la ficha 0 (computo)') || '';
-      sessionStorage.setItem('riu_ficha0', k);
-      const r = await fetch(cfg.puerta + '/hf/compute/' + window.__riuJob, { method: 'DELETE', headers: { Authorization: 'Bearer ' + k } });
+      const r = await window.RIU_APAGAR();
       tell(r.ok ? 'Respaldo apagado' : 'No se pudo apagar (HTTP ' + r.status + ')');
       if (r.ok) { window.__riuJob = null; stop.hidden = true; }
     } catch (error) { tell(error.message); }
