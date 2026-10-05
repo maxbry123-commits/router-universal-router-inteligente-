@@ -392,3 +392,18 @@ Router job = Router + riu_kernel (se renueva solo, flota hasta 10, escribe LIVE_
 - A: el Director da esos 5 valores -> se pausa el Space primero.
 - B: el Space lanza por ultima vez el job nuevo con sus propias claves -> despues se pausa.
 Sin una de las dos, pausar primero deja al Router sin quien lo renueve: se apaga al vencer (quedan unas 9 h) y no se puede relanzar.
+
+## 10. PUERTA PAUSADA Y BANCO REVISADO (orden del Director, 2026-10-05)
+
+**Hecho:** el Space `claude-github-mcp-backup` quedo **PAUSADO** (orden directa del Director, aunque haya que rehacer cosas).
+
+**Banco revisado con la clave del Director (abre):** el banco VIVO esta en el deposito de HF: `buckets/COMAND-CENTER-1/yaiwes-memoria-storage/router-inteligente-universal/banco/vault.db.gz.b64` (41 credenciales; por proveedor: nvidia 5, groq 6, hf 4). Junto a el hay `providers.json`, `tokens.json` y copias de respaldo. La copia de GitHub (`agent-microkernel/runtime-bank-v2.part1/part2`) **NO abre** con esa clave: es una copia vieja. El Director pidio un solo banco: borrar la de GitHub cuando lo ordene.
+
+**Claves del Router:** `RIU_VAULT_PASSPHRASE` = la clave del banco (verificado: abre el banco vivo). Las otras 4 (`RIU_ROUTER_API_KEY`, `RIU_AGENT_API_KEYS`, `RIU_AGENT_API_KEYS_2`, `RIU_DIRECTOR_KEY_HASH`) solo vivian como secretos del Space y HF no deja leerlos: se generan **nuevas**.
+
+**LO QUE HAY QUE REHACER por la pausa:**
+1. El Router actual (job `6ac32e10...`) ya no se renueva: vence en unas 8 h. Crear el job nuevo (HF Jobs `cpu-basic`, 16 GB) con `riu_kernel.py` dentro: renovacion propia (primero el sucesor sano), flota hasta 10 (CPU 85%, replica sin trafico 5 min se apaga, tope 20 encendidos por hora) y escribe `LIVE_URL`.
+2. La direccion fija `comand-center-1-claude-github-mcp-backup.hf.space` ya no responde. Apuntan a ella: el flag `LIVE_URL` en GitHub, `RIU_ROUTER_URL` en Vercel, el puente `/api/chat`, el README de Opus y el plugin del harness. Pasarlos al `LIVE_URL` real del job nuevo (la URL de un job exige el token de HF en la cabecera).
+3. Las 4 claves nuevas del Router: ponerlas en Vercel, en el puente y en el harness.
+4. El L4 (`l4x1`, 24 GB) no se toca: sigue bajo pedido.
+5. Probar de punta a punta y despues borrar la copia vieja del banco en GitHub.
