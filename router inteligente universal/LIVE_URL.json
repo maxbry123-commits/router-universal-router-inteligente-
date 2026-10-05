@@ -1,0 +1,8 @@
+{
+  "LIVE_URL": "https://6ac408aa404719ba37658b0a--8000.hf.jobs",
+  "job_id": "6ac408aa404719ba37658b0a",
+  "flavor": "cpu-upgrade",
+  "updated": 1791232201.1782722,
+  "auth": "X-API-Key",
+  "harnessUrl": "https://6ac408aa404719ba37658b0a--8000.hf.jobs/plugins/puente_chat/call"
+}
