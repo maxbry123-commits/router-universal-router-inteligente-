@@ -26,7 +26,18 @@ export async function mount(root, { api }) {
       if (disposed) return;
       const data = section.key === "agents" ? response.agents : response.data[section.key];
       const entries = section.key === "graph" ? data.nodes : data;
-      for (const entry of entries || []) list.append(node("div", section.format(entry), "item"));
+      for (const entry of entries || []) {
+        const item = node("div", section.format(entry), "item");
+        if (section.key === "tasks") {
+          const subtasks = entry.subtasks || entry.subtareas;
+          if (Array.isArray(subtasks)) {
+            for (const subtask of subtasks) {
+              item.append(node("div", `${subtask.id || subtask.task || "Subtarea"} · ${subtask.status || subtask.estado || "sin estado publicado"}`, "subtask"));
+            }
+          }
+        }
+        list.append(item);
+      }
       if (!list.children.length) list.append(node("p", "Sin registros en el Router.", "muted"));
       status.textContent = `${(entries || []).length} registros consultados`;
     } catch (error) {
