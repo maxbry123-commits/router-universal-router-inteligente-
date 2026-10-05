@@ -55,6 +55,8 @@ document.querySelector("#composer").addEventListener("submit", async event => {
           mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens
         } });
     history.append(node("div", answer.reply || "Respuesta vacía del Router.", "item message"));
+    if (Array.isArray(answer.tools) && answer.tools.length)
+      history.append(node("div", `Herramientas usadas: ${answer.tools.join(", ")}`, "item message muted"));
     input.value = "";
   } catch (error) {
     history.append(node("div", `No se pudo enviar: ${error.message}`, "item message"));
