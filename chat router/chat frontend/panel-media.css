@@ -1,5 +1,0 @@
-#media-files button{text-align:left;width:100%;display:flex;justify-content:space-between;gap:12px}
-#media-files button[aria-pressed=true]{box-shadow:inset 3px 0 var(--active);background:var(--muted)}
-#media-preview{min-height:100px;white-space:pre-wrap}
-#media-preview img,#media-preview video{display:block;margin:auto}
-#media-status{min-height:1.4em}
