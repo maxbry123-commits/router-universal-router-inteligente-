@@ -10,7 +10,30 @@ function remoto(headers) {
   return BASE ? "include" : "same-origin";
 }
 const L4 = { job: null, url: null };
+async function puenteRouter(base, body, qs, headers) {
+  // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
+  const q = new URLSearchParams((qs || '').replace(/^[?]/, ''));
+  const accion = q.get('accion') || 'chat';
+  let payload = accion === 'chat' ? Object.assign({}, body || {}) : { job: q.get('job'), url: q.get('url') };
+  if (accion === 'chat') {
+    let s = sessionStorage.getItem('riu_sesion');
+    if (!s) { s = 'web-' + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('riu_sesion', s); }
+    payload.sesion = s;
+  }
+  const h = { 'Content-Type': 'application/json' };
+  const pw = headers['X-Chat-Password'] || sessionStorage.getItem('riu_clave');
+  if (pw) h['Authorization'] = 'Bearer ' + pw;
+  const r = await fetch(base.replace(/[/]+$/, '') + '/' + accion, { method: 'POST', headers: h, body: JSON.stringify(payload) });
+  const env = await r.json().catch(() => ({}));
+  if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
+  if (!r.ok || env.status !== 'ok') return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
+  const p = env.result || {};
+  if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
+  if (p.error) return { status: 502, ok: false, p };
+  return { status: 200, ok: true, p };
+}
 async function puente(base, body, qs, method, headers) {
+  if (String(base).includes('/plugins/puente_chat')) return puenteRouter(base, body, qs, headers);
   const r = await fetch(base + (qs || ''), { method: method || 'POST', headers, body: method === 'GET' ? undefined : JSON.stringify(body) });
   const p = await r.json().catch(() => ({}));
   return { status: r.status, ok: r.ok, p };
