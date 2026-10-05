@@ -315,6 +315,40 @@ Resultado (2026-10-05 04:20 UTC):
 - Token del chat: banco router/chat-ui-cierre (el valor no se puede leer del banco; el Director lo pide a Opus).
 - Vercel (proyecto riu-jev-bridge): raiz = chat router/chat frontend, sin paso de compilacion ignorado, ligado a GitHub main. Despliegue dpl_n63Dra1AqEsvi81wAiZF9nsQgpBi READY (tardo unos 7,5 min). Solo UI: /api/chat da 404; harnessUrl apunta a la puerta fija del Router. Cada push a main se publica solo (unos 7 a 8 min por la talla del repo, 8,3 GB). El repo de GitHub es publico.
 
+## 7c. PARCHE DE RECUPERACION 2026-10-05 00:00 Bogota (se acaba la ventana de Claude: sigue Opus)
+
+Ordenes textuales del Director de esta tanda (resumen fiel):
+```
+23:31 Crea un space puerta nuevo idiota o no puedes ? / El servidor de 16 de ram cpu revisa que si se satura salta al siguiente HF procesador cuando llega a 85% / Revisa que el chat funcione de principio a fin y me das el enlace para verlo
+23:33 Revisa que no sea un space deberia ser un simple job con un sentinela que lo enciende si se cae no space
+23:46 Idiota te dije que lo revisaras el modelo no tiene acceso a Github y huggueface ... haz de nuevo un space nuevo y pasas todo o lo bajas a gratis y lo subes de una vez a pago
+23:58 Dame un parche de recuperacion ... para que por opus siga me pones lo que falta comprobar y que falta terminar
+```
+
+ESTADO REAL (probado en vivo):
+- Router vivo: 1 job cpu-basic (16 GB). Space de la puerta RUNNING en cpu-upgrade (32 GB): pedir cpu-basic por API da 402; hacerlo a mano en los ajustes del Space.
+- puente_chat v0.3.1 esta en el paquete del Router (bucket COMAND-CENTER-1/yaiwes-memoria-storage, router-inteligente-universal/codigo/router-bundle.tar.gz; copias .bak-<fecha>). Acciones: status, modelos, chat, estado, apagar, apagar_todo, herramientas_estado.
+- Los modelos del chat YA tienen herramientas (plugins/puente_chat/herramientas.py): github_leer, github_escribir, github_api, hf_leer, hf_escribir, hf_api, hf_almacenamiento. Las ejecuta el Router con las claves del banco; el modelo nunca ve claves. Bucle de hasta 6 pasos y 100 s en total.
+- Probado OK con herramientas: Groq Qwen 3.8 (hf_api), Nemotron 3 Super y Nemotron 3.5 Lightning (github_leer), HF L4 Qwen 3.6 35B (hf_api), Kimi K3 (hf_almacenamiento escribir y leer).
+- Bloqueos probados: no borrar repos, no rutas de GitHub ajenas, no escribir en HF fuera de COMAND-CENTER-1, no cancelar jobs, no tocar banco/codigo/control del almacenamiento.
+- Claves: GitHub del Director guardada en el banco como github/director-full (scope github; el Router la exporta a RIU_VAULT_GH_*); HF = huggingface/token-1-new. herramientas_estado da github True y hf True.
+- Seguridades del L4 (5) y solo servidores cpu-basic: ver 7b. Vercel: proyecto riu-jev-bridge, raiz chat router/chat frontend, solo UI, se publica solo desde main (unos 7 min).
+- Clave del chat: banco router/chat-ui-director (el valor se lo di al Director en el chat; para rotarla se crea otro token de la instancia chat-ui).
+
+FALTA COMPROBAR O TERMINAR (en este orden):
+1. Kimi K3: despues de usar una herramienta su respuesta final sale rota (<|close|>!!!!). Revisar _chat/_bucle (la llamada final sin herramientas); probar sin el system extra o con tool_choice none. Tambien confirmar GLM 5.3 con github_escribir (rama devin/1790824641-chat-agent-plan, ruta pruebas/ping-chat.txt: queda un archivo de prueba, borrarlo) y que Kimi/GLM no pasen de los 100 s.
+2. Probar el chat en el navegador real (pantalla de Vercel -> puerta -> puente_chat) con la clave del chat: los 7 modelos, la memoria y el ciclo del L4 (encender, responder, apagarse) desde la pantalla.
+3. Pantalla: boton de apagado remoto (acciones apagar y apagar_todo) y mostrar las herramientas usadas (campo herramientas de la respuesta).
+4. Puerta: bajar el Space a cpu-basic a mano, o crear Space nuevo (secretos que necesita: GITHUB_PERSONAL_ACCESS_TOKEN, HF_TOKEN, MCP_SECRET_PATH, MCP_SECRET_HF, RIU_KERNEL_HF_TOKEN y variables RIU_*; la URL cambia salvo que se renombre el Space viejo; el permiso CORS y los conectores MCP dependen de esa URL), o la opcion del Director: job + centinela sin Space (la URL cambia en cada reinicio: el centinela debe publicarla en un archivo fijo que lea el chat).
+5. Del plan original siguen pendientes: fichas 3, 3.1 y 4 (equipo Qwen en cola, comandos razona / ejecuta / refactoriza) y DeepSeek en el respaldo. DeepSeek por HF da MODEL_NOT_SELECTABLE en el Router.
+6. Tope total de 90 s por llamada con herramientas (hoy 90 s por llamada y 100 s el bucle; GLM 96 s).
+7. Harness DeepSeek como servicio HTTP propio (hoy el puente_chat hace su papel).
+8. Reescribir fichas/README-CONEXION-CHAT-HARNESS.md: esta desactualizado (falta v0.3.1, herramientas, clave del chat, nombres de los 7 modelos).
+9. El repo de GitHub es publico: preguntar al Director si debe ser privado.
+10. Cambiar los tokens que quedaron escritos en el chat (HF, GitHub ghp, clave del chat, clave del Director).
+
+COMO OPERAR (conectores de GitHub y HF caidos): Vercel sandbox solo como puente (projectId prj_m8Lk3iaB3eN6dwlIq1ND2un8FWTD, sin teamId; pip install huggingface_hub). Relanzar el Router = subir el paquete al bucket + POST /hf/hardware {flavor: cpu-basic, relaunch_now: true} con X-Director-Key. Editar GitHub = API de contenidos con el ghp del Director (el token github_pat da 403). Probar el chat: POST <puerta>/plugins/puente_chat/call/<accion> con la clave del chat.
+
 ## 8. PARCHE DE RECUPERACIÓN (pegar al iniciar una sesión nueva)
 ```
 Eres agente del Director (Hy). Antes de hacer NADA:
