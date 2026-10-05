@@ -3,6 +3,26 @@ import { tell } from "./base.js";
 
 export async function mount(root, { api }) {
   let disposed = false;
+  let lastTasks;
+  const renderTasks = () => {
+    const list = root.querySelector("#agents-tasks");
+    list.replaceChildren();
+    if (!lastTasks) { list.append(node("p", "No hay datos confirmados.", "muted")); return; }
+    const query = root.querySelector("#tasks-filter").value.toLocaleLowerCase();
+    const matching = lastTasks.filter(entry =>
+      `${entry.id || ""} ${entry.task || ""} ${entry.status || ""} ${entry.estado || ""}`.toLocaleLowerCase().includes(query));
+    for (const entry of matching) {
+      const item = node("div", sections[2].format(entry), "item");
+      const subtasks = entry.subtasks || entry.subtareas;
+      if (Array.isArray(subtasks)) {
+        for (const subtask of subtasks) {
+          item.append(node("div", `${subtask.id || subtask.task || "Subtarea"} · ${subtask.status || subtask.estado || "sin estado publicado"}`, "subtask"));
+        }
+      }
+      list.append(item);
+    }
+    if (!list.children.length) list.append(node("p", "Sin tareas para este filtro.", "muted"));
+  };
   const sections = [
     { path: "/chat/agents", key: "agents", list: "#agents-list", status: "#agents-status",
       format: agent => {
@@ -33,32 +53,31 @@ export async function mount(root, { api }) {
       if (disposed) return;
       const data = section.key === "agents" ? response.agents : response.data[section.key];
       const entries = section.key === "graph" ? data.nodes : data;
-      for (const entry of entries || []) {
-        const item = node("div", section.format(entry), "item");
-        const publishedState = entry.status || entry.estado;
-        if (publishedState && section.key !== "tasks") {
-          const badge = node("span", `Estado: ${publishedState}`, "badge");
-          badge.dataset.state = String(publishedState).toLowerCase();
-          item.append(badge);
-        }
-        if (section.key === "tasks") {
-          const subtasks = entry.subtasks || entry.subtareas;
-          if (Array.isArray(subtasks)) {
-            for (const subtask of subtasks) {
-              item.append(node("div", `${subtask.id || subtask.task || "Subtarea"} · ${subtask.status || subtask.estado || "sin estado publicado"}`, "subtask"));
-            }
+      if (section.key === "tasks") {
+        lastTasks = entries || [];
+        renderTasks();
+      } else {
+        for (const entry of entries || []) {
+          const item = node("div", section.format(entry), "item");
+          const publishedState = entry.status || entry.estado;
+          if (publishedState) {
+            const badge = node("span", `Estado: ${publishedState}`, "badge");
+            badge.dataset.state = String(publishedState).toLowerCase();
+            item.append(badge);
           }
+          list.append(item);
         }
-        list.append(item);
       }
       if (!list.children.length) list.append(node("p", "Sin registros en el Router.", "muted"));
       status.textContent = `${(entries || []).length} registros consultados`;
     } catch (error) {
       if (disposed) return;
+      if (section.key === "tasks") lastTasks = undefined;
       status.textContent = `No disponible: ${error.message}`;
       list.append(node("p", "No hay datos confirmados.", "muted"));
     }
   };
+  root.querySelector("#tasks-filter").addEventListener("input", renderTasks);
   root.querySelector("#agents-reload").addEventListener("click", () => {
     sections.forEach(section => { void load(section); });
   });
