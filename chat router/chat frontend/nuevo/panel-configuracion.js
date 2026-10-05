@@ -73,6 +73,24 @@ export function mount(root) {
     });
   }
 
+  for (const item of root.querySelectorAll("[data-token]")) {
+    item.title = "Copiar valor";
+    item.tabIndex = 0;
+    item.addEventListener("keydown", event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); item.click(); } });
+    item.addEventListener("click", async () => {
+      const value = item.textContent;
+      if (!value || value === "—") return;
+      try {
+        await navigator.clipboard.writeText(value);
+        status.textContent = `${item.dataset.token} copiado: ${value}`;
+        status.dataset.state = "ok";
+      } catch {
+        status.textContent = "El navegador no permitió copiar.";
+        status.dataset.state = "error";
+      }
+    });
+  }
+
   scale.addEventListener("input", () => saveFromControls("Tamaño de texto aplicado y guardado."));
   motion.addEventListener("change", () => saveFromControls(motion.checked ? "Animaciones reducidas." : "Animaciones normales."));
 
