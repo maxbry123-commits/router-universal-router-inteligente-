@@ -149,6 +149,12 @@ export async function mount(root, { api, tell }) {
   root.querySelector("#media-search").addEventListener("input", render);
   root.querySelector("#media-type").addEventListener("change", render);
   root.querySelector("#media-pinned").addEventListener("change", render);
+  root.querySelector("#media-clear").addEventListener("click", () => {
+    root.querySelector("#media-search").value = "";
+    root.querySelector("#media-type").value = "";
+    root.querySelector("#media-pinned").checked = false;
+    render();
+  });
   root.querySelector("#media-reload").addEventListener("click", reload);
   root.querySelector("#media-input").addEventListener("change", event => {
     clearLocalPreview();
