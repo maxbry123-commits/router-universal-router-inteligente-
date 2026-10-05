@@ -4,6 +4,7 @@ let BASE = (CFG.apiBase || "").replace(/[/]+$/, "");
 let liveCheckedAt = 0;
 let liveRequest = null;
 async function liveRouter() {
+  if (CFG.routerStopped) throw new Error('Router detenido por orden del Director');
   if (Date.now() - liveCheckedAt < 30000) return BASE;
   if (!liveRequest) liveRequest = (async () => {
     try {
@@ -24,9 +25,7 @@ async function liveRouter() {
 }
 
 function clave() {
-  let k = sessionStorage.getItem("riu_clave");
-  if (!k) { k = prompt("Clave de acceso") || ""; sessionStorage.setItem("riu_clave", k); }
-  return k;
+  return sessionStorage.getItem("riu_clave") || "";
 }
 function remoto(headers) {
   if (BASE) headers[CFG.authHeader || "X-API-Key"] = clave();
@@ -88,10 +87,6 @@ export async function harness({ model, message, max_tokens, avisar }) {
     if (!r.ok) { L4.job = L4.url = null; r = null; }
   }
   if (!r) r = await puente(base, { model, messages, max_tokens }, '', 'POST', headers);
-  if (r.status === 401) {
-    const k = prompt('Contrasena del chat');
-    if (k) { sessionStorage.setItem('riu_clave', k); return harness({ model, message, max_tokens, avisar }); }
-  }
   if (r.status === 202 && r.p.job_id) {
     L4.job = r.p.job_id; L4.url = null;
     window.__riuJob = r.p.job_id;

@@ -422,3 +422,16 @@ Orden vigente del Director: servidor HF de 32 GB, interfaz en Vercel; replicar l
 - Los antiguos Router de 16 GB y las instancias intermedias se retiraron después de verificar sus sucesores. Evidencia funcional en el bucket `laboratorio/recovery-http.json`, `recovery-memory.json`, `recovery-hf-models.json`.
 
 Protocolo y recuperación vigentes: `README-CONEXION-CHAT-HARNESS.md`. Las secciones anteriores conservan el historial; esta sección manda sobre la pausa y las direcciones antiguas.
+
+
+## 12. Orden de detención — 2026-10-05 (Codex)
+
+El Director rechazó el servidor de 32 GB y ordenó detenerlo y quitar la petición de clave para entrar en el chat.
+
+- Job `6ac40a4b404719ba37658c12`: cancelado.
+- Schedule de renovación `6ac40924fbc85ba6823aca1b`: suspendido y eliminado. No reinicia el servidor.
+- HF confirmó que no quedan Jobs en ejecución. No se lanzó un servidor sustituto.
+- LIVE_URL marcado detenido, direcciones de la interfaz vaciadas y llamadas al Router bloqueadas con aviso de detención.
+- Eliminados los prompts de clave de acceso y contraseña del chat; la interfaz se abre sin pedir clave. El banco y la memoria se conservan.
+
+Esta sección sustituye el estado activo de la sección 11. No reactivar ni crear servidores sin nueva orden del Director.

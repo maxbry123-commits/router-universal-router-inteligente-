@@ -1,5 +1,7 @@
 # Router Inteligente Universal - README (arquitectura simple + mapa)
 
+> **Estado vigente 2026-10-05: Router detenido por orden del Director. Renovación eliminada. La interfaz se abre sin solicitar clave; no hay backend HF activo. Las descripciones de actividad que siguen son históricas. No reactivar sin nueva orden.**
+
 ## Estado operativo — 2026-10-05
 
 Chat: https://riu-jev-bridge.vercel.app. Backend HF: un Job de 32 GB, dirección publicada en [LIVE_URL.json](router%20inteligente%20universal/LIVE_URL.json). Space antiguo pausado. Siete modelos conectados mediante puente_chat con internet, herramientas GitHub/HF, banco cifrado y memoria persistente en HF. Renovación: riu_kernel.py, schedule cada diez minutos; no escalado automático. Vercel aloja solo la interfaz.

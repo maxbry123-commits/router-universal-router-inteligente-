@@ -1,5 +1,7 @@
 # Conexión del chat — v5
 
+> **Estado vigente 2026-10-05: Router detenido por orden del Director. Renovación eliminada. La interfaz se abre sin solicitar clave; no hay backend HF activo. Las descripciones de actividad que siguen son históricas. No reactivar sin nueva orden.**
+
 Actualizado: 2026-10-05. Sin claves en este archivo.
 
 La pantalla está en https://riu-jev-bridge.vercel.app. El servidor, puente, herramientas, banco y memoria están en Hugging Face, en un Job cpu-upgrade de 32 GB. El Space anterior permanece pausado.

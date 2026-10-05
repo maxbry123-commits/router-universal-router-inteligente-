@@ -1,8 +1,8 @@
 {
-  "LIVE_URL": "https://6ac40a4b404719ba37658c12--8000.hf.jobs",
-  "job_id": "6ac40a4b404719ba37658c12",
-  "flavor": "cpu-upgrade",
-  "updated": 1791232618.2075205,
-  "auth": "X-API-Key",
-  "harnessUrl": "https://6ac40a4b404719ba37658c12--8000.hf.jobs/plugins/puente_chat/call"
+  "status": "STOPPED",
+  "LIVE_URL": null,
+  "harnessUrl": null,
+  "job_id": null,
+  "renewal": "DELETED",
+  "updated": "2026-10-05T21:17:06.949Z"
 }
