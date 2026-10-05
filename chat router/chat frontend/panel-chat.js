@@ -35,6 +35,11 @@ export async function mount(root, { api, tell }) {
     const history = root.querySelector("#history");
     history.append(node("div", message, "item message user"));
     input.value = "";
+    const sendBtn = root.querySelector("#composer button.action");
+    sendBtn.disabled = true;
+    const pending = node("div", "Pensando…", "item message pending");
+    history.append(pending);
+    history.scrollTop = history.scrollHeight;
     const agent = root.querySelector("#agent").value;
     const provider = root.querySelector("#provider").value;
     const model = root.querySelector("#model").value;
@@ -43,10 +48,24 @@ export async function mount(root, { api, tell }) {
       const body = { message, ficha: root.querySelector('#ficha').value, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       const answer = window.RIU_CONFIG?.harnessUrl ? await window.RIU_HARNESS({ model: body.ficha, message, max_tokens, avisar: (t) => history.append(node('div', t, 'item message')) }) : await api("/chat/send", { method: "POST", body });
+      pending.remove();
       history.append(node("div", answer.reply || "Sin respuesta", "item message"));
       if (answer.job_id) { window.__riuJob = answer.job_id; root.querySelector('#apagar-respaldo').hidden = false; }
       history.scrollTop = history.scrollHeight;
-    } catch (error) { history.append(node("div", `GAP: ${error.message}`, "item message")); }
+    } catch (error) {
+      pending.remove();
+      history.append(node("div", `GAP: ${error.message}`, "item message error"));
+      history.scrollTop = history.scrollHeight;
+    } finally {
+      sendBtn.disabled = false;
+      if (window.matchMedia("(pointer: fine)").matches) input.focus();
+    }
+  });
+  root.querySelector("#message").addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey && window.matchMedia("(pointer: fine)").matches) {
+      event.preventDefault();
+      root.querySelector("#composer").requestSubmit();
+    }
   });
   root.querySelectorAll("[data-control]").forEach(button => button.addEventListener("click", async () => {
     try { await api(`/control/${button.dataset.control}`, { method: "POST" }); tell(`${button.textContent}: ejecutado`); }
