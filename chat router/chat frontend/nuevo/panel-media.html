@@ -36,13 +36,20 @@
 </section>
 <section>
   <h2>Adjuntar al Router</h2>
-  <form id="media-upload" class="row">
-    <input id="media-input" type="file" required aria-label="Archivo para subir">
-    <button class="action" type="submit">Subir archivo</button>
+  <form id="media-upload">
+    <label id="media-dropzone" class="dropzone" for="media-input">
+      <input id="media-input" class="sr-only" type="file" aria-label="Archivo para subir">
+      <strong>Toca para elegir un archivo</strong>
+      <span>o arrástralo aquí · máximo 10 MB</span>
+    </label>
+    <div class="row upload-actions">
+      <button class="action" type="submit">Subir al Router</button>
+      <button id="media-local-clear" class="secondary" type="button" disabled>Quitar selección</button>
+    </div>
   </form>
   <p id="media-local-status" role="status" class="muted">Selecciona un archivo para verlo antes de subirlo.</p>
   <div id="media-local-preview" class="item">Aún no hay archivo seleccionado.</div>
-  <p class="muted">Máximo 10 MB; el tipo y el tamaño se muestran antes de subir. El ID y la lista sólo se confirman tras respuesta del Router.</p>
+  <p class="muted">El tipo y el tamaño se muestran antes de subir. El ID y la lista sólo se confirman tras respuesta del Router.</p>
 </section>
 </main><p id="notice" role="status"></p></div></div></body>
 </html>
