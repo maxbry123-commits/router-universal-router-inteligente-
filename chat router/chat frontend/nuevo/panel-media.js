@@ -6,12 +6,22 @@ const supported = /^(image\/(png|jpeg|gif|webp)|video\/(mp4|webm))$/;
 export async function mount(root, { api, tell }) {
   let files = [];
   let currentUrl;
+  let localUrl;
   let selected;
   let previewRequest = 0;
   let disposed = false;
   const status = root.querySelector("#media-status");
   const preview = root.querySelector("#media-preview");
   const actions = root.querySelector("#media-actions");
+  const localPreview = root.querySelector("#media-local-preview");
+  const localStatus = root.querySelector("#media-local-status");
+  const clearLocalPreview = () => {
+    localPreview.replaceChildren();
+    if (localUrl) URL.revokeObjectURL(localUrl);
+    localUrl = undefined;
+    localPreview.textContent = "Aún no hay archivo seleccionado.";
+    localStatus.textContent = "Selecciona un archivo para verlo antes de subirlo.";
+  };
   const clearPreview = () => {
     previewRequest++;
     if (currentUrl) URL.revokeObjectURL(currentUrl);
@@ -98,6 +108,26 @@ export async function mount(root, { api, tell }) {
   root.querySelector("#media-search").addEventListener("input", render);
   root.querySelector("#media-type").addEventListener("change", render);
   root.querySelector("#media-reload").addEventListener("click", reload);
+  root.querySelector("#media-input").addEventListener("change", event => {
+    clearLocalPreview();
+    const file = event.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      localStatus.textContent = "El archivo supera los 10 MB permitidos.";
+      return;
+    }
+    localStatus.textContent = `${file.name} · Vista previa local; aún no guardado en el Router.`;
+    if (!supported.test(file.type)) {
+      localPreview.textContent = "Este formato no tiene vista previa local.";
+      return;
+    }
+    localUrl = URL.createObjectURL(file);
+    const element = document.createElement(file.type.startsWith("image/") ? "img" : "video");
+    element.src = localUrl;
+    if (element.tagName === "IMG") element.alt = file.name;
+    else element.controls = true;
+    localPreview.replaceChildren(element);
+  });
   root.querySelector("#media-upload").addEventListener("submit", async event => {
     event.preventDefault();
     const file = root.querySelector("#media-input").files[0];
@@ -114,6 +144,7 @@ export async function mount(root, { api, tell }) {
       } });
       if (disposed) return;
       root.querySelector("#media-upload").reset();
+      clearLocalPreview();
       const listed = await reload();
       if (!disposed) status.textContent = `Guardado en Router: ${result.document.id}. ${listed ? "Lista actualizada." : "Lista no disponible."} Sin sincronización HF confirmada.`;
     } catch (error) {
@@ -121,7 +152,7 @@ export async function mount(root, { api, tell }) {
     } finally { submit.disabled = false; }
   });
   await reload();
-  return () => { disposed = true; clearPreview(); };
+  return () => { disposed = true; clearPreview(); clearLocalPreview(); };
 }
 
 void mount(document, { api, tell }).catch(error => tell(error.message));
