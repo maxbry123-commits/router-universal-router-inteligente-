@@ -66,7 +66,10 @@ export async function mount(root, { api }) {
         list.append(button);
       }
     }),
-    read("/chat/org/bitacora?limit=30", "#events-status", "#events", (data, list) => {
+    loadEvents()
+    ]);
+  };
+  const loadEvents = () => read(`/chat/org/bitacora?limit=${root.querySelector("#events-limit").value}`, "#events-status", "#events", (data, list) => {
       const runIdPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
       for (const item of (data.events || []).slice().reverse()) {
         const text = `${item.task || item.id || "Evento"} · ${item.status || "sin estado"} · ${item.phase || ""} · ${item.summary || ""}`;
@@ -83,9 +86,8 @@ export async function mount(root, { api }) {
           list.append(node("div", text, "item"));
         }
       }
-    })
-    ]);
-  };
+    });
+  root.querySelector("#events-limit").addEventListener("change", () => { void loadEvents(); });
   root.querySelector("#tracking-reload").addEventListener("click", () => { void load(); });
   root.querySelector("#run-form").addEventListener("submit", async event => {
     event.preventDefault();
