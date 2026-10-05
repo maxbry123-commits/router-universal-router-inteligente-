@@ -29,7 +29,7 @@ from .router import build_router, get_store
 from .vault_api import build_vault_router
 
 app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.3")
-app.mount("/chat/ui", StaticFiles(directory=Path(__file__).resolve().parents[3] / "chat router/ui"), name="chat-organization-ui")
+app.mount("/chat/ui", StaticFiles(directory=Path(__file__).resolve().parents[3] / "chat router/chat frontend"), name="chat-organization-ui")
 app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in os.getenv("RIU_CORS_ORIGINS", "*").split(",") if o.strip()],
                    allow_methods=["*"], allow_headers=["*"], allow_credentials=False)
 

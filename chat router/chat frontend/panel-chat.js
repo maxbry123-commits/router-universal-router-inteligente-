@@ -37,8 +37,9 @@ export async function mount(root, { api, tell }) {
     const model = root.querySelector("#model").value;
     const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[root.querySelector("#mode").value];
     try {
-      const answer = await api("/chat/send", { method: "POST", body: { message, provider, model,
-        mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens } });
+      const body = { message, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
+      // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
+      const answer = window.RIU_CONFIG?.harnessUrl ? await window.RIU_HARNESS(body) : await api("/chat/send", { method: "POST", body });
       history.append(node("div", answer.reply || "Sin respuesta", "item message"));
       history.scrollTop = history.scrollHeight;
     } catch (error) { history.append(node("div", `GAP: ${error.message}`, "item message")); }

@@ -15,7 +15,7 @@
       "height": 2201,
       "function": "Colores de estado, iconos y panel de escritorio V09",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.css",
+      "frontend": "chat router/chat frontend/shell.css",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -38,7 +38,7 @@
       "height": 2201,
       "function": "Variante de colores e iconos V09",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.css",
+      "frontend": "chat router/chat frontend/shell.css",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -61,7 +61,7 @@
       "height": 1534,
       "function": "Paleta de grises y jerarquía de superficies",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.css",
+      "frontend": "chat router/chat frontend/shell.css",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -84,7 +84,7 @@
       "height": 2388,
       "function": "Referencia de selección de proyecto Grok",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -107,7 +107,7 @@
       "height": 2388,
       "function": "Referencia de controles móviles en Firefox",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -130,7 +130,7 @@
       "height": 2388,
       "function": "Manus: acceso e inicio de sesión",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -153,7 +153,7 @@
       "height": 2388,
       "function": "Manus: formulario de conexión",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -176,7 +176,7 @@
       "height": 2388,
       "function": "Manus: opciones de conexión",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -199,7 +199,7 @@
       "height": 2388,
       "function": "Manus: campos de conexión",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -222,7 +222,7 @@
       "height": 2388,
       "function": "Manus: selector de conexión",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -245,7 +245,7 @@
       "height": 2388,
       "function": "Manus: formulario y aviso",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -268,7 +268,7 @@
       "height": 2388,
       "function": "Manus: opciones de tarea",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -291,7 +291,7 @@
       "height": 2388,
       "function": "Manus: lista de opciones",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -314,7 +314,7 @@
       "height": 2388,
       "function": "Manus: tareas recientes",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -337,7 +337,7 @@
       "height": 2388,
       "function": "Manus: permisos de conector",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -360,7 +360,7 @@
       "height": 2388,
       "function": "Manus: confirmación de conector",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -383,7 +383,7 @@
       "height": 2388,
       "function": "Manus: estado vacío",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -406,7 +406,7 @@
       "height": 2388,
       "function": "Manus: cuenta y ajustes",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -429,7 +429,7 @@
       "height": 2388,
       "function": "Grok Bot: lista de agentes",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -452,7 +452,7 @@
       "height": 2388,
       "function": "Grok Bot: configuración superior",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -475,7 +475,7 @@
       "height": 2388,
       "function": "Grok Bot: configuración inferior",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -498,7 +498,7 @@
       "height": 2388,
       "function": "Grok Bot: conversación y acciones",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -521,7 +521,7 @@
       "height": 2388,
       "function": "Edge: acceso a chat",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -544,7 +544,7 @@
       "height": 2388,
       "function": "Edge: entrada del chat",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -567,7 +567,7 @@
       "height": 2388,
       "function": "Edge: conversación inicial",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -590,7 +590,7 @@
       "height": 2388,
       "function": "Edge: configuración de contexto",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -613,7 +613,7 @@
       "height": 2388,
       "function": "Edge: selección de recursos",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -636,7 +636,7 @@
       "height": 2388,
       "function": "Edge: acción de conexión",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -659,7 +659,7 @@
       "height": 2388,
       "function": "Edge: modal de configuración",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -682,7 +682,7 @@
       "height": 2388,
       "function": "Edge: descripción de configuración",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -705,7 +705,7 @@
       "height": 2388,
       "function": "Edge: formulario de ajuste",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -728,7 +728,7 @@
       "height": 2388,
       "function": "Edge: confirmación de ajuste",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -751,7 +751,7 @@
       "height": 2388,
       "function": "Edge: sección de detalle",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -774,7 +774,7 @@
       "height": 2388,
       "function": "Edge: parámetros de agente",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -797,7 +797,7 @@
       "height": 2388,
       "function": "Edge: permisos y texto",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -820,7 +820,7 @@
       "height": 2388,
       "function": "Edge: controles de parámetros",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -843,7 +843,7 @@
       "height": 2388,
       "function": "Edge: error o aviso contextual",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -866,7 +866,7 @@
       "height": 2388,
       "function": "Edge: respuesta extensa del asistente",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -889,7 +889,7 @@
       "height": 2388,
       "function": "Edge: respuesta con secciones",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -912,7 +912,7 @@
       "height": 2388,
       "function": "Edge: seguimiento de ejecución",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -935,7 +935,7 @@
       "height": 2388,
       "function": "Edge: estado de ejecución",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -958,7 +958,7 @@
       "height": 2388,
       "function": "Edge: resultado con bloques de código",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -981,7 +981,7 @@
       "height": 2388,
       "function": "Edge: resultado revisado",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1004,7 +1004,7 @@
       "height": 2388,
       "function": "Edge: controles de revisión",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1027,7 +1027,7 @@
       "height": 2388,
       "function": "Edge: tarjetas de tarea",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1050,7 +1050,7 @@
       "height": 2388,
       "function": "Edge: estado de tarjeta",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1073,7 +1073,7 @@
       "height": 2388,
       "function": "Edge: más opciones de tarjeta",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1096,7 +1096,7 @@
       "height": 2388,
       "function": "Edge: respuesta y resumen",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1119,7 +1119,7 @@
       "height": 2388,
       "function": "Edge: lista y navegación",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1142,7 +1142,7 @@
       "height": 2388,
       "function": "Edge: navegación lateral",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1165,7 +1165,7 @@
       "height": 2388,
       "function": "Edge: tabla de estados",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1188,7 +1188,7 @@
       "height": 2388,
       "function": "Edge: pestañas de ajustes",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1211,7 +1211,7 @@
       "height": 2388,
       "function": "Grok: creación de bot",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1234,7 +1234,7 @@
       "height": 2388,
       "function": "Grok: ajuste de bot",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1257,7 +1257,7 @@
       "height": 2388,
       "function": "Grok: selector de modelo",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1280,7 +1280,7 @@
       "height": 2388,
       "function": "Grok: feedback de creación",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1303,7 +1303,7 @@
       "height": 2388,
       "function": "Manus: acción de agente en móvil",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1326,7 +1326,7 @@
       "height": 476,
       "function": "Chrome: estructura de escritorio",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1349,7 +1349,7 @@
       "height": 1199,
       "function": "Chrome: panel y métricas de escritorio",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1372,7 +1372,7 @@
       "height": 767,
       "function": "Chrome: lista de conectores",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1395,7 +1395,7 @@
       "height": 749,
       "function": "Chrome: cards y navegación",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1418,7 +1418,7 @@
       "height": 727,
       "function": "Chrome: densidad de información y estados",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1441,7 +1441,7 @@
       "height": 2388,
       "function": "Claude: chat y composición",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1464,7 +1464,7 @@
       "height": 2388,
       "function": "Claude: conversación y revisión",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
@@ -1487,7 +1487,7 @@
       "height": 2388,
       "function": "Chrome: escritorio con paneles y acciones",
       "classification": "REFERENCE_ONLY",
-      "frontend": "chat router/ui/shell.html",
+      "frontend": "chat router/chat frontend/shell.html",
       "backend": "NOT_CONNECTED",
       "contract": [
         "chat router/01-PLAN/SKILLS-MAXBRY-UI/diseno/😄SKILL.md",
