@@ -92,8 +92,11 @@ export async function mount(root, { api }) {
       list.append(node("p", "No hay datos confirmados.", "muted"));
       return;
     }
-    for (const entry of connectors.filter(item =>
-      `${item.id || ""} ${item.kind || ""}`.toLocaleLowerCase().includes(query))) {
+    const matching = connectors.filter(item =>
+      `${item.id || ""} ${item.kind || ""}`.toLocaleLowerCase().includes(query));
+    root.querySelector("#connectors-count").textContent =
+      matching.length === connectors.length ? `${connectors.length} conectores.` : `${matching.length} de ${connectors.length} conectores coinciden con la búsqueda.`;
+    for (const entry of matching) {
       const fields = [
         entry.id || "conector",
         entry.status && `estado: ${entry.status}`,
