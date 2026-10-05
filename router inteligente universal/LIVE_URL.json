@@ -1,8 +1,8 @@
 {
-  "status": "STOPPED",
-  "LIVE_URL": null,
-  "harnessUrl": null,
-  "job_id": null,
-  "renewal": "DELETED",
-  "updated": "2026-10-05T21:17:06.949Z"
+  "LIVE_URL": "https://6ac41820404719ba376595fb--8000.hf.jobs",
+  "job_id": "6ac41820404719ba376595fb",
+  "flavor": "cpu-basic",
+  "updated": 1791236154.128977,
+  "auth": "server-side-chat",
+  "harnessUrl": "https://6ac41820404719ba376595fb--8000.hf.jobs/plugins/puente_chat/call"
 }

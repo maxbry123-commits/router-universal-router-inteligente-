@@ -1,0 +1,11 @@
+{
+  "id": "ficha-0",
+  "nombre": "Memoria, almacenamiento y computo",
+  "tipo": "servicios",
+  "ia": false,
+  "selector": false,
+  "memoria": "/memoria",
+  "almacenamiento": "/espacio",
+  "computo": "HF Jobs cpu-basic",
+  "banco": "HF cifrado"
+}

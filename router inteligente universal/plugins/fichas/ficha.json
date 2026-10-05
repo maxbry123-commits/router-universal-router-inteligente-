@@ -1,0 +1,46 @@
+{
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "fichas",
+    "enabled_default": true,
+    "health_action": "status"
+  },
+  "artifact_id": "riu.plugins.fichas",
+  "version": "1.0.0",
+  "estado": "testing",
+  "categoria": "pipeline",
+  "etapa": "P",
+  "contrato": {
+    "rol": "service"
+  },
+  "ejecucion": {
+    "kind": "api",
+    "transport": "importlib",
+    "runtime_type": "hybrid",
+    "entry_point": "plugins.fichas.plugin:handle",
+    "idempotente": false,
+    "allowed_actions": [
+      "listar",
+      "status",
+      "modelos",
+      "chat",
+      "chat_async",
+      "resultado",
+      "estado",
+      "apagar",
+      "apagar_todo",
+      "herramientas_estado"
+    ]
+  },
+  "seguridad": {
+    "sandbox": "none",
+    "permisos": [],
+    "limites": {
+      "timeout_ms": 150000
+    }
+  },
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "contracts/revocation_list.json"
+  }
+}

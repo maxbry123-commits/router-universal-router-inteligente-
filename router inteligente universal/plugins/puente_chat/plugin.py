@@ -22,17 +22,11 @@ ETIQUETA_L4 = "router-respaldo-l4"
 TOPE_TOTAL_S = 90
 MAX_PASOS = 6
 _CACHE_H = {}
-FICHAS = {
-    "nv-kimi-k3": ("NV Kimi K3", "nvidia", "moonshotai/kimi-k3", 90),
-    "nv-glm-5-3": ("NV GLM 5.3", "nvidia", "z-ai/glm-5.3", 96),
-    "nv-nemotron-super": ("NV Nemotron 3 Super", "nvidia", "nvidia/nemotron-3-super-120b-a12b", 90),
-    "nv-nemotron-lightning": ("NV Nemotron 3.5 Lightning", "nvidia", "nvidia/nemotron-3.5-lightning-30b-a3b", 90),
-    "groq-qwen-3-8": ("GROQ Qwen 3.8", "groq", "qwen/qwen3.8-27b", 90),
-}
-RESPALDO = {
-    "hf-1-qwen-3-8": ("HF 1 Qwen 3.8 (27B)", "Qwen3.8-27B-UD-Q3_K_XL.gguf"),
-    "hf-2-qwen-3-6": ("HF 2 Qwen 3.6 (35B)", "Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf"),
-}
+from pathlib import Path
+_CONFIG_DIR = Path(__file__).resolve().parent / "fichas"
+_catalog = [json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob("modelo-*.json"))]
+FICHAS = {f["id"]:(f["nombre"],f["proveedor"],f["modelo"],f["timeout_s"]) for f in _catalog if f["tipo"]=="api"}
+RESPALDO = {f["id"]:(f["nombre"],f["archivo"]) for f in _catalog if f["tipo"]=="hf"}
 ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO" --alias "$ALIAS" -ngl 999 -fa on -np 1 -b 128 -c 16384 '
             '--temp 0 --top-k 20 --top-p 0.95 --no-mmproj --reasoning-budget 0 --spec-type draft-mtp --spec-draft-n-max 2 --jinja > /tmp/l.log 2>&1 &\n'
             'P=$!\nwhile kill -0 $P 2>/dev/null; do\n  sleep 5\n  I=$(( $(date +%s) - $(stat -c %Y /tmp/l.log) ))\n'

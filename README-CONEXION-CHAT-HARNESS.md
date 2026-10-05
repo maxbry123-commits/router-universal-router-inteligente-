@@ -1,5 +1,7 @@
 # Conexión del chat — v5
 
+> **Estado vigente: reanudado por el Director en HF Jobs CPU de 16 GB. Chat sin contraseña, con claves internas en el banco. Dirección actual en LIVE_URL.json. Las referencias anteriores a 32 GB y a detención son históricas.**
+
 > **Estado vigente 2026-10-05: Router detenido por orden del Director. Renovación eliminada. La interfaz se abre sin solicitar clave; no hay backend HF activo. Las descripciones de actividad que siguen son históricas. No reactivar sin nueva orden.**
 
 Actualizado: 2026-10-05. Sin claves en este archivo.

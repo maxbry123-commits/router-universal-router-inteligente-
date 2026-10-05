@@ -1,0 +1,12 @@
+{
+  "id": "nv-kimi-k3",
+  "nombre": "NV Kimi K3",
+  "proveedor": "nvidia",
+  "modelo": "moonshotai/kimi-k3",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}

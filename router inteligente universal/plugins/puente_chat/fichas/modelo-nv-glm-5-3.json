@@ -1,0 +1,12 @@
+{
+  "id": "nv-glm-5-3",
+  "nombre": "NV GLM 5.3",
+  "proveedor": "nvidia",
+  "modelo": "z-ai/glm-5.3",
+  "timeout_s": 96,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}

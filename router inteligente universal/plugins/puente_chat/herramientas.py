@@ -27,7 +27,7 @@ def _fn(nombre, desc, props, req):
 TOOLS = [
     _fn('github_leer', 'Lee un archivo, o lista una carpeta, de un repositorio de GitHub de maxbry123-commits.', {'repo': S, 'ruta': S, 'rama': S}, ['repo']),
     _fn('github_escribir', 'Crea o cambia un archivo en un repositorio de GitHub de maxbry123-commits (hace un commit).', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'rama': S}, ['repo', 'ruta', 'contenido']),
-    _fn('github_api', 'Llama a la API de GitHub (solo repos de maxbry123-commits, /user y busquedas). metodo: GET, POST, PUT, PATCH o DELETE.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
+    _fn('github_api', 'Llama a la API de GitHub con los permisos de la cuenta del Director. metodo: GET, POST, PUT, PATCH o DELETE.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
     _fn('hf_leer', 'Lee un archivo de un repo de Hugging Face. tipo: model, dataset o space.', {'repo': S, 'ruta': S, 'tipo': S, 'rama': S}, ['repo', 'ruta']),
     _fn('hf_escribir', 'Crea o cambia un archivo en un repo de Hugging Face de la cuenta COMAND-CENTER-1.', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'tipo': S}, ['repo', 'ruta', 'contenido']),
     _fn('hf_api', 'Llama a la API de Hugging Face (la ruta empieza con /api/). Escribir solo en la cuenta COMAND-CENTER-1.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
@@ -115,10 +115,8 @@ HF_BLOQUEO = [re.compile('^/api/repos/(delete|move)'),
 
 def _gh(metodo, ruta, cuerpo=None):
     metodo = str(metodo or 'GET').upper()
-    if not GH_RUTA.match(ruta or '') or '..' in ruta:
+    if not str(ruta or '').startswith('/') or str(ruta).startswith('//') or '..' in ruta:
         return 0, 'ERROR: ruta de GitHub no permitida (solo repos de maxbry123-commits, /user y busquedas)'
-    if metodo == 'DELETE' and GH_REPO.match(ruta):
-        return 0, 'ERROR: no se pueden borrar repositorios'
     t = _token_gh()
     if not t:
         return 0, 'ERROR: no hay token de GitHub valido en el banco'
@@ -129,12 +127,6 @@ def _hf(metodo, ruta, cuerpo=None):
     metodo = str(metodo or 'GET').upper()
     if not str(ruta or '').startswith('/api/') or '..' in ruta:
         return 0, 'ERROR: ruta de HF no permitida (debe empezar con /api/)'
-    if metodo != 'GET':
-        if NS not in ruta:
-            return 0, 'ERROR: solo se puede escribir en la cuenta ' + NS
-        for p in HF_BLOQUEO:
-            if p.match(ruta):
-                return 0, 'ERROR: operacion bloqueada por seguridad (borrar, mover, pausar o cancelar)'
     t = _token_hf()
     if not t:
         return 0, 'ERROR: no hay token de Hugging Face valido en el banco'

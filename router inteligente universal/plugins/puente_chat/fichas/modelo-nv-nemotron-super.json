@@ -1,0 +1,12 @@
+{
+  "id": "nv-nemotron-super",
+  "nombre": "NV Nemotron 3 Super",
+  "proveedor": "nvidia",
+  "modelo": "nvidia/nemotron-3-super-120b-a12b",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}

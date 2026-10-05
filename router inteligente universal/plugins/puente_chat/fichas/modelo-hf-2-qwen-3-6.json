@@ -1,0 +1,8 @@
+{
+  "id": "hf-2-qwen-3-6",
+  "nombre": "HF 2 Qwen 3.6 (35B)",
+  "tipo": "hf",
+  "archivo": "Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf",
+  "herramientas": true,
+  "memoria": true
+}

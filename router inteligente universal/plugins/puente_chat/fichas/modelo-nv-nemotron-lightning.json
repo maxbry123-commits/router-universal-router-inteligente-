@@ -1,0 +1,12 @@
+{
+  "id": "nv-nemotron-lightning",
+  "nombre": "NV Nemotron 3.5 Lightning",
+  "proveedor": "nvidia",
+  "modelo": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}

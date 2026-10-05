@@ -1,0 +1,12 @@
+{
+  "id": "groq-qwen-3-8",
+  "nombre": "GROQ Qwen 3.8",
+  "proveedor": "groq",
+  "modelo": "qwen/qwen3.8-27b",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}
