@@ -18,7 +18,7 @@
 <h1>Multiagente</h1>
 <p class="muted">Estado consultado al Router. El modo agente para enviar mensajes se selecciona en Chat.</p>
 <div class="grid">
-  <section><h2>Agentes disponibles</h2><p class="muted">Los modelos mostrados son los publicados por cada agente.</p><p id="agents-status" role="status" class="muted">Consultando…</p><div id="agents-list" class="list"></div></section>
+  <section><h2>Agentes disponibles</h2><p class="muted">Los modelos mostrados son los publicados por cada agente.</p><label>Filtrar agentes <input id="agents-filter" type="search" placeholder="Nombre o modelo"></label><p id="agents-status" role="status" class="muted">Consultando…</p><div id="agents-list" class="list"></div></section>
   <section><h2>Grafo de roles</h2><p class="muted">Las habilidades se muestran sólo cuando el grafo las publica.</p><p id="roles-status" role="status" class="muted">Consultando…</p><div id="roles-list" class="list"></div></section>
 </div>
 <section><h2>Tareas y subtareas</h2><p class="muted">Las subtareas se muestran únicamente cuando la cola del Router las publica.</p><label>Filtrar tareas <input id="tasks-filter" type="search" placeholder="ID o estado"></label><p id="tasks-status" role="status" class="muted">Consultando cola…</p><div id="agents-tasks" class="list"></div></section>
