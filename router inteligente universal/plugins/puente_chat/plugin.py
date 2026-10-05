@@ -3,7 +3,7 @@
 Llamada: POST <puerta>/plugins/puente_chat/call/<accion> con el token del chat (Bearer). Respuesta del host: {"status": "ok", "result": ...}.
 Acciones: status | modelos | chat {model, messages, max_tokens, sesion, respaldo_url?} | estado {job, url} | apagar {job}.
 Modelos NV/GROQ: llamada directa al proveedor con las claves del banco; rota claves del MISMO modelo; tope total 90 s (GLM 96 s).
-Modelos HF: enciende un L4 (almacenamiento conectado como disco); se apaga solo al terminar la salida, a los 5 min o con 'apagar'.
+Modelos HF: enciende un L4 (almacenamiento conectado como disco). Seguridades: (1) se apaga solo 30 s tras terminar la salida; (2) 5 min sin pedidos; (3) tope duro de HF de 20 min; (4) barrendero del Router cancela L4 viejos; (5) un solo L4 a la vez; remoto: apagar / apagar_todo.
 Memoria: antes de responder busca contexto en /memoria (scope chat:<sesion>); despues guarda pregunta y respuesta.
 """
 from __future__ import annotations
@@ -17,6 +17,9 @@ from typing import Any
 NS = "COMAND-CENTER-1"
 DUENO = "chat-ui"
 ETIQUETA_L4 = "router-respaldo-l4"
+TOPE_TOTAL_S = 100
+MAX_PASOS = 6
+_CACHE_H = {}
 FICHAS = {
     "nv-kimi-k3": ("NV Kimi K3", "nvidia", "moonshotai/kimi-k3", 90),
     "nv-glm-5-3": ("NV GLM 5.3", "nvidia", "z-ai/glm-5.3", 96),
@@ -37,7 +40,7 @@ ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO"
 
 def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float = 60) -> tuple[int, Any]:
     req = urllib.request.Request(url, data=json.dumps(cuerpo).encode() if cuerpo is not None else None, method=metodo,
-                                 headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
+                                 headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", "User-Agent": "riu-chat-mvp", "Accept": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=espera) as r:
             texto = r.read().decode()
@@ -117,11 +120,48 @@ def _api(proveedor: str, modelo: str, mensajes: list, max_tokens: int, tope: int
     return {"error": "SIN_RESPUESTA_EN_%dS" % tope if time.monotonic() >= fin else "TODAS_LAS_CLAVES_FALLARON", "detalle": ultimo}
 
 
+MAX_VIDA_L4_S = 1200  # seguridad 3: tope duro de HF (20 min), se aplica FUERA del contenedor
+FINALIZADOS = ("COMPLETED", "CANCELED", "ERROR", "DELETED")
+
+
+def _edad_s(creado: str) -> float:
+    from datetime import datetime, timezone
+    try:
+        t = datetime.fromisoformat(str(creado).replace("Z", "+00:00"))
+        return (datetime.now(timezone.utc) - t).total_seconds()
+    except ValueError:
+        return 0.0
+
+
+def _l4_vivos() -> list[dict[str, Any]]:
+    s, lista = _hf("GET", "/api/jobs/" + NS)
+    if s >= 400 or not isinstance(lista, list):
+        return []
+    return [j for j in lista if (j.get("labels") or {}).get("name") == ETIQUETA_L4
+            and (j.get("status") or {}).get("stage") not in FINALIZADOS]
+
+
+def _cancelar(job_id: str) -> bool:
+    s, _ = _hf("POST", "/api/jobs/%s/%s/cancel" % (NS, job_id))
+    return s < 400
+
+
+def _apagar_todo() -> dict[str, Any]:
+    """Apagado remoto de emergencia: cancela TODOS los L4 de respaldo."""
+    return {"apagados": sum(1 for j in _l4_vivos() if _cancelar(j["id"]))}
+
+
+def _barrer() -> int:
+    """Seguridad 4 (barrendero del Router): cualquier L4 mas viejo que su vida maxima se cancela."""
+    return sum(1 for j in _l4_vivos() if _edad_s(j.get("createdAt", "")) > MAX_VIDA_L4_S and _cancelar(j["id"]))
+
+
 def _encender(model: str) -> dict[str, Any]:
+    _apagar_todo()  # seguridad 5: un solo L4 a la vez
     _, archivo = RESPALDO[model]
     s, j = _hf("POST", "/api/jobs/" + NS, {
         "dockerImage": "ghcr.io/ggml-org/llama.cpp:server-cuda", "command": ["bash", "-c", ARRANQUE], "arguments": [],
-        "environment": {"ARCHIVO": archivo, "ALIAS": model}, "flavor": "l4x1", "timeoutSeconds": 7200, "labels": {"name": ETIQUETA_L4},
+        "environment": {"ARCHIVO": archivo, "ALIAS": model}, "flavor": "l4x1", "timeoutSeconds": MAX_VIDA_L4_S, "labels": {"name": ETIQUETA_L4},
         "volumes": [{"type": "bucket", "source": NS + "/yaiwes-memoria-storage", "mountPath": "/modelos", "readOnly": True,
                      "path": "router-respaldo/modelos"}],
         "expose": {"ports": [8080], "portsPublic": []}})
@@ -130,44 +170,133 @@ def _encender(model: str) -> dict[str, Any]:
     return {"estado": "encendiendo", "job_id": j["id"], "url": "https://" + j["id"] + "--8080.hf.jobs", "model": model}
 
 
-def _chat(p: dict[str, Any]) -> dict[str, Any]:
-    model = str(p.get("model") or "")
-    mensajes = list(p.get("messages") or [])
-    max_tokens = int(p.get("max_tokens") or 2048)
-    sesion = str(p.get("sesion") or "general")[:60]
-    pregunta = next((str(m.get("content", "")) for m in reversed(mensajes) if m.get("role") == "user"), "")
+def _herr():
+    if 'h' not in _CACHE_H:
+        import importlib.util
+        import os
+        ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'herramientas.py')
+        spec = importlib.util.spec_from_file_location('puente_herramientas', ruta)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _CACHE_H['h'] = mod
+    return _CACHE_H['h']
+
+
+def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
+    from integration.chat_mvp import providers
+    claves = providers.env_keys(proveedor)
+    base = providers.base_url(proveedor)
+    if not claves or not base:
+        return 0, {'error': 'SIN_CLAVES_' + proveedor.upper()}
+    fin = time.monotonic() + tope
+    ultimo = (0, {'error': 'SIN_RESPUESTA'})
+    for clave in claves:  # mismo modelo, otra clave; nunca otro modelo
+        resta = fin - time.monotonic()
+        if resta < 2:
+            break
+        cuerpo = {'model': modelo, 'messages': mensajes, 'max_tokens': max_tokens}
+        if tools:
+            cuerpo['tools'] = tools
+            cuerpo['tool_choice'] = 'auto'
+        ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+        if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
+            return ultimo
+        if ultimo[0] == 400:
+            return ultimo
+    return ultimo
+
+
+def _llamar_l4(url, modelo, mensajes, max_tokens, tools):
+    ultimo = (0, {'error': 'SIN_TOKEN_HF_EN_EL_BANCO'})
+    for t in _tokens_hf():
+        cuerpo = {'model': modelo, 'messages': mensajes, 'max_tokens': max_tokens}
+        if tools:
+            cuerpo['tools'] = tools
+            cuerpo['tool_choice'] = 'auto'
+        ultimo = _http('POST', url + '/v1/chat/completions', t, cuerpo, 110)
+        if ultimo[0] < 400 or ultimo[0] == 400:
+            return ultimo
+    return ultimo
+
+
+def _bucle(llamar, mensajes):
+    h = _herr()
+    usadas = []
+    fin = time.monotonic() + TOPE_TOTAL_S
+    con_tools = True
+    pasos = 0
+    while True:
+        s, d = llamar(mensajes, h.TOOLS if con_tools else None)
+        if s == 400 and con_tools and not usadas:
+            con_tools = False  # este modelo no admite herramientas: responde sin ellas
+            continue
+        if s >= 400 or s == 0 or not isinstance(d, dict) or not d.get('choices'):
+            return {'error': 'MODELO_NO_RESPONDE', 'detalle': str(d)[:300]}, usadas
+        msg = d['choices'][0].get('message') or {}
+        calls = msg.get('tool_calls') or []
+        if not calls or not con_tools:
+            return d, usadas
+        mensajes.append({'role': 'assistant', 'content': msg.get('content') or '', 'tool_calls': calls})
+        for c in calls:
+            f = c.get('function') or {}
+            try:
+                args = json.loads(f.get('arguments') or '{}')
+            except ValueError:
+                args = {}
+            res = h.ejecutar(f.get('name', ''), args)
+            usadas.append({'herramienta': f.get('name', ''), 'ok': not res.startswith('ERROR')})
+            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:12000]})
+        pasos += 1
+        if pasos >= MAX_PASOS or time.monotonic() >= fin:
+            con_tools = False  # tiempo o pasos agotados: pedir la respuesta final sin herramientas
+
+
+def _chat(p):
+    model = str(p.get('model') or '')
+    mensajes = list(p.get('messages') or [])
+    max_tokens = int(p.get('max_tokens') or 2048)
+    sesion = str(p.get('sesion') or 'general')[:60]
+    pregunta = next((str(m.get('content', '')) for m in reversed(mensajes) if m.get('role') == 'user'), '')
     if model not in FICHAS and model not in RESPALDO:
-        return {"error": "MODELO_DESCONOCIDO", "validos": [*FICHAS, *RESPALDO]}
-    if model in RESPALDO and not p.get("respaldo_url"):
+        return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
+    if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
-    ctx = _contexto(sesion, pregunta) if pregunta else ""
+    ctx = _contexto(sesion, pregunta) if pregunta else ''
+    sistema = _herr().SISTEMA
     if ctx:
-        mensajes = [{"role": "system", "content": "Contexto guardado de esta conversacion:\n" + ctx}, *mensajes]
+        sistema += ' Contexto guardado de esta conversacion: ' + ctx
+    mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
-        r = _api(proveedor, modelo, mensajes, max_tokens, tope)
-        if "error" in r:
-            return r
-        texto = r["message"].get("content") or ""
-        salida = {"model": model, "choices": [{"index": 0, "message": r["message"], "finish_reason": r.get("finish_reason")}], "usage": r.get("usage")}
+
+        def llamar(ms, tl):
+            return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
     else:
-        url = str(p["respaldo_url"])
-        if not url.startswith("https://") or not url.endswith("--8080.hf.jobs"):
-            return {"error": "RESPALDO_URL_INVALIDA"}
-        ultimo: tuple[int, Any] = (0, {})
-        for t in _tokens_hf():
-            ultimo = _http("POST", url + "/v1/chat/completions", t, {"model": model, "messages": mensajes, "max_tokens": max_tokens}, 110)
-            if ultimo[0] < 400:
-                break
-        if ultimo[0] >= 400 or not isinstance(ultimo[1], dict) or "choices" not in ultimo[1]:
-            return {"error": "RESPALDO_NO_RESPONDE", "detalle": str(ultimo[1])[:300]}
-        salida = ultimo[1]
-        texto = salida["choices"][0]["message"].get("content") or ""
-    salida["memoria_guardada"] = _guardar(sesion, model, pregunta, texto)
+        url = str(p['respaldo_url'])
+        if not url.startswith('https://') or not url.endswith('--8080.hf.jobs'):
+            return {'error': 'RESPALDO_URL_INVALIDA'}
+
+        def llamar(ms, tl):
+            return _llamar_l4(url, model, ms, max_tokens, tl)
+    d, usadas = _bucle(llamar, mensajes)
+    if 'error' in d:
+        return d
+    texto = d['choices'][0].get('message', {}).get('content') or ''
+    if not texto.strip() and usadas:
+        s2, d2 = llamar(mensajes + [{'role': 'user', 'content': 'Dime en espanol el resultado de lo que hiciste.'}], None)
+        if s2 < 400 and isinstance(d2, dict) and d2.get('choices'):
+            d = d2
+            texto = d['choices'][0].get('message', {}).get('content') or ''
+    salida = {'model': model, 'choices': d['choices'], 'usage': d.get('usage'), 'herramientas': usadas}
+    salida['memoria_guardada'] = _guardar(sesion, model, pregunta, texto)
     return salida
 
 
 def _estado(p: dict[str, Any]) -> dict[str, Any]:
+    try:
+        _barrer()
+    except Exception:  # noqa: BLE001
+        pass
     s, j = _hf("GET", "/api/jobs/%s/%s" % (NS, p.get("job")))
     etapa = (j.get("status") or {}).get("stage", "DESCONOCIDA") if isinstance(j, dict) else "DESCONOCIDA"
     listo = False
@@ -193,7 +322,11 @@ def _apagar(p: dict[str, Any]) -> dict[str, Any]:
 
 def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "status":
-        return {"ok": True, "modelos": len(FICHAS) + len(RESPALDO)}
+        try:
+            vivos = len(_l4_vivos())
+        except Exception:  # noqa: BLE001
+            vivos = -1
+        return {"ok": True, "modelos": len(FICHAS) + len(RESPALDO), "l4_vivos": vivos}
     if action == "modelos":
         return {"modelos": [{"id": k, "nombre": v[0], "respaldo": False} for k, v in FICHAS.items()]
                 + [{"id": k, "nombre": v[0], "respaldo": True} for k, v in RESPALDO.items()]}
@@ -203,4 +336,9 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return _estado(payload)
     if action == "apagar":
         return _apagar(payload)
+    if action == 'herramientas_estado':
+        h = _herr()
+        return {'github': bool(h._token_gh()), 'hf': bool(h._token_hf())}
+    if action == "apagar_todo":
+        return _apagar_todo()
     return {"error": "ACCION_DESCONOCIDA"}

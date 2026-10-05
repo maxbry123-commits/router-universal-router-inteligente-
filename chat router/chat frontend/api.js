@@ -1,5 +1,28 @@
 const CFG = window.RIU_CONFIG || {};
-const BASE = (CFG.apiBase || "").replace(/[/]+$/, "");
+let BASE = (CFG.apiBase || "").replace(/[/]+$/, "");
+
+let liveCheckedAt = 0;
+let liveRequest = null;
+async function liveRouter() {
+  if (Date.now() - liveCheckedAt < 30000) return BASE;
+  if (!liveRequest) liveRequest = (async () => {
+    try {
+      const flag = await fetch(CFG.liveUrl + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' });
+      if (!flag.ok) throw new Error('Dirección HF no disponible');
+      const info = await flag.json();
+      if (!/^https:\/\/[a-f0-9]{24}--8000\.hf\.jobs$/.test(info.LIVE_URL || '')) throw new Error('Dirección HF inválida');
+      BASE = info.LIVE_URL;
+      CFG.apiBase = BASE;
+      CFG.harnessUrl = BASE + '/plugins/puente_chat/call';
+      liveCheckedAt = Date.now();
+    } catch (error) {
+      if (!BASE) throw error;
+    } finally { liveRequest = null; }
+    return BASE;
+  })();
+  return liveRequest;
+}
+
 function clave() {
   let k = sessionStorage.getItem("riu_clave");
   if (!k) { k = prompt("Clave de acceso") || ""; sessionStorage.setItem("riu_clave", k); }
@@ -7,10 +30,12 @@ function clave() {
 }
 function remoto(headers) {
   if (BASE) headers[CFG.authHeader || "X-API-Key"] = clave();
-  return BASE ? "include" : "same-origin";
+  return BASE ? "omit" : "same-origin";
 }
 const L4 = { job: null, url: null };
 async function puenteRouter(base, body, qs, headers) {
+  await liveRouter();
+  base = CFG.harnessUrl;
   // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
   const q = new URLSearchParams((qs || '').replace(/^[?]/, ''));
   const accion = q.get('accion') || 'chat';
@@ -86,6 +111,7 @@ export async function apagarRespaldo() {
 }
 window.RIU_APAGAR = apagarRespaldo;
 export async function api(path, options = {}) {
+  await liveRouter();
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Ruta inválida");
   const headers = {};
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
@@ -107,6 +133,7 @@ export async function api(path, options = {}) {
   return payload;
 }
 export async function media(id) {
+  await liveRouter();
   if (!/^[a-f0-9]{24}$/.test(id)) throw new Error("ID de archivo inválido");
   const headers = {};
   const credentials = remoto(headers);
