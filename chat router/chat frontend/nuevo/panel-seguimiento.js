@@ -89,6 +89,12 @@ export async function mount(root, { api }) {
       }
     });
   root.querySelector("#events-limit").addEventListener("change", () => { void loadEvents(); });
+  root.querySelector("#run-clear").addEventListener("click", () => {
+    runRequest++;
+    root.querySelector("#run-id").value = "";
+    root.querySelector("#ledger").replaceChildren();
+    root.querySelector("#run-status").textContent = "Sin ejecución seleccionada.";
+  });
   root.querySelector("#tracking-reload").addEventListener("click", () => { void load(); });
   root.querySelector("#run-form").addEventListener("submit", async event => {
     event.preventDefault();
