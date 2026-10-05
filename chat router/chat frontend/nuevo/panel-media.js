@@ -2,6 +2,15 @@ import { api, media, node } from "../api.js";
 import { tell } from "./base.js";
 
 const supported = /^(image\/(png|jpeg|gif|webp)|video\/(mp4|webm))$/;
+const PIN_KEY = "yaiwes-media-pins";
+let pinned = new Set();
+try {
+  const savedPins = JSON.parse(localStorage.getItem(PIN_KEY) || "[]");
+  if (Array.isArray(savedPins)) pinned = new Set(savedPins.filter(id => typeof id === "string"));
+} catch {}
+const savePins = () => {
+  try { localStorage.setItem(PIN_KEY, JSON.stringify([...pinned])); } catch {}
+};
 
 export async function mount(root, { api, tell }) {
   let files = [];
@@ -38,15 +47,25 @@ export async function mount(root, { api, tell }) {
       const mime = file.mime || "";
       return (file.name || "").toLocaleLowerCase().includes(query) &&
         (!type || (type === "other" ? !mime.startsWith("image/") && !mime.startsWith("video/") : mime.startsWith(type)));
-    });
+    }).sort((a, b) => Number(pinned.has(b.id)) - Number(pinned.has(a.id)));
     for (const file of matching) {
-      const button = node("button", `${file.name} · ${file.mime || "tipo desconocido"} · ${file.size} bytes`, "secondary");
+      const marker = pinned.has(file.id) ? "★ " : "";
+      const button = node("button", `${marker}${file.name} · ${file.mime || "tipo desconocido"} · ${file.size} bytes`, "secondary");
       button.type = "button";
       button.setAttribute("aria-pressed", String(selected === file.id));
       button.addEventListener("click", async () => {
         selected = file.id;
         render();
         clearPreview();
+        const pinButton = node("button", pinned.has(file.id) ? "Desanclar local" : "Anclar local", "secondary");
+        pinButton.type = "button";
+        pinButton.addEventListener("click", () => {
+          if (pinned.has(file.id)) pinned.delete(file.id); else pinned.add(file.id);
+          savePins();
+          pinButton.textContent = pinned.has(file.id) ? "Desanclar local" : "Anclar local";
+          render();
+        });
+        actions.append(pinButton);
         const request = previewRequest;
         preview.textContent = "Cargando vista previa…";
         try {
@@ -62,7 +81,7 @@ export async function mount(root, { api, tell }) {
             const link = node("a", "Descargar archivo");
             link.href = currentUrl;
             link.download = file.name;
-            actions.replaceChildren(link);
+            actions.append(link);
           } else {
             const result = await api(`/chat/documents/${encodeURIComponent(file.id)}`);
             if (disposed || request !== previewRequest) return;
