@@ -1,4 +1,14 @@
+:root:not([data-theme]),:root[data-theme=gris]{--active:#0848F7}
+html:not([data-theme=blanco]) #notice{color:#FF475F}
 #ui-scale{vertical-align:middle}
-#connectors-list .item,#engineering-list .item{white-space:pre-wrap}
+#ui-scale,#ui-motion{accent-color:var(--active)}
+#scale-value{min-width:56px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--panel);text-align:center;font-variant-numeric:tabular-nums}
+#connectors-list .item,#engineering-list .item{white-space:pre-wrap;border-left:3px solid var(--state,var(--border))}
+:is(#connectors-list,#engineering-list) .item:is([data-state=ok],[data-state=online],[data-state=active],[data-state=activo],[data-state=healthy],[data-state=ready],[data-state=connected],[data-state=conectado],[data-state=habilitado]){--state:#12D86A}
+:is(#connectors-list,#engineering-list) .item:is([data-state=pending],[data-state=pendiente],[data-state=degraded],[data-state=warning],[data-state=paused]){--state:#FF7B1A}
+:is(#connectors-list,#engineering-list) .item:is([data-state=error],[data-state=failed],[data-state=offline],[data-state=down],[data-state=unhealthy],[data-state=blocked]){--state:#FF475F}
+:is(#preferences-status,#connectors-status,#engineering-status)[data-state]::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;background:var(--dot)}
+[role=status][data-state=loading]{--dot:#0848F7}[role=status][data-state=ok]{--dot:#12D86A}[role=status][data-state=pending]{--dot:#FF7B1A}[role=status][data-state=error]{--dot:#FF475F}
+html:not([data-theme=blanco]) main [role=status][data-state=error]{color:#FF475F}
 #ui-import{max-width:250px}
 html[data-reduced-motion=true] *,html[data-reduced-motion=true] *::before,html[data-reduced-motion=true] *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}

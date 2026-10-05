@@ -30,6 +30,7 @@ export async function mount(root, { api, tell }) {
     localUrl = undefined;
     localPreview.textContent = "Aún no hay archivo seleccionado.";
     localStatus.textContent = "Selecciona un archivo para verlo antes de subirlo.";
+    delete localStatus.dataset.state;
   };
   const clearPreview = () => {
     previewRequest++;
@@ -72,7 +73,7 @@ export async function mount(root, { api, tell }) {
         remove.type = "button";
         let armed = false;
         remove.addEventListener("click", async () => {
-          if (!armed) { armed = true; remove.textContent = "Confirmar eliminación"; return; }
+          if (!armed) { armed = true; remove.classList.add("danger"); remove.textContent = "Confirmar eliminación"; return; }
           remove.disabled = true;
           try {
             await api(`/chat/documents/${encodeURIComponent(file.id)}`, { method: "DELETE" });
@@ -82,7 +83,7 @@ export async function mount(root, { api, tell }) {
             status.textContent = `Registro ${file.id} eliminado en el Router.`;
             await reload();
           } catch (error) {
-            if (!disposed) { armed = false; remove.disabled = false; remove.textContent = "Eliminar registro"; tell(error.message); }
+            if (!disposed) { armed = false; remove.classList.remove("danger"); remove.disabled = false; remove.textContent = "Eliminar registro"; tell(error.message); }
           }
         });
         actions.append(remove);
@@ -122,6 +123,7 @@ export async function mount(root, { api, tell }) {
   };
   const reload = async () => {
     status.textContent = "Consultando archivos del Router…";
+    status.dataset.state = "loading";
     try {
       let filesFound;
       try {
@@ -135,12 +137,14 @@ export async function mount(root, { api, tell }) {
       if (disposed) return;
       files = filesFound || [];
       status.textContent = `${files.length} archivos registrados en Router`;
+      status.dataset.state = "ok";
       render();
       return true;
     } catch (error) {
       if (disposed) return;
       files = [];
       status.textContent = "No se pudo consultar el Router.";
+      status.dataset.state = "error";
       render();
       tell(error.message);
       return false;
@@ -162,9 +166,11 @@ export async function mount(root, { api, tell }) {
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
       localStatus.textContent = `${file.name} · ${file.type || "tipo desconocido"} · ${file.size} bytes · supera los 10 MB permitidos.`;
+      localStatus.dataset.state = "error";
       return;
     }
     localStatus.textContent = `${file.name} · ${file.type || "tipo desconocido"} · ${file.size} bytes · Vista previa local; aún no guardado en el Router.`;
+    localStatus.dataset.state = "pending";
     if (!supported.test(file.type)) {
       localPreview.textContent = "Este formato no tiene vista previa local.";
       return;
@@ -183,6 +189,7 @@ export async function mount(root, { api, tell }) {
     const submit = root.querySelector("#media-upload button");
     submit.disabled = true;
     status.textContent = "Subiendo al Router…";
+    status.dataset.state = "loading";
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const parts = [];
@@ -194,9 +201,9 @@ export async function mount(root, { api, tell }) {
       root.querySelector("#media-upload").reset();
       clearLocalPreview();
       const listed = await reload();
-      if (!disposed) status.textContent = `Guardado en Router: ${result.document.id}. ${listed ? "Lista actualizada." : "Lista no disponible."} Sin sincronización HF confirmada.`;
+      if (!disposed) { status.textContent = `Guardado en Router: ${result.document.id}. ${listed ? "Lista actualizada." : "Lista no disponible."} Sin sincronización HF confirmada.`; status.dataset.state = listed ? "ok" : "pending"; }
     } catch (error) {
-      if (!disposed) { status.textContent = "Subida no confirmada."; tell(error.message); }
+      if (!disposed) { status.textContent = "Subida no confirmada."; status.dataset.state = "error"; tell(error.message); }
     } finally { submit.disabled = false; }
   });
   await reload();
