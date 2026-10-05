@@ -72,7 +72,8 @@ export async function mount(root, { api }) {
   const loadEvents = () => read(`/chat/org/bitacora?limit=${root.querySelector("#events-limit").value}`, "#events-status", "#events", (data, list) => {
       const runIdPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
       for (const item of (data.events || []).slice().reverse()) {
-        const text = `${item.task || item.id || "Evento"} · ${item.status || "sin estado"} · ${item.phase || ""} · ${item.summary || ""}`;
+        const when = item.timestamp || item.at || item.created_at || item.ts || "";
+        const text = `${when ? `${when} · ` : ""}${item.task || item.id || "Evento"} · ${item.status || "sin estado"} · ${item.phase || ""} · ${item.summary || ""}`;
         const runId = typeof item.run_id === "string" ? item.run_id : typeof item.run === "string" ? item.run : "";
         if (runIdPattern.test(runId)) {
           const entry = node("button", `${text} · run: ${runId}`, "secondary item");
