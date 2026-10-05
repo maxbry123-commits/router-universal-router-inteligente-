@@ -16,32 +16,72 @@
   </nav></aside>
   <div class="workspace"><header class="topbar"><strong>Configuración de UI</strong></header><main>
 <h1>Configuración de UI</h1>
-<p class="muted">Preferencias visuales locales del navegador. No guardan claves ni sustituyen memoria del Router.</p>
-<section>
-  <h2>Apariencia</h2>
-  <div class="row">
-    <label>Tema <select id="ui-theme"><option value="gris">Gris V07 (principal)</option><option value="little">Little</option><option value="matte">Matte</option><option value="blanco">Blanco</option></select></label>
+<p class="muted">Sólo apariencia y preferencias visuales. Los cambios se guardan automáticamente en este navegador.</p>
+
+<section aria-labelledby="paletas-title">
+  <h2 id="paletas-title">Paletas</h2>
+  <p class="muted">Un toque aplica la paleta. Gris V07 es la principal.</p>
+  <select id="ui-theme" class="sr-only" aria-label="Tema visual">
+    <option value="gris">Gris V07</option><option value="little">Little</option><option value="matte">Matte</option><option value="blanco">Blanco</option>
+  </select>
+  <div id="theme-cards" class="theme-cards" role="radiogroup" aria-label="Paletas disponibles">
+    <button class="theme-card" type="button" data-theme-choice="gris" aria-pressed="false">
+      <span><strong>Gris V07</strong><small>Principal</small></span>
+      <span class="swatches" aria-hidden="true"><i style="--swatch:#1B1B1B"></i><i style="--swatch:#202020"></i><i style="--swatch:#2A2A2A"></i><i style="--swatch:#3C3C3C"></i><i style="--swatch:#0848F7"></i></span>
+    </button>
+    <button class="theme-card" type="button" data-theme-choice="little" aria-pressed="false">
+      <span><strong>Little</strong><small>Alternativa cálida</small></span>
+      <span class="swatches" aria-hidden="true"><i style="--swatch:#1C1B1A"></i><i style="--swatch:#2A2927"></i><i style="--swatch:#36332F"></i><i style="--swatch:#49443F"></i><i style="--swatch:#C65D3B"></i></span>
+    </button>
+    <button class="theme-card" type="button" data-theme-choice="matte" aria-pressed="false">
+      <span><strong>Matte</strong><small>Oscuro profundo</small></span>
+      <span class="swatches" aria-hidden="true"><i style="--swatch:#0A0A0D"></i><i style="--swatch:#141417"></i><i style="--swatch:#202025"></i><i style="--swatch:#3F3F4E"></i><i style="--swatch:#638BFF"></i></span>
+    </button>
+    <button class="theme-card" type="button" data-theme-choice="blanco" aria-pressed="false">
+      <span><strong>Blanco</strong><small>Claro</small></span>
+      <span class="swatches" aria-hidden="true"><i style="--swatch:#F4F4F5"></i><i style="--swatch:#FFFFFF"></i><i style="--swatch:#F8F8F9"></i><i style="--swatch:#D4D4D8"></i><i style="--swatch:#1D4ED8"></i></span>
+    </button>
+  </div>
+  <div class="token-grid" aria-label="Valores de la paleta activa">
+    <div><span>Fondo</span><code data-token="--bg">—</code></div>
+    <div><span>Panel</span><code data-token="--surface">—</code></div>
+    <div><span>Módulo</span><code data-token="--panel">—</code></div>
+    <div><span>Borde</span><code data-token="--border">—</code></div>
+    <div><span>Máscara</span><code data-token="--muted">—</code></div>
+    <div><span>Acento</span><code data-token="--active">—</code></div>
+    <div><span>Texto</span><code data-token="--text">—</code></div>
+    <div><span>Texto suave</span><code data-token="--quiet">—</code></div>
+  </div>
+</section>
+
+<section aria-labelledby="lectura-title">
+  <h2 id="lectura-title">Lectura y movimiento</h2>
+  <div class="row compact-controls">
     <label>Tamaño del texto <input id="ui-scale" type="range" min="85" max="130" step="5" value="100"></label>
     <output id="scale-value" for="ui-scale">100 %</output>
-    <label><input id="ui-motion" type="checkbox"> Reducir animaciones</label>
+    <label class="check-line"><input id="ui-motion" type="checkbox"> Reducir animaciones</label>
   </div>
   <p id="preferences-status" role="status" class="muted">Preferencias cargadas.</p>
-  <div class="row">
-    <button id="ui-export" class="secondary" type="button">Exportar ajustes JSON</button>
-    <button id="ui-copy" class="secondary" type="button">Copiar ajustes JSON</button>
-    <label>Importar ajustes JSON <input id="ui-import" type="file" accept="application/json,.json"></label>
-    <button id="ui-reset" class="secondary" type="button">Restablecer ajustes</button>
+</section>
+
+<section aria-labelledby="preview-title">
+  <h2 id="preview-title">Vista previa</h2>
+  <div id="ui-preview" class="ui-preview">
+    <div><strong>YAIWES</strong><span class="muted"> Vista previa inmediata</span></div>
+    <div class="preview-module">Módulo normal</div>
+    <button class="action" type="button" disabled>Botón de acento</button>
   </div>
 </section>
-<div class="grid">
-  <section><h2>Conectores</h2><label>Buscar conector <input id="connectors-search" type="search" placeholder="ID o tipo"></label><p class="muted">La búsqueda filtra únicamente conectores confirmados por el Router; se muestran estado, tipo, salud y rol sólo cuando están publicados.</p><p id="connectors-status" role="status" class="muted">Consultando Router…</p><p id="connectors-count" class="muted"></p><div id="connectors-list" class="list"></div></section>
-  <section><h2>Engineering Control</h2><p class="muted">Sólo lectura; estado y descripción se muestran cuando el Router los publica.</p><label>Buscar control <input id="engineering-search" type="search" placeholder="ID o descripción"></label><p id="engineering-status" role="status" class="muted">Consultando Router…</p><div id="engineering-list" class="list"></div></section>
-</div>
-<section>
-  <h2>Diseño en revisión</h2>
-  <p class="muted">Editor de tipografía V10 e iconos/emoji V12: pendientes de aprobación funcional. Rare UI: referencias de componentes, integración pendiente de pruebas. Idiomas adicionales: pendiente de traducción completa.</p>
-  <p class="muted">Los controles de MCP, GitHub, HF, SSH, evidencia y circuit breaker sólo se mostrarán como editables cuando el Router publique contratos autorizados y verificables.</p>
-</section>
-<button id="config-reload" class="secondary" type="button">Actualizar conexiones</button>
+
+<details class="advanced">
+  <summary>Importar, exportar o restablecer</summary>
+  <div class="row">
+    <button id="ui-export" class="secondary" type="button">Exportar JSON</button>
+    <button id="ui-copy" class="secondary" type="button">Copiar JSON</button>
+    <label>Importar JSON <input id="ui-import" type="file" accept="application/json,.json"></label>
+    <button id="ui-reset" class="secondary" type="button">Restablecer Gris V07</button>
+  </div>
+</details>
+
 </main><p id="notice" role="status"></p></div></div></body>
 </html>
