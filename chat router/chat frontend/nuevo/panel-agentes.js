@@ -4,6 +4,25 @@ import { tell } from "./base.js";
 export async function mount(root, { api }) {
   let disposed = false;
   let lastTasks;
+  let lastAgents;
+  const renderAgents = () => {
+    const list = root.querySelector("#agents-list");
+    list.replaceChildren();
+    if (!lastAgents) { list.append(node("p", "No hay datos confirmados.", "muted")); return; }
+    const query = root.querySelector("#agents-filter").value.toLocaleLowerCase();
+    for (const agent of lastAgents) {
+      if (!sections[0].format(agent).toLocaleLowerCase().includes(query)) continue;
+      const item = node("div", sections[0].format(agent), "item");
+      const publishedState = agent.status || agent.estado;
+      if (publishedState) {
+        const badge = node("span", `Estado: ${publishedState}`, "badge");
+        badge.dataset.state = String(publishedState).toLowerCase();
+        item.append(badge);
+      }
+      list.append(item);
+    }
+    if (!list.children.length) list.append(node("p", "Sin agentes para este filtro.", "muted"));
+  };
   const renderTasks = () => {
     const list = root.querySelector("#agents-tasks");
     list.replaceChildren();
@@ -53,7 +72,10 @@ export async function mount(root, { api }) {
       if (disposed) return;
       const data = section.key === "agents" ? response.agents : response.data[section.key];
       const entries = section.key === "graph" ? data.nodes : data;
-      if (section.key === "tasks") {
+      if (section.key === "agents") {
+        lastAgents = entries || [];
+        renderAgents();
+      } else if (section.key === "tasks") {
         lastTasks = entries || [];
         renderTasks();
       } else {
@@ -73,11 +95,13 @@ export async function mount(root, { api }) {
     } catch (error) {
       if (disposed) return;
       if (section.key === "tasks") lastTasks = undefined;
+      if (section.key === "agents") lastAgents = undefined;
       status.textContent = `No disponible: ${error.message}`;
       list.append(node("p", "No hay datos confirmados.", "muted"));
     }
   };
   root.querySelector("#tasks-filter").addEventListener("input", renderTasks);
+  root.querySelector("#agents-filter").addEventListener("input", renderAgents);
   root.querySelector("#agents-reload").addEventListener("click", () => {
     sections.forEach(section => { void load(section); });
   });
