@@ -28,6 +28,12 @@ export async function mount(root, { api }) {
       const entries = section.key === "graph" ? data.nodes : data;
       for (const entry of entries || []) {
         const item = node("div", section.format(entry), "item");
+        const publishedState = entry.status || entry.estado;
+        if (publishedState && section.key !== "tasks") {
+          const badge = node("span", `Estado: ${publishedState}`, "badge");
+          badge.dataset.state = String(publishedState).toLowerCase();
+          item.append(badge);
+        }
         if (section.key === "tasks") {
           const subtasks = entry.subtasks || entry.subtareas;
           if (Array.isArray(subtasks)) {
