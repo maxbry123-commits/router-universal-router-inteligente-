@@ -115,8 +115,15 @@ export async function mount(root, { api }) {
         connectorsLoaded = true;
         showConnectors();
       } else {
-        for (const entry of entries) list.append(node("div",
-          `${entry.id || entry.name || "Control"} · ${entry.status || "sin estado publicado"}`, "item"));
+        for (const entry of entries) {
+          const fields = [
+            entry.id || entry.name || "Control",
+            entry.status || "sin estado publicado",
+            entry.enabled === true ? "habilitado" : entry.enabled === false ? "deshabilitado" : "",
+            entry.description || entry.descripcion || ""
+          ].filter(Boolean);
+          list.append(node("div", fields.join(" · "), "item"));
+        }
         if (!entries.length) list.append(node("p", "Sin controles publicados.", "muted"));
       }
       indicator.textContent = `${entries.length} registros consultados · sólo lectura`;
