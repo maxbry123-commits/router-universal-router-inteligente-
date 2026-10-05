@@ -16,6 +16,7 @@ export async function mount(root, { api, tell }) {
   let files = [];
   let currentUrl;
   let localUrl;
+  let localFile;
   let selected;
   let previewRequest = 0;
   let disposed = false;
@@ -24,14 +25,47 @@ export async function mount(root, { api, tell }) {
   const actions = root.querySelector("#media-actions");
   const localPreview = root.querySelector("#media-local-preview");
   const localStatus = root.querySelector("#media-local-status");
-  const clearLocalPreview = () => {
-    localPreview.replaceChildren();
+  const input = root.querySelector("#media-input");
+  const dropzone = root.querySelector("#media-dropzone");
+  const localClear = root.querySelector("#media-local-clear");
+
+  const setLocalFile = file => {
     if (localUrl) URL.revokeObjectURL(localUrl);
     localUrl = undefined;
-    localPreview.textContent = "Aún no hay archivo seleccionado.";
-    localStatus.textContent = "Selecciona un archivo para verlo antes de subirlo.";
-    delete localStatus.dataset.state;
+    localFile = file || undefined;
+    localPreview.replaceChildren();
+    localClear.disabled = !localFile;
+    if (!localFile) {
+      localPreview.textContent = "Aún no hay archivo seleccionado.";
+      localStatus.textContent = "Selecciona un archivo para verlo antes de subirlo.";
+      delete localStatus.dataset.state;
+      return;
+    }
+    if (localFile.size > 10 * 1024 * 1024) {
+      localStatus.textContent = `${localFile.name} · ${localFile.type || "tipo desconocido"} · ${localFile.size} bytes · supera los 10 MB permitidos.`;
+      localStatus.dataset.state = "error";
+      localPreview.textContent = "Elige un archivo de hasta 10 MB.";
+      return;
+    }
+    localStatus.textContent = `${localFile.name} · ${localFile.type || "tipo desconocido"} · ${localFile.size} bytes · listo para subir.`;
+    localStatus.dataset.state = "pending";
+    if (!supported.test(localFile.type)) {
+      localPreview.textContent = "Este formato no tiene vista previa local.";
+      return;
+    }
+    localUrl = URL.createObjectURL(localFile);
+    const element = document.createElement(localFile.type.startsWith("image/") ? "img" : "video");
+    element.src = localUrl;
+    if (element.tagName === "IMG") element.alt = localFile.name;
+    else element.controls = true;
+    localPreview.replaceChildren(element);
   };
+
+  const clearLocalPreview = () => {
+    input.value = "";
+    setLocalFile(undefined);
+  };
+
   const clearPreview = () => {
     previewRequest++;
     if (currentUrl) URL.revokeObjectURL(currentUrl);
@@ -39,6 +73,7 @@ export async function mount(root, { api, tell }) {
     actions.replaceChildren();
     preview.textContent = "Selecciona un archivo registrado.";
   };
+
   const render = () => {
     const query = root.querySelector("#media-search").value.toLocaleLowerCase();
     const type = root.querySelector("#media-type").value;
@@ -121,6 +156,7 @@ export async function mount(root, { api, tell }) {
     root.querySelector("#media-count").textContent =
       matching.length === files.length ? `${files.length} archivos.` : `${matching.length} de ${files.length} archivos coinciden con el filtro.`;
   };
+
   const reload = async () => {
     status.textContent = "Consultando archivos del Router…";
     status.dataset.state = "loading";
@@ -150,6 +186,7 @@ export async function mount(root, { api, tell }) {
       return false;
     }
   };
+
   root.querySelector("#media-search").addEventListener("input", render);
   root.querySelector("#media-type").addEventListener("change", render);
   root.querySelector("#media-pinned").addEventListener("change", render);
@@ -157,36 +194,36 @@ export async function mount(root, { api, tell }) {
     root.querySelector("#media-search").value = "";
     root.querySelector("#media-type").value = "";
     root.querySelector("#media-pinned").checked = false;
+    selected = undefined;
+    clearPreview();
     render();
   });
   root.querySelector("#media-reload").addEventListener("click", reload);
-  root.querySelector("#media-input").addEventListener("change", event => {
-    clearLocalPreview();
-    const file = event.target.files[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      localStatus.textContent = `${file.name} · ${file.type || "tipo desconocido"} · ${file.size} bytes · supera los 10 MB permitidos.`;
-      localStatus.dataset.state = "error";
-      return;
-    }
-    localStatus.textContent = `${file.name} · ${file.type || "tipo desconocido"} · ${file.size} bytes · Vista previa local; aún no guardado en el Router.`;
-    localStatus.dataset.state = "pending";
-    if (!supported.test(file.type)) {
-      localPreview.textContent = "Este formato no tiene vista previa local.";
-      return;
-    }
-    localUrl = URL.createObjectURL(file);
-    const element = document.createElement(file.type.startsWith("image/") ? "img" : "video");
-    element.src = localUrl;
-    if (element.tagName === "IMG") element.alt = file.name;
-    else element.controls = true;
-    localPreview.replaceChildren(element);
+  input.addEventListener("change", event => setLocalFile(event.target.files[0]));
+  localClear.addEventListener("click", clearLocalPreview);
+
+  for (const eventName of ["dragenter", "dragover"]) {
+    dropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      dropzone.dataset.drag = "true";
+    });
+  }
+  for (const eventName of ["dragleave", "drop"]) {
+    dropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      delete dropzone.dataset.drag;
+    });
+  }
+  dropzone.addEventListener("drop", event => {
+    const file = event.dataTransfer?.files?.[0];
+    if (file) setLocalFile(file);
   });
+
   root.querySelector("#media-upload").addEventListener("submit", async event => {
     event.preventDefault();
-    const file = root.querySelector("#media-input").files[0];
+    const file = localFile || input.files[0];
     if (!file || file.size > 10 * 1024 * 1024) { tell("Selecciona un archivo de hasta 10 MB."); return; }
-    const submit = root.querySelector("#media-upload button");
+    const submit = root.querySelector("#media-upload button[type=submit]");
     submit.disabled = true;
     status.textContent = "Subiendo al Router…";
     status.dataset.state = "loading";
@@ -198,7 +235,6 @@ export async function mount(root, { api, tell }) {
         name: file.name, mime: file.type || "application/octet-stream", data_b64: btoa(parts.join(""))
       } });
       if (disposed) return;
-      root.querySelector("#media-upload").reset();
       clearLocalPreview();
       const listed = await reload();
       if (!disposed) { status.textContent = `Guardado en Router: ${result.document.id}. ${listed ? "Lista actualizada." : "Lista no disponible."} Sin sincronización HF confirmada.`; status.dataset.state = listed ? "ok" : "pending"; }
@@ -206,6 +242,7 @@ export async function mount(root, { api, tell }) {
       if (!disposed) { status.textContent = "Subida no confirmada."; status.dataset.state = "error"; tell(error.message); }
     } finally { submit.disabled = false; }
   });
+
   await reload();
   return () => { disposed = true; clearPreview(); clearLocalPreview(); };
 }
