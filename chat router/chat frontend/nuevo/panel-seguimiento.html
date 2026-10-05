@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguimiento y planificación · YAIWES</title>
+  <link rel="stylesheet" href="./base.css"><link rel="stylesheet" href="./panel-seguimiento.css">
+  <script src="../config.js"></script><script type="module" src="./panel-seguimiento.js"></script>
+</head>
+<body><div class="shell">
+  <aside class="sidebar"><div class="brand">Y</div><nav aria-label="Paneles">
+    <a href="./panel-chat.html">Chat nuevo</a>
+    <a href="./panel-media.html">Imágenes y videos</a>
+    <a href="./panel-agentes.html">Multiagente</a>
+    <a href="./panel-seguimiento.html" aria-current="page">Seguimiento y planificación</a>
+    <a href="./panel-configuracion.html">Configuración de UI</a>
+  </nav></aside>
+  <div class="workspace"><header class="topbar"><strong>Seguimiento y planificación</strong></header><main>
+<h1>Seguimiento y planificación</h1>
+<p class="muted">Lecturas auditadas del Router; seleccionar una plantilla no inicia una ejecución.</p>
+<div class="grid">
+  <section><h2>Estado y Crazy Wall</h2><p id="wall-status" role="status" class="muted">Consultando…</p><div id="wall" class="list"></div></section>
+  <section><h2>Cola de ejecución</h2><p id="queue-status" role="status" class="muted">Consultando…</p><div id="queue" class="list"></div></section>
+</div>
+<section><h2>Plantillas DAG inmutables</h2><p id="templates-status" role="status" class="muted">Consultando…</p><p id="template-selection" class="muted">Sin plantilla seleccionada.</p><div id="templates" class="list"></div></section>
+<section><h2>Bitácora</h2><p id="events-status" role="status" class="muted">Consultando…</p><div id="events" class="list"></div></section>
+<section>
+  <h2>Ledger, evidencia y Judge</h2>
+  <form id="run-form" class="row"><label>ID de ejecución <input id="run-id" required pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" placeholder="ID del run"></label><button class="secondary" type="submit">Consultar run</button></form>
+  <p id="run-status" role="status" class="muted">Sin ejecución seleccionada.</p>
+  <div id="ledger" class="list"></div>
+  <p class="muted">CREATED → TESTED → VERIFIED → READY → MERGED; BLOCKED si falla la evidencia. El estado sólo se lee del run; esta pantalla no emite veredictos.</p>
+</section>
+<button id="tracking-reload" class="secondary" type="button">Actualizar seguimiento</button>
+</main><p id="notice" role="status"></p></div></div></body>
+</html>

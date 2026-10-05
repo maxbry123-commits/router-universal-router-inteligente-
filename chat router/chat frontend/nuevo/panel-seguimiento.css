@@ -1,0 +1,8 @@
+#ledger .item,#events .item,#queue .item{white-space:pre-wrap}
+#ledger{max-height:45vh}
+#run-form label{flex:1}
+#run-form input{width:100%}
+#templates .item{border-left:3px solid var(--border)}
+#templates button{text-align:left}
+#templates button[aria-pressed=true]{box-shadow:inset 3px 0 var(--active);background:var(--muted)}
+#wall{max-height:40vh}

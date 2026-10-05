@@ -1,0 +1,4 @@
+.chat-history{min-height:300px;max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:9px}
+.message{max-width:85%;white-space:pre-wrap}
+.message.user{align-self:flex-end;border-color:var(--active)}
+#composer{display:grid;gap:12px}

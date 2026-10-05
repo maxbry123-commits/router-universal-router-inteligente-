@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Imágenes y videos · YAIWES</title>
+  <link rel="stylesheet" href="./base.css"><link rel="stylesheet" href="./panel-media.css">
+  <script src="../config.js"></script><script type="module" src="./panel-media.js"></script>
+</head>
+<body><div class="shell">
+  <aside class="sidebar"><div class="brand">Y</div><nav aria-label="Paneles">
+    <a href="./panel-chat.html">Chat nuevo</a>
+    <a href="./panel-media.html" aria-current="page">Imágenes y videos</a>
+    <a href="./panel-agentes.html">Multiagente</a>
+    <a href="./panel-seguimiento.html">Seguimiento y planificación</a>
+    <a href="./panel-configuracion.html">Configuración de UI</a>
+  </nav></aside>
+  <div class="workspace"><header class="topbar"><strong>Imágenes y videos</strong></header><main>
+<h1>Imágenes, videos y archivos</h1>
+<section>
+  <div class="row">
+    <label>Buscar <input id="media-search" type="search" placeholder="Nombre de archivo"></label>
+    <label>Tipo <select id="media-type"><option value="">Todos</option><option value="image/">Imágenes</option><option value="video/">Videos</option><option value="other">Otros archivos</option></select></label>
+    <button id="media-reload" class="secondary" type="button">Actualizar</button>
+  </div>
+  <p id="media-status" role="status" class="muted">Consultando archivos del Router…</p>
+  <div id="media-files" class="list"></div>
+</section>
+<section>
+  <h2>Vista previa</h2>
+  <div id="media-preview" class="item">Selecciona un archivo registrado.</div>
+  <div id="media-actions" class="row"></div>
+</section>
+<section>
+  <h2>Adjuntar al Router</h2>
+  <form id="media-upload" class="row">
+    <input id="media-input" type="file" required aria-label="Archivo para subir">
+    <button class="action" type="submit">Subir archivo</button>
+  </form>
+  <p class="muted">Máximo 10 MB. El ID y la lista sólo se confirman tras respuesta del Router.</p>
+</section>
+</main><p id="notice" role="status"></p></div></div></body>
+</html>
