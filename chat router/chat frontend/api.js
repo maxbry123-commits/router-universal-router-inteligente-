@@ -71,7 +71,7 @@ export async function harness({ model, message, max_tokens, avisar }) {
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url }, '', 'POST', headers);
   }
   if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
-  return { reply: (r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || '', job_id: L4.job, tools: (r.p.herramientas || []).map((x) => x.herramienta + (x.ok ? '' : ' (fallo)')) };
+  return { reply: (r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || '', job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) };
 }
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {

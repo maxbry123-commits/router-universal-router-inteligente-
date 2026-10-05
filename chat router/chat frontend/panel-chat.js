@@ -50,7 +50,7 @@ export async function mount(root, { api, tell }) {
       const answer = window.RIU_CONFIG?.harnessUrl ? await window.RIU_HARNESS({ model: body.ficha, message, max_tokens, avisar: (t) => history.append(node('div', t, 'item message')) }) : await api("/chat/send", { method: "POST", body });
       pending.remove();
       history.append(node("div", answer.reply || "Sin respuesta", "item message"));
-      if (answer.tools && answer.tools.length) history.append(node("div", "Herramientas usadas: " + answer.tools.join(", "), "item message meta"));
+      if (answer.tools && answer.tools.length) { const meta = node("div", "Herramientas usadas: ", "item message meta"); answer.tools.forEach((t, i) => { const ok = typeof t === "string" || t.ok; const s = document.createElement("span"); s.textContent = (typeof t === "string" ? t : t.nombre) + (ok ? "" : " (fallo)"); if (!ok) s.className = "tool-fail"; if (i) meta.append(", "); meta.append(s); }); history.append(meta); }
       if (answer.job_id) { window.__riuJob = answer.job_id; root.querySelector('#apagar-respaldo').hidden = false; }
       history.scrollTop = history.scrollHeight;
     } catch (error) {
