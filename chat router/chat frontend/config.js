@@ -1,8 +1,8 @@
 // Configuracion del chat (solo interfaz; el codigo vive en GitHub y el computo en HF).
-// La pagina habla con el puente /api/chat (hace el papel del harness DeepSeek). Los tokens NUNCA van aqui.
+// La pagina habla con el puente puente_chat que vive DENTRO del Router (computo HF, puerta fija). Clave del chat: se pide una vez y queda en la sesion. Los tokens NUNCA van aqui.
 window.RIU_CONFIG = {
   apiBase: '',
-  harnessUrl: '/api/chat',
+  harnessUrl: 'https://comand-center-1-claude-github-mcp-backup.hf.space/plugins/puente_chat/call',  // puente dentro del Router (puerta fija)
   authHeader: 'X-API-Key',
   defecto: 'nv-kimi-k3',  // el modelo HF enciende una GPU de pago: no se deja como predeterminado
   modelos: [
