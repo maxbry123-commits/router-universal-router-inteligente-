@@ -150,10 +150,10 @@ export async function mount(root, { api, tell }) {
     const file = event.target.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      localStatus.textContent = "El archivo supera los 10 MB permitidos.";
+      localStatus.textContent = `${file.name} · ${file.type || "tipo desconocido"} · ${file.size} bytes · supera los 10 MB permitidos.`;
       return;
     }
-    localStatus.textContent = `${file.name} · Vista previa local; aún no guardado en el Router.`;
+    localStatus.textContent = `${file.name} · ${file.type || "tipo desconocido"} · ${file.size} bytes · Vista previa local; aún no guardado en el Router.`;
     if (!supported.test(file.type)) {
       localPreview.textContent = "Este formato no tiene vista previa local.";
       return;
