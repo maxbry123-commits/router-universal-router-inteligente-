@@ -1,86 +1,69 @@
-# README — Conexión del chat a las fichas (para el equipo de la UI)
+# README — Conexión del chat (para el equipo de la UI) — v4
 
-Fecha: 2026-10-04 (Bogotá). Escrito por Opus por orden del Director (Hy). Todo lo de aquí está **probado en vivo**.
-Sin claves en este archivo: los tokens viven en el banco del Router (se dan los nombres de referencia).
+Fecha: 2026-10-04 (Bogotá). Escrito por Opus por orden del Director (Hy). Sin claves en este archivo.
 
----
-
-## 0. LO QUE NECESITA EL EQUIPO DE LA UI (leer primero)
-
-### 0.1 `harnessUrl` = `/api/chat` (puente listo)
-- El harness DeepSeek (`dsh`) es un programa de terminal: **no tiene dirección HTTP**. Para que el chat funcione ya, el papel del harness lo hace un **puente listo**: `router inteligente universal/fichas/puente-chat/api/chat.js`.
-- **Qué hacer:** copiar ese archivo a la carpeta `api/` del proyecto del chat en Vercel y poner en `config.js`: `harnessUrl: '/api/chat'`.
-- Corre en el **mismo dominio** del chat (`https://riu-jev-bridge-maxbry123-8833s-projects.vercel.app`), así que **no hay CORS**.
-- **Variables de entorno del proyecto Vercel** (valores los da el Director; nunca en `config.js` ni en el navegador):
-  `FICHA_KIMI_TOKEN`, `FICHA_GLM_TOKEN`, `FICHA_NEMOTRON_TOKEN`, `FICHA_GROQ_TOKEN`, `FICHA_LIGHTNING_TOKEN`, `HF_TOKEN`.
-- **Probado (2026-10-04):** lista de modelos OK; chat por ficha OK; encender L4 OK (202 + job); estado OK; apagar OK (`CANCELED`).
-
-### 0.2 Los 7 modelos del selector (nombres del Director)
-| `model` que manda el chat | Nombre visible | Qué hace el puente | Token |
-|---|---|---|---|
-| `hf-1-qwen-3-8` | HF 1 Qwen 3.8 (27B) | enciende L4 y responde con Qwen3.8-27B | `HF_TOKEN` |
-| `hf-2-qwen-3-6` | HF 2 Qwen 3.6 (35B) | enciende L4 y responde con Qwen3.6-35B-A3B + MTP | `HF_TOKEN` |
-| `groq-qwen-3-8` | GROQ Qwen 3.8 | ficha `ficha-1-groq-qwen-3-8` | `FICHA_GROQ_TOKEN` (banco: `router/harness-ficha-1-groq-qwen-3-8`) |
-| `nv-kimi-k3` | NV Kimi K3 | ficha `ficha-1-kimi-k3` | `FICHA_KIMI_TOKEN` (banco: `router/harness-ficha-1-kimi-k3`) |
-| `nv-glm-5-3` | NV GLM 5.3 | ficha `ficha-1-glm-5` | `FICHA_GLM_TOKEN` (banco: `router/harness-ficha-1-glm-5`) |
-| `nv-nemotron-super` | NV Nemotron 3 Super | ficha `ficha-1-nemotron` | `FICHA_NEMOTRON_TOKEN` (banco: `router/harness-ficha-1-nemotron`) |
-| `nv-nemotron-lightning` | NV Nemotron 3.5 Lightning | ficha `ficha-1-nemotron-lightning` | `FICHA_LIGHTNING_TOKEN` (banco: `router/harness-ficha-1-nemotron-lightning`) |
-
-`GET /api/chat?accion=modelos` devuelve esta lista para llenar el selector.
-
-### 0.3 Cómo usa el chat el puente
-**Modelos NV / GROQ (respuesta directa, tipo OpenAI):**
-```
-POST /api/chat   {"model": "nv-kimi-k3", "messages": [...], "max_tokens": 2048}
--> {"choices": [{"message": {"content": "..."}}], ...}
-```
-**Modelos HF (L4, en 3 pasos):**
-1. `POST /api/chat {"model": "hf-2-qwen-3-6", "messages": [...]}` → `202 {"estado": "encendiendo", "job_id": "...", "url": "https://<job>--8080.hf.jobs"}`. El chat muestra "encendiendo modelo (≈1 min)".
-2. Cada 5 s: `GET /api/chat?accion=estado&job=<job_id>&url=<url>` → cuando `listo: true`, seguir.
-3. `POST /api/chat {"model": "hf-2-qwen-3-6", "messages": [...], "respaldo_url": "<url>"}` → respuesta tipo OpenAI.
-   Mientras el L4 siga encendido, los siguientes mensajes van directo con `respaldo_url` (paso 3).
-
-**Botón de apagado remoto:** `POST /api/chat?accion=apagar&job=<job_id>`.
-
-**Apagado automático (no hace nada el chat):** el L4 se apaga solo 30 s después de terminar la respuesta, o a los 5 min sin pedidos (tope 2 h). Si el L4 ya se apagó (estado `COMPLETED`/`CANCELED`), el chat vuelve al paso 1.
+> ⚠️ **Estado 2026-10-04 21:15:** Hugging Face pausó el Space de la puerta por **falta de créditos prepagados** (respuesta `402 Payment Required`). Mientras no se carguen créditos en `https://huggingface.co/settings/billing` (cuenta `COMAND-CENTER-1`), la puerta, el Router y el L4 no responden. Todo lo de abajo quedó **listo y probado antes de la pausa**; al reanudar vuelve solo.
 
 ---
 
-## 1. Cómo funciona (en palabras)
-```
-Chat (Vercel) ──▶ /api/chat (puente = papel del harness)
-                     ├──▶ modelos NV / GROQ ──▶ puerta fija del Router ──▶ ficha (token amarrado) ──▶ banco ──▶ NVIDIA / Groq
-                     └──▶ modelos HF ──▶ enciende L4 en HF (almacenamiento conectado como disco) ──▶ responde ──▶ se apaga solo
-```
-- El Router no se toca ni se relanza. El respaldo HF no pasa por el Router de GitHub.
+## 0. Lo que necesita el equipo de la UI
 
-## 2. Datos fijos
-| Qué | Valor |
-|---|---|
-| Dirección del chat | `https://riu-jev-bridge-maxbry123-8833s-projects.vercel.app` |
-| Puerta fija del Router | `https://comand-center-1-claude-github-mcp-backup.hf.space` (chat de fichas: `POST /v1/router/chat/completions`, `model: "auto"`) |
-| Token de cómputo y almacenamiento (ficha 0) | banco: `router/ficha-0` |
-| Token de HF | banco: `huggingface/token-1-new` |
-| Tokens de GitHub (acceso total) | banco: `github/full-acceso`, `github/acceso-total-pat` |
+### 0.1 El puente vive DENTRO del Router (no en Vercel)
+- Plugin `puente_chat` del Router: corre en el cómputo del Router (HF), con la **dirección fija** de la puerta.
+- **`harnessUrl` (ya puesto en `chat router/chat frontend/config.js`):**
+  `https://comand-center-1-claude-github-mcp-backup.hf.space/plugins/puente_chat/call`
+- **`api.js` ya adaptado** (`chat router/chat frontend/api.js`): si `harnessUrl` apunta a `/plugins/puente_chat`, la pantalla habla con el puente del Router. No hay que cambiar nada más en la UI.
+- **Permiso desde Vercel (CORS):** la puerta ya acepta `https://riu-jev-bridge-maxbry123-8833s-projects.vercel.app` (probado: preflight 200 con `access-control-allow-origin` = esa dirección).
+- **Clave del chat:** la pantalla la pide una vez ("Contraseña del chat") y la manda como `Authorization: Bearer <clave>`. Sin clave → 401. La clave es un token del Router de la instancia `chat-ui` (banco: `router/chat-ui-pantalla`); el valor lo entrega el Director.
+- **Vercel solo pone la pantalla.** No hacen falta variables de entorno ni `api/chat.js` en Vercel.
 
-## 3. Pruebas de las fichas (2026-10-04)
-Kimi K3 OK (8 s) · GLM 5.3 OK (8 s) · Nemotron 3 Super OK (2 s) · Groq Qwen 3.8 OK (0,1 s) · Nemotron 3.5 Lightning OK.
-Cada ficha tiene su token amarrado: con ese token solo responde ese modelo; si se agota una clave, el Router usa otra clave del mismo modelo.
-
-## 4. Respaldo HF (L4)
-| Modelo | Velocidad medida | Listo en |
+### 0.2 Los 7 modelos (nombres del Director)
+| `model` | Nombre | Cómo responde |
 |---|---|---|
-| HF 1 Qwen 3.8 (27B) | ~35 tokens/s | ~1 min |
-| HF 2 Qwen 3.6 (35B) | 89–115 tokens/s | 73 s (probado) |
-Parámetros del Director: solo texto, sin visión, MTP (`--spec-type draft-mtp`, `--spec-draft-n-max 2`), Flash Attention, `parallel 1`, `batch 128`, contexto 16K, temp 0, top-k 20, top-p 0,95, sin razonamiento. Costo L4: 0,80 USD/h solo mientras está encendido.
-Lanzador en Python (alternativa al puente): `router inteligente universal/fichas/respaldo-hf/respaldo_hf.py start|status|stop`.
+| `hf-1-qwen-3-8` | HF 1 Qwen 3.8 (27B) | enciende L4 en HF y responde |
+| `hf-2-qwen-3-6` | HF 2 Qwen 3.6 (35B) | enciende L4 en HF y responde |
+| `groq-qwen-3-8` | GROQ Qwen 3.8 | Groq, claves del banco |
+| `nv-kimi-k3` | NV Kimi K3 | NVIDIA, claves del banco |
+| `nv-glm-5-3` | NV GLM 5.3 | NVIDIA, claves del banco (espera hasta 96 s) |
+| `nv-nemotron-super` | NV Nemotron 3 Super | NVIDIA, claves del banco |
+| `nv-nemotron-lightning` | NV Nemotron 3.5 Lightning | NVIDIA, claves del banco |
+Cada modelo NV/GROQ rota **solo claves del mismo modelo**; nunca cambia de modelo. Tope total de espera: 90 s (GLM 96 s).
 
-## 5. Para el harness DeepSeek (cuando se use en terminal)
-- Individuales: `router inteligente universal/fichas/individuales/harness-individuales.cordis.yml`
-- Respaldo: `router inteligente universal/fichas/respaldo-hf/harness-respaldo.cordis.yml`
+### 0.3 Protocolo del puente (por si lo necesitan)
+Todas: `POST <harnessUrl>/<accion>` con JSON y `Authorization: Bearer <clave>`. Respuesta: `{"status": "ok", "result": {...}}`.
+| Acción | Cuerpo | `result` |
+|---|---|---|
+| `modelos` | `{}` | `{modelos: [{id, nombre, respaldo}]}` |
+| `chat` | `{model, messages, max_tokens, sesion, respaldo_url?}` | NV/GROQ: respuesta tipo OpenAI (`choices[0].message.content`) + `memoria_guardada`. HF sin `respaldo_url`: `{estado: "encendiendo", job_id, url}` |
+| `estado` | `{job, url}` | `{etapa, listo}` (cuando `listo: true`, mandar `chat` con `respaldo_url = url`) |
+| `apagar` | `{job}` | `{job_id, apagado}` — **solo apaga L4 de respaldo**; cualquier otro job → `SOLO_SE_APAGAN_JOBS_DEL_L4_DE_RESPALDO` |
 
-## 6. Lo que falta (no bloquea a la UI)
-- Harness DeepSeek publicado como servicio HTTP propio (hoy lo reemplaza `/api/chat`).
-- Tope total de 90 s por llamada en NVIDIA.
-- Respaldo: DeepSeek V4 Flash, equipo 27B → 35B → 27B, comandos `razona` / `ejecuta` / `refactoriza`.
-- Ficha 2 (consejo) nueva.
+### 0.4 Memoria
+- Cada turno se guarda en la memoria del Router (sesión = `sesion`; `api.js` crea una por pestaña).
+- Antes de responder, el puente agrega al modelo los **últimos turnos de esa sesión**.
+
+### 0.5 L4 (modelos HF)
+- Se enciende con el primer mensaje HF, **listo en ~75 s** (modelos desde el almacenamiento de HF conectado como disco).
+- Se apaga solo **30 s después de terminar la respuesta**, a los **5 min sin pedidos**, o con `apagar`. Tope 2 h. Costo 0,80 USD/h solo mientras está encendido.
+
+---
+
+## 1. Pruebas (2026-10-04, por la puerta fija, con la clave del chat)
+- Sin clave → **401**. Con clave: lista de modelos **OK**.
+- `groq-qwen-3-8`: **OK en 0,6 s**, memoria guardada.
+- `hf-2-qwen-3-6`: encendido → listo en **76 s** → respondió código → memoria guardada → **se apagó solo** (`COMPLETED`).
+- `apagar` sobre el job del Router → **rechazado** (protección OK).
+- Fichas del Router (5 modelos individuales) siguen montadas.
+- Pendiente de comprobar al reanudar: recuerdo de los últimos turnos (cambio subido justo antes de la pausa).
+
+## 2. Cómo se reanuda (Director → Opus)
+1. Director carga créditos en HF.
+2. Reanudar el Space `COMAND-CENTER-1/claude-github-mcp-backup`. El kernel enciende el Router con el paquete que ya trae `puente_chat`.
+3. Comprobar `GET <puerta>/plugins` → `puente_chat: ready`.
+4. Crear la clave del chat nueva (si hace falta entregarla) y probar: NV, memoria con recuerdo, ciclo HF completo.
+
+## 3. Archivos
+- Puente (código, también dentro del paquete del Router): `router inteligente universal/plugins/puente_chat/`
+- Pantalla: `chat router/chat frontend/config.js` y `api.js`
+- Respaldo HF (lanzador Python alternativo): `router inteligente universal/fichas/respaldo-hf/`
+- `router inteligente universal/fichas/puente-chat/api/chat.js` → **ya no se usa** (el puente vive en el Router).
