@@ -349,6 +349,13 @@ FALTA COMPROBAR O TERMINAR (en este orden):
 
 COMO OPERAR (conectores de GitHub y HF caidos): Vercel sandbox solo como puente (projectId prj_m8Lk3iaB3eN6dwlIq1ND2un8FWTD, sin teamId; pip install huggingface_hub). Relanzar el Router = subir el paquete al bucket + POST /hf/hardware {flavor: cpu-basic, relaunch_now: true} con X-Director-Key. Editar GitHub = API de contenidos con el ghp del Director (el token github_pat da 403). Probar el chat: POST <puerta>/plugins/puente_chat/call/<accion> con la clave del chat.
 
+## 7d. UI DEL CHAT MEJORADA 2026-10-05 (orden del Director 00:07)
+- Orden: entrar a GitHub, buscar el chat, leer el plan y el skill Maxbry UI frontend, escoger UN solo README y mejorar la interfaz con ediciones quirurgicas.
+- Skill elegido: chat router/01-PLAN/README-SKILL-FROMTED-YAIWES-GRIS-Y-LETRAS.md (gris V07 aprobado + letras).
+- Cambios en chat router/chat frontend/: shell.css (tokens exactos del gris: borde #3A3A3A, texto #EDEDED y titulos #FAFAFA, secundarios #BFBFBF y #A0A0A0, capa #252525, seleccion #3C3C3C solo en el modulo activo; hover sin iluminar; botones con radio 10; foco visible; boton desactivado; placeholder; estado vacio; mensaje pendiente y de error; selectores del chat en rejilla), panel-chat.html (clase fields, aria-label, pista de Enter), panel-chat.js (indicador Pensando, boton bloqueado mientras responde, errores resaltados, Enter envia en computador). IDs y handlers intactos; JS y CSS validados.
+- Despliegue: 3 commits = 3 builds de Vercel (unos 7 min cada uno, en cola); el ultimo deja todo en vivo.
+- Pendiente de UI: mostrar las herramientas usadas (campo herramientas de la respuesta), boton de apagado remoto con apagar_todo, selector de tema (gris, little, matte, blanco), revisar en el movil con capturas, y los selectores de letras (parte 2 del skill, sin aprobar).
+
 ## 8. PARCHE DE RECUPERACIÓN (pegar al iniciar una sesión nueva)
 ```
 Eres agente del Director (Hy). Antes de hacer NADA:
