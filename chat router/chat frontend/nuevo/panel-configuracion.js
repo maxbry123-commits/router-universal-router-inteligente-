@@ -49,8 +49,8 @@ export async function mount(root, { api }) {
   const save = () => {
     preferences = validate({ theme: theme.value, scale: Number(scale.value), reducedMotion: motion.checked });
     render();
-    try { localStorage.setItem(key, JSON.stringify(preferences)); status.textContent = "Ajustes visuales guardados en este navegador."; }
-    catch { status.textContent = "Ajustes activos en esta pestaña; el navegador no permitió guardarlos."; }
+    try { localStorage.setItem(key, JSON.stringify(preferences)); status.textContent = "Ajustes visuales guardados en este navegador."; status.dataset.state = "ok"; }
+    catch { status.textContent = "Ajustes activos en esta pestaña; el navegador no permitió guardarlos."; status.dataset.state = "pending"; }
   };
   theme.addEventListener("change", save);
   scale.addEventListener("input", save);
@@ -58,8 +58,8 @@ export async function mount(root, { api }) {
   root.querySelector("#ui-reset").addEventListener("click", () => {
     preferences = { ...defaults };
     render();
-    try { localStorage.removeItem(key); status.textContent = "Ajustes restablecidos."; }
-    catch { status.textContent = "Ajustes restablecidos en esta pestaña."; }
+    try { localStorage.removeItem(key); status.textContent = "Ajustes restablecidos."; status.dataset.state = "ok"; }
+    catch { status.textContent = "Ajustes restablecidos en esta pestaña."; status.dataset.state = "pending"; }
   });
   root.querySelector("#ui-export").addEventListener("click", () => {
     if (exportUrl) URL.revokeObjectURL(exportUrl);
@@ -69,12 +69,14 @@ export async function mount(root, { api }) {
     link.download = "yaiwes-ui-preferences.json";
     link.click();
     status.textContent = "Descarga de preferencias solicitada.";
+    status.dataset.state = "ok";
   });
   root.querySelector("#ui-copy").addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(JSON.stringify(preferences, null, 2));
       status.textContent = "Ajustes copiados al portapapeles.";
-    } catch { status.textContent = "El navegador no permitió copiar al portapapeles."; }
+      status.dataset.state = "ok";
+    } catch { status.textContent = "El navegador no permitió copiar al portapapeles."; status.dataset.state = "error"; }
   });
   root.querySelector("#ui-import").addEventListener("change", async event => {
     const file = event.target.files[0];
@@ -84,7 +86,7 @@ export async function mount(root, { api }) {
       preferences = validate(JSON.parse(await file.text()));
       render();
       save();
-    } catch (error) { status.textContent = error.message; }
+    } catch (error) { status.textContent = error.message; status.dataset.state = "error"; }
     event.target.value = "";
   });
   const showConnectors = () => {
@@ -107,7 +109,10 @@ export async function mount(root, { api }) {
         entry.health && `salud: ${entry.health}`,
         entry.ports?.role && `rol: ${entry.ports.role}`
       ].filter(Boolean);
-      list.append(node("div", fields.join(" · "), "item"));
+      const item = node("div", fields.join(" · "), "item");
+      const published = entry.status || entry.health;
+      if (published) item.dataset.state = String(published).toLowerCase();
+      list.append(item);
     }
     if (!list.children.length) list.append(node("p", "Sin conectores para este filtro.", "muted"));
   };
@@ -128,7 +133,10 @@ export async function mount(root, { api }) {
         entry.enabled === true ? "habilitado" : entry.enabled === false ? "deshabilitado" : "",
         entry.description || entry.descripcion || ""
       ].filter(Boolean);
-      list.append(node("div", fields.join(" · "), "item"));
+      const item = node("div", fields.join(" · "), "item");
+      const published = entry.status || (entry.enabled === true ? "habilitado" : "");
+      if (published) item.dataset.state = String(published).toLowerCase();
+      list.append(item);
     }
     if (!matching.length) list.append(node("p", "Sin controles para este filtro.", "muted"));
   };
@@ -136,6 +144,7 @@ export async function mount(root, { api }) {
     const list = root.querySelector(targetId);
     const indicator = root.querySelector(statusId);
     indicator.textContent = "Consultando Router…";
+    indicator.dataset.state = "loading";
     list.replaceChildren();
     const request = field === "connectors" ? ++connectorsRequest : field === "toggles" ? ++engineeringRequest : 0;
     if (field === "connectors") connectorsLoaded = false;
@@ -154,12 +163,14 @@ export async function mount(root, { api }) {
         showEngineering();
       }
       indicator.textContent = `${entries.length} registros consultados · sólo lectura`;
+      indicator.dataset.state = "ok";
     } catch (error) {
       if (disposed || (field === "connectors" && request !== connectorsRequest) || (field === "toggles" && request !== engineeringRequest)) return;
       if (field === "connectors") { connectors = []; connectorsLoaded = false; }
       if (field === "toggles") { engineering = []; engineeringLoaded = false; showEngineering(); }
       list.append(node("p", "No hay datos confirmados.", "muted"));
       indicator.textContent = `No disponible: ${error.message}`;
+      indicator.dataset.state = "error";
     }
   };
   const load = () => Promise.all([

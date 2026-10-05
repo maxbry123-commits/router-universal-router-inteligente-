@@ -63,6 +63,7 @@ export async function mount(root, { api }) {
     const status = root.querySelector(section.status);
     const list = root.querySelector(section.list);
     status.textContent = "Consultando Router…";
+    status.dataset.state = "loading";
     list.replaceChildren();
     try {
       let response;
@@ -94,11 +95,13 @@ export async function mount(root, { api }) {
       }
       if (!list.children.length) list.append(node("p", "Sin registros en el Router.", "muted"));
       status.textContent = `${(entries || []).length} registros consultados`;
+      status.dataset.state = "ok";
     } catch (error) {
       if (disposed) return;
       if (section.key === "tasks") lastTasks = undefined;
       if (section.key === "agents") lastAgents = undefined;
       status.textContent = `No disponible: ${error.message}`;
+      status.dataset.state = "error";
       list.append(node("p", "No hay datos confirmados.", "muted"));
     }
   };
