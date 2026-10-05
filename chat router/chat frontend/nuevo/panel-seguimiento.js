@@ -55,8 +55,21 @@ export async function mount(root, { api }) {
       }
     }),
     read("/chat/org/bitacora?limit=30", "#events-status", "#events", (data, list) => {
+      const runIdPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
       for (const item of (data.events || []).slice().reverse()) {
-        list.append(node("div", `${item.task || item.id || "Evento"} · ${item.status || "sin estado"} · ${item.phase || ""} · ${item.summary || ""}`, "item"));
+        const text = `${item.task || item.id || "Evento"} · ${item.status || "sin estado"} · ${item.phase || ""} · ${item.summary || ""}`;
+        const runId = typeof item.run_id === "string" ? item.run_id : typeof item.run === "string" ? item.run : "";
+        if (runIdPattern.test(runId)) {
+          const entry = node("button", `${text} · run: ${runId}`, "secondary item");
+          entry.type = "button";
+          entry.addEventListener("click", () => {
+            root.querySelector("#run-id").value = runId;
+            root.querySelector("#run-form").requestSubmit();
+          });
+          list.append(entry);
+        } else {
+          list.append(node("div", text, "item"));
+        }
       }
     })
     ]);
