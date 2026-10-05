@@ -41,6 +41,8 @@ export async function mount(root, { api }) {
       list.append(item);
     }
     if (!list.children.length) list.append(node("p", "Sin tareas para este filtro.", "muted"));
+    root.querySelector("#tasks-count").textContent =
+      matching.length === lastTasks.length ? `${lastTasks.length} tareas.` : `${matching.length} de ${lastTasks.length} tareas coinciden con el filtro.`;
   };
   const sections = [
     { path: "/chat/agents", key: "agents", list: "#agents-list", status: "#agents-status",
