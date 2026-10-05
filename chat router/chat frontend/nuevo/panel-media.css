@@ -3,3 +3,5 @@
 #media-preview{min-height:100px;white-space:pre-wrap}
 #media-preview img,#media-preview video{display:block;margin:auto}
 #media-status{min-height:1.4em}
+#media-local-preview{min-height:100px;overflow-wrap:anywhere}
+#media-local-preview img,#media-local-preview video{display:block;margin:auto}
