@@ -9,6 +9,8 @@ export async function mount(root, { api, tell }) {
       target.append(option);
     }
   };
+  const fichas = window.RIU_CONFIG?.modelos || [];
+  for (const m of fichas) { const o = node('option', m.etiqueta); o.value = m.id; root.querySelector('#ficha').append(o); }
   try {
     const providers = await api("/chat/providers");
     select("#provider", (providers.providers || []).filter(item => item.id !== "auto"), "id", "label");
@@ -37,10 +39,11 @@ export async function mount(root, { api, tell }) {
     const model = root.querySelector("#model").value;
     const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[root.querySelector("#mode").value];
     try {
-      const body = { message, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
+      const body = { message, ficha: root.querySelector('#ficha').value, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       const answer = window.RIU_CONFIG?.harnessUrl ? await window.RIU_HARNESS(body) : await api("/chat/send", { method: "POST", body });
       history.append(node("div", answer.reply || "Sin respuesta", "item message"));
+      if (answer.job_id) { window.__riuJob = answer.job_id; root.querySelector('#apagar-respaldo').hidden = false; }
       history.scrollTop = history.scrollHeight;
     } catch (error) { history.append(node("div", `GAP: ${error.message}`, "item message")); }
   });
@@ -48,4 +51,16 @@ export async function mount(root, { api, tell }) {
     try { await api(`/control/${button.dataset.control}`, { method: "POST" }); tell(`${button.textContent}: ejecutado`); }
     catch (error) { tell(error.message); }
   }));
+  const stop = root.querySelector('#apagar-respaldo');
+  stop.addEventListener('click', async () => {
+    const cfg = window.RIU_CONFIG || {};
+    if (!window.__riuJob) { tell('No hay respaldo encendido'); return; }
+    try {
+      const k = sessionStorage.getItem('riu_ficha0') || prompt('Token de la ficha 0 (computo)') || '';
+      sessionStorage.setItem('riu_ficha0', k);
+      const r = await fetch(cfg.puerta + '/hf/compute/' + window.__riuJob, { method: 'DELETE', headers: { Authorization: 'Bearer ' + k } });
+      tell(r.ok ? 'Respaldo apagado' : 'No se pudo apagar (HTTP ' + r.status + ')');
+      if (r.ok) { window.__riuJob = null; stop.hidden = true; }
+    } catch (error) { tell(error.message); }
+  });
 }

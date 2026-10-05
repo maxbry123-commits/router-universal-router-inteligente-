@@ -14,7 +14,7 @@ export async function harness(body) {
   const response = await fetch(CFG.harnessUrl, { method: "POST", headers, body: JSON.stringify(body) });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.detail || `HARNESS_HTTP_${response.status}`);
-  return { reply: payload.reply || payload.respuesta || payload.answer || payload.text || "" };
+  return { job_id: payload.job_id || null, reply: payload.reply || payload.respuesta || payload.answer || payload.text || "" };
 }
 window.RIU_HARNESS = harness;
 export async function api(path, options = {}) {
