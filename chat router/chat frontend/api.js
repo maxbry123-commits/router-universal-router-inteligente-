@@ -76,11 +76,11 @@ export async function harness({ model, message, max_tokens, avisar }) {
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
-  const job = L4.job || window.__riuJob;
+  // apaga TODOS los L4 de respaldo (el Router solo apaga los suyos), haya o no un job conocido
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
-  const r = await puente(base, null, '?accion=apagar&job=' + encodeURIComponent(job), 'POST', headers);
+  const r = await puente(base, null, '?accion=apagar_todo', 'POST', headers);
   if (r.ok) { L4.job = L4.url = null; window.__riuJob = null; }
   return r;
 }

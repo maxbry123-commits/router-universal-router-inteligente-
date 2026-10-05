@@ -75,11 +75,11 @@ export async function mount(root, { api, tell }) {
   const stop = root.querySelector('#apagar-respaldo');
   stop.addEventListener('click', async () => {
     const cfg = window.RIU_CONFIG || {};
-    if (!window.__riuJob) { tell('No hay respaldo encendido'); return; }
+    // el boton siempre apaga todos los servidores de respaldo, haya o no uno encendido desde esta pantalla
     try {
       const r = await window.RIU_APAGAR();
-      tell(r.ok ? 'Respaldo apagado' : 'No se pudo apagar (HTTP ' + r.status + ')');
-      if (r.ok) { window.__riuJob = null; stop.hidden = true; }
+      tell(r.ok ? 'Respaldo apagado (' + ((r.p && r.p.apagados) || 0) + ' servidor(es) apagados)' : 'No se pudo apagar (HTTP ' + r.status + ')');
+      if (r.ok) { window.__riuJob = null; }
     } catch (error) { tell(error.message); }
   });
 }

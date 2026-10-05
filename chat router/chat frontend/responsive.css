@@ -4,7 +4,7 @@ main,section,.card,.grid,.row,.topbar>div{min-width:0}
 .access{flex-wrap:wrap}
 .access button,.sidebar button,button.action,button.secondary{min-height:44px}
 .sidebar button,button.action,button.secondary{transition:background-color .16s ease,color .16s ease,box-shadow .16s ease}
-:focus-visible{outline:2px solid var(--active);outline-offset:2px}
+:focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
 @media(max-width:720px){
   .sidebar nav{max-width:calc(100vw - 20px);scrollbar-width:thin}
   .topbar{align-items:flex-start}
