@@ -88,7 +88,14 @@ export async function mount(root, { api }) {
     }
     for (const entry of connectors.filter(item =>
       `${item.id || ""} ${item.kind || ""}`.toLocaleLowerCase().includes(query))) {
-      list.append(node("div", `${entry.id} · ${entry.status || "estado no publicado"} · ${entry.kind || "tipo no publicado"} · ${entry.ports?.role || "rol no publicado"}`, "item"));
+      const fields = [
+        entry.id || "conector",
+        entry.status && `estado: ${entry.status}`,
+        entry.kind && `tipo: ${entry.kind}`,
+        entry.health && `salud: ${entry.health}`,
+        entry.ports?.role && `rol: ${entry.ports.role}`
+      ].filter(Boolean);
+      list.append(node("div", fields.join(" · "), "item"));
     }
     if (!list.children.length) list.append(node("p", "Sin conectores para este filtro.", "muted"));
   };
