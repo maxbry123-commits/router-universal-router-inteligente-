@@ -113,6 +113,8 @@ export async function mount(root, { api, tell }) {
           try {
             await api(`/chat/documents/${encodeURIComponent(file.id)}`, { method: "DELETE" });
             if (disposed) return;
+            pinned.delete(file.id);
+            savePins();
             selected = undefined;
             clearPreview();
             status.textContent = `Registro ${file.id} eliminado en el Router.`;
