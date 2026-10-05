@@ -39,7 +39,19 @@ export async function mount(root, { api }) {
     read("/chat/org/queue", "#queue-status", "#queue", (data, list) => {
       for (const task of data.tasks || []) list.append(node("div",
         `${task.id || task.task || "Tarea"} · ${task.status || task.estado || "estado no publicado"}`, "item"));
-      list.append(node("div", `Workers: ${(data.workers || []).length}`, "item"));
+      const workers = data.workers || [];
+      if (workers.length) {
+        for (const worker of workers) {
+          const fields = [
+            worker.id || worker.name || "Worker",
+            worker.status || worker.estado,
+            typeof worker.tasks === "number" && `tareas: ${worker.tasks}`
+          ].filter(Boolean);
+          list.append(node("div", fields.join(" · "), "item"));
+        }
+      } else {
+        list.append(node("div", "Workers: 0", "item"));
+      }
     }),
     read("/chat/org/templates", "#templates-status", "#templates", (data, list) => {
       for (const template of data.templates || []) {
