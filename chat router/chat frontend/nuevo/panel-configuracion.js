@@ -29,6 +29,8 @@ export async function mount(root, { api }) {
   let disposed = false;
   let exportUrl;
   let connectors = [];
+  let connectorsLoaded = false;
+  let connectorsRequest = 0;
   let preferences = stored();
   const status = root.querySelector("#preferences-status");
   const theme = root.querySelector("#ui-theme");
@@ -80,6 +82,10 @@ export async function mount(root, { api }) {
     const query = root.querySelector("#connectors-search").value.toLocaleLowerCase();
     const list = root.querySelector("#connectors-list");
     list.replaceChildren();
+    if (!connectorsLoaded) {
+      list.append(node("p", "No hay datos confirmados.", "muted"));
+      return;
+    }
     for (const entry of connectors.filter(item =>
       `${item.id || ""} ${item.kind || ""}`.toLocaleLowerCase().includes(query))) {
       list.append(node("div", `${entry.id} · ${entry.status || "estado no publicado"} · ${entry.kind || "tipo no publicado"} · ${entry.ports?.role || "rol no publicado"}`, "item"));
@@ -91,12 +97,15 @@ export async function mount(root, { api }) {
     const indicator = root.querySelector(statusId);
     indicator.textContent = "Consultando Router…";
     list.replaceChildren();
+    const request = field === "connectors" ? ++connectorsRequest : 0;
+    if (field === "connectors") connectorsLoaded = false;
     try {
       const response = await api(path);
-      if (disposed) return;
+      if (disposed || (field === "connectors" && request !== connectorsRequest)) return;
       const entries = response.data[field] || [];
       if (field === "connectors") {
         connectors = entries;
+        connectorsLoaded = true;
         showConnectors();
       } else {
         for (const entry of entries) list.append(node("div",
@@ -105,8 +114,8 @@ export async function mount(root, { api }) {
       }
       indicator.textContent = `${entries.length} registros consultados · sólo lectura`;
     } catch (error) {
-      if (disposed) return;
-      if (field === "connectors") connectors = [];
+      if (disposed || (field === "connectors" && request !== connectorsRequest)) return;
+      if (field === "connectors") { connectors = []; connectorsLoaded = false; }
       list.append(node("p", "No hay datos confirmados.", "muted"));
       indicator.textContent = `No disponible: ${error.message}`;
     }
