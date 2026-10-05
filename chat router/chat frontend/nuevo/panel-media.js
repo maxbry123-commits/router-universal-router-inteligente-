@@ -41,11 +41,13 @@ export async function mount(root, { api, tell }) {
   const render = () => {
     const query = root.querySelector("#media-search").value.toLocaleLowerCase();
     const type = root.querySelector("#media-type").value;
+    const onlyPinned = root.querySelector("#media-pinned").checked;
     const list = root.querySelector("#media-files");
     list.replaceChildren();
     const matching = files.filter(file => {
       const mime = file.mime || "";
-      return (file.name || "").toLocaleLowerCase().includes(query) &&
+      return (!onlyPinned || pinned.has(file.id)) &&
+        (file.name || "").toLocaleLowerCase().includes(query) &&
         (!type || (type === "other" ? !mime.startsWith("image/") && !mime.startsWith("video/") : mime.startsWith(type)));
     }).sort((a, b) => Number(pinned.has(b.id)) - Number(pinned.has(a.id)));
     for (const file of matching) {
@@ -144,6 +146,7 @@ export async function mount(root, { api, tell }) {
   };
   root.querySelector("#media-search").addEventListener("input", render);
   root.querySelector("#media-type").addEventListener("change", render);
+  root.querySelector("#media-pinned").addEventListener("change", render);
   root.querySelector("#media-reload").addEventListener("click", reload);
   root.querySelector("#media-input").addEventListener("change", event => {
     clearLocalPreview();
