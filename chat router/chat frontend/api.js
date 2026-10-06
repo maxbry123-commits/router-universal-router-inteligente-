@@ -98,19 +98,33 @@ async function puente(base, body, qs, method, headers) {
   const p = await r.json().catch(() => ({}));
   return { status: r.status, ok: r.ok, p };
 }
-export async function harness({ model, message, max_tokens, avisar }) {
+export async function accion(acc, payload) {
+  // cualquier accion del puente (subir, archivos, ...) con la misma sesion del chat
+  await liveRouter();
+  const h = { 'Content-Type': 'application/json' };
+  const pw = sessionStorage.getItem('riu_clave');
+  if (pw) h['X-API-Key'] = pw;
+  payload = Object.assign({ sesion: sessionStorage.getItem('riu_sesion') || 'web-general' }, payload || {});
+  const r = await fetch(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) });
+  const env = await r.json().catch(() => ({}));
+  if (!r.ok || env.status !== 'ok') throw new Error(env.reason || env.detail || ('HTTP ' + r.status));
+  return env.result || {};
+}
+window.RIU_ACCION = accion;
+export async function harness({ model, message, max_tokens, avisar, anclados }) {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const esHF = model.startsWith('hf-');
+  const extra = (anclados && anclados.length) ? { anclados } : {};
   let r;
   if (esHF && L4.url) {
-    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url }, '', 'POST', headers);
+    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
     if (!r.ok) { L4.job = L4.url = null; r = null; }
   }
-  if (!r) r = await puente(base, { model, messages, max_tokens }, '', 'POST', headers);
+  if (!r) r = await puente(base, { model, messages, max_tokens, ...extra }, '', 'POST', headers);
   if (r.status === 202 && r.p.job_id) {
     L4.job = r.p.job_id; L4.url = null;
     window.__riuJob = r.p.job_id;
@@ -124,7 +138,7 @@ export async function harness({ model, message, max_tokens, avisar }) {
     }
     if (!listo) throw new Error('El modelo no encendio a tiempo');
     L4.url = r.p.url;
-    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url }, '', 'POST', headers);
+    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
   }
   if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
   return { reply: (r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || '', job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) };

@@ -8,6 +8,8 @@ window.RIU_CONFIG = {
   authHeader: 'X-API-Key',
   defecto: 'nv-kimi-k3',  // el modelo HF enciende una GPU de pago: no se deja como predeterminado
   modelos: [
+    { id: 'ask-consil-factory', etiqueta: '🧠 ask consil factory' },
+    { id: 'motor-descarga', etiqueta: '➡️ MOTOR DESCARGA EXTRACCIONES copiar mover' },
     { id: 'hf-1-qwen-3-8', etiqueta: 'HF 1 Qwen 3.8 (27B)' },
     { id: 'hf-2-qwen-3-6', etiqueta: 'HF 2 Qwen 3.6 (35B)' },
     { id: 'groq-qwen-3-8', etiqueta: 'GROQ Qwen 3.8' },

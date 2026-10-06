@@ -27,7 +27,8 @@ _CACHE_H = {}
 from pathlib import Path
 _CONFIG_DIR = Path(__file__).resolve().parent / "fichas"
 _catalog = [json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob("modelo-*.json"))]
-FICHAS = {f["id"]:(f["nombre"],f["proveedor"],f["modelo"],f["timeout_s"]) for f in _catalog if f["tipo"]=="api"}
+FICHAS = {f["id"]:(f["nombre"],f.get("proveedor","pipeline"),f.get("modelo","pipeline"),f["timeout_s"]) for f in _catalog if f["tipo"] in ("api","consil","motor")}
+ESPECIALES = {f["id"]: f["tipo"] for f in _catalog if f["tipo"] in ("consil","motor")}
 RESPALDO = {f["id"]:(f["nombre"],f["archivo"]) for f in _catalog if f["tipo"]=="hf"}
 ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO" --alias "$ALIAS" -ngl 999 -fa on -np 1 -b 128 -c 16384 '
             '--temp 0 --top-k 20 --top-p 0.95 --no-mmproj --reasoning-budget 0 --spec-type draft-mtp --spec-draft-n-max 2 --jinja > /tmp/l.log 2>&1 &\n'
@@ -249,7 +250,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if modelo == 'z-ai/glm-5.3':
                 cuerpo['reasoning_effort'] = 'low'
                 cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
-            if modelo in ('moonshotai/kimi-k3', 'nvidia/nemotron-3-super-120b-a12b'):
+            if modelo in ('moonshotai/kimi-k3', 'nvidia/nemotron-3-super-120b-a12b', 'meta/muse-glimmer-30b', 'nvidia/nemotron-3-ultra-550b-a55b'):
                 cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
             if tools:
                 cuerpo['tools'] = tools
@@ -404,6 +405,144 @@ def _ck_cargar(sesion):
         return None
 
 
+import os as _os
+import subprocess as _sub
+import base64 as _b64
+
+_SYS_PIPE = 'Eres un paso de una cadena determinista (consil). Responde solo lo pedido, en espanol y conciso.'
+
+
+def _paso_llm(prov, modelo, msgs, tope=120, mt=1200):
+    # una llamada de la cadena: misma rotacion de claves y deteccion de ocupado que el chat
+    _DEADLINE.set(time.monotonic() + tope + 30)
+    s, d = _llamar_api(prov, modelo, msgs, mt, tope, None)
+    if s < 400 and isinstance(d, dict) and d.get('choices'):
+        m = d['choices'][0].get('message') or {}
+        return _limpiar_texto(m.get('content')) or str(m.get('reasoning_content') or '')[-1500:]
+    return ''
+
+
+def _motores_buscar(query):
+    # paso 0 del consil: motores de busqueda canonicos del repo (web + github + hf)
+    base = str(_CONFIG_DIR / 'motores_busqueda')
+    h = _herr()
+    runs = [('motor_1_web_domains.py', {'SOURCES_FILE': base + '/sources.json', 'MAX_RESULTS_PER_SOURCE': '2'}),
+            ('motor_2_github_search.py', {'GITHUB_TOKEN': h._token_gh() or ''}),
+            ('motor_3_huggingface_search.py', {'HF_TOKEN': h._token_hf() or ''})]
+    salida = []
+    for nom, extra in runs:
+        try:
+            e = dict(_os.environ, QUERY=query, **extra)
+            r = _sub.run(['python3', base + '/' + nom], env=e, capture_output=True, text=True, timeout=45)
+            salida.append(nom + ':\n' + (r.stdout or r.stderr or '')[:2200])
+        except Exception as x:  # noqa: BLE001
+            salida.append(nom + ': ERROR ' + str(x)[:120])
+    return '\n'.join(salida)
+
+
+def _consil(pregunta):
+    usadas = ['paso0:motores_busqueda']
+    ctx = _motores_buscar(pregunta)
+    g12 = _paso_llm('nvidia', 'nvidia/nemotron-3-ultra-550b-a55b',
+        [{'role': 'system', 'content': _SYS_PIPE},
+         {'role': 'user', 'content': 'Propone exactamente 12 goals de entrada para esta tarea.\nTarea: %s\nInvestigacion:\n%s' % (pregunta, ctx[:6000])}], 150)
+    usadas.append('paso1:ultra-550b-12-goals')
+    rondas = []
+    for ronda in range(1, 4):
+        prop = _paso_llm('groq', 'qwen/qwen3.8-27b',
+            [{'role': 'system', 'content': _SYS_PIPE},
+             {'role': 'user', 'content': 'Ronda %d/3. Propone soluciones concretas para los goals %d-%d.\nGoals:\n%s\nTarea: %s' % (ronda, ronda * 4 - 3, ronda * 4, g12[:4000], pregunta)}], 120)
+        ref = _paso_llm('nvidia', 'meta/muse-glimmer-30b',
+            [{'role': 'system', 'content': _SYS_PIPE},
+             {'role': 'user', 'content': 'Refuta estas propuestas y propone mejores soluciones.\nPropuestas:\n%s' % prop[:4000]}], 120)
+        dec = _paso_llm('nvidia', 'moonshotai/kimi-k3',
+            [{'role': 'system', 'content': _SYS_PIPE},
+             {'role': 'user', 'content': 'Decide la mejor solucion final de esta ronda entre propuestas y refutaciones.\nPropuestas:\n%s\nRefutaciones:\n%s' % (prop[:3000], ref[:3000])}], 150)
+        rondas.append(dec or prop or ref)
+        usadas.append('paso2:consil-ronda%d' % ronda)
+    plan = '\n'.join(rondas)
+    out = _paso_llm('nvidia', 'nvidia/nemotron-3-super-120b-a12b',
+        [{'role': 'system', 'content': _SYS_PIPE},
+         {'role': 'user', 'content': 'Ejecuta la tarea siguiendo el plan decidido.\nTarea: %s\nPlan:\n%s' % (pregunta, plan[:6000])}], 150, 1600)
+    usadas.append('paso3:nemotron-super-ejecuta')
+    fin = _paso_llm('nvidia', 'moonshotai/kimi-k3',
+        [{'role': 'system', 'content': _SYS_PIPE},
+         {'role': 'user', 'content': 'Revisa, refactoriza y mejora este resultado con 12 goals de salida (calidad, claridad, completitud). Entrega la respuesta final mejorada.\nResultado:\n%s' % out[:6000]}], 150, 1600)
+    usadas.append('paso4:kimi-12-goals-salida')
+    return (fin or out or plan or g12 or 'CONSIL_SIN_RESPUESTA'), usadas
+
+
+_MOTORES_DESC = {
+    'descargar_extraer': ('motor_2_queue_download_extract.py', 'descarga componentes y extrae zip en cola'),
+    'extraer_zip': ('motor_1_extract_only.py', 'extrae un zip local'),
+    'copiar': ('motor_3_copy_batches.py', 'copia archivos en lotes verificados SOURCE_DIR->DEST_DIR'),
+    'mover': ('motor_4_move_batches.py', 'mueve archivos en lotes SOURCE_DIR->DEST_DIR'),
+    'descarga_hf': ('hf_download_extract_engine.py', 'descarga desde Hugging Face y extrae'),
+}
+
+
+def _embed_rank(query, items):
+    # nemotron-3-embed-1b ancla la tarea al motor que mejor encaja
+    from integration.chat_mvp import providers
+    claves = providers.env_keys('nvidia')
+    if not claves:
+        return 0
+    import math
+    cuerpo = {'model': 'nvidia/nemotron-3-embed-1b', 'input': [query] + items, 'truncate': 'NONE'}
+    s, d = _http('POST', providers.base_url('nvidia') + '/embeddings', claves[0], cuerpo, 30)
+    try:
+        vecs = [x['embedding'] for x in d['data']]
+        q = vecs[0]
+        nq = math.sqrt(sum(a * a for a in q)) or 1
+        best, bi = -2, 0
+        for i, v in enumerate(vecs[1:]):
+            sc = sum(a * b for a, b in zip(q, v)) / (nq * (math.sqrt(sum(b * b for b in v)) or 1))
+            if sc > best:
+                best, bi = sc, i
+        return bi
+    except Exception:  # noqa: BLE001
+        return 0
+
+
+def _motor_descarga(pregunta):
+    usadas = ['embed:nemotron-3-embed-1b']
+    nombres = list(_MOTORES_DESC)
+    elegido = nombres[_embed_rank(pregunta, [n + ' ' + d for n, (f, d) in _MOTORES_DESC.items()])]
+    fichero, desc = _MOTORES_DESC[elegido]
+    plan_txt = _paso_llm('nvidia', 'meta/muse-glimmer-30b',
+        [{'role': 'system', 'content': _SYS_PIPE},
+         {'role': 'user', 'content': 'Eres el director del motor de fichas "%s" (%s). Solo puedes usar los motores de descarga/extraccion/copiar/mover del repo. Tarea: %s. Devuelve SOLO JSON {"env": {variables del motor}, "explicacion": "..."}' % (fichero, desc, pregunta)}], 120)
+    usadas.append('muse-glimmer:plan')
+    env_extra, expl = {}, plan_txt
+    try:
+        dd = json.loads(plan_txt[plan_txt.index('{'):plan_txt.rindex('}') + 1])
+        env_extra = {k: str(v) for k, v in (dd.get('env') or {}).items()}
+        expl = dd.get('explicacion') or plan_txt
+    except Exception:  # noqa: BLE001
+        pass
+    base = str(_CONFIG_DIR / 'motores_descarga')
+    try:
+        e = dict(_os.environ, **env_extra)
+        r = _sub.run(['python3', base + '/' + fichero], env=e, capture_output=True, text=True, timeout=90)
+        salida_motor = (r.stdout or '') + (r.stderr or '')
+        usadas.append('motor:' + fichero)
+    except Exception as x:  # noqa: BLE001
+        salida_motor = 'MOTOR_ERROR ' + str(x)[:200]
+    fin = _paso_llm('nvidia', 'meta/muse-glimmer-30b',
+        [{'role': 'system', 'content': _SYS_PIPE},
+         {'role': 'user', 'content': 'Resume el resultado del motor para el usuario en 3 lineas.\nPlan: %s\nSalida del motor:\n%s' % (expl, salida_motor[:3000])}], 120)
+    return (fin or expl or salida_motor[:1500] or 'MOTOR_SIN_RESPUESTA'), usadas
+
+
+def _especial(tipo, model, sesion, pregunta):
+    texto, usadas = (_consil(pregunta) if tipo == 'consil' else _motor_descarga(pregunta))
+    return {'model': model,
+            'choices': [{'message': {'role': 'assistant', 'content': texto}}],
+            'herramientas': [{'herramienta': u, 'ok': True} for u in usadas],
+            'checklist': [{'item': u, 'estado': 'COMPLETADO'} for u in usadas],
+            'memoria_guardada': _guardar(sesion, model, pregunta, texto)}
+
+
 def _chat(p):
     model = str(p.get('model') or '')
     mensajes = list(p.get('messages') or [])
@@ -420,11 +559,28 @@ def _chat(p):
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
     if ctx:
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
+    anclados = p.get('anclados') or []
+    if anclados:  # archivos anclados por el usuario desde la ventana del chat
+        try:
+            mem, scope_for = _memoria()
+            trozos = []
+            for nom in anclados[:5]:
+                res = mem.search(scope_for(DUENO, 'chat:' + sesion), 'archivo:' + str(nom)[:120], 1)
+                filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+                dd = (filas[0].get('data') if filas and isinstance(filas[0], dict) else None) or {}
+                if dd.get('datos_b64'):
+                    trozos.append('ARCHIVO %s:\n%s' % (nom, _b64.b64decode(dd['datos_b64']).decode('utf-8', 'replace')[:3000]))
+            if trozos:
+                sistema += ' Archivos anclados por el usuario: ' + ' | '.join(trozos)
+        except Exception:  # noqa: BLE001
+            pass
     if re.search(r'(?i)(contin[uú]a?s?|sigue|retoma|seguid|seguir)', pregunta):
         guardado = _ck_cargar(sesion)
         if guardado:
             mensajes = guardado
             mensajes.append({'role': 'user', 'content': pregunta + ' (retoma el trabajo donde quedo, sin empezar de cero)'})
+    if model in ESPECIALES:  # ficha pipeline (consil / motor): no es una sola api
+        return _especial(ESPECIALES[model], model, sesion, pregunta)
     mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
@@ -556,6 +712,28 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return {'github': bool(h._token_gh()), 'hf': bool(h._token_hf())}
     if action == "apagar_todo":
         return _apagar_todo()
+    if action == "subir":  # archivo adjunto del chat -> sistema de almacenamiento/memoria
+        try:
+            nombre = str(payload.get('nombre') or 'archivo')[:120]
+            datos = str(payload.get('datos_b64') or '')
+            if len(datos) > 4_000_000:
+                return {'error': 'ARCHIVO_MUY_GRANDE'}
+            mem, scope_for = _memoria()
+            mem.save(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]),
+                     'archivo:' + nombre, {'nombre': nombre, 'tipo': str(payload.get('tipo') or '')[:80], 'datos_b64': datos})
+            return {'ok': True, 'nombre': nombre}
+        except Exception as x:  # noqa: BLE001
+            return {'error': 'SUBIR_FALLO', 'detalle': str(x)[:200]}
+    if action == "archivos":  # ventana del chat: lista lo subido para seleccionar y anclar
+        try:
+            mem, scope_for = _memoria()
+            res = mem.search(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]), 'archivo:', 50)
+            filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+            nombres = sorted({str((f.get('data', f) if isinstance(f, dict) else f).get('nombre')) for f in filas
+                              if isinstance((f.get('data', f) if isinstance(f, dict) else f), dict) and (f.get('data', f) if isinstance(f, dict) else f).get('nombre')})
+            return {'archivos': nombres}
+        except Exception:  # noqa: BLE001
+            return {'archivos': []}
     return {"error": "ACCION_DESCONOCIDA"}
 
 # Long model calls are polled through HTTP, so browser requests do not expire at the HF ingress.
