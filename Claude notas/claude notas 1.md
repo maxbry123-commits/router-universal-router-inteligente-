@@ -458,3 +458,15 @@ El Director ordenó probar los 7 modelos con tools y acceso total a GitHub/HF. R
 - Router relanzado con el kernel (sucesor sano primero): job nuevo `6ac440f4fbc85ba6823af1a7` cpu-basic 16 GB; LIVE_URL publicado; el viejo quedó cancelado. Memoria sincronizada antes del cambio.
 - Probado por modelos: GLM 5.3 github_escribir commit real; Nemotron Super github_escribir commit real; Nemotron Lightning github_leer/github_api; Kimi K3 hf_api e internet_buscar (a veces no emite la llamada: limitación del modelo, no de acceso); Groq Qwen internet_buscar; HF-2 Qwen 35B en L4 hf_api (L4 encendió ~4 min y se apagó solo). Memoria guardada en todos.
 - Archivos de prueba borrados del repo y del bucket.
+
+
+## 15. Reparación punta a punta desde el chat real — 2026-10-06 (Devin)
+
+El Director reportó GAP en el chat (MODELO_NO_RESPONDE, HTTP 503, github_leer fallo x3) y ordenó probar cada modelo desde el chat, mantener memoria/historial intacto y que cada modelo ejecute pruebas en GitHub. Causas encontradas y reparadas:
+
+- github_leer fallaba cuando el modelo escribía mal el repo (sin guion final, vacío o aproximado). Ahora `_resolver_repo` compara contra la lista real de repos de la cuenta (coincidencia exacta ignorando guiones/caso y subcadena), `github_leer`/`github_escribir` usan el repo principal si falta, y el prompt de sistema nombra el repo exacto.
+- MODELO_NO_RESPONDE: los modelos con razonamiento (GLM, Kimi, Super) gastan todo el tiempo en reasoning_content y el bucle moría con TIEMPO_TOTAL_AGOTADO sin contestar. Ahora hay una llamada final de gracia (+45 s sin herramientas), nudge "deja de razonar", deadline por ficha (tope*2.4, máx 250 s), timeout de llamada de GLM a 150 s, clear_thinking en Kimi y Super, y fallback de respuesta a reasoning_content o al resultado de la herramienta.
+- github_leer truncaba archivos largos: nuevo arg `lineas` (ej "200-400") que lee rangos y avisa el total de líneas.
+- Poll del frontend subido de 150 s a 290 s (los modelos de razonamiento tardan 1-2 min por llamada).
+- Job final `6ac45d7b404719ba3765b5a4` cpu-basic 16 GB; LIVE_URL publicado por el kernel; memoria íntegra (1397 registros, nunca borrada).
+- Verificado por chat_async (misma vía del chat) en el job final: groq, GLM, Kimi, Lightning y Super usaron github_leer y respondieron el título correcto; hf-1 (27B) y hf-2 (35B) encendieron su L4, usaron github_leer y respondieron. L4 apagado al terminar. GLM de NVIDIA colgó su endpoint un rato durante las pruebas (timeouts de proveedor, ya recuperado con timeout 150 s).

@@ -26,7 +26,7 @@ def _fn(nombre, desc, props, req):
 
 
 TOOLS = [
-    _fn('github_leer', 'Lee un archivo, o lista una carpeta, de un repositorio de GitHub de maxbry123-commits.', {'repo': S, 'ruta': S, 'rama': S}, ['repo']),
+    _fn('github_leer', 'Lee un archivo, o lista una carpeta, de un repositorio de GitHub de maxbry123-commits. En archivos largos usa lineas (ej "200-400") para leer un rango.', {'repo': S, 'ruta': S, 'rama': S, 'lineas': S}, ['repo']),
     _fn('github_escribir', 'Crea o cambia un archivo en un repositorio de GitHub de maxbry123-commits (hace un commit).', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'rama': S}, ['repo', 'ruta', 'contenido']),
     _fn('github_api', 'Llama a la API de GitHub con los permisos de la cuenta del Director. metodo: GET, POST, PUT, PATCH o DELETE.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
     _fn('hf_leer', 'Lee un archivo de un repo de Hugging Face. tipo: model, dataset o space.', {'repo': S, 'ruta': S, 'tipo': S, 'rama': S}, ['repo', 'ruta']),
@@ -193,7 +193,8 @@ def _resolver_repo(nombre):
                 break
             for r in d:
                 n = r.get('name') or ''
-                if _canon(n) == objetivo:
+                cn = _canon(n)
+                if cn == objetivo or (len(objetivo) >= 8 and objetivo in cn) or (len(cn) >= 8 and cn in objetivo):
                     encontrado = n
                     break
             pagina += 1
@@ -220,7 +221,7 @@ def _texto(s, d, limite=12000):
 
 
 def github_leer(a):
-    repo = a.get('repo', '')
+    repo = a.get('repo') or 'router-universal-router-inteligente-'
     ruta = urllib.parse.quote(a.get('ruta', '') or '', safe='/')
     rama = urllib.parse.quote(a.get('rama') or 'main', safe='')
     s, d = _gh('GET', '/repos/%s/%s/contents/%s?ref=%s' % (OWNER, repo, ruta, rama))
@@ -229,12 +230,25 @@ def github_leer(a):
     if s != 200 or not isinstance(d, dict):
         return 'ERROR %s %s' % (s, str(d)[:300])
     if d.get('encoding') == 'base64':
-        return base64.b64decode(d.get('content', '')).decode('utf-8', 'replace')[:15000]
+        texto = base64.b64decode(d.get('content', '')).decode('utf-8', 'replace')
+        lineas = str(a.get('lineas') or '').strip()
+        total = len(texto.splitlines())
+        if lineas:
+            m = re.match(r'^(\d*)\s*-\s*(\d*)$', lineas)
+            if m:
+                ini = int(m.group(1)) - 1 if m.group(1) else 0
+                fin = int(m.group(2)) if m.group(2) else total
+                trozo = '\n'.join(texto.splitlines()[max(0, ini):fin])
+                return ('(lineas %s de %d totales)\n' % (lineas, total)) + trozo[:12000]
+            return 'ERROR: lineas debe ser "desde-hasta", ej "1-200" o "300-"'
+        if total > 300:
+            return ('(archivo de %d lineas; mostrando las primeras; pide un rango con "lineas", ej "200-400")\n' % total) + texto[:12000]
+        return texto[:12000]
     return str(d)[:3000]
 
 
 def github_escribir(a):
-    repo = a.get('repo', '')
+    repo = a.get('repo') or 'router-universal-router-inteligente-'
     rama = a.get('rama') or 'main'
     base = '/repos/%s/%s/contents/%s' % (OWNER, repo, urllib.parse.quote(a.get('ruta', ''), safe='/'))
     s0, d0 = _gh('GET', base + '?ref=' + urllib.parse.quote(rama, safe=''))

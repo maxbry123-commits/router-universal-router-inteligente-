@@ -3,7 +3,7 @@
   "nombre": "NV GLM 5.3",
   "proveedor": "nvidia",
   "modelo": "z-ai/glm-5.3",
-  "timeout_s": 96,
+  "timeout_s": 150,
   "tipo": "api",
   "claves": "banco",
   "rotacion": "mismo-modelo",

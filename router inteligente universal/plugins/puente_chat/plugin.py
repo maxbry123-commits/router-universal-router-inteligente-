@@ -312,6 +312,11 @@ def _chat(p):
         if s2 < 400 and isinstance(d2, dict) and d2.get('choices'):
             d = d2
             texto = d['choices'][0].get('message', {}).get('content') or ''
+    if not texto.strip() and usadas:
+        ultimo_tool = next((m.get('content') for m in reversed(mensajes) if m.get('role') == 'tool' and m.get('content')), '')
+        texto = 'La herramienta devolvio esto:\n\n' + ultimo_tool[:2000]
+    if texto.strip() and not (d['choices'][0].get('message', {}).get('content') or '').strip():
+        d['choices'][0]['message']['content'] = texto
     salida = {'model': model, 'choices': d['choices'], 'usage': d.get('usage'), 'herramientas': usadas}
     salida['memoria_guardada'] = _guardar(sesion, model, pregunta, texto)
     return salida
