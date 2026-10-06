@@ -82,15 +82,28 @@ def _llaves(proveedor, env):
     return vistos
 
 
-def _token_gh():
-    c = _cache.get('gh')
+def _token_gh(repo='', escritura=False):
+    # Elige una clave del banco que de verdad vea el repo (y pueda escribir si hace falta):
+    # varias claves del banco son validas en /user pero no tienen acceso al repo de YAIWES.
+    clave_cache = 'gh:' + (repo or '-') + (':w' if escritura else '')
+    c = _cache.get(clave_cache)
     if c and time.time() - c[1] < 600:
         return c[0]
     for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN']):
-        s, _ = _peticion('GET', 'https://api.github.com/user', k, espera=20, extra={'Accept': 'application/vnd.github+json'})
-        if s == 200:
-            _cache['gh'] = (k, time.time())
-            return k
+        if repo:
+            s, d = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, repo), k, espera=20,
+                             extra={'Accept': 'application/vnd.github+json'})
+            if s != 200 or not isinstance(d, dict):
+                continue
+            if escritura and not (d.get('permissions') or {}).get('push'):
+                continue
+        else:
+            s, _ = _peticion('GET', 'https://api.github.com/user', k, espera=20,
+                             extra={'Accept': 'application/vnd.github+json'})
+            if s != 200:
+                continue
+        _cache[clave_cache] = (k, time.time())
+        return k
     return ''
 
 
@@ -117,10 +130,27 @@ def _gh(metodo, ruta, cuerpo=None):
     metodo = str(metodo or 'GET').upper()
     if not str(ruta or '').startswith('/') or str(ruta).startswith('//') or '..' in ruta:
         return 0, 'ERROR: ruta de GitHub no permitida (solo repos de maxbry123-commits, /user y busquedas)'
-    t = _token_gh()
-    if not t:
-        return 0, 'ERROR: no hay token de GitHub valido en el banco'
-    return _peticion(metodo, 'https://api.github.com' + ruta, t, cuerpo, 40, {'Accept': 'application/vnd.github+json'})
+    if metodo == 'DELETE' and re.match('^/repos/maxbry123-commits/[^/?]+/?([?].*)?$', str(ruta)):
+        return 0, 'ERROR: no se puede borrar un repositorio'
+    escritura = metodo not in ('GET', 'HEAD') and str(ruta).startswith('/repos/maxbry123-commits/')
+    if not escritura:
+        m = re.match('^/repos/maxbry123-commits/([^/?]+)', str(ruta))
+        t = _token_gh(m.group(1) if m else '')
+        if not t:
+            return 0, 'ERROR: no hay token de GitHub valido en el banco'
+        return _peticion(metodo, 'https://api.github.com' + ruta, t, cuerpo, 40,
+                         {'Accept': 'application/vnd.github+json'})
+    # Escritura: probar las claves del banco hasta que una tenga permiso real de commit.
+    # Las PAT finas de solo lectura devuelven 403/404 aunque el repo exista y el usuario tenga push.
+    ultimo = (0, 'ERROR: no hay token de GitHub valido en el banco')
+    for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN']):
+        s, d = _peticion(metodo, 'https://api.github.com' + ruta, k, cuerpo, 40,
+                         {'Accept': 'application/vnd.github+json'})
+        if s in (401, 403, 404):
+            ultimo = (s, d)
+            continue
+        return s, d
+    return ultimo
 
 
 def _hf(metodo, ruta, cuerpo=None):
