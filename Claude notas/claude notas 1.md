@@ -22,3 +22,17 @@ Hecho:
 - Frontend: config.js +2 fichas; panel-chat 📎/🗂/⧉, ventana de archivos con checkboxes de anclaje, burbujas con botón copiar; api.js accion() + harness anclados; shell.css estética (burbujas redondeadas, composer compacto, selects con flecha, modal).
 - Verificado en vivo job 6ac55ace: modelos lista las 2 fichas; subir/archivos OK; motor-descarga ejecutó motor_3_copy_batches VERIFIED_CLOSED; consil COMPLETÓ los 5 pasos (paso0 motores → ultra 12 goals → 3 rondas consil → super ejecuta → kimi 12 goals salida); groq responde con checklist.
 - L4 respaldo intacto. Commits: db0bfbd2a9, 445d79fef0.
+
+
+## 19) Chat UI compacta + multi-chat + sandbox + motores xray/auditor/handoff (2026-10-06)
+
+Orden (verbatim): "Estos botones son demasiado gigante reducelos al mínimo posible… abrir un nuevo chat una nueva sección… 3 o 5 estancias de chat diferentes corriendo tareas diferentes… motor de auditoría forense x Ray de archivos… motor auditor de code de los repo… selector de ancla… handoff en Jason… Todos los botones solo selector de encender y apagar… Usa mi skills Maxbry UI fromtend para todo… Todo en Github donde está el chat nada en vercel nada en huggueface nada de Github acción… Todo organizado en un solo carpeta adjunto al chat."
+
+Hecho y verificado en vivo (job 6ac578a8, LIVE_URL publicada):
+
+- Frontend (chat router/chat frontend/, una sola carpeta): selects → pildoras compactas que abren hojas (estilo Grok/Claude): modelo, modo, ⚙ más (selects secundarios dentro), ⚓ ancla. Control → toggles encender/apagar. Pestañas de chat hasta 5 estancias, cada una con su propia sesion → tareas en paralelo en el servidor. Botón 🧪 sandbox (system prompt de code persistido en memoria por sesion e inyectado al system prompt del modelo). Archivos: anclar por chat + botón X-Ray por archivo. Selector ⚓ genera handoff JSON (chat router/, 01-PLAN/SKILL.md, preview Vercel) anclado al input.
+- Backend (todo dentro de las fichas/puente_chat): acciones nuevas xray, auditor_code, handoff, sandbox (en ficha.json allowed_actions). xray = auditoría forense: urls + estructura raíz + mapa mental + microflujo horizontal + goals G1..G12 (nemotron-super). auditor_code = git-tree del repo clasificado por carpeta (30124 archivos). handoff = JSON de chat router/, SKILL.md o preview. sandbox = memoria 'sandbox' por sesion.
+- Fichas nuevas en el selector: motor-xray (tipo xray) y motor-auditor-code (tipo auditor) → 11 modelos. ESPECIALES/FICHAS aceptan tipos xray/auditor.
+- api.js: sesion por pestaña (multi-chat paralelo); harness/accion la propagan.
+- Verificado vivo: handoff skill/chat-router, auditor_code (30124), sandbox (modelo respondió "hola CLAVE"), subir/archivos, xray acción y ficha motor-xray por chat con anclados.
+- Sin Vercel, sin HF respaldo (L4 intacto), sin GH Actions.
