@@ -8,6 +8,7 @@ Memoria: antes de responder busca contexto en /memoria (scope chat:<sesion>); de
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 from contextvars import ContextVar
@@ -185,7 +186,18 @@ def _herr():
     return _CACHE_H['h']
 
 
-_BUENA = {}  # proveedor -> indice de la ultima clave que respondio bien
+_BUENA = {}
+
+
+def _sentinela():
+    # mini-agente determinista dentro de las fichas: envuelve a la LLM en un bucle
+    p = _CONFIG_DIR / 'sentinela.py'
+    if not p.exists():
+        return None
+    spec = importlib.util.spec_from_file_location('riu_sentinela', str(p))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod  # proveedor -> indice de la ultima clave que respondio bien
 
 
 def _recortar(mensajes, limite=20000):
@@ -428,33 +440,49 @@ def _chat(p):
 
         def llamar(ms, tl):
             return _llamar_l4(url, model, ms, max_tokens, tl)
-    d, usadas = _bucle(llamar, mensajes)
-    if 'error' in d and len(mensajes) > 3:
-        # se corto a medias: retoma solo donde quedo, una vez mas
-        mensajes.append({'role': 'user', 'content': 'Se corto la llamada. Continua el trabajo donde quedo y termina.'})
+    # el sentinela de las fichas envuelve a la LLM: bucle hasta terminar la tarea
+    ultimo = {'model': model}
+
+    def paso_modelo(ms):
         _DEADLINE.set(time.monotonic() + presupuesto)
-        d2, usadas2 = _bucle(llamar, mensajes)
-        usadas = usadas + list(usadas2)
-        if 'error' not in d2:
-            d = d2
-    if 'error' in d and model in FICHAS:
+        return _bucle(llamar, ms)
+
+    def paso_retoma(ms):
+        ms.append({'role': 'user', 'content': 'Se corto la llamada. Continua el trabajo donde quedo y termina.'})
+        _DEADLINE.set(time.monotonic() + presupuesto)
+        return _bucle(llamar, ms)
+
+    plan = [('modelo:' + model, paso_modelo), ('retoma', paso_retoma)]
+    if model in FICHAS:
         # reserva entre proveedores: la tarea pasa a otro modelo con lo ya hecho
         prov0 = FICHAS[model][1]
         alternos = [m for m in FICHAS if m != model and FICHAS[m][1] != prov0] + [m for m in FICHAS if m != model and FICHAS[m][1] == prov0]
-        hechas = ', '.join(sorted({u['herramienta'] for u in usadas})) or 'ninguna'
         for alt in alternos[:2]:
             _, prov_a, modelo_a, tope_a = FICHAS[alt]
-            mensajes.append({'role': 'user', 'content': 'El modelo anterior dejo de responder. Continua TU el trabajo donde quedo (ya se usaron estas herramientas: %s) y da la respuesta final.' % hechas})
-            _DEADLINE.set(time.monotonic() + min(200, max(TOPE_TOTAL_S, int(tope_a * 2.4))))
 
-            def llamar_alt(ms, tl, _p=prov_a, _m=modelo_a, _t=tope_a):
-                return _llamar_api(_p, _m, ms, max_tokens, _t, tl)
-            d3, usadas3 = _bucle(llamar_alt, mensajes)
-            usadas = usadas + list(usadas3)
-            if 'error' not in d3:
-                d = d3
-                model = alt
-                break
+            def paso_alt(ms, _a=alt, _p=prov_a, _m=modelo_a, _t=tope_a):
+                hechas = ', '.join(sorted({tc.get('function', {}).get('name', '') for m2 in ms if m2.get('role') == 'assistant' for tc in (m2.get('tool_calls') or [])})) or 'ninguna'
+                ms.append({'role': 'user', 'content': 'El modelo anterior dejo de responder. Continua TU el trabajo donde quedo (ya se usaron estas herramientas: %s) y da la respuesta final.' % hechas})
+                _DEADLINE.set(time.monotonic() + min(200, max(TOPE_TOTAL_S, int(_t * 2.4))))
+                ultimo['model'] = _a
+                return _bucle(lambda m2, tl: _llamar_api(_p, _m, m2, max_tokens, _t, tl), ms)
+
+            plan.append(('reserva:' + alt, paso_alt))
+
+    sen = _sentinela()
+    if sen:
+        def _ck_in():
+            ck = _ck_cargar(sesion)
+            return ([{'role': 'system', 'content': sistema}] + list(ck)) if ck else None
+        cl = sen.ejecutar(plan, mensajes,
+                          guardar_ck=lambda ms: _ck_guardar(sesion, _recortar(ms[1:])),
+                          cargar_ck=_ck_in)
+        d, usadas = cl['resultado']
+        checklist = cl['items']
+        model = ultimo['model']
+    else:
+        d, usadas = _bucle(llamar, mensajes)
+        checklist = []
     if 'error' in d:
         if len(mensajes) > 3:  # habia trabajo a medias: guardarlo para 'continua'
             _ck_guardar(sesion, _recortar(mensajes[1:]))
@@ -473,6 +501,8 @@ def _chat(p):
     if texto.strip() and not (d['choices'][0].get('message', {}).get('content') or '').strip():
         d['choices'][0]['message']['content'] = texto
     salida = {'model': model, 'choices': d['choices'], 'usage': d.get('usage'), 'herramientas': usadas}
+    if checklist:
+        salida['checklist'] = checklist  # salida del sentinela: lista de verificacion
     salida['memoria_guardada'] = _guardar(sesion, model, pregunta, texto)
     return salida
 
