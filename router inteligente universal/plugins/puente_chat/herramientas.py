@@ -90,10 +90,18 @@ def _token_gh(repo='', escritura=False):
     c = _cache.get(clave_cache)
     if c and time.time() - c[1] < 600:
         return c[0]
+    reserva = ''
     for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN']):
         if repo:
             s, d = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, repo), k, espera=20,
                              extra={'Accept': 'application/vnd.github+json'})
+            if s in (0, 500, 502, 503, 504):
+                # fallo transitorio de GitHub: la clave puede valer; queda de reserva
+                s2, _ = _peticion('GET', 'https://api.github.com/user', k, espera=20,
+                                  extra={'Accept': 'application/vnd.github+json'})
+                if s2 == 200 and not reserva:
+                    reserva = k
+                continue
             if s != 200 or not isinstance(d, dict):
                 continue
             if escritura and not (d.get('permissions') or {}).get('push'):
@@ -105,19 +113,26 @@ def _token_gh(repo='', escritura=False):
                 continue
         _cache[clave_cache] = (k, time.time())
         return k
-    return ''
+    if reserva:
+        _cache[clave_cache] = (reserva, time.time())
+    return reserva
 
 
 def _token_hf():
     c = _cache.get('hf')
     if c and time.time() - c[1] < 600:
         return c[0]
+    reserva = ''
     for k in _llaves('huggingface', ['HF_TOKEN']):
         s, _ = _peticion('GET', 'https://huggingface.co/api/whoami-v2', k, espera=20)
         if s == 200:
             _cache['hf'] = (k, time.time())
             return k
-    return ''
+        if s in (0, 500, 502, 503, 504) and not reserva:
+            reserva = k
+    if reserva:
+        _cache['hf'] = (reserva, time.time())
+    return reserva
 
 
 GH_RUTA = re.compile('^/(repos/maxbry123-commits/[A-Za-z0-9._-]+(/[^?#]*)?|user|user/repos|search/(code|repositories|issues|commits))([?][^#]*)?$')
@@ -144,17 +159,22 @@ def _gh(metodo, ruta, cuerpo=None):
         t = _token_gh(m.group(1) if m else '')
         if not t:
             return 0, 'ERROR: no hay token de GitHub valido en el banco'
-        return _peticion(metodo, 'https://api.github.com' + ruta, t, cuerpo, 40,
+        s, d = _peticion(metodo, 'https://api.github.com' + ruta, t, cuerpo, 40,
                          {'Accept': 'application/vnd.github+json'})
+        if s in (0, 500, 502, 503, 504):
+            time.sleep(1)
+            s, d = _peticion(metodo, 'https://api.github.com' + ruta, t, cuerpo, 40,
+                             {'Accept': 'application/vnd.github+json'})
+        return s, d
     # Escritura: probar las claves del banco hasta que una tenga permiso real de commit.
     # Las PAT finas de solo lectura devuelven 403/404 aunque el repo exista y el usuario tenga push.
     ultimo = (0, 'ERROR: no hay token de GitHub valido en el banco')
     for k in _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN']):
         s, d = _peticion(metodo, 'https://api.github.com' + ruta, k, cuerpo, 40,
                          {'Accept': 'application/vnd.github+json'})
-        if s in (401, 403, 404):
+        if s in (401, 403, 404, 0, 500, 502, 503, 504):
             ultimo = (s, d)
-            continue
+            continue  # sin permiso o fallo transitorio: siguiente clave
         return s, d
     return ultimo
 

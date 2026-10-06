@@ -9,6 +9,7 @@ Memoria: antes de responder busca contexto en /memoria (scope chat:<sesion>); de
 from __future__ import annotations
 
 import json
+import re
 from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
 import time
@@ -184,6 +185,30 @@ def _herr():
     return _CACHE_H['h']
 
 
+def _recortar(mensajes, limite=20000):
+    # Mantiene el envio por debajo del tope de la API: acorta salidas de
+    # herramientas y luego suelta los turnos mas viejos (sin romper pares
+    # assistant(tool_calls) -> tool).
+    ms = [dict(m) for m in mensajes]
+    for m in ms:
+        if m.get('role') == 'tool' and len(m.get('content') or '') > 1200:
+            m['content'] = m['content'][:1200] + ' ...[recortado]'
+    def tam():
+        return sum(len(str(m.get('content') or '')) + len(json.dumps(m.get('tool_calls') or '')) for m in ms)
+    while len(ms) > 3 and tam() > limite:
+        for i, m in enumerate(ms):
+            if m.get('role') == 'system':
+                continue
+            ms.pop(i)
+            if m.get('tool_calls'):
+                while i < len(ms) and ms[i].get('role') == 'tool':
+                    ms.pop(i)
+            break
+        else:
+            break
+    return ms
+
+
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
     from integration.chat_mvp import providers
     claves = providers.env_keys(proveedor)
@@ -196,7 +221,9 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
         resta = fin - time.monotonic()
         if resta < 2:
             break
-        cuerpo = {'model': modelo, 'messages': mensajes, 'max_tokens': max_tokens}
+        if proveedor == 'groq':
+            resta = min(resta, 45)  # una clave lenta no se come el tiempo de las demas
+        cuerpo = {'model': modelo, 'messages': _recortar(mensajes), 'max_tokens': max_tokens}
         if modelo == 'z-ai/glm-5.3':
             cuerpo['reasoning_effort'] = 'low'
             cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
@@ -209,7 +236,9 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
         if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
             return ultimo
         if ultimo[0] == 400:
-            return ultimo
+            detalle = json.dumps(ultimo[1])
+            if 'too large' not in detalle and 'tier' not in detalle:
+                return ultimo  # 400 de formato: no lo arregla otra clave; los de cuota/tier si
     return ultimo
 
 
@@ -224,6 +253,24 @@ def _llamar_l4(url, modelo, mensajes, max_tokens, tools):
         if ultimo[0] < 400 or ultimo[0] == 400:
             return ultimo
     return ultimo
+
+
+def _calls_texto(content):
+    # Algunos modelos escriben la llamada como <tool_call>... en el texto en vez de tool_calls: la ejecutamos igual.
+    calls = []
+    for bloque in re.findall(r'<tool_call>(.*?)</tool_call>', content or '', re.S):
+        b = bloque.strip()
+        m = re.match(r'<function=(\w+)>(.*?)</function>', b, re.S)
+        if m:
+            args = {k: v.strip() for k, v in re.findall(r'<parameter=(\w+)>(.*?)</parameter>', m.group(2), re.S)}
+            calls.append((m.group(1), args))
+            continue
+        try:
+            d = json.loads(b)
+            calls.append((d.get('name', ''), d.get('arguments') or {}))
+        except Exception:  # noqa: BLE001
+            pass
+    return calls
 
 
 def _bucle(llamar, mensajes):
@@ -250,6 +297,11 @@ def _bucle(llamar, mensajes):
             return {'error': 'MODELO_NO_RESPONDE', 'detalle': str(d)[:300]}, usadas
         msg = d['choices'][0].get('message') or {}
         calls = msg.get('tool_calls') or []
+        if not calls and con_tools:
+            calls = [{'id': 'texto%d' % i, 'type': 'function', 'function': {'name': n, 'arguments': json.dumps(a)}}
+                     for i, (n, a) in enumerate(_calls_texto(msg.get('content')))]
+            if calls:
+                msg['content'] = re.sub(r'<tool_call>.*?</tool_call>', '', msg.get('content') or '', flags=re.S).strip()
         if not calls or not con_tools:
             if (not (msg.get('content') or '').strip()) and msg.get('reasoning_content') and not final_hecho and time.monotonic() < fin:
                 mensajes.append({'role': 'assistant', 'content': ''})
@@ -266,10 +318,13 @@ def _bucle(llamar, mensajes):
                 args = {}
             res = h.ejecutar(f.get('name', ''), args)
             usadas.append({'herramienta': f.get('name', ''), 'ok': not res.startswith(('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0'))})
-            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:12000]})
+            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:3000]})
         pasos += 1
         if pasos >= MAX_PASOS or time.monotonic() >= fin:
             con_tools = False  # tiempo o pasos agotados: pedir la respuesta final sin herramientas
+
+
+_CHECKPOINTS = {}
 
 
 def _chat(p):
@@ -282,18 +337,23 @@ def _chat(p):
         return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
-    _DEADLINE.set(time.monotonic() + (96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S))
+    presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
+    _DEADLINE.set(time.monotonic() + presupuesto)
     ctx = _contexto(sesion, pregunta) if pregunta else ''
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
     if ctx:
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
+    if sesion in _CHECKPOINTS and re.search(r'(?i)(contin[uú]a?s?|sigue|retoma|seguid|seguir)', pregunta):
+        mensajes = _CHECKPOINTS.pop(sesion)
+        mensajes.append({'role': 'user', 'content': pregunta + ' (retoma el trabajo donde quedo, sin empezar de cero)'})
     mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
 
         def llamar(ms, tl):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
-        _DEADLINE.set(time.monotonic() + min(250, max(TOPE_TOTAL_S, int(tope * 2.4))))
+        presupuesto = min(250, max(TOPE_TOTAL_S, int(tope * 2.4)))
+        _DEADLINE.set(time.monotonic() + presupuesto)
     else:
         url = str(p['respaldo_url'])
         if not url.startswith('https://') or not url.endswith('--8080.hf.jobs'):
@@ -302,9 +362,19 @@ def _chat(p):
         def llamar(ms, tl):
             return _llamar_l4(url, model, ms, max_tokens, tl)
     d, usadas = _bucle(llamar, mensajes)
+    if 'error' in d and len(mensajes) > 3:
+        # se corto a medias: retoma solo donde quedo, una vez mas
+        mensajes.append({'role': 'user', 'content': 'Se corto la llamada. Continua el trabajo donde quedo y termina.'})
+        _DEADLINE.set(time.monotonic() + presupuesto)
+        d2, usadas2 = _bucle(llamar, mensajes)
+        usadas = usadas + list(usadas2)
+        if 'error' not in d2:
+            d = d2
     if 'error' in d:
+        if len(mensajes) > 3:  # habia trabajo a medias: guardarlo para 'continua'
+            _CHECKPOINTS[sesion] = _recortar(mensajes[1:])
         return d
-    texto = d['choices'][0].get('message', {}).get('content') or ''
+    texto = re.sub(r'<tool_call>.*?</tool_call>', '', d['choices'][0].get('message', {}).get('content') or '', flags=re.S).strip()
     if not texto.strip() and (d['choices'][0].get('message') or {}).get('reasoning_content'):
         texto = str(d['choices'][0]['message']['reasoning_content'])[-1500:]
     if not texto.strip() and usadas:
