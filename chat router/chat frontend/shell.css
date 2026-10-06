@@ -43,3 +43,40 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
   .chat-history{height:46vh}
   section .row .secondary{flex:1 1 44%;font-size:13px;padding:8px 10px;min-height:38px}
 }
+
+/* === compacto total: pildoras, hojas, pestañas de chat, toggles (minimo viable) === */
+.row.fields{gap:6px;align-items:center}
+.pill{min-height:30px;padding:4px 10px;font-size:12px;border-radius:16px;background:var(--panel);border:1px solid var(--border-strong);color:var(--text);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw;line-height:1.2}
+.pill:hover{border-color:var(--quiet-2)}
+.chat-tabs{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px}
+.chip{flex:0 0 auto;min-height:28px;padding:3px 11px;font-size:12px;border-radius:14px;background:var(--panel);border:1px solid var(--border);color:var(--quiet);cursor:pointer;white-space:nowrap}
+.chip.on{color:var(--title);border-color:var(--status-blue);background:var(--module-selected)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:721px){.sheet{align-items:center;padding:16px}}
+.sheet[hidden]{display:none}
+.sheet .va-caja{width:min(460px,100vw)}
+@media(max-width:720px){.sheet .va-caja{border-radius:20px 20px 0 0;max-height:78vh;width:100vw}}
+.fila{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;padding:9px 10px;color:var(--text);cursor:pointer;font-size:13px;min-height:38px}
+.fila:hover{background:var(--surface-alt)}
+.fila:disabled{opacity:.55}
+.fila .fila-ck{color:var(--status-green);font-weight:700}
+.fila-nom{display:flex;flex-direction:column;gap:1px}
+.fila-desc{font-size:11px;color:var(--quiet);display:block}
+.list{display:flex;flex-direction:column;gap:2px;overflow:auto}
+.mini{flex:0 0 auto;min-height:26px;padding:2px 9px;font-size:11px;border-radius:8px;background:var(--panel);border:1px solid var(--border-strong);color:var(--text);cursor:pointer}
+.va-item{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:5px 2px}
+.va-item .va-check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;min-width:0}
+.va-item .va-check input{width:16px;height:16px;min-height:0;flex:0 0 auto}
+.toggle{min-height:30px;padding:4px 14px;font-size:12px;border-radius:16px;background:var(--panel);border:1px solid var(--border-strong);color:var(--quiet);cursor:pointer}
+.toggle.on{color:var(--title);border-color:var(--status-green)}
+.toggle.on::before{content:"● ";color:var(--status-green)}
+.toggle.rojo{border-color:var(--status-red);color:var(--status-red)}
+#composer textarea{min-height:52px}
+.composer-bar .secondary{min-height:34px;padding:6px 10px;font-size:14px}
+.composer-bar .action{min-height:34px;padding:6px 14px}
+#ventana-sandbox textarea{min-height:150px;font-size:13px}
+@media(max-width:720px){
+  .pill{max-width:42vw;font-size:11px;padding:3px 9px;min-height:28px}
+  section .row .toggle{flex:0 0 auto;font-size:12px;min-height:28px;padding:3px 12px}
+  section .row .secondary{flex:0 0 auto}
+}

@@ -27,8 +27,8 @@ _CACHE_H = {}
 from pathlib import Path
 _CONFIG_DIR = Path(__file__).resolve().parent / "fichas"
 _catalog = [json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob("modelo-*.json"))]
-FICHAS = {f["id"]:(f["nombre"],f.get("proveedor","pipeline"),f.get("modelo","pipeline"),f["timeout_s"]) for f in _catalog if f["tipo"] in ("api","consil","motor")}
-ESPECIALES = {f["id"]: f["tipo"] for f in _catalog if f["tipo"] in ("consil","motor")}
+FICHAS = {f["id"]:(f["nombre"],f.get("proveedor","pipeline"),f.get("modelo","pipeline"),f["timeout_s"]) for f in _catalog if f["tipo"] in ("api","consil","motor","xray","auditor")}
+ESPECIALES = {f["id"]: f["tipo"] for f in _catalog if f["tipo"] in ("consil","motor","xray","auditor")}
 RESPALDO = {f["id"]:(f["nombre"],f["archivo"]) for f in _catalog if f["tipo"]=="hf"}
 ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO" --alias "$ALIAS" -ngl 999 -fa on -np 1 -b 128 -c 16384 '
             '--temp 0 --top-k 20 --top-p 0.95 --no-mmproj --reasoning-budget 0 --spec-type draft-mtp --spec-draft-n-max 2 --jinja > /tmp/l.log 2>&1 &\n'
@@ -534,8 +534,134 @@ def _motor_descarga(pregunta):
     return (fin or expl or salida_motor[:1500] or 'MOTOR_SIN_RESPUESTA'), usadas
 
 
-def _especial(tipo, model, sesion, pregunta):
-    texto, usadas = (_consil(pregunta) if tipo == 'consil' else _motor_descarga(pregunta))
+_REPO_DIR = 'router-universal-router-inteligente-'
+_URL_RE = re.compile(r'https?://\S+')
+_CODE_EXT = {'.py', '.js', '.mjs', '.ts', '.tsx', '.jsx', '.html', '.css', '.json',
+             '.yaml', '.yml', '.sh', '.md', '.go', '.rs', '.java', '.c', '.cpp',
+             '.h', '.sql', '.toml', '.ini', '.cfg', '.vue', '.php', '.rb', '.ipynb'}
+
+
+def _mem_dato(sesion, clave):
+    # un registro de la memoria del harness (scope chat:<sesion>); nunca lanza
+    try:
+        mem, scope_for = _memoria()
+        res = mem.search(scope_for(DUENO, 'chat:' + sesion), clave, 1)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        dd = (filas[0].get('data') if filas and isinstance(filas[0], dict) else None) or {}
+        return dd if isinstance(dd, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _archivo_memoria(sesion, nombre):
+    try:
+        dd = _mem_dato(sesion, 'archivo:' + str(nombre)[:120])
+        if dd.get('datos_b64'):
+            return _b64.b64decode(dd['datos_b64']).decode('utf-8', 'replace')
+    except Exception:  # noqa: BLE001
+        pass
+    return ''
+
+
+def _xray(sesion, nombre, texto=''):
+    # motor de auditoria forense x-ray: resumen compacto + urls + estructura raiz +
+    # mapa mental + microflujo horizontal + goals de la IA en ids G1..G12
+    nombre = str(nombre or '')[:120]
+    if not texto and nombre:
+        texto = _archivo_memoria(sesion, nombre)
+    if not texto:
+        return {'error': 'XRAY_SIN_ARCHIVO', 'detalle': 'ancla o sube un archivo primero'}
+    base_t = texto[:20000]
+    urls = sorted({u.rstrip('.,;:)]}"\'') for u in _URL_RE.findall(base_t)})[:30]
+    lineas = base_t.count('\n') + 1
+    ext = nombre.rsplit('.', 1)[-1].lower() if '.' in nombre else 'texto'
+    cabeza, funcs = [], []
+    for ln in base_t.splitlines():
+        s = ln.strip()
+        if s.startswith('#'):
+            cabeza.append(s.lstrip('#').strip()[:64])
+        elif re.match(r'(def |class |function |export |const |async )', s):
+            funcs.append(s[:64])
+    guia = (cabeza or funcs)[:10]
+    mapa = '\n'.join('  - ' + g for g in guia) or '  - (sin estructura detectada)'
+    microflujo = ' -> '.join('P%d:%s' % (i + 1, g[:20]) for i, g in enumerate(guia[:6])) \
+        or 'P1:leer -> P2:extraer -> P3:clasificar -> P4:goals'
+    goals = _paso_llm('nvidia', 'nvidia/nemotron-3-super-120b-a12b',
+        [{'role': 'system', 'content': _SYS_PIPE},
+         {'role': 'user', 'content': 'Auditoria forense X-RAY de este archivo. Entrega compacto: 1) resumen de 2 lineas 2) tipo de code/documento y funcion 3) 12 goals que la IA debe ejecutar con este archivo, ids G1..G12.\nArchivo %s:\n%s' % (nombre or 'entrada', base_t[:6000])}], 120, 1400)
+    return {'ok': True, 'nombre': nombre or 'entrada', 'urls': urls,
+            'estructura': 'lineas=%d tipo=%s titulos=%d simbolos=%d' % (lineas, ext, len(cabeza), len(funcs)),
+            'mapa_mental': mapa, 'microflujo': microflujo, 'resumen_goals': goals or '',
+            'checklist': [{'item': 'xray:extraer-urls', 'estado': 'COMPLETADO'},
+                          {'item': 'xray:estructura-raiz', 'estado': 'COMPLETADO'},
+                          {'item': 'xray:mapa-mental', 'estado': 'COMPLETADO'},
+                          {'item': 'xray:microflujo', 'estado': 'COMPLETADO'},
+                          {'item': 'xray:goals-ia', 'estado': 'COMPLETADO' if goals else 'PENDIENTE'}]}
+
+
+def _xray_texto_out(r):
+    return ('X-RAY %s\n%s\nURLs: %s\nMAPA:\n%s\nFLUJO: %s\n%s'
+            % (r.get('nombre'), r.get('estructura'), ', '.join(r.get('urls') or [])[:400] or '-',
+               r.get('mapa_mental'), r.get('microflujo'), r.get('resumen_goals') or ''))
+
+
+def _auditor_code(pregunta=''):
+    # motor auditor de code del repo: ubica y clasifica los archivos de code del proyecto
+    h = _herr()
+    s, d = h._gh('GET', '/repos/maxbry123-commits/%s/git/trees/main?recursive=1' % _REPO_DIR)
+    if s >= 400 or not isinstance(d, dict):
+        return {'error': 'AUDITOR_GITHUB_FALLO', 'detalle': str(d)[:200]}
+    por_dir = {}
+    for t in d.get('tree') or []:
+        pth = str(t.get('path') or '')
+        if t.get('type') != 'blob' or _os.path.splitext(pth)[1].lower() not in _CODE_EXT:
+            continue
+        por_dir.setdefault(pth.split('/')[0], []).append(pth)
+    lineas = ['%s/ (%d): %s' % (k, len(v), ', '.join(x.rsplit('/', 1)[-1] for x in v[:8]))
+              for k, v in sorted(por_dir.items(), key=lambda kv: -len(kv[1]))]
+    return {'ok': True, 'total': sum(len(v) for v in por_dir.values()), 'carpetas': lineas,
+            'checklist': [{'item': 'auditor:git-tree', 'estado': 'COMPLETADO'},
+                          {'item': 'auditor:clasificar-code', 'estado': 'COMPLETADO'}]}
+
+
+def _handoff(fuente):
+    # selector de ancla: handoff JSON anclable al input (proyecto, skill maestro, preview)
+    h = _herr()
+    if fuente == 'preview':
+        return {'handoff': {'fuente': 'preview-vercel-nuevo',
+                            'url': 'https://riu-jev-bridge-git-devin-179117-1f446d-maxbry123-8833s-projects.vercel.app/chat/ui/nuevo/panel-chat.html',
+                            'usa_para': 'frontend de prueba: replicar funciones y diseno'}}
+    if fuente == 'skill':
+        s, d = h._gh('GET', '/repos/maxbry123-commits/%s/contents/chat%%20router/01-PLAN/%%F0%%9F%%98%%84SKILL.md?ref=main' % _REPO_DIR)
+        extracto = ''
+        if s < 400:
+            try:
+                extracto = _b64.b64decode((d or {}).get('content') or '').decode('utf-8', 'replace')[:3500]
+            except Exception:  # noqa: BLE001
+                pass
+        return {'handoff': {'fuente': 'chat router/01-PLAN/SKILL.md', 'skill': 'fromted-yaiwes-frontend-factory',
+                            'usa_para': 'arquitectura, diseno y verificacion de la UI', 'extracto': extracto}}
+    s, d = h._gh('GET', '/repos/maxbry123-commits/%s/git/trees/main?recursive=1' % _REPO_DIR)
+    archivos = [str(t.get('path')) for t in (d or {}).get('tree') or []
+                if str(t.get('path') or '').startswith('chat router/') and t.get('type') == 'blob'][:160]
+    return {'handoff': {'fuente': 'chat router/', 'proyecto': 'workflow Loops code Yaiwes', 'rama': 'main',
+                        'archivos': archivos, 'usa_para': 'trabajar sobre el proyecto del chat'}}
+
+
+def _especial(tipo, model, sesion, pregunta, p=None):
+    if tipo == 'consil':
+        texto, usadas = _consil(pregunta)
+    elif tipo == 'xray':
+        nombres = (p or {}).get('anclados') or []
+        r = _xray(sesion, str(nombres[0]) if nombres else '', pregunta if not nombres else '')
+        texto = _xray_texto_out(r) if r.get('ok') else ('X-RAY ERROR: ' + str(r.get('detalle') or r.get('error')))
+        usadas = [c['item'] for c in r.get('checklist') or []] or ['xray']
+    elif tipo == 'auditor':
+        r = _auditor_code()
+        texto = ('Auditor de code del repo — %d archivos:\n%s' % (r.get('total', 0), '\n'.join(r.get('carpetas') or [])))
+        usadas = [c['item'] for c in r.get('checklist') or []] or ['auditor']
+    else:
+        texto, usadas = _motor_descarga(pregunta)
     return {'model': model,
             'choices': [{'message': {'role': 'assistant', 'content': texto}}],
             'herramientas': [{'herramienta': u, 'ok': True} for u in usadas],
@@ -574,13 +700,19 @@ def _chat(p):
                 sistema += ' Archivos anclados por el usuario: ' + ' | '.join(trozos)
         except Exception:  # noqa: BLE001
             pass
+    try:
+        sd = _mem_dato(sesion, 'sandbox')
+        if sd.get('texto'):
+            sistema += ' SANDBOX del usuario (system prompt de code; sigue estas instrucciones): ' + str(sd['texto'])[:3000]
+    except Exception:  # noqa: BLE001
+        pass
     if re.search(r'(?i)(contin[uú]a?s?|sigue|retoma|seguid|seguir)', pregunta):
         guardado = _ck_cargar(sesion)
         if guardado:
             mensajes = guardado
             mensajes.append({'role': 'user', 'content': pregunta + ' (retoma el trabajo donde quedo, sin empezar de cero)'})
-    if model in ESPECIALES:  # ficha pipeline (consil / motor): no es una sola api
-        return _especial(ESPECIALES[model], model, sesion, pregunta)
+    if model in ESPECIALES:  # ficha pipeline (consil / motor / xray / auditor): no es una sola api
+        return _especial(ESPECIALES[model], model, sesion, pregunta, p)
     mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
@@ -734,6 +866,24 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return {'archivos': nombres}
         except Exception:  # noqa: BLE001
             return {'archivos': []}
+    if action == 'xray':  # motor de auditoria forense x-ray del archivo anclado
+        return _xray(str(payload.get('sesion') or 'general')[:60],
+                     str(payload.get('nombre') or ''), str(payload.get('texto') or ''))
+    if action == 'auditor_code':  # motor auditor de code: ubica los archivos de code del repo
+        return _auditor_code(str(payload.get('filtro') or ''))
+    if action == 'handoff':  # selector de ancla: handoff JSON para anclar al input
+        return _handoff(str(payload.get('fuente') or 'chat-router'))
+    if action == 'sandbox':  # ventana sandbox: system prompt de code anclado a esta sesion
+        try:
+            mem, scope_for = _memoria()
+            sc = scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60])
+            if 'texto' in payload:
+                mem.save(sc, 'sandbox', {'texto': str(payload.get('texto') or '')[:4000]})
+                return {'ok': True, 'encendido': bool(str(payload.get('texto') or '').strip())}
+            dd = _mem_dato(str(payload.get('sesion') or 'general')[:60], 'sandbox')
+            return {'sandbox': str(dd.get('texto') or '')}
+        except Exception as x:  # noqa: BLE001
+            return {'error': 'SANDBOX_FALLO', 'detalle': str(x)[:200]}
     return {"error": "ACCION_DESCONOCIDA"}
 
 # Long model calls are polled through HTTP, so browser requests do not expire at the HF ingress.

@@ -10,6 +10,8 @@ window.RIU_CONFIG = {
   modelos: [
     { id: 'ask-consil-factory', etiqueta: '🧠 ask consil factory' },
     { id: 'motor-descarga', etiqueta: '➡️ MOTOR DESCARGA EXTRACCIONES copiar mover' },
+    { id: 'motor-xray', etiqueta: '🔬 MOTOR X-RAY auditoría forense' },
+    { id: 'motor-auditor-code', etiqueta: '🔎 MOTOR AUDITOR CODE repo' },
     { id: 'hf-1-qwen-3-8', etiqueta: 'HF 1 Qwen 3.8 (27B)' },
     { id: 'hf-2-qwen-3-6', etiqueta: 'HF 2 Qwen 3.6 (35B)' },
     { id: 'groq-qwen-3-8', etiqueta: 'GROQ Qwen 3.8' },

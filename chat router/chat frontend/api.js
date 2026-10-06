@@ -42,7 +42,8 @@ async function puenteRouter(base, body, qs, headers) {
   const accion = q.get('accion') || 'chat';
   let payload = accion === 'chat' ? Object.assign({}, body || {}) : { job: q.get('job'), url: q.get('url') };
   if (accion === 'chat') {
-    let s = sessionStorage.getItem('riu_sesion');
+    // sesion por estancia de chat (pestaña): cada chat lleva la suya
+    let s = (body && body.sesion) || sessionStorage.getItem('riu_sesion');
     if (!s) { s = 'web-' + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('riu_sesion', s); }
     payload.sesion = s;
   }
@@ -99,7 +100,7 @@ async function puente(base, body, qs, method, headers) {
   return { status: r.status, ok: r.ok, p };
 }
 export async function accion(acc, payload) {
-  // cualquier accion del puente (subir, archivos, ...) con la misma sesion del chat
+  // cualquier accion del puente (subir, archivos, xray, auditor_code, handoff, sandbox, ...)
   await liveRouter();
   const h = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
@@ -111,14 +112,14 @@ export async function accion(acc, payload) {
   return env.result || {};
 }
 window.RIU_ACCION = accion;
-export async function harness({ model, message, max_tokens, avisar, anclados }) {
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion }) {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const esHF = model.startsWith('hf-');
-  const extra = (anclados && anclados.length) ? { anclados } : {};
+  const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {});
   let r;
   if (esHF && L4.url) {
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);

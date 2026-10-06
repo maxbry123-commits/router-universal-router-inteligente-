@@ -31,7 +31,11 @@
       "chat_async",
       "resultado",
       "subir",
-      "archivos"
+      "archivos",
+      "xray",
+      "auditor_code",
+      "handoff",
+      "sandbox"
     ]
   },
   "seguridad": {

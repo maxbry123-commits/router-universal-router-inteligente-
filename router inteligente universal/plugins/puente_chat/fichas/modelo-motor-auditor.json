@@ -1,0 +1,14 @@
+{
+  "id": "motor-auditor-code",
+  "nombre": "\ud83d\udd0e MOTOR AUDITOR CODE repo",
+  "proveedor": "pipeline",
+  "modelo": "pipeline",
+  "timeout_s": 120,
+  "tipo": "auditor",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true,
+  "enlazados": ["github:git-tree"],
+  "salidas": ["archivos de code del proyecto por carpeta"]
+}
