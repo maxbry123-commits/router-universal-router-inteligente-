@@ -185,6 +185,9 @@ def _herr():
     return _CACHE_H['h']
 
 
+_BUENA = {}  # proveedor -> indice de la ultima clave que respondio bien
+
+
 def _recortar(mensajes, limite=20000):
     # Mantiene el envio por debajo del tope de la API: acorta salidas de
     # herramientas y luego suelta los turnos mas viejos (sin romper pares
@@ -217,28 +220,45 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
         return 0, {'error': 'SIN_CLAVES_' + proveedor.upper()}
     fin = time.monotonic() + tope
     ultimo = (0, {'error': 'SIN_RESPUESTA'})
-    for clave in claves:  # mismo modelo, otra clave; nunca otro modelo
-        resta = fin - time.monotonic()
-        if resta < 2:
-            break
-        if proveedor == 'groq':
-            resta = min(resta, 45)  # una clave lenta no se come el tiempo de las demas
-        cuerpo = {'model': modelo, 'messages': _recortar(mensajes), 'max_tokens': max_tokens}
-        if modelo == 'z-ai/glm-5.3':
-            cuerpo['reasoning_effort'] = 'low'
-            cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
-        if modelo in ('moonshotai/kimi-k3', 'nvidia/nemotron-3-super-120b-a12b'):
-            cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
-        if tools:
-            cuerpo['tools'] = tools
-            cuerpo['tool_choice'] = 'auto'
-        ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
-        if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
-            return ultimo
-        if ultimo[0] == 400:
-            detalle = json.dumps(ultimo[1])
-            if 'too large' not in detalle and 'tier' not in detalle:
-                return ultimo  # 400 de formato: no lo arregla otra clave; los de cuota/tier si
+    buena = _BUENA.get(proveedor)  # la ultima clave que respondio va primero
+    orden = ([buena] if isinstance(buena, int) and 0 <= buena < len(claves) else []) + [i for i in range(len(claves)) if i != buena]
+    muertas = set()
+    for _vuelta in range(2):  # dos vueltas: si el servicio dice ocupado, otra pasada completa
+        for i in orden:
+            if i in muertas:
+                continue
+            clave = claves[i]
+            resta = fin - time.monotonic()
+            if resta < 2:
+                return ultimo
+            if proveedor == 'groq':
+                resta = min(resta, 45)  # una clave lenta no se come el tiempo de las demas
+            cuerpo = {'model': modelo, 'messages': _recortar(mensajes), 'max_tokens': max_tokens}
+            if modelo == 'z-ai/glm-5.3':
+                cuerpo['reasoning_effort'] = 'low'
+                cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
+            if modelo in ('moonshotai/kimi-k3', 'nvidia/nemotron-3-super-120b-a12b'):
+                cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
+            if tools:
+                cuerpo['tools'] = tools
+                cuerpo['tool_choice'] = 'auto'
+            ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+            if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
+                c = str((ultimo[1]['choices'][0].get('message') or {}).get('content') or '')
+                if not any(x in c.lower() for x in ('server is busy', 'try again later', 'service unavailable')):
+                    _BUENA[proveedor] = i
+                    return ultimo
+                ultimo = (503, {'error': 'SERVICIO_OCUPADO'})
+                time.sleep(2)  # el servicio dice ocupado: siguiente clave
+                continue
+            if ultimo[0] in (401, 403, 429):
+                muertas.add(i)  # clave sin acceso o sin cuota: no insistir en la segunda vuelta
+                continue
+            if ultimo[0] == 400:
+                detalle = json.dumps(ultimo[1])
+                if 'too large' not in detalle and 'tier' not in detalle:
+                    return ultimo  # 400 de formato: no lo arregla otra clave; los de cuota/tier si
+        time.sleep(3)
     return ultimo
 
 
@@ -276,6 +296,8 @@ def _calls_texto(content):
 def _bucle(llamar, mensajes):
     h = _herr()
     usadas = []
+    vistos = {}   # dedup: misma herramienta + mismos args = mismo resultado
+    rotas = set()  # herramientas que ya fallaron por token/desconocidas
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
     con_tools = True
     pasos = 0
@@ -316,8 +338,18 @@ def _bucle(llamar, mensajes):
                 args = json.loads(f.get('arguments') or '{}')
             except ValueError:
                 args = {}
-            res = h.ejecutar(f.get('name', ''), args)
-            usadas.append({'herramienta': f.get('name', ''), 'ok': not res.startswith(('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0'))})
+            nom = f.get('name', '')
+            sello = (nom, json.dumps(args, sort_keys=True, default=str))
+            if sello in vistos:
+                res = vistos[sello]  # misma llamada repetida: no gasta otra peticion
+            elif nom in rotas:
+                res = 'ERROR: herramienta no disponible en este momento, no la uses mas y responde con lo que tengas'
+            else:
+                res = h.ejecutar(nom, args)
+                vistos[sello] = res
+                if 'no hay token' in res or 'herramienta desconocida' in res:
+                    rotas.add(nom)
+            usadas.append({'herramienta': nom, 'ok': not res.startswith(('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0'))})
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:3000]})
         pasos += 1
         if pasos >= MAX_PASOS or time.monotonic() >= fin:
@@ -325,6 +357,32 @@ def _bucle(llamar, mensajes):
 
 
 _CHECKPOINTS = {}
+
+
+def _ck_guardar(sesion, mensajes):
+    _CHECKPOINTS[sesion] = mensajes
+    try:  # lo mismo en la memoria persistente: sobrevive al cambio de job
+        mem, scope_for = _memoria()
+        mem.save(scope_for(DUENO, 'chat:' + sesion), 'checkpoint', {'mensajes': mensajes[-40:]})
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _ck_cargar(sesion):
+    if sesion in _CHECKPOINTS:
+        return _CHECKPOINTS.pop(sesion)
+    try:
+        mem, scope_for = _memoria()
+        res = mem.search(scope_for(DUENO, 'chat:' + sesion), 'checkpoint', 5)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        hallado = None
+        for f in filas:
+            d = f.get('data', f) if isinstance(f, dict) else f
+            if isinstance(d, dict) and isinstance(d.get('mensajes'), list):
+                hallado = d['mensajes']
+        return hallado
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _chat(p):
@@ -343,9 +401,11 @@ def _chat(p):
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
     if ctx:
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
-    if sesion in _CHECKPOINTS and re.search(r'(?i)(contin[uú]a?s?|sigue|retoma|seguid|seguir)', pregunta):
-        mensajes = _CHECKPOINTS.pop(sesion)
-        mensajes.append({'role': 'user', 'content': pregunta + ' (retoma el trabajo donde quedo, sin empezar de cero)'})
+    if re.search(r'(?i)(contin[uú]a?s?|sigue|retoma|seguid|seguir)', pregunta):
+        guardado = _ck_cargar(sesion)
+        if guardado:
+            mensajes = guardado
+            mensajes.append({'role': 'user', 'content': pregunta + ' (retoma el trabajo donde quedo, sin empezar de cero)'})
     mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
@@ -370,9 +430,27 @@ def _chat(p):
         usadas = usadas + list(usadas2)
         if 'error' not in d2:
             d = d2
+    if 'error' in d and model in FICHAS:
+        # reserva entre proveedores: la tarea pasa a otro modelo con lo ya hecho
+        prov0 = FICHAS[model][1]
+        alternos = [m for m in FICHAS if m != model and FICHAS[m][1] != prov0] + [m for m in FICHAS if m != model and FICHAS[m][1] == prov0]
+        hechas = ', '.join(sorted({u['herramienta'] for u in usadas})) or 'ninguna'
+        for alt in alternos[:2]:
+            _, prov_a, modelo_a, tope_a = FICHAS[alt]
+            mensajes.append({'role': 'user', 'content': 'El modelo anterior dejo de responder. Continua TU el trabajo donde quedo (ya se usaron estas herramientas: %s) y da la respuesta final.' % hechas})
+            _DEADLINE.set(time.monotonic() + min(200, max(TOPE_TOTAL_S, int(tope_a * 2.4))))
+
+            def llamar_alt(ms, tl, _p=prov_a, _m=modelo_a, _t=tope_a):
+                return _llamar_api(_p, _m, ms, max_tokens, _t, tl)
+            d3, usadas3 = _bucle(llamar_alt, mensajes)
+            usadas = usadas + list(usadas3)
+            if 'error' not in d3:
+                d = d3
+                model = alt
+                break
     if 'error' in d:
         if len(mensajes) > 3:  # habia trabajo a medias: guardarlo para 'continua'
-            _CHECKPOINTS[sesion] = _recortar(mensajes[1:])
+            _ck_guardar(sesion, _recortar(mensajes[1:]))
         return d
     texto = re.sub(r'<tool_call>.*?</tool_call>', '', d['choices'][0].get('message', {}).get('content') or '', flags=re.S).strip()
     if not texto.strip() and (d['choices'][0].get('message') or {}).get('reasoning_content'):
