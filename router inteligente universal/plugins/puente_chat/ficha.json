@@ -29,7 +29,9 @@
       "apagar_todo",
       "herramientas_estado",
       "chat_async",
-      "resultado"
+      "resultado",
+      "subir",
+      "archivos"
     ]
   },
   "seguridad": {
