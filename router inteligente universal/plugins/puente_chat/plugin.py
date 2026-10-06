@@ -293,6 +293,13 @@ def _calls_texto(content):
     return calls
 
 
+def _limpiar_texto(c):
+    # quita bloques <tool_call> cerrados y tambien el resto si quedo truncado sin cierre
+    c = re.sub(r'<tool_call>.*?</tool_call>', '', c or '', flags=re.S)
+    c = re.sub(r'<tool_call>.*', '', c, flags=re.S)
+    return c.strip()
+
+
 def _bucle(llamar, mensajes):
     h = _herr()
     usadas = []
@@ -323,7 +330,7 @@ def _bucle(llamar, mensajes):
             calls = [{'id': 'texto%d' % i, 'type': 'function', 'function': {'name': n, 'arguments': json.dumps(a)}}
                      for i, (n, a) in enumerate(_calls_texto(msg.get('content')))]
             if calls:
-                msg['content'] = re.sub(r'<tool_call>.*?</tool_call>', '', msg.get('content') or '', flags=re.S).strip()
+                msg['content'] = _limpiar_texto(msg.get('content'))
         if not calls or not con_tools:
             if (not (msg.get('content') or '').strip()) and msg.get('reasoning_content') and not final_hecho and time.monotonic() < fin:
                 mensajes.append({'role': 'assistant', 'content': ''})
@@ -452,7 +459,7 @@ def _chat(p):
         if len(mensajes) > 3:  # habia trabajo a medias: guardarlo para 'continua'
             _ck_guardar(sesion, _recortar(mensajes[1:]))
         return d
-    texto = re.sub(r'<tool_call>.*?</tool_call>', '', d['choices'][0].get('message', {}).get('content') or '', flags=re.S).strip()
+    texto = _limpiar_texto(d['choices'][0].get('message', {}).get('content'))
     if not texto.strip() and (d['choices'][0].get('message') or {}).get('reasoning_content'):
         texto = str(d['choices'][0]['message']['reasoning_content'])[-1500:]
     if not texto.strip() and usadas:
