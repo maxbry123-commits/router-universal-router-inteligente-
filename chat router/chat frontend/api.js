@@ -53,7 +53,7 @@ async function puenteRouter(base, body, qs, headers) {
   if (!r.ok || env.status !== 'ok') return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
   let p = env.result || {};
   if (p.estado === 'procesando' && p.proceso_id) {
-    const deadline = Date.now() + 150000;
+    const deadline = Date.now() + 290000;
     const proceso = p.proceso_id;
     while (p.estado === 'procesando') {
       if (Date.now() > deadline) return { status: 504, ok: false, p: { error: 'La llamada superó el tiempo de respuesta' } };

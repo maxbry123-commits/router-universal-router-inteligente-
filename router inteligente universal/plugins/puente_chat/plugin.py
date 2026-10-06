@@ -200,6 +200,8 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
         if modelo == 'z-ai/glm-5.3':
             cuerpo['reasoning_effort'] = 'low'
             cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
+        if modelo in ('moonshotai/kimi-k3', 'nvidia/nemotron-3-super-120b-a12b'):
+            cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
         if tools:
             cuerpo['tools'] = tools
             cuerpo['tool_choice'] = 'auto'
@@ -230,8 +232,16 @@ def _bucle(llamar, mensajes):
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
     con_tools = True
     pasos = 0
+    final_hecho = False
     while True:
-        if time.monotonic() >= fin: return {'error':'TIEMPO_TOTAL_AGOTADO'}, usadas
+        if time.monotonic() >= fin:
+            if final_hecho:
+                return {'error':'TIEMPO_TOTAL_AGOTADO'}, usadas
+            final_hecho = True  # una ultima llamada sin herramientas para contestar con lo que haya
+            con_tools = False
+            fin = time.monotonic() + 45
+            mensajes.append({'role': 'user', 'content': 'Se acabo el tiempo. Responde ya, sin usar mas herramientas, con lo que tengas.'})
+            continue
         s, d = llamar(mensajes, h.TOOLS if con_tools else None)
         if s == 400 and con_tools and not usadas:
             con_tools = False  # este modelo no admite herramientas: responde sin ellas
@@ -241,6 +251,11 @@ def _bucle(llamar, mensajes):
         msg = d['choices'][0].get('message') or {}
         calls = msg.get('tool_calls') or []
         if not calls or not con_tools:
+            if (not (msg.get('content') or '').strip()) and msg.get('reasoning_content') and not final_hecho and time.monotonic() < fin:
+                mensajes.append({'role': 'assistant', 'content': ''})
+                mensajes.append({'role': 'user', 'content': 'Deja de razonar y da ya la respuesta final, o usa una herramienta si la necesitas.'})
+                pasos += 1
+                continue
             return d, usadas
         mensajes.append({'role': 'assistant', 'content': msg.get('content') or '', 'tool_calls': calls})
         for c in calls:
@@ -278,6 +293,7 @@ def _chat(p):
 
         def llamar(ms, tl):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
+        _DEADLINE.set(time.monotonic() + min(250, max(TOPE_TOTAL_S, int(tope * 2.4))))
     else:
         url = str(p['respaldo_url'])
         if not url.startswith('https://') or not url.endswith('--8080.hf.jobs'):
@@ -289,6 +305,8 @@ def _chat(p):
     if 'error' in d:
         return d
     texto = d['choices'][0].get('message', {}).get('content') or ''
+    if not texto.strip() and (d['choices'][0].get('message') or {}).get('reasoning_content'):
+        texto = str(d['choices'][0]['message']['reasoning_content'])[-1500:]
     if not texto.strip() and usadas:
         s2, d2 = llamar(mensajes + [{'role': 'user', 'content': 'Dime en espanol el resultado de lo que hiciste.'}], None)
         if s2 < 400 and isinstance(d2, dict) and d2.get('choices'):

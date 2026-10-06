@@ -14,6 +14,7 @@ NS = 'COMAND-CENTER-1'
 BUCKET = NS + '/yaiwes-memoria-storage'
 _cache = {}
 SISTEMA = ('Tienes herramientas reales: GitHub (cuenta maxbry123-commits) y Hugging Face (cuenta COMAND-CENTER-1). '
+           'El repo principal es router-universal-router-inteligente- (lleva guion al final) en la rama main. '
            'Cuando te pidan leer, buscar, crear o cambiar archivos, repositorios, jobs o modelos, usa las herramientas en lugar de decir que no puedes. '
            'Nunca muestres claves ni tokens. Responde en espanol.')
 S = {'type': 'string'}
@@ -132,9 +133,14 @@ def _gh(metodo, ruta, cuerpo=None):
         return 0, 'ERROR: ruta de GitHub no permitida (solo repos de maxbry123-commits, /user y busquedas)'
     if metodo == 'DELETE' and re.match('^/repos/maxbry123-commits/[^/?]+/?([?].*)?$', str(ruta)):
         return 0, 'ERROR: no se puede borrar un repositorio'
+    m = re.match('^/repos/maxbry123-commits/([^/?]+)(/.*)?$', str(ruta))
+    if m:
+        real = _resolver_repo(urllib.parse.unquote(m.group(1)))
+        if real != m.group(1):
+            ruta = '/repos/%s/%s%s' % (OWNER, urllib.parse.quote(real, safe=''), m.group(2) or '')
+            m = re.match('^/repos/maxbry123-commits/([^/?]+)(/.*)?$', ruta)
     escritura = metodo not in ('GET', 'HEAD') and str(ruta).startswith('/repos/maxbry123-commits/')
     if not escritura:
-        m = re.match('^/repos/maxbry123-commits/([^/?]+)', str(ruta))
         t = _token_gh(m.group(1) if m else '')
         if not t:
             return 0, 'ERROR: no hay token de GitHub valido en el banco'
@@ -151,6 +157,51 @@ def _gh(metodo, ruta, cuerpo=None):
             continue
         return s, d
     return ultimo
+
+
+def _canon(nom):
+    return re.sub('[^a-z0-9]', '', str(nom or '').lower())
+
+
+def _resolver_repo(nombre):
+    # Devuelve el nombre real del repo aunque el modelo lo escriba mal
+    # (sin guion final, espacios, mayusculas). Si no hay coincidencia, devuelve el original.
+    nom = str(nombre or '').strip().strip('/')
+    if not nom:
+        return nom
+    ck = 'ghrepo:' + nom.lower()
+    c = _cache.get(ck)
+    if c and time.time() - c[1] < 600:
+        return c[0]
+    claves = _llaves('github', ['GITHUB_PERSONAL_ACCESS_TOKEN'])
+    for k in claves:
+        s, _ = _peticion('GET', 'https://api.github.com/repos/%s/%s' % (OWNER, urllib.parse.quote(nom, safe='')),
+                         k, espera=15, extra={'Accept': 'application/vnd.github+json'})
+        if s == 200:
+            _cache[ck] = (nom, time.time())
+            return nom
+        if s == 401:
+            continue
+    objetivo = _canon(nom)
+    for k in claves:
+        pagina = 1
+        encontrado = ''
+        while pagina <= 5 and not encontrado:
+            s, d = _peticion('GET', 'https://api.github.com/users/%s/repos?per_page=100&page=%d&type=owner' % (OWNER, pagina),
+                             k, espera=20, extra={'Accept': 'application/vnd.github+json'})
+            if s != 200 or not isinstance(d, list) or not d:
+                break
+            for r in d:
+                n = r.get('name') or ''
+                if _canon(n) == objetivo:
+                    encontrado = n
+                    break
+            pagina += 1
+        if encontrado:
+            _cache[ck] = (encontrado, time.time())
+            return encontrado
+        break
+    return nom
 
 
 def _hf(metodo, ruta, cuerpo=None):
