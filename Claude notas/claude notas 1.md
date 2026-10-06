@@ -447,3 +447,14 @@ El Director ordenó Inicia tras reiterar los objetivos del chat. Servidor HF Job
 - Entrada del chat sin contraseña; clave del puente resuelta dentro de HF, nunca incrustada en JS. Administración del Router conserva su autenticación.
 - Herramientas HTTP GitHub/HF usan los permisos completos de las claves del banco; internet y memoria conservados. L4 únicamente bajo pedido, con apagado automático existente.
 - La sección 12 fue una detención temporal; esta reanudación está autorizada.
+
+
+## 14. Verificación y reparación de herramientas GitHub — 2026-10-06 (Devin)
+
+El Director ordenó probar los 7 modelos con tools y acceso total a GitHub/HF. Resultado probado en vivo:
+
+- Banco abierto con la clave del Director: 43 credenciales (13 github, 4 hf). Solo 7 claves de GitHub pueden escribir commits (clasico-claude-1, director-full, full-acceso, full-acceso-2, maxbry123-classic-1/2, acceso-total-pat tiene push pero su PAT fina lo niega con 403).
+- Fallo real encontrado y reparado: herramientas.py elegía la primera clave válida de /user; varias son de solo lectura u otras cuentas y la escritura daba 403/404. Ahora `_gh` reintenta las escrituras con cada clave del banco hasta que una commitea, y `_token_gh` verifica visibilidad del repo para lecturas. Borrar repos sigue bloqueado. Fix en main (commit 31cd3ca1c5) y en el bundle del bucket (bak-20261006002930).
+- Router relanzado con el kernel (sucesor sano primero): job nuevo `6ac440f4fbc85ba6823af1a7` cpu-basic 16 GB; LIVE_URL publicado; el viejo quedó cancelado. Memoria sincronizada antes del cambio.
+- Probado por modelos: GLM 5.3 github_escribir commit real; Nemotron Super github_escribir commit real; Nemotron Lightning github_leer/github_api; Kimi K3 hf_api e internet_buscar (a veces no emite la llamada: limitación del modelo, no de acceso); Groq Qwen internet_buscar; HF-2 Qwen 35B en L4 hf_api (L4 encendió ~4 min y se apagó solo). Memoria guardada en todos.
+- Archivos de prueba borrados del repo y del bucket.
