@@ -1,6 +1,6 @@
 {
   "id": "ask-consil-factory",
-  "nombre": "\ud83e\udde0 ask consil factory",
+  "nombre": "🧠 ask consil factory",
   "proveedor": "pipeline",
   "modelo": "pipeline",
   "timeout_s": 420,
@@ -9,5 +9,21 @@
   "rotacion": "mismo-modelo",
   "herramientas": true,
   "memoria": true,
-  "pasos": ["investiga", "ultra-550b goals", "consil groq-muse-kimi x12", "nemotron-super ejecuta", "kimi refactoriza"]
+  "pasos": ["investiga", "ultra-550b goals", "consil groq-muse-kimi x12", "nemotron-super ejecuta", "kimi refactoriza"],
+  "microagente": {
+    "schema": "yaiwes.node-executor/xray-v2",
+    "mode": "FAIL_CLOSED",
+    "execution_model": "DAG+FSM",
+    "input_mode": "VERBATIM",
+    "input_immutable": true,
+    "objective_lock": true,
+    "scope_lock": true,
+    "default_deny": true,
+    "workflow": ["RESEARCH", "EXECUTE", "VALIDATE"],
+    "max_retries": 2,
+    "stop_early": false,
+    "close_token": "[[YAIWES:CLOSED]]",
+    "resume_motors": ["VERBATIM_LOCK", "CHECKPOINT_PERSISTENTE", "PROGRESS_DELTA", "TOOL_GUARD", "RESUME_ENGINE", "CLOSE_GATE"],
+    "output": {"micro_resumen": true, "flujo_horizontal": true, "checklist": true, "markers": ["🎯", "⚠️", "🆘", "✅"]}
+  }
 }
