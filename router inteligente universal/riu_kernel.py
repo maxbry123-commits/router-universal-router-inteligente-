@@ -48,7 +48,7 @@ def hydrate():
     keys={}
     for r in v.list():
         if r["enabled"] and r["provider"]=="router" and "hash" not in r["account"]:
-            try:keys[v.get_secret(r["credential_ref")]]= "chat-ui" if "chat-ui" in r["account"] else r["account"]
+            try:keys[v.get_secret(r["credential_ref"])]= "chat-ui" if "chat-ui" in r["account"] else r["account"]
             except Exception:pass
     os.environ["RIU_AGENT_API_KEYS"]=json.dumps(keys)
     os.environ["RIU_AGENT_API_KEYS_2"]="{}"
