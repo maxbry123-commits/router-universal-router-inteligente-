@@ -2,11 +2,6 @@
   "id": "hf-1-qwen-3-8",
   "nombre": "HF 1 Qwen 3.8 (27B)",
   "tipo": "hf",
-  "timeout_s": 90,
-  "recuperacion": "riu.ficha.3x3.v1",
-  "tiempos_s": {"llamada": 90, "paso": 270, "tarea": 900},
-  "motores_llamado": ["rotar_claves", "reserva_proveedor", "continuar_desde_checkpoint"],
-  "motores_estado": ["checkpoint_local", "checkpoint_persistente", "reconstruir_herramientas"],
   "archivo": "Qwen3.8-27B-UD-Q3_K_XL.gguf",
   "herramientas": true,
   "memoria": true

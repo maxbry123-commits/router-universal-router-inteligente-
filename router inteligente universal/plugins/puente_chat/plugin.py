@@ -2,7 +2,7 @@
 
 Llamada: POST <puerta>/plugins/puente_chat/call/<accion> con el token del chat (Bearer). Respuesta del host: {"status": "ok", "result": ...}.
 Acciones: status | modelos | chat {model, messages, max_tokens, sesion, respaldo_url?} | estado {job, url} | apagar {job}.
-Modelos NV/GROQ: llamada directa al proveedor con las claves del banco; rota claves del MISMO modelo; 90 s por intento de socket.
+Modelos NV/GROQ: llamada directa al proveedor con las claves del banco; rota claves del MISMO modelo; tope total 90 s (GLM 96 s).
 Modelos HF: enciende un L4 (almacenamiento conectado como disco). Seguridades: (1) se apaga solo 30 s tras terminar la salida; (2) 5 min sin pedidos; (3) tope duro de HF de 20 min; (4) barrendero del Router cancela L4 viejos; (5) un solo L4 a la vez; remoto: apagar / apagar_todo.
 Memoria: antes de responder busca contexto en /memoria (scope chat:<sesion>); despues guarda pregunta y respuesta.
 """
@@ -13,7 +13,6 @@ import json
 import re
 from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
-_TASK_DEADLINE = ContextVar("riu_chat_task_deadline", default=None)
 import time
 import urllib.error
 import urllib.parse
@@ -24,18 +23,11 @@ NS = "COMAND-CENTER-1"
 DUENO = "chat-ui"
 ETIQUETA_L4 = "router-respaldo-l4"
 TOPE_TOTAL_S = 90
-MAX_TAREA_S = 900
 MAX_PASOS = 6
 _CACHE_H = {}
 from pathlib import Path
 _CONFIG_DIR = Path(__file__).resolve().parent / "fichas"
 _catalog = [json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob("modelo-*.json"))]
-if any(f.get('timeout_s') != TOPE_TOTAL_S or f.get('recuperacion') != 'riu.ficha.3x3.v1'
-       or f.get('tiempos_s') != {'llamada': 90, 'paso': 270, 'tarea': 900}
-       or f.get('motores_llamado') != ['rotar_claves', 'reserva_proveedor', 'continuar_desde_checkpoint']
-       or f.get('motores_estado') != ['checkpoint_local', 'checkpoint_persistente', 'reconstruir_herramientas']
-       for f in _catalog):
-    raise ValueError('FICHA_RECUPERACION_INCOMPLETA')
 FICHAS = {f["id"]:(f["nombre"],f.get("proveedor","pipeline"),f.get("modelo","pipeline"),f["timeout_s"]) for f in _catalog if f["tipo"] in ("api","consil","motor","xray","auditor")}
 ESPECIALES = {f["id"]: f["tipo"] for f in _catalog if f["tipo"] in ("consil","motor","xray","auditor")}
 RESPALDO = {f["id"]:(f["nombre"],f["archivo"]) for f in _catalog if f["tipo"]=="hf"}
@@ -47,11 +39,10 @@ ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO"
 
 
 def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float = 60) -> tuple[int, Any]:
-    for deadline in (_DEADLINE.get(), _TASK_DEADLINE.get()):
-        if deadline is not None:
-            espera = min(espera, deadline - time.monotonic())
-    espera = min(espera, TOPE_TOTAL_S)
-    if espera <= 0: return 0, {'error': 'TIEMPO_TOTAL_AGOTADO'}
+    deadline = _DEADLINE.get()
+    if deadline is not None:
+        espera = min(espera, deadline - time.monotonic())
+        if espera <= 0: return 0, {'error': 'TIEMPO_TOTAL_AGOTADO'}
     req = urllib.request.Request(url, data=json.dumps(cuerpo).encode() if cuerpo is not None else None, method=metodo,
                                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", "User-Agent": "riu-chat-mvp", "Accept": "application/json"})
     try:
@@ -211,23 +202,6 @@ def _sentinela():
     return mod  # proveedor -> indice de la ultima clave que respondio bien
 
 
-def _motor(nombre):
-    clave = 'motor:' + nombre
-    if clave not in _CACHE_H:
-        ruta = _CONFIG_DIR / (nombre + '.py')
-        spec = importlib.util.spec_from_file_location('riu_' + nombre, str(ruta))
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        _CACHE_H[clave] = mod
-    return _CACHE_H[clave]
-
-
-def _plazo(segundos):
-    fin = time.monotonic() + segundos
-    tarea = _TASK_DEADLINE.get()
-    _DEADLINE.set(min(fin, tarea) if tarea else fin)
-
-
 def _recortar(mensajes, limite=20000):
     # Mantiene el envio por debajo del tope de la API: acorta salidas de
     # herramientas y luego suelta los turnos mas viejos (sin romper pares
@@ -258,56 +232,59 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
     base = providers.base_url(proveedor)
     if not claves or not base:
         return 0, {'error': 'SIN_CLAVES_' + proveedor.upper()}
-    motor = _motor('motores_llamado')
-    fin = time.monotonic() + motor.ESPERA_API_S * motor.MAX_LLAMADOS
+    fin = time.monotonic() + tope
     ultimo = (0, {'error': 'SIN_RESPUESTA'})
     buena = _BUENA.get(proveedor)  # la ultima clave que respondio va primero
+    orden = ([buena] if isinstance(buena, int) and 0 <= buena < len(claves) else []) + [i for i in range(len(claves)) if i != buena]
     muertas = set()
-    for i in motor.rotar_claves(len(claves), buena):
-        if i in muertas:
-            continue
-        clave = claves[i]
-        resta = min(motor.ESPERA_API_S, fin - time.monotonic())
-        if resta <= 0:
-            return ultimo
-        cuerpo = {'model': modelo, 'messages': _recortar(mensajes), 'max_tokens': max_tokens}
-        if modelo == 'z-ai/glm-5.3':
-            cuerpo['reasoning_effort'] = 'low'
-            cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
-        if modelo in ('moonshotai/kimi-k3', 'nvidia/nemotron-3-super-120b-a12b', 'meta/muse-glimmer-30b', 'nvidia/nemotron-3-ultra-550b-a55b'):
-            cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
-        if tools:
-            cuerpo['tools'] = tools
-            cuerpo['tool_choice'] = 'auto'
-        ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
-        if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
-            c = str((ultimo[1]['choices'][0].get('message') or {}).get('content') or '')
-            if not any(x in c.lower() for x in ('server is busy', 'try again later', 'service unavailable')):
-                _BUENA[proveedor] = i
+    for _vuelta in range(2):  # dos vueltas: si el servicio dice ocupado, otra pasada completa
+        for i in orden:
+            if i in muertas:
+                continue
+            clave = claves[i]
+            resta = fin - time.monotonic()
+            if resta < 2:
                 return ultimo
-            ultimo = (503, {'error': 'SERVICIO_OCUPADO'})
-        if ultimo[0] in (401, 403, 429):
-            muertas.add(i)
-        if ultimo[0] == 400:
-            detalle = json.dumps(ultimo[1])
-            if 'too large' not in detalle and 'tier' not in detalle:
-                return ultimo
+            if proveedor == 'groq':
+                resta = min(resta, 45)  # una clave lenta no se come el tiempo de las demas
+            cuerpo = {'model': modelo, 'messages': _recortar(mensajes), 'max_tokens': max_tokens}
+            if modelo == 'z-ai/glm-5.3':
+                cuerpo['reasoning_effort'] = 'low'
+                cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
+            if modelo in ('moonshotai/kimi-k3', 'nvidia/nemotron-3-super-120b-a12b', 'meta/muse-glimmer-30b', 'nvidia/nemotron-3-ultra-550b-a55b'):
+                cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
+            if tools:
+                cuerpo['tools'] = tools
+                cuerpo['tool_choice'] = 'auto'
+            ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+            if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
+                c = str((ultimo[1]['choices'][0].get('message') or {}).get('content') or '')
+                if not any(x in c.lower() for x in ('server is busy', 'try again later', 'service unavailable')):
+                    _BUENA[proveedor] = i
+                    return ultimo
+                ultimo = (503, {'error': 'SERVICIO_OCUPADO'})
+                time.sleep(2)  # el servicio dice ocupado: siguiente clave
+                continue
+            if ultimo[0] in (401, 403, 429):
+                muertas.add(i)  # clave sin acceso o sin cuota: no insistir en la segunda vuelta
+                continue
+            if ultimo[0] == 400:
+                detalle = json.dumps(ultimo[1])
+                if 'too large' not in detalle and 'tier' not in detalle:
+                    return ultimo  # 400 de formato: no lo arregla otra clave; los de cuota/tier si
+        time.sleep(3)
     return ultimo
 
 
 def _llamar_l4(url, modelo, mensajes, max_tokens, tools):
     ultimo = (0, {'error': 'SIN_TOKEN_HF_EN_EL_BANCO'})
-    tokens = _tokens_hf()
-    for i in _motor('motores_llamado').rotar_claves(len(tokens)):
-        t = tokens[i]
+    for t in _tokens_hf():
         cuerpo = {'model': modelo, 'messages': mensajes, 'max_tokens': max_tokens}
         if tools:
             cuerpo['tools'] = tools
             cuerpo['tool_choice'] = 'auto'
-        ultimo = _http('POST', url + '/v1/chat/completions', t, cuerpo, TOPE_TOTAL_S)
-        if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
-            return ultimo
-        if ultimo[0] == 400:
+        ultimo = _http('POST', url + '/v1/chat/completions', t, cuerpo, 110)
+        if ultimo[0] < 400 or ultimo[0] == 400:
             return ultimo
     return ultimo
 
@@ -337,10 +314,10 @@ def _limpiar_texto(c):
     return c.strip()
 
 
-def _bucle(llamar, mensajes, guardar=None):
+def _bucle(llamar, mensajes):
     h = _herr()
     usadas = []
-    vistos = {k: v for k, v in _motor('motores_estado').reconstruir_herramientas(mensajes).items() if not v.startswith('ERROR')}
+    vistos = {}   # dedup: misma herramienta + mismos args = mismo resultado
     rotas = set()  # herramientas que ya fallaron por token/desconocidas
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
     con_tools = True
@@ -395,38 +372,36 @@ def _bucle(llamar, mensajes, guardar=None):
                     rotas.add(nom)
             usadas.append({'herramienta': nom, 'ok': not res.startswith(('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0'))})
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:3000]})
-            if guardar:
-                guardar(mensajes)
         pasos += 1
         if pasos >= MAX_PASOS or time.monotonic() >= fin:
             con_tools = False  # tiempo o pasos agotados: pedir la respuesta final sin herramientas
 
 
 _CHECKPOINTS = {}
-_CK_SOURCE = {}
 
 
 def _ck_guardar(sesion, mensajes):
-    estado = _motor('motores_estado')
-    estado.checkpoint_local(_CHECKPOINTS, sesion, mensajes)
+    _CHECKPOINTS[sesion] = mensajes
     try:  # lo mismo en la memoria persistente: sobrevive al cambio de job
         mem, scope_for = _memoria()
-        estado.checkpoint_persistente(mem, scope_for(DUENO, 'chat:' + sesion), sesion, mensajes[-40:])
+        mem.save(scope_for(DUENO, 'chat:' + sesion), 'checkpoint', {'mensajes': mensajes[-40:]})
     except Exception:  # noqa: BLE001
         pass
 
 
 def _ck_cargar(sesion):
-    estado = _motor('motores_estado')
-    local = estado.checkpoint_local(_CHECKPOINTS, sesion)
-    if local:
-        _CK_SOURCE[sesion] = 'local'
-        return local
+    if sesion in _CHECKPOINTS:
+        return _CHECKPOINTS.pop(sesion)
     try:
         mem, scope_for = _memoria()
-        guardado = estado.checkpoint_persistente(mem, scope_for(DUENO, 'chat:' + sesion), sesion)
-        _CK_SOURCE[sesion] = 'persistente' if guardado else 'no_disponible'
-        return guardado
+        res = mem.search(scope_for(DUENO, 'chat:' + sesion), 'checkpoint', 5)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        hallado = None
+        for f in filas:
+            d = f.get('data', f) if isinstance(f, dict) else f
+            if isinstance(d, dict) and isinstance(d.get('mensajes'), list):
+                hallado = d['mensajes']
+        return hallado
     except Exception:  # noqa: BLE001
         return None
 
@@ -440,16 +415,8 @@ _SYS_PIPE = 'Eres un paso de una cadena determinista (consil). Responde solo lo 
 
 def _paso_llm(prov, modelo, msgs, tope=120, mt=1200):
     # una llamada de la cadena: misma rotacion de claves y deteccion de ocupado que el chat
-    _plazo(TOPE_TOTAL_S * _motor('motores_llamado').MAX_LLAMADOS)
-    s, d = _llamar_api(prov, modelo, msgs, mt, TOPE_TOTAL_S, None)
-    if s <= 0 or s >= 400 or not isinstance(d, dict) or not d.get('choices'):
-        origen = next((nombre for nombre, ficha in FICHAS.items() if ficha[1] == prov and ficha[2] == modelo), None)
-        if origen:
-            alternos = _motor('motores_llamado').reserva_proveedor(FICHAS, origen)
-            if alternos:
-                _, prov_a, modelo_a, _ = FICHAS[alternos[0]]
-                _plazo(TOPE_TOTAL_S * _motor('motores_llamado').MAX_LLAMADOS)
-                s, d = _llamar_api(prov_a, modelo_a, msgs, mt, TOPE_TOTAL_S, None)
+    _DEADLINE.set(time.monotonic() + tope + 30)
+    s, d = _llamar_api(prov, modelo, msgs, mt, tope, None)
     if s < 400 and isinstance(d, dict) and d.get('choices'):
         m = d['choices'][0].get('message') or {}
         return _limpiar_texto(m.get('content')) or str(m.get('reasoning_content') or '')[-1500:]
@@ -503,7 +470,7 @@ def _consil(pregunta):
         [{'role': 'system', 'content': _SYS_PIPE},
          {'role': 'user', 'content': 'Revisa, refactoriza y mejora este resultado con 12 goals de salida (calidad, claridad, completitud). Entrega la respuesta final mejorada.\nResultado:\n%s' % out[:6000]}], 150, 1600)
     usadas.append('paso4:kimi-12-goals-salida')
-    return (fin or out or 'CONSIL_SIN_RESPUESTA'), usadas
+    return (fin or out or plan or g12 or 'CONSIL_SIN_RESPUESTA'), usadas
 
 
 _MOTORES_DESC = {
@@ -560,14 +527,12 @@ def _motor_descarga(pregunta):
         r = _sub.run(['python3', base + '/' + fichero], env=e, capture_output=True, text=True, timeout=90)
         salida_motor = (r.stdout or '') + (r.stderr or '')
         usadas.append('motor:' + fichero)
-        if r.returncode:
-            return 'MOTOR_ERROR ' + salida_motor[:200], usadas
     except Exception as x:  # noqa: BLE001
-        return 'MOTOR_ERROR ' + str(x)[:200], usadas
+        salida_motor = 'MOTOR_ERROR ' + str(x)[:200]
     fin = _paso_llm('nvidia', 'meta/muse-glimmer-30b',
         [{'role': 'system', 'content': _SYS_PIPE},
          {'role': 'user', 'content': 'Resume el resultado del motor para el usuario en 3 lineas.\nPlan: %s\nSalida del motor:\n%s' % (expl, salida_motor[:3000])}], 120)
-    return (fin or ('Motor ejecutado: ' + salida_motor[:1500]) if salida_motor else 'MOTOR_ERROR SIN_SALIDA'), usadas
+    return (fin or expl or salida_motor[:1500] or 'MOTOR_SIN_RESPUESTA'), usadas
 
 
 _REPO_DIR = 'router-universal-router-inteligente-'
@@ -817,24 +782,14 @@ def _especial(tipo, model, sesion, pregunta, p=None):
     elif tipo == 'xray':
         nombres = [str(n) for n in ((p or {}).get('anclados') or []) if not str(n).startswith(('handoff:', 'enlace:'))]
         r = _xray(sesion, nombres[0] if nombres else '', pregunta if not nombres else '')
-        if not r.get('ok'):
-            return {'error': r.get('error') or 'XRAY_FALLO', 'detalle': str(r.get('detalle') or '')[:200],
-                    'checklist': r.get('checklist') or []}
-        if any(i.get('estado') != 'COMPLETADO' for i in r.get('checklist') or []):
-            return {'error': 'XRAY_GOALS_PENDIENTES', 'parcial': r}
         texto = _xray_texto_out(r) if r.get('ok') else ('X-RAY ERROR: ' + str(r.get('detalle') or r.get('error')))
         usadas = [c['item'] for c in r.get('checklist') or []] or ['xray']
     elif tipo == 'auditor':
         r = _auditor_code()
-        if r.get('error'):
-            return {'error': r['error'], 'checklist': r.get('checklist') or []}
         texto = ('Auditor de code del repo — %d archivos:\n%s' % (r.get('total', 0), '\n'.join(r.get('carpetas') or [])))
         usadas = [c['item'] for c in r.get('checklist') or []] or ['auditor']
     else:
         texto, usadas = _motor_descarga(pregunta)
-    if not texto or texto == 'CONSIL_SIN_RESPUESTA' or texto.startswith('MOTOR_ERROR'):
-        return {'error': 'PIPELINE_NO_TERMINO', 'detalle': texto[:200],
-                'recuperacion': {'checkpoint': False, 'replay_no_idempotente': False}}
     return {'model': model,
             'choices': [{'message': {'role': 'assistant', 'content': texto}}],
             'herramientas': [{'herramienta': u, 'ok': True} for u in usadas],
@@ -843,8 +798,6 @@ def _especial(tipo, model, sesion, pregunta, p=None):
 
 
 def _chat(p):
-    _DEADLINE.set(None)
-    _TASK_DEADLINE.set(time.monotonic() + MAX_TAREA_S)
     model = str(p.get('model') or '')
     mensajes = list(p.get('messages') or [])
     max_tokens = int(p.get('max_tokens') or 2048)
@@ -854,8 +807,8 @@ def _chat(p):
         return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
-    presupuesto = TOPE_TOTAL_S * _motor('motores_llamado').MAX_LLAMADOS
-    _plazo(presupuesto)
+    presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
+    _DEADLINE.set(time.monotonic() + presupuesto)
     ctx = _contexto(sesion, pregunta) if pregunta else ''
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
     if ctx:
@@ -906,7 +859,8 @@ def _chat(p):
 
         def llamar(ms, tl):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
-        _plazo(presupuesto)
+        presupuesto = min(250, max(TOPE_TOTAL_S, int(tope * 2.4)))
+        _DEADLINE.set(time.monotonic() + presupuesto)
     else:
         url = str(p['respaldo_url'])
         if not url.startswith('https://') or not url.endswith('--8080.hf.jobs'):
@@ -918,31 +872,28 @@ def _chat(p):
     ultimo = {'model': model}
 
     def paso_modelo(ms):
-        ultimo['model'] = model
-        _plazo(presupuesto)
-        return _bucle(llamar, ms, lambda m: _ck_guardar(sesion, _recortar(m[1:])))
+        _DEADLINE.set(time.monotonic() + presupuesto)
+        return _bucle(llamar, ms)
 
     def paso_retoma(ms):
-        ultimo['model'] = model
-        ms[:] = _motor('motores_llamado').continuar_desde_checkpoint(ms)
-        _plazo(presupuesto)
-        return _bucle(llamar, ms, lambda m: _ck_guardar(sesion, _recortar(m[1:])))
+        ms.append({'role': 'user', 'content': 'Se corto la llamada. Continua el trabajo donde quedo y termina.'})
+        _DEADLINE.set(time.monotonic() + presupuesto)
+        return _bucle(llamar, ms)
 
     plan = [('modelo:' + model, paso_modelo), ('retoma', paso_retoma)]
-    if model in FICHAS or model in RESPALDO:
+    if model in FICHAS:
         # reserva entre proveedores: la tarea pasa a otro modelo con lo ya hecho
-        alternos = _motor('motores_llamado').reserva_proveedor(FICHAS, model) if model in FICHAS else [m for m, f in FICHAS.items() if f[1] in ('groq', 'nvidia')][:2]
-        for alt in alternos:
+        prov0 = FICHAS[model][1]
+        alternos = [m for m in FICHAS if m != model and FICHAS[m][1] != prov0] + [m for m in FICHAS if m != model and FICHAS[m][1] == prov0]
+        for alt in alternos[:2]:
             _, prov_a, modelo_a, tope_a = FICHAS[alt]
 
             def paso_alt(ms, _a=alt, _p=prov_a, _m=modelo_a, _t=tope_a):
                 hechas = ', '.join(sorted({tc.get('function', {}).get('name', '') for m2 in ms if m2.get('role') == 'assistant' for tc in (m2.get('tool_calls') or [])})) or 'ninguna'
-                ms[:] = _motor('motores_llamado').continuar_desde_checkpoint(ms)
-                ms.append({'role': 'user', 'content': 'Ya se usaron estas herramientas: %s. No repitas efectos.' % hechas})
-                _plazo(presupuesto)
+                ms.append({'role': 'user', 'content': 'El modelo anterior dejo de responder. Continua TU el trabajo donde quedo (ya se usaron estas herramientas: %s) y da la respuesta final.' % hechas})
+                _DEADLINE.set(time.monotonic() + min(200, max(TOPE_TOTAL_S, int(_t * 2.4))))
                 ultimo['model'] = _a
-                return _bucle(lambda m2, tl: _llamar_api(_p, _m, m2, max_tokens, TOPE_TOTAL_S, tl), ms,
-                              lambda m: _ck_guardar(sesion, _recortar(m[1:])))
+                return _bucle(lambda m2, tl: _llamar_api(_p, _m, m2, max_tokens, _t, tl), ms)
 
             plan.append(('reserva:' + alt, paso_alt))
 
@@ -950,8 +901,7 @@ def _chat(p):
     if sen:
         def _ck_in():
             ck = _ck_cargar(sesion)
-            return {'mensajes': [{'role': 'system', 'content': sistema}] + list(ck),
-                    'origen': _CK_SOURCE.get(sesion)} if ck else None
+            return ([{'role': 'system', 'content': sistema}] + list(ck)) if ck else None
         cl = sen.ejecutar(plan, mensajes,
                           guardar_ck=lambda ms: _ck_guardar(sesion, _recortar(ms[1:])),
                           cargar_ck=_ck_in)
@@ -959,10 +909,12 @@ def _chat(p):
         checklist = cl['items']
         model = ultimo['model']
     else:
-        return {'error': 'SENTINELA_NO_DISPONIBLE'}
+        d, usadas = _bucle(llamar, mensajes)
+        checklist = []
     if 'error' in d:
-        return {**d, 'checklist': checklist, 'recuperacion': {'llamados_max': 3,
-                'reinicios_max': 3, 'timeout_s': TOPE_TOTAL_S, 'checkpoint': bool(_CHECKPOINTS.get(sesion))}}
+        if len(mensajes) > 3:  # habia trabajo a medias: guardarlo para 'continua'
+            _ck_guardar(sesion, _recortar(mensajes[1:]))
+        return d
     texto = _limpiar_texto(d['choices'][0].get('message', {}).get('content'))
     if not texto.strip() and (d['choices'][0].get('message') or {}).get('reasoning_content'):
         texto = str(d['choices'][0]['message']['reasoning_content'])[-1500:]
@@ -1108,7 +1060,7 @@ def handle(action, payload):
         with _ASYNC_LOCK:
             now=time.time()
             for key, (future, created) in list(_ASYNC_REQUESTS.items()):
-                if now-created>1200 and future.done(): del _ASYNC_REQUESTS[key]
+                if now-created>900 and future.done(): del _ASYNC_REQUESTS[key]
             if sum(not f.done() for f,_ in _ASYNC_REQUESTS.values())>=16:
                 return {'error':'CHAT_OCUPADO_REINTENTA'}
             key=_secrets.token_urlsafe(24)

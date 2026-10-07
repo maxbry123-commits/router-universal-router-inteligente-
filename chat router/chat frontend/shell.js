@@ -40,15 +40,15 @@ document.querySelector("#navigation").addEventListener("click", event => {
   if (button) show(button.dataset.view);
 });
 show("chat");
-const TEMAS = ["little", "matte", "crystal", "orange", "blue", "blanco", "gris"];
+const TEMAS = ["gris", "little", "matte", "blanco"];
 function aplicarTema(valor) {
-  const tema = TEMAS.includes(valor) ? valor : "little";
+  const tema = TEMAS.includes(valor) ? valor : "gris";
   document.documentElement.dataset.theme = tema;
   try { localStorage.setItem("riu_tema", tema); } catch (error) { /* sin almacenamiento: vale solo en esta sesion */ }
   return tema;
 }
-let temaGuardado = "little";
-try { temaGuardado = localStorage.getItem("riu_tema") || "little"; } catch (error) { /* sin almacenamiento */ }
+let temaGuardado = "gris";
+try { temaGuardado = localStorage.getItem("riu_tema") || "gris"; } catch (error) { /* sin almacenamiento */ }
 const selectorTema = document.querySelector("#theme");
 if (selectorTema) {
   selectorTema.value = aplicarTema(temaGuardado);
