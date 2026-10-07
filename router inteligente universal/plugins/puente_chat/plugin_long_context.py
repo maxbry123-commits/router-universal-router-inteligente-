@@ -48,6 +48,8 @@ def _contexto(sesion: str, pregunta: str) -> str:
         res = mem.search(scope_for(_p.DUENO, "chat:" + sesion), "", CONTEXT_TURNS + 12)
         turns: list[str] = []
         total = 0
+        # memoria search returns newest-first; reverse once so the model sees
+        # the recovered conversation in normal chronological order.
         for f in reversed(_rows(res)):
             d = f.get("data", f) if isinstance(f, dict) else f
             if not isinstance(d, dict) or "pregunta" not in d:
@@ -63,7 +65,7 @@ def _contexto(sesion: str, pregunta: str) -> str:
             total += len(block) + 2
             if len(turns) >= CONTEXT_TURNS:
                 break
-        return "\n\n".join(reversed(turns))
+        return "\n\n".join(turns)
     except Exception:
         return ""
 
