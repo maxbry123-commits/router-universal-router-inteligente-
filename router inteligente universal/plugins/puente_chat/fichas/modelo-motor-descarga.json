@@ -1,6 +1,6 @@
 {
   "id": "motor-descarga",
-  "nombre": "\u27a1\ufe0f MOTOR DESCARGA EXTRACCIONES copiar mover",
+  "nombre": "➡️ MOTOR DESCARGA EXTRACCIONES copiar mover",
   "proveedor": "pipeline",
   "modelo": "pipeline",
   "timeout_s": 300,
@@ -10,5 +10,21 @@
   "herramientas": true,
   "memoria": true,
   "enlazados": ["nvidia/nemotron-3-embed-1b", "meta/muse-glimmer-30b"],
-  "motores": ["motor_1_extract_only.py", "motor_2_queue_download_extract.py", "motor_3_copy_batches.py", "motor_4_move_batches.py", "hf_download_extract_engine.py"]
+  "motores": ["motor_1_extract_only.py", "motor_2_queue_download_extract.py", "motor_3_copy_batches.py", "motor_4_move_batches.py", "hf_download_extract_engine.py"],
+  "microagente": {
+    "schema": "yaiwes.node-executor/xray-v2",
+    "mode": "FAIL_CLOSED",
+    "execution_model": "DAG+FSM",
+    "input_mode": "VERBATIM",
+    "input_immutable": true,
+    "objective_lock": true,
+    "scope_lock": true,
+    "default_deny": true,
+    "workflow": ["RESEARCH", "EXECUTE", "VALIDATE"],
+    "max_retries": 2,
+    "stop_early": false,
+    "close_token": "[[YAIWES:CLOSED]]",
+    "resume_motors": ["VERBATIM_LOCK", "CHECKPOINT_PERSISTENTE", "PROGRESS_DELTA", "TOOL_GUARD", "RESUME_ENGINE", "CLOSE_GATE"],
+    "output": {"micro_resumen": true, "flujo_horizontal": true, "checklist": true, "markers": ["🎯", "⚠️", "🆘", "✅"]}
+  }
 }
