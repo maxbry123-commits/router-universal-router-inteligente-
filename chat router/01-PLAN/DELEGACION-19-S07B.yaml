@@ -1,0 +1,58 @@
+schema: yaiwes.chain-draft/v1
+write_policy:
+  status: BLOCKED_UNTIL_ENFORCED
+  output_schema: yaiwes.result/v1
+  sheriff: chat router/05-AGENTES/gobierno/sheriff.py
+  sentinel: chat router/05-AGENTES/gobierno/sentinel.py
+  source_write_paths:
+    - chat router/wordflow loop code Yaiwes/wordflow_loop/adapters/browser_use_adapter.py
+input_block: |
+  "Usa todos los agentes que te nombre"
+  "No escribes code usa el de los agente o investigas en Github componentes open soure y usas el motor de descarga y extracción cableas"
+  Misión completa: integrar y probar las cuatro capabilities S-07B, no crear staff.
+agent:
+  id: agent-19-chat-components-motors
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+context:
+  text: |
+    Rol solicitado: OpenHands = ejecución de integración; no declarar operativo
+    OpenHands por nombrarlo. Fuente: chat router/11-EVIDENCIA/motor2-s07b/queue.json.
+    Los cuatro árboles ya pasaron copia/movimiento local; runtime aún no verificado.
+    Reutilizar exclusivamente el motor HF, Motor 3 y Motor 4 existentes, con commit
+    fijado y read-back. No modificar Router, LFS, GitHub Actions, pip ni git clone directo.
+    Ejecutar solo con credenciales disponibles en el banco del proyecto por canal seguro;
+    no copiar valores del chat a archivos ni logs y no rotar claves sin orden.
+steps:
+  - id: inventario
+    owner_role: openhands
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-19-inventario.result.json
+    task: |
+      Comprobar fuentes y commits fijados de anthropic-skills, scrapling,
+      scrapegraph-ai y agent-reach; separar recibos de adquisición de executors
+      reales y registrar rutas, licencias y gaps de OpenHands.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: cableado
+    owner_role: openhands
+    source_mutation: true
+    result_path: chat router/11-EVIDENCIA/delegacion-19-cableado.result.json
+    task: |
+      Integrar las cuatro solo como capabilities/tools del Wordflow por los
+      contratos existentes. Si alguna requiere nueva adquisición, usar únicamente
+      motores autorizados. Registrar diff mínimo, invocación concreta por slug y
+      fallo cerrado si faltan dependencias o el ejecutor de OpenHands.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: readback
+    owner_role: openhands
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-19-readback.result.json
+    task: |
+      Para cada capability ejecutar entrada real, verificar salida y read-back
+      persistido con prueba repetible; informar PASS solo para las ejecutadas,
+      BLOCKED para las demás, con evidencia por slug y sin falsos VERIFIED_CLOSED.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+edges: [[inventario, cableado], [cableado, readback]]

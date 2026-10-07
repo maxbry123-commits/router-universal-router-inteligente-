@@ -1,0 +1,56 @@
+schema: yaiwes.chain-draft/v1
+write_policy:
+  status: BLOCKED_UNTIL_ENFORCED
+  output_schema: yaiwes.result/v1
+  sheriff: chat router/05-AGENTES/gobierno/sheriff.py
+  sentinel: chat router/05-AGENTES/gobierno/sentinel.py
+  source_write_paths:
+    - chat router/05-AGENTES/asistentes/puente_asistentes.py
+input_block: |
+  "deepseek-harness (plugins con el chat) = BASE que conecta todo el wordflow; NO eliminar. Hermes + OpenClaw = base permanente del chat (asistente + sentinelas) con o sin wordflow."
+  Misión completa: comprobar el puente permanente de Hermes y OpenClaw al chat.
+agent:
+  id: agent-44-motor-hermes-openclaw
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 2000
+context:
+  text: |
+    Roles solicitados: Hermes = planner_supervisor; OpenClaw = guardian_supervisor.
+    No sustituir uno por el otro; no vincular su vida a Wordflow.
+    Código: chat router/05-AGENTES/asistentes/ y chat router/05-AGENTES/colmena/.
+    Los scripts antiguos incluyen clone/pip directos: NO ejecutarlos.
+    Conexión autorizada solo vía plugin/puente existente; no modificar ni relanzar Router.
+    Los headers HF y X-API-Key deben provenir del banco por canal seguro; la configuración
+    SDK de cabeceras Hermes/OpenClaw sigue UNVERIFIED hasta prueba real.
+steps:
+  - id: auditar
+    owner_role: hermes
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-44-auditar.result.json
+    task: |
+      Inspeccionar adapters, credenciales por entorno, roles y contratos de salida;
+      verificar si los forks/runtime existen por el motor autorizado. Marcar GAP
+      para todo stub, simulación o dependencia sin executor.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: puente
+    owner_role: hermes
+    source_mutation: true
+    result_path: chat router/11-EVIDENCIA/delegacion-44-puente.result.json
+    task: |
+      Con credenciales seguras y runtimes verificados, cablear los dos
+      al chat y State Hub, tanto con Wordflow como sin él, sin alterar rutas/modelo
+      ni revelar tokens. Si falta cualquiera, dejar el puente fail-closed.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+  - id: comprobar
+    owner_role: openclaw
+    source_mutation: false
+    result_path: chat router/11-EVIDENCIA/delegacion-44-comprobar.result.json
+    task: |
+      Exigir respuesta independiente de cada asistente y dos eventos persistidos
+      con read-back; router_connected=true solo tras health autenticado real.
+      Sin credenciales seguras o sin respuestas: BLOCKED, no PASS.
+    checks: [{kind: min_chars, value: 200}, {kind: no_secrets}]
+edges: [[auditar, puente], [puente, comprobar]]
