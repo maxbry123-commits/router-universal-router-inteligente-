@@ -20,17 +20,34 @@ from ..huggingface import fastapi_gateway as gateway
 from . import wordflow_agents
 from .jobs import build_jobs_router
 from .route_api import build_route_router
-from .router import build_router, get_store
+from .router import build_router, get_store, sync_to_bucket
+from .storage_runtime import restore_configured_storage, start_autosync
 from .vault_api import build_vault_router
 
-app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.3")
+app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.4")
 app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in os.getenv("RIU_CORS_ORIGINS", "*").split(",") if o.strip()],
                    allow_methods=["*"], allow_headers=["*"], allow_credentials=False)
 
 
 @app.on_event("startup")
+def _restore_chat_storage() -> None:
+    """Restore durable chat memory before the SQLite Store is opened."""
+    try:
+        result = restore_configured_storage()
+        logging.getLogger("riu").info("chat storage restore: %s", result.get("status"))
+    except Exception as exc:  # storage persistence must never prevent Router boot
+        logging.getLogger("riu").warning("chat storage restore failed: %s", type(exc).__name__)
+
+
+@app.on_event("startup")
 def _seed_wordflow_fleet() -> None:
-    wordflow_agents.seed(get_store())
+    store = get_store()
+    wordflow_agents.seed(store)
+    try:
+        result = start_autosync(store, sync_to_bucket)
+        logging.getLogger("riu").info("chat storage autosync: %s", result.get("status"))
+    except Exception as exc:  # autosync failure must never take down the Router
+        logging.getLogger("riu").warning("chat storage autosync not started: %s", type(exc).__name__)
 
 
 _chat_deps: list = []
