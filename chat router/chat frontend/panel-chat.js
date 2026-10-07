@@ -88,7 +88,7 @@ export async function mount(root, { api, tell }) {
     sh.hidden = abierto;
     if (!abierto && b.dataset.sheet === "ventana-archivos") cargarArchivos();
     if (!abierto && b.dataset.sheet === "ventana-sandbox") cargarSandbox();
-    if (!abierto && b.dataset.sheet === "sh-ancla") pintarAnclas();
+    if (!abierto && b.dataset.sheet === "sh-ancla") { pintarAnclas(); cargarMiHandoff(); }
   }));
   root.querySelectorAll(".sh-cerrar").forEach((b) => b.addEventListener("click", cerrarHojas));
 
@@ -162,7 +162,15 @@ export async function mount(root, { api, tell }) {
     const lista = q("#sh-ancla-lista");
     lista.replaceChildren();
     for (const [k, t, d] of ANCLAS) {
-      lista.append(filaEncender(t, d, "handoff:" + k));
+      lista.append(filaEncender(t, d, "handoff:" + k, async (enc) => {
+        if (!enc) return;
+        try {  // muestra en el chat lo que quedo anclado
+          const r = await window.RIU_ACCION("handoff", { fuente: k, sesion: chat().sesion });
+          const c = chat();
+          c.hist.append(burbuja("⚓ ANCLADO " + k + ":\n" + JSON.stringify(r.handoff || r, null, 1)));
+          c.hist.scrollTop = c.hist.scrollHeight;
+        } catch (err) { tell(err.message); }
+      }));
     }
     lista.append(fila("🔬 Auditor de code del repo", "ubica los archivos de code del proyecto", false, async (ev) => {
       ev.currentTarget.disabled = true;
@@ -175,6 +183,34 @@ export async function mount(root, { api, tell }) {
       } catch (err) { tell(err.message); }
     }));
   };
+  // mi handoff: texto propio guardado en memoria, editable; va interno con cada mensaje
+  const cargarMiHandoff = async () => {
+    try {
+      const r = await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion });
+      q("#mi-handoff").value = r.texto || "";
+      q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
+    } catch (err) { q("#mh-estado").textContent = err.message; }
+  };
+  q("#mh-guardar").addEventListener("click", async () => {
+    try {
+      const texto = q("#mi-handoff").value;
+      const r = await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion, texto });
+      q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
+      if (r.encendido) {
+        const c = chat();
+        c.hist.append(burbuja("⚓ MI HANDOFF anclado:\n" + texto));
+        c.hist.scrollTop = c.hist.scrollHeight;
+      }
+      tell("Mi handoff " + (r.encendido ? "guardado y encendido" : "apagado"));
+    } catch (err) { tell(err.message); }
+  });
+  q("#mh-apagar").addEventListener("click", async () => {
+    try {
+      await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion, texto: "" });
+      q("#mh-estado").textContent = "apagado";
+      tell("Mi handoff apagado");
+    } catch (err) { tell(err.message); }
+  });
   q("#ancla-enlace-on").addEventListener("click", () => {
     const v = (q("#ancla-enlace").value || "").trim();
     if (!v) { tell("Pega primero un enlace o handoff"); return; }

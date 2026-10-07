@@ -713,6 +713,9 @@ def _chat(p):
         sd = _mem_dato(sesion, 'sandbox')
         if sd.get('texto'):
             sistema += ' SANDBOX del usuario (system prompt de code; sigue estas instrucciones): ' + str(sd['texto'])[:3000]
+        hp = _mem_dato(sesion, 'handoff_propio')
+        if hp.get('texto'):
+            sistema += ' HANDOFF del usuario (donde trabajar; sigue este handoff): ' + str(hp['texto'])[:6000]
     except Exception:  # noqa: BLE001
         pass
     if re.search(r'(?i)(contin[uú]a?s?|sigue|retoma|seguid|seguir)', pregunta):
@@ -882,6 +885,17 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return _auditor_code(str(payload.get('filtro') or ''))
     if action == 'handoff':  # selector de ancla: handoff JSON para anclar al input
         return _handoff(str(payload.get('fuente') or 'chat-router'))
+    if action == 'handoff_texto':  # mi handoff: texto del usuario guardado/editable por sesion
+        try:
+            mem, scope_for = _memoria()
+            sc = scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60])
+            if 'texto' in payload:
+                mem.save(sc, 'handoff_propio', {'texto': str(payload.get('texto') or '')[:8000]})
+                return {'ok': True, 'encendido': bool(str(payload.get('texto') or '').strip())}
+            dd = _mem_dato(str(payload.get('sesion') or 'general')[:60], 'handoff_propio')
+            return {'texto': str(dd.get('texto') or ''), 'encendido': bool(dd.get('texto'))}
+        except Exception as x:  # noqa: BLE001
+            return {'error': 'HANDOFF_TEXTO_FALLO', 'detalle': str(x)[:200]}
     if action == 'sandbox':  # ventana sandbox: system prompt de code anclado a esta sesion
         try:
             mem, scope_for = _memoria()

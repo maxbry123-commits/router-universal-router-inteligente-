@@ -35,6 +35,7 @@
       "xray",
       "auditor_code",
       "handoff",
+      "handoff_texto",
       "sandbox"
     ]
   },
