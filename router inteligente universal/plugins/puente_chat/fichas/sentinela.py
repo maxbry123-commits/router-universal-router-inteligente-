@@ -28,7 +28,6 @@ END_MARK = '=== END_INPUT_BLOCK ==='
 
 
 def _valido(d):
-    """Validador legado: respuesta util = dict sin error, con choices y contenido."""
     if not isinstance(d, dict) or 'error' in d or not d.get('choices'):
         return False
     msg = (d['choices'][0] or {}).get('message') or {}
@@ -36,21 +35,13 @@ def _valido(d):
 
 
 def _checklist(items, completada, resultado, **extra):
-    out = {
-        'esquema': extra.pop('esquema', ESQUEMA),
-        'completada': bool(completada),
-        'items': items,
-        'resultado': resultado,
-    }
+    out = {'esquema': extra.pop('esquema', ESQUEMA), 'completada': bool(completada), 'items': items, 'resultado': resultado}
     out.update(extra)
     return out
 
 
 def _policy(mensajes: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """Resuelve la politica desde la ficha que corresponde al modelo del system prompt.
-
-    Esto permite probar una sola ficha sin activar el runtime nuevo para todas.
-    """
+    """Resuelve politica por modelo API o por nombre de ficha HF local."""
     system = '\n'.join(str(m.get('content') or '') for m in mensajes if m.get('role') == 'system')
     base = Path(__file__).resolve().parent
     for path in sorted(base.glob('modelo-*.json')):
@@ -59,8 +50,10 @@ def _policy(mensajes: list[dict[str, Any]]) -> dict[str, Any] | None:
         except Exception:
             continue
         model = str(cfg.get('modelo') or '')
+        name = str(cfg.get('nombre') or '')
         micro = cfg.get('microagente')
-        if model and model in system and isinstance(micro, dict) and micro.get('schema') == ESQUEMA_V2:
+        matched = (model and model in system) or (name and name in system)
+        if matched and isinstance(micro, dict) and micro.get('schema') == ESQUEMA_V2:
             return dict(micro)
     return None
 
@@ -73,7 +66,6 @@ def _latest_user_index(mensajes: list[dict[str, Any]]) -> int:
 
 
 def _extract_raw(content: str) -> str:
-    """Devuelve el RAW_INPUT si el mensaje ya esta envuelto; si no, el contenido literal."""
     text = str(content or '')
     if BEGIN_MARK not in text or '<user_query mode="verbatim">' not in text:
         return text
@@ -87,7 +79,6 @@ def _extract_raw(content: str) -> str:
 
 
 def _verbatim_block(raw: str) -> str:
-    """Envuelve el input sin normalizar ni modificar los caracteres del RAW_INPUT."""
     return (
         'schema: yaiwes.node-executor/xray-v2\n'
         'mode: FAIL_CLOSED\n'
@@ -115,8 +106,7 @@ def _verbatim_block(raw: str) -> str:
         '    - PRESERVE LINE BREAKS.\n'
         '    - PRESERVE ORDER.\n'
         '    - PRESERVE CHARACTERS EXACTLY.\n\n'
-        '  <user_query mode="verbatim">\n'
-        + raw +
+        '  <user_query mode="verbatim">\n' + raw +
         '\n  </user_query>\n\n'
         '  === END_INPUT_BLOCK ===\n\n'
         'BIND_FLOW: CAPTURE_AS_DATA → FREEZE_VERBATIM → EXTRACT_USER_QUERY → BIND_AS_TASK → EXECUTE_AS_TASK\n'
@@ -204,11 +194,7 @@ def _strip_close(d: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
 def _digest(mensajes: list[dict[str, Any]]) -> str:
     compact = []
     for m in mensajes[-24:]:
-        compact.append({
-            'role': m.get('role'),
-            'content': str(m.get('content') or ''),
-            'tool_calls': m.get('tool_calls') or [],
-        })
+        compact.append({'role': m.get('role'), 'content': str(m.get('content') or ''), 'tool_calls': m.get('tool_calls') or []})
     return hashlib.sha256(json.dumps(compact, ensure_ascii=False, sort_keys=True, default=str).encode('utf-8')).hexdigest()
 
 
@@ -243,7 +229,6 @@ def _ejecutar_v2(plan, mensajes, guardar_ck, cargar_ck, policy):
     usadas: list[Any] = []
     raw, raw_sha = _prepare_verbatim(mensajes, policy)
     items.append({'motor': 'VERBATIM_LOCK', 'estado': 'PASS', 'input_sha256': raw_sha, 'chars': len(raw)})
-
     max_retries = max(0, min(int(policy.get('max_retries', 2)), 5))
     max_attempts = 1 + max_retries
     last_digest = _digest(mensajes)
@@ -258,7 +243,6 @@ def _ejecutar_v2(plan, mensajes, guardar_ck, cargar_ck, policy):
         except Exception as exc:  # noqa: BLE001
             d, us = {'error': 'EXCEPCION', 'detalle': str(exc)[:200]}, []
         usadas.extend(us or [])
-
         ok, motivo = _close_ok(d, policy)
         now_digest = _digest(mensajes)
         no_delta = now_digest == last_digest
@@ -276,16 +260,11 @@ def _ejecutar_v2(plan, mensajes, guardar_ck, cargar_ck, policy):
         if ok:
             d = _strip_close(d, policy)
             items.append({'motor': 'CLOSE_GATE', 'intento': intento, 'estado': 'PASS'})
-            return _checklist(items, True, (d, usadas), esquema=ESQUEMA_V2,
-                              estado='CLOSED', input_sha256=raw_sha, intentos=intento + 1)
+            return _checklist(items, True, (d, usadas), esquema=ESQUEMA_V2, estado='CLOSED', input_sha256=raw_sha, intentos=intento + 1)
 
         items.append({'motor': 'CLOSE_GATE', 'intento': intento, 'estado': 'RECHAZADO', 'motivo': motivo})
         if intento >= max_attempts - 1:
             break
-
-        # Si existe un checkpoint persistente, se conserva como referencia, pero
-        # no se reemplaza ciegamente el estado actual porque puede contener tool
-        # outputs nuevos de este intento.
         if cargar_ck:
             try:
                 _ = cargar_ck()
@@ -294,17 +273,12 @@ def _ejecutar_v2(plan, mensajes, guardar_ck, cargar_ck, policy):
         mensajes.append({'role': 'user', 'content': _resume_instruction(raw_sha, motivo, _tool_signatures(mensajes), no_delta)})
         items.append({'motor': 'RESUME_ENGINE', 'intento': intento, 'estado': 'ACTIVADO', 'siguiente': plan[min(intento + 1, len(plan) - 1)][0]})
 
-    detalle = (
-        '🆘 BLOQUEADO — CLOSE_GATE no obtuvo una salida cerrada tras %d intentos. '
-        'El INPUT_BLOCK se conserva con SHA256 %s. No se marca PASS falso.' % (max_attempts, raw_sha)
-    )
+    detalle = '🆘 BLOQUEADO — CLOSE_GATE no obtuvo una salida cerrada tras %d intentos. El INPUT_BLOCK se conserva con SHA256 %s. No se marca PASS falso.' % (max_attempts, raw_sha)
     blocked = {'error': 'TAREA_BLOCKED_FAIL_CLOSED', 'detalle': detalle, 'input_sha256': raw_sha}
-    return _checklist(items, False, (blocked, usadas), esquema=ESQUEMA_V2,
-                      estado='BLOCKED', input_sha256=raw_sha, intentos=max_attempts)
+    return _checklist(items, False, (blocked, usadas), esquema=ESQUEMA_V2, estado='BLOCKED', input_sha256=raw_sha, intentos=max_attempts)
 
 
 def _ejecutar_legacy(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VUELTAS):
-    """LOOP anterior, conservado para fichas aun no migradas."""
     items = []
     usadas = []
     d = {'error': 'SIN_PLAN'}
@@ -318,8 +292,7 @@ def _ejecutar_legacy(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vuelta
             if _valido(d):
                 items.append({'item': nombre, 'vuelta': vuelta, 'estado': 'COMPLETADO'})
                 return _checklist(items, True, (d, usadas))
-            items.append({'item': nombre, 'vuelta': vuelta, 'estado': 'REANUDADO',
-                          'detalle': str(d.get('error'))[:80]})
+            items.append({'item': nombre, 'vuelta': vuelta, 'estado': 'REANUDADO', 'detalle': str(d.get('error'))[:80]})
             if guardar_ck:
                 try:
                     guardar_ck(mensajes)
@@ -339,7 +312,6 @@ def _ejecutar_legacy(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vuelta
 
 
 def ejecutar(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VUELTAS):
-    """Selecciona runtime por ficha: piloto xray-v2 o LOOP legado."""
     policy = _policy(mensajes)
     if policy:
         return _ejecutar_v2(plan, mensajes, guardar_ck, cargar_ck, policy)
