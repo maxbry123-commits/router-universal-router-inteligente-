@@ -1,0 +1,19 @@
+:root:not([data-theme]),:root[data-theme=gris]{--active:#0848F7}
+html:not([data-theme=blanco]) #notice{color:#FF475F}
+#agents-list .item,#roles-list .item,#agents-tasks .item{white-space:pre-wrap}
+#agents-list .badge,#roles-list .badge{margin-left:8px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--quiet);font-size:12px;white-space:nowrap;vertical-align:middle}
+.badge::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dot,#A0A0A0)}
+.badge:is([data-state=ok],[data-state=online],[data-state=active],[data-state=activo],[data-state=ready],[data-state=done],[data-state=completed],[data-state=completado],[data-state=healthy],[data-state=idle]){--dot:#12D86A}
+.badge:is([data-state=running],[data-state=in_progress],[data-state="en curso"],[data-state=busy],[data-state=working]){--dot:#0848F7}
+.badge:is([data-state=pending],[data-state=pendiente],[data-state=queued],[data-state=waiting],[data-state=degraded],[data-state=paused]){--dot:#FF7B1A}
+.badge:is([data-state=error],[data-state=failed],[data-state=blocked],[data-state=bloqueado],[data-state=offline],[data-state=down]){--dot:#FF475F}
+:is(#agents-status,#roles-status,#tasks-status)[data-state]::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;background:var(--dot)}
+:is(#agents-status,#roles-status,#tasks-status)[data-state=loading]{--dot:#0848F7}
+:is(#agents-status,#roles-status,#tasks-status)[data-state=ok]{--dot:#12D86A}
+:is(#agents-status,#roles-status,#tasks-status)[data-state=error]{--dot:#FF475F}
+html:not([data-theme=blanco]) :is(#agents-status,#roles-status,#tasks-status)[data-state=error]{color:#FF475F}
+h3{font-size:14px;margin:18px 0 6px;padding-top:14px;border-top:1px solid var(--border);color:var(--text)}
+.tag-pending{display:inline-block;margin-left:8px;padding:2px 8px;border:1px solid #FF7B1A;border-radius:999px;color:#FF7B1A;font-size:12px;font-weight:500;vertical-align:middle}
+#agents-tasks{max-height:40vh}
+#agents-tasks .subtask{margin:8px 0 0 16px;padding-left:12px;border-left:2px solid var(--border)}
