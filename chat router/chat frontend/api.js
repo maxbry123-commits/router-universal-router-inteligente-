@@ -34,7 +34,20 @@ function remoto(headers) {
   return BASE ? "omit" : "same-origin";
 }
 const L4 = { job: null, url: null };
-async function puenteRouter(base, body, qs, headers) {
+function espera(ms, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(new DOMException("Detenido", "AbortError")); return; }
+    const terminar = () => { signal?.removeEventListener("abort", detener); resolve(); };
+    const timer = setTimeout(terminar, ms);
+    function detener() {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", detener);
+      reject(new DOMException("Detenido", "AbortError"));
+    }
+    signal?.addEventListener("abort", detener, { once: true });
+  });
+}
+async function puenteRouter(base, body, qs, headers, signal) {
   await liveRouter();
   base = CFG.harnessUrl;
   // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
@@ -50,52 +63,39 @@ async function puenteRouter(base, body, qs, headers) {
   const h = { 'Content-Type': 'application/json' };
   const pw = headers['X-Chat-Password'] || sessionStorage.getItem('riu_clave');
   if (pw) h['X-API-Key'] = pw;
-  for (let intento = 0; intento < 2; intento++) {
-    let r;
-    try {
-      r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) });
-    } catch (e) {
-      // job en cambio de direccion: releer LIVE_URL y reintentar una vez
-      liveCheckedAt = 0;
-      await liveRouter();
-      if (CFG.harnessUrl === base) throw e;
-      base = CFG.harnessUrl;
-      r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) });
-    }
+  {
+    // No reenviar chat_async: una respuesta de red perdida no implica que el job no se inició.
+    const r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload), signal });
     const env = await r.json().catch(() => ({}));
     if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
     if (!r.ok || env.status !== 'ok') return { status: r.ok ? 502 : r.status, ok: false, p: { error: env.reason || env.detail || ('HTTP ' + r.status) } };
     let p = env.result || {};
     let cortado = false;
     if (p.estado === 'procesando' && p.proceso_id) {
-      const deadline = Date.now() + 560000;
+      const deadline = Date.now() + 930000;
       const proceso = p.proceso_id;
       while (p.estado === 'procesando') {
         if (Date.now() > deadline) { cortado = true; break; }
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await espera(1000, signal);
         try {
-          const poll = await fetch(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }) });
+          const poll = await fetch(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }), signal });
           const envelope = await poll.json().catch(() => ({}));
           if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
           p = envelope.result || {};
-        } catch (e) { continue; }  // red/job en cambio: seguir esperando
+        } catch (e) { if (signal?.aborted) throw e; continue; }
       }
     }
-    if (cortado) { if (intento === 0 && accion === 'chat') { payload = Object.assign({}, payload, { messages: (payload.messages || []).concat([{ role: 'user', content: 'continúa el trabajo donde quedó' }]) }); continue; } return { status: 504, ok: false, p: { error: 'La llamada superó el tiempo de respuesta' } }; }
+    if (cortado) return { status: 504, ok: false, p: { error: 'La espera local terminó; el job remoto puede continuar' } };
     if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
     if (p.error) {
-      if (intento === 0 && accion === 'chat' && ['MODELO_NO_RESPONDE', 'TIEMPO_TOTAL_AGOTADO', 'CHAT_FAILED', 'CHAT_OCUPADO_REINTENTA', 'PROCESO_NO_EXISTE', 'SERVICIO_OCUPADO'].includes(p.error)) {
-        payload = Object.assign({}, payload, { messages: (payload.messages || []).concat([{ role: 'user', content: 'continúa el trabajo donde quedó' }]) });
-        continue;
-      }
       return { status: 502, ok: false, p };
     }
     return { status: 200, ok: true, p };
   }
 }
-async function puente(base, body, qs, method, headers) {
-  if (String(base).includes('/plugins/puente_chat')) return puenteRouter(base, body, qs, headers);
-  const r = await fetch(base + (qs || ''), { method: method || 'POST', headers, body: method === 'GET' ? undefined : JSON.stringify(body) });
+async function puente(base, body, qs, method, headers, signal) {
+  if (String(base).includes('/plugins/puente_chat')) return puenteRouter(base, body, qs, headers, signal);
+  const r = await fetch(base + (qs || ''), { method: method || 'POST', headers, body: method === 'GET' ? undefined : JSON.stringify(body), signal });
   const p = await r.json().catch(() => ({}));
   return { status: r.status, ok: r.ok, p };
 }
@@ -109,10 +109,18 @@ export async function accion(acc, payload) {
   const r = await fetch(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) });
   const env = await r.json().catch(() => ({}));
   if (!r.ok || env.status !== 'ok') throw new Error(env.reason || env.detail || ('HTTP ' + r.status));
-  return env.result || {};
+  if (!env.result || env.result.error || env.result.ok === false)
+    throw new Error(env.result?.error || "ACCION_SIN_CONFIRMACION");
+  return env.result;
 }
 window.RIU_ACCION = accion;
-export async function harness({ model, message, max_tokens, avisar, anclados, sesion }) {
+window.YAIWES_PLUGIN_BRIDGE = Object.freeze({
+  execute(actionId, payload) {
+    if (actionId === "chat.send") return harness(payload);
+    return accion(actionId, payload);
+  }
+});
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion, signal }) {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
@@ -122,24 +130,24 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {});
   let r;
   if (esHF && L4.url) {
-    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
+    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers, signal);
     if (!r.ok) { L4.job = L4.url = null; r = null; }
   }
-  if (!r) r = await puente(base, { model, messages, max_tokens, ...extra }, '', 'POST', headers);
+  if (!r) r = await puente(base, { model, messages, max_tokens, ...extra }, '', 'POST', headers, signal);
   if (r.status === 202 && r.p.job_id) {
     L4.job = r.p.job_id; L4.url = null;
     window.__riuJob = r.p.job_id;
     if (avisar) avisar('Encendiendo modelo (aprox. 1 a 4 min)...');
     let listo = false;
     for (let i = 0; i < 80 && !listo; i++) {
-      await new Promise((ok) => setTimeout(ok, 5000));
-      const e = await puente(base, null, '?accion=estado&job=' + encodeURIComponent(r.p.job_id) + '&url=' + encodeURIComponent(r.p.url || ''), 'GET', headers);
+      await espera(5000, signal);
+      const e = await puente(base, null, '?accion=estado&job=' + encodeURIComponent(r.p.job) + '&url=' + encodeURIComponent(r.p.url || ''), 'GET', headers, signal);
       if (e.ok && e.p.listo) listo = true;
       else if (e.ok && ['ERROR', 'CANCELED', 'COMPLETED', 'DELETED'].includes(e.p.etapa)) { L4.job = null; throw new Error('El modelo se apago: ' + e.p.etapa); }
     }
     if (!listo) throw new Error('El modelo no encendio a tiempo');
     L4.url = r.p.url;
-    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
+    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers, signal);
   }
   if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
   return { reply: (r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || '', job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) };
@@ -165,7 +173,7 @@ export async function api(path, options = {}) {
   try {
     const credentials = remoto(headers);
     response = await fetch(BASE + path, { method: options.method || "GET", headers, credentials,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body) });
+      body: options.body === undefined ? undefined : JSON.stringify(options.body), signal: options.signal });
   } catch (error) {
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));
     throw error;

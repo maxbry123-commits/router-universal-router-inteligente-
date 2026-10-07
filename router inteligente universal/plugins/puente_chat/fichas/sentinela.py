@@ -17,7 +17,9 @@ def _valido(d):
     if not isinstance(d, dict) or 'error' in d or not d.get('choices'):
         return False
     msg = (d['choices'][0] or {}).get('message') or {}
-    return bool((msg.get('content') or '').strip() or msg.get('tool_calls'))
+    fin = d['choices'][0].get('finish_reason')
+    return bool((msg.get('content') or '').strip() and not msg.get('tool_calls')
+                and fin in ('stop', 'end_turn'))
 
 
 def _checklist(items, completada, resultado):
@@ -34,14 +36,20 @@ def ejecutar(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VU
     """Bucle principal: recorre el plan de pasos hasta validar la respuesta.
 
     plan: lista de (nombre, paso) donde paso(mensajes) -> (respuesta, usadas).
-    Cada paso que falla guarda checkpoint; al terminar una vuelta se reinicia
+    Antes de cada paso guarda checkpoint; al terminar una vuelta se reinicia
     desde el ultimo checkpoint y continua. Nunca se detiene a mitad.
     """
     items = []
     usadas = []
     d = {'error': 'SIN_PLAN'}
-    for vuelta in range(1, int(max_vueltas) + 1):
+    max_vueltas = max(1, min(MAX_VUELTAS, int(max_vueltas)))
+    for vuelta in range(1, max_vueltas + 1):
         for nombre, paso in plan:
+            if guardar_ck:
+                try:
+                    guardar_ck(mensajes)
+                except Exception:  # noqa: BLE001
+                    pass
             try:
                 d, us = paso(mensajes)
             except Exception as e:  # noqa: BLE001
@@ -51,12 +59,8 @@ def ejecutar(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VU
                 items.append({'item': nombre, 'vuelta': vuelta, 'estado': 'COMPLETADO'})
                 return _checklist(items, True, (d, usadas))
             items.append({'item': nombre, 'vuelta': vuelta, 'estado': 'REANUDADO',
-                          'detalle': str(d.get('error'))[:80]})
-            if guardar_ck:
-                try:
-                    guardar_ck(mensajes)
-                except Exception:  # noqa: BLE001
-                    pass
+                          'motor': 'failover' if nombre.startswith('reserva:') else 'watchdog',
+                          'detalle': str(d.get('error', 'RESPUESTA_NO_FINAL'))[:80]})
         # fin de vuelta sin exito: reinicia desde el ultimo checkpoint
         ck = None
         if cargar_ck:
@@ -64,8 +68,16 @@ def ejecutar(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VU
                 ck = cargar_ck()
             except Exception:  # noqa: BLE001
                 ck = None
-        if ck:
-            mensajes[:] = list(ck) + [{'role': 'user', 'content': 'Continua el trabajo donde quedo y terminalo.'}]
-        else:
-            mensajes.append({'role': 'user', 'content': 'Continua el trabajo donde quedo y terminalo.'})
+        origen = 'no_disponible'
+        if isinstance(ck, dict):
+            origen = ck.get('origen') or origen
+            ck = ck.get('mensajes')
+        if vuelta < max_vueltas:
+            base = ck if ck else mensajes
+            mensajes[:] = [dict(m) for m in base]
+            mensajes.append({'role': 'user', 'content': 'Continua desde el ultimo checkpoint y termina la tarea sin repetir herramientas.'})
+            items.append({'item': 'checkpoint', 'vuelta': vuelta, 'estado': 'REANUDADO',
+                          'motor': 'estado_' + origen if ck else 'sin_checkpoint',
+                          'checkpoint': bool(ck)})
+    d = {'error': 'RECOVERY_EXHAUSTED', 'ultimo_error': str(d.get('error', 'RESPUESTA_NO_FINAL'))[:80]}
     return _checklist(items, False, (d, usadas))

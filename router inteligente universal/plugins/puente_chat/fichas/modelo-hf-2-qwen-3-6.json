@@ -2,6 +2,11 @@
   "id": "hf-2-qwen-3-6",
   "nombre": "HF 2 Qwen 3.6 (35B)",
   "tipo": "hf",
+  "timeout_s": 90,
+  "recuperacion": "riu.ficha.3x3.v1",
+  "tiempos_s": {"llamada": 90, "paso": 270, "tarea": 900},
+  "motores_llamado": ["rotar_claves", "reserva_proveedor", "continuar_desde_checkpoint"],
+  "motores_estado": ["checkpoint_local", "checkpoint_persistente", "reconstruir_herramientas"],
   "archivo": "Qwen3.6-35B-A3B-UD-Q3_K_XL.gguf",
   "herramientas": true,
   "memoria": true

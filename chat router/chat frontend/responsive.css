@@ -14,3 +14,17 @@ main,section,.card,.grid,.row,.topbar>div{min-width:0}
 @media(prefers-reduced-motion:reduce){
   .sidebar button,button.action,button.secondary{transition:none}
 }
+
+/* Los controles visibles son compactos; en táctil conservan un área de pulsación cómoda. */
+@media(min-width:721px){
+  .sidebar button,.access button,button.action,button.secondary{min-height:32px}
+  .sidebar button{padding:6px 10px}
+  .topbar{padding:10px 18px}
+  main{padding:16px 20px}
+  section{padding:12px}
+}
+.composer-bar button.secondary,.composer-bar button.action{min-height:32px;padding:5px 9px}
+.sheet .sh-cerrar{min-height:30px;padding:3px 8px}
+@media(max-width:720px){
+  .composer-bar button.secondary,.composer-bar button.action,.chip,.pill,.toggle,.mini{min-height:40px}
+}

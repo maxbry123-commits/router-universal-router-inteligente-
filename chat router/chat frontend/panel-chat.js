@@ -7,19 +7,54 @@ const etiquetaCorta = (a) => a.startsWith("handoff:") ? "⚓" + a.slice(8) : a.s
 
 export async function mount(root, { api, tell }) {
   const q = (s) => root.querySelector(s);
-  const copiarTexto = (t) => { try { navigator.clipboard.writeText(t); } catch (e) {} };
+  const ejecutar = (accion, payload) => {
+    if (typeof window.YAIWES_PLUGIN_BRIDGE?.execute !== "function") throw new Error("BRIDGE_MISSING");
+    return window.YAIWES_PLUGIN_BRIDGE.execute(accion, payload);
+  };
+  const copiarTexto = async t => {
+    try { await navigator.clipboard.writeText(t); tell("Copiado"); }
+    catch { tell("No se pudo copiar al portapapeles"); }
+  };
   const defecto = window.RIU_CONFIG?.defecto || "";
-  const fichaEt = (id) => (window.RIU_CONFIG?.modelos || []).find((m) => m.id === id);
+  let fichas = [];
+  const fichaEt = id => fichas.find(m => m.id === id);
 
   // ---- multi-chat: hasta 5 estancias, cada una con su sesion, su ficha, sus anclas y su historial ----
   const tabsEl = q("#chat-tabs"), histEl = q("#histories");
   const chats = [];
   let activo = 0;
   const chat = () => chats[activo];
+  const limiteAnclas = c => {
+    if (c.anclados.size < 8) return true;
+    tell("Máximo 8 anclas por tarea (límite del plugin)");
+    return false;
+  };
+  const input = q("#message");
+  let modo = "balanced";
+  const capturar = () => {
+    const c = chat();
+    if (!c) return;
+    c.borrador = input.value;
+    c.modo = modo;
+  };
+  const restaurar = () => {
+    const c = chat();
+    input.value = c.borrador || "";
+    modo = c.modo || "balanced";
+    q("#modo").textContent = MODOS[modo] + " ▾";
+  };
+  const recordar = (c, text, cls) => {
+    const entrada = { texto: text.slice(0, 4000), clase: cls || "" };
+    c.hist.append(burbuja(text, cls, texto => { entrada.texto = texto.slice(0, 4000); guardar(); }));
+    c.mensajes.push(entrada);
+    c.mensajes = c.mensajes.slice(-50);
+    guardar();
+  };
   const guardar = () => {
     try {
       sessionStorage.setItem(CLAVE_CHATS, JSON.stringify(
-        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados] }))));
+        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados],
+          borrador: c.borrador, modo: c.modo, mensajes: c.mensajes }))));
     } catch (e) {}
   };
   const pintarAnclados = () => {
@@ -36,7 +71,13 @@ export async function mount(root, { api, tell }) {
     chats.forEach((c, i) => {
       const b = node("button", "💬 " + (i + 1) + (c.ocupado ? " ⏳" : ""), "chip" + (i === activo ? " on" : ""));
       b.type = "button"; b.title = "Chat " + (i + 1) + " — sesión " + c.sesion;
-      b.addEventListener("click", () => { activo = i; pintarTabs(); });
+      b.addEventListener("click", () => {
+        if (i === activo) return;
+        capturar();
+        activo = i;
+        restaurar();
+        pintarTabs();
+      });
       tabsEl.append(b);
     });
     if (chats.length < MAX_CHAT) {
@@ -51,28 +92,37 @@ export async function mount(root, { api, tell }) {
     guardar();
   };
   const nuevoChat = (restaurado) => {
+    if (chats.length) capturar();
     const h = node("div", "", "chat-history");
     h.hidden = true; h.setAttribute("role", "log");
     histEl.append(h);
-    chats.push({
-      sesion: restaurado?.sesion || "web-" + Math.random().toString(36).slice(2, 10),
+    const sesion = restaurado?.sesion || "web-" + crypto.randomUUID();
+    const c = {
+      sesion,
       ficha: restaurado?.ficha || defecto,
       hist: h,
       anclados: new Set(restaurado?.anclados || []),
+      borrador: restaurado?.borrador || "",
+      modo: restaurado?.modo || "balanced",
+      mensajes: Array.isArray(restaurado?.mensajes) ? restaurado.mensajes.slice(-50) : [],
       ocupado: false,
-    });
+    };
+    c.mensajes.forEach(m => h.append(burbuja(m.texto, m.clase, texto => { m.texto = texto.slice(0, 4000); guardar(); })));
+    chats.push(c);
     activo = chats.length - 1;
+    restaurar();
     pintarTabs();
   };
   try {
     const previos = JSON.parse(sessionStorage.getItem(CLAVE_CHATS) || "[]");
     if (Array.isArray(previos) && previos.length) {
       previos.slice(0, MAX_CHAT).forEach((p) => nuevoChat(p));
-      activo = 0; pintarTabs();
+      activo = 0; restaurar(); pintarTabs();
     } else nuevoChat();
   } catch (e) { nuevoChat(); }
+  input.addEventListener("input", () => { chat().borrador = input.value; guardar(); });
 
-  const burbuja = (texto, cls) => {
+  function burbuja(texto, cls, onEdit) {
     const d = node("div", "", "item message" + (cls ? " " + cls : ""));
     const span = node("span", texto, "txt");
     d.append(span);
@@ -89,12 +139,13 @@ export async function mount(root, { api, tell }) {
         span.contentEditable = editando ? "true" : "false";
         e.textContent = editando ? "✔" : "✏️";
         e.title = editando ? "Guardar edición" : "Editar esta salida";
+        if (!editando) onEdit?.(span.textContent);
         if (editando) span.focus();
       });
       d.append(e);
     }
     return d;
-  };
+  }
 
   // ---- hojas (sheets): cada pildora abre la suya ----
   const cerrarHojas = () => root.querySelectorAll(".sheet").forEach((s) => { s.hidden = true; });
@@ -124,12 +175,17 @@ export async function mount(root, { api, tell }) {
     const r = node("div", "", "fila");
     const nom = node("span", titulo, "fila-nom");
     if (desc) nom.append(node("span", desc, "fila-desc"));
-    const t = node("button", "", "toggle" + (chat().anclados.has(clave) ? " on" : ""));
+    const t = node("button", chat().anclados.has(clave) ? "Apagar" : "Encender", "toggle" + (chat().anclados.has(clave) ? " on" : ""));
     t.type = "button"; t.title = "Encender = anclar, apagar = quitar";
+    t.setAttribute("aria-label", titulo + ": anclar al chat");
+    t.setAttribute("aria-pressed", String(chat().anclados.has(clave)));
     t.addEventListener("click", () => {
       const enc = !chat().anclados.has(clave);
+      if (enc && !limiteAnclas(chat())) return;
       enc ? chat().anclados.add(clave) : chat().anclados.delete(clave);
       t.classList.toggle("on", enc);
+      t.textContent = enc ? "Apagar" : "Encender";
+      t.setAttribute("aria-pressed", String(enc));
       pintarAnclados(); guardar();
       if (onOff) onOff(enc);
     });
@@ -141,7 +197,8 @@ export async function mount(root, { api, tell }) {
   const pintarFichas = () => {
     const lista = q("#sh-ficha-lista");
     lista.replaceChildren();
-    for (const m of window.RIU_CONFIG?.modelos || []) {
+    if (!fichas.length) lista.append(node("div", "Fichas sin verificar: Router no disponible", "muted"));
+    for (const m of fichas) {
       lista.append(fila(m.etiqueta, "", m.id === chat().ficha, () => {
         chat().ficha = m.id;
         pintarFichaPill();
@@ -152,18 +209,28 @@ export async function mount(root, { api, tell }) {
     }
   };
   pintarFichas();
+  void (async () => { try {
+    const r = await ejecutar("modelos", { sesion: chat().sesion });
+    if (!Array.isArray(r.modelos)) throw new Error("FICHAS_INVALIDAS");
+    fichas = r.modelos.filter(m => m.id && !/deepseek/i.test(m.id)).map(m => ({
+      id: m.id, etiqueta: (window.RIU_CONFIG?.modelos || []).find(x => x.id === m.id)?.etiqueta || m.nombre || m.id
+    }));
+    pintarFichas();
+    pintarFichaPill();
+  } catch (error) { tell("Fichas no verificadas: " + error.message); } })();
 
   // ---- pildora de modo ----
-  let modo = "balanced";
   const pintarModos = () => {
     const lista = q("#sh-modo-lista");
     lista.replaceChildren();
     for (const [k, et] of [["fast", "Rápido — 512 tok"], ["balanced", "Equilibrado — 1024 tok"], ["think", "Pensar — 2048 tok"]]) {
       lista.append(fila(MODOS[k], et, k === modo, () => {
         modo = k;
+        chat().modo = k;
         q("#modo").textContent = MODOS[k] + " ▾";
         pintarModos();
         cerrarHojas();
+        guardar();
       }));
     }
   };
@@ -181,56 +248,66 @@ export async function mount(root, { api, tell }) {
     for (const [k, t, d] of ANCLAS) {
       lista.append(filaEncender(t, d, "handoff:" + k, async (enc) => {
         if (!enc) return;
-        try {  // muestra en el chat lo que quedo anclado
-          const r = await window.RIU_ACCION("handoff", { fuente: k, sesion: chat().sesion });
-          const c = chat();
-          c.hist.append(burbuja("⚓ ANCLADO " + k + ":\n" + JSON.stringify(r.handoff || r, null, 1)));
+        const c = chat();
+        try {
+          const r = await ejecutar("handoff", { fuente: k, sesion: c.sesion });
+          if (!r.handoff) throw new Error("HANDOFF_SIN_CONFIRMACION");
+          recordar(c, "⚓ ANCLADO " + k + ":\n" + JSON.stringify(r.handoff, null, 1));
           c.hist.scrollTop = c.hist.scrollHeight;
-        } catch (err) { tell(err.message); }
+        } catch (err) {
+          c.anclados.delete("handoff:" + k);
+          if (chat() === c) pintarAnclas();
+          guardar();
+          tell(err.message);
+        }
       }));
     }
-    lista.append(fila("🔬 Auditor de code del repo", "ubica los archivos de code del proyecto", false, async (ev) => {
-      ev.currentTarget.disabled = true;
+    lista.append(fila("🔬 Auditor de code del repo", "ubica los archivos de code del proyecto", false, async () => {
+      const c = chat();
       try {
-        const r = await window.RIU_ACCION("auditor_code", { sesion: chat().sesion });
+        const r = await ejecutar("auditor_code", { sesion: c.sesion });
         cerrarHojas();
-        const c = chat();
-        c.hist.append(burbuja("🔎 AUDITOR CODE — " + r.total + " archivos:\n" + (r.carpetas || []).join("\n")));
+        recordar(c, "🔎 AUDITOR CODE — " + r.total + " archivos:\n" + (r.carpetas || []).join("\n"));
         c.hist.scrollTop = c.hist.scrollHeight;
       } catch (err) { tell(err.message); }
     }));
   };
   // mi handoff: texto propio guardado en memoria, editable; va interno con cada mensaje
   const cargarMiHandoff = async () => {
+    const c = chat();
     try {
-      const r = await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion });
+      const r = await ejecutar("handoff_texto", { sesion: c.sesion });
+      if (chat() !== c) return;
       q("#mi-handoff").value = r.texto || "";
       q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
-    } catch (err) { q("#mh-estado").textContent = err.message; }
+    } catch (err) { if (chat() === c) q("#mh-estado").textContent = err.message; }
   };
   q("#mh-guardar").addEventListener("click", async () => {
+    const c = chat();
     try {
       const texto = q("#mi-handoff").value;
-      const r = await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion, texto });
-      q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
+      const r = await ejecutar("handoff_texto", { sesion: c.sesion, texto });
+      if (chat() === c) q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
       if (r.encendido) {
-        const c = chat();
-        c.hist.append(burbuja("⚓ MI HANDOFF anclado:\n" + texto));
+        recordar(c, "⚓ MI HANDOFF anclado:\n" + texto);
         c.hist.scrollTop = c.hist.scrollHeight;
       }
       tell("Mi handoff " + (r.encendido ? "guardado y encendido" : "apagado"));
     } catch (err) { tell(err.message); }
   });
   q("#mh-apagar").addEventListener("click", async () => {
+    const c = chat();
     try {
-      await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion, texto: "" });
-      q("#mh-estado").textContent = "apagado";
+      await ejecutar("handoff_texto", { sesion: c.sesion, texto: "" });
+      if (chat() === c) q("#mh-estado").textContent = "apagado";
       tell("Mi handoff apagado");
     } catch (err) { tell(err.message); }
   });
   q("#ancla-enlace-on").addEventListener("click", () => {
     const v = (q("#ancla-enlace").value || "").trim();
     if (!v) { tell("Pega primero un enlace o handoff"); return; }
+    if (!/^https:\/\/[^\s]+$/.test(v)) { tell("Solo enlaces HTTPS válidos"); return; }
+    if (!chat().anclados.has("enlace:" + v) && !limiteAnclas(chat())) return;
     chat().anclados.add("enlace:" + v);
     q("#ancla-enlace").value = "";
     pintarAnclados(); guardar();
@@ -239,13 +316,17 @@ export async function mount(root, { api, tell }) {
 
   // ---- adjuntar y ventana de archivos (boton encender = anclar al chat + x-ray) ----
   const subir = async (file) => {
+    const c = chat();
     const buf = await file.arrayBuffer();
     if (buf.byteLength > 2_000_000) { tell("Archivo muy grande (máx ~2 MB)"); return; }
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-    const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion });
-    chat().anclados.add(r.nombre || file.name); pintarAnclados(); guardar();
-    tell("Subido y anclado: " + file.name);
+    const r = await ejecutar("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: c.sesion });
+    if (!r.ok || !r.nombre) throw new Error("SUBIR_SIN_CONFIRMACION");
+    if (c.anclados.has(r.nombre) || limiteAnclas(c)) c.anclados.add(r.nombre);
+    if (chat() === c) pintarAnclados();
+    guardar();
+    tell("Subido" + (c.anclados.has(r.nombre) ? " y anclado" : " sin anclar (límite 8)") + ": " + file.name);
   };
   q("#btn-adjunto").addEventListener("click", () => q("#adjunto").click());
   q("#adjunto").addEventListener("change", async (e) => {
@@ -253,52 +334,66 @@ export async function mount(root, { api, tell }) {
     if (f) { try { await subir(f); } catch (err) { tell(err.message); } }
   });
   q("#btn-copiar-input").addEventListener("click", () => copiarTexto(q("#message").value));
-  q("#btn-detener").addEventListener("click", () => { chat().detenerFlag = true; if (chat().detenerFn) chat().detenerFn(); });
+  q("#btn-detener").addEventListener("click", () => {
+    const c = chat();
+    if (!c.ocupado) { tell("No hay una tarea activa en este chat"); return; }
+    c.detenerFlag = true;
+    c.detenerFn?.();
+  });
 
   // ---- ventana del motor: descarga/extraccion/copiar/mover entre repos ----
   const extraerUrls = (t) => { const s = new Set(); (String(t || "").match(/https?:\/\/[^\s"'<>)\]]+/g) || []).forEach((u) => s.add(u.replace(/[.,;:!?]+$/g, ""))); return [...s]; };
-  const motorConfirma = (t) => { chat().hist.append(node("div", t, "item message meta")); chat().hist.scrollTop = chat().hist.scrollHeight; };
+  const motorConfirma = (t, c = chat()) => { recordar(c, t, "meta"); c.hist.scrollTop = c.hist.scrollHeight; };
   const mm = q("#motor-mover"), mc = q("#motor-copiar");
   mm.addEventListener("change", () => { if (mm.checked) mc.checked = false; else if (!mc.checked) mm.checked = true; });
   mc.addEventListener("change", () => { if (mc.checked) mm.checked = false; else if (!mm.checked) mc.checked = true; });
-  const motorEjecutar = async (origen, destino, op) => {
+  const motorEjecutar = async (origen, destino, op, c = chat()) => {
     if (!origen || !destino) { tell("Falta el enlace de origen o de destino"); return null; }
     try {
-      const r = await window.RIU_ACCION("mover_raiz", { op, origen, destino, sesion: chat().sesion });
-      if (r.error) { motorConfirma("⬇ motor: GAP " + r.error + " — " + (r.detalle || "")); return r; }
-      motorConfirma("⬇ " + r.op + " ✓ " + r.archivos + " archivo(s) · " + r.estado + " · " + r.registro + (r.fallos && r.fallos.length ? " · fallos: " + r.fallos.join(", ") : ""));
+      const r = await ejecutar("mover_raiz", { op, origen, destino, sesion: c.sesion });
+      if (r.error || r.estado !== "completado" || (r.fallos || []).length) {
+        motorConfirma("⬇ motor: GAP " + (r.error || r.estado || "SIN_CONFIRMACION") + " · " + (r.fallos || []).join(", "), c);
+        return null;
+      }
+      motorConfirma("⬇ " + r.op + " ✓ " + r.archivos + " archivo(s) · " + r.estado + " · " + r.registro, c);
       return r;
-    } catch (e) { motorConfirma("⬇ motor: GAP " + e.message); return null; }
+    } catch (e) { motorConfirma("⬇ motor: GAP " + e.message, c); return null; }
   };
   q("#motor-ejecutar").addEventListener("click", async () => {
     await motorEjecutar(q("#motor-origen").value.trim(), q("#motor-destino").value.trim(), mm.checked ? "mover" : "copiar");
   });
   q("#motor-archivo-btn").addEventListener("click", () => q("#motor-archivo").click());
   q("#motor-archivo").addEventListener("change", async (e) => {
+    const c = chat();
     const f = e.target.files[0]; e.target.value = "";
     if (!f) return;
     const txt = await f.text();
+    if (chat() !== c) { motorConfirma("Archivo leído en otra pestaña; vuelve a ese chat para pegar las URLs", c); return; }
     const urls = extraerUrls(txt);
     const viejo = q("#motor-urls").value.trim();
     q("#motor-urls").value = (viejo ? viejo + "\n" : "") + urls.join("\n");
     motorConfirma("⬇ archivo " + f.name + ": " + urls.length + " URL(s) visibles extraídas");
   });
   q("#motor-activar").addEventListener("click", async () => {
+    const c = chat();
     const urls = extraerUrls(q("#motor-urls").value);
     const dest = q("#motor-destino2").value.trim() || q("#motor-destino").value.trim();
     if (!urls.length || !dest) { tell("Pega las URLs y el enlace destino"); return; }
     q("#motor-cola").textContent = "cola: " + urls.length + " descarga(s)";
+    let hechas = 0;
     for (let i = 0; i < urls.length; i++) {
       q("#motor-cola").textContent = "cola: " + (i + 1) + "/" + urls.length + " → " + urls[i].slice(0, 60);
-      await motorEjecutar(urls[i], dest, "copiar");
+      if (await motorEjecutar(urls[i], dest, "copiar", c)) hechas++;
     }
-    q("#motor-cola").textContent = "cola terminada: " + urls.length + "/" + urls.length;
+    q("#motor-cola").textContent = "cola verificada: " + hechas + "/" + urls.length;
   });
   q("#motor-auditar").addEventListener("click", async () => {
+    const c = chat();
     const lista = q("#motor-hist");
     lista.replaceChildren(node("div", "Cargando…", "muted"));
     try {
-      const r = await window.RIU_ACCION("descargas", { op: "lista", sesion: chat().sesion });
+      const r = await ejecutar("descargas", { op: "lista", sesion: c.sesion });
+      if (chat() !== c) return;
       lista.replaceChildren();
       const items = (r.lista || []).slice().reverse();
       if (!items.length) { lista.append(node("div", "Sin descargas en la bitácora", "muted")); return; }
@@ -307,27 +402,34 @@ export async function mount(root, { api, tell }) {
         b.type = "button";
         b.append(node("span", (d.estado === "procesando" ? "⏳ " : d.estado === "completado" ? "✅ " : "⚠️ ") + d.op + " " + (d.archivos || 0) + " archivos · " + d.id, "fila-nom"));
         b.addEventListener("click", async () => {
-          const v = await window.RIU_ACCION("descargas", { op: "ver", id: d.id, sesion: chat().sesion });
-          q("#motor-detalle").textContent = JSON.stringify(v, null, 1).slice(0, 4000);
+          const v = await ejecutar("descargas", { op: "ver", id: d.id, sesion: c.sesion });
+          if (chat() === c) q("#motor-detalle").textContent = JSON.stringify(v, null, 1).slice(0, 4000);
         });
         lista.append(b);
       });
-    } catch (e) { lista.replaceChildren(node("div", "GAP " + e.message, "muted")); }
+    } catch (e) { if (chat() === c) lista.replaceChildren(node("div", "GAP " + e.message, "muted")); }
   });
   const cargarArchivos = async () => {
+    const c = chat();
     const lista = q("#va-lista");
     lista.replaceChildren(node("div", "Cargando…", "muted"));
     try {
-      const r = await window.RIU_ACCION("archivos", { sesion: chat().sesion });
+      const r = await ejecutar("archivos", { sesion: c.sesion });
+      if (chat() !== c) return;
       lista.replaceChildren();
       for (const nombre of r.archivos || []) {
         const fil = node("div", "", "va-item");
-        const t = node("button", "", "toggle" + (chat().anclados.has(nombre) ? " on" : ""));
+        const t = node("button", c.anclados.has(nombre) ? "Apagar" : "Encender", "toggle" + (c.anclados.has(nombre) ? " on" : ""));
         t.type = "button"; t.title = "Encender = anclar al chat, apagar = quitar";
+        t.setAttribute("aria-label", nombre + ": anclar al chat");
+        t.setAttribute("aria-pressed", String(c.anclados.has(nombre)));
         t.addEventListener("click", () => {
-          const enc = !chat().anclados.has(nombre);
-          enc ? chat().anclados.add(nombre) : chat().anclados.delete(nombre);
+          const enc = !c.anclados.has(nombre);
+          if (enc && !limiteAnclas(c)) return;
+          enc ? c.anclados.add(nombre) : c.anclados.delete(nombre);
           t.classList.toggle("on", enc);
+          t.textContent = enc ? "Apagar" : "Encender";
+          t.setAttribute("aria-pressed", String(enc));
           pintarAnclados(); guardar();
         });
         const nom = node("span", nombre, "fila-nom");
@@ -336,12 +438,11 @@ export async function mount(root, { api, tell }) {
         xr.addEventListener("click", async () => {
           xr.disabled = true;
           try {
-            const r2 = await window.RIU_ACCION("xray", { nombre, sesion: chat().sesion });
+            const r2 = await ejecutar("xray", { nombre, sesion: c.sesion });
             cerrarHojas();
-            const c = chat();
-            c.hist.append(burbuja("🔬 X-RAY " + (r2.nombre || nombre) + "\n" + (r2.estructura || "") +
+            recordar(c, "🔬 X-RAY " + (r2.nombre || nombre) + "\n" + (r2.estructura || "") +
               "\nURLs: " + (r2.urls || []).join(", ") + "\nMAPA:\n" + (r2.mapa_mental || "") +
-              "\nFLUJO: " + (r2.microflujo || "") + "\n" + (r2.resumen_goals || "")));
+              "\nFLUJO: " + (r2.microflujo || "") + "\n" + (r2.resumen_goals || ""));
             c.hist.scrollTop = c.hist.scrollHeight;
           } catch (err) { tell(err.message); }
         });
@@ -354,91 +455,76 @@ export async function mount(root, { api, tell }) {
 
   // ---- sandbox: system prompt de code anclado a esta sesion ----
   const cargarSandbox = async () => {
+    const c = chat();
     try {
-      const r = await window.RIU_ACCION("sandbox", { sesion: chat().sesion });
+      const r = await ejecutar("sandbox", { sesion: c.sesion });
+      if (chat() !== c) return;
       q("#sandbox-texto").value = r.sandbox || "";
       q("#sb-estado").textContent = r.sandbox ? "encendido" : "apagado";
-    } catch (err) { q("#sb-estado").textContent = err.message; }
+    } catch (err) { if (chat() === c) q("#sb-estado").textContent = err.message; }
   };
   q("#sb-guardar").addEventListener("click", async () => {
+    const c = chat();
     try {
-      const r = await window.RIU_ACCION("sandbox", { sesion: chat().sesion, texto: q("#sandbox-texto").value });
-      q("#sb-estado").textContent = r.encendido ? "encendido" : "apagado";
+      const r = await ejecutar("sandbox", { sesion: c.sesion, texto: q("#sandbox-texto").value });
+      if (chat() === c) q("#sb-estado").textContent = r.encendido ? "encendido" : "apagado";
       tell("Sandbox " + (r.encendido ? "encendido y anclado" : "apagado"));
     } catch (err) { tell(err.message); }
   });
   q("#sb-apagar").addEventListener("click", async () => {
+    const c = chat();
     try {
-      await window.RIU_ACCION("sandbox", { sesion: chat().sesion, texto: "" });
-      q("#sb-estado").textContent = "apagado";
+      await ejecutar("sandbox", { sesion: c.sesion, texto: "" });
+      if (chat() === c) q("#sb-estado").textContent = "apagado";
       tell("Sandbox apagado");
     } catch (err) { tell(err.message); }
-  });
-
-  // ---- selects secundarios (dentro de ⚙ más) ----
-  const select = (id, options, value, label) => {
-    const target = q(id);
-    for (const item of options) {
-      const option = node("option", item[label]);
-      option.value = item[value];
-      target.append(option);
-    }
-  };
-  try {
-    const providers = await api("/chat/providers");
-    select("#provider", (providers.providers || []).filter(item => item.id !== "auto"), "id", "label");
-    select("#agent", (await api("/chat/agents")).agents || [], "id", "name");
-    const accounts = await api("/chat/github/accounts");
-    select("#github", accounts.accounts || [], "account", "account");
-  } catch (error) { tell(error.message); }
-  q("#provider").addEventListener("change", async event => {
-    const model = q("#model");
-    model.replaceChildren(node("option", "Router elige"));
-    if (event.target.value === "auto") return;
-    try { select("#model", (await api(`/chat/providers/${encodeURIComponent(event.target.value)}/models`)).models || [], "model_id", "label"); }
-    catch (error) { tell(error.message); }
   });
 
   // ---- enviar: cada chat corre su tarea en paralelo con su sesion, su ficha y sus anclas ----
   q("#composer").addEventListener("submit", async event => {
     event.preventDefault();
     const c = chat();
-    const input = q("#message");
+    if (c.ocupado) { tell("Este chat ya está ejecutando una tarea; usa otra pestaña o espera"); return; }
     const message = input.value.trim();
     if (!message) return;
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
-    const ub = burbuja(message, "user");
-    c.hist.append(ub);
+    if (!fichas.some(m => m.id === c.ficha)) { tell("Ficha no confirmada por el Router; no se enviará la tarea"); return; }
+    if (typeof window.YAIWES_PLUGIN_BRIDGE?.execute !== "function" || !window.RIU_CONFIG?.harnessUrl) {
+      tell("BRIDGE_MISSING"); return;
+    }
+    capturar();
+    recordar(c, message, "user");
     input.value = "";
+    c.borrador = "";
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Pensando…", "item message pending");
     c.hist.append(pending);
     c.hist.scrollTop = c.hist.scrollHeight;
-    const agent = q("#agent").value;
-    const provider = q("#provider").value;
-    const model = q("#model").value;
-    const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[modo];
+    const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[c.modo] || 1024;
+    const controller = new AbortController();
     try {
-      const body = { message, ficha: c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
-      // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
-      const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });
-      const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: c.ficha, message, max_tokens, anclados: [...c.anclados], sesion: c.sesion, avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
-        : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
-      c.detenerFn = null;
+      const raceDetener = new Promise((_, rej) => { c.detenerFn = () => { controller.abort(); rej(new Error("PROCESO_DETENIDO")); }; });
+      const answer = await Promise.race([ejecutar("chat.send", { model: c.ficha, message, max_tokens, anclados: [...c.anclados], sesion: c.sesion, signal: controller.signal, avisar: t => recordar(c, t, "meta") }), raceDetener]);
+      if (!answer.reply?.trim()) throw new Error("RESPUESTA_VACIA");
       pending.remove();
-      c.hist.append(burbuja(answer.reply || "Sin respuesta"));
+      recordar(c, answer.reply);
       if (answer.tools && answer.tools.length) { const meta = node("div", "Herramientas usadas: ", "item message meta"); answer.tools.forEach((t, i) => { const ok = typeof t === "string" || t.ok; const s = document.createElement("span"); s.textContent = (typeof t === "string" ? t : t.nombre) + (ok ? "" : " (fallo)"); if (!ok) s.className = "tool-fail"; if (i) meta.append(", "); meta.append(s); }); c.hist.append(meta); }
       if (answer.job_id) { window.__riuJob = answer.job_id; q('#apagar-respaldo').hidden = false; }
       c.hist.scrollTop = c.hist.scrollHeight;
     } catch (error) {
       pending.remove();
-      c.hist.append(node("div", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "⏹ proceso detenido por el usuario" : `GAP: ${error.message}`, "item message" + (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message)) ? " meta" : " error")));
+      recordar(c, c.detenerFlag ? "⏹ espera local detenida; la tarea remota puede continuar (sin cancelación confirmada)" : `GAP: ${error.message}`, c.detenerFlag ? "meta" : "error");
+      if (!c.detenerFlag) {
+        c.borrador = message;
+        if (chat() === c) input.value = message;
+        guardar();
+      }
       c.hist.scrollTop = c.hist.scrollHeight;
     } finally {
+      c.detenerFn = null;
       c.ocupado = false; pintarTabs();
-      if (window.matchMedia("(pointer: fine)").matches) input.focus();
+      if (chat() === c && window.matchMedia("(pointer: fine)").matches) input.focus();
     }
   });
   q("#message").addEventListener("keydown", event => {

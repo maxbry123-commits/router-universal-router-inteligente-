@@ -12,6 +12,14 @@ html[data-theme=little]{--bg:#1C1B1A;--surface:#2A2927;--surface-alt:#353330;--p
 html[data-theme=matte]{--bg:#0a0a0d;--surface:#141417;--surface-alt:#1a1a1e;--panel:#202025;--module-selected:#282830;--border:#2a2a33;--border-strong:#3f3f4e;--muted:#282830;--active:#2563eb;--title:#ffffff;--text:#e4e4e7;--quiet:#a1a1aa;--quiet-2:#a1a1aa}
 html[data-theme=blanco]{--bg:#f4f4f5;--surface:#ffffff;--surface-alt:#f8f8f9;--panel:#ffffff;--module-selected:#e4e4e7;--border:#e4e4e7;--border-strong:#d4d4d8;--muted:#e4e4e7;--active:#2563eb;--title:#18181b;--text:#3f3f46;--quiet:#71717a;--quiet-2:#71717a;color-scheme:light}
 html[data-theme=blanco] a{color:#2563eb}html[data-theme=blanco] #notice,html[data-theme=blanco] .message.error,html[data-theme=blanco] .badge.blocked{color:#b42318;border-color:#b42318}
+html[data-theme=crystal]{--bg:#0c1421;--surface:rgba(242,250,255,.095);--surface-alt:rgba(242,250,255,.14);--panel:rgba(242,250,255,.095);--module-selected:rgba(184,245,250,.18);--border:rgba(230,244,255,.2);--border-strong:rgba(230,244,255,.35);--active:#b8f5fa;--title:#e6f4ff;--text:#e6f4ff;--quiet:#bfd1dd;--quiet-2:#acc1cf}
+html[data-theme=orange]{--bg:#100e0d;--surface:#26211d;--surface-alt:#302720;--panel:#26211d;--module-selected:#392d24;--border:#504139;--border-strong:#735746;--active:#ef823c;--title:#f5e9df;--text:#f5e9df;--quiet:#c5ada0;--quiet-2:#b49d90}
+html[data-theme=blue]{--bg:#0a1424;--surface:#192c45;--surface-alt:#213956;--panel:#192c45;--module-selected:#2a4562;--border:#38516a;--border-strong:#577494;--active:#66b7ff;--title:#e1edfa;--text:#e1edfa;--quiet:#adc7df;--quiet-2:#9eb9d2}
+html[data-theme=gris]{--bg:#969ba2;--surface:#d6d9de;--surface-alt:#e3e5e8;--panel:#d6d9de;--module-selected:#bdc2c9;--border:#9da3ab;--border-strong:#6d7580;--active:#303740;--title:#252932;--text:#252932;--quiet:#484f59;--quiet-2:#555c65;--status-green:#116b37;--status-blue:#164bb9;--status-red:#ad2134;color-scheme:light}
+html[data-theme=crystal] button.action,html[data-theme=blue] button.action,html[data-theme=gris] button.action{color:#102030}
+html[data-theme=gris] button.action{color:#fff}
+html[data-theme=gris] a{color:#164bb9}
+html[data-theme=gris] .message.error,html[data-theme=gris] .badge.blocked{color:var(--status-red);border-color:var(--status-red)}
 
 /* mejora visual chat: burbujas, composer fijo, controles compactos */
 .chat-history{gap:11px;padding:6px 2px}
@@ -76,8 +84,8 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .va-item .va-check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;min-width:0}
 .va-item .va-check input{width:16px;height:16px;min-height:0;flex:0 0 auto}
 .toggle{min-height:30px;padding:4px 14px;font-size:12px;border-radius:16px;background:var(--panel);border:1px solid var(--border-strong);color:var(--quiet);cursor:pointer}
-.toggle.on{color:var(--title);border-color:var(--status-green)}
-.toggle.on::before{content:"● ";color:var(--status-green)}
+.toggle.on{color:var(--title);border-color:var(--status-blue)}
+.toggle.on::before{content:"● ";color:var(--status-blue)}
 .toggle.rojo{border-color:var(--status-red);color:var(--status-red)}
 #composer textarea{min-height:52px}
 .composer-bar .secondary{min-height:34px;padding:6px 10px;font-size:14px}

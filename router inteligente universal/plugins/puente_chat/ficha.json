@@ -45,7 +45,7 @@
     "sandbox": "none",
     "permisos": [],
     "limites": {
-      "timeout_ms": 150000
+      "timeout_ms": 930000
     }
   },
   "firma": {
