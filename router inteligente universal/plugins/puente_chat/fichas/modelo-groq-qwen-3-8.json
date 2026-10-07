@@ -13,7 +13,6 @@
     "schema": "yaiwes.node-executor/xray-v2",
     "mode": "FAIL_CLOSED",
     "execution_model": "DAG+FSM",
-    "pilot": true,
     "input_mode": "VERBATIM",
     "input_immutable": true,
     "objective_lock": true,
