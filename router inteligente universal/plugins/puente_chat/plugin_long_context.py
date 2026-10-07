@@ -1,18 +1,20 @@
 """Long-context compatibility layer for ``puente_chat``.
 
-This module deliberately wraps the existing plugin instead of forking its
-routing/tool/HF logic.  It patches only the pieces that were silently cutting
-chat context:
+This module wraps the existing plugin instead of forking its routing/tool/HF
+logic. It fixes the historical silent cuts in chat input and memory.
 
-* stored user turns were truncated to 4k chars;
-* stored assistant turns were truncated to 8k chars;
-* recalled turns were truncated to 500 + 500 chars;
-* the provider payload was aggressively reduced to 20k chars.
+Policy:
+- browser/input transport: no artificial truncation here;
+- persisted user/assistant turns: up to 500k characters each;
+- recalled conversation context: up to 300k characters;
+- provider payload budget: up to 350k characters;
+- the newest user input is NEVER sliced by this layer;
+- local HF/L4 16K-token models reject oversized input explicitly rather than
+  silently cutting it.
 
-The latest user input is NEVER truncated here.  Older context may be removed
-when a provider payload exceeds its budget, but the current instruction is
-kept byte-for-byte.  Local HF/L4 models have a finite 16k-token context, so an
-oversized current input is rejected explicitly instead of being silently cut.
+These are CHARACTER budgets, not a claim that every selected model supports a
+100k-token context. A provider/model with a smaller native context may return
+an explicit context-length error.
 """
 from __future__ import annotations
 
@@ -21,15 +23,12 @@ from typing import Any
 
 from . import plugin as _p
 
-# Character budgets are intentionally configurable.  They are character
-# budgets (not token guesses), therefore they stay conservative enough for the
-# API models while being far above the previous 20k ceiling.
-STORE_INPUT_CHARS = int(os.getenv("RIU_CHAT_STORE_INPUT_CHARS") or "250000")
-STORE_OUTPUT_CHARS = int(os.getenv("RIU_CHAT_STORE_OUTPUT_CHARS") or "250000")
-CONTEXT_TURNS = int(os.getenv("RIU_CHAT_CONTEXT_TURNS") or "20")
-CONTEXT_BUDGET_CHARS = int(os.getenv("RIU_CHAT_CONTEXT_BUDGET_CHARS") or "80000")
-PROVIDER_BUDGET_CHARS = int(os.getenv("RIU_CHAT_PROVIDER_BUDGET_CHARS") or "120000")
-TOOL_RESULT_CHARS = int(os.getenv("RIU_CHAT_TOOL_RESULT_CHARS") or "6000")
+STORE_INPUT_CHARS = int(os.getenv("RIU_CHAT_STORE_INPUT_CHARS") or "500000")
+STORE_OUTPUT_CHARS = int(os.getenv("RIU_CHAT_STORE_OUTPUT_CHARS") or "500000")
+CONTEXT_TURNS = int(os.getenv("RIU_CHAT_CONTEXT_TURNS") or "40")
+CONTEXT_BUDGET_CHARS = int(os.getenv("RIU_CHAT_CONTEXT_BUDGET_CHARS") or "300000")
+PROVIDER_BUDGET_CHARS = int(os.getenv("RIU_CHAT_PROVIDER_BUDGET_CHARS") or "350000")
+TOOL_RESULT_CHARS = int(os.getenv("RIU_CHAT_TOOL_RESULT_CHARS") or "12000")
 LOCAL_INPUT_CHARS = int(os.getenv("RIU_CHAT_LOCAL_INPUT_CHARS") or "48000")
 
 
@@ -42,35 +41,30 @@ def _rows(value: Any) -> list[Any]:
 
 
 def _contexto(sesion: str, pregunta: str) -> str:
-    """Recover recent turns without the old 500-character per-side cut.
-
-    Newest complete turns are preferred.  If an older turn would overflow the
-    context budget it is skipped rather than cutting the current user input.
-    """
-    del pregunta  # kept in the signature for compatibility with plugin.py
+    """Recover recent turns without the old 500-character per-side cut."""
+    del pregunta
     try:
         mem, scope_for = _p._memoria()
-        res = mem.search(scope_for(_p.DUENO, "chat:" + sesion), "", CONTEXT_TURNS + 8)
+        res = mem.search(scope_for(_p.DUENO, "chat:" + sesion), "", CONTEXT_TURNS + 12)
         turns: list[str] = []
+        total = 0
         for f in reversed(_rows(res)):
             d = f.get("data", f) if isinstance(f, dict) else f
             if not isinstance(d, dict) or "pregunta" not in d:
                 continue
             block = "Usuario: " + str(d.get("pregunta") or "") + "\nAsistente: " + str(d.get("respuesta") or "")
             if len(block) > CONTEXT_BUDGET_CHARS:
-                # One single historical turn can itself be huge.  Keep both
-                # ends and make the reduction explicit instead of silently
-                # pretending the whole turn was supplied.
                 head = CONTEXT_BUDGET_CHARS // 2
                 tail = CONTEXT_BUDGET_CHARS - head
                 block = block[:head] + "\n[...CONTEXTO_HISTORICO_MUY_LARGO...]\n" + block[-tail:]
-            if sum(len(x) + 2 for x in turns) + len(block) > CONTEXT_BUDGET_CHARS:
+            if total + len(block) + 2 > CONTEXT_BUDGET_CHARS:
                 continue
             turns.append(block)
+            total += len(block) + 2
             if len(turns) >= CONTEXT_TURNS:
                 break
         return "\n\n".join(reversed(turns))
-    except Exception:  # memory must never take the chat down
+    except Exception:
         return ""
 
 
@@ -79,16 +73,19 @@ def _guardar(sesion: str, modelo: str, pregunta: str, respuesta: str) -> bool:
     try:
         mem, scope_for = _p._memoria()
         import time
-
+        q = str(pregunta)
+        a = str(respuesta)
         mem.save(
             scope_for(_p.DUENO, "chat:" + sesion),
             "turno-%d" % int(time.time() * 1000),
             {
                 "modelo": modelo,
-                "pregunta": str(pregunta)[:STORE_INPUT_CHARS],
-                "respuesta": str(respuesta)[:STORE_OUTPUT_CHARS],
-                "pregunta_chars": len(str(pregunta)),
-                "respuesta_chars": len(str(respuesta)),
+                "pregunta": q[:STORE_INPUT_CHARS],
+                "respuesta": a[:STORE_OUTPUT_CHARS],
+                "pregunta_chars": len(q),
+                "respuesta_chars": len(a),
+                "pregunta_completa": len(q) <= STORE_INPUT_CHARS,
+                "respuesta_completa": len(a) <= STORE_OUTPUT_CHARS,
             },
         )
         return True
@@ -97,23 +94,15 @@ def _guardar(sesion: str, modelo: str, pregunta: str, respuesta: str) -> bool:
 
 
 def _recortar(mensajes: list[dict[str, Any]], limite: int = PROVIDER_BUDGET_CHARS) -> list[dict[str, Any]]:
-    """Budget old context while preserving the latest user input exactly.
-
-    Previous code used a 20k-character hard ceiling and could discard useful
-    conversation state.  This implementation first shortens tool payloads,
-    then removes the oldest non-system messages.  The most recent user message
-    is protected and is never sliced.
-    """
+    """Budget OLD context while preserving the latest user input exactly."""
     import json
 
     ms = [dict(m) for m in mensajes]
     if not ms:
         return ms
 
-    latest_user = max((i for i, m in enumerate(ms) if m.get("role") == "user"), default=-1)
-
-    for i, m in enumerate(ms):
-        if m.get("role") == "tool" and i != latest_user:
+    for m in ms:
+        if m.get("role") == "tool":
             content = str(m.get("content") or "")
             if len(content) > TOOL_RESULT_CHARS:
                 m["content"] = content[:TOOL_RESULT_CHARS] + " ...[tool recortado por presupuesto]"
@@ -124,17 +113,13 @@ def _recortar(mensajes: list[dict[str, Any]], limite: int = PROVIDER_BUDGET_CHAR
             for m in ms
         )
 
-    # Remove oldest conversation/tool material first.  Never remove system
-    # instructions and never remove the latest user input.
     while len(ms) > 2 and size() > limite:
         removed = False
-        # Recalculate the protected user index after each mutation.
         protected = max((i for i, m in enumerate(ms) if m.get("role") == "user"), default=-1)
         for i, m in enumerate(ms):
             if m.get("role") == "system" or i == protected:
                 continue
             old = ms.pop(i)
-            # Preserve tool-call pairing when an assistant tool-call is pruned.
             if old.get("tool_calls"):
                 while i < len(ms) and ms[i].get("role") == "tool":
                     ms.pop(i)
@@ -146,7 +131,7 @@ def _recortar(mensajes: list[dict[str, Any]], limite: int = PROVIDER_BUDGET_CHAR
 
 
 def _chat(payload: dict[str, Any]) -> dict[str, Any]:
-    """Guard local 16k-context models from silent input loss."""
+    """Never silently truncate the newest input; guard 16K local models."""
     model = str(payload.get("model") or "")
     messages = list(payload.get("messages") or [])
     latest = next((str(m.get("content") or "") for m in reversed(messages) if m.get("role") == "user"), "")
@@ -155,7 +140,7 @@ def _chat(payload: dict[str, Any]) -> dict[str, Any]:
             "error": "INPUT_EXCEDE_CONTEXTO_MODELO_LOCAL",
             "detalle": (
                 "El input tiene %d caracteres. Este modelo HF local usa un contexto de 16K tokens; "
-                "el texto no fue cortado. Usa un modelo API de contexto largo o divide la tarea."
+                "el texto NO fue cortado. Usa un modelo API de contexto largo o divide la tarea."
             ) % len(latest),
             "input_chars": len(latest),
             "input_conservado": True,
@@ -163,9 +148,6 @@ def _chat(payload: dict[str, Any]) -> dict[str, Any]:
     return _ORIGINAL_CHAT(payload)
 
 
-# Patch the original module globals.  Functions defined in plugin.py resolve
-# these names at call time, so routing, tools, sentinela and HF behaviour remain
-# unchanged while all callers get the long-context policy.
 _ORIGINAL_CHAT = _p._chat
 _p._contexto = _contexto
 _p._guardar = _guardar
@@ -180,9 +162,11 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         result["long_context"] = {
             "enabled": True,
             "store_input_chars": STORE_INPUT_CHARS,
+            "store_output_chars": STORE_OUTPUT_CHARS,
             "context_turns": CONTEXT_TURNS,
             "context_budget_chars": CONTEXT_BUDGET_CHARS,
             "provider_budget_chars": PROVIDER_BUDGET_CHARS,
             "latest_user_input_preserved": True,
+            "budgets_are_characters": True,
         }
     return result
