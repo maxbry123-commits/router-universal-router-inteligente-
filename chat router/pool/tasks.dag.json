@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Universal Router Task Pool DAG",
+  "type": "object",
+  "properties": {
+    "dag_id": {"type": "string"},
+    "description": {"type": "string"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task_id", "model", "input", "dependencies"],
+        "properties": {
+          "task_id": {"type": "string"},
+          "model": {"type": "string"},
+          "input": {"type": "string"},
+          "dependencies": {"type": "array", "items": {"type": "string"}},
+          "orchestrator_role": {"type": "string", "enum": ["osquestador", "worker"]},
+          "output_schema": {
+            "type": "object",
+            "properties": {
+              "result": {"type": "string"},
+              "status": {"type": "string", "enum": ["pending", "running", "completed", "failed"]},
+              "timestamp": {"type": "string", "format": "date-time"}
+            },
+            "required": ["result", "status", "timestamp"]
+          }
+        }
+      }
+    },
+    "orchestrator": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string"},
+        "model": {"type": "string"},
+        "prompt": {"type": "string"},
+        "capabilities": {
+          "type": "array",
+          "items": {"type": "string"},
+          "example": ["message_routing", "status_aggregation", "task_assignment"]
+        }
+      },
+      "required": ["id", "model", "prompt"]
+    }
+  },
+  "required": ["dag_id", "description", "created_at", "tasks", "orchestrator"]
+}
