@@ -1,48 +1,101 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Universal Router Task Pool DAG",
-  "type": "object",
-  "properties": {
-    "dag_id": {"type": "string"},
-    "description": {"type": "string"},
-    "created_at": {"type": "string", "format": "date-time"},
-    "tasks": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["task_id", "model", "input", "dependencies"],
-        "properties": {
-          "task_id": {"type": "string"},
-          "model": {"type": "string"},
-          "input": {"type": "string"},
-          "dependencies": {"type": "array", "items": {"type": "string"}},
-          "orchestrator_role": {"type": "string", "enum": ["osquestador", "worker"]},
-          "output_schema": {
-            "type": "object",
-            "properties": {
-              "result": {"type": "string"},
-              "status": {"type": "string", "enum": ["pending", "running", "completed", "failed"]},
-              "timestamp": {"type": "string", "format": "date-time"}
-            },
-            "required": ["result", "status", "timestamp"]
-          }
-        }
+  "dag_id": "POOL-001",
+  "description": "Task pool for executing user-assigned model tasks",
+  "created_at": "2025-08-27T12:00:00Z",
+  "tasks": [
+    {
+      "task_id": "T1",
+      "model": "Groq Qwen 3.8",
+      "input": "Process task T1 as per user instructions",
+      "dependencies": [],
+      "orchestrator_role": "osquestador",
+      "output_schema": {
+        "result": "",
+        "status": "pending",
+        "timestamp": ""
       }
     },
-    "orchestrator": {
-      "type": "object",
-      "properties": {
-        "id": {"type": "string"},
-        "model": {"type": "string"},
-        "prompt": {"type": "string"},
-        "capabilities": {
-          "type": "array",
-          "items": {"type": "string"},
-          "example": ["message_routing", "status_aggregation", "task_assignment"]
-        }
-      },
-      "required": ["id", "model", "prompt"]
+    {
+      "task_id": "T2",
+      "model": "Kimi K3",
+      "input": "Process task T2 as per user instructions",
+      "dependencies": [],
+      "orchestrator_role": "osquestador",
+      "output_schema": {
+        "result": "",
+        "status": "pending",
+        "timestamp": ""
+      }
+    },
+    {
+      "task_id": "T10",
+      "model": "Glimmer 30B",
+      "input": "Process task T10 as per user instructions",
+      "dependencies": [],
+      "orchestrator_role": "worker",
+      "output_schema": {
+        "result": "",
+        "status": "pending",
+        "timestamp": ""
+      }
+    },
+    {
+      "task_id": "T11",
+      "model": "Glimmer 30B",
+      "input": "Process task T11 as per user instructions",
+      "dependencies": [],
+      "orchestrator_role": "worker",
+      "output_schema": {
+        "result": "",
+        "status": "pending",
+        "timestamp": ""
+      }
+    },
+    {
+      "task_id": "T12",
+      "model": "Glimmer 30B",
+      "input": "Process task T12 as per user instructions",
+      "dependencies": [],
+      "orchestrator_role": "worker",
+      "output_schema": {
+        "result": "",
+        "status": "pending",
+        "timestamp": ""
+      }
+    },
+    {
+      "task_id": "T20",
+      "model": "Nemotron 3 Super",
+      "input": "Process task T20 as per user instructions",
+      "dependencies": [],
+      "orchestrator_role": "worker",
+      "output_schema": {
+        "result": "",
+        "status": "pending",
+        "timestamp": ""
+      }
+    },
+    {
+      "task_id": "T21",
+      "model": "Nemotron 3 Super",
+      "input": "Process task T21 as per user instructions",
+      "dependencies": [],
+      "orchestrator_role": "worker",
+      "output_schema": {
+        "result": "",
+        "status": "pending",
+        "timestamp": ""
+      }
     }
-  },
-  "required": ["dag_id", "description", "created_at", "tasks", "orchestrator"]
+  ],
+  "orchestrator": {
+    "id": "OSQUESTADOR-001",
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "prompt": "You are the Osquestador orchestrator. Listen to the user in the chat pool, receive messages, delegate tasks to the appropriate model workers, collect results, and report back to the user. Follow the Jason DSL DAG schema for handoffs.",
+    "capabilities": [
+      "message_routing",
+      "status_aggregation",
+      "task_assignment"
+    ]
+  }
 }
