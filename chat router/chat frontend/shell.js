@@ -29,7 +29,7 @@ async function show(view) {
   document.querySelector("#view-title").textContent = labels[view];
   tell("");
   try {
-    const response = await fetch(`/chat/ui/panel-${["connectors", "templates", "engineering"].includes(view) ? "org" : view}.html`);
+    const response = await fetch(`/chat/ui/panel-${["connectors", "templates", "engineering"].includes(view) ? "org" : view}.html`, { cache: "no-store" });
     if (!response.ok) throw new Error("PANEL_UNAVAILABLE");
     panel.innerHTML = await response.text();
     cleanup = await panels[view](panel, { api, tell, view });
