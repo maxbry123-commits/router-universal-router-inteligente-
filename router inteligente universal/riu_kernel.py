@@ -48,7 +48,7 @@ def hydrate():
     keys={}
     for r in v.list():
         if r["enabled"] and r["provider"]=="router" and "hash" not in r["account"]:
-            try:keys[v.get_secret(r["credential_ref"])]= "chat-ui" if "chat-ui" in r["account"] else r["account"]
+            try:keys[v.get_secret(r["credential_ref")]]= "chat-ui" if "chat-ui" in r["account"] else r["account"]
             except Exception:pass
     os.environ["RIU_AGENT_API_KEYS"]=json.dumps(keys)
     os.environ["RIU_AGENT_API_KEYS_2"]="{}"
@@ -58,7 +58,7 @@ def command():
 def launch():
     hydrate()
     secret_names=["HF_TOKEN","HF_CONTROL_JOBS_TOKEN","GITHUB_PERSONAL_ACCESS_TOKEN","RIU_VAULT_PASSPHRASE","RIU_ROUTER_API_KEY","RIU_AGENT_API_KEYS","RIU_AGENT_API_KEYS_2","RIU_DIRECTOR_KEY_HASH","RIU_PUBLIC_CHAT_KEY"]
-    env={"HF_BUCKET_ID":NS+"/yaiwes-memoria-storage","RIU_DATA_DIR":"/tmp/riu-data","RIU_VAULT_PATH":"/tmp/riu-data/riu_vault.db","RIU_VAULT_SOURCE":BASE+"/banco/vault.db.gz.b64","RIU_VAULT_PROVIDERS_SOURCE":BASE+"/banco/providers.json","RIU_AUTOSYNC_SECONDS":"60","RIU_CODE_BUNDLE":BASE+"/codigo/router-bundle.tar.gz","RIU_ROOT":"router-inteligente-universal","RIU_FLAVOR":"cpu-basic","RIU_JOB_ROLE":"main","HF_AUTOSCALE_MAX_WORKERS":"1","HF_HUB_DISABLE_PROGRESS_BARS":"1","RIU_CORS_ORIGINS":"*"}
+    env={"HF_BUCKET_ID":NS+"/yaiwes-memoria-storage","RIU_DATA_DIR":"/tmp/riu-data","RIU_VAULT_PATH":"/tmp/riu-data/riu_vault.db","RIU_VAULT_SOURCE":BASE+"/banco/vault.db.gz.b64","RIU_VAULT_PROVIDERS_SOURCE":BASE+"/banco/providers.json","RIU_AUTOSYNC_SECONDS":"60","RIU_CHAT_ALLOW_PROVIDER_LIVE":"1","RIU_G2_GROQ_MODEL":"qwen/qwen3.8-27b","RIU_CODE_BUNDLE":BASE+"/codigo/router-bundle.tar.gz","RIU_ROOT":"router-inteligente-universal","RIU_FLAVOR":"cpu-basic","RIU_JOB_ROLE":"main","HF_AUTOSCALE_MAX_WORKERS":"1","HF_HUB_DISABLE_PROGRESS_BARS":"1","RIU_CORS_ORIGINS":"*"}
     j=HfApi(token=os.environ["HF_TOKEN"]).run_job(image="python:3.12",command=command(),flavor="cpu-basic",timeout="24h",expose=[8000],expose_public=[8000],env=env,secrets={k:os.environ[k] for k in secret_names},namespace=NS,labels={"name":"yaiwes-router-16gb"})
     return {"job_id":j.id,"url":"https://"+j.id+"--8000.hf.jobs","flavor":"cpu-basic","started":time.time(),"timeout_s":86400}
 def tick(force=False):
