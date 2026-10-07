@@ -35,14 +35,13 @@ test("acciones del plugin fallan cerrado si el resultado contiene error", async 
 test("chat.send del bridge conserva sesión y anclas sin modelo DeepSeek", async () => {
   answer = { choices: [{ message: { content: "confirmado" } }], herramientas: [] };
   const result = await window.YAIWES_PLUGIN_BRIDGE.execute("chat.send", {
-    model: "nv-nemotron-super", message: "consulta", sesion: "chat-3", task_id: "tarea-3",
+    model: "nv-nemotron-super", message: "consulta", sesion: "chat-3",
     anclados: ["archivo.txt", "handoff:skill"], max_tokens: 512
   });
   assert.equal(result.reply, "confirmado");
   assert.match(last.url, /\/plugins\/puente_chat\/call\/chat_async$/);
   assert.deepEqual(last.payload.anclados, ["archivo.txt", "handoff:skill"]);
   assert.equal(last.payload.sesion, "chat-3");
-  assert.equal(last.payload.task_id, "tarea-3");
   assert.equal(last.payload.model, "nv-nemotron-super");
 });
 

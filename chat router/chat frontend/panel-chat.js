@@ -505,7 +505,7 @@ export async function mount(root, { api, tell }) {
     try {
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => { controller.abort(); rej(new Error("PROCESO_DETENIDO")); }; });
-      const answer = await Promise.race([ejecutar("chat.send", { model: c.ficha, message, max_tokens, anclados: [...c.anclados], sesion: c.sesion, task_id: crypto.randomUUID(), signal: controller.signal, avisar: t => recordar(c, t, "meta") }), raceDetener]);
+      const answer = await Promise.race([ejecutar("chat.send", { model: c.ficha, message, max_tokens, anclados: [...c.anclados], sesion: c.sesion, signal: controller.signal, avisar: t => recordar(c, t, "meta") }), raceDetener]);
       if (!answer.reply?.trim()) throw new Error("RESPUESTA_VACIA");
       pending.remove();
       recordar(c, answer.reply);

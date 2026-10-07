@@ -21,12 +21,6 @@ html[data-theme=gris] button.action{color:#fff}
 html[data-theme=gris] a{color:#164bb9}
 html[data-theme=gris] .message.error,html[data-theme=gris] .badge.blocked{color:var(--status-red);border-color:var(--status-red)}
 
-.sidebar a[data-view]{display:block;text-decoration:none;background:transparent;border:0;text-align:left;padding:11px 12px;border-radius:8px;color:var(--quiet);cursor:pointer}
-.sidebar a[data-view][aria-current=page]{color:var(--title);background:var(--module-selected);box-shadow:inset 3px 0 var(--active)}
-.sidebar a[data-view]:hover{background:var(--surface-alt)}
-.sidebar a[data-view][aria-current=page]:hover{background:var(--module-selected)}
-@media(max-width:720px){.sidebar a[data-view]{white-space:nowrap}}
-
 /* mejora visual chat: burbujas, composer fijo, controles compactos */
 .chat-history{gap:11px;padding:6px 2px}
 .message{position:relative;padding:11px 38px 11px 13px;border-radius:14px;border:1px solid var(--border);background:var(--panel)}

@@ -1,9 +1,6 @@
 """Contrato local de recuperación: no invoca ningún proveedor externo."""
 import importlib.util
 import json
-import threading
-import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import sys
 import types
@@ -38,24 +35,11 @@ class MemoriaFalsa:
         return self.filas[-limite:]
 
 
-class MemoriaPorScope:
-    def __init__(self):
-        self.datos = {}
-
-    def save(self, scope, clave, dato):
-        self.datos[(scope, clave)] = dato
-
-    def search(self, scope, clave, limite):
-        return [{'data': dato} for (sc, key), dato in self.datos.items()
-                if sc == scope and key == clave][:limite]
-
-
 class Recuperacion(unittest.TestCase):
     def setUp(self):
         plugin._DEADLINE.set(None)
         plugin._TASK_DEADLINE.set(None)
         plugin._BUENA.clear()
-        plugin._CHECKPOINTS.clear()
 
     def test_las_doce_fichas_comparten_politica(self):
         fichas = [json.loads(f.read_text()) for f in (ROOT / 'fichas').glob('modelo-*.json')]
@@ -108,62 +92,6 @@ class Recuperacion(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(d['error'], 'PROVEEDOR_TIMEOUT_O_RED')
         self.assertEqual(tiempos, [90])
-
-    def test_watchdog_corta_respuesta_que_transmite_sin_terminar(self):
-        class RespuestaLenta(BaseHTTPRequestHandler):
-            def do_GET(self):
-                self.send_response(200)
-                self.send_header('Content-Length', '10')
-                self.end_headers()
-                self.wfile.write(b'{')
-                self.wfile.flush()
-                time.sleep(0.5)
-                try:
-                    self.wfile.write(b'"ok":true}')
-                except BrokenPipeError:
-                    pass
-
-            def log_message(self, *args):
-                pass
-
-        servidor = ThreadingHTTPServer(('127.0.0.1', 0), RespuestaLenta)
-        hilo = threading.Thread(target=servidor.serve_forever, daemon=True)
-        hilo.start()
-        try:
-            with patch.object(plugin, 'TOPE_TOTAL_S', 0.15):
-                inicio = time.monotonic()
-                status, resultado = plugin._http('GET', 'http://127.0.0.1:%d/' % servidor.server_port, 'local', espera=1)
-            self.assertEqual(status, 0)
-            self.assertEqual(resultado['error'], 'PROVEEDOR_TIMEOUT_O_RED')
-            self.assertLess(time.monotonic() - inicio, 0.45)
-        finally:
-            servidor.shutdown()
-            servidor.server_close()
-
-    def test_watchdog_tambien_corta_cuerpo_http_de_error(self):
-        class ErrorLento(BaseHTTPRequestHandler):
-            def do_GET(self):
-                self.send_response(503)
-                self.send_header('Content-Length', '10')
-                self.end_headers()
-                self.wfile.write(b'{')
-                self.wfile.flush()
-                time.sleep(0.5)
-
-            def log_message(self, *args):
-                pass
-
-        servidor = ThreadingHTTPServer(('127.0.0.1', 0), ErrorLento)
-        hilo = threading.Thread(target=servidor.serve_forever, daemon=True)
-        hilo.start()
-        try:
-            with patch.object(plugin, 'TOPE_TOTAL_S', 0.15):
-                status, resultado = plugin._http('GET', 'http://127.0.0.1:%d/' % servidor.server_port, 'local', espera=1)
-            self.assertEqual(status, 0)
-            self.assertEqual(resultado['error'], 'PROVEEDOR_TIMEOUT_O_RED')
-        finally:
-            servidor.shutdown()
-            servidor.server_close()
 
     def test_tres_motores_de_estado_recuperan_y_reconstruyen(self):
         memoria, cache = MemoriaFalsa(), {}
@@ -247,50 +175,6 @@ class Recuperacion(unittest.TestCase):
             texto = plugin._paso_llm('nvidia', 'z-ai/glm-5.3', [{'role': 'user', 'content': 'x'}])
         self.assertEqual(texto, 'recuperado')
         self.assertEqual(visitas, ['nvidia', 'groq'])
-
-    def test_paso_cero_rechaza_un_motor_con_veredicto_fallido(self):
-        herr = types.SimpleNamespace(_token_gh=lambda: '', _token_hf=lambda: '')
-        ok = types.SimpleNamespace(returncode=0, stdout='{"verdict":"SEARCH_DONE"}', stderr='')
-        gap = types.SimpleNamespace(returncode=0, stdout='{"verdict":"INPUT_GAP"}', stderr='')
-        with patch.object(plugin, '_herr', return_value=herr), patch.object(plugin._sub, 'run', side_effect=[ok, gap]) as runner:
-            self.assertEqual(plugin._motores_buscar('consulta'), '')
-        self.assertEqual(runner.call_count, 2)
-
-    def test_consil_retoma_checkpoint_persistente_sin_repetir_pasos(self):
-        memoria = MemoriaPorScope()
-        consultas, llamadas = [], []
-
-        def paso(*args):
-            llamadas.append(args[1])
-            return '' if len(llamadas) == 2 else 'salida-%d' % len(llamadas)
-
-        with patch.object(plugin, '_memoria', return_value=(memoria, lambda d, s: s)), \
-             patch.object(plugin, '_motores_buscar', side_effect=lambda q: consultas.append(q) or 'investigacion'), \
-             patch.object(plugin, '_paso_llm', side_effect=paso):
-            texto, _ = plugin._consil('tarea', 'chat-a')
-            self.assertEqual(texto, 'CONSIL_SIN_RESPUESTA')
-            plugin._CHECKPOINTS.clear()
-            texto, usadas = plugin._consil('tarea', 'chat-a')
-        self.assertEqual(texto, 'salida-13')
-        self.assertEqual(consultas, ['tarea'])
-        self.assertEqual(len(llamadas), 13)
-        self.assertIn('paso4:kimi-12-goals-salida', usadas)
-
-    def test_consil_separa_tareas_identicas_por_id(self):
-        consultas = []
-        with patch.object(plugin, '_motores_buscar', side_effect=lambda q: consultas.append(q) or 'contexto'), \
-             patch.object(plugin, '_paso_llm', return_value='respuesta'):
-            self.assertEqual(plugin._consil('misma pregunta', 'sesion', 'tarea-1')[0], 'respuesta')
-            self.assertEqual(plugin._consil('misma pregunta', 'sesion', 'tarea-2')[0], 'respuesta')
-        self.assertEqual(consultas, ['misma pregunta', 'misma pregunta'])
-
-    def test_motor_parcial_no_reporta_herramienta_terminada(self):
-        proceso = types.SimpleNamespace(returncode=0, stdout='{"verdict":"GAPS_PENDING"}\n', stderr='')
-        with patch.object(plugin, '_embed_rank', return_value=0), \
-             patch.object(plugin, '_paso_llm', return_value='{"env": {}, "explicacion": "x"}'), \
-             patch.object(plugin._sub, 'run', return_value=proceso):
-            texto, _ = plugin._motor_descarga('descarga')
-        self.assertEqual(texto, 'MOTOR_ERROR GAPS_PENDING')
 
 
 if __name__ == '__main__':

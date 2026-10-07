@@ -12,7 +12,6 @@ const panel = document.querySelector("#panel");
 const notice = document.querySelector("#notice");
 const tell = message => { notice.textContent = message || ""; };
 let cleanup;
-let requestId = 0;
 const connection = document.querySelector("#connection");
 document.querySelector("#connect").addEventListener("click", () => window.location.reload());
 window.addEventListener("router-connection", event => {
@@ -21,7 +20,6 @@ window.addEventListener("router-connection", event => {
 
 async function show(view) {
   if (!panels[view]) return;
-  const currentId = ++requestId;
   if (cleanup) cleanup();
   cleanup = undefined;
   document.querySelectorAll("[data-view]").forEach(button => {
@@ -33,29 +31,15 @@ async function show(view) {
   try {
     const response = await fetch(`/chat/ui/panel-${["connectors", "templates", "engineering"].includes(view) ? "org" : view}.html`, { cache: "no-store" });
     if (!response.ok) throw new Error("PANEL_UNAVAILABLE");
-    const html = await response.text();
-    if (currentId !== requestId) return;
-    panel.innerHTML = html;
-    const dispose = await panels[view](panel, { api, tell, view });
-    if (currentId === requestId) cleanup = dispose;
-    else if (dispose) dispose();
-  } catch (error) { if (currentId === requestId) tell(error.message); }
+    panel.innerHTML = await response.text();
+    cleanup = await panels[view](panel, { api, tell, view });
+  } catch (error) { tell(error.message); }
 }
 document.querySelector("#navigation").addEventListener("click", event => {
-  const link = event.target.closest("a[data-view]");
-  if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  event.preventDefault();
-  if (new URL(window.location.href).searchParams.get("view") !== link.dataset.view) {
-    window.history.pushState({}, "", link.href);
-  }
-  show(link.dataset.view);
+  const button = event.target.closest("[data-view]");
+  if (button) show(button.dataset.view);
 });
-function currentView() {
-  const view = new URL(window.location.href).searchParams.get("view");
-  return Object.hasOwn(panels, view) ? view : "chat";
-}
-window.addEventListener("popstate", () => show(currentView()));
-show(currentView());
+show("chat");
 const TEMAS = ["little", "matte", "crystal", "orange", "blue", "blanco", "gris"];
 function aplicarTema(valor) {
   const tema = TEMAS.includes(valor) ? valor : "little";
