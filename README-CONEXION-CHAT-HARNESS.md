@@ -1,20 +1,23 @@
-# HANDOFF — Cableado del chat YAIWES v6
+# HANDOFF — Cableado del chat YAIWES v7
 
 Actualizado: 2026-10-07.
 
-> ESTADO VIGENTE. Este documento sustituye las referencias históricas a Router de 32 GB, Router detenido y schedules HF antiguos. El circuito actual usa un único Router principal publicado por `LIVE_URL.json`. No contiene claves ni secretos.
+> ESTADO VIGENTE. Este documento describe el cableado actual del chat YAIWES en `main`: frontend Vercel, backend FastAPI, `puente_chat`, proveedores/DeepSeek, memoria/almacenamiento y las dos vías autorizadas del Router hacia Hugging Face. No contiene claves ni secretos.
 
 ## 0. Estado ejecutivo
 
 - Chat producción: https://riu-jev-bridge.vercel.app/
 - Frontend fuente: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/chat%20frontend
-- Router HF oficial actual: `6ac593acfbc85ba6823baf04`
-- Base Router actual: https://6ac593acfbc85ba6823baf04--8000.hf.jobs
-- Puerta fija del chat: https://6ac593acfbc85ba6823baf04--8000.hf.jobs/plugins/puente_chat/call
-- `LIVE_URL.json`: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/LIVE_URL.json
+- Backend Chat MVP: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/integration/chat_mvp
 - Backend `puente_chat`: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/plugins/puente_chat
-- Estado HF comprobado al actualizar este handoff: un solo Job Router en `RUNNING`; el Job duplicado `6ac5ab6a404719ba3766487f` fue cancelado.
-- Vercel producción comprobado `READY`; `config.js` de producción ya apunta también como fallback a `6ac593...`.
+- Router HF principal publicado actualmente: `6ac593acfbc85ba6823baf04`
+- Base principal actual: https://6ac593acfbc85ba6823baf04--8000.hf.jobs
+- Puerta principal del chat: https://6ac593acfbc85ba6823baf04--8000.hf.jobs/plugins/puente_chat/call
+- `LIVE_URL.json`: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/LIVE_URL.json
+- Memoria canónica: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/04-MEMORIA/memoria_yaiwes
+- Adaptador `memory_runtime.py`: PRESENTE en `main`.
+- Segunda vía Router → Hugging Face: AUTORIZADA como ruta de respaldo directa y separada; no debe confundirse con un duplicado accidental del Router principal.
+- Los Jobs L4 temporales de modelos `hf-*` son además respaldos de modelo bajo demanda; tampoco deben confundirse con el Router principal ni con la segunda vía Router→HF.
 
 ## 1. Flujo global real
 
@@ -23,13 +26,14 @@ USUARIO / NAVEGADOR
         ↓
 https://riu-jev-bridge.vercel.app/
         ↓
-Vercel sirve shell.html + shell.js + panel-chat.html + panel-chat.js
+Vercel sirve shell.html + panel-chat.html + panel-chat.js
         ↓
 api.js
         ↓
-lee LIVE_URL.json de GitHub cada ~30 s
+lee LIVE_URL.json
         ↓
-Router HF oficial :8000
+RUTA PRINCIPAL
+Router HF publicado :8000
         ↓
 public_chat_app.py
         ↓
@@ -41,9 +45,15 @@ Plugin Host /plugins
         ↓
 puente_chat/plugin.py
         ↓
-harness / proveedor / herramientas / modelo
+proveedor / DeepSeek / HF / NVIDIA / Groq / herramientas
         ↓
-memoria + almacenamiento
+memory_runtime.py
+        ↓
+memoria_loader.py
+        ↓
+memoria_yaiwes
+        ↓
+Store / SQLite / grafo / almacenamiento
         ↓
 /plugins/puente_chat/call/resultado
         ↓
@@ -52,49 +62,64 @@ api.js hace polling
 panel-chat.js pinta la respuesta
 ```
 
+Ruta adicional autorizada:
+
+```text
+CHAT / ROUTER
+      ↓
+SEGUNDA VÍA DE RESPALDO
+      ↓
+HUGGING FACE DIRECTO
+      ↓
+modelo / servicio disponible
+```
+
+La segunda vía HF es deliberada. No debe ser eliminada durante limpiezas de Jobs o auditorías de duplicados.
+
 ## 2. Frontend del chat
 
-Raíz:
+Raíz exacta:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/chat%20frontend
 
 Archivos principales:
 
-- `shell.html`: shell principal que abre en `/`.
-- `shell.js`: carga el panel Chat por defecto y monta las otras vistas.
-- `panel-chat.html`: DOM del chat, controles, pestañas, adjuntos, anclas, sandbox y motor.
-- `panel-chat.js`: comportamiento del chat.
-- `api.js`: cliente HTTP; resuelve el Router vivo y habla con `puente_chat`.
-- `config.js`: fallback y catálogo visible del frontend.
-- `shell.css`, `responsive.css`: estilos.
-- `vercel.json`: reescrituras Vercel.
+- `panel-chat.html`: DOM principal del chat.
+- `panel-chat.js`: comportamiento, controles, historial visible, anclas y acciones.
+- `api.js`: cliente HTTP; resuelve Router, llama `puente_chat`, maneja polling, sesión y respaldo HF.
+- `config.js`: fallback estático y catálogo visible de modelos/motores.
+- `shell.html` / `shell.js`: shell general.
+- `panel-archivos.html/js`: archivos y adjuntos.
+- `panel-canvas.html/js`: panel Canvas.
+- `panel-org.html/js`: organización/agentes.
+- `panel-seguimiento.html/js`: seguimiento.
+- `responsive.css`, `shell.css`: estilos.
+- `vercel.json`: rewrites de Vercel.
 
 Enlaces directos:
 
+- https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/panel-chat.html
+- https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/panel-chat.js
 - https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/api.js
 - https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/config.js
-- https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/panel-chat.js
-- https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/panel-chat.html
 - https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/shell.js
 - https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/vercel.json
 
-### Resolución del backend
+### Resolución del backend desde el navegador
 
-`config.js` tiene el Router oficial como fallback, pero la autoridad es `LIVE_URL.json`.
-
-`api.js` ejecuta `liveRouter()` y consulta:
+`config.js` contiene fallback estático. La ruta dinámica del principal se resuelve desde:
 
 https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/LIVE_URL.json
 
-Si cambia el Job HF por una renovación legítima, `api.js` reemplaza `apiBase` y `harnessUrl` sin cambiar el frontend.
+`api.js` ejecuta `liveRouter()` y actualiza `apiBase` y `harnessUrl` cuando cambia el Job publicado.
 
-Para una conversación, la UI usa principalmente:
+Protocolo principal:
 
 ```text
 POST <LIVE_URL>/plugins/puente_chat/call/chat_async
 POST <LIVE_URL>/plugins/puente_chat/call/resultado
 ```
 
-`api.js` crea una sesión por pestaña/chat y conserva el identificador en `sessionStorage`.
+La UI conserva un identificador de sesión en `sessionStorage` para la continuidad de cada estancia del chat.
 
 ## 3. Vercel
 
@@ -103,178 +128,243 @@ Proyecto: `riu-jev-bridge`
 Producción:
 https://riu-jev-bridge.vercel.app/
 
-El proyecto está conectado al repo:
+Chat:
+https://riu-jev-bridge.vercel.app/chat/ui/panel-chat.html
+
+Repositorio:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-
 
 Rama de producción: `main`.
 
-Vercel aloja la interfaz. El cómputo del Router, el puente, la memoria y las herramientas viven en HF.
+Vercel aloja el frontend. El cómputo, proveedores, memoria, herramientas y Router viven fuera del navegador.
 
-El deployment que restauró el selector completo y dejó el fallback en el Router oficial quedó `READY` en producción con commit:
+## 4. Router HF principal
 
-`c196da57f48de9cc55e93018c9227744fe649d68`
-
-## 4. Router HF oficial
-
-Job vigente al actualizar este documento:
+Router publicado actualmente:
 
 `6ac593acfbc85ba6823baf04`
 
 URL:
 https://6ac593acfbc85ba6823baf04--8000.hf.jobs
 
-HF lo reporta como `RUNNING`, flavor `cpu-basic`, con timeout de `86400` segundos (24 h). El código y la etiqueta del Router lo identifican como el Router CPU de 16 GB.
+`LIVE_URL.json` vigente:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/LIVE_URL.json
 
-El arranque del Job hace:
+El arranque actual del principal usa el artefacto operativo `router-bundle.tar.gz` del bucket HF y ejecuta:
 
 ```text
-bucket router-bundle.tar.gz
+router-bundle.tar.gz
         ↓
-extraer /app
+/app
         ↓
-cd /app/router inteligente universal
+router inteligente universal
         ↓
-python riu_kernel.py --watch
+riu_kernel.py --watch
         +
 uvicorn public_chat_app:app --host 0.0.0.0 --port 8000
 ```
 
-IMPORTANTE: el Job no clona GitHub en cada arranque. Carga el artefacto operativo `router-bundle.tar.gz` desde el bucket HF. GitHub es la fuente de código/documentación y `LIVE_URL.json`; el bundle HF es el artefacto con el que se inicia el runtime.
+IMPORTANTE: GitHub es la fuente de código/documentación; el bundle HF es el artefacto de runtime. Un cambio en `main` debe llegar al bundle/runtime antes de considerarse desplegado en el Job principal.
 
-## 5. Kernel, renovación y regla de un solo Router
+## 5. Dos vías autorizadas de Router / HF
 
-Código:
+### Vía A — Router principal publicado
+
+Es el Router cuyo URL está en `LIVE_URL.json` y que usa normalmente el frontend.
+
+Kernel:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/riu_kernel.py
 
-`riu_kernel.py --watch` vive dentro del Job principal. No hay actualmente un HF Scheduled Job separado para mantener el Router.
+El kernel mantiene el Router principal y permite handover controlado entre predecesor y sucesor.
 
-El kernel:
+### Vía B — Router de respaldo directo a Hugging Face
 
-1. Lee `control/router-current.json` del bucket.
-2. Comprueba `/health` del Router registrado.
-3. Si está sano y le quedan más de 20 minutos de vida, no crea otro Router.
-4. Cuando necesita sucesor, crea un nuevo Job.
-5. Espera a que el sucesor responda sano.
-6. Publica el nuevo Job en el bucket y en GitHub `LIVE_URL.json`.
-7. Sincroniza memoria del predecesor.
-8. Cancela el predecesor.
+Existe como segunda vía autorizada para el chat. Se conserva y no debe eliminarse por el simple hecho de no coincidir con `LIVE_URL.json`.
 
-Regla operativa:
+La regla correcta ya no es "todo segundo Router es anomalía". Hay que distinguir:
 
-- Normal: **1 Router HF RUNNING**.
-- Handover autorizado: puede haber 2 brevemente mientras el sucesor pasa health-check; después debe volver a 1.
-- Un segundo Router persistente que no sea el publicado en `LIVE_URL.json` es una anomalía y no debe conservarse.
+1. Router principal publicado por `LIVE_URL.json`.
+2. Router/vía de respaldo directa a Hugging Face, autorizada.
+3. Handover temporal principal→sucesor, autorizado.
+4. Job duplicado accidental sin papel definido, que sí es anomalía.
 
-Incidente 2026-10-07: `6ac5ab6a404719ba3766487f` estaba RUNNING sin ser el Router publicado; fue cancelado. No había referencias a ese Job en `main`.
+Workflow histórico relacionado con Router persistente HF:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/.github/workflows/riu-router-job-central.yml
+
+Runtime persistente relacionado:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/agents-yaiwes/common/router_job_persistent.py
+
+No desactivar ni borrar esta segunda vía sin una orden explícita del Director.
 
 ## 6. Entrada pública del backend
 
 Código:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/public_chat_app.py
 
-`public_chat_app.py` envuelve la aplicación principal y mantiene las credenciales internas del lado servidor. Para las rutas públicas del chat, plugin, memoria, archivos y fichas, añade internamente la clave del chat antes de pasar la petición al Router.
+`public_chat_app.py` envuelve la aplicación principal y mantiene credenciales internas del lado servidor para las puertas públicas autorizadas.
 
-La interfaz de Vercel no contiene las claves de proveedores.
+La interfaz de Vercel no debe contener claves de proveedores.
 
-## 7. Aplicación backend / Chat MVP
+## 7. Backend Chat MVP
 
-Código:
+Raíz exacta:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/integration/chat_mvp
+
+Entrada:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/app.py
 
-Monta, entre otras superficies:
+Superficies principales:
 
 - `/plugins` — Plugin Host.
-- `/chat/*` — API de chat general.
+- `/chat/*` — API general del chat.
 - `/chat/jobs/*` — trabajos paralelos.
-- `/chat/route` y `/chat/router/status` — routing resiliente.
+- `/chat/route`, `/chat/router/status` — routing resiliente.
 - `/v1/router/*` — puerta OpenAI-compatible para Hermes/OpenClaw.
 - `/gh/accounts`, `/control/*`, `/groups` — puente UI.
-- `/omniroute/*` — proxy OmniRoute.
 - `/memoria/*` — memoria YAIWES.
 - `/health`, `/v1/models`, `/v1/chat/completions` — gateway.
 
-## 8. `puente_chat`: backend específico de la UI
+Archivos clave:
+
+- `app.py` — composición FastAPI.
+- `router.py` — API chat, conversaciones, mensajes y sincronización.
+- `store.py` — SQLite/documentos/cache/grafo.
+- `providers.py` — proveedores externos.
+- `resilience.py` — fallback, circuit breaker y políticas.
+- `policies.json` — cadenas declarativas vigentes.
+- `memoria_loader.py` — loader HTTP de memoria.
+- `memory_runtime.py` — compatibilidad `puente_chat` ↔ memoria canónica.
+
+## 8. `puente_chat`: harness específico de la UI
 
 Raíz:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/plugins/puente_chat
 
-Archivos:
-
-- `plugin.py`: harness del chat, ejecución, recuperación, modelos, memoria de sesión, polling y L4 bajo demanda.
-- `herramientas.py`: herramientas disponibles al harness.
-- `ficha.json`: ficha del plugin.
-- `fichas/`: fichas/modelos/pipelines.
-
 Código principal:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/plugins/puente_chat/plugin.py
 
-Protocolo del frontend:
+Herramientas:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/plugins/puente_chat/herramientas.py
 
-```text
-POST /plugins/puente_chat/call/chat_async
-→ {estado:"procesando", proceso_id}
+Ficha plugin:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/plugins/puente_chat/ficha.json
 
-POST /plugins/puente_chat/call/resultado
-→ resultado final
-```
+Fichas/modelos/pipelines:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/plugins/puente_chat/fichas
 
-Para modelos HF locales, el plugin puede encender un L4 temporal. Esos L4 son **respaldos de modelo**, no otro Router principal: tienen etiqueta propia, límite duro, barrendero y apagado automático.
+Funciones del puente incluyen:
+
+- `chat_async` / `resultado`.
+- contexto de sesión.
+- checkpoints para recuperación.
+- archivos del chat.
+- handoff editable.
+- sandbox.
+- herramientas GitHub/HF.
+- modelos API.
+- modelos HF de respaldo bajo demanda.
+
+### L4 temporales `hf-*`
+
+`api.js` y `puente_chat` pueden encender Jobs L4 temporales para modelos HF concretos. Son respaldo de modelo, con ciclo de vida limitado y apagado automático.
+
+Esto es distinto de:
+
+- Router principal.
+- segunda vía Router→HF autorizada.
 
 ## 9. Harness y DeepSeek
 
-No existe un segundo "Router DeepSeek" ni un servidor harness DeepSeek separado.
+DeepSeek es un proveedor/modelo dentro del sistema de routing; no debe confundirse con el segundo Router de respaldo.
 
-DeepSeek forma parte del harness de proveedores del Router.
-
-Proveedor directo definido en:
+Proveedor directo:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/providers.py
 
-Ahí existe el proveedor `deepseek` con API OpenAI-compatible y base pública `https://api.deepseek.com/v1`; las claves salen del banco/vault o del entorno del servidor y no se envían al navegador.
+Registro:
+
+```text
+deepseek
+→ https://api.deepseek.com/v1
+```
+
+DeepSeek V4 Flash en cadenas del Router se resuelve por HF cuando la política lo selecciona.
 
 Routing/fallback:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/resilience.py
 
-Ese archivo define además `DEEPSEEK_FLASH` como `deepseek-ai/DeepSeek-V4-Flash` mediante el proveedor HF y lo incluye en cadenas autorizadas como `default`, `assistants`, `minor`, `g2` y `chat_nvidia` según la política de cada grupo.
-
-Por tanto hay que distinguir:
+Diferencia:
 
 ```text
-DeepSeek proveedor directo
-providers.py → api.deepseek.com/v1
+DeepSeek API directa
+providers.py
+→ api.deepseek.com/v1
 
-DeepSeek V4 Flash en cadenas del Router
-resilience.py → proveedor HF → router.huggingface.co/v1
+DeepSeek V4 Flash
+resilience/policies
+→ proveedor HF
+→ router.huggingface.co/v1
+
+Segunda vía Router→HF
+→ transporte/respaldo del sistema
+→ NO es "un servidor DeepSeek"
 ```
 
-Ninguna de esas dos rutas requiere un segundo Job Router CPU.
+## 10. Proveedores y JSON vigentes
 
-## 10. Proveedores
-
-Registry:
+Registry de proveedores:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/providers.py
 
-El backend contempla NVIDIA, HF Router, Groq, OpenAI, DeepSeek, Moonshot/Kimi, MiniMax y API local. Las claves se resuelven servidor-side.
+Resiliencia:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/resilience.py
 
-El `puente_chat` usa además sus fichas para modelos/pipelines visibles en el selector de la UI.
+Políticas JSON:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/policies.json
+
+Fichas JSON del harness:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/plugins/puente_chat/fichas
+
+Hay dos niveles JSON que no deben confundirse:
+
+```text
+policies.json
+→ orden/fallback/routing por grupo
+
+plugins/puente_chat/fichas/*.json
+→ definición concreta de modelos, motores y pipelines del harness
+```
+
+El runtime HF también puede consumir copias de fichas desde el bucket. Para certificar una versión concreta hay que comparar `main` con el bundle/fichas efectivamente cargados por el Job.
 
 ## 11. Memoria y almacenamiento
 
 ### A. Store del Chat MVP
 
-Código base:
+Store:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/store.py
+
+API/Store wiring:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/router.py
 
-`get_store()` crea el Store bajo `RIU_DATA_DIR` y conserva conversaciones, mensajes, documentos, agentes, grafo y registros locales.
+Contiene o gestiona:
 
-`sync_to_bucket()` puede copiar el snapshot SQLite y documentos al bucket HF bajo `riu-chat/`.
+- conversaciones.
+- mensajes.
+- documentos.
+- agentes.
+- cache.
+- grafo.
+- snapshot SQLite.
 
-### B. memoria_yaiwes
+### B. memoria_yaiwes canónica
 
-Loader HTTP:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/memoria_loader.py
-
-Paquete de memoria:
+Paquete:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/04-MEMORIA/memoria_yaiwes
+
+Implementación:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/04-MEMORIA/memoria_yaiwes/__init__.py
+
+Loader:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/memoria_loader.py
 
 API:
 
@@ -283,44 +373,69 @@ API:
 - `GET /memoria/load`
 - `GET /memoria/search`
 
-`memoria_yaiwes` usa SQLite como fallback siempre escribible, además del grafo SQLite y adaptadores opcionales para otros componentes si existe runtime real.
+La memoria canónica utiliza SQLite escribible como base siempre disponible, grafo SQLite fallback y adaptadores opcionales a otros componentes cuando hay runtime real.
 
-### C. GAP de fuente detectado 2026-10-07
+### C. `memory_runtime.py` — GAP DE FUENTE CERRADO
 
-`puente_chat/plugin.py` intenta importar:
+Archivo actual:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/memory_runtime.py
 
-`integration.chat_mvp.memory_runtime`
+Estado actual: PRESENTE en `main`.
 
-para su `_contexto()` y `_guardar()` por sesión, pero **ese archivo no existe actualmente en `main`**.
+Su función es mantener compatibilidad con `puente_chat`, exponiendo:
 
-El plugin atrapa la excepción y por eso el chat no cae; sin embargo, desde el código GitHub actual no se puede certificar que la memoria específica del `puente_chat` sea reproducible al 100 % solo desde `main`.
+- `memory(store)` → devuelve la única fachada canónica de `memoria_yaiwes`.
+- `scope_for(owner, scope)` → namespace determinista y acotado de la sesión.
 
-Esto NO invalida las rutas `/memoria/*`, el `Store` ni el cableado del chat. Sí significa que hay que reparar o reemplazar ese import antes de declarar **100 % PASS de memoria de sesión del puente**.
+Así el flujo queda:
 
-No borrar esta observación hasta tener una prueba real donde `memoria_guardada=true` y recuperación de turno sobreviva a reinicio/cambio de Job.
+```text
+puente_chat
+   ↓
+memory_runtime.py
+   ↓
+memoria_loader._memory()
+   ↓
+memoria_yaiwes
+   ↓
+Store / SQLite / grafo
+```
+
+No crear una segunda base de memoria para resolver esta compatibilidad.
+
+### D. Persistencia y bucket HF
+
+El runtime principal puede usar almacenamiento local temporal y sincronización/snapshot hacia bucket HF. Debido a que el Job actual arranca desde `router-bundle.tar.gz`, la certificación completa exige probar:
+
+1. guardar un turno.
+2. confirmar `memoria_guardada=true`.
+3. recuperarlo en la misma sesión.
+4. sincronizar/snapshot al almacenamiento persistente.
+5. cambiar/reiniciar Job.
+6. recuperar el mismo turno.
+
+Hasta completar esa prueba E2E, el GAP de archivo está cerrado pero la persistencia trans-Job debe tratarse como verificación pendiente.
 
 ## 12. Banco de claves y seguridad
 
-Las credenciales viven servidor-side. No deben guardarse en este handoff.
-
-El Router desbloquea/inyecta sus secretos al runtime y el frontend nunca debe contener tokens de proveedores, GitHub o HF.
+Las credenciales viven servidor-side. Nunca se deben colocar en este handoff ni en el frontend.
 
 Autenticación interna del Router: `X-API-Key`.
 
-## 13. Dos superficies de chat que no deben confundirse
+Los proveedores toman las claves del banco/vault o variables autorizadas del runtime.
 
-### UI principal Vercel
+## 13. Superficies que no deben confundirse
+
+### UI Vercel
 
 ```text
-Vercel frontend
+Vercel
 → api.js
 → puente_chat
 → chat_async / resultado
 ```
 
-Esta es la pantalla operativa del usuario.
-
-### Chat MVP general del Router
+### Chat MVP general
 
 ```text
 /chat/send
@@ -330,49 +445,85 @@ Esta es la pantalla operativa del usuario.
 /v1/router/*
 ```
 
-Estas rutas forman la infraestructura general del Router y las puertas para agentes/SDKs. No sustituyen a `puente_chat` como backend específico de la UI Vercel.
+### Respaldo HF de modelo
+
+```text
+modelo hf-*
+→ Job L4 temporal
+→ resultado
+→ apagado
+```
+
+### Segunda vía Router→HF
+
+```text
+Router/chat
+→ ruta de respaldo autorizada
+→ Hugging Face directo
+```
+
+Son cuatro superficies/roles distintos.
 
 ## 14. Fuente de verdad
 
-Orden de autoridad:
+Para el Router principal:
 
-1. HF `ps`: qué Job está realmente RUNNING.
-2. GitHub `LIVE_URL.json`: qué Router debe usar el frontend.
-3. `config.js`: fallback estático.
-4. Vercel producción: versión de frontend que ve el usuario.
-5. Bucket HF `control/router-current.json`: registro interno del kernel.
+1. HF Jobs: estado real de Jobs.
+2. GitHub `LIVE_URL.json`: principal que debe consumir la UI.
+3. Bucket HF `control/router-current.json`: principal registrado por kernel.
+4. `config.js`: fallback frontend.
+5. Vercel producción: frontend efectivamente servido.
 
-`LIVE_URL.json` y `router-current.json` deben señalar al mismo Router principal.
+Para la segunda vía HF:
+
+- verificar su workflow/runtime específico y su estado por separado.
+- no exigir que aparezca en `LIVE_URL.json`, porque `LIVE_URL.json` identifica el principal.
+
+Para código/runtime:
+
+- GitHub `main` = fuente de código.
+- `router-bundle.tar.gz` / fichas del bucket = artefacto cargado por el runtime principal.
 
 ## 15. Checklist de recuperación
 
-Si el chat falla:
+Si falla el chat:
 
-1. Revisar HF Jobs: debe existir un Router principal RUNNING.
-2. Leer `LIVE_URL.json` y comprobar que su `job_id` coincide.
-3. Probar `/health` del Job desde un entorno con acceso a `hf.jobs`.
-4. Abrir `https://riu-jev-bridge.vercel.app/chat/ui/config.js` y revisar fallback + `liveUrl`.
-5. Verificar `api.js` y su `liveRouter()`.
-6. Verificar `/plugins/puente_chat/call/chat_async` y `/resultado` en logs del Job.
-7. Verificar memoria y `memoria_guardada` si el problema es continuidad de conversación.
-8. No crear un segundo Router manual para "probar". Si hace falta sucesor, debe hacerlo el mecanismo de handover autorizado.
+1. Revisar el Router principal en HF.
+2. Leer `LIVE_URL.json` y comprobar que el principal coincide.
+3. Probar `/health`.
+4. Verificar Vercel `config.js` y `api.js`.
+5. Verificar `/plugins` y `puente_chat`.
+6. Verificar `chat_async` → `resultado`.
+7. Verificar `providers.py`, `resilience.py`, `policies.json` y fichas si el problema es un modelo.
+8. Verificar `/memoria/health`.
+9. Verificar `memory_runtime.py` y `memoria_guardada` si falla continuidad.
+10. Verificar Store/SQLite/bucket si falla persistencia entre Jobs.
+11. Si el principal falla, revisar también la segunda vía Router→HF autorizada.
+12. No cancelar la segunda vía HF solo porque no sea el Job de `LIVE_URL.json`.
+13. Cancelar únicamente Jobs cuya función haya sido identificada como duplicado accidental o no autorizado.
 
-## 16. Estado PASS / GAP al cerrar este handoff
+## 16. Estado PASS / GAP actual
 
 | Componente | Estado |
 |---|---|
-| Vercel producción | PASS / READY |
-| Frontend `config.js` → Router oficial | PASS |
-| `api.js` → `LIVE_URL.json` dinámico | PASS |
-| Un solo Router HF principal RUNNING | PASS |
-| `LIVE_URL.json` → `6ac593...` | PASS |
-| Router → `public_chat_app.py` | PASS por runtime activo |
-| Backend → Plugin Host → `puente_chat` | PASS; tráfico `chat_async/resultado` observado en logs |
-| Harness proveedores | PASS en código/routing |
-| DeepSeek como proveedor/ruta, no Router aparte | PASS arquitectónico |
-| `/memoria/*` + `memoria_yaiwes` fuente | PRESENTE |
-| memoria específica `puente_chat` vía `memory_runtime` | **GAP DE FUENTE: falta archivo en `main`** |
-| Reproducibilidad total GitHub → bundle HF | REQUIERE mantener proceso de empaquetado/sync del bundle |
+| Frontend fuente `chat router/chat frontend` | PRESENTE |
+| Vercel producción | PASS / READY en última comprobación |
+| `api.js` → `LIVE_URL.json` | PASS en código |
+| Router principal publicado | PRESENTE |
+| Backend `app.py` | PRESENTE |
+| Plugin Host → `puente_chat` | PASS en última prueba runtime |
+| `puente_chat` | PRESENTE / READY en última prueba runtime |
+| Proveedores | PRESENTES |
+| DeepSeek directo | PRESENTE en `providers.py` |
+| DeepSeek V4 Flash vía HF | PRESENTE en routing/políticas |
+| Segunda vía Router→HF | AUTORIZADA; PRESERVAR |
+| L4 temporales `hf-*` | RESPALDO DE MODELO; PRESERVAR |
+| `/memoria/health` | PASS en última prueba runtime |
+| `memoria_yaiwes` | PRESENTE |
+| `memory_runtime.py` | **GAP DE FUENTE CERRADO: PRESENTE EN MAIN** |
+| Store SQLite/grafo | PRESENTE; CONNECTED en última prueba runtime |
+| Persistencia de memoria después de cambio completo de Job | VERIFICACIÓN E2E PENDIENTE |
+| GitHub `main` → bundle HF | REQUIERE mantener sincronización/empaquetado |
 
 ## 17. Enlaces de recuperación rápida
 
@@ -380,22 +531,31 @@ Handoff canónico:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/README-CONEXION-CHAT-HARNESS.md
 
 Chat producción:
-https://riu-jev-bridge.vercel.app/
+https://riu-jev-bridge.vercel.app/chat/ui/panel-chat.html
 
-Frontend:
+Frontend completo:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/chat%20frontend
 
-Backend puente:
+Backend Chat MVP:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/integration/chat_mvp
+
+Backend `app.py`:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/app.py
+
+Backend `puente_chat`:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/plugins/puente_chat
 
-Router kernel:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/riu_kernel.py
+`plugin.py`:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/plugins/puente_chat/plugin.py
 
-LIVE URL:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/LIVE_URL.json
+Memoria canónica:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/04-MEMORIA/memoria_yaiwes
 
-Chat backend app:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/app.py
+`memory_runtime.py`:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/memory_runtime.py
+
+Store:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/store.py
 
 Proveedores:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/providers.py
@@ -403,5 +563,20 @@ https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/m
 Routing resiliente:
 https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/resilience.py
 
-Memoria:
-https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/04-MEMORIA/memoria_yaiwes
+Políticas JSON:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/integration/chat_mvp/policies.json
+
+Fichas JSON `puente_chat`:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/plugins/puente_chat/fichas
+
+LIVE URL:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/LIVE_URL.json
+
+Kernel principal:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/riu_kernel.py
+
+Workflow Router HF de respaldo/persistente:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/.github/workflows/riu-router-job-central.yml
+
+Runtime Router persistente HF:
+https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/router%20inteligente%20universal/agents-yaiwes/common/router_job_persistent.py
