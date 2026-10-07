@@ -1,3 +1,29 @@
+# HANDOFF — MAPA DE UBICACIÓN WORKFLOW WORDFLOW LOOP CODE YAIWES (corte 2026-10-07)
+
+## Raíz del código wordflow en esta rama (`devin/1790824641-chat-agent-plan`, PR #6)
+- CANÓNICA / vigente: `chat router/📂 workflow Loops code Yaiwes/` — 494 archivos; último toque 2026-10-04 (`49fa83ae57`). Contiene `runtime/`, `wordflow_loop/`, `backend/`, `minimax_mcp/`, `skills_schema/`, `workspace/`, `Crazy Wall Orquestador/`, `HANDOFF.md` interno, `GUIA-MAESTRA-EJECUCION-LOOP-V4-WORDFLOW-YAIWES.md`, `PLAN-4-OBJETIVOS/`, `PLAN-PROGRAMACION-11-OBJETIVOS-Y-AGENTES.md`, `README-ARQUITECTURA-BACKEND.md`.
+- Copia anterior (1-oct, 450 archivos): `chat router/wordflow loop code Yaiwes/` — copia vía motor_3 (`b214f9fe96`, 397 VERIFIED_CLOSED; excluye `wordflow_loop/agent_sources` y `frontend/Orca` por orden del Director). Último toque `b384864666` (S-07A motores como Native Toolset).
+- Sólo motores (7 archivos): `chat router/➡️📂 Wordflow LOOP Yaiwes/` y `chat router/➡️📂motores de descarga extracción copiado movimiento archivos agentes/`.
+
+## Origen de la copia (repo `maxbry123-commits/agentes`)
+- Raíz real: `➡️📂 wordflow loop code Yaiwes/` (~154k files). Las raíces homónimas `wordflow loop code Yaiwes/` (vacía) y `➡️📂 Wordflow LOOP Yaiwes/` (remanente, sólo `wordflow_loop/agent_sources`) NO contienen el código.
+
+## Estado y continuidad (esta rama, `chat router/`)
+- `03-ESTADO/` — `STATE.json` (rev 71, 2026-10-04, proyecto activo `router-inteligente-universal`), `CRAZY_WALL.json`, `BITACORA.jsonl`, `CHECKPOINT.json`, `memoria.md`, `checkpoint_guard.py`, `watchdog_checkpoint.py`, `OPUS-PENDIENTE.md`.
+- `01-PLAN/` — `INDICE.md`, `PLAN-ACCION-XRAY.md`, `ROOT-MAP-T11.yaml`, `DM-METODO-DAG.json`, contratos DSL-DAG (`PLAN-DSL-DAG-00-CONTRATO.yaml`, `-01-NODOS.yaml`, `-UI.yaml`, `DSL-DAG-MEMORIA-ALMACENAMIENTO.yaml`), INPUT-BLOCK verbatim (3 partes), `PLAN-MAESTRO-CHAT.yaml`, `ORQUESTADOR-DE-TRABAJO.yaml`, `SKILLS-MAXBRY-UI/`, `REFERENCIAS-UI/`.
+- `02-ARQUITECTURA/`, `04-MEMORIA/` (memoria_yaiwes), `05-AGENTES/` (gobierno), `06-ESPEJOS/`, `07-SENTINELAS/`, `09-CLAUDE-CODE/`, `10-CHAT-FUNCIONES/`, `11-EVIDENCIA/` (puerta, auditoría de método, motor2), `12-FABRICA-MOTORES/`, `13-CHAT-UI-SUITE/`, `harness plugins/`, `deepseek-harness-chat/` (harness base), `chat_orders/`, `space/`.
+- Frontend movido a `main`: `chat router/chat frontend/` (commit `d269acf982`); el Router ya no depende de la carpeta de interfaz de esta rama.
+
+## Commits clave de copiado/integración (todos en PR #6)
+`f4bd367c9c` crear raíz router Wordflow LOOP → `b214f9fe96` copia vía motor_3 → `0e36940f6d` wiring tests+motores+ROOT-MAP 11 → `ba5c9668c4` task_runtime loop core → `f54ae17b06` watchdog → `590eb73303` INPUT-BLOCK + delta N-2.x → `b384864666` S-07A motores toolset → `fd4e9646d1`/`49fa83ae57` estado evento 71 + alinear pruebas (4-oct).
+
+## Cómo correr
+- venv `~/.venv-riu`; tests: `cd "chat router/📂 workflow Loops code Yaiwes" && pytest runtime/tests -q` (conftest fija PYTHONPATH; suite propia 267+ pass, stale upstream marcado como flag).
+- Checkpoint: `python "chat router/03-ESTADO/watchdog_checkpoint.py" --summary "..."` / heartbeat `checkpoint_guard.py` cada 15 min durante trabajo activo.
+- NO está en `main`: el wordflow vive sólo en la rama del PR #6.
+
+---
+
 # HANDOFF — CORTE 2026-10-01 (para el próximo Devin, retoma en ~3 días)
 
 ## Leer primero, en este orden
