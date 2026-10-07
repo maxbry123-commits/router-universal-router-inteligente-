@@ -652,8 +652,8 @@ def _especial(tipo, model, sesion, pregunta, p=None):
     if tipo == 'consil':
         texto, usadas = _consil(pregunta)
     elif tipo == 'xray':
-        nombres = (p or {}).get('anclados') or []
-        r = _xray(sesion, str(nombres[0]) if nombres else '', pregunta if not nombres else '')
+        nombres = [str(n) for n in ((p or {}).get('anclados') or []) if not str(n).startswith(('handoff:', 'enlace:'))]
+        r = _xray(sesion, nombres[0] if nombres else '', pregunta if not nombres else '')
         texto = _xray_texto_out(r) if r.get('ok') else ('X-RAY ERROR: ' + str(r.get('detalle') or r.get('error')))
         usadas = [c['item'] for c in r.get('checklist') or []] or ['xray']
     elif tipo == 'auditor':
@@ -686,18 +686,27 @@ def _chat(p):
     if ctx:
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
     anclados = p.get('anclados') or []
-    if anclados:  # archivos anclados por el usuario desde la ventana del chat
+    if anclados:  # archivos, handoffs y enlaces anclados por el usuario desde la ventana del chat
         try:
             mem, scope_for = _memoria()
             trozos = []
-            for nom in anclados[:5]:
-                res = mem.search(scope_for(DUENO, 'chat:' + sesion), 'archivo:' + str(nom)[:120], 1)
-                filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
-                dd = (filas[0].get('data') if filas and isinstance(filas[0], dict) else None) or {}
-                if dd.get('datos_b64'):
-                    trozos.append('ARCHIVO %s:\n%s' % (nom, _b64.b64decode(dd['datos_b64']).decode('utf-8', 'replace')[:3000]))
+            for nom in anclados[:8]:
+                nom = str(nom)[:300]
+                if nom.startswith('handoff:'):  # handoff encendido en el selector de ancla
+                    try:
+                        trozos.append('HANDOFF ' + json.dumps(_handoff(nom[8:]).get('handoff') or {}, ensure_ascii=False)[:1500])
+                    except Exception:  # noqa: BLE001
+                        pass
+                elif nom.startswith('enlace:'):  # enlace/handoff pegado por el usuario
+                    trozos.append('ENLACE_ANCLADO: ' + nom[7:])
+                else:
+                    res = mem.search(scope_for(DUENO, 'chat:' + sesion), 'archivo:' + nom[:120], 1)
+                    filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+                    dd = (filas[0].get('data') if filas and isinstance(filas[0], dict) else None) or {}
+                    if dd.get('datos_b64'):
+                        trozos.append('ARCHIVO %s:\n%s' % (nom, _b64.b64decode(dd['datos_b64']).decode('utf-8', 'replace')[:3000]))
             if trozos:
-                sistema += ' Archivos anclados por el usuario: ' + ' | '.join(trozos)
+                sistema += ' Anclados por el usuario: ' + ' | '.join(trozos)
         except Exception:  # noqa: BLE001
             pass
     try:

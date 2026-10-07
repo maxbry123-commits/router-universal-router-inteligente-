@@ -2,24 +2,38 @@ import { node } from "./api.js";
 
 const MODOS = { fast: "⚡ rápido", balanced: "⚖ equilibrado", think: "🧠 pensar" };
 const MAX_CHAT = 5;
+const CLAVE_CHATS = "riu_chats_v1";  // sesiones/anclas/ficha de cada pestaña: sobreviven a recargas en esta pestaña
+const etiquetaCorta = (a) => a.startsWith("handoff:") ? "⚓" + a.slice(8) : a.startsWith("enlace:") ? "🔗" + a.slice(7, 40) : "📎" + a;
 
 export async function mount(root, { api, tell }) {
   const q = (s) => root.querySelector(s);
   const copiarTexto = (t) => { try { navigator.clipboard.writeText(t); } catch (e) {} };
+  const defecto = window.RIU_CONFIG?.defecto || "";
+  const fichaEt = (id) => (window.RIU_CONFIG?.modelos || []).find((m) => m.id === id);
 
-  // ---- multi-chat: hasta 5 estancias, cada una con su sesion y su historial ----
+  // ---- multi-chat: hasta 5 estancias, cada una con su sesion, su ficha, sus anclas y su historial ----
   const tabsEl = q("#chat-tabs"), histEl = q("#histories");
   const chats = [];
   let activo = 0;
   const chat = () => chats[activo];
+  const guardar = () => {
+    try {
+      sessionStorage.setItem(CLAVE_CHATS, JSON.stringify(
+        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados] }))));
+    } catch (e) {}
+  };
   const pintarAnclados = () => {
-    q("#anclados").textContent = chat().anclados.size ? "📎 " + [...chat().anclados].join(", ") : "";
+    q("#anclados").textContent = chat().anclados.size ? [...chat().anclados].map(etiquetaCorta).join("  ") : "";
+  };
+  const pintarFichaPill = () => {
+    const et = fichaEt(chat().ficha);
+    q("#ficha").textContent = (et ? et.etiqueta : "modelo").slice(0, 24) + " ▾";
   };
   const pintarTabs = () => {
     tabsEl.replaceChildren();
     chats.forEach((c, i) => {
       const b = node("button", "💬 " + (i + 1) + (c.ocupado ? " ⏳" : ""), "chip" + (i === activo ? " on" : ""));
-      b.type = "button"; b.title = "Chat " + (i + 1);
+      b.type = "button"; b.title = "Chat " + (i + 1) + " — sesión " + c.sesion;
       b.addEventListener("click", () => { activo = i; pintarTabs(); });
       tabsEl.append(b);
     });
@@ -31,21 +45,35 @@ export async function mount(root, { api, tell }) {
     }
     chats.forEach((c, i) => { c.hist.hidden = i !== activo; });
     pintarAnclados();
+    pintarFichaPill();
+    guardar();
   };
-  const nuevoChat = () => {
+  const nuevoChat = (restaurado) => {
     const h = node("div", "", "chat-history");
     h.hidden = true; h.setAttribute("role", "log");
     histEl.append(h);
-    chats.push({ sesion: "web-" + Math.random().toString(36).slice(2, 10), hist: h, anclados: new Set(), ocupado: false });
+    chats.push({
+      sesion: restaurado?.sesion || "web-" + Math.random().toString(36).slice(2, 10),
+      ficha: restaurado?.ficha || defecto,
+      hist: h,
+      anclados: new Set(restaurado?.anclados || []),
+      ocupado: false,
+    });
     activo = chats.length - 1;
     pintarTabs();
   };
-  nuevoChat();
+  try {
+    const previos = JSON.parse(sessionStorage.getItem(CLAVE_CHATS) || "[]");
+    if (Array.isArray(previos) && previos.length) {
+      previos.slice(0, MAX_CHAT).forEach((p) => nuevoChat(p));
+      activo = 0; pintarTabs();
+    } else nuevoChat();
+  } catch (e) { nuevoChat(); }
 
   const burbuja = (texto, cls) => {
     const d = node("div", texto, "item message" + (cls ? " " + cls : ""));
     const b = node("button", "⧉", "copiar");
-    b.type = "button"; b.title = "Copiar";
+    b.type = "button"; b.title = "Copiar esta salida";
     b.addEventListener("click", () => copiarTexto(texto));
     d.append(b);
     return d;
@@ -60,6 +88,7 @@ export async function mount(root, { api, tell }) {
     sh.hidden = abierto;
     if (!abierto && b.dataset.sheet === "ventana-archivos") cargarArchivos();
     if (!abierto && b.dataset.sheet === "ventana-sandbox") cargarSandbox();
+    if (!abierto && b.dataset.sheet === "sh-ancla") pintarAnclas();
   }));
   root.querySelectorAll(".sh-cerrar").forEach((b) => b.addEventListener("click", cerrarHojas));
 
@@ -73,23 +102,39 @@ export async function mount(root, { api, tell }) {
     return r;
   };
 
-  // ---- pildora de ficha: hoja con todas las fichas ----
-  let ficha = window.RIU_CONFIG?.defecto || "";
+  // boton de encender/apagar para anclas y archivos: encendido = va anclado con cada mensaje
+  const filaEncender = (titulo, desc, clave, onOff) => {
+    const r = node("div", "", "fila");
+    const nom = node("span", titulo, "fila-nom");
+    if (desc) nom.append(node("span", desc, "fila-desc"));
+    const t = node("button", "", "toggle" + (chat().anclados.has(clave) ? " on" : ""));
+    t.type = "button"; t.title = "Encender = anclar, apagar = quitar";
+    t.addEventListener("click", () => {
+      const enc = !chat().anclados.has(clave);
+      enc ? chat().anclados.add(clave) : chat().anclados.delete(clave);
+      t.classList.toggle("on", enc);
+      pintarAnclados(); guardar();
+      if (onOff) onOff(enc);
+    });
+    r.append(nom, t);
+    return r;
+  };
+
+  // ---- pildora de ficha: hoja con todas las fichas (por chat) ----
   const pintarFichas = () => {
     const lista = q("#sh-ficha-lista");
     lista.replaceChildren();
     for (const m of window.RIU_CONFIG?.modelos || []) {
-      lista.append(fila(m.etiqueta, "", m.id === ficha, () => {
-        ficha = m.id;
-        q("#ficha").textContent = m.etiqueta.slice(0, 24) + " ▾";
+      lista.append(fila(m.etiqueta, "", m.id === chat().ficha, () => {
+        chat().ficha = m.id;
+        pintarFichaPill();
         pintarFichas();
         cerrarHojas();
+        guardar();
       }));
     }
   };
   pintarFichas();
-  const fichaEt = (window.RIU_CONFIG?.modelos || []).find((m) => m.id === ficha);
-  q("#ficha").textContent = (fichaEt ? fichaEt.etiqueta : "modelo").slice(0, 24) + " ▾";
 
   // ---- pildora de modo ----
   let modo = "balanced";
@@ -107,27 +152,17 @@ export async function mount(root, { api, tell }) {
   };
   pintarModos();
 
-  // ---- selector de ancla: handoff JSON anclable al input ----
+  // ---- selector de ancla: handoffs con boton de encender + pegar enlace/handoff propio ----
   const ANCLAS = [
-    ["chat-router", "📂 chat router/", "proyecto workflow Loops code Yaiwes"],
-    ["skill", "😄 SKILL.md", "skill maestro Maxbry UI FROMTED"],
-    ["preview", "🔗 Preview Vercel", "panel-chat.html de prueba"],
+    ["chat-router", "📂 chat router/", "handoff del proyecto workflow Loops code Yaiwes"],
+    ["skill", "😄 SKILL.md", "handoff del skill maestro Maxbry UI FROMTED"],
+    ["preview", "🔗 Preview Vercel", "handoff del panel-chat de prueba"],
   ];
   const pintarAnclas = () => {
     const lista = q("#sh-ancla-lista");
     lista.replaceChildren();
     for (const [k, t, d] of ANCLAS) {
-      lista.append(fila(t, d, false, async (ev) => {
-        ev.currentTarget.disabled = true;
-        try {
-          const r = await window.RIU_ACCION("handoff", { fuente: k, sesion: chat().sesion });
-          const input = q("#message");
-          input.value = "HANDOFF " + JSON.stringify(r.handoff || r) + "\n" + input.value;
-          chat().anclados.add("⚓" + k);
-          cerrarHojas();
-          pintarAnclados();
-        } catch (err) { tell(err.message); }
-      }));
+      lista.append(filaEncender(t, d, "handoff:" + k));
     }
     lista.append(fila("🔬 Auditor de code del repo", "ubica los archivos de code del proyecto", false, async (ev) => {
       ev.currentTarget.disabled = true;
@@ -140,16 +175,23 @@ export async function mount(root, { api, tell }) {
       } catch (err) { tell(err.message); }
     }));
   };
-  pintarAnclas();
+  q("#ancla-enlace-on").addEventListener("click", () => {
+    const v = (q("#ancla-enlace").value || "").trim();
+    if (!v) { tell("Pega primero un enlace o handoff"); return; }
+    chat().anclados.add("enlace:" + v);
+    q("#ancla-enlace").value = "";
+    pintarAnclados(); guardar();
+    tell("Enlace anclado al chat");
+  });
 
-  // ---- adjuntar y ventana de archivos (anclar al chat + x-ray) ----
+  // ---- adjuntar y ventana de archivos (boton encender = anclar al chat + x-ray) ----
   const subir = async (file) => {
     const buf = await file.arrayBuffer();
     if (buf.byteLength > 2_000_000) { tell("Archivo muy grande (máx ~2 MB)"); return; }
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion });
-    chat().anclados.add(r.nombre || file.name); pintarAnclados();
+    chat().anclados.add(r.nombre || file.name); pintarAnclados(); guardar();
     tell("Subido y anclado: " + file.name);
   };
   q("#btn-adjunto").addEventListener("click", () => q("#adjunto").click());
@@ -166,10 +208,15 @@ export async function mount(root, { api, tell }) {
       lista.replaceChildren();
       for (const nombre of r.archivos || []) {
         const fil = node("div", "", "va-item");
-        const lab = node("label", "", "va-check");
-        const cb = node("input", ""); cb.type = "checkbox"; cb.checked = chat().anclados.has(nombre);
-        cb.addEventListener("change", () => { cb.checked ? chat().anclados.add(nombre) : chat().anclados.delete(nombre); pintarAnclados(); });
-        lab.append(cb, document.createTextNode(nombre));
+        const t = node("button", "", "toggle" + (chat().anclados.has(nombre) ? " on" : ""));
+        t.type = "button"; t.title = "Encender = anclar al chat, apagar = quitar";
+        t.addEventListener("click", () => {
+          const enc = !chat().anclados.has(nombre);
+          enc ? chat().anclados.add(nombre) : chat().anclados.delete(nombre);
+          t.classList.toggle("on", enc);
+          pintarAnclados(); guardar();
+        });
+        const nom = node("span", nombre, "fila-nom");
         const xr = node("button", "X-Ray", "mini");
         xr.type = "button"; xr.title = "Auditoría forense del archivo";
         xr.addEventListener("click", async () => {
@@ -184,7 +231,7 @@ export async function mount(root, { api, tell }) {
             c.hist.scrollTop = c.hist.scrollHeight;
           } catch (err) { tell(err.message); }
         });
-        fil.append(lab, xr);
+        fil.append(nom, t, xr);
         lista.append(fil);
       }
       if (!(r.archivos || []).length) lista.append(node("div", "No hay archivos subidos en este chat", "muted"));
@@ -238,15 +285,16 @@ export async function mount(root, { api, tell }) {
     catch (error) { tell(error.message); }
   });
 
-  // ---- enviar: cada chat corre su tarea en paralelo (su sesion) ----
+  // ---- enviar: cada chat corre su tarea en paralelo con su sesion, su ficha y sus anclas ----
   q("#composer").addEventListener("submit", async event => {
     event.preventDefault();
     const c = chat();
     const input = q("#message");
     const message = input.value.trim();
     if (!message) return;
-    if (message === "/ayuda") { tell("Elige modelo en la píldora, ancla archivos/handoffs y envía. /ayuda no ejecuta modelos."); return; }
-    c.hist.append(node("div", message, "item message user"));
+    if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
+    const ub = burbuja(message, "user");
+    c.hist.append(ub);
     input.value = "";
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Pensando…", "item message pending");
@@ -257,10 +305,10 @@ export async function mount(root, { api, tell }) {
     const model = q("#model").value;
     const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[modo];
     try {
-      const body = { message, ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
+      const body = { message, ficha: c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await window.RIU_HARNESS({ model: body.ficha, message, max_tokens, anclados: [...c.anclados], sesion: c.sesion, avisar: (t) => c.hist.append(node('div', t, 'item message')) })
+        ? await window.RIU_HARNESS({ model: c.ficha, message, max_tokens, anclados: [...c.anclados], sesion: c.sesion, avisar: (t) => c.hist.append(node('div', t, 'item message')) })
         : await api("/chat/send", { method: "POST", body });
       pending.remove();
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
