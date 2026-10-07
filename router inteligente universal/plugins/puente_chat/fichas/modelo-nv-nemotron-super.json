@@ -8,5 +8,21 @@
   "claves": "banco",
   "rotacion": "mismo-modelo",
   "herramientas": true,
-  "memoria": true
+  "memoria": true,
+  "microagente": {
+    "schema": "yaiwes.node-executor/xray-v2",
+    "mode": "FAIL_CLOSED",
+    "execution_model": "DAG+FSM",
+    "input_mode": "VERBATIM",
+    "input_immutable": true,
+    "objective_lock": true,
+    "scope_lock": true,
+    "default_deny": true,
+    "workflow": ["RESEARCH", "EXECUTE", "VALIDATE"],
+    "max_retries": 2,
+    "stop_early": false,
+    "close_token": "[[YAIWES:CLOSED]]",
+    "resume_motors": ["VERBATIM_LOCK", "CHECKPOINT_PERSISTENTE", "PROGRESS_DELTA", "TOOL_GUARD", "RESUME_ENGINE", "CLOSE_GATE"],
+    "output": {"micro_resumen": true, "flujo_horizontal": true, "checklist": true, "markers": ["🎯", "⚠️", "🆘", "✅"]}
+  }
 }
