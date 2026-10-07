@@ -15,6 +15,7 @@ from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -648,6 +649,133 @@ def _handoff(fuente):
                         'archivos': archivos, 'usa_para': 'trabajar sobre el proyecto del chat'}}
 
 
+def _gh_enlace(enlace):
+    # enlace github (tree/blob/repo) o 'repo/ruta' -> (repo, rama, ruta); owner siempre maxbry123-commits
+    enlace = str(enlace or '').strip()
+    m = re.match(r'https?://github\.com/[^/]+/([^/#?]+)/(?:tree|blob)/([^/#?]+)/?(.+)?', enlace)
+    if m:
+        return m.group(1), str(m.group(2) or 'main'), str(m.group(3) or '').strip('/')
+    m = re.match(r'https?://github\.com/[^/]+/([^/#?]+)', enlace)
+    if m:
+        return m.group(1), 'main', ''
+    partes = enlace.strip('/').split('/')
+    return partes[0], 'main', '/'.join(partes[1:]) if len(partes) > 1 else ''
+
+
+def _gh_lista(repo, rama, ruta, prof=0):
+    # archivos (blob) bajo ruta, recursivo
+    if prof > 10:
+        return []
+    s, d = _herr()._gh('GET', '/repos/maxbry123-commits/%s/contents/%s?ref=%s' % (
+        urllib.parse.quote(repo, safe=''), urllib.parse.quote(ruta, safe='/'), urllib.parse.quote(rama, safe='')))
+    if s != 200:
+        return []
+    if isinstance(d, list):
+        out = []
+        for it in d:
+            if it.get('type') == 'dir':
+                out += _gh_lista(repo, rama, str(it.get('path') or ''), prof + 1)
+            elif it.get('type') == 'file':
+                out.append(str(it.get('path')))
+        return out
+    if isinstance(d, dict) and d.get('path') and d.get('type') != 'dir':
+        return [str(d.get('path'))]
+    return []
+
+
+def _gh_bajar(repo, rama, ruta):
+    s, d = _herr()._gh('GET', '/repos/maxbry123-commits/%s/contents/%s?ref=%s' % (
+        urllib.parse.quote(repo, safe=''), urllib.parse.quote(ruta, safe='/'), urllib.parse.quote(rama, safe='')))
+    if s == 200 and isinstance(d, dict) and d.get('content'):
+        try:
+            return _b64.b64decode(d['content']), str(d.get('sha') or '')
+        except Exception:  # noqa: BLE001
+            pass
+    return None, ''
+
+
+def _gh_subir(repo, rama, ruta, datos, mensaje):
+    base = '/repos/maxbry123-commits/%s/contents/%s' % (urllib.parse.quote(repo, safe=''), urllib.parse.quote(ruta, safe='/'))
+    s0, d0 = _herr()._gh('GET', base + '?ref=' + urllib.parse.quote(rama, safe=''))
+    cuerpo = {'message': mensaje, 'content': _b64.b64encode(datos).decode('ascii'), 'branch': rama}
+    if s0 == 200 and isinstance(d0, dict) and d0.get('sha'):
+        cuerpo['sha'] = d0['sha']
+    s, _ = _herr()._gh('PUT', base, cuerpo)
+    return s in (200, 201)
+
+
+def _gh_borrar(repo, rama, ruta, sha):
+    base = '/repos/maxbry123-commits/%s/contents/%s' % (urllib.parse.quote(repo, safe=''), urllib.parse.quote(ruta, safe='/'))
+    s, _ = _herr()._gh('DELETE', base, {'message': 'mover raiz (motor de descarga)', 'sha': sha, 'branch': rama})
+    return s == 200
+
+
+def _desc_registrar(sesion, reg):
+    # stated JSON + bitacora permanente de descargas en la memoria del harness
+    try:
+        mem, scope_for = _memoria()
+        sc = scope_for(DUENO, 'chat:' + sesion)
+        mem.save(sc, 'descarga:' + reg['id'], reg)
+        prev = _mem_dato(sesion, 'descargas_hist').get('lista') or []
+        prev = [x for x in prev if x.get('id') != reg.get('id')]
+        prev.append({'id': reg.get('id'), 'op': reg.get('op'), 'origen': str(reg.get('origen'))[:150],
+                     'destino': str(reg.get('destino'))[:150], 'estado': reg.get('estado'),
+                     'archivos': reg.get('ok') or len(reg.get('log') or []), 'ts': reg.get('ts')})
+        mem.save(sc, 'descargas_hist', {'lista': prev[-50:]})
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _mover_raiz(payload):
+    # motor de descarga/extraccion/copiar/mover entre repos del owner, via API de GitHub
+    import secrets as _sec
+    sesion = str(payload.get('sesion') or 'general')[:60]
+    op = 'mover' if str(payload.get('op') or 'copiar').lower().startswith('m') else 'copiar'
+    repo_o, rama_o, ruta_o = _gh_enlace(payload.get('origen'))
+    repo_d, rama_d, ruta_d = _gh_enlace(payload.get('destino'))
+    if not repo_o or not repo_d:
+        return {'error': 'ENLACE_FALTA', 'detalle': 'Falta el enlace de origen o de destino'}
+    if not ruta_o and not payload.get('archivo'):
+        return {'error': 'RAIZ_VACIA', 'detalle': 'El enlace de origen debe apuntar a una raiz/archivo, no al repo entero'}
+    reg = {'id': 'desc-' + _sec.token_hex(5), 'op': op, 'origen': str(payload.get('origen'))[:200],
+           'destino': str(payload.get('destino'))[:200], 'estado': 'procesando', 'log': [], 'ts': int(time.time())}
+    _desc_registrar(sesion, reg)
+    archivos = _gh_lista(repo_o, rama_o, ruta_o)
+    if not archivos:
+        reg['estado'] = 'error'; reg['log'].append('sin archivos en origen'); _desc_registrar(sesion, reg)
+        return {'error': 'ORIGEN_VACIO', 'detalle': 'No hay archivos en el enlace de origen', 'registro': reg['id']}
+    ok, fallos = 0, []
+    for f in archivos:
+        rel = f[len(ruta_o):].lstrip('/') if ruta_o and f.startswith(ruta_o) else f.split('/')[-1]
+        rel = rel or f.split('/')[-1]
+        datos, sha = _gh_bajar(repo_o, rama_o, f)
+        if datos is None:
+            fallos.append(f)
+            continue
+        destino = (ruta_d + '/' + rel).strip('/') if ruta_d else rel
+        if not _gh_subir(repo_d, rama_d, destino, datos, 'motor %s: %s' % (op, rel[:60])):
+            fallos.append(f)
+            continue
+        ok += 1
+        if op == 'mover' and sha:
+            _gh_borrar(repo_o, rama_o, f, sha)
+        reg['log'].append('%s -> %s' % (f, destino))
+    reg['estado'] = 'completado' if not fallos else 'parcial'
+    reg['ok'] = ok
+    reg['fallos'] = fallos[:20]
+    _desc_registrar(sesion, reg)
+    return {'registro': reg['id'], 'estado': reg['estado'], 'archivos': ok, 'fallos': fallos[:20], 'op': op}
+
+
+def _descargas(payload):
+    # auditoria/seguimiento: lista la bitacora o el stated JSON de una descarga
+    sesion = str(payload.get('sesion') or 'general')[:60]
+    if str(payload.get('op') or 'lista') == 'ver':
+        dd = _mem_dato(sesion, 'descarga:' + str(payload.get('id') or '')[:40])
+        return dd if dd else {'error': 'DESCARGA_NO_EXISTE'}
+    return {'lista': _mem_dato(sesion, 'descargas_hist').get('lista') or []}
+
+
 def _especial(tipo, model, sesion, pregunta, p=None):
     if tipo == 'consil':
         texto, usadas = _consil(pregunta)
@@ -907,6 +1035,16 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return {'sandbox': str(dd.get('texto') or '')}
         except Exception as x:  # noqa: BLE001
             return {'error': 'SANDBOX_FALLO', 'detalle': str(x)[:200]}
+    if action == 'mover_raiz':  # motor: copiar/mover una raiz entre repos por enlace
+        try:
+            return _mover_raiz(payload)
+        except Exception as x:  # noqa: BLE001
+            return {'error': 'MOVER_FALLO', 'detalle': str(x)[:200]}
+    if action == 'descargas':  # motor: auditoria, seguimiento y bitacora de descargas
+        try:
+            return _descargas(payload)
+        except Exception as x:  # noqa: BLE001
+            return {'error': 'DESCARGAS_FALLO', 'detalle': str(x)[:200]}
     return {"error": "ACCION_DESCONOCIDA"}
 
 # Long model calls are polled through HTTP, so browser requests do not expire at the HF ingress.

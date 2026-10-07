@@ -36,7 +36,9 @@
       "auditor_code",
       "handoff",
       "handoff_texto",
-      "sandbox"
+      "sandbox",
+      "mover_raiz",
+      "descargas"
     ]
   },
   "seguridad": {
