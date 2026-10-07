@@ -80,15 +80,21 @@ def extract_one(z: zipfile.ZipFile, info: zipfile.ZipInfo):
     target = DEST_DIR / pathlib.PurePosixPath(info.filename)
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_name(target.name + ".partial")
+    expected = hashlib.sha256()
     with z.open(info, "r") as src, tmp.open("wb") as dst:
-        shutil.copyfileobj(src, dst, 1024 * 1024)
+        for block in iter(lambda: src.read(1024 * 1024), b""):
+            expected.update(block)
+            dst.write(block)
     os.replace(tmp, target)
+    if sha256_file(target) != expected.hexdigest():
+        target.unlink(missing_ok=True)
+        raise RuntimeError("EXTRACT_READBACK_HASH_MISMATCH:" + info.filename)
 
 
 def main():
     if not 1 <= BATCH_SIZE <= 100:
         raise SystemExit(json.dumps({"schema": SCHEMA, "verdict": "INPUT_GAP", "detail": "BATCH_SIZE must be 1..100"}))
-    if not str(ARCHIVE_INPUT) or not str(DEST_DIR):
+    if not os.getenv("ARCHIVE_INPUT", "").strip() or not os.getenv("DEST_DIR", "").strip():
         raise SystemExit(json.dumps({"schema": SCHEMA, "verdict": "INPUT_GAP", "detail": "ARCHIVE_INPUT and DEST_DIR required"}))
     archive, cleanup = build_archive(); DEST_DIR.mkdir(parents=True, exist_ok=True)
     state = load_state(); completed = set(state.get("completed", [])); batches = 0
@@ -98,6 +104,13 @@ def main():
             if bad:
                 raise RuntimeError("ZIP_CRC_FAIL:" + bad)
             members = safe_members(z); names = [i.filename for i in members]
+            for info in members:
+                if info.filename in completed:
+                    target = DEST_DIR / pathlib.PurePosixPath(info.filename)
+                    if not target.is_file() or sha256_file(target) != hashlib.sha256(z.read(info)).hexdigest():
+                        state.setdefault("failed", {})[info.filename] = "EXTRACTED_READBACK_HASH_MISMATCH"
+            if state.get("failed"):
+                save_state(state)
             while True:
                 pending = [i for i in members if i.filename not in completed]
                 if not pending or (MAX_BATCHES and batches >= MAX_BATCHES):

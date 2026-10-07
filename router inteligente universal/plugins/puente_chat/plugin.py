@@ -2,13 +2,14 @@
 
 Llamada: POST <puerta>/plugins/puente_chat/call/<accion> con el token del chat (Bearer). Respuesta del host: {"status": "ok", "result": ...}.
 Acciones: status | modelos | chat {model, messages, max_tokens, sesion, respaldo_url?} | estado {job, url} | apagar {job}.
-Modelos NV/GROQ: llamada directa al proveedor con las claves del banco; rota claves del MISMO modelo; 90 s por intento de socket.
+Modelos NV/GROQ: llamada directa al proveedor con las claves del banco; rota claves del MISMO modelo; 90 s por intento.
 Modelos HF: enciende un L4 (almacenamiento conectado como disco). Seguridades: (1) se apaga solo 30 s tras terminar la salida; (2) 5 min sin pedidos; (3) tope duro de HF de 20 min; (4) barrendero del Router cancela L4 viejos; (5) un solo L4 a la vez; remoto: apagar / apagar_todo.
 Memoria: antes de responder busca contexto en /memoria (scope chat:<sesion>); despues guarda pregunta y respuesta.
 """
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import re
 from contextvars import ContextVar
@@ -54,12 +55,41 @@ def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float =
     if espera <= 0: return 0, {'error': 'TIEMPO_TOTAL_AGOTADO'}
     req = urllib.request.Request(url, data=json.dumps(cuerpo).encode() if cuerpo is not None else None, method=metodo,
                                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", "User-Agent": "riu-chat-mvp", "Accept": "application/json"})
+    fin = time.monotonic() + espera
+    def leer(r):
+        sock = getattr(getattr(getattr(r, 'fp', None), 'raw', None), '_sock', None)
+        if sock is None or not hasattr(r, 'read1'):
+            return None, 'WATCHDOG_SIN_SOCKET'
+        partes = []
+        total = 0
+        while True:
+            restante = fin - time.monotonic()
+            if restante <= 0:
+                return None, 'PROVEEDOR_TIMEOUT_O_RED'
+            sock.settimeout(restante)
+            bloque = r.read1(65536)
+            if not bloque:
+                break
+            total += len(bloque)
+            if total > 4_000_000:
+                return None, 'RESPUESTA_EXCESIVA'
+            partes.append(bloque)
+        return b''.join(partes).decode(), None
+
     try:
         with urllib.request.urlopen(req, timeout=espera) as r:
-            texto = r.read().decode()
+            texto, error = leer(r)
+            if error:
+                return 0, {'error': error}
             return r.status, (json.loads(texto) if texto else {})
     except urllib.error.HTTPError as e:
-        texto = e.read().decode(errors="replace")
+        try:
+            with e:
+                texto, error = leer(e.fp)
+        except (TimeoutError, urllib.error.URLError):
+            return 0, {'error': 'PROVEEDOR_TIMEOUT_O_RED'}
+        if error:
+            return 0, {'error': error}
         try:
             return e.code, json.loads(texto)
         except ValueError:
@@ -468,42 +498,78 @@ def _motores_buscar(query):
         try:
             e = dict(_os.environ, QUERY=query, **extra)
             r = _sub.run(['python3', base + '/' + nom], env=e, capture_output=True, text=True, timeout=45)
-            salida.append(nom + ':\n' + (r.stdout or r.stderr or '')[:2200])
+            dato = json.loads((r.stdout or '').strip().splitlines()[-1])
+            if r.returncode or dato.get('verdict') not in ('SEARCH_DONE', 'NO_RESULTS'):
+                return ''
+            salida.append(nom + ':\n' + (r.stdout or '')[:2200])
         except Exception as x:  # noqa: BLE001
-            salida.append(nom + ': ERROR ' + str(x)[:120])
+            return ''
     return '\n'.join(salida)
 
 
-def _consil(pregunta):
+def _consil(pregunta, sesion='general', tarea=None):
+    clave = sesion + ':consil:' + hashlib.sha256((tarea or pregunta).encode()).hexdigest()[:16]
+    checkpoint = _ck_cargar(clave) or []
+    vistos = _motor('motores_estado').reconstruir_herramientas(checkpoint)
+
+    def etapa(nombre, ejecutar):
+        sello = (nombre, '{}')
+        if sello in vistos:
+            return vistos[sello]
+        respuesta = ejecutar()
+        if not respuesta:
+            return ''
+        checkpoint.extend([
+            {'role': 'assistant', 'tool_calls': [{'id': nombre, 'function': {'name': nombre, 'arguments': '{}'}}]},
+            {'role': 'tool', 'tool_call_id': nombre, 'content': respuesta},
+        ])
+        _ck_guardar(clave, checkpoint)
+        vistos[sello] = respuesta
+        return respuesta
+
     usadas = ['paso0:motores_busqueda']
-    ctx = _motores_buscar(pregunta)
-    g12 = _paso_llm('nvidia', 'nvidia/nemotron-3-ultra-550b-a55b',
+    ctx = etapa('paso0', lambda: _motores_buscar(pregunta))
+    if not ctx:
+        return 'CONSIL_SIN_RESPUESTA', usadas
+    g12 = etapa('paso1', lambda: _paso_llm('nvidia', 'nvidia/nemotron-3-ultra-550b-a55b',
         [{'role': 'system', 'content': _SYS_PIPE},
-         {'role': 'user', 'content': 'Propone exactamente 12 goals de entrada para esta tarea.\nTarea: %s\nInvestigacion:\n%s' % (pregunta, ctx[:6000])}], 150)
+         {'role': 'user', 'content': 'Propone exactamente 12 goals de entrada para esta tarea.\nTarea: %s\nInvestigacion:\n%s' % (pregunta, ctx[:6000])}], 150))
+    if not g12:
+        return 'CONSIL_SIN_RESPUESTA', usadas
     usadas.append('paso1:ultra-550b-12-goals')
     rondas = []
     for ronda in range(1, 4):
-        prop = _paso_llm('groq', 'qwen/qwen3.8-27b',
+        prop = etapa('prop-%d' % ronda, lambda: _paso_llm('groq', 'qwen/qwen3.8-27b',
             [{'role': 'system', 'content': _SYS_PIPE},
-             {'role': 'user', 'content': 'Ronda %d/3. Propone soluciones concretas para los goals %d-%d.\nGoals:\n%s\nTarea: %s' % (ronda, ronda * 4 - 3, ronda * 4, g12[:4000], pregunta)}], 120)
-        ref = _paso_llm('nvidia', 'meta/muse-glimmer-30b',
+             {'role': 'user', 'content': 'Ronda %d/3. Propone soluciones concretas para los goals %d-%d.\nGoals:\n%s\nTarea: %s' % (ronda, ronda * 4 - 3, ronda * 4, g12[:4000], pregunta)}], 120))
+        if not prop:
+            return 'CONSIL_SIN_RESPUESTA', usadas
+        ref = etapa('ref-%d' % ronda, lambda: _paso_llm('nvidia', 'meta/muse-glimmer-30b',
             [{'role': 'system', 'content': _SYS_PIPE},
-             {'role': 'user', 'content': 'Refuta estas propuestas y propone mejores soluciones.\nPropuestas:\n%s' % prop[:4000]}], 120)
-        dec = _paso_llm('nvidia', 'moonshotai/kimi-k3',
+             {'role': 'user', 'content': 'Refuta estas propuestas y propone mejores soluciones.\nPropuestas:\n%s' % prop[:4000]}], 120))
+        if not ref:
+            return 'CONSIL_SIN_RESPUESTA', usadas
+        dec = etapa('dec-%d' % ronda, lambda: _paso_llm('nvidia', 'moonshotai/kimi-k3',
             [{'role': 'system', 'content': _SYS_PIPE},
-             {'role': 'user', 'content': 'Decide la mejor solucion final de esta ronda entre propuestas y refutaciones.\nPropuestas:\n%s\nRefutaciones:\n%s' % (prop[:3000], ref[:3000])}], 150)
-        rondas.append(dec or prop or ref)
+             {'role': 'user', 'content': 'Decide la mejor solucion final de esta ronda entre propuestas y refutaciones.\nPropuestas:\n%s\nRefutaciones:\n%s' % (prop[:3000], ref[:3000])}], 150))
+        if not dec:
+            return 'CONSIL_SIN_RESPUESTA', usadas
+        rondas.append(dec)
         usadas.append('paso2:consil-ronda%d' % ronda)
     plan = '\n'.join(rondas)
-    out = _paso_llm('nvidia', 'nvidia/nemotron-3-super-120b-a12b',
+    out = etapa('paso3', lambda: _paso_llm('nvidia', 'nvidia/nemotron-3-super-120b-a12b',
         [{'role': 'system', 'content': _SYS_PIPE},
-         {'role': 'user', 'content': 'Ejecuta la tarea siguiendo el plan decidido.\nTarea: %s\nPlan:\n%s' % (pregunta, plan[:6000])}], 150, 1600)
+         {'role': 'user', 'content': 'Ejecuta la tarea siguiendo el plan decidido.\nTarea: %s\nPlan:\n%s' % (pregunta, plan[:6000])}], 150, 1600))
+    if not out:
+        return 'CONSIL_SIN_RESPUESTA', usadas
     usadas.append('paso3:nemotron-super-ejecuta')
-    fin = _paso_llm('nvidia', 'moonshotai/kimi-k3',
+    fin = etapa('paso4', lambda: _paso_llm('nvidia', 'moonshotai/kimi-k3',
         [{'role': 'system', 'content': _SYS_PIPE},
-         {'role': 'user', 'content': 'Revisa, refactoriza y mejora este resultado con 12 goals de salida (calidad, claridad, completitud). Entrega la respuesta final mejorada.\nResultado:\n%s' % out[:6000]}], 150, 1600)
+         {'role': 'user', 'content': 'Revisa, refactoriza y mejora este resultado con 12 goals de salida (calidad, claridad, completitud). Entrega la respuesta final mejorada.\nResultado:\n%s' % out[:6000]}], 150, 1600))
+    if not fin:
+        return 'CONSIL_SIN_RESPUESTA', usadas
     usadas.append('paso4:kimi-12-goals-salida')
-    return (fin or out or 'CONSIL_SIN_RESPUESTA'), usadas
+    return fin, usadas
 
 
 _MOTORES_DESC = {
@@ -562,6 +628,12 @@ def _motor_descarga(pregunta):
         usadas.append('motor:' + fichero)
         if r.returncode:
             return 'MOTOR_ERROR ' + salida_motor[:200], usadas
+        try:
+            resultado = json.loads((r.stdout or '').strip().splitlines()[-1])
+        except (ValueError, IndexError):
+            return 'MOTOR_ERROR SIN_VEREDICTO', usadas
+        if not isinstance(resultado, dict) or resultado.get('verdict') != 'VERIFIED_CLOSED':
+            return 'MOTOR_ERROR ' + str(resultado.get('verdict') if isinstance(resultado, dict) else 'SIN_VEREDICTO'), usadas
     except Exception as x:  # noqa: BLE001
         return 'MOTOR_ERROR ' + str(x)[:200], usadas
     fin = _paso_llm('nvidia', 'meta/muse-glimmer-30b',
@@ -772,6 +844,8 @@ def _mover_raiz(payload):
         return {'error': 'ENLACE_FALTA', 'detalle': 'Falta el enlace de origen o de destino'}
     if not ruta_o and not payload.get('archivo'):
         return {'error': 'RAIZ_VACIA', 'detalle': 'El enlace de origen debe apuntar a una raiz/archivo, no al repo entero'}
+    if repo_o == repo_d and rama_o == rama_d and (ruta_d == ruta_o or ruta_d.startswith(ruta_o + '/')):
+        return {'error': 'RUTAS_SOLAPADAS'}
     reg = {'id': 'desc-' + _sec.token_hex(5), 'op': op, 'origen': str(payload.get('origen'))[:200],
            'destino': str(payload.get('destino'))[:200], 'estado': 'procesando', 'log': [], 'ts': int(time.time())}
     _desc_registrar(sesion, reg)
@@ -788,13 +862,23 @@ def _mover_raiz(payload):
             fallos.append(f)
             continue
         destino = (ruta_d + '/' + rel).strip('/') if ruta_d else rel
+        if repo_o == repo_d and rama_o == rama_d and destino == f:
+            fallos.append(f)
+            continue
         if not _gh_subir(repo_d, rama_d, destino, datos, 'motor %s: %s' % (op, rel[:60])):
             fallos.append(f)
             continue
+        leido, _ = _gh_bajar(repo_d, rama_d, destino)
+        if leido is None or hashlib.sha256(leido).digest() != hashlib.sha256(datos).digest():
+            fallos.append(f)
+            reg['log'].append('READBACK_FALLO: ' + destino)
+            continue
+        if op == 'mover' and (not sha or not _gh_borrar(repo_o, rama_o, f, sha)):
+            fallos.append(f)
+            reg['log'].append('BORRADO_FALLO: ' + f)
+            continue
         ok += 1
-        if op == 'mover' and sha:
-            _gh_borrar(repo_o, rama_o, f, sha)
-        reg['log'].append('%s -> %s' % (f, destino))
+        reg['log'].append('%s -> %s SHA256:%s' % (f, destino, hashlib.sha256(datos).hexdigest()))
     reg['estado'] = 'completado' if not fallos else 'parcial'
     reg['ok'] = ok
     reg['fallos'] = fallos[:20]
@@ -812,20 +896,33 @@ def _descargas(payload):
 
 
 def _especial(tipo, model, sesion, pregunta, p=None):
+    def agotada():
+        fin = _TASK_DEADLINE.get()
+        return fin is not None and time.monotonic() >= fin
+
     if tipo == 'consil':
-        texto, usadas = _consil(pregunta)
+        for _ in range(3):
+            texto, usadas = _consil(pregunta, sesion, str((p or {}).get('task_id') or pregunta)[:128])
+            if texto != 'CONSIL_SIN_RESPUESTA' or agotada():
+                break
     elif tipo == 'xray':
         nombres = [str(n) for n in ((p or {}).get('anclados') or []) if not str(n).startswith(('handoff:', 'enlace:'))]
-        r = _xray(sesion, nombres[0] if nombres else '', pregunta if not nombres else '')
+        for _ in range(3):
+            r = _xray(sesion, nombres[0] if nombres else '', pregunta if not nombres else '')
+            if r.get('error') or (r.get('checklist') and all(i.get('estado') == 'COMPLETADO' for i in r['checklist'])) or agotada():
+                break
         if not r.get('ok'):
             return {'error': r.get('error') or 'XRAY_FALLO', 'detalle': str(r.get('detalle') or '')[:200],
                     'checklist': r.get('checklist') or []}
-        if any(i.get('estado') != 'COMPLETADO' for i in r.get('checklist') or []):
+        if not r.get('checklist') or any(i.get('estado') != 'COMPLETADO' for i in r['checklist']):
             return {'error': 'XRAY_GOALS_PENDIENTES', 'parcial': r}
         texto = _xray_texto_out(r) if r.get('ok') else ('X-RAY ERROR: ' + str(r.get('detalle') or r.get('error')))
         usadas = [c['item'] for c in r.get('checklist') or []] or ['xray']
     elif tipo == 'auditor':
-        r = _auditor_code()
+        for _ in range(3):
+            r = _auditor_code()
+            if not r.get('error') or agotada():
+                break
         if r.get('error'):
             return {'error': r['error'], 'checklist': r.get('checklist') or []}
         texto = ('Auditor de code del repo — %d archivos:\n%s' % (r.get('total', 0), '\n'.join(r.get('carpetas') or [])))

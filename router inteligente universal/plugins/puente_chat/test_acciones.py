@@ -71,6 +71,39 @@ class Acciones(unittest.TestCase):
                 _gh=lambda *args: (503, {'error': 'sin conexion'}))):
             self.assertEqual(plugin.handle('auditor_code', {})['error'], 'AUDITOR_GITHUB_FALLO')
 
+    def test_mover_entre_repos_exige_readback_antes_de_borrar(self):
+        borrados = []
+        def bajar(repo, rama, ruta):
+            if repo == 'origen':
+                return b'contenido', 'sha-origen'
+            return b'contenido', 'sha-destino'
+
+        with patch.object(plugin, '_gh_lista', return_value=['src/a.txt']), \
+             patch.object(plugin, '_gh_subir', return_value=True), \
+             patch.object(plugin, '_gh_bajar', side_effect=bajar), \
+             patch.object(plugin, '_gh_borrar', side_effect=lambda *args: borrados.append(args) or True):
+            resultado = plugin.handle('mover_raiz', {
+                'sesion': 'chat-uno', 'op': 'mover', 'origen': 'origen/src', 'destino': 'destino/dst'})
+        self.assertEqual(resultado['estado'], 'completado')
+        self.assertEqual(resultado['archivos'], 1)
+        self.assertEqual(borrados, [('origen', 'main', 'src/a.txt', 'sha-origen')])
+        registro = plugin.handle('descargas', {'sesion': 'chat-uno', 'op': 'ver', 'id': resultado['registro']})
+        self.assertIn('SHA256:', registro['log'][0])
+
+        borrados.clear()
+        with patch.object(plugin, '_gh_lista', return_value=['src/a.txt']), \
+             patch.object(plugin, '_gh_subir', return_value=True), \
+             patch.object(plugin, '_gh_bajar', side_effect=[
+                 (b'contenido', 'sha-origen'), (b'alterado', 'sha-destino')]), \
+             patch.object(plugin, '_gh_borrar', side_effect=lambda *args: borrados.append(args) or True):
+            fallo = plugin.handle('mover_raiz', {
+                'sesion': 'chat-uno', 'op': 'mover', 'origen': 'origen/src', 'destino': 'destino/dst'})
+        self.assertEqual(fallo['estado'], 'parcial')
+        self.assertEqual(fallo['archivos'], 0)
+        self.assertEqual(borrados, [])
+        self.assertEqual(plugin.handle('mover_raiz', {
+            'op': 'mover', 'origen': 'origen/src', 'destino': 'origen/src'})['error'], 'RUTAS_SOLAPADAS')
+
 
 if __name__ == '__main__':
     unittest.main()
