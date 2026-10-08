@@ -121,7 +121,6 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const esHF = model.startsWith('hf-');
-  const esApiCaida = model.startsWith('nv-') || model.startsWith('groq-');
   const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {});
   let r;
   if (esHF && L4.url) {
@@ -144,30 +143,6 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
     L4.url = r.p.url;
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
   }
-  if (!r.ok && esApiCaida) {
-    const causa = [r.p && r.p.error, r.p && r.p.detalle].filter(Boolean).map(String).join(' — ');
-    const caidaConfiguracion = /MODELO_NO_RESPONDE|SIN_CLAVES_|NOT_CONFIGURED|EXCEPCION|pipeline/i.test(causa);
-    if (caidaConfiguracion) {
-      if (avisar) avisar('⚠️ ' + model + ' no disponible. Usando HF Qwen3-8B · respaldo temporal.');
-      const fallback = await api('/chat/send', {
-        method: 'POST',
-        body: {
-          message,
-          provider: 'hf',
-          model: 'Qwen/Qwen3-8B',
-          conversation_id: sesion || null,
-          mode: 'direct',
-          max_tokens: Math.max(512, Number(max_tokens) || 512),
-        },
-      });
-      return {
-        reply: '⚠️ Respaldo temporal: HF Qwen3-8B\n\n' + (fallback.reply || 'Sin respuesta'),
-        job_id: null,
-        tools: [],
-        fallback_model: 'Qwen/Qwen3-8B',
-      };
-    }
-  }
   if (!r.ok) {
     const causa = [r.p.error, r.p.detalle].filter(Boolean).map(String).join(' — ');
     throw new Error(causa || ('HTTP ' + r.status));
@@ -177,7 +152,7 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
-  // apaga TODOS los L4 de respaldo (el Router solo apaga los suyos), haya o no uno encendido desde esta pantalla
+  // apaga TODOS los L4 de respaldo (el Router solo apaga los suyos), haya o no un job conocido
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
