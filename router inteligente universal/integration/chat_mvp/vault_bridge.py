@@ -250,6 +250,44 @@ class VaultBridge:
         self._need_open().rotate(ref, secret, actor="chat")
         self._export_github()
 
+    def set_enabled(self, ref: str, enabled: bool) -> None:
+        """Activate/deactivate a credential (wraps secret_bank Vault.set_enabled). Disabled keys leave the pool at once."""
+        try:
+            self._need_open().set_enabled(ref, enabled, actor="chat")
+        except self.mod().NotFound:
+            raise BankError("CREDENTIAL_NOT_FOUND") from None
+        self._export_github()
+
+    def delete(self, ref: str) -> None:
+        """Delete a credential (wraps secret_bank Vault.delete). Never returns the value."""
+        try:
+            self._need_open().delete(ref, actor="chat")
+        except self.mod().NotFound:
+            raise BankError("CREDENTIAL_NOT_FOUND") from None
+        self._export_github()
+
+    def persist(self) -> str:
+        """Copy the encrypted vault file back to HF storage (RIU_VAULT_SOURCE) so a Job renewal keeps every change.
+
+        The file is ciphertext; the previous remote copy is kept as <source>.bak-<UTC>. Failure never breaks the write.
+        """
+        src = (os.getenv("RIU_VAULT_SOURCE") or "").strip()
+        token = (os.getenv("HF_WRITE_TOKEN") or os.getenv("HF_TOKEN") or "").strip()
+        path = self.path()
+        if not src or not token or not path.is_file():
+            return "SKIPPED_NOT_CONFIGURED"
+        try:
+            from huggingface_hub import HfFileSystem
+            fs = HfFileSystem(token=token, skip_instance_cache=True)
+            try:
+                fs.pipe_file(src + ".bak-" + time.strftime("%Y%m%d%H%M%S", time.gmtime()), fs.cat_file(src))
+            except Exception:  # noqa: BLE001 - first upload has no previous copy
+                pass
+            fs.pipe_file(src, base64.b64encode(gzip.compress(path.read_bytes())))
+            return "PERSISTED"
+        except Exception as exc:  # noqa: BLE001
+            return "PERSIST_FAILED:" + type(exc).__name__
+
     def import_b64gz(self, b64: str) -> int:
         """Bootstrap a new host with an already-encrypted vault file (safe: it is ciphertext)."""
         path = self.path()

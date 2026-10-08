@@ -1,0 +1,14 @@
+# Archivos de la conexión ficha → banco → backend → harness → Router (Antonio / maxbry123-commits).
+# Sin efecto hasta que una regla exija "review from Code Owners". LIVE_URL.json queda fuera: lo publica el supervisor.
+/router\ inteligente\ universal/riu_kernel.py                                @maxbry123-commits
+/router\ inteligente\ universal/integration/chat_mvp/app.py                  @maxbry123-commits
+/router\ inteligente\ universal/integration/chat_mvp/providers.py            @maxbry123-commits
+/router\ inteligente\ universal/integration/chat_mvp/resilience.py           @maxbry123-commits
+/router\ inteligente\ universal/integration/chat_mvp/policies.json           @maxbry123-commits
+/router\ inteligente\ universal/integration/chat_mvp/memory_runtime.py       @maxbry123-commits
+/router\ inteligente\ universal/integration/chat_mvp/storage_runtime.py      @maxbry123-commits
+/router\ inteligente\ universal/integration/chat_mvp/memoria_loader.py       @maxbry123-commits
+/router\ inteligente\ universal/integration/chat_mvp/vault_*.py              @maxbry123-commits
+/router\ inteligente\ universal/plugins/puente_chat/                         @maxbry123-commits
+/chat\ router/chat\ frontend/api.js                                          @maxbry123-commits
+/chat\ router/chat\ frontend/config.js                                       @maxbry123-commits

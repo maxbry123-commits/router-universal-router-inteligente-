@@ -1,4 +1,5 @@
-"""HTTP surface of the Secret Bank inside the chat: /vault (page), /vault/status|unlock|lock|credentials|rotate|import.
+"""HTTP surface of the Secret Bank inside the chat: /vault (page), /vault/status|unlock|lock|credentials|rotate|import,
+DELETE /vault/credentials/{provider}/{account} and POST /vault/credentials/{provider}/{account}/enabled.
 
 Every endpoint needs a Router API key. The passphrase is only used to open the bank in server memory; no endpoint returns a secret.
 """
@@ -35,6 +36,20 @@ class PutReq(BaseModel):
     scope: str = "inference"
 
 
+class EnabledReq(BaseModel):
+    enabled: bool
+
+
+_PART = r"^[a-z0-9][a-z0-9_.-]*$"
+
+
+def _ref(provider: str, account: str) -> str:
+    import re
+    if not (re.match(_PART, provider) and re.match(_PART, account)):
+        raise HTTPException(status_code=422, detail="INVALID_REF")
+    return provider + "/" + account
+
+
 class ImportReq(BaseModel):
     b64gz: str = Field(min_length=20, max_length=2_000_000)
 
@@ -44,10 +59,18 @@ def _run(fn: Any, *args: Any) -> Any:
         return fn(*args)
     except BankError as exc:
         code = str(exc)
-        status = {"INVALID_PASSPHRASE": 401, "TOO_MANY_ATTEMPTS": 429, "VAULT_LOCKED": 423, "VAULT_MISSING": 404, "VAULT_EXISTS": 409}.get(code, 400)
+        status = {"INVALID_PASSPHRASE": 401, "TOO_MANY_ATTEMPTS": 429, "VAULT_LOCKED": 423, "VAULT_MISSING": 404, "VAULT_EXISTS": 409, "CREDENTIAL_NOT_FOUND": 404}.get(code, 400)
         raise HTTPException(status_code=status, detail=code) from exc
     except Exception as exc:  # noqa: BLE001 - vault errors are reported by code only, never with values
         raise HTTPException(status_code=400, detail=type(exc).__name__) from exc
+
+
+def _persisted(out: dict[str, Any]) -> dict[str, Any]:
+    """Write-through to HF storage after every bank change; adds "persisted" only when storage is configured."""
+    status = bridge.persist()
+    if status != "SKIPPED_NOT_CONFIGURED":
+        out["persisted"] = status
+    return out
 
 
 def build_vault_router() -> APIRouter:
@@ -74,12 +97,24 @@ def build_vault_router() -> APIRouter:
     @r.post("/vault/credentials")
     def put(req: PutReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
         _run(bridge.put, req.ref, req.secret, req.scope)
-        return {"stored": req.ref}
+        return _persisted({"stored": req.ref})
 
     @r.post("/vault/rotate")
     def rotate(req: PutReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
         _run(bridge.rotate, req.ref, req.secret)
-        return {"rotated": req.ref}
+        return _persisted({"rotated": req.ref})
+
+    @r.delete("/vault/credentials/{provider}/{account}")
+    def delete(provider: str, account: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        ref = _ref(provider, account)
+        _run(bridge.delete, ref)
+        return _persisted({"deleted": ref})
+
+    @r.post("/vault/credentials/{provider}/{account}/enabled")
+    def set_enabled(provider: str, account: str, req: EnabledReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        ref = _ref(provider, account)
+        _run(bridge.set_enabled, ref, req.enabled)
+        return _persisted({"ref": ref, "enabled": req.enabled})
 
     @r.post("/vault/import")
     def import_vault(req: ImportReq, _owner: str = Depends(_auth)) -> dict[str, Any]:
