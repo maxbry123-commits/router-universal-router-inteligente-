@@ -139,8 +139,13 @@ def renewal_due(reg):
     want=read("control/router-desired.json")
     asked=bool(want.get("relaunch_now")) and float(want.get("ts") or 0)>reg.get("started",0)
     return left<1200 or at_hour or asked
+WATCH="--watch" in sys.argv
 def tick(force=False):
-    if not lock():
+    # el schedule HF corre una sola vez: reintenta el candado ~90 s (los watchers lo sueltan tras cada tick de segundos)
+    for intento in range(1 if WATCH else 9):
+        if lock():break
+        if not WATCH:time.sleep(10)
+    else:
         print(json.dumps({"status":"LOCKED_BY_OTHER_SUPERVISOR"}),flush=True);return
     try:_tick(force)
     finally:unlock_lock()

@@ -188,3 +188,23 @@ def test_manual_relaunch_request_uses_safe_switch_once(world):
     bucket["control/router-desired.json"] = {"relaunch_now": True, "ts": k.time.time()}
     k.tick()
     assert calls == [("launch", "new1"), ("publish", "new1"), ("cancel", "old")]
+
+
+def test_schedule_run_waits_for_lock_released_by_watcher(world, monkeypatch):
+    bucket, state, calls = world
+    _reg(bucket)
+    for u in ("https://old--8000.hf.jobs", "https://new1--8000.hf.jobs"):
+        state["healthy"][u] = state["bank"][u] = True
+    state["chat"]["https://new1--8000.hf.jobs"] = True
+    bucket["control/router-desired.json"] = {"relaunch_now": True, "ts": k.time.time()}
+    bucket["control/kernel-lock.json"] = {"owner": "watcher:1", "until": k.time.time() + 600}
+    monkeypatch.setattr(k, "WATCH", False)
+    n = [0]
+    real_sleep = k.time.sleep
+    def sleep(s):
+        n[0] += 1
+        if n[0] == 3:  # el watcher termina su tick y suelta el candado
+            bucket["control/kernel-lock.json"] = {"owner": None, "until": 0}
+    monkeypatch.setattr(k.time, "sleep", sleep)
+    k.tick()
+    assert calls == [("launch", "new1"), ("publish", "new1"), ("cancel", "old")]
