@@ -25,7 +25,8 @@
         <label>Modo <select id="mode"><option value="fast">Rápido</option><option value="balanced" selected>Equilibrado</option><option value="think">Pensar</option></select></label>
       </div>
       <div class="chat-bar"><button id="nuevo-chat" class="secondary" type="button">Nuevo chat</button>
-        <div id="chat-tabs" role="tablist" aria-label="Chats"></div><output id="chat-id" class="muted"></output></div>
+        <div id="chat-tabs" role="tablist" aria-label="Chats"></div><output id="chat-id" class="muted"></output>
+        <small id="historial-origen" class="muted" role="status"></small></div>
       <div id="history" class="chat-history" role="log" aria-live="polite"></div>
       <form id="composer"><label for="message">Mensaje</label><textarea id="message" required placeholder="Escribe un mensaje"></textarea><button class="action" type="submit">Enviar al Router</button></form>
     </section>

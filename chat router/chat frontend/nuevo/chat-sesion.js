@@ -61,6 +61,39 @@ export function fijarConversacion(id, conversationId) {
     actualizar(id, c => ({ ...c, conversation_id: conversationId }));
 }
 
+// Punto 2: fusiona el historial del servidor (GET /chat/history/{sesion}, más antiguo primero) con el local.
+// El servidor manda: sus mensajes quedan marcados srv; los locales ya confirmados que el servidor no tiene se descartan.
+// Duplicados por rol+contenido+ts; un local sin confirmar se une a su copia del servidor si coincide rol+contenido
+// dentro de VENTANA (el servidor guarda el turno al terminar la respuesta, el navegador al enviarlo).
+const ROLES = { user: "user", assistant: "router" };
+const VENTANA = 15 * 60 * 1000;
+const aMs = ts => {
+  const n = typeof ts === "number" ? ts : Number(ts);
+  if (Number.isFinite(n)) return n < 1e12 ? Math.round(n * 1000) : n;
+  const d = Date.parse(ts);
+  return Number.isFinite(d) ? d : 0;
+};
+const clave = m => `${m.rol}\u0000${m.texto}\u0000${m.t}`;
+
+export function fusionar(id, remotos) {
+  if (!ID_OK.test(id) || !Array.isArray(remotos)) return null;
+  const servidor = remotos.filter(m => m && m.content != null)
+    .map(m => ({ rol: ROLES[m.role] || "nota", texto: String(m.content), t: aMs(m.ts), srv: true }));
+  const exactas = new Set(servidor.map(clave));
+  const usados = new Set();
+  const locales = mensajes(id).filter(m => {
+    if (exactas.has(clave(m)) || m.srv) return false;
+    const i = servidor.findIndex((s, k) => !usados.has(k) && s.rol === m.rol && s.texto === m.texto && Math.abs(s.t - m.t) <= VENTANA);
+    if (i >= 0) { usados.add(i); return false; }
+    return true;
+  });
+  const lista = [...servidor, ...locales].sort((a, b) => a.t - b.t).slice(-MAX_MENSAJES);
+  escribir(HIST + id, lista);
+  const primera = servidor.find(m => m.rol === "user");
+  if (primera) actualizar(id, c => c.titulo ? c : { ...c, titulo: primera.texto.slice(0, 28) });
+  return { servidor: servidor.length, soloLocales: locales.length };
+}
+
 function actualizar(id, cambio) {
   escribir(INDICE, indice().map(c => c.id === id ? cambio(c) : c));
 }

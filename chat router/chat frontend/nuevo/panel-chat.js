@@ -1,6 +1,6 @@
 import { api, harness, node } from "../api.js";
 import { tell } from "./base.js";
-import { activar, activo, agregar, crear, fijarConversacion, listar, mensajes } from "./chat-sesion.js";
+import { activar, activo, agregar, crear, fijarConversacion, fusionar, listar, mensajes } from "./chat-sesion.js";
 
 const select = (id, entries, value, label) => {
   const target = document.querySelector(id);
@@ -44,13 +44,34 @@ function pintarChats() {
     tab.title = `Sesión ${chat.id}`;
     tab.setAttribute("role", "tab");
     tab.setAttribute("aria-selected", String(chat.id === actual.id));
-    tab.addEventListener("click", () => { activar(chat.id); pintarChats(); });
+    tab.addEventListener("click", () => { activar(chat.id); pintarChats(); void sincronizar(chat.id); });
     return tab;
   }));
   document.querySelector("#chat-id").textContent = `Sesión: ${actual.id}`;
   const history = document.querySelector("#history");
   history.replaceChildren(...mensajes(actual.id).map(m => node("div", m.texto, CLASES[m.rol] || CLASES.router)));
   history.scrollTop = history.scrollHeight;
+}
+// Punto 2: al abrir un chat o recargar, trae su historial del Router y lo fusiona con el local.
+function origen(texto, tipo, detalle = "") {
+  const marca = document.querySelector("#historial-origen");
+  marca.textContent = texto;
+  marca.dataset.origen = tipo;
+  marca.title = detalle;
+}
+async function sincronizar(id) {
+  if (activo().id === id) origen("Historial: consultando servidor…", "cargando");
+  try {
+    const respuesta = await api(`/chat/history/${encodeURIComponent(id)}?limit=200`);
+    const resultado = fusionar(id, respuesta?.messages);
+    if (!resultado) throw new Error("respuesta sin messages");
+    if (activo().id !== id) return;
+    pintarChats();
+    origen(resultado.soloLocales ? `Historial: servidor + ${resultado.soloLocales} solo local` : "Historial: servidor",
+      "servidor", `${resultado.servidor} mensajes del Router`);
+  } catch (error) {
+    if (activo().id === id) origen("Historial: solo local", "local", `Servidor no disponible: ${error.message}`);
+  }
 }
 function decir(id, rol, texto) {
   agregar(id, rol, texto);
@@ -61,8 +82,9 @@ function decir(id, rol, texto) {
 }
 
 document.querySelector("#nuevo-chat").addEventListener("click", () => {
-  crear();
+  const chat = crear();
   pintarChats();
+  void sincronizar(chat.id);
   document.querySelector("#message").focus();
 });
 
@@ -102,4 +124,5 @@ document.querySelector("#composer").addEventListener("submit", async event => {
 });
 
 pintarChats();
+void sincronizar(activo().id);
 void loadSelectors();
