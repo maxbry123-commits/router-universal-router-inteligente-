@@ -29,6 +29,8 @@ from . import memoria_loader as ml
 MAX_NODOS = 3
 NODE_TIMEOUT_S = int(os.getenv("RIU_ORQ_NODE_TIMEOUT_S") or "150")
 NODE_MAX_TOKENS = 1200
+PLAN_INTENTOS = 2  # el planificador se reintenta una vez antes del plan de respaldo
+PLAN_BACKOFF_S = float(os.getenv("RIU_ORQ_PLAN_BACKOFF_S") or "2")
 PLANNER = "orquestador-g0"
 TOGGLE_KEY = "orquestador"
 RUN_PREFIX = "orq:run:"
@@ -80,9 +82,8 @@ def leer_run(sesion: str, run_id: str) -> dict[str, Any]:
 
 
 def listar_runs(sesion: str) -> dict[str, Any]:
-    db = ml._memory().sqlite.db
-    rows = db.execute("SELECT key,data FROM memoria_yaiwes WHERE scope=? AND substr(key,1,8)='orq:run:' ORDER BY id DESC",
-                      (ml._file_scope(sesion),)).fetchall()
+    rows = ml._q("SELECT key,data FROM memoria_yaiwes WHERE scope=? AND substr(key,1,8)='orq:run:' ORDER BY id DESC",
+                 (ml._file_scope(sesion),))
     runs, seen = [], set()
     for r in rows:
         if r["key"] in seen:
@@ -120,16 +121,42 @@ def normalizar_plan(raw: Any, agentes: set[str], max_n: int = MAX_NODOS) -> list
     return nodos
 
 
+class PlanError(RuntimeError):
+    pass
+
+
+_SECRETO = re.compile(r"(gsk_|nvapi-|hf_|sk-|ghp_|github_pat_|Bearer\s+)[A-Za-z0-9_\-.]{6,}", re.I)
+
+
+def motivo(exc: BaseException) -> str:
+    """Solo la razon (codigo/tipo), nunca cuerpos completos; cualquier cosa con forma de clave se tapa."""
+    return _SECRETO.sub("[REDACTADO]", str(exc) or type(exc).__name__)[:200]
+
+
+def _razon_api(s: int, d: Any) -> str:
+    err = d.get("error") if isinstance(d, dict) else None
+    if isinstance(err, dict):
+        err = err.get("code") or err.get("type") or "error"
+    if isinstance(d, dict) and not err and not d.get("choices"):
+        err = "SIN_CHOICES"
+    return "HTTP %s%s" % (s, (": " + str(err)[:80]) if err else "")
+
+
 def _llm(model: str, msgs: list[dict[str, str]], max_tokens: int) -> str:
     from plugins.puente_chat import plugin as P
     _, proveedor, modelo, tope = P.FICHAS[model]
     s, d = P._llamar_api(proveedor, modelo, msgs, max_tokens, tope, None)
     if s >= 400 or s == 0 or not isinstance(d, dict) or not d.get("choices"):
-        raise RuntimeError("PLANIFICADOR_NO_RESPONDE: " + str(d)[:200])
+        raise PlanError("PLANIFICADOR_NO_RESPONDE " + _razon_api(s, d))
     return str((d["choices"][0].get("message") or {}).get("content") or "")
 
 
-def planificar(model: str, input_block: str, max_n: int) -> list[dict[str, Any]]:
+RESPALDO = [{"id": "n1", "agente": PLANNER, "instrucciones": "Resuelve el INPUT_BLOCK.", "needs": []}]
+
+
+def planificar(model: str, input_block: str, max_n: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Plan del modelo (hasta PLAN_INTENTOS intentos, con espera corta) o el plan de respaldo de 1 nodo.
+    Devuelve (nodos, info) con info = {"plan_origen": "modelo"|"respaldo", "plan_intentos": n, "plan_error": razon|None}."""
     st = ml.get_store()
     agentes = {a["id"]: a for a in st.agents()}
     g0 = agentes.get(PLANNER) or {}
@@ -137,13 +164,26 @@ def planificar(model: str, input_block: str, max_n: int) -> list[dict[str, Any]]
     sistema = (str(g0.get("system_prompt") or "Eres el orquestador.") + " " + ml_contract()
                + "\nDevuelve SOLO JSON: {\"nodos\":[{\"id\":\"n1\",\"agente\":\"<id>\",\"instrucciones\":\"...\",\"needs\":[]}]}"
                + " con como maximo %d nodos (usa exactamente %d si la tarea lo permite). Agentes disponibles:\n%s" % (max_n, max_n, lista))
-    try:
-        text = _llm(model, [{"role": "system", "content": sistema},
-                            {"role": "user", "content": "INPUT_BLOCK (literal):\n" + input_block}], 700)
-        nodos = normalizar_plan(_json_obj(text), set(agentes), max_n)
-    except Exception:  # noqa: BLE001 - plan invalido = un nodo que resuelve el INPUT_BLOCK
-        nodos = []
-    return nodos or [{"id": "n1", "agente": PLANNER, "instrucciones": "Resuelve el INPUT_BLOCK.", "needs": []}]
+    error = None
+    for intento in range(1, PLAN_INTENTOS + 1):
+        if intento > 1:
+            time.sleep(PLAN_BACKOFF_S)
+        try:
+            text = _llm(model, [{"role": "system", "content": sistema},
+                                {"role": "user", "content": "INPUT_BLOCK (literal):\n" + input_block}], 700)
+            try:
+                raw = _json_obj(text)
+            except ValueError:
+                raise PlanError("PLAN_JSON_INVALIDO") from None
+            if raw is None:
+                raise PlanError("PLAN_SIN_JSON")
+            nodos = normalizar_plan(raw, set(agentes), max_n)
+            if not nodos:
+                raise PlanError("PLAN_SIN_NODOS_VALIDOS")
+            return nodos, {"plan_origen": "modelo", "plan_intentos": intento, "plan_error": None}
+        except Exception as exc:  # noqa: BLE001 - se guarda la razon y se reintenta / cae al respaldo
+            error = motivo(exc) if isinstance(exc, PlanError) else "%s: %s" % (type(exc).__name__, motivo(exc))
+    return [dict(n) for n in RESPALDO], {"plan_origen": "respaldo", "plan_intentos": PLAN_INTENTOS, "plan_error": error}
 
 
 def ml_contract() -> str:
@@ -168,6 +208,18 @@ def _turno_hijo(model: str, hija: str, nodo: dict[str, Any], deps: dict[str, str
     if deps:
         user += "\n\nSALIDAS DE NODOS PREVIOS:\n" + "\n".join("[%s]\n%s" % (k, v[:3000]) for k, v in deps.items())
     return P._chat({"model": model, "sesion": hija, "max_tokens": NODE_MAX_TOKENS, "messages": [{"role": "user", "content": user}]})
+
+
+def _nodo_directo(model: str, input_block: str, nodo: dict[str, Any]) -> dict[str, Any]:
+    """Nodo del plan de respaldo: misma ficha (orquestador-g0), contrato e INPUT_BLOCK literal, sin hijo, sin herramientas,
+    sin escribir memoria (el turno del padre lo guarda ejecutar con la respuesta)."""
+    EN_RUN.set(True)
+    g0 = ml.get_store().agent(nodo["agente"]) or {}
+    sistema = (str(g0.get("system_prompt") or "") + " " + ml_contract()).strip()
+    user = "INPUT_BLOCK (literal):\n%s\n\nNODO %s (agente %s, plan de respaldo)\nINSTRUCCIONES:\n%s" % (
+        input_block, nodo["id"], nodo["agente"], nodo["instrucciones"])
+    txt = _llm(model, [{"role": "system", "content": sistema}, {"role": "user", "content": user}], NODE_MAX_TOKENS)
+    return {"model": model, "choices": [{"message": {"role": "assistant", "content": txt}}]}
 
 
 def ejecutar(p: dict[str, Any]) -> dict[str, Any]:
@@ -198,7 +250,9 @@ def _ejecutar(p: dict[str, Any]) -> dict[str, Any]:
     run: dict[str, Any] = {"run_id": run_id, "sesion": sesion, "estado": "PLANIFICANDO", "modelo": model,
                            "input_block_sha256": ml._sha256(input_block), "ts_inicio": t0, "ts_fin": None, "nodos": [], "resumen": None}
     _save_run(run)
-    nodos = planificar(model, input_block, max_n)
+    nodos, info = planificar(model, input_block, max_n)
+    run.update(info)  # plan_origen, plan_intentos, plan_error (solo la razon): campos extra del detalle del run
+    respaldo = info["plan_origen"] == "respaldo"
     dag = dag_de(nodos, model, run_id)
     errs = dagmod.validate({**dag, "input_block": input_block})
     if errs:  # no deberia pasar (plan normalizado); fail-closed
@@ -207,9 +261,10 @@ def _ejecutar(p: dict[str, Any]) -> dict[str, Any]:
         return {"error": "ORQUESTADOR_DAG_INVALIDO", "run_id": run_id}
     run["dag"] = dag
     for n in nodos:
-        hija = ml.create_child(sesion, input_block, dag, agente=n["agente"])
+        # plan de respaldo: el nodo corre dentro del turno del padre, sin abrir un chat hijo (no deja hijos 'orquestador-g0' sueltos)
+        hija = None if respaldo else ml.create_child(sesion, input_block, dag, agente=n["agente"])["sesion_hija"]
         run["nodos"].append({"id": n["id"], "agente": n["agente"], "instrucciones": n["instrucciones"], "needs": n["needs"],
-                             "sesion_hija": hija["sesion_hija"], "estado": "PENDIENTE", "respuesta": None, "error": None, "ms": None})
+                             "sesion_hija": hija, "estado": "PENDIENTE", "respuesta": None, "error": None, "ms": None})
     run["estado"] = "EJECUTANDO"
     _save_run(run)
     by_id = {x["id"]: x for x in run["nodos"]}
@@ -234,7 +289,10 @@ def _ejecutar(p: dict[str, Any]) -> dict[str, Any]:
                 rec["estado"] = "EJECUTANDO"
                 rec["_t"] = time.time()
                 deps = {d: salidas[d] for d in n["needs"]}
-                futs[n["id"]] = pool.submit(contextvars.Context().run, _turno_hijo, model, rec["sesion_hija"], n, deps)
+                if respaldo:
+                    futs[n["id"]] = pool.submit(contextvars.Context().run, _nodo_directo, model, input_block, n)
+                else:
+                    futs[n["id"]] = pool.submit(contextvars.Context().run, _turno_hijo, model, rec["sesion_hija"], n, deps)
             _save_run(_publico(run))
             for nid, fut in futs.items():
                 rec = by_id[nid]
@@ -256,7 +314,8 @@ def _ejecutar(p: dict[str, Any]) -> dict[str, Any]:
             _save_run(_publico(run))
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
-    resumen = resumir(model, input_block, run["nodos"])
+    unico = run["nodos"][0] if respaldo and run["nodos"] else None
+    resumen = unico["respuesta"] if unico and unico["estado"] == "HECHO" and unico["respuesta"] else resumir(model, input_block, run["nodos"])
     run.update(estado="HECHO" if all(x["estado"] == "HECHO" for x in run["nodos"]) else "PARCIAL", resumen=resumen, ts_fin=time.time())
     _save_run(_publico(run))
     guardada = P._guardar(sesion, model, input_block, resumen)  # el resumen queda como turno del padre (/chat/history)

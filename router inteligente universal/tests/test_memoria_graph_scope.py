@@ -54,3 +54,32 @@ def test_graph_search_and_load_only_return_the_requested_scope(client):
         assert [n["id"] for n in g] == ["memory:%s:archivo:notas.txt" % scope]
     assert c.get("/memoria/search", params={"scope": "chat-ui:chat:web-%", "query": "", "k": 50}).json()["results"]["graph"] == []
     assert len(c.get("/memoria/search", params={"scope": A, "query": "", "k": 1}).json()["results"]["graph"]) == 1
+
+
+def test_shared_sqlite_connection_is_thread_safe(client):
+    """chat_async y los nodos del orquestador escriben a la vez por la MISMA conexion: sin candado daba
+    sqlite3.InterfaceError 'bad parameter or other API misuse'."""
+    import threading
+
+    c, _ = client
+    mem = memoria_loader._memory()
+    errors: list[str] = []
+
+    def worker(i: int) -> None:
+        try:
+            for j in range(150):
+                scope = "chat-ui:chat:web-%016d" % i
+                mem.sqlite.save(scope, "turno-%d" % j, {"pregunta": "p%d" % j, "respuesta": "r"})
+                mem.sqlite.search(scope, "turno-", 5)
+                mem.sqlite.load(scope, "turno-%d" % j)
+                memoria_loader.list_children("web-%016d" % i)
+        except Exception as exc:  # noqa: BLE001
+            errors.append("%s: %s" % (type(exc).__name__, exc))
+
+    threads = [threading.Thread(target=worker, args=(i,)) for i in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(120)
+    assert errors == []
+    assert mem.sqlite.health()["records"] == 8 * 150

@@ -5,6 +5,7 @@ import json
 import os
 import sqlite3
 import socket
+import threading
 import time
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
@@ -63,24 +64,31 @@ class SQLiteAdapter:
         self.db_path = Path(store.db_path)
         self.db = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self.db.row_factory = sqlite3.Row
+        # una sola conexion compartida por los hilos del chat (chat_async, nodos del orquestador): sin este candado
+        # dos hilos a la vez dan sqlite3.InterfaceError "bad parameter or other API misuse"
+        self.lock = threading.RLock()
         self.db.execute("CREATE TABLE IF NOT EXISTS memoria_yaiwes (id INTEGER PRIMARY KEY AUTOINCREMENT, scope TEXT NOT NULL, key TEXT NOT NULL, data TEXT NOT NULL, created_at REAL NOT NULL)")
         self.db.commit()
 
     def health(self) -> dict[str, Any]:
-        count = self.db.execute("SELECT COUNT(*) FROM memoria_yaiwes").fetchone()[0]
+        with self.lock:
+            count = self.db.execute("SELECT COUNT(*) FROM memoria_yaiwes").fetchone()[0]
         return {"name": self.name, "status": "CONNECTED", "mode": "primary", "records": count, "db": str(self.db_path)}
 
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
-        cur = self.db.execute("INSERT INTO memoria_yaiwes(scope,key,data,created_at) VALUES(?,?,?,?)", (scope, key, json.dumps(data, ensure_ascii=False), time.time()))
-        self.db.commit()
+        with self.lock:
+            cur = self.db.execute("INSERT INTO memoria_yaiwes(scope,key,data,created_at) VALUES(?,?,?,?)", (scope, key, json.dumps(data, ensure_ascii=False), time.time()))
+            self.db.commit()
         return {"adapter": self.name, "id": cur.lastrowid, "scope": scope, "key": key}
 
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
-        rows = self.db.execute("SELECT id,scope,key,data FROM memoria_yaiwes WHERE scope=? AND key=? ORDER BY id DESC", (scope, key)).fetchall()
+        with self.lock:
+            rows = self.db.execute("SELECT id,scope,key,data FROM memoria_yaiwes WHERE scope=? AND key=? ORDER BY id DESC", (scope, key)).fetchall()
         return [{"id": row["id"], "scope": row["scope"], "key": row["key"], "data": json.loads(row["data"])} for row in rows]
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
-        rows = self.db.execute("SELECT id,scope,key,data FROM memoria_yaiwes WHERE scope=? AND (key LIKE ? OR data LIKE ?) ORDER BY id DESC LIMIT ?", (scope, f"%{query}%", f"%{query}%", k)).fetchall()
+        with self.lock:
+            rows = self.db.execute("SELECT id,scope,key,data FROM memoria_yaiwes WHERE scope=? AND (key LIKE ? OR data LIKE ?) ORDER BY id DESC LIMIT ?", (scope, f"%{query}%", f"%{query}%", k)).fetchall()
         return [{"id": row["id"], "scope": row["scope"], "key": row["key"], "data": json.loads(row["data"])} for row in rows]
 
 

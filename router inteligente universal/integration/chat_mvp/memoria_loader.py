@@ -40,6 +40,24 @@ def _memory() -> Any:
     return _facade
 
 
+def _q(sql: str, params: tuple = (), one: bool = False) -> Any:
+    """Consulta directa a la memoria SQLite con el candado del adaptador (conexion compartida entre hilos)."""
+    import contextlib
+    sq = _memory().sqlite
+    with getattr(sq, "lock", None) or contextlib.nullcontext():
+        cur = sq.db.execute(sql, params)
+        return cur.fetchone() if one else cur.fetchall()
+
+
+def _x(sql: str, params: tuple = ()) -> int:
+    import contextlib
+    sq = _memory().sqlite
+    with getattr(sq, "lock", None) or contextlib.nullcontext():
+        cur = sq.db.execute(sql, params)
+        sq.db.commit()
+        return cur.rowcount
+
+
 CHAT_OWNER = "chat-ui"  # = plugins/puente_chat/plugin.py DUENO: puente_chat guarda cada turno en scope chat-ui:chat:<sesion>
 _SESION = re.compile(r"^[A-Za-z0-9_.:@-]{1,60}$")
 
@@ -109,9 +127,8 @@ def save_chat_file(sesion: str, nombre: Any, tipo: Any, datos_b64: Any) -> dict[
 
 
 def _file_rows(scope: str) -> list[Any]:
-    db = _memory().sqlite.db
-    return db.execute("SELECT id,key,data,created_at FROM memoria_yaiwes WHERE scope=? AND substr(key,1,8)='archivo:' ORDER BY id DESC",
-                      (scope,)).fetchall()
+    return _q("SELECT id,key,data,created_at FROM memoria_yaiwes WHERE scope=? AND substr(key,1,8)='archivo:' ORDER BY id DESC",
+              (scope,))
 
 
 def list_chat_files(sesion: str) -> dict[str, Any]:
@@ -129,9 +146,8 @@ def list_chat_files(sesion: str) -> dict[str, Any]:
 
 
 def _file_row(sesion: str, file_id: int) -> Any:
-    db = _memory().sqlite.db
-    row = db.execute("SELECT id,key,data FROM memoria_yaiwes WHERE id=? AND scope=? AND substr(key,1,8)='archivo:'",
-                     (int(file_id), _file_scope(sesion))).fetchone()
+    row = _q("SELECT id,key,data FROM memoria_yaiwes WHERE id=? AND scope=? AND substr(key,1,8)='archivo:'",
+             (int(file_id), _file_scope(sesion)), one=True)
     if row is None:
         raise FileError("ARCHIVO_NO_EXISTE", 404)
     return row
@@ -147,14 +163,12 @@ def delete_chat_file(sesion: str, file_id: int) -> dict[str, Any]:
     """Borra todas las versiones de ese nombre en ESE chat (si no, reapareceria la anterior) y su nodo del grafo."""
     row = _file_row(sesion, file_id)
     scope, key = _file_scope(sesion), row["key"]
-    mem = _memory()
-    cur = mem.sqlite.db.execute("DELETE FROM memoria_yaiwes WHERE scope=? AND key=?", (scope, key))
-    mem.sqlite.db.commit()
+    versions = _x("DELETE FROM memoria_yaiwes WHERE scope=? AND key=?", (scope, key))
     store = get_store()
     node = "memory:%s:%s" % (scope, key)
     store._exec("DELETE FROM graph_nodes WHERE id=?", (node,))
     store._exec("DELETE FROM graph_edges WHERE src=? OR dst=?", (node, node))
-    return {"deleted": int(file_id), "nombre": key[8:], "versions": cur.rowcount}
+    return {"deleted": int(file_id), "nombre": key[8:], "versions": versions}
 
 
 # --- PUNTO 5: agente anclado que abre un chat HIJO. Reutiliza: la ficha del agente = fila de la tabla `agents`
@@ -189,9 +203,8 @@ def _one(scope: str, key: str) -> Any:
 
 
 def _children_rows(sesion: str) -> list[dict[str, Any]]:
-    db = _memory().sqlite.db
-    rows = db.execute("SELECT key,data,created_at FROM memoria_yaiwes WHERE scope=? AND substr(key,1,5)='hija:' ORDER BY id",
-                      (_file_scope(sesion),)).fetchall()
+    rows = _q("SELECT key,data,created_at FROM memoria_yaiwes WHERE scope=? AND substr(key,1,5)='hija:' ORDER BY id",
+              (_file_scope(sesion),))
     return [{**json.loads(r["data"]), "ts": r["created_at"]} for r in rows]
 
 
@@ -227,7 +240,7 @@ def create_child(padre: str, input_block: Any, dag: Any, agente: Any = None, fic
             hija = "%s:ag:%s:%d" % (padre, aid, n)
             if not _SESION.match(hija):
                 raise ChildError("SESION_HIJA_MUY_LARGA", 422)
-            if not mem.sqlite.db.execute("SELECT 1 FROM memoria_yaiwes WHERE scope=? LIMIT 1", (_file_scope(hija),)).fetchone():
+            if not _q("SELECT 1 FROM memoria_yaiwes WHERE scope=? LIMIT 1", (_file_scope(hija),), one=True):
                 break
             n += 1
         sc, sha = _file_scope(hija), _sha256(input_block)

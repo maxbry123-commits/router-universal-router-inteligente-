@@ -164,15 +164,28 @@ def test_limits_three_nodes_unknown_agent_and_forward_needs(env):
 
 
 def test_node_timeout_is_enforced(env):
+    import threading
     _, _, mp = env
+    release, finished = threading.Event(), threading.Event()
+
+    class Blocking(FakeLLM):  # el nodo queda bloqueado hasta que el test lo suelte: sin depender del reloj ni de la carga
+        def __call__(self, proveedor, modelo, mensajes, max_tokens, tope, tools):
+            if "NODO n1" in str(mensajes[-1].get("content") or ""):
+                release.wait(60)
+                finished.set()
+            return super().__call__(proveedor, modelo, mensajes, max_tokens, tope, tools)
+
     mp.setattr(orquestador, "NODE_TIMEOUT_S", 1)
-    mp.setattr(P, "_llamar_api", FakeLLM(plan={"nodos": [{"agente": "wf-codex", "instrucciones": "lento"}]}, sleep=2.5))
+    mp.setattr(P, "_llamar_api", Blocking(plan={"nodos": [{"agente": "wf-codex", "instrucciones": "lento"}]}))
     orquestador.poner(S, True)
-    t = time.time()
     out = _chat(S, IB)
+    assert not release.is_set() and not finished.is_set()  # el padre respondio con el nodo aun bloqueado: el timeout manda
     assert out["orquestador"]["nodos"][0]["estado"] == "TIMEOUT" and out["orquestador"]["estado"] == "PARCIAL"
-    assert time.time() - t < 2.4 and out["choices"][0]["message"]["content"] == "RESUMEN-FINAL"
-    time.sleep(2.5)  # deja terminar el hilo del nodo lento antes de cerrar el Store del test
+    assert out["choices"][0]["message"]["content"] == "RESUMEN-FINAL"
+    release.set()
+    assert finished.wait(30)
+    for t in [t for t in threading.enumerate() if t.name.startswith("riu-orq")]:
+        t.join(30)  # el hilo del nodo termina (y escribe en el hijo) antes de cerrar el Store del test
 
 
 def test_no_recursion_and_api_models_only(env):
@@ -214,3 +227,77 @@ def test_same_thread_can_orchestrate_again(env):
     assert orquestador.EN_RUN.get() is False
     orquestador.poner(S, False)
     assert "orquestador" not in _chat(S, "normal")
+
+
+class FlakyPlanner(FakeLLM):
+    """El planificador responde con la lista dada (una entrada por intento); nodos y resumen como FakeLLM."""
+
+    def __init__(self, planner_replies, **kw):
+        super().__init__(**kw)
+        self.replies = list(planner_replies)
+        self.plan_times: list[float] = []
+
+    def __call__(self, proveedor, modelo, mensajes, max_tokens, tope, tools):
+        if "Devuelve SOLO JSON" in str(mensajes[0].get("content") or ""):
+            self.plan_times.append(time.monotonic())
+            self.calls.append({"mensajes": [dict(m) for m in mensajes], "tools": tools})
+            r = self.replies.pop(0)
+            if r == "PLAN":
+                return super().__call__(proveedor, modelo, mensajes, max_tokens, tope, tools)
+            return r
+        return super().__call__(proveedor, modelo, mensajes, max_tokens, tope, tools)
+
+
+def test_planner_fails_twice_records_reason_and_fallback_creates_no_child(env):
+    c, st, mp = env
+    mp.setattr(orquestador, "PLAN_BACKOFF_S", 0.3)
+    fake = FlakyPlanner([(429, {"error": {"message": "Rate limit for key gsk_abcdefghijklmnop", "code": "rate_limit_exceeded"}}),
+                         (0, {"error": "SIN_RESPUESTA"})])
+    mp.setattr(P, "_llamar_api", fake)
+    orquestador.poner(S, True)
+    out = _chat(S, IB)
+    o = out["orquestador"]
+    assert len(fake.plan_times) == 2 and fake.plan_times[1] - fake.plan_times[0] >= 0.3   # un reintento, con espera
+    assert o["estado"] == "HECHO" and [(n["id"], n["agente"], n["sesion_hija"]) for n in o["nodos"]] == [("n1", "orquestador-g0", None)]
+    assert out["choices"][0]["message"]["content"] == "salida-n1"                         # respuesta del nodo de respaldo
+    assert c.get("/chat/children/" + S).json()["children"] == []                          # sin hijo extra
+    assert st._all("SELECT COUNT(*) n FROM memoria_yaiwes WHERE scope LIKE '%:ag:%'")[0]["n"] == 0
+    run = c.get("/chat/orquestador/%s/runs/%s" % (S, o["run_id"])).json()
+    assert run["plan_origen"] == "respaldo" and run["plan_intentos"] == 2
+    assert run["plan_error"] == "PLANIFICADOR_NO_RESPONDE HTTP 0: SIN_RESPUESTA"            # la razon del ultimo intento
+    assert "gsk_" not in json.dumps(run)                                                   # nunca se guarda un cuerpo con claves
+    node_call = next(x for x in fake.calls if "NODO n1" in x["mensajes"][-1]["content"])
+    assert node_call["tools"] is None and ("INPUT_BLOCK (literal):\n" + IB) in node_call["mensajes"][-1]["content"]
+    hp = c.get("/chat/history/" + S).json()                                                # el padre: un solo turno
+    assert [m["content"] for m in hp["messages"]] == [IB, "salida-n1"]
+    # forma que usa la UI intacta: mismas claves de siempre + los campos extra
+    assert {"run_id", "sesion", "estado", "modelo", "input_block_sha256", "dag", "nodos", "resumen", "ts_inicio", "ts_fin"} <= set(run)
+    assert set(run["nodos"][0]) == {"id", "agente", "instrucciones", "needs", "sesion_hija", "estado", "respuesta", "error", "ms", "modelo"}
+
+
+def test_planner_retry_succeeds_second_time(env):
+    c, _, mp = env
+    mp.setattr(orquestador, "PLAN_BACKOFF_S", 0)
+    mp.setattr(P, "_llamar_api", FlakyPlanner([(503, {"error": {"type": "service_unavailable"}}), "PLAN"]))
+    orquestador.poner(S, True)
+    out = _chat(S, IB)
+    assert "orquestador" in out, out
+    o = out["orquestador"]
+    run = orquestador.leer_run(S, o["run_id"])
+    assert run["plan_origen"] == "modelo" and run["plan_intentos"] == 2 and run["plan_error"] is None
+    assert len(c.get("/chat/children/" + S).json()["children"]) == 2
+
+
+def test_planner_bad_json_reasons(env):
+    _, _, mp = env
+    mp.setattr(orquestador, "PLAN_BACKOFF_S", 0)
+    ok = lambda t: (200, {"choices": [{"message": {"content": t}}]})  # noqa: E731
+    mp.setattr(P, "_llamar_api", FlakyPlanner([ok("no hay plan"), ok('{"nodos":[{"instrucciones":""}]}')]))
+    orquestador.poner(S, True)
+    run = orquestador.leer_run(S, _chat(S, IB)["orquestador"]["run_id"])
+    assert run["plan_origen"] == "respaldo" and run["plan_error"] == "PLAN_SIN_NODOS_VALIDOS"
+
+
+def test_reason_redacts_key_like_text():
+    assert orquestador.motivo(RuntimeError("boom gsk_ABCDEFGHIJ123 y Bearer abcdef123456 nvapi-XYZ123456")) == \
+        "boom [REDACTADO] y [REDACTADO] [REDACTADO]"
