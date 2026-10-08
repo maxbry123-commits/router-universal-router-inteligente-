@@ -84,7 +84,9 @@ async function puenteRouter(base, body, qs, headers) {
     if (cortado) { if (intento === 0 && accion === 'chat') { payload = Object.assign({}, payload, { messages: (payload.messages || []).concat([{ role: 'user', content: 'continúa el trabajo donde quedó' }]) }); continue; } return { status: 504, ok: false, p: { error: 'La llamada superó el tiempo de respuesta' } }; }
     if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
     if (p.error) {
-      if (intento === 0 && accion === 'chat' && ['MODELO_NO_RESPONDE', 'TIEMPO_TOTAL_AGOTADO', 'CHAT_FAILED', 'CHAT_OCUPADO_REINTENTA', 'PROCESO_NO_EXISTE', 'SERVICIO_OCUPADO'].includes(p.error)) {
+      // MODELO_NO_RESPONDE no se reintenta a ciegas: normalmente indica banco/provider no disponible.
+      // Reintentar con “continúa” hacía entrar al fallback viejo y ocultaba la causa con EXCEPCION/pipeline.
+      if (intento === 0 && accion === 'chat' && ['TIEMPO_TOTAL_AGOTADO', 'CHAT_FAILED', 'CHAT_OCUPADO_REINTENTA', 'PROCESO_NO_EXISTE', 'SERVICIO_OCUPADO'].includes(p.error)) {
         payload = Object.assign({}, payload, { messages: (payload.messages || []).concat([{ role: 'user', content: 'continúa el trabajo donde quedó' }]) });
         continue;
       }
@@ -141,7 +143,10 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
     L4.url = r.p.url;
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
   }
-  if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
+  if (!r.ok) {
+    const causa = [r.p.error, r.p.detalle].filter(Boolean).map(String).join(' — ');
+    throw new Error(causa || ('HTTP ' + r.status));
+  }
   return { reply: (r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || '', job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) };
 }
 window.RIU_HARNESS = harness;
