@@ -1,6 +1,6 @@
 {
   "id": "motor-auditor-code",
-  "nombre": "🔎 MOTOR AUDITOR CODE repo",
+  "nombre": "\ud83d\udd0e MOTOR AUDITOR CODE repo",
   "proveedor": "pipeline",
   "modelo": "pipeline",
   "timeout_s": 120,
@@ -10,21 +10,5 @@
   "herramientas": true,
   "memoria": true,
   "enlazados": ["github:git-tree"],
-  "salidas": ["archivos de code del proyecto por carpeta"],
-  "microagente": {
-    "schema": "yaiwes.node-executor/xray-v2",
-    "mode": "FAIL_CLOSED",
-    "execution_model": "DAG+FSM",
-    "input_mode": "VERBATIM",
-    "input_immutable": true,
-    "objective_lock": true,
-    "scope_lock": true,
-    "default_deny": true,
-    "workflow": ["RESEARCH", "EXECUTE", "VALIDATE"],
-    "max_retries": 2,
-    "stop_early": false,
-    "close_token": "[[YAIWES:CLOSED]]",
-    "resume_motors": ["VERBATIM_LOCK", "CHECKPOINT_PERSISTENTE", "PROGRESS_DELTA", "TOOL_GUARD", "RESUME_ENGINE", "CLOSE_GATE"],
-    "output": {"micro_resumen": true, "flujo_horizontal": true, "checklist": true, "markers": ["🎯", "⚠️", "🆘", "✅"]}
-  }
+  "salidas": ["archivos de code del proyecto por carpeta"]
 }

@@ -2,11 +2,11 @@
 // La interfaz abre sin pedir clave. El Router funciona en HF CPU de 16 GB; las claves permanecen en el servidor.
 window.RIU_CONFIG = {
   routerStopped: false,
-  apiBase: 'https://6ac593acfbc85ba6823baf04--8000.hf.jobs',
+  apiBase: 'https://6ac41820404719ba376595fb--8000.hf.jobs',
   liveUrl: 'https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/LIVE_URL.json',
-  harnessUrl: 'https://6ac593acfbc85ba6823baf04--8000.hf.jobs/plugins/puente_chat/call',
+  harnessUrl: 'https://6ac41820404719ba376595fb--8000.hf.jobs/plugins/puente_chat/call',  // puente dentro del Router (puerta fija)
   authHeader: 'X-API-Key',
-  defecto: 'nv-nemotron-super',
+  defecto: 'nv-nemotron-super',  // el modelo HF enciende una GPU de pago: no se deja como predeterminado
   modelos: [
     { id: 'ask-consil-factory', etiqueta: '🧠 ask consil factory' },
     { id: 'motor-descarga', etiqueta: '➡️ MOTOR DESCARGA EXTRACCIONES copiar mover' },

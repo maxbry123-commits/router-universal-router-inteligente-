@@ -4,8 +4,6 @@ Before serving each request, a lightweight middleware re-reads `agents-yaiwes/RO
 Router (answers 503, /health still answers) — this is the REMOTE pause switch: editing/pushing that one file pauses or resumes the Job
 without touching it directly. The Job pulls the repo every 60 s and re-reads the file on every request, so no restart is needed.
 FIX 2026-09-23: before, the check was `"PAUSED" in text`, which is also true for `PAUSED=false` -> the Router was always paused.
-FIX 2026-10-08: persistent Router imports ``public_chat_app`` so browser chat uses the same passwordless public surface as the primary Router;
-``RIU_PUBLIC_CHAT_KEY`` defaults to the already-injected ``RIU_ROUTER_API_KEY`` inside the Job and is never exposed to the browser.
 """
 from __future__ import annotations
 
@@ -74,16 +72,12 @@ def main() -> None:
     vault = Path(os.environ.setdefault("RIU_VAULT_PATH", "/tmp/riu_vault.db"))
     os.environ.setdefault("RIU_DATA_DIR", "/tmp/riu")
     os.environ.setdefault("RIU_CHAT_ALLOW_PROVIDER_LIVE", "1")
-    # The browser never receives this key. public_chat_app injects it server-side
-    # only for the public chat/memory/plugin routes.
-    if os.getenv("RIU_ROUTER_API_KEY") and not os.getenv("RIU_PUBLIC_CHAT_KEY"):
-        os.environ["RIU_PUBLIC_CHAT_KEY"] = os.environ["RIU_ROUTER_API_KEY"]
     text = bank_text()
     if text:
         vault.write_bytes(gzip.decompress(base64.b64decode(text)))
     sys.path.insert(0, str(ROOT))
     threading.Thread(target=background_repull, daemon=True).start()
-    from public_chat_app import app  # noqa: E402
+    from integration.chat_mvp.app import app  # noqa: E402
     install_pause_middleware(app)
     import uvicorn  # noqa: E402
     uvicorn.run(app, host="0.0.0.0", port=8000)

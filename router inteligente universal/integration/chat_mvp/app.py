@@ -20,56 +20,17 @@ from ..huggingface import fastapi_gateway as gateway
 from . import wordflow_agents
 from .jobs import build_jobs_router
 from .route_api import build_route_router
-from .router import build_router, get_store, sync_to_bucket
-from .storage_runtime import restore_configured_storage, start_autosync
-from .vault_api import bridge as vault_bridge
+from .router import build_router, get_store
 from .vault_api import build_vault_router
 
-app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.5")
+app = FastAPI(title="Router Inteligente Universal - Chat MVP", version="0.3.3")
 app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in os.getenv("RIU_CORS_ORIGINS", "*").split(",") if o.strip()],
                    allow_methods=["*"], allow_headers=["*"], allow_credentials=False)
 
 
 @app.on_event("startup")
-def _restore_chat_storage() -> None:
-    """Restore durable chat memory before the SQLite Store or Secret Bank are opened."""
-    try:
-        result = restore_configured_storage()
-        logging.getLogger("riu").info("chat storage restore: %s", result.get("status"))
-    except Exception as exc:  # storage persistence must never prevent Router boot
-        logging.getLogger("riu").warning("chat storage restore failed: %s", type(exc).__name__)
-
-
-@app.on_event("startup")
-def _unlock_provider_bank() -> None:
-    """Load provider credentials into process memory from the already-mounted Secret Bank.
-
-    The passphrase is injected by the Router runtime as RIU_VAULT_PASSPHRASE.  It is
-    never logged, returned or persisted here.  A failure leaves the Router running
-    but providers remain unavailable, which is visible through /chat/providers.
-    """
-    try:
-        if vault_bridge.unlocked():
-            return
-        passphrase = os.getenv("RIU_VAULT_PASSPHRASE") or ""
-        if not passphrase:
-            logging.getLogger("riu").warning("provider bank unlock skipped: passphrase unavailable")
-            return
-        result = vault_bridge.unlock(passphrase)
-        logging.getLogger("riu").info("provider bank unlock: %s provider keys loaded", result.get("provider_keys", 0))
-    except Exception as exc:
-        logging.getLogger("riu").warning("provider bank unlock failed: %s", type(exc).__name__)
-
-
-@app.on_event("startup")
 def _seed_wordflow_fleet() -> None:
-    store = get_store()
-    wordflow_agents.seed(store)
-    try:
-        result = start_autosync(store, sync_to_bucket)
-        logging.getLogger("riu").info("chat storage autosync: %s", result.get("status"))
-    except Exception as exc:  # autosync failure must never take down the Router
-        logging.getLogger("riu").warning("chat storage autosync not started: %s", type(exc).__name__)
+    wordflow_agents.seed(get_store())
 
 
 _chat_deps: list = []

@@ -1,6 +1,6 @@
 {
   "id": "motor-xray",
-  "nombre": "🔬 MOTOR X-RAY auditoria forense archivos",
+  "nombre": "\ud83d\udd2c MOTOR X-RAY auditoria forense archivos",
   "proveedor": "pipeline",
   "modelo": "pipeline",
   "timeout_s": 200,
@@ -10,21 +10,5 @@
   "herramientas": true,
   "memoria": true,
   "enlazados": ["nvidia/nemotron-3-super-120b-a12b"],
-  "salidas": ["resumen compacto", "urls visibles", "estructura raiz", "mapa mental", "microflujo horizontal", "goals G1..G12"],
-  "microagente": {
-    "schema": "yaiwes.node-executor/xray-v2",
-    "mode": "FAIL_CLOSED",
-    "execution_model": "DAG+FSM",
-    "input_mode": "VERBATIM",
-    "input_immutable": true,
-    "objective_lock": true,
-    "scope_lock": true,
-    "default_deny": true,
-    "workflow": ["RESEARCH", "EXECUTE", "VALIDATE"],
-    "max_retries": 2,
-    "stop_early": false,
-    "close_token": "[[YAIWES:CLOSED]]",
-    "resume_motors": ["VERBATIM_LOCK", "CHECKPOINT_PERSISTENTE", "PROGRESS_DELTA", "TOOL_GUARD", "RESUME_ENGINE", "CLOSE_GATE"],
-    "output": {"micro_resumen": true, "flujo_horizontal": true, "checklist": true, "markers": ["🎯", "⚠️", "🆘", "✅"]}
-  }
+  "salidas": ["resumen compacto", "urls visibles", "estructura raiz", "mapa mental", "microflujo horizontal", "goals G1..G12"]
 }
