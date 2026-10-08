@@ -5,6 +5,10 @@ main,section,.card,.grid,.row,.topbar>div{min-width:0}
 .access button,.sidebar button,button.action,button.secondary{min-height:44px}
 .sidebar button,button.action,button.secondary{transition:background-color .16s ease,color .16s ease,box-shadow .16s ease}
 :focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
+/* El renderer multichat usa el atributo hidden para aislar cada sección.
+   shell.css declara .chat-history{display:flex}; esta regla garantiza que
+   una sección inactiva nunca quede visible por la cascada CSS. */
+.chat-history[hidden]{display:none!important}
 @media(max-width:720px){
   .sidebar nav{max-width:calc(100vw - 20px);scrollbar-width:thin}
   .topbar{align-items:flex-start}
