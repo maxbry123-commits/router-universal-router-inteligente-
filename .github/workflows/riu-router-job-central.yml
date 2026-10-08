@@ -1,15 +1,14 @@
 name: RIU Router Job Central
 
-# Lanza el Job ÚNICO y persistente del Router (common/router_job_persistent.py).
-# Máquina HF 16 GB DE PAGO (cpu-basic, $0.01/h), siempre encendida, vida larga. Al lanzar uno nuevo, cancela los anteriores.
-# 2026-09-28 (Director): OmniRoute DESCARTADO. Prueba 09:05: el programa arranca (1/1 vivo, catálogo 200) pero los proveedores
-#   gratis bloquean (OpenCode 403 "solo dentro de OpenCode", Felo 400/503) → no aporta respuestas; y dentro del Router lo tumbó (x10).
-#   El Router ya NO arranca OmniRoute. Modelos: NVIDIA (Kimi K3 / GLM-5.3) + Groq (claves 2-7) directos.
-# Secretos al Job (nunca en archivos): GITHUB_TOKEN, RIU_ROUTER_API_KEY, RIU_AGENT_API_KEYS, NVIDIA_API_KEY_1..4, GROQ_API_KEY_2..7, HF_TOKEN_1.
-# Tras health OK, este workflow ESCRIBE LIVE_URL en el flag.
-# E2E verificado 2026-09-28: /chat/send → NVIDIA moonshotai/kimi-k3 → respuesta real.
+# Router principal del chat. La segunda via HF de respaldo NO se cancela ni se usa
+# como motivo para bloquear el relanzamiento del principal.
+# Publica LIVE_URL.json solo despues de health + E2E real NVIDIA + GROQ.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/riu-router-job-central.yml'
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
@@ -18,7 +17,7 @@ on:
         description: 'Vida del Job'
         default: '7d'
       flavor:
-        description: 'Máquina HF (cpu-basic = 16 GB de pago)'
+        description: 'Maquina HF'
         default: 'cpu-basic'
 
 permissions:
@@ -27,13 +26,13 @@ permissions:
 jobs:
   launch:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install -U huggingface_hub requests
-      - name: Launch
+      - name: Launch primary Router
         env:
           HF_TOKEN: ${{ secrets.HF_CONTROL_JOBS_TOKEN }}
           GH_JOB_PUSH_TOKEN: ${{ secrets.GH_JOB_PUSH_TOKEN }}
@@ -56,26 +55,37 @@ jobs:
           GROQ_API_KEY_7: ${{ secrets.GROQ_API_KEY_7 }}
         run: |
           python - <<'PY'
-          import base64, os, time, requests
+          import base64, json, os, time, requests
           from huggingface_hub import HfApi
-          if not os.environ.get("HF_TOKEN", "").strip():
-              print("::notice::HF_CONTROL_JOBS_TOKEN no configurado; watchdog queda en espera sin tocar el Job actual")
-              raise SystemExit(0)
-          api = HfApi(token=os.environ["HF_TOKEN"])
-          old = [j for j in api.list_jobs() if (j.status.stage or "").upper() in ("RUNNING", "STARTING") and "router_job_persistent.py" in " ".join(j.command or [])]
-          scheduled = os.environ.get("GITHUB_EVENT_NAME") == "schedule"
-          if scheduled and old:
+
+          token = os.environ.get('HF_TOKEN', '').strip()
+          if not token:
+              raise SystemExit('HF_CONTROL_JOBS_TOKEN no configurado')
+          api = HfApi(token=token)
+
+          PRIMARY_LABEL = 'riu-router-primary-central'
+          def label_name(job):
+              labels = getattr(job, 'labels', {}) or {}
+              return labels.get('name') if isinstance(labels, dict) else None
+
+          primaries = [
+              j for j in api.list_jobs()
+              if (j.status.stage or '').upper() in ('RUNNING', 'STARTING')
+              and label_name(j) == PRIMARY_LABEL
+          ]
+
+          # En cron, conservar un principal etiquetado y sano. Los Jobs de respaldo
+          # nunca se consideran aqui y nunca se cancelan.
+          scheduled = os.environ.get('GITHUB_EVENT_NAME') == 'schedule'
+          if scheduled and primaries:
               now = time.time()
-              healthy = []
-              for j in old:
-                  created = getattr(j, "created_at", None)
+              for j in primaries:
+                  created = getattr(j, 'created_at', None)
                   age_h = (now - created.timestamp()) / 3600 if created is not None else 999
                   if age_h < 46:
-                      healthy.append((j, age_h))
-              if healthy:
-                  j, age_h = sorted(healthy, key=lambda x: x[1])[0]
-                  print(f"::notice::controlador 16 GB ya vivo {j.id} age_h={age_h:.1f}; no se relanza")
-                  raise SystemExit(0)
+                      print(f'::notice::principal ya vivo {j.id} age_h={age_h:.1f}; backup preservado')
+                      raise SystemExit(0)
+
           cmd = (
               "set -e; apt-get update -qq >/dev/null 2>&1 || true; "
               "command -v git >/dev/null || apt-get install -y -qq git >/dev/null 2>&1; "
@@ -84,62 +94,149 @@ jobs:
               "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests httpx psutil && "
               "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'"
           )
-          secrets = {"GITHUB_TOKEN": os.environ["GH_JOB_PUSH_TOKEN"]}
-          secrets["HF_CONTROL_JOBS_TOKEN"] = os.environ["HF_TOKEN"]  # solo control de Jobs/autoscaler
-          secrets["HF_TOKEN_1"] = os.environ.get("HF_TOKEN_1_SECRET") or os.environ["HF_TOKEN"]  # token de agentes (HF2); cae al de control si falta
-          if os.environ.get("GH_AGENT_TOKEN"):
-              secrets["GH_AGENT_TOKEN"] = os.environ["GH_AGENT_TOKEN"]  # escritura GitHub para agentes (nunca se imprime)
-          for env_name, sec_name in (("RIU_KEY", "RIU_ROUTER_API_KEY"), ("RIU_AGENT_KEYS", "RIU_AGENT_API_KEYS")):
-              if os.environ.get(env_name):
-                  secrets[sec_name] = os.environ[env_name]
-          n = 0
-          for pref, rango in (("NVIDIA_API_KEY_", range(1, 5)), ("GROQ_API_KEY_", range(2, 8))):
-              for i in rango:
-                  v = os.environ.get(f"{pref}{i}", "")
-                  if v:
-                      secrets[f"{pref}{i}"] = v; n += 1
-          print(f"::notice::claves de proveedores enviadas: {n} · lista del Router: {'sí' if 'RIU_AGENT_API_KEYS' in secrets else 'NO'}")
-          lifetime = os.environ["LIFETIME"]
-          try:
-              job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout=lifetime,
-                                expose=[8000], secrets=secrets, env={"RIU_G2_GROQ_MODEL": "qwen/qwen3.8-27b"})
-          except Exception as e:
-              print(f"::warning::vida {lifetime} rechazada ({str(e)[:120]}); reintento con 48h")
+
+          secrets = {'GITHUB_TOKEN': os.environ.get('GH_JOB_PUSH_TOKEN', '')}
+          secrets['HF_CONTROL_JOBS_TOKEN'] = token
+          secrets['HF_TOKEN_1'] = os.environ.get('HF_TOKEN_1_SECRET') or token
+          if os.environ.get('GH_AGENT_TOKEN'):
+              secrets['GH_AGENT_TOKEN'] = os.environ['GH_AGENT_TOKEN']
+          if os.environ.get('RIU_KEY'):
+              secrets['RIU_ROUTER_API_KEY'] = os.environ['RIU_KEY']
+          if os.environ.get('RIU_AGENT_KEYS'):
+              secrets['RIU_AGENT_API_KEYS'] = os.environ['RIU_AGENT_KEYS']
+
+          provider_count = 0
+          for pref, nums in (('NVIDIA_API_KEY_', range(1, 5)), ('GROQ_API_KEY_', range(2, 8))):
+              for i in nums:
+                  value = os.environ.get(f'{pref}{i}', '')
+                  if value:
+                      secrets[f'{pref}{i}'] = value
+                      provider_count += 1
+          print(f'::notice::provider secrets forwarded={provider_count}')
+          if provider_count == 0:
+              raise SystemExit('No hay claves NVIDIA/GROQ configuradas en GitHub Secrets')
+
+          lifetime = os.environ.get('LIFETIME') or '7d'
+          flavor = os.environ.get('FLAVOR') or 'cpu-basic'
+          job = None
+          last_exc = None
+          for ttl in (lifetime, '48h', '24h'):
               try:
-                  job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout="48h",
-                                    expose=[8000], secrets=secrets, env={"RIU_G2_GROQ_MODEL": "qwen/qwen3.8-27b"})
-              except Exception as e2:
-                  print(f"::warning::48h rechazada ({str(e2)[:120]}); reintento con 24h")
-                  job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor=os.environ["FLAVOR"], timeout="24h",
-                                    expose=[8000], secrets=secrets, env={"RIU_G2_GROQ_MODEL": "qwen/qwen3.8-27b"})
-          print(f"::notice title=RIU_ROUTER_CENTRAL_JOB_ID::{job.id} flavor={os.environ['FLAVOR']}")
-          t0, ok, stage = time.time(), None, None
-          url = f"https://{job.id}--8000.hf.jobs"
-          while time.time() - t0 < 480 and ok is None:
+                  job = api.run_job(
+                      image='python:3.12',
+                      command=['bash', '-lc', cmd],
+                      flavor=flavor,
+                      timeout=ttl,
+                      expose=[8000],
+                      secrets=secrets,
+                      env={'RIU_G2_GROQ_MODEL': 'qwen/qwen3.8-27b'},
+                      labels={'name': PRIMARY_LABEL},
+                  )
+                  break
+              except Exception as exc:
+                  last_exc = exc
+                  print(f'::warning::launch ttl={ttl} fallo: {type(exc).__name__}: {str(exc)[:120]}')
+          if job is None:
+              raise SystemExit(f'No se pudo lanzar principal: {last_exc}')
+
+          url = f'https://{job.id}--8000.hf.jobs'
+          print(f'::notice::candidate={job.id} url={url}')
+
+          # 1) health
+          health_ok = False
+          deadline = time.time() + 480
+          while time.time() < deadline:
               stage = api.inspect_job(job_id=job.id).status.stage
-              if stage == "RUNNING":
+              if stage == 'RUNNING':
                   try:
-                      if requests.get(url + "/health", headers={"Authorization": "Bearer " + os.environ["HF_TOKEN"]}, timeout=15).status_code == 200:
-                          ok = url
+                      r = requests.get(url + '/health', timeout=15)
+                      if r.status_code == 200:
+                          health_ok = True
+                          break
                   except Exception:
                       pass
-              if stage in ("ERROR", "COMPLETED", "CANCELED", "DELETED"):
+              if stage in ('ERROR', 'COMPLETED', 'CANCELED', 'DELETED'):
                   break
               time.sleep(10)
-          if ok:
-              gh = {"Authorization": f"Bearer {os.environ['GH_WRITE']}", "Accept": "application/vnd.github+json"}
-              api_url = "https://api.github.com/repos/maxbry123-commits/router-universal-router-inteligente-/contents/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag"
-              for intento in range(3):
-                  cur = requests.get(api_url, headers=gh, timeout=20).json()
-                  body = {"message": f"flag: LIVE_URL {job.id} (lanzador)", "sha": cur.get("sha"),
-                          "content": base64.b64encode(f"PAUSED=false\nLIVE_URL={ok}\n".encode()).decode()}
-                  if requests.put(api_url, headers=gh, json=body, timeout=20).status_code in (200, 201):
-                      print(f"::notice::FLAG actualizado → {ok}"); break
-                  time.sleep(3)
-              for j in old:
-                  try:
-                      api.cancel_job(job_id=j.id); print(f"::notice::Router anterior apagado {j.id}")
-                  except Exception:
-                      pass
-          print(f"::notice title=RIU_ROUTER_CENTRAL_STATE::stage={stage} health_ok_url={ok}")
+          if not health_ok:
+              raise SystemExit(f'Candidate sin health PASS: {job.id}')
+          print('::notice::health PASS')
+
+          # 2) prueba real del harness por provider: NVIDIA + GROQ.
+          def call(action, payload, timeout=30):
+              r = requests.post(url + '/plugins/puente_chat/call/' + action, json=payload, timeout=timeout)
+              r.raise_for_status()
+              return r.json()
+
+          def model_e2e(model):
+              start = call('chat_async', {
+                  'model': model,
+                  'messages': [{'role': 'user', 'content': 'Responde solamente OK'}],
+                  'max_tokens': 16,
+                  'sesion': 'router-launch-e2e-' + job.id,
+              })
+              pid = ((start.get('result') or {}).get('proceso_id'))
+              if not pid:
+                  return False, 'SIN_PROCESO_ID'
+              end = time.time() + 90
+              while time.time() < end:
+                  out = call('resultado', {'proceso_id': pid})
+                  result = out.get('result') or {}
+                  if result.get('estado') == 'procesando':
+                      time.sleep(1)
+                      continue
+                  if result.get('error'):
+                      return False, str(result.get('error')) + ':' + str(result.get('detalle') or '')[:160]
+                  choices = result.get('choices') or []
+                  text = (((choices[0] if choices else {}).get('message') or {}).get('content') or '').strip()
+                  return bool(text), ('PASS' if text else 'SIN_TEXTO')
+              return False, 'TIMEOUT'
+
+          for model in ('nv-nemotron-super', 'groq-qwen-3-8'):
+              ok, detail = model_e2e(model)
+              print(f'::notice::E2E {model} ok={ok} detail={detail}')
+              if not ok:
+                  raise SystemExit(f'E2E FAIL {model}: {detail}')
+
+          # 3) publicar principal. NO cancelar otros Routers ni Jobs de respaldo.
+          gh_token = os.environ.get('GH_WRITE', '').strip()
+          if not gh_token:
+              raise SystemExit('GH_WRITE ausente; candidate sano pero no se puede publicar LIVE_URL')
+          headers = {'Authorization': f'Bearer {gh_token}', 'Accept': 'application/vnd.github+json'}
+          repo_api = 'https://api.github.com/repos/maxbry123-commits/router-universal-router-inteligente-/contents/'
+
+          def put_file(path, text, message):
+              quoted = requests.utils.quote(path, safe='/')
+              api_url = repo_api + quoted
+              cur = requests.get(api_url + '?ref=main', headers=headers, timeout=20)
+              cur.raise_for_status()
+              sha = cur.json().get('sha')
+              body = {
+                  'message': message,
+                  'sha': sha,
+                  'branch': 'main',
+                  'content': base64.b64encode(text.encode()).decode(),
+              }
+              res = requests.put(api_url, headers=headers, json=body, timeout=30)
+              res.raise_for_status()
+
+          live = {
+              'LIVE_URL': url,
+              'job_id': job.id,
+              'flavor': flavor,
+              'updated': time.time(),
+              'auth': 'X-API-Key',
+              'harnessUrl': url + '/plugins/puente_chat/call',
+          }
+          put_file(
+              'router inteligente universal/LIVE_URL.json',
+              json.dumps(live, ensure_ascii=False, indent=2) + '\n',
+              f'router: publicar principal E2E {job.id}',
+          )
+          put_file(
+              'router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag',
+              f'PAUSED=false\nLIVE_URL={url}\n',
+              f'router: actualizar flag principal {job.id}',
+          )
+          print(f'::notice title=RIU_PRIMARY_READY::{job.id} health=PASS nvidia=PASS groq=PASS backup=PRESERVED')
           PY
