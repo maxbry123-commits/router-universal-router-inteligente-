@@ -1,4 +1,7 @@
+import { api } from "./api.js";
+
 const STORAGE_KEY = "riu_chat_isolation_v1";
+const CHATS_KEY = "riu_chats_v1";
 const DEFAULT_STATE = Object.freeze({
   draft: "",
   provider: "auto",
@@ -12,6 +15,14 @@ const MODES = {
   balanced: "⚖ equilibrado",
   think: "🧠 pensar",
 };
+
+const FICHA_ROUTE = Object.freeze({
+  "groq-qwen-3-8": { provider: "groq", model: "qwen/qwen3.8-27b" },
+  "nv-kimi-k3": { provider: "nvidia", model: "moonshotai/kimi-k3" },
+  "nv-nemotron-super": { provider: "nvidia", model: "nvidia/nemotron-3-super-120b-a12b" },
+  "nv-nemotron-lightning": { provider: "nvidia", model: "nvidia/nemotron-3.5-lightning-30b-a3b" },
+  "nv-muse-glimmer": { provider: "nvidia", model: "meta/muse-glimmer-30b" },
+});
 
 function loadState() {
   try {
@@ -33,10 +44,32 @@ function sessionFromButton(button) {
   return at >= 0 ? title.slice(at + marker.length).trim() : "";
 }
 
+function chatButtons(root) {
+  return [...root.querySelectorAll("#chat-tabs button")].filter((button) => sessionFromButton(button));
+}
+
 function activeSession(root) {
-  const button = [...root.querySelectorAll("#chat-tabs button")]
-    .find((item) => item.classList.contains("on") && sessionFromButton(item));
+  const button = chatButtons(root).find((item) => item.classList.contains("on"));
   return sessionFromButton(button);
+}
+
+function activeChatIndex(root) {
+  return chatButtons(root).findIndex((item) => item.classList.contains("on"));
+}
+
+function forceHistorySection(root) {
+  const idx = activeChatIndex(root);
+  if (idx < 0) return;
+  const histories = [...root.querySelectorAll("#histories > .chat-history")];
+  histories.forEach((history, i) => {
+    const active = i === idx;
+    history.hidden = !active;
+    history.setAttribute("aria-hidden", active ? "false" : "true");
+    history.style.display = active ? "flex" : "none";
+  });
+  const session = activeSession(root);
+  const activeHistory = histories[idx];
+  if (activeHistory && session) activeHistory.dataset.sessionId = session;
 }
 
 function modeFromUI(root) {
@@ -92,6 +125,7 @@ function restoreModelWhenReady(root, wanted) {
 }
 
 function restoreActive(root) {
+  forceHistorySection(root);
   const session = activeSession(root);
   if (!session) return;
   const all = loadState();
@@ -126,6 +160,58 @@ function restoreActive(root) {
   root.dataset.riuActiveSession = session;
 }
 
+function fichaForSession(session) {
+  try {
+    const rows = JSON.parse(sessionStorage.getItem(CHATS_KEY) || "[]");
+    const row = Array.isArray(rows) ? rows.find((item) => item && item.sesion === session) : null;
+    return String(row?.ficha || "");
+  } catch (_) {
+    return "";
+  }
+}
+
+function shouldFallback(error) {
+  return /(MODELO_NO_RESPONDE|EXCEPCION|TIEMPO_TOTAL_AGOTADO|CHAT_FAILED|TODAS_LAS_CLAVES_FALLARON|SIN_RESPUESTA|pipeline)/i
+    .test(String(error?.message || error || ""));
+}
+
+function installHarnessFallback(root) {
+  const original = window.RIU_HARNESS;
+  if (typeof original !== "function" || original.__riuFallbackInstalled) return;
+
+  const wrapped = async (options) => {
+    try {
+      return await original(options);
+    } catch (error) {
+      if (!shouldFallback(error)) throw error;
+
+      const session = String(options?.sesion || activeSession(root) || "");
+      const ficha = fichaForSession(session);
+      const route = FICHA_ROUTE[ficha] || { provider: "auto", model: "" };
+      const agent = root.querySelector("#agent")?.value || "";
+      const body = {
+        message: String(options?.message || ""),
+        provider: route.provider,
+        model: route.model,
+        mode: agent ? "agent" : "direct",
+        agent_id: agent || null,
+        max_tokens: Number(options?.max_tokens || 1024),
+      };
+      const answer = await api("/chat/send", { method: "POST", body });
+      return {
+        reply: answer.reply || "",
+        tools: [],
+        conversation_id: answer.conversation_id || null,
+        fallback: "chat_send",
+        provider: answer.provider || route.provider,
+        model: answer.model || route.model,
+      };
+    }
+  };
+  wrapped.__riuFallbackInstalled = true;
+  window.RIU_HARNESS = wrapped;
+}
+
 export function installChatIsolation(root = document) {
   const tabs = root.querySelector("#chat-tabs");
   const message = root.querySelector("#message");
@@ -146,13 +232,22 @@ export function installChatIsolation(root = document) {
     setTimeout(() => persistActive(root), 0);
   });
 
-  // El renderer rehace los botones de pestañas; este observer solo restaura
-  // controles de la sesión activa. No guarda historial: eso pertenece al Punto 2.
+  // El renderer rehace los botones de pestañas; sincroniza también la sección
+  // visible para que un chat nunca comparta el historial DOM de otro.
   const observer = new MutationObserver(() => restoreActive(root));
   observer.observe(tabs, { childList: true });
 
   restoreActive(root);
+  installHarnessFallback(root);
   return true;
 }
 
-export const __test = { sessionFromButton, activeSession, modeFromUI, snapshot };
+export const __test = {
+  sessionFromButton,
+  activeSession,
+  activeChatIndex,
+  modeFromUI,
+  snapshot,
+  fichaForSession,
+  shouldFallback,
+};
