@@ -4,10 +4,13 @@
 Compatibilidad:
 - fichas sin ``microagente`` conservan el LOOP legado;
 - una ficha con ``microagente.schema = yaiwes.node-executor/xray-v2`` activa
-  el runtime fail-closed y los 6 motores de reanudacion.
+  el runtime fail-closed y los 6 motores de reanudacion SOLO cuando el ultimo
+  input es una tarea/orden estructurada;
+- conversacion normal (saludos, preguntas simples, charla corta) usa el LOOP
+  legado y NO exige CLOSE_GATE, checklist ni token de cierre.
 
-El runtime no crea tareas nuevas ni cambia el objetivo. Captura el ultimo
-input del usuario literalmente, guarda checkpoint, detecta falta de progreso,
+El runtime no crea tareas nuevas ni cambia el objetivo. En modo tarea captura
+el ultimo input literalmente, guarda checkpoint, detecta falta de progreso,
 evita pedir al modelo que repita herramientas ya usadas, reanuda la tarea y
 solo permite CLOSED cuando pasa el CLOSE_GATE.
 """
@@ -15,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -76,6 +80,37 @@ def _extract_raw(content: str) -> str:
     if a >= 0 and b >= a:
         return text[a + len(start_tag):b]
     return text
+
+
+def _task_input(mensajes: list[dict[str, Any]]) -> bool:
+    """Activa FAIL_CLOSED solo para trabajo ejecutable, no para charla normal.
+
+    Evita el bug donde un saludo como ``Hi`` era obligado a producir
+    RESEARCH→EXECUTE→VALIDATE + CLOSE_TOKEN y terminaba consumiendo reservas.
+    """
+    idx = _latest_user_index(mensajes)
+    if idx < 0:
+        return False
+    raw = _extract_raw(str(mensajes[idx].get('content') or '')).strip()
+    if not raw:
+        return False
+    upper = raw.upper()
+    strong = (
+        'INPUT_BLOCK', 'BEGIN_INPUT_BLOCK', 'PASO ', 'TAREA ', 'NODO ',
+        'OBJETIVO', 'INICIA AHORA', 'SCHEMA:', 'DAG', 'FSM', 'CHECKLIST',
+    )
+    if any(mark in upper for mark in strong):
+        return True
+    if len(raw) >= 600 or raw.count('\n') >= 4:
+        return True
+    # Orden corta pero claramente ejecutable.
+    return bool(
+        len(raw) >= 80
+        and re.search(
+            r'(?i)\b(crea|crear|haz|hacer|modifica|modificar|corrige|corregir|revisa|revisar|audita|auditar|ejecuta|ejecutar|implementa|implementar|resuelve|resolver|prueba|probar|mueve|mover|copia|copiar|descarga|descargar)\b',
+            raw,
+        )
+    )
 
 
 def _verbatim_block(raw: str) -> str:
@@ -313,6 +348,6 @@ def _ejecutar_legacy(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vuelta
 
 def ejecutar(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VUELTAS):
     policy = _policy(mensajes)
-    if policy:
+    if policy and _task_input(mensajes):
         return _ejecutar_v2(plan, mensajes, guardar_ck, cargar_ck, policy)
     return _ejecutar_legacy(plan, mensajes, guardar_ck, cargar_ck, max_vueltas)
