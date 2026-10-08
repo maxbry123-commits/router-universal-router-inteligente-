@@ -55,8 +55,8 @@ def _unlock_provider_bank() -> None:
         if not passphrase:
             logging.getLogger("riu").warning("provider bank unlock skipped: passphrase unavailable")
             return
-        result = vault_bridge.unlock(passphrase)
-        logging.getLogger("riu").info("provider bank unlock: %s provider keys loaded", result.get("provider_keys", 0))
+        count = vault_bridge.unlock(passphrase)  # returns the number of credentials (int)
+        logging.getLogger("riu").info("provider bank unlock: %s credentials loaded", count)
     except Exception as exc:
         logging.getLogger("riu").warning("provider bank unlock failed: %s", type(exc).__name__)
 
