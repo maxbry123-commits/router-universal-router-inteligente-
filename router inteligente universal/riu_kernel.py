@@ -134,7 +134,11 @@ def ready(url):
 def renewal_due(reg):
     left=reg.get("started",0)+reg.get("timeout_s",0)-time.time()
     at_hour=time.gmtime().tm_hour==RENEW_HOUR_UTC and time.time()-reg.get("started",0)>12*3600
-    return left<1200 or at_hour
+    # control/router-desired.json {"relaunch_now": true, "ts": <epoch>} (archivo existente): relevo seguro pedido a mano,
+    # vale solo si es posterior al arranque del Router actual, asi que se consume solo tras el cambio.
+    want=read("control/router-desired.json")
+    asked=bool(want.get("relaunch_now")) and float(want.get("ts") or 0)>reg.get("started",0)
+    return left<1200 or at_hour or asked
 def tick(force=False):
     if not lock():
         print(json.dumps({"status":"LOCKED_BY_OTHER_SUPERVISOR"}),flush=True);return

@@ -174,3 +174,17 @@ def test_sentinel_does_not_spawn_sentinels(world, monkeypatch):
 def test_sentinel_command_snippet_compiles():
     c = k.sentinel_command()[2]
     compile(c.split("<<'PY'\n")[1].split("\nPY")[0], "sentinel", "exec")
+
+
+def test_manual_relaunch_request_uses_safe_switch_once(world):
+    bucket, state, calls = world
+    _reg(bucket)
+    for u in ("https://old--8000.hf.jobs", "https://new1--8000.hf.jobs"):
+        state["healthy"][u] = state["bank"][u] = True
+    state["chat"]["https://new1--8000.hf.jobs"] = True
+    bucket["control/router-desired.json"] = {"relaunch_now": True, "ts": k.time.time() - 7200}  # anterior al arranque: se ignora
+    k.tick()
+    assert calls == []
+    bucket["control/router-desired.json"] = {"relaunch_now": True, "ts": k.time.time()}
+    k.tick()
+    assert calls == [("launch", "new1"), ("publish", "new1"), ("cancel", "old")]
