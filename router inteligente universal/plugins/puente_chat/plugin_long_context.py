@@ -44,7 +44,8 @@ def _contexto(sesion: str, pregunta: str) -> str:
     del pregunta
     try:
         mem, scope_for = _p._memoria()
-        res = mem.search(scope_for(_p.DUENO, "chat:" + sesion), "", CONTEXT_TURNS + 12)
+        # solo turnos: los checkpoints del bucle de herramientas (4-10 por turno) desplazaban los turnos de la ventana
+        res = mem.search(scope_for(_p.DUENO, "chat:" + sesion), "turno-", CONTEXT_TURNS + 12)
         turns: list[str] = []
         total = 0
         for f in reversed(_rows(res)):

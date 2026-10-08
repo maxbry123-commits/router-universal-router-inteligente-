@@ -86,7 +86,7 @@ def _memoria():
 def _contexto(sesion: str, pregunta: str) -> str:
     try:
         mem, scope_for = _memoria()
-        res = mem.search(scope_for(DUENO, "chat:" + sesion), "", 6)  # ultimos turnos de esta conversacion
+        res = mem.search(scope_for(DUENO, "chat:" + sesion), "turno-", 6)  # ultimos turnos (sin checkpoints)
         filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
         trozos = []
         for f in reversed(filas):
