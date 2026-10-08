@@ -556,7 +556,9 @@ def _mem_dato(sesion, clave):
 
 def _archivo_memoria(sesion, nombre):
     try:
-        dd = _mem_dato(sesion, 'archivo:' + str(nombre)[:120])
+        mem, scope_for = _memoria()
+        filas = mem.load(scope_for(DUENO, 'chat:' + sesion), 'archivo:' + str(nombre)[:120])  # nombre exacto
+        dd = (filas[0].get('data') if filas and isinstance(filas[0], dict) else None) or {}
         if dd.get('datos_b64'):
             return _b64.b64decode(dd['datos_b64']).decode('utf-8', 'replace')
     except Exception:  # noqa: BLE001
@@ -828,8 +830,7 @@ def _chat(p):
                 elif nom.startswith('enlace:'):  # enlace/handoff pegado por el usuario
                     trozos.append('ENLACE_ANCLADO: ' + nom[7:])
                 else:
-                    res = mem.search(scope_for(DUENO, 'chat:' + sesion), 'archivo:' + nom[:120], 1)
-                    filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+                    filas = mem.load(scope_for(DUENO, 'chat:' + sesion), 'archivo:' + nom[:120])  # nombre exacto (search usa LIKE: 'a.txt' traia 'a.txt.bak')
                     dd = (filas[0].get('data') if filas and isinstance(filas[0], dict) else None) or {}
                     if dd.get('datos_b64'):
                         trozos.append('ARCHIVO %s:\n%s' % (nom, _b64.b64decode(dd['datos_b64']).decode('utf-8', 'replace')[:3000]))
@@ -985,15 +986,13 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "apagar_todo":
         return _apagar_todo()
     if action == "subir":  # archivo adjunto del chat -> sistema de almacenamiento/memoria
-        try:
-            nombre = str(payload.get('nombre') or 'archivo')[:120]
-            datos = str(payload.get('datos_b64') or '')
-            if len(datos) > 4_000_000:
-                return {'error': 'ARCHIVO_MUY_GRANDE'}
-            mem, scope_for = _memoria()
-            mem.save(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]),
-                     'archivo:' + nombre, {'nombre': nombre, 'tipo': str(payload.get('tipo') or '')[:80], 'datos_b64': datos})
-            return {'ok': True, 'nombre': nombre}
+        try:  # mismo registro 'archivo:<nombre>' de siempre; ahora valida nombre/base64 y devuelve file_id
+            from integration.chat_mvp.memoria_loader import FileError, save_chat_file
+            try:
+                return save_chat_file(str(payload.get('sesion') or 'general')[:60], payload.get('nombre') or 'archivo',
+                                      payload.get('tipo'), payload.get('datos_b64'))
+            except FileError as fe:
+                return {'error': fe.code}
         except Exception as x:  # noqa: BLE001
             return {'error': 'SUBIR_FALLO', 'detalle': str(x)[:200]}
     if action == "archivos":  # ventana del chat: lista lo subido para seleccionar y anclar

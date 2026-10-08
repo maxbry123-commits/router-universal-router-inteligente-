@@ -2,12 +2,18 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import sys
 from pathlib import Path
 from typing import Any
 
+import base64
+import binascii
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from .router import _auth, get_store
@@ -62,6 +68,101 @@ def chat_history(sesion: str, limit: int = 200) -> dict[str, Any]:
     return {"sesion": sesion, "scope": scope, "turns": len(turns), "messages": messages}
 
 
+# --- PUNTO 4: archivos por chat. Mismo mecanismo que la accion puente_chat "subir": registro 'archivo:<nombre>'
+# en la memoria SQLite del chat (scope chat-ui:chat:<sesion>), que el autosync sube al bucket y el arranque restaura.
+FILE_MAX_B64 = 4_000_000  # el limite que ya tenia "subir" (~3 MB decodificados)
+_TIPO = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.+-]*/[A-Za-z0-9][A-Za-z0-9.+-]*$")
+_BAD_NAME = re.compile(r"[\x00-\x1f\x7f/\\]")
+
+
+class FileError(ValueError):
+    def __init__(self, code: str, status: int) -> None:
+        super().__init__(code)
+        self.code, self.status = code, status
+
+
+def clean_file_name(nombre: Any) -> str:
+    """Nombre de archivo seguro: sin rutas, sin '..', sin control, 1-120 caracteres."""
+    n = str(nombre or "").strip()
+    if not n or len(n) > 120 or _BAD_NAME.search(n) or n in (".", "..") or ".." in n:
+        raise FileError("NOMBRE_INVALIDO", 422)
+    return n
+
+
+def _file_scope(sesion: str) -> str:
+    from .memory_runtime import scope_for
+    return scope_for(CHAT_OWNER, "chat:" + sesion)
+
+
+def save_chat_file(sesion: str, nombre: Any, tipo: Any, datos_b64: Any) -> dict[str, Any]:
+    n = clean_file_name(nombre)
+    datos = str(datos_b64 or "")
+    if len(datos) > FILE_MAX_B64:
+        raise FileError("ARCHIVO_MUY_GRANDE", 413)
+    try:
+        raw = base64.b64decode(datos, validate=True)
+    except (binascii.Error, ValueError):
+        raise FileError("BASE64_INVALIDO", 422) from None
+    t = str(tipo or "")[:80]
+    saved = _memory().save(_file_scope(sesion), "archivo:" + n, {"nombre": n, "tipo": t, "datos_b64": datos})
+    return {"ok": True, "file_id": saved.get("id"), "nombre": n, "tipo": t, "bytes": len(raw)}
+
+
+def _file_rows(scope: str) -> list[Any]:
+    db = _memory().sqlite.db
+    return db.execute("SELECT id,key,data,created_at FROM memoria_yaiwes WHERE scope=? AND substr(key,1,8)='archivo:' ORDER BY id DESC",
+                      (scope,)).fetchall()
+
+
+def list_chat_files(sesion: str) -> dict[str, Any]:
+    """Ultima version de cada nombre (re-subir un nombre lo reemplaza, como en la accion 'archivos')."""
+    files, seen = [], set()
+    for row in _file_rows(_file_scope(sesion)):
+        if row["key"] in seen:
+            continue
+        seen.add(row["key"])
+        d = json.loads(row["data"]) if row["data"] else {}
+        b64 = str(d.get("datos_b64") or "")
+        files.append({"file_id": row["id"], "nombre": d.get("nombre") or row["key"][8:], "tipo": d.get("tipo") or "",
+                      "bytes": max(0, len(b64) * 3 // 4 - b64[-2:].count("=")), "ts": row["created_at"]})
+    return {"sesion": sesion, "files": files}
+
+
+def _file_row(sesion: str, file_id: int) -> Any:
+    db = _memory().sqlite.db
+    row = db.execute("SELECT id,key,data FROM memoria_yaiwes WHERE id=? AND scope=? AND substr(key,1,8)='archivo:'",
+                     (int(file_id), _file_scope(sesion))).fetchone()
+    if row is None:
+        raise FileError("ARCHIVO_NO_EXISTE", 404)
+    return row
+
+
+def read_chat_file(sesion: str, file_id: int) -> tuple[str, str, bytes]:
+    d = json.loads(_file_row(sesion, file_id)["data"])
+    tipo = str(d.get("tipo") or "")
+    return str(d.get("nombre") or "archivo"), (tipo if _TIPO.match(tipo) else "application/octet-stream"), base64.b64decode(d.get("datos_b64") or "")
+
+
+def delete_chat_file(sesion: str, file_id: int) -> dict[str, Any]:
+    """Borra todas las versiones de ese nombre en ESE chat (si no, reapareceria la anterior) y su nodo del grafo."""
+    row = _file_row(sesion, file_id)
+    scope, key = _file_scope(sesion), row["key"]
+    mem = _memory()
+    cur = mem.sqlite.db.execute("DELETE FROM memoria_yaiwes WHERE scope=? AND key=?", (scope, key))
+    mem.sqlite.db.commit()
+    store = get_store()
+    node = "memory:%s:%s" % (scope, key)
+    store._exec("DELETE FROM graph_nodes WHERE id=?", (node,))
+    store._exec("DELETE FROM graph_edges WHERE src=? OR dst=?", (node, node))
+    return {"deleted": int(file_id), "nombre": key[8:], "versions": cur.rowcount}
+
+
+class FileUpload(BaseModel):
+    nombre: str = Field(min_length=1, max_length=120)
+    tipo: str = Field(default="", max_length=80)
+    datos_b64: str = Field(min_length=0, max_length=FILE_MAX_B64 + 4)
+
+
 class MemorySave(BaseModel):
     scope: str = Field(min_length=1, max_length=80)
     key: str = Field(min_length=1, max_length=200)
@@ -104,5 +205,38 @@ def build_memory_router() -> APIRouter:
             return chat_history(sesion, limit)
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(status_code=503, detail="HISTORY_UNAVAILABLE") from exc
+
+    def _check(sesion: str) -> None:
+        if not _SESION.match(sesion):
+            raise HTTPException(status_code=422, detail="SESION_INVALIDA")
+
+    def _files(fn: Any, *args: Any) -> Any:
+        try:
+            return fn(*args)
+        except FileError as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.code) from exc
+
+    @router.get("/chat/files/{sesion}")
+    def files_list(sesion: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        _check(sesion)
+        return list_chat_files(sesion)
+
+    @router.post("/chat/files/{sesion}")
+    def files_upload(sesion: str, req: FileUpload, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        _check(sesion)
+        return _files(save_chat_file, sesion, req.nombre, req.tipo, req.datos_b64)
+
+    @router.get("/chat/files/{sesion}/{file_id}")
+    def files_get(sesion: str, file_id: int, _owner: str = Depends(_auth)) -> Response:
+        _check(sesion)
+        nombre, tipo, raw = _files(read_chat_file, sesion, file_id)
+        return Response(raw, media_type=tipo, headers={  # siempre descarga: nunca se sirve HTML inline desde el Router
+            "Content-Disposition": "attachment; filename*=UTF-8''" + quote(nombre, safe=""),
+            "X-Content-Type-Options": "nosniff"})
+
+    @router.delete("/chat/files/{sesion}/{file_id}")
+    def files_delete(sesion: str, file_id: int, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        _check(sesion)
+        return _files(delete_chat_file, sesion, file_id)
 
     return router
