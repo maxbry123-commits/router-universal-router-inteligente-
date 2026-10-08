@@ -37,11 +37,16 @@ def world(monkeypatch):
     class Api:
         def __init__(self, token=None): pass
         def cancel_job(self, job_id, namespace=None): calls.append(("cancel", job_id)); state.setdefault("dead", set()).add(job_id)
+        def run_job(self, **kw):
+            jid = "sent%d" % state["next_id"]; state["next_id"] += 1
+            calls.append(("run_sentinel", jid, kw["flavor"], kw["env"]["RIU_KERNEL_ROLE"], sorted(kw["secrets"])))
+            return type("J", (), {"id": jid})()
         def inspect_job(self, job_id, namespace=None):
             stage = "CANCELED" if job_id in state.get("dead", set()) else "RUNNING"
             return type("J", (), {"status": type("S", (), {"stage": stage})()})()
     monkeypatch.setattr(k, "HfApi", Api)
     monkeypatch.setenv("HF_TOKEN", "x")
+    monkeypatch.setenv("RIU_SENTINEL_DISABLED", "1")
     return bucket, state, calls
 
 
@@ -132,3 +137,40 @@ def test_renewal_at_04_cot(world, monkeypatch):
     monkeypatch.setattr(k.time, "gmtime", lambda *a: real(0).__class__((2026, 10, 8, 9, 5, 0, 3, 281, 0)))
     k.tick()
     assert calls == [("launch", "new1"), ("publish", "new1"), ("cancel", "old")]
+
+
+def _sentinel_on(monkeypatch):
+    monkeypatch.delenv("RIU_SENTINEL_DISABLED")
+    monkeypatch.setenv("RIU_VAULT_PASSPHRASE", "x")
+    monkeypatch.setattr(k, "_SENT_CHECK", [0.0])
+
+
+def test_sentinel_job_launched_when_missing_and_not_duplicated(world, monkeypatch):
+    bucket, state, calls = world
+    _sentinel_on(monkeypatch)
+    k.ensure_sentinel()
+    assert calls == [("run_sentinel", "sent1", "cpu-basic", "sentinel", ["HF_TOKEN", "RIU_VAULT_PASSPHRASE"])]
+    k._SENT_CHECK[0] = 0.0
+    k.ensure_sentinel()  # sigue RUNNING y con vida: no lanza otro
+    assert len(calls) == 1
+
+
+def test_sentinel_renewed_before_expiry_and_old_cancelled(world, monkeypatch):
+    bucket, state, calls = world
+    _sentinel_on(monkeypatch)
+    bucket["control/sentinel.json"] = {"job_id": "sentOld", "started": k.time.time() - 172800 + 600, "timeout_s": 172800}
+    k.ensure_sentinel()
+    assert calls == [("run_sentinel", "sent1", "cpu-basic", "sentinel", ["HF_TOKEN", "RIU_VAULT_PASSPHRASE"]), ("cancel", "sentOld")]
+
+
+def test_sentinel_does_not_spawn_sentinels(world, monkeypatch):
+    bucket, state, calls = world
+    _sentinel_on(monkeypatch)
+    monkeypatch.setattr(k, "SENTINEL_ROLE", True)
+    k.ensure_sentinel()
+    assert calls == []
+
+
+def test_sentinel_command_snippet_compiles():
+    c = k.sentinel_command()[2]
+    compile(c.split("<<'PY'\n")[1].split("\nPY")[0], "sentinel", "exec")

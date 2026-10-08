@@ -80,7 +80,7 @@ def launch():
 # --- Sentinela del Router (2026-10-08): candado, 3 strikes, banco abierto y chat real antes de cambiar ---
 LIFETIMES=(("48h",172800),("24h",86400))
 STRIKES=int(os.getenv("RIU_KERNEL_STRIKES") or "3")      # fallos de /health seguidos antes de relanzar
-LOCK_TTL=1500                                           # un solo supervisor a la vez (watcher del Job o schedule HF)
+LOCK_TTL=600                                            # un solo supervisor a la vez; el relevo lo refresca cada 15 s
 RENEW_HOUR_UTC=int(os.getenv("RIU_RENEW_HOUR_UTC") or "9")  # 04:00 COT
 CHAT_MODELS=[m for m in (os.getenv("RIU_SENTINEL_MODELS") or "groq-qwen-3-8,nv-nemotron-super").split(",") if m]
 import socket
@@ -140,6 +140,33 @@ def tick(force=False):
         print(json.dumps({"status":"LOCKED_BY_OTHER_SUPERVISOR"}),flush=True);return
     try:_tick(force)
     finally:unlock_lock()
+# Motor 3: Job centinela cpu-basic aparte (solo el watcher, sin uvicorn). Si el Router muere, el centinela lo relanza;
+# si el centinela muere o caduca, el watcher del Router (o el schedule HF) lo relanza. Mismo candado, mismo tick.
+SENTINEL_ROLE=os.getenv("RIU_KERNEL_ROLE")=="sentinel"
+_SENT_CHECK=[0.0]
+def sentinel_command():
+    return ["bash","-lc","set -e\npip install -q huggingface_hub cryptography\npython - <<'PY'\nimport os,runpy\nfrom huggingface_hub import HfFileSystem\ns=HfFileSystem(token=os.environ['HF_TOKEN']).cat_file('"+BASE+"/codigo/riu_kernel.py')\nopen('/tmp/riu_kernel.py','wb').write(s)\nimport sys\nsys.argv=['riu_kernel.py','--watch']\nrunpy.run_path('/tmp/riu_kernel.py',run_name='__main__')\nPY"]
+def ensure_sentinel():
+    if SENTINEL_ROLE or os.getenv("RIU_SENTINEL_DISABLED")=="1" or time.time()-_SENT_CHECK[0]<600:return
+    _SENT_CHECK[0]=time.time()
+    try:
+        api=HfApi(token=os.environ["HF_TOKEN"]);cur=read("control/sentinel.json")
+        if cur.get("job_id"):
+            stage=api.inspect_job(job_id=cur["job_id"],namespace=NS).status.stage
+            if stage in ("RUNNING","SCHEDULING") and cur.get("started",0)+cur.get("timeout_s",0)-time.time()>1800:return
+        if not os.environ.get("RIU_VAULT_PASSPHRASE"):return
+        for ttl,secs in LIFETIMES:
+            try:
+                j=api.run_job(image="python:3.12",command=sentinel_command(),flavor="cpu-basic",timeout=ttl,env={"RIU_KERNEL_ROLE":"sentinel","PYTHONUNBUFFERED":"1","HF_HUB_DISABLE_PROGRESS_BARS":"1"},secrets={k:os.environ[k] for k in ("HF_TOKEN","RIU_VAULT_PASSPHRASE")},namespace=NS,labels={"name":"yaiwes-router-sentinel"})
+                break
+            except Exception as exc:print("KERNEL_SENTINEL_TTL_REJECTED",ttl,type(exc).__name__,flush=True)
+        else:return
+        write("control/sentinel.json",{"job_id":j.id,"started":time.time(),"timeout_s":secs})
+        if cur.get("job_id") and cur["job_id"]!=j.id:
+            try:api.cancel_job(job_id=cur["job_id"],namespace=NS)
+            except Exception:pass
+        print(json.dumps({"status":"SENTINEL_LAUNCHED","job_id":j.id}),flush=True)
+    except Exception as exc:print("KERNEL_SENTINEL_FAILED",type(exc).__name__,flush=True)
 def pending(old):
     """Sucesor ya lanzado por una corrida anterior (p. ej. el schedule de 15 min se corto): se adopta en vez de lanzar otro."""
     p=read("control/recovery-16gb.json")
@@ -155,6 +182,7 @@ def _tick(force):
     if alive and bank:
         if read("control/strikes.json").get("n"):write("control/strikes.json",{"n":0})
         if not force and reg.get("flavor")=="cpu-basic" and not renewal_due(reg):
+            ensure_sentinel()
             print(json.dumps({"status":"HEALTHY","job_id":reg.get("job_id")}),flush=True);return
     elif url and not force:
         n=read("control/strikes.json").get("n",0)+1
@@ -187,8 +215,8 @@ def _tick(force):
     print(json.dumps({"status":"SUCCESSOR_PENDING","job_id":new["job_id"]}),flush=True)
 if __name__=="__main__":
     if "--watch" in sys.argv:
-        # Motor 1: watcher dentro del Job. Motor 2: schedule HF (riu_kernel.py sin --watch). El candado evita duplicados.
-        time.sleep(120)
+        # Motor 1: watcher dentro del Job. Motor 2: schedule HF (riu_kernel.py sin --watch). Motor 3: Job centinela. El candado evita duplicados.
+        time.sleep(30 if SENTINEL_ROLE else 120)
         while True:
             try: tick()
             except Exception as exc: print("KERNEL_RETRY",type(exc).__name__,flush=True)
