@@ -4,10 +4,10 @@
     "id": "puente_chat",
     "enabled_default": true,
     "health_action": "status",
-    "nota_roja": "testing: puente del chat con contexto largo y fallback API seguro. Director 2026-10-07."
+    "nota_roja": "testing: puente del chat con contexto largo y reserva automatica limitada a fichas API. Director 2026-10-07."
   },
   "artifact_id": "riu.plugins.puente_chat",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "estado": "testing",
   "categoria": "pipeline",
   "etapa": "P",
@@ -18,7 +18,7 @@
     "kind": "api",
     "transport": "importlib",
     "runtime_type": "hybrid",
-    "entry_point": "plugins.puente_chat.plugin_runtime_safe:handle",
+    "entry_point": "plugins.puente_chat.plugin_long_context:handle",
     "idempotente": false,
     "allowed_actions": [
       "status",
