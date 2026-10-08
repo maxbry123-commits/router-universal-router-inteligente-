@@ -390,4 +390,6 @@ def build_memory_router() -> APIRouter:
         _check(sesion_hija)
         return _child(read_child, sesion_hija, limit)
 
+    from . import orquestador  # PUNTO 6: /chat/orquestador/* (mismo router, misma auth)
+    router.include_router(orquestador.build_router())
     return router

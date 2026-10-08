@@ -13,6 +13,7 @@ import json
 import re
 from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
+_SIN_HERRAMIENTAS = ContextVar("riu_chat_sin_herramientas", default=False)  # PUNTO 6: nodos del orquestador
 import time
 import urllib.error
 import urllib.parse
@@ -320,7 +321,7 @@ def _bucle(llamar, mensajes):
     vistos = {}   # dedup: misma herramienta + mismos args = mismo resultado
     rotas = set()  # herramientas que ya fallaron por token/desconocidas
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
-    con_tools = True
+    con_tools = not _SIN_HERRAMIENTAS.get()
     pasos = 0
     final_hecho = False
     while True:
@@ -807,6 +808,12 @@ def _chat(p):
     pregunta = next((str(m.get('content', '')) for m in reversed(mensajes) if m.get('role') == 'user'), '')
     if model not in FICHAS and model not in RESPALDO:
         return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
+    try:  # PUNTO 6: mini-orquestador. OFF por defecto: activo() es False y el chat sigue exactamente igual
+        from integration.chat_mvp import orquestador as _orq
+        if _orq.activo(sesion):
+            return _orq.ejecutar(p)
+    except ImportError:
+        pass
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
