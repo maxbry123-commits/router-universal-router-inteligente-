@@ -49,7 +49,7 @@ def _unlock_provider_bank() -> None:
     but providers remain unavailable, which is visible through /chat/providers.
     """
     try:
-        if vault_bridge.unlocked():
+        if vault_bridge.status().get("unlocked"):  # VaultBridge has no unlocked(): that AttributeError kept the bank closed
             return
         passphrase = os.getenv("RIU_VAULT_PASSPHRASE") or ""
         if not passphrase:
