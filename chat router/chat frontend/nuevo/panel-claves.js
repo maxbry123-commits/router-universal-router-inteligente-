@@ -1,10 +1,12 @@
-// Claves secretas: banco del Router (/vault/status|unlock|credentials|rotate). Nunca muestra, guarda ni registra valores.
+// Claves secretas: banco del Router (/vault/status|unlock|credentials|rotate, DELETE /vault/credentials/{p}/{c},
+// POST /vault/credentials/{p}/{c}/enabled). Nunca muestra, guarda ni registra valores.
 import { node } from "../api.js";
 import { tell } from "./base.js";
 
 const CFG = globalThis.window?.RIU_CONFIG || {};
 const JOB = /^https:\/\/[a-f0-9]{24}--8000\.hf\.jobs$/;
 const REF = /^[a-z0-9][a-z0-9_.-]*\/[a-z0-9][a-z0-9_.-]*$/;
+const PART = /^[a-z0-9][a-z0-9_.-]*$/;
 const TAB_KEY = "riu_clave"; // misma clave de pestaña que usa el chat (sessionStorage, nunca localStorage)
 const CODES = {
   INVALID_PASSPHRASE: "Contraseña del banco incorrecta.",
@@ -12,8 +14,11 @@ const CODES = {
   VAULT_LOCKED: "El banco está cerrado; ábrelo primero.",
   VAULT_MISSING: "El Router no tiene archivo de banco.",
   VaultError: "El Router rechazó la clave: ya existe o el nombre no es válido.",
-  NotFound: "Esa clave no existe en el banco."
+  NotFound: "Esa clave no existe en el banco.",
+  CREDENTIAL_NOT_FOUND: "Esa clave ya no existe en el banco.",
+  INVALID_REF: "Nombre no válido: proveedor/cuenta con minúsculas, números, punto, guion o guion bajo."
 };
+const PERSIST = { PERSISTED: "copia cifrada guardada en Hugging Face" };
 
 export function buildInit(method, apiKey, body) {
   const headers = { "X-API-Key": apiKey };
@@ -32,6 +37,19 @@ export function refOf(provider, account) {
   const ref = `${String(provider).trim().toLowerCase()}/${String(account).trim().toLowerCase()}`;
   if (!REF.test(ref)) throw new Error("Nombre no válido: proveedor/cuenta con minúsculas, números, punto, guion o guion bajo.");
   return ref;
+}
+
+// Ruta real del Router para una credencial: /vault/credentials/{provider}/{account}[/enabled].
+export function credentialPath(ref, suffix = "") {
+  const [provider, account, extra] = String(ref).split("/");
+  if (extra !== undefined || !PART.test(provider || "") || !PART.test(account || "")) throw new Error(CODES.INVALID_REF);
+  return `/vault/credentials/${encodeURIComponent(provider)}/${encodeURIComponent(account)}${suffix}`;
+}
+
+export function persistNote(data) {
+  const state = data && data.persisted;
+  if (!state) return "";
+  return PERSIST[state] ? ` (${PERSIST[state]})` : ` (aviso: ${String(state)})`;
 }
 
 let base = "";
@@ -124,10 +142,47 @@ export function mount(root) {
         showMode();
         $("#put-value").focus();
       });
-      item.append(name, masked, replace);
+      const toggle = node("button", entry.enabled ? "Desactivar" : "Activar", "secondary");
+      toggle.type = "button";
+      toggle.dataset.action = "enabled";
+      toggle.setAttribute("aria-pressed", String(Boolean(entry.enabled)));
+      toggle.addEventListener("click", () => { void setEnabled(entry, !entry.enabled, toggle); });
+      const remove = node("button", "Eliminar", "secondary danger");
+      remove.type = "button";
+      remove.dataset.action = "delete";
+      remove.addEventListener("click", () => { void removeCredential(entry, remove); });
+      const actions = node("div", "", "cred-actions");
+      actions.append(replace, toggle, remove);
+      item.append(name, masked, actions);
       list.append(item);
     }
     if (!matching.length) list.append(node("p", credentials.length ? "Sin claves para este filtro." : "El banco está vacío.", "muted"));
+  };
+
+  const setEnabled = async (entry, enabled, button) => {
+    const ref = entry.credential_ref;
+    if (!unlocked) { tell(CODES.VAULT_LOCKED); return; }
+    if (!enabled && !confirm(`¿Desactivar ${ref}? Sale del pool de los modelos hasta que la actives de nuevo.`)) { tell("Desactivación cancelada."); return; }
+    button.disabled = true;
+    try {
+      const data = await call("POST", credentialPath(ref, "/enabled"), { enabled });
+      tell(`${data.ref || ref} ${data.enabled ? "activada" : "desactivada"}${persistNote(data)}.`);
+    } catch (error) { tell(error.message); }
+    finally { button.disabled = false; }
+    await refresh();
+  };
+
+  const removeCredential = async (entry, button) => {
+    const ref = entry.credential_ref;
+    if (!unlocked) { tell(CODES.VAULT_LOCKED); return; }
+    if (!confirm(`¿Eliminar ${ref} del banco? Esta acción no se puede deshacer.`)) { tell("Eliminación cancelada."); return; }
+    button.disabled = true;
+    try {
+      const data = await call("DELETE", credentialPath(ref));
+      tell(`${data.deleted || ref} eliminada del banco${persistNote(data)}.`);
+    } catch (error) { tell(error.message); }
+    finally { button.disabled = false; }
+    await refresh();
   };
 
   const refresh = async () => {
@@ -214,8 +269,8 @@ export function mount(root) {
     busy(form, true);
     try {
       const scope = ref.startsWith("github/") ? "github" : "inference";
-      await call("POST", rotate ? "/vault/rotate" : "/vault/credentials", { ref, secret, scope });
-      tell(rotate ? `Valor de ${ref} reemplazado.` : `${ref} añadida al banco.`);
+      const data = await call("POST", rotate ? "/vault/rotate" : "/vault/credentials", { ref, secret, scope });
+      tell((rotate ? `Valor de ${ref} reemplazado` : `${ref} añadida al banco`) + `${persistNote(data)}.`);
     } catch (error) { tell(error.message); }
     finally { busy(form, false); }
     await refresh();

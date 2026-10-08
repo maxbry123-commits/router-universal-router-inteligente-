@@ -12,5 +12,8 @@ html:not([data-theme=blanco]) #bank-status[data-state=error]{color:#FF475F}
 .cred-name{display:grid;gap:3px}.cred-name small{color:var(--quiet)}
 .masked{font-family:ui-monospace,monospace;color:#A0A0A0;letter-spacing:2px}
 #put-mode[data-mode=rotate]{color:#FF7B1A}
+.cred-actions{display:flex;flex-wrap:wrap;gap:8px}
+.secondary.danger{color:#FF475F;border-color:#FF475F}
+.secondary.danger:hover{background:#FF475F22}
 #cred-search{min-width:min(320px,80vw)}
-@media(max-width:720px){#cred-list .item{flex-direction:column;align-items:stretch}#cred-list .item button{width:100%}}
+@media(max-width:720px){#cred-list .item{flex-direction:column;align-items:stretch}#cred-list .item button{width:100%}.cred-actions{flex-direction:column}}
