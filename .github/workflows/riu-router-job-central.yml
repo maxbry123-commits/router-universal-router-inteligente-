@@ -3,6 +3,7 @@ name: RIU Router Job Central
 # Router principal del chat. La segunda via HF de respaldo NO se cancela ni se usa
 # como motivo para bloquear el relanzamiento del principal.
 # Publica LIVE_URL.json solo despues de health + E2E real NVIDIA + GROQ.
+# Reparacion manual 2026-10-08: relanzamiento canario; publicar solo si E2E pasa.
 
 on:
   push:
