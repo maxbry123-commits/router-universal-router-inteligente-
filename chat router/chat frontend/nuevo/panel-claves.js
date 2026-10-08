@@ -1,5 +1,5 @@
-// Claves secretas: banco del Router (/vault/status|unlock|credentials|rotate, DELETE /vault/credentials/{p}/{c},
-// POST /vault/credentials/{p}/{c}/enabled). Nunca muestra, guarda ni registra valores.
+// Claves secretas: banco del Router (/vault/status|unlock|credentials|rotate, DELETE /vault/credentials/{p}/{c} = Borrar,
+// POST /vault/credentials/{p}/{c}/enabled {"enabled"} = interruptor). Nunca muestra, guarda ni registra valores.
 import { node } from "../api.js";
 import { tell } from "./base.js";
 
@@ -18,7 +18,6 @@ const CODES = {
   CREDENTIAL_NOT_FOUND: "Esa clave ya no existe en el banco.",
   INVALID_REF: "Nombre no válido: proveedor/cuenta con minúsculas, números, punto, guion o guion bajo."
 };
-const PERSIST = { PERSISTED: "copia cifrada guardada en Hugging Face" };
 
 export function buildInit(method, apiKey, body) {
   const headers = { "X-API-Key": apiKey };
@@ -28,6 +27,7 @@ export function buildInit(method, apiKey, body) {
 
 export function explain(status, detail) {
   if (typeof detail === "string" && CODES[detail]) return CODES[detail];
+  if (status === 423) return CODES.VAULT_LOCKED;
   if (status === 401 || status === 403) return "API key del Router no válida.";
   if (status === 422) return "Datos no válidos: usa minúsculas, números, punto, guion o guion bajo.";
   return typeof detail === "string" ? `Router: ${detail}` : `Router respondió HTTP ${status}.`;
@@ -46,10 +46,20 @@ export function credentialPath(ref, suffix = "") {
   return `/vault/credentials/${encodeURIComponent(provider)}/${encodeURIComponent(account)}${suffix}`;
 }
 
-export function persistNote(data) {
-  const state = data && data.persisted;
-  if (!state) return "";
-  return PERSIST[state] ? ` (${PERSIST[state]})` : ` (aviso: ${String(state)})`;
+// Estado de la copia en Hugging Face que devuelve el Router tras cada cambio ("persisted"; ausente = sin almacenamiento).
+export function persistInfo(data) {
+  const state = data && typeof data.persisted === "string" ? data.persisted : "";
+  if (state === "PERSISTED") return { text: "Copia cifrada guardada en Hugging Face: el cambio sobrevive a la renovación del Job.", state: "ok" };
+  if (state.startsWith("PERSIST_FAILED")) {
+    const why = state.split(":")[1] || "error";
+    return { text: `No se pudo guardar la copia en Hugging Face (${why}): la renovación del Job podría perder este cambio.`, state: "error" };
+  }
+  if (state) return { text: `Copia en Hugging Face: ${state}.`, state: "pending" };
+  return { text: "Sin copia en Hugging Face: el Router no tiene almacenamiento configurado; el cambio sólo vive en este Job.", state: "pending" };
+}
+
+export function isEnabled(entry) {
+  return Boolean(entry && (entry.enabled ?? entry.active));
 }
 
 let base = "";
@@ -125,10 +135,11 @@ export function mount(root) {
     for (const entry of matching) {
       const item = node("div", "", "item");
       item.dataset.ref = entry.credential_ref;
-      item.dataset.state = entry.enabled ? "ok" : "pending";
+      const on = isEnabled(entry);
+      item.dataset.state = on ? "ok" : "pending";
       const name = node("div", "", "cred-name");
       name.append(node("strong", entry.credential_ref),
-        node("small", [`proveedor: ${entry.provider}`, `cuenta: ${entry.account}`, `uso: ${entry.scope}`, entry.enabled ? "activa" : "deshabilitada"].join(" · ")));
+        node("small", [`proveedor: ${entry.provider}`, `cuenta: ${entry.account}`, `uso: ${entry.scope}`, on ? "activa" : "desactivada"].join(" · ")));
       const masked = node("span", "••••••••", "masked");
       masked.title = "Valor oculto: el Router nunca lo devuelve";
       const replace = node("button", "Reemplazar valor", "secondary");
@@ -142,31 +153,47 @@ export function mount(root) {
         showMode();
         $("#put-value").focus();
       });
-      const toggle = node("button", entry.enabled ? "Desactivar" : "Activar", "secondary");
+      const toggle = node("button", "", on ? "switch on" : "switch");
       toggle.type = "button";
       toggle.dataset.action = "enabled";
-      toggle.setAttribute("aria-pressed", String(Boolean(entry.enabled)));
-      toggle.addEventListener("click", () => { void setEnabled(entry, !entry.enabled, toggle); });
-      const remove = node("button", "Eliminar", "secondary danger");
+      toggle.setAttribute("role", "switch");
+      toggle.setAttribute("aria-checked", String(on));
+      toggle.setAttribute("aria-label", `${on ? "Desactivar" : "Activar"} ${entry.credential_ref}`);
+      toggle.title = on ? "Activa: los modelos la usan. Pulsa para desactivar." : "Desactivada: los modelos no la usan. Pulsa para activar.";
+      toggle.append(node("span", "", "switch-knob"));
+      toggle.addEventListener("click", () => { void setEnabled(entry, !on, toggle); });
+      const toggleWrap = node("span", "", "switch-line");
+      toggleWrap.append(toggle, node("span", on ? "Activa" : "Desactivada"));
+      const remove = node("button", "Borrar", "secondary danger");
       remove.type = "button";
       remove.dataset.action = "delete";
+      remove.setAttribute("aria-label", `Borrar ${entry.credential_ref}`);
       remove.addEventListener("click", () => { void removeCredential(entry, remove); });
       const actions = node("div", "", "cred-actions");
-      actions.append(replace, toggle, remove);
+      actions.append(toggleWrap, replace, remove);
       item.append(name, masked, actions);
       list.append(item);
     }
     if (!matching.length) list.append(node("p", credentials.length ? "Sin claves para este filtro." : "El banco está vacío.", "muted"));
   };
 
+  const showPersist = (data, action) => {
+    const line = $("#cred-persist");
+    if (!line) return;
+    const info = persistInfo(data);
+    line.textContent = `${action} · ${info.text}`;
+    line.dataset.state = info.state;
+  };
+
   const setEnabled = async (entry, enabled, button) => {
     const ref = entry.credential_ref;
     if (!unlocked) { tell(CODES.VAULT_LOCKED); return; }
-    if (!enabled && !confirm(`¿Desactivar ${ref}? Sale del pool de los modelos hasta que la actives de nuevo.`)) { tell("Desactivación cancelada."); return; }
     button.disabled = true;
     try {
       const data = await call("POST", credentialPath(ref, "/enabled"), { enabled });
-      tell(`${data.ref || ref} ${data.enabled ? "activada" : "desactivada"}${persistNote(data)}.`);
+      const done = `${data.ref || ref} ${data.enabled ? "activada" : "desactivada"}`;
+      tell(`${done}.`);
+      showPersist(data, done);
     } catch (error) { tell(error.message); }
     finally { button.disabled = false; }
     await refresh();
@@ -175,11 +202,13 @@ export function mount(root) {
   const removeCredential = async (entry, button) => {
     const ref = entry.credential_ref;
     if (!unlocked) { tell(CODES.VAULT_LOCKED); return; }
-    if (!confirm(`¿Eliminar ${ref} del banco? Esta acción no se puede deshacer.`)) { tell("Eliminación cancelada."); return; }
+    if (!confirm(`¿Borrar la clave ${ref} del banco? Se elimina para siempre y no se puede deshacer.`)) { tell("Borrado cancelado."); return; }
     button.disabled = true;
     try {
       const data = await call("DELETE", credentialPath(ref));
-      tell(`${data.deleted || ref} eliminada del banco${persistNote(data)}.`);
+      const done = `${data.deleted || ref} borrada del banco`;
+      tell(`${done}.`);
+      showPersist(data, done);
     } catch (error) { tell(error.message); }
     finally { button.disabled = false; }
     await refresh();
@@ -270,7 +299,9 @@ export function mount(root) {
     try {
       const scope = ref.startsWith("github/") ? "github" : "inference";
       const data = await call("POST", rotate ? "/vault/rotate" : "/vault/credentials", { ref, secret, scope });
-      tell((rotate ? `Valor de ${ref} reemplazado` : `${ref} añadida al banco`) + `${persistNote(data)}.`);
+      const done = rotate ? `Valor de ${ref} reemplazado` : `${ref} añadida al banco`;
+      tell(`${done}.`);
+      showPersist(data, done);
     } catch (error) { tell(error.message); }
     finally { busy(form, false); }
     await refresh();
