@@ -100,6 +100,15 @@ export function montarHijos({ activo, abrir, repintar }) {
     caja.hidden = false;
   }
 
+  // Trae del Router la lista de hijos del padre (también los que crea el orquestador, Punto 6) y repinta si cambió.
+  async function refrescar(padre) {
+    const r = await api(`/chat/children/${encodeURIComponent(padre)}`);
+    const antes = JSON.stringify(hijas(padre).map(h => h.id));
+    registrarHijas(padre, r?.children, true);
+    const actual = activo();
+    if ((actual.padre || actual.id) === padre && antes !== JSON.stringify(hijas(padre).map(h => h.id))) repintar();
+  }
+
   // Al abrir un chat: si es hijo, muestra su ficha + INPUT_BLOCK; si es padre, trae sus hijos del Router.
   async function cargar(id) {
     const chat = activo();
@@ -108,12 +117,7 @@ export function montarHijos({ activo, abrir, repintar }) {
     $("#hijos").hidden = Boolean(chat.padre);
     if (!chat.padre) {
       $("#hijo-ficha").hidden = true;
-      try {
-        const r = await api(`/chat/children/${encodeURIComponent(id)}`);
-        const antes = JSON.stringify(hijas(id).map(h => h.id));
-        registrarHijas(id, r?.children, true);
-        if (activo().id === id && antes !== JSON.stringify(hijas(id).map(h => h.id))) repintar();
-      } catch (error) { if (activo().id === id) estado(`No se pudieron cargar los chats hijos: ${enEspanol(error)}`, true); }
+      try { await refrescar(id); } catch (error) { if (activo().id === id) estado(`No se pudieron cargar los chats hijos: ${enEspanol(error)}`, true); }
       return;
     }
     $("#hijo-ficha").hidden = false;
@@ -129,5 +133,5 @@ export function montarHijos({ activo, abrir, repintar }) {
 
   $("#hijos").addEventListener("toggle", () => { if ($("#hijos").open) void cargarAgentes(); });
   $("#hijo-crear").addEventListener("click", () => void crear());
-  return { cargar };
+  return { cargar, refrescar };
 }

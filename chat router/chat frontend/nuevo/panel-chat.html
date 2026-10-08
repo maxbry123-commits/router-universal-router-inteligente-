@@ -35,6 +35,11 @@
         <button id="hijo-crear" class="secondary" type="button">Crear chat hijo</button></details>
       <small id="hijo-estado" class="muted" role="status"></small>
       <div id="hijo-ficha" class="hijo-ficha" hidden></div>
+      <div id="orq" class="orq" hidden><button id="orq-switch" class="orq-switch" type="button" role="switch" aria-checked="false">Orquestador OFF</button>
+        <label id="orq-nodos-caja" hidden>Nodos <select id="orq-nodos"></select></label>
+        <small id="orq-limites" class="muted"></small><small id="orq-estado" class="muted" role="status"></small>
+        <details id="orq-runs" class="orq-runs"><summary id="orq-runs-titulo">Ejecuciones del orquestador</summary>
+          <div id="orq-runs-lista" class="orq-runs-lista"></div><div id="orq-detalle" class="orq-detalle" hidden></div></details></div>
       <div class="chat-files" aria-label="Archivos del chat"><div class="chat-files-head"><strong id="archivos-titulo">Archivos de este chat</strong>
         <button id="archivos-subir" class="secondary" type="button">Subir archivo</button><input id="archivos-input" type="file" hidden>
         <small id="archivos-estado" class="muted" role="status"></small></div><ul id="archivos-lista"></ul></div>

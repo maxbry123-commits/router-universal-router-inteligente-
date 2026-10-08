@@ -3,6 +3,7 @@ import { tell } from "./base.js";
 import { activar, activo, agregar, anclados, crear, fijarConversacion, fusionar, hijas, listar, mensajes } from "./chat-sesion.js";
 import { montarArchivos } from "./chat-archivos.js";
 import { montarHijos } from "./chat-hijos.js";
+import { enviarOrquestado, montarOrquestador } from "./chat-orquestador.js";
 
 const select = (id, entries, value, label) => {
   const target = document.querySelector(id);
@@ -60,8 +61,13 @@ function pintarChats() {
   subtabs.hidden = !subtabs.childElementCount;
   document.querySelector("#chat-id").textContent = `Sesión: ${actual.id}`;
   const history = document.querySelector("#history");
-  history.replaceChildren(...mensajes(actual.id).map(m => node("div", m.texto, CLASES[m.rol] || CLASES.router)));
+  history.replaceChildren(...mensajes(actual.id).flatMap(m => burbujas(m, actual.id)));
   history.scrollTop = history.scrollHeight;
+}
+// Punto 6: bajo una respuesta orquestada va la tarjeta del run (guardada con el mensaje).
+function burbujas(m, id) {
+  const div = node("div", m.texto, CLASES[m.rol] || CLASES.router);
+  return m.run ? [div, orq.tarjeta(m.run, id)] : [div];
 }
 function abrir(id) {
   activar(id);
@@ -77,9 +83,11 @@ function origen(texto, tipo, detalle = "") {
 }
 const archivos = montarArchivos({ activoId: () => activo().id });  // Punto 4: archivos del chat activo
 const hijosUI = montarHijos({ activo, abrir, repintar: () => pintarChats() });  // Punto 5: agente anclado → chat hijo
+const orq = montarOrquestador({ activo, abrirHija: abrir, refrescarHijas: id => hijosUI.refrescar(id) });  // Punto 6
 async function sincronizar(id) {
   void archivos.cargar(id);  // al abrir/crear/recargar un chat también se recargan sus archivos
   void hijosUI.cargar(id);  // y sus chats hijos (o, si es hijo, su ficha e INPUT_BLOCK)
+  void orq.cargar(id);  // y el estado del orquestador (solo chats raíz)
   if (activo().id === id) origen("Historial: consultando servidor…", "cargando");
   try {
     const respuesta = await api(`/chat/history/${encodeURIComponent(id)}?limit=200`);
@@ -93,11 +101,11 @@ async function sincronizar(id) {
     if (activo().id === id) origen("Historial: solo local", "local", `Servidor no disponible: ${error.message}`);
   }
 }
-function decir(id, rol, texto) {
-  agregar(id, rol, texto);
+function decir(id, rol, texto, extra = null) {
+  agregar(id, rol, texto, extra);
   if (activo().id !== id) return;  // la respuesta llega a su chat aunque estés viendo otro
   const history = document.querySelector("#history");
-  history.append(node("div", texto, CLASES[rol]));
+  history.append(...burbujas({ rol, texto, ...(extra || {}) }, id));
   history.scrollTop = history.scrollHeight;
 }
 
@@ -119,7 +127,16 @@ document.querySelector("#composer").addEventListener("submit", async event => {
   const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[document.querySelector("#mode").value];
   button.disabled = true;
   decir(chat.id, "user", message);
+  const nodos = orq.nodosPara(chat.id);  // Punto 6: ON → chat_async con orquestador_nodos; OFF → camino normal
   try {
+    if (nodos) {
+      const r = await enviarOrquestado({ model: document.querySelector("#ficha").value, message, max_tokens, sesion: chat.id, anclados: anclados(chat.id), nodos });
+      decir(chat.id, "router", r.reply || "Respuesta vacía del orquestador.", r.orquestador ? { run: r.orquestador } : null);
+      input.value = "";
+      void hijosUI.refrescar(chat.id).catch(() => {});
+      void orq.cargarRuns(chat.id);
+      return;
+    }
     const answer = window.RIU_CONFIG?.harnessUrl
       ? await harness({ model: document.querySelector("#ficha").value, message, max_tokens, sesion: chat.id, anclados: anclados(chat.id),
           avisar: text => { if (activo().id === chat.id) document.querySelector("#history").append(node("div", text, "item message")); } })

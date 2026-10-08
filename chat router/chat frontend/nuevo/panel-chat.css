@@ -24,6 +24,15 @@
 .bloque{white-space:pre-wrap;overflow-wrap:anywhere;max-height:28vh;overflow:auto;margin:0;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
 .hijo-ficha .sha{font-size:12px;overflow-wrap:anywhere}.hijo-ficha .sha.mal{color:#ffbaba}
 #chat-subtabs[hidden],.chat-hijos[hidden],.hijo-ficha[hidden]{display:none}
+.orq{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px}#orq[hidden],#orq [hidden]{display:none}
+.orq-switch{background:var(--muted);border:1px solid var(--border);border-radius:999px;padding:6px 14px;color:var(--quiet)}
+.orq-switch[aria-checked=true]{background:var(--active);border-color:var(--active);color:#fff}
+#orq-limites,#orq-estado{font-size:12px}#orq-estado[data-error=true]{color:#ffbaba}html[data-theme=blanco] #orq-estado[data-error=true]{color:#9f1239}
+.orq-runs{flex-basis:100%}.orq-runs summary{cursor:pointer;color:var(--quiet);font-size:13px}
+.orq-runs-lista{display:grid;gap:4px;max-height:18vh;overflow:auto;margin:6px 0}.orq-run-item{text-align:left;font-size:12px;padding:5px 9px}
+.orq-detalle{display:grid;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:10px}
+.orq-run{align-self:flex-start;max-width:85%;display:grid;gap:3px;font-size:12px;background:var(--panel);border:1px dashed var(--border);border-radius:9px;padding:8px 10px}
+.orq-nodo{overflow-wrap:anywhere}button.enlace{background:none;border:0;padding:0;color:var(--quiet);text-decoration:underline;font-size:12px;justify-self:start}
 
 @media(max-width:720px){
   body{font-size:15px!important}

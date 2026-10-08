@@ -51,9 +51,9 @@ export function mensajes(id) {
   return Array.isArray(lista) ? lista : [];
 }
 
-export function agregar(id, rol, texto) {
+export function agregar(id, rol, texto, extra = null) {  // extra: p. ej. { run } del orquestador (Punto 6)
   if (!ID_OK.test(id)) return;
-  const lista = [...mensajes(id), { rol, texto: String(texto ?? ""), t: Date.now() }].slice(-MAX_MENSAJES);
+  const lista = [...mensajes(id), { rol, texto: String(texto ?? ""), t: Date.now(), ...(extra || {}) }].slice(-MAX_MENSAJES);
   escribir(HIST + id, lista);
   if (rol === "user") actualizar(id, c => c.titulo ? c : { ...c, titulo: String(texto).slice(0, 28) });
 }
@@ -81,12 +81,14 @@ export function fusionar(id, remotos) {
   if (!ID_OK.test(id) || !Array.isArray(remotos)) return null;
   const servidor = remotos.filter(m => m && m.content != null)
     .map(m => ({ rol: ROLES[m.role] || "nota", texto: String(m.content), t: aMs(m.ts), srv: true }));
-  const exactas = new Set(servidor.map(clave));
+  const exactas = new Map(servidor.map(s => [clave(s), s]));
   const usados = new Set();
+  const conservar = (local, delServidor) => { if (local.run && delServidor) delServidor.run = local.run; };  // tarjeta del orquestador
   const locales = mensajes(id).filter(m => {
-    if (exactas.has(clave(m)) || m.srv) return false;
+    if (exactas.has(clave(m))) { conservar(m, exactas.get(clave(m))); return false; }
+    if (m.srv) return false;
     const i = servidor.findIndex((s, k) => !usados.has(k) && s.rol === m.rol && s.texto === m.texto && Math.abs(s.t - m.t) <= VENTANA);
-    if (i >= 0) { usados.add(i); return false; }
+    if (i >= 0) { usados.add(i); conservar(m, servidor[i]); return false; }
     return true;
   });
   const lista = [...servidor, ...locales].sort((a, b) => a.t - b.t).slice(-MAX_MENSAJES);
