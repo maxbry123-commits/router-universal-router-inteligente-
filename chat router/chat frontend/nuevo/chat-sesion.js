@@ -7,7 +7,9 @@ const INDICE = "riu_nuevo_chats_v1";
 const HIST = "riu_nuevo_hist_v1:";
 const ACTIVO = "riu_nuevo_chat_activo";
 const MAX_MENSAJES = 200;
-const ID_OK = /^web-[a-z0-9]{8,56}$/;
+// Punto 5: un chat hijo es otra sesion "<padre>:ag:<agente>:<n>" (máx. 60, mismo límite que el Router).
+const ID_RE = /^web-[a-z0-9]{8,56}(?::ag:[a-z0-9][a-z0-9_-]{1,63}:\d{1,6})*$/;
+const ID_OK = { test: id => typeof id === "string" && id.length <= 60 && ID_RE.test(id) };
 
 const leer = (clave, defecto) => {
   try { return JSON.parse(localStorage.getItem(clave)) ?? defecto; } catch { return defecto; }
@@ -102,6 +104,21 @@ export function anclados(id) {
 
 export function fijarAnclados(id, nombres) {
   actualizar(id, c => ({ ...c, anclados: [...new Set(nombres)] }));
+}
+
+// Punto 5: chats hijos (agente anclado). Se guardan en el mismo índice con `padre`; el Router manda la lista.
+export function hijas(padre) { return indice().filter(c => c.padre === padre); }
+
+export function registrarHijas(padre, lista, completa = false) {
+  const nuevas = (Array.isArray(lista) ? lista : []).filter(h => h && ID_OK.test(h.sesion_hija) && h.padre === padre);
+  const ids = new Set(nuevas.map(h => h.sesion_hija));
+  const previas = new Map(indice().filter(c => c.padre === padre).map(c => [c.id, c]));
+  const resto = indice().filter(c => c.padre !== padre || (!completa && !ids.has(c.id)));
+  const hijasFinal = nuevas.map(h => ({ ...(previas.get(h.sesion_hija) || { titulo: "", conversation_id: null }),
+    id: h.sesion_hija, padre, agente: h.agente, n: h.n, input_block_sha256: h.input_block_sha256,
+    creado: previas.get(h.sesion_hija)?.creado || Date.now(), titulo: `${h.agente} #${h.n}`,
+    ...(h.sha_enviado ? { sha_enviado: h.sha_enviado } : {}) }));
+  escribir(INDICE, [...resto, ...hijasFinal]);
 }
 
 function actualizar(id, cambio) {

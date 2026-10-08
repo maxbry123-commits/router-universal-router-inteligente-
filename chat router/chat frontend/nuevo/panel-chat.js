@@ -1,7 +1,8 @@
 import { api, harness, node } from "../api.js";
 import { tell } from "./base.js";
-import { activar, activo, agregar, anclados, crear, fijarConversacion, fusionar, listar, mensajes } from "./chat-sesion.js";
+import { activar, activo, agregar, anclados, crear, fijarConversacion, fusionar, hijas, listar, mensajes } from "./chat-sesion.js";
 import { montarArchivos } from "./chat-archivos.js";
+import { montarHijos } from "./chat-hijos.js";
 
 const select = (id, entries, value, label) => {
   const target = document.querySelector(id);
@@ -37,21 +38,35 @@ document.querySelector("#provider").addEventListener("change", async event => {
 
 // Chats aislados: cada chat tiene su sesion y su historial; cambiar de chat muestra solo los suyos.
 const CLASES = { user: "item message user", router: "item message", nota: "item message muted", error: "item message" };
+function pestana(chat, texto, seleccionada) {
+  const tab = node("button", texto, "chat-tab");
+  tab.type = "button";
+  tab.title = `Sesión ${chat.id}`;
+  tab.setAttribute("role", "tab");
+  tab.setAttribute("aria-selected", String(seleccionada));
+  tab.addEventListener("click", () => abrir(chat.id));
+  return tab;
+}
 function pintarChats() {
   const actual = activo();
-  document.querySelector("#chat-tabs").replaceChildren(...listar().map((chat, i) => {
-    const tab = node("button", chat.titulo || `Chat ${i + 1}`, "chat-tab");
-    tab.type = "button";
-    tab.title = `Sesión ${chat.id}`;
-    tab.setAttribute("role", "tab");
-    tab.setAttribute("aria-selected", String(chat.id === actual.id));
-    tab.addEventListener("click", () => { activar(chat.id); pintarChats(); void sincronizar(chat.id); });
+  const raiz = actual.padre || actual.id;  // Punto 5: los hijos van como sub-pestañas bajo su padre
+  document.querySelector("#chat-tabs").replaceChildren(...listar().filter(c => !c.padre).map((chat, i) => {
+    const tab = pestana(chat, chat.titulo || `Chat ${i + 1}`, chat.id === actual.id);
+    if (chat.id === raiz && actual.padre) tab.dataset.padreActivo = "true";
     return tab;
   }));
+  const subtabs = document.querySelector("#chat-subtabs");
+  subtabs.replaceChildren(...hijas(raiz).map(h => pestana(h, `↳ ${h.titulo || h.id}`, h.id === actual.id)));
+  subtabs.hidden = !subtabs.childElementCount;
   document.querySelector("#chat-id").textContent = `Sesión: ${actual.id}`;
   const history = document.querySelector("#history");
   history.replaceChildren(...mensajes(actual.id).map(m => node("div", m.texto, CLASES[m.rol] || CLASES.router)));
   history.scrollTop = history.scrollHeight;
+}
+function abrir(id) {
+  activar(id);
+  pintarChats();
+  void sincronizar(id);
 }
 // Punto 2: al abrir un chat o recargar, trae su historial del Router y lo fusiona con el local.
 function origen(texto, tipo, detalle = "") {
@@ -61,8 +76,10 @@ function origen(texto, tipo, detalle = "") {
   marca.title = detalle;
 }
 const archivos = montarArchivos({ activoId: () => activo().id });  // Punto 4: archivos del chat activo
+const hijosUI = montarHijos({ activo, abrir, repintar: () => pintarChats() });  // Punto 5: agente anclado → chat hijo
 async function sincronizar(id) {
   void archivos.cargar(id);  // al abrir/crear/recargar un chat también se recargan sus archivos
+  void hijosUI.cargar(id);  // y sus chats hijos (o, si es hijo, su ficha e INPUT_BLOCK)
   if (activo().id === id) origen("Historial: consultando servidor…", "cargando");
   try {
     const respuesta = await api(`/chat/history/${encodeURIComponent(id)}?limit=200`);

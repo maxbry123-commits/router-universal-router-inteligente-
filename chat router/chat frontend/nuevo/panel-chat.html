@@ -27,6 +27,14 @@
       <div class="chat-bar"><button id="nuevo-chat" class="secondary" type="button">Nuevo chat</button>
         <div id="chat-tabs" role="tablist" aria-label="Chats"></div><output id="chat-id" class="muted"></output>
         <small id="historial-origen" class="muted" role="status"></small></div>
+      <div id="chat-subtabs" role="tablist" aria-label="Chats hijos (agentes anclados)" hidden></div>
+      <details id="hijos" class="chat-hijos"><summary>Anclar agente</summary>
+        <label>Agente <select id="hijo-agente"><option value="">Elige un agente</option></select></label>
+        <label for="hijo-input">INPUT_BLOCK (se envía literal, sin recortar ni normalizar)</label>
+        <textarea id="hijo-input" class="mono" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+        <button id="hijo-crear" class="secondary" type="button">Crear chat hijo</button></details>
+      <small id="hijo-estado" class="muted" role="status"></small>
+      <div id="hijo-ficha" class="hijo-ficha" hidden></div>
       <div class="chat-files" aria-label="Archivos del chat"><div class="chat-files-head"><strong id="archivos-titulo">Archivos de este chat</strong>
         <button id="archivos-subir" class="secondary" type="button">Subir archivo</button><input id="archivos-input" type="file" hidden>
         <small id="archivos-estado" class="muted" role="status"></small></div><ul id="archivos-lista"></ul></div>
