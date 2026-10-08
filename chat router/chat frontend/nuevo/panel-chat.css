@@ -2,6 +2,11 @@
 .message{max-width:85%;white-space:pre-wrap}
 .message.user{align-self:flex-end;border-color:var(--active)}
 #composer{display:grid;gap:12px}
+.chat-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}
+#chat-tabs{display:flex;gap:6px;overflow-x:auto;flex:1 1 200px;min-width:0}
+.chat-tab{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--quiet);white-space:nowrap}
+.chat-tab[aria-selected=true]{color:var(--text);box-shadow:inset 0 -2px var(--active)}
+#chat-id{font-size:12px;overflow-wrap:anywhere}
 
 @media(max-width:720px){
   body{font-size:15px!important}
