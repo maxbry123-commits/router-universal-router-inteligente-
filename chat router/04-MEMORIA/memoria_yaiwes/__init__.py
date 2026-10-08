@@ -101,13 +101,30 @@ class GraphSQLiteAdapter:
         self.store.graph_link(scope_id, node_id, "contains")
         return {"adapter": self.name, "id": node_id}
 
+    def _scoped(self, scope: str) -> list[dict[str, Any]]:
+        """Memory nodes of EXACTLY this scope (props.scope), newest first. The id prefix alone is not enough: the
+        child scope '<s>:ag:<a>:<n>' also starts with 'memory:<s>:', and graph_view mixed owner/conv/model nodes of
+        every chat into the results."""
+        like = "memory:" + scope.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + ":%"
+        rows = self.store._all("SELECT id,kind,label,props FROM graph_nodes WHERE kind='memory' AND id LIKE ? ESCAPE '\\' "
+                               "ORDER BY created_at DESC", (like,))
+        out = []
+        for row in rows:
+            try:
+                props = json.loads(row["props"] or "{}")
+            except (TypeError, ValueError):
+                continue
+            if isinstance(props, dict) and props.get("scope") == scope:
+                out.append({"id": row["id"], "kind": row["kind"], "label": row["label"]})
+        return out
+
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
         needle = f"memory:{scope}:{key}"
-        return [node for node in self.store.graph_view().get("nodes", []) if node.get("id") == needle]
+        return [node for node in self._scoped(scope) if node.get("id") == needle]
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
         q = str(query).lower()
-        return [node for node in self.store.graph_view(limit=max(k, 10)).get("nodes", []) if q in str(node.get("label", "")).lower()][:k]
+        return [node for node in self._scoped(scope) if q in str(node.get("label", "")).lower()][:max(0, int(k))]
 
 
 class ComponentAdapter:
