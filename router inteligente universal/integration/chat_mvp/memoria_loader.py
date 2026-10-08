@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,34 @@ def _memory() -> Any:
         _facade = module.build_memory(store)
         _store_id = id(store)
     return _facade
+
+
+CHAT_OWNER = "chat-ui"  # = plugins/puente_chat/plugin.py DUENO: puente_chat guarda cada turno en scope chat-ui:chat:<sesion>
+_SESION = re.compile(r"^[A-Za-z0-9_.:@-]{1,60}$")
+
+
+def chat_history(sesion: str, limit: int = 200) -> dict[str, Any]:
+    """Messages of ONE chat, oldest first, read from the canonical SQLite memory (turno-<ms> records of puente_chat).
+
+    The same SQLite file is snapshotted to the HF bucket by storage autosync and restored on Job start, so the
+    history survives a Job switch. Checkpoints and other records of the scope are not returned.
+    """
+    from .memory_runtime import scope_for
+    scope = scope_for(CHAT_OWNER, "chat:" + sesion)
+    rows = _memory().sqlite.search(scope, "turno-", max(1, min(int(limit), 1000)))
+    turns = [r for r in rows if str(r.get("key", "")).startswith("turno-")]
+    turns.sort(key=lambda r: r["id"])
+    messages: list[dict[str, Any]] = []
+    for r in turns:
+        d = r.get("data") or {}
+        try:
+            ts = int(str(r["key"])[6:]) / 1000.0
+        except ValueError:
+            ts = None
+        if d.get("pregunta"):
+            messages.append({"role": "user", "content": str(d["pregunta"]), "ts": ts})
+        messages.append({"role": "assistant", "content": str(d.get("respuesta", "")), "model": d.get("modelo"), "ts": ts})
+    return {"sesion": sesion, "scope": scope, "turns": len(turns), "messages": messages}
 
 
 class MemorySave(BaseModel):
@@ -65,5 +94,15 @@ def build_memory_router() -> APIRouter:
     @router.get("/memoria/search")
     def search(scope: str, query: str, k: int = 10, _owner: str = Depends(_auth)) -> dict[str, Any]:
         return {"scope": scope, "query": query, "results": _memory().search(scope, query, max(1, min(k, 100)))}
+
+    @router.get("/chat/history/{sesion}")
+    def history(sesion: str, limit: int = 200, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        """Persistent history of one chat (sesion = chat_id, e.g. web-<16hex>). Only that chat's messages."""
+        if not _SESION.match(sesion):
+            raise HTTPException(status_code=422, detail="SESION_INVALIDA")
+        try:
+            return chat_history(sesion, limit)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=503, detail="HISTORY_UNAVAILABLE") from exc
 
     return router
