@@ -6,7 +6,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, Optional
 
 import base64
 import binascii
@@ -157,6 +157,135 @@ def delete_chat_file(sesion: str, file_id: int) -> dict[str, Any]:
     return {"deleted": int(file_id), "nombre": key[8:], "versions": cur.rowcount}
 
 
+# --- PUNTO 5: agente anclado que abre un chat HIJO. Reutiliza: la ficha del agente = fila de la tabla `agents`
+# (Store.agent, /chat/agents, fleet Wordflow), el plan = DSL DAG riu.dag/v1 (dag.validate) y el INPUT_BLOCK literal
+# del contrato executor (dag.EXECUTOR_CONTRACT). El hijo es otra `sesion` (<padre>:ag:<agente>:<n>) en la misma
+# memoria SQLite: scope propio chat-ui:chat:<hija>, asi que sus turnos/archivos/checkpoints no tocan los del padre.
+CHILD_MAX_INPUT_BLOCK = 200_000  # caracteres; nunca se recorta, se rechaza
+CHILD_MAX_JSON = 200_000
+_AGENT_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{1,63}$")  # = router.AgentReq.id
+_CHILD_LOCK = __import__("threading").Lock()
+CHILD_KEYS = ("agente:ficha", "agente:dag", "agente:input_block", "agente:padre")
+
+
+class ChildError(ValueError):
+    def __init__(self, code: str, status: int) -> None:
+        super().__init__(code)
+        self.code, self.status = code, status
+
+
+def _sha256(text: str) -> str:
+    import hashlib
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _canon(obj: Any) -> str:
+    return json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _one(scope: str, key: str) -> Any:
+    rows = _memory().sqlite.load(scope, key)  # clave exacta (search usa LIKE)
+    return rows[0]["data"] if rows else None
+
+
+def _children_rows(sesion: str) -> list[dict[str, Any]]:
+    db = _memory().sqlite.db
+    rows = db.execute("SELECT key,data,created_at FROM memoria_yaiwes WHERE scope=? AND substr(key,1,5)='hija:' ORDER BY id",
+                      (_file_scope(sesion),)).fetchall()
+    return [{**json.loads(r["data"]), "ts": r["created_at"]} for r in rows]
+
+
+def create_child(padre: str, input_block: Any, dag: Any, agente: Any = None, ficha: Any = None) -> dict[str, Any]:
+    """Abre el chat hijo. Primeros registros del hijo, en orden: ficha, dag, input_block (literal), padre."""
+    if not isinstance(input_block, str) or not input_block.strip():
+        raise ChildError("INPUT_BLOCK_VACIO", 422)
+    if len(input_block) > CHILD_MAX_INPUT_BLOCK:
+        raise ChildError("INPUT_BLOCK_MUY_GRANDE", 413)
+    if (agente is None) == (ficha is None):
+        raise ChildError("AGENTE_O_FICHA", 422)  # exactamente uno: id de /chat/agents o una ficha completa
+    if ficha is None:
+        ficha = get_store().agent(str(agente))
+        if not ficha:
+            raise ChildError("AGENTE_NO_EXISTE", 404)
+    if not isinstance(ficha, dict) or not _AGENT_ID.match(str(ficha.get("id") or "")):
+        raise ChildError("FICHA_INVALIDA", 422)
+    if not isinstance(dag, dict):
+        raise ChildError("DAG_INVALIDO", 422)
+    if len(_canon(dag)) > CHILD_MAX_JSON or len(_canon(ficha)) > CHILD_MAX_JSON:
+        raise ChildError("JSON_MUY_GRANDE", 413)
+    if "input_block" in dag and dag["input_block"] != input_block:
+        raise ChildError("DAG_INPUT_BLOCK_DISTINTO", 422)  # el plan ejecuta con ESE INPUT_BLOCK, no con otro
+    from . import dag as dagmod
+    errs = dagmod.validate({**dag, "input_block": input_block})
+    if errs:
+        raise ChildError("DAG_INVALIDO:" + "; ".join(errs)[:300], 422)
+    aid = str(ficha["id"])
+    mem = _memory()
+    with _CHILD_LOCK:
+        n = 1 + max([int(c.get("n") or 0) for c in _children_rows(padre) if c.get("agente") == aid] or [0])
+        while True:
+            hija = "%s:ag:%s:%d" % (padre, aid, n)
+            if not _SESION.match(hija):
+                raise ChildError("SESION_HIJA_MUY_LARGA", 422)
+            if not mem.sqlite.db.execute("SELECT 1 FROM memoria_yaiwes WHERE scope=? LIMIT 1", (_file_scope(hija),)).fetchone():
+                break
+            n += 1
+        sc, sha = _file_scope(hija), _sha256(input_block)
+        mem.save(sc, "agente:ficha", {"ficha": ficha})
+        mem.save(sc, "agente:dag", {"dag": dag})
+        mem.save(sc, "agente:input_block", {"input_block": input_block, "sha256": sha})
+        link = {"sesion_hija": hija, "padre": padre, "agente": aid, "n": n, "input_block_sha256": sha}
+        mem.save(sc, "agente:padre", link)
+        mem.save(_file_scope(padre), "hija:" + hija, link)
+    return {**link, "input_block_bytes": len(input_block.encode("utf-8")), "ficha_sha256": _sha256(_canon(ficha)),
+            "dag_sha256": _sha256(_canon(dag)), "records": list(CHILD_KEYS)}
+
+
+def list_children(padre: str) -> dict[str, Any]:
+    return {"sesion": padre, "children": _children_rows(padre)}
+
+
+def read_child(hija: str, limit: int = 200) -> dict[str, Any]:
+    sc = _file_scope(hija)
+    ib = _one(sc, "agente:input_block")
+    if not ib:
+        raise ChildError("HIJA_NO_EXISTE", 404)
+    link = _one(sc, "agente:padre") or {}
+    ficha, dag = (_one(sc, "agente:ficha") or {}).get("ficha"), (_one(sc, "agente:dag") or {}).get("dag")
+    text = ib["input_block"]
+    return {"sesion_hija": hija, "padre": link.get("padre"), "agente": link.get("agente"), "n": link.get("n"),
+            "ficha": ficha, "dag": dag, "input_block": text, "input_block_sha256": _sha256(text),
+            "input_block_bytes": len(text.encode("utf-8")), "history": chat_history(hija, limit)}
+
+
+def child_context(sesion: str) -> str:
+    """Bloque de sistema del chat hijo para puente_chat (vacio si la sesion no es hija). INPUT_BLOCK sin tocar."""
+    try:
+        sc = _file_scope(sesion)
+        ib = _one(sc, "agente:input_block")
+        if not ib:
+            return ""
+        from . import dag as dagmod
+        ficha = (_one(sc, "agente:ficha") or {}).get("ficha") or {}
+        dag = (_one(sc, "agente:dag") or {}).get("dag") or {}
+        link = _one(sc, "agente:padre") or {}
+        return ("\n\nAGENTE ANCLADO (chat hijo de %s; memoria propia, separada del chat padre).\n" % link.get("padre")
+                + "FICHA DEL AGENTE:\n" + json.dumps(ficha, ensure_ascii=False)
+                + ("\nPROMPT DEL AGENTE:\n" + str(ficha.get("system_prompt")) if ficha.get("system_prompt") else "")
+                + "\nPLAN DSL/DAG:\n" + json.dumps(dag, ensure_ascii=False)
+                + "\nCONTRATO: " + dagmod.EXECUTOR_CONTRACT
+                + "\nINPUT_BLOCK (literal del chat padre, no lo parafrasees):\n<<<INPUT_BLOCK\n" + ib["input_block"] + "\nINPUT_BLOCK>>>")
+    except Exception:  # noqa: BLE001 - la memoria nunca bloquea el chat
+        return ""
+
+
+class ChildCreate(BaseModel):
+    agente: Optional[str] = Field(default=None, max_length=64)
+    ficha: Optional[Dict[str, Any]] = None
+    dag: Dict[str, Any]
+    input_block: str = Field(max_length=CHILD_MAX_INPUT_BLOCK + 1)
+
+
 class FileUpload(BaseModel):
     nombre: str = Field(min_length=1, max_length=120)
     tipo: str = Field(default="", max_length=80)
@@ -238,5 +367,27 @@ def build_memory_router() -> APIRouter:
     def files_delete(sesion: str, file_id: int, _owner: str = Depends(_auth)) -> dict[str, Any]:
         _check(sesion)
         return _files(delete_chat_file, sesion, file_id)
+
+    def _child(fn: Any, *args: Any) -> Any:
+        try:
+            return fn(*args)
+        except ChildError as exc:
+            raise HTTPException(status_code=exc.status, detail=exc.code) from exc
+
+    @router.post("/chat/children/{sesion}")
+    def children_create(sesion: str, req: ChildCreate, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        """PUNTO 5: el agente anclado al chat `sesion` abre un chat hijo con su ficha, su DAG y el INPUT_BLOCK literal."""
+        _check(sesion)
+        return _child(create_child, sesion, req.input_block, req.dag, req.agente, req.ficha)
+
+    @router.get("/chat/children/{sesion}")
+    def children_list(sesion: str, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        _check(sesion)
+        return list_children(sesion)
+
+    @router.get("/chat/child/{sesion_hija}")
+    def child_read(sesion_hija: str, limit: int = 200, _owner: str = Depends(_auth)) -> dict[str, Any]:
+        _check(sesion_hija)
+        return _child(read_child, sesion_hija, limit)
 
     return router

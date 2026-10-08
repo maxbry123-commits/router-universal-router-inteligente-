@@ -847,6 +847,11 @@ def _chat(p):
             sistema += ' HANDOFF del usuario (donde trabajar; sigue este handoff): ' + str(hp['texto'])[:6000]
     except Exception:  # noqa: BLE001
         pass
+    try:  # PUNTO 5: chat hijo de un agente anclado -> su ficha, su DAG y el INPUT_BLOCK literal del padre (sin recortar)
+        from integration.chat_mvp.memoria_loader import child_context
+        sistema += child_context(sesion)
+    except Exception:  # noqa: BLE001
+        pass
     if re.search(r'(?i)(contin[uú]a?s?|sigue|retoma|seguid|seguir)', pregunta):
         guardado = _ck_cargar(sesion)
         if guardado:
