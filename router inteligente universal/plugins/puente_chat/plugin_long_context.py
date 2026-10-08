@@ -1,7 +1,8 @@
 """Long-context compatibility layer for ``puente_chat``.
 
 This module wraps the existing plugin instead of forking its routing/tool/HF
-logic. It fixes the historical silent cuts in chat input and memory.
+logic. It fixes historical silent cuts and also keeps automatic model recovery
+inside real API fichas only.
 
 Policy:
 - browser/input transport: no artificial truncation here;
@@ -10,11 +11,9 @@ Policy:
 - provider payload budget: up to 350k characters;
 - the newest user input is NEVER sliced by this layer;
 - local HF/L4 16K-token models reject oversized input explicitly rather than
-  silently cutting it.
-
-These are CHARACTER budgets, not a claim that every selected model supports a
-100k-token context. A provider/model with a smaller native context may return
-an explicit context-length error.
+  silently cutting it;
+- consil/motor/xray/auditor fichas remain selectable explicitly, but are never
+  used as automatic API-model reserve candidates.
 """
 from __future__ import annotations
 
@@ -48,8 +47,6 @@ def _contexto(sesion: str, pregunta: str) -> str:
         res = mem.search(scope_for(_p.DUENO, "chat:" + sesion), "", CONTEXT_TURNS + 12)
         turns: list[str] = []
         total = 0
-        # memoria search returns newest-first; reverse once so the model sees
-        # the recovered conversation in normal chronological order.
         for f in reversed(_rows(res)):
             d = f.get("data", f) if isinstance(f, dict) else f
             if not isinstance(d, dict) or "pregunta" not in d:
@@ -132,6 +129,37 @@ def _recortar(mensajes: list[dict[str, Any]], limite: int = PROVIDER_BUDGET_CHAR
     return ms
 
 
+_ORIGINAL_CHAT = _p._chat
+_ORIGINAL_SENTINELA = _p._sentinela
+
+
+def _sentinela_api_safe():
+    """Return the normal sentinela but remove special pipelines from auto-reserve.
+
+    ``plugin._chat`` builds its recovery plan from FICHAS, and FICHAS also
+    contains consil/motor/xray/auditor entries. Those entries use the synthetic
+    provider ``pipeline`` and must never reach ``_llamar_api``. Filtering the
+    plan here preserves explicit special-ficha execution while making normal
+    API recovery deterministic and thread-safe.
+    """
+    sen = _ORIGINAL_SENTINELA()
+    if sen is None:
+        return None
+    original_execute = sen.ejecutar
+
+    def ejecutar(plan, mensajes, *args, **kwargs):
+        safe_plan = []
+        for name, step in plan:
+            target = str(name).split(":", 1)[1] if str(name).startswith("reserva:") else ""
+            if target and target in _p.ESPECIALES:
+                continue
+            safe_plan.append((name, step))
+        return original_execute(safe_plan, mensajes, *args, **kwargs)
+
+    sen.ejecutar = ejecutar
+    return sen
+
+
 def _chat(payload: dict[str, Any]) -> dict[str, Any]:
     """Never silently truncate the newest input; guard 16K local models."""
     model = str(payload.get("model") or "")
@@ -150,10 +178,10 @@ def _chat(payload: dict[str, Any]) -> dict[str, Any]:
     return _ORIGINAL_CHAT(payload)
 
 
-_ORIGINAL_CHAT = _p._chat
 _p._contexto = _contexto
 _p._guardar = _guardar
 _p._recortar = _recortar
+_p._sentinela = _sentinela_api_safe
 _p._chat = _chat
 
 
@@ -170,5 +198,7 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             "provider_budget_chars": PROVIDER_BUDGET_CHARS,
             "latest_user_input_preserved": True,
             "budgets_are_characters": True,
+            "automatic_reserve_api_only": True,
+            "special_fichas_explicit_only": True,
         }
     return result
