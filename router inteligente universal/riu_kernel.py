@@ -16,25 +16,34 @@ def request(method,url,key=None,data=None):
     req=urllib.request.Request(url,data=json.dumps(data).encode() if data is not None else None,headers=headers,method=method)
     with urllib.request.urlopen(req,timeout=30) as r:return json.load(r)
 def publish(reg):
-    write("control/router-current.json",reg)
+    """LIVE_URL.json on main first, then control/router-current.json. Returns False (and changes nothing) if GitHub fails."""
     apiurl="https://api.github.com/repos/"+REPO+"/contents/"+urllib.parse.quote(FLAG,safe="/")
-    key=os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]
-    old={}
-    try:old=request("GET",apiurl+"?ref=main",key)
-    except urllib.error.HTTPError as e:
-        if e.code!=404:raise
-    value={"LIVE_URL":reg["url"],"job_id":reg["job_id"],"flavor":reg["flavor"],"updated":time.time(),"auth":"X-API-Key","harnessUrl":reg["url"]+"/plugins/puente_chat/call"}
-    data={"message":"Update active HF Router address [skip ci]","branch":"main","content":base64.b64encode(json.dumps(value,indent=2).encode()).decode()}
-    if old.get("sha"):data["sha"]=old["sha"]
-    request("PUT",apiurl,key,data)
+    try:
+        key=os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+        old={}
+        try:old=request("GET",apiurl+"?ref=main",key)
+        except urllib.error.HTTPError as e:
+            if e.code!=404:raise
+        value={"LIVE_URL":reg["url"],"job_id":reg["job_id"],"flavor":reg["flavor"],"updated":time.time(),"auth":"X-API-Key","harnessUrl":reg["url"]+"/plugins/puente_chat/call"}
+        data={"message":"Update active HF Router address [skip ci]","branch":"main","content":base64.b64encode(json.dumps(value,indent=2).encode()).decode()}
+        if old.get("sha"):data["sha"]=old["sha"]
+        request("PUT",apiurl,key,data)
+    except Exception as exc:
+        print("KERNEL_PUBLISH_GITHUB_FAILED",type(exc).__name__,flush=True);return False
+    write("control/router-current.json",reg)
+    return True
 def healthy(url):
     try:
         request("GET",url+"/health")
         return True
     except Exception:return False
+_HYDRATED=[]
 def hydrate():
-    tar=tarfile.open(fileobj=io.BytesIO(fs().cat_file(BASE+"/codigo/router-bundle.tar.gz")),mode="r:gz")
-    tar.extractall("/tmp/kernel-bank",filter="data")
+    if _HYDRATED:return
+    with fs().open(BASE+"/codigo/router-bundle.tar.gz","rb",block_size=8<<20) as fh:
+        tar=tarfile.open(fileobj=fh,mode="r|gz")
+        for m in tar:  # solo el modulo del banco: el bundle completo tiene ~100k archivos
+            if m.name.startswith("router inteligente universal/Banco de claves/"):tar.extract(m,"/tmp/kernel-bank",filter="data")
     sys.path.insert(0,"/tmp/kernel-bank/router inteligente universal/Banco de claves")
     from secret_bank.vault import Vault
     p=pathlib.Path("/tmp/kernel-vault.db")
@@ -53,6 +62,7 @@ def hydrate():
     os.environ["RIU_AGENT_API_KEYS"]=json.dumps(keys)
     os.environ["RIU_AGENT_API_KEYS_2"]="{}"
     os.environ["RIU_PUBLIC_CHAT_KEY"]=v.get_secret("router/chat-ui-director")
+    _HYDRATED.append(1)
 def command():
     return ["bash","-lc","set -e\npip install -q huggingface_hub cryptography httpx 'uvicorn[standard]' fastapi pydantic psutil mcp beautifulsoup4\npython - <<'PY'\nimport os,io,tarfile\nfrom huggingface_hub import HfFileSystem\nf=HfFileSystem(token=os.environ['HF_TOKEN'])\nb='buckets/COMAND-CENTER-1/yaiwes-memoria-storage/router-inteligente-universal'\ntarfile.open(fileobj=io.BytesIO(f.cat_file(b+'/codigo/router-bundle.tar.gz')),mode='r:gz').extractall('/app',filter='data')\nimport base64,gzip\nvp,vs=os.environ.get('RIU_VAULT_PATH'),os.environ.get('RIU_VAULT_SOURCE')\nif vp and vs:\n    os.makedirs(os.path.dirname(vp),exist_ok=True)\n    open(vp,'wb').write(gzip.decompress(base64.b64decode(f.cat_file(vs))))\nPY\ncd '/app/router inteligente universal'\npython riu_kernel.py --watch &\nexec uvicorn public_chat_app:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 120"]
 def launch():
@@ -73,7 +83,8 @@ STRIKES=int(os.getenv("RIU_KERNEL_STRIKES") or "3")      # fallos de /health seg
 LOCK_TTL=1500                                           # un solo supervisor a la vez (watcher del Job o schedule HF)
 RENEW_HOUR_UTC=int(os.getenv("RIU_RENEW_HOUR_UTC") or "9")  # 04:00 COT
 CHAT_MODELS=[m for m in (os.getenv("RIU_SENTINEL_MODELS") or "groq-qwen-3-8,nv-nemotron-super").split(",") if m]
-ME=(os.getenv("JOB_ID") or "schedule")+":"+str(os.getpid())
+import socket
+ME=(os.getenv("JOB_ID") or socket.gethostname())+":"+str(os.getpid())+":"+os.urandom(4).hex()
 def http(method,url,data=None,headers=None,timeout=30):
     h={"User-Agent":"yaiwes-kernel","Content-Type":"application/json",**(headers or {})}
     req=urllib.request.Request(url,data=json.dumps(data).encode() if data is not None else None,headers=h,method=method)
@@ -129,42 +140,51 @@ def tick(force=False):
         print(json.dumps({"status":"LOCKED_BY_OTHER_SUPERVISOR"}),flush=True);return
     try:_tick(force)
     finally:unlock_lock()
+def pending(old):
+    """Sucesor ya lanzado por una corrida anterior (p. ej. el schedule de 15 min se corto): se adopta en vez de lanzar otro."""
+    p=read("control/recovery-16gb.json")
+    if not p.get("job_id") or p.get("job_id")==old.get("job_id"):return None
+    try:stage=HfApi(token=os.environ["HF_TOKEN"]).inspect_job(job_id=p["job_id"],namespace=NS).status.stage
+    except Exception:return None
+    return p if stage in ("RUNNING","SCHEDULING") else None
 def _tick(force):
     reg=read("control/router-current.json")
-    alive=bool(reg.get("url")) and healthy(reg["url"])
-    if alive:
-        write("control/strikes.json",{"n":0})
-        if not bank_ok(reg["url"]):
-            print(json.dumps({"status":"BANK_REOPEN","ok":reopen_bank(reg["url"])}),flush=True)
+    url=reg.get("url")
+    alive=bool(url) and healthy(url)
+    bank=alive and (bank_ok(url) or reopen_bank(url))
+    if alive and bank:
+        if read("control/strikes.json").get("n"):write("control/strikes.json",{"n":0})
         if not force and reg.get("flavor")=="cpu-basic" and not renewal_due(reg):
             print(json.dumps({"status":"HEALTHY","job_id":reg.get("job_id")}),flush=True);return
-    elif reg.get("url") and not force:
+    elif url and not force:
         n=read("control/strikes.json").get("n",0)+1
         write("control/strikes.json",{"n":n})
         if n<STRIKES:
-            print(json.dumps({"status":"STRIKE","n":n,"job_id":reg.get("job_id")}),flush=True);return
+            print(json.dumps({"status":"STRIKE","n":n,"why":"health" if not alive else "bank","job_id":reg.get("job_id")}),flush=True);return
     old=reg
-    if alive:
-        hydrate()
-        http("POST",old["url"]+"/chat/storage/sync",{},{"X-API-Key":os.environ.get("RIU_ROUTER_API_KEY","")},20)
-    else:
-        hydrate()
-    new=launch();write("control/recovery-16gb.json",new)
-    deadline=time.time()+900
+    hydrate()
+    key={"X-API-Key":os.environ.get("RIU_ROUTER_API_KEY","")}
+    if alive:http("POST",old["url"]+"/chat/storage/sync",{},key,20)
+    new=pending(old)
+    if not new:
+        new=launch();write("control/recovery-16gb.json",new)
+    deadline=time.time()+600  # el schedule HF corta a los 900 s: si no esta listo, la siguiente corrida lo adopta
     while time.time()<deadline:
-        if healthy(new["url"]):
-            if ready(new["url"]):
-                publish(new)
-                write("control/strikes.json",{"n":0})
-                if old.get("job_id") and old["job_id"]!=new["job_id"]:
-                    if alive:http("POST",old["url"]+"/chat/storage/sync",{},{"X-API-Key":os.environ.get("RIU_ROUTER_API_KEY","")},20)
-                    unlock_lock()  # el watcher puede vivir dentro del Job viejo: soltar el candado antes de cancelarlo
-                    try:HfApi(token=os.environ["HF_TOKEN"]).cancel_job(job_id=old["job_id"],namespace=NS)
-                    except Exception as exc:print("KERNEL_CANCEL_OLD_FAILED",type(exc).__name__,flush=True)
-                print(json.dumps({"status":"SWITCHED",**new}),flush=True);return
+        if healthy(new["url"]) and ready(new["url"]):
+            if not publish(new):
+                print(json.dumps({"status":"READY_NOT_PUBLISHED","job_id":new["job_id"]}),flush=True);return
+            write("control/strikes.json",{"n":0})
+            if old.get("job_id") and old["job_id"]!=new["job_id"]:
+                if alive:http("POST",old["url"]+"/chat/storage/sync",{},key,20)
+                unlock_lock()  # el watcher puede vivir dentro del Job viejo: soltar el candado antes de cancelarlo
+                try:HfApi(token=os.environ["HF_TOKEN"]).cancel_job(job_id=old["job_id"],namespace=NS)
+                except Exception as exc:print("KERNEL_CANCEL_OLD_FAILED",type(exc).__name__,flush=True)
+            print(json.dumps({"status":"SWITCHED",**new}),flush=True);return
         keep_lock();time.sleep(15)
-    HfApi(token=os.environ["HF_TOKEN"]).cancel_job(job_id=new["job_id"],namespace=NS)
-    raise RuntimeError("SUCCESSOR_NOT_READY_PREDECESSOR_PRESERVED")
+    if time.time()-new.get("started",0)>1800:
+        HfApi(token=os.environ["HF_TOKEN"]).cancel_job(job_id=new["job_id"],namespace=NS)
+        raise RuntimeError("SUCCESSOR_NOT_READY_PREDECESSOR_PRESERVED")
+    print(json.dumps({"status":"SUCCESSOR_PENDING","job_id":new["job_id"]}),flush=True)
 if __name__=="__main__":
     if "--watch" in sys.argv:
         # Motor 1: watcher dentro del Job. Motor 2: schedule HF (riu_kernel.py sin --watch). El candado evita duplicados.
