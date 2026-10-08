@@ -8,6 +8,12 @@
 .chat-tab[aria-selected=true]{color:var(--text);box-shadow:inset 0 -2px var(--active)}
 #chat-id{font-size:12px;overflow-wrap:anywhere}
 #historial-origen{font-size:12px;opacity:.8}#historial-origen[data-origen=local]{font-style:italic}
+.chat-files{display:grid;gap:6px;margin:0 0 10px}.chat-files-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#archivos-titulo{font-size:13px;font-weight:600}#archivos-estado{font-size:12px}#archivos-estado[data-error=true]{color:#ffbaba}html[data-theme=blanco] #archivos-estado[data-error=true]{color:#9f1239}
+#archivos-lista{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:22vh;overflow:auto}
+.archivo{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:7px 10px}.archivo .nombre{flex:1 1 140px;min-width:0}
+.archivo small{font-size:12px}.archivo button{padding:5px 10px;font-size:13px}
+.archivo button[aria-pressed=true]{color:var(--text);box-shadow:inset 0 -2px var(--active)}
 
 @media(max-width:720px){
   body{font-size:15px!important}

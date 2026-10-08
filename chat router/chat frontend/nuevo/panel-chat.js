@@ -1,6 +1,7 @@
 import { api, harness, node } from "../api.js";
 import { tell } from "./base.js";
-import { activar, activo, agregar, crear, fijarConversacion, fusionar, listar, mensajes } from "./chat-sesion.js";
+import { activar, activo, agregar, anclados, crear, fijarConversacion, fusionar, listar, mensajes } from "./chat-sesion.js";
+import { montarArchivos } from "./chat-archivos.js";
 
 const select = (id, entries, value, label) => {
   const target = document.querySelector(id);
@@ -59,7 +60,9 @@ function origen(texto, tipo, detalle = "") {
   marca.dataset.origen = tipo;
   marca.title = detalle;
 }
+const archivos = montarArchivos({ activoId: () => activo().id });  // Punto 4: archivos del chat activo
 async function sincronizar(id) {
+  void archivos.cargar(id);  // al abrir/crear/recargar un chat también se recargan sus archivos
   if (activo().id === id) origen("Historial: consultando servidor…", "cargando");
   try {
     const respuesta = await api(`/chat/history/${encodeURIComponent(id)}?limit=200`);
@@ -101,7 +104,7 @@ document.querySelector("#composer").addEventListener("submit", async event => {
   decir(chat.id, "user", message);
   try {
     const answer = window.RIU_CONFIG?.harnessUrl
-      ? await harness({ model: document.querySelector("#ficha").value, message, max_tokens, sesion: chat.id,
+      ? await harness({ model: document.querySelector("#ficha").value, message, max_tokens, sesion: chat.id, anclados: anclados(chat.id),
           avisar: text => { if (activo().id === chat.id) document.querySelector("#history").append(node("div", text, "item message")); } })
       : await api("/chat/send", { method: "POST", body: {
           message, ficha: document.querySelector("#ficha").value,

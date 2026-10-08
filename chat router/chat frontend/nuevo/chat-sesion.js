@@ -94,6 +94,16 @@ export function fusionar(id, remotos) {
   return { servidor: servidor.length, soloLocales: locales.length };
 }
 
+// Punto 4: nombres de archivos anclados por chat; viajan como `anclados` en cada mensaje de ese chat.
+export function anclados(id) {
+  const chat = indice().find(c => c.id === id);
+  return Array.isArray(chat?.anclados) ? chat.anclados.filter(n => typeof n === "string") : [];
+}
+
+export function fijarAnclados(id, nombres) {
+  actualizar(id, c => ({ ...c, anclados: [...new Set(nombres)] }));
+}
+
 function actualizar(id, cambio) {
   escribir(INDICE, indice().map(c => c.id === id ? cambio(c) : c));
 }

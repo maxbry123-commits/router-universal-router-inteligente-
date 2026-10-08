@@ -27,6 +27,9 @@
       <div class="chat-bar"><button id="nuevo-chat" class="secondary" type="button">Nuevo chat</button>
         <div id="chat-tabs" role="tablist" aria-label="Chats"></div><output id="chat-id" class="muted"></output>
         <small id="historial-origen" class="muted" role="status"></small></div>
+      <div class="chat-files" aria-label="Archivos del chat"><div class="chat-files-head"><strong id="archivos-titulo">Archivos de este chat</strong>
+        <button id="archivos-subir" class="secondary" type="button">Subir archivo</button><input id="archivos-input" type="file" hidden>
+        <small id="archivos-estado" class="muted" role="status"></small></div><ul id="archivos-lista"></ul></div>
       <div id="history" class="chat-history" role="log" aria-live="polite"></div>
       <form id="composer"><label for="message">Mensaje</label><textarea id="message" required placeholder="Escribe un mensaje"></textarea><button class="action" type="submit">Enviar al Router</button></form>
     </section>
