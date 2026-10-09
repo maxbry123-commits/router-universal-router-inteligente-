@@ -9,6 +9,9 @@ import { b64utf8 } from "./chat-aislado.js";
 import { sha256, dagHijo, abrirHijo } from "./chat-agente-hijo.js";
 
 const MAX_AGENTES = 3;
+// tarjeta de resultados del padre: la misma al ejecutar y al reconstruir tras recargar (chat-historial.js)
+export const textoTarjeta = (estado) => "🎛 ORQUESTADOR · " + estado.objective_id + " · " + estado.estado + "\n\n" +
+  estado.agentes.map((a) => `[${a.agente} · ${a.modelo} · ${a.estado} · verificación ${a.verificacion ? a.verificacion.resultado : "-"}]\n${a.respuesta || (a.verificacion ? a.verificacion.fallos.join(", ") : "")}`).join("\n\n");
 export const sinGPU = (id) => !String(id || "").startsWith("hf-");  // hf-* enciende una GPU L4 de pago: fuera del MVP
 const claveSel = (s) => "riu_orq_" + s;
 
@@ -104,7 +107,7 @@ export function conectarOrquestador(ctx) {
     if (!input.trim()) return;
     if (!activos.length) { tell("No hay agentes activos: elige en 🎛 orquestador"); return; }
     const objective_id = "obj-" + Date.now() + "-" + [...crypto.getRandomValues(new Uint8Array(2))].map((x) => x.toString(16).padStart(2, "0")).join("");
-    estado = { objective_id, sesion_padre: c.sesion, via: "HTTP+", input_block_sha256: await sha256(input), input_bytes: new TextEncoder().encode(input).length,
+    estado = { objective_id, sesion_padre: c.sesion, via: "HTTP+", input, input_block_sha256: await sha256(input), input_bytes: new TextEncoder().encode(input).length,
       handoff: null, estado: "EJECUTANDO", ts_inicio: new Date().toISOString(), ts_fin: null, bitacora: [],
       agentes: activos.map((a) => ({ agente: a.agente, modelo: a.modelo, sesion_hija: null, estado: "PENDIENTE", ms: null, respuesta: null, verificacion: null })) };
     const log = (msg) => { estado.bitacora.push({ ts: new Date().toISOString(), msg }); pintarEstado(); };
@@ -140,8 +143,7 @@ export function conectarOrquestador(ctx) {
     estado.ts_fin = new Date().toISOString();
     log("Objetivo " + estado.estado);
     pending.remove();
-    c.hist.append(ctx.burbuja("🎛 ORQUESTADOR · " + objective_id + " · " + estado.estado + "\n\n" +
-      estado.agentes.map((a) => `[${a.agente} · ${a.modelo} · ${a.estado} · verificación ${a.verificacion ? a.verificacion.resultado : "-"}]\n${a.respuesta || (a.verificacion ? a.verificacion.fallos.join(", ") : "")}`).join("\n\n")));
+    c.hist.append(ctx.burbuja(textoTarjeta(estado)));
     try {
       const nombre = "orquestador-" + objective_id + ".json";
       const r = await window.RIU_ACCION("subir", { sesion: c.sesion, nombre, tipo: "application/json", datos_b64: b64utf8(JSON.stringify(estado, null, 1)) });
