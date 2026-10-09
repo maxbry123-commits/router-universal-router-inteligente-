@@ -6,7 +6,7 @@
 
 Actualizado: 2026-10-05. Sin claves en este archivo.
 
-La pantalla está en https://riu-jev-bridge.vercel.app. El servidor, puente, herramientas, banco y memoria están en Hugging Face, en un Job cpu-upgrade de 32 GB. El Space anterior permanece pausado.
+La pantalla está en https://riu-jev-bridge.vercel.app. El servidor, puente, herramientas, banco y memoria están en Hugging Face, en un Job cpu-basic de 16 GB (verificado en Hugging Face el 2026-10-09: hay 2 Jobs vivos cpu-basic con vencimiento de 48 h). El Space anterior permanece pausado.
 
 ## Dirección y autenticación
 
@@ -42,7 +42,7 @@ POST JSON a `<puente>/<acción>`, respuesta `{status:"ok",result:{...}}`.
 
 Cada turno se guarda por sesión en SQLite y se sincroniza al bucket `COMAND-CENTER-1/yaiwes-memoria-storage`, bajo `router-inteligente-universal/memoria`. API de memoria: `/memoria/save`, `/memoria/load`; archivos: `/espacio/<ruta>`. El chat recupera los últimos turnos de su sesión.
 
-`riu_kernel.py` se ejecuta cada diez minutos mediante el schedule HF `6ac40924fbc85ba6823aca1b`. Mantiene un Router de 32 GB, renueva el Job de 24 horas, publica LIVE_URL, conserva memoria y retira el anterior después de comprobar el sucesor. No escala automáticamente. Los L4 se encienden al pedir un modelo HF y se apagan después de responder o al quedar inactivos.
+`riu_kernel.py` se ejecuta cada diez minutos mediante el schedule HF `6ac40924fbc85ba6823aca1b`. Mantiene un Router de 16 GB, renueva el Job de 24 horas, publica LIVE_URL, conserva memoria y retira el anterior después de comprobar el sucesor. No escala automáticamente. Los L4 se encienden al pedir un modelo HF y se apagan después de responder o al quedar inactivos.
 
 ## Verificación realizada
 
