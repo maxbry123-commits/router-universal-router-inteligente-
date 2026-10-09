@@ -93,14 +93,27 @@ export function conectarOrquestador(ctx) {
     }
     pintarAgentes(); pintarBoton(); pintarEstado();
   });
-  q("#orq-toggle").addEventListener("click", () => {
+  q("#orq-toggle").addEventListener("click", async () => {
     const c = chat();
     if (c.padre) { tell("El orquestador se usa desde el chat padre"); return; }
     if (!c.orq && !sel().length) { tell("Elige al menos un agente activo para encender el orquestador"); return; }
-    c.orq = !c.orq;
-    ctx.guardar(); pintarBoton();
-    tell("Orquestador " + (c.orq ? "ON: las órdenes van a los agentes activos" : "OFF: chat normal"));
+    const boton = q("#orq-toggle");
+    boton.disabled = true;
+    try {  // el ON/OFF vive en el servidor: POST /chat/orquestador/{sesion} {activo} (orquestador.py de PR #12)
+      const r = await api(`/chat/orquestador/${encodeURIComponent(c.sesion)}`, { method: "POST", body: { activo: !c.orq } });
+      c.orq = !!r.activo;
+      ctx.guardar(); pintarBoton();
+      tell("Orquestador " + (c.orq ? "ON: las órdenes van a los agentes activos" : "OFF: chat normal") + " (guardado en el Router)");
+    } catch (e) { tell("GAP orquestador ON/OFF en el Router: " + e.message); }
+    finally { boton.disabled = false; }
   });
+  // al cargar, el estado ON/OFF de cada chat padre se lee del servidor (GET /chat/orquestador/{sesion})
+  ctx.leerOrquestador = async (c) => {
+    if (c.padre) return;
+    try { c.orq = !!(await api(`/chat/orquestador/${encodeURIComponent(c.sesion)}`)).activo; ctx.guardar(); if (c === chat()) pintarBoton(); }
+    catch (e) { tell("GAP orquestador ON/OFF en el Router: " + e.message); }
+  };
+  ctx.chats.forEach(ctx.leerOrquestador);
 
   ctx.orquestar = async (c, input) => {
     const activos = sel().filter((a) => sinGPU(a.modelo));  // nunca GPU de pago, aunque venga de una selección vieja
