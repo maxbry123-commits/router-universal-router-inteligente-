@@ -104,6 +104,7 @@ export function conectarAgenteHijo(ctx) {
     const boton = ev.currentTarget, padre = chat(), agente = lista.value, input = q("#ag-input").value;
     if (padre.padre) { tell("Abre el agente desde el chat padre, no desde un chat hijo"); return; }
     if (!agente || !input.trim()) { tell("Elige un agente y escribe el INPUT_BLOCK"); return; }
+    if (ctx.chats.length >= ctx.MAX_CHAT) { tell("Máximo " + ctx.MAX_CHAT + " chats abiertos: cierra uno o recarga"); return; }  // antes del POST: sin hijos huérfanos
     if (String(padre.ficha || "").startsWith("hf-")) { tell("El chat hijo no enciende GPU de pago (hf-*): elige un modelo API en la píldora"); return; }
     boton.disabled = true;
     try {
