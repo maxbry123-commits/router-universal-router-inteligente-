@@ -804,14 +804,71 @@ def _especial(tipo, model, sesion, pregunta, p=None):
             'memoria_guardada': _guardar(sesion, model, pregunta, texto)}
 
 
+
+# ---- Fichas 2 y 3 (Ask council code / frontend qwen team): el DAG de la ficha tal cual, con los modelos de la ficha 14 ----
+_DAG_MODELO = {'ficha-dsv4pro': 'deepseek-v4-pro', 'ficha-dsv4pro0813': 'deepseek-v4-pro-0813', 'ficha-dsv4flash': 'deepseek-v4-flash-0731',
+               'ficha-glm52': 'glm-5.2', 'ficha-qwen38max': 'qwen3.8-max', 'ficha-qwen38flash': 'qwen3.8-flash',
+               'ficha-qwen37max': 'qwen3.7-max', 'ficha-qwen37plus': 'qwen3.7-plus', 'ficha-qwen36flash': 'qwen3.6-flash'}
+DAGS = {f.stem[4:]: json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob('dag-*.json'))}
+
+
+def _dag(model, pregunta, sesion):
+    import concurrent.futures as cf
+    import contextvars
+    ficha = DAGS[model]
+    nodos = {n['id']: n for n in ficha.get('nodos', [])}
+    orden = [n['id'] for n in ficha.get('nodos', [])]
+    out = {}
+
+    def correr(i):
+        n = nodos[i]
+        if n.get('tipo') == 'goals':  # goals = datos, 0 llamadas a la API
+            g = [x.get('texto', '') for x in n.get('goals', []) if x.get('texto') and x.get('texto') != 'PONER AQUI']
+            return '\n'.join(g)
+        ctx = '\n\n'.join('[%s]\n%s' % (d, out[d]) for d in n.get('depende_de', []) if out.get(d))
+        prompt = '%s\n\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n%s\n\n%s' % (n.get('rol', ''), pregunta, ctx)
+        modelo = _DAG_MODELO.get(n.get('modelo'), n.get('modelo'))
+        ultimo = None
+        for _ in range(2):  # un reintento con el mismo modelo, nunca otro
+            _DEADLINE.set(time.monotonic() + 170)
+            s, d = _llamar_api('qwencloud', modelo, [{'role': 'user', 'content': prompt}], 8000, 160, None)
+            ultimo = d
+            if s < 400 and isinstance(d, dict) and d.get('choices'):
+                t = str((d['choices'][0].get('message') or {}).get('content') or '').strip()
+                if t:
+                    return t
+        return 'GAP %s (%s): %s' % (i, modelo, str(ultimo)[:200])
+
+    pend = list(orden)
+    while pend:
+        listos = [i for i in pend if all(d in out for d in nodos[i].get('depende_de', []))]
+        if not listos:
+            break
+        with cf.ThreadPoolExecutor(max_workers=len(listos)) as ex:
+            futs = {i: ex.submit(contextvars.copy_context().run, correr, i) for i in listos}
+            for i, f in futs.items():
+                out[i] = f.result()
+                pend.remove(i)
+    usados = {d for n in nodos.values() for d in n.get('depende_de', [])}
+    finales = [i for i in orden if i not in usados and nodos[i].get('tipo') != 'goals']
+    final = out.get(finales[-1], '') if finales else ''
+    if not final or final.startswith('GAP'):  # la SALIDA siempre se entrega: la ultima buena
+        final = next((out[i] for i in reversed(orden) if out.get(i) and not out[i].startswith('GAP') and nodos[i].get('tipo') != 'goals'), final)
+    _guardar(sesion, model, pregunta, final)
+    traza = [{'nodo': i, 'modelo': nodos[i].get('modelo') or 'goals', 'ok': not str(out.get(i, '')).startswith('GAP')} for i in orden if i in out]
+    return {'model': model, 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': final}}], 'ficha': ficha.get('ficha'), 'traza': traza}
+
+
 def _chat(p):
     model = str(p.get('model') or '')
     mensajes = list(p.get('messages') or [])
     max_tokens = int(p.get('max_tokens') or 2048)
     sesion = str(p.get('sesion') or 'general')[:60]
     pregunta = next((str(m.get('content', '')) for m in reversed(mensajes) if m.get('role') == 'user'), '')
+    if model in DAGS:  # fichas 2 y 3: su DAG completo
+        return _dag(model, pregunta, sesion)
     if model not in FICHAS and model not in RESPALDO:
-        return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
+        return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *DAGS, *RESPALDO]}
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
