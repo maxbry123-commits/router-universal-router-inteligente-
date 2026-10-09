@@ -16,6 +16,7 @@ from .memoria import Memoria, ProveedorMock, conectar_harness
 from .modelos_especiales import fabrica_especiales
 from .plantilla import armar, bloque_entrada, faltan
 from .puerta import EsperaAgotada, Puerta
+from .runtime_xray import registrar_evidencia, validar_locks
 
 
 def _choque(n, o):
@@ -112,8 +113,8 @@ class FichaOS:
         self.max_par = par.get('max_parallel', 4) if par.get('enabled', True) else 1
         self.modo = par.get('mode', 'partial')
         tok = dsl.get('tokens', {})
-        self.task_budget = tok.get('task_budget', 12000)  # presupuesto de la FICHA completa
-        self.max_out = tok.get('max_output_tokens', 1500)  # tope por nodo/llamada
+        self.task_budget = tok.get('task_budget', 12000)
+        self.max_out = tok.get('max_output_tokens', 1500)
         self.consumido, self.reservado, self.tlock = 0, 0, threading.Lock()
         self.cache_cfg = dsl.get('cache', {'enabled': False})
         self.reintentos = dsl.get('retry', {}).get('max_attempts', 3)
@@ -127,7 +128,7 @@ class FichaOS:
         self.fin = threading.Event()
 
     def _expandir(self, ficha, modelo):
-        if ficha.get('tipo') == 'individual':  # ficha 1: UN modelo elegido con el selector, una sola llamada
+        if ficha.get('tipo') == 'individual':
             return [{'id': 'N1', 'modelo': modelo, 'rol': 'responde la tarea', 'depende_de': [], 'read_paths': [], 'write_paths': ['salida/' + self.task + '/']}]
         return [dict(n) for n in ficha['nodos']]
 
@@ -138,16 +139,15 @@ class FichaOS:
     def _mensajes(self, n):
         nl = chr(10)
         sis = 'NODO ' + n['id'] + '. Rol: ' + n['rol'] + '. Responde corto y concreto.'
-        if self.plantilla:  # la plantilla del Director va completa en cada llamada, con la entrada del nodo en su bloque verbatim
+        if self.plantilla:
             paso = n.get('paso', self.nodos.index(n) + 1)
             sis = sis + nl + armar(self.plantilla, self.mejoras, bloque_entrada(n, self.task, self.texto, paso, self._rutas(n)))
         usr = 'TAREA: ' + self.texto + nl
         for d in n.get('depende_de', []):
             if d in self.salida:
-                usr += nl + '[' + d + '] ' + self.salida[d][:3000]
+                usr += nl + '[' + d + '] ' + self.salida[d]
         return [{'role': 'system', 'content': sis}, {'role': 'user', 'content': usr}]
 
-    # ---------- scheduler local ----------
     def _listos(self):
         res = []
         for n in self.nodos:
@@ -167,7 +167,7 @@ class FichaOS:
             return []
         cupo, lote = self.max_par - len(activos), []
         for n in self._listos():
-            if es_datos(n):  # goals = datos deterministas: 0 API, 0 tokens, 0 puesto de cola
+            if es_datos(n):
                 self.estado[n['id']] = 'ok'
                 self.salida[n['id']] = self._texto_datos(n)
                 self.ledger[n['id']] = {'nodo': n['id'], 'estado': 'OK', 'api': 0}
@@ -199,7 +199,7 @@ class FichaOS:
     def _rutas(self, n):
         return list(n.get('write_paths') or []) + list(n.get('locks') or [])
 
-    def _individual(self, n):  # modo partial: cada nodo pide sus rutas (candados) y su propio puesto
+    def _individual(self, n):
         lk = n['id']
         try:
             if self.candados:
@@ -218,7 +218,7 @@ class FichaOS:
             if self.candados:
                 self.candados.liberar(self.task, lk)
 
-    def _grupo(self, lote):  # modo group: entran todos juntos o ninguno
+    def _grupo(self, lote):
         lk = '+'.join(n['id'] for n in lote)
         try:
             if self.candados:
@@ -258,14 +258,14 @@ class FichaOS:
         except Exception as e:
             self._terminar(n, False, {'estado': 'GAP', 'motivo': 'ERROR ' + type(e).__name__ + ': ' + str(e)[:120]})
 
-    # ---------- ejecutor + verificador ----------
     def _ejecutar(self, n, permiso, lock_nodo):
         t0 = time.time()
         msgs = self._mensajes(n)
+        validar_locks(n, self.texto, self._rutas(n))
         tok = {'input_tokens': 0, 'output_tokens': 0, 'api_cached_input_tokens': 0, 'total_api_tokens': 0, 'local_cache_hit': False, 'estimated_tokens_avoided': 0}
         reg = {'modelo': n['modelo'], 'inicio': t0, 'tokens': tok}
         tipo = self.f.get('modelos', {}).get(n['modelo'], 'texto')
-        if tipo != 'texto':  # imagen / voz: no usan chat/completions, tienen su propio adaptador (modelos_especiales)
+        if tipo != 'texto':
             if not self.especiales:
                 reg.update(estado='GAP', motivo='GAP_ENDPOINT_NO_CHAT: ' + n['modelo'] + ' no se llama por chat/completions')
                 return self._terminar(n, False, reg)
@@ -283,7 +283,7 @@ class FichaOS:
         salida, err = None, ''
         if hit:
             salida = hit[-1]['salida']
-            tok['local_cache_hit'] = True  # cache LOCAL: no cuenta como cached_tokens de la API
+            tok['local_cache_hit'] = True
             tok['estimated_tokens_avoided'] = tokens_est(msgs)
         else:
             max_out = n.get('max_output_tokens', self.max_out)
@@ -315,22 +315,29 @@ class FichaOS:
         if not salida or len(salida.strip()) < n.get('valida_min_chars', 1):
             reg.update(estado='GAP', motivo='SIN_SALIDA ' + err)
             return self._terminar(n, False, reg)
-        if necesita_ev:  # la SALIDA siempre se entrega; la verificacion es una etiqueta aparte (una respuesta de modelo no es evidencia)
+        if necesita_ev:
             ev = self.harness(n, salida, {'task': self.task, 'paths': n.get('write_paths')}) if self.harness else None
             reg['evidencia'] = ev
             if ev is None:
-                reg['verificacion'] = 'GAP_HARNESS_EXECUTOR: sin Harness/tools reales no se declara ejecucion de codigo'
-            elif not evidencia_ok(ev):
-                reg['verificacion'] = 'EVIDENCIA_INCOMPLETA: se exige exit_code 0, files_changed, tests ejecutados y pasados, receipt'
-            else:
-                reg['verificacion'] = 'VERIFICADA'
+                motivo = 'GAP_HARNESS_EXECUTOR: sin Harness/tools reales no se declara ejecucion de codigo'
+                reg['verificacion'] = motivo
+                registrar_evidencia(False, motivo)
+                reg.update(estado='GAP', motivo=motivo)
+                return self._terminar(n, False, reg)
+            if not evidencia_ok(ev):
+                motivo = 'EVIDENCIA_INCOMPLETA: se exige exit_code 0, files_changed, tests ejecutados y pasados, receipt'
+                reg['verificacion'] = motivo
+                registrar_evidencia(False, motivo)
+                reg.update(estado='GAP', motivo=motivo)
+                return self._terminar(n, False, reg)
+            reg['verificacion'] = 'VERIFICADA'
+            registrar_evidencia(True)
         if usa_cache and not hit:
             self.mem.guardar('cache', clave, {'salida': salida})
         reg['estado'] = 'OK'
         self._terminar(n, True, reg, salida)
 
-    # ---------- ciclo de vida ----------
-    def _perro(self):  # watchdog de la ficha: libera puestos de fichas muertas o con lease vencido
+    def _perro(self):
         while not self.fin.wait(5):
             self.puerta.watchdog()
 
@@ -367,12 +374,11 @@ class FichaOS:
         res = {'task': self.task, 'ficha': self.f['ficha'], 'estado': 'SALIDA' if ok else 'GAP', 'verificado': verificado, 'avisos': sorted(set(v for v in ver if v != 'VERIFICADA')),
                'salida': self.salida.get(final, ''), 'tokens': suma, 'task_budget': self.task_budget, 'nodos': dict(self.estado), 'gaps': motivos}
         self.mem.guardar('ledger', 'RESUMEN', res)
-        if ok and verificado is True:  # a la memoria del proyecto solo pasa lo verificado con evidencia
+        if ok and verificado is True:
             self.mem.promover('resultado/' + self.task, {'salida': res['salida']}, True)
         return res
 
 
-# ---------- carga y validacion de fichas ----------
 def leer_texto(ruta):
     if os.path.exists(ruta):
         return open(ruta, encoding='utf-8').read()
