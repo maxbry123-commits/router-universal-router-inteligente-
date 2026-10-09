@@ -26,38 +26,38 @@ const pintarDiagrama = (caja, texto) => {  // pasos en línea, desplazable en ho
 };
 const svg = (p) => '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + "</svg>";
 const ICO_F = {  // iconos de línea para las hojas con el mismo diseño que Team qwen
-  "Ask consil": '<circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3 3-5 6-5s6 2 6 5M14 15c3 0 8 1 8 5"/>',
-  Motores: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  pensar: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+  flecha: '<path d="M4 12h15M13 6l6 6-6 6"/>',
+  lupa: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
   chip: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
   pendiente: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
 };
-const grupoFicha = (id) => id.startsWith("ask-consil") ? "Ask consil" : id.startsWith("motor-") ? "Motores" : id.startsWith("hf-") ? "HF" : id.startsWith("groq-") ? "GROQ" : id.startsWith("nv-") ? "NVIDIA" : "Fichas";
+const icoFicha = (id) => id.startsWith("ask-consil") ? "pensar" : id === "motor-descarga" ? "flecha" : id.startsWith("motor-") ? "lupa" : "chip";  // equivalente de línea del emoji original
 const limpia = (t) => t.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim();
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
-const decorarFichas = (lista) => {  // Nvidia groq team: mismas filas que Team qwen (icono, título, check azul); mismos handlers e ids
+const decorarFichas = (lista) => {  // Nvidia groq team: las MISMAS 11 fichas, mismo orden, sin cabeceras; estilo de fila Team qwen (icono, título, check azul)
   const filas = [...lista.children].filter((e) => e.matches("button.fila"));
   if (!filas.length) return;
-  const mods = window.RIU_CONFIG?.modelos || [], grupos = new Map();
+  const mods = window.RIU_CONFIG?.modelos || [], caja = el("div", "mod-grupo");
   for (const r of filas) {
     const nom = r.querySelector(".fila-nom"), ck = r.querySelector(".fila-ck"), desc = nom.querySelector(".fila-desc");
-    const titulo = (nom.firstChild || nom).textContent, m = mods.find((x) => limpia(x.etiqueta) === titulo) || { id: "" }, g = grupoFicha(m.id);
+    const titulo = (nom.firstChild || nom).textContent, m = mods.find((x) => limpia(x.etiqueta) === titulo) || { id: "" };
     const sel = r.classList.contains("on");
     r.className = "mod-fila" + (sel ? " sel" : ""); r.setAttribute("aria-pressed", String(sel)); r.dataset.ficha = m.id;
-    const ico = el("span", "mod-ico"); ico.innerHTML = svg(ICO_F[g] || ICO_F.chip);
+    const ico = el("span", "mod-ico"); ico.innerHTML = svg(ICO_F[icoFicha(m.id)]);
     const txt = el("span", "mod-txt"); txt.append(el("b", "", titulo)); if (desc) txt.append(el("small", "", desc.textContent));
     ck.className = "mod-ck"; r.replaceChildren(ico, txt, ck);
-    if (!grupos.has(g)) grupos.set(g, []); grupos.get(g).push(r);
+    caja.append(r);
   }
-  const out = [];
-  for (const [g, rs] of grupos) { const caja = el("div", "mod-grupo"); caja.append(...rs); out.push(el("h4", "mod-grupo-t", g), caja); }
-  lista.replaceChildren(...out);
+  lista.replaceChildren(caja);
 };
-const decorarPendiente = (lista) => {  // Ask consil sin modelos: misma fila/estilo que Team qwen
+const decorarPendiente = (lista, quitar) => {  // Ask consil Nvidia groq: fila "Modelos pendientes" sin cabecera; code/fromtend: solo el diagrama
   const v = lista && lista.querySelector(":scope > .consil-vacio");
   if (!v) return;
+  if (quitar) { lista.replaceChildren(); return; }
   const caja = el("div", "mod-grupo"), f = el("div", "mod-fila mod-pendiente"), ico = el("span", "mod-ico"), txt = el("span", "mod-txt");
   ico.innerHTML = svg(ICO_F.pendiente); txt.append(el("b", "", v.textContent)); f.append(ico, txt, el("span", "mod-ck")); caja.append(f);
-  lista.replaceChildren(el("h4", "mod-grupo-t", "Modelos"), caja);
+  lista.replaceChildren(caja);
 };
 const tira_id = (id) => "dg-" + id;
 const usable = (id) => SELECTORES.some((s) => s.id === id);
@@ -131,6 +131,6 @@ export function conectarSelectores({ q }) {
   new MutationObserver(sync).observe(ficha, { attributes: true, attributeFilter: ["title"] }); sync();
   const lf = q("#sh-ficha-lista");
   if (lf) { new MutationObserver(() => decorarFichas(lf)).observe(lf, { childList: true }); decorarFichas(lf); }
-  for (const k of ["nvidia", "code", "frontend"]) decorarPendiente(q("#sh-consil-" + k + "-lista"));
+  for (const k of ["nvidia", "code", "frontend"]) decorarPendiente(q("#sh-consil-" + k + "-lista"), k !== "nvidia");
   pintar();
 }
