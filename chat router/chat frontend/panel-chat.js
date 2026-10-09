@@ -121,10 +121,24 @@ export async function mount(root, { api, tell }) {
   };
 
   // ---- pildora de ficha: hoja con todas las fichas (por chat) ----
+  const esMotor = (id) => /^(ask-consil|motor-|hf-)/.test(id);
+  const pintarMotores = () => {
+    const barra = q("#motores-barra");
+    if (!barra) return;
+    barra.replaceChildren();
+    for (const m of (window.RIU_CONFIG?.modelos || []).filter((x) => esMotor(x.id))) {
+      const b = node("button", m.etiqueta, "pill" + (m.id === chat().ficha ? " on" : ""));
+      b.type = "button";
+      b.addEventListener("click", () => { chat().ficha = m.id; pintarFichaPill(); pintarFichas(); guardar(); });
+      barra.append(b);
+    }
+  };
   const pintarFichas = () => {
     const lista = q("#sh-ficha-lista");
     lista.replaceChildren();
+    pintarMotores();
     for (const m of window.RIU_CONFIG?.modelos || []) {
+      if (esMotor(m.id)) continue;
       lista.append(fila(m.etiqueta, "", m.id === chat().ficha, () => {
         chat().ficha = m.id;
         pintarFichaPill();
