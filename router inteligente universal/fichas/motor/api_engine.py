@@ -7,6 +7,7 @@ import urllib.error
 import urllib.request
 
 from .limites import Guarda
+from .runtime_xray import cerrar_modelo, iniciar_modelo
 
 TIMEOUT = 90            # 1,5 minutos maximo por llamada
 LIMITE_LLAMADA = 18000  # al llegar a 18k caracteres la llamada se reinicia partida en bloques
@@ -143,6 +144,14 @@ class Motor:
             notas += ' [' + str(k) + '] ' + salida[:600]
 
     def llamar(self, mensajes, max_tokens=1024):
-        if chars(mensajes) >= self.limite:
-            return self._por_bloques(mensajes, max_tokens)
-        return self._ronda(mensajes, max_tokens)
+        iniciar_modelo()
+        try:
+            if chars(mensajes) >= self.limite:
+                salida = self._por_bloques(mensajes, max_tokens)
+            else:
+                salida = self._ronda(mensajes, max_tokens)
+        except Exception as exc:
+            cerrar_modelo(False, type(exc).__name__ + ': ' + str(exc)[:200])
+            raise
+        cerrar_modelo(True)
+        return salida
