@@ -227,9 +227,16 @@ def _recortar(mensajes, limite=20000):
 
 
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
-    from integration.chat_mvp import providers
-    claves = providers.env_keys(proveedor)
-    base = providers.base_url(proveedor)
+    if proveedor == 'qwencloud':  # Team qwen: clave y direccion del sello de la ficha 14 (clave del banco)
+        try:
+            k, u = _qwen_conf()
+        except Exception as x:  # noqa: BLE001
+            return 0, {'error': 'SIN_CLAVES_QWENCLOUD', 'detalle': str(x)[:150]}
+        claves, base = [k], u
+    else:
+        from integration.chat_mvp import providers
+        claves = providers.env_keys(proveedor)
+        base = providers.base_url(proveedor)
     if not claves or not base:
         return 0, {'error': 'SIN_CLAVES_' + proveedor.upper()}
     fin = time.monotonic() + tope
@@ -885,6 +892,7 @@ def _chat(p):
         # reserva entre proveedores: la tarea pasa a otro modelo con lo ya hecho
         prov0 = FICHAS[model][1]
         alternos = [m for m in FICHAS if m != model and FICHAS[m][1] != prov0] + [m for m in FICHAS if m != model and FICHAS[m][1] == prov0]
+        alternos = [m for m in alternos if FICHAS[m][1] != 'qwencloud']  # los de Qwen solo se usan si se eligen
         for alt in alternos[:2]:
             _, prov_a, modelo_a, tope_a = FICHAS[alt]
 
@@ -965,11 +973,6 @@ def _apagar(p: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---- Team qwen: los 14 modelos de la ficha (Qwen Cloud). La clave va sellada con la clave del banco ----
-_QWEN_SLUG = {  # slug del selector del chat -> id real del proveedor (segun la ficha modelos-14)
-    "qwen-3-8-max": "qwen3.8-max", "qwen-3-8-flash": "qwen3.8-flash", "qwen-3-7-max": "qwen3.7-max",
-    "qwen-3-7-plus": "qwen3.7-plus", "qwen-3-6-flash": "qwen3.6-flash", "deepseek-v4-pro": "deepseek-v4-pro",
-    "deepseek-v4-pro-0813": "deepseek-v4-pro-0813", "deepseek-v4-flash": "deepseek-v4-flash-0731", "glm-5-2": "glm-5.2",
-}
 _QWEN_CACHE = {}
 
 
@@ -989,35 +992,6 @@ def _qwen_conf():
         _QWEN_CACHE["k"] = re.search(r'apiKey:\s*"([^"]+)"', texto).group(1)
         _QWEN_CACHE["url"] = re.search(r'baseURL:\s*"([^"]+)"', texto).group(1).rstrip("/")
     return _QWEN_CACHE["k"], _QWEN_CACHE["url"]
-
-
-def _qwen(p):
-    slug = str(p.get("modelo_id_slug") or "")
-    modelo = _QWEN_SLUG.get(slug)
-    if not modelo:
-        return {"error": "MODELO_NO_ES_DE_TEXTO_O_NO_EXISTE", "detalle": slug}
-    mensaje = str(p.get("message") or "").strip()
-    if not mensaje:
-        return {"error": "MENSAJE_VACIO"}
-    sesion = str(p.get("sesion") or "chat")
-    try:
-        clave, url = _qwen_conf()
-    except Exception as x:  # noqa: BLE001
-        return {"error": "QWEN_SIN_CLAVE", "detalle": str(x)[:200]}
-    cuerpo = {"model": modelo, "messages": [{"role": "user", "content": mensaje}],
-              "max_tokens": int(p.get("max_tokens") or 1500)}
-    req = urllib.request.Request(url + "/chat/completions", data=json.dumps(cuerpo).encode(), method="POST",
-                                 headers={"Authorization": "Bearer " + clave, "Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=85) as r:
-            d = json.loads(r.read().decode("utf-8", "replace"))
-    except urllib.error.HTTPError as x:
-        return {"error": "QWEN_HTTP_%d" % x.code, "detalle": x.read()[:300].decode("utf-8", "replace")}
-    except Exception as x:  # noqa: BLE001
-        return {"error": "QWEN_FALLO", "detalle": str(x)[:200]}
-    texto = ((d.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
-    _guardar(sesion, modelo, mensaje, texto)
-    return {"ok": True, "modelo": d.get("model") or modelo, "respuesta": texto}
 
 
 def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -1102,8 +1076,6 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return _descargas(payload)
         except Exception as x:  # noqa: BLE001
             return {'error': 'DESCARGAS_FALLO', 'detalle': str(x)[:200]}
-    if action == "qwen":  # selector Team qwen del chat
-        return _qwen(payload)
     return {"error": "ACCION_DESCONOCIDA"}
 
 # Long model calls are polled through HTTP, so browser requests do not expire at the HF ingress.
