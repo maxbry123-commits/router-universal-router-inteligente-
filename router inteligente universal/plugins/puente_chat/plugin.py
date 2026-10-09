@@ -102,7 +102,7 @@ def _guardar(sesion: str, modelo: str, pregunta: str, respuesta: str) -> bool:
     try:
         mem, scope_for = _memoria()
         mem.save(scope_for(DUENO, "chat:" + sesion), "turno-%d" % int(time.time() * 1000),
-                 {"modelo": modelo, "pregunta": pregunta[:4000], "respuesta": respuesta[:8000]})
+                 {"modelo": modelo, "pregunta": pregunta[:1_000_000], "respuesta": respuesta[:1_000_000]})
         return True
     except Exception:  # noqa: BLE001
         return False
@@ -202,14 +202,14 @@ def _sentinela():
     return mod  # proveedor -> indice de la ultima clave que respondio bien
 
 
-def _recortar(mensajes, limite=20000):
+def _recortar(mensajes, limite=1_000_000):
     # Mantiene el envio por debajo del tope de la API: acorta salidas de
     # herramientas y luego suelta los turnos mas viejos (sin romper pares
     # assistant(tool_calls) -> tool).
     ms = [dict(m) for m in mensajes]
     for m in ms:
-        if m.get('role') == 'tool' and len(m.get('content') or '') > 1200:
-            m['content'] = m['content'][:1200] + ' ...[recortado]'
+        if m.get('role') == 'tool' and len(m.get('content') or '') > 1_000_000:
+            m['content'] = m['content'][:1_000_000] + ' ...[recortado]'
     def tam():
         return sum(len(str(m.get('content') or '')) + len(json.dumps(m.get('tool_calls') or '')) for m in ms)
     while len(ms) > 3 and tam() > limite:
@@ -371,7 +371,7 @@ def _bucle(llamar, mensajes):
                 if 'no hay token' in res or 'herramienta desconocida' in res:
                     rotas.add(nom)
             usadas.append({'herramienta': nom, 'ok': not res.startswith(('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0'))})
-            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:3000]})
+            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:1_000_000]})
         pasos += 1
         if pasos >= MAX_PASOS or time.monotonic() >= fin:
             con_tools = False  # tiempo o pasos agotados: pedir la respuesta final sin herramientas

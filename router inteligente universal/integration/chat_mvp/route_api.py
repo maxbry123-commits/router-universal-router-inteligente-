@@ -16,7 +16,7 @@ from .usage import UsageLog
 
 class RouteReq(BaseModel):
     group: str = Field(default="default", pattern=r"^[a-z0-9_-]{1,32}$")
-    message: str = Field(min_length=1, max_length=20000)
+    message: str = Field(min_length=1, max_length=1_000_000)
     agent_id: str | None = None
     max_tokens: int = Field(default=1024, ge=1, le=8192)
     temperature: float | None = None

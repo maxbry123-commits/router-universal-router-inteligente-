@@ -245,7 +245,7 @@ export async function mount(root, { api, tell }) {
   // ---- adjuntar y ventana de archivos (boton encender = anclar al chat + x-ray) ----
   const subir = async (file) => {
     const buf = await file.arrayBuffer();
-    if (buf.byteLength > 2_000_000) { tell("Archivo muy grande (máx ~2 MB)"); return; }
+    if (buf.byteLength > 10 * 1024 * 1024) { tell("Archivo muy grande (máx 10 MB)"); return; }
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion });

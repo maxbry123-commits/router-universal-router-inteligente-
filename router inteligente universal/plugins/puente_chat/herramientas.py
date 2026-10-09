@@ -235,7 +235,7 @@ def _hf(metodo, ruta, cuerpo=None):
     return _peticion(metodo, 'https://huggingface.co' + ruta, t, cuerpo, 40)
 
 
-def _texto(s, d, limite=12000):
+def _texto(s, d, limite=1_000_000):
     cuerpo = d if isinstance(d, str) else json.dumps(d, ensure_ascii=False)
     return ('HTTP %s ' % s) + cuerpo[:limite]
 
@@ -246,7 +246,7 @@ def github_leer(a):
     rama = urllib.parse.quote(a.get('rama') or 'main', safe='')
     s, d = _gh('GET', '/repos/%s/%s/contents/%s?ref=%s' % (OWNER, repo, ruta, rama))
     if isinstance(d, list):
-        return json.dumps([x.get('name', '') + ('/' if x.get('type') == 'dir' else '') for x in d])[:12000]
+        return json.dumps([x.get('name', '') + ('/' if x.get('type') == 'dir' else '') for x in d])[:1_000_000]
     if s != 200 or not isinstance(d, dict):
         return 'ERROR %s %s' % (s, str(d)[:300])
     if d.get('encoding') == 'base64':
@@ -259,12 +259,12 @@ def github_leer(a):
                 ini = int(m.group(1)) - 1 if m.group(1) else 0
                 fin = int(m.group(2)) if m.group(2) else total
                 trozo = '\n'.join(texto.splitlines()[max(0, ini):fin])
-                return ('(lineas %s de %d totales)\n' % (lineas, total)) + trozo[:12000]
+                return ('(lineas %s de %d totales)\n' % (lineas, total)) + trozo[:1_000_000]
             return 'ERROR: lineas debe ser "desde-hasta", ej "1-200" o "300-"'
         if total > 300:
-            return ('(archivo de %d lineas; mostrando las primeras; pide un rango con "lineas", ej "200-400")\n' % total) + texto[:12000]
-        return texto[:12000]
-    return str(d)[:3000]
+            return ('(archivo de %d lineas; mostrando las primeras; pide un rango con "lineas", ej "200-400")\n' % total) + texto[:1_000_000]
+        return texto[:1_000_000]
+    return str(d)[:1_000_000]
 
 
 def github_escribir(a):
@@ -329,10 +329,10 @@ def hf_almacenamiento(a):
         from huggingface_hub import HfApi
         api = HfApi(token=t)
         if accion == 'listar':
-            return json.dumps([(e.path, getattr(e, 'size', None)) for e in api.list_bucket_tree(BUCKET, prefix=ruta)][:200])[:12000]
+            return json.dumps([(e.path, getattr(e, 'size', None)) for e in api.list_bucket_tree(BUCKET, prefix=ruta)][:200])[:1_000_000]
         if accion == 'leer':
             api.download_bucket_files(BUCKET, files=[(ruta, '/tmp/lectura-bucket.tmp')])
-            return open('/tmp/lectura-bucket.tmp', encoding='utf-8', errors='replace').read()[:15000]
+            return open('/tmp/lectura-bucket.tmp', encoding='utf-8', errors='replace').read()[:1_000_000]
         if accion == 'escribir':
             api.batch_bucket_files(BUCKET, add=[((a.get('contenido') or '').encode(), ruta)])
             return 'OK escrito ' + ruta
@@ -380,7 +380,7 @@ def internet_leer(a):
         soup = BeautifulSoup(content, 'html.parser')
         for el in soup(['script','style','noscript']): el.decompose()
         content = soup.get_text(' ', strip=True)
-    return json.dumps({'url': url, 'contenido': content[:15000]}, ensure_ascii=False)
+    return json.dumps({'url': url, 'contenido': content[:1_000_000]}, ensure_ascii=False)
 def internet_buscar(a):
     import xml.etree.ElementTree as ET
     query = str(a.get('consulta') or '').strip()

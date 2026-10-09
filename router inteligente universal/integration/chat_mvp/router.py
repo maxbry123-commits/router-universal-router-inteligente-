@@ -79,7 +79,7 @@ def sync_to_bucket(store: Store, bucket_id: str, token: str, *, fs_factory: Call
 
 
 class SendReq(BaseModel):
-    message: str = Field(min_length=1, max_length=20000)
+    message: str = Field(min_length=1, max_length=1_000_000)
     provider: str = "hf"  # "auto" = the Router picks the model (chain of the "default" group in resilience.py); then `model` is ignored
     model: str = ""
     conversation_id: str | None = None

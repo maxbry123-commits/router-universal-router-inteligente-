@@ -68,7 +68,7 @@ class JobReq(BaseModel):
     agent_id: str | None = None
     provider: str
     model: str
-    instructions: str = Field(min_length=1, max_length=20000)
+    instructions: str = Field(min_length=1, max_length=1_000_000)
     input_block: str | None = None
     expect: dict[str, Any] | None = None
     retries: int = Field(default=0, ge=0, le=2)
