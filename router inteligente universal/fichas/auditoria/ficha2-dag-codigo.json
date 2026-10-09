@@ -76,54 +76,18 @@
    "cantidad": 12,
    "tema": "programacion, arquitectura y solucion de programacion de code",
    "goals": [
-    {
-     "id": "G01",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G02",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G03",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G04",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G05",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G06",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G07",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G08",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G09",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G10",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G11",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G12",
-     "texto": "PONER AQUI"
-    }
+    {"id": "G01", "texto": "PONER AQUI"},
+    {"id": "G02", "texto": "PONER AQUI"},
+    {"id": "G03", "texto": "PONER AQUI"},
+    {"id": "G04", "texto": "PONER AQUI"},
+    {"id": "G05", "texto": "PONER AQUI"},
+    {"id": "G06", "texto": "PONER AQUI"},
+    {"id": "G07", "texto": "PONER AQUI"},
+    {"id": "G08", "texto": "PONER AQUI"},
+    {"id": "G09", "texto": "PONER AQUI"},
+    {"id": "G10", "texto": "PONER AQUI"},
+    {"id": "G11", "texto": "PONER AQUI"},
+    {"id": "G12", "texto": "PONER AQUI"}
    ],
    "depende_de": []
   },
@@ -131,70 +95,41 @@
    "id": "N1",
    "modelo": "ficha-dsv4pro",
    "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": [
-    "N0"
-   ],
+   "depende_de": ["N0"],
    "parallel_safe": true,
-   "read_paths": [
-    "tarea/"
-   ],
-   "write_paths": [
-    "salida/N1/"
-   ],
+   "read_paths": ["tarea/"],
+   "write_paths": ["salida/N1/"],
    "locks": []
   },
   {
    "id": "N2",
    "modelo": "ficha-glm52",
    "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": [
-    "N0"
-   ],
+   "depende_de": ["N0"],
    "parallel_safe": true,
-   "read_paths": [
-    "tarea/"
-   ],
-   "write_paths": [
-    "salida/N2/"
-   ],
+   "read_paths": ["tarea/"],
+   "write_paths": ["salida/N2/"],
    "locks": []
   },
   {
    "id": "N3",
    "modelo": "ficha-qwen37max",
    "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": [
-    "N0"
-   ],
+   "depende_de": ["N0"],
    "parallel_safe": true,
-   "read_paths": [
-    "tarea/"
-   ],
-   "write_paths": [
-    "salida/N3/"
-   ],
+   "read_paths": ["tarea/"],
+   "write_paths": ["salida/N3/"],
    "locks": []
   },
   {
    "id": "N4",
    "modelo": "ficha-qwen38max",
    "rol": "analiza los goals de N0 y las propuestas de N1, N2 y N3 y EJECUTA la tarea de programacion de code (unico ejecutor)",
-   "depende_de": [
-    "N0",
-    "N1",
-    "N2",
-    "N3"
-   ],
+   "depende_de": ["N0", "N1", "N2", "N3"],
    "parallel_safe": true,
-   "read_paths": [
-    "tarea/"
-   ],
-   "write_paths": [
-    "codigo/"
-   ],
-   "locks": [
-    "codigo/"
-   ],
+   "read_paths": ["tarea/"],
+   "write_paths": ["codigo/"],
+   "locks": ["codigo/"],
    "requiere_evidencia": true
   },
   {
@@ -205,97 +140,41 @@
    "nombre": "goals_de_salida",
    "cantidad": 12,
    "goals": [
-    {
-     "id": "S01",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S02",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S03",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S04",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S05",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S06",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S07",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S08",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S09",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S10",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S11",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S12",
-     "texto": "PONER AQUI"
-    }
+    {"id": "S01", "texto": "PONER AQUI"},
+    {"id": "S02", "texto": "PONER AQUI"},
+    {"id": "S03", "texto": "PONER AQUI"},
+    {"id": "S04", "texto": "PONER AQUI"},
+    {"id": "S05", "texto": "PONER AQUI"},
+    {"id": "S06", "texto": "PONER AQUI"},
+    {"id": "S07", "texto": "PONER AQUI"},
+    {"id": "S08", "texto": "PONER AQUI"},
+    {"id": "S09", "texto": "PONER AQUI"},
+    {"id": "S10", "texto": "PONER AQUI"},
+    {"id": "S11", "texto": "PONER AQUI"},
+    {"id": "S12", "texto": "PONER AQUI"}
    ],
-   "depende_de": [
-    "N4"
-   ]
+   "depende_de": ["N4"]
   },
   {
    "id": "N6",
    "modelo": "ficha-glm52",
    "rol": "REVISA y refactoriza el resultado de N4 segun los goals de salida de N5",
-   "depende_de": [
-    "N4",
-    "N5"
-   ],
+   "depende_de": ["N4", "N5"],
    "parallel_safe": true,
-   "read_paths": [
-    "tarea/"
-   ],
-   "write_paths": [
-    "codigo/"
-   ],
-   "locks": [
-    "codigo/"
-   ],
+   "read_paths": ["tarea/", "codigo/"],
+   "write_paths": ["codigo/"],
+   "locks": ["codigo/"],
    "requiere_evidencia": true
   },
   {
    "id": "N7",
    "modelo": "ficha-qwen38max",
    "rol": "REVISA de nuevo el resultado de N6 segun N5 y entrega la SALIDA final",
-   "depende_de": [
-    "N6",
-    "N5"
-   ],
+   "depende_de": ["N6", "N5"],
    "parallel_safe": true,
-   "read_paths": [
-    "tarea/"
-   ],
-   "write_paths": [
-    "codigo/"
-   ],
-   "locks": [
-    "codigo/"
-   ],
+   "read_paths": ["tarea/"],
+   "write_paths": ["codigo/"],
+   "locks": ["codigo/"],
    "requiere_evidencia": true
   }
  ],
