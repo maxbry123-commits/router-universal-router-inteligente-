@@ -4,7 +4,7 @@ import threading
 
 
 class ProveedorMock:
-    """SOLO PARA PRUEBAS. Imita el contrato de los adaptadores de memoria_yaiwes: save(scope, key, data) / load(scope, key) / search."""
+    """SOLO PARA PRUEBAS. Imita el contrato de memoria_yaiwes: save(scope, key, data) / load(scope, key) / search."""
 
     def __init__(self, carpeta):
         os.makedirs(carpeta, exist_ok=True)
@@ -28,10 +28,29 @@ class ProveedorMock:
         with self.lock:
             return self._leer().get(scope, {}).get(key, [])
 
+    def search(self, scope, query, k=10):
+        with self.lock:
+            d = self._leer().get(scope, {})
+            filas = []
+            q = str(query or '').lower()
+            for key, vals in d.items():
+                for dato in vals:
+                    if not q or q in key.lower() or q in json.dumps(dato, ensure_ascii=False).lower():
+                        filas.append({'key': key, 'data': dato})
+            return filas[-max(1, int(k)):]
+
 
 def conectar_harness():
-    # GAP: falta la direccion exacta de memoria_yaiwes (chat router/04-MEMORIA). Cuando se conozca se cablea aqui y SOLO aqui.
-    raise NotImplementedError('GAP: conectar el proveedor harness (save/load/search de memoria_yaiwes)')
+    """Usa la misma fachada memoria_yaiwes que ya carga el Router."""
+    try:
+        from integration.chat_mvp.memoria_loader import _memory
+        memoria = _memory()
+    except Exception as exc:
+        raise RuntimeError('MEMORIA_YAIWES_NO_DISPONIBLE:' + type(exc).__name__) from exc
+    for nombre in ('save', 'load', 'search'):
+        if not callable(getattr(memoria, nombre, None)):
+            raise RuntimeError('MEMORIA_YAIWES_CONTRATO_INVALIDO:' + nombre)
+    return memoria
 
 
 class Memoria:
