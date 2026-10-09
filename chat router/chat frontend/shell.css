@@ -92,9 +92,9 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .chat-history[hidden]{display:none!important}
 .row.fields{gap:8px}
 .row.fields .pill{min-height:40px;padding:0 16px;border-radius:999px;background:var(--surface-alt);border:1px solid var(--border);color:var(--title);font-weight:600;font-size:14px;max-width:60vw;display:inline-flex;align-items:center;gap:6px}
-.row.fields .pill:hover{background:var(--module-selected)}
+@media (hover:hover){.row.fields .pill:hover{background:var(--module-selected)}}
 .row.fields .sel-nuevo{background:var(--title);color:var(--bg);border-color:var(--title);font-weight:700}
-.row.fields .sel-nuevo:hover{background:var(--quiet)}
+@media (hover:hover){.row.fields .sel-nuevo:hover{background:var(--quiet)}}
 .row.fields .sel-nuevo.on{background:var(--status-blue);border-color:var(--status-blue);color:#fff}
 .chip{min-height:34px;padding:0 14px;border-radius:999px;background:var(--surface-alt);border:1px solid var(--border);color:var(--quiet);font-weight:600}
 .chip.on{background:var(--module-selected);border-color:var(--status-blue);color:var(--title)}
@@ -103,16 +103,16 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 #composer textarea:focus{outline:0}
 .composer-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
 .composer-bar .secondary{width:40px;height:40px;min-height:40px;padding:0;flex:0 0 auto!important;border-radius:50%;background:var(--panel);border:1px solid var(--border);color:var(--title);display:inline-flex;align-items:center;justify-content:center;font-size:17px;line-height:1;filter:grayscale(1) brightness(1.6)}
-.composer-bar .secondary:hover{background:var(--module-selected)}
+@media (hover:hover){.composer-bar .secondary:hover{background:var(--module-selected)}}
 .composer-bar .action{margin-left:auto;min-height:42px;padding:0 22px;border-radius:999px;background:var(--title);border:0;color:var(--bg);font-weight:700;font-size:15px;box-shadow:none}
-.composer-bar .action:hover{background:var(--quiet)}
+@media (hover:hover){.composer-bar .action:hover{background:var(--quiet)}}
 .composer-bar .anclados{flex:1 0 100%}
 .toggle,.toggle.rojo{min-height:38px;padding:0 18px;border-radius:999px;background:var(--surface-alt);border:1px solid var(--border);color:var(--title);font-weight:600;font-size:13px}
-.toggle:hover{background:var(--module-selected)}
+@media (hover:hover){.toggle:hover{background:var(--module-selected)}}
 .toggle.on{background:var(--status-blue);border-color:var(--status-blue);color:#fff}
 .toggle.on::before{content:"● ";color:#fff}
 .toggle.rojo::before{content:"● ";color:var(--status-red)}
-.sheet .va-caja{background:var(--surface);border:1px solid var(--border);border-radius:28px;padding:16px 14px;max-height:86vh;overflow:hidden;box-shadow:0 -10px 40px rgba(0,0,0,.45)}
+.sheet .va-caja{background:var(--surface);border:1px solid var(--border);border-radius:28px;padding:16px 14px;max-height:86vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.45)}
 .sheet .va-head{align-items:center;padding:0 4px}
 .sheet .va-head strong{font-size:18px;color:var(--title)}
 .sheet .sh-cerrar{width:38px;height:38px;min-height:38px;padding:0;border-radius:50%;background:var(--surface-alt);border:1px solid var(--border)}
@@ -123,7 +123,8 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .mod-grupo-t{margin:10px 8px 4px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet-2)}
 .mod-grupo{display:flex;flex-direction:column;gap:2px;background:var(--surface-alt);border:1px solid var(--border);border-radius:22px;padding:4px}
 .mod-fila{display:grid;grid-template-columns:30px 1fr 22px;align-items:center;gap:12px;width:100%;min-height:58px;text-align:left;background:transparent;border:0;border-radius:18px;padding:9px 12px;color:var(--title);cursor:pointer}
-.mod-fila:hover{background:var(--panel)}
+@media (hover:hover){.mod-fila:hover{background:var(--panel)}}
 .mod-fila.sel{background:var(--module-selected)}
 .mod-ico{font-size:20px;text-align:center}.mod-txt b{display:block;font-size:16px;font-weight:700}.mod-txt small{display:block;font-size:13px;color:var(--quiet);margin-top:2px}
 .mod-ck{color:var(--status-blue);font-weight:800;font-size:18px;text-align:center}
+html[data-theme=blanco] .composer-bar .secondary{filter:grayscale(1) brightness(.35)}

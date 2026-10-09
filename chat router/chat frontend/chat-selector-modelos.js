@@ -51,7 +51,6 @@ export function conectarSelectorModelos(ctx) {
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
     pintarPill(); pintar();
     q("#sh-modelos").hidden = true;
-    if (det && !window.RIU_SELECTOR_QWEN.enviar) tell("Selector Qwen: " + m[1] + " elegido. Falta la ficha/plugin; los mensajes siguen por la ficha del chat.");
   };
   const pintar = () => {
     const s = chat().selectorQwen;
