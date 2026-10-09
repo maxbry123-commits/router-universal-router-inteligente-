@@ -109,6 +109,7 @@ export async function mount(root, { api, tell }) {
     cerrarHojas();
     sh.hidden = abierto;
     if (!abierto && b.dataset.sheet === "ventana-archivos") cargarArchivos();
+    if (!abierto && b.dataset.sheet === "ventana-ancla") cargarArchivos("#anc-lista");
     if (!abierto && b.dataset.sheet === "ventana-sandbox") cargarSandbox();
     if (!abierto && b.dataset.sheet === "sh-ancla") { pintarAnclas(); cargarMiHandoff(); }
   }));
@@ -249,14 +250,25 @@ export async function mount(root, { api, tell }) {
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion });
-    chat().anclados.add(r.nombre || file.name); pintarAnclados(); guardar();
-    tell("Subido y anclado: " + file.name);
+    tell("Subido (sin anclar): " + (r.nombre || file.name));
+  };
+  const subirVarios = async (files) => {
+    for (const f of files) { try { await subir(f); } catch (err) { tell(f.name + ": " + err.message); } }
+    if (!q("#ventana-ancla").hidden) cargarArchivos("#anc-lista");
   };
   q("#btn-adjunto").addEventListener("click", () => q("#adjunto").click());
   q("#adjunto").addEventListener("change", async (e) => {
-    const f = e.target.files[0]; e.target.value = "";
-    if (f) { try { await subir(f); } catch (err) { tell(err.message); } }
+    const fs = [...e.target.files]; e.target.value = "";
+    if (fs.length) await subirVarios(fs);
   });
+  q("#anc-subir").addEventListener("click", () => q("#adjunto").click());
+  const anclarTodos = async (encender) => {
+    const r = await window.RIU_ACCION("archivos", { sesion: chat().sesion });
+    for (const n of r.archivos || []) encender ? chat().anclados.add(n) : chat().anclados.delete(n);
+    pintarAnclados(); guardar(); cargarArchivos("#anc-lista");
+  };
+  q("#anc-todos").addEventListener("click", () => anclarTodos(true).catch((err) => tell(err.message)));
+  q("#anc-ninguno").addEventListener("click", () => anclarTodos(false).catch((err) => tell(err.message)));
   q("#btn-copiar-input").addEventListener("click", () => copiarTexto(q("#message").value));
   q("#btn-detener").addEventListener("click", () => { chat().detenerFlag = true; if (chat().detenerFn) chat().detenerFn(); });
 
@@ -319,8 +331,8 @@ export async function mount(root, { api, tell }) {
       });
     } catch (e) { lista.replaceChildren(node("div", "GAP " + e.message, "muted")); }
   });
-  const cargarArchivos = async () => {
-    const lista = q("#va-lista");
+  const cargarArchivos = async (destino = "#va-lista") => {
+    const lista = q(destino);
     lista.replaceChildren(node("div", "Cargando…", "muted"));
     try {
       const r = await window.RIU_ACCION("archivos", { sesion: chat().sesion });
