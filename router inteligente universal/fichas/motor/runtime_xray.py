@@ -62,9 +62,10 @@ def bind_node(nodo: dict, task_id: str, raw_input: str, paso: int, rutas: list[s
         'task_id': str(task_id),
         'paso': int(paso),
         'rol': str(nodo.get('rol') or ''),
-        'raw_input': raw_input,  # referencia exacta; no trim, no slice, no rewrite
+        'raw_input': raw_input,
         'read_paths': tuple(nodo.get('read_paths') or ()),
         'write_paths': tuple(rutas or ()),
+        'requiere_evidencia': bool(nodo.get('requiere_evidencia')),
         'fase': _fase(str(nodo.get('rol') or '')),
         'estado': 'PENDING',
         'historial': [{'estado': 'PENDING', 'ts': time()}],
@@ -88,7 +89,7 @@ def iniciar_modelo() -> None:
 
 
 def cerrar_modelo(ok: bool, motivo: str = '') -> None:
-    """Cierra la fase del nodo. FAIL-CLOSED: error => BLOCKED."""
+    """Cierra la fase del modelo; la evidencia real sigue siendo compuerta de FichaOS."""
     ctx = getattr(_CTX, 'nodo', None)
     if not ctx:
         return
@@ -103,10 +104,12 @@ def cerrar_modelo(ok: bool, motivo: str = '') -> None:
         _mover('CLOSED')
     elif estado == 'EXECUTING':
         _mover('EXECUTION_PASS')
-        _mover('CLOSED')
+        if not ctx['requiere_evidencia']:
+            _mover('CLOSED')
     elif estado == 'VALIDATING':
         _mover('STABLE')
-        _mover('CLOSED')
+        if not ctx['requiere_evidencia']:
+            _mover('CLOSED')
 
 
 def snapshot() -> dict:
