@@ -7,7 +7,7 @@ FICHA 2: 12 GOALS(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3
 FICHA 3: 12 GOALS(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> 12 GOALS(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
 ```
 
-**Implementado** (en `router inteligente universal/fichas/`, fuera del Router): FichaOS (scheduler local por ficha), Puerta SQLite global (4 puestos, 10 min, config unica `motor/puerta.config.json`), candados de rutas entre fichas, DAG, presupuesto de tokens por ficha, cache/ledger por referencia al Harness, watchdog, pruebas, 3 fichas selladas con copias de auditoria.
+**Implementado** (en `router inteligente universal/fichas/`, fuera del Router): FichaOS (scheduler local por ficha), Puerta SQLite global (4 puestos, 10 min, config unica `motor/puerta.config.json`), candados de rutas entre fichas, DAG, presupuesto de tokens por ficha, cache/ledger por referencia al Harness, watchdog, pruebas, 4 fichas selladas con copias de auditoria (la 4 es el Ask Council NVIDIA/Groq), con la plantilla XRAY-V2 cargada en cada llamada.
 
 **GAPS abiertos:** memoria real del Harness (`conectar_harness`), ejecutor real del Harness (`RIU_DEEPSEEK_HARNESS_URL` sin configurar: la salida sale SIN VERIFICAR), endpoint de los modelos de imagen/voz, texto de los 24 goals.
 

@@ -1,0 +1,7 @@
+# MEJORAS DE LAS FICHAS (se suman a la plantilla XRAY-V2; la plantilla original NO se toca)
+MEJORAS_FICHAS:
+  F01_GAP_EN_VEZ_DE_INVENTAR: "Lo que no se pueda resolver se registra como GAP con motivo; nunca inventar datos, rutas ni resultados."
+  F02_SECRETOS: "Nunca imprimir ni repetir claves o tokens."
+  F03_FUERA_DE_ALCANCE: "No tocar el Router, GitHub Actions ni LFS; fuera del alcance de la ficha = BLOCKED."
+  F04_SALIDA_CORTA: "Responder corto y concreto; entregar la salida del paso, sin explicaciones de mas."
+  F05_EVIDENCIA: "Para codigo, la verificacion es la evidencia real (ejecucion, archivos, tests, receipt); una respuesta de modelo no es evidencia."

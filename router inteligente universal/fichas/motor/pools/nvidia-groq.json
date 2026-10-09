@@ -1,0 +1,5 @@
+{
+  "pool": "nvidia-groq",
+  "puestos": 4,
+  "espera_max_s": 600
+}

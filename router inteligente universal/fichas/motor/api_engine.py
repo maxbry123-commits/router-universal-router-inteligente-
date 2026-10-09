@@ -52,7 +52,8 @@ class Motor:
     4 peticion reducida (contexto recortado, menos tokens) como ultimo intento
     """
 
-    def __init__(self, proveedores, timeout=TIMEOUT, reintentos=3, dormir=time.sleep, pulso=None):
+    def __init__(self, proveedores, timeout=TIMEOUT, reintentos=3, dormir=time.sleep, pulso=None, limite=LIMITE_LLAMADA):
+        self.limite = limite
         self.provs = proveedores
         self.timeout = timeout
         self.reintentos = reintentos
@@ -146,6 +147,6 @@ class Motor:
             notas += ' [' + str(k) + '] ' + salida[:600]
 
     def llamar(self, mensajes, max_tokens=1024):
-        if chars(mensajes) >= LIMITE_LLAMADA:
+        if chars(mensajes) >= self.limite:
             return self._por_bloques(mensajes, max_tokens)
         return self._ronda(mensajes, max_tokens)

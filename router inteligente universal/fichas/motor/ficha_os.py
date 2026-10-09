@@ -14,6 +14,7 @@ from .api_engine import ErrorApi, Motor, Proveedor, tokens_est
 from .locks import Candados, solapa
 from .memoria import Memoria, ProveedorMock, conectar_harness
 from .modelos_especiales import fabrica_especiales
+from .plantilla import armar, bloque_entrada, faltan
 from .puerta import EsperaAgotada, Puerta
 
 
@@ -66,6 +67,7 @@ class ProveedorDirecto(Proveedor):
     def __init__(self, nombre, url, modelo, clave, carpeta, perfil='libre'):
         super().__init__(nombre, url, modelo, '', perfil, carpeta)
         self._k = clave
+        self._extras, self._carpeta, self._perfil = [], carpeta, perfil
 
     def key(self):
         return self._k
@@ -94,9 +96,15 @@ class MotorUso(Motor):
 
 
 class FichaOS:
-    def __init__(self, ficha, task_id, texto, motor_factory, puerta, memoria, modelo=None, dormir=time.sleep, candados=None, harness=None, especiales=None):
+    def __init__(self, ficha, task_id, texto, motor_factory, puerta, memoria, modelo=None, dormir=time.sleep, candados=None, harness=None, especiales=None, plantilla='', mejoras=''):
         self.f, self.task, self.texto = ficha, task_id, texto
         self.especiales = especiales
+        if ficha.get('plantilla') and not plantilla:
+            raise ValueError('la ficha exige cargar la PLANTILLA XRAY-V2 en cada llamada')
+        if plantilla and faltan(plantilla):
+            raise ValueError('la plantilla no es la XRAY-V2, faltan: ' + ', '.join(faltan(plantilla)))
+        self.plantilla, self.mejoras = plantilla, mejoras
+        self.limite = ficha.get('motor', {}).get('limite_llamada_chars', 18000)
         self.mf, self.puerta, self.mem, self.dormir = motor_factory, puerta, memoria, dormir
         self.candados, self.harness = candados, harness
         dsl = ficha.get('dsl', {})
@@ -130,11 +138,15 @@ class FichaOS:
     def _mensajes(self, n):
         nl = chr(10)
         sis = 'NODO ' + n['id'] + '. Rol: ' + n['rol'] + '. Responde corto y concreto.'
+        if self.plantilla:  # la plantilla del Director va completa en cada llamada, con la entrada del nodo en su bloque verbatim
+            paso = n.get('paso', self.nodos.index(n) + 1)
+            sis = sis + nl + armar(self.plantilla, self.mejoras, bloque_entrada(n, self.task, self.texto, paso, self._rutas(n)))
         usr = 'TAREA: ' + self.texto + nl
         for d in n.get('depende_de', []):
             if d in self.salida:
                 usr += nl + '[' + d + '] ' + self.salida[d][:3000]
-        return [{'role': 'system', 'content': sis}, {'role': 'user', 'content': usr[-14000:]}]
+        tope = max(2000, self.limite - len(sis) - 500)
+        return [{'role': 'system', 'content': sis}, {'role': 'user', 'content': usr[-tope:]}]
 
     # ---------- scheduler local ----------
     def _listos(self):
@@ -375,7 +387,7 @@ def cargar_ficha(ruta):
 
 def validar_ficha(f, base, config_puerta=None):
     errs = []
-    for k in ('ficha', 'tipo', 'api', 'memory', 'cache', 'ledger', 'dsl', 'cola', 'readme', 'modelos'):
+    for k in ('ficha', 'tipo', 'api', 'memory', 'cache', 'ledger', 'dsl', 'cola', 'readme', 'plantilla', 'modelos'):
         if k not in f:
             errs.append('falta ' + k)
     for k in ('cola_global', 'todos_los_modelos'):
@@ -383,6 +395,8 @@ def validar_ficha(f, base, config_puerta=None):
             errs.append('campo prohibido (fuente unica del pool / sin Council de 14): ' + k)
     if f.get('readme') and not os.path.exists(os.path.join(base, f['readme'])):
         errs.append('README anclado no existe: ' + str(f.get('readme')))
+    if f.get('plantilla') and not os.path.exists(os.path.join(base, '..', f['plantilla'])):
+        errs.append('la plantilla XRAY-V2 no existe: ' + str(f.get('plantilla')))
     if config_puerta and f.get('cola', {}).get('pool') != config_puerta.get('pool'):
         errs.append('la ficha no apunta al pool de la API: ' + str(f.get('cola')))
     if f.get('tipo') == 'dag':
@@ -407,17 +421,26 @@ def proveedores_desde_yml(texto, carpeta):
     out = {}
     for nombre, p in yaml.safe_load(texto)[0]['config']['providers'].items():
         base = (p.get('baseURL') or '').rstrip('/')
-        out[nombre] = ProveedorDirecto(nombre, base + '/chat/completions', p['models'][0].get('id', ''), p.get('apiKey') or '', carpeta, 'libre')
+        perfil = 'groq_free' if 'groq' in base else ('nvidia' if 'nvidia' in base else 'libre')
+        out[nombre] = ProveedorDirecto(nombre, base + '/chat/completions', p['models'][0].get('id', ''), p.get('apiKey') or '', carpeta, perfil)
+        out[nombre]._extras = list(p.get('apiKeysExtra') or [])
     return out
 
 
-def fabrica_motores(provs, timeout=90):
+def fabrica_motores(provs, timeout=90, limite=18000):
     def mf(modelo):
         p = provs.get(modelo)
         if not p or not p._k or not p.url.startswith('http') or not p.modelo:
             raise ErrorApi('SIN_API: falta apiKey/baseURL/id de ' + modelo + ' en la ficha de modelos')
-        return MotorUso([p], timeout=timeout)
+        lista = [p] + [ProveedorDirecto(p.nombre + '-' + str(i), p.url, p.modelo, k, p._carpeta, p._perfil) for i, k in enumerate(p._extras, 2)]
+        return MotorUso(lista, timeout=timeout, limite=limite)
     return mf
+
+
+def ruta_pool(aqui, pool):
+    if pool in (None, 'qwen-token-plan'):
+        return os.path.join(aqui, 'puerta.config.json')
+    return os.path.join(aqui, 'pools', pool + '.json')
 
 
 def main():
@@ -429,20 +452,23 @@ def main():
     modelo = a[a.index('--modelo') + 1] if '--modelo' in a else None
     base = os.path.dirname(os.path.abspath(ruta))
     aqui = os.path.dirname(os.path.abspath(__file__))
-    cfg = json.load(open(os.path.join(aqui, 'puerta.config.json')))
     f = cargar_ficha(ruta)
+    ruta_cfg = ruta_pool(aqui, f.get('cola', {}).get('pool'))
+    cfg = json.load(open(ruta_cfg))
     errs = validar_ficha(f, base, cfg)
     if errs:
         sys.exit('ficha invalida: ' + '; '.join(errs))
     estado = os.environ.get('FICHA_ESTADO', os.path.join(base, '..', 'estado'))
-    yml = os.environ.get('FICHA_API_YML', os.path.join(base, '..', 'modelos-14', 'harness-modelos-14.cordis.yml'))
+    yml = os.environ.get('FICHA_API_YML', os.path.join(base, '..', f.get('api_yml', 'modelos-14/harness-modelos-14.cordis.yml')))
     provs = proveedores_desde_yml(leer_texto(yml), estado)
-    puerta = Puerta.desde_config(os.path.join(estado, 'puerta.db'), os.path.join(aqui, 'puerta.config.json'))
+    puerta = Puerta.desde_config(os.path.join(estado, 'puerta_' + cfg['pool'] + '.db'), ruta_cfg)
+    plantilla = leer_texto(os.path.join(base, '..', f['plantilla']))
+    mejoras = leer_texto(os.path.join(base, '..', f['mejoras'])) if f.get('mejoras') else ''
     candados = Candados(os.path.join(estado, 'candados.db'))
     prov_mem = ProveedorMock(estado) if os.environ.get('FICHA_MEMORIA') == 'mock' else conectar_harness()
     m = f['memory']
     mem = Memoria(prov_mem, task, m.get('project_memory', 'YAIWES'), m.get('read_project_memory', True), m.get('write_task_memory', True), m.get('write_project_memory', False))
-    res = FichaOS(f, task, texto, fabrica_motores(provs, f['dsl'].get('timeouts', {}).get('api_seconds', 90)), puerta, mem, modelo, candados=candados, harness=HarnessEjecutor(), especiales=fabrica_especiales(provs, carpeta=estado)).correr()
+    res = FichaOS(f, task, texto, fabrica_motores(provs, f['dsl'].get('timeouts', {}).get('api_seconds', 90), f.get('motor', {}).get('limite_llamada_chars', 18000)), puerta, mem, modelo, candados=candados, harness=HarnessEjecutor(), especiales=fabrica_especiales(provs, carpeta=estado), plantilla=plantilla, mejoras=mejoras).correr()
     print(json.dumps({k: res[k] for k in ('task', 'ficha', 'estado', 'verificado', 'avisos', 'tokens', 'nodos', 'gaps')}))
 
 

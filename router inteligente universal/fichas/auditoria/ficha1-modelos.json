@@ -72,7 +72,7 @@
   "api_recuperacion": 4,
   "tareas_recuperacion": 5,
   "bloque_chars": 8500,
-  "limite_llamada_chars": 18000,
+  "limite_llamada_chars": 60000,
   "mensajes_del_director": true
  },
  "selector": [
@@ -176,5 +176,8 @@
   }
  ],
  "ask_council": false,
- "flujo": "SELECTOR 14 -> 1 MODELO -> EJECUTAR -> SALIDA"
+ "flujo": "SELECTOR 14 -> 1 MODELO -> EJECUTAR -> SALIDA",
+ "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
+ "mejoras": "plantilla/MEJORAS_FICHAS.yaml",
+ "api_yml": "modelos-14/harness-modelos-14.cordis.yml"
 }

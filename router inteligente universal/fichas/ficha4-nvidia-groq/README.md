@@ -1,9 +1,9 @@
-# Ficha 1 - 14 modelos individuales
+# Ficha 4 - DAG codigo NVIDIA + Groq (Ask Council)
 
-Sin Ask Council y SIN goals (los goals solo van en las fichas 2 y 3). Eliges UN modelo con el selector del chat; los otros 13 no se llaman. Paralelo desactivado dentro de la ficha (el paralelo de hasta 4 ocurre ENTRE fichas, por la Puerta). Los modelos de imagen y voz (10 a 14) tienen adaptador propio en motor/modelos_especiales.py; Realtime va por WebSocket. Ver README-FICHAS.md.
+Mismo Ask Council con goals que la ficha 2, con los modelos de NVIDIA y Groq: analizan Kimi K3, GLM 5.3 (en lugar de DeepSeek) y Qwen 3.8 (Groq) en paralelo; ejecuta Glimmer 30B (Meta, en lugar de Nemotron); revisan GLM 5.3 y Qwen 3.8 (Groq). Los 12 goals de entrada (N0) y los 12 de salida (N5) son datos: 0 llamadas a la API. Pool propio `nvidia-groq` (4 puestos, 10 min). API en `modelos-nvidia-groq` (cifrada). Falta: texto de los 24 goals (PONER AQUI).
 ## Como funciona (horizontal)
 ```
-SELECTOR 14 -> 1 MODELO -> EJECUTAR -> SALIDA
+12 GOALS entrada(0 API) -> [Kimi K3 | GLM 5.3 | Qwen 3.8 Groq] -> Glimmer 30B EJECUTA -> 12 GOALS salida(0 API) -> GLM 5.3 REVISA -> Qwen 3.8 Groq REVISA -> SALIDA
 ```
 
 Bloques de la ficha (cada tarea nace con TODO esto y se apaga al terminar):
@@ -18,7 +18,5 @@ Bloques de la ficha (cada tarea nace con TODO esto y se apaga al terminar):
 9. Ledger (recibo por nodo, namespace = task_id)
 10. Memoria (referencia al harness: lee proyecto, escribe su tarea, promueve solo con PASS)
 11. Watchdog (si la ficha muere se libera su puesto y sus candados)
-
-Cada llamada de esta ficha lleva la PLANTILLA XRAY-V2 completa (plantilla/PLANTILLA_XRAY_V2.yaml) con la entrada del nodo en su bloque verbatim.
 
 Reglas generales y como crear fichas nuevas: ../README-FICHAS.md

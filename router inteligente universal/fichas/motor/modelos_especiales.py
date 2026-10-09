@@ -16,7 +16,7 @@ from .api_engine import ErrorApi
 HOST = 'https://token-plan.maas.qwencloudapi.com'
 RUTA_GEN = '/api/v1/services/aigc/multimodal-generation/generation'
 WS_TTS = 'wss://token-plan.maas.qwencloudapi.com/api-ws/v1/inference'
-WS_REALTIME = 'wss://token-plan.maas.qwencloudapi.com/api-ws/v1/realtime?model=qwen-audio-3.0-realtime-plus'
+WS_REALTIME = 'wss://token-plan.maas.qwencloudapi.com/api-ws/v1/realtime'
 
 
 def _post(url, cuerpo, key, timeout=120):
@@ -47,7 +47,8 @@ def imagen(modelo_id, prompt, key, host=HOST, size='1024*1024'):
 
 def voz_a_texto(modelo_id, audio, key, host=HOST):
     if not audio.startswith('http') and os.path.exists(audio):  # archivo local -> Data URI Base64
-        audio = 'data:audio/wav;base64,' + base64.b64encode(open(audio, 'rb').read()).decode()
+        mime = 'audio/mpeg' if audio.endswith('.mp3') else 'audio/wav'
+        audio = 'data:' + mime + ';base64,' + base64.b64encode(open(audio, 'rb').read()).decode()
     cuerpo = {'model': modelo_id, 'input': {'messages': [{'role': 'user', 'content': [{'audio': audio}]}]}}
     textos = [c['text'] for c in _partes(_post(host + RUTA_GEN, cuerpo, key)) if c.get('text')]
     if not textos:
@@ -74,6 +75,46 @@ def texto_a_voz(modelo_id, texto, key, ws=WS_TTS, voz='longxiaochun', carpeta='.
     return 'AUDIO ' + ruta
 
 
+def voz_en_vivo(modelo_id, texto, key, ws=WS_REALTIME, espera=60):
+    """Realtime por WebSocket: manda el texto como mensaje del usuario y junta la respuesta (texto o transcripcion del audio)."""
+    try:
+        import websocket
+    except ImportError:
+        raise ErrorApi('falta el cliente: pip install websocket-client')
+    try:
+        con = websocket.create_connection(ws + '?model=' + modelo_id, header=['Authorization: Bearer ' + key], timeout=espera)
+    except Exception as e:
+        raise ErrorApi('realtime no conecta: ' + type(e).__name__ + ' ' + str(e)[:120])
+    vistos, partes = [], []
+    try:
+        con.send(json.dumps({'type': 'session.update', 'session': {'modalities': ['text', 'audio'], 'turn_detection': None}}))
+        con.send(json.dumps({'type': 'conversation.item.create', 'item': {'type': 'message', 'role': 'user', 'content': [{'type': 'input_text', 'text': texto}]}}))
+        con.send(json.dumps({'type': 'response.create'}))
+        fin = time.time() + espera
+        while time.time() < fin:
+            ev = json.loads(con.recv())
+            t = ev.get('type', '')
+            vistos.append(t)
+            if t == 'error':
+                raise ErrorApi('realtime error ' + json.dumps(ev)[:200])
+            if t in ('response.text.delta', 'response.audio_transcript.delta'):
+                partes.append(ev.get('delta', ''))
+            if t == 'response.done':
+                break
+    except ErrorApi:
+        raise
+    except Exception as e:
+        raise ErrorApi('realtime ' + type(e).__name__ + ' ' + str(e)[:100] + ' eventos=' + ','.join(vistos[-8:]))
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
+    if not partes:
+        raise ErrorApi('realtime sin texto; eventos=' + ','.join(vistos[-10:]))
+    return ''.join(partes)
+
+
 def fabrica_especiales(provs, host=HOST, ws=WS_TTS, carpeta='.'):
     def esp(modelo, tipo, texto):
         p = provs.get(modelo)
@@ -86,6 +127,6 @@ def fabrica_especiales(provs, host=HOST, ws=WS_TTS, carpeta='.'):
         if tipo == 'texto-a-voz':
             return texto_a_voz(p.modelo, texto, p._k, ws, carpeta=carpeta)
         if tipo == 'voz-en-vivo':
-            raise ErrorApi('GAP_REALTIME_WEBSOCKET: va por WebSocket (' + WS_REALTIME + '), todavia no implementado')
+            return voz_en_vivo(p.modelo, texto, p._k)
         raise ErrorApi('GAP_TIPO_DESCONOCIDO: ' + tipo)
     return esp

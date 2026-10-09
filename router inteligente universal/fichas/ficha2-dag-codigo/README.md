@@ -19,4 +19,6 @@ Bloques de la ficha (cada tarea nace con TODO esto y se apaga al terminar):
 10. Memoria (referencia al harness: lee proyecto, escribe su tarea, promueve solo con PASS)
 11. Watchdog (si la ficha muere se libera su puesto y sus candados)
 
+Cada llamada de esta ficha lleva la PLANTILLA XRAY-V2 completa (plantilla/PLANTILLA_XRAY_V2.yaml) con la entrada del nodo en su bloque verbatim.
+
 Reglas generales y como crear fichas nuevas: ../README-FICHAS.md

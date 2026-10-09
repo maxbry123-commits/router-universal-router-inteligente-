@@ -37,7 +37,13 @@ Sin almacenamiento propio: la ficha solo lleva su namespace (task_id) y promueve
 - Imagen (Qwen Image 3.0 Pro, Wan 2.7 Image): POST https://token-plan.maas.qwencloudapi.com/api/v1/services/aigc/multimodal-generation/generation (docs.qwencloud.com, integrate-multimodal-gen). La salida es la URL de la imagen.
 - Texto a voz (Qwen TTS): WebSocket del SDK dashscope, wss://token-plan.maas.qwencloudapi.com/api-ws/v1/inference. La salida es el archivo mp3.
 - Voz a texto (Qwen ASR): mismo POST de multimodal-generation con el audio (URL o Base64). Formato segun la documentacion de Model Studio; sin verificar en el Token Plan.
-- Voz en vivo (Qwen Realtime): WebSocket wss://token-plan.maas.qwencloudapi.com/api-ws/v1/realtime?model=qwen-audio-3.0-realtime-plus. NO implementado (GAP_REALTIME_WEBSOCKET).
+- Voz en vivo (Qwen Realtime): WebSocket wss://token-plan.maas.qwencloudapi.com/api-ws/v1/realtime?model=qwen-audio-3.0-realtime-plus (cliente websocket-client). Manda el texto y junta la respuesta; el formato de eventos sigue la documentacion y se verifica con la llamada real.
 - Estado: probados con servidor falso; SIN prueba real todavia.
 
 ## AVISO sobre el Token Plan Individual: segun docs.qwencloud.com (token-plan-personal-overview) el plan es para uso interactivo dentro de herramientas de programacion y agentes, una persona y un dispositivo. Scripts de automatizacion, backends propios y llamadas batch no interactivas quedan fuera de alcance y pueden causar suspension del plan o bloqueo de la clave. Para colas de agentes y jobs automaticos conviene la API Standard (pago por uso).
+
+## Plantilla del Director (PLANTILLA XRAY-V2)
+Es `plantilla/PLANTILLA_XRAY_V2.yaml`, tal cual la dio el Director (verbatim, sin resumir). El agente la carga COMPLETA en cada llamada de cada ficha: el bloque `<user_query mode="verbatim">` lleva la entrada del nodo y despues se suman las mejoras (`plantilla/MEJORAS_FICHAS.yaml`). FichaOS se niega a correr una ficha sin plantilla. Como la plantilla pesa unos 13.000 caracteres, el limite de llamada de las fichas es `motor.limite_llamada_chars` (60.000 Qwen, 30.000 NVIDIA/Groq) en lugar de los 18.000 de antes.
+
+## Ficha 4 y pools de API
+La ficha 4 es el Ask Council de NVIDIA y Groq (Kimi K3, GLM 5.3, Qwen 3.8 Groq, Glimmer 30B). Cada API tiene su pool de puestos (`motor/puerta.config.json` = qwen-token-plan, `motor/pools/nvidia-groq.json`); la ficha apunta a su pool.

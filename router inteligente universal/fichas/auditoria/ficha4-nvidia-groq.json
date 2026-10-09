@@ -1,8 +1,8 @@
 {
- "ficha": "ficha3-frontend",
+ "ficha": "ficha4-nvidia-groq",
  "tipo": "dag",
  "version": 2,
- "api": "modelos-14",
+ "api": "modelos-nvidia-groq",
  "readme": "../README-FICHAS.md",
  "memory": {
   "provider": "harness",
@@ -20,7 +20,7 @@
   "namespace": "{TASK_ID}"
  },
  "cola": {
-  "pool": "qwen-token-plan"
+  "pool": "nvidia-groq"
  },
  "dsl": {
   "tokens": {
@@ -53,16 +53,16 @@
   }
  },
  "modelos": {
-  "ficha-dsv4pro": "texto",
-  "ficha-glm52": "texto",
-  "ficha-qwen37max": "texto",
-  "ficha-qwen38max": "texto"
+  "ficha-kimi3": "texto",
+  "ficha-glm53": "texto",
+  "ficha-qwen38groq": "texto",
+  "ficha-glimmer30b": "texto"
  },
  "motor": {
   "api_recuperacion": 4,
   "tareas_recuperacion": 5,
   "bloque_chars": 8500,
-  "limite_llamada_chars": 60000,
+  "limite_llamada_chars": 30000,
   "mensajes_del_director": true
  },
  "salida_final": "N7",
@@ -129,7 +129,7 @@
   },
   {
    "id": "N1",
-   "modelo": "ficha-dsv4pro",
+   "modelo": "ficha-kimi3",
    "rol": "analiza la arquitectura y propone solucion",
    "depende_de": [
     "N0"
@@ -145,7 +145,7 @@
   },
   {
    "id": "N2",
-   "modelo": "ficha-glm52",
+   "modelo": "ficha-glm53",
    "rol": "analiza la arquitectura y propone solucion",
    "depende_de": [
     "N0"
@@ -161,7 +161,7 @@
   },
   {
    "id": "N3",
-   "modelo": "ficha-qwen37max",
+   "modelo": "ficha-qwen38groq",
    "rol": "analiza la arquitectura y propone solucion",
    "depende_de": [
     "N0"
@@ -177,7 +177,7 @@
   },
   {
    "id": "N4",
-   "modelo": "ficha-dsv4pro",
+   "modelo": "ficha-glimmer30b",
    "rol": "analiza los goals de N0 y las propuestas de N1, N2 y N3 y EJECUTA la tarea de programacion de code (unico ejecutor)",
    "depende_de": [
     "N0",
@@ -260,7 +260,7 @@
   },
   {
    "id": "N6",
-   "modelo": "ficha-glm52",
+   "modelo": "ficha-glm53",
    "rol": "REVISA y refactoriza el resultado de N4 segun los goals de salida de N5",
    "depende_de": [
     "N4",
@@ -280,7 +280,7 @@
   },
   {
    "id": "N7",
-   "modelo": "ficha-qwen38max",
+   "modelo": "ficha-qwen38groq",
    "rol": "REVISA de nuevo el resultado de N6 segun N5 y entrega la SALIDA final",
    "depende_de": [
     "N6",
@@ -299,8 +299,8 @@
    "requiere_evidencia": true
   }
  ],
- "flujo": "N0 goals(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> N5 goals salida(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA",
+ "flujo": "N0 goals(0 API) -> [Kimi K3 | GLM 5.3 | Qwen 3.8 (Groq)] -> Glimmer 30B EJECUTA -> N5 goals salida(0 API) -> GLM 5.3 REVISA -> Qwen 3.8 (Groq) REVISA -> SALIDA",
  "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
  "mejoras": "plantilla/MEJORAS_FICHAS.yaml",
- "api_yml": "modelos-14/harness-modelos-14.cordis.yml"
+ "api_yml": "modelos-nvidia-groq/harness-modelos.cordis.yml"
 }

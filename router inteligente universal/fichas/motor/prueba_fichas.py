@@ -42,7 +42,7 @@ class Falso(BaseHTTPRequestHandler):
         time.sleep(PAUSA)
         with S['lock']:
             S['inflight'] -= 1
-            S['log'].append((modelo, nodo, t0, time.time(), carga['messages'][1]['content']))
+            S['log'].append((modelo, nodo, t0, time.time(), carga['messages'][1]['content'], carga['messages'][0]['content']))
         salida = 900 if modelo == 'grande' else 50
         b = json.dumps({'choices': [{'message': {'content': 'ok ' + modelo + ' ' + nodo}}], 'usage': {'prompt_tokens': 100, 'completion_tokens': salida}}).encode()
         self.send_response(200)
@@ -85,7 +85,20 @@ def correr(f, task, tmp, base, puerta, mem=None, modelo=None, candados=None, har
     m = f['memory']
     memoria = Memoria(prov, task, m['project_memory'], m['read_project_memory'], m['write_task_memory'], m['write_project_memory'])
     mf = lambda mod: MotorUso([Proveedor(mod, base + '/m/' + mod, mod, 'K', 'libre', tmp)], timeout=5)
-    return FichaOS(f, task, texto, mf, puerta, memoria, modelo, dormir=lambda s: None, candados=candados, harness=harness, especiales=especiales).correr(), memoria
+    return FichaOS(f, task, texto, mf, puerta, memoria, modelo, dormir=lambda s: None, candados=candados, harness=harness, especiales=especiales, plantilla=PL if f.get('plantilla') else '', mejoras=MJ if f.get('plantilla') else '').correr(), memoria
+
+
+def _leer_plantilla(clave):
+    ruta = os.path.join(FICHAS, 'plantilla', 'PLANTILLA_XRAY_V2.yaml' if clave == 'p' else 'MEJORAS_FICHAS.yaml')
+    return open(ruta, encoding='utf-8').read() if os.path.exists(ruta) else ''
+
+
+PL, MJ = _leer_plantilla('p'), _leer_plantilla('m')
+
+
+def correr_ficha(f, *a, **k):
+    """Las fichas reales llevan la plantilla; los mini-DAG de las pruebas no."""
+    return correr(f, *a, **k)
 
 
 def mini(nodos, **dsl):
@@ -299,8 +312,6 @@ def prueba_especiales(tmp, f1):
         r, _ = correr(f1, 'T-tts', tmp, '', puerta, modelo='ficha-qwentts', especiales=esp, texto='hola equipo')
         ok_audio = r['salida'].startswith('AUDIO ') and open(r['salida'][6:], 'rb').read() == b'ID3falso'
         chequeo('MODELO 12 Qwen TTS: usa el WebSocket del SDK (wss .../api-ws/v1/inference) y guarda el audio', r['estado'] == 'SALIDA' and ok_audio and usado['model'] == 'qwen-audio-3.0-tts-plus' and usado['texto'] == 'hola equipo' and fake.base_websocket_api_url == WS_TTS and fake.api_key == 'sk-sp-prueba', usado)
-        r, _ = correr(f1, 'T-rt', tmp, '', puerta, modelo='ficha-qwenrt', especiales=esp)
-        chequeo('MODELO 13 Qwen Realtime: queda como GAP_REALTIME_WEBSOCKET con su direccion, sin fingir que funciona', r['estado'] == 'GAP' and 'GAP_REALTIME_WEBSOCKET' in str(r['gaps']) and 'api-ws/v1/realtime' in str(r['gaps']), r['gaps'])
         r, _ = correr(f1, 'T-asr', tmp, '', puerta, modelo='ficha-qwenasr', especiales=esp, texto='http://audio.falso/a.wav')
         chequeo('MODELO 14 Qwen ASR: manda el audio (URL) por la ruta multimodal-generation y devuelve el texto', r['estado'] == 'SALIDA' and r['salida'] == 'hola mundo' and FalsoMM.visto[-1][1]['input']['messages'][0]['content'] == [{'audio': 'http://audio.falso/a.wav'}] and FalsoMM.visto[-1][1]['model'] == 'qwen-audio-3.0-asr-flash', r['salida'])
     finally:
@@ -309,6 +320,111 @@ def prueba_especiales(tmp, f1):
                 sys.modules.pop(k, None)
             else:
                 sys.modules[k] = v
+
+
+def prueba_plantilla_y_ficha4(tmp, base, F):
+    f1, f2, f3, f4 = F
+    cfg4 = json.load(open(os.path.join(AQUI, 'pools', 'nvidia-groq.json')))
+    reset()
+    puerta = Puerta(os.path.join(tmp, 'pl.db'), 4)
+    correr(f1, 'T-p1', tmp, base, puerta, modelo='ficha-glm52', texto='tarea de Max uno')
+    correr(f2, 'T-p2', tmp, base, puerta, texto='tarea de Max dos')
+    correr(f3, 'T-p3', tmp, base, puerta, texto='tarea de Max tres')
+    r4, _ = correr(f4, 'T-p4', tmp, base, Puerta(os.path.join(tmp, 'pl4.db'), 4), texto='tarea de Max cuatro')
+    llamadas_ok = len(S['log'])
+    sis_ok = all('schema: yaiwes.node-executor/xray-v2' in x[5] and '=== BEGIN_INPUT_BLOCK ===' in x[5] and 'MEJORAS' in x[5] for x in S['log'])
+    verbatim = all(('tarea de Max' in x[5].split('<user_query mode="verbatim">')[1].split('</user_query>')[0]) for x in S['log'])
+    chequeo('PLANTILLA: las 4 fichas mandan la plantilla XRAY-V2 completa + mejoras en CADA llamada', llamadas_ok == 1 + 6 + 6 + 6 and sis_ok, llamadas_ok)
+    chequeo('PLANTILLA: la entrada de cada nodo va dentro del bloque <user_query mode=verbatim>', verbatim)
+    chequeo('PLANTILLA: ninguna llamada pasa el limite de la ficha (no se parte en bloques)', all(len(x[5]) + len(x[4]) < 60000 for x in S['log']))
+    chequeo('FICHA 4 (NVIDIA/Groq): mismo Ask Council con goals; analizan Kimi K3, GLM 5.3 y Qwen 3.8 (Groq); ejecuta Glimmer 30B; revisan GLM 5.3 y Qwen 3.8 (Groq)',
+            r4['estado'] == 'SALIDA' and [x['id'] for x in f4['nodos']] == ['N0', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7']
+            and [x['modelo'] for x in f4['nodos'] if x.get('modelo')] == ['ficha-kimi3', 'ficha-glm53', 'ficha-qwen38groq', 'ficha-glimmer30b', 'ficha-glm53', 'ficha-qwen38groq']
+            and set(f4['modelos']) == {'ficha-kimi3', 'ficha-glm53', 'ficha-qwen38groq', 'ficha-glimmer30b'} and f4['cola']['pool'] == 'nvidia-groq' and cfg4['pool'] == 'nvidia-groq' and cfg4['puestos'] == 4, r4['estado'])
+    chequeo('FICHA 4: valida, con su propio pool (nvidia-groq) y la plantilla', validar_ficha(f4, FICHAS + '/ficha4-nvidia-groq', cfg4) == [], validar_ficha(f4, FICHAS + '/ficha4-nvidia-groq', cfg4))
+    sin = json.loads(json.dumps(f2))
+    sin.pop('plantilla')
+    chequeo('PLANTILLA: una ficha sin plantilla no es valida, y FichaOS se niega a correr sin cargarla', any('plantilla' in e for e in validar_ficha(sin, FICHAS + '/ficha2-dag-codigo', CFG)) and _rechaza(f2))
+
+
+def _rechaza(f):
+    try:
+        FichaOS(f, 'T', 'x', None, None, None)
+        return False
+    except ValueError:
+        return True
+
+
+def prueba_realtime_falso(tmp):
+    import types
+    from .modelos_especiales import WS_REALTIME, voz_en_vivo
+    enviados, cab = [], {}
+
+    class Con:
+        eventos = iter([{'type': 'session.created'}, {'type': 'response.audio_transcript.delta', 'delta': 'ho'}, {'type': 'response.audio_transcript.delta', 'delta': 'la'}, {'type': 'response.done'}])
+
+        def send(self, s):
+            enviados.append(json.loads(s))
+
+        def recv(self):
+            return json.dumps(next(self.eventos))
+
+        def close(self):
+            pass
+    fake = types.ModuleType('websocket')
+
+    def crear(url, header=None, timeout=None):
+        cab['url'], cab['header'] = url, header
+        return Con()
+    fake.create_connection = crear
+    guardado = sys.modules.get('websocket')
+    sys.modules['websocket'] = fake
+    try:
+        r = voz_en_vivo('qwen-audio-3.0-realtime-plus', 'hola', 'sk-sp-x')
+    finally:
+        if guardado is None:
+            sys.modules.pop('websocket', None)
+        else:
+            sys.modules['websocket'] = guardado
+    tipos = [e['type'] for e in enviados]
+    chequeo('MODELO 13 Qwen Realtime: WebSocket documentado, manda el texto del usuario, pide respuesta y junta lo que contesta', r == 'hola' and tipos == ['session.update', 'conversation.item.create', 'response.create'] and cab['url'] == WS_REALTIME + '?model=qwen-audio-3.0-realtime-plus' and cab['header'] == ['Authorization: Bearer sk-sp-x'], (r, tipos))
+
+
+def prueba_real_todas(tmp, F):
+    """Pruebas REALES (gastan plan). Solo si FICHA_PRUEBA_REAL=todas."""
+    if os.environ.get('FICHA_PRUEBA_REAL') != 'todas':
+        return
+    from .ficha_os import fabrica_motores
+    from .modelos_especiales import fabrica_especiales
+    P = proveedores_desde_yml(leer_texto(FICHAS + '/modelos-14/harness-modelos-14.cordis.yml'), tmp)
+    esp = fabrica_especiales(P, carpeta=tmp)
+    for k, t in (('ficha-qwenimg30pro', 'un circulo rojo sobre fondo blanco'), ('ficha-wan27img', 'un gato azul')):
+        try:
+            s = esp(k, 'imagen', t)
+            chequeo('REAL ' + k + ' imagen', s.startswith('IMAGEN http'), s[:90])
+        except Exception as e:
+            chequeo('REAL ' + k + ' imagen', False, e)
+    try:
+        s = esp('ficha-qwentts', 'texto-a-voz', 'hola equipo, esto es una prueba')
+        chequeo('REAL ficha-qwentts texto a voz', s.startswith('AUDIO ') and os.path.getsize(s[6:]) > 1000, s[:90])
+        a = esp('ficha-qwenasr', 'voz-a-texto', s[6:])
+        chequeo('REAL ficha-qwenasr voz a texto (audio del TTS)', 'hola' in a.lower(), a[:90])
+    except Exception as e:
+        chequeo('REAL texto a voz y voz a texto', False, e)
+    try:
+        s = esp('ficha-qwenrt', 'voz-en-vivo', 'Responde solo con la palabra OK.')
+        chequeo('REAL ficha-qwenrt voz en vivo', bool(s), s[:90])
+    except Exception as e:
+        chequeo('REAL ficha-qwenrt voz en vivo', False, e)
+    P4 = proveedores_desde_yml(leer_texto(FICHAS + '/modelos-nvidia-groq/harness-modelos.cordis.yml'), tmp)
+    for f, nombre, prov, cfgp in ((F[1], 'FICHA 2', P, 'puerta.config.json'), (F[2], 'FICHA 3', P, 'puerta.config.json'), (F[3], 'FICHA 4', P4, os.path.join('pools', 'nvidia-groq.json'))):
+        m = f['memory']
+        memoria = Memoria(ProveedorMock(os.path.join(tmp, 'real' + nombre[-1])), 'T-real' + nombre[-1], m['project_memory'], m['read_project_memory'], m['write_task_memory'], m['write_project_memory'])
+        pu = Puerta.desde_config(os.path.join(tmp, 'real' + nombre[-1] + '.db'), os.path.join(AQUI, cfgp))
+        t0 = time.time()
+        res = FichaOS(f, 'T-real' + nombre[-1], 'Escribe una funcion Python suma(a, b) y explica en una linea que hace.', fabrica_motores(prov, 90, f['motor']['limite_llamada_chars']), pu, memoria,
+                      plantilla=PL, mejoras=MJ, especiales=None).correr()
+        chequeo('REAL ' + nombre + ' completa (6 llamadas reales con la plantilla)', res['estado'] == 'SALIDA' and len(res['salida']) > 20, (res['estado'], res['gaps'], res['tokens']['total_api_tokens'], round(time.time() - t0)))
 
 
 def prueba_memoria(tmp):
@@ -423,16 +539,19 @@ if __name__ == '__main__':
     srv = ThreadingHTTPServer(('127.0.0.1', 0), Falso)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = 'http://127.0.0.1:' + str(srv.server_address[1])
-    F = [cargar_ficha(FICHAS + '/' + d + '/ficha.json') for d in ('ficha1-modelos', 'ficha2-dag-codigo', 'ficha3-frontend')]
+    F = [cargar_ficha(FICHAS + '/' + d + '/ficha.json') for d in ('ficha1-modelos', 'ficha2-dag-codigo', 'ficha3-frontend', 'ficha4-nvidia-groq')]
     prueba_puerta(tmp)
     prueba_ficha_dag(tmp, base, F[1], F[2])
     prueba_ficha1(tmp, base, F[0])
     prueba_especiales(tmp, F[0])
+    prueba_realtime_falso(tmp)
+    prueba_plantilla_y_ficha4(tmp, base, F)
     prueba_candados_budget_cola(tmp, base)
     prueba_memoria(tmp)
-    prueba_tres_fichas(tmp, base, F)
+    prueba_tres_fichas(tmp, base, F[:3])
     prueba_token_plan(tmp)
     prueba_real_token_plan(tmp, F[0])
     prueba_real_14(tmp, F[0])
+    prueba_real_todas(tmp, F)
     print('RESULTADO_FICHAS', sum(RES), '/', len(RES), flush=True)
     sys.exit(0 if all(RES) else 1)
