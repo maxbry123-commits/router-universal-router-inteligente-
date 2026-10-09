@@ -435,19 +435,8 @@ export async function mount(root, { api, tell }) {
     if (!message) return;
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
-    if (selAct && selAct !== "nvidia-groq-team") {
-      if (selAct === "team-qwen" && c.selectorQwen && typeof window.RIU_ACCION === "function") {  // Team qwen -> harness (puente) -> modelo de la ficha 14
-        c.hist.append(burbuja(message, "user")); A.registrar(c.sesion, "user", message); input.value = "";
-        const pend = node("div", "Pensando… (" + c.selectorQwen.label + ")", "item message pending"); c.hist.append(pend); c.hist.scrollTop = c.hist.scrollHeight;
-        try {
-          const r = await window.RIU_ACCION("qwen", { modelo_id_slug: c.selectorQwen.modelo_id_slug, message: A.envolver(message, c.instrucciones), sesion: c.sesion });
-          pend.remove();
-          if (r && r.respuesta) { c.hist.append(burbuja(r.respuesta)); A.registrar(c.sesion, "bot", r.respuesta); }
-          else { const t = "GAP Team qwen: " + (r ? (r.error || "") + " " + (r.detalle || "") : "sin respuesta"); c.hist.append(node("div", t, "item message meta")); A.registrar(c.sesion, "err", t); }
-        } catch (e) { pend.remove(); c.hist.append(node("div", "GAP Team qwen: " + e.message, "item message meta")); }
-        c.hist.scrollTop = c.hist.scrollHeight;
-        return;
-      }
+    const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
+    if (selAct && selAct !== "nvidia-groq-team" && !fichaQwen) {
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
       c.hist.append(node("div", nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.", "item message meta"));
@@ -467,7 +456,7 @@ export async function mount(root, { api, tell }) {
     const model = q("#model").value;
     const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[modo];
     try {
-      const body = { message: A.envolver(message, c.instrucciones), ficha: c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
+      const body = { message: A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });
