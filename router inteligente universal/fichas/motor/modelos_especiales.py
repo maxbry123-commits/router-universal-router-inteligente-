@@ -12,6 +12,7 @@ import urllib.error
 import urllib.request
 
 from .api_engine import ErrorApi
+from .runtime_xray import cerrar_modelo, iniciar_modelo
 
 HOST = 'https://token-plan.maas.qwencloudapi.com'
 RUTA_GEN = '/api/v1/services/aigc/multimodal-generation/generation'
@@ -120,13 +121,21 @@ def fabrica_especiales(provs, host=HOST, ws=WS_TTS, carpeta='.'):
         p = provs.get(modelo)
         if not p or not getattr(p, '_k', ''):
             raise ErrorApi('SIN_API: falta la clave de ' + modelo)
-        if tipo == 'imagen':
-            return imagen(p.modelo, texto, p._k, host)
-        if tipo == 'voz-a-texto':
-            return voz_a_texto(p.modelo, texto, p._k, host)
-        if tipo == 'texto-a-voz':
-            return texto_a_voz(p.modelo, texto, p._k, ws, carpeta=carpeta)
-        if tipo == 'voz-en-vivo':
-            return voz_en_vivo(p.modelo, texto, p._k)
-        raise ErrorApi('GAP_TIPO_DESCONOCIDO: ' + tipo)
+        iniciar_modelo()
+        try:
+            if tipo == 'imagen':
+                salida = imagen(p.modelo, texto, p._k, host)
+            elif tipo == 'voz-a-texto':
+                salida = voz_a_texto(p.modelo, texto, p._k, host)
+            elif tipo == 'texto-a-voz':
+                salida = texto_a_voz(p.modelo, texto, p._k, ws, carpeta=carpeta)
+            elif tipo == 'voz-en-vivo':
+                salida = voz_en_vivo(p.modelo, texto, p._k)
+            else:
+                raise ErrorApi('GAP_TIPO_DESCONOCIDO: ' + tipo)
+        except Exception as exc:
+            cerrar_modelo(False, type(exc).__name__ + ': ' + str(exc)[:200])
+            raise
+        cerrar_modelo(True)
+        return salida
     return esp
