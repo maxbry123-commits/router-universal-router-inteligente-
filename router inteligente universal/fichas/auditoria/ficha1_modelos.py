@@ -84,7 +84,7 @@ SELECTOR = [{'cola': 1, 'id': 'ficha-qwen38max', 'nombre': 'Qwen 3.8 Max', 'rol'
  {'cola': 9, 'id': 'ficha-glm52', 'nombre': 'GLM 5.2', 'rol': 'Codigo + agentes', 'tipo': 'texto'}]
 EJECUTOR_ROL = 'EJECUTA directamente la tarea con el modelo elegido en el selector (unico ejecutor). Una vez aprobada la ejecucion, continua hasta completarla: no emite salida intermedia, no pide confirmacion adicional y no aplaza el trabajo'
 # ================= MOTOR (identico en las tres fichas) =================
-VERIFICACIONES = (("VERIFICACION 1", "ficha-glm52"), ("VERIFICACION 2", "ficha-dsv4flash"), ("VERIFICACION 3", "ficha-qwen38flash"))
+VERIFICACIONES = (("VERIFICACION 1", "ficha-dsv4flash"), ("VERIFICACION 2", "ficha-qwen38flash"))
 TIPOS_QUE_APLICAN = ("texto",)  # no aplica a modelos de imagen, voz, audio ni video
 MODELOS = dict(FICHA["modelos"])
 for _, _m in VERIFICACIONES:
