@@ -79,15 +79,14 @@ Todas: `POST <harnessUrl>/<accion>` con JSON y `Authorization: Bearer <clave>`. 
 ---
 ## SISTEMA ACTUAL: FICHAS TOKEN PLAN (14 modelos QwenCloud) - actualizado 2026-10-09
 ```
-FICHA A -+
-FICHA B -+--> COLA GLOBAL (4 puestos) --> API Qwen Token Plan
-FICHA C -+
+FICHA 1: SELECTOR 14 -> 1 MODELO -> EJECUTAR -> SALIDA
+FICHA 2: [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
+FICHA 3: [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
 ```
-- Ficha 1 = 14 modelos individuales (sin Ask Council, eliges 1). Ficha 2 = DAG codigo (Council DeepSeek V4 Pro + GLM 5.2 + Qwen 3.7 Max, ejecuta Qwen 3.8 Max). Ficha 3 = frontend (mismo Council, ejecuta DeepSeek V4 Pro).
-- Goals (12 entrada / 12 salida) = datos, 0 llamadas a la API. Texto de los 24 goals: PONER AQUI (lo da el Director).
+- Sin goals. La SALIDA (texto del ultimo paso) siempre se entrega; aparte lleva la etiqueta verificado / SIN VERIFICAR (evidencia del Harness).
 - API: clave `sk-sp-...` + `https://token-plan.maas.qwencloudapi.com/compatible-mode/v1`. Nunca coding-intl ni dashscope. Clave solo cifrada en `modelos-14`.
 - 1 ficha = 1 tarea = 1 mini-sistema. Compartido: cola global (`motor/puerta.config.json`, 4 puestos, 10 min), candados de rutas entre fichas, almacen del Harness.
-- PASS de codigo = evidencia del Harness (exit_code 0, archivos, tests, receipt). Sin Harness = GAP_HARNESS_EXECUTOR (falta RIU_DEEPSEEK_HARNESS_URL).
+- Sin Harness (falta RIU_DEEPSEEK_HARNESS_URL) la salida sale SIN VERIFICAR (GAP_HARNESS_EXECUTOR) y no se promueve a la memoria del proyecto.
 - Memoria: referencia al harness; GAP: cablear `motor/memoria.py` (conectar_harness) a memoria_yaiwes.
 - Modelos de imagen/voz: no usan chat/completions (GAP_ENDPOINT_NO_CHAT) hasta tener su endpoint.
 - Pruebas (job HF 16 GB, no Vercel): `python -m motor.prueba_motor` y `python -m motor.prueba_fichas`. Copias legibles sin claves: `auditoria/`. README anclado: `README-FICHAS.md`.

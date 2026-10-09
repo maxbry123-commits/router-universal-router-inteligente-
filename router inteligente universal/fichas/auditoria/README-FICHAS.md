@@ -18,13 +18,13 @@ FICHA C (scheduler C) -+
 Clave `sk-sp-...` + base `https://token-plan.maas.qwencloudapi.com/compatible-mode/v1` (header Authorization: Bearer). Nunca mezclar con coding-intl, dashscope ni pay-as-you-go. La clave solo vive cifrada en `modelos-14`.
 
 ## Ask Council
-Es de 3 analizadores (DeepSeek V4 Pro, GLM 5.2, Qwen 3.7 Max) y luego un ejecutor. Los GOALS (12 de entrada y 12 de salida) son DATOS/criterios: 0 llamadas a la API. No hay modelos de imagen ni voz dentro del Council.
+Es de 3 analizadores en paralelo (DeepSeek V4 Pro, GLM 5.2, Qwen 3.7 Max) y luego un ejecutor, dos revisiones y la SALIDA. No hay goals ni modelos de imagen o voz dentro del Council.
 
-## Presupuesto, cache y PASS
-El presupuesto de tokens (`task_budget`) es de la FICHA completa, con reserva segura entre hilos; `max_output_tokens` es el tope por llamada. La cache local no se cuenta como cached_tokens de la API. Una respuesta de modelo NO es PASS: los nodos que cambian codigo exigen evidencia del Harness (exit_code 0, archivos, tests ejecutados y pasados, receipt). Sin Harness real = GAP_HARNESS_EXECUTOR.
+## Salida, presupuesto y cache
+La SALIDA (el texto del ultimo paso) siempre se entrega. Aparte lleva una etiqueta: verificada solo si el Harness devuelve evidencia (exit_code 0, archivos, tests ejecutados y pasados, receipt); si no, queda SIN VERIFICAR (GAP_HARNESS_EXECUTOR) y no se promueve a la memoria del proyecto. El presupuesto de tokens (`task_budget`) es de la FICHA completa; `max_output_tokens` es el tope por llamada. La cache local no se cuenta como cached_tokens de la API.
 
 ## Memoria
-Sin almacenamiento propio: la ficha solo lleva su namespace (task_id) y promueve al proyecto solo con PASS. GAP: `motor/memoria.py` (conectar_harness) falta cablearlo a memoria_yaiwes.
+Sin almacenamiento propio: la ficha solo lleva su namespace (task_id) y promueve al proyecto solo lo verificado. GAP: `motor/memoria.py` (conectar_harness) falta cablearlo a memoria_yaiwes.
 
 ## Crear una ficha nueva (checklist)
 1. Copiar una carpeta fichaN y cambiar ficha.json (nodos, modelos, depende_de, rutas).

@@ -157,7 +157,7 @@ class FichaOS:
             if es_datos(n):  # goals = datos deterministas: 0 API, 0 tokens, 0 puesto de cola
                 self.estado[n['id']] = 'ok'
                 self.salida[n['id']] = self._texto_datos(n)
-                self.ledger[n['id']] = {'nodo': n['id'], 'estado': 'PASS', 'api': 0}
+                self.ledger[n['id']] = {'nodo': n['id'], 'estado': 'OK', 'api': 0}
                 continue
             if cupo <= 0:
                 break
@@ -293,18 +293,18 @@ class FichaOS:
         if not salida or len(salida.strip()) < n.get('valida_min_chars', 1):
             reg.update(estado='GAP', motivo='SIN_SALIDA ' + err)
             return self._terminar(n, False, reg)
-        if necesita_ev:  # RESPUESTA DE MODELO != PASS. PASS = evidencia real del Harness (ejecucion, archivos, tests, receipt)
+        if necesita_ev:  # la SALIDA siempre se entrega; la verificacion es una etiqueta aparte (una respuesta de modelo no es evidencia)
             ev = self.harness(n, salida, {'task': self.task, 'paths': n.get('write_paths')}) if self.harness else None
             reg['evidencia'] = ev
             if ev is None:
-                reg.update(estado='GAP', motivo='GAP_HARNESS_EXECUTOR: sin Harness/tools reales no se declara ejecucion de codigo')
-                return self._terminar(n, False, reg)
-            if not evidencia_ok(ev):
-                reg.update(estado='GAP', motivo='EVIDENCIA_INCOMPLETA: se exige exit_code 0, files_changed, tests ejecutados y pasados, receipt')
-                return self._terminar(n, False, reg)
+                reg['verificacion'] = 'GAP_HARNESS_EXECUTOR: sin Harness/tools reales no se declara ejecucion de codigo'
+            elif not evidencia_ok(ev):
+                reg['verificacion'] = 'EVIDENCIA_INCOMPLETA: se exige exit_code 0, files_changed, tests ejecutados y pasados, receipt'
+            else:
+                reg['verificacion'] = 'VERIFICADA'
         if usa_cache and not hit:
             self.mem.guardar('cache', clave, {'salida': salida})
-        reg['estado'] = 'PASS'
+        reg['estado'] = 'OK'
         self._terminar(n, True, reg, salida)
 
     # ---------- ciclo de vida ----------
@@ -340,10 +340,12 @@ class FichaOS:
                 suma[k] += t.get(k, 0)
             suma['local_cache_hits'] += 1 if t.get('local_cache_hit') else 0
         motivos = {k: v.get('motivo') for k, v in self.ledger.items() if v.get('estado') == 'GAP'}
-        res = {'task': self.task, 'ficha': self.f['ficha'], 'estado': 'PASS' if ok else 'GAP', 'salida': self.salida.get(final, ''),
-               'tokens': suma, 'task_budget': self.task_budget, 'nodos': dict(self.estado), 'gaps': motivos}
+        ver = [r.get('verificacion') for r in self.ledger.values() if r.get('verificacion')]
+        verificado = None if not ver else all(v == 'VERIFICADA' for v in ver)
+        res = {'task': self.task, 'ficha': self.f['ficha'], 'estado': 'SALIDA' if ok else 'GAP', 'verificado': verificado, 'avisos': sorted(set(v for v in ver if v != 'VERIFICADA')),
+               'salida': self.salida.get(final, ''), 'tokens': suma, 'task_budget': self.task_budget, 'nodos': dict(self.estado), 'gaps': motivos}
         self.mem.guardar('ledger', 'RESUMEN', res)
-        if ok:
+        if ok and verificado is True:  # a la memoria del proyecto solo pasa lo verificado con evidencia
             self.mem.promover('resultado/' + self.task, {'salida': res['salida']}, True)
         return res
 
@@ -384,6 +386,9 @@ def validar_ficha(f, base, config_puerta=None):
             for d in n.get('depende_de', []):
                 if d not in ids:
                     errs.append('dependencia inexistente ' + d + ' en ' + n['id'])
+    for n in (f.get('nodos', []) if f.get('tipo') == 'dag' else []):
+        if 'participan' in n or n.get('tipo') == 'goals' or 'goals' in n:
+            errs.append('goals/participan no forman parte de la estructura de las fichas: ' + n['id'])
     return errs
 
 
@@ -428,7 +433,7 @@ def main():
     m = f['memory']
     mem = Memoria(prov_mem, task, m.get('project_memory', 'YAIWES'), m.get('read_project_memory', True), m.get('write_task_memory', True), m.get('write_project_memory', False))
     res = FichaOS(f, task, texto, fabrica_motores(provs, f['dsl'].get('timeouts', {}).get('api_seconds', 90)), puerta, mem, modelo, candados=candados, harness=HarnessEjecutor()).correr()
-    print(json.dumps({k: res[k] for k in ('task', 'ficha', 'estado', 'tokens', 'nodos', 'gaps')}))
+    print(json.dumps({k: res[k] for k in ('task', 'ficha', 'estado', 'verificado', 'avisos', 'tokens', 'nodos', 'gaps')}))
 
 
 if __name__ == '__main__':

@@ -65,75 +65,13 @@
   "limite_llamada_chars": 18000,
   "mensajes_del_director": true
  },
- "salida_final": "N7",
+ "salida_final": "N6",
  "nodos": [
-  {
-   "id": "N0",
-   "paso": 0,
-   "tipo": "goals",
-   "ejecutar_api": false,
-   "nombre": "goals_de_entrada",
-   "cantidad": 12,
-   "tema": "programacion, arquitectura y solucion de programacion de code",
-   "goals": [
-    {
-     "id": "G01",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G02",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G03",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G04",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G05",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G06",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G07",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G08",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G09",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G10",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G11",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "G12",
-     "texto": "PONER AQUI"
-    }
-   ],
-   "depende_de": []
-  },
   {
    "id": "N1",
    "modelo": "ficha-dsv4pro",
    "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": [
-    "N0"
-   ],
+   "depende_de": [],
    "parallel_safe": true,
    "read_paths": [
     "tarea/"
@@ -147,9 +85,7 @@
    "id": "N2",
    "modelo": "ficha-glm52",
    "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": [
-    "N0"
-   ],
+   "depende_de": [],
    "parallel_safe": true,
    "read_paths": [
     "tarea/"
@@ -163,9 +99,7 @@
    "id": "N3",
    "modelo": "ficha-qwen37max",
    "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": [
-    "N0"
-   ],
+   "depende_de": [],
    "parallel_safe": true,
    "read_paths": [
     "tarea/"
@@ -178,9 +112,8 @@
   {
    "id": "N4",
    "modelo": "ficha-dsv4pro",
-   "rol": "analiza la arquitectura y propone solucion y EJECUTA la tarea de programacion de code (unico ejecutor)",
+   "rol": "analiza las propuestas de N1, N2 y N3 y EJECUTA la tarea de programacion de code (unico ejecutor)",
    "depende_de": [
-    "N0",
     "N1",
     "N2",
     "N3"
@@ -199,72 +132,10 @@
   },
   {
    "id": "N5",
-   "paso": 5,
-   "tipo": "goals",
-   "ejecutar_api": false,
-   "nombre": "goals_de_salida",
-   "cantidad": 12,
-   "goals": [
-    {
-     "id": "S01",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S02",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S03",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S04",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S05",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S06",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S07",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S08",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S09",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S10",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S11",
-     "texto": "PONER AQUI"
-    },
-    {
-     "id": "S12",
-     "texto": "PONER AQUI"
-    }
-   ],
+   "modelo": "ficha-glm52",
+   "rol": "REVISA y refactoriza el resultado de N4",
    "depende_de": [
     "N4"
-   ]
-  },
-  {
-   "id": "N6",
-   "modelo": "ficha-glm52",
-   "rol": "revisa y refactoriza el codigo de N4 segun los criterios de salida de N5",
-   "depende_de": [
-    "N4",
-    "N5"
    ],
    "parallel_safe": true,
    "read_paths": [
@@ -279,11 +150,10 @@
    "requiere_evidencia": true
   },
   {
-   "id": "N7",
+   "id": "N6",
    "modelo": "ficha-qwen38max",
-   "rol": "vuelve a revisar y refactoriza el resultado de N6 segun N5; entrega la salida final",
+   "rol": "REVISA de nuevo el resultado de N5 y entrega la SALIDA final",
    "depende_de": [
-    "N6",
     "N5"
    ],
    "parallel_safe": true,
@@ -299,5 +169,5 @@
    "requiere_evidencia": true
   }
  ],
- "flujo": "N0 goals(0 API) -> [N1 | N2 | N3] Council -> N4(DeepSeek V4 Pro ejecuta) -> N5 goals(0 API) -> N6 -> N7 -> VERIFICADOR(evidencia Harness) -> PASS/GAP"
+ "flujo": "[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA"
 }

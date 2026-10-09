@@ -176,5 +176,5 @@
   }
  ],
  "ask_council": false,
- "flujo": "SELECTOR(14, eliges 1) -> crear ficha T-id -> DSL propio -> pedir puesto -> COLA(4) -> UN modelo -> verificar -> ledger -> liberar"
+ "flujo": "SELECTOR 14 -> 1 MODELO -> EJECUTAR -> SALIDA"
 }

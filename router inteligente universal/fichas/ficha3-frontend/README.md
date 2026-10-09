@@ -1,9 +1,9 @@
 # Ficha 3 - Frontend (Ask Council)
 
-Mismo Ask Council que la ficha 2 (DeepSeek V4 Pro + GLM 5.2 + Qwen 3.7 Max); solo cambia el ejecutor del paso 4: DeepSeek V4 Pro. Falta: texto de los 24 goals (PONER AQUI).
+Mismo Ask Council que la ficha 2; solo cambia quien ejecuta: DeepSeek V4 Pro. Sin goals.
 ## Como funciona (horizontal)
 ```
-N0 12 goals entrada(0 API) -> [N1 DeepSeek V4 Pro | N2 GLM 5.2 | N3 Qwen 3.7 Max] en paralelo -> N4 DeepSeek V4 Pro analiza+EJECUTA -> N5 12 criterios salida(0 API) -> N6 GLM 5.2 revisa(N4+N5) -> N7 Qwen 3.8 Max revisa(N6+N5) -> VERIFICADOR -> PASS/GAP
+[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
 ```
 
 Bloques de la ficha (cada tarea nace con TODO esto y se apaga al terminar):
@@ -14,7 +14,7 @@ Bloques de la ficha (cada tarea nace con TODO esto y se apaga al terminar):
 5. Pedir puesto -> COLA GLOBAL (4 puestos, espera hasta 10 min; el limite vive en motor/puerta.config.json)
 6. Contador de tokens (consumo real de la API; el presupuesto es de la FICHA completa)
 7. Cache local (referencia al almacen del harness; separada de los cached_tokens de la API)
-8. Verificador (PASS = evidencia real del Harness: ejecucion, archivos, tests, receipt)
+8. Etiqueta de verificacion (evidencia del Harness: ejecucion, archivos, tests, receipt). NO bloquea la SALIDA: la salida siempre se entrega, marcada verificada o sin verificar
 9. Ledger (recibo por nodo, namespace = task_id)
 10. Memoria (referencia al harness: lee proyecto, escribe su tarea, promueve solo con PASS)
 11. Watchdog (si la ficha muere se libera su puesto y sus candados)
