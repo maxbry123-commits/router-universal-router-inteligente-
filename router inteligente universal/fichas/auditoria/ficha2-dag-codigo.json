@@ -24,7 +24,7 @@
  },
  "dsl": {
   "tokens": {
-   "task_budget": 12000,
+   "task_budget": 10000000,
    "max_output_tokens": 1500
   },
   "cache": {
