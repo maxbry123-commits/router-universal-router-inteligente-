@@ -1,0 +1,6 @@
+[
+  {"nombre": "ficha-groq", "url": "https://comand-center-1-claude-github-mcp-backup.hf.space/v1/router", "modelo": "auto", "key_env": "FICHA_GROQ_TOKEN", "perfil": "groq_free"},
+  {"nombre": "ficha-kimi", "url": "https://comand-center-1-claude-github-mcp-backup.hf.space/v1/router", "modelo": "auto", "key_env": "FICHA_KIMI_TOKEN", "perfil": "nvidia"},
+  {"nombre": "ficha-glm", "url": "https://comand-center-1-claude-github-mcp-backup.hf.space/v1/router", "modelo": "auto", "key_env": "FICHA_GLM_TOKEN", "perfil": "nvidia"},
+  {"nombre": "ficha-lightning", "url": "https://comand-center-1-claude-github-mcp-backup.hf.space/v1/router", "modelo": "auto", "key_env": "FICHA_LIGHTNING_TOKEN", "perfil": "nvidia"}
+]

@@ -1,0 +1,16 @@
+# ============================================================
+# MEJORAS AÑADIDAS A LA PLANTILLA XRAY-V2 (la plantilla original queda intacta arriba; esto SOLO suma)
+# ============================================================
+MEJORAS:
+  M01_CIERRE_EXPLICITO: "Una tarea solo se cierra cuando la salida termina con la marca [[TAREA_CERRADA]]. Una salida sin esa marca es INCOMPLETA: no se aplica ni se ejecuta, se continua desde donde quedo."
+  M02_MENSAJES_DEL_DIRECTOR: "Si llega el bloque MENSAJES_DEL_DIRECTOR, atenderlo en este mismo paso SIN detener ni reiniciar la tarea en curso. Registrarlo textual como instruccion nueva y seguir."
+  M03_PUNTO_DE_CONTROL: "Cada paso deja notas cortas de estado (hecho / falta). Tras un reinicio se retoma desde el ultimo paso guardado, sin repetir lo ya hecho."
+  M04_LIMITE_DE_LLAMADA: "Mantener cada respuesta corta. Si la peticion es larga, el agente la parte en bloques de 8500 caracteres; responder la parte recibida y no esperar a ver las demas."
+  M05_GAP_EN_VEZ_DE_INVENTAR: "Lo que no se pueda resolver se registra como GAP (motivo + fix intentado) y se sigue con la siguiente tarea independiente. Nunca inventar datos, rutas ni resultados."
+  M06_SECRETOS: "Nunca imprimir, repetir ni escribir claves o tokens. Se usan solo por variable de entorno."
+  M07_FUERA_DE_ALCANCE: "No tocar el Router, GitHub Actions, LFS, ni cambiar nada en Hugging Face fuera del banco. Fuera del alcance = BLOCKED."
+  M08_ANTI_CUELGUE: "No quedarse esperando mas de ~1 minuto tras un commit/push/run: seguir con la siguiente tarea y volver al final a revisar."
+  M09_EVIDENCIA_PRIMERO: "Cada tarea cerrada muestra la prueba real (comando + resultado). Sin evidencia observable no hay PASS."
+  M10_ORDEN_DE_COLA: "Una instruccion nueva espera a que termine la tarea en curso, salvo que sea un mensaje del Director sobre esa misma tarea."
+  M11_CAMBIO_DE_API: "Si la API falla o llega a su limite (Groq free: 30/min, 8000 tokens/min, 200000 tokens/dia; NVIDIA: ~40/min) el motor cambia de API y reintenta; el agente no se detiene."
+  M12_UNA_SOLA_RAIZ: "Todo lo del proyecto en una sola raiz ordenada; sin archivos regados."
