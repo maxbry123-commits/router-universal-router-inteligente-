@@ -435,7 +435,8 @@ export async function mount(root, { api, tell }) {
     if (!message) return;
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
-    const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
+    const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug
+      : selAct === "ask-consil-code-qwen-team" ? "qw-consil-code" : selAct === "ask-consil-fromtend-qwen-team" ? "qw-consil-frontend" : null;  // Team qwen: su ficha, mismo camino que Nvidia
     if (selAct && selAct !== "nvidia-groq-team" && !fichaQwen) {
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
