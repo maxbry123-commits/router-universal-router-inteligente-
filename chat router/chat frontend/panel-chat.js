@@ -14,6 +14,7 @@ export async function mount(root, { api, tell }) {
 
   // ---- multi-chat: hasta 5 estancias, cada una con su sesion, su ficha, sus anclas y su historial ----
   const tabsEl = q("#chat-tabs"), histEl = q("#histories");
+  const alFondo = () => { const d = histEl.getBoundingClientRect().bottom - q("#composer").getBoundingClientRect().top; if (d > 0) scrollBy(0, d); }; new MutationObserver(alFondo).observe(histEl, { childList: true, subtree: true }); new ResizeObserver(alFondo).observe(document.body);  // móviles bajos: el composer fijo no tapa el final del historial
   const chats = [];
   let activo = 0;
   const chat = () => chats[activo];
