@@ -72,7 +72,7 @@ class Motor:
 
     def _post(self, p, mensajes, max_tokens):
         cuerpo = json.dumps({'model': p.modelo, 'messages': mensajes, 'max_tokens': max_tokens}).encode()
-        req = urllib.request.Request(p.url, cuerpo, {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + p.key()})
+        req = urllib.request.Request(p.url, cuerpo, {'Content-Type': 'application/json', 'User-Agent': 'ficha-motor/1.0', 'Authorization': 'Bearer ' + p.key()})
         with urllib.request.urlopen(req, timeout=self.timeout) as r:
             d = json.loads(r.read())
         return d['choices'][0]['message']['content']
