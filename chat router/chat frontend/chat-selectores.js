@@ -24,6 +24,7 @@ const pintarDiagrama = (caja, texto) => {  // pasos en línea, desplazable en ho
     const p = document.createElement("span"); p.className = "dg-paso"; p.textContent = paso; caja.append(p);
   });
 };
+const tira_id = (id) => "dg-" + id;
 const usable = (id) => SELECTORES.some((s) => s.id === id);
 const leer = () => { try { const v = sessionStorage.getItem(CLAVE); return usable(v) ? v : null; } catch (e) { return null; } };
 const escribir = (v) => { try { v ? sessionStorage.setItem(CLAVE, v) : sessionStorage.removeItem(CLAVE); } catch (e) { /* sin almacenamiento */ } };
@@ -81,8 +82,8 @@ export function conectarSelectores({ q }) {
     if (d) {  // botón "i": muestra/oculta el micro diagrama de este selector como recordatorio
       const info = document.createElement("button");
       info.type = "button"; info.className = "sel-info"; info.innerHTML = INFO;
-      info.title = "Ver diagrama de " + s.nombre; info.setAttribute("aria-label", info.title); info.setAttribute("aria-expanded", "false");
-      const tira = document.createElement("div"); tira.className = "consil-diagrama sel-diagrama"; tira.hidden = true;
+      info.title = "Ver diagrama de " + s.nombre; info.setAttribute("aria-controls", tira_id(s.id)); info.setAttribute("aria-label", info.title); info.setAttribute("aria-expanded", "false");
+      const tira = document.createElement("div"); tira.className = "consil-diagrama sel-diagrama"; tira.hidden = true; tira.id = tira_id(s.id);
       pintarDiagrama(tira, d.texto);
       const caja = q(d.sel); if (caja) pintarDiagrama(caja, d.texto);
       info.addEventListener("click", () => { tira.hidden = !tira.hidden; info.setAttribute("aria-expanded", String(!tira.hidden)); info.classList.toggle("abierto", !tira.hidden); });
