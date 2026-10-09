@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Levanta los motores de memoria (servicios HTTP con el contrato de ComponentAdapter) y exporta sus URL.
 # Uso: . 'chat router/Workflow Loop code Yaiwes/memoria/motores/levantar_motores.sh'  (con source). Interpretes configurables por variable.
-RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 M="$RAIZ/chat router/Workflow Loop code Yaiwes/memoria/motores"
 DATOS="${RIU_MOTORES_DIR:-/tmp/riu-motores}"; mkdir -p "$DATOS"
 PY_GRAPHITI="${PY_GRAPHITI:-/tmp/v-graphiti/bin/python}"; PY_GRAPHIFY="${PY_GRAPHIFY:-/tmp/v-graphify/bin/python}"; PY="${PY:-python3}"
