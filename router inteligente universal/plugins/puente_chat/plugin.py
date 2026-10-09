@@ -963,6 +963,63 @@ def _apagar(p: dict[str, Any]) -> dict[str, Any]:
     return {"job_id": job, "apagado": s < 400}
 
 
+
+# ---- Team qwen: los 14 modelos de la ficha (Qwen Cloud). La clave va sellada con la clave del banco ----
+_QWEN_SLUG = {  # slug del selector del chat -> id real del proveedor (segun la ficha modelos-14)
+    "qwen-3-8-max": "qwen3.8-max", "qwen-3-8-flash": "qwen3.8-flash", "qwen-3-7-max": "qwen3.7-max",
+    "qwen-3-7-plus": "qwen3.7-plus", "qwen-3-6-flash": "qwen3.6-flash", "deepseek-v4-pro": "deepseek-v4-pro",
+    "deepseek-v4-pro-0813": "deepseek-v4-pro-0813", "deepseek-v4-flash": "deepseek-v4-flash-0731", "glm-5-2": "glm-5.2",
+}
+_QWEN_CACHE = {}
+
+
+def _qwen_conf():
+    if "k" not in _QWEN_CACHE:
+        import hashlib
+        import os
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        clave = os.environ.get("FICHA_CLAVE_BANCO") or os.environ.get("RIU_VAULT_PASSPHRASE") or ""
+        if not clave:
+            raise RuntimeError("SIN_CLAVE_DEL_BANCO_EN_EL_ROUTER")
+        blob = (_CONFIG_DIR / "modelos-14.cordis.yml.sello").read_bytes()
+        cab = b"FICHA-SELLO-1"
+        k = len(cab)
+        llave = hashlib.scrypt(clave.encode(), salt=blob[k:k + 16], n=2 ** 15, r=8, p=1, dklen=32, maxmem=2 ** 26)
+        texto = AESGCM(llave).decrypt(blob[k + 16:k + 28], blob[k + 28:], cab).decode("utf-8")
+        _QWEN_CACHE["k"] = re.search(r'apiKey:\s*"([^"]+)"', texto).group(1)
+        _QWEN_CACHE["url"] = re.search(r'baseURL:\s*"([^"]+)"', texto).group(1).rstrip("/")
+    return _QWEN_CACHE["k"], _QWEN_CACHE["url"]
+
+
+def _qwen(p):
+    slug = str(p.get("modelo_id_slug") or "")
+    modelo = _QWEN_SLUG.get(slug)
+    if not modelo:
+        return {"error": "MODELO_NO_ES_DE_TEXTO_O_NO_EXISTE", "detalle": slug}
+    mensaje = str(p.get("message") or "").strip()
+    if not mensaje:
+        return {"error": "MENSAJE_VACIO"}
+    sesion = str(p.get("sesion") or "chat")
+    try:
+        clave, url = _qwen_conf()
+    except Exception as x:  # noqa: BLE001
+        return {"error": "QWEN_SIN_CLAVE", "detalle": str(x)[:200]}
+    cuerpo = {"model": modelo, "messages": [{"role": "user", "content": mensaje}],
+              "max_tokens": int(p.get("max_tokens") or 1500)}
+    req = urllib.request.Request(url + "/chat/completions", data=json.dumps(cuerpo).encode(), method="POST",
+                                 headers={"Authorization": "Bearer " + clave, "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=85) as r:
+            d = json.loads(r.read().decode("utf-8", "replace"))
+    except urllib.error.HTTPError as x:
+        return {"error": "QWEN_HTTP_%d" % x.code, "detalle": x.read()[:300].decode("utf-8", "replace")}
+    except Exception as x:  # noqa: BLE001
+        return {"error": "QWEN_FALLO", "detalle": str(x)[:200]}
+    texto = ((d.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
+    _guardar(sesion, modelo, mensaje, texto)
+    return {"ok": True, "modelo": d.get("model") or modelo, "respuesta": texto}
+
+
 def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "status":
         try:
@@ -1045,6 +1102,8 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return _descargas(payload)
         except Exception as x:  # noqa: BLE001
             return {'error': 'DESCARGAS_FALLO', 'detalle': str(x)[:200]}
+    if action == "qwen":  # selector Team qwen del chat
+        return _qwen(payload)
     return {"error": "ACCION_DESCONOCIDA"}
 
 # Long model calls are polled through HTTP, so browser requests do not expire at the HF ingress.
