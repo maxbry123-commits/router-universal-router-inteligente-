@@ -120,3 +120,16 @@ M-5 ⚠️ GAP controlado — Memanto descargado sin contrato runtime verificabl
 M-6 ⚠️ GAP controlado — PostgreSQL y Redis sin servicio, AgentDB descargado sin runtime verificable; SQLite cubre fallback.
 M-7 ✅ PASS local — reinicio, búsqueda por relación y evento State Hub; 30 pruebas PASS.
 H-1 ⏸️ OPUS — puente HF/Bucket fuera del alcance de Manus; no ejecutado.
+
+---
+# CORTE 2026-10-08/09 - RAIZ UNICA + PRUEBA HF (pausa para relanzar)
+Flujo: [orden Director anotada] -> [raiz unica 'Workflow Loop code Yaiwes'] -> [job HF corto] -> [PAUSA] -> [resolver GAPs]
+- Raiz unica: `chat router/Workflow Loop code Yaiwes/` (sin emoji). Copias viejas en `_copias-anteriores/`. Rutas internas corregidas (115 archivos). Commit 93f9a9016.
+- RUTA NUEVA del handoff: `chat router/Workflow Loop code Yaiwes/03-ESTADO/HANDOFF.md`.
+- Job HF `6ac8419c095c578089300a20` (cpu-basic, 16 GB pago, tope 300 s): COMPLETED en 22 s, detenido solo. PASS: MCP memoria compila y carga 4 herramientas; cordis apunta a archivo real; lectura SQLite OK; el loop usa memoria.
+## GAPs abiertos (resolver al relanzar)
+- GAP-1 rutas a carpetas que no existen en esta rama: 04-MEMORIA, 08-OMNIROUTE, 14-CHATS-INSTALADOS (27 archivos).
+- GAP-2 Router `/memoria/health` y `/chat/storage*` sin probar: falta URL y clave del Router.
+- GAP-3 runtimes de memoria sin levantar: Graphiti, Graphify, FalkorDB, AgentDB, Memanto, PostgreSQL, Redis (ver memoria/HANDOFF-MEMORIA-GAPS.json; `memoria/prueba_hf.sh` los instala).
+- GAP-4 `README.md` de la raiz del repo y `.github`/`vercel.json` no revisados (fuera de la raiz nueva).
+- GAP-5 el job pidio cpu-basic pero la maquina reporto 123 GB / 16 CPU: confirmar que cobra cpu-basic.
