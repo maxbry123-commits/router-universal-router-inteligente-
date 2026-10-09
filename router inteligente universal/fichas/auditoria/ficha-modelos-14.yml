@@ -11,9 +11,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWEN38MAX_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Qwen 3.8 Max, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "qwen3.8-max", name: Qwen 3.8 Max, contextWindow: 131072, maxTokens: 8192}]
       ficha-qwen38flash:
         cola: 2
         displayName: "⚡ Qwen 3.8 Flash - Codigo rapido"
@@ -22,9 +22,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWEN38FLASH_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Qwen 3.8 Flash, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "qwen3.8-flash", name: Qwen 3.8 Flash, contextWindow: 131072, maxTokens: 8192}]
       ficha-qwen37max:
         cola: 3
         displayName: "🧠 Qwen 3.7 Max - Razonamiento"
@@ -33,9 +33,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWEN37MAX_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Qwen 3.7 Max, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "qwen3.7-max", name: Qwen 3.7 Max, contextWindow: 131072, maxTokens: 8192}]
       ficha-qwen37plus:
         cola: 4
         displayName: "⚡ Qwen 3.7 Plus - Codigo + vision"
@@ -44,7 +44,7 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWEN37PLUS_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
         models: [{id: "qwen3.7-plus", name: Qwen 3.7 Plus, contextWindow: 131072, maxTokens: 8192}]
       ficha-qwen36flash:
@@ -55,9 +55,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWEN36FLASH_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Qwen 3.6 Flash, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "qwen3.6-flash", name: Qwen 3.6 Flash, contextWindow: 131072, maxTokens: 8192}]
       ficha-dsv4pro:
         cola: 6
         displayName: "🧠 DeepSeek V4 Pro - Codigo complejo"
@@ -66,9 +66,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_DSV4PRO_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: DeepSeek V4 Pro, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "deepseek-v4-pro", name: DeepSeek V4 Pro, contextWindow: 131072, maxTokens: 8192}]
       ficha-dsv4pro0813:
         cola: 7
         displayName: "🧠 DeepSeek V4 Pro 0813 - Maxima profundidad"
@@ -77,9 +77,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_DSV4PRO0813_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: DeepSeek V4 Pro 0813, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "deepseek-v4-pro-0813", name: DeepSeek V4 Pro 0813, contextWindow: 131072, maxTokens: 8192}]
       ficha-dsv4flash:
         cola: 8
         displayName: "⚡ DeepSeek V4 Flash - Codigo rapido"
@@ -88,9 +88,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_DSV4FLASH_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: DeepSeek V4 Flash, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "deepseek-v4-flash-0731", name: DeepSeek V4 Flash, contextWindow: 131072, maxTokens: 8192}]
       ficha-glm52:
         cola: 9
         displayName: "🧠 GLM 5.2 - Codigo + agentes"
@@ -99,9 +99,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_GLM52_API
         api: openai-completions
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: GLM 5.2, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "glm-5.2", name: GLM 5.2, contextWindow: 131072, maxTokens: 8192}]
       ficha-qwenimg30pro:
         cola: 10
         displayName: "🎨 Qwen Image 3.0 Pro - Imagenes"
@@ -110,9 +110,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWENIMG30PRO_API
         api: ""  # PONER AQUI el tipo de API
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Qwen Image 3.0 Pro, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "qwen-image-3.0-pro", name: Qwen Image 3.0 Pro, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
       ficha-wan27img:
         cola: 11
         displayName: "🎨 Wan 2.7 Image - Imagenes"
@@ -121,9 +121,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_WAN27IMG_API
         api: ""  # PONER AQUI el tipo de API
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Wan 2.7 Image, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "wan2.7-image", name: Wan 2.7 Image, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
       ficha-qwentts:
         cola: 12
         displayName: "🔊 Qwen TTS - Texto a voz"
@@ -132,9 +132,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWENTTS_API
         api: ""  # PONER AQUI el tipo de API
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Qwen TTS, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "qwen-audio-3.0-tts-plus", name: Qwen TTS, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
       ficha-qwenrt:
         cola: 13
         displayName: "🎙️ Qwen Realtime - Voz en vivo"
@@ -143,9 +143,9 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWENRT_API
         api: ""  # PONER AQUI el tipo de API
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Qwen Realtime, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "qwen-audio-3.0-realtime-plus", name: Qwen Realtime, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
       ficha-qwenasr:
         cola: 14
         displayName: "📝 Qwen ASR - Voz a texto"
@@ -154,6 +154,6 @@
         apiKey: "<CLAVE GUARDADA EN EL SELLO>"  # clave unica de la API (la misma en las 14)
         apiKeyEnv: FICHA_QWENASR_API
         api: ""  # PONER AQUI el tipo de API
-        baseURL: "https://coding-intl.dashscope.aliyuncs.com/v1"
+        baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "", name: Qwen ASR, contextWindow: 131072, maxTokens: 8192}]  # GAP: este modelo NO esta en la lista de esta API
+        models: [{id: "qwen-audio-3.0-asr-flash", name: Qwen ASR, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT

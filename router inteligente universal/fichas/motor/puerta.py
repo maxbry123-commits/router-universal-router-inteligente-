@@ -108,3 +108,12 @@ class Puerta:
             return {'activos': a, 'en_cola': e, 'puestos': self.puestos}
         finally:
             con.close()
+
+    @classmethod
+    def desde_config(cls, ruta_db, ruta_config):
+        """UNICA fuente de verdad de la capacidad de la API (puestos y espera maxima). Las fichas solo apuntan al pool."""
+        import json
+        c = json.load(open(ruta_config))
+        p = cls(ruta_db, c['puestos'], c['espera_max_s'])
+        p.pool = c['pool']
+        return p

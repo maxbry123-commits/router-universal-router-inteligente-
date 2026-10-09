@@ -1,29 +1,34 @@
 # README de fichas (ancla de todas las fichas, presentes y futuras)
 
 ## Regla principal
-1 FICHA = 1 TAREA = 1 MINI-SISTEMA INDEPENDIENTE. Cada ficha lleva su DSL, su scheduler, su ejecutor, su verificador, su cache y su ledger. NO existe un scheduler central.
+1 FICHA = 1 TAREA = 1 MINI-SISTEMA. Cada ficha lleva su DSL, su scheduler local, su ejecutor, su verificador, su cache y su ledger. NO existe scheduler central. La ficha termina y se apaga.
 
-## Lo unico compartido: la COLA GLOBAL (Puerta)
-Solo presta puestos de API: maximo 4 activos a la vez, orden por prioridad y llegada, espera hasta 10 min antes de dar error, libera el puesto si la ficha muere. No decide como se ejecuta nada.
+## Lo unico compartido
+1. La COLA GLOBAL (Puerta): presta puestos de API, maximo 4, por prioridad y llegada, espera hasta 10 min, libera si la ficha muere. Su limite vive SOLO en `motor/puerta.config.json` (pool qwen-token-plan); las fichas apuntan al pool.
+2. El registro de CANDADOS de rutas: dos fichas no escriben el mismo recurso a la vez. No administra tareas.
+3. El almacen fisico del Harness (memoria).
 
 ```
-FICHA A -+
-FICHA B -+--> COLA GLOBAL --> [P1][P2][P3][P4] --> API
-FICHA C -+
+FICHA A (scheduler A) -+
+FICHA B (scheduler B) -+--> COLA GLOBAL --> [P1][P2][P3][P4] --> API Qwen Token Plan
+FICHA C (scheduler C) -+
 ```
+
+## API (Token Plan)
+Clave `sk-sp-...` + base `https://token-plan.maas.qwencloudapi.com/compatible-mode/v1` (header Authorization: Bearer). Nunca mezclar con coding-intl, dashscope ni pay-as-you-go. La clave solo vive cifrada en `modelos-14`.
+
+## Ask Council
+Es de 3 analizadores (DeepSeek V4 Pro, GLM 5.2, Qwen 3.7 Max) y luego un ejecutor. Los GOALS (12 de entrada y 12 de salida) son DATOS/criterios: 0 llamadas a la API. No hay modelos de imagen ni voz dentro del Council.
+
+## Presupuesto, cache y PASS
+El presupuesto de tokens (`task_budget`) es de la FICHA completa, con reserva segura entre hilos; `max_output_tokens` es el tope por llamada. La cache local no se cuenta como cached_tokens de la API. Una respuesta de modelo NO es PASS: los nodos que cambian codigo exigen evidencia del Harness (exit_code 0, archivos, tests ejecutados y pasados, receipt). Sin Harness real = GAP_HARNESS_EXECUTOR.
 
 ## Memoria
-No se crea almacenamiento en la ficha. La ficha solo lleva su task_id/namespace y el harness (memoria_yaiwes) guarda cache, ledger y memoria. Lee el proyecto, escribe su tarea, y solo promueve al proyecto con PASS del verificador. GAP: falta cablear la direccion del harness en motor/memoria.py (conectar_harness).
-
-## Parallelismo dentro de una ficha
-Nodos independientes corren juntos. Rutas: si dos nodos escriben el mismo archivo van uno detras de otro. Modo partial: cada nodo pide su puesto; modo group: entran todos juntos o ninguno (se define en el DSL).
+Sin almacenamiento propio: la ficha solo lleva su namespace (task_id) y promueve al proyecto solo con PASS. GAP: `motor/memoria.py` (conectar_harness) falta cablearlo a memoria_yaiwes.
 
 ## Crear una ficha nueva (checklist)
 1. Copiar una carpeta fichaN y cambiar ficha.json (nodos, modelos, depende_de, rutas).
-2. Dejar readme: ../README-FICHAS.md (anclaje) y la API en la ficha de modelos (api: modelos-14).
-3. Validar: python -m motor.prueba_fichas
-4. Cifrar: FICHA_CLAVE_BANCO=... python -m motor.sellar sellar ficha.json
+2. Mantener `readme: ../README-FICHAS.md`, `api: modelos-14` y `cola: {pool: qwen-token-plan}`.
+3. Validar y probar: python -m motor.prueba_fichas (job de 16 GB, no Vercel).
+4. Cifrar: FICHA_CLAVE_BANCO=... python -m motor.sellar sellar ficha.json (y actualizar la copia de auditoria/).
 5. Correr: python -m motor.ficha_os ficha.json --tarea T-001 --texto "..."
-
-## Pruebas
-python -m motor.prueba_motor (motor) y python -m motor.prueba_fichas (fichas, cola, memoria). Se corren en el job de 16 GB, no en Vercel.

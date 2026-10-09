@@ -1,3 +1,11 @@
+# HANDOFF - hay DOS rutas, no las confundas
+
+- **LEGACY / SISTEMA ANTERIOR:** 7 modelos NVIDIA / Groq / HF (todo lo que sigue hasta la seccion SISTEMA ACTUAL). No se borra: es historia.
+- **SISTEMA ACTUAL:** fichas con QwenCloud Token Plan, 14 modelos (ultima seccion).
+
+---
+## LEGACY / SISTEMA ANTERIOR (7 modelos NV/Groq/HF)
+
 # README — Conexión del chat (para el equipo de la UI) — v4
 
 Fecha: 2026-10-04 (Bogotá). Escrito por Opus por orden del Director (Hy). Sin claves en este archivo.
@@ -68,10 +76,18 @@ Todas: `POST <harnessUrl>/<accion>` con JSON y `Authorization: Bearer <clave>`. 
 - Respaldo HF (lanzador Python alternativo): `router inteligente universal/fichas/respaldo-hf/`
 - `router inteligente universal/fichas/puente-chat/api/chat.js` → **ya no se usa** (el puente vive en el Router).
 
-## Fichas YAIWES (actualizado 2026-10-09)
-- Ficha 1: 14 modelos individuales (sin Ask Council, los eliges con el selector del chat). Ficha 2: DAG codigo (Ask Council, ejecuta Qwen 3.8 Max). Ficha 3: frontend (mismo Ask Council, ejecuta DeepSeek V4 Pro).
-- Carpetas: ficha1-modelos, ficha2-dag-codigo, ficha3-frontend (ficha.json cifrado con la clave del banco). API de los modelos: modelos-14. README anclado a todas: README-FICHAS.md.
-- 1 ficha = 1 tarea = 1 mini-sistema (DSL, scheduler, ejecutor, verificador, cache, ledger). Lo unico compartido: cola global de 4 puestos (motor/puerta.py), espera hasta 10 min.
-- Memoria: la ficha solo lleva su namespace; el almacen es el del harness (memoria_yaiwes). GAP: cablear la direccion en motor/memoria.py (conectar_harness).
-- Pruebas (job HF 16 GB, no Vercel): python -m motor.prueba_motor y python -m motor.prueba_fichas. Copias legibles sin claves para auditar: auditoria/.
-- Faltan: las API (modelos-14), el texto de los 24 goals y el cableado del harness.
+---
+## SISTEMA ACTUAL: FICHAS TOKEN PLAN (14 modelos QwenCloud) - actualizado 2026-10-09
+```
+FICHA A -+
+FICHA B -+--> COLA GLOBAL (4 puestos) --> API Qwen Token Plan
+FICHA C -+
+```
+- Ficha 1 = 14 modelos individuales (sin Ask Council, eliges 1). Ficha 2 = DAG codigo (Council DeepSeek V4 Pro + GLM 5.2 + Qwen 3.7 Max, ejecuta Qwen 3.8 Max). Ficha 3 = frontend (mismo Council, ejecuta DeepSeek V4 Pro).
+- Goals (12 entrada / 12 salida) = datos, 0 llamadas a la API. Texto de los 24 goals: PONER AQUI (lo da el Director).
+- API: clave `sk-sp-...` + `https://token-plan.maas.qwencloudapi.com/compatible-mode/v1`. Nunca coding-intl ni dashscope. Clave solo cifrada en `modelos-14`.
+- 1 ficha = 1 tarea = 1 mini-sistema. Compartido: cola global (`motor/puerta.config.json`, 4 puestos, 10 min), candados de rutas entre fichas, almacen del Harness.
+- PASS de codigo = evidencia del Harness (exit_code 0, archivos, tests, receipt). Sin Harness = GAP_HARNESS_EXECUTOR (falta RIU_DEEPSEEK_HARNESS_URL).
+- Memoria: referencia al harness; GAP: cablear `motor/memoria.py` (conectar_harness) a memoria_yaiwes.
+- Modelos de imagen/voz: no usan chat/completions (GAP_ENDPOINT_NO_CHAT) hasta tener su endpoint.
+- Pruebas (job HF 16 GB, no Vercel): `python -m motor.prueba_motor` y `python -m motor.prueba_fichas`. Copias legibles sin claves: `auditoria/`. README anclado: `README-FICHAS.md`.

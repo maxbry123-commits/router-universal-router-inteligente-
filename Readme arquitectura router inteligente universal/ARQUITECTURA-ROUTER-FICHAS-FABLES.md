@@ -1,3 +1,17 @@
+## ESTADO ACTUAL 2026-10-09
+
+**Implementado** (en `router inteligente universal/fichas/`, fuera del Router): FichaOS (scheduler local por ficha), Puerta SQLite global (4 puestos, 10 min, config unica `motor/puerta.config.json`), candados de rutas entre fichas, DAG, presupuesto de tokens por ficha, cache/ledger por referencia al Harness, watchdog, pruebas (`prueba_motor`, `prueba_fichas`), 3 fichas selladas con copias de auditoria.
+
+**GAPS abiertos:** memoria real del Harness (`conectar_harness`), ejecutor real del Harness (`RIU_DEEPSEEK_HARNESS_URL` sin configurar: sin evidencia no hay PASS), endpoint de los modelos de imagen/voz, texto de los 24 goals.
+
+**Corregido tras la auditoria:** Ask Council = 3 analizadores (no 14); goals = datos con 0 API; presupuesto por ficha; locks entre fichas; Token Plan (`token-plan.maas.qwencloudapi.com`, clave `sk-sp-*`); cache local separada de cached_tokens de la API; verificador por evidencia.
+
+**Cifras historicas:** los 8/32 workers y demas cifras de abajo son HISTORICAS (sistema anterior), no el limite del Token Plan actual (4 puestos).
+
+Guia de las fichas: `fichas/README-FICHAS.md`. Lo que sigue es el documento historico, sin borrar.
+
+---
+
 # ARQUITECTURA — ROUTER INTELIGENTE UNIVERSAL · MODELO DE "FICHAS" DE FABLES
 Fecha: 2026-09-29 (Bogotá) · Estado: **BORRADOR PARA APROBACIÓN DEL DIRECTOR — no se implementó nada de esto**
 Base: mensaje del Director de las 04:41 (ver `INPUT-BLOCK-VERBATIM-2026-09-29-director-parte-2.md`) + archivos subidos a `Documentos del proyecto/Documentos proyectos router inteligente universal/` + código real del Router en `main`.
@@ -290,17 +304,3 @@ Ver el mensaje de preguntas enviado el 2026-09-29; sus respuestas se anotarán e
 - Repo `main` commit `2f5c111e` (carpeta `Documentos del proyecto/Documentos proyectos router inteligente universal/`).
 - Código leído: `integration/chat_mvp/{resilience,providers,core,router,route_api,dag,jobs,jev,ui_bridge}.py`, `red/{conectores,red_universal,enchufe_gate}.py`, `agents-yaiwes/common/{routes,probe_keys}.py`, `Componente open soure…/ruflo/plugins/ruflo-deepseek-harness/`.
 - Prueba en vivo NVIDIA/Groq: `EVIDENCIA-2026-09-29-NVIDIA-Y-COMPONENTES.md`.
-
----
-## 8. Fichas YAIWES: 1 ficha = 1 tarea = 1 mini-sistema (actualizado 2026-10-09)
-Estado: construido en `router inteligente universal/fichas/` (fuera del Router). El "Ask Council" de la seccion 4.3 ya existe como ficha 2 y ficha 3.
-```
-FICHA A -+
-FICHA B -+--> COLA GLOBAL --> [P1][P2][P3][P4] --> API
-FICHA C -+      (unica pieza compartida)
-```
-- **Cada ficha** lleva su DSL, scheduler local, ejecutor, verificador, cache y ledger. No hay scheduler central.
-- **Cola global (motor/puerta.py):** maximo 4 puestos activos, orden por prioridad y llegada, espera hasta 10 min antes de dar error, libera el puesto si la ficha muere.
-- **Paralelo dentro de la ficha:** nodos independientes juntos; rutas y locks evitan que dos nodos escriban el mismo archivo; modo partial o group.
-- **Memoria:** referencia al harness (memoria_yaiwes), sin almacenamiento propio; promueve al proyecto solo con PASS. GAP: cablear direccion (motor/memoria.py).
-- **Fichas:** ficha 1 = 14 modelos individuales; ficha 2 = DAG codigo (ejecuta Qwen 3.8 Max); ficha 3 = frontend (ejecuta DeepSeek V4 Pro). Detalle y como crear fichas nuevas: fichas/README-FICHAS.md.

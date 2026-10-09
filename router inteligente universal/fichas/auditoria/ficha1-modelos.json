@@ -1,7 +1,7 @@
 {
  "ficha": "ficha1-modelos-individuales",
  "tipo": "individual",
- "version": 1,
+ "version": 2,
  "api": "modelos-14",
  "readme": "../README-FICHAS.md",
  "memory": {
@@ -19,26 +19,21 @@
  "ledger": {
   "namespace": "{TASK_ID}"
  },
- "cola_global": {
-  "puestos": 4,
-  "espera_max_s": 600,
-  "orden": "prioridad y llegada"
+ "cola": {
+  "pool": "qwen-token-plan"
  },
  "dsl": {
   "tokens": {
-   "budget": 12000,
-   "input_used": 0,
-   "output_used": 0,
-   "cached_used": 0,
-   "total_used": 0
+   "task_budget": 12000,
+   "max_output_tokens": 1500
   },
   "cache": {
    "enabled": true,
    "reuse_context": true
   },
   "parallel": {
-   "enabled": true,
-   "max_parallel": 4,
+   "enabled": false,
+   "max_parallel": 1,
    "mode": "partial",
    "overflow": "queue"
   },
@@ -73,22 +68,6 @@
   "ficha-qwenrt": "voz-en-vivo",
   "ficha-qwenasr": "voz-a-texto"
  },
- "todos_los_modelos": [
-  "ficha-qwen38max",
-  "ficha-qwen38flash",
-  "ficha-qwen37max",
-  "ficha-qwen37plus",
-  "ficha-qwen36flash",
-  "ficha-dsv4pro",
-  "ficha-dsv4pro0813",
-  "ficha-dsv4flash",
-  "ficha-glm52",
-  "ficha-qwenimg30pro",
-  "ficha-wan27img",
-  "ficha-qwentts",
-  "ficha-qwenrt",
-  "ficha-qwenasr"
- ],
  "motor": {
   "api_recuperacion": 4,
   "tareas_recuperacion": 5,
@@ -197,5 +176,5 @@
   }
  ],
  "ask_council": false,
- "flujo": "SELECTOR(14) -> crear ficha T-id -> DSL propio -> pedir puesto -> COLA(4) -> modelo -> verificar -> ledger -> liberar"
+ "flujo": "SELECTOR(14, eliges 1) -> crear ficha T-id -> DSL propio -> pedir puesto -> COLA(4) -> UN modelo -> verificar -> ledger -> liberar"
 }

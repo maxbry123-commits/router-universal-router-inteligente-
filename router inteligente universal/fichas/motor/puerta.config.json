@@ -1,0 +1,5 @@
+{
+  "pool": "qwen-token-plan",
+  "puestos": 4,
+  "espera_max_s": 600
+}
