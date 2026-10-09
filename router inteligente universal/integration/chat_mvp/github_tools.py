@@ -15,7 +15,7 @@ from typing import Any, Callable, Mapping
 
 API = "https://api.github.com"
 MAX_FILE_BYTES = 200_000
-DEFAULT_ENV_TOKENS = ("GITHUB_TOKEN_1", "GITHUB_TOKEN_2", "GITHUB_TOKEN_3", "RIU_GITHUB_TOKEN")
+DEFAULT_ENV_TOKENS = ("GITHUB_TOKEN", "GITHUB_TOKEN_1", "GITHUB_TOKEN_2", "GITHUB_TOKEN_3", "RIU_GITHUB_TOKEN")
 
 
 class GitHubError(RuntimeError):
