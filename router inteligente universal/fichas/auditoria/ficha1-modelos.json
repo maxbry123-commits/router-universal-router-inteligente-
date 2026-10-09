@@ -75,6 +75,7 @@
   "limite_llamada_chars": 60000,
   "mensajes_del_director": true
  },
+ "verificacion_instrucciones": {"fuente": "instrucciones fijas que el Director ancla en el chat; llegan dentro del mensaje entre [INSTRUCCIONES FIJAS] y [FIN INSTRUCCIONES FIJAS]", "revisar": ["antes_de_leer_la_orden", "despues_de_leer_la_orden", "antes_de_escribir_la_salida"], "si_no_cumple": {"corregir_y_reintentar": 1, "despues": "entregar con aviso GAP que nombra la instruccion no cumplida"}, "sin_instrucciones": "no se ejecuta ni gasta API", "verificador": "el mismo modelo, segunda pasada solo si hay instrucciones fijas"},
  "selector": [
   {
    "cola": 1,
