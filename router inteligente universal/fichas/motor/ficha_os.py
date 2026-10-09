@@ -13,6 +13,7 @@ import urllib.request
 from .api_engine import ErrorApi, Motor, Proveedor, tokens_est
 from .locks import Candados, solapa
 from .memoria import Memoria, ProveedorMock, conectar_harness
+from .modelos_especiales import fabrica_especiales
 from .puerta import EsperaAgotada, Puerta
 
 
@@ -93,8 +94,9 @@ class MotorUso(Motor):
 
 
 class FichaOS:
-    def __init__(self, ficha, task_id, texto, motor_factory, puerta, memoria, modelo=None, dormir=time.sleep, candados=None, harness=None):
+    def __init__(self, ficha, task_id, texto, motor_factory, puerta, memoria, modelo=None, dormir=time.sleep, candados=None, harness=None, especiales=None):
         self.f, self.task, self.texto = ficha, task_id, texto
+        self.especiales = especiales
         self.mf, self.puerta, self.mem, self.dormir = motor_factory, puerta, memoria, dormir
         self.candados, self.harness = candados, harness
         dsl = ficha.get('dsl', {})
@@ -251,9 +253,18 @@ class FichaOS:
         msgs = self._mensajes(n)
         tok = {'input_tokens': 0, 'output_tokens': 0, 'api_cached_input_tokens': 0, 'total_api_tokens': 0, 'local_cache_hit': False, 'estimated_tokens_avoided': 0}
         reg = {'modelo': n['modelo'], 'inicio': t0, 'tokens': tok}
-        if self.f.get('modelos', {}).get(n['modelo'], 'texto') != 'texto':
-            reg.update(estado='GAP', motivo='GAP_ENDPOINT_NO_CHAT: ' + n['modelo'] + ' no se llama por chat/completions')
-            return self._terminar(n, False, reg)
+        tipo = self.f.get('modelos', {}).get(n['modelo'], 'texto')
+        if tipo != 'texto':  # imagen / voz: no usan chat/completions, tienen su propio adaptador (modelos_especiales)
+            if not self.especiales:
+                reg.update(estado='GAP', motivo='GAP_ENDPOINT_NO_CHAT: ' + n['modelo'] + ' no se llama por chat/completions')
+                return self._terminar(n, False, reg)
+            try:
+                salida = self.especiales(n['modelo'], tipo, self.texto)
+            except ErrorApi as e:
+                reg.update(estado='GAP', motivo='ESPECIAL ' + str(e)[:200])
+                return self._terminar(n, False, reg)
+            reg.update(estado='OK', nota='sin tokens de chat: consume Credits del plan')
+            return self._terminar(n, True, reg, salida)
         necesita_ev = bool(n.get('requiere_evidencia'))
         usa_cache = bool(self.cache_cfg.get('enabled')) and (n.get('cache') or {}).get('enabled', True) and not necesita_ev
         clave = (n.get('cache') or {}).get('key') or hashlib.sha256((n['modelo'] + json.dumps(msgs)).encode()).hexdigest()[:24]
@@ -431,7 +442,7 @@ def main():
     prov_mem = ProveedorMock(estado) if os.environ.get('FICHA_MEMORIA') == 'mock' else conectar_harness()
     m = f['memory']
     mem = Memoria(prov_mem, task, m.get('project_memory', 'YAIWES'), m.get('read_project_memory', True), m.get('write_task_memory', True), m.get('write_project_memory', False))
-    res = FichaOS(f, task, texto, fabrica_motores(provs, f['dsl'].get('timeouts', {}).get('api_seconds', 90)), puerta, mem, modelo, candados=candados, harness=HarnessEjecutor()).correr()
+    res = FichaOS(f, task, texto, fabrica_motores(provs, f['dsl'].get('timeouts', {}).get('api_seconds', 90)), puerta, mem, modelo, candados=candados, harness=HarnessEjecutor(), especiales=fabrica_especiales(provs, carpeta=estado)).correr()
     print(json.dumps({k: res[k] for k in ('task', 'ficha', 'estado', 'verificado', 'avisos', 'tokens', 'nodos', 'gaps')}))
 
 

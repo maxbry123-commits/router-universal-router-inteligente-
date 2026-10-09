@@ -80,12 +80,12 @@ def harness_ok(nodo, salida, ctx):
     return {'exit_code': 0, 'files_changed': ['codigo/x.py'], 'tests': {'ran': True, 'passed': True}, 'receipt': 'r-' + nodo['id']}
 
 
-def correr(f, task, tmp, base, puerta, mem=None, modelo=None, candados=None, harness=harness_ok):
+def correr(f, task, tmp, base, puerta, mem=None, modelo=None, candados=None, harness=harness_ok, especiales=None, texto='tarea de prueba'):
     prov = ProveedorMock(os.path.join(tmp, 'mem')) if mem is None else mem
     m = f['memory']
     memoria = Memoria(prov, task, m['project_memory'], m['read_project_memory'], m['write_task_memory'], m['write_project_memory'])
     mf = lambda mod: MotorUso([Proveedor(mod, base + '/m/' + mod, mod, 'K', 'libre', tmp)], timeout=5)
-    return FichaOS(f, task, 'tarea de prueba', mf, puerta, memoria, modelo, dormir=lambda s: None, candados=candados, harness=harness).correr(), memoria
+    return FichaOS(f, task, texto, mf, puerta, memoria, modelo, dormir=lambda s: None, candados=candados, harness=harness, especiales=especiales).correr(), memoria
 
 
 def mini(nodos, **dsl):
@@ -245,6 +245,72 @@ def prueba_candados_budget_cola(tmp, base):
     chequeo('MODO GRUPO: los 3 nodos entran juntos cuando hay 3 puestos', ini > 0.8 and solape_max(S['log']) == 3, (round(ini, 1), solape_max(S['log'])))
 
 
+class FalsoMM(BaseHTTPRequestHandler):
+    """Servidor falso de la ruta multimodal-generation (imagen y voz a texto)."""
+    visto = []
+
+    def do_POST(self):
+        carga = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+        FalsoMM.visto.append((self.path, carga, self.headers.get('Authorization')))
+        if carga['model'].startswith('qwen-audio'):
+            c = [{'text': 'hola mundo'}]
+        else:
+            c = [{'image': 'http://img.falso/x.png'}]
+        b = json.dumps({'output': {'choices': [{'message': {'content': c}}]}}).encode()
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b)
+
+    def log_message(self, *a):
+        pass
+
+
+def prueba_especiales(tmp, f1):
+    import types
+    from .ficha_os import ProveedorDirecto
+    from .modelos_especiales import RUTA_GEN, WS_TTS, fabrica_especiales
+    srv = ThreadingHTTPServer(('127.0.0.1', 0), FalsoMM)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    host = 'http://127.0.0.1:' + str(srv.server_address[1])
+    provs = {k: ProveedorDirecto(k, 'x', IDS[k], 'sk-sp-prueba', tmp) for k in ('ficha-qwenimg30pro', 'ficha-wan27img', 'ficha-qwentts', 'ficha-qwenrt', 'ficha-qwenasr')}
+    fake = types.ModuleType('dashscope')
+    audio_pkg, tts_v2 = types.ModuleType('dashscope.audio'), types.ModuleType('dashscope.audio.tts_v2')
+    usado = {}
+
+    class SS:
+        def __init__(self, model, voice, format):
+            usado['model'], usado['voice'] = model, voice
+
+        def call(self, t):
+            usado['texto'] = t
+            return b'ID3falso'
+    tts_v2.SpeechSynthesizer, tts_v2.AudioFormat = SS, types.SimpleNamespace(MP3_22050HZ_MONO_256KBPS='mp3')
+    guardados = {k: sys.modules.get(k) for k in ('dashscope', 'dashscope.audio', 'dashscope.audio.tts_v2')}
+    sys.modules.update({'dashscope': fake, 'dashscope.audio': audio_pkg, 'dashscope.audio.tts_v2': tts_v2})
+    try:
+        esp = fabrica_especiales(provs, host=host, carpeta=tmp)
+        puerta = Puerta(os.path.join(tmp, 'esp.db'), 4)
+        FalsoMM.visto.clear()
+        r, _ = correr(f1, 'T-img', tmp, '', puerta, modelo='ficha-qwenimg30pro', especiales=esp, texto='dibuja un gato')
+        ruta, carga, auth = FalsoMM.visto[0]
+        chequeo('MODELO 10 Qwen Image 3.0 Pro: usa la ruta documentada multimodal-generation y devuelve la URL de la imagen', r['estado'] == 'SALIDA' and r['salida'] == 'IMAGEN http://img.falso/x.png' and ruta == RUTA_GEN and carga['input']['messages'][0]['content'] == [{'text': 'dibuja un gato'}] and carga['parameters'] == {'size': '1024*1024'} and carga['model'] == 'qwen-image-3.0-pro' and auth == 'Bearer sk-sp-prueba', (r['estado'], r['salida']))
+        r, _ = correr(f1, 'T-wan', tmp, '', puerta, modelo='ficha-wan27img', especiales=esp, texto='un perro')
+        chequeo('MODELO 11 Wan 2.7 Image: misma ruta de imagen con su id wan2.7-image', r['estado'] == 'SALIDA' and FalsoMM.visto[-1][1]['model'] == 'wan2.7-image', r['salida'])
+        r, _ = correr(f1, 'T-tts', tmp, '', puerta, modelo='ficha-qwentts', especiales=esp, texto='hola equipo')
+        ok_audio = r['salida'].startswith('AUDIO ') and open(r['salida'][6:], 'rb').read() == b'ID3falso'
+        chequeo('MODELO 12 Qwen TTS: usa el WebSocket del SDK (wss .../api-ws/v1/inference) y guarda el audio', r['estado'] == 'SALIDA' and ok_audio and usado['model'] == 'qwen-audio-3.0-tts-plus' and usado['texto'] == 'hola equipo' and fake.base_websocket_api_url == WS_TTS and fake.api_key == 'sk-sp-prueba', usado)
+        r, _ = correr(f1, 'T-rt', tmp, '', puerta, modelo='ficha-qwenrt', especiales=esp)
+        chequeo('MODELO 13 Qwen Realtime: queda como GAP_REALTIME_WEBSOCKET con su direccion, sin fingir que funciona', r['estado'] == 'GAP' and 'GAP_REALTIME_WEBSOCKET' in str(r['gaps']) and 'api-ws/v1/realtime' in str(r['gaps']), r['gaps'])
+        r, _ = correr(f1, 'T-asr', tmp, '', puerta, modelo='ficha-qwenasr', especiales=esp, texto='http://audio.falso/a.wav')
+        chequeo('MODELO 14 Qwen ASR: manda el audio (URL) por la ruta multimodal-generation y devuelve el texto', r['estado'] == 'SALIDA' and r['salida'] == 'hola mundo' and FalsoMM.visto[-1][1]['input']['messages'][0]['content'] == [{'audio': 'http://audio.falso/a.wav'}] and FalsoMM.visto[-1][1]['model'] == 'qwen-audio-3.0-asr-flash', r['salida'])
+    finally:
+        for k, v in guardados.items():
+            if v is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = v
+
+
 def prueba_memoria(tmp):
     p = ProveedorMock(os.path.join(tmp, 'm'))
     t1, t2 = Memoria(p, 'T01'), Memoria(p, 'T02')
@@ -361,6 +427,7 @@ if __name__ == '__main__':
     prueba_puerta(tmp)
     prueba_ficha_dag(tmp, base, F[1], F[2])
     prueba_ficha1(tmp, base, F[0])
+    prueba_especiales(tmp, F[0])
     prueba_candados_budget_cola(tmp, base)
     prueba_memoria(tmp)
     prueba_tres_fichas(tmp, base, F)

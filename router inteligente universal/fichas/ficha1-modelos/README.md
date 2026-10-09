@@ -1,6 +1,6 @@
 # Ficha 1 - 14 modelos individuales
 
-Sin Ask Council y SIN goals (los goals solo van en las fichas 2 y 3). Eliges UN modelo con el selector del chat; los otros 13 no se llaman. Paralelo desactivado dentro de la ficha (el paralelo de hasta 4 ocurre ENTRE fichas, por la Puerta). Los modelos de imagen y voz no usan chat/completions: quedan como GAP_ENDPOINT_NO_CHAT hasta tener su endpoint.
+Sin Ask Council y SIN goals (los goals solo van en las fichas 2 y 3). Eliges UN modelo con el selector del chat; los otros 13 no se llaman. Paralelo desactivado dentro de la ficha (el paralelo de hasta 4 ocurre ENTRE fichas, por la Puerta). Los modelos de imagen y voz (10 a 14) tienen adaptador propio en motor/modelos_especiales.py; Realtime queda como GAP_REALTIME_WEBSOCKET. Ver README-FICHAS.md.
 ## Como funciona (horizontal)
 ```
 SELECTOR 14 -> 1 MODELO -> EJECUTAR -> SALIDA

@@ -90,3 +90,5 @@ FICHA 3: 12 GOALS(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSe
 - Memoria: referencia al harness; GAP: cablear `motor/memoria.py` (conectar_harness) a memoria_yaiwes.
 - Modelos de imagen/voz: no usan chat/completions (GAP_ENDPOINT_NO_CHAT) hasta tener su endpoint.
 - Pruebas (job HF 16 GB, no Vercel): `python -m motor.prueba_motor` y `python -m motor.prueba_fichas`. Copias legibles sin claves: `auditoria/`. README anclado: `README-FICHAS.md`.
+- Modelos 10 a 14 (imagen y voz): adaptadores propios en `motor/modelos_especiales.py` (imagen, TTS y ASR segun docs.qwencloud.com; Realtime = GAP_REALTIME_WEBSOCKET). Probados con servidor falso, sin prueba real.
+- AVISO sobre el Token Plan Individual: segun docs.qwencloud.com (token-plan-personal-overview) el plan es para uso interactivo dentro de herramientas de programacion y agentes, una persona y un dispositivo. Scripts de automatizacion, backends propios y llamadas batch no interactivas quedan fuera de alcance y pueden causar suspension del plan o bloqueo de la clave. Para colas de agentes y jobs automaticos conviene la API Standard (pago por uso).

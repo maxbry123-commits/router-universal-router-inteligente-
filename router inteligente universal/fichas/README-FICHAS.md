@@ -32,3 +32,12 @@ Sin almacenamiento propio: la ficha solo lleva su namespace (task_id) y promueve
 3. Validar y probar: python -m motor.prueba_fichas (job de 16 GB, no Vercel).
 4. Cifrar: FICHA_CLAVE_BANCO=... python -m motor.sellar sellar ficha.json (y actualizar la copia de auditoria/).
 5. Correr: python -m motor.ficha_os ficha.json --tarea T-001 --texto "..."
+
+## Modelos 10 a 14 (imagen y voz): adaptadores propios (motor/modelos_especiales.py)
+- Imagen (Qwen Image 3.0 Pro, Wan 2.7 Image): POST https://token-plan.maas.qwencloudapi.com/api/v1/services/aigc/multimodal-generation/generation (docs.qwencloud.com, integrate-multimodal-gen). La salida es la URL de la imagen.
+- Texto a voz (Qwen TTS): WebSocket del SDK dashscope, wss://token-plan.maas.qwencloudapi.com/api-ws/v1/inference. La salida es el archivo mp3.
+- Voz a texto (Qwen ASR): mismo POST de multimodal-generation con el audio (URL o Base64). Formato segun la documentacion de Model Studio; sin verificar en el Token Plan.
+- Voz en vivo (Qwen Realtime): WebSocket wss://token-plan.maas.qwencloudapi.com/api-ws/v1/realtime?model=qwen-audio-3.0-realtime-plus. NO implementado (GAP_REALTIME_WEBSOCKET).
+- Estado: probados con servidor falso; SIN prueba real todavia.
+
+## AVISO sobre el Token Plan Individual: segun docs.qwencloud.com (token-plan-personal-overview) el plan es para uso interactivo dentro de herramientas de programacion y agentes, una persona y un dispositivo. Scripts de automatizacion, backends propios y llamadas batch no interactivas quedan fuera de alcance y pueden causar suspension del plan o bloqueo de la clave. Para colas de agentes y jobs automaticos conviene la API Standard (pago por uso).

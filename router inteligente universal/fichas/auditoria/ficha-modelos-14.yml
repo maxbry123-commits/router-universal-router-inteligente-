@@ -112,7 +112,7 @@
         api: ""  # PONER AQUI el tipo de API
         baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "qwen-image-3.0-pro", name: Qwen Image 3.0 Pro, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
+        models: [{id: "qwen-image-3.0-pro", name: Qwen Image 3.0 Pro, contextWindow: 131072, maxTokens: 8192}]  # adaptador propio en motor/modelos_especiales.py (no es chat/completions)
       ficha-wan27img:
         cola: 11
         displayName: "🎨 Wan 2.7 Image - Imagenes"
@@ -123,7 +123,7 @@
         api: ""  # PONER AQUI el tipo de API
         baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "wan2.7-image", name: Wan 2.7 Image, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
+        models: [{id: "wan2.7-image", name: Wan 2.7 Image, contextWindow: 131072, maxTokens: 8192}]  # adaptador propio en motor/modelos_especiales.py (no es chat/completions)
       ficha-qwentts:
         cola: 12
         displayName: "🔊 Qwen TTS - Texto a voz"
@@ -134,7 +134,7 @@
         api: ""  # PONER AQUI el tipo de API
         baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "qwen-audio-3.0-tts-plus", name: Qwen TTS, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
+        models: [{id: "qwen-audio-3.0-tts-plus", name: Qwen TTS, contextWindow: 131072, maxTokens: 8192}]  # adaptador propio en motor/modelos_especiales.py (no es chat/completions)
       ficha-qwenrt:
         cola: 13
         displayName: "🎙️ Qwen Realtime - Voz en vivo"
@@ -145,7 +145,7 @@
         api: ""  # PONER AQUI el tipo de API
         baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "qwen-audio-3.0-realtime-plus", name: Qwen Realtime, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
+        models: [{id: "qwen-audio-3.0-realtime-plus", name: Qwen Realtime, contextWindow: 131072, maxTokens: 8192}]  # adaptador propio en motor/modelos_especiales.py (no es chat/completions)
       ficha-qwenasr:
         cola: 14
         displayName: "📝 Qwen ASR - Voz a texto"
@@ -156,4 +156,4 @@
         api: ""  # PONER AQUI el tipo de API
         baseURL: "https://token-plan.maas.qwencloudapi.com/compatible-mode/v1"
         compat: {supportsDeveloperRole: false, maxTokensField: max_tokens}
-        models: [{id: "qwen-audio-3.0-asr-flash", name: Qwen ASR, contextWindow: 131072, maxTokens: 8192}]  # no se llama por chat/completions: GAP_ENDPOINT_NO_CHAT
+        models: [{id: "qwen-audio-3.0-asr-flash", name: Qwen ASR, contextWindow: 131072, maxTokens: 8192}]  # adaptador propio en motor/modelos_especiales.py (no es chat/completions)

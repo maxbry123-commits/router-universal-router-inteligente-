@@ -13,6 +13,8 @@ FICHA 3: 12 GOALS(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSe
 
 **Corregido:** Ask Council = 3 analizadores (no 14); goals = datos con 0 API solo en las fichas 2 y 3 (la ficha 1 sin goals); la SALIDA siempre se entrega; presupuesto por ficha; locks entre fichas; Token Plan (`token-plan.maas.qwencloudapi.com`, clave `sk-sp-*`); cache local separada de cached_tokens de la API.
 
+**AVISO sobre el Token Plan Individual: segun docs.qwencloud.com (token-plan-personal-overview) el plan es para uso interactivo dentro de herramientas de programacion y agentes, una persona y un dispositivo. Scripts de automatizacion, backends propios y llamadas batch no interactivas quedan fuera de alcance y pueden causar suspension del plan o bloqueo de la clave. Para colas de agentes y jobs automaticos conviene la API Standard (pago por uso).**
+
 **Cifras historicas:** los 8/32 workers y demas cifras de abajo son HISTORICAS (sistema anterior), no el limite del Token Plan actual (4 puestos).
 
 Guia de las fichas: `fichas/README-FICHAS.md`. Lo que sigue es el documento historico, sin borrar.
