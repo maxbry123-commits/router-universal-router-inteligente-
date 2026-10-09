@@ -99,25 +99,53 @@ class ProveedorDirecto(Proveedor):
 
 
 class MotorUso(Motor):
-    """Motor con recuperacion + conteo del consumo REAL que devuelve la API."""
+    """Motor con recuperacion, tools nativas y conteo del consumo REAL de la API."""
 
     def __init__(self, *a, **k):
         super().__init__(*a, **k)
         self.uso = {'in': 0, 'out': 0, 'cached': 0}
+        self.herramientas = HerramientasFicha()
 
     def _post(self, p, mensajes, max_tokens):
-        cuerpo = json.dumps({'model': p.modelo, 'messages': mensajes, 'max_tokens': max_tokens}).encode()
-        req = urllib.request.Request(p.url, cuerpo, {'Content-Type': 'application/json', 'User-Agent': 'ficha-motor/1.0', 'Authorization': 'Bearer ' + p.key()})
-        with urllib.request.urlopen(req, timeout=self.timeout) as r:
-            d = json.loads(r.read())
-        txt = (d['choices'][0]['message'].get('content') or '').strip()
-        if not txt:
-            raise urllib.error.URLError('respuesta vacia')
-        u = d.get('usage') or {}
-        self.uso['in'] += u.get('prompt_tokens', tokens_est(mensajes))
-        self.uso['out'] += u.get('completion_tokens', len(txt) // 4)
-        self.uso['cached'] += (u.get('prompt_tokens_details') or {}).get('cached_tokens', 0)
-        return txt
+        historial = [dict(m) for m in mensajes]
+        tools = self.herramientas.definiciones_modelo()
+        for paso in range(6):
+            cuerpo = {'model': p.modelo, 'messages': historial, 'max_tokens': max_tokens}
+            if tools:
+                cuerpo['tools'] = tools
+                cuerpo['tool_choice'] = 'auto'
+            req = urllib.request.Request(p.url, json.dumps(cuerpo).encode(), {'Content-Type': 'application/json', 'User-Agent': 'ficha-motor/1.0', 'Authorization': 'Bearer ' + p.key()})
+            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                d = json.loads(r.read())
+            if not d.get('choices'):
+                raise urllib.error.URLError('respuesta sin choices')
+            msg = d['choices'][0].get('message') or {}
+            txt = (msg.get('content') or '').strip()
+            u = d.get('usage') or {}
+            self.uso['in'] += u.get('prompt_tokens', tokens_est(historial))
+            self.uso['out'] += u.get('completion_tokens', len(txt) // 4)
+            self.uso['cached'] += (u.get('prompt_tokens_details') or {}).get('cached_tokens', 0)
+            calls = msg.get('tool_calls') or []
+            if not calls:
+                if not txt:
+                    raise urllib.error.URLError('respuesta vacia')
+                return txt
+            historial.append({'role': 'assistant', 'content': msg.get('content') or '', 'tool_calls': calls})
+            for i, call in enumerate(calls):
+                fn = call.get('function') or {}
+                nombre = str(fn.get('name') or '')
+                try:
+                    args = json.loads(fn.get('arguments') or '{}')
+                    if not isinstance(args, dict):
+                        args = {}
+                except (TypeError, ValueError):
+                    args = {}
+                try:
+                    resultado = self.herramientas.ejecutar_model_tool(nombre, args)
+                except Exception as exc:
+                    resultado = 'ERROR_TOOL ' + type(exc).__name__ + ': ' + str(exc)[:300]
+                historial.append({'role': 'tool', 'tool_call_id': str(call.get('id') or ('tool-' + str(paso) + '-' + str(i))), 'content': str(resultado)})
+        raise urllib.error.URLError('tool loop excedio 6 pasos')
 
 
 class FichaOS:
