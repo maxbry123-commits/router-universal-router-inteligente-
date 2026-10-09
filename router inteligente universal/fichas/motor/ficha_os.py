@@ -145,8 +145,7 @@ class FichaOS:
         for d in n.get('depende_de', []):
             if d in self.salida:
                 usr += nl + '[' + d + '] ' + self.salida[d][:3000]
-        tope = max(2000, self.limite - len(sis) - 500)
-        return [{'role': 'system', 'content': sis}, {'role': 'user', 'content': usr[-tope:]}]
+        return [{'role': 'system', 'content': sis}, {'role': 'user', 'content': usr}]
 
     # ---------- scheduler local ----------
     def _listos(self):
