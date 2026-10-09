@@ -160,3 +160,4 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .dg-flecha{flex:0 0 auto;white-space:pre;color:var(--quiet-2)}
 #ficha[hidden]{display:none}
 #sel-power.sel-lista{grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr))}#sel-power .sel-fila .sel-pill{white-space:nowrap}@media(max-width:480px){#sel-power .sel-fila .sel-pill{flex:1 1 100%;order:-1}#sel-power .sel-fila .sel-pill+button{margin-left:auto}}
+.consil-diagrama.lleno{flex-wrap:wrap;overflow-x:visible;row-gap:6px}.consil-diagrama.lleno .dg-paso{white-space:normal;max-width:100%}

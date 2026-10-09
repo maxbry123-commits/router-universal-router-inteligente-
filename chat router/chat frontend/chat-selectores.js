@@ -12,9 +12,9 @@ const SELECTORES = [  // nombres exactos de Antonio
 ];
 const POWER = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>';
 const DIAGRAMAS = {  // micro diagramas transversales horizontales (texto exacto de Antonio); Ask consil Nvidia groq: pendiente
-  "team-qwen": { sel: "#team-qwen-diagrama", texto: "SELECTOR → T-id → DSL → PUESTO (cola 4) → MODELO → VERIFICA → RECIBO → LIBERA" },
-  "ask-consil-code-qwen-team": { sel: "#consil-code-diagrama", texto: "12 goals entrada → [DeepSeek | GLM 5.2 | Qwen 3.7 Max] → Qwen 3.8 Max ejecuta → 12 goals salida → GLM 5.2 revisa → Qwen 3.8 Max revisa → SALIDA" },
-  "ask-consil-fromtend-qwen-team": { sel: "#consil-frontend-diagrama", texto: "12 goals entrada → [DeepSeek | GLM 5.2 | Qwen 3.7 Max] → DeepSeek V4 Pro ejecuta → 12 goals salida → GLM 5.2 revisa → Qwen 3.8 Max revisa → SALIDA" },
+  "team-qwen": { sel: "#team-qwen-diagrama", texto: "SELECTOR 14 → 1 MODELO → EJECUTAR → SALIDA" },
+  "ask-consil-code-qwen-team": { sel: "#consil-code-diagrama", texto: "[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] → Qwen 3.8 Max EJECUTA → GLM 5.2 REVISA → Qwen 3.8 Max REVISA → SALIDA" },
+  "ask-consil-fromtend-qwen-team": { sel: "#consil-frontend-diagrama", texto: "[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] → DeepSeek V4 Pro EJECUTA → GLM 5.2 REVISA → Qwen 3.8 Max REVISA → SALIDA" },
 };
 const INFO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>';
 const pintarDiagrama = (caja, texto) => {  // pasos en línea, desplazable en horizontal; el texto queda exacto (" → " entre pasos)
