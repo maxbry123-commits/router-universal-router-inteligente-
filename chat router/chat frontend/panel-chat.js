@@ -1,4 +1,5 @@
 import { node } from "./api.js";
+import { conectarSelectorModelos } from "./chat-selector-modelos.js";
 
 const MODOS = { fast: "⚡ rápido", balanced: "⚖ equilibrado", think: "🧠 pensar" };
 const MAX_CHAT = 5;
@@ -96,6 +97,7 @@ export async function mount(root, { api, tell }) {
     return d;
   };
 
+  conectarSelectorModelos({ q, chat, tell });  // Selector Qwen: solo frontend
   // ---- hojas (sheets): cada pildora abre la suya ----
   const cerrarHojas = () => root.querySelectorAll(".sheet").forEach((s) => { s.hidden = true; });
   root.querySelectorAll("[data-sheet]").forEach((b) => b.addEventListener("click", async () => {
