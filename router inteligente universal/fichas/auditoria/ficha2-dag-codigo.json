@@ -32,6 +32,7 @@
   "ficha-qwen38max": "texto"
  },
  "motor": {"api_recuperacion": 4, "tareas_recuperacion": 5, "bloque_chars": 8500, "limite_llamada_chars": 60000, "mensajes_del_director": true},
+ "verificacion_instrucciones": {"fuente": "instrucciones fijas que el Director ancla en el chat; llegan dentro del mensaje entre [INSTRUCCIONES FIJAS] y [FIN INSTRUCCIONES FIJAS]", "revisar": ["antes_de_leer_la_orden", "despues_de_leer_la_orden", "antes_de_escribir_la_salida"], "si_no_cumple": {"corregir_y_reintentar": 1, "despues": "entregar con aviso GAP que nombra la instruccion no cumplida"}, "sin_instrucciones": "no se ejecuta ni gasta API", "revisor_previo": "N6", "verificador_final": "N7"},
  "salida_final": "N7",
  "nodos": [
   {
@@ -68,8 +69,8 @@
    ],
    "depende_de": ["N4"]
   },
-  {"id": "N6", "modelo": "ficha-glm52", "rol": "REVISA y refactoriza el resultado de N4 segun los goals de salida de N5", "depende_de": ["N4", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true},
-  {"id": "N7", "modelo": "ficha-qwen38max", "rol": "REVISA de nuevo el resultado de N6 segun N5 y entrega la SALIDA final", "depende_de": ["N6", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true}
+  {"id": "N6", "modelo": "ficha-glm52", "rol": "REVISA y refactoriza el resultado de N4 segun los goals de salida de N5. Ademas verifica una por una las INSTRUCCIONES FIJAS del mensaje (si hay), corrige lo que no las cumpla e indica cuales cumplio", "depende_de": ["N4", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true},
+  {"id": "N7", "modelo": "ficha-qwen38max", "rol": "REVISA de nuevo el resultado de N6 segun N5 y entrega la SALIDA final. Ademas verifica una por una las INSTRUCCIONES FIJAS del mensaje (si hay), corrige lo que no las cumpla e indica cuales cumplio", "depende_de": ["N6", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true}
  ],
  "flujo": "N0 goals(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> N5 goals salida(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA",
  "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
