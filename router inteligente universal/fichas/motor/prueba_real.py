@@ -18,6 +18,8 @@ PROV = [
     {'nombre': 'malo', 'url': NV, 'modelo': 'z-ai/glm-5.3', 'key_env': 'CLAVE_MALA', 'perfil': 'nvidia'},
     {'nombre': 'nvidia-glm53', 'url': NV, 'modelo': 'z-ai/glm-5.3', 'key_env': 'NVIDIA_API_KEY', 'perfil': 'nvidia'},
     {'nombre': 'groq-qwen38', 'url': GQ, 'modelo': 'qwen/qwen3.8-27b', 'key_env': 'GROQ_API_KEY', 'perfil': 'groq_free'},
+    {'nombre': 'groq-qwen38-b', 'url': GQ, 'modelo': 'qwen/qwen3.8-27b', 'key_env': 'GROQ_API_KEY_B', 'perfil': 'groq_free'},
+    {'nombre': 'groq-qwen38-c', 'url': GQ, 'modelo': 'qwen/qwen3.8-27b', 'key_env': 'GROQ_API_KEY_C', 'perfil': 'groq_free'},
 ]
 
 
@@ -40,7 +42,7 @@ def api(tmp):
             chequeo('API real ' + n + ' responde', bool(r), str(round(time.time() - t0, 1)) + ' s')
         except ErrorApi as e:
             chequeo('API real ' + n + ' responde', False, e)
-    m = Motor(prov(tmp, 'malo', 'nvidia-glm53', 'groq-qwen38'))
+    m = Motor(prov(tmp, 'malo', 'nvidia-glm53', 'groq-qwen38', 'groq-qwen38-b', 'groq-qwen38-c'))
     try:
         r = m.llamar(msg, 200)
         chequeo('cambio de API: la mala falla y pasa a la buena', bool(r) and m.i >= 1, m.bitacora[:2])

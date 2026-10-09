@@ -99,6 +99,8 @@ class Motor:
                 if h.code not in (429, 500, 502, 503, 504):
                     raise ErrorApi(p.nombre + ' error ' + str(h.code))
                 ultimo = p.nombre + ' http ' + str(h.code)
+                if h.code == 429 and len(self.provs) > 1:
+                    raise ErrorApi(ultimo + ' (limite: paso a otra llave/API sin esperar)')
                 try:
                     pausa = float(h.headers.get('Retry-After', ''))
                 except Exception:

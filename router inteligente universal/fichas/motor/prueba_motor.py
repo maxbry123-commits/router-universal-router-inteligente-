@@ -26,6 +26,11 @@ class Falso(BaseHTTPRequestHandler):
         ESTADO['cargas'].append((ruta, carga))
         if ruta == '/caido':
             return self._r(500, {})
+        if ruta == '/lim429':
+            self.send_response(429)
+            self.send_header('Retry-After', '30')
+            self.end_headers()
+            return
         if ruta == '/limite' and n == 1:
             self.send_response(429)
             self.send_header('Retry-After', '0')
@@ -95,6 +100,12 @@ def pruebas_api(base, tmp):
     gg._escribir(ev)
     m.llamar([{'role': 'user', 'content': 'hola'}])
     chequeo('API 2 pasa a otra si la diaria se agota (24 h)', m.i == 1, m.bitacora[-1] if m.bitacora else '')
+
+
+    esp = []
+    m = Motor([mk('/lim429'), mk('/bueno2')], dormir=lambda s: esp.append(s))
+    r = m.llamar([{'role': 'user', 'content': 'hola'}])
+    chequeo('429: pasa a otra llave sin esperar', r == 'avance' and m.i == 1 and sum(esp) == 0, esp)
 
 
 def cola_nueva(tmp, nombre):
