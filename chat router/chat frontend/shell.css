@@ -178,3 +178,10 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .composer-bar .btn-ancla{color:#fff}
 .composer-bar .btn-ancla svg{stroke:#fff}
 #anc-pegar,#anc-instr{width:100%;min-height:52px;border-radius:12px;padding:9px 11px;background:var(--panel);border:1px solid var(--border-strong);resize:vertical}
+/* ventana ancla: texto completo en celular */
+#ventana-ancla .va-caja>*{flex:0 0 auto}
+#ventana-ancla .va-caja .list{max-height:none;overflow:visible}
+#ventana-ancla #anc-lista{max-height:34vh;overflow-y:auto}
+#anc-resumen{max-height:none!important}
+#ventana-ancla .fila-desc{font-size:12px;line-height:1.35;padding:2px 0}
+#anc-pegar,#anc-instr{min-height:64px}
