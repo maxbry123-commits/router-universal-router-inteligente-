@@ -1,0 +1,52 @@
+.chat-history{min-height:300px;max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:9px}
+.message{max-width:85%;white-space:pre-wrap}
+.message.user{align-self:flex-end;border-color:var(--active)}
+#composer{display:grid;gap:12px}
+.chat-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}
+#chat-tabs{display:flex;gap:6px;overflow-x:auto;flex:1 1 200px;min-width:0}
+.chat-tab{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--quiet);white-space:nowrap}
+.chat-tab[aria-selected=true]{color:var(--text);box-shadow:inset 0 -2px var(--active)}
+#chat-id{font-size:12px;overflow-wrap:anywhere}
+#historial-origen{font-size:12px;opacity:.8}#historial-origen[data-origen=local]{font-style:italic}
+.chat-files{display:grid;gap:6px;margin:0 0 10px}.chat-files-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#archivos-titulo{font-size:13px;font-weight:600}#archivos-estado{font-size:12px}#archivos-estado[data-error=true]{color:#ffbaba}html[data-theme=blanco] #archivos-estado[data-error=true]{color:#9f1239}
+#archivos-lista{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:22vh;overflow:auto}
+.archivo{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:7px 10px}.archivo .nombre{flex:1 1 140px;min-width:0}
+.archivo small{font-size:12px}.archivo button{padding:5px 10px;font-size:13px}
+.archivo button[aria-pressed=true]{color:var(--text);box-shadow:inset 0 -2px var(--active)}
+
+#chat-subtabs{display:flex;gap:6px;overflow-x:auto;margin:-4px 0 10px 14px}#chat-subtabs .chat-tab{font-size:13px;padding:5px 10px}
+.chat-tab[data-padre-activo=true]{color:var(--text)}
+.chat-hijos{margin:0 0 6px}.chat-hijos summary{cursor:pointer;color:var(--quiet)}.chat-hijos[open]{display:grid;gap:8px}
+.mono,.bloque{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+#hijo-estado{display:block;font-size:12px;margin-bottom:6px}#hijo-estado[data-error=true]{color:#ffbaba}html[data-theme=blanco] #hijo-estado[data-error=true]{color:#9f1239}
+.hijo-ficha{display:grid;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:10px;margin:0 0 10px}
+.bloque{white-space:pre-wrap;overflow-wrap:anywhere;max-height:28vh;overflow:auto;margin:0;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+.hijo-ficha .sha{font-size:12px;overflow-wrap:anywhere}.hijo-ficha .sha.mal{color:#ffbaba}
+#chat-subtabs[hidden],.chat-hijos[hidden],.hijo-ficha[hidden]{display:none}
+.orq{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px}#orq[hidden],#orq [hidden]{display:none}
+.orq-switch{background:var(--muted);border:1px solid var(--border);border-radius:999px;padding:6px 14px;color:var(--quiet)}
+.orq-switch[aria-checked=true]{background:var(--active);border-color:var(--active);color:#fff}
+#orq-limites,#orq-estado{font-size:12px}#orq-estado[data-error=true]{color:#ffbaba}html[data-theme=blanco] #orq-estado[data-error=true]{color:#9f1239}
+.orq-runs{flex-basis:100%}.orq-runs summary{cursor:pointer;color:var(--quiet);font-size:13px}
+.orq-runs-lista{display:grid;gap:4px;max-height:18vh;overflow:auto;margin:6px 0}.orq-run-item{text-align:left;font-size:12px;padding:5px 9px}
+.orq-detalle{display:grid;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:10px}
+.orq-run{align-self:flex-start;max-width:85%;display:grid;gap:3px;font-size:12px;background:var(--panel);border:1px dashed var(--border);border-radius:9px;padding:8px 10px}
+.orq-nodo{overflow-wrap:anywhere}button.enlace{background:none;border:0;padding:0;color:var(--quiet);text-decoration:underline;font-size:12px;justify-self:start}
+
+@media(max-width:720px){
+  body{font-size:15px!important}
+  main{padding:10px}
+  main>h1{font-size:20px;margin-bottom:8px}
+  main>p.muted{margin:0 0 10px}
+  main section{padding:10px;border-radius:10px}
+  main section>.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 10px}
+  main section>.row label{width:100%;min-width:0}
+  main section>.row label:last-child{grid-column:1/-1}
+  main section>.row select{width:100%;min-width:0}
+  .chat-history{min-height:38vh;max-height:48vh;gap:7px}
+  .message{max-width:94%}
+  #composer{gap:8px}
+  #composer textarea{min-height:86px;max-height:24vh}
+  #composer .action{width:100%;min-height:44px}
+}

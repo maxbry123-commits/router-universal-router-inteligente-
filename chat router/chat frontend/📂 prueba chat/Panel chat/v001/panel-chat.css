@@ -1,0 +1,21 @@
+.chat-history{min-height:300px;max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:9px}
+.message{max-width:85%;white-space:pre-wrap}
+.message.user{align-self:flex-end;border-color:var(--active)}
+#composer{display:grid;gap:12px}
+
+@media(max-width:720px){
+  body{font-size:15px!important}
+  main{padding:10px}
+  main>h1{font-size:20px;margin-bottom:8px}
+  main>p.muted{margin:0 0 10px}
+  main section{padding:10px;border-radius:10px}
+  main section>.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 10px}
+  main section>.row label{width:100%;min-width:0}
+  main section>.row label:last-child{grid-column:1/-1}
+  main section>.row select{width:100%;min-width:0}
+  .chat-history{min-height:38vh;max-height:48vh;gap:7px}
+  .message{max-width:94%}
+  #composer{gap:8px}
+  #composer textarea{min-height:86px;max-height:24vh}
+  #composer .action{width:100%;min-height:44px}
+}

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claves secretas · YAIWES</title>
+  <link rel="stylesheet" href="./base.css"><link rel="stylesheet" href="./panel-claves.css">
+  <script src="../config.js"></script><script type="module" src="./panel-claves.js"></script>
+</head>
+<body><div class="shell">
+  <aside class="sidebar"><div class="brand">Y</div><nav aria-label="Paneles">
+    <a href="./panel-chat.html">Chat nuevo</a>
+    <a href="./panel-media.html">Imágenes y videos</a>
+    <a href="./panel-agentes.html">Multiagente</a>
+    <a href="./panel-seguimiento.html">Seguimiento y planificación</a>
+    <a href="./panel-configuracion.html">Configuración de UI</a>
+    <a href="./panel-claves.html" aria-current="page">Claves secretas</a>
+  </nav></aside>
+  <div class="workspace"><header class="topbar"><strong>Claves secretas</strong></header><main>
+<h1>Claves secretas del banco</h1>
+<p class="muted">Gestiona las claves del banco del Router. Los valores viajan cifrados por HTTPS al Router y nunca se muestran, se guardan en el navegador ni se escriben en registros.</p>
+
+<section aria-labelledby="estado-title">
+  <h2 id="estado-title">Estado del banco</h2>
+  <p id="bank-status" role="status" class="muted">Introduce la API key del Router para consultar el banco.</p>
+  <p id="bank-detail" class="muted"></p>
+  <button id="bank-refresh" class="secondary" type="button">Actualizar estado</button>
+</section>
+
+<section aria-labelledby="acceso-title">
+  <h2 id="acceso-title">Acceso</h2>
+  <form id="key-form" class="row" autocomplete="off">
+    <label>API key del Router <input id="api-key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="MAXBRY-…" required></label>
+    <label class="check-line"><input id="api-remember" type="checkbox"> Recordar sólo en esta pestaña</label>
+    <button class="action" type="submit">Conectar</button>
+    <button id="api-forget" class="secondary" type="button">Olvidar</button>
+  </form>
+  <p id="key-status" class="muted">Sin API key en esta página.</p>
+  <form id="unlock-form" class="row" autocomplete="off">
+    <label>Contraseña del banco <input id="bank-pass" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" required></label>
+    <button class="action" type="submit">Abrir banco</button>
+  </form>
+  <p class="muted">La contraseña sólo abre el banco en la memoria del Router; se borra del campo al enviarla.</p>
+</section>
+
+<section aria-labelledby="lista-title">
+  <h2 id="lista-title">Claves guardadas</h2>
+  <label>Buscar <input id="cred-search" type="search" placeholder="Proveedor o cuenta"></label>
+  <p id="cred-count" class="muted"></p>
+  <p id="cred-persist" class="muted" role="status"></p>
+  <div id="cred-list" class="list"></div>
+  <p class="muted">El interruptor activa o desactiva la clave para los modelos sin borrarla. Borrar pide confirmación con el nombre de la clave y no se puede deshacer. Sólo se muestran nombres y estado, nunca valores.</p>
+</section>
+
+<section aria-labelledby="guardar-title">
+  <h2 id="guardar-title">Añadir o reemplazar clave</h2>
+  <form id="put-form" class="row" autocomplete="off">
+    <label>Proveedor <select id="put-provider">
+      <option value="nvidia">nvidia</option><option value="huggingface">huggingface</option><option value="groq">groq</option>
+      <option value="deepseek">deepseek</option><option value="moonshot">moonshot</option><option value="minimax">minimax</option>
+      <option value="openai">openai</option><option value="github">github</option><option value="otro">otro…</option>
+    </select></label>
+    <label id="put-custom-wrap" hidden>Otro proveedor <input id="put-custom" type="text" spellcheck="false" autocapitalize="off" placeholder="nombre"></label>
+    <label>Cuenta <input id="put-account" type="text" spellcheck="false" autocapitalize="off" placeholder="principal" required></label>
+    <label>Valor <input id="put-value" type="password" autocomplete="new-password" spellcheck="false" autocapitalize="off" required></label>
+    <button id="put-submit" class="action" type="submit">Guardar clave</button>
+  </form>
+  <p id="put-mode" class="muted">Nombre final: proveedor/cuenta (minúsculas, números, punto, guion o guion bajo).</p>
+</section>
+
+</main><p id="notice" role="status"></p></div></div></body>
+</html>

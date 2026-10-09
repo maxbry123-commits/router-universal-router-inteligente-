@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuración de UI · YAIWES</title>
+  <link rel="stylesheet" href="./base.css"><link rel="stylesheet" href="./panel-configuracion.css">
+  <script src="../config.js"></script><script type="module" src="./panel-configuracion.js"></script>
+</head>
+<body><div class="shell">
+  <aside class="sidebar"><div class="brand">Y</div><nav aria-label="Paneles">
+    <a href="./panel-chat.html">Chat nuevo</a>
+    <a href="./panel-media.html">Imágenes y videos</a>
+    <a href="./panel-agentes.html">Multiagente</a>
+    <a href="./panel-seguimiento.html">Seguimiento y planificación</a>
+    <a href="./panel-configuracion.html" aria-current="page">Configuración de UI</a>
+    <a href="./panel-claves.html">Claves secretas</a>
+  </nav></aside>
+  <div class="workspace"><header class="topbar"><strong>Configuración de UI</strong></header><main>
+<h1>Configuración de UI</h1>
+<p class="muted">Sólo apariencia y preferencias visuales. Los cambios se guardan automáticamente en este navegador.</p>
+
+<section aria-labelledby="paletas-title">
+  <h2 id="paletas-title">Paletas</h2>
+  <p class="muted">Un toque aplica la paleta. Gris V07 es la principal.</p>
+  <select id="ui-theme" class="sr-only" aria-label="Tema visual">
+    <option value="gris">Gris V07</option><option value="little">Little</option><option value="matte">Matte</option><option value="blanco">Blanco</option>
+  </select>
+  <div id="theme-cards" class="theme-cards" role="radiogroup" aria-label="Paletas disponibles">
+    <button class="theme-card" type="button" data-theme-choice="gris" aria-pressed="false">
+      <span><strong>Gris V07</strong><small>Principal</small></span>
+      <span class="swatches" aria-hidden="true"><i style="--swatch:#1B1B1B"></i><i style="--swatch:#202020"></i><i style="--swatch:#2A2A2A"></i><i style="--swatch:#3C3C3C"></i><i style="--swatch:#0848F7"></i></span>
+    </button>
+    <button class="theme-card" type="button" data-theme-choice="little" aria-pressed="false">
+      <span><strong>Little</strong><small>Alternativa cálida</small></span>
+      <span class="swatches" aria-hidden="true"><i style="--swatch:#1C1B1A"></i><i style="--swatch:#2A2927"></i><i style="--swatch:#36332F"></i><i style="--swatch:#49443F"></i><i style="--swatch:#C65D3B"></i></span>
+    </button>
+    <button class="theme-card" type="button" data-theme-choice="matte" aria-pressed="false">
+      <span><strong>Matte</strong><small>Oscuro profundo</small></span>
+      <span class="swatches" aria-hidden="true"><i style="--swatch:#0A0A0D"></i><i style="--swatch:#141417"></i><i style="--swatch:#202025"></i><i style="--swatch:#3F3F4E"></i><i style="--swatch:#638BFF"></i></span>
+    </button>
+    <button class="theme-card" type="button" data-theme-choice="blanco" aria-pressed="false">
+      <span><strong>Blanco</strong><small>Claro</small></span>
+      <span class="swatches" aria-hidden="true"><i style="--swatch:#F4F4F5"></i><i style="--swatch:#FFFFFF"></i><i style="--swatch:#F8F8F9"></i><i style="--swatch:#D4D4D8"></i><i style="--swatch:#1D4ED8"></i></span>
+    </button>
+  </div>
+  <div class="token-grid" aria-label="Valores de la paleta activa">
+    <div><span>Fondo</span><code data-token="--bg">—</code></div>
+    <div><span>Panel</span><code data-token="--surface">—</code></div>
+    <div><span>Módulo</span><code data-token="--panel">—</code></div>
+    <div><span>Borde</span><code data-token="--border">—</code></div>
+    <div><span>Máscara</span><code data-token="--muted">—</code></div>
+    <div><span>Acento</span><code data-token="--active">—</code></div>
+    <div><span>Texto</span><code data-token="--text">—</code></div>
+    <div><span>Texto suave</span><code data-token="--quiet">—</code></div>
+  </div>
+</section>
+
+<section aria-labelledby="lectura-title">
+  <h2 id="lectura-title">Lectura y movimiento</h2>
+  <div class="row compact-controls">
+    <label>Tamaño del texto <input id="ui-scale" type="range" min="85" max="130" step="5" value="100"></label>
+    <output id="scale-value" for="ui-scale">100 %</output>
+    <label class="check-line"><input id="ui-motion" type="checkbox"> Reducir animaciones</label>
+  </div>
+  <p id="preferences-status" role="status" class="muted">Preferencias cargadas.</p>
+</section>
+
+<section aria-labelledby="preview-title">
+  <h2 id="preview-title">Vista previa</h2>
+  <div id="ui-preview" class="ui-preview">
+    <div><strong>YAIWES</strong><span class="muted"> Vista previa inmediata</span></div>
+    <div class="preview-module">Módulo normal</div>
+    <button class="action" type="button" disabled>Botón de acento</button>
+  </div>
+</section>
+
+<details class="advanced">
+  <summary>Importar, exportar o restablecer</summary>
+  <div class="row">
+    <button id="ui-export" class="secondary" type="button">Exportar JSON</button>
+    <button id="ui-copy" class="secondary" type="button">Copiar JSON</button>
+    <label>Importar JSON <input id="ui-import" type="file" accept="application/json,.json"></label>
+    <button id="ui-reset" class="secondary" type="button">Restablecer Gris V07</button>
+  </div>
+</details>
+
+</main><p id="notice" role="status"></p></div></div></body>
+</html>

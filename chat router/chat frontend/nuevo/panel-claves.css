@@ -1,0 +1,26 @@
+:root:not([data-theme]),:root[data-theme=gris]{--active:#0848F7;--selected:#3C3C3C;--hover:#3A3A3A}
+html:not([data-theme=blanco]) #notice{color:#FF475F}
+.check-line{display:flex;align-items:center;gap:8px}.check-line input{accent-color:var(--active)}
+#bank-status[data-state]::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle;background:var(--dot)}
+#bank-status[data-state=loading]{--dot:#0848F7}#bank-status[data-state=ok]{--dot:#12D86A}#bank-status[data-state=pending]{--dot:#FF7B1A}#bank-status[data-state=error]{--dot:#FF475F}
+html:not([data-theme=blanco]) #bank-status[data-state=error]{color:#FF475F}
+#unlock-form[hidden],#put-custom-wrap[hidden]{display:none}
+#cred-list .item{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;border-left:3px solid var(--state,var(--border))}
+#cred-list .item:hover{background:var(--hover,var(--muted))}
+#cred-list .item[aria-selected=true]{background:var(--selected,var(--muted));border-left-color:var(--active)}
+#cred-list .item[data-state=ok]{--state:#12D86A}#cred-list .item[data-state=pending]{--state:#FF7B1A}
+.cred-name{display:grid;gap:3px}.cred-name small{color:var(--quiet)}
+.masked{font-family:ui-monospace,monospace;color:#A0A0A0;letter-spacing:2px}
+#put-mode[data-mode=rotate]{color:#FF7B1A}
+.cred-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.switch-line{display:inline-flex;align-items:center;gap:8px;min-width:130px;color:var(--quiet)}
+.switch{width:36px;height:20px;padding:2px;border:none;border-radius:999px;background:#3A3A3A;display:flex;justify-content:flex-start;align-items:center;cursor:pointer;flex:0 0 auto}
+.switch.on{justify-content:flex-end;background:var(--active)}
+.switch:disabled{opacity:.5;cursor:wait}
+.switch:focus-visible{outline:2px solid var(--active);outline-offset:2px}
+.switch-knob{width:16px;height:16px;border-radius:50%;background:#F2F2F2}
+#cred-persist[data-state=ok]{color:#12D86A}#cred-persist[data-state=pending]{color:#FF7B1A}#cred-persist[data-state=error]{color:#FF475F}
+.secondary.danger{color:#FF475F;border-color:#FF475F}
+.secondary.danger:hover{background:#FF475F22}
+#cred-search{min-width:min(320px,80vw)}
+@media(max-width:720px){#cred-list .item{flex-direction:column;align-items:stretch}#cred-list .item .secondary{width:100%}.cred-actions{flex-direction:column;align-items:stretch}}
