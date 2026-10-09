@@ -31,7 +31,7 @@ export async function mount(root, { api, tell }) {
   };
   const pintarFichaPill = () => {
     const et = fichaEt(chat().ficha);
-    q("#ficha").textContent = (et ? et.etiqueta : "modelo").slice(0, 24) + " ⌄";
+    const t = (et ? et.etiqueta : "modelo").replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim(); q("#ficha").textContent = "Nvidia groq team ⌄"; q("#ficha").title = "Nvidia groq team · " + t; q("#ficha").dataset.ficha = t;  // selector 1 (sin emojis de color)
   };
   const pintarTabs = () => {
     tabsEl.replaceChildren();
@@ -147,7 +147,7 @@ export async function mount(root, { api, tell }) {
     const lista = q("#sh-ficha-lista");
     lista.replaceChildren();
     for (const m of window.RIU_CONFIG?.modelos || []) {
-      lista.append(fila(m.etiqueta, "", m.id === chat().ficha, () => {
+      lista.append(fila(m.etiqueta.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim(), "", m.id === chat().ficha, () => {
         chat().ficha = m.id;
         pintarFichaPill();
         pintarFichas();
