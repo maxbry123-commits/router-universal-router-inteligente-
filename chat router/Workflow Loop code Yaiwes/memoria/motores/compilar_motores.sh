@@ -3,7 +3,7 @@
 # PostgreSQL: compila el codigo bajado; si falla, usa el paquete oficial de Debian (no bloquea).
 # FalkorDB: modulo oficial ya compilado (lo que su repo indica por defecto); si no baja, intenta cargo build del codigo bajado.
 set -u
-RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 C="$RAIZ/router inteligente universal/Componente open soure router inteligente universal"
 DL="$RAIZ/router inteligente universal/Componentes del Router/router inteligente software/componentes todos/componentes descargados"
 LOG=/tmp/compilar_motores.log
