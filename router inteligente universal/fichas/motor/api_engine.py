@@ -75,7 +75,10 @@ class Motor:
         req = urllib.request.Request(p.url, cuerpo, {'Content-Type': 'application/json', 'User-Agent': 'ficha-motor/1.0', 'Authorization': 'Bearer ' + p.key()})
         with urllib.request.urlopen(req, timeout=self.timeout) as r:
             d = json.loads(r.read())
-        return d['choices'][0]['message']['content']
+        txt = (d['choices'][0]['message'].get('content') or '').strip()
+        if not txt:
+            raise urllib.error.URLError('respuesta vacia')
+        return txt
 
     def _con_reintentos(self, p, mensajes, max_tokens):  # sistema 1
         est = tokens_est(mensajes) + max_tokens

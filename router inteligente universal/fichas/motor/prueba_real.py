@@ -46,10 +46,10 @@ def api(tmp):
         chequeo('cambio de API: la mala falla y pasa a la buena', bool(r) and m.i >= 1, m.bitacora[:2])
     except ErrorApi as e:
         chequeo('cambio de API', False, e)
-    m = Motor(prov(tmp, 'nvidia-glm53'))
+    m = Motor(prov(tmp, 'groq-qwen38'))
     largo = [{'role': 'user', 'content': 'Lee y al final responde solo OK. ' + 'dato ' * 3800}]
     try:
-        r = m.llamar(largo, 200)
+        r = m.llamar(largo, 1500)
         chequeo('bloques de 8500 con llamada real de 19000 caracteres', bool(r), len(largo[0]['content']))
     except ErrorApi as e:
         chequeo('bloques de 8500', False, e)
@@ -59,7 +59,7 @@ def recuperacion(tmp, modo):
     carpeta = os.path.join(tmp, modo)
     os.makedirs(carpeta)
     prov_json = os.path.join(carpeta, 'prov.json')
-    json.dump([d for d in PROV if d['nombre'] != 'malo'], open(prov_json, 'w'))
+    json.dump([d for d in reversed(PROV) if d['nombre'] != 'malo'], open(prov_json, 'w'))
     c = Cola(os.path.join(carpeta, 'cola.db'))
     tid = c.agregar('Responde con una linea corta que diga listo y escribe la marca de cierre ' + MARCA_OK)
     e = dict(os.environ, FICHA_CARPETA=carpeta, FICHA_PROVEEDORES=prov_json, FICHA_LATIDO_MAX='40', PYTHONPATH=os.getcwd())
@@ -69,7 +69,10 @@ def recuperacion(tmp, modo):
     if modo == 'huerfana':
         with c.c() as cx:
             cx.execute("update tareas set estado='en_curso',pid=999999 where id=?", (tid,))
-        subprocess.run([sys.executable, '-m', 'motor', 'correr', '--una'], env=e, timeout=300)
+        try:
+            subprocess.run([sys.executable, '-m', 'motor', 'correr', '--una'], env=e, timeout=150)
+        except subprocess.TimeoutExpired:
+            pass
     else:
         p = subprocess.Popen([sys.executable, '-m', 'motor', 'supervisar', '--una'], env=e)
         if modo == 'matar':
@@ -79,7 +82,11 @@ def recuperacion(tmp, modo):
                 if est['pid'] and c.ultimo_paso(tid) >= 1:
                     os.kill(est['pid'], signal.SIGKILL)
                     break
-        p.wait(timeout=400)
+        try:
+            p.wait(timeout=150)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            subprocess.run(["pkill", "-f", "motor correr"])
     est = c.estado()[0]['estado']
     with c.c() as cx:
         pasos = [r[0] for r in cx.execute('select paso from pasos order by paso')]
