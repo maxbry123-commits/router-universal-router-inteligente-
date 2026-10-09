@@ -426,11 +426,11 @@ export async function mount(root, { api, tell }) {
     const model = q("#model").value;
     const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[modo];
     try {
-      const body = { message, ficha: c.ficha, provider: c.directo?.provider || provider, model: c.directo?.model || model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
+      const body = { message, ficha: c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });
-      const answer = window.RIU_CONFIG?.harnessUrl && !c.directo  // selector nuevo: modelo directo del Router
+      const answer = window.RIU_CONFIG?.harnessUrl
         ? await Promise.race([window.RIU_HARNESS({ model: c.ficha, message, max_tokens, anclados: [...c.anclados], sesion: c.sesion, avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
       c.detenerFn = null;
