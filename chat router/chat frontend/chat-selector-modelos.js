@@ -44,7 +44,7 @@ export function conectarSelectorModelos(ctx) {
   const pill = q("#sel-nuevo"), lista = q("#sh-modelos-lista");
   const pintarPill = () => {
     const s = chat().selectorQwen;
-    pill.textContent = "Team qwen" + (s ? " · " + s.label : "") + " ⌄";
+    pill.textContent = "Team qwen ⌄"; if (!pill.classList.contains("bloq")) pill.title = s ? "Team qwen · " + s.label : "Team qwen";  // el modelo elegido va en el tooltip
     pill.classList.toggle("on", !!s);
     window.RIU_SELECTOR_QWEN.seleccion = s ? { modelo_id_slug: s.modelo_id_slug, label: s.label, grupo: s.grupo, sesion: chat().sesion } : null;
   };

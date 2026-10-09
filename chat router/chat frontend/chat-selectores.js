@@ -19,6 +19,8 @@ const DIAGRAMAS = {  // micro diagramas transversales horizontales (texto exacto
 const INFO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>';
 const pintarDiagrama = (caja, texto) => {  // pasos en línea, desplazable en horizontal; el texto queda exacto (" → " entre pasos)
   caja.replaceChildren(); caja.title = texto; caja.classList.add("lleno");
+  const pista = () => caja.classList.toggle("mas", caja.scrollLeft + caja.clientWidth < caja.scrollWidth - 2);  // pista visual: hay más a la derecha
+  if (!caja.dataset.pista) { caja.dataset.pista = "1"; caja.addEventListener("scroll", pista, { passive: true }); new ResizeObserver(pista).observe(caja); }
   texto.split(" → ").forEach((paso, i) => {
     if (i) { const f = document.createElement("span"); f.className = "dg-flecha"; f.textContent = " → "; caja.append(f); }
     const p = document.createElement("span"); p.className = "dg-paso"; p.textContent = paso; caja.append(p);
@@ -123,7 +125,7 @@ export function conectarSelectores({ q }) {
       const caja = q(d.sel); if (caja) pintarDiagrama(caja, d.texto);
       info.addEventListener("click", () => { tira.hidden = !tira.hidden; info.setAttribute("aria-expanded", String(!tira.hidden)); info.classList.toggle("abierto", !tira.hidden); });
       fila.append(info, b, tira);
-    } else fila.append(b);
+    } else { const hueco = el("span", "sel-info sel-info-hueco"); hueco.setAttribute("aria-hidden", "true"); fila.append(hueco, b); }  // mismo ancho que la "i": las 5 filas alinean
     botones[s.id] = b;
   }
   const ngt = q("#sel-ngt"), ficha = q("#ficha");  // Nvidia groq team: el panel muestra la ficha elegida en su tooltip
