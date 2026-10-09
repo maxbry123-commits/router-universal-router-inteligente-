@@ -5,6 +5,8 @@ main,section,.card,.grid,.row,.topbar>div{min-width:0}
 .access button,.sidebar button,button.action,button.secondary{min-height:44px}
 .sidebar button,button.action,button.secondary{transition:background-color .16s ease,color .16s ease,box-shadow .16s ease}
 :focus-visible{outline:2px solid var(--quiet);outline-offset:2px}
+/* PUNTO 1: shell.css declara .chat-history{display:flex}; sin esta regla el chat inactivo seguía visible */
+.chat-history[hidden]{display:none!important}
 @media(max-width:720px){
   .sidebar nav{max-width:calc(100vw - 20px);scrollbar-width:thin}
   .topbar{align-items:flex-start}
@@ -14,3 +16,5 @@ main,section,.card,.grid,.row,.topbar>div{min-width:0}
 @media(prefers-reduced-motion:reduce){
   .sidebar button,button.action,button.secondary{transition:none}
 }
+/* PUNTO 6: la ventana orquestador no aplasta sus secciones (selector, Crazy Wall, bitácora, State JSON) */
+#sh-orq .va-caja{max-height:88vh}#sh-orq .va-caja>*{flex-shrink:0}#orq-agentes{max-height:26vh}#orq-agentes select{max-width:48%}

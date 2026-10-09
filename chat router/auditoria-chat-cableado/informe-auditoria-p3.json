@@ -1,0 +1,175 @@
+{
+ "job_id": "6ac78d2ae7a0dae8a27888b5",
+ "live_url": "https://6ac78d2ae7a0dae8a27888b5--8000.hf.jobs",
+ "ts": "2026-10-08 21:03:31 -0500",
+ "modelo": "groq-qwen-3-8",
+ "filas": [
+  {
+   "eslabon": "Router /health",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "job_id": "6ac78d2ae7a0dae8a27888b5"
+   }
+  },
+  {
+   "eslabon": "puente_chat/harness status",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "long_context": {
+     "enabled": true,
+     "store_input_chars": 500000,
+     "store_output_chars": 500000,
+     "context_turns": 40,
+     "context_budget_chars": 300000,
+     "provider_budget_chars": 350000,
+     "latest_user_input_preserved": true,
+     "budgets_are_characters": true,
+     "automatic_reserve_api_only": true,
+     "special_fichas_explicit_only": true
+    }
+   }
+  },
+  {
+   "eslabon": "memoria_yaiwes -> store (SQLite + grafo)",
+   "resultado": "PASS",
+   "evidencia": {
+    "sqlite": {
+     "name": "sqlite",
+     "status": "CONNECTED",
+     "mode": "primary",
+     "records": 430,
+     "db": "/tmp/riu-data/riu_chat.sqlite3"
+    },
+    "graph": {
+     "name": "graph-sqlite-fallback",
+     "status": "CONNECTED",
+     "mode": "fallback",
+     "stats": {
+      "nodes": 481,
+      "edges": 400
+     }
+    }
+   }
+  },
+  {
+   "eslabon": "almacenamiento persistente: bucket HF configurado con escritura",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "hf_bucket": {
+     "configured": true,
+     "id": "COMAND-CENTER-1/yaiwes-memoria-storage",
+     "write_token": true
+    },
+    "sqlite": "/tmp/riu-data/riu_chat.sqlite3"
+   }
+  },
+  {
+   "eslabon": "chat -> puente_chat -> memory_runtime: turno guardado (memoria_guardada)",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "texto": "OK",
+    "memoria_guardada": true,
+    "error": null
+   }
+  },
+  {
+   "eslabon": "store -> /chat/history devuelve el turno (scope chat-ui:chat:audit-p3-bd7bmho54h)",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "turns": 1
+   }
+  },
+  {
+   "eslabon": "recuperación de contexto desde memoria (la UI envía solo el último mensaje)",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "texto": "AUD-EYXEEH",
+    "memoria_guardada": true,
+    "error": null
+   }
+  },
+  {
+   "eslabon": "aislamiento: otra sesión no ve esa memoria",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "texto": "NO-LA-SE",
+    "memoria_guardada": true,
+    "error": null
+   }
+  },
+  {
+   "eslabon": "/memoria/save",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "resp": {
+     "status": "SAVED",
+     "adapter": "sqlite",
+     "replicas": {},
+     "id": 443,
+     "scope": "auditoria-p3",
+     "key": "k-AUD-EYXEEH"
+    }
+   }
+  },
+  {
+   "eslabon": "/memoria/load",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200,
+    "resp": {
+     "scope": "auditoria-p3",
+     "key": "k-AUD-EYXEEH",
+     "records": [
+      {
+       "id": 443,
+       "scope": "auditoria-p3",
+       "key": "k-AUD-EYXEEH",
+       "data": {
+        "palabra": "AUD-EYXEEH"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "eslabon": "/memoria/search",
+   "resultado": "PASS",
+   "evidencia": {
+    "http": 200
+   }
+  },
+  {
+   "eslabon": "recuperación después de reinicio: sesión router-live-e2e-20261008 escrita antes del Job 6ac78d2ae7a0dae8a27888b5 y leída en él",
+   "resultado": "PASS",
+   "evidencia": {
+    "sesion": "router-live-e2e-20261008",
+    "http": 200,
+    "turnos_total": 3,
+    "mensajes_anteriores_al_job": 6,
+    "primer_ts": "2026-10-08 05:14:09 -0500",
+    "job_nacio": "2026-10-08 07:31:38 -0500"
+   }
+  },
+  {
+   "eslabon": "recuperación después de reinicio: sesión kernel-sentinela escrita antes del Job 6ac78d2ae7a0dae8a27888b5 y leída en él",
+   "resultado": "PASS",
+   "evidencia": {
+    "sesion": "kernel-sentinela",
+    "http": 200,
+    "turnos_total": 6,
+    "mensajes_anteriores_al_job": 10,
+    "primer_ts": "2026-10-08 04:49:48 -0500",
+    "job_nacio": "2026-10-08 07:31:38 -0500"
+   }
+  }
+ ]
+}

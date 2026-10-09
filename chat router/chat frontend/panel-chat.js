@@ -1,4 +1,5 @@
 import { node } from "./api.js";
+import { conectar } from "./chat-cableado.js";
 
 const MODOS = { fast: "⚡ rápido", balanced: "⚖ equilibrado", think: "🧠 pensar" };
 const MAX_CHAT = 5;
@@ -19,7 +20,7 @@ export async function mount(root, { api, tell }) {
   const guardar = () => {
     try {
       sessionStorage.setItem(CLAVE_CHATS, JSON.stringify(
-        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados] }))));
+        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], padre: c.padre, etiqueta: c.etiqueta, orq: c.orq }))));
     } catch (e) {}
   };
   const pintarAnclados = () => {
@@ -34,7 +35,7 @@ export async function mount(root, { api, tell }) {
   const pintarTabs = () => {
     tabsEl.replaceChildren();
     chats.forEach((c, i) => {
-      const b = node("button", "💬 " + (i + 1) + (c.ocupado ? " ⏳" : ""), "chip" + (i === activo ? " on" : ""));
+      const b = node("button", (c.etiqueta || "💬 " + (i + 1)) + (c.ocupado ? " ⏳" : ""), "chip" + (i === activo ? " on" : ""));
       b.type = "button"; b.title = "Chat " + (i + 1) + " — sesión " + c.sesion;
       b.addEventListener("click", () => { activo = i; pintarTabs(); });
       tabsEl.append(b);
@@ -55,7 +56,9 @@ export async function mount(root, { api, tell }) {
     h.hidden = true; h.setAttribute("role", "log");
     histEl.append(h);
     chats.push({
-      sesion: restaurado?.sesion || "web-" + Math.random().toString(36).slice(2, 10),
+      // PUNTO 1: id propio por chat (session_id = chat_id), aleatorio criptográfico; nada se comparte con otros chats
+      sesion: restaurado?.sesion || "web-" + [...crypto.getRandomValues(new Uint8Array(8))].map((x) => x.toString(16).padStart(2, "0")).join(""),
+      padre: restaurado?.padre, etiqueta: restaurado?.etiqueta, orq: !!restaurado?.orq,
       ficha: restaurado?.ficha || defecto,
       hist: h,
       anclados: new Set(restaurado?.anclados || []),
@@ -63,6 +66,7 @@ export async function mount(root, { api, tell }) {
     });
     activo = chats.length - 1;
     pintarTabs();
+    return chats[activo];
   };
   try {
     const previos = JSON.parse(sessionStorage.getItem(CLAVE_CHATS) || "[]");
@@ -95,6 +99,8 @@ export async function mount(root, { api, tell }) {
     }
     return d;
   };
+  const ctx = { root, q, api, tell, chats, chat, nuevoChat, burbuja, pintarTabs, pintarAnclados, guardar, MAX_CHAT, activar: (i) => { activo = i; pintarTabs(); } };
+  conectar(ctx);  // puntos 1-6 del Director: módulos aparte, este archivo solo los engancha
 
   // ---- hojas (sheets): cada pildora abre la suya ----
   const cerrarHojas = () => root.querySelectorAll(".sheet").forEach((s) => { s.hidden = true; });
@@ -407,6 +413,7 @@ export async function mount(root, { api, tell }) {
     const message = input.value.trim();
     if (!message) return;
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
+    if (c.orq && ctx.orquestar) { ctx.orquestar(c, input.value, () => { input.value = ""; }); return; }  // PUNTO 6: ORQUESTADOR ON
     const ub = burbuja(message, "user");
     c.hist.append(ub);
     input.value = "";
