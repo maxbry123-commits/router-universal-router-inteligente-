@@ -11,8 +11,8 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from .api_engine import Proveedor
-from .ficha_os import FichaOS, MotorUso, cargar_ficha, validar_ficha
+from .api_engine import ErrorApi, Proveedor
+from .ficha_os import FichaOS, MotorUso, cargar_ficha, leer_texto, proveedores_desde_yml, validar_ficha
 from .memoria import Memoria, ProveedorMock
 from .puerta import EsperaAgotada, Puerta
 
@@ -68,11 +68,14 @@ def solape_max(items):
     return m
 
 
-def correr(f, task, tmp, base, puerta, mem=None, modelo=None):
+def correr(f, task, tmp, base, puerta, mem=None, modelo=None, faltan=()):
     prov = ProveedorMock(os.path.join(tmp, 'mem')) if mem is None else mem
     m = f['memory']
     memoria = Memoria(prov, task, m['project_memory'], m['read_project_memory'], m['write_task_memory'], m['write_project_memory'])
-    mf = lambda mod: MotorUso([Proveedor(mod, base + '/m/' + mod, mod, 'K', 'libre', tmp)], timeout=5)
+    def mf(mod):
+        if mod in faltan:
+            raise ErrorApi('SIN_API ' + mod)
+        return MotorUso([Proveedor(mod, base + '/m/' + mod, mod, 'K', 'libre', tmp)], timeout=5)
     return FichaOS(f, task, 'tarea de prueba', mf, puerta, memoria, modelo, dormir=lambda s: None).correr(), memoria
 
 
@@ -160,12 +163,15 @@ def prueba_ficha_dag(tmp, base, f2):
     orden = n['N4'][0][3] <= min(x[2] for x in n5) and max(x[3] for x in n5) <= n['N6'][0][2] and n['N6'][0][3] <= n['N7'][0][2]
     chequeo('FICHA 2: orden N4 -> N5 -> N6 (GLM 5.2) -> N7 (Qwen 3.8 Max)', orden and n['N6'][0][0] == 'ficha-glm52' and n['N7'][0][0] == 'ficha-qwen38max')
     chequeo('FICHA 2: nunca mas de 4 llamadas a la vez a la API', S['max'] <= 4, S['max'])
-    chequeo('FICHA 2: 12 goals con todos los modelos de texto (5 de imagen/voz quedan registrados como saltados)', len(res['saltados']) == 10 and len([x for x in S['log'] if x[1].startswith('N0')]) == 9, (len(res['saltados']), len(S['log'])))
+    chequeo('FICHA 2: 12 goals de entrada con los 14 modelos participando', len(res['saltados']) == 0 and len([x for x in S['log'] if x[1].startswith('N0')]) == 14, (len(res['saltados']), len(S['log'])))
     chequeo('FICHA 2: tokens = consumo real de la API', res['tokens']['total_used'] == len(S['log']) * 150, (res['tokens'], len(S['log'])))
     chequeo('FICHA 2: ledger por nodo y memoria del proyecto solo tras PASS', bool(mem.cargar('ledger', 'N7')) and bool(mem.p.load('project/YAIWES', 'resultado/T-2')), '')
     reset()
     res2, _ = correr(f2, 'T-2', tmp, base, puerta, mem.p)
     chequeo('CACHE: segunda corrida no vuelve a llamar a la API', res2['estado'] == 'PASS' and len(S['log']) == 0 and res2['tokens']['cached_used'] > 0, (len(S['log']), res2['tokens']['cached_used']))
+    reset()
+    res3, _ = correr(f2, 'T-3', tmp, base, puerta, None, None, ('ficha-qwenimg30pro', 'ficha-qwenasr'))
+    chequeo('GOALS: un modelo sin API no frena la ficha y queda registrado como saltado', res3['estado'] == 'PASS' and sorted(set(s['modelo'] for s in res3['saltados'])) == ['ficha-qwenasr', 'ficha-qwenimg30pro'] and len(res3['saltados']) == 4, len(res3['saltados']))
 
 
 def prueba_rutas_budget_cola(tmp, base):
@@ -242,6 +248,13 @@ def prueba_tres_fichas(tmp, base, F):
     chequeo('FICHA 3: el ejecutor DeepSeek V4 Pro corrio el paso 4', len(n4f3) == 1)
 
 
+def prueba_api14(tmp):
+    P = proveedores_desde_yml(leer_texto(FICHAS + '/modelos-14/harness-modelos-14.cordis.yml'), tmp)
+    k = set(p._k for p in P.values())
+    ok = len(P) == 14 and len(k) == 1 and '' not in k and all(p.url.startswith('https://coding-intl.dashscope.aliyuncs.com/v1/') for p in P.values())
+    chequeo('API 14: la misma clave y la misma direccion en las 14 ranuras', ok, 'ids con modelo: ' + str([n for n, p in P.items() if p.modelo]))
+
+
 if __name__ == '__main__':
     tmp = tempfile.mkdtemp()
     srv = ThreadingHTTPServer(('127.0.0.1', 0), Falso)
@@ -253,5 +266,6 @@ if __name__ == '__main__':
     prueba_rutas_budget_cola(tmp, base)
     prueba_memoria(tmp)
     prueba_tres_fichas(tmp, base, F)
+    prueba_api14(tmp)
     print('RESULTADO_FICHAS', sum(RES), '/', len(RES), flush=True)
     sys.exit(0 if all(RES) else 1)

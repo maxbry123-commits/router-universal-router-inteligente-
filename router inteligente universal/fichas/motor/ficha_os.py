@@ -98,11 +98,8 @@ class FichaOS:
             nombres = ficha.get('todos_los_modelos', []) if part in ('todos', 'todos_los_modelos') else part
             hijos = []
             for m in nombres:
-                if tipos.get(m, 'texto') != 'texto':
-                    self.saltados.append({'nodo': n['id'], 'modelo': m, 'motivo': 'tipo ' + tipos[m] + ' no participa en goals de texto'})
-                    continue
                 h = {'id': n['id'] + ':' + m, 'modelo': m, 'rol': 'participa en los goals de ' + n.get('nombre', n['id']) + ': evalua cada goal en una linea',
-                     'depende_de': list(n.get('depende_de', [])), 'goals': n.get('goals', []), 'read_paths': [], 'write_paths': []}
+                     'depende_de': list(n.get('depende_de', [])), 'goals': n.get('goals', []), 'read_paths': [], 'write_paths': [], 'participante': True}
                 hijos.append(h['id'])
                 out.append(h)
             out.append({'id': n['id'], 'tipo': 'join', 'depende_de': hijos, 'rol': 'une los aportes'})
@@ -195,6 +192,10 @@ class FichaOS:
 
     def _terminar(self, n, ok, reg, salida=''):
         reg['nodo'] = n['id']
+        if not ok and n.get('participante'):  # un participante sin API no frena el DAG: queda registrado como saltado
+            reg['estado'] = 'SALTADO'
+            self.saltados.append({'nodo': n['id'], 'modelo': n['modelo'], 'motivo': str(reg.get('motivo'))[:120]})
+            ok, salida = True, ''
         try:
             self.mem.guardar('ledger', n['id'], reg)
         except Exception as e:
