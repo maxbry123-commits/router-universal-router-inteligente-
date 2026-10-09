@@ -78,8 +78,17 @@ def _hf(metodo: str, ruta: str, cuerpo: Any = None) -> tuple[int, Any]:
 
 
 def _memoria():
-    from integration.chat_mvp.memory_runtime import memory, scope_for
     from integration.chat_mvp.router import get_store
+    try:
+        from integration.chat_mvp.memory_runtime import memory, scope_for
+    except ImportError:  # en main ese modulo no existe: se usa memoria_loader (memoria_yaiwes)
+        from integration.chat_mvp.memoria_loader import _memory
+
+        def memory(_store):
+            return _memory()
+
+        def scope_for(owner, scope):
+            return 'owner:%s:%s' % (owner, scope)
     return memory(get_store()), scope_for
 
 
@@ -963,6 +972,64 @@ def _apagar(p: dict[str, Any]) -> dict[str, Any]:
     return {"job_id": job, "apagado": s < 400}
 
 
+def _filas(res):
+    return res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+
+
+def _historial(p):
+    # devuelve los turnos guardados de la sesion, en orden, para pintarlos en el chat
+    try:
+        ses = str(p.get('sesion') or 'general')[:60]
+        mem, scope_for = _memoria()
+        filas = _filas(mem.search(scope_for(DUENO, 'chat:' + ses), 'turno-', max(1, min(int(p.get('limite') or 120), 400))))
+        turnos = []
+        for f in filas:
+            d = f.get('data') if isinstance(f, dict) else None
+            if isinstance(d, dict) and 'pregunta' in d and str(f.get('key', '')).startswith('turno-'):
+                turnos.append({'clave': f.get('key'), 'modelo': d.get('modelo'), 'pregunta': d.get('pregunta'), 'respuesta': d.get('respuesta')})
+        turnos.sort(key=lambda t: str(t['clave']))
+        return {'ok': True, 'turnos': turnos}
+    except Exception as x:  # noqa: BLE001
+        return {'error': 'HISTORIAL_FALLO', 'detalle': str(x)[:200]}
+
+
+def _ultimo(sesion, clave):
+    # el registro mas nuevo con esa clave exacta (la memoria solo agrega; el ultimo manda)
+    mem, scope_for = _memoria()
+    recs = mem.load(scope_for(DUENO, 'chat:' + sesion), clave)
+    d = (recs[0].get('data') if recs and isinstance(recs[0], dict) else None) or {}
+    return d if isinstance(d, dict) else {}
+
+
+def _proyectos(p):
+    try:
+        ses = str(p.get('sesion') or 'general')[:60]
+        if str(p.get('op') or 'listar') == 'guardar':
+            lista = []
+            for x in (p.get('lista') or [])[:50]:
+                if isinstance(x, dict):
+                    lista.append({'nombre': str(x.get('nombre') or '')[:120], 'items': [str(a)[:500] for a in (x.get('items') or [])][:300]})
+            mem, scope_for = _memoria()
+            mem.save(scope_for(DUENO, 'chat:' + ses), 'proyectos', {'lista': lista})
+            return {'ok': True, 'cantidad': len(lista)}
+        return {'ok': True, 'proyectos': _ultimo(ses, 'proyectos').get('lista') or []}
+    except Exception as x:  # noqa: BLE001
+        return {'error': 'PROYECTOS_FALLO', 'detalle': str(x)[:200]}
+
+
+def _estado_chat(p):
+    # instrucciones fijas del chat, guardadas en la memoria
+    try:
+        ses = str(p.get('sesion') or 'general')[:60]
+        if str(p.get('op') or 'leer') == 'guardar':
+            mem, scope_for = _memoria()
+            mem.save(scope_for(DUENO, 'chat:' + ses), 'estado_chat', {'instrucciones': str(p.get('instrucciones') or '')[:8000]})
+            return {'ok': True}
+        return {'ok': True, 'instrucciones': _ultimo(ses, 'estado_chat').get('instrucciones') or ''}
+    except Exception as x:  # noqa: BLE001
+        return {'error': 'ESTADO_CHAT_FALLO', 'detalle': str(x)[:200]}
+
+
 def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "status":
         try:
@@ -984,6 +1051,12 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return {'github': bool(h._token_gh()), 'hf': bool(h._token_hf())}
     if action == "apagar_todo":
         return _apagar_todo()
+    if action == "historial":
+        return _historial(payload)
+    if action == "proyectos":
+        return _proyectos(payload)
+    if action == "estado_chat":
+        return _estado_chat(payload)
     if action == "subir":  # archivo adjunto del chat -> sistema de almacenamiento/memoria
         try:
             nombre = str(payload.get('nombre') or 'archivo')[:120]
