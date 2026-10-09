@@ -137,5 +137,8 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 @media(max-width:480px){.row.fields .pill{min-height:32px;padding:0 12px;font-size:13px}}
 #composer{position:sticky;bottom:8px;z-index:5}
 #composer #btn-detener[hidden]{display:none}
-.sheet .va-head .sh-cerrar{order:-1}.sheet .va-head strong{flex:1;text-align:center;padding-right:38px}
+.sheet .va-head .sh-cerrar{order:-1}.sheet .va-head strong{flex:1;text-align:center;padding-right:47px}
 @media(max-width:720px){.sheet .va-caja::before{content:"";display:block;flex:0 0 auto;width:40px;height:5px;border-radius:3px;background:var(--muted);margin:-8px auto 4px}}
+@media(max-width:480px){.chat-history{height:calc(100dvh - 590px);min-height:180px}}
+.row.fields label select,.row.fields label input{flex:0 0 auto}
+@media(max-width:720px){.sheet#ventana-archivos{align-items:flex-end;padding:0}}

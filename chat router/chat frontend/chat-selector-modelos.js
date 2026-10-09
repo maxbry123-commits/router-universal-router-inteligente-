@@ -41,6 +41,7 @@ export function conectarSelectorModelos(ctx) {
     const s = chat().selectorQwen;
     pill.textContent = s ? s.icono + " " + s.label + " ⌄" : "✦ Selector Qwen ⌄";
     pill.classList.toggle("on", !!s);
+    window.RIU_SELECTOR_QWEN.seleccion = s ? { modelo_id_slug: s.modelo_id_slug, label: s.label, grupo: s.grupo, sesion: chat().sesion } : null;
   };
   const elegir = (m, g) => {
     const c = chat();
