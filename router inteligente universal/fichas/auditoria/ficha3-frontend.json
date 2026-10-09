@@ -52,7 +52,7 @@
   {"id": "N3", "modelo": "ficha-qwen37max", "rol": "analiza la arquitectura y propone solucion", "depende_de": ["N0"], "parallel_safe": true, "read_paths": ["tarea/"], "write_paths": ["salida/N3/"], "locks": []},
   {
    "id": "N4", "modelo": "ficha-dsv4pro",
-   "rol": "analiza los goals de N0 y las propuestas de N1, N2 y N3 y EJECUTA la tarea de programacion de code (unico ejecutor)",
+   "rol": "analiza los goals de N0 y las propuestas de N1, N2 y N3 y EJECUTA directamente la tarea de frontend (unico ejecutor). Una vez aprobada la ejecucion, continua hasta completarla: no emite salida intermedia, no pide confirmacion adicional y no aplaza el trabajo",
    "depende_de": ["N0", "N1", "N2", "N3"], "parallel_safe": true,
    "read_paths": ["tarea/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true
   },
