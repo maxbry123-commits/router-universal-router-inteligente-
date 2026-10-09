@@ -18,7 +18,7 @@ FICHA C (scheduler C) -+
 Clave `sk-sp-...` + base `https://token-plan.maas.qwencloudapi.com/compatible-mode/v1` (header Authorization: Bearer). Nunca mezclar con coding-intl, dashscope ni pay-as-you-go. La clave solo vive cifrada en `modelos-14`.
 
 ## Ask Council
-Es de 3 analizadores en paralelo (DeepSeek V4 Pro, GLM 5.2, Qwen 3.7 Max) y luego un ejecutor, dos revisiones y la SALIDA. No hay goals ni modelos de imagen o voz dentro del Council.
+Es de 3 analizadores en paralelo (DeepSeek V4 Pro, GLM 5.2, Qwen 3.7 Max) y luego un ejecutor, dos revisiones y la SALIDA. Los GOALS (12 de entrada y 12 de salida) van en las fichas 2 y 3: son datos/criterios con 0 llamadas a la API y los reciben los modelos del flujo. La ficha 1 (modelos individuales) NO lleva goals ni Council. No hay modelos de imagen ni voz dentro del Council.
 
 ## Salida, presupuesto y cache
 La SALIDA (el texto del ultimo paso) siempre se entrega. Aparte lleva una etiqueta: verificada solo si el Harness devuelve evidencia (exit_code 0, archivos, tests ejecutados y pasados, receipt); si no, queda SIN VERIFICAR (GAP_HARNESS_EXECUTOR) y no se promueve a la memoria del proyecto. El presupuesto de tokens (`task_budget`) es de la FICHA completa; `max_output_tokens` es el tope por llamada. La cache local no se cuenta como cached_tokens de la API.

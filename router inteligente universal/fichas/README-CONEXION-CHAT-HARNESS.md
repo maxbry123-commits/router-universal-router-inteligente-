@@ -80,10 +80,10 @@ Todas: `POST <harnessUrl>/<accion>` con JSON y `Authorization: Bearer <clave>`. 
 ## SISTEMA ACTUAL: FICHAS TOKEN PLAN (14 modelos QwenCloud) - actualizado 2026-10-09
 ```
 FICHA 1: SELECTOR 14 -> 1 MODELO -> EJECUTAR -> SALIDA
-FICHA 2: [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
-FICHA 3: [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
+FICHA 2: 12 GOALS(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> 12 GOALS(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
+FICHA 3: 12 GOALS(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> 12 GOALS(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
 ```
-- Sin goals. La SALIDA (texto del ultimo paso) siempre se entrega; aparte lleva la etiqueta verificado / SIN VERIFICAR (evidencia del Harness).
+- Goals (12 de entrada y 12 de salida): SOLO en las fichas 2 y 3, datos con 0 llamadas a la API, texto PONER AQUI; la ficha 1 no lleva goals. La SALIDA (texto del ultimo paso) siempre se entrega; aparte lleva la etiqueta verificado / SIN VERIFICAR (evidencia del Harness).
 - API: clave `sk-sp-...` + `https://token-plan.maas.qwencloudapi.com/compatible-mode/v1`. Nunca coding-intl ni dashscope. Clave solo cifrada en `modelos-14`.
 - 1 ficha = 1 tarea = 1 mini-sistema. Compartido: cola global (`motor/puerta.config.json`, 4 puestos, 10 min), candados de rutas entre fichas, almacen del Harness.
 - Sin Harness (falta RIU_DEEPSEEK_HARNESS_URL) la salida sale SIN VERIFICAR (GAP_HARNESS_EXECUTOR) y no se promueve a la memoria del proyecto.

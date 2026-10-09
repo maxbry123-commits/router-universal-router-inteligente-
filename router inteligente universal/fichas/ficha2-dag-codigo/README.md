@@ -1,9 +1,9 @@
 # Ficha 2 - DAG codigo (Ask Council)
 
-Ask Council = SOLO DeepSeek V4 Pro + GLM 5.2 + Qwen 3.7 Max, en paralelo. Despues ejecuta Qwen 3.8 Max, revisa GLM 5.2, revisa Qwen 3.8 Max y sale la SALIDA. Sin goals.
+Ask Council = SOLO DeepSeek V4 Pro + GLM 5.2 + Qwen 3.7 Max, en paralelo. Despues ejecuta Qwen 3.8 Max, revisa GLM 5.2, revisa Qwen 3.8 Max y sale la SALIDA. Los 12 goals de entrada (N0) y los 12 de salida (N5) son datos/criterios de este Ask Council: 0 llamadas a la API; los reciben los modelos del flujo. Falta: texto de los 24 goals (PONER AQUI).
 ## Como funciona (horizontal)
 ```
-[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
+12 GOALS entrada(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> 12 GOALS salida(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
 ```
 
 Bloques de la ficha (cada tarea nace con TODO esto y se apaga al terminar):

@@ -1,9 +1,9 @@
 # Ficha 3 - Frontend (Ask Council)
 
-Mismo Ask Council que la ficha 2; solo cambia quien ejecuta: DeepSeek V4 Pro. Sin goals.
+Mismo Ask Council que la ficha 2; solo cambia quien ejecuta: DeepSeek V4 Pro. Los 12 goals de entrada (N0) y los 12 de salida (N5) son datos/criterios de este Ask Council: 0 llamadas a la API; los reciben los modelos del flujo. Falta: texto de los 24 goals (PONER AQUI).
 ## Como funciona (horizontal)
 ```
-[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
+12 GOALS entrada(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> 12 GOALS salida(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
 ```
 
 Bloques de la ficha (cada tarea nace con TODO esto y se apaga al terminar):

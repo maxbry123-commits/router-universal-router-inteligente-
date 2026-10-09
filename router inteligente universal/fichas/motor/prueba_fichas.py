@@ -162,19 +162,21 @@ def prueba_ficha_dag(tmp, base, f2, f3):
     puerta = Puerta(os.path.join(tmp, 'f2.db'), 4)
     t0 = time.time()
     res, mem = correr(f2, 'T-2', tmp, base, puerta)
-    n = {k: llamadas(k) for k in ('N1', 'N2', 'N3', 'N4', 'N5', 'N6')}
+    n = {k: llamadas(k) for k in ('N0', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7')}
     ids = [x['id'] for x in f2['nodos']]
-    chequeo('FICHA 2: estructura exacta de 6 pasos con modelo, sin goals ni verificador como paso', ids == ['N1', 'N2', 'N3', 'N4', 'N5', 'N6'] and all(x.get('modelo') for x in f2['nodos']) and not any('goals' in x or x.get('tipo') == 'goals' for x in f2['nodos']), ids)
-    chequeo('FICHA 2: entrega la SALIDA del ultimo paso (Qwen 3.8 Max)', res['estado'] == 'SALIDA' and 'ok ficha-qwen38max N6' in res['salida'], (res['estado'], res['salida'][:40], round(time.time() - t0, 1)))
+    g = [x for x in f2['nodos'] if x.get('tipo') == 'goals']
+    chequeo('FICHA 2: 12 goals entrada + Council de 3 + ejecutor + 12 goals salida + 2 revisiones', ids == ['N0', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7'] and [x['id'] for x in g] == ['N0', 'N5'] and all(len(x['goals']) == 12 and x['ejecutar_api'] is False for x in g), ids)
+    chequeo('FICHA 2: entrega la SALIDA del ultimo paso (Qwen 3.8 Max)', res['estado'] == 'SALIDA' and 'ok ficha-qwen38max N7' in res['salida'], (res['estado'], res['salida'][:40], round(time.time() - t0, 1)))
     chequeo('FICHA 2: con evidencia del Harness queda marcada como verificada', res['verificado'] is True and res['avisos'] == [], (res['verificado'], res['avisos']))
-    chequeo('FICHA 2: N1, N2, N3 hacen exactamente 3 llamadas y se solapan en paralelo', len(n['N1']) + len(n['N2']) + len(n['N3']) == 3 and solape_max(n['N1'] + n['N2'] + n['N3']) == 3)
+    chequeo('FICHA 2: N0 y N5 (goals) son datos: 0 llamadas a la API, 0 puestos de cola', len(n['N0']) == 0 and len(n['N5']) == 0 and res['nodos']['N0'] == 'ok' and res['nodos']['N5'] == 'ok')
+    chequeo('FICHA 2: N1, N2, N3 hacen exactamente 3 llamadas en paralelo y reciben los goals de entrada', len(n['N1']) + len(n['N2']) + len(n['N3']) == 3 and solape_max(n['N1'] + n['N2'] + n['N3']) == 3 and all('CRITERIOS goals_de_entrada' in n[k][0][4] for k in ('N1', 'N2', 'N3')))
     fin123 = max(x[3] for k in ('N1', 'N2', 'N3') for x in n[k])
-    chequeo('FICHA 2: N4 (Qwen 3.8 Max) ejecuta despues de los tres y recibe sus propuestas', n['N4'][0][2] >= fin123 and n['N4'][0][0] == 'ficha-qwen38max' and all('[' + k + ']' in n['N4'][0][4] for k in ('N1', 'N2', 'N3')))
-    chequeo('FICHA 2: N5 (GLM 5.2) revisa lo de N4 y luego N6 (Qwen 3.8 Max) revisa lo de N5', n['N5'][0][0] == 'ficha-glm52' and '[N4]' in n['N5'][0][4] and n['N6'][0][0] == 'ficha-qwen38max' and '[N5]' in n['N6'][0][4] and n['N4'][0][3] <= n['N5'][0][2] and n['N5'][0][3] <= n['N6'][0][2])
+    chequeo('FICHA 2: N4 (Qwen 3.8 Max) ejecuta despues de los tres, con sus propuestas y los goals de entrada', n['N4'][0][2] >= fin123 and n['N4'][0][0] == 'ficha-qwen38max' and all('[' + k + ']' in n['N4'][0][4] for k in ('N1', 'N2', 'N3')) and 'CRITERIOS goals_de_entrada' in n['N4'][0][4])
+    chequeo('FICHA 2: N6 (GLM 5.2) recibe N4 + goals de salida N5; N7 (Qwen 3.8 Max) recibe N6 + N5', '[N4]' in n['N6'][0][4] and '[N5]' in n['N6'][0][4] and '[N6]' in n['N7'][0][4] and '[N5]' in n['N7'][0][4] and n['N6'][0][0] == 'ficha-glm52' and n['N7'][0][0] == 'ficha-qwen38max' and n['N4'][0][3] <= n['N6'][0][2] and n['N6'][0][3] <= n['N7'][0][2])
     chequeo('FICHA 2: usa unicamente DeepSeek V4 Pro, GLM 5.2, Qwen 3.7 Max y Qwen 3.8 Max', set(x[0] for x in S['log']) == CUATRO and set(f2['modelos']) == CUATRO, sorted(set(x[0] for x in S['log'])))
     chequeo('FICHA 2: 6 llamadas en total y nunca mas de 4 a la vez', len(S['log']) == 6 and S['max'] <= 4, (len(S['log']), S['max']))
     chequeo('FICHA 2: tokens = consumo real de la API', res['tokens']['total_api_tokens'] == 6 * 150, res['tokens'])
-    chequeo('FICHA 2: ledger por nodo y solo lo verificado se promueve a la memoria del proyecto', bool(mem.cargar('ledger', 'N6')) and bool(mem.p.load('project/YAIWES', 'resultado/T-2')))
+    chequeo('FICHA 2: ledger por nodo y solo lo verificado se promueve a la memoria del proyecto', bool(mem.cargar('ledger', 'N7')) and bool(mem.p.load('project/YAIWES', 'resultado/T-2')))
     reset()
     res2, _ = correr(f2, 'T-2', tmp, base, puerta, mem.p)
     t = res2['tokens']
@@ -182,7 +184,8 @@ def prueba_ficha_dag(tmp, base, f2, f3):
     reset()
     r3, _ = correr(f3, 'T-3', tmp, base, puerta)
     n3 = {k: llamadas(k) for k in ('N1', 'N4')}
-    chequeo('FICHA 3: mismo Council de 3 y ejecuta DeepSeek V4 Pro; usa solo esos 4 modelos', r3['estado'] == 'SALIDA' and n3['N4'][0][0] == 'ficha-dsv4pro' and set(x[0] for x in S['log']) == CUATRO and len(S['log']) == 6 and set(f3['modelos']) == CUATRO)
+    g3 = [x['id'] for x in f3['nodos'] if x.get('tipo') == 'goals']
+    chequeo('FICHA 3: mismo Ask Council con sus 24 goals y ejecuta DeepSeek V4 Pro; usa solo esos 4 modelos', r3['estado'] == 'SALIDA' and g3 == ['N0', 'N5'] and n3['N4'][0][0] == 'ficha-dsv4pro' and set(x[0] for x in S['log']) == CUATRO and len(S['log']) == 6 and set(f3['modelos']) == CUATRO)
     reset()
     sin, m4 = correr(f2, 'T-4', tmp, base, puerta, None, None, None, None)
     chequeo('SALIDA SIEMPRE: sin Harness igual se entrega la salida, marcada SIN verificar (GAP_HARNESS_EXECUTOR) y no se promueve', sin['estado'] == 'SALIDA' and bool(sin['salida']) and sin['verificado'] is False and 'GAP_HARNESS_EXECUTOR' in str(sin['avisos']) and not m4.p.load('project/YAIWES', 'resultado/T-4'), sin['avisos'])
@@ -195,7 +198,7 @@ def prueba_ficha1(tmp, base, f1):
     reset()
     puerta = Puerta(os.path.join(tmp, 'f1.db'), 4)
     r, _ = correr(f1, 'T-1', tmp, base, puerta, modelo='ficha-glm52')
-    chequeo('FICHA 1: SELECTOR -> 1 modelo -> EJECUTAR -> SALIDA (una sola llamada, sin Council ni goals)', r['estado'] == 'SALIDA' and r['verificado'] is None and len(S['log']) == 1 and S['log'][0][0] == 'ficha-glm52' and f1['ask_council'] is False and f1['dsl']['parallel']['enabled'] is False and f1['dsl']['parallel']['max_parallel'] == 1)
+    chequeo('FICHA 1: SELECTOR -> 1 modelo -> EJECUTAR -> SALIDA (una sola llamada, sin Council ni goals)', r['estado'] == 'SALIDA' and r['verificado'] is None and len(S['log']) == 1 and S['log'][0][0] == 'ficha-glm52' and f1['ask_council'] is False and 'nodos' not in f1 and 'goals' not in f1 and f1['dsl']['parallel']['enabled'] is False and f1['dsl']['parallel']['max_parallel'] == 1)
     reset()
     r, _ = correr(f1, 'T-1b', tmp, base, puerta, modelo='ficha-qwenimg30pro')
     chequeo('FICHA 1: un modelo de imagen/voz no se llama por chat (GAP_ENDPOINT_NO_CHAT, 0 llamadas)', r['estado'] == 'GAP' and len(S['log']) == 0 and 'GAP_ENDPOINT_NO_CHAT' in str(r['gaps']))
@@ -268,9 +271,10 @@ def prueba_tres_fichas(tmp, base, F):
     malo = json.loads(json.dumps(f2))
     malo['todos_los_modelos'] = list(f1['modelos'])
     malo['nodos'][0]['participan'] = 'todos'
-    malo['nodos'].insert(0, {'id': 'N0', 'tipo': 'goals', 'ejecutar_api': False, 'goals': [], 'depende_de': []})
+    uno = json.loads(json.dumps(f1))
+    uno['goals'] = [{'id': 'G01', 'texto': 'x'}]
     malo['cola_global'] = {'puestos': 9}
-    chequeo('ANTI-REGRESION: el validador rechaza los 14 en el Council, nodos de goals y puestos propios', len(validar_ficha(malo, FICHAS + '/ficha2-dag-codigo', CFG)) >= 4)
+    chequeo('ANTI-REGRESION: el validador rechaza los 14 en el Council, goals con modelos, puestos propios y goals en la ficha 1', len(validar_ficha(malo, FICHAS + '/ficha2-dag-codigo', CFG)) >= 3 and len(validar_ficha(uno, FICHAS + '/ficha1-modelos', CFG)) >= 1)
     chequeo('3 FICHAS: ninguna lleva numeros de cola propios; memoria sin escritura directa al proyecto', all('cola_global' not in f and f['cola'] == {'pool': 'qwen-token-plan'} and f['memory']['write_project_memory'] is False and f['memory']['provider'] == 'harness' for f in F))
     reset()
     puerta = Puerta(os.path.join(tmp, 'tres.db'), 4)
@@ -300,6 +304,42 @@ def prueba_token_plan(tmp):
     chequeo('TOKEN PLAN: los 14 ids exactos del plan, sin inventar versiones', {n: p.modelo for n, p in P.items()} == IDS, {n: p.modelo for n, p in P.items() if IDS.get(n) != p.modelo})
 
 
+def sondear(url, carga, key):
+    import urllib.error
+    import urllib.request
+    q = urllib.request.Request(url, json.dumps(carga).encode(), {'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'User-Agent': 'ficha-motor/1.0'})
+    try:
+        r = urllib.request.urlopen(q, timeout=120)
+        return r.status, r.read()[:140].decode('utf-8', 'replace')
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()[:200].decode('utf-8', 'replace')
+    except Exception as e:
+        return 'ERR', type(e).__name__
+
+
+def prueba_real_14(tmp, f1):
+    """Prueba REAL de cada uno de los 14 modelos de la ficha 1 con la clave del Token Plan. Solo si FICHA_PRUEBA_REAL=14."""
+    if os.environ.get('FICHA_PRUEBA_REAL') != '14':
+        return
+    from .ficha_os import fabrica_motores
+    P = proveedores_desde_yml(leer_texto(FICHAS + '/modelos-14/harness-modelos-14.cordis.yml'), tmp)
+    m = f1['memory']
+    base = 'https://token-plan.maas.qwencloudapi.com/compatible-mode/v1'
+    key = P['ficha-glm52']._k
+    for s in f1['selector']:
+        mid, tipo, t0 = s['id'], s['tipo'], time.time()
+        if tipo == 'texto':
+            memoria = Memoria(ProveedorMock(os.path.join(tmp, 'm' + mid)), 'T-' + mid, m['project_memory'], m['read_project_memory'], m['write_task_memory'], m['write_project_memory'])
+            res = FichaOS(f1, 'T-' + mid, 'Responde solo con la palabra OK.', fabrica_motores(P, 90), Puerta(os.path.join(tmp, mid + '.db'), 4), memoria, mid, dormir=lambda x: None).correr()
+            chequeo('MODELO ' + str(s['cola']) + ' ' + s['nombre'] + ' (' + P[mid].modelo + ') por la ficha 1', res['estado'] == 'SALIDA' and res['tokens']['total_api_tokens'] > 0, (res['estado'], res['tokens']['total_api_tokens'], res['gaps'], round(time.time() - t0, 1)))
+        elif tipo == 'imagen':
+            print('INFO MODELO ' + str(s['cola']) + ' ' + s['nombre'] + ' (' + P[mid].modelo + ') /images/generations ->', sondear(base + '/images/generations', {'model': P[mid].modelo, 'prompt': 'un circulo rojo', 'n': 1}, key), flush=True)
+        elif tipo == 'texto-a-voz':
+            print('INFO MODELO ' + str(s['cola']) + ' ' + s['nombre'] + ' (' + P[mid].modelo + ') /audio/speech ->', sondear(base + '/audio/speech', {'model': P[mid].modelo, 'input': 'hola', 'voice': 'alloy'}, key), flush=True)
+        else:
+            print('INFO MODELO ' + str(s['cola']) + ' ' + s['nombre'] + ' (' + P[mid].modelo + ') NO PROBADO: ' + ('necesita un archivo de audio' if tipo == 'voz-a-texto' else 'usa websocket (tiempo real)'), flush=True)
+
+
 def prueba_real_token_plan(tmp, f1):
     """UNA llamada real con UN solo modelo (qwen3.7-plus) por la ficha 1. Solo si FICHA_PRUEBA_REAL=1."""
     if os.environ.get('FICHA_PRUEBA_REAL') != '1':
@@ -326,5 +366,6 @@ if __name__ == '__main__':
     prueba_tres_fichas(tmp, base, F)
     prueba_token_plan(tmp)
     prueba_real_token_plan(tmp, F[0])
+    prueba_real_14(tmp, F[0])
     print('RESULTADO_FICHAS', sum(RES), '/', len(RES), flush=True)
     sys.exit(0 if all(RES) else 1)

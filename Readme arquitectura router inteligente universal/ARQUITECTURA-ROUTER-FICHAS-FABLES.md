@@ -3,15 +3,15 @@
 **Estructura vigente:**
 ```
 FICHA 1: SELECTOR 14 -> 1 MODELO -> EJECUTAR -> SALIDA
-FICHA 2: [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
-FICHA 3: [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
+FICHA 2: 12 GOALS(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> 12 GOALS(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
+FICHA 3: 12 GOALS(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> 12 GOALS(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA
 ```
 
 **Implementado** (en `router inteligente universal/fichas/`, fuera del Router): FichaOS (scheduler local por ficha), Puerta SQLite global (4 puestos, 10 min, config unica `motor/puerta.config.json`), candados de rutas entre fichas, DAG, presupuesto de tokens por ficha, cache/ledger por referencia al Harness, watchdog, pruebas, 3 fichas selladas con copias de auditoria.
 
-**GAPS abiertos:** memoria real del Harness (`conectar_harness`), ejecutor real del Harness (`RIU_DEEPSEEK_HARNESS_URL` sin configurar: la salida sale SIN VERIFICAR), endpoint de los modelos de imagen/voz.
+**GAPS abiertos:** memoria real del Harness (`conectar_harness`), ejecutor real del Harness (`RIU_DEEPSEEK_HARNESS_URL` sin configurar: la salida sale SIN VERIFICAR), endpoint de los modelos de imagen/voz, texto de los 24 goals.
 
-**Corregido:** Ask Council = 3 analizadores (no 14); sin goals; la SALIDA siempre se entrega; presupuesto por ficha; locks entre fichas; Token Plan (`token-plan.maas.qwencloudapi.com`, clave `sk-sp-*`); cache local separada de cached_tokens de la API.
+**Corregido:** Ask Council = 3 analizadores (no 14); goals = datos con 0 API solo en las fichas 2 y 3 (la ficha 1 sin goals); la SALIDA siempre se entrega; presupuesto por ficha; locks entre fichas; Token Plan (`token-plan.maas.qwencloudapi.com`, clave `sk-sp-*`); cache local separada de cached_tokens de la API.
 
 **Cifras historicas:** los 8/32 workers y demas cifras de abajo son HISTORICAS (sistema anterior), no el limite del Token Plan actual (4 puestos).
 

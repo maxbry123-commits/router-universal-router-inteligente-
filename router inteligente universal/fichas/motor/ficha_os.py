@@ -386,9 +386,8 @@ def validar_ficha(f, base, config_puerta=None):
             for d in n.get('depende_de', []):
                 if d not in ids:
                     errs.append('dependencia inexistente ' + d + ' en ' + n['id'])
-    for n in (f.get('nodos', []) if f.get('tipo') == 'dag' else []):
-        if 'participan' in n or n.get('tipo') == 'goals' or 'goals' in n:
-            errs.append('goals/participan no forman parte de la estructura de las fichas: ' + n['id'])
+    if f.get('tipo') == 'individual' and (f.get('nodos') or f.get('goals')):
+        errs.append('la ficha de modelos individuales no lleva goals ni nodos: los goals solo van en las fichas con Ask Council')
     return errs
 
 
