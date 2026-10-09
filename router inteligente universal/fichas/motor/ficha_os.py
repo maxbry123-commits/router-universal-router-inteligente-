@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 
 from .api_engine import ErrorApi, Motor, Proveedor, tokens_est
+from .herramientas import HerramientasFicha
 from .locks import Candados, solapa
 from .memoria import Memoria, ProveedorMock, conectar_harness
 from .modelos_especiales import fabrica_especiales
@@ -44,8 +45,23 @@ def evidencia_ok(ev):
 
 
 class HarnessEjecutor:
-    """Adaptador al DeepSeek Harness EXISTENTE (mismo contrato que plugins/deepseek_harness del Router: POST RIU_DEEPSEEK_HARNESS_URL + /invoke).
-    Sin URL configurada devuelve None y la ficha queda en GAP_HARNESS_EXECUTOR (no se finge ejecucion)."""
+    """Adaptador al DeepSeek Harness con acceso nativo al ToolHost del Router.
+
+    Los tokens nunca se envian al modelo ni se incluyen en el payload remoto. El
+    agente/Harness usa HerramientasFicha server-side para GitHub, HF y plugins.
+    """
+
+    def __init__(self, herramientas=None):
+        self.herramientas = herramientas or HerramientasFicha()
+
+    def ejecutar_tool(self, plugin_id, action, payload=None):
+        return self.herramientas.plugin(plugin_id, action, payload or {})
+
+    def github(self, action, payload=None):
+        return self.herramientas.github(action, payload or {})
+
+    def huggingface(self, action, payload=None):
+        return self.herramientas.huggingface(action, payload or {})
 
     def __call__(self, nodo, salida_modelo, ctx):
         base = (os.getenv('RIU_DEEPSEEK_HARNESS_URL') or '').strip().rstrip('/')
@@ -54,7 +70,15 @@ class HarnessEjecutor:
         headers = {'Content-Type': 'application/json'}
         if os.getenv('RIU_DEEPSEEK_HARNESS_API_KEY'):
             headers['Authorization'] = 'Bearer ' + os.environ['RIU_DEEPSEEK_HARNESS_API_KEY']
-        cuerpo = {'action': 'invoke', 'task_id': ctx['task'], 'nodo': nodo['id'], 'modelo': nodo['modelo'], 'plan': salida_modelo, 'write_paths': ctx.get('paths')}
+        cuerpo = {
+            'action': 'invoke',
+            'task_id': ctx['task'],
+            'nodo': nodo['id'],
+            'modelo': nodo['modelo'],
+            'plan': salida_modelo,
+            'write_paths': ctx.get('paths'),
+            'herramientas': self.herramientas.capacidades(),
+        }
         req = urllib.request.Request(base + (os.getenv('RIU_DEEPSEEK_HARNESS_PATH') or '/invoke'), json.dumps(cuerpo).encode(), headers, method='POST')
         try:
             with urllib.request.urlopen(req, timeout=900) as r:
@@ -108,6 +132,7 @@ class FichaOS:
         self.limite = ficha.get('motor', {}).get('limite_llamada_chars', 18000)
         self.mf, self.puerta, self.mem, self.dormir = motor_factory, puerta, memoria, dormir
         self.candados, self.harness = candados, harness
+        self.herramientas = getattr(harness, 'herramientas', None) or HerramientasFicha()
         dsl = ficha.get('dsl', {})
         par = dsl.get('parallel', {})
         self.max_par = par.get('max_parallel', 4) if par.get('enabled', True) else 1
@@ -126,6 +151,10 @@ class FichaOS:
         self.cv = threading.Condition()
         self.hilos = []
         self.fin = threading.Event()
+
+    def ejecutar_tool(self, plugin_id, action, payload=None):
+        """Entrada nativa de la ficha a cualquier herramienta registrada del Router."""
+        return self.herramientas.plugin(plugin_id, action, payload or {})
 
     def _expandir(self, ficha, modelo):
         if ficha.get('tipo') == 'individual':
@@ -475,7 +504,9 @@ def main():
     prov_mem = ProveedorMock(estado) if os.environ.get('FICHA_MEMORIA') == 'mock' else conectar_harness()
     m = f['memory']
     mem = Memoria(prov_mem, task, m.get('project_memory', 'YAIWES'), m.get('read_project_memory', True), m.get('write_task_memory', True), m.get('write_project_memory', False))
-    res = FichaOS(f, task, texto, fabrica_motores(provs, f['dsl'].get('timeouts', {}).get('api_seconds', 90), f.get('motor', {}).get('limite_llamada_chars', 18000)), puerta, mem, modelo, candados=candados, harness=HarnessEjecutor(), especiales=fabrica_especiales(provs, carpeta=estado), plantilla=plantilla, mejoras=mejoras).correr()
+    herramientas = HerramientasFicha()
+    harness = HarnessEjecutor(herramientas)
+    res = FichaOS(f, task, texto, fabrica_motores(provs, f['dsl'].get('timeouts', {}).get('api_seconds', 90), f.get('motor', {}).get('limite_llamada_chars', 18000)), puerta, mem, modelo, candados=candados, harness=harness, especiales=fabrica_especiales(provs, carpeta=estado), plantilla=plantilla, mejoras=mejoras).correr()
     print(json.dumps({k: res[k] for k in ('task', 'ficha', 'estado', 'verificado', 'avisos', 'tokens', 'nodos', 'gaps')}))
 
 
