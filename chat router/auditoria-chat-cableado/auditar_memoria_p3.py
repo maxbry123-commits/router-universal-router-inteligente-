@@ -8,7 +8,9 @@ Entra por la misma puerta pública que usa la UI: LIVE_URL.json de main -> /plug
 y las rutas /memoria/* y /chat/history del Router. Escribe un JSON con PASS/FAIL por eslabón.
 Para "recuperación después de reinicio": guarda las sesiones de prueba en --estado; al volver a correrlo después de un
 cambio de Job comprueba que esos turnos siguen en /chat/history con un job_id distinto.
-Uso: python3 auditar_memoria_p3.py [--modelo groq-qwen-3-8] [--estado estado.json] [--salida informe.json]
+Con --sesiones-previas s1,s2 se mide ya, sin reiniciar nada: turnos de esas sesiones escritos ANTES de que naciera el Job
+vivo (ts < creación del Job, leída del id del Job, y < LIVE_URL.updated) que hoy se leen en /chat/history del Job vivo.
+Uso: python3 auditar_memoria_p3.py [--modelo groq-qwen-3-8] [--estado estado.json] [--salida informe.json] [--sesiones-previas a,b]
 """
 import argparse, json, os, random, string, time, urllib.request
 
@@ -46,6 +48,7 @@ def main():
     ap.add_argument("--modelo", default="groq-qwen-3-8")
     ap.add_argument("--estado", default="estado-auditoria-p3.json")
     ap.add_argument("--salida", default="informe-auditoria-p3.json")
+    ap.add_argument("--sesiones-previas", default="", help="sesiones escritas en un Job anterior, separadas por coma")
     a = ap.parse_args()
     _, live = http("GET", LIVE + "?t=%d" % time.time())
     base, job = live["LIVE_URL"], live.get("job_id")
@@ -90,6 +93,17 @@ def main():
     s3, se = http("GET", base + "/memoria/search?scope=%s&query=%s&k=5" % (scope, palabra))
     check("/memoria/search", s3 == 200 and palabra in json.dumps(se), {"http": s3})
 
+    nacido = min(float(live.get("updated") or 9e18), int(str(job)[:8], 16) if job else 9e18)  # ObjectId: 8 hex = segundos
+    medidas_previas = 0
+    for sp in [x.strip() for x in a.sesiones_previas.split(",") if x.strip()]:
+        s, hp = http("GET", base + "/chat/history/" + sp + "?limit=1000")
+        viejos = [m for m in (hp or {}).get("messages") or [] if m.get("ts") and m["ts"] < nacido]
+        medidas_previas += 1
+        check("recuperación después de reinicio: sesión %s escrita antes del Job %s y leída en él" % (sp, job), s == 200 and len(viejos) > 0,
+              {"sesion": sp, "http": s, "turnos_total": (hp or {}).get("turns"), "mensajes_anteriores_al_job": len(viejos),
+               "primer_ts": time.strftime("%Y-%m-%d %H:%M:%S %z", time.localtime(min(m["ts"] for m in viejos))) if viejos else None,
+               "job_nacio": time.strftime("%Y-%m-%d %H:%M:%S %z", time.localtime(nacido))})
+
     previo = json.load(open(a.estado)) if os.path.exists(a.estado) else []
     for p in previo:
         if p.get("job_id") == job:
@@ -97,7 +111,7 @@ def main():
         s, hp = http("GET", base + "/chat/history/" + p["sesion"])
         ok = s == 200 and any(p["palabra"] in m.get("content", "") for m in (hp or {}).get("messages") or [])
         check("recuperación después de reinicio (sesión del Job %s leída en Job %s)" % (p["job_id"], job), ok, {"sesion": p["sesion"], "http": s})
-    if not any(p.get("job_id") != job for p in previo):
+    if not medidas_previas and not any(p.get("job_id") != job for p in previo):
         filas.append({"eslabon": "recuperación después de reinicio", "resultado": "PENDIENTE",
                       "evidencia": "no hay sesiones de un Job anterior en %s; volver a correr tras el próximo cambio de Job" % a.estado})
     json.dump(previo + [{"sesion": sesion, "palabra": palabra, "job_id": job, "ts": time.time()}], open(a.estado, "w"), indent=1)
