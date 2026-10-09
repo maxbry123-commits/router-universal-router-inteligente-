@@ -15,6 +15,22 @@ from integration.plugin_host.host import get_host
 from plugins.puente_chat import herramientas as herramientas_chat
 
 HF_TOKEN_VARS = ("HF_CONTROL_JOBS_TOKEN", "HF_TOKEN", "HF_WRITE_TOKEN")
+ROUTER_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "router_tool",
+        "description": "Ejecuta una accion de cualquier plugin/herramienta registrada y habilitada en el Router.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "plugin_id": {"type": "string"},
+                "action": {"type": "string"},
+                "payload": {"type": "object"},
+            },
+            "required": ["plugin_id", "action"],
+        },
+    },
+}
 
 
 def _claves_banco(provider: str) -> list[str]:
@@ -63,7 +79,7 @@ class HerramientasFicha:
                 {"id": p.get("id"), "status": p.get("status"), "enabled": bool(p.get("enabled"))}
                 for p in plugins
             ],
-            "tools": [t.get("function", {}).get("name") for t in herramientas_chat.TOOLS],
+            "tools": [t.get("function", {}).get("name") for t in herramientas_chat.TOOLS] + ["router_tool"],
             "github": {
                 "token_present": bool(cuentas),
                 "accounts": sorted(cuentas),
@@ -81,12 +97,15 @@ class HerramientasFicha:
         }
 
     def definiciones_modelo(self) -> list[dict[str, Any]]:
-        """Schemas function-calling reales de GitHub/HF, sin secretos."""
-        return list(herramientas_chat.TOOLS)
+        """Schemas function-calling reales, sin secretos."""
+        return list(herramientas_chat.TOOLS) + [ROUTER_TOOL]
 
     def ejecutar_model_tool(self, nombre: str, args: dict[str, Any] | None = None) -> str:
         """Ejecuta una tool real; los tokens se quedan server-side."""
-        return herramientas_chat.ejecutar(str(nombre), args or {})
+        p = args or {}
+        if str(nombre) == "router_tool":
+            return str(self.plugin(str(p.get("plugin_id") or ""), str(p.get("action") or ""), p.get("payload") or {}))
+        return herramientas_chat.ejecutar(str(nombre), p)
 
     def plugin(self, plugin_id: str, action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         """Acceso a cualquier herramienta registrada, respetando su ficha/acciones/interruptor."""
