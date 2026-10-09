@@ -4,17 +4,31 @@
 // window.RIU_SELECTORES { activo, selectores, consil, encender(id), apagar() } + evento 'riu:selector-activo' { activo, anterior, nombre }.
 const CLAVE = "riu_selector_activo";  // sessionStorage: sobrevive a recargas en esta pestaña
 const SELECTORES = [  // nombres exactos de Antonio
-  { id: "nvidia-groq-team", nombre: "Nvidia groq team", pills: ["#sel-ngt", "#ficha"] },  // las 11 fichas
+  { id: "nvidia-groq-team", nombre: "Nvidia groq team", pills: ["#sel-ngt", "#ficha"] },
   { id: "ask-consil-nvidia-groq", nombre: "Ask consil Nvidia groq", pills: ["#sel-cn"] },
-  { id: "team-qwen", nombre: "Team qwen", pills: ["#sel-nuevo"] },  // los 14 modelos Qwen
+  { id: "team-qwen", nombre: "Team qwen", pills: ["#sel-nuevo"] },  // los 14 modelos QwenCloud
   { id: "ask-consil-code-qwen-team", nombre: "Ask cónsil code qwen team", pills: ["#sel-cc"] },
   { id: "ask-consil-fromtend-qwen-team", nombre: "Ask consil fromtend qwen team", pills: ["#sel-cf"] },
 ];
 const POWER = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>';
-const DIAGRAMAS = {  // micro diagramas transversales horizontales (texto exacto de Antonio); Ask consil Nvidia groq: pendiente
+const DIAGRAMAS = {  // micro diagramas transversales horizontales; Ask consil Nvidia groq sigue pendiente de definición explícita
   "team-qwen": { sel: "#team-qwen-diagrama", texto: "SELECTOR 14 → 1 MODELO → EJECUTAR → SALIDA" },
   "ask-consil-code-qwen-team": { sel: "#consil-code-diagrama", texto: "[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] → Qwen 3.8 Max EJECUTA → GLM 5.2 REVISA → Qwen 3.8 Max REVISA → SALIDA" },
   "ask-consil-fromtend-qwen-team": { sel: "#consil-frontend-diagrama", texto: "[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] → DeepSeek V4 Pro EJECUTA → GLM 5.2 REVISA → Qwen 3.8 Max REVISA → SALIDA" },
+};
+const CONSIL_MODELOS = {
+  "ask-consil-code-qwen-team": [
+    ["DeepSeek V4 Pro", "Analiza arquitectura · paralelo"],
+    ["GLM 5.2", "Analiza · paralelo · revisa/refactoriza"],
+    ["Qwen 3.7 Max", "Analiza arquitectura · paralelo"],
+    ["Qwen 3.8 Max", "Ejecuta código · revisión final"],
+  ],
+  "ask-consil-fromtend-qwen-team": [
+    ["DeepSeek V4 Pro", "Analiza · paralelo · ejecuta frontend"],
+    ["GLM 5.2", "Analiza · paralelo · revisa/refactoriza"],
+    ["Qwen 3.7 Max", "Analiza · paralelo"],
+    ["Qwen 3.8 Max", "Revisión final"],
+  ],
 };
 const INFO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>';
 const pintarDiagrama = (caja, texto) => {  // pasos en línea, desplazable en horizontal; el texto queda exacto (" → " entre pasos)
@@ -37,7 +51,7 @@ const ICO_F = {  // iconos de línea para las hojas con el mismo diseño que Tea
 const icoFicha = (id) => id.startsWith("ask-consil") ? "pensar" : id === "motor-descarga" ? "flecha" : id.startsWith("motor-") ? "lupa" : "chip";  // equivalente de línea del emoji original
 const limpia = (t) => t.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim();
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
-const decorarFichas = (lista) => {  // Nvidia groq team: las MISMAS 11 fichas, mismo orden, sin cabeceras; estilo de fila Team qwen (icono, título, check azul)
+const decorarFichas = (lista) => {  // Nvidia groq team: las MISMAS fichas reales de RIU_CONFIG, mismo orden; no inventa proveedores
   const filas = [...lista.children].filter((e) => e.matches("button.fila"));
   if (!filas.length) return;
   const mods = window.RIU_CONFIG?.modelos || [], caja = el("div", "mod-grupo");
@@ -53,12 +67,23 @@ const decorarFichas = (lista) => {  // Nvidia groq team: las MISMAS 11 fichas, m
   }
   lista.replaceChildren(caja);
 };
-const decorarPendiente = (lista, quitar) => {  // Ask consil Nvidia groq: fila "Modelos pendientes" sin cabecera; code/fromtend: solo el diagrama
+const decorarPendiente = (lista) => {  // Ask consil Nvidia groq: todavía no se inventan modelos ni flujo
   const v = lista && lista.querySelector(":scope > .consil-vacio");
   if (!v) return;
-  if (quitar) { lista.replaceChildren(); return; }
   const caja = el("div", "mod-grupo"), f = el("div", "mod-fila mod-pendiente"), ico = el("span", "mod-ico"), txt = el("span", "mod-txt");
   ico.innerHTML = svg(ICO_F.pendiente); txt.append(el("b", "", v.textContent)); f.append(ico, txt, el("span", "mod-ck")); caja.append(f);
+  lista.replaceChildren(caja);
+};
+const decorarConsil = (lista, modelos) => {  // vista informativa; no ejecuta nada ni finge backend
+  if (!lista || !modelos?.length) return;
+  const caja = el("div", "mod-grupo");
+  for (const [nombre, rol] of modelos) {
+    const f = el("div", "mod-fila"), ico = el("span", "mod-ico"), txt = el("span", "mod-txt");
+    ico.innerHTML = svg(ICO_F.pensar);
+    txt.append(el("b", "", nombre), el("small", "", rol));
+    f.append(ico, txt, el("span", "mod-ck"));
+    caja.append(f);
+  }
   lista.replaceChildren(caja);
 };
 const tira_id = (id) => "dg-" + id;
@@ -69,10 +94,10 @@ const escribir = (v) => { try { v ? sessionStorage.setItem(CLAVE, v) : sessionSt
 window.RIU_SELECTORES = window.RIU_SELECTORES || {
   activo: null,
   selectores: SELECTORES.map((s) => ({ id: s.id, nombre: s.nombre })),
-  consil: {  // modelos vacíos hasta que Antonio los dé; el micro diagrama transversal se pinta dentro de estos contenedores
-    "ask-consil-nvidia-groq": { modelos: [], diagrama: "#consil-nvidia-diagrama" },
-    "ask-consil-code-qwen-team": { modelos: [], diagrama: "#consil-code-diagrama" },
-    "ask-consil-fromtend-qwen-team": { modelos: [], diagrama: "#consil-frontend-diagrama" },
+  consil: {
+    "ask-consil-nvidia-groq": { modelos: [], diagrama: "#consil-nvidia-diagrama", estado: "PENDIENTE_DEFINICION" },
+    "ask-consil-code-qwen-team": { modelos: CONSIL_MODELOS["ask-consil-code-qwen-team"].map((m) => m[0]), diagrama: "#consil-code-diagrama", estado: "UI_DEFINIDA_BACKEND_PENDIENTE" },
+    "ask-consil-fromtend-qwen-team": { modelos: CONSIL_MODELOS["ask-consil-fromtend-qwen-team"].map((m) => m[0]), diagrama: "#consil-frontend-diagrama", estado: "UI_DEFINIDA_BACKEND_PENDIENTE" },
   },
   diagramas: Object.fromEntries(Object.entries(DIAGRAMAS).map(([k, v]) => [k, v.texto])),
 };
@@ -133,6 +158,8 @@ export function conectarSelectores({ q }) {
   new MutationObserver(sync).observe(ficha, { attributes: true, attributeFilter: ["title"] }); sync();
   const lf = q("#sh-ficha-lista");
   if (lf) { new MutationObserver(() => decorarFichas(lf)).observe(lf, { childList: true }); decorarFichas(lf); }
-  for (const k of ["nvidia", "code", "frontend"]) decorarPendiente(q("#sh-consil-" + k + "-lista"), k !== "nvidia");
+  decorarPendiente(q("#sh-consil-nvidia-lista"));
+  decorarConsil(q("#sh-consil-code-lista"), CONSIL_MODELOS["ask-consil-code-qwen-team"]);
+  decorarConsil(q("#sh-consil-frontend-lista"), CONSIL_MODELOS["ask-consil-fromtend-qwen-team"]);
   pintar();
 }
