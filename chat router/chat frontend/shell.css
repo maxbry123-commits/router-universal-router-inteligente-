@@ -177,3 +177,4 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 /* ancla: icono blanco en la barra del input */
 .composer-bar .btn-ancla{color:#fff}
 .composer-bar .btn-ancla svg{stroke:#fff}
+#anc-pegar,#anc-instr{width:100%;min-height:52px;border-radius:12px;padding:9px 11px;background:var(--panel);border:1px solid var(--border-strong);resize:vertical}
