@@ -4,9 +4,10 @@ import { conectarAislado } from "./chat-aislado.js";
 import { conectarHistorial } from "./chat-historial.js";
 import { conectarArchivos } from "./chat-archivos.js";
 import { conectarAgenteHijo } from "./chat-agente-hijo.js";
+import { conectarOrquestador } from "./chat-orquestador.js";
 
 export function conectar(ctx) {
-  const pasos = [conectarAislado, conectarHistorial, conectarArchivos, conectarAgenteHijo];
+  const pasos = [conectarAislado, conectarHistorial, conectarArchivos, conectarAgenteHijo, conectarOrquestador];
   for (const paso of pasos) {
     try { paso(ctx); } catch (error) { ctx.tell("GAP " + paso.name + ": " + error.message); }
   }
