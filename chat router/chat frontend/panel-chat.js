@@ -20,7 +20,7 @@ export async function mount(root, { api, tell }) {
   const guardar = () => {
     try {
       sessionStorage.setItem(CLAVE_CHATS, JSON.stringify(
-        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados] }))));
+        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], selectorQwen: c.selectorQwen || null }))));
     } catch (e) {}
   };
   const pintarAnclados = () => {
@@ -30,7 +30,7 @@ export async function mount(root, { api, tell }) {
   };
   const pintarFichaPill = () => {
     const et = fichaEt(chat().ficha);
-    q("#ficha").textContent = (et ? et.etiqueta : "modelo").slice(0, 24) + " ▾";
+    q("#ficha").textContent = (et ? et.etiqueta : "modelo").slice(0, 24) + " ⌄";
   };
   const pintarTabs = () => {
     tabsEl.replaceChildren();
@@ -49,6 +49,7 @@ export async function mount(root, { api, tell }) {
     chats.forEach((c, i) => { c.hist.hidden = i !== activo; });
     pintarAnclados();
     pintarFichaPill();
+    q("#btn-detener").hidden = !chat().ocupado;  // ⏹ solo mientras se envía
     guardar();
   };
   const nuevoChat = (restaurado) => {
@@ -60,6 +61,7 @@ export async function mount(root, { api, tell }) {
       ficha: restaurado?.ficha || defecto,
       hist: h,
       anclados: new Set(restaurado?.anclados || []),
+      selectorQwen: restaurado?.selectorQwen || null,
       ocupado: false,
     });
     activo = chats.length - 1;
@@ -97,7 +99,7 @@ export async function mount(root, { api, tell }) {
     return d;
   };
 
-  conectarSelectorModelos({ q, chat, tell });  // Selector Qwen: solo frontend
+  conectarSelectorModelos({ q, chat, tell, guardar });  // Selector Qwen: solo frontend
   // ---- hojas (sheets): cada pildora abre la suya ----
   const cerrarHojas = () => root.querySelectorAll(".sheet").forEach((s) => { s.hidden = true; });
   root.querySelectorAll("[data-sheet]").forEach((b) => b.addEventListener("click", async () => {
@@ -163,7 +165,7 @@ export async function mount(root, { api, tell }) {
     for (const [k, et] of [["fast", "Rápido — 512 tok"], ["balanced", "Equilibrado — 1024 tok"], ["think", "Pensar — 2048 tok"]]) {
       lista.append(fila(MODOS[k], et, k === modo, () => {
         modo = k;
-        q("#modo").textContent = MODOS[k] + " ▾";
+        q("#modo").textContent = MODOS[k] + " ⌄";
         pintarModos();
         cerrarHojas();
       }));

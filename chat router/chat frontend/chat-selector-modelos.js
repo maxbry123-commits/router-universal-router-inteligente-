@@ -35,7 +35,7 @@ const slug = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,
 window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({ modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo })));
 
 export function conectarSelectorModelos(ctx) {
-  const { q, chat, tell } = ctx;
+  const { q, chat, tell, guardar } = ctx;
   const pill = q("#sel-nuevo"), lista = q("#sh-modelos-lista");
   const pintarPill = () => {
     const s = chat().selectorQwen;
@@ -49,7 +49,7 @@ export function conectarSelectorModelos(ctx) {
     const det = c.selectorQwen ? { modelo_id_slug: c.selectorQwen.modelo_id_slug, label: m[1], grupo: g.titulo, sesion: c.sesion } : null;
     window.RIU_SELECTOR_QWEN.seleccion = det;
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
-    pintarPill(); pintar();
+    pintarPill(); pintar(); guardar();
     q("#sh-modelos").hidden = true;
   };
   const pintar = () => {
