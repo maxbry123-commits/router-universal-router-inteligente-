@@ -1,8 +1,9 @@
 """Herramientas nativas para todas las fichas.
 
-Los secretos viven solo en el proceso/entorno del Router. Nunca se devuelven al
-modelo ni se serializan en prompts. Las fichas obtienen acceso al PluginHost,
-GitHub y Hugging Face mediante funciones Python controladas.
+Los secretos se resuelven server-side desde el banco cifrado del Router (con
+fallback a variables de entorno), nunca se devuelven al modelo ni se serializan
+en prompts. Las fichas obtienen acceso al PluginHost, GitHub, Hugging Face y al
+set de herramientas real ya usado por puente_chat.
 """
 from __future__ import annotations
 
@@ -11,14 +12,45 @@ from typing import Any
 
 from integration.chat_mvp import github_tools as gh
 from integration.plugin_host.host import get_host
+from plugins.puente_chat import herramientas as herramientas_chat
 
 HF_TOKEN_VARS = ("HF_CONTROL_JOBS_TOKEN", "HF_TOKEN", "HF_WRITE_TOKEN")
+
+
+def _claves_banco(provider: str) -> list[str]:
+    """Lee secretos solo dentro del proceso. Nunca expone refs ni valores fuera."""
+    try:
+        from plugins.banco.plugin import get_keys
+        pares = get_keys(provider)
+    except Exception:
+        return []
+    out: list[str] = []
+    for _ref, secreto in pares:
+        valor = str(secreto or "")
+        if valor and valor not in out:
+            out.append(valor)
+    return out
+
+
+def _montar_secretos_runtime() -> dict[str, bool]:
+    """Hace visibles los tokens del banco al runtime/tools sin meterlos en JSON/prompts."""
+    gh_keys = _claves_banco("github")
+    hf_keys = _claves_banco("huggingface")
+    if not os.getenv("GITHUB_TOKEN") and gh_keys:
+        os.environ["GITHUB_TOKEN"] = gh_keys[0]
+    if not os.getenv("HF_TOKEN") and hf_keys:
+        os.environ["HF_TOKEN"] = hf_keys[0]
+    return {
+        "github": bool(os.getenv("GITHUB_TOKEN") or gh.accounts_from_env()),
+        "huggingface": any(bool(os.getenv(v)) for v in HF_TOKEN_VARS),
+    }
 
 
 class HerramientasFicha:
     """Puerta unica de herramientas para FichaOS y su Harness."""
 
     def __init__(self) -> None:
+        self._secretos = _montar_secretos_runtime()
         self.host = get_host()
 
     def capacidades(self) -> dict[str, Any]:
@@ -31,18 +63,30 @@ class HerramientasFicha:
                 {"id": p.get("id"), "status": p.get("status"), "enabled": bool(p.get("enabled"))}
                 for p in plugins
             ],
+            "tools": [t.get("function", {}).get("name") for t in herramientas_chat.TOOLS],
             "github": {
                 "token_present": bool(cuentas),
                 "accounts": sorted(cuentas),
-                "actions": ["whoami", "list_repos", "get_file", "put_file"],
+                "actions": ["whoami", "list_repos", "get_file", "put_file", "github_api"],
+                "secret_source": "bank_or_env",
             },
             "huggingface": {
                 "token_present": any(bool(os.getenv(v)) for v in HF_TOKEN_VARS),
                 "jobs_token_present": bool(os.getenv("HF_CONTROL_JOBS_TOKEN")),
                 "token_envs_present": [v for v in HF_TOKEN_VARS if os.getenv(v)],
                 "plugin": "hf_compute",
+                "actions": ["hf_leer", "hf_escribir", "hf_api", "hf_almacenamiento"],
+                "secret_source": "bank_or_env",
             },
         }
+
+    def definiciones_modelo(self) -> list[dict[str, Any]]:
+        """Schemas function-calling reales de GitHub/HF, sin secretos."""
+        return list(herramientas_chat.TOOLS)
+
+    def ejecutar_model_tool(self, nombre: str, args: dict[str, Any] | None = None) -> str:
+        """Ejecuta una tool real; los tokens se quedan server-side."""
+        return herramientas_chat.ejecutar(str(nombre), args or {})
 
     def plugin(self, plugin_id: str, action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         """Acceso a cualquier herramienta registrada, respetando su ficha/acciones/interruptor."""
@@ -66,6 +110,8 @@ class HerramientasFicha:
         if action == "status":
             c = self.capacidades()["github"]
             return {"status": "ok" if c["token_present"] else "gap", **c}
+        if action == "github_api":
+            return {"status": "ok", "result": herramientas_chat.ejecutar("github_api", p)}
         cuenta, token = self._github_token(p.get("account"))
         if action == "whoami":
             result: Any = gh.whoami(token)
@@ -80,8 +126,10 @@ class HerramientasFicha:
         return {"status": "ok", "account": cuenta, "result": result}
 
     def huggingface(self, action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-        """HF compute a traves del PluginHost; otros plugins HF se invocan con plugin()."""
+        """HF real server-side y HF compute; nunca devuelve el token."""
         if action == "token_status":
             c = self.capacidades()["huggingface"]
             return {"status": "ok" if c["token_present"] else "gap", **c}
+        if action in {"hf_leer", "hf_escribir", "hf_api", "hf_almacenamiento"}:
+            return {"status": "ok", "result": herramientas_chat.ejecutar(action, payload or {})}
         return self.plugin("hf_compute", action, payload or {})
