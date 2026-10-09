@@ -38,7 +38,7 @@
       "handoff_texto",
       "sandbox",
       "mover_raiz",
-      "descargas"
+      "descargas", "historial", "proyectos", "estado_chat"
     ]
   },
   "seguridad": {
