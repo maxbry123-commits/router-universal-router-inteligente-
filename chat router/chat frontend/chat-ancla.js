@@ -93,7 +93,8 @@ export function montarAncla({ q, chat, tell, guardar, pintarAnclados }) {
   // 2) lo que ya esta anclado (enlaces, raices, handoffs): con X para quitar uno o todo
   const resumen = el("div", "", "list"); resumen.id = "anc-resumen";
   resumen.style.maxHeight = "110px"; resumen.style.overflowY = "auto";
-  const pintarResumen = () => {
+  const pintarResumen = () => { pintarResumen0(); pintarProyectos(); };
+  const pintarResumen0 = () => {
     resumen.replaceChildren();
     const otros = [...chat().anclados].filter((a) => /^(enlace|raiz|handoff):/.test(a));
     if (!otros.length) { resumen.append(el("div", "Nada anclado todavía (enlaces / raíces / handoffs)", "fila-desc")); return; }
@@ -116,15 +117,48 @@ export function montarAncla({ q, chat, tell, guardar, pintarAnclados }) {
   instr.addEventListener("input", () => { clearTimeout(t0); t0 = setTimeout(() => { chat().instrucciones = instr.value; guardar(); pintarAnclados(); }, 300); });
   const estadoInstr = el("div", "", "fila-desc");
 
+  // 4) proyectos de ESTE chat: grupos con nombre de lo anclado (archivos, enlaces, raices). Tocar = anclar o quitar todo el grupo
+  const CLAVE_PROY = "riu_proy_v1";
+  const proys = () => { const t = leer(CLAVE_PROY) || {}; return Array.isArray(t[chat().sesion]) ? t[chat().sesion] : []; };
+  const salvarProys = (l) => { const t = leer(CLAVE_PROY) || {}; t[chat().sesion] = l; escribir(CLAVE_PROY, t); };
+  const nombreProy = el("input"); nombreProy.id = "anc-proy-nombre"; nombreProy.placeholder = "Nombre del proyecto (opcional)"; nombreProy.autocomplete = "off";
+  const bCrear = el("button", "Crear con lo anclado", "mini"); bCrear.type = "button";
+  const listaProy = el("div", "", "list"); listaProy.id = "anc-proyectos";
+  const pintarProyectos = () => {
+    listaProy.replaceChildren();
+    const l = proys();
+    if (!l.length) { listaProy.append(el("div", "Sin proyectos en este chat", "fila-desc")); return; }
+    l.forEach((p, i) => {
+      const f = el("div", "", "va-item");
+      const todos = p.items.length > 0 && p.items.every((a) => chat().anclados.has(a));
+      const t = el("button", p.nombre + " · " + p.items.length, "toggle" + (todos ? " on" : "")); t.type = "button";
+      t.addEventListener("click", () => { const ya = p.items.length > 0 && p.items.every((a) => chat().anclados.has(a)); p.items.forEach((a) => (ya ? chat().anclados.delete(a) : chat().anclados.add(a))); pintarAnclados(); guardar(); pintarResumen(); });
+      const u = el("button", "Actualizar", "mini"); u.type = "button"; u.title = "Guardar en este proyecto lo que está anclado ahora";
+      u.addEventListener("click", () => { p.items = [...chat().anclados]; salvarProys(l); pintarProyectos(); tell("Proyecto actualizado: " + p.nombre); });
+      const x = el("button", "✕", "mini"); x.type = "button";
+      x.addEventListener("click", () => { l.splice(i, 1); salvarProys(l); pintarProyectos(); });
+      f.append(t, u, x); listaProy.append(f);
+    });
+  };
+  bCrear.addEventListener("click", () => {
+    const items = [...chat().anclados];
+    if (!items.length) { tell("Ancla primero archivos, enlaces o una raíz"); return; }
+    const l = proys();
+    l.push({ nombre: nombreProy.value.trim() || "Proyecto " + (l.length + 1), items });
+    salvarProys(l); nombreProy.value = ""; pintarProyectos(); tell("Proyecto creado con " + items.length + " ítems");
+  });
+  const filaProy = el("div", "", "row"); filaProy.append(nombreProy, bCrear);
+
   const cab = caja.querySelector(".va-head");
   const ref = cab ? cab.nextSibling : caja.firstChild;
   const etiqueta = (t) => el("div", t, "fila-desc");
-  [pegar, filaPegar, resumen, etiqueta("Instrucciones fijas del chat"), instr, estadoInstr].forEach((n) => caja.insertBefore(n, ref));
+  [pegar, filaPegar, resumen, etiqueta("Instrucciones fijas del chat"), instr, estadoInstr, etiqueta("Proyectos de este chat"), filaProy, listaProy].forEach((n) => caja.insertBefore(n, ref));
 
   const refrescar = () => {
     instr.value = chat().instrucciones || "";
     estadoInstr.textContent = instr.value.trim() ? "Encendidas: se envían con cada mensaje." : "Apagadas (escribe para encender).";
     pintarResumen();
+    pintarProyectos();
   };
   instr.addEventListener("input", () => { estadoInstr.textContent = instr.value.trim() ? "Encendidas: se envían con cada mensaje." : "Apagadas (escribe para encender)."; });
   refrescar();
