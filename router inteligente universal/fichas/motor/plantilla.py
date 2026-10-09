@@ -1,8 +1,10 @@
-"""La PLANTILLA XRAY-V2 del Director (plantilla/PLANTILLA_XRAY_V2.yaml) se carga en CADA llamada de CADA ficha.
-El bloque <user_query mode="verbatim"> se rellena con la entrada del nodo; la plantilla original no se resume ni se toca."""
-import re
+"""Puente de compatibilidad para XRAY-V2.
 
-MARCA = re.compile(r'(<user_query mode="verbatim">).*?(</user_query>)', re.S)
+El YAML queda como especificacion verificable, pero YA NO se concatena al prompt.
+La captura/bind del nodo se ejecuta nativamente en runtime_xray.py.
+"""
+from .runtime_xray import bind_node
+
 CLAVES = ('schema: yaiwes.node-executor/xray-v2', '=== BEGIN_INPUT_BLOCK ===', '<user_query mode="verbatim">')
 
 
@@ -11,12 +13,13 @@ def faltan(plantilla):
 
 
 def bloque_entrada(nodo, task_id, texto, paso, rutas):
-    nl = chr(10)
-    return nl.join(['PASO ' + str(paso) + ' 📌 TAREA ' + str(task_id) + ' 📌', texto, '', 'ROL DEL NODO: ' + nodo['rol'], '', 'NODO ' + nodo['id'],
-                    'repo: maxbry123-commits/router-universal-router-inteligente- | branch: main', '',
-                    'ORIGEN: ' + ', '.join(nodo.get('read_paths') or ['(tarea)']), 'DESTINO: ' + ', '.join(rutas or ['(salida)'])])
+    # CAPTURE_AS_DATA -> FREEZE_VERBATIM -> BIND_AS_TASK en Python.
+    # El input se conserva completo; no se convierte en plantilla de texto.
+    bind_node(nodo, task_id, texto, paso, rutas)
+    return ''
 
 
 def armar(plantilla, mejoras, bloque):
-    nl = chr(10)
-    return MARCA.sub(lambda m: m.group(1) + nl + bloque + nl + m.group(2), plantilla, count=1) + nl + mejoras
+    # Compatibilidad con FichaOS: el DSL/MEJORAS no consume contexto del modelo.
+    # Su control vive en runtime_xray.py y en las compuertas nativas de FichaOS.
+    return ''
