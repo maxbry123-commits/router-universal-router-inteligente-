@@ -462,10 +462,10 @@ def _consil(pregunta):
         rondas.append(dec or prop or ref)
         usadas.append('paso2:consil-ronda%d' % ronda)
     plan = '\n'.join(rondas)
-    out = _paso_llm('nvidia', 'nvidia/nemotron-3-super-120b-a12b',
+    out = _paso_llm('nvidia', 'meta/muse-glimmer-30b',
         [{'role': 'system', 'content': _SYS_PIPE},
          {'role': 'user', 'content': 'Ejecuta la tarea siguiendo el plan decidido.\nTarea: %s\nPlan:\n%s' % (pregunta, plan[:6000])}], 150, 1600)
-    usadas.append('paso3:nemotron-super-ejecuta')
+    usadas.append('paso3:glimmer-ejecuta')
     fin = _paso_llm('nvidia', 'moonshotai/kimi-k3',
         [{'role': 'system', 'content': _SYS_PIPE},
          {'role': 'user', 'content': 'Revisa, refactoriza y mejora este resultado con 12 goals de salida (calidad, claridad, completitud). Entrega la respuesta final mejorada.\nResultado:\n%s' % out[:6000]}], 150, 1600)
