@@ -436,6 +436,18 @@ export async function mount(root, { api, tell }) {
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
     if (selAct && selAct !== "nvidia-groq-team") {
+      if (selAct === "team-qwen" && c.selectorQwen && typeof window.RIU_ACCION === "function") {  // Team qwen -> harness (puente) -> modelo de la ficha 14
+        c.hist.append(burbuja(message, "user")); A.registrar(c.sesion, "user", message); input.value = "";
+        const pend = node("div", "Pensando… (" + c.selectorQwen.label + ")", "item message pending"); c.hist.append(pend); c.hist.scrollTop = c.hist.scrollHeight;
+        try {
+          const r = await window.RIU_ACCION("qwen", { modelo_id_slug: c.selectorQwen.modelo_id_slug, message: A.envolver(message, c.instrucciones), sesion: c.sesion });
+          pend.remove();
+          if (r && r.respuesta) { c.hist.append(burbuja(r.respuesta)); A.registrar(c.sesion, "bot", r.respuesta); }
+          else { const t = "GAP Team qwen: " + (r ? (r.error || "") + " " + (r.detalle || "") : "sin respuesta"); c.hist.append(node("div", t, "item message meta")); A.registrar(c.sesion, "err", t); }
+        } catch (e) { pend.remove(); c.hist.append(node("div", "GAP Team qwen: " + e.message, "item message meta")); }
+        c.hist.scrollTop = c.hist.scrollHeight;
+        return;
+      }
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
       c.hist.append(node("div", nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.", "item message meta"));
