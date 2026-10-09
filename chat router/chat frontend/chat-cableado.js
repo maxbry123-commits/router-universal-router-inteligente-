@@ -5,9 +5,10 @@ import { conectarHistorial } from "./chat-historial.js";
 import { conectarArchivos } from "./chat-archivos.js";
 import { conectarAgenteHijo } from "./chat-agente-hijo.js";
 import { conectarOrquestador } from "./chat-orquestador.js";
+import { conectarSelectorModelos } from "./chat-selector-modelos.js";
 
 export function conectar(ctx) {
-  const pasos = [conectarAislado, conectarHistorial, conectarArchivos, conectarAgenteHijo, conectarOrquestador];
+  const pasos = [conectarAislado, conectarHistorial, conectarArchivos, conectarAgenteHijo, conectarOrquestador, conectarSelectorModelos];
   for (const paso of pasos) {
     try { paso(ctx); } catch (error) { ctx.tell("GAP " + paso.name + ": " + error.message); }
   }
