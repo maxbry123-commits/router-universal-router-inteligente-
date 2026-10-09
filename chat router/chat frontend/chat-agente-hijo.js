@@ -36,12 +36,14 @@ export async function abrirHijo(ctx, padre, hija, etiqueta, inputEnviado) {
 }
 
 export async function ejecutarEnHijo(ctx, c, texto) {
+  if (String(c.ficha || "").startsWith("hf-")) throw new Error("El chat hijo no enciende GPU de pago (hf-*): elige un modelo API en la píldora del chat padre");
   c.hist.append(ctx.burbuja(texto, "user"));
   const pending = node("div", "Pensando…", "item message pending");
   c.hist.append(pending);
   c.ocupado = true; ctx.pintarTabs();
   try {
     const r = await window.RIU_HARNESS({ model: c.ficha, message: texto, max_tokens: 1024, sesion: c.sesion, anclados: [] });
+    if (r.job_id) { window.__riuJob = r.job_id; const ap = ctx.q("#apagar-respaldo"); if (ap) ap.hidden = false; }  // por si acaso: botón de apagar visible
     c.hist.append(ctx.burbuja(r.reply || "Sin respuesta"));
     return r;
   } catch (error) {
@@ -102,6 +104,7 @@ export function conectarAgenteHijo(ctx) {
     const boton = ev.currentTarget, padre = chat(), agente = lista.value, input = q("#ag-input").value;
     if (padre.padre) { tell("Abre el agente desde el chat padre, no desde un chat hijo"); return; }
     if (!agente || !input.trim()) { tell("Elige un agente y escribe el INPUT_BLOCK"); return; }
+    if (String(padre.ficha || "").startsWith("hf-")) { tell("El chat hijo no enciende GPU de pago (hf-*): elige un modelo API en la píldora"); return; }
     boton.disabled = true;
     try {
       const dag = dagHijo(agente, "hijo-" + Date.now());

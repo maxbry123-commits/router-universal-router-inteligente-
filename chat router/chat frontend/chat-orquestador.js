@@ -9,6 +9,7 @@ import { b64utf8 } from "./chat-aislado.js";
 import { sha256, dagHijo, abrirHijo } from "./chat-agente-hijo.js";
 
 const MAX_AGENTES = 3;
+export const sinGPU = (id) => !String(id || "").startsWith("hf-");  // hf-* enciende una GPU L4 de pago: fuera del MVP
 const claveSel = (s) => "riu_orq_" + s;
 
 export function conectarOrquestador(ctx) {
@@ -36,7 +37,7 @@ export function conectarOrquestador(ctx) {
       const fila = node("div", "", "va-item");
       const ck = Object.assign(document.createElement("input"), { type: "checkbox", checked: !!e });
       const modelo = document.createElement("select");
-      (window.RIU_CONFIG?.modelos || []).forEach((m) => modelo.append(Object.assign(node("option", m.etiqueta), { value: m.id })));
+      (window.RIU_CONFIG?.modelos || []).filter((m) => sinGPU(m.id)).forEach((m) => modelo.append(Object.assign(node("option", m.etiqueta), { value: m.id })));
       modelo.value = e ? e.modelo : chat().ficha;
       const cambiar = () => {
         let v = sel().filter((x) => x.agente !== a.id);
@@ -99,7 +100,7 @@ export function conectarOrquestador(ctx) {
   });
 
   ctx.orquestar = async (c, input) => {
-    const activos = sel();
+    const activos = sel().filter((a) => sinGPU(a.modelo));  // nunca GPU de pago, aunque venga de una selección vieja
     if (!input.trim()) return;
     if (!activos.length) { tell("No hay agentes activos: elige en 🎛 orquestador"); return; }
     const objective_id = "obj-" + Date.now() + "-" + [...crypto.getRandomValues(new Uint8Array(2))].map((x) => x.toString(16).padStart(2, "0")).join("");
