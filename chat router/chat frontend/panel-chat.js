@@ -154,7 +154,7 @@ export async function mount(root, { api, tell }) {
   const pintarFichas = () => {
     const lista = q("#sh-ficha-lista");
     lista.replaceChildren();
-    for (const m of window.RIU_CONFIG?.modelos || []) {
+    for (const m of (window.RIU_CONFIG?.modelos || []).filter((x) => !x.id.startsWith("motor-"))) {
       lista.append(fila(m.etiqueta.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim(), "", m.id === chat().ficha, () => {
         chat().ficha = m.id;
         pintarFichaPill();
@@ -434,6 +434,14 @@ export async function mount(root, { api, tell }) {
     const message = input.value.trim();
     if (!message) return;
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
+    const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
+    if (selAct && selAct !== "nvidia-groq-team") {
+      const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
+      const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
+      c.hist.append(node("div", nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.", "item message meta"));
+      c.hist.scrollTop = c.hist.scrollHeight;
+      return;
+    }
     const ub = burbuja(message, "user");
     c.hist.append(ub);
     A.registrar(c.sesion, "user", message);
