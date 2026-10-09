@@ -1,0 +1,34 @@
+# FICHA DAG CODIGO - DSL DAG determinista. Usa LA MISMA API que la ficha de 14 modelos (proveedores ficha-*).
+# Solo faltan: las API (se ponen en la ficha de 14 modelos) y el texto de los 24 goals (marcados PONER AQUI).
+schema: yaiwes.dag/v1
+mode: FAIL_CLOSED
+ficha: dag-codigo-12goals
+api: modelos-14
+motor: {timeout_s: 90, recuperacion_api: 4, recuperacion_tareas: 5, bloque_chars: 8500, limite_llamada_chars: 18000, mensajes_del_director: true}
+todos_los_modelos: [ficha-qwen38max, ficha-qwen38flash, ficha-qwen37max, ficha-qwen37plus, ficha-qwen36flash, ficha-dsv4pro, ficha-dsv4pro0813, ficha-dsv4flash, ficha-glm52, ficha-qwenimg30pro, ficha-wan27img, ficha-qwentts, ficha-qwenrt, ficha-qwenasr]
+nodos:
+  - id: N0
+    paso: 0
+    nombre: goals_de_entrada
+    tipo: goals
+    cantidad: 12
+    tema: programacion, arquitectura y solucion de programacion de code
+    participan: todos_los_modelos
+    goals: [{id: G01, texto: PONER AQUI}, {id: G02, texto: PONER AQUI}, {id: G03, texto: PONER AQUI}, {id: G04, texto: PONER AQUI}, {id: G05, texto: PONER AQUI}, {id: G06, texto: PONER AQUI}, {id: G07, texto: PONER AQUI}, {id: G08, texto: PONER AQUI}, {id: G09, texto: PONER AQUI}, {id: G10, texto: PONER AQUI}, {id: G11, texto: PONER AQUI}, {id: G12, texto: PONER AQUI}]
+    depende_de: []
+  - {id: N1, paso: 1, modelo: ficha-dsv4pro, rol: analiza la arquitectura y propone solucion, paralelo_con: [N2, N3], depende_de: [N0], salida: propuesta_dsv4pro}
+  - {id: N2, paso: 2, modelo: ficha-glm52, rol: analiza la arquitectura y propone solucion, paralelo_con: [N1, N3], depende_de: [N0], salida: propuesta_glm52}
+  - {id: N3, paso: 3, modelo: ficha-qwen37max, rol: analiza la arquitectura y propone solucion, paralelo_con: [N1, N2], depende_de: [N0], salida: propuesta_qwen37max}
+  - {id: N4, paso: 4, modelo: ficha-qwen38max, rol: analiza la arquitectura, propone solucion y EJECUTA la tarea de programacion de code (unico ejecutor), depende_de: [N0, N1, N2, N3], salida: codigo_v1}
+  - id: N5
+    paso: 5
+    nombre: goals_de_salida
+    tipo: goals
+    cantidad: 12
+    participan: todos_los_modelos
+    goals: [{id: S01, texto: PONER AQUI}, {id: S02, texto: PONER AQUI}, {id: S03, texto: PONER AQUI}, {id: S04, texto: PONER AQUI}, {id: S05, texto: PONER AQUI}, {id: S06, texto: PONER AQUI}, {id: S07, texto: PONER AQUI}, {id: S08, texto: PONER AQUI}, {id: S09, texto: PONER AQUI}, {id: S10, texto: PONER AQUI}, {id: S11, texto: PONER AQUI}, {id: S12, texto: PONER AQUI}]
+    depende_de: [N4]
+  - {id: N6, paso: 6, modelo: ficha-glm52, rol: cuando la tarea esta lista, revisa y refactoriza, depende_de: [N5], salida: codigo_v2}
+  - {id: N7, paso: 7, modelo: ficha-qwen38max, rol: vuelve a revisar y refactoriza, entrega la salida final, depende_de: [N6], salida: codigo_final}
+flujo: N0 -> [N1 | N2 | N3] -> N4 -> N5 -> N6 -> N7 -> SALIDA
+reglas: {transiciones_no_listadas: FORBIDDEN, reintentos_max: 2, sin_evidencia_no_pasa: true, claves: nunca_en_este_archivo}
