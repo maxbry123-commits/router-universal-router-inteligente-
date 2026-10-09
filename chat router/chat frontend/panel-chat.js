@@ -413,7 +413,7 @@ export async function mount(root, { api, tell }) {
     const message = input.value.trim();
     if (!message) return;
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
-    if (c.orq && ctx.orquestar) { const orden = input.value; input.value = ""; ctx.orquestar(c, orden); return; }  // PUNTO 6: ORQUESTADOR ON
+    if (c.orq && ctx.orquestar) { ctx.orquestar(c, input.value, () => { input.value = ""; }); return; }  // PUNTO 6: ORQUESTADOR ON
     const ub = burbuja(message, "user");
     c.hist.append(ub);
     input.value = "";

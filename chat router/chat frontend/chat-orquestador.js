@@ -42,6 +42,7 @@ export function conectarOrquestador(ctx) {
       const modelo = document.createElement("select");
       (window.RIU_CONFIG?.modelos || []).filter((m) => sinGPU(m.id)).forEach((m) => modelo.append(Object.assign(node("option", m.etiqueta), { value: m.id })));
       modelo.value = e ? e.modelo : chat().ficha;
+      if (!modelo.value && modelo.options.length) modelo.selectedIndex = 0;  // ficha del chat fuera de la lista (hf-*, motor): primer modelo API
       const cambiar = () => {
         let v = sel().filter((x) => x.agente !== a.id);
         if (ck.checked) {
@@ -115,10 +116,11 @@ export function conectarOrquestador(ctx) {
   };
   ctx.chats.forEach(ctx.leerOrquestador);
 
-  ctx.orquestar = async (c, input) => {
-    const activos = sel().filter((a) => sinGPU(a.modelo));  // nunca GPU de pago, aunque venga de una selección vieja
-    if (!input.trim()) return;
-    if (!activos.length) { tell("No hay agentes activos: elige en 🎛 orquestador"); return; }
+  ctx.orquestar = async (c, input, aceptada) => {
+    const activos = sel().filter((a) => a.modelo && sinGPU(a.modelo));  // sin modelo vacío y nunca GPU de pago
+    if (!input.trim()) return false;
+    if (!activos.length) { tell("No hay agentes activos con modelo: elige en 🎛 orquestador"); return false; }
+    if (aceptada) aceptada();  // la orden fue aceptada: ahora sí se limpia el composer
     const objective_id = "obj-" + Date.now() + "-" + [...crypto.getRandomValues(new Uint8Array(2))].map((x) => x.toString(16).padStart(2, "0")).join("");
     estado = { objective_id, sesion_padre: c.sesion, via: "HTTP+", input, input_block_sha256: await sha256(input), input_bytes: new TextEncoder().encode(input).length,
       handoff: null, estado: "EJECUTANDO", ts_inicio: new Date().toISOString(), ts_fin: null, bitacora: [],
