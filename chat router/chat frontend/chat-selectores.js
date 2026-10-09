@@ -11,6 +11,19 @@ const SELECTORES = [  // nombres exactos de Antonio
   { id: "ask-consil-fromtend-qwen-team", nombre: "Ask consil fromtend qwen team", pills: ["#sel-cf"] },
 ];
 const POWER = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>';
+const DIAGRAMAS = {  // micro diagramas transversales horizontales (texto exacto de Antonio); Ask consil Nvidia groq: pendiente
+  "team-qwen": { sel: "#team-qwen-diagrama", texto: "SELECTOR → T-id → DSL → PUESTO (cola 4) → MODELO → VERIFICA → RECIBO → LIBERA" },
+  "ask-consil-code-qwen-team": { sel: "#consil-code-diagrama", texto: "12 goals entrada → [DeepSeek | GLM 5.2 | Qwen 3.7 Max] → Qwen 3.8 Max ejecuta → 12 goals salida → GLM 5.2 revisa → Qwen 3.8 Max revisa → SALIDA" },
+  "ask-consil-fromtend-qwen-team": { sel: "#consil-frontend-diagrama", texto: "12 goals entrada → [DeepSeek | GLM 5.2 | Qwen 3.7 Max] → DeepSeek V4 Pro ejecuta → 12 goals salida → GLM 5.2 revisa → Qwen 3.8 Max revisa → SALIDA" },
+};
+const INFO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>';
+const pintarDiagrama = (caja, texto) => {  // pasos en línea, desplazable en horizontal; el texto queda exacto (" → " entre pasos)
+  caja.replaceChildren(); caja.title = texto; caja.classList.add("lleno");
+  texto.split(" → ").forEach((paso, i) => {
+    if (i) { const f = document.createElement("span"); f.className = "dg-flecha"; f.textContent = " → "; caja.append(f); }
+    const p = document.createElement("span"); p.className = "dg-paso"; p.textContent = paso; caja.append(p);
+  });
+};
 const usable = (id) => SELECTORES.some((s) => s.id === id);
 const leer = () => { try { const v = sessionStorage.getItem(CLAVE); return usable(v) ? v : null; } catch (e) { return null; } };
 const escribir = (v) => { try { v ? sessionStorage.setItem(CLAVE, v) : sessionStorage.removeItem(CLAVE); } catch (e) { /* sin almacenamiento */ } };
@@ -23,6 +36,7 @@ window.RIU_SELECTORES = window.RIU_SELECTORES || {
     "ask-consil-code-qwen-team": { modelos: [], diagrama: "#consil-code-diagrama" },
     "ask-consil-fromtend-qwen-team": { modelos: [], diagrama: "#consil-frontend-diagrama" },
   },
+  diagramas: Object.fromEntries(Object.entries(DIAGRAMAS).map(([k, v]) => [k, v.texto])),
 };
 
 export function conectarSelectores({ q }) {
@@ -63,7 +77,18 @@ export function conectarSelectores({ q }) {
     b.type = "button"; b.className = "sel-on"; b.dataset.selector = s.id; b.setAttribute("aria-label", "ON/OFF " + s.nombre);
     b.innerHTML = POWER + "<span>OFF</span>";
     b.addEventListener("click", () => cambiar(leer() === s.id ? null : s.id));
-    fila.append(b); botones[s.id] = b;
+    const d = DIAGRAMAS[s.id];
+    if (d) {  // botón "i": muestra/oculta el micro diagrama de este selector como recordatorio
+      const info = document.createElement("button");
+      info.type = "button"; info.className = "sel-info"; info.innerHTML = INFO;
+      info.title = "Ver diagrama de " + s.nombre; info.setAttribute("aria-label", info.title); info.setAttribute("aria-expanded", "false");
+      const tira = document.createElement("div"); tira.className = "consil-diagrama sel-diagrama"; tira.hidden = true;
+      pintarDiagrama(tira, d.texto);
+      const caja = q(d.sel); if (caja) pintarDiagrama(caja, d.texto);
+      info.addEventListener("click", () => { tira.hidden = !tira.hidden; info.setAttribute("aria-expanded", String(!tira.hidden)); info.classList.toggle("abierto", !tira.hidden); });
+      fila.append(info, b, tira);
+    } else fila.append(b);
+    botones[s.id] = b;
   }
   const ngt = q("#sel-ngt"), ficha = q("#ficha");  // Nvidia groq team: el panel muestra la ficha elegida en su tooltip
   const sync = () => { if (!ngt.classList.contains("bloq")) ngt.title = ficha.title; };

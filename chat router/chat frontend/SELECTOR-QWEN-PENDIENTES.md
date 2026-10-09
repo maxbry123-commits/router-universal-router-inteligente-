@@ -56,5 +56,9 @@ No llama al Router y no envía nada. El selector de ficha `modelo ▾` sigue igu
 - Solo 1 encendido; los demás quedan bloqueados (gris, deshabilitados) hasta apagarlo. Estado en `sessionStorage` (`riu_selector_activo`). Sin emojis de color: iconos de línea SVG.
 - Gancho: `window.RIU_SELECTORES = { activo, selectores, consil, encender(id), apagar() }` + evento `riu:selector-activo` `{ activo, anterior, nombre }`. Ids: `nvidia-groq-team`, `ask-consil-nvidia-groq`, `team-qwen`, `ask-consil-code-qwen-team`, `ask-consil-fromtend-qwen-team`.
 - Ask consil (2, 4, 5): hojas `#sh-consil-nvidia`, `#sh-consil-code`, `#sh-consil-frontend` con "Modelos pendientes" + contenedor vacío del micro diagrama transversal horizontal (`#consil-nvidia-diagrama`, `#consil-code-diagrama`, `#consil-frontend-diagrama`).
-- Pendiente de Antonio: modelos de los 3 Ask consil y el micro diagrama.
+- Micro diagramas (texto exacto, tira horizontal desplazable, botón "i" en el panel + dentro de la hoja), `RIU_SELECTORES.diagramas`:
+  - Team qwen (14 modelos individuales, sin Ask Council): `SELECTOR → T-id → DSL → PUESTO (cola 4) → MODELO → VERIFICA → RECIBO → LIBERA`
+  - Ask cónsil code qwen team (DAG código, bloques N0 a N7): `12 goals entrada → [DeepSeek | GLM 5.2 | Qwen 3.7 Max] → Qwen 3.8 Max ejecuta → 12 goals salida → GLM 5.2 revisa → Qwen 3.8 Max revisa → SALIDA`
+  - Ask consil fromtend qwen team (frontend, mismo Ask Council): `12 goals entrada → [DeepSeek | GLM 5.2 | Qwen 3.7 Max] → DeepSeek V4 Pro ejecuta → 12 goals salida → GLM 5.2 revisa → Qwen 3.8 Max revisa → SALIDA`
+- Pendiente de Antonio: modelos y diagrama de Ask consil Nvidia groq; lista de modelos de los Ask consil.
 - Pendiente ficha/backend (Claude): una ficha por modelo de cada Ask consil y que el envío use el selector `activo`. Hoy nada está conectado al Router.
