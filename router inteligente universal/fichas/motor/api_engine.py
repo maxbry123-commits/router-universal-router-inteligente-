@@ -49,7 +49,7 @@ class Motor:
     1 reintentos con espera creciente (429/5xx/timeout, respeta Retry-After)
     2 cambio de API/proveedor cuando uno falla o llega a su limite diario
     3 llamada partida en bloques de 8500 caracteres al llegar a 18000
-    4 peticion reducida (contexto recortado, menos tokens) como ultimo intento
+    4 segundo intento con el MISMO input completo y menor salida maxima
     """
 
     def __init__(self, proveedores, timeout=TIMEOUT, reintentos=3, dormir=time.sleep, pulso=None, limite=LIMITE_LLAMADA):
@@ -114,10 +114,11 @@ class Motor:
                 self.dormir(pausa)
         raise ErrorApi('reintentos agotados: ' + ultimo)
 
-    def _ronda(self, mensajes, max_tokens):  # sistemas 2 y 4
+    def _ronda(self, mensajes, max_tokens):  # sistemas 2 y 4; nunca recorta el input
         errores = []
         for intento in range(2):
-            ms, mt = (mensajes, max_tokens) if intento == 0 else (self._reducir(mensajes), max(256, max_tokens // 2))
+            ms = mensajes
+            mt = max_tokens if intento == 0 else max(256, max_tokens // 2)
             for p in self.provs[self.i:] + self.provs[:self.i]:
                 try:
                     r = self._con_reintentos(p, ms, mt)
@@ -127,11 +128,6 @@ class Motor:
                     errores.append(str(e))
                     self.bitacora.append('cambio de API: ' + str(e))
         raise ErrorApi(' | '.join(errores))
-
-    def _reducir(self, mensajes):
-        sis = [m for m in mensajes if m['role'] == 'system']
-        ult = mensajes[-1]
-        return sis + [{'role': ult['role'], 'content': ult['content'][-6000:]}] if ult['role'] != 'system' else sis
 
     def _por_bloques(self, mensajes, max_tokens):  # sistema 3
         texto = chr(10).join(m['role'] + ': ' + m['content'] for m in mensajes)
