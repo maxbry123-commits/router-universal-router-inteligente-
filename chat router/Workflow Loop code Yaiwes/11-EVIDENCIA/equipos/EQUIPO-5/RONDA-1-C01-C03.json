@@ -1,0 +1,467 @@
+{
+  "schema": "yaiwes.team-evidence/v1",
+  "equipo": "EQUIPO-5",
+  "ronda": 1,
+  "fecha_utc": "2026-10-02T07:37:00Z",
+  "parent_commit": "45ca6d38d9912dd543e10ba089d1d4c733c4180a",
+  "c01": {
+    "queue_path": "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/motor2-skills-ui/queue.json",
+    "queue_sha256": "60a205a9d20f19703a7b3def2683073f1137c072e8b8e18c59d7828b78f3cc2b",
+    "expected_28": 28,
+    "queue_count": 28,
+    "publish_true": 28,
+    "missing": [],
+    "extras": []
+  },
+  "c02": {
+    "criterio": {
+      "skill": "entrega primaria declarativa para comportamiento de agente",
+      "herramienta": "runtime/API/CLI/MCP/app o librería ejecutable",
+      "solo referencia": "fuente útil sin contrato ejecutable verificable en esta ronda"
+    },
+    "counts": {
+      "herramienta": 16,
+      "solo referencia": 2,
+      "skill": 10
+    },
+    "repos": [
+      {
+        "repo": "npxskillui",
+        "clase": "herramienta",
+        "razon": "CLI Node que extrae sistemas de diseño y genera SKILL.md/.skill; tiene ejecución propia.",
+        "source_repo": "https://github.com/amaancoderx/npxskillui"
+      },
+      {
+        "repo": "recordly",
+        "clase": "herramienta",
+        "razon": "Aplicación de escritorio multiplataforma para producir demos; es una capacidad ejecutable, no un skill declarativo.",
+        "source_repo": "https://github.com/webadderallorg/Recordly"
+      },
+      {
+        "repo": "rare-ui",
+        "clase": "solo referencia",
+        "razon": "Colección de componentes y animaciones UI; no expone contrato de agente, CLI o MCP verificable.",
+        "source_repo": "https://github.com/swamimalode07/rare-ui"
+      },
+      {
+        "repo": "shadcn-skills",
+        "clase": "skill",
+        "razon": "Repositorio declarado como colección de skills de Shadcn Labs.",
+        "source_repo": "https://github.com/shadcn-labs/skills"
+      },
+      {
+        "repo": "firecrawl",
+        "clase": "herramienta",
+        "razon": "API/plataforma web consumible por agentes para search, scrape y acceso a fuentes.",
+        "source_repo": "https://github.com/firecrawl/firecrawl"
+      },
+      {
+        "repo": "firecrawl-cli",
+        "clase": "herramienta",
+        "razon": "CLI ejecutable para scrape, search y browsing; el runtime CLI es su superficie principal.",
+        "source_repo": "https://github.com/firecrawl/cli"
+      },
+      {
+        "repo": "firecrawl-mcp-server",
+        "clase": "herramienta",
+        "razon": "Servidor MCP oficial que expone scraping y búsqueda como tools.",
+        "source_repo": "https://github.com/firecrawl/firecrawl-mcp-server"
+      },
+      {
+        "repo": "firecrawl-skills",
+        "clase": "skill",
+        "razon": "Catálogo Agent Skills con 34 skills distribuidas en core, build y workflows.",
+        "source_repo": "https://github.com/firecrawl/skills"
+      },
+      {
+        "repo": "emilkowalski-skills",
+        "clase": "skill",
+        "razon": "Repositorio de skills para diseñadores e ingenieros.",
+        "source_repo": "https://github.com/emilkowalski/skills"
+      },
+      {
+        "repo": "impeccable",
+        "clase": "skill",
+        "razon": "Lenguaje/skill de diseño orientado a mejorar el comportamiento de harnesses de IA.",
+        "source_repo": "https://github.com/pbakaus/impeccable"
+      },
+      {
+        "repo": "getdesign",
+        "clase": "herramienta",
+        "razon": "Expone web, API, CLI y SDK; aunque exporta skill, su superficie principal es ejecutable.",
+        "source_repo": "https://github.com/MohtashamMurshid/getdesign"
+      },
+      {
+        "repo": "open-design",
+        "clase": "herramienta",
+        "razon": "Aplicación local y motor de diseño utilizado por coding agents y múltiples CLIs.",
+        "source_repo": "https://github.com/nexu-io/open-design"
+      },
+      {
+        "repo": "headroom",
+        "clase": "herramienta",
+        "razon": "Librería, proxy y servidor MCP para comprimir contexto y salidas de tools.",
+        "source_repo": "https://github.com/headroomlabs-ai/headroom"
+      },
+      {
+        "repo": "ponytail",
+        "clase": "skill",
+        "razon": "Agent skill/plugin de metodología YAGNI y prompt engineering.",
+        "source_repo": "https://github.com/DietrichGebert/ponytail"
+      },
+      {
+        "repo": "find-skills",
+        "clase": "herramienta",
+        "razon": "Herramienta npx para descubrir e instalar agent skills.",
+        "source_repo": "https://github.com/axxt0/find-skills"
+      },
+      {
+        "repo": "superpowers",
+        "clase": "skill",
+        "razon": "Framework de agent skills y metodología de desarrollo.",
+        "source_repo": "https://github.com/obra/superpowers"
+      },
+      {
+        "repo": "get-shit-done",
+        "clase": "skill",
+        "razon": "Sistema de meta-prompting y context engineering; funcionalmente skill/metodología, aunque upstream está archivado.",
+        "source_repo": "https://github.com/gsd-build/get-shit-done"
+      },
+      {
+        "repo": "claude-mem",
+        "clase": "herramienta",
+        "razon": "Motor persistente de memoria/contexto entre sesiones con infraestructura propia.",
+        "source_repo": "https://github.com/thedotmack/claude-mem"
+      },
+      {
+        "repo": "context-mode",
+        "clase": "herramienta",
+        "razon": "Servidor MCP más hooks para optimización y persistencia de contexto.",
+        "source_repo": "https://github.com/mksglu/context-mode"
+      },
+      {
+        "repo": "local-ultra-review",
+        "clase": "skill",
+        "razon": "Skill de code review con worktrees, lentes de revisión y verifier gating.",
+        "source_repo": "https://github.com/cogine-ai/local-ultra-review"
+      },
+      {
+        "repo": "one-skill-to-rule-them-all",
+        "clase": "skill",
+        "razon": "Meta-skill que crea, observa y mejora otros skills.",
+        "source_repo": "https://github.com/rebelytics/one-skill-to-rule-them-all"
+      },
+      {
+        "repo": "motionsites",
+        "clase": "solo referencia",
+        "razon": "Upstream devolvió HTTP 451/DMCA durante la verificación; no se declara contrato ejecutable no verificable.",
+        "source_repo": "https://github.com/aayushsoam/motionsites.ai"
+      },
+      {
+        "repo": "caret-desktop",
+        "clase": "herramienta",
+        "razon": "Aplicación desktop que modifica código real y declara integración MCP.",
+        "source_repo": "https://github.com/precious112/caret-desktop"
+      },
+      {
+        "repo": "onlook",
+        "clase": "herramienta",
+        "razon": "Herramienta de diseño AI-first que edita código real de frontend.",
+        "source_repo": "https://github.com/onlook-dev/onlook"
+      },
+      {
+        "repo": "plasmic",
+        "clase": "herramienta",
+        "razon": "Builder visual ejecutable para React, apps, sitios y contenido.",
+        "source_repo": "https://github.com/plasmicapp/plasmic"
+      },
+      {
+        "repo": "webstudio",
+        "clase": "herramienta",
+        "razon": "Builder visual open source con runtime propio y conexión a CMS.",
+        "source_repo": "https://github.com/webstudio-is/webstudio"
+      },
+      {
+        "repo": "taste-skill",
+        "clase": "skill",
+        "razon": "Skill de diseño destinado a evitar UI genérica en agentes de código.",
+        "source_repo": "https://github.com/Leonxlnx/taste-skill"
+      },
+      {
+        "repo": "magic-mcp",
+        "clase": "herramienta",
+        "razon": "Servidor MCP para buscar/generar/publicar componentes React/Tailwind desde el editor.",
+        "source_repo": "https://github.com/21st-dev/magic-mcp"
+      }
+    ],
+    "restricciones": [
+      "motionsites upstream: HTTP 451 / DMCA durante verificación"
+    ]
+  },
+  "c03": {
+    "catalog_path": "router inteligente universal/Componente open soure router inteligente universal/firecrawl-skills/code/README.md",
+    "catalog_sha256": "35a283a7c1f456776597c4d6374d2fa7418b0a7c4f13725984f30aac3a96e569",
+    "skills_count": 34,
+    "categories": {
+      "core": 13,
+      "build": 5,
+      "workflows": 16
+    },
+    "skills": [
+      {
+        "name": "firecrawl-agent",
+        "category": "core",
+        "source_tree_sha": "91cf672a54955abb56a05854232717db627e08b9",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-agent.dag.yaml",
+        "dag_sha256": "91672b3446033fd37e602a1d99dd8ddfd9c1a5293ac300b553a6dc8b76f14ca2"
+      },
+      {
+        "name": "firecrawl-alexandria",
+        "category": "core",
+        "source_tree_sha": "652d1c5d181c07e3edfdd5637f11754f4156d373",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-alexandria.dag.yaml",
+        "dag_sha256": "02ec216603493253d5993a197451db3a41fe788779ec4c61a16b14af152c15bb"
+      },
+      {
+        "name": "firecrawl-crawl",
+        "category": "core",
+        "source_tree_sha": "3e998d93b61eaf19e1e1c6da0e2b6ae2e57a7a82",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-crawl.dag.yaml",
+        "dag_sha256": "b021cff1352abdd82fc0ea781a2b4924d90fc30592a36b42face0319cafa6c6b"
+      },
+      {
+        "name": "firecrawl-developer-index",
+        "category": "core",
+        "source_tree_sha": "2427cd58f80d4f7b2d877b19b91f3a51f67c917e",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-developer-index.dag.yaml",
+        "dag_sha256": "e07133fbb2eb9ad82faf5cca48ff6c2f5696470b33482cec6538a4f7e740688d"
+      },
+      {
+        "name": "firecrawl-download",
+        "category": "core",
+        "source_tree_sha": "5e723040984224228d24a405cabbfc13676c314b",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-download.dag.yaml",
+        "dag_sha256": "5419ed9bb45a770afb1ceb6f483e1546a59b1acd6d53ab4f43453c9db0a3bd73"
+      },
+      {
+        "name": "firecrawl-interact",
+        "category": "core",
+        "source_tree_sha": "81ce80930763d47dd312f344c5ad3112f012b128",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-interact.dag.yaml",
+        "dag_sha256": "d51e5464e87be04df4ce3f63648c1d017119f393fbbdd7cee897eadb68fa9b31"
+      },
+      {
+        "name": "firecrawl-map",
+        "category": "core",
+        "source_tree_sha": "89f934004d9416d22c82176c6411a78a2c26c645",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-map.dag.yaml",
+        "dag_sha256": "b4d438c57a0c623bc426f835d50b1c866b4bfb61002ffa02ecc941e69129aa65"
+      },
+      {
+        "name": "firecrawl-monitor",
+        "category": "core",
+        "source_tree_sha": "6ceb7fffb1d521a8c1cb5aa375391d3af143dd66",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-monitor.dag.yaml",
+        "dag_sha256": "77297d68ef518dcfd990c94fecfabac2986733cbcd62dce7df016bb3540681cc"
+      },
+      {
+        "name": "firecrawl-parse",
+        "category": "core",
+        "source_tree_sha": "7421383a7be8244b9ab2192d2e039310cd60426a",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-parse.dag.yaml",
+        "dag_sha256": "0f10e87ec8a281f62382905b921908886f323825ba943729116c5ae06dad8de4"
+      },
+      {
+        "name": "firecrawl-research-index",
+        "category": "core",
+        "source_tree_sha": "e254309417908e89f25f895f1bc77f525acb094e",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-research-index.dag.yaml",
+        "dag_sha256": "08b34e5c5fc7c707c1684b1f1806e1b43749334db028a7e2cd48318d83395729"
+      },
+      {
+        "name": "firecrawl-scrape",
+        "category": "core",
+        "source_tree_sha": "40e574a6b626c89c66dccd4f4db6ed5648080083",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-scrape.dag.yaml",
+        "dag_sha256": "a2540f9d984a535cfeb58e5af691a5ffa172caf325d043dec38d053503e12de8"
+      },
+      {
+        "name": "firecrawl-search",
+        "category": "core",
+        "source_tree_sha": "4f6f40687760fef62e88f60973c3ef1b47dfccc9",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-search.dag.yaml",
+        "dag_sha256": "39e651a8d2e7217de659595e7dd83bd4d1518bd3b3ef215df18003dd4471c0f5"
+      },
+      {
+        "name": "firecrawl",
+        "category": "core",
+        "source_tree_sha": "e32229c64df29b8f1bb1e27073eaf850afe3fed3",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl.dag.yaml",
+        "dag_sha256": "4836010164ce6162f69600dd8acab700157d9bbc78dbaca2d62c255d5ab9a20e"
+      },
+      {
+        "name": "firecrawl-build-interact",
+        "category": "build",
+        "source_tree_sha": "0d20c209c066119f411542753fbc172a94bbbc41",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-build-interact.dag.yaml",
+        "dag_sha256": "d9b6c7213519ed3d6facd08e02786d21079bc0b82df19528ea4a9e565ae9c952"
+      },
+      {
+        "name": "firecrawl-build-onboarding",
+        "category": "build",
+        "source_tree_sha": "44732e55772aa0e0f613de343fa1c96193a91ed5",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-build-onboarding.dag.yaml",
+        "dag_sha256": "7993874ff4b839a02491f197301b1ebcd1a291752bcd4a5c11329717969e3115"
+      },
+      {
+        "name": "firecrawl-build-scrape",
+        "category": "build",
+        "source_tree_sha": "524353c2b02d51c0aff663c1fcb11feac836178c",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-build-scrape.dag.yaml",
+        "dag_sha256": "5b0c034b1a20a93b22c9cecc623a71617dc9a4b876a8075fb52da45c09b75cb0"
+      },
+      {
+        "name": "firecrawl-build-search",
+        "category": "build",
+        "source_tree_sha": "1fd0835d810b1960ccf13f4cc325c372baeb6fe7",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-build-search.dag.yaml",
+        "dag_sha256": "fcbb0e842ae10f0a6afb82c2637912c1c55a3fa454b4a22dc81d00233e34adac"
+      },
+      {
+        "name": "firecrawl-build",
+        "category": "build",
+        "source_tree_sha": "f40859dda1502808ad772ccaed896cec218196bf",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-build.dag.yaml",
+        "dag_sha256": "d699bbaa9cbcf2da8f596c70d4462025ab0971ca1ef3756b3b26ddc469f8174f"
+      },
+      {
+        "name": "firecrawl-company-directories",
+        "category": "workflows",
+        "source_tree_sha": "590d3b2631019b70cb400b6e955b5e62e318965f",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-company-directories.dag.yaml",
+        "dag_sha256": "919e8e1e54979dd135f21673ec837fbf84d7ce1bc97ff100896b18e222711ba5"
+      },
+      {
+        "name": "firecrawl-competitive-intel",
+        "category": "workflows",
+        "source_tree_sha": "402dd605f56697b05277e4937dfac44ae7a36c07",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-competitive-intel.dag.yaml",
+        "dag_sha256": "f3d5066de157837d39111361059b4f1008394596514fe3cbd8bb7e82f2765400"
+      },
+      {
+        "name": "firecrawl-dashboard-reporting",
+        "category": "workflows",
+        "source_tree_sha": "1ecbd1827478e50c37d4c25a11832cac341d27ea",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-dashboard-reporting.dag.yaml",
+        "dag_sha256": "580aa3f1efeb92702c8b6eac520b313dc3f360cc86d3da549d3d595944ab88d7"
+      },
+      {
+        "name": "firecrawl-deep-research",
+        "category": "workflows",
+        "source_tree_sha": "046c78ee0456e1e0aa049d5c620eb18e1a8e8b2e",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-deep-research.dag.yaml",
+        "dag_sha256": "352191b1c685b1cda0a0c83e8b63eaeafd7776e114e0b802b66512631b655468"
+      },
+      {
+        "name": "firecrawl-demo-walkthrough",
+        "category": "workflows",
+        "source_tree_sha": "f144a9f40d8c63b420bf0c53ee2d3dc4637e3892",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-demo-walkthrough.dag.yaml",
+        "dag_sha256": "8ded7bf7568ddd666ffc388727b405a83c8d970c6023d94bde1a5ff675461fca"
+      },
+      {
+        "name": "firecrawl-knowledge-base",
+        "category": "workflows",
+        "source_tree_sha": "254208de7ec1e7427e675142462880aac2353b11",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-knowledge-base.dag.yaml",
+        "dag_sha256": "d28183cda2d213e964eb5edf010b2e54a06a01fdeb129055e056fbcf2eb7d9a5"
+      },
+      {
+        "name": "firecrawl-knowledge-ingest",
+        "category": "workflows",
+        "source_tree_sha": "99587731324ae8a38458e0dae1483a7273c80685",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-knowledge-ingest.dag.yaml",
+        "dag_sha256": "b604a8d0fe62e527a98024142109d7991871eb18f865e6d6a926cf1d8011f7f1"
+      },
+      {
+        "name": "firecrawl-lead-gen",
+        "category": "workflows",
+        "source_tree_sha": "7a45229857c1a6ad7ad5ae910a53dd1787973d01",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-lead-gen.dag.yaml",
+        "dag_sha256": "984ffd1169d92d64db16c4905fb66c90a56eb01c8bab8c070053a14e2751ffff"
+      },
+      {
+        "name": "firecrawl-lead-research",
+        "category": "workflows",
+        "source_tree_sha": "e96421e66d506c17491278bf89fae551cbc094e0",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-lead-research.dag.yaml",
+        "dag_sha256": "b5dbd97192de1bbb19f146b99e7c2da2799a8b765d5474621adc08624b17a21b"
+      },
+      {
+        "name": "firecrawl-market-research",
+        "category": "workflows",
+        "source_tree_sha": "ccea8333ca566437dae1671b12993f3b0d5f14f7",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-market-research.dag.yaml",
+        "dag_sha256": "ff0903f9a586316466243a9f2a4e525bb43aaf45822df040796ff8b959ce3581"
+      },
+      {
+        "name": "firecrawl-qa",
+        "category": "workflows",
+        "source_tree_sha": "5acc18416ffb23d3721fd7803ce20ce659732e9a",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-qa.dag.yaml",
+        "dag_sha256": "b1c359f1af515206abd7c7bacfcc07c5c21498825b27b5b1d1ebd002380e513e"
+      },
+      {
+        "name": "firecrawl-research-papers",
+        "category": "workflows",
+        "source_tree_sha": "7a826887a7fd753de47f11f89334e3eed97e1fc2",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-research-papers.dag.yaml",
+        "dag_sha256": "7928414f8c9405add6cf0dea0bc7dfcb5d418bbc784e56aed32261898151954e"
+      },
+      {
+        "name": "firecrawl-seo-audit",
+        "category": "workflows",
+        "source_tree_sha": "ffa1b06651abe078627c9f9b563eaee2d7e13e56",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-seo-audit.dag.yaml",
+        "dag_sha256": "5c300d15f670b749c8aa0edde9a1e811743561e03a64f5606adec61a88b1dae0"
+      },
+      {
+        "name": "firecrawl-shop",
+        "category": "workflows",
+        "source_tree_sha": "3b80a903bdd04cfccba93dc3ca1fa7842c50e98a",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-shop.dag.yaml",
+        "dag_sha256": "2ba856205ac81f2ce77bfbe37038ad6752b0083fd269aa39af7dfb9e899c246f"
+      },
+      {
+        "name": "firecrawl-website-design-clone",
+        "category": "workflows",
+        "source_tree_sha": "833112758530416dd04061dfb202389274370691",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-website-design-clone.dag.yaml",
+        "dag_sha256": "34b0d3ac1d3decc2e5dd64603e9fd42e8cd105c2563af736a0437e50783df4ab"
+      },
+      {
+        "name": "firecrawl-workflows",
+        "category": "workflows",
+        "source_tree_sha": "b3fdd67cb3eb9b36ac68cc280ac5dc8de9eaea7a",
+        "dag_path": "chat router/Workflow Loop code Yaiwes/skills_schema/firecrawl-workflows.dag.yaml",
+        "dag_sha256": "8790d8943989f0f783f4de31ea6ae94f1ca331b66da2724e65403ad3fe4f5a3c"
+      }
+    ],
+    "capabilities": [
+      {
+        "component": "firecrawl",
+        "command_env": "YAIWES_FIRECRAWL_COMMAND"
+      },
+      {
+        "component": "firecrawl_cli",
+        "command_env": "YAIWES_FIRECRAWL_CLI_COMMAND"
+      },
+      {
+        "component": "firecrawl_mcp_server",
+        "command_env": "YAIWES_FIRECRAWL_MCP_COMMAND"
+      }
+    ],
+    "adapter_path": "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+    "adapter_sha256": "93bbbe5052ca02eed9cba37500799d06528e4bc31b1e9fa29a88c936ec5297c6"
+  }
+}

@@ -1,0 +1,6 @@
+E-05 — Tests stale upstream
+fuente: chat router/Workflow Loop code Yaiwes/01-PLAN/PLAN-ACCION-XRAY.md
+1. test_ficha_v2_accepts_testing_contract — el loader del test no registra sys.modules antes de exec_module; Python 3.12 lo exige para dataclasses con anotaciones string.
+2. test_g009_* — decide_value devuelve REVIEW_REQUIRED donde el test espera NO_VALUE_GAP; la firma de ValueAssessment difiere del contrato asumido por el test (deriva de versión).
+3. test_g021_* — el test exige prioridad descendente ('B','A'), mientras parallel_scheduler documenta/aplica lower=more urgent y el resto de la suite usa ascendente; es el caso aislado.
+acción: solo clasificación; no se modificaron tests upstream.

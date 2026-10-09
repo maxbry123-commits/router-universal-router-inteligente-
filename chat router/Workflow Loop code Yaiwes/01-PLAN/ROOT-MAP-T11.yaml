@@ -1,0 +1,80 @@
+schema: yaiwes.root-map/v1
+generated_for: T11-G
+policy: "No crear carpeta vacía; solo rutas físicas reales verificadas por read-back."
+remote_only_note: "chat router/Workflow Loop code Yaiwes/03-ESTADO/data/*.json son transporte remoto vía GitHub contents API (ui_bridge._read), no archivos locales."
+roots:
+  - id: "01"
+    name: "Chat frontend"
+    paths:
+      - "chat router/Workflow Loop code Yaiwes/13-CHAT-UI-SUITE/"
+      - "chat router/ui/"
+      - "chat router/Workflow Loop code Yaiwes/space/"
+      - "router inteligente universal/integration/chat_mvp/chat_ui.html"
+      - "router inteligente universal/chat_space/"
+  - id: "02"
+    name: "Plugins Hermes harness"
+    paths:
+      - "router inteligente universal/plugins/"
+      - "router inteligente universal/deepseek-harness-router/"
+      - "chat router/Workflow Loop code Yaiwes/05-AGENTES/asistentes/"
+      - "router inteligente universal/enchufe/"
+  - id: "03"
+    name: "Agente"
+    paths:
+      - "chat router/Workflow Loop code Yaiwes/05-AGENTES/"
+      - "router inteligente universal/agents-yaiwes/"
+      - "router inteligente universal/agents/"
+      - "router inteligente universal/agent-microkernel/"
+  - id: "04"
+    name: "Input y buscadores"
+    paths:
+      - "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/buscadores.py"
+      - "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/verificador.py"
+      - "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/evidence_pack.py"
+      - "chat router/Workflow Loop code Yaiwes/01-PLAN/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL.md"
+  - id: "05"
+    name: "Workflow"
+    paths:
+      - "chat router/Workflow Loop code Yaiwes/01-PLAN/PLAN-DSL-DAG-CHAT-AGENTES-INFRA.yaml"
+      - "chat router/Workflow Loop code Yaiwes/01-PLAN/ORQUESTADOR-DE-TRABAJO.yaml"
+      - "router inteligente universal/integration/chat_mvp/dag.py"
+
+  - id: "06"
+    name: "Memoria"
+    paths:
+      - "chat router/Workflow Loop code Yaiwes/memoria/"
+      - "router inteligente universal/integration/chat_mvp/memory_runtime.py"
+      - "router inteligente universal/integration/chat_mvp/memoria_loader.py"
+  - id: "07"
+    name: "Formato de salida"
+    paths:
+      - "router inteligente universal/enchufe/"
+      - "router inteligente universal/integration/chat_mvp/fables_adapter.py"
+      - "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/puerta.py"
+  - id: "08"
+    name: "Componentes asociados"
+    paths:
+      - "router inteligente universal/Componente open soure router inteligente universal/"
+      - "router inteligente universal/Componentes del Router/"
+  - id: "09"
+    name: "Tools y pools"
+    paths:
+      - "router inteligente universal/integration/chat_mvp/tool_contracts.py"
+      - "router inteligente universal/integration/chat_mvp/model_pool.py"
+      - "router inteligente universal/integration/chat_mvp/providers.py"
+      - "chat router/Workflow Loop code Yaiwes/05-AGENTES/gobierno/mirror_factory.py"
+  - id: "10"
+    name: "Otros"
+    paths:
+      - "router inteligente universal/Banco de claves/"
+      - "router inteligente universal/scripts/"
+      - "chat router/Workflow Loop code Yaiwes/00-INSTRUCCIONES/"
+  - id: "11"
+    name: "Wordflow LOOP Yaiwes (copiado de agentes via motor_3, VERIFIED_CLOSED)"
+    paths:
+      - "chat router/Workflow Loop code Yaiwes/_copias-anteriores/wordflow loop code Yaiwes/runtime/"
+      - "chat router/Workflow Loop code Yaiwes/_copias-anteriores/wordflow loop code Yaiwes/wordflow_loop/"
+      - "chat router/Workflow Loop code Yaiwes/_copias-anteriores/wordflow loop code Yaiwes/Crazy Wall Orquestador/"
+      - "chat router/Workflow Loop code Yaiwes/_copias-anteriores/wordflow loop code Yaiwes/backend/"
+      - "chat router/Workflow Loop code Yaiwes/_copias-anteriores/➡️📂motores de descarga extracción copiado movimiento archivos agentes/"
+      - "chat router/Workflow Loop code Yaiwes/_copias-anteriores/➡️📂 Wordflow LOOP Yaiwes/"

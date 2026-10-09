@@ -1,0 +1,8 @@
+E-07 — Borrador README-ARQUITECTURA
+fecha_utc: 2026-10-03T00:36:00Z
+fuente: chat router/Workflow Loop code Yaiwes/01-PLAN/ROOT-MAP-T11.yaml
+sha256_fuente: 566be5a83ba56ae631445a43f98a3a311bf9541ebd61ab3f7af934ceac5a2d8b
+raíces_detectadas: 11
+destino: chat router/Workflow Loop code Yaiwes/README-ARQUITECTURA-BACKEND.md
+sha256_destino: 47c62fa90c543ef04047bb3ee4ce52ca4534cf1117ff0963b87c2ab38dd03145
+resultado: borrador generado únicamente desde ROOT-MAP-T11; Router no modificado.

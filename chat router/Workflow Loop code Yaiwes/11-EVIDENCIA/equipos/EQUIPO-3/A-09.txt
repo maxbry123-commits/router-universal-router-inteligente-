@@ -1,0 +1,9 @@
+task=A-09
+component_map_path=chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py
+component_map_sha256=6dc84e5c82cfc91c2cc74aec76704a955f7e51017e2b3b00127cd5b64951e0d9
+anthropic-skills=true
+scrapling=true
+scrapegraph-ai=true
+agent-reach=true
+validation=PASS
+reference_commits=A-01:f9591b84;A-02:f9591b84;A-03:f9591b84;A-04:f9239124

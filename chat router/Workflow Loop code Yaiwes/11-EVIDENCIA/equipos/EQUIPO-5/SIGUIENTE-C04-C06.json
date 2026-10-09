@@ -1,0 +1,24 @@
+{
+  "schema": "yaiwes.team-evidence/v1",
+  "equipo": "EQUIPO-5",
+  "fecha_utc": "2026-10-03T00:25:00Z",
+  "parent_commit": "9277da87857404a48b1ff31ccca8a76127f3dfe1",
+  "tasks": {
+    "C-04": {
+      "estado": "BLOQUEADO",
+      "prueba": "GET contents local claude-mem: 404 en intento inicial y único reintento",
+      "gap": "Componente claude-mem no existe en la ruta local descargada; reglas prohíben inventar o sustituir código."
+    },
+    "C-05": {
+      "estado": "BLOQUEADO",
+      "prueba": "GET contents local shadcn-skills: 404 en intento inicial y único reintento",
+      "gap": "Componente shadcn-skills no existe en la ruta local descargada; reglas prohíben inventar o sustituir código."
+    },
+    "C-06": {
+      "estado": "CERRADO",
+      "prueba": "COMPONENT_CAPABILITIES contiene exactamente las 4 nuevas keys: getdesign, open_design, npxskillui, magic_mcp",
+      "adapter_path": "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+      "adapter_sha256": "703bfa554a5c7997c506cf978a005bb10fcfd817471618318ca10bdbd00cf01d"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+E-06 — Flags externos P7 registrados como GAP
+fuente: chat router/Workflow Loop code Yaiwes/01-PLAN/PLAN-ACCION-XRAY.md
+N-1.1 — GAP: materializar submodules en CI requiere GitHub Actions; bloqueado por diseño/billing.
+N-1.3 — GAP: mcode gitlink requiere Git Data API con permiso repo.
+N-1.4 — GAP: 5 keys NVIDIA secrets + test real; el plan lo sitúa solo vía Actions y el sandbox no tiene red NVIDIA.
+N-2.12 — GAP: equipo frontend loop bloqueado por FRONTEND gate; backend primero.
+N-2.13 — GAP: los 4 archivos requeridos nunca fueron commiteados ni adjuntados en la sesión.
+acción: flags registrados sin detener la cola.

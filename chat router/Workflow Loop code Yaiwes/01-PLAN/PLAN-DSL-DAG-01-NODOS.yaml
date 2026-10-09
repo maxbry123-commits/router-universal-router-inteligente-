@@ -1,0 +1,274 @@
+# =====================================================================
+# PLAN DSL DAG - PARTE 1: NODOS — CHAT YAIWES
+# El contrato de ejecucion esta en: PLAN-DSL-DAG-00-CONTRATO.yaml. LEER EL CONTRATO PRIMERO.
+# Formato copiado de agentes/Claude notas/PLAN-DSL-DAG-01-NODOS.yaml
+# =====================================================================
+dsl_version: "yaiwes.dag/v1"
+contrato: "chat router/Workflow Loop code Yaiwes/01-PLAN/PLAN-DSL-DAG-00-CONTRATO.yaml"
+
+# Cada nodo hereda: gobernanza SHERIFF -> EJECUTOR -> JUDGE; on_gap: gap_ladder; on_flag: continue_next;
+# checkpoint obligatorio antes de cerrar; max 3 pasos por nodo; max 500 LOC.
+
+# =====================================================================
+# DAG 0 - VERBATIM COMPLETO (condicion del Director para todo lo demas)
+# =====================================================================
+dag_0_verbatim:
+  nombre: "Instrucciones del Director 1 a 1, completas y literales"
+  nodos:
+    - id: V-1
+      titulo: "Completar verbatim literal sin resumenes"
+      fuente_director: [M18, M19, M21, M44]
+      pasos:
+        1: "copiar LITERAL documentos 22-26 y M40 completos en 00-INSTRUCCIONES/INPUT-BLOCK-VERBATIM-PARTE-5.md (sustituir los resumenes)"
+        2: "subir PARTE-2 (documentos completos del 25-sep: guia de agentes, Harness, Mapa Mental v3.0, docs HF 2-4, docs 5-7, doc 9, doc 8, doc 10)"
+        3: "verificacion cruzada archivo vs conversacion, 5 pasadas; listar faltantes en la seccion AUDITORIA al final de cada parte"
+      acceptance:
+        - "cero '…' ni 'resumen' en textos del Director"
+        - "todas las URL de la conversacion presentes"
+      evidence: [paths, sha, lista_auditoria]
+      work_surface: DOCS
+      depends_on: []
+      bloquea: []
+
+# =====================================================================
+# DAG A - ROUTER Y OMNIROUTE PRIVADO (M30-M33, M40, M43, M44 paso 2)
+# =====================================================================
+dag_a_router:
+  nombre: "Router unico en HF 16 GB de pago con OmniRoute privado"
+  nodos:
+    - id: A-1
+      titulo: "OmniRoute 100% funcional dentro del Router"
+      fuente_director: [M40, M43, M44]
+      pasos:
+        1: "leer resultado de .github/workflows/prueba-omniroute-router.yml (relee flag en cada intento)"
+        2: "si falla: leer /omniroute/status (log) y corregir start_omniroute.sh (gap_ladder)"
+        3: "repetir prueba hasta /omniroute/status encendido + /v1/models + 1 respuesta real"
+      acceptance: ["3 respuestas reales en la prueba"]
+      evidence: [run_id, anotaciones_prueba]
+      work_surface: BACKEND
+      depends_on: []
+      bloquea: [A-2, A-3, B-2]
+    - id: A-2
+      titulo: "OmniRoute como proveedor del Router (un solo Router)"
+      fuente_director: [M43]
+      pasos:
+        1: "registrar omniroute en providers del Router apuntando a 127.0.0.1:20128/v1"
+        2: "orden de ruta: OmniRoute + NVIDIA + Cerebras + Groq; DeepSeek solo si hay claves del Director"
+        3: "prueba: /chat/send con provider omniroute responde"
+      acceptance: ["una respuesta del chat sale por OmniRoute"]
+      evidence: [respuesta, sha_cambios]
+      work_surface: BACKEND
+      depends_on: [A-1]
+    - id: A-3
+      titulo: "Aviso de Kimi K3 / DeepSeek V4 en NVIDIA al usar el chat"
+      fuente_director: [M43]
+      pasos:
+        1: "ruta del Router: consulta catalogo NVIDIA y devuelve disponibilidad Kimi K3 y DeepSeek V4"
+        2: "el chat la llama al abrir y muestra nota (roja si no hay acceso)"
+      acceptance: ["captura del aviso en el chat"]
+      evidence: [captura, respuesta_ruta]
+      work_surface: MIXED
+      depends_on: [A-2]
+    - id: A-4
+      titulo: "Cola de tareas + autoescalado + MCP dentro de la maquina"
+      fuente_director: [M30, M31, M33]
+      pasos:
+        1: "cola en el Router; vigilante: 16 GB extra al 80% (tope 3), cadena 32 GB al 85% (tope 10), apagado tras 15 min sin tareas"
+        2: "conector MCP dentro de la maquina 16 GB + letrero fijo en Vercel (/mcp)"
+        3: "prueba: tarea larga enciende un 32 GB y se apaga; Claude conectado por el letrero"
+      acceptance: ["procesador encendido y apagado segun carga", "conexion por letrero"]
+      evidence: [job_ids, captura_conector]
+      work_surface: BACKEND
+      depends_on: [A-1]
+
+# =====================================================================
+# DAG B - MEMORIA Y ALMACENAMIENTO (M6, M40, M43, M44.4: solo cablear componentes del Director)
+# =====================================================================
+dag_b_memoria:
+  nombre: "State Hub + memoria persistente con componentes ya descargados"
+  nodos:
+    - id: B-1
+      titulo: "State Hub (unico escritor de estado)"
+      fuente_director: [doc24, M44]
+      pasos:
+        1: "state_hub.emit -> 03-ESTADO/BITACORA.jsonl -> STATE.json, CRAZY_WALL.json, HANDOFF.md (ruta del Router)"
+        2: "ajustar DATA de ui_bridge.py a chat router/Workflow Loop code Yaiwes/03-ESTADO/data (FLAG-1)"
+        3: "prueba: 3 eventos -> STATE y HANDOFF regenerados"
+      acceptance: ["STATE reconstruible desde la bitacora"]
+      evidence: [eventos, sha_state]
+      work_surface: BACKEND
+      depends_on: []
+      bloquea: [C-1]
+    - id: B-2
+      titulo: "Cablear memoria del Director (sin crear nada nuevo)"
+      fuente_director: [M6, M44]
+      componentes: [Graphiti, FalkorDB, Memanto, Graphify, AgentDB, "HF Storage Bucket", "PostgreSQL (servicio)", "Redis (servicio)"]
+      pasos:
+        1: "inventario: cuales estan descargados (Componente open soure router inteligente universal/) y cuales faltan -> faltantes con el motor"
+        2: "adapter por componente al Router (memoria de chat, proyecto, global y de agentes)"
+        3: "prueba: guardar recuerdo -> reiniciar Router -> recuperarlo; busqueda por grafo"
+      acceptance: ["recuerdo sobrevive reinicio", "busqueda por grafo responde"]
+      evidence: [inventario, prueba_reinicio]
+      work_surface: BACKEND
+      depends_on: [A-1, B-1]
+    - id: B-3
+      titulo: "Archivos del chat anclados al almacenamiento"
+      fuente_director: [M1, M16]
+      pasos:
+        1: "subida -> HF Bucket + indice en memoria"
+        2: "enrutar adjunto al agente/IA elegido"
+      acceptance: ["archivo disponible tras reinicio y usado en respuesta"]
+      evidence: [captura, ids]
+      work_surface: MIXED
+      depends_on: [B-2]
+
+# =====================================================================
+# DAG C - AGENTES (doc22, doc23, M42, M43)
+# =====================================================================
+dag_c_agentes:
+  nombre: "Jerarquia de agentes conectada al Router y al chat"
+  nodos:
+    - id: C-1
+      titulo: "OpenClaw y Hermes (forks) como asistentes del orquestador y del chat"
+      fuente_director: [M42, doc23]
+      forks: ["maxbry123-commits/openclaw", "maxbry123-commits/hermes-agent"]
+      pasos:
+        1: "arrancarlos con modelos de nuestro Router"
+        2: "conectarlos al State Hub (MCP) y al chat (/chat/agents)"
+        3: "prueba: cada uno responde una orden y deja evento"
+      acceptance: ["2 respuestas + 2 eventos"]
+      evidence: [eventos, capturas]
+      work_surface: MIXED
+      depends_on: [A-2, B-1]
+    - id: C-2
+      titulo: "Rowboat, Ruflo, Sheriff, Sentinel, Judge"
+      fuente_director: [doc23, M27]
+      pasos:
+        1: "Rowboat director y Ruflo colmena por el Router"
+        2: "Sheriff y Judge como codigo; Sentinel vigila heartbeats"
+        3: "prueba: orden recorre niveles 0-8"
+      acceptance: ["traza completa con evidencia"]
+      evidence: [bitacora_traza]
+      work_surface: BACKEND
+      depends_on: [C-1]
+    - id: C-3
+      titulo: "EngineeringLoop: Claude Code -> Grok -> Claude Code -> Meta x4 -> Meta Code"
+      fuente_director: [M43, doc22]
+      pasos:
+        1: "contrato unico Job/Result; todos por nuestro Router"
+        2: "Meta x4 en paralelo (codigo, tests, visual, adversarial) + agregador + fixer"
+        3: "prueba: tarea real completa el ciclo y pasa Sheriff"
+      acceptance: ["ciclo completo con evidencia"]
+      evidence: [results, diff, capturas]
+      work_surface: MIXED
+      depends_on: [C-2]
+    - id: C-4
+      titulo: "Mirror selectivo (solo equipo de ingenieria + solo el sistema a tocar)"
+      fuente_director: [M43, doc22]
+      pasos:
+        1: "MirrorManager: worktree mirror/<job> + SYSTEM_MAP"
+        2: "merge selectivo tras Sheriff; si falla se conserva el mirror"
+      acceptance: ["main recibe solo el diff aprobado"]
+      evidence: [diff, sha]
+      work_surface: BACKEND
+      depends_on: [C-3]
+    - id: C-5
+      titulo: "Acceso HF + todos los repos; grafo de agentes"
+      fuente_director: [M43]
+      pasos:
+        1: "credenciales por el Router (secretos), nunca en archivos"
+        2: "03-ESTADO/AGENT_GRAPH.json con nodos y aristas"
+      acceptance: ["agente lee un repo cualquiera y un recurso HF"]
+      evidence: [respuestas]
+      work_surface: BACKEND
+      depends_on: [C-2]
+    - id: C-6
+      titulo: "Evidence/Search Gate con 12 goals"
+      fuente_director: [doc26]
+      pasos:
+        1: "parser + compilador de busquedas + evidence pack"
+        2: "verificacion posterior + 12 goals de salida + Sheriff"
+      acceptance: ["tarea de prueba con evidence pack y 12 goals"]
+      evidence: [evidence_pack, goals]
+      work_surface: BACKEND
+      depends_on: [C-2]
+
+# =====================================================================
+# DAG D - CHAT Y PANEL (M1, M3, M16, M18, M27, M42)
+# =====================================================================
+dag_d_chat:
+  nombre: "Chat sobre base aprobada + panel separado"
+  nodos:
+    - id: D-1
+      titulo: "Base del chat (chat de Manus / Open WebUI / descargado) con skills del Director"
+      fuente_director: [M18, M42]
+      pasos:
+        1: "Director pasa el enlace del chat de Manus (FLAG-2)"
+        2: "conectarlo al Router (/api) y al Harness"
+      acceptance: ["Director aprueba visualmente"]
+      evidence: [captura, url]
+      work_surface: FRONTEND
+      depends_on: [A-2]
+    - id: D-2
+      titulo: "Funciones del chat (13 puntos + WORK + rewind + compact + Council + Archify)"
+      fuente_director: [M16]
+      pasos:
+        1: "cada boton a su ruta real (Action Registry)"
+        2: "MetaCua + CUA prueban cada boton con captura"
+      acceptance: ["cada boton con captura, sin mocks"]
+      evidence: [capturas]
+      work_surface: FRONTEND
+      depends_on: [D-1, B-3, C-2]
+    - id: D-3
+      titulo: "Panel de control separado"
+      fuente_director: [M16, M30]
+      pasos:
+        1: "energia, procesadores 16/32 GB, workflows +, avisos rojos"
+        2: "prueba de cada control"
+      acceptance: ["cada control probado"]
+      evidence: [capturas]
+      work_surface: FRONTEND
+      depends_on: [D-2, A-4]
+
+# =====================================================================
+# DAG E - EXPORTACION (M43, M44.3)
+# =====================================================================
+dag_e_export:
+  nodos:
+    - id: E-1
+      titulo: "Exportar chat router/ sin historia al repo YAIWES"
+      fuente_director: [M43, M44]
+      pasos: {1: "cuando todo este probado y el Director autorice"}
+      acceptance: ["autorizacion del Director"]
+      depends_on: [D-3, C-4, B-3]
+
+# =====================================================================
+orden_ejecucion:
+  fase_1: [V-1, A-1, B-1]
+  fase_2: [A-2, A-3, B-2]
+  fase_3: [B-3, C-1]
+  fase_4: [C-2, C-5, C-6]
+  fase_5: [C-3, C-4, A-4]
+  fase_6: [D-1, D-2, D-3]
+  fase_7: [E-1]
+  regla: "depends_on manda; FLAG no permite saltar dependencia obligatoria"
+
+estado:
+  V-1: PENDIENTE
+  A-1: EN_CURSO
+  A-2: PENDIENTE
+  A-3: PENDIENTE
+  A-4: PENDIENTE
+  B-1: PENDIENTE
+  B-2: PENDIENTE
+  B-3: PENDIENTE
+  C-1: PENDIENTE   # forks creados 27-sep
+  C-2: PENDIENTE
+  C-3: PENDIENTE
+  C-4: PENDIENTE
+  C-5: PENDIENTE
+  C-6: PENDIENTE
+  D-1: BLOQUEADO_FLAG-2
+  D-2: PENDIENTE
+  D-3: PENDIENTE
+  E-1: PENDIENTE

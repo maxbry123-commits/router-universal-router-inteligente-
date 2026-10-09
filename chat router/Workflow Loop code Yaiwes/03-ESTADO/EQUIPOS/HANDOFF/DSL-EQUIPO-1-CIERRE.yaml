@@ -1,0 +1,70 @@
+schema: yaiwes.cierre-equipo-1/v1
+modo: CERRADO            # ningún nodo termina en "preguntar" ni "escalar"
+manda_sobre: [ronda_actual, "las 3 primeras PENDIENTE", HANDOFF-EQUIPO-1-SONNET.md]   # este DSL manda
+reglas: "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/REGLAS-DURAS.md (todas)"
+
+# ------------------------------------------------------------
+# DECISIONES YA TOMADAS (no se discuten, no se vuelven a preguntar)
+# ------------------------------------------------------------
+estado_inicial: "S1-01 Rowboat, S1-02 MSAF y S1-03 Orca quedaron BLOQUEADAS (commit 60e0143). Están cerradas como gap. NO se tocan, NO se reintentan."
+decision_envoltorios: >
+  PROHIBIDO escribir envoltorios o código nuevo. El adapter exige un comando que lea el payload por
+  entrada estándar. Un componente que no traiga ese comando ya hecho queda BLOQUEADO con
+  gap="sin comando ejecutable que lea stdin" y se pasa al siguiente en el mismo segundo.
+  No pidas comando, no pidas envoltorio, no pidas permiso: eso ya está decidido.
+no_pisar_a_los_Sol:
+  solo_escribes: ["chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json", "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/"]
+  solo_lees: "todo lo demás"
+  prohibido_editar:
+    - "wordflow_loop/wordflow_loop/orchestrator_adapters.py (Sol 1 y Sol 3 editan COMPONENT_CAPABILITIES)"
+    - "skills_schema/ (Sol 1 y Sol 3)"
+    - "ROOT-MAP-T11.yaml y chat router/Workflow Loop code Yaiwes/01-PLAN/ (Sol 7 mueve archivos)"
+    - "cualquier EQUIPO-N-*.json que no sea el tuyo"
+  git: "antes de CADA push: git pull --rebase. Empuja solo tus rutas. Si rechaza: pull --rebase y 1 reintento; si sigue, imprime las entradas como JSON y continúa con el siguiente nodo."
+acceso: "ruta Vercel que ya usaste (máquina temporal, clone sparse). Intenta timeout 2700000; si da error, usa 300000 y recrea la máquina cuando venza (haz git pull y sigue desde el nodo que falta). Las claves por env, nunca impresas."
+salida_unica: "NODO [EQUIPO-1] — S1-XX | CERRADO|BLOQUEADO | GAP:<motivo en 8 palabras o —> | EVIDENCIA:<path> | COMMIT:<sha7>"   # una línea por tarea, NADA MÁS. Al final: EQUIPO-1 FIN
+
+# ------------------------------------------------------------
+# DAG: se ejecuta TODO en una sola corrida, en este orden. Commit y push al cerrar CADA nodo.
+# ------------------------------------------------------------
+dag:
+  T1_S1-09:   # lo más importante: prueba S-11 (3 workers Seals)
+    hace:
+      - "lee la definición exacta de S-11 en 'chat router/Workflow Loop code Yaiwes/01-PLAN/PLAN-ACCION-XRAY.md' (busca 'S-11') y ejecútala tal cual"
+      - "Seals vive en 'chat router/Workflow Loop code Yaiwes/backend/Seals team YAIWES'; tests con PYTHONPATH=seals_core"
+      - "3 instancias aisladas, evidencia por worker en EQUIPO-1/S1-09-worker{1,2,3}.txt con sha256"
+    cierra_si: "las 3 instancias corrieron y hay salida real de cada una"
+    si_no: "BLOQUEADO con el error exacto; siguiente nodo"
+  T2_S1-11:   # suite del loop contra la base
+    hace:
+      - "cd 'chat router/Workflow Loop code Yaiwes' && python3 -m venv /tmp/v && . /tmp/v/bin/activate && pip install -q pytest y lo que pida UN import fallido (máx 1 vuelta de pip)"
+      - "pytest runtime/tests -q > EQUIPO-1/S1-11.txt"
+      - "compara con la base 267 pass / 3 stale (g009, g021, ficha loader). No toques tests."
+    cierra_si: "hay conteo real de pass/fail/stale"
+    si_no: "BLOQUEADO con el error de instalación o de python; siguiente nodo"
+  T3_S1-10:   # auditoría de cierre de Seals (depende de T1)
+    hace: "lee la definición de S-12 en PLAN-ACCION-XRAY.md y ejecútala con la evidencia de T1; resultado en EQUIPO-1/S1-10.md"
+    si_T1_bloqueado: "S-12 queda BLOQUEADO con gap='S-11 bloqueado'; siguiente nodo"
+  T4_S1-04_a_S1-08:   # los 5 componentes que faltan, UN solo escaneo, sin explorar a mano
+    componentes: {S1-04: omniroute, S1-05: deepseek_harness, S1-06: munder_difflin, S1-07: dagu_dbos, S1-08: mcp}
+    hace:
+      - "carpeta: 'router inteligente universal/Componente open soure router inteligente universal/' (solo lectura). Lista con: git ls-tree --name-only HEAD '<carpeta>/' | grep -iE 'omniroute|deepseek|munder|dagu|dbos|mcp'"
+      - "sparse-checkout add SOLO esas carpetas"
+      - "escaneo único por carpeta: ls; grep -s '\"bin\"' -A3 package.json; grep -s -A6 'scripts' pyproject.toml; ls bin cli 2>/dev/null"
+    regla_de_decision:   # cierra si y solo si las 3 se cumplen
+      - "existe un comando ya hecho (bin, script o __main__)"
+      - "pasa: echo '{\"task\":\"ping\"}' | timeout 60 <comando>  -> exit 0 y stdout no vacío"
+      - "el adapter lo invoca bien (export YAIWES_<NOMBRE>_COMMAND solo en env; usa el modelo de runtime/tests/test_orchestrator_adapters.py; adapter en solo lectura)"
+    si_no_cumple: "BLOQUEADO gap='sin comando ejecutable que lea stdin' (o el error exacto). Un solo intento por componente."
+    evidencia: "EQUIPO-1/S1-04.txt ... S1-08.txt con sha256"
+  T5_S1-12:
+    hace: "compila en EQUIPO-1/S1-12.md la lista de gaps de T1..T4 (motivo, intento, qué falta). Sin opinar."
+
+# ------------------------------------------------------------
+# CIERRE
+# ------------------------------------------------------------
+escribir_resultado: "entrada por tarea en resultado[] con el esquema (path+url+sha256+prueba_real+gap); estado en cola; línea en bitacora; handoff actualizado. Un commit por nodo."
+estados_finales:
+  FIN: "imprime las líneas de salida_unica y 'EQUIPO-1 FIN'"
+  SIN_ESCRITURA: "si no pudiste hacer push: imprime las entradas como JSON del esquema y 'EQUIPO-1 FIN'"
+prohibido_siempre: [preguntar, escalar, esperar, explicar, Hugging Face, GitHub Actions, LFS git, tocar el router, escribir código nuevo, verificar de más, reintentar bloqueos de S1-01 a S1-03]

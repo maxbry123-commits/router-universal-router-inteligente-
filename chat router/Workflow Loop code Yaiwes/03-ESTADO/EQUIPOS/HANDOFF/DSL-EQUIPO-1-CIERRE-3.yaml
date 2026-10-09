@@ -1,0 +1,35 @@
+schema: yaiwes.cierre-equipo-1/v3        # PREPARADO. Se activa cuando terminen las oleadas 1 y 2 de los Sol y el DSL v4
+modo: CERRADO
+motivo: "Sol 5 (equipo 7) no tiene red para clonar (DNS falló). Sonnet sí. Sonnet cierra E-07 a E-12, la auditoría final y el registro OFICIAL en Crazy Wall, bitácora, STATE y handoff. Sol 5 NO se vuelve a activar."
+reglas: "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/REGLAS-DURAS.md (v2: todo cierra CERRADO o CERRADO_REF; sin preguntas, sin escalar, sin esperar)"
+acceso: "misma ruta Vercel de siempre; claves por env, nunca impresas"
+no_pisar_a_otros:
+  solo_escribes: ["chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json", "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/", "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EVIDENCIA-GLOBAL.json", "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/AUDITORIA-FINAL.md", "chat router/Workflow Loop code Yaiwes/README-ARQUITECTURA-BACKEND.md", "Devin notas/NOTA-2026-10-03-cierre.md", "lo que genere la herramienta oficial watchdog_checkpoint.py (STATE, BITACORA, CRAZY_WALL)", "una línea nueva en HANDOFF.md FUERA del bloque que genera el State Hub"]
+  solo_lees: "todos los EQUIPO-N-*.json y todo lo demás (no edites los JSON de otros)"
+  prohibido: "editar a mano STATE.json, BITACORA.jsonl o CRAZY_WALL.json: solo los escribe la herramienta oficial (llevan hash encadenado)"
+  git: "antes de CADA push: git pull --rebase; empuja solo tus rutas; si rechaza, pull --rebase y 1 reintento"
+salida: "NODO [EQUIPO-1] — <ID> | CERRADO|CERRADO_REF | COMMIT:<sha7>   (una línea por tarea; nada más). Al final: EQUIPO-1 FIN"
+
+dag:
+  T1_E-09:   # suite final ordenada, con el entorno Python 3.12 que ya montaste
+    hace: ["pytest runtime/tests -q en 'chat router/Workflow Loop code Yaiwes'", "suite seals_core con PYTHONPATH=seals_core desde 'backend/Seals team YAIWES'", "compara con la base 267/3 y 44/45; guarda EQUIPO-1/E-09.txt"]
+    cierra_en: "CERRADO si no hay fallos fuera de base; si no, CERRADO_REF con los nombres de los tests"
+  T2_E-10:   # evidencia global (agregado de datos, comando de una sola vez; no es código del repo)
+    hace: ["lee los 8 EQUIPO-N-*.json; reúne cada entrada de resultado[] con su equipo, id_tarea, estado y archivos[path+url+sha256]", "escribe 'chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EVIDENCIA-GLOBAL.json' con ese resultado"]
+    cierra_en: CERRADO
+  T3_E-07_E-11:   # README de arquitectura, solo con hechos
+    hace: ["desde 'chat router/Workflow Loop code Yaiwes/01-PLAN/ROOT-MAP-T11.yaml' y los resultados reales de los 8 JSON, escribe 'README-ARQUITECTURA-BACKEND.md' en 'chat router/Workflow Loop code Yaiwes/': qué hay, dónde está, qué corre y qué quedó como CERRADO_REF", "nada inventado: si un dato no está en un JSON o en el repo, no se escribe"]
+    cierra_en: CERRADO
+  T4_E-12_AUDITORIA_FINAL:
+    hace: ["escribe 'chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/AUDITORIA-FINAL.md': para CB-1 a CB-9 del plan (chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/PLAN-CIERRE-BACKEND.yaml) pon CERRADO / CERRADO_REF / ABIERTO con el conteo de tareas de cada equipo", "muestreo: abre 1 archivo de evidencia por equipo y comprueba que su sha256 coincide con el del JSON", "lista corta de lo que sigue abierto"]
+    cierra_en: CERRADO
+  T5_REGISTRO_OFICIAL:   # Crazy Wall, bitácora, STATE y handoff: por la vía oficial, sin editar a mano
+    id: S1-15
+    hace:
+      - "ejecuta la herramienta oficial una vez: python3 'chat router/Workflow Loop code Yaiwes/03-ESTADO/watchdog_checkpoint.py' --summary '<1 línea: tareas cerradas por equipo, resultado de la suite final, ruta de AUDITORIA-FINAL.md>'. Eso genera STATE, BITACORA y CRAZY_WALL con hash válido."
+      - "en 'chat router/Workflow Loop code Yaiwes/03-ESTADO/HANDOFF.md' agrega UNA línea con los enlaces a '03-ESTADO/EQUIPOS/00-LEEME-EQUIPOS.md' y a 'AUDITORIA-FINAL.md', colocada ANTES de la primera marca del bloque que genera el State Hub. Si no encuentras las marcas, NO edites HANDOFF.md."
+      - "escribe 'Devin notas/NOTA-2026-10-03-cierre.md' con el resumen y los enlaces (misma carpeta donde ya está la nota del día 2)"
+    cierra_en: "CERRADO si la herramienta terminó sin error; si falla tras 1 reintento: CERRADO_REF con el error exacto y deja la línea de resumen en la nota de Devin"
+  T6_HANDOFF: {hace: "actualiza 'handoff' de tu JSON con el resultado final; 1 commit"}
+
+prohibido_siempre: [preguntar, escalar, esperar, explicar, BLOQUEADO, Hugging Face, GitHub Actions, LFS git, tocar el router, escribir código nuevo en el repo, editar tests]

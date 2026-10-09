@@ -1,9 +1,0 @@
-S1-11c: 8 tests de motores con enlace simbolico (solo en la maquina, no commiteado)
-ruta esperada: chat router/motores de descarga extraccion copiado movimiento archivos agentes (con emojis)
-antes: 5 failed 3 passed
-== chat router/wordflow loop code Yaiwes
-........                                                                 [100%]
-8 passed, 272 deselected in 0.39s
-== chat router/📂 workflow Loops code Yaiwes
-........                                                                 [100%]
-8 passed, 273 deselected in 0.36s

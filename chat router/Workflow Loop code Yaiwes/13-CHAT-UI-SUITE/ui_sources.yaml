@@ -1,0 +1,30 @@
+schema: yaiwes.chat-ui-suite/v1
+gateway:
+  base_url: http://127.0.0.1:8099/v1
+  models: [yaiwes/hermes, yaiwes/openclaw]
+  bridge: chat router/Workflow Loop code Yaiwes/05-AGENTES/asistentes/puente_asistentes.py
+uis:
+  open_webui:
+    placement: router inteligente universal/Componente open soure router inteligente universal/open-webui/code
+    source_repo: https://github.com/open-webui/open-webui
+    source_commit: 8bd8b4fac5e059578ac0c74b3c18d11139f88b7d
+    mode: existing_extracted_tree
+  librechat:
+    placement: router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/LibreChat
+    source_repo: https://github.com/danny-avila/LibreChat
+    source_commit: 968950a4bdb3929c9381b80290720972cb936134
+    mode: pinned_gitlink
+  big_agi:
+    placement: router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/big-AGI
+    source_repo: https://github.com/enricoros/big-AGI
+    source_commit: 7413983159ddb7056bde035d98446d33573bfa0a
+    mode: pinned_gitlink
+  jan:
+    placement: router inteligente universal/Componente open soure router inteligente universal/open-webui/otros-chat/Jan
+    source_repo: https://github.com/janhq/jan
+    source_commit: e2185dbc7db3a002da35b3688b57910ec6fd87b2
+    mode: pinned_gitlink
+policy:
+  rewrite_ui_source: false
+  use_hermes_ui: false
+  use_openclaw_ui: false

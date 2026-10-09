@@ -1,0 +1,237 @@
+{
+  "schema": "yaiwes.o4-completion-audit/v1",
+  "generated_at": "2026-10-03T00:55:00Z",
+  "source_of_truth": [
+    {
+      "path": "chat router/Workflow Loop code Yaiwes/01-PLAN/PLAN-ACCION-XRAY.md",
+      "blob_sha": "e01c9121db90a81763092c34fdb79e0faa9f77ef"
+    },
+    {
+      "path": "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json",
+      "blob_sha": "a59a013e41517eb7495b52401ea91c10832b02b9"
+    },
+    {
+      "path": "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-4-SOL-2.json",
+      "blob_sha": "bc32c5a5769ebc2fd516f386899c21bc9b4ac5ef"
+    },
+    {
+      "path": "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/motor2-o4/.motor2-state.json",
+      "blob_sha": "8ce187f6f9fbe2e7c211e31ebaf7d0c54b8f06a4"
+    },
+    {
+      "path": "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+      "blob_sha": "17bee950acdfa5f8908fc7cf636296061022f7d7"
+    },
+    {
+      "path": "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_contracts.py",
+      "blob_sha": "1451d5beffb36097b11045e077c4cd9b8b7647c6"
+    },
+    {
+      "path": "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_adapters.py",
+      "blob_sha": "303f9bb900ee396f4190bdb2518297d51efdfd6d"
+    },
+    {
+      "path": "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_e2e.py",
+      "blob_sha": "37862dca75bc7b5c4ccb2cd60559496b587651c7"
+    }
+  ],
+  "nodos": [
+    {
+      "id": "O4-00",
+      "estado": "CERRADO",
+      "resumen": "Baseline del staff propio del orquestador identificado.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/01-PLAN/PLAN-ACCION-XRAY.md"
+      ]
+    },
+    {
+      "id": "O4-01",
+      "estado": "CERRADO",
+      "resumen": "Source lock: componentes base presentes; munder-difflin y archify con descarga/extracción verificada.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/01-PLAN/PLAN-ACCION-XRAY.md",
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/motor2-o4/.motor2-state.json"
+      ]
+    },
+    {
+      "id": "O4-02",
+      "estado": "CERRADO",
+      "resumen": "Materialización de los dos faltantes verificada por estado de Motor 2.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/motor2-o4/.motor2-state.json",
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/motor2-o4/INDEX.md"
+      ]
+    },
+    {
+      "id": "O4-03",
+      "estado": "CERRADO",
+      "resumen": "Mapa de capacidades implementado.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py"
+      ]
+    },
+    {
+      "id": "O4-04",
+      "estado": "CERRADO",
+      "resumen": "Autoridad Hermes para crear/replanificar el goal global implementada y testeada.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+        "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_adapters.py"
+      ]
+    },
+    {
+      "id": "O4-05",
+      "estado": "CERRADO",
+      "resumen": "Sheriff pre-exec implementado y testeado.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+        "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_adapters.py"
+      ]
+    },
+    {
+      "id": "O4-06",
+      "estado": "CERRADO",
+      "resumen": "Contratos normalizados de misión/tarea/resultado/evidencia/oracle implementados y testeados.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_contracts.py",
+        "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_contracts.py"
+      ]
+    },
+    {
+      "id": "O4-07",
+      "estado": "CERRADO_REF",
+      "resumen": "Rowboat sin CLI stdin→stdout verificable.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/S1-01.txt",
+        "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+      ]
+    },
+    {
+      "id": "O4-08",
+      "estado": "CERRADO_REF",
+      "resumen": "MSAF expone devui web, no contrato stdin→stdout del adapter.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/S1-02.txt",
+        "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+      ]
+    },
+    {
+      "id": "O4-09",
+      "estado": "CERRADO_REF",
+      "resumen": "Orca sin código/CLI materializado utilizable en la rama.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/S1-03.txt",
+        "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+      ]
+    },
+    {
+      "id": "O4-10",
+      "estado": "CERRADO_REF",
+      "resumen": "OmniRoute es gitlink sin comando local invocable.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/S1-04.txt",
+        "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+      ]
+    },
+    {
+      "id": "O4-11",
+      "estado": "CERRADO_REF",
+      "resumen": "DeepSeek Harness sin carpeta/comando stdin local.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/S1-05.txt",
+        "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+      ]
+    },
+    {
+      "id": "O4-12",
+      "estado": "CERRADO_REF",
+      "resumen": "Munder Difflin sin comando ejecutable stdin local.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/S1-06.txt",
+        "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+      ]
+    },
+    {
+      "id": "O4-13",
+      "estado": "CERRADO_REF",
+      "resumen": "Dagu/DBOS sin carpeta/comando local disponible.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/S1-07.txt",
+        "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+      ]
+    },
+    {
+      "id": "O4-14",
+      "estado": "CERRADO_REF",
+      "resumen": "MCP requiere subcomando; probe stdin terminó exit 2.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/S1-08.txt",
+        "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json"
+      ]
+    },
+    {
+      "id": "O4-15",
+      "estado": "CERRADO",
+      "resumen": "Evidence Ledger hash-chain y detección de tamper/missing implementados y testeados.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+        "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_adapters.py"
+      ]
+    },
+    {
+      "id": "O4-16",
+      "estado": "CERRADO",
+      "resumen": "Oracle post-exec PASS/FAIL/INCOMPLETE/BLOCKED implementado y testeado.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+        "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_adapters.py"
+      ]
+    },
+    {
+      "id": "O4-17",
+      "estado": "CERRADO",
+      "resumen": "Proyección Crazy Wall generada desde fuentes reales y cerrada con evidencia.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json"
+      ]
+    },
+    {
+      "id": "O4-18",
+      "estado": "CERRADO",
+      "resumen": "Input Shark detecta campos faltantes y produce hash normalizado; test presente.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/wordflow_loop/wordflow_loop/orchestrator_adapters.py",
+        "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_adapters.py"
+      ]
+    },
+    {
+      "id": "O4-19",
+      "estado": "CERRADO",
+      "resumen": "E2E confirmado por B-06: 3 escenarios PASS.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-4/B04-B06-test-results.json",
+        "chat router/Workflow Loop code Yaiwes/runtime/tests/test_orchestrator_e2e.py"
+      ]
+    },
+    {
+      "id": "O4-20",
+      "estado": "CERRADO",
+      "resumen": "Auditoría de cierre O4 consolidada en este artefacto; 21/21 nodos con estado y evidencia.",
+      "evidencia": [
+        "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-4/B-07-o4-completion-audit.json"
+      ]
+    }
+  ],
+  "resumen": {
+    "total": 21,
+    "CERRADO": 13,
+    "CERRADO_REF": 8,
+    "sin_estado": 0,
+    "sin_evidencia": 0
+  },
+  "prueba": {
+    "ok": true,
+    "assert": "ids O4-00..O4-20 exactos; 21/21; estados solo CERRADO/CERRADO_REF; evidencia no vacía"
+  }
+}

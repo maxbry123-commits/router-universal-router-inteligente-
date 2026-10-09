@@ -1,0 +1,30 @@
+{
+  "schema": "yaiwes.evidence/v1",
+  "equipo": "EQUIPO-4",
+  "branch": "devin/1790824641-chat-agent-plan",
+  "tests": [
+    {
+      "id": "B-04",
+      "target": "runtime/src/core/graph_visual_projection.py",
+      "command": "PYTHONPATH=/tmp/e4test pytest -q runtime/tests/test_graph_visual_projection_g026.py",
+      "result": "4 passed in 0.06s",
+      "ok": true
+    },
+    {
+      "id": "B-05",
+      "target": "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-4/crazy_wall_projection.html",
+      "readback": true,
+      "blob_sha": "ff825fcadaa4578661504c33ddda15f0e3d617ee",
+      "sha256_from_B03": "18d6051bc84e3a7943251a190985d944e8ca6d816b940b13cc6cb7086c70cd14",
+      "size_chars": 154384,
+      "ok": true
+    },
+    {
+      "id": "B-06",
+      "target": "runtime/tests/test_orchestrator_e2e.py",
+      "command": "PYTHONPATH=/tmp/e4test pytest -q tests/test_orchestrator_e2e.py",
+      "result": "3 passed in 0.05s",
+      "ok": true
+    }
+  ]
+}
