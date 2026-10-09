@@ -13,44 +13,17 @@
   "write_project_memory": false,
   "promover_con_pass": true
  },
- "cache": {
-  "namespace": "{TASK_ID}"
- },
- "ledger": {
-  "namespace": "{TASK_ID}"
- },
- "cola": {
-  "pool": "qwen-token-plan"
- },
+ "cache": {"namespace": "{TASK_ID}"},
+ "ledger": {"namespace": "{TASK_ID}"},
+ "cola": {"pool": "qwen-token-plan"},
  "dsl": {
-  "tokens": {
-   "task_budget": 10000000,
-   "max_output_tokens": 1500
-  },
-  "cache": {
-   "enabled": true,
-   "reuse_context": true
-  },
-  "parallel": {
-   "enabled": true,
-   "max_parallel": 4,
-   "mode": "partial",
-   "overflow": "queue"
-  },
+  "tokens": {"task_budget": 10000000, "max_output_tokens": 1500},
+  "cache": {"enabled": true, "reuse_context": true},
+  "parallel": {"enabled": true, "max_parallel": 4, "mode": "partial", "overflow": "queue"},
   "priority": 50,
-  "retry": {
-   "max_attempts": 3
-  },
-  "timeouts": {
-   "queue_seconds": 600,
-   "api_seconds": 90
-  },
-  "on_finish": {
-   "save_usage": true,
-   "save_cache": true,
-   "release_slot": true,
-   "start_next": true
-  }
+  "retry": {"max_attempts": 3},
+  "timeouts": {"queue_seconds": 600, "api_seconds": 90},
+  "on_finish": {"save_usage": true, "save_cache": true, "release_slot": true, "start_next": true}
  },
  "modelos": {
   "ficha-dsv4pro": "texto",
@@ -58,125 +31,45 @@
   "ficha-qwen37max": "texto",
   "ficha-qwen38max": "texto"
  },
- "motor": {
-  "api_recuperacion": 4,
-  "tareas_recuperacion": 5,
-  "bloque_chars": 8500,
-  "limite_llamada_chars": 60000,
-  "mensajes_del_director": true
- },
+ "motor": {"api_recuperacion": 4, "tareas_recuperacion": 5, "bloque_chars": 8500, "limite_llamada_chars": 60000, "mensajes_del_director": true},
  "salida_final": "N7",
  "nodos": [
   {
-   "id": "N0",
-   "paso": 0,
-   "tipo": "goals",
-   "ejecutar_api": false,
-   "nombre": "goals_de_entrada",
-   "cantidad": 12,
+   "id": "N0", "paso": 0, "tipo": "goals", "ejecutar_api": false, "nombre": "goals_de_entrada", "cantidad": 12,
    "tema": "programacion, arquitectura y solucion de programacion de code",
    "goals": [
-    {"id": "G01", "texto": "PONER AQUI"},
-    {"id": "G02", "texto": "PONER AQUI"},
-    {"id": "G03", "texto": "PONER AQUI"},
-    {"id": "G04", "texto": "PONER AQUI"},
-    {"id": "G05", "texto": "PONER AQUI"},
-    {"id": "G06", "texto": "PONER AQUI"},
-    {"id": "G07", "texto": "PONER AQUI"},
-    {"id": "G08", "texto": "PONER AQUI"},
-    {"id": "G09", "texto": "PONER AQUI"},
-    {"id": "G10", "texto": "PONER AQUI"},
-    {"id": "G11", "texto": "PONER AQUI"},
-    {"id": "G12", "texto": "PONER AQUI"}
+    {"id": "G01", "texto": "PONER AQUI"}, {"id": "G02", "texto": "PONER AQUI"},
+    {"id": "G03", "texto": "PONER AQUI"}, {"id": "G04", "texto": "PONER AQUI"},
+    {"id": "G05", "texto": "PONER AQUI"}, {"id": "G06", "texto": "PONER AQUI"},
+    {"id": "G07", "texto": "PONER AQUI"}, {"id": "G08", "texto": "PONER AQUI"},
+    {"id": "G09", "texto": "PONER AQUI"}, {"id": "G10", "texto": "PONER AQUI"},
+    {"id": "G11", "texto": "PONER AQUI"}, {"id": "G12", "texto": "PONER AQUI"}
    ],
    "depende_de": []
   },
+  {"id": "N1", "modelo": "ficha-dsv4pro", "rol": "analiza la arquitectura y propone solucion", "depende_de": ["N0"], "parallel_safe": true, "read_paths": ["tarea/"], "write_paths": ["salida/N1/"], "locks": []},
+  {"id": "N2", "modelo": "ficha-glm52", "rol": "analiza la arquitectura y propone solucion", "depende_de": ["N0"], "parallel_safe": true, "read_paths": ["tarea/"], "write_paths": ["salida/N2/"], "locks": []},
+  {"id": "N3", "modelo": "ficha-qwen37max", "rol": "analiza la arquitectura y propone solucion", "depende_de": ["N0"], "parallel_safe": true, "read_paths": ["tarea/"], "write_paths": ["salida/N3/"], "locks": []},
   {
-   "id": "N1",
-   "modelo": "ficha-dsv4pro",
-   "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": ["N0"],
-   "parallel_safe": true,
-   "read_paths": ["tarea/"],
-   "write_paths": ["salida/N1/"],
-   "locks": []
-  },
-  {
-   "id": "N2",
-   "modelo": "ficha-glm52",
-   "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": ["N0"],
-   "parallel_safe": true,
-   "read_paths": ["tarea/"],
-   "write_paths": ["salida/N2/"],
-   "locks": []
-  },
-  {
-   "id": "N3",
-   "modelo": "ficha-qwen37max",
-   "rol": "analiza la arquitectura y propone solucion",
-   "depende_de": ["N0"],
-   "parallel_safe": true,
-   "read_paths": ["tarea/"],
-   "write_paths": ["salida/N3/"],
-   "locks": []
-  },
-  {
-   "id": "N4",
-   "modelo": "ficha-dsv4pro",
+   "id": "N4", "modelo": "ficha-dsv4pro",
    "rol": "analiza los goals de N0 y las propuestas de N1, N2 y N3 y EJECUTA la tarea de programacion de code (unico ejecutor)",
-   "depende_de": ["N0", "N1", "N2", "N3"],
-   "parallel_safe": true,
-   "read_paths": ["tarea/"],
-   "write_paths": ["codigo/"],
-   "locks": ["codigo/"],
-   "requiere_evidencia": true
+   "depende_de": ["N0", "N1", "N2", "N3"], "parallel_safe": true,
+   "read_paths": ["tarea/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true
   },
   {
-   "id": "N5",
-   "paso": 5,
-   "tipo": "goals",
-   "ejecutar_api": false,
-   "nombre": "goals_de_salida",
-   "cantidad": 12,
+   "id": "N5", "paso": 5, "tipo": "goals", "ejecutar_api": false, "nombre": "goals_de_salida", "cantidad": 12,
    "goals": [
-    {"id": "S01", "texto": "PONER AQUI"},
-    {"id": "S02", "texto": "PONER AQUI"},
-    {"id": "S03", "texto": "PONER AQUI"},
-    {"id": "S04", "texto": "PONER AQUI"},
-    {"id": "S05", "texto": "PONER AQUI"},
-    {"id": "S06", "texto": "PONER AQUI"},
-    {"id": "S07", "texto": "PONER AQUI"},
-    {"id": "S08", "texto": "PONER AQUI"},
-    {"id": "S09", "texto": "PONER AQUI"},
-    {"id": "S10", "texto": "PONER AQUI"},
-    {"id": "S11", "texto": "PONER AQUI"},
-    {"id": "S12", "texto": "PONER AQUI"}
+    {"id": "S01", "texto": "PONER AQUI"}, {"id": "S02", "texto": "PONER AQUI"},
+    {"id": "S03", "texto": "PONER AQUI"}, {"id": "S04", "texto": "PONER AQUI"},
+    {"id": "S05", "texto": "PONER AQUI"}, {"id": "S06", "texto": "PONER AQUI"},
+    {"id": "S07", "texto": "PONER AQUI"}, {"id": "S08", "texto": "PONER AQUI"},
+    {"id": "S09", "texto": "PONER AQUI"}, {"id": "S10", "texto": "PONER AQUI"},
+    {"id": "S11", "texto": "PONER AQUI"}, {"id": "S12", "texto": "PONER AQUI"}
    ],
    "depende_de": ["N4"]
   },
-  {
-   "id": "N6",
-   "modelo": "ficha-glm52",
-   "rol": "REVISA y refactoriza el resultado de N4 segun los goals de salida de N5",
-   "depende_de": ["N4", "N5"],
-   "parallel_safe": true,
-   "read_paths": ["tarea/", "codigo/"],
-   "write_paths": ["codigo/"],
-   "locks": ["codigo/"],
-   "requiere_evidencia": true
-  },
-  {
-   "id": "N7",
-   "modelo": "ficha-qwen38max",
-   "rol": "REVISA de nuevo el resultado de N6 segun N5 y entrega la SALIDA final",
-   "depende_de": ["N6", "N5"],
-   "parallel_safe": true,
-   "read_paths": ["tarea/"],
-   "write_paths": ["codigo/"],
-   "locks": ["codigo/"],
-   "requiere_evidencia": true
-  }
+  {"id": "N6", "modelo": "ficha-glm52", "rol": "REVISA y refactoriza el resultado de N4 segun los goals de salida de N5", "depende_de": ["N4", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true},
+  {"id": "N7", "modelo": "ficha-qwen38max", "rol": "REVISA de nuevo el resultado de N6 segun N5 y entrega la SALIDA final", "depende_de": ["N6", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true}
  ],
  "flujo": "N0 goals(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> DeepSeek V4 Pro EJECUTA -> N5 goals salida(0 API) -> GLM 5.2 REVISA -> Qwen 3.8 Max REVISA -> SALIDA",
  "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
