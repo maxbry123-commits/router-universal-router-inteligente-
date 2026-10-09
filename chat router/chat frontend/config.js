@@ -16,6 +16,7 @@ window.RIU_CONFIG = {
     { id: 'hf-2-qwen-3-6', etiqueta: 'HF 2 Qwen 3.6 (35B)' },
     { id: 'groq-qwen-3-8', etiqueta: 'GROQ Qwen 3.8' },
     { id: 'nv-kimi-k3', etiqueta: 'NV Kimi K3' },
+    { id: 'nv-glm-5-3', etiqueta: 'NV GLM 5.3' },
     { id: 'nv-nemotron-super', etiqueta: 'NV Nemotron 3 Super' },
     { id: 'nv-nemotron-lightning', etiqueta: 'NV Nemotron 3.5 Lightning' },
     { id: 'nv-muse-glimmer', etiqueta: 'NV Muse Glimmer 30B' }
