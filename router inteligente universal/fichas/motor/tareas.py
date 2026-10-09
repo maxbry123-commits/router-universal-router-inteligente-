@@ -154,6 +154,8 @@ class Trabajador:
         open(marca, 'w').close()
         if modo == 'salir':
             os._exit(1)
+        if modo == 'matar':
+            os.kill(os.getpid(), signal.SIGKILL)
         if modo == 'colgar':
             time.sleep(10 ** 6)
 

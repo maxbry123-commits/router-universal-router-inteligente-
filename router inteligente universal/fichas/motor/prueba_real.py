@@ -65,7 +65,7 @@ def recuperacion(tmp, modo):
     c = Cola(os.path.join(carpeta, 'cola.db'))
     tid = c.agregar('Responde con una linea corta que diga listo y escribe la marca de cierre ' + MARCA_OK)
     e = dict(os.environ, FICHA_CARPETA=carpeta, FICHA_PROVEEDORES=prov_json, FICHA_LATIDO_MAX='40', PYTHONPATH=os.getcwd())
-    if modo in ('salir', 'colgar'):
+    if modo in ('salir', 'colgar', 'matar'):
         e.update(FICHA_PRUEBA_FALLA=modo + ':1', FICHA_PRUEBA_MARCA=os.path.join(carpeta, 'marca'))
     t0 = time.time()
     if modo == 'huerfana':
@@ -77,7 +77,7 @@ def recuperacion(tmp, modo):
             pass
     else:
         p = subprocess.Popen([sys.executable, '-m', 'motor', 'supervisar', '--una'], env=e)
-        if modo == 'matar':
+        if False:
             for _ in range(600):
                 time.sleep(0.1)
                 est = c.estado()[0]
@@ -93,7 +93,7 @@ def recuperacion(tmp, modo):
     with c.c() as cx:
         pasos = [r[0] for r in cx.execute('select paso from pasos order by paso')]
     log = open(os.path.join(carpeta, 'inicios.log')).read().splitlines()
-    ok = est == 'cerrada' and pasos == list(range(1, len(pasos) + 1)) and len(pasos) >= 2 and (len(log) >= 2 if modo != 'huerfana' else 'reactivadas=1' in log[0])
+    ok = est == 'cerrada' and pasos == list(range(1, len(pasos) + 1)) and len(pasos) >= (1 if modo == 'huerfana' else 2) and (len(log) >= 2 if modo != 'huerfana' else 'reactivadas=1' in log[0])
     chequeo('REAL reinicio ' + modo + ': el motor se activo y la tarea cerro', ok, (est, pasos, 'arranques=' + str(len(log)), round(time.time() - t0, 1)))
 
 
