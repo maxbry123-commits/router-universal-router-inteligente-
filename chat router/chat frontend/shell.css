@@ -174,3 +174,6 @@ button.action{box-shadow:0 2px 10px rgba(8,72,247,.35)}
 .consil-diagrama.lleno{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden}.consil-diagrama.lleno .dg-paso{white-space:nowrap;max-width:none}
 .consil-diagrama.lleno.mas{-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent)}
 #sel-power .sel-info-hueco{visibility:hidden;display:inline-block;flex:0 0 auto;padding:0;border:0}
+/* ancla: icono blanco en la barra del input */
+.composer-bar .btn-ancla{color:#fff}
+.composer-bar .btn-ancla svg{stroke:#fff}
