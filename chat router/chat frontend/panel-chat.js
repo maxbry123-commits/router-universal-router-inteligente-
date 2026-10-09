@@ -50,7 +50,7 @@ export async function mount(root, { api, tell }) {
     chats.forEach((c, i) => { c.hist.hidden = i !== activo; });
     pintarAnclados();
     pintarFichaPill();
-    q("#btn-detener").hidden = !chat().ocupado;  // Detener solo mientras se envía
+    q("#btn-detener").hidden = false;  // Detener SIEMPRE visible (restaurado por orden de Antonio)
     guardar();
   };
   const nuevoChat = (restaurado) => {
