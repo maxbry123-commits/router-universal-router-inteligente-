@@ -3,6 +3,7 @@
 // 'riu:selector-qwen' { modelo_id_slug, label, grupo, sesion }. La ficha/plugin (pendiente, ver SELECTOR-QWEN-PENDIENTES.md)
 // rellenará window.RIU_SELECTOR_QWEN.enviar; mientras siga en null el chat funciona exactamente como antes.
 import { node } from "./api.js";
+import { conectarSelectores } from "./chat-selectores.js";  // interruptor ⏻ de los 5 selectores (solo frontend)
 
 window.RIU_SELECTOR_QWEN = window.RIU_SELECTOR_QWEN || {
   enviar: null,      // gancho para la ficha/plugin: async ({ modelo_id_slug, mensaje, sesion }) => respuesta. null = sin cablear
@@ -75,4 +76,5 @@ export function conectarSelectorModelos(ctx) {
   pill.addEventListener("click", () => { pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
   new MutationObserver(pintarPill).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   pintarPill();
+  conectarSelectores(ctx);
 }

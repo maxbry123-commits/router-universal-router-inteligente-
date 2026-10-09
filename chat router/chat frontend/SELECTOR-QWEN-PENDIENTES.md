@@ -50,3 +50,10 @@ No llama al Router y no envía nada. El selector de ficha `modelo ▾` sigue igu
    - ASR: subida de audio desde el micrófono (permiso del navegador) para pasarlo a texto.
    - Realtime: WebSocket/stream de voz en vivo. Requiere decidir si el Router hace de proxy.
 7. Probar en vivo cada modelo con una respuesta real (NO MOCK) antes de cerrar.
+
+## 5 selectores con interruptor ⏻ (solo frontend, `chat-selectores.js`)
+- Fila `#sel-power`: ⏻ Modelo · ⏻ Qwen · ⏻ Cónsil Code · ⏻ Cónsil Frontend · 5º reservado (oculto, sin nombre). Solo 1 encendido; los demás quedan bloqueados (gris, deshabilitados) hasta apagarlo. Estado en `sessionStorage` (`riu_selector_activo`).
+- Gancho: `window.RIU_SELECTORES = { activo, selectores, consil, encender(id), apagar() }` + evento `riu:selector-activo` `{ activo, anterior, nombre }`.
+- Hojas nuevas `#sh-consil-code` y `#sh-consil-frontend` ("Ask Cónsil Code"/"Ask Cónsil Frontend"): lista vacía "Modelos pendientes" + contenedor del micro diagrama transversal horizontal `#consil-code-diagrama` / `#consil-frontend-diagrama` (vacío).
+- Pendiente de Antonio: modelos de Ask Cónsil Code y Ask Cónsil Frontend, el micro diagrama, nombre y modelos del 5º selector.
+- Pendiente ficha/backend (Claude): una ficha por modelo de Cónsil y que el envío use el selector `activo` (`riu:selector-activo`). Hoy nada está conectado al Router.
