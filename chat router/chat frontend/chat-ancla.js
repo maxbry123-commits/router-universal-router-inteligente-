@@ -3,6 +3,8 @@
 const CLAVE_HIST = "riu_hist_v1";
 const MAX_MSG = 120;
 const MAX_TXT = 8000;
+// habla con la memoria del Router por el puente del chat; si falla devuelve null (el navegador sigue de respaldo)
+const srv = (acc, p) => { try { return typeof window.RIU_ACCION === "function" ? window.RIU_ACCION(acc, p).catch(() => null) : Promise.resolve(null); } catch (e) { return Promise.resolve(null); } };
 
 const leer = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } };
 const escribir = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
@@ -23,7 +25,14 @@ export const registrar = (sesion, rol, texto) => {
 // vuelve a pintar el historial guardado en el chat c (c.hist = contenedor). burbuja = la funcion de panel-chat.js
 export const restaurar = (c, burbuja) => {
   const l = cargarHistorial(c.sesion);
-  if (!l.length) return;
+  if (!l.length) {  // sin copia local: se recupera de la memoria del Router
+    srv("historial", { sesion: c.sesion }).then((r) => {
+      const t = r && Array.isArray(r.turnos) ? r.turnos : [];
+      if (!t.length || cargarHistorial(c.sesion).length) return;
+      for (const x of t) { c.hist.append(burbuja(x.pregunta, "user")); registrar(c.sesion, "user", x.pregunta); c.hist.append(burbuja(x.respuesta)); registrar(c.sesion, "bot", x.respuesta); }
+    });
+    return;
+  }
   for (const m of l) c.hist.append(m.rol === "user" ? burbuja(m.texto, "user") : m.rol === "err" ? burbuja(m.texto, "error") : burbuja(m.texto));
   const ult = l[l.length - 1];
   if (ult.rol === "user") c.hist.append(burbuja("La respuesta se interrumpió al recargar la página. Reenvía tu mensaje si hace falta.", "meta"));
@@ -114,13 +123,14 @@ export function montarAncla({ q, chat, tell, guardar, pintarAnclados }) {
   const instr = el("textarea"); instr.id = "anc-instr"; instr.rows = 3; instr.autocomplete = "off";
   instr.placeholder = "Instrucciones fijas: el modelo las revisa antes y después de cada input y antes de responder. Se guardan solas.";
   let t0;
-  instr.addEventListener("input", () => { clearTimeout(t0); t0 = setTimeout(() => { chat().instrucciones = instr.value; guardar(); pintarAnclados(); }, 300); });
+  instr.addEventListener("input", () => { clearTimeout(t0); t0 = setTimeout(() => { chat().instrucciones = instr.value; guardar(); pintarAnclados(); srv("estado_chat", { op: "guardar", sesion: chat().sesion, instrucciones: instr.value }); }, 300); });
   const estadoInstr = el("div", "", "fila-desc");
 
   // 4) proyectos de ESTE chat: grupos con nombre de lo anclado (archivos, enlaces, raices). Tocar = anclar o quitar todo el grupo
   const CLAVE_PROY = "riu_proy_v1";
   const proys = () => { const t = leer(CLAVE_PROY) || {}; return Array.isArray(t[chat().sesion]) ? t[chat().sesion] : []; };
-  const salvarProys = (l) => { const t = leer(CLAVE_PROY) || {}; t[chat().sesion] = l; escribir(CLAVE_PROY, t); };
+  const salvarLocal = (l) => { const t = leer(CLAVE_PROY) || {}; t[chat().sesion] = l; escribir(CLAVE_PROY, t); };
+  const salvarProys = (l) => { salvarLocal(l); srv("proyectos", { op: "guardar", sesion: chat().sesion, lista: l }); };
   const nombreProy = el("input"); nombreProy.id = "anc-proy-nombre"; nombreProy.placeholder = "Nombre del proyecto (opcional)"; nombreProy.autocomplete = "off";
   const bCrear = el("button", "Crear con lo anclado", "mini"); bCrear.type = "button";
   const listaProy = el("div", "", "list"); listaProy.id = "anc-proyectos";
@@ -154,7 +164,13 @@ export function montarAncla({ q, chat, tell, guardar, pintarAnclados }) {
   const etiqueta = (t) => el("div", t, "fila-desc");
   [pegar, filaPegar, resumen, etiqueta("Instrucciones fijas del chat"), instr, estadoInstr, etiqueta("Proyectos de este chat"), filaProy, listaProy].forEach((n) => caja.insertBefore(n, ref));
 
+  const desdeServidor = () => {
+    const ses = chat().sesion;
+    if (!(chat().instrucciones || "").trim()) srv("estado_chat", { op: "leer", sesion: ses }).then((r) => { if (r && r.instrucciones && chat().sesion === ses && !(chat().instrucciones || "").trim()) { chat().instrucciones = r.instrucciones; instr.value = r.instrucciones; guardar(); pintarAnclados(); } });
+    if (!proys().length) srv("proyectos", { op: "listar", sesion: ses }).then((r) => { if (r && Array.isArray(r.proyectos) && r.proyectos.length && chat().sesion === ses && !proys().length) { salvarLocal(r.proyectos); pintarProyectos(); } });
+  };
   const refrescar = () => {
+    desdeServidor();
     instr.value = chat().instrucciones || "";
     estadoInstr.textContent = instr.value.trim() ? "Encendidas: se envían con cada mensaje." : "Apagadas (escribe para encender).";
     pintarResumen();
