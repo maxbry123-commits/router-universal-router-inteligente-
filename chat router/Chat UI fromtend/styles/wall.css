@@ -1,0 +1,83 @@
+/* Crazy Wall (YAIWES-CRAZY-WALL.html) portado a tokens del tema activo. */
+.wall {
+  --pure: #000;
+  --blue: var(--status-blue);
+  --ora: var(--status-warning);
+  --verde: var(--status-green);
+  --amarillo: var(--status-amber);
+  --naranja: var(--status-warning);
+  --rojo: var(--status-red);
+  --w: var(--text-bright);
+  --fg: var(--text-primary);
+  --sec: var(--text-secondary);
+  --dim: var(--text-tertiary);
+  --mut: var(--text-tertiary);
+  --bd: var(--border);
+  --bdl: var(--border-strong);
+  --surf: var(--surface);
+  --panel-bg: var(--surface-alt);
+  --card: var(--card);
+  --hover: var(--card-hover);
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.4 system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.wall .wall-hdr {
+  background: var(--surf);
+  border-bottom: 1px solid var(--blue);
+  padding: 10px 12px 8px;
+  position: sticky;
+  top: 0;
+  z-index: 8;
+}
+.wall .wall-k { font-size: 10px; color: var(--dim); letter-spacing: .06em; }
+.wall .wall-hdr h1 { font-size: 15px; color: var(--w); font-weight: 600; }
+.wall .wall-hilo { display: flex; gap: 3px; overflow-x: auto; padding: 6px 0 2px; }
+.wall .wall-hilo span { flex: 0 0 auto; border: 1px solid var(--blue); border-radius: 7px; padding: 3px 6px; font-size: 10px; color: var(--w); }
+.wall .wall-hilo i { color: var(--dim); align-self: center; font-style: normal; font-size: 10px; }
+.wall .wall-modes { display: flex; gap: 6px; margin-top: 6px; }
+.wall .wall-modes button { flex: 1; border: 1px solid var(--bd); background: var(--card); color: var(--sec); border-radius: 8px; padding: 7px; font-size: 11px; cursor: pointer; }
+.wall .wall-modes button.on { border-color: var(--blue); color: var(--w); }
+.wall .wall-legend { display: flex; gap: 8px; font-size: 10px; color: var(--dim); margin-top: 6px; }
+.wall .wall-legend b { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
+.wall .wall-plane { padding: 8px 8px 4px; flex: 1; overflow: auto; }
+.wall .wall-plane > h2 { font-size: 10px; color: var(--dim); letter-spacing: .08em; text-transform: uppercase; margin: 8px 4px 6px; }
+.wall .wall-tree { font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+.wall .wall-row { display: flex; align-items: flex-start; gap: 6px; padding: 5px 6px; border-radius: 6px; width: 100%; border: 0; background: transparent; color: var(--fg); text-align: left; cursor: pointer; }
+.wall .wall-row:active, .wall .wall-row.on { background: var(--hover); outline: 1px solid var(--blue); }
+.wall .wall-row.wall-redband { background: color-mix(in srgb, var(--rojo) 14%, transparent); }
+.wall .wall-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 8px; margin-top: 4px; }
+.wall .wall-dot.verde { background: var(--verde); }
+.wall .wall-dot.amarillo { background: var(--amarillo); }
+.wall .wall-dot.naranja { background: var(--naranja); }
+.wall .wall-dot.rojo { background: var(--rojo); }
+.wall .wall-nm { color: var(--w); flex: 1; word-break: break-all; }
+.wall .wall-nm .wall-path { color: var(--sec); }
+.wall .wall-meta { color: var(--dim); font-size: 10px; white-space: nowrap; }
+.wall .wall-kids { padding-left: 12px; border-left: 1px solid var(--bd); margin-left: 10px; }
+.wall .wall-add { margin: 8px; border: 1px dashed var(--bd); border-radius: 10px; padding: 8px; }
+.wall .wall-add select, .wall .wall-add input, .wall .wall-add textarea, .wall .wall-note {
+  width: 100%; background: var(--pure); color: var(--sec);
+  border: 1px solid var(--bd); border-radius: 8px; padding: 8px; font: 12px system-ui; margin-top: 6px;
+}
+.wall .wall-add button, .wall .wall-bar button, .wall .wall-p {
+  border: 0; border-radius: 8px; padding: 10px; background: var(--accent);
+  color: var(--primary-text); font-size: 13px; width: 100%; margin-top: 6px; cursor: pointer;
+}
+.wall .wall-bar { background: var(--surf); border-top: 1px solid var(--bd); padding: 8px; display: flex; gap: 6px; position: sticky; bottom: 0; }
+.wall .wall-bar button { margin: 0; flex: 1; }
+.wall .wall-bar button.wall-g { background: var(--card); color: var(--fg); border: 1px solid var(--bd); }
+.wall .wall-sheet { position: fixed; inset: 0; background: #000c; z-index: 20; display: none; align-items: flex-end; justify-content: center; }
+.wall .wall-sheet.on { display: flex; }
+.wall .wall-sheet .wall-box { width: 100%; max-width: 430px; max-height: 90vh; overflow: auto; background: var(--surf); border-radius: 20px 20px 0 0; padding: 14px 12px 28px; }
+.wall .wall-sheet h3 { color: var(--w); font-size: 15px; }
+.wall .wall-micro { font-family: ui-monospace, monospace; font-size: 11px; color: var(--sec); border-left: 2px solid var(--blue); padding: 6px 8px; margin: 8px 0; overflow-x: auto; white-space: nowrap; }
+.wall .wall-xray { font-size: 13px; color: var(--fg); margin: 8px 0; }
+.wall .wall-sts { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.wall .wall-sts button { border: 1px solid var(--bd); background: var(--card); color: var(--sec); border-radius: 8px; padding: 7px 8px; font-size: 11px; cursor: pointer; }
+.wall .wall-sts button.on { border-color: var(--blue); color: var(--w); }
+.wall .wall-ghost { background: var(--card); color: var(--fg); border: 1px solid var(--bd); }
+.wall .wall-toast { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: var(--pure); color: var(--sec); padding: 6px 10px; border-radius: 8px; font-size: 12px; display: none; z-index: 30; border: 1px solid var(--bd); }

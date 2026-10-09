@@ -1,0 +1,8 @@
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 10px; max-height: 45vh; overflow-y: auto; }
+.icon-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-height: 105px; padding: 12px; text-align: left; border: 1px solid var(--line, #3a3a3a); border-radius: 12px; background: var(--module, #2a2a2a); color: var(--text, #ededed); cursor: pointer; }
+.icon-cell:hover, .icon-cell:focus-visible { outline: 2px solid var(--accent, #0848f7); outline-offset: 2px; }
+.icon-cell .svg-icon { width: 22px; height: 22px; flex-shrink: 0; }
+.icon-cell .sub { font-size: 11px; color: var(--text-soft, #bdbdbd); }
+.chip-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.chip-row .chip { border: 1px solid var(--line, #3a3a3a); border-radius: 999px; padding: 6px 10px; background: var(--module, #2a2a2a); color: var(--text, #ededed); cursor: pointer; }
+.chip-row .chip[aria-pressed="true"] { border-color: var(--chip-accent, var(--accent, #0848f7)); }
