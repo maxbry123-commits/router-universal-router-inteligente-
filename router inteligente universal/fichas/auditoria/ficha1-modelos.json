@@ -1,0 +1,201 @@
+{
+ "ficha": "ficha1-modelos-individuales",
+ "tipo": "individual",
+ "version": 1,
+ "api": "modelos-14",
+ "readme": "../README-FICHAS.md",
+ "memory": {
+  "provider": "harness",
+  "namespace": "{TASK_ID}",
+  "project_memory": "YAIWES",
+  "read_project_memory": true,
+  "write_task_memory": true,
+  "write_project_memory": false,
+  "promover_con_pass": true
+ },
+ "cache": {
+  "namespace": "{TASK_ID}"
+ },
+ "ledger": {
+  "namespace": "{TASK_ID}"
+ },
+ "cola_global": {
+  "puestos": 4,
+  "espera_max_s": 600,
+  "orden": "prioridad y llegada"
+ },
+ "dsl": {
+  "tokens": {
+   "budget": 12000,
+   "input_used": 0,
+   "output_used": 0,
+   "cached_used": 0,
+   "total_used": 0
+  },
+  "cache": {
+   "enabled": true,
+   "reuse_context": true
+  },
+  "parallel": {
+   "enabled": true,
+   "max_parallel": 4,
+   "mode": "partial",
+   "overflow": "queue"
+  },
+  "priority": 50,
+  "retry": {
+   "max_attempts": 3
+  },
+  "timeouts": {
+   "queue_seconds": 600,
+   "api_seconds": 90
+  },
+  "on_finish": {
+   "save_usage": true,
+   "save_cache": true,
+   "release_slot": true,
+   "start_next": true
+  }
+ },
+ "modelos": {
+  "ficha-qwen38max": "texto",
+  "ficha-qwen38flash": "texto",
+  "ficha-qwen37max": "texto",
+  "ficha-qwen37plus": "texto",
+  "ficha-qwen36flash": "texto",
+  "ficha-dsv4pro": "texto",
+  "ficha-dsv4pro0813": "texto",
+  "ficha-dsv4flash": "texto",
+  "ficha-glm52": "texto",
+  "ficha-qwenimg30pro": "imagen",
+  "ficha-wan27img": "imagen",
+  "ficha-qwentts": "texto-a-voz",
+  "ficha-qwenrt": "voz-en-vivo",
+  "ficha-qwenasr": "voz-a-texto"
+ },
+ "todos_los_modelos": [
+  "ficha-qwen38max",
+  "ficha-qwen38flash",
+  "ficha-qwen37max",
+  "ficha-qwen37plus",
+  "ficha-qwen36flash",
+  "ficha-dsv4pro",
+  "ficha-dsv4pro0813",
+  "ficha-dsv4flash",
+  "ficha-glm52",
+  "ficha-qwenimg30pro",
+  "ficha-wan27img",
+  "ficha-qwentts",
+  "ficha-qwenrt",
+  "ficha-qwenasr"
+ ],
+ "motor": {
+  "api_recuperacion": 4,
+  "tareas_recuperacion": 5,
+  "bloque_chars": 8500,
+  "limite_llamada_chars": 18000,
+  "mensajes_del_director": true
+ },
+ "selector": [
+  {
+   "cola": 1,
+   "id": "ficha-qwen38max",
+   "nombre": "Qwen 3.8 Max",
+   "rol": "Codigo complejo",
+   "tipo": "texto"
+  },
+  {
+   "cola": 2,
+   "id": "ficha-qwen38flash",
+   "nombre": "Qwen 3.8 Flash",
+   "rol": "Codigo rapido",
+   "tipo": "texto"
+  },
+  {
+   "cola": 3,
+   "id": "ficha-qwen37max",
+   "nombre": "Qwen 3.7 Max",
+   "rol": "Razonamiento",
+   "tipo": "texto"
+  },
+  {
+   "cola": 4,
+   "id": "ficha-qwen37plus",
+   "nombre": "Qwen 3.7 Plus",
+   "rol": "Codigo + vision",
+   "tipo": "texto"
+  },
+  {
+   "cola": 5,
+   "id": "ficha-qwen36flash",
+   "nombre": "Qwen 3.6 Flash",
+   "rol": "Rapido / economico",
+   "tipo": "texto"
+  },
+  {
+   "cola": 6,
+   "id": "ficha-dsv4pro",
+   "nombre": "DeepSeek V4 Pro",
+   "rol": "Codigo complejo",
+   "tipo": "texto"
+  },
+  {
+   "cola": 7,
+   "id": "ficha-dsv4pro0813",
+   "nombre": "DeepSeek V4 Pro 0813",
+   "rol": "Maxima profundidad",
+   "tipo": "texto"
+  },
+  {
+   "cola": 8,
+   "id": "ficha-dsv4flash",
+   "nombre": "DeepSeek V4 Flash",
+   "rol": "Codigo rapido",
+   "tipo": "texto"
+  },
+  {
+   "cola": 9,
+   "id": "ficha-glm52",
+   "nombre": "GLM 5.2",
+   "rol": "Codigo + agentes",
+   "tipo": "texto"
+  },
+  {
+   "cola": 10,
+   "id": "ficha-qwenimg30pro",
+   "nombre": "Qwen Image 3.0 Pro",
+   "rol": "Imagenes",
+   "tipo": "imagen"
+  },
+  {
+   "cola": 11,
+   "id": "ficha-wan27img",
+   "nombre": "Wan 2.7 Image",
+   "rol": "Imagenes",
+   "tipo": "imagen"
+  },
+  {
+   "cola": 12,
+   "id": "ficha-qwentts",
+   "nombre": "Qwen TTS",
+   "rol": "Texto a voz",
+   "tipo": "texto-a-voz"
+  },
+  {
+   "cola": 13,
+   "id": "ficha-qwenrt",
+   "nombre": "Qwen Realtime",
+   "rol": "Voz en vivo",
+   "tipo": "voz-en-vivo"
+  },
+  {
+   "cola": 14,
+   "id": "ficha-qwenasr",
+   "nombre": "Qwen ASR",
+   "rol": "Voz a texto",
+   "tipo": "voz-a-texto"
+  }
+ ],
+ "ask_council": false,
+ "flujo": "SELECTOR(14) -> crear ficha T-id -> DSL propio -> pedir puesto -> COLA(4) -> modelo -> verificar -> ledger -> liberar"
+}

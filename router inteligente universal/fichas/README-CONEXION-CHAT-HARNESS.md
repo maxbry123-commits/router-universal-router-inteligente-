@@ -67,3 +67,11 @@ Todas: `POST <harnessUrl>/<accion>` con JSON y `Authorization: Bearer <clave>`. 
 - Pantalla: `chat router/chat frontend/config.js` y `api.js`
 - Respaldo HF (lanzador Python alternativo): `router inteligente universal/fichas/respaldo-hf/`
 - `router inteligente universal/fichas/puente-chat/api/chat.js` → **ya no se usa** (el puente vive en el Router).
+
+## Fichas YAIWES (actualizado 2026-10-09)
+- Ficha 1: 14 modelos individuales (sin Ask Council, los eliges con el selector del chat). Ficha 2: DAG codigo (Ask Council, ejecuta Qwen 3.8 Max). Ficha 3: frontend (mismo Ask Council, ejecuta DeepSeek V4 Pro).
+- Carpetas: ficha1-modelos, ficha2-dag-codigo, ficha3-frontend (ficha.json cifrado con la clave del banco). API de los modelos: modelos-14. README anclado a todas: README-FICHAS.md.
+- 1 ficha = 1 tarea = 1 mini-sistema (DSL, scheduler, ejecutor, verificador, cache, ledger). Lo unico compartido: cola global de 4 puestos (motor/puerta.py), espera hasta 10 min.
+- Memoria: la ficha solo lleva su namespace; el almacen es el del harness (memoria_yaiwes). GAP: cablear la direccion en motor/memoria.py (conectar_harness).
+- Pruebas (job HF 16 GB, no Vercel): python -m motor.prueba_motor y python -m motor.prueba_fichas. Copias legibles sin claves para auditar: auditoria/.
+- Faltan: las API (modelos-14), el texto de los 24 goals y el cableado del harness.

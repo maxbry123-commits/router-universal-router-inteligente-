@@ -290,3 +290,17 @@ Ver el mensaje de preguntas enviado el 2026-09-29; sus respuestas se anotarán e
 - Repo `main` commit `2f5c111e` (carpeta `Documentos del proyecto/Documentos proyectos router inteligente universal/`).
 - Código leído: `integration/chat_mvp/{resilience,providers,core,router,route_api,dag,jobs,jev,ui_bridge}.py`, `red/{conectores,red_universal,enchufe_gate}.py`, `agents-yaiwes/common/{routes,probe_keys}.py`, `Componente open soure…/ruflo/plugins/ruflo-deepseek-harness/`.
 - Prueba en vivo NVIDIA/Groq: `EVIDENCIA-2026-09-29-NVIDIA-Y-COMPONENTES.md`.
+
+---
+## 8. Fichas YAIWES: 1 ficha = 1 tarea = 1 mini-sistema (actualizado 2026-10-09)
+Estado: construido en `router inteligente universal/fichas/` (fuera del Router). El "Ask Council" de la seccion 4.3 ya existe como ficha 2 y ficha 3.
+```
+FICHA A -+
+FICHA B -+--> COLA GLOBAL --> [P1][P2][P3][P4] --> API
+FICHA C -+      (unica pieza compartida)
+```
+- **Cada ficha** lleva su DSL, scheduler local, ejecutor, verificador, cache y ledger. No hay scheduler central.
+- **Cola global (motor/puerta.py):** maximo 4 puestos activos, orden por prioridad y llegada, espera hasta 10 min antes de dar error, libera el puesto si la ficha muere.
+- **Paralelo dentro de la ficha:** nodos independientes juntos; rutas y locks evitan que dos nodos escriban el mismo archivo; modo partial o group.
+- **Memoria:** referencia al harness (memoria_yaiwes), sin almacenamiento propio; promueve al proyecto solo con PASS. GAP: cablear direccion (motor/memoria.py).
+- **Fichas:** ficha 1 = 14 modelos individuales; ficha 2 = DAG codigo (ejecuta Qwen 3.8 Max); ficha 3 = frontend (ejecuta DeepSeek V4 Pro). Detalle y como crear fichas nuevas: fichas/README-FICHAS.md.

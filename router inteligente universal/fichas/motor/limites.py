@@ -1,6 +1,10 @@
+import fcntl
 import json
 import os
+import threading
 import time
+
+_LOCK = threading.Lock()
 
 # Limites publicados (octubre 2026). NVIDIA es variable por cuenta: 40 RPM es el valor tipico.
 PERFILES = {
@@ -32,7 +36,7 @@ class Guarda:
         return [e for e in ev if e[0] > corte]
 
     def _escribir(self, ev):
-        tmp = self.ruta + '.tmp' + str(os.getpid())
+        tmp = self.ruta + '.tmp' + str(os.getpid()) + '_' + str(threading.get_ident())
         with open(tmp, 'w') as f:
             json.dump(ev, f)
         os.replace(tmp, self.ruta)
@@ -64,7 +68,10 @@ class Guarda:
                 peor = max(peor, float(seg))
         return max(peor, 0.0)
 
-    def registrar(self, tokens):
-        ev = self._leer()
-        ev.append([self.reloj(), tokens])
-        self._escribir(ev)
+    def registrar(self, tokens):  # seguro entre hilos y entre procesos (varias fichas a la vez)
+        with _LOCK:
+            with open(self.ruta + '.lock', 'w') as lk:
+                fcntl.flock(lk, fcntl.LOCK_EX)
+                ev = self._leer()
+                ev.append([self.reloj(), tokens])
+                self._escribir(ev)
