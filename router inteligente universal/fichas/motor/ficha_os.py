@@ -406,6 +406,8 @@ def validar_ficha(f, base, config_puerta=None):
                 errs.append('goals no pueden "participar" con modelos: ' + n['id'])
             if n.get('tipo') == 'goals' and n.get('ejecutar_api') is not False:
                 errs.append('goals debe llevar ejecutar_api:false en ' + n['id'])
+            if n.get('tipo') == 'goals' and any(not str(g.get('texto', '')).strip() or str(g.get('texto', '')).strip() == 'PONER AQUI' for g in n.get('goals', [])):
+                errs.append('goals incompletos en ' + n['id'])
             if not es_datos(n) and n.get('modelo') not in f.get('modelos', {}):
                 errs.append('modelo desconocido en ' + n['id'])
             for d in n.get('depende_de', []):
