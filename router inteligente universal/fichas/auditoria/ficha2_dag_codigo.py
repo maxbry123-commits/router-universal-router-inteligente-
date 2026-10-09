@@ -87,7 +87,7 @@ EJECUTOR = 'ficha-qwen38max'
 SELECTOR = []
 EJECUTOR_ROL = 'analiza los goals de N0 y las propuestas de N1, N2 y N3 y EJECUTA directamente la tarea de programacion de code (unico ejecutor). Una vez aprobada la ejecucion, continua hasta completarla: no emite salida intermedia, no pide confirmacion adicional y no aplaza el trabajo'
 # ================= MOTOR (identico en las tres fichas) =================
-VERIFICACIONES = (("VERIFICACION 1", "ficha-glm52"), ("VERIFICACION 2", "ficha-dsv4flash"), ("VERIFICACION 3", "ficha-qwen38flash"))
+VERIFICACIONES = (("VERIFICACION 1", "ficha-dsv4flash"), ("VERIFICACION 2", "ficha-qwen38flash"))
 TIPOS_QUE_APLICAN = ("texto",)  # no aplica a modelos de imagen, voz, audio ni video
 MODELOS = dict(FICHA["modelos"])
 for _, _m in VERIFICACIONES:
