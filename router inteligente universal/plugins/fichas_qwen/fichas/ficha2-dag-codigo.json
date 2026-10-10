@@ -151,6 +151,25 @@
         "ejemplo": "github_escribir requiere repo, ruta, contenido",
         "argumentos_vacios": "no ejecutar; 1 reparacion; si vuelve incompleta GAP TOOL_ARGUMENTS_INCOMPLETOS"
       }
+    },
+    "ficha-qwen38max": {
+      "con_tools": {
+        "no_usar": "enable_thinking=false",
+        "reasoning_effort": {
+          "rapido": "low",
+          "sin_tools": "medium",
+          "code": "medium",
+          "plan_complejo": "xhigh solo si hace falta"
+        },
+        "escalar": "un nivel si la primera respuesta no resuelve",
+        "preserve_thinking": true,
+        "conservar_en_historial": [
+          "content",
+          "reasoning_content",
+          "tool_calls",
+          "tool_result"
+        ]
+      }
     }
   },
   "loop": {
