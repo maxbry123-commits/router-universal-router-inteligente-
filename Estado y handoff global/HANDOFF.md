@@ -223,3 +223,7 @@ Nuevo mapa: `router inteligente universal/README.md`. Indice cableado, orden de 
 - Hecho y probado: banco configurable (providers.json + RIU_VAULT_AUTOLOCK_S), POST /plugins/sync y /control/reload-policies, guardian + plugin lifeguard, plugin ssh_bridge + transporte ssh.
 - Las fichas de lifeguard y hf_* se corrigieron (runtime_type compute, sandbox egress-allowlist): antes el host las marcaba invalid.
 - Pendiente: arrancar el guardian en HF con tokens reales (no probado en vivo), paramiko en requirements del Space, prueba real ssh contra un host.
+
+## INPUT BLOCK VERBATIM 2026-10-09 — Correccion quirurgica fichas Qwen (sha eba7b80a686d59c5)
+
+Estado: EN CURSO. Texto verbatim completo en Claude notas/claude notas 1.md (mismo sha).

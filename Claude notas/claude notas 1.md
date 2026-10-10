@@ -36,3 +36,253 @@ Hecho y verificado en vivo (job 6ac578a8, LIVE_URL publicada):
 - api.js: sesion por pestaña (multi-chat paralelo); harness/accion la propagan.
 - Verificado vivo: handoff skill/chat-router, auditor_code (30124), sandbox (modelo respondió "hola CLAVE"), subir/archivos, xray acción y ficha motor-xray por chat con anclados.
 - Sin Vercel, sin HF respaldo (L4 intacto), sin GH Actions.
+
+## INPUT BLOCK VERBATIM 2026-10-09 — Correccion quirurgica fichas Qwen (sha eba7b80a686d59c5)
+
+# CORRECCIÓN QUIRÚRGICA — FICHAS QWEN
+
+NO cambies la arquitectura.
+NO crees otro motor.
+NO cambies Router, Harness, Banco de claves ni sistema de sellos.
+NO migres proveedores.
+NO dupliques plugins.
+NO hagas sobreingeniería.
+
+Trabaja sobre lo que ya existe en:
+
+`router inteligente universal/plugins/fichas_qwen/`
+
+Objetivo: corregir el motor y las 3 fichas para que respeten exactamente sus propios contratos y el chat no pueda quedar "Pensando..." durante decenas de minutos.
+
+---
+
+## 1. CORREGIR `plugin.py`
+
+Actualmente `_llamar()` puede insistir hasta 1200 segundos.
+
+ELIMINAR ese comportamiento.
+
+Debe leer de la ficha activa:
+
+- `dsl.timeouts.api_seconds`
+- `dsl.retry.max_attempts`
+- `dsl.tokens.max_output_tokens`
+- `motor.limite_llamada_chars`
+
+Valores actuales esperados:
+
+- timeout API = 90 segundos
+- reintentos máximos = 3
+- max output = 1500 tokens
+- límite llamada = 60000 caracteres
+
+FLUJO:
+
+FICHA → leer configuración → llamada modelo → máximo 90 s → máximo 3 intentos → éxito o GAP
+
+NO:
+- bucle de 20 minutos
+- reintentos infinitos
+- `max_tokens=8000` hardcodeado
+- timeout calculado con los minutos restantes
+
+Una conexión fallida NO puede bloquear el nodo durante 20 minutos.
+
+Mantener el mismo modelo solicitado.
+NO saltar automáticamente a otro modelo.
+
+---
+
+## 2. INPUT
+
+NO cortar arbitrariamente a 18.000 caracteres.
+
+Respetar:
+
+`limite_llamada_chars = 60000`
+
+Si el INPUT supera 60.000:
+
+- reutiliza el mecanismo de recuperación existente si realmente existe y está cableado;
+- si no existe, devuelve GAP claro.
+
+NO inventes un segundo sistema de fragmentación.
+
+---
+
+## 3. FICHA 1 — TEAM QWEN
+
+La Ficha 1 debe ser realmente:
+
+`MODELO DEL SELECTOR → RESPUESTA`
+
+Solo N4.
+
+Eliminar las referencias residuales a:
+
+- N6
+- N7
+- `revisor_previo`
+- `verificador_final`
+
+Cambiar:
+
+`salida_final = N4`
+
+Y corregir el campo `flujo` para que diga únicamente:
+
+`modelo elegido → N4 EJECUTA → SALIDA`
+
+NO añadir revisores a Ficha 1.
+
+---
+
+## 4. FICHA 2 — CODE
+
+Restaurar la secuencia correcta:
+
+`N0 → [N1 | N2 | N3] → N4 → N5 → N6 → N7 → SALIDA`
+
+N6:
+`depende_de = ["N4","N5"]`
+
+N7:
+`depende_de = ["N6","N5"]`
+
+N7 NO puede arrancar en paralelo con N6 porque su función es revisar el resultado de N6.
+
+Mantener N1/N2/N3 en paralelo.
+
+---
+
+## 5. FICHA 3 — FRONTEND
+
+Misma corrección:
+
+`N0 → [N1 | N2 | N3] → N4 → N5 → N6 → N7 → SALIDA`
+
+N6:
+`depende_de = ["N4","N5"]`
+
+N7:
+`depende_de = ["N6","N5"]`
+
+NO ejecutar N6 y N7 en paralelo.
+
+---
+
+## 6. GOALS
+
+Los `PONER AQUI` no deben enviarse al modelo como contenido.
+
+NO inventes goals.
+
+Si el sistema ya genera los goals dinámicamente, conserva ese mecanismo.
+Si todavía no está cableado, déjalos como plantilla pero NO los conviertas en texto enviado al modelo.
+
+---
+
+## 7. PROGRESO DEL CHAT
+
+Mantener `chat_async`.
+
+NO bloquear esperando toda la ficha.
+
+El proceso debe poder informar al polling existente:
+
+- nodo actual
+- nodos terminados
+- nodo fallido, si existe
+- estado `procesando`
+- estado `completado`
+
+Ejemplo:
+
+`N1 ✓ | N2 ✓ | N3 trabajando...`
+
+Cuando termine:
+`estado = completado`
+
+No crear WebSocket, SSE ni arquitectura nueva.
+
+Reutiliza el polling `resultado` que ya existe.
+
+En frontend modifica únicamente el punto donde actualmente muestra `Pensando...` para presentar ese progreso.
+
+---
+
+## 8. MODELOS Y CLAVES
+
+NO reemplaces el sistema actual de:
+
+`sellos → _abrir_sello() → modelos`
+
+NO metas listas NVIDIA/Groq.
+NO metas claves en código.
+NO cambies el Banco de claves.
+NO imprimas secretos en logs ni respuestas.
+
+Las fichas deben continuar utilizando sus IDs `ficha-*` existentes.
+
+---
+
+## 9. PRUEBAS OBLIGATORIAS
+
+Antes de cerrar prueba:
+
+### Ficha 1
+Selector → 1 solo modelo → respuesta.
+Confirmar que N6/N7 NO se ejecutan.
+
+### Ficha 2
+Confirmar:
+
+`N1/N2/N3 paralelo`
+→ `N4`
+→ `N5`
+→ `N6`
+→ `N7`
+
+### Ficha 3
+Igual que Ficha 2.
+
+### Timeout
+Simular modelo sin respuesta:
+- no debe quedar 20 minutos esperando;
+- debe respetar 90 s por intento y máximo 3 intentos.
+
+### Config
+Confirmar que:
+- 1500 tokens vienen de ficha;
+- 90 s vienen de ficha;
+- 3 intentos vienen de ficha;
+- 60000 chars vienen de ficha.
+
+---
+
+## 10. REGLA DE CAMBIO
+
+CAMBIO MÍNIMO.
+
+Antes:
+lee archivo actual.
+
+Después:
+edita únicamente las líneas necesarias.
+
+NO reemplaces archivos completos si basta un delta pequeño.
+NO refactorices código no relacionado.
+NO cambies nombres ni rutas.
+
+Al terminar dame:
+
+1. archivos modificados;
+2. qué cambió en cada uno;
+3. pruebas ejecutadas;
+4. PASS/FAIL por Ficha 1, 2 y 3;
+5. commit SHA.
+
+Si aparece cualquier necesidad de modificar la arquitectura general del Router:
+DETENTE y pregúntame antes.
+
+El punto más importante es que no vuelva a “arreglar” la latencia cambiando el DAG o metiendo otro sistema: primero debe hacer que el motor obedezca las fichas y restaurar N6 → N7.
