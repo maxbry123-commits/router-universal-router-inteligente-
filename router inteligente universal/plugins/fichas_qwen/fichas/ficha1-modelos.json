@@ -61,7 +61,12 @@
     "ficha-dsv4pro": "texto",
     "ficha-dsv4pro0813": "texto",
     "ficha-dsv4flash": "texto",
-    "ficha-glm52": "texto"
+    "ficha-glm52": "texto",
+    "ficha-qwenimage30pro": "imagen",
+    "ficha-wan27image": "imagen",
+    "ficha-qwentts": "voz",
+    "ficha-qwenrealtime": "voz",
+    "ficha-qwenasr": "voz"
   },
   "selector": [
     {
@@ -126,6 +131,41 @@
       "nombre": "GLM 5.2",
       "rol": "Codigo + agentes",
       "tipo": "texto"
+    },
+    {
+      "cola": 10,
+      "id": "ficha-qwenimage30pro",
+      "nombre": "Qwen Image 3.0 Pro",
+      "rol": "Imagenes",
+      "tipo": "imagen"
+    },
+    {
+      "cola": 11,
+      "id": "ficha-wan27image",
+      "nombre": "Wan 2.7 Image",
+      "rol": "Imagenes",
+      "tipo": "imagen"
+    },
+    {
+      "cola": 12,
+      "id": "ficha-qwentts",
+      "nombre": "Qwen TTS",
+      "rol": "Texto a voz",
+      "tipo": "voz"
+    },
+    {
+      "cola": 13,
+      "id": "ficha-qwenrealtime",
+      "nombre": "Qwen Realtime",
+      "rol": "Voz en vivo",
+      "tipo": "voz"
+    },
+    {
+      "cola": 14,
+      "id": "ficha-qwenasr",
+      "nombre": "Qwen ASR",
+      "rol": "Voz a texto",
+      "tipo": "voz"
     }
   ],
   "motor": {
@@ -266,13 +306,12 @@
       "VALIDACION",
       "RUTAS"
     ],
-    "texto": "FORMATO OBLIGATORIO DE PLAN Y SALIDA. Cinco secciones, cada una con su encabezado en una linea propia: 1) RESUMEN CORTO (2 a 4 lineas). 2) DIAGRAMA DE FLUJO del workflow Loop en horizontal, de izquierda a derecha con flechas y la vuelta del loop; copia el DIAGRAMA REAL que se te adjunta. 3) CHECK LISTA: una linea por tarea, con ✅ las realizadas y ⬜ las pendientes. 4) VALIDACION de cambios o verificacion: que se verifico, con que evidencia real (archivo, commit, prueba, resultado) y que no se pudo verificar. 5) 3 RUTAS para mejorar, cambiar o tarea por hacer; entre ellas propone solicitar auditoria forense, X-Ray, verificacion cruzada o refactorizar (si el Director responde ok o confirmo, se activa la verificacion cruzada de 4 modelos). Sin parrafos largos ni trazas internas. En el PLAN: CHECK LISTA = tareas pendientes, VALIDACION = como se verificara, y termina con la linea ESPERANDO_APROBACION."
+    "texto": "FORMATO OBLIGATORIO DE PLAN Y SALIDA. Cinco secciones, cada una con su encabezado en una linea propia: 1) RESUMEN CORTO (2 a 4 lineas). 2) DIAGRAMA DE FLUJO del workflow Loop en horizontal, de izquierda a derecha con flechas y la vuelta del loop; copia el DIAGRAMA REAL que se te adjunta. 3) CHECK LISTA: una linea por tarea, con ✅ las realizadas y ⬜ las pendientes. 4) VALIDACION de cambios o verificacion: que se verifico, con que evidencia real (archivo, commit, prueba, resultado) y que no se pudo verificar. 5) 3 RUTAS para mejorar, cambiar o tarea por hacer. La ruta 1 SIEMPRE propone activar la nueva verificacion: auditoria forense X-Ray, verificacion cruzada con el codigo fuente y verificacion cruzada con el input block verbatim del Director (si el Director responde ok o confirmo, la hacen Qwen 3.7 Flash, DeepSeek V4 Flash y Qwen 3.8 Flash a la vez: revisan, refactorizan, resuelven gaps y mejoran lo ya hecho). Sin parrafos largos ni trazas internas. En el PLAN: CHECK LISTA = tareas pendientes, VALIDACION = como se verificara, y termina con la linea ESPERANDO_APROBACION."
   },
   "verificacion_cruzada": {
     "modelos": [
       "ficha-qwen37flash",
       "ficha-dsv4flash",
-      "ficha-glm52",
       "ficha-qwen38flash"
     ],
     "confirmar": [
@@ -282,18 +321,18 @@
       "proceder con validacion"
     ],
     "rutas_propuestas": [
-      "auditoria forense",
-      "X-Ray",
-      "verificacion cruzada",
-      "refactorizar"
+      "auditoria forense X-Ray",
+      "verificacion cruzada con el codigo fuente",
+      "verificacion cruzada con el input block verbatim"
     ],
     "paralelo": true,
     "cola": "segun sdk disponible: semaforo global de 6 llamadas y max_parallel de la ficha",
-    "solo_lectura": true,
+    "solo_lectura": false,
     "cruce": [
       "INPUT BLOCK VERBATIM",
       "codigo fuente o tarea en curso"
-    ]
+    ],
+    "refactoriza": true
   },
   "salida_final": "N4",
   "nodos": [
