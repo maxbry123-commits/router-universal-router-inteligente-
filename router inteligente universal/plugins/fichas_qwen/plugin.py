@@ -59,14 +59,17 @@ def _llamar(modelo: str, prompt: str, max_tokens: int = 8000) -> str:
     if not m:
         raise RuntimeError("MODELO_NO_ESTA_EN_EL_SELLO:" + str(modelo))
     ultimo = ""
-    for _vuelta in range(2):  # mismo modelo siempre; nunca otro
+    fin = time.time() + 1200  # hasta 20 min por modelo; bucle de reintento sobre la tarea pendiente
+    while time.time() < fin:  # mismo modelo siempre; nunca otro
         for clave in m["claves"]:
+            if time.time() >= fin:
+                break
             cuerpo = json.dumps({"model": m["modelo"], "messages": [{"role": "user", "content": prompt}],
                                  "max_tokens": max_tokens}).encode()
             req = urllib.request.Request(m["url"] + "/chat/completions", data=cuerpo, method="POST",
                                          headers={"Authorization": "Bearer " + clave, "Content-Type": "application/json"})
             try:
-                with urllib.request.urlopen(req, timeout=170) as r:
+                with urllib.request.urlopen(req, timeout=max(30, fin - time.time())) as r:
                     d = json.loads(r.read().decode("utf-8", "replace"))
                 t = str(((d.get("choices") or [{}])[0].get("message") or {}).get("content") or "").strip()
                 if t:
@@ -74,6 +77,7 @@ def _llamar(modelo: str, prompt: str, max_tokens: int = 8000) -> str:
                 ultimo = "respuesta vacia"
             except Exception as x:  # noqa: BLE001
                 ultimo = str(x)[:200]
+        time.sleep(5)
     raise RuntimeError("MODELO_SIN_RESPUESTA:%s:%s" % (modelo, ultimo))
 
 
