@@ -121,7 +121,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str) -> tuple[str, list
         final = next((out[i] for i in reversed(orden) if out.get(i) and not out[i].startswith("GAP")
                       and nodos[i].get("tipo") != "goals"), final)
     traza = [{"nodo": i, "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
-              "ok": not out.get(i, "").startswith("GAP")} for i in orden if i in out]
+              "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP")} for i in orden if i in out]
     return final, traza
 
 

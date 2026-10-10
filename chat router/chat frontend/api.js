@@ -113,14 +113,14 @@ export async function accion(acc, payload) {
   return env.result || {};
 }
 window.RIU_ACCION = accion;
-export async function harness({ model, message, max_tokens, avisar, anclados, sesion }) {
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen }) {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const esHF = model.startsWith('hf-');
-  const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {});
+  const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
   let r;
   if (esHF && L4.url) {
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
@@ -143,7 +143,8 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
   }
   if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
-  return { reply: (r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || '', job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) };
+  const prueba = Array.isArray(r.p.traza) && r.p.traza.length ? '\n\n— Prueba de ejecución —\n' + r.p.traza.filter((t) => t.modelo !== 'goals').map((t) => t.nodo + ' · ' + String(t.modelo).replace('ficha-', '') + ' · ' + (t.rol || '') + (t.ok ? ' ✔' : ' ✘')).join('\n') : '';
+  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || '') + prueba, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) };
 }
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {

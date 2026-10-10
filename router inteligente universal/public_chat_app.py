@@ -9,6 +9,7 @@ class ChatAccess:
             path=scope.get("path","")
             public=(path.startswith("/plugins/puente_chat/call/")
                     or path.startswith("/plugins/fichas/call/")
+                    or path.startswith("/plugins/fichas_qwen/call/")
                     or path.startswith("/memoria/")
                     or path.startswith("/espacio/")
                     or path.startswith("/chat/")
