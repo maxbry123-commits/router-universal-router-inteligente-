@@ -2,7 +2,7 @@
 // 1) tocar fuera de la ventana la cierra  2) Escape la cierra  3) deslizar hacia abajo desde la cabecera la cierra (celular)
 // 4) ANCLAJE EN UNA SOLA VENTANA: la pastilla "ancla" y el boton ⚓ del input abren la MISMA ventana, que junta todo
 //    (enlaces, anclado ahora, instrucciones fijas, proyectos, handoffs, Mi handoff y archivos) con un titulo por seccion.
-//    No se borra nada: solo se mueve la ventana de handoffs dentro de la de anclaje y se oculta el campo de enlace repetido.
+//    No se borra ni se oculta nada: solo se mueve la ventana de handoffs dentro de la de anclaje.
 export function conectarVentanas({ root, q }) {
   const hojas = () => [...root.querySelectorAll(".sheet")];
   hojas().forEach((s) => s.addEventListener("click", (e) => { if (e.target === s) s.hidden = true; }));
@@ -43,7 +43,6 @@ function unirAnclaje(q) {
   const bloque = [...sh.children].filter((n) => !n.classList.contains("va-head"));
   if (archivos) { va.insertBefore(tHand, archivos); bloque.forEach((n) => va.insertBefore(n, archivos)); antesDe(archivos, "Archivos"); }
   else { va.append(tHand, ...bloque); }
-  const enl = q("#ancla-enlace"); if (enl && enl.closest(".row")) enl.closest(".row").hidden = true;  // repetido: los enlaces se pegan arriba
   const tit = va.querySelector(".va-head strong"); if (tit) tit.textContent = "Anclaje";
   let ocupado = false;
   const mostrar = () => { q("#sh-ancla").hidden = true; q("#ventana-ancla").hidden = false; };

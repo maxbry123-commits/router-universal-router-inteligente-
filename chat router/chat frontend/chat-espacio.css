@@ -9,7 +9,6 @@
   section>.row.fields .pill{flex:0 0 auto}
   .chat-history{height:max(360px,calc(100dvh - 300px));min-height:360px}
   #composer textarea{min-height:40px}
-  #composer .composer-bar .anclados{max-height:34px;overflow-y:auto}
 }
 @media(max-width:480px){.chat-history{height:max(360px,calc(100dvh - 300px));min-height:360px}}
 .composer-bar .btn-microfono.on{border-color:var(--status-green);color:var(--status-green)}
@@ -22,8 +21,7 @@ body:has(.sheet:not([hidden])){overflow:hidden}
 .consil-diagrama.lleno .dg-paso{white-space:normal;max-width:100%}
 .consil-diagrama.lleno.mas{-webkit-mask-image:none;mask-image:none}
 @media(prefers-reduced-motion:reduce){.sheet .va-caja{transition:none}}
-/* anclaje en una sola ventana: titulos de seccion y campo repetido oculto */
-#ventana-ancla .row[hidden]{display:none!important}
+/* anclaje en una sola ventana: titulos de seccion */
 #ventana-ancla .anc-sec{margin:14px 4px 2px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet-2)}
 #ventana-ancla .anc-sec:first-of-type{margin-top:4px}
 #ventana-ancla #mi-handoff{min-height:64px}
