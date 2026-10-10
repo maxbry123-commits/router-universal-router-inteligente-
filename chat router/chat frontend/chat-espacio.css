@@ -14,3 +14,14 @@
 @media(max-width:480px){.chat-history{height:max(360px,calc(100dvh - 300px));min-height:360px}}
 .composer-bar .btn-microfono.on{border-color:var(--status-green);color:var(--status-green)}
 .composer-bar .btn-microfono.bloq{opacity:.4;cursor:not-allowed}
+/* ventanas: fondo quieto con una ventana abierta, titulo que no se corta, diagrama completo sin cortes, anclaje unico */
+body:has(.sheet:not([hidden])){overflow:hidden}
+.sheet .va-caja{overscroll-behavior:contain;transition:transform .15s ease-out}
+.sheet .va-head strong{font-size:17px;line-height:1.25}
+.consil-diagrama.lleno{flex-wrap:wrap;overflow-x:visible;row-gap:6px;max-height:32vh;overflow-y:auto;flex:0 0 auto}
+.consil-diagrama.lleno .dg-paso{white-space:normal;max-width:100%}
+.consil-diagrama.lleno.mas{-webkit-mask-image:none;mask-image:none}
+#ancla[hidden],#ventana-ancla [hidden]{display:none!important}
+#ventana-ancla .mod-grupo-t{margin:14px 4px 2px}
+#ventana-ancla #mi-handoff{min-height:64px}
+@media(prefers-reduced-motion:reduce){.sheet .va-caja{transition:none}}

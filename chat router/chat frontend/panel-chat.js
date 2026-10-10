@@ -2,6 +2,7 @@ import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
 import { conectarSelectorModelos } from "./chat-selector-modelos.js";
 import { conectarMicrofono } from "./chat-microfono.js";
+import { conectarVentanas } from "./chat-ventanas.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 5;
@@ -123,6 +124,7 @@ export async function mount(root, { api, tell }) {
     if (!abierto && b.dataset.sheet === "sh-ancla") { pintarAnclas(); cargarMiHandoff(); }
   }));
   root.querySelectorAll(".sh-cerrar").forEach((b) => b.addEventListener("click", cerrarHojas));
+  conectarVentanas({ root, q });  // cerrar tocando fuera / Escape / deslizando; anclaje unico en el boton del input
 
   const fila = (titulo, desc, marcada, alClick) => {
     const r = node("button", "", "fila" + (marcada ? " on" : ""));
