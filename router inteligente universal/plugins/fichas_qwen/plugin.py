@@ -119,6 +119,46 @@ def _muta(texto: str) -> bool:
     return any(v in t for v in _VERBOS)
 
 
+_SEM = threading.BoundedSemaphore(6)  # maximo de llamadas de modelo a la vez entre todas las tareas; las demas esperan en cola
+_TAREAS = {}  # plan pendiente de aprobacion por (ficha, conversacion)
+
+
+def _fallo(t: Any) -> bool:
+    return bool(re.search(r'(?im)^[ \t]*VEREDICTO:[ \t]*FAIL', str(t or '')))
+
+
+def _pend_guardar(fid: str, ses: str, d: dict[str, Any]) -> None:
+    _TAREAS[(fid, ses)] = d
+    try:  # tambien en la memoria del Harness (la que ya existe): sobrevive al reinicio
+        pc = _pc()
+        mem, sf = pc._memoria()
+        mem.save(sf(pc.DUENO, 'chat:' + ses), 'tarea_pendiente:' + fid, d)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _pend_cargar(fid: str, ses: str) -> dict[str, Any] | None:
+    d = _TAREAS.get((fid, ses))
+    if d is None:
+        try:
+            d = _pc()._mem_dato(ses, 'tarea_pendiente:' + fid)
+        except Exception:  # noqa: BLE001
+            d = None
+    if isinstance(d, dict) and d.get('plan') and d.get('input') and not d.get('cerrada') and time.time() - float(d.get('t') or 0) < 21600:
+        return d
+    return None
+
+
+def _pend_cerrar(fid: str, ses: str) -> None:
+    _TAREAS.pop((fid, ses), None)
+    try:
+        pc = _pc()
+        mem, sf = pc._memoria()
+        mem.save(sf(pc.DUENO, 'chat:' + ses), 'tarea_pendiente:' + fid, {'cerrada': True})
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _pc():
     # el Harness original (puente_chat): se reutiliza el modulo que el Router ya cargo
     import importlib.util
@@ -149,9 +189,12 @@ def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
     escribe = n.get('id') == 'N4' and bool(opts.get('aprobado'))
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
-                  'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe})
+                  'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
+                  'requiere_tools': bool(opts.get('muta')), 'tarea_id': opts.get('tarea_id') or '', 'nodo': str(n.get('id'))})
     if r.get('error'):
         det = str(r.get('detalle') or r.get('mensaje') or '')[:160]
+        if str(r['error']).startswith('GAP '):
+            raise RuntimeError(str(r['error'])[4:] + (':' + det if det else ''))
         if 'tool' in det.lower() and '400' in det:
             raise RuntimeError('MODELO_SIN_TOOLS:' + qw)
         raise RuntimeError('HARNESS_' + str(r['error']) + (':' + det if det else ''))
@@ -159,8 +202,8 @@ def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str
     if not t:
         raise RuntimeError('RESPUESTA_VACIA:' + qw)
     usadas = [x for x in (r.get('herramientas') or []) if isinstance(x, dict)]
-    opts.setdefault('herr', {})[str(n.get('id'))] = [{'herramienta': x.get('herramienta'), 'ok': bool(x.get('ok'))} for x in usadas]
-    if escribe and opts.get('muta') and not any(x.get('ok') and x.get('herramienta') in _ESCRIBE for x in usadas):
+    opts.setdefault('herr', {}).setdefault(str(n.get('id')), []).extend([{'herramienta': x.get('herramienta'), 'ok': bool(x.get('ok')), 'mutacion_real': bool(x.get('mutacion_real'))} for x in usadas])
+    if escribe and opts.get('muta') and not any(x.get('mutacion_real') for x in opts['herr'][str(n.get('id'))]):
         raise RuntimeError('EJECUCION_SIN_EVIDENCIA: la tarea pedia cambios y ninguna herramienta de escritura termino bien')
     return t
 
@@ -182,12 +225,21 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     if elegido is None:
         return 'GAP MODELO_SELECTOR_INVALIDO: ' + repr(modelo) + ' no esta en el selector', []
     opts = {} if opts is None else opts
-    out: dict[str, str] = {}
+    out: dict[str, str] = dict(opts.get('previo') or {})  # nodos que ya pasaron: no se repiten
+    opts['out'] = out
 
     def nodo(i: str) -> str:
         n = nodos[i]
         if n.get('tipo') == 'goals':
-            r = chr(10).join(g.get('texto', '') for g in n.get('goals', []) if g.get('texto') and g.get('texto') != 'PONER AQUI')
+            nl_ = chr(10)
+            r = nl_.join(g.get('texto', '') for g in n.get('goals', []) if g.get('texto') and g.get('texto') != 'PONER AQUI')
+            if i == 'N0':  # N0 real: el input literal del Director + las instrucciones fijas y restricciones de la tarea
+                r = 'INPUT LITERAL DEL DIRECTOR:' + nl_ + mensaje + (nl_ * 2 + r if r else '')
+            elif n.get('depende_de'):  # N5 real: plan aprobado + criterios de PASS + evidencia requerida
+                plan_ = str(opts.get('plan') or out.get(n['depende_de'][0], ''))
+                r = ('PLAN / RESULTADO ESPERADO:' + nl_ + plan_[:6000] + nl_ * 2 +
+                     'CRITERIOS DE PASS: cumplir cada instruccion del Director; el resultado debe existir de verdad (archivo, commit o prueba), no solo estar descrito.' + nl_ +
+                     'EVIDENCIA REQUERIDA: archivo o destino afectado, herramienta usada y resultado real.' + (nl_ * 2 + r if r else ''))
             _prog(pid, i, 'ok')
             return r
         _prog(pid, i, 'trabajando')
@@ -196,30 +248,58 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
         if n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado'):
             prompt += nl * 2 + 'AVISO DEL SISTEMA: falta la aprobacion del Director. NO ejecutes cambios ni uses herramientas de escritura. Entrega solo el PLAN (pasos, archivos, riesgos) y termina con la linea ESPERANDO_APROBACION. El Director aprueba escribiendo /aprobar al inicio de su mensaje.'
+        if n.get('id') == 'N4' and opts.get('aprobado') and opts.get('plan'):
+            prompt += nl * 2 + 'PLAN APROBADO POR EL DIRECTOR (ejecutalo tal cual; si cambia el alcance, detente y pide aprobacion otra vez):' + nl + str(opts['plan'])[:6000]
+        if n.get('id') == 'N4' and opts.get('correccion'):
+            prompt += nl * 2 + 'CORRECCION PEDIDA POR EL VERIFICADOR (corrige unicamente este fallo; no repitas operaciones ya completadas):' + nl + str(opts['correccion'])
         mod = elegido if n.get('modelo') == 'selector' else n.get('modelo')
         try:
-            r = _llamar_harness(mod, prompt, ficha, n, opts)
+            with _SEM:  # maximo 6 llamadas de modelo a la vez; las demas esperan en cola sin fallar
+                r = _llamar_harness(mod, prompt, ficha, n, opts)
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod, x)
         _prog(pid, i, 'gap' if r.startswith('GAP') else 'ok')
         return r
 
-    pend = list(orden)
-    while pend:
-        listos = [i for i in pend if all(d in out for d in nodos[i].get("depende_de", []))]
-        if not listos:
-            break
-        with _cf.ThreadPoolExecutor(max_workers=len(listos)) as ex:
-            futs = {i: ex.submit(nodo, i) for i in listos}
-            for i, f in futs.items():
-                out[i] = f.result()
-                pend.remove(i)
+    _mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
+
+    def _dag() -> None:
+        pend = [i for i in orden if i not in out]
+        while pend:
+            listos = [i for i in pend if all(d in out for d in nodos[i].get("depende_de", []))]
+            if not listos:
+                break
+            with _cf.ThreadPoolExecutor(max_workers=max(1, min(len(listos), _mp))) as ex:
+                futs = {i: ex.submit(nodo, i) for i in listos}
+                for i, f in futs.items():
+                    out[i] = f.result()
+                    pend.remove(i)
+            if opts.get('plan_stop') and out.get('N4'):  # plan sin aprobar: se detiene aqui, antes de cualquier escritura
+                break
+
+    _dag()
+    maxc = int((ficha.get('loop') or {}).get('correcciones') or 1)
+    ronda = 0
+    while opts.get('aprobado') and ronda < maxc and any(_fallo(out.get(k)) for k in ('N6', 'N7')):
+        ronda += 1  # N6/N7 solo verifican: si hallan un defecto real, N4 (unico escritor) corrige y se verifica otra vez
+        opts['correccion'] = chr(10).join(str(out.get(k) or '')[-1500:] for k in ('N6', 'N7') if _fallo(out.get(k)))
+        for k in [k for k in ('N4', 'N5', 'N6', 'N7') if k in out]:
+            del out[k]
+        _dag()
     usados = {d for n in nodos.values() for d in n.get("depende_de", [])}
     finales = [i for i in orden if i not in usados and nodos[i].get("tipo") != "goals"]
     final = out.get(finales[-1], "") if finales else ""
-    if not final or final.startswith("GAP"):
-        final = next((out[i] for i in reversed(orden) if out.get(i) and not out[i].startswith("GAP")
-                      and nodos[i].get("tipo") != "goals"), final)
+    if opts.get('plan_stop') and out.get('N4'):
+        final = out['N4']
+        if not final.startswith('GAP'):
+            opts['estado'] = 'ESPERANDO_APROBACION'
+    elif not final or final.startswith('GAP') or _fallo(final):
+        # NO PASS = NO CIERRE: un fallo del nodo final no se sustituye por la salida de un nodo anterior
+        opts['parcial'] = next((out[i] for i in reversed(orden) if out.get(i) and not out[i].startswith('GAP') and nodos[i].get('tipo') != 'goals'), '')
+        motivo = 'el nodo final no entrego salida' if not final else (final if final.startswith('GAP') else 'el juez final (N7) encontro un defecto real que no se pudo corregir')
+        final = 'GAP FINAL: ' + motivo[:600]
+    else:
+        final = re.sub(r'(?im)^[ \t]*VEREDICTO:.*$', '', final).strip()
     traza = [{"nodo": i, "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
               "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
@@ -233,14 +313,27 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if not mensaje:
         mensaje = next((str(m.get("content", "")) for m in reversed(p.get("messages") or []) if m.get("role") == "user"), "")
     t0 = time.time()
+    ses = str(p.get("sesion") or 'fichas')[:60]
     ap = mensaje.lstrip().lower().startswith('/aprobar')
     if ap:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
-    opts = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': str(p.get("sesion") or 'fichas')[:60]}
-    salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
+    pend_t = _pend_cargar(fid, ses) if ap else None
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'tarea_id': secrets.token_hex(6)}
+    if ap and not pend_t and not mensaje:
+        salida, traza = 'GAP SIN_PLAN_PENDIENTE: no hay un plan esperando aprobacion en esta conversacion; envia primero la tarea para que se genere el plan', []
+    else:
+        if pend_t:  # /aprobar retoma la MISMA tarea: input original, plan y resultados de N0-N3 ya obtenidos; arranca en N4
+            mensaje = str(pend_t['input'])
+            opts.update(muta=True, previo=dict(pend_t.get('previo') or {}), plan=str(pend_t['plan']), tarea_id=str(pend_t.get('tarea_id') or opts['tarea_id']))
+        opts['plan_stop'] = bool(opts['muta'] and not ap)
+        salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
+        if opts.get('estado') == 'ESPERANDO_APROBACION':
+            _pend_guardar(fid, ses, {'input': mensaje, 'plan': salida, 'previo': {k: v for k, v in (opts.get('out') or {}).items() if k != 'N4'}, 'tarea_id': opts['tarea_id'], 't': time.time()})
+        elif pend_t and not str(salida).startswith('GAP'):
+            _pend_cerrar(fid, ses)
     return {"model": FICHAS[fid].get("ficha", fid), "reply": salida,
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
-            "traza": traza, "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}
+            "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}
 
 
 def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
