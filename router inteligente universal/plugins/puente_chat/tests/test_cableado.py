@@ -236,12 +236,14 @@ def test_13_politica_llega_a_la_peticion_http():
 
 # ---------- Motor de fichas: /aprobar, N0/N5, N6/N7, GAP, paralelo ----------
 LLAM = []
+MODS = []
 ROL = {}
 
 
 def _llh(modelo, prompt, ficha, n, opts):
     nid = n['id']
     LLAM.append((opts.get('sesion'), nid, prompt))
+    MODS.append((opts.get('sesion'), nid, modelo))
     f = ROL.get(nid)
     if callable(f):
         return f(prompt, opts)
@@ -261,7 +263,7 @@ def _chat(ses, msg):
 
 def test_14_aprobar_retoma_la_misma_tarea():
     ROL.clear()
-    ROL['N4'] = lambda p, o: ('EJECUTADO' if o.get('aprobado') else 'PLAN: editar x' + chr(10) + 'ESPERANDO_APROBACION')
+    ROL['N4'] = _plan_o_exec
     ROL['N6'] = lambda p, o: 'revisado' + chr(10) + 'VEREDICTO: PASS'
     ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
     r = _chat('s14', 'corrige el Router')
@@ -283,7 +285,7 @@ def test_15_n6_fail_devuelve_control_a_n4():
     def n6(p, o):
         cuenta['n6'] += 1
         return 'VEREDICTO: FAIL: falta X' if cuenta['n6'] == 1 else 'VEREDICTO: PASS'
-    ROL['N4'] = lambda p, o: ('EJECUTADO' if o.get('aprobado') else 'PLAN' + chr(10) + 'ESPERANDO_APROBACION')
+    ROL['N4'] = _plan_o_exec
     ROL['N6'] = n6
     ROL['N7'] = lambda p, o: _full('final') + chr(10) + 'VEREDICTO: PASS'
     _chat('s15', 'corrige el Router')
@@ -295,7 +297,7 @@ def test_15_n6_fail_devuelve_control_a_n4():
 
 def test_16_n7_fail_no_se_oculta():
     ROL.clear()
-    ROL['N4'] = lambda p, o: ('EJECUTADO' if o.get('aprobado') else 'PLAN' + chr(10) + 'ESPERANDO_APROBACION')
+    ROL['N4'] = _plan_o_exec
     ROL['N6'] = lambda p, o: 'VEREDICTO: PASS'
     ROL['N7'] = lambda p, o: 'defecto grave' + chr(10) + 'VEREDICTO: FAIL: no cumple X'
     _chat('s16', 'corrige el Router')
@@ -349,11 +351,11 @@ def test_18_dos_tareas_en_paralelo_no_se_pisan():
 
 
 def _full(t):
-    return chr(10).join(['MICRO RESUMEN ' + t, 'MICRO FLUJO a > b', 'RESULTADO ok', 'CHECKLIST ok', 'EVIDENCIA commit'])
+    return chr(10).join(['RESUMEN CORTO ' + t, 'DIAGRAMA DE FLUJO a -> b -> c', 'CHECK LISTA x hecho', 'VALIDACION ok con evidencia', '3 RUTAS 1) a 2) b 3) c'])
 
 
 def _plan_o_exec(p, o):
-    return 'EJECUTADO' if o.get('aprobado') else 'PLAN' + chr(10) + 'ESPERANDO_APROBACION'
+    return 'EJECUTADO' if o.get('aprobado') else _full('plan') + chr(10) + 'ESPERANDO_APROBACION'
 
 
 def test_19_detector_de_mutacion():
@@ -465,7 +467,109 @@ def test_25_formato_obligatorio_tambien_en_auditoria_de_solo_lectura():
     assert _chat('s25b', 'analiza el router')['reply'] == _full('auditoria')
     for k in ('ficha2-dag-codigo', 'ficha3-frontend'):
         rol7 = [n for n in fq.FICHAS[k]['nodos'] if n['id'] == 'N7'][0]['rol']
-        assert 'solo tareas de trabajo o code' not in rol7 and 'auditoria de solo lectura' in rol7
+        assert 'solo tareas de trabajo o code' not in rol7 and 'FORMATO OBLIGATORIO DE PLAN Y SALIDA' in rol7
+
+
+def test_26_formato_de_plan_y_diagrama_en_los_prompts():
+    ROL.clear()
+    ROL['N4'] = _plan_o_exec
+    ROL['N6'] = lambda p, o: 'VEREDICTO: PASS'
+    ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
+    r = _chat('s26', 'corrige el Router')
+    p4 = _n('s26', 'N4')[0]
+    assert 'FORMATO OBLIGATORIO DE PLAN Y SALIDA' in p4 and 'DIAGRAMA REAL DEL WORKFLOW' in p4 and 'N0 \u2705' in p4
+    assert 'ESPERANDO_APROBACION' in r['reply'] and not fq._faltan(r['reply'], fq.FICHAS['ficha2-dag-codigo'])
+    _chat('s26', '/aprobar')
+    p7 = _n('s26', 'N7')[0]
+    assert 'DIAGRAMA REAL DEL WORKFLOW' in p7 and 'N7 \U0001f504' in p7 and 'N6 \u2705' in p7 and 'vuelta 0/5' in p7
+
+    def plan_flojo(p, o):
+        if o.get('aprobado'):
+            return 'EJECUTADO'
+        return (_full('plan') + chr(10) + 'ESPERANDO_APROBACION') if 'REFORMATEA' in p else 'plan sin formato' + chr(10) + 'ESPERANDO_APROBACION'
+    ROL['N4'] = plan_flojo
+    r2 = _chat('s26b', 'corrige el Router')
+    assert len(_n('s26b', 'N4')) == 2 and 'RESUMEN CORTO' in r2['reply'] and 'ESPERANDO_APROBACION' in r2['reply']
+    ROL['N4'] = lambda p, o: 'plan sin formato' + chr(10) + 'ESPERANDO_APROBACION'
+    r3 = _chat('s26c', 'corrige el Router')
+    assert r3['reply'].startswith('GAP FORMATO_PLAN') and not _n('s26c', 'N7')
+    assert _chat('s26c', '/aprobar')['reply'].startswith('GAP SIN_PLAN_PENDIENTE')
+
+
+def test_27_diagrama_horizontal_con_estado_real():
+    f = fq.FICHAS['ficha2-dag-codigo']
+    nodos = {n['id']: n for n in f['nodos']}
+    orden = [n['id'] for n in f['nodos']]
+    d = fq._diagrama(f, nodos, orden, {'N0': 'x', 'N1': 'x', 'N2': 'GAP N2 (m): boom', 'N3': 'x'}, {'ronda': 2}, 'N4')
+    l1, l2 = d.split(chr(10))
+    assert l1.startswith('INPUT \u2500\u2500\u25b6 N0 \u2705 \u2500\u2500\u25b6 [N1 \u2705 | N2 \u274c | N3 \u2705] \u2500\u2500\u25b6 N4 \U0001f504') and l1.endswith('\u2500\u2500\u25b6 SALIDA')
+    assert 'N7 \u23f3' in l1 and 'vuelta 2/5' in l2 and 'tope 600 s' in l2
+
+
+def test_28_confirmacion_activa_la_verificacion_cruzada_de_4_modelos():
+    ROL.clear()
+    est = {'act': 0, 'max': 0}
+    lock = threading.Lock()
+
+    def miembro(res):
+        def f(p, o):
+            with lock:
+                est['act'] += 1
+                est['max'] = max(est['max'], est['act'])
+            time.sleep(0.05)
+            with lock:
+                est['act'] -= 1
+            if isinstance(res, Exception):
+                raise res
+            return res
+        return f
+    ROL['N7'] = lambda p, o: _full('auditoria') + chr(10) + 'VEREDICTO: PASS'
+    r0 = _chat('s28', 'analiza el router TAREA-X')
+    assert r0['reply'] == _full('auditoria')
+    ROL['V1'] = miembro(RuntimeError('modelo no disponible'))
+    ROL['V2'] = miembro('hallazgo ok' + chr(10) + 'VEREDICTO: PASS')
+    ROL['V3'] = miembro('falta X en ficha2' + chr(10) + 'VEREDICTO: FAIL: falta X')
+    ROL['V4'] = miembro('todo bien' + chr(10) + 'VEREDICTO: PASS')
+    r = _chat('s28', 'Ok')
+    mods = [m for s, n, m in MODS if s == 's28' and n.startswith('V')]
+    assert sorted(mods) == sorted(['ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-glm52', 'ficha-qwen38flash']), mods
+    assert est['max'] == 4
+    for k in ('V1', 'V2', 'V3', 'V4'):
+        p = _n('s28', k)[0]
+        assert 'INPUT BLOCK VERBATIM DEL DIRECTOR' in p and 'analiza el router TAREA-X' in p and 'SALIDA ENTREGADA A VERIFICAR' in p and _full('auditoria') in p
+    txt = r['reply']
+    assert txt.startswith('RESUMEN CORTO') and '2 PASS, 1 FAIL, 1 sin resultado' in txt and 'Veredicto cruzado: FAIL' in txt
+    assert '\u2b1c Qwen 3.7 Flash: GAP' in txt and '\u274c GLM 5.2: FAIL - falta X' in txt and '\u2705 DeepSeek V4 Flash: PASS' in txt and '3 RUTAS' in txt
+    assert r['estado_tarea'] == 'VERIFICACION_CRUZADA' and not fq._faltan(txt, fq.FICHAS['ficha2-dag-codigo'])
+    _chat('s28', 'ok')  # la propuesta ya se uso: no se repite
+    assert len([m for s, n, m in MODS if s == 's28' and n.startswith('V')]) == 4
+
+
+def test_29_detector_de_confirmacion():
+    si = ['ok', 'OK.', 'Confirmo', 'proceder con verificaci\u00f3n', 'Proceder con validaci\u00f3n', 'procede con la verificacion cruzada',
+          'proceder con verificaci\u00f3n o validaci\u00f3n', 'dale', 'Okay!']
+    no = ['ok pero cambia el parser', 'corrige el Router', 'analiza el router', 'no', '', 'ok ok ok quiero un resumen largo de todo el repositorio por favor']
+    assert all(fq._confirma(x) for x in si), [x for x in si if not fq._confirma(x)]
+    assert not any(fq._confirma(x) for x in no)
+
+
+def test_30_ok_sin_propuesta_pendiente_no_activa_la_verificacion():
+    ROL.clear()
+    ROL['N7'] = lambda p, o: _full('x') + chr(10) + 'VEREDICTO: PASS'
+    _chat('s30', 'ok')
+    assert not [1 for s, n, m in MODS if s == 's30' and n.startswith('V')]
+    assert _n('s30', 'N7')
+
+
+def test_31_qwen37_flash_esta_cableado_sin_tocar_el_sello():
+    assert fq._QW['ficha-qwen37flash'] == 'qw-qwen-3-7-flash'
+    assert 'qw-qwen-3-7-flash' in pc.FICHAS and pc.FICHAS['qw-qwen-3-7-flash'][2] == 'qwen3.7-flash' and pc.FICHAS['qw-qwen-3-7-flash'][1] == 'qwencloud'
+    pc._POL_CACHE.clear()
+    assert pc._politica('qwen3.7-flash') == pc._politica('qwen3.8-flash') and pc._politica('qwen3.7-flash')
+    for k in ('ficha1-modelos', 'ficha2-dag-codigo', 'ficha3-frontend'):
+        f = fq.FICHAS[k]
+        assert tuple(f['verificacion_cruzada']['modelos']) == ('ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-glm52', 'ficha-qwen38flash'), k
+        assert f['formato_salida']['secciones'] == ['RESUMEN CORTO', 'DIAGRAMA', 'CHECK', 'VALIDACION', 'RUTAS'] and 'FORMATO OBLIGATORIO DE PLAN Y SALIDA' in f['formato_salida']['texto']
 
 
 if __name__ == '__main__':
