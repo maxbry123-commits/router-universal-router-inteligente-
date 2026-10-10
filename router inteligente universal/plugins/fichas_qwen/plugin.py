@@ -110,17 +110,39 @@ _QW = {'ficha-qwen38max': 'qw-qwen-3-8-max', 'ficha-qwen38flash': 'qw-qwen-3-8-f
        'ficha-qwen37plus': 'qw-qwen-3-7-plus', 'ficha-qwen36flash': 'qw-qwen-3-6-flash', 'ficha-dsv4pro': 'qw-deepseek-v4-pro',
        'ficha-dsv4pro0813': 'qw-deepseek-v4-pro-0813', 'ficha-dsv4flash': 'qw-deepseek-v4-flash', 'ficha-glm52': 'qw-glm-5-2'}
 _ESCRIBE = ('github_escribir', 'hf_escribir', 'hf_almacenamiento')
-_VERBOS = ('modifica', 'edita', 'corrige', 'cambia', 'crea ', 'escribe', 'borra', 'elimina', 'sube', 'commit', 'push', 'despliega',
-           'reinicia', 'restaura', 'aplica', 'implementa', 'arregla', 'actualiza', 'reemplaza', 'mueve', 'renombra')
+_VERBOS = ('modifica', 'modificar', 'modifique', 'modificalo', 'edita', 'editar', 'edite', 'corrige', 'corregir', 'corrija', 'corrigelo',
+           'cambia', 'cambiar', 'cambialo', 'crea', 'crear', 'escribe', 'escribir', 'escriba', 'borra', 'borrar', 'borre', 'elimina', 'eliminar',
+           'elimine', 'sube', 'subir', 'commit', 'push', 'despliega', 'desplegar', 'deploy', 'reinicia', 'reiniciar', 'reinicie', 'restaura',
+           'restaurar', 'aplica', 'aplicar', 'aplique', 'aplicalo', 'implementa', 'implementar', 'implemente', 'implementalo', 'arregla',
+           'arreglar', 'arregle', 'arreglalo', 'actualiza', 'actualizar', 'actualice', 'reemplaza', 'reemplazar', 'mueve', 'mover', 'renombra',
+           'renombrar', 'agrega', 'agregar', 'agregue', 'anade', 'anadir', 'anada', 'mejora', 'mejorar', 'cablea', 'cablear', 'integra',
+           'integrar', 'instala', 'instalar', 'configura', 'configurar', 'refactoriza', 'refactorizar', 'quita', 'quitar', 'pon', 'poner',
+           'guarda', 'guardar', 'publica', 'publicar', 'fusiona', 'merge', 'parche', 'parchea', 'migra', 'migrar', 'sincroniza',
+           'haz los cambios', 'hacer los cambios', 'fix', 'update', 'delete', 'create', 'write')
+_RE_MUTA = re.compile(r'\b(?:' + '|'.join(_VERBOS) + r')\b')
 
 
 def _muta(texto: str) -> bool:
-    t = texto.lower()
-    return any(v in t for v in _VERBOS)
+    # intencion de modificar algo: verbos de accion en la orden del Director (palabra completa, sin tildes)
+    import unicodedata
+    t = ''.join(c for c in unicodedata.normalize('NFKD', texto.lower()) if not unicodedata.combining(c))
+    return bool(_RE_MUTA.search(t))
 
 
 _SEM = threading.BoundedSemaphore(6)  # maximo de llamadas de modelo a la vez entre todas las tareas; las demas esperan en cola
 _TAREAS = {}  # plan pendiente de aprobacion por (ficha, conversacion)
+
+
+_FORMATO = ('MICRO RESUMEN', 'MICRO FLUJO', 'RESULTADO', 'CHECKLIST', 'EVIDENCIA')
+
+
+def _sin_veredicto(t: str) -> str:
+    return re.sub(r'(?im)^[ ' + chr(9) + r']*VEREDICTO:.*$', '', t or '').strip()
+
+
+def _faltan(t: str) -> list[str]:
+    # secciones obligatorias del formato final que la salida no trae (encabezado al inicio de linea)
+    return [s for s in _FORMATO if not re.search(r'(?im)^[^A-Za-z]*' + s, t or '')]
 
 
 def _fallo(t: Any) -> bool:
@@ -190,7 +212,8 @@ def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str
     escribe = n.get('id') == 'N4' and bool(opts.get('aprobado'))
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
-                  'requiere_tools': bool(opts.get('muta')), 'tarea_id': opts.get('tarea_id') or '', 'nodo': str(n.get('id'))})
+                  'requiere_tools': bool(opts.get('muta')), 'tarea_id': opts.get('tarea_id') or '', 'nodo': str(n.get('id')),
+                  'perfil': ('auditoria' if n.get('id') in ('N6', 'N7') else ('code' if (n.get('id') == 'N4' or opts.get('muta')) else 'normal'))})
     if r.get('error'):
         det = str(r.get('detalle') or r.get('mensaje') or '')[:160]
         if str(r['error']).startswith('GAP '):
@@ -225,6 +248,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     if elegido is None:
         return 'GAP MODELO_SELECTOR_INVALIDO: ' + repr(modelo) + ' no esta en el selector', []
     opts = {} if opts is None else opts
+    _t0 = time.time()
     out: dict[str, str] = dict(opts.get('previo') or {})  # nodos que ya pasaron: no se repiten
     opts['out'] = out
 
@@ -280,7 +304,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     _dag()
     maxc = int((ficha.get('loop') or {}).get('correcciones') or 1)
     ronda = 0
-    while opts.get('aprobado') and ronda < maxc and any(_fallo(out.get(k)) for k in ('N6', 'N7')):
+    tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 1800)
+    while opts.get('aprobado') and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7')):
         ronda += 1  # N6/N7 solo verifican: si hallan un defecto real, N4 (unico escritor) corrige y se verifica otra vez
         opts['correccion'] = chr(10).join(str(out.get(k) or '')[-1500:] for k in ('N6', 'N7') if _fallo(out.get(k)))
         for k in [k for k in ('N4', 'N5', 'N6', 'N7') if k in out]:
@@ -299,7 +324,23 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         motivo = 'el nodo final no entrego salida' if not final else (final if final.startswith('GAP') else 'el juez final (N7) encontro un defecto real que no se pudo corregir')
         final = 'GAP FINAL: ' + motivo[:600]
     else:
-        final = re.sub(r'(?im)^[ \t]*VEREDICTO:.*$', '', final).strip()
+        final = _sin_veredicto(final)
+        if (opts.get('muta') or opts.get('aprobado')) and 'N7' in nodos and finales and finales[-1] == 'N7':
+            falt = _faltan(final)
+            if falt:  # formato obligatorio incompleto: una sola reformateada de N7; si vuelve a faltar, GAP FORMATO_SALIDA
+                nl_ = chr(10)
+                p2 = (nodos['N7'].get('rol', '') + nl_ * 2 + 'REFORMATEA la salida con TODAS las secciones obligatorias; faltan: ' + ', '.join(falt) +
+                      '. Conserva el contenido real, no inventes nada.' + nl_ * 2 + 'SALIDA A REFORMATEAR:' + nl_ + final)
+                try:
+                    with _SEM:
+                        r7 = _sin_veredicto(_llamar_harness(elegido if nodos['N7'].get('modelo') == 'selector' else nodos['N7'].get('modelo'), p2, ficha, nodos['N7'], opts))
+                except Exception:  # noqa: BLE001
+                    r7 = ''
+                if r7 and not _faltan(r7):
+                    final = r7
+                else:
+                    opts['parcial'] = final
+                    final = 'GAP FORMATO_SALIDA: faltan ' + ', '.join(_faltan(r7 or final))
     traza = [{"nodo": i, "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
               "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
@@ -319,12 +360,14 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
     pend_t = _pend_cargar(fid, ses) if ap else None
     opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'tarea_id': secrets.token_hex(6)}
-    if ap and not pend_t and not mensaje:
+    if ap and not pend_t:
         salida, traza = 'GAP SIN_PLAN_PENDIENTE: no hay un plan esperando aprobacion en esta conversacion; envia primero la tarea para que se genere el plan', []
     else:
         if pend_t:  # /aprobar retoma la MISMA tarea: input original, plan y resultados de N0-N3 ya obtenidos; arranca en N4
+            extra = mensaje  # lo que el Director escribio despues de /aprobar: observaciones dentro del mismo plan
             mensaje = str(pend_t['input'])
-            opts.update(muta=True, previo=dict(pend_t.get('previo') or {}), plan=str(pend_t['plan']), tarea_id=str(pend_t.get('tarea_id') or opts['tarea_id']))
+            plan_ap = str(pend_t['plan']) + ((chr(10) * 2 + 'OBSERVACIONES DEL DIRECTOR AL APROBAR: ' + extra) if extra else '')
+            opts.update(muta=True, previo=dict(pend_t.get('previo') or {}), plan=plan_ap, tarea_id=str(pend_t.get('tarea_id') or opts['tarea_id']))
         opts['plan_stop'] = bool(opts['muta'] and not ap)
         salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
         if opts.get('estado') == 'ESPERANDO_APROBACION':
