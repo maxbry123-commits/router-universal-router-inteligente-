@@ -1,0 +1,12 @@
+{
+  "id": "qw-deepseek-v4-flash",
+  "nombre": "DeepSeek V4 Flash",
+  "proveedor": "qwencloud",
+  "modelo": "deepseek-v4-flash-0731",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}

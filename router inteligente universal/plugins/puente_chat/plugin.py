@@ -227,9 +227,16 @@ def _recortar(mensajes, limite=20000):
 
 
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
-    from integration.chat_mvp import providers
-    claves = providers.env_keys(proveedor)
-    base = providers.base_url(proveedor)
+    if proveedor == 'qwencloud':  # Team qwen: clave y direccion del sello de la ficha 14 (clave del banco)
+        try:
+            k, u = _qwen_conf()
+        except Exception as x:  # noqa: BLE001
+            return 0, {'error': 'SIN_CLAVES_QWENCLOUD', 'detalle': str(x)[:150]}
+        claves, base = [k], u
+    else:
+        from integration.chat_mvp import providers
+        claves = providers.env_keys(proveedor)
+        base = providers.base_url(proveedor)
     if not claves or not base:
         return 0, {'error': 'SIN_CLAVES_' + proveedor.upper()}
     fin = time.monotonic() + tope
@@ -885,6 +892,7 @@ def _chat(p):
         # reserva entre proveedores: la tarea pasa a otro modelo con lo ya hecho
         prov0 = FICHAS[model][1]
         alternos = [m for m in FICHAS if m != model and FICHAS[m][1] != prov0] + [m for m in FICHAS if m != model and FICHAS[m][1] == prov0]
+        alternos = [m for m in alternos if FICHAS[m][1] != 'qwencloud']  # los de Qwen solo se usan si se eligen
         for alt in alternos[:2]:
             _, prov_a, modelo_a, tope_a = FICHAS[alt]
 
@@ -961,6 +969,29 @@ def _apagar(p: dict[str, Any]) -> dict[str, Any]:
         return {"error": "SOLO_SE_APAGAN_JOBS_DEL_L4_DE_RESPALDO", "job_id": job}
     s, _ = _hf("POST", "/api/jobs/%s/%s/cancel" % (NS, job))
     return {"job_id": job, "apagado": s < 400}
+
+
+
+# ---- Team qwen: los 14 modelos de la ficha (Qwen Cloud). La clave va sellada con la clave del banco ----
+_QWEN_CACHE = {}
+
+
+def _qwen_conf():
+    if "k" not in _QWEN_CACHE:
+        import hashlib
+        import os
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        clave = os.environ.get("FICHA_CLAVE_BANCO") or os.environ.get("RIU_VAULT_PASSPHRASE") or ""
+        if not clave:
+            raise RuntimeError("SIN_CLAVE_DEL_BANCO_EN_EL_ROUTER")
+        blob = (_CONFIG_DIR / "modelos-14.cordis.yml.sello").read_bytes()
+        cab = b"FICHA-SELLO-1"
+        k = len(cab)
+        llave = hashlib.scrypt(clave.encode(), salt=blob[k:k + 16], n=2 ** 15, r=8, p=1, dklen=32, maxmem=2 ** 26)
+        texto = AESGCM(llave).decrypt(blob[k + 16:k + 28], blob[k + 28:], cab).decode("utf-8")
+        _QWEN_CACHE["k"] = re.search(r'apiKey:\s*"([^"]+)"', texto).group(1)
+        _QWEN_CACHE["url"] = re.search(r'baseURL:\s*"([^"]+)"', texto).group(1).rstrip("/")
+    return _QWEN_CACHE["k"], _QWEN_CACHE["url"]
 
 
 def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:

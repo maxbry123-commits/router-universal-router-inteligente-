@@ -365,3 +365,260 @@ HECHO en este commit: puntos 8, 9, 10 y 11.
 GAP-1 (punto 1): reiniciar o recargar el plugin en el Router vivo. Corta chats abiertos; espera OK explicito del Director.
 GAP-2 (puntos 2, 4, 5, 6): restaurar qwencloud/tools/memoria por el Harness de puente_chat. Toca arquitectura; espera OK explicito.
 GAP-3 (puntos 7 y 12): evidencia real de tool y smoke real Qwen/DeepSeek. Falta la clave del banco; espera OK.
+
+## INPUT BLOCK VERBATIM 2026-10-09 (4) - Autorizacion restauracion quirurgica Team Qwen
+
+Me entiendes si o no
+
+[adjunto del Director: bloque de autorizacion, copiado abajo. Tambien adjunto un consejo de paralelismo y latencia: no es orden; queda como GAP-4]
+
+# AUTORIZACIÓN — RESTAURACIÓN QUIRÚRGICA TEAM QWEN
+
+AUTORIZO únicamente los siguientes cambios.
+
+## 1. Restaurar las fichas originales Qwen
+
+Usar como fuente forense el commit:
+
+ef41898bfd5b708493175a3da9f4ea1d4c71219c
+
+Restaurar las fichas `modelo-qw-*` en:
+
+router inteligente universal/plugins/puente_chat/fichas/
+
+Ejemplo obligatorio:
+
+modelo-qw-qwen-3-8-max.json
+
+con:
+
+- proveedor: qwencloud
+- modelo: qwen3.8-max
+- claves: banco
+- herramientas: true
+- memoria: true
+- rotacion: mismo-modelo
+- timeout_s: 90
+
+Restaurar las demás `modelo-qw-*` exactamente desde ese commit.
+NO inventar fichas nuevas.
+NO cambiar IDs.
+NO cambiar nombres de modelos.
+
+---
+
+## 2. Restaurar QWENCLOUD dentro de `puente_chat`
+
+En:
+
+router inteligente universal/plugins/puente_chat/plugin.py
+
+restaurar el soporte existente:
+
+proveedor == "qwencloud"
+→ obtener URL + clave desde el sello/banco
+→ continuar por `_llamar_api()`
+
+Usar como referencia el código histórico ya existente.
+
+NO crear otro proveedor paralelo.
+NO convertir Qwen en NVIDIA.
+NO convertir Qwen en Groq.
+NO eliminar HTTP.
+
+El flujo debe seguir siendo:
+
+FICHA
+→ PUENTE_CHAT/HARNESS
+→ QWENCLOUD
+→ HTTP
+→ MODELO
+
+---
+
+## 3. Restaurar Team Qwen al Harness original
+
+El selector Team Qwen debe volver a producir:
+
+qw-<modelo_id_slug>
+
+y esa ficha debe ir por:
+
+/plugins/puente_chat/call
+
+Ruta:
+
+CHAT
+→ selector Team Qwen
+→ ficha `qw-*`
+→ puente_chat
+→ Harness
+→ modelo
+
+NO mandar Team Qwen a:
+
+/plugins/fichas_qwen/call
+
+---
+
+## 4. Conservar herramientas y memoria
+
+NO copies herramientas.
+NO crees otro sistema de memoria.
+
+Reutilizar las capacidades que ya tiene `puente_chat`.
+
+Cuando una ficha tenga:
+
+herramientas: true
+memoria: true
+
+debe utilizar el loop existente del Harness.
+
+Flujo:
+
+MODELO
+→ tool_call
+→ herramienta existente
+→ resultado
+→ mismo modelo
+→ salida
+
+La memoria debe seguir por la ruta existente de `puente_chat`.
+
+---
+
+## 5. `plugins/fichas_qwen` NO se elimina todavía
+
+NO borrar:
+
+plugins/fichas_qwen/
+
+NO destruir historial.
+
+Pero Team Qwen deja de depender de ese plugin mientras se recupera la arquitectura original.
+
+Déjalo aislado/no seleccionado por el chat hasta una auditoría posterior.
+
+---
+
+## 6. NO tocar
+
+NO cambiar:
+
+- Router core
+- PluginHost
+- Banco de claves
+- sellos
+- almacenamiento
+- memoria general
+- DeepSeek Harness
+- NVIDIA
+- Groq
+- endpoints HTTP
+- estructura general del Router
+
+NO hacer refactor.
+NO crear componentes nuevos.
+
+---
+
+## 7. NO reiniciar todavía
+
+Primero:
+
+1. aplicar cambios;
+2. comparar contra `ef41898...`;
+3. comprobar sintaxis/imports;
+4. mostrarme archivos modificados y diff.
+
+NO reinicies el Router vivo todavía.
+
+El reinicio se autoriza aparte cuando no haya chats activos.
+
+---
+
+## 8. Después del OK de reinicio
+
+Cuando yo autorice el reinicio:
+
+reiniciar una sola vez para cargar realmente los módulos Python.
+
+Después realizar:
+
+### TEST 1
+Qwen 3.8 Max
+→ pregunta simple
+→ respuesta real
+
+### TEST 2
+DeepSeek V4 Pro de Team Qwen
+→ pregunta simple
+→ respuesta real
+
+### TEST 3
+modelo con tarea que obligue herramienta
+→ tool_call
+→ herramienta ejecutada
+→ resultado
+→ mismo modelo
+→ respuesta final
+
+La evidencia debe mostrar el recorrido real.
+
+NO aceptar como evidencia solamente:
+`ejecuta ✔`
+
+Debe existir evidencia de herramienta cuando la tarea requiera herramienta.
+
+---
+
+## 9. Claves
+
+NO me pidas pegar claves del banco en el chat.
+
+El diseño original usa:
+
+claves: banco
+
+Si el Router vivo no puede abrir el banco, reporta únicamente el error técnico.
+
+NO expongas secretos.
+NO escribas claves en código.
+NO copies claves a logs.
+
+---
+
+## 10. Prohibido hacer revert completo
+
+NO hagas:
+
+git reset
+git revert masivo
+volver todo el repo a ef41898
+
+Ese commit se usa únicamente como referencia para recuperar los archivos/cableado Qwen que se perdieron.
+
+Los cambios posteriores válidos deben conservarse.
+
+---
+
+## SALIDA ANTES DE REINICIAR
+
+Dame exactamente:
+
+1. archivos restaurados;
+2. archivos modificados;
+3. diff resumido;
+4. qué se recuperó de `ef41898`;
+5. confirmación de que Team Qwen vuelve a:
+   CHAT → puente_chat → qwencloud → HTTP → modelo;
+6. confirmación de que herramientas y memoria vuelven por el Harness existente;
+7. confirmación de que NO tocaste Router core;
+8. commit SHA.
+
+Después DETENTE.
+
+
+HECHO: puntos 1, 2, 3, 4 (por el loop existente de puente_chat), 5 (fichas_qwen intacto), 10. Sin reinicio.
+GAP-1: reinicio del Router: se autoriza aparte. GAP-2: tests 1-3 tras el reinicio. GAP-4: cola de concurrencia (MAX_INFLIGHT en PluginHost): no autorizado, es Router core.
