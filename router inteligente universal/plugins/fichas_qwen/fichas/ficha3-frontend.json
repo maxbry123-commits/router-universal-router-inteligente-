@@ -314,14 +314,31 @@
       "locks": []
     },
     {
+      "id": "N3B",
+      "modelo": "ficha-dsv4pro",
+      "rol": "ARQUITECTURA (Ask consil frontend en paralelo): analiza los goals de N0 y la tarea, propone la solucion y revisa tu propuesta antes de entregarla",
+      "depende_de": [
+        "N0"
+      ],
+      "parallel_safe": true,
+      "read_paths": [
+        "tarea/"
+      ],
+      "write_paths": [
+        "salida/N3B/"
+      ],
+      "locks": []
+    },
+    {
       "id": "N3D",
       "modelo": "ficha-dsv4pro",
-      "rol": "ARQUITECTURA: analiza, propone y revisa; DECIDE. Analiza los goals de N0 y las propuestas de N1, N2 y N3, propone la tuya, revisa y DECIDE el plan de frontend que ejecutara N4. No escribes nada.",
+      "rol": "ARQUITECTURA: analiza, propone y revisa; DECIDE. Analiza los goals de N0 y las propuestas de N1, N2, N3 y N3B (tu propia propuesta en paralelo), revisa y DECIDE el plan de frontend que ejecutara N4. No escribes nada.",
       "depende_de": [
         "N0",
         "N1",
         "N2",
-        "N3"
+        "N3",
+        "N3B"
       ],
       "parallel_safe": true,
       "read_paths": [
@@ -338,12 +355,13 @@
       "timeout_s": 240,
       "max_output_tokens": 6000,
       "modelo": "ficha-dsv4flash",
-      "rol": "EJECUTA directamente la tarea de frontend segun la decision de N3D y las propuestas de N1, N2 y N3 (unico ejecutor). Una vez aprobada la ejecucion, continua hasta completarla: no emite salida intermedia, no pide confirmacion adicional y no aplaza el trabajo",
+      "rol": "EJECUTA directamente la tarea de frontend segun la decision de N3D y las propuestas de N1, N2, N3 y N3B (unico ejecutor). Una vez aprobada la ejecucion, continua hasta completarla: no emite salida intermedia, no pide confirmacion adicional y no aplaza el trabajo",
       "depende_de": [
         "N0",
         "N1",
         "N2",
         "N3",
+        "N3B",
         "N3D"
       ],
       "parallel_safe": true,
@@ -489,7 +507,7 @@
       "requiere_evidencia": true
     }
   ],
-  "flujo": "N0 goals entrada(12, 0 API) -> [Qwen 3.8 Max | GLM 5.2 | Qwen 3.7 Max] en paralelo -> DeepSeek V4 Pro analiza y DECIDE -> DeepSeek V4 Flash EJECUTA -> N5 goals salida(12, 0 API) -> GLM 5.2 -> Qwen 3.8 Max -> DeepSeek V4 Pro (REVISAN/AUDITAN/REFACTORIZAN) -> SALIDA (propone verificacion X-Ray)",
+  "flujo": "N0 goals entrada(12, 0 API) -> [Qwen 3.8 Max | GLM 5.2 | Qwen 3.7 Max | DeepSeek V4 Pro] en paralelo -> DeepSeek V4 Pro DECIDE -> DeepSeek V4 Flash EJECUTA -> N5 goals salida(12, 0 API) -> GLM 5.2 -> Qwen 3.8 Max -> DeepSeek V4 Pro (REVISAN/AUDITAN/REFACTORIZAN) -> SALIDA (propone verificacion X-Ray)",
   "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
   "mejoras": "plantilla/MEJORAS_FICHAS.yaml",
   "api_yml": "modelos-14/harness-modelos-14.cordis.yml"
