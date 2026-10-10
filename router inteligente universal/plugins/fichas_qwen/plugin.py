@@ -108,7 +108,8 @@ def _elegido(ficha: dict[str, Any], pedido: str) -> str:
 
 _QW = {'ficha-qwen38max': 'qw-qwen-3-8-max', 'ficha-qwen38flash': 'qw-qwen-3-8-flash', 'ficha-qwen37max': 'qw-qwen-3-7-max',
        'ficha-qwen37plus': 'qw-qwen-3-7-plus', 'ficha-qwen36flash': 'qw-qwen-3-6-flash', 'ficha-dsv4pro': 'qw-deepseek-v4-pro',
-       'ficha-dsv4pro0813': 'qw-deepseek-v4-pro-0813', 'ficha-dsv4flash': 'qw-deepseek-v4-flash', 'ficha-glm52': 'qw-glm-5-2'}
+       'ficha-dsv4pro0813': 'qw-deepseek-v4-pro-0813', 'ficha-dsv4flash': 'qw-deepseek-v4-flash', 'ficha-glm52': 'qw-glm-5-2',
+       'ficha-qwen37flash': 'qw-qwen-3-7-flash'}
 _ESCRIBE = ('github_escribir', 'hf_escribir', 'hf_almacenamiento')
 _VERBOS = ('modifica', 'modificar', 'modifique', 'modificalo', 'edita', 'editar', 'edite', 'corrige', 'corregir', 'corrija', 'corrigelo',
            'cambia', 'cambiar', 'cambialo', 'crea', 'crear', 'escribe', 'escribir', 'escriba', 'borra', 'borrar', 'borre', 'elimina', 'eliminar',
@@ -143,16 +144,196 @@ _SEM = threading.BoundedSemaphore(6)  # maximo de llamadas de modelo a la vez en
 _TAREAS = {}  # plan pendiente de aprobacion por (ficha, conversacion)
 
 
-_FORMATO = ('MICRO RESUMEN', 'MICRO FLUJO', 'RESULTADO', 'CHECKLIST', 'EVIDENCIA')
+_FORMATO = ('RESUMEN CORTO', 'DIAGRAMA', 'CHECK', 'VALIDACION', 'RUTAS')
+_FMT_DEF = 'FORMATO OBLIGATORIO DE PLAN Y SALIDA. Cinco secciones, cada una con su encabezado en una linea propia: 1) RESUMEN CORTO (2 a 4 lineas). 2) DIAGRAMA DE FLUJO del workflow Loop en horizontal, de izquierda a derecha con flechas y la vuelta del loop; copia el DIAGRAMA REAL que se te adjunta. 3) CHECK LISTA: una linea por tarea, con ✅ las realizadas y ⬜ las pendientes. 4) VALIDACION de cambios o verificacion: que se verifico, con que evidencia real (archivo, commit, prueba, resultado) y que no se pudo verificar. 5) 3 RUTAS para mejorar, cambiar o tarea por hacer; entre ellas propone solicitar auditoria forense, X-Ray, verificacion cruzada o refactorizar (si el Director responde ok o confirmo, se activa la verificacion cruzada de 4 modelos). Sin parrafos largos ni trazas internas. En el PLAN: CHECK LISTA = tareas pendientes, VALIDACION = como se verificara, y termina con la linea ESPERANDO_APROBACION.'
+_PANEL_DEF = ('ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-glm52', 'ficha-qwen38flash')
+_NOMBRES = {'ficha-qwen37flash': 'Qwen 3.7 Flash', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2', 'ficha-qwen38flash': 'Qwen 3.8 Flash'}
+_VERIF = {}  # propuesta de verificacion cruzada pendiente por (ficha, conversacion)
 
 
 def _sin_veredicto(t: str) -> str:
     return re.sub(r'(?im)^[ ' + chr(9) + r']*VEREDICTO:.*$', '', t or '').strip()
 
 
-def _faltan(t: str) -> list[str]:
-    # secciones obligatorias del formato final que la salida no trae (encabezado al inicio de linea)
-    return [s for s in _FORMATO if not re.search(r'(?im)^[^A-Za-z]*' + s, t or '')]
+def _norm(t: str) -> str:
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFKD', str(t or '')) if not unicodedata.combining(c))
+
+
+def _fmt_txt(ficha: dict[str, Any]) -> str:
+    return str((ficha.get('formato_salida') or {}).get('texto') or _FMT_DEF)
+
+
+def _faltan(t: str, ficha: dict[str, Any] | None = None) -> list[str]:
+    # secciones obligatorias del formato de plan y salida que el texto no trae (encabezado al inicio de linea, sin tildes)
+    secs = tuple(((ficha or {}).get('formato_salida') or {}).get('secciones') or _FORMATO)
+    u = _norm(t)
+    return [s for s in secs if not re.search(r'(?im)^[^A-Za-z]*' + re.escape(s), u)]
+
+
+def _diagrama(ficha, nodos, orden, out, opts, actual=''):
+    # diagrama horizontal del workflow Loop con el estado REAL de cada nodo (lo calcula el codigo, no el modelo)
+    niv = {}
+
+    def nivel(i):
+        if i not in niv:
+            deps = [d for d in nodos[i].get('depende_de', []) if d in nodos]
+            niv[i] = 0 if not deps else 1 + max(nivel(d) for d in deps)
+        return niv[i]
+
+    def marca(i):
+        if i == actual:
+            return i + ' 🔄'
+        v = str(out.get(i) or '')
+        if not v:
+            return i + ' ⏳'
+        return i + (' ❌' if v.startswith('GAP') else ' ✅')
+    grupos = {}
+    for i in orden:
+        grupos.setdefault(nivel(i), []).append(i)
+    tramos = []
+    for lv in sorted(grupos):
+        ms = [marca(i) + (' ⏸APROBACION' if (opts.get('plan_stop') and i == 'N4') else '') for i in grupos[lv]]
+        tramos.append(ms[0] if len(ms) == 1 else '[' + ' | '.join(ms) + ']')
+    linea = 'INPUT ──▶ ' + ' ──▶ '.join(tramos) + ' ──▶ SALIDA'
+    if 'N6' in nodos and 'N4' in nodos:
+        lp = ficha.get('loop') or {}
+        linea += chr(10) + '↺ si N6/N7 dan FAIL ──▶ N4 corrige (vuelta %d/%d, tope %d s)' % (int(opts.get('ronda') or 0), int(lp.get('correcciones') or 1), int(lp.get('max_segundos') or 600))
+    return linea
+
+
+def _asegurar_formato(texto, ficha, nid, nodos, elegido, opts, plan=False):
+    # formato de plan y salida: si faltan secciones, UNA reformateada del mismo nodo; si vuelve a faltar, se devuelve el motivo del GAP
+    falt = _faltan(texto, ficha)
+    if not falt:
+        return texto, ''
+    nl = chr(10)
+    n = nodos[nid]
+    p2 = (n.get('rol', '') + nl * 2 + _fmt_txt(ficha) + nl * 2 + 'REFORMATEA la salida con TODAS las secciones del formato; faltan: ' + ', '.join(falt) +
+          '. Conserva el contenido real y no inventes nada' + ('; conserva la linea final ESPERANDO_APROBACION' if plan else '') + '.' + nl * 2 + 'SALIDA A REFORMATEAR:' + nl + texto)
+    mod = elegido if n.get('modelo') == 'selector' else n.get('modelo')
+    try:
+        with _SEM:
+            r = _sin_veredicto(_llamar_harness(mod, p2, ficha, n, dict(opts, aprobado=False)))
+    except Exception:  # noqa: BLE001
+        r = ''
+    if r and not _faltan(r, ficha):
+        if plan and 'ESPERANDO_APROBACION' not in r:
+            r += nl + 'ESPERANDO_APROBACION'
+        return r, ''
+    return '', ', '.join(_faltan(r or texto, ficha))
+
+
+_RE_CONFIRMA = re.compile(r'^(ok|okay|okey|dale|adelante|si|confirmo|confirmado|proceder|procede|proceda|verifica|valida|verificar|validar)( con( la| el)?( verificacion| validacion)( cruzada)?( (o|y) (la )?(verificacion|validacion))?)?$')
+
+
+def _confirma(texto: str) -> bool:
+    # ok / confirmo / proceder con verificacion o validacion (mensaje corto, sin tildes ni signos)
+    t = re.sub(r'[^a-z0-9 ]+', ' ', _norm(texto).lower())
+    t = ' '.join(t.split())
+    return bool(t) and len(t) <= 80 and bool(_RE_CONFIRMA.match(t))
+
+
+def _verif_guardar(fid: str, ses: str, d: dict[str, Any]) -> None:
+    _VERIF[(fid, ses)] = d
+    try:  # tambien en la memoria del Harness (la que ya existe)
+        pc = _pc()
+        mem, sf = pc._memoria()
+        mem.save(sf(pc.DUENO, 'chat:' + ses), 'verif_pendiente:' + fid, d)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _verif_cargar(fid: str, ses: str) -> dict[str, Any] | None:
+    d = _VERIF.get((fid, ses))
+    if d is None:
+        try:
+            d = _pc()._mem_dato(ses, 'verif_pendiente:' + fid)
+        except Exception:  # noqa: BLE001
+            d = None
+    if isinstance(d, dict) and d.get('salida') and d.get('input') and not d.get('cerrada') and time.time() - float(d.get('t') or 0) < 21600:
+        return d
+    return None
+
+
+def _verif_cerrar(fid: str, ses: str) -> None:
+    _VERIF.pop((fid, ses), None)
+    try:
+        pc = _pc()
+        mem, sf = pc._memoria()
+        mem.save(sf(pc.DUENO, 'chat:' + ses), 'verif_pendiente:' + fid, {'cerrada': True})
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _panel_texto(modelos, res):
+    # resultado de la verificacion cruzada en el mismo formato de salida; lo arma el codigo (sin otro modelo)
+    nl = chr(10)
+    tab = chr(9)
+    filas = []
+    for mod, r in zip(modelos, res):
+        nom = _NOMBRES.get(mod, mod)
+        if r.startswith('GAP'):
+            filas.append((nom, 'GAP', r[:200], ''))
+            continue
+        m = re.search(r'(?im)^[ ' + tab + r']*VEREDICTO:[ ' + tab + r']*(PASS|FAIL)(.*)$', r)
+        if not m:
+            filas.append((nom, 'SIN_VEREDICTO', 'el modelo no cerro con VEREDICTO', _sin_veredicto(r)))
+        else:
+            filas.append((nom, m.group(1).upper(), m.group(2).strip(' :'), _sin_veredicto(r)))
+    npass = sum(1 for f in filas if f[1] == 'PASS')
+    nfail = sum(1 for f in filas if f[1] == 'FAIL')
+    cons = 'FAIL' if nfail else ('PASS' if npass >= 2 else 'SIN CONSENSO')
+    ico = {'PASS': '✅', 'FAIL': '❌'}
+    rutas = {'FAIL': ['1) Corregir los defectos hallados: N4 corrige y se repite la verificacion cruzada.', '2) Solicitar auditoria forense o X-Ray sobre lo que fallo.', '3) Refactorizar despues de corregir, con verificacion cruzada al final.'],
+             'PASS': ['1) Dar la tarea por cerrada.', '2) Solicitar auditoria forense o X-Ray de punta a punta.', '3) Refactorizar o mejorar lo opcional que senalaron los verificadores.'],
+             'SIN CONSENSO': ['1) Reintentar la verificacion con los modelos que no dieron resultado.', '2) Solicitar auditoria forense o X-Ray.', '3) Revisar a mano los hallazgos antes de cerrar.']}[cons]
+    lineas = ['RESUMEN CORTO',
+              'Verificacion cruzada de %d modelos (INPUT verbatim + codigo fuente): %d PASS, %d FAIL, %d sin resultado. Veredicto cruzado: %s.' % (len(filas), npass, nfail, len(filas) - npass - nfail, cons),
+              '', 'DIAGRAMA DE FLUJO',
+              'INPUT VERBATIM + CODIGO FUENTE ──▶ [' + ' | '.join('%s %s' % (f[0], ico.get(f[1], '⬜')) for f in filas) + '] ──▶ CRUCE ──▶ VEREDICTO ' + cons,
+              '', 'CHECK LISTA']
+    lineas += ['%s %s: %s%s' % (ico.get(f[1], '⬜'), f[0], f[1], (' - ' + f[2]) if f[2] else '') for f in filas]
+    lineas += ['', 'VALIDACION (de cambios o verificacion)']
+    lineas += ['%s: %s' % (f[0], (f[3][:500].replace(nl, ' ') or f[2])) for f in filas]
+    lineas += ['', '3 RUTAS'] + rutas
+    return nl.join(lineas), [{'modelo': mod, 'veredicto': f[1]} for mod, f in zip(modelos, filas)], cons
+
+
+def _verificar(fid, ses, pv, pid, t0):
+    # ok / confirmo: verificacion cruzada con los modelos de la ficha, en paralelo y en cola (semaforo global), solo lectura
+    ficha = FICHAS[fid]
+    modelos = list((ficha.get('verificacion_cruzada') or {}).get('modelos') or _PANEL_DEF)
+    nl = chr(10)
+    rol = ('VERIFICADOR INDEPENDIENTE (solo lectura): revisa y verifica la tarea entregada. VERIFICACION CRUZADA: '
+           '(1) contra el INPUT BLOCK VERBATIM del Director: cumple cada instruccion, una por una? '
+           '(2) contra el codigo fuente o la tarea en curso: lee los archivos reales con las herramientas de solo lectura (github_leer, hf_leer); no te fies de lo que dice la salida entregada. '
+           'NO modifiques ni escribas nada. Da hallazgos concretos (archivo, linea o evidencia real) y termina con una linea: VEREDICTO: PASS, o VEREDICTO: FAIL: <defecto concreto>')
+    prompt = (rol + nl * 2 + 'INPUT BLOCK VERBATIM DEL DIRECTOR:' + nl + str(pv['input']) + nl * 2 + 'PLAN APROBADO:' + nl + str(pv.get('plan') or '(sin plan)')[:4000] +
+              nl * 2 + 'SALIDA ENTREGADA A VERIFICAR:' + nl + str(pv['salida'])[:8000])
+    mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
+
+    def miembro(a):
+        k, mod = a
+        vid = 'V%d' % (k + 1)
+        _prog(pid, vid, 'trabajando')
+        nodo_v = {'id': vid, 'timeout_s': 150, 'requiere_tools': True}
+        o = {'sesion': ses, 'muta': False, 'aprobado': False, 'tarea_id': str(pv.get('tarea_id') or '')}
+        try:
+            with _SEM:
+                r = _llamar_harness(mod, prompt, ficha, nodo_v, o)
+        except Exception as x:  # noqa: BLE001
+            r = 'GAP %s (%s): %s' % (vid, mod, x)
+        _prog(pid, vid, 'gap' if r.startswith('GAP') else 'ok')
+        return r
+    with _cf.ThreadPoolExecutor(max_workers=max(1, min(len(modelos), mp))) as ex:
+        res = list(ex.map(miembro, list(enumerate(modelos))))
+    texto, resumen, cons = _panel_texto(modelos, res)
+    _verif_cerrar(fid, ses)
+    return {'model': ficha.get('ficha', fid), 'reply': texto, 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': texto}}],
+            'traza': [{'nodo': 'V%d' % (k + 1), 'modelo': m, 'rol': 'verificacion cruzada (solo lectura)'} for k, m in enumerate(modelos)],
+            'resultado_parcial': '', 'estado_tarea': 'VERIFICACION_CRUZADA', 'verificacion': resumen, 'veredicto_cruzado': cons,
+            'herramientas': [], 'ms': int((time.time() - t0) * 1000)}
 
 
 def _fallo(t: Any) -> bool:
@@ -222,8 +403,8 @@ def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str
     escribe = n.get('id') == 'N4' and bool(opts.get('aprobado'))
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
-                  'requiere_tools': bool(opts.get('muta')), 'tarea_id': opts.get('tarea_id') or '', 'nodo': str(n.get('id')),
-                  'perfil': ('auditoria' if n.get('id') in ('N6', 'N7') else ('code' if (n.get('id') == 'N4' or opts.get('muta')) else 'normal'))})
+                  'requiere_tools': bool(opts.get('muta') or n.get('requiere_tools')), 'tarea_id': opts.get('tarea_id') or '', 'nodo': str(n.get('id')),
+                  'perfil': ('auditoria' if (n.get('id') in ('N6', 'N7') or str(n.get('id')).startswith('V')) else ('code' if (n.get('id') == 'N4' or opts.get('muta')) else 'normal'))})
     if r.get('error'):
         det = str(r.get('detalle') or r.get('mensaje') or '')[:160]
         if str(r['error']).startswith('GAP '):
@@ -261,6 +442,10 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     _t0 = time.time()
     out: dict[str, str] = dict(opts.get('previo') or {})  # nodos que ya pasaron: no se repiten
     opts['out'] = out
+    _us = {d_ for n_ in nodos.values() for d_ in n_.get('depende_de', [])}
+    _fn = [i_ for i_ in orden if i_ not in _us and nodos[i_].get('tipo') != 'goals']
+    fin_id = _fn[-1] if _fn else ''
+    obligatorio = bool(fin_id) and (fin_id == 'N7' or bool(opts.get('muta') or opts.get('aprobado')))
 
     def nodo(i: str) -> str:
         n = nodos[i]
@@ -282,10 +467,13 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
         if n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado'):
             prompt += nl * 2 + 'AVISO DEL SISTEMA: falta la aprobacion del Director. NO ejecutes cambios ni uses herramientas de escritura. Entrega solo el PLAN (pasos, archivos, riesgos) y termina con la linea ESPERANDO_APROBACION. El Director aprueba escribiendo /aprobar al inicio de su mensaje.'
+            prompt += nl * 2 + _fmt_txt(ficha) + nl * 2 + 'DIAGRAMA REAL DEL WORKFLOW (copialo tal cual en la seccion DIAGRAMA DE FLUJO):' + nl + _diagrama(ficha, nodos, orden, out, opts, 'N4')
         if n.get('id') == 'N4' and opts.get('aprobado') and opts.get('plan'):
             prompt += nl * 2 + 'PLAN APROBADO POR EL DIRECTOR (ejecutalo tal cual; si cambia el alcance, detente y pide aprobacion otra vez):' + nl + str(opts['plan'])[:6000]
         if n.get('id') == 'N4' and opts.get('correccion'):
             prompt += nl * 2 + 'CORRECCION PEDIDA POR EL VERIFICADOR (corrige unicamente este fallo; no repitas operaciones ya completadas):' + nl + str(opts['correccion'])
+        if n.get('id') == fin_id and obligatorio and not (n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado')):
+            prompt += nl * 2 + _fmt_txt(ficha) + nl * 2 + 'DIAGRAMA REAL DEL WORKFLOW (copialo tal cual en la seccion DIAGRAMA DE FLUJO):' + nl + _diagrama(ficha, nodos, orden, out, opts, str(n.get('id')))
         mod = elegido if n.get('modelo') == 'selector' else n.get('modelo')
         try:
             with _SEM:  # maximo 6 llamadas de modelo a la vez; las demas esperan en cola sin fallar
@@ -317,6 +505,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 600)
     while opts.get('aprobado') and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7')):
         ronda += 1  # N6/N7 solo verifican: si hallan un defecto real, N4 (unico escritor) corrige y se verifica otra vez
+        opts['ronda'] = ronda
         opts['correccion'] = chr(10).join(str(out.get(k) or '')[-1500:] for k in ('N6', 'N7') if _fallo(out.get(k)))
         for k in [k for k in ('N4', 'N5', 'N6', 'N7') if k in out]:
             del out[k]
@@ -327,7 +516,13 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     if opts.get('plan_stop') and out.get('N4'):
         final = out['N4']
         if not final.startswith('GAP'):
-            opts['estado'] = 'ESPERANDO_APROBACION'
+            txt, gap = _asegurar_formato(final, ficha, 'N4', nodos, elegido, opts, plan=True)
+            if gap:
+                opts['parcial'] = final
+                final = 'GAP FORMATO_PLAN: faltan ' + gap
+            else:
+                final = txt
+                opts['estado'] = 'ESPERANDO_APROBACION'
     elif not final or final.startswith('GAP') or _fallo(final):
         # NO PASS = NO CIERRE: un fallo del nodo final no se sustituye por la salida de un nodo anterior
         opts['parcial'] = next((out[i] for i in reversed(orden) if out.get(i) and not out[i].startswith('GAP') and nodos[i].get('tipo') != 'goals'), '')
@@ -335,22 +530,14 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         final = 'GAP FINAL: ' + motivo[:600]
     else:
         final = _sin_veredicto(final)
-        if 'N7' in nodos and finales and finales[-1] == 'N7':  # formato obligatorio en toda tarea, tambien en auditoria de solo lectura
-            falt = _faltan(final)
-            if falt:  # formato obligatorio incompleto: una sola reformateada de N7; si vuelve a faltar, GAP FORMATO_SALIDA
-                nl_ = chr(10)
-                p2 = (nodos['N7'].get('rol', '') + nl_ * 2 + 'REFORMATEA la salida con TODAS las secciones obligatorias; faltan: ' + ', '.join(falt) +
-                      '. Conserva el contenido real, no inventes nada.' + nl_ * 2 + 'SALIDA A REFORMATEAR:' + nl_ + final)
-                try:
-                    with _SEM:
-                        r7 = _sin_veredicto(_llamar_harness(elegido if nodos['N7'].get('modelo') == 'selector' else nodos['N7'].get('modelo'), p2, ficha, nodos['N7'], opts))
-                except Exception:  # noqa: BLE001
-                    r7 = ''
-                if r7 and not _faltan(r7):
-                    final = r7
-                else:
-                    opts['parcial'] = final
-                    final = 'GAP FORMATO_SALIDA: faltan ' + ', '.join(_faltan(r7 or final))
+        if obligatorio:  # formato de plan y salida: obligatorio en el nodo final (N7 siempre; ficha 1 en tareas de trabajo)
+            txt, gap = _asegurar_formato(final, ficha, fin_id, nodos, elegido, opts)
+            if gap:
+                opts['parcial'] = final
+                final = 'GAP FORMATO_SALIDA: faltan ' + gap
+            else:
+                final = txt
+                opts['verif_ok'] = True
     traza = [{"nodo": i, "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
               "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
@@ -364,7 +551,14 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if not mensaje:
         mensaje = next((str(m.get("content", "")) for m in reversed(p.get("messages") or []) if m.get("role") == "user"), "")
     t0 = time.time()
-    ses = str(p.get("sesion") or 'fichas')[:60]
+    ses = str(p.get('sesion') or 'fichas')[:60]
+    if not mensaje.lstrip().lower().startswith('/aprobar'):
+        if _confirma(mensaje):  # ok / confirmo / proceder con verificacion: activa la verificacion cruzada si hay una propuesta pendiente
+            pv = _verif_cargar(fid, ses)
+            if pv:
+                return _verificar(fid, ses, pv, str(p.get('_pid') or ''), t0)
+        elif (fid, ses) in _VERIF:
+            _verif_cerrar(fid, ses)  # tarea nueva: la propuesta anterior ya no aplica
     ap = mensaje.lstrip().lower().startswith('/aprobar')
     if ap:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
@@ -384,6 +578,8 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             _pend_guardar(fid, ses, {'input': mensaje, 'plan': salida, 'previo': {k: v for k, v in (opts.get('out') or {}).items() if k != 'N4'}, 'tarea_id': opts['tarea_id'], 't': time.time()})
         elif pend_t and not str(salida).startswith('GAP'):
             _pend_cerrar(fid, ses)
+        if opts.get('verif_ok'):  # propuesta de verificacion cruzada: ok / confirmo / proceder con verificacion
+            _verif_guardar(fid, ses, {'input': mensaje, 'plan': str(opts.get('plan') or ''), 'salida': salida, 'tarea_id': opts['tarea_id'], 't': time.time()})
     return {"model": FICHAS[fid].get("ficha", fid), "reply": salida,
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
             "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}
