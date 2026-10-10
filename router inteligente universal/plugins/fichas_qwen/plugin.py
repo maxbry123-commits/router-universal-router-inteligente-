@@ -445,7 +445,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     _us = {d_ for n_ in nodos.values() for d_ in n_.get('depende_de', [])}
     _fn = [i_ for i_ in orden if i_ not in _us and nodos[i_].get('tipo') != 'goals']
     fin_id = _fn[-1] if _fn else ''
-    obligatorio = bool(fin_id) and (fin_id in ('N7', 'N8') or bool(opts.get('muta') or opts.get('aprobado')))
+    obligatorio = bool(fin_id)  # la salida siempre lleva el formato y propone la verificacion (X-Ray, codigo fuente, input verbatim)
 
     def nodo(i: str) -> str:
         n = nodos[i]
@@ -504,7 +504,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     ronda = 0
     tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 600)
     while opts.get('aprobado') and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7', 'N8')):
-        ronda += 1  # N6/N7 solo verifican: si hallan un defecto real, N4 (unico escritor) corrige y se verifica otra vez
+        ronda += 1  # N6/N7/N8 revisan y refactorizan; si queda un defecto real que no pudieron resolver, N4 corrige y se revisa otra vez
         opts['ronda'] = ronda
         opts['correccion'] = chr(10).join(str(out.get(k) or '')[-1500:] for k in ('N6', 'N7', 'N8') if _fallo(out.get(k)))
         for k in [k for k in ('N4', 'N5', 'N6', 'N7', 'N8') if k in out]:
@@ -530,7 +530,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         final = 'GAP FINAL: ' + motivo[:600]
     else:
         final = _sin_veredicto(final)
-        if obligatorio:  # formato de plan y salida: obligatorio en el nodo final (N7 siempre; ficha 1 en tareas de trabajo)
+        if obligatorio:  # formato de plan y salida: obligatorio en el nodo final (siempre, en las 3 fichas)
             txt, gap = _asegurar_formato(final, ficha, fin_id, nodos, elegido, opts)
             if gap:
                 opts['parcial'] = final
