@@ -1,6 +1,7 @@
 import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
 import { conectarSelectorModelos } from "./chat-selector-modelos.js";
+import { conectarMicrofono } from "./chat-microfono.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 5;
@@ -108,6 +109,7 @@ export async function mount(root, { api, tell }) {
   const ancla = A.montarAncla({ q, chat, tell, guardar, pintarAnclados });
   chats.forEach((c) => A.restaurar(c, burbuja));  // historial guardado: vuelve al recargar
   conectarSelectorModelos({ q, chat, tell, guardar });  // Selector Qwen: solo frontend
+  conectarMicrofono({ q, tell });  // micrófono: dictado por voz al input
   // ---- hojas (sheets): cada pildora abre la suya ----
   const cerrarHojas = () => root.querySelectorAll(".sheet").forEach((s) => { s.hidden = true; });
   root.querySelectorAll("[data-sheet]").forEach((b) => b.addEventListener("click", async () => {

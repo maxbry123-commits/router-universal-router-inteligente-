@@ -1,0 +1,16 @@
+/* chat-espacio.css — espacio del chat (archivo propio; se carga despues de shell.css y responsive.css).
+   Salida ~2x mas alta en celular, pastillas en una sola fila, anclados en 2 lineas, input mas bajo. */
+.chat-history{height:max(420px,calc(100dvh - 320px))}
+@media(max-width:720px){
+  h1{font-size:18px;margin:0 0 8px}
+  .chat-tabs{margin-bottom:6px}
+  section>.row.fields{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:6px 0}
+  section>.row.fields::-webkit-scrollbar{display:none}
+  section>.row.fields .pill{flex:0 0 auto}
+  .chat-history{height:max(360px,calc(100dvh - 300px));min-height:360px}
+  #composer textarea{min-height:40px}
+  #composer .composer-bar .anclados{max-height:34px;overflow-y:auto}
+}
+@media(max-width:480px){.chat-history{height:max(360px,calc(100dvh - 300px));min-height:360px}}
+.composer-bar .btn-microfono.on{border-color:var(--status-green);color:var(--status-green)}
+.composer-bar .btn-microfono.bloq{opacity:.4;cursor:not-allowed}

@@ -12,22 +12,23 @@ const SELECTORES = [  // nombres exactos de Antonio
 ];
 const POWER = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>';
 const DIAGRAMAS = {  // micro diagramas transversales horizontales; Ask consil Nvidia groq sigue pendiente de definición explícita
-  "team-qwen": { sel: "#team-qwen-diagrama", texto: "SELECTOR 14 → 1 MODELO → EJECUTAR → SALIDA" },
-  "ask-consil-code-qwen-team": { sel: "#consil-code-diagrama", texto: "[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] → Qwen 3.8 Max EJECUTA → GLM 5.2 REVISA → Qwen 3.8 Max REVISA → SALIDA" },
-  "ask-consil-fromtend-qwen-team": { sel: "#consil-frontend-diagrama", texto: "[DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] → DeepSeek V4 Pro EJECUTA → GLM 5.2 REVISA → Qwen 3.8 Max REVISA → SALIDA" },
+  "team-qwen": { sel: "#team-qwen-diagrama", texto: "SELECTOR 14 → 1 MODELO → EJECUTA → SALIDA → PROPONE AUDITORÍA FORENSE X-RAY (código fuente + input block verbatim) → «ok» → [Qwen 3.7 Flash | DeepSeek V4 Flash | Qwen 3.8 Flash] VERIFICACIÓN CRUZADA A LA VEZ: REVISAN, REFACTORIZAN, RESUELVEN GAPS → ↺ LOOP" },
+  "ask-consil-code-qwen-team": { sel: "#consil-code-diagrama", texto: "12 GOALS ENTRADA → [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max | Qwen 3.8 Max] ANALIZAN Y PROPONEN EN PARALELO → Qwen 3.8 Max DECIDE Y EJECUTA → [GLM 5.2 | Qwen v4 Max] REVISAN, AUDITAN Y REFACTORIZAN → 12 GOALS SALIDA → PROPONE AUDITORÍA FORENSE X-RAY (código fuente + input block verbatim) → «ok» → [Qwen 3.7 Flash | DeepSeek V4 Flash | Qwen 3.8 Flash] VERIFICACIÓN CRUZADA A LA VEZ: REVISAN, REFACTORIZAN, RESUELVEN GAPS → ↺ LOOP" },
+  "ask-consil-fromtend-qwen-team": { sel: "#consil-frontend-diagrama", texto: "12 GOALS ENTRADA → [Qwen 3.8 Max | GLM 5.2 | Qwen 3.7 Max | DeepSeek V4 Pro] ANALIZAN Y PROPONEN EN PARALELO → DeepSeek V4 Pro DECIDE → DeepSeek V4 Flash EJECUTA → [GLM 5.2 | Qwen 3.8 Max | DeepSeek V4 Pro] REVISAN, AUDITAN Y REFACTORIZAN → 12 GOALS SALIDA → PROPONE AUDITORÍA FORENSE X-RAY (código fuente + input block verbatim) → «ok» → [Qwen 3.7 Flash | DeepSeek V4 Flash | Qwen 3.8 Flash] VERIFICACIÓN CRUZADA A LA VEZ: REVISAN, REFACTORIZAN, RESUELVEN GAPS → ↺ LOOP" },
 };
-const CONSIL_MODELOS = {
+const CONSIL_MODELOS = {  // fichas 2 y 3: orden y papeles tal cual el input block del Director (2026-10-10)
   "ask-consil-code-qwen-team": [
-    ["DeepSeek V4 Pro", "Analiza arquitectura · paralelo"],
-    ["GLM 5.2", "Analiza · paralelo · revisa/refactoriza"],
-    ["Qwen 3.7 Max", "Analiza arquitectura · paralelo"],
-    ["Qwen 3.8 Max", "Ejecuta código · revisión final"],
+    ["DeepSeek V4 Pro", "Arquitectura · analiza, propone y revisa · paralelo"],
+    ["GLM 5.2", "Arquitectura · analiza, propone y revisa · paralelo · salida: revisa, audita y refactoriza"],
+    ["Qwen 3.7 Max", "Arquitectura · analiza, propone y revisa · paralelo"],
+    ["Qwen 3.8 Max", "Arquitectura · analiza, propone y revisa · paralelo · decide y ejecuta"],
   ],
   "ask-consil-fromtend-qwen-team": [
-    ["DeepSeek V4 Pro", "Analiza · paralelo · ejecuta frontend"],
-    ["GLM 5.2", "Analiza · paralelo · revisa/refactoriza"],
-    ["Qwen 3.7 Max", "Analiza · paralelo"],
-    ["Qwen 3.8 Max", "Revisión final"],
+    ["Qwen 3.8 Max", "Arquitectura · analiza, propone y revisa · paralelo · salida: revisa, audita y refactoriza"],
+    ["GLM 5.2", "Arquitectura · analiza, propone y revisa · paralelo · salida: revisa, audita y refactoriza"],
+    ["Qwen 3.7 Max", "Arquitectura · analiza, propone y revisa · paralelo"],
+    ["DeepSeek V4 Pro", "Arquitectura · analiza, propone y revisa · paralelo · decide · salida: revisa, audita y refactoriza"],
+    ["DeepSeek V4 Flash", "Ejecuta frontend"],
   ],
 };
 const INFO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>';
