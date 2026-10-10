@@ -243,7 +243,7 @@ def _recortar(mensajes, limite=None):
 
 _POL_MODELO = {'qwen3.8-flash': 'ficha-qwen38flash', 'qwen3.6-flash': 'ficha-qwen36flash',
                'deepseek-v4-pro': 'ficha-dsv4pro', 'deepseek-v4-pro-0813': 'ficha-dsv4pro0813',
-               'deepseek-v4-flash-0731': 'ficha-dsv4flash', 'glm-5.2': 'ficha-glm52'}
+               'deepseek-v4-flash-0731': 'ficha-dsv4flash', 'glm-5.2': 'ficha-glm52', 'qwen3.7-flash': 'ficha-qwen38flash'}
 _POL_CACHE = {}
 
 
