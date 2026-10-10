@@ -214,6 +214,11 @@ def _perfil():
     return _PERFILES.get(_PERFIL.get() or 'normal', _PERFILES['normal'])
 
 
+def _perfil_explicito():
+    # perfil pedido por un nodo de ficha (normal / code / auditoria); None en el chat normal, que conserva su contexto largo
+    return _PERFILES.get(_PERFIL.get() or '')
+
+
 def _recortar(mensajes, limite=None):
     # Mantiene el envio por debajo del tope de la API: acorta salidas de
     # herramientas y luego suelta los turnos mas viejos (sin romper pares
@@ -977,7 +982,7 @@ def _chat(p):
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
     _REQ_TOOLS.set(bool(p.get('requiere_tools')))
-    _PERFIL.set(str(p.get('perfil') or 'normal'))
+    _PERFIL.set(str(p.get('perfil') or ''))  # vacio = chat normal (contexto largo); un nodo de ficha pide su perfil
     _tid = str(p.get('tarea_id') or '')
     if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
         if len(_VISTOS_G) > 200:
