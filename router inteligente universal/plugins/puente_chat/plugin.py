@@ -248,7 +248,7 @@ def _recortar(mensajes, limite=None):
 
 _POL_MODELO = {'qwen3.8-flash': 'ficha-qwen38flash', 'qwen3.6-flash': 'ficha-qwen36flash',
                'deepseek-v4-pro': 'ficha-dsv4pro', 'deepseek-v4-pro-0813': 'ficha-dsv4pro0813',
-               'deepseek-v4-flash-0731': 'ficha-dsv4flash', 'glm-5.2': 'ficha-glm52', 'qwen3.7-flash': 'ficha-qwen38flash'}
+               'deepseek-v4-flash-0731': 'ficha-dsv4flash', 'glm-5.2': 'ficha-glm52', 'qwen3.7-flash': 'ficha-qwen38flash', 'qwen3.8-max': 'ficha-qwen38max'}
 _POL_CACHE = {}
 
 
@@ -284,6 +284,8 @@ def _extras(pol, tools):
         ex['preserve_thinking'] = True
     if tools and isinstance(ct.get('reasoning_effort'), dict) and ct['reasoning_effort'].get('code'):
         ex['reasoning_effort'] = ct['reasoning_effort']['code']
+    elif (not tools) and isinstance(ct.get('reasoning_effort'), dict) and ct['reasoning_effort'].get('sin_tools'):
+        ex['reasoning_effort'] = ct['reasoning_effort']['sin_tools']  # analisis/revision sin herramientas: esfuerzo medio, sin apagar el razonamiento
     return ex
 
 
