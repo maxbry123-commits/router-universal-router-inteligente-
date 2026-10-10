@@ -572,6 +572,32 @@ def test_31_qwen37_flash_esta_cableado_sin_tocar_el_sello():
         assert f['formato_salida']['secciones'] == ['RESUMEN CORTO', 'DIAGRAMA', 'CHECK', 'VALIDACION', 'RUTAS'] and 'FORMATO OBLIGATORIO DE PLAN Y SALIDA' in f['formato_salida']['texto']
 
 
+def test_32_perfil_explicito_solo_para_nodos_de_ficha():
+    pc._PERFIL.set('')
+    assert pc._perfil_explicito() is None and pc._perfil() == pc._PERFILES['normal']
+    pc._PERFIL.set('code')
+    assert pc._perfil_explicito() == pc._PERFILES['code']
+    pc._PERFIL.set('')
+    w = PLUG / 'puente_chat' / 'plugin_long_context.py'
+    if not w.exists():
+        return  # el wrapper de contexto largo solo existe en el bundle desplegado
+    import importlib
+    sys.path.insert(0, str(PLUG.parent))
+    lc = importlib.import_module('plugins.puente_chat.plugin_long_context')
+    lp = lc._p
+    msgs = [{'role': 'system', 'content': 's'}] + [{'role': 'user' if i % 2 == 0 else 'assistant', 'content': 'y' * 3000} for i in range(20)] + [{'role': 'user', 'content': 'ultimo input'}]
+    try:
+        lp._PERFIL.set('')
+        assert len(lc._recortar(msgs)) == len(msgs)  # chat normal: contexto largo intacto
+        lp._PERFIL.set('normal')
+        cortado = lc._recortar(msgs)
+        assert len(cortado) < len(msgs) and cortado[-1]['content'] == 'ultimo input'  # nodo de ficha: techo del perfil; el ultimo input se conserva
+        lp._PERFIL.set('code')
+        assert len(lc._recortar(msgs)) > len(cortado)
+    finally:
+        lp._PERFIL.set('')
+
+
 if __name__ == '__main__':
     fallos = 0
     for nombre, f in sorted(globals().items()):
