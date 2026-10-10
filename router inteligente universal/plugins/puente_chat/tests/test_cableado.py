@@ -263,14 +263,14 @@ def test_14_aprobar_retoma_la_misma_tarea():
     ROL.clear()
     ROL['N4'] = lambda p, o: ('EJECUTADO' if o.get('aprobado') else 'PLAN: editar x' + chr(10) + 'ESPERANDO_APROBACION')
     ROL['N6'] = lambda p, o: 'revisado' + chr(10) + 'VEREDICTO: PASS'
-    ROL['N7'] = lambda p, o: 'MICRO RESUMEN ok' + chr(10) + 'VEREDICTO: PASS'
+    ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
     r = _chat('s14', 'corrige el Router')
     assert 'ESPERANDO_APROBACION' in r['reply'] and r['estado_tarea'] == 'ESPERANDO_APROBACION'
     assert [len(_n('s14', k)) for k in ('N1', 'N2', 'N3', 'N4')] == [1, 1, 1, 1] and not _n('s14', 'N6') and not _n('s14', 'N7')
     r2 = _chat('s14', '/aprobar')
     assert [len(_n('s14', k)) for k in ('N1', 'N2', 'N3')] == [1, 1, 1]  # N1/N2/N3 no se repiten
     assert len(_n('s14', 'N4')) == 2 and 'PLAN APROBADO POR EL DIRECTOR' in _n('s14', 'N4')[1] and 'corrige el Router' in _n('s14', 'N4')[1]
-    assert r2['reply'] == 'MICRO RESUMEN ok' and 'VEREDICTO' not in r2['reply']
+    assert r2['reply'] == _full('ok') and 'VEREDICTO' not in r2['reply']
     assert 'PLAN / RESULTADO ESPERADO' in _n('s14', 'N6')[0] and 'INPUT LITERAL DEL DIRECTOR' in _n('s14', 'N1')[0]
     r3 = _chat('s14', '/aprobar')
     assert r3['reply'].startswith('GAP SIN_PLAN_PENDIENTE')  # la tarea ya se cerro
@@ -285,10 +285,10 @@ def test_15_n6_fail_devuelve_control_a_n4():
         return 'VEREDICTO: FAIL: falta X' if cuenta['n6'] == 1 else 'VEREDICTO: PASS'
     ROL['N4'] = lambda p, o: ('EJECUTADO' if o.get('aprobado') else 'PLAN' + chr(10) + 'ESPERANDO_APROBACION')
     ROL['N6'] = n6
-    ROL['N7'] = lambda p, o: 'MICRO RESUMEN final' + chr(10) + 'VEREDICTO: PASS'
+    ROL['N7'] = lambda p, o: _full('final') + chr(10) + 'VEREDICTO: PASS'
     _chat('s15', 'corrige el Router')
     r = _chat('s15', '/aprobar')
-    assert len(_n('s15', 'N4')) == 3 and len(_n('s15', 'N6')) == 2 and r['reply'] == 'MICRO RESUMEN final'
+    assert len(_n('s15', 'N4')) == 3 and len(_n('s15', 'N6')) == 2 and r['reply'] == _full('final')
     assert 'CORRECCION PEDIDA POR EL VERIFICADOR' in _n('s15', 'N4')[2] and 'falta X' in _n('s15', 'N4')[2]
     assert len(_n('s15', 'N1')) == 1
 
@@ -346,6 +346,109 @@ def test_18_dos_tareas_en_paralelo_no_se_pisan():
     [t.start() for t in ts]
     [t.join() for t in ts]
     assert res['pa'] == 'RESULTADO analiza TAREA-A' and res['pb'] == 'RESULTADO analiza TAREA-B'
+
+
+def _full(t):
+    return chr(10).join(['MICRO RESUMEN ' + t, 'MICRO FLUJO a > b', 'RESULTADO ok', 'CHECKLIST ok', 'EVIDENCIA commit'])
+
+
+def _plan_o_exec(p, o):
+    return 'EJECUTADO' if o.get('aprobado') else 'PLAN' + chr(10) + 'ESPERANDO_APROBACION'
+
+
+def test_19_detector_de_mutacion():
+    si = ['corrige el Router', 'modifica la ficha', 'agrega un campo', 'anade validacion', 'añade validación', 'mejora el parser',
+          'cablea las politicas', 'haz los cambios', 'implementar el loop', 'integra el modulo', 'refactoriza plugin',
+          'elimina ese archivo', 'quita el limite', 'sube el archivo', 'sincroniza los repos', 'Edita ficha2', 'arreglalo ya']
+    no = ['analiza el router', 'explica como funciona el harness', 'revisa el mejor modelo', 'que cambios hizo claude',
+          'lista los archivos', 'documentos del proyecto', 'revisa el cableado', 'que modificacion hizo']
+    assert all(fq._muta(x) for x in si), [x for x in si if not fq._muta(x)]
+    assert not any(fq._muta(x) for x in no), [x for x in no if fq._muta(x)]
+
+
+def test_20_perfiles_de_contexto_y_pasos():
+    largo = 'x' * 6000
+    ms = [{'role': 'system', 'content': 's'}, {'role': 'user', 'content': 'u'},
+          {'role': 'assistant', 'content': '', 'tool_calls': [{'id': 'a', 'type': 'function', 'function': {'name': 'github_leer', 'arguments': '{}'}}]},
+          {'role': 'tool', 'tool_call_id': 'a', 'content': largo}]
+    grande = [{'role': 'system', 'content': 's'}] + [{'role': 'user', 'content': 'y' * 3000} for _ in range(10)]
+    try:
+        pc._PERFIL.set('normal')
+        assert len([m for m in pc._recortar(ms) if m['role'] == 'tool'][0]['content']) < 3200
+        n_norm = len(pc._recortar(grande))
+        pc._PERFIL.set('code')
+        assert len([m for m in pc._recortar(ms) if m['role'] == 'tool'][0]['content']) == 6000
+        n_code = len(pc._recortar(grande))
+        pc._PERFIL.set('auditoria')
+        n_aud = len(pc._recortar(grande))
+        assert n_norm < n_code == n_aud == 11, (n_norm, n_code, n_aud)
+        for perfil, esperado in (('normal', 6), ('code', 10)):
+            pc._PERFIL.set(perfil)
+            h = Herr()
+            rs = [resp(calls=[('github_leer', {'repo': 'r', 'ruta': 'f%d' % i})]) for i in range(10)] + [resp('fin')]
+            bucle(rs, h)
+            assert len(h.llamadas) == esperado, (perfil, len(h.llamadas))
+    finally:
+        pc._PERFIL.set('normal')
+
+
+def test_21_aprobar_sin_plan_no_ejecuta_nada():
+    ROL.clear()
+    r = _chat('s21', '/aprobar corrige el Router')
+    assert r['reply'].startswith('GAP SIN_PLAN_PENDIENTE') and not _n('s21', 'N4')
+
+
+def test_22_validador_de_formato_final():
+    ROL.clear()
+    c = {'n7': 0}
+
+    def n7(p, o):
+        c['n7'] += 1
+        return ('MICRO RESUMEN solo' if 'REFORMATEA' not in p else _full('ok')) + chr(10) + 'VEREDICTO: PASS'
+    ROL['N4'] = _plan_o_exec
+    ROL['N6'] = lambda p, o: 'VEREDICTO: PASS'
+    ROL['N7'] = n7
+    _chat('s22', 'corrige el Router')
+    r = _chat('s22', '/aprobar')
+    assert c['n7'] == 2 and r['reply'] == _full('ok')
+    ROL['N7'] = lambda p, o: 'MICRO RESUMEN solo' + chr(10) + 'VEREDICTO: PASS'
+    _chat('s22b', 'corrige el Router')
+    r2 = _chat('s22b', '/aprobar')
+    assert r2['reply'].startswith('GAP FORMATO_SALIDA') and 'MICRO RESUMEN solo' in r2['resultado_parcial']
+    ROL['N7'] = lambda p, o: 'respuesta corta'
+    assert _chat('s22c', 'analiza el router')['reply'] == 'respuesta corta'  # solo analisis: sin validador
+
+
+def test_23_cinco_correcciones_con_tope_de_tiempo():
+    ROL.clear()
+    assert fq.FICHAS['ficha2-dag-codigo']['loop']['correcciones'] == 5 and fq.FICHAS['ficha3-frontend']['loop']['correcciones'] == 5
+    c = {'n': 0}
+
+    def n6(p, o):
+        c['n'] += 1
+        return 'VEREDICTO: FAIL: falta X' if c['n'] <= 3 else 'VEREDICTO: PASS'
+    ROL['N4'] = _plan_o_exec
+    ROL['N6'] = n6
+    ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
+    _chat('s23', 'corrige el Router')
+    r = _chat('s23', '/aprobar')
+    assert len(_n('s23', 'N4')) == 5 and len(_n('s23', 'N6')) == 4 and r['reply'] == _full('ok')
+    ROL['N6'] = lambda p, o: 'VEREDICTO: FAIL: sigue mal'
+    _chat('s23b', 'corrige el Router')
+    _chat('s23b', '/aprobar')
+    assert len(_n('s23b', 'N4')) == 7 and len(_n('s23b', 'N6')) == 6
+    f = copy.deepcopy(fq.FICHAS['ficha2-dag-codigo'])
+    f['loop']['max_segundos'] = 1e-9
+    fq._correr(f, 'corrige x', 'ficha-qwen38max', '', {'sesion': 's23c', 'aprobado': True, 'muta': True})
+    assert len(_n('s23c', 'N4')) == 1
+
+
+def test_24_n6_n7_son_solo_lectura_tambien_en_la_metadata():
+    for k in ('ficha2-dag-codigo', 'ficha3-frontend'):
+        nd = {n['id']: n for n in fq.FICHAS[k]['nodos']}
+        for i in ('N6', 'N7'):
+            assert not nd[i].get('write_paths') and not nd[i].get('locks'), (k, i)
+        assert nd['N4'].get('write_paths') and nd['N4'].get('locks'), k
 
 
 if __name__ == '__main__':
