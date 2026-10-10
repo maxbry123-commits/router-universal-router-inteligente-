@@ -243,3 +243,66 @@ Es solo editar quirúrgicamente una edición rápida
 Inicia
 
 Estado: edicion en rama fichas-qwen-correccion-0910; main sin tocar hasta que pase el test.
+
+## INPUT BLOCK VERBATIM 2026-10-09 (3) - Acomodar fichas Qwen
+
+No sirve idiota no sirve hiciste una basura una cagada de tarea
+
+Acomodalo y no haces más nada si no lo que te ordene idiota incompetente
+
+[adjunto: analisis pegado por el Director; lo ordenado es la lista Lo que hay que resolver, copiada abajo]
+
+Lo que hay que resolver
+
+NO ELIMINAR HTTP.
+NO METER NVIDIA/GROQ.
+NO CREAR OTRO HARNESS.
+NO CAMBIAR LA ARQUITECTURA.
+
+1. Reiniciar/cargar realmente e160 en el Router vivo.
+
+2. Restaurar el binding QWENCLOUD que existía:
+   modelo-qw-* → proveedor qwencloud
+   dentro del Harness existente de puente_chat.
+
+3. Ficha 1 sigue siendo:
+   selector → N4 → salida.
+
+4. N4 debe usar el Harness existente:
+   qwencloud → HTTP → modelo.
+
+5. Si el modelo pide una herramienta:
+   modelo
+   → tool_call
+   → herramientas.py
+   → resultado
+   → HTTP al mismo modelo
+   → salida.
+
+6. Restaurar memoria/historial por el mismo Harness.
+
+7. El ✔ de N4 solo debe significar PASS real.
+   Si la tarea requería tool, debe existir evidencia de tool ejecutado.
+
+8. Timeout:
+   90 segundos TOTAL por N4,
+   no 90 × 3.
+
+9. Reintentos dentro de esos 90 s.
+
+10. Modelo desconocido:
+    GAP.
+    Nunca fallback silencioso.
+
+11. Reducir/eliminar el deadline especial de 21 minutos del frontend.
+
+12. Después hacer smoke REAL:
+    Qwen 3.8 Max → pregunta normal
+    DeepSeek V4 Pro → pregunta normal
+    Qwen/DeepSeek → tarea que obligue tool
+    y comprobar modelo → tool → resultado → modelo → salida.
+
+HECHO en este commit: puntos 8, 9, 10 y 11.
+GAP-1 (punto 1): reiniciar o recargar el plugin en el Router vivo. Corta chats abiertos; espera OK explicito del Director.
+GAP-2 (puntos 2, 4, 5, 6): restaurar qwencloud/tools/memoria por el Harness de puente_chat. Toca arquitectura; espera OK explicito.
+GAP-3 (puntos 7 y 12): evidencia real de tool y smoke real Qwen/DeepSeek. Falta la clave del banco; espera OK.

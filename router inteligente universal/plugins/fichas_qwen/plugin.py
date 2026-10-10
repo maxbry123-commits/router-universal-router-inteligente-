@@ -74,15 +74,19 @@ def _llamar(modelo: str, prompt: str, ficha: dict[str, Any]) -> str:
     api_s, intentos, max_tokens, limite = _cfg(ficha)
     if len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
+    fin = time.time() + api_s  # 90 s TOTAL por nodo; los reintentos van dentro de ese tiempo
     ultimo = ''
-    for n in range(intentos):  # mismo modelo siempre; nunca otro; sin bucle de espera
+    for n in range(intentos):  # mismo modelo siempre; nunca otro
+        resto = fin - time.time()
+        if resto < 1:
+            break
         clave = m['claves'][n % len(m['claves'])]
         cuerpo = json.dumps({'model': m['modelo'], 'messages': [{'role': 'user', 'content': prompt}],
                              'max_tokens': max_tokens}).encode()
         req = urllib.request.Request(m['url'] + '/chat/completions', data=cuerpo, method='POST',
                                      headers={'Authorization': 'Bearer ' + clave, 'Content-Type': 'application/json'})
         try:
-            with urllib.request.urlopen(req, timeout=api_s) as r:
+            with urllib.request.urlopen(req, timeout=resto) as r:
                 d = json.loads(r.read().decode('utf-8', 'replace'))
             t = str(((d.get('choices') or [{}])[0].get('message') or {}).get('content') or '').strip()
             if t:
@@ -99,7 +103,7 @@ def _elegido(ficha: dict[str, Any], pedido: str) -> str:
     for s in sel:
         if pedido and (pedido == s.get("id") or norm(pedido) in (norm(s.get("id")), norm(s.get("nombre")))):
             return s["id"]
-    return sel[0]["id"] if sel else pedido
+    return None if sel else pedido  # modelo que el selector no reconoce: nunca cambiar de modelo en silencio
 
 
 def _prog(pid: str, nodo: str, estado: str) -> None:
@@ -116,6 +120,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "") -> 
     nodos = {n["id"]: n for n in ficha.get("nodos", [])}
     orden = [n["id"] for n in ficha.get("nodos", [])]
     elegido = _elegido(ficha, modelo)
+    if elegido is None:
+        return 'GAP MODELO_SELECTOR_INVALIDO: ' + repr(modelo) + ' no esta en el selector', []
     out: dict[str, str] = {}
 
     def nodo(i: str) -> str:

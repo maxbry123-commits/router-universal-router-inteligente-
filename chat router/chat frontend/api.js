@@ -69,7 +69,7 @@ async function puenteRouter(base, body, qs, headers) {
     let p = env.result || {};
     let cortado = false;
     if (p.estado === 'procesando' && p.proceso_id) {
-      const deadline = Date.now() + (body && body.plugin === 'fichas_qwen' ? 1260000 : 560000);
+      const deadline = Date.now() + 560000;
       const proceso = p.proceso_id;
       while (p.estado === 'procesando') {
         if (Date.now() > deadline) { cortado = true; break; }

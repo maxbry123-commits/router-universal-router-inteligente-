@@ -44,3 +44,4 @@
 {"id": "B-0044", "fecha": "2026-09-30", "tipo": "union", "resumen": "union2: merge bloque4 banco, recarga, salvavidas, ssh a main; limpiados pyc; fichas lifeguard/hf_* corregidas (I09/I13); tests por grupos verdes; smoke app OK"}
 {"id": "B-0045", "fecha": "2026-10-09", "tipo": "input-block", "resumen": "INPUT BLOCK verbatim Correccion quirurgica fichas Qwen anotado antes de ejecutar; sha eba7b80a686d59c5; estado EN CURSO"}
 {"id": "B-0046", "fecha": "2026-10-09", "tipo": "input-block", "resumen": "INPUT BLOCK verbatim 2 anotado: editar fichas Qwen + test de velocidad; rama fichas-qwen-correccion-0910; EN CURSO"}
+{"id": "B-0047", "fecha": "2026-10-09", "tipo": "input-block", "resumen": "INPUT BLOCK verbatim 3 anotado: acomodar fichas Qwen. Hecho: puntos 8,9,10,11. GAP-1 recarga Router, GAP-2 harness qwencloud/tools/memoria, GAP-3 smoke real"}
