@@ -184,7 +184,10 @@
     "on_permanent_error": "gap",
     "on_exhausted": "gap_final",
     "correcciones": 5,
-    "max_segundos": 600
+    "max_segundos": 600,
+    "max_partes_codigo": 12,
+    "max_segundos_codigo": 1800,
+    "analisis_max_s": 120
   },
   "formato_salida": {
     "secciones": [
@@ -489,5 +492,13 @@
   "flujo": "N0 goals entrada(12, 0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max | Qwen 3.8 Max] en paralelo -> Qwen 3.8 Max analiza, DECIDE y EJECUTA -> N5 goals salida(12, 0 API) -> GLM 5.2 REVISA/AUDITA/REFACTORIZA -> Qwen 3.8 Max REVISA/AUDITA/REFACTORIZA -> SALIDA (propone verificacion X-Ray)",
   "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
   "mejoras": "plantilla/MEJORAS_FICHAS.yaml",
-  "api_yml": "modelos-14/harness-modelos-14.cordis.yml"
+  "api_yml": "modelos-14/harness-modelos-14.cordis.yml",
+  "codigo_largo": {
+    "parte_lineas": "500 a 1000 por llamada",
+    "marcas": [
+      "CONTINUAR_PARTE",
+      "TAREA_COMPLETA"
+    ],
+    "nota": "el nodo que escribe codigo sigue en llamadas nuevas hasta TAREA_COMPLETA; la salida no se entrega antes de terminar la tarea"
+  }
 }
