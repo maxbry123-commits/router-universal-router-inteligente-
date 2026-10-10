@@ -155,6 +155,109 @@
     ],
     "sin_instrucciones": "no se ejecuta ni gasta API"
   },
+  "politicas_modelo": {
+    "nota": "Politicas por modelo: solo parametros y parseo de tools. No cambian rutas, DAG, nodos ni modelo elegido. Director 2026-10-10.",
+    "ficha-qwen38flash": {
+      "con_tools": {
+        "no_usar": "enable_thinking=false",
+        "reasoning_effort": {
+          "rapido": "low",
+          "code": "medium",
+          "plan_complejo": "xhigh solo si hace falta"
+        },
+        "escalar": "un nivel si la primera respuesta no resuelve",
+        "preserve_thinking": true,
+        "conservar_en_historial": [
+          "content",
+          "reasoning_content",
+          "tool_calls",
+          "tool_result"
+        ]
+      }
+    },
+    "ficha-qwen36flash": {
+      "anti_loop": {
+        "fingerprint": "tool + arguments normalizados",
+        "primera_vez": "ejecutar",
+        "segunda_vez": "devolver resultado cacheado",
+        "tercera_vez": "no ejecutar; responder REPETICION_TOOL_DETECTADA: ya tienes este resultado; continua con el siguiente paso"
+      },
+      "buscar_tool_calls_en": [
+        "tool_calls",
+        "content",
+        "reasoning_content"
+      ],
+      "formas_validas": [
+        "<tool_call>...</tool_call>",
+        "<invoke ...>...</invoke>",
+        "JSON de tool conocida con alta confianza"
+      ],
+      "validar": [
+        "tool",
+        "schema",
+        "arguments"
+      ],
+      "no_ejecutar_texto_ambiguo": true
+    },
+    "ficha-dsv4pro": {
+      "conservar_reasoning_content_con_tools": true,
+      "secuencia": "assistant(content, reasoning_content, tool_calls) -> tool result -> siguiente llamada",
+      "si_falta_reasoning_content": "GAP HISTORIAL_DEEPSEEK_INCOMPLETO; no reintentar igual",
+      "top_p": 0.95,
+      "temperature": "no forzar en thinking",
+      "streaming": {
+        "id_y_name": "ultimo valor no vacio; un delta posterior vacio no sobrescribe",
+        "arguments": "concatenar fragmentos en orden",
+        "al_final": "json parse -> schema -> ejecutar",
+        "incompletos": "no ejecutar; 1 reparacion al mismo modelo; si vuelve a fallar GAP TOOL_ARGUMENTS_INVALIDOS"
+      },
+      "dsml": "no mostrarlo; 1 normalizacion a tool_call interno; si no valida GAP TOOL_PROTOCOL_DEEPSEEK",
+      "reasoning_effort": "high o max (code complejo / N4)"
+    },
+    "ficha-dsv4pro0813": {
+      "conservar_reasoning_content_con_tools": true,
+      "secuencia": "assistant(content, reasoning_content, tool_calls) -> tool result -> siguiente llamada",
+      "si_falta_reasoning_content": "GAP HISTORIAL_DEEPSEEK_INCOMPLETO; no reintentar igual",
+      "top_p": 0.95,
+      "temperature": "no forzar en thinking",
+      "streaming": {
+        "id_y_name": "ultimo valor no vacio; un delta posterior vacio no sobrescribe",
+        "arguments": "concatenar fragmentos en orden",
+        "al_final": "json parse -> schema -> ejecutar",
+        "incompletos": "no ejecutar; 1 reparacion al mismo modelo; si vuelve a fallar GAP TOOL_ARGUMENTS_INVALIDOS"
+      },
+      "dsml": "no mostrarlo; 1 normalizacion a tool_call interno; si no valida GAP TOOL_PROTOCOL_DEEPSEEK",
+      "reasoning_effort": "high o max (code complejo / N4)"
+    },
+    "ficha-dsv4flash": {
+      "conservar_reasoning_content_con_tools": true,
+      "secuencia": "assistant(content, reasoning_content, tool_calls) -> tool result -> siguiente llamada",
+      "si_falta_reasoning_content": "GAP HISTORIAL_DEEPSEEK_INCOMPLETO; no reintentar igual",
+      "top_p": 0.95,
+      "temperature": "no forzar en thinking",
+      "streaming": {
+        "id_y_name": "ultimo valor no vacio; un delta posterior vacio no sobrescribe",
+        "arguments": "concatenar fragmentos en orden",
+        "al_final": "json parse -> schema -> ejecutar",
+        "incompletos": "no ejecutar; 1 reparacion al mismo modelo; si vuelve a fallar GAP TOOL_ARGUMENTS_INVALIDOS"
+      },
+      "dsml": "no mostrarlo; 1 normalizacion a tool_call interno; si no valida GAP TOOL_PROTOCOL_DEEPSEEK",
+      "reasoning_effort": "low o medium (rapido); medium o high (analisis / verificacion)"
+    },
+    "ficha-glm52": {
+      "con_tools": {
+        "tool_stream": true,
+        "probar_primero": "github_leer (solo lectura) -> tool_call estructurado",
+        "si_exige_streaming": "parsing SSE solo dentro del transporte actual"
+      },
+      "clear_thinking": true,
+      "excepcion_clear_thinking": "conservar thinking solo durante una tarea de arquitectura extremadamente compleja; despues volver a limpiar",
+      "validar_campos_requeridos": {
+        "ejemplo": "github_escribir requiere repo, ruta, contenido",
+        "argumentos_vacios": "no ejecutar; 1 reparacion; si vuelve incompleta GAP TOOL_ARGUMENTS_INCOMPLETOS"
+      }
+    }
+  },
   "salida_final": "N4",
   "nodos": [
     {
