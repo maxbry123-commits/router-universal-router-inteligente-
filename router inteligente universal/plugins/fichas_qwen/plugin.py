@@ -539,7 +539,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 final = txt
                 opts['verif_ok'] = True
     traza = [{"nodo": i, "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
-              "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza","N8":"revisa y refactoriza","N3D":"analiza y decide"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
+              "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N3B":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza","N8":"revisa y refactoriza","N3D":"analiza y decide"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
 
 
