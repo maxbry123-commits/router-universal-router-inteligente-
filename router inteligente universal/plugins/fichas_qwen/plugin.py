@@ -244,8 +244,42 @@ def _con_propuesta(t: str, ficha: dict[str, Any]) -> str:
     return r + nl * 2 + prop
 
 
+def _prop_txt(ficha: dict[str, Any]) -> str:
+    mods = (ficha.get('verificacion_cruzada') or {}).get('modelos') or []
+    quienes = ', '.join(_NOMBRES_V.get(m, str(m).replace('ficha-', '')) for m in mods)
+    return ('PROPUESTA DE VERIFICACION: responde ok para activar la auditoria forense X-Ray, la verificacion cruzada con el codigo fuente y la verificacion cruzada con el input block verbatim (' + quienes +
+            ' revisan a la vez, refactorizan, resuelven gaps y mejoran lo ya hecho).')
+
+
+def _rellenar(texto, ficha, nodos, opts, nid, falt):
+    # secciones que el codigo puede armar solo (DIAGRAMA real y RUTAS con la propuesta): evita otra llamada al modelo
+    nl = chr(10)
+    r = texto.rstrip()
+    cola = ''
+    m = re.search('(?m)^[ ' + chr(9) + ']*ESPERANDO_APROBACION[ ' + chr(9) + ']*$', r)
+    if m:
+        r, cola = r[:m.start()].rstrip(), nl * 2 + 'ESPERANDO_APROBACION'
+    if 'DIAGRAMA' in falt:
+        orden = [x['id'] for x in ficha.get('nodos', [])]
+        r += nl * 2 + 'DIAGRAMA DE FLUJO' + nl + _diagrama(ficha, nodos, orden, opts.get('out') or {}, opts, nid)
+    if 'RUTAS' in falt:
+        r += nl * 2 + 'RUTAS' + nl + '1) ' + _prop_txt(ficha) + nl + '2) Pedir una refactorizacion o mejora puntual de lo entregado.' + nl + '3) Definir la siguiente tarea.'
+    return r + cola
+
+
 def _asegurar_formato(texto, ficha, nid, nodos, elegido, opts, plan=False):
+    falt = _faltan(texto, ficha)
+    pid = (opts or {}).get('pid')
+    if falt and set(falt) <= {'DIAGRAMA', 'RUTAS'}:
+        t = _rellenar(texto, ficha, nodos, opts, nid, falt)
+        if not _faltan(t, ficha):
+            return _con_propuesta(t, ficha), ''
+    if falt and pid:
+        _prog(pid, 'SALIDA', 'trabajando')
+        _meta(pid, 'SALIDA', '', 'ordena la salida en el formato')
     t, gap = _asegurar_formato_base(texto, ficha, nid, nodos, elegido, opts, plan)
+    if falt and pid:
+        _prog(pid, 'SALIDA', 'gap' if gap else 'ok')
     return (t if gap else _con_propuesta(t, ficha)), gap
 
 
@@ -339,8 +373,9 @@ def _verificar(fid, ses, pv, pid, t0):
         k, mod = a
         vid = 'V%d' % (k + 1)
         _prog(pid, vid, 'trabajando')
+        _meta(pid, vid, mod, _tarea_visor({}, vid))
         nodo_v = {'id': vid, 'timeout_s': 240, 'requiere_tools': True, 'escribe': True}
-        o = {'sesion': ses, 'muta': False, 'aprobado': True, 'tarea_id': str(pv.get('tarea_id') or '')}
+        o = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or '')}
         try:
             with _SEM:
                 r = _llamar_harness(mod, prompt, ficha, nodo_v, o)
@@ -350,14 +385,15 @@ def _verificar(fid, ses, pv, pid, t0):
         return r
     ex = _cf.ThreadPoolExecutor(max_workers=max(1, min(len(modelos), mp)))
     try:
+        tope_v = float((ficha.get('loop') or {}).get('max_segundos_codigo') or 1800) + 60
         fs_ = [ex.submit(miembro, a) for a in enumerate(modelos)]
         t_ini = time.time()
         res = []
         for k, f in enumerate(fs_):
             try:
-                res.append(f.result(timeout=max(1.0, 300 - (time.time() - t_ini))))
+                res.append(f.result(timeout=max(1.0, tope_v - (time.time() - t_ini))))
             except _cf.TimeoutError:
-                res.append('GAP V%d (%s): TIMEOUT_NODO: no respondio en 300 s' % (k + 1, modelos[k]))
+                res.append('GAP V%d (%s): TIMEOUT_NODO: no respondio en %d s' % (k + 1, modelos[k], tope_v))
     finally:
         ex.shutdown(wait=False, cancel_futures=True)
     texto, resumen, cons = _panel_texto(modelos, res)
@@ -474,11 +510,73 @@ def _llamar_harness_2(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
 _SEM_PESADO = threading.BoundedSemaphore(2)  # Qwen 3.8 Max: maximo 2 llamadas a la vez para no saturar al proveedor
 
 
-def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
+def _llamar_harness_3(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     if modelo == 'ficha-qwen38max':
         with _SEM_PESADO:
             return _llamar_harness_2(modelo, prompt, ficha, n, opts)
     return _llamar_harness_2(modelo, prompt, ficha, n, opts)
+
+
+_REGLA_CODIGO = ('REGLA DE CODIGO LARGO: escribe el codigo por partes de 500 a 1000 lineas como maximo por llamada y guarda cada parte con las herramientas antes de seguir. '
+                 'Si al cerrar una parte todavia falta trabajo, termina con la linea CONTINUAR_PARTE: el sistema te vuelve a llamar y sigues exactamente donde quedaste, sin repetir lo ya hecho. '
+                 'Cuando TODA la tarea este terminada y verificada, termina con la linea TAREA_COMPLETA.')
+_RE_MARCAS = re.compile('(?im)^[ ' + chr(9) + ']*(TAREA_COMPLETA|CONTINUAR_PARTE)[ ' + chr(9) + ']*' + chr(10) + '?')
+
+
+def _marca(t: str, m: str) -> bool:
+    return bool(re.search('(?im)^[ ' + chr(9) + ']*' + m + '[ ' + chr(9) + ']*$', t or ''))
+
+
+def _sin_marcas(t: str) -> str:
+    return _RE_MARCAS.sub('', t or '').strip()
+
+
+def _nota(opts, nid, txt):
+    pid = (opts or {}).get('pid')
+    if pid:
+        _NOTAS.setdefault(pid, {})[str(nid)] = txt
+
+
+def _llamar_con_partes(modelo, prompt, ficha, n, opts):
+    # codigo largo: partes de 500 a 1000 lineas; cada parte es una llamada nueva que sigue donde quedo la anterior; no hay salida hasta TAREA_COMPLETA
+    nid = str(n.get('id'))
+    lp = ficha.get('loop') or {}
+    maxp = int(lp.get('max_partes_codigo') or 12)
+    tope = float(lp.get('max_segundos_codigo') or 1800)
+    nl = chr(10)
+    t0 = time.time()
+    base = prompt + nl * 2 + _REGLA_CODIGO
+    partes = []
+    for k in range(1, maxp + 1):
+        antes = len((opts.get('herr') or {}).get(nid, []))
+        p = base
+        if k > 1:
+            hechas = ', '.join('%s%s' % (h.get('herramienta'), '' if h.get('ok') else '(fallo)') for h in (opts.get('herr') or {}).get(nid, [])[-12:])
+            p = (base + nl * 2 + 'CONTINUACION (parte %d): ya hiciste las partes anteriores. Esto es lo ultimo que reportaste:' % k + nl + _sin_marcas(partes[-1])[-1500:] + nl +
+                 'Herramientas usadas hasta ahora (las ultimas): ' + hechas + nl +
+                 'No repitas nada ya escrito: lee con las herramientas el estado real de los archivos, sigue exactamente donde quedaste y termina con CONTINUAR_PARTE o TAREA_COMPLETA.')
+        _nota(opts, nid, 'escribiendo codigo, parte %d' % k)
+        t = _llamar_harness_3(modelo, p, ficha, n, opts)
+        partes.append(t)
+        nuevas = (opts.get('herr') or {}).get(nid, [])[antes:]
+        escribio = any(h.get('mutacion_real') for h in nuevas)
+        if _marca(t, 'TAREA_COMPLETA'):
+            break
+        cortada = (t or '').count(chr(96) * 3) % 2 == 1  # bloque de codigo sin cerrar: la salida se corto
+        if not (_marca(t, 'CONTINUAR_PARTE') or cortada or escribio):
+            break
+        if time.time() - t0 > tope:
+            raise RuntimeError('CODIGO_LARGO_TIEMPO: se agoto el tiempo del bucle (%d s) con trabajo pendiente en %d partes' % (tope, k))
+    else:
+        raise RuntimeError('CODIGO_LARGO_PARTES: se llego al maximo de %d partes con trabajo pendiente' % maxp)
+    _nota(opts, nid, 'termino el codigo')
+    final = _sin_marcas(partes[-1])
+    return (('(Ejecutado en %d partes de codigo)' % len(partes) + nl + final) if len(partes) > 1 else final)
+
+
+def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
+    escribe = bool(n.get('escribe') or n.get('id') == 'N4') and bool(opts.get('aprobado'))
+    return (_llamar_con_partes if escribe else _llamar_harness_3)(modelo, prompt, ficha, n, opts)
 
 
 _PROG_T: dict[str, dict[str, list]] = {}
@@ -494,14 +592,48 @@ def _prog(pid: str, nodo: str, estado: str) -> None:
             t[nodo][1] = time.time()
 
 
+_PROG_META: dict[str, dict[str, tuple]] = {}
+_NOTAS: dict[str, dict[str, str]] = {}
+_NOMBRES_M = {'ficha-qwen38max': 'Qwen 3.8 Max', 'ficha-qwen37max': 'Qwen 3.7 Max', 'ficha-qwen37plus': 'Qwen 3.7 Plus', 'ficha-qwen36flash': 'Qwen 3.6 Flash',
+              'ficha-dsv4pro': 'DeepSeek V4 Pro', 'ficha-dsv4pro0813': 'DeepSeek V4 Pro 0813'}
+_TAREAS_V = {'N1': 'analiza la arquitectura y propone', 'N2': 'analiza la arquitectura y propone', 'N3': 'analiza la arquitectura y propone',
+             'N3B': 'analiza la arquitectura y propone', 'N3D': 'analiza y decide el plan', 'N4': 'ejecuta la tarea',
+             'N6': 'revisa, audita y refactoriza', 'N7': 'revisa, audita y refactoriza', 'N8': 'revisa, audita y refactoriza'}
+
+
+def _tarea_visor(nodos, nid):
+    if nid == 'N4' and 'N1' not in nodos:
+        return 'responde con el modelo elegido'
+    if str(nid).startswith('V'):
+        return 'verifica: X-Ray, codigo fuente e input verbatim'
+    return _TAREAS_V.get(nid, 'trabaja')
+
+
+def _meta(pid, nid, mod, tarea):
+    if pid:
+        nombre = _NOMBRES_V.get(mod) or _NOMBRES_M.get(mod) or str(mod or '').replace('ficha-', '')
+        _PROG_META.setdefault(pid, {})[nid] = (nombre, tarea)
+
+
 def _texto_prog(pid: str) -> str:
-    sim = {'ok': '\u2713', 'gap': '\u2717'}
-    partes = []
+    # visor: una linea corta por modelo (que modelo, que tarea, cuantos segundos); los nodos de goals (0 API) no se muestran
+    ok_, gap_, run_, pto = chr(10003), chr(10007), chr(9654), ' ' + chr(183) + ' '
+    filas = []
     for n, e in list(_PROGRESO.get(pid, {}).items()):
+        meta = _PROG_META.get(pid, {}).get(n)
+        if not meta:
+            continue
         ini, fin = (_PROG_T.get(pid, {}).get(n) or [None, None])
         seg = int((fin or time.time()) - ini) if ini else 0
-        partes.append('%s %s%s' % (n, sim.get(e, 'trabajando...'), (' %ds' % seg) if seg >= 1 else ''))
-    return ' | '.join(partes)
+        nombre, tarea = meta
+        if e == 'ok':
+            cols = [ok_ + ' ' + n, nombre, '%ds' % seg]
+        elif e == 'gap':
+            cols = [gap_ + ' ' + n, nombre, 'sin respuesta', '%ds' % seg]
+        else:
+            cols = [run_ + ' ' + n, nombre, (_NOTAS.get(pid, {}).get(n) or tarea), '%ds' % seg]
+        filas.append(pto.join(c for c in cols if c))
+    return chr(10).join(filas)
 
 
 def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opts: dict[str, Any] | None = None) -> tuple[str, list[dict[str, Any]]]:
@@ -514,6 +646,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     _t0 = time.time()
     out: dict[str, str] = dict(opts.get('previo') or {})  # nodos que ya pasaron: no se repiten
     opts['out'] = out
+    opts['pid'] = pid
     _us = {d_ for n_ in nodos.values() for d_ in n_.get('depende_de', [])}
     _fn = [i_ for i_ in orden if i_ not in _us and nodos[i_].get('tipo') != 'goals']
     fin_id = _fn[-1] if _fn else ''
@@ -535,6 +668,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             return r
         _prog(pid, i, 'trabajando')
         _tn = time.time()
+        _meta(pid, i, nodos[i].get('modelo') if nodos[i].get('modelo') != 'selector' else elegido, _tarea_visor(nodos, i))
         nl = chr(10)
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
         prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
@@ -553,7 +687,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 r = _llamar_harness(mod, prompt, ficha, n, opts)
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod, x)
-        _prog(pid, i, 'gap' if r.startswith('GAP') else 'ok')
+        if i not in opts.setdefault('abandonados', set()):
+            _prog(pid, i, 'gap' if r.startswith('GAP') else 'ok')
         opts.setdefault('tiempos', {})[i] = int((time.time() - _tn) * 1000)
         return r
 
@@ -569,15 +704,32 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             try:
                 t_ini = time.time()
                 futs = {i: ex.submit(nodo, i) for i in listos}
-                for i, f in futs.items():
-                    # tope duro por nodo: si el modelo no responde, el nodo queda en GAP y el flujo sigue (el hilo colgado no bloquea)
-                    lim = int(nodos[i].get('timeout_s') or _cfg(ficha)[0]) + 60
-                    try:
-                        out[i] = f.result(timeout=max(1.0, lim - (time.time() - t_ini)))
-                    except _cf.TimeoutError:
-                        out[i] = 'GAP %s: TIMEOUT_NODO: el nodo no respondio en %d s; se sigue sin su resultado' % (i, lim)
-                        _prog(pid, i, 'gap')
-                    pend.remove(i)
+                lp_ = ficha.get('loop') or {}
+                tope_cod = float(lp_.get('max_segundos_codigo') or 1800)
+                ana_max = float(lp_.get('analisis_max_s') or 120)
+                grupo_ana = len(listos) >= 3 and not any(nodos[j].get('escribe') or j == 'N4' for j in listos)
+                pend_f = dict(futs)
+                while pend_f:
+                    hechos, _x = _cf.wait(list(pend_f.values()), timeout=1.0, return_when=_cf.FIRST_COMPLETED)
+                    ahora = time.time() - t_ini
+                    for i, f in list(pend_f.items()):
+                        escribe_i = bool(nodos[i].get('escribe') or i == 'N4') and bool(opts.get('aprobado'))
+                        lim = (tope_cod if escribe_i else int(nodos[i].get('timeout_s') or _cfg(ficha)[0])) + 60
+                        listas = len(futs) - len(pend_f)
+                        if f in hechos:
+                            out[i] = f.result()
+                        elif ahora > lim:
+                            opts.setdefault('abandonados', set()).add(i)
+                            out[i] = 'GAP %s: TIMEOUT_NODO: el nodo no respondio en %d s; se sigue sin su resultado' % (i, lim)
+                            _prog(pid, i, 'gap')
+                        elif grupo_ana and ahora > ana_max and listas >= 2:
+                            opts.setdefault('abandonados', set()).add(i)
+                            out[i] = 'GAP %s: TARDIO: su propuesta no llego en %d s y ya hay %d propuestas; se sigue sin ella' % (i, ana_max, listas)
+                            _prog(pid, i, 'gap')
+                        else:
+                            continue
+                        del pend_f[i]
+                        pend.remove(i)
             finally:
                 ex.shutdown(wait=False, cancel_futures=True)
             if opts.get('plan_stop') and out.get('N4'):  # plan sin aprobar: se detiene aqui, antes de cualquier escritura
@@ -683,7 +835,7 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             for k, (fut, t) in list(_PROCESOS.items()):
                 if time.time() - t > 900 and fut.done():
                     del _PROCESOS[k]
-                    _PROGRESO.pop(k, None); _PROG_T.pop(k, None)
+                    _PROGRESO.pop(k, None); _PROG_T.pop(k, None); _PROG_META.pop(k, None); _NOTAS.pop(k, None)
             _PROCESOS[clave] = (_POOL.submit(_chat, dict(p, _pid=clave)), time.time())
         return {"estado": "procesando", "proceso_id": clave}
     if action == "resultado":
