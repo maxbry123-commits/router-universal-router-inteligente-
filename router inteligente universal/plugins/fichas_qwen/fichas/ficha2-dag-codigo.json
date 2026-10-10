@@ -462,7 +462,8 @@
         "codigo/"
       ],
       "requiere_evidencia": true,
-      "escribe": true
+      "escribe": true,
+      "max_output_tokens": 3000
     },
     {
       "id": "N7",
