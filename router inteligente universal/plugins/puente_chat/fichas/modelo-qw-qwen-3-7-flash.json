@@ -1,0 +1,12 @@
+{
+  "id": "qw-qwen-3-7-flash",
+  "nombre": "Qwen 3.7 Flash",
+  "proveedor": "qwencloud",
+  "modelo": "qwen3.7-flash",
+  "timeout_s": 90,
+  "tipo": "api",
+  "claves": "banco",
+  "rotacion": "mismo-modelo",
+  "herramientas": true,
+  "memoria": true
+}
