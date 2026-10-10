@@ -43,7 +43,10 @@ export const clasificar = (texto) => {
   for (const linea of String(texto || "").split(/\r?\n/)) {  // linea con prefijo o ruta con espacios = un solo item; con enlaces = uno por enlace
     const l = linea.trim();
     if (!l) continue;
-    if (/^(enlace|raiz|handoff):/.test(l) || !/https?:\/\//i.test(l)) toks.push(l); else toks.push(...l.split(/\s+/));
+    if (/^(enlace|raiz|handoff):/.test(l)) toks.push(l);
+    else if (/https?:\/\//i.test(l)) toks.push(...l.split(/\s+/).filter((t) => /^https?:\/\//i.test(t)));  // solo los enlaces de la linea, no las palabras de alrededor
+    else if (l.includes("/")) toks.push(l);  // ruta sin http (raiz del repo)
+    // texto suelto (sin enlace ni ruta) ya no se ancla: antes cada linea de un mensaje pegado salia como un enlace falso
   }
   for (let tok of toks) {
     tok = tok.replace(/[,;]+$/, "");
