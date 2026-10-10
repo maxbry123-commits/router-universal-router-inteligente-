@@ -279,7 +279,8 @@
       "write_paths": [
         "salida/N1/"
       ],
-      "locks": []
+      "locks": [],
+      "timeout_s": 150
     },
     {
       "id": "N2",
@@ -295,7 +296,8 @@
       "write_paths": [
         "salida/N2/"
       ],
-      "locks": []
+      "locks": [],
+      "timeout_s": 150
     },
     {
       "id": "N3",
@@ -311,7 +313,8 @@
       "write_paths": [
         "salida/N3/"
       ],
-      "locks": []
+      "locks": [],
+      "timeout_s": 150
     },
     {
       "id": "N3B",
@@ -327,7 +330,8 @@
       "write_paths": [
         "salida/N3B/"
       ],
-      "locks": []
+      "locks": [],
+      "timeout_s": 150
     },
     {
       "id": "N3D",
@@ -348,11 +352,11 @@
         "salida/N3D/"
       ],
       "locks": [],
-      "timeout_s": 240
+      "timeout_s": 150
     },
     {
       "id": "N4",
-      "timeout_s": 240,
+      "timeout_s": 300,
       "max_output_tokens": 6000,
       "modelo": "ficha-dsv4flash",
       "rol": "EJECUTA directamente la tarea de frontend segun la decision de N3D y las propuestas de N1, N2, N3 y N3B (unico ejecutor). Una vez aprobada la ejecucion, continua hasta completarla: no emite salida intermedia, no pide confirmacion adicional y no aplaza el trabajo",
@@ -439,7 +443,7 @@
     },
     {
       "id": "N6",
-      "timeout_s": 240,
+      "timeout_s": 180,
       "modelo": "ficha-glm52",
       "rol": "REVISA, AUDITA y REFACTORIZA el resultado de N4 segun los goals de salida de N5, leyendo los archivos reales con las herramientas. Si encuentras gaps o defectos, resuelvelos tu mismo: refactoriza y mejora lo ya hecho, y di que cambiaste (archivo y evidencia real). Verifica una por una las INSTRUCCIONES FIJAS del mensaje (si hay), corrige lo que no las cumpla e indica cuales cumplio. Si queda un defecto real que no pudiste resolver termina con una linea: VEREDICTO: FAIL: <defecto concreto>; si no, VEREDICTO: PASS.",
       "depende_de": [
@@ -492,7 +496,7 @@
       "parallel_safe": true,
       "modelo": "ficha-dsv4pro",
       "rol": "REVISA, AUDITA y REFACTORIZA de nuevo el resultado de N7 segun N5 y entrega la SALIDA final, leyendo los archivos reales con las herramientas. Si encuentras gaps o defectos, resuelvelos tu mismo: refactoriza y mejora lo ya hecho, y di que cambiaste (archivo y evidencia real). Verifica una por una las INSTRUCCIONES FIJAS del mensaje (si hay), corrige lo que no las cumpla e indica cuales cumplio. Si queda un defecto real que no pudiste resolver termina con una linea: VEREDICTO: FAIL: <defecto concreto>; si no, VEREDICTO: PASS. La salida va en el FORMATO OBLIGATORIO DE PLAN Y SALIDA que se te adjunta (cinco secciones).",
-      "timeout_s": 240,
+      "timeout_s": 180,
       "escribe": true,
       "write_paths": [
         "codigo/"
