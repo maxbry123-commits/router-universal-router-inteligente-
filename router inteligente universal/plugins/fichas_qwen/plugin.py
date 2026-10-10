@@ -118,7 +118,17 @@ _VERBOS = ('modifica', 'modificar', 'modifique', 'modificalo', 'edita', 'editar'
            'renombrar', 'agrega', 'agregar', 'agregue', 'anade', 'anadir', 'anada', 'mejora', 'mejorar', 'cablea', 'cablear', 'integra',
            'integrar', 'instala', 'instalar', 'configura', 'configurar', 'refactoriza', 'refactorizar', 'quita', 'quitar', 'pon', 'poner',
            'guarda', 'guardar', 'publica', 'publicar', 'fusiona', 'merge', 'parche', 'parchea', 'migra', 'migrar', 'sincroniza',
-           'haz los cambios', 'hacer los cambios', 'fix', 'update', 'delete', 'create', 'write')
+           'haz los cambios', 'hacer los cambios', 'haz cambios', 'hacer cambios', 'haz que', 'hazlo', 'hacerlo',
+           'construye', 'construir', 'programa', 'programar', 'desarrolla', 'desarrollar', 'monta', 'montar', 'conecta', 'conectar',
+           'duplica', 'duplicar', 'clona', 'clonar', 'habilita', 'deshabilita', 'desactiva', 'desactivar', 'optimiza', 'optimizar',
+           'ajusta', 'ajustar', 'repara', 'reparar', 'soluciona', 'solucionar', 'reescribe', 'reescribir', 'extiende', 'extender',
+           'amplia', 'ampliar', 'inserta', 'insertar', 'sustituye', 'sustituir', 'traslada', 'trasladar',
+           'modifiques', 'corrijas', 'agregues', 'anadas', 'cambies', 'crees', 'elimines', 'implementes', 'arregles', 'actualices',
+           'cablees', 'integres', 'instales', 'configures', 'refactorices', 'quites', 'pongas', 'guardes', 'publiques', 'migres',
+           'construyas', 'reescribas', 'insertes', 'sustituyas', 'edites', 'escribas', 'borres', 'subas', 'despliegues', 'reinicies',
+           'restaures', 'apliques', 'muevas', 'renombres',
+           'fix', 'update', 'delete', 'create', 'write', 'add', 'remove', 'replace', 'edit', 'change', 'modify', 'implement',
+           'refactor', 'rename', 'move', 'build', 'install', 'patch', 'rewrite')
 _RE_MUTA = re.compile(r'\b(?:' + '|'.join(_VERBOS) + r')\b')
 
 
@@ -304,7 +314,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     _dag()
     maxc = int((ficha.get('loop') or {}).get('correcciones') or 1)
     ronda = 0
-    tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 1800)
+    tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 600)
     while opts.get('aprobado') and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7')):
         ronda += 1  # N6/N7 solo verifican: si hallan un defecto real, N4 (unico escritor) corrige y se verifica otra vez
         opts['correccion'] = chr(10).join(str(out.get(k) or '')[-1500:] for k in ('N6', 'N7') if _fallo(out.get(k)))
@@ -325,7 +335,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         final = 'GAP FINAL: ' + motivo[:600]
     else:
         final = _sin_veredicto(final)
-        if (opts.get('muta') or opts.get('aprobado')) and 'N7' in nodos and finales and finales[-1] == 'N7':
+        if 'N7' in nodos and finales and finales[-1] == 'N7':  # formato obligatorio en toda tarea, tambien en auditoria de solo lectura
             falt = _faltan(final)
             if falt:  # formato obligatorio incompleto: una sola reformateada de N7; si vuelve a faltar, GAP FORMATO_SALIDA
                 nl_ = chr(10)
