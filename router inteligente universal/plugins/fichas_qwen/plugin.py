@@ -145,8 +145,8 @@ _TAREAS = {}  # plan pendiente de aprobacion por (ficha, conversacion)
 
 
 _FORMATO = ('RESUMEN CORTO', 'DIAGRAMA', 'CHECK', 'VALIDACION', 'RUTAS')
-_FMT_DEF = 'FORMATO OBLIGATORIO DE PLAN Y SALIDA. Cinco secciones, cada una con su encabezado en una linea propia: 1) RESUMEN CORTO (2 a 4 lineas). 2) DIAGRAMA DE FLUJO del workflow Loop en horizontal, de izquierda a derecha con flechas y la vuelta del loop; copia el DIAGRAMA REAL que se te adjunta. 3) CHECK LISTA: una linea por tarea, con ✅ las realizadas y ⬜ las pendientes. 4) VALIDACION de cambios o verificacion: que se verifico, con que evidencia real (archivo, commit, prueba, resultado) y que no se pudo verificar. 5) 3 RUTAS para mejorar, cambiar o tarea por hacer; entre ellas propone solicitar auditoria forense, X-Ray, verificacion cruzada o refactorizar (si el Director responde ok o confirmo, se activa la verificacion cruzada de 4 modelos). Sin parrafos largos ni trazas internas. En el PLAN: CHECK LISTA = tareas pendientes, VALIDACION = como se verificara, y termina con la linea ESPERANDO_APROBACION.'
-_PANEL_DEF = ('ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-glm52', 'ficha-qwen38flash')
+_FMT_DEF = 'FORMATO OBLIGATORIO DE PLAN Y SALIDA. Cinco secciones, cada una con su encabezado en una linea propia: 1) RESUMEN CORTO (2 a 4 lineas). 2) DIAGRAMA DE FLUJO del workflow Loop en horizontal, de izquierda a derecha con flechas y la vuelta del loop; copia el DIAGRAMA REAL que se te adjunta. 3) CHECK LISTA: una linea por tarea, con ✅ las realizadas y ⬜ las pendientes. 4) VALIDACION de cambios o verificacion: que se verifico, con que evidencia real (archivo, commit, prueba, resultado) y que no se pudo verificar. 5) 3 RUTAS para mejorar, cambiar o tarea por hacer. La ruta 1 SIEMPRE propone activar la nueva verificacion: auditoria forense X-Ray, verificacion cruzada con el codigo fuente y verificacion cruzada con el input block verbatim del Director (si el Director responde ok o confirmo, la hacen Qwen 3.7 Flash, DeepSeek V4 Flash y Qwen 3.8 Flash a la vez: revisan, refactorizan, resuelven gaps y mejoran lo ya hecho). Sin parrafos largos ni trazas internas. En el PLAN: CHECK LISTA = tareas pendientes, VALIDACION = como se verificara, y termina con la linea ESPERANDO_APROBACION.'
+_PANEL_DEF = ['ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-qwen38flash']
 _NOMBRES = {'ficha-qwen37flash': 'Qwen 3.7 Flash', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2', 'ficha-qwen38flash': 'Qwen 3.8 Flash'}
 _VERIF = {}  # propuesta de verificacion cruzada pendiente por (ficha, conversacion)
 
@@ -198,7 +198,7 @@ def _diagrama(ficha, nodos, orden, out, opts, actual=''):
     linea = 'INPUT ──▶ ' + ' ──▶ '.join(tramos) + ' ──▶ SALIDA'
     if 'N6' in nodos and 'N4' in nodos:
         lp = ficha.get('loop') or {}
-        linea += chr(10) + '↺ si N6/N7 dan FAIL ──▶ N4 corrige (vuelta %d/%d, tope %d s)' % (int(opts.get('ronda') or 0), int(lp.get('correcciones') or 1), int(lp.get('max_segundos') or 600))
+        linea += chr(10) + '↺ si N6/N7/N8 dan FAIL ──▶ N4 corrige (vuelta %d/%d, tope %d s)' % (int(opts.get('ronda') or 0), int(lp.get('correcciones') or 1), int(lp.get('max_segundos') or 600))
     return linea
 
 
@@ -301,14 +301,11 @@ def _panel_texto(modelos, res):
 
 
 def _verificar(fid, ses, pv, pid, t0):
-    # ok / confirmo: verificacion cruzada con los modelos de la ficha, en paralelo y en cola (semaforo global), solo lectura
+    # ok / confirmo: verificacion cruzada con los modelos de la ficha, en paralelo y en cola (semaforo global); revisan, auditan y refactorizan
     ficha = FICHAS[fid]
     modelos = list((ficha.get('verificacion_cruzada') or {}).get('modelos') or _PANEL_DEF)
     nl = chr(10)
-    rol = ('VERIFICADOR INDEPENDIENTE (solo lectura): revisa y verifica la tarea entregada. VERIFICACION CRUZADA: '
-           '(1) contra el INPUT BLOCK VERBATIM del Director: cumple cada instruccion, una por una? '
-           '(2) contra el codigo fuente o la tarea en curso: lee los archivos reales con las herramientas de solo lectura (github_leer, hf_leer); no te fies de lo que dice la salida entregada. '
-           'NO modifiques ni escribas nada. Da hallazgos concretos (archivo, linea o evidencia real) y termina con una linea: VEREDICTO: PASS, o VEREDICTO: FAIL: <defecto concreto>')
+    rol = ('VERIFICADOR INDEPENDIENTE (revisa y refactoriza): auditoria forense X-Ray de la tarea entregada. VERIFICACION CRUZADA: (1) contra el INPUT BLOCK VERBATIM del Director: cumple cada instruccion, una por una? (2) contra el codigo fuente o la tarea en curso: lee los archivos reales con las herramientas (github_leer, hf_leer); no te fies de lo que dice la salida entregada. Si encuentras gaps o defectos, RESUELVELOS tu mismo: refactoriza y mejora lo ya hecho con las herramientas de escritura. Trabajas a la vez que otros verificadores: antes de escribir lee el archivo vivo, haz cambios minimos y localizados y no reescribas archivos completos. Informa que cambiaste (archivo y evidencia real). Termina con una linea: VEREDICTO: PASS, o VEREDICTO: FAIL: <defecto concreto que no pudiste resolver>')
     prompt = (rol + nl * 2 + 'INPUT BLOCK VERBATIM DEL DIRECTOR:' + nl + str(pv['input']) + nl * 2 + 'PLAN APROBADO:' + nl + str(pv.get('plan') or '(sin plan)')[:4000] +
               nl * 2 + 'SALIDA ENTREGADA A VERIFICAR:' + nl + str(pv['salida'])[:8000])
     mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
@@ -317,8 +314,8 @@ def _verificar(fid, ses, pv, pid, t0):
         k, mod = a
         vid = 'V%d' % (k + 1)
         _prog(pid, vid, 'trabajando')
-        nodo_v = {'id': vid, 'timeout_s': 150, 'requiere_tools': True}
-        o = {'sesion': ses, 'muta': False, 'aprobado': False, 'tarea_id': str(pv.get('tarea_id') or '')}
+        nodo_v = {'id': vid, 'timeout_s': 240, 'requiere_tools': True, 'escribe': True}
+        o = {'sesion': ses, 'muta': False, 'aprobado': True, 'tarea_id': str(pv.get('tarea_id') or '')}
         try:
             with _SEM:
                 r = _llamar_harness(mod, prompt, ficha, nodo_v, o)
@@ -331,7 +328,7 @@ def _verificar(fid, ses, pv, pid, t0):
     texto, resumen, cons = _panel_texto(modelos, res)
     _verif_cerrar(fid, ses)
     return {'model': ficha.get('ficha', fid), 'reply': texto, 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': texto}}],
-            'traza': [{'nodo': 'V%d' % (k + 1), 'modelo': m, 'rol': 'verificacion cruzada (solo lectura)'} for k, m in enumerate(modelos)],
+            'traza': [{'nodo': 'V%d' % (k + 1), 'modelo': m, 'rol': 'verificacion cruzada (revisa y refactoriza)'} for k, m in enumerate(modelos)],
             'resultado_parcial': '', 'estado_tarea': 'VERIFICACION_CRUZADA', 'verificacion': resumen, 'veredicto_cruzado': cons,
             'herramientas': [], 'ms': int((time.time() - t0) * 1000)}
 
@@ -391,6 +388,9 @@ def _pc():
 
 def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
+    _tp = next((x.get('tipo') for x in (ficha.get('selector') or []) if x.get('id') == modelo), None)
+    if _tp and _tp != 'texto':
+        raise RuntimeError('MODELO_' + str(_tp).upper() + '_SIN_EJECUTOR:' + str(modelo) + ' es un modelo de ' + str(_tp) + ' y la ficha aun no tiene como ejecutarlo')
     qw = _QW.get(modelo)
     pc = _pc()
     if not qw or qw not in pc.FICHAS:
@@ -400,11 +400,11 @@ def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str
     max_tok = int(n.get('max_output_tokens') or max_tok)
     if len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
-    escribe = n.get('id') == 'N4' and bool(opts.get('aprobado'))
+    escribe = bool(n.get('escribe') or n.get('id') == 'N4') and bool(opts.get('aprobado'))
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
                   'requiere_tools': bool(opts.get('muta') or n.get('requiere_tools')), 'tarea_id': opts.get('tarea_id') or '', 'nodo': str(n.get('id')),
-                  'perfil': ('auditoria' if (n.get('id') in ('N6', 'N7') or str(n.get('id')).startswith('V')) else ('code' if (n.get('id') == 'N4' or opts.get('muta')) else 'normal'))})
+                  'perfil': ('auditoria' if ((n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe) else ('code' if (n.get('id') == 'N4' or opts.get('muta') or escribe) else 'normal'))})
     if r.get('error'):
         det = str(r.get('detalle') or r.get('mensaje') or '')[:160]
         if str(r['error']).startswith('GAP '):
@@ -445,7 +445,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     _us = {d_ for n_ in nodos.values() for d_ in n_.get('depende_de', [])}
     _fn = [i_ for i_ in orden if i_ not in _us and nodos[i_].get('tipo') != 'goals']
     fin_id = _fn[-1] if _fn else ''
-    obligatorio = bool(fin_id) and (fin_id == 'N7' or bool(opts.get('muta') or opts.get('aprobado')))
+    obligatorio = bool(fin_id) and (fin_id in ('N7', 'N8') or bool(opts.get('muta') or opts.get('aprobado')))
 
     def nodo(i: str) -> str:
         n = nodos[i]
@@ -503,11 +503,11 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     maxc = int((ficha.get('loop') or {}).get('correcciones') or 1)
     ronda = 0
     tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 600)
-    while opts.get('aprobado') and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7')):
+    while opts.get('aprobado') and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7', 'N8')):
         ronda += 1  # N6/N7 solo verifican: si hallan un defecto real, N4 (unico escritor) corrige y se verifica otra vez
         opts['ronda'] = ronda
-        opts['correccion'] = chr(10).join(str(out.get(k) or '')[-1500:] for k in ('N6', 'N7') if _fallo(out.get(k)))
-        for k in [k for k in ('N4', 'N5', 'N6', 'N7') if k in out]:
+        opts['correccion'] = chr(10).join(str(out.get(k) or '')[-1500:] for k in ('N6', 'N7', 'N8') if _fallo(out.get(k)))
+        for k in [k for k in ('N4', 'N5', 'N6', 'N7', 'N8') if k in out]:
             del out[k]
         _dag()
     usados = {d for n in nodos.values() for d in n.get("depende_de", [])}
@@ -539,7 +539,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 final = txt
                 opts['verif_ok'] = True
     traza = [{"nodo": i, "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
-              "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
+              "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza","N8":"revisa y refactoriza","N3D":"analiza y decide"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
 
 
