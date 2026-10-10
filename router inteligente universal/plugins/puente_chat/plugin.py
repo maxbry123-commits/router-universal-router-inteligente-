@@ -227,16 +227,9 @@ def _recortar(mensajes, limite=20000):
 
 
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
-    if proveedor == 'qwencloud':  # Team qwen: clave y direccion del sello de la ficha 14 (clave del banco)
-        try:
-            k, u = _qwen_conf()
-        except Exception as x:  # noqa: BLE001
-            return 0, {'error': 'SIN_CLAVES_QWENCLOUD', 'detalle': str(x)[:150]}
-        claves, base = [k], u
-    else:
-        from integration.chat_mvp import providers
-        claves = providers.env_keys(proveedor)
-        base = providers.base_url(proveedor)
+    from integration.chat_mvp import providers
+    claves = providers.env_keys(proveedor)
+    base = providers.base_url(proveedor)
     if not claves or not base:
         return 0, {'error': 'SIN_CLAVES_' + proveedor.upper()}
     fin = time.monotonic() + tope
@@ -804,71 +797,14 @@ def _especial(tipo, model, sesion, pregunta, p=None):
             'memoria_guardada': _guardar(sesion, model, pregunta, texto)}
 
 
-
-# ---- Fichas 2 y 3 (Ask council code / frontend qwen team): el DAG de la ficha tal cual, con los modelos de la ficha 14 ----
-_DAG_MODELO = {'ficha-dsv4pro': 'deepseek-v4-pro', 'ficha-dsv4pro0813': 'deepseek-v4-pro-0813', 'ficha-dsv4flash': 'deepseek-v4-flash-0731',
-               'ficha-glm52': 'glm-5.2', 'ficha-qwen38max': 'qwen3.8-max', 'ficha-qwen38flash': 'qwen3.8-flash',
-               'ficha-qwen37max': 'qwen3.7-max', 'ficha-qwen37plus': 'qwen3.7-plus', 'ficha-qwen36flash': 'qwen3.6-flash'}
-DAGS = {f.stem[4:]: json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob('dag-*.json'))}
-
-
-def _dag(model, pregunta, sesion):
-    import concurrent.futures as cf
-    import contextvars
-    ficha = DAGS[model]
-    nodos = {n['id']: n for n in ficha.get('nodos', [])}
-    orden = [n['id'] for n in ficha.get('nodos', [])]
-    out = {}
-
-    def correr(i):
-        n = nodos[i]
-        if n.get('tipo') == 'goals':  # goals = datos, 0 llamadas a la API
-            g = [x.get('texto', '') for x in n.get('goals', []) if x.get('texto') and x.get('texto') != 'PONER AQUI']
-            return '\n'.join(g)
-        ctx = '\n\n'.join('[%s]\n%s' % (d, out[d]) for d in n.get('depende_de', []) if out.get(d))
-        prompt = '%s\n\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n%s\n\n%s' % (n.get('rol', ''), pregunta, ctx)
-        modelo = _DAG_MODELO.get(n.get('modelo'), n.get('modelo'))
-        ultimo = None
-        for _ in range(2):  # un reintento con el mismo modelo, nunca otro
-            _DEADLINE.set(time.monotonic() + 170)
-            s, d = _llamar_api('qwencloud', modelo, [{'role': 'user', 'content': prompt}], 8000, 160, None)
-            ultimo = d
-            if s < 400 and isinstance(d, dict) and d.get('choices'):
-                t = str((d['choices'][0].get('message') or {}).get('content') or '').strip()
-                if t:
-                    return t
-        return 'GAP %s (%s): %s' % (i, modelo, str(ultimo)[:200])
-
-    pend = list(orden)
-    while pend:
-        listos = [i for i in pend if all(d in out for d in nodos[i].get('depende_de', []))]
-        if not listos:
-            break
-        with cf.ThreadPoolExecutor(max_workers=len(listos)) as ex:
-            futs = {i: ex.submit(contextvars.copy_context().run, correr, i) for i in listos}
-            for i, f in futs.items():
-                out[i] = f.result()
-                pend.remove(i)
-    usados = {d for n in nodos.values() for d in n.get('depende_de', [])}
-    finales = [i for i in orden if i not in usados and nodos[i].get('tipo') != 'goals']
-    final = out.get(finales[-1], '') if finales else ''
-    if not final or final.startswith('GAP'):  # la SALIDA siempre se entrega: la ultima buena
-        final = next((out[i] for i in reversed(orden) if out.get(i) and not out[i].startswith('GAP') and nodos[i].get('tipo') != 'goals'), final)
-    _guardar(sesion, model, pregunta, final)
-    traza = [{'nodo': i, 'modelo': nodos[i].get('modelo') or 'goals', 'ok': not str(out.get(i, '')).startswith('GAP')} for i in orden if i in out]
-    return {'model': model, 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': final}}], 'ficha': ficha.get('ficha'), 'traza': traza}
-
-
 def _chat(p):
     model = str(p.get('model') or '')
     mensajes = list(p.get('messages') or [])
     max_tokens = int(p.get('max_tokens') or 2048)
     sesion = str(p.get('sesion') or 'general')[:60]
     pregunta = next((str(m.get('content', '')) for m in reversed(mensajes) if m.get('role') == 'user'), '')
-    if model in DAGS:  # fichas 2 y 3: su DAG completo
-        return _dag(model, pregunta, sesion)
     if model not in FICHAS and model not in RESPALDO:
-        return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *DAGS, *RESPALDO]}
+        return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
@@ -949,7 +885,6 @@ def _chat(p):
         # reserva entre proveedores: la tarea pasa a otro modelo con lo ya hecho
         prov0 = FICHAS[model][1]
         alternos = [m for m in FICHAS if m != model and FICHAS[m][1] != prov0] + [m for m in FICHAS if m != model and FICHAS[m][1] == prov0]
-        alternos = [m for m in alternos if FICHAS[m][1] != 'qwencloud']  # los de Qwen solo se usan si se eligen
         for alt in alternos[:2]:
             _, prov_a, modelo_a, tope_a = FICHAS[alt]
 
@@ -1026,29 +961,6 @@ def _apagar(p: dict[str, Any]) -> dict[str, Any]:
         return {"error": "SOLO_SE_APAGAN_JOBS_DEL_L4_DE_RESPALDO", "job_id": job}
     s, _ = _hf("POST", "/api/jobs/%s/%s/cancel" % (NS, job))
     return {"job_id": job, "apagado": s < 400}
-
-
-
-# ---- Team qwen: los 14 modelos de la ficha (Qwen Cloud). La clave va sellada con la clave del banco ----
-_QWEN_CACHE = {}
-
-
-def _qwen_conf():
-    if "k" not in _QWEN_CACHE:
-        import hashlib
-        import os
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        clave = os.environ.get("FICHA_CLAVE_BANCO") or os.environ.get("RIU_VAULT_PASSPHRASE") or ""
-        if not clave:
-            raise RuntimeError("SIN_CLAVE_DEL_BANCO_EN_EL_ROUTER")
-        blob = (_CONFIG_DIR / "modelos-14.cordis.yml.sello").read_bytes()
-        cab = b"FICHA-SELLO-1"
-        k = len(cab)
-        llave = hashlib.scrypt(clave.encode(), salt=blob[k:k + 16], n=2 ** 15, r=8, p=1, dklen=32, maxmem=2 ** 26)
-        texto = AESGCM(llave).decrypt(blob[k + 16:k + 28], blob[k + 28:], cab).decode("utf-8")
-        _QWEN_CACHE["k"] = re.search(r'apiKey:\s*"([^"]+)"', texto).group(1)
-        _QWEN_CACHE["url"] = re.search(r'baseURL:\s*"([^"]+)"', texto).group(1).rstrip("/")
-    return _QWEN_CACHE["k"], _QWEN_CACHE["url"]
 
 
 def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
