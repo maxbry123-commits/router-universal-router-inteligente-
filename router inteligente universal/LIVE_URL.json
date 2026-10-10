@@ -1,8 +1,8 @@
 {
-  "LIVE_URL": "https://6acab164fee2c9007018e21e--8000.hf.jobs",
-  "job_id": "6acab164fee2c9007018e21e",
+  "LIVE_URL": "https://6acab329095c578089318204--8000.hf.jobs",
+  "job_id": "6acab329095c578089318204",
   "flavor": "cpu-basic",
-  "updated": 1791668646.2002015,
+  "updated": 1791669097.3865395,
   "auth": "X-API-Key",
-  "harnessUrl": "https://6acab164fee2c9007018e21e--8000.hf.jobs/plugins/puente_chat/call"
+  "harnessUrl": "https://6acab329095c578089318204--8000.hf.jobs/plugins/puente_chat/call"
 }
