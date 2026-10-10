@@ -377,5 +377,17 @@
   "flujo": "modelo elegido → N4 EJECUTA → SALIDA",
   "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
   "mejoras": "plantilla/MEJORAS_FICHAS.yaml",
-  "api_yml": "modelos-14/harness-modelos-14.cordis.yml"
+  "api_yml": "modelos-14/harness-modelos-14.cordis.yml",
+  "loop": {
+    "max_partes_codigo": 12,
+    "max_segundos_codigo": 1800
+  },
+  "codigo_largo": {
+    "parte_lineas": "500 a 1000 por llamada",
+    "marcas": [
+      "CONTINUAR_PARTE",
+      "TAREA_COMPLETA"
+    ],
+    "nota": "el nodo que escribe codigo sigue en llamadas nuevas hasta TAREA_COMPLETA; la salida no se entrega antes de terminar la tarea"
+  }
 }
