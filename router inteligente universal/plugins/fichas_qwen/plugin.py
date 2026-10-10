@@ -355,9 +355,9 @@ def _verificar(fid, ses, pv, pid, t0):
         res = []
         for k, f in enumerate(fs_):
             try:
-                res.append(f.result(timeout=max(1.0, 540 - (time.time() - t_ini))))
+                res.append(f.result(timeout=max(1.0, 300 - (time.time() - t_ini))))
             except _cf.TimeoutError:
-                res.append('GAP V%d (%s): TIMEOUT_NODO: no respondio en 540 s' % (k + 1, modelos[k]))
+                res.append('GAP V%d (%s): TIMEOUT_NODO: no respondio en 300 s' % (k + 1, modelos[k]))
     finally:
         ex.shutdown(wait=False, cancel_futures=True)
     texto, resumen, cons = _panel_texto(modelos, res)
@@ -460,7 +460,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
 _DSML = '<\uff5cDSML\uff5c'
 
 
-def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
+def _llamar_harness_2(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # DeepSeek a veces escribe las llamadas a herramientas como texto (marcas DSML) en vez de llamadas estructuradas: una reintentada con aviso; si persiste, GAP claro
     t = _llamar_harness_1(modelo, prompt, ficha, n, opts)
     if _DSML in t:
@@ -471,14 +471,37 @@ def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str
     return t
 
 
+_SEM_PESADO = threading.BoundedSemaphore(2)  # Qwen 3.8 Max: maximo 2 llamadas a la vez para no saturar al proveedor
+
+
+def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
+    if modelo == 'ficha-qwen38max':
+        with _SEM_PESADO:
+            return _llamar_harness_2(modelo, prompt, ficha, n, opts)
+    return _llamar_harness_2(modelo, prompt, ficha, n, opts)
+
+
+_PROG_T: dict[str, dict[str, list]] = {}
+
+
 def _prog(pid: str, nodo: str, estado: str) -> None:
     if pid:
         _PROGRESO.setdefault(pid, {})[nodo] = estado
+        t = _PROG_T.setdefault(pid, {})
+        if estado == 'trabajando':
+            t[nodo] = [time.time(), None]
+        elif nodo in t and t[nodo][1] is None:
+            t[nodo][1] = time.time()
 
 
 def _texto_prog(pid: str) -> str:
-    sim = {'ok': '✓', 'gap': '✗'}
-    return ' | '.join('%s %s' % (n, sim.get(e, 'trabajando...')) for n, e in list(_PROGRESO.get(pid, {}).items()))
+    sim = {'ok': '\u2713', 'gap': '\u2717'}
+    partes = []
+    for n, e in list(_PROGRESO.get(pid, {}).items()):
+        ini, fin = (_PROG_T.get(pid, {}).get(n) or [None, None])
+        seg = int((fin or time.time()) - ini) if ini else 0
+        partes.append('%s %s%s' % (n, sim.get(e, 'trabajando...'), (' %ds' % seg) if seg >= 1 else ''))
+    return ' | '.join(partes)
 
 
 def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opts: dict[str, Any] | None = None) -> tuple[str, list[dict[str, Any]]]:
@@ -511,6 +534,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             _prog(pid, i, 'ok')
             return r
         _prog(pid, i, 'trabajando')
+        _tn = time.time()
         nl = chr(10)
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
         prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
@@ -530,6 +554,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod, x)
         _prog(pid, i, 'gap' if r.startswith('GAP') else 'ok')
+        opts.setdefault('tiempos', {})[i] = int((time.time() - _tn) * 1000)
         return r
 
     _mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
@@ -546,7 +571,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                 futs = {i: ex.submit(nodo, i) for i in listos}
                 for i, f in futs.items():
                     # tope duro por nodo: si el modelo no responde, el nodo queda en GAP y el flujo sigue (el hilo colgado no bloquea)
-                    lim = int(nodos[i].get('timeout_s') or _cfg(ficha)[0]) * 2 + 60
+                    lim = int(nodos[i].get('timeout_s') or _cfg(ficha)[0]) + 60
                     try:
                         out[i] = f.result(timeout=max(1.0, lim - (time.time() - t_ini)))
                     except _cf.TimeoutError:
@@ -597,7 +622,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             else:
                 final = txt
                 opts['verif_ok'] = True
-    traza = [{"nodo": i, "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
+    traza = [{"nodo": i, "ms": (opts.get('tiempos') or {}).get(i), "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
               "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N3B":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza","N8":"revisa y refactoriza","N3D":"analiza y decide"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
 
@@ -658,7 +683,7 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             for k, (fut, t) in list(_PROCESOS.items()):
                 if time.time() - t > 900 and fut.done():
                     del _PROCESOS[k]
-                    _PROGRESO.pop(k, None)
+                    _PROGRESO.pop(k, None); _PROG_T.pop(k, None)
             _PROCESOS[clave] = (_POOL.submit(_chat, dict(p, _pid=clave)), time.time())
         return {"estado": "procesando", "proceso_id": clave}
     if action == "resultado":
