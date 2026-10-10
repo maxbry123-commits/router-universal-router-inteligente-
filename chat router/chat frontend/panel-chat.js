@@ -4,6 +4,7 @@ import { conectarSelectorModelos } from "./chat-selector-modelos.js";
 import { conectarMicrofono } from "./chat-microfono.js";
 import { conectarVentanas } from "./chat-ventanas.js";
 import { conectarRiu } from "./chat-riu.js";
+import { conectarRiu2 } from "./chat-riu2.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 5;
@@ -32,6 +33,7 @@ export async function mount(root, { api, tell }) {
     const caja = q("#anclados");
     caja.innerHTML = "";
     const todos = [...chat().anclados];
+    const ba = q("#btn-ancla"); if (ba) ba.dataset.n = String(todos.length);  // RUI 19: contador del boton ancla
     if ((chat().instrucciones || "").trim()) caja.append(node("span", "📌 instrucciones fijas", "anclado-item"));
     todos.slice(0, 3).forEach((a) => caja.append(node("span", etiquetaCorta(a), "anclado-item")));
     if (todos.length > 3) caja.append(node("span", "+" + (todos.length - 3) + " más ⚓", "anclado-item"));
@@ -126,7 +128,15 @@ export async function mount(root, { api, tell }) {
   }));
   root.querySelectorAll(".sh-cerrar").forEach((b) => b.addEventListener("click", cerrarHojas));
   conectarVentanas({ root, q });
-  conectarRiu({ q });  // RUI: bloques de codigo con copiar, barra de lectura y boton bajar  // cerrar tocando fuera / Escape / deslizando; anclaje unico en el boton del input
+  conectarRiu({ q });  // RUI: bloques de codigo con copiar, barra de lectura y boton bajar
+  const cerrarChat = (i) => {  // RUI 18: cerrar un chat (el ultimo no se cierra; uno ocupado espera)
+    if (chats.length < 2 || !chats[i]) return;
+    if (chats[i].ocupado) { tell("Ese chat está trabajando: espera o pulsa Detener"); return; }
+    chats[i].hist.remove(); chats.splice(i, 1); activo = Math.min(activo > i ? activo - 1 : activo, chats.length - 1);
+    pintarTabs(); guardar(); tell("Chat cerrado");
+  };
+  root.addEventListener("riu:cerrar-chat", (e) => cerrarChat(e.detail));
+  conectarRiu2({ root, q, tell });  // RUI 12-21 + mejoras de flujo (ventanas, borrador, avisos)
 
   const fila = (titulo, desc, marcada, alClick) => {
     const r = node("button", "", "fila" + (marcada ? " on" : ""));
