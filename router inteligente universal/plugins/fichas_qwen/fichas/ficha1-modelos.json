@@ -258,6 +258,43 @@
       }
     }
   },
+  "formato_salida": {
+    "secciones": [
+      "RESUMEN CORTO",
+      "DIAGRAMA",
+      "CHECK",
+      "VALIDACION",
+      "RUTAS"
+    ],
+    "texto": "FORMATO OBLIGATORIO DE PLAN Y SALIDA. Cinco secciones, cada una con su encabezado en una linea propia: 1) RESUMEN CORTO (2 a 4 lineas). 2) DIAGRAMA DE FLUJO del workflow Loop en horizontal, de izquierda a derecha con flechas y la vuelta del loop; copia el DIAGRAMA REAL que se te adjunta. 3) CHECK LISTA: una linea por tarea, con ✅ las realizadas y ⬜ las pendientes. 4) VALIDACION de cambios o verificacion: que se verifico, con que evidencia real (archivo, commit, prueba, resultado) y que no se pudo verificar. 5) 3 RUTAS para mejorar, cambiar o tarea por hacer; entre ellas propone solicitar auditoria forense, X-Ray, verificacion cruzada o refactorizar (si el Director responde ok o confirmo, se activa la verificacion cruzada de 4 modelos). Sin parrafos largos ni trazas internas. En el PLAN: CHECK LISTA = tareas pendientes, VALIDACION = como se verificara, y termina con la linea ESPERANDO_APROBACION."
+  },
+  "verificacion_cruzada": {
+    "modelos": [
+      "ficha-qwen37flash",
+      "ficha-dsv4flash",
+      "ficha-glm52",
+      "ficha-qwen38flash"
+    ],
+    "confirmar": [
+      "ok",
+      "confirmo",
+      "proceder con verificacion",
+      "proceder con validacion"
+    ],
+    "rutas_propuestas": [
+      "auditoria forense",
+      "X-Ray",
+      "verificacion cruzada",
+      "refactorizar"
+    ],
+    "paralelo": true,
+    "cola": "segun sdk disponible: semaforo global de 6 llamadas y max_parallel de la ficha",
+    "solo_lectura": true,
+    "cruce": [
+      "INPUT BLOCK VERBATIM",
+      "codigo fuente o tarea en curso"
+    ]
+  },
   "salida_final": "N4",
   "nodos": [
     {
