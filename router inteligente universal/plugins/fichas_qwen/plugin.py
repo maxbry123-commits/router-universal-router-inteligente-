@@ -202,7 +202,7 @@ def _diagrama(ficha, nodos, orden, out, opts, actual=''):
     return linea
 
 
-def _asegurar_formato(texto, ficha, nid, nodos, elegido, opts, plan=False):
+def _asegurar_formato_base(texto, ficha, nid, nodos, elegido, opts, plan=False):
     # formato de plan y salida: si faltan secciones, UNA reformateada del mismo nodo; si vuelve a faltar, se devuelve el motivo del GAP
     falt = _faltan(texto, ficha)
     if not falt:
@@ -222,6 +222,31 @@ def _asegurar_formato(texto, ficha, nid, nodos, elegido, opts, plan=False):
             r += nl + 'ESPERANDO_APROBACION'
         return r, ''
     return '', ', '.join(_faltan(r or texto, ficha))
+
+
+_NOMBRES_V = {'ficha-qwen37flash': 'Qwen 3.7 Flash', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-qwen38flash': 'Qwen 3.8 Flash', 'ficha-glm52': 'GLM 5.2'}
+
+
+def _con_propuesta(t: str, ficha: dict[str, Any]) -> str:
+    # la salida SIEMPRE propone la verificacion (X-Ray, codigo fuente, input verbatim): si el modelo no la puso, la agrega el codigo
+    u = _norm(t).lower()
+    if re.search(r'x.?ray', u) and 'verificacion cruzada' in u:
+        return t
+    mods = (ficha.get('verificacion_cruzada') or {}).get('modelos') or []
+    quienes = ', '.join(_NOMBRES_V.get(m, str(m).replace('ficha-', '')) for m in mods)
+    nl = chr(10)
+    prop = ('PROPUESTA DE VERIFICACION: responde ok para activar la auditoria forense X-Ray, la verificacion cruzada con el codigo fuente y la verificacion cruzada con el input block verbatim (' + quienes +
+            ' revisan a la vez, refactorizan, resuelven gaps y mejoran lo ya hecho).')
+    r = t.rstrip()
+    m = re.search(r'(?m)^[ ' + chr(9) + r']*ESPERANDO_APROBACION[ ' + chr(9) + r']*$', r)
+    if m:
+        return r[:m.start()].rstrip() + nl * 2 + prop + nl + 'ESPERANDO_APROBACION'
+    return r + nl * 2 + prop
+
+
+def _asegurar_formato(texto, ficha, nid, nodos, elegido, opts, plan=False):
+    t, gap = _asegurar_formato_base(texto, ficha, nid, nodos, elegido, opts, plan)
+    return (t if gap else _con_propuesta(t, ficha)), gap
 
 
 _RE_CONFIRMA = re.compile(r'^(ok|okay|okey|dale|adelante|si|confirmo|confirmado|proceder|procede|proceda|verifica|valida|verificar|validar)( con( la| el)?( verificacion| validacion)( cruzada)?( (o|y) (la )?(verificacion|validacion))?)?$')
@@ -386,7 +411,7 @@ def _pc():
     return mod
 
 
-def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
+def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
     _tp = next((x.get('tipo') for x in (ficha.get('selector') or []) if x.get('id') == modelo), None)
     if _tp and _tp != 'texto':
@@ -419,6 +444,20 @@ def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str
     opts.setdefault('herr', {}).setdefault(str(n.get('id')), []).extend([{'herramienta': x.get('herramienta'), 'ok': bool(x.get('ok')), 'mutacion_real': bool(x.get('mutacion_real'))} for x in usadas])
     if escribe and opts.get('muta') and not any(x.get('mutacion_real') for x in opts['herr'][str(n.get('id'))]):
         raise RuntimeError('EJECUCION_SIN_EVIDENCIA: la tarea pedia cambios y ninguna herramienta de escritura termino bien')
+    return t
+
+
+_DSML = '<\uff5cDSML\uff5c'
+
+
+def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
+    # DeepSeek a veces escribe las llamadas a herramientas como texto (marcas DSML) en vez de llamadas estructuradas: una reintentada con aviso; si persiste, GAP claro
+    t = _llamar_harness_1(modelo, prompt, ficha, n, opts)
+    if _DSML in t:
+        nl = chr(10)
+        t = _llamar_harness_1(modelo, prompt + nl * 2 + 'AVISO DEL SISTEMA: tu respuesta anterior escribio las llamadas a herramientas como texto (marcas DSML) y no se ejecutaron. Usa las herramientas con llamadas estructuradas, sin escribir marcas como <DSML>, y entrega la respuesta final completa.', ficha, n, opts)
+        if _DSML in t:
+            raise RuntimeError('TOOLS_DSML_SIN_PARSEAR:' + str(modelo) + ' escribio las llamadas a herramientas como texto dos veces')
     return t
 
 
