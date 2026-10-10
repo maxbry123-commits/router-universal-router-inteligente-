@@ -527,7 +527,8 @@
         "tarea/",
         "codigo/"
       ],
-      "requiere_evidencia": true
+      "requiere_evidencia": true,
+      "max_output_tokens": 3000
     }
   ],
   "flujo": "N0 goals entrada(12, 0 API) -> [Qwen 3.8 Max | GLM 5.2 | Qwen 3.7 Max | DeepSeek V4 Pro] en paralelo -> DeepSeek V4 Pro DECIDE -> DeepSeek V4 Flash EJECUTA -> N5 goals salida(12, 0 API) -> GLM 5.2 -> Qwen 3.8 Max -> DeepSeek V4 Pro (REVISAN/AUDITAN/REFACTORIZAN) -> SALIDA (propone verificacion X-Ray)",
