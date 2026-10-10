@@ -40,7 +40,7 @@ document.querySelector("#navigation").addEventListener("click", event => {
   if (button) show(button.dataset.view);
 });
 show("chat");
-const TEMAS = ["gris", "little", "matte", "blanco"];
+const TEMAS = ["gris", "little", "matte", "blanco", "crystal", "orange", "blue"];
 function aplicarTema(valor) {
   const tema = TEMAS.includes(valor) ? valor : "gris";
   document.documentElement.dataset.theme = tema;
