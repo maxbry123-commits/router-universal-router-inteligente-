@@ -14,6 +14,9 @@ import re
 from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
 _SOLO_LECTURA = ContextVar("riu_solo_lectura", default=False)
+_POL = ContextVar("riu_politica", default=None)  # politicas_modelo del modelo que esta respondiendo
+_REQ_TOOLS = ContextVar("riu_requiere_tools", default=False)  # tarea que exige herramientas: sin tools = GAP
+_VISTOS = ContextVar("riu_vistos", default=None)  # escrituras ya hechas de esta tarea y nodo (no se repiten)
 import time
 import urllib.error
 import urllib.parse
@@ -227,6 +230,47 @@ def _recortar(mensajes, limite=20000):
     return ms
 
 
+_POL_MODELO = {'qwen3.8-flash': 'ficha-qwen38flash', 'qwen3.6-flash': 'ficha-qwen36flash',
+               'deepseek-v4-pro': 'ficha-dsv4pro', 'deepseek-v4-pro-0813': 'ficha-dsv4pro0813',
+               'deepseek-v4-flash-0731': 'ficha-dsv4flash', 'glm-5.2': 'ficha-glm52'}
+_POL_CACHE = {}
+
+
+def _politica(modelo):
+    # politicas_modelo que las fichas (fichas_qwen/fichas/*.json) declaran para este modelo; la primera ficha que lo declara gana
+    fid = _POL_MODELO.get(modelo)
+    if not fid:
+        return {}
+    if fid not in _POL_CACHE:
+        pol = {}
+        for f in sorted((Path(__file__).resolve().parent.parent / 'fichas_qwen' / 'fichas').glob('*.json')):
+            try:
+                pol = (json.loads(f.read_text(encoding='utf-8')).get('politicas_modelo') or {}).get(fid) or {}
+            except Exception:  # noqa: BLE001
+                pol = {}
+            if pol:
+                break
+        _POL_CACHE[fid] = pol
+    return _POL_CACHE[fid]
+
+
+def _extras(pol, tools):
+    # parametros extra de la peticion segun la politica del modelo (nunca se manda enable_thinking=false)
+    ex = {}
+    ct = pol.get('con_tools') or {}
+    if pol.get('top_p'):
+        ex['top_p'] = pol['top_p']
+    if tools and ct.get('tool_stream'):
+        ex['tool_stream'] = True
+    if pol.get('clear_thinking'):
+        ex['clear_thinking'] = True
+    if ct.get('preserve_thinking'):
+        ex['preserve_thinking'] = True
+    if tools and isinstance(ct.get('reasoning_effort'), dict) and ct['reasoning_effort'].get('code'):
+        ex['reasoning_effort'] = ct['reasoning_effort']['code']
+    return ex
+
+
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
     if proveedor == 'qwencloud':  # Team qwen: clave y direccion del sello de la ficha 14 (clave del banco)
         try:
@@ -264,7 +308,17 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if tools:
                 cuerpo['tools'] = tools
                 cuerpo['tool_choice'] = 'auto'
+            pol = _politica(modelo) if proveedor == 'qwencloud' else {}
+            _POL.set(pol)
+            ex = _extras(pol, tools)
+            cuerpo.update(ex)
             ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+            if ex and ultimo[0] == 400:  # el endpoint no admite algun extra de la politica: mismo modelo, misma clave, sin esos extras
+                for k_ in ex:
+                    cuerpo.pop(k_, None)
+                resta = fin - time.monotonic()
+                if resta >= 2:
+                    ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
             if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
                 c = str((ultimo[1]['choices'][0].get('message') or {}).get('content') or '')
                 if not any(x in c.lower() for x in ('server is busy', 'try again later', 'service unavailable')):
@@ -297,8 +351,9 @@ def _llamar_l4(url, modelo, mensajes, max_tokens, tools):
     return ultimo
 
 
-def _calls_texto(content):
-    # Algunos modelos escriben la llamada como <tool_call>... en el texto en vez de tool_calls: la ejecutamos igual.
+def _calls_texto(content, conocidas=None):
+    # Algunos modelos escriben la llamada como <tool_call>, <invoke> o JSON en el texto en vez de tool_calls: la ejecutamos igual,
+    # solo cuando la estructura es clara (nunca se ejecuta texto ambiguo).
     calls = []
     for bloque in re.findall(r'<tool_call>(.*?)</tool_call>', content or '', re.S):
         b = bloque.strip()
@@ -312,6 +367,24 @@ def _calls_texto(content):
             calls.append((d.get('name', ''), d.get('arguments') or {}))
         except Exception:  # noqa: BLE001
             pass
+    for nom_i, cuerpo_i in re.findall(r'<invoke\s+name="([\w\-]+)"\s*>(.*?)</invoke>', content or '', re.S):
+        args = {k: v.strip() for k, v in re.findall(r'<parameter\s+name="([\w\-]+)"\s*>(.*?)</parameter>', cuerpo_i, re.S)}
+        calls.append((nom_i, args))
+    if not calls and conocidas:
+        try:
+            d = json.loads((content or '').strip())
+        except Exception:  # noqa: BLE001
+            d = None
+        for x in (d if isinstance(d, list) else [d]):
+            if isinstance(x, dict) and x.get('name') in conocidas:
+                a = x.get('arguments', x.get('parameters', {}))
+                if isinstance(a, str):
+                    try:
+                        a = json.loads(a)
+                    except Exception:  # noqa: BLE001
+                        a = None
+                if isinstance(a, dict):
+                    calls.append((x['name'], a))
     return calls
 
 
@@ -319,24 +392,56 @@ def _limpiar_texto(c):
     # quita bloques <tool_call> cerrados y tambien el resto si quedo truncado sin cierre
     c = re.sub(r'<tool_call>.*?</tool_call>', '', c or '', flags=re.S)
     c = re.sub(r'<tool_call>.*', '', c, flags=re.S)
+    c = re.sub(r'<invoke\s+name=.*?</invoke>', '', c, flags=re.S)
     return c.strip()
+
+
+_FALLO = ('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0')
+
+
+def _es_mutacion(nom, args):
+    # mutacion real: solo las escrituras (listar/leer y GET no escriben)
+    a = args if isinstance(args, dict) else {}
+    met = str(a.get('metodo') or a.get('method') or 'GET').upper()
+    acc = str(a.get('accion') or '').lower()
+    if nom in ('github_escribir', 'hf_escribir'):
+        return True
+    if nom == 'hf_almacenamiento':
+        return acc not in ('listar', 'leer')
+    if nom in ('github_api', 'hf_api'):
+        return met != 'GET'
+    return False
 
 
 def _bloqueo(nom, args):
     # pasos de solo lectura (Ask consil): se rechazan las herramientas que escriben
     if not _SOLO_LECTURA.get():
         return ''
-    a = args if isinstance(args, dict) else {}
-    met = str(a.get('metodo') or a.get('method') or 'GET').upper()
-    if nom in ('github_escribir', 'hf_escribir', 'hf_almacenamiento') or (nom in ('github_api', 'hf_api') and met != 'GET'):
+    if _es_mutacion(nom, args):
         return 'ERROR: HERRAMIENTA_BLOQUEADA, este paso es de solo lectura'
     return ''
 
 
+def _faltantes(h, nom, args):
+    # campos requeridos de la herramienta que la llamada no trae
+    a = args if isinstance(args, dict) else {}
+    for t_ in h.TOOLS:
+        f_ = t_.get('function') or {}
+        if f_.get('name') == nom:
+            return [r for r in ((f_.get('parameters') or {}).get('required') or []) if a.get(r) in (None, '')]
+    return []
+
+
 def _bucle(llamar, mensajes):
     h = _herr()
+    conoc = {(t_.get('function') or {}).get('name') for t_ in h.TOOLS}
     usadas = []
-    vistos = {}   # dedup: misma herramienta + mismos args = mismo resultado
+    vistos = {}   # dedup de lecturas: misma herramienta + mismos args = mismo resultado
+    hechas = _VISTOS.get()  # escrituras que ya terminaron bien en esta tarea y nodo (compartido entre vueltas): no se repiten
+    if hechas is None:
+        hechas = {}
+    reps = {}
+    faltas = {}
     rotas = set()  # herramientas que ya fallaron por token/desconocidas
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
     con_tools = True
@@ -352,16 +457,23 @@ def _bucle(llamar, mensajes):
             mensajes.append({'role': 'user', 'content': 'Se acabo el tiempo. Responde ya, sin usar mas herramientas, con lo que tengas.'})
             continue
         s, d = llamar(mensajes, h.TOOLS if con_tools else None)
+        if s == 400 and 'reasoning_content' in json.dumps(d, default=str):
+            return {'error': 'GAP HISTORIAL_DEEPSEEK_INCOMPLETO', 'detalle': str(d)[:300]}, usadas
         if s == 400 and con_tools and not usadas:
+            if _REQ_TOOLS.get():  # tarea que exige herramientas: no se convierte en una respuesta de texto
+                return {'error': 'GAP MODELO_SIN_TOOLS', 'detalle': str(d)[:300]}, usadas
             con_tools = False  # este modelo no admite herramientas: responde sin ellas
             continue
         if s >= 400 or s == 0 or not isinstance(d, dict) or not d.get('choices'):
-            return {'error': 'MODELO_NO_RESPONDE', 'detalle': str(d)[:300]}, usadas
+            return {'error': 'MODELO_NO_RESPONDE', 'detalle': 'HTTP %s ' % s + str(d)[:300]}, usadas
         msg = d['choices'][0].get('message') or {}
         calls = msg.get('tool_calls') or []
         if not calls and con_tools:
+            tx = _calls_texto(msg.get('content'), conoc)
+            if not tx and 'reasoning_content' in ((_POL.get() or {}).get('buscar_tool_calls_en') or []):
+                tx = _calls_texto(msg.get('reasoning_content'), conoc)  # Qwen 3.6: la llamada a veces queda dentro del razonamiento
             calls = [{'id': 'texto%d' % i, 'type': 'function', 'function': {'name': n, 'arguments': json.dumps(a)}}
-                     for i, (n, a) in enumerate(_calls_texto(msg.get('content')))]
+                     for i, (n, a) in enumerate(tx)]
             if calls:
                 msg['content'] = _limpiar_texto(msg.get('content'))
         if not calls or not con_tools:
@@ -371,7 +483,11 @@ def _bucle(llamar, mensajes):
                 pasos += 1
                 continue
             return d, usadas
-        mensajes.append({'role': 'assistant', 'content': msg.get('content') or '', 'tool_calls': calls})
+        am = {'role': 'assistant', 'content': msg.get('content') or '', 'tool_calls': calls}
+        pol_ = _POL.get() or {}
+        if msg.get('reasoning_content') and (pol_.get('conservar_reasoning_content_con_tools') or (pol_.get('con_tools') or {}).get('preserve_thinking')):
+            am['reasoning_content'] = msg['reasoning_content']  # DeepSeek / Qwen: el razonamiento viaja junto a la llamada
+        mensajes.append(am)
         for c in calls:
             f = c.get('function') or {}
             try:
@@ -379,17 +495,37 @@ def _bucle(llamar, mensajes):
             except ValueError:
                 args = {}
             nom = f.get('name', '')
+            falt_ = _faltantes(h, nom, args)
+            if falt_:  # llamada incompleta: no se ejecuta; una reparacion y si vuelve incompleta, GAP
+                faltas[nom] = faltas.get(nom, 0) + 1
+                if faltas[nom] >= 2:
+                    return {'error': 'GAP TOOL_ARGUMENTS_INCOMPLETOS', 'detalle': nom + ': faltan ' + ', '.join(falt_)}, usadas
+                usadas.append({'herramienta': nom, 'ok': False, 'mutacion_real': False})
+                mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': 'ERROR: faltan parametros requeridos: ' + ', '.join(falt_) + '. Devuelve exclusivamente la llamada corregida.'})
+                continue
             sello = (nom, json.dumps(args, sort_keys=True, default=str))
-            if sello in vistos:
+            mut = _es_mutacion(nom, args)
+            if mut and sello in hechas:
+                res = 'OPERACION_YA_COMPLETADA: ' + hechas[sello]  # una escritura que ya termino bien nunca se repite
+            elif (not mut) and sello in vistos:
+                reps[sello] = reps.get(sello, 1) + 1
                 res = vistos[sello]  # misma llamada repetida: no gasta otra peticion
+                if reps[sello] >= 3 and (_POL.get() or {}).get('anti_loop'):
+                    res = 'REPETICION_TOOL_DETECTADA: ya tienes este resultado; continua con el siguiente paso'
             elif nom in rotas:
                 res = 'ERROR: herramienta no disponible en este momento, no la uses mas y responde con lo que tengas'
             else:
                 res = _bloqueo(nom, args) or h.ejecutar(nom, args)
-                vistos[sello] = res
+                if mut:
+                    if not str(res).startswith(_FALLO):
+                        hechas[sello] = res
+                else:
+                    vistos[sello] = res
                 if 'no hay token' in res or 'herramienta desconocida' in res:
                     rotas.add(nom)
-            usadas.append({'herramienta': nom, 'ok': not res.startswith(('ERROR', 'HTTP 4', 'HTTP 5', 'HTTP 0'))})
+            ok_ = not res.startswith(_FALLO)
+            ya_ = res.startswith(('OPERACION_YA_COMPLETADA', 'REPETICION_TOOL_DETECTADA'))
+            usadas.append({'herramienta': nom, 'ok': ok_, 'mutacion_real': bool(mut and ok_ and not ya_)})
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:3000]})
         pasos += 1
         if pasos >= MAX_PASOS or time.monotonic() >= fin:
@@ -397,6 +533,7 @@ def _bucle(llamar, mensajes):
 
 
 _CHECKPOINTS = {}
+_VISTOS_G = {}
 
 
 def _ck_guardar(sesion, mensajes):
@@ -828,6 +965,14 @@ def _chat(p):
         return _encender(model)
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
+    _REQ_TOOLS.set(bool(p.get('requiere_tools')))
+    _tid = str(p.get('tarea_id') or '')
+    if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
+        if len(_VISTOS_G) > 200:
+            _VISTOS_G.pop(next(iter(_VISTOS_G)))
+        _VISTOS.set(_VISTOS_G.setdefault((sesion, _tid, str(p.get('nodo') or '')), {}))
+    else:
+        _VISTOS.set({})
     _DEADLINE.set(time.monotonic() + presupuesto)
     ctx = _contexto(sesion, pregunta) if pregunta else ''
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
