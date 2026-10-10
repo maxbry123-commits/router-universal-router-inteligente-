@@ -336,7 +336,7 @@ def test_18_dos_tareas_en_paralelo_no_se_pisan():
     ROL.clear()
 
     def juez(p, o):
-        return 'RESULTADO ' + p.split('(INPUT BLOCK VERBATIM):' + chr(10), 1)[1].split(chr(10), 1)[0]
+        return _full(p.split('(INPUT BLOCK VERBATIM):' + chr(10), 1)[1].split(chr(10), 1)[0])
     ROL['N7'] = juez
     res = {}
 
@@ -345,7 +345,7 @@ def test_18_dos_tareas_en_paralelo_no_se_pisan():
     ts = [threading.Thread(target=corre, args=('pa', 'analiza TAREA-A')), threading.Thread(target=corre, args=('pb', 'analiza TAREA-B'))]
     [t.start() for t in ts]
     [t.join() for t in ts]
-    assert res['pa'] == 'RESULTADO analiza TAREA-A' and res['pb'] == 'RESULTADO analiza TAREA-B'
+    assert res['pa'] == _full('analiza TAREA-A') and res['pb'] == _full('analiza TAREA-B')
 
 
 def _full(t):
@@ -359,9 +359,15 @@ def _plan_o_exec(p, o):
 def test_19_detector_de_mutacion():
     si = ['corrige el Router', 'modifica la ficha', 'agrega un campo', 'anade validacion', 'añade validación', 'mejora el parser',
           'cablea las politicas', 'haz los cambios', 'implementar el loop', 'integra el modulo', 'refactoriza plugin',
-          'elimina ese archivo', 'quita el limite', 'sube el archivo', 'sincroniza los repos', 'Edita ficha2', 'arreglalo ya']
+          'elimina ese archivo', 'quita el limite', 'sube el archivo', 'sincroniza los repos', 'Edita ficha2', 'arreglalo ya',
+          'construye el modulo', 'programa el parser', 'desarrolla la funcion', 'monta el plugin', 'conecta el harness', 'duplica la ficha',
+          'clona el repo', 'habilita tool_stream', 'desactiva el fallback', 'optimiza el contexto', 'ajusta los tiempos', 'repara el bug',
+          'soluciona el error', 'reescribe el prompt', 'amplia el limite', 'inserta una linea', 'sustituye el modelo',
+          'quiero que modifiques la ficha', 'necesito que corrijas el bug', 'hazlo ahora', 'haz que funcione', 'add a field',
+          'remove the limit', 'rename the file']
     no = ['analiza el router', 'explica como funciona el harness', 'revisa el mejor modelo', 'que cambios hizo claude',
-          'lista los archivos', 'documentos del proyecto', 'revisa el cableado', 'que modificacion hizo']
+          'lista los archivos', 'documentos del proyecto', 'revisa el cableado', 'que modificacion hizo',
+          'la ficha activa', 'como se ejecuta N4', 'el router genera salida', 'una copia del archivo', 'quien arma el dag', 'que hace el modulo']
     assert all(fq._muta(x) for x in si), [x for x in si if not fq._muta(x)]
     assert not any(fq._muta(x) for x in no), [x for x in no if fq._muta(x)]
 
@@ -382,10 +388,10 @@ def test_20_perfiles_de_contexto_y_pasos():
         pc._PERFIL.set('auditoria')
         n_aud = len(pc._recortar(grande))
         assert n_norm < n_code == n_aud == 11, (n_norm, n_code, n_aud)
-        for perfil, esperado in (('normal', 6), ('code', 10)):
+        for perfil, esperado in (('normal', 6), ('code', 14), ('auditoria', 20)):
             pc._PERFIL.set(perfil)
             h = Herr()
-            rs = [resp(calls=[('github_leer', {'repo': 'r', 'ruta': 'f%d' % i})]) for i in range(10)] + [resp('fin')]
+            rs = [resp(calls=[('github_leer', {'repo': 'r', 'ruta': 'f%d' % i})]) for i in range(25)] + [resp('fin')]
             bucle(rs, h)
             assert len(h.llamadas) == esperado, (perfil, len(h.llamadas))
     finally:
@@ -415,13 +421,12 @@ def test_22_validador_de_formato_final():
     _chat('s22b', 'corrige el Router')
     r2 = _chat('s22b', '/aprobar')
     assert r2['reply'].startswith('GAP FORMATO_SALIDA') and 'MICRO RESUMEN solo' in r2['resultado_parcial']
-    ROL['N7'] = lambda p, o: 'respuesta corta'
-    assert _chat('s22c', 'analiza el router')['reply'] == 'respuesta corta'  # solo analisis: sin validador
 
 
 def test_23_cinco_correcciones_con_tope_de_tiempo():
     ROL.clear()
     assert fq.FICHAS['ficha2-dag-codigo']['loop']['correcciones'] == 5 and fq.FICHAS['ficha3-frontend']['loop']['correcciones'] == 5
+    assert fq.FICHAS['ficha2-dag-codigo']['loop']['max_segundos'] == 600 and fq.FICHAS['ficha3-frontend']['loop']['max_segundos'] == 600
     c = {'n': 0}
 
     def n6(p, o):
@@ -449,6 +454,18 @@ def test_24_n6_n7_son_solo_lectura_tambien_en_la_metadata():
         for i in ('N6', 'N7'):
             assert not nd[i].get('write_paths') and not nd[i].get('locks'), (k, i)
         assert nd['N4'].get('write_paths') and nd['N4'].get('locks'), k
+
+
+def test_25_formato_obligatorio_tambien_en_auditoria_de_solo_lectura():
+    ROL.clear()
+    ROL['N7'] = lambda p, o: 'respuesta sin formato'
+    r = _chat('s25', 'analiza el router')
+    assert r['reply'].startswith('GAP FORMATO_SALIDA') and r['resultado_parcial'] == 'respuesta sin formato'
+    ROL['N7'] = lambda p, o: _full('auditoria') if 'REFORMATEA' in p else 'respuesta sin formato'
+    assert _chat('s25b', 'analiza el router')['reply'] == _full('auditoria')
+    for k in ('ficha2-dag-codigo', 'ficha3-frontend'):
+        rol7 = [n for n in fq.FICHAS[k]['nodos'] if n['id'] == 'N7'][0]['rol']
+        assert 'solo tareas de trabajo o code' not in rol7 and 'auditoria de solo lectura' in rol7
 
 
 if __name__ == '__main__':
