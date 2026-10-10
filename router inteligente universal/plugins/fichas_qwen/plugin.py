@@ -348,8 +348,18 @@ def _verificar(fid, ses, pv, pid, t0):
             r = 'GAP %s (%s): %s' % (vid, mod, x)
         _prog(pid, vid, 'gap' if r.startswith('GAP') else 'ok')
         return r
-    with _cf.ThreadPoolExecutor(max_workers=max(1, min(len(modelos), mp))) as ex:
-        res = list(ex.map(miembro, list(enumerate(modelos))))
+    ex = _cf.ThreadPoolExecutor(max_workers=max(1, min(len(modelos), mp)))
+    try:
+        fs_ = [ex.submit(miembro, a) for a in enumerate(modelos)]
+        t_ini = time.time()
+        res = []
+        for k, f in enumerate(fs_):
+            try:
+                res.append(f.result(timeout=max(1.0, 540 - (time.time() - t_ini))))
+            except _cf.TimeoutError:
+                res.append('GAP V%d (%s): TIMEOUT_NODO: no respondio en 540 s' % (k + 1, modelos[k]))
+    finally:
+        ex.shutdown(wait=False, cancel_futures=True)
     texto, resumen, cons = _panel_texto(modelos, res)
     _verif_cerrar(fid, ses)
     return {'model': ficha.get('ficha', fid), 'reply': texto, 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': texto}}],
@@ -530,11 +540,21 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             listos = [i for i in pend if all(d in out for d in nodos[i].get("depende_de", []))]
             if not listos:
                 break
-            with _cf.ThreadPoolExecutor(max_workers=max(1, min(len(listos), _mp))) as ex:
+            ex = _cf.ThreadPoolExecutor(max_workers=max(1, min(len(listos), _mp)))
+            try:
+                t_ini = time.time()
                 futs = {i: ex.submit(nodo, i) for i in listos}
                 for i, f in futs.items():
-                    out[i] = f.result()
+                    # tope duro por nodo: si el modelo no responde, el nodo queda en GAP y el flujo sigue (el hilo colgado no bloquea)
+                    lim = int(nodos[i].get('timeout_s') or _cfg(ficha)[0]) * 2 + 60
+                    try:
+                        out[i] = f.result(timeout=max(1.0, lim - (time.time() - t_ini)))
+                    except _cf.TimeoutError:
+                        out[i] = 'GAP %s: TIMEOUT_NODO: el nodo no respondio en %d s; se sigue sin su resultado' % (i, lim)
+                        _prog(pid, i, 'gap')
                     pend.remove(i)
+            finally:
+                ex.shutdown(wait=False, cancel_futures=True)
             if opts.get('plan_stop') and out.get('N4'):  # plan sin aprobar: se detiene aqui, antes de cualquier escritura
                 break
 
