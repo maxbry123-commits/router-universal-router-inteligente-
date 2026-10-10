@@ -36,6 +36,8 @@ function campana() {
   new MutationObserver(() => {
     const m = (aviso.textContent || "").trim(); if (!m) return;
     const t = Date.now(); if (m === ult && t - ultT < 1500) return; ult = m; ultT = t;
+    const err = /error|no se pudo|fall|sin conexi|denegad|negado|HTTP [45]|BRIDGE|caído/i.test(m); aviso.classList.toggle("err", err);
+    setTimeout(() => { if ((aviso.textContent || "").trim() === m) aviso.textContent = ""; }, err ? 9000 : 4500);  // toast: se limpia solo; el historial queda en la campana
     lista.push({ t, m: m.slice(0, 220) }); if (lista.length > 30) lista.shift(); escribir("riu_avisos_v1", lista);
     if (panel.hidden) { nuevos++; insignia(); b.classList.remove("suena"); void b.offsetWidth; b.classList.add("suena"); } else pintar();
   }).observe(aviso, { childList: true, characterData: true, subtree: true });
@@ -203,6 +205,17 @@ function actividad({ q }) {
   };
   new MutationObserver(() => { if (!sh.hidden) pintar(); }).observe(sh, { attributes: true, attributeFilter: ["hidden"] });
 }
+// buscador (skill): filtra las listas largas de archivos de las ventanas
+function buscadores({ q }) {
+  ["#va-lista", "#anc-lista"].forEach((sel) => {
+    const lista = q(sel); if (!lista || lista.dataset.busca) return; lista.dataset.busca = "1";
+    const i = crear("input", "riu-buscar"); i.type = "search"; i.placeholder = "Buscar archivo…"; i.setAttribute("aria-label", "Buscar archivo"); i.autocomplete = "off"; i.hidden = true;
+    lista.before(i);
+    const filtrar = () => { const t = i.value.trim().toLowerCase(); [...lista.children].forEach((r) => { r.style.display = t && !r.textContent.toLowerCase().includes(t) ? "none" : ""; }); };
+    i.addEventListener("input", filtrar);
+    new MutationObserver(() => { i.hidden = lista.children.length < 6; filtrar(); }).observe(lista, { childList: true });
+  });
+}
 // RUI 04 family-drawer (hojas con rebote, en CSS) + accesibilidad: dialogo, foco al abrir y de vuelta al boton
 function ventanasA11y({ root }) {
   let origen = null;
@@ -229,5 +242,5 @@ function entrada({ q }) {
 
 export function conectarRiu2(ctx) {
   [campana, navegacion, sinConexion].forEach((f) => seguro(f));
-  [cerrarChats, contadorAncla, reacciones, reproductor, colaMotor, actividad, ventanasA11y, entrada].forEach((f) => seguro(f, ctx));
+  [cerrarChats, contadorAncla, reacciones, reproductor, colaMotor, actividad, buscadores, ventanasA11y, entrada].forEach((f) => seguro(f, ctx));
 }

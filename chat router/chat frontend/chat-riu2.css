@@ -41,6 +41,8 @@
 .riu-dia.n2{background:color-mix(in srgb,var(--status-green) 50%,var(--panel))}
 .riu-dia.n3{background:color-mix(in srgb,var(--status-green) 75%,var(--panel))}
 .riu-dia.n4{background:var(--status-green);border-color:var(--status-green)}
+.riu-buscar{width:100%;min-height:38px;padding:0 14px;border-radius:999px;background:var(--panel);border:1px solid var(--border);margin:2px 0 6px}
+.riu-buscar[hidden]{display:none}
 /* RUI 04 family-drawer: las hojas suben con rebote */
 @keyframes riu-hoja{from{transform:translateY(46px);opacity:0}to{transform:none;opacity:1}}
 .sheet:not([hidden]) .va-caja{animation:riu-hoja .3s cubic-bezier(.32,1.1,.5,1)}
