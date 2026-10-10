@@ -207,7 +207,7 @@ def _sentinela():
     return mod  # proveedor -> indice de la ultima clave que respondio bien
 
 
-_PERFILES = {'normal': (22000, 3000, 6), 'code': (32000, 7000, 14), 'auditoria': (60000, 7000, 10)}  # (techo de contexto en chars, tope por resultado de herramienta, pasos maximos); 60K es techo, no objetivo
+_PERFILES = {'normal': (22000, 3000, 6), 'code': (32000, 7000, 14), 'auditoria': (60000, 7000, 20)}  # (techo de contexto en chars, tope por resultado de herramienta, pasos maximos); 60K es techo, no objetivo
 
 
 def _perfil():
