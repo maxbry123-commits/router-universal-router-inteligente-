@@ -1,7 +1,9 @@
 // chat-ventanas.js — comportamiento comun de las ventanas (hojas) del chat. Archivo propio.
 // 1) tocar fuera de la ventana la cierra  2) Escape la cierra  3) deslizar hacia abajo desde la cabecera la cierra (celular)
-// El sistema de anclaje queda como era: este archivo no lo toca.
-export function conectarVentanas({ root }) {
+// 4) ANCLAJE EN UNA SOLA VENTANA: la pastilla "ancla" y el boton ⚓ del input abren la MISMA ventana, que junta todo
+//    (enlaces, anclado ahora, instrucciones fijas, proyectos, handoffs, Mi handoff y archivos) con un titulo por seccion.
+//    No se borra nada: solo se mueve la ventana de handoffs dentro de la de anclaje y se oculta el campo de enlace repetido.
+export function conectarVentanas({ root, q }) {
   const hojas = () => [...root.querySelectorAll(".sheet")];
   hojas().forEach((s) => s.addEventListener("click", (e) => { if (e.target === s) s.hidden = true; }));
   if (window.__riuEsc) document.removeEventListener("keydown", window.__riuEsc);
@@ -22,5 +24,35 @@ export function conectarVentanas({ root }) {
       if (y0 === null) return; const d = e.changedTouches[0].clientY - y0;
       caja.style.transform = ""; y0 = null; if (d > 90) s.hidden = true;
     });
+  });
+  if (q) unirAnclaje(q);
+}
+function unirAnclaje(q) {
+  const va = q("#ventana-ancla .va-caja"), sh = q("#sh-ancla .va-caja"), pill = q("#ancla"), btn = q("#btn-ancla");
+  if (!va || !sh || !pill || !btn || va.dataset.unido) return;
+  va.dataset.unido = "1";
+  const titulo = (txt) => { const t = document.createElement("div"); t.className = "anc-sec"; t.textContent = txt; return t; };
+  const antesDe = (el, txt) => { if (el && el.parentNode === va) va.insertBefore(titulo(txt), el); else if (el) el.before(titulo(txt)); };
+  const fila = (sel) => { const e = q(sel); return e ? (e.closest("#ventana-ancla .va-caja > *") || e) : null; };
+  antesDe(fila("#anc-pegar"), "Enlaces y raíces");
+  antesDe(fila("#anc-resumen"), "Anclado ahora");
+  antesDe(fila("#anc-instr"), "Instrucciones fijas");
+  antesDe(fila("#anc-proy-nombre"), "Proyectos de este chat");
+  const archivos = fila("#anc-subir");
+  const tHand = titulo("Handoffs del proyecto y Mi handoff");
+  const bloque = [...sh.children].filter((n) => !n.classList.contains("va-head"));
+  if (archivos) { va.insertBefore(tHand, archivos); bloque.forEach((n) => va.insertBefore(n, archivos)); antesDe(archivos, "Archivos"); }
+  else { va.append(tHand, ...bloque); }
+  const enl = q("#ancla-enlace"); if (enl && enl.closest(".row")) enl.closest(".row").hidden = true;  // repetido: los enlaces se pegan arriba
+  const tit = va.querySelector(".va-head strong"); if (tit) tit.textContent = "Anclaje";
+  let ocupado = false;
+  const mostrar = () => { q("#sh-ancla").hidden = true; q("#ventana-ancla").hidden = false; };
+  pill.addEventListener("click", () => { if (ocupado) return; ocupado = true; btn.click(); ocupado = false; mostrar(); });  // carga tambien archivos
+  btn.addEventListener("click", () => {
+    if (ocupado || q("#ventana-ancla").hidden) return;
+    ocupado = true; pill.click(); ocupado = false; mostrar();  // carga tambien handoffs y Mi handoff
+  });
+  va.querySelectorAll("button.mini").forEach((b) => {
+    if (b.textContent.trim() === "Handoffs…") b.addEventListener("click", () => setTimeout(() => tHand.scrollIntoView({ behavior: "smooth", block: "start" }), 60));
   });
 }
