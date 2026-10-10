@@ -17,6 +17,7 @@ _SOLO_LECTURA = ContextVar("riu_solo_lectura", default=False)
 _POL = ContextVar("riu_politica", default=None)  # politicas_modelo del modelo que esta respondiendo
 _REQ_TOOLS = ContextVar("riu_requiere_tools", default=False)  # tarea que exige herramientas: sin tools = GAP
 _VISTOS = ContextVar("riu_vistos", default=None)  # escrituras ya hechas de esta tarea y nodo (no se repiten)
+_PERFIL = ContextVar("riu_perfil", default="normal")  # normal / code / auditoria
 import time
 import urllib.error
 import urllib.parse
@@ -206,14 +207,24 @@ def _sentinela():
     return mod  # proveedor -> indice de la ultima clave que respondio bien
 
 
-def _recortar(mensajes, limite=20000):
+_PERFILES = {'normal': (22000, 3000, 6), 'code': (32000, 7000, 14), 'auditoria': (60000, 7000, 10)}  # (techo de contexto en chars, tope por resultado de herramienta, pasos maximos); 60K es techo, no objetivo
+
+
+def _perfil():
+    return _PERFILES.get(_PERFIL.get() or 'normal', _PERFILES['normal'])
+
+
+def _recortar(mensajes, limite=None):
     # Mantiene el envio por debajo del tope de la API: acorta salidas de
     # herramientas y luego suelta los turnos mas viejos (sin romper pares
     # assistant(tool_calls) -> tool).
+    if limite is None:
+        limite = _perfil()[0]
+    tmax = _perfil()[1]
     ms = [dict(m) for m in mensajes]
     for m in ms:
-        if m.get('role') == 'tool' and len(m.get('content') or '') > 1200:
-            m['content'] = m['content'][:1200] + ' ...[recortado]'
+        if m.get('role') == 'tool' and len(m.get('content') or '') > tmax:
+            m['content'] = m['content'][:tmax] + ' ...[recortado]'
     def tam():
         return sum(len(str(m.get('content') or '')) + len(json.dumps(m.get('tool_calls') or '')) for m in ms)
     while len(ms) > 3 and tam() > limite:
@@ -526,9 +537,9 @@ def _bucle(llamar, mensajes):
             ok_ = not res.startswith(_FALLO)
             ya_ = res.startswith(('OPERACION_YA_COMPLETADA', 'REPETICION_TOOL_DETECTADA'))
             usadas.append({'herramienta': nom, 'ok': ok_, 'mutacion_real': bool(mut and ok_ and not ya_)})
-            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:3000]})
+            mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
         pasos += 1
-        if pasos >= MAX_PASOS or time.monotonic() >= fin:
+        if pasos >= _perfil()[2] or time.monotonic() >= fin:
             con_tools = False  # tiempo o pasos agotados: pedir la respuesta final sin herramientas
 
 
@@ -966,6 +977,7 @@ def _chat(p):
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
     _REQ_TOOLS.set(bool(p.get('requiere_tools')))
+    _PERFIL.set(str(p.get('perfil') or 'normal'))
     _tid = str(p.get('tarea_id') or '')
     if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
         if len(_VISTOS_G) > 200:
