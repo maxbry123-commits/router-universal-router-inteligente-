@@ -441,6 +441,8 @@ export async function mount(root, { api, tell }) {
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Pensando…", "item message pending");
     c.hist.append(pending);
+    const alProgreso = (e) => { if (!pending.isConnected) { window.removeEventListener('riu-progreso', alProgreso); return; } pending.textContent = e.detail; };
+    window.addEventListener('riu-progreso', alProgreso);
     c.hist.scrollTop = c.hist.scrollHeight;
     const agent = q("#agent").value;
     const provider = q("#provider").value;

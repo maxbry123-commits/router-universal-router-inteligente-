@@ -286,3 +286,19 @@ Si aparece cualquier necesidad de modificar la arquitectura general del Router:
 DETENTE y pregúntame antes.
 
 El punto más importante es que no vuelva a “arreglar” la latencia cambiando el DAG o metiendo otro sistema: primero debe hacer que el motor obedezca las fichas y restaurar N6 → N7.
+
+## INPUT BLOCK VERBATIM 2026-10-09 (2) - Ejecutar correccion fichas Qwen + test de velocidad
+
+Yo te di unas instrucciones tu solo ejecuta las instrucciones sin sabotear el proyecto
+
+Editas quirúrgicamente las fichas y haces un test de prueba de velocidad
+
+Usas vercel solo como tunel puente de paso a Github
+
+[claves HF y GitHub omitidas a proposito: no se guardan en el repo]
+
+Es solo editar quirúrgicamente una edición rápida
+
+Inicia
+
+Estado: edicion en rama fichas-qwen-correccion-0910; main sin tocar hasta que pase el test.

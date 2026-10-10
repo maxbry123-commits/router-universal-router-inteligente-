@@ -227,3 +227,19 @@ Nuevo mapa: `router inteligente universal/README.md`. Indice cableado, orden de 
 ## INPUT BLOCK VERBATIM 2026-10-09 — Correccion quirurgica fichas Qwen (sha eba7b80a686d59c5)
 
 Estado: EN CURSO. Texto verbatim completo en Claude notas/claude notas 1.md (mismo sha).
+
+## INPUT BLOCK VERBATIM 2026-10-09 (2) - Ejecutar correccion fichas Qwen + test de velocidad
+
+Yo te di unas instrucciones tu solo ejecuta las instrucciones sin sabotear el proyecto
+
+Editas quirúrgicamente las fichas y haces un test de prueba de velocidad
+
+Usas vercel solo como tunel puente de paso a Github
+
+[claves HF y GitHub omitidas a proposito: no se guardan en el repo]
+
+Es solo editar quirúrgicamente una edición rápida
+
+Inicia
+
+Estado: edicion en rama fichas-qwen-correccion-0910; main sin tocar hasta que pase el test.

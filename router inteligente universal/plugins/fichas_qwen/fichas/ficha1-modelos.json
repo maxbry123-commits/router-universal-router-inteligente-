@@ -153,13 +153,9 @@
       "voz-en-vivo",
       "voz-a-texto"
     ],
-    "sin_instrucciones": "no se ejecuta ni gasta API",
-    "revisor_previo": [
-      "N6"
-    ],
-    "verificador_final": "N7"
+    "sin_instrucciones": "no se ejecuta ni gasta API"
   },
-  "salida_final": "N7",
+  "salida_final": "N4",
   "nodos": [
     {
       "id": "N4",
@@ -180,7 +176,7 @@
       "modelo_elegible_de": "selector (solo modelos de texto)"
     }
   ],
-  "flujo": "modelo elegido EJECUTA (N4) -> Verificacion 1 DeepSeek V4 Flash (N6) -> Verificacion 2 Qwen 3.8 Flash (N7) -> SALIDA. Sin goals ni Ask Council. Solo modelos de texto",
+  "flujo": "modelo elegido → N4 EJECUTA → SALIDA",
   "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",
   "mejoras": "plantilla/MEJORAS_FICHAS.yaml",
   "api_yml": "modelos-14/harness-modelos-14.cordis.yml"

@@ -78,7 +78,7 @@ async function puenteRouter(base, body, qs, headers) {
           const poll = await fetch(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }) });
           const envelope = await poll.json().catch(() => ({}));
           if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
-          p = envelope.result || {};
+          p = envelope.result || {}; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: p.progreso })); } catch (e) {} }
         } catch (e) { continue; }  // red/job en cambio: seguir esperando
       }
     }

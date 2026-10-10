@@ -27,6 +27,7 @@ _POOL = _cf.ThreadPoolExecutor(max_workers=8, thread_name_prefix="fichas_qwen")
 _LOCK = threading.Lock()
 _PROCESOS: dict[str, tuple[Any, float]] = {}
 _MODELOS: dict[str, dict[str, Any]] = {}
+_PROGRESO: dict[str, dict[str, str]] = {}
 
 
 def _abrir_sello(blob: bytes) -> str:
@@ -54,31 +55,42 @@ def _modelos() -> dict[str, dict[str, Any]]:
     return _MODELOS
 
 
-def _llamar(modelo: str, prompt: str, max_tokens: int = 8000) -> str:
+def _cfg(ficha: dict[str, Any]) -> tuple[int, int, int, int]:
+    # lee de la ficha activa: timeout API (s), intentos, tokens de salida, limite de chars por llamada
+    d = ficha.get('dsl') or {}
+    try:
+        return (int(d['timeouts']['api_seconds']), int(d['retry']['max_attempts']),
+                int(d['tokens']['max_output_tokens']), int(ficha['motor']['limite_llamada_chars']))
+    except (KeyError, TypeError, ValueError) as x:
+        raise RuntimeError('FICHA_SIN_CONFIG:' + repr(x))
+
+
+def _llamar(modelo: str, prompt: str, ficha: dict[str, Any]) -> str:
     m = _modelos().get(modelo)
     if not m:
-        raise RuntimeError("MODELO_NO_ESTA_EN_EL_SELLO:" + str(modelo))
-    ultimo = ""
-    fin = time.time() + 1200  # hasta 20 min por modelo; bucle de reintento sobre la tarea pendiente
-    while time.time() < fin:  # mismo modelo siempre; nunca otro
-        for clave in m["claves"]:
-            if time.time() >= fin:
-                break
-            cuerpo = json.dumps({"model": m["modelo"], "messages": [{"role": "user", "content": prompt}],
-                                 "max_tokens": max_tokens}).encode()
-            req = urllib.request.Request(m["url"] + "/chat/completions", data=cuerpo, method="POST",
-                                         headers={"Authorization": "Bearer " + clave, "Content-Type": "application/json"})
-            try:
-                with urllib.request.urlopen(req, timeout=max(30, fin - time.time())) as r:
-                    d = json.loads(r.read().decode("utf-8", "replace"))
-                t = str(((d.get("choices") or [{}])[0].get("message") or {}).get("content") or "").strip()
-                if t:
-                    return t
-                ultimo = "respuesta vacia"
-            except Exception as x:  # noqa: BLE001
-                ultimo = str(x)[:200]
-        time.sleep(5)
-    raise RuntimeError("MODELO_SIN_RESPUESTA:%s:%s" % (modelo, ultimo))
+        raise RuntimeError('MODELO_NO_ESTA_EN_EL_SELLO:' + str(modelo))
+    if not m['claves']:
+        raise RuntimeError('MODELO_SIN_CLAVE:' + str(modelo))
+    api_s, intentos, max_tokens, limite = _cfg(ficha)
+    if len(prompt) > limite:
+        raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
+    ultimo = ''
+    for n in range(intentos):  # mismo modelo siempre; nunca otro; sin bucle de espera
+        clave = m['claves'][n % len(m['claves'])]
+        cuerpo = json.dumps({'model': m['modelo'], 'messages': [{'role': 'user', 'content': prompt}],
+                             'max_tokens': max_tokens}).encode()
+        req = urllib.request.Request(m['url'] + '/chat/completions', data=cuerpo, method='POST',
+                                     headers={'Authorization': 'Bearer ' + clave, 'Content-Type': 'application/json'})
+        try:
+            with urllib.request.urlopen(req, timeout=api_s) as r:
+                d = json.loads(r.read().decode('utf-8', 'replace'))
+            t = str(((d.get('choices') or [{}])[0].get('message') or {}).get('content') or '').strip()
+            if t:
+                return t
+            ultimo = 'respuesta vacia'
+        except Exception as x:  # noqa: BLE001
+            ultimo = str(x)[:200]
+    raise RuntimeError('MODELO_SIN_RESPUESTA:%s:%s' % (modelo, ultimo))
 
 
 def _elegido(ficha: dict[str, Any], pedido: str) -> str:
@@ -90,7 +102,17 @@ def _elegido(ficha: dict[str, Any], pedido: str) -> str:
     return sel[0]["id"] if sel else pedido
 
 
-def _correr(ficha: dict[str, Any], mensaje: str, modelo: str) -> tuple[str, list[dict[str, Any]]]:
+def _prog(pid: str, nodo: str, estado: str) -> None:
+    if pid:
+        _PROGRESO.setdefault(pid, {})[nodo] = estado
+
+
+def _texto_prog(pid: str) -> str:
+    sim = {'ok': '✓', 'gap': '✗'}
+    return ' | '.join('%s %s' % (n, sim.get(e, 'trabajando...')) for n, e in list(_PROGRESO.get(pid, {}).items()))
+
+
+def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "") -> tuple[str, list[dict[str, Any]]]:
     nodos = {n["id"]: n for n in ficha.get("nodos", [])}
     orden = [n["id"] for n in ficha.get("nodos", [])]
     elegido = _elegido(ficha, modelo)
@@ -98,15 +120,21 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str) -> tuple[str, list
 
     def nodo(i: str) -> str:
         n = nodos[i]
-        if n.get("tipo") == "goals":
-            return "\n".join(g.get("texto", "") for g in n.get("goals", []) if g.get("texto") and g.get("texto") != "PONER AQUI")
-        ctx = "\n\n".join("[%s]\n%s" % (d, out[d]) for d in n.get("depende_de", []) if out.get(d))
-        prompt = "%s\n\nTAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):\n%s\n\n%s" % (n.get("rol", ""), mensaje, ctx)
-        mod = elegido if n.get("modelo") == "selector" else n.get("modelo")
+        if n.get('tipo') == 'goals':
+            r = chr(10).join(g.get('texto', '') for g in n.get('goals', []) if g.get('texto') and g.get('texto') != 'PONER AQUI')
+            _prog(pid, i, 'ok')
+            return r
+        _prog(pid, i, 'trabajando')
+        nl = chr(10)
+        ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
+        prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
+        mod = elegido if n.get('modelo') == 'selector' else n.get('modelo')
         try:
-            return _llamar(mod, prompt)
+            r = _llamar(mod, prompt, ficha)
         except Exception as x:  # noqa: BLE001
-            return "GAP %s (%s): %s" % (i, mod, x)
+            r = 'GAP %s (%s): %s' % (i, mod, x)
+        _prog(pid, i, 'gap' if r.startswith('GAP') else 'ok')
+        return r
 
     pend = list(orden)
     while pend:
@@ -137,7 +165,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if not mensaje:
         mensaje = next((str(m.get("content", "")) for m in reversed(p.get("messages") or []) if m.get("role") == "user"), "")
     t0 = time.time()
-    salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""))
+    salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""))
     return {"model": FICHAS[fid].get("ficha", fid), "reply": salida,
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
             "traza": traza, "ms": int((time.time() - t0) * 1000)}
@@ -157,16 +185,20 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             for k, (fut, t) in list(_PROCESOS.items()):
                 if time.time() - t > 900 and fut.done():
                     del _PROCESOS[k]
-            _PROCESOS[clave] = (_POOL.submit(_chat, dict(p)), time.time())
+                    _PROGRESO.pop(k, None)
+            _PROCESOS[clave] = (_POOL.submit(_chat, dict(p, _pid=clave)), time.time())
         return {"estado": "procesando", "proceso_id": clave}
     if action == "resultado":
         item = _PROCESOS.get(str(p.get("proceso_id") or ""))
         if not item:
             return {"error": "PROCESO_NO_EXISTE"}
         if not item[0].done():
-            return {"estado": "procesando", "proceso_id": p.get("proceso_id")}
+            return {"estado": "procesando", "proceso_id": p.get("proceso_id"), "progreso": _texto_prog(str(p.get("proceso_id") or ""))}
         try:
-            return item[0].result()
+            r = item[0].result()
+            if isinstance(r, dict) and "reply" in r:
+                r.setdefault("estado", "completado")
+            return r
         except Exception as x:  # noqa: BLE001
             return {"error": "CHAT_FAILED", "detalle": type(x).__name__}
     return {"error": "ACCION_DESCONOCIDA"}
