@@ -36,7 +36,8 @@ function remoto(headers) {
 const L4 = { job: null, url: null };
 async function puenteRouter(base, body, qs, headers) {
   await liveRouter();
-  base = CFG.harnessUrl;
+  const baseDe = () => (body && body.plugin ? BASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
+  base = baseDe();
   // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
   const q = new URLSearchParams((qs || '').replace(/^[?]/, ''));
   const accion = q.get('accion') || 'chat';
@@ -58,8 +59,8 @@ async function puenteRouter(base, body, qs, headers) {
       // job en cambio de direccion: releer LIVE_URL y reintentar una vez
       liveCheckedAt = 0;
       await liveRouter();
-      if (CFG.harnessUrl === base) throw e;
-      base = CFG.harnessUrl;
+      if (baseDe() === base) throw e;
+      base = baseDe();
       r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) });
     }
     const env = await r.json().catch(() => ({}));
