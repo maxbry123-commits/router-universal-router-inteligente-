@@ -54,7 +54,7 @@
   {"id": "N2", "modelo": "ficha-glm52", "rol": "analiza la arquitectura y propone solucion", "depende_de": ["N0"], "parallel_safe": true, "read_paths": ["tarea/"], "write_paths": ["salida/N2/"], "locks": []},
   {"id": "N3", "modelo": "ficha-qwen37max", "rol": "analiza la arquitectura y propone solucion", "depende_de": ["N0"], "parallel_safe": true, "read_paths": ["tarea/"], "write_paths": ["salida/N3/"], "locks": []},
   {
-   "id": "N4", "modelo": "ficha-qwen38max",
+   "id": "N4", "timeout_s": 240, "max_output_tokens": 6000, "modelo": "ficha-qwen38max",
    "rol": "analiza los goals de N0 y las propuestas de N1, N2 y N3 y EJECUTA directamente la tarea de programacion de code (unico ejecutor). Una vez aprobada la ejecucion, continua hasta completarla: no emite salida intermedia, no pide confirmacion adicional y no aplaza el trabajo",
    "depende_de": ["N0", "N1", "N2", "N3"], "parallel_safe": true,
    "read_paths": ["tarea/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true
@@ -71,8 +71,8 @@
    ],
    "depende_de": ["N4"]
   },
-  {"id": "N6", "modelo": "ficha-dsv4flash", "rol": "REVISA y refactoriza el resultado de N4 segun los goals de salida de N5. Ademas verifica una por una las INSTRUCCIONES FIJAS del mensaje (si hay), corrige lo que no las cumpla e indica cuales cumplio", "depende_de": ["N4", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true},
-  {"id": "N7", "modelo": "ficha-qwen38flash", "rol": "REVISA de nuevo el resultado de N6 segun N5 y entrega la SALIDA final. Ademas verifica una por una las INSTRUCCIONES FIJAS del mensaje (si hay), corrige lo que no las cumpla e indica cuales cumplio", "depende_de": ["N6", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true}
+  {"id": "N6", "timeout_s": 120, "modelo": "ficha-dsv4flash", "rol": "REVISA y refactoriza el resultado de N4 segun los goals de salida de N5. Ademas verifica una por una las INSTRUCCIONES FIJAS del mensaje (si hay), corrige lo que no las cumpla e indica cuales cumplio", "depende_de": ["N4", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true},
+  {"id": "N7", "timeout_s": 120, "modelo": "ficha-qwen38flash", "rol": "REVISA de nuevo el resultado de N6 segun N5 y entrega la SALIDA final. Ademas verifica una por una las INSTRUCCIONES FIJAS del mensaje (si hay), corrige lo que no las cumpla e indica cuales cumplio FORMATO DE SALIDA OBLIGATORIO (solo tareas de trabajo o code): MICRO RESUMEN (2 a 4 lineas) | MICRO FLUJO (INPUT > PLAN > HERRAMIENTAS > EJECUCION > PRUEBA > RESULTADO) | RESULTADO (que cambio, que se encontro, donde quedo) | CHECKLIST (una linea por instruccion: cumplida, o pendiente con el motivo) | EVIDENCIA (archivo, prueba, commit o resultado real; si no hubo herramienta, decirlo). Sin parrafos largos ni trazas internas.", "depende_de": ["N6", "N5"], "parallel_safe": true, "read_paths": ["tarea/", "codigo/"], "write_paths": ["codigo/"], "locks": ["codigo/"], "requiere_evidencia": true}
  ],
  "flujo": "N0 goals(0 API) -> [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max] -> Qwen 3.8 Max EJECUTA -> N5 goals salida(0 API) -> DeepSeek V4 Flash REVISA -> Qwen 3.8 Flash REVISA -> SALIDA",
  "plantilla": "plantilla/PLANTILLA_XRAY_V2.yaml",

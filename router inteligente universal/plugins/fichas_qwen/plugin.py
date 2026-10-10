@@ -106,6 +106,65 @@ def _elegido(ficha: dict[str, Any], pedido: str) -> str:
     return None if sel else pedido  # modelo que el selector no reconoce: nunca cambiar de modelo en silencio
 
 
+_QW = {'ficha-qwen38max': 'qw-qwen-3-8-max', 'ficha-qwen38flash': 'qw-qwen-3-8-flash', 'ficha-qwen37max': 'qw-qwen-3-7-max',
+       'ficha-qwen37plus': 'qw-qwen-3-7-plus', 'ficha-qwen36flash': 'qw-qwen-3-6-flash', 'ficha-dsv4pro': 'qw-deepseek-v4-pro',
+       'ficha-dsv4pro0813': 'qw-deepseek-v4-pro-0813', 'ficha-dsv4flash': 'qw-deepseek-v4-flash', 'ficha-glm52': 'qw-glm-5-2'}
+_ESCRIBE = ('github_escribir', 'hf_escribir', 'hf_almacenamiento')
+_VERBOS = ('modifica', 'edita', 'corrige', 'cambia', 'crea ', 'escribe', 'borra', 'elimina', 'sube', 'commit', 'push', 'despliega',
+           'reinicia', 'restaura', 'aplica', 'implementa', 'arregla', 'actualiza', 'reemplaza', 'mueve', 'renombra')
+
+
+def _muta(texto: str) -> bool:
+    t = texto.lower()
+    return any(v in t for v in _VERBOS)
+
+
+def _pc():
+    # el Harness original (puente_chat): se reutiliza el modulo que el Router ya cargo
+    import importlib.util
+    import sys
+    for m in list(sys.modules.values()):
+        try:
+            f = str(getattr(m, '__file__', '') or '').replace(chr(92), '/')
+            if f.endswith('puente_chat/plugin.py') and hasattr(m, '_chat'):
+                return m
+        except Exception:  # noqa: BLE001
+            continue
+    spec = importlib.util.spec_from_file_location('puente_chat_desde_fichas', DIR.parent / 'puente_chat' / 'plugin.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _llamar_harness(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
+    # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
+    qw = _QW.get(modelo)
+    pc = _pc()
+    if not qw or qw not in pc.FICHAS:
+        raise RuntimeError('FICHA_QW_NO_EXISTE:' + str(modelo))
+    api_s, _, max_tok, limite = _cfg(ficha)
+    api_s = int(n.get('timeout_s') or api_s)
+    max_tok = int(n.get('max_output_tokens') or max_tok)
+    if len(prompt) > limite:
+        raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
+    escribe = n.get('id') == 'N4' and bool(opts.get('aprobado'))
+    r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
+                  'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe})
+    if r.get('error'):
+        det = str(r.get('detalle') or r.get('mensaje') or '')[:160]
+        if 'tool' in det.lower() and '400' in det:
+            raise RuntimeError('MODELO_SIN_TOOLS:' + qw)
+        raise RuntimeError('HARNESS_' + str(r['error']) + (':' + det if det else ''))
+    t = str(((r.get('choices') or [{}])[0].get('message') or {}).get('content') or '').strip()
+    if not t:
+        raise RuntimeError('RESPUESTA_VACIA:' + qw)
+    usadas = [x for x in (r.get('herramientas') or []) if isinstance(x, dict)]
+    opts.setdefault('herr', {})[str(n.get('id'))] = [{'herramienta': x.get('herramienta'), 'ok': bool(x.get('ok'))} for x in usadas]
+    if escribe and opts.get('muta') and not any(x.get('ok') and x.get('herramienta') in _ESCRIBE for x in usadas):
+        raise RuntimeError('EJECUCION_SIN_EVIDENCIA: la tarea pedia cambios y ninguna herramienta de escritura termino bien')
+    return t
+
+
 def _prog(pid: str, nodo: str, estado: str) -> None:
     if pid:
         _PROGRESO.setdefault(pid, {})[nodo] = estado
@@ -116,12 +175,13 @@ def _texto_prog(pid: str) -> str:
     return ' | '.join('%s %s' % (n, sim.get(e, 'trabajando...')) for n, e in list(_PROGRESO.get(pid, {}).items()))
 
 
-def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "") -> tuple[str, list[dict[str, Any]]]:
+def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opts: dict[str, Any] | None = None) -> tuple[str, list[dict[str, Any]]]:
     nodos = {n["id"]: n for n in ficha.get("nodos", [])}
     orden = [n["id"] for n in ficha.get("nodos", [])]
     elegido = _elegido(ficha, modelo)
     if elegido is None:
         return 'GAP MODELO_SELECTOR_INVALIDO: ' + repr(modelo) + ' no esta en el selector', []
+    opts = {} if opts is None else opts
     out: dict[str, str] = {}
 
     def nodo(i: str) -> str:
@@ -134,9 +194,11 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "") -> 
         nl = chr(10)
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
         prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
+        if n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado'):
+            prompt += nl * 2 + 'AVISO DEL SISTEMA: falta la aprobacion del Director. NO ejecutes cambios ni uses herramientas de escritura. Entrega solo el PLAN (pasos, archivos, riesgos) y termina con la linea ESPERANDO_APROBACION. El Director aprueba escribiendo /aprobar al inicio de su mensaje.'
         mod = elegido if n.get('modelo') == 'selector' else n.get('modelo')
         try:
-            r = _llamar(mod, prompt, ficha)
+            r = _llamar_harness(mod, prompt, ficha, n, opts)
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod, x)
         _prog(pid, i, 'gap' if r.startswith('GAP') else 'ok')
@@ -159,7 +221,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "") -> 
         final = next((out[i] for i in reversed(orden) if out.get(i) and not out[i].startswith("GAP")
                       and nodos[i].get("tipo") != "goals"), final)
     traza = [{"nodo": i, "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
-              "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP")} for i in orden if i in out]
+              "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
 
 
@@ -171,10 +233,14 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if not mensaje:
         mensaje = next((str(m.get("content", "")) for m in reversed(p.get("messages") or []) if m.get("role") == "user"), "")
     t0 = time.time()
-    salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""))
+    ap = mensaje.lstrip().lower().startswith('/aprobar')
+    if ap:
+        mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
+    opts = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': str(p.get("sesion") or 'fichas')[:60]}
+    salida, traza = _correr(FICHAS[fid], mensaje, str(p.get("modelo") or ""), str(p.get("_pid") or ""), opts)
     return {"model": FICHAS[fid].get("ficha", fid), "reply": salida,
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
-            "traza": traza, "ms": int((time.time() - t0) * 1000)}
+            "traza": traza, "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}
 
 
 def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:

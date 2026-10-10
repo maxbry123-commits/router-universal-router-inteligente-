@@ -13,6 +13,7 @@ import json
 import re
 from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
+_SOLO_LECTURA = ContextVar("riu_solo_lectura", default=False)
 import time
 import urllib.error
 import urllib.parse
@@ -321,6 +322,17 @@ def _limpiar_texto(c):
     return c.strip()
 
 
+def _bloqueo(nom, args):
+    # pasos de solo lectura (Ask consil): se rechazan las herramientas que escriben
+    if not _SOLO_LECTURA.get():
+        return ''
+    a = args if isinstance(args, dict) else {}
+    met = str(a.get('metodo') or a.get('method') or 'GET').upper()
+    if nom in ('github_escribir', 'hf_escribir', 'hf_almacenamiento') or (nom in ('github_api', 'hf_api') and met != 'GET'):
+        return 'ERROR: HERRAMIENTA_BLOQUEADA, este paso es de solo lectura'
+    return ''
+
+
 def _bucle(llamar, mensajes):
     h = _herr()
     usadas = []
@@ -373,7 +385,7 @@ def _bucle(llamar, mensajes):
             elif nom in rotas:
                 res = 'ERROR: herramienta no disponible en este momento, no la uses mas y responde con lo que tengas'
             else:
-                res = h.ejecutar(nom, args)
+                res = _bloqueo(nom, args) or h.ejecutar(nom, args)
                 vistos[sello] = res
                 if 'no hay token' in res or 'herramienta desconocida' in res:
                     rotas.add(nom)
@@ -815,6 +827,7 @@ def _chat(p):
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
+    _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
     _DEADLINE.set(time.monotonic() + presupuesto)
     ctx = _contexto(sesion, pregunta) if pregunta else ''
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
@@ -866,7 +879,7 @@ def _chat(p):
 
         def llamar(ms, tl):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
-        presupuesto = min(250, max(TOPE_TOTAL_S, int(tope * 2.4)))
+        presupuesto = int(p.get('presupuesto_s') or 0) or min(250, max(TOPE_TOTAL_S, int(tope * 2.4)))
         _DEADLINE.set(time.monotonic() + presupuesto)
     else:
         url = str(p['respaldo_url'])
@@ -893,6 +906,8 @@ def _chat(p):
         prov0 = FICHAS[model][1]
         alternos = [m for m in FICHAS if m != model and FICHAS[m][1] != prov0] + [m for m in FICHAS if m != model and FICHAS[m][1] == prov0]
         alternos = [m for m in alternos if FICHAS[m][1] != 'qwencloud']  # los de Qwen solo se usan si se eligen
+        if prov0 == 'qwencloud':
+            alternos = []  # Qwencloud elegido: reintenta el mismo modelo o GAP, nunca otro proveedor
         for alt in alternos[:2]:
             _, prov_a, modelo_a, tope_a = FICHAS[alt]
 

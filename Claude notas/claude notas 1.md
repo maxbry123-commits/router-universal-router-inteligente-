@@ -622,3 +622,65 @@ Después DETENTE.
 
 HECHO: puntos 1, 2, 3, 4 (por el loop existente de puente_chat), 5 (fichas_qwen intacto), 10. Sin reinicio.
 GAP-1: reinicio del Router: se autoriza aparte. GAP-2: tests 1-3 tras el reinicio. GAP-4: cola de concurrencia (MAX_INFLIGHT en PluginHost): no autorizado, es Router core.
+
+## INPUT BLOCK VERBATIM 2026-10-10 (5) - Cambiar antes de reiniciar (Ask consil)
+
+Antes de reiniciar
+
+Cambia esto
+
+[adjunto del Director: revision con 13 puntos; lo autorizado es la lista Lo que si autorizaria antes de reiniciar, copiada abajo]
+
+Lo que sí autorizaría antes de reiniciar
+
+1. NO tocar otra vez la ruta Team Qwen normal: ya volvió a puente_chat.
+
+2. Ficha 2 y Ficha 3 conservan su DAG actual.
+
+3. Cambiar solamente la ejecución de sus nodos no-goals:
+   ficha-* → mapa determinista → qw-*
+   → puente_chat/Harness existente
+   → herramientas existentes
+   → mismo HTTP
+   → mismo Qwencloud.
+
+4. NO copiar herramientas dentro de fichas_qwen.
+
+5. N1/N2/N3:
+   herramientas de lectura disponibles.
+
+6. N4:
+   herramientas reales de escritura/ejecución.
+   Si la tarea pide modificar code y no hubo tool real:
+   GAP EJECUCION_SIN_EVIDENCIA.
+   Nunca "✔" solo porque devolvió texto.
+
+7. N6/N7:
+   poder releer archivos/pruebas reales para verificar lo que hizo N4.
+
+8. Si un endpoint Qwen devuelve 400 porque no admite tools:
+   en tarea de ejecución NO caer silenciosamente a modo texto.
+   Debe devolver GAP MODELO_SIN_TOOLS.
+
+9. Qwencloud seleccionado:
+   NO pasar automáticamente a NVIDIA/Groq si falla.
+   Reintentar el mismo modelo o GAP.
+
+10. Añadir los dos perfiles:
+    TRABAJO y CODE/AUDITORIA.
+
+11. Añadir PLAN → APROBACIÓN → EJECUCIÓN para operaciones mutables.
+
+12. Añadir el formato:
+    MICRO RESUMEN
+    MICRO FLUJO HORIZONTAL
+    RESULTADO
+    CHECKLIST ✅
+    EVIDENCIA
+
+13. Eliminar el reenvío automático de toda la tarea al cumplir 560 s.
+    Mantener el mismo proceso/checkpoint.
+
+
+HECHO: 3, 4, 5, 6, 7, 8, 9, 11 (aprobacion real: el Director escribe /aprobar al inicio del mensaje), 12 (formato en N7), 13. Perfiles: N1-N3 90 s, N4 240 s y 6000 tokens, N6/N7 120 s.
+GAP-5 (punto 10): contexto 60K y salidas de herramienta por bloques: _recortar sigue en 20000 y 1200 caracteres, y los modos de la pantalla siguen limitando tokens. GAP-6: reloj global de 10 min con checkpoint. GAP-7: sin reinicio ni pruebas todavia; MAX_PARALELO no se respeta.

@@ -82,10 +82,10 @@ async function puenteRouter(base, body, qs, headers) {
         } catch (e) { continue; }  // red/job en cambio: seguir esperando
       }
     }
-    if (cortado) { if (intento === 0 && accion === 'chat') { payload = Object.assign({}, payload, { messages: (payload.messages || []).concat([{ role: 'user', content: 'continúa el trabajo donde quedó' }]) }); continue; } return { status: 504, ok: false, p: { error: 'La llamada superó el tiempo de respuesta' } }; }
+    if (cortado) { return { status: 504, ok: false, p: { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'El proceso sigue en el Router; no se relanza la tarea', proceso_id: p.proceso_id } }; }
     if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
     if (p.error) {
-      if (intento === 0 && accion === 'chat' && ['MODELO_NO_RESPONDE', 'TIEMPO_TOTAL_AGOTADO', 'CHAT_FAILED', 'CHAT_OCUPADO_REINTENTA', 'PROCESO_NO_EXISTE', 'SERVICIO_OCUPADO'].includes(p.error)) {
+      if (intento === 0 && accion === 'chat' && !(body && body.plugin) && ['MODELO_NO_RESPONDE', 'TIEMPO_TOTAL_AGOTADO', 'CHAT_FAILED', 'CHAT_OCUPADO_REINTENTA', 'PROCESO_NO_EXISTE', 'SERVICIO_OCUPADO'].includes(p.error)) {
         payload = Object.assign({}, payload, { messages: (payload.messages || []).concat([{ role: 'user', content: 'continúa el trabajo donde quedó' }]) });
         continue;
       }
@@ -144,7 +144,7 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   }
   if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
   const prueba = Array.isArray(r.p.traza) && r.p.traza.length ? '\n\n— Prueba de ejecución —\n' + r.p.traza.filter((t) => t.modelo !== 'goals').map((t) => t.nodo + ' · ' + String(t.modelo).replace('ficha-', '') + ' · ' + (t.rol || '') + (t.ok ? ' ✔' : ' ✘')).join('\n') : '';
-  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || '') + prueba, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) };
+  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), traza: r.p.traza, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })) };
 }
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {
