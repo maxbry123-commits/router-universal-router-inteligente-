@@ -1,5 +1,5 @@
 fastapi>=0.115
-pydantic>=2.7
+pydantic>=2.11.5
 huggingface_hub>=0.30
 # Graphify/Graphiti (minimo autorizado; sin openai, neo4j, posthog ni graspologic)
 networkx
