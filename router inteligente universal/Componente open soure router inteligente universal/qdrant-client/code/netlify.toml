@@ -1,0 +1,9 @@
+[build]
+  command = "mkdir -p public"
+  publish = "public"
+
+[[redirects]]
+  from = "/*"
+  to = "https://qdrant.tech/documentation/"
+  status = 301
+  force = true

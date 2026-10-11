@@ -1,0 +1,33 @@
+{
+  "bundle_bytes": 1206789,
+  "bundle_sha256": "9afcbe18bcd0cad1e16ac071747c7ccd85271672f46737a9d45c2664af9dbe02",
+  "extracted_tree": {
+    "bytes": 4442647,
+    "files": 247,
+    "sha256": "20ae58317144097a6c980a8c5c6d321592fa64a517beaafd1e603ab94678a95e"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1206789,
+      "name": "qdrant-client.bundle.zip.part-0001",
+      "sha256": "9afcbe18bcd0cad1e16ac071747c7ccd85271672f46737a9d45c2664af9dbe02"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "slug": "qdrant-client",
+  "source_bytes": 4442647,
+  "source_commit": "cf747f4b6fa71ba35dfb467931f3fa65f2cdf263",
+  "source_files": 247,
+  "source_ref": "HEAD",
+  "source_repo": "qdrant/qdrant-client",
+  "source_tree": {
+    "bytes": 4442647,
+    "files": 247,
+    "sha256": "20ae58317144097a6c980a8c5c6d321592fa64a517beaafd1e603ab94678a95e"
+  }
+}
