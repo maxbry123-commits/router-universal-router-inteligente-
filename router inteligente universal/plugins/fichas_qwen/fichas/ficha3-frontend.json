@@ -86,8 +86,8 @@
       "voz-a-texto"
     ],
     "sin_instrucciones": "no se ejecuta ni gasta API",
-    "revisor_previo": "N6",
-    "verificador_final": "N7"
+    "revisor_previo": "N7",
+    "verificador_final": "N8"
   },
   "politicas_modelo": {
     "nota": "Politicas por modelo: solo parametros y parseo de tools. No cambian rutas, DAG, nodos ni modelo elegido. Director 2026-10-10.",
