@@ -26,15 +26,8 @@ export function parsearSlashWF(msg, lista) {  // "/wf <nombre> <instrucción>" d
 }
 const lineas = (arr) => arr.map((t) => "- " + String(t).slice(0, 400)).join("\n");
 export function construirPrefijo(oficial) {
-  const partes = [], con = dameCon(), wfs = dameWF().filter((w) => w.encendido);
-  if (con.encendida) {
-    let t = "[CONSTITUCIÓN SENTINELA · ENCENDIDA]";
-    if ((con.texto || "").trim()) t += "\n" + con.texto.trim();
-    if (con.oficial && oficial) t += "\nConstitución YAIWES oficial:\n" + String(oficial).slice(0, 8000);
-    if ((con.items || []).length) t += "\nAnclado a la constitución:\n" + lineas(con.items);
-    const rc = refsCompartidas("constitucion"); if (rc.length) t += "\nClaves disponibles (solo referencia): " + rc.join(", ");
-    partes.push(t);
-  }
+  const partes = [], wfs = dameWF().filter((w) => w.encendido);
+  // la Constitucion ya NO viaja como texto del mensaje: va estructurada (gobernanza + constitucion) y el Harness carga la oficial
   wfs.forEach((w) => {
     let t = "[WORKFLOW LOOP «" + w.nombre + "» · ENCENDIDO]";
     if ((w.systemPrompt || "").trim()) t += "\nSystem prompt:\n" + w.systemPrompt.trim();
@@ -50,4 +43,13 @@ export function construirPrefijo(oficial) {
   return partes.join("\n\n");
 }
 export function aplicarAMensaje(msg, oficial) { const p = construirPrefijo(oficial); return p ? p + "\n\n--- MENSAJE DEL DIRECTOR ---\n" + msg : msg; }
-export function ampliarAnclados(lista) { const rs = refsCompartidas("chat").map((r) => "secreto:" + r); return [...lista, ...rs.filter((x) => !lista.includes(x))]; }
+const nombresConst = (con) => (con.items || []).map((t) => String(t).replace(/^archivo:/, "").trim()).filter((n) => !/^(enlace|raiz|secreto|constitucion):/.test(n) && /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(n));
+export function datosGobernanza() {  // Constitucion encendida -> campos estructurados para el Harness (nunca el JSON oficial: lo carga el Harness)
+  const con = dameCon(); if (!con.encendida) return null;
+  return { gobernanza: { enabled: true }, constitucion: { texto: String(con.texto || "").trim(), anclados: nombresConst(con) } };
+}
+export function ampliarAnclados(lista) {
+  const rs = refsCompartidas("chat").map((r) => "secreto:" + r);
+  const con = dameCon(), cs = con.encendida ? nombresConst(con).map((n) => "constitucion:" + n) : [];  // archivos de la ventana Constitucion = fuentes constitucionales directas
+  return [...lista, ...[...rs, ...cs].filter((x) => !lista.includes(x))];
+}
