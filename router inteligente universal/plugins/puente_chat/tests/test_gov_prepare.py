@@ -356,6 +356,28 @@ def test_f_cambio_real_tras_freeze_sigue_dando_gap():
     assert r['ok'] is False and r['codigo'] == 'CONSTITUTION_CHANGED_DURING_TASK', r
 
 
+def test_g_memoria_usa_fachada_canonica_no_memory_runtime():
+    import sys
+    import types
+    src = SRC
+    assert 'integration.chat_mvp.memory_runtime' not in src.replace('memory_runtime.py ya no existe', '')
+    i = src.index('_CTRL_MEM = re.compile')
+    j = src.index('def _contexto(')
+    fake = types.ModuleType('integration.chat_mvp.memoria_loader')
+    marca = object()
+    fake._memory = lambda: marca
+    for nombre in ('integration', 'integration.chat_mvp'):
+        sys.modules.setdefault(nombre, types.ModuleType(nombre))
+    sys.modules['integration.chat_mvp.memoria_loader'] = fake
+    ns = {'re': re}
+    exec(src[i:j], ns)
+    mem, scope_for = ns['_memoria']()
+    assert mem is marca
+    assert scope_for('chat-ui', 'chat:abc') == 'chat-ui:chat:abc'
+    assert scope_for('chat-ui', 'chat-ui:x') == 'chat-ui:x'
+    assert len(scope_for('o', 'x' * 200)) == 80 and scope_for('', '') == 'anonymous:general'
+
+
 if __name__ == '__main__':
     n = 0
     for k, f in sorted(globals().items()):
