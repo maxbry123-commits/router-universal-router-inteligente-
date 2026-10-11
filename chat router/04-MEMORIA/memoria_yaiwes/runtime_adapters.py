@@ -19,6 +19,22 @@ from urllib.request import Request, urlopen
 
 EMBED_DIM = 256
 
+os.environ.setdefault("GRAPHITI_TELEMETRY_ENABLED", "false")
+
+
+def _componentes_en_path() -> None:
+    """Codigo local de Graphiti y Graphify (copias del repo, sin pip install de graphiti-core/graphifyy)."""
+    import sys
+    raiz = Path(os.getenv("RIU_COMPONENTES_DIR") or (Path(__file__).resolve().parents[3] / "router inteligente universal"
+                                                       / "Componente open soure router inteligente universal"))
+    for nombre in ("graphiti", "graphify"):
+        d = raiz / nombre / "code"
+        if d.is_dir() and str(d) not in sys.path:
+            sys.path.append(str(d))
+
+
+_componentes_en_path()
+
 
 def _data_dir() -> Path:
     return Path(os.getenv("RIU_DATA_DIR") or (Path.cwd() / "riu_data"))
