@@ -35,7 +35,10 @@ Global (en `shell.html`): `shell.css`, `responsive.css`, `shell-riu.css`, `chat-
 | Workflow Loops code Yaiwes | fila «workflow Loops code Yaiwes» del panel Selectores (selección + ON/OFF) | `selector-workflows.js`, `ventana-workflows.js` / `.css` |
 | Constitución sentinela | pastilla «constitución» | `ventana-constitucion.js` / `.css` |
 | Banco de claves | pastilla «claves» | `ventana-claves.js` / `.css` |
-| Destinos del anclaje (Chat / Constitución / Workflows / Agentes remotos) | ventana de Anclaje | `anclaje-destinos.js` |
+| Objetivos del anclaje (Chat / Constitución / Workflows / Agentes remotos / Proyecto / Sandbox): LA MISMA ventana de Anclaje, solo cambia el objetivo; los archivos son compartidos | ventana de Anclaje | `anclaje-destinos.js`, `objetivos-ancla.js` |
+| Mi handoff editable (texto + enlaces + archivos) | ventana de Anclaje | `handoff-editor.js` |
+| Borrar un archivo | lista de archivos (Anclaje y Archivos) | `archivos-borrar.js` |
+| Habilidades (menú al escribir «/») | caja del chat | `menu-habilidades.js` / `habilidades.css` |
 
 Partes comunes: `ventanas-comun.js` / `.css` (crear ventana, pastillas, bloque de anclas), `almacen.js` (localStorage), `contexto.js` (lógica pura del contexto), `chat-contexto.js` (lo engancha al envío).
 Las ventanas nuevas se construyen por JS y cargan su propio CSS al abrirse; `ventanas-nuevas.js` las cablea (un fallo en una no rompe a las demás).
@@ -45,7 +48,7 @@ Las ventanas nuevas se construyen por JS y cargan su propio CSS al abrirse; `ven
 - `window.RIU_HARNESS` (de `api.js`) queda envuelto por `chat-contexto.js`: si hay constitución o workflows encendidos, su texto se antepone al mensaje y las claves compartidas con el chat viajan como `secreto:<referencia>` (solo el nombre). Sin nada encendido, el envío es idéntico al de antes.
 - `window.RIU_WORKFLOW_ADAPTERS[id] = { nombre, enviar(wf, entrada, ctx) }`: aquí se registran los plugins que conectan un workflow en curso. Hoy: `chat` y `webhook` (HTTPS).
 - Instrucciones a un workflow: desde el chat `/wf <nombre> <instrucción>` (no va a la IA, queda en su ventana de ejecución); la IA escribe en esa ventana con `[[WF:<nombre>]]instrucción[[/WF]]` (el system prompt del workflow encendido se lo explica).
-- Anclaje: lo nuevo que se ancla se reparte a los destinos encendidos (observa lo anclado; no modifica `chat-ancla.js`).
+- Anclaje por objetivo: `window.RIU_OBJETIVO_ANCLA()` devuelve el objetivo activo (si no existe, es el chat). `panel-chat.js` usa `chatA()` solo para lo anclado; los archivos y la sesión del servidor siguen siendo los del chat (carpeta compartida). `window.RIU_ANCLA_ABRIR(tipo, id)` abre la ventana con ese objetivo y `window.RIU_ANCLA_REFRESCAR()` la refresca.
 - Almacenamiento (localStorage): `riu_chats_v1`, `riu_hist_v1`, `riu_proy_v1`, `riu_apariencia_v1`, `riu_tema`, `riu_avisos_v1`, `riu_reac_v1`, `riu_pin_v1`, `riu_workflows_v1`, `riu_constitucion_v1`, `riu_claves_v1`, `riu_destinos_v1`. sessionStorage: `riu_clave`, `riu_sesion`, `riu_const_oficial`, `riu_borrador_v1`.
 
 ## Backend que usa este frontend
@@ -60,7 +63,7 @@ Las ventanas nuevas se construyen por JS y cargan su propio CSS al abrirse; `ven
 ## GAP (lo que no está resuelto; no se inventa)
 1. **Workflows en curso:** el backend no tiene una acción `workflow`; la ejecución se conecta por adaptadores. Falta el adaptador real al backend.
 2. **Agentes remotos + SDK:** se ancla la URL del repo con la marca «SDK»; falta definir la ruta/formato de la SDK de cada agente.
-3. **Botones de anclaje:** se pidieron 6 y se listaron 4 (Chat, Constitución, Workflows, Agentes remotos). Faltan 2 por definir.
+3. **Borrar archivos:** el servidor no tiene todavía la acción `archivo_borrar`; se agregó al backend del chat (`plugin.py`) y entra cuando se reinicie el servidor. Mientras tanto el archivo se quita de la lista y de todo lo anclado en este navegador.
 4. **Banco de claves:** necesita que `/vault/*` esté expuesto en el mismo servidor que `harnessUrl` y que el servidor acepte la clave del Router. El servidor no lista credenciales: la lista para compartir se guarda local.
 5. **Canvas:** solo vista previa de adjuntos; no genera imagen ni video.
 6. **Imágenes del skill:** no se pueden abrir desde el túnel; la etapa de imágenes espera a que se suban.
@@ -73,6 +76,7 @@ Las ventanas nuevas se construyen por JS y cargan su propio CSS al abrirse; `ven
 | `21cd470dfa` | Reversión a un estado conocido cuando el chat desapareció (causa: caché vieja de Edge). |
 | `3aaa183ddf` | Restauración de lo revertido + vista smartphone centrada (`chat-movil.css`) + cabeceras no-cache en `vercel.json`. |
 | `628c1ca9ad` | Salida del chat 3× más larga; Anclaje se desliza entero; PIN opcional; orbe de conexión; orden del menú; soltar archivos; inventario de los 22 componentes RUI. |
+| este cambio (3) | Botón de enviar rectangular y azul eléctrico; anclaje = LA MISMA ventana con 6 objetivos (Chat, Constitución, Workflows, Agentes remotos, Proyecto, Sandbox); borrar un archivo; Mi handoff editable con texto, enlaces y archivos; menú de Habilidades al escribir «/»; backend: acción `archivo_borrar`. |
 | este cambio (2) | Botón blanco de enviar devuelto a su forma original; «encendido» ahora enciende el símbolo en azul eléctrico (sin cuadro azul); fila «workflow Loops code Yaiwes» con selección y ON/OFF en Selectores; README y handoff anclables al chat desde Configuración (sección 11). |
 | `2ba8c7a35a` | Botón de enviar corregido; «encendido» en azul eléctrico (`encendido.css`); borrar chats con la X de cada pestaña; 5 paneles (Configuración, pestaña Proyecto); ventanas Workflow Loops, Constitución sentinela y Banco de claves; destinos del anclaje; README y HANDOFF. |
 

@@ -5,6 +5,9 @@ export const dameWF = () => { const v = leer(KEYS.workflows, { lista: [] }); ret
 export const dameCon = () => Object.assign({ encendida: false, texto: "", oficial: false, items: [] }, leer(KEYS.constitucion, {}));
 export const dameClaves = () => (leer(KEYS.claves, { refs: {} }).refs) || {};
 export const dameDestinos = () => Object.assign({ activos: ["chat"], wfSel: [], agentes: [] }, leer(KEYS.destinos, {}));
+export const dameAg = () => Object.assign({ items: [], notas: "", on: false }, leer(KEYS.agentes, {}));
+export const dameSb = () => Object.assign({ items: [], notas: "", on: false }, leer(KEYS.sandbox, {}));
+export const dameProyGlobal = () => { const t = leer("riu_proy_v1", {}); return Array.isArray(t.global) ? t.global : []; };
 export const refsCompartidas = (a) => { const r = dameClaves(); return Object.keys(r).filter((k) => r[k] && r[k].comparte && r[k].comparte[a]); };
 export function parsearBloquesWF(texto) {  // la IA escribe en la ventana de ejecución con: [[WF:nombre]]instrucción[[/WF]]
   const out = [], re = /\[\[WF:([^\]\n]{1,60})\]\]([\s\S]*?)\[\[\/WF\]\]/g; let m;
@@ -23,7 +26,7 @@ export function parsearSlashWF(msg, lista) {  // "/wf <nombre> <instrucción>" d
 }
 const lineas = (arr) => arr.map((t) => "- " + String(t).slice(0, 400)).join("\n");
 export function construirPrefijo(oficial) {
-  const partes = [], con = dameCon(), wfs = dameWF().filter((w) => w.encendido), des = dameDestinos();
+  const partes = [], con = dameCon(), wfs = dameWF().filter((w) => w.encendido);
   if (con.encendida) {
     let t = "[CONSTITUCIÓN SENTINELA · ENCENDIDA]";
     if ((con.texto || "").trim()) t += "\n" + con.texto.trim();
@@ -40,7 +43,10 @@ export function construirPrefijo(oficial) {
     t += "\nPara escribir una instrucción en la ventana de ejecución de este workflow responde con: [[WF:" + w.nombre + "]]instrucción[[/WF]]";
     partes.push(t);
   });
-  if (wfs.length && des.agentes.length) partes.push("[AGENTES REMOTOS · código fuente + SDK]\n" + lineas(des.agentes.map((a) => a.url + (a.sdk ? " (con SDK)" : ""))));
+  const urlDe = (t) => String(t).replace(/^(enlace|raiz):/, "");
+  const ag = dameAg(); if (ag.on && ((ag.items || []).length || (ag.notas || "").trim())) partes.push("[AGENTES REMOTOS · código fuente + SDK]\n" + ((ag.notas || "").trim() ? ag.notas.trim() + "\n" : "") + lineas((ag.items || []).map(urlDe)));
+  const sb = dameSb(); if (sb.on && ((sb.items || []).length || (sb.notas || "").trim())) partes.push("[SANDBOX ANCLADO]\n" + ((sb.notas || "").trim() ? sb.notas.trim() + "\n" : "") + lineas(sb.items || []));
+  dameProyGlobal().filter((p) => p.on).forEach((p) => partes.push("[PROYECTO «" + p.nombre + "»]\n" + ((p.notas || "").trim() ? p.notas.trim() + "\n" : "") + lineas(p.items || [])));
   return partes.join("\n\n");
 }
 export function aplicarAMensaje(msg, oficial) { const p = construirPrefijo(oficial); return p ? p + "\n\n--- MENSAJE DEL DIRECTOR ---\n" + msg : msg; }

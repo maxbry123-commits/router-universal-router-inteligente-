@@ -3,7 +3,7 @@
 // Los workflows que ya están en curso se conectan con adaptadores (plugins): window.RIU_WORKFLOW_ADAPTERS[id] = { nombre, enviar(wf, entrada, ctx) }.
 import { leer, escribir, KEYS, uid, hash } from "./almacen.js";
 import { parsearBloquesWF, buscarWF, parsearSlashWF } from "./contexto.js";
-import { el, boton, crearVentana, abrirVentana, agregarPill, seccionAnclas } from "./ventanas-comun.js";
+import { el, boton, crearVentana, abrirVentana, agregarPill } from "./ventanas-comun.js";
 
 export const ADAPTADORES = {
   chat: { nombre: "Chat (mensaje con el contexto del workflow)", enviar: async (wf, e, ctx) => {
@@ -71,7 +71,7 @@ export function montarWorkflows({ root, q, tell }) {
     ad.addEventListener("change", () => { poner(w.id, (y) => { y.adaptador = ad.value; }); pintar(); });
     cuerpo.append(el("div", "vn-t", "Conectar con la ejecución"), ad);
     if (w.adaptador === "webhook") { const wh = el("input", "vn-in"); wh.placeholder = "https://… (endpoint del workflow en curso)"; wh.value = w.webhook || ""; wh.setAttribute("aria-label", "URL del webhook"); wh.addEventListener("change", () => poner(w.id, (y) => { y.webhook = wh.value.trim(); })); cuerpo.append(wh); }
-    seccionAnclas(cuerpo, { titulo: "Anclas de «" + w.nombre + "»", leerTokens: () => (cargar().lista.find((x) => x.id === w.id) || { items: [] }).items, escribirTokens: (ts) => poner(w.id, (y) => { y.items = ts; }), destino: { tipo: "wf", id: w.id }, tell });
+    cuerpo.append(el("div", "vn-t", "Anclas de «" + w.nombre + "»"), el("div", "vn-estado", (w.items || []).length + " anclado(s). Es la misma ventana de anclaje: enlaces, handoffs, archivos compartidos, proyectos."), boton("Abrir el anclaje de este workflow", "mini", () => { if (window.RIU_ANCLA_ABRIR) window.RIU_ANCLA_ABRIR("workflows", w.id); else tell("El anclaje no está disponible"); }));
     cuerpo.append(el("div", "vn-t", "Ventana de ejecución"));
     const ins = el("input", "vn-in"); ins.placeholder = "Escribe una instrucción para este workflow…"; ins.setAttribute("aria-label", "Instrucción");
     const esc = boton("Escribir en la ejecución", "mini", () => { const t = ins.value.trim(); if (!t) return; poner(w.id, (y) => entrada(y, "usuario", t)); ins.value = ""; pintar(); });

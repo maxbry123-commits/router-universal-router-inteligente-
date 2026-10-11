@@ -4,6 +4,11 @@ import { leer, escribir, KEYS, uid } from "./almacen.js";
 import { dameWF } from "./contexto.js";
 import { el, boton, etiqueta } from "./ventanas-comun.js";
 const CLAVE_PROY = "riu_proy_v1";
+const etiquetaSesion = (s) => {
+  if (s === "manual") return "creado aquí"; if (s === "global") return "carpeta de proyecto"; if (s === "constitucion") return "Constitución"; if (s === "agentes") return "Agentes remotos"; if (s === "sandbox") return "Sandbox";
+  if (s.startsWith("wf:")) { const w = dameWF().find((x) => x.id === s.slice(3)); return "Workflow " + (w ? w.nombre : s.slice(3)); }
+  if (s.startsWith("proyecto:")) return "dentro de " + s.slice(9); return "chat " + String(s).slice(-6);
+};
 const unico = (a) => [...new Set(a)];
 export function montarProyecto(root, { tell }) {
   const tabs = root.querySelectorAll("[data-tab]"), pa = root.querySelector("#tab-archivos"), pp = root.querySelector("#tab-proyecto"), lista = root.querySelector("#proyecto-lista");
@@ -24,13 +29,14 @@ export function montarProyecto(root, { tell }) {
     if (!ps.length) lista.append(el("div", "fila-desc", "Aún no hay proyectos. Se crean en la ventana de anclaje (campo «Nombre del proyecto») o aquí arriba."));
     ps.forEach(({ ses, i, p }) => {
       const card = el("div", "vn-entrada"), items = Array.isArray(p.items) ? p.items : [];
-      card.append(el("strong", "", (p.nombre || "Proyecto") + " · " + items.length), el("small", "", ses === "manual" ? "creado aquí" : "chat " + String(ses).slice(-6)));
+      card.append(el("strong", "", (p.nombre || "Proyecto") + " · " + items.length), el("small", "", etiquetaSesion(ses)));
       const det = el("details"); det.append(el("summary", "", "Ver lo anclado")); items.forEach((t) => det.append(el("div", "vn-item", etiqueta(t)))); card.append(det);
       const acc = el("div", "vn-fila"), sel = el("select", "vn-in"); sel.setAttribute("aria-label", "Workflow destino");
       const wfs = dameWF(); wfs.forEach((w) => { const o = el("option", "", w.nombre); o.value = w.id; sel.append(o); }); sel.hidden = !wfs.length;
       if (wfs.length) acc.append(sel, boton("Copiar al workflow", "mini", () => { const d = leer(KEYS.workflows, { lista: [] }), w = d.lista.find((x) => x.id === sel.value); if (!w) return; w.items = unico([...(w.items || []), ...items]); escribir(KEYS.workflows, d); tell("Copiado a «" + w.nombre + "»"); }));
       acc.append(boton("Copiar a la constitución", "mini", () => { const c = Object.assign({ encendida: false, texto: "", oficial: false, items: [] }, leer(KEYS.constitucion, {})); c.items = unico([...(c.items || []), ...items]); escribir(KEYS.constitucion, c); tell("Copiado a la constitución"); }),
         boton("Borrar", "mini rojo", () => { if (!confirm("¿Borrar el proyecto «" + (p.nombre || "") + "»? (lo anclado en el chat no se toca)")) return; const t = leer(CLAVE_PROY, {}); if (Array.isArray(t[ses])) { t[ses].splice(i, 1); escribir(CLAVE_PROY, t); } pintar(); }));
+      if (ses === "global") { const tg = boton(p.on ? "Encendido" : "Apagado · encender", "toggle" + (p.on ? " on" : ""), () => { const t = leer(CLAVE_PROY, {}), x = (t.global || [])[i]; if (x) { x.on = !x.on; escribir(CLAVE_PROY, t); } pintar(); }); tg.setAttribute("aria-pressed", String(!!p.on)); acc.append(tg); }
       card.append(acc); lista.append(card);
     });
   }

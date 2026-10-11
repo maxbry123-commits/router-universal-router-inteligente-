@@ -9,6 +9,4 @@ button[aria-pressed="true"]:not(.ap-sw),button[aria-checked="true"]{color:var(--
 .toggle.on::before{color:var(--azul-electrico)!important;text-shadow:0 0 8px var(--azul-electrico-brillo)}
 .composer-bar .btn-microfono.on{background:var(--panel);border-color:var(--border-strong);color:var(--azul-electrico);animation:riu-mic-azul 1.1s ease-in-out infinite}
 @keyframes riu-mic-azul{50%{filter:drop-shadow(0 0 8px var(--azul-electrico-brillo))}}
-/* enviar: el boton blanco se queda igual; la flecha se enciende cuando hay texto */
-#composer:has(#message:not(:placeholder-shown)) .composer-bar .action{color:var(--azul-electrico)!important}
 @media(prefers-reduced-motion:reduce){.composer-bar .btn-microfono.on{animation:none}}

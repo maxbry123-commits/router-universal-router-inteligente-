@@ -1,0 +1,4 @@
+/* boton-enviar.css — el botón de enviar del chat: rectangular y azul eléctrico (pedido del Director), con la flecha en blanco. */
+.composer-bar .action{background:var(--azul-electrico,#1F6BFF)!important;color:#fff!important;border:0!important;border-radius:12px!important;min-height:46px;height:46px;min-width:104px;padding:0 20px!important;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;box-shadow:0 0 0 1px rgba(31,107,255,.6),0 4px 16px rgba(31,107,255,.35)}
+.composer-bar .action::after{content:"Enviar";font-size:15px}
+@media (hover:hover){.composer-bar .action:hover{filter:brightness(1.12);background:var(--azul-electrico,#1F6BFF)!important}}

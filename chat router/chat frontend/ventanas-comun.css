@@ -15,3 +15,6 @@
 .vn-entrada[data-estado=enviada]{opacity:.75}
 .vn-entrada[data-estado=error]{border-color:var(--status-red)}
 .sheet .va-ancho{width:min(560px,100vw)}
+.vn-hoed{display:grid;gap:8px}
+.vn-destinos .toggle{flex:0 0 auto}
+.va-borrar{flex:0 0 auto}

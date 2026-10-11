@@ -24,6 +24,7 @@ export async function mount(root, { api, tell }) {
   const chats = [];
   let activo = 0;
   const chat = () => chats[activo];
+  const chatA = () => (window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : chat());  // objetivo del anclaje: el chat (por defecto) u otro (constitución, workflow, agentes, proyecto, sandbox)
   const guardar = () => {
     try {
       localStorage.setItem("riu_chat_activo", String(activo)); localStorage.setItem(CLAVE_CHATS, JSON.stringify(
@@ -111,7 +112,7 @@ export async function mount(root, { api, tell }) {
     return d;
   };
 
-  const ancla = A.montarAncla({ q, chat, tell, guardar, pintarAnclados });
+  const ancla = A.montarAncla({ q, chat: chatA, tell, guardar, pintarAnclados });
   chats.forEach((c) => A.restaurar(c, burbuja));  // historial guardado: vuelve al recargar
   conectarSelectorModelos({ q, chat, tell, guardar });  // Selector Qwen: solo frontend
   conectarMicrofono({ q, tell });  // micrófono: dictado por voz al input
@@ -140,6 +141,7 @@ export async function mount(root, { api, tell }) {
     pintarTabs(); guardar(); tell("Chat borrado");
   };
   window.RIU_CHAT = { chat, tokens: () => [...chat().anclados], pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
+  window.RIU_ANCLA_REFRESCAR = () => { cargarArchivos("#anc-lista"); ancla.refrescar(); pintarAnclas(); cargarMiHandoff(); };  // refresca la ventana de anclaje al cambiar de objetivo
   root.addEventListener("riu:cerrar-chat", (e) => cerrarChat(e.detail));
   conectarRiu2({ root, q, tell });  // RUI 12-21 + mejoras de flujo (ventanas, borrador, avisos)
   conectarVentanasNuevas({ root, q, tell });  // workflows, constitución sentinela, banco de claves y destinos del anclaje (cada uno en su archivo)
@@ -159,11 +161,11 @@ export async function mount(root, { api, tell }) {
     const r = node("div", "", "fila");
     const nom = node("span", titulo, "fila-nom");
     if (desc) nom.append(node("span", desc, "fila-desc"));
-    const t = node("button", "", "toggle" + (chat().anclados.has(clave) ? " on" : ""));
+    const t = node("button", "", "toggle" + (chatA().anclados.has(clave) ? " on" : ""));
     t.type = "button"; t.title = "Encender = anclar, apagar = quitar";
     t.addEventListener("click", () => {
-      const enc = !chat().anclados.has(clave);
-      enc ? chat().anclados.add(clave) : chat().anclados.delete(clave);
+      const enc = !chatA().anclados.has(clave);
+      enc ? chatA().anclados.add(clave) : chatA().anclados.delete(clave);
       t.classList.toggle("on", enc);
       pintarAnclados(); guardar();
       if (onOff) onOff(enc);
@@ -215,7 +217,7 @@ export async function mount(root, { api, tell }) {
     lista.replaceChildren();
     for (const [k, t, d] of ANCLAS) {
       lista.append(filaEncender(t, d, "handoff:" + k, async (enc) => {
-        if (!enc) return;
+        if (!enc || window.RIU_OBJETIVO_ANCLA) return;
         try {  // muestra en el chat lo que quedo anclado
           const r = await window.RIU_ACCION("handoff", { fuente: k, sesion: chat().sesion });
           const c = chat();
@@ -238,7 +240,7 @@ export async function mount(root, { api, tell }) {
   // mi handoff: texto propio guardado en memoria, editable; va interno con cada mensaje
   const cargarMiHandoff = async () => {
     try {
-      const r = await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion });
+      const r = await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion });
       q("#mi-handoff").value = r.texto || "";
       q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
     } catch (err) { q("#mh-estado").textContent = err.message; }
@@ -246,7 +248,7 @@ export async function mount(root, { api, tell }) {
   q("#mh-guardar").addEventListener("click", async () => {
     try {
       const texto = q("#mi-handoff").value;
-      const r = await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion, texto });
+      const r = await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion, texto });
       q("#mh-estado").textContent = r.encendido ? "encendido" : "apagado";
       if (r.encendido) {
         const c = chat();
@@ -258,7 +260,7 @@ export async function mount(root, { api, tell }) {
   });
   q("#mh-apagar").addEventListener("click", async () => {
     try {
-      await window.RIU_ACCION("handoff_texto", { sesion: chat().sesion, texto: "" });
+      await window.RIU_ACCION("handoff_texto", { sesion: chatA().sesion, texto: "" });
       q("#mh-estado").textContent = "apagado";
       tell("Mi handoff apagado");
     } catch (err) { tell(err.message); }
@@ -266,7 +268,7 @@ export async function mount(root, { api, tell }) {
   q("#ancla-enlace-on").addEventListener("click", () => {
     const v = (q("#ancla-enlace").value || "").trim();
     if (!v) { tell("Pega primero un enlace o handoff"); return; }
-    chat().anclados.add("enlace:" + v);
+    chatA().anclados.add("enlace:" + v);
     q("#ancla-enlace").value = "";
     pintarAnclados(); guardar();
     tell("Enlace anclado al chat");
@@ -280,7 +282,7 @@ export async function mount(root, { api, tell }) {
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion });
-    if (anclarAlSubir) { chat().anclados.add(r.nombre || file.name); pintarAnclados(); guardar(); tell("Subido y anclado: " + (r.nombre || file.name)); }
+    if (anclarAlSubir) { chatA().anclados.add(r.nombre || file.name); pintarAnclados(); guardar(); tell("Subido y anclado: " + (r.nombre || file.name)); }
     else tell("Subido (sin anclar): " + (r.nombre || file.name));
   };
   const subirVarios = async (files) => {
@@ -296,7 +298,7 @@ export async function mount(root, { api, tell }) {
   q("#anc-subir").addEventListener("click", () => { anclarAlSubir = true; q("#adjunto").click(); });
   const anclarTodos = async (encender) => {
     const r = await window.RIU_ACCION("archivos", { sesion: chat().sesion });
-    for (const n of r.archivos || []) encender ? chat().anclados.add(n) : chat().anclados.delete(n);
+    for (const n of r.archivos || []) encender ? chatA().anclados.add(n) : chatA().anclados.delete(n);
     pintarAnclados(); guardar(); cargarArchivos("#anc-lista");
   };
   q("#anc-todos").addEventListener("click", () => anclarTodos(true).catch((err) => tell(err.message)));
@@ -371,11 +373,11 @@ export async function mount(root, { api, tell }) {
       lista.replaceChildren();
       for (const nombre of r.archivos || []) {
         const fil = node("div", "", "va-item");
-        const t = node("button", "", "toggle" + (chat().anclados.has(nombre) ? " on" : ""));
+        const t = node("button", "", "toggle" + (chatA().anclados.has(nombre) ? " on" : ""));
         t.type = "button"; t.title = "Encender = anclar al chat, apagar = quitar";
         t.addEventListener("click", () => {
-          const enc = !chat().anclados.has(nombre);
-          enc ? chat().anclados.add(nombre) : chat().anclados.delete(nombre);
+          const enc = !chatA().anclados.has(nombre);
+          enc ? chatA().anclados.add(nombre) : chatA().anclados.delete(nombre);
           t.classList.toggle("on", enc);
           pintarAnclados(); guardar();
         });
