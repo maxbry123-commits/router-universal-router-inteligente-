@@ -310,15 +310,15 @@ _IDS_CTX = ContextVar('yaiwes_ids_llm', default=None)  # ids de la peticion que 
 def llm_call(p):
     """Puerta LLM unica: componente -> Harness -> HTTP -> Ficha 4 -> modelo -> Harness -> componente."""
     import urllib.request as _ur
-    base = (os.getenv('RIU_ROUTER_URL') or ('http://127.0.0.1:' + str(os.getenv('PORT') or '7860'))).rstrip('/')
-    url = os.getenv('RIU_FICHA4_URL') or (base + '/plugins/fichas_qwen/call/llm')
+    base = (_os.getenv('RIU_ROUTER_URL') or ('http://127.0.0.1:' + str(_os.getenv('PORT') or '7860'))).rstrip('/')
+    url = _os.getenv('RIU_FICHA4_URL') or (base + '/plugins/fichas_qwen/call/llm')
     body = {k: p.get(k) for k in ('caller_id', 'plugin_id', 'workflow_id', 'project_id', 'task_id', 'session_id', 'task_type',
                                   'messages', 'participant', 'participants', 'priority', 'max_tokens')}
     body['ficha_qwen'] = 'ficha4-workflow-yaiwes'
-    h = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + str(os.getenv('RIU_ROUTER_API_KEY') or '')}
+    h = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + str(_os.getenv('RIU_ROUTER_API_KEY') or '')}
     try:
         r = _ur.Request(url, data=json.dumps(body).encode(), headers=h, method='POST')
-        d = json.loads(_ur.urlopen(r, timeout=int(os.getenv('RIU_FICHA4_TIMEOUT') or '120')).read().decode() or '{}')
+        d = json.loads(_ur.urlopen(r, timeout=int(_os.getenv('RIU_FICHA4_TIMEOUT') or '120')).read().decode() or '{}')
         d = d.get('result', d) if isinstance(d, dict) else {}
         if d.get('error'):
             return {'error': d['error'], 'detalle': d.get('detalle', '')}
