@@ -1,5 +1,8 @@
 from .client import EmbedderClient
-from .openai import OpenAIEmbedder, OpenAIEmbedderConfig
+try:  # opcional: YAIWES inyecta su propio cliente
+    from .openai import OpenAIEmbedder, OpenAIEmbedderConfig
+except ImportError:
+    OpenAIEmbedder = OpenAIEmbedderConfig = None
 
 __all__ = [
     'EmbedderClient',
