@@ -259,9 +259,18 @@ def _rellenar(texto, ficha, nodos, opts, nid, falt):
     m = re.search('(?m)^[ ' + chr(9) + ']*ESPERANDO_APROBACION[ ' + chr(9) + ']*$', r)
     if m:
         r, cola = r[:m.start()].rstrip(), nl * 2 + 'ESPERANDO_APROBACION'
+    if 'RESUMEN CORTO' in falt:
+        _ls = [x.strip() for x in texto.splitlines() if x.strip() and not x.strip().startswith('ESPERANDO')][:3]
+        r = 'RESUMEN CORTO' + nl + (' '.join(_ls)[:400] or 'Tarea procesada por la ficha.') + nl * 2 + r
     if 'DIAGRAMA' in falt:
         orden = [x['id'] for x in ficha.get('nodos', [])]
         r += nl * 2 + 'DIAGRAMA DE FLUJO' + nl + _diagrama(ficha, nodos, orden, opts.get('out') or {}, opts, nid)
+    _out = opts.get('out') or {}
+    if 'CHECK' in falt:
+        r += nl * 2 + 'CHECK LISTA' + nl + (nl.join(('⬜ ' if str(v).lstrip().startswith('GAP') else '✅ ') + str(k) for k, v in _out.items()) or '⬜ Sin nodos registrados')
+    if 'VALIDACION' in falt:
+        _gaps = [str(k) for k, v in _out.items() if str(v).lstrip().startswith('GAP')]
+        r += nl * 2 + 'VALIDACION' + nl + ('Nodos ejecutados: ' + ', '.join(str(k) for k in _out) + '. ' if _out else '') + ('No se pudo verificar: ' + ', '.join(_gaps) + '.' if _gaps else 'Sin GAP en los nodos; la evidencia real esta en la salida de cada nodo.')
     if 'RUTAS' in falt:
         r += nl * 2 + 'RUTAS' + nl + '1) ' + _prop_txt(ficha) + nl + '2) Pedir una refactorizacion o mejora puntual de lo entregado.' + nl + '3) Definir la siguiente tarea.'
     return r + cola
@@ -270,7 +279,7 @@ def _rellenar(texto, ficha, nodos, opts, nid, falt):
 def _asegurar_formato(texto, ficha, nid, nodos, elegido, opts, plan=False):
     falt = _faltan(texto, ficha)
     pid = (opts or {}).get('pid')
-    if falt and set(falt) <= {'DIAGRAMA', 'RUTAS'}:
+    if falt and (not plan or set(falt) <= {'DIAGRAMA', 'RUTAS'}):
         t = _rellenar(texto, ficha, nodos, opts, nid, falt)
         if not _faltan(t, ficha):
             return _con_propuesta(t, ficha), ''
@@ -374,11 +383,15 @@ def _verificar(fid, ses, pv, pid, t0):
         vid = 'V%d' % (k + 1)
         _prog(pid, vid, 'trabajando')
         _meta(pid, vid, mod, _tarea_visor({}, vid))
-        nodo_v = {'id': vid, 'timeout_s': 240, 'requiere_tools': True, 'escribe': True}
-        o = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or '')}
+        nodo_v = {'id': vid, 'timeout_s': 180, 'max_output_tokens': 3000, 'requiere_tools': True, 'escribe': True}
+        o = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or ''), 'anclados': list(pv.get('anclados') or [])}
         try:
             with _SEM:
                 r = _llamar_harness(mod, prompt, ficha, nodo_v, o)
+                if not str(r).startswith('GAP') and not re.search(r'(?im)^[ ' + chr(9) + r']*VEREDICTO:', str(r)):  # sin linea de veredicto: un solo reintento pidiendola
+                    r2 = _llamar_harness(mod, prompt + nl * 2 + 'Tu respuesta anterior no incluyo la linea final. Termina OBLIGATORIAMENTE con una linea que diga VEREDICTO: PASS o VEREDICTO: FAIL.', ficha, nodo_v, o)
+                    if re.search(r'(?im)^[ ' + chr(9) + r']*VEREDICTO:', str(r2)):
+                        r = r2
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (vid, mod, x)
         _prog(pid, vid, 'gap' if r.startswith('GAP') else 'ok')
@@ -474,7 +487,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     escribe = bool(n.get('escribe') or n.get('id') == 'N4') and bool(opts.get('aprobado'))
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
-                  'requiere_tools': bool(opts.get('muta') or n.get('requiere_tools')), 'tarea_id': opts.get('tarea_id') or '', 'nodo': str(n.get('id')),
+                  'requiere_tools': bool(opts.get('muta') or n.get('requiere_tools')), 'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'nodo': str(n.get('id')),
                   'perfil': ('auditoria' if ((n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe) else ('code' if (n.get('id') == 'N4' or opts.get('muta') or escribe) else 'normal'))})
     if r.get('error'):
         det = str(r.get('detalle') or r.get('mensaje') or '')[:160]
@@ -799,7 +812,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if ap:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
     pend_t = _pend_cargar(fid, ses) if ap else None
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'tarea_id': secrets.token_hex(6)}
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
     if ap and not pend_t:
         salida, traza = 'GAP SIN_PLAN_PENDIENTE: no hay un plan esperando aprobacion en esta conversacion; envia primero la tarea para que se genere el plan', []
     else:
@@ -815,7 +828,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
         elif pend_t and not str(salida).startswith('GAP'):
             _pend_cerrar(fid, ses)
         if opts.get('verif_ok'):  # propuesta de verificacion cruzada: ok / confirmo / proceder con verificacion
-            _verif_guardar(fid, ses, {'input': mensaje, 'plan': str(opts.get('plan') or ''), 'salida': salida, 'tarea_id': opts['tarea_id'], 't': time.time()})
+            _verif_guardar(fid, ses, {'input': mensaje, 'plan': str(opts.get('plan') or ''), 'salida': salida, 'tarea_id': opts['tarea_id'], 'anclados': list(opts.get('anclados') or []), 't': time.time()})
     return {"model": FICHAS[fid].get("ficha", fid), "reply": salida,
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
             "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}
