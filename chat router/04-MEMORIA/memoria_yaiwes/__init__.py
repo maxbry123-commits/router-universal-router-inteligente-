@@ -307,7 +307,7 @@ class QdrantLocalAdapter(ComponentAdapter):
 
 
 def _solo_sqlite(scope: str, key: str) -> bool:
-    return ":gov:" in scope or ":snapanc:" in scope or key in ("gov-registro", "snapshot-anclados")
+    return ":gov:" in scope or ":snapanc:" in scope or key in ("gov-registro", "snapshot-anclados") or str(key).startswith("archivo:")  # archivo subido: solo SQLite hasta que el usuario lo ancle
 
 
 class MemoryFacade:
