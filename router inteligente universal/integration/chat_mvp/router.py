@@ -39,7 +39,13 @@ def get_store() -> Store:
     global _store
     if _store is None:
         default = Path("/data") if os.access("/data", os.W_OK) else Path.cwd() / "riu_data"
-        _store = Store(os.getenv("RIU_DATA_DIR") or default)
+        _dd = os.getenv("RIU_DATA_DIR") or default
+        try:  # STORAGE_LIFECYCLE: restaurar del bucket HF solo si no hay base local
+            from .storage_lifecycle import restore_if_empty
+            restore_if_empty(_dd, os.getenv("HF_BUCKET_ID"), os.getenv("HF_WRITE_TOKEN") or os.getenv("HF_TOKEN"))
+        except Exception:  # noqa: BLE001
+            pass
+        _store = Store(_dd)
     return _store
 
 
