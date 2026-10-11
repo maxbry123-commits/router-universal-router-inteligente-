@@ -1204,17 +1204,31 @@ def _gov_calcular(sesion, ov, nombres):
     base, err = _gov_base()
     if err:
         return None, err
-    anc = []
+    anc, textos = [], []
     for n in _gov_nombres(nombres, []):
         t, _pr = _gov_ancla_leer(sesion, n)
         if t is None:
             return None, 'FUENTE_ANCLADA_NO_LEIBLE: constitucion:' + n
         anc.append({'nombre': n, 'sha256': _gov_sha(t.encode('utf-8'))})
+        textos.append((n, anc[-1]['sha256'], t))
     overlay = dict(ov)
     if anc:
         overlay['anclas'] = anc
-    h = _gov_sha({'base': base, 'overlay': overlay})
-    return {'id': str(base['id']), 'version': str(base['version']), 'hash': h, 'overlay': overlay}, ''
+    canon = json.dumps({'base': base, 'overlay': overlay}, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+    res = {'id': str(base['id']), 'version': str(base['version']), 'hash': _gov_sha(canon.encode('utf-8')), 'overlay': overlay,
+           'canon': canon, 'overlays_texto': textos}
+    res['bloque'] = _gov_prompt_context(res)
+    return res, ''
+
+
+def _gov_prompt_context(info):
+    # bloque de system prompt determinista (sin LLM): Constitucion validada + overlays constitucion: validados; HASH = hash de gov_ctx.
+    # La linea 5 (canon) es exactamente el contenido hasheado: sha256(canon) == HASH
+    partes = ['[CONSTITUCION YAIWES]', 'ID: ' + info['id'], 'VERSION: ' + info['version'], 'HASH: ' + info['hash'], info['canon']]
+    for n, sha, t in info['overlays_texto']:
+        partes += ['[OVERLAY constitucion:%s sha256=%s]' % (n, sha), t, '[/OVERLAY]']
+    partes.append('[FIN CONSTITUCION]')
+    return chr(10).join(partes)
 
 
 def _gov_reg_cargar(task_id):
@@ -1270,7 +1284,7 @@ def gov_prepare(payload):
     if he and str(he) != info['hash']:
         return {'error': cambio}
     try:
-        r = resolver_anclados(sesion, anclados, task_id, '')
+        r = resolver_anclados(sesion, anclados, task_id, str(p.get('pregunta') or ''))
     except Exception as e:  # noqa: BLE001
         return {'error': 'FUENTE_ANCLADA_NO_LEIBLE: ' + type(e).__name__}
     if r.get('source_set_changed'):
@@ -1314,7 +1328,7 @@ def sheriff_pre(gov, pregunta=''):
     he = str(g.get('hash_esperado') or '')
     if he and he != info['hash']:
         return {'ok': False, 'codigo': 'CONSTITUTION_CHANGED_DURING_TASK', 'detalle': 'constitucion_hash_esperado difiere del recalculado'}
-    return {'ok': True, 'id': info['id'], 'hash': info['hash']}
+    return {'ok': True, 'id': info['id'], 'hash': info['hash'], 'bloque': info['bloque']}
 
 
 def _gov_pre_chat(p, sesion, pregunta, anclados):
@@ -1340,7 +1354,7 @@ def _gov_pre_chat(p, sesion, pregunta, anclados):
     malas = [str(s.get('id')) for s in (ra.get('snapshot') or []) if s.get('estado') != 'OK']
     if malas:
         return None, {'error': 'GAP FUENTE_ANCLADA_NO_LEIBLE', 'detalle': ', '.join(malas[:5])}
-    return {'id': chk['id'], 'hash': chk['hash'], 'sheriff': 'PASS', 'supervisor': 'PENDIENTE', 'guardian': 'PENDIENTE',
+    return {'id': chk['id'], 'hash': chk['hash'], '_bloque': chk['bloque'], 'sheriff': 'PASS', 'supervisor': 'PENDIENTE', 'guardian': 'PENDIENTE',
             'sentinel': 'PENDIENTE', 'judge': 'PENDIENTE'}, None
 # ==GOV-END==
 
@@ -1468,15 +1482,18 @@ def _chat(p):
     else:
         _VISTOS.set({})
     _DEADLINE.set(time.monotonic() + presupuesto)
+    gov_info, gov_err = _gov_pre_chat(p, sesion, pregunta, p.get('anclados') or [])  # gobernada: Sheriff + anclas ANTES del modelo (fail-closed)
+    if gov_err:
+        return gov_err
+    gov_bloque = gov_info.pop('_bloque', '') if gov_info else ''
     ctx = _contexto(sesion, pregunta) if pregunta else ''
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
+    if gov_bloque:  # Constitucion validada: primero, antes de memoria y anclas
+        sistema += ' ' + gov_bloque
     if ctx:
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
     anclados = p.get('anclados') or []
     fuentes_anc = []
-    gov_info, gov_err = _gov_pre_chat(p, sesion, pregunta, anclados)  # gobernada: Sheriff + anclas ANTES del modelo (fail-closed)
-    if gov_err:
-        return gov_err
     if anclados:  # archivos, handoffs, enlaces y raices anclados por el usuario desde la ventana del chat
         try:
             res_anc = resolver_anclados(sesion, anclados, p.get('task_id') or p.get('tarea') or sesion, pregunta)
