@@ -217,7 +217,37 @@ class GraphitiAdapter(_Base):
                     pass
             out.append({"source": "graphiti", "scope": scope, "id": str(getattr(r, "uuid", "")), "text": fact, "content": fact,
                         "score": None, "provenance": prov})
+        if not out:  # sin aristas (el modelo no extrajo relaciones): se busca en los episodios del grupo; la procedencia sigue saliendo del episodio
+            out = self._buscar_episodios(scope, gid, query, k)
         return out
+
+    def _buscar_episodios(self, scope: str, gid: str, query: str, k: int) -> list[dict[str, Any]]:
+        try:
+            from graphiti_core.nodes import EpisodicNode
+            eps = self._run(EpisodicNode.get_by_group_ids(self._graph().driver.clone(database=gid), [gid]))
+        except Exception:  # noqa: BLE001
+            return []
+        toks = [t for t in re.split(r"[^A-Za-z0-9_.]+", query.lower()) if len(t) > 2]
+        res = []
+        for ep in eps:
+            body = str(getattr(ep, "content", "") or "")
+            try:
+                d = json.loads(body)
+            except Exception:  # noqa: BLE001
+                d = {}
+            if not isinstance(d, dict):
+                d = {}
+            txt = str(d.get("text") or body)
+            hit = sum(1 for t in toks if t in body.lower())
+            if toks and not hit:
+                continue
+            prov = {"group_id": gid, "episodes": [str(ep.uuid)]}
+            for kk in ("source_id", "source_sha256", "source_type", "source_snapshot_id", "procedencia"):
+                if kk in d:
+                    prov[kk] = d[kk]
+            res.append((hit, {"source": "graphiti", "scope": scope, "id": str(ep.uuid), "text": txt, "content": txt, "score": None, "provenance": prov}))
+        res.sort(key=lambda x: -x[0])
+        return [r for _, r in res[:k]]
 
     def close(self) -> None:
         if self._g is not None:
