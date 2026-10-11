@@ -1137,6 +1137,214 @@ def _snap_cargar(clave):
     return None
 
 
+# ==GOV-BEGIN== gobernanza determinista (Constitucion YAIWES v1.1.0): sin LLM, sin red, sin dependencias nuevas
+_CONST_RUTA = Path(__file__).resolve().parent / 'constitucion' / 'CONSTITUCION-YAIWES.json'
+_CONST_DIR = _CONST_RUTA.parent
+_GOV_REG = {}  # task_id -> {task_id, hash, snapshot_id, ts, entrada}; respaldo en proceso del registro persistido en la memoria
+_GOV_NOMBRE_OK = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$')
+
+
+def _gov_sha(obj):
+    import hashlib
+    if not isinstance(obj, (bytes, bytearray)):
+        obj = json.dumps(obj, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+    return hashlib.sha256(obj).hexdigest()
+
+
+def _gov_base():
+    # carga la Constitucion del Harness (JSON, ruta relativa al plugin); fail-closed si no es valida
+    try:
+        d = json.loads(_CONST_RUTA.read_text(encoding='utf-8'))
+    except Exception as e:  # noqa: BLE001
+        return None, 'CONSTITUTION_INVALID: ' + type(e).__name__
+    if not isinstance(d, dict) or not d.get('id') or not d.get('version') or d.get('modo') != 'FAIL_CLOSED':
+        return None, 'CONSTITUTION_INVALID: falta id/version o modo distinto de FAIL_CLOSED'
+    return d, ''
+
+
+def _gov_ancla_leer(sesion, nombre):
+    # ancla constitucion:<nombre> por REFERENCIA DIRECTA (nombre exacto, nunca por similitud): carpeta constitucion/ o archivo de la memoria del chat
+    nombre = str(nombre).strip()
+    if not _GOV_NOMBRE_OK.match(nombre) or '..' in nombre:
+        return None, 'constitucion:' + nombre[:60]
+    for ext in ('', '.json', '.md', '.txt'):
+        f = _CONST_DIR / (nombre + ext)
+        try:
+            if f.is_file():
+                return f.read_text(encoding='utf-8'), 'constitucion-harness:' + f.name
+        except OSError:
+            continue
+    t = _archivo_memoria(sesion, nombre)
+    if t:
+        return t, 'memoria-harness:chat:' + str(sesion)[:60]
+    return None, 'constitucion:' + nombre
+
+
+def _gov_entrada(c):
+    # overlay SOLO si viene en el payload: {anchor, archivo, texto, anclados}
+    if isinstance(c, str):
+        c = {'texto': c}
+    if not isinstance(c, dict):
+        return {}, []
+    ov = {k: c[k].strip() for k in ('anchor', 'archivo', 'texto') if isinstance(c.get(k), str) and c[k].strip()}
+    nombres = [str(x)[:300] for x in (c.get('anclados') or []) if isinstance(x, str)]
+    return ov, nombres
+
+
+def _gov_nombres(nombres, anclados):
+    out = set()
+    for n in list(nombres) + [str(a) for a in anclados if str(a).startswith('constitucion:')]:
+        n = n[13:] if n.startswith('constitucion:') else n
+        if n.strip():
+            out.add(n.strip())
+    return sorted(out)
+
+
+def _gov_calcular(sesion, ov, nombres):
+    base, err = _gov_base()
+    if err:
+        return None, err
+    anc = []
+    for n in _gov_nombres(nombres, []):
+        t, _pr = _gov_ancla_leer(sesion, n)
+        if t is None:
+            return None, 'FUENTE_ANCLADA_NO_LEIBLE: constitucion:' + n
+        anc.append({'nombre': n, 'sha256': _gov_sha(t.encode('utf-8'))})
+    overlay = dict(ov)
+    if anc:
+        overlay['anclas'] = anc
+    h = _gov_sha({'base': base, 'overlay': overlay})
+    return {'id': str(base['id']), 'version': str(base['version']), 'hash': h, 'overlay': overlay}, ''
+
+
+def _gov_reg_cargar(task_id):
+    r = _GOV_REG.get(task_id)
+    if r:
+        return r
+    try:
+        mem, scope_for = _memoria()
+        res = mem.search(scope_for(DUENO, 'gov:' + task_id[:80]), '', 6)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        for f in filas:
+            d = f.get('data', f) if isinstance(f, dict) else f
+            if isinstance(d, dict) and d.get('task_id') == task_id and d.get('hash'):
+                _GOV_REG[task_id] = d
+                return d
+    except Exception:  # noqa: BLE001 - sin memoria legible no hay registro previo; el guardado posterior falla cerrado
+        return None
+    return None
+
+
+def _gov_reg_guardar(reg):
+    try:
+        mem, scope_for = _memoria()
+        mem.save(scope_for(DUENO, 'gov:' + reg['task_id'][:80]), 'gov-registro', reg)
+    except Exception:  # noqa: BLE001
+        return False
+    if len(_GOV_REG) >= 200:
+        _GOV_REG.pop(next(iter(_GOV_REG)))
+    _GOV_REG[reg['task_id']] = reg
+    return True
+
+
+def gov_prepare(payload):
+    # congela Constitucion + source snapshot UNA vez por task_id; lo llama el motor de fichas antes del primer modelo
+    p = payload if isinstance(payload, dict) else {}
+    aprobado = bool(p.get('aprobado'))
+    if p.get('gobernanza_activa') is False:
+        base, _e = _gov_base()
+        return {'constitution_id': str((base or {}).get('id') or ''), 'constitution_hash': '', 'source_snapshot_id': '',
+                'approved': aprobado, 'apagada_por_director': True}
+    task_id = str(p.get('task_id') or '')[:200]
+    if not task_id:
+        return {'error': 'CONSTITUTION_INVALID: task_id ausente'}
+    sesion = str(p.get('sesion') or 'general')[:60]
+    anclados = [str(a)[:300] for a in (p.get('anclados') or [])]
+    ov, nom = _gov_entrada(p.get('constitucion'))
+    nom = _gov_nombres(nom, anclados)
+    info, err = _gov_calcular(sesion, ov, nom)
+    if err:
+        return {'error': err}
+    cambio = 'CONSTITUTION_CHANGED_BEFORE_APPROVAL' if aprobado else 'CONSTITUTION_CHANGED_DURING_TASK'
+    he = p.get('hash_esperado')
+    if he and str(he) != info['hash']:
+        return {'error': cambio}
+    try:
+        r = resolver_anclados(sesion, anclados, task_id, '')
+    except Exception as e:  # noqa: BLE001
+        return {'error': 'FUENTE_ANCLADA_NO_LEIBLE: ' + type(e).__name__}
+    if r.get('source_set_changed'):
+        return {'error': 'SOURCE_SET_CHANGED'}
+    malas = [str(s.get('id')) for s in (r.get('snapshot') or []) if s.get('estado') != 'OK']
+    if malas:
+        return {'error': 'FUENTE_ANCLADA_NO_LEIBLE: ' + ', '.join(malas[:5])}
+    snap_id = _gov_sha({'pedidos': r.get('pedidos') or [], 'snapshot': r.get('snapshot') or []})
+    prev = _gov_reg_cargar(task_id)
+    if prev:
+        if prev.get('hash') != info['hash']:
+            return {'error': cambio}
+        if prev.get('snapshot_id') != snap_id:
+            return {'error': 'SOURCE_CHANGED_DURING_TASK'}
+    else:
+        reg = {'task_id': task_id, 'hash': info['hash'], 'snapshot_id': snap_id, 'ts': time.time(),
+               'entrada': {'overlay': ov, 'nombres': nom}}
+        if not _gov_reg_guardar(reg):
+            return {'error': 'GOVERNANCE_NO_PERSISTIDO'}
+    return {'constitution_id': info['id'], 'constitution_hash': info['hash'], 'source_snapshot_id': snap_id, 'approved': aprobado}
+
+
+def sheriff_pre(gov, pregunta=''):
+    # Sheriff determinista previo al modelo. gov: {gov_ctx, constitucion, hash_esperado, anclados, sesion, task_id}
+    g = gov if isinstance(gov, dict) else {}
+    ctx = g.get('gov_ctx') if isinstance(g.get('gov_ctx'), dict) else {}
+    sesion = str(g.get('sesion') or 'general')[:60]
+    anclados = [str(a)[:300] for a in (g.get('anclados') or [])]
+    ov, nom = _gov_entrada(g.get('constitucion'))
+    if not ov and not nom and g.get('task_id'):
+        ent = (_gov_reg_cargar(str(g['task_id'])) or {}).get('entrada') or {}
+        ov, nom = dict(ent.get('overlay') or {}), list(ent.get('nombres') or [])
+    info, err = _gov_calcular(sesion, ov, _gov_nombres(nom, anclados))
+    if err:
+        return {'ok': False, 'codigo': err.split(':')[0].strip(), 'detalle': err}
+    ch = str(ctx.get('constitution_hash') or '')
+    if not ch:
+        return {'ok': False, 'codigo': 'GOVERNANCE_PREPARE_NO_DISPONIBLE', 'detalle': 'gov_ctx sin constitution_hash: gov_prepare no se ejecuto'}
+    if ch != info['hash']:
+        return {'ok': False, 'codigo': 'CONSTITUTION_CHANGED_DURING_TASK', 'detalle': 'el hash de gov_ctx difiere del recalculado'}
+    he = str(g.get('hash_esperado') or '')
+    if he and he != info['hash']:
+        return {'ok': False, 'codigo': 'CONSTITUTION_CHANGED_DURING_TASK', 'detalle': 'constitucion_hash_esperado difiere del recalculado'}
+    return {'ok': True, 'id': info['id'], 'hash': info['hash']}
+
+
+def _gov_pre_chat(p, sesion, pregunta, anclados):
+    # -> (gov_info | None, error | None). Corre ANTES del modelo y de cualquier tool. Chat normal: (None, None)
+    gd = p.get('gobernanza')
+    gob = bool(p.get('gov_ctx')) or gd is True or (isinstance(gd, dict) and bool(gd.get('enabled')))
+    if p.get('gobernanza_activa') is False:  # solo la orden explicita del Director la apaga
+        base, _e = _gov_base()
+        return {'id': str((base or {}).get('id') or ''), 'apagada_por_director': True}, None
+    if not gob:
+        return None, None
+    tid = str(p.get('task_id') or p.get('tarea') or sesion)
+    chk = sheriff_pre({'gov_ctx': p.get('gov_ctx'), 'constitucion': p.get('constitucion'), 'hash_esperado': p.get('constitucion_hash_esperado'),
+                       'anclados': anclados, 'sesion': sesion, 'task_id': tid}, pregunta)
+    if not chk['ok']:
+        return None, {'error': 'GAP ' + chk['codigo'], 'detalle': chk['detalle']}
+    try:
+        ra = resolver_anclados(sesion, anclados, tid, pregunta)
+    except Exception as e:  # noqa: BLE001
+        return None, {'error': 'GAP FUENTE_ANCLADA_NO_LEIBLE', 'detalle': 'resolver_anclados fallo: ' + type(e).__name__}
+    if ra.get('source_set_changed'):
+        return None, {'error': 'GAP SOURCE_SET_CHANGED', 'detalle': 'el conjunto de anclas cambio dentro de la misma tarea'}
+    malas = [str(s.get('id')) for s in (ra.get('snapshot') or []) if s.get('estado') != 'OK']
+    if malas:
+        return None, {'error': 'GAP FUENTE_ANCLADA_NO_LEIBLE', 'detalle': ', '.join(malas[:5])}
+    return {'id': chk['id'], 'hash': chk['hash'], 'sheriff': 'PASS', 'supervisor': 'PENDIENTE', 'guardian': 'PENDIENTE',
+            'sentinel': 'PENDIENTE', 'judge': 'PENDIENTE'}, None
+# ==GOV-END==
+
+
 def resolver_anclados(sesion, anclados, task_id, pregunta=''):
     # Resuelve TODOS los anclados (sin tope). Devuelve {'texto': str para el modelo, 'snapshot': [...]}.
     # El snapshot (ids/hashes/estado, sin copiar documentos) se crea una vez por task_id y se reutiliza.
@@ -1150,7 +1358,7 @@ def resolver_anclados(sesion, anclados, task_id, pregunta=''):
     if clave in _SNAP_ANC:
         r = _SNAP_ANC[clave]
         if set(str(n)[:300] for n in anclados) != set(r.get('pedidos') or []):
-            return dict(r, texto=r['texto'] + ' | SOURCE_SET_CHANGED: las anclas actuales difieren de las de esta tarea; el cambio aplica a la siguiente tarea')
+            return dict(r, source_set_changed=True, texto=r['texto'] + ' | SOURCE_SET_CHANGED: las anclas actuales difieren de las de esta tarea; el cambio aplica a la siguiente tarea')
         return r
     trozos, snap, usado = [], [], [0]
 
@@ -1199,6 +1407,12 @@ def resolver_anclados(sesion, anclados, task_id, pregunta=''):
                         poner('archivo_raiz', rp, t, pr)
                 if resto or trunc:
                     trozos.append('GAP RAIZ_ARCHIVOS_NO_LEIDOS (%d%s): %s' % (len(resto), '+' if trunc else '', ', '.join(resto[:15]) + (' ...' if len(resto) > 15 or trunc else '')))
+            elif nom.startswith('constitucion:'):
+                t, pr = _gov_ancla_leer(sesion, nom[13:])
+                if t is None:
+                    falla('constitucion', nom, 'GAP FUENTE_ANCLADA_NO_LEIBLE: ' + nom, pr)
+                else:
+                    poner('constitucion', nom, t, pr)
             elif nom.startswith('enlace:'):
                 u = nom[7:].strip()
                 g = _anc_gh_url(u)
@@ -1260,6 +1474,9 @@ def _chat(p):
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
     anclados = p.get('anclados') or []
     fuentes_anc = []
+    gov_info, gov_err = _gov_pre_chat(p, sesion, pregunta, anclados)  # gobernada: Sheriff + anclas ANTES del modelo (fail-closed)
+    if gov_err:
+        return gov_err
     if anclados:  # archivos, handoffs, enlaces y raices anclados por el usuario desde la ventana del chat
         try:
             res_anc = resolver_anclados(sesion, anclados, p.get('task_id') or p.get('tarea') or sesion, pregunta)
@@ -1285,7 +1502,10 @@ def _chat(p):
             mensajes = guardado
             mensajes.append({'role': 'user', 'content': pregunta + ' (retoma el trabajo donde quedo, sin empezar de cero)'})
     if model in ESPECIALES:  # ficha pipeline (consil / motor / xray / auditor): no es una sola api
-        return _especial(ESPECIALES[model], model, sesion, pregunta, p)
+        r_esp = _especial(ESPECIALES[model], model, sesion, pregunta, p)
+        if gov_info and isinstance(r_esp, dict) and 'error' not in r_esp:
+            r_esp['constitucion'] = gov_info
+        return r_esp
     mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
@@ -1377,6 +1597,8 @@ def _chat(p):
     salida['memoria_guardada'] = _guardar(sesion, model, pregunta, texto)
     if fuentes_anc:
         salida['fuentes_ancladas'] = fuentes_anc
+    if gov_info:
+        salida['constitucion'] = gov_info
     return salida
 
 
