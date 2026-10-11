@@ -5,7 +5,60 @@
   "ia": false,
   "selector": false,
   "memoria": "/memoria",
-  "almacenamiento": "/espacio",
+  "almacenamiento": "/chat/storage",
   "computo": "HF Jobs cpu-basic",
-  "banco": "HF cifrado"
+  "banco": "HF cifrado",
+  "computo_endpoint": "/control/hf",
+  "puertos": [
+    {
+      "puerto": "ficha0-p01",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p02",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p03",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p04",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p05",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p06",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p07",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p08",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p09",
+      "plugin_id": null,
+      "estado": "libre"
+    },
+    {
+      "puerto": "ficha0-p10",
+      "plugin_id": null,
+      "estado": "libre"
+    }
+  ]
 }
