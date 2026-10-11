@@ -311,6 +311,14 @@ class MemoryFacade:
         self.sqlite = SQLiteAdapter(store)
         self.graph = GraphSQLiteAdapter(store)
         self.components = {name: ComponentAdapter(name) for name in ("state-hub", "dataset-yaiwes", "graphiti", "falkordb", "memanto", "graphify", "agentdb", "postgresql", "redis", "hf-storage-bucket", "chroma")}
+        try:  # adaptadores reales (health estricto); si el modulo falla, queda el generico
+            from . import runtime_adapters as _ra
+            self.embedding = _ra.EmbeddingAdapter()
+            self.components["graphiti"] = _ra.GraphitiAdapter(self.embedding)
+            self.components["graphify"] = _ra.GraphifyCodeAdapter()
+            self.components["memanto"] = _ra.MemantoAdapter()
+        except Exception:  # noqa: BLE001
+            self.embedding = None
         self.components["qdrant"] = QdrantLocalAdapter()  # indice derivado local; SQLite sigue siendo la verdad
 
     def health(self) -> dict[str, Any]:
