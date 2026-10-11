@@ -373,23 +373,25 @@ def _verificar(fid, ses, pv, pid, t0):
     ficha = FICHAS[fid]
     modelos = list((ficha.get('verificacion_cruzada') or {}).get('modelos') or _PANEL_DEF)
     nl = chr(10)
-    rol = ('VERIFICADOR INDEPENDIENTE (revisa y refactoriza): auditoria forense X-Ray de la tarea entregada. VERIFICACION CRUZADA: (1) contra el INPUT BLOCK VERBATIM del Director: cumple cada instruccion, una por una? (2) contra el codigo fuente o la tarea en curso: lee los archivos reales con las herramientas (github_leer, hf_leer); no te fies de lo que dice la salida entregada. Si encuentras gaps o defectos, RESUELVELOS tu mismo: refactoriza y mejora lo ya hecho con las herramientas de escritura. Trabajas a la vez que otros verificadores: antes de escribir lee el archivo vivo, haz cambios minimos y localizados y no reescribas archivos completos. Informa que cambiaste (archivo y evidencia real). Termina con una linea: VEREDICTO: PASS, o VEREDICTO: FAIL: <defecto concreto que no pudiste resolver>')
+    rol = ('VERIFICADOR INDEPENDIENTE (SOLO LECTURA): auditoria forense X-Ray de la tarea entregada. VERIFICACION CRUZADA: (1) contra el INPUT BLOCK VERBATIM del Director: cumple cada instruccion, una por una? (2) contra el codigo fuente o la tarea en curso: lee los archivos reales con las herramientas (github_leer, hf_leer); no te fies de lo que dice la salida entregada. SOLO LECTURA: no escribas ni modifiques nada (N4 es el unico escritor). Si detectas un defecto, devuelve una linea CORRECCION_N4: <defecto concreto> | <evidencia real> | <archivo o ruta>. Termina con una linea: VEREDICTO: PASS, o VEREDICTO: FAIL: <defecto concreto que no pudiste resolver>')
     prompt = (rol + nl * 2 + 'INPUT BLOCK VERBATIM DEL DIRECTOR:' + nl + str(pv['input']) + nl * 2 + 'PLAN APROBADO:' + nl + str(pv.get('plan') or '(sin plan)')[:4000] +
               nl * 2 + 'SALIDA ENTREGADA A VERIFICAR:' + nl + str(pv['salida'])[:8000])
     mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
+
+    base_opts = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or ''), 'anclados': list(pv.get('anclados') or []), 'pregunta': str(pv.get('input') or ''),
+                 'gobernanza': _gob(ficha), 'constitucion': _const_ref(ficha, {}), 'constitucion_hash': str(pv.get('constitucion_hash') or '')}
+    gc = _gov_prepare(ficha, base_opts, True, str(pv.get('constitucion_hash') or ''))
+    if gc.get('error'):
+        return {'model': ficha.get('ficha', fid), 'reply': 'GAP ' + str(gc['error']), 'estado_tarea': 'GAP', 'herramientas': [], 'ms': int((time.time() - t0) * 1000)}
 
     def miembro(a):
         k, mod = a
         vid = 'V%d' % (k + 1)
         _prog(pid, vid, 'trabajando')
         _meta(pid, vid, mod, _tarea_visor({}, vid))
-        nodo_v = {'id': vid, 'timeout_s': 180, 'max_output_tokens': 3000, 'requiere_tools': True, 'escribe': True}
-        o = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or ''), 'anclados': list(pv.get('anclados') or []), 'gobernanza': _gob(FICHAS.get(fid) or {}), 'constitucion': _const_ref(FICHAS.get(fid) or {}, {}), 'constitucion_hash': str(pv.get('constitucion_hash') or '')}
-    _gc = _gov_prepare(FICHAS.get(fid) or {}, o, True, str(pv.get('constitucion_hash') or ''))
-    if _gc.get('error'):
-        return {'model': (FICHAS.get(fid) or {}).get('ficha', fid), 'reply': 'GAP ' + str(_gc['error'])}
-    if _gc:
-        o['gov_ctx'] = _gc
+        nodo_v = {'id': vid, 'timeout_s': 180, 'max_output_tokens': 3000, 'requiere_tools': True, 'escribe': False}
+        o = dict(base_opts)
+        o['gov_ctx'] = dict(gc)
         try:
             with _SEM:
                 r = _llamar_harness(mod, prompt, ficha, nodo_v, o)
@@ -417,7 +419,7 @@ def _verificar(fid, ses, pv, pid, t0):
     texto, resumen, cons = _panel_texto(modelos, res)
     _verif_cerrar(fid, ses)
     return {'model': ficha.get('ficha', fid), 'reply': texto, 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': texto}}],
-            'traza': [{'nodo': 'V%d' % (k + 1), 'modelo': m, 'rol': 'verificacion cruzada (revisa y refactoriza)'} for k, m in enumerate(modelos)],
+            'traza': [{'nodo': 'V%d' % (k + 1), 'modelo': m, 'rol': 'verificacion cruzada (solo lectura)'} for k, m in enumerate(modelos)],
             'resultado_parcial': '', 'estado_tarea': 'VERIFICACION_CRUZADA', 'verificacion': resumen, 'veredicto_cruzado': cons,
             'herramientas': [], 'ms': int((time.time() - t0) * 1000)}
 
@@ -511,7 +513,7 @@ def _gov_prepare(ficha, opts, aprobado, esperado=''):
     if not callable(fn):
         return {'error': 'GOVERNANCE_PREPARE_NO_DISPONIBLE'}
     try:
-        r = fn({'task_id': opts.get('tarea_id') or '', 'sesion': opts.get('sesion') or '', 'constitucion': opts.get('constitucion') or {}, 'anclados': list(opts.get('anclados') or []), 'aprobado': bool(aprobado), 'hash_esperado': str(esperado or ''), 'ficha': ficha.get('ficha') or ''})
+        r = fn({'task_id': opts.get('tarea_id') or '', 'pregunta': str(opts.get('pregunta') or ''), 'sesion': opts.get('sesion') or '', 'constitucion': opts.get('constitucion') or {}, 'anclados': list(opts.get('anclados') or []), 'aprobado': bool(aprobado), 'hash_esperado': str(esperado or ''), 'ficha': ficha.get('ficha') or ''})
     except Exception as e:
         return {'error': 'GOVERNANCE_PREPARE_FALLO:' + str(e)[:160]}
     if not isinstance(r, dict):
@@ -943,6 +945,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             plan_ap = str(pend_t['plan']) + ((chr(10) * 2 + 'OBSERVACIONES DEL DIRECTOR AL APROBAR: ' + extra) if extra else '')
             opts.update(muta=True, previo=dict(pend_t.get('previo') or {}), plan=plan_ap, tarea_id=str(pend_t.get('tarea_id') or opts['tarea_id']), constitucion_hash=str(pend_t.get('constitucion_hash') or ''))
         opts['plan_stop'] = bool(opts['muta'] and not ap)
+        opts['pregunta'] = mensaje
         gc_ = _gov_prepare(FICHAS[fid], opts, ap, str((pend_t or {}).get('constitucion_hash') or ''))
         if gc_.get('error'):
             salida, traza = 'GAP ' + str(gc_['error']), []
