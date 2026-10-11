@@ -52,3 +52,18 @@
 #composer{bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 .sheet .va-caja{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 @media(prefers-reduced-motion:reduce){.chip-confirmar,.riu-contador.sube,.riu-r.pop,.sheet:not([hidden]) .va-caja,.sheet:not([hidden]),.riu-tareas li.en-curso .riu-tilde{animation:none}.chip-borrar .tapa{transition:none}}
+/* RUI 01 folder: archivos vacío */
+.riu-carpeta{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0;color:var(--quiet-2);font-size:13px}
+.riu-carpeta[hidden]{display:none}
+.riu-carpeta .fondo{fill:var(--panel);stroke:var(--border-strong);stroke-width:1.5}
+.riu-carpeta .tapa{fill:var(--module-selected);stroke:var(--border-strong);stroke-width:1.5;transform-box:view-box;transform-origin:4px 50px;animation:riu-abre 1.4s cubic-bezier(.34,1.2,.64,1) .2s both}
+@keyframes riu-abre{from{transform:none}to{transform:skewX(-8deg) scaleY(.82)}}
+/* bienvenida + RUI 11 letras con gravedad */
+.riu-bienvenida{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;text-align:center;z-index:2;pointer-events:none}
+.riu-bienvenida[hidden]{display:none}
+.riu-bv-titulo{font-size:22px;font-weight:700;color:var(--title)}
+.riu-bv-titulo span{display:inline-block;animation:riu-cae .6s cubic-bezier(.34,1.4,.64,1) both;animation-delay:calc(var(--i,0) * 35ms)}
+@keyframes riu-cae{from{opacity:0;transform:translateY(-26px) rotate(-8deg)}}
+.riu-bv-sub{margin:0;color:var(--quiet-2);font-size:14px}
+.riu-bv-acc{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;pointer-events:auto;margin-top:6px}
+@media(prefers-reduced-motion:reduce){.riu-carpeta .tapa,.riu-bv-titulo span{animation:none}}

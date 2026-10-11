@@ -1,6 +1,7 @@
 // chat-riu2.js — resto de componentes RUI del skill (12, 13, 14, 15, 17, 18, 19, 21, 04, 05, 02) llevados a JS simple
 // + mejoras de flujo (ventanas accesibles, borrador, campo que crece, aviso sin conexion). Archivo propio, solo frontend, datos reales:
 // nada se inventa; lo que muestra sale del chat, del historial local y de los avisos reales.
+import { cargar } from "./apariencia-aplicar.js";
 const $ = (s, r = document) => r.querySelector(s);
 const crear = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const leer = (k, def) => { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v == null ? def : v; } catch (e) { return def; } };
@@ -37,7 +38,7 @@ function campana() {
     const m = (aviso.textContent || "").trim(); if (!m) return;
     const t = Date.now(); if (m === ult && t - ultT < 1500) return; ult = m; ultT = t;
     const err = /error|no se pudo|fall|sin conexi|denegad|negado|HTTP [45]|BRIDGE|caído/i.test(m); aviso.classList.toggle("err", err);
-    setTimeout(() => { if ((aviso.textContent || "").trim() === m) aviso.textContent = ""; }, err ? 9000 : 4500);  // toast: se limpia solo; el historial queda en la campana
+    setTimeout(() => { if ((aviso.textContent || "").trim() === m) aviso.textContent = ""; }, Math.round((Number(cargar().avisoSeg) || 4.5) * 1000 * (err ? 2 : 1)));  // toast: se limpia solo; el historial queda en la campana
     lista.push({ t, m: m.slice(0, 220) }); if (lista.length > 30) lista.shift(); escribir("riu_avisos_v1", lista);
     if (panel.hidden) { nuevos++; insignia(); b.classList.remove("suena"); void b.offsetWidth; b.classList.add("suena"); } else pintar();
   }).observe(aviso, { childList: true, characterData: true, subtree: true });
@@ -205,6 +206,26 @@ function actividad({ q }) {
   };
   new MutationObserver(() => { if (!sh.hidden) pintar(); }).observe(sh, { attributes: true, attributeFilter: ["hidden"] });
 }
+// RUI 01 folder: carpeta que se abre cuando "Archivos en memoria" está vacía
+function carpetaVacia({ q }) {
+  const lista = q("#va-lista"); if (!lista || lista.dataset.carpeta) return; lista.dataset.carpeta = "1";
+  const c = crear("div", "riu-carpeta"); c.hidden = true;
+  c.innerHTML = '<svg viewBox="0 0 64 56" width="64" height="56" aria-hidden="true"><path class="fondo" d="M4 12a4 4 0 0 1 4-4h14l6 6h28a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path class="tapa" d="M4 24h56v24a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/></svg><span>Aún no hay archivos en memoria</span>';
+  lista.after(c);
+  const act = () => { const n = lista.children.length; c.hidden = !(n === 0 || (n === 1 && /sin |vac[ií]o|no hay|ning/i.test(lista.textContent))); };
+  new MutationObserver(act).observe(lista, { childList: true }); act();
+}
+// bienvenida (spec §5) con RUI 11 gravity-letters: el chat vacío saluda y ofrece accesos rápidos reales
+function bienvenida({ q }) {
+  const hist = q("#histories"); if (!hist || hist.querySelector(".riu-bienvenida")) return;
+  const w = crear("div", "riu-bienvenida"), t = crear("div", "riu-bv-titulo"); t.setAttribute("aria-label", "¿Qué hacemos hoy?");
+  [..."¿Qué hacemos hoy?"].forEach((ch, i) => { const s = crear("span", "", ch === " " ? "\u00a0" : ch); s.style.setProperty("--i", i); s.setAttribute("aria-hidden", "true"); t.append(s); });
+  const fila = crear("div", "riu-bv-acc");
+  [["Mis archivos", "#btn-archivos"], ["Anclar", "#btn-ancla"], ["Sandbox", "#btn-sandbox"]].forEach(([n, sel]) => { const b = crear("button", "mini", n); b.type = "button"; b.addEventListener("click", () => { const x = q(sel); if (x) x.click(); }); fila.append(b); });
+  w.append(t, crear("p", "riu-bv-sub", "Escribe una orden o /ayuda"), fila); hist.append(w);
+  const act = () => { const h = [...hist.querySelectorAll(".chat-history")].find((x) => !x.hidden); w.hidden = !!(h && h.querySelector(".message")); };
+  new MutationObserver(act).observe(hist, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden"] }); act();
+}
 // buscador (skill): filtra las listas largas de archivos de las ventanas
 function buscadores({ q }) {
   ["#va-lista", "#anc-lista"].forEach((sel) => {
@@ -242,5 +263,5 @@ function entrada({ q }) {
 
 export function conectarRiu2(ctx) {
   [campana, navegacion, sinConexion].forEach((f) => seguro(f));
-  [cerrarChats, contadorAncla, reacciones, reproductor, colaMotor, actividad, buscadores, ventanasA11y, entrada].forEach((f) => seguro(f, ctx));
+  [cerrarChats, contadorAncla, reacciones, reproductor, colaMotor, actividad, buscadores, carpetaVacia, bienvenida, ventanasA11y, entrada].forEach((f) => seguro(f, ctx));
 }

@@ -22,3 +22,5 @@
 #notice.err:not(:empty){border-color:var(--status-red);color:var(--status-red)}
 @keyframes riu-toast{from{opacity:0;transform:translate(-50%,10px)}}
 @media(prefers-reduced-motion:reduce){#notice:not(:empty){animation:none}}
+/* RUI 03 hook-sidebar: riel punteado del que cuelga el indicador activo */
+@media(min-width:721px){#navigation.con-ind::before{content:"";position:absolute;left:0;top:0;bottom:0;border-left:1px dashed var(--border-strong);pointer-events:none}}
