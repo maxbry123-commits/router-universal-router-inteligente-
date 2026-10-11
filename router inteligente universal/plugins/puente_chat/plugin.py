@@ -82,10 +82,21 @@ def _hf(metodo: str, ruta: str, cuerpo: Any = None) -> tuple[int, Any]:
     return ultimo
 
 
+_CTRL_MEM = re.compile(r'[\x00-\x1f\x7f]')
+
+
+def _scope_for(owner, scope):
+    # namespace determinista y acotado (<=80) para la fachada canonica memoria_yaiwes
+    o = _CTRL_MEM.sub('', str(owner or '')).strip() or 'anonymous'
+    s = _CTRL_MEM.sub('', str(scope or '')).strip() or 'general'
+    return (s if s.startswith(o + ':') else o + ':' + s)[:80]
+
+
 def _memoria():
-    from integration.chat_mvp.memory_runtime import memory, scope_for
-    from integration.chat_mvp.router import get_store
-    return memory(get_store()), scope_for
+    # UNICA memoria: la fachada canonica memoria_yaiwes (chat router/04-MEMORIA) que carga memoria_loader sobre el store del Router.
+    # memory_runtime.py ya no existe en main (revert 4156657): no se importa.
+    from integration.chat_mvp.memoria_loader import _memory
+    return _memory(), _scope_for
 
 
 def _contexto(sesion: str, pregunta: str) -> str:
