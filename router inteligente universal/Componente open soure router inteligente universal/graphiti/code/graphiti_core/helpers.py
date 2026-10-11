@@ -23,7 +23,10 @@ from typing import Any
 
 import numpy as np
 from dotenv import load_dotenv
-from neo4j import time as neo4j_time
+try:  # opcional
+    from neo4j import time as neo4j_time
+except ImportError:
+    neo4j_time = None
 from numpy._typing import NDArray
 from pydantic import BaseModel
 
@@ -56,7 +59,7 @@ CHUNK_DENSITY_THRESHOLD = float(os.getenv('CHUNK_DENSITY_THRESHOLD', 0.15))
 
 
 def parse_db_date(input_date: neo4j_time.DateTime | str | None) -> datetime | None:
-    if isinstance(input_date, neo4j_time.DateTime):
+    if neo4j_time is not None and isinstance(input_date, neo4j_time.DateTime):
         return input_date.to_native()
 
     if isinstance(input_date, str):
