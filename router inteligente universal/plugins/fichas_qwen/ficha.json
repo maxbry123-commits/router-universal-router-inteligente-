@@ -25,7 +25,8 @@
       "fichas",
       "chat",
       "chat_async",
-      "resultado"
+      "resultado",
+      "llm"
     ]
   },
   "seguridad": {
