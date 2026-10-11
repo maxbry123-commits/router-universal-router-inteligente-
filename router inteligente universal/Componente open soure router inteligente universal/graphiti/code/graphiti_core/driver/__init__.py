@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from neo4j import Neo4jDriver
+try:  # opcional: YAIWES inyecta su propio cliente
+    from neo4j import Neo4jDriver
+except ImportError:
+    Neo4jDriver = None
 
 __all__ = ['Neo4jDriver']
