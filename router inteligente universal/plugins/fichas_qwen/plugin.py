@@ -967,6 +967,34 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}
 
 
+_TAREAS_PEQUENAS = {"small", "simple", "tool", "lookup"}
+
+
+def _ficha4_modelo(task_type: Any) -> str:
+    # seleccion deterministica por task_type (sin LLM selectora): pequenas -> Qwen 3.8 Flash; el resto, modelos ya registrados
+    t = str(task_type or "small").lower()
+    if t in _TAREAS_PEQUENAS:
+        return "ficha-qwen38flash"
+    return {"code": "ficha-qwen38max", "complex": "ficha-qwen38max", "reason": "ficha-qwen37max"}.get(t, "ficha-qwen38flash")
+
+
+def _llm(p: dict[str, Any]) -> dict[str, Any]:
+    # Ficha 4 = servicio LLM detras del Harness: recibe por HTTP, llama al modelo y devuelve; no abre memoria ni Harness
+    fid = "ficha4-workflow-yaiwes"
+    if fid not in FICHAS:
+        return {"error": "GAP_FICHA4"}
+    msgs = p.get("messages") or []
+    prompt = "\n\n".join("[" + str(m.get("role", "user")) + "] " + str(m.get("content", "")) for m in msgs if isinstance(m, dict))
+    if not prompt:
+        return {"error": "SIN_MENSAJES"}
+    modelo = _ficha4_modelo(p.get("task_type"))
+    try:
+        out = _llamar(modelo, prompt, FICHAS[fid])
+    except Exception as x:  # noqa: BLE001
+        return {"error": "GAP_LLM_FICHA", "detalle": repr(x)[:200]}
+    return {"ficha": fid, "modelo": modelo, "reply": out, **{k: p.get(k) for k in ("caller_id", "plugin_id", "workflow_id", "project_id", "task_id", "task_type")}}
+
+
 def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
     p = payload or {}
     if action == "status":
@@ -997,4 +1025,6 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             return r
         except Exception as x:  # noqa: BLE001
             return {"error": "CHAT_FAILED", "detalle": type(x).__name__}
+    if action == "llm":
+        return _llm(p)
     return {"error": "ACCION_DESCONOCIDA"}
