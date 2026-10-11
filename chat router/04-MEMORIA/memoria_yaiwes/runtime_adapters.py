@@ -185,8 +185,22 @@ class GraphitiAdapter(_Base):
         out = []
         for r in res:
             fact = str(getattr(r, "fact", r))
+            eps = [str(e) for e in (getattr(r, "episodes", None) or [])]
+            prov = {"group_id": gid, "episodes": eps}
+            if eps:  # procedencia: se lee del propio episodio (sin sidecar ni tabla nueva)
+                try:
+                    from graphiti_core.nodes import EpisodicNode
+                    for ep in self._run(EpisodicNode.get_by_uuids(self._graph().driver.clone(database=gid), eps)):
+                        d = json.loads(ep.content)
+                        for kk in ("source_id", "source_sha256", "source_type", "source_snapshot_id", "procedencia"):
+                            if isinstance(d, dict) and kk in d:
+                                prov[kk] = d[kk]
+                        if "source_id" in prov:
+                            break
+                except Exception:  # noqa: BLE001 - sin procedencia el dato se descarta aguas arriba
+                    pass
             out.append({"source": "graphiti", "scope": scope, "id": str(getattr(r, "uuid", "")), "text": fact, "content": fact,
-                        "score": None, "provenance": {"group_id": gid, "episodes": [str(e) for e in (getattr(r, "episodes", None) or [])]}})
+                        "score": None, "provenance": prov})
         return out
 
     def close(self) -> None:
