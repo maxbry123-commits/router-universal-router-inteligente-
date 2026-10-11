@@ -267,6 +267,74 @@ def test_raiz_congelada_misma_seleccion_en_llamadas_posteriores():
     # prepare le pasa la pregunta del payload a resolver_anclados
     assert "str(p.get('pregunta') or '')" in SRC
 
+def _ns_completo():
+    ns, mem, ruta, ll = nuevo()
+    ns['_SNAP_ANC'] = {}
+    ns.update({'_ANC_TOPE_DOC': 3000, '_ANC_TOPE_TOTAL': 24000, '_ANC_RAIZ_MAX': 6})
+    ns['_anc_sha'] = lambda t: hashlib.sha256(str(t).encode('utf-8')).hexdigest()
+    ns['_archivo_memoria'] = lambda sesion, nombre: ('contenido de a.md' if nombre == 'a.md' else '')
+    exec(_fn('_snap_scope', '_snap_guardar', '_snap_cargar', 'resolver_anclados'), ns)
+    return ns, mem, ruta
+
+
+def test_a_constitucion_anclada_solo_en_bloque_constitucional():
+    ns, _m, _r = _ns_completo()
+    MARCA = 'CONTENIDO_EXTRA_UNICO'
+    ns['_CONST_DIR'].joinpath('extra.md').write_text(MARCA, encoding='utf-8')
+    an = ['constitucion:extra', 'archivo:a.md']
+    ctx = ns['gov_prepare'](payload(task_id='TA', anclados=an))
+    assert 'error' not in ctx
+    p = {'gov_ctx': ctx, 'anclados': an, 'task_id': 'TA', 'sesion': 's'}
+    info, err = ns['_gov_pre_chat'](p, 's', 'q', an)
+    assert err is None
+    b = info['_bloque']
+    assert b.count('constitucion:extra') == 1 and b.count(MARCA) == 1  # exactamente una vez en el bloque constitucional
+    r = ns['resolver_anclados']('s', an, 'TA', 'q')
+    for texto in (r['texto_data'], ):
+        assert 'extra' not in texto and MARCA not in texto and 'contenido de a.md' in texto  # no vuelve al bloque DATO
+    assert any(s['id'] == 'constitucion:extra' and s['sha256'] for s in r['snapshot'])  # trazabilidad intacta
+    ns['_SNAP_ANC'].clear()  # rehidratado desde memoria: tampoco aparece
+    assert 'extra' not in ns['resolver_anclados']('s', an, 'TA', 'q')['texto_data']
+    i = SRC.index('def _chat(p):')
+    cuerpo = SRC[i:SRC.index('def _estado', i)]
+    assert "anclados_data = [a for a in anclados if not str(a).startswith('constitucion:')]" in cuerpo
+    assert cuerpo.index("sistema += ' ' + gov_bloque") < cuerpo.index('Contexto guardado') < cuerpo.index('Anclados por el usuario')
+
+
+def test_b_reanudar_conserva_el_mismo_hash():
+    ns, _m, _r, ll = nuevo()
+    h0 = ns['gov_prepare'](payload(task_id='TB', constitucion_texto='regla personalizada'))
+    assert 'error' not in h0
+    h_sin = ns['gov_prepare'](payload(task_id='TB0'))['constitution_hash']
+    assert h0['constitution_hash'] != h_sin  # el texto personalizado entra al hash
+    n_res = ll['resolver']
+    r = ns['gov_prepare']({'task_id': 'TB', 'sesion': 's', 'reanudar': True, 'aprobado': True,
+                           'constitucion_texto': 'OTRO TEXTO IGNORADO', 'anclados': ['archivo:zzz'], 'hash_esperado': h0['constitution_hash']})
+    assert r == dict(h0, approved=True)  # mismo hash, mismo snapshot id
+    assert ll['resolver'] == n_res  # sin recalcular raices
+    assert ns['gov_resume_input']('TB')['overlay'] == {'texto': 'regla personalizada'}
+    # con overlay constitucion:extra tambien
+    ns['_CONST_DIR'].joinpath('extra.md').write_text('x', encoding='utf-8')
+    a = ns['gov_prepare'](payload(task_id='TB2', anclados=['constitucion:extra']))
+    assert ns['gov_prepare']({'task_id': 'TB2', 'reanudar': True})['constitution_hash'] == a['constitution_hash']
+
+
+def test_c_sin_registro_no_recuperable():
+    ns, _m, _r, _l = nuevo()
+    assert ns['gov_prepare']({'task_id': 'NUNCA', 'reanudar': True})['error'] == 'GOVERNANCE_CONTEXT_NO_RECUPERABLE'
+    assert ns['gov_prepare']({'reanudar': True})['error'] == 'GOVERNANCE_CONTEXT_NO_RECUPERABLE'  # nunca una Constitucion nueva
+    assert ns['gov_resume_input']('NUNCA') is None
+
+
+def test_d_reanudar_hash_esperado_distinto():
+    ns, _m, ruta, _l = nuevo()
+    h = ns['gov_prepare'](payload(task_id='TD'))['constitution_hash']
+    assert ns['gov_prepare']({'task_id': 'TD', 'reanudar': True, 'hash_esperado': '0' * 64})['error'] == 'CONSTITUTION_CHANGED_DURING_TASK'
+    assert ns['gov_prepare']({'task_id': 'TD', 'reanudar': True, 'hash_esperado': h})['constitution_hash'] == h
+    ruta.write_text(json.dumps(dict(CONST_OK, reglas=['cambiada'])), encoding='utf-8')  # cambia el archivo durante la tarea
+    assert ns['gov_prepare']({'task_id': 'TD', 'reanudar': True})['error'] == 'CONSTITUTION_CHANGED_DURING_TASK'
+    assert ns['gov_prepare']({'task_id': 'TD', 'reanudar': True, 'hash_esperado': h})['error'] == 'CONSTITUTION_CHANGED_DURING_TASK'
+
 if __name__ == '__main__':
     n = 0
     for k, f in sorted(globals().items()):
