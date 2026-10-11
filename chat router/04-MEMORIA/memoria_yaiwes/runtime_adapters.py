@@ -191,8 +191,9 @@ class GraphitiAdapter(_Base):
                                                 group_id=self._gid(scope)))
             return {"adapter": self.name, "status": "SAVED"}
         except Exception as exc:  # noqa: BLE001 - SQLite ya guardo; Graphiti nunca tumba el chat
-            self._err = f"GAP_WRITE:{type(exc).__name__}"
-            return {"adapter": self.name, "status": "GAP", "reason": self._err}
+            m = str(exc)
+            self._err = m.split(":", 1)[0] if m.startswith("GAP_FICHA4_HTTP") else f"GAP_WRITE:{type(exc).__name__}"
+            return {"adapter": self.name, "status": "GAP", "reason": self._err, "detalle": m[:160] if m.startswith("GAP_") else ""}
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
         gid = self._gid(scope)
