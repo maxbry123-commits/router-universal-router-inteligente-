@@ -287,6 +287,15 @@ class GraphifyCodeAdapter(_Base):
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
         return {"adapter": self.name, "status": "SKIPPED", "reason": "code-graph-not-memory"}
 
+    def _rel(self, f):
+        """ruta relativa a la raiz indexada (el filtro por ancla compara prefijos de ruta del repo)"""
+        if not f:
+            return f
+        try:
+            return Path(str(f)).resolve().relative_to(Path(self.source_root()).resolve()).as_posix()
+        except Exception:  # noqa: BLE001
+            return str(f).replace("\\", "/")
+
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
         g = self.graph_path()
         if not g.exists():
@@ -306,7 +315,7 @@ class GraphifyCodeAdapter(_Base):
             nid = n.get("id")
             edges = [{"source": e.get("source"), "target": e.get("target"), "relation": e.get("relation") or e.get("type")}
                      for e in links if nid in (e.get("source"), e.get("target"))][:20]
-            out.append({"source": "graphify", "id": nid, "label": n.get("label"), "file": n.get("source_file") or n.get("file"),
+            out.append({"source": "graphify", "id": nid, "label": n.get("label"), "file": self._rel(n.get("source_file") or n.get("file")),
                         "text": str(n.get("label") or nid), "edges": edges})
         return out
 
