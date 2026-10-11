@@ -471,15 +471,17 @@
     "anexo_memoria": {
       "enabled": true,
       "modelo": "ficha-qwen36flash",
-      "rol": "agente de memoria colaborador: sheriff de entrada y sentinela de salida; verifica que el modelo cumple lo anclado",
+      "rol": "scout de memoria consultivo (Qwen 3.6 Flash): reporta POSIBLE_CONFLICTO; solo el codigo determinista del Harness bloquea",
       "fases": [
         "entrada",
         "salida"
       ],
       "timeout_s": 60,
       "max_output_tokens": 900,
-      "bloquea_solo_con_evidencia_literal": true,
-      "no_decide_la_verdad": true
+      "no_decide_la_verdad": true,
+      "autoridad": "consultiva",
+      "puede_bloquear": false,
+      "salida": "solo traza (trace_anexo); nunca se concatena a la respuesta final"
     },
     "nodos": {
       "N4": {
@@ -494,6 +496,23 @@
           "solo_tras_aprobar"
         ]
       }
-    }
+    },
+    "escritor_unico": "N4",
+    "congelado": {
+      "cuando": "antes del primer modelo y antes de abrir el ThreadPool",
+      "funcion_harness": "gov_prepare",
+      "contexto": "GovernanceContext inmutable; todos los nodos paralelos reciben la misma copia",
+      "cambia_durante_tarea": "GAP CONSTITUTION_CHANGED_DURING_TASK",
+      "sin_gov_prepare_en_harness": "GAP GOVERNANCE_PREPARE_NO_DISPONIBLE (fail-closed)"
+    },
+    "guardianes_bloquean": [
+      "sheriff_pre",
+      "supervisor_scope",
+      "guardian_mutation",
+      "judge_contract",
+      "output_firewall"
+    ],
+    "receipts": "persistentes en la memoria existente; fingerprint sha256(task_id+node_id+hash+tool+target+args); DONE no se repite; read-back obligatorio",
+    "fuentes_obligatorias": "si hay anclas obligatorias y alguna no esta OK: GAP antes del modelo; SOURCE_SET_CHANGED y SOURCE_CHANGED_DURING_TASK son fail-closed"
   }
 }
