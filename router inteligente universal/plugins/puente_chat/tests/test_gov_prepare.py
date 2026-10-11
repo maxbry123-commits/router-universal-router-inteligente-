@@ -335,6 +335,27 @@ def test_d_reanudar_hash_esperado_distinto():
     assert ns['gov_prepare']({'task_id': 'TD', 'reanudar': True})['error'] == 'CONSTITUTION_CHANGED_DURING_TASK'
     assert ns['gov_prepare']({'task_id': 'TD', 'reanudar': True, 'hash_esperado': h})['error'] == 'CONSTITUTION_CHANGED_DURING_TASK'
 
+def test_e_recorrido_real_gov_prepare_reanudar_sheriff():
+    ns, _m, _r, _l = nuevo()
+    a = ns['gov_prepare'](payload(task_id='TE', constitucion_texto='REGLA ESPECIAL'))
+    assert 'error' not in a
+    b = ns['gov_prepare']({'task_id': 'TE', 'reanudar': True, 'aprobado': True, 'hash_esperado': a['constitution_hash']})
+    assert b['constitution_hash'] == a['constitution_hash']
+    ses = payload().get('sesion') or 's'
+    for const_actual in ({}, {'texto': 'TEXTO DISTINTO QUE NO DEBE REDEFINIR'}):  # /aprobar ya no manda constitucion_texto
+        r = ns['sheriff_pre']({'gov_ctx': b, 'task_id': 'TE', 'sesion': ses, 'constitucion': const_actual, 'hash_esperado': a['constitution_hash']}, 'q')
+        assert r['ok'] is True and r['hash'] == a['constitution_hash'], r
+
+
+def test_f_cambio_real_tras_freeze_sigue_dando_gap():
+    ns, _m, _r, _l = nuevo()
+    a = ns['gov_prepare'](payload(task_id='TF', constitucion_texto='REGLA ESPECIAL'))
+    ses = payload().get('sesion') or 's'
+    ns['_CONST_RUTA'].write_text(json.dumps(dict(CONST_OK, reglas=['a', 'b', 'CAMBIADA'])), encoding='utf-8')
+    r = ns['sheriff_pre']({'gov_ctx': a, 'task_id': 'TF', 'sesion': ses, 'constitucion': {}}, 'q')
+    assert r['ok'] is False and r['codigo'] == 'CONSTITUTION_CHANGED_DURING_TASK', r
+
+
 if __name__ == '__main__':
     n = 0
     for k, f in sorted(globals().items()):
