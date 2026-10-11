@@ -440,6 +440,16 @@ def _bloqueo(nom, args):
     return ''
 
 
+def _evi(nom, args, ok, mut):
+    # evidencia real de una herramienta ejecutada: {tool, accion, objetivo, ok, mutacion_real}
+    a = args if isinstance(args, dict) else {}
+    acc = a.get('accion') or a.get('metodo') or a.get('method') or ''
+    obj = a.get('ruta') or a.get('repo') or ''
+    if a.get('repo') and a.get('ruta'):
+        obj = str(a.get('repo')) + ':' + str(a.get('ruta'))
+    return {'herramienta': nom, 'tool': nom, 'accion': str(acc), 'objetivo': str(obj)[:200], 'ok': bool(ok), 'mutacion_real': bool(mut)}
+
+
 def _faltantes(h, nom, args):
     # campos requeridos de la herramienta que la llamada no trae
     a = args if isinstance(args, dict) else {}
@@ -518,7 +528,7 @@ def _bucle(llamar, mensajes):
                 faltas[nom] = faltas.get(nom, 0) + 1
                 if faltas[nom] >= 2:
                     return {'error': 'GAP TOOL_ARGUMENTS_INCOMPLETOS', 'detalle': nom + ': faltan ' + ', '.join(falt_)}, usadas
-                usadas.append({'herramienta': nom, 'ok': False, 'mutacion_real': False})
+                usadas.append(_evi(nom, args, False, False))
                 mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': 'ERROR: faltan parametros requeridos: ' + ', '.join(falt_) + '. Devuelve exclusivamente la llamada corregida.'})
                 continue
             sello = (nom, json.dumps(args, sort_keys=True, default=str))
@@ -543,7 +553,7 @@ def _bucle(llamar, mensajes):
                     rotas.add(nom)
             ok_ = not res.startswith(_FALLO)
             ya_ = res.startswith(('OPERACION_YA_COMPLETADA', 'REPETICION_TOOL_DETECTADA'))
-            usadas.append({'herramienta': nom, 'ok': ok_, 'mutacion_real': bool(mut and ok_ and not ya_)})
+            usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_)))
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
         pasos += 1
         if pasos >= _perfil()[2] or time.monotonic() >= fin:
@@ -1341,6 +1351,10 @@ def _chat(p):
         if len(mensajes) > 3:  # habia trabajo a medias: guardarlo para 'continua'
             _ck_guardar(sesion, _recortar(mensajes[1:]))
         return d
+    if (_REQ_TOOLS.get() or p.get('muta')) and not _SOLO_LECTURA.get():
+        # nodo que debe escribir: sin ninguna mutacion real exitosa no hay exito, aunque el modelo escriba texto
+        if not any(isinstance(u_, dict) and u_.get('mutacion_real') and u_.get('ok') for u_ in usadas):
+            return {'error': 'GAP EJECUCION_SIN_EVIDENCIA', 'detalle': 'el nodo debia escribir y ninguna herramienta mutó con éxito', 'evidencia_tools': [u_ for u_ in usadas if isinstance(u_, dict) and 'tool' in u_]}
     texto = _limpiar_texto(d['choices'][0].get('message', {}).get('content'))
     if not texto.strip() and (d['choices'][0].get('message') or {}).get('reasoning_content'):
         texto = str(d['choices'][0]['message']['reasoning_content'])[-1500:]
@@ -1355,6 +1369,9 @@ def _chat(p):
     # siempre queda el texto limpio: si era solo una llamada a herramienta, sale vacio
     d['choices'][0]['message']['content'] = texto
     salida = {'model': model, 'choices': d['choices'], 'usage': d.get('usage'), 'herramientas': usadas}
+    evid_ = [u_ for u_ in usadas if isinstance(u_, dict) and 'tool' in u_]
+    if evid_:
+        salida['evidencia_tools'] = evid_
     if checklist:
         salida['checklist'] = checklist  # salida del sentinela: lista de verificacion
     salida['memoria_guardada'] = _guardar(sesion, model, pregunta, texto)
