@@ -17,7 +17,10 @@ limitations under the License.
 from .client import LLMClient
 from .config import LLMConfig
 from .errors import RateLimitError
-from .openai_client import OpenAIClient
+try:  # opcional: YAIWES inyecta su propio cliente
+    from .openai_client import OpenAIClient
+except ImportError:
+    OpenAIClient = None
 from .token_tracker import TokenUsage, TokenUsageTracker
 
 __all__ = [
