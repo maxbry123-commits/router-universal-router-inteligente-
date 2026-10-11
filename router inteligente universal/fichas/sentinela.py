@@ -9,7 +9,7 @@ Salida unica: lista de verificacion (checklist) con esquema riu.ficha.sentinela.
 from __future__ import annotations
 
 ESQUEMA = 'riu.ficha.sentinela.v1'
-MAX_VUELTAS = 3  # pasadas completas sobre el plan antes de rendirse
+MAX_VUELTAS = 5  # pasadas completas sobre el plan antes de rendirse
 
 
 def _valido(d):
