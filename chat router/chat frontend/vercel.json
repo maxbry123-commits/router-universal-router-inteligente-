@@ -1,6 +1,32 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/shell.html" },
-    { "source": "/chat/ui/:path*", "destination": "/:path*" }
+    {
+      "source": "/",
+      "destination": "/shell.html"
+    },
+    {
+      "source": "/chat/ui/:path*",
+      "destination": "/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/chat/ui/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
   ]
 }

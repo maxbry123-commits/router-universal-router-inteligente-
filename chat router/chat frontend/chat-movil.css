@@ -1,0 +1,35 @@
+/* chat-movil.css — vista de smartphone (≤720px): todo centrado, sin huecos y con los controles al alcance del pulgar.
+   Archivo propio, va en shell.html después de shell.css / responsive.css. Solo afecta al celular. */
+@media (max-width:720px){
+  html{overflow-x:hidden}
+  /* el hueco enorme bajo el menu: las filas automáticas del grid se estiraban; ahora el espacio libre es del contenido */
+  .shell{grid-template-rows:auto minmax(0,1fr);min-height:100vh;min-height:100dvh}
+  .sidebar{position:sticky;top:0;z-index:30;align-self:start;padding:8px max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left))}
+  .sidebar nav{scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:3px}
+  .sidebar nav::-webkit-scrollbar{display:none}
+  .sidebar nav>button{scroll-snap-align:center;min-height:40px}
+  .sidebar nav>button:first-of-type{margin-inline-start:auto}
+  .sidebar nav>button:last-of-type{margin-inline-end:auto}
+  /* encabezado centrado */
+  .topbar{flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:12px 14px}
+  .topbar strong{font-size:20px}
+  .access{width:100%;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px}
+  .access #connection{flex:1 1 100%;text-align:center}
+  /* contenido centrado y con margen seguro */
+  main{width:100%;margin:0 auto;padding:12px max(12px,env(safe-area-inset-right)) 24px max(12px,env(safe-area-inset-left))}
+  main h1{text-align:center;margin:0 0 12px}
+  .chat-tabs>.chip:first-child{margin-inline-start:auto}
+  .chat-tabs>:last-child{margin-inline-end:auto}
+  section>.row.fields>.pill:first-child,section>.row.fields>*:first-child{margin-inline-start:auto}
+  section>.row.fields>*:last-child{margin-inline-end:auto}
+  /* caja de escritura: botones repartidos en una sola fila y enviar abajo a todo el ancho */
+  #composer{max-width:600px;margin-inline:auto}
+  .composer-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px}
+  .composer-bar .secondary{flex:1 1 0!important;min-width:0;max-width:44px;width:auto;height:auto;min-height:0;aspect-ratio:1/1;padding:0}
+  .composer-bar .action{order:99;flex:1 1 100%!important;width:100%;margin:6px 0 0;min-height:46px;justify-content:center;text-align:center}
+  /* ventanas centradas, con el borde de arriba redondeado */
+  .sheet .va-caja{margin-inline:auto;border-radius:22px 22px 0 0}
+  /* bienvenida */
+  .riu-bv-titulo{font-size:24px;line-height:1.2;padding:0 8px}
+}
+@media (max-width:360px){.topbar strong{font-size:18px}.composer-bar{gap:4px}}

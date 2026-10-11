@@ -14,7 +14,7 @@ export function conectarVentanas({ root, q }) {
     let y0 = null;
     caja.addEventListener("touchstart", (e) => {
       const y = e.touches[0].clientY;
-      y0 = (e.target.closest(".va-head") && caja.scrollTop <= 0) ? y : null;  // solo desde la cabecera y con la ventana arriba: deslizar el contenido no mueve la ventana
+      y0 = e.target.closest(".va-head") ? y : null;  // se arrastra desde la cabecera (siempre visible arriba); el contenido se desliza normal
     }, { passive: true });
     caja.addEventListener("touchmove", (e) => {
       if (y0 === null) return; const d = e.touches[0].clientY - y0;

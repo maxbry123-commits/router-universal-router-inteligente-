@@ -101,6 +101,12 @@ export function montarAncla({ q, chat, tell, guardar, pintarAnclados }) {
     resumen.replaceChildren();
     const otros = [...chat().anclados].filter((a) => /^(enlace|raiz|handoff):/.test(a));
     if (!otros.length) { resumen.append(el("div", "Nada anclado todavía (enlaces / raíces / handoffs)", "fila-desc")); return; }
+    const basura = otros.filter((a) => a.startsWith("enlace:") && !/https?:\/\/|\//.test(a.slice(7)));  // texto suelto anclado por error (no es enlace ni ruta)
+    if (basura.length) {
+      const b = el("button", "Limpiar texto suelto (" + basura.length + ")", "mini"); b.type = "button";
+      b.addEventListener("click", () => { basura.forEach((a) => chat().anclados.delete(a)); pintarAnclados(); guardar(); pintarResumen(); });
+      resumen.append(b);
+    }
     for (const a of otros) {
       const f = el("div", "", "va-item");
       f.append(el("span", (a.startsWith("raiz:") ? "📁 " : a.startsWith("handoff:") ? "📌 " : "🔗 ") + a.replace(/^(enlace|raiz|handoff):/, ""), "fila-nom"));
