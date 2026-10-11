@@ -1,11 +1,15 @@
 """YAIWES memory facade: SQLite is the always-available writable fallback."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import sqlite3
 import socket
+import threading
 import time
+import uuid
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 from pathlib import Path
@@ -179,11 +183,135 @@ class ComponentAdapter:
         return []
 
 
+class QdrantLocalAdapter(ComponentAdapter):
+    """Indice DERIVADO y reconstruible: Qdrant en modo local (sin servidor), el cliente viene del motor de descarga.
+    SQLite sigue siendo la verdad. Embedding determinista LEXICAL_HASH: busca por palabras en comun, NO es semantico."""
+
+    COLLECTION = "memoria_yaiwes"
+    DIM = 256
+    EMBEDDING = "LEXICAL_HASH_256"
+
+    def __init__(self) -> None:
+        super().__init__("qdrant")
+        self._client: Any = None
+        self._error: str | None = None
+        self._down_until = 0.0
+        self._lock = threading.Lock()
+
+    @staticmethod
+    def _enabled() -> bool:
+        return os.getenv("RIU_QDRANT_LOCAL", "1") != "0"
+
+    @staticmethod
+    def _path() -> str:
+        return os.getenv("RIU_QDRANT_PATH") or str(ROOT / "chat router" / "04-MEMORIA" / "indices" / "qdrant_local")
+
+    def _ready(self) -> bool:
+        if not self._enabled():
+            self._error = "GAP_DISABLED"
+            return False
+        if self._client is not None:
+            return time.time() >= self._down_until
+        if time.time() < self._down_until:
+            return False
+        with self._lock:
+            if self._client is not None:
+                return True
+            try:
+                from qdrant_client import QdrantClient, models
+                Path(self._path()).mkdir(parents=True, exist_ok=True)
+                client = QdrantClient(path=self._path())
+                if not client.collection_exists(self.COLLECTION):
+                    client.create_collection(collection_name=self.COLLECTION, vectors_config=models.VectorParams(size=self.DIM, distance=models.Distance.COSINE))
+                self._client = client
+                self._error = None
+                return True
+            except ImportError:
+                self._error = "GAP_CLIENT_NOT_INSTALLED"
+            except Exception as exc:  # noqa: BLE001 - un indice derivado nunca tumba la memoria
+                self._error = "GAP_" + type(exc).__name__
+            self._down_until = time.time() + 60
+            return False
+
+    def _fail(self, exc: Exception) -> None:
+        self._error = "GAP_" + type(exc).__name__
+        self._down_until = time.time() + 60
+
+    def _endpoint(self) -> str | None:
+        return "local" if self._ready() else None
+
+    @classmethod
+    def embed(cls, text: Any) -> list[float]:
+        vec = [0.0] * cls.DIM
+        for token in re.findall(r"\w+", str(text).lower()):
+            n = int.from_bytes(hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest(), "big")
+            vec[n % cls.DIM] += 1.0 if (n >> 63) & 1 else -1.0
+        norm = sum(v * v for v in vec) ** 0.5
+        return [v / norm for v in vec] if norm else vec
+
+    @staticmethod
+    def _pid(scope: str, key: str) -> str:
+        return str(uuid.uuid5(uuid.NAMESPACE_URL, scope + "\x1f" + key))
+
+    def health(self) -> dict[str, Any]:
+        item = _component("qdrant")
+        downloaded = _downloaded("qdrant-client") or _downloaded("qdrant")
+        source_status = "PRESENT_DOWNLOADED" if downloaded.get("status") in {"EXTRACTED_VERIFIED", "VERIFIED_EXISTING"} else item.get("source_status", "GAP")
+        ready = self._ready()
+        records = None
+        if ready:
+            try:
+                records = self._client.count(collection_name=self.COLLECTION, exact=True).count
+            except Exception as exc:  # noqa: BLE001
+                self._fail(exc)
+                ready = False
+        return {"name": self.name, "source_status": source_status, "runtime_status": "CONNECTED" if ready else (self._error or "GAP"), "configured": self._enabled(),
+                "mode": "derived-local-index", "truth": "sqlite", "embedding": self.EMBEDDING, "semantic": False, "records": records, "path": self._path()}
+
+    def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
+        if not self._ready():
+            return {"adapter": self.name, "status": "GAP", "reason": self._error or "not ready"}
+        try:
+            from qdrant_client import models
+            vec = self.embed(key + " " + json.dumps(data, ensure_ascii=False)[:4000])
+            if not any(vec):
+                return {"adapter": self.name, "status": "GAP", "reason": "empty vector"}
+            self._client.upsert(collection_name=self.COLLECTION, points=[models.PointStruct(id=self._pid(scope, key), vector=vec, payload={"scope": scope, "key": key, "data": data, "ts": time.time()})])
+            return {"adapter": self.name, "status": "SAVED", "mode": "derived-index", "embedding": self.EMBEDDING}
+        except Exception as exc:  # noqa: BLE001
+            self._fail(exc)
+            return {"adapter": self.name, "status": "GAP", "reason": type(exc).__name__}
+
+    def load(self, scope: str, key: str) -> list[dict[str, Any]]:
+        return []  # indice derivado: la verdad se carga de SQLite, no se duplica aqui
+
+    def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
+        if not str(query).strip() or not self._ready():
+            return []
+        try:
+            from qdrant_client import models
+            vec = self.embed(query)
+            if not any(vec):
+                return []
+            flt = models.Filter(must=[models.FieldCondition(key="scope", match=models.MatchValue(value=scope))])
+            res = self._client.query_points(collection_name=self.COLLECTION, query=vec, query_filter=flt, limit=k, with_payload=True)
+            return [{"scope": p.payload.get("scope"), "key": p.payload.get("key"), "data": p.payload.get("data"), "score": p.score} for p in res.points]
+        except Exception as exc:  # noqa: BLE001
+            self._fail(exc)
+            return []
+
+    def rebuild(self, sqlite_adapter: Any) -> dict[str, Any]:
+        rows = sqlite_adapter.db.execute("SELECT scope,key,data FROM memoria_yaiwes ORDER BY id").fetchall()
+        done = sum(1 for r in rows if self.save(r["scope"], r["key"], json.loads(r["data"])).get("status") == "SAVED")
+        return {"indexed": done, "total": len(rows)}
+
+
 class MemoryFacade:
     def __init__(self, store: Any) -> None:
         self.sqlite = SQLiteAdapter(store)
         self.graph = GraphSQLiteAdapter(store)
-        self.components = {name: ComponentAdapter(name) for name in ("state-hub", "dataset-yaiwes", "graphiti", "falkordb", "memanto", "graphify", "agentdb", "postgresql", "redis", "hf-storage-bucket", "chroma", "qdrant")}
+        self.components = {name: ComponentAdapter(name) for name in ("state-hub", "dataset-yaiwes", "graphiti", "falkordb", "memanto", "graphify", "agentdb", "postgresql", "redis", "hf-storage-bucket", "chroma")}
+        self.components["qdrant"] = QdrantLocalAdapter()  # indice derivado local; SQLite sigue siendo la verdad
 
     def health(self) -> dict[str, Any]:
         adapters = {"sqlite": self.sqlite.health(), "graph": self.graph.health()}
@@ -191,23 +319,52 @@ class MemoryFacade:
         return {"schema": "yaiwes.memory/v1", "adapters": adapters, "fallback": "sqlite"}
 
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
-        saved = self.sqlite.save(scope, key, data)
-        self.graph.save(scope, key, data)
-        replicas = {name: adapter.save(scope, key, data) for name, adapter in self.components.items() if adapter._endpoint()}
-        return {"status": "SAVED", "adapter": "sqlite", "replicas": replicas, **saved}
+        saved = self.sqlite.save(scope, key, data)  # SQLite es la verdad: si esto no falla, el dato esta guardado
+        gaps: list[dict[str, Any]] = []
+        try:
+            self.graph.save(scope, key, data)
+        except Exception as exc:  # noqa: BLE001 - la replica de grafo nunca invalida el guardado
+            gaps.append({"adapter": self.graph.name, "error": type(exc).__name__})
+        replicas: dict[str, Any] = {}
+        for name, adapter in self.components.items():
+            try:
+                if adapter._endpoint():
+                    replicas[name] = adapter.save(scope, key, data)
+            except Exception as exc:  # noqa: BLE001
+                replicas[name] = {"adapter": name, "status": "GAP", "reason": type(exc).__name__}
+        out = {"status": "SAVED", "adapter": "sqlite", "replicas": replicas, **saved}
+        if gaps:
+            out["replica_gaps"] = gaps
+        return out
 
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
         records = list(self.sqlite.load(scope, key))
         for adapter in self.components.values():
-            records.extend(adapter.load(scope, key))
+            try:
+                records.extend(adapter.load(scope, key))
+            except Exception:  # noqa: BLE001
+                pass
         return records
 
     def search(self, scope: str, query: str, k: int = 10) -> dict[str, Any]:
-        results = {"sqlite": self.sqlite.search(scope, query, k), "graph": self.graph.search(scope, query, k)}
+        results: dict[str, Any] = {"sqlite": self.sqlite.search(scope, query, k)}
+        try:
+            results["graph"] = self.graph.search(scope, query, k)
+        except Exception:  # noqa: BLE001
+            results["graph"] = []
         for name, adapter in self.components.items():
-            if adapter._endpoint():
-                results[name] = adapter.search(scope, query, k)
+            try:
+                if adapter._endpoint():
+                    results[name] = adapter.search(scope, query, k)
+            except Exception:  # noqa: BLE001
+                results[name] = []
         return results
+
+    def rebuild_index(self) -> dict[str, Any]:
+        qd = self.components.get("qdrant")
+        if qd is None or not qd._endpoint():
+            return {"status": "GAP", "reason": getattr(qd, "_error", None) or "qdrant no disponible"}
+        return {"status": "REBUILT", **qd.rebuild(self.sqlite)}
 
 
 def build_memory(store: Any) -> MemoryFacade:
