@@ -23,7 +23,7 @@ export function montarConstitucion({ root, q, tell }) {
     enc.setAttribute("aria-pressed", String(!!c.encendida));
     cuerpo.append(enc, el("div", "vn-estado", "Encendida, su texto y sus anclas viajan con cada mensaje del chat."));
     const ta = el("textarea", "vn-ta"); ta.value = c.texto || ""; ta.placeholder = "Mi constitución sentinela: reglas que la IA debe respetar siempre…"; ta.setAttribute("aria-label", "Mi constitución");
-    ta.addEventListener("change", () => poner((x) => { x.texto = ta.value.slice(0, 12000); }));
+    ta.addEventListener("input", () => poner((x) => { x.texto = ta.value.slice(0, 12000); }));  // guarda al teclear: nada se pierde si envia sin soltar el campo
     cuerpo.append(el("div", "vn-t", "Mi constitución sentinela"), ta);
     const of = boton(c.oficial ? "Incluir la oficial YAIWES: sí" : "Incluir la oficial YAIWES: no", "toggle" + (c.oficial ? " on" : ""), async () => {
       if (!c.oficial) { try { await oficial(); } catch (e) { tell("No pude leer la constitución oficial: " + e.message); return; } }
