@@ -335,8 +335,8 @@ def _graphiti_llm_ficha(msgs, max_tokens=1200):
                   'project_id': ids.get('project_id'), 'task_id': ids.get('task_id'), 'task_type': 'small', 'messages': msgs, 'max_tokens': max_tokens})
     if r.get('reply'):
         return r['reply']
-    f = _FICHA_CTX.get()  # respaldo: Ficha 4 inalcanzable -> el modelo de la ficha de esta peticion (nunca rompe el chat)
-    return _paso_llm(f[0], f[1], msgs, 90, max_tokens) if f else ''
+    # sin respaldo: Graphiti NUNCA llama a un modelo directo. Ficha 4 por HTTP falla -> GAP (el adaptador lo devuelve como estado)
+    raise RuntimeError('GAP_FICHA4_HTTP:' + str(r.get('error') or r.get('detalle') or 'sin_respuesta')[:120])
 
 
 def _cablear_graphiti(proveedor, modelo, ids=None):
@@ -1431,6 +1431,15 @@ def _gov_pre_chat(p, sesion, pregunta, anclados):
         return {'id': str((base or {}).get('id') or ''), 'apagada_por_director': True}, None
     if not gob:
         return None, None
+    gc = p.get('gov_ctx')
+    if not (isinstance(gc, dict) and gc.get('constitution_hash')):  # el chat manda gobernanza+constitucion estructuradas: el Harness congela la Constitucion (gov_prepare) una vez por mensaje
+        if not (p.get('task_id') or p.get('tarea')):
+            p['task_id'] = sesion + ':m' + str(int(time.time() * 1000))
+        prep = gov_prepare({'task_id': str(p.get('task_id') or p.get('tarea'))[:200], 'sesion': sesion, 'anclados': [str(a) for a in anclados],
+                            'constitucion': p.get('constitucion'), 'constitucion_texto': p.get('constitucion_texto')})
+        if prep.get('error'):
+            return None, {'error': 'GAP ' + str(prep['error']).split(':')[0], 'detalle': str(prep['error'])[:200]}
+        p['gov_ctx'] = prep
     tid = str(p.get('task_id') or p.get('tarea') or sesion)
     chk = sheriff_pre({'gov_ctx': p.get('gov_ctx'), 'constitucion': p.get('constitucion'), 'hash_esperado': p.get('constitucion_hash_esperado'),
                        'anclados': anclados, 'sesion': sesion, 'task_id': tid}, pregunta)
@@ -1688,6 +1697,8 @@ def _chat(p):
     else:
         _VISTOS.set({})
     _DEADLINE.set(time.monotonic() + presupuesto)
+    _cablear_graphiti('', '', {'project_id': sesion, 'task_id': str(p.get('task_id') or p.get('tarea') or sesion),  # ANTES de gobernanza/anclas: el callback LLM de Graphiti ya apunta a Harness->Ficha 4
+                               'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or '')})
     gov_info, gov_err = _gov_pre_chat(p, sesion, pregunta, p.get('anclados') or [])  # gobernada: Sheriff + anclas ANTES del modelo (fail-closed)
     if gov_err:
         return gov_err
@@ -1742,8 +1753,6 @@ def _chat(p):
     mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
-        _cablear_graphiti(proveedor, modelo, {'project_id': sesion, 'task_id': str(p.get('task_id') or p.get('tarea') or sesion),
-                                              'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or '')})
 
         def llamar(ms, tl):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
