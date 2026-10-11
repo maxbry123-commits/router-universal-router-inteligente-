@@ -1,5 +1,7 @@
 # Test determinista (sin red, sin LLM, con stubs) de gov_prepare / sheriff_pre / _gov_pre_chat.
 # Extrae el bloque ==GOV-BEGIN==..==GOV-END== de plugin.py y lo ejecuta con exec. Uso: python test_gov_prepare.py
+import ast
+import hashlib
 import json
 import re
 import tempfile
@@ -160,6 +162,110 @@ def test_pass_y_ancla_constitucion():
     assert ns['gov_prepare'](payload(task_id='D', anclados=['constitucion:no-existe']))['error'].startswith('FUENTE_ANCLADA_NO_LEIBLE')
     assert "nom.startswith('constitucion:')" in SRC
 
+
+REAL = PLUGIN.parent / 'constitucion' / 'CONSTITUCION-YAIWES.json'
+
+
+def _fn(*nombres):
+    tree = ast.parse(SRC)
+    return chr(10).join(ast.get_source_segment(SRC, n) for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in nombres)
+
+
+def test_system_prompt_contiene_constitucion_real():
+    ns, _m, _r, _l = nuevo()
+    ns['_CONST_RUTA'] = REAL
+    ns['_CONST_DIR'] = REAL.parent
+    real = json.loads(REAL.read_text(encoding='utf-8'))
+    ctx = ns['gov_prepare'](payload())
+    p = {'gov_ctx': ctx, 'anclados': ['archivo:a.txt'], 'task_id': 'T1', 'sesion': 's'}
+    info, err = ns['_gov_pre_chat'](p, 's', 'q', p['anclados'])
+    assert err is None
+    b = info['_bloque']
+    assert b.startswith('[CONSTITUCION YAIWES]') and b.endswith('[FIN CONSTITUCION]')
+    assert 'ID: ' + real['id'] in b and 'VERSION: ' + real['version'] in b
+    assert all(json.dumps(k, ensure_ascii=False) in b for k in real)  # todas las secciones reales de la Constitucion
+    i = SRC.index('def _chat(p):')
+    cuerpo = SRC[i:SRC.index('def _estado', i)]
+    a = cuerpo.index("sistema += ' ' + gov_bloque")
+    assert a < cuerpo.index('Contexto guardado de esta conversacion') and a < cuerpo.index('Anclados por el usuario')
+    assert cuerpo.index('_gov_pre_chat(') < cuerpo.index('_contexto(')
+
+
+def test_hash_del_bloque_igual_a_gov_ctx():
+    ns, _m, _r, _l = nuevo()
+    ns['_CONST_RUTA'] = REAL
+    ns['_CONST_DIR'] = REAL.parent
+    ctx = ns['gov_prepare'](payload())
+    p = {'gov_ctx': ctx, 'anclados': ['archivo:a.txt'], 'task_id': 'T1', 'sesion': 's'}
+    b = ns['_gov_pre_chat'](p, 's', 'q', p['anclados'])[0]['_bloque']
+    lineas = b.split(chr(10))
+    assert lineas[3] == 'HASH: ' + ctx['constitution_hash']
+    assert hashlib.sha256(lineas[4].encode('utf-8')).hexdigest() == ctx['constitution_hash']  # el contenido del bloque produce ese hash
+    # con overlay constitucion:<nombre> validado
+    ns2, _m2, _r2, _l2 = nuevo()
+    ns2['_CONST_DIR'].joinpath('extra.md').write_text('regla extra', encoding='utf-8')
+    an = ['archivo:a.txt', 'constitucion:extra']
+    ctx2 = ns2['gov_prepare'](payload(task_id='O', anclados=an))
+    p2 = {'gov_ctx': ctx2, 'anclados': an, 'task_id': 'O', 'sesion': 's'}
+    b2 = ns2['_gov_pre_chat'](p2, 's', 'q', an)[0]['_bloque']
+    assert '[OVERLAY constitucion:extra' in b2 and 'regla extra' in b2 and ('HASH: ' + ctx2['constitution_hash']) in b2
+    assert hashlib.sha256(b2.split(chr(10))[4].encode('utf-8')).hexdigest() == ctx2['constitution_hash']
+
+
+def _ns_raiz(paths):
+    mem = MemStub()
+    cuenta = {'lista': 0, 'leer': 0}
+    ns = {'json': json, 're': re, 'time': time, 'Path': Path, '__file__': 'x', 'DUENO': 'chat-ui', '_SNAP_ANC': {},
+          '_ANC_TOPE_DOC': 3000, '_ANC_TOPE_TOTAL': 24000, '_ANC_RAIZ_MAX': 6}
+    ns['_memoria'] = lambda: (mem, lambda d, c: d + '|' + c)
+    ns['_anc_sha'] = lambda t: hashlib.sha256(str(t).encode('utf-8')).hexdigest()
+    ns['_anc_raiz_parse'] = lambda r: ('o', 'r', '', 'integration')
+
+    def lista(*a, **k):
+        cuenta['lista'] += 1
+        return list(paths), False
+
+    def leer(o, r, rama, rp):
+        cuenta['leer'] += 1
+        return 'contenido de ' + rp, 'gh:' + rp
+    ns['_anc_raiz_lista'] = lista
+    ns['_anc_gh_leer'] = leer
+    exec(_fn('_snap_scope', '_snap_guardar', '_snap_cargar', 'resolver_anclados', '_anc_raiz_elegir'), ns)
+    return ns, cuenta
+
+
+PATHS = ['README.md', 'integration/chat_mvp/memory_runtime.py', 'integration/chat_mvp/router.py', 'integration/otro/zeta.py', 'assets/logo.png']
+
+
+def _ids_archivos(r):
+    return [s['id'] for s in r['snapshot'] if s['tipo'] == 'archivo_raiz']
+
+
+def test_raiz_pregunta_memory_runtime_selecciona_archivo_relevante():
+    ns, _c = _ns_raiz(PATHS)
+    r = ns['resolver_anclados']('s', ['raiz:o/r/integration'], 'T6', 'memory_runtime')
+    ids = _ids_archivos(r)
+    assert 'integration/chat_mvp/memory_runtime.py' in ids and 'assets/logo.png' not in ids
+    # control: otra pregunta en otra tarea NO selecciona memory_runtime (la seleccion depende de la pregunta)
+    r2 = ns['resolver_anclados']('s', ['raiz:o/r/integration'], 'T6b', 'zzzz qqqq')
+    assert 'integration/chat_mvp/memory_runtime.py' not in _ids_archivos(r2)
+
+
+def test_raiz_congelada_misma_seleccion_en_llamadas_posteriores():
+    ns, cuenta = _ns_raiz(PATHS)
+    r1 = ns['resolver_anclados']('s', ['raiz:o/r/integration'], 'T7', 'memory_runtime')
+    ids1 = _ids_archivos(r1)
+    lecturas = cuenta['leer']
+    for q in ('pregunta distinta zzzz', '', 'router zeta'):
+        r = ns['resolver_anclados']('s', ['raiz:o/r/integration'], 'T7', q)
+        assert _ids_archivos(r) == ids1 and r['texto'] == r1['texto'] and not r.get('source_set_changed')
+    assert cuenta['lista'] == 1 and cuenta['leer'] == lecturas  # el snapshot se crea una sola vez, no se recalcula
+    # tras perder la cache en proceso se rehidrata desde la memoria con la misma seleccion
+    ns['_SNAP_ANC'].clear()
+    r = ns['resolver_anclados']('s', ['raiz:o/r/integration'], 'T7', 'otra cosa')
+    assert _ids_archivos(r) == ids1 and cuenta['lista'] == 1
+    # prepare le pasa la pregunta del payload a resolver_anclados
+    assert "str(p.get('pregunta') or '')" in SRC
 
 if __name__ == '__main__':
     n = 0
