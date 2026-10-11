@@ -38,6 +38,12 @@ function unirAnclaje(q) {
   antesDe(fila("#anc-resumen"), "Anclado ahora");
   antesDe(fila("#anc-instr"), "Instrucciones fijas");
   antesDe(fila("#anc-proy-nombre"), "Proyectos de este chat");
+  const pegar = q("#anc-pegar");
+  if (pegar) pegar.addEventListener("paste", () => setTimeout(() => {  // al pegar: se cierra el teclado y se baja a lo anclado
+    pegar.blur();
+    const t = [...va.querySelectorAll(".anc-sec")].find((x) => x.textContent === "Anclado ahora");
+    if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 250));
   const archivos = fila("#anc-subir");
   const tHand = titulo("Handoffs del proyecto y Mi handoff");
   const bloque = [...sh.children].filter((n) => !n.classList.contains("va-head"));

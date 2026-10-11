@@ -266,7 +266,35 @@ function entrada({ q }) {
   alto();
 }
 
+// RUI 20 matrix-orb: orbe del estado de la conexión (naranja girando = sin verificar, verde = conectado, rojo = fallo)
+function orbeConexion() {
+  const c = $("#connection"); if (!c || window.__riuOrbe) return; window.__riuOrbe = true;
+  const o = crear("span", "riu-orbe"); o.setAttribute("aria-hidden", "true"); c.before(o);
+  const act = () => {
+    const t = (c.textContent || "").toLowerCase();
+    o.dataset.e = /error|ca[ií]do|fall|sin conexi|offline|desconect|bloquead|no disponible|timeout/.test(t) ? "mal" : (/conectad|\bok\b|listo|activo|en l[ií]nea|online|verificad/.test(t) && !/sin verificar/.test(t)) ? "bien" : "espera";
+    c.title = c.textContent;
+  };
+  new MutationObserver(act).observe(c, { childList: true, characterData: true, subtree: true }); act();
+}
+// V07 "selector de archivos (táctil + soltar)": arrastrar archivos encima del chat los adjunta como el botón del clip
+function soltarArchivos({ root, q, tell }) {
+  const inp = q("#adjunto"), btn = q("#btn-adjunto"); if (!inp || !btn || root.dataset.soltar) return; root.dataset.soltar = "1";
+  const cap = crear("div", "riu-soltar", "Suelta aquí para adjuntar"); cap.hidden = true; root.append(cap);
+  let n = 0;
+  const hay = (e) => !!(e.dataTransfer && [...(e.dataTransfer.types || [])].includes("Files"));
+  root.addEventListener("dragenter", (e) => { if (!hay(e)) return; e.preventDefault(); n++; cap.hidden = false; });
+  root.addEventListener("dragover", (e) => { if (hay(e)) e.preventDefault(); });
+  root.addEventListener("dragleave", (e) => { if (!hay(e)) return; n = Math.max(0, n - 1); if (!n) cap.hidden = true; });
+  root.addEventListener("drop", (e) => {
+    if (!hay(e)) return; e.preventDefault(); n = 0; cap.hidden = true;
+    const dt = new DataTransfer(); [...e.dataTransfer.files].forEach((f) => dt.items.add(f)); if (!dt.files.length) return;
+    inp.click = () => {}; try { btn.click(); } finally { delete inp.click; }  // fija "solo subir" como el clip, sin abrir el selector
+    inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true }));
+    tell(dt.files.length + " archivo(s) soltado(s)");
+  });
+}
 export function conectarRiu2(ctx) {
-  [campana, navegacion, sinConexion].forEach((f) => seguro(f));
-  [cerrarChats, contadorAncla, reacciones, reproductor, colaMotor, actividad, buscadores, carpetaVacia, bienvenida, ventanasA11y, entrada].forEach((f) => seguro(f, ctx));
+  [campana, navegacion, sinConexion, orbeConexion].forEach((f) => seguro(f));
+  [cerrarChats, contadorAncla, reacciones, reproductor, colaMotor, actividad, buscadores, carpetaVacia, bienvenida, soltarArchivos, ventanasA11y, entrada].forEach((f) => seguro(f, ctx));
 }

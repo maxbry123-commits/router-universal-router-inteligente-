@@ -72,3 +72,6 @@
 .riu-bv-titulo .riu-pal{animation:none}
 .riu-bv-titulo{text-wrap:balance}
 .con-bienvenida .chat-history:empty::before{content:none}
+/* soltar archivos */
+.riu-soltar{position:fixed;inset:12px;z-index:90;display:flex;align-items:center;justify-content:center;border:2px dashed var(--active);border-radius:22px;background:color-mix(in srgb,var(--bg) 82%,transparent);color:var(--title);font-size:18px;font-weight:600;pointer-events:none}
+.riu-soltar[hidden]{display:none}

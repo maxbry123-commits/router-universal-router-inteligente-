@@ -2,6 +2,7 @@
 // Panel propio (se llama por HTML desde el shell). Aplica en vivo con apariencia-aplicar.js y guarda en este navegador.
 import { ICONOS, TRAZOS, PALETA, SENAL, FUENTES, FUENTES_ETQ, TEMAS, PRESETS, ROLES, DESTINOS, COLOR_DEF } from "./apariencia-datos.js";
 import { cargar, guardarEstado, construirCSS, HEX } from "./apariencia-aplicar.js";
+import { montarExtra } from "./apariencia-extra.js";
 
 const svg = (id, w = 20) => '<svg viewBox="0 0 24 24" width="' + w + '" height="' + w + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (TRAZOS[id] || TRAZOS.info) + "</svg>";
 const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4))); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
@@ -26,6 +27,7 @@ const sanear = (o) => {  // solo valores conocidos y validos (importar / datos r
     if (Object.keys(x).length) r.tipo[id] = x;
   }
   for (const [id] of DESTINOS) if (o.iconos && TRAZOS[o.iconos[id]]) r.iconos[id] = o.iconos[id];
+  if (Array.isArray(o.orden)) r.orden = [...new Set(o.orden.filter((v) => typeof v === "string" && /^[a-z]{3,14}$/.test(v)))].slice(0, 12);
   const e = num(o.escala, 90, 115); if (e !== undefined && e !== 100) r.escala = e;
   const s = num(o.avisoSeg, 2, 15); if (s !== undefined) r.avisoSeg = s;
   return r;
@@ -131,6 +133,8 @@ export async function mount(root, { tell } = {}) {
     const sel = document.querySelector("#theme"); if (sel) { sel.value = "gris"; sel.dispatchEvent(new Event("change")); }
     pintarTodo(); avisa("Apariencia restablecida");
   });
-  const pintarTodo = () => { pintarTemas(); pintarSenal(); pintarPresets(); pintarRoles(); pintarEstudio(); pintarDestinos(); pintarIconos(); pintarAvisos(); };
+  let extra = null;
+  const pintarTodo = () => { pintarTemas(); pintarSenal(); pintarPresets(); pintarRoles(); pintarEstudio(); pintarDestinos(); pintarIconos(); pintarAvisos(); if (extra) extra.pintar(); };
+  extra = montarExtra(root, { est: () => est, guardar, avisa });
   pintarTodo();
 }

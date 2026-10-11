@@ -2,6 +2,7 @@
 // icono de los botones, color de señal y tamaño de interfaz. Solo emite lo que el Director cambió: sin cambios no toca nada.
 // Los valores se validan al leer (un dato roto o manipulado en el navegador se ignora).
 import { TRAZOS, FUENTES, ROLES, DESTINOS } from "./apariencia-datos.js";
+import { iniciarBloqueo } from "./bloqueo-pin.js";
 export const CLAVE = "riu_apariencia_v1";
 export const HEX = /^#[0-9a-fA-F]{6}$/;
 const lim = (n, a, b, d) => { n = Number(n); return Number.isFinite(n) ? Math.min(b, Math.max(a, n)) : d; };
@@ -39,6 +40,18 @@ function aplicarIconos(map) {
     } else if (s.dataset.riuOrig !== undefined) { s.innerHTML = s.dataset.riuOrig; delete s.dataset.riuOrig; delete s.dataset.riuIcono; }
   }
 }
+let ordenOriginal = null;
+function aplicarOrden(orden) {  // orden del menu lateral elegido en Apariencia (sin orden guardado = el de fabrica)
+  const nav = document.querySelector("#navigation"); if (!nav) return;
+  const bs = [...nav.querySelectorAll(":scope > button[data-view]")], ids = bs.map((b) => b.dataset.view);
+  if (!ordenOriginal) ordenOriginal = ids.slice();
+  const base = Array.isArray(orden) && orden.length ? orden : ordenOriginal;
+  const resto = [...ordenOriginal, ...ids].filter((v, i, a) => ids.includes(v) && !base.includes(v) && a.indexOf(v) === i);  // lo no elegido conserva el orden de fabrica
+  const quiero = [...base.filter((v) => ids.includes(v)), ...resto];
+  if (quiero.join() === ids.join()) return;
+  quiero.forEach((v) => nav.append(bs.find((b) => b.dataset.view === v)));
+  const ind = nav.querySelector(".nav-ind"); if (ind) nav.append(ind);
+}
 export function aplicar(est = cargar()) {
   let st = document.getElementById("riu-apariencia");
   if (!st) { st = document.createElement("style"); st.id = "riu-apariencia"; document.head.append(st); }
@@ -47,7 +60,9 @@ export function aplicar(est = cargar()) {
   if (typeof est.senal === "string" && HEX.test(est.senal)) { rs.setProperty("--active", est.senal); rs.setProperty("--status-blue", est.senal); }
   else { rs.removeProperty("--active"); rs.removeProperty("--status-blue"); }
   aplicarIconos(est.iconos);
+  aplicarOrden(est.orden);
 }
 aplicar();
 const panel = document.querySelector("#panel");
 if (panel) { let t = 0; new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => aplicarIconos(cargar().iconos), 80); }).observe(panel, { childList: true, subtree: true }); }
+iniciarBloqueo();

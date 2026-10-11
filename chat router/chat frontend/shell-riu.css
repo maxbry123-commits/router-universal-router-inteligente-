@@ -24,3 +24,19 @@
 @media(prefers-reduced-motion:reduce){#notice:not(:empty){animation:none}}
 /* RUI 03 hook-sidebar: riel punteado del que cuelga el indicador activo */
 @media(min-width:721px){#navigation.con-ind::before{content:"";position:absolute;left:0;top:0;bottom:0;border-left:1px dashed var(--border-strong);pointer-events:none}}
+/* RUI 20 matrix-orb: orbe de la conexion */
+.riu-orbe{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:50%;vertical-align:middle;flex:0 0 auto;position:relative;color:var(--status-orange);background:conic-gradient(from 0deg,currentColor,transparent 55%,currentColor);animation:riu-orbe-gira 2.4s linear infinite}
+.riu-orbe::after{content:"";position:absolute;inset:3px;border-radius:50%;background:currentColor}
+.riu-orbe[data-e=bien]{color:var(--status-green)}
+.riu-orbe[data-e=mal]{color:var(--status-red);animation:none}
+@keyframes riu-orbe-gira{to{transform:rotate(360deg)}}
+/* RUI 10 otp-input + bloqueo con PIN */
+.riu-otp{display:flex;gap:10px;justify-content:center;margin:12px 0}
+.riu-otp input{width:52px;height:60px;min-height:0;padding:0;text-align:center;font-size:24px;border-radius:14px;background:var(--panel);border:1px solid var(--border-strong);color:var(--title)}
+.riu-otp input:focus{outline:none;border-color:var(--active);box-shadow:0 0 0 3px color-mix(in srgb,var(--active) 30%,transparent)}
+.riu-otp.mal{animation:riu-sacude .4s}
+@keyframes riu-sacude{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+#riu-pin{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:24px;text-align:center;background:var(--bg);color:var(--text)}
+#riu-pin strong{font-size:22px;color:var(--title)}
+.riu-pin-msg{min-height:20px;margin:0;color:var(--status-red);font-size:13px}
+@media(prefers-reduced-motion:reduce){.riu-orbe,.riu-otp.mal{animation:none}}
