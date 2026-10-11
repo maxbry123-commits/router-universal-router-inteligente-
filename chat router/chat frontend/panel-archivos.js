@@ -1,6 +1,8 @@
+import { montarProyecto } from "./proyecto.js";
 import { node } from "./api.js";
 
 export async function mount(root, { api, tell }) {
+  montarProyecto(root, { tell });  // pestaña Proyecto (proyecto.js)
   let files = [];
   const render = () => {
     const list = root.querySelector("#file-list");

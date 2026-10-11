@@ -5,6 +5,7 @@ import { conectarMicrofono } from "./chat-microfono.js";
 import { conectarVentanas } from "./chat-ventanas.js";
 import { conectarRiu } from "./chat-riu.js";
 import { conectarRiu2 } from "./chat-riu2.js";
+import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 5;
@@ -129,14 +130,19 @@ export async function mount(root, { api, tell }) {
   root.querySelectorAll(".sh-cerrar").forEach((b) => b.addEventListener("click", cerrarHojas));
   conectarVentanas({ root, q });
   conectarRiu({ q });  // RUI: bloques de codigo con copiar, barra de lectura y boton bajar
-  const cerrarChat = (i) => {  // RUI 18: cerrar un chat (el ultimo no se cierra; uno ocupado espera)
-    if (chats.length < 2 || !chats[i]) return;
+  const cerrarChat = (i) => {  // borrar un chat (la X de su pestana); si es el unico, se vacia y queda uno nuevo
+    if (!chats[i]) return;
     if (chats[i].ocupado) { tell("Ese chat está trabajando: espera o pulsa Detener"); return; }
-    chats[i].hist.remove(); chats.splice(i, 1); activo = Math.min(activo > i ? activo - 1 : activo, chats.length - 1);
-    pintarTabs(); guardar(); tell("Chat cerrado");
+    const ses = chats[i].sesion;
+    try { for (const k of ["riu_hist_v1", "riu_proy_v1"]) { const t = JSON.parse(localStorage.getItem(k) || "{}"); if (t && t[ses] !== undefined) { delete t[ses]; localStorage.setItem(k, JSON.stringify(t)); } } } catch (e) {}
+    if (chats.length < 2) { nuevoChat(); i = 0; }
+    chats[i].hist.remove(); chats.splice(i, 1); activo = Math.max(0, Math.min(activo > i ? activo - 1 : activo, chats.length - 1));
+    pintarTabs(); guardar(); tell("Chat borrado");
   };
+  window.RIU_CHAT = { chat, tokens: () => [...chat().anclados], pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
   root.addEventListener("riu:cerrar-chat", (e) => cerrarChat(e.detail));
   conectarRiu2({ root, q, tell });  // RUI 12-21 + mejoras de flujo (ventanas, borrador, avisos)
+  conectarVentanasNuevas({ root, q, tell });  // workflows, constitución sentinela, banco de claves y destinos del anclaje (cada uno en su archivo)
 
   const fila = (titulo, desc, marcada, alClick) => {
     const r = node("button", "", "fila" + (marcada ? " on" : ""));

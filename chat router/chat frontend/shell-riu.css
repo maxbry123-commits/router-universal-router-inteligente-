@@ -40,3 +40,6 @@
 #riu-pin strong{font-size:22px;color:var(--title)}
 .riu-pin-msg{min-height:20px;margin:0;color:var(--status-red);font-size:13px}
 @media(prefers-reduced-motion:reduce){.riu-orbe,.riu-otp.mal{animation:none}}
+/* la configuracion de la UI vive en su panel (Configuracion): el selector de tema sale de la barra del chat */
+.access label[for="theme"]{display:none}
+.riu-estado{display:flex;align-items:center;justify-content:center;gap:6px;flex:1 1 100%}

@@ -1,0 +1,3 @@
+/* ventana-workflows.css — solo lo propio de la ventana de workflows */
+.wf-cuerpo{display:grid;gap:10px}
+#pill-workflows.on::before{content:"● ";color:#fff}

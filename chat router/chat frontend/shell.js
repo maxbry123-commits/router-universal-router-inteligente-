@@ -9,7 +9,7 @@ import "./apariencia-aplicar.js";  // aplica la apariencia guardada en todo el c
 
 const panels = { chat, archivos, seguimiento, canvas, connectors: organization, templates: organization, engineering: organization, apariencia };
 const labels = { chat: "Chat", archivos: "Archivos", seguimiento: "Seguimiento", canvas: "Canvas",
-  connectors: "Conectores", templates: "Plantillas", engineering: "Ingeniería", apariencia: "Apariencia" };
+  connectors: "Conectores", templates: "Plantillas", engineering: "Ingeniería", apariencia: "Configuración" };
 const panel = document.querySelector("#panel");
 const notice = document.querySelector("#notice");
 const tell = message => { notice.textContent = message || ""; };

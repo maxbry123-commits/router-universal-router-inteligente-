@@ -1,0 +1,3 @@
+/* ventana-claves.css — solo lo propio de la ventana del banco de claves */
+.cl-cuerpo{display:grid;gap:10px}
+.cl-ref{display:grid;gap:6px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow-wrap:anywhere}

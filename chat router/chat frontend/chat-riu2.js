@@ -85,20 +85,20 @@ function cerrarChats({ root, q }) {
     try {
       tabs.querySelectorAll(".chip-borrar,.chip-confirmar").forEach((x) => x.remove());
       const chips = [...tabs.querySelectorAll(".chip")].filter((c) => c.textContent.trim() !== "＋");
-      chips.forEach((c) => { c.setAttribute("role", "tab"); c.setAttribute("aria-selected", String(c.classList.contains("on"))); });
-      const i = chips.findIndex((c) => c.classList.contains("on"));
-      if (chips.length < 2 || i < 0) return;
-      const b = crear("button", "chip-borrar"); b.type = "button"; b.title = "Cerrar este chat"; b.setAttribute("aria-label", "Cerrar este chat");
-      b.innerHTML = SVG('<path class="tapa" d="M4 7h16M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13M10 11v6M14 11v6"/>', 16);
-      chips[i].after(b);
-      b.addEventListener("click", () => {
-        const c = crear("span", "chip-confirmar");
-        const si = crear("button", "mini rojo", "Cerrar"), no = crear("button", "mini", "Mantener");
-        si.type = no.type = "button";
-        si.addEventListener("click", () => { clearTimeout(t); root.dispatchEvent(new CustomEvent("riu:cerrar-chat", { detail: i })); });
-        no.addEventListener("click", () => { clearTimeout(t); poner(); });
-        obs.disconnect(); c.append(si, no); b.replaceWith(c); obs.observe(tabs, { childList: true });
-        clearTimeout(t); t = setTimeout(() => { if (c.isConnected) poner(); }, 4000);
+      chips.forEach((c, i) => {
+        c.setAttribute("role", "tab"); c.setAttribute("aria-selected", String(c.classList.contains("on")));
+        const b = crear("button", "chip-borrar"); b.type = "button"; b.title = "Borrar este chat"; b.setAttribute("aria-label", "Borrar " + c.textContent.replace("…", "").trim());
+        b.innerHTML = SVG('<path d="M6 6l12 12M18 6L6 18"/>', 14);
+        c.after(b);
+        b.addEventListener("click", () => {
+          const cf = crear("span", "chip-confirmar");
+          const si = crear("button", "mini rojo", chips.length > 1 ? "Borrar" : "Vaciar"), no = crear("button", "mini", "Mantener");
+          si.type = no.type = "button";
+          si.addEventListener("click", () => { clearTimeout(t); root.dispatchEvent(new CustomEvent("riu:cerrar-chat", { detail: i })); });
+          no.addEventListener("click", () => { clearTimeout(t); poner(); });
+          obs.disconnect(); cf.append(si, no); b.replaceWith(cf); obs.observe(tabs, { childList: true });
+          clearTimeout(t); t = setTimeout(() => { if (cf.isConnected) poner(); }, 4000);
+        });
       });
     } finally { obs.observe(tabs, { childList: true }); }
   };
@@ -269,10 +269,10 @@ function entrada({ q }) {
 // RUI 20 matrix-orb: orbe del estado de la conexión (naranja girando = sin verificar, verde = conectado, rojo = fallo)
 function orbeConexion() {
   const c = $("#connection"); if (!c || window.__riuOrbe) return; window.__riuOrbe = true;
-  const o = crear("span", "riu-orbe"); o.setAttribute("aria-hidden", "true"); c.before(o);
+  const o = crear("span", "riu-orbe"), w = crear("span", "riu-estado"); o.setAttribute("aria-hidden", "true"); c.before(w); w.append(o, c);
   const act = () => {
     const t = (c.textContent || "").toLowerCase();
-    o.dataset.e = /error|ca[ií]do|fall|sin conexi|offline|desconect|bloquead|no disponible|timeout/.test(t) ? "mal" : (/conectad|\bok\b|listo|activo|en l[ií]nea|online|verificad/.test(t) && !/sin verificar/.test(t)) ? "bien" : "espera";
+    o.dataset.e = /error|ca[ií]do|fall|sin conexi|offline|desconect|bloquead|no disponible|timeout/.test(t) ? "mal" : (/conectad|disponible|\bok\b|listo|activo|en l[ií]nea|online|verificad/.test(t) && !/sin verificar/.test(t)) ? "bien" : "espera";
     c.title = c.textContent;
   };
   new MutationObserver(act).observe(c, { childList: true, characterData: true, subtree: true }); act();

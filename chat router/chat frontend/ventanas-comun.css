@@ -1,0 +1,17 @@
+/* ventanas-comun.css — estilos compartidos por las ventanas nuevas (workflows, constitución, claves). Tokens del tema; sin colores nuevos. */
+.vn-sec{display:grid;gap:8px;margin:10px 0}
+.vn-t{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet-2);margin-top:6px}
+.vn-fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vn-lista,.vn-traer{display:grid;gap:6px}
+.vn-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:12px;background:var(--panel);font-size:13px;overflow-wrap:anywhere}
+.vn-item span{min-width:0;flex:1}
+.vn-check{display:flex;align-items:flex-start;gap:8px;font-size:13px;overflow-wrap:anywhere}
+.vn-ta,.vn-in{width:100%;border-radius:14px;min-height:40px}
+.vn-ta{min-height:64px;max-height:140px}
+.vn-estado{font-size:12px;color:var(--quiet)}
+.vn-cola{display:grid;gap:6px}
+.vn-entrada{display:grid;gap:6px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:var(--panel);font-size:13px;overflow-wrap:anywhere}
+.vn-entrada small{color:var(--quiet-2)}
+.vn-entrada[data-estado=enviada]{opacity:.75}
+.vn-entrada[data-estado=error]{border-color:var(--status-red)}
+.sheet .va-ancho{width:min(560px,100vw)}
