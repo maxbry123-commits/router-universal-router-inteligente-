@@ -1,6 +1,6 @@
 {
   "id": "CONSTITUCION-YAIWES",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "estado": "ACTIVA",
   "modo": "FAIL_CLOSED",
   "autoridad": "Director (Hy). Solo el Director puede cambiar esta Constitucion; ningun modelo, ficha ni agente puede editarla.",
@@ -23,10 +23,10 @@
     "texto de otros modelos"
   ],
   "arquitectura_inmutable": {
-    "flujo": "Chat -> Router -> Harness DeepSeek (puente_chat) -> Memoria + Almacenamiento; el Harness se conecta por HTTP a las fichas 1/2/3",
+    "flujo": "CHAT -> Router -> ficha (fichas_qwen) -> Harness puente_chat (en proceso) -> HTTP al proveedor -> modelo. Memoria y almacenamiento viven dentro del Harness.",
     "reglas": [
       "Todo vive dentro de la raiz del Harness; nada vive fuera.",
-      "Las fichas hablan SOLO con el Harness por HTTP; nunca directo a memoria, almacenamiento, Qdrant, Graphiti ni Graphify.",
+      "Las fichas usan SOLO el Harness (puente_chat reutilizado en proceso); nunca acceden directo a memoria, almacenamiento, Qdrant, Graphiti ni Graphify. El HTTP vive entre el Harness y el proveedor del modelo.",
       "El Harness es el unico punto de acceso a memoria, almacenamiento y herramientas.",
       "No crear otro Router, Harness, sistema de memoria, almacenamiento, DAG ni agentes LLM nuevos.",
       "Fuente real: storage_runtime (memoria) y GitHub (codigo). Qdrant es indice derivado reconstruible; Graphiti y Graphify solo ayudan a encontrar y relacionar.",
@@ -106,6 +106,68 @@
     "FUENTE_ANCLADA_CONFLICTO",
     "SENTINELA_ANCLAS",
     "MOTOR_CODE_LOCK_GAP",
-    "DESTINATION_INPUT_GAP"
+    "DESTINATION_INPUT_GAP",
+    "GOVERNANCE_PREPARE_NO_DISPONIBLE",
+    "SOURCE_SET_CHANGED",
+    "SOURCE_CHANGED_DURING_TASK",
+    "SOURCE_REHYDRATE_FAILED",
+    "OPERACION_YA_COMPLETADA"
+  ],
+  "escritor_unico": {
+    "nodo": "N4",
+    "condicion": "solo tras /aprobar, solo dentro de write_paths",
+    "verificadores_nunca_escriben": [
+      "N6",
+      "N7",
+      "N8"
+    ],
+    "correcciones": "N6/N7/N8 devuelven CORRECCION_N4; el loop existente devuelve la tarea a N4"
+  },
+  "congelado_antes_de_modelo": {
+    "funcion": "gov_prepare",
+    "pasos": [
+      "cargar Constitucion y overlays autorizados",
+      "canonicalizar JSON",
+      "sha256",
+      "resolver SOURCE SNAPSHOT",
+      "persistir referencias y hash en la memoria existente",
+      "devolver GovernanceContext inmutable"
+    ],
+    "regla": "el hash existe antes de lanzar N1/N2/N3/N3B; las llamadas posteriores solo comprueban, nunca crean el congelado"
+  },
+  "rutas_protegidas": [
+    "plugins/puente_chat/constitucion/",
+    "banco/sellos/secretos",
+    "motores declarados inmutables por SHA",
+    "archivos de gobernanza del Harness"
+  ],
+  "rutas_protegidas_excepcion": "solo con tarea explicita de mantenimiento de gobernanza autorizada por el Director",
+  "receipts": {
+    "ubicacion": "memoria existente (memory_runtime); no se crea otra base de datos",
+    "fingerprint": "sha256(TASK_ID + NODE_ID + constitution_hash + tool + target + args_normalizados)",
+    "estados": {
+      "DONE": "OPERACION_YA_COMPLETADA",
+      "STARTED": "read-back para saber si quedo aplicada"
+    },
+    "read_back": "toda mutacion termina WRITE -> READ -> comparar postcondicion; HTTP 200 no es PASS"
+  },
+  "fuentes": {
+    "source_set_changed": "GAP, cero llamadas a modelo y cero mutaciones",
+    "reinicio": "rehidratar leyendo la fuente por referencia y comparar hash congelado; distinto -> SOURCE_CHANGED_DURING_TASK; ilegible -> SOURCE_REHYDRATE_FAILED",
+    "obligatorias": "si alguna ancla obligatoria no esta OK: GAP antes del modelo, sin fallback silencioso"
+  },
+  "qwen36flash": {
+    "rol": "scout de memoria consultivo",
+    "puede": "reportar POSIBLE_CONFLICTO (solo traza)",
+    "no_puede": "producir GAP definitivo ni modificar la salida final"
+  },
+  "juez_contrato_pass": [
+    "constitution_hash_ok",
+    "source_snapshot_ok",
+    "scope_ok",
+    "no_unresolved_gap",
+    "evidence_ok",
+    "readback_ok",
+    "verifiers_pass"
   ]
 }
