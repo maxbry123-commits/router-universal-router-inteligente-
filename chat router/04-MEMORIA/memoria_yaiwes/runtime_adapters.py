@@ -1,71 +1,27 @@
-"""Adaptadores reales de Graphiti, Graphify, Memanto y embedding compartido.
+"""Adaptadores de Graphiti (memoria) y Graphify (codigo) para memoria_yaiwes.
 
-Regla: nunca devolver CONNECTED por tener codigo fuente. Cada health() hace una
-comprobacion real y, si falta algo, devuelve un GAP_* especifico.
-SQLite sigue siendo la verdad; todo esto es indice/replica derivada.
+Regla: CONNECTED solo si el contrato real se cumple; si falta algo, GAP_* especifico.
+SQLite sigue siendo la verdad; Graphiti/Graphify son indices derivados.
+Sin modelos nuevos: el vector de Graphiti es QdrantLocalAdapter.embed (256, NO semantico).
 """
 from __future__ import annotations
 
 import asyncio
 import json
 import os
-import subprocess
+import re
 import threading
-import time
+import types
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from urllib.request import Request, urlopen
 
-EMBED_MODEL = "intfloat/multilingual-e5-small"
-EMBED_DIM = 384
+EMBED_DIM = 256
 
 
-class EmbeddingAdapter:
-    """Un solo modelo local compartido (e5-small, 384). Se carga una vez."""
-    name = "embedding"
-    _lock = threading.Lock()
-    _model: Any = None
-    _err: str | None = None
-
-    @classmethod
-    def _load(cls) -> Any:
-        with cls._lock:
-            if cls._model is not None or cls._err:
-                return cls._model
-            path = os.getenv("RIU_EMBED_MODEL_DIR", "")
-            if not path or not Path(path).is_dir():
-                cls._err = "GAP_EMBEDDING_MODEL_NOT_AVAILABLE"
-                return None
-            try:
-                from sentence_transformers import SentenceTransformer
-            except Exception:  # noqa: BLE001
-                cls._err = "GAP_SENTENCE_TRANSFORMERS_NOT_INSTALLED"
-                return None
-            try:
-                cls._model = SentenceTransformer(path, device="cpu")
-            except Exception as exc:  # noqa: BLE001
-                cls._err = f"GAP_EMBEDDING_LOAD_FAILED:{type(exc).__name__}"
-            return cls._model
-
-    @classmethod
-    def reset(cls) -> None:
-        cls._model, cls._err = None, None
-
-    def ready(self) -> bool:
-        return self._load() is not None
-
-    def embed(self, texts: list[str], kind: str = "passage") -> list[list[float]]:
-        model = self._load()
-        if model is None:
-            raise RuntimeError(self._err or "GAP_EMBEDDING_MODEL_NOT_AVAILABLE")
-        pref = "query: " if kind == "query" else "passage: "
-        vecs = model.encode([pref + t for t in texts], normalize_embeddings=True)
-        return [list(map(float, v)) for v in vecs]
-
-    def health(self) -> dict[str, Any]:
-        ok = self.ready()
-        return {"status": "CONNECTED" if ok else self._err, "model": EMBED_MODEL, "dim": EMBED_DIM,
-                "semantic": ok, "e2e_verified": False}
+def _data_dir() -> Path:
+    return Path(os.getenv("RIU_DATA_DIR") or (Path.cwd() / "riu_data"))
 
 
 def _flat(data: Any) -> str:
@@ -74,6 +30,10 @@ def _flat(data: Any) -> str:
 
 class _Base:
     name = "base"
+    IN_SAVE = True  # False = fuera del guardado de memoria
+
+    def health(self) -> dict[str, Any]:
+        return {"status": "GAP"}
 
     def _endpoint(self) -> str | None:  # la fachada solo llama si esto es truthy
         return "local" if self.health().get("status") == "CONNECTED" else None
@@ -88,137 +48,249 @@ class _Base:
         return []
 
 
-class GraphitiAdapter(_Base):
-    """Graphiti sobre FalkorDBLite embebido. LLM = cliente inyectado (el del modelo de la ficha).
-    Activar con RIU_GRAPHITI_ENABLE=1 y set_llm_client(...)/set_embedder(...)."""
-    name = "graphiti"
+class YaiwesGraphitiEmbedder:
+    """Puente al vector tecnico existente (QdrantLocalAdapter.embed). NO es semantico."""
+    dimension = EMBED_DIM
+    semantic = False
 
-    def __init__(self, embedder: EmbeddingAdapter | None = None) -> None:
-        self.embedder = embedder or EmbeddingAdapter()
-        self.llm_client: Any = None
-        self._g: Any = None
-        self._loop: asyncio.AbstractEventLoop | None = None
-        self._err: str | None = None
-        self._dead_until = 0.0
-
-    def set_llm_client(self, client: Any) -> None:
-        self.llm_client = client
-        self._g = None
-
-    def _gap(self) -> str | None:
-        if os.getenv("RIU_GRAPHITI_ENABLE") != "1":
-            return "GAP_DISABLED"
-        try:
-            import graphiti_core  # noqa: F401
-        except Exception:  # noqa: BLE001
-            return "GAP_GRAPHITI_CORE_NOT_INSTALLED"
-        try:
-            import redislite  # noqa: F401
-        except Exception:  # noqa: BLE001
-            return "GAP_FALKORDBLITE_NOT_INSTALLED"
-        if self.llm_client is None:
-            return "GAP_NO_LLM_CLIENT"
-        if not self.embedder.ready():
-            return "GAP_EMBEDDING_MODEL_NOT_AVAILABLE"
-        return None
-
-    def health(self) -> dict[str, Any]:
-        gap = self._gap() or self._err
-        return {"status": gap or "CONNECTED", "e2e_verified": False, "driver": "falkordblite-embedded"}
-
-    def _run(self, coro: Any) -> Any:
-        if self._loop is None:
-            self._loop = asyncio.new_event_loop()
-            threading.Thread(target=self._loop.run_forever, daemon=True).start()
-        return asyncio.run_coroutine_threadsafe(coro, self._loop).result(60)
-
-    def _graph(self) -> Any:
-        if self._g is None:
-            from graphiti_core import Graphiti
-            from graphiti_core.driver.falkordb_driver import FalkorDriver
-            from redislite.async_falkordb_client import AsyncFalkorDB
-            db_path = os.getenv("RIU_GRAPHITI_DB", "riu_data/graphiti.db")
-            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-            driver = FalkorDriver(falkor_db=AsyncFalkorDB(db_path))
-            self._g = Graphiti(graph_driver=driver, llm_client=self.llm_client, embedder=_GraphitiEmbedder(self.embedder))
-            self._run(self._g.build_indices_and_constraints())
-        return self._g
-
-    def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
-        from datetime import datetime, timezone
-        try:
-            g = self._graph()
-            self._run(g.add_episode(name=f"{scope}:{key}", episode_body=_flat(data), source_description="yaiwes-memory",
-                                    reference_time=datetime.now(timezone.utc), group_id=scope.replace(":", "_")))
-            return {"adapter": self.name, "status": "SAVED"}
-        except Exception as exc:  # noqa: BLE001
-            self._err = f"GAP_RUNTIME:{type(exc).__name__}"
-            return {"adapter": self.name, "status": "GAP", "reason": self._err}
-
-    def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
-        g = self._graph()
-        res = self._run(g.search(query, group_ids=[scope.replace(":", "_")], num_results=k))
-        return [{"source": "graphiti", "text": getattr(r, "fact", str(r)), "id": str(getattr(r, "uuid", ""))} for r in res]
-
-
-class _GraphitiEmbedder:
-    """Puente duck-typed al EmbedderClient de Graphiti usando el embedding compartido."""
-    def __init__(self, emb: EmbeddingAdapter) -> None:
-        self.emb = emb
+    def __init__(self, embed_fn: Callable[[Any], list[float]]) -> None:
+        self._embed = embed_fn
 
     async def create(self, input_data: Any) -> list[float]:
         text = input_data if isinstance(input_data, str) else " ".join(map(str, input_data))
-        return self.emb.embed([text])[0]
+        return [float(x) for x in self._embed(text)]
 
     async def create_batch(self, input_data_list: list[str]) -> list[list[float]]:
-        return self.emb.embed(list(input_data_list))
+        return [[float(x) for x in self._embed(t)] for t in input_data_list]
+
+
+class YaiwesPassthroughCrossEncoder:
+    """Sin modelo ni API: devuelve los mismos pasajes en orden estable (evita el reranker OpenAI por defecto)."""
+
+    async def rank(self, query: str, passages: list[str]) -> list[tuple[str, float]]:
+        n = len(passages)
+        return [(p, float(n - i)) for i, p in enumerate(passages)]
+
+
+def _extract_json(text: str) -> dict[str, Any]:
+    m = re.search(r"\{.*\}", text or "", re.S)
+    return json.loads(m.group(0)) if m else {}
+
+
+def build_llm_client(call: Callable[[list[dict[str, str]], int], str]) -> Any:
+    """YaiwesGraphitiLLM: LLMClient de Graphiti que delega en la llamada del modelo YA elegido por la ficha."""
+    from graphiti_core.llm_client.client import LLMClient
+    from graphiti_core.llm_client.config import LLMConfig
+
+    class YaiwesGraphitiLLM(LLMClient):
+        def __init__(self) -> None:
+            super().__init__(LLMConfig(api_key="ficha", model="ficha"), cache=False)
+
+        async def _generate_response(self, messages, response_model=None, max_tokens=8192, model_size=None):  # noqa: ANN001
+            msgs = [{"role": m.role, "content": m.content} for m in messages]
+            if response_model is not None:
+                schema = json.dumps(response_model.model_json_schema(), ensure_ascii=False)
+                msgs[-1]["content"] += "\n\nResponde SOLO con JSON valido que cumpla este esquema:\n" + schema
+            text = await asyncio.to_thread(call, msgs, max_tokens)
+            return _extract_json(text) if response_model is not None else {"content": text}
+
+    return YaiwesGraphitiLLM()
+
+
+class GraphitiAdapter(_Base):
+    """Graphiti 0.30.2 -> FalkorDriver -> FalkorDBLite en <RIU_DATA_DIR>/indices/graphiti/graphiti.db.
+    LLM = el de la ficha (set_llm_client); embedder = QdrantLocalAdapter.embed; cross-encoder sin modelo."""
+    name = "graphiti"
+
+    def __init__(self, embed_fn: Callable[[Any], list[float]] | None = None) -> None:
+        self._embed_fn = embed_fn
+        self._call_ref: dict[str, Any] = {"call": None}
+        self._g: Any = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._verified = False
+        self._err: str | None = None
+
+    def set_llm_client(self, call: Callable[[list[dict[str, str]], int], str]) -> None:
+        """Recibe la llamada al modelo que ya ejecuta la ficha: call(messages, max_tokens) -> texto."""
+        self._call_ref["call"] = call
+
+    @staticmethod
+    def db_path() -> Path:
+        return _data_dir() / "indices" / "graphiti" / "graphiti.db"
+
+    def health(self) -> dict[str, Any]:
+        if os.getenv("RIU_GRAPHITI_ENABLE") != "1":
+            return {"status": "GAP_DISABLED"}
+        try:
+            import graphiti_core  # noqa: F401
+        except ImportError as exc:
+            return {"status": "GAP_IMPORT", "missing": getattr(exc, "name", None)}
+        try:
+            from redislite.async_falkordb_client import AsyncFalkorDB  # noqa: F401
+        except ImportError as exc:
+            return {"status": "GAP_GRAPH_BACKEND", "missing": getattr(exc, "name", "falkordblite")}
+        if self._call_ref["call"] is None:
+            return {"status": "GAP_LLM", "reason": "la ficha aun no entrego su modelo"}
+        if self._embed_fn is None:
+            return {"status": "GAP_EMBEDDER"}
+        return {"status": self._err or "CONNECTED", "backend": "falkordblite", "db": str(self.db_path()),
+                "embedding": {"dim": EMBED_DIM, "semantic": False, "source": "QdrantLocalAdapter.embed"},
+                "e2e_verified": self._verified}
+
+    def _run(self, coro: Any, timeout: float = 300) -> Any:
+        if self._loop is None:
+            self._loop = asyncio.new_event_loop()
+            threading.Thread(target=self._loop.run_forever, daemon=True, name="graphiti-loop").start()
+        return asyncio.run_coroutine_threadsafe(coro, self._loop).result(timeout)
+
+    def _graph(self) -> Any:
+        if self._g is not None:
+            return self._g
+        os.environ.setdefault("EMBEDDING_DIM", str(EMBED_DIM))  # antes de importar graphiti_core
+        from graphiti_core import Graphiti
+        from graphiti_core.cross_encoder.client import CrossEncoderClient
+        from graphiti_core.driver.falkordb_driver import FalkorDriver
+        from graphiti_core.embedder.client import EmbedderClient
+        from redislite.async_falkordb_client import AsyncFalkorDB
+        self.db_path().parent.mkdir(parents=True, exist_ok=True)
+        driver = FalkorDriver(falkor_db=AsyncFalkorDB(str(self.db_path())))
+        emb = types.new_class("YaiwesGraphitiEmbedder", (YaiwesGraphitiEmbedder, EmbedderClient))(self._embed_fn)
+        ce = types.new_class("YaiwesPassthroughCrossEncoder", (YaiwesPassthroughCrossEncoder, CrossEncoderClient))()
+        llm = build_llm_client(lambda msgs, mt: self._call_ref["call"](msgs, mt))
+        g = Graphiti(graph_driver=driver, llm_client=llm, embedder=emb, cross_encoder=ce)
+        self._run(g.build_indices_and_constraints())
+        self._g = g
+        return g
+
+    @staticmethod
+    def _gid(scope: str) -> str:
+        return re.sub(r"[^A-Za-z0-9_-]", "_", scope) or "default"
+
+    def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
+        try:
+            from graphiti_core.nodes import EpisodeType
+            body = json.dumps(data if isinstance(data, (dict, list)) else {"text": str(data)}, ensure_ascii=False, sort_keys=True)
+            self._run(self._graph().add_episode(name=f"{scope}:{key}", episode_body=body, source_description="yaiwes-memory",
+                                                reference_time=datetime.now(timezone.utc), source=EpisodeType.json,
+                                                group_id=self._gid(scope)))
+            return {"adapter": self.name, "status": "SAVED"}
+        except Exception as exc:  # noqa: BLE001 - SQLite ya guardo; Graphiti nunca tumba el chat
+            self._err = f"GAP_WRITE:{type(exc).__name__}"
+            return {"adapter": self.name, "status": "GAP", "reason": self._err}
+
+    def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
+        gid = self._gid(scope)
+        res = self._run(self._graph().search(query, group_ids=[gid], num_results=k))
+        self._verified = True
+        out = []
+        for r in res:
+            fact = str(getattr(r, "fact", r))
+            out.append({"source": "graphiti", "scope": scope, "id": str(getattr(r, "uuid", "")), "text": fact, "content": fact,
+                        "score": None, "provenance": {"group_id": gid, "episodes": [str(e) for e in (getattr(r, "episodes", None) or [])]}})
+        return out
+
+    def close(self) -> None:
+        if self._g is not None:
+            try:
+                self._run(self._g.close(), 60)
+            finally:
+                self._g = None
 
 
 class GraphifyCodeAdapter(_Base):
-    """Grafo del CODIGO (no de la memoria). Lee graphify-out/graph.json; solo busqueda, no es parte de save."""
+    """Graphify 0.1.14 sobre CODIGO, via modulos Python (sin CLI, sin LLM, sin embeddings).
+    SOURCE de solo lectura -> OUTPUT escribible (<RIU_DATA_DIR>/indices/graphify/graph.json)."""
     name = "graphify"
+    IN_SAVE = False
 
-    @staticmethod
-    def _graph_path() -> Path | None:
-        root = os.getenv("RIU_GRAPHIFY_ROOT")
-        return Path(root) / "graphify-out" / "graph.json" if root else None
+    def __init__(self, source_root: str | Path | None = None, output_dir: str | Path | None = None) -> None:
+        self._src, self._out = source_root, output_dir
+
+    def source_root(self) -> Path | None:
+        r = self._src or os.getenv("RIU_GRAPHIFY_SOURCE_ROOT") or os.getenv("RIU_GRAPHIFY_ROOT")
+        return Path(r) if r else None
+
+    def output_dir(self) -> Path:
+        return Path(self._out or os.getenv("RIU_GRAPHIFY_OUTPUT") or (_data_dir() / "indices" / "graphify"))
+
+    def graph_path(self) -> Path:
+        return self.output_dir() / "graph.json"
+
+    def _gap_io(self) -> dict[str, Any] | None:
+        s = self.source_root()
+        if s is None or not s.is_dir() or not os.access(s, os.R_OK):
+            return {"status": "GAP_SOURCE"}
+        o = self.output_dir()
+        try:
+            o.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            return {"status": "GAP_OUTPUT"}
+        return None if os.access(o, os.W_OK) else {"status": "GAP_OUTPUT"}
 
     def health(self) -> dict[str, Any]:
-        p = self._graph_path()
-        if p is None:
-            return {"status": "GAP_DISABLED"}
-        if not p.exists():
-            return {"status": "GAP_GRAPH_NOT_BUILT", "hint": "graphify <root>"}
-        return {"status": "CONNECTED", "graph_json_bytes": p.stat().st_size, "age_s": int(time.time() - p.stat().st_mtime), "e2e_verified": False}
+        gap = self._gap_io()
+        if gap:
+            return gap
+        g = self.graph_path()
+        if not g.exists():
+            return {"status": "GAP_GRAPH_NOT_BUILT"}
+        try:
+            nodes = json.loads(g.read_text(encoding="utf-8")).get("nodes") or []
+        except Exception:  # noqa: BLE001
+            return {"status": "GAP_QUERY", "reason": "graph.json invalido"}
+        if not nodes:
+            return {"status": "GAP_QUERY", "reason": "graph.json vacio"}
+        return {"status": "CONNECTED", "nodes": len(nodes), "graph_json": str(g), "e2e_verified": False}
 
     def build(self) -> dict[str, Any]:
-        root = os.getenv("RIU_GRAPHIFY_ROOT")
-        if not root:
-            return {"status": "GAP_DISABLED"}
+        gap = self._gap_io()
+        if gap:
+            return gap
         try:
-            r = subprocess.run(["graphify", root], capture_output=True, timeout=600)
-        except FileNotFoundError:
-            return {"status": "GAP_GRAPHIFY_NOT_INSTALLED"}
-        return {"status": "BUILT" if r.returncode == 0 else "GAP_BUILD_FAILED", "rc": r.returncode}
+            from graphify.build import build_from_json
+            from graphify.cluster import cluster
+            from graphify.detect import detect
+            from graphify.export import to_json
+            from graphify.extract import collect_files, extract
+        except ImportError as exc:
+            return {"status": "GAP_GRAPHIFY_DEPS", "missing": getattr(exc, "name", str(exc))}
+        src = self.source_root()
+        code = (detect(src).get("files") or {}).get("code") or []
+        files: list[Path] = []
+        for p in code:
+            p = Path(p)
+            files.extend(collect_files(p if p.is_absolute() else src / p))
+        if not files:
+            return {"status": "GAP_NO_CODE_FILES"}
+        graph = build_from_json(extract(files))  # solo AST de codigo: sin extraccion semantica/LLM
+        to_json(graph, cluster(graph), str(self.graph_path()))
+        return {"status": "BUILT", "files": len(files), "graph_json": str(self.graph_path())}
 
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
         return {"adapter": self.name, "status": "SKIPPED", "reason": "code-graph-not-memory"}
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
-        p = self._graph_path()
-        if p is None or not p.exists():
+        g = self.graph_path()
+        if not g.exists():
             return []
-        g = json.loads(p.read_text(encoding="utf-8"))
-        nodes = g.get("nodes", [])
+        data = json.loads(g.read_text(encoding="utf-8"))
+        links = data.get("links") or data.get("edges") or []
         terms = [t for t in query.lower().split() if t]
+        scored = []
+        for n in data.get("nodes", []):
+            hay = " ".join(str(n.get(f, "")) for f in ("id", "label", "source_file", "file")).lower()
+            s = sum(t in hay for t in terms)
+            if s:
+                scored.append((s, n))
+        scored.sort(key=lambda x: -x[0])
         out = []
-        for n in nodes:
-            text = json.dumps(n, ensure_ascii=False).lower()
-            score = sum(t in text for t in terms)
-            if score:
-                out.append((score, n))
-        out.sort(key=lambda x: -x[0])
-        return [{"source": "graphify", "text": str(n.get("label") or n.get("id")), "node": n.get("id")} for _, n in out[:k]]
+        for _, n in scored[:k]:
+            nid = n.get("id")
+            edges = [{"source": e.get("source"), "target": e.get("target"), "relation": e.get("relation") or e.get("type")}
+                     for e in links if nid in (e.get("source"), e.get("target"))][:20]
+            out.append({"source": "graphify", "id": nid, "label": n.get("label"), "file": n.get("source_file") or n.get("file"),
+                        "text": str(n.get("label") or nid), "edges": edges})
+        return out
 
 
 class MemantoAdapter(_Base):
