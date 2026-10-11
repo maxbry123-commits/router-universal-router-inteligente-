@@ -300,6 +300,26 @@ def _extras(pol, tools):
     return ex
 
 
+_FICHA_ACTUAL = {}
+
+
+def _graphiti_llm_ficha(msgs, max_tokens=1200):
+    # la LLM de Graphiti ES la que ya usa la ficha activa (sin selector nuevo)
+    f = _FICHA_ACTUAL.get('v')
+    return _paso_llm(f[0], f[1], msgs, 90, max_tokens) if f else ''
+
+
+def _cablear_graphiti(proveedor, modelo):
+    _FICHA_ACTUAL['v'] = (proveedor, modelo)
+    try:
+        mem, _ = _memoria()
+        g = getattr(mem, 'components', {}).get('graphiti')
+        if g is not None and hasattr(g, 'set_llm_client'):
+            g.set_llm_client(_graphiti_llm_ficha)
+    except Exception:  # noqa: BLE001 - Graphiti nunca rompe el chat
+        pass
+
+
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
     if proveedor == 'qwencloud':  # Team qwen: clave y direccion del sello de la ficha 14 (clave del banco)
         try:
@@ -1570,6 +1590,7 @@ def _chat(p):
     mensajes = [{'role': 'system', 'content': sistema}, *mensajes]
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
+        _cablear_graphiti(proveedor, modelo)
 
         def llamar(ms, tl):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
