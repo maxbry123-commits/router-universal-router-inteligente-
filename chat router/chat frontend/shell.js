@@ -4,12 +4,10 @@ import { mount as archivos } from "./panel-archivos.js";
 import { mount as seguimiento } from "./panel-seguimiento.js";
 import { mount as canvas } from "./panel-canvas.js";
 import { mount as organization } from "./panel-org.js";
-import { mount as apariencia } from "./panel-apariencia.js";
-import "./apariencia-aplicar.js";  // aplica la apariencia guardada en todo el chat
 
-const panels = { chat, archivos, seguimiento, canvas, connectors: organization, templates: organization, engineering: organization, apariencia };
+const panels = { chat, archivos, seguimiento, canvas, connectors: organization, templates: organization, engineering: organization };
 const labels = { chat: "Chat", archivos: "Archivos", seguimiento: "Seguimiento", canvas: "Canvas",
-  connectors: "Conectores", templates: "Plantillas", engineering: "Ingeniería", apariencia: "Apariencia" };
+  connectors: "Conectores", templates: "Plantillas", engineering: "Ingeniería" };
 const panel = document.querySelector("#panel");
 const notice = document.querySelector("#notice");
 const tell = message => { notice.textContent = message || ""; };

@@ -14,8 +14,8 @@
 .composer-bar .btn-microfono.on{border-color:var(--status-green);color:var(--status-green)}
 .composer-bar .btn-microfono.bloq{opacity:.4;cursor:not-allowed}
 /* ventanas: fondo quieto con una ventana abierta, titulo que no se corta, diagrama completo sin cortes */
-.sheet .va-caja{max-height:min(88vh,calc(100dvh - 16px));overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;transition:transform .15s ease-out}
-.sheet .va-head{position:sticky;top:-16px;z-index:2;background:var(--surface);padding:8px 4px;touch-action:none}
+body:has(.sheet:not([hidden])){overflow:hidden}
+.sheet .va-caja{overscroll-behavior:contain;transition:transform .15s ease-out}
 .sheet .va-head strong{font-size:17px;line-height:1.25}
 .consil-diagrama.lleno{flex-wrap:wrap;overflow-x:visible;row-gap:6px;max-height:32vh;overflow-y:auto;flex:0 0 auto}
 .consil-diagrama.lleno .dg-paso{white-space:normal;max-width:100%}
