@@ -263,7 +263,11 @@ class GraphifyCodeAdapter(_Base):
         if not files:
             return {"status": "GAP_NO_CODE_FILES"}
         graph = build_from_json(extract(files))  # solo AST de codigo: sin extraccion semantica/LLM
-        to_json(graph, cluster(graph), str(self.graph_path()))
+        try:
+            comunidades = cluster(graph)
+        except ImportError:  # sin graspologic: una sola comunidad (to_json solo necesita grafo + mapa de comunidades)
+            comunidades = {0: list(graph.nodes())}
+        to_json(graph, comunidades, str(self.graph_path()))
         return {"status": "BUILT", "files": len(files), "graph_json": str(self.graph_path())}
 
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
