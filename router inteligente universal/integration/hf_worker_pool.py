@@ -90,6 +90,7 @@ class HFWorkerPool:
     def _forwarded_secrets(self) -> dict[str, str]:
         names = [
             "GITHUB_TOKEN", "RIU_ROUTER_API_KEY", "RIU_AGENT_API_KEYS",
+            "HF_WRITE_TOKEN", "HF_TOKEN",
             "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4",
             "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4",
             "GROQ_API_KEY_5", "GROQ_API_KEY_6", "GROQ_API_KEY_7",
@@ -112,7 +113,8 @@ class HFWorkerPool:
             timeout=os.getenv("HF_AUTOSCALE_WORKER_TIMEOUT", "12h"),
             expose=[PORT],
             secrets=self._forwarded_secrets(),
-            env={"HF_AUTOSCALE_CHILD": "1"},
+            env={"HF_AUTOSCALE_CHILD": "1", "RIU_DATA_DIR": "/data",
+                 **{k: os.environ[k] for k in ("HF_BUCKET_ID", "RIU_AUTOSYNC_SECONDS") if os.getenv(k)}},
         )
         now = time.time()
         worker = Worker(
