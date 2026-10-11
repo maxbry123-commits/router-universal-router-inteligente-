@@ -71,37 +71,6 @@ def test_autosync_periodico():
     assert len(calls) >= 2 and calls[0] == ("store", "B") and sl.STATUS["last_sync"]
 
 
-def test_embedding_gap_especifico():
-    os.environ.pop("RIU_EMBED_MODEL_DIR", None); ra.EmbeddingAdapter.reset()
-    h = ra.EmbeddingAdapter().health()
-    assert h["status"] == "GAP_EMBEDDING_MODEL_NOT_AVAILABLE" and h["semantic"] is False
-
-
-def test_graphiti_nunca_connected_sin_dependencias():
-    os.environ.pop("RIU_GRAPHITI_ENABLE", None)
-    g = ra.GraphitiAdapter(); assert g.health()["status"] == "GAP_DISABLED" and not g._endpoint()
-    os.environ["RIU_GRAPHITI_ENABLE"] = "1"
-    try:
-        s = g.health()["status"]
-        assert s.startswith("GAP_") and s != "GAP_DISABLED", s
-    finally:
-        os.environ.pop("RIU_GRAPHITI_ENABLE")
-
-
-def test_graphify_busca_en_graph_json():
-    root = Path(tempfile.mkdtemp()); (root / "graphify-out").mkdir()
-    (root / "graphify-out" / "graph.json").write_text(json.dumps({"nodes": [{"id": "a", "label": "gov_prepare"}, {"id": "b", "label": "otra"}]}))
-    os.environ["RIU_GRAPHIFY_ROOT"] = str(root)
-    try:
-        g = ra.GraphifyCodeAdapter()
-        assert g.health()["status"] == "CONNECTED"
-        assert [r["node"] for r in g.search("s", "gov_prepare")] == ["a"]
-        assert g.save("s", "k", {})["status"] == "SKIPPED"
-    finally:
-        os.environ.pop("RIU_GRAPHIFY_ROOT")
-    assert ra.GraphifyCodeAdapter().health()["status"] == "GAP_DISABLED"
-
-
 def test_memanto_contra_servicio_falso_y_caido():
     seen = []
     class H(BaseHTTPRequestHandler):
@@ -125,6 +94,44 @@ def test_memanto_contra_servicio_falso_y_caido():
         assert ra.MemantoAdapter().health()["status"].startswith("GAP_SERVICE_UNREACHABLE")
     finally:
         os.environ.pop("RIU_MEMANTO_URL")
+
+
+def test_embedder_reutiliza_vector_existente():
+    import asyncio
+    e = ra.YaiwesGraphitiEmbedder(lambda s: [0.5] * 256)
+    assert e.dimension == 256 and e.semantic is False
+    assert len(asyncio.run(e.create("x"))) == 256 and len(asyncio.run(e.create_batch(["a", "b"]))) == 2
+
+
+def test_cross_encoder_passthrough_orden_estable():
+    import asyncio
+    r = asyncio.run(ra.YaiwesPassthroughCrossEncoder().rank("q", ["b", "a", "c"]))
+    assert [p for p, _ in r] == ["b", "a", "c"]
+
+
+def test_graphiti_nunca_connected_sin_dependencias():
+    os.environ.pop("RIU_GRAPHITI_ENABLE", None)
+    g = ra.GraphitiAdapter(lambda s: [0.0] * 256); assert g.health()["status"] == "GAP_DISABLED" and not g._endpoint()
+    os.environ["RIU_GRAPHITI_ENABLE"] = "1"
+    try:
+        s = g.health()["status"]
+        assert s.startswith("GAP_") and s != "GAP_DISABLED", s
+    finally:
+        os.environ.pop("RIU_GRAPHITI_ENABLE")
+
+
+def test_graphify_busca_en_graph_json():
+    out = Path(tempfile.mkdtemp()); src = Path(tempfile.mkdtemp())
+    (out / "graph.json").write_text(json.dumps({"nodes": [{"id": "n1", "label": "puente_chat", "source_file": "plugins/puente_chat/plugin.py"}], "links": []}))
+    a = ra.GraphifyCodeAdapter(str(src), str(out))
+    r = a.search("s", "puente_chat")
+    assert r and r[0]["file"].endswith("plugin.py"), r
+
+
+def test_graphify_build_sin_deps_es_gap_no_pass():
+    src = Path(tempfile.mkdtemp()); (src / "m.py").write_text("def puente_chat():\n    return 1\n")
+    r = ra.GraphifyCodeAdapter(str(src), str(Path(tempfile.mkdtemp()))).build()
+    assert r["status"] in ("BUILT", "GAP_GRAPHIFY_DEPS"), r
 
 
 if __name__ == "__main__":
