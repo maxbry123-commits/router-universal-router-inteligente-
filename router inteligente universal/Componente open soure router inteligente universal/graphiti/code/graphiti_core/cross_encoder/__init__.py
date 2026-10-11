@@ -15,6 +15,9 @@ limitations under the License.
 """
 
 from .client import CrossEncoderClient
-from .openai_reranker_client import OpenAIRerankerClient
+try:  # opcional: YAIWES inyecta su propio cliente
+    from .openai_reranker_client import OpenAIRerankerClient
+except ImportError:
+    OpenAIRerankerClient = None
 
 __all__ = ['CrossEncoderClient', 'OpenAIRerankerClient']
