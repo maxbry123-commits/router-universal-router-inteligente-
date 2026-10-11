@@ -29,6 +29,17 @@ app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in os.getenv("
 
 
 @app.on_event("startup")
+def _storage_autosync() -> None:
+    try:
+        import os as _os
+        from .router import sync_to_bucket
+        from .storage_lifecycle import start_autosync
+        start_autosync(get_store, sync_to_bucket, _os.getenv("HF_BUCKET_ID"), _os.getenv("HF_WRITE_TOKEN") or _os.getenv("HF_TOKEN"))
+    except Exception:  # noqa: BLE001
+        pass
+
+
+@app.on_event("startup")
 def _seed_wordflow_fleet() -> None:
     wordflow_agents.seed(get_store())
 
