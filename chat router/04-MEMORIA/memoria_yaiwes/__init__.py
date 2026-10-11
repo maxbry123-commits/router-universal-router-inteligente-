@@ -306,6 +306,10 @@ class QdrantLocalAdapter(ComponentAdapter):
         return {"indexed": done, "total": len(rows)}
 
 
+def _solo_sqlite(scope: str, key: str) -> bool:
+    return ":gov:" in scope or ":snapanc:" in scope or key in ("gov-registro", "snapshot-anclados")
+
+
 class MemoryFacade:
     def __init__(self, store: Any) -> None:
         self.sqlite = SQLiteAdapter(store)
@@ -328,14 +332,15 @@ class MemoryFacade:
 
     def save(self, scope: str, key: str, data: Any) -> dict[str, Any]:
         saved = self.sqlite.save(scope, key, data)  # SQLite es la verdad: si esto no falla, el dato esta guardado
+        if _solo_sqlite(scope, key):  # gobernanza/snapshots: NUNCA a grafo, Qdrant, Graphiti, Graphify ni otras replicas
+            return {"status": "SAVED", "adapter": "sqlite", "replicas": {}, "only_sqlite": True, **saved}
         gaps: list[dict[str, Any]] = []
         try:
             self.graph.save(scope, key, data)
         except Exception as exc:  # noqa: BLE001 - la replica de grafo nunca invalida el guardado
             gaps.append({"adapter": self.graph.name, "error": type(exc).__name__})
         replicas: dict[str, Any] = {}
-        solo_sqlite = ":gov:" in scope or ":snapanc:" in scope or key in ("gov-registro", "snapshot-anclados")
-        for name, adapter in ({} if solo_sqlite else self.components).items():
+        for name, adapter in self.components.items():
             try:
                 if getattr(adapter, "IN_SAVE", True) is False:
                     continue
@@ -350,6 +355,8 @@ class MemoryFacade:
 
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
         records = list(self.sqlite.load(scope, key))
+        if _solo_sqlite(scope, key):
+            return records
         for adapter in self.components.values():
             try:
                 records.extend(adapter.load(scope, key))
@@ -359,6 +366,8 @@ class MemoryFacade:
 
     def search(self, scope: str, query: str, k: int = 10) -> dict[str, Any]:
         results: dict[str, Any] = {"sqlite": self.sqlite.search(scope, query, k)}
+        if _solo_sqlite(scope, ""):
+            return results
         try:
             results["graph"] = self.graph.search(scope, query, k)
         except Exception:  # noqa: BLE001
