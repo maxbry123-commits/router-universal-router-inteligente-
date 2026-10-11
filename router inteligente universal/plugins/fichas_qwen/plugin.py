@@ -470,6 +470,9 @@ def _pc():
     return mod
 
 
+NL = chr(10)
+
+
 def _gob(ficha, p=None):
     # gobernanza de la ficha (Constitucion + guardianes + anexo de memoria); el selector del chat puede apagarla
     g = ficha.get('gobernanza')
