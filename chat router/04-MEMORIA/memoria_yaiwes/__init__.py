@@ -311,15 +311,15 @@ class MemoryFacade:
         self.sqlite = SQLiteAdapter(store)
         self.graph = GraphSQLiteAdapter(store)
         self.components = {name: ComponentAdapter(name) for name in ("state-hub", "dataset-yaiwes", "graphiti", "falkordb", "memanto", "graphify", "agentdb", "postgresql", "redis", "hf-storage-bucket", "chroma")}
+        qd = QdrantLocalAdapter()  # primero: su embed() (256d, NO semantico) alimenta a Graphiti
+        self.components["qdrant"] = qd  # indice derivado local; SQLite sigue siendo la verdad
         try:  # adaptadores reales (health estricto); si el modulo falla, queda el generico
             from . import runtime_adapters as _ra
-            self.embedding = _ra.EmbeddingAdapter()
-            self.components["graphiti"] = _ra.GraphitiAdapter(self.embedding)
+            self.components["graphiti"] = _ra.GraphitiAdapter(QdrantLocalAdapter.embed)
             self.components["graphify"] = _ra.GraphifyCodeAdapter()
             self.components["memanto"] = _ra.MemantoAdapter()
         except Exception:  # noqa: BLE001
-            self.embedding = None
-        self.components["qdrant"] = QdrantLocalAdapter()  # indice derivado local; SQLite sigue siendo la verdad
+            pass
 
     def health(self) -> dict[str, Any]:
         adapters = {"sqlite": self.sqlite.health(), "graph": self.graph.health()}
@@ -334,8 +334,11 @@ class MemoryFacade:
         except Exception as exc:  # noqa: BLE001 - la replica de grafo nunca invalida el guardado
             gaps.append({"adapter": self.graph.name, "error": type(exc).__name__})
         replicas: dict[str, Any] = {}
-        for name, adapter in self.components.items():
+        solo_sqlite = ":gov:" in scope or ":snapanc:" in scope or key in ("gov-registro", "snapshot-anclados")
+        for name, adapter in ({} if solo_sqlite else self.components).items():
             try:
+                if getattr(adapter, "IN_SAVE", True) is False:
+                    continue
                 if adapter._endpoint():
                     replicas[name] = adapter.save(scope, key, data)
             except Exception as exc:  # noqa: BLE001
