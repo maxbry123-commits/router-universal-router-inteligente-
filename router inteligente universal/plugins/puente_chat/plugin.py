@@ -1315,10 +1315,17 @@ def _gov_reg_cargar(task_id):
 
 
 def _gov_reg_guardar(reg):
-    try:
-        mem, scope_for = _memoria()
-        mem.save(scope_for(DUENO, 'gov:' + reg['task_id'][:80]), 'gov-registro', reg)
-    except Exception:  # noqa: BLE001
+    # SQLite es la verdad: bajo escrituras paralelas puede estar ocupada un instante -> reintento corto; si sigue fallando, falla cerrado
+    ok = False
+    for intento in range(4):
+        try:
+            mem, scope_for = _memoria()
+            mem.save(scope_for(DUENO, 'gov:' + reg['task_id'][:80]), 'gov-registro', reg)
+            ok = True
+            break
+        except Exception:  # noqa: BLE001
+            time.sleep(0.25 * (intento + 1))
+    if not ok:
         return False
     if len(_GOV_REG) >= 200:
         _GOV_REG.pop(next(iter(_GOV_REG)))
