@@ -378,7 +378,7 @@ def _verificar(fid, ses, pv, pid, t0):
               nl * 2 + 'SALIDA ENTREGADA A VERIFICAR:' + nl + str(pv['salida'])[:8000])
     mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
 
-    base_opts = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or ''), 'anclados': list(pv.get('anclados') or []), 'pregunta': str(pv.get('input') or ''),
+    base_opts = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or ''), 'anclados': list(pv.get('anclados') or []), 'pregunta': str(pv.get('input') or ''), 'reanudar': True,
                  'gobernanza': _gob(ficha), 'constitucion': _const_ref(ficha, {}), 'constitucion_hash': str(pv.get('constitucion_hash') or '')}
     gc = _gov_prepare(ficha, base_opts, True, str(pv.get('constitucion_hash') or ''))
     if gc.get('error'):
@@ -513,7 +513,7 @@ def _gov_prepare(ficha, opts, aprobado, esperado=''):
     if not callable(fn):
         return {'error': 'GOVERNANCE_PREPARE_NO_DISPONIBLE'}
     try:
-        r = fn({'task_id': opts.get('tarea_id') or '', 'pregunta': str(opts.get('pregunta') or ''), 'sesion': opts.get('sesion') or '', 'constitucion': opts.get('constitucion') or {}, 'anclados': list(opts.get('anclados') or []), 'aprobado': bool(aprobado), 'hash_esperado': str(esperado or ''), 'ficha': ficha.get('ficha') or ''})
+        r = fn({'task_id': opts.get('tarea_id') or '', 'pregunta': str(opts.get('pregunta') or ''), 'sesion': opts.get('sesion') or '', 'constitucion': opts.get('constitucion') or {}, 'anclados': list(opts.get('anclados') or []), 'aprobado': bool(aprobado), 'hash_esperado': str(esperado or ''), 'reanudar': bool(opts.get('reanudar')), 'ficha': ficha.get('ficha') or ''})
     except Exception as e:
         return {'error': 'GOVERNANCE_PREPARE_FALLO:' + str(e)[:160]}
     if not isinstance(r, dict):
@@ -946,6 +946,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             opts.update(muta=True, previo=dict(pend_t.get('previo') or {}), plan=plan_ap, tarea_id=str(pend_t.get('tarea_id') or opts['tarea_id']), constitucion_hash=str(pend_t.get('constitucion_hash') or ''))
         opts['plan_stop'] = bool(opts['muta'] and not ap)
         opts['pregunta'] = mensaje
+        opts['reanudar'] = bool(pend_t and pend_t.get('constitucion_hash'))  # /aprobar: reconstruye la entrada constitucional congelada por task_id
         gc_ = _gov_prepare(FICHAS[fid], opts, ap, str((pend_t or {}).get('constitucion_hash') or ''))
         if gc_.get('error'):
             salida, traza = 'GAP ' + str(gc_['error']), []
