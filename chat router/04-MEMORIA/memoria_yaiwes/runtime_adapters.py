@@ -298,8 +298,13 @@ class GraphifyCodeAdapter(_Base):
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
         g = self.graph_path()
-        if not g.exists():
-            return []
+        if not g.exists():  # graph.json es derivado: si falta (reinicio/disco nuevo) se reconstruye UNA vez del codigo real
+            try:
+                self.build()
+            except Exception:  # noqa: BLE001
+                return []
+            if not g.exists():
+                return []
         data = json.loads(g.read_text(encoding="utf-8"))
         links = data.get("links") or data.get("edges") or []
         terms = [t for t in query.lower().split() if t]
