@@ -1,0 +1,19 @@
+/* anclaje-mejoras.css — estilos de las 20 mejoras del anclaje. Tokens del tema. */
+.am-barra{gap:8px}
+.am-aviso{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:12px;background:var(--panel);font-size:13px}
+.am-aviso[hidden]{display:none}
+.am-rec{gap:6px}
+.am-med.am-alerta{color:var(--status-orange)}
+#ventana-ancla .va-item.am-fila{flex-wrap:wrap}
+#ventana-ancla .va-item .fila-nom{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+#ventana-ancla .va-item.am-abierto .fila-nom{-webkit-line-clamp:unset;display:block}
+.am-bandeja{display:none;flex:1 1 100%;flex-wrap:wrap;gap:6px;padding-top:6px}
+.am-abierto .am-bandeja{display:flex}
+.am-bandeja select{max-width:200px;min-height:32px}
+.am-tb{flex:1 1 100%;color:var(--quiet-2);font-size:11px}
+.va-item.am-fijo{border-left:3px solid var(--azul-electrico,#1F6BFF)}
+.va-item.am-mudo .fila-nom{opacity:.45;text-decoration:line-through}
+.va-item.am-nuevo{animation:am-flash 1.4s ease-out}
+@keyframes am-flash{from{background:color-mix(in srgb,var(--azul-electrico,#1F6BFF) 30%,transparent)}}
+#anc-lista .va-item[data-filtrado="1"]{display:none}
+@media(prefers-reduced-motion:reduce){.va-item.am-nuevo{animation:none}}

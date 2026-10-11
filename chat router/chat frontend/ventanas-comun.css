@@ -18,3 +18,5 @@
 .vn-hoed{display:grid;gap:8px}
 .vn-destinos .toggle{flex:0 0 auto}
 .va-borrar{flex:0 0 auto}
+#anc-resumen{max-height:none!important;overflow:visible!important}
+.nv-notas{border-top:1px solid var(--border);padding-top:10px;margin-top:14px}

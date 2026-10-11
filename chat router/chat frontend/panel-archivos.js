@@ -1,8 +1,10 @@
+import { montarAlmacenArchivos } from "./almacen-archivos.js";
 import { montarProyecto } from "./proyecto.js";
 import { node } from "./api.js";
 
 export async function mount(root, { api, tell }) {
   montarProyecto(root, { tell });  // pestaña Proyecto (proyecto.js)
+  const montado = montarAlmacenArchivos(root, { tell });  // almacén real, el mismo del chat (almacen-archivos.js)
   let files = [];
   const render = () => {
     const list = root.querySelector("#file-list");
@@ -18,7 +20,7 @@ export async function mount(root, { api, tell }) {
   const reload = async () => { files = (await api("/chat/org/files")).data.files; render(); };
   root.querySelector("#file-search").addEventListener("input", render);
   root.querySelector("#reload").addEventListener("click", () => reload().catch(error => tell(error.message)));
-  try { await reload(); } catch (error) { tell(error.message); }
+  if (!montado) try { await reload(); } catch (error) { tell(error.message); }
   root.querySelector("#upload").addEventListener("submit", async event => {
     event.preventDefault();
     const file = root.querySelector("#file-input").files[0];

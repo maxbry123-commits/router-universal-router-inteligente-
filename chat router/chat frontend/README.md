@@ -39,6 +39,11 @@ Global (en `shell.html`): `shell.css`, `responsive.css`, `shell-riu.css`, `chat-
 | Mi handoff editable (texto + enlaces + archivos) | ventana de Anclaje | `handoff-editor.js` |
 | Borrar un archivo | lista de archivos (Anclaje y Archivos) | `archivos-borrar.js` |
 | Habilidades (menú al escribir «/») | caja del chat | `menu-habilidades.js` / `habilidades.css` |
+| Agregar al chat (Cámara, Fotos, Archivos, proyecto, interruptores) | el clip | `agregar-al-chat.js` / `.css` |
+| Notas (una por ventana; en Anclaje, una por objetivo) | al final de cada ventana | `notas-ventana.js` |
+| Pensando 3D | sobre la caja de escritura mientras el chat trabaja | `pensando-3d.js` / `.css` |
+| 20 mejoras de anclaje | ventana de Anclaje | `anclaje-mejoras.js` / `.css` |
+| Almacén de archivos (20 mejoras) | panel Archivos | `almacen-archivos.js` / `.css` |
 
 Partes comunes: `ventanas-comun.js` / `.css` (crear ventana, pastillas, bloque de anclas), `almacen.js` (localStorage), `contexto.js` (lógica pura del contexto), `chat-contexto.js` (lo engancha al envío).
 Las ventanas nuevas se construyen por JS y cargan su propio CSS al abrirse; `ventanas-nuevas.js` las cablea (un fallo en una no rompe a las demás).
@@ -76,6 +81,7 @@ Las ventanas nuevas se construyen por JS y cargan su propio CSS al abrirse; `ven
 | `21cd470dfa` | Reversión a un estado conocido cuando el chat desapareció (causa: caché vieja de Edge). |
 | `3aaa183ddf` | Restauración de lo revertido + vista smartphone centrada (`chat-movil.css`) + cabeceras no-cache en `vercel.json`. |
 | `628c1ca9ad` | Salida del chat 3× más larga; Anclaje se desliza entero; PIN opcional; orbe de conexión; orden del menú; soltar archivos; inventario de los 22 componentes RUI. |
+| este cambio (4) | 20 mejoras de anclaje (`anclaje-mejoras.js`); 20 mejoras del almacenamiento de archivos con el almacén real del chat (`almacen-archivos.js`, adiós «Not Found»); hoja «Agregar al chat» (`agregar-al-chat.js`); notas distintas en cada ventana (`notas-ventana.js`); animación 3D del pensamiento (`pensando-3d.js`); backend: `archivo_borrar` acepta `restaurar`. |
 | este cambio (3) | Botón de enviar rectangular y azul eléctrico; anclaje = LA MISMA ventana con 6 objetivos (Chat, Constitución, Workflows, Agentes remotos, Proyecto, Sandbox); borrar un archivo; Mi handoff editable con texto, enlaces y archivos; menú de Habilidades al escribir «/»; backend: acción `archivo_borrar`. |
 | este cambio (2) | Botón blanco de enviar devuelto a su forma original; «encendido» ahora enciende el símbolo en azul eléctrico (sin cuadro azul); fila «workflow Loops code Yaiwes» con selección y ON/OFF en Selectores; README y handoff anclables al chat desde Configuración (sección 11). |
 | `2ba8c7a35a` | Botón de enviar corregido; «encendido» en azul eléctrico (`encendido.css`); borrar chats con la X de cada pestaña; 5 paneles (Configuración, pestaña Proyecto); ventanas Workflow Loops, Constitución sentinela y Banco de claves; destinos del anclaje; README y HANDOFF. |

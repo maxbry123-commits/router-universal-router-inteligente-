@@ -24,6 +24,8 @@ export function parsearSlashWF(msg, lista) {  // "/wf <nombre> <instrucción>" d
   }
   return { wf: null, texto: resto };
 }
+export const K_PIN = "riu_pin_anclas_v1", K_MUTE = "riu_mute_anclas_v1", K_ALIAS = "riu_alias_anclas_v1";
+const sinMute = (clave, arr) => { const m = leer(K_MUTE, {})[clave]; return Array.isArray(m) ? (arr || []).filter((t) => !m.includes(t)) : (arr || []); };
 const lineas = (arr) => arr.map((t) => "- " + String(t).slice(0, 400)).join("\n");
 export function construirPrefijo(oficial) {
   const partes = [], wfs = dameWF().filter((w) => w.encendido);
@@ -31,15 +33,15 @@ export function construirPrefijo(oficial) {
   wfs.forEach((w) => {
     let t = "[WORKFLOW LOOP «" + w.nombre + "» · ENCENDIDO]";
     if ((w.systemPrompt || "").trim()) t += "\nSystem prompt:\n" + w.systemPrompt.trim();
-    if ((w.items || []).length) t += "\nAnclado a este workflow:\n" + lineas(w.items);
+    if (sinMute("wf:" + w.id, w.items).length) t += "\nAnclado a este workflow:\n" + lineas(sinMute("wf:" + w.id, w.items));
     const rw = refsCompartidas("workflows"); if (rw.length) t += "\nClaves disponibles (solo referencia): " + rw.join(", ");
     t += "\nPara escribir una instrucción en la ventana de ejecución de este workflow responde con: [[WF:" + w.nombre + "]]instrucción[[/WF]]";
     partes.push(t);
   });
   const urlDe = (t) => String(t).replace(/^(enlace|raiz):/, "");
-  const ag = dameAg(); if (ag.on && ((ag.items || []).length || (ag.notas || "").trim())) partes.push("[AGENTES REMOTOS · código fuente + SDK]\n" + ((ag.notas || "").trim() ? ag.notas.trim() + "\n" : "") + lineas((ag.items || []).map(urlDe)));
-  const sb = dameSb(); if (sb.on && ((sb.items || []).length || (sb.notas || "").trim())) partes.push("[SANDBOX ANCLADO]\n" + ((sb.notas || "").trim() ? sb.notas.trim() + "\n" : "") + lineas(sb.items || []));
-  dameProyGlobal().filter((p) => p.on).forEach((p) => partes.push("[PROYECTO «" + p.nombre + "»]\n" + ((p.notas || "").trim() ? p.notas.trim() + "\n" : "") + lineas(p.items || [])));
+  const ag = dameAg(); if (ag.on && ((ag.items || []).length || (ag.notas || "").trim())) partes.push("[AGENTES REMOTOS · código fuente + SDK]\n" + ((ag.notas || "").trim() ? ag.notas.trim() + "\n" : "") + lineas(sinMute("agentes", ag.items).map(urlDe)));
+  const sb = dameSb(); if (sb.on && ((sb.items || []).length || (sb.notas || "").trim())) partes.push("[SANDBOX ANCLADO]\n" + ((sb.notas || "").trim() ? sb.notas.trim() + "\n" : "") + lineas(sinMute("sandbox", sb.items)));
+  dameProyGlobal().filter((p) => p.on).forEach((p) => partes.push("[PROYECTO «" + p.nombre + "»]\n" + ((p.notas || "").trim() ? p.notas.trim() + "\n" : "") + lineas(sinMute("proyecto:" + p.nombre, p.items))));
   return partes.join("\n\n");
 }
 export function aplicarAMensaje(msg, oficial) { const p = construirPrefijo(oficial); return p ? p + "\n\n--- MENSAJE DEL DIRECTOR ---\n" + msg : msg; }
@@ -49,6 +51,7 @@ export function datosGobernanza() {  // Constitucion encendida -> campos estruct
   return { gobernanza: { enabled: true }, constitucion: { texto: String(con.texto || "").trim(), anclados: nombresConst(con) } };
 }
 export function ampliarAnclados(lista) {
+  const c = typeof window !== "undefined" && window.RIU_CHAT ? window.RIU_CHAT.chat() : null; if (c && c.sesion) lista = sinMute(c.sesion, lista);
   const rs = refsCompartidas("chat").map((r) => "secreto:" + r);
   const con = dameCon(), cs = con.encendida ? nombresConst(con).map((n) => "constitucion:" + n) : [];  // archivos de la ventana Constitucion = fuentes constitucionales directas
   return [...lista, ...[...rs, ...cs].filter((x) => !lista.includes(x))];

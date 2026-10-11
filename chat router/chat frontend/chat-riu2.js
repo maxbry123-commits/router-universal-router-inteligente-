@@ -289,7 +289,7 @@ function soltarArchivos({ root, q, tell }) {
   root.addEventListener("drop", (e) => {
     if (!hay(e)) return; e.preventDefault(); n = 0; cap.hidden = true;
     const dt = new DataTransfer(); [...e.dataTransfer.files].forEach((f) => dt.items.add(f)); if (!dt.files.length) return;
-    inp.click = () => {}; try { btn.click(); } finally { delete inp.click; }  // fija "solo subir" como el clip, sin abrir el selector
+    btn.dataset.directo = "1"; inp.click = () => {}; try { btn.click(); } finally { delete inp.click; delete btn.dataset.directo; }  // fija "solo subir" como el clip, sin abrir el selector
     inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true }));
     tell(dt.files.length + " archivo(s) soltado(s)");
   });

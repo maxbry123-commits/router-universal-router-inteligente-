@@ -1,0 +1,22 @@
+/* pensando-3d.css — cubo 3D que gira mientras el chat piensa (CSS 3D, sin librerías). */
+.p3d{position:absolute;left:10px;bottom:calc(100% + 10px);display:flex;align-items:center;gap:12px;padding:8px 16px 8px 10px;border-radius:16px;background:var(--surface);border:1px solid var(--border-strong);box-shadow:0 8px 28px rgba(0,0,0,.45);z-index:35;pointer-events:none}
+.p3d[hidden]{display:none}
+.p3d-escena{position:relative;width:46px;height:46px;perspective:260px}
+.p3d-cubo{position:absolute;inset:11px;transform-style:preserve-3d;animation:p3d-gira 4s linear infinite}
+.p3d-cubo i{position:absolute;inset:0;border:1.5px solid var(--azul-electrico,#1F6BFF);background:rgba(31,107,255,.12);box-shadow:0 0 8px rgba(31,107,255,.5)}
+.p3d-cubo .f1{transform:translateZ(12px)}
+.p3d-cubo .f2{transform:rotateY(180deg) translateZ(12px)}
+.p3d-cubo .f3{transform:rotateY(90deg) translateZ(12px)}
+.p3d-cubo .f4{transform:rotateY(-90deg) translateZ(12px)}
+.p3d-cubo .f5{transform:rotateX(90deg) translateZ(12px)}
+.p3d-cubo .f6{transform:rotateX(-90deg) translateZ(12px)}
+.p3d-anillo{position:absolute;inset:2px;border-radius:50%;border:1.5px solid rgba(31,107,255,.65)}
+.p3d-anillo.a1{animation:p3d-a1 3s linear infinite}
+.p3d-anillo.a2{border-color:rgba(18,216,106,.65);animation:p3d-a2 5s linear infinite}
+.p3d-txt{display:grid;gap:2px}
+.p3d-txt strong{font-size:14px;color:var(--title)}
+.p3d-t{font-size:12px;color:var(--quiet);font-variant-numeric:tabular-nums}
+@keyframes p3d-gira{from{transform:rotateX(-20deg) rotateY(0)}to{transform:rotateX(-20deg) rotateY(360deg)}}
+@keyframes p3d-a1{from{transform:rotateX(70deg) rotateZ(0)}to{transform:rotateX(70deg) rotateZ(360deg)}}
+@keyframes p3d-a2{from{transform:rotateY(70deg) rotateZ(0)}to{transform:rotateY(70deg) rotateZ(-360deg)}}
+@media(prefers-reduced-motion:reduce){.p3d-cubo,.p3d-anillo{animation:none}}

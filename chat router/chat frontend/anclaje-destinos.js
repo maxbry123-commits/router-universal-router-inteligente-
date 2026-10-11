@@ -14,6 +14,7 @@ export function montarDestinos({ root, q, tell }) {
     if (t !== "chat" && !nuevo) return false;
     tipo = t; obj = nuevo; window.RIU_OBJETIVO_ANCLA = obj ? () => obj : undefined;
     if (titulo) titulo.textContent = base + (obj ? " · " + obj.nombre : "");
+    window.dispatchEvent(new CustomEvent("riu:objetivo"));
     if (refrescar !== false && window.RIU_ANCLA_REFRESCAR) window.RIU_ANCLA_REFRESCAR();
     pintar(); return true;
   }

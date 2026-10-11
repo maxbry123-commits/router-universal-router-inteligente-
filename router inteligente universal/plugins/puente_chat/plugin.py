@@ -1929,9 +1929,25 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             mem, scope_for = _memoria()
             mem.save(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]),
                      'archivo:' + nombre, {'nombre': nombre, 'tipo': str(payload.get('tipo') or '')[:80], 'datos_b64': datos})
+            try:  # volver a subir el mismo nombre lo deshace de "borrado"
+                mem.save(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]), 'borrado:' + nombre,
+                         {'nombre': nombre, 'borrado': False, 'ts': __import__('time').time()})
+            except Exception:  # noqa: BLE001
+                pass
             return {'ok': True, 'nombre': nombre}
         except Exception as x:  # noqa: BLE001
             return {'error': 'SUBIR_FALLO', 'detalle': str(x)[:200]}
+    if action == "archivo_borrar":  # ventana de anclaje / panel Archivos: borra UN archivo de la memoria del chat (marca de borrado; con restaurar=true lo devuelve)
+        try:
+            nombre = str(payload.get('nombre') or '')[:120]
+            if not nombre:
+                return {'error': 'NOMBRE_VACIO'}
+            mem, scope_for = _memoria()
+            mem.save(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]),
+                     'borrado:' + nombre, {'nombre': nombre, 'borrado': not bool(payload.get('restaurar')), 'ts': __import__('time').time()})
+            return {'ok': True, 'nombre': nombre}
+        except Exception as x:  # noqa: BLE001
+            return {'error': 'BORRAR_FALLO', 'detalle': str(x)[:200]}
     if action == "archivos":  # ventana del chat: lista lo subido para seleccionar y anclar
         try:
             mem, scope_for = _memoria()
@@ -1939,6 +1955,19 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
             nombres = sorted({str((f.get('data', f) if isinstance(f, dict) else f).get('nombre')) for f in filas
                               if isinstance((f.get('data', f) if isinstance(f, dict) else f), dict) and (f.get('data', f) if isinstance(f, dict) else f).get('nombre')})
+            try:  # lo borrado con archivo_borrar no se lista (lo mas reciente por nombre manda)
+                rb = mem.search(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]), 'borrado:', 200)
+                fb = rb if isinstance(rb, list) else next((v for v in (rb or {}).values() if isinstance(v, list)), [])
+                ult = {}
+                for f in fb:
+                    d = f.get('data', f) if isinstance(f, dict) else f
+                    if isinstance(d, dict) and d.get('nombre') is not None:
+                        n, t = str(d.get('nombre')), float(d.get('ts') or 0)
+                        if n not in ult or t >= ult[n][0]:
+                            ult[n] = (t, bool(d.get('borrado')))
+                nombres = [n for n in nombres if not (n in ult and ult[n][1])]
+            except Exception:  # noqa: BLE001
+                pass
             return {'archivos': nombres}
         except Exception:  # noqa: BLE001
             return {'archivos': []}

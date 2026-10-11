@@ -9,6 +9,10 @@ import { montarWorkflows } from "./ventana-workflows.js";
 import { montarSelectorWorkflows } from "./selector-workflows.js";
 import { montarConstitucion } from "./ventana-constitucion.js";
 import { montarClaves } from "./ventana-claves.js";
+import { montarMejorasAncla } from "./anclaje-mejoras.js";
+import { montarAgregarAlChat } from "./agregar-al-chat.js";
+import { montarPensando3D } from "./pensando-3d.js";
+import { montarNotas } from "./notas-ventana.js";
 export function conectarVentanasNuevas(ctx) {
-  [instalarContexto, montarDestinos, montarHandoffEditor, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
+  [instalarContexto, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarPensando3D, montarNotas].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
 }

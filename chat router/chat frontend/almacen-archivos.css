@@ -1,0 +1,18 @@
+/* almacen-archivos.css — panel Archivos (almacén compartido con el chat). Tokens del tema; geometría del skill. */
+.ar-app{display:grid;gap:10px;margin-top:10px}
+.ar-zona{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:16px;border:2px dashed var(--border-strong);border-radius:18px;background:var(--surface)}
+.ar-zona.suelta{border-color:var(--azul-electrico,#1F6BFF);background:color-mix(in srgb,var(--azul-electrico,#1F6BFF) 10%,var(--surface))}
+.ar-sel{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px;border:1px solid var(--border-strong);border-radius:14px;background:var(--panel)}
+.ar-sel[hidden]{display:none}
+.ar-lista{display:grid;gap:8px}
+.ar-fila{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.ar-fila.sel{border-color:var(--border-strong);background:var(--module-selected)}
+.ar-nom{display:grid;gap:2px;min-width:0;overflow-wrap:anywhere}
+.ar-ic{margin-right:6px}
+.ar-en{color:var(--quiet-2);font-size:11px}
+.ar-acc{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.ar-fila input[type=checkbox]{width:22px;height:22px;accent-color:var(--azul-electrico,#1F6BFF)}
+.ar-papelera{padding:8px 10px;border:1px solid var(--border);border-radius:14px}
+.ar-papelera summary{cursor:pointer;color:var(--quiet)}
+.ar-xray{max-height:260px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;padding:10px;border:1px solid var(--border);border-radius:12px;background:var(--panel)}
+.ar-xray[hidden]{display:none}
