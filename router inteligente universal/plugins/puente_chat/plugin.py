@@ -1338,10 +1338,12 @@ def sheriff_pre(gov, pregunta=''):
     ctx = g.get('gov_ctx') if isinstance(g.get('gov_ctx'), dict) else {}
     sesion = str(g.get('sesion') or 'general')[:60]
     anclados = [str(a)[:300] for a in (g.get('anclados') or [])]
-    ov, nom = _gov_entrada(g.get('constitucion'))
-    if not ov and not nom and g.get('task_id'):
-        ent = (_gov_reg_cargar(str(g['task_id'])) or {}).get('entrada') or {}
+    # despues de gov_prepare el payload NUNCA redefine la Constitucion de la tarea: manda el registro congelado por task_id (_GOV_REG)
+    ent = (_gov_reg_cargar(str(g['task_id'])) or {}).get('entrada') if g.get('task_id') else None
+    if isinstance(ent, dict):
         ov, nom = dict(ent.get('overlay') or {}), list(ent.get('nombres') or [])
+    else:
+        ov, nom = _gov_entrada(g.get('constitucion'))
     info, err = _gov_calcular(sesion, ov, _gov_nombres(nom, anclados))
     if err:
         return {'ok': False, 'codigo': err.split(':')[0].strip(), 'detalle': err}
