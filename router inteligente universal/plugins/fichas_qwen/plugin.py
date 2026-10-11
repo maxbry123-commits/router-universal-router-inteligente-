@@ -22,7 +22,7 @@ from typing import Any
 
 DIR = Path(__file__).resolve().parent
 FICHAS = {f.stem: json.loads(f.read_text(encoding="utf-8")) for f in sorted((DIR / "fichas").glob("*.json"))}
-ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend"}
+ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "4": "ficha4-workflow-yaiwes"}
 _POOL = _cf.ThreadPoolExecutor(max_workers=8, thread_name_prefix="fichas_qwen")
 _LOCK = threading.Lock()
 _PROCESOS: dict[str, tuple[Any, float]] = {}
