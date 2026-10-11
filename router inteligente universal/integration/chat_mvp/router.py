@@ -40,6 +40,7 @@ def get_store() -> Store:
     if _store is None:
         default = Path("/data") if os.access("/data", os.W_OK) else Path.cwd() / "riu_data"
         _dd = os.getenv("RIU_DATA_DIR") or default
+        os.environ.setdefault("RIU_DATA_DIR", str(_dd))  # una sola raiz: chat, memoria, Graphiti y Graphify
         try:  # STORAGE_LIFECYCLE: restaurar del bucket HF solo si no hay base local
             from .storage_lifecycle import restore_if_empty
             restore_if_empty(_dd, os.getenv("HF_BUCKET_ID"), os.getenv("HF_WRITE_TOKEN") or os.getenv("HF_TOKEN"))
