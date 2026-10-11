@@ -43,7 +43,7 @@ export const clasificar = (texto) => {
   for (const linea of String(texto || "").split(/\r?\n/)) {  // linea con prefijo o ruta con espacios = un solo item; con enlaces = uno por enlace
     const l = linea.trim();
     if (!l) continue;
-    if (/^(enlace|raiz|handoff):/.test(l)) toks.push(l);
+    if (/^(enlace|raiz|handoff|constitucion):/.test(l)) toks.push(l);
     else if (/https?:\/\//i.test(l)) toks.push(...l.split(/\s+/).filter((t) => /^https?:\/\//i.test(t)));  // solo los enlaces de la linea, no las palabras de alrededor
     else if (l.includes("/")) toks.push(l);  // ruta sin http (raiz del repo)
     // texto suelto (sin enlace ni ruta) ya no se ancla: antes cada linea de un mensaje pegado salia como un enlace falso
@@ -52,7 +52,7 @@ export const clasificar = (texto) => {
     tok = tok.replace(/[,;]+$/, "");
     if (!tok) continue;
     let clave;
-    if (/^(enlace|raiz|handoff):/.test(tok)) clave = tok;
+    if (/^(enlace|raiz|handoff|constitucion):/.test(tok)) clave = tok;
     else if (/^https?:\/\//i.test(tok)) {
       const sinQ = tok.split(/[?#]/)[0].replace(/\/+$/, "");
       const ruta = sinQ.replace(/^https?:\/\/[^/]+\/?/, "").split("/").filter(Boolean);
@@ -99,7 +99,7 @@ export function montarAncla({ q, chat, tell, guardar, pintarAnclados }) {
   const pintarResumen = () => { pintarResumen0(); pintarProyectos(); };
   const pintarResumen0 = () => {
     resumen.replaceChildren();
-    const otros = [...chat().anclados].filter((a) => /^(enlace|raiz|handoff):/.test(a));
+    const otros = [...chat().anclados].filter((a) => /^(enlace|raiz|handoff|constitucion):/.test(a));
     if (!otros.length) { resumen.append(el("div", "Nada anclado todavía (enlaces / raíces / handoffs)", "fila-desc")); return; }
     const basura = otros.filter((a) => a.startsWith("enlace:") && !/https?:\/\/|\//.test(a.slice(7)));  // texto suelto anclado por error (no es enlace ni ruta)
     if (basura.length) {
@@ -109,7 +109,7 @@ export function montarAncla({ q, chat, tell, guardar, pintarAnclados }) {
     }
     for (const a of otros) {
       const f = el("div", "", "va-item");
-      f.append(el("span", (a.startsWith("raiz:") ? "📁 " : a.startsWith("handoff:") ? "📌 " : "🔗 ") + a.replace(/^(enlace|raiz|handoff):/, ""), "fila-nom"));
+      f.append(el("span", (a.startsWith("raiz:") ? "📁 " : a.startsWith("handoff:") ? "📌 " : a.startsWith("constitucion:") ? "📜 Constitución: " : "🔗 ") + a.replace(/^(enlace|raiz|handoff|constitucion):/, ""), "fila-nom"));
       const x = el("button", "✕", "mini"); x.type = "button";
       x.addEventListener("click", () => { chat().anclados.delete(a); pintarAnclados(); guardar(); pintarResumen(); });
       f.append(x); resumen.append(f);
