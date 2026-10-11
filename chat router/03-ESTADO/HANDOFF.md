@@ -50,3 +50,20 @@ M-5 ⚠️ GAP controlado — Memanto descargado sin contrato runtime verificabl
 M-6 ⚠️ GAP controlado — PostgreSQL, Redis y AgentDB sin servicio/runtime verificable; SQLite cubre fallback.
 M-7 ✅ PASS local — reinicio, búsqueda por relación y evento State Hub; 30 pruebas PASS.
 H-1 ⏸️ OPUS — puente HF/Bucket fuera del alcance de Manus; no ejecutado.
+
+## Integracion Graphiti / Graphify / Memanto / Lifecycle (2026-10-11)
+
+Codigo en `chat router/04-MEMORIA/memoria_yaiwes/runtime_adapters.py` y `integration/chat_mvp/storage_lifecycle.py`.
+SQLite sigue siendo la verdad; todo lo demas es indice/replica derivada. `GET /memoria/health` muestra el estado real de cada uno.
+
+| Componente | Que hace | Estado hoy | Para activarlo |
+|---|---|---|---|
+| Embedding e5-small (384) | un modelo compartido | GAP_EMBEDDING_MODEL_NOT_AVAILABLE | carpeta del modelo en `RIU_EMBED_MODEL_DIR` + `sentence-transformers` |
+| Graphiti | grafo temporal sobre FalkorDBLite embebido; LLM = el de la ficha (`set_llm_client`) | GAP segun dependencia que falte | `RIU_GRAPHITI_ENABLE=1`, `graphiti-core`, `redislite`, modelo de embeddings |
+| Graphify | grafo del CODIGO (busqueda en graph.json), no entra en save | GAP_GRAPH_NOT_BUILT | `RIU_GRAPHIFY_ROOT` y correr `graphify <root>` |
+| Memanto | agente `yaiwes-router`, token solo en RAM | GAP_SERVICE_UNREACHABLE | `RIU_MEMANTO_URL` con `memanto serve` |
+| Qdrant local | indice derivado, vector lexical (NO semantico) | GAP si falta qdrant-client | instalar qdrant-client |
+| Restore al arrancar | si no hay base local, baja el snapshot del bucket HF; valida integridad; nunca pisa datos locales | implementado | `HF_BUCKET_ID` + `HF_WRITE_TOKEN`/`HF_TOKEN` |
+| Autosync | sube snapshot cada `RIU_AUTOSYNC_SECONDS` (300 por defecto) | implementado | mismas variables |
+
+Pruebas: `python test_memoria_real.py` (10) y `python test_runtime_lifecycle.py` (9), sin red ni descargas. Los adaptadores de Graphiti y Memanto NO se han probado contra los servicios reales (no instalados, sin autorizacion de descarga); ninguno se declara CONNECTED sin que `health()` lo compruebe.
