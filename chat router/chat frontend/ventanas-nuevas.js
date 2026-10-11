@@ -3,8 +3,9 @@
 import { instalarContexto } from "./chat-contexto.js";
 import { montarDestinos } from "./anclaje-destinos.js";
 import { montarWorkflows } from "./ventana-workflows.js";
+import { montarSelectorWorkflows } from "./selector-workflows.js";
 import { montarConstitucion } from "./ventana-constitucion.js";
 import { montarClaves } from "./ventana-claves.js";
 export function conectarVentanasNuevas(ctx) {
-  [instalarContexto, montarDestinos, montarWorkflows, montarConstitucion, montarClaves].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
+  [instalarContexto, montarDestinos, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
 }

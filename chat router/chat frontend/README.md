@@ -32,7 +32,7 @@ Global (en `shell.html`): `shell.css`, `responsive.css`, `shell-riu.css`, `chat-
 | Ventana | Se abre desde | Archivos |
 |---------|---------------|----------|
 | Modo, Más, Motor, Archivos, Sandbox, Anclaje | pastillas y botones del chat | hojas en `panel-chat.html`; `chat-ventanas.js`, `chat-ancla.js` |
-| Workflow Loops code Yaiwes | pastilla «workflow» | `ventana-workflows.js` / `.css` |
+| Workflow Loops code Yaiwes | fila «workflow Loops code Yaiwes» del panel Selectores (selección + ON/OFF) | `selector-workflows.js`, `ventana-workflows.js` / `.css` |
 | Constitución sentinela | pastilla «constitución» | `ventana-constitucion.js` / `.css` |
 | Banco de claves | pastilla «claves» | `ventana-claves.js` / `.css` |
 | Destinos del anclaje (Chat / Constitución / Workflows / Agentes remotos) | ventana de Anclaje | `anclaje-destinos.js` |
@@ -73,6 +73,7 @@ Las ventanas nuevas se construyen por JS y cargan su propio CSS al abrirse; `ven
 | `21cd470dfa` | Reversión a un estado conocido cuando el chat desapareció (causa: caché vieja de Edge). |
 | `3aaa183ddf` | Restauración de lo revertido + vista smartphone centrada (`chat-movil.css`) + cabeceras no-cache en `vercel.json`. |
 | `628c1ca9ad` | Salida del chat 3× más larga; Anclaje se desliza entero; PIN opcional; orbe de conexión; orden del menú; soltar archivos; inventario de los 22 componentes RUI. |
-| este cambio | Botón de enviar corregido; «encendido» en azul eléctrico (`encendido.css`); borrar chats con la X de cada pestaña; 5 paneles (Configuración, pestaña Proyecto); ventanas Workflow Loops, Constitución sentinela y Banco de claves; destinos del anclaje; README y HANDOFF. |
+| este cambio (2) | Botón blanco de enviar devuelto a su forma original; «encendido» ahora enciende el símbolo en azul eléctrico (sin cuadro azul); fila «workflow Loops code Yaiwes» con selección y ON/OFF en Selectores; README y handoff anclables al chat desde Configuración (sección 11). |
+| `2ba8c7a35a` | Botón de enviar corregido; «encendido» en azul eléctrico (`encendido.css`); borrar chats con la X de cada pestaña; 5 paneles (Configuración, pestaña Proyecto); ventanas Workflow Loops, Constitución sentinela y Banco de claves; destinos del anclaje; README y HANDOFF. |
 
 Cada cambio nuevo se agrega como una fila arriba de esta tabla.

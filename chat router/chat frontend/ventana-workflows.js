@@ -28,6 +28,7 @@ export function montarWorkflows({ root, q, tell }) {
   if (root.dataset.wf) return; root.dataset.wf = "1";
   const { sheet, caja } = crearVentana(root, { id: "ventana-workflows", titulo: "Workflow Loops code Yaiwes", css: "ventana-workflows" });
   const pill = agregarPill(q, "pill-workflows", "workflow ⌄", () => { pintar(); abrirVentana(root, sheet); });
+  pill.style.display = "none";  // la entrada visible es la fila «workflow Loops code Yaiwes» del panel Selectores (selector-workflows.js)
   const cuerpo = el("div", "wf-cuerpo"); caja.append(cuerpo);
   const ctx = { q, tell };
   const marcar = () => pill.classList.toggle("on", cargar().lista.some((w) => w.encendido));

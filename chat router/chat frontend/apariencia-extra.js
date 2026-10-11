@@ -18,6 +18,23 @@ const RUI = [
 ];
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 
+const BASE_DOC = "https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/chat%20frontend/";
+const DOCS = [["README del frontend", BASE_DOC + "README.md"], ["Handoff del frontend", BASE_DOC + "HANDOFF-FRONTEND.md"]];
+function documentacion(root, api) {  // README y handoff al alcance del chat: enlaces y botón para anclarlos al chat activo
+  const caja = root.querySelector("#ap-docs"); if (!caja) return;
+  const ul = el("ul", "ap-docs");
+  DOCS.forEach(([n, u]) => { const li = el("li"), a = el("a", "", n); a.href = u; a.target = "_blank"; a.rel = "noopener"; li.append(a); ul.append(li); });
+  const b = el("button", "mini", "Anclar README y handoff al chat"); b.type = "button";
+  b.addEventListener("click", () => {
+    try {
+      const k = "riu_chats_v1", arr = JSON.parse(localStorage.getItem(k) || "[]");
+      if (!Array.isArray(arr) || !arr.length) { api.avisa("Abre el chat una vez para poder anclar"); return; }
+      const i = Math.min(Math.max(Number(localStorage.getItem("riu_chat_activo")) || 0, 0), arr.length - 1), ya = new Set(arr[i].anclados || []);
+      DOCS.forEach(([, u]) => ya.add("enlace:" + u)); arr[i].anclados = [...ya]; localStorage.setItem(k, JSON.stringify(arr)); api.avisa("README y handoff anclados al chat activo");
+    } catch (e) { api.avisa("No se pudo anclar: " + e.message); }
+  });
+  caja.append(ul, b);
+}
 export function montarExtra(root, api) {
   const q = (s) => root.querySelector(s);
   const etq = Object.fromEntries(VISTAS), base = VISTAS.map((v) => v[0]);
@@ -82,5 +99,6 @@ export function montarExtra(root, api) {
   // ---- 10 · inventario RUI ----
   const rui = q("#ap-rui");
   if (rui) RUI.forEach(([n, nom, uso]) => { const li = el("li", ""); li.append(el("b", "", n), el("strong", "", nom), el("span", "muted", uso)); rui.append(li); });
+  documentacion(root, api);
   return { pintar: () => { pintarOrden(); pintarPin(); } };
 }

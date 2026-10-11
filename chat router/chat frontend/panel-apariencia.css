@@ -45,3 +45,5 @@
 .ap-rui b{grid-row:1/3;align-self:center;color:var(--active);font-variant-numeric:tabular-nums}
 .ap-rui span{font-size:12px}
 #ap-pin .ap-fila{margin:8px 0}
+.ap-docs{margin:0 0 10px;padding-left:18px}
+.ap-docs a{color:var(--active)}
