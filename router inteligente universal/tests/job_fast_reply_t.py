@@ -4,10 +4,11 @@ import json, os, sys, time, urllib.request as u
 
 U = os.environ['ROUTER_URL'].rstrip('/')
 P = '/plugins/fichas_qwen/call/'
+K = os.environ.get('RIU_ROUTER_API_KEY', '')  # el Router exige clave aun en localhost
 
 
 def post(path, body, t=60):
-    r = u.Request(U + P + path, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json'})
+    r = u.Request(U + P + path, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K, 'X-API-Key': K})
     return json.load(u.urlopen(r, timeout=t))
 
 
