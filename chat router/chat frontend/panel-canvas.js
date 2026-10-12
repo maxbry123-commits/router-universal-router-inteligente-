@@ -1,6 +1,8 @@
+import { montarCanvas } from "./canvas-visor.js";
 import { media, node } from "./api.js";
 
 export async function mount(root, { api, tell }) {
+  if (montarCanvas(root, { tell })) return;  // visor real (canvas-visor.js); lo de abajo es la ruta vieja /chat/org/files
   let currentUrl;
   try {
     const files = (await api("/chat/org/files")).data.files;

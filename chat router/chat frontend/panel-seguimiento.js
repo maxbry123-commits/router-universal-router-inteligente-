@@ -1,6 +1,8 @@
+import { montarSeguimiento } from "./seguimiento-real.js";
 import { node } from "./api.js";
 
 export async function mount(root, { api, tell }) {
+  if (montarSeguimiento(root, { tell })) return;  // datos reales (seguimiento-real.js); lo de abajo es la ruta vieja /chat/org/*
   try {
     const [graph, queue, bitacora] = await Promise.all([
       api("/chat/org/graph"), api("/chat/org/queue"), api("/chat/org/bitacora?limit=30")

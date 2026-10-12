@@ -1,0 +1,11 @@
+/* paneles-reales.css — Seguimiento y Canvas con datos reales. Tokens del tema. */
+.sg-app,.cv-app{display:grid;gap:12px;margin-top:10px}
+.sg-sec{display:grid;gap:8px;padding:12px;border:1px solid var(--border);border-radius:16px;background:var(--surface)}
+.sg-sec h2{margin:0;font-size:16px;color:var(--title)}
+.sg-resp small{display:block;color:var(--quiet);overflow-wrap:anywhere}
+.sg-resp{display:grid;gap:2px}
+.cv-visor{display:flex;align-items:center;justify-content:center;min-height:220px;padding:8px;border:1px dashed var(--border-strong);border-radius:18px;background:var(--surface);overflow:hidden}
+.cv-visor img,.cv-visor video{max-width:100%;max-height:60vh;border-radius:12px}
+.cv-visor audio{width:100%}
+.cv-visor iframe{width:100%;height:60vh;border:0;border-radius:12px;background:#fff}
+.sg-alerta{color:var(--status-orange)}
