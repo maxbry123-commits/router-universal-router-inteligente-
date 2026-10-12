@@ -49,6 +49,7 @@ if 'D' in SEL:
 def llm(body):
     t = time.time()
     x = post('llm', body)
+    x = x.get('result') if isinstance(x.get('result'), dict) else x
     x['_t_total_ms'] = int((time.time() - t) * 1000)
     return x
 if 'E' in SEL:
