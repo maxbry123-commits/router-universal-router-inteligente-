@@ -13,7 +13,7 @@ export PYTHONPATH="$PWD:$PWD/security:$PWD/integration:$PWD/../chat router"
 if [ "${FR_GRAPH:-}" = 1 ]; then  # contador de llamadas a codigo Graphiti/Graphify DENTRO del proceso del Router (solo para medir; no cambia nada)
 mkdir -p /tmp/sc && cat > /tmp/sc/sitecustomize.py <<'PYEOF'
 import sys, threading, json, time, os
-if 'uvicorn' in ' '.join(sys.argv):
+if 'uvicorn' in ' '.join(getattr(sys, 'orig_argv', sys.argv)):
     C = {'graphiti': 0, 'graphify': 0}; K = {}
     def _p(frame, event, arg):
         if event != 'call':

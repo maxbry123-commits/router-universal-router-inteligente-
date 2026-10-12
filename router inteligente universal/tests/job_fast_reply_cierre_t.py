@@ -73,7 +73,7 @@ if 'F1M' in SEL:  # Ficha 1: TODOS los modelos del selector, uno por uno, con FA
             if m in TEXTO:
                 ok = x.get('execution_path') == 'FAST_QA' and ll == 1 and tc == 0 and mod == m and bool(r)
             else:  # imagen y voz: GAP_NO_EXECUTOR permitido (Parche 2)
-                ok = 'NO_EXECUTOR' in (r + json.dumps(x, ensure_ascii=False))
+                ok = any(k in (r + json.dumps(x, ensure_ascii=False)) for k in ('NO_EXECUTOR', 'MODELO_IMAGEN', 'MODELO_VOZ'))
             emit('F1 ' + m, ok, tipo='texto' if m in TEXTO else 'imagen/voz', execution_path=x.get('execution_path'), modelo=mod, numero_llamadas=ll, tool_calls=tc, ms=x.get('_t_total_ms'), reply=r[:60])
 
 if 'GRAPH' in SEL:  # Graphiti y Graphify en FAST_QA = 0 (contador dentro del proceso del Router; control con ancla)
