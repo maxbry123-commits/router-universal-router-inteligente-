@@ -44,3 +44,13 @@ Se escribio leyendo el codigo del Plugin Host, los plugins, el banco de claves y
 - Recarga en caliente: POST /plugins/sync (reescanea plugins/ sin reiniciar) y /control/reload-policies (recarga politicas).
 - Salvavidas 24/7 sin GitHub Actions: agents-yaiwes/common/guardian.py + plugin lifeguard (relanza al Router en HF; relaunch es dry-run salvo dry_run=false).
 - Puente SSH: plugin ssh_bridge (run/put/get a hosts de lista blanca en config.json, credenciales solo por env) y transporte ssh en el plugin connectivity.
+
+## Estado 2026-10-12 - Router, fichas, memoria y banco (actualizado)
+- Router vivo: job HF cpu-basic (2 CPU, 16 GB) con el codigo del bucket (router-bundle.tar.gz), banco unico y arreglos de main. Pantalla: Vercel riu-jev-bridge lee LIVE_URL.json.
+- Flujo que no se cambia: COMPONENTE -> HARNESS puente_chat -> HTTP -> FICHA -> MODELO -> HTTP -> HARNESS. Graphiti va Harness -> HTTP -> Ficha 4.
+- Fichas: 1 (9 modelos de texto; imagen y voz = GAP_NO_EXECUTOR), 2 (codigo), 3 (frontend), 4 (copia de la 1 con ruta por tipo de tarea). Sellos en plugins/fichas_qwen/sellos.
+- Memoria: SQLite primario, grafo de respaldo, Graphiti por anclaje, sincronizacion al bucket cada 60 s.
+- Banco unico: plugins/fichas_qwen/sellos/proveedores.sello (clave FICHA_CLAVE_BANCO). Tokens de HF y GitHub son secretos del job.
+- Chat: corregido el congelamiento al enviar (observadores de la pantalla, commits 7b9a35e5 y a0dcef44).
+- Recuperacion: carpeta recuperacion/ (PARCHE-1-ROUTER, PARCHE-2-FICHAS, PARCHE-3-MEMORIA, PARCHE-4-BANCO).
+- Sin verificar: anclaje de Graphiti tras el arreglo.
