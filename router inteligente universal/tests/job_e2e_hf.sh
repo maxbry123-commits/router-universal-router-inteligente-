@@ -8,7 +8,6 @@ cd r && git sparse-checkout set --cone "$B/integration" "$B/plugins" "$B/securit
 ls "$B" | head -20
 (apt-get update -qq && apt-get install -y -qq nodejs >/dev/null) 2>&1 | tail -1
 pip install -q --break-system-packages -r "$B/requirements.txt" fastapi uvicorn pydantic huggingface_hub cryptography pyyaml requests httpx psutil neo4j 2>&1 | tail -3
-export RIU_ROUTER_API_KEY=e2e-$(date +%s) RIU_DATA_DIR=/tmp/riu RIU_GRAPHITI_ENABLE=1 RIU_ROUTER_URL=http://127.0.0.1:8000 RIU_VAULT_PASSPHRASE="${FICHA_CLAVE_BANCO:-}"
 export RIU_AGENT_API_KEYS="{\"$RIU_ROUTER_API_KEY\":\"e2e\"}"
 mkdir -p $RIU_DATA_DIR
 cd "$B"
