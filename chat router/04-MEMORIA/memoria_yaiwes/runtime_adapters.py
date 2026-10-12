@@ -162,6 +162,12 @@ class GraphitiAdapter(_Base):
     def _graph(self) -> Any:
         if self._g is not None:
             return self._g
+        if self._call_ref["call"] is None:  # cableado perezoso: Graphiti -> Harness -> HTTP -> Ficha 4 (nunca un modelo directo)
+            try:
+                from plugins.puente_chat.plugin import _graphiti_llm_ficha
+                self._call_ref["call"] = _graphiti_llm_ficha
+            except Exception:  # noqa: BLE001
+                pass
         os.environ.setdefault("EMBEDDING_DIM", str(EMBED_DIM))  # antes de importar graphiti_core
         from graphiti_core import Graphiti
         from graphiti_core.cross_encoder.client import CrossEncoderClient
