@@ -503,6 +503,7 @@ export async function mount(root, { api, tell }) {
       A.registrar(c.sesion, "err", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : "GAP: " + error.message);
       c.hist.append(node("div", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : `GAP: ${error.message}`, "item message" + (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message)) ? " meta" : " error")));
       c.hist.scrollTop = c.hist.scrollHeight;
+      if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
       c.ocupado = false; pintarTabs();
       if (window.matchMedia("(pointer: fine)").matches) input.focus();

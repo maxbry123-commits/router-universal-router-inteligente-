@@ -1,5 +1,6 @@
 // apariencia-extra.js — secciones 8, 9 y 10 de la ventana Apariencia: orden del menú (V07 "organización táctil"), bloqueo con PIN (RUI 10)
 // e inventario de los 22 componentes RUI (V07 "Rare UI"). Archivo propio; lo llama panel-apariencia.js.
+import { montarAccesoConfig } from "./acceso-clave.js";
 import { pinActivo, pinDisponible, fijarPin, verificarPin, quitarPin, crearOtp, bloquear } from "./bloqueo-pin.js";
 const VISTAS = [["chat", "Chat"], ["archivos", "Archivos"], ["seguimiento", "Seguimiento"], ["canvas", "Canvas"], ["connectors", "Conectores"], ["templates", "Plantillas"], ["engineering", "Ingeniería"], ["apariencia", "Apariencia"]];
 const GRIP = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
@@ -100,5 +101,6 @@ export function montarExtra(root, api) {
   const rui = q("#ap-rui");
   if (rui) RUI.forEach(([n, nom, uso]) => { const li = el("li", ""); li.append(el("b", "", n), el("strong", "", nom), el("span", "muted", uso)); rui.append(li); });
   documentacion(root, api);
+  montarAccesoConfig(root, api);
   return { pintar: () => { pintarOrden(); pintarPin(); } };
 }

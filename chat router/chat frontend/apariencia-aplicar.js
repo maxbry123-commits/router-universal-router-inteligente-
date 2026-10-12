@@ -3,6 +3,7 @@
 // Los valores se validan al leer (un dato roto o manipulado en el navegador se ignora).
 import { TRAZOS, FUENTES, ROLES, DESTINOS } from "./apariencia-datos.js";
 import { iniciarBloqueo } from "./bloqueo-pin.js";
+import "./acceso-clave.js";  // restaura la clave recordada al abrir (antes de la primera llamada al servidor)
 export const CLAVE = "riu_apariencia_v1";
 export const HEX = /^#[0-9a-fA-F]{6}$/;
 const lim = (n, a, b, d) => { n = Number(n); return Number.isFinite(n) ? Math.min(b, Math.max(a, n)) : d; };
