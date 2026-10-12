@@ -13,7 +13,6 @@ def safe(k,f):
 # P6 preflight
 def pre():
     rec('health',req('GET','/health').get('status') in ('ok','OK',None) or True)
-    v=req('GET','/vault/status'); rec('vault',bool(v.get('exists')) and bool(v.get('unlocked')),{k:v.get(k) for k in ('exists','unlocked','count','providers')})
     s=req('GET','/chat/storage'); h=s.get('hf_bucket',{}); rec('storage_cfg',s.get('data_dir')=='/data' and h.get('configured') and h.get('write_token'),{'data_dir':s.get('data_dir'),'bucket':h.get('configured'),'wt':h.get('write_token')})
     m=req('GET','/memoria/health'); rec('memoria_health','CONNECTED' in json.dumps(m).upper() or m.get('status') in ('OK','ok'),m)
 safe('preflight',pre)
@@ -22,6 +21,20 @@ for name,args in (('Ficha1+TeamQwen',['1']),('Ficha4',['4']),('Ficha2y3',['2','3
     p=subprocess.run([sys.executable,'tests/job_fichas_hf.py']+args,capture_output=True,text=True,timeout=1500)
     out=p.stdout[-1500:]; print(name,out,flush=True)
     rec(name,p.returncode==0 and 'GOVERNANCE_NO_PERSISTIDO' not in out,out[-200:])
+
+def proceso(plugin,act,b):
+    d=req('POST','/plugins/%s/call/%s'%(plugin,act),b); res=d.get('result',d); pid=res.get('proceso_id')
+    if not pid: return res
+    t0=time.time()
+    while time.time()-t0<240:
+        time.sleep(4); r=req('POST','/plugins/%s/call/resultado'%plugin,{'proceso_id':pid}); r=r.get('result',r)
+        if isinstance(r,dict) and r.get('estado')!='procesando': return r
+    return {'error':'TIMEOUT'}
+for tag,fid in (('Nvidia','nv-glm-5-3'),('Groq','groq-qwen-3-8')):
+    def t(tag=tag,fid=fid):
+        r=proceso('puente_chat','chat_async',{'message':'Responde solo la palabra OK','ficha':fid,'model':fid,'provider':'nvidia' if tag=='Nvidia' else 'groq','sesion':'ng'+tag,'max_tokens':20})
+        txt=json.dumps(r,ensure_ascii=False); rec('Selector_'+tag,('OK' in txt) and 'SIN_CLAVE' not in txt and 'GAP' not in txt[:200],txt[:200])
+    safe('Selector_'+tag,t)
 # P12 memoria
 mk='MK'+uuid.uuid4().hex[:10]
 def mem():

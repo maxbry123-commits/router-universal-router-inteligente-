@@ -1,4 +1,0 @@
-El banco de ejecución está partido en dos archivos (para publicarlo sin errores de copia):
-  runtime-bank-v2.part1 + runtime-bank-v2.part2
-Se ensambla con:  cat runtime-bank-v2.part1 runtime-bank-v2.part2 > runtime-bank.db.gz.b64
-Los workflows RIU Microkernel Run y RIU Agents Run lo hacen antes de ejecutar. Cifrado: sin la contraseña (secreto RIU_RUNTIME_BANK_PASSPHRASE) no se abre.

@@ -44,20 +44,6 @@ def _seed_wordflow_fleet() -> None:
     wordflow_agents.seed(get_store())
 
 
-@app.on_event("startup")
-def _unlock_vault_from_secret() -> None:
-    """Router-job: el banco cifrado ya esta en RIU_VAULT_PATH; se abre en memoria con la secret RIU_VAULT_PASSPHRASE (nunca se devuelve ni se loguea)."""
-    try:
-        import os as _os
-        from .vault_bridge import bridge
-        pp = _os.getenv("RIU_VAULT_PASSPHRASE")
-        if not pp:
-            return
-        st = bridge.status()
-        if st.get("exists") and not st.get("unlocked"):
-            bridge.unlock(pp)
-    except Exception as exc:  # noqa: BLE001
-        logging.getLogger("riu").warning("vault auto-unlock fallo: %s", type(exc).__name__)
 
 
 _chat_deps: list = []

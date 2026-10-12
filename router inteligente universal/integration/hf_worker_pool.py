@@ -90,7 +90,7 @@ class HFWorkerPool:
     def _forwarded_secrets(self) -> dict[str, str]:
         names = [
             "GITHUB_TOKEN", "RIU_ROUTER_API_KEY", "RIU_AGENT_API_KEYS",
-            "HF_WRITE_TOKEN", "HF_TOKEN", "RIU_VAULT_PASSPHRASE",
+            "HF_WRITE_TOKEN", "HF_TOKEN", "FICHA_CLAVE_BANCO",
             "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4",
             "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4",
             "GROQ_API_KEY_5", "GROQ_API_KEY_6", "GROQ_API_KEY_7",
