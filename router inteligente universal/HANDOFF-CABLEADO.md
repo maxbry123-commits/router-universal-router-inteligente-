@@ -48,3 +48,9 @@ Sin GitHub Actions. Sin Router nuevo: edicion quirurgica del vivo. No lanzar ni 
 - Hecho y probado: banco configurable (providers.json + RIU_VAULT_AUTOLOCK_S), POST /plugins/sync y /control/reload-policies, guardian + plugin lifeguard, plugin ssh_bridge + transporte ssh.
 - Las fichas de lifeguard y hf_* se corrigieron (runtime_type compute, sandbox egress-allowlist): antes el host las marcaba invalid.
 - Pendiente: arrancar el guardian en HF con tokens reales (no probado en vivo), paramiko en requirements del Space, prueba real ssh contra un host.
+
+## Bloque 5 (2026-10-12)
+- Hecho: banco unico proveedores.sello; Graphiti con cableado perezoso hacia Ficha 4 por HTTP; SQLite con candado; ruta de Ficha 4 por tipo de tarea; paquete del bucket actualizado (respaldo .bak-20261011-pre-banco-unico); Router nuevo job 6acc638dfee2c900701a1ad0 con LIVE_URL apuntando a el.
+- Probado en vivo: selector (NVIDIA, Groq, Qwen), archivo anclado, constitucion y las 4 fichas.
+- Pendiente: verificar anclaje de Graphiti (T2/T2B); desplegar en Vercel el arreglo de chat-riu.js y chat-riu2.js (commits a0dcef44 y 7b9a35e5); apagar el job viejo 6acab680095c57808931837b cuando el Director lo diga.
+- Parches de recuperacion: ver carpeta recuperacion/.
