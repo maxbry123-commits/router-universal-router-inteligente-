@@ -28,7 +28,7 @@ export async function mount(root, { api, tell }) {
   const guardar = () => {
     try {
       localStorage.setItem("riu_chat_activo", String(activo)); localStorage.setItem(CLAVE_CHATS, JSON.stringify(
-        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], instrucciones: c.instrucciones || "", selectorQwen: c.selectorQwen || null }))));
+        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], instrucciones: c.instrucciones || "", selectorQwen: c.selectorQwen || null, fastReply: !!c.fastReply }))));
     } catch (e) {}
   };
   const pintarAnclados = () => {
@@ -44,8 +44,16 @@ export async function mount(root, { api, tell }) {
     const et = fichaEt(chat().ficha);
     const t = (et ? et.etiqueta : "modelo").replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim(); q("#ficha").textContent = "Nvidia groq team ⌄"; q("#ficha").title = "Nvidia groq team · " + t; q("#ficha").dataset.ficha = t;  // selector 1 (sin emojis de color)
   };
+  const pintarFastReply = () => {  // boton ⚡ Respuesta rápida: el estado es de cada chat
+    const b = q("#btn-fast-reply"); if (!b || !chat()) return;
+    const on = !!chat().fastReply;
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+    b.textContent = on ? "⚡ Rápida ON" : "⚡ Rápida";
+    b.title = on ? "Respuesta rápida activada para preguntas simples" : "Activar respuesta rápida";
+  };
   const pintarTabs = () => {
     tabsEl.replaceChildren();
+    pintarFastReply();
     chats.forEach((c, i) => {
       const b = node("button", "Chat " + (i + 1) + (c.ocupado ? " …" : ""), "chip" + (i === activo ? " on" : ""));
       b.type = "button"; b.title = "Chat " + (i + 1) + " — sesión " + c.sesion;
@@ -74,6 +82,7 @@ export async function mount(root, { api, tell }) {
       hist: h,
       anclados: new Set(restaurado?.anclados || []),
       selectorQwen: restaurado?.selectorQwen || null,
+      fastReply: !!(restaurado && restaurado.fastReply),
       instrucciones: restaurado?.instrucciones || "",
       ocupado: false,
     });
@@ -451,6 +460,11 @@ export async function mount(root, { api, tell }) {
   });
 
   // ---- enviar: cada chat corre su tarea en paralelo con su sesion, su ficha y sus anclas ----
+  const btnFast = q("#btn-fast-reply");
+  if (btnFast) btnFast.addEventListener("click", () => {
+    chat().fastReply = !chat().fastReply; pintarFastReply(); guardar();
+    tell(chat().fastReply ? "Respuesta rápida activada" : "Respuesta rápida desactivada");
+  });
   q("#composer").addEventListener("submit", async event => {
     event.preventDefault();
     const c = chat();
@@ -484,17 +498,20 @@ export async function mount(root, { api, tell }) {
     try {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2 y 3)
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
-      const body = { message: A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens, ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}) };
+      const body = { message: A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens, fast_reply: !!c.fastReply, ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}) };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: A.envolver(message, c.instrucciones), max_tokens, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : null, avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
+        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: A.envolver(message, c.instrucciones), max_tokens, fast_reply: !!c.fastReply, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : null, avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
       c.detenerFn = null;
       pending.remove();
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
+      if (answer.execution_path === "FAST_QA") c.hist.append(node("div", "⚡ respuesta rápida · " + answer.ms + " ms", "item meta"));
+      else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
+      else if (c.fastReply && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));
       if (answer.tools && answer.tools.length) { const meta = node("div", "Herramientas usadas: ", "item message meta"); answer.tools.forEach((t, i) => { const ok = typeof t === "string" || t.ok; const s = document.createElement("span"); s.textContent = (typeof t === "string" ? t : t.nombre) + (ok ? "" : " (fallo)"); if (!ok) s.className = "tool-fail"; if (i) meta.append(", "); meta.append(s); }); c.hist.append(meta); }
       if (answer.job_id) { window.__riuJob = answer.job_id; q('#apagar-respaldo').hidden = false; }
       c.hist.scrollTop = c.hist.scrollHeight;

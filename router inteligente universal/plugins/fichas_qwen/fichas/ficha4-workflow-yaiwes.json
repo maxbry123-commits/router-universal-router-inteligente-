@@ -1,14 +1,36 @@
 {
   "fast_lane": {
     "enabled": true,
+    "button_override": true,
     "timeout_s": 25,
-    "max_output_tokens": 600,
-    "context_chars": 12000,
+    "max_output_tokens": 500,
+    "context_chars": 10000,
     "max_steps": 1,
+    "attempts": 1,
     "skip_tools": true,
     "skip_anexo_memoria": true,
     "skip_formato_largo": true,
-    "task_types": ["small", "simple", "lookup", "question", "qa", "chat"]
+    "task_types": [
+      "small",
+      "simple",
+      "lookup",
+      "question",
+      "qa",
+      "chat"
+    ],
+    "blocked_task_types": [
+      "tool",
+      "code",
+      "debug",
+      "refactor",
+      "frontend",
+      "reason",
+      "complex",
+      "architecture",
+      "planning",
+      "agent",
+      "workflow"
+    ]
   },
   "ficha": "ficha4-workflow-yaiwes",
   "proposito": "Workflow Loops Code YAIWES",
