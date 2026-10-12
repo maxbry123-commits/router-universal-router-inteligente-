@@ -58,7 +58,7 @@ def t_llm():
     r = pc.llm_call({'caller_id': 'job', 'plugin_id': 'job', 'workflow_id': 'job', 'project_id': 'p', 'task_id': 't', 'task_type': 'small', 'messages': [{'role': 'user', 'content': 'Responde solo: LISTO'}]})
     reg('LLM_HARNESS_HTTP_FICHA4_FLASH', bool(r.get('reply')) and r.get('modelo') == 'ficha-qwen38flash', 'modelo=%s err=%s' % (r.get('modelo'), r.get('error')))
     r2 = pc.llm_call({'caller_id': 'job', 'task_type': 'code', 'messages': [{'role': 'user', 'content': 'Responde solo: OK'}]})
-    reg('LLM_FICHA4_ENRUTA_CODE_A_MAX', r2.get('modelo') == 'ficha-qwen38max', 'modelo=%s err=%s' % (r2.get('modelo'), r2.get('error')))
+    reg('LLM_FICHA4_ENRUTA_CODE_A_FLASH', r2.get('modelo') == 'ficha-qwen38flash', 'modelo=%s err=%s' % (r2.get('modelo'), r2.get('error')))
 seguro('LLM', t_llm)
 
 # ---------- C. MEMORIA / ALMACENAMIENTO / ANCLAJE ----------
