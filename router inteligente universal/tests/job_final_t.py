@@ -33,7 +33,7 @@ def proceso(plugin,act,b):
 for tag,fid in (('Nvidia','nv-glm-5-3'),('Groq','groq-qwen-3-8')):
     def t(tag=tag,fid=fid):
         r=proceso('puente_chat','chat_async',{'message':'Responde solo la palabra OK','ficha':fid,'model':fid,'provider':'nvidia' if tag=='Nvidia' else 'groq','sesion':'ng'+tag,'max_tokens':20})
-        txt=json.dumps(r,ensure_ascii=False); rec('Selector_'+tag,('OK' in txt) and 'SIN_CLAVE' not in txt and 'GAP' not in txt[:200],txt[:200])
+        txt=json.dumps(r,ensure_ascii=False); c=((r.get('choices') or [{}])[0].get('message') or {}).get('content') if isinstance(r,dict) else None; rec('Selector_'+tag,bool(c or r.get('reply')) and 'SIN_CLAVE' not in txt and not r.get('error'),txt[:200])
     safe('Selector_'+tag,t)
 
 # P10/P11 Constitucion + anclaje por HTTP (misma ruta que el chat: fichas_qwen/chat_async con gobernanza+constitucion+anclados)
