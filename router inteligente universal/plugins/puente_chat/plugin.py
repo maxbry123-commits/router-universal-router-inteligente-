@@ -218,7 +218,7 @@ def _sentinela():
     return mod  # proveedor -> indice de la ultima clave que respondio bien
 
 
-_PERFILES = {'normal': (22000, 3000, 6), 'code': (32000, 7000, 14), 'auditoria': (60000, 7000, 20)}  # (techo de contexto en chars, tope por resultado de herramienta, pasos maximos); 60K es techo, no objetivo
+_PERFILES = {'fast': (12000, 1200, 1), 'normal': (22000, 3000, 6), 'code': (32000, 7000, 14), 'auditoria': (60000, 7000, 20)}  # (techo de contexto en chars, tope por resultado de herramienta, pasos maximos); 60K es techo, no objetivo
 
 
 def _perfil():
@@ -525,8 +525,9 @@ def _faltantes(h, nom, args):
 
 
 def _bucle(llamar, mensajes):
-    h = _herr()
-    conoc = {(t_.get('function') or {}).get('name') for t_ in h.TOOLS}
+    fast = _PERFIL.get() == 'fast'  # carril rapido: nunca se carga ni se manda el esquema de herramientas
+    h = None if fast else _herr()
+    conoc = set() if fast else {(t_.get('function') or {}).get('name') for t_ in h.TOOLS}
     usadas = []
     vistos = {}   # dedup de lecturas: misma herramienta + mismos args = mismo resultado
     hechas = _VISTOS.get()  # escrituras que ya terminaron bien en esta tarea y nodo (compartido entre vueltas): no se repiten
@@ -536,7 +537,7 @@ def _bucle(llamar, mensajes):
     faltas = {}
     rotas = set()  # herramientas que ya fallaron por token/desconocidas
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
-    con_tools = True
+    con_tools = not fast
     pasos = 0
     final_hecho = False
     while True:
@@ -548,7 +549,7 @@ def _bucle(llamar, mensajes):
             fin = time.monotonic() + 45
             mensajes.append({'role': 'user', 'content': 'Se acabo el tiempo. Responde ya, sin usar mas herramientas, con lo que tengas.'})
             continue
-        s, d = llamar(mensajes, h.TOOLS if con_tools else None)
+        s, d = llamar(mensajes, h.TOOLS if (con_tools and h is not None) else None)
         if s == 400 and 'reasoning_content' in json.dumps(d, default=str):
             return {'error': 'GAP HISTORIAL_DEEPSEEK_INCOMPLETO', 'detalle': str(d)[:300]}, usadas
         if s == 400 and con_tools and not usadas:
