@@ -578,6 +578,25 @@ def _anexo_salida(ficha, salida, opts):
     return salida
 
 
+_PIDE_CAMBIO = re.compile(r'(?i)\b(modific|edit[ae]|cambia|crea(r|\b)|implement|refactor|arregl|corrig|escrib[ae]|agrega|elimina|borra|actualiza|parche|commit|/aprobar)')
+_PIDE_FORMATO = re.compile(r'(?i)\b(plan\b|planifica|audit|diagrama|formato completo|check ?list|rutas)')
+
+
+def _es_cambio(mensaje, opts) -> bool:
+    # programacion/modificacion real: perfil code solo aqui
+    o = opts or {}
+    return bool(o.get('muta') or o.get('perfil') == 'code' or _PIDE_CAMBIO.search(str(mensaje or '')))
+
+
+def _es_simple(mensaje, opts, nodos) -> bool:
+    # pregunta conversacional de Ficha 1 (un solo nodo): respuesta normal del modelo, sin las 5 secciones
+    o = opts or {}
+    if len(nodos) > 1 or o.get('muta') or o.get('plan') or o.get('plan_stop') or o.get('aprobado') or o.get('perfil') == 'code':
+        return False
+    m = str(mensaje or '')
+    return not (_PIDE_CAMBIO.search(m) or _PIDE_FORMATO.search(m))
+
+
 def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
     _tp = next((x.get('tipo') for x in (ficha.get('selector') or []) if x.get('id') == modelo), None)
@@ -593,10 +612,18 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     if len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
     escribe = bool((n.get('id') == 'N4') if (opts.get('gobernanza') or {}).get('enabled') else (n.get('escribe') or n.get('id') == 'N4')) and bool(opts.get('aprobado'))
+    _tm = time.time()
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
                   'requiere_tools': (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta'))), 'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
-                  'perfil': ('auditoria' if ((n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe) else ('code' if (n.get('id') == 'N4' or opts.get('muta') or escribe) else 'normal'))})
+                  'perfil': ('auditoria' if ((n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe) else ('code' if (opts.get('muta') or escribe or opts.get('perfil') == 'code' or opts.get('es_cambio')) else 'normal'))})
+    try:  # metrica de latencia por nodo (solo registro, no cambia la salida)
+        _perfil = 'code' if (opts.get('muta') or escribe or opts.get('perfil') == 'code' or opts.get('es_cambio')) else 'normal'
+        _tcs = r.get('tool_calls') if isinstance(r.get('tool_calls'), list) else (r.get('herramientas') if isinstance(r.get('herramientas'), list) else [])
+        _pas = r.get('pasos') if isinstance(r.get('pasos'), list) else []
+        opts.setdefault('metricas', {})[str(n.get('id') or modelo)] = {'t_modelo': round(time.time() - _tm, 2), 'numero_llamadas_modelo': int(r.get('llamadas_modelo') or r.get('llamadas') or len(_pas) or 1), 'numero_tool_calls': len(_tcs), 'perfil_usado': _perfil}
+    except Exception:  # noqa: BLE001
+        pass
     _cr = r.get('constitucion')
     if isinstance(_cr, dict):
         opts.setdefault('trace_constitucion', {})[str(n.get('id') or modelo)] = {k: _cr.get(k) for k in ('id', 'hash', 'sheriff', 'supervisor', 'guardian', 'sentinel', 'judge') if k in _cr}
@@ -782,7 +809,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     _us = {d_ for n_ in nodos.values() for d_ in n_.get('depende_de', [])}
     _fn = [i_ for i_ in orden if i_ not in _us and nodos[i_].get('tipo') != 'goals']
     fin_id = _fn[-1] if _fn else ''
-    obligatorio = bool(fin_id)  # la salida siempre lleva el formato y propone la verificacion (X-Ray, codigo fuente, input verbatim)
+    opts['es_cambio'] = _es_cambio(mensaje, opts)
+    obligatorio = bool(fin_id) and not _es_simple(mensaje, opts, nodos)  # la salida siempre lleva el formato y propone la verificacion (X-Ray, codigo fuente, input verbatim)
 
     def nodo(i: str) -> str:
         n = nodos[i]
@@ -908,7 +936,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             else:
                 final = txt
                 opts['verif_ok'] = True
-    traza = [{"nodo": i, "ms": (opts.get('tiempos') or {}).get(i), "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
+    traza = [{"nodo": i, "ms": (opts.get('tiempos') or {}).get(i), "metricas": (opts.get('metricas') or {}).get(i), "modelo": (elegido if nodos[i].get("modelo") == "selector" else nodos[i].get("modelo")) or "goals",
               "rol": {"N1":"analiza (ask consil)","N2":"analiza (ask consil)","N3":"analiza (ask consil)","N3B":"analiza (ask consil)","N4":"ejecuta","N6":"revisa y refactoriza","N7":"revisa y refactoriza","N8":"revisa y refactoriza","N3D":"analiza y decide"}.get(i, ""), "ok": not out.get(i, "").startswith("GAP"), "herramientas": opts.get("herr", {}).get(i, [])} for i in orden if i in out]
     return final, traza
 
