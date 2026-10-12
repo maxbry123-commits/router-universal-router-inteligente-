@@ -87,6 +87,7 @@ const decorarConsil = (lista, modelos) => {  // vista informativa; no ejecuta na
   }
   lista.replaceChildren(caja);
 };
+const FAST_IDS = ["team-qwen", "ask-consil-code-qwen-team", "ask-consil-fromtend-qwen-team"];  // selectores de las fichas 1, 2 y 3: cada uno con su ⚡
 const tira_id = (id) => "dg-" + id;
 const usable = (id) => SELECTORES.some((s) => s.id === id);
 const leer = () => { try { const v = sessionStorage.getItem(CLAVE); return usable(v) ? v : null; } catch (e) { return null; } };
@@ -106,7 +107,30 @@ window.RIU_SELECTORES = window.RIU_SELECTORES || {
 export function conectarSelectores({ q }) {
   const R = window.RIU_SELECTORES, panel = q("#sel-power");
   if (!panel) return;
-  const botones = {};
+  const css = document.createElement("link"); css.rel = "stylesheet"; css.href = new URL("./selector-resp.css", import.meta.url).href; document.head.append(css);
+  const botones = {}, resp = {}; let global = null;
+  const etiquetaPill = (sel) => { const p = q(sel); return p ? p.textContent.replace(/⌄\s*$/, "").trim() : ""; };
+  const chatAct = () => { try { return (window.RIU_CHAT && window.RIU_CHAT.chat && window.RIU_CHAT.chat()) || {}; } catch (e) { return {}; } };
+  const modeloDe = (id) => {  // el modelo que responde si este selector esta encendido (sale de lo que ya existe en el chat)
+    const c = chatAct();
+    if (id === "nvidia-groq-team") return etiquetaPill("#ficha");
+    if (id === "team-qwen") return c.selectorQwen ? c.selectorQwen.label : "";
+    return R.consil[id] && R.consil[id].modelos.length ? R.consil[id].modelos.join(" · ") : "";
+  };
+  const pintarResp = () => {
+    const act = leer(), fast = !!chatAct().fastReply;
+    for (const s of SELECTORES) {
+      const r = resp[s.id]; if (!r) continue;
+      const m = modeloDe(s.id), extra = fast && FAST_IDS.includes(s.id) && m ? " · ⚡ rápida" : "";
+      r.textContent = m ? (act === s.id ? "Responde: " : "Modelo: ") + m + extra : s.id === "team-qwen" ? "Elige un modelo" : ""; r.hidden = !r.textContent;
+    }
+    for (const b of panel.querySelectorAll(".sel-fast")) { b.classList.toggle("on", fast); b.setAttribute("aria-pressed", String(fast)); b.disabled = !!act && act !== b.dataset.selector; }
+    if (global) {
+      const nom = act ? SELECTORES.find((s) => s.id === act).nombre : "", m = act ? modeloDe(act) : "";
+      global.textContent = act ? "Responde ahora: " + nom + (m ? " · " + m : "") : "Ningún selector encendido: responde el modelo por defecto (" + (etiquetaPill("#ficha") || "—") + ")";
+      global.classList.toggle("on", !!act);
+    }
+  };
   const pintar = () => {
     const act = leer(), nAct = act ? SELECTORES.find((s) => s.id === act).nombre : "";
     R.activo = act;
@@ -126,6 +150,7 @@ export function conectarSelectores({ q }) {
         if (sh) sh.hidden = true;
       }
     }
+    pintarResp();
   };
   const cambiar = (nuevo) => {
     const anterior = leer();
@@ -135,6 +160,7 @@ export function conectarSelectores({ q }) {
   };
   R.encender = (id) => { const a = leer(); if (!usable(id) || (a && a !== id)) return false; if (a !== id) cambiar(id); return true; };
   R.apagar = () => { if (leer()) cambiar(null); return true; };
+  R.refrescar = pintarResp; window.addEventListener("riu:selector-qwen", pintarResp); window.addEventListener("riu:fast-reply", pintarResp);
   for (const s of SELECTORES) {
     const fila = panel.querySelector('[data-selector="' + s.id + '"]');
     const b = document.createElement("button");
@@ -153,7 +179,16 @@ export function conectarSelectores({ q }) {
       fila.append(info, b, tira);
     } else { const hueco = el("span", "sel-info sel-info-hueco"); hueco.setAttribute("aria-hidden", "true"); fila.append(hueco, b); }  // mismo ancho que la "i": las 5 filas alinean
     botones[s.id] = b;
+    if (FAST_IDS.includes(s.id)) {  // ⚡ Respuesta rápida junto al ON/OFF de este selector; el estado es del chat y lo guarda panel-chat
+      const fb = document.createElement("button"); fb.type = "button"; fb.className = "sel-fast"; fb.dataset.selector = s.id; fb.textContent = "⚡";
+      fb.setAttribute("aria-pressed", "false"); fb.setAttribute("aria-label", "Respuesta rápida · " + s.nombre); fb.title = "Respuesta rápida: una sola llamada para preguntas simples";
+      fb.addEventListener("click", () => window.dispatchEvent(new CustomEvent("riu:fast-reply-toggle", { detail: { selector: s.id } })));
+      b.before(fb);
+    }
+    const rr = el("div", "sel-resp"); rr.hidden = true; resp[s.id] = rr;
+    const dg = fila.querySelector(".sel-diagrama"); if (dg) fila.insertBefore(rr, dg); else fila.append(rr);
   }
+  global = el("div", "sel-resp-global"); global.setAttribute("role", "status"); panel.prepend(global);
   const ngt = q("#sel-ngt"), ficha = q("#ficha");  // Nvidia groq team: el panel muestra la ficha elegida en su tooltip
   const sync = () => { if (!ngt.classList.contains("bloq")) ngt.title = ficha.title; };
   new MutationObserver(sync).observe(ficha, { attributes: true, attributeFilter: ["title"] }); sync();

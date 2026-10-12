@@ -46,6 +46,7 @@ export function conectarSelectorModelos(ctx) {
     const s = chat().selectorQwen;
     pill.textContent = "Team qwen ⌄"; if (!pill.classList.contains("bloq")) pill.title = s ? "Team qwen · " + s.label : "Team qwen";  // el modelo elegido va en el tooltip
     pill.classList.toggle("on", !!s);
+    if (window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar) window.RIU_SELECTORES.refrescar();
     window.RIU_SELECTOR_QWEN.seleccion = s ? { modelo_id_slug: s.modelo_id_slug, label: s.label, grupo: s.grupo, sesion: chat().sesion } : null;
   };
   const elegir = (m, g) => {
@@ -56,6 +57,7 @@ export function conectarSelectorModelos(ctx) {
     window.RIU_SELECTOR_QWEN.seleccion = det;
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
     pintarPill(); pintar(); guardar();
+    const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender("team-qwen"); else if (SEL.activo === "team-qwen") SEL.apagar(); }  // elegir un modelo = ese selector responde
     q("#sh-modelos").hidden = true;
   };
   const pintar = () => {
