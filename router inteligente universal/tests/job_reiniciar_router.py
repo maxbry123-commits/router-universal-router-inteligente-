@@ -57,6 +57,14 @@ with tarfile.open('/tmp/b.tgz', 'r|gz') as src, tarfile.open('/tmp/n.tgz', 'w|gz
         else: dst.addfile(m)
 assert vistos == set(ARCHIVOS), vistos
 fs.put_file('/tmp/n.tgz', BASE + '/codigo/router-bundle.tar.gz'); out(paso='paquete nuevo subido', MB=round(os.path.getsize('/tmp/n.tgz') / 1e6), reemplazados=len(vistos))
+hh = hashlib.sha256()
+with open('/tmp/n.tgz', 'rb') as ff:
+    for blk in iter(lambda: ff.read(8 << 20), b''): hh.update(blk)
+try: oldj = json.loads(fs.cat_file(BASE + '/codigo/router-bundle.json'))
+except Exception: oldj = {}
+fs.pipe_file(BASE + '/codigo/router-bundle.json.bak-20261012-pre-fastreply2', json.dumps(oldj, ensure_ascii=False).encode())
+oldj.update({'sha256': hh.hexdigest(), 'bytes': os.path.getsize('/tmp/n.tgz'), 'commit': 'main 7107f947ae: respuesta rapida fichas 1-4', 'ts': time.time(), 'agregado': str(oldj.get('agregado', '')) + ' + respuesta rapida (fast_reply) fichas 1-4'})
+fs.pipe_file(BASE + '/codigo/router-bundle.json', json.dumps(oldj, ensure_ascii=False).encode()); out(paso='router-bundle.json actualizado', respaldo='router-bundle.json.bak-20261012-pre-fastreply2')
 # relanzar como lo hace el kernel (+ FICHA_CLAVE_BANCO, que el kernel no incluye)
 CMD = ['bash', '-lc', "set -e\npip install -q huggingface_hub cryptography httpx 'uvicorn[standard]' fastapi pydantic psutil mcp beautifulsoup4\npython - <<'PY'\nimport os,io,tarfile\nfrom huggingface_hub import HfFileSystem\nf=HfFileSystem(token=os.environ['HF_TOKEN'])\nb='buckets/COMAND-CENTER-1/yaiwes-memoria-storage/router-inteligente-universal'\ntarfile.open(fileobj=io.BytesIO(f.cat_file(b+'/codigo/router-bundle.tar.gz')),mode='r:gz').extractall('/app',filter='data')\nimport base64,gzip\nvp,vs=os.environ.get('RIU_VAULT_PATH'),os.environ.get('RIU_VAULT_SOURCE')\nif vp and vs:\n    os.makedirs(os.path.dirname(vp),exist_ok=True)\n    open(vp,'wb').write(gzip.decompress(base64.b64decode(f.cat_file(vs))))\nPY\ncd '/app/router inteligente universal'\npython riu_kernel.py --watch &\nexec uvicorn public_chat_app:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 120"]
 ENV = {'HF_BUCKET_ID': NS + '/yaiwes-memoria-storage', 'RIU_DATA_DIR': '/tmp/riu-data', 'RIU_VAULT_PATH': '/tmp/riu-data/riu_vault.db', 'RIU_VAULT_SOURCE': BASE + '/banco/vault.db.gz.b64', 'RIU_VAULT_PROVIDERS_SOURCE': BASE + '/banco/providers.json', 'RIU_AUTOSYNC_SECONDS': '60', 'RIU_CHAT_ALLOW_PROVIDER_LIVE': '1', 'RIU_G2_GROQ_MODEL': 'qwen/qwen3.8-27b', 'RIU_CODE_BUNDLE': BASE + '/codigo/router-bundle.tar.gz', 'RIU_ROOT': 'router-inteligente-universal', 'RIU_FLAVOR': 'cpu-basic', 'RIU_JOB_ROLE': 'main', 'HF_AUTOSCALE_MAX_WORKERS': '1', 'HF_HUB_DISABLE_PROGRESS_BARS': '1', 'RIU_CORS_ORIGINS': '*'}
