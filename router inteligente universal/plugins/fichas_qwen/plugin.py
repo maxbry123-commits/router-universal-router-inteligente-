@@ -975,7 +975,7 @@ def _ficha4_modelo(task_type: Any) -> str:
     t = str(task_type or "small").lower()
     if t in _TAREAS_PEQUENAS:
         return "ficha-qwen38flash"
-    return {"code": "ficha-qwen38max", "complex": "ficha-qwen38max", "reason": "ficha-qwen37max"}.get(t, "ficha-qwen38flash")
+    return {"code": "ficha-qwen38flash", "debug": "ficha-qwen38flash", "refactor": "ficha-qwen38flash", "frontend": "ficha-dsv4flash", "reason": "ficha-qwen37max", "complex": "ficha-qwen38max", "architecture": "ficha-qwen38max", "planning": "ficha-qwen38max"}.get(t, "ficha-qwen38flash")
 
 
 def _llm(p: dict[str, Any]) -> dict[str, Any]:

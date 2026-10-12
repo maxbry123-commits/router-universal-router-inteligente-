@@ -14,3 +14,4 @@ numpy
 falkordb>=1.1.2,<2
 falkordblite>=0.5
 redis<9
+cryptography>=42
