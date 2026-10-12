@@ -12,7 +12,7 @@ def safe(k,f):
     except Exception as e: rec(k,False,'EXC '+repr(e))
 # P6 preflight
 def pre():
-    rec('health',req('GET','/health').get('status') in ('ok','OK',None) or True)
+    h=req('GET','/health'); rec('health',isinstance(h,dict) and h.get('status') in ('ok','OK'),h)
     s=req('GET','/chat/storage'); h=s.get('hf_bucket',{}); rec('storage_cfg',s.get('data_dir')=='/data' and h.get('configured') and h.get('write_token'),{'data_dir':s.get('data_dir'),'bucket':h.get('configured'),'wt':h.get('write_token')})
     m=req('GET','/memoria/health'); rec('memoria_health','CONNECTED' in json.dumps(m).upper() or m.get('status') in ('OK','ok'),m)
 safe('preflight',pre)

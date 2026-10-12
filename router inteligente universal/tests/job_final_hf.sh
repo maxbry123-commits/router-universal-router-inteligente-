@@ -1,5 +1,5 @@
 #!/bin/bash
-# Job final HF cpu-basic: banco unico (FICHA_CLAVE_BANCO). No imprime secretos.
+# Job final HF cpu-basic. BANCO OPERATIVO UNIFICADO = plugins/fichas_qwen/sellos/proveedores.sello (clave FICHA_CLAVE_BANCO). No imprime secretos.
 set -u
 exec 2>&1
 B="router inteligente universal"
