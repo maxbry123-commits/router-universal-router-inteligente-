@@ -228,7 +228,7 @@ function bienvenida({ q }) {
   const fila = crear("div", "riu-bv-acc");
   [["Mis archivos", "#btn-archivos"], ["Anclar", "#btn-ancla"], ["Sandbox", "#btn-sandbox"]].forEach(([n, sel]) => { const b = crear("button", "mini", n); b.type = "button"; b.addEventListener("click", () => { const x = q(sel); if (x) x.click(); }); fila.append(b); });
   w.append(t, crear("p", "riu-bv-sub", "Escribe una orden o /ayuda"), fila); hist.append(w);
-  const act = () => { const h = [...hist.querySelectorAll(".chat-history")].find((x) => !x.hidden); w.hidden = !!(h && h.querySelector(".message")); hist.classList.toggle("con-bienvenida", !w.hidden); };
+  const act = () => { const h = [...hist.querySelectorAll(".chat-history")].find((x) => !x.hidden); { const v = !!(h && h.querySelector(".message")); if (w.hidden !== v) w.hidden = v; } hist.classList.toggle("con-bienvenida", !w.hidden); };
   new MutationObserver(act).observe(hist, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden"] }); act();
 }
 // buscador (skill): filtra las listas largas de archivos de las ventanas
