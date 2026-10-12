@@ -709,6 +709,8 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
               'No hagas plan, DAG, checklist ni diagrama salvo que el usuario lo pida.' + nl + 'No abras otra ronda.' + nl +
               'Responde claro y completo con la menor latencia posible.' + nl * 2 + 'PREGUNTA:' + nl + str(mensaje or '')[:fc['context_chars']])
     n = {'id': 'FAST', 'modelo': modelo, 'timeout_s': fc['timeout_s'], 'max_output_tokens': fc['max_output_tokens'], 'requiere_tools': False, 'escribe': False}
+    opts.setdefault('metricas', {})  # la copia comparte estos dicts: asi las metricas de la llamada no se pierden
+    opts.setdefault('tiempos', {})
     t0 = time.time()
     try:
         with _SEM:
@@ -717,7 +719,7 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
         r = 'GAP FAST (%s): %s' % (modelo, x)
     ms = int((time.time() - t0) * 1000)
     opts.setdefault('tiempos', {})['FAST'] = ms
-    return r, [{'nodo': 'FAST', 'modelo': modelo, 'rol': 'respuesta rapida', 'ms': ms, 'ok': not str(r).startswith('GAP')}]
+    return r, [{'nodo': 'FAST', 'modelo': modelo, 'rol': 'respuesta rapida', 'ms': ms, 'metricas': (opts.get('metricas') or {}).get('FAST'), 'ok': not str(r).startswith('GAP')}]
 
 
 def _consult(ficha, nodos, mensaje, elegido, pid, opts):
