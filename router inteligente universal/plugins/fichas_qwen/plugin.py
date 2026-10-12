@@ -582,10 +582,16 @@ _PIDE_CAMBIO = re.compile(r'(?i)\b(modific|edit[ae]|cambia|crea(r|\b)|implement|
 _PIDE_FORMATO = re.compile(r'(?i)\b(plan\b|planifica|audit|diagrama|formato completo|check ?list|rutas)')
 
 
+_NO_CAMBIA = re.compile(r'(?i)(solo lectura|solo-lectura|read[- ]only|no (lo )?(modifi|edit|cambi|escrib|toqu)|sin (modific|cambiar|editar|escribir|tocar)|no (hagas|hag) cambios)')
+
+
 def _es_cambio(mensaje, opts) -> bool:
     # programacion/modificacion real: perfil code solo aqui
     o = opts or {}
-    return bool(o.get('muta') or o.get('perfil') == 'code' or _PIDE_CAMBIO.search(str(mensaje or '')))
+    if o.get('muta') or o.get('perfil') == 'code':
+        return True
+    m = str(mensaje or '')
+    return bool(_PIDE_CAMBIO.search(m)) and not _NO_CAMBIA.search(m)
 
 
 def _es_simple(mensaje, opts, nodos) -> bool:
@@ -594,7 +600,7 @@ def _es_simple(mensaje, opts, nodos) -> bool:
     if len(nodos) > 1 or o.get('muta') or o.get('plan') or o.get('plan_stop') or o.get('aprobado') or o.get('perfil') == 'code':
         return False
     m = str(mensaje or '')
-    return not (_PIDE_CAMBIO.search(m) or _PIDE_FORMATO.search(m))
+    return not ((_PIDE_CAMBIO.search(m) and not _NO_CAMBIA.search(m)) or _PIDE_FORMATO.search(m))
 
 
 def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
