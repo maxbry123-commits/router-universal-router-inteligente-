@@ -35,6 +35,36 @@ for tag,fid in (('Nvidia','nv-glm-5-3'),('Groq','groq-qwen-3-8')):
         r=proceso('puente_chat','chat_async',{'message':'Responde solo la palabra OK','ficha':fid,'model':fid,'provider':'nvidia' if tag=='Nvidia' else 'groq','sesion':'ng'+tag,'max_tokens':20})
         txt=json.dumps(r,ensure_ascii=False); rec('Selector_'+tag,('OK' in txt) and 'SIN_CLAVE' not in txt and 'GAP' not in txt[:200],txt[:200])
     safe('Selector_'+tag,t)
+
+# P10/P11 Constitucion + anclaje por HTTP (misma ruta que el chat: fichas_qwen/chat_async con gobernanza+constitucion+anclados)
+import base64,glob
+def subir(nombre,texto,ses):
+    return req('POST','/plugins/puente_chat/call/subir',{'nombre':nombre,'datos_b64':base64.b64encode(texto.encode()).decode(),'tipo':'text/markdown','sesion':ses})
+def en_indices(marca):
+    n=0
+    for d in ('/data/indices/graphiti','/data/indices/graphify'):
+        for f in glob.glob(d+'/**/*',recursive=True):
+            try:
+                if os.path.isfile(f) and marca.encode() in open(f,'rb').read(): n+=1
+            except Exception: pass
+    return n
+def chat_q(ses,extra):
+    b={'message':'Responde solo la palabra OK','ficha_qwen':'1','modelo':'ficha-qwen38flash','sesion':ses}; b.update(extra)
+    return proceso('fichas_qwen','chat_async',b)
+MC='CM'+uuid.uuid4().hex[:10]; MA='AM'+uuid.uuid4().hex[:10]; SES='sf'+uuid.uuid4().hex[:6]
+def const():
+    subir('const-test.md','# Constitucion de prueba\nMARCA '+MC,SES)
+    r=chat_q(SES,{'gobernanza':{'enabled':True},'constitucion':{'texto':'Regla de prueba '+MC,'anclados':['const-test.md']}})
+    txt=json.dumps(r,ensure_ascii=False); bad=any(e in txt for e in ('CONSTITUTION_INVALID','GOVERNANCE_NO_PERSISTIDO','CONSTITUTION_CHANGED'))
+    rec('Constitution_http',(not bad) and bool(r.get('reply') or r.get('estado')) ,txt[:200])
+    time.sleep(15); rec('Constitution_no_en_graphiti_graphify',en_indices(MC)==0,'archivos con marca=%d'%en_indices(MC))
+safe('Constitution_http',const)
+def ancla():
+    subir('anc-test.md','# Plan\nEl Harness usa puente_chat. MARCA '+MA,SES)
+    chat_q(SES,{}); time.sleep(10); rec('Anchor_sin_anclar_no_graphiti',en_indices(MA)==0,'archivos con marca=%d'%en_indices(MA))
+    r=chat_q(SES,{'anclados':['anc-test.md']}); time.sleep(40)
+    n=en_indices(MA); rec('Anchor_Graphiti_indexa',n>0,'archivos con marca=%d | %s'%(n,json.dumps(r,ensure_ascii=False)[:120]))
+safe('Anchor_Graphiti',ancla)
 # P12 memoria
 mk='MK'+uuid.uuid4().hex[:10]
 def mem():
