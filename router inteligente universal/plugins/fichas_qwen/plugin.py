@@ -623,7 +623,7 @@ _NOMBRES = {'ficha-qwen38max': 'Qwen 3.8 Max', 'ficha-qwen38flash': 'Qwen 3.8 Fl
 def _fast_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
     c = dict(ficha.get('fast_lane') or {})
     return {'enabled': bool(c.get('enabled')), 'timeout_s': int(c.get('timeout_s') or 25), 'max_output_tokens': int(c.get('max_output_tokens') or 600),
-            'context_chars': int(c.get('context_chars') or 12000), 'max_steps': int(c.get('max_steps') or 1), 'button_override': bool(c.get('button_override', True)),
+            'context_chars': int(c.get('context_chars') or 12000), 'max_steps': int(c.get('max_steps') or 1), 'button_override': bool(c.get('button_override', True)), 'blocked_task_types': {str(x).lower() for x in (c.get('blocked_task_types') or _FAST_TASKS_BLOQUEADOS)},
             'task_types': {str(x).lower() for x in (c.get('task_types') or ['small', 'simple', 'lookup', 'question', 'qa', 'chat'])}}
 
 
@@ -688,6 +688,9 @@ def _fast_button_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any]) -
             return False
     if opts.get('perfil') == 'code':
         return False
+    tt = str(opts.get('task_type') or '').lower()
+    if tt and (tt in fc['blocked_task_types'] or tt not in fc['task_types']):
+        return False
     m = str(mensaje or '')
     if m.lstrip().lower().startswith('/aprobar') or _FAST_REPLY_BLOCK.search(m):
         return False
@@ -701,7 +704,7 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
     if fid.startswith('ficha2') or fid.startswith('ficha3'):
         modelo = str(ficha.get('fast_model') or 'ficha-qwen38flash')
     elif fid.startswith('ficha4'):
-        modelo = _ficha4_modelo('question')
+        modelo = _ficha4_modelo(opts.get('task_type') or 'question')
     else:
         modelo = elegido
     nl = chr(10)
@@ -1177,7 +1180,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if ap:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
     pend_t = _pend_cargar(fid, ses) if ap else None
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'fast_reply': bool(p.get('fast_reply')), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:
@@ -1206,7 +1209,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             _pend_cerrar(fid, ses)
         if opts.get('verif_ok'):  # propuesta de verificacion cruzada: ok / confirmo / proceder con verificacion
             _verif_guardar(fid, ses, {'input': mensaje, 'plan': str(opts.get('plan') or ''), 'salida': salida, 'tarea_id': opts['tarea_id'], 'anclados': list(opts.get('anclados') or []), 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time()})
-    return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_reply": bool(opts.get("fast_reply")), "fast_fallback": bool(opts.get("fast_fallback")), "fast_consult": bool(opts.get("fast_consult")),
+    return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_consult": bool(opts.get("fast_consult")),
             "execution_path": ("FAST_CONSULT" if opts.get("fast_consult") else ("FAST_QA" if opts.get("fast_lane") else "HEAVY")),
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
             "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}

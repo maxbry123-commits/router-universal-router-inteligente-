@@ -144,7 +144,7 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   }
   if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
   const prueba = Array.isArray(r.p.traza) && r.p.traza.length ? '\n\n— Prueba de ejecución —\n' + r.p.traza.filter((t) => t.modelo !== 'goals').map((t) => t.nodo + ' · ' + String(t.modelo).replace('ficha-', '') + ' · ' + (t.rol || '') + (t.ok ? ' ✔' : ' ✘')).join('\n') : '';
-  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), traza: r.p.traza, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })), fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, fast_fallback: !!r.p.fast_fallback, execution_path: r.p.execution_path || "", ms: Number(r.p.ms || 0) };  // camino que uso la ficha (FAST_QA, FAST_CONSULT o HEAVY)
+  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), traza: r.p.traza, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })), fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, execution_path: r.p.execution_path || "HEAVY", ms: Number(r.p.ms || 0) };
 }
 window.RIU_HARNESS = harness;
 export async function apagarRespaldo() {
