@@ -1,5 +1,5 @@
 #!/bin/bash
-# Job final HF cpu-basic. Secretos por env del job (FICHA_CLAVE_BANCO y RIU_VAULT_PASSPHRASE SEPARADOS). No imprime secretos.
+# Job final HF cpu-basic: banco unico (FICHA_CLAVE_BANCO). No imprime secretos.
 set -u
 exec 2>&1
 B="router inteligente universal"
