@@ -1,4 +1,15 @@
 {
+  "fast_lane": {
+    "enabled": true,
+    "timeout_s": 25,
+    "max_output_tokens": 600,
+    "context_chars": 12000,
+    "max_steps": 1,
+    "skip_tools": true,
+    "skip_anexo_memoria": true,
+    "skip_formato_largo": true,
+    "task_types": ["small", "simple", "lookup", "question", "qa", "chat"]
+  },
   "ficha": "ficha1-modelos-individuales",
   "tipo": "dag",
   "version": 2,
