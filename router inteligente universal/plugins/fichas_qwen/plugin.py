@@ -137,6 +137,7 @@ def _muta(texto: str) -> bool:
     # intencion de modificar algo: verbos de accion en la orden del Director (palabra completa, sin tildes)
     import unicodedata
     t = ''.join(c for c in unicodedata.normalize('NFKD', texto.lower()) if not unicodedata.combining(c))
+    t = _NO_CAMBIA.sub(' ', t)  # 'solo lectura / no modifiques nada' no es orden de modificar
     return bool(_RE_MUTA.search(t))
 
 
