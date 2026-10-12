@@ -65,13 +65,20 @@ def _cfg(ficha: dict[str, Any]) -> tuple[int, int, int, int]:
         raise RuntimeError('FICHA_SIN_CONFIG:' + repr(x))
 
 
-def _llamar(modelo: str, prompt: str, ficha: dict[str, Any]) -> str:
+def _llamar(modelo: str, prompt: str, ficha: dict[str, Any], *, timeout_override: int | None = None, attempts_override: int | None = None,
+            max_tokens_override: int | None = None) -> str:
     m = _modelos().get(modelo)
     if not m:
         raise RuntimeError('MODELO_NO_ESTA_EN_EL_SELLO:' + str(modelo))
     if not m['claves']:
         raise RuntimeError('MODELO_SIN_CLAVE:' + str(modelo))
     api_s, intentos, max_tokens, limite = _cfg(ficha)
+    if timeout_override is not None:
+        api_s = min(api_s, int(timeout_override))
+    if attempts_override is not None:
+        intentos = min(intentos, int(attempts_override))
+    if max_tokens_override is not None:
+        max_tokens = min(max_tokens, int(max_tokens_override))
     if len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
     fin = time.time() + api_s  # 90 s TOTAL por nodo; los reintentos van dentro de ese tiempo
@@ -564,6 +571,8 @@ def _anexo(ficha, fase, texto, opts):
 
 
 def _anexo_salida(ficha, salida, opts):
+    if opts.get('fast_lane'):
+        return salida
     # el anexo es CONSULTIVO: solo deja traza (trace_anexo); nunca bloquea ni toca la salida. Solo las compuertas deterministas del Harness bloquean.
     if not salida or str(salida).startswith('GAP') or not (opts.get('gobernanza') or {}).get('anexo_memoria'):
         return salida
@@ -604,6 +613,120 @@ def _es_simple(mensaje, opts, nodos) -> bool:
     return not ((_PIDE_CAMBIO.search(m) and not _NO_CAMBIA.search(m)) or _PIDE_FORMATO.search(m))
 
 
+_FAST_CALLERS_BLOQUEADOS = {'graphiti', 'agent', 'agente', 'workflow', 'hermes', 'openclaw'}
+_FAST_TASKS_BLOQUEADOS = {'tool', 'code', 'debug', 'refactor', 'frontend', 'reason', 'complex', 'architecture', 'planning', 'agent', 'workflow'}
+_NO_CONSULTA = re.compile(r'(?i)\b(audit|x-?ray|forens|deploy|despliega|commit|push|herramienta|tools?|ejecuta|ejecutar|agente|workflow|repo\b|repositorio|github|archivo|/aprobar)')
+_NOMBRES = {'ficha-qwen38max': 'Qwen 3.8 Max', 'ficha-qwen38flash': 'Qwen 3.8 Flash', 'ficha-qwen37max': 'Qwen 3.7 Max', 'ficha-qwen37plus': 'Qwen 3.7 Plus',
+            'ficha-qwen36flash': 'Qwen 3.6 Flash', 'ficha-dsv4pro': 'DeepSeek V4 Pro', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2'}
+
+
+def _fast_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
+    c = dict(ficha.get('fast_lane') or {})
+    return {'enabled': bool(c.get('enabled')), 'timeout_s': int(c.get('timeout_s') or 25), 'max_output_tokens': int(c.get('max_output_tokens') or 600),
+            'context_chars': int(c.get('context_chars') or 12000), 'max_steps': int(c.get('max_steps') or 1),
+            'task_types': {str(x).lower() for x in (c.get('task_types') or ['small', 'simple', 'lookup', 'question', 'qa', 'chat'])}}
+
+
+def _fast_chat_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nodos: dict[str, Any]) -> bool:
+    # FAST_GATE determinista (0 LLM): pregunta simple de Ficha 1/4 (un solo N4) -> una sola llamada al modelo elegido, sin tools, sin anexos, sin formato
+    if not _fast_cfg(ficha)['enabled'] or len(nodos) != 1 or 'N4' not in nodos:
+        return False
+    if not _es_simple(mensaje, opts, nodos):
+        return False
+    if opts.get('muta') or opts.get('es_cambio') or opts.get('aprobado') or opts.get('plan') or opts.get('plan_stop') or opts.get('previo'):
+        return False
+    if opts.get('perfil') == 'code' or opts.get('anclados'):
+        return False
+    return True
+
+
+def _fast_llm_ok(p: dict[str, Any], ficha: dict[str, Any]) -> bool:
+    c = _fast_cfg(ficha)
+    if not c['enabled']:
+        return False
+    caller = str(p.get('caller_id') or '').lower()
+    if any(x in caller for x in _FAST_CALLERS_BLOQUEADOS):
+        return False
+    tt = str(p.get('task_type') or 'small').lower()
+    return tt not in _FAST_TASKS_BLOQUEADOS and tt in c['task_types']
+
+
+def _fast_consult_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
+    c = dict(ficha.get('fast_consult') or {})
+    return {'enabled': bool(c.get('enabled')), 'opinion_timeout_s': int(c.get('opinion_timeout_s') or 90), 'opinion_max_tokens': int(c.get('opinion_max_tokens') or 350),
+            'decision_timeout_s': int(c.get('decision_timeout_s') or 90), 'decision_max_tokens': int(c.get('decision_max_tokens') or 900)}
+
+
+def _fast_consult_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nodos: dict[str, Any]) -> bool:
+    # Ficha 2/3: SOLO consulta (sin ordenar nada) -> Ask Consil (4 opiniones en paralelo) + 1 decision; sin tools, revisores ni loops
+    if not _fast_consult_cfg(ficha)['enabled'] or not all(k in nodos for k in ('N1', 'N2', 'N3', 'N3B')):
+        return False
+    if 'N3D' not in nodos and 'N4' not in nodos:
+        return False
+    if opts.get('muta') or opts.get('es_cambio') or opts.get('aprobado') or opts.get('plan') or opts.get('plan_stop') or opts.get('previo'):
+        return False
+    if opts.get('perfil') == 'code' or opts.get('anclados') or _muta(mensaje):
+        return False
+    m = str(mensaje or '')
+    if m.lstrip().lower().startswith('/aprobar') or _NO_CONSULTA.search(m) or _PIDE_FORMATO.search(m):
+        return False
+    return True
+
+
+def _consult(ficha, nodos, mensaje, elegido, pid, opts):
+    # FAST_CONSULT: ronda unica en paralelo (N1,N2,N3,N3B) + una decision (N3D en Ficha 3, N4 en Ficha 2). Nada mas.
+    fc = _fast_consult_cfg(ficha)
+    ids = [i for i in ('N1', 'N2', 'N3', 'N3B') if i in nodos]
+    dec = 'N3D' if 'N3D' in nodos else 'N4'
+    nl = chr(10)
+
+    def mod(i):
+        m = nodos[i].get('modelo')
+        return elegido if m == 'selector' else m
+
+    def uno(i, prompt, tout, mt):
+        n = dict(nodos[i], timeout_s=tout, max_output_tokens=mt, requiere_tools=False, escribe=False)
+        _prog(pid, i, 'trabajando')
+        t = time.time()
+        try:
+            with _SEM:
+                r = _llamar_harness_1(mod(i), prompt, ficha, n, opts)
+        except Exception as x:  # noqa: BLE001
+            r = 'GAP %s (%s): %s' % (i, mod(i), x)
+        opts.setdefault('tiempos', {})[i] = int((time.time() - t) * 1000)
+        _prog(pid, i, 'gap' if str(r).startswith('GAP') else 'ok')
+        return str(r)
+
+    base = ('MODO CONSULTA RAPIDA. Responde directamente con tu opinion, clara y concreta (maximo 150 palabras). No uses herramientas. No ejecutes cambios.'
+            + nl * 2 + 'PREGUNTA:' + nl + mensaje)
+    ops = {}
+    ex = _cf.ThreadPoolExecutor(max_workers=len(ids))
+    try:
+        futs = {i: ex.submit(uno, i, base, fc['opinion_timeout_s'], fc['opinion_max_tokens']) for i in ids}
+        for i, f in futs.items():
+            ops[i] = f.result()
+    finally:
+        ex.shutdown(wait=False, cancel_futures=True)
+    opts.setdefault('out', {}).update({i: v for i, v in ops.items()})
+    buenas = [i for i in ids if ops.get(i) and not ops[i].startswith('GAP')]
+    if len(buenas) < 2:
+        return 'GAP CONSULTA: menos de 2 opiniones validas del Ask Consil (' + '; '.join(ops[i][:120] for i in ids if ops[i].startswith('GAP')) + ')', []
+    bloque = (nl * 2).join('OPINION %s (%s):%s%s' % (i, _NOMBRES.get(mod(i), mod(i)), nl, ops[i][:2500] if i in buenas else '(sin respuesta)') for i in ids)
+    pd = ('MODO CONSULTA RAPIDA. Compara las cuatro opiniones y entrega tu decision final. No uses herramientas. No ejecutes cambios. No abras otra ronda.'
+          + nl * 2 + 'PREGUNTA:' + nl + mensaje + nl * 2 + bloque)
+    decision = uno(dec, pd, fc['decision_timeout_s'], fc['decision_max_tokens'])
+    if decision.startswith('GAP') or not decision.strip():
+        opts['parcial'] = bloque
+        return 'GAP FINAL: la decision no respondio. ' + decision[:300], []
+    titulo = 'ASK CONSIL FRONTEND' if 'N3D' in nodos else 'ASK CONSIL'
+    partes = [titulo] + ['%s:%s%s' % (_NOMBRES.get(mod(i), mod(i)), nl, ops[i].strip() if i in buenas else '(sin respuesta)') for i in ids]
+    partes.append('DECISIÓN — %s:%s%s' % (_NOMBRES.get(mod(dec), mod(dec)), nl, decision.strip()))
+    final = (nl * 2).join(partes)
+    traza = [{'nodo': i, 'ms': (opts.get('tiempos') or {}).get(i), 'metricas': (opts.get('metricas') or {}).get(i), 'modelo': mod(i),
+              'rol': 'consulta (ask consil)' if i != dec else 'decide', 'ok': not (ops.get(i) or decision if i == dec else ops.get(i, '')).startswith('GAP')} for i in ids + [dec]]
+    return final, traza
+
+
 def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
     _tp = next((x.get('tipo') for x in (ficha.get('selector') or []) if x.get('id') == modelo), None)
@@ -616,16 +739,32 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     api_s, _, max_tok, limite = _cfg(ficha)
     api_s = int(n.get('timeout_s') or api_s)
     max_tok = int(n.get('max_output_tokens') or max_tok)
+    fast = bool(opts.get('fast_lane'))
+    if fast and not opts.get('fast_consult'):
+        _fc = _fast_cfg(ficha)
+        api_s = min(api_s, _fc['timeout_s'])
+        max_tok = min(max_tok, _fc['max_output_tokens'])
     if len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
     escribe = bool((n.get('id') == 'N4') if (opts.get('gobernanza') or {}).get('enabled') else (n.get('escribe') or n.get('id') == 'N4')) and bool(opts.get('aprobado'))
+    if fast:
+        escribe = False
+    requiere_tools = False if fast else (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta')))
+    if fast:
+        perfil = 'fast'
+    elif (n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe:
+        perfil = 'auditoria'
+    elif opts.get('muta') or escribe or opts.get('perfil') == 'code' or opts.get('es_cambio'):
+        perfil = 'code'
+    else:
+        perfil = 'normal'
     _tm = time.time()
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
-                  'requiere_tools': (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta'))), 'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
-                  'perfil': ('auditoria' if ((n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe) else ('code' if (opts.get('muta') or escribe or opts.get('perfil') == 'code' or opts.get('es_cambio')) else 'normal'))})
+                  'requiere_tools': requiere_tools, 'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
+                  'perfil': perfil})
     try:  # metrica de latencia por nodo (solo registro, no cambia la salida)
-        _perfil = 'code' if (opts.get('muta') or escribe or opts.get('perfil') == 'code' or opts.get('es_cambio')) else 'normal'
+        _perfil = perfil
         _tcs = r.get('tool_calls') if isinstance(r.get('tool_calls'), list) else (r.get('herramientas') if isinstance(r.get('herramientas'), list) else [])
         _pas = r.get('pasos') if isinstance(r.get('pasos'), list) else []
         opts.setdefault('metricas', {})[str(n.get('id') or modelo)] = {'t_modelo': round(time.time() - _tm, 2), 'numero_llamadas_modelo': int(r.get('llamadas_modelo') or r.get('llamadas') or len(_pas) or 1), 'numero_tool_calls': len(_tcs), 'perfil_usado': _perfil}
@@ -809,14 +948,19 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     out: dict[str, str] = dict(opts.get('previo') or {})  # nodos que ya pasaron: no se repiten
     opts['out'] = out
     opts['pid'] = pid
-    if not opts.get('previo'):  # anexo de memoria (Qwen 3.6 Flash) como sheriff de entrada; en /aprobar no se repite
+    opts['es_cambio'] = _es_cambio(mensaje, opts)
+    opts['fast_lane'] = _fast_chat_ok(ficha, mensaje, opts, nodos)
+    if not opts['fast_lane'] and _fast_consult_ok(ficha, mensaje, opts, nodos):
+        opts['fast_lane'] = True
+        opts['fast_consult'] = True
+        return _consult(ficha, nodos, mensaje, elegido, pid, opts)
+    if not opts.get('previo') and not opts.get('fast_lane'):  # anexo de memoria (Qwen 3.6 Flash) como sheriff de entrada; en /aprobar no se repite
         opts['anexo_entrada'] = _anexo(ficha, 'entrada', mensaje, opts)
         if str(opts.get('anexo_entrada') or '').startswith('GAP '):
             return str(opts['anexo_entrada']), []
     _us = {d_ for n_ in nodos.values() for d_ in n_.get('depende_de', [])}
     _fn = [i_ for i_ in orden if i_ not in _us and nodos[i_].get('tipo') != 'goals']
     fin_id = _fn[-1] if _fn else ''
-    opts['es_cambio'] = _es_cambio(mensaje, opts)
     obligatorio = bool(fin_id) and not _es_simple(mensaje, opts, nodos)  # la salida siempre lleva el formato y propone la verificacion (X-Ray, codigo fuente, input verbatim)
 
     def nodo(i: str) -> str:
@@ -840,7 +984,12 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         _meta(pid, i, nodos[i].get('modelo') if nodos[i].get('modelo') != 'selector' else elegido, _tarea_visor(nodos, i))
         nl = chr(10)
         ctx = (nl * 2).join('[%s]%s%s' % (d, nl, out[d]) for d in n.get('depende_de', []) if out.get(d))
-        prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
+        if opts.get('fast_lane') and n.get('id') == 'N4':
+            prompt = ('MODO RESPUESTA RAPIDA.' + nl + 'Responde directamente a la pregunta del usuario.' + nl + 'No uses herramientas.' + nl + 'No hagas cambios.' + nl +
+                      'No crees planes ni diagramas salvo que el usuario los pida.' + nl + 'Se claro y breve, pero responde completamente.' + nl * 2 +
+                      'PREGUNTA:' + nl + mensaje[:_fast_cfg(ficha)['context_chars']])
+        else:
+            prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
         if n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado'):
             prompt += nl * 2 + 'AVISO DEL SISTEMA: falta la aprobacion del Director. NO ejecutes cambios ni uses herramientas de escritura. Entrega solo el PLAN (pasos, archivos, riesgos) y termina con la linea ESPERANDO_APROBACION. El Director aprueba escribiendo /aprobar al inicio de su mensaje.'
             prompt += nl * 2 + _fmt_txt(ficha) + nl * 2 + 'DIAGRAMA REAL DEL WORKFLOW (copialo tal cual en la seccion DIAGRAMA DE FLUJO):' + nl + _diagrama(ficha, nodos, orden, out, opts, 'N4')
@@ -904,7 +1053,10 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             if opts.get('plan_stop') and out.get('N4'):  # plan sin aprobar: se detiene aqui, antes de cualquier escritura
                 break
 
-    _dag()
+    if opts.get('fast_lane') and len(orden) == 1 and orden[0] == 'N4':
+        out['N4'] = nodo('N4')
+    else:
+        _dag()
     maxc = int((ficha.get('loop') or {}).get('correcciones') or 1)
     ronda = 0
     tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 600)
@@ -997,12 +1149,13 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             _pend_cerrar(fid, ses)
         if opts.get('verif_ok'):  # propuesta de verificacion cruzada: ok / confirmo / proceder con verificacion
             _verif_guardar(fid, ses, {'input': mensaje, 'plan': str(opts.get('plan') or ''), 'salida': salida, 'tarea_id': opts['tarea_id'], 'anclados': list(opts.get('anclados') or []), 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time()})
-    return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **_gov_resp(opts),
+    return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_consult": bool(opts.get("fast_consult")),
+            "execution_path": ("FAST_CONSULT" if opts.get("fast_consult") else ("FAST_QA" if opts.get("fast_lane") else "HEAVY")),
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
             "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}
 
 
-_TAREAS_PEQUENAS = {"small", "simple", "tool", "lookup"}
+_TAREAS_PEQUENAS = {"small", "simple", "tool", "lookup", "question", "qa", "chat"}
 
 
 def _ficha4_modelo(task_type: Any) -> str:
@@ -1022,12 +1175,20 @@ def _llm(p: dict[str, Any]) -> dict[str, Any]:
     prompt = "\n\n".join("[" + str(m.get("role", "user")) + "] " + str(m.get("content", "")) for m in msgs if isinstance(m, dict))
     if not prompt:
         return {"error": "SIN_MENSAJES"}
+    fast = _fast_llm_ok(p, FICHAS[fid])
+    fc = _fast_cfg(FICHAS[fid])
     modelo = _ficha4_modelo(p.get("task_type"))
+    t0 = time.time()
     try:
-        out = _llamar(modelo, prompt, FICHAS[fid])
+        if fast:
+            out = _llamar(modelo, "MODO RESPUESTA RAPIDA.\nResponde directamente.\nNo uses herramientas.\nNo ejecutes cambios.\nSe breve y completo.\n\n" + prompt, FICHAS[fid],
+                          timeout_override=fc["timeout_s"], attempts_override=1, max_tokens_override=fc["max_output_tokens"])
+        else:
+            req_max = p.get("max_tokens")
+            out = _llamar(modelo, prompt, FICHAS[fid], max_tokens_override=(int(req_max) if req_max else None))
     except Exception as x:  # noqa: BLE001
-        return {"error": "GAP_LLM_FICHA", "detalle": repr(x)[:200]}
-    return {"ficha": fid, "modelo": modelo, "reply": out, **{k: p.get(k) for k in ("caller_id", "plugin_id", "workflow_id", "project_id", "task_id", "task_type")}}
+        return {"error": "GAP_LLM_FICHA", "detalle": repr(x)[:200], "fast_lane": fast}
+    return {"ficha": fid, "modelo": modelo, "reply": out, "fast_lane": fast, "ms": int((time.time() - t0) * 1000), **{k: p.get(k) for k in ("caller_id", "plugin_id", "workflow_id", "project_id", "task_id", "task_type")}}
 
 
 def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
