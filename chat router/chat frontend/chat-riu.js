@@ -35,10 +35,10 @@ export function conectarRiu({ q }) {
   hist.prepend(barra); hist.append(bajar);
   const activa = () => [...hist.querySelectorAll(".chat-history")].find((h) => !h.hidden && h.offsetParent !== null);
   const medir = () => {
-    const h = activa(); if (!h) { barra.style.width = "0"; bajar.hidden = true; return; }
+    const h = activa(); if (!h) { barra.style.width = "0"; if (!bajar.hidden) bajar.hidden = true; return; }
     const max = h.scrollHeight - h.clientHeight;
     barra.style.width = max > 4 ? Math.round((h.scrollTop / max) * 100) + "%" : "0";
-    bajar.hidden = !(max - h.scrollTop > 160);
+    { const v = !(max - h.scrollTop > 160); if (bajar.hidden !== v) bajar.hidden = v; }
   };
   bajar.addEventListener("click", () => { const h = activa(); if (h) h.scrollTo({ top: h.scrollHeight, behavior: "smooth" }); });
   hist.addEventListener("scroll", medir, { capture: true, passive: true });
