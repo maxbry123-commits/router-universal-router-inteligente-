@@ -43,6 +43,23 @@ def hidratar():
 try:
     v = hidratar(); out(paso='banco abierto', ok=True, secretos_del_router=len([1 for x in v.list() if x['provider'] == 'router']), claves_agente=len(json.loads(os.environ['RIU_AGENT_API_KEYS'])), tiene_ficha_clave=bool(os.environ.get('FICHA_CLAVE_BANCO')))
 except Exception as e: out(paso='banco abierto', ok=False, error=type(e).__name__ + ': ' + str(e)[:120]); sys.exit(2)
+if MODE == 'PROBE':  # compara la ruta por defecto (puente_chat) entre routers, sin cambiar nada
+    KEY = os.environ['RIU_ROUTER_API_KEY']; HP = {'X-API-Key': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json'}
+    def hp(url, met, path, body=None, t=40):
+        try:
+            with ur.urlopen(ur.Request(url + path, data=json.dumps(body).encode() if body is not None else None, headers=HP, method=met), timeout=t) as rr: return rr.status, json.load(rr)
+        except urllib.error.HTTPError as e: return e.code, {'http_error': e.read()[:200].decode('utf-8', 'ignore')}
+        except Exception as e: return 0, {'exc': type(e).__name__ + ': ' + str(e)[:80]}
+    for nom, url in [x.split('=', 1) for x in os.environ['RR_URLS'].split(',')]:
+        out(router=nom, health=hp(url, 'GET', '/health', t=15)[0])
+        for modelo in ('nv-nemotron-super', 'groq-qwen-3-8'):
+            t1 = time.time(); s1, d1 = hp(url, 'POST', '/plugins/puente_chat/call/chat_async', {'model': modelo, 'messages': [{'role': 'user', 'content': 'Responde solamente OK'}], 'max_tokens': 16, 'sesion': 'probe-' + nom}); pid = (d1.get('result') or {}).get('proceso_id'); r = {}
+            while pid and time.time() - t1 < 150:
+                time.sleep(2); s2, d2 = hp(url, 'POST', '/plugins/puente_chat/call/resultado', {'proceso_id': pid}); r = d2.get('result') or {}
+                if r.get('estado') != 'procesando': break
+            ch = r.get('choices') or []
+            out(router=nom, modelo=modelo, inicio=s1, estado=r.get('estado'), contenido=str(((ch[0] if ch else {}).get('message') or {}).get('content'))[:40], error=str(r.get('error') or r.get('detalle') or d1.get('http_error') or d1.get('exc') or '')[:200], claves=sorted(r.keys())[:10], seg=round(time.time() - t1))
+    out(paso='FIN_PROBE'); sys.exit(0)
 if MODE != 'APPLY': out(paso='FIN_CHECK'); sys.exit(0)
 if any(a not in enb or sha(enb[a]) != sha(gh(BASE_SHA, a)) for a in ARCHIVOS) and not os.environ.get('RR_FORCE'): out(paso='ABORTA', motivo='el paquete tiene cambios que no estan en GitHub: no se pisa sin RR_FORCE'); sys.exit(3)
 nuevo = {a: gh('main', a) for a in ARCHIVOS}
