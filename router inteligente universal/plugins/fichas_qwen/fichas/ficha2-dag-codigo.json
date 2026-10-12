@@ -1,4 +1,22 @@
 {
+  "fast_lane": {
+    "enabled": true,
+    "timeout_s": 25,
+    "max_output_tokens": 600,
+    "context_chars": 12000,
+    "max_steps": 1,
+    "skip_tools": true,
+    "skip_anexo_memoria": true,
+    "skip_formato_largo": true,
+    "task_types": ["small", "simple", "lookup", "question", "qa", "chat"]
+  },
+  "fast_consult": {
+    "enabled": true,
+    "opinion_timeout_s": 90,
+    "opinion_max_tokens": 350,
+    "decision_timeout_s": 90,
+    "decision_max_tokens": 900
+  },
   "ficha": "ficha2-dag-codigo",
   "tipo": "dag",
   "version": 2,
