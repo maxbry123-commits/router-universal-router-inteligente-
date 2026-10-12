@@ -18,6 +18,6 @@ for i in $(seq 1 90); do python -c "import socket;s=socket.socket();s.settimeout
 ES
 bash /tmp/start.sh
 echo ---PRUEBAS_FAST_REPLY
-ROUTER_URL=http://127.0.0.1:8000 python tests/job_fast_reply_t.py 2>&1 | cut -c1-400; rc=${PIPESTATUS[0]}
+ROUTER_URL=http://127.0.0.1:8000 python tests/job_fast_reply_t.py ${FR_TESTS:-} 2>&1 | cut -c1-400; rc=${PIPESTATUS[0]}
 echo ---app.log; tail -12 /tmp/app.log | cut -c1-200
 echo FAST_REPLY_DONE rc=$rc

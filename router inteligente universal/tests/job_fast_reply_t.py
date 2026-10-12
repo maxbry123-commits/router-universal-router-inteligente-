@@ -78,7 +78,7 @@ if 'T6' in SEL:
     fila('T6 F3 + rapida + modifica archivo = HEAVY', '3', x.get('execution_path') == 'HEAVY' and x.get('fast_lane') is False, x, str(x.get('estado_tarea')))
 if 'T7' in SEL:
     x = llm({'caller_id': 'chat', 'task_type': 'architecture', 'messages': [{'role': 'user', 'content': 'Diseña la arquitectura de un sistema de colas.'}]})
-    fila('T7 F4 architecture = HEAVY', '4', x.get('fast_lane') is False and x.get('modelo') == 'ficha-qwen38max', x, str(x.get('modelo')))
+    fila('T7 F4 architecture = HEAVY', '4', x.get('fast_lane') is False and x.get('modelo') == 'ficha-qwen38max', x, str({k: x.get(k) for k in ('error', 'detalle', 'modelo', 'fast_lane', 'estado')})[:300])
 if 'T8' in SEL:
     a = chat('1', '¿Qué es una API? Responde en una frase.')
     b = chat('2', '¿Qué diferencia hay entre REST y WebSocket?')
