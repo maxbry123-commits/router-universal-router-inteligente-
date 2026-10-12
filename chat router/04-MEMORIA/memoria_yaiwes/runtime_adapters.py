@@ -192,6 +192,10 @@ class GraphitiAdapter(_Base):
             return {"adapter": self.name, "status": "SAVED"}
         except Exception as exc:  # noqa: BLE001 - SQLite ya guardo; Graphiti nunca tumba el chat
             m = str(exc)
+            try:
+                open("/tmp/graphiti_err.txt", "a").write(__import__("traceback").format_exc() + "\n---\n")
+            except Exception:  # noqa: BLE001
+                pass
             self._err = m.split(":", 1)[0] if m.startswith("GAP_FICHA4_HTTP") else f"GAP_WRITE:{type(exc).__name__}"
             return {"adapter": self.name, "status": "GAP", "reason": self._err, "detalle": m[:160] if m.startswith("GAP_") else __import__("traceback").format_exc()[-500:]}
 

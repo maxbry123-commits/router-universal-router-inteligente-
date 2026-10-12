@@ -20,5 +20,6 @@ bash /tmp/start.sh
 python tests/job_final_t.py; rc=$?
 echo ---CIERRE_TOTAL_REAL
 RIU_FICHA4_URL=http://127.0.0.1:8000/plugins/fichas_qwen/call/llm python tests/job_cierre_total.py 2>&1 | cut -c1-220 | tail -80; rc2=${PIPESTATUS[0]}
+echo ---GRAPHITI_ERR; tail -c 2500 /tmp/graphiti_err.txt 2>/dev/null
 echo ---app.log; tail -15 /tmp/app.log | cut -c1-200
 echo E2E_DONE rc=$rc rc_cierre=$rc2
