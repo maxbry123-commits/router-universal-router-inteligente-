@@ -47,7 +47,11 @@ function instalarCapturaFetch() {
             ficha_qwen: req.ficha_qwen == null ? null : String(req.ficha_qwen),
           });
         }
-        if (esResultado && req.proceso_id && (env.status !== 'ok' || p.estado !== 'procesando')) borrar(String(req.proceso_id));
+        // Un HTTP/envelope temporal no significa que el proceso haya muerto. Solo se limpia cuando
+        // el Router contestó correctamente y confirmó final o error real del proceso.
+        if (esResultado && req.proceso_id && env.status === 'ok' && (p.error || p.estado !== 'procesando')) {
+          borrar(String(req.proceso_id));
+        }
       } catch (e) {}
     }
     return resp;
@@ -63,7 +67,9 @@ function metasChats() {
 function histDeSesion(q, sesion) {
   const metas = metasChats();
   const i = metas.findIndex((m) => m && m.sesion === sesion);
-  const hs = [...q('#histories').querySelectorAll('.chat-history')];
+  const caja = q('#histories');
+  if (!caja) return null;
+  const hs = [...caja.querySelectorAll('.chat-history')];
   return i >= 0 ? hs[i] || null : null;
 }
 function burbuja(texto, cls = '') {
