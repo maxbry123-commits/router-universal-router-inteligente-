@@ -20,7 +20,10 @@ export async function mount(root, { api, tell }) {
 
   // ---- multi-chat: hasta 5 estancias, cada una con su sesion, su ficha, sus anclas y su historial ----
   const tabsEl = q("#chat-tabs"), histEl = q("#histories");
-  const alFondo = () => { const d = histEl.getBoundingClientRect().bottom - q("#composer").getBoundingClientRect().top; if (d > 0) scrollBy(0, d); }; new MutationObserver(alFondo).observe(histEl, { childList: true, subtree: true }); new ResizeObserver(alFondo).observe(document.body);  // móviles bajos: el composer fijo no tapa el final del historial
+  const abajo = (c) => { if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight; };  // sigue las respuestas solo si estas cerca del final; el historial tiene su propio scroll
+  const ctlB = q("#ctl-barra"), ctlP = q("#ctl-panel");  // barra Controles: desliza hacia abajo y se recoge; son los mismos botones de siempre (no se clonan ni cambian de nodo)
+  if (ctlB && ctlP) ctlB.addEventListener("click", () => { const ab = ctlP.classList.toggle("abierto"); ctlB.setAttribute("aria-expanded", String(ab)); ctlB.textContent = ab ? "Controles ▴" : "Controles ▾"; });
+  const previo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); return h.slice(-20).map((m) => ({ role: m.rol === "user" ? "user" : "assistant", content: m.texto })); };  // historial de ESTA sesion, aparte del input actual
   const chats = [];
   let activo = 0;
   const chat = () => chats[activo];
@@ -72,6 +75,7 @@ export async function mount(root, { api, tell }) {
   };
   const nuevoChat = (restaurado) => {
     const h = node("div", "", "chat-history");
+    h.addEventListener("scroll", () => { h.__sigue = h.scrollHeight - h.scrollTop - h.clientHeight < 90; }, { passive: true });  // si subes, deja de seguir; al volver cerca del fondo sigue otra vez
     h.hidden = true; h.setAttribute("role", "log");
     histEl.append(h);
     chats.push({
@@ -106,9 +110,10 @@ export async function mount(root, { api, tell }) {
     if (!cls || !/\b(user|meta|pending|error)\b/.test(cls)) {
       const e = node("button", "", "editar"); e.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>'; e.setAttribute("aria-label", "Editar");
       e.type = "button"; e.title = "Editar esta salida";
-      let editando = false;
+      let editando = false; span.dataset.orig = texto;
       e.addEventListener("click", () => {
         editando = !editando;
+        if (!editando) { const nuevo = span.textContent; if (nuevo !== span.dataset.orig) { A.reemplazar(chat().sesion, span.dataset.orig, nuevo); span.dataset.orig = nuevo; } }  // la edicion sustituye al texto guardado
         span.contentEditable = editando ? "true" : "false";
         if (editando) e.textContent = "✓"; else e.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></svg>';
         e.title = editando ? "Guardar edición" : "Editar esta salida";
@@ -120,7 +125,15 @@ export async function mount(root, { api, tell }) {
   };
 
   const ancla = A.montarAncla({ q, chat: chatA, tell, guardar, pintarAnclados });
-  chats.forEach((c) => A.restaurar(c, burbuja));  // historial guardado: vuelve al recargar
+  chats.forEach((c) => A.restaurar(c, burbuja).then(() => {  // historial guardado: vuelve al recargar; una tarea que seguia corriendo se retoma por su proceso_id (NO se relanza)
+    if (!window.RIU_PENDIENTE || !window.RIU_PENDIENTE(c.sesion)) return;
+    c.ocupado = true; pintarTabs();
+    const aviso = node("div", "Recuperando la respuesta de la tarea que seguía corriendo…", "item message meta"); c.hist.append(aviso); abajo(c);
+    window.RIU_RETOMAR(c.sesion).then((p) => {
+      aviso.remove(); const t = p && ((p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content) || p.reply);
+      if (t) { c.hist.append(burbuja(t)); A.registrar(c.sesion, "bot", t); } else c.hist.append(burbuja(p && p.error === "PROCESO_NO_EXISTE" ? "La tarea ya no está en el Router (se reinició). Reenvía tu mensaje." : "Sin respuesta de la tarea recuperada: " + ((p && (p.error || p.detalle)) || "vacía"), "error"));
+    }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); });
+  }));
   conectarSelectorModelos({ q, chat, tell, guardar });  // Selector Qwen: solo frontend
   conectarMicrofono({ q, tell });  // micrófono: dictado por voz al input
   // ---- hojas (sheets): cada pildora abre la suya ----
@@ -141,7 +154,7 @@ export async function mount(root, { api, tell }) {
   const cerrarChat = (i) => {  // borrar un chat (la X de su pestana); si es el unico, se vacia y queda uno nuevo
     if (!chats[i]) return;
     if (chats[i].ocupado) { tell("Ese chat está trabajando: espera o pulsa Detener"); return; }
-    const ses = chats[i].sesion;
+    const ses = chats[i].sesion; A.olvidar(ses);
     try { for (const k of ["riu_hist_v1", "riu_proy_v1"]) { const t = JSON.parse(localStorage.getItem(k) || "{}"); if (t && t[ses] !== undefined) { delete t[ses]; localStorage.setItem(k, JSON.stringify(t)); } } } catch (e) {}
     if (chats.length < 2) { nuevoChat(); i = 0; }
     chats[i].hist.remove(); chats.splice(i, 1); activo = Math.max(0, Math.min(activo > i ? activo - 1 : activo, chats.length - 1));
@@ -229,7 +242,7 @@ export async function mount(root, { api, tell }) {
           const r = await window.RIU_ACCION("handoff", { fuente: k, sesion: chat().sesion });
           const c = chat();
           c.hist.append(burbuja("ANCLADO " + k + ":\n" + JSON.stringify(r.handoff || r, null, 1)));
-          c.hist.scrollTop = c.hist.scrollHeight;
+          abajo(c);
         } catch (err) { tell(err.message); }
       }));
     }
@@ -240,7 +253,7 @@ export async function mount(root, { api, tell }) {
         cerrarHojas();
         const c = chat();
         c.hist.append(burbuja("AUDITOR CODE — " + r.total + " archivos:\n" + (r.carpetas || []).join("\n")));
-        c.hist.scrollTop = c.hist.scrollHeight;
+        abajo(c);
       } catch (err) { tell(err.message); }
     }));
   };
@@ -260,7 +273,7 @@ export async function mount(root, { api, tell }) {
       if (r.encendido) {
         const c = chat();
         c.hist.append(burbuja("MI HANDOFF anclado:\n" + texto));
-        c.hist.scrollTop = c.hist.scrollHeight;
+        abajo(c);
       }
       tell("Mi handoff " + (r.encendido ? "guardado y encendido" : "apagado"));
     } catch (err) { tell(err.message); }
@@ -311,11 +324,11 @@ export async function mount(root, { api, tell }) {
   q("#anc-todos").addEventListener("click", () => anclarTodos(true).catch((err) => tell(err.message)));
   q("#anc-ninguno").addEventListener("click", () => anclarTodos(false).catch((err) => tell(err.message)));
   q("#btn-copiar-input").addEventListener("click", () => copiarTexto(q("#message").value));
-  q("#btn-detener").addEventListener("click", () => { chat().detenerFlag = true; if (chat().detenerFn) chat().detenerFn(); });
+  q("#btn-detener").addEventListener("click", () => { chat().detenerFlag = true; if (chat().detenerFn) chat().detenerFn(); if (window.RIU_CANCELAR) window.RIU_CANCELAR(chat().sesion); });
 
   // ---- ventana del motor: descarga/extraccion/copiar/mover entre repos ----
   const extraerUrls = (t) => { const s = new Set(); (String(t || "").match(/https?:\/\/[^\s"'<>)\]]+/g) || []).forEach((u) => s.add(u.replace(/[.,;:!?]+$/g, ""))); return [...s]; };
-  const motorConfirma = (t) => { chat().hist.append(node("div", t, "item message meta")); chat().hist.scrollTop = chat().hist.scrollHeight; };
+  const motorConfirma = (t) => { chat().hist.append(node("div", t, "item message meta")); abajo(chat()); };
   const mm = q("#motor-mover"), mc = q("#motor-copiar");
   mm.addEventListener("change", () => { if (mm.checked) mc.checked = false; else if (!mc.checked) mm.checked = true; });
   mc.addEventListener("change", () => { if (mc.checked) mm.checked = false; else if (!mm.checked) mc.checked = true; });
@@ -400,7 +413,7 @@ export async function mount(root, { api, tell }) {
             c.hist.append(burbuja("X-RAY " + (r2.nombre || nombre) + "\n" + (r2.estructura || "") +
               "\nURLs: " + (r2.urls || []).join(", ") + "\nMAPA:\n" + (r2.mapa_mental || "") +
               "\nFLUJO: " + (r2.microflujo || "") + "\n" + (r2.resumen_goals || "")));
-            c.hist.scrollTop = c.hist.scrollHeight;
+            abajo(c);
           } catch (err) { tell(err.message); }
         });
         fil.append(nom, t, xr);
@@ -462,6 +475,7 @@ export async function mount(root, { api, tell }) {
   window.__riuFastH = () => { chat().fastReply = !chat().fastReply; pintarFastReply(); guardar(); tell(chat().fastReply ? "Respuesta rápida activada" : "Respuesta rápida desactivada"); };
   window.addEventListener("riu:fast-reply-toggle", window.__riuFastH);
   q("#composer").addEventListener("submit", async event => {
+    chat().hist.__sigue = true;  // al enviar vuelves al final
     event.preventDefault();
     const c = chat();
     const input = q("#message");
@@ -474,7 +488,7 @@ export async function mount(root, { api, tell }) {
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
       c.hist.append(node("div", nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.", "item message meta"));
-      c.hist.scrollTop = c.hist.scrollHeight;
+      abajo(c);
       return;
     }
     const ub = burbuja(message, "user");
@@ -486,7 +500,7 @@ export async function mount(root, { api, tell }) {
     c.hist.append(pending);
     const alProgreso = (e) => { if (!pending.isConnected) { window.removeEventListener('riu-progreso', alProgreso); return; } pending.textContent = e.detail; };
     window.addEventListener('riu-progreso', alProgreso);
-    c.hist.scrollTop = c.hist.scrollHeight;
+    abajo(c);
     const agent = q("#agent").value;
     const provider = q("#provider").value;
     const model = q("#model").value;
@@ -497,9 +511,10 @@ export async function mount(root, { api, tell }) {
       const body = { message: A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}) };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
+      const ctxPrev = (window.RIU_SELECTORES && window.RIU_SELECTORES.activo === "ask-consil-code-qwen-team") ? previo(c, message) : undefined;  // memoria de la misma sesion (Ask consil code)
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: A.envolver(message, c.instrucciones), max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : null, avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
+        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: A.envolver(message, c.instrucciones), max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : null, avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
       c.detenerFn = null;
       pending.remove();
@@ -510,12 +525,12 @@ export async function mount(root, { api, tell }) {
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));
       if (answer.tools && answer.tools.length) { const meta = node("div", "Herramientas usadas: ", "item message meta"); answer.tools.forEach((t, i) => { const ok = typeof t === "string" || t.ok; const s = document.createElement("span"); s.textContent = (typeof t === "string" ? t : t.nombre) + (ok ? "" : " (fallo)"); if (!ok) s.className = "tool-fail"; if (i) meta.append(", "); meta.append(s); }); c.hist.append(meta); }
       if (answer.job_id) { window.__riuJob = answer.job_id; q('#apagar-respaldo').hidden = false; }
-      c.hist.scrollTop = c.hist.scrollHeight;
+      abajo(c);
     } catch (error) {
       pending.remove();
       A.registrar(c.sesion, "err", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : "GAP: " + error.message);
       c.hist.append(node("div", (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) ? "proceso detenido por el usuario" : `GAP: ${error.message}`, "item message" + (c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message)) ? " meta" : " error")));
-      c.hist.scrollTop = c.hist.scrollHeight;
+      abajo(c);
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
       c.ocupado = false; pintarTabs();

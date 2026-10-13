@@ -34,6 +34,30 @@ function remoto(headers) {
   return BASE ? "omit" : "same-origin";
 }
 const L4 = { job: null, url: null };
+// ---- procesos en curso: una recarga NO relanza la tarea; se retoma por su proceso_id (sesion, proceso_id, direccion exacta del Router, hora) ----
+const CP = 'riu_proc_v1';
+const procs = () => { try { return JSON.parse(localStorage.getItem(CP) || '{}'); } catch (e) { return {}; } };
+const guardaProc = (ses, v) => { try { const t = procs(); if (v) t[ses] = v; else delete t[ses]; localStorage.setItem(CP, JSON.stringify(t)); } catch (e) {} };
+const hdrs = () => { const k = sessionStorage.getItem('riu_clave'); const h = { 'Content-Type': 'application/json' }; if (k) { h['X-API-Key'] = k; h.Authorization = 'Bearer ' + k; } return h; };
+window.RIU_PENDIENTE = (ses) => procs()[ses] || null;
+window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de ejecutar; si ya corre, el Router no lanza los pasos siguientes
+  const v = procs()[ses]; if (!v) return false; guardaProc(ses, null);
+  try { await fetch(v.base.replace(/[/]+$/, '') + '/cancelar', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) }); } catch (e) {}
+  return true;
+};
+window.RIU_RETOMAR = async (ses) => {
+  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + 560000;
+  while (Date.now() < fin) {
+    try {
+      const r = await fetch(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) });
+      const e = await r.json().catch(() => ({})); const p = e.result || {};
+      if (p.error === 'PROCESO_NO_EXISTE') { guardaProc(ses, null); return { error: 'PROCESO_NO_EXISTE' }; }
+      if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
+    } catch (x) { /* caida temporal: seguir esperando, el registro no se borra */ }
+    await new Promise((ok) => setTimeout(ok, 1500));
+  }
+  return { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'sigue en el Router' };
+};
 async function puenteRouter(base, body, qs, headers) {
   await liveRouter();
   const baseDe = () => (body && body.plugin ? BASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
@@ -71,6 +95,7 @@ async function puenteRouter(base, body, qs, headers) {
     if (p.estado === 'procesando' && p.proceso_id) {
       const deadline = Date.now() + 560000;
       const proceso = p.proceso_id;
+      if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
       while (p.estado === 'procesando') {
         if (Date.now() > deadline) { cortado = true; break; }
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -82,6 +107,7 @@ async function puenteRouter(base, body, qs, headers) {
         } catch (e) { continue; }  // red/job en cambio: seguir esperando
       }
     }
+    if (!cortado && payload && payload.sesion) guardaProc(payload.sesion, null);  // termino: ya no hay nada que retomar
     if (cortado) { return { status: 504, ok: false, p: { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'El proceso sigue en el Router; no se relanza la tarea', proceso_id: p.proceso_id } }; }
     if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
     if (p.error) {
@@ -113,14 +139,14 @@ export async function accion(acc, payload) {
   return env.result || {};
 }
 window.RIU_ACCION = accion;
-export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply }) {
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo }) {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const esHF = model.startsWith('hf-');
-  const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, gobernanza ? { gobernanza } : {}, constitucion ? { constitucion } : {}, typeof fast_reply === "boolean" ? { fast_reply } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
+  const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, gobernanza ? { gobernanza } : {}, constitucion ? { constitucion } : {}, typeof fast_reply === "boolean" ? { fast_reply } : {}, Array.isArray(contexto_previo) && contexto_previo.length ? { contexto_previo } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
   let r;
   if (esHF && L4.url) {
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);

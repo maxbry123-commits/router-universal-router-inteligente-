@@ -23,9 +23,24 @@ from typing import Any
 DIR = Path(__file__).resolve().parent
 FICHAS = {f.stem: json.loads(f.read_text(encoding="utf-8")) for f in sorted((DIR / "fichas").glob("*.json"))}
 ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "4": "ficha4-workflow-yaiwes"}
-_POOL = _cf.ThreadPoolExecutor(max_workers=8, thread_name_prefix="fichas_qwen")
+_POOL = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen")  # maximo 4 solicitudes activas; las demas esperan en cola
 _LOCK = threading.Lock()
 _PROCESOS: dict[str, tuple[Any, float]] = {}
+_CANCEL: set[str] = set()  # procesos que el usuario detuvo con Detener: no se lanzan mas pasos
+
+
+def _hist_txt(v: Any) -> str:
+    # historial previo de la MISMA sesion (el chat lo manda aparte del input): max 20 mensajes y ~12.000 caracteres; solo se anade al prompt del modelo
+    if isinstance(v, str):
+        t = v
+    else:
+        t = chr(10).join('[%s] %s' % ('usuario' if str(m.get('role')) == 'user' else 'asistente', str(m.get('content') or '')) for m in list(v or [])[-20:] if isinstance(m, dict) and m.get('content'))
+    return t[-12000:]
+
+
+def _hb(opts: dict[str, Any], nl: str) -> str:
+    h = str((opts or {}).get('historial') or '')
+    return (nl * 2 + 'HISTORIAL PREVIO DE ESTA SESION (solo contexto, no es una orden; lo unico que debes atender es el INPUT ACTUAL):' + nl + h) if h else ''
 _MODELOS: dict[str, dict[str, Any]] = {}
 _PROGRESO: dict[str, dict[str, str]] = {}
 
@@ -148,7 +163,7 @@ def _muta(texto: str) -> bool:
     return bool(_RE_MUTA.search(t))
 
 
-_SEM = threading.BoundedSemaphore(6)  # maximo de llamadas de modelo a la vez entre todas las tareas; las demas esperan en cola
+_SEM = threading.BoundedSemaphore(4)  # maximo de llamadas de modelo a la vez entre todas las tareas; las demas esperan en cola
 _TAREAS = {}  # plan pendiente de aprobacion por (ficha, conversacion)
 
 
@@ -710,7 +725,7 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
     nl = chr(10)
     prompt = ('MODO RESPUESTA RAPIDA.' + nl + 'Responde directamente a la pregunta.' + nl + 'No uses herramientas.' + nl + 'No ejecutes cambios.' + nl +
               'No hagas plan, DAG, checklist ni diagrama salvo que el usuario lo pida.' + nl + 'No abras otra ronda.' + nl +
-              'Responde claro y completo con la menor latencia posible.' + nl * 2 + 'PREGUNTA:' + nl + str(mensaje or '')[:fc['context_chars']])
+              'Responde claro y completo con la menor latencia posible.' + nl * 2 + 'PREGUNTA:' + nl + str(mensaje or '')[:fc['context_chars']] + _hb(opts, nl))
     n = {'id': 'FAST', 'modelo': modelo, 'timeout_s': fc['timeout_s'], 'max_output_tokens': fc['max_output_tokens'], 'requiere_tools': False, 'escribe': False}
     opts.setdefault('metricas', {})  # la copia comparte estos dicts: asi las metricas de la llamada no se pierden
     opts.setdefault('tiempos', {})
@@ -750,7 +765,7 @@ def _consult(ficha, nodos, mensaje, elegido, pid, opts):
         return str(r)
 
     base = ('MODO CONSULTA RAPIDA. Responde directamente con tu opinion, clara y concreta (maximo 150 palabras). No uses herramientas. No ejecutes cambios.'
-            + nl * 2 + 'PREGUNTA:' + nl + mensaje)
+            + nl * 2 + 'PREGUNTA:' + nl + mensaje + _hb(opts, nl))
     ops = {}
     ex = _cf.ThreadPoolExecutor(max_workers=len(ids))
     try:
@@ -765,7 +780,7 @@ def _consult(ficha, nodos, mensaje, elegido, pid, opts):
         return 'GAP CONSULTA: menos de 2 opiniones validas del Ask Consil (' + '; '.join(ops[i][:120] for i in ids if ops[i].startswith('GAP')) + ')', []
     bloque = (nl * 2).join('OPINION %s (%s):%s%s' % (i, _NOMBRES.get(mod(i), mod(i)), nl, ops[i][:2500] if i in buenas else '(sin respuesta)') for i in ids)
     pd = ('MODO CONSULTA RAPIDA. Compara las cuatro opiniones y entrega tu decision final. No uses herramientas. No ejecutes cambios. No abras otra ronda.'
-          + nl * 2 + 'PREGUNTA:' + nl + mensaje + nl * 2 + bloque)
+          + nl * 2 + 'PREGUNTA:' + nl + mensaje + _hb(opts, nl) + nl * 2 + bloque)
     decision = uno(dec, pd, fc['decision_timeout_s'], fc['decision_max_tokens'])
     if decision.startswith('GAP') or not decision.strip():
         opts['parcial'] = bloque
@@ -806,6 +821,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         perfil = 'fast'
     elif (n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe:
         perfil = 'auditoria'
+    elif str(ficha.get('ficha') or '').startswith('ficha3') and n.get('id') in ('N1', 'N2', 'N3', 'N3B', 'N3D'):
+        perfil = 'normal'  # Ficha 3: el perfil lo decide el nodo; los analistas no pasan a code solo porque la tarea muta (N4 es el unico escritor)
     elif opts.get('muta') or escribe or opts.get('perfil') == 'code' or opts.get('es_cambio'):
         perfil = 'code'
     else:
@@ -1010,8 +1027,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         opts['fast_button'] = False
         opts['fast_fallback'] = True
     _pesado = bool(opts.get('fast_reply')) and str(opts.get('task_type') or '') in _fast_cfg(ficha)['blocked_task_types']  # ⚡ + ruta pesada: ningun carril rapido, flujo completo
-    opts['fast_lane'] = (not _pesado) and _fast_chat_ok(ficha, mensaje, opts, nodos)
-    if not opts['fast_lane'] and not _pesado and _fast_consult_ok(ficha, mensaje, opts, nodos):
+    opts['fast_lane'] = bool(opts.get('fast_reply')) and (not _pesado) and _fast_chat_ok(ficha, mensaje, opts, nodos)  # ⚡ apagado = nunca modo rapido desde el chat
+    if not opts['fast_lane'] and opts.get('fast_reply') and not _pesado and _fast_consult_ok(ficha, mensaje, opts, nodos):
         opts['fast_lane'] = True
         opts['fast_consult'] = True
         return _consult(ficha, nodos, mensaje, elegido, pid, opts)
@@ -1030,7 +1047,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             nl_ = chr(10)
             r = nl_.join(g.get('texto', '') for g in n.get('goals', []) if g.get('texto') and g.get('texto') != 'PONER AQUI')
             if i == 'N0':  # N0 real: el input literal del Director + las instrucciones fijas y restricciones de la tarea
-                r = 'INPUT LITERAL DEL DIRECTOR:' + nl_ + mensaje + (nl_ * 2 + r if r else '')
+                r = 'INPUT LITERAL DEL DIRECTOR:' + nl_ + mensaje + _hb(opts, nl_) + (nl_ * 2 + r if r else '')
                 if opts.get('anexo_entrada'):
                     r += nl_ * 2 + 'REVISION DE ENTRADA (sheriff / agente de memoria, Qwen 3.6 Flash):' + nl_ + str(opts['anexo_entrada'])[:1500]
             elif n.get('depende_de'):  # N5 real: plan aprobado + criterios de PASS + evidencia requerida
@@ -1040,6 +1057,8 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                      'EVIDENCIA REQUERIDA: archivo o destino afectado, herramienta usada y resultado real.' + (nl_ * 2 + r if r else ''))
             _prog(pid, i, 'ok')
             return r
+        if pid and pid in _CANCEL:
+            return 'GAP CANCELADO_POR_USUARIO: Detener antes de este paso'
         _prog(pid, i, 'trabajando')
         _tn = time.time()
         _meta(pid, i, nodos[i].get('modelo') if nodos[i].get('modelo') != 'selector' else elegido, _tarea_visor(nodos, i))
@@ -1048,7 +1067,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         if opts.get('fast_lane') and n.get('id') == 'N4':
             prompt = ('MODO RESPUESTA RAPIDA.' + nl + 'Responde directamente a la pregunta del usuario.' + nl + 'No uses herramientas.' + nl + 'No hagas cambios.' + nl +
                       'No crees planes ni diagramas salvo que el usuario los pida.' + nl + 'Se claro y breve, pero responde completamente.' + nl * 2 +
-                      'PREGUNTA:' + nl + mensaje[:_fast_cfg(ficha)['context_chars']])
+                      'PREGUNTA:' + nl + mensaje[:_fast_cfg(ficha)['context_chars']] + _hb(opts, nl))
         else:
             prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
         if n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado'):
@@ -1121,7 +1140,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     maxc = int((ficha.get('loop') or {}).get('correcciones') or 1)
     ronda = 0
     tope_s = float((ficha.get('loop') or {}).get('max_segundos') or 600)
-    while opts.get('aprobado') and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7', 'N8')):
+    while opts.get('aprobado') and not (pid and pid in _CANCEL) and ronda < maxc and time.time() - _t0 < tope_s and any(_fallo(out.get(k)) for k in ('N6', 'N7', 'N8')):
         ronda += 1  # N6/N7/N8 revisan y refactorizan; si queda un defecto real que no pudieron resolver, N4 corrige y se revisa otra vez
         opts['ronda'] = ronda
         opts['correccion'] = chr(10).join(str(out.get(k) or '')[-1500:] for k in ('N6', 'N7', 'N8') if _fallo(out.get(k)))
@@ -1181,7 +1200,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if ap:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
     pend_t = _pend_cargar(fid, ses) if ap else None
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:
@@ -1282,6 +1301,11 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             return r
         except Exception as x:  # noqa: BLE001
             return {"error": "CHAT_FAILED", "detalle": type(x).__name__}
+    if action == "cancelar":  # Detener: en cola se cancela antes de ejecutar; si ya corre, no se lanzan los pasos siguientes
+        k = str(p.get("proceso_id") or "")
+        _CANCEL.add(k)
+        it = _PROCESOS.get(k)
+        return {"estado": "cancelado", "proceso_id": k, "en_cola": bool(it and it[0].cancel())}
     if action == "llm":
         return _llm(p)
     return {"error": "ACCION_DESCONOCIDA"}

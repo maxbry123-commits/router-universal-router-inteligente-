@@ -1,32 +1,38 @@
 // Ventana ⚓ de friccion cero + instrucciones fijas + historial persistente.
 // Solo frontend del chat. Sin tocar el Router. Todo se guarda en el navegador (localStorage) y sobrevive a recargas y a cambios de chat.
 const CLAVE_HIST = "riu_hist_v1";
-const MAX_MSG = 120;
-const MAX_TXT = 8000;
 
 const leer = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } };
 const escribir = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
 const el = (tag, texto, cls) => { const d = document.createElement(tag); if (texto) d.textContent = texto; if (cls) d.className = cls; return d; };
 
-// ---- historial por sesion ----
-export const cargarHistorial = (sesion) => { const t = leer(CLAVE_HIST) || {}; return Array.isArray(t[sesion]) ? t[sesion] : []; };
+// ---- historial por sesion: la copia COMPLETA vive en IndexedDB y localStorage guarda solo una cache corta; nunca se borra nada por falta de cuota ----
+const memo = {};
+const idb = () => new Promise((ok, no) => { const r = indexedDB.open("riu_hist", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+const idbLeer = async (k) => { try { const d = await idb(); return await new Promise((ok) => { const q = d.transaction("h").objectStore("h").get(k); q.onsuccess = () => ok(Array.isArray(q.result) ? q.result : []); q.onerror = () => ok([]); }); } catch (e) { return []; } };
+const idbEscribir = async (k, v) => { try { const d = await idb(); await new Promise((ok) => { const tx = d.transaction("h", "readwrite"); if (v === null) tx.objectStore("h").delete(k); else tx.objectStore("h").put(v, k); tx.oncomplete = ok; tx.onerror = ok; tx.onabort = ok; }); } catch (e) {} };
+const cache = (sesion) => { const t = leer(CLAVE_HIST) || {}; return Array.isArray(t[sesion]) ? t[sesion] : []; };
+export const cargarHistorial = (sesion) => memo[sesion] || cache(sesion);
+const guardar = (sesion) => { idbEscribir(sesion, memo[sesion]); const t = leer(CLAVE_HIST) || {}; t[sesion] = memo[sesion].slice(-40); escribir(CLAVE_HIST, t); };
 export const registrar = (sesion, rol, texto) => {
-  const t = leer(CLAVE_HIST) || {};
-  const l = Array.isArray(t[sesion]) ? t[sesion] : [];
-  l.push({ rol, texto: String(texto == null ? "" : texto).slice(0, MAX_TXT), ts: Date.now() });
-  t[sesion] = l.slice(-MAX_MSG);
-  if (!escribir(CLAVE_HIST, t)) {  // sin espacio: recorta lo mas viejo de todos los chats y reintenta
-    for (const k of Object.keys(t)) t[k] = t[k].slice(-Math.ceil(MAX_MSG / 4));
-    escribir(CLAVE_HIST, t);
-  }
+  if (!memo[sesion]) memo[sesion] = cache(sesion).slice();
+  memo[sesion].push({ rol, texto: String(texto == null ? "" : texto), ts: Date.now() });
+  guardar(sesion);
 };
-// vuelve a pintar el historial guardado en el chat c (c.hist = contenedor). burbuja = la funcion de panel-chat.js
-export const restaurar = (c, burbuja) => {
-  const l = cargarHistorial(c.sesion);
+export const reemplazar = (sesion, viejo, nuevo) => {  // editar una salida SUSTITUYE la anterior (sin duplicados)
+  const l = memo[sesion] || (memo[sesion] = cache(sesion).slice());
+  for (let i = l.length - 1; i >= 0; i--) if (l[i].rol !== "user" && l[i].texto === viejo) { l[i].texto = nuevo; guardar(sesion); return true; }
+  return false;
+};
+export const olvidar = (sesion) => { delete memo[sesion]; idbEscribir(sesion, null); const t = leer(CLAVE_HIST) || {}; delete t[sesion]; escribir(CLAVE_HIST, t); };  // solo al eliminar ese chat
+// vuelve a pintar el historial completo en el chat c (c.hist = contenedor). burbuja = la funcion de panel-chat.js
+export const restaurar = async (c, burbuja) => {
+  const completo = await idbLeer(c.sesion), corto = cache(c.sesion), ult0 = completo.length ? completo[completo.length - 1].ts : 0;
+  const l = completo.concat(corto.filter((m) => m.ts > ult0)); memo[c.sesion] = l;
   if (!l.length) return;
   for (const m of l) c.hist.append(m.rol === "user" ? burbuja(m.texto, "user") : m.rol === "err" ? burbuja(m.texto, "error") : burbuja(m.texto));
   const ult = l[l.length - 1];
-  if (ult.rol === "user") c.hist.append(burbuja("La respuesta se interrumpió al recargar la página. Reenvía tu mensaje si hace falta.", "meta"));
+  if (ult.rol === "user" && !(window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion))) c.hist.append(burbuja("La respuesta se interrumpió al recargar la página. Reenvía tu mensaje si hace falta.", "meta"));
 };
 
 // ---- instrucciones fijas: el modelo las revisa antes de leer la orden, despues de leerla y antes de escribir su salida ----

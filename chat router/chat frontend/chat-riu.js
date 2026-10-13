@@ -33,12 +33,14 @@ export function conectarRiu({ q }) {
   const bajar = document.createElement("button"); bajar.type = "button"; bajar.className = "riu-bajar"; bajar.hidden = true;
   bajar.title = "Bajar al final"; bajar.setAttribute("aria-label", "Bajar al final"); bajar.innerHTML = ICO_BAJAR;
   hist.prepend(barra); hist.append(bajar);
+  const subir = document.createElement("button"); subir.type = "button"; subir.className = "riu-bajar riu-subir"; subir.hidden = true; subir.title = "Ir al principio"; subir.setAttribute("aria-label", "Ir al principio"); subir.innerHTML = ICO_BAJAR; hist.append(subir);
+  subir.addEventListener("click", () => { const h = [...hist.querySelectorAll(".chat-history")].find((x) => !x.hidden && x.offsetParent !== null); if (h) h.scrollTo({ top: 0, behavior: "smooth" }); });
   const activa = () => [...hist.querySelectorAll(".chat-history")].find((h) => !h.hidden && h.offsetParent !== null);
   const medir = () => {
-    const h = activa(); if (!h) { barra.style.width = "0"; if (!bajar.hidden) bajar.hidden = true; return; }
+    const h = activa(); if (!h) { barra.style.width = "0"; if (!bajar.hidden) bajar.hidden = true; subir.hidden = true; return; }
     const max = h.scrollHeight - h.clientHeight;
     barra.style.width = max > 4 ? Math.round((h.scrollTop / max) * 100) + "%" : "0";
-    { const v = !(max - h.scrollTop > 160); if (bajar.hidden !== v) bajar.hidden = v; }
+    { if (bajar.hidden) bajar.hidden = false; if (subir.hidden) subir.hidden = false; }
   };
   bajar.addEventListener("click", () => { const h = activa(); if (h) h.scrollTo({ top: h.scrollHeight, behavior: "smooth" }); });
   hist.addEventListener("scroll", medir, { capture: true, passive: true });

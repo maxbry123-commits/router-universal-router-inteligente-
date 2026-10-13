@@ -151,8 +151,10 @@ export function conectarSelectores({ q }) {
       }
     }
     pintarResp();
+    const nb = botones["ask-consil-nvidia-groq"]; if (nb) { nb.disabled = true; nb.textContent = "NO DISPONIBLE"; nb.title = "Sin backend cableado: no se usa hasta que exista"; }
   };
   const cambiar = (nuevo) => {
+    if (nuevo === "ask-consil-nvidia-groq") return;  // nunca cae en silencio a otro modelo
     const anterior = leer();
     escribir(nuevo); pintar();
     const nombre = nuevo ? SELECTORES.find((s) => s.id === nuevo).nombre : null;

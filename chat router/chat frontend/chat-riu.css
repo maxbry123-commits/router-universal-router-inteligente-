@@ -16,3 +16,5 @@
 .composer-bar .btn-microfono.on{animation:riu-mic 1.1s ease-in-out infinite}
 @keyframes riu-mic{50%{box-shadow:0 0 0 6px rgba(18,216,106,.18)}}
 @media(prefers-reduced-motion:reduce){.message.pending .txt::before,.composer-bar .btn-microfono.on{animation:none}}
+
+.riu-subir{bottom:56px}.riu-subir svg{transform:rotate(180deg)}

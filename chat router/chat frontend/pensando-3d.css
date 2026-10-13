@@ -20,3 +20,5 @@
 @keyframes p3d-a1{from{transform:rotateX(70deg) rotateZ(0)}to{transform:rotateX(70deg) rotateZ(360deg)}}
 @keyframes p3d-a2{from{transform:rotateY(70deg) rotateZ(0)}to{transform:rotateY(70deg) rotateZ(-360deg)}}
 @media(prefers-reduced-motion:reduce){.p3d-cubo,.p3d-anillo{animation:none}}
+
+.p3d{position:static!important;flex:0 0 auto;padding:0 6px;gap:6px;background:transparent;border:0;box-shadow:none}.p3d-escena{transform:scale(.78);margin:-6px -4px}

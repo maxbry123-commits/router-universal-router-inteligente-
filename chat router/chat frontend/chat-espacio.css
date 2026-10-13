@@ -1,16 +1,13 @@
 /* chat-espacio.css — espacio del chat (archivo propio; se carga despues de shell.css y responsive.css).
    Salida ~2x mas alta en celular, pastillas en una sola fila, anclados en 2 lineas, input mas bajo. */
-.chat-history{height:max(1300px,170dvh)}
 @media(max-width:720px){
   h1{font-size:18px;margin:0 0 8px}
   .chat-tabs{margin-bottom:6px}
   section>.row.fields{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:6px 0}
   section>.row.fields::-webkit-scrollbar{display:none}
   section>.row.fields .pill{flex:0 0 auto}
-  .chat-history{height:max(1400px,175dvh);min-height:1400px}
   #composer textarea{min-height:40px}
 }
-@media(max-width:480px){.chat-history{height:max(1400px,175dvh);min-height:1400px}}
 .composer-bar .btn-microfono.on{border-color:var(--status-green);color:var(--status-green)}
 .composer-bar .btn-microfono.bloq{opacity:.4;cursor:not-allowed}
 /* ventanas: fondo quieto con una ventana abierta, titulo que no se corta, diagrama completo sin cortes */
@@ -26,7 +23,7 @@
 #ventana-ancla .anc-sec:first-of-type{margin-top:4px}
 #ventana-ancla #mi-handoff{min-height:64px}
 /* salida 3x mas larga: la caja de escritura queda pegada abajo para no tener que buscarla */
-#composer{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:6}
+#composer{flex:0 0 auto;position:static;z-index:6;padding-bottom:env(safe-area-inset-bottom,0px)}
 /* ventanas: las listas ya no tienen scroll propio; se desliza la ventana entera (el dedo ya no queda atrapado en una lista) */
 .sheet .va-caja .list{max-height:none;overflow:visible;flex:0 0 auto}
 .sheet .va-caja{overscroll-behavior-y:contain}
@@ -34,3 +31,13 @@
 #ventana-ancla .va-item span{min-width:0;overflow-wrap:anywhere}
 #ventana-ancla #anc-pegar{max-height:112px}
 .anc-sec{scroll-margin-top:64px}
+
+/* layout del chat: barra Controles + historial con su propio scroll + composer (sin alturas artificiales) */
+section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh - 118px);min-height:440px;gap:6px}
+.ctl-barra{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:100%;min-height:34px;padding:4px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-size:14px;cursor:pointer}
+.ctl-panel{flex:0 0 auto;max-height:0;overflow:hidden;transition:max-height .28s ease}
+.ctl-panel.abierto{max-height:62dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ctl-int>.row.fields{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:6px 0}
+.ctl-int>.row.fields .pill{flex:0 0 auto}
+#histories{flex:1 1 auto;min-height:0;position:relative;display:flex;flex-direction:column}
+.chat-history{flex:1 1 auto;min-height:0;height:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
