@@ -1,16 +1,20 @@
 /* chat-espacio.css — espacio del chat (archivo propio; se carga despues de shell.css y responsive.css).
-   Salida ~2x mas alta en celular, pastillas en una sola fila, anclados en 2 lineas, input mas bajo. */
-.chat-history{height:max(1300px,170dvh)}
+   Salida con scroll propio: el usuario puede leer arriba sin que el procesamiento lo devuelva al final. */
+.chat-controls{margin:0 0 10px;padding:2px 0 4px;background:var(--bg);position:relative;z-index:7}
+.chat-controls .chat-tabs{margin-bottom:6px}
+.chat-controls>.row.fields{margin:6px 0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chat-controls>.row.fields::-webkit-scrollbar{display:none}
+.chat-controls>.row.fields .pill{flex:0 0 auto}
+
+/* GAP 3: el historial tiene su propio viewport. Ya no se infla a 1400px/175dvh. */
+.chat-history{height:min(72dvh,900px);min-height:420px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
 @media(max-width:720px){
   h1{font-size:18px;margin:0 0 8px}
-  .chat-tabs{margin-bottom:6px}
-  section>.row.fields{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:6px 0}
-  section>.row.fields::-webkit-scrollbar{display:none}
-  section>.row.fields .pill{flex:0 0 auto}
-  .chat-history{height:max(1400px,175dvh);min-height:1400px}
+  .chat-controls{margin-bottom:8px}
+  .chat-history{height:58dvh;min-height:360px}
   #composer textarea{min-height:40px}
 }
-@media(max-width:480px){.chat-history{height:max(1400px,175dvh);min-height:1400px}}
+@media(max-width:480px){.chat-history{height:56dvh;min-height:320px}}
 .composer-bar .btn-microfono.on{border-color:var(--status-green);color:var(--status-green)}
 .composer-bar .btn-microfono.bloq{opacity:.4;cursor:not-allowed}
 /* ventanas: fondo quieto con una ventana abierta, titulo que no se corta, diagrama completo sin cortes */
@@ -25,8 +29,8 @@
 #ventana-ancla .anc-sec{margin:14px 4px 2px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet-2)}
 #ventana-ancla .anc-sec:first-of-type{margin-top:4px}
 #ventana-ancla #mi-handoff{min-height:64px}
-/* salida 3x mas larga: la caja de escritura queda pegada abajo para no tener que buscarla */
-#composer{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:6}
+/* GAP 3: composer en flujo normal. Así el MutationObserver antiguo no puede empujar la página al fondo. */
+#composer{position:static;bottom:auto;z-index:6}
 /* ventanas: las listas ya no tienen scroll propio; se desliza la ventana entera (el dedo ya no queda atrapado en una lista) */
 .sheet .va-caja .list{max-height:none;overflow:visible;flex:0 0 auto}
 .sheet .va-caja{overscroll-behavior-y:contain}
