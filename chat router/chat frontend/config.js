@@ -69,23 +69,53 @@ window.addEventListener('riu:selector-activo', () => {
   } catch (e) {}
 });
 
-// GAP 2 — Chat 1/2/3 + modo + mas + ancla + motor viven FUERA del marco del historial.
-// Se mueven los mismos nodos (no se clonan), por lo que conservan todos sus listeners y estados.
+// GAP 2 definitivo — los controles superiores salen físicamente del marco del historial.
+// Quedan en una pestaña fija "Controles" que abre/cierra un panel deslizante.
 (() => {
-  const separarControles = () => {
-    if (document.getElementById('chat-controls')) return;
+  let intentos = 0;
+  const montarDock = () => {
+    intentos += 1;
+    if (document.getElementById('chat-controls-dock')) return;
     const tabs = document.getElementById('chat-tabs');
     const histories = document.getElementById('histories');
-    const frame = histories && histories.closest('section');
-    if (!tabs || !histories || !frame) return;
-    const fields = tabs.nextElementSibling && tabs.nextElementSibling.classList.contains('fields') ? tabs.nextElementSibling : null;
-    if (!fields) return;
-    const controles = document.createElement('div');
-    controles.id = 'chat-controls';
-    controles.className = 'chat-controls';
-    frame.parentNode.insertBefore(controles, frame);
-    controles.append(tabs, fields);
+    const fields = tabs && tabs.nextElementSibling && tabs.nextElementSibling.classList.contains('fields') ? tabs.nextElementSibling : null;
+    if (!tabs || !fields || !histories) {
+      if (intentos < 50) setTimeout(montarDock, 100);
+      return;
+    }
+
+    const dock = document.createElement('div');
+    dock.id = 'chat-controls-dock';
+    dock.className = 'chat-controls-dock';
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.id = 'chat-controls-toggle';
+    toggle.className = 'chat-controls-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-controls', 'chat-controls-panel');
+    toggle.textContent = 'Controles ▾';
+
+    const panel = document.createElement('div');
+    panel.id = 'chat-controls-panel';
+    panel.className = 'chat-controls-panel';
+    panel.setAttribute('aria-hidden', 'true');
+
+    // Se mueven los nodos reales, no se clonan: conservan todos sus listeners/estado.
+    panel.append(tabs, fields);
+    dock.append(toggle, panel);
+    document.body.append(dock);
+
+    const abrir = (on) => {
+      dock.classList.toggle('open', on);
+      toggle.setAttribute('aria-expanded', String(on));
+      toggle.textContent = on ? 'Controles ▴' : 'Controles ▾';
+      panel.setAttribute('aria-hidden', String(!on));
+    };
+    toggle.addEventListener('click', () => abrir(!dock.classList.contains('open')));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrir(false); });
   };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', separarControles, { once: true });
-  else setTimeout(separarControles, 0);
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montarDock, { once: true });
+  else setTimeout(montarDock, 0);
 })();
