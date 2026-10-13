@@ -55,7 +55,6 @@ _optimizar_ficha3()
 
 
 def _fast_chat_ok(ficha, mensaje, opts, nodos):
-    """Ficha 1 y Ficha 4 en chat: OFF significa OFF."""
     fid = str((ficha or {}).get("ficha") or "")
     if (fid.startswith("ficha1") or fid.startswith("ficha4")) and not bool((opts or {}).get("fast_reply")):
         return False
@@ -63,7 +62,6 @@ def _fast_chat_ok(ficha, mensaje, opts, nodos):
 
 
 def _fast_consult_ok(ficha, mensaje, opts, nodos):
-    """Fichas 2/3 en chat: no activar FAST_CONSULT con el boton rapido apagado."""
     fid = str((ficha or {}).get("ficha") or "")
     if (fid.startswith("ficha2") or fid.startswith("ficha3")) and not bool((opts or {}).get("fast_reply")):
         return False
@@ -71,7 +69,7 @@ def _fast_consult_ok(ficha, mensaje, opts, nodos):
 
 
 def _separar_entrada(texto):
-    """Devuelve (input_literal, contexto_para_modelos) sin dejar que contexto cambie la clasificacion."""
+    """Devuelve input literal + contexto/instrucciones que solo veran los modelos."""
     s = str(texto or "")
     extras = []
     if s.startswith("[CONTEXTO PREVIO DE ESTA MISMA SESIÓN") and "[FIN CONTEXTO PREVIO]" in s:
@@ -88,14 +86,23 @@ def _separar_entrada(texto):
     return s.strip(), "\n\n".join(x for x in extras if x).strip()
 
 
+def _ultimo_user(messages):
+    for m in reversed(messages or []):
+        if isinstance(m, dict) and m.get("role") == "user":
+            return str(m.get("content") or "")
+    return ""
+
+
 def _chat_con_contexto(p):
     q = dict(p or {})
-    literal, extra = _separar_entrada(q.get("message") or "")
+    bruto = str(q.get("message") or "") or _ultimo_user(q.get("messages") or [])
+    literal, extra = _separar_entrada(bruto)
     extra_payload = str(q.get("contexto_previo") or "").strip()
     if extra_payload:
         extra = (extra + "\n\n" + extra_payload).strip() if extra else extra_payload
-    if q.get("message") is not None:
-        q["message"] = literal
+
+    # Siempre fijamos message: asi el core NO vuelve a clasificar el bloque envuelto de messages[].
+    q["message"] = literal
     anterior = getattr(_ctx_local, "extra", "")
     _ctx_local.extra = extra
     try:
