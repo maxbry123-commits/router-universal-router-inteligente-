@@ -22,3 +22,20 @@ window.RIU_CONFIG = {
     { id: 'nv-muse-glimmer', etiqueta: 'NV Muse Glimmer 30B' }
   ]
 };
+
+// GAP fast-reply: al restaurar un chat, panel-chat carga fastReply antes de que el panel de Selectores
+// tenga acceso a window.RIU_CHAT. Reintenta hasta que ambos existan y fuerza una sola sincronizacion visual.
+(() => {
+  let intentos = 0;
+  const sincronizarFastReply = () => {
+    intentos += 1;
+    const listo = !!(window.RIU_CHAT && window.RIU_SELECTORES && typeof window.RIU_SELECTORES.refrescar === 'function');
+    if (listo) {
+      window.RIU_SELECTORES.refrescar();
+      window.dispatchEvent(new CustomEvent('riu:fast-reply', { detail: { sync: true } }));
+      return;
+    }
+    if (intentos < 30) setTimeout(sincronizarFastReply, 100);
+  };
+  setTimeout(sincronizarFastReply, 0);
+})();
