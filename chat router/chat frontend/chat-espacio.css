@@ -55,3 +55,11 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
 }
 #histories .riu-bajar{width:30px;height:30px;opacity:.8;right:6px;bottom:8px}
 #histories .riu-subir{bottom:44px}
+
+/* ranuras de reacomodo (movil <-> escritorio): no pintan nada, los nodos se mueven dentro */
+#h1-slot,#h1-slot-int,#sel-slot-ctl,#sel-slot-bajo{display:contents}
+.ctl-int h1{font-size:18px;margin:0 0 6px;text-align:center}
+/* movil: el selector de MODELO IA queda debajo del area de escritura; la conversacion conserva ~toda la pantalla */
+@media(max-width:720px){
+  #sel-slot-bajo #selectores{margin:8px 0 0}
+}

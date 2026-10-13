@@ -230,12 +230,36 @@ def _perfil_explicito():
     return _PERFILES.get(_PERFIL.get() or '')
 
 
+def _soltar_turno_viejo(ms):
+    # Suelta el turno completo mas viejo: user + su respuesta (assistant + tool_calls + tool results).
+    # Nunca toca el ultimo user (input actual) y nunca parte la cadena assistant(tool_calls) -> tool.
+    i = next((k for k, m in enumerate(ms) if m.get('role') == 'user'), -1)
+    if i < 0 or not any(m.get('role') == 'user' for m in ms[i + 1:]):
+        return False  # no quedan turnos completos que soltar (el ultimo user es intocable)
+    j = next((k for k in range(i + 1, len(ms)) if ms[k].get('role') == 'user'), len(ms))
+    del ms[i:j]
+    return True
+
+
+def _es_contexto_largo(ultimo):
+    # el provider dice que la conversacion no cabe en su ventana (no es un error de formato ni de clave)
+    if not isinstance(ultimo[1], dict) or ultimo[0] not in (400, 413, 422):
+        return False
+    detalle = json.dumps(ultimo[1]).lower()
+    return any(x in detalle for x in ('context', 'too large', 'too many tokens', 'reduce the length', 'input length', 'max_tokens'))
+
+
 def _recortar(mensajes, limite=None):
     # Mantiene el envio por debajo del tope de la API: acorta salidas de
-    # herramientas y luego suelta los turnos mas viejos (sin romper pares
-    # assistant(tool_calls) -> tool).
+    # herramientas y luego suelta los turnos mas viejos completos (sin romper
+    # la cadena assistant(tool_calls) -> tool ni tocar el input actual).
+    # Perfil vacio (chat normal / Team 5): sin tope artificial; si el provider
+    # devuelve context-too-large, _llamar_api suelta turnos viejos y reintenta.
     if limite is None:
-        limite = _perfil()[0]
+        pe = _perfil_explicito()
+        if pe is None:
+            return [dict(m) for m in mensajes]
+        limite = pe[0]
     tmax = _perfil()[1]
     ms = [dict(m) for m in mensajes]
     for m in ms:
@@ -243,20 +267,14 @@ def _recortar(mensajes, limite=None):
             m['content'] = m['content'][:tmax] + ' ...[recortado]'
     def tam():
         return sum(len(str(m.get('content') or '')) + len(json.dumps(m.get('tool_calls') or '')) for m in ms)
-    while len(ms) > 3 and tam() > limite:
-        for i, m in enumerate(ms):
-            if m.get('role') == 'system':
-                continue
-            ms.pop(i)
-            if m.get('tool_calls'):
-                while i < len(ms) and ms[i].get('role') == 'tool':
-                    ms.pop(i)
-            break
-        else:
+    while tam() > limite:
+        if not _soltar_turno_viejo(ms):
             break
     return ms
 
 
+_MAX_COMPLETION = {'qwen3.8-max', 'qwen3.8-flash', 'qwen3.7-max', 'qwen3.7-plus',
+                   'deepseek-v4-pro', 'deepseek-v4-pro-0813', 'deepseek-v4-flash-0731', 'glm-5.2'}
 _POL_MODELO = {'qwen3.8-flash': 'ficha-qwen38flash', 'qwen3.6-flash': 'ficha-qwen36flash',
                'deepseek-v4-pro': 'ficha-dsv4pro', 'deepseek-v4-pro-0813': 'ficha-dsv4pro0813',
                'deepseek-v4-flash-0731': 'ficha-dsv4flash', 'glm-5.2': 'ficha-glm52', 'qwen3.7-flash': 'ficha-qwen38flash', 'qwen3.8-max': 'ficha-qwen38max'}
@@ -382,6 +400,8 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if proveedor == 'groq':
                 resta = min(resta, 45)  # una clave lenta no se come el tiempo de las demas
             cuerpo = {'model': modelo, 'messages': _recortar(mensajes), 'max_tokens': max_tokens}
+            if proveedor == 'qwencloud' and modelo in _MAX_COMPLETION:
+                cuerpo['max_completion_tokens'] = cuerpo.pop('max_tokens')  # limite conjunto razonamiento + salida
             if modelo == 'z-ai/glm-5.3':
                 cuerpo['reasoning_effort'] = 'low'
                 cuerpo['chat_template_kwargs'] = {'clear_thinking': True}
@@ -395,6 +415,19 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             ex = _extras(pol, tools)
             cuerpo.update(ex)
             ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+            if ultimo[0] == 400 and 'max_completion_tokens' in cuerpo and 'max_completion' in json.dumps(ultimo[1]).lower():
+                cuerpo['max_tokens'] = cuerpo.pop('max_completion_tokens')  # el endpoint lo rechaza: misma llamada con max_tokens
+                resta = fin - time.monotonic()
+                if resta >= 2:
+                    ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+            largo = 0
+            while _es_contexto_largo(ultimo) and largo < 12 and _soltar_turno_viejo(mensajes):
+                largo += 1  # no cabe en la ventana del provider: soltar el turno completo mas viejo y reintentar (mismo modelo, misma clave)
+                resta = fin - time.monotonic()
+                if resta < 2:
+                    break
+                cuerpo['messages'] = _recortar(mensajes)
+                ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
             if ex and ultimo[0] == 400:  # el endpoint no admite algun extra de la politica: mismo modelo, misma clave, sin esos extras
                 for k_ in ex:
                     cuerpo.pop(k_, None)
@@ -1711,7 +1744,7 @@ def _chat(p):
     if gov_err:
         return gov_err
     gov_bloque = gov_info.pop('_bloque', '') if gov_info else ''
-    ctx = _contexto(sesion, pregunta) if pregunta else ''
+    ctx = '' if p.get('contexto_explicito') else (_contexto(sesion, pregunta) if pregunta else '')  # Team 5: el historial ya va en messages''
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
     if gov_bloque:  # Constitucion validada: primero, antes de memoria y anclas
         sistema += ' ' + gov_bloque

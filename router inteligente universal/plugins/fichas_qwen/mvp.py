@@ -82,7 +82,8 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
     r = pc._chat({'model': qw, 'messages': conv, 'max_tokens': mt, 'sesion': ses,
                   'presupuesto_s': _TIMEOUT_S, 'solo_lectura': False, 'requiere_tools': False,
                   'tarea_id': str(p.get('tarea_id') or ''), 'task_id': str(p.get('task_id') or ''),
-                  'anclados': list(p.get('anclados') or []), 'perfil': str(p.get('perfil') or 'code')})
+                  'anclados': list(p.get('anclados') or []), 'perfil': str(p.get('perfil') or ''),
+                  'contexto_explicito': True})  # el historial completo ya va en messages: sin perfil artificial y sin reinsertar _contexto() en el system
     if pid:
         fq._prog(pid, 'MVP', 'gap' if (isinstance(r, dict) and r.get('error')) else 'ok')
     if not isinstance(r, dict):

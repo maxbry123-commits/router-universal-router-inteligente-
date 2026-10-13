@@ -21,6 +21,14 @@ export async function mount(root, { api, tell }) {
   // ---- multi-chat: hasta 5 estancias, cada una con su sesion, su ficha, sus anclas y su historial ----
   const tabsEl = q("#chat-tabs"), histEl = q("#histories");
   const abajo = (c) => { if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight; };  // sigue las respuestas solo si estas cerca del final; el historial tiene su propio scroll
+  const mmMovil = window.matchMedia("(max-width: 720px)");
+  const reacomodoMovil = () => {
+    const h1 = document.querySelector("#h1-slot h1, #h1-slot-int h1");
+    const sel = document.getElementById("selectores");
+    if (h1) (mmMovil.matches ? q("#h1-slot-int") : q("#h1-slot")).appendChild(h1);
+    if (sel) (mmMovil.matches ? q("#sel-slot-bajo") : q("#sel-slot-ctl")).appendChild(sel);
+  };
+  reacomodoMovil(); mmMovil.addEventListener("change", reacomodoMovil);
   const ctlB = q("#ctl-barra"), ctlP = q("#ctl-panel");  // barra Controles: desliza hacia abajo y se recoge; son los mismos botones de siempre (no se clonan ni cambian de nodo)
   if (ctlB && ctlP) ctlB.addEventListener("click", () => { const ab = ctlP.classList.toggle("abierto"); ctlB.setAttribute("aria-expanded", String(ab)); ctlB.textContent = ab ? "Controles ▴" : "Controles ▾"; });
   const medirCtl = () => { const s = document.querySelector(".sidebar") || document.querySelector("#navigation"); const b = s ? Math.round(s.getBoundingClientRect().bottom) : 0; if (b > 0) document.documentElement.style.setProperty("--ctl-top", b + "px"); };  // la barra se pega justo debajo de la tira superior
