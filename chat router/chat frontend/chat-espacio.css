@@ -40,8 +40,11 @@
 @keyframes ctl-desliza{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
 .ctl-int>.row.fields{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:6px 0}
 .ctl-int>.row.fields .pill{flex:0 0 auto}
-section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh - var(--ctl-top,116px) - 66px);min-height:440px;gap:6px}
+/* salida ~4x mas util: la seccion ya no fija una altura que el composer se come; crece con el contenido.
+   El historial tiene flex:1 con un minimo real, el scroll vive en .chat-history y el composer conserva su altura propia abajo. */
+section:has(> #histories){display:flex;flex-direction:column;min-height:calc(100dvh - var(--ctl-top,116px) - 66px);height:auto;gap:6px}
 #histories{flex:1 1 auto;min-height:0;position:relative;display:flex;flex-direction:column}
-.chat-history{flex:1 1 auto;min-height:0;height:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:40px}
+.chat-history{flex:1 1 auto;min-height:min(60dvh, 720px);height:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:40px}
+@media(max-width:720px){.chat-history{min-height:65dvh}}
 #histories .riu-bajar{width:30px;height:30px;opacity:.8;right:6px;bottom:8px}
 #histories .riu-subir{bottom:44px}

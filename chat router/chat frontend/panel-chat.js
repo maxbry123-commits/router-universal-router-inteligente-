@@ -486,7 +486,13 @@ export async function mount(root, { api, tell }) {
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
     const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
-    if (selAct && selAct !== "nvidia-groq-team" && !fichaQwen && !/^ask-consil/.test(selAct)) {
+    const fichaMvp = selAct === "mvp";  // MVP: ruta propia -> plugin ficha_mvp (1 modelo elegido, historial y tools)
+    if (fichaMvp && !c.selectorQwen) {
+      c.hist.append(node("div", "MVP: elige primero un modelo en la hoja MVP ⌄ (el mismo catalogo de la Ficha 1 / Team qwen). No se envio a otro modelo.", "item message meta"));
+      abajo(c);
+      return;
+    }
+    if (selAct && selAct !== "nvidia-groq-team" && !fichaQwen && !/^ask-consil/.test(selAct) && !fichaMvp) {
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
       c.hist.append(node("div", nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.", "item message meta"));
@@ -508,15 +514,16 @@ export async function mount(root, { api, tell }) {
     const model = q("#model").value;
     const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[modo];
     try {
-      const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2 y 3)
+      const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2 y 3); selector MVP -> plugin ficha_mvp
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
-      const body = { message: A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}) };
+      const mvp = selAct === "mvp" ? { plugin: "ficha_mvp", modelo: c.selectorQwen ? c.selectorQwen.label : "" } : null;  // MVP: solo plugin ficha_mvp, sin fichas_qwen, sin N4, sin fallback
+      const body = { message: A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}), ...(mvp || {}) };
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
-      const ctxPrev = (window.RIU_SELECTORES && window.RIU_SELECTORES.activo === "ask-consil-code-qwen-team") ? previo(c, message) : undefined;  // memoria de la misma sesion (Ask consil code)
+      const ctxPrev = (window.RIU_SELECTORES && (window.RIU_SELECTORES.activo === "ask-consil-code-qwen-team" || window.RIU_SELECTORES.activo === "mvp")) ? previo(c, message) : undefined;  // memoria de la misma sesion (Ask consil code / MVP)
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: A.envolver(message, c.instrucciones), max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : null, avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
+        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: A.envolver(message, c.instrucciones), max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
       c.detenerFn = null;
       pending.remove();

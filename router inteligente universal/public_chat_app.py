@@ -10,6 +10,7 @@ class ChatAccess:
             public=(path.startswith("/plugins/puente_chat/call/")
                     or path.startswith("/plugins/fichas/call/")
                     or path.startswith("/plugins/fichas_qwen/call/")
+                    or path.startswith("/plugins/ficha_mvp/call/")
                     or path.startswith("/memoria/")
                     or path.startswith("/espacio/")
                     or path.startswith("/chat/")

@@ -1,0 +1,81 @@
+{
+  "plugin_host": {
+    "schema": "plugin_host/v1",
+    "id": "ficha_mvp",
+    "enabled_default": true,
+    "health_action": "status",
+    "nota_roja": "Ficha MVP (Director 2026-10-13): camino separado de las fichas 1-4. INPUT + HISTORIAL + TOOLS -> 1 modelo elegido del selector de la Ficha 1 -> respuesta. Sin DAG, sin council, sin N4, sin timeout de nodo."
+  },
+  "artifact_id": "riu.plugins.ficha_mvp",
+  "version": "1.0.0",
+  "estado": "testing",
+  "categoria": "pipeline",
+  "etapa": "P",
+  "contrato": {
+    "rol": "service"
+  },
+  "ejecucion": {
+    "kind": "api",
+    "transport": "importlib",
+    "runtime_type": "compute",
+    "entry_point": "plugins.ficha_mvp.plugin:handle",
+    "idempotente": false,
+    "allowed_actions": [
+      "status",
+      "modelos",
+      "chat",
+      "chat_async",
+      "resultado",
+      "cancelar"
+    ]
+  },
+  "seguridad": {
+    "sandbox": "egress-allowlist",
+    "permisos": [
+      "network:http"
+    ],
+    "limites": {
+      "timeout_ms": 30000
+    }
+  },
+  "firma": {
+    "gpg_key_id": "PENDIENTE",
+    "revocation_ref": "contracts/revocation_list.json"
+  },
+  "ficha": "MVP",
+  "selector": {
+    "todos_los_modelos_del_registro_existente": true,
+    "fuente": "plugins/fichas_qwen/fichas/ficha1-modelos.json (selector de la Ficha 1, tal cual)",
+    "modelo_activo": 1
+  },
+  "sesion": {
+    "conservar_historial": true,
+    "mezclar_sesiones": false
+  },
+  "ejecucion_mvp": {
+    "dag": false,
+    "council": false,
+    "reviewers": false,
+    "max_modelos_simultaneos": 1,
+    "timeout_request_ms": 300000,
+    "stream_idle_timeout_ms": 300000
+  },
+  "tools": {
+    "usar_registry_existente": true,
+    "github": "permitido_si_el_router_ya_lo_autoriza",
+    "huggingface": "permitido_si_el_router_ya_lo_autoriza",
+    "filesystem_search_shell": "usar_los_existentes",
+    "tool_calling": "structured"
+  },
+  "contexto": {
+    "input_actual": "literal",
+    "historial_usuario": true,
+    "historial_asistente": true,
+    "auto_compact_threshold": 0.85
+  },
+  "salida": {
+    "devolver_texto_modelo": true,
+    "devolver_tool_calls": true,
+    "sin_formato_forzado": true
+  }
+}

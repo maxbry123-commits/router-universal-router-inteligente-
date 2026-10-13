@@ -81,6 +81,8 @@ export function conectarSelectorModelos(ctx) {
     }
   };
   pill.addEventListener("click", () => { pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
+  const pillMvp = q("#sel-mvp");  // MVP: misma hoja y mismo catalogo; la ruta de envio es otra (plugin ficha_mvp)
+  if (pillMvp) pillMvp.addEventListener("click", () => { pillMvp.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
   new MutationObserver(pintarPill).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   pintarPill();
   conectarSelectores(ctx);
