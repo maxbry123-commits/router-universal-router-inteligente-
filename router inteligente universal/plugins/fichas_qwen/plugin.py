@@ -33,7 +33,6 @@ _ctx_local = _threading.local()
 _CANCELADOS = set()
 _CANCEL_LOCK = _threading.Lock()
 
-# Contrato del Director: hasta 4 solicitudes activas; overflow queda en la cola del executor.
 try:
     _pool_viejo = _core._POOL
     _core._POOL = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas-qwen")
@@ -63,7 +62,6 @@ def _limpiar_cancelado(pid):
 
 
 def _optimizar_ficha3():
-    """Quita una fase serial sin quitar verificadores: N6 || N7 -> N8."""
     f = _core.FICHAS.get("ficha3-frontend")
     if not isinstance(f, dict):
         return
@@ -155,7 +153,8 @@ def _llamar_harness_1_con_contexto(modelo, prompt, ficha, n, opts):
     pid = str((opts or {}).get("pid") or "")
     if _cancelado(pid):
         raise RuntimeError("PROCESO_DETENIDO")
-    extra = str((opts or {}).get("contexto_prompt") or "").strip()
+    # HEAVY trae contexto_prompt por opts; FAST puede saltarse _correr, por eso cae al thread-local.
+    extra = str((opts or {}).get("contexto_prompt") or getattr(_ctx_local, "extra", "") or "").strip()
     if extra and extra not in str(prompt):
         prompt = extra + "\n\n[INPUT / PROMPT ACTUAL]\n" + str(prompt)
     r = _llamar_harness_1_original(modelo, prompt, ficha, n, opts)
