@@ -1,10 +1,12 @@
-// chat-proceso-recovery.js — conserva proceso_id por sesión y retoma /resultado después de una recarga.
-// Nunca relanza la orden: solo vuelve a consultar el proceso original en el Router exacto que lo creó.
+// chat-proceso-recovery.js — conserva proceso_id por sesión y retoma /resultado tras recarga
+// o cuando el cliente normal deja de esperar. Nunca relanza la orden original.
 import { registrar } from './chat-ancla.js';
 
 const CLAVE = 'riu_procesos_v1';
 const MAX_EDAD = 30 * 60 * 1000;
+const RETOMAR_EN_MISMA_PAGINA_MS = 565000; // api.js corta a ~560 s; a partir de aqui este supervisor sigue el mismo proceso_id.
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+const recuperando = new Set();
 
 const leer = () => {
   try {
@@ -22,6 +24,11 @@ const cuerpoJson = (body) => {
 };
 const urlDe = (input) => typeof input === 'string' ? input : (input && input.url) || '';
 const metodoDe = (input, init) => String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+const esReintentoAutomatico = (req) => {
+  const ms = Array.isArray(req && req.messages) ? req.messages : [];
+  if (ms.length < 2) return false;
+  return String((ms[ms.length - 1] || {}).content || '').trim().toLowerCase() === 'continúa el trabajo donde quedó';
+};
 
 function instalarCapturaFetch() {
   if (window.__riuFetchProcesos) return;
@@ -33,6 +40,16 @@ function instalarCapturaFetch() {
     const esInicio = metodo === 'POST' && /\/chat_async(?:[?#].*)?$/.test(url);
     const esResultado = metodo === 'POST' && /\/resultado(?:[?#].*)?$/.test(url);
     const req = cuerpoJson(init && init.body);
+
+    // api.js antiguo añadía este segundo mensaje para volver a ejecutar ciertos errores del bridge.
+    // Eso puede duplicar una tarea. Se devuelve un error controlado sin enviar una segunda ejecución.
+    if (esInicio && esReintentoAutomatico(req)) {
+      return new Response(JSON.stringify({
+        status: 'ok',
+        result: { error: 'REINTENTO_AUTOMATICO_BLOQUEADO', detalle: 'La tarea original no se vuelve a ejecutar automáticamente.' },
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
     const resp = await original(input, init);
     if (esInicio || esResultado) {
       try {
@@ -45,10 +62,10 @@ function instalarCapturaFetch() {
             base: url.replace(/\/chat_async(?:[?#].*)?$/, ''),
             creado: Date.now(),
             ficha_qwen: req.ficha_qwen == null ? null : String(req.ficha_qwen),
+            reintentarDespues: 0,
           });
         }
-        // Un HTTP/envelope temporal no significa que el proceso haya muerto. Solo se limpia cuando
-        // el Router contestó correctamente y confirmó final o error real del proceso.
+        // Solo se elimina cuando el Router respondió correctamente y confirmó final/error real.
         if (esResultado && req.proceso_id && env.status === 'ok' && (p.error || p.estado !== 'procesando')) {
           borrar(String(req.proceso_id));
         }
@@ -81,84 +98,106 @@ function burbuja(texto, cls = '') {
   }
   return d;
 }
-function limpiarFalsoInterrumpido(h) {
-  [...h.querySelectorAll('.message.meta')].forEach((m) => {
-    if ((m.textContent || '').includes('La respuesta se interrumpió al recargar la página')) m.remove();
+function limpiarMarcadoresTransitorios(h) {
+  [...h.querySelectorAll('.message.meta,.message.error')].forEach((m) => {
+    const t = m.textContent || '';
+    if (t.includes('La respuesta se interrumpió al recargar la página') || t.includes('TIEMPO_TOTAL_AGOTADO')) m.remove();
   });
 }
 function textoFinal(p) {
-  return String(
-    (((p.choices || [])[0] || {}).message || {}).content ||
-    p.reply || ''
-  ).trim();
+  return String(((((p.choices || [])[0] || {}).message || {}).content) || p.reply || '').trim();
 }
 
 async function recuperarUno(q, rec) {
+  const id = String(rec.proceso_id || '');
+  if (!id || recuperando.has(id)) return;
   const h = histDeSesion(q, rec.sesion);
   if (!h) return;
-  limpiarFalsoInterrumpido(h);
-  const pending = burbuja('Retomando tarea que seguía en el Router…', 'pending');
+  recuperando.add(id);
+  limpiarMarcadoresTransitorios(h);
+  const pending = burbuja('Retomando la misma tarea que sigue en el Router…', 'pending');
   h.append(pending);
   const key = sessionStorage.getItem('riu_clave') || '';
   const headers = { 'Content-Type': 'application/json' }; if (key) headers['X-API-Key'] = key;
   const fetch0 = window.__riuFetchOriginal || window.fetch.bind(window);
   let fallosRed = 0;
   const limite = Date.now() + 10 * 60 * 1000;
-  while (Date.now() < limite) {
-    try {
-      const r = await fetch0(rec.base.replace(/\/$/, '') + '/resultado', {
-        method: 'POST', headers, body: JSON.stringify({ proceso_id: rec.proceso_id }), credentials: 'omit',
-      });
-      const env = await r.json().catch(() => ({}));
-      if (!r.ok || env.status !== 'ok') {
+  try {
+    while (Date.now() < limite) {
+      try {
+        const r = await fetch0(rec.base.replace(/\/$/, '') + '/resultado', {
+          method: 'POST', headers, body: JSON.stringify({ proceso_id: id }), credentials: 'omit',
+        });
+        const env = await r.json().catch(() => ({}));
+        if (!r.ok || env.status !== 'ok') {
+          fallosRed++;
+          if (fallosRed < 3) { await dormir(1200); continue; }
+          pending.remove();
+          const t = 'Conexión temporal perdida con la tarea; se conserva el proceso y se reintentará sin duplicarlo.';
+          h.append(burbuja(t, 'meta'));
+          guardar({ ...rec, reintentarDespues: Date.now() + 30000 });
+          return;
+        }
+        fallosRed = 0;
+        const p = env.result || {};
+        if (p.error) {
+          pending.remove();
+          const t = p.error === 'PROCESO_NO_EXISTE'
+            ? 'GAP: el proceso ya no existe en el Router. No se relanzó la tarea.'
+            : 'GAP: ' + String(p.error);
+          h.append(burbuja(t, 'error')); registrar(rec.sesion, 'err', t); borrar(id); return;
+        }
+        if (p.estado === 'procesando') {
+          pending.textContent = p.progreso || 'La misma tarea sigue procesando…';
+          await dormir(1000); continue;
+        }
+        pending.remove();
+        const txt = textoFinal(p) || 'Sin respuesta';
+        h.append(burbuja(txt)); registrar(rec.sesion, 'bot', txt); borrar(id);
+        return;
+      } catch (e) {
         fallosRed++;
-        if (fallosRed < 3) { await dormir(1200); continue; }
-        pending.remove();
-        const t = 'GAP: no se pudo reconectar con el proceso original. No se relanzó la tarea.';
-        h.append(burbuja(t, 'error')); registrar(rec.sesion, 'err', t); borrar(rec.proceso_id); return;
+        if (fallosRed >= 3) {
+          pending.remove();
+          h.append(burbuja('Conexión temporal perdida; el proceso queda guardado para reintentar.', 'meta'));
+          guardar({ ...rec, reintentarDespues: Date.now() + 30000 });
+          return;
+        }
+        await dormir(1200);
       }
-      fallosRed = 0;
-      const p = env.result || {};
-      if (p.error) {
-        pending.remove();
-        const t = p.error === 'PROCESO_NO_EXISTE'
-          ? 'GAP: el proceso ya no existe en el Router. No se relanzó la tarea.'
-          : 'GAP: ' + String(p.error);
-        h.append(burbuja(t, 'error')); registrar(rec.sesion, 'err', t); borrar(rec.proceso_id); return;
-      }
-      if (p.estado === 'procesando') {
-        pending.textContent = p.progreso || 'Retomando tarea que sigue procesando…';
-        await dormir(1000); continue;
-      }
-      pending.remove();
-      const txt = textoFinal(p) || 'Sin respuesta';
-      h.append(burbuja(txt)); registrar(rec.sesion, 'bot', txt); borrar(rec.proceso_id);
-      return;
-    } catch (e) {
-      fallosRed++;
-      if (fallosRed >= 3) {
-        pending.remove();
-        const t = 'GAP: conexión perdida con el Router que ejecutaba la tarea. No se relanzó.';
-        h.append(burbuja(t, 'error')); registrar(rec.sesion, 'err', t); borrar(rec.proceso_id); return;
-      }
-      await dormir(1200);
     }
+    pending.remove();
+    const t = 'GAP: tiempo total de seguimiento agotado; la tarea no se duplicó.';
+    h.append(burbuja(t, 'error')); registrar(rec.sesion, 'err', t); borrar(id);
+  } finally {
+    recuperando.delete(id);
   }
-  pending.remove();
-  const t = 'GAP: tiempo de reconexión agotado; la tarea no se duplicó.';
-  h.append(burbuja(t, 'error')); registrar(rec.sesion, 'err', t); borrar(rec.proceso_id);
 }
 
 export function instalarRecuperacionProcesos({ q }) {
   instalarCapturaFetch();
-  if (window.__riuRecuperandoProcesos) return;
-  window.__riuRecuperandoProcesos = true;
+  // Cada root nuevo (Chat remontado) necesita su propio supervisor; la captura de fetch sí es global.
+  const caja = q('#histories');
+  if (!caja || caja.dataset.procesoRecovery) return;
+  caja.dataset.procesoRecovery = '1';
+
+  // Al montar una página nueva, cualquier proceso guardado es de una ejecución previa a la recarga: retomarlo ya.
   setTimeout(() => {
-    const x = leer();
-    const ahora = Date.now();
+    const x = leer(), ahora = Date.now();
     for (const [id, rec] of Object.entries(x)) {
       if (!rec || !rec.sesion || !rec.base || ahora - Number(rec.creado || 0) > MAX_EDAD) { borrar(id); continue; }
-      recuperarUno(q, rec).catch(() => {});
+      if (Number(rec.reintentarDespues || 0) <= ahora) recuperarUno(q, rec).catch(() => {});
     }
   }, 350);
+
+  // En la misma página, api.js deja de esperar a ~560 s. Este supervisor continúa con EL MISMO proceso_id.
+  const vigilante = setInterval(() => {
+    if (!caja.isConnected) { clearInterval(vigilante); return; }
+    const x = leer(), ahora = Date.now();
+    for (const [id, rec] of Object.entries(x)) {
+      const edad = ahora - Number(rec && rec.creado || 0);
+      if (!rec || !rec.sesion || !rec.base || edad > MAX_EDAD) { borrar(id); continue; }
+      if (edad >= RETOMAR_EN_MISMA_PAGINA_MS && Number(rec.reintentarDespues || 0) <= ahora) recuperarUno(q, rec).catch(() => {});
+    }
+  }, 5000);
 }
