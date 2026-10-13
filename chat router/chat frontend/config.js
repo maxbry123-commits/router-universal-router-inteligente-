@@ -64,63 +64,58 @@ window.addEventListener('riu:selector-activo', () => {
   } catch (e) {}
 });
 
-// Controles del chat: FUERA del historial, en una barra fija inmediatamente debajo
-// de la navegacion Chat/Canvas/Seguimiento/Archivos. Al tocar la barra, el panel cae hacia abajo.
+// Controles del chat: barra fina debajo de Chat/Canvas/Seguimiento/Archivos.
+// Tiene ciclo de vida: al salir de Chat se elimina; al volver se monta con los controles de la nueva instancia.
 (() => {
-  let intentos = 0;
-  const montarDock = () => {
-    intentos += 1;
-    if (document.getElementById('chat-controls-dock')) return;
-    const tabs = document.getElementById('chat-tabs');
-    const histories = document.getElementById('histories');
-    const fields = tabs && tabs.nextElementSibling && tabs.nextElementSibling.classList.contains('fields') ? tabs.nextElementSibling : null;
-    if (!tabs || !fields || !histories) {
-      if (intentos < 50) setTimeout(montarDock, 100);
-      return;
-    }
-
-    const dock = document.createElement('div');
-    dock.id = 'chat-controls-dock';
-    dock.className = 'chat-controls-dock';
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.id = 'chat-controls-toggle';
-    toggle.className = 'chat-controls-toggle';
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-controls', 'chat-controls-panel');
-    toggle.textContent = 'Controles ▾';
-
-    const panel = document.createElement('div');
-    panel.id = 'chat-controls-panel';
-    panel.className = 'chat-controls-panel';
-    panel.setAttribute('aria-hidden', 'true');
-
-    panel.append(tabs, fields);
-    dock.append(toggle, panel);
-    document.body.append(dock);
-
-    const posicionar = () => {
-      const movil = matchMedia('(max-width:720px)').matches;
-      const nav = document.querySelector('.sidebar');
-      const top = movil && nav ? Math.max(0, Math.round(nav.getBoundingClientRect().bottom)) : 8;
-      document.documentElement.style.setProperty('--chat-controls-top', top + 'px');
-    };
-    posicionar();
-    addEventListener('resize', posicionar, { passive: true });
-    addEventListener('orientationchange', () => setTimeout(posicionar, 120), { passive: true });
-
-    const abrir = (on) => {
-      dock.classList.toggle('open', on);
-      toggle.setAttribute('aria-expanded', String(on));
-      toggle.textContent = on ? 'Controles ▴' : 'Controles ▾';
-      panel.setAttribute('aria-hidden', String(!on));
-      posicionar();
-    };
-    toggle.addEventListener('click', () => abrir(!dock.classList.contains('open')));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrir(false); });
+  let timer = 0;
+  const chatActivo = () => !!document.querySelector('#navigation [data-view="chat"][aria-current="page"]');
+  const posicionar = () => {
+    const movil = matchMedia('(max-width:720px)').matches;
+    const nav = document.querySelector('.sidebar');
+    const top = movil && nav ? Math.max(0, Math.round(nav.getBoundingClientRect().bottom)) : 8;
+    document.documentElement.style.setProperty('--chat-controls-top', top + 'px');
   };
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montarDock, { once: true });
-  else setTimeout(montarDock, 0);
+  const crearDock = (tabs, fields) => {
+    const viejo = document.getElementById('chat-controls-dock');
+    if (viejo) viejo.remove();
+    const dock = document.createElement('div'); dock.id = 'chat-controls-dock'; dock.className = 'chat-controls-dock';
+    const toggle = document.createElement('button');
+    toggle.type = 'button'; toggle.id = 'chat-controls-toggle'; toggle.className = 'chat-controls-toggle';
+    toggle.setAttribute('aria-expanded', 'false'); toggle.setAttribute('aria-controls', 'chat-controls-panel'); toggle.textContent = 'Controles ▾';
+    const panel = document.createElement('div'); panel.id = 'chat-controls-panel'; panel.className = 'chat-controls-panel'; panel.setAttribute('aria-hidden', 'true');
+    panel.append(tabs, fields); dock.append(toggle, panel); document.body.append(dock); posicionar();
+    const abrir = (on) => {
+      dock.classList.toggle('open', on); toggle.setAttribute('aria-expanded', String(on));
+      toggle.textContent = on ? 'Controles ▴' : 'Controles ▾'; panel.setAttribute('aria-hidden', String(!on)); posicionar();
+    };
+    toggle.addEventListener('click', () => abrir(!dock.classList.contains('open')));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && dock.isConnected) abrir(false); });
+  };
+
+  const reconciliar = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      const dock = document.getElementById('chat-controls-dock');
+      if (!chatActivo()) { if (dock) dock.remove(); return; }
+      const panelRaiz = document.getElementById('panel');
+      // Un #chat-tabs dentro de #panel es una instancia nueva que aun no fue movida al dock.
+      const tabsNuevos = panelRaiz && panelRaiz.querySelector('#chat-tabs');
+      const fieldsNuevos = tabsNuevos && tabsNuevos.nextElementSibling && tabsNuevos.nextElementSibling.classList.contains('fields') ? tabsNuevos.nextElementSibling : null;
+      if (tabsNuevos && fieldsNuevos) { crearDock(tabsNuevos, fieldsNuevos); return; }
+      // Si Chat sigue activo y el dock ya contiene sus nodos, solo recalcular posicion.
+      if (dock && dock.querySelector('#chat-tabs')) posicionar();
+    }, 30);
+  };
+
+  const iniciar = () => {
+    const panelRaiz = document.getElementById('panel');
+    const nav = document.getElementById('navigation');
+    if (panelRaiz) new MutationObserver(reconciliar).observe(panelRaiz, { childList: true, subtree: false });
+    if (nav) new MutationObserver(reconciliar).observe(nav, { attributes: true, subtree: true, attributeFilter: ['aria-current'] });
+    addEventListener('resize', posicionar, { passive: true });
+    addEventListener('orientationchange', () => setTimeout(posicionar, 120), { passive: true });
+    reconciliar();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar, { once: true }); else iniciar();
 })();
