@@ -12,8 +12,9 @@ import { montarClaves } from "./ventana-claves.js";
 import { montarMejorasAncla } from "./anclaje-mejoras.js";
 import { montarAgregarAlChat } from "./agregar-al-chat.js";
 import { montarPensando3D } from "./pensando-3d.js";
+import { montarHistorialPersistente } from "./chat-historial-db.js";
 import { montarNotas } from "./notas-ventana.js";
 import { instalarAuth, montarAcceso } from "./acceso-clave.js";
 export function conectarVentanasNuevas(ctx) {
-  [instalarContexto, instalarAuth, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarAcceso, montarPensando3D, montarNotas].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
+  [instalarContexto, instalarAuth, montarHistorialPersistente, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarAcceso, montarPensando3D, montarNotas].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
 }
