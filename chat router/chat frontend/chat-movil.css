@@ -55,3 +55,8 @@
   #mv-ctl .ctl-int{display:flex;flex-direction:column;gap:8px}
 }
 
+
+/* debajo del panel del chat: el selector que abre la ventana de modelos */
+.zona-sel{display:flex;gap:8px;margin:8px 0}
+.zona-sel .sel-pill{flex:1;min-height:36px}
+.sel-nom{flex:1;font-size:13px;font-weight:600;color:var(--tx-dim)}
