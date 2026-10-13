@@ -53,6 +53,4 @@
   #mv-top .access{display:flex;flex-wrap:wrap;gap:8px;width:100%}
   #mv-title h1{font-size:18px;margin:0;text-align:center}
   #mv-ctl .ctl-int{display:flex;flex-direction:column;gap:8px}
-  .modelo-ia-fila{margin:4px 0 0}
-  .modelo-ia-fila .pill{min-height:34px}
 }
