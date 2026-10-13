@@ -1,9 +1,10 @@
 """Puerta fina para fichas_qwen.
 
 Mantiene el nucleo original en plugin_core.py y corrige una sola regla:
-para las fichas 1, 2 y 3, los carriles FAST interactivos solo pueden activarse
-cuando el usuario encendio explicitamente el boton de respuesta rapida.
-Ficha 4 conserva su fast-lane automatico para workflows internos.
+para las fichas 1, 2, 3 y 4, los carriles FAST del chat interactivo solo pueden
+activarse cuando el usuario encendio explicitamente el boton de respuesta rapida.
+La accion interna `llm` de Ficha 4 conserva su fast-lane automatico para workflows:
+no depende del boton del chat y no se modifica aqui.
 """
 from __future__ import annotations
 
@@ -22,15 +23,15 @@ _fast_consult_ok_original = _core._fast_consult_ok
 
 
 def _fast_chat_ok(ficha, mensaje, opts, nodos):
-    """Ficha 1: OFF significa OFF. Ficha 4 mantiene su ruta automatica."""
+    """Ficha 1 y Ficha 4 en chat: OFF significa OFF."""
     fid = str((ficha or {}).get("ficha") or "")
-    if fid.startswith("ficha1") and not bool((opts or {}).get("fast_reply")):
+    if (fid.startswith("ficha1") or fid.startswith("ficha4")) and not bool((opts or {}).get("fast_reply")):
         return False
     return _fast_chat_ok_original(ficha, mensaje, opts, nodos)
 
 
 def _fast_consult_ok(ficha, mensaje, opts, nodos):
-    """Fichas 2/3: no activar FAST_CONSULT con el boton rapido apagado."""
+    """Fichas 2/3 en chat: no activar FAST_CONSULT con el boton rapido apagado."""
     fid = str((ficha or {}).get("ficha") or "")
     if (fid.startswith("ficha2") or fid.startswith("ficha3")) and not bool((opts or {}).get("fast_reply")):
         return False
