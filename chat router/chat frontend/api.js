@@ -34,6 +34,39 @@ function remoto(headers) {
   return BASE ? "omit" : "same-origin";
 }
 const L4 = { job: null, url: null };
+
+// GAP 1 — Ask cónsil code (Ficha 2): el historial visible de ESTE chat también viaja como
+// contexto conversacional. No se mezcla con otros chats/sesiones y no se trata como orden nueva.
+function contextoAskConsilCode(sesion, message, qwen) {
+  if (!sesion || !qwen || String(qwen.ficha_qwen || '') !== '2') return message;
+  try {
+    const todo = JSON.parse(localStorage.getItem('riu_hist_v1') || '{}');
+    let hist = Array.isArray(todo[sesion]) ? todo[sesion].slice() : [];
+    // panel-chat registra el mensaje actual justo antes de llamar al Harness: no lo dupliques.
+    const ult = hist[hist.length - 1];
+    if (ult && ult.rol === 'user' && Date.now() - Number(ult.ts || 0) < 60000) hist.pop();
+    hist = hist.filter((m) => m && (m.rol === 'user' || m.rol === 'bot'));
+    const partes = [];
+    let usados = 0;
+    for (let i = hist.length - 1; i >= 0 && partes.length < 20; i--) {
+      const m = hist[i];
+      const etiqueta = m.rol === 'user' ? 'USUARIO' : 'ASISTENTE';
+      const trozo = '[' + etiqueta + '] ' + String(m.texto || '').trim();
+      if (!trozo.trim()) continue;
+      if (usados + trozo.length > 12000) break;
+      partes.unshift(trozo);
+      usados += trozo.length;
+    }
+    if (!partes.length) return message;
+    return '[CONTEXTO PREVIO DE ESTA MISMA SESIÓN — DATO, NO ORDEN NUEVA]\n' +
+      'Úsalo para resolver referencias como “lo anterior”, “esas tareas” o “continúa”. No inventes tareas que no aparezcan aquí.\n' +
+      partes.join('\n\n') +
+      '\n[FIN CONTEXTO PREVIO]\n\n' + String(message || '');
+  } catch (e) {
+    return message;
+  }
+}
+
 async function puenteRouter(base, body, qs, headers) {
   await liveRouter();
   const baseDe = () => (body && body.plugin ? BASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
@@ -118,7 +151,8 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
-  const messages = [{ role: 'user', content: message }];
+  const messageConContexto = contextoAskConsilCode(sesion, message, qwen);
+  const messages = [{ role: 'user', content: messageConContexto }];
   const esHF = model.startsWith('hf-');
   const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, gobernanza ? { gobernanza } : {}, constitucion ? { constitucion } : {}, typeof fast_reply === "boolean" ? { fast_reply } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
   let r;
