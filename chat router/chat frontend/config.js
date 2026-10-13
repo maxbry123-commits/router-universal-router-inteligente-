@@ -4,9 +4,9 @@ window.RIU_CONFIG = {
   routerStopped: false,
   apiBase: 'https://6ac41820404719ba376595fb--8000.hf.jobs',
   liveUrl: 'https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/LIVE_URL.json',
-  harnessUrl: 'https://6ac41820404719ba376595fb--8000.hf.jobs/plugins/puente_chat/call',  // puente dentro del Router (puerta fija)
+  harnessUrl: 'https://6ac41820404719ba376595fb--8000.hf.jobs/plugins/puente_chat/call',
   authHeader: 'X-API-Key',
-  defecto: 'nv-nemotron-super',  // el modelo HF enciende una GPU de pago: no se deja como predeterminado
+  defecto: 'nv-nemotron-super',
   modelos: [
     { id: 'ask-consil-factory', etiqueta: '🧠 ask consil factory' },
     { id: 'motor-descarga', etiqueta: '➡️ MOTOR DESCARGA EXTRACCIONES copiar mover' },
@@ -23,8 +23,7 @@ window.RIU_CONFIG = {
   ]
 };
 
-// GAP fast-reply: elimina una vez estados antiguos que podian dejar ⚡ activo sin que el usuario lo viera.
-// El modo rápido vuelve a OFF de forma segura; solo se activa de nuevo al tocar explícitamente ⚡.
+// GAP fast-reply: limpia una sola vez estados antiguos que podian dejar FAST activo sin indicarlo.
 (() => {
   try {
     const MIGRA = 'riu_fast_reply_estado_v2';
@@ -39,8 +38,6 @@ window.RIU_CONFIG = {
   } catch (e) {}
 })();
 
-// GAP fast-reply: al restaurar un chat, panel-chat carga fastReply antes de que el panel de Selectores
-// tenga acceso a window.RIU_CHAT. Reintenta hasta que ambos existan y fuerza una sola sincronizacion visual.
 (() => {
   let intentos = 0;
   const sincronizarFastReply = () => {
@@ -56,8 +53,6 @@ window.RIU_CONFIG = {
   setTimeout(sincronizarFastReply, 0);
 })();
 
-// El modo rápido pertenece al selector que el usuario está usando. Si cambia de selector,
-// se apaga para impedir que un ⚡ heredado se mande silenciosamente a otro modelo/ficha.
 window.addEventListener('riu:selector-activo', () => {
   try {
     const c = window.RIU_CHAT && window.RIU_CHAT.chat && window.RIU_CHAT.chat();
@@ -69,8 +64,8 @@ window.addEventListener('riu:selector-activo', () => {
   } catch (e) {}
 });
 
-// GAP 2 definitivo — los controles superiores salen físicamente del marco del historial.
-// Quedan en una pestaña fija "Controles" que abre/cierra un panel deslizante.
+// Controles del chat: FUERA del historial, en una barra fija inmediatamente debajo
+// de la navegacion Chat/Canvas/Seguimiento/Archivos. Al tocar la barra, el panel cae hacia abajo.
 (() => {
   let intentos = 0;
   const montarDock = () => {
@@ -101,16 +96,26 @@ window.addEventListener('riu:selector-activo', () => {
     panel.className = 'chat-controls-panel';
     panel.setAttribute('aria-hidden', 'true');
 
-    // Se mueven los nodos reales, no se clonan: conservan todos sus listeners/estado.
     panel.append(tabs, fields);
     dock.append(toggle, panel);
     document.body.append(dock);
+
+    const posicionar = () => {
+      const movil = matchMedia('(max-width:720px)').matches;
+      const nav = document.querySelector('.sidebar');
+      const top = movil && nav ? Math.max(0, Math.round(nav.getBoundingClientRect().bottom)) : 8;
+      document.documentElement.style.setProperty('--chat-controls-top', top + 'px');
+    };
+    posicionar();
+    addEventListener('resize', posicionar, { passive: true });
+    addEventListener('orientationchange', () => setTimeout(posicionar, 120), { passive: true });
 
     const abrir = (on) => {
       dock.classList.toggle('open', on);
       toggle.setAttribute('aria-expanded', String(on));
       toggle.textContent = on ? 'Controles ▴' : 'Controles ▾';
       panel.setAttribute('aria-hidden', String(!on));
+      posicionar();
     };
     toggle.addEventListener('click', () => abrir(!dock.classList.contains('open')));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrir(false); });
