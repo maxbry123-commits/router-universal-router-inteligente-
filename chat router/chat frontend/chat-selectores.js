@@ -126,7 +126,7 @@ export function conectarSelectores({ q }) {
       const m = modeloDe(s.id), extra = fast && FAST_IDS.includes(s.id) && m ? " · ⚡ rápida" : "";
       r.textContent = m ? (act === s.id ? "Responde: " : "Modelo: ") + m + extra : (s.id === "team-qwen" || s.id === "team-5-mvp") ? "Elige un modelo" : ""; r.hidden = !r.textContent;
     }
-    for (const b of panel.querySelectorAll(".sel-fast")) { b.classList.toggle("on", fast); b.setAttribute("aria-pressed", String(fast)); b.disabled = !!act && act !== b.dataset.selector; }
+    for (const b of document.querySelectorAll(".sel-fast")) { b.classList.toggle("on", fast); b.setAttribute("aria-pressed", String(fast)); b.disabled = !!act && act !== b.dataset.selector; }
     if (global) {
       const nom = act ? SELECTORES.find((s) => s.id === act).nombre : "", m = act ? modeloDe(act) : "";
       global.textContent = act ? "Responde ahora: " + nom + (m ? " · " + m : "") : "Ningún selector encendido: responde el modelo por defecto (" + (etiquetaPill("#ficha") || "—") + ")";
@@ -166,7 +166,7 @@ export function conectarSelectores({ q }) {
   R.apagar = () => { if (leer()) cambiar(null); return true; };
   R.refrescar = pintarResp; window.addEventListener("riu:selector-qwen", pintarResp); window.addEventListener("riu:fast-reply", pintarResp);
   for (const s of SELECTORES) {
-    const fila = panel.querySelector('[data-selector="' + s.id + '"]');
+    const fila = document.querySelector('.sel-fila[data-selector= + s.id + ]');  // team-qwen/team-5-mvp viven en zona-comp bajo el input
     const b = document.createElement("button");
     b.type = "button"; b.className = "sel-on"; b.dataset.selector = s.id; b.setAttribute("aria-label", "ON/OFF " + s.nombre);
     b.innerHTML = POWER + "<span>OFF</span>";
