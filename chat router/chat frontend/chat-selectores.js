@@ -9,11 +9,11 @@ const SELECTORES = [  // nombres exactos de Antonio
   { id: "team-qwen", nombre: "Team qwen", pills: ["#sel-nuevo"] },  // los 14 modelos QwenCloud
   { id: "ask-consil-code-qwen-team", nombre: "Ask cónsil code qwen team", pills: ["#sel-cc"] },
   { id: "ask-consil-fromtend-qwen-team", nombre: "Ask consil fromtend qwen team", pills: ["#sel-cf"] },
-  { id: "mvp", nombre: "MVP", pills: ["#sel-mvp"] },  // ficha MVP: 1 modelo elegido del mismo selector que Team qwen
+  { id: "team-5-mvp", nombre: "Team 5 MVP", pills: ["#sel-mvp"] },  // Ficha 5: 1 modelo elegido del mismo selector que Team qwen
 ];
 const POWER = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>';
 const DIAGRAMAS = {  // micro diagramas transversales horizontales; Ask consil Nvidia groq sigue pendiente de definición explícita
-  "mvp": { sel: "#mvp-diagrama", texto: "INPUT + HISTORIAL SESIÓN + TOOLS → 1 MODELO ELEGIDO → TOOL CALL SI HACE FALTA → RESPUESTA" },
+  "team-5-mvp": { sel: "#mvp-diagrama", texto: "INPUT + HISTORIAL SESIÓN + TOOLS → 1 MODELO ELEGIDO → TOOL CALL SI HACE FALTA → RESPUESTA" },
   "team-qwen": { sel: "#team-qwen-diagrama", texto: "SELECTOR 14 → 1 MODELO → EJECUTA → SALIDA → PROPONE AUDITORÍA FORENSE X-RAY (código fuente + input block verbatim) → «ok» → [Qwen 3.7 Flash | DeepSeek V4 Flash | Qwen 3.8 Flash] VERIFICACIÓN CRUZADA A LA VEZ: REVISAN, REFACTORIZAN, RESUELVEN GAPS → ↺ LOOP" },
   "ask-consil-code-qwen-team": { sel: "#consil-code-diagrama", texto: "12 GOALS ENTRADA → [DeepSeek V4 Pro | GLM 5.2 | Qwen 3.7 Max | Qwen 3.8 Max] ANALIZAN Y PROPONEN EN PARALELO → Qwen 3.8 Max DECIDE Y EJECUTA → [GLM 5.2 | Qwen v4 Max] REVISAN, AUDITAN Y REFACTORIZAN → 12 GOALS SALIDA → PROPONE AUDITORÍA FORENSE X-RAY (código fuente + input block verbatim) → «ok» → [Qwen 3.7 Flash | DeepSeek V4 Flash | Qwen 3.8 Flash] VERIFICACIÓN CRUZADA A LA VEZ: REVISAN, REFACTORIZAN, RESUELVEN GAPS → ↺ LOOP" },
   "ask-consil-fromtend-qwen-team": { sel: "#consil-frontend-diagrama", texto: "12 GOALS ENTRADA → [Qwen 3.8 Max | GLM 5.2 | Qwen 3.7 Max | DeepSeek V4 Pro] ANALIZAN Y PROPONEN EN PARALELO → DeepSeek V4 Pro DECIDE → DeepSeek V4 Flash EJECUTA → [GLM 5.2 | Qwen 3.8 Max | DeepSeek V4 Pro] REVISAN, AUDITAN Y REFACTORIZAN → 12 GOALS SALIDA → PROPONE AUDITORÍA FORENSE X-RAY (código fuente + input block verbatim) → «ok» → [Qwen 3.7 Flash | DeepSeek V4 Flash | Qwen 3.8 Flash] VERIFICACIÓN CRUZADA A LA VEZ: REVISAN, REFACTORIZAN, RESUELVEN GAPS → ↺ LOOP" },
@@ -116,7 +116,7 @@ export function conectarSelectores({ q }) {
   const modeloDe = (id) => {  // el modelo que responde si este selector esta encendido (sale de lo que ya existe en el chat)
     const c = chatAct();
     if (id === "nvidia-groq-team") return etiquetaPill("#ficha");
-    if (id === "team-qwen" || id === "mvp") return c.selectorQwen ? c.selectorQwen.label : "";
+    if (id === "team-qwen" || id === "team-5-mvp") return c.selectorQwen ? c.selectorQwen.label : "";
     return R.consil[id] && R.consil[id].modelos.length ? R.consil[id].modelos.join(" · ") : "";
   };
   const pintarResp = () => {
@@ -124,7 +124,7 @@ export function conectarSelectores({ q }) {
     for (const s of SELECTORES) {
       const r = resp[s.id]; if (!r) continue;
       const m = modeloDe(s.id), extra = fast && FAST_IDS.includes(s.id) && m ? " · ⚡ rápida" : "";
-      r.textContent = m ? (act === s.id ? "Responde: " : "Modelo: ") + m + extra : (s.id === "team-qwen" || s.id === "mvp") ? "Elige un modelo" : ""; r.hidden = !r.textContent;
+      r.textContent = m ? (act === s.id ? "Responde: " : "Modelo: ") + m + extra : (s.id === "team-qwen" || s.id === "team-5-mvp") ? "Elige un modelo" : ""; r.hidden = !r.textContent;
     }
     for (const b of panel.querySelectorAll(".sel-fast")) { b.classList.toggle("on", fast); b.setAttribute("aria-pressed", String(fast)); b.disabled = !!act && act !== b.dataset.selector; }
     if (global) {

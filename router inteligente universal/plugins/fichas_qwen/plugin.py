@@ -22,7 +22,7 @@ from typing import Any
 
 DIR = Path(__file__).resolve().parent
 FICHAS = {f.stem: json.loads(f.read_text(encoding="utf-8")) for f in sorted((DIR / "fichas").glob("*.json"))}
-ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "4": "ficha4-workflow-yaiwes"}
+ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "4": "ficha4-workflow-yaiwes", "5": "ficha5-mvp"}  # 5 = Team 5 MVP (camino directo, mvp.py)
 _POOL = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen")  # maximo 4 solicitudes activas; las demas esperan en cola
 _LOCK = threading.Lock()
 _PROCESOS: dict[str, tuple[Any, float]] = {}
@@ -1189,6 +1189,9 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
         mensaje = next((str(m.get("content", "")) for m in reversed(p.get("messages") or []) if m.get("role") == "user"), "")
     t0 = time.time()
     ses = str(p.get('sesion') or 'fichas')[:60]
+    if fid == 'ficha5-mvp':  # Team 5 MVP: camino directo (input + historial + tools -> 1 modelo -> respuesta); la cola, el proceso y el visor son los de la familia
+        from . import mvp as _mvp
+        return _mvp.chat(p, FICHAS[fid], mensaje, ses, t0)
     if not mensaje.lstrip().lower().startswith('/aprobar'):
         if _confirma(mensaje):  # ok / confirmo / proceder con verificacion: activa la verificacion cruzada si hay una propuesta pendiente
             pv = _verif_cargar(fid, ses)

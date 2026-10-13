@@ -42,10 +42,13 @@ window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({
 export function conectarSelectorModelos(ctx) {
   const { q, chat, tell, guardar } = ctx;
   const pill = q("#sel-nuevo"), lista = q("#sh-modelos-lista");
+  const pillMvp = q("#sel-mvp");  // Team 5 MVP: misma hoja y mismo catalogo; la ruta de envio es otra (ficha_qwen=5)
+  let hojaOrigen = "team-qwen";  // quien abrio la hoja de modelos: al elegir, se enciende ESE selector y no el otro
   const pintarPill = () => {
     const s = chat().selectorQwen;
     pill.textContent = "Team qwen ⌄"; if (!pill.classList.contains("bloq")) pill.title = s ? "Team qwen · " + s.label : "Team qwen";  // el modelo elegido va en el tooltip
     pill.classList.toggle("on", !!s);
+    if (pillMvp) { if (!pillMvp.classList.contains("bloq")) pillMvp.title = s ? "Team 5 MVP · " + s.label : "Team 5 MVP"; pillMvp.classList.toggle("on", !!s); }
     if (window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar) window.RIU_SELECTORES.refrescar();
     window.RIU_SELECTOR_QWEN.seleccion = s ? { modelo_id_slug: s.modelo_id_slug, label: s.label, grupo: s.grupo, sesion: chat().sesion } : null;
   };
@@ -57,7 +60,8 @@ export function conectarSelectorModelos(ctx) {
     window.RIU_SELECTOR_QWEN.seleccion = det;
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
     pintarPill(); pintar(); guardar();
-    const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender("team-qwen"); else if (SEL.activo === "team-qwen") SEL.apagar(); }  // elegir un modelo = ese selector responde
+    const dest = hojaOrigen === "team-5-mvp" ? "team-5-mvp" : "team-qwen";
+    const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
     q("#sh-modelos").hidden = true;
   };
   const pintar = () => {
@@ -80,9 +84,8 @@ export function conectarSelectorModelos(ctx) {
       lista.append(caja);
     }
   };
-  pill.addEventListener("click", () => { pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
-  const pillMvp = q("#sel-mvp");  // MVP: misma hoja y mismo catalogo; la ruta de envio es otra (plugin ficha_mvp)
-  if (pillMvp) pillMvp.addEventListener("click", () => { pillMvp.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
+  pill.addEventListener("click", () => { hojaOrigen = "team-qwen"; pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
+  if (pillMvp) pillMvp.addEventListener("click", () => { hojaOrigen = "team-5-mvp"; pillMvp.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
   new MutationObserver(pintarPill).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   pintarPill();
   conectarSelectores(ctx);

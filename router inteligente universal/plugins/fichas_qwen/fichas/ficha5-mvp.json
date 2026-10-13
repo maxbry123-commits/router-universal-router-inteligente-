@@ -1,0 +1,32 @@
+{
+  "ficha": "ficha5-mvp",
+  "nombre": "Team 5 MVP",
+  "selector_fuente": "ficha1-modelos",
+  "ejecucion": {
+    "modo": "directo",
+    "modelos_por_turno": 1,
+    "dag": false,
+    "council": false,
+    "reviewers": false,
+    "fast_lane": false,
+    "timeout_total_s": 300
+  },
+  "memoria": {
+    "provider": "harness",
+    "misma_sesion_chat": true
+  },
+  "tools": {
+    "provider": "puente_chat",
+    "registry_existente": true,
+    "parallel_tool_calls": false
+  },
+  "model_config": {
+    "source": "registry_existente",
+    "no_duplicar_provider_config": true
+  },
+  "salida": {
+    "devolver_texto_modelo": true,
+    "devolver_tool_calls": true,
+    "sin_formato_forzado": true
+  }
+}

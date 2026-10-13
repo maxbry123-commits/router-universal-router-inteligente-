@@ -40,11 +40,18 @@
 @keyframes ctl-desliza{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
 .ctl-int>.row.fields{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:6px 0}
 .ctl-int>.row.fields .pill{flex:0 0 auto}
-/* salida ~4x mas util: la seccion ya no fija una altura que el composer se come; crece con el contenido.
-   El historial tiene flex:1 con un minimo real, el scroll vive en .chat-history y el composer conserva su altura propia abajo. */
-section:has(> #histories){display:flex;flex-direction:column;min-height:calc(100dvh - var(--ctl-top,116px) - 66px);height:auto;gap:6px}
+/* escritorio: la seccion es flex-column con la altura calculada de siempre; el scroll vive en .chat-history */
+section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh - var(--ctl-top,116px) - 66px);min-height:440px;gap:6px}
 #histories{flex:1 1 auto;min-height:0;position:relative;display:flex;flex-direction:column}
-.chat-history{flex:1 1 auto;min-height:min(60dvh, 720px);height:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:40px}
-@media(max-width:720px){.chat-history{min-height:65dvh}}
+.chat-history{flex:1 1 auto;min-height:0;height:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:40px}
+/* movil: el chat ocupa casi toda la pantalla (100dvh) y se divide en barras compactas -> historial flex:1 -> composer con su altura; la pagina NO se alarga */
+@media(max-width:720px){
+  main{padding-top:6px;padding-bottom:0}
+  main>h1{font-size:16px;margin:0 0 4px}
+  #ctl-wrap{margin-bottom:4px}
+  section:has(> #histories){height:calc(100dvh - var(--ctl-top,56px) - 8px);min-height:0}
+  #histories{flex:1 1 0;min-height:0}
+  .chat-history{flex:1 1 0;min-height:0}
+}
 #histories .riu-bajar{width:30px;height:30px;opacity:.8;right:6px;bottom:8px}
 #histories .riu-subir{bottom:44px}

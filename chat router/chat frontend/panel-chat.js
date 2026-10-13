@@ -26,6 +26,7 @@ export async function mount(root, { api, tell }) {
   const medirCtl = () => { const s = document.querySelector(".sidebar") || document.querySelector("#navigation"); const b = s ? Math.round(s.getBoundingClientRect().bottom) : 0; if (b > 0) document.documentElement.style.setProperty("--ctl-top", b + "px"); };  // la barra se pega justo debajo de la tira superior
   medirCtl(); window.addEventListener("resize", medirCtl);
   const previo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); return h.slice(-20).map((m) => ({ role: m.rol === "user" ? "user" : "assistant", content: m.texto })); };  // historial de ESTA sesion, aparte del input actual
+  const previoTodo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); return h.map((m) => ({ role: m.rol === "user" ? "user" : "assistant", content: m.texto })); };  // Team 5 MVP: TODO el historial de ESTA sesion, con roles
   const chats = [];
   let activo = 0;
   const chat = () => chats[activo];
@@ -127,7 +128,7 @@ export async function mount(root, { api, tell }) {
   };
 
   const ancla = A.montarAncla({ q, chat: chatA, tell, guardar, pintarAnclados });
-  chats.forEach((c) => A.restaurar(c, burbuja).then(() => {  // historial guardado: vuelve al recargar; una tarea que seguia corriendo se retoma por su proceso_id (NO se relanza)
+  chats.forEach((c) => { c.historialListo = A.restaurar(c, burbuja); c.historialListo.then(() => {  // historial guardado: vuelve al recargar; una tarea que seguia corriendo se retoma por su proceso_id (NO se relanza)
     if (!window.RIU_PENDIENTE || !window.RIU_PENDIENTE(c.sesion)) return;
     c.ocupado = true; pintarTabs();
     const aviso = node("div", "Recuperando la respuesta de la tarea que seguía corriendo…", "item message meta"); c.hist.append(aviso); abajo(c);
@@ -135,7 +136,7 @@ export async function mount(root, { api, tell }) {
       aviso.remove(); const t = p && ((p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content) || p.reply);
       if (t) { c.hist.append(burbuja(t)); A.registrar(c.sesion, "bot", t); } else c.hist.append(burbuja(p && p.error === "PROCESO_NO_EXISTE" ? "La tarea ya no está en el Router (se reinició). Reenvía tu mensaje." : "Sin respuesta de la tarea recuperada: " + ((p && (p.error || p.detalle)) || "vacía"), "error"));
     }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); });
-  }));
+  }); });
   conectarSelectorModelos({ q, chat, tell, guardar });  // Selector Qwen: solo frontend
   conectarMicrofono({ q, tell });  // micrófono: dictado por voz al input
   // ---- hojas (sheets): cada pildora abre la suya ----
@@ -486,9 +487,9 @@ export async function mount(root, { api, tell }) {
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
     const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
-    const fichaMvp = selAct === "mvp";  // MVP: ruta propia -> plugin ficha_mvp (1 modelo elegido, historial y tools)
+    const fichaMvp = selAct === "team-5-mvp";  // Team 5 MVP: ruta propia -> fichas_qwen ficha_qwen=5 (1 modelo elegido, historial completo y tools)
     if (fichaMvp && !c.selectorQwen) {
-      c.hist.append(node("div", "MVP: elige primero un modelo en la hoja MVP ⌄ (el mismo catalogo de la Ficha 1 / Team qwen). No se envio a otro modelo.", "item message meta"));
+      c.hist.append(node("div", "Team 5 MVP: elige primero un modelo en la hoja Team 5 MVP ⌄ (el mismo catalogo de la Ficha 1 / Team qwen). No se envio a otro modelo.", "item message meta"));
       abajo(c);
       return;
     }
@@ -514,16 +515,17 @@ export async function mount(root, { api, tell }) {
     const model = q("#model").value;
     const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[modo];
     try {
-      const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2 y 3); selector MVP -> plugin ficha_mvp
+      const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
-      const mvp = selAct === "mvp" ? { plugin: "ficha_mvp", modelo: c.selectorQwen ? c.selectorQwen.label : "" } : null;  // MVP: solo plugin ficha_mvp, sin fichas_qwen, sin N4, sin fallback
-      const body = { message: A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}), ...(mvp || {}) };
+      const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
+      const body = { message: mvp ? message : A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}), ...(mvp || {}) };  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
-      const ctxPrev = (window.RIU_SELECTORES && (window.RIU_SELECTORES.activo === "ask-consil-code-qwen-team" || window.RIU_SELECTORES.activo === "mvp")) ? previo(c, message) : undefined;  // memoria de la misma sesion (Ask consil code / MVP)
+      if (selAct === "team-5-mvp" && c.historialListo) { try { await c.historialListo; } catch (e) {} }  // al recargar, esperar a que el historial completo (IndexedDB) termine de restaurarse antes de leerlo
+      const ctxPrev = selAct === "team-5-mvp" ? previoTodo(c, message) : (selAct === "ask-consil-code-qwen-team" ? previo(c, message) : undefined);  // Team 5: TODO el historial de la sesion con roles; consil-code: ultimos 20
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: A.envolver(message, c.instrucciones), max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
+        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: mvp ? message : A.envolver(message, c.instrucciones), max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
       c.detenerFn = null;
       pending.remove();
