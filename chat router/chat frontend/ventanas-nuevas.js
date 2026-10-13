@@ -16,6 +16,7 @@ import { montarHistorialPersistente } from "./chat-historial-db.js";
 import { instalarContextoFichas } from "./chat-contexto-fichas.js";
 import { instalarGuardSelector } from "./chat-selector-guard.js";
 import { instalarRecuperacionProcesos } from "./chat-proceso-recovery.js";
+import { instalarDetenerBackend } from "./chat-detener-backend.js";
 import { instalarFastVisual } from "./chat-fast-visual.js";
 import { instalarSelectorPorSesion } from "./chat-selector-por-sesion.js";
 import { montarNotas } from "./notas-ventana.js";
@@ -28,6 +29,7 @@ export function conectarVentanasNuevas(ctx) {
     instalarContextoFichas,
     instalarGuardSelector,
     instalarRecuperacionProcesos,
+    instalarDetenerBackend,
     instalarFastVisual,
     instalarSelectorPorSesion,
     montarDestinos,
