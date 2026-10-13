@@ -4,6 +4,8 @@ Mantiene el nucleo original en plugin_core.py y corrige reglas de entrada sin du
 - Fichas 1, 2, 3 y 4: FAST del chat solo si el Director encendio explicitamente el boton.
 - Historial e instrucciones fijas se separan del input literal antes de clasificar ok, /aprobar,
   mutacion, FAST o tarea nueva. Se vuelven a inyectar unicamente en los prompts de los modelos.
+- Ficha 3: N6 y N7 son revisores independientes de solo lectura y corren en paralelo;
+  N8 conserva el juicio final y espera a ambos.
 - La accion interna `llm` de Ficha 4 conserva su fast automatico para workflows.
 """
 from __future__ import annotations
@@ -27,6 +29,31 @@ _llamar_harness_1_original = _core._llamar_harness_1
 _ctx_local = _threading.local()
 
 
+def _optimizar_ficha3():
+    """Quita una fase serial sin quitar verificadores: N6 || N7 -> N8."""
+    f = _core.FICHAS.get("ficha3-frontend")
+    if not isinstance(f, dict):
+        return
+    ns = {str(n.get("id")): n for n in (f.get("nodos") or []) if isinstance(n, dict)}
+    n6, n7, n8 = ns.get("N6"), ns.get("N7"), ns.get("N8")
+    if not (n6 and n7 and n8):
+        return
+    n7["depende_de"] = ["N4", "N5"]
+    n7["rol"] = str(n7.get("rol") or "").replace(
+        "de nuevo el resultado de N6 segun N5",
+        "independientemente el resultado de N4 segun N5, en paralelo con N6",
+    )
+    n8["depende_de"] = ["N6", "N7", "N5"]
+    n8["rol"] = str(n8.get("rol") or "").replace(
+        "de nuevo el resultado de N7 segun N5 y entrega la SALIDA final",
+        "los resultados independientes de N6 y N7 segun N5 y entrega la SALIDA final",
+    )
+    f["flujo"] = "N0 -> [N1|N2|N3|N3B] paralelo -> N3D decide -> N4 ejecuta -> N5 -> [N6|N7] revisan en paralelo -> N8 juez final -> SALIDA"
+
+
+_optimizar_ficha3()
+
+
 def _fast_chat_ok(ficha, mensaje, opts, nodos):
     """Ficha 1 y Ficha 4 en chat: OFF significa OFF."""
     fid = str((ficha or {}).get("ficha") or "")
@@ -47,15 +74,10 @@ def _separar_entrada(texto):
     """Devuelve (input_literal, contexto_para_modelos) sin dejar que contexto cambie la clasificacion."""
     s = str(texto or "")
     extras = []
-
-    # GAP memoria: api.js / chat-contexto-fichas pueden anteponer este bloque.
     if s.startswith("[CONTEXTO PREVIO DE ESTA MISMA SESIÓN") and "[FIN CONTEXTO PREVIO]" in s:
         cab, s = s.split("[FIN CONTEXTO PREVIO]", 1)
         extras.append(cab.strip() + "\n[FIN CONTEXTO PREVIO]")
         s = s.lstrip("\r\n ")
-
-    # GAP instrucciones fijas: A.envolver() las coloca alrededor del input. Para el kernel son
-    # instrucciones del modelo, no parte del comando literal que decide /aprobar, ok o mutacion.
     if s.startswith("[INSTRUCCIONES FIJAS.") and "[FIN INSTRUCCIONES FIJAS]" in s:
         cab, resto = s.split("[FIN INSTRUCCIONES FIJAS]", 1)
         extras.insert(0, cab.strip() + "\n[FIN INSTRUCCIONES FIJAS]")
@@ -63,7 +85,6 @@ def _separar_entrada(texto):
         marca = "[ANTES DE RESPONDER: comprueba que tu salida cumple las INSTRUCCIONES FIJAS de arriba.]"
         if s.rstrip().endswith(marca):
             s = s.rstrip()[:-len(marca)].rstrip()
-
     return s.strip(), "\n\n".join(x for x in extras if x).strip()
 
 
@@ -98,15 +119,12 @@ def _llamar_harness_1_con_contexto(modelo, prompt, ficha, n, opts):
     return _llamar_harness_1_original(modelo, prompt, ficha, n, opts)
 
 
-# Las funciones del nucleo resuelven sus globals dentro del modulo core. Parchearlas alli garantiza
-# que chat_async, FAST_QA, FAST_CONSULT, DAG, anexos y verificadores usen las mismas compuertas.
 _core._fast_chat_ok = _fast_chat_ok
 _core._fast_consult_ok = _fast_consult_ok
 _core._chat = _chat_con_contexto
 _core._correr = _correr_con_contexto
 _core._llamar_harness_1 = _llamar_harness_1_con_contexto
 
-# Reexportar la API y el estado que el Router ya espera del plugin.
 for _name in dir(_core):
     if _name.startswith("__") or _name in globals():
         continue
@@ -114,6 +132,4 @@ for _name in dir(_core):
 
 
 def handle(action, payload):
-    # Normaliza antes de que core.handle cree el Future de chat_async. El Future termina llamando
-    # a _core._chat, que ya esta parcheado arriba y conserva el input literal para el kernel.
     return _core.handle(action, payload)
