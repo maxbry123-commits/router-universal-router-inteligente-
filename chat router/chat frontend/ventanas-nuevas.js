@@ -17,6 +17,7 @@ import { instalarContextoFichas } from "./chat-contexto-fichas.js";
 import { instalarGuardSelector } from "./chat-selector-guard.js";
 import { instalarRecuperacionProcesos } from "./chat-proceso-recovery.js";
 import { instalarFastVisual } from "./chat-fast-visual.js";
+import { instalarSelectorPorSesion } from "./chat-selector-por-sesion.js";
 import { montarNotas } from "./notas-ventana.js";
 import { instalarAuth, montarAcceso } from "./acceso-clave.js";
 export function conectarVentanasNuevas(ctx) {
@@ -28,6 +29,7 @@ export function conectarVentanasNuevas(ctx) {
     instalarGuardSelector,
     instalarRecuperacionProcesos,
     instalarFastVisual,
+    instalarSelectorPorSesion,
     montarDestinos,
     montarMejorasAncla,
     montarHandoffEditor,
