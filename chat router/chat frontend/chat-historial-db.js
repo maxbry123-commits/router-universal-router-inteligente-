@@ -89,7 +89,7 @@ const crearBurbuja = (m) => {
 };
 
 // Mantiene la cola reciente que consumen las fichas exactamente alineada con el historial visual.
-// Esto también corrige un GAP previo: si el usuario edita una salida, el modelo ya no recibe la versión vieja.
+// Si el usuario edita una salida, el modelo recibe la versión editada y no una copia vieja.
 const sincronizarCache = (sesion, mensajes) => {
   if (!sesion) return;
   try {
@@ -119,7 +119,6 @@ export function montarHistorialPersistente({ root, q }) {
   if (!cont || cont.dataset.histDb) return;
   cont.dataset.histDb = '1';
 
-  // Pide almacenamiento persistente cuando el navegador lo permite; si no, sigue funcionando igual.
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
 
   let restaurando = false;
@@ -131,25 +130,27 @@ export function montarHistorialPersistente({ root, q }) {
       for (let i = 0; i < hs.length; i++) {
         const sesion = metas[i] && metas[i].sesion;
         if (!sesion) continue;
-        const h = hs[i], dom = extraer(h), rec = await leerDb(sesion).catch(() => null);
+        const h = hs[i], domInicial = extraer(h), rec = await leerDb(sesion).catch(() => null);
         const guardado = rec && Array.isArray(rec.mensajes) ? rec.mensajes : [];
         if (!guardado.length) {
-          if (dom.length) {
-            await guardarDb(sesion, dom).catch(() => false);
-            sincronizarCache(sesion, dom);
+          if (domInicial.length) {
+            await guardarDb(sesion, domInicial).catch(() => false);
+            sincronizarCache(sesion, domInicial);
           }
           continue;
         }
-        const k = solape(guardado, dom);
+        // Al iniciar, el DOM puede traer solo la cola reciente de localStorage. Prependemos únicamente
+        // la parte antigua que falta; después el DOM completo pasa a ser la fuente de verdad.
+        const k = solape(guardado, domInicial);
         const anteriores = guardado.slice(0, guardado.length - k);
         if (anteriores.length) {
           const frag = document.createDocumentFragment();
           anteriores.forEach((m) => frag.append(crearBurbuja(m)));
           h.prepend(frag);
         }
-        const combinado = guardado.concat(dom.slice(k));
-        if (combinado.length !== guardado.length || k !== dom.length) await guardarDb(sesion, combinado).catch(() => false);
-        sincronizarCache(sesion, combinado);
+        const completo = extraer(h);
+        await guardarDb(sesion, completo).catch(() => false);
+        sincronizarCache(sesion, completo);
       }
       compactarCache();
     } finally { restaurando = false; }
@@ -167,12 +168,10 @@ export function montarHistorialPersistente({ root, q }) {
         if (!sesion) continue;
         const dom = extraer(hs[i]);
         if (!dom.length) continue;
-        const rec = await leerDb(sesion).catch(() => null);
-        const viejo = rec && Array.isArray(rec.mensajes) ? rec.mensajes : [];
-        const k = solape(viejo, dom);
-        const combinado = viejo.length ? viejo.concat(dom.slice(k)) : dom;
-        await guardarDb(sesion, combinado).catch(() => false);
-        sincronizarCache(sesion, combinado);
+        // Después de restaurar, el DOM contiene el historial completo. Reemplazar el snapshot evita
+        // duplicados y hace que editar/borrar una salida se refleje exactamente en IndexedDB.
+        await guardarDb(sesion, dom).catch(() => false);
+        sincronizarCache(sesion, dom);
       }
       compactarCache();
     }, 450);
