@@ -88,6 +88,20 @@ const crearBurbuja = (m) => {
   d.append(s, b); return d;
 };
 
+// Mantiene la cola reciente que consumen las fichas exactamente alineada con el historial visual.
+// Esto también corrige un GAP previo: si el usuario edita una salida, el modelo ya no recibe la versión vieja.
+const sincronizarCache = (sesion, mensajes) => {
+  if (!sesion) return;
+  try {
+    const t = JSON.parse(localStorage.getItem(CLAVE_RECIENTE) || '{}');
+    const base = t && typeof t === 'object' ? t : {};
+    const ult = (mensajes || []).slice(-RECIENTES);
+    const ahora = Date.now();
+    base[sesion] = ult.map((m, i) => ({ rol: m.rol, texto: m.texto, ts: ahora - (ult.length - i) }));
+    localStorage.setItem(CLAVE_RECIENTE, JSON.stringify(base));
+  } catch (e) {}
+};
+
 const compactarCache = () => {
   try {
     const t = JSON.parse(localStorage.getItem(CLAVE_RECIENTE) || '{}');
@@ -120,7 +134,10 @@ export function montarHistorialPersistente({ root, q }) {
         const h = hs[i], dom = extraer(h), rec = await leerDb(sesion).catch(() => null);
         const guardado = rec && Array.isArray(rec.mensajes) ? rec.mensajes : [];
         if (!guardado.length) {
-          if (dom.length) await guardarDb(sesion, dom).catch(() => false);
+          if (dom.length) {
+            await guardarDb(sesion, dom).catch(() => false);
+            sincronizarCache(sesion, dom);
+          }
           continue;
         }
         const k = solape(guardado, dom);
@@ -132,6 +149,7 @@ export function montarHistorialPersistente({ root, q }) {
         }
         const combinado = guardado.concat(dom.slice(k));
         if (combinado.length !== guardado.length || k !== dom.length) await guardarDb(sesion, combinado).catch(() => false);
+        sincronizarCache(sesion, combinado);
       }
       compactarCache();
     } finally { restaurando = false; }
@@ -154,6 +172,7 @@ export function montarHistorialPersistente({ root, q }) {
         const k = solape(viejo, dom);
         const combinado = viejo.length ? viejo.concat(dom.slice(k)) : dom;
         await guardarDb(sesion, combinado).catch(() => false);
+        sincronizarCache(sesion, combinado);
       }
       compactarCache();
     }, 450);
