@@ -32,12 +32,16 @@
 #ventana-ancla #anc-pegar{max-height:112px}
 .anc-sec{scroll-margin-top:64px}
 
-/* layout del chat: barra Controles + historial con su propio scroll + composer (sin alturas artificiales) */
-section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh - 118px);min-height:440px;gap:6px}
-.ctl-barra{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:100%;min-height:34px;padding:4px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-size:14px;cursor:pointer}
-.ctl-panel{flex:0 0 auto;max-height:0;overflow:hidden;transition:max-height .28s ease}
-.ctl-panel.abierto{max-height:62dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* layout del chat: la barra Controles va FUERA del cuadro del historial, debajo de la tira superior (Chat | Canvas | Seguimiento | Archivos) */
+#ctl-wrap{position:sticky;top:var(--ctl-top,116px);z-index:30;margin:0 0 8px}
+.ctl-barra{display:flex;align-items:center;justify-content:center;width:100%;min-height:36px;padding:4px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--border-strong);color:var(--text);font-size:14px;cursor:pointer}
+.ctl-panel{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:calc(100dvh - var(--ctl-top,116px) - 60px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;border-radius:14px;background:var(--bg,#1a1a1a);border:1px solid var(--border-strong);box-shadow:0 12px 32px rgba(0,0,0,.55)}
+.ctl-panel.abierto{display:block;animation:ctl-desliza .22s ease}
+@keyframes ctl-desliza{from{transform:translateY(-10px);opacity:0}to{transform:none;opacity:1}}
 .ctl-int>.row.fields{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:6px 0}
 .ctl-int>.row.fields .pill{flex:0 0 auto}
+section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh - var(--ctl-top,116px) - 66px);min-height:440px;gap:6px}
 #histories{flex:1 1 auto;min-height:0;position:relative;display:flex;flex-direction:column}
-.chat-history{flex:1 1 auto;min-height:0;height:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.chat-history{flex:1 1 auto;min-height:0;height:auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-right:40px}
+#histories .riu-bajar{width:30px;height:30px;opacity:.8;right:6px;bottom:8px}
+#histories .riu-subir{bottom:44px}

@@ -184,7 +184,7 @@ export function conectarSelectores({ q }) {
     if (FAST_IDS.includes(s.id)) {  // ⚡ Respuesta rápida junto al ON/OFF de este selector; el estado es del chat y lo guarda panel-chat
       const fb = document.createElement("button"); fb.type = "button"; fb.className = "sel-fast"; fb.dataset.selector = s.id; fb.textContent = "⚡";
       fb.setAttribute("aria-pressed", "false"); fb.setAttribute("aria-label", "Respuesta rápida · " + s.nombre); fb.title = "Respuesta rápida: una sola llamada para preguntas simples";
-      fb.addEventListener("click", () => window.dispatchEvent(new CustomEvent("riu:fast-reply-toggle", { detail: { selector: s.id } })));
+      fb.addEventListener("click", () => { const forzar = !leer(); if (forzar) cambiar(s.id); window.dispatchEvent(new CustomEvent("riu:fast-reply-toggle", { detail: { selector: s.id, forzar } })); });  // ⚡ con todos los selectores apagados: enciende este selector y activa la rapida (antes no hacia nada)
       b.before(fb);
     }
     const rr = el("div", "sel-resp"); rr.hidden = true; resp[s.id] = rr;

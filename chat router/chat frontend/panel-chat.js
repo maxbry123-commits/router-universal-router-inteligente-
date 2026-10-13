@@ -23,6 +23,8 @@ export async function mount(root, { api, tell }) {
   const abajo = (c) => { if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight; };  // sigue las respuestas solo si estas cerca del final; el historial tiene su propio scroll
   const ctlB = q("#ctl-barra"), ctlP = q("#ctl-panel");  // barra Controles: desliza hacia abajo y se recoge; son los mismos botones de siempre (no se clonan ni cambian de nodo)
   if (ctlB && ctlP) ctlB.addEventListener("click", () => { const ab = ctlP.classList.toggle("abierto"); ctlB.setAttribute("aria-expanded", String(ab)); ctlB.textContent = ab ? "Controles ▴" : "Controles ▾"; });
+  const medirCtl = () => { const s = document.querySelector(".sidebar") || document.querySelector("#navigation"); const b = s ? Math.round(s.getBoundingClientRect().bottom) : 0; if (b > 0) document.documentElement.style.setProperty("--ctl-top", b + "px"); };  // la barra se pega justo debajo de la tira superior
+  medirCtl(); window.addEventListener("resize", medirCtl);
   const previo = (c, message) => { const h = A.cargarHistorial(c.sesion).filter((m) => m.rol === "user" || m.rol === "bot"); if (h.length && h[h.length - 1].rol === "user" && h[h.length - 1].texto === message) h.pop(); return h.slice(-20).map((m) => ({ role: m.rol === "user" ? "user" : "assistant", content: m.texto })); };  // historial de ESTA sesion, aparte del input actual
   const chats = [];
   let activo = 0;
@@ -472,7 +474,7 @@ export async function mount(root, { api, tell }) {
 
   // ---- enviar: cada chat corre su tarea en paralelo con su sesion, su ficha y sus anclas ----
   if (window.__riuFastH) window.removeEventListener("riu:fast-reply-toggle", window.__riuFastH);
-  window.__riuFastH = () => { chat().fastReply = !chat().fastReply; pintarFastReply(); guardar(); tell(chat().fastReply ? "Respuesta rápida activada" : "Respuesta rápida desactivada"); };
+  window.__riuFastH = (ev) => { chat().fastReply = (ev && ev.detail && ev.detail.forzar) ? true : !chat().fastReply; pintarFastReply(); guardar(); tell(chat().fastReply ? "Respuesta rápida activada" : "Respuesta rápida desactivada"); };
   window.addEventListener("riu:fast-reply-toggle", window.__riuFastH);
   q("#composer").addEventListener("submit", async event => {
     chat().hist.__sigue = true;  // al enviar vuelves al final
