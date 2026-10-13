@@ -11,9 +11,9 @@ import { montarConstitucion } from "./ventana-constitucion.js";
 import { montarClaves } from "./ventana-claves.js";
 import { montarMejorasAncla } from "./anclaje-mejoras.js";
 import { montarAgregarAlChat } from "./agregar-al-chat.js";
+import { montarPensando3D } from "./pensando-3d.js";
 import { montarNotas } from "./notas-ventana.js";
 import { instalarAuth, montarAcceso } from "./acceso-clave.js";
 export function conectarVentanasNuevas(ctx) {
-  // pensando-3d se dejó fuera: el estado real "Pensando…" ya vive dentro del historial y no debe tapar la respuesta.
-  [instalarContexto, instalarAuth, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarAcceso, montarNotas].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
+  [instalarContexto, instalarAuth, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarAcceso, montarPensando3D, montarNotas].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
 }
