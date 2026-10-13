@@ -68,3 +68,24 @@ window.addEventListener('riu:selector-activo', () => {
     window.dispatchEvent(new CustomEvent('riu:fast-reply', { detail: { on: false, reason: 'selector-change' } }));
   } catch (e) {}
 });
+
+// GAP 2 — Chat 1/2/3 + modo + mas + ancla + motor viven FUERA del marco del historial.
+// Se mueven los mismos nodos (no se clonan), por lo que conservan todos sus listeners y estados.
+(() => {
+  const separarControles = () => {
+    if (document.getElementById('chat-controls')) return;
+    const tabs = document.getElementById('chat-tabs');
+    const histories = document.getElementById('histories');
+    const frame = histories && histories.closest('section');
+    if (!tabs || !histories || !frame) return;
+    const fields = tabs.nextElementSibling && tabs.nextElementSibling.classList.contains('fields') ? tabs.nextElementSibling : null;
+    if (!fields) return;
+    const controles = document.createElement('div');
+    controles.id = 'chat-controls';
+    controles.className = 'chat-controls';
+    frame.parentNode.insertBefore(controles, frame);
+    controles.append(tabs, fields);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', separarControles, { once: true });
+  else setTimeout(separarControles, 0);
+})();
