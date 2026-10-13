@@ -1,22 +1,37 @@
-/* chat-espacio.css — espacio del chat (archivo propio; se carga despues de shell.css y responsive.css).
-   Salida con scroll propio: el usuario puede leer arriba sin que el procesamiento lo devuelva al final. */
-.chat-controls{margin:0 0 10px;padding:2px 0 4px;background:var(--bg);position:relative;z-index:7}
-.chat-controls .chat-tabs{margin-bottom:6px}
-.chat-controls>.row.fields{margin:6px 0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.chat-controls>.row.fields::-webkit-scrollbar{display:none}
-.chat-controls>.row.fields .pill{flex:0 0 auto}
+/* chat-espacio.css — espacio del chat y controles fuera del historial. */
 
-/* GAP 3: el historial tiene su propio viewport. Ya no se infla a 1400px/175dvh. */
-.chat-history{height:min(72dvh,900px);min-height:420px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+/* Pestaña fija superior: contiene Chat 1/2/3 + modo + más + ancla + motor. */
+.chat-controls-dock{position:fixed;top:88px;right:12px;left:12px;z-index:85;display:flex;flex-direction:column;align-items:flex-end;pointer-events:none}
+.chat-controls-toggle{pointer-events:auto;min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);color:var(--title);font-weight:650;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.chat-controls-panel{pointer-events:none;width:min(640px,calc(100vw - 24px));max-height:0;overflow:hidden;margin-top:6px;padding:0 10px;border:1px solid transparent;border-radius:16px;background:var(--surface);opacity:0;transform:translateY(-14px);transition:max-height .22s ease,opacity .18s ease,transform .22s ease,padding .22s ease,border-color .22s ease;box-shadow:0 12px 34px rgba(0,0,0,.42)}
+.chat-controls-dock.open .chat-controls-panel{pointer-events:auto;max-height:220px;padding:10px;border-color:var(--border-strong);opacity:1;transform:none;overflow-y:auto}
+.chat-controls-panel .chat-tabs{margin:0 0 8px;display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.chat-controls-panel .chat-tabs::-webkit-scrollbar{display:none}
+.chat-controls-panel>.row.fields{margin:0;display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chat-controls-panel>.row.fields::-webkit-scrollbar{display:none}
+.chat-controls-panel>.row.fields .pill{flex:0 0 auto}
+
+/* GAP 3: historial con viewport propio; nunca obliga a mover la página completa. */
+#histories{position:relative}
+.chat-history{height:min(72dvh,900px);min-height:420px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#composer{position:static;bottom:auto;z-index:6}
+
 @media(max-width:720px){
   h1{font-size:18px;margin:0 0 8px}
-  .chat-controls{margin-bottom:8px}
+  .chat-controls-dock{top:94px;right:10px;left:10px}
+  .chat-controls-panel{width:calc(100vw - 20px)}
+  .chat-controls-dock.open .chat-controls-panel{max-height:190px}
   .chat-history{height:58dvh;min-height:360px}
   #composer textarea{min-height:40px}
 }
-@media(max-width:480px){.chat-history{height:56dvh;min-height:320px}}
+@media(max-width:480px){
+  .chat-controls-dock{top:92px}
+  .chat-history{height:56dvh;min-height:320px}
+}
+
 .composer-bar .btn-microfono.on{border-color:var(--status-green);color:var(--status-green)}
 .composer-bar .btn-microfono.bloq{opacity:.4;cursor:not-allowed}
+
 /* ventanas: fondo quieto con una ventana abierta, titulo que no se corta, diagrama completo sin cortes */
 .sheet .va-caja{max-height:min(88vh,calc(100dvh - 16px));overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;transition:transform .15s ease-out}
 .sheet .va-head{position:sticky;top:-16px;z-index:2;background:var(--surface);padding:8px 4px;touch-action:none}
@@ -24,14 +39,12 @@
 .consil-diagrama.lleno{flex-wrap:wrap;overflow-x:visible;row-gap:6px;max-height:32vh;overflow-y:auto;flex:0 0 auto}
 .consil-diagrama.lleno .dg-paso{white-space:normal;max-width:100%}
 .consil-diagrama.lleno.mas{-webkit-mask-image:none;mask-image:none}
-@media(prefers-reduced-motion:reduce){.sheet .va-caja{transition:none}}
+@media(prefers-reduced-motion:reduce){.sheet .va-caja,.chat-controls-panel{transition:none}}
+
 /* anclaje en una sola ventana: titulos de seccion */
 #ventana-ancla .anc-sec{margin:14px 4px 2px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--quiet-2)}
 #ventana-ancla .anc-sec:first-of-type{margin-top:4px}
 #ventana-ancla #mi-handoff{min-height:64px}
-/* GAP 3: composer en flujo normal. Así el MutationObserver antiguo no puede empujar la página al fondo. */
-#composer{position:static;bottom:auto;z-index:6}
-/* ventanas: las listas ya no tienen scroll propio; se desliza la ventana entera (el dedo ya no queda atrapado en una lista) */
 .sheet .va-caja .list{max-height:none;overflow:visible;flex:0 0 auto}
 .sheet .va-caja{overscroll-behavior-y:contain}
 #ventana-ancla .va-item{font-size:13px;line-height:1.35;overflow-wrap:anywhere;word-break:break-word}
