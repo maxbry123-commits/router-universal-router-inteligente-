@@ -1,10 +1,8 @@
 /* chat-riu.css — estilos de los componentes RUI en el chat (archivo propio). Tokens del tema activo; sin colores nuevos. */
 #histories{position:relative}
 .riu-progreso{position:absolute;top:0;left:0;height:3px;width:0;background:var(--status-blue);border-radius:2px;z-index:3;transition:width .1s linear;pointer-events:none}
-.riu-bajar,.riu-subir{position:absolute;right:10px;display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--surface-alt);border:1px solid var(--border-strong);color:var(--title);cursor:pointer;z-index:4;box-shadow:0 4px 14px rgba(0,0,0,.35)}
-.riu-subir{top:10px}
-.riu-bajar{bottom:10px}
-.riu-bajar[hidden],.riu-subir[hidden]{display:none}
+.riu-bajar{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--surface-alt);border:1px solid var(--border-strong);color:var(--title);cursor:pointer;z-index:4;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.riu-bajar[hidden]{display:none}
 .riu-code{position:relative;margin:8px 0;padding:12px 40px 12px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow-x:auto;white-space:pre;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text)}
 .riu-code[data-lang]::before{content:attr(data-lang);position:absolute;top:4px;left:12px;font-size:10px;color:var(--quiet-2);text-transform:uppercase;letter-spacing:.06em}
 .riu-code[data-lang]{padding-top:20px}

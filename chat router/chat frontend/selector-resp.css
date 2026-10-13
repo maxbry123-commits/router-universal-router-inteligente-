@@ -1,6 +1,6 @@
 /* selector-resp.css — ⚡ junto a cada selector de ficha y el modelo legible fuera del boton. Tokens del tema. */
-.sel-fast{flex:0 0 auto;width:38px;height:38px;min-height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border-strong);color:var(--muted);font-size:17px;line-height:1;cursor:pointer;filter:grayscale(1);opacity:.72}
-.sel-fast.on{border-color:var(--azul-electrico);color:var(--azul-electrico);text-shadow:0 0 8px var(--azul-electrico-brillo);filter:none;opacity:1}
+.sel-fast{flex:0 0 auto;width:38px;height:38px;min-height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel);border:1px solid var(--border-strong);color:var(--muted);font-size:17px;line-height:1;cursor:pointer}
+.sel-fast.on{border-color:var(--azul-electrico);color:var(--azul-electrico);text-shadow:0 0 8px var(--azul-electrico-brillo)}
 .sel-fast:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(1)}
 .sel-resp{flex:1 0 100%;margin:0;padding:0 14px 4px;font-size:13px;line-height:1.35;color:var(--muted);overflow-wrap:anywhere}
 .sel-fila.activa .sel-resp{color:var(--title)}

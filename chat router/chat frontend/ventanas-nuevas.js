@@ -12,38 +12,8 @@ import { montarClaves } from "./ventana-claves.js";
 import { montarMejorasAncla } from "./anclaje-mejoras.js";
 import { montarAgregarAlChat } from "./agregar-al-chat.js";
 import { montarPensando3D } from "./pensando-3d.js";
-import { montarHistorialPersistente } from "./chat-historial-db.js";
-import { instalarContextoFichas } from "./chat-contexto-fichas.js";
-import { instalarGuardSelector } from "./chat-selector-guard.js";
-import { instalarRecuperacionProcesos } from "./chat-proceso-recovery.js";
-import { instalarDetenerBackend } from "./chat-detener-backend.js";
-import { instalarFastVisual } from "./chat-fast-visual.js";
-import { instalarSelectorPorSesion } from "./chat-selector-por-sesion.js";
 import { montarNotas } from "./notas-ventana.js";
 import { instalarAuth, montarAcceso } from "./acceso-clave.js";
 export function conectarVentanasNuevas(ctx) {
-  [
-    instalarContexto,
-    instalarAuth,
-    montarHistorialPersistente,
-    instalarContextoFichas,
-    instalarGuardSelector,
-    instalarRecuperacionProcesos,
-    instalarDetenerBackend,
-    instalarFastVisual,
-    instalarSelectorPorSesion,
-    montarDestinos,
-    montarMejorasAncla,
-    montarHandoffEditor,
-    montarAgregarAlChat,
-    montarArchivosBorrar,
-    montarHabilidades,
-    montarWorkflows,
-    montarSelectorWorkflows,
-    montarConstitucion,
-    montarClaves,
-    montarAcceso,
-    montarPensando3D,
-    montarNotas,
-  ].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
+  [instalarContexto, instalarAuth, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarAcceso, montarPensando3D, montarNotas].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
 }
