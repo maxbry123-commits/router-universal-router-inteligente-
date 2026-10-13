@@ -1,5 +1,6 @@
 // chat-selector-por-sesion.js — cada Chat conserva su selector principal.
 // Evita que cambiar el selector en Chat 2 cambie silenciosamente la ruta de Chat 1.
+// Los listeners globales sobreviven a Chat -> Canvas -> Chat y cada root nuevo recibe sus listeners locales.
 const CLAVE = 'riu_selector_por_sesion_v1';
 let cambiando = false;
 
@@ -24,7 +25,6 @@ function restaurar() {
   if (!window.RIU_SELECTORES) return;
   const ses = sesionActual(); if (!ses) return;
   const m = leerMapa();
-  // Primera vez de una sesión existente: adopta el selector actual para no cambiarla de golpe.
   if (!(ses in m)) { m[ses] = window.RIU_SELECTORES.activo || null; guardarMapa(m); return; }
   const deseado = m[ses] || null;
   const actual = window.RIU_SELECTORES.activo || null;
@@ -40,15 +40,18 @@ function restaurar() {
 }
 
 export function instalarSelectorPorSesion({ root }) {
-  if (window.__riuSelectorPorSesion) return;
-  window.__riuSelectorPorSesion = true;
-  window.addEventListener('riu:selector-activo', () => { guardarActivo(); });
-  // panel-chat actualiza el Chat activo antes de que termine el click de la pestaña.
-  root.addEventListener('click', (e) => {
-    if (!e.target.closest('#chat-tabs .chip')) return;
-    setTimeout(restaurar, 0);
-  });
-  // Nuevo chat / restauración: guardar/restaurar tras montar las pestañas.
-  new MutationObserver(() => setTimeout(restaurar, 0)).observe(root.querySelector('#histories') || root, { childList: true, subtree: false });
+  if (!window.__riuSelectorPorSesionGlobal) {
+    window.__riuSelectorPorSesionGlobal = true;
+    window.addEventListener('riu:selector-activo', guardarActivo);
+  }
+  if (!root.dataset.selectorSesion) {
+    root.dataset.selectorSesion = '1';
+    root.addEventListener('click', (e) => {
+      if (!e.target.closest('#chat-tabs .chip')) return;
+      setTimeout(restaurar, 0);
+    });
+    const h = root.querySelector('#histories');
+    if (h) new MutationObserver(() => setTimeout(restaurar, 0)).observe(h, { childList: true, subtree: false });
+  }
   setTimeout(restaurar, 50);
 }
