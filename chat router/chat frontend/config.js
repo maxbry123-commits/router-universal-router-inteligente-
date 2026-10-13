@@ -23,6 +23,22 @@ window.RIU_CONFIG = {
   ]
 };
 
+// GAP fast-reply: elimina una vez estados antiguos que podian dejar ⚡ activo sin que el usuario lo viera.
+// El modo rápido vuelve a OFF de forma segura; solo se activa de nuevo al tocar explícitamente ⚡.
+(() => {
+  try {
+    const MIGRA = 'riu_fast_reply_estado_v2';
+    if (localStorage.getItem(MIGRA) !== '1') {
+      const chats = JSON.parse(localStorage.getItem('riu_chats_v1') || '[]');
+      if (Array.isArray(chats)) {
+        for (const c of chats) if (c && typeof c === 'object') c.fastReply = false;
+        localStorage.setItem('riu_chats_v1', JSON.stringify(chats));
+      }
+      localStorage.setItem(MIGRA, '1');
+    }
+  } catch (e) {}
+})();
+
 // GAP fast-reply: al restaurar un chat, panel-chat carga fastReply antes de que el panel de Selectores
 // tenga acceso a window.RIU_CHAT. Reintenta hasta que ambos existan y fuerza una sola sincronizacion visual.
 (() => {
@@ -39,3 +55,16 @@ window.RIU_CONFIG = {
   };
   setTimeout(sincronizarFastReply, 0);
 })();
+
+// El modo rápido pertenece al selector que el usuario está usando. Si cambia de selector,
+// se apaga para impedir que un ⚡ heredado se mande silenciosamente a otro modelo/ficha.
+window.addEventListener('riu:selector-activo', () => {
+  try {
+    const c = window.RIU_CHAT && window.RIU_CHAT.chat && window.RIU_CHAT.chat();
+    if (!c || !c.fastReply) return;
+    c.fastReply = false;
+    if (window.RIU_CHAT.pintar) window.RIU_CHAT.pintar();
+    if (window.RIU_SELECTORES && typeof window.RIU_SELECTORES.refrescar === 'function') window.RIU_SELECTORES.refrescar();
+    window.dispatchEvent(new CustomEvent('riu:fast-reply', { detail: { on: false, reason: 'selector-change' } }));
+  } catch (e) {}
+});
