@@ -19,6 +19,7 @@ _REQ_TOOLS = ContextVar("riu_requiere_tools", default=False)  # tarea que exige 
 _VISTOS = ContextVar("riu_vistos", default=None)  # escrituras ya hechas de esta tarea y nodo (no se repiten)
 _PERFIL = ContextVar("riu_perfil", default="normal")  # normal / code / auditoria
 _CANCEL_FN = ContextVar("riu_cancel_fn", default=None)  # callable -> True = usuario detuvo el proceso: no lanzar mas pasos
+_TECHO_DURO = ContextVar("riu_techo_duro", default=False)  # True = techo literal del presupuesto: sin la ventana extra de 45 s
 import time
 import urllib.error
 import urllib.parse
@@ -579,7 +580,7 @@ def _bucle(llamar, mensajes):
         if cf and cf():
             return {'error': 'GAP CANCELADO_POR_USUARIO'}, usadas
         if time.monotonic() >= fin:
-            if final_hecho:
+            if final_hecho or _TECHO_DURO.get():  # Team 5: 0-300 s total, sin la ventana extra de 45 s
                 return {'error':'TIEMPO_TOTAL_AGOTADO'}, usadas
             final_hecho = True  # una ultima llamada sin herramientas para contestar con lo que haya
             con_tools = False
@@ -1737,6 +1738,7 @@ def _chat(p):
     _REQ_TOOLS.set(bool(p.get('requiere_tools')))
     _PERFIL.set(str(p.get('perfil') or ''))  # vacio = chat normal (contexto largo); un nodo de ficha pide su perfil
     _CANCEL_FN.set(p.get('cancelar_si') if callable(p.get('cancelar_si')) else None)
+    _TECHO_DURO.set(bool(p.get('techo_duro')))
     _tid = str(p.get('tarea_id') or '')
     if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
         if len(_VISTOS_G) > 200:

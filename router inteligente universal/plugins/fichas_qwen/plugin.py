@@ -1280,6 +1280,8 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         return {"ok": True, "fichas": list(FICHAS), "sellos": len(list((DIR / "sellos").glob("*.sello")))}
     if action == "fichas":
         return {"fichas": [{"n": k, "id": v, "nombre": FICHAS[v].get("ficha")} for k, v in ALIAS.items() if v in FICHAS]}
+    if action == "selector":  # fuente unica del catalogo: el selector de la Ficha 1 tal cual; Team qwen y Team 5 leen lo mismo
+        return {"selector": (FICHAS.get("ficha1-modelos") or {}).get("selector") or []}
     if action == "chat":
         return _chat(p)
     if action == "chat_async":
