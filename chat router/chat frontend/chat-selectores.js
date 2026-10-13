@@ -129,7 +129,7 @@ export function conectarSelectores({ q }) {
     for (const b of panel.querySelectorAll(".sel-fast")) { b.classList.toggle("on", fast); b.setAttribute("aria-pressed", String(fast)); b.disabled = !!act && act !== b.dataset.selector; }
     if (global) {
       const nom = act ? SELECTORES.find((s) => s.id === act).nombre : "", m = act ? modeloDe(act) : "";
-      global.textContent = act ? (m ? "Responde ahora: " + nom + " · " + m : nom + " · falta elegir modelo") : "Ningún selector encendido: responde el modelo por defecto (" + (etiquetaPill("#ficha") || "—") + ")";  // nunca "Responde ahora" sin modelo elegido
+      global.textContent = act ? "Responde ahora: " + nom + (m ? " · " + m : "") : "Ningún selector encendido: responde el modelo por defecto (" + (etiquetaPill("#ficha") || "—") + ")";
       global.classList.toggle("on", !!act);
     }
   };

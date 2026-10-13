@@ -11,7 +11,7 @@ window.RIU_SELECTOR_QWEN = window.RIU_SELECTOR_QWEN || {
   modelos: [],       // catálogo visible (slugs de interfaz, NO son ids de proveedor)
 };
 
-let GRUPOS = [
+const GRUPOS = [
   { titulo: "Qwen", modelos: [
     ["pensar", "Qwen 3.8 Max", "Código complejo"],
     ["rayo", "Qwen 3.8 Flash", "Código rápido"],
@@ -25,12 +25,12 @@ let GRUPOS = [
   { titulo: "GLM", modelos: [
     ["pensar", "GLM 5.2", "Código + agentes"]] },
   { titulo: "Imágenes", modelos: [
-    ["imagen", "Qwen Image 3.0 Pro", "Imágenes", "imagen"],
-    ["imagen", "Wan 2.7 Image", "Imágenes", "imagen"]] },
+    ["imagen", "Qwen Image 3.0 Pro", "Imágenes"],
+    ["imagen", "Wan 2.7 Image", "Imágenes"]] },
   { titulo: "Modo recepción", recepcion: true, modelos: [
-    ["voz", "Qwen TTS", "Texto a voz", "voz"],
-    ["micro", "Qwen Realtime", "Voz en vivo", "voz"],
-    ["texto", "Qwen ASR", "Voz a texto", "voz"]] },
+    ["voz", "Qwen TTS", "Texto a voz"],
+    ["micro", "Qwen Realtime", "Voz en vivo"],
+    ["texto", "Qwen ASR", "Voz a texto"]] },
 ];
 const ICO = {  // iconos de línea monocromos (currentColor), skill Maxbry UI: sin emojis de color
   pensar: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>', rayo: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
@@ -38,23 +38,6 @@ const ICO = {  // iconos de línea monocromos (currentColor), skill Maxbry UI: s
   voz: '<path d="M4 9v6h4l5 4V5L8 9zM16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>', micro: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', texto: '<path d="M4 6h16M4 12h16M4 18h10"/>' };
 const slug = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({ modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo })));
-
-// fuente unica del catalogo: el selector de la Ficha 1 (ficha1-modelos.json) expuesto por fichas_qwen; si falla, queda la copia local
-const cargarCatalogoF1 = async () => {
-  try {
-    const r = await fetch("/plugins/fichas_qwen/call/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "selector" }) });
-    const d = await r.json();
-    const sel = d && d.selector;
-    if (!Array.isArray(sel) || !sel.length) return false;
-    const ico = (m) => m.tipo === "imagen" ? "imagen" : m.tipo === "voz" ? (/realtime/i.test(m.nombre) ? "micro" : /asr/i.test(m.nombre) ? "texto" : "voz") : (/flash|plus/i.test(m.nombre) ? "rayo" : /3\.6/i.test(m.nombre) ? "rapido" : "pensar");
-    const grp = (m) => m.tipo === "imagen" ? "Imágenes" : m.tipo === "voz" ? "Modo recepción" : m.nombre.split(" ")[0];
-    const gs = {};
-    for (const m of sel) { const t = grp(m); (gs[t] = gs[t] || []).push([ico(m), m.nombre, m.rol + (m.tipo !== "texto" ? " · " + m.tipo : ""), m.tipo]); }
-    GRUPOS = Object.entries(gs).map(([titulo, modelos]) => ({ titulo, modelos }));
-    window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({ modelo_id_slug: slug(m[1]), label: m[1], grupo: g.titulo })));
-    return true;
-  } catch (e) { return false; }
-};
 
 export function conectarSelectorModelos(ctx) {
   const { q, chat, tell, guardar } = ctx;
@@ -76,7 +59,7 @@ export function conectarSelectorModelos(ctx) {
     const det = c.selectorQwen ? { modelo_id_slug: c.selectorQwen.modelo_id_slug, label: m[1], grupo: g.titulo, sesion: c.sesion } : null;
     window.RIU_SELECTOR_QWEN.seleccion = det;
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
-    pintarPill(); pintar(); guardar();
+    pintarPill(); pintar(); guardar(); if (typeof actualizarMIA === "function") actualizarMIA();  // la pildora de abajo refleja el modelo elegido
     const dest = hojaOrigen === "team-5-mvp" ? "team-5-mvp" : "team-qwen";
     const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
     q("#sh-modelos").hidden = true;
@@ -89,15 +72,13 @@ export function conectarSelectorModelos(ctx) {
       const caja = node("div", "", "mod-grupo");
       for (const m of g.modelos) {
         const sel = !!(s && s.label === m[1]);
-        const noMvp = hojaOrigen === "team-5-mvp" && m[3] && m[3] !== "texto";  // Team 5 solo ejecuta texto hoy: el resto se muestra marcado, nunca se envia a otro modelo
-        const b = node("button", "", "mod-fila" + (sel ? " sel" : "") + (noMvp ? " no-mvp" : ""));
+        const b = node("button", "", "mod-fila" + (sel ? " sel" : ""));
         b.type = "button"; b.setAttribute("aria-pressed", String(sel));
-        if (noMvp) { b.disabled = true; b.title = m[1] + " es " + m[3] + ": no disponible en MVP"; }
         const txt = node("span", "", "mod-txt");
-        txt.append(node("b", m[1]), node("small", m[2] + (noMvp ? " — no disponible en MVP" : "")));
+        txt.append(node("b", m[1]), node("small", m[2]));
         const ico = node("span", "", "mod-ico"); ico.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICO[m[0]] || "") + "</svg>";
         b.append(ico, txt, node("span", sel ? "✓" : "", "mod-ck"));
-        if (!noMvp) b.addEventListener("click", () => elegir(m, g));
+        b.addEventListener("click", () => elegir(m, g));
         caja.append(b);
       }
       lista.append(caja);
@@ -106,11 +87,11 @@ export function conectarSelectorModelos(ctx) {
   const SEL_GLOBAL = () => window.RIU_SELECTORES;
   pill.addEventListener("click", () => { const R = SEL_GLOBAL(); if (R && R.encender && R.activo !== "team-qwen") R.encender("team-qwen"); });
   if (pillMvp) pillMvp.addEventListener("click", () => { const R = SEL_GLOBAL(); if (R && R.encender && R.activo !== "team-5-mvp") R.encender("team-5-mvp"); });
-  // #modelo-ia: unico punto de entrada al catalogo (#sh-modelos / mismo GRUPOS / selectorQwen); va debajo del input
+  // #modelo-ia: unico punto de entrada al catalogo existente (#sh-modelos / GRUPOS / selectorQwen); va debajo del input
   const pillMIA = q("#modelo-ia");
   const actualizarMIA = () => {
     if (!pillMIA) return;
-    const R = SEL_GLOBAL(), act = R && R.activo, s = chat().selectorQwen;
+    const R = SEL_GLOBAL(), act = R && R.activo, c = chat(), s = c.selectorQwen;
     const consil = act === "ask-consil-code-qwen-team" || act === "ask-consil-fromtend-qwen-team";
     const nvidia = act === "nvidia-groq-team" || act === "ask-consil-nvidia-groq";
     if (consil) { pillMIA.textContent = "Modelos definidos por la ficha"; pillMIA.disabled = true; pillMIA.removeAttribute("data-sheet"); }
@@ -129,7 +110,6 @@ export function conectarSelectorModelos(ctx) {
   window.addEventListener("riu:selector-activo", actualizarMIA);
   new MutationObserver(actualizarMIA).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   actualizarMIA();
-  cargarCatalogoF1().then((ok) => { if (ok) { pintarPill(); pintar(); } });  // el catalogo real de la Ficha 1 sustituye la copia local
   new MutationObserver(pintarPill).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   pintarPill();
   conectarSelectores(ctx);
