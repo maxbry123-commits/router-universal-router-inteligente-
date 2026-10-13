@@ -3,9 +3,9 @@ import os, sys, io, json, gzip, base64, tarfile, hashlib, time, shutil, pathlib,
 from huggingface_hub import HfFileSystem, HfApi
 MODE = os.environ.get('RR_MODE', 'CHECK'); NS = 'COMAND-CENTER-1'
 BASE = 'buckets/%s/yaiwes-memoria-storage/router-inteligente-universal' % NS
-REPO = 'maxbry123-commits/router-universal-router-inteligente-'; BASE_SHA = '254e5b1a1b61a6fa3bddbe2d403c06ae7cc4edcf'
+REPO = 'maxbry123-commits/router-universal-router-inteligente-'; BASE_SHA = '7107f947aec9a0b35917c162402c134a7de03934'
 RI = 'router inteligente universal/'
-ARCHIVOS = [RI + 'plugins/fichas_qwen/plugin.py'] + [RI + 'plugins/fichas_qwen/fichas/%s.json' % n for n in ('ficha1-modelos', 'ficha2-dag-codigo', 'ficha3-frontend', 'ficha4-workflow-yaiwes')]
+ARCHIVOS = [RI + 'plugins/fichas_qwen/plugin.py', RI + 'plugins/fichas_qwen/fichas/ficha3-frontend.json']
 VIEJOS = ['6acc8a9d095c57808932967a', '6acca1dcfee2c900701a4256']
 def out(**k): print(json.dumps(k, ensure_ascii=False), flush=True)
 def gh(ref, path): return ur.urlopen('https://raw.githubusercontent.com/%s/%s/%s' % (REPO, ref, urllib.parse.quote(path)), timeout=60).read()
@@ -109,10 +109,23 @@ def chat(base, body, lim=400):
         if r.get('estado') != 'procesando': return r
     return {'estado': 'SIN_RESPUESTA'}
 F = '/plugins/fichas_qwen/call/'; P = '/plugins/puente_chat/call/'; ok = []
-r = chat(P, {'model': 'nv-nemotron-super', 'messages': [{'role': 'user', 'content': 'Responde solamente OK'}], 'max_tokens': 16, 'sesion': 'rr-default'}); c = ((r.get('choices') or [{}])[0].get('message') or {}).get('content'); ok.append(bool(c)); out(prueba='selector ninguno / Nvidia groq team (harness puente_chat)', ok=bool(c), respuesta=str(c)[:40])
-for nom, fi, mod in [('Team qwen (ficha 1) Qwen 3.8 Flash', '1', 'Qwen 3.8 Flash'), ('Ask consil code (ficha 2)', '2', ''), ('Ask consil frontend (ficha 3)', '3', '')]:
-    r = chat(F, {'ficha_qwen': fi, 'modelo': mod or 'ficha-qwen38flash', 'messages': [{'role': 'user', 'content': 'Responde solo OK'}], 'sesion': 'rr-' + fi, 'fast_reply': True}); good = r.get('execution_path') == 'FAST_QA' and bool(r.get('reply')); ok.append(good)
-    out(prueba=nom + ' con fast_reply', ok=good, execution_path=r.get('execution_path'), modelo=next((z.get('modelo') for z in (r.get('traza') or []) if z.get('modelo') not in (None, 'goals')), None), ms=r.get('ms'))
+def _find(d, k):
+    if isinstance(d, dict):
+        if k in d: return d[k]
+        for v in d.values():
+            r = _find(v, k)
+            if r is not None: return r
+    return None
+live = _find(http('GET', '/health')[1], 'live_provider_inference'); ok.append(live is True); out(prueba='health: live_provider_inference', ok=(live is True), valor=live)
+cd = (False, None, None)
+for modelo in ('groq-qwen-3-8', 'nv-nemotron-super', 'groq-qwen-3-8', 'nv-nemotron-super'):
+    r = chat(P, {'model': modelo, 'messages': [{'role': 'user', 'content': 'Responde solamente OK'}], 'max_tokens': 16, 'sesion': 'rr-default'}, 150); c = ((r.get('choices') or [{}])[0].get('message') or {}).get('content')
+    if c and str(c).strip(): cd = (True, modelo, str(c)[:30]); break
+ok.append(cd[0]); out(prueba='respuesta REAL de un modelo por la ruta por defecto (puente_chat)', ok=cd[0], modelo=cd[1], respuesta=cd[2])
+for nom, fi, mod, fast in [('Team qwen (ficha 1) con rapida ON', '1', 'Qwen 3.8 Flash', True), ('Team qwen (ficha 1) con rapida OFF', '1', 'Qwen 3.8 Flash', False), ('Ask consil code (ficha 2) con rapida ON', '2', '', True), ('Ask consil frontend (ficha 3) con rapida ON', '3', '', True)]:
+    r = chat(F, {'ficha_qwen': fi, 'modelo': mod or 'ficha-qwen38flash', 'messages': [{'role': 'user', 'content': 'Responde solo OK'}], 'sesion': 'rr-' + fi + str(fast), 'fast_reply': fast}, 300)
+    good = (r.get('execution_path') == 'FAST_QA' and bool(r.get('reply'))) if fast else (bool(r.get('reply')) and r.get('fast_lane') is False and r.get('execution_path') not in ('FAST_QA', 'FAST_CONSULT')); ok.append(good)
+    out(prueba=nom, ok=good, execution_path=r.get('execution_path'), fast_lane=r.get('fast_lane'), ms=r.get('ms'))
 if all(ok):
     api = HfApi(token=os.environ['HF_TOKEN'])
     value = {'LIVE_URL': URL, 'job_id': j.id, 'flavor': 'cpu-basic', 'updated': time.time(), 'auth': 'X-API-Key', 'harnessUrl': URL + '/plugins/puente_chat/call'}
@@ -121,7 +134,7 @@ if all(ok):
     old = json.load(ur.urlopen(ur.Request(apiurl + '?ref=main', headers=gh_h), timeout=30))
     ur.urlopen(ur.Request(apiurl, data=json.dumps({'message': 'Update active HF Router address [skip ci]', 'branch': 'main', 'sha': old['sha'], 'content': base64.b64encode(json.dumps(value, indent=2).encode()).decode()}).encode(), headers=gh_h, method='PUT'), timeout=30)
     fs.pipe_file(BASE + '/control/router-current.json', json.dumps({'url': URL, 'job_id': j.id, 'flavor': 'cpu-basic', 'started': time.time(), 'timeout_s': 172800}).encode()); out(paso='LIVE_URL publicada', url=URL)
-    for vid in VIEJOS:
+    for vid in [x.id for x in api.list_jobs(namespace=NS) if (getattr(x, 'labels', None) or {}).get('name') == 'yaiwes-router-16gb' and 'RUNNING' in str(getattr(getattr(x, 'status', None), 'stage', '')) and x.id != j.id]:
         try: api.cancel_job(job_id=vid, namespace=NS); out(paso='router viejo retirado', job=vid[-8:])
         except Exception as e: out(paso='router viejo NO retirado', job=vid[-8:], error=type(e).__name__)
     out(paso='FIN_APPLY', ok=True)
