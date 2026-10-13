@@ -83,7 +83,8 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
                   'presupuesto_s': _TIMEOUT_S, 'solo_lectura': False, 'requiere_tools': False,
                   'tarea_id': str(p.get('tarea_id') or ''), 'task_id': str(p.get('task_id') or ''),
                   'anclados': list(p.get('anclados') or []), 'perfil': str(p.get('perfil') or ''),
-                  'contexto_explicito': True})  # el historial completo ya va en messages: sin perfil artificial y sin reinsertar _contexto() en el system
+                  'contexto_explicito': True,
+                  'cancelar_si': (lambda _k=pid: _k in fq._CANCEL) if pid else None})  # Detener: se mira antes de cada modelo/tool; un HTTP en vuelo se deja terminar  # el historial completo ya va en messages: sin perfil artificial y sin reinsertar _contexto() en el system
     if pid:
         fq._prog(pid, 'MVP', 'gap' if (isinstance(r, dict) and r.get('error')) else 'ok')
     if not isinstance(r, dict):

@@ -24,9 +24,7 @@ export async function mount(root, { api, tell }) {
   const mmMovil = window.matchMedia("(max-width: 720px)");
   const reacomodoMovil = () => {
     const h1 = document.querySelector("#h1-slot h1, #h1-slot-int h1");
-    const sel = document.getElementById("selectores");
     if (h1) (mmMovil.matches ? q("#h1-slot-int") : q("#h1-slot")).appendChild(h1);
-    if (sel) (mmMovil.matches ? q("#sel-slot-bajo") : q("#sel-slot-ctl")).appendChild(sel);
   };
   reacomodoMovil(); mmMovil.addEventListener("change", reacomodoMovil);
   const ctlB = q("#ctl-barra"), ctlP = q("#ctl-panel");  // barra Controles: desliza hacia abajo y se recoge; son los mismos botones de siempre (no se clonan ni cambian de nodo)

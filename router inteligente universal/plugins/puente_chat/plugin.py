@@ -18,6 +18,7 @@ _POL = ContextVar("riu_politica", default=None)  # politicas_modelo del modelo q
 _REQ_TOOLS = ContextVar("riu_requiere_tools", default=False)  # tarea que exige herramientas: sin tools = GAP
 _VISTOS = ContextVar("riu_vistos", default=None)  # escrituras ya hechas de esta tarea y nodo (no se repiten)
 _PERFIL = ContextVar("riu_perfil", default="normal")  # normal / code / auditoria
+_CANCEL_FN = ContextVar("riu_cancel_fn", default=None)  # callable -> True = usuario detuvo el proceso: no lanzar mas pasos
 import time
 import urllib.error
 import urllib.parse
@@ -420,9 +421,9 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 resta = fin - time.monotonic()
                 if resta >= 2:
                     ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
-            largo = 0
-            while _es_contexto_largo(ultimo) and largo < 12 and _soltar_turno_viejo(mensajes):
-                largo += 1  # no cabe en la ventana del provider: soltar el turno completo mas viejo y reintentar (mismo modelo, misma clave)
+            while _es_contexto_largo(ultimo) and _soltar_turno_viejo(mensajes):
+                # no cabe en la ventana del provider: soltar UN turno completo viejo y reintentar (mismo modelo, misma clave);
+                # termina solo: cada vuelta borra un turno y el input actual / system / cadena tool son intocables
                 resta = fin - time.monotonic()
                 if resta < 2:
                     break
@@ -573,7 +574,10 @@ def _bucle(llamar, mensajes):
     con_tools = not fast
     pasos = 0
     final_hecho = False
+    cf = _CANCEL_FN.get()
     while True:
+        if cf and cf():
+            return {'error': 'GAP CANCELADO_POR_USUARIO'}, usadas
         if time.monotonic() >= fin:
             if final_hecho:
                 return {'error':'TIEMPO_TOTAL_AGOTADO'}, usadas
@@ -615,6 +619,8 @@ def _bucle(llamar, mensajes):
             am['reasoning_content'] = msg['reasoning_content']  # DeepSeek / Qwen: el razonamiento viaja junto a la llamada
         mensajes.append(am)
         for c in calls:
+            if cf and cf():
+                return {'error': 'GAP CANCELADO_POR_USUARIO'}, usadas
             f = c.get('function') or {}
             try:
                 args = json.loads(f.get('arguments') or '{}')
@@ -1730,6 +1736,7 @@ def _chat(p):
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
     _REQ_TOOLS.set(bool(p.get('requiere_tools')))
     _PERFIL.set(str(p.get('perfil') or ''))  # vacio = chat normal (contexto largo); un nodo de ficha pide su perfil
+    _CANCEL_FN.set(p.get('cancelar_si') if callable(p.get('cancelar_si')) else None)
     _tid = str(p.get('tarea_id') or '')
     if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
         if len(_VISTOS_G) > 200:

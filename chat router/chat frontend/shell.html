@@ -18,6 +18,7 @@
   <div class="shell">
     <aside class="sidebar" aria-label="Vistas">
       <div class="brand">Y</div>
+      <span id="nav-slot"></span>
       <nav id="navigation">
         <button data-view="chat" aria-current="page">Chat</button>
         <button data-view="canvas">Canvas</button>
@@ -27,6 +28,9 @@
       </nav>
     </aside>
     <div class="workspace">
+      <div id="movil-bar" hidden><button type="button" id="movil-toggle" aria-expanded="false" aria-controls="movil-panel">Chat v</button><span id="movil-status">· Router</span></div>
+      <div id="movil-panel" hidden><div id="mv-nav"></div><div id="mv-top"></div><div id="mv-title"></div><div id="mv-ctl"></div></div>
+      <span id="topbar-slot"></span>
       <header class="topbar">
         <div><strong id="view-title">Chat</strong><small>Router Inteligente Universal · IMMUTABLE</small></div>
         <div class="access"><button class="secondary" id="connect" type="button">Reintentar conexión</button><label for="theme">Tema <select id="theme"><option value="gris">Gris</option><option value="little">Little</option><option value="matte">Matte</option><option value="blanco">Blanco</option><option value="crystal">Cristal</option><option value="orange">Naranja</option><option value="blue">Azul</option></select></label><span id="connection" role="status">Sin verificar</span></div>
