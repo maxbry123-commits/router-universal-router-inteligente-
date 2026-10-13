@@ -11,8 +11,9 @@
 .chat-controls-panel>.row.fields::-webkit-scrollbar{display:none}
 .chat-controls-panel>.row.fields .pill{flex:0 0 auto}
 
-/* GAP 3: historial con viewport propio; nunca obliga a mover la página completa. */
-#histories{position:relative}
+/* GAP 3: historial con viewport propio. El margen inferior hace que el antiguo alFondo()
+   calcule una distancia <= 0 y quede inerte; el seguimiento real vive en chat-riu.js. */
+#histories{position:relative;margin-bottom:14px}
 .chat-history{height:min(72dvh,900px);min-height:420px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 #composer{position:static;bottom:auto;z-index:6}
 
