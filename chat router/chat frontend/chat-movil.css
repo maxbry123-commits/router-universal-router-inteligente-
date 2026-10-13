@@ -56,3 +56,7 @@
   .modelo-ia-fila{margin:4px 0 0}
   .modelo-ia-fila .pill{min-height:34px}
 }
+
+/* caja de componentes DEBAJO del marco de Enviar: aqui vive el selector del modelo */
+.zona-comp{border:1px solid var(--border-strong);border-radius:12px;padding:8px 10px;margin:8px 0;display:flex;justify-content:center;background:var(--surface)}
+.zona-comp .pill{min-height:34px;max-width:100%}
