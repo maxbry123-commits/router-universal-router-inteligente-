@@ -59,7 +59,7 @@ export function conectarSelectorModelos(ctx) {
     const det = c.selectorQwen ? { modelo_id_slug: c.selectorQwen.modelo_id_slug, label: m[1], grupo: g.titulo, sesion: c.sesion } : null;
     window.RIU_SELECTOR_QWEN.seleccion = det;
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
-    pintarPill(); pintar(); guardar();
+    pintarPill(); pintar(); guardar(); if (typeof actualizarMIA === "function") actualizarMIA();  // la pildora de abajo refleja el modelo elegido
     const dest = hojaOrigen === "team-5-mvp" ? "team-5-mvp" : "team-qwen";
     const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
     q("#sh-modelos").hidden = true;
@@ -84,8 +84,32 @@ export function conectarSelectorModelos(ctx) {
       lista.append(caja);
     }
   };
-  pill.addEventListener("click", () => { hojaOrigen = "team-qwen"; pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
-  if (pillMvp) pillMvp.addEventListener("click", () => { hojaOrigen = "team-5-mvp"; pillMvp.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
+  const SEL_GLOBAL = () => window.RIU_SELECTORES;
+  pill.addEventListener("click", () => { const R = SEL_GLOBAL(); if (R && R.encender && R.activo !== "team-qwen") R.encender("team-qwen"); });
+  if (pillMvp) pillMvp.addEventListener("click", () => { const R = SEL_GLOBAL(); if (R && R.encender && R.activo !== "team-5-mvp") R.encender("team-5-mvp"); });
+  // #modelo-ia: unico punto de entrada al catalogo existente (#sh-modelos / GRUPOS / selectorQwen); va debajo del input
+  const pillMIA = q("#modelo-ia");
+  const actualizarMIA = () => {
+    if (!pillMIA) return;
+    const R = SEL_GLOBAL(), act = R && R.activo, c = chat(), s = c.selectorQwen;
+    const consil = act === "ask-consil-code-qwen-team" || act === "ask-consil-fromtend-qwen-team";
+    const nvidia = act === "nvidia-groq-team" || act === "ask-consil-nvidia-groq";
+    if (consil) { pillMIA.textContent = "Modelos definidos por la ficha"; pillMIA.disabled = true; pillMIA.removeAttribute("data-sheet"); }
+    else if (nvidia) { pillMIA.textContent = "Modelo IA: " + (q("#ficha") && q("#ficha").dataset.ficha ? q("#ficha").dataset.ficha : "Nvidia groq team") + " v"; pillMIA.disabled = false; pillMIA.dataset.sheet = "sh-ficha"; }
+    else { pillMIA.textContent = "Modelo IA: " + (s ? s.label : "elegir") + " v"; pillMIA.disabled = false; pillMIA.dataset.sheet = "sh-modelos"; }
+  };
+  if (pillMIA) {
+    pillMIA.addEventListener("click", () => {
+      const R = SEL_GLOBAL();
+      hojaOrigen = R && R.activo === "team-5-mvp" ? "team-5-mvp" : "team-qwen";  // el modelo elegido enciende el sistema activo, nunca el otro
+      const sh = q("#" + (pillMIA.dataset.sheet || "sh-modelos"));
+      if (sh) pillMIA.setAttribute("aria-expanded", String(sh.hidden));
+      pintar();
+    });
+  }
+  window.addEventListener("riu:selector-activo", actualizarMIA);
+  new MutationObserver(actualizarMIA).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
+  actualizarMIA();
   new MutationObserver(pintarPill).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   pintarPill();
   conectarSelectores(ctx);
