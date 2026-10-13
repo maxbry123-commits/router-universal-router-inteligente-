@@ -6,10 +6,13 @@ Mantiene el nucleo original en plugin_core.py y corrige reglas de entrada sin du
   mutacion, FAST o tarea nueva. Se vuelven a inyectar unicamente en los prompts de los modelos.
 - Ficha 3: N6 y N7 son revisores independientes de solo lectura y corren en paralelo;
   N8 conserva el juicio final y espera a ambos.
+- Cola global: maximo 4 procesos/llamadas activas; el resto espera en cola.
+- Detener: cancela si aun esta en cola o corta cooperativamente al terminar la llamada en curso.
 - La accion interna `llm` de Ficha 4 conserva su fast automatico para workflows.
 """
 from __future__ import annotations
 
+import concurrent.futures as _cf
 import importlib.util as _importlib_util
 import threading as _threading
 from pathlib import Path as _Path
@@ -27,6 +30,36 @@ _chat_original = _core._chat
 _correr_original = _core._correr
 _llamar_harness_1_original = _core._llamar_harness_1
 _ctx_local = _threading.local()
+_CANCELADOS = set()
+_CANCEL_LOCK = _threading.Lock()
+
+# Contrato del Director: hasta 4 solicitudes activas; overflow queda en la cola del executor.
+try:
+    _pool_viejo = _core._POOL
+    _core._POOL = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas-qwen")
+    _pool_viejo.shutdown(wait=False, cancel_futures=True)
+except Exception:
+    pass
+_core._SEM = _threading.BoundedSemaphore(4)
+
+
+def _cancelado(pid):
+    if not pid:
+        return False
+    with _CANCEL_LOCK:
+        return str(pid) in _CANCELADOS
+
+
+def _marcar_cancelado(pid):
+    if pid:
+        with _CANCEL_LOCK:
+            _CANCELADOS.add(str(pid))
+
+
+def _limpiar_cancelado(pid):
+    if pid:
+        with _CANCEL_LOCK:
+            _CANCELADOS.discard(str(pid))
 
 
 def _optimizar_ficha3():
@@ -69,7 +102,6 @@ def _fast_consult_ok(ficha, mensaje, opts, nodos):
 
 
 def _separar_entrada(texto):
-    """Devuelve input literal + contexto/instrucciones que solo veran los modelos."""
     s = str(texto or "")
     extras = []
     if s.startswith("[CONTEXTO PREVIO DE ESTA MISMA SESIÓN") and "[FIN CONTEXTO PREVIO]" in s:
@@ -100,8 +132,6 @@ def _chat_con_contexto(p):
     extra_payload = str(q.get("contexto_previo") or "").strip()
     if extra_payload:
         extra = (extra + "\n\n" + extra_payload).strip() if extra else extra_payload
-
-    # Siempre fijamos message: asi el core NO vuelve a clasificar el bloque envuelto de messages[].
     q["message"] = literal
     anterior = getattr(_ctx_local, "extra", "")
     _ctx_local.extra = extra
@@ -112,6 +142,8 @@ def _chat_con_contexto(p):
 
 
 def _correr_con_contexto(ficha, mensaje, modelo, pid="", opts=None):
+    if _cancelado(pid):
+        raise RuntimeError("PROCESO_DETENIDO")
     o = {} if opts is None else opts
     extra = str(getattr(_ctx_local, "extra", "") or "").strip()
     if extra:
@@ -120,10 +152,16 @@ def _correr_con_contexto(ficha, mensaje, modelo, pid="", opts=None):
 
 
 def _llamar_harness_1_con_contexto(modelo, prompt, ficha, n, opts):
+    pid = str((opts or {}).get("pid") or "")
+    if _cancelado(pid):
+        raise RuntimeError("PROCESO_DETENIDO")
     extra = str((opts or {}).get("contexto_prompt") or "").strip()
     if extra and extra not in str(prompt):
         prompt = extra + "\n\n[INPUT / PROMPT ACTUAL]\n" + str(prompt)
-    return _llamar_harness_1_original(modelo, prompt, ficha, n, opts)
+    r = _llamar_harness_1_original(modelo, prompt, ficha, n, opts)
+    if _cancelado(pid):
+        raise RuntimeError("PROCESO_DETENIDO")
+    return r
 
 
 _core._fast_chat_ok = _fast_chat_ok
@@ -139,4 +177,28 @@ for _name in dir(_core):
 
 
 def handle(action, payload):
-    return _core.handle(action, payload)
+    p = payload or {}
+    if action == "detener":
+        pid = str(p.get("proceso_id") or "")
+        if not pid:
+            return {"error": "PROCESO_ID_FALTA"}
+        _marcar_cancelado(pid)
+        item = getattr(_core, "_PROCESOS", {}).get(pid)
+        if not item:
+            return {"error": "PROCESO_NO_EXISTE"}
+        fut = item[0]
+        en_cola = bool(fut.cancel())
+        if en_cola:
+            try:
+                with _core._LOCK:
+                    _core._PROCESOS.pop(pid, None)
+            except Exception:
+                pass
+            _limpiar_cancelado(pid)
+        return {"ok": True, "proceso_id": pid, "cancelado_en_cola": en_cola, "detencion_cooperativa": not en_cola}
+    r = _core.handle(action, p)
+    if action == "resultado":
+        pid = str(p.get("proceso_id") or "")
+        if isinstance(r, dict) and (r.get("error") or r.get("estado") != "procesando"):
+            _limpiar_cancelado(pid)
+    return r
