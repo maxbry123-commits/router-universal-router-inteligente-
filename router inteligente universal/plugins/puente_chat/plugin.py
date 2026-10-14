@@ -16,6 +16,10 @@ _DEADLINE = ContextVar("riu_chat_deadline", default=None)
 _SOLO_LECTURA = ContextVar("riu_solo_lectura", default=False)
 _POL = ContextVar("riu_politica", default=None)  # politicas_modelo del modelo que esta respondiendo
 _REQ_TOOLS = ContextVar("riu_requiere_tools", default=False)  # tarea que exige herramientas: sin tools = GAP
+_RONDAS_MAX = ContextVar("riu_rondas_tools_max", default=0)  # Team 5: tope propio de rondas modelo/tool (0 = sin tope propio)
+_PROG_FN = ContextVar("riu_prog_fn", default=None)  # Team 5: avisos reales de progreso (modelo / tool / respuesta)
+_STREAM_FN = ContextVar("riu_stream_fn", default=None)  # Team 5: chunks de la respuesta final al chat en cuanto llegan
+_EXTRA_LLM = ContextVar("riu_extra_llm", default=None)  # Team 5: extras de la peticion por modelo (p.ej. reasoning_effort)
 _VISTOS = ContextVar("riu_vistos", default=None)  # escrituras ya hechas de esta tarea y nodo (no se repiten)
 _PERFIL = ContextVar("riu_perfil", default="normal")  # normal / code / auditoria
 _CANCEL_FN = ContextVar("riu_cancel_fn", default=None)  # callable -> True = usuario detuvo el proceso: no lanzar mas pasos
@@ -56,6 +60,69 @@ def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float =
         with urllib.request.urlopen(req, timeout=espera) as r:
             texto = r.read().decode()
             return r.status, (json.loads(texto) if texto else {})
+    except urllib.error.HTTPError as e:
+        texto = e.read().decode(errors="replace")
+        try:
+            return e.code, json.loads(texto)
+        except ValueError:
+            return e.code, {"error": texto[:200]}
+    except (TimeoutError, urllib.error.URLError):
+        return 0, {'error': 'PROVEEDOR_TIMEOUT_O_RED'}
+
+
+def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> tuple[int, Any]:
+    # SSE del MISMO /chat/completions: Team 5 ve la respuesta final progresar en el chat (chunks -> on_delta);
+    # los tool_calls tambien se acumulan, asi las rondas intermedias con stream siguen funcionando igual.
+    deadline = _DEADLINE.get()
+    if deadline is not None:
+        espera = min(espera, deadline - time.monotonic())
+        if espera <= 0:
+            return 0, {'error': 'TIEMPO_TOTAL_AGOTADO'}
+    cuerpo = dict(cuerpo, stream=True, stream_options={'include_usage': True})
+    req = urllib.request.Request(url, data=json.dumps(cuerpo).encode(), method='POST',
+                                 headers={"Authorization": "Bearer " + token, "Content-Type": "application/json",
+                                          "User-Agent": "riu-chat-mvp", "Accept": "text/event-stream"})
+    partes: list[str] = []
+    usage: dict = {}
+    calls: dict[int, dict] = {}
+    try:
+        with urllib.request.urlopen(req, timeout=espera) as r:
+            for linea in r:
+                if not linea.startswith(b'data:'):
+                    continue
+                dato = linea[5:].strip()
+                if dato == b'[DONE]':
+                    break
+                try:
+                    ev = json.loads(dato)
+                except ValueError:
+                    continue
+                if isinstance(ev.get('usage'), dict):
+                    usage = ev['usage']
+                d_ = ((ev.get('choices') or [{}])[0].get('delta') or {})
+                if d_.get('content'):
+                    partes.append(d_['content'])
+                    try:
+                        on_delta(d_['content'])
+                    except Exception:  # noqa: BLE001
+                        pass
+                for tc in (d_.get('tool_calls') or []):
+                    i = int(tc.get('index') or 0)
+                    acc = calls.setdefault(i, {'id': '', 'type': 'function', 'function': {'name': '', 'arguments': ''}})
+                    if tc.get('id'):
+                        acc['id'] = str(tc['id'])
+                    f_ = tc.get('function') or {}
+                    if f_.get('name'):
+                        acc['function']['name'] += str(f_['name'])
+                    if f_.get('arguments'):
+                        acc['function']['arguments'] += str(f_['arguments'])
+            msg: dict = {'role': 'assistant', 'content': ''.join(partes)}
+            if calls:
+                msg['tool_calls'] = [calls[i] for i in sorted(calls)]
+            d: dict = {'choices': [{'index': 0, 'message': msg}]}
+            if usage:
+                d['usage'] = usage
+            return 200, d
     except urllib.error.HTTPError as e:
         texto = e.read().decode(errors="replace")
         try:
@@ -415,8 +482,22 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             pol = _politica(modelo) if proveedor == 'qwencloud' else {}
             _POL.set(pol)
             ex = _extras(pol, tools)
+            if proveedor == 'qwencloud':
+                if tools and modelo.startswith('qwen'):
+                    ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
+                    ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
+                if tools and modelo == 'glm-5.2':
+                    ex['tool_stream'] = True  # documentacion oficial de Function Calling de GLM
             cuerpo.update(ex)
-            ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+            exl = _EXTRA_LLM.get() if not tools else None  # Team 5: politica propia solo en la llamada final de texto
+            if isinstance(exl, dict):
+                for k_, v_ in exl.items():
+                    if k_ not in cuerpo:
+                        cuerpo[k_] = v_
+            sf = _STREAM_FN.get()
+            ultimo = _http_stream(base + '/chat/completions', clave, cuerpo, resta, sf) \
+                     if (sf and proveedor == 'qwencloud') \
+                     else _http('POST', base + '/chat/completions', clave, cuerpo, resta)
             if ultimo[0] == 400 and 'max_completion_tokens' in cuerpo and 'max_completion' in json.dumps(ultimo[1]).lower():
                 cuerpo['max_tokens'] = cuerpo.pop('max_completion_tokens')  # el endpoint lo rechaza: misma llamada con max_tokens
                 resta = fin - time.monotonic()
@@ -574,8 +655,11 @@ def _bucle(llamar, mensajes):
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
     con_tools = not fast
     pasos = 0
+    rondas = 0  # Team 5: rondas modelo->tool->modelo ya ejecutadas
+    rondas_max = int(_RONDAS_MAX.get() or 0)
     final_hecho = False
     cf = _CANCEL_FN.get()
+    pf = _PROG_FN.get()
     while True:
         if cf and cf():
             return {'error': 'GAP CANCELADO_POR_USUARIO'}, usadas
@@ -587,6 +671,11 @@ def _bucle(llamar, mensajes):
             fin = time.monotonic() + 45
             mensajes.append({'role': 'user', 'content': 'Se acabo el tiempo. Responde ya, sin usar mas herramientas, con lo que tengas.'})
             continue
+        if pf:
+            try:
+                pf('modelo' if con_tools else 'respuesta')
+            except Exception:  # noqa: BLE001
+                pass
         s, d = llamar(mensajes, h.TOOLS if (con_tools and h is not None) else None)
         if s == 400 and 'reasoning_content' in json.dumps(d, default=str):
             return {'error': 'GAP HISTORIAL_DEEPSEEK_INCOMPLETO', 'detalle': str(d)[:300]}, usadas
@@ -648,7 +737,17 @@ def _bucle(llamar, mensajes):
             elif nom in rotas:
                 res = 'ERROR: herramienta no disponible en este momento, no la uses mas y responde con lo que tengas'
             else:
+                if pf:
+                    try:
+                        pf('tool:' + nom)
+                    except Exception:  # noqa: BLE001
+                        pass
                 res = _bloqueo(nom, args) or h.ejecutar(nom, args)
+                if pf:
+                    try:
+                        pf('tool_ok:' + nom)
+                    except Exception:  # noqa: BLE001
+                        pass
                 if mut:
                     if not str(res).startswith(_FALLO):
                         hechas[sello] = res
@@ -661,8 +760,9 @@ def _bucle(llamar, mensajes):
             usadas.append(_evi(nom, args, ok_, bool(mut and ok_ and not ya_)))
             mensajes.append({'role': 'tool', 'tool_call_id': c.get('id', ''), 'content': res[:_perfil()[1]]})
         pasos += 1
-        if pasos >= _perfil()[2] or time.monotonic() >= fin:
-            con_tools = False  # tiempo o pasos agotados: pedir la respuesta final sin herramientas
+        rondas += 1
+        if pasos >= _perfil()[2] or time.monotonic() >= fin or (rondas_max and rondas >= rondas_max):
+            con_tools = False  # tiempo/pasos/rondas Team 5 agotados: pedir la respuesta final sin herramientas
 
 
 _CHECKPOINTS = {}
@@ -1739,6 +1839,10 @@ def _chat(p):
     _PERFIL.set(str(p.get('perfil') or ''))  # vacio = chat normal (contexto largo); un nodo de ficha pide su perfil
     _CANCEL_FN.set(p.get('cancelar_si') if callable(p.get('cancelar_si')) else None)
     _TECHO_DURO.set(bool(p.get('techo_duro')))
+    _RONDAS_MAX.set(int(p.get('rondas_tools_max') or 0))
+    _PROG_FN.set(p.get('progreso_fn') if callable(p.get('progreso_fn')) else None)
+    _STREAM_FN.set(p.get('stream_fn') if callable(p.get('stream_fn')) else None)
+    _EXTRA_LLM.set(p.get('extra_llm') if isinstance(p.get('extra_llm'), dict) else None)
     _tid = str(p.get('tarea_id') or '')
     if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
         if len(_VISTOS_G) > 200:
