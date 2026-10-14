@@ -1969,10 +1969,14 @@ def _chat(p):
         if len(mensajes) > 3:  # habia trabajo a medias: guardarlo para 'continua'
             _ck_guardar(sesion, _recortar(mensajes[1:]))
         return d
-    if (_REQ_TOOLS.get() or p.get('muta')) and not _SOLO_LECTURA.get():
-        # nodo que debe escribir: sin ninguna mutacion real exitosa no hay exito, aunque el modelo escriba texto
+    if p.get('muta') and not _SOLO_LECTURA.get():
+        # tarea que debe ESCRIBIR: sin ninguna mutacion real exitosa no hay exito, aunque el modelo escriba texto
         if not any(isinstance(u_, dict) and u_.get('mutacion_real') and u_.get('ok') for u_ in usadas):
             return {'error': 'GAP EJECUCION_SIN_EVIDENCIA', 'detalle': 'el nodo debia escribir y ninguna herramienta mutó con éxito', 'evidencia_tools': [u_ for u_ in usadas if isinstance(u_, dict) and 'tool' in u_]}
+    elif _REQ_TOOLS.get() and not _SOLO_LECTURA.get():
+        # tarea que solo debe USAR tools (Team 5: verificacion solo-lectura de GitHub/HF): vale cualquier tool con exito, no exige mutacion
+        if not any(isinstance(u_, dict) and u_.get('ok') for u_ in usadas):
+            return {'error': 'GAP EJECUCION_SIN_EVIDENCIA', 'detalle': 'la tarea exigia herramientas y ninguna respondió con éxito', 'evidencia_tools': [u_ for u_ in usadas if isinstance(u_, dict) and 'tool' in u_]}
     texto = _limpiar_texto(d['choices'][0].get('message', {}).get('content'))
     if not texto.strip() and (d['choices'][0].get('message') or {}).get('reasoning_content'):
         texto = str(d['choices'][0]['message']['reasoning_content'])[-1500:]
