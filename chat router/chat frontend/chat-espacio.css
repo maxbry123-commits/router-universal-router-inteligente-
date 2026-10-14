@@ -64,5 +64,3 @@ section:has(> #histories){display:flex;flex-direction:column;height:calc(100dvh 
   #sel-slot-bajo #selectores{margin:8px 0 0}
 }
 
-#composer .modelo-ia{margin-top:6px;font-size:11px;min-height:26px;max-width:100%;color:var(--muted);border-style:dashed}
-#composer .modelo-ia.on{color:var(--azul-electrico);border-style:solid}

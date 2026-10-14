@@ -42,12 +42,13 @@ window.RIU_SELECTOR_QWEN.modelos = GRUPOS.flatMap((g) => g.modelos.map((m) => ({
 export function conectarSelectorModelos(ctx) {
   const { q, chat, tell, guardar } = ctx;
   const pill = q("#sel-nuevo"), lista = q("#sh-modelos-lista");
-  const pillMvp = q("#sel-mvp"), mia = q("#modelo-ia");  // Team 5 MVP: la hoja solo se abre desde #modelo-ia (debajo del textarea)
+  const pillMvp = q("#sel-mvp");  // Team 5 MVP: misma hoja y mismo catalogo; la ruta de envio es otra (ficha_qwen=5)
+  let hojaOrigen = "team-qwen";  // quien abrio la hoja de modelos: al elegir, se enciende ESE selector y no el otro
   const pintarPill = () => {
     const s = chat().selectorQwen;
-    pill.textContent = "Team qwen"; if (!pill.classList.contains("bloq")) pill.title = s ? "Team qwen · " + s.label : "Team qwen";  // el modelo elegido va en el tooltip
-    if (pillMvp) { if (!pillMvp.classList.contains("bloq")) pillMvp.title = s ? "Team 5 MVP · " + s.label : "Team 5 MVP"; }
-    if (mia) { mia.textContent = s ? "Modelo IA: " + s.label + " ⌄" : "Modelo IA: elegir ⌄"; mia.title = s ? "Modelo IA · " + s.label : "Elegir modelo"; mia.classList.toggle("on", !!s); }
+    pill.textContent = "Team qwen ⌄"; if (!pill.classList.contains("bloq")) pill.title = s ? "Team qwen · " + s.label : "Team qwen";  // el modelo elegido va en el tooltip
+    pill.classList.toggle("on", !!s);
+    if (pillMvp) { if (!pillMvp.classList.contains("bloq")) pillMvp.title = s ? "Team 5 MVP · " + s.label : "Team 5 MVP"; pillMvp.classList.toggle("on", !!s); }
     if (window.RIU_SELECTORES && window.RIU_SELECTORES.refrescar) window.RIU_SELECTORES.refrescar();
     window.RIU_SELECTOR_QWEN.seleccion = s ? { modelo_id_slug: s.modelo_id_slug, label: s.label, grupo: s.grupo, sesion: chat().sesion } : null;
   };
@@ -58,7 +59,9 @@ export function conectarSelectorModelos(ctx) {
     const det = c.selectorQwen ? { modelo_id_slug: c.selectorQwen.modelo_id_slug, label: m[1], grupo: g.titulo, sesion: c.sesion } : null;
     window.RIU_SELECTOR_QWEN.seleccion = det;
     window.dispatchEvent(new CustomEvent("riu:selector-qwen", { detail: det }));
-    pintarPill(); pintar(); guardar();  // elegir modelo solo guarda chat().selectorQwen: NO enciende ni apaga el sistema
+    pintarPill(); pintar(); guardar(); if (typeof actualizarMIA === "function") actualizarMIA();  // la pildora de abajo refleja el modelo elegido
+    const dest = hojaOrigen === "team-5-mvp" ? "team-5-mvp" : "team-qwen";
+    const SEL = window.RIU_SELECTORES; if (SEL && SEL.encender) { if (c.selectorQwen) SEL.encender(dest); else if (SEL.activo === dest) SEL.apagar(); }  // elegir un modelo = el selector que abrio la hoja responde
     q("#sh-modelos").hidden = true;
   };
   const pintar = () => {
@@ -67,29 +70,23 @@ export function conectarSelectorModelos(ctx) {
     for (const g of GRUPOS) {
       lista.append(node("h4", g.titulo, "mod-grupo-t"));
       const caja = node("div", "", "mod-grupo");
-      const noTexto = g.titulo === "Imágenes" || g.recepcion;  // imagen/voz: visibles siempre; con Team 5 encendido quedan disabled (solo hay ejecutor texto)
-      const mvpOn = (window.RIU_SELECTORES && window.RIU_SELECTORES.activo) === "team-5-mvp";
       for (const m of g.modelos) {
         const sel = !!(s && s.label === m[1]);
-        const off = noTexto && mvpOn;
-        const b = node("button", "", "mod-fila" + (sel ? " sel" : "") + (off ? " mod-off" : ""));
+        const b = node("button", "", "mod-fila" + (sel ? " sel" : ""));
         b.type = "button"; b.setAttribute("aria-pressed", String(sel));
-        if (off) { b.disabled = true; b.title = "no disponible en Team 5 MVP"; }
         const txt = node("span", "", "mod-txt");
-        txt.append(node("b", m[1]), node("small", off ? "no disponible en Team 5 MVP" : m[2]));
+        txt.append(node("b", m[1]), node("small", m[2]));
         const ico = node("span", "", "mod-ico"); ico.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICO[m[0]] || "") + "</svg>";
         b.append(ico, txt, node("span", sel ? "✓" : "", "mod-ck"));
-        if (!off) b.addEventListener("click", () => elegir(m, g));
+        b.addEventListener("click", () => elegir(m, g));
         caja.append(b);
       }
       lista.append(caja);
     }
   };
-  const conmutar = (id) => { const S = window.RIU_SELECTORES; if (!S) return; if (S.activo === id) S.apagar(); else S.encender(id); };  // pills de sistema: solo ON/OFF; la hoja de modelos la abre #modelo-ia
-  pill.addEventListener("click", () => conmutar("team-qwen"));
-  if (pillMvp) pillMvp.addEventListener("click", () => conmutar("team-5-mvp"));
-  if (mia) mia.addEventListener("click", () => pintar());  // al abrir la hoja se repinta (check ✓ y disabled de Team 5 al dia)
-  window.addEventListener("riu:selector-activo", pintar);  // encender Team 5 deshabilita imagen/voz al momento
+  const SEL_GLOBAL = () => window.RIU_SELECTORES;
+  pill.addEventListener("click", () => { hojaOrigen = "team-qwen"; pill.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
+  if (pillMvp) pillMvp.addEventListener("click", () => { hojaOrigen = "team-5-mvp"; pillMvp.setAttribute("aria-expanded", String(q("#sh-modelos").hidden)); pintar(); });
   new MutationObserver(pintarPill).observe(q("#chat-tabs"), { childList: true, subtree: true, attributes: true });
   pintarPill();
   conectarSelectores(ctx);
