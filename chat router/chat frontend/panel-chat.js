@@ -139,7 +139,9 @@ export async function mount(root, { api, tell }) {
     c.ocupado = true; pintarTabs();
     const aviso = node("div", "Recuperando la respuesta de la tarea que seguía corriendo…", "item message meta"); c.hist.append(aviso); abajo(c);
     window.RIU_RETOMAR(c.sesion).then((p) => {
-      aviso.remove(); const t = p && ((p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content) || p.reply);
+      aviso.remove();
+      if (p && p.error === 'PROCESO_DETENIDO') { c.hist.append(node("div", "proceso detenido por el usuario", "item message meta")); abajo(c); return; }
+      const t = p && ((p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content) || p.reply);
       if (t) { c.hist.append(burbuja(t)); A.registrar(c.sesion, "bot", t); } else c.hist.append(burbuja(p && p.error === "PROCESO_NO_EXISTE" ? "La tarea ya no está en el Router (se reinició). Reenvía tu mensaje." : "Sin respuesta de la tarea recuperada: " + ((p && (p.error || p.detalle)) || "vacía"), "error"));
     }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); });
   }); });
@@ -333,7 +335,16 @@ export async function mount(root, { api, tell }) {
   q("#anc-todos").addEventListener("click", () => anclarTodos(true).catch((err) => tell(err.message)));
   q("#anc-ninguno").addEventListener("click", () => anclarTodos(false).catch((err) => tell(err.message)));
   q("#btn-copiar-input").addEventListener("click", () => copiarTexto(q("#message").value));
-  q("#btn-detener").addEventListener("click", () => { chat().detenerFlag = true; if (chat().detenerFn) chat().detenerFn(); if (window.RIU_CANCELAR) window.RIU_CANCELAR(chat().sesion); });
+  q("#btn-detener").addEventListener("click", () => {  // para TODOS los chats con algo corriendo (activo, en otra pestaña o retomado tras recargar): detenerFn corta el envio y RIU_CANCELAR corta el polling y avisa al Router
+    let algo = false;
+    for (const c of chats) {
+      c.detenerFlag = true;
+      if (c.detenerFn) { try { c.detenerFn(); } catch (e) {} algo = true; }
+      if (c.ocupado) algo = true;
+      if (window.RIU_CANCELAR) { try { window.RIU_CANCELAR(c.sesion); } catch (e) {} }
+    }
+    if (!algo) tell("No hay proceso en marcha");
+  });
 
   // ---- ventana del motor: descarga/extraccion/copiar/mover entre repos ----
   const extraerUrls = (t) => { const s = new Set(); (String(t || "").match(/https?:\/\/[^\s"'<>)\]]+/g) || []).forEach((u) => s.add(u.replace(/[.,;:!?]+$/g, ""))); return [...s]; };
@@ -527,9 +538,9 @@ export async function mount(root, { api, tell }) {
       const body = { message: mvp ? message : A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}), ...(mvp || {}) };  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
+      const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
       if (selAct === "team-5-mvp" && c.historialListo) { try { await c.historialListo; } catch (e) {} }  // al recargar, esperar a que el historial completo (IndexedDB) termine de restaurarse antes de leerlo
       const ctxPrev = selAct === "team-5-mvp" ? previoTodo(c, message) : (selAct === "ask-consil-code-qwen-team" ? previo(c, message) : undefined);  // Team 5: TODO el historial de la sesion con roles; consil-code: ultimos 20
-      const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });
       const answer = window.RIU_CONFIG?.harnessUrl
         ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: mvp ? message : A.envolver(message, c.instrucciones), max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
@@ -550,7 +561,7 @@ export async function mount(root, { api, tell }) {
       abajo(c);
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
-      c.ocupado = false; pintarTabs();
+      c.detenerFn = null; c.ocupado = false; pintarTabs();
       if (window.matchMedia("(pointer: fine)").matches) input.focus();
     }
   });

@@ -48,6 +48,8 @@ window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de 
 window.RIU_RETOMAR = async (ses) => {
   const v = procs()[ses]; if (!v) return null; const fin = Date.now() + 560000;
   while (Date.now() < fin) {
+    if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };  // Detener sobre una tarea retomada: RIU_CANCELAR ya borro el registro y aviso al Router
+
     try {
       const r = await fetch(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) });
       const e = await r.json().catch(() => ({})); const p = e.result || {};
