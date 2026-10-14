@@ -1969,14 +1969,15 @@ def _chat(p):
         if len(mensajes) > 3:  # habia trabajo a medias: guardarlo para 'continua'
             _ck_guardar(sesion, _recortar(mensajes[1:]))
         return d
+    if _REQ_TOOLS.get():
+        # "debe ejecutar al menos una herramienta correctamente" NO es "debe modificar GitHub/Hugging Face": la prueba
+        # solo-lectura de Team 5 pasa con cualquier tool que respondio bien; la mutacion la exige solo muta
+        if not any(isinstance(u_, dict) and u_.get('ok') and u_.get('tool') for u_ in usadas):
+            return {'error': 'GAP HERRAMIENTA_NO_EJECUTADA', 'evidencia_tools': [u_ for u_ in usadas if isinstance(u_, dict) and 'tool' in u_]}
     if p.get('muta') and not _SOLO_LECTURA.get():
         # tarea que debe ESCRIBIR: sin ninguna mutacion real exitosa no hay exito, aunque el modelo escriba texto
         if not any(isinstance(u_, dict) and u_.get('mutacion_real') and u_.get('ok') for u_ in usadas):
-            return {'error': 'GAP EJECUCION_SIN_EVIDENCIA', 'detalle': 'el nodo debia escribir y ninguna herramienta mutó con éxito', 'evidencia_tools': [u_ for u_ in usadas if isinstance(u_, dict) and 'tool' in u_]}
-    elif _REQ_TOOLS.get() and not _SOLO_LECTURA.get():
-        # tarea que solo debe USAR tools (Team 5: verificacion solo-lectura de GitHub/HF): vale cualquier tool con exito, no exige mutacion
-        if not any(isinstance(u_, dict) and u_.get('ok') for u_ in usadas):
-            return {'error': 'GAP EJECUCION_SIN_EVIDENCIA', 'detalle': 'la tarea exigia herramientas y ninguna respondió con éxito', 'evidencia_tools': [u_ for u_ in usadas if isinstance(u_, dict) and 'tool' in u_]}
+            return {'error': 'GAP EJECUCION_SIN_EVIDENCIA', 'detalle': 'la tarea debía escribir y ninguna herramienta mutó con éxito'}
     texto = _limpiar_texto(d['choices'][0].get('message', {}).get('content'))
     if not texto.strip() and (d['choices'][0].get('message') or {}).get('reasoning_content'):
         texto = str(d['choices'][0]['message']['reasoning_content'])[-1500:]

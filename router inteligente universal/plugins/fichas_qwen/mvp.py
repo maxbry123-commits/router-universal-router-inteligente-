@@ -25,6 +25,8 @@ _RAZON = {'ficha-qwen38max': 'medium', 'ficha-qwen38flash': 'low', 'ficha-qwen37
           'ficha-qwen36flash': 'low', 'ficha-dsv4pro': 'high', 'ficha-dsv4pro0813': 'high', 'ficha-dsv4flash': 'high',
           'ficha-glm52': 'high', 'ficha-qwen37flash': 'low'}  # Team 5: reasoning_effort por modelo (Token Plan oficial)
 _QUIERE_TOOLS = re.compile(r'(tools?|herramienta|github|hugging ?face|huggingface|acceso)', re.I)  # intencion explicita de tools, sin LLM
+_SOLO_LEER = re.compile(r'(comprobar|comprueba|verifica|verificar|revisa|probar|prueba|checa|confirma).{0,40}(acceso|tools?|herramienta)', re.I)  # 'comprueba acceso a GitHub/HF usando las tools' -> prueba solo-lectura
+_ORDEN_MUTAR = re.compile(r'(crea|crear|modifica|actualiza|borra|mueve|sube|commit|escribe|cambia)', re.I)  # orden real de escritura -> solo_lectura nunca se activa
 _TOOL_NOMBRE = ('github', 'GitHub'), ('hf_', 'Hugging Face'), ('hugging', 'Hugging Face')
 _TIMEOUT_S = 300  # techo unico de solicitud para toda la ficha; no hay timeout por nodo
 
@@ -118,11 +120,12 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
         if pid:
             fq._prog(pid, 'MVP · generando respuesta', '…' + ''.join(_buf)[-80:])
     requiere = bool(_QUIERE_TOOLS.search(mensaje or ''))  # 'revisa acceso a GitHub/HF', 'prueba las tools'... -> tools obligatorias
+    solo_lectura = bool(_SOLO_LEER.search(mensaje or '')) and not _ORDEN_MUTAR.search(mensaje or '')  # verificar acceso = jamas escribir; una orden de crear/modificar... no se protege
     if pid:  # mismo visor de progreso de la familia
         fq._prog(pid, 'MVP', 'trabajando')
         fq._meta(pid, 'MVP', elegido, 'responde con el modelo elegido')
     r = pc._chat({'model': qw, 'messages': conv, 'max_tokens': mt, 'sesion': ses,
-                  'presupuesto_s': _TIMEOUT_S, 'solo_lectura': False, 'requiere_tools': requiere,
+                  'presupuesto_s': _TIMEOUT_S, 'solo_lectura': solo_lectura, 'requiere_tools': requiere,
                   'rondas_tools_max': 3,  # MVP: modelo->tool->modelo->tool->modelo->respuesta, sin 6 vueltas automaticas
                   'progreso_fn': _pf, 'stream_fn': _sf,
                   'extra_llm': {'reasoning_effort': _RAZON[elegido]} if elegido in _RAZON else None,
