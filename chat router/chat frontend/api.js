@@ -97,6 +97,7 @@ async function puenteRouter(base, body, qs, headers) {
     if (p.estado === 'procesando' && p.proceso_id) {
       const deadline = Date.now() + 560000;
       const proceso = p.proceso_id;
+      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: 'Pensando…' })); } catch (e) {}  // ya hay proceso_id en el Router: Enviando -> Pensando
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
       while (p.estado === 'procesando') {
         if (Date.now() > deadline) { cortado = true; break; }

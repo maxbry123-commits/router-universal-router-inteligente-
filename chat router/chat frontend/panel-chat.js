@@ -522,7 +522,7 @@ export async function mount(root, { api, tell }) {
     A.registrar(c.sesion, "user", message);
     input.value = "";
     c.ocupado = true; pintarTabs();
-    const pending = node("div", "Pensando…", "item message pending");
+    const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
     c.hist.append(pending);
     const alProgreso = (e) => { if (!pending.isConnected) { window.removeEventListener('riu-progreso', alProgreso); return; } pending.textContent = e.detail; };
     window.addEventListener('riu-progreso', alProgreso);
@@ -539,8 +539,7 @@ export async function mount(root, { api, tell }) {
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
-      if (selAct === "team-5-mvp" && c.historialListo) { try { await c.historialListo; } catch (e) {} }  // al recargar, esperar a que el historial completo (IndexedDB) termine de restaurarse antes de leerlo
-      const ctxPrev = selAct === "team-5-mvp" ? previoTodo(c, message) : (selAct === "ask-consil-code-qwen-team" ? previo(c, message) : undefined);  // Team 5: TODO el historial de la sesion con roles; consil-code: ultimos 20
+      const ctxPrev = selAct === "ask-consil-code-qwen-team" ? previo(c, message) : undefined;  // Team 5 MVP: SIN contexto_previo -> contexto_explicito=false -> el Harness lee memoria_yaiwes; consil-code: ultimos 20
       const answer = window.RIU_CONFIG?.harnessUrl
         ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: mvp ? message : A.envolver(message, c.instrucciones), max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
