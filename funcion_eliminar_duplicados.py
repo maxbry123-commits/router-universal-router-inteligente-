@@ -1,20 +1,29 @@
 def eliminar_duplicados_y_ordenar(numeros: list) -> list:
     """
-    Recibe una lista de números, elimina duplicados, ordena de menor a mayor y devuelve el resultado.
+    Recibe una lista de numeros, elimina duplicados y ordena de menor a mayor.
     
     Args:
-        numeros (list): Lista de números que puede contener duplicados.
-        
+        numeros: Lista de numeros (puede contener duplicados)
+    
     Returns:
-        list: Lista ordenada sin duplicados.
+        Lista ordenada sin duplicados
+    
+    Ejemplo:
+        >>> eliminar_duplicados_y_ordenar([3, 1, 4, 1, 5, 9, 2, 6, 5])
+        [1, 2, 3, 4, 5, 6, 9]
     """
-    # Eliminar duplicados usando un conjunto (set), luego convertir a lista y ordenar
-    return sorted(set(numeros))
+    # Eliminar duplicados usando set y convertir de vuelta a lista
+    sin_duplicados = list(set(numeros))
+    
+    # Ordenar de menor a mayor
+    resultado_ordenado = sorted(sin_duplicados)
+    
+    return resultado_ordenado
 
 
 # Ejemplo de uso
 if __name__ == "__main__":
-    lista_ejemplo = [5, 3, 8, 1, 3, 9, 5, 2, 8, 7]
+    lista_ejemplo = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7]
     resultado = eliminar_duplicados_y_ordenar(lista_ejemplo)
     print(f"Lista original: {lista_ejemplo}")
-    print(f"Lista sin duplicados y ordenada: {resultado}")
+    print(f"Lista procesada: {resultado}")
