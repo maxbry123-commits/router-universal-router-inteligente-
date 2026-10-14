@@ -134,9 +134,9 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
 
 
 def _tokens_hf() -> list[str]:
-    from integration.chat_mvp import providers, vault_hook
+    from integration.chat_mvp import providers
     vistos: list[str] = []
-    for t in [*vault_hook.provider_keys("huggingface"), *providers.env_keys("hf")]:
+    for t in providers.env_keys("hf"):  # fuente canonica unica: banco (provider_map hf -> huggingface) + HF_TOKEN/HF_TOKEN_1
         if t and t not in vistos:
             vistos.append(t)
     return vistos

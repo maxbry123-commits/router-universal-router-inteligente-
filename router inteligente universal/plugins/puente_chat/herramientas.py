@@ -123,7 +123,7 @@ def _token_hf():
     if c and time.time() - c[1] < 600:
         return c[0]
     reserva = ''
-    for k in _llaves('huggingface', ['HF_TOKEN']):
+    for k in _llaves('hf', ['HF_TOKEN']):  # nombre logico del chat: provider_map hf -> vault_provider huggingface; 'huggingface' devolvia [] y caia a HF_TOKEN suelto
         s, _ = _peticion('GET', 'https://huggingface.co/api/whoami-v2', k, espera=20)
         if s == 200:
             _cache['hf'] = (k, time.time())

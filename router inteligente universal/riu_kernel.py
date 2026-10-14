@@ -32,6 +32,18 @@ def healthy(url):
         request("GET",url+"/health")
         return True
     except Exception:return False
+def _hf_token_vivo(v):
+    # el nombre de la credencial no manda: se prueba cada token habilitado del provider huggingface contra whoami-v2 y
+    # gana el primero que responda 200; si ninguno vale, fail-closed (nunca se imprime el token)
+    for r in v.list():
+        if r["provider"]=="huggingface" and r["enabled"] and "hash" not in r["account"]:
+            try:
+                tok=v.get_secret(r["credential_ref"])
+                req=urllib.request.Request("https://huggingface.co/api/whoami-v2",headers={"Authorization":"Bearer "+tok})
+                with urllib.request.urlopen(req,timeout=15) as r_:
+                    if r_.status==200:return tok
+            except Exception:pass
+    raise RuntimeError("GAP_HF_SIN_TOKEN_VALIDO")
 def hydrate():
     tar=tarfile.open(fileobj=io.BytesIO(fs().cat_file(BASE+"/codigo/router-bundle.tar.gz")),mode="r:gz")
     tar.extractall("/tmp/kernel-bank",filter="data")
@@ -40,7 +52,7 @@ def hydrate():
     p=pathlib.Path("/tmp/kernel-vault.db")
     p.write_bytes(gzip.decompress(base64.b64decode(fs().cat_file(BASE+"/banco/vault.db.gz.b64"))))
     v=Vault(p).unlock(os.environ["RIU_VAULT_PASSPHRASE"])
-    os.environ["HF_TOKEN"]=v.get_secret("huggingface/token-1-new")
+    os.environ["HF_TOKEN"]=_hf_token_vivo(v)  # sin hardcode: la primera credencial habilitada de huggingface que valide 200
     os.environ["HF_CONTROL_JOBS_TOKEN"]=os.environ["HF_TOKEN"]
     os.environ["GITHUB_PERSONAL_ACCESS_TOKEN"]=v.get_secret("github/director-full")
     os.environ["RIU_ROUTER_API_KEY"]=v.get_secret("router/runtime-admin-32gb")
