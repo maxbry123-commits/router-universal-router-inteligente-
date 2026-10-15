@@ -817,6 +817,20 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     if fast:
         escribe = False
     requiere_tools = False if fast else (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta')))
+    # puerta de capacidades por nodo: WRITE solo si el nodo ejecutor tiene escritura aprobada; READ si declara tools; NONE si no las necesita.
+    # Ficha 1 (chat suelto): el input del usuario fija la puerta (consulta normal -> NONE, externa -> READ).
+    if escribe:
+        cap_nodo = 'write'
+    elif requiere_tools:
+        cap_nodo = 'read'
+    elif opts.get('fid') == 'ficha1-modelos':
+        cap_nodo = str(opts.get('cap_in') or 'none')
+    else:
+        cap_nodo = 'none'
+    if cap_nodo == 'write' and not escribe:
+        cap_nodo = 'read'  # jamas WRITE sin el flag de escritura aprobada
+    if cap_nodo in ('read', 'write') and opts.get('fid') == 'ficha1-modelos':
+        requiere_tools = True  # consulta externa de Ficha 1: al menos una tool debe ejecutarse (evidencia)
     if fast:
         perfil = 'fast'
     elif (n.get('id') in ('N6', 'N7', 'N8') or str(n.get('id')).startswith('V')) and not escribe:
@@ -830,7 +844,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     _tm = time.time()
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
-                  'requiere_tools': requiere_tools, 'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
+                  'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,  # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado 'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
                   'perfil': perfil})
     try:  # metrica de latencia por nodo (solo registro, no cambia la salida)
         _perfil = perfil
@@ -1188,6 +1202,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if not mensaje:
         mensaje = next((str(m.get("content", "")) for m in reversed(p.get("messages") or []) if m.get("role") == "user"), "")
     t0 = time.time()
+    _prog(str(p.get('_pid') or ''), 'A0', 'ok')  # worker real tomando la tarea: sale de la cola
     ses = str(p.get('sesion') or 'fichas')[:60]
     if fid == 'ficha5-mvp':  # Team 5 MVP: camino directo (input + historial + tools -> 1 modelo -> respuesta); la cola, el proceso y el visor son los de la familia
         from . import mvp as _mvp
@@ -1203,7 +1218,8 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     if ap:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
     pend_t = _pend_cargar(fid, ses) if ap else None
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
+    from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'fid': fid, 'cap_in': _capacidad_de(mensaje), 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:
@@ -1235,7 +1251,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_consult": bool(opts.get("fast_consult")),
             "execution_path": ("FAST_CONSULT" if opts.get("fast_consult") else ("FAST_QA" if opts.get("fast_lane") else "HEAVY")),
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
-            "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "ms": int((time.time() - t0) * 1000)}
+            "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "queue_ms": int((t0 - float(p.get("_t_submit") or t0)) * 1000), "ms": int((time.time() - t0) * 1000)}
 
 
 _TAREAS_PEQUENAS = {"small", "simple", "tool", "lookup", "question", "qa", "chat"}
@@ -1291,7 +1307,9 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
                 if time.time() - t > 900 and fut.done():
                     del _PROCESOS[k]
                     _PROGRESO.pop(k, None); _PROG_T.pop(k, None); _PROG_META.pop(k, None); _NOTAS.pop(k, None)
-            _PROCESOS[clave] = (_POOL.submit(_chat, dict(p, _pid=clave)), time.time())
+            _PROCESOS[clave] = (_POOL.submit(_chat, dict(p, _pid=clave, _t_submit=time.time())), time.time())
+            _meta(clave, 'A0', '', 'en cola, esperando worker')
+            _prog(clave, 'A0', 'trabajando')  # En cola hasta que el worker toma la tarea; process_id != modelo corriendo
         return {"estado": "procesando", "proceso_id": clave}
     if action == "resultado":
         item = _PROCESOS.get(str(p.get("proceso_id") or ""))

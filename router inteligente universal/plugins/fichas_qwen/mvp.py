@@ -12,7 +12,6 @@ memoria_yaiwes con llave chat:<sesion>) y la concurrencia/cancelacion/progreso s
 """
 from __future__ import annotations
 
-import re
 import time
 from typing import Any
 
@@ -24,9 +23,7 @@ _MAX_DEF = {'ficha-qwen38max': 4096, 'ficha-qwen38flash': 4096, 'ficha-qwen37max
 _RAZON = {'ficha-qwen38max': 'medium', 'ficha-qwen38flash': 'low', 'ficha-qwen37max': 'medium', 'ficha-qwen37plus': 'medium',
           'ficha-qwen36flash': 'low', 'ficha-dsv4pro': 'high', 'ficha-dsv4pro0813': 'high', 'ficha-dsv4flash': 'high',
           'ficha-glm52': 'high', 'ficha-qwen37flash': 'low'}  # Team 5: reasoning_effort por modelo (Token Plan oficial)
-_QUIERE_TOOLS = re.compile(r'(tools?|herramienta|github|hugging ?face|huggingface|acceso)', re.I)  # intencion explicita de tools, sin LLM
-_SOLO_LEER = re.compile(r'(comprobar|comprueba|verifica|verificar|revisa|probar|prueba|checa|confirma).{0,40}(acceso|tools?|herramienta)', re.I)  # 'comprueba acceso a GitHub/HF usando las tools' -> prueba solo-lectura
-_ORDEN_MUTAR = re.compile(r'(crea|crear|modifica|actualiza|borra|mueve|sube|commit|escribe|cambia)', re.I)  # orden real de escritura -> solo_lectura nunca se activa
+from plugins.puente_chat.capacidad import capacidad_de  # la puerta es UNA, compartida con todas las fichas: el software decide, no el modelo
 _TOOL_NOMBRE = ('github', 'GitHub'), ('hf_', 'Hugging Face'), ('hugging', 'Hugging Face')
 _TIMEOUT_S = 300  # techo unico de solicitud para toda la ficha; no hay timeout por nodo
 
@@ -119,15 +116,14 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
         _buf.append(chunk)
         if pid:
             fq._prog(pid, 'MVP · generando respuesta', '…' + ''.join(_buf)[-80:])
-    quiere_tools = bool(_QUIERE_TOOLS.search(mensaje or ''))  # el input pide GitHub/HF/tools -> el catalogo va al modelo; pregunta normal -> tools=[]
-    quiere_mutar = quiere_tools and bool(_ORDEN_MUTAR.search(mensaje or ''))  # tools + orden explicita de modificar -> escritura habilitada (las dos cosas a la vez)
-    requiere = quiere_tools  # la tarea pide tools: al menos una debe ejecutarse con exito (evidencia)
-    solo_lectura = quiere_tools and not quiere_mutar  # tools sin orden de modificar: mutaciones bloqueadas por _bloqueo
+    cap = capacidad_de(mensaje)  # INPUT -> CAP_NONE/READ/WRITE: sin intencion externa no se envia ni el catalogo
+    requiere = cap != 'none'  # la tarea pide tools: al menos una debe ejecutarse con exito (evidencia)
+    solo_lectura = cap != 'write'  # WRITE exige servicio externo + orden explicita de modificar; el resto bloquea mutaciones
     if pid:  # mismo visor de progreso de la familia
         fq._prog(pid, 'MVP', 'trabajando')
         fq._meta(pid, 'MVP', elegido, 'responde con el modelo elegido')
     r = pc._chat({'model': qw, 'messages': conv, 'max_tokens': mt, 'sesion': ses,
-                  'presupuesto_s': _TIMEOUT_S, 'solo_lectura': solo_lectura, 'requiere_tools': requiere, 'tools_habilitadas': quiere_tools,  # sin tools pedidas: el catalogo ni se envia
+                  'presupuesto_s': _TIMEOUT_S, 'solo_lectura': solo_lectura, 'requiere_tools': requiere, 'tools_habilitadas': cap != 'none', 'cap_tools': cap,  # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'rondas_tools_max': 3,  # MVP: modelo->tool->modelo->tool->modelo->respuesta, sin 6 vueltas automaticas
                   'progreso_fn': _pf, 'stream_fn': _sf,
                   'extra_llm': {'reasoning_effort': _RAZON[elegido]} if elegido in _RAZON else None,
@@ -156,8 +152,9 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
             'herramientas': [x for x in (r.get('herramientas') or []) if isinstance(x, dict)],
             'evidencia_tools': r.get('evidencia_tools') or [],
             'traza': [{'nodo': 'MVP', 'modelo': elegido, 'rol': 'input + historial + tools -> 1 modelo -> respuesta', 'ok': True,
-                        'modelo_pedido': str(p.get('modelo') or ''), 'modelo_ficha1': elegido,
+                        'modelo_pedido': str(p.get('modelo') or ''), 'modelo_ficha1': elegido, 'capacidad': cap,
                         'provider_model': str(pc.FICHAS[qw][2]), 'tiempos': tiempos}],
+            'metricas': dict(r.get('metricas') or {}, queue_ms=int((t0 - float(p.get('_t_submit') or t0)) * 1000)),  # cola y velocidad del modelo son cosas distintas
             'estado_tarea': 'COMPLETADO', 'execution_path': 'MVP',
             'memoria_guardada': r.get('memoria_guardada'),
             'ms': int((time.time() - t0) * 1000)}

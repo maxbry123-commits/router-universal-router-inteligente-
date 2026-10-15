@@ -14,7 +14,17 @@ import re
 from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
 _SOLO_LECTURA = ContextVar("riu_solo_lectura", default=False)
-_TOOLS_HAB = ContextVar("riu_tools_habilitadas", default=True)  # Team 5: tools solo si el input las pide; los demas flujos no la envian -> True por defecto, nada cambia
+_TOOLS_HAB = ContextVar("riu_tools_habilitadas", default=True)
+_CAP_TOOLS = ContextVar("riu_cap_tools", default="write")  # read: el catalogo de escritura ni se muestra; write: catalogo completo (default = igual que antes)
+_MET = ContextVar("riu_met", default=None)  # tiempos reales del turno: cola/modelo/tools/memoria
+
+def _met(k, v):
+    m = _MET.get()
+    if isinstance(m, dict): m[k] = v
+
+def _met_add(k, v):
+    m = _MET.get()
+    if isinstance(m, dict): m[k] = int(m.get(k) or 0) + int(v)  # Team 5: tools solo si el input las pide; los demas flujos no la envian -> True por defecto, nada cambia
 _POL = ContextVar("riu_politica", default=None)  # politicas_modelo del modelo que esta respondiendo
 _REQ_TOOLS = ContextVar("riu_requiere_tools", default=False)  # tarea que exige herramientas: sin tools = GAP
 _RONDAS_MAX = ContextVar("riu_rondas_tools_max", default=0)  # Team 5: tope propio de rondas modelo/tool (0 = sin tope propio)
@@ -617,7 +627,7 @@ def _bloqueo(nom, args):
     if not _SOLO_LECTURA.get():
         return ''
     if _es_mutacion(nom, args):
-        return 'ERROR: HERRAMIENTA_BLOQUEADA, este paso es de solo lectura'
+        return 'ERROR: GAP_MUTACION_NO_AUTORIZADA: este paso no autorizo escritura'  # segunda puerta: aunque se cuele una llamada mutante, nunca se ejecuta
     return ''
 
 
@@ -645,6 +655,11 @@ def _bucle(llamar, mensajes):
     fast = _PERFIL.get() == 'fast'  # carril rapido: nunca se carga ni se manda el esquema de herramientas
     h = None if fast else _herr()
     conoc = set() if fast else {(t_.get('function') or {}).get('name') for t_ in h.TOOLS}
+    if h is not None:  # puerta de capacidades: CAP_READ no muestra tools de escritura; CAP_NONE ni siquiera llega aqui (con_tools=False)
+        from plugins.puente_chat.capacidad import catalogo_para as _catalogo_para
+        tools_vis = _catalogo_para(_CAP_TOOLS.get(), h.TOOLS)
+    else:
+        tools_vis = None
     usadas = []
     vistos = {}   # dedup de lecturas: misma herramienta + mismos args = mismo resultado
     hechas = _VISTOS.get()  # escrituras que ya terminaron bien en esta tarea y nodo (compartido entre vueltas): no se repiten
@@ -655,6 +670,7 @@ def _bucle(llamar, mensajes):
     rotas = set()  # herramientas que ya fallaron por token/desconocidas
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
     con_tools = (not fast) and _TOOLS_HAB.get()  # Team 5 apaga el catalogo en preguntas normales: el modelo no puede pedir tools por su cuenta
+    primera_llamada = True
     pasos = 0
     rondas = 0  # Team 5: rondas modelo->tool->modelo ya ejecutadas
     rondas_max = int(_RONDAS_MAX.get() or 0)
@@ -677,7 +693,11 @@ def _bucle(llamar, mensajes):
                 pf('modelo' if con_tools else 'respuesta')
             except Exception:  # noqa: BLE001
                 pass
-        s, d = llamar(mensajes, h.TOOLS if (con_tools and h is not None) else None)
+        _tm0 = time.time()
+        s, d = llamar(mensajes, tools_vis if (con_tools and h is not None) else None)  # CAP filtrado: el modelo solo ve lo que puede usar
+        if primera_llamada:
+            _met('model_ttft_ms', int((time.time() - _tm0) * 1000))  # primera respuesta del modelo (aprox TTFT real, sin contar cola)
+            primera_llamada = False
         if s == 400 and 'reasoning_content' in json.dumps(d, default=str):
             return {'error': 'GAP HISTORIAL_DEEPSEEK_INCOMPLETO', 'detalle': str(d)[:300]}, usadas
         if s == 400 and con_tools and not usadas:
@@ -743,7 +763,9 @@ def _bucle(llamar, mensajes):
                         pf('tool:' + nom)
                     except Exception:  # noqa: BLE001
                         pass
+                _tt0 = time.time()
                 res = _bloqueo(nom, args) or h.ejecutar(nom, args)
+                _met_add('tools_ms', int((time.time() - _tt0) * 1000))
                 if pf:
                     try:
                         pf('tool_ok:' + nom)
@@ -1836,6 +1858,9 @@ def _chat(p):
         return _encender(model)
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
+    _CAP_TOOLS.set(str(p.get('cap_tools') or 'write'))  # Team 5/fichas mandan su cap; ausente = write, igual que siempre
+    _t_sub = float(p.get('_t_submit') or 0)
+    _MET.set({'queue_ms': int((time.time() - _t_sub) * 1000) if _t_sub else 0, 't_inicio': time.time()})
     _TOOLS_HAB.set(p.get('tools_habilitadas') is not False)  # ausente -> True: fichas/DAG/consil igual que antes
     _REQ_TOOLS.set(bool(p.get('requiere_tools')))
     _PERFIL.set(str(p.get('perfil') or ''))  # vacio = chat normal (contexto largo); un nodo de ficha pide su perfil
@@ -1859,7 +1884,9 @@ def _chat(p):
     if gov_err:
         return gov_err
     gov_bloque = gov_info.pop('_bloque', '') if gov_info else ''
+    _tmm = time.time()
     ctx = '' if p.get('contexto_explicito') else (_contexto(sesion, pregunta) if pregunta else '')  # Team 5: el historial ya va en messages''
+    _met('memory_ms', int((time.time() - _tmm) * 1000))
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
     if gov_bloque:  # Constitucion validada: primero, antes de memoria y anclas
         sistema += ' ' + gov_bloque
@@ -2000,6 +2027,10 @@ def _chat(p):
     if checklist:
         salida['checklist'] = checklist  # salida del sentinela: lista de verificacion
     salida['memoria_guardada'] = _guardar(sesion, model, pregunta, texto)
+    _m = _MET.get() or {}
+    salida['metricas'] = {'queue_ms': int(_m.get('queue_ms') or 0), 'memory_ms': int(_m.get('memory_ms') or 0),
+                          'model_ttft_ms': int(_m.get('model_ttft_ms') or 0), 'tools_ms': int(_m.get('tools_ms') or 0),
+                          'total_ms': int((time.time() - float(_m.get('t_inicio') or time.time())) * 1000)}  # cola != velocidad del modelo
     if fuentes_anc:
         salida['fuentes_ancladas'] = fuentes_anc
     if gov_info:

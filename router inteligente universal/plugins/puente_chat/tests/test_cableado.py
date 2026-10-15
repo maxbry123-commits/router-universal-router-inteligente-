@@ -133,10 +133,10 @@ def test_07_solo_lectura_y_mutacion_real():
     try:
         assert pc._bloqueo('hf_almacenamiento', {'accion': 'listar'}) == ''
         assert pc._bloqueo('hf_almacenamiento', {'accion': 'leer'}) == ''
-        assert 'HERRAMIENTA_BLOQUEADA' in pc._bloqueo('hf_almacenamiento', {'accion': 'escribir'})
+        assert 'GAP_MUTACION_NO_AUTORIZADA' in pc._bloqueo('hf_almacenamiento', {'accion': 'escribir'})
         assert pc._bloqueo('github_api', {'metodo': 'GET'}) == ''
-        assert 'HERRAMIENTA_BLOQUEADA' in pc._bloqueo('github_api', {'metodo': 'PATCH'})
-        assert 'HERRAMIENTA_BLOQUEADA' in pc._bloqueo('github_escribir', ESCR)
+        assert 'GAP_MUTACION_NO_AUTORIZADA' in pc._bloqueo('github_api', {'metodo': 'PATCH'})
+        assert 'GAP_MUTACION_NO_AUTORIZADA' in pc._bloqueo('github_escribir', ESCR)
         assert pc._bloqueo('github_leer', LEER) == ''
     finally:
         pc._SOLO_LECTURA.set(False)
