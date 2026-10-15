@@ -210,7 +210,7 @@ def test_13_politica_llega_a_la_peticion_http():
     pc._POL_CACHE.clear()
     msg = [{'role': 'user', 'content': 'x'}]
     pc._llamar_api('qwencloud', 'glm-5.2', msg, 100, 30, TOOLS)
-    assert capt[-1].get('tool_stream') is True and capt[-1].get('clear_thinking') is True and 'top_p' not in capt[-1]
+    assert 'tool_stream' not in capt[-1] and capt[-1].get('clear_thinking') is True and 'top_p' not in capt[-1]  # GLM: tool_stream default false (oficial), nunca global
     pc._llamar_api('qwencloud', 'deepseek-v4-pro', msg, 100, 30, TOOLS)
     assert capt[-1].get('top_p') == 0.95 and 'tool_stream' not in capt[-1]
     pc._llamar_api('qwencloud', 'deepseek-v4-flash-0731', msg, 100, 30, TOOLS)
@@ -231,7 +231,12 @@ def test_13_politica_llega_a_la_peticion_http():
         return 200, {'choices': [{'message': {'content': 'ok'}}]}
     pc._http = http400
     s, d = pc._llamar_api('qwencloud', 'glm-5.2', msg, 100, 30, TOOLS)
-    assert s == 200 and len(capt) == 2 and capt[0]['model'] == capt[1]['model'] == 'glm-5.2' and 'tool_stream' not in capt[1]
+    assert s == 200 and len(capt) == 1 and 'tool_stream' not in capt[0]  # glm-5.2 ya no envia tool_stream: 1 llamada limpia
+    # la regla comun: sin tools no van tools/tool_choice/tool_stream; con tools van tools+tool_choice=auto
+    s, d = pc._llamar_api('qwencloud', 'qwen3.8-max', msg, 100, 30, None)
+    assert 'tools' not in capt[-1] and 'tool_choice' not in capt[-1] and 'tool_stream' not in capt[-1]
+    s, d = pc._llamar_api('qwencloud', 'qwen3.8-max', msg, 100, 30, TOOLS)
+    assert capt[-1].get('tool_choice') == 'auto' and capt[-1].get('enable_thinking') is False and 'reasoning_effort' not in capt[-1]
 
 
 # ---------- Motor de fichas: /aprobar, N0/N5, N6/N7, GAP, paralelo ----------

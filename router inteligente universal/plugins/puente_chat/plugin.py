@@ -500,8 +500,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 if tools and modelo.startswith('qwen'):
                     ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
                     ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
-                if tools and modelo == 'glm-5.2':
-                    ex['tool_stream'] = True  # documentacion oficial de Function Calling de GLM
+                # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
             cuerpo.update(ex)
             exl = _EXTRA_LLM.get() if not tools else None  # Team 5: politica propia solo en la llamada final de texto
             if isinstance(exl, dict):
