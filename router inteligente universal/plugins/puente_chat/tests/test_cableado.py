@@ -273,12 +273,12 @@ def test_14_aprobar_retoma_la_misma_tarea():
     ROL['N4'] = _plan_o_exec
     ROL['N6'] = lambda p, o: 'revisado' + chr(10) + 'VEREDICTO: PASS'
     ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
-    r = _chat('s14', 'corrige el Router')
+    r = _chat('s14', 'modifica el archivo del repo')
     assert 'ESPERANDO_APROBACION' in r['reply'] and r['estado_tarea'] == 'ESPERANDO_APROBACION'
     assert [len(_n('s14', k)) for k in ('N1', 'N2', 'N3', 'N4')] == [1, 1, 1, 1] and not _n('s14', 'N6') and not _n('s14', 'N7')
     r2 = _chat('s14', '/aprobar')
     assert [len(_n('s14', k)) for k in ('N1', 'N2', 'N3')] == [1, 1, 1]  # N1/N2/N3 no se repiten
-    assert len(_n('s14', 'N4')) == 2 and 'PLAN APROBADO POR EL DIRECTOR' in _n('s14', 'N4')[1] and 'corrige el Router' in _n('s14', 'N4')[1]
+    assert len(_n('s14', 'N4')) == 2 and 'PLAN APROBADO POR EL DIRECTOR' in _n('s14', 'N4')[1] and 'modifica el archivo del repo' in _n('s14', 'N4')[1]
     assert r2['reply'].startswith(_full('ok')) and 'VEREDICTO' not in r2['reply']  # la salida siempre anexa la PROPUESTA DE VERIFICACION
     assert 'PLAN / RESULTADO ESPERADO' in _n('s14', 'N6')[0] and 'INPUT LITERAL DEL DIRECTOR' in _n('s14', 'N1')[0]
     r3 = _chat('s14', '/aprobar')
@@ -295,7 +295,7 @@ def test_15_n6_fail_devuelve_control_a_n4():
     ROL['N4'] = _plan_o_exec
     ROL['N6'] = n6
     ROL['N7'] = lambda p, o: _full('final') + chr(10) + 'VEREDICTO: PASS'
-    _chat('s15', 'corrige el Router')
+    _chat('s15', 'modifica el archivo del repo')
     r = _chat('s15', '/aprobar')
     assert len(_n('s15', 'N4')) == 3 and len(_n('s15', 'N6')) == 2 and r['reply'].startswith(_full('final'))
     assert 'CORRECCION PEDIDA POR EL VERIFICADOR' in _n('s15', 'N4')[2] and 'falta X' in _n('s15', 'N4')[2]
@@ -307,7 +307,7 @@ def test_16_n7_fail_no_se_oculta():
     ROL['N4'] = _plan_o_exec
     ROL['N6'] = lambda p, o: 'VEREDICTO: PASS'
     ROL['N7'] = lambda p, o: 'defecto grave' + chr(10) + 'VEREDICTO: FAIL: no cumple X'
-    _chat('s16', 'corrige el Router')
+    _chat('s16', 'modifica el archivo del repo')
     r = _chat('s16', '/aprobar')
     assert r['reply'].startswith('GAP FINAL') and 'defecto grave' in r['resultado_parcial']
     ROL['N7'] = lambda p, o: (_ for _ in ()).throw(RuntimeError('boom'))
@@ -366,7 +366,7 @@ def _plan_o_exec(p, o):
 
 
 def test_19_detector_de_mutacion():
-    si = ['corrige el Router', 'modifica la ficha', 'agrega un campo', 'anade validacion', 'añade validación', 'mejora el parser',
+    si = ['modifica el archivo del repo', 'modifica la ficha', 'agrega un campo', 'anade validacion', 'añade validación', 'mejora el parser',
           'cablea las politicas', 'haz los cambios', 'implementar el loop', 'integra el modulo', 'refactoriza plugin',
           'elimina ese archivo', 'quita el limite', 'sube el archivo', 'sincroniza los repos', 'Edita ficha2', 'arreglalo ya',
           'construye el modulo', 'programa el parser', 'desarrolla la funcion', 'monta el plugin', 'conecta el harness', 'duplica la ficha',
@@ -423,11 +423,11 @@ def test_22_validador_de_formato_final():
     ROL['N4'] = _plan_o_exec
     ROL['N6'] = lambda p, o: 'VEREDICTO: PASS'
     ROL['N7'] = n7
-    _chat('s22', 'corrige el Router')
+    _chat('s22', 'modifica el archivo del repo')
     r = _chat('s22', '/aprobar')
     assert c['n7'] == 1 and r['reply'].startswith('RESUMEN CORTO') and 'MICRO RESUMEN solo' in r['reply'] and not fq._faltan(r['reply'], fq.FICHAS['ficha2-dag-codigo'])  # _rellenar envuelve el formato determinista antes de reformatear
     ROL['N7'] = lambda p, o: 'MICRO RESUMEN solo' + chr(10) + 'VEREDICTO: PASS'
-    _chat('s22b', 'corrige el Router')
+    _chat('s22b', 'modifica el archivo del repo')
     r2 = _chat('s22b', '/aprobar')
     assert r2['reply'].startswith('RESUMEN CORTO') and 'MICRO RESUMEN solo' in r2['reply'] and not r2['reply'].startswith('GAP')  # la salida mal formateada se envuelve, no da GAP
 
@@ -444,11 +444,11 @@ def test_23_cinco_correcciones_con_tope_de_tiempo():
     ROL['N4'] = _plan_o_exec
     ROL['N6'] = n6
     ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
-    _chat('s23', 'corrige el Router')
+    _chat('s23', 'modifica el archivo del repo')
     r = _chat('s23', '/aprobar')
     assert len(_n('s23', 'N4')) == 5 and len(_n('s23', 'N6')) == 4 and r['reply'].startswith(_full('ok'))
     ROL['N6'] = lambda p, o: 'VEREDICTO: FAIL: sigue mal'
-    _chat('s23b', 'corrige el Router')
+    _chat('s23b', 'modifica el archivo del repo')
     _chat('s23b', '/aprobar')
     assert len(_n('s23b', 'N4')) == 7 and len(_n('s23b', 'N6')) == 6
     f = copy.deepcopy(fq.FICHAS['ficha2-dag-codigo'])
@@ -483,7 +483,7 @@ def test_26_formato_de_plan_y_diagrama_en_los_prompts():
     ROL['N4'] = _plan_o_exec
     ROL['N6'] = lambda p, o: 'VEREDICTO: PASS'
     ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
-    r = _chat('s26', 'corrige el Router')
+    r = _chat('s26', 'modifica el archivo del repo')
     p4 = _n('s26', 'N4')[0]
     assert 'FORMATO OBLIGATORIO DE PLAN Y SALIDA' in p4 and 'DIAGRAMA REAL DEL WORKFLOW' in p4 and 'N0 \u2705' in p4
     assert 'ESPERANDO_APROBACION' in r['reply'] and not fq._faltan(r['reply'], fq.FICHAS['ficha2-dag-codigo'])
@@ -496,10 +496,10 @@ def test_26_formato_de_plan_y_diagrama_en_los_prompts():
             return 'EJECUTADO'
         return (_full('plan') + chr(10) + 'ESPERANDO_APROBACION') if 'REFORMATEA' in p else 'plan sin formato' + chr(10) + 'ESPERANDO_APROBACION'
     ROL['N4'] = plan_flojo
-    r2 = _chat('s26b', 'corrige el Router')
+    r2 = _chat('s26b', 'modifica el archivo del repo')
     assert len(_n('s26b', 'N4')) == 2 and 'RESUMEN CORTO' in r2['reply'] and 'ESPERANDO_APROBACION' in r2['reply']
     ROL['N4'] = lambda p, o: 'plan sin formato' + chr(10) + 'ESPERANDO_APROBACION'
-    r3 = _chat('s26c', 'corrige el Router')
+    r3 = _chat('s26c', 'modifica el archivo del repo')
     assert r3['reply'].startswith('GAP FORMATO_PLAN') and not _n('s26c', 'N7')
     assert _chat('s26c', '/aprobar')['reply'].startswith('GAP SIN_PLAN_PENDIENTE')
 
@@ -555,7 +555,7 @@ def test_28_confirmacion_activa_la_verificacion_cruzada_de_3_modelos():
 def test_29_detector_de_confirmacion():
     si = ['ok', 'OK.', 'Confirmo', 'proceder con verificaci\u00f3n', 'Proceder con validaci\u00f3n', 'procede con la verificacion cruzada',
           'proceder con verificaci\u00f3n o validaci\u00f3n', 'dale', 'Okay!']
-    no = ['ok pero cambia el parser', 'corrige el Router', 'analiza el router', 'no', '', 'ok ok ok quiero un resumen largo de todo el repositorio por favor']
+    no = ['ok pero cambia el parser', 'modifica el archivo del repo', 'analiza el router', 'no', '', 'ok ok ok quiero un resumen largo de todo el repositorio por favor']
     assert all(fq._confirma(x) for x in si), [x for x in si if not fq._confirma(x)]
     assert not any(fq._confirma(x) for x in no)
 
@@ -604,6 +604,47 @@ def test_32_perfil_explicito_solo_para_nodos_de_ficha():
     finally:
         lp._PERFIL.set('')
 
+
+def test_33_la_puerta_cap_es_la_unica_autoridad_de_escritura():
+    # READ nunca se eleva a WRITE por _muta/verbos ambiguos; cap_in (capacidad_de) es la unica autoridad
+    from types import SimpleNamespace
+    fq2 = _cargar('fichas_qwen_test_cap', PLUG / 'fichas_qwen' / 'plugin.py')
+    CAPS = []
+    fq2._pc = lambda: SimpleNamespace(FICHAS=set(fq2._QW.values()), _chat=lambda pl: (CAPS.append(pl),
+        {'choices': [{'message': {'content': _full('ok') + chr(10) + 'TAREA_COMPLETA'}}],
+         'herramientas': [{'herramienta': 'github_api', 'ok': True, 'mutacion_real': True}]})[1])
+    f2, f3 = fq2.FICHAS['ficha2-dag-codigo'], fq2.FICHAS['ficha3-frontend']
+
+    def cap(f, nid, cap_in, ap, muta, extra=None):
+        fq2._llamar_harness('ficha-qwen38flash', 'p', f, dict(extra or {}, id=nid),
+                            {'cap_in': cap_in, 'fid': f['ficha'], 'aprobado': ap, 'muta': muta, 'sesion': 's33'})
+        return CAPS[-1]['cap_tools'], CAPS[-1]['tools_habilitadas']
+    # cap_in=READ: los nodos de Ficha 2/3 que pueden consultar reciben READ (leer el repo de verdad)
+    assert cap(f2, 'N1', 'read', False, False) == ('read', True)
+    assert cap(f2, 'N6', 'read', False, False) == ('read', True)
+    assert cap(f3, 'N6', 'read', False, False) == ('read', True)
+    # cap_in=WRITE sin aprobacion: N4 lee mientras crea el plan; nadie escribe antes de /aprobar
+    assert cap(f2, 'N4', 'write', False, True) == ('read', True)
+    assert cap(f2, 'N6', 'write', False, True) == ('read', True)
+    # tras /aprobar: solo el ejecutor (N4) escribe; los revisores quedan READ
+    assert cap(f2, 'N4', 'write', True, True) == ('write', True)
+    assert cap(f2, 'N6', 'write', True, True) == ('read', True)
+    # cap_in=NONE: sin catalogo
+    assert cap(f2, 'N1', 'none', False, False) == ('none', False)
+    # nodos que declaran requiere_tools=False no consultan aunque el input sea READ (consulta rapida, anexos, FAST)
+    assert cap(f2, 'FAST', 'read', False, False, extra={'requiere_tools': False, 'escribe': False}) == ('none', False)
+
+    # flujo completo Ficha 2: "Escribe un resumen del repo" es READ -> N4 sin orden de plan ni aprobacion de escritura
+    ROL.clear()
+    ROL['N4'] = lambda p, o: _full('ejec')
+    ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
+    r = _chat('s33', 'Escribe un resumen del repo')
+    assert 'ESPERANDO_APROBACION' not in r['reply'] and 'falta la aprobacion' not in _n('s33', 'N4')[0]
+    r = _chat('s33b', 'Crea un informe del repositorio')
+    assert 'ESPERANDO_APROBACION' not in r['reply'] and 'falta la aprobacion' not in _n('s33b', 'N4')[0]
+    # "En GitHub modifica archivo X" es WRITE -> sigue el flujo de aprobacion (N4 recibe la orden de plan)
+    _chat('s33c', 'En GitHub modifica archivo X del repositorio')
+    assert 'ESPERANDO_APROBACION' in _n('s33c', 'N4')[0] and 'falta la aprobacion' in _n('s33c', 'N4')[0]
 
 if __name__ == '__main__':
     fallos = 0

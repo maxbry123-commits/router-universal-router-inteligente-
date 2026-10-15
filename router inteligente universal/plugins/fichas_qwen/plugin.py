@@ -240,6 +240,7 @@ def _asegurar_formato_base(texto, ficha, nid, nodos, elegido, opts, plan=False):
     mod = elegido if n.get('modelo') == 'selector' else n.get('modelo')
     try:
         with _SEM:
+            _prog((opts or {}).get('pid'), 'SALIDA', 'trabajando')  # En cola hasta adquirir el slot
             r = _sin_veredicto(_llamar_harness(mod, p2, ficha, n, dict(opts, aprobado=False)))
     except Exception:  # noqa: BLE001
         r = ''
@@ -310,7 +311,6 @@ def _asegurar_formato(texto, ficha, nid, nodos, elegido, opts, plan=False):
         if not _faltan(t, ficha):
             return _con_propuesta(t, ficha), ''
     if falt and pid:
-        _prog(pid, 'SALIDA', 'trabajando')
         _meta(pid, 'SALIDA', '', 'ordena la salida en el formato')
     t, gap = _asegurar_formato_base(texto, ficha, nid, nodos, elegido, opts, plan)
     if falt and pid:
@@ -413,13 +413,13 @@ def _verificar(fid, ses, pv, pid, t0):
     def miembro(a):
         k, mod = a
         vid = 'V%d' % (k + 1)
-        _prog(pid, vid, 'trabajando')
         _meta(pid, vid, mod, _tarea_visor({}, vid))
         nodo_v = {'id': vid, 'timeout_s': 180, 'max_output_tokens': 3000, 'requiere_tools': True, 'escribe': False}
         o = dict(base_opts)
         o['gov_ctx'] = dict(gc)
         try:
             with _SEM:
+                _prog(pid, vid, 'trabajando')  # En cola hasta adquirir el slot: el visor solo marca trabajando cuando el modelo arranca de verdad
                 r = _llamar_harness(mod, prompt, ficha, nodo_v, o)
                 if not str(r).startswith('GAP') and not re.search(r'(?im)^[ ' + chr(9) + r']*VEREDICTO:', str(r)):  # sin linea de veredicto: un solo reintento pidiendola
                     r2 = _llamar_harness(mod, prompt + nl * 2 + 'Tu respuesta anterior no incluyo la linea final. Termina OBLIGATORIAMENTE con una linea que diga VEREDICTO: PASS o VEREDICTO: FAIL.', ficha, nodo_v, o)
@@ -736,9 +736,13 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
     t0 = time.time()
     try:
         with _SEM:
+            if pid:
+                _meta(pid, 'FAST', modelo, 'respuesta rapida')
+            _prog(pid, 'FAST', 'trabajando')  # En cola hasta adquirir el slot
             r = _llamar_harness(modelo, prompt, ficha, n, dict(opts, fast_lane=True, aprobado=False, muta=False))
     except Exception as x:  # noqa: BLE001
         r = 'GAP FAST (%s): %s' % (modelo, x)
+    _prog(pid, 'FAST', 'gap' if str(r).startswith('GAP') else 'ok')
     ms = int((time.time() - t0) * 1000)
     opts.setdefault('tiempos', {})['FAST'] = ms
     return r, [{'nodo': 'FAST', 'modelo': modelo, 'rol': 'respuesta rapida', 'ms': ms, 'metricas': (opts.get('metricas') or {}).get('FAST'), 'ok': not str(r).startswith('GAP')}]
@@ -757,10 +761,10 @@ def _consult(ficha, nodos, mensaje, elegido, pid, opts):
 
     def uno(i, prompt, tout, mt):
         n = dict(nodos[i], timeout_s=tout, max_output_tokens=mt, requiere_tools=False, escribe=False)
-        _prog(pid, i, 'trabajando')
         t = time.time()
         try:
             with _SEM:
+                _prog(pid, i, 'trabajando')  # En cola hasta el slot _SEM: no mostrar trabajando mientras espera
                 r = _llamar_harness_1(mod(i), prompt, ficha, n, opts)
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod(i), x)
@@ -823,12 +827,16 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
     requiere_tools = False if fast else (bool(n['requiere_tools']) if 'requiere_tools' in n else bool(opts.get('muta')))
     # puerta de capacidades por nodo: WRITE solo si el nodo ejecutor tiene escritura aprobada; READ si declara tools; NONE si no las necesita.
     # Ficha 1 (chat suelto): el input del usuario fija la puerta (consulta normal -> NONE, externa -> READ).
+    cap_in = str(opts.get('cap_in') or 'none')
+    puede_consultar = not fast and not ('requiere_tools' in n and not n.get('requiere_tools'))  # los nodos que declaran requiere_tools=False (consulta rapida, anexos, FAST) no consultan
     if escribe:
         cap_nodo = 'write'
+    elif cap_in != 'none' and puede_consultar:
+        cap_nodo = 'read'  # cap_in READ o WRITE pendiente de aprobacion: los nodos que pueden consultar leen; el WRITE real exige escribe+aprobado
     elif requiere_tools:
         cap_nodo = 'read'
     elif opts.get('fid') == 'ficha1-modelos':
-        cap_nodo = str(opts.get('cap_in') or 'none')
+        cap_nodo = cap_in
     else:
         cap_nodo = 'none'
     if cap_nodo == 'write' and not escribe:
@@ -1081,7 +1089,6 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             return r
         if pid and pid in _CANCEL:
             return 'GAP CANCELADO_POR_USUARIO: Detener antes de este paso'
-        _prog(pid, i, 'trabajando')
         _tn = time.time()
         _meta(pid, i, nodos[i].get('modelo') if nodos[i].get('modelo') != 'selector' else elegido, _tarea_visor(nodos, i))
         nl = chr(10)
@@ -1104,6 +1111,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         mod = elegido if n.get('modelo') == 'selector' else n.get('modelo')
         try:
             with _SEM:  # maximo 6 llamadas de modelo a la vez; las demas esperan en cola sin fallar
+                _prog(pid, i, 'trabajando')  # En cola hasta adquirir el slot: no mostrar trabajando mientras espera _SEM
                 r = _llamar_harness(mod, prompt, ficha, n, opts)
         except Exception as x:  # noqa: BLE001
             r = 'GAP %s (%s): %s' % (i, mod, x)
@@ -1227,7 +1235,8 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
         mensaje = mensaje.lstrip()[len('/aprobar'):].lstrip()
     pend_t = _pend_cargar(fid, ses) if ap else None
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _muta(mensaje), 'sesion': ses, 'fid': fid, 'cap_in': _capacidad_de(mensaje), 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
+    _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:

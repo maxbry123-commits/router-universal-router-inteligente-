@@ -89,7 +89,7 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
         mt = _MAX_DEF.get(elegido, 16384)
     pid = str(p.get('_pid') or '')
     nombre = (sel.get('selector') or [{}])
-    nombre = str(next((x.get('label') for x in nombre if x.get('id') == elegido), elegido))  # nombre de Ficha 1 (Qwen 3.8 Max)
+    nombre = str(next(((x.get('nombre') or x.get('label')) for x in nombre if x.get('id') == elegido), elegido))  # el selector usa 'nombre' (Ficha 1); 'label' por compatibilidad
     tiempos: list = []
     def _tl(nom: str) -> str:  # tool -> nombre visible del progreso
         n = str(nom or '').lower()
@@ -97,23 +97,24 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
             if k_ in n:
                 return v_
         return str(nom or 'tool')
-    def _pf(ev: str) -> None:  # progreso real en el mismo visor + tiempos (sin prompts ni claves)
+    def _pf(ev: str) -> None:  # progreso real en el nodo visible 'MVP': nota, sin nodos dinamicos (los que no tienen _meta los ignora _texto_prog)
         tiempos.append({'ev': ev, 'ms': int((time.time() - t0) * 1000)})
         if not pid:
             return
+        notas = fq._NOTAS.setdefault(pid, {})
         if ev == 'modelo':
-            fq._prog(pid, 'MVP · llamando ' + nombre, 'trabajando')
+            notas['MVP'] = 'llamando ' + nombre
         elif ev == 'respuesta':
-            fq._prog(pid, 'MVP · generando respuesta', 'trabajando')
+            notas['MVP'] = 'generando respuesta'
         elif ev.startswith('tool_ok:'):
-            fq._prog(pid, 'MVP · ' + _tl(ev[8:]), 'ok')
+            notas['MVP'] = 'generando respuesta'  # la tool termino: el modelo sigue redactando
         elif ev.startswith('tool:'):
-            fq._prog(pid, 'MVP · ' + _tl(ev[5:]), 'trabajando')
+            notas['MVP'] = 'usando ' + _tl(ev[5:])
     _buf: list = []
-    def _sf(chunk: str) -> None:  # chunk del stream -> el visor muestra la respuesta creciendo
+    def _sf(chunk: str) -> None:  # chunk del stream -> la nota del nodo MVP muestra la respuesta creciendo (sin reiniciar su cronometro)
         _buf.append(chunk)
         if pid:
-            fq._prog(pid, 'MVP · generando respuesta', '…' + ''.join(_buf)[-80:])
+            fq._NOTAS.setdefault(pid, {})['MVP'] = '…' + ''.join(_buf)[-80:]
     cap = capacidad_de(mensaje)  # INPUT -> CAP_NONE/READ/WRITE: sin intencion externa no se envia ni el catalogo
     requiere = cap != 'none'  # la tarea pide tools: al menos una debe ejecutarse con exito (evidencia)
     solo_lectura = cap != 'write'  # WRITE exige servicio externo + orden explicita de modificar; el resto bloquea mutaciones

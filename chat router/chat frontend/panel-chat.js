@@ -512,7 +512,8 @@ export async function mount(root, { api, tell }) {
       abajo(c);
       return;
     }
-    if (selAct && selAct !== "nvidia-groq-team" && !fichaQwen && !/^ask-consil/.test(selAct) && !fichaMvp) {
+    const CONSIL_LISTO = /^(ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team)$/;  // unicos Ask Consil cableados al Router; Nvidia groq = PENDIENTE, nunca cae en c.ficha ni en otro modelo
+    if (selAct && selAct !== "nvidia-groq-team" && !fichaQwen && !CONSIL_LISTO.test(selAct) && !fichaMvp) {
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
       c.hist.append(node("div", nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.", "item message meta"));
@@ -527,10 +528,12 @@ export async function mount(root, { api, tell }) {
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
     c.hist.append(pending);
     const alProgreso = (e) => {
+      if (!pending.isConnected) { window.removeEventListener('riu-progreso', alProgreso); return; }  // listener fuera solo si la burbuja desaparecio (o en finally)
       const d = e.detail;
+      if (!d || d.sesion !== c.sesion) return;  // evento de otro chat: ignorar, no quitarse
       const v = window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion);  // progreso aislado: solo mi sesion y, si hay PID guardado, solo mi proceso
-      if (!pending.isConnected || (d && d.sesion && d.sesion !== c.sesion) || (v && v.pid && d && d.proceso_id && d.proceso_id !== v.pid)) { window.removeEventListener('riu-progreso', alProgreso); return; }
-      pending.textContent = d && d.texto !== undefined ? d.texto : d;
+      if (v && v.pid && d.proceso_id && d.proceso_id !== v.pid) return;
+      pending.textContent = d.texto !== undefined ? d.texto : d;
     };
     window.addEventListener('riu-progreso', alProgreso);
     abajo(c);
