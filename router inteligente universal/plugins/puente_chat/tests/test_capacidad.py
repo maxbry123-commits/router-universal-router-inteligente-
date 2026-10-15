@@ -5,14 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # repo root -> plugins.puente_chat.capacidad
 from plugins.puente_chat.capacidad import capacidad_de, catalogo_para, CAP_NONE, CAP_READ, CAP_WRITE
 
-T = {'github_escribir': {'function': {'name': 'github_escribir'}},
-     'hf_escribir': {'function': {'name': 'hf_escribir'}},
-     'github_leer': {'function': {'name': 'github_leer'}},
-     'github_api': {'function': {'name': 'github_api'}},
-     'hf_leer': {'function': {'name': 'hf_leer'}},
-     'hf_api': {'function': {'name': 'hf_api'}},
-     'hf_almacenamiento': {'function': {'name': 'hf_almacenamiento'}}}
-FULL = list(T.values())
+from plugins.puente_chat.herramientas import TOOLS as FULL  # catalogo real con sus parametros
 
 CASOS = [
     ("¿Qué modelo eres?", CAP_NONE),
@@ -40,6 +33,11 @@ CASOS = [
     ("Haz commit de este cambio en el repo", CAP_WRITE),
     ("Actualiza el Space de Hugging Face", CAP_WRITE),
     ("Sube este archivo al repo", CAP_WRITE),
+    # regresiones de la auditoria: haz/hacer no autorizan mutacion por si solos
+    ("Haz un resumen del repo", CAP_READ),
+    ("Hacer una auditoría del repositorio", CAP_READ),
+    ("En GitHub modifica X", CAP_WRITE),
+    ("Haz un commit en el repo", CAP_WRITE),
 ]
 
 
@@ -66,8 +64,24 @@ def main():
             errores.append('FAIL CAP_READ falta %s en catalogo' % debe)
 
     cat_write = nombres(catalogo_para(CAP_WRITE, FULL))
-    if cat_write != set(T):
+    if cat_write != nombres(FULL):
         errores.append('FAIL CAP_WRITE catalogo incompleto: %s' % cat_write)
+
+    # CAP_READ no expone metodos de escritura ni en el esquema visible
+    read_tools = {t['function']['name']: t['function'] for t in catalogo_para(CAP_READ, FULL)}
+    for nom, param, permitido in (('github_api', 'metodo', {'GET', 'HEAD'}),
+                                  ('hf_api', 'metodo', {'GET', 'HEAD'}),
+                                  ('hf_almacenamiento', 'accion', {'listar', 'leer'})):
+        f = read_tools[nom]
+        props = (f.get('parameters') or {}).get('properties') or {}
+        enu = set((props.get(param) or {}).get('enum') or [])
+        if enu != permitido:
+            errores.append('FAIL CAP_READ %s.%s enum=%s (esperaba %s)' % (nom, param, enu, permitido))
+        for escr in ('cuerpo', 'contenido'):
+            if escr in props:
+                errores.append('FAIL CAP_READ %s expone parametro de escritura %s' % (nom, escr))
+        if 'SOLO LECTURA' not in str(f.get('description')):
+            errores.append('FAIL CAP_READ %s descripcion sin restriccion de lectura' % nom)
 
     if errores:
         print(chr(10).join(errores))
@@ -76,5 +90,33 @@ def main():
     return 0
 
 
+def test_kwargs_gobernanza_llegan_a_pc_chat():
+    # fichas_qwen._llamar_harness_1 debe pasar tarea_id/gobernanza/constitucion/nodo a pc._chat (auditoria de ChatGPT)
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    import plugins.fichas_qwen.plugin as fq
+    capt = []
+
+    class _StubPC:
+        FICHAS = {'qw-qwen-3-8-flash': ('n', 'u', 'm')}
+
+        @staticmethod
+        def _chat(p):
+            capt.append(p)
+            return {'choices': [{'message': {'content': 'ok'}}], 'constitucion': {}}
+
+    fq._pc = lambda: _StubPC
+    ficha = {'ficha': 'ficha1-modelos', 'dsl': {'timeouts': {'api_seconds': 60}, 'retry': {'max_attempts': 1}, 'tokens': {'max_output_tokens': 100}},
+             'motor': {'limite_llamada_chars': 999999}, 'selector': [{'id': 'ficha-qwen38flash', 'tipo': 'texto'}]}
+    opts = {'sesion': 's', 'aprobado': False, 'muta': False, 'cap_in': 'none', 'fid': 'ficha1-modelos', 'tarea_id': 't1',
+            'gobernanza': {'x': 1}, 'constitucion': {'y': 2}, 'gov_ctx': {'z': 3}}
+    fq._llamar_harness_1('ficha-qwen38flash', 'hola', ficha, {'id': 'N4'}, opts)
+    p = capt[-1]
+    for k in ('tarea_id', 'task_id', 'anclados', 'gobernanza', 'constitucion', 'constitucion_hash_esperado', 'gov_ctx', 'nodo_scope', 'nodo'):
+        assert k in p, 'falta ' + k + ' en pc._chat'
+    assert p['tools_habilitadas'] is False and p['cap_tools'] == 'none'
+    print('PASS kwargs gobernanza llegan a pc._chat')
+
+
 if __name__ == '__main__':
+    test_kwargs_gobernanza_llegan_a_pc_chat()
     sys.exit(main())

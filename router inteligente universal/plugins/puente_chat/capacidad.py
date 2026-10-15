@@ -13,7 +13,7 @@ CAP_NONE, CAP_READ, CAP_WRITE = 'none', 'read', 'write'
 _EXTERNO = re.compile(r'(?i)github|hugging\s*face|huggingface|\bhf\b|\brepos?\b|repositorio|rama|\bbranch\b|\bcommits?\b|pull\s*request|\bpr\b|\bissues?\b|\bspaces?\b|datasets?|job\s*de\s*hf|tools?|herramientas?|acceso')
 
 # orden de mutacion: crear/escribir/borrar/subir/commit/actualizar/eliminar/modificar/cambiar/...
-_MUTA = re.compile(r'(crear?|escrib\w*|borr\w*|sub\w*|commit|actualiz\w*|elimin\w*|mov\w*|reemplaz\w*|modific\w*|cambi\w*|despleg\w*|reinici\w*|restaur\w*|implement\w*|arregl\w*|aplica\w*|apliqu\w*|haz|hacer)', re.I)
+_MUTA = re.compile(r'(crear?|escrib\w*|borr\w*|sub\w*|commit|actualiz\w*|elimin\w*|mov\w*|reemplaz\w*|modific\w*|cambi\w*|despleg\w*|reinici\w*|restaur\w*|implement\w*|arregl\w*|aplica\w*|apliqu\w*)', re.I)
 
 # un 'no' antes del verbo lo niega: "no modifiques nada, solo revisa el repo" -> lectura
 _NEG = re.compile(r'\bno\b[\wáéíóúñü ]{0,25}$', re.I)
@@ -35,11 +35,39 @@ def capacidad_de(texto: str | None) -> str:
 _PURO_ESCRIBE = ('github_escribir', 'hf_escribir')
 
 
+_DESC_READ = {  # descripcion que ve el modelo en CAP_READ: los metodos mutantes ni se anuncian
+    'github_api': 'Llama a la API de GitHub en modo SOLO LECTURA. metodo permitido: GET o HEAD.',
+    'hf_api': 'Llama a la API de Hugging Face en modo SOLO LECTURA (la ruta empieza con /api/). metodo permitido: GET o HEAD.',
+    'hf_almacenamiento': 'Almacenamiento permanente de Hugging Face en modo SOLO LECTURA. accion permitida: listar o leer.',
+}
+
+
 def catalogo_para(cap: str, tools: list | None) -> list | None:
     if cap == CAP_NONE:
         return None
     if cap == CAP_READ:
-        return [t for t in (tools or []) if str((t.get('function') or {}).get('name')) not in _PURO_ESCRIBE]
+        import copy as _copy
+        cat = []
+        for t in (tools or []):
+            f = t.get('function') or {}
+            nom = str(f.get('name'))
+            if nom in _PURO_ESCRIBE:
+                continue  # tools puramente de escritura: ni se presentan
+            t = _copy.deepcopy(t)
+            f = t['function']
+            if nom in _DESC_READ:
+                f['description'] = _DESC_READ[nom]  # el modelo solo ve los metodos de lectura permitidos
+                props = (f.get('parameters') or {}).get('properties') or {}
+                if 'metodo' in props and isinstance(props['metodo'], dict):
+                    props['metodo']['enum'] = ['GET', 'HEAD']  # la mutacion sigue rechazada por _es_mutacion/_bloqueo
+                if 'accion' in props and isinstance(props['accion'], dict):
+                    props['accion']['enum'] = ['listar', 'leer']
+                props.pop('cuerpo', None)     # sin payload de escritura en lectura
+                props.pop('contenido', None)
+                req = (f.get('parameters') or {}).get('required') or []
+                f.get('parameters', {})['required'] = [r for r in req if r in props]
+            cat.append(t)
+        return cat
     return list(tools or [])
 
 

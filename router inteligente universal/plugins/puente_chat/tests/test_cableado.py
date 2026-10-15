@@ -216,7 +216,7 @@ def test_13_politica_llega_a_la_peticion_http():
     pc._llamar_api('qwencloud', 'deepseek-v4-flash-0731', msg, 100, 30, TOOLS)
     assert capt[-1].get('top_p') == 0.95
     pc._llamar_api('qwencloud', 'qwen3.8-flash', msg, 100, 30, TOOLS)
-    assert capt[-1].get('preserve_thinking') is True and capt[-1].get('reasoning_effort') == 'medium' and 'enable_thinking' not in capt[-1]
+    assert capt[-1].get('enable_thinking') is False and 'reasoning_effort' not in capt[-1] and capt[-1].get('preserve_thinking') is True  # FC oficial Qwen: la llamada que decide la tool no razona
     pc._llamar_api('qwencloud', 'qwen3.6-flash', msg, 100, 30, TOOLS)
     assert not ({'tool_stream', 'top_p', 'preserve_thinking', 'clear_thinking'} & set(capt[-1]))
     pc._llamar_api('qwencloud', 'qwen3.7-max', msg, 100, 30, TOOLS)

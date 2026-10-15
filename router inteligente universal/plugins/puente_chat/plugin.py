@@ -111,6 +111,9 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                 if isinstance(ev.get('usage'), dict):
                     usage = ev['usage']
                 d_ = ((ev.get('choices') or [{}])[0].get('delta') or {})
+                _mm = _MET.get() or {}
+                if d_ and 'model_ttft_ms' not in _mm and _mm.get('t_model_start'):
+                    _met('model_ttft_ms', int((time.monotonic() - _mm['t_model_start']) * 1000))  # TTFT real: primer delta (content o tool_call)
                 if d_.get('content'):
                     partes.append(d_['content'])
                     try:
@@ -506,6 +509,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                     if k_ not in cuerpo:
                         cuerpo[k_] = v_
             sf = _STREAM_FN.get()
+            _met('t_model_start', time.monotonic())  # base del TTFT real: _http_stream lo sella en el primer delta
             ultimo = _http_stream(base + '/chat/completions', clave, cuerpo, resta, sf) \
                      if (sf and proveedor == 'qwencloud') \
                      else _http('POST', base + '/chat/completions', clave, cuerpo, resta)
@@ -696,7 +700,7 @@ def _bucle(llamar, mensajes):
         _tm0 = time.time()
         s, d = llamar(mensajes, tools_vis if (con_tools and h is not None) else None)  # CAP filtrado: el modelo solo ve lo que puede usar
         if primera_llamada:
-            _met('model_ttft_ms', int((time.time() - _tm0) * 1000))  # primera respuesta del modelo (aprox TTFT real, sin contar cola)
+            _met('model_call_ms', int((time.time() - _tm0) * 1000))  # duracion completa de la primera llamada al modelo (no es TTFT)
             primera_llamada = False
         if s == 400 and 'reasoning_content' in json.dumps(d, default=str):
             return {'error': 'GAP HISTORIAL_DEEPSEEK_INCOMPLETO', 'detalle': str(d)[:300]}, usadas
@@ -2029,7 +2033,7 @@ def _chat(p):
     salida['memoria_guardada'] = _guardar(sesion, model, pregunta, texto)
     _m = _MET.get() or {}
     salida['metricas'] = {'queue_ms': int(_m.get('queue_ms') or 0), 'memory_ms': int(_m.get('memory_ms') or 0),
-                          'model_ttft_ms': int(_m.get('model_ttft_ms') or 0), 'tools_ms': int(_m.get('tools_ms') or 0),
+                          'model_ttft_ms': int(_m.get('model_ttft_ms') or 0), 'model_call_ms': int(_m.get('model_call_ms') or 0), 'tools_ms': int(_m.get('tools_ms') or 0),
                           'total_ms': int((time.time() - float(_m.get('t_inicio') or time.time())) * 1000)}  # cola != velocidad del modelo
     if fuentes_anc:
         salida['fuentes_ancladas'] = fuentes_anc
