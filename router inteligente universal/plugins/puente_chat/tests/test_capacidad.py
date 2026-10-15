@@ -49,6 +49,15 @@ CASOS = [
     ("Modifica archivo X del repositorio", CAP_WRITE),
     ("Haz commit", CAP_WRITE),
     ("Sube archivo X al repo", CAP_WRITE),
+    # el Router es un sistema real del proyecto: corregirlo es WRITE; revisarlo es READ
+    ("corrige el Router", CAP_WRITE),
+    ("corregir el Router", CAP_WRITE),
+    ("arregla el Router", CAP_WRITE),
+    ("revisa el Router", CAP_READ),
+    ("corrige el archivo del repo", CAP_WRITE),
+    ("Corrige este fragmento que te pego aquí", CAP_NONE),
+    ("corre el comando", CAP_NONE),
+    ("Escribe un resumen del Router", CAP_READ),
 ]
 
 

@@ -10,13 +10,13 @@ CAP_NONE, CAP_READ, CAP_WRITE = 'none', 'read', 'write'
 
 # intencion de servicio externo: GitHub, Hugging Face, repo/PR/commit/issue, tools/acceso. Palabras genericas como
 # 'codigo', 'funcion', 'archivo', 'escribe' o 'crea' NO cuentan solas: pueden referirse a texto generado en la respuesta.
-_EXTERNO = re.compile(r'(?i)github|hugging\s*face|huggingface|\bhf\b|\brepos?\b|repositorio|rama|\bbranch\b|\bcommits?\b|pull\s*request|\bpr\b|\bissues?\b|\bspaces?\b|datasets?|job\s*de\s*hf|tools?|herramientas?|acceso')
+_EXTERNO = re.compile(r'(?i)github|hugging\s*face|huggingface|\bhf\b|\brepos?\b|repositorio|rama|\bbranch\b|\bcommits?\b|pull\s*request|\bpr\b|\bissues?\b|\bspaces?\b|datasets?|job\s*de\s*hf|tools?|herramientas?|acceso|\brouter\b')
 
 # verbos que SIEMPRE mutan el recurso externo (borra/modifica/sube/commit/actualiza/elimina/mueve/reemplaza/despliega/reinicia/restaura/renombra)
 _MUTA = re.compile(r'(borr\w*|sub\w*|commit|push|merge|actualiz\w*|elimin\w*|mov\w*|reemplaz\w*|modific\w*|cambi\w*|despleg\w*|reinici\w*|restaur\w*|renombr\w*)', re.I)
 
 # verbos ambiguos: escribir/crear/generar sobre un sistema externo NO mutan si el objeto es contenido (resumen/informe/auditoria...)
-_MUTA_DEBIL = re.compile(r'(crear?|escrib\w*|gener\w*|redact\w*|implement\w*|arregl\w*|aplica\w*|apliqu\w*)', re.I)
+_MUTA_DEBIL = re.compile(r'(crear?|escrib\w*|gener\w*|redact\w*|implement\w*|arregl\w*|aplica\w*|apliqu\w*|corr[ei][gj]\w*)', re.I)
 _CONTENIDO = re.compile(r'(resumen|informe|auditor\w*|reporte|an[áa]lisis|explicaci[óo]n|documentaci[óo]n|descripci[óo]n|lista|tabla|gu[íi]a|tutorial|diagrama|ensayo|correo|mensaje)', re.I)
 _RECURSO_EXT = re.compile(r'(archivo|fichero|file|rama|branch|issue|pull request|\bpr\b|dataset|space|job|release|tag|workflow|carpeta|directorio|commit)', re.I)
 

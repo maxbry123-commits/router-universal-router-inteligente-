@@ -650,6 +650,8 @@ def _fast_chat_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nod
     # FAST_GATE determinista (0 LLM): pregunta simple de Ficha 1/4 (un solo N4) -> una sola llamada al modelo elegido, sin tools, sin anexos, sin formato
     if not _fast_cfg(ficha)['enabled'] or len(nodos) != 1 or 'N4' not in nodos:
         return False
+    if str(opts.get('cap_in') or 'none') != 'none':
+        return False  # CAP_READ/WRITE exigen tools: FAST nunca responde sobre un sistema externo sin leerlo
     if not _es_simple(mensaje, opts, nodos):
         return False
     if opts.get('muta') or opts.get('es_cambio') or opts.get('aprobado') or opts.get('plan') or opts.get('plan_stop') or opts.get('previo'):
@@ -682,6 +684,8 @@ def _fast_consult_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], 
         return False
     if 'N3D' not in nodos and 'N4' not in nodos:
         return False
+    if str(opts.get('cap_in') or 'none') != 'none':
+        return False  # CAP_READ/WRITE exigen tools: FAST_CONSULT nunca consulta sin tools
     if opts.get('muta') or opts.get('es_cambio') or opts.get('aprobado') or opts.get('plan') or opts.get('plan_stop') or opts.get('previo'):
         return False
     if opts.get('perfil') == 'code' or opts.get('anclados') or _muta(mensaje):
@@ -702,6 +706,8 @@ def _fast_button_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any]) -
     fc = _fast_cfg(ficha)
     if not fc['enabled'] or not fc['button_override']:
         return False
+    if str(opts.get('cap_in') or 'none') != 'none':
+        return False  # CAP_READ/WRITE exigen tools: el boton rapido nunca degrada la puerta a NONE
     for k in ('muta', 'es_cambio', 'aprobado', 'plan', 'plan_stop', 'requiere_tools', 'previo'):
         if opts.get(k):
             return False

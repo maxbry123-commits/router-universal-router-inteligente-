@@ -646,6 +646,31 @@ def test_33_la_puerta_cap_es_la_unica_autoridad_de_escritura():
     _chat('s33c', 'En GitHub modifica archivo X del repositorio')
     assert 'ESPERANDO_APROBACION' in _n('s33c', 'N4')[0] and 'falta la aprobacion' in _n('s33c', 'N4')[0]
 
+def test_34_fast_nunca_degrada_cap_y_corrige_router_es_write():
+    # FAST con cap_in != none seria CAP_NONE efectivo: los 3 gates lo rechazan; CAP_NONE si puede usar FAST
+    f1, f2, f3 = fq.FICHAS['ficha1-modelos'], fq.FICHAS['ficha2-dag-codigo'], fq.FICHAS['ficha3-frontend']
+    n1 = {n['id']: n for n in f1['nodos']}
+    n2 = {n['id']: n for n in f2['nodos']}
+    n3 = {n['id']: n for n in f3['nodos']}
+    assert fq._fast_button_ok(f1, '¿Qué modelo eres?', {'fast_reply': True, 'cap_in': 'none', 'sesion': 's34'})
+    for cap in ('read', 'write'):
+        assert not fq._fast_button_ok(f1, '¿Qué modelo eres?', {'fast_reply': True, 'cap_in': cap, 'sesion': 's34'})
+        assert not fq._fast_button_ok(f1, 'Revisa GitHub', {'fast_reply': True, 'cap_in': cap, 'sesion': 's34'})
+        assert not fq._fast_chat_ok(f1, '¿Qué modelo eres?', {'fast_reply': True, 'cap_in': cap, 'sesion': 's34'}, n1)
+        assert not fq._fast_consult_ok(f2, '¿Qué opinas del diseño del Router?', {'fast_reply': True, 'cap_in': cap, 'sesion': 's34'}, n2)
+        assert not fq._fast_consult_ok(f3, '¿Qué opinas del diseño del Router?', {'fast_reply': True, 'cap_in': cap, 'sesion': 's34'}, n3)
+    # "corrige el Router" = orden de modificar el sistema real -> WRITE -> plan -> ESPERANDO_APROBACION -> /aprobar
+    from plugins.puente_chat.capacidad import capacidad_de
+    assert capacidad_de('corrige el Router') == 'write' and capacidad_de('revisa el Router') == 'read'
+    ROL.clear()
+    ROL['N4'] = _plan_o_exec
+    ROL['N6'] = lambda p, o: 'revisado' + chr(10) + 'VEREDICTO: PASS'
+    ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
+    r = _chat('s34', 'corrige el Router')
+    assert 'ESPERANDO_APROBACION' in r['reply'] and 'falta la aprobacion' in _n('s34', 'N4')[0]
+    r = _chat('s34', '/aprobar')
+    assert r['reply'].startswith(_full('ok')) and 'PLAN APROBADO' in _n('s34', 'N4')[-1]
+
 if __name__ == '__main__':
     fallos = 0
     for nombre, f in sorted(globals().items()):
