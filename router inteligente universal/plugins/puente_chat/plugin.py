@@ -112,7 +112,7 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                     usage = ev['usage']
                 d_ = ((ev.get('choices') or [{}])[0].get('delta') or {})
                 _mm = _MET.get() or {}
-                if d_ and 'model_ttft_ms' not in _mm and _mm.get('t_model_start'):
+                if (d_.get('content') or d_.get('tool_calls')) and 'model_ttft_ms' not in _mm and _mm.get('t_model_start'):
                     _met('model_ttft_ms', int((time.monotonic() - _mm['t_model_start']) * 1000))  # TTFT real: primer delta (content o tool_call)
                 if d_.get('content'):
                     partes.append(d_['content'])
@@ -621,7 +621,7 @@ def _es_mutacion(nom, args):
     if nom == 'hf_almacenamiento':
         return acc not in ('listar', 'leer')
     if nom in ('github_api', 'hf_api'):
-        return met != 'GET'
+        return met not in ('GET', 'HEAD')  # GET y HEAD solo leen (el catalogo READ ya anuncia GET/HEAD)
     return False
 
 

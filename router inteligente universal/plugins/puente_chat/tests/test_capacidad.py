@@ -38,6 +38,17 @@ CASOS = [
     ("Hacer una auditoría del repositorio", CAP_READ),
     ("En GitHub modifica X", CAP_WRITE),
     ("Haz un commit en el repo", CAP_WRITE),
+    # auditoria 2: escribir/crear CONTENIDO sobre el repo no muta -> READ
+    ("Escribe un resumen del repo", CAP_READ),
+    ("Crea un informe del repositorio", CAP_READ),
+    ("Escribe una auditoría del repo", CAP_READ),
+    ("Genera un análisis de este repositorio", CAP_READ),
+    # ...pero escribir/crear RECURSOS del sistema externo si muta -> WRITE
+    ("En GitHub crea archivo X", CAP_WRITE),
+    ("Escribe contenido en archivo X del repo", CAP_WRITE),
+    ("Modifica archivo X del repositorio", CAP_WRITE),
+    ("Haz commit", CAP_WRITE),
+    ("Sube archivo X al repo", CAP_WRITE),
 ]
 
 
