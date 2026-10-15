@@ -335,15 +335,16 @@ export async function mount(root, { api, tell }) {
   q("#anc-todos").addEventListener("click", () => anclarTodos(true).catch((err) => tell(err.message)));
   q("#anc-ninguno").addEventListener("click", () => anclarTodos(false).catch((err) => tell(err.message)));
   q("#btn-copiar-input").addEventListener("click", () => copiarTexto(q("#message").value));
-  q("#btn-detener").addEventListener("click", () => {  // para TODOS los chats con algo corriendo (activo, en otra pestaña o retomado tras recargar): detenerFn corta el envio y RIU_CANCELAR corta el polling y avisa al Router
+  q("#btn-detener").addEventListener("click", () => {  // parar duro en TODOS los chats: detenerFn corta el envio en curso, RIU_CANCELAR corta el polling/retomado y avisa al Router, y si la promesa se perdio (tab suspendida/registro borrado) igual se limpia ocupado + pending para que el cubo no siga girando
     let algo = false;
     for (const c of chats) {
       c.detenerFlag = true;
       if (c.detenerFn) { try { c.detenerFn(); } catch (e) {} algo = true; }
-      if (c.ocupado) algo = true;
+      if (c.hist) c.hist.querySelectorAll(".pending").forEach((p) => { p.remove(); algo = true; });
+      if (c.ocupado) { algo = true; c.ocupado = false; pintarTabs(); }
       if (window.RIU_CANCELAR) { try { window.RIU_CANCELAR(c.sesion); } catch (e) {} }
     }
-    if (!algo) tell("No hay proceso en marcha");
+    tell(algo ? "Detenido" : "No hay proceso en marcha");
   });
 
   // ---- ventana del motor: descarga/extraccion/copiar/mover entre repos ----
@@ -544,6 +545,7 @@ export async function mount(root, { api, tell }) {
         ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: mvp ? message : A.envolver(message, c.instrucciones), max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
       c.detenerFn = null;
+      if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
       pending.remove();
       c.hist.append(burbuja(answer.reply || "Sin respuesta"));
       A.registrar(c.sesion, "bot", answer.reply || "Sin respuesta");
