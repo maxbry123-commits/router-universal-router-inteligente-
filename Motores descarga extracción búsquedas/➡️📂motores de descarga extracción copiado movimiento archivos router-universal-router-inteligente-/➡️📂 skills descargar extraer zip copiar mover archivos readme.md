@@ -67,7 +67,7 @@ Los siguientes blobs son canónicos e inmutables:
 |---|---|
 | `motor_1_extract_only.py` | `a52d5dc0e6ff26f75d753b848dcc1a40c5dd4500` |
 | `motor_2_queue_download_extract.py` | `84d566e2ee4e98e42eb3a864026d067d48caabd9` |
-| `hf_download_extract_engine.py` | `91e6e4486692eab314be5c7130d8310d3c855397` |
+| `hf_download_extract_engine.py` | `a0e1c87f1a5bb3a9e1576fd8df96198a28059efd` |
 | `motor_3_copy_batches.py` | `3689924361ce4a1a9fde4ae2b6f6009c37a6042d` |
 | `motor_copy_root_to_repo.py` | `8281211da76db3080fe1f1ea38b3eb0c45d655cb` |
 | `motor_4_move_batches.py` | `9a21facfe11327cf60a2afca8f415ad52f0ecbe5` |
