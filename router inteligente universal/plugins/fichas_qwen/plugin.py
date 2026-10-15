@@ -103,8 +103,10 @@ def _llamar(modelo: str, prompt: str, ficha: dict[str, Any], *, timeout_override
         if resto < 1:
             break
         clave = m['claves'][n % len(m['claves'])]
-        cuerpo = json.dumps({'model': m['modelo'], 'messages': [{'role': 'user', 'content': prompt}],
-                             'max_tokens': max_tokens}).encode()
+        _c = {'model': m['modelo'], 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tokens}
+        if m['modelo'] in ESFUERZO_MODELO:
+            _c['reasoning_effort'] = ESFUERZO_MODELO[m['modelo']]  # llamada directa sin tools: perfil comun de los 9 modelos (Ficha 4 / fast_lane)
+        cuerpo = json.dumps(_c).encode()
         req = urllib.request.Request(m['url'] + '/chat/completions', data=cuerpo, method='POST',
                                      headers={'Authorization': 'Bearer ' + clave, 'Content-Type': 'application/json'})
         try:
@@ -132,6 +134,7 @@ _QW = {'ficha-qwen38max': 'qw-qwen-3-8-max', 'ficha-qwen38flash': 'qw-qwen-3-8-f
        'ficha-qwen37plus': 'qw-qwen-3-7-plus', 'ficha-qwen36flash': 'qw-qwen-3-6-flash', 'ficha-dsv4pro': 'qw-deepseek-v4-pro',
        'ficha-dsv4pro0813': 'qw-deepseek-v4-pro-0813', 'ficha-dsv4flash': 'qw-deepseek-v4-flash', 'ficha-glm52': 'qw-glm-5-2',
        'ficha-qwen37flash': 'qw-qwen-3-7-flash'}
+from plugins.fichas_qwen.perfiles import ESFUERZO_FICHA, ESFUERZO_MODELO  # perfil comun YAIWES (sin tools); Team 5 (mvp.py) lee la misma fuente
 _ESCRIBE = ('github_escribir', 'hf_escribir', 'hf_almacenamiento')
 _VERBOS = ('modifica', 'modificar', 'modifique', 'modificalo', 'edita', 'editar', 'edite', 'corrige', 'corregir', 'corrija', 'corrigelo',
            'cambia', 'cambiar', 'cambialo', 'crea', 'crear', 'escribe', 'escribir', 'escriba', 'borra', 'borrar', 'borre', 'elimina', 'eliminar',
@@ -169,7 +172,7 @@ _TAREAS = {}  # plan pendiente de aprobacion por (ficha, conversacion)
 
 _FORMATO = ('RESUMEN CORTO', 'DIAGRAMA', 'CHECK', 'VALIDACION', 'RUTAS')
 _FMT_DEF = 'FORMATO OBLIGATORIO DE PLAN Y SALIDA. Cinco secciones, cada una con su encabezado en una linea propia: 1) RESUMEN CORTO (2 a 4 lineas). 2) DIAGRAMA DE FLUJO del workflow Loop en horizontal, de izquierda a derecha con flechas y la vuelta del loop; copia el DIAGRAMA REAL que se te adjunta. 3) CHECK LISTA: una linea por tarea, con ✅ las realizadas y ⬜ las pendientes. 4) VALIDACION de cambios o verificacion: que se verifico, con que evidencia real (archivo, commit, prueba, resultado) y que no se pudo verificar. 5) 3 RUTAS para mejorar, cambiar o tarea por hacer. La ruta 1 SIEMPRE propone activar la nueva verificacion: auditoria forense X-Ray, verificacion cruzada con el codigo fuente y verificacion cruzada con el input block verbatim del Director (si el Director responde ok o confirmo, la hacen Qwen 3.8 Flash, DeepSeek V4 Flash y Qwen 3.8 Flash a la vez: revisan, refactorizan, resuelven gaps y mejoran lo ya hecho). Sin parrafos largos ni trazas internas. En el PLAN: CHECK LISTA = tareas pendientes, VALIDACION = como se verificara, y termina con la linea ESPERANDO_APROBACION.'
-_PANEL_DEF = ['ficha-qwen38flash', 'ficha-dsv4flash', 'ficha-qwen38flash']
+_PANEL_DEF = ['ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-qwen38flash']  # verificacion cruzada: 3 modelos distintos, sin duplicados (GLM 5.2 solo si el Director lo ordena)
 _NOMBRES = {'ficha-qwen37flash': 'Qwen 3.7 Flash', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2', 'ficha-qwen38flash': 'Qwen 3.8 Flash'}
 _VERIF = {}  # propuesta de verificacion cruzada pendiente por (ficha, conversacion)
 
@@ -632,7 +635,8 @@ _FAST_CALLERS_BLOQUEADOS = {'graphiti', 'agent', 'agente', 'workflow', 'hermes',
 _FAST_TASKS_BLOQUEADOS = {'tool', 'code', 'debug', 'refactor', 'frontend', 'reason', 'complex', 'architecture', 'planning', 'agent', 'workflow'}
 _NO_CONSULTA = re.compile(r'(?i)\b(audit|x-?ray|forens|deploy|despliega|commit|push|herramienta|tools?|ejecuta|ejecutar|agente|workflow|repo\b|repositorio|github|archivo|/aprobar)')
 _NOMBRES = {'ficha-qwen38max': 'Qwen 3.8 Max', 'ficha-qwen38flash': 'Qwen 3.8 Flash', 'ficha-qwen37max': 'Qwen 3.7 Max', 'ficha-qwen37plus': 'Qwen 3.7 Plus',
-            'ficha-qwen36flash': 'Qwen 3.6 Flash', 'ficha-dsv4pro': 'DeepSeek V4 Pro', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2'}
+            'ficha-qwen36flash': 'Qwen 3.6 Flash', 'ficha-dsv4pro': 'DeepSeek V4 Pro', 'ficha-dsv4flash': 'DeepSeek V4 Flash', 'ficha-glm52': 'GLM 5.2',
+            'ficha-qwen37flash': 'Qwen 3.7 Flash'}  # nombre visible del panel de verificacion cruzada
 
 
 def _fast_cfg(ficha: dict[str, Any]) -> dict[str, Any]:
@@ -847,6 +851,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
+                  'extra_llm': {'reasoning_effort': ESFUERZO_FICHA[modelo]} if modelo in ESFUERZO_FICHA else None,
+                  # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
                   'perfil': perfil})
     try:  # metrica de latencia por nodo (solo registro, no cambia la salida)
         _perfil = perfil

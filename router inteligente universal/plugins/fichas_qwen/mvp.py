@@ -20,9 +20,7 @@ from typing import Any
 _MAX_DEF = {'ficha-qwen38max': 4096, 'ficha-qwen38flash': 4096, 'ficha-qwen37max': 4096, 'ficha-qwen37plus': 4096,
             'ficha-qwen36flash': 2048, 'ficha-dsv4pro': 4096, 'ficha-dsv4pro0813': 4096, 'ficha-dsv4flash': 4096,
             'ficha-glm52': 4096, 'ficha-qwen37flash': 2048}  # salida normal MVP; 8192 solo si el usuario pide algo largo, 16384 explicito
-_RAZON = {'ficha-qwen38max': 'medium', 'ficha-qwen38flash': 'low', 'ficha-qwen37max': 'medium', 'ficha-qwen37plus': 'medium',
-          'ficha-qwen36flash': 'low', 'ficha-dsv4pro': 'high', 'ficha-dsv4pro0813': 'high', 'ficha-dsv4flash': 'high',
-          'ficha-glm52': 'high', 'ficha-qwen37flash': 'low'}  # Team 5: reasoning_effort por modelo (Token Plan oficial)
+from plugins.fichas_qwen.perfiles import ESFUERZO_FICHA as _RAZON  # perfil comun de los 9 modelos (sin tools): misma fuente que Fichas 1-4
 from plugins.puente_chat.capacidad import capacidad_de  # la puerta es UNA, compartida con todas las fichas: el software decide, no el modelo
 _TOOL_NOMBRE = ('github', 'GitHub'), ('hf_', 'Hugging Face'), ('hugging', 'Hugging Face')
 _TIMEOUT_S = 300  # techo unico de solicitud para toda la ficha; no hay timeout por nodo

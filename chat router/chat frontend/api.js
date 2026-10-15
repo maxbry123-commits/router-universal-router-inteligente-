@@ -53,7 +53,7 @@ window.RIU_RETOMAR = async (ses) => {
     try {
       const r = await fetch(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) });
       const e = await r.json().catch(() => ({})); const p = e.result || {};
-      if (p.error === 'PROCESO_NO_EXISTE') { guardaProc(ses, null); return { error: 'PROCESO_NO_EXISTE' }; }
+      if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso: borrar PID y devolver ya (no esperar 560 s)
       if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
     } catch (x) { /* caida temporal: seguir esperando, el registro no se borra */ }
     await new Promise((ok) => setTimeout(ok, 1500));
@@ -97,7 +97,7 @@ async function puenteRouter(base, body, qs, headers) {
     if (p.estado === 'procesando' && p.proceso_id) {
       const deadline = Date.now() + 560000;
       const proceso = p.proceso_id;
-      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: 'En cola…' }));  // process_id != modelo corriendo: el backend informa el estado real } catch (e) {}  // ya hay proceso_id en el Router: Enviando -> Pensando
+      try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}  // process_id != modelo corriendo: el backend informa el estado real; sesion+pid aíslan el progreso entre chats
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
       while (p.estado === 'procesando') {
         if (Date.now() > deadline) { cortado = true; break; }
@@ -106,20 +106,14 @@ async function puenteRouter(base, body, qs, headers) {
           const poll = await fetch(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }) });
           const envelope = await poll.json().catch(() => ({}));
           if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
-          p = envelope.result || {}; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: p.progreso })); } catch (e) {} }
+          p = envelope.result || {}; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso } })); } catch (e) {} }
         } catch (e) { continue; }  // red/job en cambio: seguir esperando
       }
     }
     if (!cortado && payload && payload.sesion) guardaProc(payload.sesion, null);  // termino: ya no hay nada que retomar
     if (cortado) { return { status: 504, ok: false, p: { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'El proceso sigue en el Router; no se relanza la tarea', proceso_id: p.proceso_id } }; }
     if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
-    if (p.error) {
-      if (intento === 0 && accion === 'chat' && !(body && body.plugin) && ['MODELO_NO_RESPONDE', 'TIEMPO_TOTAL_AGOTADO', 'CHAT_FAILED', 'CHAT_OCUPADO_REINTENTA', 'PROCESO_NO_EXISTE', 'SERVICIO_OCUPADO'].includes(p.error)) {
-        payload = Object.assign({}, payload, { messages: (payload.messages || []).concat([{ role: 'user', content: 'continúa el trabajo donde quedó' }]) });
-        continue;
-      }
-      return { status: 502, ok: false, p };
-    }
+    if (p.error) return { status: 502, ok: false, p };  // proceso terminado en error: NO se relanza otro chat_async (el reintento de red de LIVE_URL solo vale antes de obtener proceso_id)
     return { status: 200, ok: true, p };
   }
 }

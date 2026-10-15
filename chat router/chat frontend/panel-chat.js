@@ -502,6 +502,7 @@ export async function mount(root, { api, tell }) {
     const input = q("#message");
     const message = input.value.trim();
     if (!message) return;
+    if (c.ocupado) { tell("Este chat ya tiene una tarea en curso"); return; }  // una tarea por chat; los demas chats siguen en paralelo
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
     const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
@@ -525,7 +526,12 @@ export async function mount(root, { api, tell }) {
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
     c.hist.append(pending);
-    const alProgreso = (e) => { if (!pending.isConnected) { window.removeEventListener('riu-progreso', alProgreso); return; } pending.textContent = e.detail; };
+    const alProgreso = (e) => {
+      const d = e.detail;
+      const v = window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion);  // progreso aislado: solo mi sesion y, si hay PID guardado, solo mi proceso
+      if (!pending.isConnected || (d && d.sesion && d.sesion !== c.sesion) || (v && v.pid && d && d.proceso_id && d.proceso_id !== v.pid)) { window.removeEventListener('riu-progreso', alProgreso); return; }
+      pending.textContent = d && d.texto !== undefined ? d.texto : d;
+    };
     window.addEventListener('riu-progreso', alProgreso);
     abajo(c);
     const agent = q("#agent").value;
@@ -562,6 +568,7 @@ export async function mount(root, { api, tell }) {
       abajo(c);
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
+      window.removeEventListener('riu-progreso', alProgreso);  // listener fuera al terminar/error/cancelar
       c.detenerFn = null; c.ocupado = false; pintarTabs();
       if (window.matchMedia("(pointer: fine)").matches) input.focus();
     }

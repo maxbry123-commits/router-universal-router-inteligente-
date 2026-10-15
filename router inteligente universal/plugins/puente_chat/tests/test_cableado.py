@@ -256,6 +256,8 @@ def _llh(modelo, prompt, ficha, n, opts):
 
 
 fq._llamar_harness = _llh
+fq._llamar_harness_1 = lambda modelo, prompt, ficha, n, opts: 'anexo sheriff (stub)'  # sheriff de entrada/anexos usan el Harness real (SQLite+gov): neutralizado en tests del motor
+fq._gov_prepare = lambda ficha, opts, aprobado, esperado='': {'constitution_id': 'tc', 'constitution_hash': 'h1', 'source_snapshot_id': '', 'approved': bool(aprobado)}  # gobernanza real exige SQLite; aqui se prueba el motor, no la persistencia (test_gov_prepare.py cubre la gobernanza)
 
 
 def _n(ses, nid):
@@ -277,7 +279,7 @@ def test_14_aprobar_retoma_la_misma_tarea():
     r2 = _chat('s14', '/aprobar')
     assert [len(_n('s14', k)) for k in ('N1', 'N2', 'N3')] == [1, 1, 1]  # N1/N2/N3 no se repiten
     assert len(_n('s14', 'N4')) == 2 and 'PLAN APROBADO POR EL DIRECTOR' in _n('s14', 'N4')[1] and 'corrige el Router' in _n('s14', 'N4')[1]
-    assert r2['reply'] == _full('ok') and 'VEREDICTO' not in r2['reply']
+    assert r2['reply'].startswith(_full('ok')) and 'VEREDICTO' not in r2['reply']  # la salida siempre anexa la PROPUESTA DE VERIFICACION
     assert 'PLAN / RESULTADO ESPERADO' in _n('s14', 'N6')[0] and 'INPUT LITERAL DEL DIRECTOR' in _n('s14', 'N1')[0]
     r3 = _chat('s14', '/aprobar')
     assert r3['reply'].startswith('GAP SIN_PLAN_PENDIENTE')  # la tarea ya se cerro
@@ -295,7 +297,7 @@ def test_15_n6_fail_devuelve_control_a_n4():
     ROL['N7'] = lambda p, o: _full('final') + chr(10) + 'VEREDICTO: PASS'
     _chat('s15', 'corrige el Router')
     r = _chat('s15', '/aprobar')
-    assert len(_n('s15', 'N4')) == 3 and len(_n('s15', 'N6')) == 2 and r['reply'] == _full('final')
+    assert len(_n('s15', 'N4')) == 3 and len(_n('s15', 'N6')) == 2 and r['reply'].startswith(_full('final'))
     assert 'CORRECCION PEDIDA POR EL VERIFICADOR' in _n('s15', 'N4')[2] and 'falta X' in _n('s15', 'N4')[2]
     assert len(_n('s15', 'N1')) == 1
 
@@ -352,7 +354,7 @@ def test_18_dos_tareas_en_paralelo_no_se_pisan():
     ts = [threading.Thread(target=corre, args=('pa', 'analiza TAREA-A')), threading.Thread(target=corre, args=('pb', 'analiza TAREA-B'))]
     [t.start() for t in ts]
     [t.join() for t in ts]
-    assert res['pa'] == _full('analiza TAREA-A') and res['pb'] == _full('analiza TAREA-B')
+    assert res['pa'].startswith(_full('analiza TAREA-A')) and res['pb'].startswith(_full('analiza TAREA-B'))  # + PROPUESTA DE VERIFICACION anexada
 
 
 def _full(t):
@@ -423,11 +425,11 @@ def test_22_validador_de_formato_final():
     ROL['N7'] = n7
     _chat('s22', 'corrige el Router')
     r = _chat('s22', '/aprobar')
-    assert c['n7'] == 2 and r['reply'] == _full('ok')
+    assert c['n7'] == 1 and r['reply'].startswith('RESUMEN CORTO') and 'MICRO RESUMEN solo' in r['reply'] and not fq._faltan(r['reply'], fq.FICHAS['ficha2-dag-codigo'])  # _rellenar envuelve el formato determinista antes de reformatear
     ROL['N7'] = lambda p, o: 'MICRO RESUMEN solo' + chr(10) + 'VEREDICTO: PASS'
     _chat('s22b', 'corrige el Router')
     r2 = _chat('s22b', '/aprobar')
-    assert r2['reply'].startswith('GAP FORMATO_SALIDA') and 'MICRO RESUMEN solo' in r2['resultado_parcial']
+    assert r2['reply'].startswith('RESUMEN CORTO') and 'MICRO RESUMEN solo' in r2['reply'] and not r2['reply'].startswith('GAP')  # la salida mal formateada se envuelve, no da GAP
 
 
 def test_23_cinco_correcciones_con_tope_de_tiempo():
@@ -444,7 +446,7 @@ def test_23_cinco_correcciones_con_tope_de_tiempo():
     ROL['N7'] = lambda p, o: _full('ok') + chr(10) + 'VEREDICTO: PASS'
     _chat('s23', 'corrige el Router')
     r = _chat('s23', '/aprobar')
-    assert len(_n('s23', 'N4')) == 5 and len(_n('s23', 'N6')) == 4 and r['reply'] == _full('ok')
+    assert len(_n('s23', 'N4')) == 5 and len(_n('s23', 'N6')) == 4 and r['reply'].startswith(_full('ok'))
     ROL['N6'] = lambda p, o: 'VEREDICTO: FAIL: sigue mal'
     _chat('s23b', 'corrige el Router')
     _chat('s23b', '/aprobar')
@@ -467,9 +469,10 @@ def test_25_formato_obligatorio_tambien_en_auditoria_de_solo_lectura():
     ROL.clear()
     ROL['N7'] = lambda p, o: 'respuesta sin formato'
     r = _chat('s25', 'analiza el router')
-    assert r['reply'].startswith('GAP FORMATO_SALIDA') and r['resultado_parcial'] == 'respuesta sin formato'
-    ROL['N7'] = lambda p, o: _full('auditoria') if 'REFORMATEA' in p else 'respuesta sin formato'
-    assert _chat('s25b', 'analiza el router')['reply'] == _full('auditoria')
+    assert r['reply'].startswith('RESUMEN CORTO') and 'respuesta sin formato' in r['reply'] and not fq._faltan(r['reply'], fq.FICHAS['ficha2-dag-codigo'])  # el formato se rellena tambien en auditoria de solo lectura
+    ROL['N7'] = lambda p, o: 'respuesta sin formato'
+    r2 = _chat('s25b', 'analiza el router')  # _rellenar envuelve antes que reformatear: la auditoria queda en formato aunque el modelo no lo traiga
+    assert r2['reply'].startswith('RESUMEN CORTO') and 'respuesta sin formato' in r2['reply'] and not fq._faltan(r2['reply'], fq.FICHAS['ficha2-dag-codigo'])
     for k in ('ficha2-dag-codigo', 'ficha3-frontend'):
         rol7 = [n for n in fq.FICHAS[k]['nodos'] if n['id'] == 'N7'][0]['rol']
         assert 'solo tareas de trabajo o code' not in rol7 and 'FORMATO OBLIGATORIO DE PLAN Y SALIDA' in rol7
@@ -507,11 +510,11 @@ def test_27_diagrama_horizontal_con_estado_real():
     orden = [n['id'] for n in f['nodos']]
     d = fq._diagrama(f, nodos, orden, {'N0': 'x', 'N1': 'x', 'N2': 'GAP N2 (m): boom', 'N3': 'x'}, {'ronda': 2}, 'N4')
     l1, l2 = d.split(chr(10))
-    assert l1.startswith('INPUT \u2500\u2500\u25b6 N0 \u2705 \u2500\u2500\u25b6 [N1 \u2705 | N2 \u274c | N3 \u2705] \u2500\u2500\u25b6 N4 \U0001f504') and l1.endswith('\u2500\u2500\u25b6 SALIDA')
+    assert l1.startswith('INPUT \u2500\u2500\u25b6 N0 \u2705 \u2500\u2500\u25b6 [N1 \u2705 | N2 \u274c | N3 \u2705 | N3B \u23f3] \u2500\u2500\u25b6 N4 \U0001f504') and l1.endswith('\u2500\u2500\u25b6 SALIDA')
     assert 'N7 \u23f3' in l1 and 'vuelta 2/5' in l2 and 'tope 600 s' in l2
 
 
-def test_28_confirmacion_activa_la_verificacion_cruzada_de_4_modelos():
+def test_28_confirmacion_activa_la_verificacion_cruzada_de_3_modelos():
     ROL.clear()
     est = {'act': 0, 'max': 0}
     lock = threading.Lock()
@@ -530,24 +533,23 @@ def test_28_confirmacion_activa_la_verificacion_cruzada_de_4_modelos():
         return f
     ROL['N7'] = lambda p, o: _full('auditoria') + chr(10) + 'VEREDICTO: PASS'
     r0 = _chat('s28', 'analiza el router TAREA-X')
-    assert r0['reply'] == _full('auditoria')
+    assert r0['reply'].startswith(_full('auditoria'))  # + PROPUESTA DE VERIFICACION
     ROL['V1'] = miembro(RuntimeError('modelo no disponible'))
     ROL['V2'] = miembro('hallazgo ok' + chr(10) + 'VEREDICTO: PASS')
     ROL['V3'] = miembro('falta X en ficha2' + chr(10) + 'VEREDICTO: FAIL: falta X')
-    ROL['V4'] = miembro('todo bien' + chr(10) + 'VEREDICTO: PASS')
     r = _chat('s28', 'Ok')
     mods = [m for s, n, m in MODS if s == 's28' and n.startswith('V')]
-    assert sorted(mods) == sorted(['ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-glm52', 'ficha-qwen38flash']), mods
-    assert est['max'] == 4
-    for k in ('V1', 'V2', 'V3', 'V4'):
+    assert sorted(mods) == sorted(['ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-qwen38flash']), mods
+    assert est['max'] == 3
+    for k in ('V1', 'V2', 'V3'):
         p = _n('s28', k)[0]
         assert 'INPUT BLOCK VERBATIM DEL DIRECTOR' in p and 'analiza el router TAREA-X' in p and 'SALIDA ENTREGADA A VERIFICAR' in p and _full('auditoria') in p
     txt = r['reply']
-    assert txt.startswith('RESUMEN CORTO') and '2 PASS, 1 FAIL, 1 sin resultado' in txt and 'Veredicto cruzado: FAIL' in txt
-    assert '\u2b1c Qwen 3.7 Flash: GAP' in txt and '\u274c GLM 5.2: FAIL - falta X' in txt and '\u2705 DeepSeek V4 Flash: PASS' in txt and '3 RUTAS' in txt
+    assert txt.startswith('RESUMEN CORTO') and '1 PASS, 1 FAIL, 1 sin resultado' in txt and 'Veredicto cruzado: FAIL' in txt
+    assert 'Qwen 3.8 Flash: FAIL - falta X' in txt and 'DeepSeek V4 Flash: PASS' in txt and 'Qwen 3.7 Flash: GAP' in txt and '3 RUTAS' in txt
     assert r['estado_tarea'] == 'VERIFICACION_CRUZADA' and not fq._faltan(txt, fq.FICHAS['ficha2-dag-codigo'])
     _chat('s28', 'ok')  # la propuesta ya se uso: no se repite
-    assert len([m for s, n, m in MODS if s == 's28' and n.startswith('V')]) == 4
+    assert len([m for s, n, m in MODS if s == 's28' and n.startswith('V')]) == 3
 
 
 def test_29_detector_de_confirmacion():
@@ -573,7 +575,7 @@ def test_31_qwen37_flash_esta_cableado_sin_tocar_el_sello():
     assert pc._politica('qwen3.7-flash') == pc._politica('qwen3.8-flash') and pc._politica('qwen3.7-flash')
     for k in ('ficha1-modelos', 'ficha2-dag-codigo', 'ficha3-frontend'):
         f = fq.FICHAS[k]
-        assert tuple(f['verificacion_cruzada']['modelos']) == ('ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-glm52', 'ficha-qwen38flash'), k
+        assert tuple(f['verificacion_cruzada']['modelos']) == ('ficha-qwen37flash', 'ficha-dsv4flash', 'ficha-qwen38flash'), k
         assert f['formato_salida']['secciones'] == ['RESUMEN CORTO', 'DIAGRAMA', 'CHECK', 'VALIDACION', 'RUTAS'] and 'FORMATO OBLIGATORIO DE PLAN Y SALIDA' in f['formato_salida']['texto']
 
 
