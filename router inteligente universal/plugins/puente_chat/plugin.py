@@ -14,6 +14,7 @@ import re
 from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
 _SOLO_LECTURA = ContextVar("riu_solo_lectura", default=False)
+_TOOLS_HAB = ContextVar("riu_tools_habilitadas", default=True)  # Team 5: tools solo si el input las pide; los demas flujos no la envian -> True por defecto, nada cambia
 _POL = ContextVar("riu_politica", default=None)  # politicas_modelo del modelo que esta respondiendo
 _REQ_TOOLS = ContextVar("riu_requiere_tools", default=False)  # tarea que exige herramientas: sin tools = GAP
 _RONDAS_MAX = ContextVar("riu_rondas_tools_max", default=0)  # Team 5: tope propio de rondas modelo/tool (0 = sin tope propio)
@@ -653,7 +654,7 @@ def _bucle(llamar, mensajes):
     faltas = {}
     rotas = set()  # herramientas que ya fallaron por token/desconocidas
     fin = _DEADLINE.get() or (time.monotonic() + TOPE_TOTAL_S)
-    con_tools = not fast
+    con_tools = (not fast) and _TOOLS_HAB.get()  # Team 5 apaga el catalogo en preguntas normales: el modelo no puede pedir tools por su cuenta
     pasos = 0
     rondas = 0  # Team 5: rondas modelo->tool->modelo ya ejecutadas
     rondas_max = int(_RONDAS_MAX.get() or 0)
@@ -1835,6 +1836,7 @@ def _chat(p):
         return _encender(model)
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
+    _TOOLS_HAB.set(p.get('tools_habilitadas') is not False)  # ausente -> True: fichas/DAG/consil igual que antes
     _REQ_TOOLS.set(bool(p.get('requiere_tools')))
     _PERFIL.set(str(p.get('perfil') or ''))  # vacio = chat normal (contexto largo); un nodo de ficha pide su perfil
     _CANCEL_FN.set(p.get('cancelar_si') if callable(p.get('cancelar_si')) else None)

@@ -119,13 +119,15 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
         _buf.append(chunk)
         if pid:
             fq._prog(pid, 'MVP · generando respuesta', '…' + ''.join(_buf)[-80:])
-    requiere = bool(_QUIERE_TOOLS.search(mensaje or ''))  # 'revisa acceso a GitHub/HF', 'prueba las tools'... -> tools obligatorias
-    solo_lectura = bool(_SOLO_LEER.search(mensaje or '')) and not _ORDEN_MUTAR.search(mensaje or '')  # verificar acceso = jamas escribir; una orden de crear/modificar... no se protege
+    quiere_tools = bool(_QUIERE_TOOLS.search(mensaje or ''))  # el input pide GitHub/HF/tools -> el catalogo va al modelo; pregunta normal -> tools=[]
+    quiere_mutar = quiere_tools and bool(_ORDEN_MUTAR.search(mensaje or ''))  # tools + orden explicita de modificar -> escritura habilitada (las dos cosas a la vez)
+    requiere = quiere_tools  # la tarea pide tools: al menos una debe ejecutarse con exito (evidencia)
+    solo_lectura = quiere_tools and not quiere_mutar  # tools sin orden de modificar: mutaciones bloqueadas por _bloqueo
     if pid:  # mismo visor de progreso de la familia
         fq._prog(pid, 'MVP', 'trabajando')
         fq._meta(pid, 'MVP', elegido, 'responde con el modelo elegido')
     r = pc._chat({'model': qw, 'messages': conv, 'max_tokens': mt, 'sesion': ses,
-                  'presupuesto_s': _TIMEOUT_S, 'solo_lectura': solo_lectura, 'requiere_tools': requiere,
+                  'presupuesto_s': _TIMEOUT_S, 'solo_lectura': solo_lectura, 'requiere_tools': requiere, 'tools_habilitadas': quiere_tools,  # sin tools pedidas: el catalogo ni se envia
                   'rondas_tools_max': 3,  # MVP: modelo->tool->modelo->tool->modelo->respuesta, sin 6 vueltas automaticas
                   'progreso_fn': _pf, 'stream_fn': _sf,
                   'extra_llm': {'reasoning_effort': _RAZON[elegido]} if elegido in _RAZON else None,
