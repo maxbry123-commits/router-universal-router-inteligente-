@@ -271,7 +271,7 @@ def build_spec(kind: str, cfg: Config, life: "str | None" = None) -> dict:
     if "HF_TOKEN_1" not in secrets and cfg.hf_token:
         secrets["HF_TOKEN_1"] = cfg.hf_token
     if cfg.hf_token:
-        # HF_CONTROL_JOBS_TOKEN retirado: no se propaga a ningun Job
+        pass  # HF_CONTROL_JOBS_TOKEN retirado: no se propaga a ningun Job
     if kind == "router":
         cmd, flavor, expose, env = router_command(), cfg.flavor_router, [8000], dict(GROQ_MODEL_ENV)
     else:
