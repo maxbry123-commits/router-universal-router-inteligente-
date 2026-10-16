@@ -1042,15 +1042,29 @@ def _texto_prog(pid: str) -> str:
     return chr(10).join(filas)
 
 
-def _ck_guardar(pid: str, fid: str, out: dict[str, Any]) -> None:
+def _ck_guardar(pid: str, fid: str, out: dict[str, Any], payload: dict[str, Any] | None = None, estado: str = 'RUNNING', resultado: Any = None) -> None:
     # checkpoint de tarea en la MISMA memoria (scope task:<pid>): tras cada nodo terminado
     if not pid:
         return
     try:
         mem, scope_for = _pc()._memoria()
-        mem.save(scope_for('chat-ui', 'task:' + pid), 'ck', {'estado': 'RUNNING', 'fid': fid, 'out': dict(out), 'ts': time.time()})
+        prev = _ck_cargar(pid) or {}
+        mem.save(scope_for('chat-ui', 'task:' + pid), 'ck',
+                 {'estado': estado, 'fid': fid, 'out': dict(out), 'payload': payload if payload is not None else prev.get('payload'),
+                  'resultado': resultado if resultado is not None else prev.get('resultado'), 'ts': time.time()})
     except Exception:  # noqa: BLE001 - el checkpoint nunca tumba la tarea
         pass
+
+
+def _pool_run(pid: str, p: dict[str, Any]):
+    # wrapper del worker: al terminar marca el checkpoint DONE/FAILED con el resultado
+    try:
+        r = _chat(p)
+        _ck_guardar(pid, str(p.get('ficha_qwen') or ''), {}, estado='DONE', resultado=r)
+        return r
+    except Exception as x:  # noqa: BLE001
+        _ck_guardar(pid, str(p.get('ficha_qwen') or ''), {}, estado='FAILED', resultado={'error': 'CHAT_FAILED', 'detalle': type(x).__name__})
+        raise
 
 
 def _ck_cargar(pid: str) -> dict[str, Any] | None:
@@ -1363,13 +1377,26 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
                 if time.time() - t > 900 and fut.done():
                     del _PROCESOS[k]
                     _PROGRESO.pop(k, None); _PROG_T.pop(k, None); _PROG_META.pop(k, None); _NOTAS.pop(k, None)
-            _PROCESOS[clave] = (_POOL.submit(_chat, dict(p, _pid=clave, _t_submit=time.time())), time.time())
+            _PROCESOS[clave] = (_POOL.submit(_pool_run, clave, dict(p, _pid=clave, _t_submit=time.time())), time.time())
             _meta(clave, 'A0', '', 'en cola, esperando worker')
             _prog(clave, 'A0', 'trabajando')  # En cola hasta que el worker toma la tarea; process_id != modelo corriendo
+            _ck_guardar(clave, str(p.get('ficha_qwen') or ''), {}, payload=dict(p))  # persiste la tarea: sobrevive reinicio del Router
         return {"estado": "procesando", "proceso_id": clave}
     if action == "resultado":
         item = _PROCESOS.get(str(p.get("proceso_id") or ""))
         if not item:
+            ck = _ck_cargar(str(p.get("proceso_id") or ""))  # RAM vacia (reinicio): reanudar desde checkpoint, no desde cero
+            if isinstance(ck, dict) and ck.get('estado') == 'DONE' and ck.get('resultado') is not None:
+                return ck['resultado']
+            if isinstance(ck, dict) and ck.get('estado') in ('RUNNING', 'FAILED') and isinstance(ck.get('payload'), dict):
+                clave = str(p.get("proceso_id") or "")
+                pl = dict(ck['payload']); pl['_pid'] = clave
+                with _LOCK:
+                    _PROCESOS[clave] = (_POOL.submit(_pool_run, clave, pl), time.time())
+                    _meta(clave, 'A0', '', 'reanudado desde checkpoint')
+                    _prog(clave, 'A0', 'trabajando')
+                _ck_guardar(clave, str(ck.get('fid') or ''), dict(ck.get('out') or {}), estado='RUNNING')
+                return {"estado": "procesando", "proceso_id": clave, "reanudado": True}
             return {"error": "PROCESO_NO_EXISTE"}
         if not item[0].done():
             return {"estado": "procesando", "proceso_id": p.get("proceso_id"), "progreso": _texto_prog(str(p.get("proceso_id") or ""))}
