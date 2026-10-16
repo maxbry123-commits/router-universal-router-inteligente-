@@ -1979,11 +1979,23 @@ def _chat(p):
         return _encender(model)
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
-    _CAP_TOOLS.set(str(p.get('cap_tools') or 'write'))  # Team 5/fichas mandan su cap; ausente = write, igual que siempre
+    _MOTOR_HAB.set(bool(p.get('motor')))  # ⚙ Motor: solo cuando el toggle del chat esta ON
+    if p.get('tools_habilitadas') is None and p.get('cap_tools') is None and not _MOTOR_HAB.get():
+        # chat normal sin ⚙Motor y sin decision del llamante: la misma puerta CAP determinista de fichas_qwen
+        # decide si el modelo ve el catalogo. Pregunta trivial -> CAP_NONE (sin tools, respuesta en segundos,
+        # no minutos: el modelo razonador ya no se pierde usando github_leer etc. en un "hola").
+        try:
+            from plugins.puente_chat.capacidad import capacidad_de as _cap_chat
+            _cap_c = _cap_chat(pregunta)
+        except Exception:  # noqa: BLE001
+            _cap_c = 'write'
+        _CAP_TOOLS.set(_cap_c)
+        _TOOLS_HAB.set(_cap_c != 'none')
+    else:
+        _CAP_TOOLS.set(str(p.get('cap_tools') or 'write'))  # Team 5/fichas mandan su cap; ausente = write, igual que siempre
+        _TOOLS_HAB.set(p.get('tools_habilitadas') is not False)  # ausente -> True: fichas/DAG/consil igual que antes
     _t_sub = float(p.get('_t_submit') or 0)
     _MET.set({'queue_ms': int((time.time() - _t_sub) * 1000) if _t_sub else 0, 't_inicio': time.time()})
-    _TOOLS_HAB.set(p.get('tools_habilitadas') is not False)  # ausente -> True: fichas/DAG/consil igual que antes
-    _MOTOR_HAB.set(bool(p.get('motor')))  # ⚙ Motor: solo cuando el toggle del chat esta ON
     _MOTOR_SES.set(sesion)
     _REQ_TOOLS.set(bool(p.get('requiere_tools')))
     _PERFIL.set(str(p.get('perfil') or ''))  # vacio = chat normal (contexto largo); un nodo de ficha pide su perfil
