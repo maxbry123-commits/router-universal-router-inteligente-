@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import argparse, json, os
-from huggingface_hub import run_job  # RETIRADO: no se usa (raise antes)
+from huggingface_hub import run_job
 
 SCHEMA="yaiwes.websearch.hf-trigger.v1"
 HF_NAMESPACE=os.getenv("HF_NAMESPACE","COMAND-CENTER-1")
@@ -44,7 +44,6 @@ def main():
         "RESULT_BRANCH":a.result_branch,
         "RESULT_ROOT":a.result_root,
     }
-    raise RuntimeError('HF_JOBS_RETIRADOS: trigger_hf_websearch no puede crear Jobs')
     job=run_job(
         image="python:3.12-slim",command=command,flavor=CPU_FLAVOR,namespace=HF_NAMESPACE,
         timeout=a.timeout,name=f"{a.worker.lower()}-websearch",env=env,secrets=secrets or None,

@@ -82,7 +82,11 @@ try:
     app.include_router(build_memory_router())  # /memoria/*: memoria_yaiwes con fallback SQLite
 except Exception as exc:  # never take the Router down for memory GAPs
     logging.getLogger("riu").warning("memoria_yaiwes no montada: %s", exc)
-# hf_control_plane RETIRADO (2026-10-16): no hay autoscaler ni workers HF Jobs.
-# El runtime permanente es el Space CPU 32 GB; la saturacion se resuelve con la cola existente.
+try:
+    from ..hf_control_api import install_hf_control_plane
+
+    install_hf_control_plane(app)  # /control/hf/*: autoscaler + pool temporal 16/32 GB
+except Exception as exc:  # never take the Router down for HF control plane
+    logging.getLogger("riu").warning("hf_control_plane no montado: %s", exc)
 
 app.include_router(gateway.app.router)  # /health, /v1/models, /v1/chat/completions, /chat/models

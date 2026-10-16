@@ -46,8 +46,10 @@ def assert_machine_32gb_ram(*, flavor: str | None = None, ram_gb: int | None = N
 
 
 def guarded_run_job(api: Any, **kwargs: Any) -> Any:
-    """RETIRADO (2026-10-16): nunca lanza HF Jobs; el runtime permanente es el Space CPU 32 GB."""
-    raise HardwareSheriffError("HF_JOBS_RETIRADOS: guarded_run_job eliminado")
+    """Envuelve api.run_job: valida máquina 32 GB RAM y luego lanza."""
+    flavor = kwargs.get("flavor") or kwargs.get("hardware_flavor")
+    assert_machine_32gb_ram(flavor=flavor)
+    return api.run_job(**kwargs)
 
 
 def job_is_allowed_32gb(job: Any) -> bool:

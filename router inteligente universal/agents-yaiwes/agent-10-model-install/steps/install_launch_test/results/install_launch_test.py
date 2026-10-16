@@ -1,4 +1,3 @@
-# HISTORICO: artefacto de agente (HF Jobs retirados 2026-10-16). No ejecutar.
 """GOLDEN wrapper — NO regenerar. Verifica /health live o lanza own_server_launch.
 Solo máquina 32 GB RAM. Meta: RUNNING_HEALTHY vía GET /health 200 en --8080.hf.jobs.
 """

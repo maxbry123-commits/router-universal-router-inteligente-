@@ -1,4 +1,3 @@
-# HISTORICO: artefacto de agente (HF Jobs retirados 2026-10-16). No ejecutar.
 """GOLDEN serve_health - NO regenerar.
 Maquina 32 GB (cpu-upgrade) + LFM2.5, o probe live GET /health 200.
 Meta: RUNNING_HEALTHY. Cero regeneracion LLM.

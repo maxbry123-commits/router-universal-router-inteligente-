@@ -34,7 +34,6 @@ class HFJobsCompute:
         return HfApi()
 
     def submit(self, request: HFJobRequest) -> dict:
-        raise RuntimeError("HF_JOBS_RETIRADOS: HFJobsCompute.submit eliminado (Space permanente)")
         job = self._api().run_job(
             image=request.image,
             command=list(request.command),
