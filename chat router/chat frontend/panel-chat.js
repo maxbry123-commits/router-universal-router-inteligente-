@@ -6,6 +6,7 @@ import { conectarVentanas } from "./chat-ventanas.js";
 import { conectarRiu } from "./chat-riu.js";
 import { conectarRiu2 } from "./chat-riu2.js";
 import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
+import { proyId } from "./objetivos-ancla.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 10;
@@ -180,7 +181,7 @@ export async function mount(root, { api, tell }) {
   window.RIU_DESTINO_ARCHIVOS = () => {  // destinoArchivos(): UNICA autoridad de a donde van los archivos segun el objetivo de la ventana-ancla
     const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null;
     if (o && o.tipo === "constitucion") return { destino: "constitucion" };
-    if (o && o.tipo === "proyecto") { const pid = (window.slugProyF ? window.slugProyF(o.id) : String(o.id || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 48)) || chat().project_id || ""; return { destino: "proyecto", project_id: pid }; }  // proyecto SELECCIONADO en la ventana, no solo el del chat
+    if (o && o.tipo === "proyecto") { return { destino: "proyecto", project_id: proyId(o.id) || chat().project_id || "" }; }  // proyecto SELECCIONADO en la ventana (project_id real p-<uid>), no solo el del chat
     return {};
   };
   window.RIU_ANCLA_REFRESCAR = () => { cargarArchivos("#anc-lista"); ancla.refrescar(); pintarAnclas(); cargarMiHandoff(); };  // refresca la ventana de anclaje al cambiar de objetivo

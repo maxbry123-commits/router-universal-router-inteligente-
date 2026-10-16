@@ -1,7 +1,7 @@
 // objetivos-ancla.js — a qué se ancla: el chat u otro objetivo (constitución, workflow, agentes remotos, proyecto, sandbox).
 // La ventana de anclaje es UNA sola; solo cambia el objetivo. Cada objetivo se comporta como un chat: { sesion, anclados (Set que se guarda solo), instrucciones }.
 // Los archivos son compartidos: viven en la carpeta de archivos del chat y cualquier objetivo puede anclarlos.
-import { leer, escribir, KEYS } from "./almacen.js";
+import { leer, escribir, KEYS, uid } from "./almacen.js";
 export const OBJETIVOS = [["chat", "Chat"], ["constitucion", "Constitución"], ["workflows", "Workflows"], ["agentes", "Agentes remotos"], ["proyecto", "Proyecto"], ["sandbox", "Sandbox"]];
 export class SetGuardable extends Set {
   constructor(items, alCambiar) { super(items || []); this._cb = alCambiar; }
@@ -11,7 +11,8 @@ export class SetGuardable extends Set {
 }
 const KP = "riu_proy_v1", arr = (v) => (Array.isArray(v) ? v : []);
 export const slugProy = (nombre) => (String(nombre || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 48) || "proyecto");
-const upsertRemoto = (nombre) => { try { if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "upsert", project_id: slugProy(nombre), nombre }).catch(() => {}); } catch (e) {} };
+export const proyId = (nombre) => { const p = listaProyectos().find((x) => x.nombre === nombre); return (p && p.project_id) || slugProy(nombre); };  // id real guardado; compat: proyectos viejos solo tenian slug
+const upsertRemoto = (nombre, pid) => { try { if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "upsert", project_id: pid || slugProy(nombre), nombre }).catch(() => {}); } catch (e) {} };
 const conGet = () => Object.assign({ encendida: false, texto: "", oficial: false, items: [] }, leer(KEYS.constitucion, {}));
 const wfStore = () => { const v = leer(KEYS.workflows, { lista: [], sel: null }); if (!Array.isArray(v.lista)) v.lista = []; return v; };
 const simple = (k) => Object.assign({ items: [], notas: "", on: false }, leer(k, {}));
@@ -20,7 +21,7 @@ export const listaProyectos = () => arr(leer(KP, {}).global);
 export function crearProyecto(nombre) {
   const n = String(nombre || "").trim().slice(0, 60); if (!n) return null;
   const t = leer(KP, {}); t.global = arr(t.global);
-  if (!t.global.some((p) => p.nombre.toLowerCase() === n.toLowerCase())) { t.global.push({ nombre: n, items: [], on: false, notas: "" }); escribir(KP, t); upsertRemoto(n); }
+  if (!t.global.some((p) => p.nombre.toLowerCase() === n.toLowerCase())) { const pid = "p-" + uid(); t.global.push({ nombre: n, project_id: pid, items: [], on: false, notas: "" }); escribir(KP, t); upsertRemoto(n, pid); }  // project_id p-<uid> independiente del nombre
   return (t.global.find((p) => p.nombre.toLowerCase() === n.toLowerCase()) || {}).nombre || n;
 }
 export function crearObjetivo(tipo, id) {

@@ -1819,10 +1819,13 @@ def _anclas_graphiti(sesion, task_id, snap, docs):
         if g is None or not g._endpoint():
             return
         sid = _anc_sha(json.dumps(snap, ensure_ascii=False, sort_keys=True))[:16]
-        sc = scope_for(DUENO, 'anchors:' + str(sesion)[:60])
+        _sc_id = str((_IDS_CTX.get() or {}).get('anchor_scope') or ('anchors:' + str(sesion)[:60]))
+        sc = scope_for(DUENO, _sc_id)  # project:<pid> si el chat pertenece a un proyecto; anchors:<sesion> si no (mismo scope al escribir y buscar)
         for d in docs:
             if d['source_type'] not in ('archivo', 'enlace', 'handoff', 'archivo_raiz'):
                 continue
+            if str(d.get('source_id') or '').startswith('constitucion') or str(d.get('id') or '').startswith('constitucion'):
+                continue  # constitucion:YAIWES nunca entra a Graphiti (fuente determinista de gobernanza)
             key = 'anc-' + _anc_sha(d['source_id'] + d['source_sha256'])[:16]  # determinista: no duplica
             if (sc, key) in _ANC_GRAPHITI_HECHAS:
                 continue
@@ -1840,7 +1843,8 @@ def _derivados(sesion, pregunta, anclados, res_anc):
     lineas = []
     g = comps.get('graphiti')
     if g is not None and pregunta and g._endpoint():
-        sc = scope_for(DUENO, 'anchors:' + str(sesion)[:60])
+        _sc_id = str((_IDS_CTX.get() or {}).get('anchor_scope') or ('anchors:' + str(sesion)[:60]))
+        sc = scope_for(DUENO, _sc_id)  # mismo scope que al escribir: project:<pid> o anchors:<sesion>
         for h in (g.search(sc, pregunta, 5) or [])[:5]:
             prov = h.get('provenance') if isinstance(h.get('provenance'), dict) else {}
             sid = h.get('source_id') or prov.get('source_id')
@@ -2057,7 +2061,8 @@ def _chat(p):
         _VISTOS.set({})
     _DEADLINE.set(time.monotonic() + presupuesto)
     _cablear_graphiti('', '', {'project_id': str(p.get('project_id') or sesion), 'task_id': str(p.get('task_id') or p.get('tarea') or sesion),  # scope real: project:<id> si el chat pertenece a un proyecto, anchors:<sesion> si no
-                               'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or ''), 'nodo': str(p.get('nodo') or '')})
+                               'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or ''), 'nodo': str(p.get('nodo') or ''),
+                               'anchor_scope': (('project:' + str(p.get('project_id'))[:60]) if p.get('project_id') else ('anchors:' + str(sesion)[:60]))})
     if p.get('project_id'):  # chat dentro de un proyecto: sus archivos entran como anclados proyecto:<pid>:<nombre>
         try:
             extras = [a for a in _proyecto_anclados(p['project_id']) if a not in (p.get('anclados') or [])]

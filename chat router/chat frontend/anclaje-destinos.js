@@ -1,7 +1,7 @@
 // anclaje-destinos.js — en la ventana de Anclaje: "Anclar a" Chat / Constitución / Workflows / Agentes remotos / Proyecto / Sandbox.
 // Es LA MISMA ventana para todos: al elegir el objetivo, todo lo de la ventana (enlaces, anclado ahora, instrucciones fijas, proyectos,
 // handoffs, Mi handoff y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
-import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy } from "./objetivos-ancla.js";
+import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId } from "./objetivos-ancla.js";
 import { el, boton, cargarCss } from "./ventanas-comun.js";
 export function montarDestinos({ root, q, tell }) {
   const caja = q("#ventana-ancla .va-caja"); if (!caja || caja.dataset.destinos) return; caja.dataset.destinos = "1";
@@ -43,7 +43,7 @@ export function montarDestinos({ root, q, tell }) {
       const nuevo = boton("＋ Carpeta", "mini", () => { const n = crearProyecto(nom.value); if (!n) { tell("Escribe un nombre"); return; } tell("Carpeta creada: " + n); fijar("proyecto", n); });
       const f2 = el("div", "vn-fila"); f2.append(nom, nuevo); fila.append(s, f2);
       try {
-        const c = window.RIU_CHAT && window.RIU_CHAT.chat(), pid = slugProy(obj.id);
+        const c = window.RIU_CHAT && window.RIU_CHAT.chat(), pid = proyId(obj.id);  // project_id real (p-<uid>) si existe; slug solo en proyectos viejos
         if (c && window.RIU_ACCION) {
           const vinc = c.project_id === pid;
           const b = boton(vinc ? "Quitar chat actual" : "Añadir chat actual", "mini", async () => {
