@@ -1,54 +1,62 @@
-# HANDOFF CABLEADO — estado operativo
+# HANDOFF CABLEADO — estado operativo actual
 
-ESTADO VIGENTE — 2026-10-16
+Actualizado: 2026-10-16
 
-Chat
-→ Router
-→ cómputo / almacenamiento
+## Flujo vigente
 
-Router:
-https://comand-center-1-riu-router.hf.space
+```text
+Chat → Router → cómputo / almacenamiento
+```
 
-Space:
-COMAND-CENTER-1/riu-router
+El Router solo enruta y conecta. Los modelos, proveedores, selectores y DAG pertenecen a las fichas y permanecen fuera del Router.
 
-Hardware:
-cpu-upgrade
-8 vCPU
-32 GB
-24/7
-sleep_time = -1
+## Router
 
-Jobs Router:
-activos = 0
-scheduled = 0
+- Space: `COMAND-CENTER-1/riu-router`
+- URL: `https://comand-center-1-riu-router.hf.space`
+- Hardware: `cpu-upgrade`
+- CPU: 8 vCPU
+- RAM: 32 GB
+- Operación: 24/7
+- `sleep_time = -1`
 
-Cola:
-sin cambios
+## Estado
 
-Almacenamiento:
-sin cambios
+- Router activo
+- Chat → Router activo
+- Cola existente sin cambios
+- Almacenamiento sin cambios
+- HF Router Jobs activos: 0
+- HF Router Jobs programados: 0
+- Router HF Job antiguo: retirado
 
-Arquitectura:
-sin cambios
+## Dirección vigente
 
-Fuente de dirección:
+Fuente:
+
 `router inteligente universal/LIVE_URL.json`
 
-Punto bueno previo:
-858ed87b7a97e00516c39409df107dac36ba88d0
+URL:
 
-HEAD previo al cierre:
-efb88fbc26d77042e0b658f8f6876c111b4bbb3c
+`https://comand-center-1-riu-router.hf.space`
 
-NO TOCAR:
-fichas
-modelos
-proveedores
-puente_chat
-Harness
-memoria
-cola
-agentes
-plugins funcionales
-DAG
+`router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag` mantiene:
+
+```text
+PAUSED=false
+LIVE_URL=https://comand-center-1-riu-router.hf.space
+```
+
+## No modificar al cambiar el cómputo
+
+- fichas
+- modelos
+- proveedores
+- Harness
+- memoria
+- cola
+- agentes
+- DAG
+- almacenamiento
+
+El cambio de cómputo del Router debe limitarse a cambiar dónde apunta o corre el mismo Router.
