@@ -13,6 +13,7 @@ const KP = "riu_proy_v1", arr = (v) => (Array.isArray(v) ? v : []);
 export const slugProy = (nombre) => (String(nombre || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 48) || "proyecto");
 export const proyId = (nombre) => { const p = listaProyectos().find((x) => x.nombre === nombre); return (p && p.project_id) || slugProy(nombre); };  // id real guardado; compat: proyectos viejos solo tenian slug
 const upsertRemoto = (nombre, pid) => { try { if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "upsert", project_id: pid || slugProy(nombre), nombre }).catch(() => {}); } catch (e) {} };
+const upsertMeta = (pid, campos) => { try { if (window.RIU_ACCION && pid) window.RIU_ACCION("proyecto", { op: "upsert", project_id: pid, ...campos }).catch(() => {}); } catch (e) {} };  // MERGE backend: solo campos modificados
 const conGet = () => Object.assign({ encendida: false, texto: "", oficial: false, items: [] }, leer(KEYS.constitucion, {}));
 const wfStore = () => { const v = leer(KEYS.workflows, { lista: [], sel: null }); if (!Array.isArray(v.lista)) v.lista = []; return v; };
 const simple = (k) => Object.assign({ items: [], notas: "", on: false }, leer(k, {}));
@@ -47,9 +48,10 @@ export function crearObjetivo(tipo, id) {
     const p0 = listaProyectos().find((x) => x.nombre === id); if (!p0) return null;
     const mod = (fn) => { const t = leer(KP, {}); t.global = arr(t.global); const x = t.global.find((y) => y.nombre === id); if (x) { fn(x); escribir(KP, t); } };
     const dame = () => listaProyectos().find((y) => y.nombre === id) || {};
-    return { tipo, id, nombre: "Proyecto «" + id + "»", sesion: "proyecto:" + id, anclados: new SetGuardable(p0.items, (s) => mod((x) => { x.items = [...s]; })),
-      get instrucciones() { return dame().notas || ""; }, set instrucciones(v) { mod((x) => { x.notas = String(v).slice(0, 8000); }); },
-      get encendido() { return !!dame().on; }, set encendido(v) { mod((x) => { x.on = !!v; }); } };
+    return { tipo, id, nombre: "Proyecto «" + id + "»", sesion: "proyecto:" + id, project_id: p0.project_id || null,
+      anclados: new SetGuardable(p0.items, (s) => { mod((x) => { x.items = [...s]; }); upsertMeta(dame().project_id, { anclas: [...s] }); }),
+      get instrucciones() { return dame().notas || ""; }, set instrucciones(v) { mod((x) => { x.notas = String(v).slice(0, 8000); }); upsertMeta(dame().project_id, { notas: String(v).slice(0, 8000) }); },
+      get encendido() { return !!dame().on; }, set encendido(v) { mod((x) => { x.on = !!v; }); upsertMeta(dame().project_id, { encendido: !!v }); } };
   }
   return null;
 }

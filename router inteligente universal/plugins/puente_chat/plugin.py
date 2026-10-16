@@ -805,13 +805,26 @@ def _bucle(llamar, mensajes):
                     _rc = _receipt_cargar(_tid, _fp)
                     if isinstance(_rc, dict) and _rc.get('estado') == 'DONE':
                         res = 'OPERACION_YA_COMPLETADA: ' + str(_rc.get('resultado') or res)[:400]
-                    elif isinstance(_rc, dict) and _rc.get('estado') == 'PREPARED':
-                        res = 'GAP_TOOL_RESULT_INDETERMINADO: ' + nom + ' quedo PREPARED sin DONE tras un reinicio; no se repite a ciegas'  # sin verificacion especifica de la tool NO se puede asumir el side effect
+                    elif isinstance(_rc, dict) and _rc.get('estado') == 'PREPARED':  # reconciliar: verificar con lecturas existentes antes de repetir
+                        _v = _tool_verificar(nom, args)
+                        if _v is True:
+                            _receipt_guardar(_tid, _fp, dict(_rc, estado='DONE', evidencia='verificado-presente'))
+                            res = 'OPERACION_YA_COMPLETADA: el recurso ya existe; side effect previo confirmado'
+                        elif _v is False:
+                            res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
+                            if not str(res).startswith(_FALLO) and _tool_verificar(nom, args) is not False:
+                                _receipt_guardar(_tid, _fp, {'estado': 'DONE', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp, 'resultado': str(res)[:1000]})
+                        else:
+                            res = 'GAP_TOOL_RESULT_INDETERMINADO: ' + nom + ' quedo PREPARED sin DONE tras un reinicio; no se repite a ciegas'  # esta tool no tiene verificacion segura
                     else:
-                        _receipt_guardar(_tid, _fp, {'estado': 'PREPARED', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp})
-                        res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
-                        if not str(res).startswith(_FALLO):
-                            _receipt_guardar(_tid, _fp, {'estado': 'DONE', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp, 'resultado': str(res)[:1000]})
+                        if not _receipt_guardar(_tid, _fp, {'estado': 'PREPARED', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp}):
+                            res = 'GAP_RECEIPT_NO_PERSISTIDO: no se pudo guardar el receipt durable; mutacion NO ejecutada'  # sin receipt durable no hay mutacion
+                        else:
+                            res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
+                            if not str(res).startswith(_FALLO):
+                                _v2 = _tool_verificar(nom, args)
+                                if _v2 is not False:  # DONE solo tras verificacion cuando la tool la permite; sin verificador, politica: DONE al exito
+                                    _receipt_guardar(_tid, _fp, {'estado': 'DONE', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp, 'resultado': str(res)[:1000], 'evidencia': 'verificado' if _v2 is True else 'exito-sin-verificador'})
                 else:
                     res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
                 _met_add('tools_ms', int((time.time() - _tt0) * 1000))
@@ -1687,7 +1700,7 @@ def gov_prepare(payload):
     if he and str(he) != info['hash']:
         return {'error': cambio}
     try:
-        r = resolver_anclados(sesion, anclados, task_id, str(p.get('pregunta') or ''))
+        r = resolver_anclados(sesion, anclados, task_id, str(p.get('pregunta') or ''), str(p.get('project_id') or ''))
     except Exception as e:  # noqa: BLE001
         return {'error': 'FUENTE_ANCLADA_NO_LEIBLE: ' + type(e).__name__}
     if r.get('source_set_changed'):
@@ -1750,7 +1763,8 @@ def _gov_pre_chat(p, sesion, pregunta, anclados):
         if not (p.get('task_id') or p.get('tarea')):
             p['task_id'] = sesion + ':m' + str(int(time.time() * 1000))
         prep = gov_prepare({'task_id': str(p.get('task_id') or p.get('tarea'))[:200], 'sesion': sesion, 'anclados': [str(a) for a in anclados],
-                            'constitucion': p.get('constitucion'), 'constitucion_texto': p.get('constitucion_texto')})
+                            'constitucion': p.get('constitucion'), 'constitucion_texto': p.get('constitucion_texto'),
+                            'project_id': str(p.get('project_id') or '')})
         if prep.get('error'):
             return None, {'error': 'GAP ' + str(prep['error']).split(':')[0], 'detalle': str(prep['error'])[:200]}
         p['gov_ctx'] = prep
@@ -1760,7 +1774,7 @@ def _gov_pre_chat(p, sesion, pregunta, anclados):
     if not chk['ok']:
         return None, {'error': 'GAP ' + chk['codigo'], 'detalle': chk['detalle']}
     try:
-        ra = resolver_anclados(sesion, anclados, tid, pregunta)
+        ra = resolver_anclados(sesion, anclados, tid, pregunta, str(p.get('project_id') or ''))
     except Exception as e:  # noqa: BLE001
         return None, {'error': 'GAP FUENTE_ANCLADA_NO_LEIBLE', 'detalle': 'resolver_anclados fallo: ' + type(e).__name__}
     if ra.get('source_set_changed'):
@@ -1809,7 +1823,12 @@ def _snap_rehidratar(sesion, cargado):
     return dict(fresco, snapshot=cargado['snapshot'], pedidos=pedidos, pregunta=cargado.get('pregunta') or '', rehidratado=True)
 
 
-def _anclas_graphiti(sesion, task_id, snap, docs):
+def _scope_anclas(sesion, project_id=''):
+    # MISMO scope al escribir y buscar: project:<pid> si el chat pertenece a un proyecto; anchors:<sesion> si no
+    return ('project:' + str(project_id)[:60]) if project_id else ('anchors:' + str(sesion)[:60])
+
+
+def _anclas_graphiti(sesion, task_id, snap, docs, project_id=''):
     # copia DERIVADA de anclas normales ya leidas y verificadas (SHA + snapshot). Nunca constitucion:*.
     if not docs:
         return
@@ -1819,8 +1838,7 @@ def _anclas_graphiti(sesion, task_id, snap, docs):
         if g is None or not g._endpoint():
             return
         sid = _anc_sha(json.dumps(snap, ensure_ascii=False, sort_keys=True))[:16]
-        _sc_id = str((_IDS_CTX.get() or {}).get('anchor_scope') or ('anchors:' + str(sesion)[:60]))
-        sc = scope_for(DUENO, _sc_id)  # project:<pid> si el chat pertenece a un proyecto; anchors:<sesion> si no (mismo scope al escribir y buscar)
+        sc = scope_for(DUENO, _scope_anclas(sesion, project_id))
         for d in docs:
             if d['source_type'] not in ('archivo', 'enlace', 'handoff', 'archivo_raiz'):
                 continue
@@ -1835,7 +1853,7 @@ def _anclas_graphiti(sesion, task_id, snap, docs):
         pass
 
 
-def _derivados(sesion, pregunta, anclados, res_anc):
+def _derivados(sesion, pregunta, anclados, res_anc, project_id=''):
     # Graphiti/Graphify = DATOS DERIVADOS: solo se aceptan si su source_id+SHA coinciden con el snapshot de fuentes directas
     mem, scope_for = _memoria()
     comps = getattr(mem, 'components', {})
@@ -1843,8 +1861,7 @@ def _derivados(sesion, pregunta, anclados, res_anc):
     lineas = []
     g = comps.get('graphiti')
     if g is not None and pregunta and g._endpoint():
-        _sc_id = str((_IDS_CTX.get() or {}).get('anchor_scope') or ('anchors:' + str(sesion)[:60]))
-        sc = scope_for(DUENO, _sc_id)  # mismo scope que al escribir: project:<pid> o anchors:<sesion>
+        sc = scope_for(DUENO, _scope_anclas(sesion, project_id))  # mismo scope que al escribir
         for h in (g.search(sc, pregunta, 5) or [])[:5]:
             prov = h.get('provenance') if isinstance(h.get('provenance'), dict) else {}
             sid = h.get('source_id') or prov.get('source_id')
@@ -1985,7 +2002,7 @@ def _resolver_fuentes(sesion, anclados, pregunta=''):
     return res
 
 
-def resolver_anclados(sesion, anclados, task_id, pregunta=''):
+def resolver_anclados(sesion, anclados, task_id, pregunta='', project_id=''):
     # Resuelve TODOS los anclados (sin tope). Devuelve {'texto': str para el modelo, 'snapshot': [...]}.
     # El snapshot (ids/hashes/estado, sin copiar documentos) se crea una vez por task_id y se reutiliza.
     clave = (str(sesion), str(task_id))
@@ -2009,7 +2026,7 @@ def resolver_anclados(sesion, anclados, task_id, pregunta=''):
     if len(_SNAP_ANC) >= 200:
         _SNAP_ANC.pop(next(iter(_SNAP_ANC)))
     _SNAP_ANC[clave] = res
-    _anclas_graphiti(sesion, task_id, res.get('snapshot') or [], docs)
+    _anclas_graphiti(sesion, task_id, res.get('snapshot') or [], docs, project_id)
     return res
 
 
@@ -2093,7 +2110,7 @@ def _chat(p):
     anclados_data = [a for a in anclados if not str(a).startswith('constitucion:')]  # los constitucion: ya van en el bloque constitucional
     if anclados:  # archivos, handoffs, enlaces y raices anclados por el usuario desde la ventana del chat
         try:
-            res_anc = resolver_anclados(sesion, anclados, p.get('task_id') or p.get('tarea') or sesion, pregunta)
+            res_anc = resolver_anclados(sesion, anclados, p.get('task_id') or p.get('tarea') or sesion, pregunta, str(p.get('project_id') or ''))
             fuentes_anc = [{'id': s.get('id'), 'tipo': s.get('tipo'), 'cargada': s.get('estado') == 'OK',
                             'verificada': s.get('estado') == 'OK' and bool(s.get('sha256')),
                             'usada': 'no incluido' not in str(s.get('procedencia')), 'hash': s.get('sha256', '')}
@@ -2106,7 +2123,7 @@ def _chat(p):
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
     if res_anc is not None and not res_anc.get('gap'):  # SYSTEM > CONSTITUCION > MEMORIA > ANCLAS DIRECTAS > DERIVADOS > usuario
         try:
-            _der = _derivados(sesion, pregunta, anclados, res_anc)
+            _der = _derivados(sesion, pregunta, anclados, res_anc, str(p.get('project_id') or ''))
             if _der:
                 sistema += ' ' + _der
         except Exception:  # noqa: BLE001
@@ -2569,6 +2586,7 @@ def _receipt_cargar(tid, fp):
 
 
 def _receipt_guardar(tid, fp, data):
+    # -> True/False. PREPARED debe ser durable ANTES del side effect: memoria_yaiwes + espejo hf_storage existente
     try:
         mem, scope_for = _memoria()
         rec = dict(data, ts=time.time())
@@ -2577,8 +2595,42 @@ def _receipt_guardar(tid, fp, data):
             _hf_store_mod().handle('write', {'path': 'tasks/%s/receipts/%s.json' % (tid, fp), 'content': json.dumps(rec, ensure_ascii=False)})  # espejo en el bucket: /data no sobrevive al reinicio del Space
         except Exception:  # noqa: BLE001
             pass
+        return True
     except Exception:  # noqa: BLE001
-        pass
+        return False
+
+
+def _tool_verificar(nom, args):
+    # -> True si el recurso ya existe (side effect ocurrido), False si demostrable que no ocurrio, None si no puede determinarse.
+    # Usa lecturas YA existentes de la propia tool; NO hay verificador universal.
+    a = args if isinstance(args, dict) else {}
+    try:
+        if nom in ('hf_escribir', 'hf_almacenamiento'):
+            path = str(a.get('path') or a.get('ruta') or '')
+            if not path:
+                return None
+            r = _hf_store_mod().handle('read', {'path': path})
+            if not (isinstance(r, dict) and r.get('status') == 'ok'):
+                return False
+            esperado = a.get('content')
+            if esperado is None:
+                return True
+            return bool(str(r.get('content') or '') == str(esperado))
+        if nom == 'github_escribir':
+            path = str(a.get('path') or a.get('ruta') or '')
+            repo = str(a.get('repo') or '')
+            if not path:
+                return None
+            r = _herramientas().ejecutar('github_api', {'metodo': 'GET', 'endpoint': 'repos/%s/contents/%s' % (repo or 'maxbry123-commits/router-universal-router-inteligente-', path)}) if repo else None
+            if isinstance(r, str) and r.startswith('{'):
+                try:
+                    return bool(json.loads(r).get('sha'))
+                except Exception:  # noqa: BLE001
+                    return None
+            return None
+    except Exception:  # noqa: BLE001
+        return None
+    return None
 
 
 def _task_run(key, payload):

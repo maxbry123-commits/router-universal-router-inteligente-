@@ -168,8 +168,9 @@ export async function mount(root, { api, tell }) {
   const cerrarChat = async (i) => {  // borrar un chat (la X de su pestana); si es el unico, se vacia y queda uno nuevo
     if (!chats[i]) return;
     if (chats[i].ocupado) { tell("Ese chat está trabajando: espera o pulsa Detener"); return; }
-    if (chats[i].project_id && window.RIU_ACCION) {  // unlink ANTES de borrar (await, no fire-and-forget): el proyecto deja de listarlo
-      try { await window.RIU_ACCION("proyecto", { op: "unlink_chat", project_id: chats[i].project_id, sesion: chats[i].sesion }); } catch (e) {}
+    if (chats[i].project_id && window.RIU_ACCION) {  // unlink ANTES de borrar, FAIL CLOSED: si el backend no confirma, el chat NO se borra
+      try { await window.RIU_ACCION("proyecto", { op: "unlink_chat", project_id: chats[i].project_id, sesion: chats[i].sesion }); }
+      catch (e) { tell("No se pudo quitar el chat del proyecto"); return; }
     }
     const ses = chats[i].sesion; A.olvidar(ses);
     try { for (const k of ["riu_hist_v1", "riu_proy_v1"]) { const t = JSON.parse(localStorage.getItem(k) || "{}"); if (t && t[ses] !== undefined) { delete t[ses]; localStorage.setItem(k, JSON.stringify(t)); } } } catch (e) {}
@@ -181,7 +182,7 @@ export async function mount(root, { api, tell }) {
   window.RIU_DESTINO_ARCHIVOS = () => {  // destinoArchivos(): UNICA autoridad de a donde van los archivos segun el objetivo de la ventana-ancla
     const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null;
     if (o && o.tipo === "constitucion") return { destino: "constitucion" };
-    if (o && o.tipo === "proyecto") { return { destino: "proyecto", project_id: proyId(o.id) || chat().project_id || "" }; }  // proyecto SELECCIONADO en la ventana (project_id real p-<uid>), no solo el del chat
+    if (o && o.tipo === "proyecto") { return { destino: "proyecto", project_id: o.project_id || proyId(o.id) || chat().project_id || "" }; }  // project_id persistido del objetivo, nunca slug recalculado
     return {};
   };
   window.RIU_ANCLA_REFRESCAR = () => { cargarArchivos("#anc-lista"); ancla.refrescar(); pintarAnclas(); cargarMiHandoff(); };  // refresca la ventana de anclaje al cambiar de objetivo
@@ -341,7 +342,7 @@ export async function mount(root, { api, tell }) {
   });
   q("#anc-subir").addEventListener("click", () => { anclarAlSubir = true; q("#adjunto").click(); });
   const anclarTodos = async (encender) => {
-    const r = await window.RIU_ACCION("archivos", { sesion: chat().sesion });
+    const r = await window.RIU_ACCION("archivos", { sesion: chat().sesion, ...window.RIU_DESTINO_ARCHIVOS() });  // misma autoridad que cargarArchivos/subir: chat/constitucion/proyecto
     for (const n of r.archivos || []) encender ? chatA().anclados.add(n) : chatA().anclados.delete(n);
     pintarAnclados(); guardar(); cargarArchivos("#anc-lista");
   };

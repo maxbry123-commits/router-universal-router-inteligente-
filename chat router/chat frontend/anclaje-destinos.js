@@ -43,7 +43,7 @@ export function montarDestinos({ root, q, tell }) {
       const nuevo = boton("＋ Carpeta", "mini", () => { const n = crearProyecto(nom.value); if (!n) { tell("Escribe un nombre"); return; } tell("Carpeta creada: " + n); fijar("proyecto", n); });
       const f2 = el("div", "vn-fila"); f2.append(nom, nuevo); fila.append(s, f2);
       try {
-        const c = window.RIU_CHAT && window.RIU_CHAT.chat(), pid = proyId(obj.id);  // project_id real (p-<uid>) si existe; slug solo en proyectos viejos
+        const c = window.RIU_CHAT && window.RIU_CHAT.chat(), pid = obj.project_id || proyId(obj.id);  // project_id persistido del objetivo (crearObjetivo lo transporta); slug solo en proyectos viejos
         if (c && window.RIU_ACCION) {
           const vinc = c.project_id === pid;
           const b = boton(vinc ? "Quitar chat actual" : "Añadir chat actual", "mini", async () => {

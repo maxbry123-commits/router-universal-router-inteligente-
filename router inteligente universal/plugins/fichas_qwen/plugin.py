@@ -1201,6 +1201,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             opts['fast_button'] = True
             return _r_fast, _tr_fast
         opts['fast_fallback'] = True  # numero_llamadas_FAST <= 1: el explicito ya gasto su intento; a HEAVY una sola vez
+        opts['fast_source'] = 'NONE'  # boton ⚡ intento FAST y cayo a HEAVY: el origen reportado es NONE (BUTTON solo si el FAST sale)
     _fcf = _fast_cfg(ficha)
     _tt = str(opts.get('task_type') or '').lower()
     _pesado = bool(_tt and (_tt in _fcf['blocked_task_types'] or _tt not in _fcf['task_types']))  # pesado por task_type del mensaje, JAMAS por el boton ⚡

@@ -39,8 +39,13 @@ def restore_if_empty(data_dir: Any, bucket: str | None, token: str | None, fs_fa
         if ok:
             try:
                 esperados = [r[0] for r in con.execute("SELECT id FROM documents")]
-            except Exception:  # noqa: BLE001 - esquema distinto: se sigue sin la lista
-                esperados = []
+            except Exception:  # noqa: BLE001 - la tabla existe pero la consulta falla = indice invalido: GAP, NO promover
+                tiene_docs = con.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='documents'").fetchone()[0]
+                con.close()
+                if tiene_docs:
+                    tmp.unlink(missing_ok=True)
+                    STATUS["restore"] = "GAP_DOCUMENT_INDEX"
+                    return {"status": "GAP_DOCUMENT_INDEX", "gap": "GAP_DOCUMENT_INDEX"}
         con.close()
     except Exception:  # noqa: BLE001
         ok = False

@@ -26,8 +26,18 @@ export function montarProyecto(root, { tell }) {
         const n = String(p.nombre || p.project_id || ""), pid = String(p.project_id || "");
         if (!n) return;
         const ex = t.global.find((x) => (pid && x.project_id === pid) || x.nombre.toLowerCase() === n.toLowerCase());
-        if (ex) { if (pid && !ex.project_id) { ex.project_id = pid; nuevos++; } }  // hidratar id real tambien en los ya cacheados
-        else { t.global.push({ nombre: n, project_id: pid || slugP(n), items: [], on: !!p.encendido, notas: p.notas || "" }); nuevos++; }
+        if (ex) {  // backend = fuente de verdad: identidad por project_id; el cache recibe TODA la metadata remota
+          if (pid && !ex.project_id) ex.project_id = pid;
+          if (pid && ex.project_id !== pid) { ex.project_id = pid; }  // el id remoto manda sobre cualquier slug viejo
+          if (p.nombre) ex.nombre = n;
+          if (p.notas !== undefined) ex.notas = p.notas;
+          if (p.anclas !== undefined || p.items !== undefined) ex.items = p.anclas || p.items || ex.items;
+          if (p.encendido !== undefined) ex.on = !!p.encendido;
+          if (p.estado !== undefined) ex.estado = p.estado;
+          ex.created_at = p.created_at || ex.created_at; ex.updated_at = p.updated_at || ex.updated_at;
+          nuevos++;
+        }
+        else { t.global.push({ nombre: n, project_id: pid || slugP(n), items: p.anclas || p.items || [], on: !!p.encendido, notas: p.notas || "", estado: p.estado, created_at: p.created_at, updated_at: p.updated_at }); nuevos++; }
       });
       if (nuevos) { escribir(CLAVE_PROY, t); pintar(); }
     } catch (e) {}
