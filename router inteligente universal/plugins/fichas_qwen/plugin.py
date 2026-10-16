@@ -1140,7 +1140,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         opts['fast_button'] = False
         opts['fast_fallback'] = True
     _pesado = bool(opts.get('fast_reply')) and str(opts.get('task_type') or '') in _fast_cfg(ficha)['blocked_task_types']  # ⚡ + ruta pesada: ningun carril rapido, flujo completo
-    opts['fast_lane'] = bool(opts.get('fast_reply')) and (not _pesado) and _fast_chat_ok(ficha, mensaje, opts, nodos)  # ⚡ apagado = nunca modo rapido desde el chat
+    opts['fast_lane'] = (not _pesado) and _fast_chat_ok(ficha, mensaje, opts, nodos)  # FAST_GATE decide solo: el boton ⚡ es override, no requisito (pregunta simple -> una llamada, sin anexos ni DAG)
     if not opts['fast_lane'] and opts.get('fast_reply') and not _pesado and _fast_consult_ok(ficha, mensaje, opts, nodos):
         opts['fast_lane'] = True
         opts['fast_consult'] = True
