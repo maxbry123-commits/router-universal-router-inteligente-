@@ -40,7 +40,7 @@ def test_tp_sin_tools(pc, monkeypatch):
 
 def test_tp_con_tools(pc, monkeypatch):
     r, e = run(pc, monkeypatch, TP, TOOLS)
-    assert e[0].get('enable_thinking') is not False and not both(e[0])
+    assert e[0]['enable_thinking'] is False and 'reasoning_effort' not in e[0]  # medido: Token Plan acepta false (camino rapido de main)
 
 def test_ds_con_tools(pc, monkeypatch):
     r, e = run(pc, monkeypatch, DS, TOOLS)
@@ -52,7 +52,7 @@ def test_ds_sin_tools(pc, monkeypatch):
 
 def test_tp_extra_llm_false_se_quita(pc, monkeypatch):
     r, e = run(pc, monkeypatch, TP, None, extra={'enable_thinking': False})
-    assert 'enable_thinking' not in e[0] and not both(e[0])
+    assert e[0]['enable_thinking'] is False and not both(e[0])
 
 def test_ds_extra_llm_nunca_ambos(pc, monkeypatch):
     r, e = run(pc, monkeypatch, DS, None, extra={'enable_thinking': True})
@@ -70,3 +70,19 @@ def test_panel_chat_js():
     s = js.read_text()
     assert s.count('ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" }') == 2
     assert 'ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas' in s  # Team 5 intacto
+
+
+def test_glm52_min_tokens(pc, monkeypatch):
+    env = []
+    monkeypatch.setattr(pc, '_qwen_conf', lambda: ('sk-sp-x', TP))
+    monkeypatch.setattr(pc, '_politica', lambda mod: {})
+    monkeypatch.setattr(pc, '_http', lambda m, u, t, c, e=60: (env.append(dict(c)), OK)[1])
+    pc._llamar_api('qwencloud', 'glm-5.2', [{'role': 'user', 'content': 'hola'}], 64, 30, None)
+    assert max(env[0].get('max_tokens') or 0, env[0].get('max_completion_tokens') or 0) >= 1024
+
+
+def test_solo_thinking_regla_por_modelo(pc, monkeypatch):
+    pc._SOLO_THINKING.add('qwen3.8-max')
+    r, e = run(pc, monkeypatch, TP, TOOLS)
+    pc._SOLO_THINKING.discard('qwen3.8-max')
+    assert e[0].get('enable_thinking') is not False

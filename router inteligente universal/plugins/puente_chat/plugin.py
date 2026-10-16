@@ -463,6 +463,10 @@ def _cablear_graphiti(proveedor, modelo, ids=None):
         pass
 
 
+_SOLO_THINKING: set[str] = set()  # ids que dan 400 'enable_thinking restricted to True' (16-oct: ninguno de los 9 de texto)
+_MIN_MAX_TOKENS = {'glm-5.2': 1024}  # glm-5.2 gasta los tokens razonando: con 64 devuelve content vacio
+
+
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
     if proveedor == 'qwencloud':  # Team qwen: clave y direccion del sello de la ficha 14 (clave del banco)
         try:
@@ -505,12 +509,11 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             pol = _politica(modelo) if proveedor == 'qwencloud' else {}
             _POL.set(pol)
             ex = _extras(pol, tools)
-            _tp = proveedor == 'qwencloud' and 'token-plan' in str(base).lower()
             if proveedor == 'qwencloud':
-                if tools and modelo.startswith('qwen') and not _tp:
+                if tools and modelo.startswith('qwen') and modelo not in _SOLO_THINKING:
                     ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
                     ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
-                # Token Plan: enable_thinking esta restringido a True (400 si llega false): nunca se manda false
+                # medido 16-oct en Token Plan: enable_thinking=false se acepta en los 9 modelos de texto (y es el camino rapido con tools)
                 # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
             cuerpo.update(ex)
             exl = _EXTRA_LLM.get() if not tools else None  # Team 5: politica propia solo en la llamada final de texto
@@ -520,11 +523,17 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                         cuerpo[k_] = v_
                         ex[k_] = v_  # tambien cuenta como extra: el reintento sin extras lo quita
             if proveedor == 'qwencloud':
-                if _tp and cuerpo.get('enable_thinking') is False:
-                    cuerpo.pop('enable_thinking', None)
-                if 'enable_thinking' in cuerpo and 'reasoning_effort' in cuerpo:
-                    # nunca los dos: Token Plan conserva reasoning_effort; otros hosts conservan enable_thinking
-                    cuerpo.pop('enable_thinking' if _tp else 'reasoning_effort', None)
+                if modelo in _SOLO_THINKING and cuerpo.get('enable_thinking') is False:
+                    cuerpo.pop('enable_thinking', None)  # modelo que responde 400 'restricted to True'
+                if cuerpo.get('enable_thinking') is False:
+                    cuerpo.pop('reasoning_effort', None)  # nunca enable_thinking=false + reasoning_effort
+                    cuerpo.pop('thinking_budget', None)
+                if 'reasoning_effort' in cuerpo:
+                    cuerpo.pop('enable_thinking', None)  # thinking ya es el default; un solo control: reasoning_effort
+                    cuerpo.pop('thinking_budget', None)  # doc Qwen: reasoning_effort y thinking_budget juntos dan error
+                if modelo in _MIN_MAX_TOKENS:
+                    _f = 'max_completion_tokens' if 'max_completion_tokens' in cuerpo else 'max_tokens'
+                    cuerpo[_f] = max(int(cuerpo.get(_f) or 0), _MIN_MAX_TOKENS[modelo])
             sf = _STREAM_FN.get()
             _met('t_model_start', time.monotonic())  # base del TTFT real: _http_stream lo sella en el primer delta
             _t0c = time.monotonic()
