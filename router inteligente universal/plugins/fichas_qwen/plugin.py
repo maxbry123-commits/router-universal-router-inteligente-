@@ -1042,6 +1042,23 @@ def _texto_prog(pid: str) -> str:
     return chr(10).join(filas)
 
 
+def _hfs():
+    # plugin hf_storage ya cargado por el Router (mismo bucket permanente); si no, se carga desde su plugin.py
+    import importlib.util
+    import sys
+    for m in list(sys.modules.values()):
+        try:
+            f = str(getattr(m, '__file__', '') or '').replace(chr(92), '/')
+            if f.endswith('hf_storage/plugin.py') and hasattr(m, 'handle'):
+                return m
+        except Exception:  # noqa: BLE001
+            continue
+    spec = importlib.util.spec_from_file_location('hf_storage_desde_fichas', DIR.parent / 'hf_storage' / 'plugin.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def _ck_guardar(pid: str, fid: str, out: dict[str, Any], payload: dict[str, Any] | None = None, estado: str = 'RUNNING', resultado: Any = None) -> None:
     # checkpoint de tarea en la MISMA memoria (scope task:<pid>): tras cada nodo terminado
     if not pid:
@@ -1049,9 +1066,13 @@ def _ck_guardar(pid: str, fid: str, out: dict[str, Any], payload: dict[str, Any]
     try:
         mem, scope_for = _pc()._memoria()
         prev = _ck_cargar(pid) or {}
-        mem.save(scope_for('chat-ui', 'task:' + pid), 'ck',
-                 {'estado': estado, 'fid': fid, 'out': dict(out), 'payload': payload if payload is not None else prev.get('payload'),
-                  'resultado': resultado if resultado is not None else prev.get('resultado'), 'ts': time.time()})
+        rec = {'estado': estado, 'fid': fid, 'out': dict(out), 'payload': payload if payload is not None else prev.get('payload'),
+               'resultado': resultado if resultado is not None else prev.get('resultado'), 'ts': time.time()}
+        mem.save(scope_for('chat-ui', 'task:' + pid), 'ck', rec)
+        try:
+            _hfs().handle('write', {'path': 'tasks/%s.ck.json' % pid, 'content': json.dumps(rec, ensure_ascii=False)})  # espejo en el bucket: /data no sobrevive al reinicio del Space
+        except Exception:  # noqa: BLE001
+            pass
     except Exception:  # noqa: BLE001 - el checkpoint nunca tumba la tarea
         pass
 
@@ -1078,9 +1099,19 @@ def _ck_cargar(pid: str) -> dict[str, Any] | None:
             if isinstance(d, dict) and isinstance(d.get('out'), dict):
                 if mejor is None or float(d.get('ts') or 0) > float(mejor.get('ts') or 0):
                     mejor = d
-        return mejor
+        if mejor is not None:
+            return mejor
     except Exception:  # noqa: BLE001
-        return None
+        pass
+    try:  # RAM/SQLite sin el ck (reinicio antes del autosync): leer el espejo del bucket
+        r = _hfs().handle('read', {'path': 'tasks/%s.ck.json' % pid})
+        if isinstance(r, dict) and r.get('status') == 'ok' and r.get('encoding') == 'utf-8':
+            d = json.loads(r.get('content') or '{}')
+            if isinstance(d, dict) and isinstance(d.get('out'), dict):
+                return d
+    except Exception:  # noqa: BLE001
+        pass
+    return None
 
 
 def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opts: dict[str, Any] | None = None) -> tuple[str, list[dict[str, Any]]]:

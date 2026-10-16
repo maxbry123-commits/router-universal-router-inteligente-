@@ -2423,10 +2423,30 @@ _ASYNC_POOL = _cf.ThreadPoolExecutor(max_workers=16, thread_name_prefix='riu-cha
 _ASYNC_LOCK = _threading.Lock()
 _ASYNC_REQUESTS = {}
 
+def _hf_store_mod():
+    # plugin hf_storage ya cargado por el Router (mismo bucket permanente); si no, se carga desde su plugin.py
+    for m in list(__import__('sys').modules.values()):
+        try:
+            f = str(getattr(m, '__file__', '') or '').replace(chr(92), '/')
+            if f.endswith('hf_storage/plugin.py') and hasattr(m, 'handle'):
+                return m
+        except Exception:  # noqa: BLE001
+            continue
+    spec = importlib.util.spec_from_file_location('hf_storage_desde_puente', Path(__file__).resolve().parent.parent / 'hf_storage' / 'plugin.py')
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def _task_ck_guardar(key, data):
     try:
         mem, scope_for = _memoria()
-        mem.save(scope_for(DUENO, 'task:' + key), 'ck', dict(data, ts=time.time()))
+        rec = dict(data, ts=time.time())
+        mem.save(scope_for(DUENO, 'task:' + key), 'ck', rec)
+        try:
+            _hf_store_mod().handle('write', {'path': 'tasks/%s.ck.json' % key, 'content': json.dumps(rec, ensure_ascii=False)})  # espejo en el bucket: /data no sobrevive al reinicio del Space
+        except Exception:  # noqa: BLE001
+            pass
     except Exception:  # noqa: BLE001
         pass
 
@@ -2441,9 +2461,19 @@ def _task_ck_cargar(key):
             if isinstance(d, dict) and d.get('estado') in ('RUNNING', 'DONE'):
                 if mejor is None or float(d.get('ts') or 0) > float(mejor.get('ts') or 0):
                     mejor = d
-        return mejor
+        if mejor is not None:
+            return mejor
     except Exception:  # noqa: BLE001
-        return None
+        pass
+    try:  # RAM/SQLite sin el ck (reinicio antes del autosync): leer el espejo del bucket
+        r = _hf_store_mod().handle('read', {'path': 'tasks/%s.ck.json' % key})
+        if isinstance(r, dict) and r.get('status') == 'ok' and r.get('encoding') == 'utf-8':
+            d = json.loads(r.get('content') or '{}')
+            if isinstance(d, dict) and d.get('estado') in ('RUNNING', 'DONE'):
+                return d
+    except Exception:  # noqa: BLE001
+        pass
+    return None
 
 def _task_run(key, payload):
     try:
