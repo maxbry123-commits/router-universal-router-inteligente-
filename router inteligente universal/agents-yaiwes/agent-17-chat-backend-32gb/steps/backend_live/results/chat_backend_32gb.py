@@ -1,3 +1,4 @@
+# HISTORICO: artefacto de agente (HF Jobs retirados 2026-10-16). No ejecutar.
 # chat_backend_32gb.py
 import os
 import sys

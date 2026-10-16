@@ -33,6 +33,7 @@ tail -n 20 /tmp/l.log
 
 
 def main() -> None:
+    raise SystemExit("RETIRADO: el respaldo L4/HF Jobs fue eliminado del Router (Space CPU 32 GB permanente)")
     api = HfApi(token=os.environ["HF_TOKEN"])
     accion = sys.argv[1] if len(sys.argv) > 1 else "status"
     if accion == "start":

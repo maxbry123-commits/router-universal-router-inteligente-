@@ -72,7 +72,7 @@ async function resolveRouterUrl() {
       const text = await r.text();
       const line = text.split(/\r?\n/).find((v) => v.startsWith('LIVE_URL='));
       const url = line ? line.slice('LIVE_URL='.length).trim().replace(/\/$/, '') : '';
-      if (/^https:\/\/[a-z0-9-]+--8000\.hf\.jobs$/i.test(url)) {
+      if (/^https:\/\/[a-z0-9-]+\.hf\.space$/i.test(url)) {
         routerCache = { url, at: Date.now() };
         return url;
       }

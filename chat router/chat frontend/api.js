@@ -14,14 +14,14 @@ async function liveRouter() {
       const flag = await fetch(CFG.liveUrl + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' });
       if (!flag.ok) throw new Error('Dirección HF no disponible');
       const info = await flag.json();
-      if (!/^https:\/\/[a-f0-9]{24}--8000\.hf\.jobs$/.test(info.LIVE_URL || '')) throw new Error('Dirección HF inválida');
+      if (!/^https:\/\/[a-z0-9-]+\.hf\.space$/.test(info.LIVE_URL || '')) throw new Error('Dirección HF inválida: se esperaba https://<space>.hf.space');
       BASE = info.LIVE_URL;
       CFG.apiBase = BASE;
       CFG.harnessUrl = BASE + '/plugins/puente_chat/call';
       liveCheckedAt = Date.now();
       liveVerified = true;
     } catch (error) {
-      if (!liveVerified) throw new Error('ROUTER_LIVE_URL_NO_RESUELTO');  // primera resolución: sin fallback a jobs históricos
+      if (!liveVerified) throw new Error('ROUTER_LIVE_URL_NO_RESUELTO');  // primera resolución: sin fallback a URLs históricas
     } finally { liveRequest = null; }
     return BASE;
   })();
@@ -35,7 +35,6 @@ function remoto(headers) {
   if (BASE) headers[CFG.authHeader || "X-API-Key"] = clave();
   return BASE ? "omit" : "same-origin";
 }
-const L4 = { job: null, url: null };
 // ---- procesos en curso: una recarga NO relanza la tarea; se retoma por su proceso_id (sesion, proceso_id, direccion exacta del Router, hora) ----
 const CP = 'riu_proc_v1';
 const procs = () => { try { return JSON.parse(localStorage.getItem(CP) || '{}'); } catch (e) { return {}; } };
@@ -69,7 +68,7 @@ async function puenteRouter(base, body, qs, headers) {
   // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
   const q = new URLSearchParams((qs || '').replace(/^[?]/, ''));
   const accion = q.get('accion') || 'chat';
-  let payload = accion === 'chat' ? Object.assign({}, body || {}) : { job: q.get('job'), url: q.get('url') };
+  let payload = Object.assign({}, body || {});
   if (accion === 'chat') {
     // sesion por estancia de chat (pestaña): cada chat lleva la suya
     let s = (body && body.sesion) || sessionStorage.getItem('riu_sesion');
@@ -84,7 +83,7 @@ async function puenteRouter(base, body, qs, headers) {
     try {
       r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) });
     } catch (e) {
-      // job en cambio de direccion: releer LIVE_URL y reintentar una vez
+      // Space cambio de direccion o caido: releer LIVE_URL y reintentar una vez
       liveCheckedAt = 0;
       await liveRouter();
       if (baseDe() === base) throw e;
@@ -109,12 +108,11 @@ async function puenteRouter(base, body, qs, headers) {
           const envelope = await poll.json().catch(() => ({}));
           if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
           p = envelope.result || {}; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso } })); } catch (e) {} }
-        } catch (e) { continue; }  // red/job en cambio: seguir esperando
+        } catch (e) { continue; }  // red en cambio: seguir esperando
       }
     }
     if (!cortado && payload && payload.sesion) guardaProc(payload.sesion, null);  // termino: ya no hay nada que retomar
     if (cortado) { return { status: 504, ok: false, p: { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'El proceso sigue en el Router; no se relanza la tarea', proceso_id: p.proceso_id } }; }
-    if (p.estado === 'encendiendo') return { status: 202, ok: true, p };
     if (p.error) return { status: 502, ok: false, p };  // proceso terminado en error: NO se relanza otro chat_async (el reintento de red de LIVE_URL solo vale antes de obtener proceso_id)
     return { status: 200, ok: true, p };
   }
@@ -144,45 +142,13 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
-  const esHF = model.startsWith('hf-');
   const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, gobernanza ? { gobernanza } : {}, constitucion ? { constitucion } : {}, typeof fast_reply === "boolean" ? { fast_reply } : {}, Array.isArray(contexto_previo) && contexto_previo.length ? { contexto_previo } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
-  let r;
-  if (esHF && L4.url) {
-    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
-    if (!r.ok) { L4.job = L4.url = null; r = null; }
-  }
-  if (!r) r = await puente(base, { model, messages, max_tokens, ...extra }, '', 'POST', headers);
-  if (r.status === 202 && r.p.job_id) {
-    L4.job = r.p.job_id; L4.url = null;
-    window.__riuJob = r.p.job_id;
-    if (avisar) avisar('Encendiendo modelo (aprox. 1 a 4 min)...');
-    let listo = false;
-    for (let i = 0; i < 80 && !listo; i++) {
-      await new Promise((ok) => setTimeout(ok, 5000));
-      const e = await puente(base, null, '?accion=estado&job=' + encodeURIComponent(r.p.job_id) + '&url=' + encodeURIComponent(r.p.url || ''), 'GET', headers);
-      if (e.ok && e.p.listo) listo = true;
-      else if (e.ok && ['ERROR', 'CANCELED', 'COMPLETED', 'DELETED'].includes(e.p.etapa)) { L4.job = null; throw new Error('El modelo se apago: ' + e.p.etapa); }
-    }
-    if (!listo) throw new Error('El modelo no encendio a tiempo');
-    L4.url = r.p.url;
-    r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
-  }
+  const r = await puente(base, { model, messages, max_tokens, ...extra }, '', 'POST', headers);
   if (!r.ok) throw new Error(r.p.error || r.p.detail || ('HTTP ' + r.status));
   const prueba = Array.isArray(r.p.traza) && r.p.traza.length ? '\n\n— Prueba de ejecución —\n' + r.p.traza.filter((t) => t.modelo !== 'goals').map((t) => t.nodo + ' · ' + String(t.modelo).replace('ficha-', '') + ' · ' + (t.rol || '') + (t.ok ? ' ✔' : ' ✘')).join('\n') : '';
-  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), traza: r.p.traza, job_id: L4.job, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })), fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, execution_path: r.p.execution_path || "HEAVY", ms: Number(r.p.ms || 0) };
+  return { reply: ((r.p.choices && r.p.choices[0] && r.p.choices[0].message && r.p.choices[0].message.content) || ''), traza: r.p.traza, tools: (r.p.herramientas || []).map((x) => ({ nombre: x.herramienta, ok: !!x.ok })), fast_lane: !!r.p.fast_lane, fast_consult: !!r.p.fast_consult, execution_path: r.p.execution_path || "HEAVY", ms: Number(r.p.ms || 0) };
 }
 window.RIU_HARNESS = harness;
-export async function apagarRespaldo() {
-  const base = (window.RIU_CONFIG || {}).harnessUrl;
-  // apaga TODOS los L4 de respaldo (el Router solo apaga los suyos), haya o no un job conocido
-  const headers = { 'Content-Type': 'application/json' };
-  const pw = sessionStorage.getItem('riu_clave');
-  if (pw) headers['X-Chat-Password'] = pw;
-  const r = await puente(base, null, '?accion=apagar_todo', 'POST', headers);
-  if (r.ok) { L4.job = L4.url = null; window.__riuJob = null; }
-  return r;
-}
-window.RIU_APAGAR = apagarRespaldo;
 export async function api(path, options = {}) {
   await liveRouter();
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Ruta inválida");

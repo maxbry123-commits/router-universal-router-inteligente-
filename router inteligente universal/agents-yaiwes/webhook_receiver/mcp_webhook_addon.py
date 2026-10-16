@@ -37,6 +37,7 @@ def _launch_router_job_sync() -> str | None:
            "git clone --depth 1 https://github.com/maxbry123-commits/router-universal-router-inteligente- /tmp/r && cd /tmp/r && "
            "pip install -q fastapi 'uvicorn[standard]' pydantic huggingface_hub cryptography pyyaml requests && "
            "python 'router inteligente universal/agents-yaiwes/common/router_job_persistent.py'")
+    raise RuntimeError('HF_JOBS_RETIRADOS: mcp_webhook_addon no puede crear Jobs')
     job = api.run_job(image="python:3.12", command=["bash", "-lc", cmd], flavor="cpu-upgrade", timeout="6h", expose=[8000],
                       secrets={"GITHUB_TOKEN": _required_env("GITHUB_PERSONAL_ACCESS_TOKEN")})
     t0 = _time.time()

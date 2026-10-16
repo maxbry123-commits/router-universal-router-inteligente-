@@ -146,10 +146,8 @@ def _cmd_text(job: Any) -> str:
 
 
 def alive_jobs(api: Any, kind: str) -> list:
-    """Jobs vivos del tipo (router|guardian), el mas nuevo primero."""
-    out = [j for j in api.list_jobs() if _stage(j) in ALIVE and MARKS[kind] in _cmd_text(j)]
-    out.sort(key=lambda j: getattr(j, "created_at").timestamp(), reverse=True)
-    return out
+    """RETIRADO: no hay Jobs YAIWES que vigilar; devuelve vacio."""
+    return []
 
 
 def expiry_epoch(job: Any, cfg: Config, kind: str) -> float:
@@ -273,7 +271,7 @@ def build_spec(kind: str, cfg: Config, life: "str | None" = None) -> dict:
     if "HF_TOKEN_1" not in secrets and cfg.hf_token:
         secrets["HF_TOKEN_1"] = cfg.hf_token
     if cfg.hf_token:
-        secrets["HF_CONTROL_JOBS_TOKEN"] = cfg.hf_token
+        # HF_CONTROL_JOBS_TOKEN retirado: no se propaga a ningun Job
     if kind == "router":
         cmd, flavor, expose, env = router_command(), cfg.flavor_router, [8000], dict(GROQ_MODEL_ENV)
     else:
@@ -296,16 +294,8 @@ def describe_spec(spec: dict) -> dict:
 
 
 def launch_with_ladder(kind: str, cfg: Config, api: Any) -> "tuple[Any, dict]":
-    """Vida 7d/5d -> 48h -> 24h si HF rechaza (igual que el lanzador actual)."""
-    want = cfg.life_router if kind == "router" else cfg.life_guardian
-    last: "Exception | None" = None
-    for life in dict.fromkeys([want, "48h", "24h"]):
-        spec = build_spec(kind, cfg, life)
-        try:
-            return api.run_job(**spec), spec
-        except Exception as e:  # noqa: BLE001
-            last = e
-    raise RuntimeError(f"HF rechazo todas las vidas: {str(last)[:120]}")
+    """RETIRADO: nunca lanza HF Jobs (el runtime permanente es el Space CPU 32 GB)."""
+    raise RuntimeError("HF_JOBS_RETIRADOS: guardian no puede crear computo")
 
 
 # ---------------------------------------------------------------- plan (puro) y ejecucion
@@ -352,6 +342,7 @@ def relaunch(kind: str, cfg: Config, api: Any, http: HttpFn, state: State, reaso
         young = []
     if young:
         return {**res, "ok": False, "blocked": f"ya hay un {kind} lanzado hace < {cfg.min_pause_s}s ({young[0].id})"}
+    return {**res, "ok": False, "error": "HF_JOBS_RETIRADOS: relaunch eliminado (Space permanente)"}
     if not state.lock.acquire(blocking=False):
         return {**res, "ok": False, "blocked": "lanzamiento en curso (cerrojo)"}
     try:
@@ -422,7 +413,10 @@ def tick(kinds: "tuple[str, ...]", cfg: Config, api: Any, http: HttpFn, state: S
     return out
 
 
-def run_forever(kinds: "tuple[str, ...]", cfg: Config, api: Any = None, http: HttpFn = default_http, state: "State | None" = None,
+def run_forever(kinds, cfg, http=None):
+    return  # RETIRADO: sin vigilancia de Jobs
+
+def _run_forever_retirado(kinds: "tuple[str, ...]", cfg: Config, api: Any = None, http: HttpFn = default_http, state: "State | None" = None,
                 sleep: Callable = time.sleep, now: Callable = time.time, max_ticks: "int | None" = None) -> None:
     api = api or hf_api(cfg)
     state = state or State(cfg.state_path)

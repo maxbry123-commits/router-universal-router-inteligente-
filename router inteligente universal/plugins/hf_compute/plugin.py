@@ -46,6 +46,7 @@ def load_config() -> dict[str, Any]:
 
 def _pool() -> Any | None:
     try:
+        # retirado: el pool ya no puede crear computo (stub en memoria)
         return importlib.import_module("integration.hf_worker_pool").POOL
     except Exception:
         return None
@@ -120,13 +121,12 @@ def handle(action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]
         if action == "ensure":
             cpu, ram, workers, _ = _metrics(pool, payload)
             p = plan(cfg, cpu, ram, workers)
-            if payload.get("apply") is True and p.get("launch"):
-                w = pool.launch(p["launch"], "hf_compute " + p["decision"])
-                return {"status": "ok", "applied": True, "plan": p, "worker": w.public() if hasattr(w, "public") else str(w)}
-            return {"status": "ok", "applied": False, "dry_run": True, "plan": p}
+            # apply retirado: NUNCA se lanza computo; Space 32 GB permanente, saturacion=cola
+            return {"status": "ok", "applied": False, "dry_run": True, "plan": p,
+                    "apply_disponible": False, "nota": "capacidad de lanzar computo retirada"}
         if action == "invoke":
-            res = getattr(pool, INVOKE_NAME)(payload.get("body") or {})
-            return {"status": "ok", "result": _run(res) if inspect.isawaitable(res) else res}
+            # retirado: invoke podia crear un worker al no haber ninguno vivo
+            return {"status": "error", "error": "invoke retirado: el Router permanente atiende la cola localmente"}
         return {"status": "error", "error": "accion no permitida", "allowed": list(ACTIONS)}
     except Exception as exc:
         return {"status": "error", "error": str(exc)[:300]}

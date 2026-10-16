@@ -96,28 +96,18 @@ def status() -> dict:
 
 @app.post("/power/router/on")
 def router_on() -> dict:
-    _cache.clear()
-    if router_alive(live_url()):
-        set_paused(FLAG, False)
-        return {"ok": True, "estado": "ya estaba encendido"}
+    """RETIRADO: ya no despacha workflows ni crea Jobs. Solo status del Space permanente."""
     set_paused(FLAG, False)
-    r = gh("POST", f"/actions/workflows/{ROUTER_WF}/dispatches", json={"ref": "main", "inputs": {"lifetime": "6h"}})
-    return {"ok": r.status_code == 204, "estado": "encendiendo (tarda 2 a 5 minutos)" if r.status_code == 204 else f"no se pudo encender ({r.status_code})"}
+    return {"ok": True, "estado": "encendido" if router_alive(live_url()) else "apagado",
+            "nota": "el Router permanente es un HF Space 32 GB; no se enciende/apaga por Job"}
 
 
 @app.post("/power/router/off")
 def router_off() -> dict:
-    m = re.match(r"https://([0-9a-f]+)--", live_url())
-    stopped = False
-    if m:
-        try:
-            from huggingface_hub import HfApi
-            HfApi(token=HF).cancel_job(job_id=m.group(1))
-            stopped = True
-        except Exception:
-            stopped = False
+    """RETIRADO: nunca cancela un Job ni toca el hardware del Space."""
     set_paused(FLAG, True)
-    return {"ok": True, "estado": "Router apagado" if stopped else "Router en pausa"}
+    return {"ok": True, "estado": "Router en pausa",
+            "nota": "pausa logica solamente; el Space permanente sigue vivo"}
 
 
 @app.post("/power/agents/{accion}")

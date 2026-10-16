@@ -45,6 +45,7 @@ def job_is_healthy() -> bool:
 def ensure_router_alive() -> None:
     if job_is_healthy():
         return
+    raise RuntimeError('HF_JOBS_RETIRADOS: webhook_space_app no puede crear Jobs')
     job = api.run_job(image="python:3.12", command=launch_cmd(), flavor="cpu-upgrade", timeout="6h", expose=[8000],
                       secrets={"GITHUB_TOKEN": GITHUB_TOKEN})
     STATE["job_id"] = job.id

@@ -1,9 +1,9 @@
 """Plugin puente_chat (Director 2026-10-04): papel del harness para la UI del chat, dentro del Router (su computo, puerta fija).
 
 Llamada: POST <puerta>/plugins/puente_chat/call/<accion> con el token del chat (Bearer). Respuesta del host: {"status": "ok", "result": ...}.
-Acciones: status | modelos | chat {model, messages, max_tokens, sesion, respaldo_url?} | estado {job, url} | apagar {job}.
+Acciones: status | modelos | chat {model, messages, max_tokens, sesion}. L4/HF Jobs retirados: estado/apagar devuelven error.
 Modelos NV/GROQ: llamada directa al proveedor con las claves del banco; rota claves del MISMO modelo; tope total 90 s (GLM 96 s).
-Modelos HF: enciende un L4 (almacenamiento conectado como disco). Seguridades: (1) se apaga solo 30 s tras terminar la salida; (2) 5 min sin pedidos; (3) tope duro de HF de 20 min; (4) barrendero del Router cancela L4 viejos; (5) un solo L4 a la vez; remoto: apagar / apagar_todo.
+Modelos HF (tipo "hf"): sin ejecutor por ahora -> GAP_NO_EXECUTOR. El runtime permanente es el Space CPU 32 GB; no hay L4 ni Jobs.
 Memoria: antes de responder busca contexto en /memoria (scope chat:<sesion>); despues guarda pregunta y respuesta.
 """
 from __future__ import annotations
@@ -43,7 +43,6 @@ from typing import Any
 
 NS = "COMAND-CENTER-1"
 DUENO = "chat-ui"
-ETIQUETA_L4 = "router-respaldo-l4"
 TOPE_TOTAL_S = 90
 MAX_PASOS = 6
 _CACHE_H = {}
@@ -53,11 +52,7 @@ _catalog = [json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob("modelo-*
 FICHAS = {f["id"]:(f["nombre"],f.get("proveedor","pipeline"),f.get("modelo","pipeline"),f["timeout_s"]) for f in _catalog if f["tipo"] in ("api","consil","motor","xray","auditor")}
 ESPECIALES = {f["id"]: f["tipo"] for f in _catalog if f["tipo"] in ("consil","motor","xray","auditor")}
 RESPALDO = {f["id"]:(f["nombre"],f["archivo"]) for f in _catalog if f["tipo"]=="hf"}
-ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO" --alias "$ALIAS" -ngl 999 -fa on -np 1 -b 128 -c 16384 '
-            '--temp 0 --top-k 20 --top-p 0.95 --no-mmproj --reasoning-budget 0 --spec-type draft-mtp --spec-draft-n-max 2 --jinja > /tmp/l.log 2>&1 &\n'
-            'P=$!\nwhile kill -0 $P 2>/dev/null; do\n  sleep 5\n  I=$(( $(date +%s) - $(stat -c %Y /tmp/l.log) ))\n'
-            '  if grep -q print_timing /tmp/l.log && [ $I -ge 30 ]; then echo APAGADO_FIN_DE_SALIDA; kill $P; exit 0; fi\n'
-            '  if [ $I -ge 300 ]; then echo APAGADO_5_MIN_SIN_USO; kill $P; exit 0; fi\ndone\n')
+
 
 
 def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float = 60) -> tuple[int, Any]:
@@ -225,54 +220,8 @@ def _api(proveedor: str, modelo: str, mensajes: list, max_tokens: int, tope: int
     return {"error": "SIN_RESPUESTA_EN_%dS" % tope if time.monotonic() >= fin else "TODAS_LAS_CLAVES_FALLARON", "detalle": ultimo}
 
 
-MAX_VIDA_L4_S = 1200  # seguridad 3: tope duro de HF (20 min), se aplica FUERA del contenedor
-FINALIZADOS = ("COMPLETED", "CANCELED", "ERROR", "DELETED")
-
-
-def _edad_s(creado: str) -> float:
-    from datetime import datetime, timezone
-    try:
-        t = datetime.fromisoformat(str(creado).replace("Z", "+00:00"))
-        return (datetime.now(timezone.utc) - t).total_seconds()
-    except ValueError:
-        return 0.0
-
-
-def _l4_vivos() -> list[dict[str, Any]]:
-    s, lista = _hf("GET", "/api/jobs/" + NS)
-    if s >= 400 or not isinstance(lista, list):
-        return []
-    return [j for j in lista if (j.get("labels") or {}).get("name") == ETIQUETA_L4
-            and (j.get("status") or {}).get("stage") not in FINALIZADOS]
-
-
-def _cancelar(job_id: str) -> bool:
-    s, _ = _hf("POST", "/api/jobs/%s/%s/cancel" % (NS, job_id))
-    return s < 400
-
-
-def _apagar_todo() -> dict[str, Any]:
-    """Apagado remoto de emergencia: cancela TODOS los L4 de respaldo."""
-    return {"apagados": sum(1 for j in _l4_vivos() if _cancelar(j["id"]))}
-
-
-def _barrer() -> int:
-    """Seguridad 4 (barrendero del Router): cualquier L4 mas viejo que su vida maxima se cancela."""
-    return sum(1 for j in _l4_vivos() if _edad_s(j.get("createdAt", "")) > MAX_VIDA_L4_S and _cancelar(j["id"]))
-
-
-def _encender(model: str) -> dict[str, Any]:
-    _apagar_todo()  # seguridad 5: un solo L4 a la vez
-    _, archivo = RESPALDO[model]
-    s, j = _hf("POST", "/api/jobs/" + NS, {
-        "dockerImage": "ghcr.io/ggml-org/llama.cpp:server-cuda", "command": ["bash", "-c", ARRANQUE], "arguments": [],
-        "environment": {"ARCHIVO": archivo, "ALIAS": model}, "flavor": "l4x1", "timeoutSeconds": MAX_VIDA_L4_S, "labels": {"name": ETIQUETA_L4},
-        "volumes": [{"type": "bucket", "source": NS + "/yaiwes-memoria-storage", "mountPath": "/modelos", "readOnly": True,
-                     "path": "router-respaldo/modelos"}],
-        "expose": {"ports": [8080], "portsPublic": []}})
-    if s >= 400:
-        return {"error": "NO_SE_PUDO_ENCENDER", "detalle": str(j)[:300]}
-    return {"estado": "encendiendo", "job_id": j["id"], "url": "https://" + j["id"] + "--8080.hf.jobs", "model": model}
+# L4/HF Jobs RETIRADO (2026-10-16): _l4_vivos/_encender/_barrer/_apagar(_todo)
+# eliminados. Los modelos tipo "hf" conservan identidad pero devuelven GAP_NO_EXECUTOR.
 
 
 def _herr():
@@ -547,19 +496,6 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 if 'too large' not in detalle and 'tier' not in detalle:
                     return ultimo  # 400 de formato: no lo arregla otra clave; los de cuota/tier si
         time.sleep(3)
-    return ultimo
-
-
-def _llamar_l4(url, modelo, mensajes, max_tokens, tools):
-    ultimo = (0, {'error': 'SIN_TOKEN_HF_EN_EL_BANCO'})
-    for t in _tokens_hf():
-        cuerpo = {'model': modelo, 'messages': mensajes, 'max_tokens': max_tokens}
-        if tools:
-            cuerpo['tools'] = tools
-            cuerpo['tool_choice'] = 'auto'
-        ultimo = _http('POST', url + '/v1/chat/completions', t, cuerpo, 110)
-        if ultimo[0] < 400 or ultimo[0] == 400:
-            return ultimo
     return ultimo
 
 
@@ -1857,8 +1793,8 @@ def _chat(p):
     pregunta = next((str(m.get('content', '')) for m in reversed(mensajes) if m.get('role') == 'user'), '')
     if model not in FICHAS and model not in RESPALDO:
         return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
-    if model in RESPALDO and not p.get('respaldo_url'):
-        return _encender(model)
+    if model in RESPALDO:
+        return {'error': 'GAP_NO_EXECUTOR', 'detalle': 'modelo HF sin ejecutor: L4/HF Jobs retirados del Router (Space CPU 32 GB permanente)', 'model': model}
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
     _CAP_TOOLS.set(str(p.get('cap_tools') or 'write'))  # Team 5/fichas mandan su cap; ausente = write, igual que siempre
@@ -1944,13 +1880,6 @@ def _chat(p):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
         presupuesto = int(p.get('presupuesto_s') or 0) or min(250, max(TOPE_TOTAL_S, int(tope * 2.4)))
         _DEADLINE.set(time.monotonic() + presupuesto)
-    else:
-        url = str(p['respaldo_url'])
-        if not url.startswith('https://') or not url.endswith('--8080.hf.jobs'):
-            return {'error': 'RESPALDO_URL_INVALIDA'}
-
-        def llamar(ms, tl):
-            return _llamar_l4(url, model, ms, max_tokens, tl)
     # el sentinela de las fichas envuelve a la LLM: bucle hasta terminar la tarea
     ultimo = {'model': model}
 
@@ -2042,31 +1971,11 @@ def _chat(p):
 
 
 def _estado(p: dict[str, Any]) -> dict[str, Any]:
-    try:
-        _barrer()
-    except Exception:  # noqa: BLE001
-        pass
-    s, j = _hf("GET", "/api/jobs/%s/%s" % (NS, p.get("job")))
-    etapa = (j.get("status") or {}).get("stage", "DESCONOCIDA") if isinstance(j, dict) else "DESCONOCIDA"
-    listo = False
-    url = str(p.get("url") or "")
-    if etapa == "RUNNING" and url.endswith("--8080.hf.jobs"):
-        for t in _tokens_hf():
-            code, _ = _http("GET", url + "/health", t, None, 10)
-            if code == 200:
-                listo = True
-                break
-    return {"etapa": etapa, "listo": listo}
+    return {"error": "L4_RETIRADO", "detalle": "ya no hay Jobs L4 que consultar"}
 
 
 def _apagar(p: dict[str, Any]) -> dict[str, Any]:
-    job = str(p.get("job") or "")
-    s, j = _hf("GET", "/api/jobs/%s/%s" % (NS, job))
-    etiqueta = ((j.get("labels") or {}).get("name") if isinstance(j, dict) else None)
-    if etiqueta != ETIQUETA_L4:
-        return {"error": "SOLO_SE_APAGAN_JOBS_DEL_L4_DE_RESPALDO", "job_id": job}
-    s, _ = _hf("POST", "/api/jobs/%s/%s/cancel" % (NS, job))
-    return {"job_id": job, "apagado": s < 400}
+    return {"error": "L4_RETIRADO", "detalle": "ya no hay Jobs L4 que apagar"}
 
 
 
@@ -2094,14 +2003,10 @@ def _qwen_conf():
 
 def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "status":
-        try:
-            vivos = len(_l4_vivos())
-        except Exception:  # noqa: BLE001
-            vivos = -1
-        return {"ok": True, "modelos": len(FICHAS) + len(RESPALDO), "l4_vivos": vivos}
+        return {"ok": True, "modelos": len(FICHAS) + len(RESPALDO), "l4_vivos": 0}
     if action == "modelos":
         return {"modelos": [{"id": k, "nombre": v[0], "respaldo": False} for k, v in FICHAS.items()]
-                + [{"id": k, "nombre": v[0], "respaldo": True} for k, v in RESPALDO.items()]}
+                + [{"id": k, "nombre": v[0], "respaldo": False, "gap": "GAP_NO_EXECUTOR"} for k, v in RESPALDO.items()]}
     if action == "llm_call":
         return llm_call(payload)
     if action == "chat":
@@ -2114,7 +2019,7 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         h = _herr()
         return {'github': bool(h._token_gh()), 'hf': bool(h._token_hf())}
     if action == "apagar_todo":
-        return _apagar_todo()
+        return {"error": "L4_RETIRADO", "apagados": 0}
     if action == "subir":  # archivo adjunto del chat -> sistema de almacenamiento/memoria
         try:
             nombre = str(payload.get('nombre') or 'archivo')[:120]
