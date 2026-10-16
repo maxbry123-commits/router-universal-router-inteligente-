@@ -138,14 +138,14 @@ export async function accion(acc, payload) {
   return env.result || {};
 }
 window.RIU_ACCION = accion;
-export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo }) {
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id }) {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const esHF = model.startsWith('hf-');
-  const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, gobernanza ? { gobernanza } : {}, constitucion ? { constitucion } : {}, typeof fast_reply === "boolean" ? { fast_reply } : {}, Array.isArray(contexto_previo) && contexto_previo.length ? { contexto_previo } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
+  const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, gobernanza ? { gobernanza } : {}, constitucion ? { constitucion } : {}, typeof fast_reply === "boolean" ? { fast_reply } : {}, motor ? { motor: true } : {}, project_id ? { project_id } : {}, Array.isArray(contexto_previo) && contexto_previo.length ? { contexto_previo } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
   let r;
   if (esHF && L4.url) {
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
