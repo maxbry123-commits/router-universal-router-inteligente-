@@ -32,7 +32,7 @@
    "workflow"
   ]
  },
- "fast_model": "ficha-qwen38flash",
+ "fast_model": "ficha-qwen38max",
  "fast_consult": {
   "enabled": true,
   "opinion_timeout_s": 90,
