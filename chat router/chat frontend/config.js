@@ -2,9 +2,9 @@
 // La interfaz abre sin pedir clave. El Router funciona en HF CPU de 16 GB; las claves permanecen en el servidor.
 window.RIU_CONFIG = {
   routerStopped: false,
-  apiBase: 'https://6ac41820404719ba376595fb--8000.hf.jobs',
+  apiBase: '',  // la dirección real sale solo de LIVE_URL.json; nunca de un Job histórico
   liveUrl: 'https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/LIVE_URL.json',
-  harnessUrl: 'https://6ac41820404719ba376595fb--8000.hf.jobs/plugins/puente_chat/call',  // puente dentro del Router (puerta fija)
+  harnessUrl: '',  // puente dentro del Router: se rellena desde LIVE_URL.json en la primera resolución
   authHeader: 'X-API-Key',
   defecto: 'nv-nemotron-super',  // el modelo HF enciende una GPU de pago: no se deja como predeterminado
   modelos: [
