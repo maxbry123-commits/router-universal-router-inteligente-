@@ -54,6 +54,8 @@ def choose_slot(slots: list[SlotStatus]) -> str | None:
 
 
 def launch_cpu_job(worker_id: str, command: list[str], *, name: str | None = None, timeout: str = "30m") -> dict[str, Any]:
+    # RETIRADO (2026-10-16): el Router permanente es un HF Space cpu-upgrade 32 GB; 0 HF Jobs.
+    raise RuntimeError("HF_JOBS_RETIRADOS: launch_cpu_job eliminado (sin recreacion de Jobs)")
     if worker_id not in WORKER_ORDER:
         raise ValueError(f"Unknown worker: {worker_id}")
     job = run_job(
