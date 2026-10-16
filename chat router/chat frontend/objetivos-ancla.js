@@ -10,6 +10,8 @@ export class SetGuardable extends Set {
   clear() { super.clear(); if (this._cb) this._cb(this); }
 }
 const KP = "riu_proy_v1", arr = (v) => (Array.isArray(v) ? v : []);
+export const slugProy = (nombre) => (String(nombre || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 48) || "proyecto");
+const upsertRemoto = (nombre) => { try { if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "upsert", project_id: slugProy(nombre), nombre }).catch(() => {}); } catch (e) {} };
 const conGet = () => Object.assign({ encendida: false, texto: "", oficial: false, items: [] }, leer(KEYS.constitucion, {}));
 const wfStore = () => { const v = leer(KEYS.workflows, { lista: [], sel: null }); if (!Array.isArray(v.lista)) v.lista = []; return v; };
 const simple = (k) => Object.assign({ items: [], notas: "", on: false }, leer(k, {}));
@@ -18,7 +20,7 @@ export const listaProyectos = () => arr(leer(KP, {}).global);
 export function crearProyecto(nombre) {
   const n = String(nombre || "").trim().slice(0, 60); if (!n) return null;
   const t = leer(KP, {}); t.global = arr(t.global);
-  if (!t.global.some((p) => p.nombre.toLowerCase() === n.toLowerCase())) { t.global.push({ nombre: n, items: [], on: false, notas: "" }); escribir(KP, t); }
+  if (!t.global.some((p) => p.nombre.toLowerCase() === n.toLowerCase())) { t.global.push({ nombre: n, items: [], on: false, notas: "" }); escribir(KP, t); upsertRemoto(n); }
   return (t.global.find((p) => p.nombre.toLowerCase() === n.toLowerCase()) || {}).nombre || n;
 }
 export function crearObjetivo(tipo, id) {

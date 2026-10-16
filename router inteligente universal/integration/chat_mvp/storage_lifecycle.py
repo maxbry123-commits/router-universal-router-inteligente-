@@ -32,9 +32,15 @@ def restore_if_empty(data_dir: Any, bucket: str | None, token: str | None, fs_fa
     d.mkdir(parents=True, exist_ok=True)
     tmp = d / "riu_chat.sqlite3.restore"
     tmp.write_bytes(data)
+    esperados: list[str] = []
     try:
         con = sqlite3.connect(tmp)
         ok = con.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+        if ok:
+            try:
+                esperados = [r[0] for r in con.execute("SELECT id FROM documents")]
+            except Exception:  # noqa: BLE001 - esquema distinto: se sigue sin la lista
+                esperados = []
         con.close()
     except Exception:  # noqa: BLE001
         ok = False
@@ -44,17 +50,30 @@ def restore_if_empty(data_dir: Any, bucket: str | None, token: str | None, fs_fa
         return {"status": STATUS["restore"]}
     os.replace(tmp, db)
     docs = 0
+    faltantes: list[str] = []
     (d / "docs").mkdir(exist_ok=True)
+    remotos: set[str] = set()
     try:
         for p in fs.ls(f"{base}/docs", detail=False):
             name = str(p).rsplit("/", 1)[-1]
-            if name and not (d / "docs" / name).exists():
+            if not name:
+                continue
+            remotos.add(name)
+            if not (d / "docs" / name).exists():
                 (d / "docs" / name).write_bytes(fs.cat_file(p if str(p).startswith("buckets/") else f"{base}/docs/{name}"))
                 docs += 1
     except Exception:  # noqa: BLE001 - los documentos son best-effort; la base ya esta
         pass
+    for did in esperados:  # un doc registrado en SQLite que falta en el bucket NO se oculta
+        if did not in remotos:
+            faltantes.append(did)
     STATUS["restore"] = "RESTORED"
-    return {"status": "RESTORED", "docs": docs}
+    STATUS["docs_gap"] = faltantes
+    out = {"status": "RESTORED", "docs": docs}
+    if faltantes:
+        out["gap"] = "GAP_DOCUMENTO_FALTANTE"
+        out["faltantes"] = faltantes
+    return out
 
 
 _thread: threading.Thread | None = None
@@ -62,7 +81,7 @@ _thread: threading.Thread | None = None
 
 def start_autosync(get_store: Callable[[], Any], sync_fn: Callable[..., Any], bucket: str | None, token: str | None, interval: float | None = None) -> dict[str, Any]:
     global _thread
-    secs = float(os.getenv("RIU_AUTOSYNC_SECONDS", "300")) if interval is None else interval
+    secs = float(os.getenv("RIU_AUTOSYNC_SECONDS", "60")) if interval is None else interval
     if not bucket or not token or secs <= 0:
         STATUS["autosync"] = "OFF_NOT_CONFIGURED"
         return {"status": STATUS["autosync"]}

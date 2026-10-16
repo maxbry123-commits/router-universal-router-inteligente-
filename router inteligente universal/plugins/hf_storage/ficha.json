@@ -4,7 +4,7 @@
     "id": "hf_storage",
     "enabled_default": false,
     "health_action": "status",
-    "nota_roja": "Puente al almacenamiento permanente de HF (repo dataset COMAND-CENTER-1/yaiwes-hf-memoria, cambiable con HF_STORAGE_REPO). Requiere HF_TOKEN (solo nombre de variable, nunca el valor). Pendiente: Storage Bucket real (hoy se usa el repo dataset verificado en T-08)."
+    "nota_roja": "Puente al almacenamiento permanente de HF (Storage Bucket COMAND-CENTER-1/yaiwes-memoria-storage, prefijo riu-chat/, cambiable con HF_BUCKET_ID o HF_STORAGE_BUCKET). Mismo bucket que usa storage_lifecycle/autosync. Requiere HF_TOKEN (solo nombre de variable, nunca el valor)."
   },
   "artifact_id": "riu.plugins.hf_storage",
   "version": "0.1.0",

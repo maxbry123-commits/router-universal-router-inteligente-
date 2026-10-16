@@ -1042,6 +1042,33 @@ def _texto_prog(pid: str) -> str:
     return chr(10).join(filas)
 
 
+def _ck_guardar(pid: str, fid: str, out: dict[str, Any]) -> None:
+    # checkpoint de tarea en la MISMA memoria (scope task:<pid>): tras cada nodo terminado
+    if not pid:
+        return
+    try:
+        mem, scope_for = _pc()._memoria()
+        mem.save(scope_for('chat-ui', 'task:' + pid), 'ck', {'estado': 'RUNNING', 'fid': fid, 'out': dict(out), 'ts': time.time()})
+    except Exception:  # noqa: BLE001 - el checkpoint nunca tumba la tarea
+        pass
+
+
+def _ck_cargar(pid: str) -> dict[str, Any] | None:
+    try:
+        mem, scope_for = _pc()._memoria()
+        res = mem.search(scope_for('chat-ui', 'task:' + pid), 'ck', 20)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        mejor = None
+        for f in filas:
+            d = f.get('data', f) if isinstance(f, dict) else f
+            if isinstance(d, dict) and isinstance(d.get('out'), dict):
+                if mejor is None or float(d.get('ts') or 0) > float(mejor.get('ts') or 0):
+                    mejor = d
+        return mejor
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opts: dict[str, Any] | None = None) -> tuple[str, list[dict[str, Any]]]:
     nodos = {n["id"]: n for n in ficha.get("nodos", [])}
     orden = [n["id"] for n in ficha.get("nodos", [])]
@@ -1051,6 +1078,11 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     opts = {} if opts is None else opts
     _t0 = time.time()
     out: dict[str, str] = dict(opts.get('previo') or {})  # nodos que ya pasaron: no se repiten
+    if pid and 'previo' not in opts:  # reanudacion: el checkpoint persistido cuenta como previo
+        _ck0 = _ck_cargar(pid)
+        if isinstance(_ck0, dict) and isinstance(_ck0.get('out'), dict):
+            for k_, v_ in _ck0['out'].items():
+                out.setdefault(k_, v_)
     opts['out'] = out
     opts['pid'] = pid
     opts['es_cambio'] = _es_cambio(mensaje, opts)
@@ -1152,6 +1184,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                         listas = len(futs) - len(pend_f)
                         if f in hechos:
                             out[i] = f.result()
+                            _ck_guardar(pid, fid, out)
                         elif ahora > lim:
                             opts.setdefault('abandonados', set()).add(i)
                             out[i] = 'GAP %s: TIMEOUT_NODO: el nodo no respondio en %d s; se sigue sin su resultado' % (i, lim)

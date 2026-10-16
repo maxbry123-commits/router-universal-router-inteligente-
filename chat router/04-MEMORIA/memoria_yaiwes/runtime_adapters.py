@@ -387,6 +387,34 @@ class GraphifyCodeAdapter(_Base):
                         "text": str(n.get("label") or nid), "edges": edges})
         return out
 
+    def analisis(self, query: str, scope: str = "", k: int = 10, task_type: str = "reason",
+                 caller_id: str = "graphify", plugin_id: str = "graphify", workflow_id: str | None = None,
+                 project_id: str | None = None, task_id: str | None = None, session_id: str | None = None) -> dict[str, Any]:
+        """Servicio OPCIONAL de analisis: el grafo determinista NO cambia.
+        Graphify -> Harness -> HTTP -> Ficha 4 -> modelo -> Graphify.
+        La LLM solo recibe resultados del grafo para interpretar (dependencias, impacto, archivos).
+        Graphify nunca lleva API key ni llama directo a un proveedor."""
+        filas = self.search(scope, query, k)
+        if not filas:
+            return {"status": "GAP_GRAPH", "reason": "sin resultados para analizar"}
+        cuerpo = json.dumps(filas, ensure_ascii=False)[:9000]
+        mensaje = (
+            "Resultados del grafo de codigo (nodos con 'edges' = dependencias). "
+            "Interpreta dependencias, impacto y que parte del codigo pertenece a la consulta.\n"
+            "CONSULTA: " + str(query)[:500] + "\nGRAFO: " + cuerpo
+        )
+        try:
+            from plugins.puente_chat.plugin import llm_call  # misma puerta LLM que Graphiti
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "GAP_IMPORT", "missing": getattr(exc, "name", None)}
+        r = llm_call({"caller_id": caller_id, "plugin_id": plugin_id, "workflow_id": workflow_id,
+                      "project_id": project_id, "task_id": task_id, "session_id": session_id,
+                      "task_type": task_type, "messages": [{"role": "user", "content": mensaje}], "max_tokens": 1400})
+        if r.get("error"):
+            return {"status": "GAP_FICHA4", "detalle": r}
+        return {"status": "ok", "modelo": r.get("modelo"), "ficha": r.get("ficha"), "reply": r.get("reply"),
+                "nodos": len(filas)}
+
 
 class MemantoAdapter(_Base):
     """Memanto via REST v2 (RIU_MEMANTO_URL). Agente estable yaiwes-router; token solo en RAM."""

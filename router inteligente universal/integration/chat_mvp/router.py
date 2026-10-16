@@ -75,12 +75,12 @@ def sync_to_bucket(store: Store, bucket_id: str, token: str, *, fs_factory: Call
     fs = fs_factory(token=token)
     base = f"buckets/{bucket_id}/riu-chat"
     files = 0
+    for doc in store.documents():  # documentos pendientes primero; la base sube al final como commit del snapshot
+        fs.pipe_file(f"{base}/docs/{doc['id']}", (store.dir / "docs" / doc["id"]).read_bytes())
+        files += 1
     with tempfile.TemporaryDirectory() as tmp:
         snap = store.snapshot(Path(tmp) / "riu_chat.sqlite3")
         fs.pipe_file(f"{base}/riu_chat.sqlite3", snap.read_bytes())
-        files += 1
-    for doc in store.documents():
-        fs.pipe_file(f"{base}/docs/{doc['id']}", (store.dir / "docs" / doc["id"]).read_bytes())
         files += 1
     return {"bucket": bucket_id, "files": files}
 

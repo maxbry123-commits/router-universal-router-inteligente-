@@ -15,6 +15,8 @@ from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
 _SOLO_LECTURA = ContextVar("riu_solo_lectura", default=False)
 _TOOLS_HAB = ContextVar("riu_tools_habilitadas", default=True)
+_MOTOR_HAB = ContextVar("riu_motor_habilitado", default=False)  # ⚙ Motor ON: el modelo ve tools del motor existente
+_MOTOR_SES = ContextVar("riu_motor_sesion", default="general")
 _CAP_TOOLS = ContextVar("riu_cap_tools", default="write")  # read: el catalogo de escritura ni se muestra; write: catalogo completo (default = igual que antes)
 _MET = ContextVar("riu_met", default=None)  # tiempos reales del turno: cola/modelo/tools/memoria
 
@@ -661,6 +663,8 @@ def _bucle(llamar, mensajes):
     if h is not None:  # puerta de capacidades: CAP_READ no muestra tools de escritura; CAP_NONE ni siquiera llega aqui (con_tools=False)
         from plugins.puente_chat.capacidad import catalogo_para as _catalogo_para
         tools_vis = _catalogo_para(_CAP_TOOLS.get(), h.TOOLS)
+        if _MOTOR_HAB.get() and tools_vis is not None:
+            tools_vis = list(tools_vis) + _MOTOR_TOOLS  # ⚙ Motor ON: descargar/extraer/copiar/mover del motor existente
     else:
         tools_vis = None
     usadas = []
@@ -767,7 +771,7 @@ def _bucle(llamar, mensajes):
                     except Exception:  # noqa: BLE001
                         pass
                 _tt0 = time.time()
-                res = _bloqueo(nom, args) or h.ejecutar(nom, args)
+                res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
                 _met_add('tools_ms', int((time.time() - _tt0) * 1000))
                 if pf:
                     try:
@@ -920,6 +924,51 @@ def _embed_rank(query, items):
         return 0
 
 
+def _mf(nombre, desc, props, req):
+    return {'type': 'function', 'function': {'name': nombre, 'description': desc,
+            'parameters': {'type': 'object', 'properties': props, 'required': req}}}
+
+
+_MOTOR_TOOLS = [
+    _mf('motor_descargar', 'Motor: descarga una URL (GitHub/Hugging Face/archivo) al destino indicado y verifica el origen antes y el destino despues.',
+        {'origen': {'type': 'string'}, 'destino': {'type': 'string'}}, ['origen']),
+    _mf('motor_extraer', 'Motor: extrae/audita el contenido de un archivo ya anclado (x-ray) y devuelve su estructura.',
+        {'archivo': {'type': 'string'}}, []),
+    _mf('motor_copiar', 'Motor: copia una raiz o archivo entre repos GitHub del owner; verifica origen y escribe destino con receipt.',
+        {'origen': {'type': 'string'}, 'destino': {'type': 'string'}}, ['origen', 'destino']),
+    _mf('motor_mover', 'Motor: mueve una raiz o archivo entre repos GitHub del owner; verifica origen y escribe destino con receipt.',
+        {'origen': {'type': 'string'}, 'destino': {'type': 'string'}}, ['origen', 'destino']),
+    _mf('motor_verificar', 'Motor: verifica el estado de una operacion previa del motor por su id (origen/destino, receipt).',
+        {'id': {'type': 'string'}}, []),
+]
+
+
+def _motor_ejecutar(nom, args):
+    # dispatch de las tools del motor existente; devuelve None si no es una tool de motor
+    if not _MOTOR_HAB.get() or not isinstance(nom, str) or not nom.startswith('motor_'):
+        return None
+    ses = _MOTOR_SES.get() or 'general'
+    a = args if isinstance(args, dict) else {}
+    try:
+        if nom == 'motor_descargar':
+            texto, usadas = _motor_descarga(str(a.get('origen') or '') + ' -> ' + str(a.get('destino') or ''))
+            return json.dumps({'estado': 'ok', 'resultado': texto, 'motor': usadas}, ensure_ascii=False)
+        if nom == 'motor_extraer':
+            r = _xray(ses, str(a.get('archivo') or ''))
+            if not r.get('ok'):
+                return 'MOTOR_ERROR: ' + str(r.get('error') or r.get('detalle') or 'xray fallo')
+            return _xray_texto_out(r)[:4000]
+        if nom in ('motor_copiar', 'motor_mover'):
+            r = _mover_raiz({'sesion': ses, 'op': 'copiar' if nom == 'motor_copiar' else 'mover',
+                             'origen': a.get('origen'), 'destino': a.get('destino'), 'archivo': a.get('archivo')})
+            return json.dumps(r, ensure_ascii=False)[:3000]
+        if nom == 'motor_verificar':
+            return json.dumps(_descargas({'sesion': ses, 'op': 'ver' if a.get('id') else 'lista', 'id': a.get('id')}), ensure_ascii=False)[:3000]
+        return 'MOTOR_ERROR: tool desconocida'
+    except Exception as exc:  # noqa: BLE001
+        return 'MOTOR_ERROR: ' + type(exc).__name__ + ' ' + str(exc)[:200]
+
+
 def _motor_descarga(pregunta):
     usadas = ['embed:nemotron-3-embed-1b']
     nombres = list(_MOTORES_DESC)
@@ -977,6 +1026,52 @@ def _archivo_memoria(sesion, nombre):
     except Exception:  # noqa: BLE001
         pass
     return ''
+
+
+def _archivo_scope(scope, nombre):
+    # igual que _archivo_memoria pero sobre cualquier scope (proyecto, constitucion); nombre exacto
+    try:
+        mem, scope_for = _memoria()
+        res = mem.search(scope_for(DUENO, scope), 'archivo:' + str(nombre)[:120], 40)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        mejor = None
+        for f in filas:
+            d = f.get('data', f) if isinstance(f, dict) else f
+            if isinstance(d, dict) and d.get('nombre') == nombre and d.get('datos_b64'):
+                if mejor is None or float(d.get('ts') or 0) >= float(mejor.get('ts') or 0):
+                    mejor = d
+        if mejor:
+            return _b64.b64decode(mejor['datos_b64']).decode('utf-8', 'replace')
+    except Exception:  # noqa: BLE001
+        pass
+    return ''
+
+
+def _proyecto_anclados(pid):
+    # archivos del proyecto como anclados proyecto:<pid>:<nombre> (referencia compartida, no copia)
+    mem, scope_for = _memoria()
+    res = mem.search(scope_for(DUENO, 'project:' + str(pid)[:48]), 'archivo:', 40)
+    filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+    nom = []
+    for f in filas:
+        d = f.get('data', f) if isinstance(f, dict) else f
+        if isinstance(d, dict) and d.get('nombre'):
+            nom.append(str(d['nombre']))
+    return ['proyecto:' + str(pid)[:48] + ':' + n for n in sorted(set(nom))[:12]]
+
+
+def _proyecto_meta(pid):
+    try:
+        mem, scope_for = _memoria()
+        res = mem.search(scope_for(DUENO, 'project:' + str(pid)[:48]), 'proyecto', 5)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        for f in filas:
+            d = f.get('data', f) if isinstance(f, dict) else f
+            if isinstance(d, dict) and (d.get('nombre') or d.get('notas')):
+                return d
+    except Exception:  # noqa: BLE001
+        pass
+    return {}
 
 
 def _xray(sesion, nombre, texto=''):
@@ -1406,6 +1501,9 @@ def _gov_ancla_leer(sesion, nombre):
                 return f.read_text(encoding='utf-8'), 'constitucion-harness:' + f.name
         except OSError:
             continue
+    t = _archivo_scope('constitucion', nombre)  # archivos subidos a Constitución: mismo scope fijo, no dependen del chat
+    if t:
+        return t, 'memoria-harness:constitucion'
     t = _archivo_memoria(sesion, nombre)
     if t:
         return t, 'memoria-harness:chat:' + str(sesion)[:60]
@@ -1804,6 +1902,18 @@ def _resolver_fuentes(sesion, anclados, pregunta=''):
                     falla('enlace', nom, 'GAP FUENTE_ANCLADA_NO_LEIBLE: ' + u, pr)
                 else:
                     poner('enlace', nom, t, pr)
+            elif nom.startswith('proyecto:'):
+                # proyecto:<project_id>:<nombre> -> archivo guardado en scope project:<pid> (referencia compartida)
+                cuerpo_p = nom[9:]
+                try:
+                    prj_p, nomarc_p = cuerpo_p.split(':', 1)
+                except ValueError:
+                    prj_p, nomarc_p = '', ''
+                t = _archivo_scope('project:' + prj_p[:48], nomarc_p[:120]) if prj_p and nomarc_p else ''
+                if t:
+                    poner('archivo', 'proyecto:' + prj_p + '/' + nomarc_p, t, 'memoria-harness:project:' + prj_p[:48])
+                else:
+                    falla('archivo', nom, 'GAP FUENTE_ANCLADA_NO_LEIBLE: ' + nom, 'memoria-harness:project:' + prj_p[:48])
             else:
                 nombre = nom[8:] if nom.startswith('archivo:') else nom
                 t = _archivo_memoria(sesion, nombre)
@@ -1865,6 +1975,8 @@ def _chat(p):
     _t_sub = float(p.get('_t_submit') or 0)
     _MET.set({'queue_ms': int((time.time() - _t_sub) * 1000) if _t_sub else 0, 't_inicio': time.time()})
     _TOOLS_HAB.set(p.get('tools_habilitadas') is not False)  # ausente -> True: fichas/DAG/consil igual que antes
+    _MOTOR_HAB.set(bool(p.get('motor')))  # ⚙ Motor: solo cuando el toggle del chat esta ON
+    _MOTOR_SES.set(sesion)
     _REQ_TOOLS.set(bool(p.get('requiere_tools')))
     _PERFIL.set(str(p.get('perfil') or ''))  # vacio = chat normal (contexto largo); un nodo de ficha pide su perfil
     _CANCEL_FN.set(p.get('cancelar_si') if callable(p.get('cancelar_si')) else None)
@@ -1883,12 +1995,26 @@ def _chat(p):
     _DEADLINE.set(time.monotonic() + presupuesto)
     _cablear_graphiti('', '', {'project_id': sesion, 'task_id': str(p.get('task_id') or p.get('tarea') or sesion),  # ANTES de gobernanza/anclas: el callback LLM de Graphiti ya apunta a Harness->Ficha 4
                                'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or '')})
+    if p.get('project_id'):  # chat dentro de un proyecto: sus archivos entran como anclados proyecto:<pid>:<nombre>
+        try:
+            extras = [a for a in _proyecto_anclados(p['project_id']) if a not in (p.get('anclados') or [])]
+            if extras:
+                p['anclados'] = list(p.get('anclados') or []) + extras
+        except Exception:  # noqa: BLE001
+            pass
     gov_info, gov_err = _gov_pre_chat(p, sesion, pregunta, p.get('anclados') or [])  # gobernada: Sheriff + anclas ANTES del modelo (fail-closed)
     if gov_err:
         return gov_err
     gov_bloque = gov_info.pop('_bloque', '') if gov_info else ''
     _tmm = time.time()
     ctx = '' if p.get('contexto_explicito') else (_contexto(sesion, pregunta) if pregunta else '')  # Team 5: el historial ya va en messages''
+    if p.get('project_id'):  # cabecera del proyecto (nombre/notas) delante del historial reciente
+        try:
+            meta_p = _proyecto_meta(p['project_id'])
+            if meta_p:
+                ctx = ('[PROYECTO %s] %s' % (str(meta_p.get('nombre') or p['project_id']), str(meta_p.get('notas') or '')[:600])).strip() + '\n' + ctx
+        except Exception:  # noqa: BLE001
+            pass
     _met('memory_ms', int((time.time() - _tmm) * 1000))
     sistema = _herr().SISTEMA + ' Modelo seleccionado: ' + (FICHAS[model][2] if model in FICHAS else RESPALDO[model][0])
     if gov_bloque:  # Constitucion validada: primero, antes de memoria y anclas
@@ -2122,14 +2248,23 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             if len(datos) > 4_000_000:
                 return {'error': 'ARCHIVO_MUY_GRANDE'}
             mem, scope_for = _memoria()
-            mem.save(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]),
-                     'archivo:' + nombre, {'nombre': nombre, 'tipo': str(payload.get('tipo') or '')[:80], 'datos_b64': datos})
+            dest = str(payload.get('destino') or 'chat')
+            if dest == 'constitucion':
+                scope = scope_for(DUENO, 'constitucion')
+            elif dest == 'proyecto':
+                prj = ''.join(c for c in str(payload.get('project_id') or '') if c.isalnum() or c in '-_')[:48]
+                if not prj:
+                    return {'error': 'PROJECT_ID_VACIO'}
+                scope = scope_for(DUENO, 'project:' + prj)
+            else:
+                scope = scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60])
+            mem.save(scope, 'archivo:' + nombre, {'nombre': nombre, 'tipo': str(payload.get('tipo') or '')[:80], 'datos_b64': datos})
             try:  # volver a subir el mismo nombre lo deshace de "borrado"
-                mem.save(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]), 'borrado:' + nombre,
+                mem.save(scope, 'borrado:' + nombre,
                          {'nombre': nombre, 'borrado': False, 'ts': __import__('time').time()})
             except Exception:  # noqa: BLE001
                 pass
-            return {'ok': True, 'nombre': nombre}
+            return {'ok': True, 'nombre': nombre, 'destino': dest}
         except Exception as x:  # noqa: BLE001
             return {'error': 'SUBIR_FALLO', 'detalle': str(x)[:200]}
     if action == "archivo_borrar":  # ventana de anclaje / panel Archivos: borra UN archivo de la memoria del chat (marca de borrado; con restaurar=true lo devuelve)
@@ -2146,12 +2281,19 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
     if action == "archivos":  # ventana del chat: lista lo subido para seleccionar y anclar
         try:
             mem, scope_for = _memoria()
-            res = mem.search(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]), 'archivo:', 50)
+            dest_a = str(payload.get('destino') or 'chat')
+            if dest_a == 'constitucion':
+                scope_a = scope_for(DUENO, 'constitucion')
+            elif dest_a == 'proyecto':
+                scope_a = scope_for(DUENO, 'project:' + ''.join(c for c in str(payload.get('project_id') or '') if c.isalnum() or c in '-_')[:48])
+            else:
+                scope_a = scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60])
+            res = mem.search(scope_a, 'archivo:', 50)
             filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
             nombres = sorted({str((f.get('data', f) if isinstance(f, dict) else f).get('nombre')) for f in filas
                               if isinstance((f.get('data', f) if isinstance(f, dict) else f), dict) and (f.get('data', f) if isinstance(f, dict) else f).get('nombre')})
             try:  # lo borrado con archivo_borrar no se lista (lo mas reciente por nombre manda)
-                rb = mem.search(scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60]), 'borrado:', 200)
+                rb = mem.search(scope_a, 'borrado:', 200)
                 fb = rb if isinstance(rb, list) else next((v for v in (rb or {}).values() if isinstance(v, list)), [])
                 ult = {}
                 for f in fb:
@@ -2205,6 +2347,59 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return _descargas(payload)
         except Exception as x:  # noqa: BLE001
             return {'error': 'DESCARGAS_FALLO', 'detalle': str(x)[:200]}
+    if action == 'proyecto':  # UN sistema de proyectos sobre memoria_yaiwes: scope project:<project_id>
+        try:
+            mem, scope_for = _memoria()
+            op = str(payload.get('op') or 'list')
+            pid = ''.join(c for c in str(payload.get('project_id') or '') if c.isalnum() or c in '-_')[:48]
+            idx_scope = scope_for(DUENO, 'proyectos')
+            def _buscar(scope, q, k=200):
+                res = mem.search(scope, q, k)
+                filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+                out = {}
+                for f in filas:
+                    d = f.get('data', f) if isinstance(f, dict) else f
+                    if isinstance(d, dict) and float(d.get('ts') or 0) >= float(out.get(d.get('_k') or d.get('project_id') or str(d), {}).get('ts') or -1):
+                        k2 = str(d.get('_k') or d.get('project_id') or '')
+                        if k2 and float(d.get('ts') or 0) >= float((out.get(k2) or {}).get('ts') or -1):
+                            out[k2] = d
+                return out
+            if op == 'list':
+                return {'ok': True, 'proyectos': [v for v in _buscar(idx_scope, 'proyecto:').values() if not v.get('eliminado')]}
+            if not pid:
+                return {'error': 'PROJECT_ID_VACIO'}
+            scope = scope_for(DUENO, 'project:' + pid)
+            if op == 'get':
+                items = _buscar(scope, '', 400)
+                meta = items.get('meta') or {}
+                chats = sorted({k.split(':', 1)[-1] for k in items if k.startswith('chat:')})
+                archivos = sorted({k.split(':', 1)[-1] for k in items if k.startswith('archivo:')})
+                return {'ok': True, 'project_id': pid, 'proyecto': meta, 'chats': chats, 'archivos': archivos}
+            if op == 'upsert':
+                ahora = time.time()
+                d = {'project_id': pid, '_k': 'proyecto:' + pid, 'nombre': str(payload.get('nombre') or pid)[:80],
+                     'notas': str(payload.get('notas') or '')[:4000], 'estado': 'activo', 'updated_at': ahora, 'ts': ahora}
+                prev = _buscar(idx_scope, 'proyecto:' + pid)
+                d['created_at'] = (next(iter(prev.values()), {}) or {}).get('created_at') or ahora
+                mem.save(idx_scope, 'proyecto:' + pid, d)
+                mem.save(scope, 'meta', dict(d))
+                return {'ok': True, 'project_id': pid}
+            if op == 'link_chat':
+                ses = str(payload.get('sesion') or '')[:60]
+                if not ses:
+                    return {'error': 'SESION_VACIA'}
+                mem.save(scope, 'chat:' + ses, {'sesion': ses, '_k': 'chat:' + ses, 'ts': time.time()})
+                return {'ok': True, 'project_id': pid, 'sesion': ses}
+            if op == 'unlink_chat':
+                ses = str(payload.get('sesion') or '')[:60]
+                mem.save(scope, 'chat:' + ses, {'sesion': ses, '_k': 'chat:' + ses, 'borrado': True, 'ts': time.time()})
+                return {'ok': True, 'project_id': pid, 'sesion': ses}
+            if op == 'delete':
+                mem.save(idx_scope, 'proyecto:' + pid, {'project_id': pid, '_k': 'proyecto:' + pid, 'eliminado': True, 'ts': time.time()})
+                return {'ok': True, 'project_id': pid}
+            return {'error': 'OP_DESCONOCIDA', 'ops': ['list', 'get', 'upsert', 'link_chat', 'unlink_chat', 'delete']}
+        except Exception as x:  # noqa: BLE001
+            return {'error': 'PROYECTO_FALLO', 'detalle': str(x)[:200]}
     return {"error": "ACCION_DESCONOCIDA"}
 
 # Long model calls are polled through HTTP, so browser requests do not expire at the HF ingress.
@@ -2214,6 +2409,37 @@ import secrets as _secrets
 _ASYNC_POOL = _cf.ThreadPoolExecutor(max_workers=16, thread_name_prefix='riu-chat')
 _ASYNC_LOCK = _threading.Lock()
 _ASYNC_REQUESTS = {}
+
+def _task_ck_guardar(key, data):
+    try:
+        mem, scope_for = _memoria()
+        mem.save(scope_for(DUENO, 'task:' + key), 'ck', dict(data, ts=time.time()))
+    except Exception:  # noqa: BLE001
+        pass
+
+def _task_ck_cargar(key):
+    try:
+        mem, scope_for = _memoria()
+        res = mem.search(scope_for(DUENO, 'task:' + key), 'ck', 40)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        mejor = None
+        for f in filas:
+            d = f.get('data', f) if isinstance(f, dict) else f
+            if isinstance(d, dict) and d.get('estado') in ('RUNNING', 'DONE'):
+                if mejor is None or float(d.get('ts') or 0) > float(mejor.get('ts') or 0):
+                    mejor = d
+        return mejor
+    except Exception:  # noqa: BLE001
+        return None
+
+def _task_run(key, payload):
+    try:
+        r = _chat(dict(payload))
+    except Exception as exc:  # noqa: BLE001
+        r = {'error': 'CHAT_FAILED', 'detalle': type(exc).__name__}
+    _task_ck_guardar(key, {'estado': 'DONE', 'resultado': r})
+    return r
+
 _original_handle = handle
 def handle(action, payload):
     if action == 'chat_async':
@@ -2224,13 +2450,25 @@ def handle(action, payload):
             if sum(not f.done() for f,_ in _ASYNC_REQUESTS.values())>=16:
                 return {'error':'CHAT_OCUPADO_REINTENTA'}
             key=_secrets.token_urlsafe(24)
-            future=_ASYNC_POOL.submit(_chat,dict(payload))
+            p2 = dict(payload); p2['_pid'] = key; p2.setdefault('task_id', key)
+            _task_ck_guardar(key, {'estado': 'RUNNING', 'payload': p2})
+            future=_ASYNC_POOL.submit(_task_run, key, p2)
             _ASYNC_REQUESTS[key]=(future,now)
         return {'estado':'procesando','proceso_id':key}
     if action == 'resultado':
         key=str(payload.get('proceso_id') or '')
         with _ASYNC_LOCK: item=_ASYNC_REQUESTS.get(key)
-        if not item: return {'error':'PROCESO_NO_EXISTE'}
+        if not item:
+            ck = _task_ck_cargar(key)  # reinicio del Router: la RAM se fue; el checkpoint en memoria manda
+            if ck and ck.get('estado') == 'DONE':
+                return ck.get('resultado') if isinstance(ck.get('resultado'), dict) else {'estado': 'completado', 'resultado': ck.get('resultado')}
+            if ck and ck.get('estado') == 'RUNNING' and isinstance(ck.get('payload'), dict):
+                pl = dict(ck['payload']); pl['_pid'] = key
+                future = _ASYNC_POOL.submit(_task_run, key, pl)
+                with _ASYNC_LOCK:
+                    _ASYNC_REQUESTS[key] = (future, time.time())
+                return {'estado': 'procesando', 'proceso_id': key, 'reanudado': True}
+            return {'error':'PROCESO_NO_EXISTE'}
         future,_=item
         if not future.done():return {'estado':'procesando','proceso_id':key}
         try:return future.result()

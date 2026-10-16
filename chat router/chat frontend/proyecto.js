@@ -4,6 +4,8 @@ import { leer, escribir, KEYS, uid } from "./almacen.js";
 import { dameWF } from "./contexto.js";
 import { el, boton, etiqueta } from "./ventanas-comun.js";
 const CLAVE_PROY = "riu_proy_v1";
+const slugP = (n) => (String(n || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 48) || "proyecto");
+const remoto = (op, x) => { try { if (window.RIU_ACCION) return window.RIU_ACCION("proyecto", { op, ...x }); } catch (e) {} return Promise.resolve(null); };  // memoria_yaiwes = verdad; riu_proy_v1 = cache de UI
 const etiquetaSesion = (s) => {
   if (s === "manual") return "creado aquí"; if (s === "global") return "carpeta de proyecto"; if (s === "constitucion") return "Constitución"; if (s === "agentes") return "Agentes remotos"; if (s === "sandbox") return "Sandbox";
   if (s.startsWith("wf:")) { const w = dameWF().find((x) => x.id === s.slice(3)); return "Workflow " + (w ? w.nombre : s.slice(3)); }
@@ -16,13 +18,23 @@ export function montarProyecto(root, { tell }) {
   const mostrar = (t) => { pa.hidden = t !== "archivos"; pp.hidden = t !== "proyecto"; tabs.forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); }); if (t === "proyecto") pintar(); };
   tabs.forEach((b) => b.addEventListener("click", () => mostrar(b.dataset.tab)));
   const todos = () => { const t = leer(CLAVE_PROY, {}), out = []; Object.keys(t).forEach((ses) => (Array.isArray(t[ses]) ? t[ses] : []).forEach((p, i) => out.push({ ses, i, p }))); return out; };
+  remoto("list").then((r) => {  // fuente de verdad: proyectos del backend (scope project:<id>); el cache local se fusiona
+    try {
+      if (!r || !Array.isArray(r.proyectos)) return;
+      const t = leer(CLAVE_PROY, {}); t.global = Array.isArray(t.global) ? t.global : []; let nuevos = 0;
+      r.proyectos.forEach((p) => { const n = String(p.nombre || p.project_id || ""); if (n && !t.global.some((x) => x.nombre.toLowerCase() === n.toLowerCase())) { t.global.push({ nombre: n, items: [], on: false, notas: p.notas || "" }); nuevos++; } });
+      if (nuevos) { escribir(CLAVE_PROY, t); pintar(); }
+    } catch (e) {}
+  }).catch(() => {});
   function pintar() {
     lista.replaceChildren();
     const nom = el("input", "vn-in"), ta = el("textarea", "vn-ta"); nom.placeholder = "Nombre del proyecto nuevo"; nom.maxLength = 60; nom.setAttribute("aria-label", "Nombre del proyecto"); ta.placeholder = "Enlaces o texto, uno por línea…"; ta.setAttribute("aria-label", "Contenido del proyecto");
     const crear = boton("Crear proyecto", "mini", () => {
       const n = nom.value.trim(), items = ta.value.split(/\n/).map((l) => l.trim()).filter(Boolean).map((l) => (/^https?:\/\//i.test(l) ? "enlace:" + l.split(/\s+/)[0] : "texto:" + l.slice(0, 2000)));
       if (!n || !items.length) { tell("Pon un nombre y al menos un enlace o texto"); return; }
-      const t = leer(CLAVE_PROY, {}); t.manual = Array.isArray(t.manual) ? t.manual : []; t.manual.push({ nombre: n, items: unico(items) }); escribir(CLAVE_PROY, t); tell("Proyecto creado: " + n); pintar();
+      const t = leer(CLAVE_PROY, {}); t.manual = Array.isArray(t.manual) ? t.manual : []; t.manual.push({ nombre: n, items: unico(items) }); escribir(CLAVE_PROY, t);
+      remoto("upsert", { project_id: slugP(n), nombre: n }).then(() => remoto("list")).catch(() => {});
+      tell("Proyecto creado: " + n); pintar();
     });
     const nuevo = el("div", "vn-sec"); nuevo.append(el("div", "vn-t", "Proyecto nuevo"), nom, ta, crear); lista.append(nuevo);
     const ps = todos();

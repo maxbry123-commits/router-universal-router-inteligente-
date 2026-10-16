@@ -1,7 +1,7 @@
 // anclaje-destinos.js — en la ventana de Anclaje: "Anclar a" Chat / Constitución / Workflows / Agentes remotos / Proyecto / Sandbox.
 // Es LA MISMA ventana para todos: al elegir el objetivo, todo lo de la ventana (enlaces, anclado ahora, instrucciones fijas, proyectos,
 // handoffs, Mi handoff y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
-import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto } from "./objetivos-ancla.js";
+import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy } from "./objetivos-ancla.js";
 import { el, boton, cargarCss } from "./ventanas-comun.js";
 export function montarDestinos({ root, q, tell }) {
   const caja = q("#ventana-ancla .va-caja"); if (!caja || caja.dataset.destinos) return; caja.dataset.destinos = "1";
@@ -13,6 +13,12 @@ export function montarDestinos({ root, q, tell }) {
     const nuevo = t === "chat" ? null : crearObjetivo(t, id);
     if (t !== "chat" && !nuevo) return false;
     tipo = t; obj = nuevo; window.RIU_OBJETIVO_ANCLA = obj ? () => obj : undefined;
+    if (t === "proyecto" && obj) {  // "Añadir chat actual": el chat queda vinculado al proyecto (mismo scope en backend)
+      try {
+        const c = window.RIU_CHAT && window.RIU_CHAT.chat();
+        if (c) { c.project_id = slugProy(obj.id); if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "link_chat", project_id: c.project_id, sesion: c.sesion }).catch(() => {}); tell("Chat añadido al proyecto «" + obj.id + "»"); }
+      } catch (e) {}
+    }
     if (titulo) titulo.textContent = base + (obj ? " · " + obj.nombre : "");
     window.dispatchEvent(new CustomEvent("riu:objetivo"));
     if (refrescar !== false && window.RIU_ANCLA_REFRESCAR) window.RIU_ANCLA_REFRESCAR();

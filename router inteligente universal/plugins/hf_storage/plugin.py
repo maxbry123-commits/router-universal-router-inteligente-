@@ -1,55 +1,38 @@
-"""hf_storage: puente list/read/write al almacenamiento permanente de HF (repo dataset).
+"""hf_storage: puente list/read/write/backup_sqlite al almacenamiento permanente REAL de HF.
+
+El Storage Bucket vigente es el mismo que usa storage_lifecycle/sync_to_bucket:
+COMAND-CENTER-1/yaiwes-memoria-storage (prefijo riu-chat/), accedido via HfFileSystem
+con rutas "buckets/<id>/riu-chat/..." — mismo backend, sin crear otro.
 
 No guarda nada en el Router. Token solo por variable de entorno HF_TOKEN.
-GPT no dejo codigo de puente (T-08 sigue PENDIENTE, solo documento), por eso es nuevo.
 """
 from __future__ import annotations
 
 import base64
-import json
 import os
 import re
-import urllib.error
-import urllib.parse
-import urllib.request
 from typing import Any
 
-HF = "https://huggingface.co"
-DEFAULT_REPO = "COMAND-CENTER-1/yaiwes-hf-memoria"
+DEFAULT_BUCKET = "COMAND-CENTER-1/yaiwes-memoria-storage"
+PREFIX = "riu-chat"  # mismo prefijo que usa storage_lifecycle
 MAX_READ = 2_000_000
 ACTIONS = ("status", "list", "read", "write", "backup_sqlite")
-_REPO_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$")
+_BUCKET_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
-def _http(method, url, headers=None, data=None, timeout=30):
-    """HTTP minimo (stdlib). Devuelve (status, bytes). Los tests lo reemplazan por un mock."""
-    req = urllib.request.Request(url, data=data, method=method, headers=headers or {})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status, r.read()
-    except urllib.error.HTTPError as e:
-        return e.code, e.read()
-    except Exception as e:  # red caida, DNS, timeout
-        return 0, str(e).encode()
+def _bucket() -> str:
+    b = (os.getenv("HF_BUCKET_ID") or os.getenv("HF_STORAGE_BUCKET") or DEFAULT_BUCKET).strip()
+    if not _BUCKET_RE.match(b):
+        raise ValueError("bucket invalido")
+    return b
 
 
-def _json(body):
-    try:
-        return json.loads(body.decode("utf-8", "replace"))
-    except ValueError:
-        return None
-
-
-def _repo() -> str:
-    repo = os.getenv("HF_STORAGE_REPO", DEFAULT_REPO).strip()
-    if not _REPO_RE.match(repo):
-        raise ValueError("HF_STORAGE_REPO invalido")
-    return repo
-
-
-def _auth() -> dict[str, str]:
+def _fs():
     token = os.getenv("HF_TOKEN", "").strip()
-    return {"Authorization": "Bearer " + token} if token else {}
+    if not token:
+        raise ValueError("HF_TOKEN ausente")
+    from huggingface_hub import HfFileSystem
+    return HfFileSystem(token=token, skip_instance_cache=True)
 
 
 def _path(value: Any, allow_empty: bool = False) -> str:
@@ -59,59 +42,54 @@ def _path(value: Any, allow_empty: bool = False) -> str:
     return p
 
 
-def _commit(repo: str, path: str, data: bytes, summary: str) -> dict[str, Any]:
-    if not _auth():
-        return {"status": "error", "error": "HF_TOKEN ausente"}
-    head = {"key": "header", "value": {"summary": summary[:200]}}
-    fil = {"key": "file", "value": {"content": base64.b64encode(data).decode(), "path": path, "encoding": "base64"}}
-    body = (json.dumps(head) + "\n" + json.dumps(fil) + "\n").encode()
-    url = f"{HF}/api/datasets/{repo}/commit/main"
-    st, raw = _http("POST", url, {**_auth(), "Content-Type": "application/x-ndjson"}, body, 60)
-    if st >= 400 or st == 0:
-        return {"status": "error", "http_status": st, "error": raw[:300].decode("utf-8", "replace")}
-    return {"status": "ok", "repo": repo, "path": path, "bytes": len(data)}
+def _full(p: str) -> str:
+    return f"buckets/{_bucket()}/{PREFIX}/{p}"
 
 
 def handle(action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
     payload = payload or {}
     try:
-        repo = _repo()
+        bucket = _bucket()
         if action == "status":
-            return {"status": "ok", "repo": repo, "repo_type": "dataset", "token_present": bool(_auth()), "actions": list(ACTIONS)}
+            return {"status": "ok", "bucket": bucket, "prefix": PREFIX, "repo_type": "bucket",
+                    "token_present": bool(os.getenv("HF_TOKEN")), "actions": list(ACTIONS)}
+        fs = _fs()
         if action == "list":
             p = _path(payload.get("path"), True)
-            url = f"{HF}/api/datasets/{repo}/tree/main" + ("/" + urllib.parse.quote(p) if p else "")
-            st, raw = _http("GET", url, _auth())
-            data = _json(raw)
-            if st != 200 or not isinstance(data, list):
-                return {"status": "error", "http_status": st, "error": raw[:300].decode("utf-8", "replace")}
-            return {"status": "ok", "repo": repo, "entries": [{"path": e.get("path"), "type": e.get("type"), "size": e.get("size")} for e in data]}
+            base = _full(p)
+            try:
+                entries = fs.ls(base, detail=True) if p else fs.ls(base, detail=True)
+            except FileNotFoundError:
+                return {"status": "ok", "bucket": bucket, "path": p, "entries": []}
+            out = []
+            for e in entries:
+                name = str(e.get("name") or e.get("path") or "").rsplit("/", 1)[-1]
+                out.append({"path": str(e.get("name") or e.get("path") or "").split(PREFIX + "/", 1)[-1],
+                            "name": name, "type": e.get("type"), "size": e.get("size")})
+            return {"status": "ok", "bucket": bucket, "path": p, "entries": out}
         if action == "read":
             p = _path(payload.get("path"))
-            st, raw = _http("GET", f"{HF}/datasets/{repo}/resolve/main/{urllib.parse.quote(p)}", _auth(), None, 60)
-            if st != 200:
-                return {"status": "error", "http_status": st, "error": raw[:300].decode("utf-8", "replace")}
-            if len(raw) > MAX_READ:
+            data = fs.cat_file(_full(p))
+            if len(data) > MAX_READ:
                 return {"status": "error", "error": "archivo supera %d bytes" % MAX_READ}
             try:
-                return {"status": "ok", "path": p, "encoding": "utf-8", "content": raw.decode("utf-8")}
+                return {"status": "ok", "bucket": bucket, "path": p, "encoding": "utf-8", "content": data.decode("utf-8")}
             except UnicodeDecodeError:
-                return {"status": "ok", "path": p, "encoding": "base64", "content": base64.b64encode(raw).decode()}
+                return {"status": "ok", "bucket": bucket, "path": p, "encoding": "base64", "content": base64.b64encode(data).decode()}
         if action == "write":
             p = _path(payload.get("path"))
-            if "content_b64" in payload:
-                data = base64.b64decode(str(payload["content_b64"]))
-            else:
-                data = str(payload.get("content", "")).encode("utf-8")
-            return _commit(repo, p, data, str(payload.get("summary") or "hf_storage write " + p))
-        if action == "backup_sqlite":  # T-08: copia la base SQLite de memoria al dataset privado
+            data = base64.b64decode(str(payload["content_b64"])) if "content_b64" in payload else str(payload.get("content", "")).encode("utf-8")
+            fs.pipe_file(_full(p), data)
+            return {"status": "ok", "bucket": bucket, "path": p, "bytes": len(data)}
+        if action == "backup_sqlite":  # copia la base SQLite de memoria al mismo bucket permanente
             src = str(payload.get("db_path") or "")
             if not src or not os.path.isfile(src):
                 return {"status": "error", "error": "db_path no existe"}
-            dest = _path(payload.get("dest") or "sqlite/memoria_yaiwes.db")
+            dest = _path(payload.get("dest") or "riu_chat.sqlite3")
             with open(src, "rb") as fh:
                 data = fh.read()
-            return _commit(repo, dest, data, "backup sqlite memoria")
+            fs.pipe_file(_full(dest), data)
+            return {"status": "ok", "bucket": bucket, "path": dest, "bytes": len(data)}
         return {"status": "error", "error": "accion no permitida", "allowed": list(ACTIONS)}
     except Exception as exc:  # el plugin nunca tumba al host
         return {"status": "error", "error": str(exc)[:300]}

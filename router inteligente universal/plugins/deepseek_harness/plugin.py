@@ -26,6 +26,17 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         if not base:
             return _degraded("sin RIU_DEEPSEEK_HARNESS_URL: harness no configurado")
         return {"status": "ok", "configured": True, "url": base.split("?")[0]}
+    if action == "llm":
+        # DeepSeek Harness -> HTTP -> /plugins/fichas_qwen/call/llm -> Ficha 4 -> modelo.
+        # Reutiliza la misma puerta LLM que Graphiti (llm_call); nunca llama directo a un proveedor.
+        try:
+            from plugins.puente_chat.plugin import llm_call
+            p2 = dict(payload)
+            p2.setdefault("caller_id", "deepseek_harness")
+            p2.setdefault("plugin_id", "deepseek_harness")
+            return llm_call(p2)
+        except Exception as exc:  # noqa: BLE001
+            return {"status": "degraded", "reason": "llm_call: " + type(exc).__name__}
     if action != "invoke":
         return _degraded("accion desconocida")
     if not base:

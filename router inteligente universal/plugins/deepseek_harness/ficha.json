@@ -22,7 +22,8 @@
     "idempotente": false,
     "allowed_actions": [
       "status",
-      "invoke"
+      "invoke",
+      "llm"
     ]
   },
   "seguridad": {

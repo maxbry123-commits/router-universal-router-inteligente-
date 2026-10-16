@@ -8,7 +8,7 @@ import { conectarRiu2 } from "./chat-riu2.js";
 import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
-const MAX_CHAT = 5;
+const MAX_CHAT = 10;
 const CLAVE_CHATS = "riu_chats_v1";  // sesiones/anclas/ficha de cada pestaña: sobreviven a recargas en esta pestaña
 const etiquetaCorta = (a) => a.startsWith("handoff:") ? a.slice(8) : a.startsWith("enlace:") ? a.slice(7, 40) : a.startsWith("raiz:") ? "raíz " + a.slice(5, 40) : a;
 
@@ -40,7 +40,7 @@ export async function mount(root, { api, tell }) {
   const guardar = () => {
     try {
       localStorage.setItem("riu_chat_activo", String(activo)); localStorage.setItem(CLAVE_CHATS, JSON.stringify(
-        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], instrucciones: c.instrucciones || "", selectorQwen: c.selectorQwen || null, fastReply: !!c.fastReply }))));
+        chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], instrucciones: c.instrucciones || "", selectorQwen: c.selectorQwen || null, fastReply: !!c.fastReply, motor: !!c.motor, project_id: c.project_id || null }))));
     } catch (e) {}
   };
   const pintarAnclados = () => {
@@ -94,6 +94,8 @@ export async function mount(root, { api, tell }) {
       anclados: new Set(restaurado?.anclados || []),
       selectorQwen: restaurado?.selectorQwen || null,
       fastReply: !!(restaurado && restaurado.fastReply),
+      motor: !!(restaurado && restaurado.motor),
+      project_id: (restaurado && restaurado.project_id) || null,
       instrucciones: restaurado?.instrucciones || "",
       ocupado: false,
     });
@@ -312,7 +314,8 @@ export async function mount(root, { api, tell }) {
     if (buf.byteLength > 2_000_000) { tell("Archivo muy grande (máx ~2 MB)"); return; }
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-    const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion });
+    const _dest = () => { const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null; if (o && o.tipo === "constitucion") return { destino: "constitucion" }; if (o && o.tipo === "proyecto") return { destino: "proyecto", project_id: chat().project_id || "" }; return {}; };  // destino=chat por defecto: igual que siempre
+    const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion, ..._dest() });
     if (anclarAlSubir) { chatA().anclados.add(r.nombre || file.name); pintarAnclados(); guardar(); tell("Subido y anclado: " + (r.nombre || file.name)); }
     else tell("Subido (sin anclar): " + (r.nombre || file.name));
   };
@@ -494,6 +497,10 @@ export async function mount(root, { api, tell }) {
   // ---- enviar: cada chat corre su tarea en paralelo con su sesion, su ficha y sus anclas ----
   if (window.__riuFastH) window.removeEventListener("riu:fast-reply-toggle", window.__riuFastH);
   window.__riuFastH = (ev) => { chat().fastReply = (ev && ev.detail && ev.detail.forzar) ? true : !chat().fastReply; pintarFastReply(); guardar(); tell(chat().fastReply ? "Respuesta rápida activada" : "Respuesta rápida desactivada"); };
+  const pintarMotor = () => { const b = q("#btn-motor-on"); if (b) { b.classList.toggle("sel-on", !!chat().motor); b.setAttribute("aria-pressed", String(!!chat().motor)); } };
+  const bmo = q("#btn-motor-on"); if (bmo) bmo.addEventListener("click", () => { chat().motor = !chat().motor; pintarMotor(); guardar(); tell(chat().motor ? "⚙ Motor ON: el modelo puede descargar, extraer, copiar y mover" : "⚙ Motor OFF"); });
+  pintarMotor();
+  const bpr = q("#btn-proyectos"); if (bpr) bpr.addEventListener("click", () => { if (window.RIU_ANCLA_ABRIR) window.RIU_ANCLA_ABRIR("proyecto"); });  // misma ventana-ancla, objetivo Proyecto
   window.addEventListener("riu:fast-reply-toggle", window.__riuFastH);
   q("#composer").addEventListener("submit", async event => {
     chat().hist.__sigue = true;  // al enviar vuelves al final
@@ -512,7 +519,7 @@ export async function mount(root, { api, tell }) {
       abajo(c);
       return;
     }
-    const CONSIL_LISTO = /^(ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team)$/;  // unicos Ask Consil cableados al Router; Nvidia groq = PENDIENTE, nunca cae en c.ficha ni en otro modelo
+    const CONSIL_LISTO = /^(ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team|ask-consil-nvidia-groq)$/;  // Ask Consil cableados al Router; nvidia-groq va como CONSULTA a la ficha ask-consil-factory
     if (selAct && selAct !== "nvidia-groq-team" && !fichaQwen && !CONSIL_LISTO.test(selAct) && !fichaMvp) {
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
@@ -545,13 +552,13 @@ export async function mount(root, { api, tell }) {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
       const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
-      const body = { message: mvp ? message : A.envolver(message, c.instrucciones), ficha: fichaQwen || c.ficha, provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}), ...(mvp || {}) };  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha
+      const body = { message: mvp ? message : A.envolver(message, c.instrucciones), ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : {}), ...(mvp || {}) };  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
       const ctxPrev = selAct === "ask-consil-code-qwen-team" ? previo(c, message) : undefined;  // Team 5 MVP: SIN contexto_previo -> contexto_explicito=false -> el Harness lee memoria_yaiwes; consil-code: ultimos 20
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || c.ficha, message: mvp ? message : A.envolver(message, c.instrucciones), max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
+        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mvp ? message : A.envolver(message, c.instrucciones), max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
       c.detenerFn = null;
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
