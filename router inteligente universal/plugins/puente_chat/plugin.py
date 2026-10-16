@@ -98,6 +98,7 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json",
                                           "User-Agent": "riu-chat-mvp", "Accept": "text/event-stream"})
     partes: list[str] = []
+    razon: list[str] = []
     usage: dict = {}
     calls: dict[int, dict] = {}
     try:
@@ -118,6 +119,8 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                 _mm = _MET.get() or {}
                 if (d_.get('content') or d_.get('tool_calls')) and 'model_ttft_ms' not in _mm and _mm.get('t_model_start'):
                     _met('model_ttft_ms', int((time.monotonic() - _mm['t_model_start']) * 1000))  # TTFT real: primer delta (content o tool_call)
+                if d_.get('reasoning_content'):
+                    razon.append(str(d_['reasoning_content']))  # Qwen thinking: no se pierde el razonamiento
                 if d_.get('content'):
                     partes.append(d_['content'])
                     try:
@@ -137,6 +140,8 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
             msg: dict = {'role': 'assistant', 'content': ''.join(partes)}
             if calls:
                 msg['tool_calls'] = [calls[i] for i in sorted(calls)]
+            if razon:
+                msg['reasoning_content'] = ''.join(razon)
             d: dict = {'choices': [{'index': 0, 'message': msg}]}
             if usage:
                 d['usage'] = usage
@@ -387,7 +392,7 @@ def _politica(modelo):
 
 
 def _extras(pol, tools):
-    # parametros extra de la peticion segun la politica del modelo (nunca se manda enable_thinking=false)
+    # parametros extra de la peticion segun la politica del modelo (enable_thinking lo decide _llamar_api segun host)
     ex = {}
     ct = pol.get('con_tools') or {}
     if pol.get('top_p'):
@@ -500,10 +505,12 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             pol = _politica(modelo) if proveedor == 'qwencloud' else {}
             _POL.set(pol)
             ex = _extras(pol, tools)
+            _tp = proveedor == 'qwencloud' and 'token-plan' in str(base).lower()
             if proveedor == 'qwencloud':
-                if tools and modelo.startswith('qwen'):
+                if tools and modelo.startswith('qwen') and not _tp:
                     ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
                     ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
+                # Token Plan: enable_thinking esta restringido a True (400 si llega false): nunca se manda false
                 # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
             cuerpo.update(ex)
             exl = _EXTRA_LLM.get() if not tools else None  # Team 5: politica propia solo en la llamada final de texto
@@ -511,6 +518,13 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 for k_, v_ in exl.items():
                     if k_ not in cuerpo:
                         cuerpo[k_] = v_
+                        ex[k_] = v_  # tambien cuenta como extra: el reintento sin extras lo quita
+            if proveedor == 'qwencloud':
+                if _tp and cuerpo.get('enable_thinking') is False:
+                    cuerpo.pop('enable_thinking', None)
+                if 'enable_thinking' in cuerpo and 'reasoning_effort' in cuerpo:
+                    # nunca los dos: Token Plan conserva reasoning_effort; otros hosts conservan enable_thinking
+                    cuerpo.pop('enable_thinking' if _tp else 'reasoning_effort', None)
             sf = _STREAM_FN.get()
             _met('t_model_start', time.monotonic())  # base del TTFT real: _http_stream lo sella en el primer delta
             _t0c = time.monotonic()
@@ -553,8 +567,9 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                     break
                 cuerpo['messages'] = _recortar(mensajes)
                 ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
-            if ex and ultimo[0] == 400:  # el endpoint no admite algun extra de la politica: mismo modelo, misma clave, sin esos extras
-                for k_ in ex:
+            _quitados = [k_ for k_ in ex if k_ in cuerpo] if ultimo[0] == 400 else []
+            if _quitados:  # el endpoint no admite algun extra de la politica: UN reintento, mismo modelo, misma clave, sin esos extras
+                for k_ in _quitados:
                     cuerpo.pop(k_, None)
                 resta = fin - time.monotonic()
                 if resta >= 2:
@@ -705,6 +720,7 @@ def _bucle(llamar, mensajes):
     con_tools = (not fast) and _TOOLS_HAB.get()  # Team 5 apaga el catalogo en preguntas normales: el modelo no puede pedir tools por su cuenta
     primera_llamada = True
     pasos = 0
+    reintento_razonar = False
     rondas = 0  # Team 5: rondas modelo->tool->modelo ya ejecutadas
     rondas_max = int(_RONDAS_MAX.get() or 0)
     final_hecho = False
@@ -751,7 +767,11 @@ def _bucle(llamar, mensajes):
             if calls:
                 msg['content'] = _limpiar_texto(msg.get('content'))
         if not calls or not con_tools:
-            if (not (msg.get('content') or '').strip()) and msg.get('reasoning_content') and not final_hecho and time.monotonic() < fin:
+            if (not (msg.get('content') or '').strip()) and msg.get('reasoning_content'):
+                if reintento_razonar or final_hecho or time.monotonic() >= fin:
+                    msg['content'] = str(msg['reasoning_content'])[-1500:]  # fix B: cierra con el razonamiento recortado (misma logica que la salida final)
+                    return d, usadas
+                reintento_razonar = True  # fix B: como mucho 1 reintento 'deja de razonar'
                 mensajes.append({'role': 'assistant', 'content': ''})
                 mensajes.append({'role': 'user', 'content': 'Deja de razonar y da ya la respuesta final, o usa una herramienta si la necesitas.'})
                 pasos += 1

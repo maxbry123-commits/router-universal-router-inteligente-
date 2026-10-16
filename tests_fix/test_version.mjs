@@ -1,0 +1,28 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const D = "chat router/chat frontend/";
+globalThis.RIU_VERSION_NO_AUTO = true;
+await import("../" + encodeURI(D) + "version.js");
+const { check } = globalThis.RIU_VERSION;
+const ss = () => { const m = new Map(); return { getItem: k => m.has(k) ? m.get(k) : null, setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
+const loc = () => ({ href: "https://riu-jev-bridge.vercel.app/", replaced: [], replace(u) { this.replaced.push(u); } });
+const ok = j => ({ ok: true, json: async () => j });
+const fx = (front, main) => async u => u.includes("version.json") ? (front ? ok({ commit: front }) : { ok: false }) : (main === "throw" ? (() => { throw new Error("red"); })() : ok({ sha: main }));
+const A = "a".repeat(40), B = "b".repeat(40);
+let s = ss(), l = loc();
+assert.equal(await check({ fetch: fx(A, A), sessionStorage: s, location: l }), "igual"); assert.equal(l.replaced.length, 0);
+s = ss(); l = loc();
+assert.equal(await check({ fetch: fx(A, B), sessionStorage: s, location: l }), "recarga");
+assert.equal(l.replaced[0], "https://riu-jev-bridge.vercel.app/?v=" + B.slice(0, 12));
+s.removeItem("riu_v_check_ts");  // tras recargar sigue viejo (CDN): no bucle
+assert.equal(await check({ fetch: fx(A, B), sessionStorage: s, location: l }), "ya_recargado"); assert.equal(l.replaced.length, 1);
+s = ss(); l = loc();
+assert.equal(await check({ fetch: fx(A, "throw"), sessionStorage: s, location: l }), "sin_red"); assert.equal(l.replaced.length, 0);
+s = ss();
+assert.equal(await check({ fetch: fx(null, B), sessionStorage: s, location: l }), "sin_version"); assert.equal(l.replaced.length, 0);
+assert.equal(await check({ fetch: fx(A, B), sessionStorage: s, location: l }), "throttle");
+const vj = JSON.parse(fs.readFileSync(D + "vercel.json", "utf8"));
+assert.ok(vj.rewrites.length === 2 && vj.buildCommand.includes("VERCEL_GIT_COMMIT_SHA"));
+for (const src of ["/", "/index.html", "/chat/ui/(.*)", "/(.*)\\.js", "/(.*)\\.css"]) assert.ok(vj.headers.some(h => h.source === src && h.headers[0].value === "no-cache, must-revalidate"), src);
+assert.ok(fs.readFileSync(D + "shell.html", "utf8").indexOf("version.js") < fs.readFileSync(D + "shell.html", "utf8").indexOf("config.js"));
+console.log("OK 9 casos");

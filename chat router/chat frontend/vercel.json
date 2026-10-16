@@ -15,7 +15,25 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-cache"
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/shell.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
         }
       ]
     },
@@ -24,9 +42,38 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-cache"
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.css",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/version.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
         }
       ]
     }
-  ]
+  ],
+  "buildCommand": "printf '{\"commit\":\"%s\"}' \"$VERCEL_GIT_COMMIT_SHA\" > version.json",
+  "outputDirectory": "."
 }

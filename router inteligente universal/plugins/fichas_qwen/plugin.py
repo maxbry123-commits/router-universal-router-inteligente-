@@ -573,6 +573,11 @@ def _anexo(ficha, fase, texto, opts):
     ax = (opts.get('gobernanza') or {}).get('anexo_memoria') or {}
     if not ax.get('enabled') or fase not in (ax.get('fases') or []):
         return ''
+    simple = opts.get('es_simple')
+    if simple is None and fase == 'entrada':
+        simple = _es_simple(texto, opts, {'N4': {}})
+    if simple:
+        return ''  # fix B: pregunta simple -> sin anexos de memoria (ahorra 2 llamadas flash de 60 s)
     n = {'id': 'S-' + fase.upper(), 'timeout_s': int(ax.get('timeout_s') or 60), 'max_output_tokens': int(ax.get('max_output_tokens') or 900), 'requiere_tools': False, 'escribe': False}
     prompt = (_P_ENTRADA if fase == 'entrada' else _P_SALIDA) + str(texto)[:12000]
     try:
@@ -929,7 +934,9 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
                   'extra_llm': {'reasoning_effort': ESFUERZO_FICHA[modelo]} if modelo in ESFUERZO_FICHA else None,
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
-                  'perfil': perfil})
+                  'perfil': perfil,
+                  # Token Plan: thinking obligado en true -> siempre SSE (como mvp.py); el chunk se reenvia si hay visor
+                  'stream_fn': opts.get('stream_fn') if callable(opts.get('stream_fn')) else (lambda _c: None)})
     try:  # metrica de latencia por nodo (solo registro, no cambia la salida)
         _perfil = perfil
         _tcs = r.get('tool_calls') if isinstance(r.get('tool_calls'), list) else (r.get('herramientas') if isinstance(r.get('herramientas'), list) else [])
@@ -1223,6 +1230,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         opts.setdefault('fast_source', 'NONE')
         opts['fast_reject_reasons'] = _fast_reject_reasons(ficha, mensaje, opts, _pesado or _caller_bloq)
     if not opts.get('previo') and not opts.get('fast_lane'):  # anexo de memoria (Qwen 3.6 Flash) como sheriff de entrada; en /aprobar no se repite
+        opts['es_simple'] = _es_simple(mensaje, opts, nodos)
         opts['anexo_entrada'] = _anexo(ficha, 'entrada', mensaje, opts)
         if str(opts.get('anexo_entrada') or '').startswith('GAP '):
             return str(opts['anexo_entrada']), []

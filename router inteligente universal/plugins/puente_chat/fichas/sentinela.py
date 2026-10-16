@@ -12,7 +12,7 @@ Salida unica: lista de verificacion (checklist) con esquema riu.ficha.sentinela.
 from __future__ import annotations
 
 ESQUEMA = 'riu.ficha.sentinela.v1'
-MAX_VUELTAS = 5  # intentos sobre la misma tarea antes de rendirse (GAP_FINAL)
+MAX_VUELTAS = 2  # intentos sobre la misma tarea antes de rendirse (GAP_FINAL)
 _DEFINITIVOS = ('GAP MODELO_SIN_TOOLS', 'GAP HISTORIAL_DEEPSEEK_INCOMPLETO', 'GAP TOOL_ARGUMENTS_INCOMPLETOS',
                 'SIN_CLAVES', 'MODELO_DESCONOCIDO', 'MODELO_NO_ESTA_EN_EL_SELLO', 'HERRAMIENTA_BLOQUEADA',
                 'HTTP 401', 'HTTP 403', 'HTTP 404')
@@ -32,6 +32,15 @@ def _definitivo(d):
         return False
     txt = str(d.get('error') or '') + ' ' + str(d.get('detalle') or '')[:200]
     return any(x in txt for x in _DEFINITIVOS)
+
+
+def _cerrar(d):
+    """fix B: respuesta vacia (sin error) o PROVEEDOR_TIMEOUT_O_RED: reintentar el mismo modelo no ayuda."""
+    if not isinstance(d, dict):
+        return False
+    if 'PROVEEDOR_TIMEOUT_O_RED' in str(d.get('error') or ''):
+        return True
+    return 'error' not in d and bool(d.get('choices'))  # choices sin content ni tool_calls
 
 
 def _checklist(items, completada, resultado):
@@ -56,6 +65,7 @@ def ejecutar(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VU
     usadas = []
     errores = []
     d = {'error': 'SIN_PLAN'}
+    cerrar = False
     for vuelta in range(1, int(max_vueltas) + 1):
         for nombre, paso in plan:
             try:
@@ -68,6 +78,10 @@ def ejecutar(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VU
                 return _checklist(items, True, (d, usadas))
             err = str(d.get('error'))[:80] if isinstance(d, dict) else 'RESPUESTA_INVALIDA'
             errores.append(err)
+            if _cerrar(d):  # fix B: vacio o timeout/red -> no relanzar el mismo modelo; pasa a la reserva (si hay) y cierra con lo que haya
+                cerrar = True
+                items.append({'item': nombre, 'vuelta': vuelta, 'estado': 'CERRADO', 'detalle': err, 'siguiente': 'NEXT_OR_GAP'})
+                continue
             if _definitivo(d):
                 items.append({'item': nombre, 'vuelta': vuelta, 'estado': 'GAP_FINAL', 'detalle': err, 'siguiente': 'GAP'})
                 return _checklist(items, False, (d, usadas))
@@ -78,6 +92,9 @@ def ejecutar(plan, mensajes, guardar_ck=None, cargar_ck=None, max_vueltas=MAX_VU
                 except Exception:  # noqa: BLE001
                     pass
         # fin de vuelta sin exito: reinicia desde el ultimo checkpoint
+        if cerrar:
+            items.append({'item': 'tarea', 'vuelta': vuelta, 'estado': 'GAP_FINAL', 'siguiente': 'GAP'})
+            return _checklist(items, False, (d, usadas))
         ck = None
         if cargar_ck:
             try:
