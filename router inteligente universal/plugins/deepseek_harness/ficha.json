@@ -2,7 +2,7 @@
   "plugin_host": {
     "schema": "plugin_host/v1",
     "id": "deepseek_harness",
-    "enabled_default": false,
+    "enabled_default": true,
     "health_action": "status",
     "nota_roja": "Wrapper removible de la regla Fables s8 (harness de DeepSeek). Sin RIU_DEEPSEEK_HARNESS_URL responde degraded."
   },

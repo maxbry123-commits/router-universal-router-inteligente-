@@ -2,7 +2,7 @@
   "plugin_host": {
     "schema": "plugin_host/v1",
     "id": "hf_storage",
-    "enabled_default": false,
+    "enabled_default": true,
     "health_action": "status",
     "nota_roja": "Puente al almacenamiento permanente de HF (Storage Bucket COMAND-CENTER-1/yaiwes-memoria-storage, prefijo riu-chat/, cambiable con HF_BUCKET_ID o HF_STORAGE_BUCKET). Mismo bucket que usa storage_lifecycle/autosync. Requiere HF_TOKEN (solo nombre de variable, nunca el valor)."
   },
