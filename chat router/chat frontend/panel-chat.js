@@ -164,9 +164,12 @@ export async function mount(root, { api, tell }) {
   root.querySelectorAll(".sh-cerrar").forEach((b) => b.addEventListener("click", cerrarHojas));
   conectarVentanas({ root, q });
   conectarRiu({ q });  // RUI: bloques de codigo con copiar, barra de lectura y boton bajar
-  const cerrarChat = (i) => {  // borrar un chat (la X de su pestana); si es el unico, se vacia y queda uno nuevo
+  const cerrarChat = async (i) => {  // borrar un chat (la X de su pestana); si es el unico, se vacia y queda uno nuevo
     if (!chats[i]) return;
     if (chats[i].ocupado) { tell("Ese chat está trabajando: espera o pulsa Detener"); return; }
+    if (chats[i].project_id && window.RIU_ACCION) {  // unlink ANTES de borrar (await, no fire-and-forget): el proyecto deja de listarlo
+      try { await window.RIU_ACCION("proyecto", { op: "unlink_chat", project_id: chats[i].project_id, sesion: chats[i].sesion }); } catch (e) {}
+    }
     const ses = chats[i].sesion; A.olvidar(ses);
     try { for (const k of ["riu_hist_v1", "riu_proy_v1"]) { const t = JSON.parse(localStorage.getItem(k) || "{}"); if (t && t[ses] !== undefined) { delete t[ses]; localStorage.setItem(k, JSON.stringify(t)); } } } catch (e) {}
     if (chats.length < 2) { nuevoChat(); i = 0; }
@@ -174,6 +177,12 @@ export async function mount(root, { api, tell }) {
     pintarTabs(); guardar(); tell("Chat borrado");
   };
   window.RIU_CHAT = { chat, tokens: () => [...chat().anclados], pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
+  window.RIU_DESTINO_ARCHIVOS = () => {  // destinoArchivos(): UNICA autoridad de a donde van los archivos segun el objetivo de la ventana-ancla
+    const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null;
+    if (o && o.tipo === "constitucion") return { destino: "constitucion" };
+    if (o && o.tipo === "proyecto") { const pid = (window.slugProyF ? window.slugProyF(o.id) : String(o.id || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 48)) || chat().project_id || ""; return { destino: "proyecto", project_id: pid }; }  // proyecto SELECCIONADO en la ventana, no solo el del chat
+    return {};
+  };
   window.RIU_ANCLA_REFRESCAR = () => { cargarArchivos("#anc-lista"); ancla.refrescar(); pintarAnclas(); cargarMiHandoff(); };  // refresca la ventana de anclaje al cambiar de objetivo
   root.addEventListener("riu:cerrar-chat", (e) => cerrarChat(e.detail));
   conectarRiu2({ root, q, tell });  // RUI 12-21 + mejoras de flujo (ventanas, borrador, avisos)
@@ -314,7 +323,7 @@ export async function mount(root, { api, tell }) {
     if (buf.byteLength > 2_000_000) { tell("Archivo muy grande (máx ~2 MB)"); return; }
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
-    const _dest = () => { const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null; if (o && o.tipo === "constitucion") return { destino: "constitucion" }; if (o && o.tipo === "proyecto") return { destino: "proyecto", project_id: chat().project_id || "" }; return {}; };  // destino=chat por defecto: igual que siempre
+    const _dest = window.RIU_DESTINO_ARCHIVOS || (() => ({}));  // destinoArchivos(): unica autoridad de a donde van los archivos (chat / constitucion / proyecto seleccionado)
     const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion, ..._dest() });
     if (anclarAlSubir) { chatA().anclados.add(r.nombre || file.name); pintarAnclados(); guardar(); tell("Subido y anclado: " + (r.nombre || file.name)); }
     else tell("Subido (sin anclar): " + (r.nombre || file.name));
@@ -413,7 +422,7 @@ export async function mount(root, { api, tell }) {
     const lista = q(destino);
     lista.replaceChildren(node("div", "Cargando…", "muted"));
     try {
-      const r = await window.RIU_ACCION("archivos", { sesion: chat().sesion });
+      const r = await window.RIU_ACCION("archivos", { sesion: chat().sesion, ...window.RIU_DESTINO_ARCHIVOS() });  // lista del objetivo actual (chat/constitucion/proyecto seleccionado), no siempre del chat
       lista.replaceChildren();
       for (const nombre of r.archivos || []) {
         const fil = node("div", "", "va-item");

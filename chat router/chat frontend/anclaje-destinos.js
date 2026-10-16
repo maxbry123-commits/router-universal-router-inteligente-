@@ -14,12 +14,7 @@ export function montarDestinos({ root, q, tell }) {
     const nuevo = t === "chat" ? null : crearObjetivo(t, id);
     if (t !== "chat" && !nuevo) return false;
     tipo = t; obj = nuevo; window.RIU_OBJETIVO_ANCLA = obj ? () => obj : undefined;
-    if (t === "proyecto" && obj) {  // "Añadir chat actual": el chat queda vinculado al proyecto (mismo scope en backend)
-      try {
-        const c = window.RIU_CHAT && window.RIU_CHAT.chat();
-        if (c) { c.project_id = slugProy(obj.id); if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "link_chat", project_id: c.project_id, sesion: c.sesion }).catch(() => {}); tell("Chat añadido al proyecto «" + obj.id + "»"); }
-      } catch (e) {}
-    }
+    // seleccionar/abrir un Proyecto NO vincula el chat: el vinculo es SOLO via el boton [Añadir chat actual] (mas abajo)
     if (titulo) titulo.textContent = base + (obj ? " · " + obj.nombre : "");
     window.dispatchEvent(new CustomEvent("riu:objetivo"));
     if (refrescar !== false && window.RIU_ANCLA_REFRESCAR) window.RIU_ANCLA_REFRESCAR();
@@ -47,6 +42,28 @@ export function montarDestinos({ root, q, tell }) {
       const nom = el("input", "vn-in"); nom.placeholder = "Nueva carpeta de proyecto…"; nom.maxLength = 60; nom.setAttribute("aria-label", "Nueva carpeta de proyecto");
       const nuevo = boton("＋ Carpeta", "mini", () => { const n = crearProyecto(nom.value); if (!n) { tell("Escribe un nombre"); return; } tell("Carpeta creada: " + n); fijar("proyecto", n); });
       const f2 = el("div", "vn-fila"); f2.append(nom, nuevo); fila.append(s, f2);
+      try {
+        const c = window.RIU_CHAT && window.RIU_CHAT.chat(), pid = slugProy(obj.id);
+        if (c && window.RIU_ACCION) {
+          const vinc = c.project_id === pid;
+          const b = boton(vinc ? "Quitar chat actual" : "Añadir chat actual", "mini", async () => {
+            const c2 = window.RIU_CHAT && window.RIU_CHAT.chat(); if (!c2) return;
+            try {
+              if (c2.project_id === pid) {
+                await window.RIU_ACCION("proyecto", { op: "unlink_chat", project_id: pid, sesion: c2.sesion });
+                c2.project_id = null; tell("Chat quitado del proyecto «" + obj.id + "»");
+              } else {
+                if (c2.project_id) await window.RIU_ACCION("proyecto", { op: "unlink_chat", project_id: c2.project_id, sesion: c2.sesion });
+                await window.RIU_ACCION("proyecto", { op: "link_chat", project_id: pid, sesion: c2.sesion });
+                c2.project_id = pid; tell("Chat añadido al proyecto «" + obj.id + "»");
+              }
+              if (window.RIU_CHAT && window.RIU_CHAT.pintar) window.RIU_CHAT.pintar();
+              pintar();
+            } catch (e) { tell("No se pudo: " + (e && e.message ? e.message : e)); }
+          });
+          fila.append(b);
+        }
+      } catch (e) {}
     }
     if (obj) {
       const b = boton(obj.encendido ? "Encendido · viaja con cada mensaje" : "Apagado · encender para que viaje con cada mensaje", "toggle" + (obj.encendido ? " on" : ""), () => { obj.encendido = !obj.encendido; tell(obj.nombre + (obj.encendido ? " encendido" : " apagado")); pintar(); });

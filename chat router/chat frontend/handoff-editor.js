@@ -7,7 +7,7 @@ export function montarHandoffEditor({ root, q, tell }) {
   const insertar = (linea) => { const v = ta.value.replace(/\s*$/, ""); ta.value = (v ? v + "\n" : "") + linea; ta.dispatchEvent(new Event("input", { bubbles: true })); guardar(); };
   const objetivo = () => (window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null);  // Chat / Constitución / Proyecto
   const sesion = () => { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); return c ? c.sesion : "general"; };
-  const destino = () => { const o = objetivo(); if (o && o.tipo === "constitucion") return { destino: "constitucion" }; if (o && o.tipo === "proyecto") { const c = window.RIU_CHAT && window.RIU_CHAT.chat(); return { destino: "proyecto", project_id: (c && c.project_id) || "" }; } return {}; };
+  const destino = () => (window.RIU_DESTINO_ARCHIVOS ? window.RIU_DESTINO_ARCHIVOS() : {});  // unica autoridad: objetivo actual de la ventana (chat/constitucion/proyecto seleccionado)
   const en = el("input", "vn-in"); en.placeholder = "Enlace para el handoff…"; en.autocomplete = "off"; en.setAttribute("aria-label", "Enlace para el handoff");
   const bEn = boton("＋ Enlace", "mini", () => { const u = en.value.trim(); if (!/^https?:\/\//i.test(u)) { tell("Pega un enlace que empiece con http o https"); return; } insertar("Enlace: " + u); en.value = ""; tell("Enlace añadido al handoff"); });
   const fe = el("div", "vn-fila"); fe.append(en, bEn);
