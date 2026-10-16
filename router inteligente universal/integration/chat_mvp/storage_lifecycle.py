@@ -48,32 +48,38 @@ def restore_if_empty(data_dir: Any, bucket: str | None, token: str | None, fs_fa
         tmp.unlink(missing_ok=True)
         STATUS["restore"] = "REMOTE_SNAPSHOT_CORRUPT"
         return {"status": STATUS["restore"]}
-    os.replace(tmp, db)
-    docs = 0
-    faltantes: list[str] = []
-    (d / "docs").mkdir(exist_ok=True)
+    # ATOMICO: el SQLite NO se promueve hasta demostrar que TODOS los documentos registrados existen en el bucket.
     remotos: set[str] = set()
     try:
         for p in fs.ls(f"{base}/docs", detail=False):
             name = str(p).rsplit("/", 1)[-1]
-            if not name:
-                continue
-            remotos.add(name)
+            if name:
+                remotos.add(name)
+    except Exception as exc:  # noqa: BLE001 - sin el listado remoto no se puede demostrar nada: NO promover
+        tmp.unlink(missing_ok=True)
+        STATUS["restore"] = "GAP_LISTADO_REMOTO:" + type(exc).__name__
+        return {"status": STATUS["restore"], "gap": "GAP_LISTADO_REMOTO"}
+    faltantes = [did for did in esperados if did not in remotos]
+    if faltantes:  # doc registrado en SQLite que falta en el bucket: GAP y la base NO se promueve
+        tmp.unlink(missing_ok=True)
+        STATUS["restore"] = "GAP_DOCUMENTO_FALTANTE"
+        STATUS["docs_gap"] = faltantes
+        return {"status": "GAP_DOCUMENTO_FALTANTE", "gap": "GAP_DOCUMENTO_FALTANTE", "faltantes": faltantes}
+    docs = 0
+    (d / "docs").mkdir(exist_ok=True)
+    try:
+        for name in remotos:
             if not (d / "docs" / name).exists():
-                (d / "docs" / name).write_bytes(fs.cat_file(p if str(p).startswith("buckets/") else f"{base}/docs/{name}"))
+                (d / "docs" / name).write_bytes(fs.cat_file(f"{base}/docs/{name}"))
                 docs += 1
-    except Exception:  # noqa: BLE001 - los documentos son best-effort; la base ya esta
-        pass
-    for did in esperados:  # un doc registrado en SQLite que falta en el bucket NO se oculta
-        if did not in remotos:
-            faltantes.append(did)
+    except Exception as exc:  # noqa: BLE001 - un doc no descargado NO promueve la base
+        tmp.unlink(missing_ok=True)
+        STATUS["restore"] = "GAP_DOC_DESCARGA:" + type(exc).__name__
+        return {"status": STATUS["restore"], "gap": "GAP_DOC_DESCARGA"}
+    os.replace(tmp, db)  # ultimo paso: ya esta probado integro y con todos sus documentos
     STATUS["restore"] = "RESTORED"
-    STATUS["docs_gap"] = faltantes
-    out = {"status": "RESTORED", "docs": docs}
-    if faltantes:
-        out["gap"] = "GAP_DOCUMENTO_FALTANTE"
-        out["faltantes"] = faltantes
-    return out
+    STATUS["docs_gap"] = []
+    return {"status": "RESTORED", "docs": docs}
 
 
 _thread: threading.Thread | None = None

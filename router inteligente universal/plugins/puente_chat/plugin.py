@@ -39,6 +39,7 @@ _PERFIL = ContextVar("riu_perfil", default="normal")  # normal / code / auditori
 _CANCEL_FN = ContextVar("riu_cancel_fn", default=None)  # callable -> True = usuario detuvo el proceso: no lanzar mas pasos
 _TECHO_DURO = ContextVar("riu_techo_duro", default=False)  # True = techo literal del presupuesto: sin la ventana extra de 45 s
 import time
+import hashlib
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -796,7 +797,23 @@ def _bucle(llamar, mensajes):
                     except Exception:  # noqa: BLE001
                         pass
                 _tt0 = time.time()
-                res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
+                if mut:  # receipts crash-safe: PREPARED antes del side effect, DONE tras verificar; nunca repetir a ciegas
+                    _idr = _IDS_CTX.get() or {}
+                    _tid = str(_idr.get('task_id') or 'desconocida')
+                    _nodo_r = str(_idr.get('nodo') or '')
+                    _fp = hashlib.sha256(('|'.join([_tid, _nodo_r, nom, json.dumps(args, sort_keys=True, default=str)])).encode()).hexdigest()
+                    _rc = _receipt_cargar(_tid, _fp)
+                    if isinstance(_rc, dict) and _rc.get('estado') == 'DONE':
+                        res = 'OPERACION_YA_COMPLETADA: ' + str(_rc.get('resultado') or res)[:400]
+                    elif isinstance(_rc, dict) and _rc.get('estado') == 'PREPARED':
+                        res = 'GAP_TOOL_RESULT_INDETERMINADO: ' + nom + ' quedo PREPARED sin DONE tras un reinicio; no se repite a ciegas'  # sin verificacion especifica de la tool NO se puede asumir el side effect
+                    else:
+                        _receipt_guardar(_tid, _fp, {'estado': 'PREPARED', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp})
+                        res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
+                        if not str(res).startswith(_FALLO):
+                            _receipt_guardar(_tid, _fp, {'estado': 'DONE', 'task_id': _tid, 'nodo': _nodo_r, 'tool': nom, 'args_hash': _fp, 'resultado': str(res)[:1000]})
+                else:
+                    res = _bloqueo(nom, args) or _motor_ejecutar(nom, args) or h.ejecutar(nom, args)
                 _met_add('tools_ms', int((time.time() - _tt0) * 1000))
                 if pf:
                     try:
@@ -2039,8 +2056,8 @@ def _chat(p):
     else:
         _VISTOS.set({})
     _DEADLINE.set(time.monotonic() + presupuesto)
-    _cablear_graphiti('', '', {'project_id': sesion, 'task_id': str(p.get('task_id') or p.get('tarea') or sesion),  # ANTES de gobernanza/anclas: el callback LLM de Graphiti ya apunta a Harness->Ficha 4
-                               'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or '')})
+    _cablear_graphiti('', '', {'project_id': str(p.get('project_id') or sesion), 'task_id': str(p.get('task_id') or p.get('tarea') or sesion),  # scope real: project:<id> si el chat pertenece a un proyecto, anchors:<sesion> si no
+                               'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or ''), 'nodo': str(p.get('nodo') or '')})
     if p.get('project_id'):  # chat dentro de un proyecto: sus archivos entran como anclados proyecto:<pid>:<nombre>
         try:
             extras = [a for a in _proyecto_anclados(p['project_id']) if a not in (p.get('anclados') or [])]
@@ -2429,10 +2446,17 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
                 return {'ok': True, 'project_id': pid, 'proyecto': meta, 'chats': chats, 'archivos': archivos}
             if op == 'upsert':
                 ahora = time.time()
-                d = {'project_id': pid, '_k': 'proyecto:' + pid, 'nombre': str(payload.get('nombre') or pid)[:80],
-                     'notas': str(payload.get('notas') or '')[:4000], 'estado': 'activo', 'updated_at': ahora, 'ts': ahora}
                 prev = _buscar(idx_scope, 'proyecto:' + pid)
-                d['created_at'] = (next(iter(prev.values()), {}) or {}).get('created_at') or ahora
+                d = dict(next(iter(prev.values()), {}) or {})  # MERGE: un upsert parcial NUNCA borra nombre/notas/anclas/estado/created_at
+                d['project_id'] = pid
+                d['_k'] = 'proyecto:' + pid
+                for k in ('nombre', 'notas', 'estado', 'anclas', 'encendido'):  # solo se pisan los campos que vienen en la peticion
+                    if payload.get(k) is not None:
+                        d[k] = payload[k]
+                d.setdefault('nombre', pid)
+                d['created_at'] = d.get('created_at') or ahora
+                d['updated_at'] = ahora
+                d['ts'] = ahora
                 mem.save(idx_scope, 'proyecto:' + pid, d)
                 mem.save(scope, 'meta', dict(d))
                 return {'ok': True, 'project_id': pid}
@@ -2513,6 +2537,44 @@ def _task_ck_cargar(key):
     except Exception:  # noqa: BLE001
         pass
     return None
+
+def _receipt_cargar(tid, fp):
+    try:
+        mem, scope_for = _memoria()
+        res = mem.search(scope_for(DUENO, 'task:' + tid), 'receipt:' + fp, 10)
+        filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+        mejor = None
+        for f in filas:
+            d = f.get('data', f) if isinstance(f, dict) else f
+            if isinstance(d, dict) and d.get('estado') in ('PREPARED', 'DONE') and (mejor is None or float(d.get('ts') or 0) > float(mejor.get('ts') or 0)):
+                mejor = d
+        if mejor is not None:
+            return mejor
+    except Exception:  # noqa: BLE001
+        pass
+    try:  # RAM/SQLite sin el receipt (reinicio antes del autosync): leer el espejo del bucket
+        r = _hf_store_mod().handle('read', {'path': 'tasks/%s/receipts/%s.json' % (tid, fp)})
+        if isinstance(r, dict) and r.get('status') == 'ok' and r.get('encoding') == 'utf-8':
+            d = json.loads(r.get('content') or '{}')
+            if isinstance(d, dict) and d.get('estado') in ('PREPARED', 'DONE'):
+                return d
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def _receipt_guardar(tid, fp, data):
+    try:
+        mem, scope_for = _memoria()
+        rec = dict(data, ts=time.time())
+        mem.save(scope_for(DUENO, 'task:' + tid), 'receipt:' + fp, rec)
+        try:
+            _hf_store_mod().handle('write', {'path': 'tasks/%s/receipts/%s.json' % (tid, fp), 'content': json.dumps(rec, ensure_ascii=False)})  # espejo en el bucket: /data no sobrevive al reinicio del Space
+        except Exception:  # noqa: BLE001
+            pass
+    except Exception:  # noqa: BLE001
+        pass
+
 
 def _task_run(key, payload):
     try:
