@@ -1,8 +1,9 @@
 {
-  "LIVE_URL": "https://6acf24cdc6628814522378fd--8000.hf.jobs",
-  "job_id": "6acf24cdc6628814522378fd",
-  "flavor": "cpu-basic",
-  "updated": 1791960376.5595345,
+  "LIVE_URL": "https://comand-center-1-riu-router.hf.space",
+  "runtime": "hf-space",
+  "space_id": "COMAND-CENTER-1/riu-router",
+  "hardware": "cpu-upgrade",
+  "updated": 1792145600.0,
   "auth": "X-API-Key",
-  "harnessUrl": "https://6acf24cdc6628814522378fd--8000.hf.jobs/plugins/puente_chat/call"
+  "harnessUrl": "https://comand-center-1-riu-router.hf.space/plugins/puente_chat/call"
 }
