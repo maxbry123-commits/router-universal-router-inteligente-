@@ -1198,7 +1198,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                         listas = len(futs) - len(pend_f)
                         if f in hechos:
                             out[i] = f.result()
-                            _ck_guardar(pid, fid, out)
+                            _ck_guardar(pid, str(ficha.get('id') or ficha.get('ficha') or ''), out)
                         elif ahora > lim:
                             opts.setdefault('abandonados', set()).add(i)
                             out[i] = 'GAP %s: TIMEOUT_NODO: el nodo no respondio en %d s; se sigue sin su resultado' % (i, lim)
