@@ -1,49 +1,49 @@
-# Router Inteligente Universal — README
+# Router Inteligente Universal — estado operativo
 
-Actualizado 2026-10-16. Para handoff operativo: [HANDOFF-CABLEADO.md](HANDOFF-CABLEADO.md).
+Actualizado: 2026-10-16
 
-## ARQUITECTURA ACTUAL
+## Función actual
 
-Chat
-→ Router
-→ cómputo
-→ almacenamiento
+```text
+Chat → Router → cómputo / almacenamiento
+```
 
-El Router:
-- solo enruta/conecta;
-- no contiene modelos;
-- no contiene proveedores;
-- no contiene las fichas;
-- no decide los modelos.
+El Router solo enruta y conecta el chat con el cómputo y el almacenamiento.
 
-Las fichas/plugins conservan su arquitectura existente.
+El Router no contiene ni decide modelos, proveedores, selectores o DAG. Esa lógica pertenece a las fichas y permanece fuera del Router, sin cambios de arquitectura.
 
-## RUNTIME ACTUAL
+## Runtime actual
 
 - Space: `COMAND-CENTER-1/riu-router`
-- URL: https://comand-center-1-riu-router.hf.space
+- URL: `https://comand-center-1-riu-router.hf.space`
+- Hardware: Hugging Face `cpu-upgrade`
+- CPU: 8 vCPU
+- RAM: 32 GB
+- Operación: 24/7
+- `sleep_time = -1`
 
-## HARDWARE
+## Estado operativo
 
-- HF CPU Upgrade
-- 8 vCPU
-- 32 GB RAM
-- 24/7
-- sleep_time = -1
-
-## ESTADO
-
-- Router: RUNNING
-- Chat: activo
+- Router: activo
+- Chat → Router: activo
 - Cola existente: intacta
 - Almacenamiento: intacto
 - HF Router Jobs activos: 0
-- HF scheduled Router Jobs: 0
+- HF Router Jobs programados: 0
+- Runtime del Router por HF Job antiguo: retirado
 
-## FUENTE DE DIRECCIÓN
+## Dirección del Router
 
-`router inteligente universal/LIVE_URL.json` — única dirección viva del Router. El chat la lee y valida `*.hf.space`.
+Fuente vigente:
 
-## Plugins
+`router inteligente universal/LIVE_URL.json`
 
-Todo lo demás sigue siendo plugin: una carpeta `plugins/<id>/` con `ficha.json` y `plugin.py` (función `handle(action, payload)`). El Plugin Host las lee, valida y llama por HTTP; si un plugin falla, solo ese queda marcado y el Router sigue.
+Dirección vigente:
+
+`https://comand-center-1-riu-router.hf.space`
+
+`ROUTER_JOB_PAUSE.flag` apunta a la misma dirección y mantiene `PAUSED=false`.
+
+## Regla de arquitectura
+
+Para cambiar el cómputo del Router se modifica únicamente el destino del Router. No se modifican fichas, modelos, proveedores, Harness, memoria, cola, agentes, DAG ni almacenamiento.
