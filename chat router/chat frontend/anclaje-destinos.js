@@ -10,6 +10,7 @@ export function montarDestinos({ root, q, tell }) {
   if (head) head.after(fila); else caja.prepend(fila);
   let tipo = "chat", obj = null;
   function fijar(t, id, refrescar) {
+    if (t === "proyecto" && !id) { let l = listaProyectos(); if (!l.length) { crearProyecto("Proyecto 1"); l = listaProyectos(); } if (l.length) id = l[0].nombre; }  // misma regla que cambiar(): sin id, el primero existente o uno nuevo
     const nuevo = t === "chat" ? null : crearObjetivo(t, id);
     if (t !== "chat" && !nuevo) return false;
     tipo = t; obj = nuevo; window.RIU_OBJETIVO_ANCLA = obj ? () => obj : undefined;
