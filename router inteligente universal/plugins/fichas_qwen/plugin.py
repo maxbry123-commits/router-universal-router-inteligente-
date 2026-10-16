@@ -797,10 +797,8 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
     fc = _fast_cfg(ficha)
     fid = str(ficha.get('ficha') or '')
     if fid.startswith('ficha2') or fid.startswith('ficha3'):
-        # modelo elegido explicito por el usuario manda; si no, el modelo FAST de la ficha
-        _n = lambda t: re.sub(r'[^a-z0-9]', '', str(t).lower())  # noqa: E731
-        _id = elegido if elegido in _QW else next((k for k, v in _NOMBRES.items() if _n(v) == _n(elegido) and k in _QW), None)
-        modelo = _id if (opts.get('modelo_explicito') and _id) else str(ficha.get('fast_model') or 'ficha-qwen38flash')
+        # Ask consil (equipo fijo): SIEMPRE el fast_model de su ficha; el selector de Team qwen no aplica aqui
+        modelo = str(ficha.get('fast_model') or 'ficha-qwen38max')
     elif fid.startswith('ficha4'):
         modelo = _ficha4_modelo(opts.get('task_type') or 'question')
     else:

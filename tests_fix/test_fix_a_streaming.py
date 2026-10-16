@@ -110,12 +110,12 @@ def test_ficha1_pasa_stream_fn(monkeypatch):
     capt['stream_fn']('a'); assert got == ['a']  # visor existente se respeta
 
 
-def test_fast_ficha2_respeta_modelo_explicito_y_37_low(monkeypatch):
+def test_fast_ficha2_usa_fast_model_de_la_ficha_y_37_low(monkeypatch):
     fq = sys.modules.get('fixa_fichas_qwen') or _load('fixa_fichas_qwen', 'fichas_qwen/plugin.py')
     vistos = []
     monkeypatch.setattr(fq, '_llamar_harness_1', lambda modelo, prompt, ficha, n, opts: (vistos.append(modelo), 'ok')[1])
     f2 = {'ficha': 'ficha2-dag-codigo', 'fast_lane': {'enabled': True}}
-    for explicito, esperado in ((True, 'ficha-qwen37max'), (False, 'ficha-qwen38flash')):
+    for explicito, esperado in ((True, 'ficha-qwen38max'), (False, 'ficha-qwen38max')):
         vistos.clear()
         try:
             fq._fast_qa(f2, 'hola', 'Qwen 3.7 Max', '', {'modelo_explicito': explicito})

@@ -68,7 +68,7 @@ def test_panel_chat_js():
     js = R / 'chat router' / 'chat frontend' / 'panel-chat.js'
     assert subprocess.run(['node', '--check', str(js)]).returncode == 0
     s = js.read_text()
-    assert s.count('ficha_qwen: fq, modelo: c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" }') == 2
+    assert s.count('ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" }') == 2
     assert 'ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas' in s  # Team 5 intacto
 
 
