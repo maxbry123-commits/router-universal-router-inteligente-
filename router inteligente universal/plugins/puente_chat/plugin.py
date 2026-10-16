@@ -28,6 +28,7 @@ def _met_add(k, v):
     m = _MET.get()
     if isinstance(m, dict): m[k] = int(m.get(k) or 0) + int(v)  # Team 5: tools solo si el input las pide; los demas flujos no la envian -> True por defecto, nada cambia
 _POL = ContextVar("riu_politica", default=None)  # politicas_modelo del modelo que esta respondiendo
+_AUDIT = ContextVar("riu_audit_llm", default=None)  # auditoria forense de la llamada HTTP al modelo (sin secretos, sin prompts)
 _REQ_TOOLS = ContextVar("riu_requiere_tools", default=False)  # tarea que exige herramientas: sin tools = GAP
 _RONDAS_MAX = ContextVar("riu_rondas_tools_max", default=0)  # Team 5: tope propio de rondas modelo/tool (0 = sin tope propio)
 _PROG_FN = ContextVar("riu_prog_fn", default=None)  # Team 5: avisos reales de progreso (modelo / tool / respuesta)
@@ -511,9 +512,33 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                         cuerpo[k_] = v_
             sf = _STREAM_FN.get()
             _met('t_model_start', time.monotonic())  # base del TTFT real: _http_stream lo sella en el primer delta
+            _t0c = time.monotonic()
             ultimo = _http_stream(base + '/chat/completions', clave, cuerpo, resta, sf) \
                      if (sf and proveedor == 'qwencloud') \
                      else _http('POST', base + '/chat/completions', clave, cuerpo, resta)
+            _au = _AUDIT.get()
+            if _au is not None:  # auditoria forense: request/response real al endpoint SIN secretos ni prompts
+                try:
+                    _d = ultimo[1] if isinstance(ultimo[1], dict) else {}
+                    _ch = (_d.get('choices') or [{}])[0]
+                    _ms = _ch.get('message') or {}
+                    _u = _d.get('usage') or {}
+                    _au.append({'host': base, 'path': '/chat/completions', 'model': modelo,
+                                'stream': bool(sf and proveedor == 'qwencloud'), 'tools': bool(tools), 'tool_choice': cuerpo.get('tool_choice'),
+                                'n_messages': len(cuerpo.get('messages') or []),
+                                'chars_in': sum(len(str(m.get('content') or '')) for m in (cuerpo.get('messages') or []) if isinstance(m, dict)),
+                                'reasoning_effort': cuerpo.get('reasoning_effort'), 'enable_thinking': cuerpo.get('enable_thinking'),
+                                'preserve_thinking': cuerpo.get('preserve_thinking'),
+                                'token_field': 'max_completion_tokens' if 'max_completion_tokens' in cuerpo else ('max_tokens' if 'max_tokens' in cuerpo else None),
+                                'max_tokens_val': cuerpo.get('max_completion_tokens') or cuerpo.get('max_tokens'),
+                                'http': ultimo[0], 'ms': int((time.monotonic() - _t0c) * 1000),
+                                'finish_reason': _ch.get('finish_reason'), 'content_nonempty': bool(str(_ms.get('content') or '').strip()),
+                                'reasoning_content_present': bool(_ms.get('reasoning_content')),
+                                'prompt_tokens': _u.get('prompt_tokens'),
+                                'cached_tokens': (_u.get('prompt_tokens_details') or {}).get('cached_tokens') if isinstance(_u.get('prompt_tokens_details'), dict) else _u.get('cached_tokens'),
+                                'completion_tokens': _u.get('completion_tokens')})
+                except Exception:  # noqa: BLE001
+                    pass
             if ultimo[0] == 400 and 'max_completion_tokens' in cuerpo and 'max_completion' in json.dumps(ultimo[1]).lower():
                 cuerpo['max_tokens'] = cuerpo.pop('max_completion_tokens')  # el endpoint lo rechaza: misma llamada con max_tokens
                 resta = fin - time.monotonic()
@@ -1980,6 +2005,7 @@ def _chat(p):
     presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
     _MOTOR_HAB.set(bool(p.get('motor')))  # ⚙ Motor: solo cuando el toggle del chat esta ON
+    _AUDIT.set([])  # auditoria de cada llamada HTTP al modelo de ESTA peticion (requisito forense, sin secretos)
     if p.get('tools_habilitadas') is None and p.get('cap_tools') is None and not _MOTOR_HAB.get():
         # chat normal sin ⚙Motor y sin decision del llamante: la misma puerta CAP determinista de fichas_qwen
         # decide si el modelo ve el catalogo. Pregunta trivial -> CAP_NONE (sin tools, respuesta en segundos,
@@ -2180,6 +2206,7 @@ def _chat(p):
     salida['metricas'] = {'queue_ms': int(_m.get('queue_ms') or 0), 'memory_ms': int(_m.get('memory_ms') or 0),
                           'model_ttft_ms': int(_m.get('model_ttft_ms') or 0), 'model_call_ms': int(_m.get('model_call_ms') or 0), 'tools_ms': int(_m.get('tools_ms') or 0),
                           'total_ms': int((time.time() - float(_m.get('t_inicio') or time.time())) * 1000)}  # cola != velocidad del modelo
+    salida['audit_llm'] = list(_AUDIT.get() or [])  # request/response reales al endpoint (sin secretos): endpoint, plan, tokens, finish_reason, ms
     if fuentes_anc:
         salida['fuentes_ancladas'] = fuentes_anc
     if gov_info:

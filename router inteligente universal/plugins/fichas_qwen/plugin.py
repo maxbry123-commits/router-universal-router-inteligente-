@@ -722,6 +722,68 @@ def _fast_button_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any]) -
     return True
 
 
+def _fast_multi_qa_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nodos: dict[str, Any]) -> bool:
+    # FAST_QA para Ficha 2/3 (DAG multi-nodo): SOLO input trivial -> una llamada al fast_model del JSON, sin entrar al DAG.
+    # Reutiliza las mismas compuertas que _fast_chat_ok (cap/flags/anclas/task_type/formato) menos la de un solo N4.
+    fid = str(ficha.get('ficha') or '')
+    if not (fid.startswith('ficha2') or fid.startswith('ficha3')):
+        return False
+    fc = _fast_cfg(ficha)
+    if not fc['enabled']:
+        return False
+    if str(opts.get('cap_in') or 'none') != 'none':
+        return False  # CAP_READ/WRITE exigen tools: FAST nunca responde sobre un sistema externo sin leerlo
+    for k in ('muta', 'es_cambio', 'aprobado', 'plan', 'plan_stop', 'previo', 'requiere_tools'):
+        if opts.get(k):
+            return False
+    if opts.get('perfil') == 'code' or opts.get('anclados'):
+        return False
+    tt = str(opts.get('task_type') or '').lower()
+    if tt and (tt in fc['blocked_task_types'] or tt not in fc['task_types']):
+        return False
+    m = str(mensaje or '')
+    if m.lstrip().lower().startswith('/aprobar') or _FAST_REPLY_BLOCK.search(m) or _PIDE_FORMATO.search(m):
+        return False
+    if _PIDE_CAMBIO.search(m) and not _NO_CAMBIA.search(m):
+        return False
+    return True
+
+
+def _fast_reject_reasons(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], pesado: bool = False) -> list:
+    # lista determinista (0 LLM) de por que FAST no aplico: auditoria, nunca adivinacion
+    r: list = []
+    fc = _fast_cfg(ficha)
+    if not fc['enabled']:
+        r.append('FAST_DISABLED')
+    if pesado:
+        r.append('BLOCKED_TASK_TYPE')
+    if str(opts.get('cap_in') or 'none') != 'none':
+        r.append('CAP_NOT_NONE')
+    if opts.get('muta'):
+        r.append('MUTATION')
+    if opts.get('es_cambio'):
+        r.append('CHANGE_REQUEST')
+    if opts.get('anclados'):
+        r.append('ANCHORED_FILES')
+    if opts.get('aprobado'):
+        r.append('APPROVAL')
+    if opts.get('plan') or opts.get('plan_stop'):
+        r.append('PLAN')
+    if opts.get('previo'):
+        r.append('PREVIOUS_STATE')
+    if opts.get('requiere_tools'):
+        r.append('TOOLS_REQUIRED')
+    m = str(mensaje or '')
+    if _PIDE_FORMATO.search(m) or _FAST_REPLY_BLOCK.search(m):
+        r.append('COMPLEX_FORMAT')
+    caller = str(opts.get('caller_id') or '').lower()
+    if any(x in caller for x in _FAST_CALLERS_BLOQUEADOS):
+        r.append('CALLER_BLOCKED')
+    if not r:
+        r.append('NO_CANDIDATE')
+    return r
+
+
 def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
     # FAST_QA unico para las 4 fichas: UNA llamada, sin DAG, sin tools, sin anexo de memoria, sin formato largo
     fc = _fast_cfg(ficha)
@@ -872,7 +934,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         _perfil = perfil
         _tcs = r.get('tool_calls') if isinstance(r.get('tool_calls'), list) else (r.get('herramientas') if isinstance(r.get('herramientas'), list) else [])
         _pas = r.get('pasos') if isinstance(r.get('pasos'), list) else []
-        opts.setdefault('metricas', {})[str(n.get('id') or modelo)] = {'t_modelo': round(time.time() - _tm, 2), 'numero_llamadas_modelo': int(r.get('llamadas_modelo') or r.get('llamadas') or len(_pas) or 1), 'numero_tool_calls': len(_tcs), 'perfil_usado': _perfil}
+        opts.setdefault('metricas', {})[str(n.get('id') or modelo)] = {'t_modelo': round(time.time() - _tm, 2), 'numero_llamadas_modelo': int(r.get('llamadas_modelo') or r.get('llamadas') or len(_pas) or 1), 'numero_tool_calls': len(_tcs), 'perfil_usado': _perfil, 'audit_llm': list(r.get('audit_llm') or []), 'metricas_harness': dict(r.get('metricas') or {})}
     except Exception:  # noqa: BLE001
         pass
     _cr = r.get('constitucion')
@@ -1132,19 +1194,33 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     opts['pid'] = pid
     opts['es_cambio'] = _es_cambio(mensaje, opts)
     if _fast_button_ok(ficha, mensaje, opts):  # boton ⚡ Respuesta rapida: UNA llamada (FAST_QA); si falla, cae al flujo normal
-        opts['fast_lane'] = True
-        opts['fast_button'] = True
+        opts['fast_source'] = 'BUTTON'
         _r_fast, _tr_fast = _fast_qa(ficha, mensaje, elegido, pid, opts)
         if not str(_r_fast).startswith('GAP'):
+            opts['fast_lane'] = True
+            opts['fast_button'] = True
             return _r_fast, _tr_fast
-        opts['fast_button'] = False
-        opts['fast_fallback'] = True
-    _pesado = bool(opts.get('fast_reply')) and str(opts.get('task_type') or '') in _fast_cfg(ficha)['blocked_task_types']  # ⚡ + ruta pesada: ningun carril rapido, flujo completo
-    opts['fast_lane'] = (not _pesado) and _fast_chat_ok(ficha, mensaje, opts, nodos)  # FAST_GATE decide solo: el boton ⚡ es override, no requisito (pregunta simple -> una llamada, sin anexos ni DAG)
-    if not opts['fast_lane'] and opts.get('fast_reply') and not _pesado and _fast_consult_ok(ficha, mensaje, opts, nodos):
-        opts['fast_lane'] = True
-        opts['fast_consult'] = True
-        return _consult(ficha, nodos, mensaje, elegido, pid, opts)
+        opts['fast_fallback'] = True  # numero_llamadas_FAST <= 1: el explicito ya gasto su intento; a HEAVY una sola vez
+    _fcf = _fast_cfg(ficha)
+    _tt = str(opts.get('task_type') or '').lower()
+    _pesado = bool(_tt and (_tt in _fcf['blocked_task_types'] or _tt not in _fcf['task_types']))  # pesado por task_type del mensaje, JAMAS por el boton ⚡
+    _caller_bloq = any(x in str(opts.get('caller_id') or '').lower() for x in _FAST_CALLERS_BLOQUEADOS)
+    if not opts.get('fast_fallback') and not _pesado and not _caller_bloq:
+        if _fast_chat_ok(ficha, mensaje, opts, nodos) or _fast_multi_qa_ok(ficha, mensaje, opts, nodos):
+            _r_fast, _tr_fast = _fast_qa(ficha, mensaje, elegido, pid, opts)
+            if not str(_r_fast).startswith('GAP'):
+                opts['fast_lane'] = True
+                opts['fast_source'] = 'AUTO'
+                return _r_fast, _tr_fast
+            opts['fast_fallback'] = True  # FAST automatico fallo una vez: HEAVY, sin un segundo FAST
+        elif _fast_consult_ok(ficha, mensaje, opts, nodos):
+            opts['fast_lane'] = True
+            opts['fast_consult'] = True
+            opts['fast_source'] = 'AUTO'
+            return _consult(ficha, nodos, mensaje, elegido, pid, opts)
+    if not opts.get('fast_lane'):
+        opts.setdefault('fast_source', 'NONE')
+        opts['fast_reject_reasons'] = _fast_reject_reasons(ficha, mensaje, opts, _pesado or _caller_bloq)
     if not opts.get('previo') and not opts.get('fast_lane'):  # anexo de memoria (Qwen 3.6 Flash) como sheriff de entrada; en /aprobar no se repite
         opts['anexo_entrada'] = _anexo(ficha, 'entrada', mensaje, opts)
         if str(opts.get('anexo_entrada') or '').startswith('GAP '):
@@ -1320,7 +1396,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     pend_t = _pend_cargar(fid, ses) if ap else None
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': secrets.token_hex(6), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:
@@ -1351,6 +1427,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             _verif_guardar(fid, ses, {'input': mensaje, 'plan': str(opts.get('plan') or ''), 'salida': salida, 'tarea_id': opts['tarea_id'], 'anclados': list(opts.get('anclados') or []), 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time()})
     return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_consult": bool(opts.get("fast_consult")),
             "execution_path": ("FAST_CONSULT" if opts.get("fast_consult") else ("FAST_QA" if opts.get("fast_lane") else "HEAVY")),
+            "fast_source": str(opts.get('fast_source') or 'NONE'), "fast_reject_reasons": list(opts.get('fast_reject_reasons') or []),
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],
             "traza": traza, "resultado_parcial": opts.get("parcial", ""), "estado_tarea": opts.get("estado", ""), "herramientas": [dict(x, nodo=k) for k, v in opts.get("herr", {}).items() for x in v], "queue_ms": int((t0 - float(p.get("_t_submit") or t0)) * 1000), "ms": int((time.time() - t0) * 1000)}
 
