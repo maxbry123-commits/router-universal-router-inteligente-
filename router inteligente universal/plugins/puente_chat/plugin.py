@@ -365,7 +365,8 @@ def _recortar(mensajes, limite=None):
     return ms
 
 
-_MAX_COMPLETION = {'qwen3.8-max', 'qwen3.8-flash', 'qwen3.7-max', 'qwen3.7-plus',
+# qwen3.7-max/plus fuera: con max_completion_tokens < thinking_budget implicito (8192) responden 400 y el reintento sin extras piensa sin limite (medido 16-oct)
+_MAX_COMPLETION = {'qwen3.8-max', 'qwen3.8-flash',
                    'deepseek-v4-pro', 'deepseek-v4-pro-0813', 'deepseek-v4-flash-0731', 'glm-5.2'}
 _POL_MODELO = {'qwen3.8-flash': 'ficha-qwen38flash', 'qwen3.6-flash': 'ficha-qwen36flash',
                'deepseek-v4-pro': 'ficha-dsv4pro', 'deepseek-v4-pro-0813': 'ficha-dsv4pro0813',
@@ -591,6 +592,8 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 ultimo = (503, {'error': 'SERVICIO_OCUPADO'})
                 time.sleep(2)  # el servicio dice ocupado: siguiente clave
                 continue
+            if ultimo[0] in (404, 410):
+                return ultimo  # modelo retirado/inexistente (p. ej. kimi-k3 en NVIDIA = 410): ninguna clave lo arregla
             if ultimo[0] in (401, 403, 429):
                 muertas.add(i)  # clave sin acceso o sin cuota: no insistir en la segunda vuelta
                 continue
@@ -777,7 +780,7 @@ def _bucle(llamar, mensajes):
                 msg['content'] = _limpiar_texto(msg.get('content'))
         if not calls or not con_tools:
             if (not (msg.get('content') or '').strip()) and msg.get('reasoning_content'):
-                if reintento_razonar or final_hecho or time.monotonic() >= fin:
+                if _PERFIL.get() == 'fast' or reintento_razonar or final_hecho or time.monotonic() >= fin:  # FAST: 1 sola llamada, sin 'deja de razonar'
                     msg['content'] = str(msg['reasoning_content'])[-1500:]  # fix B: cierra con el razonamiento recortado (misma logica que la salida final)
                     return d, usadas
                 reintento_razonar = True  # fix B: como mucho 1 reintento 'deja de razonar'
@@ -2552,17 +2555,29 @@ def _hf_store_mod():
     return mod
 
 
-def _task_ck_guardar(key, data):
+def _bg(fn, *a):
+    # escrituras de persistencia fuera del camino sincrono del chat (bucket FUSE lento)
+    _threading.Thread(target=fn, args=a, daemon=True).start()
+
+def _hf_espejo(path, rec):
+    t0 = time.time()
+    try:
+        _hf_store_mod().handle('write', {'path': path, 'content': json.dumps(rec, ensure_ascii=False)})
+    except Exception:  # noqa: BLE001
+        pass
+    print('[puente_chat] espejo %s %.2fs' % (path, time.time() - t0), flush=True)
+
+def _task_ck_guardar_sync(key, data):
     try:
         mem, scope_for = _memoria()
         rec = dict(data, ts=time.time())
         mem.save(scope_for(DUENO, 'task:' + key), 'ck', rec)
-        try:
-            _hf_store_mod().handle('write', {'path': 'tasks/%s.ck.json' % key, 'content': json.dumps(rec, ensure_ascii=False)})  # espejo en el bucket: /data no sobrevive al reinicio del Space
-        except Exception:  # noqa: BLE001
-            pass
+        _hf_espejo('tasks/%s.ck.json' % key, rec)
     except Exception:  # noqa: BLE001
         pass
+
+def _task_ck_guardar(key, data):
+    _bg(_task_ck_guardar_sync, key, data)
 
 def _task_ck_cargar(key):
     try:
@@ -2620,10 +2635,7 @@ def _receipt_guardar(tid, fp, data):
         mem, scope_for = _memoria()
         rec = dict(data, ts=time.time())
         mem.save(scope_for(DUENO, 'task:' + tid), 'receipt:' + fp, rec)
-        try:
-            _hf_store_mod().handle('write', {'path': 'tasks/%s/receipts/%s.json' % (tid, fp), 'content': json.dumps(rec, ensure_ascii=False)})  # espejo en el bucket: /data no sobrevive al reinicio del Space
-        except Exception:  # noqa: BLE001
-            pass
+        _bg(_hf_espejo, 'tasks/%s/receipts/%s.json' % (tid, fp), rec)
         return True
     except Exception:  # noqa: BLE001
         return False
@@ -2663,10 +2675,12 @@ def _tool_verificar(nom, args):
 
 
 def _task_run(key, payload):
+    t0 = time.time()
     try:
         r = _chat(dict(payload))
     except Exception as exc:  # noqa: BLE001
         r = {'error': 'CHAT_FAILED', 'detalle': type(exc).__name__}
+    print('[puente_chat] task %s chat %.2fs' % (key[:8], time.time() - t0), flush=True)
     _task_ck_guardar(key, {'estado': 'DONE', 'resultado': r})
     return r
 

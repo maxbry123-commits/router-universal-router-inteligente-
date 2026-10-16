@@ -24,6 +24,9 @@ DIR = Path(__file__).resolve().parent
 FICHAS = {f.stem: json.loads(f.read_text(encoding="utf-8")) for f in sorted((DIR / "fichas").glob("*.json"))}
 ALIAS = {"1": "ficha1-modelos", "2": "ficha2-dag-codigo", "3": "ficha3-frontend", "4": "ficha4-workflow-yaiwes", "5": "ficha5-mvp"}  # 5 = Team 5 MVP (camino directo, mvp.py)
 _POOL = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen")  # maximo 4 solicitudes activas; las demas esperan en cola
+_POOL_FAST = _cf.ThreadPoolExecutor(max_workers=4, thread_name_prefix="fichas_qwen_fast")  # fix 7: preguntas simples (FAST) no esperan detras de tareas pesadas
+_ULT_POLL: dict[str, float] = {}  # fix 7: ultima vez que el chat pregunto por el proceso (/resultado)
+HUERFANO_S = 180  # fix 7: proceso sin /resultado en 180 s = nadie lo espera -> se cancela y libera la cola
 _LOCK = threading.Lock()
 _PROCESOS: dict[str, tuple[Any, float]] = {}
 _CANCEL: set[str] = set()  # procesos que el usuario detuvo con Detener: no se lanzan mas pasos
@@ -794,7 +797,10 @@ def _fast_qa(ficha: dict[str, Any], mensaje: str, elegido: str, pid: str, opts: 
     fc = _fast_cfg(ficha)
     fid = str(ficha.get('ficha') or '')
     if fid.startswith('ficha2') or fid.startswith('ficha3'):
-        modelo = str(ficha.get('fast_model') or 'ficha-qwen38flash')
+        # modelo elegido explicito por el usuario manda; si no, el modelo FAST de la ficha
+        _n = lambda t: re.sub(r'[^a-z0-9]', '', str(t).lower())  # noqa: E731
+        _id = elegido if elegido in _QW else next((k for k, v in _NOMBRES.items() if _n(v) == _n(elegido) and k in _QW), None)
+        modelo = _id if (opts.get('modelo_explicito') and _id) else str(ficha.get('fast_model') or 'ficha-qwen38flash')
     elif fid.startswith('ficha4'):
         modelo = _ficha4_modelo(opts.get('task_type') or 'question')
     else:
@@ -875,6 +881,9 @@ def _consult(ficha, nodos, mensaje, elegido, pid, opts):
     return final, traza
 
 
+_FAST_LOW = {'ficha-qwen37max', 'ficha-qwen37plus'}  # FAST: serie 3.7 sin thinking (con low aun razona ~1400 tokens, TTFT 20 s > tope FAST 25 s; false medido OK)
+
+
 def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
     _tp = next((x.get('tipo') for x in (ficha.get('selector') or []) if x.get('id') == modelo), None)
@@ -932,7 +941,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
-                  'extra_llm': {'reasoning_effort': ESFUERZO_FICHA[modelo]} if modelo in ESFUERZO_FICHA else None,
+                  'extra_llm': ({'enable_thinking': False} if (perfil == 'fast' and modelo in _FAST_LOW) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None,
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
                   'perfil': perfil,
                   # Token Plan: thinking obligado en true -> siempre SSE (como mvp.py); el chunk se reenvia si hay visor
@@ -1190,6 +1199,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     if elegido is None:
         return 'GAP MODELO_SELECTOR_INVALIDO: ' + repr(modelo) + ' no esta en el selector', []
     opts = {} if opts is None else opts
+    opts.setdefault('modelo_explicito', bool(str(modelo or '').strip()))
     _t0 = time.time()
     out: dict[str, str] = dict(opts.get('previo') or {})  # nodos que ya pasaron: no se repiten
     if pid and 'previo' not in opts:  # reanudacion: el checkpoint persistido cuenta como previo
@@ -1477,6 +1487,40 @@ def _llm(p: dict[str, Any]) -> dict[str, Any]:
     return {"ficha": fid, "modelo": modelo, "reply": out, "fast_lane": fast, "ms": int((time.time() - t0) * 1000), **{k: p.get(k) for k in ("caller_id", "plugin_id", "workflow_id", "project_id", "task_id", "task_type")}}
 
 
+def _es_fast_req(p: dict[str, Any]) -> bool:
+    # fix 7: misma puerta determinista que _correr (sin LLM) para elegir la cola rapida; si se equivoca solo cambia de cola
+    fid = ALIAS.get(str(p.get("ficha_qwen") or ""), str(p.get("ficha_qwen") or ""))
+    f = FICHAS.get(fid) or {}
+    if fid not in ("ficha1-modelos",) or not _fast_cfg(f)['enabled'] or p.get('anclados'):
+        return False
+    c = _fast_cfg(f)
+    tt = str(p.get('task_type') or '').lower()
+    if tt and (tt in c['blocked_task_types'] or tt not in c['task_types']):
+        return False
+    m = str(p.get('message') or '')
+    return bool(m) and len(m) <= c['context_chars'] and not m.lstrip().lower().startswith('/aprobar') and _es_simple(m, {}, {'N4': {}})
+
+
+def _reap_huerfanos(ahora: float | None = None) -> list[str]:
+    # fix 7: cancela procesos que nadie consulta (pestana cerrada, timeout del front); los de la cola ni arrancan
+    ahora = time.time() if ahora is None else ahora
+    fuera = []
+    for k, (fut, t) in list(_PROCESOS.items()):
+        if fut.done() or k in _CANCEL:
+            continue
+        if ahora - max(t, _ULT_POLL.get(k, t)) > HUERFANO_S:
+            _CANCEL.add(k)
+            fut.cancel()
+            fuera.append(k)
+    return fuera
+
+
+def _cola() -> dict[str, Any]:
+    vivos = [(k, f) for k, (f, _t) in list(_PROCESOS.items()) if not f.done()]
+    return {"corriendo": sum(1 for _k, f in vivos if f.running()), "en_cola": sum(1 for _k, f in vivos if not f.running()),
+            "workers": 4, "workers_fast": 4, "cancelados": len(_CANCEL)}
+
+
 def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
     p = payload or {}
     if action == "status":
@@ -1494,12 +1538,18 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
                 if time.time() - t > 900 and fut.done():
                     del _PROCESOS[k]
                     _PROGRESO.pop(k, None); _PROG_T.pop(k, None); _PROG_META.pop(k, None); _NOTAS.pop(k, None)
-            _PROCESOS[clave] = (_POOL.submit(_pool_run, clave, dict(p, _pid=clave, _t_submit=time.time())), time.time())
-            _meta(clave, 'A0', '', 'en cola, esperando worker')
+            _reap_huerfanos()
+            _fast_q = _es_fast_req(p)
+            _PROCESOS[clave] = ((_POOL_FAST if _fast_q else _POOL).submit(_pool_run, clave, dict(p, _pid=clave, _t_submit=time.time())), time.time())
+            _ULT_POLL[clave] = time.time()
+            _meta(clave, 'A0', '', 'en cola, esperando worker' + (' (rapida)' if _fast_q else ''))
             _prog(clave, 'A0', 'trabajando')  # En cola hasta que el worker toma la tarea; process_id != modelo corriendo
             _ck_guardar(clave, str(p.get('ficha_qwen') or ''), {}, payload=dict(p))  # persiste la tarea: sobrevive reinicio del Router
-        return {"estado": "procesando", "proceso_id": clave}
+        return {"estado": "procesando", "proceso_id": clave, "cola": "fast" if _fast_q else "normal"}
+    if action == "cola":
+        return _cola()
     if action == "resultado":
+        _ULT_POLL[str(p.get("proceso_id") or "")] = time.time()
         item = _PROCESOS.get(str(p.get("proceso_id") or ""))
         if not item:
             ck = _ck_cargar(str(p.get("proceso_id") or ""))  # RAM vacia (reinicio): reanudar desde checkpoint, no desde cero
@@ -1516,7 +1566,14 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
                 return {"estado": "procesando", "proceso_id": clave, "reanudado": True}
             return {"error": "PROCESO_NO_EXISTE"}
         if not item[0].done():
-            return {"estado": "procesando", "proceso_id": p.get("proceso_id"), "progreso": _texto_prog(str(p.get("proceso_id") or ""))}
+            _r = {"estado": "procesando", "proceso_id": p.get("proceso_id"), "progreso": _texto_prog(str(p.get("proceso_id") or ""))}
+            if not item[0].running():  # fix 7: el front ve que espera worker, no que el modelo tarda
+                _c = _cola()
+                _r.update(en_cola=True, cola=_c)
+                _r["progreso"] = (_r["progreso"] or "") + ("\n" if _r["progreso"] else "") + "En cola: %d tareas corriendo, %d esperando" % (_c["corriendo"], _c["en_cola"])
+            return _r
+        if item[0].cancelled():
+            return {"error": "PROCESO_CANCELADO", "proceso_id": p.get("proceso_id")}
         try:
             r = item[0].result()
             if isinstance(r, dict) and "reply" in r:

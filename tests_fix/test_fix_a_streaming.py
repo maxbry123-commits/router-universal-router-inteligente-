@@ -108,3 +108,29 @@ def test_ficha1_pasa_stream_fn(monkeypatch):
     with pytest.raises(RuntimeError, match='STOP_TEST'):
         fq._llamar_harness_1('ficha-qwen38max', 'x', FICHA, {'id': 'N4'}, {'stream_fn': got.append})
     capt['stream_fn']('a'); assert got == ['a']  # visor existente se respeta
+
+
+def test_fast_ficha2_respeta_modelo_explicito_y_37_low(monkeypatch):
+    fq = sys.modules.get('fixa_fichas_qwen') or _load('fixa_fichas_qwen', 'fichas_qwen/plugin.py')
+    vistos = []
+    monkeypatch.setattr(fq, '_llamar_harness_1', lambda modelo, prompt, ficha, n, opts: (vistos.append(modelo), 'ok')[1])
+    f2 = {'ficha': 'ficha2-dag-codigo', 'fast_lane': {'enabled': True}}
+    for explicito, esperado in ((True, 'ficha-qwen37max'), (False, 'ficha-qwen38flash')):
+        vistos.clear()
+        try:
+            fq._fast_qa(f2, 'hola', 'Qwen 3.7 Max', '', {'modelo_explicito': explicito})
+        except Exception:
+            pass
+        assert vistos and vistos[0] == esperado
+    assert {'ficha-qwen37max', 'ficha-qwen37plus'} <= fq._FAST_LOW
+
+
+def test_410_modelo_retirado_no_rota_claves(monkeypatch):
+    from integration.chat_mvp import providers
+    monkeypatch.setattr(providers, 'env_keys', lambda p: ['k1', 'k2', 'k3'])
+    monkeypatch.setattr(providers, 'base_url', lambda p: 'http://x')
+    n = []
+    monkeypatch.setattr(pc, '_http', lambda *a, **k: (n.append(1), (410, {'error': 'gone'}))[1])
+    monkeypatch.setattr(pc.time, 'sleep', lambda s: None)
+    r = pc._llamar_api('nvidia', 'moonshotai/kimi-k3', [{'role': 'user', 'content': 'x'}], 50, 20, None)
+    assert r[0] == 410 and len(n) == 1

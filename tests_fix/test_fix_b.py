@@ -35,7 +35,20 @@ def test_vacio_con_reasoning_max_1_reintento_y_devuelve_texto(fast):
     assert sen._valido(d)  # el sentinela ya no lo relanza
 
 
-def test_reintento_que_responde_bien(fast):
+@pytest.fixture
+def normal():
+    t = pc._PERFIL.set("normal")
+    yield
+    pc._PERFIL.reset(t)
+
+
+def test_fast_sin_reintento_razonar(fast):
+    n = []
+    d, _ = pc._bucle(lambda ms, t: (n.append(1), (200, _resp("", "pensando 42")))[1], [{"role": "user", "content": "x"}])
+    assert len(n) == 1 and "42" in d["choices"][0]["message"]["content"]
+
+
+def test_reintento_que_responde_bien(normal):
     seq = [_resp("", "pensando"), _resp("Hola, soy Qwen")]
     d, _ = pc._bucle(lambda ms, t: (200, seq.pop(0)), [{"role": "user", "content": "x"}])
     assert d["choices"][0]["message"]["content"] == "Hola, soy Qwen"

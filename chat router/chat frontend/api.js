@@ -101,6 +101,7 @@ async function puenteRouter(base, body, qs, headers) {
       const proceso = p.proceso_id;
       try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'En cola…' } })); } catch (e) {}  // process_id != modelo corriendo: el backend informa el estado real; sesion+pid aíslan el progreso entre chats
       if (payload && payload.sesion) guardaProc(payload.sesion, { pid: proceso, base, ts: Date.now() });
+      let fallosRed = 0;  // fix 5: la red caida ya no se oculta para siempre
       while (p.estado === 'procesando') {
         if (Date.now() > deadline) { cortado = true; break; }
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -108,8 +109,13 @@ async function puenteRouter(base, body, qs, headers) {
           const poll = await fetch(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }) });
           const envelope = await poll.json().catch(() => ({}));
           if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
-          p = envelope.result || {}; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso } })); } catch (e) {} }
-        } catch (e) { continue; }  // red/job en cambio: seguir esperando
+          p = envelope.result || {}; fallosRed = 0; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso } })); } catch (e) {} }
+        } catch (e) {  // red/job en cambio: seguir esperando, pero avisar y cortar tras 20 fallos seguidos (~20 s)
+          fallosRed++;
+          try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Sin conexión con el Router (' + fallosRed + ')…' } })); } catch (x) {}
+          if (fallosRed >= 20) return { status: 503, ok: false, p: { error: 'ROUTER_SIN_RESPUESTA', detalle: String(e && e.message || e).slice(0, 200), proceso_id: proceso } };
+          continue;
+        }
       }
     }
     if (!cortado && payload && payload.sesion) guardaProc(payload.sesion, null);  // termino: ya no hay nada que retomar
