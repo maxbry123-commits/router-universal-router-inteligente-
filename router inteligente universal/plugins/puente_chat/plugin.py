@@ -1063,7 +1063,7 @@ def _proyecto_anclados(pid):
 def _proyecto_meta(pid):
     try:
         mem, scope_for = _memoria()
-        res = mem.search(scope_for(DUENO, 'project:' + str(pid)[:48]), 'proyecto', 5)
+        res = mem.search(scope_for(DUENO, 'project:' + str(pid)[:48]), 'meta', 5)
         filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
         for f in filas:
             d = f.get('data', f) if isinstance(f, dict) else f
@@ -2370,10 +2370,15 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
                 return {'error': 'PROJECT_ID_VACIO'}
             scope = scope_for(DUENO, 'project:' + pid)
             if op == 'get':
-                items = _buscar(scope, '', 400)
-                meta = items.get('meta') or {}
-                chats = sorted({k.split(':', 1)[-1] for k in items if k.startswith('chat:')})
-                archivos = sorted({k.split(':', 1)[-1] for k in items if k.startswith('archivo:')})
+                def _filas(q, k=200):
+                    res = mem.search(scope, q, k)
+                    return res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
+                def _dato(f):
+                    return f.get('data', f) if isinstance(f, dict) else f
+                metas = [d for d in (_dato(f) for f in _filas('meta', 5)) if isinstance(d, dict)]
+                meta = metas[0] if metas else {}
+                chats = sorted({str(d.get('sesion')) for d in (_dato(f) for f in _filas('chat:')) if isinstance(d, dict) and d.get('sesion') and not d.get('borrado')})
+                archivos = sorted({str(d.get('nombre')) for d in (_dato(f) for f in _filas('archivo:')) if isinstance(d, dict) and d.get('nombre')})
                 return {'ok': True, 'project_id': pid, 'proyecto': meta, 'chats': chats, 'archivos': archivos}
             if op == 'upsert':
                 ahora = time.time()
