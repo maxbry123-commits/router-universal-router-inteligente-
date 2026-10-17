@@ -60,6 +60,8 @@ def restore_if_empty(data_dir: Any, bucket: str | None, token: str | None, fs_fa
             name = str(p).rsplit("/", 1)[-1]
             if name:
                 remotos.add(name)
+    except FileNotFoundError:  # sin carpeta docs/ en el bucket = cero documentos subidos (caso normal); si SQLite espera alguno, faltantes lo frena abajo
+        remotos = set()
     except Exception as exc:  # noqa: BLE001 - sin el listado remoto no se puede demostrar nada: NO promover
         tmp.unlink(missing_ok=True)
         STATUS["restore"] = "GAP_LISTADO_REMOTO:" + type(exc).__name__
@@ -90,6 +92,13 @@ def restore_if_empty(data_dir: Any, bucket: str | None, token: str | None, fs_fa
 _thread: threading.Thread | None = None
 
 
+def _restore_bloquea_sync() -> bool:
+    r = str(STATUS.get("restore") or "")
+    if r.startswith("NO_REMOTE_SNAPSHOT:"):  # solo "no existe" deja subir; un fallo de red al leer no
+        return not r.endswith("FileNotFoundError")
+    return r.startswith("GAP_") or r == "REMOTE_SNAPSHOT_CORRUPT"
+
+
 def start_autosync(get_store: Callable[[], Any], sync_fn: Callable[..., Any], bucket: str | None, token: str | None, interval: float | None = None) -> dict[str, Any]:
     global _thread
     secs = float(os.getenv("RIU_AUTOSYNC_SECONDS", "60")) if interval is None else interval
@@ -103,6 +112,9 @@ def start_autosync(get_store: Callable[[], Any], sync_fn: Callable[..., Any], bu
     def loop() -> None:
         import time
         while not stop.wait(secs):
+            if _restore_bloquea_sync():  # hay snapshot remoto que NO se pudo restaurar: subir la base local lo pisaria
+                STATUS["last_error"] = "SYNC_BLOQUEADO_RESTORE:" + str(STATUS.get("restore"))
+                continue
             try:
                 sync_fn(get_store(), bucket, token)
                 STATUS["last_sync"] = time.time()

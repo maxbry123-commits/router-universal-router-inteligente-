@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import os
+import time
 import re
 from typing import Any
 
@@ -40,6 +41,13 @@ def _path(value: Any, allow_empty: bool = False) -> str:
     if (not p and not allow_empty) or "\\" in p or ".." in p.split("/"):
         raise ValueError("path invalido")
     return p
+
+
+_RESERVADO = ("riu_chat.sqlite3", "docs/", "docs")  # snapshot de storage_lifecycle (restauracion en frio): solo lo escribe el autosync
+
+
+def _reservado(p: str) -> bool:
+    return p in _RESERVADO or p.startswith("docs/")
 
 
 def _full(p: str) -> str:
@@ -78,6 +86,8 @@ def handle(action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]
                 return {"status": "ok", "bucket": bucket, "path": p, "encoding": "base64", "content": base64.b64encode(data).decode()}
         if action == "write":
             p = _path(payload.get("path"))
+            if _reservado(p):
+                return {"status": "error", "error": "ruta reservada al autosync (riu_chat.sqlite3, docs/)"}
             data = base64.b64decode(str(payload["content_b64"])) if "content_b64" in payload else str(payload.get("content", "")).encode("utf-8")
             fs.pipe_file(_full(p), data)
             return {"status": "ok", "bucket": bucket, "path": p, "bytes": len(data)}
@@ -85,9 +95,21 @@ def handle(action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]
             src = str(payload.get("db_path") or "")
             if not src or not os.path.isfile(src):
                 return {"status": "error", "error": "db_path no existe"}
-            dest = _path(payload.get("dest") or "riu_chat.sqlite3")
-            with open(src, "rb") as fh:
-                data = fh.read()
+            dest = _path(payload.get("dest") or time.strftime("backups/riu_chat-%Y%m%dT%H%M%S.sqlite3", time.gmtime()))
+            if _reservado(dest):
+                return {"status": "error", "error": "ruta reservada al autosync (riu_chat.sqlite3, docs/)"}
+            import sqlite3
+            import tempfile
+            with tempfile.TemporaryDirectory() as tmp:  # copia consistente con la API de backup (no bytes crudos de una base viva)
+                dst = os.path.join(tmp, "b.sqlite3")
+                con, out = sqlite3.connect(src), sqlite3.connect(dst)
+                try:
+                    con.backup(out)
+                finally:
+                    out.close()
+                    con.close()
+                with open(dst, "rb") as fh:
+                    data = fh.read()
             fs.pipe_file(_full(dest), data)
             return {"status": "ok", "bucket": bucket, "path": dest, "bytes": len(data)}
         return {"status": "error", "error": "accion no permitida", "allowed": list(ACTIONS)}
