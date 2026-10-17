@@ -75,7 +75,7 @@ window.RIU_RETOMAR = async (ses) => {
     if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };  // Detener sobre una tarea retomada: RIU_CANCELAR ya borro el registro y aviso al Router
 
     try {
-      const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 20 }) }, 28000);
+      const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 8 }) }, 16000);
       const e = await r.json().catch(() => ({})); const p = e.result || {};
       if (!r.ok || e.status !== 'ok') { if (++malos >= 8) { guardaProc(ses, null); return { error: e.reason || e.detail || ('HTTP ' + r.status) }; } }  // respuesta invalida repetida: cortar, no girar 560 s
       else if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso (PROCESO_NO_EXISTE tras reinicio): borrar PID y devolver ya
@@ -87,6 +87,7 @@ window.RIU_RETOMAR = async (ses) => {
   }
   return { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'sigue en el Router' };
 };
+try { liveRouter().catch(() => {}); } catch (e) {}  // harnessUrl listo antes del primer envio
 async function puenteRouter(base, body, qs, headers) {
   await liveRouter();
   const baseDe = () => (body && body.plugin ? PBASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
@@ -132,9 +133,10 @@ async function puenteRouter(base, body, qs, headers) {
         if (Date.now() > deadline) { cortado = true; break; }
         if (!primera) await new Promise(resolve => setTimeout(resolve, 250)); primera = false;
         try {
-          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 20 }) }, 28000);  // long-poll: el Router responde apenas hay resultado/progreso (max 20 s)
+          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 8 }) }, 16000);  // long-poll: el Router responde apenas hay resultado/progreso (max 8 s, max 3 a la vez por plugin: host limita 8 llamadas)
           const envelope = await poll.json().catch(() => ({}));
-          if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
+          if (poll.status === 401 || poll.status === 403) return { status: 401, ok: false, p: envelope };
+          if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));  // /resultado fallido (cupo del host, 5xx): contar y reintentar, no cortar el chat
           p = envelope.result || {}; fallosRed = 0; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso } })); } catch (e) {} }
         } catch (e) {  // red/job en cambio: seguir esperando, pero avisar y cortar tras 80 fallos seguidos (~20 s a 250 ms)
           fallosRed++;

@@ -1521,7 +1521,7 @@ def _cola() -> dict[str, Any]:
 
 _RID: dict = {}
 import threading as _th_lp
-_LP_SEM = _th_lp.BoundedSemaphore(12)
+_LP_SEM = _th_lp.BoundedSemaphore(3)
 
 
 def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
@@ -1575,7 +1575,7 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
                 _ck_guardar(clave, str(ck.get('fid') or ''), dict(ck.get('out') or {}), estado='RUNNING')
                 return {"estado": "procesando", "proceso_id": clave, "reanudado": True}
             return {"error": "PROCESO_NO_EXISTE"}
-        try: _esp = max(0.0, min(20.0, float(p.get("espera") or 0)))
+        try: _esp = max(0.0, min(8.0, float(p.get("espera") or 0)))
         except Exception: _esp = 0.0
         if _esp and not item[0].done() and _LP_SEM.acquire(blocking=False):  # long-poll: vuelve apenas hay resultado o cambia el progreso
             try:

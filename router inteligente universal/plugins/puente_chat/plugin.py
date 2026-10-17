@@ -2699,7 +2699,7 @@ def _task_run(key, payload):
 _original_handle = handle
 _ASYNC_RID = {}
 import threading as _th_lp
-_LP_SEM = _th_lp.BoundedSemaphore(12)
+_LP_SEM = _th_lp.BoundedSemaphore(3)
 from concurrent.futures import wait as _cf_wait
 def handle(action, payload):
     if action == 'chat_async':
@@ -2737,7 +2737,7 @@ def handle(action, payload):
                 return {'estado': 'procesando', 'proceso_id': key, 'reanudado': True}
             return {'error':'PROCESO_NO_EXISTE'}
         future,_=item
-        try: espera=max(0.0,min(20.0,float(payload.get('espera') or 0)))
+        try: espera=max(0.0,min(8.0,float(payload.get("espera") or 0)))
         except Exception: espera=0.0
         if espera and not future.done() and _LP_SEM.acquire(blocking=False):  # long-poll acotado: no agota el threadpool
             try: _cf_wait([future], timeout=espera)
