@@ -66,7 +66,7 @@ const hdrs = () => { const k = sessionStorage.getItem('riu_clave'); const h = { 
 window.RIU_PENDIENTE = (ses) => procs()[ses] || null;
 window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de ejecutar; si ya corre, el Router no lanza los pasos siguientes
   const v = procs()[ses]; if (!v) return false; guardaProc(ses, null);
-  try { await fetch(v.base.replace(/[/]+$/, '') + '/cancelar', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) }); } catch (e) {}
+  try { await fetchT(v.base.replace(/[/]+$/, '') + '/cancelar', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) }, 8000); } catch (e) {}
   return true;
 };
 window.RIU_RETOMAR = async (ses) => {
@@ -137,7 +137,7 @@ async function puenteRouter(base, body, qs, headers) {
           const envelope = await poll.json().catch(() => ({}));
           if (poll.status === 401 || poll.status === 403) return { status: 401, ok: false, p: envelope };
           if (!poll.ok || envelope.status !== 'ok') throw new Error(envelope.reason || envelope.detail || ('HTTP ' + poll.status));  // /resultado fallido (cupo del host, 5xx): contar y reintentar, no cortar el chat
-          p = envelope.result || {}; fallosRed = 0; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso } })); } catch (e) {} }
+          p = envelope.result || {}; fallosRed = 0; if (p.progreso || p.parcial) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso || '', parcial: p.parcial || '' } })); } catch (e) {} }
         } catch (e) {  // red/job en cambio: seguir esperando, pero avisar y cortar tras 80 fallos seguidos (~20 s a 250 ms)
           fallosRed++;
           try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Sin conexión con el Router (' + fallosRed + ')…' } })); } catch (x) {}
@@ -155,7 +155,7 @@ async function puenteRouter(base, body, qs, headers) {
 }
 async function puente(base, body, qs, method, headers) {
   if (String(base).includes('/plugins/puente_chat')) return puenteRouter(base, body, qs, headers);
-  const r = await fetch(base + (qs || ''), { method: method || 'POST', headers, body: method === 'GET' ? undefined : JSON.stringify(body) });
+  const r = await fetchT(base + (qs || ''), { method: method || 'POST', headers, body: method === 'GET' ? undefined : JSON.stringify(body) }, 15000);
   const p = await r.json().catch(() => ({}));
   return { status: r.status, ok: r.ok, p };
 }
@@ -166,7 +166,7 @@ export async function accion(acc, payload) {
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) h['X-API-Key'] = pw;
   payload = Object.assign({ sesion: sessionStorage.getItem('riu_sesion') || 'web-general' }, payload || {});
-  const r = await fetch(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) });
+  const r = await fetchT(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) }, acc === 'subir' ? 60000 : 15000);  // subir: archivo grande, tope mayor
   const env = await r.json().catch(() => ({}));
   if (!r.ok || env.status !== 'ok') throw new Error(env.reason || env.detail || ('HTTP ' + r.status));
   return env.result || {};
@@ -225,8 +225,8 @@ export async function api(path, options = {}) {
   let response;
   try {
     const credentials = remoto(headers);
-    response = await fetch(BASE + path, { method: options.method || "GET", headers, credentials,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body) });
+    response = await fetchT(BASE + path, { method: options.method || "GET", headers, credentials,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body) }, path === "/chat/send" ? 120000 : 15000);  // /chat/send (sin harness) espera la respuesta completa
   } catch (error) {
     window.dispatchEvent(new CustomEvent("router-connection", { detail: "Sin conexión" }));
     throw error;
@@ -244,7 +244,7 @@ export async function media(id) {
   if (!/^[a-f0-9]{24}$/.test(id)) throw new Error("ID de archivo inválido");
   const headers = {};
   const credentials = remoto(headers);
-  const response = await fetch(`${BASE}/chat/media/${id}`, { headers, credentials });
+  const response = await fetchT(`${BASE}/chat/media/${id}`, { headers, credentials }, 15000);
   if (!response.ok) throw new Error(`MEDIA_HTTP_${response.status}`);
   return response.blob();
 }

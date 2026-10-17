@@ -553,6 +553,8 @@ export async function mount(root, { api, tell }) {
       if (!d || d.sesion !== c.sesion) return;  // evento de otro chat: ignorar, no quitarse
       const v = window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion);  // progreso aislado: solo mi sesion y, si hay PID guardado, solo mi proceso
       if (v && v.pid && d.proceso_id && d.proceso_id !== v.pid) return;
+      if (d.parcial) { pending.textContent = d.parcial; pending.classList.add('parcial'); try { abajo(c); } catch (x) {} return; }  // texto parcial en stream dentro de la burbuja; la final la reemplaza (pending.remove)
+      if (pending.classList.contains('parcial')) return;  // ya hay texto parcial: no volver a 'Pensando…'
       pending.textContent = d.texto !== undefined ? d.texto : d;
     };
     window.addEventListener('riu-progreso', alProgreso);

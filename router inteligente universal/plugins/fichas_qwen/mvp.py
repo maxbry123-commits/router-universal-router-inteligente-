@@ -116,13 +116,16 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
     def _sf(chunk: str) -> None:  # chunk del stream -> la nota del nodo MVP muestra la respuesta creciendo (sin reiniciar su cronometro)
         _buf.append(chunk)
         if pid:
+            fq._PARCIAL[pid] = ''.join(_buf)
             fq._NOTAS.setdefault(pid, {})['MVP'] = '…' + ''.join(_buf)[-80:]
     cap = capacidad_de(mensaje)  # INPUT -> CAP_NONE/READ/WRITE: sin intencion externa no se envia ni el catalogo
     requiere = cap != 'none'  # la tarea pide tools: al menos una debe ejecutarse con exito (evidencia)
     solo_lectura = cap != 'write'  # WRITE exige servicio externo + orden explicita de modificar; el resto bloquea mutaciones
     simple = cap == 'none'  # pregunta simple: sin tools, sin anexo, sin sentinela, reasoning acotado
     ex_llm = {'reasoning_effort': _RAZON[elegido]} if elegido in _RAZON else None
-    if simple and ex_llm and ex_llm['reasoning_effort'] in ('medium', 'high'):
+    if simple and ex_llm and str(elegido).startswith('ficha-qwen'):
+        ex_llm = {'enable_thinking': False}  # pregunta simple: Qwen sin thinking (Token Plan lo acepta en los modelos de texto)
+    elif simple and ex_llm and ex_llm['reasoning_effort'] in ('medium', 'high'):
         ex_llm = {'reasoning_effort': 'low'}
     if simple and not p.get('max_tokens'):
         mt = min(mt, 1024)

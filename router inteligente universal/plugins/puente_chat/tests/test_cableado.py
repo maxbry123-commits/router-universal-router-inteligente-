@@ -207,6 +207,7 @@ def test_13_politica_llega_a_la_peticion_http():
         return 200, {'choices': [{'message': {'content': 'ok'}}]}
     pc._qwen_conf = lambda: ('k', 'http://base')
     pc._http = http
+    pc._http_stream = lambda u, t, c, e, f: pc._http('POST', u, t, c, e)  # qwencloud va siempre en stream
     pc._POL_CACHE.clear()
     msg = [{'role': 'user', 'content': 'x'}]
     pc._llamar_api('qwencloud', 'glm-5.2', msg, 100, 30, TOOLS)

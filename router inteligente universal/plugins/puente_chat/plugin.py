@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import random
 import re
 from contextvars import ContextVar
 _DEADLINE = ContextVar("riu_chat_deadline", default=None)
@@ -64,6 +65,35 @@ ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO"
             '  if [ $I -ge 300 ]; then echo APAGADO_5_MIN_SIN_USO; kill $P; exit 0; fi\ndone\n')
 
 
+import http.client as _hc
+_CONNECT_S = 5  # conexion TCP/TLS: 5 s; lectura entre chunks aparte (_LECTURA_S)
+_LECTURA_S = 60
+
+
+class _ConnT(_hc.HTTPSConnection):
+    def connect(self):
+        t = self.timeout
+        self.timeout = min(_CONNECT_S, t) if isinstance(t, (int, float)) else _CONNECT_S
+        try:
+            super().connect()
+        finally:
+            self.timeout = t
+        if self.sock is not None and isinstance(t, (int, float)):
+            self.sock.settimeout(t)
+
+
+class _HttpsT(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_ConnT, req, context=self._context)
+
+
+_OPENER = urllib.request.build_opener(_HttpsT())
+
+
+def _abrir(req, espera):  # connect 5 s; lectura (cabeceras y cada chunk) min(espera, 60 s)
+    return _OPENER.open(req, timeout=max(1.0, min(float(espera), _LECTURA_S)))
+
+
 def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float = 60) -> tuple[int, Any]:
     deadline = _DEADLINE.get()
     if deadline is not None:
@@ -72,7 +102,7 @@ def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float =
     req = urllib.request.Request(url, data=json.dumps(cuerpo).encode() if cuerpo is not None else None, method=metodo,
                                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", "User-Agent": "riu-chat-mvp", "Accept": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=espera) as r:
+        with _abrir(req, espera) as r:
             texto = r.read().decode()
             return r.status, (json.loads(texto) if texto else {})
     except urllib.error.HTTPError as e:
@@ -81,7 +111,7 @@ def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float =
             return e.code, json.loads(texto)
         except ValueError:
             return e.code, {"error": texto[:200]}
-    except (TimeoutError, urllib.error.URLError):
+    except (TimeoutError, OSError, _hc.HTTPException):
         return 0, {'error': 'PROVEEDOR_TIMEOUT_O_RED'}
 
 
@@ -102,8 +132,11 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
     usage: dict = {}
     calls: dict[int, dict] = {}
     try:
-        with urllib.request.urlopen(req, timeout=espera) as r:
+        _fin_s = time.monotonic() + espera
+        with _abrir(req, espera) as r:
             for linea in r:
+                if time.monotonic() > _fin_s:
+                    raise TimeoutError('TIEMPO_TOTAL_AGOTADO')
                 if not linea.startswith(b'data:'):
                     continue
                 dato = linea[5:].strip()
@@ -152,7 +185,7 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
             return e.code, json.loads(texto)
         except ValueError:
             return e.code, {"error": texto[:200]}
-    except (TimeoutError, urllib.error.URLError):
+    except (TimeoutError, OSError, _hc.HTTPException):
         return 0, {'error': 'PROVEEDOR_TIMEOUT_O_RED'}
 
 
@@ -538,8 +571,8 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             sf = _STREAM_FN.get()
             _met('t_model_start', time.monotonic())  # base del TTFT real: _http_stream lo sella en el primer delta
             _t0c = time.monotonic()
-            ultimo = _http_stream(base + '/chat/completions', clave, cuerpo, resta, sf) \
-                     if (sf and proveedor == 'qwencloud') \
+            ultimo = _http_stream(base + '/chat/completions', clave, cuerpo, resta, sf or (lambda _c: None)) \
+                     if proveedor == 'qwencloud' \
                      else _http('POST', base + '/chat/completions', clave, cuerpo, resta)
             _au = _AUDIT.get()
             if _au is not None:  # auditoria forense: request/response real al endpoint SIN secretos ni prompts
@@ -549,7 +582,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                     _ms = _ch.get('message') or {}
                     _u = _d.get('usage') or {}
                     _au.append({'host': base, 'path': '/chat/completions', 'model': modelo,
-                                'stream': bool(sf and proveedor == 'qwencloud'), 'tools': bool(tools), 'tool_choice': cuerpo.get('tool_choice'),
+                                'stream': proveedor == 'qwencloud', 'tools': bool(tools), 'tool_choice': cuerpo.get('tool_choice'),
                                 'n_messages': len(cuerpo.get('messages') or []),
                                 'chars_in': sum(len(str(m.get('content') or '')) for m in (cuerpo.get('messages') or []) if isinstance(m, dict)),
                                 'reasoning_effort': cuerpo.get('reasoning_effort'), 'enable_thinking': cuerpo.get('enable_thinking'),
@@ -601,7 +634,10 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 detalle = json.dumps(ultimo[1])
                 if 'too large' not in detalle and 'tier' not in detalle:
                     return ultimo  # 400 de formato: no lo arregla otra clave; los de cuota/tier si
-        time.sleep(3)
+                continue
+            if 0 < ultimo[0] < 500 and ultimo[0] != 429:
+                return ultimo  # error de contenido (2xx sin choices, 4xx): reintentar no lo arregla; solo red/timeout/5xx
+        time.sleep(1 + random.random() * 0.5)  # backoff corto con jitter antes de la segunda vuelta
     return ultimo
 
 
@@ -2101,6 +2137,8 @@ def _chat(p):
     _PROG_FN.set(p.get('progreso_fn') if callable(p.get('progreso_fn')) else None)
     _STREAM_FN.set(p.get('stream_fn') if callable(p.get('stream_fn')) else None)
     _EXTRA_LLM.set(p.get('extra_llm') if isinstance(p.get('extra_llm'), dict) else None)
+    if p.get('extra_llm') is None and _CAP_TOOLS.get() == 'none' and len(pregunta or '') <= 300:
+        _EXTRA_LLM.set({'enable_thinking': False})  # pregunta simple (CAP_NONE, corta): sin thinking; las complejas lo mantienen
     _tid = str(p.get('tarea_id') or '')
     if _tid:  # misma tarea y mismo nodo: las escrituras ya hechas no se repiten aunque se reintente o se corrija
         if len(_VISTOS_G) > 200:

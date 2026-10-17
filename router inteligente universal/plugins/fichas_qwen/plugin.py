@@ -11,6 +11,7 @@ from __future__ import annotations
 import concurrent.futures as _cf
 import hashlib
 import json
+import random
 import os
 import re
 import secrets
@@ -109,16 +110,22 @@ def _llamar(modelo: str, prompt: str, ficha: dict[str, Any], *, timeout_override
         _c = {'model': m['modelo'], 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tokens}
         if m['modelo'] in ESFUERZO_MODELO:
             _c['reasoning_effort'] = ESFUERZO_MODELO[m['modelo']]  # llamada directa sin tools: perfil comun de los 9 modelos (Ficha 4 / fast_lane)
+        _c['stream'] = True  # siempre en stream (Token Plan Qwen)
         cuerpo = json.dumps(_c).encode()
         req = urllib.request.Request(m['url'] + '/chat/completions', data=cuerpo, method='POST',
-                                     headers={'Authorization': 'Bearer ' + clave, 'Content-Type': 'application/json'})
+                                     headers={'Authorization': 'Bearer ' + clave, 'Content-Type': 'application/json', 'Accept': 'text/event-stream'})
         try:
-            with urllib.request.urlopen(req, timeout=resto) as r:
-                d = json.loads(r.read().decode('utf-8', 'replace'))
-            t = str(((d.get('choices') or [{}])[0].get('message') or {}).get('content') or '').strip()
+            cod, d = _pc()._http_stream(m['url'] + '/chat/completions', clave, dict(_c), resto, lambda _x: None)
+            if cod == 0 or cod >= 500 or cod == 429:
+                ultimo = str(d.get('error') if isinstance(d, dict) else d)[:200]
+                time.sleep(min(2.0, 0.5 * (2 ** n)) + random.random() * 0.3)  # backoff 0,5->1->2 s + jitter
+                continue  # solo red/timeout/5xx/429 se reintenta
+            t = str(((d.get('choices') or [{}])[0].get('message') or {}).get('content') or '').strip() if cod < 400 else ''
             if t:
                 return t
-            ultimo = 'respuesta vacia'
+            raise RuntimeError('MODELO_SIN_RESPUESTA:%s:%s' % (modelo, ('http %d ' % cod + json.dumps(d)[:150]) if cod >= 400 else 'respuesta vacia'))
+        except RuntimeError:
+            raise
         except Exception as x:  # noqa: BLE001
             ultimo = str(x)[:200]
     raise RuntimeError('MODELO_SIN_RESPUESTA:%s:%s' % (modelo, ultimo))
@@ -933,17 +940,24 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         perfil = 'code'
     else:
         perfil = 'normal'
+    _bp: list = []
+    _pidp = str(opts.get('pid') or '')
+
+    def _sf_parcial(c_: str) -> None:  # texto parcial visible: solo respuesta directa (FAST o Ficha 1), ultimo nodo que escribe gana
+        if _pidp and (fast or opts.get('fid') == 'ficha1-modelos'):
+            _bp.append(c_)
+            _PARCIAL[_pidp] = ''.join(_bp)
     _tm = time.time()
     r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
-                  'extra_llm': ({'enable_thinking': False} if (perfil == 'fast' and modelo in _FAST_LOW) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None,
+                  'extra_llm': ({'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None,
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
                   'perfil': perfil,
                   # Token Plan: thinking obligado en true -> siempre SSE (como mvp.py); el chunk se reenvia si hay visor
-                  'stream_fn': opts.get('stream_fn') if callable(opts.get('stream_fn')) else (lambda _c: None)})
+                  'stream_fn': opts.get('stream_fn') if callable(opts.get('stream_fn')) else _sf_parcial})
     try:  # metrica de latencia por nodo (solo registro, no cambia la salida)
         _perfil = perfil
         _tcs = r.get('tool_calls') if isinstance(r.get('tool_calls'), list) else (r.get('herramientas') if isinstance(r.get('herramientas'), list) else [])
@@ -1076,6 +1090,7 @@ def _prog(pid: str, nodo: str, estado: str) -> None:
 
 _PROG_META: dict[str, dict[str, tuple]] = {}
 _NOTAS: dict[str, dict[str, str]] = {}
+_PARCIAL: dict[str, str] = {}  # texto parcial en stream de la respuesta (el chat lo pinta en la burbuja via /resultado)
 _NOMBRES_M = {'ficha-qwen38max': 'Qwen 3.8 Max', 'ficha-qwen37max': 'Qwen 3.7 Max', 'ficha-qwen37plus': 'Qwen 3.7 Plus', 'ficha-qwen36flash': 'Qwen 3.6 Flash',
               'ficha-dsv4pro': 'DeepSeek V4 Pro', 'ficha-dsv4pro0813': 'DeepSeek V4 Pro 0813'}
 _TAREAS_V = {'N1': 'analiza la arquitectura y propone', 'N2': 'analiza la arquitectura y propone', 'N3': 'analiza la arquitectura y propone',
@@ -1547,7 +1562,7 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             for k, (fut, t) in list(_PROCESOS.items()):
                 if time.time() - t > 900 and fut.done():
                     del _PROCESOS[k]
-                    _PROGRESO.pop(k, None); _PROG_T.pop(k, None); _PROG_META.pop(k, None); _NOTAS.pop(k, None)
+                    _PROGRESO.pop(k, None); _PROG_T.pop(k, None); _PROG_META.pop(k, None); _NOTAS.pop(k, None); _PARCIAL.pop(k, None)
             _reap_huerfanos()
             _fast_q = _es_fast_req(p)
             _PROCESOS[clave] = ((_POOL_FAST if _fast_q else _POOL).submit(_pool_run, clave, dict(p, _pid=clave, _t_submit=time.time())), time.time())
@@ -1579,14 +1594,16 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         except Exception: _esp = 0.0
         if _esp and not item[0].done() and _LP_SEM.acquire(blocking=False):  # long-poll: vuelve apenas hay resultado o cambia el progreso
             try:
-                _p0 = _texto_prog(str(p.get("proceso_id") or "")); _t0 = time.time()
+                _p0 = _texto_prog(str(p.get("proceso_id") or "")); _t0 = time.time(); _pp0 = len(_PARCIAL.get(str(p.get("proceso_id") or ""), ''))
                 while time.time() - _t0 < _esp and not item[0].done():
                     import concurrent.futures as _cfw; _cfw.wait([item[0]], timeout=0.5)
-                    if _texto_prog(str(p.get("proceso_id") or "")) != _p0: break
+                    if _texto_prog(str(p.get("proceso_id") or "")) != _p0 or len(_PARCIAL.get(str(p.get("proceso_id") or ""), '')) != _pp0: break
                     _ULT_POLL[str(p.get("proceso_id") or "")] = time.time()
             finally: _LP_SEM.release()
         if not item[0].done():
             _r = {"estado": "procesando", "proceso_id": p.get("proceso_id"), "progreso": _texto_prog(str(p.get("proceso_id") or ""))}
+            if _PARCIAL.get(str(p.get("proceso_id") or "")):
+                _r["parcial"] = _PARCIAL[str(p.get("proceso_id") or "")]
             if not item[0].running():  # fix 7: el front ve que espera worker, no que el modelo tarda
                 _c = _cola()
                 _r.update(en_cola=True, cola=_c)
