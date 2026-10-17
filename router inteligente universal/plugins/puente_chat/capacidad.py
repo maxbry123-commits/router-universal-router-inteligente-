@@ -24,11 +24,14 @@ _RECURSO_EXT = re.compile(r'(archivo|fichero|file|rama|branch|issue|pull request
 _NEG = re.compile(r'\bno\b[\wáéíóúñü ]{0,25}$', re.I)
 
 
+_AGENTE = re.compile(r'\b(agentes?|bots?|chat bots|mirror|crear_agente)\b', re.I)
+
+
 def capacidad_de(texto: str | None) -> str:
     # el input actual decide: sin intencion externa -> NONE; externo + orden de mutar no negada -> WRITE; externo solo -> READ
     t = str(texto or '')
     if not _EXTERNO.search(t):
-        return CAP_NONE
+        return CAP_READ if _AGENTE.search(t) else CAP_NONE  # crear_agente siempre visible cuando se habla de agentes/bots
     for m in _MUTA.finditer(t):  # verbos inequivocos: mutan aunque el objeto sea vago
         if not _NEG.search(t[:m.start()]):
             return CAP_WRITE

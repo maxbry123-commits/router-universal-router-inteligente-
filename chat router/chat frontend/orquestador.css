@@ -23,3 +23,12 @@
 .orq-plus{display:flex;flex-direction:column;gap:6px;padding:6px;border:1px dashed #666;border-radius:8px}
 .orq-leyenda{display:flex;gap:8px;flex-wrap:wrap;font-size:10px;opacity:.8}.orq-leyenda span{display:flex;gap:3px;align-items:center}
 .orq-leyenda .orq-sem{position:static;width:8px;height:8px;border-width:0}
+/* v2: seccion Chat BOTS debajo del chat abierto */
+.chat-bots{display:flex;flex-direction:column;gap:6px;margin:4px 0}
+.bots-tira{display:flex;gap:6px;overflow-x:auto;align-items:center;padding:2px 0;scrollbar-width:none}
+.bots-tit{font-size:12px;opacity:.8;white-space:nowrap}
+.bot-chip{position:relative;display:flex;gap:4px;align-items:center;white-space:nowrap;padding-right:16px}
+.bot-chip .orq-sem{top:3px;right:3px;width:9px;height:9px;border-width:1px}
+.bot-n{max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.chat-bots.abierto .orq-hilo{max-height:42vh}
+#orq-sem{position:static}
