@@ -54,6 +54,7 @@ export async function mount(root, { api, tell }) {
       localStorage.setItem("riu_chat_activo", String(activo)); localStorage.setItem(CLAVE_CHATS, JSON.stringify(
         chats.map((c) => ({ sesion: c.sesion, ficha: c.ficha, anclados: [...c.anclados], instrucciones: c.instrucciones || "", selectorQwen: c.selectorQwen || null, fastReply: !!c.fastReply, motor: !!c.motor, project_id: c.project_id || null }))));
     } catch (e) {}
+    try { A.respaldarPestanas(JSON.parse(localStorage.getItem(CLAVE_CHATS) || "[]")); } catch (e) {}  // respaldo de pestañas en el Router (nombre y orden)
   };
   const pintarAnclados = () => {
     const caja = q("#anclados");
@@ -90,11 +91,26 @@ export async function mount(root, { api, tell }) {
       mas.addEventListener("click", nuevoChat);
       tabsEl.append(mas);
     }
+    const rec = node("button", "↺", "mini btn-recuperar-hist"); rec.type = "button"; rec.id = "btn-recuperar-hist"; rec.title = "Recuperar historial y contexto de este chat"; rec.setAttribute("aria-label", "Recuperar historial"); rec.style.borderRadius = "999px";  // sin clase chip: no recibe la X de borrar
+    rec.addEventListener("click", recuperarHist); tabsEl.append(rec);
     chats.forEach((c, i) => { c.hist.hidden = i !== activo; });
     pintarAnclados();
     try { pintarFichaPill(); } catch (e) {}
     { const bd = q("#btn-detener"); if (bd) bd.hidden = false; }  // Detener SIEMPRE visible (restaurado por orden de Antonio)
     guardar();
+  };
+  const recuperarHist = async () => {  // ↺: une copia local + respaldo del Router; reabre (en su orden) los chats cuya pestaña se perdió; los borrados no vuelven
+    let c = chat(); if (c.ocupado) { tell("Ese chat está trabajando: espera o pulsa Detener"); return; }
+    tell("Recuperando historial…"); let pest = 0;
+    try {
+      let r = { total: 0, router: 0, routerOk: true }, total0 = 0;
+      for (const x of chats) if (!x.ocupado) { const y = await A.recuperar(x, burbuja, api); total0 += y.total; if (x === c) r = y; }  // todos los chats abiertos, no solo el visible
+      const vacio = chats.length === 1 && !total0;  // navegador borrado: la pestaña nueva y vacía se cambia por las recuperadas
+      for (const p of await A.pestanasPerdidas(chats.map((x) => x.sesion))) { if (chats.length >= MAX_CHAT) break; const prev = activo; nuevoChat(p); const y = await A.recuperar(chat(), burbuja, api); r = { total: r.total + y.total, router: r.router + y.router, routerOk: r.routerOk && y.routerOk }; activo = prev; pest++; }
+      if (vacio && pest) { const v = chats[0]; v.hist.remove(); chats.splice(0, 1); A.olvidar(v.sesion); activo = 0; c = chat(); }
+      pintarTabs(); c.hist.__sigue = true; abajo(c);
+      tell(r.total ? "Historial recuperado: " + r.total + " mensajes" + (r.router ? " (" + r.router + " desde el Router)" : "") + (pest ? " · " + pest + " chat(s) reabiertos" : "") : (r.routerOk ? "No hay historial guardado para este chat" : "Sin conexión con el Router: solo se revisó la copia local"));
+    } catch (e) { tell("No se pudo recuperar el historial"); }
   };
   const nuevoChat = (restaurado) => {
     const h = node("div", "", "chat-history");
@@ -149,6 +165,7 @@ export async function mount(root, { api, tell }) {
     return d;
   };
 
+  A.conectarRespaldo(api);  // cada mensaje y la lista de pestañas también quedan en /memoria del Router
   const ancla = A.montarAncla({ q, chat: chatA, tell, guardar, pintarAnclados });
   chats.forEach((c) => { c.historialListo = A.restaurar(c, burbuja); c.historialListo.then(() => {  // historial guardado: vuelve al recargar; una tarea que seguia corriendo se retoma por su proceso_id (NO se relanza)
     if (!window.RIU_PENDIENTE || !window.RIU_PENDIENTE(c.sesion)) return;
