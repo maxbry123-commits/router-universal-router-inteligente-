@@ -1,0 +1,75 @@
+{
+  "bundle_bytes": 90626412,
+  "bundle_sha256": "a8b997725681523eae0760f3c71dc3e2a42b14ecfa6f0d4d9d633ec11a3002f0",
+  "elapsed_seconds": 20.71,
+  "extracted_tree": {
+    "bytes": 214616460,
+    "files": 18605,
+    "sha256": "d034fe67546f8dd1a4b6adc6dd9e127f7fac1bf850643c7cf6c43f9b8b568758"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v0.22.2.bundle.zip.part-0001",
+      "sha256": "35a269e9c95fde32a1a3ef1bffa61ec28feb7f7e9cde9e710e558c1f3d831cdf"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v0.22.2.bundle.zip.part-0002",
+      "sha256": "473a693d824e706bde4787647079cd68cf5fb70aeb056543df17d4ebd84c6ecb"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v0.22.2.bundle.zip.part-0003",
+      "sha256": "12748a68e8005cec2396eefcd30ffd0b07e47003de809880762ab44644b9db86"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v0.22.2.bundle.zip.part-0004",
+      "sha256": "e1f085da435d69acef7cd770ca14df7171038ed82d84c0c39def0e7c81867a9b"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v0.22.2.bundle.zip.part-0005",
+      "sha256": "f97cd1ce89cf101500340311cd212fbce476182e0d680a2876a395dd01925591"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v0.22.2.bundle.zip.part-0006",
+      "sha256": "dec1e57740437868d02497cfb6b4d7973197b2f9eda31841e61846bbdb57de87"
+    },
+    {
+      "bytes": 12582912,
+      "name": "hermes-agent-v0.22.2.bundle.zip.part-0007",
+      "sha256": "77d438e99e5ead67272287ebbf6a8bc89963342a185640a339ed4f47a20fcb18"
+    },
+    {
+      "bytes": 2546028,
+      "name": "hermes-agent-v0.22.2.bundle.zip.part-0008",
+      "sha256": "3662bb24635d821db8d01b3477d8f6bcdae5775f4df8ab23e983757fd8f06d5f"
+    }
+  ],
+  "publish": {
+    "verdict": "DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED"
+  },
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "hermes-agent-v0.22.2",
+  "source_bytes": 214616460,
+  "source_commit": "d923a5eb487a17c0a68801bba9ef0f56c81040a8",
+  "source_files": 18605,
+  "source_ref": "v0.22.2",
+  "source_repo": "NousResearch/hermes-agent",
+  "source_tree": {
+    "bytes": 214616460,
+    "files": 18605,
+    "sha256": "d034fe67546f8dd1a4b6adc6dd9e127f7fac1bf850643c7cf6c43f9b8b568758"
+  },
+  "verdict": "VERIFIED_CLOSED"
+}
