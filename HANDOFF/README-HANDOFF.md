@@ -2,6 +2,8 @@
 
 Actualizado: 16-oct-2026 23:20, hora Bogotá (UTC-5). Estado: **todo en pausa** por orden de Antonio.
 
+**Chat BOTS (orquestador de agentes) + ROOM CONFERENCIAS:** ver [`HANDOFF/CHATBOTS/`](CHATBOTS/) ([arquitectura](CHATBOTS/README-ARQUITECTURA.md) · [handoff y PROGRESO](CHATBOTS/HANDOFF.md)).
+
 Pega este bloque completo en un Grok Bot nuevo:
 
 ---
