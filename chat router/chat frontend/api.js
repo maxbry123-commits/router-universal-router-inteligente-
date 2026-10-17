@@ -218,10 +218,24 @@ export async function apagarRespaldo() {
   return r;
 }
 window.RIU_APAGAR = apagarRespaldo;
-export async function api(path, options = {}) {
+// /memoria/* con PIN (RIU_MEMORIA_PIN o RIU_SECRETOS_PIN en el Space): se pide UNA vez por carga si el Router responde MEMORIA_PIN_REQUERIDO y queda en este navegador
+const PIN_MEM = "riu_memoria_pin";
+let pinMemPedido = false;
+const pinMemoria = () => { try { return localStorage.getItem(PIN_MEM) || ""; } catch (e) { return ""; } };
+function pedirPinMemoria() {
+  if (pinMemPedido || typeof prompt !== "function") return false;
+  pinMemPedido = true;
+  try { localStorage.removeItem(PIN_MEM); } catch (e) {}
+  const v = (prompt("PIN de la memoria del Router") || "").trim();
+  if (!v) return false;
+  try { localStorage.setItem(PIN_MEM, v); } catch (e) { return false; }
+  return true;
+}
+export async function api(path, options = {}, _reintento = false) {
   await liveRouter();
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Ruta inválida");
   const headers = {};
+  if (path.startsWith("/memoria/")) { const mp = pinMemoria(); if (mp) headers["X-Memoria-Pin"] = mp; }
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   let response;
   try {
@@ -237,6 +251,7 @@ export async function api(path, options = {}) {
   window.dispatchEvent(new CustomEvent("router-connection", { detail: status }));
   const payload = response.headers.get("content-type")?.includes("application/json")
     ? await response.json() : { detail: `HTTP ${response.status}` };
+  if (!response.ok && response.status === 401 && payload.detail === "MEMORIA_PIN_REQUERIDO" && !_reintento && pedirPinMemoria()) return api(path, options, true);
   if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : `HTTP ${response.status}`);
   return payload;
 }

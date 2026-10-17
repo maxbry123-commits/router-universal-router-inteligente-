@@ -1,5 +1,5 @@
 """Passwordless chat entry. Infrastructure credentials remain server-side in the vault."""
-import os, time, json
+import os, time, json, hmac
 from collections import deque
 from integration.chat_mvp.app import app
 
@@ -30,6 +30,25 @@ def _limitado(scope) -> bool:
         for k in [k for k, v in _RL.items() if not v][:2000]: _RL.pop(k, None)
     return False
 
+def _memoria_pin() -> str:
+    """PIN de /memoria/*: RIU_MEMORIA_PIN o, si no esta, el mismo RIU_SECRETOS_PIN de la ventana de secretos. Sin PIN = como antes."""
+    return os.getenv("RIU_MEMORIA_PIN") or os.getenv("RIU_SECRETOS_PIN") or ""
+
+
+def _memoria_bloqueada(scope) -> bool:
+    """/memoria/* exige la cabecera X-Memoria-Pin igual al PIN (comparacion en tiempo constante); OPTIONS (CORS) pasa."""
+    if not scope.get("path", "").startswith("/memoria/") or scope.get("method") == "OPTIONS":
+        return False
+    pin = _memoria_pin()
+    if not pin:
+        return False
+    dado = b""
+    for k, v in scope.get("headers", []):
+        if k.lower() == b"x-memoria-pin":
+            dado = v
+    return not hmac.compare_digest(pin.encode(), dado)
+
+
 class ChatAccess:
     def __init__(self, app): self.app=app
     async def __call__(self, scope, receive, send):
@@ -44,6 +63,11 @@ class ChatAccess:
             if _limitado(scope):
                 body=json.dumps({"status":"error","reason":"RATE_LIMIT","detail":"Demasiados envios seguidos; espera un momento"}).encode()
                 await send({"type":"http.response.start","status":429,"headers":[(b"content-type",b"application/json"),(b"retry-after",b"30")]})
+                await send({"type":"http.response.body","body":body})
+                return
+            if _memoria_bloqueada(scope):
+                body=json.dumps({"detail":"MEMORIA_PIN_REQUERIDO"}).encode()
+                await send({"type":"http.response.start","status":401,"headers":[(b"content-type",b"application/json"),(b"access-control-allow-origin",b"*")]})
                 await send({"type":"http.response.body","body":body})
                 return
             path=scope.get("path","")
