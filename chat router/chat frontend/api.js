@@ -166,7 +166,7 @@ export async function accion(acc, payload) {
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) h['X-API-Key'] = pw;
   payload = Object.assign({ sesion: sessionStorage.getItem('riu_sesion') || 'web-general' }, payload || {});
-  const r = await fetchT(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) }, acc === 'subir' ? 60000 : 15000);  // subir: archivo grande, tope mayor
+  const r = await fetchT(CFG.harnessUrl.replace(/[/]+$/, '') + '/' + acc, { method: 'POST', headers: h, body: JSON.stringify(payload) }, acc === 'subir' ? 60000 : acc === 'recurso_probar' ? 120000 : 15000);  // subir: archivo grande; recurso_probar: llamada real al modelo
   const env = await r.json().catch(() => ({}));
   if (!r.ok || env.status !== 'ok') throw new Error(env.reason || env.detail || ('HTTP ' + r.status));
   return env.result || {};

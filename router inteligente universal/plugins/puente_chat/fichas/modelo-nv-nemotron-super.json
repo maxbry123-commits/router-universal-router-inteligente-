@@ -8,5 +8,6 @@
   "claves": "banco",
   "rotacion": "mismo-modelo",
   "herramientas": true,
-  "memoria": true
+  "memoria": true,
+  "nota": "Ficha NVIDIA del chat (reemplaza a Kimi K3): 1 sola clave (NVIDIA_API_KEY_1). Nemotron 3 Ultra (nvidia/nemotron-3-ultra-550b-a55b) dio 503 en las 5 claves el 16-oct."
 }

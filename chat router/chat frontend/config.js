@@ -7,9 +7,9 @@ window.RIU_CONFIG = {
   harnessUrl: '',  // puente dentro del Router: se rellena desde LIVE_URL.json en la primera resolución
   proxyDestino: 'https://comand-center-1-riu-router.hf.space',  // destino fijo de los rewrites /plugins, /vault, /health de vercel.json y direccion inicial sin esperar LIVE_URL.json
   authHeader: 'X-API-Key',
-  defecto: 'nv-muse-glimmer',  // ficha NVIDIA: Glimmer / Kimi K3
+  defecto: 'nv-muse-glimmer',  // ficha NVIDIA: Glimmer / Nemotron 3 Super (1 clave); las otras 4 claves van a la tool NVIDIA de codigo
   modelos: [
     { id: 'nv-muse-glimmer', etiqueta: 'NV Muse Glimmer 30B' },
-    { id: 'nv-kimi-k3', etiqueta: 'NV Kimi K3 (retirado por NVIDIA)' }
+    { id: 'nv-nemotron-super', etiqueta: 'NV Nemotron 3 Super' }
   ]
 };

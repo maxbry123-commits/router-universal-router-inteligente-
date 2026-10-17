@@ -25,7 +25,7 @@ PROVIDERS: dict[str, dict[str, Any]] = {
                "env": ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4", "NVIDIA_API_KEY_5")},
     "hf": {"label": "Hugging Face Router", "base": "https://router.huggingface.co/v1", "env": ("HF_TOKEN", "HF_TOKEN_1")},
     "groq": {"label": "Groq", "base": "https://api.groq.com/openai/v1",
-             "env": ("GROQ_API_KEY", "GROQ_API_KEY_1", "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4",
+             "env": ("GROQ_API_KEY", "GROQ_API_KEY_2", "GROQ_API_KEY_3", "GROQ_API_KEY_4",
                      "GROQ_API_KEY_5", "GROQ_API_KEY_6", "GROQ_API_KEY_7")},
     "openai": {"label": "OpenAI (SDK, 14 claves rotativas)", "base": "https://api.openai.com/v1",
                "env": ("OPENAI_API_KEY", "OPENAI_API_KEY_1", "OPENAI_API_KEY_2", "OPENAI_API_KEY_3", "OPENAI_API_KEY_4", "OPENAI_API_KEY_5", "OPENAI_API_KEY_6", "OPENAI_API_KEY_7", "OPENAI_API_KEY_8", "OPENAI_API_KEY_9", "OPENAI_API_KEY_10", "OPENAI_API_KEY_11", "OPENAI_API_KEY_12", "OPENAI_API_KEY_13", "OPENAI_API_KEY_14")},

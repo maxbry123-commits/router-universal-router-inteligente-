@@ -401,7 +401,7 @@ SISTEMA += ' Si una herramienta falla, explica el error; no inventes su resultad
 
 # --- Groq: una sola ficha como tool para enrutar a agentes (pool de hasta 20) ---
 GROQ_MAX = 20
-GROQ_RUTA = 'agentes/groq-pool.json'
+GROQ_RUTA = os.environ.get('RIU_AGENTES_RUTA') or 'agentes/groq-pool.json'  # pruebas locales: ruta aparte, sin tocar el pool real
 GROQ_MODELOS = ('openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'qwen/qwen3.8-27b')
 _GROQ_DEF = [
     {'nombre': 'investigador', 'modelo': 'openai/gpt-oss-20b', 'sistema': 'Eres un investigador. Responde con datos concretos y breves, en espanol.'},
@@ -409,6 +409,7 @@ _GROQ_DEF = [
     {'nombre': 'redactor', 'modelo': 'openai/gpt-oss-20b', 'sistema': 'Eres un redactor. Escribe textos claros y breves en espanol.'},
 ]
 _GROQ = {'pool': None, 'i': 0}
+GROQ_ENV = ['GROQ_API_KEY'] + ['GROQ_API_KEY_%d' % i for i in range(2, 11)]  # GROQ_API_KEY_1 fuera: HTTP 401 medido el 16-oct
 
 
 def groq_pool():
@@ -430,7 +431,11 @@ def groq_guardar(pool):
             continue
         vistos.add(n)
         m = str(a.get('modelo') or GROQ_MODELOS[0])
-        limpio.append({'nombre': n, 'modelo': m if m in GROQ_MODELOS else GROQ_MODELOS[0], 'sistema': str(a.get('sistema') or '')[:600]})
+        ag = {'nombre': n, 'modelo': m if m in GROQ_MODELOS else GROQ_MODELOS[0], 'sistema': str(a.get('sistema') or '')[:600]}
+        rec = str(a.get('recurso') or '')
+        if rec and rec in recursos_ids():
+            ag['recurso'] = rec  # recurso LLM enlazado (Ficha 4 / NVIDIA codigo / Groq); sin recurso = su modelo Groq
+        limpio.append(ag)
     if len(limpio) > GROQ_MAX:
         return {'error': 'MAXIMO_%d_AGENTES' % GROQ_MAX}
     _GROQ['pool'] = limpio
@@ -443,10 +448,12 @@ def groq_agente(a):
     ag = next((x for x in groq_pool() if x['nombre'] == nombre), None)
     if not ag:
         return 'ERROR: agente desconocido. Agentes: ' + ', '.join(x['nombre'] for x in groq_pool())
-    claves = _llaves('groq', ['GROQ_API_KEY'] + ['GROQ_API_KEY_%d' % i for i in range(1, 11)])
+    if ag.get('recurso') and not str(ag['recurso']).startswith('groq:'):
+        return '[' + ag['nombre'] + ' · ' + ag['recurso'] + '] ' + llamar_recurso(ag['recurso'], ag.get('sistema') or '', str(a.get('mensaje') or ''))
+    claves = _llaves('groq', GROQ_ENV)
     if not claves:
         return 'ERROR: no hay claves de Groq'
-    cuerpo = {'model': ag['modelo'], 'max_tokens': 1500, 'messages': [{'role': 'system', 'content': ag['sistema'] or 'Responde en espanol.'}, {'role': 'user', 'content': str(a.get('mensaje') or '')[:8000]}]}
+    cuerpo = {'model': (str(ag.get('recurso') or '')[5:] or ag['modelo']) if str(ag.get('recurso') or '').startswith('groq:') else ag['modelo'], 'max_tokens': 1500, 'messages': [{'role': 'system', 'content': ag['sistema'] or 'Responde en espanol.'}, {'role': 'user', 'content': str(a.get('mensaje') or '')[:8000]}]}
     ultimo = ''
     for _ in range(len(claves)):
         k = claves[_GROQ['i'] % len(claves)]
@@ -463,3 +470,100 @@ def groq_agente(a):
 TOOLS.append(_fn('groq_agente', 'Enruta un mensaje a uno de los agentes Groq conectados (pool de hasta 20) y devuelve su respuesta. nombre: nombre del agente (ej. investigador, programador, redactor).', {'nombre': S, 'mensaje': S}, ['nombre', 'mensaje']))
 FUNCS['groq_agente'] = groq_agente
 SISTEMA += ' Tienes groq_agente(nombre, mensaje) para delegar en un agente Groq del pool.'
+
+
+# --- Staff de tools: recursos LLM enlazables (Ficha 4 por Harness/HTTP, tool NVIDIA de codigo, Groq) ---
+# El Harness (plugin.py) inyecta LLM_CALL (llm_call -> HTTP -> Ficha 4) y LLM_NV (_llamar_api nvidia, claves 2-5).
+LLM_CALL = None
+LLM_NV = None
+NV_CODIGO = [('z-ai/glm-5.3', 'GLM-5.3', 'Codigo: 1o de la comunidad (SWE-bench, LMArena WebDev)'),
+             ('stepfun-ai/step-5-preview', 'Step 5 Preview', 'Codigo rapido: 2o en uso real OpenRouter')]
+# deepseek-ai/deepseek-v4.1-flash (1o en uso OpenRouter) queda fuera: timeout >90 s en NVIDIA el 16-oct (3 de 3)
+
+
+def _ficha4_texto():
+    ruta = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'fichas_qwen', 'fichas', 'ficha4-workflow-yaiwes.json')
+    try:
+        with open(ruta, encoding='utf-8') as f:
+            sel = json.load(f).get('selector') or []
+    except Exception:  # noqa: BLE001
+        sel = []
+    return [x for x in sel if isinstance(x, dict) and x.get('tipo') == 'texto' and x.get('id')]
+
+
+def recursos_llm():
+    r = [{'id': 'ficha4:' + x['id'], 'nombre': x.get('nombre') or x['id'], 'rol': x.get('rol') or '', 'grupo': 'Ficha 4', 'via': 'Harness -> HTTP -> Ficha 4'} for x in _ficha4_texto()]
+    r += [{'id': 'nvcode:' + m, 'nombre': n + ' (NVIDIA)', 'rol': rol, 'grupo': 'NVIDIA codigo', 'via': 'Harness -> HTTP -> NVIDIA (claves 2-5)'} for m, n, rol in NV_CODIGO]
+    r += [{'id': 'groq:' + m, 'nombre': m, 'rol': 'Groq', 'grupo': 'Groq', 'via': 'Harness -> HTTP -> Groq'} for m in GROQ_MODELOS]
+    return r
+
+
+def recursos_ids():
+    return {x['id'] for x in recursos_llm()}
+
+
+def llamar_recurso(recurso, sistema, mensaje):
+    recurso = str(recurso or '')
+    msgs = ([{'role': 'system', 'content': str(sistema)[:2000]}] if sistema else []) + [{'role': 'user', 'content': str(mensaje or '')[:12000]}]
+    if recurso not in recursos_ids():
+        return 'ERROR: recurso desconocido. Validos: ' + ', '.join(sorted(recursos_ids()))
+    if recurso.startswith('ficha4:'):
+        if not LLM_CALL:
+            return 'ERROR: GAP_FICHA4_HTTP (harness sin llm_call)'
+        d = LLM_CALL({'caller_id': 'tools-staff', 'plugin_id': 'tools', 'workflow_id': 'tools-staff', 'task_type': 'code', 'modelo': recurso[7:], 'messages': msgs, 'max_tokens': 1500})
+        return str(d.get('reply') or '') if d.get('reply') else 'ERROR Ficha 4: ' + str(d.get('error') or 'sin respuesta') + ' ' + str(d.get('detalle') or '')
+    if recurso.startswith('nvcode:'):
+        if not LLM_NV:
+            return 'ERROR: harness sin NVIDIA'
+        s_, d = LLM_NV(recurso[7:], msgs)
+        if isinstance(d, dict) and d.get('choices'):
+            return str((d['choices'][0].get('message') or {}).get('content') or '')
+        return 'ERROR NVIDIA: HTTP %s %s' % (s_, json.dumps(d, ensure_ascii=False)[:200] if isinstance(d, dict) else str(d)[:200])
+    claves = _llaves('groq', GROQ_ENV)
+    for k in claves:
+        s_, d = _peticion('POST', 'https://api.groq.com/openai/v1/chat/completions', k, {'model': recurso[5:], 'max_tokens': 1500, 'messages': msgs}, 45)
+        if s_ == 200 and isinstance(d, dict) and d.get('choices'):
+            return str(d['choices'][0]['message'].get('content') or '')
+    return 'ERROR Groq: sin respuesta'
+
+
+def agente_enlazar(a):
+    nombre = re.sub(r'[^a-z0-9_-]', '', str(a.get('nombre') or '').lower())[:40]
+    rec = str(a.get('recurso') or '')
+    if not nombre:
+        return {'error': 'FALTA_NOMBRE'}
+    if rec not in recursos_ids():
+        return {'error': 'RECURSO_DESCONOCIDO', 'validos': sorted(recursos_ids())}
+    pool = [dict(x) for x in groq_pool()]
+    ag = next((x for x in pool if x['nombre'] == nombre), None)
+    if ag is None:
+        ag = {'nombre': nombre, 'modelo': GROQ_MODELOS[0], 'sistema': str(a.get('sistema') or '')}
+        pool.append(ag)
+    ag['recurso'] = rec
+    if a.get('sistema'):
+        ag['sistema'] = str(a['sistema'])
+    return groq_guardar(pool)
+
+
+def _t_recurso(a):
+    return llamar_recurso(a.get('recurso'), '', a.get('mensaje'))
+
+
+def _t_nvcodigo(a):
+    m = str(a.get('modelo') or NV_CODIGO[0][0])
+    return llamar_recurso('nvcode:' + (m if m in [x[0] for x in NV_CODIGO] else NV_CODIGO[0][0]), 'Eres un programador senior. Responde con codigo correcto y breve, en espanol.', a.get('mensaje'))
+
+
+def _t_enlazar(a):
+    r = agente_enlazar(a)
+    return json.dumps(r, ensure_ascii=False)[:1500]
+
+
+TOOLS.extend([
+    _fn('nvidia_codigo', 'Tool NVIDIA de codigo (GLM-5.3 por defecto, o deepseek-ai/deepseek-v4.1-flash): escribe o revisa codigo y devuelve la respuesta.', {'mensaje': S, 'modelo': S}, ['mensaje']),
+    _fn('recurso_llm', 'Consulta un recurso LLM del staff de tools (ej. ficha4:ficha-qwen38max, nvcode:z-ai/glm-5.3, groq:openai/gpt-oss-120b) y devuelve su respuesta.', {'recurso': S, 'mensaje': S}, ['recurso', 'mensaje']),
+    _fn('agente_enlazar', 'Enlaza un recurso LLM (modelo de la Ficha 4, NVIDIA codigo o Groq) a un agente del staff; si el agente no existe lo crea. Luego usa groq_agente(nombre, mensaje).', {'nombre': S, 'recurso': S, 'sistema': S}, ['nombre', 'recurso']),
+])
+FUNCS.update({'nvidia_codigo': _t_nvcodigo, 'recurso_llm': _t_recurso, 'agente_enlazar': _t_enlazar})
+SISTEMA += (' Staff de tools: nvidia_codigo(mensaje) para codigo; recurso_llm(recurso, mensaje) para consultar un modelo de la Ficha 4 '
+            '(ficha4:<id>), NVIDIA codigo (nvcode:<modelo>) o Groq; agente_enlazar(nombre, recurso) para elegir que modelo usa un agente.')

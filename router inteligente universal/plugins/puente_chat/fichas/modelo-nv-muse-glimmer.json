@@ -8,5 +8,6 @@
   "claves": "banco",
   "rotacion": "mismo-modelo",
   "herramientas": true,
-  "memoria": true
+  "memoria": true,
+  "nota": "Ficha NVIDIA del chat: 1 sola clave (NVIDIA_API_KEY_1); simple -> chat_template_kwargs.enable_thinking=false, resto reasoning_effort=low; stream."
 }

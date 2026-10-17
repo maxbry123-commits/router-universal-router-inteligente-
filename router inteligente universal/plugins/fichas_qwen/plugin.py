@@ -1490,7 +1490,8 @@ def _llm(p: dict[str, Any]) -> dict[str, Any]:
         return {"error": "SIN_MENSAJES"}
     fast = _fast_llm_ok(p, FICHAS[fid])
     fc = _fast_cfg(FICHAS[fid])
-    modelo = _ficha4_modelo(p.get("task_type"))
+    _pedido = str(p.get("modelo") or "")  # staff de tools: el agente/plugin elige su modelo de texto de la Ficha 4
+    modelo = _pedido if (FICHAS[fid].get("modelos") or {}).get(_pedido) == "texto" else _ficha4_modelo(p.get("task_type"))
     t0 = time.time()
     try:
         if fast:

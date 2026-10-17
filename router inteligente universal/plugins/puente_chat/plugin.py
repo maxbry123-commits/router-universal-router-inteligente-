@@ -327,11 +327,16 @@ def _herr():
         spec = importlib.util.spec_from_file_location('puente_herramientas', ruta)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
+        mod.LLM_CALL = llm_call  # staff de tools: recurso Ficha 4 por Harness -> HTTP -> Ficha 4
+        mod.LLM_NV = lambda m_, ms_: _llamar_api('nvidia', m_, ms_, 2048, 90, None)  # tool NVIDIA de codigo (claves 2-5)
         _CACHE_H['h'] = mod
     return _CACHE_H['h']
 
 
 _BUENA = {}
+_NV_IDX_CHAT = (0,)  # NVIDIA_API_KEY_1: ficha NVIDIA del chat (Glimmer / Nemotron 3 Super)
+_NV_IDX_CODIGO = (1, 2, 3, 4)  # NVIDIA_API_KEY_2..5: ficha de tools NVIDIA de codigo
+_NV_CODIGO = ('z-ai/glm-5.3', 'stepfun-ai/step-5-preview', 'deepseek-ai/deepseek-v4.1-flash')  # comunidad: SWE-bench/LMArena WebDev/OpenRouter (DeepSeek V4.1 Flash da timeout en NVIDIA el 16-oct)
 
 
 def _sentinela():
@@ -459,7 +464,7 @@ def llm_call(p):
     base = (_os.getenv('RIU_ROUTER_URL') or ('http://127.0.0.1:' + str(_os.getenv('PORT') or '7860'))).rstrip('/')
     url = _os.getenv('RIU_FICHA4_URL') or (base + '/plugins/fichas_qwen/call/llm')
     body = {k: p.get(k) for k in ('caller_id', 'plugin_id', 'workflow_id', 'project_id', 'task_id', 'session_id', 'task_type',
-                                  'messages', 'participant', 'participants', 'priority', 'max_tokens')}
+                                  'messages', 'participant', 'participants', 'priority', 'max_tokens', 'modelo')}
     body['ficha_qwen'] = 'ficha4-workflow-yaiwes'
     h = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + str(_os.getenv('RIU_ROUTER_API_KEY') or '')}
     try:
@@ -524,11 +529,16 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
         from integration.chat_mvp import providers
         claves = providers.env_keys(proveedor)
         base = providers.base_url(proveedor)
+    bk = proveedor
+    if proveedor == 'nvidia' and claves:  # ficha NVIDIA del chat: 1 sola clave; tool NVIDIA de codigo: las otras 4
+        grupo = 'codigo' if modelo in _NV_CODIGO else 'chat'
+        sel = [claves[i] for i in (_NV_IDX_CODIGO if grupo == 'codigo' else _NV_IDX_CHAT) if i < len(claves)]
+        claves, bk = (sel or claves[:1]), 'nvidia:' + grupo
     if not claves or not base:
         return 0, {'error': 'SIN_CLAVES_' + proveedor.upper()}
     fin = time.monotonic() + tope
     ultimo = (0, {'error': 'SIN_RESPUESTA'})
-    buena = _BUENA.get(proveedor)  # la ultima clave que respondio va primero
+    buena = _BUENA.get(bk)  # la ultima clave que respondio va primero
     orden = ([buena] if isinstance(buena, int) and 0 <= buena < len(claves) else []) + [i for i in range(len(claves)) if i != buena]
     muertas = set()
     for _vuelta in range(2):  # dos vueltas: si el servicio dice ocupado, otra pasada completa
@@ -563,6 +573,14 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
             cuerpo.update(ex)
             exl = _EXTRA_LLM.get() if not tools else None  # Team 5: politica propia solo en la llamada final de texto
+            if proveedor == 'nvidia':
+                # medido 16-oct: NVIDIA rechaza enable_thinking top-level (400) y el reintento sin extras razonaba completo (Glimmer 21 s).
+                # chat_template_kwargs.enable_thinking=false: Glimmer ~7 s, Nemotron 3 Super ~2,6 s
+                if isinstance(exl, dict) and exl.get('enable_thinking') is False:
+                    cuerpo['chat_template_kwargs'] = dict(cuerpo.get('chat_template_kwargs') or {}, enable_thinking=False)
+                    exl = {k_: v_ for k_, v_ in exl.items() if k_ != 'enable_thinking'}
+                elif modelo == 'meta/muse-glimmer-30b' and 'reasoning_effort' not in cuerpo:
+                    cuerpo['reasoning_effort'] = 'low'  # Glimmer piensa ~350 tokens por defecto: low lo deja en ~7 s
             if isinstance(exl, dict):
                 for k_, v_ in exl.items():
                     if k_ not in cuerpo:
@@ -583,8 +601,9 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             sf = _STREAM_FN.get()
             _met('t_model_start', time.monotonic())  # base del TTFT real: _http_stream lo sella en el primer delta
             _t0c = time.monotonic()
+            _stream = proveedor == 'qwencloud' or (proveedor == 'nvidia' and not tools)
             ultimo = _http_stream(base + '/chat/completions', clave, cuerpo, resta, sf or (lambda _c: None)) \
-                     if proveedor == 'qwencloud' \
+                     if _stream \
                      else _http('POST', base + '/chat/completions', clave, cuerpo, resta)
             _au = _AUDIT.get()
             if _au is not None:  # auditoria forense: request/response real al endpoint SIN secretos ni prompts
@@ -594,7 +613,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                     _ms = _ch.get('message') or {}
                     _u = _d.get('usage') or {}
                     _au.append({'host': base, 'path': '/chat/completions', 'model': modelo,
-                                'stream': proveedor == 'qwencloud', 'tools': bool(tools), 'tool_choice': cuerpo.get('tool_choice'),
+                                'stream': _stream, 'tools': bool(tools), 'tool_choice': cuerpo.get('tool_choice'),
                                 'n_messages': len(cuerpo.get('messages') or []),
                                 'chars_in': sum(len(str(m.get('content') or '')) for m in (cuerpo.get('messages') or []) if isinstance(m, dict)),
                                 'reasoning_effort': cuerpo.get('reasoning_effort'), 'enable_thinking': cuerpo.get('enable_thinking'),
@@ -632,7 +651,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             if ultimo[0] < 400 and isinstance(ultimo[1], dict) and ultimo[1].get('choices'):
                 c = str((ultimo[1]['choices'][0].get('message') or {}).get('content') or '')
                 if not any(x in c.lower() for x in ('server is busy', 'try again later', 'service unavailable')):
-                    _BUENA[proveedor] = i
+                    _BUENA[bk] = i
                     return ultimo
                 ultimo = (503, {'error': 'SERVICIO_OCUPADO'})
                 time.sleep(2)  # el servicio dice ocupado: siguiente clave
@@ -2151,7 +2170,7 @@ def _chat(p):
         return _encender(model)
     if model in _RETIRADO:
         return {'error': 'MODELO_RETIRADO', 'detalle': _RETIRADO[model]}
-    presupuesto = 96 if model == 'nv-glm-5-3' else int(FICHAS[model][3]) + 5 if model in ('nv-kimi-k3', 'nv-muse-glimmer') else TOPE_TOTAL_S  # Kimi: timeout de su ficha (>1,6 min)
+    presupuesto = 96 if model == 'nv-glm-5-3' else int(FICHAS[model][3]) + 5 if model in ('nv-kimi-k3', 'nv-muse-glimmer', 'nv-nemotron-super') else TOPE_TOTAL_S  # Kimi: timeout de su ficha (>1,6 min)
     _LECT.set(float(FICHAS[model][3]) if model == 'nv-kimi-k3' else _LECTURA_S)
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
     _MOTOR_HAB.set(bool(p.get('motor')))  # ⚙ Motor: solo cuando el toggle del chat esta ON
@@ -2455,9 +2474,22 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return {'agentes': h.groq_pool(), 'max': h.GROQ_MAX, 'modelos': list(h.GROQ_MODELOS)}
     if action == 'tools_estado':  # ventana Configuracion: fichas, modelos, tools y agentes
         h = _herr()
-        return {'fichas': [{'id': k, 'nombre': v[0], 'proveedor': v[1], 'modelo': v[2], 'timeout_s': v[3]} for k, v in FICHAS.items() if k in ('nv-muse-glimmer', 'nv-kimi-k3')],
-                'tools': [t['function']['name'] for t in h.TOOLS], 'agentes': h.groq_pool(),
-                'claves': {'github': bool(h._token_gh()), 'hf': bool(h._token_hf()), 'groq': len(h._llaves('groq', ['GROQ_API_KEY'] + ['GROQ_API_KEY_%d' % i for i in range(1, 11)])), 'nvidia': len(h._llaves('nvidia', []))}}
+        _nvk = len(h._llaves('nvidia', []))
+        return {'fichas': [{'id': k, 'nombre': v[0], 'proveedor': v[1], 'modelo': v[2], 'timeout_s': v[3]} for k, v in FICHAS.items() if k in ('nv-muse-glimmer', 'nv-nemotron-super')],
+                'tools': [t['function']['name'] for t in h.TOOLS], 'agentes': h.groq_pool(), 'recursos': h.recursos_llm(), 'max': h.GROQ_MAX,
+                'claves': {'github': bool(h._token_gh()) if not payload.get('rapido') else None, 'hf': bool(h._token_hf()) if not payload.get('rapido') else None,
+                           'groq': len(h._llaves('groq', h.GROQ_ENV)), 'nvidia': _nvk,
+                           'nvidia_chat': min(_nvk, len(_NV_IDX_CHAT)), 'nvidia_codigo': len([i for i in _NV_IDX_CODIGO if i < _nvk])}}
+    if action == 'agente_enlazar':  # ventana Tools: elegir el recurso LLM (Ficha 4 / NVIDIA codigo / Groq) de un agente
+        return _herr().agente_enlazar(payload)
+    if action == 'recurso_probar':  # ventana Tools: probar un recurso o un agente enlazado (Harness -> HTTP -> recurso)
+        h = _herr()
+        t0 = time.time()
+        if payload.get('agente'):
+            txt = h.groq_agente({'nombre': payload['agente'], 'mensaje': str(payload.get('mensaje') or 'responde: ok')[:4000]})
+        else:
+            txt = h.llamar_recurso(payload.get('recurso'), '', str(payload.get('mensaje') or 'responde: ok')[:4000])
+        return {'ok': not str(txt).startswith('ERROR') and ' ERROR' not in str(txt)[:120], 'respuesta': str(txt)[:4000], 'ms': int((time.time() - t0) * 1000)}
     if action == 'herramientas_estado':
         h = _herr()
         return {'github': bool(h._token_gh()), 'hf': bool(h._token_hf())}

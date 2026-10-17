@@ -30,6 +30,8 @@
       "herramientas_estado",
       "groq_agentes",
       "tools_estado",
+      "agente_enlazar",
+      "recurso_probar",
       "chat_async",
       "resultado",
       "subir",
