@@ -30,8 +30,18 @@ def _banco_unico(provider: str) -> list[str]:
     return [str(x) for x in (_SELLO.get(provider) or []) if x]
 
 
+def _secretos_chat(provider: str) -> list[str]:
+    """Claves guardadas desde la ventana Secretos del chat con ese proveedor (plugin secretos). Nunca rompe el pool."""
+    try:
+        from plugins.secretos.plugin import por_proveedor
+        return list(por_proveedor(provider))
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def provider_keys(provider: str) -> list[str]:
     try:
-        return [*_banco_unico(provider), *list(_provider_keys(provider))]
+        base = [*_banco_unico(provider), *list(_provider_keys(provider))]
     except Exception:  # noqa: BLE001 - a locked or broken bank must never break the chat
-        return []
+        base = []
+    return base + _secretos_chat(provider)

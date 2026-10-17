@@ -14,7 +14,8 @@ import { montarAgregarAlChat } from "./agregar-al-chat.js";
 import { montarPensando3D } from "./pensando-3d.js";
 import { montarNotas } from "./notas-ventana.js";
 import { instalarAuth, montarAcceso } from "./acceso-clave.js";
+import { montarWatchdog } from "./watchdog-avisos.js";
 import { montarPropuestasAncla } from "./anclaje-propuestas.js";  // ⚓ abre la propuesta A (barra única); ?panel=b|c abre B o C; clásico detrás de un botón
 export function conectarVentanasNuevas(ctx) {
-  [instalarContexto, instalarAuth, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarAcceso, montarPensando3D, montarNotas, montarPropuestasAncla].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
+  [instalarContexto, instalarAuth, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarAcceso, montarPensando3D, montarNotas, montarPropuestasAncla, montarWatchdog].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
 }
