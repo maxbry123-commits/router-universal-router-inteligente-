@@ -1,6 +1,6 @@
 # Chat BOTS — fuente principal (todo en un sitio)
 
-Actualizado: 17-oct-2026 01:15, hora Bogotá (UTC-5) (rama `wip/chatbots-backend-mvp`: §3.0 MVP backend). Dueño: **Antonio Mendoza**. Base: `main` `b17c430857`.
+Actualizado: 17-oct-2026 01:07, hora Bogotá (UTC-5) (rama `wip/chatbots-backend-mvp`: §3.0 MVP backend). Dueño: **Antonio Mendoza**. Base: `main` `b17c430857`.
 
 Esta carpeta (`chat router/chat bot/`) es la **fuente principal** de Chat BOTS (orquestador de agentes) + ROOM CONFERENCIAS. Los originales siguen en [`HANDOFF/CHATBOTS/`](../../HANDOFF/CHATBOTS/) (no se borran). Inventario de ramas, archivos y PROGRESO: [`HANDOFF.md`](HANDOFF.md).
 
@@ -136,7 +136,7 @@ Actualizado: 17-oct-2026 00:35, hora Bogotá (UTC-5). Fuente: solo el código de
 - ROOM CONFERENCIAS + A−/A+: rama `wip/room-conferencias-rebase2` (`a014c943c0`, 2 commits sobre main `55d9d95fb4`). **No está en main.**
 - Handoff para agentes: [`HANDOFF.md`](../../HANDOFF/CHATBOTS/HANDOFF.md). Bloque de Antonio: [`GROKBOT-FUNCIONAMIENTO-Y-MEJORAS.md`](../../HANDOFF/CHATBOTS/GROKBOT-FUNCIONAMIENTO-Y-MEJORAS.md).
 
-### 3.0 MVP backend (rama [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp), 17-oct-2026 01:15 Bogotá) — no está en main
+### 3.0 MVP backend (rama [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp), 17-oct-2026 01:07 Bogotá) — no está en main
 
 Estado por pieza y endpoints: [`ESTADO-BACKEND.md`](ESTADO-BACKEND.md) (lo lee el agente de frontend para dibujar el avance).
 

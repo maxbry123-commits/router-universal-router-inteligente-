@@ -1,6 +1,6 @@
 # ESTADO-BACKEND — Chat BOTS (lo lee el agente de frontend para dibujar el avance)
 
-Actualizado: 17-oct-2026 01:15, hora Bogotá (UTC-5). Rama: [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp) (desde `main` `529b680b0e`). **No está en main.**
+Actualizado: 17-oct-2026 01:07, hora Bogotá (UTC-5). Rama: [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp) (desde `main` `529b680b0e`). **No está en main.**
 
 Estados: **hecho** = en main y probado · **en curso** = código en rama, falta prueba / revisión ×3 / Android · **pendiente** = sin código.
 
@@ -59,4 +59,5 @@ Campos nuevos en la vista del agente: `objetivo`, `fallo` (`FAIL_TIMEOUT`, `FAIL
 |---|---|
 | 17-oct 01:02 | Rama creada desde `main` `529b680b0e`; commit 1/3 código MVP `64bd84ab66` |
 | 17-oct 01:02 | CI bloqueado por facturación de GitHub Actions |
-| 17-oct 01:15 | Commit 2/3 docs (este archivo, README arquitectura, HANDOFF, TAREAS/03) |
+| 17-oct 01:07 | Commit 2/3 docs `0caac6ec3b` (este archivo, README arquitectura, HANDOFF, TAREAS/03) |
+| 17-oct 01:09 | Commit 3/3: horas corregidas a la hora real del commit |

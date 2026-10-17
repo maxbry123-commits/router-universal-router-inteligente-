@@ -1,6 +1,6 @@
 # 03 — Backend de Chat BOTS / evolución (código)
 
-Actualizado: 17-oct-2026 01:15, hora Bogotá (UTC-5). Índice: [README.md](README.md).
+Actualizado: 17-oct-2026 01:07, hora Bogotá (UTC-5). Índice: [README.md](README.md).
 
 **Estado: EN CURSO** (17-oct 01:02, orden de Antonio: «El agente que va hacer el backend revisa que sirve lo Mvp necesario y borra los archivos que sobran»). Rama [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp). Estado por pieza: [`chat router/chat bot/ESTADO-BACKEND.md`](../../chat%20router/chat%20bot/ESTADO-BACKEND.md).
 
@@ -19,8 +19,8 @@ Backend de Chat BOTS (orquestador de agentes) y evolución de Grok Bot a nivel d
 | 01:02 | 1–3. Comparación Grok Bot, tabla de las 40 mejoras, componentes elegidos/descartados | hecho (rama) | [README §3.0](../../chat%20router/chat%20bot/README.md) en la rama |
 | 01:02 | 5. Cableado MVP: `gobierno.py`, `mirror_repos.py`, `arquitectura.py` en `plugins/orquestador` + `crear_agente` | en curso | commit `64bd84ab66` |
 | 01:02 | Pruebas `tests/test_orquestador_mvp.py` | bloqueado | GitHub Actions: «account is locked due to a billing issue» |
-| 01:15 | 6, 8, 10. README arquitectura, `ESTADO-BACKEND.md`, HANDOFF | hecho (rama) | commit de docs |
-| 01:15 | 9. Archify = `tt-a1i/archify` (MIT); el backend da el JSON, el frontend renderiza | hecho (rama) | acción `arquitectura` |
+| 01:07 | 6, 8, 10. README arquitectura, `ESTADO-BACKEND.md`, HANDOFF | hecho (rama) | commit de docs |
+| 01:07 | 9. Archify = `tt-a1i/archify` (MIT); el backend da el JSON, el frontend renderiza | hecho (rama) | acción `arquitectura` |
 | — | Deploy al Space + Android 412 px 4G | pendiente | falta `HF_TOKEN` en el entorno |
 
 ## Pendiente
