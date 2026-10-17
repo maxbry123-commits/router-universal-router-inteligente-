@@ -8,7 +8,7 @@ import { conectarRiu2 } from "./chat-riu2.js";
 import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 import { proyId } from "./objetivos-ancla.js";
 import { montarProyectos } from "./ventana-proyectos.js";
-import { crearCola, devolverACaja } from "./cola-envio.js";
+import { crearCola, devolverACaja, antesDeCola } from "./cola-envio.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 10;
@@ -580,11 +580,11 @@ export async function mount(root, { api, tell }) {
       noSale(nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.");
       return;
     }
-    if (ubCola) c.hist.append(ubCola); else { c.hist.append(burbuja(message, "user")); input.value = ""; }  // el de la cola ya esta pintado: solo baja al final
+    if (ubCola) antesDeCola(c.hist, ubCola); else { c.hist.append(burbuja(message, "user")); input.value = ""; }  // el de la cola ya esta pintado: solo baja al final
     A.registrar(c.sesion, "user", message);
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
-    c.hist.append(pending);
+    antesDeCola(c.hist, pending);  // lo que sigue en cola queda debajo
     const alProgreso = (e) => {
       if (!pending.isConnected) { window.removeEventListener('riu-progreso', alProgreso); return; }  // listener fuera solo si la burbuja desaparecio (o en finally)
       const d = e.detail;
@@ -632,7 +632,7 @@ export async function mount(root, { api, tell }) {
       if (!(c.detenerFlag || /PROCESO_DETENIDO/.test(String(error && error.message))) && !input.value) { input.value = message; input.dispatchEvent(new Event("input", { bubbles: true })); }  // si falla, el mensaje vuelve a la caja
     } finally {
       window.removeEventListener('riu-progreso', alProgreso);  // listener fuera al terminar/error/cancelar
-      c.detenerFn = null; c.ocupado = false; pintarTabs();
+      c.detenerFn = null; c.ocupado = false; pintarTabs(); colaDe(c).siguiente();  // en el mismo paso que pinta la respuesta: la cola baja debajo de ella
       if (window.matchMedia("(pointer: fine)").matches) input.focus();
     }
   };
