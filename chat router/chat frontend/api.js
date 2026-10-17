@@ -172,6 +172,19 @@ export async function accion(acc, payload) {
   return env.result || {};
 }
 window.RIU_ACCION = accion;
+export async function plugin(id, acc, payload) {
+  // otro plugin del Router por el mismo harness (/plugins/<id>/call/<accion>): secretos, watchdog, ...
+  await liveRouter();
+  const h = { 'Content-Type': 'application/json' };
+  const pw = sessionStorage.getItem('riu_clave');
+  if (pw) h['X-API-Key'] = pw;
+  const url = CFG.harnessUrl.replace(/[/]+$/, '').replace('/plugins/puente_chat/', '/plugins/' + encodeURIComponent(id) + '/') + '/' + acc;
+  const r = await fetchT(url, { method: 'POST', headers: h, body: JSON.stringify(payload || {}) }, 20000);
+  const env = await r.json().catch(() => ({}));
+  if (!r.ok || env.status !== 'ok') throw new Error(env.reason || env.detail || ('HTTP ' + r.status));
+  return env.result || {};
+}
+window.RIU_PLUGIN = plugin;
 export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id }) {
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
