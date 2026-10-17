@@ -13,14 +13,14 @@ Terminar y probar en Android las piezas de frontend del chat: ROOM CONFERENCIAS,
 | [`wip/room-conferencias-rebase2`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/room-conferencias-rebase2) ([`a014c943c0`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/a014c943c0)) | ROOM CONFERENCIAS + A−/A+ | 2×1 = 9 s 249 ms; 3×2 = 72 s 703 ms (412 px headless) | Android real |
 | [`wip/room-todos`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/room-todos) ([`604b2866f2`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/604b2866f2)) | «Todos» = 12 modelos; el usuario interviene | Todos = 92 s 872 ms | Preguntas: tope 6 y fila de 6 líneas |
 | [`feat/nuevo-proyecto`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/feat/nuevo-proyecto) ([`2078388c18`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/2078388c18)) | «＋ Nuevo proyecto» en Clásico y paneles A/B/C; id + fecha vía `created_at` | — | 7 proyectos de prueba en la memoria real: **borrar solo con el sí de Antonio** |
-| `feat/escribir-sin-esperar` (**solo local**) · `wip/room-escribir-sin-esperar` (**solo local**) · `orquestador-escribir-sin-esperar` (**solo local**) | Escribir sin esperar en Chat / ROOM / Chat BOTS | en curso | Subir a origin; revisión ×3 |
+| [`feat/escribir-sin-esperar`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/feat/escribir-sin-esperar) (`c99902c444`) · [`wip/room-escribir-sin-esperar`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/room-escribir-sin-esperar) (`c086120187`) · [`orquestador-escribir-sin-esperar`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/orquestador-escribir-sin-esperar) (`626eb65024`) — ya en origin | Escribir sin esperar en Chat / ROOM / Chat BOTS | en curso | Revisión ×3 |
 | [`wip/skills-maxbry-ui-rebase2`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/skills-maxbry-ui-rebase2) ([`668f6f7442`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/668f6f7442)) | Skills Maxbry UI | 22/22 a 412 px | Pulir gooey-nav |
 
 ## Pendiente
 1. Prueba Android real (412 px, 4G) de cada rama.
 2. Respuestas de Antonio: tope 6 y fila de 6 líneas en ROOM «Todos».
 3. Sí de Antonio para borrar los 7 proyectos de prueba.
-4. Subir a origin las 3 ramas «escribir sin esperar» (hoy solo locales).
+4. Las 3 ramas «escribir sin esperar» ya están en origin; falta revisión ×3.
 
 ## Reglas
 - Una tarea = un agente, en su propia rama. Sin trabajo doble.

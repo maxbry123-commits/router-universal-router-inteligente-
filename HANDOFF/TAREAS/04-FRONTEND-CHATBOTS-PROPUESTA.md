@@ -30,6 +30,29 @@ Rediseñar el frontend de Chat BOTS. Antonio aprobó crear agente + ficha y dijo
 1. Elección A/B de Antonio.
 2. Implementar la elegida con cambios milimétricos, corregir los 5 fallos, capturas 412 px.
 
+## VENTANA DE ARQUITECTURA (orden de Antonio)
+
+Orden de Antonio (verbatim, 17-oct-2026):
+
+> Que haga una comparación investigación como funciona grockbot
+> Luego la información que te di
+> Luego los componentes que aporta sin sobre ingeniería
+> Luego poda usa solo lo escencial
+> Luego cablea y actuliza readme de arquitectura
+> Borra la basura
+>
+> El agente backend pasa información a el agente de fromte el sistema chatbot debe tener
+> 1. Una arquitectura interna usas skills archify lo descarga y lo usa dentro del chat dentro de chatbot luego crea una ventana de información donde está la pestaña de chatbot y va acrulizando creando la arquitectura de chat bot según
+> 1. Fromtend aprobado
+> 2. Backend lo que el agente le informa
+> Luego el agente de fromtend dibuja en el diagrama el avance
+
+Tarea del agente de frontend:
+- Una ventana de información junto a la pestaña de Chat BOTS que muestra el diagrama de arquitectura de Chat BOTS (hecho con archify).
+- El diagrama se actualiza según 1) el frontend aprobado y 2) lo que informa el agente backend en `chat router/chat bot/ESTADO-BACKEND.md`.
+- El agente de frontend dibuja el avance en el diagrama.
+- **Archify**: la skill más probable es [`tt-a1i/archify`](https://github.com/tt-a1i/archify) («Turn any idea, plan, or codebase into a beautiful interactive diagram. An agent skill for Claude Code, Codex, and more»). No está en los repos de Antonio. **Por confirmar con Antonio** que es esa.
+
 ## Reglas
 - Una tarea = un agente, en su propia rama. Sin trabajo doble.
 - Revisión ×3 por otro agente (conecta, prueba en PC y Android).
@@ -39,3 +62,4 @@ Rediseñar el frontend de Chat BOTS. Antonio aprobó crear agente + ficha y dijo
 - No tocar la arquitectura: COMPONENTE → HARNESS (puente_chat) → HTTP → FICHA → MODELO.
 - La computadora del bot es solo para pruebas de frontend.
 - Español, mínimo, tiempos como «X s YYY ms». Al empezar y al terminar: actualizar PROGRESO en [`HANDOFF/CHATBOTS/HANDOFF.md`](../CHATBOTS/HANDOFF.md) y [`HANDOFF/TAREAS.md`](../TAREAS.md).
+
