@@ -1,0 +1,50 @@
+{
+  "bundle_bytes": 38189234,
+  "bundle_sha256": "3562c7180908e7e4bb9b2f795b076f7b998003865a7975e4ec82729b5db9222e",
+  "extracted_tree": {
+    "bytes": 61795465,
+    "files": 4615,
+    "sha256": "647d67e0f27c170102a10fdc63b1e40c5bedcc66fad4a605a8b8f06e0c5a45ec"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "ECC.bundle.zip.part-0001",
+      "sha256": "d0cc30f085a0306d954225ed7b7079950ddf4a77a5f310a7b980c37826b229f3"
+    },
+    {
+      "bytes": 12582912,
+      "name": "ECC.bundle.zip.part-0002",
+      "sha256": "36d6c7824c674d6384486315330d720763b38aeeb4215ccb51eb98e982191d16"
+    },
+    {
+      "bytes": 12582912,
+      "name": "ECC.bundle.zip.part-0003",
+      "sha256": "4214065a4d0d8055a9b02f9fe64ec6dc43a8f73e1bad3af78c6343033c39fdf2"
+    },
+    {
+      "bytes": 440498,
+      "name": "ECC.bundle.zip.part-0004",
+      "sha256": "db5d6194c7b676b100ee68dd51e6e2e0824ef13e6563e3cee92c232a8fd2964a"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "ECC",
+  "source_bytes": 61795465,
+  "source_commit": "b92f181b3b748d1abbc2afd94af6aa7d8c8fca29",
+  "source_files": 4615,
+  "source_ref": "main",
+  "source_repo": "affaan-m/ECC",
+  "source_tree": {
+    "bytes": 61795465,
+    "files": 4615,
+    "sha256": "647d67e0f27c170102a10fdc63b1e40c5bedcc66fad4a605a8b8f06e0c5a45ec"
+  }
+}

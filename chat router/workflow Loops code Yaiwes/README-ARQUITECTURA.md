@@ -9,6 +9,7 @@ Regla del Director: INPUT literal → STATE/CHECKPOINT → delta 1×1 → verify
 - agentes/ — solo 3 subcarpetas: chat-router-05-AGENTES (asistentes, colmena, gobierno, AGENTES.yaml), plan-opus-agentes, handoffs-agentes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/agentes
 - code/ — código del loop (wordflow_loop, runtime, memoria, backend, minimax_mcp, skills_schema, workspace, harness-plugins, plan-opus-runner): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/code
 - workflow/ — DSL-DAG, contrato, nodos, centro de control, bitácora/crazy wall, estado: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow
+- skills/ — skills del loop (ECC): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills
 - HANDOFF único: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/HANDOFF.md
 
 ## ⚠️ Archivos VIVOS (cableados): la copia aquí es de lectura; el ORIGINAL es el vivo
@@ -42,12 +43,19 @@ Los workflows no se editan, así que estos originales siguen en su sitio. Si cam
 - Harness DeepSeek (base del chat, vivo): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/deepseek-harness-chat
 - Motores canónicos (vivos, no se copian): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/Motores%20descarga%20extracci%C3%B3n%20b%C3%BAsquedas
 
-## Hermes y OpenClaw (base permanente del chat; vivos, no se mueven)
+## Hermes y OpenClaw (base permanente del chat; espejo por enlace)
 
-- Hermes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/hermes-agent-v0.22.2
-- OpenClaw: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/openclaw-v2026.10.4
+Viven solo en sus repos propios (orden de Antonio, 17-oct-2026). Sin copia de código aquí: el espejo es este enlace fijado a commit.
 
-Espejo: no hace falta mantener 2 copias; una sola copia basta y este enlace es el "espejo". La copia vieja de Hermes (Componentes del Router/hermes-agent, v2026.9.14) se borró en t145u.
+- Hermes v0.22.2: https://github.com/maxbry123-commits/hermes-agent/tree/d923a5eb487a17c0a68801bba9ef0f56c81040a8
+- OpenClaw v2026.10.4: https://github.com/maxbry123-commits/openclaw/tree/383c124cc32ffee3f8e56f549b88da94d269a4af
+- Registro del loop: `code/wordflow_loop/wordflow_loop/agent_fleet/agent_fleet_registry.json` (`source_repo` + `source_commit`, `mirror: link`).
+
+## skills/ (ECC)
+
+- Qué es: ECC (affaan-m/ECC v2.2.3, MIT), 311 skills en formato `SKILL.md` (frontmatter `name` + `description`).
+- Dónde: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills/ECC
+- Cómo lo llama el loop: `code/skills_schema/ecc.dag.yaml` (claim → execute → verify). El agente del nodo lee `skills/ECC/skills/<nombre>/SKILL.md`; sin runtime (`YAIWES_ECC_COMMAND`) falla cerrado (BLOCKED).
 
 ## Movido (no cableado; original borrado)
 
