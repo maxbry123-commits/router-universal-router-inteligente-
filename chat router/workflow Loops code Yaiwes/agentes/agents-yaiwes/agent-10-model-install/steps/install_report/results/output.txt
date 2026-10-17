@@ -1,1 +1,0 @@
-install_report: solo ok flavor cpu-upgrade (máquina 32 GB RAM). cpu-basic/GPU = rejected.\n

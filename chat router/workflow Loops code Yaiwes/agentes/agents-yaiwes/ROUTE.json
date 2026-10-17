@@ -1,9 +1,0 @@
-{
-  "route_by_group": {},
-  "route_code": ["nvidia", "groq"],
-  "route_jobs": ["nvidia", "groq"],
-  "route": ["nvidia", "groq"],
-  "fallback": ["deepseek_flash"],
-  "prioridad_modelos": ["kimi-k3", "glm-5", "deepseek-v4", "cualquier NVIDIA que responda"],
-  "nota": "ORDEN DEL DIRECTOR 2026-09-27: el Router pregunta primero qué modelos responden (sonda por clave, caché 15 min) y prioriza Kimi K3 > GLM-5 > DeepSeek V4 Flash > otro NVIDIA disponible (hasta 4 claves NVIDIA; si una cae salta a la siguiente). Cerebras ELIMINADO (pide pago). Groq de respaldo (faltan GROQ_API_KEY_n en secretos de este repo). DeepSeek V4 Flash de HF al final. Sin APIs de Anthropic. No cambiar sin autorización del Director."
-}

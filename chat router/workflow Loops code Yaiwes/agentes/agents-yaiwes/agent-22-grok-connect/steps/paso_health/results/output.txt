@@ -1,3 +1,0 @@
-http_status: 200
-router_ok: si
-live_url_host: router-job-pause-yaiwes.hf.space

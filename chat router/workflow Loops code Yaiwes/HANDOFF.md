@@ -11,6 +11,8 @@ README arquitectura: https://github.com/maxbry123-commits/router-universal-route
 - code/ separa runtime/ y wordflow_loop/ en subcarpetas: los tests de la rama (pytest runtime/tests) se corren desde code/.
 - Sin GitHub Actions, sin HF, sin LFS, sin secretos.
 
+- t144u: borradas las copias agentes/agents-yaiwes, agentes/router-agents y el readme indice agentes suelto (los originales cableados siguen intactos).
+
 ## Dónde seguir
 
 - Centro de control: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow/plan-opus/CENTRO-DE-CONTROL.yaml
@@ -21,7 +23,8 @@ README arquitectura: https://github.com/maxbry123-commits/router-universal-route
 - Crazy Wall Orquestador: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow/crazy-wall-bitacora
 - Handoff y memoria de la rama Devin (DSL-DAG P1–P8): https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow/version-rama-devin/estado/HANDOFF.md · https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow/estado/memoria.md
 - Handoff anterior de la raíz de la rama: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow/docs-rama-devin/HANDOFF-rama-devin-2026-10-08.md
-- Agentes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/agentes (índice: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/agentes/%E2%9E%A1%EF%B8%8F%F0%9F%93%82%20readme%20indice%20agentes.md)
+- Agentes (solo chat-router-05-AGENTES, plan-opus-agentes, handoffs-agentes): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/agentes
+- Agentes vivos sin copia: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/agents-yaiwes · https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/agents · https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/05-AGENTES
 - Código: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/code
 - Estado global: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow/estado-y-handoff-global
 

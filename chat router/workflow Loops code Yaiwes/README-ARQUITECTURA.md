@@ -6,7 +6,7 @@ Regla del Director: INPUT literal → STATE/CHECKPOINT → delta 1×1 → verify
 
 ## Subraíces
 
-- agentes/ — definiciones y memorias de todos los agentes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/agentes
+- agentes/ — solo 3 subcarpetas: chat-router-05-AGENTES (asistentes, colmena, gobierno, AGENTES.yaml), plan-opus-agentes, handoffs-agentes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/agentes
 - code/ — código del loop (wordflow_loop, runtime, memoria, backend, minimax_mcp, skills_schema, workspace, harness-plugins, plan-opus-runner): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/code
 - workflow/ — DSL-DAG, contrato, nodos, centro de control, bitácora/crazy wall, estado: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow
 - HANDOFF único: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/HANDOFF.md
@@ -15,12 +15,12 @@ Regla del Director: INPUT literal → STATE/CHECKPOINT → delta 1×1 → verify
 
 Los workflows no se editan, así que estos originales siguen en su sitio. Si cambias algo, cámbialo en el original.
 
-- agentes/agents-yaiwes = COPIA de router inteligente universal/agents-yaiwes (sin donors/)
+- router inteligente universal/agents-yaiwes (SIN copia aquí desde t144u; se usa directo el original)
   - Vivo: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/agents-yaiwes
-  - Lo lee: riu-agents-run.yml y otros 20 workflows
-- agentes/router-agents = COPIA de router inteligente universal/agents (ORDERS.yaml RUN-002 + runtime)
+  - Lo lee: riu-agents-run.yml y otros ~20 workflows
+- router inteligente universal/agents (SIN copia aquí desde t144u; se usa directo el original)
   - Vivo: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/agents
-  - Lo lee: ORDERS.yaml + run_agent.py (rutas relativas)
+  - Lo lee: ORDERS.yaml (RUN-002) + run_agent.py
 - agentes/chat-router-05-AGENTES = COPIA de chat router/05-AGENTES (asistentes, colmena, gobierno)
   - Vivo: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/05-AGENTES
   - Lo lee: workflows del chat (3 refs)
@@ -41,6 +41,12 @@ Los workflows no se editan, así que estos originales siguen en su sitio. Si cam
 - Wordflow de 154.810 archivos en agentes: https://github.com/maxbry123-commits/agentes/tree/main/%E2%9E%A1%EF%B8%8F%F0%9F%93%82%20wordflow%20loop%20code%20Yaiwes (no se copia por tamaño; se enlaza)
 - Harness DeepSeek (base del chat, vivo): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/deepseek-harness-chat
 - Motores canónicos (vivos, no se copian): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/Motores%20descarga%20extracci%C3%B3n%20b%C3%BAsquedas
+
+## Hermes y OpenClaw (base permanente del chat; vivos, no se mueven)
+
+- Hermes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/hermes-agent-v2026.9.24
+- Hermes (copia en Componentes del Router): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/Componentes%20del%20Router/hermes-agent
+- OpenClaw: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/openclaw-v2026.9.6
 
 ## Movido (no cableado; original borrado)
 
