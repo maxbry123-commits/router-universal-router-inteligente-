@@ -1,8 +1,8 @@
 # 03 — Backend de Chat BOTS / evolución (código)
 
-Actualizado: 17-oct-2026 00:55, hora Bogotá (UTC-5). Índice: [README.md](README.md).
+Actualizado: 17-oct-2026 01:15, hora Bogotá (UTC-5). Índice: [README.md](README.md).
 
-**Estado: EN PAUSA** (orden de Antonio). No retomar sin su orden.
+**Estado: EN CURSO** (17-oct 01:02, orden de Antonio: «El agente que va hacer el backend revisa que sirve lo Mvp necesario y borra los archivos que sobran»). Rama [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp). Estado por pieza: [`chat router/chat bot/ESTADO-BACKEND.md`](../../chat%20router/chat%20bot/ESTADO-BACKEND.md).
 
 ## Objetivo
 Backend de Chat BOTS (orquestador de agentes) y evolución de Grok Bot a nivel de código, reciclando componentes open source antes de escribir código propio.
@@ -13,8 +13,18 @@ Backend de Chat BOTS (orquestador de agentes) y evolución de Grok Bot a nivel d
 | [`orquestador-agentes-rebase`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/orquestador-agentes-rebase) ([`9dc637165f`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/9dc637165f)) | Plugin backend `plugins/orquestador` (Chat BOTS v2) | sandbox HF Jobs 6 s 627 ms; pruebas v1 (ver [arquitectura](../CHATBOTS/README-ARQUITECTURA.md)) | Red de HF Jobs: pendiente de respuesta de Antonio |
 | [`wip/grokbot-evolucionado`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/grokbot-evolucionado) ([`5778306623`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/5778306623)) | 24 propuestas + `research/grokbot-evolucionado/SINTESIS.md` | 24 imágenes `propuesta-01..24.png` | Pasar de propuestas a código |
 
+## Progreso (17-oct-2026, Bogotá)
+| Hora | Paso | Estado | Evidencia |
+|---|---|---|---|
+| 01:02 | 1–3. Comparación Grok Bot, tabla de las 40 mejoras, componentes elegidos/descartados | hecho (rama) | [README §3.0](../../chat%20router/chat%20bot/README.md) en la rama |
+| 01:02 | 5. Cableado MVP: `gobierno.py`, `mirror_repos.py`, `arquitectura.py` en `plugins/orquestador` + `crear_agente` | en curso | commit `64bd84ab66` |
+| 01:02 | Pruebas `tests/test_orquestador_mvp.py` | bloqueado | GitHub Actions: «account is locked due to a billing issue» |
+| 01:15 | 6, 8, 10. README arquitectura, `ESTADO-BACKEND.md`, HANDOFF | hecho (rama) | commit de docs |
+| 01:15 | 9. Archify = `tt-a1i/archify` (MIT); el backend da el JSON, el frontend renderiza | hecho (rama) | acción `arquitectura` |
+| — | Deploy al Space + Android 412 px 4G | pendiente | falta `HF_TOKEN` en el entorno |
+
 ## Pendiente
-1. Mirror desde los enlaces de agentes: enlaces encontrados en [ENLACES DE AGENTES PARA MIRROR](#enlaces-de-agentes-para-mirror).
+1. Mirror desde los enlaces de agentes: cableado en la rama por enlace (`mirror(de="repo:<agent_id>")`, `agentes_repo`, `repo_leer`), sin copiar código (orden de Antonio: «Los mirror es para usarlo en chat bot. Así no copias de nuevo todo el agente»). Falta probar en el Space.
 2. Respuesta de Antonio sobre la red de HF Jobs.
 3. Reciclar componentes open source antes de escribir código: depende de [05-MOTORES-DESCARGA.md](05-MOTORES-DESCARGA.md).
 
@@ -69,3 +79,4 @@ Notas:
 - No tocar la arquitectura: COMPONENTE → HARNESS (puente_chat) → HTTP → FICHA → MODELO.
 - La computadora del bot es solo para pruebas de frontend.
 - Español, mínimo, tiempos como «X s YYY ms». Al empezar y al terminar: actualizar PROGRESO en [`HANDOFF/CHATBOTS/HANDOFF.md`](../CHATBOTS/HANDOFF.md) y [`HANDOFF/TAREAS.md`](../TAREAS.md).
+

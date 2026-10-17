@@ -1,6 +1,6 @@
 # Chat BOTS — fuente principal (todo en un sitio)
 
-Actualizado: 17-oct-2026 00:50, hora Bogotá (UTC-5). Dueño: **Antonio Mendoza**. Base: `main` `b17c430857`.
+Actualizado: 17-oct-2026 01:15, hora Bogotá (UTC-5) (rama `wip/chatbots-backend-mvp`: §3.0 MVP backend). Dueño: **Antonio Mendoza**. Base: `main` `b17c430857`.
 
 Esta carpeta (`chat router/chat bot/`) es la **fuente principal** de Chat BOTS (orquestador de agentes) + ROOM CONFERENCIAS. Los originales siguen en [`HANDOFF/CHATBOTS/`](../../HANDOFF/CHATBOTS/) (no se borran). Inventario de ramas, archivos y PROGRESO: [`HANDOFF.md`](HANDOFF.md).
 
@@ -136,6 +136,120 @@ Actualizado: 17-oct-2026 00:35, hora Bogotá (UTC-5). Fuente: solo el código de
 - ROOM CONFERENCIAS + A−/A+: rama `wip/room-conferencias-rebase2` (`a014c943c0`, 2 commits sobre main `55d9d95fb4`). **No está en main.**
 - Handoff para agentes: [`HANDOFF.md`](../../HANDOFF/CHATBOTS/HANDOFF.md). Bloque de Antonio: [`GROKBOT-FUNCIONAMIENTO-Y-MEJORAS.md`](../../HANDOFF/CHATBOTS/GROKBOT-FUNCIONAMIENTO-Y-MEJORAS.md).
 
+### 3.0 MVP backend (rama [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp), 17-oct-2026 01:15 Bogotá) — no está en main
+
+Estado por pieza y endpoints: [`ESTADO-BACKEND.md`](ESTADO-BACKEND.md) (lo lee el agente de frontend para dibujar el avance).
+
+```
+orquestador.js (COMPONENTE)
+  → POST /plugins/orquestador/call/<acción>
+  → plugin orquestador ── gobierno.py (goal lock, recibos, watchdog, loop, fallos, redacción)
+                       ├─ mirror_repos.py (enlace a repos de agentes; lee por llamada, no copia)
+                       ├─ arquitectura.py (JSON Archify + estado → ventana de información)
+                       └─ memoria_yaiwes (_mem().save: SQLite → Graphiti/Graphify/state-hub → bucket)
+  → HTTP puente_chat chat_async / resultado (HARNESS)
+  → FICHA 4 → MODELO
+```
+
+Base: el plugin `orquestador` de `orquestador-agentes-rebase` (`9dc637165f`) traído a la rama + `crear_agente` sobre `herramientas.py` de main (main ya tenía el staff de tools). Sin almacenamiento nuevo, sin puente nuevo.
+
+#### 3.0.1 Grok Bot (docs públicas) → RIU
+
+Fuentes: [docs.x.ai/grok-bot/overview](https://docs.x.ai/grok-bot/overview), [skills-routines-and-automations](https://docs.x.ai/grok-bot/skills-routines-and-automations), [computer-and-apps](https://docs.x.ai/grok-bot/computer-and-apps), [x.ai/news/designing-grok-bot](https://x.ai/news/designing-grok-bot).
+
+| Grok Bot | RIU Chat BOTS | Hueco |
+|---|---|---|
+| Bot persistente: nombre, memoria, archivos, sesiones | agente `ag-…` con `memoria_id`, persistido en memoria_yaiwes | — |
+| Orquestador + varios Bots en paralelo, grupos y traspasos | sección Chat BOTS (50), `crear_agente` desde el chat, `mirror` | traspaso entre agentes: pendiente |
+| Skills (a nivel de cuenta, reutilizables) | `hf_skills` (por llamada) | skills propias de Chat BOTS: pendiente |
+| Routines (horario/evento, ≤50 por Bot, ≥5 min, 20 ejecuciones guardadas) | no existe | pendiente (post-MVP) |
+| Memoria por Bot; tools compartidas | scopes `chat-ui:orq:<sección>` | niveles usuario/proyecto/agente: parcial |
+| Computadora en la nube (navegador, terminal, archivos), 1 pantalla por Bot | sandbox por agente (HF Jobs > Vercel > bwrap) | navegador / computer use: pendiente |
+| Conectores | MCP de RIU, deploy GitHub/HF/Vercel | — |
+| Aprobaciones antes de enviar/borrar/publicar | `[APROBACION]`, `deploy` con `confirmado` | GOAL LOCK: en rama (en curso) |
+
+#### 3.0.2 Las 40 mejoras de Antonio → equipo RIU → hueco
+
+«Rama» = cubierto en `wip/chatbots-backend-mvp` (en curso). Lo que no se ve en el repo va «por confirmar».
+
+| # | Mejora | Equipo RIU que la cubre | Hueco / MVP |
+|---|---|---|---|
+| 1 | Goal lock | — | **Rama**: `objetivo` + hash; cambiar exige `confirmado` |
+| 2 | Plan lock | — | pendiente (OpenManus `PlanningFlow`, post-MVP) |
+| 3 | Task compiler | — | pendiente |
+| 4 | DAG determinista | `riu-dag-run.yml` (por confirmar si aplica a Chat BOTS) | pendiente |
+| 5 | 1 tarea = 1 worker | agente = sub-chat aislado | parcial |
+| 6 | Scope firewall | `capacidad.py` (CAP_*), `tools_habilitadas:false` | parcial |
+| 7 | Evidence gate | sandbox `exit_code` | pendiente |
+| 8 | Receipts | — | **Rama**: `recibos` encadenados por hash |
+| 9 | Watchdog | `lifeguard`, watchdog del Space (rama `secretos-watchdog-mcp-rebase2`) | **Rama**: `vigilar` por agente |
+| 10 | Recovery OS | `lifeguard` (relanza Router) | **Rama** mínimo: `recuperar` + `reiniciar` |
+| 11 | Checkpoints | memoria_yaiwes guarda cada estado | pendiente (restaurar a checkpoint) |
+| 12 | Rollback automático | backups del bucket (memoria) | pendiente |
+| 13 | Diff budget | — | pendiente |
+| 14 | Token governor | `max_tokens` por llamada | parcial |
+| 15 | Loop detector | — | **Rama**: 3 respuestas iguales → `bloqueado` |
+| 16 | Memory router | scopes por sección/agente | parcial |
+| 17 | Tool registry | `agent_fleet_registry.json`, `hf_skills`, `ficha.json allowed_actions` | parcial |
+| 18 | Colisiones de tools | — | pendiente |
+| 19 | Capability discovery | registro de la flota (`roles`, `status`) | parcial (`agentes_repo` lo expone) |
+| 20 | Verificador independiente | revisión ×3 (regla humana/agente) | pendiente en código |
+| 21 | Shadow execution | sandbox aislado | parcial |
+| 22 | Multi-agent scheduler | `parallel` (máx. 8 en vuelo) | parcial |
+| 23 | Queue manager | `MAX_AGENTES` 50, `AGENTE_OCUPADO`; cola en `orquestador-escribir-sin-esperar` | parcial |
+| 24 | Permiso de un solo uso | `deploy` pide `confirmado` cada vez | parcial |
+| 25 | Idempotencia | `request_id` idempotente de puente_chat | cubierto |
+| 26 | Output firewall | Constitución sentinela (ramas `constitucion-contrato-*`) | parcial |
+| 27 | State machine | estados `activo…error` | **Rama**: + `fallo` |
+| 28 | Heartbeat | stream de latidos | **Rama**: vencido por tiempo (sin latido real del worker) |
+| 29 | Circuit breaker | reintento Qwen solo en red/5xx/429 | pendiente |
+| 30 | Cost router | selector de modelos de la Ficha 4 (manual) | pendiente (automático) |
+| 31 | Context compiler | historial 12 mensajes / 6000 c | parcial |
+| 32 | File ownership | sandbox por agente | parcial |
+| 33 | Test contract | — | pendiente |
+| 34 | Failure classifier | — | **Rama**: `FAIL_*` |
+| 35 | Retry inteligente | reintento Qwen | pendiente |
+| 36 | Human approval gate | `[APROBACION]`, `confirmado` | cubierto |
+| 37 | Trace completo | stream de 40 líneas | **Rama**: recibos (quién/qué/entrada/salida/hora/hash) |
+| 38 | Agent health score | `latencia_ms` | pendiente |
+| 39 | Auto routing por capacidad | `roles` del registro | pendiente |
+| 40 | Gobernanza fuera del LLM | — | **Rama**: `gobierno.py` sin modelo |
+
+#### 3.0.3 Componentes elegidos (solo la idea, sin copiar runtime)
+
+| Componente (licencia) | Qué se tomó | Dónde |
+|---|---|---|
+| OpenHands Automation `watchdog.py` (MIT) | RUNNING con tiempo vencido → FAILED | `gobierno.vencido/recuperar`, acción `vigilar` |
+| OpenManus `app/agent/base.py` `is_stuck` (MIT) | `duplicate_threshold` = 2 | `gobierno.atascado` |
+| OpenHands agent-server `_secret_redaction.py` (MIT) | redactar tokens en stream y recibos | `gobierno.redactar` |
+| Agent Zero `_goal` (MIT) | objetivo congelado | `gobierno.fijar_objetivo` |
+| RIU `plugins/hf_skills` | lectura por llamada de un repo GitHub | `mirror_repos._get` |
+| Archify (MIT) | formato JSON `architecture` | `arquitectura.py` (render en el frontend) |
+
+#### 3.0.4 Descartados (poda)
+
+| Componente | Motivo |
+|---|---|
+| Agent Zero `_orchestrator` | Prohibido: llama CLIs con logins propios, salta la FICHA |
+| Sandboxes Docker (OpenManus `DockerSandbox`, OpenHands `docker_runtime`) | Prohibido / sin Docker en el Space; ya está `sandbox.py` |
+| OpenManus Daytona + `computer_use_tool` | Servicio externo; no hace falta en el MVP |
+| Agent-S (Apache-2.0) | Necesita pantalla y modelo con visión: post-MVP |
+| Browser Use (core) | Chromium en el Space por confirmar; el mirror por enlace no lo necesita |
+| OpenHands agent-server completo | Requiere `openhands-sdk`, Python ≥3.12 y Docker; solo patrones |
+| OpenHands Automation `scheduler`/`dispatcher` (routines) | Post-MVP (PostgreSQL/croniter) |
+| OpenManus `PlanningFlow`, MCP server, A2A | Plan lock post-MVP; A2A por confirmar con Antonio |
+| Agent Zero `_memory` (FAISS) | Habría memoria paralela; se usa memoria_yaiwes |
+| Agent Zero `_time_travel`, `_tool_access`, `_skills` | Checkpoints / permisos / skills: post-MVP; `capacidad.py` cubre lo mínimo |
+| Grabación rrweb (openhands-tools browser_use) | Post-MVP (evidence gate) |
+
+#### 3.0.5 Mirror por enlace
+
+Orden de Antonio (17-oct): «Los mirror es para usarlo en chat bot. Así no copias de nuevo todo el agente». `mirror(de="repo:<agent_id>")` crea un agente de Chat BOTS que guarda **solo** `repo.url`; `repo_leer` lee un archivo del repo del agente por llamada (no se guarda). Fuentes: `maxbry123-commits/openclaw`, `maxbry123-commits/hermes-agent` y el registro de la flota (`source_repo` + `source_path` → `Agentes-motores-Wordflow-YAIWES`). Los agentes sin repo (Goose, Muse/Glimmer: `operator_runtime`) no salen.
+
+#### 3.0.6 Archify
+
+[tt-a1i/archify](https://github.com/tt-a1i/archify) (MIT, commit `88d1ae4498`): skill de agente que convierte JSON tipado en HTML interactivo validado (10 tipos: architecture, workflow, sequence…). Chat BOTS: el backend devuelve el JSON `architecture` con el estado de cada pieza (acción `arquitectura`); el frontend instala la skill (`npx skills add tt-a1i/archify -g`) y lo renderiza en la ventana de información de la pestaña Chat BOTS. En los repos de Antonio no aparece «archify» (búsqueda de código en GitHub: 0 resultados).
+
 ### 0. Ruta (no cambiar)
 
 ```
@@ -227,7 +341,7 @@ Todas: `POST /plugins/orquestador/call/<acción>` con JSON; respuesta `{status:"
 - `mirror(de="chat")`: el frontend manda los últimos 12 elementos visibles de `#histories .chat-history:not([hidden])` (rol por clase CSS, ≤3000 caracteres); el agente nuevo recibe system «mirror del chat principal».
 - `mirror(de=<id>)`: copia system, modelo, mensajes, instrucciones y archivos (re-subidos) del agente origen.
 - Nombre `Mirror <origen>`, icono 🪞, `origen` = de dónde salió. Cuenta para el tope de 50.
-- «Mirror desde los enlaces del agente»: **no existe en el código** (pendiente, ver HANDOFF §PROGRESO).
+- «Mirror desde los enlaces del agente»: en la rama `wip/chatbots-backend-mvp` como `mirror(de="repo:<agent_id>")` por enlace, sin copiar código (§3.0.5). En main: no existe.
 
 ### 6. Sandbox (`sandbox.py`)
 
@@ -297,7 +411,7 @@ Evidencia (mensaje del commit `a014c943c0`, 17-oct 00:13 Bogotá): «Probado 412
 ### 11. Por confirmar
 - Qué ficha real del Router resuelve cada id `qw-…` de Chat BOTS.
 - Si `tests_fix/orq_test.py` (v1) se mantiene o se retira.
-- `status`/`reiniciar` para el watchdog (PARCHE §4.1: falta).
+- `status`/`reiniciar` para el watchdog: en la rama `wip/chatbots-backend-mvp` (`vigilar`, `reiniciar`); falta conectarlo al watchdog del Space.
 - Red de HF Jobs (decisión de Antonio).
 - Integración de Chat BOTS y ROOM en main: ninguna de las dos ramas está fusionada.
 
@@ -868,3 +982,4 @@ El agente ejecuta.
 El verificador comprueba.
 
 La evidencia decide si realmente está DONE.
+

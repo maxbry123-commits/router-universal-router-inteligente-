@@ -1,6 +1,6 @@
 # HANDOFF — Chat BOTS + ROOM CONFERENCIAS + trabajo de chat relacionado
 
-Actualizado: 17-oct-2026 00:50, hora Bogotá (UTC-5). Dueño: **Antonio Mendoza**. Base: `main` `b17c430857`. Guía completa: [`README.md`](README.md).
+Actualizado: 17-oct-2026 01:15, hora Bogotá (UTC-5). Dueño: **Antonio Mendoza**. Base: `main` `b17c430857`. Guía completa: [`README.md`](README.md).
 
 Identificación de **cada** archivo, rama y artefacto. Archivos por rama sacados con `gh api repos/…/compare/main...<rama>` (solo lo que la rama cambia respecto a main). Estados: `main` (fusionado) · `wip` (a medias, en curso) · `en pausa` (orden de Antonio) · `pendiente` (listo en rama, falta revisión ×3 / Android / decisión). **Ninguna rama de esta lista está en main.**
 
@@ -8,6 +8,7 @@ Identificación de **cada** archivo, rama y artefacto. Archivos por rama sacados
 
 | Rama | SHA | Último commit (Bogotá) | Commits sobre main / detrás | Archivos | ESTADO | QUÉ HACE |
 |---|---|---|---|---|---|---|
+| [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp) | ver PROGRESO | 17-oct 01:15 | 2 / 0 | 16 | wip | MVP backend Chat BOTS: orquestador + gobierno determinista + mirror por enlace + arquitectura Archify. Estado: [`ESTADO-BACKEND.md`](ESTADO-BACKEND.md). CI bloqueado (facturación Actions). |
 | [`orquestador-agentes-rebase`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/orquestador-agentes-rebase) | [`9dc637165f`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/9dc637165fa009656c4dccef9b9ce60c657af291) | 16-oct 22:51 | 4 / 28 | 15 | en pausa | Chat BOTS v2: plugin `orquestador` (backend), frontend `#chat-bots`, tool `crear_agente`, pruebas v1/v2. TAREAS/03 EN PAUSA. |
 | [`orquestador-escribir-sin-esperar`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/orquestador-escribir-sin-esperar) | [`626eb65024`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/626eb65024c8641e1b8e4ef789f4fbe9b5ab72e7) | 17-oct 00:38 | 8 / 28 | 17 | wip | Chat BOTS v2 + escribir sin esperar (cola por agente, `cola-envio.js`) + cola de Chat 1. En curso. |
 | [`wip/room-conferencias-rebase2`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/room-conferencias-rebase2) | [`a014c943c0`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/a014c943c08aea53d9996857b1ebc4f9750b724e) | 17-oct 00:13 | 2 / 16 | 5 | wip | ROOM CONFERENCIAS + A−/A+. 412 px headless: 2×1 = 9 s 249 ms; 3×2 = 72 s 703 ms. Android real: por confirmar. |
@@ -29,6 +30,27 @@ Identificación de **cada** archivo, rama y artefacto. Archivos por rama sacados
 ## 2. Archivos por rama
 
 Columnas: ARCHIVO/RAMA → TIPO → RAMA → SHA → ENLACE GitHub → ESTADO → QUÉ HACE. «add» = archivo nuevo en la rama; «mod» = modifica un archivo de main.
+
+### `wip/chatbots-backend-mvp`
+
+| ARCHIVO | TIPO | ENLACE | ESTADO | QUÉ HACE |
+|---|---|---|---|---|
+| `router inteligente universal/plugins/orquestador/plugin.py` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/orquestador/plugin.py) | wip | Plugin (de `orquestador-agentes-rebase`) + cableado MVP |
+| `router inteligente universal/plugins/orquestador/gobierno.py` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/orquestador/gobierno.py) | wip | Goal lock, recibos, watchdog, loop, fallos, redacción |
+| `router inteligente universal/plugins/orquestador/mirror_repos.py` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/orquestador/mirror_repos.py) | wip | Mirror por enlace a repos de agentes (no copia) |
+| `router inteligente universal/plugins/orquestador/arquitectura.py` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/orquestador/arquitectura.py) | wip | JSON Archify + estado por pieza |
+| `router inteligente universal/plugins/orquestador/ficha.json` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/orquestador/ficha.json) | wip | Contrato 0.3.0 + 6 acciones |
+| `router inteligente universal/plugins/orquestador/sandbox.py` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/orquestador/sandbox.py) | wip | Sin cambios (de la rama v2) |
+| `router inteligente universal/plugins/orquestador/deploy.py` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/orquestador/deploy.py) | wip | Sin cambios (de la rama v2) |
+| `router inteligente universal/plugins/orquestador/__init__.py` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/orquestador/__init__.py) | wip | Paquete |
+| `router inteligente universal/plugins/puente_chat/herramientas.py` | mod | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/puente_chat/herramientas.py) | wip | + tool `crear_agente` sobre la versión de main |
+| `router inteligente universal/plugins/puente_chat/capacidad.py` | mod | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/plugins/puente_chat/capacidad.py) | wip | `_AGENTE`: `crear_agente` visible al hablar de agentes |
+| `router inteligente universal/tests/test_orquestador_mvp.py` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/router%20inteligente%20universal/tests/test_orquestador_mvp.py) | wip | 7 tests (memoria y harness falsos) |
+| `.github/workflows/riu-chatbots-backend-verify.yml` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/.github/workflows/riu-chatbots-backend-verify.yml) | wip | CI de la rama (bloqueado por facturación) |
+| `chat router/chat bot/ESTADO-BACKEND.md` | add | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/chat%20router/chat%20bot/ESTADO-BACKEND.md) | wip | Estado para el diagrama del frontend |
+| `chat router/chat bot/README.md` | mod | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/chat%20router/chat%20bot/README.md) | wip | §3.0 MVP backend |
+| `chat router/chat bot/HANDOFF.md` | mod | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/chat%20router/chat%20bot/HANDOFF.md) | wip | Este archivo |
+| `HANDOFF/TAREAS/03-BACKEND-CHATBOTS-EVOLUCION.md` | mod | [ver](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/HANDOFF/TAREAS/03-BACKEND-CHATBOTS-EVOLUCION.md) | wip | Progreso tarea 03 |
 
 ### `orquestador-agentes-rebase`
 
@@ -362,7 +384,7 @@ Columnas: ARCHIVO/RAMA → TIPO → RAMA → SHA → ENLACE GitHub → ESTADO �
 | 16-oct-2026 22:51 | integrador / `orquestador-agentes-rebase` | Chat BOTS v2: backend + frontend + tool `crear_agente` + pruebas v1 | hecho (rama), sin main | commits `a1e299e446`…`9dc637165f` |
 | 17-oct-2026 (hora por confirmar) | capturas / `orquestador-agentes-rebase` | Capturas del orquestador (412 px) | hecho | Fallos: el panel abierto no se oculta; el campo repo se borra al repintar (`pintar()` no lo restaura); solapes; la tira queda encima del chat |
 | 17-oct-2026 (hora por confirmar) | Antonio | Creación de agentes + ficha | aprobado | — |
-| 17-oct-2026 (hora por confirmar) | por asignar | Mirror desde los enlaces del agente | pendiente | No existe en el código |
+| 17-oct-2026 (hora por confirmar) | por asignar | Mirror desde los enlaces del agente | pendiente | No existe en el código (17-oct 01:02: en rama `wip/chatbots-backend-mvp`, por enlace) |
 | 17-oct-2026 (hora por confirmar) | rama por confirmar | Propuesta de nuevo diseño del frontend Chat BOTS | en curso | — |
 | 17-oct-2026 (hora por confirmar) | `wip/room-todos` (`604b2866f2`) | «Todos participan» en ROOM | en curso | Commit: chip «Todos», botón Intervenir; «Todos x1 (12 modelos) sin errores, 2x2 con intervención» (sin revisión ×3) |
 | 17-oct-2026 (hora por confirmar) | `feat/escribir-sin-esperar`, `wip/room-escribir-sin-esperar` | Escribir sin esperar en Chat / ROOM / Chat BOTS | en curso | Ramas locales; Chat BOTS: por confirmar |
@@ -373,12 +395,15 @@ Columnas: ARCHIVO/RAMA → TIPO → RAMA → SHA → ENLACE GitHub → ESTADO �
 | 17-oct-2026 00:46 | docs / `docs/enlaces-agentes` | ENLACES DE AGENTES PARA MIRROR en `HANDOFF/TAREAS/03` | en main | PR #17, merge `b17c430857` |
 | 17-oct-2026 00:50 | docs / `docs/chat-bot-raiz` | Carpeta `chat router/chat bot/` (README.md + HANDOFF.md) como fuente principal | en main | Este PR |
 | 17-oct-2026 00:50 | docs / `docs/chat-bot-raiz` | Comprobado: las 3 ramas «escribir sin esperar» ya están en origin | hecho | `feat/escribir-sin-esperar` `c99902c444`, `wip/room-escribir-sin-esperar` `c086120187`, `orquestador-escribir-sin-esperar` `626eb65024` |
+| 17-oct-2026 01:02 | backend / `wip/chatbots-backend-mvp` | MVP backend Chat BOTS (gobierno, mirror por enlace, arquitectura Archify) | hecho (rama), sin probar | commit `64bd84ab66`; CI no corrió: GitHub Actions bloqueado por facturación (run 39008450153) |
+| 17-oct-2026 01:15 | backend / `wip/chatbots-backend-mvp` | Docs: `ESTADO-BACKEND.md`, README §3.0, este HANDOFF, TAREAS/03 | hecho (rama) | ver §2 `wip/chatbots-backend-mvp` |
 
 ## 6. Pendientes
 
 - `HF_TOKEN` para deploy y medición real en el Space (bloqueo).
 - Antonio elige diseño **A o B** del frontend Chat BOTS.
-- Mirror desde los enlaces de agentes: no existe en el código; enlaces en `HANDOFF/TAREAS/03` (copiados en README.md §6); confirmar con Antonio cuáles usar.
+- Mirror desde los enlaces de agentes: en `wip/chatbots-backend-mvp` (por enlace, sin copiar); falta probar en el Space y Android.
+- MVP backend Chat BOTS: correr `tests/test_orquestador_mvp.py` (Actions bloqueado por facturación), deploy al Space (falta `HF_TOKEN`), revisión ×3, Android.
 - Pruebas reales en **Android** (412 px, 4G, E2E) de cada rama antes de merge/deploy.
 - **7 proyectos de prueba** en la memoria real: borrar solo con el sí de Antonio.
 - Red de HF Jobs para el sandbox de Chat BOTS: decisión de Antonio.
@@ -394,3 +419,4 @@ Columnas: ARCHIVO/RAMA → TIPO → RAMA → SHA → ENLACE GitHub → ESTADO �
 3. Añade tu fila en PROGRESO (`en curso`).
 4. Trabaja, prueba 412 px 4G E2E, pide la revisión ×3.
 5. Actualiza PROGRESO y `HANDOFF/TAREAS.md`. Reporta a Antonio en español, mínimo, con tiempos `X s YYY ms`.
+
