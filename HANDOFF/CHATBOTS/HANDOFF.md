@@ -61,6 +61,7 @@ Registro de lo que Antonio pidió sobre Chat BOTS y ROOM. Añade una fila por in
 | 17-oct-2026 (hora por confirmar) | `feat/escribir-sin-esperar`, `wip/room-escribir-sin-esperar` | Escribir sin esperar en Chat / ROOM / Chat BOTS | en curso | Ramas locales; Chat BOTS: por confirmar |
 | 17-oct-2026 00:13 | `wip/room-conferencias-rebase2` (`a014c943c0`) | ROOM CONFERENCIAS + A−/A+ | probado 412 px headless | 2×1 = 9 s 249 ms; 3×2 = 72 s 703 ms; recarga conserva historial; Chat 1 OK. Android real: por confirmar |
 | 17-oct-2026 00:35 | docs / `docs/chatbots-handoff` | Documentación HANDOFF/CHATBOTS | en main | Este archivo |
+| 17-oct-2026 00:40 | docs / `docs/tareas-separadas` | 5 tareas en archivos separados: [`HANDOFF/TAREAS/`](../TAREAS/README.md) (01–05) | en main | `HANDOFF/TAREAS/README.md` |
 | 17-oct-2026 00:40 | descarga / `docs/componentes-os` | Descarga + inventario de componentes open source (Agent Zero, OpenManus, OpenHands, Agent-S, Browser Use) | en main | [`COMPONENTES-OPENSOURCE.md`](COMPONENTES-OPENSOURCE.md); código en el box `/workspace/componentes-os/` (32 MB, no va al repo) |
 
 ## Cómo retomar
