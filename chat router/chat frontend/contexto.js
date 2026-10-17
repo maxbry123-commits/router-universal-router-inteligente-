@@ -49,7 +49,7 @@ export function construirPrefijo(oficial) {
 export function aplicarAMensaje(msg, oficial) { const p = construirPrefijo(oficial); return p ? p + "\n\n--- MENSAJE DEL DIRECTOR ---\n" + msg : msg; }
 const nombresConst = (con) => sinMute("constitucion", con.items || []).map((t) => String(t).replace(/^archivo:/, "").trim()).filter((n) => !/^(enlace|raiz|secreto|constitucion):/.test(n) && /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(n));
 export function datosGobernanza() {  // Constitucion encendida -> campos estructurados para el Harness (nunca el JSON oficial: lo carga el Harness)
-  const con = dameCon(); if (!con.encendida) return null;
+  const con = dameCon(); if (!con.encendida || !con.oficial) return null;  // ON sola = sentinela ligero (sentinela.js); la gobernanza YAIWES pesada solo con «Incluir la oficial»
   return { gobernanza: { enabled: true }, constitucion: { texto: String(con.texto || "").trim(), anclados: nombresConst(con) } };
 }
 export function ampliarAnclados(lista) {
