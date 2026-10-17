@@ -1,0 +1,28 @@
+schema_id: skills_schema/ecc.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: 'Exponer ECC (affaan-m/ECC v2.2.3, 311 skills SKILL.md) como biblioteca de instrucciones en skills/ECC/skills; nunca como agente, staff o autoridad.'
+work_surface: LOCAL
+acceptance:
+- capability ecc registrada en COMPONENT_CAPABILITIES
+- cada skill se lee desde skills/ECC/skills/<nombre>/SKILL.md (frontmatter name + description)
+- runtime ausente falla cerrado via YAIWES_ECC_COMMAND
+- no transfiere autoridad ni muta el goal global
+tools:
+- ecc
+- sheriff
+- judge
+- verifier
+evidence:
+- path: evidence/ecc.json
+  sha256: pending
+oracle: 'component_adapter:ecc'
+gap_policy: 'RUNTIME_UNAVAILABLE => BLOCKED; nunca PASS sin evidencia'
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute
