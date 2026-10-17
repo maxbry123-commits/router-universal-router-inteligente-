@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>YAIWES · Panel 1 Chat</title>
+  <style>
+:root{
+  --bg:#0a0a0d;--surface:#141417;--panel:#1a1a1e;--card:#202025;--elev:#26262b;
+  --line:#2a2a33;--line-strong:#3f3f4e;--text:#f4f4f5;--muted:#a1a1aa;--dim:#71717a;
+  --little:#2563eb;--orange:#ff5500;--danger:#ef4444;--ok:#93c5fd;--shadow:0 18px 60px rgba(0,0,0,.45);
+  --radius:16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color-scheme:dark
+}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#000;color:var(--text)}body{overflow:hidden}button,textarea{font:inherit}button{color:inherit;cursor:pointer}button:focus-visible,textarea:focus-visible{outline:2px solid var(--little);outline-offset:2px}.app{height:100dvh;display:grid;grid-template-columns:248px minmax(0,1fr) 270px;background:var(--bg)}
+.rail,.inspector{background:#0d0d10}.rail{border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}.rail-head{height:66px;padding:12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}.brand-mark{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--elev);border:1px solid var(--line-strong);font-weight:700}.rail-head strong{display:block;font-size:14px}.rail-head span{display:block;font-size:11px;color:var(--dim);margin-top:2px}.icon-btn.rail-close{margin-left:auto;display:none}.new-chat{margin:12px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;text-align:left;font-weight:650}.new-chat:hover,.new-chat[aria-pressed="true"]{background:var(--elev);border-color:var(--line-strong)}.rail-section-title{padding:7px 16px 6px;font-size:11px;color:var(--dim)}.chat-list{padding:0 8px 10px;overflow:auto;flex:1}.chat-item{width:100%;border:0;background:transparent;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center;text-align:left;color:var(--muted);margin-bottom:3px}.chat-item:hover{background:#151519}.chat-item.active{background:var(--card);color:var(--text)}.chat-avatar{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--elev);border:1px solid var(--line);color:#fff;flex:0 0 auto}.chat-copy{min-width:0;flex:1}.chat-copy b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-copy small{display:block;color:var(--dim);font-size:10px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.unread-dot{width:7px;height:7px;border-radius:50%;background:var(--little);flex:0 0 auto}.rail-footer{border-top:1px solid var(--line);padding:12px;color:var(--dim);font-size:10px;display:flex;align-items:center;gap:7px}.bridge-dot{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.main{min-width:0;display:flex;flex-direction:column;background:radial-gradient(700px 380px at 50% -120px,rgba(37,99,235,.08),transparent 72%),var(--bg)}.topbar{height:58px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:9px 14px;gap:8px;background:rgba(10,10,13,.94)}.icon-btn{width:38px;height:38px;border:0;border-radius:50%;background:transparent;display:grid;place-items:center;color:var(--muted);font-size:18px}.icon-btn:hover{background:var(--elev);color:var(--text)}.model-trigger{border:0;background:transparent;padding:8px 8px;border-radius:10px;font-weight:650;display:flex;align-items:center;gap:6px}.model-trigger:hover,.model-trigger[aria-expanded="true"]{background:var(--elev)}.top-spacer{flex:1}.run-state{font:10px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--dim);padding:6px 8px;border:1px solid var(--line);border-radius:999px}.run-state[data-state="running"]{color:var(--ok);border-color:rgba(37,99,235,.45)}.run-state[data-state="blocked"]{color:#fbbf24;border-color:rgba(251,191,36,.35)}.run-state[data-state="cancelled"]{color:var(--muted)}
+.thread{flex:1;overflow:auto;padding:24px max(16px,calc((100% - 760px)/2));display:flex;flex-direction:column;gap:14px;scrollbar-gutter:stable}.empty-state{margin:auto;max-width:440px;text-align:center;padding:24px}.empty-orb{width:58px;height:58px;margin:0 auto 14px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(145deg,#26262b,#151519);border:1px solid var(--line-strong);font-size:24px}.empty-state h1{font-size:22px;letter-spacing:-.02em;margin:0 0 9px}.empty-state p{margin:0;color:var(--muted);font-size:13px;line-height:1.55}.message{max-width:min(720px,92%);border-radius:18px;padding:12px 14px;border:1px solid var(--line);background:var(--surface);align-self:flex-start}.message.user{align-self:flex-end;background:var(--card);border-color:var(--line-strong)}.message.system.blocked{border-left:3px solid #f59e0b}.message-head{font-size:10px;color:var(--dim);display:flex;gap:8px;align-items:center;margin-bottom:6px}.message-head b{color:var(--text);font-weight:650}.message-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.55}.attachment-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.attachment-chip{display:flex;align-items:center;gap:7px;background:#0c0c0f;border:1px solid var(--line);border-radius:10px;padding:6px 8px;max-width:220px}.attachment-chip .kind{font-size:9px;color:#a9c2ff;background:rgba(37,99,235,.14);border-radius:6px;padding:5px}.attachment-chip b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.attachment-chip small{display:block;font-size:9px;color:var(--dim);margin-top:2px}
+.composer-shell{padding:10px max(14px,calc((100% - 760px)/2)) max(10px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(10,10,13,.96)}.attachment-preview{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 8px}.preview{position:relative;display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line-strong);border-radius:11px;padding:6px 28px 6px 7px;max-width:210px}.preview img{width:38px;height:38px;border-radius:8px;object-fit:cover}.preview span{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.preview button{position:absolute;right:4px;top:4px;border:0;background:transparent;color:var(--dim);border-radius:50%;width:22px;height:22px}.composer{border:1px solid var(--line-strong);background:var(--surface);border-radius:22px;padding:10px}.composer:focus-within{border-color:rgba(37,99,235,.8);box-shadow:0 0 0 2px rgba(37,99,235,.12)}.composer textarea{width:100%;border:0;background:transparent;resize:none;outline:0;color:var(--text);min-height:38px;max-height:140px;line-height:1.45;padding:4px 5px 8px}.composer textarea::placeholder{color:var(--dim)}.composer-row{display:flex;align-items:center;gap:7px}.circle-btn,.send-btn{width:38px;height:38px;border-radius:50%;border:0;display:grid;place-items:center}.circle-btn{background:transparent;color:var(--muted);font-size:21px}.circle-btn:hover,.circle-btn.active{background:var(--elev);color:var(--text)}.circle-btn.recording{color:#f97316;background:rgba(249,115,22,.12)}.mode-pill{border:0;background:var(--elev);border-radius:14px;padding:7px 10px;color:var(--muted);font-size:12px;display:flex;align-items:center;gap:5px}.mode-pill:hover,.mode-pill[aria-expanded="true"]{color:var(--text);background:#303036}.composer-spacer{flex:1}.send-btn{background:#f4f4f5;color:#09090b;font-weight:800;font-size:20px}.send-btn:disabled{opacity:.35;cursor:not-allowed}.stop-btn{border:1px solid var(--line-strong);background:var(--elev);border-radius:11px;padding:8px 10px;color:var(--muted);font-size:11px}.composer-hint{text-align:center;color:#555;font-size:9px;margin:6px 0 0}
+.inspector{border-left:1px solid var(--line);padding:16px;overflow:auto}.inspector h2{font-size:11px;font-weight:600;color:var(--dim);margin:4px 0 10px}.inspect-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:16px}.kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px}.kv:last-child{border-bottom:0}.kv span{color:var(--dim)}.kv b{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-weight:500}.event-log:empty::before{content:"Sin eventos";color:var(--dim);font-size:10px}.event{display:grid;grid-template-columns:1fr auto;gap:3px 8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px}.event:last-child{border-bottom:0}.event b{font-weight:600}.event span{color:var(--dim)}.event time{grid-column:2;color:#555;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+.menu{position:fixed;z-index:30;background:#222226;border:1px solid var(--line-strong);border-radius:16px;padding:6px;box-shadow:var(--shadow);min-width:245px}.menu[hidden]{display:none}.model-menu{top:54px;left:258px}.action-menu{top:54px;right:282px}.menu button{width:100%;border:0;background:transparent;border-radius:11px;padding:10px 11px;display:flex;align-items:center;justify-content:space-between;text-align:left;gap:14px}.menu button:hover,.menu button:focus-visible{background:#303036}.menu button[aria-checked="true"]{background:#303036}.menu button span:first-child{display:flex;flex-direction:column}.menu b{font-size:13px}.menu small{color:var(--dim);font-size:10px;margin-top:3px}.menu .check{visibility:hidden}.menu button[aria-checked="true"] .check{visibility:visible}.menu .danger{color:#f87171}.scrim{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:20}.scrim[hidden]{display:none}
+.sheet,.confirm{border:1px solid var(--line-strong);background:#242426;color:var(--text);box-shadow:var(--shadow)}.sheet{width:min(560px,calc(100% - 24px));border-radius:20px;padding:10px 12px 18px;position:fixed;inset:auto 12px 12px auto;margin:0}.sheet::backdrop,.confirm::backdrop{background:rgba(0,0,0,.58)}.sheet-handle{width:38px;height:4px;border-radius:999px;background:#555;margin:2px auto 10px}.sheet-head{display:flex;align-items:center}.sheet-head h2{flex:1;text-align:center;font-size:17px;margin:0}.sheet-head-space{width:38px}.tool-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:14px 2px 12px}.tool-tile{border:1px solid var(--line-strong);background:#303034;border-radius:14px;padding:12px 5px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:7px;font-size:11px}.tool-tile:hover,.tool-tile:focus-visible{background:#38383d;color:var(--text)}.tool-icon{font-size:21px;color:var(--text)}.sheet-options{border-top:1px solid var(--line)}.sheet-row{width:100%;border:0;background:transparent;padding:13px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);text-align:left}.sheet-row:last-child{border-bottom:0}.sheet-row[aria-pressed="true"]{background:#2b2b2f}.row-state{visibility:hidden;color:var(--little)}.sheet-row[aria-pressed="true"] .row-state{visibility:visible}.confirm{width:min(420px,calc(100% - 28px));border-radius:18px;padding:18px}.confirm h2{margin:0 0 8px;font-size:17px}.confirm p{color:var(--muted);font-size:13px;line-height:1.5}.confirm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.secondary-btn,.danger-btn{border-radius:11px;padding:9px 12px}.secondary-btn{border:1px solid var(--line-strong);background:var(--surface)}.danger-btn{border:0;background:#7f1d1d;color:#fff}
+.mobile-only{display:none}
+@media(max-width:1080px){.app{grid-template-columns:230px minmax(0,1fr)}.inspector{display:none}.action-menu{right:12px}.model-menu{left:240px}}
+@media(max-width:720px){body{overflow:hidden}.app{display:block}.main{height:100dvh}.rail{position:fixed;z-index:40;inset:0 auto 0 0;width:min(320px,88vw);transform:translateX(-102%);transition:transform .2s ease;box-shadow:var(--shadow)}.rail.open{transform:translateX(0)}.icon-btn.rail-close{display:grid}.mobile-only{display:grid}.topbar{height:56px;padding:8px 10px}.run-state{display:none}.thread{padding:18px 12px}.empty-state{padding:20px 12px}.empty-state h1{font-size:20px}.composer-shell{padding:8px 10px max(8px,env(safe-area-inset-bottom))}.composer{border-radius:22px}.composer-hint{display:none}.model-menu{left:52px;top:52px;right:12px;min-width:0}.action-menu{left:auto;right:10px;top:52px;min-width:250px}.sheet{width:100%;left:0;right:0;bottom:0;border-radius:20px 20px 0 0;border-bottom:0}.tool-grid{gap:6px}.inspector{display:none}.message{max-width:94%}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+</style>
+</head>
+<body>
+  <div class="app" id="app" data-panel-id="PANEL-01" data-window-id="CHAT-01">
+    <aside class="rail" id="rail" aria-label="Conversaciones">
+      <div class="rail-head">
+        <div class="brand-mark" aria-hidden="true">Y</div>
+        <div>
+          <strong>YAIWES</strong>
+          <span>Chat operativo</span>
+        </div>
+        <button class="icon-btn rail-close" id="railClose" type="button" aria-label="Cerrar conversaciones">×</button>
+      </div>
+      <button class="new-chat" id="newChat" type="button">＋ Nuevo chat</button>
+      <div class="rail-section-title">Chats</div>
+      <div class="chat-list" id="chatList"></div>
+      <div class="rail-footer">
+        <span class="bridge-dot" aria-hidden="true"></span>
+        <span id="connectionStatus">Bridge no conectado</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="railOpen" type="button" aria-label="Abrir conversaciones" aria-expanded="false">☰</button>
+        <button class="model-trigger" id="modelTrigger" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span id="modelLabel">Expert</span><span aria-hidden="true">⌄</span>
+        </button>
+        <div class="top-spacer"></div>
+        <span class="run-state" id="runState" data-state="idle">READY</span>
+        <button class="icon-btn" id="moreTrigger" type="button" aria-label="Más acciones" aria-haspopup="menu" aria-expanded="false">•••</button>
+      </header>
+
+      <section class="thread" id="messages" aria-live="polite" aria-label="Conversación">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-orb" aria-hidden="true">✦</div>
+          <h1>¿Qué quieres construir?</h1>
+          <p>Escribe una instrucción o añade una referencia. El frontend funciona en local y falla cerrado cuando el bridge no está conectado.</p>
+        </div>
+      </section>
+
+      <section class="composer-shell" aria-label="Compositor">
+        <div class="attachment-preview" id="attachmentPreview" aria-live="polite"></div>
+        <div class="composer" id="composerBox">
+          <textarea id="composer" rows="1" placeholder="Escribe un mensaje…" aria-label="Mensaje"></textarea>
+          <div class="composer-row">
+            <button class="circle-btn" id="addTrigger" type="button" aria-label="Añadir al chat" aria-haspopup="dialog">＋</button>
+            <button class="mode-pill" id="modeTrigger" type="button" aria-haspopup="menu" aria-expanded="false"><span id="modeLabel">Expert</span>⌄</button>
+            <div class="composer-spacer"></div>
+            <button class="circle-btn" id="audioBtn" type="button" aria-label="Grabar audio">⌁</button>
+            <button class="stop-btn" id="stopBtn" type="button" hidden>■ Detener</button>
+            <button class="send-btn" id="sendBtn" type="button" aria-label="Enviar mensaje">↑</button>
+          </div>
+        </div>
+        <p class="composer-hint">Enter envía · Shift+Enter crea una línea</p>
+      </section>
+    </main>
+
+    <aside class="inspector" aria-label="Inspector local">
+      <h2>Estado local</h2>
+      <div class="inspect-card">
+        <div class="kv"><span>panel</span><b>PANEL-01</b></div>
+        <div class="kv"><span>window</span><b>CHAT-01</b></div>
+        <div class="kv"><span>modo</span><b id="inspectMode">Expert</b></div>
+        <div class="kv"><span>estado</span><b id="inspectState">READY</b></div>
+      </div>
+      <h2>Eventos</h2>
+      <div class="inspect-card event-log" id="eventLog"></div>
+    </aside>
+
+    <div class="scrim" id="scrim" hidden></div>
+
+    <div class="menu model-menu" id="modelMenu" role="menu" hidden>
+      <button role="menuitemradio" data-mode="Heavy" aria-checked="false"><span><b>Heavy</b><small>Equipo de expertos</small></span><span class="check">✓</span></button>
+      <button role="menuitemradio" data-mode="Expert" aria-checked="true"><span><b>Expert</b><small>Razonamiento profundo</small></span><span class="check">✓</span></button>
+      <button role="menuitemradio" data-mode="Fast" aria-checked="false"><span><b>Fast</b><small>Respuesta rápida</small></span><span class="check">✓</span></button>
+      <button role="menuitemradio" data-mode="Auto" aria-checked="false"><span><b>Auto</b><small>Selecciona según la tarea</small></span><span class="check">✓</span></button>
+    </div>
+
+    <div class="menu action-menu" id="actionMenu" role="menu" hidden>
+      <button role="menuitem" id="renameBtn"><span>Renombrar</span><span aria-hidden="true">✎</span></button>
+      <button role="menuitem" id="exportBtn"><span>Exportar conversación</span><span aria-hidden="true">⇩</span></button>
+      <button role="menuitem" id="clearBtn" class="danger"><span>Eliminar mensajes</span><span aria-hidden="true">⌫</span></button>
+    </div>
+  </div>
+
+  <dialog class="sheet" id="toolsDialog" aria-labelledby="toolsTitle">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-head">
+      <button class="icon-btn" id="toolsClose" type="button" aria-label="Cerrar">×</button>
+      <h2 id="toolsTitle">Añadir al chat</h2>
+      <span class="sheet-head-space"></span>
+    </div>
+    <div class="tool-grid">
+      <button class="tool-tile" id="cameraBtn" type="button"><span class="tool-icon">◉</span><span>Cámara</span></button>
+      <button class="tool-tile" id="imageBtn" type="button"><span class="tool-icon">▧</span><span>Fotos</span></button>
+      <button class="tool-tile" id="audioTile" type="button"><span class="tool-icon">⌁</span><span>Audio</span></button>
+      <button class="tool-tile" id="fileBtn" type="button"><span class="tool-icon">▤</span><span>Archivo</span></button>
+    </div>
+    <div class="sheet-options">
+      <button class="sheet-row selectable" type="button" data-tool="research" aria-pressed="true"><span>Investigación en profundidad</span><span class="row-state">✓</span></button>
+      <button class="sheet-row selectable" type="button" data-tool="web" aria-pressed="false"><span>Búsqueda en la Web</span><span class="row-state">✓</span></button>
+      <button class="sheet-row selectable" type="button" data-tool="artifacts" aria-pressed="false"><span>Artefactos</span><span class="row-state">✓</span></button>
+    </div>
+  </dialog>
+
+  <dialog class="confirm" id="confirmDialog" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Confirmar</h2>
+    <p id="confirmText"></p>
+    <div class="confirm-actions">
+      <button class="secondary-btn" id="confirmCancel" type="button">Cancelar</button>
+      <button class="danger-btn" id="confirmOk" type="button">Eliminar</button>
+    </div>
+  </dialog>
+
+  <input id="fileInput" type="file" multiple hidden>
+  <input id="imageInput" type="file" accept="image/*" multiple hidden>
+  <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+
+  <script src="../../../../../chat%20router/chat%20frontend/config.js"></script>
+  <script type="module" src="../../../puente-yaiwes.js"></script>
+  <script>
+(() => {
+  'use strict';
+  const STORAGE_KEY = 'yaiwes.panel01.chat.v2';
+  const $ = (id) => document.getElementById(id);
+  const uid = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  const now = () => new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+  const defaultState = () => ({
+    version:2,
+    chats:[{id:uid(),title:'Proyecto UI YAIWES',messages:[],updatedAt:Date.now()}],
+    activeChatId:null,
+    mode:'Expert',
+    enabledTools:['research'],
+    attachments:[],
+    events:[],
+    run:{status:'READY',timer:null,token:null},
+    recording:false
+  });
+
+  const EMPTY_STATE = $('emptyState');
+  const S = loadState();
+  if (!S.activeChatId || !S.chats.some(c => c.id === S.activeChatId)) S.activeChatId = S.chats[0].id;
+  S.attachments = [];
+  S.run = {status:'READY',timer:null,token:null};
+  let mediaRecorder = null;
+  let recordedChunks = [];
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed.chats) || !parsed.chats.length) return defaultState();
+      return {...defaultState(),...parsed,attachments:[],events:Array.isArray(parsed.events)?parsed.events.slice(0,12):[]};
+    }catch{return defaultState()}
+  }
+
+  function persist(){
+    const safe = {...S,attachments:[],run:{status:S.run.status,timer:null,token:null},events:S.events.slice(0,12)};
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(safe))}catch{}
+  }
+
+  function activeChat(){ return S.chats.find(c => c.id === S.activeChatId) || S.chats[0]; }
+
+  function log(action,result='ok'){
+    S.events.unshift({action,result,time:now()});
+    S.events = S.events.slice(0,12);
+    persist();
+    renderEvents();
+  }
+
+  function emitAction(actionId,payload={}){
+    const event = {type:'YAIWES_UI_ACTION',panelId:'PANEL-01',windowId:'CHAT-01',actionId,payload,at:new Date().toISOString()};
+    window.dispatchEvent(new CustomEvent('yaiwes:ui-action',{detail:event}));
+    const bridge = window.YAIWES_BRIDGE;
+    if (bridge && typeof bridge.dispatch === 'function') {
+      try { return Promise.resolve(bridge.dispatch(actionId,payload)); }
+      catch (error) { return Promise.resolve({ok:false,reason:error?.message || 'bridge_error'}); }
+    }
+    return Promise.resolve({ok:false,reason:'bridge_not_connected'});
+  }
+
+  function setRunState(status){
+    S.run.status = status;
+    const normalized = status.toLowerCase();
+    $('runState').textContent = status;
+    $('runState').dataset.state = normalized.includes('run') || normalized.includes('queue') ? 'running' : normalized.includes('block') ? 'blocked' : normalized.includes('cancel') ? 'cancelled' : 'idle';
+    $('inspectState').textContent = status;
+    $('stopBtn').hidden = !['QUEUED','RUNNING'].includes(status);
+  }
+
+  function escapeHtml(text){
+    const div=document.createElement('div'); div.textContent=String(text ?? ''); return div.innerHTML;
+  }
+
+  function renderChats(){
+    const list = $('chatList');
+    list.innerHTML = '';
+    for (const chat of S.chats){
+      const btn = document.createElement('button');
+      btn.type='button'; btn.className=`chat-item${chat.id===S.activeChatId?' active':''}`; btn.dataset.chatId=chat.id;
+      const last=chat.messages.at(-1)?.text || 'Sin mensajes';
+      btn.innerHTML=`<span class="chat-avatar" aria-hidden="true">${escapeHtml((chat.title||'C').trim().charAt(0).toUpperCase())}</span><span class="chat-copy"><b>${escapeHtml(chat.title)}</b><small>${escapeHtml(last)}</small></span>${chat.id===S.activeChatId?'<span class="unread-dot" aria-hidden="true"></span>':''}`;
+      btn.addEventListener('click',()=>{S.activeChatId=chat.id;persist();closeRail();renderAll();log('chat.select',chat.title)});
+      list.append(btn);
+    }
+  }
+
+  function renderMessages(){
+    const thread=$('messages'); thread.replaceChildren(); const chat=activeChat();
+    if(!chat.messages.length){
+      EMPTY_STATE.hidden=false;
+      thread.append(EMPTY_STATE);
+      return;
+    }
+    for(const m of chat.messages){
+      const article=document.createElement('article');
+      article.className=`message ${m.role}${m.blocked?' blocked':''}`;
+      const head=document.createElement('div'); head.className='message-head';
+      head.innerHTML=`<b>${m.role==='user'?'Tú':'YAIWES'}</b><span>${escapeHtml(m.time||'')}</span><span>${escapeHtml(m.state||'')}</span>`;
+      const body=document.createElement('div'); body.className='message-body'; body.textContent=m.text || '';
+      article.append(head,body);
+      if(m.attachments?.length){
+        const row=document.createElement('div'); row.className='attachment-row';
+        for(const a of m.attachments){
+          const chip=document.createElement('div'); chip.className='attachment-chip';
+          chip.innerHTML=`<span class="kind">${a.type?.startsWith('image/')?'IMG':a.type?.startsWith('audio/')?'AUD':'FILE'}</span><span><b>${escapeHtml(a.name)}</b><small>${escapeHtml(a.size)}</small></span>`;
+          row.append(chip);
+        }
+        article.append(row);
+      }
+      thread.append(article);
+    }
+    requestAnimationFrame(()=>{thread.scrollTop=thread.scrollHeight});
+  }
+
+  function renderAttachments(){
+    const host=$('attachmentPreview'); host.innerHTML='';
+    S.attachments.forEach((a,index)=>{
+      const item=document.createElement('div'); item.className='preview';
+      if(a.preview){const img=document.createElement('img');img.src=a.preview;img.alt='';item.append(img)}
+      const label=document.createElement('span');label.textContent=a.name;item.append(label);
+      const remove=document.createElement('button');remove.type='button';remove.setAttribute('aria-label',`Quitar ${a.name}`);remove.textContent='×';
+      remove.addEventListener('click',()=>{if(a.preview?.startsWith('blob:'))URL.revokeObjectURL(a.preview);S.attachments.splice(index,1);renderAttachments();syncSendState();log('attachment.remove',a.name)});
+      item.append(remove);host.append(item);
+    });
+  }
+
+  function renderEvents(){
+    $('eventLog').innerHTML=S.events.map(e=>`<div class="event"><b>${escapeHtml(e.action)}</b><span>${escapeHtml(e.result)}</span><time>${escapeHtml(e.time)}</time></div>`).join('');
+  }
+
+  function renderMode(){
+    $('modelLabel').textContent=S.mode;$('modeLabel').textContent=S.mode;$('inspectMode').textContent=S.mode;
+    document.querySelectorAll('[data-mode]').forEach(btn=>btn.setAttribute('aria-checked',String(btn.dataset.mode===S.mode)));
+  }
+
+  function renderTools(){
+    document.querySelectorAll('[data-tool]').forEach(btn=>btn.setAttribute('aria-pressed',String(S.enabledTools.includes(btn.dataset.tool))));
+  }
+
+  function renderAll(){ renderChats();renderMessages();renderAttachments();renderEvents();renderMode();renderTools();syncSendState(); }
+
+  function autoGrow(){
+    const t=$('composer');t.style.height='auto';t.style.height=Math.min(t.scrollHeight,140)+'px';syncSendState();
+  }
+  function syncSendState(){ $('sendBtn').disabled=!$('composer').value.trim()&&!S.attachments.length; }
+
+  function openRail(){ $('rail').classList.add('open');$('railOpen').setAttribute('aria-expanded','true'); if(innerWidth<=720){$('scrim').hidden=false} }
+  function closeRail(){ $('rail').classList.remove('open');$('railOpen').setAttribute('aria-expanded','false');$('scrim').hidden=true; }
+
+  function closeMenus(){
+    $('modelMenu').hidden=true;$('actionMenu').hidden=true;$('modelTrigger').setAttribute('aria-expanded','false');$('modeTrigger').setAttribute('aria-expanded','false');$('moreTrigger').setAttribute('aria-expanded','false');
+  }
+  function toggleModelMenu(anchor){
+    const willOpen=$('modelMenu').hidden; closeMenus(); if(willOpen){$('modelMenu').hidden=false;$(anchor).setAttribute('aria-expanded','true');$('modelMenu').querySelector('[aria-checked="true"]')?.focus();}
+  }
+  function toggleActionMenu(){ const willOpen=$('actionMenu').hidden; closeMenus(); if(willOpen){$('actionMenu').hidden=false;$('moreTrigger').setAttribute('aria-expanded','true');$('actionMenu').querySelector('button')?.focus();} }
+
+  function addFiles(fileList){
+    const files=[...fileList];
+    for(const f of files){
+      const item={name:f.name,size:formatBytes(f.size),type:f.type||'application/octet-stream'};
+      if(f.type.startsWith('image/')) item.preview=URL.createObjectURL(f);
+      S.attachments.push(item);
+    }
+    renderAttachments();syncSendState();log('attachment.add',`${files.length} archivo(s)`);
+  }
+  function formatBytes(bytes){if(bytes<1024)return `${bytes} B`;if(bytes<1048576)return `${(bytes/1024).toFixed(1)} KB`;return `${(bytes/1048576).toFixed(1)} MB`}
+
+  async function startAudio(){
+    if(mediaRecorder?.state==='recording'){mediaRecorder.stop();return}
+    if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder){log('audio.record','unsupported');return}
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true}); recordedChunks=[]; mediaRecorder=new MediaRecorder(stream);
+      mediaRecorder.ondataavailable=(e)=>{if(e.data.size)recordedChunks.push(e.data)};
+      mediaRecorder.onstop=()=>{
+        const blob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||'audio/webm'});
+        S.attachments.push({name:`audio-${Date.now()}.webm`,size:formatBytes(blob.size),type:blob.type||'audio/webm'});
+        stream.getTracks().forEach(t=>t.stop());S.recording=false;renderAttachments();syncAudioButtons();syncSendState();log('audio.record','ready');
+      };
+      mediaRecorder.start();S.recording=true;syncAudioButtons();log('audio.record','recording');
+    }catch{S.recording=false;syncAudioButtons();log('audio.record','permission_denied')}
+  }
+  function syncAudioButtons(){
+    $('audioBtn').classList.toggle('recording',S.recording);$('audioBtn').textContent=S.recording?'■':'⌁';$('audioBtn').setAttribute('aria-label',S.recording?'Detener grabación':'Grabar audio');
+    $('audioTile').classList.toggle('active',S.recording);
+  }
+
+  async function send(){
+    const text=$('composer').value.trim(); if(!text&&!S.attachments.length)return;
+    if(['QUEUED','RUNNING'].includes(S.run.status))return;
+    const chat=activeChat();
+    const attachments=S.attachments.map(({name,size,type})=>({name,size,type}));
+    chat.messages.push({id:uid(),role:'user',text:text||'[Adjuntos]',attachments,time:now(),state:'QUEUED'});chat.updatedAt=Date.now();
+    $('composer').value='';S.attachments.forEach(a=>{if(a.preview?.startsWith('blob:'))URL.revokeObjectURL(a.preview)});S.attachments=[];autoGrow();renderAll();setRunState('QUEUED');log('send_message','queued');
+    const token=uid();S.run.token=token;
+    const resultPromise=emitAction('send_message',{conversationId:chat.id,text,attachments,mode:S.mode,tools:S.enabledTools});
+    setRunState('RUNNING');
+    const timeout=new Promise(resolve=>{S.run.timer=setTimeout(()=>resolve({ok:false,reason:'bridge_not_connected'}),120000)});
+    const result=await Promise.race([resultPromise,timeout]);
+    if(S.run.token!==token)return;
+    clearTimeout(S.run.timer);S.run.timer=null;
+    if(result?.ok){if(result.reply){chat.messages.push({id:uid(),role:'assistant',text:result.reply,time:now(),state:'DONE'});chat.updatedAt=Date.now();persist();renderAll()}setRunState('READY');log('bridge.dispatch','accepted');return}
+    chat.messages.push({id:uid(),role:'system',text:'La interfaz registró la acción, pero el bridge backend no está conectado. No se generó una respuesta artificial.',time:now(),state:'BRIDGE_REQUIRED',blocked:true});
+    chat.updatedAt=Date.now();setRunState('BRIDGE_REQUIRED');persist();renderAll();log('bridge.dispatch',result?.reason||'not_connected');
+    setTimeout(()=>{if(S.run.status==='BRIDGE_REQUIRED')setRunState('READY')},900);
+  }
+
+  function cancelRun(){
+    if(!['QUEUED','RUNNING'].includes(S.run.status))return;
+    if(S.run.timer)clearTimeout(S.run.timer);S.run.timer=null;S.run.token=uid();setRunState('CANCELLED');emitAction('cancel_run',{conversationId:activeChat().id});log('cancel_run','local_cancelled');setTimeout(()=>setRunState('READY'),700);
+  }
+
+  function newChat(){
+    const chat={id:uid(),title:'Nuevo chat',messages:[],updatedAt:Date.now()};S.chats.unshift(chat);S.activeChatId=chat.id;persist();renderAll();closeRail();$('composer').focus();log('chat.create','ok');
+  }
+  function renameChat(){
+    closeMenus();const chat=activeChat();const name=prompt('Nombre del chat',chat.title);if(name?.trim()){chat.title=name.trim().slice(0,80);chat.updatedAt=Date.now();persist();renderAll();log('chat.rename',chat.title)}
+  }
+  function exportChat(){
+    closeMenus();const data=JSON.stringify(activeChat(),null,2);const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`yaiwes-${activeChat().title.replace(/[^a-z0-9-_]+/gi,'-').toLowerCase()||'chat'}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),0);log('export_conversation','json');
+  }
+  function askClear(){closeMenus();$('confirmText').textContent='Se eliminarán los mensajes de esta conversación. El chat se conservará.';$('confirmDialog').showModal();}
+  function clearMessages(){const chat=activeChat();chat.messages=[];chat.updatedAt=Date.now();persist();$('confirmDialog').close();renderAll();log('chat.clear','ok')}
+
+  function selectMode(mode){S.mode=mode;persist();renderMode();closeMenus();log('mode.select',mode);$('composer').focus()}
+  function toggleTool(name){
+    const i=S.enabledTools.indexOf(name);if(i>=0)S.enabledTools.splice(i,1);else S.enabledTools.push(name);persist();renderTools();log('tool.toggle',`${name}:${S.enabledTools.includes(name)?'on':'off'}`);
+  }
+
+  $('railOpen').addEventListener('click',openRail);$('railClose').addEventListener('click',closeRail);$('scrim').addEventListener('click',()=>{closeRail();closeMenus()});
+  $('newChat').addEventListener('click',newChat);$('modelTrigger').addEventListener('click',()=>toggleModelMenu('modelTrigger'));$('modeTrigger').addEventListener('click',()=>toggleModelMenu('modeTrigger'));$('moreTrigger').addEventListener('click',toggleActionMenu);
+  document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>selectMode(btn.dataset.mode)));
+  document.querySelectorAll('[data-tool]').forEach(btn=>btn.addEventListener('click',()=>toggleTool(btn.dataset.tool)));
+  $('addTrigger').addEventListener('click',()=>{$('toolsDialog').showModal();log('tools.open','ok')});$('toolsClose').addEventListener('click',()=>$('toolsDialog').close());
+  $('fileBtn').addEventListener('click',()=>{$('toolsDialog').close();$('fileInput').click()});$('imageBtn').addEventListener('click',()=>{$('toolsDialog').close();$('imageInput').click()});$('cameraBtn').addEventListener('click',()=>{$('toolsDialog').close();$('cameraInput').click()});$('audioTile').addEventListener('click',()=>{$('toolsDialog').close();startAudio()});
+  $('fileInput').addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});$('imageInput').addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});$('cameraInput').addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});
+  $('audioBtn').addEventListener('click',startAudio);$('sendBtn').addEventListener('click',send);$('stopBtn').addEventListener('click',cancelRun);
+  $('renameBtn').addEventListener('click',renameChat);$('exportBtn').addEventListener('click',exportChat);$('clearBtn').addEventListener('click',askClear);$('confirmCancel').addEventListener('click',()=>$('confirmDialog').close());$('confirmOk').addEventListener('click',clearMessages);
+  $('composer').addEventListener('input',autoGrow);$('composer').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+  document.addEventListener('pointerdown',e=>{if(!e.target.closest('.menu')&&!e.target.closest('#modelTrigger')&&!e.target.closest('#modeTrigger')&&!e.target.closest('#moreTrigger'))closeMenus()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenus();closeRail()}if(e.key==='ArrowDown'&&!$('modelMenu').hidden){e.preventDefault();const items=[...$('modelMenu').querySelectorAll('button')];const i=items.indexOf(document.activeElement);items[(i+1+items.length)%items.length].focus()}if(e.key==='ArrowUp'&&!$('modelMenu').hidden){e.preventDefault();const items=[...$('modelMenu').querySelectorAll('button')];const i=items.indexOf(document.activeElement);items[(i-1+items.length)%items.length].focus()}});
+  window.addEventListener('resize',()=>{if(innerWidth>720)closeRail()});
+
+  window.__YAIWES_PANEL01__={state:S,send,newChat,selectMode,toggleTool,emitAction};
+  renderAll();setRunState('READY');syncAudioButtons();autoGrow();log('panel.init','ready');
+})();
+
+</script>
+</body>
+</html>

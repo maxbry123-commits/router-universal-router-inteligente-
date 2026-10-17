@@ -1,0 +1,341 @@
+# Dockview — Full Reference
+
+> A zero dependency layout manager supporting tabs, groups, grids and splitviews for React, Vue, Angular, and JavaScript.
+
+Dockview is an open-source docking layout library that lets you build IDE-like and dashboard interfaces with resizable panels, draggable tabs, floating groups, maximizable groups, and popout windows. It has zero runtime dependencies and works with React, Vue 3, Angular, and plain TypeScript.
+
+## Key Features
+
+- Zero runtime dependencies
+- Drag and drop with customizable drop zones and overlays
+- Floating/overlay groups (with configurable bounds and drag handles)
+- Popout windows (extracting panels to separate browser windows, with custom URLs)
+- Maximize and restore groups
+- Edge groups (panels pinned to layout edges)
+- Tab groups (visual tab organization with colored chips and custom chip renderers)
+- Configurable header/tab positions, tab overflow menu, and headerless groups
+- Size constraints, borderless mode, and multiple render modes
+- Full serialization and deserialization for state persistence
+- Built-in themes plus CSS custom property theming
+- Splitview, gridview, paneview, and dockview layout strategies
+- Strict CSP support and Shadow DOM compatibility
+- Accessibility: ARIA roles/labels, screen-reader announcements, keyboard navigation
+- Comprehensive programmatic API and a full event surface
+- TypeScript-first with full type definitions
+
+## Editions
+
+Dockview ships as an MIT-licensed open-source core with an optional commercial
+Enterprise superset.
+
+- **Dockview** — free, MIT licensed. Everything needed to build a complete docking layout: dockable grid, nested layouts, floating groups, popout windows, edge groups, maximize/restore, tab groups and chips, tab overflow menu, drag and drop, save/restore, built-in themes, and full framework support.
+- **Dockview Enterprise** — commercial licence with a free 30-day trial. A drop-in superset that adds: smart guides (snapping), DnD compass, layout history (undo/redo), multi-row tabs, pinned tabs, advanced tab overflow (search and previews), tab and chip context menus, auto-hide and dock-to-edge groups, and spatial keyboard navigation/docking.
+
+Enterprise features live in a separate `dockview-enterprise` package unlocked
+with a licence key. In JavaScript it is a drop-in replacement — install it
+instead of `dockview` and import from it. In React/Vue/Angular, keep importing
+components from the framework package and add a one-line side-effect import
+(`import 'dockview-enterprise';`) at start-up. See
+https://dockview.dev/docs/overview/licence for the full feature comparison.
+
+## Packages
+
+| Package | Framework | Install |
+|---|---|---|
+| dockview-core | JavaScript (core engine) | `npm install dockview-core` |
+| dockview | JavaScript (re-exports core) | `npm install dockview` |
+| dockview-react | React | `npm install dockview-react` |
+| dockview-vue | Vue 3 | `npm install dockview-vue` |
+| dockview-angular | Angular | `npm install dockview-angular` |
+| dockview-enterprise | All (commercial superset) | `npm install dockview-enterprise` |
+
+## Quick Start — JavaScript
+
+Install:
+
+```
+npm install dockview
+```
+
+Import the stylesheet and create a dockview instance with `createDockview`:
+
+```ts
+import 'dockview/dist/styles/dockview.css';
+import {
+    createDockview,
+    themeAbyss,
+    IContentRenderer,
+    GroupPanelPartInitParameters,
+} from 'dockview';
+
+class MyPanel implements IContentRenderer {
+    private readonly _element = document.createElement('div');
+
+    get element() {
+        return this._element;
+    }
+
+    init(params: GroupPanelPartInitParameters) {
+        this._element.textContent = params.params?.title ?? 'Panel';
+    }
+}
+
+const api = createDockview(document.getElementById('app'), {
+    theme: themeAbyss,
+    createComponent: (options) => new MyPanel(),
+});
+
+api.addPanel({ id: 'panel_1', component: 'default', title: 'Panel 1' });
+api.addPanel({
+    id: 'panel_2',
+    component: 'default',
+    title: 'Panel 2',
+    position: { referencePanel: 'panel_1', direction: 'right' },
+});
+```
+
+The theme can be applied via the `theme` option (a theme object) as above, or by
+adding the theme's CSS class to a parent element.
+
+## Quick Start — React
+
+Install:
+
+```
+npm install dockview-react
+```
+
+Import the stylesheet and render the component:
+
+```tsx
+import 'dockview-react/dist/styles/dockview.css';
+import {
+    DockviewReact,
+    DockviewReadyEvent,
+    IDockviewPanelProps,
+} from 'dockview-react';
+
+const MyPanel = (props: IDockviewPanelProps) => {
+    return <div style={{ padding: 16 }}>{props.api.title}</div>;
+};
+
+const components = { default: MyPanel };
+
+export default function App() {
+    const onReady = (event: DockviewReadyEvent) => {
+        event.api.addPanel({
+            id: 'panel_1',
+            component: 'default',
+            title: 'Panel 1',
+        });
+        event.api.addPanel({
+            id: 'panel_2',
+            component: 'default',
+            title: 'Panel 2',
+            position: { referencePanel: 'panel_1', direction: 'right' },
+        });
+    };
+
+    return (
+        <DockviewReact
+            className="dockview-theme-abyss"
+            style={{ width: '100%', height: '100%' }}
+            onReady={onReady}
+            components={components}
+        />
+    );
+}
+```
+
+## Quick Start — Vue 3
+
+Install:
+
+```
+npm install dockview-vue
+```
+
+Import the stylesheet and register panel components by name:
+
+```vue
+<script setup lang="ts">
+import 'dockview-vue/dist/styles/dockview.css';
+import {
+    DockviewVue,
+    type DockviewReadyEvent,
+    type IDockviewPanelProps,
+} from 'dockview-vue';
+import { defineComponent, type PropType } from 'vue';
+
+const MyPanel = defineComponent({
+    name: 'MyPanel',
+    props: {
+        params: {
+            type: Object as PropType<IDockviewPanelProps>,
+            required: true,
+        },
+    },
+    template: `<div style="padding: 16px">{{ params.api.title }}</div>`,
+});
+
+function onReady(event: DockviewReadyEvent) {
+    event.api.addPanel({ id: 'panel_1', component: 'my-panel', title: 'Panel 1' });
+    event.api.addPanel({
+        id: 'panel_2',
+        component: 'my-panel',
+        title: 'Panel 2',
+        position: { referencePanel: 'panel_1', direction: 'right' },
+    });
+}
+</script>
+
+<template>
+    <DockviewVue
+        style="width:100%;height:100%"
+        class="dockview-theme-abyss"
+        :components="{ 'my-panel': MyPanel }"
+        @ready="onReady"
+    />
+</template>
+```
+
+## Quick Start — Angular
+
+Install:
+
+```
+npm install dockview-angular
+```
+
+Import the stylesheet in your `styles.css` or `angular.json`, then use the
+`dv-dockview` component:
+
+```ts
+import 'dockview-angular/dist/styles/dockview.css';
+import { Component, Input, NgModule, Type } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { DockviewAngularModule } from 'dockview-angular';
+
+@Component({
+    selector: 'my-panel',
+    template: `<div style="padding: 16px">{{ api.title }}</div>`,
+})
+export class MyPanelComponent {
+    @Input() api: any;
+}
+
+@Component({
+    selector: 'app-root',
+    template: `
+        <dv-dockview
+            [components]="components"
+            class="dockview-theme-abyss"
+            (ready)="onReady($event)"
+        ></dv-dockview>
+    `,
+})
+export class AppComponent {
+    components: Record<string, Type<any>> = { default: MyPanelComponent };
+
+    onReady(event: any) {
+        event.api.addPanel({ id: 'panel_1', component: 'default', title: 'Panel 1' });
+        event.api.addPanel({
+            id: 'panel_2',
+            component: 'default',
+            title: 'Panel 2',
+            position: { referencePanel: 'panel_1', direction: 'right' },
+        });
+    }
+}
+
+@NgModule({
+    declarations: [AppComponent, MyPanelComponent],
+    imports: [BrowserModule, DockviewAngularModule],
+    bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+## API Overview
+
+### Creating a layout
+
+Recommended factory functions (each returns the corresponding API):
+
+- `createDockview(element, options)` — docking layout with tabs, groups, and drag and drop
+- `createGridview(element, options)` — grid-based layout
+- `createSplitview(element, options)` — split-based layout
+- `createPaneview(element, options)` — accordion/pane-based layout
+
+The underlying classes (`DockviewComponent`, `GridviewComponent`,
+`SplitviewComponent`, `PaneviewComponent`) remain available for advanced use.
+Groups and panels are represented by `DockviewGroupPanel` (a container of panels
+with tabs) and `DockviewPanel` (individual content).
+
+### Key DockviewApi members
+
+The `DockviewApi` (available via the `onReady` event, or as the return value of
+`createDockview`) provides:
+
+Panels and groups:
+- `addPanel(options)` / `removePanel(panel)` — add or remove a panel
+- `addGroup(options)` / `removeGroup(group)` / `closeAllGroups()` — manage groups
+- `getPanel(id)` / `getGroup(id)` — look up by ID
+- `panels` / `groups` / `activePanel` / `activeGroup` — current state
+- `focus()` / `layout(width, height)` / `clear()`
+
+Advanced groups and windows:
+- `addFloatingGroup(item, options)` — create a floating group
+- `addPopoutGroup(item, options)` — pop a group out to a new window; `getPopouts()`
+- `addEdgeGroup(position, options)` — pin a group to a layout edge
+- `createTabGroup(options)` — create a tab group for visual organization
+- `maximizeGroup(panel)` / `exitMaximizedGroup()` / `hasMaximizedGroup()`
+- `activateNext()` / `activatePrevious()` — navigate between panels (formerly `moveToNext` / `moveToPrevious`, now deprecated aliases)
+
+State and history:
+- `toJSON()` — serialize the layout
+- `fromJSON(data)` — deserialize/restore a layout
+- `undo()` / `redo()` / `canUndo` / `canRedo` / `clearHistory()` — layout history
+
+Events (a selection of the full surface):
+- `onDidLayoutChange` / `onDidLayoutFromJSON`
+- `onDidAddPanel` / `onDidRemovePanel` / `onDidActivePanelChange` / `onDidMovePanel`
+- `onDidAddGroup` / `onDidRemoveGroup` / `onDidActiveGroupChange`
+- `onDidDrop` / `onWillDrop` / `onWillShowOverlay`
+- `onDidMaximizedGroupChange`
+- `onDidAddPopoutGroup` / `onDidRemovePopoutGroup`
+- `onDidCreateTabGroup` / `onDidTabGroupChange`
+
+### Themes
+
+Built-in themes applied via CSS class on a parent element (or as a theme object
+via the `theme` option/prop):
+- `dockview-theme-dark` — Dark theme
+- `dockview-theme-light` — Light theme
+- `dockview-theme-vs` — Visual Studio theme
+- `dockview-theme-abyss` — Abyss dark theme (based on VS Code)
+- `dockview-theme-dracula` — Dracula theme (based on VS Code)
+- `dockview-theme-nord` — Nord theme
+- `dockview-theme-catppuccin-mocha` — Catppuccin Mocha theme
+- `dockview-theme-monokai` — Monokai theme
+- `dockview-theme-solarized-light` — Solarized Light theme
+- `dockview-theme-github-dark` — GitHub Dark theme
+- `dockview-theme-github-light` — GitHub Light theme
+
+Most themes also ship a `-spaced` variant (e.g. `dockview-theme-abyss-spaced`,
+`dockview-theme-nord-spaced`) that adds padding/gaps between groups.
+
+Custom themes can be created using CSS custom properties (CSS variables).
+
+## Links
+
+- Documentation: https://dockview.dev/docs/overview/introduction
+- Quickstart: https://dockview.dev/docs/overview/quickstart
+- Installation: https://dockview.dev/docs/overview/installation
+- API Reference: https://dockview.dev/docs/api/dockview/overview
+- Licensing: https://dockview.dev/docs/overview/licence
+- Live Demo: https://dockview.dev/demo
+- GitHub: https://github.com/mathuo/dockview
+- npm: https://www.npmjs.com/package/dockview-react
+- Blog / Release Notes: https://dockview.dev/blog
+- License: MIT (core); commercial for Dockview Enterprise

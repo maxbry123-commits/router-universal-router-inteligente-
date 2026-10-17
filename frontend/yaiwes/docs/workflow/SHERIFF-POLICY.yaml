@@ -1,0 +1,13 @@
+schema: yaiwes.sheriff/v1
+default: deny
+rules:
+  - {id: source-ingestion, allow_if: "files_read && skills_read && references_inspected"}
+  - {id: no-invention, deny_if: "unreferenced_ui || guessed_model || guessed_capability"}
+  - {id: originals-lock, deny_path: "Ui Yaiwes interface beta/01-original/**"}
+  - {id: controls, deny_if: visible_control_without_handler}
+  - {id: backend-boundary, deny_if: ui_calls_provider_directly}
+  - {id: skill-scope, deny_if: "skill_scope_exceeded || dependency_missing"}
+  - {id: state, deny_if: cosmetic_state_without_logical_state}
+  - {id: quality, deny_close_if: "acceptance_below_100 || console_errors > 0 || missing_assets > 0"}
+  - {id: external-review, deny_claim_if: reviewer_or_sentinel_not_actually_executed}
+on_deny: BLOCKED

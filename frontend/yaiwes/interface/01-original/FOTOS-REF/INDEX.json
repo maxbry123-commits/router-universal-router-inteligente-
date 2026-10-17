@@ -1,0 +1,748 @@
+{
+  "n": 106,
+  "total_bytes": 7629041,
+  "items": [
+    {
+      "id": "F001",
+      "file": "F001.jpg",
+      "origin": "(12).jpg",
+      "sha12": "c52cb4e298c7",
+      "bytes": 59852
+    },
+    {
+      "id": "F002",
+      "file": "F002.jpg",
+      "origin": "1000006822.jpg",
+      "sha12": "eed85f6130b4",
+      "bytes": 44708
+    },
+    {
+      "id": "F003",
+      "file": "F003.jpg",
+      "origin": "1000006824.jpg",
+      "sha12": "d3f0aff79920",
+      "bytes": 113164
+    },
+    {
+      "id": "F004",
+      "file": "F004.jpg",
+      "origin": "1000006827.jpg",
+      "sha12": "a8a815a9615d",
+      "bytes": 97429
+    },
+    {
+      "id": "F005",
+      "file": "F005.jpg",
+      "origin": "1000006834.jpg",
+      "sha12": "e030f93753dd",
+      "bytes": 79449
+    },
+    {
+      "id": "F006",
+      "file": "F006.jpg",
+      "origin": "1000006850.jpg",
+      "sha12": "e1f84aff2e19",
+      "bytes": 48923
+    },
+    {
+      "id": "F007",
+      "file": "F007.jpg",
+      "origin": "1000006852.jpg",
+      "sha12": "ed88aed58e15",
+      "bytes": 47623
+    },
+    {
+      "id": "F008",
+      "file": "F008.jpg",
+      "origin": "1000006873.jpg",
+      "sha12": "f69de0d2c93b",
+      "bytes": 122934
+    },
+    {
+      "id": "F009",
+      "file": "F009.png",
+      "origin": "1000013427.png",
+      "sha12": "e60e65c868b8",
+      "bytes": 80208
+    },
+    {
+      "id": "F010",
+      "file": "F010.png",
+      "origin": "1000013429.png",
+      "sha12": "73f970cdb654",
+      "bytes": 94486
+    },
+    {
+      "id": "F011",
+      "file": "F011.png",
+      "origin": "1000013430.png",
+      "sha12": "ee5e5207cb45",
+      "bytes": 116662
+    },
+    {
+      "id": "F012",
+      "file": "F012.png",
+      "origin": "1000013431.png",
+      "sha12": "ca0af3d4a959",
+      "bytes": 123268
+    },
+    {
+      "id": "F013",
+      "file": "F013.png",
+      "origin": "1000017430.png",
+      "sha12": "e2cd1f122477",
+      "bytes": 80043
+    },
+    {
+      "id": "F014",
+      "file": "F014.jpg",
+      "origin": "1000018397.jpg",
+      "sha12": "1d3fe95b5028",
+      "bytes": 38306
+    },
+    {
+      "id": "F015",
+      "file": "F015.png",
+      "origin": "1000019851.png",
+      "sha12": "4ba15b0bb47b",
+      "bytes": 88433
+    },
+    {
+      "id": "F016",
+      "file": "F016.png",
+      "origin": "1000020341.png",
+      "sha12": "5b1e2e3311c5",
+      "bytes": 85346
+    },
+    {
+      "id": "F017",
+      "file": "F017.png",
+      "origin": "1000020369.png",
+      "sha12": "61b3c2b6075e",
+      "bytes": 73978
+    },
+    {
+      "id": "F018",
+      "file": "F018.png",
+      "origin": "1000020370.png",
+      "sha12": "96fdfc352daf",
+      "bytes": 71903
+    },
+    {
+      "id": "F019",
+      "file": "F019.png",
+      "origin": "1000020448.png",
+      "sha12": "cde2c5e90e47",
+      "bytes": 53453
+    },
+    {
+      "id": "F020",
+      "file": "F020.png",
+      "origin": "1000020449.png",
+      "sha12": "c6433a19c1c9",
+      "bytes": 37112
+    },
+    {
+      "id": "F021",
+      "file": "F021.png",
+      "origin": "1000020450.png",
+      "sha12": "3b33b37e73df",
+      "bytes": 37580
+    },
+    {
+      "id": "F022",
+      "file": "F022.png",
+      "origin": "1000020519.png",
+      "sha12": "9ac5cda4b6fe",
+      "bytes": 116356
+    },
+    {
+      "id": "F023",
+      "file": "F023.png",
+      "origin": "1000020963.png",
+      "sha12": "93278495222d",
+      "bytes": 65655
+    },
+    {
+      "id": "F024",
+      "file": "F024.png",
+      "origin": "1000021237.png",
+      "sha12": "f8b466e60f5b",
+      "bytes": 66770
+    },
+    {
+      "id": "F025",
+      "file": "F025.png",
+      "origin": "1000021241.png",
+      "sha12": "a08458acc968",
+      "bytes": 74427
+    },
+    {
+      "id": "F026",
+      "file": "F026.png",
+      "origin": "1000021274.png",
+      "sha12": "128ec6fe838b",
+      "bytes": 87912
+    },
+    {
+      "id": "F027",
+      "file": "F027.png",
+      "origin": "1000021275.png",
+      "sha12": "e59f893b5ce1",
+      "bytes": 66170
+    },
+    {
+      "id": "F028",
+      "file": "F028.png",
+      "origin": "1000021276.png",
+      "sha12": "7496ded80a87",
+      "bytes": 65764
+    },
+    {
+      "id": "F029",
+      "file": "F029.png",
+      "origin": "1000021308.png",
+      "sha12": "3a134cd64b62",
+      "bytes": 46705
+    },
+    {
+      "id": "F030",
+      "file": "F030.png",
+      "origin": "1000021310.png",
+      "sha12": "b1fe912710ba",
+      "bytes": 52750
+    },
+    {
+      "id": "F031",
+      "file": "F031.png",
+      "origin": "1000021311.png",
+      "sha12": "72009d3a2bec",
+      "bytes": 48933
+    },
+    {
+      "id": "F032",
+      "file": "F032.png",
+      "origin": "1000021889.png",
+      "sha12": "b5b0124b9659",
+      "bytes": 68944
+    },
+    {
+      "id": "F033",
+      "file": "F033.png",
+      "origin": "1000021892.png",
+      "sha12": "9ede8b356e10",
+      "bytes": 41729
+    },
+    {
+      "id": "F034",
+      "file": "F034.png",
+      "origin": "1000021894.png",
+      "sha12": "e0b37cb1bf56",
+      "bytes": 71664
+    },
+    {
+      "id": "F035",
+      "file": "F035.png",
+      "origin": "1000021897.png",
+      "sha12": "a85b3eaba7a1",
+      "bytes": 29626
+    },
+    {
+      "id": "F036",
+      "file": "F036.png",
+      "origin": "1000021900.png",
+      "sha12": "d621e3e4ba3e",
+      "bytes": 45302
+    },
+    {
+      "id": "F037",
+      "file": "F037.png",
+      "origin": "1000021905.png",
+      "sha12": "c6a7b6336fce",
+      "bytes": 85385
+    },
+    {
+      "id": "F038",
+      "file": "F038.png",
+      "origin": "1000021908.png",
+      "sha12": "7bbc476c6fc5",
+      "bytes": 64915
+    },
+    {
+      "id": "F039",
+      "file": "F039.png",
+      "origin": "1000021915.png",
+      "sha12": "9ca9646d737d",
+      "bytes": 75793
+    },
+    {
+      "id": "F040",
+      "file": "F040.png",
+      "origin": "1000021917.png",
+      "sha12": "512a0b25693c",
+      "bytes": 52919
+    },
+    {
+      "id": "F041",
+      "file": "F041.png",
+      "origin": "1000021920.png",
+      "sha12": "0ddc37669ca1",
+      "bytes": 79973
+    },
+    {
+      "id": "F042",
+      "file": "F042.png",
+      "origin": "1000021921.png",
+      "sha12": "c0e5b731ee09",
+      "bytes": 45704
+    },
+    {
+      "id": "F043",
+      "file": "F043.png",
+      "origin": "1000021922.png",
+      "sha12": "43ee56d74ed0",
+      "bytes": 66578
+    },
+    {
+      "id": "F044",
+      "file": "F044.png",
+      "origin": "1000021923.png",
+      "sha12": "0746459ca8cc",
+      "bytes": 62886
+    },
+    {
+      "id": "F045",
+      "file": "F045.png",
+      "origin": "1000021924.png",
+      "sha12": "7a45fad72bcd",
+      "bytes": 74993
+    },
+    {
+      "id": "F046",
+      "file": "F046.png",
+      "origin": "1000021925.png",
+      "sha12": "d49094a9cd6d",
+      "bytes": 62774
+    },
+    {
+      "id": "F047",
+      "file": "F047.png",
+      "origin": "1000021927.png",
+      "sha12": "31f4a4ed4e2a",
+      "bytes": 82317
+    },
+    {
+      "id": "F048",
+      "file": "F048.png",
+      "origin": "1000021929.png",
+      "sha12": "ab8b7c594064",
+      "bytes": 79968
+    },
+    {
+      "id": "F049",
+      "file": "F049.png",
+      "origin": "1000071902.png",
+      "sha12": "7896a9cd1c6b",
+      "bytes": 91781
+    },
+    {
+      "id": "F050",
+      "file": "F050.png",
+      "origin": "1000071969.png",
+      "sha12": "548389498223",
+      "bytes": 70750
+    },
+    {
+      "id": "F051",
+      "file": "F051.png",
+      "origin": "1000071970.png",
+      "sha12": "5bf568a3de06",
+      "bytes": 73338
+    },
+    {
+      "id": "F052",
+      "file": "F052.png",
+      "origin": "1000071975.png",
+      "sha12": "7122e59c587e",
+      "bytes": 41953
+    },
+    {
+      "id": "F053",
+      "file": "F053.png",
+      "origin": "1000071976.png",
+      "sha12": "6fb48ee6f345",
+      "bytes": 46063
+    },
+    {
+      "id": "F054",
+      "file": "F054.png",
+      "origin": "1000071977.png",
+      "sha12": "a90cae8dc6c4",
+      "bytes": 62446
+    },
+    {
+      "id": "F055",
+      "file": "F055.jpg",
+      "origin": "1000071988.jpg",
+      "sha12": "523d8e580e4d",
+      "bytes": 72389
+    },
+    {
+      "id": "F056",
+      "file": "F056.jpg",
+      "origin": "1000071989.jpg",
+      "sha12": "3a4a7fcdf98b",
+      "bytes": 73233
+    },
+    {
+      "id": "F057",
+      "file": "F057.jpg",
+      "origin": "1000071990.jpg",
+      "sha12": "3a4a7fcdf98b",
+      "bytes": 73233
+    },
+    {
+      "id": "F058",
+      "file": "F058.png",
+      "origin": "1000074949.png",
+      "sha12": "810f9514cf7e",
+      "bytes": 82107
+    },
+    {
+      "id": "F059",
+      "file": "F059.png",
+      "origin": "1000076305.png",
+      "sha12": "d667263188fd",
+      "bytes": 73362
+    },
+    {
+      "id": "F060",
+      "file": "F060.png",
+      "origin": "1000076692.png",
+      "sha12": "0c6c9ebbf0ea",
+      "bytes": 53973
+    },
+    {
+      "id": "F061",
+      "file": "F061.png",
+      "origin": "1000076693.png",
+      "sha12": "72a92488eb4e",
+      "bytes": 56791
+    },
+    {
+      "id": "F062",
+      "file": "F062.png",
+      "origin": "1000076711.png",
+      "sha12": "e3cc75cfe64d",
+      "bytes": 47863
+    },
+    {
+      "id": "F063",
+      "file": "F063.png",
+      "origin": "1000076712.png",
+      "sha12": "d640c4a19173",
+      "bytes": 56660
+    },
+    {
+      "id": "F064",
+      "file": "F064.png",
+      "origin": "1000076716.png",
+      "sha12": "3541300900f1",
+      "bytes": 87218
+    },
+    {
+      "id": "F065",
+      "file": "F065.png",
+      "origin": "1000076719.png",
+      "sha12": "25426378c298",
+      "bytes": 48729
+    },
+    {
+      "id": "F066",
+      "file": "F066.png",
+      "origin": "1000076721.png",
+      "sha12": "071d811a57e4",
+      "bytes": 69148
+    },
+    {
+      "id": "F067",
+      "file": "F067.png",
+      "origin": "1000076771.png",
+      "sha12": "df2d9a16d30d",
+      "bytes": 97516
+    },
+    {
+      "id": "F068",
+      "file": "F068.png",
+      "origin": "1000077691.png",
+      "sha12": "959bcd838445",
+      "bytes": 67006
+    },
+    {
+      "id": "F069",
+      "file": "F069.jpg",
+      "origin": "1000077697.jpg",
+      "sha12": "3a4a7fcdf98b",
+      "bytes": 73233
+    },
+    {
+      "id": "F070",
+      "file": "F070.jpg",
+      "origin": "1000077699.jpg",
+      "sha12": "523d8e580e4d",
+      "bytes": 72389
+    },
+    {
+      "id": "F071",
+      "file": "F071.png",
+      "origin": "1000077722.png",
+      "sha12": "b7ab55511ab2",
+      "bytes": 37294
+    },
+    {
+      "id": "F072",
+      "file": "F072.png",
+      "origin": "1000077723.png",
+      "sha12": "7ab895719f81",
+      "bytes": 60605
+    },
+    {
+      "id": "F073",
+      "file": "F073.png",
+      "origin": "1000077724.png",
+      "sha12": "fd40e41f0cba",
+      "bytes": 61756
+    },
+    {
+      "id": "F074",
+      "file": "F074.png",
+      "origin": "1000077725.png",
+      "sha12": "fd40e41f0cba",
+      "bytes": 61756
+    },
+    {
+      "id": "F075",
+      "file": "F075.png",
+      "origin": "1000077726.png",
+      "sha12": "fd40e41f0cba",
+      "bytes": 61756
+    },
+    {
+      "id": "F076",
+      "file": "F076.png",
+      "origin": "1000077727.png",
+      "sha12": "14bf86282a40",
+      "bytes": 88877
+    },
+    {
+      "id": "F077",
+      "file": "F077.png",
+      "origin": "1000077728.png",
+      "sha12": "1fc34f84250f",
+      "bytes": 72553
+    },
+    {
+      "id": "F078",
+      "file": "F078.png",
+      "origin": "1000077729.png",
+      "sha12": "6efa9d5f446c",
+      "bytes": 89803
+    },
+    {
+      "id": "F079",
+      "file": "F079.png",
+      "origin": "1000077730.png",
+      "sha12": "e364073125c3",
+      "bytes": 46739
+    },
+    {
+      "id": "F080",
+      "file": "F080.png",
+      "origin": "1000077731.png",
+      "sha12": "3b3641039de6",
+      "bytes": 46968
+    },
+    {
+      "id": "F081",
+      "file": "F081.png",
+      "origin": "1000077732.png",
+      "sha12": "ab294bb1e945",
+      "bytes": 48740
+    },
+    {
+      "id": "F082",
+      "file": "F082.png",
+      "origin": "1000077733.png",
+      "sha12": "67e574bc16d8",
+      "bytes": 69399
+    },
+    {
+      "id": "F083",
+      "file": "F083.png",
+      "origin": "1000077734.png",
+      "sha12": "9e5374d6b32c",
+      "bytes": 45451
+    },
+    {
+      "id": "F084",
+      "file": "F084.png",
+      "origin": "1000077735.png",
+      "sha12": "85b7239e61ef",
+      "bytes": 45925
+    },
+    {
+      "id": "F085",
+      "file": "F085.png",
+      "origin": "1000077736.png",
+      "sha12": "7519f4398ac6",
+      "bytes": 45811
+    },
+    {
+      "id": "F086",
+      "file": "F086.png",
+      "origin": "1000077737.png",
+      "sha12": "91be7302be2e",
+      "bytes": 43706
+    },
+    {
+      "id": "F087",
+      "file": "F087.png",
+      "origin": "1000077739.png",
+      "sha12": "1c3b4fb7041d",
+      "bytes": 62895
+    },
+    {
+      "id": "F088",
+      "file": "F088.png",
+      "origin": "1000077743.png",
+      "sha12": "5364f111b83a",
+      "bytes": 77314
+    },
+    {
+      "id": "F089",
+      "file": "F089.png",
+      "origin": "1000077766.png",
+      "sha12": "0f2488b22231",
+      "bytes": 73600
+    },
+    {
+      "id": "F090",
+      "file": "F090.png",
+      "origin": "1000077767.png",
+      "sha12": "2ce72df75514",
+      "bytes": 60099
+    },
+    {
+      "id": "F091",
+      "file": "F091.png",
+      "origin": "1000077768.png",
+      "sha12": "53c090af09b5",
+      "bytes": 67287
+    },
+    {
+      "id": "F092",
+      "file": "F092.png",
+      "origin": "1000077769.png",
+      "sha12": "ba68ec445112",
+      "bytes": 11335
+    },
+    {
+      "id": "F093",
+      "file": "F093.png",
+      "origin": "1000077770.png",
+      "sha12": "a6a43998b6ae",
+      "bytes": 16773
+    },
+    {
+      "id": "F094",
+      "file": "F094.png",
+      "origin": "1000077785.png",
+      "sha12": "081c868494d0",
+      "bytes": 78396
+    },
+    {
+      "id": "F095",
+      "file": "F095.png",
+      "origin": "1000077786.png",
+      "sha12": "b491c16eff02",
+      "bytes": 91176
+    },
+    {
+      "id": "F096",
+      "file": "F096.png",
+      "origin": "1000077787.png",
+      "sha12": "53d96b203ce8",
+      "bytes": 91719
+    },
+    {
+      "id": "F097",
+      "file": "F097.png",
+      "origin": "1000077820.png",
+      "sha12": "e33bfa902ad7",
+      "bytes": 43281
+    },
+    {
+      "id": "F098",
+      "file": "F098.jpeg",
+      "origin": "AQMQcc3kA9QXWgKgC2OEF53O_Uh-uPK22DY2IKUsiDTFfFASergW5IaUSTNsk446QfM6DVZcKxewja3-QOKagppK.jpeg",
+      "sha12": "3c8128f12a0d",
+      "bytes": 146392
+    },
+    {
+      "id": "F099",
+      "file": "F099.jpeg",
+      "origin": "AQNbKVFu5lbPtOVSSICp9Sfogk94aUPhNJQxOA38QLrP45BK7Lja5FmzYcb6kL9hNocO6xEH730SDB2RszmV6Gj9.jpeg",
+      "sha12": "9612ab782d0f",
+      "bytes": 102735
+    },
+    {
+      "id": "F100",
+      "file": "F100.jpeg",
+      "origin": "AQO0NQAl_ISEYk_lPS3hDQeyIIGrXjScwNiaRJ7dadQMlG8_TPvbHASsScTJ9PTL2mEC4vntXlbhObmcr6LPrXcN.jpeg",
+      "sha12": "159760067548",
+      "bytes": 87274
+    },
+    {
+      "id": "F101",
+      "file": "F101.jpeg",
+      "origin": "AQPy0bdrdFs5ifu7BmRMJSYxIySKviXh05Ue8uvmjL948suw6HfjvBbeAWTXZsepkZB4KoNOgPvK7-eSrADFMIIY.jpeg",
+      "sha12": "d54873cd9e01",
+      "bytes": 144765
+    },
+    {
+      "id": "F102",
+      "file": "F102.png",
+      "origin": "Screenshot_20260908-044135_Cx Explorador de Archivos.png",
+      "sha12": "0f2488b22231",
+      "bytes": 73600
+    },
+    {
+      "id": "F103",
+      "file": "F103.jpg",
+      "origin": "grok_image_1773354968629.jpg",
+      "sha12": "10e01977ce55",
+      "bytes": 153978
+    },
+    {
+      "id": "F104",
+      "file": "F104.jpg",
+      "origin": "grok_image_1773355119586.jpg",
+      "sha12": "b827af8d892b",
+      "bytes": 154915
+    },
+    {
+      "id": "F105",
+      "file": "F105.jpg",
+      "origin": "grok_image_1773355164733.jpg",
+      "sha12": "0b3a40dd1980",
+      "bytes": 140446
+    },
+    {
+      "id": "F106",
+      "file": "F106.jpg",
+      "origin": "grok_image_1773357204872.jpg",
+      "sha12": "c2e8b93901ea",
+      "bytes": 154969
+    }
+  ]
+}

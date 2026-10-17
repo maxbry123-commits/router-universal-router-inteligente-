@@ -1,0 +1,225 @@
+{
+  "schema": "yaiwes.skills.registry/v1",
+  "generated_at": "2026-09-27",
+  "physical_skill_files": 38,
+  "logical_skills": 27,
+  "activation": "SkillScanner -> SkillRegistry -> PolicyGate -> TaskRouter -> AgentAdapter -> Verifier",
+  "skills": [
+    {
+      "name": "diagnose-crash",
+      "root": "UI YAIWES interface",
+      "category": "runtime/diagnostico",
+      "id": "SKILL-01",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "omarchy",
+      "root": "UI YAIWES interface",
+      "category": "runtime/sistema",
+      "id": "SKILL-02",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "computer-use",
+      "root": "UI YAIWES interface",
+      "category": "operacion/UI",
+      "id": "SKILL-03",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "linear-tickets",
+      "root": "UI YAIWES interface",
+      "category": "tickets/workflow",
+      "id": "SKILL-04",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "orca-cli",
+      "root": "UI YAIWES interface",
+      "category": "CLI",
+      "id": "SKILL-05",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "orca-emulator-android",
+      "root": "UI YAIWES interface",
+      "category": "emulacion/android",
+      "id": "SKILL-06",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "orca-emulator",
+      "root": "UI YAIWES interface",
+      "category": "emulacion",
+      "id": "SKILL-07",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "orca-linear",
+      "root": "UI YAIWES interface",
+      "category": "tickets/integracion",
+      "id": "SKILL-08",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "orca-per-workspace-env",
+      "root": "UI YAIWES interface",
+      "category": "entorno/workspace",
+      "id": "SKILL-09",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "orchestration",
+      "root": "UI YAIWES interface",
+      "category": "orquestacion",
+      "id": "SKILL-10",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "diagnose-pw-failure",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "QA/Playwright",
+      "id": "SKILL-11",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "fix-pw-spec",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "QA/Playwright",
+      "id": "SKILL-12",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "write-and-verify-pw-test",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "QA/Playwright",
+      "id": "SKILL-13",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "budibase-setup-run",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "setup/runtime",
+      "id": "SKILL-14",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "assign-prs",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "repo/PR",
+      "id": "SKILL-15",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "change",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "cambio/codigo",
+      "id": "SKILL-16",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "dependabot-rollup",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "dependencias",
+      "id": "SKILL-17",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "headless-component",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "componentes",
+      "id": "SKILL-18",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "lint-check",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "QA/lint",
+      "id": "SKILL-19",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "package-info",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "paquetes",
+      "id": "SKILL-20",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "release-recovery",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "release/recuperacion",
+      "id": "SKILL-21",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "review-pr",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "repo/review",
+      "id": "SKILL-22",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "token-lookup",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "design tokens",
+      "id": "SKILL-23",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "triage-issues",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "issues/triage",
+      "id": "SKILL-24",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "v9-component",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "componentes",
+      "id": "SKILL-25",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "visual-test",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "QA/visual",
+      "id": "SKILL-26",
+      "state": "DISCOVERED",
+      "approved": false
+    },
+    {
+      "name": "verify-v8-v9-migration-docs",
+      "root": "fabrica de UI INTERFACE fromtend",
+      "category": "migracion/docs",
+      "id": "SKILL-27",
+      "state": "DISCOVERED",
+      "approved": false
+    }
+  ]
+}

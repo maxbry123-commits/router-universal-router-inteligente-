@@ -1,0 +1,53 @@
+{
+  "schema": "yaiwes.t2.module-runtime-verification.v1",
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2-R5A1_WRITE_MINIMUM_CODEMIRROR_ADAPTER_WITH_TEST_HARNESS",
+  "status": "VERIFIED_COMPLETE",
+  "verified_at_utc": "2026-09-12T12:01:42Z",
+  "owner": "Astra",
+  "module": "M_RUNTIME_ORCHESTRATION",
+  "target_windows": ["RUN-07", "RUN-08"],
+  "source_commit_under_test": "3a8108efd40e755754376c48206096a35dc257ed",
+  "workflow_run_id": 34692174640,
+  "workflow_job_id": 103549254048,
+  "job_name": "isolated-adapter-test",
+  "job_status": "completed",
+  "job_conclusion": "success",
+  "tests": {
+    "total": 3,
+    "pass": 3,
+    "fail": 0,
+    "cases": [
+      "fails closed when CodeMirror runtime is absent",
+      "mount/get/set/change/destroy stays frontend-local",
+      "rejects non-string documents"
+    ]
+  },
+  "security_boundary": {
+    "frontend_local": true,
+    "backend_productive_write": false,
+    "secret_values_read_or_printed": false,
+    "persist_credentials": false,
+    "lfs_enabled": false
+  },
+  "evidence": {
+    "adapter": "UI YAIWES interface/Fromtend/modules/M_RUNTIME_ORCHESTRATION/adapters/codemirror-adapter.mjs",
+    "test": "UI YAIWES interface/Fromtend/modules/M_RUNTIME_ORCHESTRATION/tests/codemirror-adapter.test.mjs",
+    "workflow_run": "https://github.com/maxbry123-commits/frontend/actions/runs/34692174640"
+  },
+  "observed_nonblocking_repo_hygiene_flag": {
+    "id": "LFS_POINTER_MISMATCH_LEGACY_HYPOTHESIS_ASSETS",
+    "count": 10,
+    "scope": "UI YAIWES/componentes open soure UI YAIWES/Hypothesis/website",
+    "effect_on_this_gate": "NONE_DEMONSTRATED",
+    "action": "keep flagged; do not enable LFS and do not treat as adapter failure"
+  },
+  "promotion": {
+    "isolated_adapter_runtime": "PASS",
+    "run07_run08_wiring": "PENDING",
+    "module_e2e": "PENDING",
+    "reviewer": "PENDING"
+  },
+  "next_node": "T2-R5A2_WIRE_RUN07_RUN08_THROUGH_FRONTEND_ONLY_MODULE_CONTRACT",
+  "fail_closed": true
+}

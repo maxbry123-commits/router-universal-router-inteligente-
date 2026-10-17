@@ -1,0 +1,7 @@
+{
+  "productName": "YAIWES",
+  "identifier": "com.yaiwes.ui",
+  "build": {
+    "frontendDist": "../Ui Yaiwes interface beta/02-fromted"
+  }
+}

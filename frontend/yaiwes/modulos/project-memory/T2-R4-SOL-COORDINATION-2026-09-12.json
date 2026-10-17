@@ -1,0 +1,50 @@
+{
+  "schema": "yaiwes.t2.sol-coordination.v1",
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2-R4_COORDINATE_SOL_A_B_WITHOUT_COLLISION",
+  "status": "COORDINATED_WAITING_OWNER_CLAIMS",
+  "preconditions": {
+    "t1_gate": "VERIFIED_CLOSED",
+    "r1_window_map": "VERIFIED_COMPLETE",
+    "r2_backend_boundary_map": "VERIFIED_COMPLETE",
+    "r3_oss_donor_map": "VERIFIED_COMPLETE"
+  },
+  "sol_A": {
+    "node": "SOL_FACTORY_A_T1_CONTRACT_CONSUMER",
+    "owner": "SOL_GPT_ENV_A",
+    "current_status": "READY_TO_CLAIM",
+    "exclusive_write_root": "UI YAIWES/watchdog UI YAIWES/➡️ Astra plan fábrica UI YAIWES/Frontend/factory-v0/project-memory/sol-nodes/",
+    "assigned_delta": "Validate one backend-facing UI contract using existing factory adapter; evidence only; no product-path write.",
+    "must_read": [
+      "UI YAIWES interface/Backend/project-memory/T2-R2-BACKEND-API-MCP-BOUNDARY-MAP-2026-09-12.json",
+      "factory-v0/src/backend-adapter.js"
+    ],
+    "closure_evidence": ["source_sha","command_or_test","log","readback","ASTRA_review"]
+  },
+  "sol_B": {
+    "node": "SOL_FACTORY_B_T1_OSS_BACKEND_DONOR_REVIEW",
+    "owner": "SOL_GPT_ENV_B",
+    "current_status": "READY_TO_CLAIM",
+    "exclusive_write_root": "UI YAIWES/watchdog UI YAIWES/➡️ Astra plan fábrica UI YAIWES/Frontend/factory-v0/project-memory/sol-nodes/",
+    "assigned_component": "Dagu",
+    "assigned_delta": "Classify minimum orchestration/DAG donor capability, provenance/license, adapter boundary and tests; evidence/spec only; no productive backend write.",
+    "must_read": [
+      "UI YAIWES interface/Fromtend/project-memory/T2-R3-OSS-DONOR-CAPABILITY-MAP-2026-09-12.json",
+      "UI YAIWES/componentes open soure UI YAIWES/Dagu/"
+    ],
+    "closure_evidence": ["source_url","source_ref","license","minimum_capability","destination","test_plan","readback","ASTRA_review"]
+  },
+  "anti_collision": {
+    "single_writer_per_path": true,
+    "sol_A_and_B_must_claim_before_mutation": true,
+    "productive_backend_write": "DENY_WITHOUT_EXPLICIT_HANDOFF",
+    "astra_does_not_claim_sol_owned_nodes": true
+  },
+  "safe_parallel_work": {
+    "allowed": true,
+    "astra_next_safe_node": "T2-R5_PREFLIGHT_FIRST_FACTORY_MODULE_NO_IMPLEMENTATION",
+    "rule": "Astra may prepare module contract/acceptance criteria while waiting, but must not represent Sol nodes as executed."
+  },
+  "gap": "SOL_A_B_EXECUTION_PENDING_BY_DESIGNATED_OWNERS",
+  "next_node": "T2-R5_PREFLIGHT_FIRST_FACTORY_MODULE_NO_IMPLEMENTATION"
+}

@@ -1,0 +1,374 @@
+{
+  "schema": "yaiwes.skills.registry/v1",
+  "generated_at": "2026-09-27T16:03:00-05:00",
+  "scope": {
+    "roots_scanned": [
+      {
+        "path": "UI YAIWES interface/",
+        "scan": "recursive_complete",
+        "skill_md_count": 10
+      },
+      {
+        "path": "fabrica de UI INTERFACE fromtend/",
+        "scan": "top_level_subtrees_complete_due_root_tree_truncation",
+        "skill_md_count": 41
+      }
+    ],
+    "physical_skill_md_count": 51,
+    "logical_capability_count": 39,
+    "note": "logical count collapses Fluent .agents/.claude mirrors and the linear-tickets legacy alias into one capability family"
+  },
+  "policy": {
+    "fail_closed": true,
+    "product_ui_tokens": "FROMTED matte/little/blanco win",
+    "donor_skills_not_global": true,
+    "activate_only_after_adapter_and_test": true
+  },
+  "ui_interface": [
+    {
+      "name": "diagnose-crash",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Omarchy/default/agents/skills/diagnose-crash/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "crash-diagnostics"
+    },
+    {
+      "name": "omarchy",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Omarchy/default/agents/skills/omarchy/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "desktop-config"
+    },
+    {
+      "name": "computer-use",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/computer-use/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "gui-control"
+    },
+    {
+      "name": "linear-tickets",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/linear-tickets/SKILL.md",
+      "status": "ALIAS_DONOR_SCOPED",
+      "category": "ticketing"
+    },
+    {
+      "name": "orca-cli",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-cli/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "workspace-cli"
+    },
+    {
+      "name": "orca-emulator-android",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-emulator-android/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "android-qa"
+    },
+    {
+      "name": "orca-emulator",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-emulator/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "ios-qa"
+    },
+    {
+      "name": "orca-linear",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-linear/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "ticketing"
+    },
+    {
+      "name": "orca-per-workspace-env",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-per-workspace-env/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "workspace-env"
+    },
+    {
+      "name": "orchestration",
+      "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orchestration/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "multi-agent-orchestration"
+    }
+  ],
+  "factory": [
+    {
+      "name": "diagnose-pw-failure",
+      "path": "fabrica de UI INTERFACE fromtend/Appsmith/.cursor/skills/diagnose-pw-failure/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "qa-playwright"
+    },
+    {
+      "name": "fix-pw-spec",
+      "path": "fabrica de UI INTERFACE fromtend/Appsmith/.cursor/skills/fix-pw-spec/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "qa-playwright"
+    },
+    {
+      "name": "write-and-verify-pw-test",
+      "path": "fabrica de UI INTERFACE fromtend/Appsmith/.cursor/skills/write-and-verify-pw-test/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "qa-playwright"
+    },
+    {
+      "name": "budibase-setup-run",
+      "path": "fabrica de UI INTERFACE fromtend/Budibase/.agents/skills/budibase-setup-run/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "dev-bootstrap"
+    },
+    {
+      "name": "assign-prs",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/assign-prs/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "repo-ops"
+    },
+    {
+      "name": "change",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/change/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "release-metadata"
+    },
+    {
+      "name": "dependabot-rollup",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/dependabot-rollup/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "dependency-ops"
+    },
+    {
+      "name": "headless-component",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/headless-component/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "component-authoring"
+    },
+    {
+      "name": "lint-check",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/lint-check/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "lint"
+    },
+    {
+      "name": "package-info",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/package-info/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "package-discovery"
+    },
+    {
+      "name": "release-recovery",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/release-recovery/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "release-recovery"
+    },
+    {
+      "name": "review-pr",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/review-pr/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "code-review"
+    },
+    {
+      "name": "token-lookup",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/token-lookup/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "design-tokens"
+    },
+    {
+      "name": "triage-issues",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/triage-issues/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "issue-triage"
+    },
+    {
+      "name": "v9-component",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/v9-component/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "component-scaffold"
+    },
+    {
+      "name": "visual-test",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/visual-test/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "visual-qa"
+    },
+    {
+      "name": "assign-prs",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/assign-prs/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "repo-ops"
+    },
+    {
+      "name": "change",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/change/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "release-metadata"
+    },
+    {
+      "name": "headless-component",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/headless-component/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "component-authoring"
+    },
+    {
+      "name": "lint-check",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/lint-check/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "lint"
+    },
+    {
+      "name": "package-info",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/package-info/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "package-discovery"
+    },
+    {
+      "name": "release-recovery",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/release-recovery/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "release-recovery"
+    },
+    {
+      "name": "review-pr",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/review-pr/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "code-review"
+    },
+    {
+      "name": "token-lookup",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/token-lookup/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "design-tokens"
+    },
+    {
+      "name": "triage-issues",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/triage-issues/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "issue-triage"
+    },
+    {
+      "name": "v9-component",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/v9-component/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "component-scaffold"
+    },
+    {
+      "name": "visual-test",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.claude/skills/visual-test/SKILL.md",
+      "status": "MIRROR_DONOR_SCOPED",
+      "category": "visual-qa"
+    },
+    {
+      "name": "verify-v8-v9-migration-docs",
+      "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.github/skills/verify-v8-v9-migration-docs/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "migration-docs"
+    },
+    {
+      "name": "blog-writer",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/blog-writer/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "docs"
+    },
+    {
+      "name": "content-redirect",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/content-redirect/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "docs"
+    },
+    {
+      "name": "daily-docs-audit",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/daily-docs-audit/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "docs-audit"
+    },
+    {
+      "name": "doc-writer",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/doc-writer/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "docs"
+    },
+    {
+      "name": "docs-product-alignment",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/docs-product-alignment/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "docs-audit"
+    },
+    {
+      "name": "frontmatter-description",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/frontmatter-description/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "docs-seo"
+    },
+    {
+      "name": "pr-review",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/pr-review/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "docs-review"
+    },
+    {
+      "name": "release-note-writer",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/release-note-writer/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "release-docs"
+    },
+    {
+      "name": "review-agent-corrections",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/review-agent-corrections/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "agent-feedback"
+    },
+    {
+      "name": "write-my-release-notes",
+      "path": "fabrica de UI INTERFACE fromtend/VS-Code-Contribution-Points-Docs/.github/skills/write-my-release-notes/SKILL.md",
+      "status": "DONOR_SCOPED",
+      "category": "release-docs"
+    },
+    {
+      "name": "frontend-design",
+      "path": "fabrica de UI INTERFACE fromtend/skills/frontend-design/SKILL.md",
+      "status": "FACTORY_PRIMARY",
+      "category": "design"
+    },
+    {
+      "name": "impeccable",
+      "path": "fabrica de UI INTERFACE fromtend/skills/impeccable/SKILL.md",
+      "status": "FACTORY_PRIMARY",
+      "category": "ui-quality"
+    },
+    {
+      "name": "skill-creator",
+      "path": "fabrica de UI INTERFACE fromtend/skills/skill-creator/SKILL.md",
+      "status": "FACTORY_PRIMARY",
+      "category": "skill-authoring"
+    }
+  ],
+  "related_reference_skills_not_counted_in_two_root_total": [
+    {
+      "name": "fromted-frontend-architecture",
+      "path": "Skills arquitectura frontend Yaiwes/fromted-frontend-architecture/SKILL.md",
+      "role": "ORCHESTRATOR_CANONICAL"
+    },
+    {
+      "name": "frontend-design-reference",
+      "path": "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/skills-referencia-claude/frontend-design.SKILL.md",
+      "role": "REFERENCE"
+    },
+    {
+      "name": "web-design-guidelines",
+      "path": "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/skills-referencia-claude/web-design-guidelines.SKILL.md",
+      "role": "REFERENCE_QA"
+    },
+    {
+      "name": "web-artifacts-builder",
+      "path": "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/skills-referencia-claude/web-artifacts-builder.SKILL.md",
+      "role": "REFERENCE_BUILD"
+    },
+    {
+      "name": "theme-factory",
+      "path": "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/skills-referencia-claude/theme-factory.SKILL.md",
+      "role": "REFERENCE_NON_PRODUCT_THEME"
+    },
+    {
+      "name": "brand-guidelines",
+      "path": "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/skills-referencia-claude/brand-guidelines.SKILL.md",
+      "role": "REFERENCE_NOT_FROMTED"
+    },
+    {
+      "name": "image-to-code",
+      "path": "UI YAIWES/componentes open soure UI YAIWES/Image-to-Code/skills/image-to-code-skill/SKILL.md",
+      "role": "REFERENCE_IMAGE_FIRST"
+    }
+  ]
+}

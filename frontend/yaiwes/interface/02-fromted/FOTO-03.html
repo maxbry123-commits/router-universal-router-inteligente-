@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self' blob:;">
+<title>FOTO-03 · Motivo foto 03</title>
+<link rel="stylesheet" href="_shared/fromted.css">
+<script>window.FROMTED_LOCK={"id": "FOTO-03", "name": "Motivo foto 03", "view": "F003"};window.FROMTED_MANIFEST={"id": "FOTO-03", "in": ["FROMTED_THEME", "FROMTED_BACKEND_WIRE"], "out": ["FOTO-03.EVENT"]};</script>
+<script src="_shared/abs.js"></script>
+<script src="_shared/security.js"></script>
+<script src="_shared/connectors.js"></script>
+
+</head>
+<body data-id="FOTO-03">
+<header class="top">
+  <div class="brand"><b>YAIWES</b><small>FOTO-03 · Motivo foto 03</small></div>
+  <button type="button" data-abs="theme">Tema</button>
+  <button type="button" data-abs="ping">Ping IO</button>
+  <button type="button" class="cargar" data-abs="cargar">Cargar</button>
+  <button type="button" class="descargar" data-abs="descargar">Descargar</button>
+</header>
+
+<main style="padding:12px">
+  <div class="card" id="stage" style="min-height:240px;background:#000 center/cover no-repeat;background-image:url('../01-original/FOTOS-REF/F046.png')">
+    <b>Versionado / timeline git</b>
+    <p>Layout referencia. Paleta FROMTED (no naranja HUD).</p>
+  </div>
+  <label><input type="checkbox" id="tr"> semi-transparente</label>
+  <button class="little" id="use">Usar como fondo de esta ventana</button>
+  <pre class="log" id="lg"></pre>
+</main>
+
+<footer class="foot"><span>FOTO-03</span><span id="st">ABS listo</span></footer>
+<script>
+ABS.register('FOTO-03.run', function(p){ return {ok:true, id:'FOTO-03'}; });
+ABS.register('theme', function(){ document.body.classList.toggle('blanco'); return {theme:document.body.className}; });
+ABS.register('ping', async function(){ const r=await FROMTED_IO.ping(); document.getElementById('st').textContent=JSON.stringify(r); return r; });
+ABS.register('cargar', function(){ document.getElementById('st').textContent='Cargar · ABS'; return {op:'cargar'}; });
+ABS.register('descargar', function(){
+  const blob=new Blob([JSON.stringify({id:'FOTO-03', at:Date.now()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='FOTO-03.json'; a.click();
+  return {op:'descargar'};
+});
+document.querySelectorAll('[data-abs]').forEach(function(b){ b.addEventListener('click', function(){ ABS.dispatch(b.getAttribute('data-abs')); }); });
+
+document.getElementById('use').onclick=function(){
+  localStorage.setItem('FROMTED_BG','F003.jpg');
+  ABS.dispatch('foto.bg',{file:'F003.jpg'});
+  document.getElementById('lg').textContent='fondo = F003.jpg';
+};
+document.getElementById('tr').onchange=function(){ document.getElementById('stage').style.opacity=this.checked?0.7:1; };
+
+</script>
+</body></html>

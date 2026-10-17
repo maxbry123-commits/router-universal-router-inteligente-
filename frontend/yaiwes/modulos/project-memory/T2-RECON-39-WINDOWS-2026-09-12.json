@@ -1,0 +1,56 @@
+{
+  "schema": "yaiwes.t2.recon.v1",
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2_INTERFACE_YAIWES",
+  "status": "R1_R2_VERIFIED_COMPLETE_R3_ACTIVE",
+  "source_main_sha_observed": "18594b2a0d4baddf01c8640bb5b26ee47abd9df4",
+  "t1_gate": {
+    "status": "VERIFIED_CLOSED",
+    "factory_source_sha": "8d5a7ed86f9af517b0d42f5aad9e2f7359edd7f0",
+    "hf_space_commit": "9aa43978497e9bd9fba9d9ecea11ac8e83b01764",
+    "canonical_web": "https://comand-center-1-yaiwes-ui-factory.static.hf.space/"
+  },
+  "window_inventory": {
+    "expected_from_physical_index": 39,
+    "director_prompt_count": 38,
+    "reconciled_truth": 39,
+    "groups": {"RUN":8,"WALL":16,"GBOT":1,"FOTO":14},
+    "canonical_index": "UI YAIWES interface/Ui Yaiwes interface beta/02-fromted/INDEX.json",
+    "host": "UI YAIWES interface/Ui Yaiwes interface beta/02-fromted/HOST.html",
+    "status": "PHYSICAL_INVENTORY_AND_CAPABILITY_MAP_VERIFIED",
+    "capability_map": "UI YAIWES interface/Fromtend/project-memory/T2-R1-WINDOW-CAPABILITY-MAP-2026-09-12.json"
+  },
+  "roots": {
+    "frontend": {"path":"UI YAIWES interface/Fromtend/","owner":"➡️ Astra plan fábrica UI YAIWES","status":"MATERIALIZED"},
+    "backend_ui_staging": {"path":"UI YAIWES interface/Backend/","owner":"➡️ Astra plan fábrica UI YAIWES","policy":"DONOR_STAGING_ONLY","status":"MATERIALIZED","productive_sol_backend_write":"DENY_WITHOUT_EXPLICIT_HANDOFF"}
+  },
+  "shared_window_boundary": {
+    "input_plugins": ["FROMTED_THEME","FROMTED_BACKEND_WIRE"],
+    "event_pattern": "<WINDOW_ID>.EVENT",
+    "abs_pattern": ["<WINDOW_ID>.run","<WINDOW_ID>.toggle","io.ping"],
+    "kernel_targets_declared": ["local","web","github","huggingface","gdrive","database"],
+    "window_secret_policy": "NO_RAW_TOKEN_IN_WINDOW"
+  },
+  "backend_boundary_map": "UI YAIWES interface/Backend/project-memory/T2-R2-BACKEND-API-MCP-BOUNDARY-MAP-2026-09-12.json",
+  "sol_nodes": [
+    {"id":"SOL_FACTORY_A_T1_CONTRACT_CONSUMER","status_observed":"READY_TO_CLAIM","safe_scope":"contract/evidence deltas only; no Sol production backend writes","t2_use":"candidate contract-validation worker after node claim"},
+    {"id":"SOL_FACTORY_B_T1_OSS_BACKEND_DONOR_REVIEW","status_observed":"READY_TO_CLAIM","safe_scope":"one OSS donor capability/evidence only; no Sol production backend writes","t2_use":"candidate backend-donor review worker after node claim"}
+  ],
+  "reuse_policy": "REUSE>COPY>PATCH>ADAPT>GENERATE",
+  "completed": [
+    "T2-R1_MAP_39_WINDOWS_TO_PRODUCT_CAPABILITIES",
+    "T2-R2_MAP_BACKEND_CONTRACTS_AND_API_MCP_BOUNDARIES"
+  ],
+  "gaps": [
+    "OSS_DONOR_TO_T2_MODULE_MAP_PENDING",
+    "SOL_NODE_CLAIM_AND_EXECUTION_PENDING",
+    "LEGACY_CRAZY_WALL_DOES_NOT_TRACK_T2_RECON",
+    "RIU_CREDENTIAL_GLOBAL_E2E_REMAINS_ROUTER_PROJECT_GAP_NOT_T2_MAPPING_BLOCKER"
+  ],
+  "queue_1x1": [
+    "T2-R3_MAP_OSS_REUSE_CANDIDATES_TO_CAPABILITIES",
+    "T2-R4_CLAIM_AND_EXECUTE_SOL_A_AND_SOL_B_WITH_NON_COLLIDING_PATHS",
+    "T2-R5_BUILD_FIRST_FACTORY_GENERATED_MODULE_ONLY_AFTER_R1_R4_EVIDENCE"
+  ],
+  "fail_closed_rule": "No module implementation until window inventory, backend boundary and donor reuse map are evidence-backed."
+}

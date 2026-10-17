@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FROMTED p09 — Mode dropdown Grok</title>
+<style>
+:root{--bg:#0d0d0d;--sheet:#1c1c1c;--elev:#252525;--border:#2e2e2e;--white:#f0f0f0;--dim:#9b9b9b;--orange:#ff6b1a;--blue:#2f6bff;--green:#22c55e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#000;color:var(--white);display:flex;justify-content:center;min-height:100dvh}
+.phone{width:100%;max-width:390px;min-height:100dvh;background:var(--bg);position:relative;display:flex;flex-direction:column}
+.fake{flex:1;opacity:.35;padding:20px;font-size:14px;color:var(--dim)}
+.menu{position:absolute;left:12px;bottom:90px;width:260px;background:#2a2a2a;border-radius:16px;padding:6px;border:1px solid #3a3a3a;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.opt{padding:12px 14px;border-radius:12px}
+.opt.on{background:#3a3a3a}
+.opt .t{font-size:15px;font-weight:600;display:flex;justify-content:space-between}
+.opt .t .check{color:var(--white)}
+.opt .d{font-size:12px;color:var(--dim);margin-top:4px;display:flex;align-items:center;gap:6px}
+.opt .d svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.6}
+.composer{margin:12px;display:flex;align-items:center;gap:8px;background:var(--sheet);border:1px solid var(--border);border-radius:24px;padding:8px 10px}
+.composer .mode{padding:6px 10px;border-radius:14px;background:var(--elev);font-size:13px;color:var(--dim);border:0}
+.composer .send{margin-left:auto;width:36px;height:36px;border-radius:50%;border:0;background:#e8e8e8;color:#111}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="fake">…conversación de fondo…</div>
+  <div class="menu">
+    <div class="opt"><div class="t">Heavy</div><div class="d"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Team of Experts</div></div>
+    <div class="opt on"><div class="t">Expert <span class="check">✓</span></div><div class="d"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a6 6 0 0 0-4-10z"/></svg> Thinks hard</div></div>
+    <div class="opt"><div class="t">Fast</div><div class="d"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> Quick responses</div></div>
+    <div class="opt"><div class="t">Auto</div><div class="d"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg> Chooses Fast or Expert</div></div>
+  </div>
+  <div class="composer">
+    <button class="mode" type="button">Expert ▾</button>
+    <button class="send" type="button">↑</button>
+  </div>
+</div>
+</body>
+</html>

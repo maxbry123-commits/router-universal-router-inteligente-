@@ -1,0 +1,156 @@
+{
+  "schema": "yaiwes.skills.registry/v1",
+  "updated": "2026-09-27",
+  "audited_roots": [
+    "UI YAIWES interface/",
+    "fabrica de UI INTERFACE fromtend/"
+  ],
+  "physical_skill_docs": 38,
+  "canonical_capabilities": 26,
+  "ui_yaiwes_interface": {
+    "physical": 10,
+    "canonical": 9,
+    "skills": [
+      {
+        "id": "diagnose-crash",
+        "category": "incident",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Omarchy/default/agents/skills/diagnose-crash/SKILL.md"
+      },
+      {
+        "id": "omarchy",
+        "category": "system-ui",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Omarchy/default/agents/skills/omarchy/SKILL.md"
+      },
+      {
+        "id": "computer-use",
+        "category": "gui-device",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/computer-use/SKILL.md"
+      },
+      {
+        "id": "orca-cli",
+        "category": "orchestration-ops",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-cli/SKILL.md"
+      },
+      {
+        "id": "orca-emulator-android",
+        "category": "mobile-qa",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-emulator-android/SKILL.md"
+      },
+      {
+        "id": "orca-emulator",
+        "category": "mobile-qa",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-emulator/SKILL.md"
+      },
+      {
+        "id": "orca-linear",
+        "category": "project-ops",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-linear/SKILL.md",
+        "aliases": [
+          "linear-tickets"
+        ]
+      },
+      {
+        "id": "orca-per-workspace-env",
+        "category": "runtime-setup",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orca-per-workspace-env/SKILL.md"
+      },
+      {
+        "id": "orchestration",
+        "category": "orchestration",
+        "path": "UI YAIWES interface/Backend/Motor3 approved donors/Orca/skills/orchestration/SKILL.md"
+      }
+    ]
+  },
+  "factory": {
+    "physical": 28,
+    "canonical": 17,
+    "skills": [
+      {
+        "id": "diagnose-pw-failure",
+        "category": "qa-e2e",
+        "path": "fabrica de UI INTERFACE fromtend/Appsmith/.cursor/skills/diagnose-pw-failure/SKILL.md"
+      },
+      {
+        "id": "fix-pw-spec",
+        "category": "qa-e2e",
+        "path": "fabrica de UI INTERFACE fromtend/Appsmith/.cursor/skills/fix-pw-spec/SKILL.md"
+      },
+      {
+        "id": "write-and-verify-pw-test",
+        "category": "qa-e2e",
+        "path": "fabrica de UI INTERFACE fromtend/Appsmith/.cursor/skills/write-and-verify-pw-test/SKILL.md"
+      },
+      {
+        "id": "budibase-setup-run",
+        "category": "runtime-setup",
+        "path": "fabrica de UI INTERFACE fromtend/Budibase/.agents/skills/budibase-setup-run/SKILL.md"
+      },
+      {
+        "id": "assign-prs",
+        "category": "project-ops",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/assign-prs/SKILL.md"
+      },
+      {
+        "id": "change",
+        "category": "release-ops",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/change/SKILL.md"
+      },
+      {
+        "id": "dependabot-rollup",
+        "category": "dependency-ops",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/dependabot-rollup/SKILL.md"
+      },
+      {
+        "id": "headless-component",
+        "category": "component-design",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/headless-component/SKILL.md"
+      },
+      {
+        "id": "lint-check",
+        "category": "quality",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/lint-check/SKILL.md"
+      },
+      {
+        "id": "package-info",
+        "category": "project-ops",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/package-info/SKILL.md"
+      },
+      {
+        "id": "release-recovery",
+        "category": "incident",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/release-recovery/SKILL.md"
+      },
+      {
+        "id": "review-pr",
+        "category": "quality",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/review-pr/SKILL.md"
+      },
+      {
+        "id": "token-lookup",
+        "category": "design-system",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/token-lookup/SKILL.md"
+      },
+      {
+        "id": "triage-issues",
+        "category": "project-ops",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/triage-issues/SKILL.md"
+      },
+      {
+        "id": "v9-component",
+        "category": "component-design",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/v9-component/SKILL.md"
+      },
+      {
+        "id": "visual-test",
+        "category": "visual-qa",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.agents/skills/visual-test/SKILL.md"
+      },
+      {
+        "id": "verify-v8-v9-migration-docs",
+        "category": "docs-verification",
+        "path": "fabrica de UI INTERFACE fromtend/Fluent-UI/.github/skills/verify-v8-v9-migration-docs/SKILL.md"
+      }
+    ],
+    "alias_rule": "Fluent-UI/.claude/skills/* references matching .agents/skills/* and MUST NOT be registered as duplicate capabilities"
+  }
+}

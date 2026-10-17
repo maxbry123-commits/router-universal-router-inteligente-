@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FROMTED v2 — 03 Settings modelos</title>
+<style>
+:root {
+  --bg: #0d0d0d; --surface: #171717; --card: #1a1a1a; --border: #2a2a2a;
+  --white: #f5f5f5; --gray-1: #b8b8b8; --gray-2: #8a8a8a;
+  --orange: #ff6b1a; --blue: #2f6bff; --green: #22c55e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: #000; color: var(--white); display: flex; justify-content: center; min-height: 100dvh;
+}
+.phone { width: 100%; max-width: 390px; min-height: 100dvh; background: var(--bg); display: flex; flex-direction: column; }
+.top {
+  display: flex; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+.top button { border: 0; background: transparent; color: var(--gray-2); width: 36px; height: 36px; }
+.top button svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.top h1 { flex: 1; text-align: center; font-size: 15px; font-weight: 600; }
+.sheet {
+  margin: 12px; flex: 1; border: 1px solid var(--border); border-radius: 16px;
+  background: var(--card); overflow: hidden; display: flex; flex-direction: column;
+}
+.split { display: grid; grid-template-columns: 100px 1fr; min-height: 140px; border-bottom: 1px solid var(--border); }
+.left { background: #121212; padding: 10px 6px; border-right: 1px solid var(--border); }
+.left .lbl { font-size: 10px; color: var(--gray-2); letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px; }
+.left .item { padding: 10px 8px; font-size: 13px; color: var(--gray-2); border-radius: 8px; margin: 2px 0; }
+.left .item.sel { color: var(--blue); background: var(--surface); } /* letras azul */
+.right { padding: 12px; }
+.model { padding: 12px; border-radius: 12px; margin-bottom: 6px; border: 1px solid transparent; }
+.model.sel { border-color: var(--border); background: var(--surface); }
+.model .n { font-size: 14px; display: flex; justify-content: space-between; }
+.model .n .check { color: var(--blue); }
+.model .s { font-size: 12px; color: var(--gray-2); margin-top: 4px; }
+.block { padding: 14px; border-top: 1px solid var(--border); }
+.block h4 { font-size: 11px; color: var(--gray-2); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; }
+.seg { display: flex; gap: 6px; }
+.seg button {
+  flex: 1; padding: 10px 6px; font-size: 12px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--gray-1);
+}
+.seg button.sel { color: var(--blue); border-color: #3a3a3a; } /* sin relleno azul */
+.foot {
+  display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border);
+}
+.foot button {
+  flex: 1; padding: 12px; border-radius: 12px; font-size: 13px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--white);
+}
+/* sin botón rosa/naranja de guardar */
+.hint { text-align: center; font-size: 11px; color: var(--gray-2); padding: 8px; }
+.hint b { color: var(--orange); font-weight: 600; } /* solo palabras cargar/descargar si aplican */
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="top">
+    <button aria-label="menú"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <h1>FROMTED</h1>
+    <button aria-label="buscar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+  </div>
+  <div class="sheet">
+    <div class="split">
+      <div class="left">
+        <div class="lbl">Proveedor</div>
+        <div class="item sel">OpenRouter</div>
+        <div class="item">Local</div>
+        <div class="item">LiteLLM</div>
+      </div>
+      <div class="right">
+        <div class="model sel">
+          <div class="n">Qwen Omni <span class="check">✓</span></div>
+          <div class="s">Multimodal</div>
+        </div>
+        <div class="model">
+          <div class="n">Gemma E2B Q4</div>
+          <div class="s">On-device</div>
+        </div>
+      </div>
+    </div>
+    <div class="block">
+      <h4>Speed</h4>
+      <div class="seg">
+        <button class="sel" type="button">Default</button>
+        <button type="button">Fast</button>
+        <button type="button">Standard</button>
+        <button type="button">Auto</button>
+      </div>
+    </div>
+    <div class="foot">
+      <button type="button">Descartar</button>
+      <button type="button">Guardar</button>
+    </div>
+  </div>
+  <p class="hint">Botones neutros. Naranja solo en textos <b>Cargar</b> / <b>Descargar</b>.</p>
+</div>
+</body>
+</html>

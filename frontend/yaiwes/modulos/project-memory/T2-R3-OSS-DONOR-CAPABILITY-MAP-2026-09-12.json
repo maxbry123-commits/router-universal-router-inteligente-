@@ -1,0 +1,62 @@
+{
+  "schema": "yaiwes.t2.oss-donor-capability-map.v1",
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2-R3_MAP_OSS_REUSE_CANDIDATES_TO_CAPABILITIES",
+  "status": "VERIFIED_COMPLETE",
+  "observed_main_sha_before_write": "8ae93e4966315b553d4473ed1c6dceb79a211573",
+  "source_inventory": {
+    "path": "UI YAIWES/componentes open soure UI YAIWES/",
+    "tree_sha": "2d25955c0d3f932ae14debe2f671883861698a4b",
+    "policy": "REUSE > COPY > PATCH > ADAPT > GENERATE",
+    "presence_is_not_runtime_pass": true
+  },
+  "candidate_map": [
+    {"component":"CodeMirror 6","module":"M_RUNTIME_ORCHESTRATION","capabilities":["YAML/code editor","node/config editing"],"windows":["RUN-07","RUN-08"],"integration_state":"CANDIDATE_PRESENT_NEEDS_ADAPTER_TEST"},
+    {"component":"Excalidraw","module":"M_LAYERS_COMPOSITION","capabilities":["visual canvas","object/layer composition"],"windows":["WALL-01","WALL-08","FOTO-08"],"integration_state":"CANDIDATE_PRESENT_NEEDS_ADAPTER_TEST"},
+    {"component":"Chart.js","module":"M_EVIDENCE_AUDIT","capabilities":["metrics/evidence charts","runtime summaries"],"windows":["RUN-03","FOTO-14"],"integration_state":"CANDIDATE_PRESENT_NEEDS_ADAPTER_TEST"},
+    {"component":"Lucide","module":"M_WORKSPACE_FILES_BLOCKS","capabilities":["UI iconography"],"windows":["WALL-01","WALL-02","WALL-03","WALL-15"],"integration_state":"RUNTIME_DONOR_ALREADY_PROVEN_IN_FACTORY_MINIMAL_PLUS; T2_ADAPTER_STILL_REQUIRED"},
+    {"component":"LibreChat","module":"M_AGENT_CHAT_SHELL","capabilities":["multi-model chat UX patterns","conversation shell"],"windows":["GBOT-01","WALL-04"],"integration_state":"CANDIDATE_PRESENT_NEEDS_MINIMUM_CAPABILITY_EXTRACTION"},
+    {"component":"Open WebUI","module":"M_AGENT_CHAT_SHELL","capabilities":["agent/model interaction UX","model/session surfaces"],"windows":["GBOT-01","FOTO-11"],"integration_state":"CANDIDATE_PRESENT_NEEDS_MINIMUM_CAPABILITY_EXTRACTION"},
+    {"component":"LiteLLM","module":"M_AGENT_CHAT_SHELL","capabilities":["provider/model routing boundary"],"windows":["GBOT-01","FOTO-11"],"integration_state":"BACKEND_DONOR_CANDIDATE_ONLY; RIU_REMAINS_CANONICAL_ROUTER"},
+    {"component":"MCP TypeScript SDK","module":"M_AGENT_CHAT_SHELL","capabilities":["MCP client/server contracts"],"windows":["GBOT-01","RUN-05"],"integration_state":"BOUNDARY_DONOR_CANDIDATE_API_MCP_ONLY"},
+    {"component":"MCP Python SDK","module":"M_AGENT_CHAT_SHELL","capabilities":["MCP backend contracts"],"windows":["GBOT-01","RUN-05"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"Dagu","module":"M_RUNTIME_ORCHESTRATION","capabilities":["DAG/job visualization and execution concepts"],"windows":["RUN-01","RUN-02","RUN-05"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"NATS","module":"M_RUNTIME_ORCHESTRATION","capabilities":["event/message transport"],"windows":["RUN-05","RUN-08"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"Firecracker","module":"M_TERMINAL_SANDBOX","capabilities":["microVM isolation concepts"],"windows":["RUN-06","FOTO-02"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"Moby","module":"M_TERMINAL_SANDBOX","capabilities":["container runtime concepts"],"windows":["RUN-06","FOTO-02"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"LanceDB","module":"M_KNOWLEDGE_MEMORY_CONTEXT","capabilities":["vector storage/search"],"windows":["FOTO-01","FOTO-07","FOTO-10"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"FastEmbed","module":"M_KNOWLEDGE_MEMORY_CONTEXT","capabilities":["local embedding pipeline"],"windows":["FOTO-01","FOTO-07","FOTO-10"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"Oxigraph","module":"M_KNOWLEDGE_MEMORY_CONTEXT","capabilities":["RDF/knowledge graph storage"],"windows":["FOTO-01","FOTO-10"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"Meilisearch","module":"M_WORKSPACE_FILES_BLOCKS","capabilities":["workspace/file search"],"windows":["WALL-03","WALL-09","FOTO-06"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"PDF.js","module":"M_WORKSPACE_FILES_BLOCKS","capabilities":["PDF preview/rendering"],"windows":["WALL-03","WALL-11","FOTO-06"],"integration_state":"FRONTEND_DONOR_CANDIDATE_NEEDS_ADAPTER_TEST"},
+    {"component":"Docling","module":"M_WORKSPACE_FILES_BLOCKS","capabilities":["document parsing/structure extraction"],"windows":["WALL-03","FOTO-10"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"Apache Tika","module":"M_WORKSPACE_FILES_BLOCKS","capabilities":["file metadata/content extraction"],"windows":["WALL-03","WALL-09"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"OpenTelemetry Collector","module":"M_EVIDENCE_AUDIT","capabilities":["telemetry collection"],"windows":["RUN-03","FOTO-14"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"OpenTelemetry Python","module":"M_EVIDENCE_AUDIT","capabilities":["trace/metric instrumentation"],"windows":["RUN-03","FOTO-14"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"Grafana","module":"M_EVIDENCE_AUDIT","capabilities":["observability dashboard patterns"],"windows":["RUN-03","FOTO-14"],"integration_state":"REFERENCE_DONOR_CANDIDATE_ONLY"},
+    {"component":"Cosign","module":"M_EVIDENCE_AUDIT","capabilities":["artifact signing/provenance"],"windows":["FOTO-14","FOTO-03"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"OpenBao","module":"M_STORAGE","capabilities":["secret-management boundary concepts"],"windows":["FOTO-09"],"integration_state":"BACKEND_DONOR_STAGING_ONLY; NO_SECRET_VALUES_IN_UI"},
+    {"component":"OPA","module":"M_EVIDENCE_AUDIT","capabilities":["policy evaluation"],"windows":["RUN-03","FOTO-14"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"OpenFGA","module":"M_EVIDENCE_AUDIT","capabilities":["authorization relationship model"],"windows":["RUN-03","FOTO-14"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"},
+    {"component":"Apache PyCasbin","module":"M_EVIDENCE_AUDIT","capabilities":["authorization policy enforcement"],"windows":["RUN-03","FOTO-14"],"integration_state":"BACKEND_DONOR_STAGING_ONLY"}
+  ],
+  "priority_reuse_shortlist": [
+    {"order":1,"component":"CodeMirror 6","reason":"direct fit to RUN-07/RUN-08 with narrow frontend adapter surface"},
+    {"order":2,"component":"Lucide","reason":"already proven as minimal runtime donor in Factory; lowest-risk reuse path"},
+    {"order":3,"component":"Excalidraw","reason":"direct fit to composition/layers; extract capability rather than whole product"},
+    {"order":4,"component":"PDF.js","reason":"direct file-preview capability for workspace without backend ownership collision"},
+    {"order":5,"component":"Chart.js","reason":"small visual evidence/metrics surface"}
+  ],
+  "verification": {
+    "all_candidates_physically_present_in_inventory_tree": true,
+    "no_candidate_promoted_to_runtime_pass_by_presence": true,
+    "backend_candidates_remain_donor_staging_only": true,
+    "no_sol_productive_backend_write": true,
+    "no_module_implementation_started": true
+  },
+  "gaps": [
+    "EACH_SELECTED_DONOR_STILL_REQUIRES_SOURCE_REF_LICENSE_MINIMUM_CAPABILITY_ADAPTER_TEST_EVIDENCE_BEFORE_RUNTIME_USE",
+    "SOL_NODE_A_AND_B_REMAIN_READY_TO_CLAIM_BY_THEIR_OWNERS"
+  ],
+  "next_node": "T2-R4_COORDINATE_SOL_A_B_WITHOUT_COLLISION"
+}

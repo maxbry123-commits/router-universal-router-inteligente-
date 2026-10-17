@@ -1,0 +1,29 @@
+{
+  "id": "YAIWES-UI-LOOP-v1",
+  "date": "2026-09-08",
+  "one_turn_one_id": true,
+  "github_fromted_requires": "OK <ID>",
+  "steps": [
+    "L0",
+    "L1",
+    "L2",
+    "L3",
+    "L4",
+    "L5",
+    "L6",
+    "L7",
+    "L8",
+    "L9",
+    "L10"
+  ],
+  "fail": "restart from failed step; no GitHub FROMTED",
+  "tokens": {
+    "matte": "#0a0a0d",
+    "little": "#2563eb",
+    "blanco": "#ffffff",
+    "orange_only": "#ff5500"
+  },
+  "start_id_after_LOOP_OK": "RUN-01",
+  "biblioteca_dumped": false,
+  "inventario": "Ui Yaiwes interface beta/01-original/INVENTARIO-39.json"
+}

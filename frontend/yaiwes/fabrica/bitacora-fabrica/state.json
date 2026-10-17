@@ -1,0 +1,75 @@
+{
+  "v": 1,
+  "updated": "2026-09-09T07:04:31Z",
+  "schema": "yaiwes.crazywall.factory.v1",
+  "nodes": {
+    "F0": {
+      "title": "Inventario 39 + hashes",
+      "status": "hecho",
+      "pct": 100
+    },
+    "F1": {
+      "title": "Copiar lote-01 a runtime fábrica",
+      "status": "hecho",
+      "pct": 100
+    },
+    "F2": {
+      "title": "ABS + security + connectors",
+      "status": "hecho",
+      "pct": 100
+    },
+    "F3": {
+      "title": "HOST iframe",
+      "status": "hecho",
+      "pct": 100
+    },
+    "F4": {
+      "title": "PWA empaque web zip",
+      "status": "pendiente",
+      "pct": 20
+    },
+    "F5": {
+      "title": "Tauri Linux/Windows",
+      "status": "pendiente",
+      "pct": 20
+    },
+    "F6": {
+      "title": "Capacitor Android/iOS",
+      "status": "pendiente",
+      "pct": 20
+    },
+    "F7": {
+      "title": "Conector user-picked",
+      "status": "pendiente",
+      "pct": 20
+    },
+    "F8": {
+      "title": "Cifrar wires",
+      "status": "pendiente",
+      "pct": 20
+    },
+    "F9": {
+      "title": "Strip Factory del producto",
+      "status": "pendiente",
+      "pct": 20
+    },
+    "F10": {
+      "title": "Action valida 39",
+      "status": "pendiente",
+      "pct": 20
+    },
+    "F11": {
+      "title": "OK por ID del director",
+      "status": "pendiente",
+      "pct": 20
+    },
+    "F12": {
+      "title": "03-producto lock",
+      "status": "pendiente",
+      "pct": 20
+    }
+  },
+  "notes": {
+    "00": "Paso 2-7 2026-09-09: 39 FROMTED split subidas. Fábrica DAG creado."
+  }
+}

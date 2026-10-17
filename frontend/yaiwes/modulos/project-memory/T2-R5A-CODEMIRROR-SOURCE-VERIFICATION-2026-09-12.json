@@ -1,0 +1,69 @@
+{
+  "schema": "yaiwes.t2.r5a.codemirror-source-verification.v2",
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2-R5A_ADAPT_CODEMIRROR_MINIMUM_CAPABILITY_IN_FACTORY_WORKFLOW",
+  "status": "ADAPTER_WRITTEN_ISOLATED_TEST_IN_PROGRESS",
+  "observed_main_head_before_update": "3a8108efd40e755754376c48206096a35dc257ed",
+  "factory_gate": {
+    "status": "VERIFIED_CLOSED",
+    "source_sha": "8d5a7ed86f9af517b0d42f5aad9e2f7359edd7f0",
+    "hf_space_commit": "9aa43978497e9bd9fba9d9ecea11ac8e83b01764",
+    "canonical_preview": "https://comand-center-1-yaiwes-ui-factory.static.hf.space/",
+    "reopen": false
+  },
+  "donor": {
+    "component": "CodeMirror 6",
+    "repo_path": "UI YAIWES/componentes open soure UI YAIWES/CodeMirror 6/",
+    "inventory_tree_sha": "1a7c7ade9f04041dc37a3c5eaa6e461f2009cbd4",
+    "source_commit": "c010426d06689a7115aa9df08425126b6d3ead2f",
+    "license": "MIT",
+    "package_role": "Development environment for the CodeMirror 6 packages",
+    "policy": "ADAPT_MINIMUM_CAPABILITY"
+  },
+  "target": {
+    "module": "M_RUNTIME_ORCHESTRATION",
+    "slice": "RUN_ORCHESTRATION_EDITOR_INSPECTOR",
+    "windows": ["RUN-07", "RUN-08"],
+    "capability": "YAML/code editor and node/config editing",
+    "backend_write": "DENY",
+    "secret_handling": "DENY_RAW_SECRET_FRONTEND"
+  },
+  "implementation": {
+    "adapter_path": "UI YAIWES interface/Fromtend/modules/M_RUNTIME_ORCHESTRATION/adapters/codemirror-adapter.mjs",
+    "adapter_commit": "be8a6059139ba60cce2401cc45287144e183d41a",
+    "test_path": "UI YAIWES interface/Fromtend/modules/M_RUNTIME_ORCHESTRATION/tests/codemirror-adapter.test.mjs",
+    "test_commit": "6ba08456ed64d88ff03b6b29bde63ed0349c7a1a",
+    "workflow_path": ".github/workflows/astra-t2-r5a1-codemirror-adapter.yml",
+    "workflow_commit": "3a8108efd40e755754376c48206096a35dc257ed",
+    "workflow_run": 34692174640,
+    "workflow_state_at_update": "IN_PROGRESS"
+  },
+  "verification": {
+    "physical_source_present": true,
+    "source_commit_read_back": true,
+    "license_metadata_read_back": true,
+    "runtime_adapter_written": true,
+    "isolated_test_terminal": false,
+    "isolated_test_pass": false,
+    "run07_run08_wired": false,
+    "e2e_pass": false,
+    "runtime_pass_claimed": false
+  },
+  "ownership": {
+    "astra_scope": "frontend adapter/evidence only",
+    "sol_productive_backend_write": false,
+    "backend_policy": "DONOR_STAGING_ONLY"
+  },
+  "parallel_observation": {
+    "sol_s3_excalidraw_run": 34691576762,
+    "status": "COMPLETED_FAILURE",
+    "failure_stage": "Install current vendored source",
+    "promotion": "DENY"
+  },
+  "gaps": [
+    "CODEMIRROR_ISOLATED_RUNTIME_TEST_TERMINAL_PENDING",
+    "RUN07_RUN08_INTEGRATION_PENDING",
+    "RUN07_RUN08_E2E_PENDING"
+  ],
+  "next_node": "T2-R5A2_CLASSIFY_ISOLATED_TEST_THEN_WIRE_RUN07_RUN08_IF_PASS"
+}

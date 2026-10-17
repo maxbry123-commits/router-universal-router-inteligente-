@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="matte">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI YAIWES · Run</title>
+<style>
+html[data-theme="matte"],:root{
+  --pure:#000000;
+  --bg:#0a0a0d;
+  --surface:#141417;
+  --elevated:#1a1a1e;
+  --panel:#1a1a1e;
+  --fg:#e4e4e7;
+  --muted:#a1a1aa;
+  --subtle:#71717a;
+  --line:#2a2a33;
+  --line2:#3f3f4e;
+  --sel:#2563eb;
+  --orange:#ff5500;
+  --cta-bg:#ffffff;
+  --cta-fg:#0a0a0d;
+  --scheme:dark;
+  --r:10px;
+}
+html[data-theme="little"]{
+  --pure:#1C1B1A;
+  --bg:#1C1B1A;
+  --surface:#2A2927;
+  --elevated:#353330;
+  --panel:#2A2927;
+  --fg:#F5F4F0;
+  --muted:#A8A29E;
+  --subtle:#9C9590;
+  --line:rgba(255,255,255,0.1);
+  --line2:rgba(255,255,255,0.18);
+  --sel:#C65D3B;
+  --orange:#C65D3B;
+  --cta-bg:#C65D3B;
+  --cta-fg:#F5F4F0;
+  --scheme:dark;
+}
+html[data-theme="blanco"]{
+  --pure:#ffffff;
+  --bg:#f4f4f5;
+  --surface:#ffffff;
+  --elevated:#f8f8f9;
+  --panel:#ffffff;
+  --fg:#3f3f46;
+  --muted:#71717a;
+  --subtle:#a1a1aa;
+  --line:#e4e4e7;
+  --line2:#d4d4d8;
+  --sel:#2563eb;
+  --orange:#2563eb;
+  --cta-bg:#18181b;
+  --cta-fg:#ffffff;
+  --scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:var(--scheme)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.app{display:flex;flex-direction:column;min-height:100dvh}
+.top{display:flex;align-items:center;gap:8px;min-height:56px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--bg);flex-wrap:wrap}
+.brand{min-width:140px}
+.brand b{display:block;font-size:13px;letter-spacing:.18em}
+.brand small{display:block;color:var(--subtle);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.tabs{display:flex;gap:4px;flex:1;overflow:auto}
+.tabs button,.btn{
+  height:40px;padding:0 12px;border:1px solid var(--line);background:var(--elevated);
+  color:var(--muted);border-radius:8px;white-space:nowrap
+}
+.tabs button.on{background:var(--elevated);color:var(--fg);border-color:var(--sel)}.btn.primary{background:var(--cta-bg);color:var(--cta-fg);border-color:var(--cta-bg)}
+.btn.ghost{background:transparent}
+.btn:hover,.tabs button:hover{border-color:var(--line2);color:var(--fg)}
+.stage{flex:1;display:flex;min-height:0}
+.canvas{flex:1;overflow:auto;padding:24px 16px 72px}
+.col{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:0}
+.card,.term{
+  width:100%;border:1px solid var(--line);background:var(--surface);
+  border-radius:14px;padding:14px;text-align:left
+}
+.term{border-radius:20px;background:var(--pure)}
+.card.on,.term.on{border-color:var(--sel)}
+.k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);margin-bottom:4px}
+.t{font-size:16px;font-weight:600}
+.s{font-size:12px;color:var(--muted);margin-top:4px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.idx{color:var(--subtle);font-size:12px;margin-right:6px}
+.slot{height:36px;display:flex;align-items:center;justify-content:center;position:relative}
+.slot::before{content:"";width:1px;height:100%;background:var(--line)}
+.slot button{position:absolute;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+select,input[type=text],textarea{
+  width:100%;min-height:42px;border:1px solid var(--line);background:var(--elevated);
+  border-radius:8px;padding:8px 10px
+}
+textarea{min-height:90px;resize:vertical}
+.side{width:100%;max-width:100%;border-top:1px solid var(--line);background:var(--panel);overflow:auto}
+@media(min-width:900px){
+  .side{width:340px;border-top:0;border-left:1px solid var(--line)}
+}
+.side h3{padding:12px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);display:flex;justify-content:space-between}
+.side .body{padding:14px}
+.field{margin-bottom:14px}
+.foot{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-top:1px solid var(--line);font-size:11px;color:var(--subtle);letter-spacing:.08em;text-transform:uppercase}
+.grid{display:grid;gap:12px}
+@media(min-width:900px){.grid.three{grid-template-columns:1fr 1.1fr 1fr}}
+.box{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:3px 8px;font-size:11px;color:var(--muted)}
+.vagon{min-width:70px;padding:8px 4px;text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--elevated);font-size:11px}
+.vagon.done{border-color:#888}
+.vagon.running{border-color:var(--sel)}
+.vagon.failed{border-color:#bbb}
+.docs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.docc{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px;text-align:center;font-size:12px}
+.docc.on{border-color:var(--sel)}
+.pre{background:var(--elevated);border:1px solid var(--line);border-radius:8px;padding:10px;font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto}
+.err{position:fixed;bottom:12px;left:12px;right:12px;background:var(--panel);border:1px solid var(--line2);padding:10px 12px;border-radius:8px;display:none;z-index:50}
+.boot{padding:32px;color:var(--muted)}
+.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <b>UI YAIWES</b>
+      <small>Run · equipo IA</small>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button type="button" class="on" data-view="cascade">CASCADE</button>
+      <button type="button" data-view="tren">TREN</button>
+      <button type="button" data-view="auditor">AUDITOR</button>
+      <button type="button" data-view="ventanas">VENTANAS</button>
+      <button type="button" data-view="orquesta">ORQUESTA</button>
+    </nav>
+    <div class="flex">
+      <button class="btn ghost" type="button" id="btnAdd">+ IA</button>
+      <button class="btn ghost" type="button" id="btnSand">Sandbox</button>
+      <button class="btn ghost" type="button" id="btnCode">Codigo</button>
+      <button class="btn primary" type="button" id="btnRun">Run</button>
+      <button class="btn ghost" type="button" id="btnTheme">Matte</button>
+    </div>
+  </header>
+  <div class="stage">
+    <div class="canvas" id="canvas"><p class="boot">Cargando UI YAIWES…</p></div>
+    <aside class="side" id="side" hidden></aside>
+  </div>
+  <footer class="foot"><span id="fl">—</span><span id="fr">—</span></footer>
+</div>
+<div class="err" id="err"></div>
+<noscript><p class="boot">Activa JavaScript para usar UI YAIWES.</p></noscript>
+
+<script>
+(function(){
+  var ORDER=["matte","little","blanco"];
+  var LABEL={matte:"Matte",little:"Little",blanco:"Blanco"};
+  function apply(name){
+    if(ORDER.indexOf(name)<0) name="matte";
+    document.documentElement.setAttribute("data-theme",name);
+    try{localStorage.setItem("yaiwes-theme",name);}catch(e){}
+    var b=document.getElementById("btnTheme");
+    if(b) b.textContent=LABEL[name];
+  }
+  var saved="matte";
+  try{saved=localStorage.getItem("yaiwes-theme")||"matte";}catch(e){}
+  apply(saved);
+  document.addEventListener("click",function(e){
+    if(e.target && e.target.id==="btnTheme"){
+      var cur=document.documentElement.getAttribute("data-theme")||"matte";
+      apply(ORDER[(ORDER.indexOf(cur)+1)%ORDER.length]);
+    }
+  });
+})();
+</script>
+<script>
+(function(){
+"use strict";
+function esc(s){
+  return String(s==null?"":s)
+    .replace(/&/g,"&"+"amp;")
+    .replace(/</g,"&"+"lt;")
+    .replace(/>/g,"&"+"gt;")
+    .replace(/"/g,"&"+"quot;");
+}
+function showErr(m){
+  var e=document.getElementById("err");
+  e.textContent=String(m);
+  e.style.display="block";
+}
+window.onerror=function(m){showErr(m);};
+
+var MODELS=[
+  ["grok-4","Grok 4","xAI"],
+  ["grok-4-fast","Grok 4 Fast","xAI"],
+  ["claude-sonnet","Claude Sonnet","Anthropic"],
+  ["claude-opus","Claude Opus","Anthropic"],
+  ["gpt-4.1","GPT-4.1","OpenAI"],
+  ["qwen-coder","Qwen 2.5 Coder","Local"],
+  ["deepseek-v3","DeepSeek V3","DeepSeek"],
+  ["llama-3.3","Llama 3.3","Local"],
+  ["hrm","HRM","Local"],
+  ["custom","Custom / BYO","Custom"]
+];
+var ROLES=[
+  ["analyzer","Analyzer","Normaliza la tarea. No disena arquitectura.","ROL: Analyzer\nNo inventes nodos ni plantillas."],
+  ["planner","Planner","Plan dentro de la plantilla fija.","ROL: Planner\nNo agregues nodos."],
+  ["coder","Coder","Implementa. Sandbox obligatorio.","ROL: Coder\nEjecuta solo en el sandbox."],
+  ["critic","Critic","Red team. Ataca la propuesta.","ROL: Critic\nBusca huecos. No propone DAG nuevo."],
+  ["verifier","Verifier","Comprueba schema y evidencia.","ROL: Verifier\nFail closed si falta prueba."],
+  ["judge","Judge","ACCEPT o REJECT.","ROL: Judge\nNunca improvisa DAG."],
+  ["synthesizer","Synthesizer","Consolida al Output Schema.","ROL: Synthesizer\nProduce el paquete final."],
+  ["sentinel","Sentinel","Bloquea transiciones no autorizadas.","ROL: Sentinel\nFail closed."],
+  ["architect","Architect","Selecciona plantilla. No la inventa.","ROL: Architect\nSolo plantillas T01-T12."],
+  ["researcher","Researcher","Solo fuentes del registry.","ROL: Researcher\nCita o UNKNOWN."],
+  ["security","Security","Secretos solo por token_ref.","ROL: Security\nEnchufe Gate obligatorio."],
+  ["custom","Custom","Rol libre. El DAG sigue bloqueado.","ROL: Custom\nNo mutes el DAG."]
+];
+var DEST=[
+  ["agent-api","Agent API","/api/agent/complete"],
+  ["webhook","Webhook","https://hooks.example/cascade"],
+  ["panel-run","Panel RUN","/api/ws/events"],
+  ["filesystem","Filesystem","sandbox://out/result.json"]
+];
+function role(id){for(var i=0;i<ROLES.length;i++) if(ROLES[i][0]===id) return ROLES[i]; return ROLES[ROLES.length-1];}
+function model(id){for(var i=0;i<MODELS.length;i++) if(MODELS[i][0]===id) return MODELS[i]; return MODELS[0];}
+function dest(id){for(var i=0;i<DEST.length;i++) if(DEST[i][0]===id) return DEST[i]; return DEST[0];}
+function uid(){return "n"+Math.random().toString(36).slice(2,8);}
+function mk(roleId){
+  var r=role(roleId);
+  return {id:uid(),modelId:"grok-4",roleId:r[0],label:r[1],prompt:r[3],input:'{"task":""}',output:'{"node":"'+r[0]+'","status":"ok"}',backend:"docker",timeout:30,mem:512,net:false,on:true,status:"idle"};
+}
+var S={
+  view:"cascade", panel:null, sel:null, running:false, cursor:-1,
+  name:"Equipo CODE",
+  input:"Revisa este modulo y propone un parche minimo.",
+  dest:"agent-api",
+  endpoint:"/api/agent/complete",
+  last:"",
+  sb:{backend:"docker",timeout:30,mem:512,net:false},
+  nodes:[mk("analyzer"),mk("coder"),mk("critic"),mk("synthesizer")],
+  tren:{e:[],i:8,props:["PROP-001 Sentinel techo","PROP-002 Canary 10%","PROP-003 Lote fichas"],led:["GENESIS"],det:"Toca un vagon."},
+  aud:{q:"",pins:[],sel:null,out:""},
+  vent:{i:0,st:"lista",p:{},bp:{},est:["pending","pending","pending","pending"],fotos:[null,null,null,null],in:'{"x":5}',dsl:""},
+  orq:{in:'{"x":5,"msg":"hola tren"}',lib:"sumar1",pila:[],out:"Ejecuta para ver la salida.",py:"",dest:"ver aqui"}
+};
+for(var t=0;t<16;t++) S.tren.e.push(t<8?"done":t===8?"running":"pending");
+
+function opts(list, val, i0, i1){
+  var h="";
+  for(var i=0;i<list.length;i++){
+    var v=list[i][i0], l=list[i][i1];
+    h+="<option value=\""+esc(v)+"\""+(v===val?" selected":"")+">"+esc(l)+"</option>";
+  }
+  return h;
+}
+function paint(){
+  document.getElementById("fl").textContent=S.nodes.length+" IA · "+S.sb.backend+" · "+S.sb.timeout+"s";
+  document.getElementById("fr").textContent="→ "+dest(S.dest)[1];
+  var tabs=document.querySelectorAll("#tabs button");
+  for(var i=0;i<tabs.length;i++) tabs[i].className=tabs[i].getAttribute("data-view")===S.view?"on":"";
+  var canvas=document.getElementById("canvas");
+  var side=document.getElementById("side");
+  if(S.view==="cascade"){ canvas.innerHTML=viewCascade(); }
+  else if(S.view==="tren"){ canvas.innerHTML=viewTren(); }
+  else if(S.view==="auditor"){ canvas.innerHTML=viewAud(); }
+  else if(S.view==="ventanas"){ canvas.innerHTML=viewVent(); }
+  else { canvas.innerHTML=viewOrq(); }
+  if(S.view==="cascade" && S.panel){ side.hidden=false; side.innerHTML=viewSide(); }
+  else { side.hidden=true; side.innerHTML=""; }
+  bind();
+}
+function viewCascade(){
+  if(S.panel==="code"){
+    return "<div class=\"box\"><div class=\"row\"><span class=\"k\">Documento DAG locked</span><button class=\"btn\" type=\"button\" id=\"copyY\">Copiar YAML</button></div><pre class=\"pre\" id=\"yaml\">"+esc(toYaml())+"</pre></div>";
+  }
+  var h="<div class=\"col\">";
+  h+="<button class=\"term"+(S.sel==="in"?" on":"")+"\" type=\"button\" data-sel=\"in\"><div class=\"k\">Input</div><div class=\"t\">"+esc(S.input.slice(0,80))+"</div><div class=\"s\">control de flujo · payload inicial</div></button>";
+  h+=slot(0);
+  for(var i=0;i<S.nodes.length;i++){
+    var n=S.nodes[i], m=model(n.modelId), r=role(n.roleId);
+    var badge=n.status==="running"?"RUN":n.status==="done"?"DONE":n.backend;
+    h+="<article class=\"card"+(S.sel===n.id?" on":"")+"\" data-sel=\""+n.id+"\" style=\""+(n.on?"":"opacity:.5")+"\">";
+    h+="<div class=\"row\"><div><span class=\"idx\">"+("0"+(i+1)).slice(-2)+"</span><strong>"+esc(n.label)+"</strong></div><span class=\"chip\">"+esc(badge)+"</span></div>";
+    h+="<select data-model=\""+n.id+"\">"+opts(MODELS,n.modelId,0,1)+"</select>";
+    h+="<div style=\"height:8px\"></div>";
+    h+="<select data-role=\""+n.id+"\">"+opts(ROLES,n.roleId,0,1)+"</select>";
+    h+="<div class=\"s\">IN-01 → "+esc(m[1])+" → OUT-01 · "+esc(r[2])+"</div>";
+    h+="</article>";
+    h+=slot(i+1);
+  }
+  var d=dest(S.dest);
+  h+="<button class=\"term"+(S.sel==="out"?" on":"")+"\" type=\"button\" data-sel=\"out\"><div class=\"k\">API · Destino</div><div class=\"t\">"+esc(d[1])+"</div><div class=\"s\">"+esc(S.endpoint)+"</div></button>";
+  h+="</div>";
+  return h;
+}
+function slot(i){
+  if(S.nodes.length>=20) return "<div class=\"slot\"></div>";
+  return "<div class=\"slot\"><button type=\"button\" data-ins=\""+i+"\">+</button></div>";
+}
+function viewSide(){
+  if(S.panel==="sand"){
+    return "<h3>Sandbox <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\">"+formSb(S.sb,true)+"</div>";
+  }
+  if(S.sel==="in"){
+    return "<h3>Input <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\"><div class=\"field\"><div class=\"k\">Tarea</div><textarea id=\"inT\">"+esc(S.input)+"</textarea></div></div>";
+  }
+  if(S.sel==="out"){
+    return "<h3>Destino API <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\">"+
+      "<div class=\"field\"><div class=\"k\">Destino</div><select id=\"outD\">"+opts(DEST,S.dest,0,1)+"</select></div>"+
+      "<div class=\"field\"><div class=\"k\">Endpoint</div><input type=\"text\" id=\"outE\" value=\""+esc(S.endpoint)+"\"></div>"+
+      (S.last?"<div class=\"field\"><div class=\"k\">Ultimo payload</div><pre class=\"pre\">"+esc(S.last)+"</pre></div>":"")+
+      "</div>";
+  }
+  var n=null;
+  for(var i=0;i<S.nodes.length;i++) if(S.nodes[i].id===S.sel) n=S.nodes[i];
+  if(!n) return "<h3>Config <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\">Selecciona un nodo.</div>";
+  return "<h3>"+esc(n.label)+" <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\">"+
+    "<div class=\"flex\" style=\"margin-bottom:12px\"><button class=\"btn\" type=\"button\" data-mv=\"-1\">Subir</button><button class=\"btn\" type=\"button\" data-mv=\"1\">Bajar</button><button class=\"btn ghost\" type=\"button\" data-rm=\""+n.id+"\">Quitar</button></div>"+
+    "<div class=\"field\"><div class=\"k\">Nombre</div><input type=\"text\" id=\"nL\" value=\""+esc(n.label)+"\"></div>"+
+    "<div class=\"field\"><div class=\"k\">System prompt</div><textarea id=\"nP\">"+esc(n.prompt)+"</textarea></div>"+
+    "<div class=\"field\"><div class=\"k\">Codigo de entrada</div><textarea id=\"nI\">"+esc(n.input)+"</textarea></div>"+
+    "<div class=\"field\"><div class=\"k\">Codigo de salida</div><textarea id=\"nO\">"+esc(n.output)+"</textarea></div>"+
+    formSb(n,false)+
+    "</div>";
+}
+function formSb(sb, global){
+  return "<div class=\"field\"><div class=\"k\">Backend</div><select id=\"sbB\"><option"+(sb.backend==="docker"?" selected":"")+">docker</option><option"+(sb.backend==="subprocess"?" selected":"")+">subprocess</option></select></div>"+
+    "<div class=\"field\"><div class=\"k\">Timeout "+sb.timeout+"s</div><input type=\"range\" id=\"sbT\" min=\"5\" max=\"120\" step=\"5\" value=\""+sb.timeout+"\"></div>"+
+    "<div class=\"field\"><div class=\"k\">Memoria "+sb.mem+" MB</div><input type=\"range\" id=\"sbM\" min=\"128\" max=\"4096\" step=\"128\" value=\""+sb.mem+"\"></div>"+
+    (global?"<button class=\"btn\" type=\"button\" id=\"sbAll\">Aplicar a todas las IA</button>":"");
+}
+function toYaml(){
+  var lines=["# UI YAIWES — DAG locked","","template:","  id: YAIWES","  name: "+JSON.stringify(S.name),"  dag: LOCKED","","input:","  prompt: "+JSON.stringify(S.input),"","nodes:"];
+  for(var i=0;i<S.nodes.length;i++){
+    var n=S.nodes[i];
+    lines.push("  - id: n"+("0"+(i+1)).slice(-2),"    role: "+n.roleId,"    model: "+n.modelId,"    enabled: "+n.on);
+  }
+  lines.push("","output:","  destination: "+S.dest,"  endpoint: "+JSON.stringify(S.endpoint));
+  return lines.join("\n");
+}
+var NODOS=["boot","router","auth","cola","providers","gateway","bus","gcl","loops","witness","memoria","sentinel","runner","generador","fichas","frontend"];
+function viewTren(){
+  var h="<div class=\"grid three\"><div class=\"box\"><div class=\"k\">Tren en vivo</div><div class=\"flex\" style=\"overflow:auto;padding:8px 0\">";
+  for(var i=0;i<S.tren.e.length;i++) h+="<button class=\"vagon "+S.tren.e[i]+"\" type=\"button\" data-vg=\""+i+"\">T-"+("00"+(i+1)).slice(-3)+"<br>"+NODOS[i]+"</button>";
+  h+="</div><p class=\"s\" id=\"tdet\">"+esc(S.tren.det)+"</p><div class=\"flex\"><button class=\"btn primary\" type=\"button\" id=\"tGo\">Avanzar</button><button class=\"btn\" type=\"button\" id=\"tFail\">Simular fallo</button></div></div>";
+  h+="<div class=\"box\"><div class=\"k\">Cola de firmas</div>";
+  if(!S.tren.props.length) h+="<p class=\"s\">Cola vacia</p>";
+  for(var p=0;p<S.tren.props.length;p++){
+    h+="<div class=\"row\" style=\"margin-top:8px\"><span>"+esc(S.tren.props[p])+"</span><span class=\"flex\"><button class=\"btn primary\" type=\"button\" data-sign=\""+p+"\">Firmar</button><button class=\"btn\" type=\"button\" data-rej=\""+p+"\">Rechazar</button></span></div>";
+  }
+  h+="<div class=\"k\" style=\"margin-top:12px\">Ledger</div><pre class=\"pre\">"+esc(S.tren.led.join("\n"))+"</pre></div></div>";
+  return h;
+}
+var DOCS=[["ACTA_DECISIONES.md","gobernanza"],["sequence.json","plan"],["LOTE_1A_fichas.md","fichas"],["providers.yaml","config"],["conexiones.yaml","mapa"],["CASCADE.yaml","dag"]];
+function viewAud(){
+  var h="<div class=\"box\"><div class=\"k\">Auditor</div><p class=\"s\">Anclar documentos e inyectar al agente</p><input type=\"text\" id=\"aq\" placeholder=\"Buscar…\" value=\""+esc(S.aud.q)+"\"><div class=\"docs\" style=\"margin-top:10px\">";
+  for(var i=0;i<DOCS.length;i++){
+    if(S.aud.q && DOCS[i][0].toLowerCase().indexOf(S.aud.q.toLowerCase())<0) continue;
+    h+="<button class=\"docc"+(S.aud.sel===DOCS[i][0]?" on":"")+"\" type=\"button\" data-doc=\""+esc(DOCS[i][0])+"\">"+esc(DOCS[i][0])+"<br><span class=\"chip\">"+esc(DOCS[i][1])+"</span></button>";
+  }
+  h+="</div>";
+  if(S.aud.sel) h+="<div class=\"flex\" style=\"margin-top:10px\"><button class=\"btn primary\" type=\"button\" id=\"aPin\">Anclar</button><button class=\"btn\" type=\"button\" id=\"aSend\">Enviar a agente</button></div>";
+  if(S.aud.out) h+="<pre class=\"pre\" style=\"margin-top:10px\">"+esc(S.aud.out)+"</pre>";
+  h+="<div class=\"k\" style=\"margin-top:12px\">Anclados</div><p class=\"s\">"+(S.aud.pins.length?S.aud.pins.join(" · "):"— nada anclado —")+"</p></div>";
+  return h;
+}
+var PROC=[["V-01","sumar_uno",function(p){p.a=(p.x||0)+1;return p;}],["V-02","duplicar",function(p){p.b=(p.a||0)*2;return p;}],["V-03","validar",function(p){if(p.b==null) throw new Error("sin b"); p.ok=true;return p;}],["V-04","empaquetar",function(p){p.final=(p.b||0)+(p.x||0);return p;}]];
+function viewVent(){
+  var h="<div class=\"box\"><div class=\"row\"><div class=\"k\">Ventanas del tren</div><span class=\"chip\">"+esc(S.vent.st)+"</span></div><div class=\"flex\" style=\"overflow:auto\">";
+  for(var i=0;i<PROC.length;i++){
+    var f=S.vent.fotos[i];
+    h+="<div class=\"box\" style=\"min-width:180px\"><b>"+PROC[i][0]+"</b> "+PROC[i][1]+"<div class=\"s\">"+S.vent.est[i]+(S.vent.bp[PROC[i][0]]?" · bp":"")+"</div>";
+    h+="<pre class=\"pre\">IN "+esc(f?JSON.stringify(f.inn):"—")+"\nOUT "+esc(f?(f.err||JSON.stringify(f.out)):"—")+"</pre>";
+    h+="<button class=\"btn\" type=\"button\" data-bp=\""+PROC[i][0]+"\">Breakpoint</button></div>";
+  }
+  h+="</div><div class=\"flex\" style=\"margin-top:10px\"><input type=\"text\" id=\"vIn\" value=\""+esc(S.vent.in)+"\" style=\"max-width:200px\"><button class=\"btn primary\" type=\"button\" id=\"vRun\">Correr</button><button class=\"btn\" type=\"button\" id=\"vReset\">Reiniciar</button><button class=\"btn\" type=\"button\" id=\"vDsl\">Export DSL</button></div>";
+  if(S.vent.dsl) h+="<pre class=\"pre\" style=\"margin-top:10px\">"+esc(S.vent.dsl)+"</pre>";
+  h+="</div>";
+  return h;
+}
+var LIB={sumar1:function(p){p.x=(p.x||0)+1;return p;},doblar:function(p){p.x=(p.x||0)*2;return p;},mayus:function(p){p.msg=String(p.msg||"").toUpperCase();return p;},limpiar:function(p){p.msg=String(p.msg||"").trim();return p;},sellar:function(p){p.sello=String(p.x||"")+"-ok";return p;}};
+function viewOrq(){
+  var keys=["sumar1","doblar","mayus","limpiar","sellar"];
+  var h="<div class=\"grid three\"><div class=\"box\"><div class=\"k\">Input</div><textarea id=\"oIn\">"+esc(S.orq.in)+"</textarea></div>";
+  h+="<div class=\"box\"><div class=\"k\">Proceso</div><div class=\"flex\"><select id=\"oLib\">";
+  for(var i=0;i<keys.length;i++) h+="<option"+(keys[i]===S.orq.lib?" selected":"")+">"+keys[i]+"</option>";
+  h+="</select><button class=\"btn\" type=\"button\" id=\"oAdd\">+</button></div>";
+  for(var j=0;j<S.orq.pila.length;j++) h+="<div class=\"row\" style=\"margin-top:6px\"><span>"+(j+1)+". "+esc(S.orq.pila[j])+"</span><button class=\"btn ghost\" type=\"button\" data-del=\""+j+"\">x</button></div>";
+  h+="<div class=\"flex\" style=\"margin-top:8px\"><button class=\"btn primary\" type=\"button\" id=\"oRun\">Ejecutar sandbox</button></div></div>";
+  h+="<div class=\"box\"><div class=\"k\">Salida</div><pre class=\"pre\">"+esc(S.orq.out)+"</pre></div></div>";
+  return h;
+}
+function nodeBy(id){for(var i=0;i<S.nodes.length;i++) if(S.nodes[i].id===id) return S.nodes[i]; return null;}
+function bind(){
+  var canvas=document.getElementById("canvas");
+  var side=document.getElementById("side");
+  canvas.onclick=onCanvas;
+  canvas.onchange=onChange;
+  if(document.getElementById("inT")) document.getElementById("inT").oninput=function(){S.input=this.value;};
+  if(document.getElementById("nL")) document.getElementById("nL").oninput=function(){var n=nodeBy(S.sel); if(n) n.label=this.value;};
+  if(document.getElementById("nP")) document.getElementById("nP").oninput=function(){var n=nodeBy(S.sel); if(n) n.prompt=this.value;};
+  if(document.getElementById("nI")) document.getElementById("nI").oninput=function(){var n=nodeBy(S.sel); if(n) n.input=this.value;};
+  if(document.getElementById("nO")) document.getElementById("nO").oninput=function(){var n=nodeBy(S.sel); if(n) n.output=this.value;};
+  if(document.getElementById("aq")) document.getElementById("aq").oninput=function(){S.aud.q=this.value; paint(); document.getElementById("aq").focus();};
+  if(document.getElementById("vIn")) document.getElementById("vIn").oninput=function(){S.vent.in=this.value;};
+  if(document.getElementById("oIn")) document.getElementById("oIn").oninput=function(){S.orq.in=this.value;};
+  if(document.getElementById("oLib")) document.getElementById("oLib").onchange=function(){S.orq.lib=this.value;};
+  side.onclick=onSide;
+  side.onchange=onSideChange;
+}
+function onCanvas(e){
+  var t=e.target.closest("[data-sel],[data-ins],[data-vg],[data-sign],[data-rej],[data-doc],[data-bp],[data-del],button");
+  if(!t) return;
+  if(t.id==="copyY"){ try{navigator.clipboard.writeText(toYaml()); t.textContent="Copiado";}catch(ex){showErr("No se pudo copiar");} return; }
+  if(t.hasAttribute("data-ins")){
+    if(S.nodes.length>=20) return;
+    var n=mk("custom");
+    S.nodes.splice(+t.getAttribute("data-ins"),0,n);
+    S.sel=n.id; S.panel="node"; paint(); return;
+  }
+  if(t.hasAttribute("data-sel")){ S.sel=t.getAttribute("data-sel"); S.panel="node"; paint(); return; }
+  if(t.hasAttribute("data-vg")){ var i=+t.getAttribute("data-vg"); S.tren.det="T-"+("00"+(i+1)).slice(-3)+" "+NODOS[i]+" · "+S.tren.e[i]; paint(); return; }
+  if(t.id==="tGo"){
+    var r=S.tren.e.indexOf("running"); if(r>=0) S.tren.e[r]="done";
+    var p=S.tren.e.indexOf("pending"); if(p>=0) S.tren.e[p]="running";
+    paint(); return;
+  }
+  if(t.id==="tFail"){
+    var r2=S.tren.e.indexOf("running");
+    if(r2>=0){ S.tren.e[r2]="failed"; S.tren.det=NODOS[r2]+" fallo → retry"; paint(); setTimeout(function(){ if(S.tren.e[r2]==="failed"){S.tren.e[r2]="running"; paint();}},1200);}
+    return;
+  }
+  if(t.hasAttribute("data-sign")){ var i2=+t.getAttribute("data-sign"); S.tren.led.push("FIRMA "+S.tren.props[i2]); S.tren.props.splice(i2,1); paint(); return; }
+  if(t.hasAttribute("data-rej")){ S.tren.props.splice(+t.getAttribute("data-rej"),1); paint(); return; }
+  if(t.hasAttribute("data-doc")){ S.aud.sel=t.getAttribute("data-doc"); paint(); return; }
+  if(t.id==="aPin" && S.aud.sel){ if(S.aud.pins.indexOf(S.aud.sel)<0) S.aud.pins.push(S.aud.sel); S.aud.out="ANCLADO "+S.aud.sel; paint(); return; }
+  if(t.id==="aSend" && S.aud.sel){ S.aud.out="POST /puente/enviar\n"+JSON.stringify({doc:S.aud.sel,anclas:S.aud.pins},null,2); paint(); return; }
+  if(t.hasAttribute("data-bp")){ var id=t.getAttribute("data-bp"); S.vent.bp[id]=!S.vent.bp[id]; paint(); return; }
+  if(t.id==="vRun"){ runVent(); paint(); return; }
+  if(t.id==="vReset"){ S.vent={i:0,st:"lista",p:{},bp:S.vent.bp,est:["pending","pending","pending","pending"],fotos:[null,null,null,null],in:S.vent.in,dsl:""}; paint(); return; }
+  if(t.id==="vDsl"){ S.vent.dsl=JSON.stringify({nodos:PROC.map(function(p,i){return {id:p[0],fase:p[1]};}),dag:"LOCKED"},null,2); paint(); return; }
+  if(t.id==="oAdd"){ S.orq.pila.push(S.orq.lib); paint(); return; }
+  if(t.hasAttribute("data-del")){ S.orq.pila.splice(+t.getAttribute("data-del"),1); paint(); return; }
+  if(t.id==="oRun"){
+    var payload;
+    try{payload=JSON.parse(S.orq.in);}catch(ex){showErr("JSON invalido");return;}
+    var log=["IN "+JSON.stringify(payload)];
+    for(var k=0;k<S.orq.pila.length;k++){
+      try{ payload=LIB[S.orq.pila[k]](payload); log.push(S.orq.pila[k]+" → "+JSON.stringify(payload)); }
+      catch(ex){ log.push("ERROR "+ex.message); break; }
+    }
+    S.orq.out=log.join("\n"); paint();
+  }
+}
+function onChange(e){
+  var t=e.target;
+  if(t.hasAttribute("data-model")){ var n=nodeBy(t.getAttribute("data-model")); if(n) n.modelId=t.value; paint(); }
+  if(t.hasAttribute("data-role")){
+    var n2=nodeBy(t.getAttribute("data-role"));
+    if(n2){ var r=role(t.value); n2.roleId=r[0]; n2.label=r[1]; n2.prompt=r[3]; }
+    paint();
+  }
+}
+function onSide(e){
+  var t=e.target.closest("[data-close],[data-mv],[data-rm],button");
+  if(!t) return;
+  if(t.hasAttribute("data-close")){ S.panel=null; S.sel=null; paint(); return; }
+  if(t.hasAttribute("data-rm") && S.nodes.length>1){ S.nodes=S.nodes.filter(function(n){return n.id!==t.getAttribute("data-rm");}); S.sel=S.nodes[0].id; paint(); return; }
+  if(t.hasAttribute("data-mv")){
+    var n=nodeBy(S.sel); if(!n) return;
+    var i=S.nodes.indexOf(n), j=i+(+t.getAttribute("data-mv"));
+    if(j<0||j>=S.nodes.length) return;
+    var tmp=S.nodes[i]; S.nodes[i]=S.nodes[j]; S.nodes[j]=tmp; paint(); return;
+  }
+  if(t.id==="sbAll"){ for(var i2=0;i2<S.nodes.length;i2++){ S.nodes[i2].backend=S.sb.backend; S.nodes[i2].timeout=S.sb.timeout; S.nodes[i2].mem=S.sb.mem; } paint(); }
+}
+function onSideChange(e){
+  var t=e.target;
+  if(t.id==="outD"){ S.dest=t.value; S.endpoint=dest(t.value)[2]; paint(); }
+  if(t.id==="outE") S.endpoint=t.value;
+  if(t.id==="sbB"){ targetSb().backend=t.value; }
+  if(t.id==="sbT"){ targetSb().timeout=+t.value; paint(); }
+  if(t.id==="sbM"){ targetSb().mem=+t.value; paint(); }
+}
+function targetSb(){ return S.panel==="sand"?S.sb:(nodeBy(S.sel)||S.sb); }
+function runVent(){
+  var v=S.vent;
+  if(v.st==="lista"){ try{v.p=JSON.parse(v.in);}catch(ex){showErr("entrada no es JSON");return;} }
+  v.st="corriendo";
+  while(v.i<PROC.length){
+    var p=PROC[v.i];
+    if(v.bp[p[0]] && v.est[v.i]==="pending"){ v.est[v.i]="pausada"; v.st="pausada"; return; }
+    try{ var inn=JSON.parse(JSON.stringify(v.p)); var out=p[2](v.p); v.fotos[v.i]={inn:inn,out:out}; v.p=out; v.est[v.i]="done"; v.i++; }
+    catch(ex){ v.fotos[v.i]={inn:v.p,err:ex.message}; v.est[v.i]="failed"; v.st="failed"; return; }
+  }
+  v.st="done";
+}
+document.getElementById("tabs").onclick=function(e){
+  var b=e.target.closest("[data-view]"); if(!b) return;
+  S.view=b.getAttribute("data-view"); S.panel=null; paint();
+};
+document.getElementById("btnAdd").onclick=function(){
+  S.view="cascade";
+  if(S.nodes.length>=20) return;
+  var n=mk("custom"); S.nodes.push(n); S.sel=n.id; S.panel="node"; paint();
+};
+document.getElementById("btnSand").onclick=function(){ S.view="cascade"; S.panel=S.panel==="sand"?null:"sand"; paint(); };
+document.getElementById("btnCode").onclick=function(){ S.view="cascade"; S.panel=S.panel==="code"?null:"code"; paint(); };
+var runT=null;
+document.getElementById("btnRun").onclick=function(){
+  S.view="cascade";
+  if(S.running){ S.running=false; clearInterval(runT); document.getElementById("btnRun").textContent="Run"; S.nodes.forEach(function(n){ if(n.status==="running") n.status="idle"; }); paint(); return; }
+  S.panel=null; S.sel=null; S.running=true; S.cursor=0; S.last="";
+  S.nodes.forEach(function(n){ n.status="idle"; });
+  document.getElementById("btnRun").textContent="Parar";
+  paint();
+  runT=setInterval(function(){
+    if(!S.running){ clearInterval(runT); return; }
+    if(S.cursor===0){ S.cursor=1; if(S.nodes[0]) S.nodes[0].status="running"; paint(); return; }
+    var i=S.cursor-1;
+    if(i<S.nodes.length){
+      S.nodes[i].status="done";
+      if(S.nodes[i+1]) S.nodes[i+1].status="running";
+      S.cursor++; paint(); return;
+    }
+    S.running=false; clearInterval(runT);
+    S.last=JSON.stringify({answer:"Flujo "+S.nodes.length+" IA",destination:dest(S.dest)[1],endpoint:S.endpoint},null,2);
+    document.getElementById("btnRun").textContent="Run";
+    S.sel="out"; S.panel="node"; paint();
+  },500);
+};
+paint();
+})();
+</script>
+</body>
+</html>

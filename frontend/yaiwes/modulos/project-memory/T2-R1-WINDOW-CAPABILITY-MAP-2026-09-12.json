@@ -1,0 +1,88 @@
+{
+  "schema": "yaiwes.t2.window-capability-map.v1",
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2-R1_MAP_39_WINDOWS_TO_PRODUCT_CAPABILITIES",
+  "status": "VERIFIED_COMPLETE",
+  "observed_main_sha_before_write": "6d6429a0109ed966eba485fabb25e324c199f0d9",
+  "source_index": "UI YAIWES interface/Ui Yaiwes interface beta/02-fromted/INDEX.json",
+  "source_index_count": 39,
+  "groups": {"RUN":8,"WALL":16,"GBOT":1,"FOTO":14},
+  "shared_contract_observed": {
+    "plugin_in": ["FROMTED_THEME","FROMTED_BACKEND_WIRE"],
+    "event_out_pattern": "<WINDOW_ID>.EVENT",
+    "abs_pattern": ["<WINDOW_ID>.run","<WINDOW_ID>.toggle","io.ping"],
+    "backend_boundary": "ABS → kernel (local|web|github|huggingface|gdrive|database)",
+    "host_boundary": "HOST.html iframe + postMessage FROMTED_ABS",
+    "security": "window has no token; token_ref boundary; CSP; encrypted wires declared in fichas"
+  },
+  "capability_domains": {
+    "orchestration_runtime": [
+      {"id":"RUN-01","name":"CASCADE","capability":"workflow/cascade execution view"},
+      {"id":"RUN-02","name":"TREN","capability":"pipeline/train execution view"},
+      {"id":"RUN-03","name":"AUDITOR","capability":"audit/verification surface"},
+      {"id":"RUN-04","name":"VENTANAS V-01…V-04","capability":"multi-window runtime grouping"},
+      {"id":"RUN-05","name":"ORQUESTA","capability":"orchestration control surface"},
+      {"id":"RUN-06","name":"panel Sandbox","capability":"sandbox/runtime inspection"},
+      {"id":"RUN-07","name":"panel Codigo YAML","capability":"declarative YAML/code editing"},
+      {"id":"RUN-08","name":"panel nodo / input / out","capability":"node input/output inspector"}
+    ],
+    "workspace_wall": [
+      {"id":"WALL-01","name":"Tab Bloques","capability":"block workspace tab"},
+      {"id":"WALL-02","name":"Tab Árbol","capability":"hierarchical tree navigation"},
+      {"id":"WALL-03","name":"Tab Archivos","capability":"file workspace tab"},
+      {"id":"WALL-04","name":"Modo Preguntar","capability":"ask/query mode"},
+      {"id":"WALL-05","name":"Modo Tap archivo","capability":"file-focused interaction mode"},
+      {"id":"WALL-06","name":"Modo Tap bloque","capability":"block-focused interaction mode"},
+      {"id":"WALL-07","name":"6 raíces","capability":"multi-root workspace navigation"},
+      {"id":"WALL-08","name":"Grid bloques 00–25","capability":"block grid/catalog"},
+      {"id":"WALL-09","name":"Lista archivos","capability":"file listing"},
+      {"id":"WALL-10","name":"Sheet bloque","capability":"block detail sheet"},
+      {"id":"WALL-11","name":"Sheet archivo","capability":"file detail sheet"},
+      {"id":"WALL-12","name":"Sheet raíz","capability":"root detail sheet"},
+      {"id":"WALL-13","name":"Sheet extra","capability":"extensible detail sheet"},
+      {"id":"WALL-14","name":"Añadir raíz","capability":"workspace root creation"},
+      {"id":"WALL-15","name":"Barra Guardar / Share","capability":"save/share actions"},
+      {"id":"WALL-16","name":"state.json bitácora","capability":"state/ledger inspection"}
+    ],
+    "agent_shell": [
+      {"id":"GBOT-01","name":"Cáscara Grok Bot FROMTED","capability":"agent/chat shell surface"}
+    ],
+    "product_reference_surfaces": [
+      {"id":"FOTO-01","name":"Grafo de conocimiento / neuronas","capability":"knowledge graph visualization"},
+      {"id":"FOTO-02","name":"Terminal Marte / HUD","capability":"terminal/HUD"},
+      {"id":"FOTO-03","name":"Versionado / timeline git","capability":"version control history"},
+      {"id":"FOTO-04","name":"Assets / librería media","capability":"asset/media library"},
+      {"id":"FOTO-05","name":"Skills / módulos","capability":"skills/module catalog"},
+      {"id":"FOTO-06","name":"Navegador / explorer","capability":"explorer/navigation"},
+      {"id":"FOTO-07","name":"Memory adapter","capability":"memory adapter surface"},
+      {"id":"FOTO-08","name":"Capas / layers","capability":"layer management"},
+      {"id":"FOTO-09","name":"Almacenamiento","capability":"storage management"},
+      {"id":"FOTO-10","name":"Contexto / context","capability":"context management"},
+      {"id":"FOTO-11","name":"Modelos","capability":"model catalog/selection"},
+      {"id":"FOTO-12","name":"Timeline","capability":"activity/timeline surface"},
+      {"id":"FOTO-13","name":"Personalidad","capability":"assistant/personality configuration"},
+      {"id":"FOTO-14","name":"Evidencia","capability":"evidence/provenance surface"}
+    ]
+  },
+  "derived_product_modules": [
+    "M_RUNTIME_ORCHESTRATION",
+    "M_WORKSPACE_FILES_BLOCKS",
+    "M_AGENT_CHAT_SHELL",
+    "M_TERMINAL_SANDBOX",
+    "M_KNOWLEDGE_MEMORY_CONTEXT",
+    "M_GIT_VERSION_TIMELINE",
+    "M_ASSETS_SKILLS_MODELS",
+    "M_STORAGE",
+    "M_LAYERS_COMPOSITION",
+    "M_EVIDENCE_AUDIT",
+    "M_PERSONALITY_SETTINGS"
+  ],
+  "verification": {
+    "all_39_index_entries_accounted_for": true,
+    "photo_semantics_read_from_fichas": true,
+    "shared_backend_boundary_sampled_across_run_wall_gbot_photo": true,
+    "module_build_started": false,
+    "fail_closed": true
+  },
+  "next_node": "T2-R2_MAP_BACKEND_CONTRACTS_AND_API_MCP_BOUNDARIES"
+}

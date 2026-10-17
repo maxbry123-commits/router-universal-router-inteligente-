@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HOST · 39 ventanas YAIWES</title>
+<link rel="stylesheet" href="_shared/fromted.css">
+<style> .grid{display:flex;flex-wrap:wrap;gap:6px;padding:8px} iframe{width:100%;height:70vh;border:1px solid var(--little);background:#000} </style>
+</head>
+<body>
+<header class="top"><div class="brand"><b>HOST</b><small>1 iframe = 1 Lego</small></div>
+<button class="cargar" id="carga">Cargar</button>
+<button class="descargar" id="desc">Descargar índice</button>
+</header>
+<nav class="grid" id="nav"><button data-id="RUN-01">RUN-01</button>
+<button data-id="RUN-02">RUN-02</button>
+<button data-id="RUN-03">RUN-03</button>
+<button data-id="RUN-04">RUN-04</button>
+<button data-id="RUN-05">RUN-05</button>
+<button data-id="RUN-06">RUN-06</button>
+<button data-id="RUN-07">RUN-07</button>
+<button data-id="RUN-08">RUN-08</button>
+<button data-id="WALL-01">WALL-01</button>
+<button data-id="WALL-02">WALL-02</button>
+<button data-id="WALL-03">WALL-03</button>
+<button data-id="WALL-04">WALL-04</button>
+<button data-id="WALL-05">WALL-05</button>
+<button data-id="WALL-06">WALL-06</button>
+<button data-id="WALL-07">WALL-07</button>
+<button data-id="WALL-08">WALL-08</button>
+<button data-id="WALL-09">WALL-09</button>
+<button data-id="WALL-10">WALL-10</button>
+<button data-id="WALL-11">WALL-11</button>
+<button data-id="WALL-12">WALL-12</button>
+<button data-id="WALL-13">WALL-13</button>
+<button data-id="WALL-14">WALL-14</button>
+<button data-id="WALL-15">WALL-15</button>
+<button data-id="WALL-16">WALL-16</button>
+<button data-id="GBOT-01">GBOT-01</button>
+<button data-id="FOTO-01">FOTO-01</button>
+<button data-id="FOTO-02">FOTO-02</button>
+<button data-id="FOTO-03">FOTO-03</button>
+<button data-id="FOTO-04">FOTO-04</button>
+<button data-id="FOTO-05">FOTO-05</button>
+<button data-id="FOTO-06">FOTO-06</button>
+<button data-id="FOTO-07">FOTO-07</button>
+<button data-id="FOTO-08">FOTO-08</button>
+<button data-id="FOTO-09">FOTO-09</button>
+<button data-id="FOTO-10">FOTO-10</button>
+<button data-id="FOTO-11">FOTO-11</button>
+<button data-id="FOTO-12">FOTO-12</button>
+<button data-id="FOTO-13">FOTO-13</button>
+<button data-id="FOTO-14">FOTO-14</button></nav>
+<iframe id="fr" title="ventana"></iframe>
+<pre class="log" id="lg"></pre>
+<script src="_shared/abs.js"></script>
+<script>
+const fr=document.getElementById('fr');
+function load(id){ fr.src=id+'.html'; document.getElementById('lg').textContent='HOST → '+id; }
+document.getElementById('nav').onclick=function(e){ const id=e.target.getAttribute('data-id'); if(id) load(id); };
+window.addEventListener('message', function(ev){ if(ev.data&&ev.data.type==='FROMTED_ABS'){ document.getElementById('lg').textContent=JSON.stringify(ev.data); }});
+load('RUN-01');
+document.getElementById('desc').onclick=function(){
+  const blob=new Blob([["RUN-01", "RUN-02", "RUN-03", "RUN-04", "RUN-05", "RUN-06", "RUN-07", "RUN-08", "WALL-01", "WALL-02", "WALL-03", "WALL-04", "WALL-05", "WALL-06", "WALL-07", "WALL-08", "WALL-09", "WALL-10", "WALL-11", "WALL-12", "WALL-13", "WALL-14", "WALL-15", "WALL-16", "GBOT-01", "FOTO-01", "FOTO-02", "FOTO-03", "FOTO-04", "FOTO-05", "FOTO-06", "FOTO-07", "FOTO-08", "FOTO-09", "FOTO-10", "FOTO-11", "FOTO-12", "FOTO-13", "FOTO-14"]],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='index-39.json'; a.click();
+};
+</script>
+</body></html>

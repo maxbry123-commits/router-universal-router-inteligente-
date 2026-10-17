@@ -1,0 +1,53 @@
+{
+  "schema": "yaiwes.loop.v1",
+  "idle": true,
+  "current": null,
+  "step": "S0",
+  "allowed_start": "CICLO RUN-01",
+  "steps": [
+    "S0",
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8"
+  ],
+  "gates": {
+    "S4": "5 clicks evidence",
+    "S5": "5-pass cross",
+    "S7": "OK|RECHAZO|STOP",
+    "S8": "github only if OK"
+  },
+  "tokens": {
+    "matte": "#0a0a0d",
+    "little": "#2563eb",
+    "blanco": "#ffffff",
+    "orange": "#ff5500",
+    "orange_rule": "Cargar/Descargar only"
+  },
+  "biblioteca_truth_2026_09_08": {
+    "all_sandbox_pushed": false,
+    "github_fe": [
+      "lote-01-10",
+      "lote-02-10",
+      "lote-03-1-html",
+      "lote-BACKEND-note",
+      "skills-claude-refs"
+    ],
+    "github_ui_original": [
+      "RUN-3",
+      "CRAZY-WALL-3",
+      "p01-p10-v2-DOC1"
+    ],
+    "still_sandbox": [
+      "~30 zips",
+      "~106 fotos",
+      "AUDITORIA-ZIPS",
+      "clones",
+      "public/"
+    ]
+  }
+}

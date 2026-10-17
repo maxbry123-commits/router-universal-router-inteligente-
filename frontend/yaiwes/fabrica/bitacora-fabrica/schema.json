@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "required": [
+    "v",
+    "nodes"
+  ],
+  "properties": {
+    "v": {
+      "type": "integer"
+    },
+    "nodes": {
+      "type": "object"
+    }
+  }
+}

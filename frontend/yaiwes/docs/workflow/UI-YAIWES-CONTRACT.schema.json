@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "yaiwes.ui.task-contract/v1",
+  "type": "object",
+  "required": [
+    "task_id",
+    "surface_id",
+    "requirements",
+    "sources",
+    "skills",
+    "allowed_actions",
+    "outputs",
+    "acceptance"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "surface_id": {
+      "type": "string"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sources": {
+      "type": "object",
+      "required": [
+        "project_files",
+        "reference_images"
+      ],
+      "properties": {
+        "project_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reference_images": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "design_system": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "path",
+          "scope"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "allowed_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "forbidden_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

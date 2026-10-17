@@ -1,0 +1,33 @@
+{
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2-R5A2_WIRE_RUN07_RUN08_THROUGH_FRONTEND_ONLY_MODULE_CONTRACT",
+  "owner": "Astra",
+  "node": "M_RUNTIME_ORCHESTRATION",
+  "status": "WIRED_CI_IN_PROGRESS",
+  "windows": ["RUN-07", "RUN-08"],
+  "source_commit": "abc9561d0b9c630072aa1e9bfc72d625a5fccd1b",
+  "ci": {
+    "workflow": "astra-t2-r5a2-runtime-orchestration-contract",
+    "run_id": 34697823160,
+    "head_sha": "6caac2747f9a16432b35d3d96b0b6ef4b6964fcc",
+    "observed_status": "in_progress",
+    "pass_claimed": false
+  },
+  "verified_properties": [
+    "RUN-07 routes document changes through the frontend ActionBus/postMessage contract",
+    "RUN-08 only accepts declared inspector fields",
+    "nested credential-like fields are denied by contract tests",
+    "contract exposes no backend write surface"
+  ],
+  "gap_flags": [
+    "POSTMESSAGE_TARGET_ORIGIN_IS_WILDCARD_IN_CURRENT_CONTRACT",
+    "CI_NOT_TERMINAL"
+  ],
+  "policy": {
+    "backend_productive_write": "DENY",
+    "force": "DENY",
+    "lfs": "DENY",
+    "pass_by_presence": "DENY"
+  },
+  "next_gate": "CI terminal success, then remove wildcard target origin before E2E promotion"
+}

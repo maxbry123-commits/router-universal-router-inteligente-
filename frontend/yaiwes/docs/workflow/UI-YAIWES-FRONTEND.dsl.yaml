@@ -1,0 +1,31 @@
+schema: yaiwes.ui.workflow/v1
+id: UI-YAIWES-FRONTEND
+mode: fail_closed
+source_priority: [director_requirement, reference_images, design_system, existing_components, project_files, skills_agents, inference]
+staff:
+  director: approve
+  codex: execute_improve
+  v0: optional_visual_bootstrap
+  meta_visual_reviewer: adapter_required
+  sheriff: policy_gate
+  validator: structural_gate
+  verifier: browser_gate
+  sentinel: web_audit
+  guardian: close_gate
+stages:
+  - {id: ingest, run: [read_project, read_agents, read_skills, inspect_references, resolve_assets]}
+  - {id: skill_resolve, run: [reference-reader, design-system, frontend-implementation, browser-verification, mobile-qa, interaction-qa]}
+  - {id: schema, require: UI-YAIWES-CONTRACT.schema.json}
+  - {id: contract, output: task_contract}
+  - {id: sheriff, require: SHERIFF-POLICY.yaml}
+  - {id: implement, actor: codex, optional_input: v0}
+  - {id: run_browser, tool: playwright}
+  - {id: interaction_qa, require: [buttons, dropdowns, tabs, inputs, state, reload]}
+  - {id: capture, require: [desktop, mobile]}
+  - {id: compare, input: [reference, screenshot, dom, computedStyle]}
+  - {id: meta_review, actor: meta_visual_reviewer, on_missing_adapter: META_REVIEW_UNAVAILABLE}
+  - {id: sentinel, actor: sentinel, policy: official_sources_first}
+  - {id: verify, actor: verifier, require: 11_of_11}
+  - {id: guardian, actor: guardian, pass_only_if: acceptance_100}
+loop: {on_fail: return_to_implement}
+outputs: [snapshot_html, modular_source, assets, manifest, tests, version, evidence]

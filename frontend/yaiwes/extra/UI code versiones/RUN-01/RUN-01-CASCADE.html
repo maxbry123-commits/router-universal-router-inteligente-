@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RUN-01 CASCADE · FROMTED</title>
+<style>
+:root{
+  --matte:#0a0a0d; --surf:#141417; --elev:#1a1a1f;
+  --little:#2563eb; --fg:#ffffff; --muted:#a1a1aa; --line:#2a2a32;
+  --naranja:#ff5500;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--matte);color:var(--fg);font:15px/1.45 system-ui,sans-serif;color-scheme:dark}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.app{display:flex;flex-direction:column;min-height:100dvh}
+.top{display:flex;align-items:center;gap:8px;min-height:56px;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand b{display:block;font-size:13px;letter-spacing:.16em}
+.brand small{color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.btn{height:40px;padding:0 12px;border:1px solid var(--line);background:var(--elev);color:var(--muted);border-radius:8px}
+.btn:hover{border-color:var(--little);color:var(--fg)}
+.btn.on,.btn.primary{background:var(--little);color:var(--fg);border-color:var(--little)}
+.btn.naranja{background:var(--naranja);color:#fff;border-color:var(--naranja)}
+.btn.ghost{background:transparent}
+.stage{flex:1;display:flex;min-height:0}
+.canvas{flex:1;overflow:auto;padding:20px 14px 64px}
+.col{max-width:560px;margin:0 auto}
+.card,.term{width:100%;border:1px solid var(--line);background:var(--surf);border-radius:14px;padding:14px;text-align:left;margin:0}
+.term{border-radius:20px;background:#000}
+.card.on,.term.on{border-color:var(--little)}
+.k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.t{font-size:16px;font-weight:600}
+.s{font-size:12px;color:var(--muted);margin-top:4px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.slot{height:36px;display:flex;align-items:center;justify-content:center;position:relative}
+.slot::before{content:"";width:1px;height:100%;background:var(--line)}
+.slot button{position:absolute;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--matte);color:var(--fg)}
+select,input[type=text],textarea,input[type=password]{width:100%;min-height:42px;border:1px solid var(--line);background:var(--elev);border-radius:8px;padding:8px 10px}
+textarea{min-height:88px;resize:vertical}
+.side{width:100%;border-top:1px solid var(--line);background:#0b0b0e;overflow:auto}
+@media(min-width:900px){.side{width:340px;border-top:0;border-left:1px solid var(--line)}}
+.side h3{padding:12px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.side .body{padding:14px}
+.field{margin-bottom:14px}
+.foot{min-height:40px;display:flex;align-items:center;justify-content:space-between;padding:6px 14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:3px 8px;font-size:11px;color:var(--muted)}
+.pre{background:#111;border:1px solid var(--line);border-radius:8px;padding:10px;font:12px/1.5 ui-monospace,Menlo,monospace;color:var(--muted);white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto}
+.flex{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.err{position:fixed;bottom:12px;left:12px;right:12px;background:#1a1a1a;border:1px solid #666;padding:10px;border-radius:8px;display:none;z-index:50}
+#factory{display:none;position:fixed;inset:0;background:#000c;z-index:40;align-items:flex-end;justify-content:center}
+#factory.on{display:flex}
+#factory .box{width:100%;max-width:520px;max-height:90vh;overflow:auto;background:var(--surf);border-radius:16px 16px 0 0;padding:16px}
+iframe.sbx{width:100%;height:72px;border:1px solid var(--line);border-radius:8px;background:#000}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><b>RUN-01</b><small>CASCADE · 1 ventana</small></div>
+    <div class="flex" style="margin-left:auto">
+      <button class="btn ghost" type="button" id="btnAdd">+ IA</button>
+      <button class="btn ghost" type="button" id="btnSand">Sandbox</button>
+      <button class="btn ghost" type="button" id="btnCode">Codigo</button>
+      <button class="btn naranja" type="button" id="btnCargar" title="Cargar DAG">Cargar</button>
+      <button class="btn naranja" type="button" id="btnDescargar" title="Descargar YAML">Descargar</button>
+      <button class="btn primary" type="button" id="btnRun">Run</button>
+    </div>
+  </header>
+  <div class="stage">
+    <div class="canvas" id="canvas"></div>
+    <aside class="side" id="side" hidden></aside>
+  </div>
+  <footer class="foot">
+    <span id="fl">—</span>
+    <button class="btn ghost" type="button" id="btnFactory" style="height:28px;font-size:10px;letter-spacing:.12em">FACTORY</button>
+    <span id="fr">—</span>
+  </footer>
+</div>
+<div class="err" id="err"></div>
+<div id="factory"><div class="box">
+  <div class="k">Panel privado · no es UI de usuario</div>
+  <h3 style="margin:8px 0 12px">Backend + plugins RUN-01</h3>
+  <div class="field"><div class="k">Clave fábrica</div><input type="password" id="fk" placeholder="clave interna"></div>
+  <div class="field"><div class="k">Method</div><select id="beM"><option>POST</option><option>GET</option><option>PUT</option></select></div>
+  <div class="field"><div class="k">URL backend</div><input type="text" id="beU" placeholder="http://127.0.0.1:8787/api/agent/complete"></div>
+  <div class="field"><div class="k">Headers JSON</div><textarea id="beH">{"content-type":"application/json"}</textarea></div>
+  <div class="field"><div class="k">Función / path interno</div><input type="text" id="beF" placeholder="cascade.run"></div>
+  <div class="field"><div class="k">Log privado</div><pre class="pre" id="beL">—</pre></div>
+  <div class="flex">
+    <button class="btn primary" type="button" id="beSave">Guardar cableado</button>
+    <button class="btn" type="button" id="beTest">Probar fetch</button>
+    <button class="btn ghost" type="button" id="beClose">Cerrar</button>
+  </div>
+</div></div>
+<noscript><p>Activa JavaScript.</p></noscript>
+<script>
+(function(){
+"use strict";
+window.FROMTED_MANIFEST={
+  id:"RUN-01", title:"CASCADE",
+  in:["HOST_THEME","BACKEND_WIRE","CASCADE_SEED"],
+  out:["CASCADE_YAML","CASCADE_RUN","NODE_IO","SANDBOX_RESULT","BACKEND_PACKET"]
+};
+function emit(name, payload){
+  var msg={fromted:name, id:"RUN-01", payload:payload};
+  window.dispatchEvent(new CustomEvent("FROMTED_"+name,{detail:payload}));
+  try{ if(parent!==window) parent.postMessage(msg,"*"); }catch(e){}
+  logPriv(name+" "+JSON.stringify(payload).slice(0,220));
+}
+window.addEventListener("message", function(e){
+  var d=e.data||{};
+  if(d.fromted==="BACKEND_WIRE" && d.payload){ Object.assign(BE, d.payload); saveBE(); }
+  if(d.fromted==="CASCADE_SEED" && d.payload && d.payload.input){ S.input=d.payload.input; paint(); }
+});
+function esc(s){return String(s==null?"":s).replace(/&/g,"&").replace(/</g,"<").replace(/>/g,">").replace(/"/g,""");}
+function showErr(m){var e=document.getElementById("err"); e.textContent=String(m); e.style.display="block";}
+window.onerror=function(m){showErr(m);};
+
+var MODELS=[["grok-4","Grok 4"],["grok-4-fast","Grok 4 Fast"],["claude-sonnet","Claude Sonnet"],["claude-opus","Claude Opus"],["gpt-4.1","GPT-4.1"],["qwen-coder","Qwen 2.5 Coder"],["deepseek-v3","DeepSeek V3"],["llama-3.3","Llama 3.3"],["hrm","HRM"],["custom","Custom / BYO"]];
+var ROLES=[
+  ["analyzer","Analyzer","Normaliza.","ROL: Analyzer\nNo inventes nodos."],
+  ["planner","Planner","Plan en plantilla.","ROL: Planner\nNo agregues nodos."],
+  ["coder","Coder","Sandbox obligatorio.","ROL: Coder\nEjecuta en sandbox."],
+  ["critic","Critic","Red team.","ROL: Critic\nHuecos, no DAG nuevo."],
+  ["verifier","Verifier","Schema y evidencia.","ROL: Verifier\nFail closed."],
+  ["judge","Judge","ACCEPT/REJECT.","ROL: Judge"],
+  ["synthesizer","Synthesizer","Output schema.","ROL: Synthesizer"],
+  ["sentinel","Sentinel","Fail closed.","ROL: Sentinel"],
+  ["architect","Architect","Plantilla T01-T12.","ROL: Architect"],
+  ["researcher","Researcher","Registry.","ROL: Researcher"],
+  ["security","Security","token_ref.","ROL: Security"],
+  ["custom","Custom","Libre, DAG locked.","ROL: Custom"]
+];
+var DEST=[["agent-api","Agent API","/api/agent/complete"],["webhook","Webhook","https://hooks.example/cascade"],["panel-run","Panel RUN","/api/ws/events"],["filesystem","Filesystem","sandbox://out/result.json"]];
+function role(id){for(var i=0;i<ROLES.length;i++) if(ROLES[i][0]===id) return ROLES[i]; return ROLES[ROLES.length-1];}
+function model(id){for(var i=0;i<MODELS.length;i++) if(MODELS[i][0]===id) return MODELS[i]; return MODELS[0];}
+function dest(id){for(var i=0;i<DEST.length;i++) if(DEST[i][0]===id) return DEST[i]; return DEST[0];}
+function uid(){return "n"+Math.random().toString(36).slice(2,8);}
+function mk(roleId){
+  var r=role(roleId);
+  return {id:uid(),modelId:"grok-4",roleId:r[0],label:r[1],prompt:r[3],input:'{"task":""}',output:'{"node":"'+r[0]+'","status":"ok"}',backend:"docker",timeout:30,mem:512,on:true,status:"idle",lastSb:""};
+}
+var S={panel:null,sel:null,running:false,cursor:-1,name:"Equipo CODE",input:"Revisa este modulo y propone un parche minimo.",dest:"agent-api",endpoint:"/api/agent/complete",last:"",sb:{backend:"docker",timeout:30,mem:512},nodes:[mk("analyzer"),mk("coder"),mk("critic"),mk("synthesizer")]};
+var BE={key:"",method:"POST",url:"",headers:{"content-type":"application/json"},fn:"cascade.run",log:[]};
+try{ var z=JSON.parse(localStorage.getItem("fromted.backend.RUN-01")||"null"); if(z) Object.assign(BE,z);}catch(e){}
+function saveBE(){ try{ localStorage.setItem("fromted.backend.RUN-01", JSON.stringify({method:BE.method,url:BE.url,headers:BE.headers,fn:BE.fn})); }catch(e){} }
+function logPriv(s){ BE.log.unshift(new Date().toISOString().slice(11,19)+" "+s); BE.log=BE.log.slice(0,40); var el=document.getElementById("beL"); if(el) el.textContent=BE.log.join("\n"); }
+
+function opts(list,val,a,b){var h=""; for(var i=0;i<list.length;i++){var v=list[i][a],l=list[i][b]; h+="<option value=\""+esc(v)+"\""+(v===val?" selected":"")+">"+esc(l)+"</option>";} return h;}
+function paint(){
+  document.getElementById("fl").textContent=S.nodes.length+" IA · "+S.sb.backend+" · "+S.sb.timeout+"s";
+  document.getElementById("fr").textContent="→ "+dest(S.dest)[1];
+  var canvas=document.getElementById("canvas");
+  var side=document.getElementById("side");
+  canvas.innerHTML=viewCascade();
+  if(S.panel){ side.hidden=false; side.innerHTML=viewSide(); } else { side.hidden=true; side.innerHTML=""; }
+  bind();
+}
+function viewCascade(){
+  if(S.panel==="code"){
+    return "<div class=\"card\"><div class=\"row\"><span class=\"k\">DAG locked</span><button class=\"btn\" type=\"button\" id=\"copyY\">Copiar YAML</button></div><pre class=\"pre\" id=\"yaml\">"+esc(toYaml())+"</pre></div>";
+  }
+  var h="<div class=\"col\">";
+  h+="<button class=\"term"+(S.sel==="in"?" on":"")+"\" type=\"button\" data-sel=\"in\"><div class=\"k\">Input</div><div class=\"t\">"+esc(S.input.slice(0,80))+"</div><div class=\"s\">payload inicial · enchufe IN</div></button>";
+  h+=slot(0);
+  for(var i=0;i<S.nodes.length;i++){
+    var n=S.nodes[i], m=model(n.modelId), r=role(n.roleId);
+    var badge=n.status==="running"?"RUN":n.status==="done"?"DONE":n.backend;
+    h+="<article class=\"card"+(S.sel===n.id?" on":"")+"\" data-sel=\""+n.id+"\" style=\""+(n.on?"":"opacity:.45")+"\">";
+    h+="<div class=\"row\"><div><span class=\"k\" style=\"display:inline\">"+("0"+(i+1)).slice(-2)+" </span><strong>"+esc(n.label)+"</strong></div><span class=\"chip\">"+esc(badge)+"</span></div>";
+    h+="<select data-model=\""+n.id+"\">"+opts(MODELS,n.modelId,0,1)+"</select><div style=\"height:8px\"></div>";
+    h+="<select data-role=\""+n.id+"\">"+opts(ROLES,n.roleId,0,1)+"</select>";
+    h+="<div class=\"s\">IN → "+esc(m[1])+" → OUT · "+esc(r[2])+" · sb "+n.backend+"</div></article>";
+    h+=slot(i+1);
+  }
+  var d=dest(S.dest);
+  h+="<button class=\"term"+(S.sel==="out"?" on":"")+"\" type=\"button\" data-sel=\"out\"><div class=\"k\">API · Destino</div><div class=\"t\">"+esc(d[1])+"</div><div class=\"s\">"+esc(S.endpoint)+"</div></button></div>";
+  return h;
+}
+function slot(i){ if(S.nodes.length>=20) return "<div class=\"slot\"></div>"; return "<div class=\"slot\"><button type=\"button\" data-ins=\""+i+"\">+</button></div>"; }
+function formSb(sb, global){
+  return "<div class=\"field\"><div class=\"k\">Backend sandbox</div><select id=\"sbB\"><option"+(sb.backend==="docker"?" selected":"")+">docker</option><option"+(sb.backend==="subprocess"?" selected":"")+">subprocess</option><option"+(sb.backend==="iframe"?" selected":"")+">iframe</option></select></div>"+
+    "<div class=\"field\"><div class=\"k\">Timeout "+sb.timeout+"s</div><input type=\"range\" id=\"sbT\" min=\"5\" max=\"120\" step=\"5\" value=\""+sb.timeout+"\"></div>"+
+    "<div class=\"field\"><div class=\"k\">Memoria "+sb.mem+" MB</div><input type=\"range\" id=\"sbM\" min=\"128\" max=\"4096\" step=\"128\" value=\""+sb.mem+"\"></div>"+
+    "<div class=\"field\"><div class=\"k\">Ejecutar code interno</div><button class=\"btn\" type=\"button\" id=\"sbRun\">Probar sandbox</button><iframe class=\"sbx\" id=\"sbFrame\" sandbox=\"allow-scripts\" title=\"sandbox nodo\"></iframe><pre class=\"pre\" id=\"sbOut\">"+(esc((nodeBy(S.sel)||{}).lastSb||"—"))+"</pre></div>"+
+    (global?"<button class=\"btn\" type=\"button\" id=\"sbAll\">Aplicar a todas las IA</button>":"");
+}
+function viewSide(){
+  if(S.panel==="sand") return "<h3>Sandbox <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\">"+formSb(S.sb,true)+"</div>";
+  if(S.sel==="in") return "<h3>Input <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\"><div class=\"field\"><div class=\"k\">Tarea</div><textarea id=\"inT\">"+esc(S.input)+"</textarea></div></div>";
+  if(S.sel==="out") return "<h3>Destino API <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\"><div class=\"field\"><div class=\"k\">Destino</div><select id=\"outD\">"+opts(DEST,S.dest,0,1)+"</select></div><div class=\"field\"><div class=\"k\">Endpoint</div><input type=\"text\" id=\"outE\" value=\""+esc(S.endpoint)+"\"></div>"+(S.last?"<div class=\"field\"><div class=\"k\">Ultimo paquete</div><pre class=\"pre\">"+esc(S.last)+"</pre></div>":"")+"</div>";
+  var n=nodeBy(S.sel);
+  if(!n) return "<h3>Config <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\">Selecciona un nodo.</div>";
+  return "<h3>"+esc(n.label)+" <button class=\"btn ghost\" type=\"button\" data-close=\"1\">x</button></h3><div class=\"body\">"+
+    "<div class=\"flex\" style=\"margin-bottom:12px\"><button class=\"btn\" type=\"button\" data-mv=\"-1\">Subir</button><button class=\"btn\" type=\"button\" data-mv=\"1\">Bajar</button><button class=\"btn ghost\" type=\"button\" data-rm=\""+n.id+"\">Quitar</button><button class=\"btn\" type=\"button\" id=\"nOn\">"+(n.on?"ON":"OFF")+"</button></div>"+
+    "<div class=\"field\"><div class=\"k\">Nombre</div><input type=\"text\" id=\"nL\" value=\""+esc(n.label)+"\"></div>"+
+    "<div class=\"field\"><div class=\"k\">System prompt</div><textarea id=\"nP\">"+esc(n.prompt)+"</textarea></div>"+
+    "<div class=\"field\"><div class=\"k\">Codigo entrada (JSON)</div><textarea id=\"nI\">"+esc(n.input)+"</textarea></div>"+
+    "<div class=\"field\"><div class=\"k\">Codigo salida</div><textarea id=\"nO\">"+esc(n.output)+"</textarea></div>"+
+    formSb(n,false)+"</div>";
+}
+function toYaml(){
+  var lines=["# RUN-01 CASCADE — DAG locked","","template:","  id: YAIWES","  name: "+JSON.stringify(S.name),"  dag: LOCKED","","input:","  prompt: "+JSON.stringify(S.input),"","nodes:"];
+  for(var i=0;i<S.nodes.length;i++){ var n=S.nodes[i]; lines.push("  - id: n"+("0"+(i+1)).slice(-2),"    role: "+n.roleId,"    model: "+n.modelId,"    enabled: "+n.on,"    sandbox: "+n.backend); }
+  lines.push("","output:","  destination: "+S.dest,"  endpoint: "+JSON.stringify(S.endpoint));
+  return lines.join("\n");
+}
+function nodeBy(id){for(var i=0;i<S.nodes.length;i++) if(S.nodes[i].id===id) return S.nodes[i]; return null;}
+function bind(){
+  var canvas=document.getElementById("canvas"); var side=document.getElementById("side");
+  canvas.onclick=onCanvas; canvas.onchange=onChange; side.onclick=onSide; side.onchange=onSideChange;
+  ["inT","nL","nP","nI","nO"].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    el.oninput=function(){
+      if(id==="inT") S.input=this.value;
+      var n=nodeBy(S.sel); if(!n) return;
+      if(id==="nL") n.label=this.value;
+      if(id==="nP") n.prompt=this.value;
+      if(id==="nI") n.input=this.value;
+      if(id==="nO") n.output=this.value;
+    };
+  });
+}
+function onCanvas(e){
+  var t=e.target.closest("[data-sel],[data-ins],button"); if(!t) return;
+  if(t.id==="copyY"){ try{navigator.clipboard.writeText(toYaml()); t.textContent="Copiado"; emit("CASCADE_YAML", toYaml());}catch(ex){showErr("No se pudo copiar");} return; }
+  if(t.hasAttribute("data-ins")){
+    if(S.nodes.length>=20) return;
+    var n=mk("custom"); S.nodes.splice(+t.getAttribute("data-ins"),0,n); S.sel=n.id; S.panel="node"; emit("NODE_IO",{op:"insert",id:n.id}); paint(); return;
+  }
+  if(t.hasAttribute("data-sel")){ S.sel=t.getAttribute("data-sel"); S.panel="node"; paint(); }
+}
+function onChange(e){
+  var t=e.target;
+  if(t.hasAttribute("data-model")){ var n=nodeBy(t.getAttribute("data-model")); if(n) n.modelId=t.value; emit("NODE_IO",{op:"model",id:n&&n.id,model:t.value}); paint(); }
+  if(t.hasAttribute("data-role")){ var n2=nodeBy(t.getAttribute("data-role")); if(n2){ var r=role(t.value); n2.roleId=r[0]; n2.label=r[1]; n2.prompt=r[3]; emit("NODE_IO",{op:"role",id:n2.id,role:r[0]}); } paint(); }
+}
+function onSide(e){
+  var t=e.target.closest("[data-close],[data-mv],[data-rm],button"); if(!t) return;
+  if(t.hasAttribute("data-close")){ S.panel=null; S.sel=null; paint(); return; }
+  if(t.hasAttribute("data-rm") && S.nodes.length>1){ S.nodes=S.nodes.filter(function(n){return n.id!==t.getAttribute("data-rm");}); S.sel=S.nodes[0].id; paint(); return; }
+  if(t.hasAttribute("data-mv")){ var n=nodeBy(S.sel); if(!n) return; var i=S.nodes.indexOf(n), j=i+(+t.getAttribute("data-mv")); if(j<0||j>=S.nodes.length) return; var tmp=S.nodes[i]; S.nodes[i]=S.nodes[j]; S.nodes[j]=tmp; paint(); return; }
+  if(t.id==="nOn"){ var n3=nodeBy(S.sel); if(n3){ n3.on=!n3.on; paint(); } return; }
+  if(t.id==="sbAll"){ for(var i2=0;i2<S.nodes.length;i2++){ S.nodes[i2].backend=S.sb.backend; S.nodes[i2].timeout=S.sb.timeout; S.nodes[i2].mem=S.sb.mem; } paint(); return; }
+  if(t.id==="sbRun"){ runSandbox(S.panel==="sand"?null:nodeBy(S.sel)); return; }
+}
+function onSideChange(e){
+  var t=e.target;
+  if(t.id==="outD"){ S.dest=t.value; S.endpoint=dest(t.value)[2]; paint(); }
+  if(t.id==="outE") S.endpoint=t.value;
+  if(t.id==="sbB") targetSb().backend=t.value;
+  if(t.id==="sbT"){ targetSb().timeout=+t.value; paint(); }
+  if(t.id==="sbM"){ targetSb().mem=+t.value; paint(); }
+}
+function targetSb(){ return S.panel==="sand"?S.sb:(nodeBy(S.sel)||S.sb); }
+function runSandbox(n){
+  var code = n ? n.input : S.input;
+  var frame=document.getElementById("sbFrame");
+  var src="<!DOCTYPE html><script>try{var d=parent.document.getElementById('sbOut');var x="+JSON.stringify(code)+";var o=JSON.parse(x);o._sandbox='ok';o._t=Date.now();parent.postMessage({fromted:'SANDBOX_RESULT',payload:o},'*');}catch(e){parent.postMessage({fromted:'SANDBOX_RESULT',payload:{error:String(e)}},'*');}<\/script>";
+  function onMsg(ev){
+    if(!ev.data || ev.data.fromted!=="SANDBOX_RESULT") return;
+    window.removeEventListener("message", onMsg);
+    var out=JSON.stringify(ev.data.payload,null,2);
+    if(n) n.lastSb=out;
+    var pre=document.getElementById("sbOut"); if(pre) pre.textContent=out;
+    emit("SANDBOX_RESULT", ev.data.payload);
+  }
+  window.addEventListener("message", onMsg);
+  if(frame) frame.srcdoc=src;
+}
+function packet(){
+  return {window:"RUN-01", fn:BE.fn, input:S.input, dest:S.dest, endpoint:S.endpoint, nodes:S.nodes.map(function(n){return {id:n.id,role:n.roleId,model:n.modelId,on:n.on};})};
+}
+function fireBackend(body){
+  emit("BACKEND_PACKET", body);
+  if(!BE.url){ logPriv("SIN_BACKEND — payload listo, pega URL en Factory"); S.last=JSON.stringify({status:"SIN_BACKEND",body:body},null,2); return Promise.resolve({status:"SIN_BACKEND"}); }
+  var headers=BE.headers||{};
+  return fetch(BE.url,{method:BE.method||"POST",headers:headers,body:JSON.stringify(body)}).then(function(r){return r.text().then(function(t){ S.last=t; logPriv("HTTP "+r.status); return {status:r.status,text:t}; });}).catch(function(err){ showErr(String(err)); logPriv("FETCH_FAIL "+err); S.last=String(err); });
+}
+var runT=null;
+document.getElementById("btnAdd").onclick=function(){ if(S.nodes.length>=20) return; var n=mk("custom"); S.nodes.push(n); S.sel=n.id; S.panel="node"; emit("NODE_IO",{op:"add",id:n.id}); paint(); };
+document.getElementById("btnSand").onclick=function(){ S.panel=S.panel==="sand"?null:"sand"; paint(); };
+document.getElementById("btnCode").onclick=function(){ S.panel=S.panel==="code"?null:"code"; paint(); };
+document.getElementById("btnCargar").onclick=function(){
+  var inp=document.createElement("input"); inp.type="file"; inp.accept=".yaml,.yml,.json,.txt";
+  inp.onchange=function(){ var f=inp.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ S.input=String(r.result).slice(0,4000); logPriv("Cargar "+f.name); paint(); }; r.readAsText(f); };
+  inp.click();
+};
+document.getElementById("btnDescargar").onclick=function(){
+  var blob=new Blob([toYaml()],{type:"text/yaml"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="RUN-01-CASCADE.yaml"; a.click();
+  emit("CASCADE_YAML", toYaml());
+};
+document.getElementById("btnRun").onclick=function(){
+  if(S.running){ S.running=false; clearInterval(runT); document.getElementById("btnRun").textContent="Run"; S.nodes.forEach(function(n){ if(n.status==="running") n.status="idle"; }); paint(); return; }
+  S.panel=null; S.sel=null; S.running=true; S.cursor=0; S.last="";
+  S.nodes.forEach(function(n){ n.status="idle"; });
+  document.getElementById("btnRun").textContent="Parar";
+  emit("CASCADE_RUN",{phase:"start",nodes:S.nodes.length});
+  paint();
+  runT=setInterval(function(){
+    if(!S.running){ clearInterval(runT); return; }
+    if(S.cursor===0){ S.cursor=1; if(S.nodes[0]) S.nodes[0].status="running"; paint(); return; }
+    var i=S.cursor-1;
+    if(i<S.nodes.length){
+      S.nodes[i].status="done";
+      emit("NODE_IO",{op:"done",id:S.nodes[i].id,role:S.nodes[i].roleId});
+      if(S.nodes[i+1]) S.nodes[i+1].status="running";
+      S.cursor++; paint(); return;
+    }
+    S.running=false; clearInterval(runT);
+    document.getElementById("btnRun").textContent="Run";
+    var body=packet();
+    fireBackend(body).then(function(){ S.sel="out"; S.panel="node"; paint(); });
+  },400);
+};
+document.getElementById("btnFactory").onclick=function(){
+  var k=document.getElementById("fk");
+  document.getElementById("factory").classList.add("on");
+  document.getElementById("beU").value=BE.url||"";
+  document.getElementById("beM").value=BE.method||"POST";
+  document.getElementById("beH").value=JSON.stringify(BE.headers||{},null,2);
+  document.getElementById("beF").value=BE.fn||"";
+  document.getElementById("beL").textContent=BE.log.join("\n")||"—";
+  k.focus();
+};
+document.getElementById("beClose").onclick=function(){ document.getElementById("factory").classList.remove("on"); };
+document.getElementById("beSave").onclick=function(){
+  BE.method=document.getElementById("beM").value;
+  BE.url=document.getElementById("beU").value.trim();
+  BE.fn=document.getElementById("beF").value.trim();
+  try{ BE.headers=JSON.parse(document.getElementById("beH").value);}catch(e){ showErr("headers JSON invalido"); return; }
+  saveBE(); logPriv("cableado guardado "+BE.method+" "+BE.url); emit("BACKEND_WIRE",{url:BE.url,method:BE.method,fn:BE.fn});
+};
+document.getElementById("beTest").onclick=function(){
+  document.getElementById("beSave").onclick();
+  fireBackend({ping:true,window:"RUN-01"}).then(function(r){ logPriv("test "+JSON.stringify(r).slice(0,180)); });
+};
+paint();
+emit("WINDOW_READY", FROMTED_MANIFEST);
+})();
+</script>
+</body>
+</html>

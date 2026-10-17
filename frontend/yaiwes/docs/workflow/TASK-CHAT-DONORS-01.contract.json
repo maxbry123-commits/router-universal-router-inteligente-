@@ -1,0 +1,161 @@
+{
+  "$schema": "yaiwes.ui.task-contract/v1",
+  "task_id": "CHAT-DONORS-01",
+  "surface_id": "PANEL-01-CHAT/CHAT-01",
+  "status": "READY_FOR_CODEX",
+  "actor": "codex",
+  "base_branch": "main",
+  "requirements": [
+    "Copiar sin reescribir el código de tres interfaces de chat ya descargadas.",
+    "Colocarlas visual y estructuralmente debajo de CHAT-01 dentro de PANEL-01-CHAT.",
+    "No usar las UI nativas de Hermes ni OpenClaw.",
+    "Cablear las tres superficies a Hermes y OpenClaw mediante adapter externo y YAIWES_BRIDGE.",
+    "Conservar CHAT-01 actual funcional y fail-closed.",
+    "No modificar ningún archivo dentro de los tres donor folders después de la copia."
+  ],
+  "sources": {
+    "project_files": [
+      "UI YAIWES interface/Ui Yaiwes interface beta/04-panels/PANEL-01-CHAT/",
+      "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/lote-zips-extraidos/01-original/_chat-ui-main/",
+      "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/lote-zips-extraidos/01-original/__open-chat-ui-main/",
+      "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/lote-zips-extraidos/01-original/_chat-ui-react-master/",
+      "➡️📂motores de descarga extracción copiado movimiento archivos fromtend/➡️📂motor de copiar archivos/motor_3_copy_batches.py",
+      "UI YAIWES interface/readme arquitectura UI YAIWES interface beta/HANDOFF-FRONTEND-UI-YAIWES-2026-09-27.md"
+    ],
+    "reference_images": [],
+    "design_system": "UI YAIWES interface/DESIGN_SYSTEM.md",
+    "architecture": [
+      "UI YAIWES interface/AGENTS.md",
+      "UI YAIWES interface/EXECUTION-CONTRACT.md",
+      "UI YAIWES interface/workflow/UI-YAIWES-FRONTEND.dsl.yaml",
+      "UI YAIWES interface/workflow/SHERIFF-POLICY.yaml"
+    ]
+  },
+  "skills": [
+    {
+      "id": "canonical-copy-motor",
+      "path": "➡️📂motores de descarga extracción copiado movimiento archivos fromtend/➡️📂 skills descargar extraer zip copiar mover archivos readme.md",
+      "scope": "copy-only; motor code immutable; read-back mandatory"
+    },
+    {
+      "id": "frontend-yaiwes",
+      "path": "UI YAIWES interface/AGENTS.md",
+      "scope": "PANEL-01-CHAT only"
+    }
+  ],
+  "copy_plan": [
+    {
+      "source": "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/lote-zips-extraidos/01-original/_chat-ui-main",
+      "destination": "UI YAIWES interface/Ui Yaiwes interface beta/04-panels/PANEL-01-CHAT/chat-variants/chat-ui",
+      "motor": "motor_3_copy_batches.py",
+      "collision_policy": "fail"
+    },
+    {
+      "source": "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/lote-zips-extraidos/01-original/__open-chat-ui-main",
+      "destination": "UI YAIWES interface/Ui Yaiwes interface beta/04-panels/PANEL-01-CHAT/chat-variants/open-chat-ui",
+      "motor": "motor_3_copy_batches.py",
+      "collision_policy": "fail"
+    },
+    {
+      "source": "Skills arquitectura frontend Yaiwes/biblioteca code frontend Maxbry Yaiwes/lote-zips-extraidos/01-original/_chat-ui-react-master",
+      "destination": "UI YAIWES interface/Ui Yaiwes interface beta/04-panels/PANEL-01-CHAT/chat-variants/chat-ui-react",
+      "motor": "motor_3_copy_batches.py",
+      "collision_policy": "fail"
+    }
+  ],
+  "motor_lock": {
+    "path": "➡️📂motores de descarga extracción copiado movimiento archivos fromtend/➡️📂motor de copiar archivos/motor_3_copy_batches.py",
+    "blob_sha": "3689924361ce4a1a9fde4ae2b6f6009c37a6042d",
+    "batch_size": "1..100",
+    "collision_policy": "fail",
+    "required_verdict": "VERIFIED_CLOSED",
+    "readback": true
+  },
+  "mount_order": [
+    "CHAT-01",
+    "chat-ui",
+    "open-chat-ui",
+    "chat-ui-react"
+  ],
+  "wiring": {
+    "rule": "Donor code remains immutable; integration code lives outside donor folders.",
+    "flow": "DONOR_CHAT -> external_adapter -> YAIWES_BRIDGE.dispatch -> agentTarget -> response/event -> mounted donor surface",
+    "agent_targets": [
+      "hermes",
+      "openclaw"
+    ],
+    "payload_contract": {
+      "required": [
+        "agentTarget",
+        "conversationId",
+        "text"
+      ],
+      "agentTarget_enum": [
+        "hermes",
+        "openclaw"
+      ]
+    },
+    "fail_closed": true,
+    "forbidden": "direct provider calls from donor/UI"
+  },
+  "allowed_actions": [
+    "read handoff/agents/contract/sheriff before implementation",
+    "execute canonical motor_3_copy_batches.py unchanged",
+    "create chat-variants destination subfolders through Motor3",
+    "create adapter/wrapper outside donor folders",
+    "update PANEL-01-CHAT host/shell to mount the three copied surfaces below CHAT-01",
+    "update panel manifest with chat variants and Hermes/OpenClaw targets",
+    "add tests and evidence outside donor folders",
+    "run browser interaction QA desktop and mobile"
+  ],
+  "forbidden_actions": [
+    "edit or rewrite any donor file",
+    "edit motor_3_copy_batches.py",
+    "modify Ui Yaiwes interface beta/01-original/**",
+    "use Hermes native UI",
+    "use OpenClaw native UI",
+    "download a fourth chat UI",
+    "replace CHAT-01",
+    "call LLM providers directly from frontend",
+    "declare PASS without hash read-back and browser evidence"
+  ],
+  "outputs": [
+    "Ui Yaiwes interface beta/04-panels/PANEL-01-CHAT/chat-variants/chat-ui/**",
+    "Ui Yaiwes interface beta/04-panels/PANEL-01-CHAT/chat-variants/open-chat-ui/**",
+    "Ui Yaiwes interface beta/04-panels/PANEL-01-CHAT/chat-variants/chat-ui-react/**",
+    "minimal external adapter/wrapper under PANEL-01-CHAT/src/",
+    "updated PANEL-01-CHAT manifest",
+    "functional tests",
+    "copy hash/read-back evidence",
+    "desktop/mobile evidence",
+    "updated handoff/team traceability"
+  ],
+  "acceptance": [
+    "Motor3 blob equals 3689924361ce4a1a9fde4ae2b6f6009c37a6042d.",
+    "All three Motor3 runs end VERIFIED_CLOSED with failed=0 and pending=0.",
+    "Source and destination file/hash maps are identical for each donor.",
+    "No donor file differs after copy.",
+    "CHAT-01 remains functional.",
+    "Three donor surfaces are mounted below CHAT-01 in the declared order.",
+    "Each mounted surface can select target hermes or openclaw through external adapter.",
+    "No Hermes/OpenClaw native UI is present.",
+    "No direct frontend provider call exists.",
+    "Browser interactions pass desktop and mobile with console_errors=0.",
+    "Sentinel has no critical finding.",
+    "Guardian closes only at 100%."
+  ],
+  "evidence": [
+    "Motor3 stdout result for each donor",
+    "source/destination hash tree read-back",
+    "changed-file proof showing donor copies only plus external adapter/shell/tests",
+    "browser interaction evidence",
+    "final commit SHA"
+  ],
+  "dispatch": {
+    "requested_by": "Director",
+    "executor": "Codex",
+    "mechanism": "project workflow contract",
+    "automatic_runner_found": false,
+    "note": "No automatic Codex task consumer was found in this repo. Contract is ready for the next authorized Codex execution surface; do not claim RUNNING until an executor actually claims it."
+  }
+}

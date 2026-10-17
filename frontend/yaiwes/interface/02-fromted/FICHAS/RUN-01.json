@@ -1,0 +1,48 @@
+{
+  "id": "RUN-01",
+  "name": "CASCADE",
+  "kind": "run",
+  "view": "cascade",
+  "tokens": {
+    "matte": "#0a0a0d",
+    "surf": "#141417",
+    "little": "#2563eb",
+    "blanco": "#ffffff",
+    "orange": "#ff5500"
+  },
+  "fondo": "matte #0a0a0d",
+  "plugins": {
+    "in": [
+      "FROMTED_THEME",
+      "FROMTED_BACKEND_WIRE"
+    ],
+    "out": [
+      "RUN-01.EVENT"
+    ]
+  },
+  "abs": [
+    "RUN-01.run",
+    "RUN-01.toggle",
+    "io.ping"
+  ],
+  "code": "02-fromted/RUN-01.html + _shared/abs.js",
+  "backend": "ABS → kernel (local|web|github|huggingface|gdrive|database). Ventana sin token.",
+  "link_other": "HOST.html iframe + postMessage FROMTED_ABS",
+  "security": "AES-256-GCM wires; CSP; no Factory en producto; token_ref",
+  "goals": [
+    "G01",
+    "G02",
+    "G03",
+    "G04",
+    "G05",
+    "G06",
+    "G07",
+    "G08",
+    "G09",
+    "G10",
+    "G11",
+    "G12"
+  ],
+  "status": "SUBIDO-FROMTED-SPLIT",
+  "updated": "2026-09-09T07:04:31Z"
+}

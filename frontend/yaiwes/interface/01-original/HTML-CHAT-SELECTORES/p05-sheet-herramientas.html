@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FROMTED p05 — Sheet herramientas</title>
+<style>
+:root{--bg:#0d0d0d;--sheet:#1c1c1c;--elev:#252525;--border:#2e2e2e;--white:#f0f0f0;--dim:#9b9b9b;--orange:#ff6b1a;--blue:#2f6bff;--green:#22c55e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#000;color:var(--white);display:flex;justify-content:center;min-height:100dvh;align-items:flex-end}
+.phone{width:100%;max-width:390px;min-height:100dvh;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.55)}
+.sheet{background:var(--sheet);border-radius:16px 16px 0 0;padding:10px 8px 24px;border:1px solid var(--border)}
+.handle{width:36px;height:4px;background:#444;border-radius:2px;margin:4px auto 10px}
+.sub{display:flex;align-items:center;justify-content:space-between;padding:6px 12px 10px;font-size:13px;color:var(--dim)}
+.row{display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:10px;font-size:15px}
+.row:active,.row.on{background:var(--elev)}
+.row svg{width:18px;height:18px;stroke:var(--dim);fill:none;stroke-width:1.6}
+.row .ok{margin-left:auto;color:var(--blue);font-size:16px}
+.caps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 8px 12px}
+.cap{background:var(--elev);border:1px solid var(--border);border-radius:12px;padding:12px 4px;text-align:center;font-size:11px;color:var(--dim)}
+.cap svg{width:20px;height:20px;stroke:var(--white);fill:none;stroke-width:1.5;display:block;margin:0 auto 6px}
+</style>
+</head>
+<body>
+<div class="phone"><div class="sheet">
+  <div class="handle"></div>
+  <div class="caps">
+    <div class="cap"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Cámara</div>
+    <div class="cap"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Fotos</div>
+    <div class="cap"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z"/></svg>Video</div>
+    <div class="cap"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Archivo</div>
+  </div>
+  <div class="sub"><span>Herramientas</span><span>Habilitar todo</span></div>
+  <div class="row on"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Investigación en profundidad<span class="ok">✓</span></div>
+  <div class="row"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M12 8v8"/></svg>Crear imagen</div>
+  <div class="row"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z"/></svg>Crear video</div>
+  <div class="row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M2 12h20"/></svg>Búsqueda en la Web</div>
+  <div class="row"><svg viewBox="0 0 24 24"><path d="M12 3l9 6v12H3V9l9-6z"/></svg>Artefactos</div>
+  <div class="row"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 17V9l6-4 6 4v8"/></svg>Aprende</div>
+</div></div>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "YAIWES UI",
+  "short_name": "YAIWES",
+  "start_url": "../Ui Yaiwes interface beta/02-fromted/HOST.html",
+  "display": "standalone",
+  "background_color": "#0a0a0d",
+  "theme_color": "#2563eb"
+}

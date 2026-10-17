@@ -1,0 +1,27 @@
+{
+  "identity": "➡️ Astra plan fábrica UI YAIWES",
+  "task": "T2_INTERFACE_YAIWES",
+  "node": "T2-R5A2_RUN07_RUN08_FRONTEND_CONTRACT",
+  "owner": "Astra",
+  "status": "VERIFIED_COMPLETE",
+  "source_commit": "eaa81923cb9ea84b9d1219ab01d04e66ee94ea38",
+  "workflow": {
+    "name": "astra-t2-r5a2-runtime-orchestration-contract",
+    "run_id": 34700407038,
+    "job_id": 103571035669,
+    "conclusion": "success",
+    "tests": {"pass": 5, "fail": 0}
+  },
+  "verified_invariants": [
+    "fails closed without required frontend dependencies",
+    "fails closed when postMessage origin is absent, wildcard, or invalid",
+    "RUN-07 routes editor changes only through ActionBus/postMessage contract",
+    "RUN-08 publishes an immutable safe snapshot",
+    "RUN-08 rejects undeclared and secret-bearing fields"
+  ],
+  "backend_productive_write": "DENY",
+  "secret_values_read_or_printed": false,
+  "lfs_used": false,
+  "force_used": false,
+  "promotion_note": "Contract gate verified only. E2E deployed/reviewer gate remains separate and must not be inferred from this PASS."
+}
