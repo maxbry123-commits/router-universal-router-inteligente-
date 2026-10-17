@@ -1,0 +1,6 @@
+19 2 11.668 Mercado de Skills Locales con Versionado Semántico y Firma MCP
+20 3 19.204 Gateway MCP HTTP Unificado con Autenticación por Tokens de Alcance
+21 2* 8.411 Snapshot Proactivo de Estado del Agente con Persistencia en Local y Nube (Checkpoint MCP)
+22 2 8.74 Motor de Descomposición y Seguimiento de Metas por Hitos (GOAL-BREAKDOWN MCP)
+23 3 8.452 Bitácora de Cambios Criptográfica y Vulnerable a la Manipulación (Audit-Trail MCP)
+24 2* 8.519 Renderer de Respostas en Español Mínimo con Formato de Tiempo Unificado (Style-Renderer MCP)

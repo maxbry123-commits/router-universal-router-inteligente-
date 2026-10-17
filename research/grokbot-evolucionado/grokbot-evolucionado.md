@@ -1,6 +1,6 @@
 # Grok Bot evolucionado — propuestas (WIP)
 
-Estado: **a medias, pausado por Antonio (16-oct-2026, hora Bogotá)**. 18 propuestas generadas por Ask consil / fichas Qwen vía el chat real (cada una en sesión nueva `web-gbx-*`, con el historial de la anterior + un goal de evolución). Meta: 20 o más. Faltan imágenes (grokbot-img/ quedó vacío) y la síntesis final.
+Estado: **a medias, pausado por Antonio (16-oct-2026, hora Bogotá)**. 18 propuestas generadas por Ask consil / fichas Qwen vía el chat real (cada una en sesión nueva `web-gbx-*`, con el historial de la anterior + un goal de evolución). Meta: 20 o más → 24 hechas. Imágenes en grokbot-img/, síntesis en SINTESIS.md.
 
 Scripts: `consil.py` (cliente chat_async + /resultado), `run_consil.py` (cadena de propuestas). Log: `run.log` (terminó con timeout de red).
 
@@ -220,3 +220,92 @@ CÓMO FUNCIONA: 1. Grok Bot extrae automáticamente de cada tarea exitosa los fu
 IMPACTO: Elimina el copy-paste manual entre repos, reduce errores por desincronización de contextos, acelera tasks que implican reutilizar lógica depuente/HTTP/ficha ya validada, y crea un historial auditable de que piezas de código son estables y en qué entornos.
 
 FACTIBILIDAD: alta — requiere solo expansión del store local persistente existente en Grok Bot, un índice ligero de búsqueda local (grep/edite), y reutilizar el pipeline de tests automático que ya existe para revisión de seguridad; no necesita nueva infraestructura externa ni cambios en MCP.
+
+## 19. Mercado de Skills Locales con Versionado Semántico y Firma MCP
+
+- Goal: Plantillas/skills del usuario instalables y versionadas.
+- Ficha 2 · 11 s 668 ms · error: None
+
+![](grokbot-img/propuesta-19.png)
+
+TÍTULO: Mercado de Skills Locales con Versionado Semántico y Firma MCP
+PROBLEMA: Los usuarios crean plantillas y flujos útiles pero no hay forma estandarizada de empaquetarlos, versionarlos, compartirlos entre máquinas ni verificarlos sin copiar/pegar código manualmente.
+PROPUESTA: Un gestor de skills nativo en Grok Bot que trata cada skill como un paquete versionado (semver) con manifiesto, tests, checksums y firma MCP opcional, instalable desde repos Git/HF o registro local.
+CÓMO FUNCIONA: 1) CLI `grokbot skill init` genera estructura estándar (manifest.yaml, src/, tests/, .mcp-sign); 2) `grokbot skill publish` sube a GitHub/HF con tag semver y firma MCP; 3) `grokbot skill install usuario/skill@^1.2.0` resuelve dependencias, verifica checksum/firma y sincroniza al vault local; 4) Runtime carga skills vía `importSkill('usuario/skill')` con aislamiento y sandbox; 5) `grokbot skill upgrade` actualiza según rango semver con diff de cambios y confirmación.
+IMPACTO: Reutilización inmediata de flujos complejos entre proyectos/máquinas; colaboración sin fricción; auditoría y rollback por versión; cero copiar/pegar.
+FACTIBILIDAD: alta - aprovecha stores persistentes, MCP GitHub/HF, shell persistente y verificación de seguridad ya existentes en Grok Bot.
+
+## 20. Gateway MCP HTTP Unificado con Autenticación por Tokens de Alcance
+
+- Goal: Protocolo abierto (MCP HTTP) para que cualquier modelo externo controle o consulte a Grok Bot.
+- Ficha 3 · 19 s 204 ms · error: None
+
+![](grokbot-img/propuesta-20.png)
+
+TÍTULO: Gateway MCP HTTP Unificado con Autenticación por Tokens de Alcance
+PROBLEMA: No existe interfaz estándar para que modelos externos (Claude, GPT, modelos locales, etc.) invoquen herramientas, consulten estado o disparen flujos en Grok Bot sin copiar/pegar manualmente.
+PROPUESTA: Exponer un endpoint HTTP único (/mcp) que implemente el protocolo MCP (JSON-RPC 2.0 sobre HTTP+SSE) con descubrimiento de capacidades, ejecución de tools y suscripción a eventos, protegido por tokens JWT de alcance granular (read:state, write:tools, admin:deploy).
+CÓMO FUNCIONA: 1) Servidor FastAPI/Starlette en la máquina Linux persistente monta /mcp con middleware de verificación JWT (clave rotativa semanal). 2) Manifiesto MCP dinámico generado desde el registro interno de tools, skills y subagentes. 3) Handlers MCP mapean tools→harness→ficha→modelo y devuelven resultados tipados. 4) SSE para streaming de logs, métricas y eventos de subagentes en tiempo real. 5) CLI/SDK Python/TS auto-generado para consumidores externos.
+IMPACTO: Cualquier modelo/agente externo orquesta Grok Bot como backend programable; habilita flujos multi-modelo reales, CI/CD autónomo y "Grok Bot as a Service" sin fricción de copiar/pegar.
+FACTIBILIDAD: alta — MCP ya es estándar emergente (Anthropic, LangChain, Vercel AI SDK); FastAPI + JWT + SSE es stack nativo Python en la máquina Linux; tokens de alcance reusan infra de credenciales Vault+MCP ya propuesta.
+
+## 21. Snapshot Proactivo de Estado del Agente con Persistencia en Local y Nube (Checkpoint MCP)
+
+- Goal: Recuperación ante reinicio/pérdida del estado de la máquina compartida.
+- Ficha 2* · 8 s 411 ms · error: None
+
+![](grokbot-img/propuesta-21.png)
+
+TÍTULO: Snapshot Proactivo de Estado del Agente con Persistencia en Local y Nube (Checkpoint MCP)
+PROBLEMA: Al reiniciarse la máquina compartida o perderse su estado, Grok Bot pierde el progreso en curso, la configuración de subagentes y el contexto de sesión, dejando el trabajo huérfano y obligando al usuario a reconstruirlo manually.
+PROPUESTA: Implementar un servicio interno de "snapshot continuo" que capture automáticamente puntos de verificación (checkpoints) del estado crítico de Grok Bot (variables de sesión, archivos temporales de trabajo, estado de subagentes pendientes y colas de tareas) y los dual-nube (volumen local + repositorio privado de GitHub/HF) mediante una tool MCP dedicada.
+CÓMO FUNCIONA: 1) Un daemon ligero en la máquina compartida intercepta cambios en las stores persistentes y el estado del pool de subagentes. 2) Cada X minutos o tras eventos atómicos (tarea completada, cambio de rama en Vercel/GitHub), serializa el estado en JSON comprimido y lo cifra. 3) La tool MCP `checkpoint_save` sube el snapshot a un repo privado (ej. riu-snapshots en maxbry123-commits) y a HF Almacenamiento. 4) La tool MCP `checkpoint_restore` permite a Grok Bot (o al usuario) invocar la restauración: descarga el último snapshot válido, valida su integridad (hash SHA-256), restaura los archivos y re-inyecta el estado en las stores persistidas, reanudando los subagentes interrumpidos desde su último punto estable.
+IMPACTO: Elimina la fricción de "trabajo huérfano" ante caídas; garantiza que el usuario no pierda más de 15 minutos de progreso; facilita la migración o clonación de Grok Bot en otra máquina con solo invocar `checkpoint_restore`.
+FACTIBILIDAD: alta — Ya existen stores persistentes, conectores MCP para GitHub/HF y shell persistente; solo requiere encapsular lógica existente de serialización y subida en la nueva tool MCP, sin cambios en la arquitectura COMPONENTE→HARNESS.
+
+## 22. Motor de Descomposición y Seguimiento de Metas por Hitos (GOAL-BREAKDOWN MCP)
+
+- Goal: Modo 'director': el usuario da metas de alto nivel y Grok Bot planifica, reparte y reporta por hitos.
+- Ficha 2 · 8 s 740 ms · error: None
+
+![](grokbot-img/propuesta-22.png)
+
+TÍTULO: Motor de Descomposición y Seguimiento de Metas por Hitos (GOAL-BREAKDOWN MCP)
+
+PROBLEMA: Hoy Grok Bot opera en modo "tarea única": el usuario describe un paso concreto y él lo ejecuta. No existe un componente que reciba una meta de alto nivel, la descomponga en hitos verificables, asigne cada hito a subagentes, ni reporte el avance hito a hito; al terminar un hito, el usuario debe volver a explicar el siguiente, perdiendo el hilo de la meta global y duplicando contexto.
+
+PROPUESTA: Implementar un módulo MCP "-goal-director-" que además de los existentes (agentlink, snapshot, etc.), reciba metas de alto nivel del usuario, las transforme en un grafo acíclico de hitos (DAG) con criterios de éxito medibles, lo persista en el almacén HF como documento de verdad única, lo ejecute asignando cada hito a subagentes existentes, y emita reportes de hito al usuario con estado, bloqueo y siguiente paso sugerido.
+
+CÓMO FUNCIONA: (1) El usuario escribe una meta en lenguaje natural (ej. "migrar el router a Vercel con tests E2E"). (2) Un subagente "arquitecto" usa nvidia_codigo para descomponerla en un YAML con hitos_id, descripción, dependencias, criterio_exito y agente_asignado. (3) Ese YAML se guarda en hf_almacenamiento en /goal-director/metodologia/{fecha}-{slug}.yaml como contrato. (4) Un orquestador interno itera el DAG: para cada hito sin dependencias pendientes, despacha al subagente asignado vía groq_agente con el contexto del hito + el YAML completo. (5) Cuando un subagente termina, el orquestador verifica el criterio_exito (ej. CI verde, test ok) con una llamada nvidia_codigo o recurso_llm; si pasa, marca el hito como completo y libera sus dependientes; si falla, lo marca como bloqueado y avisa al usuario con el fallo. (6) En cada transición, se actualiza el YAML en HF y se envía al usuario un mensaje de hito: "✓ Hitos 1-3 completos, activo 4/8, siguiente: despliegue a Vercel". (7) Si el plan se agota, el DAG persistido permite reanudar sin re-explicar, alineado con el Handler de Handoff ya propuesto.
+
+IMPACTO: Convierte a Grok Bot de "ejecutor de pasos" en "director de proyecto": el usuario da la meta una sola vez, ve progreso por hitos objetivos, puede intervenir en cualquier hito, y el trabajo es reanudable tras caídas o agotamiento de plan. Reduce la fricción de re-explicar contexto y de no ver el estado de subagentes, ya que cada hito mapea 1:1 con un subagente observable.
+
+FACTIBILIDAD: alta — Reutiliza groq_agente, hf_almacenamiento, nvidia_codegen y nvidia_code para verificación; no requiere nueva infraestructura ni modelos, solo un YAML como contrato y un bucle de orquestación en el harness existente.
+
+## 23. Bitácora de Cambios Criptográfica y Vulnerable a la Manipulación (Audit-Trail MCP)
+
+- Goal: Auditoría/traza verificable de lo que cada agente cambió (quién, qué, cuándo, prueba).
+- Ficha 3 · 8 s 452 ms · error: None
+
+![](grokbot-img/propuesta-23.png)
+
+TÍTULO: Bitácora de Cambios Criptográfica y Vulnerable a la Manipulación (Audit-Trail MCP)
+PROBLEMA: Actualmente, no existe una trazabilidad inmutable y verificable de las acciones concretas que cada agente (o subagente) realiza sobre el estado del cliente o el repositorio, lo que dificulta auditar quién modificó qué, cuándo, y con qué prueba de éxito, especialmente en incidentes o errores de orquestación.
+PROPUESTA: Implementar un módulo MCP "-audit-trail-" que intercepte toda mutación de estado (edición de archivos, despliegues, llamadas a APIs externos) y genere un registro apilado en cadena de bloques local (hash encadenado) que registre: agente responsable, timestamp, snapshot antes/después del cambio, y artefactos de prueba (logs de testing/verificación).
+CÓMO FUNCIONA: 1) Interceptar via middleware MCP todos los escrituras/acciones de estado. 2) Calcular hash SHA-256 del estado anterior, hash del nuevo estado, metadatos del agente y timestamp. 3) Encadenar cada nueva entrada con el hash de la anterior (inmutabilidad). 4) Guardar el registro en un archivo apend-only local y sincronizarlo periódicamente con el storage de Hugging Face para backup. 5) Exponer una herramienta MCP "verificar_audit" que permita recuperar y validar la integridad de cualquier rama de cambios mediante la cadena de hashes.
+IMPACTO: Permite auditoría forense completa del trabajo de Grok Bot, facilita el rollback exacto de acciones erróneas de subagentes, y cumple con el objetivo de trazabilidad verificable (quién, qué, cuándo, prueba) de forma automática y sin intervención manual.
+FACTIBILIDAD: alta - Los middleware del sistema MCP ya permiten interceptar todas las acciones del agente; el hashing y almacenamiento apend-only son operaciones computacionalmente triviales; la sincronización con HF usa la infraestructura de persistencia ya existente.
+
+## 24. Renderer de Respostas en Español Mínimo con Formato de Tiempo Unificado (Style-Renderer MCP)
+
+- Goal: Idioma y estilo del usuario (respuestas mínimas en español, tiempos 'X s YYY ms') respetados siempre.
+- Ficha 2* · 8 s 519 ms · error: None
+
+![](grokbot-img/propuesta-24.png)
+
+TÍTULO: Renderer de Respostas en Español Mínimo con Formato de Tiempo Unificado (Style-Renderer MCP)
+PROBLEMA: Grok Bot no garantiza ni fuerza el estilo ni el idioma del usuario, lo que provoca respuestas en inglés, párrafos verbosos o formatos de tiempo inconsistentes (ej. "2.5s" en vez de "2 s 500 ms"), rompiendo la experiencia de usuario y el Goal #24.
+PROPUESTA: Implementar un "Style-Renderer MCP" que actúe como un filtro de salida obligatorio. Antes de entregar cualquier respuesta al usuario, esta herramienta recibe el texto crudo del modelo, lo procesa con reglas de traducción/estilo y lo reformatea para cumplir estrictamente con el idioma (español) y la estética (mínimo, tiempos normalizados).
+CÓMO FUNCIONA: 1. Interceptar la respuesta final en el pipeline de `puente_chat`. 2. Pasar el texto por el MCP "style-renderer". 3. Aplicar reglas de Post-Process: detección de idioma (si no es es-ES, traducir al estado final), compresión de texto (cortar preámbulos y muletillas), y aplicación de regex para normalizar cualquier medida de tiempo al formato "X s YYY ms". 4. Devolver el string limpio al frontend.
+IMPACTO: Eliminación total de la fricción del usuario al re-explicar o renegociar el estilo en cada interacción; asegura la consistencia de marca personal de Antonio en cada chat.
+FACTIBILIDAD: alta + Es una capa de middleware de texto pura (regex y reglas o LLM de bajo costo como post-processor) que no requiere cambios en la arquitectura base ni en la lógica de los subagentes.
