@@ -55,14 +55,16 @@ export async function mount(root, { api, tell }) {
   };
   const pintarFichaPill = () => {
     const et = fichaEt(chat().ficha);
-    const t = (et ? et.etiqueta : "modelo").replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim(); q("#ficha").textContent = "Nvidia groq team ⌄"; q("#ficha").title = "Nvidia groq team · " + t; q("#ficha").dataset.ficha = t;  // selector 1 (sin emojis de color)
+    const t = (et ? et.etiqueta : "modelo").replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim(); const fp = q("#ficha"); if (!fp) return;  // vista movil: la pildora puede no existir -> no romper el envio
+    fp.textContent = "Nvidia groq team ⌄"; fp.title = "Nvidia groq team · " + t; fp.dataset.ficha = t;  // selector 1 (sin emojis de color)
   };
   const FAST_SEL = () => /^(team-qwen|ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team)$/.test((window.RIU_SELECTORES && window.RIU_SELECTORES.activo) || "");  // ⚡ solo cuenta con un selector de ficha encendido
   const pintarFastReply = () => {  // ⚡ Respuesta rápida: el estado es de cada chat; los botones viven junto a cada selector de ficha
     if (!chat()) return;
     window.dispatchEvent(new CustomEvent("riu:fast-reply", { detail: { on: !!chat().fastReply } }));
   };
-  const pintarTabs = () => {
+  const pintarTabs = () => { try { pintarTabs0(); } catch (e) { try { console.error("pintarTabs", e); } catch (x) {} } };  // un fallo de UI (layout movil) nunca bloquea el envio
+  const pintarTabs0 = () => {
     tabsEl.replaceChildren();
     pintarFastReply();
     chats.forEach((c, i) => {
@@ -79,8 +81,8 @@ export async function mount(root, { api, tell }) {
     }
     chats.forEach((c, i) => { c.hist.hidden = i !== activo; });
     pintarAnclados();
-    pintarFichaPill();
-    q("#btn-detener").hidden = false;  // Detener SIEMPRE visible (restaurado por orden de Antonio)
+    try { pintarFichaPill(); } catch (e) {}
+    { const bd = q("#btn-detener"); if (bd) bd.hidden = false; }  // Detener SIEMPRE visible (restaurado por orden de Antonio)
     guardar();
   };
   const nuevoChat = (restaurado) => {
@@ -554,10 +556,10 @@ export async function mount(root, { api, tell }) {
       pending.textContent = d.texto !== undefined ? d.texto : d;
     };
     window.addEventListener('riu-progreso', alProgreso);
-    abajo(c);
-    const agent = q("#agent").value;
-    const provider = q("#provider").value;
-    const model = q("#model").value;
+    try { abajo(c); } catch (e) {}
+    const agent = (q("#agent") || {}).value || "";
+    const provider = (q("#provider") || {}).value || "";
+    const model = (q("#model") || {}).value || "";
     const max_tokens = { fast: 512, balanced: 1024, think: 2048 }[modo];
     try {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
