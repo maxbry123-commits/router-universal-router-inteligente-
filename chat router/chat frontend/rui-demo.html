@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUI — componentes Maxbry UI (propuesta funcional)</title>
+<link rel="stylesheet" href="/chat/ui/shell.css">
+<style>body{margin:0;padding:12px;background:var(--bg);color:var(--text);font:15px/1.4 system-ui}section{margin:0 0 14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden}section>h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--quiet)}.fila{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.lienzo{position:relative;height:200px;overflow:auto;border-radius:10px;background:var(--surface)}.lienzo h3{margin:0;padding:60px 12px;font-size:14px}</style>
+</head><body>
+<h1 style="font-size:17px;margin:4px 0 12px">RUI · 22 componentes (Rare UI → JS simple)</h1>
+<section id="rui-1"><h2>RUI 1 · folder-component</h2><div class="fila" id="d1" style="justify-content:center;padding-top:110px"></div></section>
+<section id="rui-2"><h2>RUI 2 · bounce-sidebar</h2><div id="d2"></div></section>
+<section id="rui-3"><h2>RUI 3 · hook-sidebar</h2><div id="d3"></div></section>
+<section id="rui-4"><h2>RUI 4 · family-drawer</h2><div id="d4"></div></section>
+<section id="rui-5"><h2>RUI 5 · proximity-sidebar</h2><div class="fila" style="align-items:flex-start"><div id="d5"></div><div class="lienzo" id="l5" style="flex:1"><h3 id="p5a">Introducción</h3><h3 id="p5b">Instalación</h3><h3 id="p5c">Uso</h3><h3 id="p5d">API</h3><h3 id="p5e">Notas</h3></div></div></section>
+<section id="rui-6"><h2>RUI 6 · duration-picker</h2><div id="d6"></div><div id="o6" class="fila-desc"></div></section>
+<section id="rui-7"><h2>RUI 7 · fluid-orb</h2><div class="fila" id="d7" style="justify-content:center"></div></section>
+<section id="rui-8"><h2>RUI 8 · scroll-progress</h2><div class="lienzo" id="l8"><h3 id="s8a">Resumen</h3><h3 id="s8b">Detalles</h3><h3 id="s8c">Pruebas</h3><h3 id="s8d">Cierre</h3><div style="height:200px"></div></div></section>
+<section id="rui-9"><h2>RUI 9 · code-block</h2><div id="d9"></div></section>
+<section id="rui-10"><h2>RUI 10 · otp-input</h2><div id="d10"></div><div id="o10" class="fila-desc"></div></section>
+<section id="rui-11"><h2>RUI 11 · gravity-letters</h2><div id="d11"></div></section>
+<section id="rui-12"><h2>RUI 12 · github-activity</h2><div id="d12"></div></section>
+<section id="rui-13"><h2>RUI 13 · emoji-reaction</h2><div id="d13" style="padding-top:60px"></div></section>
+<section id="rui-14"><h2>RUI 14 · notification-bell</h2><div class="fila" id="d14"></div></section>
+<section id="rui-15"><h2>RUI 15 · step-player</h2><div id="d15"></div></section>
+<section id="rui-16"><h2>RUI 16 · grid-reveal (rui-media.js)</h2><div id="d16"></div></section>
+<section id="rui-17"><h2>RUI 17 · gooey-nav</h2><div id="d17"></div></section>
+<section id="rui-18"><h2>RUI 18 · delete-button</h2><div id="d18"></div></section>
+<section id="rui-19"><h2>RUI 19 · animated-counter</h2><div class="fila" id="d19"></div></section>
+<section id="rui-20"><h2>RUI 20 · matrix-orb</h2><div class="fila" id="d20" style="justify-content:center"></div></section>
+<section id="rui-21"><h2>RUI 21 · task-list</h2><div id="d21"></div></section>
+<section id="rui-22"><h2>RUI 22 · voice-note (rui-media.js)</h2><div id="d22"></div></section>
+<script type="module">
+import * as K from "/chat/ui/rui-kit.js";
+import { gridReveal, voiceNote } from "/chat/ui/rui-media.js";
+const $ = (id) => document.getElementById(id);
+$("d1").append(K.folder({ size: "sm" }));
+$("d2").append(K.bounceSidebar([{ label: "Chat", heading: true }, "Chat 1", "Chat 2", "Chat 3", { label: "Panel", heading: true }, "YAIWES", "Proyectos"], { value: 1 }));
+$("d3").append(K.hookSidebar(["Fichas", "Anclas", "Constitución", "Memoria"], { label: "Router" }));
+const P = (t, d, btns) => { const f = document.createDocumentFragment(), h = document.createElement("h2"), p = document.createElement("p"); h.textContent = t; p.textContent = d; f.append(h, p, ...btns); return f; };
+const B = (cls, t, fn) => { const b = document.createElement("button"); b.type = "button"; b.className = cls; b.textContent = t; b.onclick = fn; return b; };
+$("d4").append(K.familyDrawer({
+  default: (go) => P("Opciones", "Elige qué quieres ver.", [B("rui-fd-btn", "🔑 Ver clave privada", () => go("key")), B("rui-fd-btn", "📝 Ver frase de recuperación", () => go("phrase")), B("rui-fd-btn", "🗑️ Quitar", () => go("remove"))]),
+  key: (go) => P("Clave privada", "Solo se muestra la máscara. Nunca la compartas.", [(() => { const r = document.createElement("div"); r.className = "rui-fd-row"; r.append(B("rui-fd-sec", "Volver", () => go("default"))); return r; })()]),
+  phrase: (go) => P("Frase de recuperación", "Guárdala en un lugar seguro y fuera de línea. Quien la tenga controla el acceso.", [(() => { const r = document.createElement("div"); r.className = "rui-fd-row"; r.append(B("rui-fd-sec", "Volver", () => go("default"))); return r; })()]),
+  remove: (go, close) => P("¿Seguro?", "Esta acción no se puede deshacer.", [(() => { const r = document.createElement("div"); r.className = "rui-fd-row"; r.append(B("rui-fd-sec", "Cancelar", () => go("default")), B("rui-fd-sec pri", "Quitar", close)); return r; })()]),
+}, { trigger: "Probar" }));
+$("d5").append(K.proximitySidebar([{ id: "p5a", label: "Introducción", level: 1 }, { id: "p5b", label: "Instalación", level: 2 }, { id: "p5c", label: "Uso", level: 3 }, { id: "p5d", label: "API", level: 3 }, { id: "p5e", label: "Notas" }], { scroller: $("l5") }));
+$("d6").append(K.durationPicker({ onConfirm: (v) => { $("o6").textContent = `Confirmado: ${v.hours} h ${v.minutes} min`; } }));
+$("d7").append(K.fluidOrb({ size: 160 }));
+$("l8").prepend(K.scrollProgress([{ id: "s8a", label: "Resumen" }, { id: "s8b", label: "Detalles" }, { id: "s8c", label: "Pruebas" }, { id: "s8d", label: "Cierre" }], { scroller: $("l8"), offset: 60 }));
+$("d9").append(K.codeBlock('// pregunta al router\nconst r = await fetch("/plugins/chat_async", { method: "POST" });\nconst { request_id } = await r.json();\nreturn 42;', { filename: "api.js", highlightLines: [2] }));
+$("d10").append(K.otpInput({ length: 6, onComplete: (code, set) => { set(code === "123456" ? "success" : "error"); $("o10").textContent = code === "123456" ? "Código correcto" : "Código incorrecto (prueba 123456)"; } }));
+$("d11").append(K.gravityLetters());
+$("d12").append(K.githubActivity("maxbry123-commits"));
+$("d13").append(K.emojiReaction());
+const bell = K.notificationBell({ count: 0 }); $("d14").append(bell, B("pill", "+1 notificación", () => bell.set((bell._n = (bell._n || 0) + 1))));
+$("d15").append(K.stepPlayer({ steps: 4, duration: 1500 }));
+$("d16").append(gridReveal("data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><defs><linearGradient id="g" x2="1" y2="1"><stop offset="0" stop-color="#0848F7"/><stop offset="1" stop-color="#FF7B1A"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><circle cx="200" cy="200" r="90" fill="#EDEDED"/></svg>'), { alt: "demo" }));
+$("d17").append(K.gooeyNav(["Chat", "Router", "YAIWES"], { value: 0 }));
+$("d18").append(K.deleteButton());
+const cnt = K.animatedCounter({ value: 1280 }); $("d19").append(cnt, B("pill", "+137", () => cnt.set((cnt._v = (cnt._v || 1280) + 137))));
+const orb = K.matrixOrb({ size: 160 }); $("d20").append(orb); ["idle", "listening", "thinking"].forEach((st) => $("d20").append(B("pill", st, () => orb.setState(st))));
+$("d21").append(K.taskList([{ id: "a", label: "Rebase en main" }, { id: "b", label: "Portar 20 componentes" }, { id: "c", label: "Probar a 412 px" }, { id: "d", label: "Revisión ×3" }]));
+$("d22").append(voiceNote(tono(), { nombre: "demo" }));
+function tono(){const sr=8000,n=sr*2,b=new ArrayBuffer(44+n*2),v=new DataView(b),w=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));w(0,"RIFF");v.setUint32(4,36+n*2,true);w(8,"WAVEfmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,n*2,true);for(let i=0;i<n;i++)v.setInt16(44+i*2,Math.sin(i/sr*2*Math.PI*440)*8000*Math.sin(Math.PI*i/n),true);return URL.createObjectURL(new Blob([b],{type:"audio/wav"}));}
+window.__ruiListo = true;
+</script></body></html>
