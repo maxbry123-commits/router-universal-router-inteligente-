@@ -7,7 +7,7 @@ import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
 
 const CLAVE = "riu_room_v1";
-const MAX_PART = 6, MAX_RONDAS = 5;
+const MAX_RONDAS = 5;  // participantes: sin tope, pueden entrar todos los selectores ("Todos")
 const leer = () => { try { return JSON.parse(localStorage.getItem(CLAVE) || "{}") || {}; } catch (e) { return {}; } };
 const PREF = /^\[\[([^\]\n]{1,60})\]\]\n?/;  // "[[Nombre]]\ntexto": quién habló, guardado dentro del mismo historial
 
@@ -28,6 +28,7 @@ export function montarRoom({ q, tell }) {
   const st = Object.assign({ activo: false, sesion: "room-" + Math.random().toString(36).slice(2, 10), part: ["f1:qwen-3-8-flash", "f1:deepseek-v4-flash"], rondas: 1 }, leer());
   const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify({ activo: st.activo, sesion: st.sesion, part: st.part, rondas: st.rondas })); } catch (e) {} };
   let ocupado = false, parar = false, cortar = null;  // cortar: Detener no espera a que el Router termine el turno en curso
+  let tema = "", interv = "";  // tema: mensaje que abrió el debate; interv: lo último que dijo el Usuario EN MEDIO del debate
 
   // ---- vista ----
   const vista = node("div", "", "room-view"); vista.hidden = true;
@@ -57,6 +58,11 @@ export function montarRoom({ q, tell }) {
   const pintarCfg = () => {
     const P = participantes(); lista.replaceChildren();
     st.part = st.part.filter((id) => P.some((p) => p.id === id));
+    const todos = st.part.length === P.length;  // "Todos": un toque añade TODOS los selectores; otro toque los quita
+    const bT = node("button", "Todos", "chip room-p room-todos" + (todos ? " on" : "")); bT.type = "button"; bT.setAttribute("aria-pressed", String(todos));
+    bT.title = todos ? "Quitar a todos" : "Añadir a todos los modelos como participantes";
+    bT.addEventListener("click", () => { if (ocupado) return; st.part = todos ? [] : [...st.part, ...P.map((p) => p.id).filter((id) => !st.part.includes(id))]; guardar(); pintarCfg(); });
+    lista.append(bT);
     P.forEach((p) => {
       const on = st.part.includes(p.id), orden = st.part.indexOf(p.id) + 1;
       const b = node("button", (on ? orden + "· " : "") + p.nombre, "chip room-p" + (on ? " on" : ""));
@@ -64,7 +70,6 @@ export function montarRoom({ q, tell }) {
       b.addEventListener("click", () => {
         if (ocupado) return;
         if (st.part.includes(p.id)) st.part = st.part.filter((x) => x !== p.id);
-        else if (st.part.length >= MAX_PART) { tell("Máximo " + MAX_PART + " participantes"); return; }
         else st.part.push(p.id);
         guardar(); pintarCfg();
       });
@@ -111,10 +116,10 @@ export function montarRoom({ q, tell }) {
   // así la puerta de capacidades del Router mira lo que pidió el Usuario y no las palabras que escribieron los otros modelos.
   // NVIDIA (puente_chat directo, sin contexto_previo): la conversación va dentro del mensaje.
   const armar = (p, nombres, r, R) => {
-    const T = turnos(), ult = [...T].reverse().find((t) => t.user);
-    const tema = ult ? "\n\nTema del Usuario: " + ult.texto : "";
-    if (p.qwen) return { message: orden(p, nombres, r, R) + tema, contexto_previo: T.map((t) => ({ role: t.user ? "user" : "assistant", content: "[" + t.quien + "]: " + t.texto })) };
-    return { message: "Conversación de la sala:\n" + T.map((t) => "[" + t.quien + "]: " + t.texto).join("\n\n") + "\n\n" + orden(p, nombres, r, R) };
+    const T = turnos(), ult = [...T].reverse().find((t) => t.user), t0 = tema || (ult && ult.texto);
+    const usr = interv ? "\n\nEl Usuario intervino en el debate: «" + interv + "». Respóndele a él directamente (llámalo Usuario) además de a los demás." : "";
+    if (p.qwen) return { message: orden(p, nombres, r, R) + (t0 ? "\n\nTema del Usuario: " + t0 : "") + usr, contexto_previo: T.map((t) => ({ role: t.user ? "user" : "assistant", content: "[" + t.quien + "]: " + t.texto })) };
+    return { message: "Conversación de la sala:\n" + T.map((t) => "[" + t.quien + "]: " + t.texto).join("\n\n") + "\n\n" + orden(p, nombres, r, R) + usr };
   };
   const limpia = (p, t) => String(t || "").replace(new RegExp("^\\s*(\\*\\*)?\\[?«?" + p.nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "»?\\]?(\\*\\*)?\\s*:\\s*(\\*\\*)?\\s*", "i"), "").trim();  // quita el "**Nombre**:" que algunos modelos anteponen
   const turno = async (p, nombres, r, R) => {
@@ -126,7 +131,7 @@ export function montarRoom({ q, tell }) {
       const corte = new Promise((_, rej) => { cortar = () => rej(new Error("PROCESO_DETENIDO")); });
       const ans = await Promise.race([window.RIU_HARNESS({ model: p.model, ...armar(p, nombres, r, R), max_tokens: 700, sesion: st.sesion, qwen: p.qwen, avisar: (t) => { pend.textContent = p.nombre + " · " + t; } }), corte]);
       let txt = String((ans && ans.reply) || ""), via = "";
-      const hc = txt.match(/^\s*ASK CONSIL\s*\n+([^\n:]{1,40}):[ \t]*\n/);  // cabecera de Ask cónsil ("ASK CONSIL / DeepSeek V4 Pro:"): el modelo real pasa a la etiqueta
+      const hc = txt.match(/^\s*ASK CONSIL(?: FRONTEND)?\s*\n+([^\n:]{1,40}):[ \t]*\n/);  // cabecera de Ask cónsil ("ASK CONSIL / DeepSeek V4 Pro:"): el modelo real pasa a la etiqueta
       if (hc) { via = " · " + hc[1].trim(); txt = txt.slice(hc[0].length); }
       txt = limpia(p, txt) || "Sin respuesta";
       const ms = Math.round(performance.now() - t0);
@@ -143,14 +148,19 @@ export function montarRoom({ q, tell }) {
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const texto = caja.value.trim();
-    if (!texto || ocupado) return;
+    if (!texto) return;
+    if (ocupado) {  // el Usuario también participa: su mensaje entra en la sala y los siguientes turnos lo ven y le responden
+      caja.value = ""; hist.__sigue = true;
+      hist.append(burbuja(texto, "user")); A.registrar(st.sesion, "user", texto); interv = texto; abajo(); return;
+    }
     const P = participantes(), sel = st.part.map((id) => P.find((p) => p.id === id)).filter(Boolean);
     if (!sel.length) { tell("Elige al menos un participante"); return; }
     if (!window.RIU_HARNESS || !(window.RIU_CONFIG || {}).harnessUrl) { tell("Router aún sin conectar: espera un momento"); return; }
     await listo;
-    ocupado = true; parar = false; bStop.hidden = false; bEnv.disabled = true; pintarCfg(); window.RIU_ROOM.pintar();
+    ocupado = true; parar = false; bStop.hidden = false; bEnv.textContent = "Intervenir"; caja.placeholder = "Intervén en el debate…"; pintarCfg(); window.RIU_ROOM.pintar();
     hist.__sigue = true; caja.value = "";
     hist.append(burbuja(texto, "user")); A.registrar(st.sesion, "user", texto); abajo();
+    tema = texto; interv = "";
     const nombres = sel.map((p) => p.nombre), R = st.rondas;
     try {
       for (let r = 1; r <= R && !parar; r++) {
@@ -158,7 +168,7 @@ export function montarRoom({ q, tell }) {
         for (const p of sel) { if (parar) break; estado.textContent = "Ronda " + r + "/" + R + " · " + p.nombre; await turno(p, nombres, r, R); }
       }
     } finally {
-      ocupado = false; estado.textContent = ""; bStop.hidden = true; bEnv.disabled = false; pintarCfg(); window.RIU_ROOM.pintar();
+      ocupado = false; estado.textContent = ""; bStop.hidden = true; bEnv.textContent = "Debatir"; caja.placeholder = "Tema o mensaje para la sala…"; interv = ""; pintarCfg(); window.RIU_ROOM.pintar();
     }
   });
   bStop.addEventListener("click", () => { parar = true; if (cortar) { try { cortar(); } catch (e) {} } if (window.RIU_CANCELAR) { try { window.RIU_CANCELAR(st.sesion); } catch (e) {} } tell("Deteniendo la sala…"); });
