@@ -21,7 +21,17 @@ export async function mount(root, { api, tell }) {
 
   // ---- multi-chat: hasta 5 estancias, cada una con su sesion, su ficha, sus anclas y su historial ----
   const tabsEl = q("#chat-tabs"), histEl = q("#histories");
-  const abajo = (c) => { if (c.hist.__sigue !== false) c.hist.scrollTop = c.hist.scrollHeight; };  // sigue las respuestas solo si estas cerca del final; el historial tiene su propio scroll
+  const abajo = (c) => {  // sigue las respuestas solo si estas cerca del final; si subiste, aparece "↓ nuevo"
+    if (c.hist.__sigue !== false) { c.hist.scrollTop = c.hist.scrollHeight; if (c.hist.__nuevo) c.hist.__nuevo.hidden = true; return; }
+    let b = c.hist.__nuevo;
+    if (!b) {
+      b = c.hist.__nuevo = document.createElement("button"); b.type = "button"; b.className = "btn-nuevo-abajo"; b.textContent = "↓ nuevo";
+      b.style.cssText = "position:sticky;bottom:8px;left:50%;transform:translateX(-50%);display:block;margin:0 auto;z-index:5;padding:4px 12px;border-radius:14px;font-size:13px";
+      b.addEventListener("click", () => { c.hist.__sigue = true; c.hist.scrollTop = c.hist.scrollHeight; b.hidden = true; });
+      c.hist.addEventListener("scroll", () => { if (c.hist.__sigue) b.hidden = true; }, { passive: true });
+    }
+    c.hist.append(b); b.hidden = false;
+  };  // sigue las respuestas solo si estas cerca del final; el historial tiene su propio scroll
   const mmMovil = window.matchMedia("(max-width: 720px)");
   const reacomodoMovil = () => {
     const h1 = document.querySelector("#h1-slot h1, #h1-slot-int h1");
@@ -553,7 +563,7 @@ export async function mount(root, { api, tell }) {
       if (!d || d.sesion !== c.sesion) return;  // evento de otro chat: ignorar, no quitarse
       const v = window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion);  // progreso aislado: solo mi sesion y, si hay PID guardado, solo mi proceso
       if (v && v.pid && d.proceso_id && d.proceso_id !== v.pid) return;
-      if (d.parcial) { pending.textContent = d.parcial; pending.classList.add('parcial'); try { abajo(c); } catch (x) {} return; }  // texto parcial en stream dentro de la burbuja; la final la reemplaza (pending.remove)
+      if (d.parcial) { const ya = pending.classList.contains('parcial') ? pending.textContent : ''; if (ya && d.parcial.startsWith(ya)) { if (d.parcial.length > ya.length) pending.append(d.parcial.slice(ya.length)); } else pending.textContent = d.parcial; pending.classList.add('parcial'); try { abajo(c); } catch (x) {} return; }  // render incremental: solo se anade el trozo nuevo  // texto parcial en stream dentro de la burbuja; la final la reemplaza (pending.remove)
       if (pending.classList.contains('parcial')) return;  // ya hay texto parcial: no volver a 'Pensando…'
       pending.textContent = d.texto !== undefined ? d.texto : d;
     };

@@ -501,6 +501,16 @@ _SOLO_THINKING: set[str] = set()  # ids que dan 400 'enable_thinking restricted 
 _MIN_MAX_TOKENS = {'glm-5.2': 1024}  # glm-5.2 gasta los tokens razonando: con 64 devuelve content vacio
 
 
+def _sin_razon_previa(ms):
+    # turnos previos: no reenviar reasoning_content (se cobra y sube la latencia); solo la cadena de tools en curso
+    # (assistant con tool_calls seguido de sus tool) lo conserva para preserve_thinking
+    corte = len(ms)
+    while corte > 0 and isinstance(ms[corte - 1], dict) and ms[corte - 1].get('role') in ('tool', 'assistant') and (ms[corte - 1].get('role') == 'tool' or ms[corte - 1].get('tool_calls')):
+        corte -= 1
+    return [({k: v for k, v in m.items() if k != 'reasoning_content'} if (i < corte and isinstance(m, dict) and m.get('role') == 'assistant' and 'reasoning_content' in m) else m)
+            for i, m in enumerate(ms)]
+
+
 def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
     if proveedor == 'qwencloud':  # Team qwen: clave y direccion del sello de la ficha 14 (clave del banco)
         try:
@@ -529,7 +539,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 return ultimo
             if proveedor == 'groq':
                 resta = min(resta, 45)  # una clave lenta no se come el tiempo de las demas
-            cuerpo = {'model': modelo, 'messages': _recortar(mensajes), 'max_tokens': max_tokens}
+            cuerpo = {'model': modelo, 'messages': _sin_razon_previa(_recortar(mensajes)), 'max_tokens': max_tokens}
             if proveedor == 'qwencloud' and modelo in _MAX_COMPLETION:
                 cuerpo['max_completion_tokens'] = cuerpo.pop('max_tokens')  # limite conjunto razonamiento + salida
             if modelo == 'z-ai/glm-5.3':
@@ -608,7 +618,7 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
                 resta = fin - time.monotonic()
                 if resta < 2:
                     break
-                cuerpo['messages'] = _recortar(mensajes)
+                cuerpo['messages'] = _sin_razon_previa(_recortar(mensajes))
                 ultimo = _http('POST', base + '/chat/completions', clave, cuerpo, resta)
             _quitados = [k_ for k_ in ex if k_ in cuerpo] if ultimo[0] == 400 else []
             if _quitados:  # el endpoint no admite algun extra de la politica: UN reintento, mismo modelo, misma clave, sin esos extras

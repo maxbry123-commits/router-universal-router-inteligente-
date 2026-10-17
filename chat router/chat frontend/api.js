@@ -11,7 +11,7 @@ let PBASE = "";  // base de los plugins (chat_async, /resultado): mismo origen e
 const vivos = new Set();
 const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg) vivos.add(reg); const t = setTimeout(() => ac && ac.abort(), ms); return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
 // al volver a la pestaña: cortar los fetch que quedaron colgados en segundo plano; el polling sigue con el mismo proceso_id y un chat_async sin proceso_id se reintenta
-try { document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') return; for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }); } catch (e) {}
+try { const cortarColgados = () => { for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }; document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') cortarColgados(); }); window.addEventListener('online', cortarColgados); window.addEventListener('pageshow', (e) => { if (e.persisted) cortarColgados(); }); } catch (e) {}  // volver a la pestana, recuperar red o volver del bfcache: los fetch colgados se cortan y el polling reintenta
 const usarProxy = () => { try { return /\.vercel\.app$/.test(location.hostname) && localStorage.getItem('riu_proxy') !== '0' && !/[?&]proxy=0/.test(location.search); } catch (e) { return false; } };
 function aplicarBase(url) {
   BASE = url;

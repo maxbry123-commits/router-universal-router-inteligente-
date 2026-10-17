@@ -1553,6 +1553,17 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         clave = secrets.token_urlsafe(24)
         _rid = str(p.get("request_id") or "")[:80]
         with _LOCK:
+            if _rid and _rid not in _RID:  # reinicio del Router: el request_id persistido devuelve el mismo proceso_id
+                try:
+                    _mem, _sf_ = _pc()._memoria()
+                    _rr = _mem.search(_sf_('chat-ui', 'rid:' + _rid), 'rid', 1)
+                    _ff = _rr if isinstance(_rr, list) else next((v for v in (_rr or {}).values() if isinstance(v, list)), [])
+                    for _f in _ff:
+                        _d = _f.get('data', _f) if isinstance(_f, dict) else {}
+                        if isinstance(_d, dict) and _d.get('pid'):
+                            _RID[_rid] = str(_d['pid'])
+                except Exception:  # noqa: BLE001
+                    pass
             if _rid and _rid in _RID:  # idempotente: reintento del cliente con el mismo request_id => mismo proceso_id
                 return {"estado": "procesando", "proceso_id": _RID[_rid], "repetido": True}
             if _rid:
@@ -1570,6 +1581,12 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             _meta(clave, 'A0', '', 'en cola, esperando worker' + (' (rapida)' if _fast_q else ''))
             _prog(clave, 'A0', 'trabajando')  # En cola hasta que el worker toma la tarea; process_id != modelo corriendo
             _ck_guardar(clave, str(p.get('ficha_qwen') or ''), {}, payload=dict(p))  # persiste la tarea: sobrevive reinicio del Router
+            if _rid:
+                try:
+                    _mem, _sf_ = _pc()._memoria()
+                    _mem.save(_sf_('chat-ui', 'rid:' + _rid), 'rid', {'pid': clave, 'ts': time.time()})  # request_id -> proceso_id junto al checkpoint
+                except Exception:  # noqa: BLE001
+                    pass
         return {"estado": "procesando", "proceso_id": clave, "cola": "fast" if _fast_q else "normal"}
     if action == "cola":
         return _cola()
@@ -1602,8 +1619,12 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             finally: _LP_SEM.release()
         if not item[0].done():
             _r = {"estado": "procesando", "proceso_id": p.get("proceso_id"), "progreso": _texto_prog(str(p.get("proceso_id") or ""))}
-            if _PARCIAL.get(str(p.get("proceso_id") or "")):
-                _r["parcial"] = _PARCIAL[str(p.get("proceso_id") or "")]
+            _pk = str(p.get("proceso_id") or "")
+            if _PARCIAL.get(_pk):
+                _r["parcial"] = _PARCIAL[_pk]
+            _r["ts_servidor"] = time.time()
+            _r["fase"] = ('cola' if not item[0].running() else 'escribiendo' if _PARCIAL.get(_pk)
+                          else 'tools' if any(str(v).startswith('usando') for v in (_NOTAS.get(_pk) or {}).values()) else 'pensando')
             if not item[0].running():  # fix 7: el front ve que espera worker, no que el modelo tarda
                 _c = _cola()
                 _r.update(en_cola=True, cola=_c)
