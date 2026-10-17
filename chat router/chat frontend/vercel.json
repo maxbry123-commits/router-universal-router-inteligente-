@@ -13,6 +13,10 @@
       "destination": "https://comand-center-1-riu-router.hf.space/health"
     },
     {
+      "source": "/yaiwes",
+      "destination": "/yaiwes/panel-01.html"
+    },
+    {
       "source": "/",
       "destination": "/shell.html"
     },
@@ -117,6 +121,15 @@
     },
     {
       "source": "/version.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/yaiwes(.*)",
       "headers": [
         {
           "key": "Cache-Control",

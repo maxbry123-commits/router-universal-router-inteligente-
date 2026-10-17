@@ -9,3 +9,5 @@ Origen: maxbry123-commits/frontend, carpeta "UI YAIWES interface" (sin "Backend/
 Cableado: puente-yaiwes.js define window.YAIWES_BRIDGE y usa harness() de chat router/chat frontend/api.js
 (COMPONENTE -> HARNESS puente_chat -> FICHA -> MODELO). PANEL-01-CHAT/index.html carga config.js + puente,
 timeout 700 ms -> 120 s y pinta result.reply. Modelo: localStorage 'yaiwes_modelo' o RIU_CONFIG.defecto.
+
+Servido en Vercel: /yaiwes -> chat router/chat frontend/yaiwes/panel-01.html (+ puente-yaiwes.js). Equipo en localStorage yaiwes_equipo (team-qwen | team-5-mvp), modelo yaiwes_modelo (etiqueta, p.ej. Qwen 3.8 Max).
