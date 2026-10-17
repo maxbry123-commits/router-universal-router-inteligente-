@@ -148,6 +148,13 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                     ev = json.loads(dato)
                 except ValueError:
                     continue
+                if isinstance(ev.get('error'), dict) and not partes and not calls:
+                    # NVIDIA manda el 503 (overloaded) como evento SSE dentro de un HTTP 200: devolver el codigo real, no un 200 vacio
+                    try:
+                        _ce = int(ev['error'].get('code') or 502)
+                    except (TypeError, ValueError):
+                        _ce = 502
+                    return (_ce if 400 <= _ce < 600 else 502), {'error': ev['error']}
                 if isinstance(ev.get('usage'), dict):
                     usage = ev['usage']
                 d_ = ((ev.get('choices') or [{}])[0].get('delta') or {})
@@ -172,6 +179,8 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                         acc['function']['name'] += str(f_['name'])
                     if f_.get('arguments'):
                         acc['function']['arguments'] += str(f_['arguments'])
+            if not partes and not calls and not razon and not usage:
+                return 502, {'error': 'STREAM_VACIO'}  # el proveedor cerro sin datos: no es una respuesta valida
             msg: dict = {'role': 'assistant', 'content': ''.join(partes)}
             if calls:
                 msg['tool_calls'] = [calls[i] for i in sorted(calls)]
@@ -328,7 +337,7 @@ def _herr():
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         mod.LLM_CALL = llm_call  # staff de tools: recurso Ficha 4 por Harness -> HTTP -> Ficha 4
-        mod.LLM_NV = lambda m_, ms_: _llamar_api('nvidia', m_, ms_, 2048, 90, None)  # tool NVIDIA de codigo (claves 2-5)
+        mod.LLM_NV = lambda m_, ms_, t_=90: _llamar_api('nvidia', m_, ms_, 2048, t_, None)  # tool NVIDIA de codigo (claves 2-5)
         _CACHE_H['h'] = mod
     return _CACHE_H['h']
 
@@ -336,7 +345,18 @@ def _herr():
 _BUENA = {}
 _NV_IDX_CHAT = (0,)  # NVIDIA_API_KEY_1: ficha NVIDIA del chat (Glimmer / Nemotron 3 Super)
 _NV_IDX_CODIGO = (1, 2, 3, 4)  # NVIDIA_API_KEY_2..5: ficha de tools NVIDIA de codigo
-_NV_CODIGO = ('z-ai/glm-5.3', 'stepfun-ai/step-5-preview', 'deepseek-ai/deepseek-v4.1-flash')  # comunidad: SWE-bench/LMArena WebDev/OpenRouter (DeepSeek V4.1 Flash da timeout en NVIDIA el 16-oct)
+_NV_CODIGO = ('z-ai/glm-5.3', 'stepfun-ai/step-5-preview', 'deepseek-ai/deepseek-v4.1-flash')
+_NEMO_ULTRA = 'nvidia/nemotron-3-ultra-550b-a55b'  # ficha Nemotron: Ultra primero; 503/404/410 -> Super (FICHAS) sin que el usuario haga nada
+_NEMO_ULTRA_KO = {'hasta': 0.0}  # Ultra caido: 10 min directo a Super para no pagar su 503 en cada mensaje
+
+
+def _llamar_nemotron(modelo, ms, max_tokens, tope, tl):
+    if time.monotonic() >= _NEMO_ULTRA_KO['hasta']:
+        r = _llamar_api('nvidia', _NEMO_ULTRA, ms, max_tokens, min(tope, 30), tl)
+        if r[0] not in (0, 404, 410, 503):
+            return r
+        _NEMO_ULTRA_KO['hasta'] = time.monotonic() + 600
+    return _llamar_api('nvidia', modelo, ms, max_tokens, tope, tl)  # comunidad: SWE-bench/LMArena WebDev/OpenRouter (DeepSeek V4.1 Flash da timeout en NVIDIA el 16-oct)
 
 
 def _sentinela():
@@ -2292,6 +2312,8 @@ def _chat(p):
             tope = min(tope, presupuesto)  # tope corto real por llamada (Team 5 CAP_NONE)
 
         def llamar(ms, tl):
+            if model == 'nv-nemotron-super':
+                return _llamar_nemotron(modelo, ms, max_tokens, tope, tl)
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
         _DEADLINE.set(time.monotonic() + presupuesto)
     else:

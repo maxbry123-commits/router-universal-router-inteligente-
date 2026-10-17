@@ -477,8 +477,9 @@ SISTEMA += ' Tienes groq_agente(nombre, mensaje) para delegar en un agente Groq 
 LLM_CALL = None
 LLM_NV = None
 NV_CODIGO = [('z-ai/glm-5.3', 'GLM-5.3', 'Codigo: 1o de la comunidad (SWE-bench, LMArena WebDev)'),
-             ('stepfun-ai/step-5-preview', 'Step 5 Preview', 'Codigo rapido: 2o en uso real OpenRouter')]
-# deepseek-ai/deepseek-v4.1-flash (1o en uso OpenRouter) queda fuera: timeout >90 s en NVIDIA el 16-oct (3 de 3)
+             ('stepfun-ai/step-5-preview', 'Step 5 Preview', 'Codigo rapido: 2o en uso real OpenRouter'),
+             ('deepseek-ai/deepseek-v4.1-flash', 'DeepSeek V4.1 Flash', 'Codigo: 3a opcion, solo si responde en <30 s')]
+NV_TOPE = {'deepseek-ai/deepseek-v4.1-flash': 30}  # DeepSeek V4.1 Flash dio timeout >90 s el 16-oct: tope 30 s y se salta
 
 
 def _ficha4_texto():
@@ -515,7 +516,7 @@ def llamar_recurso(recurso, sistema, mensaje):
     if recurso.startswith('nvcode:'):
         if not LLM_NV:
             return 'ERROR: harness sin NVIDIA'
-        s_, d = LLM_NV(recurso[7:], msgs)
+        s_, d = LLM_NV(recurso[7:], msgs, NV_TOPE.get(recurso[7:], 90))
         if isinstance(d, dict) and d.get('choices'):
             return str((d['choices'][0].get('message') or {}).get('content') or '')
         return 'ERROR NVIDIA: HTTP %s %s' % (s_, json.dumps(d, ensure_ascii=False)[:200] if isinstance(d, dict) else str(d)[:200])
@@ -550,8 +551,16 @@ def _t_recurso(a):
 
 
 def _t_nvcodigo(a):
-    m = str(a.get('modelo') or NV_CODIGO[0][0])
-    return llamar_recurso('nvcode:' + (m if m in [x[0] for x in NV_CODIGO] else NV_CODIGO[0][0]), 'Eres un programador senior. Responde con codigo correcto y breve, en espanol.', a.get('mensaje'))
+    # cadena: GLM-5.3 -> Step 5 Preview -> DeepSeek V4.1 Flash (<30 s); el modelo pedido va primero
+    ids = [x[0] for x in NV_CODIGO]
+    m = str(a.get('modelo') or '')
+    orden = ([m] if m in ids else []) + [x for x in ids if x != m]
+    r = ''
+    for mod_ in orden:
+        r = llamar_recurso('nvcode:' + mod_, 'Eres un programador senior. Responde con codigo correcto y breve, en espanol.', a.get('mensaje'))
+        if not str(r).startswith('ERROR') and str(r).strip():
+            return r
+    return r
 
 
 def _t_enlazar(a):
@@ -560,7 +569,7 @@ def _t_enlazar(a):
 
 
 TOOLS.extend([
-    _fn('nvidia_codigo', 'Tool NVIDIA de codigo (GLM-5.3 por defecto, o deepseek-ai/deepseek-v4.1-flash): escribe o revisa codigo y devuelve la respuesta.', {'mensaje': S, 'modelo': S}, ['mensaje']),
+    _fn('nvidia_codigo', 'Tool NVIDIA de codigo (GLM-5.3 por defecto; si falla Step 5 Preview y luego DeepSeek V4.1 Flash): escribe o revisa codigo y devuelve la respuesta. modelo opcional: z-ai/glm-5.3, stepfun-ai/step-5-preview o deepseek-ai/deepseek-v4.1-flash.', {'mensaje': S, 'modelo': S}, ['mensaje']),
     _fn('recurso_llm', 'Consulta un recurso LLM del staff de tools (ej. ficha4:ficha-qwen38max, nvcode:z-ai/glm-5.3, groq:openai/gpt-oss-120b) y devuelve su respuesta.', {'recurso': S, 'mensaje': S}, ['recurso', 'mensaje']),
     _fn('agente_enlazar', 'Enlaza un recurso LLM (modelo de la Ficha 4, NVIDIA codigo o Groq) a un agente del staff; si el agente no existe lo crea. Luego usa groq_agente(nombre, mensaje).', {'nombre': S, 'recurso': S, 'sistema': S}, ['nombre', 'recurso']),
 ])
