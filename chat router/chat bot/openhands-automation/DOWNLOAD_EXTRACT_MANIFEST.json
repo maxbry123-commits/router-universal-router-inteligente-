@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 1126649,
+  "bundle_sha256": "9aa6319a5c0a6ae3b4104225c0919158dd1716decbc5881613b1289948c4c0d0",
+  "extracted_tree": {
+    "bytes": 4171441,
+    "files": 276,
+    "sha256": "de80690cd23af031c6485710a4f04d5579ae5b2343db9f2077373c5b90a4d8a3"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 1126649,
+      "name": "openhands-automation.bundle.zip.part-0001",
+      "sha256": "9aa6319a5c0a6ae3b4104225c0919158dd1716decbc5881613b1289948c4c0d0"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "openhands-automation",
+  "source_bytes": 4171441,
+  "source_commit": "bc4cca7c7e2eab5cb7d0ff671bec5dd113d3e2c2",
+  "source_files": 276,
+  "source_ref": "main",
+  "source_repo": "OpenHands/automation",
+  "source_tree": {
+    "bytes": 4171441,
+    "files": 276,
+    "sha256": "de80690cd23af031c6485710a4f04d5579ae5b2343db9f2077373c5b90a4d8a3"
+  }
+}
