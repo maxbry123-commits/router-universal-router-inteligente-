@@ -8,6 +8,8 @@ import { conectarRiu2 } from "./chat-riu2.js";
 import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 import { proyId } from "./objetivos-ancla.js";
 import { montarProyectos } from "./ventana-proyectos.js";
+import { montarRoom } from "./room-conferencias.js";
+import { montarTamano } from "./texto-tamano.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 10;
@@ -91,6 +93,7 @@ export async function mount(root, { api, tell }) {
       tabsEl.append(mas);
     }
     chats.forEach((c, i) => { c.hist.hidden = i !== activo; });
+    try { if (window.RIU_ROOM) window.RIU_ROOM.pintar(); } catch (e) {}  // ROOM CONFERENCIAS: su pestaña y su vista (si está activa, oculta el chat)
     pintarAnclados();
     try { pintarFichaPill(); } catch (e) {}
     { const bd = q("#btn-detener"); if (bd) bd.hidden = false; }  // Detener SIEMPRE visible (restaurado por orden de Antonio)
@@ -193,6 +196,8 @@ export async function mount(root, { api, tell }) {
   };
   try { montarProyectos(root, { tell: (t) => { try { const e = document.createElement("div"); e.className = "item message meta"; e.textContent = t; chat().hist.append(e); } catch (x) {} } }); } catch (e) {}  // ventana Proyectos disponible desde el arranque
   window.RIU_CHAT = { chat, ocupado: () => chats.some((x) => x.ocupado), tokens: () => [...chat().anclados], pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
+  try { montarRoom({ q, tell }); } catch (e) { try { console.warn("room", e); } catch (x) {} }  // ROOM CONFERENCIAS junto a Chat 1/2/3
+  try { montarTamano({ q, tell }); } catch (e) {}  // A− / A+ tamaño del texto del chat
   window.RIU_DESTINO_ARCHIVOS = () => {  // destinoArchivos(): UNICA autoridad de a donde van los archivos segun el objetivo de la ventana-ancla
     const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null;
     if (o && o.tipo === "constitucion") return { destino: "constitucion" };

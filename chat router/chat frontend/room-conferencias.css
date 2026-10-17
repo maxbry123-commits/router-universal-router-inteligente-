@@ -1,0 +1,26 @@
+/* ROOM CONFERENCIAS + tamaño de texto A−/A+ (archivo propio) */
+.room-view{display:flex;flex-direction:column;flex:1 1 0;min-height:0;gap:6px}
+.room-view[hidden]{display:none!important}
+.room-cfg{display:flex;flex-direction:column;gap:6px}
+.room-part{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.room-part .chip{white-space:nowrap;flex:0 0 auto}
+.room-rondas{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.room-n{min-width:1.4em;text-align:center;font-weight:700}
+.room-nueva{margin-inline-start:auto}
+.room-quien{font-size:.78em;font-weight:700;opacity:.8;margin-bottom:3px;letter-spacing:.02em}
+.room-hist .item.meta{font-size:12px;opacity:.7}
+.room-ronda{text-align:center;font-weight:600}
+.room-form{display:flex;flex-direction:column;gap:6px}
+.room-form textarea{min-height:52px;max-height:30vh;resize:vertical}
+.room-barra{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.room-estado{margin-inline-end:auto;font-size:12px}
+#composer.room-oculto{display:none!important}
+.chat-tabs .room-tab{white-space:nowrap;font-weight:700}
+.fs-grupo{display:inline-flex;gap:4px}
+.fs-btn{min-width:38px}
+html.riu-fs #histories .item.message,html.riu-fs #histories .item.message .txt,html.riu-fs #message,html.riu-fs #room-msg{font-size:var(--riu-chat-fs)!important}
+html.riu-fs #histories .item.message .riu-code{font-size:calc(var(--riu-chat-fs) * .88)!important}
+.chat-tabs .room-tab+.chip-borrar,.chat-tabs .room-tab+.chip-confirmar{display:none!important}
+#histories:has(> .room-view:not([hidden])) > .riu-bienvenida{display:none!important}
+.room-hist:empty::before{content:"Elige participantes y rondas, escribe un tema y pulsa Debatir"}
+.room-barra{padding-right:44px}
