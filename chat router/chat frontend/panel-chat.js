@@ -90,11 +90,24 @@ export async function mount(root, { api, tell }) {
       mas.addEventListener("click", nuevoChat);
       tabsEl.append(mas);
     }
+    const rec = node("button", "↺", "mini btn-recuperar-hist"); rec.type = "button"; rec.id = "btn-recuperar-hist"; rec.title = "Recuperar historial y contexto de este chat"; rec.setAttribute("aria-label", "Recuperar historial"); rec.style.borderRadius = "999px";  // sin clase chip: no recibe la X de borrar
+    rec.addEventListener("click", recuperarHist); tabsEl.append(rec);
     chats.forEach((c, i) => { c.hist.hidden = i !== activo; });
     pintarAnclados();
     try { pintarFichaPill(); } catch (e) {}
     { const bd = q("#btn-detener"); if (bd) bd.hidden = false; }  // Detener SIEMPRE visible (restaurado por orden de Antonio)
     guardar();
+  };
+  const recuperarHist = async () => {  // ↺: une copia local + memoria del Router; reabre chats con historial cuya pestaña se perdió
+    const c = chat(); if (c.ocupado) { tell("Ese chat está trabajando: espera o pulsa Detener"); return; }
+    tell("Recuperando historial…"); let pest = 0;
+    try {
+      for (const s of await A.huerfanas(chats.map((x) => x.sesion))) { if (chats.length >= MAX_CHAT) break; const prev = activo; nuevoChat({ sesion: s }); await A.recuperar(chat(), burbuja, api); activo = prev; pest++; }
+      let r = { total: 0, router: 0, routerOk: true };
+      for (const x of chats) if (!x.ocupado) { const y = await A.recuperar(x, burbuja, api); if (x === c) r = y; }  // todos los chats abiertos, no solo el visible
+      pintarTabs(); c.hist.__sigue = true; abajo(c);
+      tell(r.total ? "Historial recuperado: " + r.total + " mensajes" + (r.router ? " (" + r.router + " desde el Router)" : "") + (pest ? " · " + pest + " chat(s) reabiertos" : "") : (r.routerOk ? "No hay historial guardado para este chat" : "Sin conexión con el Router: solo se revisó la copia local"));
+    } catch (e) { tell("No se pudo recuperar el historial"); }
   };
   const nuevoChat = (restaurado) => {
     const h = node("div", "", "chat-history");

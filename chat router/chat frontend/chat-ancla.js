@@ -35,6 +35,31 @@ export const restaurar = async (c, burbuja) => {
   if (ult.rol === "user" && !(window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion))) c.hist.append(burbuja("La respuesta se interrumpió al recargar la página. Reenvía tu mensaje si hace falta.", "meta"));
 };
 
+// ---- recuperar: une la copia local (IndexedDB + cache) con la memoria del Router (/memoria SQLite, sincronizada al bucket) y repinta ----
+const idbClaves = async () => { try { const d = await idb(); return await new Promise((ok) => { const q = d.transaction("h").objectStore("h").getAllKeys(); q.onsuccess = () => ok(q.result || []); q.onerror = () => ok([]); }); } catch (e) { return []; } };
+export const huerfanas = async (activas) => { const out = []; for (const k of await idbClaves()) if (typeof k === "string" && !activas.includes(k) && (await idbLeer(k)).length) out.push(k); return out; };  // chats con historial cuya pestaña se perdió (borrar un chat lo quita de IndexedDB)
+const limpiar = (t) => { let s = String(t || ""); const f = s.lastIndexOf("[FIN INSTRUCCIONES FIJAS]"); if (f >= 0) s = s.slice(f + 25).replace(/\n\n\[ANTES DE RESPONDER:[\s\S]*$/, ""); const p = s.lastIndexOf("\nPREGUNTA:\n"); if (p >= 0) s = s.slice(p + 11); return s.trim(); };  // el Router guarda la pregunta con envoltorios
+const delRouter = async (api, sesion) => {
+  try {
+    const r = await api("/memoria/search?scope=" + encodeURIComponent("chat-ui:chat:" + sesion) + "&query=&k=500");
+    const out = [];
+    ((r && r.results && r.results.sqlite) || []).map((f) => ({ ts: Number(String(f.key || "").replace(/\D/g, "")) || 0, d: f.data || {} })).filter((x) => x.ts && x.d.pregunta !== undefined).sort((a, b) => a.ts - b.ts)
+      .forEach((x) => { out.push({ rol: "user", texto: limpiar(x.d.pregunta), ts: x.ts - 1 }); if (x.d.respuesta) out.push({ rol: "bot", texto: String(x.d.respuesta), ts: x.ts }); });
+    return out;
+  } catch (e) { return null; }
+};
+export const recuperar = async (c, burbuja, api) => {
+  const vistos = new Set(), l = [];
+  for (const m of [...(await idbLeer(c.sesion)), ...cache(c.sesion), ...(memo[c.sesion] || [])]) { const k = m.ts + m.rol + m.texto; if (!vistos.has(k)) { vistos.add(k); l.push(m); } }
+  const rem = api ? await delRouter(api, c.sesion) : null, ya = new Set(l.map((m) => m.rol + "\u0000" + String(m.texto).trim()));
+  let nuevos = 0;
+  for (const m of rem || []) if (m.texto && !ya.has(m.rol + "\u0000" + m.texto)) { l.push(m); nuevos++; }
+  l.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  memo[c.sesion] = l; if (l.length) guardar(c.sesion);
+  c.hist.replaceChildren(...l.map((m) => m.rol === "user" ? burbuja(m.texto, "user") : m.rol === "err" ? burbuja(m.texto, "error") : burbuja(m.texto)));
+  return { total: l.length, router: nuevos, routerOk: rem !== null };
+};
+
 // ---- instrucciones fijas: el modelo las revisa antes de leer la orden, despues de leerla y antes de escribir su salida ----
 export const envolver = (mensaje, instr) => {
   const t = String(instr || "").trim();
