@@ -2,6 +2,8 @@
 
 **Estado: TODO EN PAUSA por orden de Antonio (t101 «Detente», t102 «Pon todo en pausa…»), 16-oct-2026 ~23:15 hora Bogotá (UTC-5).** No hay agentes corriendo. Nada se despliega ni se fusiona hasta que Antonio lo pida.
 
+**Tareas por archivo (17-oct-2026 00:40, hora Bogotá):** ver [`HANDOFF/TAREAS/`](TAREAS/README.md) — 01 backend chat (ACTIVO), 02 frontend chat (ACTIVO), 03 backend Chat BOTS/evolución (EN PAUSA), 04 frontend Chat BOTS propuesta (ACTIVO aparte), 05 descarga con motores (PENDIENTE).
+
 ## 1. Hecho y en producción (main + Space)
 - Latencia del chat resuelta: chat_async + long-poll, idempotencia, parcial en la burbuja. Qwen Max ~2–4.5 s, Flash ~2 s.
 - Qwen Token Plan optimizado (stream, thinking off en simples, reintentos y timeouts).
