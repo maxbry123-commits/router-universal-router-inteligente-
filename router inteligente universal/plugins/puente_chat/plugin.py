@@ -68,6 +68,7 @@ ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO"
 import http.client as _hc
 _CONNECT_S = 5  # conexion TCP/TLS: 5 s; lectura entre chunks aparte (_LECTURA_S)
 _LECTURA_S = 60
+_LECT = ContextVar('riu_lectura_s', default=60.0)  # Kimi: lectura larga solo para ese modelo
 
 
 class _ConnT(_hc.HTTPSConnection):
@@ -91,7 +92,7 @@ _OPENER = urllib.request.build_opener(_HttpsT())
 
 
 def _abrir(req, espera):  # connect 5 s; lectura (cabeceras y cada chunk) min(espera, 60 s)
-    return _OPENER.open(req, timeout=max(1.0, min(float(espera), _LECTURA_S)))
+    return _OPENER.open(req, timeout=max(1.0, min(float(espera), _LECT.get())))
 
 
 def _http(metodo: str, url: str, token: str, cuerpo: Any = None, espera: float = 60) -> tuple[int, Any]:
@@ -2118,7 +2119,8 @@ def _chat(p):
         return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
-    presupuesto = 96 if model == 'nv-glm-5-3' else TOPE_TOTAL_S
+    presupuesto = 96 if model == 'nv-glm-5-3' else int(FICHAS[model][3]) + 5 if model in ('nv-kimi-k3', 'nv-muse-glimmer') else TOPE_TOTAL_S  # Kimi: timeout de su ficha (>1,6 min)
+    _LECT.set(float(FICHAS[model][3]) if model == 'nv-kimi-k3' else _LECTURA_S)
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))
     _MOTOR_HAB.set(bool(p.get('motor')))  # ⚙ Motor: solo cuando el toggle del chat esta ON
     _AUDIT.set([])  # auditoria de cada llamada HTTP al modelo de ESTA peticion (requisito forense, sin secretos)
@@ -2414,6 +2416,16 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         return _estado(payload)
     if action == "apagar":
         return _apagar(payload)
+    if action == 'groq_agentes':  # ventana de tools: listar / guardar el pool de agentes Groq (max 20)
+        h = _herr()
+        if isinstance(payload.get('agentes'), list):
+            return h.groq_guardar(payload['agentes'])
+        return {'agentes': h.groq_pool(), 'max': h.GROQ_MAX, 'modelos': list(h.GROQ_MODELOS)}
+    if action == 'tools_estado':  # ventana Configuracion: fichas, modelos, tools y agentes
+        h = _herr()
+        return {'fichas': [{'id': k, 'nombre': v[0], 'proveedor': v[1], 'modelo': v[2], 'timeout_s': v[3]} for k, v in FICHAS.items() if k in ('nv-muse-glimmer', 'nv-kimi-k3')],
+                'tools': [t['function']['name'] for t in h.TOOLS], 'agentes': h.groq_pool(),
+                'claves': {'github': bool(h._token_gh()), 'hf': bool(h._token_hf()), 'groq': len(h._llaves('groq', ['GROQ_API_KEY'] + ['GROQ_API_KEY_%d' % i for i in range(1, 11)])), 'nvidia': len(h._llaves('nvidia', []))}}
     if action == 'herramientas_estado':
         h = _herr()
         return {'github': bool(h._token_gh()), 'hf': bool(h._token_hf())}

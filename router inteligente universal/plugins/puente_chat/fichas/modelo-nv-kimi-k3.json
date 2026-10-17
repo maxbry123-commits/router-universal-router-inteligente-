@@ -3,7 +3,7 @@
   "nombre": "NV Kimi K3",
   "proveedor": "nvidia",
   "modelo": "moonshotai/kimi-k3",
-  "timeout_s": 90,
+  "timeout_s": 125,
   "tipo": "api",
   "claves": "banco",
   "rotacion": "mismo-modelo",

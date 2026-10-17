@@ -66,7 +66,7 @@ export async function mount(root, { api, tell }) {
   const pintarFichaPill = () => {
     const et = fichaEt(chat().ficha);
     const t = (et ? et.etiqueta : "modelo").replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "").trim(); const fp = q("#ficha"); if (!fp) return;  // vista movil: la pildora puede no existir -> no romper el envio
-    fp.textContent = "Nvidia groq team ⌄"; fp.title = "Nvidia groq team · " + t; fp.dataset.ficha = t;  // selector 1 (sin emojis de color)
+    fp.textContent = "NVIDIA ⌄"; fp.title = "NVIDIA · " + t; fp.dataset.ficha = t;  // selector 1 (sin emojis de color)
   };
   const FAST_SEL = () => /^(team-qwen|ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team)$/.test((window.RIU_SELECTORES && window.RIU_SELECTORES.activo) || "");  // ⚡ solo cuenta con un selector de ficha encendido
   const pintarFastReply = () => {  // ⚡ Respuesta rápida: el estado es de cada chat; los botones viven junto a cada selector de ficha
@@ -102,7 +102,7 @@ export async function mount(root, { api, tell }) {
     histEl.append(h);
     chats.push({
       sesion: restaurado?.sesion || "web-" + Math.random().toString(36).slice(2, 10),
-      ficha: restaurado?.ficha || defecto,
+      ficha: fichaEt(restaurado?.ficha) ? restaurado.ficha : defecto,  // fichas NVIDIA viejas guardadas -> Glimmer
       hist: h,
       anclados: new Set(restaurado?.anclados || []),
       selectorQwen: restaurado?.selectorQwen || null,

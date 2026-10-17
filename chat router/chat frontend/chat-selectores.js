@@ -4,8 +4,7 @@
 // window.RIU_SELECTORES { activo, selectores, consil, encender(id), apagar() } + evento 'riu:selector-activo' { activo, anterior, nombre }.
 const CLAVE = "riu_selector_activo";  // sessionStorage: sobrevive a recargas en esta pestaña
 const SELECTORES = [  // nombres exactos de Antonio
-  { id: "nvidia-groq-team", nombre: "Nvidia groq team", pills: ["#sel-ngt", "#ficha"] },
-  { id: "ask-consil-nvidia-groq", nombre: "Ask consil Nvidia groq", pills: ["#sel-cn"] },
+  { id: "nvidia-groq-team", nombre: "NVIDIA", pills: ["#sel-ngt", "#ficha"] },  // ficha NVIDIA: Glimmer / Kimi K3 (Groq va como tool)
   { id: "team-qwen", nombre: "Team qwen", pills: ["#sel-nuevo"] },  // los 14 modelos QwenCloud
   { id: "ask-consil-code-qwen-team", nombre: "Ask cónsil code qwen team", pills: ["#sel-cc"] },
   { id: "ask-consil-fromtend-qwen-team", nombre: "Ask consil fromtend qwen team", pills: ["#sel-cf"] },

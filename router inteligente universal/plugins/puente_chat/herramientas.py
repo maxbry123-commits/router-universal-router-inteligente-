@@ -398,3 +398,68 @@ FUNCS.update({'internet_leer':internet_leer,'internet_buscar':internet_buscar})
 SISTEMA += ' Tambien tienes internet_buscar e internet_leer para consultar la web publica.'
 
 SISTEMA += ' Si una herramienta falla, explica el error; no inventes su resultado.'
+
+# --- Groq: una sola ficha como tool para enrutar a agentes (pool de hasta 20) ---
+GROQ_MAX = 20
+GROQ_RUTA = 'agentes/groq-pool.json'
+GROQ_MODELOS = ('openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'qwen/qwen3.8-27b')
+_GROQ_DEF = [
+    {'nombre': 'investigador', 'modelo': 'openai/gpt-oss-20b', 'sistema': 'Eres un investigador. Responde con datos concretos y breves, en espanol.'},
+    {'nombre': 'programador', 'modelo': 'openai/gpt-oss-120b', 'sistema': 'Eres un programador senior. Responde con codigo corto y correcto, en espanol.'},
+    {'nombre': 'redactor', 'modelo': 'openai/gpt-oss-20b', 'sistema': 'Eres un redactor. Escribe textos claros y breves en espanol.'},
+]
+_GROQ = {'pool': None, 'i': 0}
+
+
+def groq_pool():
+    if _GROQ['pool'] is None:
+        txt = hf_almacenamiento({'accion': 'leer', 'ruta': GROQ_RUTA})
+        try:
+            p = json.loads(txt)
+            _GROQ['pool'] = [a for a in p if isinstance(a, dict) and a.get('nombre')][:GROQ_MAX] if isinstance(p, list) else list(_GROQ_DEF)
+        except ValueError:
+            _GROQ['pool'] = list(_GROQ_DEF)
+    return _GROQ['pool']
+
+
+def groq_guardar(pool):
+    limpio, vistos = [], set()
+    for a in pool or []:
+        n = re.sub(r'[^a-z0-9_-]', '', str((a or {}).get('nombre') or '').lower())[:40]
+        if not n or n in vistos:
+            continue
+        vistos.add(n)
+        m = str(a.get('modelo') or GROQ_MODELOS[0])
+        limpio.append({'nombre': n, 'modelo': m if m in GROQ_MODELOS else GROQ_MODELOS[0], 'sistema': str(a.get('sistema') or '')[:600]})
+    if len(limpio) > GROQ_MAX:
+        return {'error': 'MAXIMO_%d_AGENTES' % GROQ_MAX}
+    _GROQ['pool'] = limpio
+    r = hf_almacenamiento({'accion': 'escribir', 'ruta': GROQ_RUTA, 'contenido': json.dumps(limpio, ensure_ascii=False)})
+    return {'ok': True, 'agentes': limpio, 'guardado': r.startswith('OK')}
+
+
+def groq_agente(a):
+    nombre = str(a.get('nombre') or '').lower().strip()
+    ag = next((x for x in groq_pool() if x['nombre'] == nombre), None)
+    if not ag:
+        return 'ERROR: agente desconocido. Agentes: ' + ', '.join(x['nombre'] for x in groq_pool())
+    claves = _llaves('groq', ['GROQ_API_KEY'] + ['GROQ_API_KEY_%d' % i for i in range(1, 11)])
+    if not claves:
+        return 'ERROR: no hay claves de Groq'
+    cuerpo = {'model': ag['modelo'], 'max_tokens': 1500, 'messages': [{'role': 'system', 'content': ag['sistema'] or 'Responde en espanol.'}, {'role': 'user', 'content': str(a.get('mensaje') or '')[:8000]}]}
+    ultimo = ''
+    for _ in range(len(claves)):
+        k = claves[_GROQ['i'] % len(claves)]
+        _GROQ['i'] += 1
+        s, d = _peticion('POST', 'https://api.groq.com/openai/v1/chat/completions', k, cuerpo, 45)
+        if s == 200 and isinstance(d, dict) and d.get('choices'):
+            return '[' + ag['nombre'] + ' · ' + ag['modelo'] + '] ' + str(d['choices'][0]['message'].get('content') or '')
+        ultimo = 'HTTP %s' % s
+        if s not in (0, 401, 403, 429) and s < 500:
+            break
+    return 'ERROR Groq: ' + ultimo
+
+
+TOOLS.append(_fn('groq_agente', 'Enruta un mensaje a uno de los agentes Groq conectados (pool de hasta 20) y devuelve su respuesta. nombre: nombre del agente (ej. investigador, programador, redactor).', {'nombre': S, 'mensaje': S}, ['nombre', 'mensaje']))
+FUNCS['groq_agente'] = groq_agente
+SISTEMA += ' Tienes groq_agente(nombre, mensaje) para delegar en un agente Groq del pool.'
