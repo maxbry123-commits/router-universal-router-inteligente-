@@ -2,11 +2,25 @@
 // (hilo, system, memoria, archivos y sandbox propios), max 50 por seccion. Antonio les escribe desde aqui.
 // Backend: plugin orquestador; LLM por HTTP al harness puente_chat. Cambio quirurgico: solo inserta #chat-bots antes de #histories.
 import { accion } from "./api.js";
+import { crearCola, marcarEnCola, devolverACaja } from "./cola-envio.js";
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const btn = (txt, cls, fn, id) => { const b = el("button", cls || "secondary", txt); b.type = "button"; if (id) b.id = id; b.onclick = fn; return b; };
 const ESTADO_TXT = { activo: "Activo", trabajando: "Trabajando", bloqueado: "Bloqueado", aprobacion: "Necesita aprobación", terminado: "Terminado", error: "Error" };
 const fmt = (ms) => Math.floor(ms / 1000) + " s " + String(ms % 1000).padStart(3, "0") + " ms";
 let MODELOS = [], AGENTES = [], SEL = null, timer = null, SECCION = "";
+// escribir sin esperar: mientras el agente trabaja la caja sigue libre; lo enviado queda "en cola" (por agente) y sale en orden cuando termina
+// (el plugin acepta un turno por agente: AGENTE_OCUPADO). pintar() redibuja el panel, así que la cola guarda solo textos.
+const COLAS = {}, ENVIANDO = {};
+const ocupadoAg = (id) => !!ENVIANDO[id] || (AGENTES.find((a) => a.id === id) || {}).estado === "trabajando";
+const colaDe = (id) => COLAS[id] || (COLAS[id] = crearCola({ ocupado: () => ocupadoAg(id), enviar: (x) => { enviarYa(id, x.texto); } }));
+async function enviarYa(id, t) {
+  ENVIANDO[id] = true; let r = {};
+  try { r = await orq("enviar", { id, mensaje: t }); } catch (x) { r = { error: x.message }; }
+  ENVIANDO[id] = false;
+  if (r.error === "AGENTE_OCUPADO") colaDe(id).items.unshift({ texto: t });  // seguía ocupado: vuelve al frente de la cola, no se pierde
+  else if (r.error) alert(r.error);
+  await refrescar();
+}
 
 async function orq(acc, payload) {
   let base = ""; try { base = localStorage.getItem("riu_orq_base") || ""; } catch (e) {}
@@ -68,8 +82,9 @@ function seccion(a) {
   const st = el("div", "orq-stream"); st.id = "orq-stream"; (a.stream || []).slice(-4).forEach((l) => st.append(el("div", "", l)));
   const hilo = el("div", "orq-hilo"); hilo.id = "orq-hilo";
   (a.mensajes || []).forEach((m) => { const d = el("div", "orq-msg " + m.role, m.content); if (m.ms) d.append(el("em", "", fmt(m.ms))); hilo.append(d); });
+  colaDe(a.id).items.forEach((x) => { const d = el("div", "orq-msg user", x.texto); marcarEnCola(d, true); hilo.append(d); });  // lo que espera turno, marcado "en cola"
   const inp = el("input"); inp.placeholder = "Escríbele a " + a.nombre + "…"; inp.id = "orq-input";
-  const enviar = async () => { const t = inp.value.trim(); if (!t) return; inp.value = ""; const r = await orq("enviar", { id: a.id, mensaje: t }); if (r.error) alert(r.error); await refrescar(); };
+  const enviar = async () => { const t = inp.value.trim(); if (!t) return; inp.value = ""; if (colaDe(a.id).poner({ texto: t })) { await pintar(); inp.focus(); } };  // ocupado -> en cola (se ve en el hilo); libre -> sale ya
   inp.onkeydown = (e) => { if (e.key === "Enter") enviar(); };
   const plus = el("div", "orq-plus"); plus.hidden = true; plus.id = "orq-plus";
   const file = el("input"); file.type = "file"; file.id = "orq-file";
@@ -81,6 +96,8 @@ function seccion(a) {
   hablar.title = "Hablar con el agente que ejecuta la tarea";
   const fila = el("div", "orq-row"); fila.append(btn("+", "secondary", () => { plus.hidden = !plus.hidden; }, "orq-mas"), inp, hablar, btn("Enviar", "action", enviar, "orq-enviar"));
   const acc = el("div", "orq-row");
+  const nCola = colaDe(a.id).length;
+  if (nCola) { const vc = btn("✕ cola (" + nCola + ")", "secondary", () => { const caja = document.getElementById("orq-input"); devolverACaja(caja, colaDe(a.id).vaciar().map((x) => x.texto)); pintar(); }, "orq-vaciar-cola"); vc.title = "Quitar lo que está en cola y devolverlo a la caja (lo que ya corre sigue)"; acc.append(vc); }  // en su fila: la caja no se encoge
   const ej = btn("▶ Ejecutar", "secondary", async () => { ej.disabled = true; const r = await orq("ejecutar", { id: a.id }); if (r.error) alert(r.error); ej.disabled = false; refrescar(); }, "orq-ejecutar"); ej.title = "Ejecuta en su sandbox aislado el último bloque de código del agente";
   if (a.estado === "aprobacion") acc.append(btn("✅ Aprobar", "action", async () => { await orq("aprobar", { id: a.id }); refrescar(); }, "orq-aprobar"));
   acc.append(ej, btn("🪞 Mirror", "secondary", () => mirror(a.id), "orq-mirror"), btn("🗑", "secondary", async () => { if (!confirm("¿Borrar " + a.nombre + " y su sandbox?")) return; await orq("borrar", { id: a.id }); SEL = null; refrescar(); }, "orq-borrar"));
@@ -113,6 +130,7 @@ async function pintar() {
   if (plusAb && document.getElementById("orq-plus")) document.getElementById("orq-plus").hidden = false;
   if (depAb && document.getElementById("orq-deploy")) document.getElementById("orq-deploy").open = true;
   if (foco && document.getElementById(foco) && foco !== "orq-file") document.getElementById(foco).focus();
+  for (const id in COLAS) if (COLAS[id].length && !ocupadoAg(id)) COLAS[id].siguiente();  // terminó el turno: sale el siguiente en cola
   clearTimeout(timer);
   if (AGENTES.some((a) => a.estado === "trabajando")) timer = setTimeout(refrescar, 1200);
 }
