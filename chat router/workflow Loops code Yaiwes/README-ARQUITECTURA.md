@@ -45,8 +45,9 @@ Los workflows no se editan, así que estos originales siguen en su sitio. Si cam
 ## Hermes y OpenClaw (base permanente del chat; vivos, no se mueven)
 
 - Hermes: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/hermes-agent-v2026.9.24
-- Hermes (copia en Componentes del Router): https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/Componentes%20del%20Router/hermes-agent
 - OpenClaw: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/router%20inteligente%20universal/Componente%20open%20soure%20router%20inteligente%20universal/openclaw-v2026.9.6
+
+Espejo: no hace falta mantener 2 copias; una sola copia basta y este enlace es el "espejo". La copia vieja de Hermes (Componentes del Router/hermes-agent, v2026.9.14) se borró en t145u.
 
 ## Movido (no cableado; original borrado)
 
