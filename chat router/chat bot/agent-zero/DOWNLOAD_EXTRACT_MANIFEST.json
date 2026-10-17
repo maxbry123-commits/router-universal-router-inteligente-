@@ -1,0 +1,45 @@
+{
+  "bundle_bytes": 29521469,
+  "bundle_sha256": "ea18aeb67bc28515a3d98e390d73b6a09d24a597a5f1ec10a603d03803a344dc",
+  "extracted_tree": {
+    "bytes": 49181608,
+    "files": 3105,
+    "sha256": "846fc593a8024d3e8fec40f973d9f54b77de55e5477b84e0439d1b7d8f20d40c"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "agent-zero.bundle.zip.part-0001",
+      "sha256": "cd2b1def53d1bca4de675e56a6de2591b863603e4d9548d88ae895443b7abbaa"
+    },
+    {
+      "bytes": 12582912,
+      "name": "agent-zero.bundle.zip.part-0002",
+      "sha256": "626bd3f916b539ed652173972230f6a8695b0ca682d8e5b99149238acc552959"
+    },
+    {
+      "bytes": 4355645,
+      "name": "agent-zero.bundle.zip.part-0003",
+      "sha256": "d762dfacddc17d2224e6b9587c29945bfb1e4dfbce40681f1fe3c8c7b9e28f87"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "agent-zero",
+  "source_bytes": 49181608,
+  "source_commit": "ff2a5b9c9c4e490ba38dd7c313e779510bb2071a",
+  "source_files": 3105,
+  "source_ref": "main",
+  "source_repo": "agent0ai/agent-zero",
+  "source_tree": {
+    "bytes": 49181608,
+    "files": 3105,
+    "sha256": "846fc593a8024d3e8fec40f973d9f54b77de55e5477b84e0439d1b7d8f20d40c"
+  }
+}
