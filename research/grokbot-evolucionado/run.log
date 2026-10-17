@@ -1,0 +1,83 @@
+1 2 24.936 Canal de Mensajes Directos entre Agentes mediante MCP "AgentLink"
+2 3 24.923 Panel de Monitoreo y Control de Subagentes en Tiempo Real
+3 None 211.517 Handler de Handoff Automático al Agotar el Plan Semanal
+4 2 21.217 Almacén de Contexto Persistente por Proyecto
+5 3 23.41 Entorno de Emulador Android integrado para verificación E2E automática
+6 2* 15.664 Caché Semántico Compartido para Resultados de Modelos
+7 2 19.916 Políticas de Aprobación Dinámicas por Proyecto con Firmas MCP
+8 3 14.611 Sala de Conferencias Multi‑Modelo para Debates Internos
+9 2* 15.549 Gestor de Credenciales Integrado con Vault Local y MCP
+10 2 25.991 Herramienta Nativa de Invocación Harness→Ficha para Grok Bot
+11 3 40.361 Orquestador de Despliegues Inmutables con Rollback MCP
+12 2* 46.671 Compañero Móvil Seguro (PWA + Túnel MCP) para Control Remoto de Grok Bot
+13 2 9.462 Conductor de Integración con Triple Revisión Automatizada (Gate-3 MCP)
+14 3 17.166 Watchdog Autónomo de Salud de Agentes y Despliegues con Autorrecuperación MCP
+15 2* 15.909 Visor Automático de Resultados Visuales Integrado
+16 2 14.441 Cola de Dudas Asíncrona
+17 3 28.485 Visor de Métricas de Latencia y Costo por Tarea en Tiempo Real
+18 2* 20.063 Registro Local de Snippets Reutilizables con Pruebas y Verificador de Compatibilidad
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/urllib/request.py", line 1319, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+              encode_chunked=req.has_header('Transfer-encoding'))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/client.py", line 1367, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/client.py", line 1413, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/client.py", line 1362, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/http/client.py", line 1122, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "/usr/lib/python3.13/http/client.py", line 1066, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/http/client.py", line 1501, in connect
+    super().connect()
+    ~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/http/client.py", line 1032, in connect
+    self.sock = self._create_connection(
+                ~~~~~~~~~~~~~~~~~~~~~~~^
+        (self.host,self.port), self.timeout, self.source_address)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/socket.py", line 864, in create_connection
+    raise exceptions[0]
+  File "/usr/lib/python3.13/socket.py", line 849, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+TimeoutError: timed out
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/research/run_consil.py", line 47, in <module>
+    r=ask(msg,fq,False,limit=120 if fq is None else 400)
+  File "/workspace/research/consil.py", line 11, in ask
+    t=time.time(); e=post('/chat_async',body); res=e.get('result') or {}
+                     ~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/research/consil.py", line 5, in post
+    with urllib.request.urlopen(r,timeout=to) as x: return json.load(x)
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/urllib/request.py", line 189, in urlopen
+    return opener.open(url, data, timeout)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/urllib/request.py", line 489, in open
+    response = self._open(req, data)
+  File "/usr/lib/python3.13/urllib/request.py", line 506, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+                              '_open', req)
+  File "/usr/lib/python3.13/urllib/request.py", line 466, in _call_chain
+    result = func(*args)
+  File "/usr/lib/python3.13/urllib/request.py", line 1367, in https_open
+    return self.do_open(http.client.HTTPSConnection, req,
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        context=self._context)
+                        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/urllib/request.py", line 1322, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error timed out>
