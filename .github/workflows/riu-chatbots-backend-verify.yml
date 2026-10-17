@@ -1,0 +1,43 @@
+name: RIU Chat BOTS backend verify
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [wip/chatbots-backend-mvp]
+    paths:
+      - 'router inteligente universal/plugins/orquestador/**'
+      - 'router inteligente universal/plugins/puente_chat/herramientas.py'
+      - 'router inteligente universal/plugins/puente_chat/capacidad.py'
+      - 'router inteligente universal/tests/test_orquestador_mvp.py'
+      - '.github/workflows/riu-chatbots-backend-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            router inteligente universal/plugins/__init__.py
+            router inteligente universal/plugins/orquestador
+            router inteligente universal/plugins/puente_chat
+            router inteligente universal/tests/test_orquestador_mvp.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check pytest
+      - name: Compilar y probar MVP backend Chat BOTS
+        working-directory: 'router inteligente universal'
+        run: |
+          python -m py_compile plugins/orquestador/*.py plugins/puente_chat/herramientas.py plugins/puente_chat/capacidad.py
+          python -m pytest -q -p no:cacheprovider tests/test_orquestador_mvp.py
+      - name: Sin credenciales en el codigo
+        run: |
+          ! grep -RInE 'hf_[A-Za-z0-9]{30,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|sk-[A-Za-z0-9_-]{32,}' \
+            'router inteligente universal/plugins/orquestador' 'router inteligente universal/tests/test_orquestador_mvp.py' || { echo 'credential pattern found'; exit 1; }
