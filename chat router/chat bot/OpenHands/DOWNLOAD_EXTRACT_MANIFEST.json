@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 11980079,
+  "bundle_sha256": "50a346cbd208bbdfe187393cd0ba8f0d645cbb5f1fc1aaee4e365a9da4254afa",
+  "extracted_tree": {
+    "bytes": 27694132,
+    "files": 2725,
+    "sha256": "4a00f4a9119de3db7ce171650060cda0774979f83c2d60e2a8592f42d55211f5"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 11980079,
+      "name": "OpenHands.bundle.zip.part-0001",
+      "sha256": "50a346cbd208bbdfe187393cd0ba8f0d645cbb5f1fc1aaee4e365a9da4254afa"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "OpenHands",
+  "source_bytes": 27694132,
+  "source_commit": "852132d38dbc15e03d6825bbacbeb971c72575be",
+  "source_files": 2725,
+  "source_ref": "main",
+  "source_repo": "OpenHands/OpenHands",
+  "source_tree": {
+    "bytes": 27694132,
+    "files": 2725,
+    "sha256": "4a00f4a9119de3db7ce171650060cda0774979f83c2d60e2a8592f42d55211f5"
+  }
+}
