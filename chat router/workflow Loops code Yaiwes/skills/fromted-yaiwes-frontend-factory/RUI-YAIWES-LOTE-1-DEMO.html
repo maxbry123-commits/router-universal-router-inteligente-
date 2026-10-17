@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rare UI → YAIWES · Lote 1</title>
+<style>
+:root{
+  --bg:#151515;--surface:#1d1d1d;--card:#232323;--line:#333;--text:#efefef;--muted:#a6a6a6;
+  --yai-bg:#1B1B1B;--yai-panel:#202020;--yai-card:#2A2A2A;--yai-selected:#3C3C3C;--yai-mask:#484848;
+  --yai-border:#3A3A3A;--yai-border-strong:#525252;--yai-text:#EDEDED;--yai-muted:#A0A0A0;--yai-accent:#0848F7;
+  --rare-orange:#FC4C01;--rare-inactive:#868593;--rare-bar:#262626;--rare-bar-text:#F4F4F9;
+  --rare-drawer:#FEFFFE;--rare-row:#F7F8F9;--rare-dark:#222222;--rare-muted:#999999;--rare-blue:#4DAFFF;--rare-red:#FF3F40;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit}
+body{min-height:100dvh}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(21,21,21,.92);backdrop-filter:blur(16px);border-bottom:1px solid #2a2a2a;padding:14px 18px}
+.topbar-inner{max-width:1500px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand small{display:block;color:#8e8e8e;text-transform:uppercase;letter-spacing:.16em;font-size:10px;font-weight:800}
+.brand h1{font-size:18px;margin:4px 0 0}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tabs button{border:1px solid #383838;background:#222;color:#aaa;border-radius:999px;padding:8px 12px;cursor:pointer}
+.tabs button.active{border-color:var(--yai-accent);background:#26314e;color:#fff}
+.page{max-width:1500px;margin:auto;padding:18px}
+.notice{border:1px solid #303030;background:#1b1b1b;border-radius:18px;padding:14px 16px;color:#bdbdbd;font-size:12px;line-height:1.6;margin-bottom:16px}
+.demo{display:none}.demo.active{display:block}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.frame{border:1px solid #323232;border-radius:24px;background:#1a1a1a;overflow:hidden;min-height:590px}
+.frame.yai{background:var(--yai-bg);border-color:var(--yai-border)}
+.frame-head{padding:16px 18px;border-bottom:1px solid #303030;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.frame.yai .frame-head{border-color:var(--yai-border)}
+.frame-head strong{font-size:14px}.frame-head span{font-size:10px;color:#8f8f8f;text-transform:uppercase;letter-spacing:.12em}
+.stage{padding:24px;min-height:520px;position:relative;overflow:hidden}
+.frame.yai .stage{background:var(--yai-bg)}
+.helper{color:#8e8e8e;font-size:11px;margin:0 0 18px;line-height:1.5}
+.component-card{max-width:390px;margin:35px auto;background:#202020;border:1px solid #343434;border-radius:22px;padding:24px}
+.frame.yai .component-card{background:var(--yai-card);border-color:var(--yai-border)}
+.component-title{margin:0 0 18px;font-size:13px;color:#aaa;text-transform:uppercase;letter-spacing:.13em}
+
+/* Bounce */
+.bounce-list{position:relative;display:flex;flex-direction:column;gap:4px;padding-left:26px;max-width:250px;margin:auto}
+.bounce-dot{position:absolute;left:8px;top:0;width:6px;height:6px;border-radius:50%;transition:transform .28s cubic-bezier(.2,.85,.25,1),opacity .15s}
+.bounce-item{height:32px;border:0;background:transparent;color:#777;text-align:left;border-radius:8px;padding:4px 6px;cursor:pointer;transition:color .2s,background .2s}
+.bounce-item.active{color:#f5f5f5}.bounce-item:hover{background:#2a2a2a}
+.frame.yai .bounce-item{color:#858585}.frame.yai .bounce-item.active{color:var(--yai-text)}.frame.yai .bounce-item:hover{background:var(--yai-selected)}
+
+/* Hook */
+.hook-wrap{position:relative;max-width:250px;margin:auto;padding-left:20px}
+.hook-label{font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.hook-rail-base{position:absolute;left:2px;top:0;width:1px;height:0;background:repeating-linear-gradient(to bottom,currentColor 0 2px,transparent 2px 4px);transition:height .36s cubic-bezier(.2,.8,.2,1);color:var(--rare-orange)}
+.hook-corner{position:absolute;left:2px;width:12px;height:7px;border-left:1px dashed currentColor;border-bottom:1px dashed currentColor;border-radius:0 0 0 6px;transition:top .36s cubic-bezier(.2,.8,.2,1);color:var(--rare-orange)}
+.hook-item{display:block;width:100%;height:34px;border:0;background:transparent;text-align:left;color:#727272;padding:6px 8px 6px 16px;border-radius:8px;cursor:pointer}.hook-item.active{color:#fff}
+.frame.yai .hook-item{color:#868686}.frame.yai .hook-item.active{color:var(--yai-text)}
+.frame.yai .hook-rail-base,.frame.yai .hook-corner{color:var(--yai-accent)}
+
+/* Proximity */
+.prox-shell{display:grid;grid-template-columns:130px 1fr;gap:20px;height:410px;max-width:500px;margin:auto}
+.prox-nav{display:flex;flex-direction:column;justify-content:center;gap:13px;align-items:flex-start;padding-left:10px}
+.prox-dash{height:1px;border:0;background:#a7a7a7;transform-origin:left center;width:var(--base);transition:width .16s ease,background .15s;cursor:pointer;padding:0}
+.prox-dash[data-kind="body"]{background:#666}.prox-dash.active{background:#fff}
+.frame.yai .prox-dash{background:#707070}.frame.yai .prox-dash.active{background:var(--yai-text)}
+.prox-doc{overflow:auto;height:410px;padding-right:6px}.prox-doc section{min-height:190px;padding:12px 14px;border-bottom:1px solid #303030}.prox-doc h3{margin:0 0 8px}.prox-doc p{color:#8f8f8f;line-height:1.7;font-size:12px}
+
+/* Gooey */
+.gooey-shell{display:flex;justify-content:center;align-items:center;height:360px}
+.gooey-nav{position:relative;display:flex;gap:4px;background:var(--rare-bar);border-radius:999px;padding:5px;isolation:isolate}
+.gooey-blob{position:absolute;top:5px;bottom:5px;border-radius:999px;background:var(--rare-orange);transition:left .36s cubic-bezier(.2,.9,.2,1),width .36s cubic-bezier(.2,.9,.2,1);z-index:-1;box-shadow:0 0 0 5px rgba(252,76,1,.08)}
+.gooey-btn{border:0;background:transparent;color:var(--rare-inactive);padding:10px 14px;border-radius:999px;cursor:pointer;transition:color .2s;white-space:nowrap}.gooey-btn.active{color:#fff}
+.frame.yai .gooey-nav{background:var(--yai-card);border:1px solid var(--yai-border)}
+.frame.yai .gooey-blob{background:var(--yai-accent);box-shadow:0 0 0 5px rgba(8,72,247,.09)}
+.frame.yai .gooey-btn{color:var(--yai-muted)}.frame.yai .gooey-btn.active{color:#fff}
+
+/* Family Drawer */
+.drawer-demo{height:470px;position:relative;display:flex;align-items:flex-end;justify-content:center;background:#101010;border-radius:18px;overflow:hidden}
+.drawer-launch{position:absolute;top:24px;left:50%;transform:translateX(-50%);border:1px solid #dedede;background:#fff;color:#111;border-radius:999px;padding:10px 16px;cursor:pointer}
+.drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .25s}
+.drawer{width:min(361px,calc(100% - 28px));border-radius:36px 36px 26px 26px;background:var(--rare-drawer);color:var(--rare-dark);padding:22px 18px 18px;transform:translateY(110%);transition:transform .38s cubic-bezier(.2,.85,.25,1);box-shadow:0 26px 60px rgba(0,0,0,.35)}
+.drawer-demo.open .drawer{transform:translateY(-14px)}.drawer-demo.open .drawer-overlay{opacity:1;pointer-events:auto}
+.drawer-handle{width:44px;height:5px;background:#d8d8d8;border-radius:999px;margin:0 auto 18px}
+.drawer h3{margin:0 0 4px;font-size:21px}.drawer p{color:var(--rare-muted);font-size:13px;margin:0 0 18px;line-height:1.5}
+.drawer-row{width:100%;height:48px;border:0;border-radius:16px;background:var(--rare-row);color:var(--rare-dark);display:flex;align-items:center;justify-content:space-between;padding:0 14px;margin-top:10px;cursor:pointer;text-align:left}
+.drawer-row.primary{background:var(--rare-blue);color:#fff}.drawer-row.danger{background:#FFF0F0;color:var(--rare-red)}
+.frame.yai .drawer-demo{background:var(--yai-bg)}.frame.yai .drawer-launch{background:var(--yai-card);color:var(--yai-text);border-color:var(--yai-border)}
+.frame.yai .drawer{background:var(--yai-panel);color:var(--yai-text);border:1px solid var(--yai-border-strong)}
+.frame.yai .drawer p{color:var(--yai-muted)}.frame.yai .drawer-handle{background:var(--yai-mask)}
+.frame.yai .drawer-row{background:var(--yai-card);color:var(--yai-text);border:1px solid var(--yai-border)}
+.frame.yai .drawer-row.primary{background:var(--yai-accent);color:#fff;border-color:var(--yai-accent)}
+.frame.yai .drawer-row.danger{background:var(--yai-card);color:#FF475F;border-color:#5c3037}
+
+/* Test badge */
+.testbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.testpill{border:1px solid #3b3b3b;background:#222;border-radius:999px;padding:6px 9px;font-size:10px;color:#aaa}
+.testpill.pass{border-color:#2b6947;color:#8fe0b1;background:#1a2a20}
+@media(max-width:900px){.pair{grid-template-columns:1fr}.page{padding:12px}.frame{min-height:520px}.stage{padding:16px}.prox-shell{grid-template-columns:100px 1fr}.tabs{overflow:auto;flex-wrap:nowrap;max-width:100%}.tabs button{flex:none}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><small>Rare UI → YAIWES · lote 1</small><h1>Original vs gris YAIWES</h1></div>
+    <nav class="tabs" id="tabs">
+      <button class="active" data-demo="bounce">Bounce Sidebar</button>
+      <button data-demo="hook">Hook Sidebar</button>
+      <button data-demo="proximity">Proximity Sidebar</button>
+      <button data-demo="gooey">Gooey Nav</button>
+      <button data-demo="drawer">Family Drawer</button>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+<div class="notice">
+Esta página de prueba conserva la misma interacción en ambas columnas y cambia únicamente la capa cromática.
+La columna izquierda reproduce la paleta original identificada en Rare UI; la derecha usa el gris YAIWES aprobado.
+</div>
+
+<section class="demo active" id="demo-bounce">
+<div class="pair">
+  <article class="frame rare"><div class="frame-head"><strong>Rare UI original</strong><span>#FC4C01</span></div><div class="stage">
+    <p class="helper">Pulsa un elemento. El punto usa desplazamiento elástico.</p>
+    <div class="component-card"><h2 class="component-title">Bounce Sidebar</h2><div class="bounce-list" data-sync="bounce" data-theme="rare"></div></div>
+  </div></article>
+  <article class="frame yai"><div class="frame-head"><strong>YAIWES recolor</strong><span>gris + #0848F7</span></div><div class="stage">
+    <p class="helper">Mismo diseño, posiciones y timing. Solo cambia color.</p>
+    <div class="component-card"><h2 class="component-title">Bounce Sidebar</h2><div class="bounce-list" data-sync="bounce" data-theme="yai"></div></div>
+  </div></article>
+</div><div class="testbar"><span class="testpill pass">SYNC CLICK</span><span class="testpill pass">GEOMETRÍA IGUAL</span><span class="testpill pass">COLOR AISLADO</span></div>
+</section>
+
+<section class="demo" id="demo-hook">
+<div class="pair">
+  <article class="frame rare"><div class="frame-head"><strong>Rare UI original</strong><span>#FC4C01</span></div><div class="stage">
+    <p class="helper">El rail punteado termina en un hook que sigue al elemento activo.</p>
+    <div class="component-card"><h2 class="component-title">Hook Sidebar</h2><div class="hook-wrap" data-sync="hook" data-theme="rare"></div></div>
+  </div></article>
+  <article class="frame yai"><div class="frame-head"><strong>YAIWES recolor</strong><span>gris + #0848F7</span></div><div class="stage">
+    <p class="helper">La forma del rail y la transición permanecen iguales.</p>
+    <div class="component-card"><h2 class="component-title">Hook Sidebar</h2><div class="hook-wrap" data-sync="hook" data-theme="yai"></div></div>
+  </div></article>
+</div>
+</section>
+
+<section class="demo" id="demo-proximity">
+<div class="pair">
+  <article class="frame rare"><div class="frame-head"><strong>Rare UI original</strong><span>foreground / muted</span></div><div class="stage">
+    <p class="helper">Mueve el puntero sobre las rayas o tócala; se expanden por proximidad.</p>
+    <div class="prox-shell" data-sync="proximity" data-theme="rare"></div>
+  </div></article>
+  <article class="frame yai"><div class="frame-head"><strong>YAIWES recolor</strong><span>grises aprobados</span></div><div class="stage">
+    <p class="helper">No se cambia la lógica de proximidad, solo los tonos.</p>
+    <div class="prox-shell" data-sync="proximity" data-theme="yai"></div>
+  </div></article>
+</div>
+</section>
+
+<section class="demo" id="demo-gooey">
+<div class="pair">
+  <article class="frame rare"><div class="frame-head"><strong>Rare UI original</strong><span>naranja #FC4C01</span></div><div class="stage">
+    <p class="helper">Selecciona una pestaña. La cápsula activa se desplaza conservando la misma geometría.</p>
+    <div class="gooey-shell"><div class="gooey-nav" data-sync="gooey" data-theme="rare"></div></div>
+  </div></article>
+  <article class="frame yai"><div class="frame-head"><strong>YAIWES recolor</strong><span>gris + azul eléctrico</span></div><div class="stage">
+    <p class="helper">Mismo movimiento, mismo radio, mismos espacios.</p>
+    <div class="gooey-shell"><div class="gooey-nav" data-sync="gooey" data-theme="yai"></div></div>
+  </div></article>
+</div>
+</section>
+
+<section class="demo" id="demo-drawer">
+<div class="pair">
+  <article class="frame rare"><div class="frame-head"><strong>Rare UI original</strong><span>Family Drawer claro</span></div><div class="stage">
+    <p class="helper">Abre el drawer y navega entre opciones.</p>
+    <div class="drawer-demo" data-sync="drawer" data-theme="rare"></div>
+  </div></article>
+  <article class="frame yai"><div class="frame-head"><strong>YAIWES recolor</strong><span>Family Drawer gris</span></div><div class="stage">
+    <p class="helper">Se conserva el drawer, radios y transición; solo se remapea la paleta.</p>
+    <div class="drawer-demo" data-sync="drawer" data-theme="yai"></div>
+  </div></article>
+</div>
+</section>
+</main>
+
+<script>
+const state={bounce:0,hook:0,proximity:0,gooey:0,drawerOpen:false,drawerView:'default'};
+const bounceItems=['Inicio','Chat','Archivos','Conectores','Ajustes'];
+const hookItems=['Overview','Activity','Tasks','Settings'];
+const proxSections=[
+ {label:'Título',kind:'title',base:40,bump:70},{label:'Subtítulo',kind:'subtitle',base:36,bump:64},
+ {label:'Sección',kind:'section',base:30,bump:56},{label:'Cuerpo',kind:'body',base:24,bump:50}
+];
+const gooeyItems=['Chat','Archivos','Tools','Perfil'];
+
+function sync(kind){document.querySelectorAll(`[data-sync="${kind}"]`).forEach(el=>renderOne(kind,el));}
+function renderOne(kind,el){
+ if(kind==='bounce') renderBounce(el);
+ if(kind==='hook') renderHook(el);
+ if(kind==='proximity') renderProximity(el);
+ if(kind==='gooey') renderGooey(el);
+ if(kind==='drawer') renderDrawer(el);
+}
+function renderBounce(el){
+ el.innerHTML=`<span class="bounce-dot"></span>`+bounceItems.map((x,i)=>`<button class="bounce-item ${i===state.bounce?'active':''}" data-i="${i}">${x}</button>`).join('');
+ const dot=el.querySelector('.bounce-dot'); dot.style.background=el.dataset.theme==='yai'?'var(--yai-accent)':'var(--rare-orange)';
+ const active=el.querySelector(`.bounce-item[data-i="${state.bounce}"]`);
+ requestAnimationFrame(()=>{ if(active) dot.style.transform=`translateY(${active.offsetTop+active.offsetHeight/2-3}px)`;});
+ el.querySelectorAll('.bounce-item').forEach(b=>b.onclick=()=>{state.bounce=+b.dataset.i;sync('bounce');});
+}
+function renderHook(el){
+ el.innerHTML=`<div class="hook-label">Navigation</div><span class="hook-rail-base"></span><span class="hook-corner"></span>`+
+ hookItems.map((x,i)=>`<button class="hook-item ${i===state.hook?'active':''}" data-i="${i}">${x}</button>`).join('');
+ const active=el.querySelector(`.hook-item[data-i="${state.hook}"]`), rail=el.querySelector('.hook-rail-base'), corner=el.querySelector('.hook-corner');
+ requestAnimationFrame(()=>{if(active){const y=active.offsetTop+active.offsetHeight/2;rail.style.height=Math.max(0,y-6)+'px';corner.style.top=(y-6)+'px';}});
+ el.querySelectorAll('.hook-item').forEach(b=>b.onclick=()=>{state.hook=+b.dataset.i;sync('hook');});
+}
+function renderProximity(el){
+ el.innerHTML=`<div class="prox-nav">${proxSections.map((s,i)=>`<button class="prox-dash ${i===state.proximity?'active':''}" data-i="${i}" data-kind="${s.kind}" style="--base:${s.base}px;width:${s.base}px" title="${s.label}"></button>`).join('')}</div>
+ <div class="prox-doc">${proxSections.map((s,i)=>`<section id="${el.dataset.theme}-${i}"><h3>${s.label}</h3><p>Contenido de ejemplo para comprobar scroll y selección. El comportamiento del dash se mantiene; la variante YAIWES solo cambia color.</p></section>`).join('')}</div>`;
+ const nav=el.querySelector('.prox-nav'), dashes=[...el.querySelectorAll('.prox-dash')], doc=el.querySelector('.prox-doc');
+ nav.onmousemove=e=>{dashes.forEach((d,i)=>{const r=d.getBoundingClientRect(),dist=Math.abs(e.clientY-(r.top+r.height/2)),s=proxSections[i],t=Math.max(0,1-Math.min(dist,40)/40);d.style.width=(s.base+s.bump*t)+'px';});};
+ nav.onmouseleave=()=>dashes.forEach((d,i)=>d.style.width=proxSections[i].base+'px');
+ dashes.forEach(d=>d.onclick=()=>{state.proximity=+d.dataset.i;sync('proximity');setTimeout(()=>document.querySelectorAll(`[data-sync="proximity"] .prox-doc`).forEach(doc2=>doc2.children[state.proximity]?.scrollIntoView({block:'nearest'})),0);});
+ doc.onscroll=()=>{const idx=Math.round(doc.scrollTop/190);if(idx!==state.proximity && idx>=0 && idx<proxSections.length){state.proximity=idx;sync('proximity');}};
+}
+function renderGooey(el){
+ el.innerHTML=`<span class="gooey-blob"></span>`+gooeyItems.map((x,i)=>`<button class="gooey-btn ${i===state.gooey?'active':''}" data-i="${i}">${x}</button>`).join('');
+ const a=el.querySelector(`.gooey-btn[data-i="${state.gooey}"]`),blob=el.querySelector('.gooey-blob');
+ requestAnimationFrame(()=>{if(a){blob.style.left=a.offsetLeft+'px';blob.style.width=a.offsetWidth+'px';}});
+ el.querySelectorAll('.gooey-btn').forEach(b=>b.onclick=()=>{state.gooey=+b.dataset.i;sync('gooey');});
+}
+function drawerContent(theme){
+ if(state.drawerView==='key') return `<h3>Private Key</h3><p>Vista apilada secundaria.</p><button class="drawer-row" data-drawer-action="back">← Volver</button><button class="drawer-row primary">Copiar</button>`;
+ if(state.drawerView==='phrase') return `<h3>Recovery Phrase</h3><p>Segunda vista, misma transición y geometría.</p><button class="drawer-row" data-drawer-action="back">← Volver</button><button class="drawer-row primary">Ver frase</button>`;
+ if(state.drawerView==='remove') return `<h3>Remove Wallet</h3><p>Confirmación dentro del mismo drawer.</p><button class="drawer-row" data-drawer-action="back">Cancelar</button><button class="drawer-row danger">Eliminar</button>`;
+ return `<h3>Options</h3><p>Drawer con vistas apiladas.</p><button class="drawer-row" data-drawer-action="key">View Private Key <span>›</span></button><button class="drawer-row" data-drawer-action="phrase">View Recovery Phrase <span>›</span></button><button class="drawer-row danger" data-drawer-action="remove">Remove Wallet <span>›</span></button>`;
+}
+function renderDrawer(el){
+ el.classList.toggle('open',state.drawerOpen);
+ el.innerHTML=`<button class="drawer-launch">Abrir drawer</button><div class="drawer-overlay"></div><div class="drawer"><div class="drawer-handle"></div>${drawerContent(el.dataset.theme)}</div>`;
+ el.querySelector('.drawer-launch').onclick=()=>{state.drawerOpen=true;sync('drawer')};
+ el.querySelector('.drawer-overlay').onclick=()=>{state.drawerOpen=false;sync('drawer')};
+ el.querySelectorAll('[data-drawer-action]').forEach(b=>b.onclick=()=>{const a=b.dataset.drawerAction;state.drawerView=a==='back'?'default':a;sync('drawer')});
+}
+document.querySelectorAll('[data-sync]').forEach(el=>renderOne(el.dataset.sync,el));
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('active',x===b));
+ document.querySelectorAll('.demo').forEach(x=>x.classList.toggle('active',x.id===`demo-${b.dataset.demo}`));
+});
+</script>
+</body>
+</html>
