@@ -1,7 +1,7 @@
 // anclaje-destinos.js — en la ventana de Anclaje: "Anclar a" Chat / Constitución / Workflows / Agentes remotos / Proyecto / Sandbox.
 // Es LA MISMA ventana para todos: al elegir el objetivo, todo lo de la ventana (enlaces, anclado ahora, instrucciones fijas, proyectos,
 // handoffs, Mi handoff y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
-import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId, buscarProyecto } from "./objetivos-ancla.js";
+import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId, nuevoProyectoPrompt } from "./objetivos-ancla.js";
 import { el, boton, cargarCss } from "./ventanas-comun.js";
 export function montarDestinos({ root, q, tell }) {
   const caja = q("#ventana-ancla .va-caja"); if (!caja || caja.dataset.destinos) return; caja.dataset.destinos = "1";
@@ -47,11 +47,7 @@ export function montarDestinos({ root, q, tell }) {
       const on = el("option", "", "＋ Nuevo proyecto"); on.value = "__nuevo__"; s.append(on);
       s.addEventListener("change", () => {
         if (s.value !== "__nuevo__") { fijar("proyecto", s.value); return; }
-        const n = (window.prompt("Nombre del nuevo proyecto") || "").trim(); s.value = obj.project_id;
-        if (!n) return;
-        const ya = listaProyectos().some((p) => p.nombre.toLowerCase() === n.toLowerCase()), nom2 = crearProyecto(n), p = buscarProyecto(nom2);
-        if (!p) { tell("No se pudo crear"); return; }
-        tell((ya ? "Ya existía: " : "Proyecto creado: ") + p.nombre); fijar("proyecto", p.project_id);
+        s.value = obj.project_id; const p = nuevoProyectoPrompt(tell); if (p) fijar("proyecto", p.project_id);
       });
       const nom = el("input", "vn-in"); nom.placeholder = "Nueva carpeta de proyecto…"; nom.maxLength = 60; nom.setAttribute("aria-label", "Nueva carpeta de proyecto");
       const nuevo = boton("＋ Carpeta", "mini", () => { const n = crearProyecto(nom.value); if (!n) { tell("Escribe un nombre"); return; } tell("Carpeta creada: " + n); fijar("proyecto", n); });

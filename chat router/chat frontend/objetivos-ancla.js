@@ -12,7 +12,7 @@ export class SetGuardable extends Set {
 const KP = "riu_proy_v1", arr = (v) => (Array.isArray(v) ? v : []);
 export const slugProy = (nombre) => (String(nombre || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 48) || "proyecto");
 export const proyId = (nombre) => { const p = listaProyectos().find((x) => x.nombre === nombre); return (p && p.project_id) || slugProy(nombre); };  // id real guardado; compat: proyectos viejos solo tenian slug
-const upsertRemoto = (nombre, pid) => { try { if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "upsert", project_id: pid || slugProy(nombre), nombre }).catch(() => {}); } catch (e) {} };
+const upsertRemoto = (nombre, pid, extra) => { try { if (window.RIU_ACCION) window.RIU_ACCION("proyecto", { op: "upsert", project_id: pid || slugProy(nombre), nombre, ...(extra || {}) }).catch(() => {}); } catch (e) {} };  // un solo upsert (dos en paralelo pisaban el nombre)
 const upsertMeta = (pid, campos) => { try { if (window.RIU_ACCION && pid) window.RIU_ACCION("proyecto", { op: "upsert", project_id: pid, ...campos }).catch(() => {}); } catch (e) {} };  // MERGE backend: solo campos modificados
 const conGet = () => Object.assign({ encendida: false, texto: "", oficial: false, items: [] }, leer(KEYS.constitucion, {}));
 const wfStore = () => { const v = leer(KEYS.workflows, { lista: [], sel: null }); if (!Array.isArray(v.lista)) v.lista = []; return v; };
@@ -28,8 +28,14 @@ export const buscarProyecto = (ref) => listaProyectos().find((x) => x.project_id
 export function crearProyecto(nombre) {
   const n = String(nombre || "").trim().slice(0, 60); if (!n) return null;
   const t = leer(KP, {}); t.global = arr(t.global);
-  if (!t.global.some((p) => p.nombre.toLowerCase() === n.toLowerCase())) { const pid = "p-" + uid(); const fecha = new Date().toISOString(); t.global.push({ nombre: n, project_id: pid, fecha, items: [], on: false, notas: "" }); escribir(KP, t); upsertRemoto(n, pid); upsertMeta(pid, { fecha }); }  // project_id p-<uid> independiente del nombre
+  if (!t.global.some((p) => p.nombre.toLowerCase() === n.toLowerCase())) { const pid = "p-" + uid(); const fecha = new Date().toISOString(); t.global.push({ nombre: n, project_id: pid, fecha, items: [], on: false, notas: "" }); escribir(KP, t); upsertRemoto(n, pid, { fecha }); }  // project_id p-<uid> independiente del nombre
   return (t.global.find((p) => p.nombre.toLowerCase() === n.toLowerCase()) || {}).nombre || n;
+}
+export function nuevoProyectoPrompt(tell) {  // '+ Nuevo proyecto' (lo usan el panel clásico y las vistas A/B/C): pide nombre, crea (id+fecha) y devuelve el registro
+  const n = (window.prompt("Nombre del nuevo proyecto") || "").trim(); if (!n) return null;
+  const ya = listaProyectos().some((p) => p.nombre.toLowerCase() === n.toLowerCase()), p = buscarProyecto(crearProyecto(n));
+  if (tell) tell(p ? (ya ? "Ya existía: " : "Proyecto creado: ") + p.nombre : "No se pudo crear");
+  return p;
 }
 export function crearObjetivo(tipo, id) {
   if (tipo === "constitucion") {
