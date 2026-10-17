@@ -1,0 +1,35 @@
+{
+  "bundle_bytes": 876700,
+  "bundle_sha256": "cc8f69dbca4a7be449579546c9c8d5cd36e0eda4cfdf1757daa3e889f6746e46",
+  "extracted_tree": {
+    "bytes": 2373838,
+    "files": 287,
+    "sha256": "9618ff1956b2da03796a9241b97d65428c3eadc07d7b72185a991b96ee5e3470"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 876700,
+      "name": "skills.bundle.zip.part-0001",
+      "sha256": "cc8f69dbca4a7be449579546c9c8d5cd36e0eda4cfdf1757daa3e889f6746e46"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "skills",
+  "source_bytes": 2373838,
+  "source_commit": "7ba4dcf8ebe1626b00baa41e1f2478113719b60b",
+  "source_files": 287,
+  "source_ref": "main",
+  "source_repo": "remotion-dev/skills",
+  "source_tree": {
+    "bytes": 2373838,
+    "files": 287,
+    "sha256": "9618ff1956b2da03796a9241b97d65428c3eadc07d7b72185a991b96ee5e3470"
+  }
+}

@@ -1,0 +1,33 @@
+{
+ "bundle_bytes": 4528322,
+ "bundle_sha256": "b41664cfa4697abca4dd7c9456442b434142213ed12be2650e224abe7a226000",
+ "extracted_tree": {
+  "bytes": 7310990,
+  "files": 680,
+  "sha256": "18c7bbb4f2a12912f82ab4e71c46bd92782b1485720a7c09eb869d74ce162cec"
+ },
+ "extraction_verified": true,
+ "max_github_blob_bytes": 99614720,
+ "no_lfs": true,
+ "part_size_limit_bytes": 12582912,
+ "reconstruction_verified": true,
+ "schema": "yaiwes.hf.download-extract.v1",
+ "skipped_special": [],
+ "skipped_special_count": 0,
+ "slug": "claude-skills",
+ "source_bytes": 7310990,
+ "source_commit": "fc5b7851a6c7ba367e05797df46ad3679df355dd",
+ "source_files": 680,
+ "source_ref": "main",
+ "source_repo": "OneWave-AI/claude-skills",
+ "source_tree": {
+  "bytes": 7310990,
+  "files": 680,
+  "sha256": "18c7bbb4f2a12912f82ab4e71c46bd92782b1485720a7c09eb869d74ce162cec"
+ },
+ "archives_removed_after_motor_1_verification": true,
+ "motor_1_verdict": "VERIFIED_CLOSED",
+ "motor_1_matches_manifest": true,
+ "gitattributes_lfs_removed": [],
+ "route_completion": "engine _archives -> motor_1 (CRC + tree hash = manifiesto) -> motor_3 (sha256) -> git add -f (incluye archivos ignorados por el .gitignore del repo)"
+}

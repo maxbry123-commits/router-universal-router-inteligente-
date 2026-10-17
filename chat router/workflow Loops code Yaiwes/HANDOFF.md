@@ -16,6 +16,8 @@ README arquitectura: https://github.com/maxbry123-commits/router-universal-route
 - 17-oct-2026: nueva raíz `skills/` con ECC (311 skills, MIT), movida desde Yaiwes (borrada allí); cableada en `code/skills_schema/ecc.dag.yaml`. Enlace: https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills/ECC
 - 17-oct-2026: espejo de OpenClaw y Hermes = enlace a sus repos propios fijado a commit (OpenClaw v2026.10.4 `383c124c`, Hermes v0.22.2 `d923a5eb`); borradas las copias locales y su evidencia `agent-source-copy-state/openclaw.json`, `hermes.json`.
 
+- 17-oct-2026: copiadas a `skills/` (originales intactos en Yaiwes): archify https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills/archify y motion-graphics https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills/motion-graphics (archivos idénticos byte a byte, verificados por SHA de git).
+
 ## Dónde seguir
 
 - Centro de control: https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/workflow/plan-opus/CENTRO-DE-CONTROL.yaml
