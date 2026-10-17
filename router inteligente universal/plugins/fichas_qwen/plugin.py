@@ -741,7 +741,7 @@ def _fast_button_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any]) -
     return True
 
 
-_REFIERE_ANCLA = re.compile(r'(?i)(anclad|adjunt|document|fichero|\.(txt|md|py|js|json|html|css|pdf|csv)\b|\b(texto|contenido|este|esta|esto|estos|estas|ese|esa|eso|lee|leer|l[eé]elo|resume|resumen|resumir|analiza|analizar|revisa|revisar|explica|explicar|seg[uú]n|basad|compara|compar[ae]|qu[eé] dice|d[oó]nde|funci[oó]n|clase|l[ií]nea|error|bug|fallo)\b)')
+_REFIERE_ANCLA = re.compile(r'(?i)(\.(txt|md|py|js|ts|json|html|css|pdf|csv|ya?ml)\b|\b(anclad|adjunt|document|fichero|res[uú]m|expl[ií]c|an[aá]l[ií][zcs]|analy[sz]|rev[ií]s|comp[aá]r|basad|funci[oó]n|clase|l[ií]nea|error|bug|fallo|attach|summar|review|explain)|\b(texto|contenido|este|esta|esto|estos|estas|ese|esa|eso|esos|esas|lee|leer|l[eé]elo|seg[uú]n|qu[eé] dice|d[oó]nde|trata|this|read|file)\b)')  # revision x3: raices sin \b final (resumelo/explicalo/analizalo/basado/funciones/lineas) + ingles basico
 _ANCLA_TRIVIAL_MAX = 160
 
 
@@ -793,8 +793,8 @@ def _fast_reject_reasons(ficha: dict[str, Any], mensaje: str, opts: dict[str, An
         r.append('MUTATION')
     if opts.get('es_cambio'):
         r.append('CHANGE_REQUEST')
-    if opts.get('anclados'):
-        r.append('ANCHORED_FILES')
+    if opts.get('anclados') and not (str(ficha.get('ficha') or '').startswith(('ficha2', 'ficha3')) and _anclas_solo_contexto(str(mensaje or ''))):
+        r.append('ANCHORED_FILES')  # consil-latencia: en Ficha 2/3 un input trivial con anclas no es motivo de rechazo
     if opts.get('aprobado'):
         r.append('APPROVAL')
     if opts.get('plan') or opts.get('plan_stop'):
