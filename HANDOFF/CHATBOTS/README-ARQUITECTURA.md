@@ -1,3 +1,4 @@
+Fuente principal movida a chat router/chat bot/
 # Chat BOTS (orquestador de agentes) + ROOM CONFERENCIAS — arquitectura real
 
 Actualizado: 17-oct-2026 00:35, hora Bogotá (UTC-5). Fuente: solo el código de las ramas citadas. Lo que no sale del código va marcado **por confirmar**.

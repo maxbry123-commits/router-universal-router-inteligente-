@@ -1,3 +1,4 @@
+Fuente principal movida a chat router/chat bot/
 # HANDOFF — Chat BOTS (orquestador de agentes) + ROOM CONFERENCIAS
 
 Actualizado: 17-oct-2026 00:35, hora Bogotá (UTC-5). Dueño: **Antonio Mendoza**.
