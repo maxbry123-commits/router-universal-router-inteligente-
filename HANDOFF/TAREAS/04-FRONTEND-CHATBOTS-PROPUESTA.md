@@ -28,7 +28,7 @@ Rediseñar el frontend de Chat BOTS. Antonio aprobó crear agente + ficha y dijo
 
 ## Pendiente
 1. Elección A/B de Antonio.
-2. Implementar la elegida con cambios milimétricos, corregir los 5 fallos, capturas 412 px.
+2. Implementar la elegida con cambios milimétricos (los 5 fallos ya están corregidos en `fix/chatbots-frontend-5-fallos`; ver PROGRESO).
 
 ## VENTANA DE ARQUITECTURA (orden de Antonio)
 
@@ -52,6 +52,20 @@ Tarea del agente de frontend:
 - El diagrama se actualiza según 1) el frontend aprobado y 2) lo que informa el agente backend en `chat router/chat bot/ESTADO-BACKEND.md`.
 - El agente de frontend dibuja el avance en el diagrama.
 - **Archify**: la skill más probable es [`tt-a1i/archify`](https://github.com/tt-a1i/archify) («Turn any idea, plan, or codebase into a beautiful interactive diagram. An agent skill for Claude Code, Codex, and more»). No está en los repos de Antonio. **Por confirmar con Antonio** que es esa.
+
+## PROGRESO
+Rama: [`fix/chatbots-frontend-5-fallos`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/fix/chatbots-frontend-5-fallos) desde `orquestador-escribir-sin-esperar` (626eb65024, con cola de envío). Arreglo: [`0422190c52`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/commit/0422190c52) (solo `orquestador.js` y `orquestador.css`). Sin A ni B. Sin merge.
+
+| # | Fallo | Estado | Evidencia (Playwright headless 412 px y 1366 px, backend simulado) |
+|---|---|---|---|
+| 1 | Tira encima del chat (`hist.before`) | ✅ Corregido | `#chat-bots` va después de `#composer`; con sub-chat abierto, la tira va debajo del sub-chat. |
+| 2 | `.orq-plus{display:flex}` anula `hidden` | ✅ Corregido | `.chat-bots [hidden]{display:none!important}`: `#orq-plus` oculto → `display:none` (antes `flex`). |
+| 3 | `pintar()` no restaura `#orq-dep-repo` | ✅ Corregido | Tras redibujar: repo `spaces/usuario/prueba` y destino `hf` se conservan (antes `""` y `github`). |
+| 4 | Solape Selectores / «¿Qué hacemos hoy?» | ✅ Corregido | `#histories[hidden]` quedaba `flex` y el sub-chat desbordaba hacia Selectores; ahora `none` y el sub-chat hace scroll dentro de su sección. |
+| 5 | Controles tapa la tira | ✅ Corregido | 1366 px con Controles abierto: 8/8 chips tapados antes, 0/8 después (chat y sub-chat). |
+| — | Prueba real Android 412 px, 4G, E2E | ⏳ Pendiente | Falta revisión ×3 por otro agente. |
+
+Capturas (computadora del bot, no en el repo): `/workspace/shots/chatbots-fixes/` (antes-* y despues-*).
 
 ## Reglas
 - Una tarea = un agente, en su propia rama. Sin trabajo doble.

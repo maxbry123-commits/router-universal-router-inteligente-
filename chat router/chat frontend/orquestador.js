@@ -1,6 +1,6 @@
 // orquestador.js — "Chat BOTS": seccion debajo del chat abierto (como Chat 1/2/3). Cada agente es un sub-chat aislado
 // (hilo, system, memoria, archivos y sandbox propios), max 50 por seccion. Antonio les escribe desde aqui.
-// Backend: plugin orquestador; LLM por HTTP al harness puente_chat. Cambio quirurgico: solo inserta #chat-bots antes de #histories.
+// Backend: plugin orquestador; LLM por HTTP al harness puente_chat. Cambio quirurgico: solo inserta #chat-bots debajo del chat (despues de #composer).
 import { accion } from "./api.js";
 import { crearCola, marcarEnCola, devolverACaja } from "./cola-envio.js";
 const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -121,14 +121,17 @@ async function pintar() {
   let det = null;
   if (SEL && SEL !== "nuevo") { try { det = (await orq("estado", { id: SEL })).agente; } catch (x) { det = null; } if (det) AGENTES = AGENTES.map((a) => (a.id === det.id ? det : a)); }
   const foco = document.activeElement?.id, val = document.getElementById("orq-input")?.value, plusAb = document.getElementById("orq-plus")?.hidden === false, depAb = document.getElementById("orq-deploy")?.open;
+  const depRepo = document.getElementById("orq-dep-repo")?.value, depDst = document.getElementById("orq-dep-destino")?.value;  // fallo 3: el deploy no pierde lo escrito al redibujar
   const panel = SEL === "nuevo" ? formNuevo() : det ? seccion(det) : null;
-  caja.replaceChildren(tira(), ...(panel ? [panel] : []));
+  caja.replaceChildren(...(panel ? [panel] : []), tira());  // la tira va debajo (del chat o del sub-chat abierto): Controles no la tapa
   // sub-chat abierto: ocupa el lugar del hilo principal (el chat sigue intacto debajo, oculto)
   const hist = document.getElementById("histories"), comp = document.getElementById("composer");
   if (hist) hist.hidden = !!panel; if (comp) comp.hidden = !!panel; caja.classList.toggle("abierto", !!panel);
   if (val && document.getElementById("orq-input")) document.getElementById("orq-input").value = val;
   if (plusAb && document.getElementById("orq-plus")) document.getElementById("orq-plus").hidden = false;
   if (depAb && document.getElementById("orq-deploy")) document.getElementById("orq-deploy").open = true;
+  if (depDst && document.getElementById("orq-dep-destino")) document.getElementById("orq-dep-destino").value = depDst;
+  if (depRepo && document.getElementById("orq-dep-repo")) document.getElementById("orq-dep-repo").value = depRepo;
   if (foco && document.getElementById(foco) && foco !== "orq-file") document.getElementById(foco).focus();
   for (const id in COLAS) if (COLAS[id].length && !ocupadoAg(id)) COLAS[id].siguiente();  // terminó el turno: sale el siguiente en cola
   clearTimeout(timer);
@@ -146,7 +149,7 @@ async function refrescar() {
 function instalar() {
   const hist = document.getElementById("histories");
   if (!hist || document.getElementById("chat-bots")) return;
-  const caja = el("div", "chat-bots"); caja.id = "chat-bots"; hist.before(caja);
+  const caja = el("div", "chat-bots"); caja.id = "chat-bots"; (document.getElementById("composer") || hist).after(caja);  // debajo del chat abierto (antes: hist.before)
   document.getElementById("chat-tabs")?.addEventListener("click", () => setTimeout(() => { SEL = null; refrescar(); }, 50));  // otro Chat N -> su propia seccion de bots
   refrescar();
 }
