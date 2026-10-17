@@ -1,0 +1,13 @@
+# Cómo trabaja Antonio
+- Español. Respuestas mínimas, sin explicaciones largas.
+- Tiempos siempre como "X s YYY ms".
+- No reportar hasta que esté probado y funcionando en vista Android (412 px, 4G), E2E real (Enviar → respuesta visible).
+- Un agente por tarea, en paralelo, cada uno en su rama. Sin trabajo doble (no re-leer, re-descargar ni desplegar dos veces), pero sí todas las pruebas necesarias.
+- Revisión triple: otro agente revisa 3 veces, conecta, prueba en PC y Android, y solo entonces va a main.
+- Frontend: ediciones milimétricas y otro agente comprueba que nada se rompió. Mostrar HTML funcional o imágenes, no maquetas estáticas.
+- Backend: código con modelos open source y otro agente revisa con 3 pruebas y simulaciones.
+- Escalar solo cuando esté listo o con dudas, como lista de preguntas. Cero fricción.
+- El código ya probado se copia de repo a repo en GitHub, no pasa por su PC.
+- Aprobación permanente: push a main y redeploy del Space ("no preguntes más").
+- Nada se borra sin su sí explícito. Nunca imprimir secretos.
+- Excluido: latido/estados de burbuja/botón Reintentar, SSE, punto 8. La opción 4 (servir el frontend desde el Space) queda en espera.
