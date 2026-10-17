@@ -43,7 +43,10 @@
       "sandbox",
       "mover_raiz",
       "descargas",
-      "proyecto"
+      "proyecto",
+      "sentinela_anclar",
+      "sentinela_grafo",
+      "sentinela_validar"
     ]
   },
   "seguridad": {

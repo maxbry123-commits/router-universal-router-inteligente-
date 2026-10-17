@@ -499,6 +499,32 @@ def llm_call(p):
         return {'error': 'GAP_FICHA4_HTTP', 'detalle': type(x).__name__}
 
 
+SENTINELA_ACCIONES = ('sentinela_anclar', 'sentinela_grafo', 'sentinela_validar')
+
+
+def sentinela_call(action, p):
+    """Constitucion sentinela como plugin: componente -> Harness -> HTTP -> Ficha (fichas_qwen) -> grafo (SQLite + Graphiti + Graphify).
+    El Harness no toca el grafo: reenvia por HTTP la accion a la ficha, igual que llm_call con la Ficha 4."""
+    import urllib.request as _ur
+    if action not in SENTINELA_ACCIONES:
+        return {'error': 'ACCION_DESCONOCIDA'}
+    base = (_os.getenv('RIU_ROUTER_URL') or ('http://127.0.0.1:' + str(_os.getenv('PORT') or '7860'))).rstrip('/')
+    url = base + '/plugins/fichas_qwen/call/' + action
+    body = {k: v for k, v in (p or {}).items() if not str(k).startswith('_')}
+    h = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + str(_os.getenv('RIU_ROUTER_API_KEY') or '')}
+    try:
+        r = _ur.Request(url, data=json.dumps(body).encode(), headers=h, method='POST')
+        d = json.loads(_ur.urlopen(r, timeout=14).read().decode() or '{}')
+    except Exception as x:  # noqa: BLE001
+        return {'error': 'GAP_FICHA_HTTP', 'detalle': type(x).__name__}
+    if not isinstance(d, dict):
+        return {'error': 'GAP_FICHA_HTTP', 'detalle': 'respuesta no es objeto'}
+    if d.get('status') not in (None, 'ok'):
+        return {'error': 'GAP_FICHA_HTTP', 'detalle': str(d.get('reason') or d.get('detail') or d.get('status'))[:200]}
+    out = d.get('result', d)
+    return dict(out, via='harness->http->fichas_qwen') if isinstance(out, dict) else {'resultado': out, 'via': 'harness->http->fichas_qwen'}
+
+
 def _graphiti_llm_ficha(msgs, max_tokens=1200):
     # Graphiti no conoce modelo ni proveedor: pide al Harness, que va por HTTP a la Ficha 4 (task_type small = Qwen 3.8 Flash)
     ids = _IDS_CTX.get() or {}
@@ -2483,6 +2509,8 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
                 + [{"id": k, "nombre": v[0], "respaldo": True} for k, v in RESPALDO.items()]}
     if action == "llm_call":
         return llm_call(payload)
+    if action in SENTINELA_ACCIONES:  # Constitucion sentinela (grafo / validacion) por el canal Harness, como plugin
+        return sentinela_call(action, payload)
     if action == "chat":
         return _chat(payload)
     if action == "estado":

@@ -1,5 +1,5 @@
 // sentinela.js — Constitución sentinela (contrato verificable), system prompt (simple, sin validación) y «Anclar archivo real».
-// Lógica + secciones de la ventana Constitución. El backend (fichas_qwen/sentinela_contrato.py) valida la salida y corrige con 1 reintento.
+// Lógica + secciones de la ventana Constitución (el system prompt tiene su propia ventana: ventana-system-prompt.js). El backend (fichas_qwen/sentinela_contrato.py) valida la salida y corrige con 1 reintento.
 import { el, boton } from "./ventanas-comun.js";
 const K_SP = "riu_system_prompts_v1", K_AR = "riu_ancla_real_v1", K_CON = "riu_constitucion_v1";
 const leerJ = (k, d) => { try { return Object.assign(d, JSON.parse(localStorage.getItem(k) || "null") || {}); } catch (e) { return d; } };
@@ -31,14 +31,9 @@ export function textoSentinela(s) {  // línea visible en el chat bajo la respue
   return p.join("\n");
 }
 window.RIU_SENTINELA_TXT = textoSentinela;
-const urlPlugin = () => String((window.RIU_CONFIG || {}).harnessUrl || "").replace(/\/plugins\/puente_chat\/call\/?$/, "/plugins/fichas_qwen/call");
-export async function llamarSentinela(accion, payload) {
-  const u = urlPlugin(); if (!u) throw new Error("Router sin URL todavía");
-  const h = { "Content-Type": "application/json" }; const pw = sessionStorage.getItem("riu_clave"); if (pw) h["X-API-Key"] = pw;
-  const r = await fetch(u + "/" + accion, { method: "POST", headers: h, body: JSON.stringify(payload) });
-  const env = await r.json().catch(() => ({}));
-  if (!r.ok || env.status !== "ok") throw new Error(env.reason || env.detail || "HTTP " + r.status);
-  return env.result || {};
+export async function llamarSentinela(accion, payload) {  // Componente -> Harness (puente_chat) -> HTTP -> fichas_qwen -> grafo (Graphiti · Graphify · SQLite)
+  const f = window.RIU_ACCION; if (typeof f !== "function") throw new Error("Harness no disponible todavía");
+  const r = await f(accion, payload); if (r && r.error) throw new Error(r.error + (r.detalle ? ": " + r.detalle : "")); return r || {};
 }
 function payloadGrafo() {
   const c = dameC(), sp = dameSP(), a = sp.lista.find((x) => x.id === sp.activo), ar = dameAR();
@@ -53,13 +48,7 @@ export function sincronizarGrafo(tell, ya) {  // lo anclado se escribe en el gra
   tSync = setTimeout(go, 1200); return null;
 }
 const resumenGrafo = (r) => !r ? "Aún no anclado al grafo." : "Grafo SQLite: " + r.graph_sqlite + " · Graphiti: " + r.graphiti + " · Graphify: " + (typeof r.graphify === "object" ? r.graphify.status + (r.graphify.nodos ? " (" + r.graphify.nodos + " nodos)" : "") : r.graphify) + " · " + (r.escritos || []).length + " anclas";
-export function montarSecciones(cuerpo, tell) {
-  // 1) Contrato verificable (el mismo texto de «Mi constitución sentinela»)
-  const ayuda = el("div", "vn-estado", "Contrato: cada línea CLAVE: valor se verifica en la salida (TERMINA CON, EMPIEZA CON, DEBE, PROHIBIDO, FORMATO: json, ESQUEMA, CODIGO: python, MAX_LINEAS, MAX_CARACTERES). El resto de líneas viaja como regla. Si falla: 1 corrección automática.");
-  const pl = boton("Insertar plantilla de contrato", "mini", () => { const ta = cuerpo.querySelector("textarea[aria-label='Mi constitución']"); if (!ta) return; ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + PLANTILLA; ta.dispatchEvent(new Event("input", { bubbles: true })); sincronizarGrafo(tell); tell("Plantilla insertada"); });
-  pl.dataset.sent = "plantilla";
-  const ta0 = cuerpo.querySelector("textarea[aria-label='Mi constitución']"); if (ta0) { ta0.after(ayuda, pl); ta0.addEventListener("input", () => sincronizarGrafo()); } else cuerpo.append(ayuda, pl);
-  // 2) System prompt: simple, NO funciona como la Constitución (sin validación)
+export function seccionSystemPrompt(cuerpo, tell, alCambiar) {  // ventana aparte: simple, NO funciona como la Constitución (sin validación)
   const box = el("div", "sent-sp"); box.dataset.sent = "sp";
   const pintarSP = () => {
     box.replaceChildren(); const sp = dameSP();
@@ -70,16 +59,27 @@ export function montarSecciones(cuerpo, tell) {
     const nom = el("input", "vn-in"); nom.placeholder = "Nombre del system prompt"; nom.setAttribute("aria-label", "Nombre del system prompt"); nom.dataset.sent = "sp-nombre";
     const ta = el("textarea", "vn-ta"); ta.placeholder = "Escribe aquí el system prompt…"; ta.setAttribute("aria-label", "Texto del system prompt"); ta.dataset.sent = "sp-texto";
     const act = sp.lista.find((x) => x.id === sp.activo); if (act) { nom.value = act.nombre; ta.value = act.texto; }
-    sel.addEventListener("change", () => { const v = dameSP(); v.activo = sel.value || null; guardarJ(K_SP, v); pintarSP(); sincronizarGrafo(tell); tell(sel.value ? "System prompt activo: " + sel.selectedOptions[0].textContent : "Sin system prompt"); });
+    sel.addEventListener("change", () => { const v = dameSP(); v.activo = sel.value || null; guardarJ(K_SP, v); pintarSP(); if (alCambiar) alCambiar(); sincronizarGrafo(tell); tell(sel.value ? "System prompt activo: " + sel.selectedOptions[0].textContent : "Sin system prompt"); });
     const g = boton("Guardar", "mini", () => { const v = dameSP(), n = nom.value.trim() || "Prompt " + (v.lista.length + 1), t = ta.value.slice(0, 6000); if (!t.trim()) { tell("Escribe el system prompt"); return; }
       let x = v.lista.find((y) => y.id === v.activo && y.nombre === n) || v.lista.find((y) => y.nombre === n); if (!x) { x = { id: "sp-" + Date.now().toString(36), nombre: n, texto: t }; v.lista.push(x); } else x.texto = t;
-      v.activo = x.id; guardarJ(K_SP, v); pintarSP(); sincronizarGrafo(tell); tell("System prompt guardado y activo: " + n); }); g.dataset.sent = "sp-guardar";
-    const nv = boton("Nuevo", "mini", () => { const v = dameSP(); v.activo = null; guardarJ(K_SP, v); pintarSP(); });
-    const br = boton("Borrar", "mini", () => { const v = dameSP(); if (!v.activo) return; v.lista = v.lista.filter((y) => y.id !== v.activo); v.activo = null; guardarJ(K_SP, v); pintarSP(); tell("System prompt borrado"); });
+      v.activo = x.id; guardarJ(K_SP, v); pintarSP(); if (alCambiar) alCambiar(); sincronizarGrafo(tell); tell("System prompt guardado y activo: " + n); }); g.dataset.sent = "sp-guardar";
+    const nv = boton("Nuevo", "mini", () => { const v = dameSP(); v.activo = null; guardarJ(K_SP, v); pintarSP(); if (alCambiar) alCambiar(); });
+    const br = boton("Borrar", "mini", () => { const v = dameSP(); if (!v.activo) return; v.lista = v.lista.filter((y) => y.id !== v.activo); v.activo = null; guardarJ(K_SP, v); pintarSP(); if (alCambiar) alCambiar(); tell("System prompt borrado"); });
     const fila = el("div", "vn-fila"); fila.append(g, nv, br);
     box.append(sel, nom, ta, fila);
   };
   pintarSP();
+  cuerpo.append(box);
+  return { pintar: pintarSP };
+}
+export function montarSecciones(cuerpo, tell) {
+  // 1) Contrato verificable (el mismo texto de «Mi constitución sentinela»)
+  const ayuda = el("div", "vn-estado", "Contrato: cada línea CLAVE: valor se verifica en la salida (TERMINA CON, EMPIEZA CON, DEBE, PROHIBIDO, FORMATO: json, ESQUEMA, CODIGO: python, MAX_LINEAS, MAX_CARACTERES; también «termina con PALABRA» / «empieza con PALABRA»). El resto de líneas viaja como regla. Si falla: 1 corrección automática.");
+  const pl = boton("Insertar plantilla de contrato", "mini", () => { const ta = cuerpo.querySelector("textarea[aria-label='Mi constitución']"); if (!ta) return; ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + PLANTILLA; ta.dispatchEvent(new Event("input", { bubbles: true })); sincronizarGrafo(tell); tell("Plantilla insertada"); });
+  pl.dataset.sent = "plantilla";
+  const ta0 = cuerpo.querySelector("textarea[aria-label='Mi constitución']"); if (ta0) { ta0.after(ayuda, pl); ta0.addEventListener("input", () => sincronizarGrafo()); } else cuerpo.append(ayuda, pl);
+  // 2) System prompt: ventana aparte (ventana-system-prompt.js); aquí solo el acceso
+  const irSP = boton("System prompt: ventana aparte", "mini", () => { const b = document.querySelector("#pill-system-prompt"); if (b) b.click(); else tell("La ventana del system prompt no está disponible"); }); irSP.dataset.sent = "sp-abrir";
   // 3) Anclar archivo real: el contenido viaja en el contexto; el código se valida (y se ejecuta en sandbox si el Router lo permite)
   const ab = el("div", "sent-ar"); ab.dataset.sent = "ar";
   const pintarAR = () => {
@@ -115,5 +115,5 @@ export function montarSecciones(cuerpo, tell) {
         "\nGraphiti: " + (Array.isArray(r.graphiti) ? r.graphiti.length + " resultados" : r.graphiti) + " · escrituras " + JSON.stringify(r.graphiti_escrituras || {}) +
         "\nGraphify: " + (Array.isArray(r.graphify) ? gf.length + " nodos\n" + gf.slice(0, 8).map((x) => "· " + x.label + " (" + x.file + ")").join("\n") : r.graphify); } catch (e) { tell("Grafo: " + e.message); } }), pre);
   window.addEventListener("riu:sentinela-grafo", (e) => { if (est.isConnected) est.textContent = resumenGrafo(e.detail); });
-  cuerpo.append(box, ab, gb);
+  cuerpo.append(irSP, ab, gb);
 }
