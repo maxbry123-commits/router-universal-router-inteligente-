@@ -463,3 +463,19 @@ def groq_agente(a):
 TOOLS.append(_fn('groq_agente', 'Enruta un mensaje a uno de los agentes Groq conectados (pool de hasta 20) y devuelve su respuesta. nombre: nombre del agente (ej. investigador, programador, redactor).', {'nombre': S, 'mensaje': S}, ['nombre', 'mensaje']))
 FUNCS['groq_agente'] = groq_agente
 SISTEMA += ' Tienes groq_agente(nombre, mensaje) para delegar en un agente Groq del pool.'
+
+
+def crear_agente(a):  # orquestador: la LLM del chat crea un agente (ventana-icono) con su modelo de la ficha 4
+    from plugins.orquestador import plugin as orq
+    try:
+        from plugins.puente_chat.plugin import _MOTOR_SES
+        sec = _MOTOR_SES.get() or 'web-general'
+    except Exception:  # noqa: BLE001
+        sec = 'web-general'
+    r = orq.crear({'seccion': a.get('seccion') or sec, 'nombre': a.get('nombre'), 'sistema': a.get('sistema'), 'modelo': a.get('modelo') or 'ficha-qwen38flash'}, 'llm-chat')
+    return json.dumps(r, ensure_ascii=False)[:800]
+
+
+TOOLS.append(_fn('crear_agente', 'Crea un agente (sub-chat) en la seccion Chat BOTS del chat abierto (max 50) con su propio system y un modelo de la ficha 4 (ficha-qwen38max, ficha-qwen38flash, ficha-dsv4pro, ficha-dsv4flash, ficha-glm52...).', {'nombre': S, 'sistema': S, 'modelo': S}, ['nombre', 'sistema']))
+FUNCS['crear_agente'] = crear_agente
+SISTEMA += ' Tienes crear_agente(nombre, sistema, modelo) para crear un agente en Chat BOTS cuando el Director lo pida.'
