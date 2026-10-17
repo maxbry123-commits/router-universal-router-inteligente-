@@ -226,12 +226,22 @@ def validar(salida: str, c: dict[str, Any]) -> list[str]:
 
 
 def arreglo_determinista(salida: str, c: dict[str, Any]) -> str:
-    """FIX sin LLM: si el contrato pide JSON y viene dentro de ```json ...```, se deja solo el JSON."""
+    """FIX sin LLM: si el contrato pide JSON y viene dentro de ```json ...```, se deja solo el JSON.
+    TERMINA CON / EMPIEZA CON (texto literal, sin JSON): se agrega la marca que falta (sin LLM y sin recortar la respuesta)."""
     if c.get('formato') == 'json' or c.get('esquema'):
         obj, crudo = _json_de(salida)
         if obj is not None and crudo and crudo != salida.strip():
             return crudo
-    return salida
+        return salida
+    s = str(salida or '')
+    if not s.strip() or s.startswith('GAP'):
+        return salida
+    v = validar(s, {'termina': c.get('termina') or '', 'empieza': c.get('empieza') or ''})
+    if c.get('empieza') and any(x.startswith('EMPIEZA') for x in v):
+        s = c['empieza'] + NL + s.lstrip()
+    if c.get('termina') and any(x.startswith('TERMINA') for x in v):
+        s = s.rstrip() + NL + c['termina']
+    return s
 
 
 # ---------------------------------------------------------------- archivos anclados (reales)
@@ -329,9 +339,11 @@ def preparar(p: dict[str, Any]) -> dict[str, Any]:
     sp_nom = str(sp.get('nombre') or '') if isinstance(sp, dict) else ''
     ar = p.get('ancla_real') if isinstance(p.get('ancla_real'), dict) else {}
     archivos = revisar_archivos(list(ar.get('archivos') or []), c) if ar.get('on') else []
-    bloque = bloque_entrada(ctxt if s.get('entrada', True) is not False else '', c, sp_txt, archivos)  # entrada:false = solo validar la salida (prueba/auditoria del validador)
+    ent = ctxt if s.get('entrada', True) is not False else ''  # entrada:false = solo validar la salida (prueba/auditoria del validador)
+    bloque = bloque_entrada(ent, c, sp_txt, archivos)
     activo = bool(bloque) or c is not None
     return {'on': on, 'contrato_txt': ctxt, 'contrato': c, 'system_prompt': sp_txt, 'system_prompt_nombre': sp_nom, 'archivos': archivos, 'bloque': bloque,
+            'bloque_contrato': bloque_entrada(ent, c, sp_txt, []),  # sin archivos: para el nodo final de las fichas con N0 (los archivos ya van en N0)
             'activo': activo}
 
 
@@ -544,7 +556,8 @@ def graphify_anclar(ses: str, codigo: list[dict[str, Any]], GraphifyCodeAdapter:
     src, out = _dir_graphify(ses)
     src.mkdir(parents=True, exist_ok=True)
     for a in codigo:
-        (src / re.sub(r'[^A-Za-z0-9._-]', '_', a['nombre'])).write_text(a['_txt'], encoding='utf-8')
+        nom = re.sub(r'[^A-Za-z0-9._-]', '_', Path(str(a['nombre'])).name).lstrip('.') or 'archivo'  # nunca sale de src/ (sin '..' ni rutas)
+        (src / nom).write_text(a['_txt'], encoding='utf-8')
     ad = GraphifyCodeAdapter(source_root=src, output_dir=out)
     try:
         b = ad.build()
@@ -560,7 +573,10 @@ def consultar_grafo(mem: Any, scope_for: Callable[[str, str], str], dueno: str, 
     ses = re.sub(r'[^A-Za-z0-9_-]', '_', str(p.get('sesion') or 'general'))[:60]
     sc = scope_for(dueno, 'sentinela:' + ses)
     q = str(p.get('consulta') or '')
-    k = int(p.get('k') or 10)
+    try:
+        k = max(1, min(50, int(p.get('k') or 10)))
+    except (TypeError, ValueError):
+        k = 10
     out: dict[str, Any] = {'scope': sc}
     try:
         out['graph_sqlite'] = mem.graph.search(sc, q, k)

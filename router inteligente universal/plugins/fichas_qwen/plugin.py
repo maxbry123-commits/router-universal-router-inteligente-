@@ -1295,6 +1295,9 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
                       'PREGUNTA:' + nl + mensaje[:_fast_cfg(ficha)['context_chars']] + _hb(opts, nl))
         else:
             prompt = n.get('rol', '') + nl * 2 + 'TAREA DEL DIRECTOR (INPUT BLOCK VERBATIM):' + nl + mensaje + nl * 2 + ctx
+            _sbk = 'sentinela_bloque' if 'N0' not in nodos else 'sentinela_contrato'  # Constitucion ON: el modelo que escribe la respuesta final tambien recibe el contrato
+            if opts.get(_sbk) and 'N0' not in n.get('depende_de', []) and (n.get('id') == fin_id or ('N0' not in nodos and n.get('id') == 'N4')):
+                prompt += nl * 2 + str(opts[_sbk])
         if n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado'):
             prompt += nl * 2 + 'AVISO DEL SISTEMA: falta la aprobacion del Director. NO ejecutes cambios ni uses herramientas de escritura. Entrega solo el PLAN (pasos, archivos, riesgos) y termina con la linea ESPERANDO_APROBACION. El Director aprueba escribiendo /aprobar al inicio de su mensaje.'
             prompt += nl * 2 + _fmt_txt(ficha) + nl * 2 + 'DIAGRAMA REAL DEL WORKFLOW (copialo tal cual en la seccion DIAGRAMA DE FLUJO):' + nl + _diagrama(ficha, nodos, orden, out, opts, 'N4')
@@ -1409,7 +1412,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
 
 def _chat(p: dict[str, Any]) -> dict[str, Any]:
     # Constitucion sentinela: contrato en la ENTRADA + validador determinista en la SALIDA + 1 juez-corrector solo si falla. OFF = no corre.
-    from . import sentinela_contrato as _sent
+    from plugins.fichas_qwen import sentinela_contrato as _sent  # absoluto (como perfiles): vale cargado como paquete o por ruta
     try:
         ctx = _sent.preparar(p)
     except Exception as e:  # noqa: BLE001
@@ -1425,7 +1428,7 @@ def _chat_sentinela(p, ctx, _sent):
     if not ctx.get('activo'):
         return _chat_base(p)
     fid = ALIAS.get(str(p.get("ficha_qwen") or ""), str(p.get("ficha_qwen") or ""))
-    q = dict(p, _sentinela_bloque=ctx['bloque'])
+    q = dict(p, _sentinela_bloque=ctx['bloque'], _sentinela_contrato=ctx.get('bloque_contrato') or '')
     if fid == 'ficha5-mvp':  # Team 5: el bloque va en sus instrucciones fijas (system)
         q['instrucciones_fijas'] = (str(p.get('instrucciones_fijas') or '').strip() + chr(10) * 2 + ctx['bloque']).strip()
     r = _chat_base(q)
@@ -1478,7 +1481,7 @@ def _chat_base(p: dict[str, Any]) -> dict[str, Any]:
     pend_t = _pend_cargar(fid, ses) if ap else None
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else []), 'sentinela_bloque': str(p.get('_sentinela_bloque') or '')}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else []), 'sentinela_bloque': str(p.get('_sentinela_bloque') or ''), 'sentinela_contrato': str(p.get('_sentinela_contrato') or '')}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:
@@ -1704,7 +1707,7 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
     if action == "llm":
         return _llm(p)
     if action in ("sentinela_anclar", "sentinela_grafo", "sentinela_validar"):  # Constitucion sentinela: anclaje al grafo (Graphiti + Graphify + grafo SQLite) y validacion
-        from . import sentinela_contrato as _sent
+        from plugins.fichas_qwen import sentinela_contrato as _sent  # absoluto (como perfiles): vale cargado como paquete o por ruta
         if action == "sentinela_validar":
             c = _sent.parsear(str(p.get('contrato') or ''))
             r = {'archivos': [{k: v for k, v in a.items() if k != '_txt'} for a in _sent.revisar_archivos(list(p.get('archivos') or []), c)]}
