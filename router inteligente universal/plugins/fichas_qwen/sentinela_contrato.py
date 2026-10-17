@@ -42,6 +42,11 @@ _EXT = {'.py': 'python', '.js': 'javascript', '.mjs': 'javascript', '.json': 'js
 
 
 # ---------------------------------------------------------------- contrato
+_NATURAL = re.compile(r'^(?:(?:la\s+)?respuesta\s+|siempre\s+|debes?\s+|tu\s+respuesta\s+)*'
+                      r'(termina|terminar|terminá|acaba|acabar|finaliza|finalizar|empieza|empezar|comienza|comenzar)\s+(?:siempre\s+)?con\s*:?\s*'
+                      r'["\'«“]?([^\s"\'«»“”]+?)["\'»”]?[.!]?$', re.I)
+
+
 def parsear(texto: str) -> dict[str, Any]:
     """Lineas 'CLAVE: valor' = reglas verificables; el resto = reglas libres (solo entrada)."""
     c: dict[str, Any] = {'debe': [], 'prohibido': [], 'libres': [], 'formato': '', 'esquema': None, 'max_lineas': 0, 'max_chars': 0,
@@ -59,7 +64,11 @@ def parsear(texto: str) -> dict[str, Any]:
                     clave = nom
                     break
         if not clave:
-            c['libres'].append(ln[:400])
+            n = _NATURAL.match(ln)  # «termina con SENTINELA7» / «empieza con VALE» sin dos puntos: 1 sola palabra = verificable
+            if n:
+                c['termina' if n.group(1).lower().startswith(('term', 'acab', 'fin')) else 'empieza'] = n.group(2)[:200]
+            else:
+                c['libres'].append(ln[:400])
             continue
         v = m.group(2).strip()
         if clave in ('debe', 'prohibido'):
@@ -563,7 +572,7 @@ def consultar_grafo(mem: Any, scope_for: Callable[[str, str], str], dueno: str, 
     k = int(p.get('k') or 10)
     out: dict[str, Any] = {'scope': sc}
     try:
-        out['graph_sqlite'] = mem.graph.search(sc, q, k)
+        out['graph_sqlite'] = mem.graph.search(sc, q or 'sent-', k)  # consulta vacia = todo lo anclado (las claves empiezan por sent-)
     except Exception as e:  # noqa: BLE001
         out['graph_sqlite'] = 'GAP:' + type(e).__name__
     try:
@@ -583,7 +592,13 @@ def consultar_grafo(mem: Any, scope_for: Callable[[str, str], str], dueno: str, 
     src, gout = _dir_graphify(ses)
     if (gout / 'graph.json').exists():
         try:
-            out['graphify'] = _clase_graphify(mem)(source_root=src, output_dir=gout).search('code', q or 'def', k)
+            gf = _clase_graphify(mem)(source_root=src, output_dir=gout)
+            if q:
+                out['graphify'] = gf.search('code', q, k)
+            else:  # consulta vacia = los nodos del codigo anclado (search() descarta los nodos sin coincidencias)
+                nodos = json.loads((gout / 'graph.json').read_text(encoding='utf-8')).get('nodes') or []
+                out['graphify'] = [{'source': 'graphify', 'id': n.get('id'), 'label': n.get('label'), 'file': gf._rel(n.get('source_file') or n.get('file')),
+                                    'text': str(n.get('label') or n.get('id'))} for n in nodos[:k]]
         except Exception as e:  # noqa: BLE001
             out['graphify'] = 'GAP:' + type(e).__name__
     else:

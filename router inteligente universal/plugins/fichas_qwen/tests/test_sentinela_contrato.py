@@ -39,3 +39,13 @@ def test_archivo_real_viaja_y_se_valida():
     a = ctx['archivos'][0]
     assert a['sintaxis_ok'] is False and 'def f(:' in ctx['bloque']
     assert s.ejecutar_sandbox('print(1)', 'python')['ejecutado'] in (True, False)
+
+
+def test_termina_con_en_lenguaje_natural():
+    for t in ('termina con SENTINELA7', 'Termina con SENTINELA7.', 'La respuesta termina siempre con «SENTINELA7»', 'termina con: SENTINELA7'):
+        assert s.parsear(t)['termina'] == 'SENTINELA7', t
+    assert s.parsear('empieza con VALE')['empieza'] == 'VALE'
+    c = s.parsear('Termina con una pregunta')  # varias palabras: regla libre (viaja al modelo, no se valida literal)
+    assert c['termina'] == '' and c['libres'] == ['Termina con una pregunta']
+    c = s.parsear('termina con SENTINELA7')
+    assert s.validar('ok SENTINELA7', c) == [] and s.validar('ok', c) == ['TERMINA CON: SENTINELA7']

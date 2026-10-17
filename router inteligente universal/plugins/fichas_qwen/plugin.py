@@ -1407,9 +1407,29 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
     return final, traza
 
 
+def _sent_mod():
+    # sentinela_contrato.py junto a este plugin: paquete (Router) o archivo suelto (pruebas que cargan plugin.py por ruta)
+    try:
+        from . import sentinela_contrato as m  # type: ignore
+        return m
+    except ImportError:
+        import importlib.util
+        import sys as _s
+        m = _s.modules.get('plugins.fichas_qwen.sentinela_contrato')
+        if m is None:
+            spec = importlib.util.spec_from_file_location('plugins.fichas_qwen.sentinela_contrato', str(DIR / 'sentinela_contrato.py'))
+            m = importlib.util.module_from_spec(spec)
+            _s.modules['plugins.fichas_qwen.sentinela_contrato'] = m
+            spec.loader.exec_module(m)
+        return m
+
+
 def _chat(p: dict[str, Any]) -> dict[str, Any]:
     # Constitucion sentinela: contrato en la ENTRADA + validador determinista en la SALIDA + 1 juez-corrector solo si falla. OFF = no corre.
-    from . import sentinela_contrato as _sent
+    try:
+        _sent = _sent_mod()
+    except Exception:  # noqa: BLE001 - la sentinela nunca rompe el chat: sin modulo, el chat sale como antes
+        return _chat_base(p)
     try:
         ctx = _sent.preparar(p)
     except Exception as e:  # noqa: BLE001
@@ -1434,13 +1454,14 @@ def _chat_sentinela(p, ctx, _sent):
     info = dict(_sent.publico(ctx), on=bool(ctx.get('on')))
     if ctx.get('on') and isinstance(r.get('reply'), str):
         ficha = FICHAS.get(fid) or {}
-        mod = _elegido(ficha, str(p.get('modelo') or '')) if fid not in ('ficha2-dag-codigo', 'ficha3-frontend') else None
+        _fsel = (FICHAS.get('ficha1-modelos') or {}) if fid == 'ficha5-mvp' else ficha  # Team 5 elige del selector de la Ficha 1 (como mvp.py)
+        mod = _elegido(_fsel, str(p.get('modelo') or '')) if fid not in ('ficha2-dag-codigo', 'ficha3-frontend') else None
         mod = mod or str(ficha.get('fast_model') or 'ficha-qwen38flash')
         n = {'id': 'JUEZ', 'timeout_s': 40, 'max_output_tokens': 1500, 'requiere_tools': False, 'escribe': False}
         o = {'sesion': str(p.get('sesion') or 'fichas')[:60], 'fid': fid, 'cap_in': 'none', 'fast_lane': True, 'aprobado': False, 'muta': False, 'tarea_id': str(p.get('_pid') or '')}
         msg = str(p.get('message') or '') or next((str(m.get('content', '')) for m in reversed(p.get('messages') or []) if m.get('role') == 'user'), '')
         t0 = time.time()
-        txt, inf = _sent.salida(ctx, msg, r['reply'], lambda pr: _llamar_harness_1(mod, pr, ficha, n, o))
+        txt, inf = _sent.salida(ctx, msg, r['reply'], lambda pr: _llamar_harness_1(mod, pr, _fsel, n, o))  # Team 5: catalogo y timeouts de la Ficha 1 (Team 5 no tiene los suyos)
         inf['ms_total'] = int((time.time() - t0) * 1000)
         info.update(inf)
         if txt != r['reply']:
@@ -1704,7 +1725,7 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
     if action == "llm":
         return _llm(p)
     if action in ("sentinela_anclar", "sentinela_grafo", "sentinela_validar"):  # Constitucion sentinela: anclaje al grafo (Graphiti + Graphify + grafo SQLite) y validacion
-        from . import sentinela_contrato as _sent
+        _sent = _sent_mod()
         if action == "sentinela_validar":
             c = _sent.parsear(str(p.get('contrato') or ''))
             r = {'archivos': [{k: v for k, v in a.items() if k != '_txt'} for a in _sent.revisar_archivos(list(p.get('archivos') or []), c)]}
