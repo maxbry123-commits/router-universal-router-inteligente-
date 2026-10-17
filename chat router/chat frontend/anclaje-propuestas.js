@@ -3,7 +3,7 @@
 // defecto) y «silenciadas» (fila OFF = sigue anclada pero no viaja; contexto.js ya las filtra al enviar).
 //  A · una barra: pegas / arrastras / escribes para buscar; ON/OFF por fila.   B · tarjetas por destino.   C · mínimo: un botón ⚓ y una lista.
 import { leer, escribir } from "./almacen.js";
-import { crearObjetivo, listaWF, listaProyectos, crearProyecto, proyId } from "./objetivos-ancla.js";
+import { crearObjetivo, listaWF, listaProyectos, crearProyecto, proyId, nuevoProyectoPrompt } from "./objetivos-ancla.js";
 import { K_MUTE } from "./contexto.js";
 import { clasificar } from "./chat-ancla.js";
 import { el, boton, cargarCss } from "./ventanas-comun.js";
@@ -72,10 +72,15 @@ function fila(f, { tag, alCambio, tell, deshacer }) {
   const x = boton("✕", "ap-x", () => { M.quitar(f.d.k, f.tok); deshacer(f.d.k, f.tok); alCambio(); }); x.setAttribute("aria-label", "Quitar " + nombre(f.tok));
   r.append(n, s, x); return r;
 }
-function selectorDestino(val, fn) {
+function selectorDestino(val, fn, tell) {
   const s = el("select", "ap-dest"); s.setAttribute("aria-label", "Anclar en");
   destinos().forEach((d) => { const o = el("option", "", d.ic + " " + d.n); o.value = d.k; s.append(o); });
-  s.value = destinos().some((d) => d.k === val) ? val : "chat"; s.addEventListener("change", () => fn(s.value)); return s;
+  const nv = el("option", "", "🗂 ＋ Nuevo proyecto"); nv.value = "__nuevo__"; s.append(nv);
+  s.value = destinos().some((d) => d.k === val) ? val : "chat";
+  const prev = s.value; s.addEventListener("change", () => {
+    if (s.value !== "__nuevo__") { fn(s.value); return; }
+    s.value = prev; const p = nuevoProyectoPrompt(tell); if (p) fn("proyecto:" + p.nombre);  // misma clave que destinos()
+  }); return s;
 }
 export function montarPropuestasAncla({ root, q, tell }) {
   // ⚓ abre la propuesta A (barra única) por defecto; ?panel=b|c abre B o C; el panel clásico queda detrás del botón «Clásico».
@@ -147,7 +152,7 @@ export function montarPropuestasAncla({ root, q, tell }) {
     inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && inp.value.trim()) { e.preventDefault(); const t = inp.value; filtro = ""; pegarEn(destSel, t); } });
     const clip = boton("📎", "ap-ic-b", () => elegir(destSel)); clip.setAttribute("aria-label", "Subir y anclar archivo");
     barra.append(inp, clip); zonaDrop(w, () => destSel);
-    const pie = el("div", "ap-pie"); pie.append(el("span", "", "Se ancla en"), selectorDestino(destSel, (k) => { fijarDest(k); pintar(); }), el("span", "ap-hint", "Enter ancla · ✕ quita"));
+    const pie = el("div", "ap-pie"); pie.append(el("span", "", "Se ancla en"), selectorDestino(destSel, (k) => { fijarDest(k); pintar(); }, decir), el("span", "ap-hint", "Enter ancla · ✕ quita"));
     w.append(barra, pie); const sg = sugerencias(destSel); if (sg) w.append(sg);
     const lista = el("div", "ap-lista"), fs = M.filas(filtro), c = ctx();
     if (!fs.length) lista.append(vacio(filtro ? "Nada coincide con «" + filtro + "». Enter para anclarlo." : "Nada anclado. Pega un enlace aquí arriba o suelta un archivo."));
@@ -182,7 +187,9 @@ export function montarPropuestasAncla({ root, q, tell }) {
       grid.append(card);
     });
     if (!grid.children.length) grid.append(vacio("Nada coincide con «" + filtro + "»."));
-    w.append(grid); return w;
+    w.append(grid);
+    if (!filtro) { const nv = boton("🗂 ＋ Nuevo proyecto", "mini", () => { const p = nuevoProyectoPrompt(decir); if (p) { abiertas.add("proyecto:" + p.nombre); pintar(); } }); nv.dataset.ap = "nuevo-proyecto"; w.append(nv); }  // misma función que el selector
+    return w;
   }
   // ---------- C · mínimo: un botón ⚓ y una lista ----------
   let buscando = false;
@@ -195,7 +202,7 @@ export function montarPropuestasAncla({ root, q, tell }) {
     const info = el("div", "ap-c-info"); info.append(el("strong", "", "Anclar"), el("small", "ap-sub", "Toca: ancla lo copiado o elige archivo · también puedes pegar o soltar aquí"));
     const lupa = boton("🔎", "ap-ic-b" + (buscando ? " on" : ""), () => { buscando = !buscando; if (!buscando) filtro = ""; pintar(); if (buscando) { const b = cuerpo.querySelector("[data-ap=buscarc]"); if (b) b.focus(); } }); lupa.setAttribute("aria-label", "Buscar");
     top.append(big, info, lupa); w.append(top);
-    const pie = el("div", "ap-pie"); pie.append(el("span", "", "en"), selectorDestino(destSel, (k) => { fijarDest(k); pintar(); }));
+    const pie = el("div", "ap-pie"); pie.append(el("span", "", "en"), selectorDestino(destSel, (k) => { fijarDest(k); pintar(); }, decir));
     if (d.k !== "chat") pie.append(sw(M.encendido(d.k), d.n + " encendido", () => { const on = M.alternarDestino(d.k); if (on === null) return; decir(d.n + (on ? ": ON" : ": OFF")); pintar(); }));
     w.append(pie);
     if (buscando) { const b = el("input", "ap-buscar"); b.type = "search"; b.dataset.ap = "buscarc"; b.placeholder = "Buscar…"; b.value = filtro; b.setAttribute("aria-label", "Buscar"); b.addEventListener("input", () => { filtro = b.value; pintar(); }); w.append(b); const sg = sugerencias(destSel); if (sg) w.append(sg); }

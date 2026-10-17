@@ -1,7 +1,7 @@
 // anclaje-destinos.js — en la ventana de Anclaje: "Anclar a" Chat / Constitución / Workflows / Agentes remotos / Proyecto / Sandbox.
 // Es LA MISMA ventana para todos: al elegir el objetivo, todo lo de la ventana (enlaces, anclado ahora, instrucciones fijas, proyectos,
 // handoffs, Mi handoff y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
-import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId } from "./objetivos-ancla.js";
+import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId, nuevoProyectoPrompt } from "./objetivos-ancla.js";
 import { el, boton, cargarCss } from "./ventanas-comun.js";
 export function montarDestinos({ root, q, tell }) {
   const caja = q("#ventana-ancla .va-caja"); if (!caja || caja.dataset.destinos) return; caja.dataset.destinos = "1";
@@ -43,8 +43,12 @@ export function montarDestinos({ root, q, tell }) {
     }
     if (tipo === "proyecto" && obj) {
       const s = el("select", "vn-in"); s.setAttribute("aria-label", "Carpeta de proyecto");
-      listaProyectos().forEach((p) => { const o = el("option", "", p.nombre); o.value = p.nombre; s.append(o); }); s.value = obj.id;
-      s.addEventListener("change", () => fijar("proyecto", s.value));
+      listaProyectos().forEach((p) => { const o = el("option", "", p.nombre); o.value = p.project_id; s.append(o); }); s.value = obj.project_id;  // cada proyecto se ancla por su propio ID
+      const on = el("option", "", "＋ Nuevo proyecto"); on.value = "__nuevo__"; s.append(on);
+      s.addEventListener("change", () => {
+        if (s.value !== "__nuevo__") { fijar("proyecto", s.value); return; }
+        s.value = obj.project_id; const p = nuevoProyectoPrompt(tell); if (p) fijar("proyecto", p.project_id);
+      });
       const nom = el("input", "vn-in"); nom.placeholder = "Nueva carpeta de proyecto…"; nom.maxLength = 60; nom.setAttribute("aria-label", "Nueva carpeta de proyecto");
       const nuevo = boton("＋ Carpeta", "mini", () => { const n = crearProyecto(nom.value); if (!n) { tell("Escribe un nombre"); return; } tell("Carpeta creada: " + n); fijar("proyecto", n); });
       const f2 = el("div", "vn-fila"); f2.append(nom, nuevo); fila.append(s, f2);

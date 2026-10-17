@@ -13,6 +13,7 @@ const etiquetaSesion = (s) => {
   if (s.startsWith("proyecto:")) return "dentro de " + s.slice(9); return "chat " + String(s).slice(-6);
 };
 const unico = (a) => [...new Set(a)];
+const isoDe = (v) => { if (!v) return undefined; const d = new Date(typeof v === "number" ? (v < 1e12 ? v * 1000 : v) : v); return isNaN(d) ? undefined : d.toISOString(); };  // created_at del backend (epoch s) -> fecha ISO
 export function montarProyecto(root, { tell }) {
   const tabs = root.querySelectorAll("[data-tab]"), pa = root.querySelector("#tab-archivos"), pp = root.querySelector("#tab-proyecto"), lista = root.querySelector("#proyecto-lista");
   if (!pa || !pp || !lista) return;
@@ -35,10 +36,11 @@ export function montarProyecto(root, { tell }) {
           if (p.anclas !== undefined || p.items !== undefined) ex.items = p.anclas || p.items || ex.items;
           if (p.encendido !== undefined) ex.on = !!p.encendido;
           if (p.estado !== undefined) ex.estado = p.estado;
+          if (!ex.fecha) ex.fecha = p.fecha || isoDe(p.created_at);  // fecha de creación: remota si existe; nunca se borra la local
           ex.created_at = p.created_at || ex.created_at; ex.updated_at = p.updated_at || ex.updated_at;
           nuevos++;
         }
-        else { t.global.push({ nombre: n, project_id: pid || slugP(n), items: p.anclas || p.items || [], on: !!p.encendido, notas: p.notas || "", estado: p.estado, created_at: p.created_at, updated_at: p.updated_at }); nuevos++; }
+        else { t.global.push({ nombre: n, project_id: pid || slugP(n), items: p.anclas || p.items || [], on: !!p.encendido, notas: p.notas || "", estado: p.estado, fecha: p.fecha || isoDe(p.created_at), created_at: p.created_at, updated_at: p.updated_at }); nuevos++; }
       });
       if (nuevos) { escribir(CLAVE_PROY, t); pintar(); }
     } catch (e) {}
