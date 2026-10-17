@@ -11,7 +11,7 @@ def _find(env, tail):
     if os.environ.get(env):
         return Path(os.environ[env])
     for p in REPO.rglob(tail.split('/')[-1]):
-        if str(p).replace('\\', '/').endswith(tail):
+        if "workflow Loops" not in str(p) and str(p).replace("\\", "/").endswith(tail):  # la copia vieja de workflow no cuenta
             return p
     raise FileNotFoundError(tail)
 
