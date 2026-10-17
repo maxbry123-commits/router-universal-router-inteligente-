@@ -3,7 +3,7 @@
 import { escribir, KEYS } from "./almacen.js";
 import { dameCon, refsCompartidas } from "./contexto.js";
 import { el, boton, crearVentana, abrirVentana, agregarPill } from "./ventanas-comun.js";
-import { montarSecciones, sincronizarGrafo } from "./sentinela.js";
+import { montarSecciones, sincronizarGrafo, montarSystemPrompt } from "./sentinela.js";
 const URL_OFICIAL = "https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/plugins/puente_chat/constitucion/CONSTITUCION-YAIWES.json";
 export function montarConstitucion({ root, q, tell }) {
   if (root.dataset.con) return; root.dataset.con = "1";
@@ -42,4 +42,5 @@ export function montarConstitucion({ root, q, tell }) {
   }
   const onAlm = () => { if (!root.isConnected) { window.removeEventListener("riu:almacen", onAlm); return; } marcar(); };
   window.addEventListener("riu:almacen", onAlm); marcar();
+  montarSystemPrompt({ root, q, tell });  // System prompt: ventana aparte (pill «prompt»)
 }

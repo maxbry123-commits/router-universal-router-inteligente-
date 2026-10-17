@@ -1,6 +1,6 @@
 // sentinela.js — Constitución sentinela (contrato verificable), system prompt (simple, sin validación) y «Anclar archivo real».
 // Lógica + secciones de la ventana Constitución. El backend (fichas_qwen/sentinela_contrato.py) valida la salida y corrige con 1 reintento.
-import { el, boton } from "./ventanas-comun.js";
+import { el, boton, crearVentana, abrirVentana, agregarPill } from "./ventanas-comun.js";
 const K_SP = "riu_system_prompts_v1", K_AR = "riu_ancla_real_v1", K_CON = "riu_constitucion_v1";
 const leerJ = (k, d) => { try { return Object.assign(d, JSON.parse(localStorage.getItem(k) || "null") || {}); } catch (e) { return d; } };
 const guardarJ = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
@@ -59,27 +59,6 @@ export function montarSecciones(cuerpo, tell) {
   const pl = boton("Insertar plantilla de contrato", "mini", () => { const ta = cuerpo.querySelector("textarea[aria-label='Mi constitución']"); if (!ta) return; ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + PLANTILLA; ta.dispatchEvent(new Event("input", { bubbles: true })); sincronizarGrafo(tell); tell("Plantilla insertada"); });
   pl.dataset.sent = "plantilla";
   const ta0 = cuerpo.querySelector("textarea[aria-label='Mi constitución']"); if (ta0) { ta0.after(ayuda, pl); ta0.addEventListener("input", () => sincronizarGrafo()); } else cuerpo.append(ayuda, pl);
-  // 2) System prompt: simple, NO funciona como la Constitución (sin validación)
-  const box = el("div", "sent-sp"); box.dataset.sent = "sp";
-  const pintarSP = () => {
-    box.replaceChildren(); const sp = dameSP();
-    box.append(el("div", "vn-t", "System prompt (simple, sin validación)"), el("div", "vn-estado", "Se añade al inicio del mensaje del modelo. No se verifica ni corrige: eso solo lo hace la Constitución."));
-    const sel = el("select", "vn-in"); sel.setAttribute("aria-label", "System prompt activo"); sel.dataset.sent = "sp-sel";
-    const o0 = el("option", "", "Ninguno"); o0.value = ""; sel.append(o0);
-    sp.lista.forEach((x) => { const o = el("option", "", x.nombre); o.value = x.id; sel.append(o); }); sel.value = sp.activo || "";
-    const nom = el("input", "vn-in"); nom.placeholder = "Nombre del system prompt"; nom.setAttribute("aria-label", "Nombre del system prompt"); nom.dataset.sent = "sp-nombre";
-    const ta = el("textarea", "vn-ta"); ta.placeholder = "Escribe aquí el system prompt…"; ta.setAttribute("aria-label", "Texto del system prompt"); ta.dataset.sent = "sp-texto";
-    const act = sp.lista.find((x) => x.id === sp.activo); if (act) { nom.value = act.nombre; ta.value = act.texto; }
-    sel.addEventListener("change", () => { const v = dameSP(); v.activo = sel.value || null; guardarJ(K_SP, v); pintarSP(); sincronizarGrafo(tell); tell(sel.value ? "System prompt activo: " + sel.selectedOptions[0].textContent : "Sin system prompt"); });
-    const g = boton("Guardar", "mini", () => { const v = dameSP(), n = nom.value.trim() || "Prompt " + (v.lista.length + 1), t = ta.value.slice(0, 6000); if (!t.trim()) { tell("Escribe el system prompt"); return; }
-      let x = v.lista.find((y) => y.id === v.activo && y.nombre === n) || v.lista.find((y) => y.nombre === n); if (!x) { x = { id: "sp-" + Date.now().toString(36), nombre: n, texto: t }; v.lista.push(x); } else x.texto = t;
-      v.activo = x.id; guardarJ(K_SP, v); pintarSP(); sincronizarGrafo(tell); tell("System prompt guardado y activo: " + n); }); g.dataset.sent = "sp-guardar";
-    const nv = boton("Nuevo", "mini", () => { const v = dameSP(); v.activo = null; guardarJ(K_SP, v); pintarSP(); });
-    const br = boton("Borrar", "mini", () => { const v = dameSP(); if (!v.activo) return; v.lista = v.lista.filter((y) => y.id !== v.activo); v.activo = null; guardarJ(K_SP, v); pintarSP(); tell("System prompt borrado"); });
-    const fila = el("div", "vn-fila"); fila.append(g, nv, br);
-    box.append(sel, nom, ta, fila);
-  };
-  pintarSP();
   // 3) Anclar archivo real: el contenido viaja en el contexto; el código se valida (y se ejecuta en sandbox si el Router lo permite)
   const ab = el("div", "sent-ar"); ab.dataset.sent = "ar";
   const pintarAR = () => {
@@ -115,5 +94,34 @@ export function montarSecciones(cuerpo, tell) {
         "\nGraphiti: " + (Array.isArray(r.graphiti) ? r.graphiti.length + " resultados" : r.graphiti) + " · escrituras " + JSON.stringify(r.graphiti_escrituras || {}) +
         "\nGraphify: " + (Array.isArray(r.graphify) ? gf.length + " nodos\n" + gf.slice(0, 8).map((x) => "· " + x.label + " (" + x.file + ")").join("\n") : r.graphify); } catch (e) { tell("Grafo: " + e.message); } }), pre);
   window.addEventListener("riu:sentinela-grafo", (e) => { if (est.isConnected) est.textContent = resumenGrafo(e.detail); });
-  cuerpo.append(box, ab, gb);
+  cuerpo.append(boton("Abrir la ventana System prompt", "mini", () => { const b = document.getElementById("pill-system-prompt"); if (b) b.click(); }), ab, gb);
+}
+export function montarSystemPrompt({ root, q, tell }) {  // ventana propia, aparte de la Constitución: prompt simple, sin validación
+  if (root.dataset.sp) return; root.dataset.sp = "1";
+  const { sheet, caja } = crearVentana(root, { id: "ventana-system-prompt", titulo: "System prompt", css: "ventana-constitucion" });
+  const box = el("div", "sent-sp con-cuerpo"); box.dataset.sent = "sp"; caja.append(box);
+  const activoSP = () => { const v = dameSP(); return !!v.lista.find((x) => x.id === v.activo && String(x.texto || "").trim()); };
+  const pill = agregarPill(q, "pill-system-prompt", "prompt ⌄", () => { pintarSP(); abrirVentana(root, sheet); });
+  const marcarSP = () => pill.classList.toggle("on", activoSP());
+  // 2) System prompt: simple, NO funciona como la Constitución (sin validación)
+  const pintarSP = () => {
+    box.replaceChildren(); const sp = dameSP();
+    box.append(el("div", "vn-t", "System prompt (simple, sin validación)"), el("div", "vn-estado", "Viaja con cada mensaje al modelo (selectores Qwen). No se verifica ni corrige: eso solo lo hace la Constitución."));
+    const sel = el("select", "vn-in"); sel.setAttribute("aria-label", "System prompt activo"); sel.dataset.sent = "sp-sel";
+    const o0 = el("option", "", "Ninguno"); o0.value = ""; sel.append(o0);
+    sp.lista.forEach((x) => { const o = el("option", "", x.nombre); o.value = x.id; sel.append(o); }); sel.value = sp.activo || "";
+    const nom = el("input", "vn-in"); nom.placeholder = "Nombre del system prompt"; nom.setAttribute("aria-label", "Nombre del system prompt"); nom.dataset.sent = "sp-nombre";
+    const ta = el("textarea", "vn-ta"); ta.placeholder = "Escribe aquí el system prompt…"; ta.setAttribute("aria-label", "Texto del system prompt"); ta.dataset.sent = "sp-texto";
+    const act = sp.lista.find((x) => x.id === sp.activo); if (act) { nom.value = act.nombre; ta.value = act.texto; }
+    sel.addEventListener("change", () => { const v = dameSP(); v.activo = sel.value || null; guardarJ(K_SP, v); pintarSP(); marcarSP(); sincronizarGrafo(tell); tell(sel.value ? "System prompt activo: " + sel.selectedOptions[0].textContent : "Sin system prompt"); });
+    const g = boton("Guardar", "mini", () => { const v = dameSP(), n = nom.value.trim() || "Prompt " + (v.lista.length + 1), t = ta.value.slice(0, 6000); if (!t.trim()) { tell("Escribe el system prompt"); return; }
+      let x = v.lista.find((y) => y.id === v.activo && y.nombre === n) || v.lista.find((y) => y.nombre === n); if (!x) { x = { id: "sp-" + Date.now().toString(36), nombre: n, texto: t }; v.lista.push(x); } else x.texto = t;
+      v.activo = x.id; guardarJ(K_SP, v); pintarSP(); marcarSP(); sincronizarGrafo(tell); tell("System prompt guardado y activo: " + n); }); g.dataset.sent = "sp-guardar";
+    const nv = boton("Nuevo", "mini", () => { const v = dameSP(); v.activo = null; guardarJ(K_SP, v); pintarSP(); marcarSP(); });
+    const br = boton("Borrar", "mini", () => { const v = dameSP(); if (!v.activo) return; v.lista = v.lista.filter((y) => y.id !== v.activo); v.activo = null; guardarJ(K_SP, v); pintarSP(); marcarSP(); tell("System prompt borrado"); });
+    const fila = el("div", "vn-fila"); fila.append(g, nv, br);
+    box.append(sel, nom, ta, fila);
+  };
+  pintarSP();
+  marcarSP();
 }
