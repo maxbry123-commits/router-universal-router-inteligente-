@@ -18,11 +18,17 @@ const conGet = () => Object.assign({ encendida: false, texto: "", oficial: false
 const wfStore = () => { const v = leer(KEYS.workflows, { lista: [], sel: null }); if (!Array.isArray(v.lista)) v.lista = []; return v; };
 const simple = (k) => Object.assign({ items: [], notas: "", on: false }, leer(k, {}));
 export const listaWF = () => wfStore().lista;
-export const listaProyectos = () => arr(leer(KP, {}).global);
+export const listaProyectos = () => {  // compat: proyectos viejos sin project_id reciben el slug (el mismo id que ya usaba el backend); se guarda una sola vez
+  const t = leer(KP, {}), l = arr(t.global); let cambio = false;
+  l.forEach((p) => { if (p && !p.project_id) { p.project_id = slugProy(p.nombre); cambio = true; } });
+  if (cambio) { t.global = l; escribir(KP, t); }
+  return l;
+};
+export const buscarProyecto = (ref) => listaProyectos().find((x) => x.project_id === ref) || listaProyectos().find((x) => x.nombre === ref) || null;  // por project_id (nuevo) o por nombre (viejo)
 export function crearProyecto(nombre) {
   const n = String(nombre || "").trim().slice(0, 60); if (!n) return null;
   const t = leer(KP, {}); t.global = arr(t.global);
-  if (!t.global.some((p) => p.nombre.toLowerCase() === n.toLowerCase())) { const pid = "p-" + uid(); t.global.push({ nombre: n, project_id: pid, items: [], on: false, notas: "" }); escribir(KP, t); upsertRemoto(n, pid); }  // project_id p-<uid> independiente del nombre
+  if (!t.global.some((p) => p.nombre.toLowerCase() === n.toLowerCase())) { const pid = "p-" + uid(); const fecha = new Date().toISOString(); t.global.push({ nombre: n, project_id: pid, fecha, items: [], on: false, notas: "" }); escribir(KP, t); upsertRemoto(n, pid); upsertMeta(pid, { fecha }); }  // project_id p-<uid> independiente del nombre
   return (t.global.find((p) => p.nombre.toLowerCase() === n.toLowerCase()) || {}).nombre || n;
 }
 export function crearObjetivo(tipo, id) {
@@ -45,7 +51,7 @@ export function crearObjetivo(tipo, id) {
       get encendido() { return !!simple(k).on; }, set encendido(v) { mod((x) => { x.on = !!v; }); } };
   }
   if (tipo === "proyecto") {
-    const p0 = listaProyectos().find((x) => x.nombre === id); if (!p0) return null;
+    const p0 = buscarProyecto(id); if (!p0) return null; id = p0.nombre;  // acepta project_id o nombre; internamente sigue por nombre (sesion/claves sin cambios)
     const mod = (fn) => { const t = leer(KP, {}); t.global = arr(t.global); const x = t.global.find((y) => y.nombre === id); if (x) { fn(x); escribir(KP, t); } };
     const dame = () => listaProyectos().find((y) => y.nombre === id) || {};
     return { tipo, id, nombre: "Proyecto «" + id + "»", sesion: "proyecto:" + id, project_id: p0.project_id || null,
