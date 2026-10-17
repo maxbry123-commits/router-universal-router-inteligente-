@@ -8,8 +8,8 @@ import json, os, sys, urllib.request, datetime, pathlib
 
 REPO = "maxbry123-commits/router-universal-router-inteligente-"
 BUCKET = "buckets/COMAND-CENTER-1/yaiwes-memoria-storage/handoff"
-SEGUIDAS = ["memoria-audit", "orquestador-agentes", "panel-anclaje-v2", "constitucion-contrato",
-            "tools-staff", "historial-persistente", "anclas-constitucion", "handoff-migracion"]
+VENTANA_H = int(os.getenv("HANDOFF_VENTANA_H", "48"))  # ramas con push en las últimas N horas
+BOGOTA = datetime.timezone(datetime.timedelta(hours=-5), "UTC-5")
 AQUI = pathlib.Path(__file__).resolve().parent
 BITACORA = AQUI.parent / "chat router" / "03-ESTADO" / "BITACORA.jsonl"
 INI, FIN = "<!-- AUTO:INICIO -->", "<!-- AUTO:FIN -->"
@@ -22,22 +22,56 @@ def gh(path):
     with urllib.request.urlopen(req, timeout=20) as r:
         return json.load(r)
 
+def bog(iso):
+    """ISO UTC de GitHub -> 'AAAA-MM-DD HH:MM' en America/Bogota (UTC-5)."""
+    try:
+        return datetime.datetime.fromisoformat(iso.replace("Z", "+00:00")).astimezone(BOGOTA).strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        return str(iso)[:16]
+
+def ramas_activas():
+    """Ramas reales con push reciente (API de actividad), sin main; luego solo las que van por delante de main."""
+    corte = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=VENTANA_H)
+    vistas = {}
+    for e in gh("activity?per_page=100&time_period=week"):
+        ref = e.get("ref", "")
+        if not ref.startswith("refs/heads/") or ref == "refs/heads/main":
+            continue
+        t = datetime.datetime.fromisoformat(e["timestamp"].replace("Z", "+00:00"))
+        if t >= corte:
+            vistas[ref[11:]] = max(t, vistas.get(ref[11:], t))
+    return [b for b, _ in sorted(vistas.items(), key=lambda x: x[1], reverse=True)]
+
 def ramas():
     filas = []
-    for b in SEGUIDAS:
+    try:
+        lista = ramas_activas()
+    except Exception as e:
+        return [f"| — | — | — | — | sin acceso a la API de actividad ({type(e).__name__}) |"]
+    tope = None if os.getenv("GITHUB_TOKEN") else int(os.getenv("HANDOFF_TOPE", "15"))  # cuota sin token: 60/h
+    corte = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=VENTANA_H)
+    omitidas = 0
+    for b in lista[:tope]:
         try:
             c = gh(f"commits/{b}")
+            fecha = datetime.datetime.fromisoformat(c["commit"]["committer"]["date"].replace("Z", "+00:00"))
+            if fecha < corte:
+                continue  # push reciente pero sin commits nuevos (rama vieja re-subida)
             cmp = gh(f"compare/main...{b}")
-            filas.append(f"| `{b}` | {c['sha'][:10]} | {c['commit']['committer']['date'][:10]} | "
+            if not cmp.get("ahead_by"):
+                continue  # ya fusionada en main
+            filas.append(f"| `{b}` | {c['sha'][:10]} | {bog(c['commit']['committer']['date'])} | "
                          f"+{cmp.get('ahead_by','?')}/-{cmp.get('behind_by','?')} | "
                          f"{c['commit']['message'].splitlines()[0][:90]} |")
-        except Exception as e:
-            filas.append(f"| `{b}` | — | — | — | no existe o sin acceso ({type(e).__name__}) |")
+        except Exception:
+            omitidas += 1
+    if omitidas or (tope and len(lista) > tope):
+        filas.append(f"| … | — | — | — | {omitidas} sin acceso y {max(0, len(lista) - (tope or len(lista)))} sin revisar (define GITHUB_TOKEN) |")
     return filas
 
 def commits(n=10):
     try:
-        return [f"- {c['sha'][:10]} {c['commit']['committer']['date'][:10]} {c['commit']['message'].splitlines()[0][:100]}"
+        return [f"- {c['sha'][:10]} {bog(c['commit']['committer']['date'])} {c['commit']['message'].splitlines()[0][:100]}"
                 for c in gh(f"commits?sha=main&per_page={n}")]
     except Exception as e:
         return [f"- (sin acceso a GitHub: {type(e).__name__})"]
@@ -52,17 +86,17 @@ def bitacora(n=8):
         out = []
         for l in lineas[-n:]:
             e = json.loads(l)
-            out.append(f"- seq {e.get('seq')} {e.get('at','')[:16]} {e.get('task','')} {e.get('status','')}: "
+            out.append(f"- seq {e.get('seq')} {bog(e.get('at',''))} {e.get('task','')} {e.get('status','')}: "
                        f"{str(e.get('summary',''))[:120]} → next: {e.get('next','')}")
         return out
     except Exception as e:
         return [f"- (BITACORA no disponible: {type(e).__name__})"]
 
 def run(subir=True):
-    ahora = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).strftime("%Y-%m-%d %H:%M (UTC-5)")
-    auto = "\n".join([INI, f"## Estado automático ({ahora})", "", "### Ramas",
-                      "| Rama | Último commit | Fecha | vs main (+/-) | Mensaje |", "|---|---|---|---|---|",
-                      *ramas(), "", "### Últimos commits en main", *commits(), "",
+    ahora = datetime.datetime.now(BOGOTA).strftime("%Y-%m-%d %H:%M")
+    auto = "\n".join([INI, f"## Estado automático ({ahora}, hora Bogotá UTC-5)", "", "### Ramas",
+                      "| Rama | Último commit | Fecha (UTC-5) | vs main (+/-) | Mensaje |", "|---|---|---|---|---|",
+                      *ramas(), "", "### Últimos commits en main (hora UTC-5)", *commits(), "",
                       "### BITACORA state-hub (últimos)", *bitacora(), FIN])
     f = AQUI / "TAREAS.md"
     txt = f.read_text(encoding="utf-8") if f.exists() else "# Tareas\n"
