@@ -576,3 +576,244 @@ TOOLS.extend([
 FUNCS.update({'nvidia_codigo': _t_nvcodigo, 'recurso_llm': _t_recurso, 'agente_enlazar': _t_enlazar})
 SISTEMA += (' Staff de tools: nvidia_codigo(mensaje) para codigo; recurso_llm(recurso, mensaje) para consultar un modelo de la Ficha 4 '
             '(ficha4:<id>), NVIDIA codigo (nvcode:<modelo>) o Groq; agente_enlazar(nombre, recurso) para elegir que modelo usa un agente.')
+
+
+# --- t172u-t177u: Chat BOTS, ROOM, notas (bloc) y panel de pendientes (DSL DAG) como tools de CUALQUIER modelo del chat ---
+# Mismo conector del chat MVP: LLM_CALL (plugin.py llm_call -> HTTP -> Ficha 4 -> modelo) y la misma memoria memoria_yaiwes.
+# Los input blocks se guardan verbatim 1:1 (nunca se reescriben); la vista organizada es aparte.
+import hashlib as _hl
+import threading as _th
+NOTAS_SCOPE = 'chat-ui:agenda:notas'
+ESTADOS_DAG = ('🔴 pendiente', '🟡 en curso', '🟢 cerrado', '⚫ cancelado', '⚪ falta instrucciones o autorizacion')
+_TRABAJOS = {}
+_COMP_RAIZ = 'chat router/chat bot'
+
+
+def _mem_ag():
+    from integration.chat_mvp.memoria_loader import _memory
+    return _memory()
+
+
+def _dato(clave):
+    try:
+        r = _mem_ag().sqlite.load(NOTAS_SCOPE, clave)  # clave exacta, el mas reciente primero (igual que plugins/orquestador)
+        dd = (r[0].get('data') if r and isinstance(r[0], dict) else None) or {}
+        return dd if isinstance(dd, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _poner(clave, data):
+    _mem_ag().save(NOTAS_SCOPE, clave, dict(data, clave=clave))
+
+
+def notas_inputs(_a=None):
+    return list(_dato('indice').get('inputs') or [])
+
+
+def notas_guardar(a):
+    texto = str(a.get('texto') or '')
+    if not texto.strip():
+        return {'error': 'TEXTO_VACIO'}
+    sha = _hl.sha256(texto.encode('utf-8')).hexdigest()
+    idx = notas_inputs()
+    if any(x.get('sha256') == sha for x in idx):
+        return {'ok': True, 'repetido': True, 'sha256': sha}
+    iid = 'in-%04d' % (len(idx) + 1)
+    _poner('input:' + iid, {'id': iid, 'texto': texto, 'sha256': sha, 'fecha': time.strftime('%Y-%m-%dT%H:%M:%S%z')})
+    idx.append({'id': iid, 'sha256': sha, 'fecha': time.strftime('%Y-%m-%dT%H:%M:%S%z'), 'chars': len(texto)})
+    _poner('indice', {'inputs': idx})
+    return {'ok': True, 'id': iid, 'sha256': sha}
+
+
+def notas_leer(a):
+    iid = str(a.get('id') or '')
+    d = _dato('input:' + iid)
+    if not d:
+        return {'error': 'INPUT_NO_EXISTE'}
+    ok = _hl.sha256(str(d.get('texto') or '').encode('utf-8')).hexdigest() == d.get('sha256')
+    return {'id': iid, 'texto': d.get('texto'), 'sha256': d.get('sha256'), 'intacto': ok, 'fecha': d.get('fecha')}
+
+
+def notas_prompt(a=None):
+    a = a or {}
+    if a.get('prompt') not in (None, ''):
+        p = a['prompt']
+        if isinstance(p, str):
+            try:
+                p = json.loads(p)
+            except ValueError:
+                p = {'rol': p}
+        if not isinstance(p, dict):
+            return {'error': 'PROMPT_DEBE_SER_JSON_O_TEXTO'}
+        _poner('prompt', {'prompt': p, 'fecha': time.strftime('%Y-%m-%dT%H:%M:%S%z')})
+        return {'ok': True, 'propio': True}
+    d = _dato('prompt')
+    if d.get('prompt'):
+        return {'prompt': d['prompt'], 'propio': True}
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'notas_organizador_prompt.json')
+    with open(ruta, encoding='utf-8') as f:
+        return {'prompt': json.load(f), 'propio': False}
+
+
+def _json_de(txt):
+    t = str(txt or '').strip()
+    t = re.sub(r'^```(?:json)?\s*|\s*```$', '', t)
+    i, j = t.find('{'), t.rfind('}')
+    return json.loads(t[i:j + 1]) if i >= 0 and j > i else None
+
+
+def _organizar():
+    pr = notas_prompt().get('prompt') or {}
+    entradas = [notas_leer({'id': x['id']}) for x in notas_inputs()]
+    entradas = [{'id': e['id'], 'fecha': e.get('fecha'), 'texto': e.get('texto')} for e in entradas if e.get('texto')]
+    if not entradas:
+        return {'error': 'SIN_INPUTS'}
+    if not LLM_CALL:
+        return {'error': 'GAP_FICHA4_HTTP (harness sin llm_call)'}
+    modelo = str(pr.get('modelo') or 'ficha-qwen38max')
+    msgs = [{'role': 'system', 'content': json.dumps(pr, ensure_ascii=False)[:12000]},
+            {'role': 'user', 'content': json.dumps({'inputs': entradas}, ensure_ascii=False)[-60000:]}]
+    d = LLM_CALL({'caller_id': 'agenda-notas', 'plugin_id': 'puente_chat', 'workflow_id': 'notas-dag', 'task_type': 'code',
+                  'modelo': modelo, 'messages': msgs, 'max_tokens': 6000})
+    if not d.get('reply'):
+        return {'error': 'GAP_FICHA4', 'detalle': str(d.get('error') or '') + ' ' + str(d.get('detalle') or ''), 'modelo': modelo}
+    try:
+        dag = _json_de(d['reply'])
+    except ValueError:
+        dag = None
+    if not isinstance(dag, dict) or not isinstance(dag.get('nodos'), list):
+        return {'error': 'LLM_SIN_JSON_DAG', 'modelo': modelo, 'respuesta': str(d['reply'])[:1500]}
+    for n in dag['nodos']:
+        if isinstance(n, dict) and n.get('estado') not in ESTADOS_DAG:
+            n['estado_original'] = n.get('estado')
+            n['estado'] = ESTADOS_DAG[4]
+    vista = {'dag': dag, 'modelo': d.get('modelo') or modelo, 'inputs': len(entradas), 'fecha': time.strftime('%Y-%m-%dT%H:%M:%S%z')}
+    _poner('vista', vista)
+    return vista
+
+
+def _en_hilo(tipo, fn):
+    tid = tipo + '-' + _hl.sha256(str(time.time()).encode()).hexdigest()[:10]
+    _TRABAJOS[tid] = {'estado': 'procesando'}
+
+    def corre():
+        try:
+            _TRABAJOS[tid] = {'estado': 'completado', 'resultado': fn()}
+        except Exception as x:  # noqa: BLE001
+            _TRABAJOS[tid] = {'estado': 'error', 'error': type(x).__name__ + ' ' + str(x)[:200]}
+    _th.Thread(target=corre, daemon=True).start()
+    return {'estado': 'procesando', 'trabajo': tid}
+
+
+def pendientes(a):
+    acc = str(a.get('accion') or 'vista')
+    if acc == 'organizar':
+        return _en_hilo('dag', _organizar) if a.get('asincrono') else _organizar()
+    if acc == 'prompt_leer':
+        return notas_prompt()
+    if acc == 'prompt_guardar':
+        return notas_prompt({'prompt': a.get('prompt')})
+    if acc == 'trabajo':
+        return _TRABAJOS.get(str(a.get('trabajo') or ''), {'error': 'TRABAJO_NO_EXISTE'})
+    return _dato('vista') or {'vacio': True}
+
+
+def notas(a):
+    acc = str(a.get('accion') or 'listar')
+    if acc == 'guardar':
+        return notas_guardar(a)
+    if acc == 'leer':
+        return notas_leer(a)
+    return {'inputs': notas_inputs()}
+
+
+ROOM_DEF = ['ficha-qwen38flash', 'ficha-dsv4flash']  # ROOM por defecto: Qwen 3.8 Flash + DeepSeek V4 Flash (README chat bot §3.10)
+
+
+def _room(tema, part, rondas):
+    nombres = {x['id']: x.get('nombre') or x['id'] for x in _ficha4_texto()}
+    hilo = []
+    for r in range(1, rondas + 1):
+        for pid in part:
+            nom = nombres.get(pid, pid)
+            ctx = '\n'.join('[%s] %s' % (h['nombre'], h['texto']) for h in hilo[-24:])[-9000:]
+            orden = ('SALA DE CONFERENCIAS. Eres «%s». Ronda %d de %d. Tema del Usuario: %s\nConversacion hasta ahora:\n%s\n'
+                     'Coincide o rebate a los demas citando su nombre. Maximo 120 palabras, en espanol.') % (nom, r, rondas, tema, ctx or '(empiezas tu)')
+            txt = llamar_recurso('ficha4:' + pid, 'Participas en ROOM CONFERENCIAS de YAIWES.', orden)
+            hilo.append({'ronda': r, 'id': pid, 'nombre': nom, 'texto': str(txt)[:2000]})
+    return {'tema': tema, 'rondas': rondas, 'participantes': part, 'turnos': hilo}
+
+
+def room_debatir(a):
+    tema = str(a.get('tema') or '').strip()
+    if not tema:
+        return {'error': 'FALTA_TEMA'}
+    ok = {x['id'] for x in _ficha4_texto()}
+    part = [p for p in (a.get('participantes') or ROOM_DEF) if p in ok][:6] or ROOM_DEF
+    rondas = max(1, min(3, int(a.get('rondas') or 1)))
+    if a.get('asincrono'):
+        return _en_hilo('room', lambda: _room(tema, part, rondas))
+    return _room(tema, part[:3], min(rondas, 2))  # tool del chat: tope 3 participantes x 2 rondas para no agotar el tiempo
+
+
+_BOTS_OK = ('status', 'modelos', 'listar', 'crear', 'enviar', 'estado', 'mirror', 'aprobar', 'archivos', 'recibos', 'agentes_repo', 'repo_leer', 'arquitectura', 'vigilar')
+
+
+def chat_bots(a):
+    acc = str(a.get('accion') or 'listar')
+    if acc not in _BOTS_OK:
+        return {'error': 'ACCION_NO_PERMITIDA_DESDE_TOOL', 'permitidas': list(_BOTS_OK)}
+    from plugins.orquestador import plugin as orq
+    p = dict(a.get('datos') or {}) if isinstance(a.get('datos'), dict) else {}
+    p.setdefault('seccion', a.get('seccion') or 'web-general')
+    if acc == 'crear':
+        p['creado_por'] = 'llm-chat'
+    return orq.handle(acc, p)
+
+
+def crear_agente(a):  # rama wip/chatbots-backend-mvp: la LLM del chat crea un agente en Chat BOTS
+    return chat_bots({'accion': 'crear', 'seccion': a.get('seccion'), 'datos': {'nombre': a.get('nombre'), 'sistema': a.get('sistema'),
+                                                                                'modelo': a.get('modelo') or 'ficha-qwen38flash'}})
+
+
+def componentes_backend(a):
+    comp = re.sub(r'[^\w.-]', '', str(a.get('componente') or ''))
+    ruta = str(a.get('ruta') or '').strip('/')
+    if '..' in ruta:
+        return 'ERROR: ruta no permitida'
+    base = _COMP_RAIZ + ('/' + comp + '/code' if comp else '')
+    return github_leer({'repo': 'router-universal-router-inteligente-', 'ruta': base + ('/' + ruta if ruta and comp else ''), 'rama': 'main', 'lineas': a.get('lineas')})
+
+
+def http_accion(action, p):
+    # HTTP /plugins/puente_chat/call/<action> (mismo plugin del chat): notas, pendientes, room_debatir, chat_bots
+    p = dict(p or {})
+    if action == 'notas':
+        return notas(p)
+    if action == 'pendientes':
+        return pendientes(dict(p, asincrono=p.get('asincrono', True)))
+    if action == 'room_debatir':
+        return room_debatir(dict(p, asincrono=True)) if p.get('accion') != 'trabajo' else _TRABAJOS.get(str(p.get('trabajo') or ''), {'error': 'TRABAJO_NO_EXISTE'})
+    if action == 'chat_bots':
+        return chat_bots(p)
+    return {'error': 'ACCION_DESCONOCIDA'}
+
+
+def _j(f):
+    return lambda a: (lambda r: r if isinstance(r, str) else json.dumps(r, ensure_ascii=False)[:12000])(f(a))
+
+
+_A = {'type': 'array', 'items': S}
+TOOLS.extend([
+    _fn('notas', 'Bloc de notas de Antonio: guarda un input block VERBATIM 1:1 (inmutable, con sha256), lista los inputs o lee uno. accion: guardar (texto), listar, leer (id ej. in-0001).', {'accion': S, 'texto': S, 'id': S}, ['accion']),
+    _fn('pendientes', 'Panel de pendientes: organiza los input blocks en un DSL DAG (nodos=tareas, aristas=dependencias, 5 estados 🔴🟡🟢⚫⚪) con el prompt JSON editable. accion: vista, organizar, prompt_leer, prompt_guardar (prompt JSON), trabajo (trabajo).', {'accion': S, 'prompt': S, 'trabajo': S}, ['accion']),
+    _fn('room_debatir', 'ROOM CONFERENCIAS: debate entre modelos de la Ficha 4 por turnos (cada uno coincide o rebate citando nombres). participantes: ids de la Ficha 4 (ej. ficha-qwen38max, ficha-qwen38flash, ficha-dsv4flash, ficha-glm52); rondas 1-2.', {'tema': S, 'participantes': _A, 'rondas': {'type': 'integer'}}, ['tema']),
+    _fn('chat_bots', 'Chat BOTS (agentes sub-chat del chat abierto, max 50): accion status, modelos, listar, crear, enviar, estado, mirror, aprobar, archivos, recibos, agentes_repo, repo_leer, arquitectura, vigilar; datos: objeto con los campos de la accion (ej. {"id":"ag-...","mensaje":"..."}).', {'accion': S, 'seccion': S, 'datos': O}, ['accion']),
+    _fn('crear_agente', 'Crea un agente (sub-chat) en Chat BOTS del chat abierto con su system y un modelo de la Ficha 4 (ficha-qwen38max, ficha-qwen38flash, ficha-dsv4pro, ficha-dsv4flash, ficha-glm52...).', {'nombre': S, 'sistema': S, 'modelo': S}, ['nombre', 'sistema']),
+    _fn('componentes_backend', 'Lee los componentes del backend del chat bot descargados en router main "chat router/chat bot" (agent-zero, OpenManus, OpenHands, openhands-software-agent-sdk, openhands-automation, Agent-S, browser-use, context7, rea, CLI-Anything, strix, artemis). Sin componente lista la carpeta; con componente y ruta lee code/<ruta>.', {'componente': S, 'ruta': S, 'lineas': S}, []),
+])
+FUNCS.update({'notas': _j(notas), 'pendientes': _j(pendientes), 'room_debatir': _j(room_debatir), 'chat_bots': _j(chat_bots),
+              'crear_agente': _j(crear_agente), 'componentes_backend': componentes_backend})
+SISTEMA += (' Tienes tambien: notas (bloc de notas verbatim), pendientes (DSL DAG de tareas con prompt JSON editable), room_debatir (ROOM '
+            'CONFERENCIAS entre modelos de la Ficha 4), chat_bots y crear_agente (Chat BOTS) y componentes_backend (codigo de los componentes del chat bot).')
