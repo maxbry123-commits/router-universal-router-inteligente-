@@ -387,6 +387,36 @@ Columnas: ARCHIVO/RAMA → TIPO → RAMA → SHA → ENLACE GitHub → ESTADO �
 - ROOM «Todos»: respuestas de Antonio sobre tope 6 y fila de 6 líneas; bug «cambia» (189 s 720 ms).
 - Revisión ×3 de todas las ramas de la tabla §1.
 
+## Instrucciones de Antonio (backend + frontend Chat BOTS)
+
+Orden de Antonio (verbatim, 17-oct-2026):
+
+> Que haga una comparación investigación como funciona grockbot
+> Luego la información que te di
+> Luego los componentes que aporta sin sobre ingeniería
+> Luego poda usa solo lo escencial
+> Luego cablea y actuliza readme de arquitectura
+> Borra la basura
+>
+> El agente backend pasa información a el agente de fromte el sistema chatbot debe tener
+> 1. Una arquitectura interna usas skills archify lo descarga y lo usa dentro del chat dentro de chatbot luego crea una ventana de información donde está la pestaña de chatbot y va acrulizando creando la arquitectura de chat bot según
+> 1. Fromtend aprobado
+> 2. Backend lo que el agente le informa
+> Luego el agente de fromtend dibuja en el diagrama el avance
+
+Agente backend (detalle en [`HANDOFF/TAREAS/03`](../../HANDOFF/TAREAS/03-BACKEND-CHATBOTS-EVOLUCION.md#instrucción-para-el-agente-backend-mvp)):
+1. Investigar y comparar cómo funciona Grok Bot.
+2. Cruzar con la información de Antonio (`HANDOFF/CHATBOTS/GROKBOT-FUNCIONAMIENTO-Y-MEJORAS.md`, las 40 mejoras).
+3. Elegir los componentes que aportan, sin sobreingeniería.
+4. Podar: solo lo esencial.
+5. Cablear en COMPONENTE → HARNESS → HTTP → FICHA → MODELO y actualizar la arquitectura en `chat router/chat bot/README.md`.
+6. Borrar la basura (permiso de Antonio ya dado).
+7. Informar el avance al agente de frontend en `chat router/chat bot/ESTADO-BACKEND.md`.
+
+Agente frontend (detalle en [`HANDOFF/TAREAS/04`](../../HANDOFF/TAREAS/04-FRONTEND-CHATBOTS-PROPUESTA.md)): ventana de información junto a la pestaña de Chat BOTS con el diagrama de arquitectura (archify), actualizado según el frontend aprobado y `ESTADO-BACKEND.md`; dibuja el avance en el diagrama.
+
+**Archify**: la skill más probable es [`tt-a1i/archify`](https://github.com/tt-a1i/archify) («Turn any idea, plan, or codebase into a beautiful interactive diagram. An agent skill for Claude Code, Codex, and more»). No está en los repos de Antonio. **Por confirmar con Antonio** que es esa.
+
 ## Cómo retomar
 
 1. Lee [`README.md`](README.md) y la fila más reciente de PROGRESO de tu tarea. Si está `en curso` con otro agente, no la dupliques.
@@ -394,3 +424,4 @@ Columnas: ARCHIVO/RAMA → TIPO → RAMA → SHA → ENLACE GitHub → ESTADO �
 3. Añade tu fila en PROGRESO (`en curso`).
 4. Trabaja, prueba 412 px 4G E2E, pide la revisión ×3.
 5. Actualiza PROGRESO y `HANDOFF/TAREAS.md`. Reporta a Antonio en español, mínimo, con tiempos `X s YYY ms`.
+
