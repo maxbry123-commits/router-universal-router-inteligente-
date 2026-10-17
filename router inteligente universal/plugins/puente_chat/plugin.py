@@ -235,7 +235,10 @@ def _memoria():
     return _memory(), _scope_for
 
 
-def _contexto(sesion: str, pregunta: str) -> str:
+_OTRO_MODELO = 'respondio OTRO modelo'  # marca de un turno guardado de otro selector (no es la identidad del modelo actual)
+
+
+def _contexto(sesion: str, pregunta: str, modelo_actual: str = '') -> str:
     try:
         mem, scope_for = _memoria()
         res = mem.search(scope_for(DUENO, "chat:" + sesion), "", 6)  # ultimos turnos de esta conversacion
@@ -244,7 +247,9 @@ def _contexto(sesion: str, pregunta: str) -> str:
         for f in reversed(filas):
             d = f.get("data", f) if isinstance(f, dict) else f
             if isinstance(d, dict) and "pregunta" in d:
-                trozos.append("Usuario: " + str(d["pregunta"])[:500] + "\nAsistente: " + str(d.get("respuesta", ""))[:500])
+                m_ = str(d.get("modelo") or "")
+                quien = "Asistente" if not (m_ and modelo_actual) or m_ == modelo_actual else "Asistente (%s: %s; NO es tu identidad)" % (_OTRO_MODELO, m_[:60])
+                trozos.append("Usuario: " + str(d["pregunta"])[:500] + "\n" + quien + ": " + str(d.get("respuesta", ""))[:500])
         return "\n".join(trozos)
     except Exception:  # noqa: BLE001 - la memoria nunca bloquea el chat
         return ""
@@ -2245,7 +2250,7 @@ def _chat(p):
         return gov_err
     gov_bloque = gov_info.pop('_bloque', '') if gov_info else ''
     _tmm = time.time()
-    ctx = '' if p.get('contexto_explicito') else (_contexto(sesion, pregunta) if pregunta else '')  # Team 5: el historial ya va en messages''
+    ctx = '' if p.get('contexto_explicito') else (_contexto(sesion, pregunta, model) if pregunta else '')  # Team 5: el historial ya va en messages''
     if p.get('project_id'):  # cabecera del proyecto (nombre/notas) delante del historial reciente
         try:
             meta_p = _proyecto_meta(p['project_id'])
@@ -2274,6 +2279,9 @@ def _chat(p):
             pass
     if ctx:  # MEMORIA EXACTA despues de las anclas directas (SYSTEM > CONSTITUCION > ANCLAS > CODIGO > MEMORIA > DERIVADOS)
         sistema += ' Contexto guardado de esta conversacion: ' + ctx
+        if _OTRO_MODELO in ctx:  # cambio de selector en el mismo chat: el historial trae la identidad del modelo anterior
+            sistema += (' IDENTIDAD: tu eres ' + (FICHAS[model][0] + ' (' + FICHAS[model][2] + ')' if model in FICHAS else RESPALDO[model][0])
+                        + '. Los turnos marcados "' + _OTRO_MODELO + '" los respondio otro modelo: no te presentes con su nombre ni copies su identidad.')
     if res_anc is not None and not res_anc.get('gap'):  # SYSTEM > CONSTITUCION > MEMORIA > ANCLAS DIRECTAS > DERIVADOS > usuario
         try:
             _der = _derivados(sesion, pregunta, anclados, res_anc, str(p.get('project_id') or ''))
