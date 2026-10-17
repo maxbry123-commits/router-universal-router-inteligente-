@@ -5,6 +5,7 @@
 // Historial: la misma memoria del chat (chat-ancla: IndexedDB + cache localStorage) con su propia sesión room-*; el Router la guarda por sesión.
 import { node } from "./api.js";
 import * as A from "./chat-ancla.js";
+import { crearCola, devolverACaja, antesDeCola } from "./cola-envio.js";
 
 const CLAVE = "riu_room_v1";
 const MAX_RONDAS = 5;  // participantes: sin tope, pueden entrar todos los selectores ("Todos")
@@ -123,7 +124,7 @@ export function montarRoom({ q, tell }) {
   };
   const limpia = (p, t) => String(t || "").replace(new RegExp("^\\s*(\\*\\*)?\\[?«?" + p.nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "»?\\]?(\\*\\*)?\\s*:\\s*(\\*\\*)?\\s*", "i"), "").trim();  // quita el "**Nombre**:" que algunos modelos anteponen
   const turno = async (p, nombres, r, R) => {
-    const pend = node("div", p.nombre + " · pensando…", "item message pending room-pend"); hist.append(pend); abajo();
+    const pend = node("div", p.nombre + " · pensando…", "item message pending room-pend"); antesDeCola(hist, pend); abajo();
     const alProg = (e) => { const d = e.detail; if (!d || d.sesion !== st.sesion) return; if (d.parcial) { pend.textContent = p.nombre + ": " + d.parcial; abajo(); } else if (d.texto && !d.parcial) pend.textContent = p.nombre + " · " + d.texto; };
     window.addEventListener("riu-progreso", alProg);
     const t0 = performance.now();
@@ -136,42 +137,51 @@ export function montarRoom({ q, tell }) {
       txt = limpia(p, txt) || "Sin respuesta";
       const ms = Math.round(performance.now() - t0);
       pend.remove();
-      const b = burbuja("[[" + p.nombre + via + "]]\n" + txt); b.dataset.ms = String(ms); hist.append(b);
+      const b = burbuja("[[" + p.nombre + via + "]]\n" + txt); b.dataset.ms = String(ms); antesDeCola(hist, b);
       A.registrar(st.sesion, "bot", "[[" + p.nombre + via + "]]\n" + txt);
-      hist.append(node("div", p.nombre + " · " + Math.floor(ms / 1000) + " s " + String(ms % 1000).padStart(3, "0") + " ms", "item meta room-ms"));
+      antesDeCola(hist, node("div", p.nombre + " · " + Math.floor(ms / 1000) + " s " + String(ms % 1000).padStart(3, "0") + " ms", "item meta room-ms"));
     } catch (err) {
       pend.remove();
       const msg = parar ? "proceso detenido por el usuario" : "GAP " + p.nombre + ": " + ((err && err.message) || err);
-      hist.append(burbuja(msg, parar ? "meta" : "error")); A.registrar(st.sesion, "err", msg);
+      antesDeCola(hist, burbuja(msg, parar ? "meta" : "error")); A.registrar(st.sesion, "err", msg);
     } finally { cortar = null; window.removeEventListener("riu-progreso", alProg); abajo(); }
   };
+  // escribir sin esperar: la caja sigue activa mientras la sala debate (lo enviado entra como intervención, room-todos); si ya hay cola, lo nuevo va detrás y abre el siguiente debate
+  const cola = crearCola({ ocupado: () => ocupado, enviar: (x) => { debatir(x.texto, x.el); } });
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const texto = caja.value.trim();
     if (!texto) return;
-    if (ocupado) {  // el Usuario también participa: su mensaje entra en la sala y los siguientes turnos lo ven y le responden
+    if (ocupado) {  // [room-todos] mientras la sala debate, el Usuario interviene: su mensaje entra en la sala y los siguientes turnos lo ven y le responden
       caja.value = ""; hist.__sigue = true;
       hist.append(burbuja(texto, "user")); A.registrar(st.sesion, "user", texto); interv = texto; abajo(); return;
     }
+    if (cola.length) { const ub = burbuja(texto, "user"); hist.append(ub); caja.value = ""; cola.poner({ texto, el: ub }); hist.__sigue = true; abajo(); window.RIU_ROOM.pintar(); caja.focus(); return; }  // [escribir-sin-esperar] cola pendiente: va detrás, en orden
+    await debatir(texto, null);
+  });
+  const debatir = async (texto, ubCola) => { try { await debatir0(texto, ubCola); } finally { window.RIU_ROOM.pintar(); cola.siguiente(); } };
+  const debatir0 = async (texto, ubCola) => {
+    const noSale = (t) => { if (ubCola) { ubCola.remove(); devolverACaja(caja, [texto]); } tell(t); };  // en cola y no puede salir: vuelve a la caja
     const P = participantes(), sel = st.part.map((id) => P.find((p) => p.id === id)).filter(Boolean);
-    if (!sel.length) { tell("Elige al menos un participante"); return; }
-    if (!window.RIU_HARNESS || !(window.RIU_CONFIG || {}).harnessUrl) { tell("Router aún sin conectar: espera un momento"); return; }
-    await listo;
-    ocupado = true; parar = false; bStop.hidden = false; bEnv.textContent = "Intervenir"; caja.placeholder = "Intervén en el debate…"; pintarCfg(); window.RIU_ROOM.pintar();
-    hist.__sigue = true; caja.value = "";
-    hist.append(burbuja(texto, "user")); A.registrar(st.sesion, "user", texto); abajo();
+    if (!sel.length) { noSale("Elige al menos un participante"); return; }
+    if (!window.RIU_HARNESS || !(window.RIU_CONFIG || {}).harnessUrl) { noSale("Router aún sin conectar: espera un momento"); return; }
+    ocupado = true; parar = false; bStop.hidden = false; bEnv.textContent = "Intervenir"; caja.placeholder = "Intervén en el debate…"; pintarCfg(); window.RIU_ROOM.pintar();  // ocupado ANTES de esperar: un segundo envío en ese instante es intervención, no abre otro debate
+    try { await listo; } catch (e) {}
+    hist.__sigue = true;
+    if (ubCola) antesDeCola(hist, ubCola); else { caja.value = ""; hist.append(burbuja(texto, "user")); }
+    A.registrar(st.sesion, "user", texto); abajo();
     tema = texto; interv = "";
     const nombres = sel.map((p) => p.nombre), R = st.rondas;
     try {
       for (let r = 1; r <= R && !parar; r++) {
-        if (R > 1) hist.append(node("div", "Ronda " + r + " de " + R, "item meta room-ronda"));
+        if (R > 1) antesDeCola(hist, node("div", "Ronda " + r + " de " + R, "item meta room-ronda"));
         for (const p of sel) { if (parar) break; estado.textContent = "Ronda " + r + "/" + R + " · " + p.nombre; await turno(p, nombres, r, R); }
       }
     } finally {
       ocupado = false; estado.textContent = ""; bStop.hidden = true; bEnv.textContent = "Debatir"; caja.placeholder = "Tema o mensaje para la sala…"; interv = ""; pintarCfg(); window.RIU_ROOM.pintar();
     }
-  });
-  bStop.addEventListener("click", () => { parar = true; if (cortar) { try { cortar(); } catch (e) {} } if (window.RIU_CANCELAR) { try { window.RIU_CANCELAR(st.sesion); } catch (e) {} } tell("Deteniendo la sala…"); });
+  };
+  bStop.addEventListener("click", () => { const vuelve = cola.vaciar().map((x) => x.texto); devolverACaja(caja, vuelve); parar = true; if (cortar) { try { cortar(); } catch (e) {} } if (window.RIU_CANCELAR) { try { window.RIU_CANCELAR(st.sesion); } catch (e) {} } tell("Deteniendo la sala…"); });
   caja.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(pointer: fine)").matches) { e.preventDefault(); form.requestSubmit(); } });
 
   // ---- pestaña ROOM CONFERENCIAS en la tira de chats (pintarTabs la vuelve a pintar) ----
@@ -185,7 +195,7 @@ export function montarRoom({ q, tell }) {
       tab = node("button", "", "chip room-tab"); tab.type = "button"; tab.title = "ROOM CONFERENCIAS — varias LLM debaten";
       tab.addEventListener("click", () => { st.activo = true; guardar(); pintar(); setTimeout(abajo, 30); });
     }
-    tab.textContent = "ROOM CONFERENCIAS" + (ocupado ? " …" : "");
+    tab.textContent = "ROOM CONFERENCIAS" + (ocupado ? " …" : "") + (cola.length ? " +" + cola.length : "");
     tabsEl.append(tab);
     tab.classList.toggle("on", st.activo);
     vista.hidden = !st.activo; hist.hidden = !st.activo;
