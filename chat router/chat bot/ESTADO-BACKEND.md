@@ -60,4 +60,4 @@ Campos nuevos en la vista del agente: `objetivo`, `fallo` (`FAIL_TIMEOUT`, `FAIL
 | 17-oct 01:02 | Rama creada desde `main` `529b680b0e`; commit 1/3 código MVP `64bd84ab66` |
 | 17-oct 01:02 | CI bloqueado por facturación de GitHub Actions |
 | 17-oct 01:07 | Commit 2/3 docs `0caac6ec3b` (este archivo, README arquitectura, HANDOFF, TAREAS/03) |
-| 17-oct 01:09 | Commit 3/3: horas corregidas a la hora real del commit |
+| 17-oct 01:07 | Commits 3 y 4: horas corregidas a la hora real (`dddb1bcc6e` y el siguiente) |
