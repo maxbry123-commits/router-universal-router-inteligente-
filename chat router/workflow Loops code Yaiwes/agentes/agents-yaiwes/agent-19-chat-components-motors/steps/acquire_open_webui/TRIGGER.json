@@ -1,0 +1,1 @@
+{"schema": "yaiwes.trigger/v1", "run_id": "CHAIN-001", "input_block": "DIRECTOR 2026-09-24: un agente DESCARGA solo con los motores de descarga y extracción, con el destino fijado.\nNo GitHub Actions manual, no HF Job, ningún otro método. Open WebUI es la base del chat.\nLEY: no crear componentes desde cero; motores canónicos -> descargar -> extraer -> publicar.\n"}

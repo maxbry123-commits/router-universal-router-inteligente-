@@ -1,0 +1,26 @@
+schema_id: skills_schema/hyperframes-keyframes.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Keyframes y animación DETERMINISTA
+work_surface: FRONTEND
+acceptance: keyframes deterministas (filosofía 90% determinista)
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/hyperframes-keyframes.json
+  sha256: pending
+oracle: check:keyframes_deterministas
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

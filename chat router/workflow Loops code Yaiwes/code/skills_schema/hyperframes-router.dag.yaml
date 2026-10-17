@@ -1,0 +1,26 @@
+schema_id: skills_schema/hyperframes-router.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Router del pipeline de motion
+work_surface: FRONTEND
+acceptance: determina qué skills de hyperframes aplican
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/hyperframes-router.json
+  sha256: pending
+oracle: router:hyperframes_chain
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

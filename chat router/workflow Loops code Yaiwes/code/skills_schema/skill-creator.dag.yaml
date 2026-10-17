@@ -1,0 +1,28 @@
+schema_id: skills_schema/skill-creator.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Meta-schema que genera los demás
+work_surface: MIXED
+acceptance:
+- procesado PRIMERO
+- genera schemas válidos
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/skill-creator.json
+  sha256: pending
+oracle: meta:genera_schemas
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

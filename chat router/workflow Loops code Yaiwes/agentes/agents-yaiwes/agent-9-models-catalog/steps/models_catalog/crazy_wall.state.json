@@ -1,0 +1,33 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-9-models-catalog",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T14:56:20Z",
+ "group": "hf-models",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "d9bc6398c888d9616bbe9cde4542abf98258698eac45639b9a32eafd1d4fd3e2",
+   "chars": 5702
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "models_catalog.py",
+   "sha256": "5c756bc11bd72489f016ba071e59b2a1101b218a2dbfa8afc00411e91bf71551"
+  }
+ ],
+ "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+ "attempts": 2,
+ "route_trace": [
+  "hf/MiniMaxAI/MiniMax-M3:AgentGenerationError:Error while generating output:\nRequest timed out."
+ ]
+}

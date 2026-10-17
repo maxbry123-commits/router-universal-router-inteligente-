@@ -1,0 +1,29 @@
+{
+  "schema": "yaiwes.state/v1",
+  "revision": 71,
+  "updated_at": "2026-10-04T02:14:34Z",
+  "active_project": "router-inteligente-universal",
+  "projects": {
+    "chat-yaiwes": {
+      "status": "RUNNING",
+      "progress": 0,
+      "active_tasks": [
+        "RIU-0119",
+        "RIU-0120",
+        "UI-T-05",
+        "UI-T-06",
+        "UI-T-10"
+      ],
+      "blocked_tasks": [
+        "UI-T-07",
+        "PLAN-RECEPCION"
+      ]
+    },
+    "router-inteligente-universal": {
+      "status": "COMPLETED",
+      "progress": 0,
+      "active_tasks": [],
+      "blocked_tasks": []
+    }
+  }
+}

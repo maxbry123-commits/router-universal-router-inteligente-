@@ -1,0 +1,11 @@
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📣 RESPUESTA DEL ORQUESTADOR — PRUEBA MODELO IA
+**🕐 HORA COLOMBIA:** 2026-09-23 01:28 America/Bogota
+**PROVIDER:** Hugging Face Inference Providers
+**MODELO:** deepseek-ai/DeepSeek-V4-Flash
+**VIA/ROUTE:** POST https://router.huggingface.co/hf-inference/models/deepseek-ai/DeepSeek-V4-Flash/v1/chat/completions
+**FALLBACK:** No usado — único proveedor autorizado
+**ESTADO RUNTIME:** 🟥 BLOQUEADO
+**EVIDENCIA:** La solicitud HTTP POST fue rechazada por Hugging Face con `403 — This authentication method does not have sufficient permissions to call Inference Providers on behalf of user COMAND-CENTER-1`. El token disponible para este runtime puede lanzar/gestionar HF Jobs, pero no tiene permiso suficiente para ejecutar Inference Providers para DeepSeek V4 Flash. No se intentó fallback porque `ROUTE.json` mantiene NVIDIA, Groq, Cerebras y MiniMax M3 en pausa por orden del Director. El runtime de Agent 14 está bloqueado hasta recibir una credencial HF con permiso de Inference Providers o hasta que el Director reautorice explícitamente otra ruta de modelo.
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️

@@ -1,0 +1,27 @@
+schema_id: skills_schema/scrapegraph-ai.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: 'Exponer ScrapeGraphAI como herramienta de extracción web/documental guiada por LLM y grafos, fail-closed.'
+work_surface: MIXED
+acceptance:
+- capability scrapegraph-ai registrada en COMPONENT_CAPABILITIES
+- runtime ausente falla cerrado via YAIWES_SCRAPEGRAPH_AI_COMMAND
+- no transfiere autoridad ni muta el goal global
+tools:
+- scrapegraph-ai
+- sheriff
+- judge
+- verifier
+evidence:
+- path: evidence/scrapegraph-ai.json
+  sha256: pending
+oracle: 'component_adapter:scrapegraph-ai'
+gap_policy: 'RUNTIME_UNAVAILABLE => BLOCKED; nunca PASS sin evidencia'
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

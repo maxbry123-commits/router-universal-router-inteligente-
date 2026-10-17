@@ -1,0 +1,28 @@
+schema_id: skills_schema/design-system.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Tokens, componentes, identidad, evitar design drift
+work_surface: FRONTEND
+acceptance:
+- todo color/espaciado sale de token declarado
+- cero valores mágicos
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/design-system.json
+  sha256: pending
+oracle: check:tokens_solo
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

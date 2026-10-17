@@ -1,0 +1,130 @@
+# PLAN DSL DAG — CHAT + EQUIPO DE AGENTES + INFRAESTRUCTURA (Router 16 GB)
+# Autor: Opus (orquestador). Director: Max. Fecha: 2026-09-26.
+# Fuente de las instrucciones: chat router/INPUT-BLOCK-VERBATIM-CHAT-Y-PANEL*.md (partes 1, 3, 4). Estado real: chat router/HANDOFF-MAESTRO.md
+# Nivel: mismo formato que el plan de 4 objetivos (nodos con quién ejecuta, audita y repara; entrada, salida verificable, cierre).
+schema: yaiwes.plan/v2
+
+reglas_globales:
+  - "No cambiar instrucciones, diseño ni herramientas del Director sin autorización expresa."
+  - "Anotar cada instrucción nueva verbatim antes de ejecutar; lo no resuelto = GAP, nunca inventar."
+  - "Descargas SOLO con el motor de descarga y extracción. No escribir código desde cero si existe componente descargado."
+  - "Rutas IA: NVIDIA (hasta 4 claves, Kimi más nuevo) -> Cerebras -> Groq -> DeepSeek V4 Flash al final. Sin APIs de Anthropic."
+  - "Sin claves en repos. Cada nodo cierra solo con prueba real (botón pulsado, respuesta recibida, archivo verificado)."
+  - "Un nodo no se marca CERRADO porque exista el archivo: COMPONENTE DESCARGADO != INTEGRADO."
+
+arquitectura_fijada_por_el_Director:
+  vercel: "Solo pantalla del chat + letrero de dirección fija con 3 puertas: /mcp/<secreto> -> conector Claude, /api -> Router, /omniroute/v1 -> OmniRoute. $0."
+  hf_16gb_pago_siempre_encendido: "UNA máquina HF Job cpu-basic de pago ($0.01/h). Dentro: conector MCP de Claude + Router + OmniRoute. Nunca duerme. Si se cae, se relanza sola y el letrero la sigue."
+  autoescalado: "El Router, al recibir una tarea, dispara procesadores: 16 GB extra al 80% de uso (tope 3); cadena 32 GB para agentes y modelos locales, siguiente al 85% (tope 10). Los refuerzos toman trabajo de una cola y se apagan tras 15 min sin tareas."
+  retirar: "Los 5 Spaces omniroute-1..5 y el Space del conector se apagan cuando la máquina de 16 GB esté probada."
+
+# ─────────────────────────────────────────────────────────────
+# DAG 1 — INFRAESTRUCTURA (primero: el chat y los agentes dependen de esto)
+# ─────────────────────────────────────────────────────────────
+infra:
+  - id: I1_maquina_16gb
+    ejecuta: Opus
+    hace: "Job HF cpu-basic de pago con 3 procesos: Router (FastAPI existente), OmniRoute oficial v3.8.51, conector MCP (app.py del Space actual, sin OAuth). Relanzador automático si muere."
+    salida: "LIVE_URL en ROUTER_JOB_PAUSE.flag + /health del Router, /v1/models de OmniRoute y MCP initialize respondiendo."
+    cierre: "Las 3 respuestas reales."
+  - id: I2_letrero_vercel
+    depende: [I1_maquina_16gb]
+    ejecuta: Opus
+    hace: "Función Vercel con 3 puertas que lee LIVE_URL del flag y reenvía (añade HF_TOKEN_1 que ya está en Vercel)."
+    cierre: "Claude se conecta por riu-jev-bridge.vercel.app/mcp/<secreto> sin OAuth; chat y OmniRoute responden por Vercel."
+  - id: I3_cola_y_autoescalado
+    depende: [I1_maquina_16gb]
+    ejecuta: Opus (diseño) + agente de código (implementa sobre el Router existente)
+    hace: "Cola de tareas en el Router + vigilante: mide CPU/RAM, dispara Jobs 16 GB (80%, tope 3) y 32 GB (85%, tope 10); registro de workers; apagado por inactividad 15 min."
+    cierre: "Prueba: 1 tarea larga enciende un worker 32 GB, termina, el worker se apaga solo."
+  - id: I4_omniroute_5_cuentas
+    depende: [I1_maquina_16gb]
+    ejecuta: Opus + Director (si un proveedor pide iniciar sesión)
+    hace: "Dentro de OmniRoute: 5 cuentas/conexiones de proveedores; clave de API guardada como secreto OMNIROUTE_KEY; OmniRoute añadido como proveedor del Router."
+    cierre: "Una petición del chat sale por OmniRoute y vuelve."
+  - id: I5_retirar_lo_viejo
+    depende: [I2_letrero_vercel, I4_omniroute_5_cuentas]
+    hace: "Apagar Spaces omniroute-1..5 y Space del conector; borrar conectores viejos en Claude (Director)."
+    cierre: "Solo queda la máquina 16 GB + Vercel; costo fijo ~$7/mes."
+
+# ─────────────────────────────────────────────────────────────
+# DAG 2 — CHAT (base: Open WebUI u otro chat open source descargado + skills y diseños del Director)
+# ─────────────────────────────────────────────────────────────
+chat:
+  - id: C0_base
+    depende: [I2_letrero_vercel]
+    ejecuta: Opus
+    hace: "Elegir base entre lo descargado (Open WebUI ya está; candidatos A: assistant-ui, Open Claude, GrokChat). Reusar su código; editar quirúrgicamente. Aplicar skills del Director (fábrica UI) y sus diseños HTML (router-v2a..v5, _04-VENTANAS, v2-03-settings), 3 colores."
+    cierre: "Chat publicado en Vercel con la base elegida, aprobado visualmente por el Director."
+  - id: C1_selectores_ruta
+    depende: [C0_base]
+    hace: "Selector de 3 modos: (1) NVIDIA/Kimi -> Cerebras -> Groq -> DeepSeek con nota ROJA si no hay acceso; (2) solo DeepSeek V4 Flash; (3) una IA local de HF específica. Kimi K3 (o el más nuevo) vía proveedores HF. GLM-5.3-Flash (Aux Alpha) con stop por fecha si es gratis temporal."
+  - id: C2_modos_agente
+    depende: [C0_base]
+    hace: "Con agente / sin agente; selector de agente; grupos (orquestador -> agentes -> API de origen); cablear varios agentes con botones; mirror de agente (sin memoria, enrutable a un orquestador); activar destino del agente (repo/carpeta con trazabilidad)."
+  - id: C3_archivos_y_memoria
+    depende: [C0_base]
+    hace: "Subida de archivos anclada al almacenamiento; enrutar adjuntos a la IA/agente elegido (panel tipo Claude); memoria persistente por conversación/proyecto/global (Graphiti + Graphify + Memanto + HF Bucket)."
+  - id: C4_sandbox_y_archivos_de_agente
+    depende: [C2_modos_agente]
+    hace: "Sandbox por agente: código ejecutable, skills, archivos, indicaciones; crear Memoria.md / Claude.md / Handoff.md por agente; DSL DAG ejecutable desde el chat."
+  - id: C5_conexiones_externas
+    depende: [C0_base]
+    hace: "Conectar Claude u otra API/MCP sin tocar GitHub (formulario; claves en la caja fuerte cifrada de HF que hizo Sonnet)."
+  - id: C6_work_y_botones
+    depende: [C2_modos_agente]
+    hace: "Barra WORK (RUN, LOOP, PROGRAMAR, POOL, MÁS) + Work Panel + Action Registry + comandos /run /loop /schedule /watchdog; botones ➡️🆘 error rewind, ➡️ compact, ask Council (varias IAs a la vez); Archify como comando; motores de descarga/búsqueda como contexto desde el chat; ventana de programación."
+  - id: C7_panel_control
+    depende: [C6_work_y_botones, I3_cola_y_autoescalado]
+    hace: "Panel aparte del chat: energía (Router/procesadores/agentes), emergencia, workflows ➕ de otros repos (plan de 4 objetivos), estado de procesadores 16/32 GB, avisos rojos."
+  - id: C8_prueba_botones
+    depende: [C1_selectores_ruta, C3_archivos_y_memoria, C4_sandbox_y_archivos_de_agente, C5_conexiones_externas, C7_panel_control]
+    ejecuta: MetaCua + CUA+MCP (navegan el chat con capturas)
+    audita: Opus
+    hace: "Pulsar cada botón y selector, captura y resultado real. Sin mocks."
+    cierre: "Informe con captura por botón; el Director aprueba."
+
+# ─────────────────────────────────────────────────────────────
+# DAG 3 — EQUIPO DE AGENTES (staff) conectado al Router
+# ─────────────────────────────────────────────────────────────
+staff:
+  miembros:
+    orquestador_principal: Rowboat
+    flujo_y_enjambre: Ruflo
+    disena_y_revisa: "Claude Code (usando el Router: NVIDIA/Cerebras/Groq/DeepSeek, no Anthropic)"
+    ejecuta_mejoras: "Grok (GrokBot / Grok Build GUI)"
+    meta: {muse_code: programa, muse_glimmer: decide y corrige, metacua: navega y revisa frontend con capturas, cua_mcp: computadora de pruebas}
+    apoyo: [Hermes, Microsoft Agent Framework, Codex, MiMo Code]
+    memoria: [Memanto, Graphiti, Graphify]
+    vigilante: "agente centinela (revisa cada 10 min, reactiva, anota GAPs, mapa vivo cada hora)"
+  cadena_de_trabajo: "Rowboat recibe la orden -> Ruflo reparte -> Claude Code diseña -> Grok ejecuta -> Claude Code revisa -> 4 de Meta mejoran y prueban -> centinela verifica -> resultado al chat + Crazy Wall"
+  nodos:
+    - id: S1_descargas_staff
+      hace: "Confirmar descargados con el motor: Rowboat, Ruflo, Claude Code, GrokBot, Grok Build GUI, Hermes, MSAF, Codex, MiMo, 4 de Meta, Memanto, Graphiti, Graphify (cadenas 19/28/39/42)."
+      cierre: "Cada uno con manifiesto verificado en el repo."
+    - id: S2_micro_sistema_por_agente
+      depende: [S1_descargas_staff]
+      hace: "Carpeta propia por agente con CLAUDE.md, MEMORIA.md, SKILLS.md, HANDOFF.md, inbox/."
+    - id: S3_conectar_al_router
+      depende: [S2_micro_sistema_por_agente, I1_maquina_16gb]
+      hace: "Cada agente llama a modelos solo por el Router/OmniRoute (misma ruta de IA). Registro en /chat/agents."
+      cierre: "Cada agente responde una orden de prueba por el Router."
+    - id: S4_cadena_rowboat_ruflo
+      depende: [S3_conectar_al_router, I3_cola_y_autoescalado]
+      hace: "Montar la cadena de trabajo; las tareas van a la cola y encienden procesadores 32 GB cuando hacen falta."
+      cierre: "Una tarea real recorre la cadena completa con evidencia."
+    - id: S5_plan_4_objetivos
+      depende: [S4_cadena_rowboat_ruflo]
+      hace: "El plan de 4 objetivos (repo agentes) pasa a ser un workflow del botón ➕; hoy corre en el mini router cada hora."
+    - id: S6_puertas_obligatorias
+      depende: [S3_conectar_al_router]
+      hace: "Esquema obligatorio yaiwes.gate/v1 (ECC, Prompt Master, Ponytail, Agent Skills) como código en cada ejecución."
+
+# ─────────────────────────────────────────────────────────────
+orden_de_ejecucion: [I1, I2, I4, I3, S1, S2, S3, C0, C1, C2, C3, C5, C4, C6, S6, S4, C7, S5, C8, I5]
+lo_que_el_Director_puede_adelantar:
+  - "C0: mirar los diseños y decir cuál base de chat prefiere (Open WebUI, assistant-ui, Open Claude o GrokChat) y sus 3 colores."
+  - "I4: tener a mano las cuentas de proveedores que quiere en OmniRoute (las que piden iniciar sesión)."
+  - "C5: confirmar dónde está la caja fuerte cifrada de HF que hizo Sonnet."
+  - "Crear GROQ_API_KEY en secretos de GitHub (Groq hoy sin clave en el Router)."
+fuera_de_este_plan: "T-3000 MOTOR AUTOEVOLUTION (plan propio; se discute con el Director antes de programar)."

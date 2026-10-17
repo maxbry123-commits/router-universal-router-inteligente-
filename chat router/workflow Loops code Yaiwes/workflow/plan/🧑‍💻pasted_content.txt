@@ -1,0 +1,73 @@
+Componentes de memoria y almacenamiento. 
+.
+| Componente | Estado según la auditoría |
+|---|---|
+| **SQLite del Router** — conversaciones, mensajes, documentos, caché y perfiles de agentes | Implementado en el Router. Falta comprobar que los datos persistan después de reiniciar el servicio. |
+| **Grafo básico de SQLite** — relaciones entre conversaciones, documentos, modelos y agentes | Implementado, pero no es búsqueda semántica ni Graphiti. |
+| **Hugging Face Dataset** — `COMAND-CENTER-1/yaiwes-hf-memoria` | Adaptador para turnos, archivos y snapshots presente en `main`; escrituras y privacidad efectiva no verificadas. |
+| **Hugging Face Storage Bucket** — copias de la base SQLite y adjuntos | Hay código de sincronización manual; falta verificar que el bucket y sus credenciales estén configurados y que la sincronización funcione. |
+| **State Hub** — bitácora y archivos de estado | Pendiente. En la ruta prevista no se encontraron `BITACORA.jsonl`, `STATE.json` ni `CRAZY_WALL.json`. |
+| **Graphiti** — memoria temporal/en grafo | Código descargado, no conectado al Router. |
+| **FalkorDB** — base de datos de grafos para Graphiti | No encontrado en la carpeta de componentes prevista; pendiente. |
+| **Memanto** — memoria de agentes | Código descargado, no conectado. |
+| **Graphify** — grafo de código | Código descargado, no conectado al runtime del chat. |
+| **AgentDB** — experiencia/memoria de agentes | No encontrado en la carpeta prevista; pendiente. |
+| **PostgreSQL** — almacenamiento relacional | Código fuente descargado; no está conectado al chat ni se verificó un servicio activo. |
+| **Redis** — caché | Código fuente descargado; no está conectado. La caché actual del Router usa SQLite. |
+| **Secret Bank** — credenciales cifradas | 
+
+ya entiendes todos esos son los componentes que vas a cablear organizado todos dentro de la raíz del chat concretados como paso 1 📌 
+
+ 
+
+luego paso 2 📌 hace el puente de el almacenamiento con huggueface 
+
+ya entiendes todos esos son los componentes que vas a cablear organizado todos dentro de la raíz del chat concretados como paso 1 📌 
+
+ 
+
+luego paso 2 📌 hace el puente de el almacenamiento con huggueface 
+
+ 
+
+lo entiendes? 
+Lite
+Sí, lo entiendo y seguiré ese orden:
+
+    Cablear los componentes de memoria y almacenamiento desde la raíz del chat, integrando al Router los que estén presentes en el repositorio y dejando identificados los que falten, sin fingir que están instalados ni sustituirlos por otros.
+    Hacer el puente del almacenamiento con Hugging Face y validar el código localmente.
+
+Me limitaré a cambios de código en GitHub y pruebas locales: sin desplegar en Vercel ni tocar el cómputo, los secretos o la configuración de Hugging Face.
+22:55
+No se pudo completar
+
+## Componentes de memoria y almacenamiento
+
+| Componente | Estado según la auditoría |
+|---|---|
+| **SQLite del Router** — conversaciones, mensajes, documentos, caché y perfiles de agentes | Implementado en el Router. Falta comprobar que los datos persistan después de reiniciar el servicio. |
+| **Grafo básico de SQLite** — relaciones entre conversaciones, documentos, modelos y agentes | Implementado, pero no es búsqueda semántica ni Graphiti. |
+| **Hugging Face Dataset** — `COMAND-CENTER-1/yaiwes-hf-memoria` | Adaptador para turnos, archivos y snapshots presente en `main`; escrituras y privacidad efectiva no verificadas. |
+| **Hugging Face Storage Bucket** — copias de la base SQLite y adjuntos | Hay código de sincronización manual; falta verificar que el bucket y sus credenciales estén configurados y que la sincronización funcione. |
+| **State Hub** — bitácora y archivos de estado | Pendiente. En la ruta prevista no se encontraron `BITACORA.jsonl`, `STATE.json` ni `CRAZY_WALL.json`. |
+| **Graphiti** — memoria temporal/en grafo | Código descargado, no conectado al Router. |
+| **FalkorDB** — base de datos de grafos para Graphiti | No encontrado en la carpeta de componentes prevista; pendiente. |
+| **Memanto** — memoria de agentes | Código descargado, no conectado. |
+| **Graphify** — grafo de código | Código descargado, no conectado al runtime del chat. |
+| **AgentDB** — experiencia/memoria de agentes | No encontrado en la carpeta prevista; pendiente. |
+| **PostgreSQL** — almacenamiento relacional | Código fuente descargado; no está conectado al chat ni se verificó un servicio activo. |
+| **Redis** — caché | Código fuente descargado; no está conectado. La caché actual del Router usa SQLite. |
+| **Secret Bank** — credenciales cifradas | Implementado, pero almacena secretos; **no** es memoria de conversación. |
+
+**Resumen:** lo que ya persiste conversaciones en el diseño actual es SQLite; el Dataset y el Bucket son destinos adicionales de respaldo. Los demás componentes del plan requieren verificación, conexión o implementación.
+GitHub+1
+
+Manus is an AI Agent and can make mistakes. Please double-check before use.
+
+
+
+
+
+Implementado, pero almacena secretos; **no** es memoria de conversación. |
+
+**Resumen:** lo que ya persiste conversaciones en el diseño actual es SQLite; el Dataset y el Bucket son destinos adicionales de respaldo. Los demás componentes del plan requieren verificación, conexión o implementación.

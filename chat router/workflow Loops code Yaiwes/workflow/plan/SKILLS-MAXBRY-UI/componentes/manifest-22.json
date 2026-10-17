@@ -1,0 +1,139 @@
+{
+  "repository": "https://github.com/swamimalode07/rare-ui",
+  "pinned_commit": "1d572f4b1862f5f6b1be61bb33380fede433e1df",
+  "component_count": 22,
+  "components": [
+    {
+      "index": 1,
+      "name": "folder-component",
+      "path": "components/ui/folder-component.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/folder-component.tsx"
+    },
+    {
+      "index": 2,
+      "name": "bounce-sidebar",
+      "path": "components/ui/bounce-sidebar.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/bounce-sidebar.tsx"
+    },
+    {
+      "index": 3,
+      "name": "hook-sidebar",
+      "path": "components/ui/hook-sidebar.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/hook-sidebar.tsx"
+    },
+    {
+      "index": 4,
+      "name": "family-drawer",
+      "path": "components/ui/family-drawer.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/family-drawer.tsx"
+    },
+    {
+      "index": 5,
+      "name": "proximity-sidebar",
+      "path": "components/ui/proximity-sidebar.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/proximity-sidebar.tsx"
+    },
+    {
+      "index": 6,
+      "name": "duration-picker",
+      "path": "components/ui/duration-picker.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/duration-picker.tsx"
+    },
+    {
+      "index": 7,
+      "name": "fluid-orb",
+      "path": "components/ui/fluid-orb.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/fluid-orb.tsx"
+    },
+    {
+      "index": 8,
+      "name": "scroll-progress",
+      "path": "components/ui/scroll-progress.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/scroll-progress.tsx"
+    },
+    {
+      "index": 9,
+      "name": "code-block",
+      "path": "components/ui/code-block.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/code-block.tsx"
+    },
+    {
+      "index": 10,
+      "name": "otp-input",
+      "path": "components/ui/otp-input.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/otp-input.tsx"
+    },
+    {
+      "index": 11,
+      "name": "gravity-letters",
+      "path": "components/ui/gravity-letters.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/gravity-letters.tsx"
+    },
+    {
+      "index": 12,
+      "name": "github-activity",
+      "path": "components/ui/github-activity.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/github-activity.tsx"
+    },
+    {
+      "index": 13,
+      "name": "emoji-reaction",
+      "path": "components/ui/emoji-reaction.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/emoji-reaction.tsx"
+    },
+    {
+      "index": 14,
+      "name": "notification-bell",
+      "path": "components/ui/notification-bell.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/notification-bell.tsx"
+    },
+    {
+      "index": 15,
+      "name": "step-player",
+      "path": "components/ui/step-player.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/step-player.tsx"
+    },
+    {
+      "index": 16,
+      "name": "grid-reveal",
+      "path": "components/ui/grid-reveal.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/grid-reveal.tsx"
+    },
+    {
+      "index": 17,
+      "name": "gooey-nav",
+      "path": "components/ui/gooey-nav.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/gooey-nav.tsx"
+    },
+    {
+      "index": 18,
+      "name": "delete-button",
+      "path": "components/ui/delete-button.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/delete-button.tsx"
+    },
+    {
+      "index": 19,
+      "name": "animated-counter",
+      "path": "components/ui/animated-counter.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/animated-counter.tsx"
+    },
+    {
+      "index": 20,
+      "name": "matrix-orb",
+      "path": "components/ui/matrix-orb.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/matrix-orb.tsx"
+    },
+    {
+      "index": 21,
+      "name": "task-list",
+      "path": "components/ui/task-list.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/task-list.tsx"
+    },
+    {
+      "index": 22,
+      "name": "voice-note",
+      "path": "components/ui/voice-note.tsx",
+      "source": "https://github.com/swamimalode07/rare-ui/blob/1d572f4b1862f5f6b1be61bb33380fede433e1df/components/ui/voice-note.tsx"
+    }
+  ]
+}

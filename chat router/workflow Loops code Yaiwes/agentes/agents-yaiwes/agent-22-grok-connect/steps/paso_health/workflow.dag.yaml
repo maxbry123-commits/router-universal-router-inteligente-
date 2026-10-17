@@ -1,0 +1,38 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-22-grok-connect
+  framework: pocketflow
+  group: orchestrators
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 400
+context:
+  text: 'Par: agent-15-orchestrator-grok.
+
+    Flag: router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag
+
+    '
+  max_chars: 40000
+task: 'Hacer el GET /health de verdad. Escribir solo el resultado, no instrucciones.
+
+  línea 1: http_status: NNN
+
+  línea 2: router_ok: si|no
+
+  línea 3: live_url_host: (host sin query)
+
+  router_connected true solo si NNN=200.
+
+  '
+checks:
+- kind: contains
+  values:
+  - 'http_status:'
+  - 'router_ok:'
+- kind: no_secrets

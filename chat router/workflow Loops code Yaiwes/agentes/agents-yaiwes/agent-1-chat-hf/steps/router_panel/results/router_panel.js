@@ -1,0 +1,31 @@
+function initRouterPanel(container, fetchJson) {
+    container.innerHTML = '';
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Actualizar estado del Router';
+    const output = document.createElement('div');
+    output.style.whiteSpace = 'pre-line';
+
+    container.append(btn, output);
+
+    async function refresh() {
+        const resp = await fetchJson('/chat/router/status');
+        if (resp.status === 200) {
+            const { deepseek_peak_now, limiter, groups } = resp.body;
+            const lines = [];
+            lines.push(`Hora pico de DeepSeek: ${deepseek_peak_now ? 'sí' : 'no'}`);
+            lines.push(`Concurrencia: ${limiter.slots} espacios (nivel ${limiter.tier})`);
+            for (const [groupName, info] of Object.entries(groups)) {
+                const authorized = info.authorized_fallback ? 'sí' : 'no';
+                const models = info.chain.map(c => c.model).join(' → ');
+                lines.push(`${groupName}: respaldo autorizado ${authorized} (authorized_fallback) — ${models}`);
+            }
+            output.textContent = lines.join('\n');
+        } else {
+            output.textContent = `Error ${resp.status}`;
+        }
+    }
+
+    btn.addEventListener('click', refresh);
+    refresh(); // initial load
+}

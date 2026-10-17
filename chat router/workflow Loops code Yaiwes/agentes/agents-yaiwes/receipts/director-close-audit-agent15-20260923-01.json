@@ -1,0 +1,12 @@
+{
+  "schema": "yaiwes.receipt/v1",
+  "task_id": "director-close-audit-agent15-20260923-01",
+  "target_agent": "agent-15-orchestrator-grok",
+  "status": "BLOCKED",
+  "runner_rc": 1,
+  "processed_at_utc": "2026-09-23T13:56:12.451830+00:00",
+  "instruction_file": "router inteligente universal/agents-yaiwes/inbox/director-close-audit-agent15-20260923-01.json",
+  "output_file": null,
+  "state_file": "router inteligente universal/agents-yaiwes/agent-15-orchestrator-grok/crazy_wall.state.json",
+  "note": ""
+}

@@ -1,0 +1,28 @@
+schema_id: skills_schema/react-best-practices.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Rendimiento React/Next, waterfalls, bundles, hooks
+work_surface: FRONTEND
+acceptance:
+- sin waterfalls detectados
+- bundle bajo umbral declarado
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/react-best-practices.json
+  sha256: pending
+oracle: check:waterfalls+bundle_size
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

@@ -1,0 +1,194 @@
+{
+  "items": [
+    {
+      "id": "P1-01",
+      "quote": "Necesitas que pueda tu colocar los api key de mis modelos locales y los modelos de deepsek v4 flash y pro y Kimi k 3 mínimax M3",
+      "status": "PARCIAL",
+      "area": "chat",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/",
+        "router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js"
+      ],
+      "note": "El selector de proveedor y modelo existe en el Chat MVP, pero el CONTEXTO no muestra cableadas las 4 APIs literales (DeepSeek v4 flash/pro, Kimi k3, MiniMax M3).",
+      "tarea": "agent-1-chat-hf debe añadir al selector los 4 proveedores literales del Director (DeepSeek v4 flash/pro, Kimi k3, MiniMax M3) y validar cada api key."
+    },
+    {
+      "id": "P1-02",
+      "quote": "Que puedan operar en Github y huggueface 100%",
+      "status": "PARCIAL",
+      "area": "chat",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/",
+        "router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py"
+      ],
+      "note": "El router corre como Job en HF (probado) y el chat se construye en GitHub con raíz main, pero no hay URL pública de Space confirmada en el CONTEXTO.",
+      "tarea": "agent-3-router debe entregar la URL del Space HF público y el repo GitHub con raíz main enlazado al chat."
+    },
+    {
+      "id": "P1-03",
+      "quote": "Que con el selector pueda cambiar de cuenta de Github diferente",
+      "status": "HECHO",
+      "area": "chat",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/"
+      ],
+      "note": "El Chat MVP declara explícitamente 'cuentas GitHub' en su integración.",
+      "tarea": ""
+    },
+    {
+      "id": "P1-04",
+      "quote": "pueda operar con agente y sin agente",
+      "status": "HECHO",
+      "area": "agentes",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/"
+      ],
+      "note": "El Chat MVP incluye el modo 'con/sin agente' según el CONTEXTO.",
+      "tarea": ""
+    },
+    {
+      "id": "P1-05",
+      "quote": "Le conectas al chat dentro de huggueface almacenamiento su propio espacio y fusionas para crear un entorno llamado Mvp almacenamiento para ai",
+      "status": "PARCIAL",
+      "area": "almacenamiento",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/",
+        "router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py"
+      ],
+      "note": "Existe Static Space HF y Chat MVP como integración, pero no se nombra explícitamente el entorno 'Mvp almacenamiento para ai' en los entregables.",
+      "tarea": "agent-3-router debe documentar el Space 'Mvp almacenamiento para ai' y verificar la fusión con el chat."
+    },
+    {
+      "id": "P1-06",
+      "quote": "SQL Little Graphiti y graphyty Caché",
+      "status": "HECHO",
+      "area": "almacenamiento",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/"
+      ],
+      "note": "El Chat MVP integra 'SQL+grafo+caché+documentos', cubriendo SQL, Graphiti/Graphyty y caché.",
+      "tarea": ""
+    },
+    {
+      "id": "P1-07",
+      "quote": "Que pueda subir archivos adjuntos y ten",
+      "status": "HECHO",
+      "area": "chat",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/"
+      ],
+      "note": "El Chat MVP incluye 'documentos' en su integración, lo que cubre adjuntos.",
+      "tarea": ""
+    },
+    {
+      "id": "P1-08",
+      "quote": "Necesito que revises el router en el repo de router universal usa el router que hizo Fables los code están en los archivos",
+      "status": "AMBIGUO",
+      "area": "agentes",
+      "evidence": [],
+      "note": "El CONTEXTO no menciona a Fables por nombre; el router de Job existe pero no se confirma que sea el código de Fables.",
+      "tarea": "agent-3-router debe confirmar en una nota si el router activo es el de Fables o indicar qué código se adoptó."
+    },
+    {
+      "id": "P1-09",
+      "quote": "Vasmos a tener más de 50 agente con el nombre de agente Seals Team YAIWES",
+      "status": "PENDIENTE",
+      "area": "agentes",
+      "evidence": [],
+      "note": "Ningún entregable del CONTEXTO registra agentes con el nombre 'Seals Team YAIWES'.",
+      "tarea": "agent-4-router-smol debe crear el registro de los 50+ agentes 'Seals Team YAIWES' con su api key y pool."
+    },
+    {
+      "id": "P1-10",
+      "quote": "esos modelos locales no deben estar instalado a huggueface deben llamar al modelo remoto como lo indica hugguenface para no descargar el modelo",
+      "status": "PARCIAL",
+      "area": "modelos",
+      "evidence": [
+        "router inteligente universal/agents-yaiwes/agent-8-router-local/steps/mirror_route/results/mirror_route.py",
+        "router inteligente universal/agents-yaiwes/agent-9-models-catalog/steps/models_catalog/results/models_catalog.py"
+      ],
+      "note": "Hay mirror_route y catálogo de modelos, pero el CONTEXTO no confirma la política 'invocar remoto sin descargar pesos'.",
+      "tarea": "agent-8-router-local debe documentar que mirror_route NO descarga pesos locales y solo llama a la API remota."
+    },
+    {
+      "id": "P1-11",
+      "quote": "deben trabajar como mirror y duplicarse sines necesario 50 o 100 veces",
+      "status": "PARCIAL",
+      "area": "agentes",
+      "evidence": [
+        "router inteligente universal/agents-yaiwes/agent-8-router-local/steps/local_pool/results/local_pool.py",
+        "router inteligente universal/agents-yaiwes/agent-8-router-local/steps/mirror_route/results/mirror_route.py"
+      ],
+      "note": "Hay local_pool y mirror_route, pero el CONTEXTO no confirma la capacidad de 50–100 espejos simultáneos.",
+      "tarea": "agent-8-router-local debe demostrar en local_pool que admite 50–100 espejos simultáneos."
+    },
+    {
+      "id": "P1-12",
+      "quote": "Deben usar el dataset y los aceleradores que deberían o fueron instalados en huggueface",
+      "status": "PARCIAL",
+      "area": "aceleradores",
+      "evidence": [
+        "router inteligente universal/agents-yaiwes/agent-6-hf-nodes/steps/ram_plan/results/hf_nodes.py",
+        "router inteligente universal/agents-yaiwes/agent-7-llama-hf/steps/hf_job/results/hf_job.py"
+      ],
+      "note": "Hay plan de RAM y hf_job, pero el CONTEXTO no confirma dataset usado ni tipo de acelerador (CPU/GPU) por nodo.",
+      "tarea": "agent-6-hf-nodes debe declarar el dataset y el tipo de acelerador HF asignado a cada nodo."
+    },
+    {
+      "id": "P1-13",
+      "quote": "necesito resolver la prioridad de el chat con los requisitos que. Te puse como primer paso Mónico chat + deepsek v4 flash y pro + Kimi k 3+ Nvidia api + mínimax M3",
+      "status": "PARCIAL",
+      "area": "chat",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/",
+        "router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/router_panel/results/router_panel.js"
+      ],
+      "note": "Chat y router_panel existen, pero la cascada de prioridad con esos 5 proveedores no está documentada en el CONTEXTO.",
+      "tarea": "agent-1-chat-hf debe priorizar el chat con esos 5 proveedores y validar el orden (Nvidia → locales → DeepSeek v4)."
+    },
+    {
+      "id": "P1-14",
+      "quote": "Realiza una manera de usar mi propio banco secreto de claves si no se puede en Github lo haces en huggueface busca la manera",
+      "status": "HECHO",
+      "area": "almacenamiento",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/"
+      ],
+      "note": "El Chat MVP declara 'banco de claves' integrado en su stack.",
+      "tarea": ""
+    },
+    {
+      "id": "P1-15",
+      "quote": "Necesito un acceso directo al chat busca algo Open soure como el chat de minimax o Claude que pueda usar para el chat",
+      "status": "AMBIGUO",
+      "area": "chat",
+      "evidence": [
+        "router inteligente universal/agents-yaiwes/agent-3-router/steps/deploy_script/results/deploy_static_space.py"
+      ],
+      "note": "Hay deploy_static_space.py, pero el CONTEXTO no confirma que el front-end adoptado sea open source tipo MiniMax/Claude ni su URL.",
+      "tarea": "agent-3-router debe elegir y documentar el front-end open source usado y publicar la URL pública."
+    },
+    {
+      "id": "P1-16",
+      "quote": "para cambiar de modelos y agente y para almacenar archivos para encadenar a los procesos de almacenamiento",
+      "status": "HECHO",
+      "area": "almacenamiento",
+      "evidence": [
+        "router inteligente universal/integration/chat_mvp/"
+      ],
+      "note": "El Chat MVP cubre selector de modelos/agente y la cadena a 'SQL+grafo+caché+documentos'.",
+      "tarea": ""
+    },
+    {
+      "id": "P1-17",
+      "quote": "añadiría una ventana/panel persistente de Archivos / Memoria",
+      "status": "PARCIAL",
+      "area": "chat",
+      "evidence": [
+        "router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js"
+      ],
+      "note": "Existe vault_panel.js del agent-1, pero el CONTEXTO no lo confirma como panel persistente Archivos/Memoria visible dentro del chat.",
+      "tarea": "agent-1-chat-hf debe cablear vault_panel como panel persistente de Archivos/Memoria dentro de la UI del chat."
+    }
+  ]
+}

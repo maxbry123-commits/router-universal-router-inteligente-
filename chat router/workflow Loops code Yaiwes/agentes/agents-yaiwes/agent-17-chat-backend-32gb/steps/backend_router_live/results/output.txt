@@ -1,0 +1,11 @@
+GAP: No fue posible determinar dónde está instalado Open WebUI ni la URL del Router existente para cablear la conexión, ni se puede ejecutar la prueba real porque el runtime actual no expone los servicios de red necesarios (no hay procesos HTTP identificables ni se dispone de un HF Job en ejecución). Sin acceso a los archivos de configuración de Open WebUI (por ejemplo, `docker-compose.yml` o archivos `.env` locales de Open WebUI), no se puede cerrar su conexión con el backend y redirigirla al Router existente. Dado que la orden exige cerrar el backend real y su conexión con Open WebUI, y no se permite crear un backend alternativo, la tarea queda bloqueada hasta que se tenga acceso al entorno de Open WebUI (dónde se ejecuta y cómo se configura su endpoint de API) y un runtime 32GB en ejecución para hacer las pruebas reales de /health, /v1/models y /v1/chat/completions.
+
+```
+CHECKLIST DE INTEGRACION
+/health: <no ejecutado, sin runtime de 32GB>
+/v1/models: <no ejecutado, sin runtime de 32GB>
+/v1/chat/completions: <no ejecutado, sin runtime de 32GB>
+32GB: <no confirmado, sin runtime>
+Open WebUI: <desconocido, no se encontró configuración ni proceso>
+PRUEBA: <no se realizó ninguna prueba real>
+```

@@ -1,0 +1,28 @@
+schema_id: skills_schema/skill-router.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: 'Punto de entrada: enruta a schemas aplicables y los encadena'
+work_surface: MIXED
+acceptance:
+- selecciona schemas aplicables
+- encadena en DAG
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/skill-router.json
+  sha256: pending
+oracle: router:chain_dag
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

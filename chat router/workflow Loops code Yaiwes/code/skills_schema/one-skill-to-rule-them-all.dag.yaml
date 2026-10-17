@@ -1,0 +1,28 @@
+schema_id: skills_schema/one-skill-to-rule-them-all.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Meta-skill para crear, observar y mejorar otros skills.
+work_surface: MIXED
+acceptance:
+- registrado como SKILL
+- ejecución sujeta a sheriff y verifier
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/one-skill-to-rule-them-all.json
+  sha256: pending
+oracle: contract:method_skill
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

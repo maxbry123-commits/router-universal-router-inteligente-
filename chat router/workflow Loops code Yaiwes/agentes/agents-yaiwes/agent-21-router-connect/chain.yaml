@@ -1,0 +1,31 @@
+schema: yaiwes.chain/v1
+input_block: |
+  ORDEN DIRECTOR 2026-09-24: Probar conexión al Router.
+  GET LIVE_URL/health con Authorization Bearer HF_TOKEN y X-API-Key del entorno.
+  LIVE_URL se lee de agents-yaiwes/ROUTER_JOB_PAUSE.flag (línea LIVE_URL=).
+  Escribir en steps/paso_health/results/output.txt el status HTTP y un json corto.
+  Actualizar crazy_wall.state.json router_connected true solo si health es 200.
+  No imprimir tokens. No LFS. No GitHub Actions. No Job de descarga.
+agent:
+  id: agent-21-router-connect
+  framework: pocketflow
+  group: chat
+  route: [deepseek_flash]
+  fallback: []
+  max_tokens: 800
+context:
+  text: |
+    Flag: router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag
+    Ruta health: GET {LIVE_URL}/health
+steps:
+  - id: paso_health
+    task: |
+      1. Leer LIVE_URL del flag.
+      2. GET /health.
+      3. Guardar output.txt con http_status y body recortado sin secretos.
+      4. router_connected=true solo si 200.
+    checks:
+      - kind: min_chars
+        value: 40
+      - kind: no_secrets
+edges: []

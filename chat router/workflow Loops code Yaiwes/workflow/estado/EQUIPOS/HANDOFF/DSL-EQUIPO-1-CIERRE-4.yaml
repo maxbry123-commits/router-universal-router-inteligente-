@@ -1,0 +1,30 @@
+schema: yaiwes.cierre-equipo-1/v4
+modo: CERRADO            # no existe BLOQUEADO, ni preguntar, ni escalar
+reglas: "chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/REGLAS-DURAS.md (v2: todo cierra CERRADO o CERRADO_REF)"
+acceso: "misma ruta Vercel de siempre; claves por env, nunca impresas"
+estado_inicial: "S1-01 a S1-13 cerradas (commit 402d4e2). Queda UN fallo de causa conocida: los 8 tests de motores de S1-11b."
+no_pisar_a_otros:
+  solo_escribes: ["chat router/Workflow Loop code Yaiwes/03-ESTADO/EQUIPOS/EQUIPO-1-SONNET.json", "chat router/Workflow Loop code Yaiwes/11-EVIDENCIA/equipos/EQUIPO-1/"]
+  prohibido: "editar tests, renombrar carpetas del repo, escribir código, tocar orchestrator_adapters.py, skills_schema/, ROOT-MAP, 01-PLAN, JSON ajenos. Todo lo que hagas para probar vive SOLO en la máquina temporal y NO se commitea."
+  git: "antes de CADA push: git pull --rebase; empuja solo tus rutas; si rechaza, pull --rebase y 1 reintento"
+salida: "NODO [EQUIPO-1] — <ID> | CERRADO|CERRADO_REF | COMMIT:<sha7>     (una línea por tarea, nada más). Al final: EQUIPO-1 FIN"
+
+diagnostico_ya_hecho: >
+  Los 8 tests fallan en las dos carpetas por igual. Error: FileNotFoundError / CANONICAL_MOTOR_NOT_FOUND.
+  Los tests buscan: '<...>/Wordflow LOOP Yaiwes/motores de descarga extraccion copiado movimiento archivos agentes'
+  (sin emojis, sin tilde). La carpeta real es: 'chat router/Workflow Loop code Yaiwes/_copias-anteriores/➡️📂 Wordflow LOOP Yaiwes/➡️📂motores de descarga extracción copiado movimiento archivos agentes'
+  (también existe idéntica dentro de la raíz del Wordflow). Es un desajuste de NOMBRE de ruta, no de código.
+
+dag:
+  T1_S1-11c:
+    id: S1-11c
+    pasos:
+      - "sparse-checkout add de 'chat router/Workflow Loop code Yaiwes/_copias-anteriores/➡️📂 Wordflow LOOP Yaiwes' (usa git -c core.quotepath=false ls-tree para ver los nombres con emoji; si el nombre no sale, haz el checkout por ruta completa)"
+      - "corre solo los 8 tests de S1-11b con --tb=short y copia de la salida la RUTA ESPERADA exacta (la que aparece en el FileNotFoundError)"
+      - "crea esa ruta esperada como enlace simbólico (ln -s) apuntando a la carpeta real de motores. Solo en la máquina. No se commitea."
+      - "vuelve a correr los 8 tests 1 vez y guarda EQUIPO-1/S1-11c.txt con el resultado real"
+    cierra_en: "CERRADO si pasan los 8 (queda probado que era el nombre de la ruta y no el código); CERRADO_REF con los nombres de los que sigan fallando y su error"
+    escribe_en_handoff: "una línea para el Director: 'los 8 tests de motores pasan si la ruta se llama X; hoy se llama Y'. Es una nota escrita, no una pregunta."
+  T2_HANDOFF: {id: S1-14, hace: "actualiza 'handoff' de tu JSON con el resultado de S1-11c; 1 commit"}
+
+prohibido_siempre: [preguntar, escalar, esperar, explicar, BLOQUEADO, Hugging Face, GitHub Actions, LFS git, tocar el router, escribir código, verificar de más]

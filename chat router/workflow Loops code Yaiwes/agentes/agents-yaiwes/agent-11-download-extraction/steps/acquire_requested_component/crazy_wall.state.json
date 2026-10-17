@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-11-download-extraction",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T06:03:32Z",
+ "group": "chat-components",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "1caf5d0627c0d0f5eb2c19f23a8349a8ceac610f317b488b28dc1f73942b1a60",
+   "chars": 376
+  }
+ ],
+ "model": "hf/deepseek-ai/DeepSeek-V4-Flash",
+ "attempts": 1,
+ "route_trace": []
+}

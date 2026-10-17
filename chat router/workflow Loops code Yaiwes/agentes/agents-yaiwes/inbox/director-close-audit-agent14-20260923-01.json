@@ -1,0 +1,38 @@
+{
+  "schema": "yaiwes.instruction/v1",
+  "task_id": "director-close-audit-agent14-20260923-01",
+  "target_agent": "agent-14-orchestrator-msaf",
+  "depth": 0,
+  "allow_delegation": true,
+  "instruction": "MENSAJE DEL DIRECTOR — VERBATIM:\n\n➡️ analiza el proyecto del chat que está en ejecución en Github y huggueface y dime qué falta para cerrar\n\nAGENTE ORQUESTADOR MICROSOFT: responde TÚ MISMO con evidencia real. La respuesta debe quedar también en tu README-DIRECTOR.md. Separa CERRADO / EN EJECUCIÓN / BLOQUEADO / FALTA PARA CERRAR / GAP / FIX / PRUEBAS / SIGUIENTE ACCIÓN. Incluye hora Colombia. No inventes PASS. Si necesitas trabajo de otro agente, delega únicamente al pool autorizado usando el bloque YAIWES_DELEGATIONS_JSON.",
+  "context_files": [
+    "➡️ ➡️ 📂 osquestador comand Center.md",
+    "router inteligente universal/agents-yaiwes/agent-16-chat-space-oauth/crazy_wall.state.json",
+    "router inteligente universal/agents-yaiwes/agent-17-chat-backend-32gb/crazy_wall.state.json",
+    "router inteligente universal/agents-yaiwes/agent-18-chat-final-auditor/crazy_wall.state.json",
+    "router inteligente universal/agents-yaiwes/agent-19-chat-components-motors/crazy_wall.state.json",
+    "router inteligente universal/agents-yaiwes/agent-4-router-smol/crazy_wall.state.json",
+    "router inteligente universal/agents-yaiwes/agent-8-router-local/crazy_wall.state.json",
+    "router inteligente universal/agents-yaiwes/agent-11-download-extraction/crazy_wall.state.json",
+    "router inteligente universal/agents-yaiwes/agent-12-yaiwes-router/crazy_wall.state.json"
+  ],
+  "checks": [
+    {
+      "kind": "contains",
+      "values": [
+        "CERRADO",
+        "EN EJECUCIÓN",
+        "BLOQUEADO",
+        "FALTA PARA CERRAR",
+        "GAP",
+        "FIX",
+        "PRUEBAS",
+        "SIGUIENTE ACCIÓN"
+      ]
+    },
+    {
+      "kind": "no_secrets"
+    }
+  ],
+  "created_by": "Director/Sol"
+}

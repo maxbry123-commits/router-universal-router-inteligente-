@@ -1,0 +1,31 @@
+```yaml
+variables_entorno:
+  OPENAI_API_BASE_URL: "<LIVE_URL>/v1"
+  OPENAI_API_KEY: "RIU_ROUTER_API_KEY"          # secreto RIU_ROUTER_API_KEY
+  OPENAI_API_HEADERS: "Authorization: Bearer $HF_TOKEN"  # HF_TOKEN como secreto
+  HF_TOKEN: "SECRET_HF_TOKEN"                   # secreto HF_TOKEN
+  RIU_ROUTER_API_KEY: "SECRET_RIU_ROUTER_API_KEY"  # secreto para X-API-Key
+  DATABASE_URL: "SECRET_DATABASE_URL"           # PostgreSQL
+  REDIS_URL: "SECRET_REDIS_URL"                 # Redis (opcional para caché)
+  MEMORY_BACKEND: "postgresql+redis"
+  GRAPHITI_ENABLED: "true"
+  FALKORDB_HOST: "SECRET_FALKORDB_HOST"
+  FALKORDB_PORT: "SECRET_FALKORDB_PORT"
+
+pasos_arranque_cpu_router:
+  1. "Clonar/descargar Open WebUI en router inteligente universal/Componente open soure router inteligente universal/open-webui/"
+  2. "Crear archivo .env en el directorio de Open WebUI con las variables de entorno listadas, usando valores reales de secretos del router (leer de ROUTER_JOB_PAUSE.flag para LIVE_URL)"
+  3. "Ejecutar: cd open-webui && python -m open_webui.main --host 0.0.0.0 --port 8080 --cpu-only"
+  4. "Verificar que el servicio escuche en puerto 8080 y responda a GET /health"
+
+prueba_exito:
+  "curl -X POST http://localhost:8080/v1/chat/completions -H \"Authorization: Bearer $RIU_ROUTER_API_KEY\" -H \"X-API-Key: $RIU_ROUTER_API_KEY\" -H \"Content-Type: application/json\" -d '{\"model\": \"deepseek_flash\", \"messages\": [{\"role\": \"user\", \"content\": \"test\"}]}' -w \"\\nHTTP_CODE: %{http_code}\""
+  "Esperar: HTTP_CODE: 200 y respuesta JSON con choices[0].message.content"
+
+gaps:
+  - "Open WebUI no está descargado/instalado en el router (solo hay un componente vacío en la ruta indicada)"
+  - "ROUTER_JOB_PAUSE.flag podría no existir o contener URL dinámica; se requiere mecanismo para leer LIVE_URL automáticamente"
+  - "Los secretos (HF_TOKEN, RIU_ROUTER_API_KEY, DATABASE_URL, REDIS_URL, FALKORDB_HOST/PORT) no están definidos en el entorno actual"
+  - "Open WebUI requiere Node.js y npm para build; en CPU puro podría necesitar dependencias adicionales (Chromium, etc.)"
+  - "No hay prueba de conectividad con el Router FastAPI (app.py) para verificar que /v1/chat/completions funcione correctamente entre ambos servicios"
+```

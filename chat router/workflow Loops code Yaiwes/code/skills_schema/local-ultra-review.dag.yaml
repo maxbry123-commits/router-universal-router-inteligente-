@@ -1,0 +1,28 @@
+schema_id: skills_schema/local-ultra-review.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Skill local de code review con worktrees, lentes de revisión y verifier gating.
+work_surface: MIXED
+acceptance:
+- registrado como SKILL
+- ejecución sujeta a sheriff y verifier
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/local-ultra-review.json
+  sha256: pending
+oracle: contract:method_skill
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

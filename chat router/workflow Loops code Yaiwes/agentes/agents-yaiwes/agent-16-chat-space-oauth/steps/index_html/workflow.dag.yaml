@@ -1,0 +1,51 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-16-chat-space-oauth
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 2000
+context:
+  text: "Base: Open WebUI ya descargado. Reciclar chat_ui.html de chat_mvp.\nCarpeta\
+    \ UI para Vercel: \"router inteligente universal/vercel-ui/\" (estática; todas\
+    \ las llamadas van a LIVE_URL del Router).\nLIVE_URL se lee en runtime de: https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag\n\
+    Cuentas GitHub: secretos GH_ACCOUNT_1..3 (solo nombres; el Router elige la clave).\
+    \ Nunca claves en el HTML.\nRutas: /v1/models, /v1/chat/completions, /chat/agents,\
+    \ /chat/documents, /chat/github/*, /chat/storage.\n\n\nSALIDA VERIFICADA DEL PASO\
+    \ ANTERIOR (vercel_json):\n```json\n{\n  \"version\": 2,\n  \"public\": true,\n\
+    \  \"buildCommand\": null,\n  \"outputDirectory\": \".\",\n  \"routes\": [\n \
+    \   {\n      \"src\": \"^/(.*)\",\n      \"dest\": \"/index.html\",\n      \"\
+    status\": 200\n    }\n  ],\n  \"rewrites\": [\n    {\n      \"source\": \"/(v1/models|v1/chat/completions|chat/agents|chat/documents|chat/github/.*|chat/storage)\"\
+    ,\n      \"destination\": \"https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag\"\
+    \n    }\n  ],\n  \"redirects\": [],\n  \"headers\": [\n    {\n      \"source\"\
+    : \"/index.html\",\n      \"headers\": [\n        {\n          \"key\": \"Cache-Control\"\
+    ,\n          \"value\": \"no-cache, no-store, must-revalidate\"\n        }\n \
+    \     ]\n    }\n  ],\n  \"env\": {\n    \"LIVE_URL_SOURCE\": \"https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag\"\
+    \n  }\n}\n```"
+  max_chars: 40000
+task: 'Entrega index.html completo (un solo archivo, CSS y JS dentro) con:
+
+  selector de modelo (lee /v1/models), interruptor con agente / sin agente, selector
+  de cuenta GitHub (lee /chat/github/accounts),
+
+  selector de agente (lee /chat/agents), botón + para añadir workflow (nombre + repo
+  + ruta de plan; guarda con POST /chat/storage),
+
+  subida de archivos (POST /chat/documents con chat_id), área de chat y campo para
+  pegar la API key del Router guardada solo en el navegador.
+
+  Solo el código.
+
+  '
+checks:
+- kind: js_syntax
+- kind: min_chars
+  value: 1500
+- kind: no_secrets

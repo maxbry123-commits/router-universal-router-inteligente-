@@ -1,0 +1,407 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>agent-16-chat-space-oauth</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0b0d10;color:#d0d4dc;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;min-height:100dvh;display:flex;flex-direction:column;padding:0 0.5rem 0.5rem}
+    .app{max-width:640px;margin:0 auto;width:100%;display:flex;flex-direction:column;min-height:100dvh;gap:0.5rem;padding:0.25rem 0}
+    /* top bar */
+    .topbar{display:flex;flex-wrap:wrap;gap:0.4rem 0.3rem;align-items:center;background:#14181d;border-radius:1.2rem;padding:0.5rem 0.6rem;box-shadow:0 0 0 1px #2a3038}
+    .topbar select,.topbar button,.topbar label{font-size:0.8rem;background:#1e242c;color:#d0d4dc;border:1px solid #2e3843;border-radius:1.8rem;padding:0.3rem 0.6rem;outline:none;white-space:nowrap;cursor:pointer}
+    .topbar select{min-width:70px;flex:1 0 auto}
+    .topbar .switch-wrap{display:flex;align-items:center;gap:0.3rem;background:#1a2028;padding:0.1rem 0.5rem;border-radius:2rem;border:1px solid #2e3843}
+    .topbar .switch-wrap input{margin:0;accent-color:#4c9aff;width:1rem;height:1rem}
+    .topbar .switch-wrap span{font-size:0.7rem;opacity:0.8}
+    .plusBtn{background:#1e2a36;border:1px solid #3a4755;border-radius:2rem;font-size:1.1rem;line-height:1;padding:0.1rem 0.6rem}
+    /* chat area */
+    .chatbox{flex:1;background:#0f1318;border-radius:1.5rem;display:flex;flex-direction:column;border:1px solid #222a33;overflow:hidden;min-height:300px}
+    .history{flex:1;overflow-y:auto;padding:0.6rem 0.8rem;display:flex;flex-direction:column;gap:0.5rem;scroll-behavior:smooth;font-size:0.9rem}
+    .msg{background:#1c232d;padding:0.4rem 0.7rem;border-radius:1rem;max-width:85%;word-break:break-word;border:1px solid #2c3643}
+    .msg.assistant{background:#1f2b38;border-left:3px solid #4c9aff;align-self:flex-start}
+    .msg.user{background:#1b2a3a;border-right:3px solid #78b8ff;align-self:flex-end}
+    .inputarea{display:flex;gap:0.3rem;padding:0.4rem 0.5rem;border-top:1px solid #252e38;background:#0e1217;border-radius:0 0 1.5rem 1.5rem}
+    .inputarea input{flex:1;background:#1a212a;border:none;border-radius:2rem;padding:0.5rem 0.8rem;color:#d0d4dc;font-size:0.9rem;outline:1px solid #2e3a48}
+    .inputarea input:focus{outline:1px solid #4c9aff}
+    .inputarea button{background:#2d3b4c;border:none;border-radius:2rem;padding:0.4rem 1rem;font-size:0.9rem;cursor:pointer;color:#d0d4dc;font-weight:500}
+    .attach{background:transparent;border:none;font-size:1.3rem;cursor:pointer;padding:0 0.2rem}
+    /* workflow panel */
+    .wflow-panel{background:#141a22;border-radius:1.5rem;padding:0.5rem 0.7rem;border:1px solid #24303e;display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}
+    .wflow-panel input{background:#1a212a;border:1px solid #2e3a48;border-radius:2rem;padding:0.3rem 0.6rem;color:#d0d4dc;font-size:0.75rem;flex:1 1 100px}
+    .wflow-panel button{background:#28333f;border:1px solid #3b4a5a;border-radius:2rem;padding:0.2rem 0.8rem;font-size:0.7rem;cursor:pointer}
+    .panel-control{display:flex;flex-wrap:wrap;gap:0.3rem;background:#11171f;border-radius:2rem;padding:0.4rem 0.6rem;border:1px solid #2a3544;justify-content:center}
+    .panel-control button{background:#26313e;border:1px solid #3f4f62;border-radius:2rem;padding:0.25rem 0.7rem;font-size:0.7rem;cursor:pointer}
+    .settings-panel{background:#11161d;border-radius:1.5rem;padding:0.5rem 0.7rem;border:1px solid #2a3441;display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center}
+    .settings-panel input{background:#1a212a;border:1px solid #2e3a48;border-radius:2rem;padding:0.3rem 0.6rem;color:#d0d4dc;font-size:0.75rem;flex:1;min-width:100px}
+    .settings-panel button{background:#283542;border:1px solid #3f5165;border-radius:2rem;padding:0.2rem 0.8rem;font-size:0.7rem;cursor:pointer}
+    .error-line{background#1c1a1a;color:#f77;padding:0.2rem 0.6rem;border-radius:1rem;font-size:0.75rem;text-align:center;border:1px solid #733;min-height:1.2rem}
+    .flex-fill{flex:1}
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- barra superior -->
+  <div class="topbar" id="topbar">
+    <select id="modelSelect" aria-label="modelo"><option>cargando modelos…</option></select>
+    <div class="switch-wrap"><input type="checkbox" id="agentSwitch"><span>🔄 agente</span></div>
+    <select id="agentSelect" aria-label="agente"><option value="">sin agente</option></select>
+    <select id="ghSelect" aria-label="cuenta"><option>cuenta gh</option></select>
+    <select id="groupSelect" aria-label="grupo"><option>grupo</option></select>
+    <button class="plusBtn" id="workflowPlusBtn" title="añadir workflow">➕</button>
+  </div>
+
+  <!-- area de chat principal -->
+  <div class="chatbox">
+    <div class="history" id="history"><div class="msg assistant">ready — select model & send.</div></div>
+    <div class="inputarea">
+      <button class="attach" id="attachBtn" title="subir archivo">📎</button>
+      <input type="file" id="fileInput" accept="*/*" style="display:none">
+      <input type="text" id="chatInput" placeholder="mensaje…">
+      <button id="sendBtn">➤</button>
+    </div>
+  </div>
+
+  <!-- workflow (inline) se muestra al pulsar ➕ -->
+  <div class="wflow-panel" id="wflowPanel" style="display:none">
+    <input type="text" id="wfName" placeholder="nombre">
+    <input type="text" id="wfRepo" placeholder="repo">
+    <input type="text" id="wfPlan" placeholder="ruta plan">
+    <button id="wfSave">guardar</button>
+    <button id="wfCancel">✕</button>
+  </div>
+
+  <!-- panel de control pausa/emergencia/orden -->
+  <div class="panel-control">
+    <button id="pauseBtn">⏸️ pausar</button>
+    <button id="resumeBtn">▶️ reanudar</button>
+    <button id="emergencyBtn">🛑 emergencia</button>
+    <button id="startJobBtn">🔌 job</button>
+    <button id="orderBtn">🗓️ orden</button>
+  </div>
+
+  <!-- ajustes: hf token + api key (localStorage) -->
+  <div class="settings-panel">
+    <input type="text" id="hfTokenInput" placeholder="HF token">
+    <input type="text" id="apiKeyInput" placeholder="X-API-Key">
+    <button id="saveKeysBtn">guardar claves</button>
+  </div>
+
+  <!-- linea de error unica -->
+  <div class="error-line" id="errorLine"></div>
+</div>
+
+<script>
+  (function() {
+    // --- estado y helpers ---
+    let BASE = '';
+    const LS = localStorage;
+    const errorLine = document.getElementById('errorLine');
+
+    function setError(msg) { errorLine.textContent = msg || ''; }
+    function getKeys() { return { hf: LS.getItem('HF_TOKEN') || '', api: LS.getItem('X_API_KEY') || '' }; }
+    function saveKeys(hf, api) { LS.setItem('HF_TOKEN', hf); LS.setItem('X_API_KEY', api); }
+
+    // lectura de LIVE_URL desde flag
+    async function fetchBaseUrl() {
+      try {
+        const resp = await fetch('https://raw.githubusercontent.com/maxbry123-commits/router-universal-router-inteligente-/main/router%20inteligente%20universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag');
+        const text = await resp.text();
+        const match = text.match(/LIVE_URL=(.+)/);
+        if (match) {
+          let url = match[1].trim();
+          if (url.endsWith('/')) url = url.slice(0, -1);
+          BASE = url;
+        } else {
+          BASE = ''; 
+          setError('no se pudo extraer LIVE_URL del flag');
+        }
+      } catch (e) {
+        setError('error obteniendo LIVE_URL: ' + e.message);
+        BASE = '';
+      }
+    }
+
+    // peticiones con clave, headers
+    async function apiFetch(path, options = {}) {
+      const { hf, api } = getKeys();
+      const headers = { 'Content-Type': 'application/json', ...options.headers };
+      if (hf) headers['Authorization'] = `Bearer ${hf}`;
+      if (api) headers['X-API-Key'] = api;
+      const url = BASE + path;
+      try {
+        const res = await fetch(url, { ...options, headers });
+        if (!res.ok) {
+          let errBody = '';
+          try { errBody = await res.text(); } catch(_) {}
+          throw new Error(`status ${res.status}: ${errBody.slice(0,70)}`);
+        }
+        return res;
+      } catch (err) {
+        setError('API error: ' + err.message);
+        throw err;
+      }
+    }
+
+    // --- inicializar selects ---
+    async function loadModels() {
+      try {
+        const res = await apiFetch('/v1/models');
+        const data = await res.json();
+        const sel = document.getElementById('modelSelect');
+        sel.innerHTML = '';
+        if (Array.isArray(data)) {
+          data.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id || m;
+            opt.text = m.id || m;
+            sel.add(opt);
+          });
+        } else if (data.data && Array.isArray(data.data)) {
+          data.data.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.text = m.id;
+            sel.add(opt);
+          });
+        } else {
+          sel.innerHTML = '<option>modelos no listados</option>';
+        }
+      } catch (e) {
+        document.getElementById('modelSelect').innerHTML = '<option>error modelos</option>';
+      }
+    }
+
+    async function loadAgents() {
+      try {
+        const res = await apiFetch('/chat/agents');
+        const data = await res.json();
+        const sel = document.getElementById('agentSelect');
+        sel.innerHTML = '<option value="">sin agente</option>';
+        if (Array.isArray(data)) {
+          data.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.id || a.name || a;
+            opt.text = a.name || a.id || a;
+            sel.add(opt);
+          });
+        } else if (data.agents) {
+          data.agents.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.id || a;
+            opt.text = a.name || a.id || a;
+            sel.add(opt);
+          });
+        }
+      } catch (e) {
+        document.getElementById('agentSelect').innerHTML = '<option>error agentes</option>';
+      }
+    }
+
+    async function loadGhAccounts() {
+      try {
+        const res = await apiFetch('/gh/accounts');
+        const data = await res.json();
+        const sel = document.getElementById('ghSelect');
+        sel.innerHTML = '';
+        if (Array.isArray(data)) {
+          data.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.login || g.id || g;
+            opt.text = g.login || g.id || g;
+            sel.add(opt);
+          });
+        } else if (data.accounts) {
+          data.accounts.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.login || g;
+            opt.text = g.login || g;
+            sel.add(opt);
+          });
+        } else {
+          sel.innerHTML = '<option>gh cuentas</option>';
+        }
+      } catch (e) {
+        document.getElementById('ghSelect').innerHTML = '<option>error gh</option>';
+      }
+    }
+
+    async function loadGroups() {
+      try {
+        const res = await apiFetch('/groups');
+        const data = await res.json();
+        const sel = document.getElementById('groupSelect');
+        sel.innerHTML = '';
+        if (Array.isArray(data)) {
+          data.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id || g.name || g;
+            opt.text = g.name || g.id || g;
+            sel.add(opt);
+          });
+        } else if (data.groups) {
+          data.groups.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id || g;
+            opt.text = g.name || g.id || g;
+            sel.add(opt);
+          });
+        } else {
+          sel.innerHTML = '<option>grupos</option>';
+        }
+      } catch (e) {
+        document.getElementById('groupSelect').innerHTML = '<option>error grupos</option>';
+      }
+    }
+
+    // --- envio de mensajes al chat ---
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const history = document.getElementById('history');
+      const userDiv = document.createElement('div');
+      userDiv.className = 'msg user';
+      userDiv.textContent = text;
+      history.appendChild(userDiv);
+      history.scrollTop = history.scrollHeight;
+      input.value = '';
+
+      const model = document.getElementById('modelSelect').value;
+      const agentOn = document.getElementById('agentSwitch').checked;
+      const agentId = document.getElementById('agentSelect').value;
+      let modelField = model;
+      if (agentOn) modelField = model + '+agentes';
+
+      const body = {
+        model: modelField,
+        messages: [{ role: 'user', content: text }],
+        agent: agentId || undefined,
+      };
+      try {
+        const res = await apiFetch('/v1/chat/completions', { method: 'POST', body: JSON.stringify(body) });
+        const data = await res.json();
+        let reply = '';
+        if (data.choices && data.choices[0] && data.choices[0].message) reply = data.choices[0].message.content;
+        else if (data.response) reply = data.response;
+        else reply = JSON.stringify(data).slice(0,300);
+        const asstDiv = document.createElement('div');
+        asstDiv.className = 'msg assistant';
+        asstDiv.textContent = reply;
+        history.appendChild(asstDiv);
+        history.scrollTop = history.scrollHeight;
+      } catch (e) {
+        const errDiv = document.createElement('div');
+        errDiv.className = 'msg assistant';
+        errDiv.textContent = '❌ error: ' + e.message;
+        history.appendChild(errDiv);
+      }
+    }
+
+    // --- subir archivo ---
+    document.getElementById('attachBtn').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const form = new FormData();
+      form.append('file', file);
+      form.append('chat_id', 'default');
+      const { hf, api } = getKeys();
+      const headers = {};
+      if (hf) headers['Authorization'] = `Bearer ${hf}`;
+      if (api) headers['X-API-Key'] = api;
+      try {
+        const res = await fetch(BASE + '/chat/documents', { method: 'POST', headers, body: form });
+        if (!res.ok) throw new Error('upload fail ' + res.status);
+        setError('archivo subido');
+      } catch (err) {
+        setError('error upload: ' + err.message);
+      }
+      e.target.value = '';
+    });
+
+    // --- workflow ➕ ---
+    const wfPanel = document.getElementById('wflowPanel');
+    document.getElementById('workflowPlusBtn').addEventListener('click', () => {
+      wfPanel.style.display = (wfPanel.style.display === 'none') ? 'flex' : 'none';
+    });
+    document.getElementById('wfCancel').addEventListener('click', () => { wfPanel.style.display = 'none'; });
+    document.getElementById('wfSave').addEventListener('click', async () => {
+      const name = document.getElementById('wfName').value.trim();
+      const repo = document.getElementById('wfRepo').value.trim();
+      const plan = document.getElementById('wfPlan').value.trim();
+      if (!name || !repo || !plan) { setError('completa nombre, repo, plan'); return; }
+      try {
+        const res = await apiFetch('/chat/storage', {
+          method: 'POST',
+          body: JSON.stringify({ name, repo, plan_path: plan })
+        });
+        if (res.ok) setError('workflow guardado');
+        else setError('error al guardar workflow');
+        wfPanel.style.display = 'none';
+        document.getElementById('wfName').value = '';
+        document.getElementById('wfRepo').value = '';
+        document.getElementById('wfPlan').value = '';
+      } catch (e) { setError(e.message); }
+    });
+
+    // --- panel control ---
+    async function controlAction(path, label) {
+      try {
+        const res = await apiFetch(path, { method: 'POST' });
+        if (res.ok) setError(label + ' OK');
+        else setError(label + ' falló');
+      } catch (e) { setError(e.message); }
+    }
+    document.getElementById('pauseBtn').addEventListener('click', () => controlAction('/control/pause-agents', 'pausar'));
+    document.getElementById('resumeBtn').addEventListener('click', () => controlAction('/control/resume-agents', 'reanudar'));
+    document.getElementById('emergencyBtn').addEventListener('click', () => controlAction('/control/emergency-stop', 'emergencia'));
+    document.getElementById('startJobBtn').addEventListener('click', () => controlAction('/control/start-job', 'start job'));
+    document.getElementById('orderBtn').addEventListener('click', () => controlAction('/control/order', 'orden programada'));
+
+    // --- settings: guardar claves ---
+    document.getElementById('saveKeysBtn').addEventListener('click', () => {
+      const hf = document.getElementById('hfTokenInput').value.trim();
+      const api = document.getElementById('apiKeyInput').value.trim();
+      saveKeys(hf, api);
+      setError('claves guardadas en localStorage');
+      // recargar datos?
+    });
+
+    // cargar claves previas en inputs
+    function loadKeysIntoInputs() {
+      const { hf, api } = getKeys();
+      document.getElementById('hfTokenInput').value = hf;
+      document.getElementById('apiKeyInput').value = api;
+    }
+
+    // --- enviar mensaje con enter ---
+    document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    document.getElementById('chatInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    // --- init ---
+    async function init() {
+      await fetchBaseUrl();
+      if (!BASE) { setError('LIVE_URL no definida'); }
+      // carga inicial
+      loadKeysIntoInputs();
+      // No bloquear carga de selects si BASE no existe
+      if (BASE) {
+        loadModels();
+        loadAgents();
+        loadGhAccounts();
+        loadGroups();
+      } else {
+        document.getElementById('modelSelect').innerHTML = '<option>sin url</option>';
+      }
+    }
+    init();
+  })();
+</script>
+</body>
+</html>
+```

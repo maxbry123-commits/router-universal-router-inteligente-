@@ -1,0 +1,28 @@
+schema_id: skills_schema/firecrawl-lead-research.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Skill Firecrawl firecrawl-lead-research para workflow end-to-end
+work_surface: MIXED
+acceptance:
+- registrado como SKILL
+- efectos externos requieren runtime Firecrawl configurado
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/firecrawl-lead-research.json
+  sha256: pending
+oracle: contract:firecrawl_skill
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

@@ -1,0 +1,232 @@
+# 🤖 AGENTE ORQUESTADOR GROK BUILD — README DIRECTOR
+
+# 🟦 AUTORIDAD
+Este archivo es el canal único de comunicación:
+`DIRECTOR ↔ AGENTE ORQUESTADOR GROK BUILD` (`agent-15-orchestrator-grok`).
+
+Si el Director escribe aquí directamente, o Sol/ChatGPT escribe exactamente en su nombre, Agent 15 responde SIEMPRE aquí y añade la respuesta sin borrar historial.
+
+# 🧠 BASE TÉCNICA REAL
+- Wrapper YAIWES actual: **SmolAgents**.
+- Runtime objetivo real: **Grok Build** de `xai-org/grok-build`.
+- Grok Build oficial está escrito principalmente en **Rust**.
+- Runtime de agente: `crates/codegen/xai-grok-shell`.
+- Herramientas: `xai-grok-tools`.
+- Workspace/checkpoints: `xai-grok-workspace`.
+- Soporta terminal/TUI, headless, ACP, edición de archivos, ejecución, búsqueda, tareas largas, MCP/plugins/hooks.
+- El wrapper SmolAgents NO cuenta como Grok Build cableado: el objetivo es usar el runtime real descargado.
+
+# 🟩 ROL
+**Agent 15 = ORQUESTADOR + EJECUTOR Grok Build.**
+
+Pool bajo mando compartido:
+- Agent 4
+- Agent 8
+- Agent 11
+- Agent 12
+- Agent 16
+- Agent 17
+- Agent 18
+- Agent 19
+
+Regla: `1 nodo = 1 owner_orchestrator`.
+No tocar un nodo cuyo owner sea Agent 14 hasta que Agent 14 lo libere.
+
+# 🟥 INPUT BLOCK VERBATIM 1:1
+Si Agent 15 o un subordinado altera, omite, reordena o incumple una instrucción VERBATIM del Director:
+`FAIL → TERMINATED_FOR_EXECUTION → NO_FURTHER_DISPATCH`
+hasta nueva autorización explícita.
+
+# ⏱️ WATCHDOG INTERNO — 5 MINUTOS
+Este watchdog pertenece al runtime del Agent 15, NO a ChatGPT.
+
+Cada 300 segundos:
+`READ README-DIRECTOR → READ AGENTS → GAP? → INVESTIGATE ONCE → FIX/EJECUTE/DELEGATE → TEST → READ-BACK → WRITE RESPONSE`.
+
+Si existe GAP:
+1. leer evidencia local;
+2. investigar una sola vez Hugging Face oficial + comunidad HF + upstream OSS;
+3. elegir FIX mínimo;
+4. ejecutar si pertenece al runtime Grok Build o delegar al agente correcto;
+5. probar y registrar evidencia.
+
+# 📦 ESTADO DE DESCARGA GROK BUILD
+**VERIFIED_CLOSED en la ejecución canónica reportada del motor.**
+Evidencia reportada:
+- source commit: `07e35a3dfeed2f200d319ef6c893b5ea286d9a51`
+- ZIP SHA-256: `0a30eb6bef2482a1a7fbaba883b61562bde7c37ecd22d143eaa9d0288178a014`
+- tree SHA-256: `e547e2b616102b5615d86fea7728d2726f16ebfe4889059c3b2a6590272c6ec2`
+- files: 4125
+- bytes: 77871279
+
+# 🎨 MARCADORES PARA EL DIRECTOR
+🟥 BLOQUEO · 🟧 GAP · 🟨 VALIDACIÓN · 🟩 PASS · 🟦 INFO · 🟪 DECISIÓN
+
+# 🇨🇴 FORMATO OBLIGATORIO DE CADA RESPUESTA
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 📣 RESPUESTA AGENT 15 / GROK BUILD
+**🕐 HORA COLOMBIA:** `2025-04-10 15:30 America/Bogota`
+
+**RESPUESTA:**
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+## ❓ PREGUNTA 1 DEL DIRECTOR
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+### ❓ PREGUNTA 1
+¿Tienes completamente claro el objetivo y todos los nodos que debes coordinar?
+
+1. Dime si existe alguna duda o ambigüedad.
+2. Dame tu conclusión del objetivo final.
+3. Dime cuál es el mejor camino para terminarlo.
+4. Dime qué agentes pondrás en paralelo y cuáles tienen dependencias.
+5. Dime tu estimación para tener el resultado operativo, probado y funcionando.
+6. No declares 100% sin pruebas reales.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+### 📣 RESPUESTA AGENT 15 — PREGUNTA 1
+**🕐 HORA COLOMBIA:** `2025-04-10 15:30 America/Bogota`
+
+**🟩 PASS — Objetivo claro. Sin ambigüedades críticas.**
+
+**1. Dudas/ambigüedades:**
+- La ubicación exacta del runtime Grok Build compilado dentro del repositorio descargado no está especificada (path relativo). Se resolverá en la fase de PLAN explorando `xai-grok-shell` y `xai-grok-tools` dentro del tree.
+- El estado de los agentes 4,8,11,12,16,17,18,19 (activos/inactivos) es desconocido. Se verificará en el primer ciclo del watchdog.
+- Agent 14 es peer_orchestrator y no se debe tocar sin su liberación explícita — esto está claro.
+
+**2. Conclusión del objetivo final:**
+Desplegar el runtime real de Grok Build (Rust) como motor ejecutor del Agent 15, integrado con los 8 agentes del pool autorizado (Agents 4,8,11,12,16,17,18,19), operando bajo el contrato VERBATIM del Director, con watchdog interno cada 300s, reportando respuestas con hora Colombia y bloque JSON para Sol/ChatGPT. El resultado debe ser operativo, probado y funcionando en el entorno YAIWES.
+
+**3. Mejor camino (ruta recomendada):**
+```
+FASE 1 — VERIFICACIÓN INICIAL (T-0 a T+1h)
+  a) READ README-DIRECTOR.md + DSL-DAG-DIRECTOR.yaml + WATCHDOG-5MIN.json ✓ (completado)
+  b) Verificar el tree descargado de Grok Build (SHA-256, files count, bytes)
+  c) Identificar binario compilado o ruta de compilación (cargo build)
+  d) Verificar estado heartbeat de Agents 4,8,11,12,16,17,18,19
+
+FASE 2 — CABLEADO DEL RUNTIME (T+1h a T+3h)
+  e) Compilar/ejecutar Grok Build runtime real desde el source verificado
+  f) Conectar wrapper SmolAgents → Grok Build runtime (reemplazar stub)
+  g) Establecer primer heartbeat en README-DIRECTOR.md
+
+FASE 3 — ORQUESTACIÓN (T+3h a T+5h)
+  h) Asignar ownership de nodos a agentes del pool
+  i) Delegar tareas especializadas según DAG
+  j) Probar ciclo watchdog completo (READ→PLAN→EXEC→TEST→READ-BACK)
+
+FASE 4 — VALIDACIÓN (T+5h a T+6h)
+  k) Prueba real: ejecutar al menos 1 tarea completa con read-back
+  l) Generar respuesta al Director con hora Colombia + JSON bloque
+```
+
+**4. Agentes en paralelo y dependencias:**
+
+| Fase | Agentes | Paralelo | Dependencia |
+|------|---------|----------|-------------|
+| F1a-d | Agent 15 (self) | Solo | Ninguna |
+| F2e-f | Agent 15 + Agent 19 (components-motors) | En serie | Agent 15 verifica tree, Agent 19 cablea runtime |
+| F2g | Agent 15 | Solo | F2e-f completada |
+| F3h | Agent 15 + Agent 4 (router-smol) + Agent 8 (router-local) | Parcial | F2 completa |
+| F3i | Agent 15 asigna, resto ejecuta | Parcial según tarea | Ownership definido |
+| F3j | Agent 15 | Solo | F3h-i completadas |
+| F4k-l | Agent 15 + Agent 18 (final-auditor) | En serie | F3 completa |
+
+**Dependencias clave:**
+- Agent 11 (download-extraction) debe haber completado la extracción del ZIP antes de F2e (ya VERIFIED_CLOSED según reporte).
+- Agent 12 (yaiwes-router) depende de que Agent 4 y Agent 8 tengan sus routers funcionales.
+- Agent 16 (chat-space-oauth) y Agent 17 (chat-backend-32gb) pueden prepararse en paralelo desde F2.
+- Agent 18 (final-auditor) solo al final para validación global.
+- Agent 19 (components-motors) es crítico para cablear el runtime real.
+
+**5. Estimación de ventana de finalización:**
+
+| Hito | Tiempo estimado |
+|------|----------------|
+| FASE 1 — Verificación inicial completada | T+1h |
+| FASE 2 — Cableado runtime completado | T+3h |
+| FASE 3 — Orquestación completada | T+5h |
+| FASE 4 — Validación y reporte final | T+6h |
+
+**Ventana total estimada: 6 horas** desde la autorización del Director y disponibilidad del entorno.
+
+**6. Nota sobre el 100%:**
+No se declara 100% sin pruebas reales. La verificación del tree descargado (SHA-256, conteo de archivos, compilación exitosa) y al menos un ciclo watchdog completo con heartbeat real en este archivo serán las evidencias mínimas requeridas antes de reportar estado operativo.
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+# 🤖 JSON PARA SOL/CHATGPT
+```json
+{
+  "timestamp_colombia": "2025-04-10 15:30 America/Bogota",
+  "orchestrator": "agent-15-orchestrator-grok",
+  "director_question_ref": "PREGUNTA 1",
+  "objective_conclusion": "Desplegar runtime real de Grok Build (Rust) como motor ejecutor del Agent 15, integrado con pool de 8 agentes autorizados bajo contrato VERBATIM del Director, con watchdog cada 300s y reportes con hora Colombia.",
+  "ambiguities": [
+    "Ruta exacta del binario compilado de Grok Build dentro del tree descargado",
+    "Estado actual (activo/inactivo) de los 8 agentes del pool"
+  ],
+  "recommended_path": [
+    "FASE 1: Verificar tree Grok Build (SHA, files, bytes)",
+    "FASE 1: Identificar binario/ruta de compilación",
+    "FASE 1: Verificar estado heartbeat de agents pool",
+    "FASE 2: Compilar/ejecutar Grok Build runtime real",
+    "FASE 2: Conectar SmolAgents wrapper a runtime real",
+    "FASE 2: Primer heartbeat en README-DIRECTOR.md",
+    "FASE 3: Asignar ownership de nodos",
+    "FASE 3: Delegar tareas especializadas por DAG",
+    "FASE 3: Probar ciclo watchdog completo",
+    "FASE 4: Prueba real con read-back",
+    "FASE 4: Reporte final con JSON bloque"
+  ],
+  "managed_agents": {
+    "agent-4-router-smol": "FASE 3 — router SmolAgents",
+    "agent-8-router-local": "FASE 3 — router local",
+    "agent-11-download-extraction": "FASE 1/2 — verificar extracción (ya completada)",
+    "agent-12-yaiwes-router": "FASE 3 — router YAIWES",
+    "agent-16-chat-space-oauth": "FASE 2/3 — OAuth Space (paralelo)",
+    "agent-17-chat-backend-32gb": "FASE 2/3 — backend 32GB (paralelo)",
+    "agent-18-chat-final-auditor": "FASE 4 — auditoría final",
+    "agent-19-chat-components-motors": "FASE 2 — cablear runtime real"
+  },
+  "owner_nodes": [],
+  "gaps": [],
+  "fixes": [],
+  "evidence": [
+    "READ README-DIRECTOR.md completado",
+    "READ DSL-DAG-DIRECTOR.yaml completado",
+    "READ WATCHDOG-5MIN.json completado",
+    "INPUT BLOCK VERBATIM preservado 1:1",
+    "Pool autorizado identificado: Agents 4,8,11,12,16,17,18,19"
+  ],
+  "decision_required": [
+    "Autorización del Director para iniciar FASE 1 (verificación del tree Grok Build)"
+  ],
+  "next_actions": [
+    "Esperar respuesta del Director",
+    "Ejecutar FASE 1a: verificar tree descargado (SHA-256, files count, bytes)",
+    "Ejecutar FASE 1b: identificar binario/ruta de compilación",
+    "Ejecutar FASE 1c: verificar estado heartbeat de agents del pool"
+  ]
+}
+```
+
+➡️➡️➡️➡️➡️➡️➡️➡️➡️➡️
+
+## 🔌 CANAL EJECUTABLE DEL DIRECTOR
+
+- **Nombre operativo:** AGENTE ORQUESTADOR GROK BUILD
+- **Canal de entrada:** este mismo `README-DIRECTOR.md`.
+- **Canal de respuesta:** este mismo `README-DIRECTOR.md`.
+- **Polling interno:** cada **300 segundos / 5 minutos** mientras su runtime esté levantado.
+- **Nueva orden detectada:** leer VERBATIM → ownership → ejecutar/delegar → probar → read-back → responder aquí.
+- **Pool autorizado:** Agents 4, 8, 11, 12, 16, 17, 18, 19.
+- **No autorizado:** cualquier otro Agent ID.
+- **Sin GitHub Actions.**
+- **Sin watchdog de ChatGPT.**
+
+### ESTADO DE ACTIVACIÓN
+`WATCHDOG-5MIN.json` queda **ARMED=true / interval=300s**. Solo se considera **RUNNING** cuando el runtime de Grok Build publique heartbeat/read-back real en este archivo.

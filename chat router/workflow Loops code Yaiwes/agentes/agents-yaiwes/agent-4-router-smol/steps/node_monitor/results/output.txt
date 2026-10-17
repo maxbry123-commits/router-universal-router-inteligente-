@@ -1,0 +1,35 @@
+```python
+def node_state(ram_pct: float, cpu_pct: float, active_jobs: int, max_parallel: int) -> str:
+    """Return node state based on load and job count."""
+    if active_jobs >= max_parallel:
+        return "CLOSED"
+    load = max(ram_pct, cpu_pct)
+    if load < 80:
+        return "GREEN"
+    if load < 90:
+        return "YELLOW"
+    if load < 95:
+        return "DRAIN"
+    return "CLOSED"
+
+
+def pick_node(nodes: list) -> str | None:
+    """Pick the best node id or None."""
+    green_candidates = []
+    yellow_candidates = []
+    for node in nodes:
+        state = node_state(
+            node["ram"], node["cpu"], node["active"], node["max_parallel"]
+        )
+        if state == "GREEN":
+            green_candidates.append(node)
+        elif state == "YELLOW":
+            yellow_candidates.append(node)
+    if green_candidates:
+        best = min(green_candidates, key=lambda n: max(n["ram"], n["cpu"]))
+        return best["id"]
+    if yellow_candidates:
+        best = min(yellow_candidates, key=lambda n: max(n["ram"], n["cpu"]))
+        return best["id"]
+    return None
+```

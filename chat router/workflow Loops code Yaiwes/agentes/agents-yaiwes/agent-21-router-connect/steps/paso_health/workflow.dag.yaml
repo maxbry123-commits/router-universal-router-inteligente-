@@ -1,0 +1,34 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-21-router-connect
+  framework: pocketflow
+  group: chat
+  route:
+  - deepseek_flash
+  fallback: []
+  max_tokens: 800
+context:
+  text: 'Flag: router inteligente universal/agents-yaiwes/ROUTER_JOB_PAUSE.flag
+
+    Ruta health: GET {LIVE_URL}/health
+
+    '
+  max_chars: 40000
+task: '1. Leer LIVE_URL del flag.
+
+  2. GET /health.
+
+  3. Guardar output.txt con http_status y body recortado sin secretos.
+
+  4. router_connected=true solo si 200.
+
+  '
+checks:
+- kind: min_chars
+  value: 40
+- kind: no_secrets

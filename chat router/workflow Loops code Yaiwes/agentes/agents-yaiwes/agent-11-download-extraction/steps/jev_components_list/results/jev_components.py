@@ -1,0 +1,17 @@
+JEV_COMPONENTS = {
+    "typesafe-skills": ("https://github.com/typesafe-ai/skills", ["README.md", "src"]),
+    "typesafe-sdk-python": ("https://github.com/typesafe-ai/typesafe-sdk-python", ["README.md", "src"]),
+    "typesafe-sdk-js": ("https://github.com/typesafe-ai/typesafe-sdk-js", ["README.md", "src"]),
+    "system-one-adapter-python": ("https://github.com/typesafe-ai/system-one-adapter-python", ["README.md", "src"]),
+    "typesafe-router": ("https://github.com/BunsDev/typesafe-router", ["README.md", "src"]),
+    "jev-router": ("https://github.com/gargpratyush/jev-router", ["README.md", "src"]),
+    "jev-codex-router": ("https://github.com/0xNatoshi/jev-codex-router", ["README.md", "src"]),
+    "jev-mcp-jkudish": ("https://github.com/jkudish/jev-mcp", ["README.md", "src"]),
+    "typesafe-jev-mcp": ("https://github.com/anasbekheit/typesafe-jev-mcp", ["README.md", "src"]),
+    "typesafe-mcp": ("https://github.com/itsmostafa/typesafe-mcp", ["README.md", "src"]),
+    "jev-mcp-byk": ("https://github.com/BYK/jev-mcp", ["README.md", "src"]),
+    "jev-agent-skill-router": ("https://github.com/GodsBoy/jev-agent-skill-router", ["README.md", "src"]),
+    "skillranker": ("https://github.com/Dicklesworthstone/skillranker", ["README.md", "src"]),
+    "jev-eval-agent": ("https://github.com/vinilana/jev-eval-agent", ["README.md", "src"]),
+    "jev-system-one": ("https://github.com/haseeb-heaven/jev-system-one", ["README.md", "src"]),
+}

@@ -1,0 +1,35 @@
+schema: yaiwes.micro-agent/v1
+execution:
+  mode: fail_closed
+  max_parallel: 1
+  continue_on_failure: false
+  retries: 2
+agent:
+  id: agent-10-model-install
+  framework: pocketflow
+  group: hf-install
+  route: [nvidia, groq, minimax_m3]
+  fallback: []
+  max_tokens: 1200
+context:
+  text: |
+    Regla Sheriff: SOLO máquina 32 GB RAM (flavor técnico cpu-upgrade).
+    cpu-basic (=16GB) = REJECT. GPU = REJECT.
+    validate_orders solo marca ok si flavor == cpu-upgrade.
+  max_chars: 8000
+task: |
+  Escribe install_report.py con validate_orders(text)->dict.
+  ok solo si flavor == "cpu-upgrade" (máquina 32 GB RAM).
+  Cualquier otro flavor (cpu-basic, GPU, ausente) va a rejected.
+checks:
+  - kind: python_ast
+  - kind: python_exec
+    module: install_report.py
+    test: |
+      from install_report import validate_orders
+      text = 'x\n```json\n{"orders": [{"model_id":"a","flavor":"cpu-upgrade"},{"model_id":"b","flavor":"cpu-basic"},{"model_id":"c","flavor":"a10g-small"}]}\n```\ny'
+      r = validate_orders(text)
+      assert r["count"] == 3
+      assert {o["model_id"] for o in r["ok"]} == {"a"}
+      assert {o["model_id"] for o in r["rejected"]} == {"b", "c"}
+  - kind: no_secrets

@@ -1,0 +1,96 @@
+{
+  "id": "UI-YAIWES-CHAT-PERFIL-0.2",
+  "name": "FROMTED × YAIWES Perfil Visual Funcional",
+  "version": "0.2.0-review",
+  "defaultTheme": "little",
+  "canonicalThemeIds": [
+    "little",
+    "matte",
+    "blanco"
+  ],
+  "candidateThemeIds": [
+    "crystal",
+    "orange",
+    "blue",
+    "gris"
+  ],
+  "themeStatusExtension": {
+    "progress": "--status-green",
+    "enabled": "--status-blue",
+    "warning": "--status-red",
+    "pending": "--sub",
+    "scope": "semantic indicators, not brand accents",
+    "approval": "pending final visual approval"
+  },
+  "files": {
+    "entry": "index.html",
+    "style": "styles.css",
+    "behavior": "app.js",
+    "actionBus": "src/lib/actionBus.js",
+    "snapshot": "snapshot/index-standalone.html"
+  },
+  "slots": [
+    "mainContent",
+    "inspector",
+    "sideNav",
+    "bottomNav",
+    "sheetInner",
+    "chatMessages",
+    "fileRows",
+    "wallGrid"
+  ],
+  "locales": [
+    "es",
+    "en",
+    "fr",
+    "pt"
+  ],
+  "actions": [
+    "chat.close",
+    "chat.export",
+    "chat.attach",
+    "chat.send",
+    "mode.thinking.toggle",
+    "mode.select",
+    "model.select",
+    "tool.document.toggle",
+    "tool.website.toggle",
+    "tool.image.toggle",
+    "files.add",
+    "files.pin",
+    "files.download",
+    "files.search",
+    "wall.status.set",
+    "wall.root.add",
+    "wall.note.set",
+    "theme.select",
+    "locale.select",
+    "ui.navigate",
+    "ui.settings",
+    "state.export",
+    "state.import",
+    "state.reset"
+  ],
+  "backend": {
+    "bridge": "window.YAIWES_PLUGIN_BRIDGE.execute(actionId, payload)",
+    "event": "yaiwes:ui-action",
+    "remoteActionIds": [
+      "chat.send"
+    ],
+    "failClosed": true,
+    "noFakeAiOutput": true
+  },
+  "data": {
+    "localPersistence": "localStorage",
+    "persistedFileLimitBytes": 1048576,
+    "externalProviderNotIncluded": true
+  },
+  "tests": {
+    "browser": "tests/panel-01-chat.spec.js",
+    "localVerifier": "tests/run_browser_qa.py"
+  },
+  "referenceImages": [
+    "snapshot/reference-files-grok.jpg",
+    "snapshot/reference-mode-grok.jpg"
+  ]
+}

@@ -1,0 +1,53 @@
+def render_order(rules: dict, order: dict) -> dict:
+    """
+    Render a RIU DAG plan from rules and order.
+
+    Parameters
+    ----------
+    rules : dict
+        Must contain "max_retries" (int), "route" (list of providers) and "fallback" (list).
+    order : dict
+        Must contain "id", "input_block" and "steps" (list of dicts with "id", "instructions"
+        and optionally "expect").
+
+    Returns
+    -------
+    dict
+        A plan dict with schema "riu.dag/v1", id, input_block, route, fallback and nodes.
+
+    Raises
+    ------
+    ValueError
+        If steps is empty, input_block is empty or route is empty.
+    """
+    steps = order.get("steps", [])
+    input_block = order.get("input_block", "")
+    route = rules.get("route", [])
+
+    if not steps:
+        raise ValueError("steps list is empty")
+    if not input_block:
+        raise ValueError("input_block is empty")
+    if not route:
+        raise ValueError("route is empty")
+
+    nodes = []
+    for i, step in enumerate(steps):
+        node = {
+            "id": step["id"],
+            "instructions": step["instructions"],
+            "needs": [] if i == 0 else [steps[i - 1]["id"]],
+            "retries": rules["max_retries"],
+            "expect": step.get("expect"),
+            "model": {"provider": route[0], "model": "auto"},
+        }
+        nodes.append(node)
+
+    return {
+        "schema": "riu.dag/v1",
+        "id": order["id"],
+        "input_block": order["input_block"],
+        "route": rules["route"],
+        "fallback": rules["fallback"],
+        "nodes": nodes,
+    }

@@ -1,0 +1,8 @@
+CHECKLIST DE INTEGRACION
+Open WebUI: router inteligente universal/Componente open soure router inteligente universal/open-webui/ (el directorio existe, pero no se tocó porque la tarea pide NO redescargar ni modificar Open WebUI)
+Router: router inteligente universal/integration/chat_mvp/chat_ui.html (chat_ui.html contiene la UI integrada con router/model selector, modo con/sin agente, subida de documentos)
+GitHub: router inteligente universal/integration/chat_mvp/chat_ui.html (chat_ui.html contiene el panel GitHub con login, repos, lectura de archivos y commit)
+Jobs: router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/jobs_panel/results/jobs_panel.js (Jobs Panel está en su archivo JS independiente)
+Secret Bank: router inteligente universal/agents-yaiwes/agent-1-chat-hf/steps/vault_panel/results/vault_panel.js (Vault/Secret Bank está en su archivo JS independiente)
+Crazy Wall: router inteligente universal/agents-yaiwes/agent-2-chat-hf-smol/steps/crazy_wall_chain/results/crazy_wall_chain.py (Crazy Wall Chain está en su archivo Python independiente)
+PRUEBA: La integración consiste en que chat_ui.html (Chat MVP existente) ya incluye los paneles Documentos, GitHub, Agentes, Almacenamiento y Claves en sus pestañas laterales, y los scripts JS independientes (vault_panel.js, router_panel.js, jobs_panel.js, crazy_wall_chain.py) contienen las funciones de integración. No se realizó una prueba de ejecución en vivo porque el sistema no está desplegado, pero se verificó que los archivos existen en las rutas indicadas antes de trabajar.

@@ -1,0 +1,35 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-8-router-local",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-21T15:00:56Z",
+ "group": "router-local",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "hf",
+ "model": "deepseek-ai/DeepSeek-V4-Flash",
+ "via": "route",
+ "attempts": 1,
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "5fae90e335776d09346f7bb1ccb708fa36068a23a4800c400ad4e5e035d867f9",
+   "chars": 582
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "mirror_route.py",
+   "sha256": "09c1371de2d41024c59c367b83f04dc5816db5397a47f5d4a1837566ada490da"
+  }
+ ],
+ "route_trace": [
+  "hf/MiniMaxAI/MiniMax-M3:PROVIDER_ERROR:429:{\"error\":{\"message\":\"Model busy, retry later\",\"type\":\"invalid_request_error\",\"par"
+ ]
+}

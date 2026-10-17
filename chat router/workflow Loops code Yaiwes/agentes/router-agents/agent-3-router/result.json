@@ -1,0 +1,11 @@
+{
+ "agent": "agent-3-router",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "attempts": 1,
+ "output_sha256": "f7fa17aa48b83ed7aa62eb4b84fac32b042aa97006337f54e518bbf63cc017ae",
+ "gaps": []
+}

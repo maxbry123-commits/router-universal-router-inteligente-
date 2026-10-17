@@ -1,0 +1,43 @@
+{
+  "schema": "yaiwes.seals-motors-manifest/v1",
+  "motors": {
+    "motor_1_extract_only.py": {
+      "source": "chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\u27a1\ufe0f\ud83d\udcc2 Motor de extracci\u00f3n zip/motor_1_extract_only.py",
+      "sha256": "eed52e86e28f9b0157e3c7eaa959235391b9a117309caa676272bfb0cae412fc",
+      "readback_sha256": "eed52e86e28f9b0157e3c7eaa959235391b9a117309caa676272bfb0cae412fc",
+      "verified": true
+    },
+    "motor_2_queue_download_extract.py": {
+      "source": "chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/motor_2_queue_download_extract.py",
+      "sha256": "8647f8b112e17604fa898bd5168a84e4281b8e73f217e5a6767e0817069759b7",
+      "readback_sha256": "8647f8b112e17604fa898bd5168a84e4281b8e73f217e5a6767e0817069759b7",
+      "verified": true
+    },
+    "motor_3_copy_batches.py": {
+      "source": "chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\u27a1\ufe0f\ud83d\udcc2motor de copiar archivos/motor_3_copy_batches.py",
+      "sha256": "964ec046fa04226b903d4a7a3110eb3d0e24a1a026664c8307f948bdafbd30fe",
+      "readback_sha256": "964ec046fa04226b903d4a7a3110eb3d0e24a1a026664c8307f948bdafbd30fe",
+      "verified": true
+    },
+    "motor_4_move_batches.py": {
+      "source": "chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\u27a1\ufe0f\ud83d\udcc2motor de moves archivos/motor_4_move_batches.py",
+      "sha256": "d2f5adae532181f00616cace85096f6e4fdf715fe93ed51fb5d2d5ee3d4a4469",
+      "readback_sha256": "d2f5adae532181f00616cace85096f6e4fdf715fe93ed51fb5d2d5ee3d4a4469",
+      "verified": true
+    },
+    "hf_download_extract_engine.py": {
+      "source": "chat router/\u27a1\ufe0f\ud83d\udcc2motores de descarga extracci\u00f3n copiado movimiento archivos agentes/\ud83d\udcc2Motor descarga de componentes y extracci\u00f3n de zip/hf_download_extract_engine.py",
+      "sha256": "e560b025b242db157cefc8a55a0b4c9d9f602895cb96a6b10f038bbe5b17a777",
+      "readback_sha256": "e560b025b242db157cefc8a55a0b4c9d9f602895cb96a6b10f038bbe5b17a777",
+      "verified": true
+    },
+    "motor_5_zip_root.py": {
+      "source": "git blob 2516d85d81f691f86c32a70b90c2599639eb83c6",
+      "sha256": "808447487ea28ea93a55cbba796652c532c216ab96213a76a16bf25ef78f461f",
+      "readback_sha256": "808447487ea28ea93a55cbba796652c532c216ab96213a76a16bf25ef78f461f",
+      "verified": true,
+      "note": "extraido de blob canonico agentes"
+    }
+  },
+  "all_verified": true
+}

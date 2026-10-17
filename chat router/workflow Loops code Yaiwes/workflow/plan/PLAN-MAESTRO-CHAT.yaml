@@ -1,0 +1,146 @@
+# PLAN MAESTRO — CHAT YAIWES (DSL DAG)
+# Formato inspirado en el plan de 4 objetivos (repo agentes: PLAN-DSL-DAG-00-CONTRATO / 01-NODOS) y en las instrucciones del Director.
+# Cada nodo cita de qué instrucción sale (ver ../00-INSTRUCCIONES: M1..M44, documentos 1..26).
+# Cómo usarlo (cualquier IA/Opus de otra cuenta): 1) leer ../02-ARQUITECTURA/📂readme chat Arquitectura.md
+#   2) leer ../03-ESTADO/STATE.json y CRAZY_WALL.json  3) tomar el primer nodo READY cuyas dependencias estén DONE
+#   4) reclamarlo en CRAZY_WALL (1 chat = 1 nodo)  5) ejecutarlo hasta su "cierre"  6) anotar evento en BITACORA.jsonl y actualizar HANDOFF.md.
+schema: yaiwes.plan/v3
+proyecto: chat-yaiwes
+raiz: "chat router/"
+
+contrato_de_nodo:   # todos los nodos cumplen esto
+  campos: [id, fuente, ejecuta, audita, repara, depende, entrada, salida, cierre, estado]
+  estados: [PENDING, READY, CLAIMED, RUNNING, BLOCKED, DONE]
+  reglas:
+    - "cierre = prueba real (respuesta, captura, archivo verificado). Nunca porque el archivo exista."
+    - "lo no resuelto = GAP anotado en BITACORA; nunca inventar."
+    - "no cambiar instrucciones, diseño ni herramientas del Director sin autorización."
+    - "todo modelo por nuestro Router (M44.1-2). Descargas solo con el motor."
+
+# ══════════════════════════ FASE A — ROUTER Y OMNIROUTE PRIVADO (M40, M43, M44 paso 2)
+nodos:
+  - id: A1
+    fuente: "M40 'termina de instalar el Omni router… 100 % funcional', M44 paso 2"
+    ejecuta: Opus
+    audita: prueba-omniroute-router.yml
+    depende: []
+    entrada: "Router en Job 16 GB + start_omniroute.sh + puerta /omniroute"
+    salida: "/omniroute/status encendido, /omniroute/v1/models con lista, 1 respuesta real"
+    cierre: "resultado del workflow de prueba con las 3 respuestas"
+    estado: RUNNING
+  - id: A2
+    fuente: "M43 'reporten primero cuando se usa en el chat si está disponible Kimi k 3 o DeepSeek v4 en la api de Nvidia'"
+    ejecuta: Opus
+    depende: [A1]
+    salida: "al abrir el chat, aviso: Kimi K3 / DeepSeek V4 disponibles o no en NVIDIA"
+    cierre: "captura del aviso en el chat"
+    estado: PENDING
+  - id: A3
+    fuente: "M43 'tenemos un solo router … Omni router y las api … deepsek solo si yo conecto las claves'"
+    ejecuta: Opus
+    depende: [A1]
+    salida: "Router usa OmniRoute como proveedor + NVIDIA/Cerebras/Groq; DeepSeek solo con claves presentes"
+    cierre: "petición del chat sale por OmniRoute y vuelve"
+    estado: PENDING
+  - id: A4
+    fuente: "M30, M31 autoescalado; M33 conector dentro de la máquina 16 GB"
+    ejecuta: Opus
+    depende: [A1]
+    salida: "cola de tareas + vigilante (16 GB 80 %, 32 GB 85 % hasta 10) + conector MCP en la máquina con letrero Vercel"
+    cierre: "tarea larga enciende un 32 GB y se apaga al terminar; Claude conectado por el letrero"
+    estado: PENDING
+
+# ══════════════════════════ FASE B — MEMORIA Y ALMACENAMIENTO (M40, M43 'termines lo de almacenamiento y memoria y probar', M44.4 'solo cablear')
+  - id: B1
+    fuente: "doc 24 State Hub; M44 'anotando en el Crazy wall bitácora stated JSON handoff'"
+    ejecuta: Opus
+    depende: []
+    salida: "State Hub (emit → BITACORA.jsonl → STATE.json/CRAZY_WALL.json/HANDOFF.md) dentro de 03-ESTADO/ y como ruta del Router"
+    cierre: "emitir 3 eventos de prueba y ver STATE/HANDOFF regenerados"
+    estado: PENDING
+  - id: B2
+    fuente: "M6 'PostgreSQL + Redis + Graphiti + FalkorDB + AgentDB + HF Storage Bucket + Graphify', M8, M44.4"
+    ejecuta: Opus
+    audita: Judge (código)
+    depende: [A1]
+    salida: "cableado de componentes YA descargados: Graphiti+FalkorDB (grafo), Memanto (memoria de agentes), Graphify (grafo de código), AgentDB (experiencia), HF Bucket (archivos); Postgres/Redis como servicio"
+    cierre: "prueba: guardar un recuerdo, reiniciar el Router, recuperarlo; buscar por grafo"
+    estado: PENDING
+  - id: B3
+    fuente: "M1 'subida de archivos anclada al almacenamiento', M16 punto 6"
+    depende: [B2]
+    salida: "archivos subidos en el chat quedan en el almacenamiento y se enrutan al agente elegido"
+    cierre: "subir archivo, reiniciar, seguir disponible y usado en respuesta"
+    estado: PENDING
+
+# ══════════════════════════ FASE C — AGENTES (doc 22, doc 23, M42, M43)
+  - id: C1
+    fuente: "M42 'OpenClaw y Hermes como asistentes… fokeas… cableas al chat'; doc 23"
+    depende: [A3, B1]
+    salida: "forks maxbry123-commits/openclaw y /hermes-agent corriendo con modelos del Router, conectados al State Hub y al chat"
+    cierre: "cada uno responde una orden desde el chat y deja evento en la bitácora"
+    estado: PENDING   # forks ya creados 27-sep
+  - id: C2
+    fuente: "doc 23 jerarquía: Rowboat → Hermes+OpenClaw → Sheriff → Ruflo → Colmena → Sentinel → revisión → Judge"
+    depende: [C1]
+    salida: "Rowboat y Ruflo conectados; Sheriff, Sentinel y Judge como código"
+    cierre: "una orden recorre toda la jerarquía con evidencia"
+    estado: PENDING
+  - id: C3
+    fuente: "M43 cadena 'Claude Code diseña → Grok ejecuta → Claude Code revisa y corrige → 4 de Meta … corrige Meta Code'; doc 22"
+    depende: [C2]
+    salida: "EngineeringLoop con contrato único job/result; Meta ×4 en paralelo; todos por el Router"
+    cierre: "tarea real completa el ciclo y pasa Sheriff"
+    estado: PENDING
+  - id: C4
+    fuente: "M43 'mirror solo con el equipo de ingeniería… copia solo de ese sistema'; doc 22 MIRROR"
+    depende: [C3]
+    salida: "MirrorManager (worktree aislado + SYSTEM_MAP); merge selectivo tras Sheriff"
+    cierre: "trabajo nuevo crea mirror, termina, main recibe solo el diff aprobado"
+    estado: PENDING
+  - id: C5
+    fuente: "M43 'todos tengan acceso a HF y Github todos los repo'; 'agentes como grafos conectados'"
+    depende: [C2]
+    salida: "secretos de GitHub/HF disponibles para los agentes vía Router; grafo de agentes en 03-ESTADO/AGENT_GRAPH.json"
+    cierre: "un agente lee un repo cualquiera y un recurso de HF"
+    estado: PENDING
+  - id: C6
+    fuente: "doc 26 Evidence/Search Gate con 12 goals"
+    depende: [C2]
+    salida: "puerta de evidencia antes y después de cada tarea"
+    cierre: "tarea de prueba con evidence pack y 12 goals de salida"
+    estado: PENDING
+
+# ══════════════════════════ FASE D — CHAT (M1, M3, M16 13 puntos, M18, M27 paso 5)
+  - id: D1
+    fuente: "M18 'chat usando WebUI o un chat listo', M42 'manus desplegó el chat'"
+    depende: [A3]
+    salida: "base del chat decidida (chat de Manus / Open WebUI / descargado) con skills y diseños del Director"
+    cierre: "Director aprueba visualmente"
+    estado: PENDING   # falta enlace del chat de Manus
+  - id: D2
+    fuente: "M16 puntos 1–13 + barra WORK, rewind, compact, Council, Archify"
+    depende: [D1, B3, C2]
+    salida: "cada función del chat conectada a su ruta real"
+    cierre: "MetaCua + CUA prueban cada botón con captura (sin mocks)"
+    estado: PENDING
+  - id: D3
+    fuente: "M16 paso 2 'panel adicional sin tocar el chat'"
+    depende: [D2, A4]
+    salida: "panel de control separado: energía, procesadores 16/32 GB, workflows ➕, avisos rojos"
+    cierre: "cada control probado"
+    estado: PENDING
+
+# ══════════════════════════ FASE E — EXPORTACIÓN (M43, M44.3)
+  - id: E1
+    fuente: "M43 'exportar todo en una raíz sin historia al repo de Yaiwes'; M44.3 'cuando funcione y esté probado'"
+    depende: [D3, C4, B3]
+    salida: "export de esta raíz sin historial al repo YAIWES"
+    cierre: "Director autoriza"
+    estado: PENDING
+
+orden: [A1, B1, A3, A2, B2, B3, C1, C5, C2, C6, C3, C4, A4, D1, D2, D3, E1]
+fuera_de_este_plan:
+  - "Router Inteligente Universal (proyecto aparte; aquí solo se usa como servicio)."
+  - "T-3000 MOTOR AUTOEVOLUTION (plan propio, repo frontend)."
+  - "Fábrica UI (después de memoria y almacenamiento, M43)."

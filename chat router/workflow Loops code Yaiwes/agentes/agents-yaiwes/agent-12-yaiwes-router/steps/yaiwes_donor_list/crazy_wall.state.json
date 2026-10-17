@@ -1,0 +1,35 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-12-yaiwes-router",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-22T10:14:15Z",
+ "group": "yaiwes-downloads",
+ "current_nodes": [
+  "tool_calling_agent"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "d7c319e221f78d82e7bd0be49367c829c49a579abd48f07296ced7c5ac1f9c14",
+   "chars": 521
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "yaiwes_donors.py",
+   "sha256": "d7c319e221f78d82e7bd0be49367c829c49a579abd48f07296ced7c5ac1f9c14"
+  }
+ ],
+ "model": "groq/openai/gpt-oss-120b",
+ "attempts": 4,
+ "route_trace": [
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal",
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal",
+  "nvidia/nvidia/nemotron-3-super-120b-a12b:AgentGenerationError:Error while generating output:\nError code: 500 - {'error': {'message': 'Internal"
+ ]
+}

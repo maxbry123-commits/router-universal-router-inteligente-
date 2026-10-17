@@ -1,0 +1,36 @@
+{
+  "source": "https://github.com/swamimalode07/rare-ui",
+  "components_count_verified": 22,
+  "components": [
+    "animated-counter",
+    "bounce-sidebar",
+    "code-block",
+    "delete-button",
+    "duration-picker",
+    "emoji-reaction",
+    "family-drawer",
+    "fluid-orb",
+    "folder-component",
+    "github-activity",
+    "gooey-nav",
+    "gravity-letters",
+    "grid-reveal",
+    "hook-sidebar",
+    "matrix-orb",
+    "notification-bell",
+    "otp-input",
+    "proximity-sidebar",
+    "scroll-progress",
+    "step-player",
+    "task-list",
+    "voice-note"
+  ],
+  "lote_1": [
+    "bounce-sidebar",
+    "hook-sidebar",
+    "proximity-sidebar",
+    "gooey-nav",
+    "family-drawer"
+  ],
+  "rule": "preserve design/motion/layout; recolor only"
+}

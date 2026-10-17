@@ -1,0 +1,13 @@
+{
+  "schema": "yaiwes.seals-motor-contract/v1",
+  "motor": "motor_5_zip_root",
+  "action": "zip_root",
+  "inputs": [
+    "ROOT_DIR",
+    "OUTPUT_ZIP",
+    "MANIFEST_PATH",
+    "COLLISION_POLICY"
+  ],
+  "output": "VERIFIED_CLOSED",
+  "rule": "FUENTE CANONICA -> blob SHA -> copia exacta -> read-back -> mismo SHA"
+}

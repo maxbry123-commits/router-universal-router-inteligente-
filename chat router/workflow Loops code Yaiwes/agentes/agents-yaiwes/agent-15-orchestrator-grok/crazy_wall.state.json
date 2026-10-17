@@ -1,0 +1,25 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-15-orchestrator-grok",
+ "framework": "smolagents",
+ "status": "CLOSED",
+ "updated_at": "2026-09-25T08:18:45Z",
+ "group": "orchestrators",
+ "chain": [
+  "director_control_loop",
+  "director_model_probe",
+  "director_close_audit"
+ ],
+ "completed": [
+  "director_control_loop",
+  "director_model_probe",
+  "director_close_audit"
+ ],
+ "failed": [],
+ "next_nodes": [],
+ "current_nodes": [],
+ "route": [
+  "deepseek_flash"
+ ],
+ "router_connected": false
+}

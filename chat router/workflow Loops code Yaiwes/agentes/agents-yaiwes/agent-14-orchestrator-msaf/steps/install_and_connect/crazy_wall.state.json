@@ -1,0 +1,33 @@
+{
+ "schema": "yaiwes.crazy-wall/v1",
+ "agent": "agent-14-orchestrator-msaf",
+ "framework": "pocketflow",
+ "status": "CLOSED",
+ "updated_at": "2026-09-23T01:44:41Z",
+ "group": "orchestrators",
+ "current_nodes": [
+  "execute"
+ ],
+ "next_nodes": [
+  "sheriff"
+ ],
+ "provider": "nvidia",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "via": "route",
+ "attempts": 2,
+ "gaps": [],
+ "evidence": [
+  {
+   "kind": "output_sha256",
+   "sha256": "afb0113bc44ead1b057530923e61f0c974122a1141e11dabcfd36bbb224e87a7",
+   "chars": 918
+  },
+  {
+   "kind": "exec",
+   "exit": 0,
+   "file": "msaf_connect.py",
+   "sha256": "b4b1579b1442203c89088ef734c21641911a9a951d024e45ad8946647ebcc0cc"
+  }
+ ],
+ "route_trace": []
+}

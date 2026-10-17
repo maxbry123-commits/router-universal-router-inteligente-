@@ -1,0 +1,26 @@
+import subprocess
+import sys
+import os
+import openai
+
+def connect_and_ping() -> dict:
+    # 1) Install Microsoft Agent Framework (agent-framework) silently
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "-q", "agent-framework", "--break-system-packages"],
+        check=True
+    )
+    # 2) Prepare OpenAI-compatible client pointing to HF router
+    client = openai.OpenAI(
+        base_url="https://router.huggingface.co/v1",
+        api_key=os.environ["HF_TOKEN"]
+    )
+    # 3) Send a single message to DeepSeek-V4-Flash
+    response = client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-V4-Flash",
+        messages=[{"role": "user", "content": "Responde solo con la palabra OK."}],
+        max_tokens=5,
+        temperature=0,
+    )
+    reply = response.choices[0].message.content.strip()
+    # 4) Return result dict
+    return {"installed": True, "reply": reply}

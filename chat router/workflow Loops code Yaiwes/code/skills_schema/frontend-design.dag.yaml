@@ -1,0 +1,28 @@
+schema_id: skills_schema/frontend-design.dag.yaml
+schema: yaiwes.skill-dag/v1
+objective: Interfaces distintivas nivel producción
+work_surface: FRONTEND
+acceptance:
+- componentes con estilo no-default
+- jerarquía visual presente
+tools:
+- sheriff
+- sentinel
+- supervisor
+- guardian
+- judge
+- verifier
+evidence:
+- path: evidence/frontend-design.json
+  sha256: pending
+oracle: check:componentes_no_default
+gap_policy: flag 🚩 PENDIENTE + GAP tipado; nunca PASS sin oracle
+nodes:
+- id: claim
+  role: writer
+- id: execute
+  depends_on:
+  - claim
+- id: verify
+  depends_on:
+  - execute

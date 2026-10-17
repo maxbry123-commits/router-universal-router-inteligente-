@@ -1,0 +1,121 @@
+COMPONENTES_REUTILIZADOS:
+- `integration/chat_mvp/store.py`: Store con SQLite, documentos, grafo, cache.
+- `integration/chat_mvp/router.py`: Enrutamiento HTTP básico de chat.
+- `integration/chat_mvp/vault_api.py`: Secret Bank API.
+- `integration/chat_mvp/jobs.py`: Ejecutor de jobs paralelos.
+
+COMPONENT_REQUESTS:
+1. PostgreSQL
+   nombre: postgresql-storage
+   URL/origen: https://github.com/postgres/postgres
+   destino requerido: /usr/local/bin/postgres, /usr/lib/postgresql/
+   consumidor: agent-6
+
+2. Redis
+   nombre: redis-storage
+   URL/origen: https://github.com/redis/redis
+   destino requerido: /usr/bin/redis-server, /usr/bin/redis-cli
+   consumidor: agent-6
+
+3. Graphiti
+   nombre: graphiti-memory
+   URL/origen: https://github.com/graphiti/graphiti
+   destino requerido: /usr/local/lib/python3.*/site-packages/graphiti/
+   consumidor: agent-6
+
+4. FalkorDB
+   nombre: falkordb
+   URL/origen: https://github.com/FalkorDB/FalkorDB
+   destino requerido: /usr/bin/falkordb-server
+   consumidor: agent-6
+
+5. AgentDB
+   nombre: agentdb-python
+   URL/origen: https://github.com/agentdb/agentdb
+   destino requerido: /usr/local/lib/python3.*/site-packages/agentdb/
+   consumidor: agent-6
+
+CABLEADO:
+```
+Open WebUI <-> /chat endpoints (router.py) <-> Store (store.py)
+                |
+                +-> SQLite (conversaciones, mensajes, documentos, grafo, cache)
+                +-> PostgreSQL (verdad durable: usuarios, auditorías, referencias)
+                +-> Redis (estado efímero: caché TTL, sesiones, locks)
+                +-> Graphiti/FalkorDB (memoria relacional temporal)
+                +-> AgentDB (memoria agentic: episodios, patrones)
+                +-> HF Bucket (archivos originales, adjuntos, snapshots)
+                +-> Secret Bank (vault_api.py - referencias, nunca secretos planos)
+```
+
+PRUEBAS:
+```python
+def test_persistence(store, db_postgres, redis_client, graphiti, agentdb, bucket):
+    # 1. Crear conversación
+    cid = store.new_conversation("Test", "orquestador-g0", "test_user")
+    assert cid is not None
+    
+    # 2. Guardar mensajes
+    store.add_message(cid, "user", "Hola mundo")
+    store.add_message(cid, "assistant", "Respuesta de prueba", "hf", "gpt2")
+    
+    # 3. Adjuntar archivo
+    doc = store.put_document("test.txt", "text/plain", b"contenido de prueba", cid)
+    assert doc["id"] is not None
+    
+    # 4. Guardar memoria (PostgreSQL)
+    db_postgres.save_memory_entry(cid, "test_user", {"type": "chat", "summary": "Prueba exitosa"})
+    
+    # 5. Guardar memoria (Redis)
+    redis_client.setex(f"session:test_user", 3600, cid)
+    
+    # 6. Guardar memoria (Graphiti/FalkorDB)
+    graphiti.add_entity("test_user", "conversation", cid)
+    graphiti.link("test_user", cid, "had")
+    
+    # 7. Guardar memoria (AgentDB)
+    agentdb.record_episode(cid, "test_agent", "user_message", "assistant_response")
+    
+    # 8. Cerrar chat
+    del cid
+    
+    # 9. Reabrir y recuperar conversación
+    recovered = store.conversation(doc["id"])
+    assert recovered is not None
+    msgs = store.messages(recovered["id"])
+    assert len(msgs) == 2
+    assert msgs[1]["content"] == "Respuesta de prueba"
+    
+    # 10. Recuperar archivo
+    recovered_doc = store.document(doc["id"])
+    assert recovered_doc["name"] == "test.txt"
+    assert store.document_text(doc["id"]) == "contenido de prueba"
+    
+    # 11. Recuperar memoria/contexto
+    from_postgres = db_postgres.get_memory_entries(cid)
+    assert len(from_postgres) >= 1
+```
+
+PERSISTENCIA:
+- SQLite (`store.py`): conversaciones, mensajes, documentos, grafo, cache, agentes
+- PostgreSQL (pendiente): usuarios, auditorías, referencias externas
+- Redis (pendiente): sesiones TTL, caché efímera, locks, colas
+- Graphiti/FalkorDB (pendiente): entidades, relaciones, contexto temporal
+- AgentDB (pendiente): episodios, patrones, skills agentic
+- HF Bucket: documentos originales, snapshots SQLite
+- Secret Bank: credenciales siempre cifradas, solo referencias en memoria normal
+
+GAP:
+- PostgreSQL no instalado: requiere COMPONENT_REQUEST
+- Redis no instalado: requiere COMPONENT_REQUEST
+- Graphiti no instalado: requiere COMPONENT_REQUEST
+- FalkorDB no instalado: requiere COMPONENT_REQUEST
+- AgentDB no instalado: requiere COMPONENT_REQUEST
+- Separación CHAT MEMORY / PROJECT MEMORY / GLOBAL MEMORY no implementada (actualmente todo en SQLite plano)
+- Pruebas de persistencia real (cierro/reabro) no ejecutadas automáticamente
+
+FIX:
+- Los 5 componentes faltantes se solicitaron en COMPONENT_REQUESTS
+- Store.py se reutiliza como base, las capas de memoria superiores se integrarán cuando lleguen los componentes
+- El cableado de Open WebUI -> Chat MVP -> storage/memory queda documentado y listo para adaptar endpoints
+- Las pruebas (1)-(11) están diseñadas para ejecutarse manualmente tras instalación de componentes

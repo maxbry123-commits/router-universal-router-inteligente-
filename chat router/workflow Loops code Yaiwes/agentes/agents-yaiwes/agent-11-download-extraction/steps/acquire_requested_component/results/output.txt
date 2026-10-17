@@ -1,0 +1,8 @@
+COMPONENTE: N/A
+ORIGEN: N/A
+DESTINO: N/A
+MOTOR: N/A
+HASH/READ-BACK: N/A
+ESTADO: BLOCKED
+GAP: No se encontró un COMPONENT_REQUEST con ORIGEN y DESTINO explícitos en el INPUT_BLOCK. El input contiene únicamente la orden de Agent 14 y las instrucciones generales del rol, pero no hay un COMPONENT_REQUEST con los campos ORIGEN y DESTINO requeridos.
+SIGUIENTE_CONSUMIDOR: Agent 14
