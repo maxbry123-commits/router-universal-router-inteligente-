@@ -26,7 +26,10 @@
       "chat",
       "chat_async",
       "resultado",
-      "llm"
+      "llm",
+      "sentinela_anclar",
+      "sentinela_grafo",
+      "sentinela_validar"
     ]
   },
   "seguridad": {
