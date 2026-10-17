@@ -57,6 +57,7 @@ _CONFIG_DIR = Path(__file__).resolve().parent / "fichas"
 _catalog = [json.loads(f.read_text()) for f in sorted(_CONFIG_DIR.glob("modelo-*.json"))]
 FICHAS = {f["id"]:(f["nombre"],f.get("proveedor","pipeline"),f.get("modelo","pipeline"),f["timeout_s"]) for f in _catalog if f["tipo"] in ("api","consil","motor","xray","auditor")}
 ESPECIALES = {f["id"]: f["tipo"] for f in _catalog if f["tipo"] in ("consil","motor","xray","auditor")}
+_RETIRADO = {f['id']: f['retirado'] for f in _catalog if f.get('retirado')}  # modelo dado de baja por el proveedor: error claro, sin caer a otro modelo
 RESPALDO = {f["id"]:(f["nombre"],f["archivo"]) for f in _catalog if f["tipo"]=="hf"}
 ARRANQUE = ('/app/llama-server --host 0.0.0.0 --port 8080 -m "/modelos/$ARCHIVO" --alias "$ALIAS" -ngl 999 -fa on -np 1 -b 128 -c 16384 '
             '--temp 0 --top-k 20 --top-p 0.95 --no-mmproj --reasoning-budget 0 --spec-type draft-mtp --spec-draft-n-max 2 --jinja > /tmp/l.log 2>&1 &\n'
@@ -2148,6 +2149,8 @@ def _chat(p):
         return {'error': 'MODELO_DESCONOCIDO', 'validos': [*FICHAS, *RESPALDO]}
     if model in RESPALDO and not p.get('respaldo_url'):
         return _encender(model)
+    if model in _RETIRADO:
+        return {'error': 'MODELO_RETIRADO', 'detalle': _RETIRADO[model]}
     presupuesto = 96 if model == 'nv-glm-5-3' else int(FICHAS[model][3]) + 5 if model in ('nv-kimi-k3', 'nv-muse-glimmer') else TOPE_TOTAL_S  # Kimi: timeout de su ficha (>1,6 min)
     _LECT.set(float(FICHAS[model][3]) if model == 'nv-kimi-k3' else _LECTURA_S)
     _SOLO_LECTURA.set(bool(p.get('solo_lectura')))

@@ -8,5 +8,6 @@
   "claves": "banco",
   "rotacion": "mismo-modelo",
   "herramientas": true,
-  "memoria": true
+  "memoria": true,
+  "retirado": "NVIDIA retiró moonshotai/kimi-k3 el 15-oct-2026 (HTTP 410) y kimi-k2.6 no está habilitado en las 5 claves (HTTP 404)"
 }

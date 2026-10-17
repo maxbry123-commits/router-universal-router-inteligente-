@@ -10,6 +10,6 @@ window.RIU_CONFIG = {
   defecto: 'nv-muse-glimmer',  // ficha NVIDIA: Glimmer / Kimi K3
   modelos: [
     { id: 'nv-muse-glimmer', etiqueta: 'NV Muse Glimmer 30B' },
-    { id: 'nv-kimi-k3', etiqueta: 'NV Kimi K3 (espera larga)' }
+    { id: 'nv-kimi-k3', etiqueta: 'NV Kimi K3 (retirado por NVIDIA)' }
   ]
 };

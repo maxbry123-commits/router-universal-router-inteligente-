@@ -28,6 +28,8 @@
       "apagar",
       "apagar_todo",
       "herramientas_estado",
+      "groq_agentes",
+      "tools_estado",
       "chat_async",
       "resultado",
       "subir",
