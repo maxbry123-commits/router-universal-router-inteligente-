@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/plugins/:path*",
+      "destination": "https://comand-center-1-riu-router.hf.space/plugins/:path*"
+    },
+    {
+      "source": "/vault/:path*",
+      "destination": "https://comand-center-1-riu-router.hf.space/vault/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://comand-center-1-riu-router.hf.space/health"
+    },
+    {
       "source": "/",
       "destination": "/shell.html"
     },
@@ -10,6 +22,45 @@
     }
   ],
   "headers": [
+    {
+      "source": "/plugins/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "x-vercel-enable-rewrite-caching",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "source": "/vault/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "x-vercel-enable-rewrite-caching",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "source": "/health",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "x-vercel-enable-rewrite-caching",
+          "value": "0"
+        }
+      ]
+    },
     {
       "source": "/",
       "headers": [

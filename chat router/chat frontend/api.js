@@ -5,29 +5,49 @@ let BASE = "";  // sin base hardcodeada: la única fuente de verdad es LIVE_URL.
 let liveVerified = false;  // solo tras una resolución real de LIVE_URL se conserva BASE en la sesión
 
 let liveCheckedAt = 0;
-// fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pensando" sin que el Router reciba nada
-const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const t = setTimeout(() => ac && ac.abort(), ms); return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => clearTimeout(t)); };
 let liveRequest = null;
-async function liveRouter() {
-  if (CFG.routerStopped) throw new Error('Router detenido por orden del Director');
-  if (Date.now() - liveCheckedAt < 30000 && BASE) return BASE;
+let PBASE = "";  // base de los plugins (chat_async, /resultado): mismo origen en Vercel (rewrites de vercel.json) o el Space directo
+// fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pensando" sin que el Router reciba nada
+const vivos = new Set();
+const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const reg = ac ? { ac, t0: Date.now() } : null; if (reg) vivos.add(reg); const t = setTimeout(() => ac && ac.abort(), ms); return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => { clearTimeout(t); if (reg) vivos.delete(reg); }); };
+// al volver a la pestaña: cortar los fetch que quedaron colgados en segundo plano; el polling sigue con el mismo proceso_id y un chat_async sin proceso_id se reintenta
+try { document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') return; for (const r of [...vivos]) if (Date.now() - r.t0 > 2000) { try { r.ac.abort(); } catch (e) {} } }); } catch (e) {}
+const usarProxy = () => { try { return /\.vercel\.app$/.test(location.hostname) && localStorage.getItem('riu_proxy') !== '0' && !/[?&]proxy=0/.test(location.search); } catch (e) { return false; } };
+function aplicarBase(url) {
+  BASE = url;
+  // mismo origen: en Vercel, si LIVE_URL es el Space al que apuntan los rewrites, los plugins van por location.origin (4G no corta *.hf.space). ?proxy=0 o localStorage riu_proxy=0 lo apaga
+  PBASE = (url === CFG.proxyDestino && usarProxy()) ? location.origin : url;
+  CFG.apiBase = BASE;
+  CFG.harnessUrl = PBASE + '/plugins/puente_chat/call';
+  try { localStorage.setItem('riu_live_url', url); } catch (e) {}
+}
+const VALIDA = (u) => /^https:\/\/[a-z0-9-]+\.hf\.space$/.test(u || '');
+function refrescarLive() {
   if (!liveRequest) liveRequest = (async () => {
     try {
       const flag = await fetchT(CFG.liveUrl + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' }, 8000);
       if (!flag.ok) throw new Error('Dirección HF no disponible');
       const info = await flag.json();
-      if (!/^https:\/\/[a-z0-9-]+\.hf\.space$/.test(info.LIVE_URL || '')) throw new Error('Dirección HF inválida');
-      BASE = info.LIVE_URL;
-      CFG.apiBase = BASE;
-      CFG.harnessUrl = BASE + '/plugins/puente_chat/call';
+      if (!VALIDA(info.LIVE_URL)) throw new Error('Dirección HF inválida');
+      aplicarBase(info.LIVE_URL);
       liveCheckedAt = Date.now();
       liveVerified = true;
     } catch (error) {
-      if (!liveVerified) throw new Error('ROUTER_LIVE_URL_NO_RESUELTO');  // primera resolución: sin fallback a jobs históricos
+      if (!liveVerified && !BASE) throw new Error('ROUTER_LIVE_URL_NO_RESUELTO');
     } finally { liveRequest = null; }
     return BASE;
   })();
   return liveRequest;
+}
+async function liveRouter() {
+  if (CFG.routerStopped) throw new Error('Router detenido por orden del Director');
+  if (!BASE) {  // no bloquear el envio esperando raw.githubusercontent: ultima direccion buena o el Space fijo de config.js
+    let c = ''; try { c = localStorage.getItem('riu_live_url') || ''; } catch (e) {}
+    if (!VALIDA(c)) c = CFG.proxyDestino || '';
+    if (VALIDA(c)) aplicarBase(c);
+  }
+  if (Date.now() - liveCheckedAt >= 30000) { const pr = refrescarLive(); if (!BASE) return pr; pr.catch(() => {}); }  // con BASE: refresco en segundo plano
+  return BASE;
 }
 
 function clave() {
@@ -69,7 +89,7 @@ window.RIU_RETOMAR = async (ses) => {
 };
 async function puenteRouter(base, body, qs, headers) {
   await liveRouter();
-  const baseDe = () => (body && body.plugin ? BASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
+  const baseDe = () => (body && body.plugin ? PBASE + '/plugins/' + body.plugin + '/call' : CFG.harnessUrl);  // plugin del Router elegido por el selector
   base = baseDe();
   // Puente dentro del Router (plugin puente_chat, puerta fija): POST <base>/<accion>, respuesta {status, result}.
   const q = new URLSearchParams((qs || '').replace(/^[?]/, ''));
@@ -92,8 +112,7 @@ async function puenteRouter(base, body, qs, headers) {
       // job en cambio de direccion: releer LIVE_URL y reintentar una vez
       liveCheckedAt = 0;
       await liveRouter();
-      if (baseDe() === base) throw e;
-      base = baseDe();
+      base = baseDe();  // sin proceso_id todavia: reintenta el POST una vez (misma u otra direccion)
       r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, 30000);
     }
     const env = await r.json().catch(() => ({}));

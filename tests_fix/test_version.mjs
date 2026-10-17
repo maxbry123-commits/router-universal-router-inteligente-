@@ -24,7 +24,7 @@ assert.equal(await check({ fetch: fx(B), sessionStorage: s, location: l, forzar:
 assert.equal(l.replaced[0], "https://riu-jev-bridge.vercel.app/?v=" + B.slice(0, 12));
 assert.equal(await check({ fetch: fx(B), sessionStorage: s, location: l, forzar: true, ...libre }), "ya_recargado"); assert.equal(l.replaced.length, 1);
 const vj = JSON.parse(fs.readFileSync(D + "vercel.json", "utf8"));
-assert.ok(vj.rewrites.length === 2 && vj.buildCommand.includes("VERCEL_GIT_COMMIT_SHA"));
+assert.ok(vj.rewrites.length === 5 && ["/plugins/:path*", "/vault/:path*", "/health"].every((x) => vj.rewrites.some((r) => r.source === x && r.destination.startsWith("https://comand-center-1-riu-router.hf.space"))) && vj.buildCommand.includes("VERCEL_GIT_COMMIT_SHA"));
 for (const src of ["/", "/index.html", "/chat/ui/(.*)", "/(.*)\\.js", "/(.*)\\.css"]) assert.ok(vj.headers.some(h => h.source === src && h.headers[0].value === "no-cache, must-revalidate"), src);
 assert.ok(fs.readFileSync(D + "shell.html", "utf8").indexOf("version.js") < fs.readFileSync(D + "shell.html", "utf8").indexOf("config.js"));
 console.log("OK 13 casos");
