@@ -2,6 +2,7 @@
 // Antes llamaba a /chat/org/files (ruta que este sitio no tiene: «Not Found»). La generación de imagen/video es GAP: el motor no está conectado y no se simula.
 import { leer, escribir } from "./almacen.js";
 import { el, boton, cargarCss } from "./ventanas-comun.js";
+import { gridReveal, voiceNote } from "./rui-media.js";  // RUI 16 grid-reveal + RUI 22 voice-note
 const K = "riu_canvas_v1";
 export const tipoMedio = (n) => { const e = String(n).split(/[?#]/)[0].split(".").pop().toLowerCase(); if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif"].includes(e)) return "imagen"; if (["mp4", "webm", "mov", "m4v", "ogv"].includes(e)) return "video"; if (["mp3", "wav", "ogg", "m4a", "flac"].includes(e)) return "audio"; if (e === "pdf") return "pdf"; return "otro"; };
 const sesionActiva = () => { try { const c = JSON.parse(localStorage.getItem("riu_chats_v1") || "[]"), i = Number(localStorage.getItem("riu_chat_activo")) || 0; return (c[Math.min(Math.max(i, 0), c.length - 1)] || {}).sesion || "general"; } catch (e) { return "general"; } };
@@ -15,8 +16,10 @@ export function montarCanvas(root, { tell }) {
   const vacio = () => { visor.replaceChildren(el("div", "fila-desc", "Abre una imagen, un video, un audio o un PDF con un enlace o desde este dispositivo.")); info.textContent = ""; actual = null; };
   function mostrar(src, nombre, tipo) {
     const t = tipo || tipoMedio(nombre || src); visor.replaceChildren(); let nodo;
-    if (t === "imagen") { nodo = el("img"); nodo.alt = nombre || "imagen"; } else if (t === "video") { nodo = el("video"); nodo.controls = true; nodo.playsInline = true; } else if (t === "audio") { nodo = el("audio"); nodo.controls = true; } else if (t === "pdf") { nodo = el("iframe"); nodo.title = nombre || "PDF"; } else { visor.append(el("div", "fila-desc", "No sé mostrar este tipo de archivo. Puedes abrirlo en una pestaña nueva.")); info.textContent = nombre || src; actual = { src, nombre, t }; return; }
-    nodo.src = src; nodo.addEventListener("error", () => { info.textContent = "No se pudo cargar (revisa el enlace o que permita mostrarse aquí)."; }); visor.append(nodo); info.textContent = (nombre || src) + " · " + t; actual = { src, nombre, t };
+    if (t === "imagen") { nodo = el("img"); nodo.alt = nombre || "imagen"; } else if (t === "video") { nodo = el("video"); nodo.controls = true; nodo.playsInline = true; } else if (t === "audio") { nodo = voiceNote(src, { nombre }); } else if (t === "pdf") { nodo = el("iframe"); nodo.title = nombre || "PDF"; } else { visor.append(el("div", "fila-desc", "No sé mostrar este tipo de archivo. Puedes abrirlo en una pestaña nueva.")); info.textContent = nombre || src; actual = { src, nombre, t }; return; }
+    const falla = () => { info.textContent = "No se pudo cargar (revisa el enlace o que permita mostrarse aquí)."; };
+    if (t !== "audio") { nodo.src = src; nodo.addEventListener("error", falla); }
+    visor.append(t === "imagen" ? gridReveal(src, { alt: nombre || "imagen", nodoFinal: nodo, onError: falla }) : nodo); info.textContent = (nombre || src) + " · " + t; actual = { src, nombre, t };
   }
   function recordar(url, nombre, t) { const l = leer(K, { l: [] }).l.filter((x) => x.url !== url); l.unshift({ url, nombre: nombre || url, t }); escribir(K, { l: l.slice(0, 12) }); pintarHist(); }
   function pintarHist() { hist.replaceChildren(); const l = leer(K, { l: [] }).l; if (!l.length) { hist.append(el("div", "fila-desc", "Lo que abras con un enlace aparece aquí.")); return; } l.forEach((x) => { const f = el("div", "vn-item"); f.append(el("span", "", (x.t === "imagen" ? "🖼️ " : x.t === "video" ? "🎬 " : x.t === "audio" ? "🎵 " : x.t === "pdf" ? "📕 " : "🔗 ") + String(x.nombre).slice(0, 80)), boton("Abrir", "mini", () => mostrar(x.url, x.nombre, x.t)), boton("✕", "mini", () => { escribir(K, { l: leer(K, { l: [] }).l.filter((y) => y.url !== x.url) }); pintarHist(); })); hist.append(f); }); }
