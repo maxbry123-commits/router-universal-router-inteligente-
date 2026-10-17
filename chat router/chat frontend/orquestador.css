@@ -32,3 +32,7 @@
 .bot-n{max-width:90px;overflow:hidden;text-overflow:ellipsis}
 .chat-bots.abierto .orq-hilo{max-height:42vh}
 #orq-sem{position:static}
+/* fallos 2, 4 y 5: [hidden] gana a display:flex (.orq-plus, #histories); el sub-chat abierto queda dentro de la seccion del chat y no invade Selectores */
+.chat-bots [hidden],section:has(> #chat-bots) > [hidden]{display:none!important}
+.chat-bots.abierto{flex:1 1 auto;min-height:0}
+.chat-bots.abierto > .orq-sec{flex:1 1 auto;min-height:0;overflow-y:auto}
