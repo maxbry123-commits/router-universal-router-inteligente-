@@ -2,6 +2,8 @@
 // agentes remotos y claves compartidas (de las claves solo viaja el NOMBRE de la referencia, nunca el valor).
 import { leer, KEYS } from "./almacen.js";
 export const dameWF = () => { const v = leer(KEYS.workflows, { lista: [] }); return Array.isArray(v.lista) ? v.lista : []; };
+const K_MIG_CON = "riu_con_off_mig_v1";  // migración única: la Constitución arranca APAGADA para todos (también quien la tenía encendida)
+try { if (typeof localStorage !== "undefined" && !localStorage.getItem(K_MIG_CON)) { const c = leer(KEYS.constitucion, null); if (c && c.encendida) { c.encendida = false; localStorage.setItem(KEYS.constitucion, JSON.stringify(c)); } localStorage.setItem(K_MIG_CON, "1"); } } catch (e) {}
 export const dameCon = () => Object.assign({ encendida: false, texto: "", oficial: false, items: [] }, leer(KEYS.constitucion, {}));
 export const dameClaves = () => (leer(KEYS.claves, { refs: {} }).refs) || {};
 export const dameDestinos = () => Object.assign({ activos: ["chat"], wfSel: [], agentes: [] }, leer(KEYS.destinos, {}));

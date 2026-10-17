@@ -19,7 +19,7 @@ export function montarConstitucion({ root, q, tell }) {
   }
   function pintar() {
     const c = dameCon(); cuerpo.replaceChildren(); marcar();
-    const enc = boton(c.encendida ? "Encendida" : "Apagada · encender", "toggle" + (c.encendida ? " on" : ""), () => { poner((x) => { x.encendida = !x.encendida; }); pintar(); tell(c.encendida ? "Constitución apagada" : "Constitución encendida"); });
+    const enc = boton("Constitución: " + (c.encendida ? "ON" : "OFF"), "toggle" + (c.encendida ? " on" : ""), () => { poner((x) => { x.encendida = !x.encendida; }); pintar(); tell(c.encendida ? "Constitución: OFF · no se envía" : "Constitución: ON · viaja con cada mensaje"); });
     enc.setAttribute("aria-pressed", String(!!c.encendida));
     cuerpo.append(enc, el("div", "vn-estado", "Encendida, su texto y sus anclas viajan con cada mensaje del chat."));
     const ta = el("textarea", "vn-ta"); ta.value = c.texto || ""; ta.placeholder = "Mi constitución sentinela: reglas que la IA debe respetar siempre…"; ta.setAttribute("aria-label", "Mi constitución");

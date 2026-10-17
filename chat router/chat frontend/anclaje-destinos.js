@@ -30,6 +30,12 @@ export function montarDestinos({ root, q, tell }) {
     const bs = el("div", "vn-fila");
     OBJETIVOS.forEach(([id, nom]) => { const on = id === tipo, b = boton(nom, "toggle" + (on ? " on" : ""), () => cambiar(id)); b.setAttribute("aria-pressed", String(on)); bs.append(b); });
     fila.append(bs);
+    // encendido/apagado de CADA ancla, siempre visible en la hoja (la Constitución arranca apagada; solo viaja si está encendida)
+    const est = el("div", "vn-fila vn-encendidos"); est.append(el("div", "vn-t", "Encendido de cada ancla"));
+    const tog = (t, id, etq) => { const o = crearObjetivo(t, id); if (!o) return; const on = !!o.encendido, b = boton(etq + ": " + (on ? "ON" : "OFF"), "toggle" + (on ? " on" : ""), () => { o.encendido = !o.encendido; tell(etq + (o.encendido ? ": ON · viaja con cada mensaje" : ": OFF · no se envía")); pintar(); }); b.dataset.ancla = t + (id ? ":" + id : ""); b.setAttribute("aria-pressed", String(on)); est.append(b); };
+    est.append(el("span", "vn-estado", "● Chat · siempre"));
+    tog("constitucion", undefined, "Constitución"); listaWF().forEach((w) => tog("workflows", w.id, "Workflow " + w.nombre)); tog("agentes", undefined, "Agentes remotos"); listaProyectos().forEach((p) => tog("proyecto", p.nombre, "Proyecto " + p.nombre)); tog("sandbox", undefined, "Sandbox");
+    fila.append(est);
     if (tipo === "workflows" && obj) {
       const s = el("select", "vn-in"); s.setAttribute("aria-label", "Workflow");
       listaWF().forEach((w) => { const o = el("option", "", w.nombre); o.value = w.id; s.append(o); }); s.value = obj.id;
@@ -65,12 +71,11 @@ export function montarDestinos({ root, q, tell }) {
         }
       } catch (e) {}
     }
-    if (obj) {
-      const b = boton(obj.encendido ? "Encendido · viaja con cada mensaje" : "Apagado · encender para que viaje con cada mensaje", "toggle" + (obj.encendido ? " on" : ""), () => { obj.encendido = !obj.encendido; tell(obj.nombre + (obj.encendido ? " encendido" : " apagado")); pintar(); });
-      b.setAttribute("aria-pressed", String(obj.encendido)); fila.append(b);
-    } else fila.append(el("div", "vn-estado", "Chat: lo anclado viaja con cada mensaje del chat activo."));
+    if (obj) fila.append(el("div", "vn-estado", obj.nombre + ": " + (obj.encendido ? "ON · viaja con cada mensaje" : "OFF · no se envía") + " (se cambia arriba)"));  // un solo botón por ancla: el de «Encendido de cada ancla»
+    else fila.append(el("div", "vn-estado", "Chat: lo anclado viaja con cada mensaje del chat activo."));
   }
-  pintar();
+  pintar(); unBotonMiHandoff(q, tell); chipAncla(q);
+  window.addEventListener("riu:almacen", () => { if (!root.isConnected) return; chipAncla(q); });
   window.RIU_ANCLA_ABRIR = (t, id) => {  // lo usan las ventanas de workflow / constitución: abre ESTA ventana con ese objetivo
     if (!fijar(t, id, false)) return;
     const s = q("#ventana-ancla"), b = q("#btn-ancla");
@@ -78,4 +83,20 @@ export function montarDestinos({ root, q, tell }) {
   };
   const sh = q("#ventana-ancla");
   if (sh) new MutationObserver(() => { if (sh.hidden && tipo !== "chat") fijar("chat", undefined, false); }).observe(sh, { attributes: true, attributeFilter: ["hidden"] });
+}
+function chipAncla(q) {  // el chip «ancla» del chat (pastilla y botón ⚓ del input, el visible en móvil) muestra si la Constitución está ON u OFF
+  const on = !!crearObjetivo("constitucion").encendido, ba = q("#btn-ancla") || document.getElementById("btn-ancla");
+  if (ba) { let m = ba.querySelector(".riu-const-chip"); if (!m) { m = document.createElement("span"); m.className = "riu-const-chip"; m.style.cssText = "position:absolute;top:-6px;left:-6px;font-size:11px;line-height:1;pointer-events:none"; ba.style.position = ba.style.position || "relative"; ba.append(m); }
+    m.textContent = on ? "📜" : ""; ba.dataset.const = on ? "on" : "off"; ba.title = "Anclaje · Constitución " + (on ? "ON" : "OFF"); }
+  const pill = q("#ancla") || document.getElementById("ancla"); if (!pill) return;  // en móvil la pastilla se mueve fuera del panel (#mv-ctl)
+  pill.textContent = "ancla · 📜 " + (on ? "ON" : "OFF") + " ⌄"; pill.classList.toggle("on", on); pill.title = "Constitución " + (on ? "ON: viaja con cada mensaje" : "OFF: no se envía");
+}
+function unBotonMiHandoff(q, tell) {  // Mi handoff: un solo botón ON/OFF en lugar de «Encender/Guardar» + «Apagar» (los originales quedan ocultos y siguen funcionando)
+  const g = q("#mh-guardar"), a = q("#mh-apagar"), est = q("#mh-estado"), enl = q("#ancla-enlace-on");
+  if (enl) enl.textContent = "Anclar";
+  if (!g || !a || !est || g.dataset.uno) return; g.dataset.uno = "1"; [g, a, est].forEach((x) => { x.style.display = "none"; });
+  const t = document.createElement("button"); t.type = "button"; t.id = "mh-toggle"; g.before(t);
+  const pinta = () => { const on = est.textContent.trim() === "encendido"; t.textContent = "Mi handoff: " + (on ? "ON" : "OFF"); t.className = "toggle" + (on ? " on" : ""); t.setAttribute("aria-pressed", String(on)); };
+  t.addEventListener("click", () => { if (est.textContent.trim() === "encendido") a.click(); else { const m = q("#mi-handoff"); if (!m || !m.value.trim()) { tell("Escribe tu handoff primero"); return; } g.click(); } });
+  new MutationObserver(pinta).observe(est, { childList: true, characterData: true, subtree: true }); pinta();
 }

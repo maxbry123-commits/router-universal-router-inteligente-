@@ -415,7 +415,7 @@ def _verificar(fid, ses, pv, pid, t0):
     mp = int(((ficha.get('dsl') or {}).get('parallel') or {}).get('max_parallel') or 0) or 99
 
     base_opts = {'sesion': ses, 'muta': False, 'aprobado': True, 'pid': pid, 'tarea_id': str(pv.get('tarea_id') or ''), 'anclados': list(pv.get('anclados') or []), 'pregunta': str(pv.get('input') or ''), 'reanudar': True,
-                 'gobernanza': _gob(ficha), 'constitucion': _const_ref(ficha, {}), 'constitucion_hash': str(pv.get('constitucion_hash') or '')}
+                 'gobernanza': _gob(ficha) if pv.get('constitucion_hash') else {}, 'constitucion': _const_ref(ficha, {}), 'constitucion_hash': str(pv.get('constitucion_hash') or '')}
     gc = _gov_prepare(ficha, base_opts, True, str(pv.get('constitucion_hash') or ''))
     if gc.get('error'):
         return {'model': ficha.get('ficha', fid), 'reply': 'GAP ' + str(gc['error']), 'estado_tarea': 'GAP', 'herramientas': [], 'ms': int((time.time() - t0) * 1000)}
@@ -523,6 +523,10 @@ def _gob(ficha, p=None):
         return {}
     if isinstance(p, dict) and p.get('gobernanza_activa') is False:
         return {'enabled': False, 'apagada_por_director': True}
+    if isinstance(p, dict):  # opt-in: la Constitucion solo entra si el chat la manda ENCENDIDA (nunca por defecto)
+        gd = p.get('gobernanza')
+        if not (p.get('gobernanza_activa') is True or p.get('gov_ctx') or gd is True or (isinstance(gd, dict) and gd.get('enabled'))):
+            return {}
     return g
 
 

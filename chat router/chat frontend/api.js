@@ -179,7 +179,8 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
   const esHF = model.startsWith('hf-');
-  const extra = Object.assign((anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, gobernanza ? { gobernanza } : {}, constitucion ? { constitucion } : {}, typeof fast_reply === "boolean" ? { fast_reply } : {}, motor ? { motor: true } : {}, project_id ? { project_id } : {}, Array.isArray(contexto_previo) && contexto_previo.length ? { contexto_previo } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
+  let conOn = false; try { conOn = !!(JSON.parse(localStorage.getItem('riu_constitucion_v1') || '{}') || {}).encendida; } catch (e) {}  // Constitución OFF -> gobernanza_activa:false (el backend no la inyecta)
+  const extra = Object.assign(conOn ? {} : { gobernanza_activa: false }, (anclados && anclados.length) ? { anclados } : {}, sesion ? { sesion } : {}, gobernanza ? { gobernanza } : {}, constitucion ? { constitucion } : {}, typeof fast_reply === "boolean" ? { fast_reply } : {}, motor ? { motor: true } : {}, project_id ? { project_id } : {}, Array.isArray(contexto_previo) && contexto_previo.length ? { contexto_previo } : {}, qwen || {});  // qwen: selector Qwen -> plugin fichas_qwen
   let r;
   if (esHF && L4.url) {
     r = await puente(base, { model, messages, max_tokens, respaldo_url: L4.url, ...extra }, '', 'POST', headers);
