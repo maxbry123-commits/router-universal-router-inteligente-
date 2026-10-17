@@ -8,6 +8,7 @@ import { montarHabilidades } from "./menu-habilidades.js";
 import { montarWorkflows } from "./ventana-workflows.js";
 import { montarSelectorWorkflows } from "./selector-workflows.js";
 import { montarConstitucion } from "./ventana-constitucion.js";
+import { montarSystemPrompt } from "./ventana-system-prompt.js";  // system prompt: ventana aparte de la Constitución
 import { montarClaves } from "./ventana-claves.js";
 import { montarMejorasAncla } from "./anclaje-mejoras.js";
 import { montarAgregarAlChat } from "./agregar-al-chat.js";
@@ -16,5 +17,5 @@ import { montarNotas } from "./notas-ventana.js";
 import { instalarAuth, montarAcceso } from "./acceso-clave.js";
 import { montarPropuestasAncla } from "./anclaje-propuestas.js";  // ⚓ abre la propuesta A (barra única); ?panel=b|c abre B o C; clásico detrás de un botón
 export function conectarVentanasNuevas(ctx) {
-  [instalarContexto, instalarAuth, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarClaves, montarAcceso, montarPensando3D, montarNotas, montarPropuestasAncla].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
+  [instalarContexto, instalarAuth, montarDestinos, montarMejorasAncla, montarHandoffEditor, montarAgregarAlChat, montarArchivosBorrar, montarHabilidades, montarWorkflows, montarSelectorWorkflows, montarConstitucion, montarSystemPrompt, montarClaves, montarAcceso, montarPensando3D, montarNotas, montarPropuestasAncla].forEach((f) => { try { f(ctx); } catch (e) { console.warn("ventanas-nuevas:", f.name, e); } });
 }
