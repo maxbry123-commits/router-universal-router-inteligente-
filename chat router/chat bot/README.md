@@ -1,6 +1,6 @@
 # Chat BOTS — fuente principal (todo en un sitio)
 
-Actualizado: 17-oct-2026 00:50, hora Bogotá (UTC-5). Dueño: **Antonio Mendoza**. Base: `main` `b17c430857`.
+Actualizado: 17-oct-2026 02:30, hora Bogotá (UTC-5). Dueño: **Antonio Mendoza**. Base: `main` `59028d1898`.
 
 Esta carpeta (`chat router/chat bot/`) es la **fuente principal** de Chat BOTS (orquestador de agentes) + ROOM CONFERENCIAS. Los originales siguen en [`HANDOFF/CHATBOTS/`](../../HANDOFF/CHATBOTS/) (no se borran). Inventario de ramas, archivos y PROGRESO: [`HANDOFF.md`](HANDOFF.md).
 
@@ -134,7 +134,57 @@ Actualizado: 17-oct-2026 00:35, hora Bogotá (UTC-5). Fuente: solo el código de
 
 - Chat BOTS: rama `orquestador-agentes-rebase` (`9dc637165f`, 4 commits sobre main: backend, frontend, tool `crear_agente`, pruebas). **No está en main.**
 - ROOM CONFERENCIAS + A−/A+: rama `wip/room-conferencias-rebase2` (`a014c943c0`, 2 commits sobre main `55d9d95fb4`). **No está en main.**
+- MVP backend Chat BOTS: rama `wip/chatbots-backend-mvp` (`6150bb763a`, 4 commits sobre main `529b680b0e`), **sin probar, no está en main** (ver «MVP backend» abajo).
+- 5 fallos del frontend Chat BOTS: rama `fix/chatbots-frontend-5-fallos` (`dce5a295bf`), **no está en main** (ver «3. Frontend»).
 - Handoff para agentes: [`HANDOFF.md`](../../HANDOFF/CHATBOTS/HANDOFF.md). Bloque de Antonio: [`GROKBOT-FUNCIONAMIENTO-Y-MEJORAS.md`](../../HANDOFF/CHATBOTS/GROKBOT-FUNCIONAMIENTO-Y-MEJORAS.md).
+
+### MVP backend (rama wip/chatbots-backend-mvp, 6150bb763a, sin probar)
+
+Resumen de la rama [`wip/chatbots-backend-mvp`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/wip/chatbots-backend-mvp) (último commit `6150bb763a`, 17-oct-2026 01:07 Bogotá): su README §3.0 y [`ESTADO-BACKEND.md`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/wip/chatbots-backend-mvp/chat%20router/chat%20bot/ESTADO-BACKEND.md). **No está en main. Sin probar.**
+
+```
+orquestador.js (COMPONENTE)
+  → POST /plugins/orquestador/call/<acción>
+  → plugin orquestador ── gobierno.py (goal lock, recibos, watchdog, loop, fallos, redacción)
+                       ├─ mirror_repos.py (enlace a repos de agentes; lee por llamada, no copia)
+                       ├─ arquitectura.py (JSON Archify + estado → ventana de información)
+                       └─ memoria_yaiwes (_mem().save: SQLite → Graphiti/Graphify/state-hub → bucket)
+  → HTTP puente_chat chat_async / resultado (HARNESS)
+  → FICHA 4 → MODELO
+```
+
+Base: el plugin `orquestador` de `orquestador-agentes-rebase` (`9dc637165f`) + `crear_agente` sobre `herramientas.py` de main. Sin almacenamiento nuevo ni puente nuevo. `ficha.json` 0.3.0.
+
+Archivos nuevos (`router inteligente universal/plugins/orquestador/`):
+
+| Archivo | Qué hace |
+|---|---|
+| `gobierno.py` | Gobierno determinista sin modelo: goal lock, recibos encadenados por hash, watchdog, loop detector, clasificador de fallos `FAIL_*`, redacción de secretos |
+| `mirror_repos.py` | Mirror por enlace a repos de agentes; lee por llamada, **no copia código** |
+| `arquitectura.py` | JSON Archify (`schema_version: 1`, `architecture`) + estado por pieza (`PIEZAS`) |
+
+Acciones nuevas (`POST /plugins/orquestador/call/<acción>`):
+
+| Acción | Qué hace |
+|---|---|
+| `vigilar` | `trabajando` > 180 s → `error` `FAIL_TIMEOUT`; devuelve `{revisadas, recuperados}` |
+| `reiniciar` | `id` → agente a `activo` (suelta el proceso) |
+| `recibos` | últimos 20 recibos encadenados por hash + `objetivo_intacto` |
+| `agentes_repo` | `[{agent_id, nombre, repo, ruta, roles, url}]` (OpenClaw, Hermes + registro de la flota, leído por llamada) |
+| `repo_leer` | `agent_id`, `ruta` (README.md por defecto) → texto ≤12 000 caracteres, no se guarda |
+| `arquitectura` | `{archify, diagrama, piezas}` para la ventana de información |
+| `mirror` con `de="repo:<id>"` | agente con `repo {agent_id, nombre, url}`; solo guarda el enlace |
+
+Además: `objetivo` en `crear`/`configurar` (cambiarlo sin `confirmado:true` → `OBJETIVO_BLOQUEADO`); `status` añade `gobierno {watchdog_timeout_s: 180, loop_duplicados: 2}`; campos nuevos `objetivo`, `fallo`, `repo`.
+
+Mejoras de Antonio cubiertas en la rama (tabla «Las 40 mejoras» de su README §3.0.2, marcadas **Rama**): 1 Goal lock · 8 Receipts · 9 Watchdog · 10 Recovery OS (mínimo: `recuperar` + `reiniciar`) · 15 Loop detector · 27 State machine (+ `fallo`) · 28 Heartbeat (vencido por tiempo) · 34 Failure classifier · 37 Trace completo (recibos) · 40 Gobernanza fuera del LLM. Ya cubiertas antes: 25 Idempotencia, 36 Human approval gate. (La tabla marca 10 como «Rama» + 2 «cubierto»; la cifra de 11: por confirmar.)
+
+Bloqueos:
+- `tests/test_orquestador_mvp.py` (7 tests) **no corrió**: GitHub Actions bloqueado por facturación («account is locked due to a billing issue», run [39008450153](https://github.com/maxbry123-commits/router-universal-router-inteligente-/actions/runs/39008450153)).
+- Deploy al Space y prueba Android 412 px 4G: pendientes, falta `HF_TOKEN` en el entorno.
+- Solo hay análisis estático (`ast.parse` OK de los 7 `.py`).
+
+Pendiente de backend (sin código): tool **`usar_agente(nombre, mensaje)`** en `puente_chat` para que la LLM del chat use los agentes creados (hoy solo existe `crear_agente`). **No está hecho.**
 
 ### 0. Ruta (no cambiar)
 
@@ -212,6 +262,8 @@ Todas: `POST /plugins/orquestador/call/<acción>` con JSON; respuesta `{status:"
 - Con un panel abierto se **ocultan** `#histories` y `#composer` (el chat sigue debajo, oculto).
 - **Repintado:** `pintar()` reemplaza todo el contenido de `#chat-bots` (`replaceChildren`) y solo restaura el valor de `#orq-input`, `+` abierto, deploy abierto y el foco. Si algún agente está `trabajando`, se repite cada 1 200 ms. (Por eso el campo repo `#orq-dep-repo` se borra al repintar: fallo visto en capturas.)
 - Semáforo (`orquestador.css`): activo verde, trabajando azul con pulso, bloqueado naranja, aprobación amarillo con pulso, terminado gris, error rojo.
+- **5 fallos corregidos** en la rama [`fix/chatbots-frontend-5-fallos`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/fix/chatbots-frontend-5-fallos) (`dce5a295bf`; arreglo `0422190c52`, solo `orquestador.js` y `orquestador.css`, sobre `orquestador-escribir-sin-esperar` `626eb65024`): 1) la tira va debajo del chat (no `hist.before`); 2) `.chat-bots [hidden]{display:none!important}` gana a `display:flex`; 3) `pintar()` restaura `#orq-dep-repo` y destino; 4) el sub-chat no invade Selectores ni deja ver «¿Qué hacemos hoy?»; 5) Controles ya no tapa la tira (1366 px: 8/8 chips tapados antes, 0/8 después). Evidencia: **solo Playwright headless** 412 px y 1366 px con backend simulado ([`HANDOFF/TAREAS/04` §PROGRESO](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/fix/chatbots-frontend-5-fallos/HANDOFF/TAREAS/04-FRONTEND-CHATBOTS-PROPUESTA.md#progreso)). **Prueba Android 412 px 4G E2E: pendiente.** Sin A ni B. No está en main.
+- **Ficha de agentes simplificada** (un toque desde la lista de mirror, insignia 🔧 de tool): **maqueta esperando la aprobación de Antonio, no implementada.** Capturas en la computadora del bot (no en el repo): `/workspace/shots/ficha-agentes/` (antes-*, despues-*, `mockup/`).
 
 ### 4. Agentes y FICHA
 
@@ -227,7 +279,9 @@ Todas: `POST /plugins/orquestador/call/<acción>` con JSON; respuesta `{status:"
 - `mirror(de="chat")`: el frontend manda los últimos 12 elementos visibles de `#histories .chat-history:not([hidden])` (rol por clase CSS, ≤3000 caracteres); el agente nuevo recibe system «mirror del chat principal».
 - `mirror(de=<id>)`: copia system, modelo, mensajes, instrucciones y archivos (re-subidos) del agente origen.
 - Nombre `Mirror <origen>`, icono 🪞, `origen` = de dónde salió. Cuenta para el tope de 50.
-- «Mirror desde los enlaces del agente»: **no existe en el código** (pendiente, ver HANDOFF §PROGRESO).
+- «Mirror desde los enlaces del agente»: no existe en `orquestador-agentes-rebase`; **está en la rama `wip/chatbots-backend-mvp`** (sin probar): `mirror(de="repo:<id>")` guarda **solo el enlace** (`repo.url`) y `repo_leer` lee un archivo del repo por llamada. **No se copia código.**
+- Enlaces fijados a commit (repos propios, única ubicación): OpenClaw https://github.com/maxbry123-commits/openclaw/tree/383c124cc32ffee3f8e56f549b88da94d269a4af (v2026.10.4) · Hermes https://github.com/maxbry123-commits/hermes-agent/tree/d923a5eb487a17c0a68801bba9ef0f56c81040a8 (v0.22.2). El resto de enlaces: tabla de §6.
+- Registro: en `agent_fleet_registry.json` (main, PR #21) openclaw y hermes van sin copia local, con `mirror: link` + `source_repo` + `source_commit`.
 
 ### 6. Sandbox (`sandbox.py`)
 
@@ -297,9 +351,22 @@ Evidencia (mensaje del commit `a014c943c0`, 17-oct 00:13 Bogotá): «Probado 412
 ### 11. Por confirmar
 - Qué ficha real del Router resuelve cada id `qw-…` de Chat BOTS.
 - Si `tests_fix/orq_test.py` (v1) se mantiene o se retira.
-- `status`/`reiniciar` para el watchdog (PARCHE §4.1: falta).
+- `status`/`reiniciar` para el watchdog (PARCHE §4.1): en la rama `wip/chatbots-backend-mvp` (`vigilar`, `reiniciar`), sin probar.
 - Red de HF Jobs (decisión de Antonio).
 - Integración de Chat BOTS y ROOM en main: ninguna de las dos ramas está fusionada.
+
+### 12. Skills (`chat router/workflow Loops code Yaiwes/skills/`)
+
+Fuente: [`skills/README.md`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills/README.md) en main.
+
+| Skill | Origen / licencia | Ruta | Estado |
+|---|---|---|---|
+| ECC | affaan-m/ECC v2.2.3 (commit `b92f181b3b`), MIT, **311 skills**; movido desde Yaiwes; cableado en `code/skills_schema/ecc.dag.yaml` | [`skills/ECC`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills/ECC) | en main (PR #21) |
+| archify | tt-a1i/archify `d0c8c7e9f4`, MIT, 158 archivos; copia de Yaiwes (original intacto) | [`skills/archify`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills/archify) | en main (PR #23) |
+| motion-graphics | 12 skills Remotion (remotion-dev/skills `7ba4dcf8eb`, **sin archivo de licencia en la descarga**) + animate, css-animation-creator, motion-language-designer (OneWave-AI/claude-skills `fc5b7851a6`, MIT); origen en `motion-graphics/_origen/` | [`skills/motion-graphics`](https://github.com/maxbry123-commits/router-universal-router-inteligente-/tree/main/chat%20router/workflow%20Loops%20code%20Yaiwes/skills/motion-graphics) | en main (PR #23) |
+
+- **Archify** (diagrama vía JSON) se usa para la ventana de arquitectura de Chat BOTS: el backend entrega el JSON (`arquitectura`, rama `wip/chatbots-backend-mvp`) y el frontend lo renderiza. Ventana en el frontend: pendiente.
+- **Planeado:** un router de skills dentro de Anclaje. **Maqueta esperando la aprobación de Antonio**, no implementado. Capturas en la computadora del bot (no en el repo): `/workspace/shots/anclaje-skills/`.
 
 ## 4. ROOM CONFERENCIAS — estado de ramas
 
@@ -321,11 +388,11 @@ Bug abierto (TAREAS/01): en ROOM, la palabra «cambia» manda Ask consil al fluj
 - Capturas (computadora del bot, no en el repo): `/workspace/shots/chatbots-propuesta/` — A1, A2, A4, A5, B1, B2, B4, B7.
 - Base: `orquestador-agentes-rebase` (`9dc637165f`: `orquestador.js`, `orquestador.css`).
 - Fallos actuales en la base (TAREAS/04): 1) la tira queda encima del chat (`hist.before`); 2) `.orq-plus` con `display:flex` anula `hidden`; 3) `pintar()` no restaura `#orq-dep-repo`; 4) solapes entre Selectores y «¿Qué hacemos hoy?»; 5) Controles tapa la tira.
-- Tras la elección: implementar con cambios milimétricos, corregir los 5 fallos, capturas 412 px.
+- Tras la elección: implementar con cambios milimétricos, capturas 412 px. Los 5 fallos ya están corregidos en `fix/chatbots-frontend-5-fallos` (§3, «3. Frontend»).
 
 ## 6. Mirror (enlaces de agentes)
 
-Lo que hay en código (rama `orquestador-agentes-rebase`): `mirror(de="chat")` y `mirror(de=<id>)` (ver §3, «5. Mirror»). **«Mirror desde los enlaces del agente» no existe en el código.**
+Lo que hay en código: `mirror(de="chat")` y `mirror(de=<id>)` (rama `orquestador-agentes-rebase`) y `mirror(de="repo:<id>")` solo por enlace (rama `wip/chatbots-backend-mvp`, sin probar). Detalle en §3, «5. Mirror».
 
 Enlaces recopilados en [`HANDOFF/TAREAS/03` §ENLACES DE AGENTES PARA MIRROR](https://github.com/maxbry123-commits/router-universal-router-inteligente-/blob/main/HANDOFF/TAREAS/03-BACKEND-CHATBOTS-EVOLUCION.md#enlaces-de-agentes-para-mirror) (PR #17, merge `b17c430857`). Copia:
 
@@ -418,13 +485,18 @@ La caja sigue libre mientras el modelo/agente trabaja; lo enviado queda «en col
 
 ## 9. Pendientes
 
-- `HF_TOKEN` para deploy y medición real en el Space (bloqueo; TAREAS/01).
+- **MVP backend** (`wip/chatbots-backend-mvp`): correr los 7 tests (GitHub Actions bloqueado por facturación), deploy al Space (falta `HF_TOKEN`), revisión ×3, Android.
+- Tool **`usar_agente(nombre, mensaje)`** en `puente_chat` para que la LLM del chat use los agentes creados: no hecho.
+- **Frontend 5 fallos** (`fix/chatbots-frontend-5-fallos`): solo prueba headless; falta revisión ×3 y Android.
+- **Ficha de agentes simplificada** (un toque desde la lista de mirror, insignia 🔧): maqueta, esperando aprobación de Antonio.
+- **Router de skills en Anclaje**: maqueta, esperando aprobación de Antonio.
+- Ventana de arquitectura (Archify) en el frontend de Chat BOTS: pendiente.
 - Antonio elige diseño **A o B** del frontend Chat BOTS (§5).
-- Mirror desde los enlaces de agentes: no existe en el código; enlaces en §6; confirmar con Antonio cuáles usar.
-- Pruebas reales en **Android** (412 px, 4G, E2E) de Chat BOTS, ROOM, «Todos», escribir sin esperar.
+- Antonio elige **una** rama de Constitución (`constitucion-contrato-rebase`, `-rebase2`, `-rebase3`).
 - **7 proyectos de prueba** en la memoria real (rama `feat/nuevo-proyecto`): borrar **solo con el sí de Antonio**.
+- Bug «cambia» en ROOM: manda Ask consil al flujo largo (189 s 720 ms).
+- Prueba real en **Android** (412 px, 4G, E2E) de **cada rama** antes de merge o deploy.
 - Red de HF Jobs para el sandbox (abierta): decisión de Antonio.
-- `status`/`reiniciar` del orquestador para el watchdog (PARCHE §4.1: falta).
 - Qué ficha real del Router resuelve cada id `qw-…` de Chat BOTS: por confirmar.
 - Integrar Chat BOTS y ROOM en main: ninguna rama está fusionada.
 
