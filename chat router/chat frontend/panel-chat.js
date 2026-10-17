@@ -8,6 +8,7 @@ import { conectarRiu2 } from "./chat-riu2.js";
 import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 import { proyId } from "./objetivos-ancla.js";
 import { montarProyectos } from "./ventana-proyectos.js";
+import { crearCola, devolverACaja } from "./cola-envio.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 10;
@@ -48,6 +49,7 @@ export async function mount(root, { api, tell }) {
   const chats = [];
   let activo = 0;
   const chat = () => chats[activo];
+  const colaDe = (c) => c.cola || (c.cola = crearCola({ ocupado: () => !!c.ocupado, enviar: (x) => { enviar(c, x.texto, x.el); } }));  // una cola por chat (cada chat tiene su sesion)
   const chatA = () => (window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : chat());  // objetivo del anclaje: el chat (por defecto) u otro (constitución, workflow, agentes, proyecto, sandbox)
   const guardar = () => {
     try {
@@ -79,7 +81,7 @@ export async function mount(root, { api, tell }) {
     tabsEl.replaceChildren();
     pintarFastReply();
     chats.forEach((c, i) => {
-      const b = node("button", "Chat " + (i + 1) + (c.ocupado ? " …" : ""), "chip" + (i === activo ? " on" : ""));
+      const b = node("button", "Chat " + (i + 1) + (c.ocupado ? " …" : "") + (c.cola && c.cola.length ? " +" + c.cola.length : ""), "chip" + (i === activo ? " on" : ""));
       b.type = "button"; b.title = "Chat " + (i + 1) + " — sesión " + c.sesion;
       b.addEventListener("click", () => { activo = i; pintarTabs(); });
       tabsEl.append(b);
@@ -159,7 +161,7 @@ export async function mount(root, { api, tell }) {
       if (p && p.error === 'PROCESO_DETENIDO') { c.hist.append(node("div", "proceso detenido por el usuario", "item message meta")); abajo(c); return; }
       const t = p && ((p.choices && p.choices[0] && p.choices[0].message && p.choices[0].message.content) || p.reply);
       if (t) { c.hist.append(burbuja(t)); A.registrar(c.sesion, "bot", t); } else c.hist.append(burbuja(p && p.error === "PROCESO_NO_EXISTE" ? "La tarea ya no está en el Router (se reinició). Reenvía tu mensaje." : "Sin respuesta de la tarea recuperada: " + ((p && (p.error || p.detalle)) || "vacía"), "error"));
-    }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); });
+    }).finally(() => { c.ocupado = false; pintarTabs(); abajo(c); colaDe(c).siguiente(); });  // lo escrito mientras se retomaba sale ahora, en orden
   }); });
   conectarSelectorModelos({ q, chat, tell, guardar });  // Selector Qwen: solo frontend
   conectarMicrofono({ q, tell });  // micrófono: dictado por voz al input
@@ -192,7 +194,7 @@ export async function mount(root, { api, tell }) {
     pintarTabs(); guardar(); tell("Chat borrado");
   };
   try { montarProyectos(root, { tell: (t) => { try { const e = document.createElement("div"); e.className = "item message meta"; e.textContent = t; chat().hist.append(e); } catch (x) {} } }); } catch (e) {}  // ventana Proyectos disponible desde el arranque
-  window.RIU_CHAT = { chat, ocupado: () => chats.some((x) => x.ocupado), tokens: () => [...chat().anclados], pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
+  window.RIU_CHAT = { chat, ocupado: () => chats.some((x) => x.ocupado || (x.cola && x.cola.length)), tokens: () => [...chat().anclados], pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
   window.RIU_DESTINO_ARCHIVOS = () => {  // destinoArchivos(): UNICA autoridad de a donde van los archivos segun el objetivo de la ventana-ancla
     const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null;
     if (o && o.tipo === "constitucion") return { destino: "constitucion" };
@@ -364,15 +366,17 @@ export async function mount(root, { api, tell }) {
   q("#anc-ninguno").addEventListener("click", () => anclarTodos(false).catch((err) => tell(err.message)));
   q("#btn-copiar-input").addEventListener("click", () => copiarTexto(q("#message").value));
   q("#btn-detener").addEventListener("click", () => {  // parar duro en TODOS los chats: detenerFn corta el envio en curso, RIU_CANCELAR corta el polling/retomado y avisa al Router, y si la promesa se perdio (tab suspendida/registro borrado) igual se limpia ocupado + pending para que el cubo no siga girando
-    let algo = false;
+    let algo = false; const enCola = [];
     for (const c of chats) {
+      if (c.cola && c.cola.length) { enCola.push(...c.cola.vaciar().map((x) => x.texto)); algo = true; }  // la cola no sigue tras Detener: sus textos vuelven a la caja
       c.detenerFlag = true;
       if (c.detenerFn) { try { c.detenerFn(); } catch (e) {} algo = true; }
       if (c.hist) c.hist.querySelectorAll(".pending").forEach((p) => { p.remove(); algo = true; });
       if (c.ocupado) { algo = true; c.ocupado = false; pintarTabs(); }
       if (window.RIU_CANCELAR) { try { window.RIU_CANCELAR(c.sesion); } catch (e) {} }
     }
-    tell(algo ? "Detenido" : "No hay proceso en marcha");
+    devolverACaja(q("#message"), enCola); if (enCola.length) pintarTabs();
+    tell(algo ? "Detenido" + (enCola.length ? " · " + enCola.length + " en cola devuelto(s) a la caja" : "") : "No hay proceso en marcha");
   });
 
   // ---- ventana del motor: descarga/extraccion/copiar/mover entre repos ----
@@ -534,28 +538,33 @@ export async function mount(root, { api, tell }) {
     const input = q("#message");
     const message = input.value.trim();
     if (!message) return;
-    if (c.ocupado) { tell("Este chat ya tiene una tarea en curso"); return; }  // una tarea por chat; los demas chats siguen en paralelo
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
+    if (c.ocupado || colaDe(c).length) {  // escribir sin esperar: la caja sigue libre; el mensaje queda "en cola" en el hilo y sale al terminar la respuesta actual
+      const ub = burbuja(message, "user"); c.hist.append(ub); input.value = "";
+      colaDe(c).poner({ texto: message, el: ub }); pintarTabs(); abajo(c); input.focus(); return;  // el foco vuelve a la caja: sigues escribiendo
+    }
+    await enviar(c, message, null);
+  });
+  const enviar = async (c, message, ubCola) => { try { await enviar0(c, message, ubCola); } finally { colaDe(c).siguiente(); } };  // al terminar (bien, error o Detener) sale el siguiente en cola
+  const enviar0 = async (c, message, ubCola) => {
+    const input = q("#message");
+    const noSale = (t) => { if (ubCola) { ubCola.remove(); devolverACaja(input, [message]); } c.hist.append(node("div", t, "item message meta")); abajo(c); };  // un mensaje en cola que no puede salir vuelve a la caja
     const selAct = window.RIU_SELECTORES?.activo;  // solo "Nvidia groq team" tiene modelos reales en el Router hoy
     const fichaQwen = selAct === "team-qwen" && c.selectorQwen ? "qw-" + c.selectorQwen.modelo_id_slug : null;  // Team qwen: su ficha, mismo camino que Nvidia
     const fichaMvp = selAct === "team-5-mvp";  // Team 5 MVP: ruta propia -> fichas_qwen ficha_qwen=5 (1 modelo elegido, historial completo y tools)
     if (fichaMvp && !c.selectorQwen) {
-      c.hist.append(node("div", "Team 5 MVP: elige primero un modelo en la hoja Team 5 MVP ⌄ (el mismo catalogo de la Ficha 1 / Team qwen). No se envio a otro modelo.", "item message meta"));
-      abajo(c);
+      noSale("Team 5 MVP: elige primero un modelo en la hoja Team 5 MVP ⌄ (el mismo catalogo de la Ficha 1 / Team qwen). No se envio a otro modelo.");
       return;
     }
     const CONSIL_LISTO = /^(ask-consil-code-qwen-team|ask-consil-fromtend-qwen-team|ask-consil-nvidia-groq)$/;  // Ask Consil cableados al Router; nvidia-groq va como CONSULTA a la ficha ask-consil-factory
     if (selAct && selAct !== "nvidia-groq-team" && !fichaQwen && !CONSIL_LISTO.test(selAct) && !fichaMvp) {
       const nomSel = (window.RIU_SELECTORES.selectores.find((x) => x.id === selAct) || {}).nombre || selAct;
       const det = selAct === "team-qwen" ? (c.selectorQwen ? " · " + c.selectorQwen.label : " · sin modelo elegido") : "";
-      c.hist.append(node("div", nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.", "item message meta"));
-      abajo(c);
+      noSale(nomSel + det + ": sin IA conectada en el Router (no hay proveedor ni clave para estos modelos). No se envió a otro modelo. Enciende Nvidia groq team o apaga el selector.");
       return;
     }
-    const ub = burbuja(message, "user");
-    c.hist.append(ub);
+    if (ubCola) c.hist.append(ubCola); else { c.hist.append(burbuja(message, "user")); input.value = ""; }  // el de la cola ya esta pintado: solo baja al final
     A.registrar(c.sesion, "user", message);
-    input.value = "";
     c.ocupado = true; pintarTabs();
     const pending = node("div", "Enviando…", "item message pending");  // Enviando hasta que el Router confirma proceso_id; luego riu-progreso pone Pensando/tools
     c.hist.append(pending);
@@ -609,7 +618,7 @@ export async function mount(root, { api, tell }) {
       c.detenerFn = null; c.ocupado = false; pintarTabs();
       if (window.matchMedia("(pointer: fine)").matches) input.focus();
     }
-  });
+  };
   q("#message").addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.shiftKey && window.matchMedia("(pointer: fine)").matches) {
       event.preventDefault();
