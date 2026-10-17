@@ -26,6 +26,12 @@
       if (!main) return "sin_red";
       if (front === main) { ss.removeItem(K); return "igual"; }
       if (ss.getItem(K) === main) return "ya_recargado";
+      try {  // nunca recargar con una tarea en curso o texto escrito: eso cortaba la respuesta ("se interrumpio al recargar")
+        const doc = d.document || g.document, ls = d.localStorage || g.localStorage;
+        const enCurso = (doc && doc.querySelector && doc.querySelector(".item.message.pending")) || (ls && ls.getItem("riu_proc_v1") && ls.getItem("riu_proc_v1") !== "{}");
+        const caja = doc && doc.querySelector && doc.querySelector("#message");
+        if (enCurso || (caja && caja.value && caja.value.trim())) { ss.removeItem(KT); return "ocupado"; }
+      } catch (e) {}
       ss.setItem(K, main);
       const u = new URL(loc.href); u.searchParams.set("v", main.slice(0, 12));
       loc.replace(u.toString());

@@ -5,13 +5,15 @@ let BASE = "";  // sin base hardcodeada: la única fuente de verdad es LIVE_URL.
 let liveVerified = false;  // solo tras una resolución real de LIVE_URL se conserva BASE en la sesión
 
 let liveCheckedAt = 0;
+// fetch con tope: en movil (4G, pestaña en segundo plano) un fetch puede quedar colgado para siempre y el chat se queda en "Pensando" sin que el Router reciba nada
+const fetchT = (url, opts, ms) => { const ac = typeof AbortController === 'function' ? new AbortController() : null; const t = setTimeout(() => ac && ac.abort(), ms); return fetch(url, Object.assign({}, opts || {}, ac ? { signal: ac.signal } : {})).finally(() => clearTimeout(t)); };
 let liveRequest = null;
 async function liveRouter() {
   if (CFG.routerStopped) throw new Error('Router detenido por orden del Director');
   if (Date.now() - liveCheckedAt < 30000 && BASE) return BASE;
   if (!liveRequest) liveRequest = (async () => {
     try {
-      const flag = await fetch(CFG.liveUrl + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' });
+      const flag = await fetchT(CFG.liveUrl + '?t=' + Date.now(), { cache: 'no-store', credentials: 'omit' }, 8000);
       if (!flag.ok) throw new Error('Dirección HF no disponible');
       const info = await flag.json();
       if (!/^https:\/\/[a-z0-9-]+\.hf\.space$/.test(info.LIVE_URL || '')) throw new Error('Dirección HF inválida');
@@ -48,17 +50,20 @@ window.RIU_CANCELAR = async (ses) => {  // Detener: en cola se cancela antes de 
   return true;
 };
 window.RIU_RETOMAR = async (ses) => {
-  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + 560000;
+  const v = procs()[ses]; if (!v) return null; const fin = Date.now() + 560000; let malos = 0;
   while (Date.now() < fin) {
     if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };  // Detener sobre una tarea retomada: RIU_CANCELAR ya borro el registro y aviso al Router
 
     try {
-      const r = await fetch(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) });
+      const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) }, 10000);
       const e = await r.json().catch(() => ({})); const p = e.result || {};
-      if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso: borrar PID y devolver ya (no esperar 560 s)
-      if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
-    } catch (x) { /* caida temporal: seguir esperando, el registro no se borra */ }
-    await new Promise((ok) => setTimeout(ok, 1500));
+      if (!r.ok || e.status !== 'ok') { if (++malos >= 8) { guardaProc(ses, null); return { error: e.reason || e.detail || ('HTTP ' + r.status) }; } }  // respuesta invalida repetida: cortar, no girar 560 s
+      else if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso (PROCESO_NO_EXISTE tras reinicio): borrar PID y devolver ya
+      else if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
+      else if (!p.estado) { if (++malos >= 8) { guardaProc(ses, null); return { error: 'RESULTADO_VACIO' }; } }
+      else malos = 0;
+    } catch (x) { if (++malos >= 40) { guardaProc(ses, null); return { error: 'ROUTER_SIN_RESPUESTA' }; } }  // red caida ~20 s seguidos: cortar con aviso
+    await new Promise((ok) => setTimeout(ok, 500));
   }
   return { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'sigue en el Router' };
 };
@@ -82,14 +87,14 @@ async function puenteRouter(base, body, qs, headers) {
   for (let intento = 0; intento < 2; intento++) {
     let r;
     try {
-      r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) });
+      r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, 30000);
     } catch (e) {
       // job en cambio de direccion: releer LIVE_URL y reintentar una vez
       liveCheckedAt = 0;
       await liveRouter();
       if (baseDe() === base) throw e;
       base = baseDe();
-      r = await fetch(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) });
+      r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, 30000);
     }
     const env = await r.json().catch(() => ({}));
     if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
@@ -107,7 +112,7 @@ async function puenteRouter(base, body, qs, headers) {
         if (Date.now() > deadline) { cortado = true; break; }
         if (!primera) await new Promise(resolve => setTimeout(resolve, 250)); primera = false;
         try {
-          const poll = await fetch(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }) });
+          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }) }, 15000);
           const envelope = await poll.json().catch(() => ({}));
           if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
           p = envelope.result || {}; fallosRed = 0; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso } })); } catch (e) {} }
