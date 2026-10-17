@@ -3,6 +3,7 @@
 import { leer, escribir, KEYS, uid } from "./almacen.js";
 import { dameWF } from "./contexto.js";
 import { el, boton, etiqueta } from "./ventanas-comun.js";
+import { nuevoProyecto } from "./ventana-proyectos.js";
 const CLAVE_PROY = "riu_proy_v1";
 const slugP = (n) => (String(n || "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, "").slice(0, 48) || "proyecto");
 const remoto = (op, x) => { try { if (window.RIU_ACCION) return window.RIU_ACCION("proyecto", { op, ...x }); } catch (e) {} return Promise.resolve(null); };  // memoria_yaiwes = verdad; riu_proy_v1 = cache de UI
@@ -54,6 +55,7 @@ export function montarProyecto(root, { tell }) {
       tell("Proyecto creado: " + n); pintar();
     });
     const nuevo = el("div", "vn-sec"); nuevo.append(el("div", "vn-t", "Proyecto nuevo"), nom, ta, crear); lista.append(nuevo);
+    const fp = el("div", "vn-fila"); fp.append(boton("＋ Nuevo proyecto", "mini on", () => { const n = nuevoProyecto(tell); if (n && window.RIU_PROYECTOS_ABRIR) window.RIU_PROYECTOS_ABRIR(n); }), boton("Proyectos: archivos y procesos", "mini", () => window.RIU_PROYECTOS_ABRIR && window.RIU_PROYECTOS_ABRIR())); lista.prepend(fp);
     const ps = todos();
     if (!ps.length) lista.append(el("div", "fila-desc", "Aún no hay proyectos. Se crean en la ventana de anclaje (campo «Nombre del proyecto») o aquí arriba."));
     ps.forEach(({ ses, i, p }) => {

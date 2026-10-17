@@ -7,6 +7,7 @@ import { conectarRiu } from "./chat-riu.js";
 import { conectarRiu2 } from "./chat-riu2.js";
 import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 import { proyId } from "./objetivos-ancla.js";
+import { montarProyectos } from "./ventana-proyectos.js";
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 10;
@@ -190,6 +191,7 @@ export async function mount(root, { api, tell }) {
     chats[i].hist.remove(); chats.splice(i, 1); activo = Math.max(0, Math.min(activo > i ? activo - 1 : activo, chats.length - 1));
     pintarTabs(); guardar(); tell("Chat borrado");
   };
+  try { montarProyectos(root, { tell: (t) => { try { const e = document.createElement("div"); e.className = "item message meta"; e.textContent = t; chat().hist.append(e); } catch (x) {} } }); } catch (e) {}  // ventana Proyectos disponible desde el arranque
   window.RIU_CHAT = { chat, ocupado: () => chats.some((x) => x.ocupado), tokens: () => [...chat().anclados], pintar: () => { pintarAnclados(); guardar(); } };  // ganchos para las ventanas de workflows / constitución / claves
   window.RIU_DESTINO_ARCHIVOS = () => {  // destinoArchivos(): UNICA autoridad de a donde van los archivos segun el objetivo de la ventana-ancla
     const o = window.RIU_OBJETIVO_ANCLA ? window.RIU_OBJETIVO_ANCLA() : null;
