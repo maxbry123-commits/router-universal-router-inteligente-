@@ -1,6 +1,6 @@
 # HANDOFF — Chat BOTS + ROOM CONFERENCIAS + trabajo de chat relacionado
 
-Actualizado: 17-oct-2026 00:50, hora Bogotá (UTC-5). Dueño: **Antonio Mendoza**. Base: `main` `b17c430857`. Guía completa: [`README.md`](README.md).
+Actualizado: 17-oct-2026 02:30, hora Bogotá (UTC-5). Dueño: **Antonio Mendoza**. Base: `main` `59028d1898`. Guía completa: [`README.md`](README.md).
 
 Identificación de **cada** archivo, rama y artefacto. Archivos por rama sacados con `gh api repos/…/compare/main...<rama>` (solo lo que la rama cambia respecto a main). Estados: `main` (fusionado) · `wip` (a medias, en curso) · `en pausa` (orden de Antonio) · `pendiente` (listo en rama, falta revisión ×3 / Android / decisión). **Ninguna rama de esta lista está en main.**
 
@@ -373,6 +373,15 @@ Columnas: ARCHIVO/RAMA → TIPO → RAMA → SHA → ENLACE GitHub → ESTADO �
 | 17-oct-2026 00:46 | docs / `docs/enlaces-agentes` | ENLACES DE AGENTES PARA MIRROR en `HANDOFF/TAREAS/03` | en main | PR #17, merge `b17c430857` |
 | 17-oct-2026 00:50 | docs / `docs/chat-bot-raiz` | Carpeta `chat router/chat bot/` (README.md + HANDOFF.md) como fuente principal | en main | Este PR |
 | 17-oct-2026 00:50 | docs / `docs/chat-bot-raiz` | Comprobado: las 3 ramas «escribir sin esperar» ya están en origin | hecho | `feat/escribir-sin-esperar` `c99902c444`, `wip/room-escribir-sin-esperar` `c086120187`, `orquestador-escribir-sin-esperar` `626eb65024` |
+| 17-oct-2026 01:07 | backend / `wip/chatbots-backend-mvp` (`6150bb763a`) | MVP backend Chat BOTS: `gobierno.py`, `mirror_repos.py`, `arquitectura.py`; acciones `vigilar`, `reiniciar`, `recibos`, `agentes_repo`, `repo_leer`, `arquitectura`, `mirror de="repo:<id>"` | hecho (rama), sin probar | commits `64bd84ab66` (01:02)…`6150bb763a` (01:07); CI no corrió (Actions bloqueado por facturación, run 39008450153); falta `HF_TOKEN` |
+| 17-oct-2026 01:54 | frontend / `fix/chatbots-frontend-5-fallos` (`dce5a295bf`) | 5 fallos del frontend Chat BOTS | hecho (rama), solo headless | arreglo `0422190c52` (01:54); Playwright headless 412/1366 px, backend simulado; Android pendiente |
+| 17-oct-2026 (hora por confirmar, sin commit) | frontend / sin rama | Ficha de agentes simplificada (un toque desde la lista de mirror, insignia 🔧) | maqueta, esperando aprobación de Antonio | capturas en el box `/workspace/shots/ficha-agentes/` (no en el repo) |
+| 17-oct-2026 01:40 | limpieza / `limpieza/openclaw-hermes-descarga` | Mirror solo por enlace: OpenClaw/Hermes fuera de main | en main | PR #20, merge `40572c165a` |
+| 17-oct-2026 02:01 | skills / `skills/ecc-y-espejo-openclaw-hermes` | ECC v2.2.3 (311 skills, MIT) en `chat router/workflow Loops code Yaiwes/skills/ECC` + registro `mirror: link` (openclaw, hermes) | en main | PR #21, commit `72372b63db` (02:01), merge `1338353917` (02:02) |
+| 17-oct-2026 02:09 | agentes / repo `maxbry123-commits/agentes` | Mirror solo por enlace: borradas las copias viejas de OpenClaw/Hermes en `Core kernel Yaiwes` | en main (agentes) | agentes PR #26, merge `b7d0f91d58` (02:09) |
+| 17-oct-2026 02:09 | docs / `docs/agentes-core-kernel-limpio` | Nota: Core kernel Yaiwes ya limpio de OpenClaw/Hermes | en main | PR #22, merge `23bb572f72` |
+| 17-oct-2026 02:24 | skills / `skills/archify-motion-graphics` | Copia de archify (tt-a1i/archify, MIT, 158 archivos) y motion-graphics (12 Remotion sin licencia en la descarga + 3 OneWave-AI MIT) en `skills/` junto a ECC | en main | PR #23, commit `d02584b573` (02:24), merge `59028d1898` (02:24) |
+| 17-oct-2026 02:30 | docs / `docs/chatbots-readme-al-dia` | README §3 (MVP backend, frontend, mirror, skills) y §9 al día | en main | Este PR |
 
 ## 6. Pendientes
 
