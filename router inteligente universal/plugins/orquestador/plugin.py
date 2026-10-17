@@ -391,7 +391,7 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
         a = _cargar(str(p.get('id') or ''), p.get('seccion'))
         if not a:
             return {'error': 'AGENTE_NO_EXISTE'}
-        r = _dep.desplegar(str(p.get('destino') or ''), str(p.get('repo') or ''), _sandbox(a) / 'archivos', str(p.get('rama') or 'main'), bool(p.get('dry_run')))
+        r = _dep.desplegar(str(p.get('destino') or ''), str(p.get('repo') or ''), _sandbox(a) / 'archivos', str(p.get('rama') or 'main'), bool(p.get('dry_run')), p.get('confirmado') is True)
         _linea(a, 'deploy %s → %s: %s' % (p.get('destino'), p.get('repo'), r.get('estado') or r.get('error'))); _guardar(a)
         return r
     return {'error': 'ACCION_DESCONOCIDA'}

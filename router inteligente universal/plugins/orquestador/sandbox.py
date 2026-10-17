@@ -86,9 +86,16 @@ def _hf_jobs(code, sb: Path, timeout):
             files[f.name] = base64.b64encode(f.read_bytes()).decode()
     boot = ('import os,json,base64;os.makedirs("/sandbox/archivos",exist_ok=True);os.chdir("/sandbox")\n'
             '[open("archivos/"+k,"wb").write(base64.b64decode(v)) for k,v in json.loads(os.environ.pop("ORQ_FILES","{}")).items()]\n'
+            'import socket as _s\nif os.environ.get("ORQ_RED")=="abierta":\n'
+            '  def _no(*a,**k): raise OSError("red bloqueada por el sandbox del orquestador")\n'
+            '  _s.socket.connect=_no;_s.socket.connect_ex=_no;_s.getaddrinfo=_no;_s.create_connection=_no;print("[orq] red: bloqueada a nivel Python (evitable con ctypes/subprocess)")\n'
             'exec(compile(base64.b64decode(os.environ.pop("ORQ_CODE")).decode(),"main.py","exec"))')
-    s, d = _hf('POST', '/api/jobs/' + NS, {'dockerImage': 'python:3.12-slim', 'command': ['python', '-c', boot], 'arguments': [],
-                                          'environment': {'ORQ_CODE': base64.b64encode(code.encode()).decode(), 'ORQ_FILES': json.dumps(files)},
+    # red: se intenta cortar con un namespace de red (unshare -rn); si el contenedor no lo permite, corre igual
+    # (sin secretos y con timeout) y la salida lo dice con ORQ_RED=abierta.
+    sh = ('if unshare -rn true 2>/dev/null; then echo "[orq] red: bloqueada (unshare -rn)"; exec unshare -rn python -c "$ORQ_BOOT"; '
+          'else echo "[orq] red: abierta (el contenedor no permite namespaces); sin secretos y con timeout"; ORQ_RED=abierta exec timeout %d python -c "$ORQ_BOOT"; fi' % timeout)
+    s, d = _hf('POST', '/api/jobs/' + NS, {'dockerImage': 'python:3.12-slim', 'command': ['sh', '-c', sh], 'arguments': [],
+                                          'environment': {'ORQ_BOOT': boot, 'ORQ_CODE': base64.b64encode(code.encode()).decode(), 'ORQ_FILES': json.dumps(files)},
                                           'flavor': 'cpu-basic', 'timeoutSeconds': max(60, timeout + 60), 'labels': {'name': 'orq-sandbox'}})
     if s >= 400 or s == 0:
         r = _local(code, sb, timeout); r['nota'] = 'HF Jobs fallo (%s): se uso local' % s
@@ -109,7 +116,7 @@ def _hf_jobs(code, sb: Path, timeout):
                 out.append(json.loads(ln[5:]).get('data', ''))
             except Exception:  # noqa: BLE001
                 out.append(ln[5:])
-    return {'proveedor': 'hf-jobs', 'aislamiento': 'contenedor efimero HF (otra maquina, sin secretos)', 'job_id': jid,
+    return {'proveedor': 'hf-jobs', 'aislamiento': 'contenedor efimero HF (otra maquina, sin secretos, timeout%s)' % (', sin red (namespace)' if 'bloqueada (unshare' in '\n'.join(out) else ', red bloqueada solo a nivel Python' if 'nivel Python' in '\n'.join(out) else ', red abierta'), 'job_id': jid,
             'exit_code': 0 if stage == 'COMPLETED' else 1, 'stdout': '\n'.join(out)[-6000:], 'stderr': '' if stage == 'COMPLETED' else stage, 'ms': int((time.time() - t0) * 1000)}
 
 
