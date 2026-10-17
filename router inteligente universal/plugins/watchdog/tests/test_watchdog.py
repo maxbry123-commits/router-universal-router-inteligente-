@@ -60,7 +60,7 @@ def deps():
     guardadas = []
 
     W.set_deps(host=host, health=lambda: (salud["ok"], "HTTP 200" if salud["ok"] else "URLError"),
-               mem=lambda k, d: guardadas.append((k, d)), storage=storage)  # storage: se evalua en cada ronda
+               mem=lambda k, d: guardadas.append((k, d)), storage=storage, restart=lambda: "HTTP 200")  # nunca el HF real
     yield host, salud, st, guardadas
     W.detener()
     W.set_deps()
@@ -118,6 +118,36 @@ def test_agente_caido_se_reinicia(deps):
     W.revisar()
     assert host.reinicios == ["agentes_orq"]
     assert W._estado["agente:agentes_orq"]["ok"]
+
+
+def test_reinicio_space_tras_3_fallas_maximo_1_cada_30_min(deps, monkeypatch):
+    host, salud, *_ = deps
+    pedidos = []
+    W._deps["restart"] = lambda: pedidos.append(time.time()) or "HTTP 200"
+    monkeypatch.delenv("RIU_WATCHDOG_RESTART_SPACE", raising=False)
+    salud["ok"] = False
+    W.revisar(); W.revisar()
+    assert pedidos == []          # 2 fallas: todavia no
+    W.revisar()
+    assert len(pedidos) == 1      # 3 fallas seguidas: reinicio
+    for _ in range(6):
+        W.revisar()
+    assert len(pedidos) == 1      # ventana de 30 min: no se repite
+    W._reinicio["ultimo"] = time.time() - W.REINICIO_MIN_S - 1
+    W.revisar(); W.revisar(); W.revisar()
+    assert len(pedidos) == 2      # pasados 30 min y 3 fallas nuevas: otro
+    assert W.handle("status", {})["reinicios_space"]["n"] == 2
+
+
+def test_reinicio_space_se_apaga_con_env(deps, monkeypatch):
+    host, salud, *_ = deps
+    pedidos = []
+    W._deps["restart"] = lambda: pedidos.append(1) or "HTTP 200"
+    monkeypatch.setenv("RIU_WATCHDOG_RESTART_SPACE", "0")
+    salud["ok"] = False
+    for _ in range(5):
+        W.revisar()
+    assert pedidos == []
 
 
 def test_hilo_arranca_y_para(deps):

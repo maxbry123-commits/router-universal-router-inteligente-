@@ -116,7 +116,7 @@ def _scope(a: dict) -> str:
 
 def _scope_lectura(a: dict) -> str:
     s = str(a.get("scope") or "").strip()
-    if s.startswith("chat-ui:") and len(s) <= 80 and not re.search(r"secretos|watchdog", s):  # nunca el almacen de secretos
+    if s.startswith("chat-ui:") and len(s) <= 80 and not re.search(r"secretos", s):  # nunca el almacen de secretos
         return s
     return _scope(a)
 
