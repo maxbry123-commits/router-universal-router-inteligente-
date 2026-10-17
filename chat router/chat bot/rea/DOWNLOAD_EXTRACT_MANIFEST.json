@@ -1,0 +1,40 @@
+{
+  "bundle_bytes": 14188172,
+  "bundle_sha256": "10de52c433c2fd05095c835c41572fdfc0c3ccd585cb4fa092617f1a581016ae",
+  "extracted_tree": {
+    "bytes": 48667488,
+    "files": 3879,
+    "sha256": "50dd02c96540080a504f683a2acd8c66e024c8c0e9bf9a800429fb7c4102b2ba"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "rea.bundle.zip.part-0001",
+      "sha256": "bb2dc754962298292ed9ba09d02b308821e0acfce592178519be88a5c012511c"
+    },
+    {
+      "bytes": 1605260,
+      "name": "rea.bundle.zip.part-0002",
+      "sha256": "96e5e7e6db09790c8563a462e8d51f388dce9fb503bd3dd3c2b8d43c3d9e8ab3"
+    }
+  ],
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [],
+  "skipped_special_count": 0,
+  "slug": "rea",
+  "source_bytes": 48667488,
+  "source_commit": "ab45bf641e95a56a9d6cb8d246818a3d6925eb41",
+  "source_files": 3879,
+  "source_ref": "main",
+  "source_repo": "morluto/rea",
+  "source_tree": {
+    "bytes": 48667488,
+    "files": 3879,
+    "sha256": "50dd02c96540080a504f683a2acd8c66e024c8c0e9bf9a800429fb7c4102b2ba"
+  }
+}
