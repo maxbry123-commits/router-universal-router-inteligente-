@@ -75,14 +75,14 @@ window.RIU_RETOMAR = async (ses) => {
     if (!procs()[ses]) return { error: 'PROCESO_DETENIDO' };  // Detener sobre una tarea retomada: RIU_CANCELAR ya borro el registro y aviso al Router
 
     try {
-      const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid }) }, 10000);
+      const r = await fetchT(v.base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: hdrs(), body: JSON.stringify({ proceso_id: v.pid, espera: 20 }) }, 28000);
       const e = await r.json().catch(() => ({})); const p = e.result || {};
       if (!r.ok || e.status !== 'ok') { if (++malos >= 8) { guardaProc(ses, null); return { error: e.reason || e.detail || ('HTTP ' + r.status) }; } }  // respuesta invalida repetida: cortar, no girar 560 s
       else if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso (PROCESO_NO_EXISTE tras reinicio): borrar PID y devolver ya
       else if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
       else if (!p.estado) { if (++malos >= 8) { guardaProc(ses, null); return { error: 'RESULTADO_VACIO' }; } }
       else malos = 0;
-    } catch (x) { if (++malos >= 40) { guardaProc(ses, null); return { error: 'ROUTER_SIN_RESPUESTA' }; } }  // red caida ~20 s seguidos: cortar con aviso
+    } catch (x) { if (++malos >= 12) { guardaProc(ses, null); return { error: 'ROUTER_SIN_RESPUESTA' }; } }  // red caida ~20 s seguidos: cortar con aviso
     await new Promise((ok) => setTimeout(ok, 500));
   }
   return { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'sigue en el Router' };
@@ -100,20 +100,21 @@ async function puenteRouter(base, body, qs, headers) {
     let s = (body && body.sesion) || sessionStorage.getItem('riu_sesion');
     if (!s) { s = 'web-' + Math.random().toString(36).slice(2, 10); sessionStorage.setItem('riu_sesion', s); }
     payload.sesion = s;
+    payload.request_id = payload.request_id || ('rq-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10));
   }
   const h = { 'Content-Type': 'application/json' };
   const pw = headers['X-Chat-Password'] || sessionStorage.getItem('riu_clave');
   if (pw) h['X-API-Key'] = pw;
   for (let intento = 0; intento < 2; intento++) {
     let r;
-    try {
-      r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, 30000);
-    } catch (e) {
-      // job en cambio de direccion: releer LIVE_URL y reintentar una vez
-      liveCheckedAt = 0;
-      await liveRouter();
-      base = baseDe();  // sin proceso_id todavia: reintenta el POST una vez (misma u otra direccion)
-      r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, 30000);
+    // envio reintentable: request_id fijo => el Router devuelve el mismo proceso_id si el POST anterior si llego (sin duplicar)
+    for (let k = 0; k < 3; k++) {
+      try { r = await fetchT(base.replace(/[/]+$/, '') + '/' + (accion === 'chat' ? 'chat_async' : accion), { method: 'POST', headers: h, body: JSON.stringify(payload) }, k ? 20000 : 15000); break; }
+      catch (e) {
+        if (k === 2) throw e;
+        liveCheckedAt = 0; await liveRouter(); base = baseDe();
+        await new Promise(ok => setTimeout(ok, 800 * (k + 1)));
+      }
     }
     const env = await r.json().catch(() => ({}));
     if (r.status === 401 || r.status === 403) return { status: 401, ok: false, p: env };
@@ -131,14 +132,14 @@ async function puenteRouter(base, body, qs, headers) {
         if (Date.now() > deadline) { cortado = true; break; }
         if (!primera) await new Promise(resolve => setTimeout(resolve, 250)); primera = false;
         try {
-          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso }) }, 15000);
+          const poll = await fetchT(base.replace(/[/]+$/, '') + '/resultado', { method: 'POST', headers: h, body: JSON.stringify({ proceso_id: proceso, espera: 20 }) }, 28000);  // long-poll: el Router responde apenas hay resultado/progreso (max 20 s)
           const envelope = await poll.json().catch(() => ({}));
           if (!poll.ok || envelope.status !== 'ok') return { status: poll.status, ok: false, p: { error: envelope.reason || envelope.detail || 'Error al consultar la respuesta' } };
           p = envelope.result || {}; fallosRed = 0; if (p.progreso) { try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: p.progreso } })); } catch (e) {} }
         } catch (e) {  // red/job en cambio: seguir esperando, pero avisar y cortar tras 80 fallos seguidos (~20 s a 250 ms)
           fallosRed++;
           try { window.dispatchEvent(new CustomEvent('riu-progreso', { detail: { sesion: payload.sesion, proceso_id: proceso, texto: 'Sin conexión con el Router (' + fallosRed + ')…' } })); } catch (x) {}
-          if (fallosRed >= 80) return { status: 503, ok: false, p: { error: 'ROUTER_SIN_RESPUESTA', detalle: String(e && e.message || e).slice(0, 200), proceso_id: proceso } };
+          if (fallosRed >= 12) return { status: 503, ok: false, p: { error: 'ROUTER_SIN_RESPUESTA', detalle: String(e && e.message || e).slice(0, 200), proceso_id: proceso } };
           continue;
         }
       }

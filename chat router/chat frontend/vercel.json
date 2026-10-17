@@ -125,6 +125,6 @@
       ]
     }
   ],
-  "buildCommand": "printf '{\"commit\":\"%s\"}' \"$VERCEL_GIT_COMMIT_SHA\" > version.json",
+  "buildCommand": "sh build.sh",
   "outputDirectory": "."
 }

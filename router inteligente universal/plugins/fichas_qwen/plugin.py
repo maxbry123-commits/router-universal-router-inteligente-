@@ -1519,6 +1519,11 @@ def _cola() -> dict[str, Any]:
             "workers": 4, "workers_fast": 4, "cancelados": len(_CANCEL)}
 
 
+_RID: dict = {}
+import threading as _th_lp
+_LP_SEM = _th_lp.BoundedSemaphore(12)
+
+
 def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
     p = payload or {}
     if action == "status":
@@ -1531,7 +1536,14 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         return _chat(p)
     if action == "chat_async":
         clave = secrets.token_urlsafe(24)
+        _rid = str(p.get("request_id") or "")[:80]
         with _LOCK:
+            if _rid and _rid in _RID:  # idempotente: reintento del cliente con el mismo request_id => mismo proceso_id
+                return {"estado": "procesando", "proceso_id": _RID[_rid], "repetido": True}
+            if _rid:
+                _RID[_rid] = clave
+                if len(_RID) > 2000:
+                    for _k in list(_RID)[:500]: del _RID[_k]
             for k, (fut, t) in list(_PROCESOS.items()):
                 if time.time() - t > 900 and fut.done():
                     del _PROCESOS[k]
@@ -1563,6 +1575,16 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
                 _ck_guardar(clave, str(ck.get('fid') or ''), dict(ck.get('out') or {}), estado='RUNNING')
                 return {"estado": "procesando", "proceso_id": clave, "reanudado": True}
             return {"error": "PROCESO_NO_EXISTE"}
+        try: _esp = max(0.0, min(20.0, float(p.get("espera") or 0)))
+        except Exception: _esp = 0.0
+        if _esp and not item[0].done() and _LP_SEM.acquire(blocking=False):  # long-poll: vuelve apenas hay resultado o cambia el progreso
+            try:
+                _p0 = _texto_prog(str(p.get("proceso_id") or "")); _t0 = time.time()
+                while time.time() - _t0 < _esp and not item[0].done():
+                    import concurrent.futures as _cfw; _cfw.wait([item[0]], timeout=0.5)
+                    if _texto_prog(str(p.get("proceso_id") or "")) != _p0: break
+                    _ULT_POLL[str(p.get("proceso_id") or "")] = time.time()
+            finally: _LP_SEM.release()
         if not item[0].done():
             _r = {"estado": "procesando", "proceso_id": p.get("proceso_id"), "progreso": _texto_prog(str(p.get("proceso_id") or ""))}
             if not item[0].running():  # fix 7: el front ve que espera worker, no que el modelo tarda

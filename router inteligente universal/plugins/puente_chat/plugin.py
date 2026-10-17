@@ -2697,6 +2697,10 @@ def _task_run(key, payload):
     return r
 
 _original_handle = handle
+_ASYNC_RID = {}
+import threading as _th_lp
+_LP_SEM = _th_lp.BoundedSemaphore(12)
+from concurrent.futures import wait as _cf_wait
 def handle(action, payload):
     if action == 'chat_async':
         with _ASYNC_LOCK:
@@ -2705,7 +2709,14 @@ def handle(action, payload):
                 if now-created>900 and future.done(): del _ASYNC_REQUESTS[key]
             if sum(not f.done() for f,_ in _ASYNC_REQUESTS.values())>=16:
                 return {'error':'CHAT_OCUPADO_REINTENTA'}
+            rid=str(payload.get('request_id') or '')[:80]
+            if rid and rid in _ASYNC_RID:  # idempotente: mismo request_id => mismo proceso_id (reintento del cliente)
+                return {'estado':'procesando','proceso_id':_ASYNC_RID[rid],'repetido':True}
             key=_secrets.token_urlsafe(24)
+            if rid:
+                _ASYNC_RID[rid]=key
+                if len(_ASYNC_RID)>2000:
+                    for k in list(_ASYNC_RID)[:500]: del _ASYNC_RID[k]
             p2 = dict(payload); p2['_pid'] = key; p2.setdefault('task_id', key)
             _task_ck_guardar(key, {'estado': 'RUNNING', 'payload': p2})
             future=_ASYNC_POOL.submit(_task_run, key, p2)
@@ -2726,6 +2737,11 @@ def handle(action, payload):
                 return {'estado': 'procesando', 'proceso_id': key, 'reanudado': True}
             return {'error':'PROCESO_NO_EXISTE'}
         future,_=item
+        try: espera=max(0.0,min(20.0,float(payload.get('espera') or 0)))
+        except Exception: espera=0.0
+        if espera and not future.done() and _LP_SEM.acquire(blocking=False):  # long-poll acotado: no agota el threadpool
+            try: _cf_wait([future], timeout=espera)
+            finally: _LP_SEM.release()
         if not future.done():return {'estado':'procesando','proceso_id':key}
         try:return future.result()
         except Exception as exc:return {'error':'CHAT_FAILED','detalle':type(exc).__name__}
