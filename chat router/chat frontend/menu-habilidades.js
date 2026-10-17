@@ -10,7 +10,7 @@ export function montarHabilidades({ root, q, tell }) {
     ...dameWF().map((w) => ({ cmd: "/wf " + w.nombre, nombre: "Workflow · " + w.nombre, desc: "Escribir una instrucción en su ejecución", ins: "/wf " + w.nombre + " " })),
     { cmd: "/workflow", nombre: "Workflow Loops code Yaiwes", desc: "Abrir la ventana", abre: "#pill-workflows" },
     { cmd: "/constitucion", nombre: "Constitución sentinela", desc: "Abrir la ventana", abre: "#pill-constitucion" },
-    { cmd: "/claves", nombre: "Banco de claves", desc: "Abrir la ventana", abre: "#pill-claves" },
+    { cmd: "/claves", nombre: "Secretos y claves", desc: "API keys y tokens cifrados", abre: "#pill-claves" },
     { cmd: "/anclaje", nombre: "Anclaje", desc: "Enlaces, archivos y handoffs", abre: "#btn-ancla" },
     { cmd: "/archivos", nombre: "Archivos", desc: "La carpeta compartida", abre: "#btn-archivos" },
     { cmd: "/sandbox", nombre: "Sandbox", desc: "Instrucciones de código", abre: "#btn-sandbox" },

@@ -89,4 +89,21 @@ try:
 except Exception as exc:  # never take the Router down for HF control plane
     logging.getLogger("riu").warning("hf_control_plane no montado: %s", exc)
 
+try:
+    from ..plugin_host.mcp_http import build_mcp_router
+
+    app.include_router(build_mcp_router())  # /mcp: MCP Streamable HTTP (token MCP) -> harness -> fichas/memoria
+except Exception as exc:  # never take the Router down for the MCP door
+    logging.getLogger("riu").warning("mcp_http no montado: %s", exc)
+
+
+@app.on_event("startup")
+def _watchdog_start() -> None:
+    try:  # plugin watchdog por el harness: arranca su hilo (RIU_WATCHDOG_S, 0 = apagado)
+        from ..plugin_host.host import get_host
+        get_host().call("watchdog", "arrancar")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 app.include_router(gateway.app.router)  # /health, /v1/models, /v1/chat/completions, /chat/models

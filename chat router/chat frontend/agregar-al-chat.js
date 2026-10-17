@@ -51,7 +51,7 @@ export function montarAgregarAlChat({ root, q, tell }) {
       interruptor("Agentes remotos", "Código fuente + SDK anclados", () => obj("agentes").encendido, (on) => { obj("agentes").encendido = on; }),
     );
     cuerpo.append(acceso("Anclaje", "Enlaces, handoffs, archivos y más", "#btn-ancla"), acceso("Archivos recientes", "La carpeta compartida", "#btn-archivos"), acceso("Workflows", "Crear y configurar", "#pill-workflows"), acceso("Constitución sentinela", "Reglas, anclas y notas", "#pill-constitucion"),
-      acceso("Claves", "Banco de claves", "#pill-claves"),
+      acceso("Claves", "Secretos y claves", "#pill-claves"),
       fila("Habilidades", "Comandos con «/»", () => { sheet.hidden = true; const m = q("#message"); if (m) { m.value = "/"; m.dispatchEvent(new Event("input", { bubbles: true })); m.focus(); } }),
       interruptor("Memoria", "Siempre activa; no se cambia por chat", () => true, () => false, true));
   }

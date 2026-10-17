@@ -13,6 +13,10 @@
       "destination": "https://comand-center-1-riu-router.hf.space/health"
     },
     {
+      "source": "/mcp",
+      "destination": "https://comand-center-1-riu-router.hf.space/mcp"
+    },
+    {
       "source": "/yaiwes/",
       "destination": "/yaiwes/index.html"
     },
@@ -54,6 +58,19 @@
     },
     {
       "source": "/health",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "x-vercel-enable-rewrite-caching",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "source": "/mcp",
       "headers": [
         {
           "key": "Cache-Control",
