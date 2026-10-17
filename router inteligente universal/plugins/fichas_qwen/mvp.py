@@ -23,7 +23,9 @@ _MAX_DEF = {'ficha-qwen38max': 4096, 'ficha-qwen38flash': 4096, 'ficha-qwen37max
 from plugins.fichas_qwen.perfiles import ESFUERZO_FICHA as _RAZON  # perfil comun de los 9 modelos (sin tools): misma fuente que Fichas 1-4
 from plugins.puente_chat.capacidad import capacidad_de  # la puerta es UNA, compartida con todas las fichas: el software decide, no el modelo
 _TOOL_NOMBRE = ('github', 'GitHub'), ('hf_', 'Hugging Face'), ('hugging', 'Hugging Face')
-_TIMEOUT_S = 300  # techo unico de solicitud para toda la ficha; no hay timeout por nodo
+_TIMEOUT_S = 300
+_TIMEOUT_SIMPLE_S = 30  # CAP_NONE (p.ej. 'que modelo eres'): 1 llamada en stream, tope corto, GAP al instante
+# _TIMEOUT_S: techo unico de solicitud para toda la ficha; no hay timeout por nodo
 
 
 def _fq():
@@ -118,16 +120,22 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
     cap = capacidad_de(mensaje)  # INPUT -> CAP_NONE/READ/WRITE: sin intencion externa no se envia ni el catalogo
     requiere = cap != 'none'  # la tarea pide tools: al menos una debe ejecutarse con exito (evidencia)
     solo_lectura = cap != 'write'  # WRITE exige servicio externo + orden explicita de modificar; el resto bloquea mutaciones
+    simple = cap == 'none'  # pregunta simple: sin tools, sin anexo, sin sentinela, reasoning acotado
+    ex_llm = {'reasoning_effort': _RAZON[elegido]} if elegido in _RAZON else None
+    if simple and ex_llm and ex_llm['reasoning_effort'] in ('medium', 'high'):
+        ex_llm = {'reasoning_effort': 'low'}
+    if simple and not p.get('max_tokens'):
+        mt = min(mt, 1024)
     if pid:  # mismo visor de progreso de la familia
         fq._prog(pid, 'MVP', 'trabajando')
         fq._meta(pid, 'MVP', elegido, 'responde con el modelo elegido')
     r = pc._chat({'model': qw, 'messages': conv, 'max_tokens': mt, 'sesion': ses,
-                  'presupuesto_s': _TIMEOUT_S, 'solo_lectura': solo_lectura, 'requiere_tools': requiere, 'tools_habilitadas': cap != 'none', 'cap_tools': cap,  # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
+                  'presupuesto_s': _TIMEOUT_SIMPLE_S if simple else _TIMEOUT_S, 'directo': simple, 'solo_lectura': solo_lectura, 'requiere_tools': requiere, 'tools_habilitadas': cap != 'none', 'cap_tools': cap,  # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'rondas_tools_max': 3,  # MVP: modelo->tool->modelo->tool->modelo->respuesta, sin 6 vueltas automaticas
                   'progreso_fn': _pf, 'stream_fn': _sf,
-                  'extra_llm': {'reasoning_effort': _RAZON[elegido]} if elegido in _RAZON else None,
+                  'extra_llm': ex_llm,
                   'tarea_id': str(p.get('tarea_id') or ''), 'task_id': str(p.get('task_id') or ''),
-                  'anclados': list(p.get('anclados') or []), 'perfil': str(p.get('perfil') or ''),
+                  'anclados': [] if simple else list(p.get('anclados') or []), 'perfil': str(p.get('perfil') or ''),
                   'contexto_explicito': tiene_historial,  # historial del navegador -> no reinsertar _contexto(); historial vacio -> el mismo Harness lee memoria_yaiwes
                   'techo_duro': True,  # techo literal 0-300 s: sin la ventana extra de 45 s del bucle comun
                   'cancelar_si': (lambda _k=pid: _k in fq._CANCEL) if pid else None})  # Detener: se mira antes de cada modelo/tool; un HTTP en vuelo se deja terminar  # el historial completo ya va en messages: sin perfil artificial y sin reinsertar _contexto() en el system

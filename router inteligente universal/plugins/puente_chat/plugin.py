@@ -2160,7 +2160,10 @@ def _chat(p):
                 sistema += ' ' + _der
         except Exception:  # noqa: BLE001
             pass
+    _directo = bool(p.get('directo'))  # Team 5 CAP_NONE: 1 llamada, sin anexos, sin sentinela/retoma/reserva
     try:
+        if _directo:
+            raise StopIteration
         sd = _mem_dato(sesion, 'sandbox')
         if sd.get('texto'):
             sistema += ' SANDBOX del usuario (system prompt de code; sigue estas instrucciones): ' + str(sd['texto'])[:3000]
@@ -2183,9 +2186,12 @@ def _chat(p):
     if model in FICHAS:
         _, proveedor, modelo, tope = FICHAS[model]
 
+        presupuesto = int(p.get('presupuesto_s') or 0) or min(250, max(TOPE_TOTAL_S, int(tope * 2.4)))
+        if _directo:
+            tope = min(tope, presupuesto)  # tope corto real por llamada (Team 5 CAP_NONE)
+
         def llamar(ms, tl):
             return _llamar_api(proveedor, modelo, ms, max_tokens, tope, tl)
-        presupuesto = int(p.get('presupuesto_s') or 0) or min(250, max(TOPE_TOTAL_S, int(tope * 2.4)))
         _DEADLINE.set(time.monotonic() + presupuesto)
     else:
         url = str(p['respaldo_url'])
@@ -2226,8 +2232,14 @@ def _chat(p):
 
             plan.append(('reserva:' + alt, paso_alt))
 
-    sen = _sentinela()
-    if sen:
+    sen = None if _directo else _sentinela()
+    if _directo:
+        d, usadas = llamar(mensajes, None)[1], []  # UNA llamada en stream, sin tools ni reintento de sentinela
+        if not isinstance(d, dict) or not d.get('choices'):
+            e_ = (d or {}).get('error') if isinstance(d, dict) else None
+            return {'error': str(e_ or 'MODELO_SIN_RESPUESTA'), 'detalle': json.dumps(d, ensure_ascii=False)[:300] if isinstance(d, dict) else str(d)[:300]}
+        checklist = []
+    elif sen:
         def _ck_in():
             ck = _ck_cargar(sesion)
             return ([{'role': 'system', 'content': sistema}] + list(ck)) if ck else None
