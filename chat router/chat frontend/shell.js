@@ -6,7 +6,7 @@ import { mount as canvas } from "./panel-canvas.js";
 import { mount as organization } from "./panel-org.js";
 import { mount as apariencia } from "./panel-apariencia.js";
 import "./apariencia-aplicar.js";
-import "./tools-ventana.js";  // MVP tools: ventana en el chat + bloque en Configuración  // aplica la apariencia guardada en todo el chat
+import "./tools-ventana.js"; import "./orquestador.js";  // MVP tools: ventana en el chat + bloque en Configuración  // aplica la apariencia guardada en todo el chat
 
 const panels = { chat, archivos, seguimiento, canvas, connectors: organization, templates: organization, engineering: organization, apariencia };
 const labels = { chat: "Chat", archivos: "Archivos", seguimiento: "Seguimiento", canvas: "Canvas",
