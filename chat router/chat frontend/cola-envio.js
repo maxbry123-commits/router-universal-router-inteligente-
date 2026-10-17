@@ -34,6 +34,8 @@ export function marcarEnCola(el, on) {
   if (on && !t) { t = document.createElement("span"); t.className = "tag-cola"; t.textContent = "en cola"; el.append(t); }
   if (!on && t) t.remove();
 }
+// para hilos que pintan varias cosas por turno (ROOM): mete el nodo ANTES del primer mensaje en cola (si no hay cola, al final)
+export function antesDeCola(hist, nodo) { hist.insertBefore(nodo, hist.querySelector(":scope > .en-cola")); return nodo; }
 // devuelve los textos que estaban en cola a la caja (Detener): nada se pierde
 export function devolverACaja(input, textos) {
   if (!input || !textos.length) return;
