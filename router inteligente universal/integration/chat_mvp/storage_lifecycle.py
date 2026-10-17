@@ -12,6 +12,14 @@ STATUS: dict[str, Any] = {"restore": "NOT_RUN", "autosync": "OFF", "last_sync": 
 
 
 def restore_if_empty(data_dir: Any, bucket: str | None, token: str | None, fs_factory: Callable[..., Any] | None = None) -> dict[str, Any]:
+    try:
+        return _restore(data_dir, bucket, token, fs_factory)
+    except Exception as exc:  # noqa: BLE001 - un fallo inesperado NO puede dejar "NOT_RUN" (el autosync subiria la base vacia)
+        STATUS["restore"] = "GAP_RESTORE_EXC:" + type(exc).__name__
+        return {"status": STATUS["restore"], "gap": "GAP_RESTORE_EXC"}
+
+
+def _restore(data_dir: Any, bucket: str | None, token: str | None, fs_factory: Callable[..., Any] | None = None) -> dict[str, Any]:
     d = Path(data_dir)
     db = d / "riu_chat.sqlite3"
     if db.exists() and db.stat().st_size > 0:
