@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>YAIWES · paneles</title>
+<link rel="stylesheet" href="./fabrica/runtime/lote-01-nucleo-host/01-design-tokens.css">
+<style>
+body{margin:0;font:14px/1.45 system-ui,sans-serif;background:#0a0a0d;color:#eee}
+header{padding:12px 14px;border-bottom:1px solid #222;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header a{color:#8ab4ff}
+main{padding:10px 14px;display:grid;gap:14px}
+section{background:#141417;border:1px solid #222;border-radius:10px;padding:10px}
+h2{font-size:15px;margin:0 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
+.grid a{display:block;padding:8px;border:1px solid #2a2a30;border-radius:8px;color:#ddd;text-decoration:none;font-size:13px}
+.grid a small{display:block;color:#888}
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px}
+.fotos img{width:100%;height:90px;object-fit:cover;border-radius:6px;background:#222}
+.ok{color:#4ade80}.gap{color:#f87171}
+pre{white-space:pre-wrap;font-size:12px;color:#bbb;max-height:220px;overflow:auto}
+</style></head><body>
+<header><strong>YAIWES</strong><a href="/">← Chat</a><a href="./panel-01.html">PANEL-01 chat</a><a href="./fromted/HOST.html">HOST</a><span id="estado"></span></header>
+<main>
+<section><h2>Ventanas (RUN · WALL · GBOT · FOTO)</h2><div id="ventanas" class="grid"></div></section>
+<section><h2>Originales</h2><div class="grid" id="originales"></div></section>
+<section><h2>Fábrica UI · host (runtime)</h2><div id="yaiwes-host" class="yaiwes-host"></div></section>
+<section><h2>SKILLS-REGISTRY</h2><pre id="skills">cargando…</pre></section>
+<section><h2>PLAN-DAG</h2><pre id="dag">cargando…</pre></section>
+<section><h2>Chequeos: seguridad · QA · empaque</h2><div id="checks"></div></section>
+<section><h2>Fotos de referencia</h2><div id="fotos" class="fotos"></div></section>
+<section><h2>Módulos</h2><div class="grid"><a href="./modulos/modules/M_RUNTIME_ORCHESTRATION/runtime-orchestration-contract.mjs">M_RUNTIME_ORCHESTRATION<small>contrato</small></a><a href="/#proyectos" onclick="localStorage.setItem('riu_abrir_proyectos','1')">Proyectos<small>ventana en el chat</small></a></div></section>
+</main>
+<script>
+// conector por defecto de las ventanas: el Router por el mismo origen (proxy Vercel /plugins -> Space)
+try{const c=JSON.parse(localStorage.getItem('FROMTED_CONNECTOR')||'{}');if(!c.kind)localStorage.setItem('FROMTED_CONNECTOR',JSON.stringify({kind:'web',url:'/plugins/puente_chat/call'}))}catch(e){}
+const $=(s)=>document.querySelector(s), a=(href,t,s)=>{const x=document.createElement('a');x.href=href;x.innerHTML=t+(s?'<small>'+s+'</small>':'');return x};
+const j=(u)=>fetch(u,{cache:'no-cache'}).then(r=>{if(!r.ok)throw new Error(u+' '+r.status);return r.json()});
+j('./fromted/INDEX.json').then(d=>d.windows.forEach(w=>$('#ventanas').append(a('./fromted/'+w.file,w.id,w.name)))).catch(e=>$('#ventanas').textContent='GAP '+e.message);
+[['./original/RUN/UI-YAIWES-Run.html','RUN','procesos'],['./original/RUN/UI-YAIWES-Run-temas.html','RUN temas',''],['./original/CRAZY-WALL/YAIWES-CRAZY-WALL.html','CRAZY WALL',''],['./original/HTML-CHAT-SELECTORES/v2-01-chat-grok.html','Chat selectores','v2'],['./original/HTML-CHAT-SELECTORES/v2-03-settings.html','Settings','v2'],['./original/HTML-CHAT-SELECTORES/v2-04-directorio.html','Directorio','v2']].forEach(x=>$('#originales').append(a(...x)));
+j('./fabrica/SKILLS-REGISTRY.json').then(d=>{const s=[...(d.ui_interface||[]),...(d.factory||[]),...(d.skills||[])];$('#skills').textContent=(Array.isArray(s)&&s.length?s.map(x=>'· '+((x.name||x.id)+" · "+(x.category||"")+" · "+(x.status||""))).join('\n'):JSON.stringify(d,null,1).slice(0,3000))}).catch(e=>$('#skills').textContent='GAP '+e.message);
+j('./fabrica/PLAN-DAG-DETERMINISTA.json').then(d=>{$('#dag').textContent=(d.nodes||[]).map(n=>n.id+' · '+n.title+' · '+n.status+(n.next?' → '+n.next:'')).join('\n')}).catch(e=>$('#dag').textContent='GAP '+e.message);
+j('./original/FOTOS-REF/INDEX.json').then(d=>d.items.forEach(f=>{const i=new Image();i.loading='lazy';i.alt=f.id;i.src='./original/FOTOS-REF/'+f.file;const l=document.createElement('a');l.href=i.src;l.append(i);$('#fotos').append(l)})).catch(e=>$('#fotos').textContent='GAP '+e.message);
+(async()=>{const out=[];const chk=async(n,u,f)=>{try{const r=await fetch(u,{cache:'no-cache'});const ok=r.ok&&(!f||f(await r.text()));out.push('<div class="'+(ok?'ok':'gap')+'">'+(ok?'✔ ':'✘ ')+n+'</div>')}catch(e){out.push('<div class="gap">✘ '+n+'</div>')}};
+await chk('Seguridad: CSP definida (default-src self)','./seguridad/csp.json',t=>JSON.parse(t)['default-src'].includes("'self'"));
+await chk('QA: smoke de PANEL-01 presente','./qa/tests/panel-01-smoke.spec.js');
+await chk('Empaque: manifest PWA válido','./empaque/manifest.webmanifest',t=>!!JSON.parse(t).name);
+await chk('Router: /health','/health',t=>/ok/.test(t));
+$('#checks').innerHTML=out.join('')})();
+</script>
+<script type="module">
+try{await import('./fabrica/runtime/lote-01-nucleo-host/10-wire.js');document.getElementById('estado').textContent='host listo'}catch(e){document.getElementById('estado').textContent='host GAP: '+e.message}
+</script>
+</body></html>

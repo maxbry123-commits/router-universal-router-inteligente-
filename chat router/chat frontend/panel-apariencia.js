@@ -35,6 +35,13 @@ const sanear = (o) => {  // solo valores conocidos y validos (importar / datos r
 
 export async function mount(root, { tell } = {}) {
   const q = (s) => root.querySelector(s);
+  try {  // 13 · YAIWES: SKILLS-REGISTRY y PLAN-DAG listados desde la fabrica servida en /yaiwes/
+    const j = (u) => fetch(u, { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+    const ps = q("#ap-skills"), pd = q("#ap-dag"), bp = q("#ap-proyectos");
+    if (bp) bp.addEventListener("click", () => { if (window.RIU_PROYECTOS_ABRIR) window.RIU_PROYECTOS_ABRIR(); else { localStorage.setItem("riu_abrir_proyectos", "1"); location.hash = ""; location.reload(); } });
+    if (ps) j("/yaiwes/fabrica/SKILLS-REGISTRY.json").then((d) => { const s = [...(d.ui_interface || []), ...(d.factory || []), ...(d.skills || [])]; ps.textContent = Array.isArray(s) && s.length ? s.map((x) => "· " + ((x.name || x.id || x.nombre) + " · " + (x.category || "") + " · " + (x.status || ""))).join("\n") : JSON.stringify(d, null, 1).slice(0, 3000); }).catch((e) => { ps.textContent = "GAP " + e.message; });
+    if (pd) j("/yaiwes/fabrica/PLAN-DAG-DETERMINISTA.json").then((d) => { pd.textContent = (d.nodes || []).map((n) => n.id + " · " + n.title + " · " + n.status).join("\n"); }).catch((e) => { pd.textContent = "GAP " + e.message; });
+  } catch (e) {}
   const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   const avisa = (m) => { if (tell) tell(m); };
   let est = sanear(cargar()), rol = ROLES[0][0], destino = DESTINOS[0][0];

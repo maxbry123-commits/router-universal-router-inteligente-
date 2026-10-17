@@ -13,8 +13,8 @@
       "destination": "https://comand-center-1-riu-router.hf.space/health"
     },
     {
-      "source": "/yaiwes",
-      "destination": "/yaiwes/panel-01.html"
+      "source": "/yaiwes/",
+      "destination": "/yaiwes/index.html"
     },
     {
       "source": "/",
@@ -139,5 +139,12 @@
     }
   ],
   "buildCommand": "sh build.sh",
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "redirects": [
+    {
+      "source": "/yaiwes",
+      "destination": "/yaiwes/",
+      "permanent": false
+    }
+  ]
 }

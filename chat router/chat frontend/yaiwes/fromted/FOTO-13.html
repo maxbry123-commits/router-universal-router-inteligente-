@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; frame-src 'self' blob:;">
-<title>FOTO-07 · Motivo foto 07</title>
+<title>FOTO-13 · Motivo foto 13</title>
 <link rel="stylesheet" href="_shared/fromted.css">
-<script>window.FROMTED_LOCK={"id": "FOTO-07", "name": "Motivo foto 07", "view": "F007"};window.FROMTED_MANIFEST={"id": "FOTO-07", "in": ["FROMTED_THEME", "FROMTED_BACKEND_WIRE"], "out": ["FOTO-07.EVENT"]};</script>
+<script>window.FROMTED_LOCK={"id": "FOTO-13", "name": "Motivo foto 13", "view": "F013"};window.FROMTED_MANIFEST={"id": "FOTO-13", "in": ["FROMTED_THEME", "FROMTED_BACKEND_WIRE"], "out": ["FOTO-13.EVENT"]};</script>
 <script src="_shared/abs.js"></script>
 <script src="_shared/security.js"></script>
 <script src="_shared/connectors.js"></script>
 
 </head>
-<body data-id="FOTO-07">
+<body data-id="FOTO-13">
 <header class="top">
-  <div class="brand"><b>YAIWES</b><small>FOTO-07 · Motivo foto 07</small></div>
+  <div class="brand"><b>YAIWES</b><small>FOTO-13 · Motivo foto 13</small></div>
   <button type="button" data-abs="theme">Tema</button>
   <button type="button" data-abs="ping">Ping IO</button>
   <button type="button" class="cargar" data-abs="cargar">Cargar</button>
@@ -22,8 +22,8 @@
 </header>
 
 <main style="padding:12px">
-  <div class="card" id="stage" style="min-height:240px;background:#000 center/cover no-repeat;background-image:url('../01-original/FOTOS-REF/F043.png')">
-    <b>Memory adapter</b>
+  <div class="card" id="stage" style="min-height:240px;background:#000 center/cover no-repeat;background-image:url('../original/FOTOS-REF/F037.png')">
+    <b>Personalidad</b>
     <p>Layout referencia. Paleta FROMTED (no naranja HUD).</p>
   </div>
   <label><input type="checkbox" id="tr"> semi-transparente</label>
@@ -31,23 +31,23 @@
   <pre class="log" id="lg"></pre>
 </main>
 
-<footer class="foot"><span>FOTO-07</span><span id="st">ABS listo</span></footer>
+<footer class="foot"><span>FOTO-13</span><span id="st">ABS listo</span></footer>
 <script>
-ABS.register('FOTO-07.run', function(p){ return {ok:true, id:'FOTO-07'}; });
+ABS.register('FOTO-13.run', function(p){ return {ok:true, id:'FOTO-13'}; });
 ABS.register('theme', function(){ document.body.classList.toggle('blanco'); return {theme:document.body.className}; });
 ABS.register('ping', async function(){ const r=await FROMTED_IO.ping(); document.getElementById('st').textContent=JSON.stringify(r); return r; });
 ABS.register('cargar', function(){ document.getElementById('st').textContent='Cargar · ABS'; return {op:'cargar'}; });
 ABS.register('descargar', function(){
-  const blob=new Blob([JSON.stringify({id:'FOTO-07', at:Date.now()},null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='FOTO-07.json'; a.click();
+  const blob=new Blob([JSON.stringify({id:'FOTO-13', at:Date.now()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='FOTO-13.json'; a.click();
   return {op:'descargar'};
 });
 document.querySelectorAll('[data-abs]').forEach(function(b){ b.addEventListener('click', function(){ ABS.dispatch(b.getAttribute('data-abs')); }); });
 
 document.getElementById('use').onclick=function(){
-  localStorage.setItem('FROMTED_BG','F007.jpg');
-  ABS.dispatch('foto.bg',{file:'F007.jpg'});
-  document.getElementById('lg').textContent='fondo = F007.jpg';
+  localStorage.setItem('FROMTED_BG','F013.png');
+  ABS.dispatch('foto.bg',{file:'F013.png'});
+  document.getElementById('lg').textContent='fondo = F013.png';
 };
 document.getElementById('tr').onchange=function(){ document.getElementById('stage').style.opacity=this.checked?0.7:1; };
 

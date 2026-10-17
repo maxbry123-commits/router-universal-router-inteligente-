@@ -1194,6 +1194,35 @@ def _proyecto_anclados(pid):
     return ['proyecto:' + str(pid)[:48] + ':' + n for n in sorted(set(nom))[:12]]
 
 
+def proyecto_proceso(project_id, proceso_id, texto, origen):
+    # registra un proceso (chat_async) dentro del proyecto: la ventana del proyecto lo lista con su estado
+    try:
+        prj = ''.join(c for c in str(project_id or '') if c.isalnum() or c in '-_')[:48]
+        if not prj or not proceso_id:
+            return
+        mem, scope_for = _memoria()
+        mem.save(scope_for(DUENO, 'project:' + prj), 'proceso:' + str(proceso_id)[:40],
+                 {'_k': 'proceso:' + str(proceso_id)[:40], 'proceso_id': str(proceso_id), 'texto': str(texto or '')[:140], 'origen': origen, 'ts': time.time()})
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _estado_proceso(pid_, origen):
+    import sys as _s
+    try:
+        if origen == 'fichas_qwen':
+            m = _s.modules.get('plugins.fichas_qwen.plugin')
+            it = (getattr(m, '_PROCESOS', {}) or {}).get(pid_) if m else None
+        else:
+            it = (globals().get('_ASYNC_REQUESTS') or {}).get(pid_)
+        if not it:
+            return 'terminado'
+        f = it[0]
+        return 'cancelado' if f.cancelled() else 'terminado' if f.done() else 'corriendo' if f.running() else 'en cola'
+    except Exception:  # noqa: BLE001
+        return 'desconocido'
+
+
 def _proyecto_meta(pid):
     try:
         mem, scope_for = _memoria()
@@ -2569,7 +2598,13 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
                 meta = metas[0] if metas else {}
                 chats = sorted({str(d.get('sesion')) for d in (_dato(f) for f in _filas('chat:')) if isinstance(d, dict) and d.get('sesion') and not d.get('borrado')})
                 archivos = sorted({str(d.get('nombre')) for d in (_dato(f) for f in _filas('archivo:')) if isinstance(d, dict) and d.get('nombre')})
-                return {'ok': True, 'project_id': pid, 'proyecto': meta, 'chats': chats, 'archivos': archivos}
+                procs = {}
+                for d in (_dato(f) for f in _filas('proceso:', 100)):
+                    if isinstance(d, dict) and d.get('proceso_id'):
+                        procs[d['proceso_id']] = d
+                procesos = sorted(({'proceso_id': k, 'texto': v.get('texto', ''), 'origen': v.get('origen', ''), 'ts': v.get('ts'), 'estado': _estado_proceso(k, v.get('origen'))}
+                                   for k, v in procs.items()), key=lambda x: -float(x.get('ts') or 0))[:50]
+                return {'ok': True, 'project_id': pid, 'proyecto': meta, 'chats': chats, 'archivos': archivos, 'procesos': procesos}
             if op == 'upsert':
                 ahora = time.time()
                 prev = _buscar(idx_scope, 'proyecto:' + pid)
@@ -2778,6 +2813,9 @@ def handle(action, payload):
                 if len(_ASYNC_RID)>2000:
                     for k in list(_ASYNC_RID)[:500]: del _ASYNC_RID[k]
             p2 = dict(payload); p2['_pid'] = key; p2.setdefault('task_id', key)
+            if payload.get('project_id'):
+                _ms = payload.get('messages') or [{}]
+                proyecto_proceso(payload.get('project_id'), key, str((_ms[-1] or {}).get('content') or payload.get('message') or ''), 'puente_chat')
             _task_ck_guardar(key, {'estado': 'RUNNING', 'payload': p2})
             future=_ASYNC_POOL.submit(_task_run, key, p2)
             _ASYNC_REQUESTS[key]=(future,now)

@@ -311,8 +311,6 @@ function saveVersion(){
   try{const ls=localStorage.getItem("yaiwes-wall");if(ls){const p=JSON.parse(ls);if((p.v||0)>=(STATE.v||0)) Object.assign(STATE,p);}}catch(e){}
   render();
 })();
-</script>
-<script type="application/json" id="state">{"v":2,"mode":"file","ov":{},"notes":{},"extra":[],"sel":"WF.runner"}
 (function lockWall(){
   var L=window.FROMTED_LOCK||{};
   var s=L.view||'arbol';

@@ -1581,6 +1581,12 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
             _meta(clave, 'A0', '', 'en cola, esperando worker' + (' (rapida)' if _fast_q else ''))
             _prog(clave, 'A0', 'trabajando')  # En cola hasta que el worker toma la tarea; process_id != modelo corriendo
             _ck_guardar(clave, str(p.get('ficha_qwen') or ''), {}, payload=dict(p))  # persiste la tarea: sobrevive reinicio del Router
+            if p.get('project_id'):
+                try:
+                    _ms = p.get('messages') or [{}]
+                    _pc().proyecto_proceso(p.get('project_id'), clave, str((_ms[-1] or {}).get('content') or p.get('message') or ''), 'fichas_qwen')
+                except Exception:  # noqa: BLE001
+                    pass
             if _rid:
                 try:
                     _mem, _sf_ = _pc()._memoria()

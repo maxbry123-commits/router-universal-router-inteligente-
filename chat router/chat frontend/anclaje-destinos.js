@@ -3,12 +3,14 @@
 // handoffs, Mi handoff y archivos) se aplica a ese objetivo. Los archivos son compartidos. Sin elegir nada, es el chat de siempre.
 import { OBJETIVOS, crearObjetivo, listaWF, listaProyectos, crearProyecto, slugProy, proyId } from "./objetivos-ancla.js";
 import { el, boton, cargarCss } from "./ventanas-comun.js";
+import { montarProyectos, nuevoProyecto } from "./ventana-proyectos.js";
 export function montarDestinos({ root, q, tell }) {
   const caja = q("#ventana-ancla .va-caja"); if (!caja || caja.dataset.destinos) return; caja.dataset.destinos = "1";
   cargarCss("ventanas-comun");
   const fila = el("div", "vn-sec vn-destinos"), head = caja.querySelector(".va-head"), titulo = head && head.querySelector("strong"), base = titulo ? titulo.textContent : "Anclaje";
   if (head) head.after(fila); else caja.prepend(fila);
   let tipo = "chat", obj = null;
+  try { montarProyectos(root, { tell }); } catch (e) {}
   function fijar(t, id, refrescar) {
     if (t === "proyecto" && !id) { let l = listaProyectos(); if (!l.length) { crearProyecto("Proyecto 1"); l = listaProyectos(); } if (l.length) id = l[0].nombre; }  // misma regla que cambiar(): sin id, el primero existente o uno nuevo
     const nuevo = t === "chat" ? null : crearObjetivo(t, id);
@@ -30,6 +32,13 @@ export function montarDestinos({ root, q, tell }) {
     const bs = el("div", "vn-fila");
     OBJETIVOS.forEach(([id, nom]) => { const on = id === tipo, b = boton(nom, "toggle" + (on ? " on" : ""), () => cambiar(id)); b.setAttribute("aria-pressed", String(on)); bs.append(b); });
     fila.append(bs);
+    // encendido/apagado de CADA ancla, siempre visible en la hoja (la Constitución arranca apagada; solo viaja si está encendida)
+    const est = el("div", "vn-fila vn-encendidos"); est.append(el("div", "vn-t", "Encendido de cada ancla"));
+    const tog = (t, id, etq) => { const o = crearObjetivo(t, id); if (!o) return; const on = !!o.encendido, b = boton((on ? "● " : "○ ") + etq + (on ? " · encendida" : " · apagada"), "toggle" + (on ? " on" : ""), () => { o.encendido = !o.encendido; tell(etq + (o.encendido ? " encendida" : " apagada")); pintar(); }); b.dataset.ancla = t + (id ? ":" + id : ""); b.setAttribute("aria-pressed", String(on)); est.append(b); };
+    est.append(el("span", "vn-estado", "● Chat · siempre"));
+    tog("constitucion", undefined, "Constitución"); listaWF().forEach((w) => tog("workflows", w.id, "Workflow " + w.nombre)); tog("agentes", undefined, "Agentes remotos"); listaProyectos().forEach((p) => tog("proyecto", p.nombre, "Proyecto " + p.nombre)); tog("sandbox", undefined, "Sandbox");
+    est.append(boton("＋ Nuevo proyecto", "mini", () => { const n = nuevoProyecto(tell); if (n) fijar("proyecto", n); }), boton("Proyectos…", "mini", () => window.RIU_PROYECTOS_ABRIR && window.RIU_PROYECTOS_ABRIR()));
+    fila.append(est);
     if (tipo === "workflows" && obj) {
       const s = el("select", "vn-in"); s.setAttribute("aria-label", "Workflow");
       listaWF().forEach((w) => { const o = el("option", "", w.nombre); o.value = w.id; s.append(o); }); s.value = obj.id;
