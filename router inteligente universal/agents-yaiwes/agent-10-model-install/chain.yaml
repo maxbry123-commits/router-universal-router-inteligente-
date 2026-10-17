@@ -32,6 +32,7 @@ steps:
       - kind: contains
         values: ["own_server_launch", "own_server_main", "assert_machine_32gb_ram", "cpu-upgrade"]
       - kind: python_exec
+        timeout: 1800
         module: install_launch_test.py
         test: |
           import os
