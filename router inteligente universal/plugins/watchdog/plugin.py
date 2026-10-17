@@ -8,7 +8,7 @@ Que vigila en cada ronda (cada RIU_WATCHDOG_S, 60 s por defecto; 0 = sin hilo):
   4. agentes  plugins cuyo id contiene agent/orquest: health; si exponen 'reiniciar' se llama una vez por caida.
 Avisos: cambio de estado (cae / se recupera) -> alerta en RAM (200) + SQLite de memoria (scope chat-ui:watchdog); la campana del chat
 los lee con la accion 'alertas' {desde}. Un fallo repetido no se repite en la campana mas de una vez cada 10 min.
-Reinicio del Space: solo si RIU_WATCHDOG_RESTART_SPACE=1 y /health falla 3 rondas seguidas (POST HF /restart con HF_TOKEN).
+Reinicio del Space: /health falla 3 rondas seguidas -> POST HF /restart (HF_TOKEN), maximo 1 cada 30 min; RIU_WATCHDOG_RESTART_SPACE=0 lo apaga.
 """
 from __future__ import annotations
 
@@ -25,12 +25,14 @@ REPETIR_S = 600
 MAX_ALERTAS = 200
 CLAVE = ("puente_chat", "fichas_qwen", "deepseek_harness", "hf_storage", "secretos")
 AGENTE_RE = re.compile(r"agent|orquest")
+REINICIO_MIN_S = 1800  # maximo 1 reinicio del Space cada 30 min
 
 _lock = threading.RLock()
 _alertas: list[dict] = []
 _estado: dict[str, dict] = {}  # chequeo -> {ok, desde, ultimo_aviso, fallos, detalle}
 _ronda: dict[str, Any] = {"n": 0, "ultima": None, "ms": None, "resultado": None}
 _hilo: dict[str, Any] = {"t": None, "stop": None, "cada_s": None}
+_reinicio: dict[str, Any] = {"ultimo": None, "n": 0}
 _deps: dict[str, Any] = {}  # tests: set_deps(host=..., health=..., storage=..., mem=..., restart=...)
 
 
@@ -41,6 +43,7 @@ def set_deps(**kw: Any) -> None:
         _alertas.clear()
         _estado.clear()
         _ronda.update(n=0, ultima=None, ms=None, resultado=None)
+        _reinicio.update(ultimo=None, n=0)
 
 
 # ---- dependencias reales (inyectables) -----------------------------------------------------------------------------
@@ -125,8 +128,6 @@ def _marcar(chequeo: str, ok: bool, detalle: str, accion: str | None = None) -> 
               "desde": prev["desde"] if prev and prev["ok"] == ok else ahora,
               "fallos": 0 if ok else (prev.get("fallos", 0) + 1 if prev else 1),
               "ultimo_aviso": prev.get("ultimo_aviso") if prev else None}
-        if not ok and prev and prev.get("reiniciado"):
-            st["reiniciado"] = True
         _estado[chequeo] = st
     if not ok and (prev is None or prev["ok"] or ahora - float(prev.get("ultimo_aviso") or 0) >= REPETIR_S):
         _avisar("error", chequeo, "Watchdog: %s caído (%s)" % (chequeo, detalle), accion)
@@ -140,18 +141,27 @@ def _marcar(chequeo: str, ok: bool, detalle: str, accion: str | None = None) -> 
 
 
 # ---- chequeos ----------------------------------------------------------------------------------------------------
+def _reinicio_permitido() -> bool:
+    """Por defecto SI (Director 2026-10-16); RIU_WATCHDOG_RESTART_SPACE=0 lo apaga. Maximo 1 reinicio cada REINICIO_MIN_S."""
+    if os.getenv("RIU_WATCHDOG_RESTART_SPACE", "1") == "0":
+        return False
+    return time.time() - float(_reinicio["ultimo"] or 0) >= REINICIO_MIN_S
+
+
 def _chk_health() -> dict:
     ok, det = _health_http()
     accion = None
     prev = _estado.get("health") or {}
-    if not ok and prev.get("fallos", 0) + 1 >= 3 and os.getenv("RIU_WATCHDOG_RESTART_SPACE") == "1" and not prev.get("reiniciado"):
+    if not ok and prev.get("fallos", 0) + 1 >= 3 and _reinicio_permitido():  # 3 fallas seguidas de /health
+        _reinicio["ultimo"] = time.time()
         try:
             accion = "reinicio del Space pedido: " + _restart_space()
+            _reinicio["n"] += 1
         except Exception as exc:  # noqa: BLE001
             accion = "reinicio del Space fallo: " + type(exc).__name__
     st = _marcar("health", ok, det, accion)
-    if accion:
-        st["reiniciado"] = True
+    if accion and not ok:
+        st["fallos"] = 0  # tras pedir el reinicio se vuelven a contar 3 fallas
     return st
 
 
@@ -295,7 +305,7 @@ def handle(action: str, payload: dict[str, Any] | None = None) -> dict[str, Any]
         if action == "status":
             with _lock:
                 vivo = _hilo["t"] is not None and _hilo["t"].is_alive()
-                return {"ok": True, "hilo": vivo, "cada_s": _hilo["cada_s"], "ronda": dict(_ronda),
+                return {"ok": True, "hilo": vivo, "cada_s": _hilo["cada_s"], "ronda": dict(_ronda), "reinicios_space": dict(_reinicio),
                         "caidos": sorted(k for k, v in _estado.items() if not v["ok"]), "alertas": len(_alertas)}
         if action == "revisar":
             return revisar()

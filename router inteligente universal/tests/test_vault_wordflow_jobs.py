@@ -34,6 +34,32 @@ SECRETS = {"nvidia/uno": "nvapi-TEST-SECRET-UNO", "nvidia/dos": "nvapi-TEST-SECR
 NAMES = ("NVIDIA_API_KEY", "NVIDIA_API_KEY_1", "NVIDIA_API_KEY_2", "NVIDIA_API_KEY_3", "NVIDIA_API_KEY_4", "NVIDIA_API_KEY_5", "HF_TOKEN", "HF_TOKEN_1", "RIU_GITHUB_ACCOUNTS")
 
 
+def _huella(v):
+    """Nunca un valor: solo largo y sha256 corto, para que un fallo no imprima ninguna parte de una clave."""
+    import hashlib
+    if isinstance(v, (list, tuple)):
+        return [_huella(x) for x in v]
+    if v is None:
+        return None
+    return "len=%d sha=%s" % (len(str(v)), hashlib.sha256(str(v).encode()).hexdigest()[:8])
+
+
+def _igual(actual, esperado):
+    if actual != esperado:  # sin assert de pytest: su informe mostraria los valores
+        raise AssertionError("claves distintas: %s != %s" % (_huella(actual), _huella(esperado)))
+
+
+@pytest.fixture(autouse=True)
+def _sin_bancos_reales(monkeypatch):
+    """Aisla el pool de claves: ni el banco unico real (FICHA_CLAVE_BANCO) ni los secretos del chat entran a estos tests."""
+    from integration.chat_mvp import vault_hook
+    for n in ("FICHA_CLAVE_BANCO", "RIU_VAULT_PASSPHRASE"):
+        monkeypatch.delenv(n, raising=False)
+    monkeypatch.setattr(vault_hook, "_SELLO", None)
+    monkeypatch.setattr(vault_hook, "_banco_unico", lambda provider: [])
+    monkeypatch.setattr(vault_hook, "_secretos_chat", lambda provider: [], raising=False)
+
+
 @pytest.fixture
 def bank(tmp_path, monkeypatch):
     for n in NAMES:
@@ -57,22 +83,26 @@ def bank(tmp_path, monkeypatch):
 
 def test_unlock_puts_bank_keys_first_in_the_pool_and_lock_removes_them(bank, monkeypatch):
     monkeypatch.setenv("NVIDIA_API_KEY_1", "env-key")
-    assert prov.env_keys("nvidia") == ["env-key"]
+    _igual(prov.env_keys("nvidia"), ["env-key"])
     assert bank.unlock(PASS) == 4
     keys = prov.env_keys("nvidia")
-    assert keys[:2] == ["nvapi-TEST-SECRET-UNO", "nvapi-TEST-SECRET-DOS"] and keys[-1] == "env-key"
-    assert prov.resolve_key("hf") == "hf_TEST_SECRET"
-    assert core.key_pool("nvidia", keys[0]) == keys
+    _igual(keys[:2], ["nvapi-TEST-SECRET-UNO", "nvapi-TEST-SECRET-DOS"])
+    _igual(keys[-1:], ["env-key"])
+    _igual(prov.resolve_key("hf"), "hf_TEST_SECRET")
+    _igual(core.key_pool("nvidia", keys[0]), keys)
     bank.lock()
-    assert prov.env_keys("nvidia") == ["env-key"] and prov.resolve_key("hf") is None
+    _igual(prov.env_keys("nvidia"), ["env-key"])
+    _igual(prov.resolve_key("hf"), None)
 
 
 def test_github_tokens_reach_the_account_selector_only_while_unlocked(bank):
     assert "planeta123" not in gh.accounts_from_env()
     bank.unlock(PASS)
-    assert gh.accounts_from_env()["planeta123"] and gh.token_for("planeta123") == "ghp_TEST_SECRET_PLANETA"
+    assert gh.accounts_from_env()["planeta123"]
+    _igual(gh.token_for("planeta123"), "ghp_TEST_SECRET_PLANETA")
     bank.lock()
-    assert "planeta123" not in gh.accounts_from_env() and gh.token_for("planeta123") is None
+    assert "planeta123" not in gh.accounts_from_env()
+    _igual(gh.token_for("planeta123"), None)
 
 
 def test_wrong_passphrase_lockout_and_status_never_returns_values(bank):
@@ -90,9 +120,10 @@ def test_wrong_passphrase_lockout_and_status_never_returns_values(bank):
 def test_unlock_expires_by_ttl(bank, monkeypatch):
     monkeypatch.setenv("RIU_VAULT_TTL", "0.05")
     bank.unlock(PASS)
-    assert prov.env_keys("nvidia")
+    assert len(prov.env_keys("nvidia")) > 0
     time.sleep(0.1)
-    assert bank.status()["unlocked"] is False and prov.env_keys("nvidia") == []
+    assert bank.status()["unlocked"] is False
+    _igual(prov.env_keys("nvidia"), [])
 
 
 def test_import_only_when_missing_and_only_sqlite(tmp_path, monkeypatch):
