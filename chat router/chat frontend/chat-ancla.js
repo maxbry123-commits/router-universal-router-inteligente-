@@ -14,17 +14,29 @@ const idbEscribir = async (k, v) => { try { const d = await idb(); await new Pro
 const cache = (sesion) => { const t = leer(CLAVE_HIST) || {}; return Array.isArray(t[sesion]) ? t[sesion] : []; };
 export const cargarHistorial = (sesion) => memo[sesion] || cache(sesion);
 const guardar = (sesion) => { idbEscribir(sesion, memo[sesion]); const t = leer(CLAVE_HIST) || {}; t[sesion] = memo[sesion].slice(-40); escribir(CLAVE_HIST, t); };
+// ---- respaldo en el Router: cada mensaje COMPLETO (user/bot/err, sin recorte) va a /memoria (SQLite + sync al bucket); si falla, queda en cola y se reintenta ----
+let API = null; const CLAVE_PEND = "riu_hist_pend_v1", SC_HIST = "chat-ui:hist:", SC_TABS = "chat-ui:pestanas";
+const pend = () => leer(CLAVE_PEND) || [];
+let vaciando = false;
+const vaciar = async () => {
+  if (!API || vaciando) return; vaciando = true;
+  try { let l = pend(); while (l.length) { try { await API("/memoria/save", { method: "POST", body: l[0] }); } catch (e) { break; } l = pend(); l.shift(); escribir(CLAVE_PEND, l); } } finally { vaciando = false; }
+};
+const subir = (scope, key, data) => { const l = pend(); l.push({ scope, key, data }); escribir(CLAVE_PEND, l); vaciar(); };
+const subirMsg = (sesion, m) => subir((SC_HIST + sesion).slice(0, 80), "m-" + m.ts + "-" + m.rol, m);
+export const conectarRespaldo = (api) => { API = api; vaciar(); try { addEventListener("online", vaciar); } catch (e) {} };
 export const registrar = (sesion, rol, texto) => {
   if (!memo[sesion]) memo[sesion] = cache(sesion).slice();
-  memo[sesion].push({ rol, texto: String(texto == null ? "" : texto), ts: Date.now() });
-  guardar(sesion);
+  const m = { rol, texto: String(texto == null ? "" : texto), ts: Date.now() };
+  memo[sesion].push(m);
+  guardar(sesion); subirMsg(sesion, m);
 };
 export const reemplazar = (sesion, viejo, nuevo) => {  // editar una salida SUSTITUYE la anterior (sin duplicados)
   const l = memo[sesion] || (memo[sesion] = cache(sesion).slice());
-  for (let i = l.length - 1; i >= 0; i--) if (l[i].rol !== "user" && l[i].texto === viejo) { l[i].texto = nuevo; guardar(sesion); return true; }
+  for (let i = l.length - 1; i >= 0; i--) if (l[i].rol !== "user" && l[i].texto === viejo) { l[i].texto = nuevo; guardar(sesion); subirMsg(sesion, l[i]); return true; }  // misma llave: el registro más nuevo manda
   return false;
 };
-export const olvidar = (sesion) => { delete memo[sesion]; idbEscribir(sesion, null); const t = leer(CLAVE_HIST) || {}; delete t[sesion]; escribir(CLAVE_HIST, t); };  // solo al eliminar ese chat
+export const olvidar = (sesion) => { marcarBorrado(sesion); delete memo[sesion]; idbEscribir(sesion, null); const t = leer(CLAVE_HIST) || {}; delete t[sesion]; escribir(CLAVE_HIST, t); };  // solo al eliminar ese chat
 // vuelve a pintar el historial completo en el chat c (c.hist = contenedor). burbuja = la funcion de panel-chat.js
 export const restaurar = async (c, burbuja) => {
   const completo = await idbLeer(c.sesion), corto = cache(c.sesion), ult0 = completo.length ? completo[completo.length - 1].ts : 0;
@@ -35,11 +47,40 @@ export const restaurar = async (c, burbuja) => {
   if (ult.rol === "user" && !(window.RIU_PENDIENTE && window.RIU_PENDIENTE(c.sesion))) c.hist.append(burbuja("La respuesta se interrumpió al recargar la página. Reenvía tu mensaje si hace falta.", "meta"));
 };
 
+// ---- pestañas: la lista (sesion, nombre, orden) y los chats borrados se respaldan en /memoria; antes de escribir se mezcla con lo remoto, así un navegador vacío no pisa el respaldo ----
+let REM = null, remP = null, ultTabs = "";
+const ultimo = (r) => { const rs = (r && r.records) || []; return rs.length ? rs.reduce((a, b) => (b.id > a.id ? b : a)).data : null; };
+const tabsRemotas = () => { if (!remP) remP = (async () => { try { REM = ultimo(await API("/memoria/load?scope=" + encodeURIComponent(SC_TABS) + "&key=lista")) || { chats: [], borrados: [] }; } catch (e) { remP = null; return null; } return REM; })(); return remP; };
+export const respaldarPestanas = async (lista) => {  // lista: [{ sesion, ... }] en orden de pestañas
+  if (!API) return; const r = await tabsRemotas(); if (!r) return;
+  const borr = new Set([...(r.borrados || []), ...(leer("riu_borrados_v1") || [])]);
+  const loc = lista.filter((c) => !borr.has(c.sesion)).map((c, i) => Object.assign({}, c, { nombre: "Chat " + (i + 1), orden: i }));
+  const ya = new Set(loc.map((c) => c.sesion));
+  const chats = loc.concat((r.chats || []).filter((c) => !ya.has(c.sesion) && !borr.has(c.sesion)));  // las que solo están en el respaldo se conservan (para ↺)
+  const data = { chats, borrados: [...borr] }, j = JSON.stringify(data);
+  if (j === ultTabs) return; ultTabs = j; REM = data; subir(SC_TABS, "lista", Object.assign({ ts: Date.now() }, data));
+};
+export const marcarBorrado = (sesion) => { const b = leer("riu_borrados_v1") || []; if (!b.includes(sesion)) { b.push(sesion); escribir("riu_borrados_v1", b); } if (REM) REM.borrados = [...new Set([...(REM.borrados || []), sesion])]; };
+export const pestanasPerdidas = async (activas) => {  // del respaldo remoto + IndexedDB: chats no borrados que no están abiertos, en su orden
+  remP = null; const r = (await tabsRemotas()) || { chats: [], borrados: [] }, borr = new Set([...(r.borrados || []), ...(leer("riu_borrados_v1") || [])]);
+  const out = (r.chats || []).filter((c) => !activas.includes(c.sesion) && !borr.has(c.sesion));
+  for (const k of await huerfanas(activas)) if (!borr.has(k) && !out.some((c) => c.sesion === k)) out.push({ sesion: k });
+  return out;
+};
+
 // ---- recuperar: une la copia local (IndexedDB + cache) con la memoria del Router (/memoria SQLite, sincronizada al bucket) y repinta ----
 const idbClaves = async () => { try { const d = await idb(); return await new Promise((ok) => { const q = d.transaction("h").objectStore("h").getAllKeys(); q.onsuccess = () => ok(q.result || []); q.onerror = () => ok([]); }); } catch (e) { return []; } };
 export const huerfanas = async (activas) => { const out = []; for (const k of await idbClaves()) if (typeof k === "string" && !activas.includes(k) && (await idbLeer(k)).length) out.push(k); return out; };  // chats con historial cuya pestaña se perdió (borrar un chat lo quita de IndexedDB)
 const limpiar = (t) => { let s = String(t || ""); const f = s.lastIndexOf("[FIN INSTRUCCIONES FIJAS]"); if (f >= 0) s = s.slice(f + 25).replace(/\n\n\[ANTES DE RESPONDER:[\s\S]*$/, ""); const p = s.lastIndexOf("\nPREGUNTA:\n"); if (p >= 0) s = s.slice(p + 11); return s.trim(); };  // el Router guarda la pregunta con envoltorios
+const delRespaldo = async (api, sesion) => {
+  try {
+    const r = await api("/memoria/search?scope=" + encodeURIComponent((SC_HIST + sesion).slice(0, 80)) + "&query=&k=100000"), m = new Map();
+    for (const f of (r && r.results && r.results.sqlite) || []) if (f.data && f.data.ts && (!m.has(f.key) || f.id > m.get(f.key).id)) m.set(f.key, f);  // por llave, el registro más nuevo (ediciones)
+    return [...m.values()].map((f) => ({ rol: f.data.rol, texto: String(f.data.texto == null ? "" : f.data.texto), ts: f.data.ts }));
+  } catch (e) { return null; }
+};
 const delRouter = async (api, sesion) => {
+  const comp = await delRespaldo(api, sesion); if (comp && comp.length) return comp;
   try {
     const r = await api("/memoria/search?scope=" + encodeURIComponent("chat-ui:chat:" + sesion) + "&query=&k=500");
     const out = [];
