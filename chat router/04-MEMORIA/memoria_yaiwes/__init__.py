@@ -112,12 +112,20 @@ class GraphSQLiteAdapter:
         return {"adapter": self.name, "id": node_id}
 
     def load(self, scope: str, key: str) -> list[dict[str, Any]]:
+        # consulta directa por id: graph_view() solo ve las ultimas 200 aristas y perdia las memorias antiguas
         needle = f"memory:{scope}:{key}"
-        return [node for node in self.store.graph_view().get("nodes", []) if node.get("id") == needle]
+        return self.store._all("SELECT id,kind,label FROM graph_nodes WHERE id=?", (needle,))
 
     def search(self, scope: str, query: str, k: int = 10) -> list[dict[str, Any]]:
+        # filtra por scope y busca en clave y datos de TODO el grafo (antes: solo ~20 nodos recientes, sin scope ni datos)
         q = str(query).lower()
-        return [node for node in self.store.graph_view(limit=max(k, 10)).get("nodes", []) if q in str(node.get("label", "")).lower()][:k]
+        pre = f"memory:{scope}:"
+        if not q:
+            return []
+        rows = self.store._all("SELECT id,kind,label,props FROM graph_nodes WHERE kind='memory' AND substr(id,1,?)=? "
+                               "AND (instr(lower(label),?)>0 OR instr(lower(props),?)>0) ORDER BY created_at DESC LIMIT ?",
+                               (len(pre), pre, q, q, max(1, int(k))))
+        return [{"id": r["id"], "kind": r["kind"], "label": r["label"]} for r in rows]
 
 
 class ComponentAdapter:
@@ -313,7 +321,7 @@ class QdrantLocalAdapter(ComponentAdapter):
 
 
 def _solo_sqlite(scope: str, key: str) -> bool:
-    return ":gov:" in scope or ":snapanc:" in scope or key in ("gov-registro", "snapshot-anclados") or str(key).startswith("archivo:")  # archivo subido: solo SQLite hasta que el usuario lo ancle
+    return ":gov:" in scope or ":snapanc:" in scope or key in ("gov-registro", "snapshot-anclados") or str(key).startswith(("archivo:", "borrado:"))  # borrado: marca de papelera, sin contenido; archivo subido: solo SQLite hasta que el usuario lo ancle
 
 
 class MemoryFacade:

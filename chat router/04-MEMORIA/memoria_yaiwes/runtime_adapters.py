@@ -160,7 +160,9 @@ class GraphitiAdapter(_Base):
             return {"status": "GAP_LLM", "reason": "la ficha aun no entrego su modelo"}
         if self._embed_fn is None:
             return {"status": "GAP_EMBEDDER"}
-        return {"status": self._err or "CONNECTED", "backend": "falkordblite", "db": str(self.db_path()),
+        # un fallo de escritura (p. ej. GAP_FICHA4_HTTP) se reporta en last_error pero NO apaga el adaptador:
+        # antes quedaba en GAP hasta reiniciar y el anclaje (T2/T2B) dejaba de escribir en Graphiti
+        return {"status": "CONNECTED", "backend": "falkordblite", "db": str(self.db_path()), "last_error": self._err,
                 "embedding": {"dim": EMBED_DIM, "semantic": False, "source": "QdrantLocalAdapter.embed"},
                 "e2e_verified": self._verified}
 
@@ -201,6 +203,7 @@ class GraphitiAdapter(_Base):
             self._run(self._graph().add_episode(name=f"{scope}:{key}", episode_body=body, source_description="yaiwes-memory",
                                                 reference_time=datetime.now(timezone.utc), source=EpisodeType.json,
                                                 group_id=self._gid(scope)))
+            self._err = None
             return {"adapter": self.name, "status": "SAVED"}
         except Exception as exc:  # noqa: BLE001 - SQLite ya guardo; Graphiti nunca tumba el chat
             m = str(exc)
