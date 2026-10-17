@@ -594,7 +594,7 @@ export async function mount(root, { api, tell }) {
       else if (answer.execution_path === "FAST_CONSULT") c.hist.append(node("div", "⚡ cónsil rápido · " + answer.ms + " ms", "item meta"));
       else if (c.fastReply && FAST_SEL() && answer.execution_path === "HEAVY") c.hist.append(node("div", "Respuesta rápida omitida: la tarea requiere flujo completo", "item meta"));
       if (answer.tools && answer.tools.length) { const meta = node("div", "Herramientas usadas: ", "item message meta"); answer.tools.forEach((t, i) => { const ok = typeof t === "string" || t.ok; const s = document.createElement("span"); s.textContent = (typeof t === "string" ? t : t.nombre) + (ok ? "" : " (fallo)"); if (!ok) s.className = "tool-fail"; if (i) meta.append(", "); meta.append(s); }); c.hist.append(meta); }
-      if (answer.job_id) { window.__riuJob = answer.job_id; q('#apagar-respaldo').hidden = false; }
+      if (answer.job_id) { window.__riuJob = answer.job_id; const ar = q('#apagar-respaldo'); if (ar) ar.hidden = false; }
       abajo(c);
     } catch (error) {
       pending.remove();
@@ -615,27 +615,5 @@ export async function mount(root, { api, tell }) {
     }
   });
 
-  // ---- control: toggles de encender/apagar ----
-  const llamarControl = async (accion) => { try { await api(`/control/${accion}`, { method: "POST" }); tell(accion + ": ejecutado"); return true; } catch (error) { tell(error.message); return false; } };
-  q("#tg-agentes").addEventListener("click", async (e) => {
-    const b = e.currentTarget;
-    if (await llamarControl(b.classList.contains("on") ? "pause-agents" : "resume-agents")) b.classList.toggle("on");
-  });
-  q("#tg-router").addEventListener("click", async (e) => {
-    const b = e.currentTarget;
-    if (await llamarControl(b.classList.contains("on") ? "emergency-stop" : "resume-router")) b.classList.toggle("on");
-  });
-  root.querySelectorAll("[data-control]").forEach(button => button.addEventListener("click", async () => {
-    await llamarControl(button.dataset.control);
-  }));
-  q('#apagar-respaldo').addEventListener('click', async (e) => {
-    const b = e.currentTarget;
-    if (b.classList.contains("on")) { b.classList.remove("on"); tell("El respaldo se enciende al elegir un modelo HF"); return; }
-    // el boton siempre apaga todos los servidores de respaldo, haya o no uno encendido desde esta pantalla
-    try {
-      const r = await window.RIU_APAGAR();
-      tell(r.ok ? 'Respaldo apagado (' + ((r.p && r.p.apagados) || 0) + ' servidor(es) apagados)' : 'No se pudo apagar (HTTP ' + r.status + ')');
-      if (r.ok) { window.__riuJob = null; }
-    } catch (error) { tell(error.message); }
-  });
+
 }

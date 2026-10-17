@@ -33,7 +33,7 @@ const sanear = (o) => {  // solo valores conocidos y validos (importar / datos r
   return r;
 };
 
-export async function mount(root, { tell } = {}) {
+export async function mount(root, { api, tell } = {}) {
   const q = (s) => root.querySelector(s);
   try {  // 13 · YAIWES: SKILLS-REGISTRY y PLAN-DAG listados desde la fabrica servida en /yaiwes/
     const j = (u) => fetch(u, { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
@@ -144,4 +144,28 @@ export async function mount(root, { tell } = {}) {
   const pintarTodo = () => { pintarTemas(); pintarSenal(); pintarPresets(); pintarRoles(); pintarEstudio(); pintarDestinos(); pintarIconos(); pintarAvisos(); if (extra) extra.pintar(); };
   extra = montarExtra(root, { est: () => est, guardar, avisa });
   pintarTodo();
+  // Control (antes en el chat): Agentes, Router/Emergencia, Respaldo
+  if (api) {
+    const llamarControl = async (accion) => { try { await api(`/control/${accion}`, { method: "POST" }); avisa(accion + ": ejecutado"); return true; } catch (error) { avisa(error.message); return false; } };
+    const tgA = q("#tg-agentes");
+    if (tgA) tgA.addEventListener("click", async (e) => {
+      const b = e.currentTarget;
+      if (await llamarControl(b.classList.contains("on") ? "pause-agents" : "resume-agents")) b.classList.toggle("on");
+    });
+    const tgR = q("#tg-router");
+    if (tgR) tgR.addEventListener("click", async (e) => {
+      const b = e.currentTarget;
+      if (await llamarControl(b.classList.contains("on") ? "emergency-stop" : "resume-router")) b.classList.toggle("on");
+    });
+    const ar = q("#apagar-respaldo");
+    if (ar) ar.addEventListener("click", async (e) => {
+      const b = e.currentTarget;
+      if (b.classList.contains("on")) { b.classList.remove("on"); avisa("El respaldo se enciende al elegir un modelo HF"); return; }
+      try {
+        const r = await window.RIU_APAGAR();
+        avisa(r.ok ? "Respaldo apagado (" + ((r.p && r.p.apagados) || 0) + " servidor(es) apagados)" : "No se pudo apagar (HTTP " + r.status + ")");
+        if (r.ok) window.__riuJob = null;
+      } catch (error) { avisa(error.message); }
+    });
+  }
 }

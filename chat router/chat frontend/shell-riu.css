@@ -43,3 +43,10 @@
 /* la configuracion de la UI vive en su panel (Configuracion): el selector de tema sale de la barra del chat */
 .access label[for="theme"]{display:none}
 .riu-estado{display:flex;align-items:center;justify-content:center;gap:6px;flex:1 1 100%}
+
+/* topbar sin tarjeta: solo estado (+ campana si no hay slot móvil) */
+.topbar.topbar-slim{padding:8px 16px;min-height:0}
+.topbar.topbar-slim .access{gap:8px}
+@media (max-width:720px){
+  .workspace > .topbar.topbar-slim{display:none}
+}

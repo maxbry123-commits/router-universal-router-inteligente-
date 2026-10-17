@@ -22,7 +22,7 @@ function aplicarMovil() {
   if (mmMovil.matches) {  // reubicar los nodos EXISTENTES (no clonarlos): listeners y show(view) siguen intactos
     mvBar.hidden = false;
     if (nav) document.querySelector("#mv-nav").appendChild(nav);
-    if (topbar) document.querySelector("#mv-top").appendChild(topbar);
+    // topbar ya no va a mv-top: la tarjeta Chat/Reintentar/Router repetido salió del chat; campana en #campana-slot
     if (ctlInt) document.querySelector("#mv-ctl").appendChild(ctlInt);  // Controles entero: h1, chats, pills, selectores
     const h1 = document.querySelector("#panel h1");  // h1 de otras vistas (el del chat viaja dentro de ctl-int)
     if (h1) { h1._mvHome = h1.parentNode; h1._mvNext = h1.nextSibling; document.querySelector("#mv-title").appendChild(h1); }
@@ -45,7 +45,7 @@ const notice = document.querySelector("#notice");
 const tell = message => { notice.textContent = message || ""; };
 let cleanup;
 const connection = document.querySelector("#connection");
-document.querySelector("#connect").addEventListener("click", () => window.location.reload());
+const connectBtn = document.querySelector("#connect"); if (connectBtn) connectBtn.addEventListener("click", () => window.location.reload());
 window.addEventListener("router-connection", event => {
   connection.textContent = event.detail;
   mvStatus.textContent = "· " + (event.detail || "Router");

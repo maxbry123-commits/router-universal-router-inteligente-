@@ -11,14 +11,21 @@ const seguro = (f, ...a) => { try { f(...a); } catch (e) { console.warn("riu2:",
 
 // ---------- GLOBAL (una sola vez): campana de avisos (RUI 14), nav con indicador/rebote/proximidad (RUI 17, 02, 05), sin conexion ----------
 function campana() {
-  const acceso = $(".access"), aviso = $("#notice");
-  if (window.__riuCampana || !acceso || !aviso) return;
+  const aviso = $("#notice");
+  if (window.__riuCampana || !aviso) return;
   window.__riuCampana = true;
   const lista = leer("riu_avisos_v1", []);
   const b = crear("button", "riu-campana"); b.type = "button"; b.title = "Avisos"; b.setAttribute("aria-label", "Avisos"); b.setAttribute("aria-expanded", "false");
   b.innerHTML = SVG('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>', 20);
   const ins = crear("span", "riu-insignia"); ins.hidden = true; b.append(ins);
-  acceso.prepend(b);
+  const colocar = () => {
+    const bar = $("#movil-bar"), slot = $("#campana-slot"), acceso = $(".access");
+    const destino = (bar && !bar.hidden && slot) ? slot : (acceso || slot);
+    if (!destino) return;
+    if (destino === slot) slot.replaceChildren(b); else if (b.parentNode !== destino) destino.prepend(b);
+  };
+  colocar();
+  try { matchMedia("(max-width:720px)").addEventListener("change", colocar); } catch (e) {}
   const panel = crear("div", "riu-avisos"); panel.hidden = true; panel.setAttribute("role", "dialog"); panel.setAttribute("aria-label", "Avisos");
   document.body.append(panel);
   let nuevos = 0;
