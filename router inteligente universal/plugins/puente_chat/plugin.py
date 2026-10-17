@@ -764,6 +764,8 @@ def _es_mutacion(nom, args):
         return acc not in ('listar', 'leer')
     if nom in ('github_api', 'hf_api'):
         return met not in ('GET', 'HEAD')  # GET y HEAD solo leen (el catalogo READ ya anuncia GET/HEAD)
+    if nom in ('notas', 'pendientes', 'chat_bots', 'crear_agente'):  # t172u: escrituras de notas/pendientes/Chat BOTS (lecturas siguen libres)
+        return nom == 'crear_agente' or acc in ('guardar', 'organizar', 'prompt_guardar', 'crear', 'enviar', 'mirror', 'aprobar', 'vigilar')
     return False
 
 
@@ -2589,6 +2591,11 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
                      str(payload.get('nombre') or ''), str(payload.get('texto') or ''))
     if action == 'auditor_code':  # motor auditor de code: ubica los archivos de code del repo
         return _auditor_code(str(payload.get('filtro') or ''))
+    if action in ('notas', 'pendientes', 'room_debatir', 'chat_bots'):  # t175u-t177u: bloc de notas, panel de pendientes (DAG), ROOM y Chat BOTS por el mismo Harness (herramientas.py)
+        try:
+            return _herr().http_accion(action, payload)
+        except Exception as x:  # noqa: BLE001
+            return {'error': action.upper() + '_FALLO', 'detalle': str(x)[:200]}
     if action == 'handoff':  # selector de ancla: handoff JSON para anclar al input
         return _handoff(str(payload.get('fuente') or 'chat-router'))
     if action == 'handoff_texto':  # mi handoff: texto del usuario guardado/editable por sesion
