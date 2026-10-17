@@ -44,6 +44,7 @@ Registro de lo que Antonio pidió sobre Chat BOTS y ROOM. Añade una fila por in
 | 17-oct-2026 (hora por confirmar) | «Todos participan» en ROOM | Orden al agente de docs |
 | 17-oct-2026 (hora por confirmar) | Escribir sin esperar en Chat / ROOM / Chat BOTS | Orden al agente de docs |
 | 17-oct-2026 00:35 | Esta documentación (docs a main por aprobación permanente) | Orden al agente de docs |
+| 17-oct-2026 00:40 | Descargar Agent Zero, OpenManus, OpenHands, Agent-S y Browser Use (solo carpetas útiles) e inventariarlos: **el agente backend debe esperar esta descarga y reciclar componentes antes de escribir código** ([`COMPONENTES-OPENSOURCE.md`](COMPONENTES-OPENSOURCE.md)) | Orden al agente de descarga |
 
 ## PROGRESO
 
@@ -60,6 +61,7 @@ Registro de lo que Antonio pidió sobre Chat BOTS y ROOM. Añade una fila por in
 | 17-oct-2026 (hora por confirmar) | `feat/escribir-sin-esperar`, `wip/room-escribir-sin-esperar` | Escribir sin esperar en Chat / ROOM / Chat BOTS | en curso | Ramas locales; Chat BOTS: por confirmar |
 | 17-oct-2026 00:13 | `wip/room-conferencias-rebase2` (`a014c943c0`) | ROOM CONFERENCIAS + A−/A+ | probado 412 px headless | 2×1 = 9 s 249 ms; 3×2 = 72 s 703 ms; recarga conserva historial; Chat 1 OK. Android real: por confirmar |
 | 17-oct-2026 00:35 | docs / `docs/chatbots-handoff` | Documentación HANDOFF/CHATBOTS | en main | Este archivo |
+| 17-oct-2026 00:40 | descarga / `docs/componentes-os` | Descarga + inventario de componentes open source (Agent Zero, OpenManus, OpenHands, Agent-S, Browser Use) | en main | [`COMPONENTES-OPENSOURCE.md`](COMPONENTES-OPENSOURCE.md); código en el box `/workspace/componentes-os/` (32 MB, no va al repo) |
 
 ## Cómo retomar
 
