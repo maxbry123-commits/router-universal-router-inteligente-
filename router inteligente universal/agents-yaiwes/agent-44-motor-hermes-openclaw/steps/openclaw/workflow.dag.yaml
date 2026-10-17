@@ -42,6 +42,6 @@ checks:
       universal
     PUBLISH: '1'
     SOURCE_REPO: openclaw/openclaw
-    SOURCE_REF: v2026.9.6
-    SLUG: openclaw-v2026.9.6
+    SOURCE_REF: v2026.10.4
+    SLUG: openclaw-v2026.10.4
 - kind: no_secrets

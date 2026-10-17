@@ -37,6 +37,6 @@ checks:
       universal
     PUBLISH: '1'
     SOURCE_REPO: NousResearch/hermes-agent
-    SOURCE_REF: v2026.9.24
-    SLUG: hermes-agent-v2026.9.24
+    SOURCE_REF: v0.22.2
+    SLUG: hermes-agent-v0.22.2
 - kind: no_secrets

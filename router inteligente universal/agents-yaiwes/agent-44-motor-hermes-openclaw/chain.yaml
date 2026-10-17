@@ -1,7 +1,7 @@
 schema: yaiwes.chain/v1
 input_block: |
   DIRECTOR 2026-09-26: revisa que OpenClaw y Hermes sean las últimas versiones; si no, descárgalos de nuevo y sustituye.
-  Últimas verificadas: Hermes Agent v2026.9.24 (v0.21.5, NousResearch/hermes-agent) y OpenClaw v2026.9.6 (openclaw/openclaw).
+  Últimas verificadas: Hermes Agent v0.22.2 (NousResearch/hermes-agent) y OpenClaw v2026.10.4 (openclaw/openclaw).
 agent:
   id: agent-44-motor-hermes-openclaw
   framework: pocketflow
@@ -19,12 +19,12 @@ steps:
     task: Responde exactamente MOTOR_EXEC_REQUEST_HERMES.
     checks:
       - {kind: contains, values: [MOTOR_EXEC_REQUEST_HERMES]}
-      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "NousResearch/hermes-agent", SOURCE_REF: "v2026.9.24", SLUG: "hermes-agent-v2026.9.24"}}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "NousResearch/hermes-agent", SOURCE_REF: "v0.22.2", SLUG: "hermes-agent-v0.22.2"}}
       - {kind: no_secrets}
   - id: openclaw
     task: Responde exactamente MOTOR_EXEC_REQUEST_OPENCLAW.
     checks:
       - {kind: contains, values: [MOTOR_EXEC_REQUEST_OPENCLAW]}
-      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "openclaw/openclaw", SOURCE_REF: "v2026.9.6", SLUG: "openclaw-v2026.9.6"}}
+      - {kind: motor_exec, path: *m, timeout: 1800, expect: *e, env: {<<: *d, SOURCE_REPO: "openclaw/openclaw", SOURCE_REF: "v2026.10.4", SLUG: "openclaw-v2026.10.4"}}
       - {kind: no_secrets}
 edges: []

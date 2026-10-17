@@ -1,0 +1,122 @@
+{
+  "bundle_bytes": 194798271,
+  "bundle_sha256": "418742239e5ff76d7fde7a40c53db089077dd5baf76ed0c44c7d11df0bcfd95d",
+  "elapsed_seconds": 86.03,
+  "extracted_tree": {
+    "bytes": 649717822,
+    "files": 52562,
+    "sha256": "10dca5ce2837067b092549ad5643be04c53091f672eae40bc6b1643d032d342b"
+  },
+  "extraction_verified": true,
+  "max_github_blob_bytes": 99614720,
+  "no_lfs": true,
+  "part_size_limit_bytes": 12582912,
+  "parts": [
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0001",
+      "sha256": "1e7f45a87d50a0118c9cf60d4edc2ee74049399178293b502e0072a2fe1c7b47"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0002",
+      "sha256": "635b23b660535f9cd7da2de2a05ad1e5f60da1a0d96b33e8e61b0b1ffeb0c83e"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0003",
+      "sha256": "fb7aaed6c2885f4aad5255645612506956c284fabcebac384f1cc6f8ff53c9d7"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0004",
+      "sha256": "0556fcc3e99f54a60e198dadc18ac4a883b0e20248a0732127543634f80bcab3"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0005",
+      "sha256": "2759647f2c503f0c612a42914c86d673962fc76915433e37f098da0679e24d10"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0006",
+      "sha256": "410e1c73af0fe01a231a314da533ab1faf5bc7566dfc94f8d56c3bd11dfc811d"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0007",
+      "sha256": "2e7f738d7e22f8707704be0099d583ced223801f38190b7df727a9a5f205fce4"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0008",
+      "sha256": "ff055488a31f02a168bc619090089ddffa2846a4940b6373ce8c52dc840ed198"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0009",
+      "sha256": "168fdb51d75c4b27ecadf49c6e98099c5ded35cec8196e5893f3cd5892afad78"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0010",
+      "sha256": "e2abfa467ece749d114f2c33f6c92e974c5800bb915888e71847c52499a80811"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0011",
+      "sha256": "0f8438e8dcb1c11930dea14127fe4c335a0f75fac438ba7f4ac20bd8d3881ce7"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0012",
+      "sha256": "ddb8b6907972398fe871f99c54fb2cad64026402c949b160736044af2b0f225a"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0013",
+      "sha256": "efa9a45a3a142dbcd4fbc8a45dda05e37930ebb3c1238c2ecf2f7836f4f77208"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0014",
+      "sha256": "f8de10ab8a41ed62dea6b6a7bab79f85fa561202be499fbf4c4001d2cbf1fa88"
+    },
+    {
+      "bytes": 12582912,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0015",
+      "sha256": "1465875740f60ae845e93b4af0747c6c7fc1ac6f6d3cca9f9e7b2e434c403839"
+    },
+    {
+      "bytes": 6054591,
+      "name": "openclaw-v2026.10.4.bundle.zip.part-0016",
+      "sha256": "842dd7c6930b1dd1ec1749ff0787b951137cad98d9afe912b6dcf85254504bb5"
+    }
+  ],
+  "publish": {
+    "verdict": "DRY_RUN_DOWNLOAD_EXTRACT_VERIFIED"
+  },
+  "reconstruction_verified": true,
+  "schema": "yaiwes.hf.download-extract.v1",
+  "skipped_special": [
+    ".claude/skills",
+    "apps/macos/Tests/OpenClawIPCTests/GatewayTLSStoreFixture.swift",
+    "extensions/litellm/CLAUDE.md",
+    "extensions/lmstudio/CLAUDE.md",
+    "extensions/ollama/CLAUDE.md",
+    "extensions/vllm/CLAUDE.md"
+  ],
+  "skipped_special_count": 6,
+  "slug": "openclaw-v2026.10.4",
+  "source_bytes": 649717822,
+  "source_commit": "383c124cc32ffee3f8e56f549b88da94d269a4af",
+  "source_files": 52562,
+  "source_ref": "v2026.10.4",
+  "source_repo": "openclaw/openclaw",
+  "source_tree": {
+    "bytes": 649717822,
+    "files": 52562,
+    "sha256": "10dca5ce2837067b092549ad5643be04c53091f672eae40bc6b1643d032d342b"
+  },
+  "verdict": "VERIFIED_CLOSED"
+}
