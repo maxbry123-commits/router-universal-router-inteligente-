@@ -1,0 +1,6 @@
+port.txt
+sim.log
+sim_server.out
+*.png
+e2e-resultado.json
+node_modules/
