@@ -22,5 +22,5 @@ html.riu-fs #histories .item.message,html.riu-fs #histories .item.message .txt,h
 html.riu-fs #histories .item.message .riu-code{font-size:calc(var(--riu-chat-fs) * .88)!important}
 .chat-tabs .room-tab+.chip-borrar,.chat-tabs .room-tab+.chip-confirmar{display:none!important}
 #histories:has(> .room-view:not([hidden])) > .riu-bienvenida{display:none!important}
-.room-hist:empty::before{content:"Elige participantes y rondas, escribe un tema y pulsa Debatir"}
+#histories .room-hist:empty::before{content:"Elige participantes y rondas, escribe un tema y pulsa Debatir"}
 .room-barra{padding-right:44px}

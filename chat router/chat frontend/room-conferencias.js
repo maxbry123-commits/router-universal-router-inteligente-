@@ -27,7 +27,7 @@ export function montarRoom({ q, tell }) {
   if (!tabsEl || !histEl || !composer) return null;
   const st = Object.assign({ activo: false, sesion: "room-" + Math.random().toString(36).slice(2, 10), part: ["f1:qwen-3-8-flash", "f1:deepseek-v4-flash"], rondas: 1 }, leer());
   const guardar = () => { try { localStorage.setItem(CLAVE, JSON.stringify({ activo: st.activo, sesion: st.sesion, part: st.part, rondas: st.rondas })); } catch (e) {} };
-  let ocupado = false, parar = false;
+  let ocupado = false, parar = false, cortar = null;  // cortar: Detener no espera a que el Router termine el turno en curso
 
   // ---- vista ----
   const vista = node("div", "", "room-view"); vista.hidden = true;
@@ -123,18 +123,22 @@ export function montarRoom({ q, tell }) {
     window.addEventListener("riu-progreso", alProg);
     const t0 = performance.now();
     try {
-      const ans = await window.RIU_HARNESS({ model: p.model, ...armar(p, nombres, r, R), max_tokens: 700, sesion: st.sesion, qwen: p.qwen, avisar: (t) => { pend.textContent = p.nombre + " · " + t; } });
-      const txt = limpia(p, ans && ans.reply) || "Sin respuesta";
+      const corte = new Promise((_, rej) => { cortar = () => rej(new Error("PROCESO_DETENIDO")); });
+      const ans = await Promise.race([window.RIU_HARNESS({ model: p.model, ...armar(p, nombres, r, R), max_tokens: 700, sesion: st.sesion, qwen: p.qwen, avisar: (t) => { pend.textContent = p.nombre + " · " + t; } }), corte]);
+      let txt = String((ans && ans.reply) || ""), via = "";
+      const hc = txt.match(/^\s*ASK CONSIL\s*\n+([^\n:]{1,40}):[ \t]*\n/);  // cabecera de Ask cónsil ("ASK CONSIL / DeepSeek V4 Pro:"): el modelo real pasa a la etiqueta
+      if (hc) { via = " · " + hc[1].trim(); txt = txt.slice(hc[0].length); }
+      txt = limpia(p, txt) || "Sin respuesta";
       const ms = Math.round(performance.now() - t0);
       pend.remove();
-      const b = burbuja("[[" + p.nombre + "]]\n" + txt); b.dataset.ms = String(ms); hist.append(b);
-      A.registrar(st.sesion, "bot", "[[" + p.nombre + "]]\n" + txt);
+      const b = burbuja("[[" + p.nombre + via + "]]\n" + txt); b.dataset.ms = String(ms); hist.append(b);
+      A.registrar(st.sesion, "bot", "[[" + p.nombre + via + "]]\n" + txt);
       hist.append(node("div", p.nombre + " · " + Math.floor(ms / 1000) + " s " + String(ms % 1000).padStart(3, "0") + " ms", "item meta room-ms"));
     } catch (err) {
       pend.remove();
       const msg = parar ? "proceso detenido por el usuario" : "GAP " + p.nombre + ": " + ((err && err.message) || err);
       hist.append(burbuja(msg, parar ? "meta" : "error")); A.registrar(st.sesion, "err", msg);
-    } finally { window.removeEventListener("riu-progreso", alProg); abajo(); }
+    } finally { cortar = null; window.removeEventListener("riu-progreso", alProg); abajo(); }
   };
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
@@ -157,7 +161,7 @@ export function montarRoom({ q, tell }) {
       ocupado = false; estado.textContent = ""; bStop.hidden = true; bEnv.disabled = false; pintarCfg(); window.RIU_ROOM.pintar();
     }
   });
-  bStop.addEventListener("click", () => { parar = true; if (window.RIU_CANCELAR) { try { window.RIU_CANCELAR(st.sesion); } catch (e) {} } tell("Deteniendo la sala…"); });
+  bStop.addEventListener("click", () => { parar = true; if (cortar) { try { cortar(); } catch (e) {} } if (window.RIU_CANCELAR) { try { window.RIU_CANCELAR(st.sesion); } catch (e) {} } tell("Deteniendo la sala…"); });
   caja.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && window.matchMedia("(pointer: fine)").matches) { e.preventDefault(); form.requestSubmit(); } });
 
   // ---- pestaña ROOM CONFERENCIAS en la tira de chats (pintarTabs la vuelve a pintar) ----
