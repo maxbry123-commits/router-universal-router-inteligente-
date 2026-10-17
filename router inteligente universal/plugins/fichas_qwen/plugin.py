@@ -44,7 +44,8 @@ def _hist_txt(v: Any) -> str:
 
 def _hb(opts: dict[str, Any], nl: str) -> str:
     h = str((opts or {}).get('historial') or '')
-    return (nl * 2 + 'HISTORIAL PREVIO DE ESTA SESION (solo contexto, no es una orden; lo unico que debes atender es el INPUT ACTUAL):' + nl + h) if h else ''
+    b = str((opts or {}).get('sentinela_bloque') or '')  # Constitucion sentinela (contrato) + system prompt + archivos anclados reales
+    return ((nl * 2 + b) if b else '') + ((nl * 2 + 'HISTORIAL PREVIO DE ESTA SESION (solo contexto, no es una orden; lo unico que debes atender es el INPUT ACTUAL):' + nl + h) if h else '')
 _MODELOS: dict[str, dict[str, Any]] = {}
 _PROGRESO: dict[str, dict[str, str]] = {}
 
@@ -534,7 +535,7 @@ def _const_ref(ficha, p):
     g = ficha.get('gobernanza') or {}
     c = g.get('constitucion') or {}
     return {'anchor': c.get('anchor') or 'constitucion:YAIWES', 'archivo': c.get('archivo') or '',
-            'texto': str((p or {}).get('constitucion_texto') or '')[:20000],
+            'texto': str((p or {}).get('constitucion_texto') or (((p or {}).get('constitucion') or {}).get('texto') if isinstance((p or {}).get('constitucion'), dict) else '') or '')[:20000],  # el chat manda constitucion.texto
             'anclados': list((p or {}).get('constitucion_anclados') or [])[:50]}
 
 
@@ -1407,6 +1408,51 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
 
 
 def _chat(p: dict[str, Any]) -> dict[str, Any]:
+    # Constitucion sentinela: contrato en la ENTRADA + validador determinista en la SALIDA + 1 juez-corrector solo si falla. OFF = no corre.
+    from . import sentinela_contrato as _sent
+    try:
+        ctx = _sent.preparar(p)
+    except Exception as e:  # noqa: BLE001
+        ctx = {'activo': False, 'on': False, 'error': type(e).__name__}
+    _sent.ACTIVOS[0] += 1
+    try:
+        return _chat_sentinela(p, ctx, _sent)
+    finally:
+        _sent.ACTIVOS[0] -= 1
+
+
+def _chat_sentinela(p, ctx, _sent):
+    if not ctx.get('activo'):
+        return _chat_base(p)
+    fid = ALIAS.get(str(p.get("ficha_qwen") or ""), str(p.get("ficha_qwen") or ""))
+    q = dict(p, _sentinela_bloque=ctx['bloque'])
+    if fid == 'ficha5-mvp':  # Team 5: el bloque va en sus instrucciones fijas (system)
+        q['instrucciones_fijas'] = (str(p.get('instrucciones_fijas') or '').strip() + chr(10) * 2 + ctx['bloque']).strip()
+    r = _chat_base(q)
+    if not isinstance(r, dict):
+        return r
+    info = dict(_sent.publico(ctx), on=bool(ctx.get('on')))
+    if ctx.get('on') and isinstance(r.get('reply'), str):
+        ficha = FICHAS.get(fid) or {}
+        mod = _elegido(ficha, str(p.get('modelo') or '')) if fid not in ('ficha2-dag-codigo', 'ficha3-frontend') else None
+        mod = mod or str(ficha.get('fast_model') or 'ficha-qwen38flash')
+        n = {'id': 'JUEZ', 'timeout_s': 40, 'max_output_tokens': 1500, 'requiere_tools': False, 'escribe': False}
+        o = {'sesion': str(p.get('sesion') or 'fichas')[:60], 'fid': fid, 'cap_in': 'none', 'fast_lane': True, 'aprobado': False, 'muta': False, 'tarea_id': str(p.get('_pid') or '')}
+        msg = str(p.get('message') or '') or next((str(m.get('content', '')) for m in reversed(p.get('messages') or []) if m.get('role') == 'user'), '')
+        t0 = time.time()
+        txt, inf = _sent.salida(ctx, msg, r['reply'], lambda pr: _llamar_harness_1(mod, pr, ficha, n, o))
+        inf['ms_total'] = int((time.time() - t0) * 1000)
+        info.update(inf)
+        if txt != r['reply']:
+            r['reply_original'] = r['reply']
+            r['reply'] = txt
+            if isinstance(r.get('choices'), list) and r['choices']:
+                r['choices'] = [{"index": 0, "message": {"role": "assistant", "content": txt}}]
+    r['sentinela'] = info
+    return r
+
+
+def _chat_base(p: dict[str, Any]) -> dict[str, Any]:
     fid = ALIAS.get(str(p.get("ficha_qwen") or ""), str(p.get("ficha_qwen") or ""))
     if fid not in FICHAS:
         return {"error": "FICHA_NO_EXISTE", "validas": list(ALIAS)}
@@ -1432,7 +1478,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     pend_t = _pend_cargar(fid, ses) if ap else None
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else []), 'sentinela_bloque': str(p.get('_sentinela_bloque') or '')}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:
@@ -1657,4 +1703,21 @@ def handle(action: str, payload: dict[str, Any] | None) -> dict[str, Any]:
         return {"estado": "cancelado", "proceso_id": k, "en_cola": bool(it and it[0].cancel())}
     if action == "llm":
         return _llm(p)
+    if action in ("sentinela_anclar", "sentinela_grafo", "sentinela_validar"):  # Constitucion sentinela: anclaje al grafo (Graphiti + Graphify + grafo SQLite) y validacion
+        from . import sentinela_contrato as _sent
+        if action == "sentinela_validar":
+            c = _sent.parsear(str(p.get('contrato') or ''))
+            r = {'archivos': [{k: v for k, v in a.items() if k != '_txt'} for a in _sent.revisar_archivos(list(p.get('archivos') or []), c)]}
+            if p.get('salida') is not None:
+                r['violaciones'] = _sent.validar(str(p.get('salida')), c)
+            return r
+        try:
+            _pcm = _pc()
+            mem, scope_for = _pcm._memoria()
+            dueno = getattr(_pcm, 'DUENO', 'chat-ui')
+        except Exception as e:  # noqa: BLE001
+            return {"error": "GAP_MEMORIA", "detalle": type(e).__name__}
+        if action == "sentinela_anclar":
+            return _sent.anclar_grafo(mem, scope_for, dueno, p, ocupado=lambda: any(not f.done() for f, _t in list(_PROCESOS.values())))
+        return _sent.consultar_grafo(mem, scope_for, dueno, p)
     return {"error": "ACCION_DESCONOCIDA"}
