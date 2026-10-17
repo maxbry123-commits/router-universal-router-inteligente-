@@ -78,12 +78,14 @@ function selectorDestino(val, fn) {
   s.value = destinos().some((d) => d.k === val) ? val : "chat"; s.addEventListener("change", () => fn(s.value)); return s;
 }
 export function montarPropuestasAncla({ root, q, tell }) {
-  const v0 = (new URLSearchParams(location.search).get("panel") || "").toLowerCase();
+  // ⚓ abre la propuesta A (barra única) por defecto; ?panel=b|c abre B o C; el panel clásico queda detrás del botón «Clásico».
+  const vUrl = (new URLSearchParams(location.search).get("panel") || "").toLowerCase(), v0 = VARS[vUrl] ? vUrl : "a";
+  let clasico = false;  // true = este clic va al panel clásico (botón «Clásico» o RIU_ANCLA_ABRIR de workflow/constitución)
+  const abrirClasico = () => { const b = q("#btn-ancla"), s = q("#ventana-ancla"); if (!b || !s) return; clasico = true; try { if (s.hidden) b.click(); else if (window.RIU_ANCLA_REFRESCAR) window.RIU_ANCLA_REFRESCAR(); } finally { clasico = false; } };
+  const ba = q("#btn-ancla"); if (ba) ba.addEventListener("click", (e) => { if (clasico) return; e.stopImmediatePropagation(); e.preventDefault(); if (sheet && !sheet.hidden) cerrar(); else abrir(); }, true);
+  const abrirObj = window.RIU_ANCLA_ABRIR; if (typeof abrirObj === "function") window.RIU_ANCLA_ABRIR = (...a) => { clasico = true; try { return abrirObj(...a); } finally { clasico = false; } };
   window.RIU_ANCLA_PROP = (v) => abrir(v);
-  if (!VARS[v0]) return;  // sin ?panel= no cambia nada: el ⚓ abre el panel clásico
-  cargarCss("anclaje-propuestas");
-  const ba = q("#btn-ancla"); if (ba) ba.addEventListener("click", (e) => { e.stopImmediatePropagation(); e.preventDefault(); abrir(); }, true);
-  setTimeout(() => abrir(v0), 0);
+  if (VARS[vUrl]) setTimeout(() => abrir(vUrl), 0);  // ?panel=a|b|c abre el panel al cargar (enlace directo)
   const abiertas = new Set(["chat"]);  // tarjetas abiertas en B
   let sheet, caja, cuerpo, aviso, variante = v0, destSel = leer(K_DEST, "chat"), filtro = "", archivos = [], tAviso = 0, ultimo = null;
   const decir = (t, conDeshacer) => { if (!aviso) { tell(t); return; } aviso.replaceChildren(el("span", "", t)); if (conDeshacer) aviso.append(boton("Deshacer", "ap-undo", () => { if (ultimo) { M.anclar(ultimo.k, [ultimo.tok]); ultimo = null; aviso.hidden = true; pintar(); } })); aviso.hidden = false; clearTimeout(tAviso); tAviso = setTimeout(() => { aviso.hidden = true; }, conDeshacer ? 7000 : 3500); };
@@ -103,9 +105,9 @@ export function montarPropuestasAncla({ root, q, tell }) {
     sheet = el("div", "sheet ap-sheet"); sheet.id = "ancla-prop"; sheet.hidden = true; sheet.setAttribute("role", "dialog"); sheet.setAttribute("aria-modal", "true"); sheet.setAttribute("aria-label", "Anclaje");
     caja = el("div", "va-caja ap-caja"); const head = el("div", "ap-head"), tabs = el("div", "ap-tabs");
     Object.keys(VARS).forEach((k) => { const b = boton(k.toUpperCase(), "ap-tab", () => abrir(k)); b.dataset.v = k; b.title = VARS[k]; tabs.append(b); });
-    const clasico = boton("Clásico", "ap-clasico", () => { cerrar(); const s = q("#ventana-ancla"); if (s) { s.hidden = false; if (window.RIU_ANCLA_REFRESCAR) window.RIU_ANCLA_REFRESCAR(); } });
+    const bClasico = boton("Clásico", "ap-clasico", () => { cerrar(); abrirClasico(); });
     const x = boton("✕", "ap-cerrar", cerrar); x.setAttribute("aria-label", "Cerrar");
-    head.append(el("strong", "", "⚓ Anclaje"), tabs, clasico, x);
+    head.append(el("strong", "", "⚓ Anclaje"), tabs, bClasico, x);
     cuerpo = el("div", "ap-cuerpo"); aviso = el("div", "ap-aviso"); aviso.hidden = true; aviso.setAttribute("role", "status");
     caja.append(head, cuerpo, aviso, picker); sheet.append(caja); root.append(sheet);
     sheet.addEventListener("click", (e) => { if (e.target === sheet) cerrar(); });
