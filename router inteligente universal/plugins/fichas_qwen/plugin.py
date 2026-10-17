@@ -741,6 +741,17 @@ def _fast_button_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any]) -
     return True
 
 
+_REFIERE_ANCLA = re.compile(r'(?i)(anclad|adjunt|document|fichero|\.(txt|md|py|js|json|html|css|pdf|csv)\b|\b(texto|contenido|este|esta|esto|estos|estas|ese|esa|eso|lee|leer|l[eé]elo|resume|resumen|resumir|analiza|analizar|revisa|revisar|explica|explicar|seg[uú]n|basad|compara|compar[ae]|qu[eé] dice|d[oó]nde|funci[oó]n|clase|l[ií]nea|error|bug|fallo)\b)')
+_ANCLA_TRIVIAL_MAX = 160
+
+
+def _anclas_solo_contexto(mensaje: str) -> bool:
+    # consil-latencia (0 LLM): con anclas, Ficha 2/3 solo salta el DAG si el input es corto y NO se refiere a lo anclado ni pide analisis.
+    # Las anclas no se descartan: puente_chat las resuelve y las mete en el system como DATO tambien en la llamada FAST.
+    m = str(mensaje or '').strip()
+    return bool(m) and len(m) <= _ANCLA_TRIVIAL_MAX and not _REFIERE_ANCLA.search(m)
+
+
 def _fast_multi_qa_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any], nodos: dict[str, Any]) -> bool:
     # FAST_QA para Ficha 2/3 (DAG multi-nodo): SOLO input trivial -> una llamada al fast_model del JSON, sin entrar al DAG.
     # Reutiliza las mismas compuertas que _fast_chat_ok (cap/flags/anclas/task_type/formato) menos la de un solo N4.
@@ -755,12 +766,12 @@ def _fast_multi_qa_ok(ficha: dict[str, Any], mensaje: str, opts: dict[str, Any],
     for k in ('muta', 'es_cambio', 'aprobado', 'plan', 'plan_stop', 'previo', 'requiere_tools'):
         if opts.get(k):
             return False
-    if opts.get('perfil') == 'code' or opts.get('anclados'):
-        return False
+    m = str(mensaje or '')
+    if opts.get('perfil') == 'code' or (opts.get('anclados') and not _anclas_solo_contexto(m)):
+        return False  # consil-latencia: con anclas, un input trivial que no pregunta por ellas va por FAST (las anclas siguen entrando como contexto en el Harness)
     tt = str(opts.get('task_type') or '').lower()
     if tt and (tt in fc['blocked_task_types'] or tt not in fc['task_types']):
         return False
-    m = str(mensaje or '')
     if m.lstrip().lower().startswith('/aprobar') or _FAST_REPLY_BLOCK.search(m) or _PIDE_FORMATO.search(m):
         return False
     if _PIDE_CAMBIO.search(m) and not _NO_CAMBIA.search(m):
