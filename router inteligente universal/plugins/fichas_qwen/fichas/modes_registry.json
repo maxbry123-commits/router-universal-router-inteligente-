@@ -1,0 +1,1253 @@
+{
+  "registry_version": "1.0.0",
+  "language": "es",
+  "extends_contract": "loop_contract.example.v1_1.json",
+  "selector": {
+    "precedence": [
+      "button_lock",
+      "slash_command",
+      "auto_classifier",
+      "default_mode"
+    ],
+    "default_mode": "m05_respuesta_rapida",
+    "on_unknown_mode": "REJECT",
+    "gate": {
+      "trigger_words": [
+        "INICIA",
+        "RUN",
+        "IMPUTA"
+      ],
+      "satisfied_by": [
+        "button_lock",
+        "slash_command",
+        "trigger_word"
+      ]
+    },
+    "ui_thinking_toggle_policy": "mode_wins",
+    "auto_slash": "/auto"
+  },
+  "ui": {
+    "button": {
+      "label": "Modo",
+      "position": "composer_left",
+      "menu_style": "bottom_sheet",
+      "include_auto_option": true,
+      "show_active_chip": true,
+      "persist": "per_conversation"
+    },
+    "menu_order": [
+      "m01_plan",
+      "m02_objetivo",
+      "m03_investigacion",
+      "m04_agentico_loop",
+      "m05_respuesta_rapida",
+      "m06_orquestador_pool",
+      "m07_tool",
+      "m08_auto_evolucion",
+      "m09_mythos",
+      "m10_agenda",
+      "m11_max_paralelo"
+    ]
+  },
+  "hard_limit_caps": {
+    "max_iterations": 1000,
+    "max_wall_clock_s": 86400,
+    "max_cost_usd": 300,
+    "max_consecutive_no_progress": 30,
+    "max_tokens_per_turn": 64000,
+    "max_running": 10,
+    "max_cycle_repeats": 10
+  },
+  "immutable_sections": [
+    "selector.gate",
+    "selector.on_unknown_mode",
+    "hard_limit_caps",
+    "self_modification",
+    "immutable_sections"
+  ],
+  "self_modification": {
+    "branch_prefix": "self-evolve/",
+    "merge_policy": "pr_only",
+    "require_tests_green": true,
+    "max_files_changed_per_cycle": 10,
+    "protected_paths": [
+      ".env",
+      "secrets/",
+      ".git/"
+    ],
+    "targets": {
+      "router_ficha": "modes_registry.json",
+      "backend": [
+        "<EDITAR: rutas del backend del chat>"
+      ],
+      "frontend": [
+        "<EDITAR: rutas del frontend del chat>"
+      ]
+    }
+  },
+  "objective_schema": {
+    "required": [
+      "goal",
+      "done_when",
+      "constraints",
+      "out_of_scope",
+      "deliverables"
+    ],
+    "list_fields": [
+      "done_when",
+      "constraints",
+      "out_of_scope",
+      "deliverables"
+    ]
+  },
+  "autonomy_rules": [
+    "Nunca preguntes lo que puedas descubrir leyendo el repo o ejecutando un comando.",
+    "Si falta un dato no critico, asume lo razonable, registralo en state/assumptions.md y sigue.",
+    "Cada turno termina con una accion: editar, ejecutar o escribir estado; prohibido responder solo con analisis.",
+    "Maximo 3 lecturas seguidas sin editar ni ejecutar.",
+    "Antes de leer, consulta state/progress.json y no releas lo ya registrado.",
+    "Registra en progress.json lo hecho y su evidencia (comando y salida).",
+    "Detente solo cuando todas las tareas sean terminales; las aprobaciones de frontend o resultados no bloquean los nodos independientes.",
+    "Si la misma accion falla 2 veces, cambia de enfoque."
+  ],
+  "tools_profiles": {
+    "none": [],
+    "read_only": [
+      "read_file",
+      "grep",
+      "glob"
+    ],
+    "research": [
+      "read_file",
+      "grep",
+      "glob",
+      "web_search",
+      "web_fetch"
+    ],
+    "code": [
+      "read_file",
+      "grep",
+      "glob",
+      "edit_file",
+      "bash",
+      "web_search",
+      "web_fetch"
+    ],
+    "orchestrate": [
+      "read_state",
+      "dispatch_task",
+      "web_search",
+      "web_fetch"
+    ],
+    "registered_tools": [
+      "registered_tools"
+    ],
+    "self_evolve": [
+      "read_file",
+      "grep",
+      "glob",
+      "edit_file",
+      "bash",
+      "git_branch",
+      "git_commit",
+      "run_tests",
+      "web_search",
+      "web_fetch"
+    ]
+  },
+  "step_catalog": [
+    {
+      "id": "pin_objective",
+      "kind": "llm+deterministic",
+      "description": "Fija el objetivo en state/objective.md (goal, done_when, constraints, out_of_scope, deliverables) y lo reinyecta en cada iteracion.",
+      "evidence": "state/objective.md existe y valida contra objective_schema"
+    },
+    {
+      "id": "gather_context",
+      "kind": "tool",
+      "description": "Lee repo, estado y archivos relevantes SIN repetir lecturas (cache path+mtime+rango).",
+      "evidence": "state/context.md con rutas leidas"
+    },
+    {
+      "id": "read_state",
+      "kind": "tool",
+      "description": "Carga progress.json, requirements.json y assumptions.md antes de actuar.",
+      "evidence": "hash de los archivos de estado en el evento step_passed"
+    },
+    {
+      "id": "research_sources",
+      "kind": "tool",
+      "description": "Consulta las fuentes de research_sources.json con busqueda y fetch; falla en suave y registra.",
+      "evidence": "state/research.md y state/research_failed.md"
+    },
+    {
+      "id": "research_before_step",
+      "kind": "tool",
+      "description": "Antes de CADA paso, busca en fuentes oficiales y comunidad como resolverlo; registra la fuente usada.",
+      "evidence": "entrada nueva en state/research.md con URL por paso"
+    },
+    {
+      "id": "extract_methods",
+      "kind": "llm",
+      "description": "Extrae metodos, librerias, repos y advertencias de lo investigado.",
+      "evidence": "state/methods.json"
+    },
+    {
+      "id": "rank_resources",
+      "kind": "deterministic",
+      "description": "Ordena recursos por relevancia, actualidad y cobertura del objetivo.",
+      "evidence": "state/resources.json con score por recurso"
+    },
+    {
+      "id": "create_resources",
+      "kind": "tool",
+      "description": "Crea los recursos necesarios (archivos, scripts, fixtures, configuracion).",
+      "evidence": "archivos creados listados en progress.json"
+    },
+    {
+      "id": "architecture_design",
+      "kind": "llm",
+      "description": "Disena arquitectura y decisiones; cada decision con alternativa descartada.",
+      "evidence": "state/architecture.md"
+    },
+    {
+      "id": "task_breakdown_dag",
+      "kind": "llm+deterministic",
+      "description": "Convierte el plan en DAG de tareas con aceptacion verificable por nodo.",
+      "evidence": "state/plan.dag.json valida con validate_contract.py"
+    },
+    {
+      "id": "risk_review",
+      "kind": "llm",
+      "description": "Lista riesgos, supuestos y huecos del plan.",
+      "evidence": "state/risks.md"
+    },
+    {
+      "id": "emit_plan",
+      "kind": "deterministic",
+      "description": "Entrega el plan final en archivos; no ejecuta nada.",
+      "evidence": "state/plan.md y state/plan.dag.json"
+    },
+    {
+      "id": "execute_dag_loop",
+      "kind": "loop",
+      "description": "Ejecuta el DAG en bucle gather-act-verify-repeat hasta que todos los nodos sean terminales.",
+      "evidence": "progress.json con todos los nodos en estado terminal y evidencia"
+    },
+    {
+      "id": "run_tests",
+      "kind": "tool",
+      "description": "Corre pruebas y linters del proyecto.",
+      "evidence": "salida y exit code de los comandos de verificacion"
+    },
+    {
+      "id": "verify_frontend",
+      "kind": "tool",
+      "description": "Verifica el frontend (build y revision visual) y publica punto de revision no bloqueante.",
+      "evidence": "captura o salida de build + review_point emitido"
+    },
+    {
+      "id": "final_gate",
+      "kind": "deterministic",
+      "description": "Compuerta final fail-closed: todo terminal, todo con evidencia, limites no violados.",
+      "evidence": "veredicto PASS/FAIL del validador"
+    },
+    {
+      "id": "deliver_report",
+      "kind": "deterministic",
+      "description": "Entrega resumen con evidencia por entregable.",
+      "evidence": "state/report.md"
+    },
+    {
+      "id": "fast_answer",
+      "kind": "llm",
+      "description": "Responde directo, breve, sin herramientas ni bucle.",
+      "evidence": "respuesta enviada"
+    },
+    {
+      "id": "run_tool",
+      "kind": "tool",
+      "description": "Ejecuta la herramienta pedida con los argumentos dados y devuelve el resultado tal cual.",
+      "evidence": "tool_result en el historial del siguiente turno"
+    },
+    {
+      "id": "audit_self",
+      "kind": "tool",
+      "description": "Revisa ficha de router, backend y frontend del chat y lista gaps contra el registro de modos.",
+      "evidence": "state/self_audit.md"
+    },
+    {
+      "id": "detect_gaps",
+      "kind": "deterministic",
+      "description": "Calcula la lista de gaps abiertos comparando objetivo, requisitos y resultados.",
+      "evidence": "state/gaps.json (lista vacia = sin gaps)"
+    },
+    {
+      "id": "apply_fix_branch",
+      "kind": "tool",
+      "description": "Aplica correcciones SOLO en rama self-evolve/*, cambios aditivos y minimos.",
+      "evidence": "commit en rama self-evolve/* con diff acotado"
+    },
+    {
+      "id": "regression_tests",
+      "kind": "tool",
+      "description": "Corre la bateria completa y el harness_selftest tras cada correccion.",
+      "evidence": "exit code 0 de toda la bateria"
+    },
+    {
+      "id": "open_pr",
+      "kind": "tool",
+      "description": "Abre PR con diff, evidencia de pruebas y lista de gaps cerrados; NO hace merge.",
+      "evidence": "URL o archivo del PR"
+    },
+    {
+      "id": "store_verbatim_input",
+      "kind": "deterministic",
+      "description": "Guarda el input original sin modificar y su hash sha256.",
+      "evidence": "state/input_verbatim.md y hash"
+    },
+    {
+      "id": "prioritize_tasks",
+      "kind": "llm+deterministic",
+      "description": "Asigna prioridad, dependencias y estrategia por tarea.",
+      "evidence": "state/agenda.json con prioridad por tarea"
+    },
+    {
+      "id": "cross_verify",
+      "kind": "llm+deterministic",
+      "description": "Verifica cruzada: cada tarea debe trazarse a un fragmento del input verbatim, y viceversa.",
+      "evidence": "state/cross_verify.json sin huecos"
+    },
+    {
+      "id": "build_queues",
+      "kind": "deterministic",
+      "description": "Crea colas por prioridad y marca tareas paralelizables.",
+      "evidence": "state/queues.json"
+    },
+    {
+      "id": "arm_watchdog",
+      "kind": "deterministic",
+      "description": "Activa vigilancia: latido, deteccion de estancamiento y reintento.",
+      "evidence": "evento watchdog_armed"
+    },
+    {
+      "id": "dispatch_parallel",
+      "kind": "tool",
+      "description": "Despacha tareas a modelos y agentes del registry; hasta max_running en paralelo, el resto en cola.",
+      "evidence": "eventos task_started por tarea y peak_running<=cap"
+    },
+    {
+      "id": "merge_results",
+      "kind": "deterministic",
+      "description": "Integra resultados de workers; ante conflicto rebase y reverifica.",
+      "evidence": "commit de integracion y pruebas en verde"
+    },
+    {
+      "id": "verify_traceability",
+      "kind": "deterministic",
+      "description": "Verifica que cada tarea tenga folio, evento de inicio, evidencia y estado terminal.",
+      "evidence": "state/traceability.json sin huecos"
+    }
+  ],
+  "auto_classifier": {
+    "enabled": true,
+    "method": "deterministic_rules_first",
+    "fallback": "default_mode",
+    "rules": [
+      {
+        "id": "ar01_agenda",
+        "priority": 20,
+        "pattern": "(agenda|priorid(ad|ades)|cola de tareas|calendario|watchdog)",
+        "then_mode": "m10_agenda"
+      },
+      {
+        "id": "ar02_plan",
+        "priority": 30,
+        "pattern": "(arquitectura|planifica|plan de proyecto|roadmap|dise[ñn]a el sistema)",
+        "then_mode": "m01_plan"
+      },
+      {
+        "id": "ar03_research",
+        "priority": 40,
+        "pattern": "(investiga|research|busca (recursos|m[eé]todos)|benchmark de)",
+        "then_mode": "m03_investigacion"
+      },
+      {
+        "id": "ar04_tool",
+        "priority": 50,
+        "pattern": "^\\s*(ejecuta (la )?tool|usa (la )?tool|run tool)",
+        "then_mode": "m07_tool"
+      }
+    ]
+  },
+  "events": [
+    "mode_resolved",
+    "objective_pinned",
+    "step_started",
+    "step_passed",
+    "step_failed",
+    "cycle_started",
+    "cycle_closed",
+    "task_queued",
+    "task_started",
+    "task_blocked",
+    "watchdog_stall",
+    "limit_reached",
+    "terminal"
+  ],
+  "modes": [
+    {
+      "id": "m01_plan",
+      "order": 1,
+      "slash": "/plan",
+      "label": "Plan",
+      "icon": "🧭",
+      "category": "planificacion",
+      "summary": "Planificacion y arquitectura: entrega plan y DAG, no ejecuta.",
+      "base_mode": null,
+      "autonomous_loop": false,
+      "no_escalation": false,
+      "auto_eligible": true,
+      "reasoning": {
+        "plan": "high",
+        "execute": "high",
+        "verify": "medium"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "research",
+      "pipeline": [
+        "pin_objective",
+        "gather_context",
+        "architecture_design",
+        "task_breakdown_dag",
+        "risk_review",
+        "emit_plan"
+      ],
+      "research": {
+        "mode": "on_demand",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 3,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": false,
+        "max_running": 1,
+        "overflow": "reject",
+        "queue_max": 0,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 30,
+        "max_wall_clock_s": 3600,
+        "max_cost_usd": 10,
+        "max_consecutive_no_progress": 5,
+        "max_tokens_per_turn": 32000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/objective.md",
+        "state/architecture.md",
+        "state/plan.md",
+        "state/plan.dag.json"
+      ],
+      "termination": "plan_emitted",
+      "guards": [
+        "objective_pinned",
+        "evidence_required"
+      ],
+      "prompt_block": [
+        "Tu salida es un plan y una arquitectura, no codigo ejecutado.",
+        "Entrega el DAG con aceptacion verificable por nodo.",
+        "Documenta cada decision con la alternativa descartada.",
+        "No preguntes: si falta un dato, asume, registralo en state/assumptions.md y sigue."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m02_objetivo",
+      "order": 2,
+      "slash": "/objetivo",
+      "label": "Objetivo",
+      "icon": "🎯",
+      "category": "autonomo",
+      "summary": "Investiga, crea recursos, disena, ejecuta, prueba y entrega sin escalar.",
+      "base_mode": "agent_code",
+      "autonomous_loop": true,
+      "no_escalation": true,
+      "auto_eligible": false,
+      "reasoning": {
+        "plan": "high",
+        "execute": "none",
+        "verify": "low"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "code",
+      "pipeline": [
+        "pin_objective",
+        "gather_context",
+        "research_sources",
+        "create_resources",
+        "architecture_design",
+        "task_breakdown_dag",
+        "execute_dag_loop",
+        "run_tests",
+        "final_gate",
+        "deliver_report"
+      ],
+      "research": {
+        "mode": "initial",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 5,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": false,
+        "max_running": 1,
+        "overflow": "reject",
+        "queue_max": 0,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 500,
+        "max_wall_clock_s": 43200,
+        "max_cost_usd": 150,
+        "max_consecutive_no_progress": 15,
+        "max_tokens_per_turn": 16000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/objective.md",
+        "state/plan.dag.json",
+        "state/progress.json",
+        "state/report.md"
+      ],
+      "termination": "all_nodes_terminal_and_tests_pass",
+      "guards": [
+        "objective_pinned",
+        "drift_guard",
+        "anti_repeat",
+        "evidence_required"
+      ],
+      "prompt_block": [
+        "Define el objetivo con done_when verificable y mantenlo fijo.",
+        "Investiga una vez al inicio y de nuevo solo si te atascas.",
+        "Disena el plan, ejecutalo, prueba y entrega el producto terminado.",
+        "Termina solo con todos los nodos terminales y pruebas en verde."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m03_investigacion",
+      "order": 3,
+      "slash": "/investigar",
+      "label": "Investigacion",
+      "icon": "🔎",
+      "category": "investigacion",
+      "summary": "Consulta las 20 fuentes, extrae metodos y recursos, y luego planifica el proyecto.",
+      "base_mode": null,
+      "autonomous_loop": false,
+      "no_escalation": true,
+      "auto_eligible": true,
+      "reasoning": {
+        "plan": "high",
+        "execute": "medium",
+        "verify": "medium"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "research",
+      "pipeline": [
+        "pin_objective",
+        "research_sources",
+        "extract_methods",
+        "rank_resources",
+        "architecture_design",
+        "task_breakdown_dag",
+        "emit_plan",
+        "final_gate"
+      ],
+      "research": {
+        "mode": "dedicated",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 20,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": true,
+        "max_running": 5,
+        "overflow": "queue",
+        "queue_max": 100,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 80,
+        "max_wall_clock_s": 10800,
+        "max_cost_usd": 30,
+        "max_consecutive_no_progress": 8,
+        "max_tokens_per_turn": 32000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/research.md",
+        "state/research_failed.md",
+        "state/methods.json",
+        "state/resources.json",
+        "state/plan.md"
+      ],
+      "termination": "plan_emitted_with_sources",
+      "guards": [
+        "objective_pinned",
+        "anti_repeat",
+        "evidence_required"
+      ],
+      "prompt_block": [
+        "Recorre las fuentes de research_sources.json; una falla no detiene el modo, se registra.",
+        "Cada recurso lleva URL, fecha y para que sirve.",
+        "Despues de investigar, produce el plan de proyecto basado en lo encontrado, citando la fuente de cada decision."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m04_agentico_loop",
+      "order": 4,
+      "slash": "/agentico",
+      "label": "Agentico Loop",
+      "icon": "🔁",
+      "category": "autonomo",
+      "summary": "Workflow en bucle de codigo y frontend hasta terminar todas las tareas.",
+      "base_mode": "agent_code",
+      "autonomous_loop": true,
+      "no_escalation": true,
+      "auto_eligible": false,
+      "reasoning": {
+        "plan": "high",
+        "execute": "none",
+        "verify": "low"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "code",
+      "pipeline": [
+        "pin_objective",
+        "read_state",
+        "gather_context",
+        "execute_dag_loop",
+        "run_tests",
+        "verify_frontend",
+        "final_gate"
+      ],
+      "research": {
+        "mode": "on_demand",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 5,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": false,
+        "max_running": 1,
+        "overflow": "reject",
+        "queue_max": 0,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 500,
+        "max_wall_clock_s": 43200,
+        "max_cost_usd": 150,
+        "max_consecutive_no_progress": 15,
+        "max_tokens_per_turn": 16000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/progress.json",
+        "state/events.jsonl",
+        "state/report.md"
+      ],
+      "termination": "all_nodes_terminal_and_tests_pass",
+      "guards": [
+        "objective_pinned",
+        "drift_guard",
+        "anti_repeat",
+        "evidence_required"
+      ],
+      "prompt_block": [
+        "Lee state/progress.json primero; no releas lo ya registrado.",
+        "Cada turno termina con una accion: editar, ejecutar o escribir estado.",
+        "Los puntos de aprobacion de frontend son no bloqueantes: sigue con los nodos independientes.",
+        "Si fallas 2 veces igual, cambia de enfoque con la escalera on_stuck."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m05_respuesta_rapida",
+      "order": 5,
+      "slash": "/rapido",
+      "label": "Rapido",
+      "icon": "⚡",
+      "category": "conversacion",
+      "summary": "Respuesta directa y breve, sin herramientas ni bucle.",
+      "base_mode": null,
+      "autonomous_loop": false,
+      "no_escalation": false,
+      "auto_eligible": true,
+      "reasoning": {
+        "plan": "none",
+        "execute": "none",
+        "verify": "none"
+      },
+      "tool_choice": {
+        "plan": "none",
+        "execute": "none",
+        "verify": "none"
+      },
+      "tools_profile": "none",
+      "pipeline": [
+        "fast_answer"
+      ],
+      "research": {
+        "mode": "none"
+      },
+      "parallel": {
+        "enabled": false,
+        "max_running": 1,
+        "overflow": "reject",
+        "queue_max": 0,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 1,
+        "max_wall_clock_s": 120,
+        "max_cost_usd": 1,
+        "max_consecutive_no_progress": 1,
+        "max_tokens_per_turn": 2000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [],
+      "termination": "answer_sent",
+      "guards": [],
+      "prompt_block": [
+        "Responde directo y breve.",
+        "Sin herramientas, sin planes, sin preguntas innecesarias."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m06_orquestador_pool",
+      "order": 6,
+      "slash": "/orquestador",
+      "label": "Orquestador",
+      "icon": "🧩",
+      "category": "orquestacion",
+      "summary": "Orquesta modelos y agentes en un pool; el orquestador no escribe codigo.",
+      "base_mode": "orchestrator",
+      "autonomous_loop": true,
+      "no_escalation": true,
+      "auto_eligible": false,
+      "reasoning": {
+        "plan": "high",
+        "execute": "none",
+        "verify": "low"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "orchestrate",
+      "pipeline": [
+        "pin_objective",
+        "gather_context",
+        "task_breakdown_dag",
+        "dispatch_parallel",
+        "merge_results",
+        "final_gate"
+      ],
+      "research": {
+        "mode": "on_demand",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 3,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": true,
+        "max_running": 4,
+        "overflow": "queue",
+        "queue_max": 500,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 400,
+        "max_wall_clock_s": 43200,
+        "max_cost_usd": 150,
+        "max_consecutive_no_progress": 15,
+        "max_tokens_per_turn": 16000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/plan.dag.json",
+        "state/progress.json",
+        "state/report.md"
+      ],
+      "termination": "all_nodes_terminal_and_merge_verified",
+      "guards": [
+        "objective_pinned",
+        "drift_guard",
+        "anti_repeat",
+        "evidence_required",
+        "orchestrator_never_writes_code"
+      ],
+      "prompt_block": [
+        "Tu rol es descomponer, delegar, integrar y verificar; nunca escribes codigo tu mismo.",
+        "Elige worker por capacidad y costo segun el registry.",
+        "Cada worker recibe solo su porcion de la tarea mas lo aprendido."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m07_tool",
+      "order": 7,
+      "slash": "/tool",
+      "label": "Tool",
+      "icon": "🛠",
+      "category": "herramientas",
+      "summary": "Ejecuta las herramientas pedidas y devuelve el resultado.",
+      "base_mode": null,
+      "autonomous_loop": false,
+      "no_escalation": false,
+      "auto_eligible": true,
+      "reasoning": {
+        "plan": "none",
+        "execute": "none",
+        "verify": "none"
+      },
+      "tool_choice": {
+        "plan": "required",
+        "execute": "required",
+        "verify": "auto"
+      },
+      "tools_profile": "registered_tools",
+      "pipeline": [
+        "run_tool",
+        "deliver_report"
+      ],
+      "research": {
+        "mode": "none"
+      },
+      "parallel": {
+        "enabled": false,
+        "max_running": 1,
+        "overflow": "reject",
+        "queue_max": 0,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 25,
+        "max_wall_clock_s": 900,
+        "max_cost_usd": 5,
+        "max_consecutive_no_progress": 5,
+        "max_tokens_per_turn": 4000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/report.md"
+      ],
+      "termination": "tool_results_returned",
+      "guards": [
+        "evidence_required"
+      ],
+      "prompt_block": [
+        "Ejecuta la herramienta solicitada con los argumentos dados.",
+        "Devuelve el resultado tal cual, sin reinterpretarlo.",
+        "Si la herramienta falla, reintenta una vez con el error y reporta."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m08_auto_evolucion",
+      "order": 8,
+      "slash": "/evolucion",
+      "label": "Auto-evolucion",
+      "icon": "🧬",
+      "category": "autonomo",
+      "summary": "Revisa su propia ficha, backend y frontend, corrige gaps en una rama y abre PR.",
+      "base_mode": "agent_code",
+      "autonomous_loop": true,
+      "no_escalation": true,
+      "auto_eligible": false,
+      "reasoning": {
+        "plan": "high",
+        "execute": "none",
+        "verify": "medium"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "self_evolve",
+      "pipeline": [
+        "pin_objective",
+        "read_state",
+        "audit_self",
+        {
+          "cycle": [
+            "detect_gaps",
+            "apply_fix_branch",
+            "regression_tests"
+          ],
+          "max": 10,
+          "until": "gap_list_empty"
+        },
+        "open_pr",
+        "final_gate"
+      ],
+      "research": {
+        "mode": "on_demand",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 5,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": false,
+        "max_running": 1,
+        "overflow": "reject",
+        "queue_max": 0,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 300,
+        "max_wall_clock_s": 28800,
+        "max_cost_usd": 100,
+        "max_consecutive_no_progress": 10,
+        "max_tokens_per_turn": 16000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/self_audit.md",
+        "state/gaps.json",
+        "state/pr.md"
+      ],
+      "termination": "gap_list_empty_and_regression_green",
+      "guards": [
+        "objective_pinned",
+        "drift_guard",
+        "anti_repeat",
+        "evidence_required",
+        "branch_only",
+        "additive_only"
+      ],
+      "prompt_block": [
+        "Solo modificas en ramas self-evolve/*; nunca en la rama principal.",
+        "Cambios aditivos y minimos; no reescribes archivos base.",
+        "No tocas secciones inmutables ni los limites duros del registro.",
+        "Tras cada correccion corre la bateria completa y el harness_selftest."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m09_mythos",
+      "order": 9,
+      "slash": "/mythos",
+      "label": "Mythos",
+      "icon": "🔮",
+      "category": "autonomo",
+      "summary": "Investiga antes de cada paso y mejora en ciclos (hasta 10) hasta cerrar todos los gaps.",
+      "base_mode": "agent_code",
+      "autonomous_loop": true,
+      "no_escalation": true,
+      "auto_eligible": false,
+      "reasoning": {
+        "plan": "xhigh",
+        "execute": "none",
+        "verify": "medium"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "code",
+      "pipeline": [
+        "pin_objective",
+        "gather_context",
+        "research_sources",
+        "detect_gaps",
+        {
+          "cycle": [
+            "research_before_step",
+            "execute_dag_loop",
+            "run_tests",
+            "detect_gaps"
+          ],
+          "max": 10,
+          "until": "gap_list_empty"
+        },
+        "final_gate",
+        "deliver_report"
+      ],
+      "research": {
+        "mode": "before_every_step",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 5,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": false,
+        "max_running": 1,
+        "overflow": "reject",
+        "queue_max": 0,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 800,
+        "max_wall_clock_s": 64800,
+        "max_cost_usd": 250,
+        "max_consecutive_no_progress": 20,
+        "max_tokens_per_turn": 32000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/research.md",
+        "state/gaps.json",
+        "state/progress.json",
+        "state/report.md"
+      ],
+      "termination": "gap_list_empty_and_tests_pass",
+      "guards": [
+        "objective_pinned",
+        "drift_guard",
+        "anti_repeat",
+        "evidence_required"
+      ],
+      "prompt_block": [
+        "Antes de cada paso investiga como resolverlo y registra la fuente.",
+        "Trabajas en ciclos de mejora (maximo 10); cada ciclo reduce la lista de gaps.",
+        "Cierras solo cuando state/gaps.json esta vacio y las pruebas pasan.",
+        "Si un gap no cede, cambia de enfoque con la escalera on_stuck; no te detienes."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m10_agenda",
+      "order": 10,
+      "slash": "/agenda",
+      "label": "Agenda",
+      "icon": "🗓",
+      "category": "planificacion",
+      "summary": "Organiza tareas y objetivos con prioridades, verificacion cruzada, colas y watchdog.",
+      "base_mode": null,
+      "autonomous_loop": false,
+      "no_escalation": true,
+      "auto_eligible": true,
+      "reasoning": {
+        "plan": "high",
+        "execute": "medium",
+        "verify": "medium"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "read_only",
+      "pipeline": [
+        "pin_objective",
+        "store_verbatim_input",
+        "prioritize_tasks",
+        "cross_verify",
+        "build_queues",
+        "arm_watchdog",
+        "verify_traceability",
+        "emit_plan"
+      ],
+      "research": {
+        "mode": "on_demand",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 3,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": true,
+        "max_running": 10,
+        "overflow": "queue",
+        "queue_max": 1000,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 60,
+        "max_wall_clock_s": 7200,
+        "max_cost_usd": 20,
+        "max_consecutive_no_progress": 6,
+        "max_tokens_per_turn": 32000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/input_verbatim.md",
+        "state/agenda.json",
+        "state/queues.json",
+        "state/traceability.json"
+      ],
+      "termination": "agenda_emitted_and_traceability_verified",
+      "guards": [
+        "objective_pinned",
+        "evidence_required",
+        "verbatim_input_immutable"
+      ],
+      "data_protection": {
+        "verbatim_input_file": "state/input_verbatim.md",
+        "hash": "sha256",
+        "redact_patterns": [
+          "(?i)api[_-]?key\\s*[:=]\\s*\\S+",
+          "(?i)secret\\s*[:=]\\s*\\S+",
+          "(?i)password\\s*[:=]\\s*\\S+"
+        ],
+        "cross_verify": {
+          "min_independent_verifiers": 2,
+          "on_mismatch": "fix_and_reverify"
+        }
+      },
+      "handoff_to": "m11_max_paralelo",
+      "prompt_block": [
+        "Guarda el input original sin modificar y calcula su hash.",
+        "Toda tarea debe trazarse a un fragmento del input; todo fragmento relevante debe tener tarea.",
+        "Asigna prioridad, dependencias, colas y vigilancia; cada tarea con folio."
+      ],
+      "prompt_import_slot": null
+    },
+    {
+      "id": "m11_max_paralelo",
+      "order": 11,
+      "slash": "/paralelo",
+      "label": "Max Paralelo",
+      "icon": "🚀",
+      "category": "orquestacion",
+      "summary": "Hasta 10 tareas en paralelo con varios modelos y agentes; el excedente va a cola.",
+      "base_mode": "orchestrator",
+      "autonomous_loop": true,
+      "no_escalation": true,
+      "auto_eligible": false,
+      "reasoning": {
+        "plan": "high",
+        "execute": "none",
+        "verify": "low"
+      },
+      "tool_choice": {
+        "plan": "auto",
+        "execute": "auto",
+        "verify": "auto"
+      },
+      "tools_profile": "orchestrate",
+      "pipeline": [
+        "pin_objective",
+        "gather_context",
+        "task_breakdown_dag",
+        "build_queues",
+        "arm_watchdog",
+        "dispatch_parallel",
+        "merge_results",
+        "run_tests",
+        "verify_traceability",
+        "final_gate"
+      ],
+      "research": {
+        "mode": "on_demand",
+        "sources_file": "research_sources.json",
+        "max_searches_per_step": 3,
+        "log_to": "state/research.md"
+      },
+      "parallel": {
+        "enabled": true,
+        "max_running": 10,
+        "overflow": "queue",
+        "queue_max": 1000,
+        "watchdog": {
+          "heartbeat_s": 30,
+          "stall_s": 300,
+          "on_stall": "restart_then_requeue"
+        }
+      },
+      "limits": {
+        "max_iterations": 600,
+        "max_wall_clock_s": 43200,
+        "max_cost_usd": 200,
+        "max_consecutive_no_progress": 15,
+        "max_tokens_per_turn": 16000,
+        "on_limit": "TERMINATE_WITH_REPORT"
+      },
+      "outputs": [
+        "state/queues.json",
+        "state/progress.json",
+        "state/traceability.json",
+        "state/report.md"
+      ],
+      "termination": "all_nodes_terminal_merge_and_tests_verified",
+      "guards": [
+        "objective_pinned",
+        "drift_guard",
+        "anti_repeat",
+        "evidence_required",
+        "orchestrator_never_writes_code"
+      ],
+      "prompt_block": [
+        "Ejecutas hasta 10 tareas a la vez; las demas esperan en cola por prioridad.",
+        "Mezcla modelos y agentes segun capacidad y costo.",
+        "Cada tarea tiene folio, latido y reintento; si se estanca, se reinicia y se reencola.",
+        "Integras resultados y reverificas antes de cerrar."
+      ],
+      "prompt_import_slot": null
+    }
+  ]
+}
