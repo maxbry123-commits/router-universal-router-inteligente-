@@ -82,6 +82,11 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
         except Exception as x:  # noqa: BLE001
             return {'model': elegido, 'error': 'GAP TOKEN_PLAN_NO_CONFIGURADO', 'detalle': str(x)[:150]}
     conv = _mensajes(p, mensaje)
+    # >>> MODOS BEGIN  (punto E: system_block del modo va antes que todo, como mensaje system)
+    _modo = p.get('_modo')
+    if isinstance(_modo, dict) and _modo.get('system_block'):
+        conv = [{'role': 'system', 'content': _modo['system_block']}] + conv
+    # <<< MODOS END
     tiene_historial = any(x.get('role') in ('user', 'assistant') for x in conv[:-1])  # hay turnos previos reales o solo el input actual
     if not conv:
         return {'model': elegido, 'error': 'GAP SIN_MENSAJE'}
@@ -119,6 +124,10 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
             fq._PARCIAL[pid] = ''.join(_buf)
             fq._NOTAS.setdefault(pid, {})['MVP'] = '…' + ''.join(_buf)[-80:]
     cap = capacidad_de(mensaje)  # INPUT -> CAP_NONE/READ/WRITE: sin intencion externa no se envia ni el catalogo
+    # >>> MODOS BEGIN  (mode_wins: tool_choice 'none' del modo apaga tools aunque el payload pida WRITE)
+    if isinstance(_modo, dict) and (_modo.get('tool_choice') or {}).get('execute') == 'none':
+        cap = 'none'
+    # <<< MODOS END
     requiere = cap != 'none'  # la tarea pide tools: al menos una debe ejecutarse con exito (evidencia)
     solo_lectura = cap != 'write'  # WRITE exige servicio externo + orden explicita de modificar; el resto bloquea mutaciones
     simple = cap == 'none'  # pregunta simple: sin tools, sin anexo, sin sentinela, reasoning acotado
@@ -132,6 +141,11 @@ def chat(p: dict[str, Any], ficha: dict[str, Any], mensaje: str, ses: str, t0: f
     if pid:  # mismo visor de progreso de la familia
         fq._prog(pid, 'MVP', 'trabajando')
         fq._meta(pid, 'MVP', elegido, 'responde con el modelo elegido')
+    # >>> MODOS BEGIN  (mode_wins: el razonamiento de la fase execute lo fija el modo)
+    if isinstance(_modo, dict) and (_modo.get('reasoning') or {}).get('execute'):
+        _r = _modo['reasoning']['execute']
+        ex_llm = {'enable_thinking': False} if _r == 'none' else {'reasoning_effort': _r}
+    # <<< MODOS END
     r = pc._chat({'model': qw, 'messages': conv, 'max_tokens': mt, 'sesion': ses,
                   'presupuesto_s': _TIMEOUT_SIMPLE_S if simple else _TIMEOUT_S, 'directo': simple, 'solo_lectura': solo_lectura, 'requiere_tools': requiere, 'tools_habilitadas': cap != 'none', 'cap_tools': cap,  # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'rondas_tools_max': 3,  # MVP: modelo->tool->modelo->tool->modelo->respuesta, sin 6 vueltas automaticas

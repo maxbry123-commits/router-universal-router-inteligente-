@@ -32,6 +32,50 @@ _LOCK = threading.Lock()
 _PROCESOS: dict[str, tuple[Any, float]] = {}
 _CANCEL: set[str] = set()  # procesos que el usuario detuvo con Detener: no se lanzan mas pasos
 
+# >>> MODOS BEGIN
+# Selector de 11 modos (paquete modos/, aditivo): el backend es la autoridad. Solo actua cuando el
+# mensaje trae mode_request (boton/auto del front) o un slash de modo; sin eso, el camino es el de siempre.
+_MODOS_DIR = DIR / "modos"
+_MODOS_STATE = DIR / "state"
+if str(_MODOS_DIR) not in __import__("sys").path:
+    __import__("sys").path.insert(0, str(_MODOS_DIR))
+try:
+    import mode_router as _mr
+    import objective_store as _obj_store
+    import prompt_import as _pim
+    MODOS_REG = _mr.load_registry(str(_MODOS_DIR / "modes_registry.json"), strict=True)
+    _MODOS_ERR = ""
+except Exception as _e:  # paquete modos roto -> los mensajes CON modo fallan cerrado; el resto sigue igual
+    MODOS_REG = None
+    _MODOS_ERR = f"{type(_e).__name__}: {_e}"
+    _mr = None
+    _obj_store = None
+    _pim = None
+
+
+def _modos_objetivo(ses: str) -> dict | None:
+    # state/objective.md por sesion (fail-closed si esta corrupto: objetivo corrupto => error, no ignorarlo)
+    if _obj_store is None:
+        return None
+    return _obj_store.read_objective(str(_MODOS_STATE / f"objective-{ses}.md"))
+
+
+def _modos_emit(ev: str, data: dict) -> None:
+    _ev_modos = {"mode_resolved", "objective_pinned", "step_started", "step_passed", "step_failed",
+                 "cycle_started", "cycle_closed", "task_queued", "task_started", "task_blocked",
+                 "watchdog_stall", "limit_reached", "terminal"}
+    if ev in _ev_modos:
+        try:
+            rec = dict(data, event=ev, t=time.time())
+            os.makedirs(_MODOS_STATE, exist_ok=True)
+            tmp = _MODOS_STATE / "events.jsonl.tmp"
+            tmp.write_text(json.dumps(rec, ensure_ascii=False) + "\n", encoding="utf-8")
+            with open(_MODOS_STATE / "events.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        except OSError:
+            pass
+# <<< MODOS END
+
 
 def _hist_txt(v: Any) -> str:
     # historial previo de la MISMA sesion (el chat lo manda aparte del input): max 20 mensajes y ~12.000 caracteres; solo se anade al prompt del modelo
@@ -966,7 +1010,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
-                  'extra_llm': ({'enable_thinking': True} if opts.get('thinking') else {'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None,
+                  'extra_llm': (({'enable_thinking': False} if opts.get('modos_reasoning') == 'none' else {'reasoning_effort': opts['modos_reasoning']}) if opts.get('modos_reasoning') else  # >>> MODOS <<< mode_wins: el modo decide el razonamiento de la llamada
+                              ({'enable_thinking': True} if opts.get('thinking') else {'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None),
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
                   'perfil': perfil,
                   # Token Plan: thinking obligado en true -> siempre SSE (como mvp.py); el chunk se reenvia si hay visor
@@ -1431,8 +1476,35 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     t0 = time.time()
     _prog(str(p.get('_pid') or ''), 'A0', 'ok')  # worker real tomando la tarea: sale de la cola
     ses = str(p.get('sesion') or 'fichas')[:60]
+    # >>> MODOS BEGIN  (punto D: route_request antes de despachar la ficha; la autoridad del modo es el backend)
+    modo = None
+    _slash_modo = False
+    if MODOS_REG is not None and _mr is not None and p.get("mode_request") is None:
+        _slash_modo = _mr.parse_slash(MODOS_REG, mensaje)[0] is not None  # solo slash de modo (o /auto): /ayuda y /aprobar no son modos
+    if p.get("mode_request") is not None or _slash_modo:
+        if MODOS_REG is None or _mr is None:
+            return {"error": "MODE_ERROR", "code": "REGISTRY_INVALID", "detail": "paquete modos no cargado: " + _MODOS_ERR}
+        try:
+            _routed = _mr.route_request(MODOS_REG, {"message": mensaje, "mode_request": p.get("mode_request")},
+                                        objective=_modos_objetivo(ses), emit=_modos_emit)
+            modo = _pim.apply_prompt_import(MODOS_REG, _routed["ficha"], str(_MODOS_DIR))  # prompt_import_slot tras system_block
+            mensaje = _routed["message"] or mensaje
+            p["_modo_resuelto"] = {"mode_id": _routed["mode_id"], "source": _routed["source"], "reason": _routed["reason"]}
+            _modos_emit("mode_resolved", {"mode_id": _routed["mode_id"], "source": _routed["source"], "sesion": ses})
+        except _mr.ModeError as e:
+            return {"error": "MODE_ERROR", "code": e.code, "detail": e.detail}
+        except Exception as e:  # objetivo corrupto / prompt_import rechazado: fail-closed, nunca seguir en silencio
+            return {"error": "MODE_ERROR", "code": "MODE_INPUT_INVALID", "detail": f"{type(e).__name__}: {e}"}
+        if modo and "pin_objective" in [s if isinstance(s, str) else s.get("id", "") for it in modo["pipeline"] for s in ([it] if isinstance(it, str) else it.get("cycle", []))] and _obj_store is not None and _modos_objetivo(ses) is None:
+            _obj_store.write_objective(str(_MODOS_STATE / f"objective-{ses}.md"),
+                                       {"goal": mensaje[:500], "done_when": ["la tarea entrego evidencia verificable"],
+                                        "constraints": ["respetar topes duros del modo"], "out_of_scope": ["modificar otros archivos del repo"],
+                                        "deliverables": ["respuesta o artefacto pedido"]})
+            _modos_emit("objective_pinned", {"sesion": ses})
+    # <<< MODOS END
     if fid == 'ficha5-mvp':  # Team 5 MVP: camino directo (input + historial + tools -> 1 modelo -> respuesta); la cola, el proceso y el visor son los de la familia
         from . import mvp as _mvp
+        p["_modo"] = modo  # >>> MODOS <<< ficha_modo para la ruta directa (system_block, reasoning, tools)
         return _mvp.chat(p, FICHAS[fid], mensaje, ses, t0)
     if not mensaje.lstrip().lower().startswith('/aprobar'):
         if _confirma(mensaje):  # ok / confirmo / proceder con verificacion: activa la verificacion cruzada si hay una propuesta pendiente
@@ -1448,6 +1520,17 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
     opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'thinking': bool(p.get('thinking') or p.get('thinking_requested')), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
+    # >>> MODOS BEGIN  (punto E: fuera de bucle la fase es 'execute'; el system_block viaja por instrucciones_fijas, que ya se anade al prompt)
+    if modo:
+        opts['modos'] = modo
+        opts['instrucciones_fijas'] = modo["system_block"] + (("\n\n" + opts['instrucciones_fijas']) if opts['instrucciones_fijas'] else "")
+        _fase_modo = "execute"
+        if modo["tool_choice"].get(_fase_modo) == "none":
+            opts['cap_in'] = 'none'  # mode_wins: el modo sin tools apaga el catalogo aunque el payload pida WRITE
+            opts['muta'] = False
+        opts['modos_reasoning'] = modo["reasoning"].get(_fase_modo)
+        opts['modos_limits'] = modo.get("limits")
+    # <<< MODOS END
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:
@@ -1476,7 +1559,8 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
             _pend_cerrar(fid, ses)
         if opts.get('verif_ok'):  # propuesta de verificacion cruzada: ok / confirmo / proceder con verificacion
             _verif_guardar(fid, ses, {'input': mensaje, 'plan': str(opts.get('plan') or ''), 'salida': salida, 'tarea_id': opts['tarea_id'], 'anclados': list(opts.get('anclados') or []), 'constitucion_hash': str(opts.get('constitucion_hash') or ''), 't': time.time()})
-    return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_consult": bool(opts.get("fast_consult")),
+    return {"model": FICHAS[fid].get("ficha", fid), "reply": salida, **({"modo": p["_modo_resuelto"]} if p.get("_modo_resuelto") else {}),  # >>> MODOS <<<
+            **_gov_resp(opts), "fast_lane": bool(opts.get("fast_lane")), "fast_consult": bool(opts.get("fast_consult")),
             "execution_path": ("FAST_CONSULT" if opts.get("fast_consult") else ("FAST_QA" if opts.get("fast_lane") else "HEAVY")),
             "fast_source": str(opts.get('fast_source') or 'NONE'), "fast_reject_reasons": list(opts.get('fast_reject_reasons') or []),
             "choices": [{"index": 0, "message": {"role": "assistant", "content": salida}}],

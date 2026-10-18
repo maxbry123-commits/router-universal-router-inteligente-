@@ -172,7 +172,7 @@ export async function accion(acc, payload) {
   return env.result || {};
 }
 window.RIU_ACCION = accion;
-export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas }) {
+export async function harness({ model, message, max_tokens, avisar, anclados, sesion, qwen, gobernanza, constitucion, fast_reply, contexto_previo, motor, project_id, instrucciones_fijas, mode_request }) {  // >>> MODOS <<< mode_request viaja en el payload
   const base = (window.RIU_CONFIG || {}).harnessUrl;
   const headers = { 'Content-Type': 'application/json' };
   const pw = sessionStorage.getItem('riu_clave');
@@ -188,7 +188,8 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
     motor ? { motor } : {},
     project_id ? { project_id } : {},
     contexto_previo ? { contexto_previo } : {},
-    qwen ? { qwen } : {}
+    mode_request ? { mode_request } : {},   // >>> MODOS <<<
+    qwen ? { qwen: mode_request ? { ...qwen, mode_request } : qwen } : {}   // >>> MODOS <<< tambien dentro de qwen: llega a fichas_qwen haga el merge que haga el puente
   );
   const esHF = model.startsWith('hf-');
   let r;

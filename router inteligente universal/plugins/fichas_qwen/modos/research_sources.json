@@ -1,0 +1,241 @@
+{
+  "sources_version": "1.0.0",
+  "note": "Lista semilla elegida por criterio editorial, no medida por trafico ni verificada en vivo. El modo debe verificar acceso y fallar en suave registrando la fuente caida.",
+  "min_successful": 8,
+  "protocol": {
+    "query_style": "site:{domain} {topic}",
+    "max_results_per_source": 5,
+    "fetch_top": 2,
+    "fail_soft": true,
+    "log_failed_to": "state/research_failed.md",
+    "extract": [
+      "metodo",
+      "libreria",
+      "repo_url",
+      "advertencias",
+      "fecha"
+    ],
+    "freshness_days_preferred": 365,
+    "dedupe_by": "canonical_url"
+  },
+  "sources": [
+    {
+      "id": "s01",
+      "domain": "github.com",
+      "kind": "codigo_comunidad",
+      "use_for": [
+        "repos",
+        "issues",
+        "discussions",
+        "awesome-lists"
+      ],
+      "query_hint": "agent loop OR ralph OR orchestrator"
+    },
+    {
+      "id": "s02",
+      "domain": "huggingface.co",
+      "kind": "modelos_datasets",
+      "use_for": [
+        "modelos",
+        "datasets",
+        "spaces",
+        "papers"
+      ],
+      "query_hint": "agent OR router OR tool calling"
+    },
+    {
+      "id": "s03",
+      "domain": "discuss.huggingface.co",
+      "kind": "foro_comunidad",
+      "use_for": [
+        "foros",
+        "problemas",
+        "metodos"
+      ],
+      "query_hint": "agents OR inference OR tool use"
+    },
+    {
+      "id": "s04",
+      "domain": "stackoverflow.com",
+      "kind": "foro_programacion",
+      "use_for": [
+        "errores",
+        "soluciones",
+        "buenas practicas"
+      ],
+      "query_hint": "error message + stack"
+    },
+    {
+      "id": "s05",
+      "domain": "news.ycombinator.com",
+      "kind": "foro_comunidad",
+      "use_for": [
+        "debates",
+        "herramientas nuevas"
+      ],
+      "query_hint": "coding agents OR agent harness"
+    },
+    {
+      "id": "s06",
+      "domain": "reddit.com",
+      "kind": "foro_comunidad",
+      "use_for": [
+        "r/LocalLLaMA",
+        "r/ClaudeAI",
+        "r/ChatGPTCoding",
+        "r/programming"
+      ],
+      "query_hint": "agent loop OR qwen OR claude code"
+    },
+    {
+      "id": "s07",
+      "domain": "dev.to",
+      "kind": "blog_dev",
+      "use_for": [
+        "tutoriales",
+        "casos"
+      ],
+      "query_hint": "ai agents OR rag pipeline"
+    },
+    {
+      "id": "s08",
+      "domain": "lobste.rs",
+      "kind": "foro_comunidad",
+      "use_for": [
+        "debates tecnicos"
+      ],
+      "query_hint": "llm OR agents"
+    },
+    {
+      "id": "s09",
+      "domain": "arxiv.org",
+      "kind": "investigacion",
+      "use_for": [
+        "papers",
+        "metodos"
+      ],
+      "query_hint": "agentic coding OR tool use OR planning"
+    },
+    {
+      "id": "s10",
+      "domain": "anthropic.com/engineering",
+      "kind": "oficial",
+      "use_for": [
+        "harness",
+        "loops",
+        "subagentes",
+        "buenas practicas"
+      ],
+      "query_hint": "agents OR harness OR claude code"
+    },
+    {
+      "id": "s11",
+      "domain": "docs.langchain.com",
+      "kind": "biblioteca_rag",
+      "use_for": [
+        "rag",
+        "agentes",
+        "grafos"
+      ],
+      "query_hint": "langgraph OR retrieval"
+    },
+    {
+      "id": "s12",
+      "domain": "docs.llamaindex.ai",
+      "kind": "biblioteca_rag",
+      "use_for": [
+        "rag",
+        "indices",
+        "agentes"
+      ],
+      "query_hint": "agent OR query engine"
+    },
+    {
+      "id": "s13",
+      "domain": "docs.haystack.deepset.ai",
+      "kind": "biblioteca_rag",
+      "use_for": [
+        "pipelines",
+        "rag"
+      ],
+      "query_hint": "pipeline OR retriever"
+    },
+    {
+      "id": "s14",
+      "domain": "docs.trychroma.com",
+      "kind": "biblioteca_rag",
+      "use_for": [
+        "vector store",
+        "embeddings"
+      ],
+      "query_hint": "collections OR embeddings"
+    },
+    {
+      "id": "s15",
+      "domain": "qdrant.tech",
+      "kind": "biblioteca_rag",
+      "use_for": [
+        "vector search",
+        "rag"
+      ],
+      "query_hint": "hybrid search OR rag"
+    },
+    {
+      "id": "s16",
+      "domain": "cookbook.openai.com",
+      "kind": "oficial",
+      "use_for": [
+        "recetas",
+        "function calling"
+      ],
+      "query_hint": "function calling OR agents"
+    },
+    {
+      "id": "s17",
+      "domain": "simonwillison.net",
+      "kind": "blog_experto",
+      "use_for": [
+        "llm",
+        "herramientas",
+        "agentes"
+      ],
+      "query_hint": "llm tools OR agents"
+    },
+    {
+      "id": "s18",
+      "domain": "latent.space",
+      "kind": "blog_experto",
+      "use_for": [
+        "ingenieria ai",
+        "agentes"
+      ],
+      "query_hint": "agents OR coding"
+    },
+    {
+      "id": "s19",
+      "domain": "softwareengineering.stackexchange.com",
+      "kind": "foro_programacion",
+      "use_for": [
+        "arquitectura",
+        "patrones"
+      ],
+      "query_hint": "architecture OR design pattern"
+    },
+    {
+      "id": "s20",
+      "domain": "pypi.org",
+      "kind": "paquetes",
+      "use_for": [
+        "librerias",
+        "versiones"
+      ],
+      "query_hint": "agent OR rag OR orchestration"
+    }
+  ],
+  "topic_templates": {
+    "agent_loops": "agent loop gather act verify repeat stop hook",
+    "rag": "rag retrieval pipeline embeddings rerank",
+    "router": "llm router model routing tool calling",
+    "frontend_agent": "coding agent frontend preview approval"
+  }
+}

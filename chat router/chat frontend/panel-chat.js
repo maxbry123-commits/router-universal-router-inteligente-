@@ -8,6 +8,9 @@ import { conectarRiu2 } from "./chat-riu2.js";
 import { conectarVentanasNuevas } from "./ventanas-nuevas.js";
 import { proyId } from "./objetivos-ancla.js";
 import { montarProyectos } from "./ventana-proyectos.js";
+// >>> MODOS BEGIN
+import { initModeSelector } from "./mode_selector.js";
+// <<< MODOS END
 
 const MODOS = { fast: "rápido", balanced: "equilibrado", think: "pensar" };
 const MAX_CHAT = 10;
@@ -583,6 +586,18 @@ export async function mount(root, { api, tell }) {
   pintarMotor();
   const bpr = q("#btn-proyectos"); if (bpr) bpr.addEventListener("click", () => { if (window.RIU_ANCLA_ABRIR) window.RIU_ANCLA_ABRIR("proyecto"); });  // misma ventana-ancla, objetivo Proyecto
   window.addEventListener("riu:fast-reply-toggle", window.__riuFastH);
+  // >>> MODOS BEGIN  (punto A: boton selector de modos junto a los del compositor; el backend es la autoridad)
+  let modeUI = null;
+  try {
+    modeUI = await initModeSelector({
+      mountEl: q("#mode-selector-mount"),
+      registryUrl: "/chat/ui/modes_registry.json",
+      conversationId: "panel",
+      composerEl: q("#message"),
+      thinkingToggleEl: q("#modo"),   // punto C: en modos autonomos el selector de thinking queda deshabilitado
+    });
+  } catch (e) { try { console.warn("mode_selector no cargo:", e); } catch (_) {} }  // si el registro no responde, el chat sigue sin modos
+  // <<< MODOS END
   q("#composer").addEventListener("submit", async event => {
     chat().hist.__sigue = true;  // al enviar vuelves al final
     event.preventDefault();
@@ -639,14 +654,16 @@ export async function mount(root, { api, tell }) {
       const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
       const mensajeQwen = soloLiteralQwen ? rawText : (mvp ? message : A.envolver(message, c.instrucciones));
       const fijasQwen = (soloLiteralQwen || mvp) ? (c.instrucciones || "") : "";
-      const body = { message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: modo === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : {}), ...(mvp || {}) };  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
+      const _conModo = modeUI ? modeUI.wrapSend((b) => b) : ((b) => b);  // >>> MODOS <<< punto B: agrega mode_request al payload sin tocar el resto
+      const body = _conModo({ message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, thinking: modo === "think", ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : {}), ...(mvp || {}) });  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
       const ctxPrev = soloLiteralQwen ? previo(c, rawText) : undefined;  // ficha 2/3: verbatim; consil-code: ultimos 20; Team 5: sin contexto_previo
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
-        : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
+        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, mode_request: modeUI ? modeUI.getModeRequest() : undefined,  // >>> MODOS <<<
+        qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
+        : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);  // >>> MODOS <<< body ya lleva mode_request
       c.detenerFn = null;
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia
       pending.remove();

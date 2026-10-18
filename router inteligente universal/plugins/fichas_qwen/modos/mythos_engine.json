@@ -1,0 +1,60 @@
+{
+  "engine_id": "MYTHOS_ENGINE_v1",
+  "applies_to_mode": "m09_mythos",
+  "language": "es",
+  "baseline": {
+    "name": "Mythos v0 (lo que ya estaba en modes_registry.json)",
+    "description": "Ciclo investigar, ejecutar, probar, listar gaps; maximo 10 ciclos; sin controles propios de convergencia, evidencia ni regresion."
+  },
+  "improvements": [
+    { "id": "M01", "name": "Libro de gaps con cierre solo por evidencia",
+      "mechanism": "Cada gap tiene id, severidad 1-5 y estado open/closed/blocked. close() exige evidencia no vacia; sin evidencia lanza error.",
+      "proof": "test_close_requires_evidence" },
+    { "id": "M02", "name": "Compuerta de investigacion antes de cada paso",
+      "mechanism": "Ningun gap se ejecuta sin al menos min_findings_per_step hallazgos con fuente, deduplicados por fuente. Sin hallazgos el paso se bloquea y cuenta como sin progreso.",
+      "proof": "test_research_gate_blocks_execution" },
+    { "id": "M03", "name": "Multi-hipotesis por gap",
+      "mechanism": "propose() debe devolver al menos min_hypotheses enfoques distintos; se prueba uno y los demas quedan como alternativas registradas.",
+      "proof": "test_converges_and_records_alternatives" },
+    { "id": "M04", "name": "Verificador independiente del ejecutor",
+      "mechanism": "execute() y verify() son callbacks distintos; un gap solo cierra con verify.passed=true y evidencia. El ejecutor nunca se autoevalua.",
+      "proof": "test_converges_and_records_alternatives" },
+    { "id": "M05", "name": "Metrica de convergencia y deteccion de estancamiento",
+      "mechanism": "score = suma de severidades de gaps abiertos; debe bajar estrictamente cada ciclo. stagnation_cycles_trigger ciclos sin mejora suben la profundidad de investigacion.",
+      "proof": "test_stagnation_raises_depth_then_blocks_with_evidence" },
+    { "id": "M06", "name": "Guarda de regresion",
+      "mechanism": "Cada ciclo re-prueba los gaps ya cerrados via regress(); los que se rompieron se reabren.",
+      "proof": "test_regression_reopens_gap" },
+    { "id": "M07", "name": "Presupuesto de tiempo por ciclo con rollover",
+      "mechanism": "El tiempo restante se reparte entre los ciclos que quedan; lo no usado pasa al siguiente. Pasarse del total termina con reporte.",
+      "proof": "test_time_budget_terminates_with_report" },
+    { "id": "M08", "name": "Memoria negativa de enfoques fallidos",
+      "mechanism": "Cada enfoque probado tiene firma sha256(gap+texto normalizado); un enfoque fallido no se vuelve a ejecutar nunca para ese gap.",
+      "proof": "test_failed_approach_never_repeats" },
+    { "id": "M09", "name": "Mejor estado hasta ahora con rollback",
+      "mechanism": "Se guarda snapshot del mejor score. Si un ciclo deja el score peor que el mejor, se restaura codigo y libro al mejor snapshot.",
+      "proof": "test_rollback_to_best_snapshot" },
+    { "id": "M10", "name": "Auditoria final en frio",
+      "mechanism": "Con cero gaps abiertos se ejecuta audit() con contexto limpio. Solo si pasa con evidencia hay convergencia; si falla agrega gaps nuevos y el bucle sigue (dentro del tope de ciclos).",
+      "proof": "test_final_audit_failure_adds_gaps" }
+  ],
+  "config": {
+    "max_cycles": 10,
+    "min_findings_per_step": 1,
+    "min_hypotheses": 2,
+    "stagnation_cycles_trigger": 2,
+    "max_research_depth": 3,
+    "budget": { "max_seconds": 64800 },
+    "best_so_far_rollback": true,
+    "final_audit_required": true
+  },
+  "caps": { "max_cycles": 10, "max_research_depth": 5 },
+  "gap_schema": {
+    "required": ["id", "title", "severity"],
+    "severity_range": [1, 5],
+    "statuses": ["open", "closed", "blocked"]
+  },
+  "terminal_states": ["CONVERGED", "CONVERGED_WITH_BLOCKED", "TERMINATED_BY_LIMIT"],
+  "on_stagnation_ladder": ["raise_research_depth", "block_gap_with_evidence_and_continue"],
+  "escalation": "none"
+}
