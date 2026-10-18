@@ -80,12 +80,12 @@ window.RIU_RETOMAR = async (ses) => {
       if (!r.ok || e.status !== 'ok') { if (++malos >= 8) { guardaProc(ses, null); return { error: e.reason || e.detail || ('HTTP ' + r.status) }; } }  // respuesta invalida repetida: cortar, no girar 560 s
       else if (p.error) { guardaProc(ses, null); return p; }  // error real del proceso (PROCESO_NO_EXISTE tras reinicio): borrar PID y devolver ya
       else if (p.estado && p.estado !== 'procesando') { guardaProc(ses, null); return p; }
-      else if (!p.estado) { if (++malos >= 8) { guardaProc(ses, null); return { error: 'RESULTADO_VACIO' }; } }
+      else if (!p.estado) { if (++malos >= 8) return { estado: 'reanudable', proceso_id: v.pid, error: 'GAP_RESULTADO_TEMPORALMENTE_VACIO', detalle: 'Reconsultar el mismo PID; no relanzar el trabajo' }; }
       else malos = 0;
-    } catch (x) { if (++malos >= 12) { guardaProc(ses, null); return { error: 'ROUTER_SIN_RESPUESTA' }; } }  // red caida ~20 s seguidos: cortar con aviso
+    } catch (x) { if (++malos >= 12) { return { estado: 'reanudable', proceso_id: v.pid, error: 'ROUTER_SIN_RESPUESTA' }; } }  // red caida: mismo PID sigue siendo recuperable
     await new Promise((ok) => setTimeout(ok, 500));
   }
-  return { error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'sigue en el Router' };
+  return { estado: 'reanudable', proceso_id: v.pid, error: 'TIEMPO_TOTAL_AGOTADO', detalle: 'sigue en el Router' };
 };
 try { liveRouter().catch(() => {}); } catch (e) {}  // harnessUrl listo antes del primer envio
 async function puenteRouter(base, body, qs, headers) {
@@ -178,6 +178,18 @@ export async function harness({ model, message, max_tokens, avisar, anclados, se
   const pw = sessionStorage.getItem('riu_clave');
   if (pw) headers['X-Chat-Password'] = pw;
   const messages = [{ role: 'user', content: message }];
+  const extra = Object.assign(
+    { active_anchors_v1: true },
+    { sesion: sesion || undefined, anclados: anclados || [] },
+    gobernanza !== undefined ? { gobernanza } : {},
+    constitucion !== undefined ? { constitucion } : {},
+    instrucciones_fijas ? { instrucciones_fijas } : {},
+    fast_reply ? { fast_reply } : {},
+    motor ? { motor } : {},
+    project_id ? { project_id } : {},
+    contexto_previo ? { contexto_previo } : {},
+    qwen ? { qwen } : {}
+  );
   const esHF = model.startsWith('hf-');
   let r;
   if (esHF && L4.url) {

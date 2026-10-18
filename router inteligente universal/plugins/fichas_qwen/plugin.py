@@ -966,7 +966,7 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
                   'tarea_id': opts.get('tarea_id') or '', 'task_id': opts.get('tarea_id') or '', 'anclados': list(opts.get('anclados') or []), 'gobernanza': opts.get('gobernanza') or {}, 'constitucion': opts.get('constitucion') or {}, 'constitucion_hash_esperado': str(opts.get('constitucion_hash') or ''), 'gov_ctx': dict(opts.get('gov_ctx') or {}), 'nodo_scope': _scope_nodo(ficha, n), 'nodo': str(n.get('id')),
-                  'extra_llm': ({'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None,
+                  'extra_llm': ({'enable_thinking': True} if opts.get('thinking') else {'enable_thinking': False} if ((perfil == 'fast' and (modelo in _FAST_LOW or cap_in == 'none')) or (cap_nodo == 'none' and cap_in == 'none' and opts.get('fid') == 'ficha1-modelos')) else {'reasoning_effort': ESFUERZO_FICHA[modelo]}) if modelo in ESFUERZO_FICHA else None,
                   # llamadas sin tools llevan el perfil comun; con tools el Harness lo ignora (extra_llm solo se aplica si tools=None)
                   'perfil': perfil,
                   # Token Plan: thinking obligado en true -> siempre SSE (como mvp.py); el chunk se reenvia si hay visor
@@ -1447,7 +1447,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     pend_t = _pend_cargar(fid, ses) if ap else None
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'thinking': bool(p.get('thinking') or p.get('thinking_requested')), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:
