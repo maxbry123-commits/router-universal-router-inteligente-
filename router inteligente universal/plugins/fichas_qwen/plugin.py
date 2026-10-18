@@ -918,7 +918,6 @@ def _yaiwes_system_messages(ficha: dict, nodo: dict, prompt_user: str) -> list[d
             {'role': 'user', 'content': prompt_user}]
 
 
->>>>>>> 07995ccc8f (FASE2+PARCHE3+4: system_prompt harness, literal ficha 2/3, OFF real anclas, listado 2000, finish_reason+continuidad, lock agente, chat-full)
 def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
     _tp = next((x.get('tipo') for x in (ficha.get('selector') or []) if x.get('id') == modelo), None)
