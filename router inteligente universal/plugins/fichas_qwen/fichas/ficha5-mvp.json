@@ -1,6 +1,8 @@
 {
   "ficha": "ficha5-mvp",
   "nombre": "Team 5 MVP",
+  "version": 2,
+  "api": "modelos-14",
   "selector_fuente": "ficha1-modelos",
   "ejecucion": {
     "modo": "directo",
@@ -8,11 +10,16 @@
     "dag": false,
     "council": false,
     "reviewers": false,
-    "fast_lane": false,
+    "fast_lane": true,
     "timeout_total_s": 300
   },
   "memoria": {
     "provider": "harness",
+    "namespace": "{TASK_ID}",
+    "project_memory": "YAIWES",
+    "read_project_memory": true,
+    "write_task_memory": true,
+    "write_project_memory": false,
     "misma_sesion_chat": true
   },
   "tools": {
@@ -23,6 +30,36 @@
   "model_config": {
     "source": "registry_existente",
     "no_duplicar_provider_config": true
+  },
+  "dsl": {
+    "tokens": {
+      "task_budget": 10000000,
+      "max_output_tokens": 1500
+    },
+    "cache": {
+      "enabled": true,
+      "reuse_context": true
+    },
+    "parallel": {
+      "enabled": true,
+      "max_parallel": 4,
+      "mode": "partial",
+      "overflow": "queue"
+    },
+    "priority": 50,
+    "retry": {
+      "max_attempts": 3
+    },
+    "timeouts": {
+      "queue_seconds": 600,
+      "api_seconds": 90
+    },
+    "on_finish": {
+      "save_usage": true,
+      "save_cache": true,
+      "release_slot": true,
+      "start_next": true
+    }
   },
   "salida": {
     "devolver_texto_modelo": true,
