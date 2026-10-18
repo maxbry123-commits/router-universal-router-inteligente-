@@ -56,5 +56,10 @@ export function ampliarAnclados(lista) {
   const c = typeof window !== "undefined" && window.RIU_CHAT ? window.RIU_CHAT.chat() : null; if (c && c.sesion) lista = sinMute(c.sesion, lista);
   const rs = refsCompartidas("chat").map((r) => "secreto:" + r);
   const con = dameCon(), cs = con.encendida ? nombresConst(con).map((n) => "constitucion:" + n) : [];  // archivos de la ventana Constitucion = fuentes constitucionales directas
-  return [...lista, ...[...rs, ...cs].filter((x) => !lista.includes(x))];
+  // Solo proyectos ENCEDIDOS; una asociacion almacenada con ON=false NO es ancla activa.
+  const pActivas = dameProyGlobal()
+    .filter(p => p.on === true && p.project_id)
+    .flatMap(p => (p.items || []).map(n => 'proyecto:' + p.project_id + ':' + n));
+  // El servidor acepta la lista final como snapshot del turno; no inyecta todo el almacen.
+  return [...new Set([...lista, ...rs, ...cs, ...pActivas])];
 }

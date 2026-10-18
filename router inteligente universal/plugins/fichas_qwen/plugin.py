@@ -893,6 +893,32 @@ def _consult(ficha, nodos, mensaje, elegido, pid, opts):
 _FAST_LOW = {'ficha-qwen37max', 'ficha-qwen37plus'}  # FAST: serie 3.7 sin thinking (con low aun razona ~1400 tokens, TTFT 20 s > tope FAST 25 s; false medido OK)
 
 
+def _yaiwes_system_messages(ficha: dict, nodo: dict, prompt_user: str) -> list[dict]:
+    """SOLO fichas 2/3, SOLO nodo declarado, SYSTEM inmutable + USER intacto."""
+    nombre = str(ficha.get('ficha') or '')
+    if nombre not in ('ficha2-dag-codigo', 'ficha3-frontend'):
+        return [{'role': 'user', 'content': prompt_user}]
+    cfg = ficha.get('system_prompt_yaiwes_v1')
+    if not cfg:
+        raise RuntimeError('GAP_SYSTEM_PROMPT_FASE1_AUSENTE')
+    if cfg.get('schema') != 'yaiwes.system-prompt/v1':
+        raise RuntimeError('GAP_SYSTEM_PROMPT_SCHEMA')
+    if str(nodo.get('id')) not in cfg.get('scope', []):
+        return [{'role': 'user', 'content': prompt_user}]
+    import hashlib
+    literal = cfg.get('source_text')
+    if not isinstance(literal, str) or not literal:
+        raise RuntimeError('GAP_SYSTEM_PROMPT_LITERAL_VACIO')
+    firma = hashlib.sha256(literal.encode('utf-8')).hexdigest()
+    if firma != cfg.get('source_sha256'):
+        raise RuntimeError('GAP_SYSTEM_PROMPT_LITERAL_ALTERADO')
+    system = literal + '\n\n' + str(cfg.get('additional_text') or '')
+    # No resumir ni truncar system; el proveedor debe aceptar la llamada o responder GAP.
+    return [{'role': 'system', 'content': system},
+            {'role': 'user', 'content': prompt_user}]
+
+
+>>>>>>> 07995ccc8f (FASE2+PARCHE3+4: system_prompt harness, literal ficha 2/3, OFF real anclas, listado 2000, finish_reason+continuidad, lock agente, chat-full)
 def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[str, Any], opts: dict[str, Any]) -> str:
     # Ask consil por el Harness original (puente_chat): mismo HTTP, mismas herramientas, mismo modelo Qwencloud
     _tp = next((x.get('tipo') for x in (ficha.get('selector') or []) if x.get('id') == modelo), None)
@@ -910,7 +936,16 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
         _fc = _fast_cfg(ficha)
         api_s = min(api_s, _fc['timeout_s'])
         max_tok = min(max_tok, _fc['max_output_tokens'])
-    if len(prompt) > limite:
+    if str(ficha.get('ficha') or '') in ('ficha2-dag-codigo', 'ficha3-frontend'):
+        _mensajes_preflight = _yaiwes_system_messages(ficha, n, prompt)
+        _chars_todos = sum(len(str(m.get('content') or '')) for m in _mensajes_preflight)
+        if _chars_todos > limite:
+            raise RuntimeError(
+                'GAP_CONTEXT_TOTAL_REQUIERE_PARTICION:'
+                f' system+user={_chars_todos} caracteres > umbral_configurado={limite}; '
+                'ninguna instruccion fue recortada'
+            )
+    elif len(prompt) > limite:
         raise RuntimeError('INPUT_SUPERA_LIMITE:%d>%d' % (len(prompt), limite))
     escribe = bool((n.get('id') == 'N4') if (opts.get('gobernanza') or {}).get('enabled') else (n.get('escribe') or n.get('id') == 'N4')) and bool(opts.get('aprobado'))
     if fast:
@@ -952,7 +987,8 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
             _bp.append(c_)
             _PARCIAL[_pidp] = ''.join(_bp)
     _tm = time.time()
-    r = pc._chat({'model': qw, 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': max_tok,
+    r = pc._chat({'model': qw, 'messages': _yaiwes_system_messages(ficha, n, prompt), 'max_tokens': max_tok,
+                  'ficha_id': str(ficha.get('ficha') or ''), 'active_anchors_v1': bool(opts.get('active_anchors_v1')),
                   'sesion': opts.get('sesion') or 'fichas', 'presupuesto_s': api_s, 'solo_lectura': not escribe,
                   'requiere_tools': requiere_tools, 'tools_habilitadas': cap_nodo != 'none', 'cap_tools': cap_nodo,
                   # NONE: sin catalogo; READ: solo lectura; WRITE: autorizado
@@ -962,6 +998,9 @@ def _llamar_harness_1(modelo: str, prompt: str, ficha: dict[str, Any], n: dict[s
                   'perfil': perfil,
                   # Token Plan: thinking obligado en true -> siempre SSE (como mvp.py); el chunk se reenvia si hay visor
                   'stream_fn': opts.get('stream_fn') if callable(opts.get('stream_fn')) else _sf_parcial})
+    if isinstance(r, dict) and r.get('error') == 'GAP_OUTPUT_TRUNCATED':
+        opts.setdefault('salidas_parciales', {})[str(n.get('id'))] = str(r.get('parcial') or '')
+        raise RuntimeError('GAP_OUTPUT_TRUNCATED:' + str(n.get('id')))
     try:  # metrica de latencia por nodo (solo registro, no cambia la salida)
         _perfil = perfil
         _tcs = r.get('tool_calls') if isinstance(r.get('tool_calls'), list) else (r.get('herramientas') if isinstance(r.get('herramientas'), list) else [])
@@ -1273,6 +1312,9 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
             r = nl_.join(g.get('texto', '') for g in n.get('goals', []) if g.get('texto') and g.get('texto') != 'PONER AQUI')
             if i == 'N0':  # N0 real: el input literal del Director + las instrucciones fijas y restricciones de la tarea
                 r = 'INPUT LITERAL DEL DIRECTOR:' + nl_ + mensaje + _hb(opts, nl_) + (nl_ * 2 + r if r else '')
+                fijas = str(opts.get('instrucciones_fijas') or '')
+                if fijas:
+                    r += nl_ * 2 + '[INSTRUCCIONES FIJAS]\n' + fijas + '\n[FIN INSTRUCCIONES FIJAS]'
                 if opts.get('anexo_entrada'):
                     r += nl_ * 2 + 'REVISION DE ENTRADA (sheriff / agente de memoria, Qwen 3.6 Flash):' + nl_ + str(opts['anexo_entrada'])[:1500]
             elif n.get('depende_de'):  # N5 real: plan aprobado + criterios de PASS + evidencia requerida
@@ -1432,7 +1474,7 @@ def _chat(p: dict[str, Any]) -> dict[str, Any]:
     pend_t = _pend_cargar(fid, ses) if ap else None
     from plugins.puente_chat.capacidad import capacidad_de as _capacidad_de
     _cap_in = _capacidad_de(mensaje)  # unica autoridad de permisos: muta solo si la puerta CAP dice WRITE
-    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
+    opts: dict[str, Any] = {'aprobado': ap, 'muta': _cap_in == 'write', 'sesion': ses, 'fid': fid, 'cap_in': _cap_in, 'fast_reply': bool(p.get('fast_reply')), 'task_type': str(p.get('task_type') or '').lower(), 'historial': _hist_txt(p.get('contexto_previo')), 'tarea_id': str(p.get('task_id') or p.get('_pid') or secrets.token_hex(6)), 'caller_id': str(p.get('caller_id') or ''), 'instrucciones_fijas': str(p.get('instrucciones_fijas') or ''), 'active_anchors_v1': p.get('active_anchors_v1') is True, 'anclados': (list(p.get('anclados')) if isinstance(p.get('anclados'), (list, tuple)) else [])}  # task_id estable: mismo process_id -> mismos checkpoints/governance/receipts
     opts['gobernanza'] = _gob(FICHAS[fid], p)
     opts['constitucion'] = _const_ref(FICHAS[fid], p)
     if ap and not pend_t:

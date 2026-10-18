@@ -353,23 +353,38 @@ export async function mount(root, { api, tell }) {
   let anclarAlSubir = false;  // true solo cuando se sube desde la ventana ⚓
   const subir = async (file) => {
     const buf = await file.arrayBuffer();
-    if (buf.byteLength > 2_000_000) { tell("Archivo muy grande (máx ~2 MB)"); return; }
+    if (buf.byteLength > 2_000_000) throw new Error('ARCHIVO_MUY_GRANDE: límite vigente de 2 MB por archivo');
     let bin = ""; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     const _dest = window.RIU_DESTINO_ARCHIVOS || (() => ({}));  // destinoArchivos(): unica autoridad de a donde van los archivos (chat / constitucion / proyecto seleccionado)
-    const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion, ..._dest() });
+    const destinoExplicito = _dest();
+    const projectId = String(q('#adjunto')?.dataset.riuUploadProject || '');
+    const destinoCarga = projectId ? { destino: 'proyecto', project_id: projectId } : destinoExplicito;
+    const r = await window.RIU_ACCION("subir", { nombre: file.name, tipo: file.type || "texto", datos_b64: btoa(bin), sesion: chat().sesion, ...destinoCarga });
+    if (!r || r.error || r.ok !== true) {
+      throw new Error('GAP_SUBIR: ' + String((r && (r.error || r.detalle)) || 'SIN_CONFIRMACION'));
+    }
+    // solo DESPUES se permite decir "Subido" y/o cambiar el Set de anclas
     if (anclarAlSubir) { chatA().anclados.add(r.nombre || file.name); pintarAnclados(); guardar(); tell("Subido y anclado: " + (r.nombre || file.name)); }
     else tell("Subido (sin anclar): " + (r.nombre || file.name));
   };
   const subirVarios = async (files) => {
-    for (const f of files) { try { await subir(f); } catch (err) { tell(f.name + ": " + err.message); } }
+    const lote = [...files]; let correctos = 0, fallidos = 0;
+    for (const [i, f] of lote.entries()) {
+      try { await subir(f); correctos++; }
+      catch (err) { fallidos++; tell(f.name + ': ' + err.message); }
+      if ((i + 1) % 10 === 0 || i + 1 === lote.length)
+        tell('Subidas: ' + (i + 1) + '/' + lote.length + ' · PASS ' + correctos + ' · GAP ' + fallidos);
+    }
     if (!q("#ventana-ancla").hidden) cargarArchivos("#anc-lista");
   };
-  q("#btn-adjunto").addEventListener("click", () => { anclarAlSubir = false; q("#adjunto").click(); });
+  q("#btn-adjunto").addEventListener("click", () => { anclarAlSubir = false; delete q("#adjunto").dataset.riuUploadProject; q("#adjunto").click(); });
   q("#adjunto").addEventListener("change", async (e) => {
-    const fs = [...e.target.files]; e.target.value = "";
-    if (fs.length) await subirVarios(fs);
-    anclarAlSubir = false;
+    try {
+      const fs = [...e.target.files]; e.target.value = "";
+      if (fs.length) await subirVarios(fs);
+      anclarAlSubir = false;
+    } finally { delete e.target.dataset.riuUploadProject; }
   });
   q("#anc-subir").addEventListener("click", () => { anclarAlSubir = true; q("#adjunto").click(); });
   const anclarTodos = async (encender) => {
@@ -541,6 +556,30 @@ export async function mount(root, { api, tell }) {
   window.__riuFastH = (ev) => { chat().fastReply = (ev && ev.detail && ev.detail.forzar) ? true : !chat().fastReply; pintarFastReply(); guardar(); tell(chat().fastReply ? "Respuesta rápida activada" : "Respuesta rápida desactivada"); };
   const pintarMotor = () => { const b = q("#btn-motor-on"); if (b) { b.classList.toggle("sel-on", !!chat().motor); b.setAttribute("aria-pressed", String(!!chat().motor)); } };
   const bmo = q("#btn-motor-on"); if (bmo) bmo.addEventListener("click", () => { chat().motor = !chat().motor; pintarMotor(); guardar(); tell(chat().motor ? "⚙ Motor ON: el modelo puede descargar, extraer, copiar y mover" : "⚙ Motor OFF"); });
+  const bLock = q('#btn-agent-access-lock');
+  if (bLock) {
+    let busy = false, locked = true;  // UI no habilita nada antes de leer el servidor
+    const pintarLock = () => {
+      bLock.textContent = locked ? '🔒 IA/agentes/tools BLOQUEADOS' : '🔓 IA/agentes/tools habilitados';
+      bLock.setAttribute('aria-pressed', String(locked));
+    };
+    bLock.disabled = true; pintarLock();
+    const refrescarLock = async () => {
+      const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion });
+      if (!r || r.ok !== true || typeof r.locked !== 'boolean') throw new Error('GAP_AGENT_LOCK_ESTADO');
+      locked = r.locked; pintarLock(); bLock.disabled = false;
+    };
+    void refrescarLock().catch(() => { locked = true; pintarLock(); bLock.disabled = true; });
+    bLock.addEventListener('click', async () => {
+      if (busy) return; busy = true; bLock.disabled = true;
+      try {
+        const r = await window.RIU_ACCION('agent_access_lock', { sesion: chat().sesion, locked: !locked });
+        if (!r || r.ok !== true || r.locked !== !locked) throw new Error('GAP_AGENT_LOCK_CAMBIO');
+        locked = r.locked; pintarLock();
+      } catch (e) { tell('GAP: no se verificó el bloqueo: ' + e.message); }
+      finally { busy = false; bLock.disabled = false; }
+    });
+  }
   pintarMotor();
   const bpr = q("#btn-proyectos"); if (bpr) bpr.addEventListener("click", () => { if (window.RIU_ANCLA_ABRIR) window.RIU_ANCLA_ABRIR("proyecto"); });  // misma ventana-ancla, objetivo Proyecto
   window.addEventListener("riu:fast-reply-toggle", window.__riuFastH);
@@ -549,7 +588,8 @@ export async function mount(root, { api, tell }) {
     event.preventDefault();
     const c = chat();
     const input = q("#message");
-    const message = input.value.trim();
+    const rawText = input.value;
+    const message = rawText.trim();
     if (!message) return;
     if (c.ocupado) { tell("Este chat ya tiene una tarea en curso"); return; }  // una tarea por chat; los demas chats siguen en paralelo
     if (message === "/ayuda") { tell("Elige modelo en la píldora, enciende anclas/archivos y envía. /ayuda no ejecuta modelos."); return; }
@@ -595,14 +635,17 @@ export async function mount(root, { api, tell }) {
     try {
       const selAct = window.RIU_SELECTORES?.activo;  // selectores Qwen -> plugin fichas_qwen (fichas 1, 2, 3 y 5 = Team 5 MVP)
       const fq = selAct === "team-qwen" ? "1" : selAct === "ask-consil-code-qwen-team" ? "2" : selAct === "ask-consil-fromtend-qwen-team" ? "3" : null;
+      const soloLiteralQwen = fq === "2" || fq === "3";  // ficha 2/3: input verbatim del Director (sin envolver ni trim)
+      const mensajeQwen = soloLiteralQwen ? rawText : (mvp ? message : A.envolver(message, c.instrucciones));
+      const fijasQwen = (soloLiteralQwen || mvp) ? (c.instrucciones || "") : "";
       const mvp = selAct === "team-5-mvp" ? { plugin: "fichas_qwen", ficha_qwen: "5", modelo: c.selectorQwen ? c.selectorQwen.label : "", instrucciones_fijas: c.instrucciones || "" } : null;  // Team 5 MVP: fichas_qwen ficha_qwen=5, sin N4, sin fallback
-      const body = { message: mvp ? message : A.envolver(message, c.instrucciones), ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : {}), ...(mvp || {}) };  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha
+      const body = { message: mensajeQwen, ficha: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), provider, model, mode: agent ? "agent" : "direct", agent_id: agent || null, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, ...(fijasQwen ? { instrucciones_fijas: fijasQwen } : {}), ...(fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : {}), ...(mvp || {}) };  // MVP: input literal + instrucciones_fijas aparte, max_tokens lo decide la ficha; ficha 2/3 verbatim + instrucciones_fijas
       // con harnessUrl el mensaje va al harness DeepSeek (y este a la memoria por su plugin); si no, al Router como hoy
       c.detenerFlag = false;
       const raceDetener = new Promise((_, rej) => { c.detenerFn = () => rej(new Error("PROCESO_DETENIDO")); });  // Detener ya vale desde aqui: tambien mientras se restaura el historial o se arma el contexto
-      const ctxPrev = selAct === "ask-consil-code-qwen-team" ? previo(c, message) : undefined;  // Team 5 MVP: SIN contexto_previo -> contexto_explicito=false -> el Harness lee memoria_yaiwes; consil-code: ultimos 20
+      const ctxPrev = soloLiteralQwen ? previo(c, rawText) : undefined;  // ficha 2/3: verbatim; consil-code: ultimos 20; Team 5: sin contexto_previo
       const answer = window.RIU_CONFIG?.harnessUrl
-        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mvp ? message : A.envolver(message, c.instrucciones), max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
+        ? await Promise.race([window.RIU_HARNESS({ model: fichaQwen || (selAct === "ask-consil-nvidia-groq" ? "ask-consil-factory" : c.ficha), message: mensajeQwen, max_tokens: mvp ? 0 : max_tokens, fast_reply: !!c.fastReply && FAST_SEL(), motor: !!c.motor, project_id: c.project_id || null, contexto_previo: ctxPrev, anclados: [...c.anclados], sesion: c.sesion, instrucciones_fijas: fijasQwen || undefined, qwen: fq ? { plugin: "fichas_qwen", ficha_qwen: fq, modelo: fq === "1" && c.selectorQwen ? c.selectorQwen.label : "", task_type: "chat" } : (mvp || null), avisar: (t) => c.hist.append(node('div', t, 'item message')) }), raceDetener])
         : await Promise.race([api("/chat/send", { method: "POST", body }), raceDetener]);
       c.detenerFn = null;
       if (c.detenerFlag) throw new Error("PROCESO_DETENIDO");  // detenido mientras la respuesta llegaba: no pintar respuesta tardia

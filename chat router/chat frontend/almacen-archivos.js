@@ -95,8 +95,8 @@ export function montarAlmacenArchivos(root, { tell }) {
     await cargar();
   }
   function pintarSub() {
-    listaSub.replaceChildren(); subidas = subidas.slice(0, 12);
-    subidas.forEach((s) => { const f = el("div", "vn-item"); f.append(el("span", "", (s.estado === "ok" ? "✓ " : s.estado === "error" ? "⚠ " : "… ") + s.nombre + (s.nota ? " · " + s.nota : "")), s.estado === "error" ? boton("Reintentar", "mini", async () => { s.estado = "subiendo"; s.nota = ""; pintarSub(); await subirUno(s); await cargar(); }) : el("span")); listaSub.append(f); });
+    listaSub.replaceChildren();
+    subidas.slice(0, 30).forEach((s) => { const f = el("div", "vn-item"); f.append(el("span", "", (s.estado === "ok" ? "✓ " : s.estado === "error" ? "⚠ " : "… ") + s.nombre + (s.nota ? " · " + s.nota : "")), s.estado === "error" ? boton("Reintentar", "mini", async () => { s.estado = "subiendo"; s.nota = ""; pintarSub(); await subirUno(s); await cargar(); }) : el("span")); listaSub.append(f); });
   }
   // ---- borrar / restaurar ----
   async function borrar(nombres) {

@@ -1,7 +1,7 @@
 // agregar-al-chat.js — hoja «Agregar al chat» (referencia del Director): Cámara / Fotos / Archivos, carpeta de proyecto, interruptores reales y accesos.
 // El clip abre esta hoja; «Archivos» hace lo de siempre (selector directo). Los interruptores son los de verdad (workflow, constitución, sandbox, agentes).
 import { leer, escribir, KEYS } from "./almacen.js";
-import { crearObjetivo, listaWF, listaProyectos } from "./objetivos-ancla.js";
+import { crearObjetivo, listaWF, listaProyectos, proyId } from "./objetivos-ancla.js";
 import { el, boton, crearVentana, abrirVentana } from "./ventanas-comun.js";
 const KPS = "riu_proyecto_subida_v1";
 const SVG = (p) => '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + "</svg>";
@@ -11,11 +11,13 @@ export function montarAgregarAlChat({ root, q, tell }) {
   const cuerpo = el("div", "ag-cuerpo"); caja.append(cuerpo);
   const proyecto = () => { try { return localStorage.getItem(KPS) || ""; } catch (e) { return ""; } };
   const fijarProyecto = (n) => { try { if (n) localStorage.setItem(KPS, n); else localStorage.removeItem(KPS); } catch (e) {} };
-  const directo = () => { btn.dataset.directo = "1"; try { btn.click(); } finally { delete btn.dataset.directo; } };
+  const directo = () => { const pn = proyecto(); const pObj = listaProyectos().find((p) => p.nombre === pn); inp.dataset.riuUploadProject = pObj ? (pObj.project_id || proyId(pObj.id)) : ''; btn.dataset.directo = "1"; try { btn.click(); } finally { delete btn.dataset.directo; } };
   btn.addEventListener("click", (e) => { if (btn.dataset.directo) return; e.preventDefault(); e.stopImmediatePropagation(); pintar(); abrirVentana(root, sheet); }, true);
-  inp.addEventListener("change", () => { const pn = proyecto(); if (!pn) return; const o = crearObjetivo("proyecto", pn); if (o) [...(inp.files || [])].forEach((f) => o.anclados.add(f.name)); });
   const adjuntar = (files) => {
     files = [...files]; if (!files.length) return; const dt = new DataTransfer(); files.forEach((f) => dt.items.add(f));
+    const pn = proyecto();
+    const pObj = listaProyectos().find((p) => p.nombre === pn);
+    inp.dataset.riuUploadProject = pObj ? (pObj.project_id || proyId(pObj.id)) : '';  // destino fisico asignado ANTES del change de subida
     btn.dataset.directo = "1"; inp.click = () => {}; try { btn.click(); } finally { delete inp.click; delete btn.dataset.directo; }
     inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true })); sheet.hidden = true;
   };
@@ -34,7 +36,7 @@ export function montarAgregarAlChat({ root, q, tell }) {
     const g = el("div", "ag-3");
     g.append(grande("Cámara", SVG('<path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'), () => iCam.click()),
       grande("Fotos", SVG('<rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="M5 17l5-5 4 4 2-2 3 3"/>'), () => iFoto.click()),
-      grande("Archivos", SVG('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9.5 13.5L12 11l2.5 2.5"/>'), () => { sheet.hidden = true; directo(); }));
+      grande("Archivos", SVG('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9.5 13.5L12 11l2.5 2.5"/>'), () => { sheet.hidden = true; const pnr = proyecto(); const pObj2 = listaProyectos().find((p) => p.nombre === pnr); inp.dataset.riuUploadProject = pObj2 ? (pObj2.project_id || proyId(pObj2.id)) : ''; directo(); }));
     cuerpo.append(g);
     const pn = proyecto(), lp = el("div", "ag-lista"); lp.hidden = true;
     ["", ...listaProyectos().map((p) => p.nombre)].forEach((n) => lp.append(boton(n || "Ninguno", "mini" + (n === pn ? " on" : ""), () => { fijarProyecto(n); tell(n ? "Lo que subas se agrega a «" + n + "»" : "Sin carpeta de proyecto"); pintar(); })));

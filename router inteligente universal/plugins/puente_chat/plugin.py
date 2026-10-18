@@ -133,6 +133,8 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
     razon: list[str] = []
     usage: dict = {}
     calls: dict[int, dict] = {}
+    finish_reason = None
+    saw_done = False
     try:
         _fin_s = time.monotonic() + espera
         with _abrir(req, espera) as r:
@@ -143,6 +145,7 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                     continue
                 dato = linea[5:].strip()
                 if dato == b'[DONE]':
+                    saw_done = True
                     break
                 try:
                     ev = json.loads(dato)
@@ -155,6 +158,9 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                     except (TypeError, ValueError):
                         _ce = 502
                     return (_ce if 400 <= _ce < 600 else 502), {'error': ev['error']}
+                opciones = ev.get('choices') or []
+                if opciones and opciones[0].get('finish_reason') is not None:
+                    finish_reason = str(opciones[0]['finish_reason'])
                 if isinstance(ev.get('usage'), dict):
                     usage = ev['usage']
                 d_ = ((ev.get('choices') or [{}])[0].get('delta') or {})
@@ -181,12 +187,15 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
                         acc['function']['arguments'] += str(f_['arguments'])
             if not partes and not calls and not razon and not usage:
                 return 502, {'error': 'STREAM_VACIO'}  # el proveedor cerro sin datos: no es una respuesta valida
+            if not saw_done and finish_reason is None:
+                return 502, {'error': 'GAP_STREAM_INTERRUPTED',
+                             'parcial': ''.join(partes)}
             msg: dict = {'role': 'assistant', 'content': ''.join(partes)}
             if calls:
                 msg['tool_calls'] = [calls[i] for i in sorted(calls)]
             if razon:
                 msg['reasoning_content'] = ''.join(razon)
-            d: dict = {'choices': [{'index': 0, 'message': msg}]}
+            d: dict = {'choices': [{'index': 0, 'message': msg, 'finish_reason': finish_reason}]}
             if usage:
                 d['usage'] = usage
             return 200, d
@@ -198,6 +207,36 @@ def _http_stream(url: str, token: str, cuerpo: Any, espera: float, on_delta) -> 
             return e.code, {"error": texto[:200]}
     except (TimeoutError, OSError, _hc.HTTPException):
         return 0, {'error': 'PROVEEDOR_TIMEOUT_O_RED'}
+
+
+def _agent_lock_status(sesion: str) -> bool:
+    """Fail closed si no puede leerse el estado de autorizacion del agente."""
+    try:
+        mem, sf = _memoria()
+        rows = mem.load(sf(DUENO, 'chat:' + str(sesion)[:60]), 'agent_access_lock:v1')
+        if not rows:
+            return False  # valor de migracion: anterior sin bloqueo; NO elevar permisos
+        d = rows[0].get('data') if isinstance(rows[0], dict) else None
+        if not isinstance(d, dict) or not isinstance(d.get('locked'), bool):
+            return True
+        return d['locked']
+    except Exception:  # noqa: BLE001
+        return True  # fallo de memoria: NO autorizar agentes por suposicion
+
+
+def _agent_lock_set(sesion: str, locked: bool) -> dict:
+    if type(locked) is not bool:
+        return {'error': 'GAP_AGENT_LOCK_INVALIDO'}
+    try:
+        mem, sf = _memoria()
+        mem.save(sf(DUENO, 'chat:' + str(sesion)[:60]), 'agent_access_lock:v1',
+                 {'locked': locked, 'ts': time.time()})
+        vigente = _agent_lock_status(sesion)
+        if vigente != locked:
+            return {'error': 'GAP_AGENT_LOCK_NO_PERSISTIDO'}
+        return {'ok': True, 'locked': vigente}
+    except Exception as exc:  # noqa: BLE001
+        return {'error': 'GAP_AGENT_LOCK_WRITE', 'detalle': type(exc).__name__}
 
 
 def _tokens_hf() -> list[str]:
@@ -253,6 +292,30 @@ def _contexto(sesion: str, pregunta: str) -> str:
 def _guardar(sesion: str, modelo: str, pregunta: str, respuesta: str) -> bool:
     try:
         mem, scope_for = _memoria()
+        if len(pregunta) > 4000 or len(respuesta) > 8000:
+            import hashlib
+            _huella = hashlib.sha256(
+                (pregunta + '\0' + respuesta).encode('utf-8')
+            ).hexdigest()
+            _scope_full = scope_for(DUENO, 'chat-full:' + sesion)
+            _key_full = 'archivo:turno-full:' + _huella  # politica _solo_sqlite: sin replicas
+            _prev_full = mem.load(_scope_full, _key_full)
+            if not _prev_full:
+                mem.save(_scope_full, _key_full, {
+                    'pregunta': pregunta,
+                    'respuesta': respuesta,
+                    'sha256': _huella,
+                    'integridad': 'verbatim-utf8',
+                })
+                _prev_full = mem.load(_scope_full, _key_full)
+            _rows = _prev_full if isinstance(_prev_full, list) else []
+            if not any(isinstance(row, dict) and
+                       isinstance(row.get('data'), dict) and
+                       row['data'].get('sha256') == _huella and
+                       row['data'].get('pregunta') == pregunta and
+                       row['data'].get('respuesta') == respuesta
+                       for row in _rows):
+                raise RuntimeError('GAP_ARCHIVO_COMPLETO_NO_VERIFICADO')
         mem.save(scope_for(DUENO, "chat:" + sesion), "turno-%d" % int(time.time() * 1000),
                  {"modelo": modelo, "pregunta": pregunta[:4000], "respuesta": respuesta[:8000]})
         return True
@@ -587,8 +650,15 @@ def _llamar_api(proveedor, modelo, mensajes, max_tokens, tope, tools):
             ex = _extras(pol, tools)
             if proveedor == 'qwencloud':
                 if tools and modelo.startswith('qwen') and modelo not in _SOLO_THINKING:
-                    ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
-                    ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
+                    _exp_th = os.environ.get('RIU_QWEN_TOOLS_THINKING_TESTED') == '1' \
+                        and str((_IDS_CTX.get() or {}).get('ficha_id') or '') in ('ficha2-dag-codigo', 'ficha3-frontend') \
+                        and str(_PERFIL.get() or '') in ('code', 'auditoria')
+                    if _exp_th:
+                        # Experiment B condicionado: thinking ON con tool_choice=auto (documentado QwenCloud).
+                        ex['tool_choice'] = 'auto'
+                    else:
+                        ex['enable_thinking'] = False  # Function Calling oficial Qwen: la llamada que decide la tool no razona
+                        ex.pop('reasoning_effort', None)  # nunca enable_thinking + reasoning_effort en la misma peticion
                 # medido 16-oct en Token Plan: enable_thinking=false se acepta en los 9 modelos de texto (y es el camino rapido con tools)
                 # tool_stream NUNCA global: solo si la politica del modelo lo activa para esa tarea (con_tools.tool_stream)
             cuerpo.update(ex)
@@ -809,6 +879,10 @@ def _bucle(llamar, mensajes):
             tools_vis = list(tools_vis) + _MOTOR_TOOLS  # ⚙ Motor ON: descargar/extraer/copiar/mover del motor existente
     else:
         tools_vis = None
+    textos_previos = []
+    continuaciones_salida = 0
+    huella_ultima_parte = None
+    partes_sin_progreso = 0
     usadas = []
     vistos = {}   # dedup de lecturas: misma herramienta + mismos args = mismo resultado
     hechas = _VISTOS.get()  # escrituras que ya terminaron bien en esta tarea y nodo (compartido entre vueltas): no se repiten
@@ -843,8 +917,14 @@ def _bucle(llamar, mensajes):
                 pf('modelo' if con_tools else 'respuesta')
             except Exception:  # noqa: BLE001
                 pass
+        _lk_ses = str((_IDS_CTX.get() or {}).get('sesion') or '')
+        if _lk_ses and _agent_lock_status(_lk_ses):
+            return {'error': 'GAP_AGENT_ACCESS_LOCKED',
+                    'detalle': 'acceso a modelos/agentes/tools bloqueado por el Director'}, usadas
         _tm0 = time.time()
         s, d = llamar(mensajes, tools_vis if (con_tools and h is not None) else None)  # CAP filtrado: el modelo solo ve lo que puede usar
+        if isinstance(d, dict) and d.get('error') == 'GAP_STREAM_INTERRUPTED':
+            return {'error': 'GAP_STREAM_INTERRUPTED', 'parcial': str(d.get('parcial') or '')}, usadas
         if primera_llamada:
             _met('model_call_ms', int((time.time() - _tm0) * 1000))  # duracion completa de la primera llamada al modelo (no es TTFT)
             primera_llamada = False
@@ -858,6 +938,51 @@ def _bucle(llamar, mensajes):
         if s >= 400 or s == 0 or not isinstance(d, dict) or not d.get('choices'):
             return {'error': 'MODELO_NO_RESPONDE', 'detalle': 'HTTP %s ' % s + str(d)[:300]}, usadas
         msg = d['choices'][0].get('message') or {}
+        termino = d['choices'][0].get('finish_reason')
+        if termino == 'length':
+            if msg.get('tool_calls'):
+                return {'error': 'GAP_TOOL_CALL_TRUNCADA',
+                        'detalle': 'finish_reason=length durante tool_call'}, usadas
+            parcial = str(msg.get('content') or '')
+            if not parcial:
+                return {'error': 'GAP_SALIDA_SIN_CONTENIDO',
+                        'detalle': 'finish_reason=length; tokens consumidos sin texto'}, usadas
+            # Cada ronda debe anadir progreso; sin maximo arbitrario de DOS respuestas,
+            # pero jamas prolongar una tarea sin progreso.
+            import hashlib as _hl
+            huella = _hl.sha256(parcial.encode('utf-8')).hexdigest()
+            if huella == huella_ultima_parte:
+                partes_sin_progreso += 1
+            else:
+                partes_sin_progreso = 0
+                huella_ultima_parte = huella
+                textos_previos.append(parcial)
+            continuaciones_salida += 1
+            if partes_sin_progreso >= 2:
+                return {'error': 'GAP_CONTINUACION_SIN_PROGRESO',
+                        'parcial': ''.join(textos_previos),
+                        'rondas': continuaciones_salida}, usadas
+            if time.monotonic() + 8 >= fin:
+                return {'error': 'GAP_OUTPUT_TRUNCATED',
+                        'detalle': 'presupuesto de ejecucion agotado; salida recuperable',
+                        'parcial': ''.join(textos_previos),
+                        'rondas': continuaciones_salida}, usadas
+            mensajes.append({'role': 'assistant', 'content': parcial})
+            mensajes.append({'role': 'user', 'content':
+                             'CONTINUACIÓN DE SALIDA: sigue exactamente donde terminó el texto, '
+                             'sin repetir contenido, y conserva el formato solicitado.'})
+            continue
+        if textos_previos and not (msg.get('content') or '').strip() and not msg.get('tool_calls'):
+            return {'error': 'GAP_CONTINUACION_VACIA',
+                    'parcial': ''.join(textos_previos)}, usadas
+        if textos_previos and msg.get('content'):
+            nuevo = str(msg['content'])
+            anterior = ''.join(textos_previos)
+            limite_sol = min(1500, len(anterior), len(nuevo))
+            _k = next((k for k in range(limite_sol, 0, -1)
+                       if anterior.endswith(nuevo[:k])), 0)
+            msg['content'] = anterior + nuevo[_k:]
+            textos_previos = []
         calls = msg.get('tool_calls') or []
         if not calls and con_tools:
             tx = _calls_texto(msg.get('content'), conoc)
@@ -2234,8 +2359,15 @@ def _chat(p):
     _DEADLINE.set(time.monotonic() + presupuesto)
     _cablear_graphiti('', '', {'project_id': str(p.get('project_id') or sesion), 'task_id': str(p.get('task_id') or p.get('tarea') or sesion),  # scope real: project:<id> si el chat pertenece a un proyecto, anchors:<sesion> si no
                                'workflow_id': str(p.get('workflow_id') or ''), 'plugin_id': str(p.get('plugin_id') or ''), 'nodo': str(p.get('nodo') or ''),
+                               'ficha_id': str(p.get('ficha_id') or ''),
                                'anchor_scope': (('project:' + str(p.get('project_id'))[:60]) if p.get('project_id') else ('anchors:' + str(sesion)[:60]))})
-    if p.get('project_id'):  # chat dentro de un proyecto: sus archivos entran como anclados proyecto:<pid>:<nombre>
+    if p.get('active_anchors_v1') is True:
+        activos = p.get('anclados')
+        if not isinstance(activos, list) or not all(isinstance(x, str) for x in activos):
+            return {'error': 'GAP_ANCLADOS_ACTIVOS_INVALIDOS'}
+        # La lista expresa SOLO el conjunto activado por el usuario para ESTE turno.
+        p['anclados'] = list(dict.fromkeys(activos))
+    if p.get('project_id') and p.get('active_anchors_v1') is not True:  # chat dentro de un proyecto: sus archivos entran como anclados proyecto:<pid>:<nombre>
         try:
             extras = [a for a in _proyecto_anclados(p['project_id']) if a not in (p.get('anclados') or [])]
             if extras:
@@ -2566,7 +2698,10 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
                 scope_a = scope_for(DUENO, 'project:' + ''.join(c for c in str(payload.get('project_id') or '') if c.isalnum() or c in '-_')[:48])
             else:
                 scope_a = scope_for(DUENO, 'chat:' + str(payload.get('sesion') or 'general')[:60])
-            res = mem.search(scope_a, 'archivo:', 50)
+            res = mem.search(scope_a, 'archivo:', 2000)
+            filas_raw = res if isinstance(res, list) else []
+            if len(filas_raw) >= 2000:
+                return {'error': 'ARCHIVOS_LISTA_INCOMPLETA', 'detalle': 'limite de listado alcanzado (2000 registros)'}
             filas = res if isinstance(res, list) else next((v for v in (res or {}).values() if isinstance(v, list)), [])
             nombres = sorted({str((f.get('data', f) if isinstance(f, dict) else f).get('nombre')) for f in filas
                               if isinstance((f.get('data', f) if isinstance(f, dict) else f), dict) and (f.get('data', f) if isinstance(f, dict) else f).get('nombre')})
@@ -2584,8 +2719,8 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             except Exception:  # noqa: BLE001
                 pass
             return {'archivos': nombres}
-        except Exception:  # noqa: BLE001
-            return {'archivos': []}
+        except Exception as exc:  # noqa: BLE001
+            return {'error': 'GAP_LISTA_ARCHIVOS', 'detalle': type(exc).__name__}
     if action == 'xray':  # motor de auditoria forense x-ray del archivo anclado
         return _xray(str(payload.get('sesion') or 'general')[:60],
                      str(payload.get('nombre') or ''), str(payload.get('texto') or ''))
@@ -2630,6 +2765,11 @@ def handle(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             return _descargas(payload)
         except Exception as x:  # noqa: BLE001
             return {'error': 'DESCARGAS_FALLO', 'detalle': str(x)[:200]}
+    if action == 'agent_access_lock':  # boton del Director: bloqueo servidor de agentes/LLM/tools (fail-closed)
+        sesion_l = str(payload.get('sesion') or 'general')[:60]
+        if 'locked' not in payload:
+            return {'ok': True, 'locked': _agent_lock_status(sesion_l)}
+        return _agent_lock_set(sesion_l, payload['locked'])
     if action == 'proyecto':  # UN sistema de proyectos sobre memoria_yaiwes: scope project:<project_id>
         try:
             mem, scope_for = _memoria()
