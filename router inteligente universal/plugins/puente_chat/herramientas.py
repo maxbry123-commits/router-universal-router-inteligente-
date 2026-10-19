@@ -28,7 +28,7 @@ def _fn(nombre, desc, props, req):
 TOOLS = [
     _fn('github_leer', 'Lee un archivo, o lista una carpeta, de un repositorio de GitHub de maxbry123-commits. En archivos largos usa lineas (ej "200-400") para leer un rango.', {'repo': S, 'ruta': S, 'rama': S, 'lineas': S}, ['repo']),
     _fn('github_escribir', 'Crea o cambia un archivo en un repositorio de GitHub de maxbry123-commits (hace un commit).', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'rama': S}, ['repo', 'ruta', 'contenido']),
-    _fn('github_api', 'Llama a la API de GitHub con los permisos de la cuenta del Director. metodo: GET, POST, PUT, PATCH o DELETE.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
+    _fn('github_api', 'Llama a la API de GitHub con los permisos de la cuenta del Director. metodo: GET, POST, PUT, PATCH o DELETE. ruta: empieza con / (ej. /repos/<owner>/<repo>/commits?per_page=3); admite ?query params.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
     _fn('hf_leer', 'Lee un archivo de un repo de Hugging Face. tipo: model, dataset o space.', {'repo': S, 'ruta': S, 'tipo': S, 'rama': S}, ['repo', 'ruta']),
     _fn('hf_escribir', 'Crea o cambia un archivo en un repo de Hugging Face de la cuenta COMAND-CENTER-1.', {'repo': S, 'ruta': S, 'contenido': S, 'mensaje': S, 'tipo': S}, ['repo', 'ruta', 'contenido']),
     _fn('hf_api', 'Llama a la API de Hugging Face (la ruta empieza con /api/). Escribir solo en la cuenta COMAND-CENTER-1.', {'metodo': S, 'ruta': S, 'cuerpo': O}, ['metodo', 'ruta']),
@@ -282,7 +282,14 @@ def github_escribir(a):
 
 
 def github_api(a):
-    s, d = _gh(a.get('metodo'), a.get('ruta'), a.get('cuerpo'))
+    ruta = str(a.get('ruta') or a.get('endpoint') or a.get('path') or '').strip()  # alias: los modelos mandan endpoint/path
+    if ruta.startswith('https://api.github.com'):
+        ruta = ruta[len('https://api.github.com'):]  # el modelo manda a veces la URL completa
+    elif ruta.startswith('api.github.com'):
+        ruta = ruta[len('api.github.com'):]
+    if ruta and not ruta.startswith('/'):
+        ruta = '/' + ruta  # aceptar "repos/..." sin barra inicial; los ?query params ya los admite GH_RUTA
+    s, d = _gh(a.get('metodo') or a.get('method'), ruta, a.get('cuerpo') or a.get('body'))
     return _texto(s, d)
 
 
