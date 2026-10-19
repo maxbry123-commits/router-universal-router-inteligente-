@@ -3,7 +3,7 @@
 Fuente de la verdad: todos los inputs/instrucciones/prompts recibidos de Antonio en esta sesión, texto exacto 1 a 1, sin resumir ni editar.
 
 - Sesión: `devin-6ae7e452334a4819bc462545418a6daa` (web, usuario Antonio / maxbry123-commits)
-- Mensajes: **121** (extraídos del historial de eventos de la sesión)
+- Mensajes: **123** (extraídos del historial de eventos de la sesión)
 - Generado: 2026-10-18 UTC
 - Anexos de texto: **27** archivos únicos (dedupe sha256) · Imágenes: **41** únicas
 - Las líneas `ATTACHMENT:"url"` dentro de los mensajes se conservan verbatim; el contenido de cada adjunto de texto está en ANEXOS al final.
@@ -13636,6 +13636,71 @@ ATTACHMENT:"https://app.devin.ai/attachments/8476be3e-cffd-43f1-8ba9-598c21f7b1a
 ## INPUT 121 — 2026-10-18 22:21:17 UTC — `event-01a1511adee47849bb3074f48f890c1b`
 
 ya pasaste todos mis imput que te he dado 1 a 1 imput block verbartin en un archivo en Github?
+
+---
+
+## INPUT 122 — 2026-10-19 (sesion devin-6ae7e452334a4819bc462545418a6daa)
+
+todas cada una sección nueva en el chat 
+Para luego yo revisar 
+
+
+tarea 1 📌 
+usa para verificar las fichas 
+1. Mandas a GLM 5.2 revisión y refactoria justificada 4 pasada 
+2. Mandas a qwen 3.8 Max ( no flash) revisión y refactoria justificada 4 pasada 
+3. Mandas a deepsek v4 pro revisión y refactoria justificada 4 pasada 
+
+tarea 2 📌 
+mandas en oaraleparalelo como el plan da para hasta 6 modelos en el mismo tiempo 
+4. Deepsek v4 pro para resolver los gaps y las tareas de frontend del chat  luego le das 
+5. Mandas a qwen 3.8 Max (no flash) a hacerte todas las tareas pendientes del backend de el chat y  revisar todo el backend de chat 
+5.  Con trabajo editar quirúrgicamente Mandas a deeopsek v4 pro que busque en la raíz del chat router el plan y revise imágenes y revise el skils Maxbry UI fromtend y crea todo el fromtend que está en Las imágenes en el chat y crea todo el fromtend del code y de los archivos que están dentro del skills en el fromtend del chat los sube y lo crea respetando la configuración del skills y realiza fricción 0 con 4 revisiones luego le activas el botón del tool agente para que deepsek le de instrucciones a qwen 3.8 Max para que haga el backend del chat de lo que deepsek está creando 
+
+6. Mandas a qwen 3.8 a usar los motores de descarga y extracción copiar y mover  instale necesidades para que funcione el canvas usando todos los componentes de que existen de diseño y programación de cómo open desing y otros dento de el repo de la fábrica de UI existe una cantidad importante de code de componentes open soure los mueve al backen y al fromtend del chat para usarlos en el panel del canvas todos como archivos independiente de del archivo del backend y fromtend del chat nada de archivos monoliticos cableado usando el enchufe universal Fables y luego que qwen 3.8 Max cree y mejore el canavas de el chat y que crear el cableado del canvas al sistema tool del chat para que la ai del chat tenga acceso al uso del canvas como tools 
+
+6. Con trabajo editar quirúrgicamente Cuando deeopsek v4 pro termine mandas a qwen 3.8 en la misma sección del chat para que ejecute revisión del fromtend y refactoria de lo que hizo deepsek v4 pro en el fromtend del chat 
+
+7. Revisa que funcione el trabajo en paralelo que te di de minimax en donde valla en la ficha y en el backend del chat y fromtend quiero un botón o selector con funciones del sistema de trabajo en paralelo 
+
+ Quiero que todo lo mandas a revisar 3 veces usas varios modelos no flash 
+
+8. quiero botones y funciones en todo el chat  con funciones reales buen diseño según el skills Maxbry UI fromtend 
+
+
+Todos los creas en el chat si detectas fallos en un proceso mandas a qwen 3.8 Max y a GLM 5.2 para que los dos revisen el gaps en la ficha del fallo o del error que consigas
+Si vez que una tarea no la hacen bien si algo falla y es parte de la fichas los mandas a ellos para que actualicen la ficha 
+
+luego que lleves más de el 80% te doy más tareas para seguir probando para que tú pruebes en el chat usa el wachdog activo cada 30 min o 1 hora cuando veas que ya la ficha esta ok para ir revisando el progreso 
+
+Anotas todo en el archivo de instrucciones 1 a 1 imput block verbartin 
+
+dime si el panel de opendientes este funcionando en el chat 
+
+cuando te actives cada 30 min  a 1 hora me vas dando un resumen del progreso necesito resumen corto + % de cada tarea en curso 
+
+alguna duda ?
+
+---
+
+## INPUT 123 — 2026-10-19 (sesion devin-6ae7e452334a4819bc462545418a6daa)
+
+Ley constitución para Devin tu no ejecutas tu delegas todas las tareas a los modelos dime si te quedo claro 
+
+ok inicia con tareas 1 y 2 al mismo tiempo porque no se pisan 
+
+añade a tarea 2 📌 
+en backend que qwen 3.8 Max añada el skils Maxbry UI fromtend y los motores de descarga y extracción y copiar y mover y los motores buscadores de investigación que están en el repo de router inteligente universal o en el repo de agente para que los modelos lo usen como tool y me salga en el chat también para anclar mandas tu a los modelos a buscar tu das las instrucciones tu no haces las tareas tu solo revisa el resultado en code y en visual lo hago yo tu me dices revisa x chat activo ve la imagen o revisa este panel en el chat y yo reviso tu revisas solo el code y como trabajan los modelos 
+
+Tu solo delegas y revisas los resultados le escribes por el chat 
+
+Manda a crear  un tool para que te puedas comunicar con ellos existia un sistema ROOM CONFERENCIAS que hizo grockbot revisa que le falta y mandas a qwen 3.8 Max que integre MCp HTTP y tools y  otras funciones  para que tú puedas escribir en el chat y en el sistema ROOM CONFERENCIAS y otras ai por medio de esos sistema o por medio de Jason para usar el chat como si fuera yo 
+
+manda en paralelo a 2 modelos que revisen hagan Auditoría forense x Ray verificación cruzada con los archivos adjuntos y el code fuente en las fichas mandas 3 revísiones a deepsek v4 flash y qwen 3.6 y te reportan a ti el resultado si falta algo si hay que mandar hacer una tarea refactoria porque falta algo en la ficha mandas a GLM 5 y qwen 3.8 Max 
+
+esro te manda Claude delega tu eres un osquestador y revisa code revisas el resultado no ejecutas asegúrate que todo lo que te doy quede escrito 1 a 1 imput block verbartin 
+
+si necesitas algo mas de Claude me avisas delegas tu no ejecutas delegas a los modelos las tareas
 
 ---
 
