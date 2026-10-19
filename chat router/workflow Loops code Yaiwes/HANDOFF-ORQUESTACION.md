@@ -63,6 +63,8 @@ Nota: LIVE_URL.json no contiene job_id (campos: LIVE_URL, runtime, space_id, har
 ### Commits
 - 3767ddd DSL N1-N5: estado por nodo en ContextVar, required solo paso 1, acuse con evidencia, deadline por nodo, fuente unica de politicas
 - 5a077a4 fichas JSON: contrato reintento Claude + tool_stream GLM + per_attempt dsv4 + lectura >1MB (INPUT 129 x4 pasadas)
+- f54435a conectar prompt layout D ejecutor (INPUT 129) en reintento y dsv4 primario
+- 36f6a17 N5: fallback_modelo distinto por modelo (glm52->qwen38max, qwen38max->glm52); el JSON ya no lista a un modelo como su propio fallback
 - (bundle desplegado: router-bundle.tar.gz 308MB -> bucket; backup .bak NO creado: HfFileSystem.cp no soportado en buckets -> GAP menor)
 
 ### Que se borro y por que
@@ -79,3 +81,4 @@ Nota: LIVE_URL.json no contiene job_id (campos: LIVE_URL, runtime, space_id, har
 - N5: fuente unica = politicas_modelo de ficha1; bloque reintento ahora LO LEE el codigo (per_attempt_s, max_attempts, fallback_modelo); glm52 nunca es su propio fallback
 - N6: 56 tests existentes + 4 nuevos test_dsl_cableado = 100% verde
 - N9: PENDIENTE — auditoria independiente de Claude Sonnet (no la hago yo)
+- PENDIENTE: auditoria de las fichas por GLM 5.2 — 2 intentos, TIMEOUT_NODO a 150s sin emitir tool calls (api.z.ai lento en tareas largas de lectura); la opinion de qwen38max si llego y se aplico (lectura_archivo_grande)
