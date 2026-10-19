@@ -96,7 +96,9 @@ class MotorYaiwes(Motor):
                 if not isinstance(item.get(k), str):
                     raise MotorError('GAP_CAMPO_TIPO %s.%s: se esperaba texto' % (item['id'], k))
             if 'path' in req:
-                self.path(item['path'])  # ruta vacia/absoluta/fuera del workspace: rechazo antes de mutar
+                _p = self.path(item['path'])  # ruta vacia/absoluta/fuera del workspace: rechazo antes de mutar
+                if _p == self.root / '.receipts' or (self.root / '.receipts') in _p.parents:  # >>> PARCHE_T1 <<< el modelo no escribe donde viven los recibos
+                    raise MotorError('GAP_RUTA_RESERVADA %s: .receipts es del ejecutor' % item['id'])
             if item['op'] == 'write_text' and len(item['text']) > self.max_chars:
                 raise MotorError('GAP_TEXTO_LARGO %s: %d > %d' % (item['id'], len(item['text']), self.max_chars))
             if item['op'] == 'verify_contains' and not item['text']:
@@ -225,19 +227,28 @@ def es_mutante(plan):
         return False
 
 
+def _recibo_integro(rec):  # >>> PARCHE_T1 <<< lo emitio el ejecutor y nadie lo toco (sha256 sobre el contenido)
+    try:
+        if not isinstance(rec, dict) or rec.get('source') != 'tool_executor':
+            return False
+        return rec.get('sha256') == _sha(_canon({k: v for k, v in rec.items() if k not in ('sha256', 'reutilizado')}))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def recibo_existe(rid):
     """El modelo puede NOMBRAR recibos; aqui se comprueba que los emitio el ejecutor (Bloque 2 seccion 06)."""
     rid = str(rid or '')
     if not rid.startswith('receipt-'):
         return False
     with _LOCK:
-        if rid in _RECIBOS:
+        if rid in _RECIBOS and _recibo_integro(_RECIBOS[rid]):
             return True
     try:
         for cp in base_workspaces().glob('*/.receipts/*.json'):
             done = (json.loads(cp.read_text(encoding='utf-8')).get('done') or {})
             for rec in done.values():
-                if rec.get('id') == rid:
+                if rec.get('id') == rid and _recibo_integro(rec):
                     with _LOCK:
                         _RECIBOS[rid] = rec
                     return True

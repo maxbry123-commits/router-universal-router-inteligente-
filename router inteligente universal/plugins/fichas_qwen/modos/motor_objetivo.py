@@ -51,6 +51,29 @@ def _json_de(texto):
         return None
 
 
+DELTA_CONTINUIDAD = (  # >>> PARCHE_T1 <<< anexo corto del ingeniero (no es un segundo system prompt)
+    '[CONTINUIDAD DE EJECUCION]\n'
+    'Espera el resultado de cada herramienta antes de afirmar nada. No repitas mutaciones ya confirmadas.\n'
+    'Si falta trabajo y hubo avance real: estado="sigue" y en nota_siguiente el paso exacto y el ultimo recibo.\n'
+    'Si algo falla: error real, causa, cambio concreto, reintento. estado="hecho" solo con evidencia de herramienta; '
+    '"bloqueado" solo ante un impedimento real. receipt_ids: solo ids de recibos reales que viste.\n')
+
+
+def _recibos_falsos(ids):  # >>> PARCHE_T1 <<< ids que el modelo nombra y el ejecutor nunca emitio
+    if not isinstance(ids, list) or not ids:
+        return []
+    try:
+        import importlib.util as _iu
+        from pathlib import Path as _P
+        _f = _P(__file__).resolve().parent.parent / 'motor_json' / 'yaiwes_motor.py'
+        _s = _iu.spec_from_file_location('yaiwes_motor_chk', _f)
+        _m = _iu.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        return [str(x) for x in ids if not _m.recibo_existe(x)]
+    except Exception:  # noqa: BLE001
+        return []  # sin motor disponible no se inventa un fallo
+
+
 def _prompt_vuelta(obj, t, resumen, instrucciones=None):
     ins = ''
     if instrucciones:
@@ -64,9 +87,10 @@ def _prompt_vuelta(obj, t, resumen, instrucciones=None):
     return ('OBJETIVO DEL DIRECTOR:\n' + obj['objetivo'] + '\n\n'
             'TAREA ACTUAL (' + t['id'] + '): ' + tarea_txt + '\n\n'
             'HECHO HASTA AHORA (resumen):\n' + (resumen or '(nada aún)') + ins + '\n\n'
+            + DELTA_CONTINUIDAD +  # >>> PARCHE_T1 <<<
             'Haz SOLO esta tarea ahora, usando herramientas si hacen falta. No pidas confirmación.\n'
             'Responde AL FINAL con este JSON exacto: {"tarea":"' + t['id'] + '","estado":"hecho|sigue|bloqueado",'
-            '"resultado":"...","evidencia":"...","nuevas_tareas":[],"nota_siguiente":"..."}')
+            '"resultado":"...","evidencia":"...","nuevas_tareas":[],"nota_siguiente":"...","receipt_ids":[]}')
 
 
 def _prompt_plan(obj, lim):
@@ -93,7 +117,7 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
        buzon(proceso_id) -> [mensajes no aplicados] + aplicar(id, vuelta)  (DSL G19)"""
     pid = str(obj.get('proceso_id') or '')
     lim = dict({'max_vueltas': 20, 'max_tareas': 50, 'max_minutos': 240, 'max_intentos_por_tarea': 3,
-                'max_vueltas_sin_progreso': 5, 'pausa_entre_vueltas_s': 2}, **(obj.get('limites') or {}))
+                'max_vueltas_sin_progreso': 5, 'pausa_entre_vueltas_s': 2, 'max_continuaciones_por_tarea': 8}, **(obj.get('limites') or {}))
     st = estado or {'tareas': [], 'vuelta': 0, 'resumen': [], 't0': time.time(), 'sin_progreso': 0,
                     'instrucciones_director': [], 'reanudaciones': 0}
     if not st['tareas']:
@@ -201,8 +225,20 @@ def correr_objetivo(obj, llamar, guardar, progreso, estado=None, buzon=None):
         modo_actual = t.get('modo') or 'code'
         ok_ev = (int(r.get('mutaciones_ok') or 0) > 0 if modo_actual == 'code'
                  else int(r.get('herramientas_ok') or 0) > 0 or modo_actual in ('rapido', 'planificador'))
+        _falsos = _recibos_falsos(j.get('receipt_ids'))  # >>> PARCHE_T1 <<< recibo inventado = sin evidencia
+        if _falsos:
+            ok_ev = False
+            j['resultado'] = 'GAP_RECIBO_INEXISTENTE: ' + ', '.join(_falsos)[:160]
+        import hashlib as _hh
+        _huella = _hh.sha256(('%s|%s|%s|%s|%s' % (j.get('resultado'), j.get('evidencia'), j.get('nota_siguiente'),
+                                                 r.get('mutaciones_ok'), r.get('herramientas_ok'))).encode('utf-8')).hexdigest()[:12]
+        _avance = (not _falsos) and j.get('estado') == 'sigue' and ok_ev and _huella != t.get('huella')
         if j.get('estado') == 'hecho' and ok_ev:
             t['estado'], t['evidencia'] = 'hecho', str(j.get('evidencia') or '')[:500]
+            st['sin_progreso'] = 0
+        elif _avance and t.get('continuaciones', 0) < lim['max_continuaciones_por_tarea']:  # >>> PARCHE_T1 <<< continuar != fallar
+            t['estado'], t['huella'] = 'sigue', _huella
+            t['continuaciones'] = t.get('continuaciones', 0) + 1
             st['sin_progreso'] = 0
         else:
             t['intentos'] += 1
