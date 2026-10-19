@@ -1457,7 +1457,7 @@ _MOTOR_TOOLS = [
         {'plan': {'type': 'string'}}, ['plan']),
     _mf('motor_descargar', 'Motor: descarga una URL (GitHub/Hugging Face/archivo) al destino indicado y verifica el origen antes y el destino despues.',
         {'origen': {'type': 'string'}, 'destino': {'type': 'string'}}, ['origen']),
-    _mf('motor_extraer', 'Motor: extrae/audita el contenido de un archivo ya anclado (x-ray) y devuelve su estructura.',
+    _mf('motor_extraer', 'Motor: audita el TEXTO de un archivo ya anclado (x-ray) y devuelve su estructura. NO descomprime zips: para descargar/extraer/publicar un zip usa motor_descargar.',
         {'archivo': {'type': 'string'}}, []),
     _mf('motor_copiar', 'Motor: copia una raiz o archivo entre repos GitHub del owner; verifica origen y escribe destino con receipt.',
         {'origen': {'type': 'string'}, 'destino': {'type': 'string'}}, ['origen', 'destino']),
@@ -1501,6 +1501,28 @@ def _motor_ejecutar(nom, args):
         return 'MOTOR_ERROR: ' + type(exc).__name__ + ' ' + str(exc)[:200]
 
 
+def _env_motor(base, env_extra):  # >>> PARCHE_MOTOR_ENV <<<
+    # variables permitidas = las que los scripts del motor leen; el token lo pone el Harness (nunca el modelo)
+    permitidas = set()
+    try:
+        for f_ in _os.listdir(base):
+            if f_.endswith('.py'):
+                with open(base + '/' + f_, encoding='utf-8') as fh_:
+                    permitidas |= set(re.findall(r"(?:getenv|environ\.get)\(\s*['\"]([A-Z][A-Z0-9_]+)['\"]", fh_.read()))
+    except OSError:
+        pass
+    permitidas.discard('GITHUB_TOKEN')
+    permitidas.discard('HF_TOKEN')
+    ok = {str(k): str(v)[:500] for k, v in (env_extra or {}).items() if str(k) in permitidas}
+    try:
+        tok = _herr()._token_gh('', True)
+        if tok:
+            ok['GITHUB_TOKEN'] = str(tok)
+    except Exception:  # noqa: BLE001
+        pass
+    return ok
+
+
 def _motor_descarga(pregunta):
     usadas = ['embed:nemotron-3-embed-1b']
     nombres = list(_MOTORES_DESC)
@@ -1520,7 +1542,7 @@ def _motor_descarga(pregunta):
     base = str(_CONFIG_DIR / 'motores_descarga')
     rc_ = None  # >>> PARCHE_N7 <<<
     try:
-        e = dict(_os.environ, **env_extra)
+        e = dict(_os.environ, **_env_motor(base, env_extra))  # >>> PARCHE_MOTOR_ENV <<<
         r = _sub.run(['python3', base + '/' + fichero], env=e, capture_output=True, text=True, timeout=300)
         salida_motor = (r.stdout or '') + (r.stderr or '')
         rc_ = r.returncode

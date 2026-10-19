@@ -1721,7 +1721,7 @@ def _correr(ficha: dict[str, Any], mensaje: str, modelo: str, pid: str = "", opt
         if n.get('id') == 'N4' and opts.get('aprobado') and opts.get('plan'):
             prompt += nl * 2 + 'PLAN APROBADO POR EL DIRECTOR (ejecutalo tal cual; si cambia el alcance, detente y pide aprobacion otra vez):' + nl + str(opts['plan'])[:6000]
         if n.get('id') in ('N4', 'P3') and opts.get('aprobado'):  # >>> PARCHE_N7 <<<
-            prompt += nl * 2 + 'PUBLICAR: para crear o cambiar archivos en GitHub usa la herramienta github_escribir (repo, ruta, contenido, mensaje, rama). github_api solo sirve para leer (GET). Tras escribir, verifica con github_leer e informa ruta y commit. Si motor_extraer o motor_descargar falla, lee el error real del resultado y corrige antes de reintentar.'
+            prompt += nl * 2 + 'PUBLICAR: para crear o cambiar archivos en GitHub usa la herramienta github_escribir (repo, ruta, contenido, mensaje, rama). github_api solo sirve para leer (GET). Tras escribir, verifica con github_leer e informa ruta y commit. Si motor_extraer o motor_descargar falla, lee el error real del resultado y corrige antes de reintentar. Para un ZIP en GitHub: motor_descargar descarga, extrae y publica con el motor del repo (indica origen y destino); motor_extraer solo audita texto, no descomprime.'
         if n.get('id') == 'N4' and opts.get('correccion'):
             prompt += nl * 2 + 'CORRECCION PEDIDA POR EL VERIFICADOR (corrige unicamente este fallo; no repitas operaciones ya completadas):' + nl + str(opts['correccion'])
         if n.get('id') == fin_id and obligatorio and not (n.get('id') == 'N4' and opts.get('muta') and not opts.get('aprobado')):
